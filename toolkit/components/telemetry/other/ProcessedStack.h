@@ -3,8 +3,8 @@
 
 
 
-#ifndef ProcessedStack_h__
-#define ProcessedStack_h__
+#ifndef ProcessedStack_h_
+#define ProcessedStack_h_
 
 #include <vector>
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef __FontVisibilityProvider_h__
-#define __FontVisibilityProvider_h__
+#ifndef FontVisibilityProvider_h_
+#define FontVisibilityProvider_h_
 
 #include <stdint.h>
 

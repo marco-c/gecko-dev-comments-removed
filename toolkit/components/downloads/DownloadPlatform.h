@@ -2,8 +2,8 @@
 
 
 
-#ifndef __DownloadPlatform_h__
-#define __DownloadPlatform_h__
+#ifndef DownloadPlatform_h_
+#define DownloadPlatform_h_
 
 #include "mozIDownloadPlatform.h"
 

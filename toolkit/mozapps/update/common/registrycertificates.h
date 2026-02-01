@@ -2,8 +2,8 @@
 
 
 
-#ifndef _REGISTRYCERTIFICATES_H_
-#define _REGISTRYCERTIFICATES_H_
+#ifndef REGISTRYCERTIFICATES_H_
+#define REGISTRYCERTIFICATES_H_
 
 #include "certificatecheck.h"
 

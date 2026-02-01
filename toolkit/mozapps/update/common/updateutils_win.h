@@ -4,8 +4,8 @@
 
 
 
-#ifndef WINDIRENT_H__
-#define WINDIRENT_H__
+#ifndef WINDIRENT_H_
+#define WINDIRENT_H_
 
 
 

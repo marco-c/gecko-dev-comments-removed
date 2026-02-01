@@ -3,8 +3,8 @@
 
 
 
-#ifndef ProtocolParser_h__
-#define ProtocolParser_h__
+#ifndef ProtocolParser_h_
+#define ProtocolParser_h_
 
 #include "HashStore.h"
 #include "chromium/safebrowsing.pb.h"

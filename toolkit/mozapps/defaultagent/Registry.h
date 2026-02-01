@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DEFAULT_BROWSER_AGENT_REGISTRY_H__
-#define __DEFAULT_BROWSER_AGENT_REGISTRY_H__
+#ifndef DEFAULT_BROWSER_AGENT_REGISTRY_H_
+#define DEFAULT_BROWSER_AGENT_REGISTRY_H_
 
 #include <cstdint>
 #include <windows.h>

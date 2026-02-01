@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryIPCAccumulator_h__
-#define TelemetryIPCAccumulator_h__
+#ifndef TelemetryIPCAccumulator_h_
+#define TelemetryIPCAccumulator_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Maybe.h"

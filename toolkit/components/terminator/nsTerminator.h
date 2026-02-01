@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTerminator_h__
-#define nsTerminator_h__
+#ifndef nsTerminator_h_
+#define nsTerminator_h_
 
 #include "nsISupports.h"
 #include "nsIObserver.h"

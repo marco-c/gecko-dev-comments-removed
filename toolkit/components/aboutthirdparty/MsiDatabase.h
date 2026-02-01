@@ -4,8 +4,8 @@
 
 
 
-#ifndef __MsiDatabase_h__
-#define __MsiDatabase_h__
+#ifndef MsiDatabase_h_
+#define MsiDatabase_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"

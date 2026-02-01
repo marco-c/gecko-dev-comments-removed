@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_nsCookieBannerRule_h__
-#define mozilla_nsCookieBannerRule_h__
+#ifndef mozilla_nsCookieBannerRule_h_
+#define mozilla_nsCookieBannerRule_h_
 
 #include "nsICookieBannerRule.h"
 #include "nsICookieRule.h"

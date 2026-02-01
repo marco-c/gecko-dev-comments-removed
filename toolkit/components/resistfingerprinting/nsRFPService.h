@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsRFPService_h__
-#define __nsRFPService_h__
+#ifndef _nsRFPService_h_
+#define _nsRFPService_h_
 
 #include <cstdint>
 #include <bitset>

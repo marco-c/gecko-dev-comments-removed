@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryScalarInfo_h__
-#define TelemetryScalarInfo_h__
+#ifndef TelemetryScalarInfo_h_
+#define TelemetryScalarInfo_h_
 
 #include "TelemetryCommon.h"
 

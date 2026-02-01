@@ -3,8 +3,8 @@
 
 
 
-#ifndef Telemetry_h__
-#define Telemetry_h__
+#ifndef Telemetry_h_
+#define Telemetry_h_
 
 #include "mozilla/TelemetryEventEnums.h"
 #include "mozilla/TelemetryHistogramEnums.h"

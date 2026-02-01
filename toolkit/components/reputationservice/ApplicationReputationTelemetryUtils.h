@@ -3,8 +3,8 @@
 
 
 
-#ifndef ApplicationReputationTelemetryUtils_h__
-#define ApplicationReputationTelemetryUtils_h__
+#ifndef ApplicationReputationTelemetryUtils_h_
+#define ApplicationReputationTelemetryUtils_h_
 
 #include "mozilla/glean/ReputationserviceMetrics.h"
 #include "mozilla/Telemetry.h"

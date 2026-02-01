@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWebBrowserFindImpl_h__
-#define nsWebBrowserFindImpl_h__
+#ifndef nsWebBrowserFindImpl_h_
+#define nsWebBrowserFindImpl_h_
 
 #include "nsIWebBrowserFind.h"
 

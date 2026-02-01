@@ -3,8 +3,8 @@
 
 
 
-#ifndef UrlClassifierTelemetryUtils_h__
-#define UrlClassifierTelemetryUtils_h__
+#ifndef UrlClassifierTelemetryUtils_h_
+#define UrlClassifierTelemetryUtils_h_
 
 #include "nsISupportsImpl.h"
 

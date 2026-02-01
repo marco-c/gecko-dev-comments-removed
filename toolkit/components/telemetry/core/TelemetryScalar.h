@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryScalar_h__
-#define TelemetryScalar_h__
+#ifndef TelemetryScalar_h_
+#define TelemetryScalar_h_
 
 #include <stdint.h>
 #include "mozilla/TelemetryProcessEnums.h"

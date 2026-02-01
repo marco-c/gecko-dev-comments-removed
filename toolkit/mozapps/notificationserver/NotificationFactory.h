@@ -4,8 +4,8 @@
 
 
 
-#ifndef NotificationFactory_h__
-#define NotificationFactory_h__
+#ifndef NotificationFactory_h_
+#define NotificationFactory_h_
 
 #include <filesystem>
 

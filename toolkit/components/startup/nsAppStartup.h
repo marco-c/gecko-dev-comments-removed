@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAppStartup_h__
-#define nsAppStartup_h__
+#ifndef nsAppStartup_h_
+#define nsAppStartup_h_
 
 #include "nsIAppStartup.h"
 #include "nsIWindowCreator.h"

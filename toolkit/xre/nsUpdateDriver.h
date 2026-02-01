@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsUpdateDriver_h__
-#define nsUpdateDriver_h__
+#ifndef nsUpdateDriver_h_
+#define nsUpdateDriver_h_
 
 #include "nscore.h"
 #include "nsIUpdateService.h"

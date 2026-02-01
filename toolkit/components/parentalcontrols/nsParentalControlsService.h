@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsParentalControlsService_h__
-#define nsParentalControlsService_h__
+#ifndef nsParentalControlsService_h_
+#define nsParentalControlsService_h_
 
 #include "nsIParentalControlsService.h"
 #include "nsCOMPtr.h"

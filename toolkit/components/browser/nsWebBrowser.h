@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWebBrowser_h__
-#define nsWebBrowser_h__
+#ifndef nsWebBrowser_h_
+#define nsWebBrowser_h_
 
 
 #include "nsDocShellTreeOwner.h"

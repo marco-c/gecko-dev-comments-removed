@@ -4,8 +4,8 @@
 
 
 
-#ifndef telemetry_UntrustedModules_h__
-#define telemetry_UntrustedModules_h__
+#ifndef telemetry_UntrustedModules_h_
+#define telemetry_UntrustedModules_h_
 
 #include "jsapi.h"
 #include "mozilla/dom/Promise.h"

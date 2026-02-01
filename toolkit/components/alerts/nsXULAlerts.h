@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsXULAlerts_h__
-#define nsXULAlerts_h__
+#ifndef nsXULAlerts_h_
+#define nsXULAlerts_h_
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsAutoWindowStateHelper_h
-#define __nsAutoWindowStateHelper_h
+#ifndef _nsAutoWindowStateHelper_h
+#define _nsAutoWindowStateHelper_h
 
 #include "nsCOMPtr.h"
 #include "nsPIDOMWindow.h"

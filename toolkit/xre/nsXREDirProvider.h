@@ -3,8 +3,8 @@
 
 
 
-#ifndef _nsXREDirProvider_h__
-#define _nsXREDirProvider_h__
+#ifndef _nsXREDirProvider_h_
+#define _nsXREDirProvider_h_
 
 #include "nsIDirectoryService.h"
 #include "nsIProfileMigrator.h"

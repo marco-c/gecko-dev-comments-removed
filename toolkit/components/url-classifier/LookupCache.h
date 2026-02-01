@@ -3,8 +3,8 @@
 
 
 
-#ifndef LookupCache_h__
-#define LookupCache_h__
+#ifndef LookupCache_h_
+#define LookupCache_h_
 
 #include "Entries.h"
 #include "nsString.h"

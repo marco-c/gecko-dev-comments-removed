@@ -3,8 +3,8 @@
 
 
 
-#ifndef Telemetry_Comms_h__
-#define Telemetry_Comms_h__
+#ifndef Telemetry_Comms_h_
+#define Telemetry_Comms_h_
 
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"

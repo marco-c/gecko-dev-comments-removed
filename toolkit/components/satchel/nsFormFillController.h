@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsFormFillController__
-#define __nsFormFillController__
+#ifndef _nsFormFillController_
+#define _nsFormFillController_
 
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/Promise.h"

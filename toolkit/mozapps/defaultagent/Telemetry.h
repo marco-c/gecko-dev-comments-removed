@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DEFAULT_BROWSER_TELEMETRY_H__
-#define __DEFAULT_BROWSER_TELEMETRY_H__
+#ifndef DEFAULT_BROWSER_TELEMETRY_H_
+#define DEFAULT_BROWSER_TELEMETRY_H_
 
 #include <windows.h>
 

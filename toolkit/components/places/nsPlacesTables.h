@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsPlacesTables_h__
-#define __nsPlacesTables_h__
+#ifndef _nsPlacesTables_h_
+#define _nsPlacesTables_h_
 
 #define CREATE_MOZ_PLACES                                \
   nsLiteralCString(                                      \

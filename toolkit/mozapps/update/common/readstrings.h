@@ -4,8 +4,8 @@
 
 
 
-#ifndef READSTRINGS_H__
-#define READSTRINGS_H__
+#ifndef READSTRINGS_H_
+#define READSTRINGS_H_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"

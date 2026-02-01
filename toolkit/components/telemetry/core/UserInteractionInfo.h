@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryUserInteractionInfo_h__
-#define TelemetryUserInteractionInfo_h__
+#ifndef TelemetryUserInteractionInfo_h_
+#define TelemetryUserInteractionInfo_h_
 
 #include "TelemetryCommon.h"
 

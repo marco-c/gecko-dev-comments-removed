@@ -3,8 +3,8 @@
 
 
 
-#ifndef Stopwatch_h__
-#define Stopwatch_h__
+#ifndef Stopwatch_h_
+#define Stopwatch_h_
 
 #include "mozilla/dom/UserInteractionBinding.h"
 

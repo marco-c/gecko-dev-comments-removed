@@ -3,8 +3,8 @@
 
 
 
-#ifndef Classifier_h__
-#define Classifier_h__
+#ifndef Classifier_h_
+#define Classifier_h_
 
 #include "Entries.h"
 #include "HashStore.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_RFPTargetSetIDL_h__
-#define mozilla_RFPTargetSetIDL_h__
+#ifndef mozilla_RFPTargetSetIDL_h_
+#define mozilla_RFPTargetSetIDL_h_
 
 #include "nsIRFPTargetSetIDL.h"
 #include "nsRFPService.h"

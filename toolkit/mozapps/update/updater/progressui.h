@@ -4,8 +4,8 @@
 
 
 
-#ifndef PROGRESSUI_H__
-#define PROGRESSUI_H__
+#ifndef PROGRESSUI_H_
+#define PROGRESSUI_H_
 
 #include "updatedefines.h"
 

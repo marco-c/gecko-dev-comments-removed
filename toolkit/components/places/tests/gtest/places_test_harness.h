@@ -4,8 +4,8 @@
 
 
 
-#ifndef places_test_harness_h__
-#define places_test_harness_h__
+#ifndef places_test_harness_h_
+#define places_test_harness_h_
 
 #include "gtest/gtest.h"
 #include "mozilla/dom/PlacesEventBinding.h"

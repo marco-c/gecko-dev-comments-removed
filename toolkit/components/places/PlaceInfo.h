@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_places_PlaceInfo_h__
-#define mozilla_places_PlaceInfo_h__
+#ifndef mozilla_places_PlaceInfo_h_
+#define mozilla_places_PlaceInfo_h_
 
 #include "mozIAsyncHistory.h"
 #include "nsCOMPtr.h"

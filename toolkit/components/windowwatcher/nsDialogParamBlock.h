@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsDialogParamBlock_h
-#define __nsDialogParamBlock_h
+#ifndef _nsDialogParamBlock_h
+#define _nsDialogParamBlock_h
 
 #include "nsIDialogParamBlock.h"
 #include "nsIMutableArray.h"

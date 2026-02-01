@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DEFAULT_BROWSER_AGENT_CACHE_H__
-#define __DEFAULT_BROWSER_AGENT_CACHE_H__
+#ifndef DEFAULT_BROWSER_AGENT_CACHE_H_
+#define DEFAULT_BROWSER_AGENT_CACHE_H_
 
 #include <cstdint>
 #include <string>

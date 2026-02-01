@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsWinRemoteServer_h__
-#define __nsWinRemoteServer_h__
+#ifndef _nsWinRemoteServer_h_
+#define _nsWinRemoteServer_h_
 
 #include "nsRemoteServer.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFind_h__
-#define nsFind_h__
+#ifndef nsFind_h_
+#define nsFind_h_
 
 #include "nsIFind.h"
 

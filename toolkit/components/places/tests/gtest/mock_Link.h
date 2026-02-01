@@ -8,8 +8,8 @@
 
 
 
-#ifndef mock_Link_h__
-#define mock_Link_h__
+#ifndef mock_Link_h_
+#define mock_Link_h_
 
 #include "mozilla/dom/Link.h"
 #include "mozilla/StaticPrefs_layout.h"

@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_BounceTrackingProtectionStorage_h__
-#define mozilla_BounceTrackingProtectionStorage_h__
+#ifndef mozilla_BounceTrackingProtectionStorage_h_
+#define mozilla_BounceTrackingProtectionStorage_h_
 
 #include "mozIStorageFunction.h"
 #include "mozilla/Logging.h"

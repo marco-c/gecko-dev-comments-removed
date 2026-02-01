@@ -3,8 +3,8 @@
 
 
 
-#ifndef __mozilla_ProcInfo_h
-#define __mozilla_ProcInfo_h
+#ifndef _mozilla_ProcInfo_h
+#define _mozilla_ProcInfo_h
 
 #include <base/process.h>
 #include <stdint.h>

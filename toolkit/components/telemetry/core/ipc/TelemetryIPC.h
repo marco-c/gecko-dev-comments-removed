@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryIPC_h__
-#define TelemetryIPC_h__
+#ifndef TelemetryIPC_h_
+#define TelemetryIPC_h_
 
 #include "mozilla/TelemetryProcessEnums.h"
 #include "nsTArray.h"

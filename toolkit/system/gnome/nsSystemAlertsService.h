@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsSystemAlertsService_h__
-#define nsSystemAlertsService_h__
+#ifndef nsSystemAlertsService_h_
+#define nsSystemAlertsService_h_
 
 #include "nsIAlertsService.h"
 #include "nsTHashMap.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef HashStore_h__
-#define HashStore_h__
+#ifndef HashStore_h_
+#define HashStore_h_
 
 #include "Entries.h"
 #include "ChunkSet.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPlacesIndexes_h__
-#define nsPlacesIndexes_h__
+#ifndef nsPlacesIndexes_h_
+#define nsPlacesIndexes_h_
 
 #define CREATE_PLACES_IDX(__name, __table, __columns, __type)                  \
   nsLiteralCString("CREATE " __type " INDEX IF NOT EXISTS " __table "_" __name \

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __AboutThirdPartyUtils_h__
-#define __AboutThirdPartyUtils_h__
+#ifndef AboutThirdPartyUtils_h_
+#define AboutThirdPartyUtils_h_
 
 #include "nsString.h"
 

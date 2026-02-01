@@ -2,8 +2,8 @@
 
 
 
-#ifndef __nsAutoCompleteController__
-#define __nsAutoCompleteController__
+#ifndef _nsAutoCompleteController_
+#define _nsAutoCompleteController_
 
 #include "nsIAutoCompleteController.h"
 

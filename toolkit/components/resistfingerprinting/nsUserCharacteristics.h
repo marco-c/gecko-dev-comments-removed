@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsUserCharacteristics_h__
-#define __nsUserCharacteristics_h__
+#ifndef _nsUserCharacteristics_h_
+#define _nsUserCharacteristics_h_
 
 #include "ErrorList.h"
 #include "mozilla/MouseEvents.h"

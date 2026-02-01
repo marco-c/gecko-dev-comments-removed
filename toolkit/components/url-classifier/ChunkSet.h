@@ -3,8 +3,8 @@
 
 
 
-#ifndef ChunkSet_h__
-#define ChunkSet_h__
+#ifndef ChunkSet_h_
+#define ChunkSet_h_
 
 #include "Entries.h"
 #include "nsString.h"
@@ -30,6 +30,14 @@ class ChunkSet {
 
   nsresult Write(nsIOutputStream* aOut) const;
   nsresult Read(nsIInputStream* aIn, uint32_t aNumElements);
+
+  ChunkSet InfallibleClone() const {
+    ChunkSet result;
+    if (!result.mRanges.Assign(mRanges, fallible)) {
+      MOZ_CRASH("Out of memory");
+    }
+    return result;
+  }
 
  private:
   class Range {

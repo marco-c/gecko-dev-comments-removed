@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAppRunner_h__
-#define nsAppRunner_h__
+#ifndef nsAppRunner_h_
+#define nsAppRunner_h_
 
 #ifdef XP_WIN
 #  include <windows.h>

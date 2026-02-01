@@ -2,8 +2,8 @@
 
 
 
-#ifndef __nsAutoCompleteSimpleResult__
-#define __nsAutoCompleteSimpleResult__
+#ifndef _nsAutoCompleteSimpleResult_
+#define _nsAutoCompleteSimpleResult_
 
 #include "nsIAutoCompleteResult.h"
 #include "nsIAutoCompleteSimpleResult.h"

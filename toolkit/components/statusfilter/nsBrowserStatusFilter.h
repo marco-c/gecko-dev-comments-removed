@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsBrowserStatusFilter_h__
-#define nsBrowserStatusFilter_h__
+#ifndef nsBrowserStatusFilter_h_
+#define nsBrowserStatusFilter_h_
 
 #include "nsIWebProgressListener.h"
 #include "nsIWebProgressListener2.h"

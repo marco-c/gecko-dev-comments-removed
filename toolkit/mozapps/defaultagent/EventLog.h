@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DEFAULT_BROWSER_AGENT_EVENT_LOG_H__
-#define __DEFAULT_BROWSER_AGENT_EVENT_LOG_H__
+#ifndef DEFAULT_BROWSER_AGENT_EVENT_LOG_H_
+#define DEFAULT_BROWSER_AGENT_EVENT_LOG_H_
 
 #include "mozilla/Types.h"
 

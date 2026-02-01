@@ -4,8 +4,8 @@
 
 
 
-#ifndef LlamaRuntimeLinker_h__
-#define LlamaRuntimeLinker_h__
+#ifndef LlamaRuntimeLinker_h_
+#define LlamaRuntimeLinker_h_
 
 #include "llama/llama.h"
 #include "ggml.h"

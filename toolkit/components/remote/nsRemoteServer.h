@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsRemoteServer_h__
-#define __nsRemoteServer_h__
+#ifndef _nsRemoteServer_h_
+#define _nsRemoteServer_h_
 
 #include "nsString.h"
 

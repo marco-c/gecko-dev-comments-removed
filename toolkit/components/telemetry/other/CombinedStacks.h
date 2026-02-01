@@ -3,8 +3,8 @@
 
 
 
-#ifndef CombinedStacks_h__
-#define CombinedStacks_h__
+#ifndef CombinedStacks_h_
+#define CombinedStacks_h_
 
 #include <vector>
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsUrlClassifierGTestCommon_h__
-#define nsUrlClassifierGTestCommon_h__
+#ifndef nsUrlClassifierGTestCommon_h_
+#define nsUrlClassifierGTestCommon_h_
 
 #include "Entries.h"
 #include "nsAppDirectoryServiceDefs.h"

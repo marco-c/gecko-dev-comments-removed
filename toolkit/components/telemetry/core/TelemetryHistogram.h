@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryHistogram_h__
-#define TelemetryHistogram_h__
+#ifndef TelemetryHistogram_h_
+#define TelemetryHistogram_h_
 
 #include "mozilla/TelemetryComms.h"
 #include "mozilla/TelemetryHistogramEnums.h"

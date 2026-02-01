@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCheckSummedOutputStream_h__
-#define nsCheckSummedOutputStream_h__
+#ifndef nsCheckSummedOutputStream_h_
+#define nsCheckSummedOutputStream_h_
 
 #include "nsIFile.h"
 #include "nsIOutputStream.h"

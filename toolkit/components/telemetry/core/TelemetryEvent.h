@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryEvent_h__
-#define TelemetryEvent_h__
+#ifndef TelemetryEvent_h_
+#define TelemetryEvent_h_
 
 #include <stdint.h>
 #include "js/TypeDecls.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef _UACHELPER_H_
-#define _UACHELPER_H_
+#ifndef UACHELPER_H_
+#define UACHELPER_H_
 
 #include <windows.h>
 

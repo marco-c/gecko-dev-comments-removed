@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_AlertNotification_h__
-#define mozilla_AlertNotification_h__
+#ifndef mozilla_AlertNotification_h_
+#define mozilla_AlertNotification_h_
 
 #include "imgINotificationObserver.h"
 #include "nsIAlertsService.h"

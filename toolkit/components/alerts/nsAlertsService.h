@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAlertsService_h__
-#define nsAlertsService_h__
+#ifndef nsAlertsService_h_
+#define nsAlertsService_h_
 
 #include "nsIAlertsService.h"
 #include "nsCOMPtr.h"

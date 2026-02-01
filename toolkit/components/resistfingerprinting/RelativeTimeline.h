@@ -3,8 +3,8 @@
 
 
 
-#ifndef __RelativeTimeline_h__
-#define __RelativeTimeline_h__
+#ifndef RelativeTimeline_h_
+#define RelativeTimeline_h_
 
 #include <cstdint>
 

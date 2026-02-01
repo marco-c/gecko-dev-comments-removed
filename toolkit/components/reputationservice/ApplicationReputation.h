@@ -4,8 +4,8 @@
 
 
 
-#ifndef ApplicationReputation_h__
-#define ApplicationReputation_h__
+#ifndef ApplicationReputation_h_
+#define ApplicationReputation_h_
 
 #include "nsIApplicationReputation.h"
 #include "nsISupports.h"

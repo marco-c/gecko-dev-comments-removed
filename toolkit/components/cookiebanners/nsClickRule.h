@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_nsclickrule_h__
-#define mozilla_nsclickrule_h__
+#ifndef mozilla_nsclickrule_h_
+#define mozilla_nsclickrule_h_
 
 #include "nsIClickRule.h"
 #include "nsString.h"

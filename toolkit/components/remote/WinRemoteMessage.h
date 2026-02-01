@@ -3,8 +3,8 @@
 
 
 
-#ifndef __WinRemoteMessage_h__
-#define __WinRemoteMessage_h__
+#ifndef WinRemoteMessage_h_
+#define WinRemoteMessage_h_
 
 #include <windows.h>
 

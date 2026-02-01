@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_BounceTrackingProtection_h__
-#define mozilla_BounceTrackingProtection_h__
+#ifndef mozilla_BounceTrackingProtection_h_
+#define mozilla_BounceTrackingProtection_h_
 
 #include "BounceTrackingMapEntry.h"
 #include "BounceTrackingStorageObserver.h"

@@ -29,8 +29,8 @@
 
 
 
-#ifndef bspatch_h__
-#define bspatch_h__
+#ifndef bspatch_h_
+#define bspatch_h_
 
 #include <stdint.h>
 #include <stdio.h>

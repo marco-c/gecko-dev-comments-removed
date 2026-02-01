@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryEventInfo_h__
-#define TelemetryEventInfo_h__
+#ifndef TelemetryEventInfo_h_
+#define TelemetryEventInfo_h_
 
 #include "TelemetryCommon.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef LookupCacheV4_h__
-#define LookupCacheV4_h__
+#ifndef LookupCacheV4_h_
+#define LookupCacheV4_h_
 
 #include "LookupCache.h"
 

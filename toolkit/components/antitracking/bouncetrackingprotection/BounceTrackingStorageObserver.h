@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_BounceTrackingStorageObserver_h__
-#define mozilla_BounceTrackingStorageObserver_h__
+#ifndef mozilla_BounceTrackingStorageObserver_h_
+#define mozilla_BounceTrackingStorageObserver_h_
 
 #include "mozilla/Logging.h"
 #include "nsIObserver.h"

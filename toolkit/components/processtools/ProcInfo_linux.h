@@ -3,8 +3,8 @@
 
 
 
-#ifndef __mozilla_ProcInfo_linux_h
-#define __mozilla_ProcInfo_linux_h
+#ifndef _mozilla_ProcInfo_linux_h
+#define _mozilla_ProcInfo_linux_h
 
 
 

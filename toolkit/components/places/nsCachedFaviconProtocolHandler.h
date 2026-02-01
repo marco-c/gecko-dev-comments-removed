@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCachedFaviconProtocolHandler_h___
-#define nsCachedFaviconProtocolHandler_h___
+#ifndef nsCachedFaviconProtocolHandler_h_
+#define nsCachedFaviconProtocolHandler_h_
 
 #include "nsCOMPtr.h"
 #include "nsIProtocolHandler.h"

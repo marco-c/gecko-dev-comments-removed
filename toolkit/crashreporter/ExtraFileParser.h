@@ -2,8 +2,8 @@
 
 
 
-#ifndef ExtraFileParser_h__
-#define ExtraFileParser_h__
+#ifndef ExtraFileParser_h_
+#define ExtraFileParser_h_
 
 #include "js/JSON.h"  
 

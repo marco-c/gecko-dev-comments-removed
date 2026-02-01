@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_ClearDataCallback_h__
-#define mozilla_ClearDataCallback_h__
+#ifndef mozilla_ClearDataCallback_h_
+#define mozilla_ClearDataCallback_h_
 
 #include "BounceTrackingMapEntry.h"
 #include "mozilla/MozPromise.h"

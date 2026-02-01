@@ -2,8 +2,8 @@
 
 
 
-#ifndef _PATHHASH_H_
-#define _PATHHASH_H_
+#ifndef PATHHASH_H_
+#define PATHHASH_H_
 
 #include <windows.h>
 

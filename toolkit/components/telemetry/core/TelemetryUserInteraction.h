@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryUserInteraction_h__
-#define TelemetryUserInteraction_h__
+#ifndef TelemetryUserInteraction_h_
+#define TelemetryUserInteraction_h_
 
 #include "nsStringFwd.h"
 

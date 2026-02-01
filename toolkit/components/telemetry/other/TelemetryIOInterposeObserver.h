@@ -9,8 +9,8 @@
 
 
 
-#ifndef TelemetryIOInterposeObserver_h__
-#define TelemetryIOInterposeObserver_h__
+#ifndef TelemetryIOInterposeObserver_h_
+#define TelemetryIOInterposeObserver_h_
 
 #include "core/TelemetryCommon.h"
 #include "js/RootingAPI.h"

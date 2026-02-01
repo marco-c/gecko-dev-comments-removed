@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsWinRemoteClient_h__
-#define nsWinRemoteClient_h__
+#ifndef nsWinRemoteClient_h_
+#define nsWinRemoteClient_h_
 
 #include "nscore.h"
 #include "nsRemoteClient.h"

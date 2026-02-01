@@ -4,8 +4,8 @@
 
 
 
-#ifndef ArchiveReader_h__
-#define ArchiveReader_h__
+#ifndef ArchiveReader_h_
+#define ArchiveReader_h_
 
 #include <stdio.h>
 #include "mar.h"

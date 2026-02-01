@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DEFAULT_BROWSER_AGENT_COMMON_H__
-#define __DEFAULT_BROWSER_AGENT_COMMON_H__
+#ifndef DEFAULT_BROWSER_AGENT_COMMON_H_
+#define DEFAULT_BROWSER_AGENT_COMMON_H_
 
 #include "mozilla/WinHeaderOnlyUtils.h"
 

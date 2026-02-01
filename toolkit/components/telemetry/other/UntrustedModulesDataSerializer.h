@@ -4,8 +4,8 @@
 
 
 
-#ifndef UntrustedModulesDataSerializer_h__
-#define UntrustedModulesDataSerializer_h__
+#ifndef UntrustedModulesDataSerializer_h_
+#define UntrustedModulesDataSerializer_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/UntrustedModulesData.h"

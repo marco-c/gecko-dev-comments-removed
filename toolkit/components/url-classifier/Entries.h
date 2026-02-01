@@ -7,8 +7,8 @@
 
 
 
-#ifndef SBEntries_h__
-#define SBEntries_h__
+#ifndef SBEntries_h_
+#define SBEntries_h_
 
 #include "mozilla/crypto_hash_sha2.h"
 #include "mozilla/Base64.h"

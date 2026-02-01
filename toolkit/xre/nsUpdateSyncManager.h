@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsUpdateSyncManager_h__
-#define nsUpdateSyncManager_h__
+#ifndef nsUpdateSyncManager_h_
+#define nsUpdateSyncManager_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsIObserver.h"

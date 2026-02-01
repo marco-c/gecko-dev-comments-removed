@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_nsCookieInjector_h__
-#define mozilla_nsCookieInjector_h__
+#ifndef mozilla_nsCookieInjector_h_
+#define mozilla_nsCookieInjector_h_
 
 #include "nsCOMPtr.h"
 #include "nsICookieBannerRule.h"

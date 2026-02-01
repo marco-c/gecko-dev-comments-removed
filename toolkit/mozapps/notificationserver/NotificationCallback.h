@@ -4,8 +4,8 @@
 
 
 
-#ifndef NotificationCallback_h__
-#define NotificationCallback_h__
+#ifndef NotificationCallback_h_
+#define NotificationCallback_h_
 
 #include <filesystem>
 #include <tuple>

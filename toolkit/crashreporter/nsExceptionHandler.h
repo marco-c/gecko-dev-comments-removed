@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsExceptionHandler_h__
-#define nsExceptionHandler_h__
+#ifndef nsExceptionHandler_h_
+#define nsExceptionHandler_h_
 
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"

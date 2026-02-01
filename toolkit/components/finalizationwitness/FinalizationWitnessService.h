@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_finalizationwitnessservice_h__
-#define mozilla_finalizationwitnessservice_h__
+#ifndef mozilla_finalizationwitnessservice_h_
+#define mozilla_finalizationwitnessservice_h_
 
 #include "nsIFinalizationWitnessService.h"
 #include "nsIObserver.h"

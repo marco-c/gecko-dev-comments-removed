@@ -3,8 +3,8 @@
 
 
 
-#ifndef FOGIPC_h__
-#define FOGIPC_h__
+#ifndef FOGIPC_h_
+#define FOGIPC_h_
 
 #include <functional>
 

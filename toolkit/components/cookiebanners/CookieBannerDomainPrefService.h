@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_CookieBannerDomainPrefService_h__
-#define mozilla_CookieBannerDomainPrefService_h__
+#ifndef mozilla_CookieBannerDomainPrefService_h_
+#define mozilla_CookieBannerDomainPrefService_h_
 
 #include "nsIContentPrefService2.h"
 

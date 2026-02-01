@@ -3,8 +3,8 @@
 
 
 
-#ifndef TelemetryCommon_h__
-#define TelemetryCommon_h__
+#ifndef TelemetryCommon_h_
+#define TelemetryCommon_h_
 
 #include "PLDHashTable.h"
 #include "js/RootingAPI.h"

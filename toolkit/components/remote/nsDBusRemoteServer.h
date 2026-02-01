@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsDBusRemoteServer_h__
-#define __nsDBusRemoteServer_h__
+#ifndef _nsDBusRemoteServer_h_
+#define _nsDBusRemoteServer_h_
 
 #include "nsRemoteServer.h"
 #include "nsUnixRemoteServer.h"

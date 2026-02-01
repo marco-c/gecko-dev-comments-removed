@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsProfileLock_h___
-#define __nsProfileLock_h___
+#ifndef _nsProfileLock_h_
+#define _nsProfileLock_h_
 
 #include "nsIFile.h"
 

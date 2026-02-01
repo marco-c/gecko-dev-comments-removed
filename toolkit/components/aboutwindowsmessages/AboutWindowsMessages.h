@@ -4,8 +4,8 @@
 
 
 
-#ifndef __AboutWindowsMessages_h__
-#define __AboutWindowsMessages_h__
+#ifndef AboutWindowsMessages_h_
+#define AboutWindowsMessages_h_
 
 #include "mozilla/MozPromise.h"
 #include "nsIAboutWindowsMessages.h"

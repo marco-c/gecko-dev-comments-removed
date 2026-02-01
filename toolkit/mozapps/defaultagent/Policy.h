@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DEFAULT_BROWSER_AGENT_POLICY_H__
-#define __DEFAULT_BROWSER_AGENT_POLICY_H__
+#ifndef DEFAULT_BROWSER_AGENT_POLICY_H_
+#define DEFAULT_BROWSER_AGENT_POLICY_H_
 
 namespace mozilla::default_agent {
 

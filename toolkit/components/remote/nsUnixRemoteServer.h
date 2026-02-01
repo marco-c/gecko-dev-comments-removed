@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsUnixRemoteServer_h__
-#define __nsUnixRemoteServer_h__
+#ifndef _nsUnixRemoteServer_h_
+#define _nsUnixRemoteServer_h_
 
 #include "nsStringFwd.h"
 #include "mozilla/Span.h"

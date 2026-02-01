@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsGTKRemoteServer_h__
-#define __nsGTKRemoteServer_h__
+#ifndef _nsGTKRemoteServer_h_
+#define _nsGTKRemoteServer_h_
 
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsUpdateMutex_h__
-#define nsUpdateMutex_h__
+#ifndef nsUpdateMutex_h_
+#define nsUpdateMutex_h_
 
 #include "nsIUpdateService.h"
 #include "nsProfileLock.h"

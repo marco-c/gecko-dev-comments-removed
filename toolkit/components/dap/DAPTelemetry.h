@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_nsIDAPTelemetry_h__
-#define mozilla_nsIDAPTelemetry_h__
+#ifndef mozilla_nsIDAPTelemetry_h_
+#define mozilla_nsIDAPTelemetry_h_
 
 #include "nsIDAPTelemetry.h"
 

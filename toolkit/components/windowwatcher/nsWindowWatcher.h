@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsWindowWatcher_h__
-#define __nsWindowWatcher_h__
+#ifndef _nsWindowWatcher_h_
+#define _nsWindowWatcher_h_
 
 
 #define NS_WINDOWWATCHER_CID \

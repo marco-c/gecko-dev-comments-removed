@@ -3,8 +3,8 @@
 
 
 
-#ifndef DBusRemoteClient_h__
-#define DBusRemoteClient_h__
+#ifndef DBusRemoteClient_h_
+#define DBusRemoteClient_h_
 
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>

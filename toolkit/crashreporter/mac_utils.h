@@ -3,8 +3,8 @@
 
 
 
-#ifndef toolkit_breakpad_mac_utils_h__
-#define toolkit_breakpad_mac_utils_h__
+#ifndef toolkit_breakpad_mac_utils_h_
+#define toolkit_breakpad_mac_utils_h_
 
 #include "nsString.h"
 

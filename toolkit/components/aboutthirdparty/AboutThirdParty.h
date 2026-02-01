@@ -4,8 +4,8 @@
 
 
 
-#ifndef __AboutThirdParty_h__
-#define __AboutThirdParty_h__
+#ifndef AboutThirdParty_h_
+#define AboutThirdParty_h_
 
 #include "mozilla/CompactPair.h"
 #include "mozilla/MozPromise.h"

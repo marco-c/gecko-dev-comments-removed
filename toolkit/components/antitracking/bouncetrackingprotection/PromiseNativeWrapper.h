@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_PromiseNativeWrapper_h__
-#define mozilla_PromiseNativeWrapper_h__
+#ifndef mozilla_PromiseNativeWrapper_h_
+#define mozilla_PromiseNativeWrapper_h_
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/Promise.h"
