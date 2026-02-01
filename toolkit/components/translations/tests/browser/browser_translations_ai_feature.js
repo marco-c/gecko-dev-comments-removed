@@ -189,7 +189,7 @@ add_task(async function test_ai_feature_state_combinations() {
     expectEnabled,
   } of cases) {
     const description = `default=${defaultPref} translations=${translationsPref} enabled=${enabledPref}`;
-    info(`AI feature state: ${description}`);
+    info(`Translations feature state: ${description}`);
     Services.prefs.setStringPref(AI_CONTROL_DEFAULT_PREF, defaultPref);
     Services.prefs.setStringPref(
       AI_CONTROL_TRANSLATIONS_PREF,
@@ -240,9 +240,17 @@ add_task(async function test_ai_feature_enable() {
       "Enable turns on translations"
     );
     is(deleteCalls, 0, "Enable does not delete artifacts");
+
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translationsFeature.enable,
+      {
+        expectedEventCount: 1,
+      }
+    );
   } finally {
     TranslationsUtils.deleteAllLanguageFiles = originalDeleteAllLanguageFiles;
     await SpecialPowers.popPrefEnv();
+    TestTranslationsTelemetry.cleanup();
   }
 });
 
@@ -286,9 +294,17 @@ add_task(async function test_ai_feature_disable() {
       "Disable turns off translations"
     );
     is(deleteCalls, 1, "Disable deletes artifacts");
+
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translationsFeature.disable,
+      {
+        expectedEventCount: 1,
+      }
+    );
   } finally {
     TranslationsUtils.deleteAllLanguageFiles = originalDeleteAllLanguageFiles;
     await SpecialPowers.popPrefEnv();
+    TestTranslationsTelemetry.cleanup();
   }
 });
 
@@ -325,9 +341,17 @@ add_task(async function test_ai_feature_reset() {
       "Reset clears the translations enabled pref"
     );
     is(deleteCalls, 1, "Reset deletes artifacts");
+
+    await TestTranslationsTelemetry.assertEvent(
+      Glean.translationsFeature.reset,
+      {
+        expectedEventCount: 1,
+      }
+    );
   } finally {
     TranslationsUtils.deleteAllLanguageFiles = originalDeleteAllLanguageFiles;
     await SpecialPowers.popPrefEnv();
+    TestTranslationsTelemetry.cleanup();
   }
 });
 
