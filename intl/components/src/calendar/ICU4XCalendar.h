@@ -8,7 +8,6 @@
 #include "mozilla/intl/calendar/ISODate.h"
 #include "mozilla/intl/calendar/MonthCode.h"
 
-#include <memory>
 #include <mutex>
 #include <stdint.h>
 #include <string_view>
@@ -27,7 +26,6 @@ namespace mozilla::intl::calendar {
 
 class ICU4XCalendar : public icu::Calendar {
   mutable UniqueICU4XCalendar calendar_{};
-  mutable std::unique_ptr<icu::Calendar> fallback_{};
   icu4x::capi::CalendarKind kind_;
 
  protected:
@@ -41,11 +39,6 @@ class ICU4XCalendar : public icu::Calendar {
 
 
   icu4x::capi::Calendar* getICU4XCalendar(UErrorCode& status) const;
-
-  
-
-
-  icu::Calendar* getFallbackCalendar(UErrorCode& status) const;
 
  protected:
   
@@ -62,15 +55,6 @@ class ICU4XCalendar : public icu::Calendar {
 
 
   virtual bool hasMonthCode(MonthCode monthCode) const = 0;
-
-  
-
-
-
-
-
-  virtual bool requiresFallbackForExtendedYear(int32_t year) const = 0;
-  virtual bool requiresFallbackForGregorianYear(int32_t year) const = 0;
 
  protected:
   static constexpr int32_t kEpochStartAsJulianDay =
@@ -115,12 +99,6 @@ class ICU4XCalendar : public icu::Calendar {
                               UErrorCode& status) const override;
 
   int32_t handleGetExtendedYear(UErrorCode& status) override;
-
- protected:
-  
-
-
-  void handleComputeFieldsFromFallback(int32_t julianDay, UErrorCode& status);
 };
 
 
