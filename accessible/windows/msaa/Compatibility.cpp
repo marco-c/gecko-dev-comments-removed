@@ -234,6 +234,21 @@ bool Compatibility::IsUiaEnabled() {
   if (!(sConsumers & UIAUTOMATION)) {
     InitConsumers();
   }
-  return !IsJAWS() && !IsOldJAWS() && !IsVisperoShared() &&
-         !(sConsumers & NVDA);
+  if (sConsumers & NVDA) {
+    
+    static Maybe<bool> sIsNvdaVersionSupported;
+    if (sIsNvdaVersionSupported.isNothing()) {
+      if (HMODULE nvdaHandle = ::GetModuleHandleW(L"nvdaHelperRemote")) {
+        
+        
+        
+        sIsNvdaVersionSupported = Some(!IsModuleVersionLessThan(
+            nvdaHandle, MAKE_FILE_VERSION(2025, 2, 0, 0)));
+      } else {
+        sIsNvdaVersionSupported = Some(false);
+      }
+    }
+    return *sIsNvdaVersionSupported;
+  }
+  return !IsJAWS() && !IsOldJAWS() && !IsVisperoShared();
 }
