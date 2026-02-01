@@ -220,8 +220,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CDATASection", insecureContext: true },
   
-  { name: "CSPViolationReportBody", insecureContext: true },
-  
   { name: "CSS", insecureContext: true },
   
   { name: "CSSAnimation", insecureContext: true },
@@ -398,8 +396,6 @@ let interfaceNamesInGlobalScope = [
   { name: "DecompressionStream", insecureContext: true },
   
   { name: "DelayNode", insecureContext: true },
-  
-  { name: "DeprecationReportBody", insecureContext: true },
   
   { name: "DeviceLightEvent", insecureContext: true, disabled: true },
   
@@ -895,8 +891,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "InstallTrigger", insecureContext: true },
   
-  { name: "IntegrityViolationReportBody", insecureContext: true },
-  
   { name: "IntersectionObserver", insecureContext: true },
   
   { name: "IntersectionObserverEntry", insecureContext: true },
@@ -1260,12 +1254,6 @@ let interfaceNamesInGlobalScope = [
   { name: "ReadableStreamDefaultController", insecureContext: true },
   
   { name: "ReadableStreamDefaultReader", insecureContext: true },
-  
-  { name: "Report", insecureContext: true },
-  
-  { name: "ReportBody", insecureContext: true },
-  
-  { name: "ReportingObserver", insecureContext: true },
   
   { name: "Request", insecureContext: true },
   
