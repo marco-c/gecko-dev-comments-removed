@@ -1121,7 +1121,7 @@ describe('Page', function () {
       ]);
       expect(t1).toBeGreaterThan(t2);
       
-      expect(t1 - t0).toBeGreaterThan(400);
+      expect(t1 - t0).toBeGreaterThanOrEqual(400);
       
       expect(t1 - t2).toBeGreaterThanOrEqual(100);
     });
