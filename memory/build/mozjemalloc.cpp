@@ -105,6 +105,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -224,6 +232,7 @@ class SizeClass {
   enum ClassType {
     Quantum,
     QuantumWide,
+    SubPage,
     Large,
   };
 
@@ -239,6 +248,9 @@ class SizeClass {
     } else if (aSize <= kMaxQuantumWideClass) {
       mType = QuantumWide;
       mSize = QUANTUM_WIDE_CEILING(aSize);
+    } else if (aSize <= gMaxSubPageClass) {
+      mType = SubPage;
+      mSize = SUBPAGE_CEILING(aSize);
     } else if (aSize <= gMaxLargeClass) {
       mType = Large;
       mSize = PAGE_CEILING(aSize);
@@ -2755,6 +2767,10 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
       bin = &mBins[kNumQuantumClasses + (aSize / kQuantumWide) -
                    (kMinQuantumWideClass / kQuantumWide)];
       break;
+    case SizeClass::SubPage:
+      bin = &mBins[kNumQuantumClasses + kNumQuantumWideClasses +
+                   (FloorLog2(aSize) - LOG2(kMinSubPageClass))];
+      break;
     default:
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected size class type");
   }
@@ -3958,8 +3974,8 @@ static bool malloc_init_hard() {
     MOZ_CRASH();
   }
 #else
+  gPageSize = page_size;
   gRealPageSize = page_size;
-  gPageSize = std::min(4_KiB, page_size);
 #endif
 
   
@@ -4311,7 +4327,7 @@ inline void MozJemalloc::jemalloc_stats_internal(
   aStats->quantum_max = kMaxQuantumClass;
   aStats->quantum_wide = kQuantumWide;
   aStats->quantum_wide_max = kMaxQuantumWideClass;
-  aStats->unused = kMaxQuantumWideClass;
+  aStats->subpage_max = gMaxSubPageClass;
   aStats->large_max = gMaxLargeClass;
   aStats->chunksize = kChunkSize;
   aStats->page_size = gPageSize;

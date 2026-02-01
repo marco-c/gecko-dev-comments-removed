@@ -12,6 +12,7 @@
 
 
 #include "mozilla/Literals.h"
+#include "mozilla/MathAlgorithms.h"
 
 #include "Constants.h"
 
@@ -72,7 +73,7 @@ static const size_t gRealPageSize = 16_KiB;
 #  else
 static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gPageSize = 4_KiB;
+static const size_t gPageSize = gRealPageSize;
 #else
 
 
@@ -116,7 +117,8 @@ void DefineGlobals();
 #endif
 
 
-#define gMaxBinClass (kMaxQuantumWideClass)
+#define gMaxBinClass \
+  (gMaxSubPageClass ? gMaxSubPageClass : kMaxQuantumWideClass)
 
 
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
@@ -131,7 +133,11 @@ void DefineGlobals();
   (((a) + (kQuantumWideMask)) & ~(kQuantumWideMask))
 
 
-#define NUM_SMALL_CLASSES (kNumQuantumClasses + kNumQuantumWideClasses)
+#define SUBPAGE_CEILING(a) (RoundUpPow2(a))
+
+
+#define NUM_SMALL_CLASSES \
+  (kNumQuantumClasses + kNumQuantumWideClasses + gNumSubPageClasses)
 
 
 static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {

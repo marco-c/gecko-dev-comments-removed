@@ -2,6 +2,18 @@
 
 
 
+
+GLOBAL(size_t, gMaxSubPageClass,
+       gPageSize / 2 >= kMinSubPageClass ? gPageSize / 2 : 0)
+
+
+GLOBAL(uint8_t, gNumSubPageClasses, []() GLOBAL_CONSTEXPR -> uint8_t {
+  if GLOBAL_CONSTEXPR (gMaxSubPageClass != 0) {
+    return mozilla::FloorLog2(gMaxSubPageClass) - LOG2(kMinSubPageClass) + 1;
+  }
+  return 0;
+}())
+
 GLOBAL(uint8_t, gPageSize2Pow, GLOBAL_LOG2(gPageSize))
 GLOBAL(uint8_t, gRealPageSize2Pow, GLOBAL_LOG2(gRealPageSize))
 GLOBAL(size_t, gPageSizeMask, gPageSize - 1)
@@ -37,11 +49,12 @@ GLOBAL_ASSERT(1ULL << gRealPageSize2Pow == gRealPageSize,
 GLOBAL_ASSERT(kQuantum >= sizeof(void*));
 GLOBAL_ASSERT(kQuantum <= kQuantumWide);
 GLOBAL_ASSERT(!kNumQuantumWideClasses ||
-              kQuantumWide <= (kMinLargeClass - kMaxQuantumClass));
+              kQuantumWide <= (kMinSubPageClass - kMaxQuantumClass));
 
 GLOBAL_ASSERT(kQuantumWide <= kMaxQuantumClass);
 
-GLOBAL_ASSERT(gMaxLargeClass >= kMaxQuantumWideClass);
+GLOBAL_ASSERT(gMaxSubPageClass >= kMinSubPageClass || gMaxSubPageClass == 0);
+GLOBAL_ASSERT(gMaxLargeClass >= gMaxSubPageClass);
 GLOBAL_ASSERT(kChunkSize >= gPageSize);
 GLOBAL_ASSERT(kChunkSize >= gRealPageSize);
 GLOBAL_ASSERT(gPagesPerRealPage < gChunkHeaderNumPages);

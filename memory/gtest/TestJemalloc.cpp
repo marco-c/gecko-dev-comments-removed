@@ -108,7 +108,8 @@ TEST(Jemalloc, PtrInfo)
 
   
   
-  size_t small_max = stats.quantum_wide_max;
+  size_t small_max =
+      stats.subpage_max ? stats.subpage_max : stats.quantum_wide_max;
   for (size_t n = 0; n <= small_max; n += 8) {
     auto p = (char*)moz_arena_malloc(arenaId, n);
     size_t usable = moz_malloc_size_of(p);

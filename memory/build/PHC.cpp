@@ -1822,11 +1822,7 @@ Maybe<void*> PHC::PageRealloc(const Maybe<arena_id_t>& aArenaId, void* aOldPtr,
     
     
     size_t oldUsableSize = PageUsableSize(index);
-    
-    
-    
-    size_t newUsableSize =
-        std::min(MozJemalloc::malloc_good_size(aNewSize), kPageSize);
+    size_t newUsableSize = MozJemalloc::malloc_good_size(aNewSize);
     uint8_t* pagePtr = sRegion.AllocPagePtr(index);
     uint8_t* newPtr = pagePtr + kPageSize - newUsableSize;
     memmove(newPtr, aOldPtr, std::min(oldUsableSize, aNewSize));
