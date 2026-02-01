@@ -346,10 +346,6 @@ var allowlist = [
   },
   
   {
-    file: "chrome://browser/content/aiwindow/components/ai-website-chip.mjs",
-  },
-  
-  {
     file: "chrome://browser/content/aiwindow/components/website-chip-container.mjs",
   },
 ];
