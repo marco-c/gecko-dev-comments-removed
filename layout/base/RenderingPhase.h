@@ -16,8 +16,8 @@ namespace mozilla {
 
 
 enum class RenderingPhase : uint8_t {
-  
-  FlushAutoFocusCandidates = 0,
+  Reveal = 0,
+  FlushAutoFocusCandidates,
   ResizeSteps,
   ScrollSteps,
   EvaluateMediaQueriesAndReportChanges,
@@ -38,6 +38,7 @@ enum class RenderingPhase : uint8_t {
 using RenderingPhases = EnumSet<RenderingPhase, uint16_t>;
 inline constexpr RenderingPhases AllRenderingPhases() {
   return {
+      RenderingPhase::Reveal,
       RenderingPhase::FlushAutoFocusCandidates,
       RenderingPhase::ResizeSteps,
       RenderingPhase::ScrollSteps,
