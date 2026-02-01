@@ -1430,7 +1430,6 @@ BrowsingContext* BrowsingContext::FindWithNameInSubtree(
   return nullptr;
 }
 
-
 bool BrowsingContext::IsSandboxedFrom(BrowsingContext* aTarget) {
   
   if (!aTarget) {
@@ -2468,28 +2467,14 @@ void BrowsingContext::Navigate(
     loadState->SetLoadType(LOAD_STOP_CONTENT);
   }
 
-  const auto snapShot = [&](auto& source) {
-    loadState->SetSourceBrowsingContext(source->GetBrowsingContext());
-    WindowContext* context = source->GetWindowContext();
+  
+  nsCOMPtr<nsPIDOMWindowInner> sourceWindow =
+      nsContentUtils::IncumbentInnerWindow();
+  if (sourceWindow) {
+    WindowContext* context = sourceWindow->GetWindowContext();
+    loadState->SetSourceBrowsingContext(sourceWindow->GetBrowsingContext());
     loadState->SetHasValidUserGestureActivation(
         context && context->HasValidTransientUserGestureActivation());
-  };
-
-  
-  
-  
-  
-  if (aSourceDocument) {
-    snapShot(aSourceDocument);
-  } else if (nsCOMPtr<nsPIDOMWindowInner> incumbentWindow =
-                 nsContentUtils::IncumbentInnerWindow()) {
-    
-    
-    
-    
-    
-    
-    snapShot(incumbentWindow);
   }
 
   loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
