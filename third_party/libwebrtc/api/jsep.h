@@ -263,7 +263,7 @@ class SessionDescriptionInternal {
 
 
 
-class RTC_EXPORT SessionDescriptionInterface
+class RTC_EXPORT SessionDescriptionInterface final
     : public SessionDescriptionInternal {
  public:
   static std::unique_ptr<SessionDescriptionInterface> Create(
@@ -283,40 +283,31 @@ class RTC_EXPORT SessionDescriptionInterface
   static const char kAnswer[];
   static const char kRollback[];
 
-  virtual ~SessionDescriptionInterface() {}
+  ~SessionDescriptionInterface();
 
   
   
-  virtual std::unique_ptr<SessionDescriptionInterface> Clone() const;
+  std::unique_ptr<SessionDescriptionInterface> Clone() const;
 
   
-  virtual SessionDescription* description() {
+  SessionDescription* description() {
     return SessionDescriptionInternal::description();
   }
-  virtual const SessionDescription* description() const {
+  const SessionDescription* description() const {
     return SessionDescriptionInternal::description();
   }
 
   
   
-  virtual std::string session_id() const { return std::string(id()); }
-  virtual std::string session_version() const { return std::string(version()); }
+  std::string session_id() const { return std::string(id()); }
+  std::string session_version() const { return std::string(version()); }
 
   
   
-  virtual SdpType GetType() const { return sdp_type(); }
+  SdpType GetType() const { return sdp_type(); }
 
   
-  virtual std::string type() const { return SdpTypeToString(sdp_type()); }
-
-  
-  
-  
-  
-  
-  
-  
-  virtual bool AddCandidate(const IceCandidate* candidate);
+  std::string type() const { return SdpTypeToString(sdp_type()); }
 
   
   
@@ -324,31 +315,45 @@ class RTC_EXPORT SessionDescriptionInterface
   
   
   
-  virtual bool RemoveCandidate(const IceCandidate* candidate);
+  
+  bool AddCandidate(const IceCandidate* candidate);
 
   
-  virtual size_t number_of_mediasections() const {
-    return mediasection_count();
+  
+  
+  
+  
+  
+  bool RemoveCandidate(const IceCandidate* candidate);
+
+  
+  size_t number_of_mediasections() const { return mediasection_count(); }
+
+  
+  
+  const IceCandidateCollection* candidates(size_t mediasection_index) const;
+
+  
+  bool ToString(std::string* out) const {
+    if (!out)
+      return false;
+    *out = ToString();
+    return !out->empty();
   }
 
   
-  
-  virtual const IceCandidateCollection* candidates(
-      size_t mediasection_index) const;
-
-  
-  virtual bool ToString(std::string* out) const;
+  std::string ToString() const;
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const SessionDescriptionInterface& p) {
     sink.Append("\n--- BEGIN SDP ");
     absl::Format(&sink, "%v", p.GetType());
     sink.Append(" ---\n");
-    std::string temp;
-    if (p.ToString(&temp)) {
+    std::string temp = p.ToString();
+    if (!temp.empty()) {
       sink.Append(temp);
     } else {
-      sink.Append("Error in ToString\n");
+      sink.Append("<no session description>\n");
     }
     sink.Append("--- END SDP ---\n");
   }
