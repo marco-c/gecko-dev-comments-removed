@@ -285,7 +285,7 @@ void SandboxBroker::Policy::AddAncestors(const char* aPath, int aPerms) {
   nsAutoCString path(aPath);
 
   while (true) {
-    const auto lastSlash = path.RFindCharInSet("/");
+    const auto lastSlash = path.RFindChar('/');
     if (lastSlash <= 0) {
       MOZ_ASSERT(lastSlash == 0);
       return;
@@ -293,6 +293,60 @@ void SandboxBroker::Policy::AddAncestors(const char* aPath, int aPerms) {
     path.Truncate(lastSlash);
     AddPath(aPerms, path.get());
   }
+}
+
+enum class IterationDecision : uint8_t { Continue, Break };
+
+
+
+template <typename Fn>
+void ForEachAncestorDirectoryWithTrailingSlash(const nsACString& aPath,
+                                               Fn&& aCallback) {
+  if (aPath.IsEmpty()) {
+    return;
+  }
+  nsAutoCString ancestor(aPath);
+  while (true) {
+    
+    
+    
+    if (ancestor.Last() == '/') {
+      ancestor.Truncate(ancestor.Length() - 1);
+    }
+    const auto lastSlash = ancestor.RFindChar('/');
+    if (lastSlash < 0) {
+      MOZ_ASSERT(ancestor.IsEmpty());
+      break;
+    }
+    ancestor.Truncate(lastSlash + 1);
+    if (aCallback(ancestor) == IterationDecision::Break) {
+      break;
+    }
+  }
+}
+
+static int ComputeInheritedPerms(const SandboxBroker::PathPermissionMap& aMap,
+                                 const nsACString& aPath, bool aIncludeDeny) {
+  int inheritedPerms = 0;
+  ForEachAncestorDirectoryWithTrailingSlash(
+      aPath, [&](const nsACString& aAncestor) {
+        const int ancestorPerms = aMap.Get(aAncestor);
+        if (!(ancestorPerms & SandboxBroker::RECURSIVE)) {
+          return IterationDecision::Continue;
+        }
+        if (ancestorPerms & SandboxBroker::FORCE_DENY) {
+          
+          
+          if (aIncludeDeny) {
+            inheritedPerms |= ancestorPerms & ~SandboxBroker::RECURSIVE;
+          }
+          return IterationDecision::Break;
+        }
+        inheritedPerms |= ancestorPerms & ~SandboxBroker::RECURSIVE;
+        return IterationDecision::Continue;
+      });
+  MOZ_ASSERT(!(inheritedPerms & SandboxBroker::RECURSIVE));
+  return inheritedPerms;
 }
 
 void SandboxBroker::Policy::FixRecursivePermissions() {
@@ -307,40 +361,9 @@ void SandboxBroker::Policy::FixRecursivePermissions() {
 
   for (const auto& entry : oldMap) {
     const nsACString& path = entry.GetKey();
-    const int& localPerms = entry.GetData();
-    int inheritedPerms = 0;
-
-    nsAutoCString ancestor(path);
-    
-    
-    
-    while (true) {
-      
-      
-      
-      if (ancestor.Last() == '/') {
-        ancestor.Truncate(ancestor.Length() - 1);
-      }
-      const auto lastSlash = ancestor.RFindCharInSet("/");
-      if (lastSlash < 0) {
-        MOZ_ASSERT(ancestor.IsEmpty());
-        break;
-      }
-      ancestor.Truncate(lastSlash + 1);
-      const int ancestorPerms = oldMap.Get(ancestor);
-      if (ancestorPerms & RECURSIVE) {
-        
-        if ((localPerms & FORCE_DENY) == FORCE_DENY) {
-          if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-            SANDBOX_LOG("skip inheritence policy for %s: %d",
-                        PromiseFlatCString(path).get(), localPerms);
-          }
-        } else {
-          inheritedPerms |= ancestorPerms & ~RECURSIVE;
-        }
-      }
-    }
-
+    const int localPerms = entry.GetData();
+    const int inheritedPerms =
+        ComputeInheritedPerms(oldMap, path,  false);
     const int newPerms = localPerms | inheritedPerms;
     if ((newPerms & ~RECURSIVE) == inheritedPerms) {
       if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
@@ -367,29 +390,13 @@ int SandboxBroker::Policy::Lookup(const nsACString& aPath) const {
   if (perms) {
     return perms;
   }
-
   
-  if (!ValidatePath(PromiseFlatCString(aPath).get())) return 0;
-
-  
-  
-  
-  int allPerms = 0;
-  for (const auto& entry : mMap) {
-    const nsACString& whiteListPath = entry.GetKey();
-    const int& perms = entry.GetData();
-
-    if (!(perms & RECURSIVE)) continue;
-
-    
-    if (StringBeginsWith(aPath, whiteListPath)) {
-      allPerms |= perms;
-    }
+  if (!ValidatePath(PromiseFlatCString(aPath).get())) {
+    return 0;
   }
-
   
   
-  return allPerms & ~RECURSIVE;
+  return ComputeInheritedPerms(mMap, aPath,  true);
 }
 
 static bool AllowOperation(int aReqFlags, int aPerms) {
