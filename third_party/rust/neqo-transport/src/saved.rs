@@ -38,7 +38,7 @@ impl SavedDatagrams {
     }
 
     
-    pub fn is_either_full(&self) -> bool {
+    pub const fn is_either_full(&self) -> bool {
         self.handshake.len() == Self::CAPACITY || self.application_data.len() == Self::CAPACITY
     }
 
