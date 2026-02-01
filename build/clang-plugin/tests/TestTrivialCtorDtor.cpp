@@ -74,15 +74,7 @@ struct MOZ_TRIVIAL_CTOR_DTOR OkConstExprConstructorInMember {
   OkConstExprConstructor m;
 };
 
-#if __cplusplus >= 202002L
-struct
-#else
-
-
-
-struct 
-#endif
-MOZ_TRIVIAL_CTOR_DTOR BadUnfortunateError {
+struct MOZ_TRIVIAL_CTOR_DTOR OkExplicitlyInitializedMember {
   OkConstExprConstructor m;
   void *n;
 };
