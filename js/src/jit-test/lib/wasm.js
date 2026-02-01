@@ -526,6 +526,9 @@ const MaxTableElemsRuntime = 10000000;
 const MaxUint32 = 0xFFFF_FFFF;
 
 
+const MaxImports = 1000000; 
+
+
 
 
 function iota(len, k=0) {

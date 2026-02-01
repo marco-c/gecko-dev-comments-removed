@@ -26,11 +26,11 @@ const invalidRefNullHeapBody = moduleWithSections([
 checkInvalid(invalidRefNullHeapBody, /invalid heap type/);
 
 const invalidRefNullHeapElem = moduleWithSections([
-    generalElemSection([
+    elemSection([
         {
-            flag: PassiveElemExpr,
-            typeCode: FuncRefCode,
-            elems: [
+            mode: "passive",
+            elemType: [FuncRefCode],
+            exprs: [
                 [RefNullCode, OptRefCode, FuncRefCode, EndCode]
             ]
         }
@@ -54,14 +54,15 @@ checkInvalid(invalidRefNullHeapGlobal, /invalid heap type/);
 const invalidImportedTableInit = moduleWithSections([
     importSection([
         {
-            module: "", item: "",
-            
-            
-            
-            tableType: [
-                0x40, 0x00, ...tableType(FuncRefCode, limits({ min: 0 })),
-                RefFuncCode, ...varS32(123), EndCode,
-            ],
+            module: "", item: "", type: externtype({
+                
+                
+                
+                tableType: [
+                    0x40, 0x00, ...tableType(FuncRefCode, limits({ min: 0 })),
+                    RefFuncCode, ...varS32(123), EndCode,
+                ],
+            }),
         },
     ]),
 ]);

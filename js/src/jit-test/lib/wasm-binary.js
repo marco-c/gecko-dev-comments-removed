@@ -566,29 +566,57 @@ function bodySection(bodies) {
     return { name: codeId, body };
 }
 
-function importSection(imports) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function importSection(importGroups) {
     var body = [];
-    body.push(...varU32(imports.length));
-    for (let imp of imports) {
-        body.push(...string(imp.module));
-        body.push(...string(imp.item));
-        if (imp.hasOwnProperty("funcTypeIndex")) {
-            body.push(ExternFuncCode);
-            body.push(...varU32(imp.funcTypeIndex));
-        } else if (imp.hasOwnProperty("tableType")) {
-            body.push(ExternTableCode);
-            body.push(...imp.tableType);
-        } else if (imp.hasOwnProperty("memType")) {
-            body.push(ExternMemCode);
-            body.push(...imp.memType);
-        } else if (imp.hasOwnProperty("globalType")) {
-            body.push(ExternGlobalCode);
-            body.push(...imp.globalType);
-        } else if (imp.hasOwnProperty("tagType")) {
-            body.push(ExternTagCode);
-            body.push(...imp.tagType);
+    body.push(...varU32(importGroups.length));
+    for (let group of importGroups) {
+        body.push(...string(group.module));
+        if (group.items) {
+            if (group.type) {
+                
+                body.push(...string(""));
+                body.push(0x7E);
+                body.push(...group.type);
+                body.push(...varU32(group.numItems ?? group.items.length));
+                for (const item of group.items) {
+                    body.push(...string(item));
+                }
+            } else {
+                
+                body.push(...string(""));
+                body.push(0x7F);
+                body.push(...varU32(group.numItems ?? group.items.length));
+                for (const item of group.items) {
+                    body.push(...string(item.item));
+                    body.push(...item.type);
+                }
+            }
         } else {
-            throw new Error(`unknown import type for "${imp.module}" "${imp.name}"`);
+            
+            body.push(...string(group.item));
+            body.push(...group.type);
         }
     }
     return { name: importId, body };
@@ -753,57 +781,119 @@ function globalSection(globalArray) {
     return { name: globalId, body };
 }
 
-function elemSection(elemArrays) {
+
+
+
+
+
+
+
+
+function globalType(global) {
     var body = [];
-    body.push(...varU32(elemArrays.length));
-    for (let array of elemArrays) {
-        body.push(...varU32(0)); 
-        body.push(...varU32(I32ConstCode));
-        body.push(...varS32(array.offset));
-        body.push(...varU32(EndCode));
-        body.push(...varU32(array.elems.length));
-        for (let elem of array.elems)
-            body.push(...varU32(elem));
-    }
-    return { name: elemId, body };
+    body.push(...(Array.isArray(global.valType) ? global.valType : varU32(global.valType)));
+    body.push(global.mut ? 0x01 : 0x00);
+    return body;
 }
 
-const ActiveFuncIdxTable0 = 0;
-const PassiveFuncIdx = 1;
-const ActiveFuncIdx = 2;
-const DeclaredFuncIdx = 3;
-const ActiveElemExprTable0 = 4;
-const PassiveElemExpr = 5;
-const ActiveElemExpr = 6;
-const DeclaredElemExpr = 7;
 
-function generalElemSection(elemObjs) {
-    let body = [];
-    body.push(...varU32(elemObjs.length));
-    for (let elemObj of elemObjs) {
-        body.push(elemObj.flag);
-        if ((elemObj.flag & 3) == 2)
-            body.push(...varU32(elemObj.table));
-        
-        if ((elemObj.flag & 1) == 0) {
+
+
+
+
+
+
+
+
+function externtype(t) {
+    if (t.hasOwnProperty("funcTypeIndex")) {
+        return [ExternFuncCode, ...varU32(t.funcTypeIndex)];
+    } else if (t.hasOwnProperty("tableType")) {
+        return [ExternTableCode, ...t.tableType];
+    } else if (t.hasOwnProperty("memType")) {
+        return [ExternMemCode, ...t.memType];
+    } else if (t.hasOwnProperty("globalType")) {
+        return [ExternGlobalCode, ...t.globalType];
+    } else if (t.hasOwnProperty("tagType")) {
+        return [ExternTagCode, ...t.tagType];
+    } else {
+        throw new Error("unknown externtype");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function elemSection(elemSegments) {
+    const body = [];
+    body.push(...varU32(elemSegments.length));
+    for (const segment of elemSegments) {
+        if (!["active", "passive", "declarative"].includes(segment.mode)) {
+            throw new Error(`segment mode must be "active", "passive", or "declarative", but got ${segment.mode}`);
+        }
+        if (!segment.indices && !segment.exprs) {
+            throw new Error("segment must have either .indices or .exprs");
+        }
+        if (segment.mode === "active" && segment.offset === undefined) {
+            throw new Error("active element segment must have .offset");
+        }
+        if (segment.mode !== "active" && segment.exprs && segment.elemType === undefined) {
+            throw new Error("non-active element segment with expression encoding must have .elemType");
+        }
+
+        const b0 = segment.mode === "active" ? 0 : 1;
+        const b1 = (
+            segment.mode === "active"
+            ? (segment.table === undefined ? 0 : 1)
+            : (segment.mode === "passive" ? 0 : 1)
+        );
+        const b2 = segment.exprs === undefined ? 0 : 1;
+        const flag = (b0 << 0) | (b1 << 1) | (b2 << 2);
+        console.log("flag", flag);
+
+        body.push(flag);
+        if (segment.table !== undefined) {
+            body.push(...varU32(segment.table));
+        }
+        if (segment.mode === "active") {
             body.push(...varU32(I32ConstCode));
-            body.push(...varS32(elemObj.offset));
+            body.push(...varS32(segment.offset));
             body.push(...varU32(EndCode));
         }
-        if (elemObj.flag & 4) {
-            if (elemObj.flag & 3)
-                body.push(elemObj.typeCode & 255);
+        if (segment.exprs === undefined) {
             
-            body.push(...varU32(elemObj.elems.length));
-            for (let elemBytes of elemObj.elems)
-                body.push(...elemBytes);
+            if (segment.mode !== "active" || segment.table !== undefined) {
+                body.push(0x00); 
+            }
+            body.push(...varU32(segment.indices.length));
+            for (const idx of segment.indices) {
+                body.push(...varU32(idx));
+            }
         } else {
-            if (elemObj.flag & 3)
-                body.push(elemObj.externKind & 255);
             
-            body.push(...varU32(elemObj.elems.length));
-            for (let elem of elemObj.elems)
-                body.push(...varU32(elem));
+            if (segment.mode !== "active") {
+                body.push(...segment.elemType);
+            }
+            body.push(...varU32(segment.exprs.length));
+            for (const elemExpr of segment.exprs) {
+                body.push(...elemExpr);
+            }
         }
     }
     return { name: elemId, body };
