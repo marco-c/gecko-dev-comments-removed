@@ -1869,7 +1869,10 @@ add_task(async function formHistory() {
   
   
   
-  await PlacesTestUtils.addVisits("http://foo.example.com/");
+  await PlacesTestUtils.addVisits({
+    url: "http://foo.example.com/",
+    transition: PlacesUtils.history.TRANSITION_TYPED,
+  });
   context = createContext("foo", { isPrivate: false });
   await check_results({
     context,

@@ -39,7 +39,12 @@ add_setup(async () => {
 
 
 add_task(async function basic() {
-  await PlacesTestUtils.addVisits(["https://example.com/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("examp", { isPrivate: false });
   await check_results({
     context,
@@ -116,7 +121,12 @@ add_task(async function noAutofill() {
 
 
 add_task(async function autofillDoesNotMatchEngine() {
-  await PlacesTestUtils.addVisits(["https://example.test.ca/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://example.test.ca/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("example", { isPrivate: false });
   await check_results({
     context,
@@ -139,7 +149,12 @@ add_task(async function autofillDoesNotMatchEngine() {
 
 add_task(async function ignoreWww() {
   
-  await PlacesTestUtils.addVisits(["https://www.example.com/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://www.example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("www.examp", { isPrivate: false });
   await check_results({
     context,
@@ -167,7 +182,12 @@ add_task(async function ignoreWww() {
   await cleanupPlaces();
 
   
-  await PlacesTestUtils.addVisits(["https://foo.bar/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://foo.bar/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let extension = await SearchTestUtils.installSearchExtension(
     {
       name: "TestWww",
@@ -203,7 +223,12 @@ add_task(async function ignoreWww() {
   await cleanupPlaces();
 
   
-  await PlacesTestUtils.addVisits(["https://www.foo.bar/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://www.foo.bar/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   context = createContext("foo", { isPrivate: false });
   await check_results({
     context,
@@ -238,8 +263,14 @@ add_task(async function ignoreWww() {
 add_task(async function conflictingEngines() {
   for (let i = 0; i < 3; i++) {
     await PlacesTestUtils.addVisits([
-      "https://foobar.com/",
-      "https://foo.com/",
+      {
+        url: "https://foobar.com/",
+        transition: PlacesUtils.history.TRANSITION_TYPED,
+      },
+      {
+        url: "https://foo.com/",
+        transition: PlacesUtils.history.TRANSITION_TYPED,
+      },
     ]);
   }
   let extension1 = await SearchTestUtils.installSearchExtension(
@@ -342,7 +373,10 @@ add_task(async function multipleEnginesForHostname() {
 
   
   for (let i = 0; i < maxResultCount; i++) {
-    await PlacesTestUtils.addVisits("https://example.com/");
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
   }
 
   
@@ -394,7 +428,12 @@ add_task(async function multipleEnginesForHostname() {
 
 add_task(async function test_casing() {
   info("Tab-to-search results appear also in case of different casing.");
-  await PlacesTestUtils.addVisits(["https://example.com/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("eXAm", { isPrivate: false });
   await check_results({
     context,
@@ -432,7 +471,12 @@ add_task(async function test_publicSuffix() {
     { skipUnload: true }
   );
   let engine = SearchService.getEngineByName("MyTest");
-  await PlacesTestUtils.addVisits(["https://test.mytest.it/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://test.mytest.it/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("my", { isPrivate: false });
   await check_results({
     context,
@@ -476,7 +520,12 @@ add_task(async function test_publicSuffixIsHost() {
   );
 
   
-  await PlacesTestUtils.addVisits(["https://com.mx/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://com.mx/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("co", { isPrivate: false });
   await check_results({
     context,
@@ -505,7 +554,12 @@ add_task(async function test_disabledEngine() {
     { skipUnload: true }
   );
   let engine = SearchService.getEngineByName("Disabled");
-  await PlacesTestUtils.addVisits(["https://disabled.com/"]);
+  await PlacesTestUtils.addVisits([
+    {
+      url: "https://disabled.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
   let context = createContext("dis", { isPrivate: false });
 
   info("Sanity check that the engine would appear.");
