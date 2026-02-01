@@ -2385,7 +2385,6 @@ nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
   
   
 
-  
   CHECK_mWorkingPath();
 
   nsresult rv = NS_OK;
@@ -2419,8 +2418,6 @@ nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
         return rv;
       }
 
-      
-      
       nsCOMPtr<nsIFile> file;
       while (NS_SUCCEEDED(dirEnum->GetNextFile(getter_AddRefs(file))) && file) {
         file->Remove(aRecursive, aRemoveCount);
