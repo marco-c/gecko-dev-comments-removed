@@ -1392,7 +1392,11 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   
   
   
-  sandboxing::SizeTrackingConfig trackingConfig(config, 12);
+  
+  
+  
+  sandboxing::SizeTrackingConfig trackingConfig(config,
+                                                sandbox::kPolMemPageCount - 2);
 
   if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
     
