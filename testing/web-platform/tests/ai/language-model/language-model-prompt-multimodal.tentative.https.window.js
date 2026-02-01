@@ -234,6 +234,10 @@ promise_test(async () => {
   video.width = 1224;
   video.height = 768;
   
+  video.muted = true;
+  video.playsInline = true;
+  video.autoplay = true;
+  
   await video.play();
   const session = await createLanguageModel(kImageOptions);
   const result =
