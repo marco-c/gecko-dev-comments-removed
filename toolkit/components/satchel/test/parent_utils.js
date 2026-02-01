@@ -1,5 +1,3 @@
-
-
 const { FormHistory } = ChromeUtils.importESModule(
   "resource://gre/modules/FormHistory.sys.mjs"
 );
