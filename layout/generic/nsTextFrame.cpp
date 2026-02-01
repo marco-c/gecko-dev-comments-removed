@@ -5151,8 +5151,7 @@ nsresult nsTextFrame::CharacterDataChanged(
       if (!areAncestorsAwareOfReflowRequest) {
         
         presShell->FrameNeedsReflow(
-            textFrame, IntrinsicDirty::FrameAncestorsAndDescendants,
-            NS_FRAME_IS_DIRTY);
+            textFrame, IntrinsicDirty::FrameAndAncestors, NS_FRAME_IS_DIRTY);
       } else {
         
         
