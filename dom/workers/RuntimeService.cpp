@@ -1019,53 +1019,27 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
     NS_ASSERTION(global, "This should never be null!");
 
     JS::JobQueueMayNotBeEmpty(cx);
-    if (StaticPrefs::javascript_options_use_js_microtask_queue()) {
-      PROFILER_MARKER_FLOW_ONLY("WorkerJSContext::DispatchToMicroTask", OTHER,
-                                {}, FlowMarker,
-                                Flow::FromPointer(runnable.get()));
+    PROFILER_MARKER_FLOW_ONLY("WorkerJSContext::DispatchToMicroTask", OTHER, {},
+                              FlowMarker, Flow::FromPointer(runnable.get()));
 
-      
-      
-      
-      
-      if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
-        if (!EnqueueMicroTask(cx, runnable.forget())) {
-          
-          
-          NS_ABORT_OOM(0);
-        }
-      } else {
-        MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
-                   IsWorkerDebuggerSandbox(global));
-        if (!EnqueueDebugMicroTask(cx, runnable.forget())) {
-          
-          
-          NS_ABORT_OOM(0);
-        }
+    
+    
+    
+    
+    if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
+      if (!EnqueueMicroTask(cx, runnable.forget())) {
+        
+        
+        NS_ABORT_OOM(0);
       }
     } else {
-      std::deque<RefPtr<MicroTaskRunnable>>* microTaskQueue = nullptr;
-      
-      
-      
-      
-      if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
-        microTaskQueue = &GetMicroTaskQueue();
-      } else {
-        MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
-                   IsWorkerDebuggerSandbox(global));
-
-        microTaskQueue = &GetDebuggerMicroTaskQueue();
-      }
-
-      if (!runnable->isInList()) {
+      MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
+                 IsWorkerDebuggerSandbox(global));
+      if (!EnqueueDebugMicroTask(cx, runnable.forget())) {
         
-        mMicrotasksToTrace.insertBack(runnable);
+        
+        NS_ABORT_OOM(0);
       }
-      PROFILER_MARKER_FLOW_ONLY("WorkerJSContext::DispatchToMicroTask", OTHER,
-                                {}, FlowMarker,
-                                Flow::FromPointer(runnable.get()));
-      microTaskQueue->push_back(std::move(runnable));
     }
   }
 
