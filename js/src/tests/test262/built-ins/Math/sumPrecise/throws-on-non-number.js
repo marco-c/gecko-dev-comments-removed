@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(TypeError, function () {
   Math.sumPrecise([{}]);
 });

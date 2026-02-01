@@ -7,7 +7,6 @@
 
 
 
-
 verifyProperty(Math, "sumPrecise", {
   writable: true,
   enumerable: false,

@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(Math.sumPrecise([1, 2, 3]), 6);
 assert.sameValue(Math.sumPrecise([1e308]), 1e308);
 assert.sameValue(Math.sumPrecise([1e308, -1e308]), 0);

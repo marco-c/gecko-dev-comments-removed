@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(Math.sumPrecise, "length", {
   value: 1,
   writable: false,

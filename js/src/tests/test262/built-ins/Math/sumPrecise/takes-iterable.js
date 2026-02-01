@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(Math.sumPrecise([1, 2]), 3);
 
 function* gen() {

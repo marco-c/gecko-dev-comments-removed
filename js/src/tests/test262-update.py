@@ -32,7 +32,6 @@ FEATURE_CHECK_NEEDED = {
     "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",  
     "Error.isError": "!Error.isError",  
     "iterator-sequencing": "!Iterator.concat",  
-    "Math.sumPrecise": "!Math.sumPrecise",  
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
 }
 RELEASE_OR_BETA = set(["legacy-regexp"])
