@@ -127,7 +127,7 @@ class SVGRenderingObserver : public nsStubMutationObserver {
 
   Element* GetAndObserveReferencedElement();
 
-  virtual bool ObservesReflow() { return false; }
+  virtual bool ObservesReflow() const { return false; }
 
  protected:
   void StartObserving();
@@ -147,10 +147,10 @@ class SVGRenderingObserver : public nsStubMutationObserver {
 
   virtual void OnRenderingChange() = 0;
 
-  virtual Element* GetReferencedElementWithoutObserving() = 0;
+  virtual Element* GetReferencedElementWithoutObserving() const = 0;
 
 #ifdef DEBUG
-  void DebugObserverSet();
+  void DebugObserverSet() const;
 #endif
 
   
@@ -226,7 +226,10 @@ class SVGObserverUtils {
 
   static void InvalidateRenderingObservers(nsIFrame* aFrame);
 
-  enum class InvalidationFlag { Reflow, Destroy };
+  enum class InvalidationFlag {
+    
+    FrameBeingDestroyed
+  };
   using InvalidationFlags = EnumSet<InvalidationFlag>;
 
   enum class ReferenceState {
