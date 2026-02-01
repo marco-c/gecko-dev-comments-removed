@@ -15075,6 +15075,12 @@ nsresult FactoryOp::DirectoryWorkDone() {
   MOZ_ASSERT(gFactoryOps);
 
   
+  
+  
+  
+  
+  
+  
   const bool blocked = [&self = *this] {
     bool foundThis = false;
     bool blocked = false;
@@ -15249,12 +15255,14 @@ bool FactoryOp::MustWaitFor(const FactoryOp& aExistingOp) {
   }
 
   
-  if (!aExistingOp.mDatabaseId.isNothing() && !mDatabaseId.isNothing() &&
+  if (aExistingOp.mDatabaseId.isSome() && mDatabaseId.isSome() &&
       aExistingOp.mDatabaseId.ref() != mDatabaseId.ref()) {
     return false;
   }
 
-  return true;
+  
+  
+  return aExistingOp.mDatabaseId.isNothing() == mDatabaseId.isNothing();
 }
 
 
