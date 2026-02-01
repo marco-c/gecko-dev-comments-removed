@@ -3678,7 +3678,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         break;
       case NS_ERROR_UNKNOWN_SOCKET_TYPE:
         
-        error = "unknownSocketType";
+        error = "clientSocketMisconfiguration";
         break;
       case NS_ERROR_NET_RESET:
         
