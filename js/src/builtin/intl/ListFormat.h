@@ -102,15 +102,6 @@ class ListFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_FormatList(JSContext* cx, unsigned argc,
-                                          JS::Value* vp);
-
 }  
 
 #endif 
