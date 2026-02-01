@@ -445,6 +445,14 @@ class nsPresContext : public nsISupports,
   
 
 
+
+
+
+  nscoord GetBimodalDynamicToolbarHeightForFixedPosInAppUnits() const;
+
+  
+
+
   mozilla::DynamicToolbarState GetDynamicToolbarState() const;
 
   

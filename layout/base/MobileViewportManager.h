@@ -71,6 +71,11 @@ class MobileViewportManager final : public nsIDOMEventListener,
   
 
 
+  mozilla::CSSToScreenScale GetIntrinsicScaleForFixedViewport() const;
+
+  
+
+
   void HandleDOMMetaAdded();
 
  private:
