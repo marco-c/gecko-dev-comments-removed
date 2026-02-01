@@ -47,6 +47,7 @@ use crate::values::computed::ToComputedValue;
     Serialize,
     Deserialize,
 )]
+#[typed_value(derive_fields)]
 pub struct TreeScoped<T> {
     
     pub value: T,
