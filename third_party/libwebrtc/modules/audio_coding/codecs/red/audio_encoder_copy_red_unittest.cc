@@ -34,7 +34,7 @@
 using ::testing::_;
 using ::testing::Eq;
 using ::testing::InSequence;
-using ::testing::Invoke;
+
 using ::testing::MockFunction;
 using ::testing::Optional;
 using ::testing::Return;
@@ -170,9 +170,9 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
   {
     InSequence s;
     EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(kEncodedSize)))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(0)))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(kEncodedSize)));
+        .WillOnce(MockAudioEncoder::FakeEncoding(kEncodedSize))
+        .WillOnce(MockAudioEncoder::FakeEncoding(0))
+        .WillOnce(MockAudioEncoder::FakeEncoding(kEncodedSize));
   }
 
   
@@ -201,7 +201,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes1) {
   InSequence s;
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
     EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
+        .WillOnce(MockAudioEncoder::FakeEncoding(encode_size));
   }
 
   
@@ -230,7 +230,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes0) {
   InSequence s;
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
     EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
+        .WillOnce(MockAudioEncoder::FakeEncoding(encode_size));
   }
 
   for (size_t i = 1; i <= kNumPackets; ++i) {
@@ -250,7 +250,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes2) {
   InSequence s;
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
     EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
+        .WillOnce(MockAudioEncoder::FakeEncoding(encode_size));
   }
 
   
@@ -286,7 +286,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes3) {
   InSequence s;
   for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
     EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
+        .WillOnce(MockAudioEncoder::FakeEncoding(encode_size));
   }
 
   
@@ -328,7 +328,7 @@ TEST_F(AudioEncoderCopyRedTest, VeryLargePacket) {
   info.encoded_timestamp = timestamp_;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
 
   Encode();
   ASSERT_EQ(0u, encoded_info_.redundant.size());
@@ -344,7 +344,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   info.encoded_timestamp = timestamp_;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
 
   
   
@@ -355,7 +355,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckTimestamps) {
   primary_timestamp = timestamp_;
   info.encoded_timestamp = timestamp_;
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
 
   Encode();
   ASSERT_EQ(2u, encoded_info_.redundant.size());
@@ -375,7 +375,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
     payload[i] = i;
   }
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillRepeatedly(Invoke(MockAudioEncoder::CopyEncoding(payload)));
+      .WillRepeatedly(MockAudioEncoder::CopyEncoding(payload));
 
   
   
@@ -413,7 +413,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   info.encoded_bytes = 17;
   info.payload_type = primary_payload_type;
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
 
   
   
@@ -423,7 +423,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   const int secondary_payload_type = red_payload_type_ + 2;
   info.payload_type = secondary_payload_type;
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
 
   Encode();
   ASSERT_EQ(2u, encoded_info_.redundant.size());
@@ -440,11 +440,11 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header) {
   info.payload_type = primary_payload_type;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();
   info.encoded_timestamp = timestamp_;  
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
 
   EXPECT_EQ(encoded_.size(),
@@ -462,7 +462,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header) {
   EXPECT_EQ(encoded_[4], primary_payload_type);
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
              
 
@@ -495,11 +495,11 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header0) {
   info.payload_type = primary_payload_type;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();
   info.encoded_timestamp = timestamp_;  
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
 
   EXPECT_EQ(encoded_.size(),
@@ -517,11 +517,11 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header2) {
   info.payload_type = primary_payload_type;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();
   info.encoded_timestamp = timestamp_;  
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
 
   EXPECT_EQ(encoded_.size(),
@@ -539,7 +539,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header2) {
   EXPECT_EQ(encoded_[4], primary_payload_type);
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
              
 
@@ -576,12 +576,12 @@ TEST_F(AudioEncoderCopyRedTest, RespectsPayloadMTU) {
   info.payload_type = primary_payload_type;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();
   info.encoded_timestamp = timestamp_;  
   info.encoded_bytes = 500;
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
 
   EXPECT_EQ(encoded_.size(), 5u + 600u + 500u);
@@ -589,7 +589,7 @@ TEST_F(AudioEncoderCopyRedTest, RespectsPayloadMTU) {
   info.encoded_timestamp = timestamp_;  
   info.encoded_bytes = 400;
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();  
   EXPECT_EQ(encoded_.size(), 5u + 500u + 400u);
 }
@@ -602,7 +602,7 @@ TEST_F(AudioEncoderCopyRedTest, LargeTimestampGap) {
   info.payload_type = primary_payload_type;
 
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();
   
   
@@ -610,7 +610,7 @@ TEST_F(AudioEncoderCopyRedTest, LargeTimestampGap) {
   info.encoded_timestamp = timestamp_;  
   info.encoded_bytes = 200;
   EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
-      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+      .WillOnce(MockAudioEncoder::FakeEncoding(info));
   Encode();
 
   
