@@ -202,9 +202,6 @@ document.addEventListener(
           }
           break;
         
-        case "editBookmarkPanel_showForNewBookmarks":
-          StarUI.onShowForNewBookmarksCheckboxCommand();
-          break;
         case "editBookmarkPanelDoneButton":
           StarUI.panel.hidePopup();
           break;
