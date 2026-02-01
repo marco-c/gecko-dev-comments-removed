@@ -1553,6 +1553,8 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
       UpdatePlaceholderShownState();
       needValidityUpdate = true;
+    } else if (aName == nsGkAtoms::colorspace || aName == nsGkAtoms::alpha) {
+      UpdateColor();
     }
 
     if (CreatesDateTimeWidget()) {
@@ -1629,11 +1631,6 @@ bool HTMLInputElement::Alpha() const {
   return HasAttr(nsGkAtoms::alpha);
 }
 
-void HTMLInputElement::SetAlpha(bool aValue, ErrorResult& aRv) {
-  SetHTMLBoolAttr(nsGkAtoms::alpha, aValue, aRv);
-  UpdateColor();
-}
-
 void HTMLInputElement::GetAutocomplete(nsAString& aValue) {
   if (!DoesAutocompleteApply()) {
     return;
@@ -1678,12 +1675,6 @@ StyleColorSpace HTMLInputElement::GetColorSpaceEnum() const {
     return static_cast<StyleColorSpace>(captureVal->GetEnumValue());
   }
   return StyleColorSpace::Srgb;
-}
-
-void HTMLInputElement::SetColorSpace(const nsAString& aValue,
-                                     ErrorResult& aRv) {
-  SetHTMLAttr(nsGkAtoms::colorspace, aValue, aRv);
-  UpdateColor();
 }
 
 void HTMLInputElement::GetFormEnctype(nsAString& aValue) {
@@ -2187,6 +2178,10 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLInputElement::UpdateColor() {
   
   
   
+  if (mType != FormControlType::InputColor) {
+    
+    return;
+  }
   if (!mValueChanged) {
     SetDefaultValueAsValue();
     return;
