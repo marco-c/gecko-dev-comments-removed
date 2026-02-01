@@ -37,15 +37,21 @@ test(
 
       
       
-      assert_throws_quotaexceedederror(() => {
-        fetchLater(requestUrl, {
-          method: 'POST',
-          signal: controller.signal,
-          body: makeBeaconData(generatePayload(quota), dataType),
-          
-          referrer: '',
-        });
-      }, null, null);
+      assert_throws_quotaexceedederror(
+        () => {
+          fetchLater(requestUrl, {
+            method: 'POST',
+            signal: controller.signal,
+            body: makeBeaconData(generatePayload(quota), dataType),
+            
+            referrer: '',
+          });
+        },
+        
+        
+        (requested) => [QUOTA_PER_ORIGIN, null].includes(requested),
+        (remaining) => [halfQuota - 1, null].includes(remaining)
+      );
 
       
       
