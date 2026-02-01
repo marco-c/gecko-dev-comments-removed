@@ -137,6 +137,7 @@ public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
       final Bundle bundle) {
     if (cancellationSignal.isCanceled()) {
       layoutResultCallback.onLayoutCancelled();
+      deleteTempPdf();
       return;
     }
     final PrintDocumentInfo pdi =
@@ -209,6 +210,18 @@ public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
 
   @Override
   public void onFinish() {
+    deleteTempPdf();
+    if (this.mPrintDialogFinish != null) {
+      mPrintDialogFinish.complete(true);
+    }
+  }
+
+  
+
+
+
+  @AnyThread
+  private void deleteTempPdf() {
     
     try {
       if (mDoDeleteTmpPdf) {
@@ -226,9 +239,6 @@ public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
     } catch (final NullPointerException npe) {
       
       
-    }
-    if (this.mPrintDialogFinish != null) {
-      mPrintDialogFinish.complete(true);
     }
   }
 }
