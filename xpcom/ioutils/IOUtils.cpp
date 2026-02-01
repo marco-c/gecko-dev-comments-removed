@@ -1445,6 +1445,18 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
 
   if (tempFile) {
     writeFile = tempFile;
+
+    
+    if (aOptions.mMode == WriteMode::Append) {
+      if (auto result = CopySync(aFile, tempFile,  false,
+                                  false);
+          result.isErr()) {
+        return Err(IOError::WithCause(
+            result.unwrapErr(),
+            "Could not write to `%s': failed to copy for append",
+            aFile->HumanReadablePath().get()));
+      }
+    }
   } else {
     writeFile = aFile;
   }
