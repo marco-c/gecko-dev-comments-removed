@@ -354,7 +354,7 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
 
   
   
-  RefPtr<Element> target = GetCommandForElement();
+  RefPtr<Element> target = GetCommandForElementInternal();
 
   
   if (target) {
@@ -611,14 +611,18 @@ Element::Command HTMLButtonElement::GetCommand() const {
   return Command::Invalid;
 }
 
-Element* HTMLButtonElement::GetCommandForElement() const {
+Element* HTMLButtonElement::GetCommandForElementForBindings() const {
+  return GetCommandForElementInternal();
+}
+
+Element* HTMLButtonElement::GetCommandForElementInternal() const {
   if (StaticPrefs::dom_element_commandfor_enabled()) {
     return GetAttrAssociatedElement(nsGkAtoms::commandfor);
   }
   return nullptr;
 }
 
-void HTMLButtonElement::SetCommandForElement(Element* aElement) {
+void HTMLButtonElement::SetCommandForElementForBindings(Element* aElement) {
   ExplicitlySetAttrElement(nsGkAtoms::commandfor, aElement);
 }
 
