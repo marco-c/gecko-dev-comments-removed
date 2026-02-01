@@ -639,6 +639,19 @@ if (typeof Mozilla == "undefined") {
 
 
 
+  Mozilla.UITour.showFirefoxAccountsForAIWindow = function () {
+    _sendEvent("showFirefoxAccountsForAIWindow");
+  };
+
+  
+
+
+
+
+
+
+
+
 
 
 
