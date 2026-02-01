@@ -138,6 +138,15 @@ class PerfSpewer {
                                  void* code_addr, uint64_t code_size,
                                  JS::JitCodeRecord* maybeProfilerRecord,
                                  AutoLockPerfSpewer& lock);
+
+  
+  
+  
+  void reset() {
+    endRecording();
+    debugInfo_.clearAndFree();
+    irFileName_ = JS::UniqueChars();
+  }
 };
 
 void CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg);
