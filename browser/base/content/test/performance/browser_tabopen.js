@@ -32,6 +32,7 @@ add_task(async function () {
 
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
+  await ensureSearchIconVisible();
 
   
   

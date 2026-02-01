@@ -289,6 +289,22 @@ function disableFxaBadge() {
   });
 }
 
+
+
+
+async function ensureSearchIconVisible() {
+  if (
+    Services.prefs.getBoolPref("browser.urlbar.scotchBonnet.enableOverride")
+  ) {
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+    BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        gURLBar.querySelector(".searchmode-switcher-icon").style.listStyleImage
+    );
+  }
+}
+
 function rectInBoundingClientRect(r, bcr) {
   return (
     bcr.x <= r.x1 &&
