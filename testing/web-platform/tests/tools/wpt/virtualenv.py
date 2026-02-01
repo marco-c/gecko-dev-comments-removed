@@ -127,13 +127,6 @@ class Virtualenv:
         return self._working_set
 
     def activate(self):
-        if sys.platform == "darwin":
-            
-            
-            
-            
-            
-            os.environ.pop("__PYVENV_LAUNCHER__", None)
 
         paths = self.get_paths()
 
