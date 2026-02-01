@@ -18975,10 +18975,9 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
     
     UpdateLastRememberedSizes();
 
-    const bool evaluateAllFallbacksIfNeeded = !initialAnchorOverflowDone;
+    const bool firstTime = !initialAnchorOverflowDone;
     initialAnchorOverflowDone = true;
-    if (AnchorPositioningUtils::TriggerLayoutOnOverflow(
-            ps, evaluateAllFallbacksIfNeeded)) {
+    if (AnchorPositioningUtils::TriggerLayoutOnOverflow(ps, firstTime)) {
       
       
       

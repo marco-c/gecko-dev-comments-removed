@@ -9,6 +9,7 @@
 #include "DisplayPortUtils.h"
 #include "ScrollContainerFrame.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/OverflowChangedTracker.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
@@ -961,6 +962,112 @@ nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
              : nullptr;
 }
 
+using AffectedAnchor = AnchorPosDefaultAnchorCache;
+using AppliedShifts = nsTHashMap<nsIFrame*, nsPoint>;
+struct ScrollShifts {
+  nsPoint mScrollCompensatedDelta;
+  nsPoint mChainedDelta;
+
+  nsPoint Sum() const { return mChainedDelta + mScrollCompensatedDelta; }
+};
+static ScrollShifts FindScrollCompensatedAnchorShift(
+    const PresShell* aPresShell, const nsIFrame* aPositioned,
+    const AnchorPosReferenceData& aReferenceData,
+    const AppliedShifts& aAppliedShifts) {
+  MOZ_ASSERT(aPositioned->IsAbsolutelyPositioned(),
+             "Anchor positioned frame is not absolutely positioned?");
+  const auto* defaultAnchorName = aReferenceData.mDefaultAnchorName.get();
+  if (!defaultAnchorName) {
+    return {};
+  }
+  auto* defaultAnchor =
+      aPresShell->GetAnchorPosAnchor(defaultAnchorName, aPositioned);
+  if (!defaultAnchor) {
+    return {};
+  }
+  const auto compensatingForScroll = aReferenceData.CompensatingForScrollAxes();
+  
+  
+  
+  
+  const nsPoint chainedDelta = [&]() -> nsPoint {
+    if (defaultAnchor->StylePosition()->mPositionAnchor.IsNone()) {
+      return {};
+    }
+    const auto* referenceData =
+        defaultAnchor->GetProperty(nsIFrame::AnchorPosReferences());
+    if (!referenceData) {
+      return {};
+    }
+    if (auto delta = aAppliedShifts.Lookup(defaultAnchor)) {
+      
+      
+      
+      return *delta;
+    }
+    return FindScrollCompensatedAnchorShift(aPresShell, defaultAnchor,
+                                            *referenceData, aAppliedShifts)
+        .Sum();
+  }();
+
+  const nsPoint scrollCompensatedDelta = [&]() -> nsPoint {
+    if (compensatingForScroll.isEmpty()) {
+      return {};
+    }
+    const auto* scrollContainer =
+        AnchorPositioningUtils::GetNearestScrollFrame(defaultAnchor)
+            .mScrollContainer;
+    if (!scrollContainer) {
+      return nsPoint();
+    }
+    const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
+        compensatingForScroll, aPositioned,
+        AffectedAnchor{defaultAnchor, scrollContainer});
+    return offset - aReferenceData.mDefaultScrollShift;
+  }();
+  return {scrollCompensatedDelta, chainedDelta};
+}
+
+
+static void UpdateScrollShift(PresShell* aPresShell, nsIFrame* aPositioned,
+                              AnchorPosReferenceData& aReferenceData,
+                              OverflowChangedTracker& aOct,
+                              AppliedShifts& aAppliedShifts) {
+  const auto scrollShifts = FindScrollCompensatedAnchorShift(
+      aPresShell, aPositioned, aReferenceData, aAppliedShifts);
+  auto delta = scrollShifts.Sum();
+  if (delta == nsPoint()) {
+    return;
+  }
+  aAppliedShifts.InsertOrUpdate(aPositioned, delta);
+  
+  
+  
+  
+  
+  
+  aPositioned->SchedulePaint();
+  if (!aReferenceData.CompensatingForScrollAxes().isEmpty()) {
+    aReferenceData.mDefaultScrollShift += scrollShifts.mScrollCompensatedDelta;
+  }
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    accService->NotifyAnchorPositionedScrollUpdate(aPresShell, aPositioned);
+  }
+#endif
+  
+  
+  
+  aPositioned->SetPosition(aPositioned->GetPosition() - delta);
+  aPositioned->UpdateOverflow();
+  
+  
+  
+  
+  aOct.AddFrame(aPositioned->GetParent(),
+                OverflowChangedTracker::CHILDREN_CHANGED);
+}
+
 static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,
                                   AnchorPosReferenceData& aReferencedAnchors,
                                   bool aEvaluateAllFallbacksIfNeeded) {
@@ -1077,10 +1184,12 @@ static bool ComputePositionVisibility(
   return true;
 }
 
-bool AnchorPositioningUtils::TriggerLayoutOnOverflow(
-    PresShell* aPresShell, bool aEvaluateAllFallbacksIfNeeded) {
+bool AnchorPositioningUtils::TriggerLayoutOnOverflow(PresShell* aPresShell,
+                                                     bool aFirstIteration) {
   bool didLayoutPositionedItems = false;
 
+  OverflowChangedTracker oct;
+  AppliedShifts appliedShifts;
   for (auto* positioned : aPresShell->GetAnchorPosPositioned()) {
     AnchorPosReferenceData* referencedAnchors =
         positioned->GetProperty(nsIFrame::AnchorPosReferences());
@@ -1088,8 +1197,13 @@ bool AnchorPositioningUtils::TriggerLayoutOnOverflow(
       continue;
     }
 
+    if (aFirstIteration) {
+      UpdateScrollShift(aPresShell, positioned, *referencedAnchors, oct,
+                        appliedShifts);
+    }
+
     if (TriggerFallbackReflow(aPresShell, positioned, *referencedAnchors,
-                              aEvaluateAllFallbacksIfNeeded)) {
+                              aFirstIteration)) {
       didLayoutPositionedItems = true;
     }
 
@@ -1107,6 +1221,7 @@ bool AnchorPositioningUtils::TriggerLayoutOnOverflow(
       positioned->InvalidateFrameSubtree();
     }
   }
+  oct.Flush();
   return didLayoutPositionedItems;
 }
 
