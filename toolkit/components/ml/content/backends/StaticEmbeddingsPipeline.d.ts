@@ -89,6 +89,6 @@ export interface StaticEmbeddingsOptions {
 
 
 interface PreTrainedTokenizer {
-  model: { vocab: list[any] };
+  model: { vocab: Array<any> };
   encode(text: string): number[];
 }
