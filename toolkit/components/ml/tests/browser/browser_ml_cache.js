@@ -47,26 +47,6 @@ const FAKE_ONNX_MODEL_ARGS = {
   taskName: "task_onnx",
 };
 
-function createRandomBlob(blockSize = 8, count = 1) {
-  const blocks = Array.from({ length: count }, () =>
-    Uint32Array.from(
-      { length: blockSize / 4 },
-      () => Math.random() * 4294967296
-    )
-  );
-  return new Blob(blocks, { type: "application/octet-stream" });
-}
-
-function createBlob(size = 8) {
-  return createRandomBlob(size);
-}
-
-function stripLastUsed(data) {
-  return data.map(({ lastUsed: _unusedLastUsed, ...rest }) => {
-    return rest;
-  });
-}
-
 
 
 
@@ -602,29 +582,6 @@ add_task(async function testTooFewParts() {
 });
 
 
-
-
-
-
-async function initializeCache() {
-  const dbName = `modelFiles-${crypto.randomUUID()}`;
-  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
-  await OPFS.getDirectoryHandle(dbName, { create: true });
-  return await IndexedDBCache.init({ dbName });
-}
-
-
-
-
-async function deleteCache(cache) {
-  await cache.dispose();
-  await TestIndexedDBCache.deleteDatabaseAndWait(cache.dbName).catch(() => {});
-  try {
-    await OPFS.remove(cache.dbName, { recursive: true });
-  } catch (e) {
-    
-  }
-}
 
 
 
@@ -1650,6 +1607,8 @@ add_task(async function test_DeleteFileByEngines() {
   const testData = createBlob();
   const engineOne = "engine-1";
   const engineTwo = "engine-2";
+  const model = "org/model";
+  const revision = "v1";
 
   
   await cache.put({
@@ -1677,6 +1636,10 @@ add_task(async function test_DeleteFileByEngines() {
   );
 
   
+  let retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 2);
+
+  
   await cache.deleteFilesByEngine({ engineId: engineOne });
 
   retrievedData = await cache.getFile({
@@ -1690,6 +1653,11 @@ add_task(async function test_DeleteFileByEngines() {
     testData,
     "The retrieved data should match the stored data."
   );
+
+  
+  retrievedFiles = await cache.listFiles({ model, revision });
+  Assert.equal(retrievedFiles.metadata.engineIds.length, 1);
+  Assert.equal(retrievedFiles.metadata.engineIds[0], engineTwo);
 
   
   await cache.deleteFilesByEngine({ engineId: engineTwo });
@@ -1706,6 +1674,10 @@ add_task(async function test_DeleteFileByEngines() {
     null,
     "The data for the deleted model should not exist."
   );
+
+  
+  Assert.equal(await cache._testGetData(cache.enginesStoreName), null);
+
   await deleteCache(cache);
 });
 
@@ -1734,6 +1706,18 @@ add_task(async function test_ModelHub_DeleteFileByEngines() {
     headers: null,
   });
 
+  
+  const dataBeforeDelete = await cache.getFile({
+    engineId: engineOne,
+    model: "org/model",
+    revision: "v1",
+    file: "file.txt",
+  });
+  Assert.notEqual(dataBeforeDelete, null, "The data should exist");
+
+  
+  Assert.notEqual(await cache._testGetData(cache.enginesStoreName), null);
+
   await hub.deleteFilesByEngine({ engineId: engineOne });
 
   
@@ -1748,6 +1732,11 @@ add_task(async function test_ModelHub_DeleteFileByEngines() {
     null,
     "The data for the deleted model should not exist."
   );
+
+  
+  
+  
+  Assert.equal(await cache._testGetData(cache.enginesStoreName), null);
 
   await deleteCache(cache);
 });
