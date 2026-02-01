@@ -23,6 +23,7 @@
 #include "nsTextEquivUtils.h"
 #include "Pivot.h"
 #include "Relation.h"
+#include "TextLeafRange.h"
 #include "mozilla/a11y/RelationType.h"
 #include "xpcAccessibleDocument.h"
 
@@ -351,7 +352,8 @@ void RemoteAccessible::Value(nsString& aValue) const {
     
     if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
         (IsGeneric() && IsEditableRoot())) {
-      nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
+      TextLeafRange::FromAccessible(const_cast<RemoteAccessible*>(this))
+          .GetFlattenedText(aValue);
       return;
     }
 
