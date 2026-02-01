@@ -144,12 +144,6 @@ TEST(CandidateTest, ToCandidateAttributeHostnameCandidate) {
 }
 
 TEST(CandidateTest, ToCandidateAttributeTcpCandidates) {
-  
-  
-  
-  
-  constexpr char TCPTYPE_ACTIVE_STR[] = "active";
-
   Candidate candidate(ICE_CANDIDATE_COMPONENT_RTP, "tcp",
                       SocketAddress("192.168.1.5", 9), kCandidatePriority, "",
                       "", IceCandidateType::kHost, kCandidateGeneration,

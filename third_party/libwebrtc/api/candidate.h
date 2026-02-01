@@ -39,6 +39,12 @@ RTC_EXPORT absl::string_view IceCandidateTypeToString(IceCandidateType);
     "relay";
 
 
+static constexpr int DISCARD_PORT = 9;
+static constexpr char TCPTYPE_ACTIVE_STR[] = "active";
+static constexpr char TCPTYPE_PASSIVE_STR[] = "passive";
+static constexpr char TCPTYPE_SIMOPEN_STR[] = "so";
+
+
 
 static constexpr size_t kMaxTurnServers = 32;
 
