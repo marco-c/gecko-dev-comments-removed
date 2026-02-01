@@ -179,6 +179,8 @@ class VideoEncoderConfig {
 
   bool HasScaleResolutionDownTo() const;
 
+  bool HasScaleResolutionDownBy() const;
+
   SdpVideoFormat GetSimulcastVideoFormat(size_t stream_index) const;
 
   
