@@ -27,6 +27,7 @@
 #include "api/test/simulated_network.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
+#include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/spatial_layer.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -107,6 +108,10 @@ class VideoQualityTestFixtureInterface {
       std::vector<SpatialLayer> spatial_layers;
       
       bool infer_streams = false;
+      
+      
+      
+      std::optional<ScalabilityMode> scalability_mode;
     } ss[2];
     struct Logging {
       std::string rtc_event_log_name;
