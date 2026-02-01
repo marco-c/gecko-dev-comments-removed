@@ -491,13 +491,10 @@ void RiscvDebugger::Debug() {
             "%" XSTR(ARG_SIZE) "s",
             cmd, arg1, arg2);
       if ((strcmp(cmd, "si") == 0) || (strcmp(cmd, "stepi") == 0)) {
-        SimInstruction* instr =
-            reinterpret_cast<SimInstruction*>(sim_->get_pc());
-        if (!(instr->IsTrap()) ||
-            instr->InstructionBits() == rtCallRedirInstr) {
+        SimInstruction instr(reinterpret_cast<Instruction*>(sim_->get_pc()));
+        if (!(instr.IsTrap()) || instr.InstructionBits() == rtCallRedirInstr) {
           sim_->icount_++;
-          sim_->InstructionDecode(
-              reinterpret_cast<Instruction*>(sim_->get_pc()));
+          sim_->InstructionDecode(instr);
         } else {
           
           printf("/!\\ Jumping over generated breakpoint.\n");
@@ -914,8 +911,8 @@ static void FlushICacheLocked(SimulatorProcess::ICacheMap& i_cache,
 }
 
 
-void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
-  intptr_t address = reinterpret_cast<intptr_t>(instr);
+void SimulatorProcess::checkICacheLocked(const SimInstruction& instr) {
+  intptr_t address = reinterpret_cast<intptr_t>(instr.instr());
   void* page = reinterpret_cast<void*>(address & (~CachePage::kPageMask));
   void* line = reinterpret_cast<void*>(address & (~CachePage::kLineMask));
   int offset = (address & CachePage::kPageMask);
@@ -925,12 +922,11 @@ void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
   char* cached_line = cache_page->cachedData(offset & ~CachePage::kLineMask);
 
   if (cache_hit) {
-#  ifdef DEBUG
     
-    int cmpret = memcmp(reinterpret_cast<void*>(instr),
-                        cache_page->cachedData(offset), kInstrSize);
+    mozilla::DebugOnly<int> cmpret =
+        memcmp(reinterpret_cast<void*>(instr.instr()),
+               cache_page->cachedData(offset), kInstrSize);
     MOZ_ASSERT(cmpret == 0);
-#  endif
   } else {
     
     memcpy(cached_line, line, CachePage::kLineLength);
@@ -1798,10 +1794,11 @@ void Simulator::DieOrDebug() {
 }
 
 
-void Simulator::InstructionDecode(Instruction* instr) {
-  
-  
-  
+void Simulator::InstructionDecode(const SimInstruction& instr) {
+  if (!SimulatorProcess::ICacheCheckingDisableCount) {
+    AutoLockSimulatorCache als;
+    SimulatorProcess::checkICacheLocked(instr);
+  }
   pc_modified_ = false;
 
   EmbeddedVector<char, 256> buffer;
@@ -1811,13 +1808,10 @@ void Simulator::InstructionDecode(Instruction* instr) {
     disasm::NameConverter converter;
     disasm::Disassembler dasm(converter);
     
-    dasm.InstructionDecode(buffer, reinterpret_cast<byte*>(instr));
-
-    
-    
+    dasm.InstructionDecode(buffer, reinterpret_cast<byte*>(instr.instr()));
   }
 
-  instr_ = instr;
+  instr_ = instr.instr();
   switch (instr_.InstructionType()) {
     case Instruction::kRType:
       DecodeRVRType();
@@ -1878,12 +1872,13 @@ void Simulator::InstructionDecode(Instruction* instr) {
 
   if (FLAG_trace_sim) {
     printf("  0x%012" PRIxPTR "      %-44s\t%s\n",
-           reinterpret_cast<intptr_t>(instr), buffer.start(),
+           reinterpret_cast<intptr_t>(instr.instr()), buffer.start(),
            trace_buf_.start());
   }
 
   if (!pc_modified_) {
-    setRegister(pc, reinterpret_cast<sreg_t>(instr) + instr->InstructionSize());
+    setRegister(
+        pc, reinterpret_cast<sreg_t>(instr.instr()) + instr.InstructionSize());
   }
 
   if (watch_address_ != nullptr) {
@@ -1935,7 +1930,7 @@ void Simulator::execute() {
       single_step_callback_(single_step_callback_arg_, this,
                             (void*)program_counter);
     }
-    Instruction* instr = reinterpret_cast<Instruction*>(program_counter);
+    SimInstruction instr(reinterpret_cast<Instruction*>(program_counter));
     InstructionDecode(instr);
     icount_++;
     program_counter = get_pc();
