@@ -460,7 +460,13 @@ public class GeckoThread extends Thread {
 
     
     
-    if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
+    
+    
+    if (env.contains("MOZ_CRASHREPORTER=1") || env.contains("MOZ_CRASHREPORTER_DISABLE=1")) {
+      
+      
+    } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0
+        && !BuildConfig.DEBUG_BUILD) {
       env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
     } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0
         && BuildConfig.DEBUG_BUILD) {
