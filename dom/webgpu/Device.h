@@ -121,6 +121,8 @@ class Device final : public DOMEventTargetHelper,
   
   void ExpireExternalTextures();
 
+  
+  bool mLost;
   RefPtr<dom::Promise> mLostPromise;
   RefPtr<Queue> mQueue;
   nsTHashSet<nsCString> mKnownWarnings;

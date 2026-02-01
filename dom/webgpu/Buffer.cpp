@@ -361,20 +361,29 @@ void Buffer::UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv) {
 
 void Buffer::ResolveMapRequest(dom::Promise* aPromise, BufferAddress aOffset,
                                BufferAddress aSize, bool aWritable) {
-  MOZ_RELEASE_ASSERT(mMapRequest == aPromise);
+  if (mMapRequest != aPromise) {
+    
+    return;
+  }
   SetMapped(aOffset, aSize, aWritable);
   promise::MaybeResolveWithUndefined(std::move(mMapRequest));
 }
 
 void Buffer::RejectMapRequest(dom::Promise* aPromise,
                               const nsACString& message) {
-  MOZ_RELEASE_ASSERT(mMapRequest == aPromise);
+  if (mMapRequest != aPromise) {
+    
+    return;
+  }
   promise::MaybeRejectWithOperationError(std::move(mMapRequest),
                                          nsCString(message));
 }
 
 void Buffer::RejectMapRequestWithAbortError(dom::Promise* aPromise) {
-  MOZ_RELEASE_ASSERT(mMapRequest == aPromise);
+  if (mMapRequest != aPromise) {
+    
+    return;
+  }
   AbortMapRequest();
 }
 
