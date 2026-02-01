@@ -142,6 +142,7 @@ pub struct TextureViewDescriptor<'a> {
     mip_level_count: Option<&'a u32>,
     base_array_layer: u32,
     array_layer_count: Option<&'a u32>,
+    usage: wgt::TextureUsages,
 }
 
 
