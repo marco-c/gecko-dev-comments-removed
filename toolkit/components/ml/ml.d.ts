@@ -26,6 +26,33 @@ export type EngineStatus =
   
   | "TERMINATED";
 
+export interface EngineRunRequest {
+  
+
+
+
+  id: string;
+
+  
+
+
+
+
+  args: any[];
+
+  
+
+
+
+
+  options: any;
+
+  
+
+
+  data?: Uint8Array;
+}
+
 
 
 
@@ -58,3 +85,87 @@ export type StatusByEngineId = Map<
     options: PipelineOptions | PipelineOptionsRaw | null;
   }
 >;
+
+export type EngineNames =
+  keyof GleanImpl["firefoxAiRuntime"]["engineCreationSuccess"];
+
+export interface ParsedModelHubUrl {
+  model: string;
+  revision: string;
+  file: string;
+  modelWithHostname: string;
+}
+
+export interface SyncEvent {
+  created: BaseRecord[];
+  updated: Array<{ old: BaseRecord; new: BaseRecord }>;
+  deleted: BaseRecord[];
+}
+
+interface BaseRecord {
+  id: string; 
+  last_modified: number; 
+  schema: number; 
+}
+
+
+
+
+
+interface RecordsMLUnique {
+  
+
+
+
+  "ml-model-allow-deny-list": {
+    filter: "ALLOW" | "DENY";
+    urlPrefix: string; 
+    description: string; 
+  };
+
+  
+
+
+
+
+  "ml-inference-options": {
+    modelId: string; 
+    taskName: string; 
+    dtype?: string; 
+    featureId?: string; 
+    processorId: string; 
+    tokenizerId: string; 
+    modelRevision: string; 
+    processorRevision: string; 
+    tokenizerRevision: string; 
+    backend?: string; 
+    numThreads?: number;
+  };
+}
+
+export type RecordsML = {
+  [Collection in keyof RecordsMLUnique]: BaseRecord &
+    RecordsMLUnique[Collection];
+};
+
+export interface RemoteSettingsInferenceOptions {
+  modelRevision: string | null;
+  modelId: string | null;
+  tokenizerRevision: string | null;
+  tokenizerId: string | null;
+  processorRevision: string | null;
+  processorId: string | null;
+  dtype: string | null;
+  numThreads: number | null;
+  runtimeFilename: string | null;
+}
+
+export interface ChunkResponse {
+  text: string;
+  tokens: any;
+  isPrompt: any;
+  toolCalls: Array<{
+    id: string;
+    function: { name: string; arguments: any[] };
+  }>;
+}

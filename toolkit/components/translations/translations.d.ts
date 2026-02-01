@@ -15,7 +15,7 @@ export interface Attachment {
   
   hash: string;
   
-  size: string;
+  size: number;
   
   filename: string;
   
