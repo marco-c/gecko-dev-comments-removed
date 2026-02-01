@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsmacshellservice_h____
-#define nsmacshellservice_h____
+#ifndef nsmacshellservice_h_
+#define nsmacshellservice_h_
 
 #include "nsToolkitShellService.h"
 #include "nsIMacShellService.h"

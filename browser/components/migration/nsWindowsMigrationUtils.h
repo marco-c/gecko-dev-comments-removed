@@ -2,8 +2,8 @@
 
 
 
-#ifndef windowsmigrationutils__h__
-#define windowsmigrationutils__h__
+#ifndef windowsmigrationutils_h_
+#define windowsmigrationutils_h_
 
 #include "prtime.h"
 

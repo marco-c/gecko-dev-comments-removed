@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsGNOMEShellSearchProvider_h__
-#define __nsGNOMEShellSearchProvider_h__
+#ifndef _nsGNOMEShellSearchProvider_h_
+#define _nsGNOMEShellSearchProvider_h_
 
 #include <gio/gio.h>
 

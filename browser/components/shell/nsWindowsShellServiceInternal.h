@@ -3,8 +3,8 @@
 
 
 
-#ifndef nswindowsshellserviceinternal_h____
-#define nswindowsshellserviceinternal_h____
+#ifndef nswindowsshellserviceinternal_h_
+#define nswindowsshellserviceinternal_h_
 
 #include "ErrorList.h"
 #include "nsStringFwd.h"

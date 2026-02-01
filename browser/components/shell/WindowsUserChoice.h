@@ -3,8 +3,8 @@
 
 
 
-#ifndef SHELL_WINDOWSUSERCHOICE_H__
-#define SHELL_WINDOWSUSERCHOICE_H__
+#ifndef SHELL_WINDOWSUSERCHOICE_H_
+#define SHELL_WINDOWSUSERCHOICE_H_
 
 #include <windows.h>
 

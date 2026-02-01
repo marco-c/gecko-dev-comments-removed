@@ -3,8 +3,8 @@
 
 
 
-#ifndef nstoolkitshellservice_h____
-#define nstoolkitshellservice_h____
+#ifndef nstoolkitshellservice_h_
+#define nstoolkitshellservice_h_
 
 #include "nsIToolkitShellService.h"
 

@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsGNOMEShellDBusHelper_h__
-#define __nsGNOMEShellDBusHelper_h__
+#ifndef _nsGNOMEShellDBusHelper_h_
+#define _nsGNOMEShellDBusHelper_h_
 
 #include <gio/gio.h>
 #include "nsINavHistoryService.h"

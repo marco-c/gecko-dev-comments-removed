@@ -8,8 +8,8 @@
 
 
 
-#ifndef windowsdefaultbrowser_h____
-#define windowsdefaultbrowser_h____
+#ifndef windowsdefaultbrowser_h_
+#define windowsdefaultbrowser_h_
 
 #include "mozilla/UniquePtr.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsgnomeshellservice_h____
-#define nsgnomeshellservice_h____
+#ifndef nsgnomeshellservice_h_
+#define nsgnomeshellservice_h_
 
 #include "nsIGNOMEShellService.h"
 #include "nsToolkitShellService.h"

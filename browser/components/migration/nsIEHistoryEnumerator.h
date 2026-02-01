@@ -2,8 +2,8 @@
 
 
 
-#ifndef iehistoryenumerator___h___
-#define iehistoryenumerator___h___
+#ifndef iehistoryenumerator_h_
+#define iehistoryenumerator_h_
 
 #include <urlhist.h>
 

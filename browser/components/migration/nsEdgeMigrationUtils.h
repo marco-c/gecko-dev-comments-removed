@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsedgemigrationutils__h__
-#define nsedgemigrationutils__h__
+#ifndef nsedgemigrationutils_h_
+#define nsedgemigrationutils_h_
 
 #include "nsISupportsImpl.h"
 #include "nsIEdgeMigrationUtils.h"

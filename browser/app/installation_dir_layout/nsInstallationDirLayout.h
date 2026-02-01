@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla_nsInstDirLayout_h__
-#define mozilla_nsInstDirLayout_h__
+#ifndef mozilla_nsInstDirLayout_h_
+#define mozilla_nsInstDirLayout_h_
 
 #include "nsIInstallationDirLayout.h"
 

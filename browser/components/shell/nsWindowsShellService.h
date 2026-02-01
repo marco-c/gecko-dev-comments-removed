@@ -3,8 +3,8 @@
 
 
 
-#ifndef nswindowsshellservice_h____
-#define nswindowsshellservice_h____
+#ifndef nswindowsshellservice_h_
+#define nswindowsshellservice_h_
 
 #include "nscore.h"
 #include "nsString.h"

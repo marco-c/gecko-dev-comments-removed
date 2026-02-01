@@ -3,8 +3,8 @@
 
 
 
-#ifndef AboutRedirector_h__
-#define AboutRedirector_h__
+#ifndef AboutRedirector_h_
+#define AboutRedirector_h_
 
 #include "nsIAboutModule.h"
 

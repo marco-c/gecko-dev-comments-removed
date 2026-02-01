@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsKeychainMigrationUtils_h__
-#define nsKeychainMigrationUtils_h__
+#ifndef nsKeychainMigrationUtils_h_
+#define nsKeychainMigrationUtils_h_
 
 #include <CoreFoundation/CoreFoundation.h>
 
