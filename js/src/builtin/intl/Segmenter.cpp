@@ -17,9 +17,7 @@
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/LocaleNegotiation.h"
-#include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/StringAsciiChars.h"
-#include "builtin/intl/UsingEnum.h"
 #include "gc/AllocKind.h"
 #include "gc/GCContext.h"
 #include "icu4x/GraphemeClusterSegmenter.hpp"
@@ -73,10 +71,6 @@ const JSClass& SegmenterObject::protoClass_ = PlainObject::class_;
 static bool segmenter_supportedLocalesOf(JSContext* cx, unsigned argc,
                                          Value* vp);
 
-static bool segmenter_segment(JSContext* cx, unsigned argc, Value* vp);
-
-static bool segmenter_resolvedOptions(JSContext* cx, unsigned argc, Value* vp);
-
 static bool segmenter_toSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setString(cx->names().Segmenter);
@@ -89,8 +83,9 @@ static const JSFunctionSpec segmenter_static_methods[] = {
 };
 
 static const JSFunctionSpec segmenter_methods[] = {
-    JS_FN("resolvedOptions", segmenter_resolvedOptions, 0, 0),
-    JS_FN("segment", segmenter_segment, 1, 0),
+    JS_SELF_HOSTED_FN("resolvedOptions", "Intl_Segmenter_resolvedOptions", 0,
+                      0),
+    JS_SELF_HOSTED_FN("segment", "Intl_Segmenter_segment", 1, 0),
     JS_FN("toSource", segmenter_toSource, 0, 0),
     JS_FS_END,
 };
@@ -112,24 +107,6 @@ const ClassSpec SegmenterObject::classSpec_ = {
     nullptr,
     ClassSpec::DontDefineConstructor,
 };
-
-static constexpr std::string_view GranularityToString(
-    SegmenterGranularity granularity) {
-#ifndef USING_ENUM
-  using enum SegmenterGranularity;
-#else
-  USING_ENUM(SegmenterGranularity, Grapheme, Word, Sentence);
-#endif
-  switch (granularity) {
-    case Grapheme:
-      return "grapheme";
-    case Word:
-      return "word";
-    case Sentence:
-      return "sentence";
-  }
-  MOZ_CRASH("invalid segmenter granularity");
-}
 
 
 
@@ -155,67 +132,14 @@ static bool Segmenter(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
+  HandleValue locales = args.get(0);
+  HandleValue options = args.get(1);
 
   
-  Rooted<LocalesList> requestedLocales(cx, cx);
-  if (!CanonicalizeLocaleList(cx, args.get(0), &requestedLocales)) {
+  if (!intl::InitializeObject(cx, segmenter, cx->names().InitializeSegmenter,
+                              locales, options)) {
     return false;
   }
-
-  Rooted<ArrayObject*> requestedLocalesArray(
-      cx, LocalesListToArray(cx, requestedLocales));
-  if (!requestedLocalesArray) {
-    return false;
-  }
-  segmenter->setRequestedLocales(requestedLocalesArray);
-
-  auto granularity = SegmenterGranularity::Grapheme;
-  if (args.hasDefined(1)) {
-    
-    Rooted<JSObject*> options(
-        cx, RequireObjectArg(cx, "options", "Intl.Segmenter", args[1]));
-    if (!options) {
-      return false;
-    }
-
-    
-    LocaleMatcher matcher;
-    if (!GetLocaleMatcherOption(cx, options, &matcher)) {
-      return false;
-    }
-
-    
-    
-    
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    static constexpr auto granularities = MapOptions<GranularityToString>(
-        SegmenterGranularity::Grapheme, SegmenterGranularity::Word,
-        SegmenterGranularity::Sentence);
-    if (!GetStringOption(cx, options, cx->names().granularity, granularities,
-                         SegmenterGranularity::Grapheme, &granularity)) {
-      return false;
-    }
-  }
-
-  
-  segmenter->setGranularity(granularity);
 
   
   args.rval().setObject(*segmenter);
@@ -592,36 +516,46 @@ static typename Interface::Segmenter* CreateSegmenter(
   return result.ok;
 }
 
-
-
-
-static bool ResolveLocale(JSContext* cx, Handle<SegmenterObject*> segmenter) {
-  
-  if (segmenter->isLocaleResolved()) {
+static bool EnsureInternalsResolved(JSContext* cx,
+                                    Handle<SegmenterObject*> segmenter) {
+  if (segmenter->getLocale()) {
     return true;
   }
 
-  Rooted<ArrayObject*> requestedLocales(
-      cx, &segmenter->getRequestedLocales()->as<ArrayObject>());
+  Rooted<JS::Value> value(cx);
 
-  
-  mozilla::EnumSet<UnicodeExtensionKey> relevantExtensionKeys{};
-
-  
-  Rooted<LocaleOptions> localeOptions(cx);
-
-  
-  auto localeData = LocaleData::Default;
-
-  
-  Rooted<ResolvedLocale> resolved(cx);
-  if (!ResolveLocale(cx, AvailableLocaleKind::ListFormat, requestedLocales,
-                     localeOptions, relevantExtensionKeys, localeData,
-                     &resolved)) {
+  Rooted<JSObject*> internals(cx, intl::GetInternalsObject(cx, segmenter));
+  if (!internals) {
     return false;
   }
 
-  switch (segmenter->getGranularity()) {
+  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
+    return false;
+  }
+  Rooted<JSString*> locale(cx, value.toString());
+
+  if (!GetProperty(cx, internals, internals, cx->names().granularity, &value)) {
+    return false;
+  }
+
+  SegmenterGranularity granularity;
+  {
+    JSLinearString* linear = value.toString()->ensureLinear(cx);
+    if (!linear) {
+      return false;
+    }
+
+    if (StringEqualsLiteral(linear, "grapheme")) {
+      granularity = SegmenterGranularity::Grapheme;
+    } else if (StringEqualsLiteral(linear, "word")) {
+      granularity = SegmenterGranularity::Word;
+    } else {
+      MOZ_ASSERT(StringEqualsLiteral(linear, "sentence"));
+      granularity = SegmenterGranularity::Sentence;
+    }
+  }
+
+  switch (granularity) {
     case SegmenterGranularity::Grapheme: {
       auto* seg = CreateSegmenter<GraphemeClusterSegmenter>();
       if (!seg) {
@@ -631,7 +565,7 @@ static bool ResolveLocale(JSContext* cx, Handle<SegmenterObject*> segmenter) {
       break;
     }
     case SegmenterGranularity::Word: {
-      auto* seg = CreateSegmenter<WordSegmenter>(cx, resolved.dataLocale());
+      auto* seg = CreateSegmenter<WordSegmenter>(cx, locale);
       if (!seg) {
         return false;
       }
@@ -639,7 +573,7 @@ static bool ResolveLocale(JSContext* cx, Handle<SegmenterObject*> segmenter) {
       break;
     }
     case SegmenterGranularity::Sentence: {
-      auto* seg = CreateSegmenter<SentenceSegmenter>(cx, resolved.dataLocale());
+      auto* seg = CreateSegmenter<SentenceSegmenter>(cx, locale);
       if (!seg) {
         return false;
       }
@@ -648,10 +582,9 @@ static bool ResolveLocale(JSContext* cx, Handle<SegmenterObject*> segmenter) {
     }
   }
 
-  
-  segmenter->setLocale(resolved.dataLocale());
+  segmenter->setLocale(locale);
+  segmenter->setGranularity(granularity);
 
-  MOZ_ASSERT(segmenter->isLocaleResolved(), "locale successfully resolved");
   return true;
 }
 
@@ -892,14 +825,6 @@ static bool EnsureBreakIterator(JSContext* cx, Handle<T*> segments,
   }
 
   
-  if (!segments->getSegmenter()->isLocaleResolved()) {
-    Rooted<SegmenterObject*> segmenter(cx, segments->getSegmenter());
-    if (!ResolveLocale(cx, segmenter)) {
-      return false;
-    }
-  }
-
-  
   if (!EnsureStringChars(cx, segments)) {
     return false;
   }
@@ -1000,21 +925,28 @@ static ArrayObject* FindSegmentBoundaries(JSContext* cx, Handle<T*> segments,
   return CreateBoundaries(cx, boundaries, segments->getGranularity());
 }
 
+bool js::intl_CreateSegmentsObject(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 2);
 
+  Rooted<SegmenterObject*> segmenter(cx,
+                                     &args[0].toObject().as<SegmenterObject>());
+  Rooted<JSString*> string(cx, args[1].toString());
 
+  
+  if (!EnsureInternalsResolved(cx, segmenter)) {
+    return false;
+  }
 
-static SegmentsObject* CreateSegmentsObject(JSContext* cx,
-                                            Handle<SegmenterObject*> segmenter,
-                                            Handle<JSString*> string) {
   Rooted<JSObject*> proto(
       cx, GlobalObject::getOrCreateSegmentsPrototype(cx, cx->global()));
   if (!proto) {
-    return nullptr;
+    return false;
   }
 
   auto* segments = NewObjectWithGivenProto<SegmentsObject>(cx, proto);
   if (!segments) {
-    return nullptr;
+    return false;
   }
 
   segments->setSegmenter(segmenter);
@@ -1022,7 +954,8 @@ static SegmentsObject* CreateSegmentsObject(JSContext* cx,
   segments->setString(string);
   segments->setIndex(0);
 
-  return segments;
+  args.rval().setObject(*segments);
+  return true;
 }
 
 bool js::intl_CreateSegmentIterator(JSContext* cx, unsigned argc, Value* vp) {
@@ -1093,89 +1026,6 @@ bool js::intl_FindNextSegmentBoundaries(JSContext* cx, unsigned argc,
 
   args.rval().setObject(*result);
   return true;
-}
-
-static bool IsSegmenter(Handle<JS::Value> v) {
-  return v.isObject() && v.toObject().is<SegmenterObject>();
-}
-
-
-
-
-static bool segmenter_segment(JSContext* cx, const CallArgs& args) {
-  Rooted<SegmenterObject*> segmenter(
-      cx, &args.thisv().toObject().as<SegmenterObject>());
-
-  
-  Rooted<JSString*> string(cx, JS::ToString(cx, args.get(0)));
-  if (!string) {
-    return false;
-  }
-
-  
-  auto* result = CreateSegmentsObject(cx, segmenter, string);
-  if (!result) {
-    return false;
-  }
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
-static bool segmenter_segment(JSContext* cx, unsigned argc, Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsSegmenter, segmenter_segment>(cx, args);
-}
-
-
-
-
-static bool segmenter_resolvedOptions(JSContext* cx, const CallArgs& args) {
-  Rooted<SegmenterObject*> segmenter(
-      cx, &args.thisv().toObject().as<SegmenterObject>());
-
-  if (!ResolveLocale(cx, segmenter)) {
-    return false;
-  }
-
-  
-  Rooted<IdValueVector> options(cx, cx);
-
-  
-  if (!options.emplaceBack(NameToId(cx->names().locale),
-                           StringValue(segmenter->getLocale()))) {
-    return false;
-  }
-
-  auto* granularity = NewStringCopy<CanGC>(
-      cx, GranularityToString(segmenter->getGranularity()));
-  if (!granularity) {
-    return false;
-  }
-  if (!options.emplaceBack(NameToId(cx->names().granularity),
-                           StringValue(granularity))) {
-    return false;
-  }
-
-  
-  auto* result = NewPlainObjectWithUniqueNames(cx, options);
-  if (!result) {
-    return false;
-  }
-  args.rval().setObject(*result);
-  return true;
-}
-
-
-
-
-static bool segmenter_resolvedOptions(JSContext* cx, unsigned argc, Value* vp) {
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsSegmenter, segmenter_resolvedOptions>(cx, args);
 }
 
 
