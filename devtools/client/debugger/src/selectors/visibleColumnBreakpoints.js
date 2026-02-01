@@ -26,10 +26,6 @@ function contains(location, range) {
   );
 }
 
-function convertToList(breakpointPositions) {
-  return [].concat(...Object.values(breakpointPositions));
-}
-
 
 
 
@@ -148,8 +144,10 @@ export function getFirstBreakpointPosition(state, location) {
     return null;
   }
 
-  return sortSelectedLocations(convertToList(positions), location.source).find(
-    position =>
-      getSelectedLocation(position, location.source).line == location.line
-  );
+  const breakpointPositionsForLine = positions[location.line];
+  if (!breakpointPositionsForLine) {
+    return null;
+  }
+
+  return sortSelectedLocations(breakpointPositionsForLine, location.source)[0];
 }
