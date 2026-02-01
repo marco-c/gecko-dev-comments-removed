@@ -267,7 +267,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  void NotifyCandidateready(Port* port, const Candidate& candidate) {
+  void NotifyCandidateReady(Port* port, const Candidate& candidate) {
     SignalCandidateReady(port, candidate);
   }
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
