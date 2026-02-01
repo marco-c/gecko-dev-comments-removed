@@ -142,6 +142,7 @@ add_task(async function test_bug1749957_bug1750056() {
   }).QueryInterface(Ci.nsIHttpChannel);
 
   
+  
   {
     chan.requestMethod = "POST";
     chan.setRequestHeader("content-length", "" + amount,  false);
