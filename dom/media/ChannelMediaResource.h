@@ -41,6 +41,7 @@ class ChannelSuspendAgent {
   void Delegate(nsIChannel* aChannel);
   
   void Revoke();
+  void RevokeIfManaged(nsIChannel* aChannel);
 
  private:
   
