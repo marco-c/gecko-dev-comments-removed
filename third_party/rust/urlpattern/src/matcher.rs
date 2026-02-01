@@ -1,10 +1,10 @@
-use crate::Error;
 use crate::regexp::RegExp;
+use crate::Error;
 
 #[derive(Debug)]
 
 
-pub struct Matcher<R: RegExp> {
+pub(crate) struct Matcher<R: RegExp> {
   pub prefix: String,
   pub suffix: String,
   pub inner: InnerMatcher<R>,
@@ -12,7 +12,7 @@ pub struct Matcher<R: RegExp> {
 }
 
 #[derive(Debug)]
-pub enum InnerMatcher<R: RegExp> {
+pub(crate) enum InnerMatcher<R: RegExp> {
   
   
   

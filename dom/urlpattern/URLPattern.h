@@ -59,8 +59,6 @@ class URLPattern final : public nsISupports, public nsWrapperCache {
  private:
   ~URLPattern();
   nsCOMPtr<nsISupports> mParent;
-
-  
   UrlpPattern mPattern;
   bool mIgnoreCase;
 };
