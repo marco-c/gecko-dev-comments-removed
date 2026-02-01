@@ -350,10 +350,6 @@ var allowlist = [
   },
   
   {
-    file: "chrome://browser/content/aiwindow/components/memories-icon-button.mjs",
-  },
-  
-  {
     file: "chrome://browser/content/aiwindow/components/website-chip-container.mjs",
   },
 ];
