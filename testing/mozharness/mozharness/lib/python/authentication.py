@@ -3,6 +3,7 @@
 
 
 """module for http authentication operations"""
+
 import getpass
 import os
 

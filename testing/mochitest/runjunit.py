@@ -636,14 +636,16 @@ class JunitArgumentParser(argparse.ArgumentParser):
             help="Defines an extra user preference.",
         )
         
-        self.add_argument(
-            "--certificate-path",
-            action="store",
-            type=str,
-            dest="certPath",
-            default=None,
-            help="Path to directory containing certificate store.",
-        ),
+        (
+            self.add_argument(
+                "--certificate-path",
+                action="store",
+                type=str,
+                dest="certPath",
+                default=None,
+                help="Path to directory containing certificate store.",
+            ),
+        )
         self.add_argument(
             "--http-port",
             action="store",

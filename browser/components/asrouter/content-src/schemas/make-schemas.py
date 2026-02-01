@@ -262,13 +262,11 @@ def bundle_schema(schema_def: SchemaDefinition):
 
         
         
-        defs.update(
-            {
-                name: dfn
-                for name, dfn in common_schema["$defs"].items()
-                if dfn_filter(name)
-            }
-        )
+        defs.update({
+            name: dfn
+            for name, dfn in common_schema["$defs"].items()
+            if dfn_filter(name)
+        })
 
     
     

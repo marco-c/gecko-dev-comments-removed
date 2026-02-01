@@ -15,7 +15,6 @@ initial_prefs = {
 
 
 class TestDefaultLauncherVisible(MarionetteTestCase):
-
     def setUp(self):
         MarionetteTestCase.setUp(self)
 
@@ -106,12 +105,10 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         )
 
         
-        self.restart_with_prefs(
-            {
-                "sidebar.revamp": True,
-                "browser.startup.page": 3,
-            }
-        )
+        self.restart_with_prefs({
+            "sidebar.revamp": True,
+            "browser.startup.page": 3,
+        })
 
         self.assertTrue(
             self.is_button_visible(),
@@ -157,6 +154,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         self.marionette.find_element(By.ID, "browserLayoutShowSidebar").click()
 
         self.marionette.set_context("chrome")
+        self.assertTrue(
+            self.marionette.get_pref("sidebar.revamp"),
+            "The sidebar.revamp pref should now be true",
+        )
+
         
         Wait(self.marionette).until(
             lambda _: self.is_button_visible(),
@@ -174,6 +176,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         self.marionette.restart()
         self.marionette.set_context("chrome")
         self.wait_for_sidebar_initialized()
+
+        self.assertTrue(
+            self.marionette.get_pref("sidebar.revamp"),
+            "The sidebar.revamp pref should still be true",
+        )
 
         self.assertTrue(
             self.is_launcher_visible(),
@@ -212,12 +219,10 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         )
 
         
-        self.marionette.set_prefs(
-            {
-                "sidebar.revamp": True,
-                "sidebar.revamp.defaultLauncherVisible": False,
-            }
-        )
+        self.marionette.set_prefs({
+            "sidebar.revamp": True,
+            "sidebar.revamp.defaultLauncherVisible": False,
+        })
 
         
         Wait(self.marionette).until(
@@ -244,13 +249,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
     def test_vertical_tabs_default_hidden(self):
         
         
-        self.restart_with_prefs(
-            {
-                "sidebar.revamp": True,
-                "sidebar.verticalTabs": True,
-                "sidebar.visibility": "always-show",
-            }
-        )
+        self.restart_with_prefs({
+            "sidebar.revamp": True,
+            "sidebar.verticalTabs": True,
+            "sidebar.visibility": "always-show",
+        })
 
         Wait(self.marionette).until(
             lambda _: self.is_launcher_visible(),

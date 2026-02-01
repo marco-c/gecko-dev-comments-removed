@@ -19,13 +19,11 @@ def inline(doc):
 
 
 
-DEFAULT_WINDOWS = set(
-    [
-        
-        
-        (inline("""<div">Lorem</div>"""), inline("""<div">Ipsum</div>""")),
-    ]
-)
+DEFAULT_WINDOWS = set([
+    
+    
+    (inline("""<div">Lorem</div>"""), inline("""<div">Ipsum</div>""")),
+])
 
 
 class TestAutoRestoreWithTabGroups(SessionStoreTestCase):

@@ -27,37 +27,35 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
             prefs["fission.autostart"] = False
 
         
-        prefs.update(
-            {
-                
-                
-                
-                "browser.region.network.url": "",
-                
-                "browser.cache.disk.smart_size.enabled": False,
-                "toolkit.telemetry.server": f"{SERVER_URL}/pings",
-                "telemetry.fog.test.localhost_port": -1,
-                "toolkit.telemetry.initDelay": 1,
-                "toolkit.telemetry.minSubsessionLength": 0,
-                "datareporting.healthreport.uploadEnabled": True,
-                "datareporting.policy.dataSubmissionEnabled": True,
-                "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
-                "datareporting.usage.uploadEnabled": True,
-                "toolkit.telemetry.log.level": "Trace",
-                "toolkit.telemetry.log.dump": True,
-                "toolkit.telemetry.send.overrideOfficialCheck": True,
-                "toolkit.telemetry.testing.disableFuzzingDelay": True,
-                
-                
-                "app.normandy.enabled": False,
-                
-                
-                "app.shield.optoutstudies.enabled": False,
-                
-                
-                "screenshots.browser.component.enabled": False,
-            }
-        )
+        prefs.update({
+            
+            
+            
+            "browser.region.network.url": "",
+            
+            "browser.cache.disk.smart_size.enabled": False,
+            "toolkit.telemetry.server": f"{SERVER_URL}/pings",
+            "telemetry.fog.test.localhost_port": -1,
+            "toolkit.telemetry.initDelay": 1,
+            "toolkit.telemetry.minSubsessionLength": 0,
+            "datareporting.healthreport.uploadEnabled": True,
+            "datareporting.policy.dataSubmissionEnabled": True,
+            "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
+            "datareporting.usage.uploadEnabled": True,
+            "toolkit.telemetry.log.level": "Trace",
+            "toolkit.telemetry.log.dump": True,
+            "toolkit.telemetry.send.overrideOfficialCheck": True,
+            "toolkit.telemetry.testing.disableFuzzingDelay": True,
+            
+            
+            "app.normandy.enabled": False,
+            
+            
+            "app.shield.optoutstudies.enabled": False,
+            
+            
+            "screenshots.browser.component.enabled": False,
+        })
 
         super().__init__(prefs=prefs, **kwargs)
 

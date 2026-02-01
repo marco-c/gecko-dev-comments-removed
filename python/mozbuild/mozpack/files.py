@@ -1253,13 +1253,11 @@ class MercurialRevisionFinder(BaseFinder):
 
         
         
-        out = self._client.rawcommand(
-            [
-                b"files",
-                b"--rev",
-                self._rev.encode(),
-            ]
-        )
+        out = self._client.rawcommand([
+            b"files",
+            b"--rev",
+            self._rev.encode(),
+        ])
         for relpath in out.splitlines():
             
             

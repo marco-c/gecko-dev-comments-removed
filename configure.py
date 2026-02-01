@@ -2,7 +2,6 @@
 
 
 
-import codecs
 import itertools
 import logging
 import os
@@ -227,7 +226,7 @@ def config_status(config, execute=True):
     
     
     
-    with codecs.open("config.status", "w", "utf-8") as fh:
+    with open("config.status", "w", encoding="utf-8") as fh:
         fh.write(
             textwrap.dedent(
                 """\
@@ -242,7 +241,7 @@ def config_status(config, execute=True):
             fh.write("%s = " % k)
             pprint.pprint(v, stream=fh, indent=4)
         fh.write(
-            "__all__ = ['topobjdir', 'topsrcdir', 'defines', " "'substs', 'mozconfig']"
+            "__all__ = ['topobjdir', 'topsrcdir', 'defines', 'substs', 'mozconfig']"
         )
 
         if execute:

@@ -571,15 +571,13 @@ def process_special_casing(special_casing, table, index):
     )
 
     
-    assert set(
-        [
-            "After_I",
-            "After_Soft_Dotted",
-            "Final_Sigma",
-            "More_Above",
-            "Not_Before_Dot",
-        ]
-    ).issuperset(
+    assert set([
+        "After_I",
+        "After_Soft_Dotted",
+        "Final_Sigma",
+        "More_Above",
+        "Not_Before_Dot",
+    ]).issuperset(
         set(
             filter(
                 partial(is_not, None),

@@ -57,12 +57,10 @@ RELEASE_PROMOTION_PROJECTS = {
     "try-comm-central",
 } | RELEASE_PROJECTS
 
-TEMPORARY_PROJECTS = set(
-    {
-        
-        "oak",
-    }
-)
+TEMPORARY_PROJECTS = set({
+    
+    "oak",
+})
 
 TRY_PROJECTS = {
     "staging-firefox",  

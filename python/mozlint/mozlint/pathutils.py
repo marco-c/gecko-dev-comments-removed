@@ -196,7 +196,6 @@ def filterpaths(
         
         
         for inc in include:
-
             
             
             if inc.isfile and path.path == inc.path:

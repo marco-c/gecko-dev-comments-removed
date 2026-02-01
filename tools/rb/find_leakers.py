@@ -50,9 +50,7 @@ def process_log(log_lines):
             ignore,
             operation,
             count,
-        ) = log_line.strip("\r\n").split(
-            " "
-        )[:5]
+        ) = log_line.strip("\r\n").split(" ")[:5]
 
         
         

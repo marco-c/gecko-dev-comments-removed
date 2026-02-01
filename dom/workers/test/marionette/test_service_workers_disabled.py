@@ -23,11 +23,9 @@ class ServiceWorkersDisabledTestCase(MarionetteServiceWorkerTestCase):
     def test_service_workers_disabled_at_startup(self):
         
         
-        self.marionette.instance.profile.set_preferences(
-            {
-                "dom.serviceWorkers.enabled": False,
-            }
-        )
+        self.marionette.instance.profile.set_preferences({
+            "dom.serviceWorkers.enabled": False,
+        })
 
         self.marionette.restart()
 

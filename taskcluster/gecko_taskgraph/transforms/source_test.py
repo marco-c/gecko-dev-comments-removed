@@ -7,7 +7,6 @@ with either `platform` or a list of `platforms`, and set the appropriate
 treeherder configuration and attributes for that platform.
 """
 
-
 import copy
 import os
 
@@ -19,40 +18,36 @@ from voluptuous import Any, Extra, Optional, Required
 
 from gecko_taskgraph.transforms.job import job_description_schema
 
-source_test_description_schema = Schema(
-    {
-        
-        
-        Extra: object,
-        
-        
-        
-        Required("platform"): Any(str, [str]),
-        
-        
-        
-        
-        Optional("require-build"): optionally_keyed_by("project", {str: str}),
-        
-        
-        Required("worker-type"): optionally_keyed_by(
-            "platform", job_description_schema["worker-type"]
-        ),
-        Required("worker"): optionally_keyed_by(
-            "platform", job_description_schema["worker"]
-        ),
-        Optional("dependencies"): {
-            k: optionally_keyed_by("platform", v)
-            for k, v in job_description_schema["dependencies"].items()
-        },
-        
-        Optional("fetches"): {
-            str: optionally_keyed_by(
-                "platform", job_description_schema["fetches"][str]
-            ),
-        },
-    }
-)
+source_test_description_schema = Schema({
+    
+    
+    Extra: object,
+    
+    
+    
+    Required("platform"): Any(str, [str]),
+    
+    
+    
+    
+    Optional("require-build"): optionally_keyed_by("project", {str: str}),
+    
+    
+    Required("worker-type"): optionally_keyed_by(
+        "platform", job_description_schema["worker-type"]
+    ),
+    Required("worker"): optionally_keyed_by(
+        "platform", job_description_schema["worker"]
+    ),
+    Optional("dependencies"): {
+        k: optionally_keyed_by("platform", v)
+        for k, v in job_description_schema["dependencies"].items()
+    },
+    
+    Optional("fetches"): {
+        str: optionally_keyed_by("platform", job_description_schema["fetches"][str]),
+    },
+})
 
 transforms = TransformSequence()
 

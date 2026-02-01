@@ -23,54 +23,52 @@ from gecko_taskgraph.util.hash import hash_paths
 
 CACHE_TYPE = "toolchains.v3"
 
-toolchain_run_schema = Schema(
-    {
-        Required("using"): "toolchain-script",
-        
-        
-        
-        Required("script"): str,
-        
-        Optional("arguments"): [str],
-        
-        
-        Required("tooltool-downloads"): Any(
-            False,
-            "public",
-            "internal",
-        ),
-        
-        
-        
-        
-        
-        
-        Required("sparse-profile"): Any(str, None),
-        
-        Optional("sparse-profile-prefix"): str,
-        
-        
-        Optional("resources"): [str],
-        
-        Required("toolchain-artifact"): str,
-        Optional(
-            "toolchain-alias",
-            description="An alias that can be used instead of the real toolchain job name in "
-            "fetch stanzas for jobs.",
-        ): optionally_keyed_by("project", Any(None, str, [str])),
-        Optional(
-            "toolchain-env",
-            description="Additional env variables to add to the worker when using this toolchain",
-        ): {str: object},
-        Optional(
-            "toolchain-extract",
-            description="Whether the toolchain should be extracted after it is fetched "
-            + "(default: True)",
-        ): bool,
-        
-        Optional("workdir"): str,
-    }
-)
+toolchain_run_schema = Schema({
+    Required("using"): "toolchain-script",
+    
+    
+    
+    Required("script"): str,
+    
+    Optional("arguments"): [str],
+    
+    
+    Required("tooltool-downloads"): Any(
+        False,
+        "public",
+        "internal",
+    ),
+    
+    
+    
+    
+    
+    
+    Required("sparse-profile"): Any(str, None),
+    
+    Optional("sparse-profile-prefix"): str,
+    
+    
+    Optional("resources"): [str],
+    
+    Required("toolchain-artifact"): str,
+    Optional(
+        "toolchain-alias",
+        description="An alias that can be used instead of the real toolchain job name in "
+        "fetch stanzas for jobs.",
+    ): optionally_keyed_by("project", Any(None, str, [str])),
+    Optional(
+        "toolchain-env",
+        description="Additional env variables to add to the worker when using this toolchain",
+    ): {str: object},
+    Optional(
+        "toolchain-extract",
+        description="Whether the toolchain should be extracted after it is fetched "
+        + "(default: True)",
+    ): bool,
+    
+    Optional("workdir"): str,
+})
 
 
 def get_digest_data(config, run, taskdesc):
@@ -151,13 +149,11 @@ def common_toolchain(config, job, taskdesc, is_docker):
     digest_data = get_digest_data(config, run, taskdesc)
 
     env = worker.setdefault("env", {})
-    env.update(
-        {
-            "MOZ_BUILD_DATE": config.params["moz_build_date"],
-            "MOZ_SCM_LEVEL": config.params["level"],
-            "TOOLCHAIN_ARTIFACT": run.pop("toolchain-artifact"),
-        }
-    )
+    env.update({
+        "MOZ_BUILD_DATE": config.params["moz_build_date"],
+        "MOZ_SCM_LEVEL": config.params["level"],
+        "TOOLCHAIN_ARTIFACT": run.pop("toolchain-artifact"),
+    })
 
     if is_docker:
         

@@ -4,6 +4,7 @@
 """
 Add notifications via taskcluster-notify for release tasks
 """
+
 from string import Formatter
 
 from taskgraph.transforms.base import TransformSequence
@@ -67,20 +68,18 @@ def add_notifications(config, jobs):
             
             status_types = notifications.get("status-types", ["on-completed"])
             for s in status_types:
-                job.setdefault("routes", []).extend(
-                    [f"notify.email.{email}.{s}" for email in emails]
-                )
+                job.setdefault("routes", []).extend([
+                    f"notify.email.{email}.{s}" for email in emails
+                ])
 
             
-            job.setdefault("extra", {}).update(
-                {
-                    "notify": {
-                        "email": {
-                            "subject": subject,
-                        }
+            job.setdefault("extra", {}).update({
+                "notify": {
+                    "email": {
+                        "subject": subject,
                     }
                 }
-            )
+            })
             if message:
                 job["extra"]["notify"]["email"]["content"] = message
 

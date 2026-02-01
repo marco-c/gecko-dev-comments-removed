@@ -1,8 +1,8 @@
 
 
 
-""" Script that launches profiles creation.
-"""
+"""Script that launches profiles creation."""
+
 import argparse
 import os
 import sys

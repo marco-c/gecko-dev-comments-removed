@@ -83,9 +83,10 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
     if not lintargs.get("formatonly", False):
         exclude_args = []
         for path in config.get("exclude", []):
-            exclude_args.extend(
-                ["--ignore-pattern", os.path.relpath(path, lintargs["root"])]
-            )
+            exclude_args.extend([
+                "--ignore-pattern",
+                os.path.relpath(path, lintargs["root"]),
+            ])
 
         
         stylelint_rc = config.get("stylelint-rc", ".stylelintrc.js")
@@ -205,15 +206,13 @@ def run(cmd_args, config, fix):
                 
                 
                 msg = msg.replace("(" + err.get("rule") + ")", "").strip()
-            err.update(
-                {
-                    "message": msg,
-                    "level": err.get("severity") or "error",
-                    "lineno": err.get("line") or 0,
-                    "path": obj["source"],
-                    "rule": err.get("rule") or "parseError",
-                }
-            )
+            err.update({
+                "message": msg,
+                "level": err.get("severity") or "error",
+                "lineno": err.get("line") or 0,
+                "path": obj["source"],
+                "rule": err.get("rule") or "parseError",
+            })
             results.append(result.from_config(config, **err))
 
     return {"results": results, "fixed": fixed}

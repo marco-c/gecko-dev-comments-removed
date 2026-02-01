@@ -33,94 +33,92 @@ def _by_platform(arg):
     return optionally_keyed_by("build-platform", arg)
 
 
-l10n_description_schema = Schema(
-    {
+l10n_description_schema = Schema({
+    
+    Required("name"): str,
+    
+    Required("build-platform"): str,
+    
+    Required("run-time"): _by_platform(int),
+    
+    Required("ignore-locales"): _by_platform([str]),
+    
+    Required("mozharness"): {
         
-        Required("name"): str,
+        Required("script"): _by_platform(str),
         
-        Required("build-platform"): str,
-        
-        Required("run-time"): _by_platform(int),
-        
-        Required("ignore-locales"): _by_platform([str]),
-        
-        Required("mozharness"): {
-            
-            Required("script"): _by_platform(str),
-            
-            Required("config"): _by_platform([str]),
-            
-            
-            Optional("config-paths"): [str],
-            
-            Optional("options"): _by_platform([str]),
-            
-            Required("actions"): _by_platform([str]),
-            
-            
-            Optional("comm-checkout"): bool,
-        },
-        
-        Optional("index"): {
-            
-            Required("product"): _by_platform(str),
-            
-            Required("job-name"): _by_platform(str),
-            
-            Optional("type"): _by_platform(str),
-        },
-        
-        Required("description"): _by_platform(str),
-        Optional("run-on-projects"): job_description_schema["run-on-projects"],
-        Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
-        
-        Required("worker-type"): _by_platform(str),
-        
-        Required("locales-file"): _by_platform(str),
-        
-        Required("tooltool"): _by_platform(Any("internal", "public")),
+        Required("config"): _by_platform([str]),
         
         
-        Optional("docker-image"): _by_platform(
-            
-            {"in-tree": str},
-        ),
-        Optional("fetches"): {
-            str: _by_platform([str]),
-        },
+        Optional("config-paths"): [str],
+        
+        Optional("options"): _by_platform([str]),
+        
+        Required("actions"): _by_platform([str]),
         
         
+        Optional("comm-checkout"): bool,
+    },
+    
+    Optional("index"): {
         
+        Required("product"): _by_platform(str),
         
+        Required("job-name"): _by_platform(str),
         
-        Optional("secrets"): _by_platform(Any(bool, [str])),
+        Optional("type"): _by_platform(str),
+    },
+    
+    Required("description"): _by_platform(str),
+    Optional("run-on-projects"): job_description_schema["run-on-projects"],
+    Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
+    
+    Required("worker-type"): _by_platform(str),
+    
+    Required("locales-file"): _by_platform(str),
+    
+    Required("tooltool"): _by_platform(Any("internal", "public")),
+    
+    
+    Optional("docker-image"): _by_platform(
         
-        Required("treeherder"): {
-            
-            Required("platform"): _by_platform(str),
-            
-            Required("symbol"): str,
-            
-            Required("tier"): _by_platform(int),
-        },
+        {"in-tree": str},
+    ),
+    Optional("fetches"): {
+        str: _by_platform([str]),
+    },
+    
+    
+    
+    
+    
+    Optional("secrets"): _by_platform(Any(bool, [str])),
+    
+    Required("treeherder"): {
         
-        Optional("env"): _by_platform({str: taskref_or_string}),
+        Required("platform"): _by_platform(str),
         
-        Optional("locales-per-chunk"): _by_platform(int),
+        Required("symbol"): str,
         
-        
-        Optional("dependencies"): {str: str},
-        
-        Optional("when"): {"files-changed": [str]},
-        
-        Optional("attributes"): job_description_schema["attributes"],
-        Optional("extra"): job_description_schema["extra"],
-        
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("task-from"): task_description_schema["task-from"],
-    }
-)
+        Required("tier"): _by_platform(int),
+    },
+    
+    Optional("env"): _by_platform({str: taskref_or_string}),
+    
+    Optional("locales-per-chunk"): _by_platform(int),
+    
+    
+    Optional("dependencies"): {str: str},
+    
+    Optional("when"): {"files-changed": [str]},
+    
+    Optional("attributes"): job_description_schema["attributes"],
+    Optional("extra"): job_description_schema["extra"],
+    
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("task-from"): task_description_schema["task-from"],
+})
 
 transforms = TransformSequence()
 
@@ -296,12 +294,10 @@ def chunk_locales(config, jobs):
                 chunked_locales = chunkify(
                     locales_with_changesets_as_list, this_chunk, chunks
                 )
-                chunked["mozharness"]["options"].extend(
-                    [
-                        f"locale={locale}:{changeset}"
-                        for locale, changeset in chunked_locales
-                    ]
-                )
+                chunked["mozharness"]["options"].extend([
+                    f"locale={locale}:{changeset}"
+                    for locale, changeset in chunked_locales
+                ])
                 chunked["attributes"]["l10n_chunk"] = str(this_chunk)
                 
                 chunked["attributes"]["chunk_locales"] = [
@@ -315,12 +311,10 @@ def chunk_locales(config, jobs):
                 yield chunked
         else:
             job["mozharness"]["options"] = job["mozharness"].get("options", [])
-            job["mozharness"]["options"].extend(
-                [
-                    f"locale={locale}:{changeset}"
-                    for locale, changeset in sorted(locales_with_changesets.items())
-                ]
-            )
+            job["mozharness"]["options"].extend([
+                f"locale={locale}:{changeset}"
+                for locale, changeset in sorted(locales_with_changesets.items())
+            ])
             yield job
 
 
@@ -353,13 +347,11 @@ def set_extra_config(config, jobs):
 @transforms.add
 def make_job_description(config, jobs):
     for job in jobs:
-        job["mozharness"].update(
-            {
-                "using": "mozharness",
-                "job-script": "taskcluster/scripts/builder/build-l10n.sh",
-                "secrets": job.get("secrets", False),
-            }
-        )
+        job["mozharness"].update({
+            "using": "mozharness",
+            "job-script": "taskcluster/scripts/builder/build-l10n.sh",
+            "secrets": job.get("secrets", False),
+        })
         job_description = {
             "name": job["name"],
             "worker-type": job["worker-type"],
@@ -437,11 +429,9 @@ def add_macos_signing_artifacts(config, jobs):
         assert build_dep, f"l10n job {job['name']} has no build dependency"
         for path, artifact in build_dep.task["payload"]["artifacts"].items():
             if path.startswith("public/build/security/"):
-                job["worker"].setdefault("artifacts", []).append(
-                    {
-                        "name": path,
-                        "path": artifact["path"],
-                        "type": "file",
-                    }
-                )
+                job["worker"].setdefault("artifacts", []).append({
+                    "name": path,
+                    "path": artifact["path"],
+                    "type": "file",
+                })
         yield job

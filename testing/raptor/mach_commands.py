@@ -137,12 +137,10 @@ class RaptorRunner(MozbuildObject):
             
             
             
-            self.config.update(
-                {
-                    "browsertime_browsertimejs": browsertime.browsertime_path(),
-                    "browsertime_vismet_script": browsertime.visualmetrics_path(),
-                }
-            )
+            self.config.update({
+                "browsertime_browsertimejs": browsertime.browsertime_path(),
+                "browsertime_vismet_script": browsertime.visualmetrics_path(),
+            })
 
             def _get_browsertime_package():
                 with open(
@@ -179,9 +177,9 @@ class RaptorRunner(MozbuildObject):
                 
                 
                 btime_cache = os.path.join(self.config["mozbuild_path"], "browsertime")
-                if not os.path.exists(btime_cache) or not any(
-                    ["ffmpeg" in cache_dir for cache_dir in os.listdir(btime_cache)]
-                ):
+                if not os.path.exists(btime_cache) or not any([
+                    "ffmpeg" in cache_dir for cache_dir in os.listdir(btime_cache)
+                ]):
                     return True
 
                 

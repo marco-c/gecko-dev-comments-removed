@@ -15,23 +15,21 @@ def inline(doc):
 
 
 
-DEFAULT_WINDOWS = set(
-    [
-        
-        
-        (inline("""<div">Lorem</div>"""),),
-        
-        (
-            inline("""<div">ipsum</div>"""),
-            inline("""<div">dolor</div>"""),
-        ),
-        
-        (
-            inline("""<div">sit</div>"""),
-            inline("""<div">amet</div>"""),
-        ),
-    ]
-)
+DEFAULT_WINDOWS = set([
+    
+    
+    (inline("""<div">Lorem</div>"""),),
+    
+    (
+        inline("""<div">ipsum</div>"""),
+        inline("""<div">dolor</div>"""),
+    ),
+    
+    (
+        inline("""<div">sit</div>"""),
+        inline("""<div">amet</div>"""),
+    ),
+])
 
 
 class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
@@ -53,37 +51,33 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
 
         self.test_windows = test_windows
 
-        self.private_windows = set(
-            [
-                (
-                    inline("""<div">consectetur</div>"""),
-                    inline("""<div">ipsum</div>"""),
-                ),
-                (
-                    inline("""<div">adipiscing</div>"""),
-                    inline("""<div">consectetur</div>"""),
-                ),
-            ]
-        )
+        self.private_windows = set([
+            (
+                inline("""<div">consectetur</div>"""),
+                inline("""<div">ipsum</div>"""),
+            ),
+            (
+                inline("""<div">adipiscing</div>"""),
+                inline("""<div">consectetur</div>"""),
+            ),
+        ])
 
-        self.marionette.enforce_gecko_prefs(
-            {
-                
-                
-                "browser.startup.page": startup_page,
-                
-                
-                "browser.sessionstore.restore_on_demand": restore_on_demand,
-                
-                
-                
-                "browser.sessionstore.debug.no_auto_updates": no_auto_updates,
-                
-                "toolkit.winRegisterApplicationRestart": win_register_restart,
-                
-                "browser.taskbarTabs.enabled": taskbartabs_enable,
-            }
-        )
+        self.marionette.enforce_gecko_prefs({
+            
+            
+            "browser.startup.page": startup_page,
+            
+            
+            "browser.sessionstore.restore_on_demand": restore_on_demand,
+            
+            
+            
+            "browser.sessionstore.debug.no_auto_updates": no_auto_updates,
+            
+            "toolkit.winRegisterApplicationRestart": win_register_restart,
+            
+            "browser.taskbarTabs.enabled": taskbartabs_enable,
+        })
 
         self.all_windows = self.test_windows.copy()
         self.open_windows(self.test_windows)
