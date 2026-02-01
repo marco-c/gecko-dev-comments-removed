@@ -11,7 +11,6 @@
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_CONGESTION_CONTROL_FEEDBACK_TRACKER_H_
 
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 #include "api/transport/ecn_marking.h"
@@ -42,16 +41,36 @@ class CongestionControlFeedbackTracker {
 
  private:
   struct PacketInfo {
-    int64_t unwrapped_sequence_number = 0;
-    Timestamp arrival_time;
+    bool received() const { return arrival_time != Timestamp::MinusInfinity(); }
+
+    Timestamp arrival_time = Timestamp::MinusInfinity();
     EcnMarking ecn = EcnMarking::kNotEct;
   };
 
+  
+  
+  
+  PacketInfo* FindOrCreatePacketInfo(int64_t sequence_number);
+
   const uint32_t ssrc_;
-  std::optional<int64_t> last_sequence_number_in_feedback_;
   SeqNumUnwrapper<uint16_t> unwrapper_;
 
+  
+  
+  
   std::vector<PacketInfo> packets_;
+
+  
+  
+  int64_t first_sequence_number_in_packets_ = -1;
+
+  
+  
+  int64_t next_sequence_number_in_feedback_ = -1;
+
+  
+  
+  int num_ignored_packets_since_last_feedback_ = 0;
 };
 
 }  

@@ -25,9 +25,13 @@ namespace webrtc {
 namespace {
 
 using ::testing::AllOf;
+using ::testing::Contains;
 using ::testing::Field;
+using ::testing::Ge;
+using ::testing::IsEmpty;
 using ::testing::Property;
 using ::testing::SizeIs;
+using PacketInfo = ::webrtc::rtcp::CongestionControlFeedback::PacketInfo;
 
 constexpr uint32_t kSsrc = 1234;
 
@@ -101,6 +105,42 @@ TEST(CongestionControlFeedbackTrackerTest,
               feedback_time - packet_1.arrival_time()),
           Field(&rtcp::CongestionControlFeedback::PacketInfo::ecn,
                 EcnMarking::kCe)));
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     ReportsFirstArrivalTimeButEcnFromCeWhenReceivedBetweenFeedback) {
+  using enum EcnMarking;
+  CongestionControlFeedbackTracker tracker(kSsrc);
+
+  RtpPacketReceived packet = CreatePacket(
+      Timestamp::Millis(123), 1, kEct1);
+  tracker.ReceivedPacket(packet);
+  tracker.ReceivedPacket(CreatePacket(Timestamp::Millis(123),
+                                      2, kEct1));
+
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  Timestamp feedback_time1 = Timestamp::Millis(567);
+  tracker.AddPacketsToFeedback(feedback_time1, feedback_info);
+  EXPECT_THAT(feedback_info,
+              Contains(AllOf(Field(&PacketInfo::sequence_number, 1),
+                             Field(&PacketInfo::arrival_time_offset,
+                                   feedback_time1 - packet.arrival_time()),
+                             Field(&PacketInfo::ecn, kEct1))));
+
+  
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(600), 1, kCe));
+
+  
+  
+  feedback_info.clear();
+  Timestamp feedback_time2 = Timestamp::Millis(700);
+  tracker.AddPacketsToFeedback(Timestamp::Millis(700), feedback_info);
+  EXPECT_THAT(feedback_info,
+              Contains(AllOf(Field(&PacketInfo::sequence_number, 1),
+                             Field(&PacketInfo::arrival_time_offset,
+                                   feedback_time2 - packet.arrival_time()),
+                             Field(&PacketInfo::ecn, kCe))));
 }
 
 TEST(CongestionControlFeedbackTrackerTest,
@@ -189,12 +229,154 @@ TEST(CongestionControlFeedbackTrackerTest,
   EXPECT_THAT(feedback_info[0].arrival_time_offset,
               feedback_time - packet_2.arrival_time());
   EXPECT_THAT(feedback_info[1].sequence_number, 2);
-  
-  
-  EXPECT_THAT(feedback_info[1].arrival_time_offset, TimeDelta::MinusInfinity());
+  EXPECT_THAT(feedback_info[1].arrival_time_offset,
+              feedback_time - packet_1.arrival_time());
   EXPECT_THAT(feedback_info[2].sequence_number, 3);
   EXPECT_THAT(feedback_info[2].arrival_time_offset,
               feedback_time - packet_3.arrival_time());
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     IgnoresPacketsReceivedWithTooSmallSequenceNumber) {
+  CongestionControlFeedbackTracker tracker(kSsrc);
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(125), 1065));
+  
+  
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(130), 1000));
+
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  tracker.AddPacketsToFeedback(Timestamp::Millis(135), feedback_info);
+
+  ASSERT_THAT(feedback_info, SizeIs(1));
+  EXPECT_EQ(feedback_info[0].sequence_number, 1065);
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     CreatesFeedbackForPacketsReceivedWithSmallPositiveJumpInSequenceNumber) {
+  CongestionControlFeedbackTracker tracker(kSsrc);
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(125), 1'000));
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(130), 1'200));
+
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  tracker.AddPacketsToFeedback(Timestamp::Millis(135), feedback_info);
+
+  ASSERT_THAT(feedback_info, SizeIs(Ge(2)));
+  EXPECT_EQ(feedback_info.front().sequence_number, 1'000);
+  EXPECT_EQ(feedback_info.back().sequence_number, 1'200);
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     IgnoresPacketsReceivedWithLargePositiveJumpInSequenceNumber) {
+  CongestionControlFeedbackTracker tracker(kSsrc);
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(125), 1'000));
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(130), 20'000));
+
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  tracker.AddPacketsToFeedback(Timestamp::Millis(135), feedback_info);
+
+  ASSERT_THAT(feedback_info, SizeIs(1));
+  EXPECT_EQ(feedback_info.front().sequence_number, 1'000);
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     ResumeProducingReportsAfterBackwardSequenceNumberJump) {
+  CongestionControlFeedbackTracker tracker(kSsrc);
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(130), 10'000));
+
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(140), 1000));
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  tracker.AddPacketsToFeedback(Timestamp::Millis(150), feedback_info);
+  
+  ASSERT_THAT(feedback_info, SizeIs(1));
+  EXPECT_EQ(feedback_info[0].sequence_number, 10'000);
+
+  
+  
+  feedback_info = {};
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(160), 1001));
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(170), 1002));
+  tracker.AddPacketsToFeedback(Timestamp::Millis(180), feedback_info);
+  
+  
+
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(180), 1003));
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(190), 1004));
+  tracker.AddPacketsToFeedback(Timestamp::Millis(200), feedback_info);
+
+  ASSERT_THAT(feedback_info, Not(IsEmpty()));
+  EXPECT_EQ(feedback_info.back().sequence_number, 1004);
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     ResumeProducingReportsAfterForwardSequenceNumberJump) {
+  CongestionControlFeedbackTracker tracker(kSsrc);
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(130), 1'000));
+
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(140), 20'000));
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  tracker.AddPacketsToFeedback(Timestamp::Millis(150), feedback_info);
+  
+  ASSERT_THAT(feedback_info, SizeIs(1));
+  EXPECT_EQ(feedback_info[0].sequence_number, 1'000);
+
+  
+  
+  feedback_info = {};
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(160), 20'001));
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(170), 20'002));
+  tracker.AddPacketsToFeedback(Timestamp::Millis(180), feedback_info);
+  
+  
+
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(180), 20'003));
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(190), 20'004));
+  tracker.AddPacketsToFeedback(Timestamp::Millis(200), feedback_info);
+
+  ASSERT_THAT(feedback_info, Not(IsEmpty()));
+  EXPECT_EQ(feedback_info.back().sequence_number, 20'004);
+}
+
+TEST(CongestionControlFeedbackTrackerTest,
+     DoesntResetStateOnPeriodsOfInactivity) {
+  CongestionControlFeedbackTracker tracker(kSsrc);
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(130), 1'000));
+
+  std::vector<rtcp::CongestionControlFeedback::PacketInfo> feedback_info;
+  tracker.AddPacketsToFeedback(Timestamp::Millis(140), feedback_info);
+  ASSERT_THAT(feedback_info, Not(IsEmpty()));
+
+  feedback_info = {};
+  tracker.AddPacketsToFeedback(Timestamp::Millis(150), feedback_info);
+  EXPECT_THAT(feedback_info, IsEmpty());
+
+  tracker.AddPacketsToFeedback(Timestamp::Millis(160), feedback_info);
+  EXPECT_THAT(feedback_info, IsEmpty());
+
+  tracker.ReceivedPacket(CreatePacket(
+      Timestamp::Millis(170), 998));
+  tracker.AddPacketsToFeedback(Timestamp::Millis(180), feedback_info);
+  ASSERT_THAT(feedback_info, SizeIs(3));
+  EXPECT_EQ(feedback_info[0].sequence_number, 998);
+  EXPECT_EQ(feedback_info[2].sequence_number, 1000);
 }
 
 }  

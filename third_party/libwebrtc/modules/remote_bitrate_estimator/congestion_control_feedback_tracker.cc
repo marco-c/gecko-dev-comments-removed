@@ -12,10 +12,8 @@
 #include "modules/remote_bitrate_estimator/congestion_control_feedback_tracker.h"
 
 #include <cstdint>
-#include <tuple>
 #include <vector>
 
-#include "absl/algorithm/container.h"
 #include "api/transport/ecn_marking.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -27,93 +25,157 @@
 namespace webrtc {
 
 constexpr int kMaxPacketsPerSsrc = 16384;
+constexpr int kMaxPacketsToKeepForReorderCalculation = 64;
+
+CongestionControlFeedbackTracker::PacketInfo*
+CongestionControlFeedbackTracker::FindOrCreatePacketInfo(
+    int64_t sequence_number) {
+  if (packets_.empty()) {
+    
+    
+    
+    
+    
+    packets_.resize(kMaxPacketsToKeepForReorderCalculation);
+    first_sequence_number_in_packets_ =
+        sequence_number - kMaxPacketsToKeepForReorderCalculation + 1;
+    next_sequence_number_in_feedback_ = sequence_number;
+    return &packets_.back();
+  }
+
+  if (sequence_number < first_sequence_number_in_packets_) {
+    RTC_LOG(LS_VERBOSE) << "Received too old packet ssrc:" << ssrc_
+                        << " seq:" << sequence_number << ". Expected seq >= "
+                        << first_sequence_number_in_packets_
+                        << ". Ignoring the packet.";
+    return nullptr;
+  }
+
+  if (sequence_number >=
+      first_sequence_number_in_packets_ + std::ssize(packets_)) {
+    int64_t new_size = sequence_number - first_sequence_number_in_packets_ + 1;
+    if (new_size > kMaxPacketsPerSsrc) {
+      RTC_LOG(LS_VERBOSE)
+          << "Received too new packet ssrc:" << ssrc_
+          << " seq:" << sequence_number
+          << " that would increase number of packet to report to " << new_size
+          << " from current " << packets_.size()
+          << ", first seq:" << first_sequence_number_in_packets_
+          << ". Ignoring the packet.";
+      return nullptr;
+    }
+
+    packets_.resize(new_size);
+    return &packets_.back();
+  }
+
+  
+  return &packets_[sequence_number - first_sequence_number_in_packets_];
+}
 
 void CongestionControlFeedbackTracker::ReceivedPacket(
     const RtpPacketReceived& packet) {
   RTC_DCHECK_EQ(packet.Ssrc(), ssrc_);
-  if (packets_.size() > kMaxPacketsPerSsrc) {
-    RTC_LOG(LS_VERBOSE)
-        << "Unexpected number of packets without sending reports:"
-        << packets_.size();
+
+  int64_t sequence_number = unwrapper_.Unwrap(packet.SequenceNumber());
+  PacketInfo* info = FindOrCreatePacketInfo(sequence_number);
+  if (info == nullptr) {
+    ++num_ignored_packets_since_last_feedback_;
     return;
   }
-  int64_t unwrapped_sequence_number =
-      unwrapper_.Unwrap(packet.SequenceNumber());
-  if (last_sequence_number_in_feedback_ &&
-      unwrapped_sequence_number < *last_sequence_number_in_feedback_ + 1) {
+
+  if (info->received()) {
+    
+    
+    
+    
+    
+    if (packet.ecn() == EcnMarking::kCe && info->ecn != EcnMarking::kCe) {
+      info->ecn = EcnMarking::kCe;
+    } else {
+      
+      
+      return;
+    }
+  } else {
+    
+    info->arrival_time = packet.arrival_time();
+    info->ecn = packet.ecn();
+  }
+
+  
+  
+  if (sequence_number < next_sequence_number_in_feedback_) {
     RTC_LOG(LS_WARNING)
         << "Received packet unorderered between feeedback. SSRC: "
         << packet.Ssrc() << " Seq: " << packet.SequenceNumber()
-        << " last feedback: "
-        << static_cast<uint16_t>(*last_sequence_number_in_feedback_);
-    
-    
-    
-    
-    
-    
-    last_sequence_number_in_feedback_ = unwrapped_sequence_number - 1;
+        << " last feedback: " << next_sequence_number_in_feedback_;
+    next_sequence_number_in_feedback_ = sequence_number;
   }
-  packets_.push_back({.unwrapped_sequence_number = unwrapped_sequence_number,
-                      .arrival_time = packet.arrival_time(),
-                      .ecn = packet.ecn()});
 }
 
 void CongestionControlFeedbackTracker::AddPacketsToFeedback(
     Timestamp feedback_time,
     std::vector<rtcp::CongestionControlFeedback::PacketInfo>& packet_feedback) {
   if (packets_.empty()) {
+    
     return;
   }
-  absl::c_sort(packets_, [](const PacketInfo& a, const PacketInfo& b) {
-    return std::tie(a.unwrapped_sequence_number, a.arrival_time) <
-           std::tie(b.unwrapped_sequence_number, b.arrival_time);
-  });
-  if (!last_sequence_number_in_feedback_) {
-    last_sequence_number_in_feedback_ =
-        packets_.front().unwrapped_sequence_number - 1;
+
+  RTC_DCHECK_GE(next_sequence_number_in_feedback_,
+                first_sequence_number_in_packets_);
+  RTC_DCHECK_LE(next_sequence_number_in_feedback_,
+                first_sequence_number_in_packets_ + std::ssize(packets_));
+
+  if (next_sequence_number_in_feedback_ ==
+      first_sequence_number_in_packets_ + std::ssize(packets_)) {
+    
+    if (num_ignored_packets_since_last_feedback_ > 0) {
+      
+      
+      
+      RTC_LOG(LS_WARNING)
+          << num_ignored_packets_since_last_feedback_
+          << " received packets were discarded while no packets were accepted "
+             "to produce feedback for SSRC: "
+          << ssrc_
+          << ". Assuming sequence numbers were reset, "
+             "reset state and next sequence number in feedback from "
+          << next_sequence_number_in_feedback_;
+      
+      
+      packets_.clear();
+      num_ignored_packets_since_last_feedback_ = 0;
+    }
+    return;
   }
+  num_ignored_packets_since_last_feedback_ = 0;
 
-  auto packet_it = packets_.begin();
-  for (int64_t sequence_number = *last_sequence_number_in_feedback_ + 1;
-       sequence_number <= packets_.back().unwrapped_sequence_number &&
-       sequence_number <=
-           *last_sequence_number_in_feedback_ + kMaxPacketsPerSsrc;
-       ++sequence_number) {
-    RTC_DCHECK(packet_it != packets_.end());
+  uint16_t rtp_sequence_number =
+      static_cast<uint16_t>(next_sequence_number_in_feedback_);
+  for (auto it = packets_.begin() + (next_sequence_number_in_feedback_ -
+                                     first_sequence_number_in_packets_);
+       it != packets_.end(); ++it, ++rtp_sequence_number) {
+    const PacketInfo& info = *it;
 
-    EcnMarking ecn = EcnMarking::kNotEct;
-    TimeDelta arrival_time_offset = TimeDelta::MinusInfinity();
-
-    if (sequence_number == packet_it->unwrapped_sequence_number) {
-      arrival_time_offset = feedback_time - packet_it->arrival_time;
-      ecn = packet_it->ecn;
-      ++packet_it;
-      while (packet_it != packets_.end() &&
-             packet_it->unwrapped_sequence_number == sequence_number) {
-        
-        
-        
-        
-        
-        
-        if (packet_it->ecn == EcnMarking::kCe) {
-          ecn = EcnMarking::kCe;
-        }
-        RTC_LOG(LS_WARNING) << "Received duplicate packet ssrc:" << ssrc_
-                            << " seq:" << static_cast<uint16_t>(sequence_number)
-                            << " ecn: " << static_cast<int>(ecn);
-        ++packet_it;
-      }
-    }  
     packet_feedback.push_back(
         {.ssrc = ssrc_,
-         .sequence_number = static_cast<uint16_t>(sequence_number),
-         .arrival_time_offset = arrival_time_offset,
-         .ecn = ecn});
+         .sequence_number = rtp_sequence_number,
+         .arrival_time_offset = info.received()
+                                    ? feedback_time - info.arrival_time
+                                    : TimeDelta::MinusInfinity(),
+         .ecn = info.ecn});
   }
-  last_sequence_number_in_feedback_ = packets_.back().unwrapped_sequence_number;
-  packets_.clear();
+
+  next_sequence_number_in_feedback_ =
+      first_sequence_number_in_packets_ + std::ssize(packets_);
+
+  
+  
+  int64_t num_elements_to_erase =
+      std::ssize(packets_) - kMaxPacketsToKeepForReorderCalculation;
+  first_sequence_number_in_packets_ += num_elements_to_erase;
+  packets_.erase(packets_.begin(), packets_.begin() + num_elements_to_erase);
 }
 
 }  
