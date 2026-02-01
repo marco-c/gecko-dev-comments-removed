@@ -108,17 +108,16 @@ class SVGFilterInstance {
       nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
       nsTArray<RefPtr<SourceSurface>>& aInputImages, bool aInputIsTainted);
 
-  float GetPrimitiveUserSpaceUnitValue(SVGLength::Axis aCtxType) const;
+  float GetPrimitiveUserSpaceUnitValue(SVGLength::Axis aAxis) const;
 
-  float GetPrimitiveNumber(SVGLength::Axis aCtxType,
+  float GetPrimitiveNumber(SVGLength::Axis aAxis,
                            const SVGAnimatedNumber* aNumber) const {
-    return GetPrimitiveNumber(aCtxType, aNumber->GetAnimValue());
+    return GetPrimitiveNumber(aAxis, aNumber->GetAnimValue());
   }
-  float GetPrimitiveNumber(SVGLength::Axis aCtxType,
+  float GetPrimitiveNumber(SVGLength::Axis aAxis,
                            const SVGAnimatedNumberPair* aNumberPair,
                            SVGAnimatedNumberPairWhichOne aPairWhichOne) const {
-    return GetPrimitiveNumber(aCtxType,
-                              aNumberPair->GetAnimValue(aPairWhichOne));
+    return GetPrimitiveNumber(aAxis, aNumberPair->GetAnimValue(aPairWhichOne));
   }
 
   
@@ -132,7 +131,7 @@ class SVGFilterInstance {
 
 
 
-  float UserSpaceToFilterSpace(SVGLength::Axis aCtxType, float aValue) const;
+  float UserSpaceToFilterSpace(SVGLength::Axis aAxis, float aValue) const;
 
   
 
@@ -161,7 +160,7 @@ class SVGFilterInstance {
 
 
 
-  float GetPrimitiveNumber(SVGLength::Axis aCtxType, float aValue) const;
+  float GetPrimitiveNumber(SVGLength::Axis aAxis, float aValue) const;
 
   
 

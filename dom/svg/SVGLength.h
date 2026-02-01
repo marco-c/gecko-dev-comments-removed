@@ -80,11 +80,10 @@ class SVGLength {
 
 
 
-  float GetValueInPixels(const dom::SVGElement* aElement,
-                         SVGLength::Axis aAxis) const;
+  float GetValueInPixels(const dom::SVGElement* aElement, Axis aAxis) const;
 
   float GetValueInPixelsWithZoom(const dom::SVGElement* aElement,
-                                 SVGLength::Axis aAxis) const;
+                                 Axis aAxis) const;
 
   
 
@@ -93,17 +92,17 @@ class SVGLength {
 
 
   float GetValueInSpecifiedUnit(uint8_t aUnit, const dom::SVGElement* aElement,
-                                SVGLength::Axis aAxis) const;
+                                Axis aAxis) const;
 
   bool IsPercentage() const { return IsPercentageUnit(mUnit); }
 
   float GetPixelsPerUnitWithZoom(const dom::UserSpaceMetrics& aMetrics,
-                                 SVGLength::Axis aAxis) const {
+                                 Axis aAxis) const {
     return GetPixelsPerUnit(aMetrics, mUnit, aAxis, true);
   }
 
   float GetPixelsPerUnit(const dom::UserSpaceMetrics& aMetrics,
-                         SVGLength::Axis aAxis) const {
+                         Axis aAxis) const {
     return GetPixelsPerUnit(aMetrics, mUnit, aAxis, false);
   }
 
@@ -132,11 +131,10 @@ class SVGLength {
 
 
   static float GetPixelsPerUnit(const dom::UserSpaceMetrics& aMetrics,
-                                uint8_t aUnitType, SVGLength::Axis aAxis,
-                                bool aApplyZoom);
+                                uint8_t aUnitType, Axis aAxis, bool aApplyZoom);
 
   static float GetPixelsPerCSSUnit(const dom::UserSpaceMetrics& aMetrics,
-                                   nsCSSUnit aCSSUnit, SVGLength::Axis aAxis,
+                                   nsCSSUnit aCSSUnit, Axis aAxis,
                                    bool aApplyZoom);
 
  private:

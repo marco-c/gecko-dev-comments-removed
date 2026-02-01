@@ -198,6 +198,11 @@ class SVGContentUtils {
   static double ComputeNormalizedHypotenuse(double aWidth, double aHeight);
 
   
+
+
+  static double AxisLength(const gfxSize& aAxisSize, SVGLength::Axis aAxis);
+
+  
   static float AngleBisect(float a1, float a2);
 
   
@@ -291,7 +296,7 @@ class SVGContentUtils {
 
   static float CoordToFloat(const dom::SVGElement* aContent,
                             const StyleLengthPercentageUnion&,
-                            SVGLength::Axis aCtxType = SVGLength::Axis::XY);
+                            SVGLength::Axis aAxis = SVGLength::Axis::XY);
   
 
 
