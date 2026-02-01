@@ -4110,6 +4110,11 @@ class AboutTranslationsTestUtils {
     
 
 
+    static EnabledStateChanged = "AboutTranslationsTest:EnabledStateChanged";
+
+    
+
+
 
 
     static DetectedLanguageUpdated =
