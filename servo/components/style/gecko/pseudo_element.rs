@@ -272,7 +272,10 @@ impl PseudoElement {
     
     #[inline]
     pub fn animations_stored_in_parent(&self) -> bool {
-        matches!(*self, Self::Before | Self::After | Self::Marker | Self::Backdrop)
+        matches!(
+            *self,
+            Self::Before | Self::After | Self::Marker | Self::Backdrop
+        )
     }
 
     
@@ -309,12 +312,6 @@ impl PseudoElement {
     #[inline]
     pub fn is_first_line(&self) -> bool {
         *self == PseudoElement::FirstLine
-    }
-
-    
-    #[inline]
-    pub fn is_color_swatch(&self) -> bool {
-        *self == PseudoElement::MozColorSwatch
     }
 
     
