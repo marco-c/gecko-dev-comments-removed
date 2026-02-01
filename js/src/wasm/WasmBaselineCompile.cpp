@@ -1729,27 +1729,6 @@ ABIArg BaseCompiler::reservePointerArgument(FunctionCall* call) {
   return call->abi.next(MIRType::Pointer);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void BaseCompiler::passArg(ValType type, const Stk& arg, FunctionCall* call) {
   switch (type.kind()) {
     case ValType::I32: {
