@@ -44,7 +44,7 @@ const ButtonsBitfield = {
 
 
 
-function check_PointerEvent(event, testNamePrefix, standardAttrs = true) {
+function check_PointerEvent(event, testNamePrefix) {
   if (testNamePrefix === undefined)
     testNamePrefix = "";
 
@@ -52,17 +52,15 @@ function check_PointerEvent(event, testNamePrefix, standardAttrs = true) {
   var pointerTestName = (testNamePrefix ? testNamePrefix + ' ' : '')
     + (expectedPointerType == null ? event.pointerType : expectedPointerType) + ' ' + event.type;
 
-  if (standardAttrs) {
-    if (expectedPointerType != null) {
-      test(function () {
-        assert_equals(event.pointerType, expectedPointerType);
-      }, pointerTestName + ".pointerType is correct.");
-    }
-
+  if (expectedPointerType != null) {
     test(function () {
-      assert_true(event instanceof event.target.ownerDocument.defaultView.PointerEvent);
-    }, pointerTestName + " event is a PointerEvent event");
+      assert_equals(event.pointerType, expectedPointerType);
+    }, pointerTestName + ".pointerType is correct.");
   }
+
+  test(function () {
+    assert_true(event instanceof event.target.ownerDocument.defaultView.PointerEvent);
+  }, pointerTestName + " event is a PointerEvent event");
 
   
   var idl_type_check = {
@@ -73,70 +71,74 @@ function check_PointerEvent(event, testNamePrefix, standardAttrs = true) {
     "object": function (v) { return typeof v === "object" }
   };
 
+
   
-  
-  if (!standardAttrs) {
-    test(function () {
-      assert_implements_optional("fromElement" in event);
+  test(function () {
+    assert_implements_optional("fromElement" in event);
+    if (event.fromElement !== undefined) {
       assert_equals(event.fromElement, null);
-    }, pointerTestName + ".fromElement value is null");
-    test(function () {
-      assert_implements_optional("toElement" in event);
+    }
+  }, pointerTestName + ".fromElement value is null");
+  test(function () {
+    assert_implements_optional("toElement" in event);
+    if (event.toElement !== undefined) {
       assert_equals(event.toElement, null);
-    }, pointerTestName + ".toElement value is null");
-  } else {
-    test(function () {
-      assert_equals(event.isTrusted, true);
-    }, pointerTestName + ".isTrusted value is true");
-    test(function () {
-      let expected = (event.type != 'pointerenter' && event.type != 'pointerleave');
-      assert_equals(event.composed, expected);
-    }, pointerTestName + ".composed value is valid");
-    test(function () {
-      let expected = (event.type != 'pointerenter' && event.type != 'pointerleave');
-      assert_equals(event.bubbles, expected);
-    }, pointerTestName + ".bubbles value is valid");
-    test(function () {
-      let cancelable_events = [
-        'pointerdown', 'pointermove', 'pointerup', 'pointerover', 'pointerout'
-      ];
-      assert_equals(event.cancelable, cancelable_events.includes(event.type));
-    }, pointerTestName + ".cancelable value is valid");
+    }
+  }, pointerTestName + ".toElement value is null");
 
-    
-    
-    test(function () {
-      assert_greater_than_equal(event.pressure, 0, "pressure is greater than or equal to 0");
-      assert_less_than_equal(event.pressure, 1, "pressure is less than or equal to 1");
+  
+  
+  test(function () {
+    assert_equals(event.isTrusted, true);
+  }, pointerTestName + ".isTrusted value is true");
+  test(function () {
+    let expected = (event.type != 'pointerenter' && event.type != 'pointerleave');
+    assert_equals(event.composed, expected);
+  }, pointerTestName + ".composed value is valid");
+  test(function () {
+    let expected = (event.type != 'pointerenter' && event.type != 'pointerleave');
+    assert_equals(event.bubbles, expected);
+  }, pointerTestName + ".bubbles value is valid");
+  test(function () {
+    let cancelable_events = [
+      'pointerdown', 'pointermove', 'pointerup', 'pointerover', 'pointerout'
+    ];
+    assert_equals(event.cancelable, cancelable_events.includes(event.type));
+  }, pointerTestName + ".cancelable value is valid");
 
-      if (event.buttons === 0) {
-        assert_equals(event.pressure, 0, "pressure is 0 with no buttons pressed");
-      } else {
-        assert_greater_than(event.pressure, 0, "pressure is greater than 0 with a button pressed");
-        if (event.pointerType === "mouse") {
-          assert_equals(event.pressure, 0.5, "pressure is 0.5 for mouse with a button pressed");
-        }
+  
+  
+  test(function () {
+    assert_greater_than_equal(event.pressure, 0, "pressure is greater than or equal to 0");
+    assert_less_than_equal(event.pressure, 1, "pressure is less than or equal to 1");
+
+    if (event.buttons === 0) {
+      assert_equals(event.pressure, 0, "pressure is 0 with no buttons pressed");
+    } else {
+      assert_greater_than(event.pressure, 0, "pressure is greater than 0 with a button pressed");
+      if (event.pointerType === "mouse") {
+        assert_equals(event.pressure, 0.5, "pressure is 0.5 for mouse with a button pressed");
       }
-    }, pointerTestName + ".pressure value is valid");
-
-    
-    if (event.pointerType === "mouse") {
-      test(function () {
-        assert_equals(event.width, 1, "width of mouse should be 1");
-        assert_equals(event.height, 1, "height of mouse should be 1");
-        assert_equals(event.tiltX, 0, event.type + ".tiltX is 0 for mouse");
-        assert_equals(event.tiltY, 0, event.type + ".tiltY is 0 for mouse");
-        assert_true(event.isPrimary, event.type + ".isPrimary is true for mouse");
-      }, pointerTestName + " properties for pointerType = mouse");
     }
+  }, pointerTestName + ".pressure value is valid");
 
-    
-    if (event.type == "pointerup") {
-      test(function () {
-        assert_equals(event.width, 1, "width of pointerup should be 1");
-        assert_equals(event.height, 1, "height of pointerup should be 1");
-      }, pointerTestName + " properties for pointerup");
-    }
+  
+  if (event.pointerType === "mouse") {
+    test(function () {
+      assert_equals(event.width, 1, "width of mouse should be 1");
+      assert_equals(event.height, 1, "height of mouse should be 1");
+      assert_equals(event.tiltX, 0, event.type + ".tiltX is 0 for mouse");
+      assert_equals(event.tiltY, 0, event.type + ".tiltY is 0 for mouse");
+      assert_true(event.isPrimary, event.type + ".isPrimary is true for mouse");
+    }, pointerTestName + " properties for pointerType = mouse");
+  }
+
+  
+  if (event.type == "pointerup") {
+    test(function () {
+      assert_equals(event.width, 1, "width of pointerup should be 1");
+      assert_equals(event.height, 1, "height of pointerup should be 1");
+    }, pointerTestName + " properties for pointerup");
   }
 }
 
