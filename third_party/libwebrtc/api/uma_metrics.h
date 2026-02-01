@@ -235,6 +235,8 @@ enum SdpMungingType {
   kVideoCodecsRtcpReducedSize = 89,
   
   kDataChannelSctpInit = 100,
+  kDataChannelMaxMessageSize = 101,
+  kDataChannelSctpPort = 101,
   kMaxValue,
 };
 
