@@ -22,8 +22,10 @@ enum {
 };
 
 
-static const uint16_t WebRtcSpl_kAllPassFilter1[3] = {6418, 36982, 57261};
-static const uint16_t WebRtcSpl_kAllPassFilter2[3] = {21333, 49062, 63010};
+static const float WebRtcSpl_kAllPassFilter1[3] = {0.0979309082f, 0.5643005371f,
+                                                   0.8737335205f};
+static const float WebRtcSpl_kAllPassFilter2[3] = {
+    0.32551574707f, 0.74862670898f, 0.96145629882f};
 
 
 
@@ -43,11 +45,11 @@ static const uint16_t WebRtcSpl_kAllPassFilter2[3] = {21333, 49062, 63010};
 
 
 
-static void WebRtcSpl_AllPassQMF(int32_t* in_data,
+static void WebRtcSpl_AllPassQMF(float* in_data,
                                  size_t data_length,
-                                 int32_t* out_data,
-                                 const uint16_t* filter_coefficients,
-                                 int32_t* filter_state) {
+                                 float* out_data,
+                                 const float* filter_coefficients,
+                                 float* filter_state) {
   
   
   
@@ -66,7 +68,7 @@ static void WebRtcSpl_AllPassQMF(int32_t* in_data,
   
   
   size_t k;
-  int32_t diff;
+  float diff;
   
 
   
@@ -76,18 +78,16 @@ static void WebRtcSpl_AllPassQMF(int32_t* in_data,
   
   
   
-  diff = WebRtcSpl_SubSatW32(in_data[0], filter_state[1]);
+  diff = in_data[0] - filter_state[1];
   
-  out_data[0] =
-      WEBRTC_SPL_SCALEDIFF32(filter_coefficients[0], diff, filter_state[0]);
+  out_data[0] = filter_state[0] + filter_coefficients[0] * diff;
 
   
   for (k = 1; k < data_length; k++) {
     
-    diff = WebRtcSpl_SubSatW32(in_data[k], out_data[k - 1]);
+    diff = in_data[k] - out_data[k - 1];
     
-    out_data[k] =
-        WEBRTC_SPL_SCALEDIFF32(filter_coefficients[0], diff, in_data[k - 1]);
+    out_data[k] = in_data[k - 1] + filter_coefficients[0] * diff;
   }
 
   
@@ -98,16 +98,14 @@ static void WebRtcSpl_AllPassQMF(int32_t* in_data,
 
   
   
-  diff = WebRtcSpl_SubSatW32(out_data[0], filter_state[3]);
+  diff = out_data[0] - filter_state[3];
   
-  in_data[0] =
-      WEBRTC_SPL_SCALEDIFF32(filter_coefficients[1], diff, filter_state[2]);
+  in_data[0] = filter_state[2] + filter_coefficients[1] * diff;
   for (k = 1; k < data_length; k++) {
     
-    diff = WebRtcSpl_SubSatW32(out_data[k], in_data[k - 1]);
+    diff = out_data[k] - in_data[k - 1];
     
-    in_data[k] =
-        WEBRTC_SPL_SCALEDIFF32(filter_coefficients[1], diff, out_data[k - 1]);
+    in_data[k] = out_data[k - 1] + filter_coefficients[1] * diff;
   }
 
   filter_state[2] =
@@ -117,16 +115,14 @@ static void WebRtcSpl_AllPassQMF(int32_t* in_data,
 
   
   
-  diff = WebRtcSpl_SubSatW32(in_data[0], filter_state[5]);
+  diff = in_data[0] - filter_state[5];
   
-  out_data[0] =
-      WEBRTC_SPL_SCALEDIFF32(filter_coefficients[2], diff, filter_state[4]);
+  out_data[0] = filter_state[4] + filter_coefficients[2] * diff;
   for (k = 1; k < data_length; k++) {
     
-    diff = WebRtcSpl_SubSatW32(in_data[k], out_data[k - 1]);
+    diff = in_data[k] - out_data[k - 1];
     
-    out_data[k] =
-        WEBRTC_SPL_SCALEDIFF32(filter_coefficients[2], diff, in_data[k - 1]);
+    out_data[k] = in_data[k - 1] + filter_coefficients[2] * diff;
   }
   filter_state[4] =
       in_data[data_length - 1];  
@@ -134,27 +130,26 @@ static void WebRtcSpl_AllPassQMF(int32_t* in_data,
       out_data[data_length - 1];  
 }
 
-void WebRtcSpl_AnalysisQMF(const int16_t* in_data,
+void WebRtcSpl_AnalysisQMF(const float* in_data,
                            size_t in_data_length,
-                           int16_t* low_band,
-                           int16_t* high_band,
-                           int32_t* filter_state1,
-                           int32_t* filter_state2) {
+                           float* low_band,
+                           float* high_band,
+                           float* filter_state1,
+                           float* filter_state2) {
   size_t i;
   int16_t k;
-  int32_t tmp;
-  int32_t half_in1[kMaxBandFrameLength];
-  int32_t half_in2[kMaxBandFrameLength];
-  int32_t filter1[kMaxBandFrameLength];
-  int32_t filter2[kMaxBandFrameLength];
+  float half_in1[kMaxBandFrameLength];
+  float half_in2[kMaxBandFrameLength];
+  float filter1[kMaxBandFrameLength];
+  float filter2[kMaxBandFrameLength];
   const size_t band_length = in_data_length / 2;
   RTC_DCHECK_EQ(0, in_data_length % 2);
   RTC_DCHECK_LE(band_length, kMaxBandFrameLength);
 
   
   for (i = 0, k = 0; i < band_length; i++, k += 2) {
-    half_in2[i] = ((int32_t)in_data[k]) * (1 << 10);
-    half_in1[i] = ((int32_t)in_data[k + 1]) * (1 << 10);
+    half_in2[i] = in_data[k];
+    half_in1[i] = in_data[k + 1];
   }
 
   
@@ -166,25 +161,21 @@ void WebRtcSpl_AnalysisQMF(const int16_t* in_data,
   
   
   for (i = 0; i < band_length; i++) {
-    tmp = (filter1[i] + filter2[i] + 1024) >> 11;
-    low_band[i] = WebRtcSpl_SatW32ToW16(tmp);
-
-    tmp = (filter1[i] - filter2[i] + 1024) >> 11;
-    high_band[i] = WebRtcSpl_SatW32ToW16(tmp);
+    low_band[i] = (filter1[i] + filter2[i]) * 0.5f;
+    high_band[i] = (filter1[i] - filter2[i]) * 0.5f;
   }
 }
 
-void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
-                            const int16_t* high_band,
+void WebRtcSpl_SynthesisQMF(const float* low_band,
+                            const float* high_band,
                             size_t band_length,
-                            int16_t* out_data,
-                            int32_t* filter_state1,
-                            int32_t* filter_state2) {
-  int32_t tmp;
-  int32_t half_in1[kMaxBandFrameLength];
-  int32_t half_in2[kMaxBandFrameLength];
-  int32_t filter1[kMaxBandFrameLength];
-  int32_t filter2[kMaxBandFrameLength];
+                            float* out_data,
+                            float* filter_state1,
+                            float* filter_state2) {
+  float half_in1[kMaxBandFrameLength];
+  float half_in2[kMaxBandFrameLength];
+  float filter1[kMaxBandFrameLength];
+  float filter2[kMaxBandFrameLength];
   size_t i;
   int16_t k;
   RTC_DCHECK_LE(band_length, kMaxBandFrameLength);
@@ -192,10 +183,8 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
   
   
   for (i = 0; i < band_length; i++) {
-    tmp = (int32_t)low_band[i] + (int32_t)high_band[i];
-    half_in1[i] = tmp * (1 << 10);
-    tmp = (int32_t)low_band[i] - (int32_t)high_band[i];
-    half_in2[i] = tmp * (1 << 10);
+    half_in1[i] = low_band[i] + high_band[i];
+    half_in2[i] = low_band[i] - high_band[i];
   }
 
   
@@ -206,12 +195,10 @@ void WebRtcSpl_SynthesisQMF(const int16_t* low_band,
 
   
   
-  
   for (i = 0, k = 0; i < band_length; i++) {
-    tmp = (filter2[i] + 512) >> 10;
-    out_data[k++] = WebRtcSpl_SatW32ToW16(tmp);
-
-    tmp = (filter1[i] + 512) >> 10;
-    out_data[k++] = WebRtcSpl_SatW32ToW16(tmp);
+    out_data[k++] = filter2[i] > -32768.0f ?
+                    (filter2[i] < 32767.0f ? filter2[i] : 32767.0f) : -32768.0f;
+    out_data[k++] = filter1[i] > -32768.0f ?
+                    (filter1[i] < 32767.0f ? filter1[i] : 32767.0f) : -32768.0f;
   }
 }
