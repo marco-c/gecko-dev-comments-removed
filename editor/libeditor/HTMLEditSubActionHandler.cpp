@@ -185,9 +185,8 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
   
   
   rv = InsertBRElementToEmptyListItemsAndTableCellsInRange(
-      RawRangeBoundary(bodyOrDocumentElement, 0u),
-      RawRangeBoundary(bodyOrDocumentElement,
-                       bodyOrDocumentElement->GetChildCount()));
+      RawRangeBoundary::StartOfParent(*bodyOrDocumentElement),
+      RawRangeBoundary::EndOfParent(*bodyOrDocumentElement));
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
