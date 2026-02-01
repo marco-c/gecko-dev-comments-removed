@@ -47,14 +47,6 @@
 #endif
 
 #if defined(_MSC_VER)
-
-
-
-
-
-
-
-
 #  define MOZ_HAVE_NEVER_INLINE __declspec(noinline)
 #elif defined(__clang__)
 
