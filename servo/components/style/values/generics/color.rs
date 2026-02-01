@@ -5,6 +5,7 @@
 
 
 use crate::color::{mix::ColorInterpolationMethod, AbsoluteColor, ColorFunction};
+use crate::derives::*;
 use crate::values::{
     computed::ToComputedValue, specified::percentage::ToPercentage, ParseError, Parser,
 };
@@ -42,6 +43,24 @@ bitflags! {
 }
 
 
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[allow(missing_docs)]
+#[repr(C)]
+pub struct GenericColorMixItem<Color, Percentage> {
+    pub color: Color,
+    pub percentage: Percentage,
+}
+
+
 
 
 
@@ -59,10 +78,8 @@ bitflags! {
 #[repr(C)]
 pub struct GenericColorMix<Color, Percentage> {
     pub interpolation: ColorInterpolationMethod,
-    pub left: Color,
-    pub left_percentage: Percentage,
-    pub right: Color,
-    pub right_percentage: Percentage,
+    pub left: GenericColorMixItem<Color, Percentage>,
+    pub right: GenericColorMixItem<Color, Percentage>,
     pub flags: ColorMixFlags,
 }
 
@@ -74,20 +91,20 @@ impl<Color: ToCss, Percentage: ToCss + ToPercentage> ToCss for ColorMix<Color, P
         W: Write,
     {
         fn can_omit<Percentage: ToPercentage>(
-            percent: &Percentage,
-            other: &Percentage,
+            a: &Percentage,
+            b: &Percentage,
             is_left: bool,
         ) -> bool {
-            if percent.is_calc() {
+            if a.is_calc() {
                 return false;
             }
-            if percent.to_percentage() == 0.5 {
-                return other.to_percentage() == 0.5;
+            if a.to_percentage() == 0.5 {
+                return b.to_percentage() == 0.5;
             }
             if is_left {
                 return false;
             }
-            (1.0 - percent.to_percentage() - other.to_percentage()).abs() <= f32::EPSILON
+            (1.0 - a.to_percentage() - b.to_percentage()).abs() <= f32::EPSILON
         }
 
         dest.write_str("color-mix(")?;
@@ -100,17 +117,20 @@ impl<Color: ToCss, Percentage: ToCss + ToPercentage> ToCss for ColorMix<Color, P
             dest.write_str(", ")?;
         }
 
-        self.left.to_css(dest)?;
-        if !can_omit(&self.left_percentage, &self.right_percentage, true) {
+        self.left.color.to_css(dest)?;
+        if !can_omit(&self.left.percentage, &self.right.percentage, true) {
             dest.write_char(' ')?;
-            self.left_percentage.to_css(dest)?;
+            self.left.percentage.to_css(dest)?;
         }
+
         dest.write_str(", ")?;
-        self.right.to_css(dest)?;
-        if !can_omit(&self.right_percentage, &self.left_percentage, false) {
+
+        self.right.color.to_css(dest)?;
+        if !can_omit(&self.right.percentage, &self.left.percentage, false) {
             dest.write_char(' ')?;
-            self.right_percentage.to_css(dest)?;
+            self.right.percentage.to_css(dest)?;
         }
+
         dest.write_char(')')
     }
 }
@@ -122,15 +142,17 @@ impl<Percentage> ColorMix<GenericColor<Percentage>, Percentage> {
     where
         Percentage: ToPercentage,
     {
-        let left = self.left.as_absolute()?;
-        let right = self.right.as_absolute()?;
+        use crate::color::mix;
 
-        Some(crate::color::mix::mix(
+        let left = self.left.color.as_absolute()?;
+        let right = self.right.color.as_absolute()?;
+
+        Some(mix::mix_many(
             self.interpolation,
-            &left,
-            self.left_percentage.to_percentage(),
-            &right,
-            self.right_percentage.to_percentage(),
+            [
+                mix::ColorMixItem::new(*left, self.left.percentage.to_percentage()),
+                mix::ColorMixItem::new(*right, self.right.percentage.to_percentage()),
+            ],
             self.flags,
         ))
     }
