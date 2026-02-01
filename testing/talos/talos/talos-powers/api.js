@@ -285,12 +285,12 @@ TalosPowersService.prototype = {
       
       
       
-      AboutNewTab.onBrowserReady();
+      
       
       
       
       let pollForFeed = async function () {
-        let foundFeed = AboutNewTab.activityStream.store.feeds.get(
+        let foundFeed = AboutNewTab.activityStream?.store.feeds.get(
           "feeds.system.topsites"
         );
         if (!foundFeed) {
