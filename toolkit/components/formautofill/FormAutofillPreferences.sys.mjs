@@ -182,19 +182,9 @@ export class FormAutofillPreferences {
       },
     });
 
-    let paymentsGroup = document.querySelector(
-      "setting-group[groupid=payments]"
-    );
-    paymentsGroup.config = FORM_AUTOFILL_CONFIG.payments;
-    paymentsGroup.getSetting = win.Preferences.getSetting.bind(win.Preferences);
-
-    let addressesGroup = document.querySelector(
-      "setting-group[groupid=addresses]"
-    );
-    addressesGroup.config = FORM_AUTOFILL_CONFIG.addresses;
-    addressesGroup.getSetting = win.Preferences.getSetting.bind(
-      win.Preferences
-    );
+    win.SettingGroupManager.registerGroups(FORM_AUTOFILL_CONFIG);
+    win.initSettingGroup("payments");
+    win.initSettingGroup("addresses");
     Services.obs.notifyObservers(win, "formautofill-preferences-initialized");
   }
 
@@ -569,5 +559,15 @@ export class FormAutofillPreferences {
       noValidate: true,
       l10nStrings: lazy.ManageAddresses.getAddressL10nStrings(),
     });
+  }
+
+  static openPaymentPreference() {
+    const win = Services.wm.getMostRecentBrowserWindow();
+    win.openPreferences("privacy-payment-methods-autofill");
+  }
+
+  static openAddressPreference() {
+    const win = Services.wm.getMostRecentBrowserWindow();
+    win.openPreferences("privacy-address-autofill");
   }
 }
