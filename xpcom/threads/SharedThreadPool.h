@@ -7,10 +7,8 @@
 #ifndef SharedThreadPool_h_
 #define SharedThreadPool_h_
 
-#include <type_traits>
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/MaybeLeakRefPtr.h"
-#include "mozilla/RefCountType.h"
 #include "nsCOMPtr.h"
 #include "nsID.h"
 #include "nsIThreadPool.h"
@@ -39,21 +37,18 @@ namespace mozilla {
 
 
 
-class SharedThreadPool : public nsIThreadPool {
+
+
+
+class SharedThreadPool final : public nsIThreadPool {
  public:
+  
   
   
   static already_AddRefed<SharedThreadPool> Get(const nsCString& aName,
                                                 uint32_t aThreadLimit = 4);
 
-  
-  
-  
-  
-  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
-  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override;
-  NS_IMETHOD_(MozExternalRefCountType) Release(void) override;
-  using HasThreadSafeRefCnt = std::true_type;
+  NS_DECL_THREADSAFE_ISUPPORTS
 
   
   NS_FORWARD_SAFE_NSITHREADPOOL(mPool);
@@ -75,8 +70,8 @@ class SharedThreadPool : public nsIThreadPool {
     
     
     nsCOMPtr<nsIRunnable> runnable(event);
-    return !mPool ? NS_ERROR_NULL_POINTER
-                  : mPool->Dispatch(runnable.forget(), flags);
+    return NS_WARN_IF(!mPool) ? NS_ERROR_NULL_POINTER
+                              : mPool->Dispatch(runnable.forget(), flags);
   }
 
   NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override {
@@ -104,33 +99,17 @@ class SharedThreadPool : public nsIThreadPool {
   
   static void InitStatics();
 
-  
-  
-  static void SpinUntilEmpty();
-
   NS_IMETHOD_(FeatureFlags) GetFeatures() override { return SUPPORTS_BASE; }
 
  private:
-  
-  static bool IsEmpty();
-
-  
-  
-  
-  SharedThreadPool(const nsCString& aName, nsIThreadPool* aPool);
+  explicit SharedThreadPool(nsIThreadPool* aPool);
   virtual ~SharedThreadPool();
 
   nsresult EnsureThreadLimitIsAtLeast(uint32_t aThreadLimit);
 
   
-  const nsCString mName;
-
   
-  nsCOMPtr<nsIThreadPool> mPool;
-
-  
-  
-  nsrefcnt mRefCnt;
+  const nsCOMPtr<nsIThreadPool> mPool;
 };
 
 }  
