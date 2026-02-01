@@ -317,14 +317,19 @@ add_task(async function test_aifeature_isAllowed_policy_disabled() {
 
   is(
     LinkPreview.isAllowed,
-    false,
-    "isAllowed returns false when disabled by policy"
+    true,
+    "isAllowed returns true when disabled by policy"
+  );
+  is(
+    LinkPreview.isManagedByPolicy,
+    true,
+    "isManagedByPolicy returns false when disabled by policy"
   );
 
   is(
-    LinkPreview.isAllowed,
     LinkPreview.canShowKeyPoints,
-    "isAllowed matches canShowKeyPoints when disabled by policy"
+    false,
+    "canShowKeyPoints returns false when disabled by policy"
   );
 
   Services.prefs.unlockPref("browser.ml.linkPreview.optin");
