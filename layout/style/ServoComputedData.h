@@ -27,6 +27,10 @@ struct ServoComputedCustomProperties {
   uintptr_t mNonInherited;
 };
 
+struct ServoUsedAttributes {
+  uintptr_t mUsedAttributes;
+};
+
 struct ServoRuleNode {
   uintptr_t mPtr;
 };
@@ -76,6 +80,7 @@ class ServoComputedData {
 
  private:
   mozilla::ServoComputedCustomProperties custom_properties;
+  mozilla::ServoUsedAttributes attribute_references;
   
   
   

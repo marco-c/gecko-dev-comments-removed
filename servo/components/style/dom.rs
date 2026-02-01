@@ -14,6 +14,7 @@ use crate::context::UpdateAnimationsTasks;
 use crate::data::ElementData;
 use crate::media_queries::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
+use crate::selector_map::PrecomputedHashSet;
 use crate::selector_parser::{AttrValue, Lang, PseudoElement, RestyleDamage, SelectorImpl};
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylesheets::scope_rule::ImplicitScopeRoot;
@@ -985,6 +986,46 @@ pub trait TElement:
 pub trait AttributeProvider {
     
     fn get_attr(&self, attr: &LocalName) -> Option<String>;
+}
+
+
+pub type AttributeReferences = Option<Box<PrecomputedHashSet<LocalName>>>;
+
+
+pub struct AttributeTracker<'a> {
+    
+    pub provider: &'a dyn AttributeProvider,
+    
+    pub references: Box<PrecomputedHashSet<AtomIdent>>,
+}
+
+impl<'a> AttributeTracker<'a> {
+    
+    pub fn new(provider: &'a dyn AttributeProvider) -> Self {
+        Self {
+            provider,
+            references: Default::default(),
+        }
+    }
+
+    
+    pub fn new_dummy() -> Self {
+        Self {
+            provider: &DummyAttributeProvider {},
+            references: Default::default(),
+        }
+    }
+
+    
+    pub fn finalize(self) -> Box<PrecomputedHashSet<AtomIdent>> {
+        self.references
+    }
+
+    
+    pub fn query(&mut self, name: &LocalName) -> Option<String> {
+        self.references.insert(name.clone());
+        self.provider.get_attr(name)
+    }
 }
 
 

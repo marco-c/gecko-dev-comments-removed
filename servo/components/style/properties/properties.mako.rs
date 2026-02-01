@@ -1739,6 +1739,9 @@ pub struct ComputedValuesInner {
     custom_properties: crate::custom_properties::ComputedCustomProperties,
 
     
+    pub attribute_references: AttributeReferences,
+
+    
     pub effective_zoom: computed::Zoom,
 
     
@@ -1985,6 +1988,7 @@ impl ComputedValues {
     pub fn new(
         pseudo: Option<&PseudoElement>,
         custom_properties: crate::custom_properties::ComputedCustomProperties,
+        attribute_references: crate::dom::AttributeReferences,
         writing_mode: WritingMode,
         effective_zoom: computed::Zoom,
         flags: ComputedValueFlags,
@@ -1997,6 +2001,7 @@ impl ComputedValues {
         Arc::new(Self {
             inner: ComputedValuesInner {
                 custom_properties,
+                attribute_references,
                 writing_mode,
                 rules,
                 visited_style,
@@ -2400,6 +2405,9 @@ pub struct StyleBuilder<'a> {
     pub custom_properties: crate::custom_properties::ComputedCustomProperties,
 
     
+    pub attribute_references: crate::dom::AttributeReferences,
+
+    
     
     
     pub invalid_non_custom_properties: LonghandIdSet,
@@ -2466,6 +2474,7 @@ impl<'a> StyleBuilder<'a> {
             modified_reset: false,
             is_root_element,
             custom_properties: crate::custom_properties::ComputedCustomProperties::default(),
+            attribute_references: crate::dom::AttributeReferences::default(),
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: inherited_style.writing_mode,
             effective_zoom: inherited_style.effective_zoom,
@@ -2506,6 +2515,7 @@ impl<'a> StyleBuilder<'a> {
             modified_reset: false,
             is_root_element: false,
             rules: None,
+            attribute_references: crate::dom::AttributeReferences::default(),
             custom_properties: style_to_derive_from.custom_properties().clone(),
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: style_to_derive_from.writing_mode,
@@ -2754,6 +2764,7 @@ impl<'a> StyleBuilder<'a> {
         ComputedValues::new(
             self.pseudo,
             self.custom_properties,
+            self.attribute_references,
             self.writing_mode,
             self.effective_zoom,
             self.flags.get(),
@@ -2963,7 +2974,7 @@ macro_rules! longhand_properties_idents {
 
 
 #[cfg(feature = "gecko")]
-size_of_test!(ComputedValues, 248);
+size_of_test!(ComputedValues, 256);
 #[cfg(feature = "servo")]
 size_of_test!(ComputedValues, 216);
 
