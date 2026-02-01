@@ -15,14 +15,56 @@
 #include <tuple>
 #include <vector>
 
+#include "absl/strings/ascii.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
+#include "api/rtc_error.h"
 #include "api/rtp_transceiver_direction.h"
 #include "media/base/media_constants.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
+namespace {
+constexpr char kSdpDelimiterSemicolon[] = ";";
+constexpr char kSdpDelimiterEqualChar = '=';
+constexpr char kSdpDelimiterEqual[] = "=";
+constexpr char kSdpDelimiterSemicolonChar = ';';
+
+void ParseFmtpParam(absl::string_view line,
+                    std::string* parameter,
+                    std::string* value) {
+  if (!tokenize_first(line, kSdpDelimiterEqualChar, parameter, value)) {
+    
+    *parameter = "";
+    *value = std::string(line);
+  }
+  
+}
+
+bool IsFmtpParam(absl::string_view name) {
+  
+  
+  
+  
+  return name != kCodecParamPTime && name != kCodecParamMaxPTime;
+}
+
+void WriteFmtpParameter(absl::string_view parameter_name,
+                        absl::string_view parameter_value,
+                        StringBuilder& os) {
+  if (parameter_name.empty()) {
+    
+    os << parameter_value;
+  } else {
+    
+    os << parameter_name << kSdpDelimiterEqual << parameter_value;
+  }
+}
+
+}  
 
 const char* DegradationPreferenceToString(
     DegradationPreference degradation_preference) {
@@ -40,6 +82,43 @@ const char* DegradationPreferenceToString(
 }
 
 const double kDefaultBitratePriority = 1.0;
+
+bool WriteFmtpParameters(const CodecParameterMap& parameters,
+                         StringBuilder& os) {
+  bool empty = true;
+  const char* delimiter = "";  
+  for (const auto& entry : parameters) {
+    const std::string& key = entry.first;
+    const std::string& value = entry.second;
+
+    if (IsFmtpParam(key)) {
+      os << delimiter;
+      
+      delimiter = kSdpDelimiterSemicolon;
+      WriteFmtpParameter(key, value, os);
+      empty = false;
+    }
+  }
+
+  return !empty;
+}
+
+RTCError ParseFmtpParameterSet(absl::string_view line_params,
+                               CodecParameterMap& codec_params) {
+  
+  for (absl::string_view param :
+       split(line_params, kSdpDelimiterSemicolonChar)) {
+    std::string name;
+    std::string value;
+    ParseFmtpParam(absl::StripAsciiWhitespace(param), &name, &value);
+    if (codec_params.find(name) != codec_params.end()) {
+      RTC_LOG(LS_INFO) << "Overwriting duplicate fmtp parameter with key \""
+                       << name << "\".";
+    }
+    codec_params[name] = value;
+  }
+  return RTCError::OK();
+}
 
 RtcpFeedback::RtcpFeedback() = default;
 RtcpFeedback::RtcpFeedback(RtcpFeedbackType type) : type(type) {}

@@ -23,12 +23,14 @@
 #include "absl/strings/string_view.h"
 #include "api/media_types.h"
 #include "api/priority.h"
+#include "api/rtc_error.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/video/resolution.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
+class StringBuilder;
 
 using CodecParameterMap = std::map<std::string, std::string>;
 
@@ -136,6 +138,17 @@ RTC_EXPORT const char* DegradationPreferenceToString(
     DegradationPreference degradation_preference);
 
 RTC_EXPORT extern const double kDefaultBitratePriority;
+
+
+
+
+
+bool WriteFmtpParameters(const CodecParameterMap& parameters,
+                         StringBuilder& os);
+
+
+RTCError ParseFmtpParameterSet(absl::string_view line_params,
+                               CodecParameterMap& codec_params);
 
 struct RTC_EXPORT RtcpFeedback {
   RtcpFeedbackType type = RtcpFeedbackType::CCM;

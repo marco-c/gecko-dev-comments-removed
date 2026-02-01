@@ -26,12 +26,8 @@
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/jsep.h"
-#include "api/rtp_parameters.h"
-#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
-struct SdpParseError;
-
 
 
 
@@ -48,18 +44,6 @@ absl_nullable std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
     SdpType sdp_type,
     absl::string_view sdp,
     SdpParseError* absl_nullable error = nullptr);
-
-
-
-
-
-bool WriteFmtpParameters(const CodecParameterMap& parameters,
-                         StringBuilder* os);
-
-
-bool ParseFmtpParameterSet(absl::string_view line_params,
-                           CodecParameterMap& codec_params,
-                           SdpParseError* error);
 
 }  
 

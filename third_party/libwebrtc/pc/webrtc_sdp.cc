@@ -26,7 +26,6 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/nullability.h"
-#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -154,8 +153,6 @@ const char kSdpDelimiterSpace[] = " ";
 const char kSdpDelimiterSpaceChar = ' ';
 constexpr absl::string_view kSdpDelimiterColon = ":";
 const char kSdpDelimiterColonChar = ':';
-const char kSdpDelimiterSemicolon[] = ";";
-const char kSdpDelimiterSemicolonChar = ';';
 const char kSdpDelimiterSlashChar = '/';
 const char kNewLineChar = '\n';
 const char kReturnChar = '\r';
@@ -1011,24 +1008,12 @@ void WriteRtcpFbHeader(int payload_type, StringBuilder* os) {
   }
 }
 
-void WriteFmtpParameter(absl::string_view parameter_name,
-                        absl::string_view parameter_value,
-                        StringBuilder* os) {
-  if (parameter_name.empty()) {
-    
-    *os << parameter_value;
-  } else {
-    
-    *os << parameter_name << kSdpDelimiterEqual << parameter_value;
-  }
-}
-
 void AddFmtpLine(const Codec& codec, std::string* message) {
   StringBuilder os;
   WriteFmtpHeader(codec.id, &os);
   os << kSdpDelimiterSpace;
   
-  if (WriteFmtpParameters(codec.params, &os)) {
+  if (WriteFmtpParameters(codec.params, os)) {
     AddLine(os.str(), message);
   }
   return;
@@ -1431,14 +1416,6 @@ void BuildMediaDescription(const ContentInfo* content_info,
   } else if (IsRtpProtocol(media_desc->protocol())) {
     BuildRtpContentAttributes(media_desc, media_type, msid_signaling, message);
   }
-}
-
-bool IsFmtpParam(absl::string_view name) {
-  
-  
-  
-  
-  return name != kCodecParamPTime && name != kCodecParamMaxPTime;
 }
 
 bool ParseConnectionData(absl::string_view line,
@@ -2037,20 +2014,6 @@ void UpdateCodec(MediaContentDescription* content_desc,
   AddOrReplaceCodec(content_desc, new_codec);
 }
 
-bool ParseFmtpParam(absl::string_view line,
-                    std::string* parameter,
-                    std::string* value,
-                    SdpParseError* error) {
-  if (!tokenize_first(line, kSdpDelimiterEqualChar, parameter, value)) {
-    
-    *parameter = "";
-    *value = std::string(line);
-    return true;
-  }
-  
-  return true;
-}
-
 bool ParseFmtpAttributes(absl::string_view line,
                          const MediaType media_type,
                          MediaContentDescription* media_desc,
@@ -2086,7 +2049,7 @@ bool ParseFmtpAttributes(absl::string_view line,
 
   
   CodecParameterMap codec_params;
-  if (!ParseFmtpParameterSet(line_params, codec_params, error)) {
+  if (!ParseFmtpParameterSet(line_params, codec_params).ok()) {
     return false;
   }
 
@@ -3286,47 +3249,6 @@ std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
   }
 
   return description;
-}
-
-bool WriteFmtpParameters(const CodecParameterMap& parameters,
-                         StringBuilder* os) {
-  bool empty = true;
-  const char* delimiter = "";  
-  for (const auto& entry : parameters) {
-    const std::string& key = entry.first;
-    const std::string& value = entry.second;
-
-    if (IsFmtpParam(key)) {
-      *os << delimiter;
-      
-      delimiter = kSdpDelimiterSemicolon;
-      WriteFmtpParameter(key, value, os);
-      empty = false;
-    }
-  }
-
-  return !empty;
-}
-
-bool ParseFmtpParameterSet(absl::string_view line_params,
-                           CodecParameterMap& codec_params,
-                           SdpParseError* error) {
-  
-  for (absl::string_view param :
-       split(line_params, kSdpDelimiterSemicolonChar)) {
-    std::string name;
-    std::string value;
-    if (!ParseFmtpParam(absl::StripAsciiWhitespace(param), &name, &value,
-                        error)) {
-      return false;
-    }
-    if (codec_params.find(name) != codec_params.end()) {
-      RTC_LOG(LS_INFO) << "Overwriting duplicate fmtp parameter with key \""
-                       << name << "\".";
-    }
-    codec_params[name] = value;
-  }
-  return true;
 }
 
 }  
