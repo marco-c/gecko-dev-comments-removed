@@ -9,6 +9,7 @@
 #include "ClientManager.h"
 #include "ClientSource.h"
 #include "MainThreadUtils.h"
+#include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/ClientsBinding.h"
@@ -133,6 +134,13 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
     
     
     else {
+      
+      
+      
+      
+      
+      AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(aNewChannel);
+
       nsCOMPtr<nsIPrincipal> foreignPartitionedPrincipal;
       rv = StoragePrincipalHelper::GetPrincipal(
           aNewChannel,
