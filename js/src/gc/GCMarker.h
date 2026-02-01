@@ -577,6 +577,9 @@ class GCMarker {
   void delayMarkingChildrenOnOOM(gc::Cell* cell);
 
   
+  void deactivate();
+
+  
 
 
 
