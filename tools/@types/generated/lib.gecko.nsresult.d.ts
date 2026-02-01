@@ -367,9 +367,6 @@ interface nsIXPCComponents_Results {
   NS_ERROR_CONNECTION_REFUSED: 0x804b000d;
 
   
-  NS_ERROR_SUPERFLUOS_AUTH: 0x804b005b;
-
-  
   NS_ERROR_BASIC_HTTP_AUTH_DISABLED: 0x804b005c;
 
   
@@ -671,6 +668,9 @@ interface nsIXPCComponents_Results {
 
   
   NS_ERROR_EMAILTRACKING_URI: 0x805d002c;
+
+  
+  NS_ERROR_HARMFULADDON_URI: 0x805d002e;
 
   
 

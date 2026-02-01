@@ -100,6 +100,15 @@ export class AbstractWorker {
     _agent: any;
     _deferredJobs: Map<any, any>;
     _deferredJobId: number;
+    _exceptionNames: {
+        EvalError: string;
+        InternalError: string;
+        RangeError: string;
+        ReferenceError: string;
+        SyntaxError: string;
+        TypeError: string;
+        URIError: string;
+    };
     log(): void;
     _generateDeferredJobId(): string;
     
