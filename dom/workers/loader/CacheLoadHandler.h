@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_CacheLoadHandler_h__
-#define mozilla_dom_workers_CacheLoadHandler_h__
+#ifndef mozilla_dom_workers_CacheLoadHandler_h_
+#define mozilla_dom_workers_CacheLoadHandler_h_
 
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/CacheBinding.h"

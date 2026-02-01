@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCopySupport_h__
-#define nsCopySupport_h__
+#ifndef nsCopySupport_h_
+#define nsCopySupport_h_
 
 #include <cstdint>
 

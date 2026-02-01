@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistSerializeParent_h__
-#define WebBrowserPersistSerializeParent_h__
+#ifndef WebBrowserPersistSerializeParent_h_
+#define WebBrowserPersistSerializeParent_h_
 
 #include "mozilla/PWebBrowserPersistSerializeParent.h"
 #include "nsCOMPtr.h"

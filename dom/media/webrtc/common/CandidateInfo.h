@@ -2,8 +2,8 @@
 
 
 
-#ifndef _CANDIDATE_INFO_H__
-#define _CANDIDATE_INFO_H__
+#ifndef CANDIDATE_INFO_H_
+#define CANDIDATE_INFO_H_
 
 #include <cstdint>
 #include <string>

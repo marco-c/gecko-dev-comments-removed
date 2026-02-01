@@ -7,12 +7,11 @@
 
 
 
-#ifndef mediapipelinefilter_h__
-#define mediapipelinefilter_h__
+#ifndef mediapipelinefilter_h_
+#define mediapipelinefilter_h_
 
 #include <stdint.h>
 
-#include <cstddef>
 #include <set>
 #include <string>
 #include <vector>

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_NavigationActivation_h___
-#define mozilla_dom_NavigationActivation_h___
+#ifndef mozilla_dom_NavigationActivation_h_
+#define mozilla_dom_NavigationActivation_h_
 
 #include "nsCOMPtr.h"
 #include "nsISupports.h"

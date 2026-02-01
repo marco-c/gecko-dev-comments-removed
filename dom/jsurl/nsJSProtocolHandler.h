@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsJSProtocolHandler_h___
-#define nsJSProtocolHandler_h___
+#ifndef nsJSProtocolHandler_h_
+#define nsJSProtocolHandler_h_
 
 #include "nsIClassInfo.h"
 #include "nsINestedURI.h"

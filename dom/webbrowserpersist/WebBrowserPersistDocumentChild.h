@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistDocumentChild_h__
-#define WebBrowserPersistDocumentChild_h__
+#ifndef WebBrowserPersistDocumentChild_h_
+#define WebBrowserPersistDocumentChild_h_
 
 #include "mozilla/PWebBrowserPersistDocumentChild.h"
 #include "nsCOMPtr.h"

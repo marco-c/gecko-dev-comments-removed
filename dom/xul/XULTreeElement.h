@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULTreeElement_h__
-#define XULTreeElement_h__
+#ifndef XULTreeElement_h_
+#define XULTreeElement_h_
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsITreeView.h"

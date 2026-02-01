@@ -4,8 +4,8 @@
 
 
 
-#ifndef IntegrityPolicy_h___
-#define IntegrityPolicy_h___
+#ifndef IntegrityPolicy_h_
+#define IntegrityPolicy_h_
 
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"

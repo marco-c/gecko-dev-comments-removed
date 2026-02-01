@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformanceEventCounts_h___
-#define mozilla_dom_PerformanceEventCounts_h___
+#ifndef mozilla_dom_PerformanceEventCounts_h_
+#define mozilla_dom_PerformanceEventCounts_h_
 
 #include "nsCOMPtr.h"
 #include "nsWrapperCache.h"

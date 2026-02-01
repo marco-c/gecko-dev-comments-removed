@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_dom_media_ipc_RDDProcessImpl_h__
-#define _include_dom_media_ipc_RDDProcessImpl_h__
+#ifndef _include_dom_media_ipc_RDDProcessImpl_h_
+#define _include_dom_media_ipc_RDDProcessImpl_h_
 #include "mozilla/ipc/ProcessChild.h"
 
 #if defined(XP_WIN)

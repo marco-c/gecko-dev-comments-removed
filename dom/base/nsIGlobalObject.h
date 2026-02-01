@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIGlobalObject_h__
-#define nsIGlobalObject_h__
+#ifndef nsIGlobalObject_h_
+#define nsIGlobalObject_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/LinkedList.h"
@@ -406,9 +406,14 @@ class nsIGlobalObject : public nsISupports {
   size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aSizeOf) const;
 
  private:
+  void ClearReports();
+
+ private:
   
   nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
-  nsTArray<RefPtr<mozilla::dom::Report>> mReportRecords;
+  
+  nsTArray<RefPtr<mozilla::dom::Report>> mReportBuffer;
+  nsTHashMap<nsString, uint32_t> mReportPerTypeCount;
 
   
   RefPtr<mozilla::dom::Function> mCountQueuingStrategySizeFunction;

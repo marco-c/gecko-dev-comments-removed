@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_threadlocal_h__
-#define mozilla_dom_indexeddb_threadlocal_h__
+#ifndef mozilla_dom_indexeddb_threadlocal_h_
+#define mozilla_dom_indexeddb_threadlocal_h_
 
 #include "IDBTransaction.h"
 #include "ProfilerHelpers.h"

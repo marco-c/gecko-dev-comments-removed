@@ -3,8 +3,8 @@
 
 
 
-#ifndef __GMPTestMonitor_h__
-#define __GMPTestMonitor_h__
+#ifndef GMPTestMonitor_h_
+#define GMPTestMonitor_h_
 
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/SpinEventLoopUntil.h"

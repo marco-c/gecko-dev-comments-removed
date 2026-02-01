@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_GFX_DRAWTARGETWEBGL_H
-#define _MOZILLA_GFX_DRAWTARGETWEBGL_H
+#ifndef MOZILLA_GFX_DRAWTARGETWEBGL_H
+#define MOZILLA_GFX_DRAWTARGETWEBGL_H
 
 #include <deque>
 #include <memory>

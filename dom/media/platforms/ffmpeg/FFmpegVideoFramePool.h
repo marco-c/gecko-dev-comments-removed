@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegVideoFramePool_h__
-#define __FFmpegVideoFramePool_h__
+#ifndef FFmpegVideoFramePool_h_
+#define FFmpegVideoFramePool_h_
 
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLibs.h"

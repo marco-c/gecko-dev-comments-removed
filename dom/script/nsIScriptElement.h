@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIScriptElement_h___
-#define nsIScriptElement_h___
+#ifndef nsIScriptElement_h_
+#define nsIScriptElement_h_
 
 #include "js/ColumnNumber.h"  
 #include "js/loader/ScriptKind.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_FakeString_h__
-#define mozilla_dom_FakeString_h__
+#ifndef mozilla_dom_FakeString_h_
+#define mozilla_dom_FakeString_h_
 
 #include "js/String.h"
 #include "mozilla/RefPtr.h"

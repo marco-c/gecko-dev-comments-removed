@@ -3,8 +3,8 @@
 
 
 
-#ifndef txBufferingHandler_h__
-#define txBufferingHandler_h__
+#ifndef txBufferingHandler_h_
+#define txBufferingHandler_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsString.h"

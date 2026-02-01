@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIAnimationObserver_h___
-#define nsIAnimationObserver_h___
+#ifndef nsIAnimationObserver_h_
+#define nsIAnimationObserver_h_
 
 #include "nsIMutationObserver.h"
 

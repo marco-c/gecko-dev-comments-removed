@@ -3,8 +3,8 @@
 
 
 
-#ifndef txXPathNode_h__
-#define txXPathNode_h__
+#ifndef txXPathNode_h_
+#define txXPathNode_h_
 
 #include "mozilla/dom/Document.h"
 #include "nsIContent.h"

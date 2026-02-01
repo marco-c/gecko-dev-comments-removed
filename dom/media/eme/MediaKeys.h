@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_mediakeys_h__
-#define mozilla_dom_mediakeys_h__
+#ifndef mozilla_dom_mediakeys_h_
+#define mozilla_dom_mediakeys_h_
 
 #include "DecoderDoctorLogger.h"
 #include "mozilla/DetailedPromise.h"

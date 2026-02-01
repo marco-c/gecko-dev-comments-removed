@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTSTREAMS__H_
-#define DOM_WEBTRANSPORT_API_WEBTRANSPORTSTREAMS__H_
+#ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTSTREAMS_H_
+#define DOM_WEBTRANSPORT_API_WEBTRANSPORTSTREAMS_H_
 
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/WritableStream.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mediapacket_h__
-#define mediapacket_h__
+#ifndef mediapacket_h_
+#define mediapacket_h_
 
 #include <cstddef>
 #include <cstdint>

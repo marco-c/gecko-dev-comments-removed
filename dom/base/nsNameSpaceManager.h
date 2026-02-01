@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsNameSpaceManager_h___
-#define nsNameSpaceManager_h___
+#ifndef nsNameSpaceManager_h_
+#define nsNameSpaceManager_h_
 
 #include "mozilla/StaticPtr.h"
 #include "nsStringFwd.h"

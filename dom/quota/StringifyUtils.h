@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_stringifyutils_h__
-#define mozilla_dom_quota_stringifyutils_h__
+#ifndef mozilla_dom_quota_stringifyutils_h_
+#define mozilla_dom_quota_stringifyutils_h_
 
 #include "mozilla/ThreadLocal.h"
 #include "nsLiteralString.h"

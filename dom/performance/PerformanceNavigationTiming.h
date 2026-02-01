@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformanceNavigationTiming_h___
-#define mozilla_dom_PerformanceNavigationTiming_h___
+#ifndef mozilla_dom_PerformanceNavigationTiming_h_
+#define mozilla_dom_PerformanceNavigationTiming_h_
 
 #include <stdint.h>
 

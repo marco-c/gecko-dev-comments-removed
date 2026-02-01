@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMixedContentBlocker_h___
-#define nsMixedContentBlocker_h___
+#ifndef nsMixedContentBlocker_h_
+#define nsMixedContentBlocker_h_
 
 #define NS_MIXEDCONTENTBLOCKER_CONTRACTID "@mozilla.org/mixedcontentblocker;1"
 

@@ -10,8 +10,8 @@
 
 
 
-#ifndef nsNoDataProtocolContentPolicy_h__
-#define nsNoDataProtocolContentPolicy_h__
+#ifndef nsNoDataProtocolContentPolicy_h_
+#define nsNoDataProtocolContentPolicy_h_
 
 
 #define NS_NODATAPROTOCOLCONTENTPOLICY_CID \

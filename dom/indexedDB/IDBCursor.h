@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbcursor_h__
-#define mozilla_dom_idbcursor_h__
+#ifndef mozilla_dom_idbcursor_h_
+#define mozilla_dom_idbcursor_h_
 
 #include "IDBCursorType.h"
 #include "IndexedDatabase.h"

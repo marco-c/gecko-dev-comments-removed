@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistRemoteDocument_h__
-#define WebBrowserPersistRemoteDocument_h__
+#ifndef WebBrowserPersistRemoteDocument_h_
+#define WebBrowserPersistRemoteDocument_h_
 
 #include "mozilla/PWebBrowserPersistDocumentParent.h"
 #include "nsCOMPtr.h"

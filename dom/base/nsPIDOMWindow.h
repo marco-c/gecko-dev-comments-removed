@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPIDOMWindow_h__
-#define nsPIDOMWindow_h__
+#ifndef nsPIDOMWindow_h_
+#define nsPIDOMWindow_h_
 
 #include "Units.h"
 #include "js/TypeDecls.h"

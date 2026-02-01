@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RTCRtpReceiver_h_
-#define _RTCRtpReceiver_h_
+#ifndef RTCRtpReceiver_h_
+#define RTCRtpReceiver_h_
 
 #include <vector>
 

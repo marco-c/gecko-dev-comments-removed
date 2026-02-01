@@ -2,8 +2,8 @@
 
 
 
-#ifndef _WEBRTC_GLOBAL_PARENT_H_
-#define _WEBRTC_GLOBAL_PARENT_H_
+#ifndef WEBRTC_GLOBAL_PARENT_H_
+#define WEBRTC_GLOBAL_PARENT_H_
 
 #include "mozilla/dom/PWebrtcGlobalParent.h"
 #include "nsISupportsImpl.h"

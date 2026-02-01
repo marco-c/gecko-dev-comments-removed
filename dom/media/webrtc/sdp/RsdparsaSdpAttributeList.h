@@ -4,8 +4,8 @@
 
 
 
-#ifndef _RSDPARSA_SDP_ATTRIBUTE_LIST_H_
-#define _RSDPARSA_SDP_ATTRIBUTE_LIST_H_
+#ifndef RSDPARSA_SDP_ATTRIBUTE_LIST_H_
+#define RSDPARSA_SDP_ATTRIBUTE_LIST_H_
 
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"

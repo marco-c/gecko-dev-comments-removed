@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_audiochannelservice_h__
-#define mozilla_dom_audiochannelservice_h__
+#ifndef mozilla_dom_audiochannelservice_h_
+#define mozilla_dom_audiochannelservice_h_
 
 #include <functional>
 

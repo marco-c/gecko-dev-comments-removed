@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbfactory_h__
-#define mozilla_dom_idbfactory_h__
+#ifndef mozilla_dom_idbfactory_h_
+#define mozilla_dom_idbfactory_h_
 
 #include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/UniquePtr.h"

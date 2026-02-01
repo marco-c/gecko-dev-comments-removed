@@ -8,8 +8,8 @@
 
 
 
-#ifndef nsDOMTokenList_h___
-#define nsDOMTokenList_h___
+#ifndef nsDOMTokenList_h_
+#define nsDOMTokenList_h_
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMTokenListSupportedTokens.h"

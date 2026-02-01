@@ -2,8 +2,8 @@
 
 
 
-#ifndef WebrtcMediaDataEncoderCodec_h__
-#define WebrtcMediaDataEncoderCodec_h__
+#ifndef WebrtcMediaDataEncoderCodec_h_
+#define WebrtcMediaDataEncoderCodec_h_
 
 #include "MediaConduitInterface.h"
 #include "MediaInfo.h"

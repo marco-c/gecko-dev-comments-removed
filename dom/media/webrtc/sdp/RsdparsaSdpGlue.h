@@ -3,8 +3,8 @@
 
 
 
-#ifndef _RUSTSDPGLUE_H_
-#define _RUSTSDPGLUE_H_
+#ifndef RUSTSDPGLUE_H_
+#define RUSTSDPGLUE_H_
 
 #include <string>
 #include <utility>

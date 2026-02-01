@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbobjectstore_h__
-#define mozilla_dom_idbobjectstore_h__
+#ifndef mozilla_dom_idbobjectstore_h_
+#define mozilla_dom_idbobjectstore_h_
 
 #include "IDBCursor.h"
 #include "js/RootingAPI.h"

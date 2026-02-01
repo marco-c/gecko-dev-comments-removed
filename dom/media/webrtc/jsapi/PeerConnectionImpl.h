@@ -2,8 +2,8 @@
 
 
 
-#ifndef _PEER_CONNECTION_IMPL_H_
-#define _PEER_CONNECTION_IMPL_H_
+#ifndef PEER_CONNECTION_IMPL_H_
+#define PEER_CONNECTION_IMPL_H_
 
 #include <cmath>
 #include <map>

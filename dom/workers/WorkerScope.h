@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workerscope_h__
-#define mozilla_dom_workerscope_h__
+#ifndef mozilla_dom_workerscope_h_
+#define mozilla_dom_workerscope_h_
 
 #include "js/TypeDecls.h"
 #include "js/loader/ModuleLoaderBase.h"

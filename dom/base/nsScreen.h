@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsScreen_h___
-#define nsScreen_h___
+#ifndef nsScreen_h_
+#define nsScreen_h_
 
 #include "Units.h"
 #include "mozilla/DOMEventTargetHelper.h"

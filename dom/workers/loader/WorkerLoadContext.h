@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_WorkerLoadContext_h__
-#define mozilla_dom_workers_WorkerLoadContext_h__
+#ifndef mozilla_dom_workers_WorkerLoadContext_h_
+#define mozilla_dom_workers_WorkerLoadContext_h_
 
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ScriptKind.h"
@@ -102,9 +102,7 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
                     bool aOnlyExistingCachedResourcesAllowed);
 
   
-  bool IsTopLevel() {
-    return mRequest->IsTopLevel() && (mKind == Kind::MainScript);
-  };
+  bool IsTopLevel();
 
   static Kind GetKind(bool isMainScript, bool isDebuggerScript) {
     if (isDebuggerScript) {
@@ -181,7 +179,7 @@ class ThreadSafeRequestHandle final {
 
   JS::loader::ScriptLoadRequest* GetRequest() const { return mRequest; }
 
-  WorkerLoadContext* GetContext() { return mRequest->GetWorkerLoadContext(); }
+  WorkerLoadContext* GetContext();
 
   bool IsEmpty() { return !mRequest; }
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsChildContentList_h__
-#define nsChildContentList_h__
+#ifndef nsChildContentList_h_
+#define nsChildContentList_h_
 
 #include "js/TypeDecls.h"  
 #include "mozilla/RefPtr.h"

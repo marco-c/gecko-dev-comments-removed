@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_UserNavigationInvolvement_h___
-#define mozilla_dom_UserNavigationInvolvement_h___
+#ifndef mozilla_dom_UserNavigationInvolvement_h_
+#define mozilla_dom_UserNavigationInvolvement_h_
 #include <cstdint>
 namespace mozilla::dom {
 

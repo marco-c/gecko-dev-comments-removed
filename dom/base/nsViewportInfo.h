@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsViewportInfo_h___
-#define nsViewportInfo_h___
+#ifndef nsViewportInfo_h_
+#define nsViewportInfo_h_
 
 #include <stdint.h>
 

@@ -1,8 +1,8 @@
 
 
 
-#ifndef _TRANSCEIVERIMPL_H_
-#define _TRANSCEIVERIMPL_H_
+#ifndef TRANSCEIVERIMPL_H_
+#define TRANSCEIVERIMPL_H_
 
 #include <string>
 

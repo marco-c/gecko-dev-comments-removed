@@ -4,8 +4,8 @@
 
 
 
-#if !defined(MediaMetadataManager_h__)
-#  define MediaMetadataManager_h__
+#if !defined(MediaMetadataManager_h_)
+#  define MediaMetadataManager_h_
 
 #  include "MediaEventSource.h"
 #  include "TimeUnits.h"

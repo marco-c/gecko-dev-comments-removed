@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebrtcImageBuffer_h__
-#define WebrtcImageBuffer_h__
+#ifndef WebrtcImageBuffer_h_
+#define WebrtcImageBuffer_h_
 
 #include "ImageContainer.h"
 #include "common_video/include/video_frame_buffer.h"

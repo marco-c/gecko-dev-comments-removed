@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbdatabase_h__
-#define mozilla_dom_idbdatabase_h__
+#ifndef mozilla_dom_idbdatabase_h_
+#define mozilla_dom_idbdatabase_h_
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/UniquePtr.h"

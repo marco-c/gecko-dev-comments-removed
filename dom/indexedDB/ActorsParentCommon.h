@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_actorsparentcommon_h__
-#define mozilla_dom_indexeddb_actorsparentcommon_h__
+#ifndef mozilla_dom_indexeddb_actorsparentcommon_h_
+#define mozilla_dom_indexeddb_actorsparentcommon_h_
 
 
 

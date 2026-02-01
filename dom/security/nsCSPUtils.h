@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSPUtils_h___
-#define nsCSPUtils_h___
+#ifndef nsCSPUtils_h_
+#define nsCSPUtils_h_
 
 #include "mozilla/ErrorResult.h"
 #include "nsCOMPtr.h"

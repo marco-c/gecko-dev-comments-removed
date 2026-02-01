@@ -1,8 +1,8 @@
 
 
 
-#ifndef __WEBAUTHN_H_
-#define __WEBAUTHN_H_
+#ifndef WEBAUTHN_H_
+#define WEBAUTHN_H_
 
 #pragma once
 

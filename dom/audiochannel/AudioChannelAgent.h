@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_audio_channel_agent_h__
-#define mozilla_dom_audio_channel_agent_h__
+#ifndef mozilla_dom_audio_channel_agent_h_
+#define mozilla_dom_audio_channel_agent_h_
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

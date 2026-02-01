@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_InputType_h__
-#define mozilla_dom_InputType_h__
+#ifndef mozilla_dom_InputType_h_
+#define mozilla_dom_InputType_h_
 
 #include <stdint.h>
 

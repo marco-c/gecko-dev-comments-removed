@@ -10,8 +10,8 @@
 
 
 
-#ifndef simpletokenbucket_h__
-#define simpletokenbucket_h__
+#ifndef simpletokenbucket_h_
+#define simpletokenbucket_h_
 
 #include <stdint.h>
 

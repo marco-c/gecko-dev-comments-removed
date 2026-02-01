@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMimeTypeArray_h___
-#define nsMimeTypeArray_h___
+#ifndef nsMimeTypeArray_h_
+#define nsMimeTypeArray_h_
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsCOMPtr.h"

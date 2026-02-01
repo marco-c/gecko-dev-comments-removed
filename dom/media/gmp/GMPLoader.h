@@ -4,8 +4,8 @@
 
 
 
-#ifndef GMP_LOADER_H__
-#define GMP_LOADER_H__
+#ifndef GMP_LOADER_H_
+#define GMP_LOADER_H_
 
 #include <stdint.h>
 

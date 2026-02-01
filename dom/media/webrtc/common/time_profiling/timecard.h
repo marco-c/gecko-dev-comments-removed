@@ -4,8 +4,8 @@
 
 
 
-#ifndef timecard_h__
-#define timecard_h__
+#ifndef timecard_h_
+#define timecard_h_
 
 #include "prtime.h"
 

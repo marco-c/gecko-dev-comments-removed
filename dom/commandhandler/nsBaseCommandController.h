@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsBaseCommandController_h__
-#define nsBaseCommandController_h__
+#ifndef nsBaseCommandController_h_
+#define nsBaseCommandController_h_
 
 #include "nsIController.h"
 #include "nsIWeakReferenceUtils.h"

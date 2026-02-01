@@ -4,8 +4,8 @@
 
 
 
-#ifndef DirectionalityUtils_h___
-#define DirectionalityUtils_h___
+#ifndef DirectionalityUtils_h_
+#define DirectionalityUtils_h_
 
 #include "nsStringFwd.h"
 #include "nscore.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef _JSEPTRANSCEIVER_H_
-#define _JSEPTRANSCEIVER_H_
+#ifndef JSEPTRANSCEIVER_H_
+#define JSEPTRANSCEIVER_H_
 
 #include <string>
 

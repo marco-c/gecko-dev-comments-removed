@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistSerializeChild_h__
-#define WebBrowserPersistSerializeChild_h__
+#ifndef WebBrowserPersistSerializeChild_h_
+#define WebBrowserPersistSerializeChild_h_
 
 #include "mozilla/PWebBrowserPersistDocument.h"
 #include "mozilla/PWebBrowserPersistSerializeChild.h"

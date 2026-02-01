@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WorkerDocumentListener_h__
-#define mozilla_dom_WorkerDocumentListener_h__
+#ifndef mozilla_dom_WorkerDocumentListener_h_
+#define mozilla_dom_WorkerDocumentListener_h_
 
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"

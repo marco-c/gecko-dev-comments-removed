@@ -18,8 +18,8 @@
 
 
 
-#ifndef mozilla_dom_NodeInfo_h___
-#define mozilla_dom_NodeInfo_h___
+#ifndef mozilla_dom_NodeInfo_h_
+#define mozilla_dom_NodeInfo_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"

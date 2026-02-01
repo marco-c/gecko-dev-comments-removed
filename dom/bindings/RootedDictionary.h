@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_RootedDictionary_h__
-#define mozilla_dom_RootedDictionary_h__
+#ifndef mozilla_dom_RootedDictionary_h_
+#define mozilla_dom_RootedDictionary_h_
 
 #include "jsapi.h"
 #include "mozilla/dom/Nullable.h"

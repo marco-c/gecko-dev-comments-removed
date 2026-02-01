@@ -4,8 +4,8 @@
 
 
 
-#ifndef _RUSTSDPPARSER_H_
-#define _RUSTSDPPARSER_H_
+#ifndef RUSTSDPPARSER_H_
+#define RUSTSDPPARSER_H_
 
 #include <string>
 

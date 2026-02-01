@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbrequest_h__
-#define mozilla_dom_idbrequest_h__
+#ifndef mozilla_dom_idbrequest_h_
+#define mozilla_dom_idbrequest_h_
 
 #include "ReportInternalError.h"
 #include "SafeRefPtr.h"

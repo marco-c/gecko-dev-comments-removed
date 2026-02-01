@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWindowMemoryReporter_h__
-#define nsWindowMemoryReporter_h__
+#ifndef nsWindowMemoryReporter_h_
+#define nsWindowMemoryReporter_h_
 
 #include "mozilla/TimeStamp.h"
 #include "nsIMemoryReporter.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_serviceworkerregistrationparent_h__
-#define mozilla_dom_serviceworkerregistrationparent_h__
+#ifndef mozilla_dom_serviceworkerregistrationparent_h_
+#define mozilla_dom_serviceworkerregistrationparent_h_
 
 #include "mozilla/dom/PServiceWorkerRegistrationParent.h"
 

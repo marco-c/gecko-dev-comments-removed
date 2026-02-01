@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPATTRIBUTE_H_
-#define _SDPATTRIBUTE_H_
+#ifndef SDPATTRIBUTE_H_
+#define SDPATTRIBUTE_H_
 
 #include <algorithm>
 #include <cctype>

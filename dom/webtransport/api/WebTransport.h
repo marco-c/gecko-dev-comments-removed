@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORT__H_
-#define DOM_WEBTRANSPORT_API_WEBTRANSPORT__H_
+#ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORT_H_
+#define DOM_WEBTRANSPORT_API_WEBTRANSPORT_H_
 
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportBinding.h"

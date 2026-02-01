@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHTMLDocument_h___
-#define nsHTMLDocument_h___
+#ifndef nsHTMLDocument_h_
+#define nsHTMLDocument_h_
 
 #include "PLDHashTable.h"
 #include "mozilla/dom/BindingDeclarations.h"

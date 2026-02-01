@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SIPCCSDPPARSER_H_
-#define _SIPCCSDPPARSER_H_
+#ifndef SIPCCSDPPARSER_H_
+#define SIPCCSDPPARSER_H_
 
 #include <string>
 

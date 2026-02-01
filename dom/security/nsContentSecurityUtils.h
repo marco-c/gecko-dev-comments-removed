@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsContentSecurityUtils_h___
-#define nsContentSecurityUtils_h___
+#ifndef nsContentSecurityUtils_h_
+#define nsContentSecurityUtils_h_
 
 #include <utility>
 

@@ -6,8 +6,8 @@
 
 
 
-#ifndef gtest_ringbuffer_dumper_h__
-#define gtest_ringbuffer_dumper_h__
+#ifndef gtest_ringbuffer_dumper_h_
+#define gtest_ringbuffer_dumper_h_
 
 #include "mozilla/SyncRunnable.h"
 

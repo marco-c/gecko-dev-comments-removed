@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_NetworkLoadHandler_h__
-#define mozilla_dom_workers_NetworkLoadHandler_h__
+#ifndef mozilla_dom_workers_NetworkLoadHandler_h_
+#define mozilla_dom_workers_NetworkLoadHandler_h_
 
 #include "mozilla/dom/ScriptLoadHandler.h"
 #include "mozilla/dom/WorkerLoadContext.h"

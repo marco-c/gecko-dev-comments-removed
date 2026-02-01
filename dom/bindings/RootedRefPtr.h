@@ -14,8 +14,8 @@
 
 
 
-#ifndef mozilla_RootedRefPtr_h__
-#define mozilla_RootedRefPtr_h__
+#ifndef mozilla_RootedRefPtr_h_
+#define mozilla_RootedRefPtr_h_
 
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"

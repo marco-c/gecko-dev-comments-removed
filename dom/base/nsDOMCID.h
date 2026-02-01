@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDOMCID_h__
-#define nsDOMCID_h__
+#ifndef nsDOMCID_h_
+#define nsDOMCID_h_
 
 #include "nsISupports.h"
 

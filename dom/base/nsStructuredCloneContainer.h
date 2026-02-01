@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsStructuredCloneContainer_h__
-#define nsStructuredCloneContainer_h__
+#ifndef nsStructuredCloneContainer_h_
+#define nsStructuredCloneContainer_h_
 
 #include <cstdint>
 

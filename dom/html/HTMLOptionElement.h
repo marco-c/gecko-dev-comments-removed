@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_HTMLOptionElement_h__
-#define mozilla_dom_HTMLOptionElement_h__
+#ifndef mozilla_dom_HTMLOptionElement_h_
+#define mozilla_dom_HTMLOptionElement_h_
 
 #include "mozilla/dom/HTMLFormElement.h"
 #include "nsGenericHTMLElement.h"

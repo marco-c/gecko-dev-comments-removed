@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformanceEntry_h___
-#define mozilla_dom_PerformanceEntry_h___
+#ifndef mozilla_dom_PerformanceEntry_h_
+#define mozilla_dom_PerformanceEntry_h_
 
 #include "mozilla/dom/PerformanceObserverBinding.h"
 #include "nsAtom.h"

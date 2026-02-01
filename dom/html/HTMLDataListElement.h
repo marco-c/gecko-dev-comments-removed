@@ -3,8 +3,8 @@
 
 
 
-#ifndef HTMLDataListElement_h___
-#define HTMLDataListElement_h___
+#ifndef HTMLDataListElement_h_
+#define HTMLDataListElement_h_
 
 #include "nsContentList.h"
 #include "nsGenericHTMLElement.h"

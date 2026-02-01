@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXMLElement_h___
-#define nsXMLElement_h___
+#ifndef nsXMLElement_h_
+#define nsXMLElement_h_
 
 #include "mozilla/dom/Element.h"
 

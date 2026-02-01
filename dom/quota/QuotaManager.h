@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_quotamanager_h__
-#define mozilla_dom_quota_quotamanager_h__
+#ifndef mozilla_dom_quota_quotamanager_h_
+#define mozilla_dom_quota_quotamanager_h_
 
 #include <cstdint>
 #include <utility>

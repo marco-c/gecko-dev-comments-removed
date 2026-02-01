@@ -2,8 +2,8 @@
 
 
 
-#ifndef _MTRANSPORTCHILD_H__
-#define _MTRANSPORTCHILD_H__
+#ifndef MTRANSPORTCHILD_H_
+#define MTRANSPORTCHILD_H_
 
 #include "mozilla/Mutex.h"
 #include "mozilla/dom/PMediaTransportChild.h"

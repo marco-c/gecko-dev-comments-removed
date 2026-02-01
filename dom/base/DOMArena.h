@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_Arena_h___
-#define DOM_Arena_h___
+#ifndef DOM_Arena_h_
+#define DOM_Arena_h_
 #include "mozilla/mozalloc_oom.h"  
 #include "mozmemory.h"
 #include "nsISupportsImpl.h"

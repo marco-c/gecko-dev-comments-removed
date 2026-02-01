@@ -41,8 +41,8 @@
 
 
 
-#ifndef nricemediastream_h__
-#define nricemediastream_h__
+#ifndef nricemediastream_h_
+#define nricemediastream_h_
 
 #include <string>
 #include <vector>

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIScriptObjectPrincipal_h__
-#define nsIScriptObjectPrincipal_h__
+#ifndef nsIScriptObjectPrincipal_h_
+#define nsIScriptObjectPrincipal_h_
 
 #include "nsISupports.h"
 

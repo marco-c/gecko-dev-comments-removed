@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_fetchParent_h__
-#define mozilla_dom_fetchParent_h__
+#ifndef mozilla_dom_fetchParent_h_
+#define mozilla_dom_fetchParent_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"

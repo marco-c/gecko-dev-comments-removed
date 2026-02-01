@@ -3,8 +3,8 @@
 
 
 
-#ifndef __TX_I_XPATH_CONTEXT
-#define __TX_I_XPATH_CONTEXT
+#ifndef TX_I_XPATH_CONTEXT
+#define TX_I_XPATH_CONTEXT
 
 #include "nsISupportsImpl.h"
 #include "nsStringFwd.h"

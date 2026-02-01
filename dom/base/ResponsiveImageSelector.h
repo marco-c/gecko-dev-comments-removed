@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_responsiveimageselector_h__
-#define mozilla_dom_responsiveimageselector_h__
+#ifndef mozilla_dom_responsiveimageselector_h_
+#define mozilla_dom_responsiveimageselector_h_
 
 #include "mozilla/FunctionRef.h"
 #include "mozilla/ServoBindingTypes.h"

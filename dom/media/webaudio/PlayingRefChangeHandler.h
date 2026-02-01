@@ -4,8 +4,8 @@
 
 
 
-#ifndef PlayingRefChangeHandler_h__
-#define PlayingRefChangeHandler_h__
+#ifndef PlayingRefChangeHandler_h_
+#define PlayingRefChangeHandler_h_
 
 #include "AudioNodeTrack.h"
 #include "nsThreadUtils.h"

@@ -40,8 +40,8 @@
 
 
 
-#ifndef nriceresolver_h__
-#define nriceresolver_h__
+#ifndef nriceresolver_h_
+#define nriceresolver_h_
 
 #include "nricectx.h"
 #include "nsICancelable.h"

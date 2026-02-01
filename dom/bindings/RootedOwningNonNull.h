@@ -14,8 +14,8 @@
 
 
 
-#ifndef mozilla_RootedOwningNonNull_h__
-#define mozilla_RootedOwningNonNull_h__
+#ifndef mozilla_RootedOwningNonNull_h_
+#define mozilla_RootedOwningNonNull_h_
 
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"

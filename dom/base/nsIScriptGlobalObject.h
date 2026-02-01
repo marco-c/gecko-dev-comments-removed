@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIScriptGlobalObject_h__
-#define nsIScriptGlobalObject_h__
+#ifndef nsIScriptGlobalObject_h_
+#define nsIScriptGlobalObject_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/EventForwards.h"

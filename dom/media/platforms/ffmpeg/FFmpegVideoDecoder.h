@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegVideoDecoder_h__
-#define __FFmpegVideoDecoder_h__
+#ifndef FFmpegVideoDecoder_h_
+#define FFmpegVideoDecoder_h_
 
 #include <atomic>
 

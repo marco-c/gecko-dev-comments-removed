@@ -14,12 +14,11 @@
 
 
 
-#ifndef __ClearKeySession_h__
-#define __ClearKeySession_h__
+#ifndef ClearKeySession_h_
+#define ClearKeySession_h_
 
 
 
-#include <stddef.h>
 
 #include <string>
 #include <vector>

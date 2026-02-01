@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSPParser_h___
-#define nsCSPParser_h___
+#ifndef nsCSPParser_h_
+#define nsCSPParser_h_
 
 #include "PolicyTokenizer.h"
 #include "nsCSPContext.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ChromeUtils__
-#define mozilla_dom_ChromeUtils__
+#ifndef mozilla_dom_ChromeUtils_
+#define mozilla_dom_ChromeUtils_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/BindingDeclarations.h"

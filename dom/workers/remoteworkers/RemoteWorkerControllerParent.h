@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_remoteworkercontrollerparent_h__
-#define mozilla_dom_remoteworkercontrollerparent_h__
+#ifndef mozilla_dom_remoteworkercontrollerparent_h_
+#define mozilla_dom_remoteworkercontrollerparent_h_
 
 #include <functional>
 

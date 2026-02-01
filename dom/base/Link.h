@@ -8,8 +8,8 @@
 
 
 
-#ifndef mozilla_dom_Link_h__
-#define mozilla_dom_Link_h__
+#ifndef mozilla_dom_Link_h_
+#define mozilla_dom_Link_h_
 
 #include "mozilla/dom/RustTypes.h"
 #include "nsCOMPtr.h"

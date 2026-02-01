@@ -4,8 +4,8 @@
 
 
 
-#ifndef _JESPTRACKENCODING_H_
-#define _JESPTRACKENCODING_H_
+#ifndef JESPTRACKENCODING_H_
+#define JESPTRACKENCODING_H_
 
 #include <vector>
 

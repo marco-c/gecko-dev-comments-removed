@@ -8,8 +8,8 @@
 
 
 
-#ifndef nsNodeInfoManager_h___
-#define nsNodeInfoManager_h___
+#ifndef nsNodeInfoManager_h_
+#define nsNodeInfoManager_h_
 
 #include "mozilla/Attributes.h"  
 #include "mozilla/MruCache.h"

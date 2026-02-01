@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULMenuBarElement_h__
-#define XULMenuBarElement_h__
+#ifndef XULMenuBarElement_h_
+#define XULMenuBarElement_h_
 
 #include "XULMenuParentElement.h"
 #include "mozilla/Attributes.h"

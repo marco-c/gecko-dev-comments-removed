@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_serviceworkeractors_h__
-#define mozilla_dom_serviceworkeractors_h__
+#ifndef mozilla_dom_serviceworkeractors_h_
+#define mozilla_dom_serviceworkeractors_h_
 
 namespace mozilla::dom {
 

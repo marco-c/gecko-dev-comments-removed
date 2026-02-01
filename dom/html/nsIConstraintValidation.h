@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIConstraintValidition_h___
-#define nsIConstraintValidition_h___
+#ifndef nsIConstraintValidition_h_
+#define nsIConstraintValidition_h_
 
 #include "nsISupports.h"
 

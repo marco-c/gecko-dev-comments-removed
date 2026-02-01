@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_profilerhelpers_h__
-#define mozilla_dom_indexeddb_profilerhelpers_h__
+#ifndef mozilla_dom_indexeddb_profilerhelpers_h_
+#define mozilla_dom_indexeddb_profilerhelpers_h_
 
 
 

@@ -47,8 +47,8 @@
 
 
 
-#ifndef nricectx_h__
-#define nricectx_h__
+#ifndef nricectx_h_
+#define nricectx_h_
 
 #include <map>
 #include <memory>

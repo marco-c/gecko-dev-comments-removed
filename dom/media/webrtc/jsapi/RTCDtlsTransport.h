@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RTCDtlsTransport_h_
-#define _RTCDtlsTransport_h_
+#ifndef RTCDtlsTransport_h_
+#define RTCDtlsTransport_h_
 
 #include "js/RootingAPI.h"
 #include "mozilla/DOMEventTargetHelper.h"

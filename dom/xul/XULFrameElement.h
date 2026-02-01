@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULFrameElement_h__
-#define XULFrameElement_h__
+#ifndef XULFrameElement_h_
+#define XULFrameElement_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/Nullable.h"

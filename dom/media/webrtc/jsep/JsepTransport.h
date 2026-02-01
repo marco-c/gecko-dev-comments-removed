@@ -2,8 +2,8 @@
 
 
 
-#ifndef _JSEPTRANSPORT_H_
-#define _JSEPTRANSPORT_H_
+#ifndef JSEPTRANSPORT_H_
+#define JSEPTRANSPORT_H_
 
 #include <mozilla/RefPtr.h>
 #include <mozilla/UniquePtr.h>

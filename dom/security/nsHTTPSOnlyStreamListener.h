@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHTTPSOnlyStreamListener_h___
-#define nsHTTPSOnlyStreamListener_h___
+#ifndef nsHTTPSOnlyStreamListener_h_
+#define nsHTTPSOnlyStreamListener_h_
 
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"

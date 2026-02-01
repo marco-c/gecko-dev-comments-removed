@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_NavigateEvent_h___
-#define mozilla_dom_NavigateEvent_h___
+#ifndef mozilla_dom_NavigateEvent_h_
+#define mozilla_dom_NavigateEvent_h_
 
 #include "js/RootingAPI.h"
 #include "js/Value.h"

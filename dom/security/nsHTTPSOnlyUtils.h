@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHTTPSOnlyUtils_h___
-#define nsHTTPSOnlyUtils_h___
+#ifndef nsHTTPSOnlyUtils_h_
+#define nsHTTPSOnlyUtils_h_
 
 #include "mozilla/net/DocumentLoadListener.h"
 #include "nsIScriptError.h"

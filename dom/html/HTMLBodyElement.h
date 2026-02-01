@@ -3,8 +3,8 @@
 
 
 
-#ifndef HTMLBodyElement_h___
-#define HTMLBodyElement_h___
+#ifndef HTMLBodyElement_h_
+#define HTMLBodyElement_h_
 
 #include "nsGenericHTMLElement.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WindowsUtilsParent_h__
-#define mozilla_dom_WindowsUtilsParent_h__
+#ifndef mozilla_dom_WindowsUtilsParent_h_
+#define mozilla_dom_WindowsUtilsParent_h_
 
 #include "mozilla/ProcInfo.h"
 #include "mozilla/dom/PWindowsUtilsParent.h"

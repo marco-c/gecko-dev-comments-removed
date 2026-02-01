@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPATTRIBUTELIST_H_
-#define _SDPATTRIBUTELIST_H_
+#ifndef SDPATTRIBUTELIST_H_
+#define SDPATTRIBUTELIST_H_
 
 #include "sdp/SdpAttribute.h"
 

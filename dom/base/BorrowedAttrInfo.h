@@ -4,8 +4,8 @@
 
 
 
-#ifndef BorrowedAttrInfo_h__
-#define BorrowedAttrInfo_h__
+#ifndef BorrowedAttrInfo_h_
+#define BorrowedAttrInfo_h_
 
 class nsAttrName;
 class nsAttrValue;

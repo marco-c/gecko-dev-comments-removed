@@ -2,8 +2,8 @@
 
 
 
-#ifndef _WEBRTC_GLOBAL_CHILD_H_
-#define _WEBRTC_GLOBAL_CHILD_H_
+#ifndef WEBRTC_GLOBAL_CHILD_H_
+#define WEBRTC_GLOBAL_CHILD_H_
 
 #include "mozilla/dom/PWebrtcGlobalChild.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RTCSctpTransport_h_
-#define _RTCSctpTransport_h_
+#ifndef RTCSctpTransport_h_
+#define RTCSctpTransport_h_
 
 #include "RTCDtlsTransport.h"
 #include "js/RootingAPI.h"

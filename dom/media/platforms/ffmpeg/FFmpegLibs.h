@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegLibs_h__
-#define __FFmpegLibs_h__
+#ifndef FFmpegLibs_h_
+#define FFmpegLibs_h_
 
 extern "C" {
 #ifdef __GNUC__

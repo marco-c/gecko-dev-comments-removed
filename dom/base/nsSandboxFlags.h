@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsSandboxFlags_h___
-#define nsSandboxFlags_h___
+#ifndef nsSandboxFlags_h_
+#define nsSandboxFlags_h_
 
 
 

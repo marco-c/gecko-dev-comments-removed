@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_filepicker_message_utils_h__
-#define mozilla_dom_filepicker_message_utils_h__
+#ifndef mozilla_dom_filepicker_message_utils_h_
+#define mozilla_dom_filepicker_message_utils_h_
 
 #include "ipc/EnumSerializer.h"
 #include "nsIFilePicker.h"

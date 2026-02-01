@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCaseTreatment_h___
-#define nsCaseTreatment_h___
+#ifndef nsCaseTreatment_h_
+#define nsCaseTreatment_h_
 
 
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIFormControl_h___
-#define nsIFormControl_h___
+#ifndef nsIFormControl_h_
+#define nsIFormControl_h_
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/StaticPrefs_dom.h"

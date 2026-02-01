@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RTCDTMFSender_h_
-#define _RTCDTMFSender_h_
+#ifndef RTCDTMFSender_h_
+#define RTCDTMFSender_h_
 
 #include "MediaEventSource.h"
 #include "js/RootingAPI.h"

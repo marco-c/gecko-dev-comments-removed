@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformancePaintTiming_h___
-#define mozilla_dom_PerformancePaintTiming_h___
+#ifndef mozilla_dom_PerformancePaintTiming_h_
+#define mozilla_dom_PerformancePaintTiming_h_
 
 #include "mozilla/dom/PerformanceEntry.h"
 #include "mozilla/dom/PerformancePaintTimingBinding.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef txXPathOptimizer_h__
-#define txXPathOptimizer_h__
+#ifndef txXPathOptimizer_h_
+#define txXPathOptimizer_h_
 
 #include "txCore.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIDocumentActivity_h__
-#define nsIDocumentActivity_h__
+#ifndef nsIDocumentActivity_h_
+#define nsIDocumentActivity_h_
 
 #include "nsISupports.h"
 

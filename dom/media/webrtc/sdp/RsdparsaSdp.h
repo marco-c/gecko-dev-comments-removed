@@ -4,8 +4,8 @@
 
 
 
-#ifndef _RSDPARSA_SDP_H_
-#define _RSDPARSA_SDP_H_
+#ifndef RSDPARSASDP_H_
+#define RSDPARSASDP_H_
 
 #include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpAttributeList.h"

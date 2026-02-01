@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULTextElement_h__
-#define XULTextElement_h__
+#ifndef XULTextElement_h_
+#define XULTextElement_h_
 
 #include "nsXULElement.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsICanvasRenderingContextInternal_h___
-#define nsICanvasRenderingContextInternal_h___
+#ifndef nsICanvasRenderingContextInternal_h_
+#define nsICanvasRenderingContextInternal_h_
 
 #include "gfxRect.h"
 #include "mozilla/EventForwards.h"

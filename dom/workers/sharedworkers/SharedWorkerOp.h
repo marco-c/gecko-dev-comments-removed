@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_sharedworkerop_h__
-#define mozilla_dom_sharedworkerop_h__
+#ifndef mozilla_dom_sharedworkerop_h_
+#define mozilla_dom_sharedworkerop_h_
 
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/dom/RemoteWorkerOp.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef GetUserMediaRequest_h__
-#define GetUserMediaRequest_h__
+#ifndef GetUserMediaRequest_h_
+#define GetUserMediaRequest_h_
 
 #include <cstdint>
 

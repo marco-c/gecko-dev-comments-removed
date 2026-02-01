@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWindowRoot_h__
-#define nsWindowRoot_h__
+#ifndef nsWindowRoot_h_
+#define nsWindowRoot_h_
 
 class nsIGlobalObject;
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef webrtc_tcp_socket_callback_h__
-#define webrtc_tcp_socket_callback_h__
+#ifndef webrtc_tcp_socket_callback_h_
+#define webrtc_tcp_socket_callback_h_
 
 #include "nsTArray.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SIPCCSDPMEDIASECTION_H_
-#define _SIPCCSDPMEDIASECTION_H_
+#ifndef SIPCCSDPMEDIASECTION_H_
+#define SIPCCSDPMEDIASECTION_H_
 
 #include <map>
 

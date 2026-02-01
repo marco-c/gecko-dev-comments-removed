@@ -2,8 +2,8 @@
 
 
 
-#ifndef _WEBRTC_IPC_TRAITS_H_
-#define _WEBRTC_IPC_TRAITS_H_
+#ifndef WEBRTC_IPC_TRAITS_H_
+#define WEBRTC_IPC_TRAITS_H_
 
 #include <vector>
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef TEST_CDM_STORAGE_H__
-#define TEST_CDM_STORAGE_H__
+#ifndef TEST_CDM_STORAGE_H_
+#define TEST_CDM_STORAGE_H_
 
 #include <cstdint>
 #include <functional>

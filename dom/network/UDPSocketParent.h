@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_UDPSocketParent_h__
-#define mozilla_dom_UDPSocketParent_h__
+#ifndef mozilla_dom_UDPSocketParent_h_
+#define mozilla_dom_UDPSocketParent_h_
 
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/net/PUDPSocketParent.h"

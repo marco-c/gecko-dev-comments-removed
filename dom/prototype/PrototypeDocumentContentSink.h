@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PrototypeDocumentContentSink_h__
-#define mozilla_dom_PrototypeDocumentContentSink_h__
+#ifndef mozilla_dom_PrototypeDocumentContentSink_h_
+#define mozilla_dom_PrototypeDocumentContentSink_h_
 
 #include "js/experimental/JSStencil.h"
 #include "mozilla/Logging.h"

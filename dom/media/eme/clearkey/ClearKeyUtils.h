@@ -14,8 +14,8 @@
 
 
 
-#ifndef __ClearKeyUtils_h__
-#define __ClearKeyUtils_h__
+#ifndef ClearKeyUtils_h_
+#define ClearKeyUtils_h_
 
 #include <assert.h>
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformanceObserverEntryList_h__
-#define mozilla_dom_PerformanceObserverEntryList_h__
+#ifndef mozilla_dom_PerformanceObserverEntryList_h_
+#define mozilla_dom_PerformanceObserverEntryList_h_
 
 #include "mozilla/dom/PerformanceEntryBinding.h"
 #include "nsCOMPtr.h"

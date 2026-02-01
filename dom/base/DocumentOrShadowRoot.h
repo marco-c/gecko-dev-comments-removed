@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DocumentOrShadowRoot_h__
-#define mozilla_dom_DocumentOrShadowRoot_h__
+#ifndef mozilla_dom_DocumentOrShadowRoot_h_
+#define mozilla_dom_DocumentOrShadowRoot_h_
 
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/RelativeTo.h"

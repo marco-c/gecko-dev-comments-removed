@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_sharedworker_h__
-#define mozilla_dom_workers_sharedworker_h__
+#ifndef mozilla_dom_workers_sharedworker_h_
+#define mozilla_dom_workers_sharedworker_h_
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/BindingDeclarations.h"

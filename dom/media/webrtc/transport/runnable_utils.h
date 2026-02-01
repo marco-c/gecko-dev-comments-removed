@@ -6,8 +6,8 @@
 
 
 
-#ifndef runnable_utils_h__
-#define runnable_utils_h__
+#ifndef runnable_utils_h_
+#define runnable_utils_h_
 
 #include <functional>
 #include <tuple>

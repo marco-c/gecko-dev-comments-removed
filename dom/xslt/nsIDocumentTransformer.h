@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsIDocumentTransformer_h__
-#define nsIDocumentTransformer_h__
+#ifndef nsIDocumentTransformer_h_
+#define nsIDocumentTransformer_h_
 
 #include "nsISupports.h"
 #include "nsStringFwd.h"

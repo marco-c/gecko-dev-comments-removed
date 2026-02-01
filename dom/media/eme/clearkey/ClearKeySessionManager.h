@@ -14,12 +14,11 @@
 
 
 
-#ifndef __ClearKeyDecryptor_h__
-#define __ClearKeyDecryptor_h__
+#ifndef ClearKeyDecryptor_h_
+#define ClearKeyDecryptor_h_
 
 
 
-#include <stddef.h>
 
 #include <functional>
 #include <map>

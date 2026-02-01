@@ -3,8 +3,8 @@
 
 
 
-#if !defined(MediaDecoderStateMachine_h__)
-#  define MediaDecoderStateMachine_h__
+#if !defined(MediaDecoderStateMachine_h_)
+#  define MediaDecoderStateMachine_h_
 
 #  include "AudioDeviceInfo.h"
 #  include "ImageContainer.h"

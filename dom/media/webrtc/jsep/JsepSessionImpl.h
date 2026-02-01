@@ -2,8 +2,8 @@
 
 
 
-#ifndef _JSEPSESSIONIMPL_H_
-#define _JSEPSESSIONIMPL_H_
+#ifndef JSEPSESSIONIMPL_H_
+#define JSEPSESSIONIMPL_H_
 
 #include <map>
 #include <set>

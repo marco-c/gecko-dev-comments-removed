@@ -3,8 +3,8 @@
 
 
 
-#ifndef txRtfHandler_h___
-#define txRtfHandler_h___
+#ifndef txRtfHandler_h_
+#define txRtfHandler_h_
 
 #include "txBufferingHandler.h"
 #include "txExprResult.h"

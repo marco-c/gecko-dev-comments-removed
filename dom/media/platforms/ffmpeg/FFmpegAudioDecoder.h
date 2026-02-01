@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegAACDecoder_h__
-#define __FFmpegAACDecoder_h__
+#ifndef FFmpegAACDecoder_h_
+#define FFmpegAACDecoder_h_
 
 #include "FFmpegDataDecoder.h"
 #include "FFmpegLibWrapper.h"

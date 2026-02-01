@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_serviceworkerchild_h__
-#define mozilla_dom_serviceworkerchild_h__
+#ifndef mozilla_dom_serviceworkerchild_h_
+#define mozilla_dom_serviceworkerchild_h_
 
 #include "mozilla/dom/PServiceWorkerChild.h"
 #include "mozilla/dom/WorkerRef.h"

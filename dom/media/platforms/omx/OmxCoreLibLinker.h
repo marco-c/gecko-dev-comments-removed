@@ -4,8 +4,8 @@
 
 
 
-#ifndef __OmxCoreLibLinker_h__
-#define __OmxCoreLibLinker_h__
+#ifndef OmxCoreLibLinker_h_
+#define OmxCoreLibLinker_h_
 
 struct PRLibrary;
 

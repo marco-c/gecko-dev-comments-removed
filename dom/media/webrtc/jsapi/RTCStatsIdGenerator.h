@@ -4,8 +4,8 @@
 
 
 
-#ifndef _RTCSTATSIDGENERATOR_H_
-#define _RTCSTATSIDGENERATOR_H_
+#ifndef RTCSTATSIDGENERATOR_H_
+#define RTCSTATSIDGENERATOR_H_
 
 #include <map>
 

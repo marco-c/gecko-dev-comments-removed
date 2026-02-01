@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIHTMLCollection_h___
-#define nsIHTMLCollection_h___
+#ifndef nsIHTMLCollection_h_
+#define nsIHTMLCollection_h_
 
 #include "js/TypeDecls.h"
 #include "nsISupports.h"

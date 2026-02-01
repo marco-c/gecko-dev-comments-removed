@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIScriptContext_h__
-#define nsIScriptContext_h__
+#ifndef nsIScriptContext_h_
+#define nsIScriptContext_h_
 
 #include "js/experimental/JSStencil.h"
 #include "jspubtd.h"

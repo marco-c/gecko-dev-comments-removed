@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsOSPermissionRequestBase_h__
-#define nsOSPermissionRequestBase_h__
+#ifndef nsOSPermissionRequestBase_h_
+#define nsOSPermissionRequestBase_h_
 
 #include "nsIOSPermissionRequest.h"
 #include "nsWeakReference.h"

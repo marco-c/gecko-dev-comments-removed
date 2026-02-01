@@ -2,8 +2,8 @@
 
 
 
-#ifndef _MTRANSPORTHANDLER_IPC_H__
-#define _MTRANSPORTHANDLER_IPC_H__
+#ifndef MTRANSPORTHANDLER_IPC_H_
+#define MTRANSPORTHANDLER_IPC_H_
 
 #include "jsapi/MediaTransportHandler.h"
 #include "mozilla/dom/PMediaTransportChild.h"

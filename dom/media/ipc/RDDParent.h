@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_dom_media_ipc_RDDParent_h__
-#define _include_dom_media_ipc_RDDParent_h__
+#ifndef _include_dom_media_ipc_RDDParent_h_
+#define _include_dom_media_ipc_RDDParent_h_
 #include "mozilla/PRDDParent.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ipc/AsyncBlockers.h"

@@ -4,12 +4,10 @@
 
 
 
-#ifndef nsFrameMessageManager_h__
-#define nsFrameMessageManager_h__
+#ifndef nsFrameMessageManager_h_
+#define nsFrameMessageManager_h_
 
 #include <string.h>
-
-#include <cstdint>
 
 #include "ErrorList.h"
 #include "js/TypeDecls.h"

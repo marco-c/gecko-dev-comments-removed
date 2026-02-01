@@ -3,8 +3,8 @@
 
 
 
-#ifndef HTMLDivElement_h___
-#define HTMLDivElement_h___
+#ifndef HTMLDivElement_h_
+#define HTMLDivElement_h_
 
 #include "nsGenericHTMLElement.h"
 

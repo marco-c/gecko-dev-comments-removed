@@ -6,8 +6,8 @@
 
 
 
-#ifndef m_cpp_utils_h__
-#define m_cpp_utils_h__
+#ifndef m_cpp_utils_h_
+#define m_cpp_utils_h_
 
 namespace mozilla {
 

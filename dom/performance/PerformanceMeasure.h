@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_performancemeasure_h___
-#define mozilla_dom_performancemeasure_h___
+#ifndef mozilla_dom_performancemeasure_h_
+#define mozilla_dom_performancemeasure_h_
 
 #include "mozilla/dom/PerformanceEntry.h"
 

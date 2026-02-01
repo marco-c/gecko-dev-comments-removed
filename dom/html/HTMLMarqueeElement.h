@@ -3,8 +3,8 @@
 
 
 
-#ifndef HTMLMarqueeElement_h___
-#define HTMLMarqueeElement_h___
+#ifndef HTMLMarqueeElement_h_
+#define HTMLMarqueeElement_h_
 
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"

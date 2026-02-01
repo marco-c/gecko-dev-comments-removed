@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_filestreams_h__
-#define mozilla_dom_quota_filestreams_h__
+#ifndef mozilla_dom_quota_filestreams_h_
+#define mozilla_dom_quota_filestreams_h_
 
 
 #include "Client.h"

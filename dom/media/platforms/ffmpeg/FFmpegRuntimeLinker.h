@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegRuntimeLinker_h__
-#define __FFmpegRuntimeLinker_h__
+#ifndef FFmpegRuntimeLinker_h_
+#define FFmpegRuntimeLinker_h_
 
 #include "PlatformDecoderModule.h"
 #include "PlatformEncoderModule.h"

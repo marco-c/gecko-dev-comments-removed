@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistLocalDocument_h__
-#define WebBrowserPersistLocalDocument_h__
+#ifndef WebBrowserPersistLocalDocument_h_
+#define WebBrowserPersistLocalDocument_h_
 
 #include "mozilla/NotNull.h"
 #include "nsCOMPtr.h"

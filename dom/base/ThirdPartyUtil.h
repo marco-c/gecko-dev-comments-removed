@@ -4,10 +4,8 @@
 
 
 
-#ifndef ThirdPartyUtil_h__
-#define ThirdPartyUtil_h__
-
-#include <cstdint>
+#ifndef ThirdPartyUtil_h_
+#define ThirdPartyUtil_h_
 
 #include "ErrorList.h"
 #include "mozIThirdPartyUtil.h"

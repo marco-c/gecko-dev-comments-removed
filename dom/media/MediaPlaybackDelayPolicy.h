@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_mediaplaybackdelaypolicy_h__
-#define mozilla_dom_mediaplaybackdelaypolicy_h__
+#ifndef mozilla_dom_mediaplaybackdelaypolicy_h_
+#define mozilla_dom_mediaplaybackdelaypolicy_h_
 
 #include "AudioChannelAgent.h"
 #include "AudioChannelService.h"

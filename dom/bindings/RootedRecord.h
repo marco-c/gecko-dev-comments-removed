@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_RootedRecord_h__
-#define mozilla_dom_RootedRecord_h__
+#ifndef mozilla_dom_RootedRecord_h_
+#define mozilla_dom_RootedRecord_h_
 
 #include "js/RootingAPI.h"
 #include "mozilla/dom/Record.h"

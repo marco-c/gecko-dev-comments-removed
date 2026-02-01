@@ -4,8 +4,8 @@
 
 
 
-#ifndef dom_indexeddb_schemaupgrades_h__
-#define dom_indexeddb_schemaupgrades_h__
+#ifndef dom_indexeddb_schemaupgrades_h_
+#define dom_indexeddb_schemaupgrades_h_
 
 #include <cstdint>
 

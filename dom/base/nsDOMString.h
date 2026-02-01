@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDOMString_h___
-#define nsDOMString_h___
+#ifndef nsDOMString_h_
+#define nsDOMString_h_
 
 #include "nsString.h"
 

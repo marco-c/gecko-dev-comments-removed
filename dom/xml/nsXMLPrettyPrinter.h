@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsXMLPrettyPrinter_h__
-#define nsXMLPrettyPrinter_h__
+#ifndef nsXMLPrettyPrinter_h_
+#define nsXMLPrettyPrinter_h_
 
 #include "nsCOMPtr.h"
 #include "nsStubDocumentObserver.h"

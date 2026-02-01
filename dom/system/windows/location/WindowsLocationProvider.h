@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WindowsLocationProvider_h__
-#define mozilla_dom_WindowsLocationProvider_h__
+#ifndef mozilla_dom_WindowsLocationProvider_h_
+#define mozilla_dom_WindowsLocationProvider_h_
 
 #include "mozilla/MozPromise.h"
 #include "nsCOMPtr.h"

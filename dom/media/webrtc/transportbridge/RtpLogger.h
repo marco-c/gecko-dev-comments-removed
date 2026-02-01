@@ -4,8 +4,8 @@
 
 
 
-#ifndef rtplogger_h__
-#define rtplogger_h__
+#ifndef rtplogger_h_
+#define rtplogger_h_
 
 #include "transport/mediapacket.h"
 

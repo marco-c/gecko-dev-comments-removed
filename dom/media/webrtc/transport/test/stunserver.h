@@ -6,8 +6,8 @@
 
 
 
-#ifndef stunserver_h__
-#define stunserver_h__
+#ifndef stunserver_h_
+#define stunserver_h_
 
 #include <map>
 #include <string>

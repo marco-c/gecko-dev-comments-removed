@@ -4,8 +4,8 @@
 
 
 
-#ifndef SpeechRecognitionError_h__
-#define SpeechRecognitionError_h__
+#ifndef SpeechRecognitionError_h_
+#define SpeechRecognitionError_h_
 
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/SpeechRecognitionErrorBinding.h"

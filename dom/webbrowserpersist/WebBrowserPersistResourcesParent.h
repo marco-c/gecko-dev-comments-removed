@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistResourcesParent_h__
-#define WebBrowserPersistResourcesParent_h__
+#ifndef WebBrowserPersistResourcesParent_h_
+#define WebBrowserPersistResourcesParent_h_
 
 #include "WebBrowserPersistDocumentParent.h"
 #include "mozilla/PWebBrowserPersistResourcesParent.h"

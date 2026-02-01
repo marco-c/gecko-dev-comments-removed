@@ -4,8 +4,8 @@
 
 
 
-#ifndef AlignedTArray_h__
-#define AlignedTArray_h__
+#ifndef AlignedTArray_h_
+#define AlignedTArray_h_
 
 #include "nsTArray.h"
 

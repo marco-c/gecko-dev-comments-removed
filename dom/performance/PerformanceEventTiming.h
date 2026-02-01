@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformanceEventTiming_h___
-#define mozilla_dom_PerformanceEventTiming_h___
+#ifndef mozilla_dom_PerformanceEventTiming_h_
+#define mozilla_dom_PerformanceEventTiming_h_
 
 #include "Performance.h"
 #include "mozilla/EventForwards.h"

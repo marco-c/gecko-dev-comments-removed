@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIXMLContentSink_h___
-#define nsIXMLContentSink_h___
+#ifndef nsIXMLContentSink_h_
+#define nsIXMLContentSink_h_
 
 #include "nsIContentSink.h"
 #include "nsISupports.h"

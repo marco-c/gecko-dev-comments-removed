@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SIPCCSDPATTRIBUTELIST_H_
-#define _SIPCCSDPATTRIBUTELIST_H_
+#ifndef SIPCCSDPATTRIBUTELIST_H_
+#define SIPCCSDPATTRIBUTELIST_H_
 
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpParser.h"

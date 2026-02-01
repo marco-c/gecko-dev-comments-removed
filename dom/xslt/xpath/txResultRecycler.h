@@ -3,8 +3,8 @@
 
 
 
-#ifndef txResultRecycler_h__
-#define txResultRecycler_h__
+#ifndef txResultRecycler_h_
+#define txResultRecycler_h_
 
 #include "nsCOMPtr.h"
 #include "txStack.h"

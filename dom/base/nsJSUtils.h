@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsJSUtils_h__
-#define nsJSUtils_h__
+#ifndef nsJSUtils_h_
+#define nsJSUtils_h_
 
 
 

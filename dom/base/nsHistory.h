@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHistory_h___
-#define nsHistory_h___
+#ifndef nsHistory_h_
+#define nsHistory_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/ChildSHistory.h"

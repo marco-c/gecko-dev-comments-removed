@@ -2,8 +2,8 @@
 
 
 
-#ifndef _PACKET_DUMPER_H_
-#define _PACKET_DUMPER_H_
+#ifndef PACKET_DUMPER_H_
+#define PACKET_DUMPER_H_
 
 #include <vector>
 

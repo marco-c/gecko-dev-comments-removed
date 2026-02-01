@@ -4,8 +4,8 @@
 
 
 
-#ifndef StructuredCloneTags_h__
-#define StructuredCloneTags_h__
+#ifndef StructuredCloneTags_h_
+#define StructuredCloneTags_h_
 
 #include "js/StructuredClone.h"
 

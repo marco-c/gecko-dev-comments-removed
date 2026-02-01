@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSPService_h___
-#define nsCSPService_h___
+#ifndef nsCSPService_h_
+#define nsCSPService_h_
 
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"

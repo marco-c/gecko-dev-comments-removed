@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_Selection_h__
-#define mozilla_Selection_h__
+#ifndef mozilla_Selection_h_
+#define mozilla_Selection_h_
 
 #include "mozilla/AutoRestore.h"
 #include "mozilla/EventForwards.h"

@@ -14,8 +14,8 @@
 
 
 
-#ifndef __ClearKeyStorage_h__
-#define __ClearKeyStorage_h__
+#ifndef ClearKeyStorage_h_
+#define ClearKeyStorage_h_
 
 #include <stdint.h>
 

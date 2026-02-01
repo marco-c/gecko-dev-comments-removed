@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsContentCreatorFunctions_h__
-#define nsContentCreatorFunctions_h__
+#ifndef nsContentCreatorFunctions_h_
+#define nsContentCreatorFunctions_h_
 
 #include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"

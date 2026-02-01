@@ -3,8 +3,8 @@
 
 
 
-#ifndef txKey_h__
-#define txKey_h__
+#ifndef txKey_h_
+#define txKey_h_
 
 #include "nsTHashtable.h"
 #include "txExpandedNameMap.h"

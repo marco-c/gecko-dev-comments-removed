@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebBrowserPersistDocumentParent_h__
-#define WebBrowserPersistDocumentParent_h__
+#ifndef WebBrowserPersistDocumentParent_h_
+#define WebBrowserPersistDocumentParent_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/PWebBrowserPersistDocumentParent.h"

@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsXULElement_h__
-#define nsXULElement_h__
+#ifndef nsXULElement_h_
+#define nsXULElement_h_
 
 #include <stdint.h>
 #include <stdio.h>

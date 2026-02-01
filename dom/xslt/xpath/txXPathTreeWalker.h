@@ -3,8 +3,8 @@
 
 
 
-#ifndef txXPathTreeWalker_h__
-#define txXPathTreeWalker_h__
+#ifndef txXPathTreeWalker_h_
+#define txXPathTreeWalker_h_
 
 #include "nsIContentInlines.h"
 #include "nsTArray.h"

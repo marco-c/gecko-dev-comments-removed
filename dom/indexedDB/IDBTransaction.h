@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbtransaction_h__
-#define mozilla_dom_idbtransaction_h__
+#ifndef mozilla_dom_idbtransaction_h_
+#define mozilla_dom_idbtransaction_h_
 
 #include "FlippedOnce.h"
 #include "SafeRefPtr.h"

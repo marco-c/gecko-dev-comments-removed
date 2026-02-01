@@ -2,8 +2,8 @@
 
 
 
-#ifndef _MTRANSPORTHANDLER_H__
-#define _MTRANSPORTHANDLER_H__
+#ifndef MTRANSPORTHANDLER_H_
+#define MTRANSPORTHANDLER_H_
 
 #include <set>
 #include <string>

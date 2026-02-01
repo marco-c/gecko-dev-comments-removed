@@ -10,8 +10,8 @@
 
 
 
-#ifndef FragmentOrElement_h___
-#define FragmentOrElement_h___
+#ifndef FragmentOrElement_h_
+#define FragmentOrElement_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"

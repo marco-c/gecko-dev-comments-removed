@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_workerprivate_h__
-#define mozilla_dom_workers_workerprivate_h__
+#ifndef mozilla_dom_workers_workerprivate_h_
+#define mozilla_dom_workers_workerprivate_h_
 
 #include <bitset>
 

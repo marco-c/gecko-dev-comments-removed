@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsXULPrototypeCache_h__
-#define nsXULPrototypeCache_h__
+#ifndef nsXULPrototypeCache_h_
+#define nsXULPrototypeCache_h_
 
 #include "js/experimental/JSStencil.h"
 #include "mozilla/RefPtr.h"

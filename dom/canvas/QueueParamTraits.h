@@ -5,8 +5,8 @@
 
 
 
-#ifndef _QUEUEPARAMTRAITS_H_
-#define _QUEUEPARAMTRAITS_H_ 1
+#ifndef QUEUEPARAMTRAITS_H_
+#define QUEUEPARAMTRAITS_H_ 1
 
 #include "WebGLTypes.h"
 #include "ipc/EnumSerializer.h"

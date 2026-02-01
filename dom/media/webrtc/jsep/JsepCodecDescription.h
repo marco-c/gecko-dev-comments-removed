@@ -2,8 +2,8 @@
 
 
 
-#ifndef _JSEPCODECDESCRIPTION_H_
-#define _JSEPCODECDESCRIPTION_H_
+#ifndef JSEPCODECDESCRIPTION_H_
+#define JSEPCODECDESCRIPTION_H_
 
 #include <cmath>
 #include <set>

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_usageinfo_h__
-#define mozilla_dom_quota_usageinfo_h__
+#ifndef mozilla_dom_quota_usageinfo_h_
+#define mozilla_dom_quota_usageinfo_h_
 
 #include <cstdint>
 

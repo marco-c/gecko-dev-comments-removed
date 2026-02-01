@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_HTMLDNSPrefetch_h___
-#define mozilla_dom_HTMLDNSPrefetch_h___
+#ifndef mozilla_dom_HTMLDNSPrefetch_h_
+#define mozilla_dom_HTMLDNSPrefetch_h_
 
 #include "nsCOMPtr.h"
 #include "nsIDNSService.h"

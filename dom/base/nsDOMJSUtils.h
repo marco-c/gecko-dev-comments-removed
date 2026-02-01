@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDOMJSUtils_h__
-#define nsDOMJSUtils_h__
+#ifndef nsDOMJSUtils_h_
+#define nsDOMJSUtils_h_
 
 #include "js/TypeDecls.h"
 #include "nscore.h"

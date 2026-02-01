@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddatabase_h__
-#define mozilla_dom_indexeddatabase_h__
+#ifndef mozilla_dom_indexeddatabase_h_
+#define mozilla_dom_indexeddatabase_h_
 
 #include "DatabaseFileInfoFwd.h"
 #include "SafeRefPtr.h"

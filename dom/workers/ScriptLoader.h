@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_scriptloader_h__
-#define mozilla_dom_workers_scriptloader_h__
+#ifndef mozilla_dom_workers_scriptloader_h_
+#define mozilla_dom_workers_scriptloader_h_
 
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptLoadRequest.h"

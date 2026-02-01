@@ -7,8 +7,8 @@
 
 
 
-#ifndef transportlayerice_h__
-#define transportlayerice_h__
+#ifndef transportlayerice_h_
+#define transportlayerice_h_
 
 #include "m_cpp_utils.h"
 #include "mozilla/RefPtr.h"

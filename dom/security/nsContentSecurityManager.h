@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsContentSecurityManager_h___
-#define nsContentSecurityManager_h___
+#ifndef nsContentSecurityManager_h_
+#define nsContentSecurityManager_h_
 
 #include "mozilla/CORSMode.h"
 #include "nsIChannel.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_TimeoutManager_h__
-#define mozilla_dom_TimeoutManager_h__
+#ifndef mozilla_dom_TimeoutManager_h_
+#define mozilla_dom_TimeoutManager_h_
 
 #include "mozilla/dom/Timeout.h"
 #include "mozilla/dom/TimeoutBudgetManager.h"

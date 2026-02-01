@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPPREF_H_
-#define _SDPPREF_H_
+#ifndef SDPPREF_H_
+#define SDPPREF_H_
 
 #include <string>
 #include <unordered_map>

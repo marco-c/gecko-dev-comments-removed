@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_shadowroot_h__
-#define mozilla_dom_shadowroot_h__
+#ifndef mozilla_dom_shadowroot_h_
+#define mozilla_dom_shadowroot_h_
 
 #include "mozilla/BindgenUniquePtr.h"
 #include "mozilla/DOMEventTargetHelper.h"

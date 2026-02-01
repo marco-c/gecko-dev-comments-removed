@@ -1,8 +1,8 @@
 
 
 
-#ifndef stun_socket_filter_h__
-#define stun_socket_filter_h__
+#ifndef stun_socket_filter_h_
+#define stun_socket_filter_h_
 
 #include "nsISocketFilter.h"
 

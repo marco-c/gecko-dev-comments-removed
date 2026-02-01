@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_workers_WorkerCSPContext_h__
-#define mozilla_dom_workers_WorkerCSPContext_h__
+#ifndef mozilla_dom_workers_WorkerCSPContext_h_
+#define mozilla_dom_workers_WorkerCSPContext_h_
 
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"

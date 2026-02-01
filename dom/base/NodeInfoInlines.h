@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_NodeInfoInlines_h___
-#define mozilla_dom_NodeInfoInlines_h___
+#ifndef mozilla_dom_NodeInfoInlines_h_
+#define mozilla_dom_NodeInfoInlines_h_
 
 #include "nsAtom.h"
 #include "nsDOMString.h"

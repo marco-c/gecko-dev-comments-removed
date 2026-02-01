@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_NavigationHistoryEntry_h___
-#define mozilla_dom_NavigationHistoryEntry_h___
+#ifndef mozilla_dom_NavigationHistoryEntry_h_
+#define mozilla_dom_NavigationHistoryEntry_h_
 
 #include "mozilla/DOMEventTargetHelper.h"
 

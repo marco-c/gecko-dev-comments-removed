@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFVPXRuntimeLinker_h__
-#define __FFVPXRuntimeLinker_h__
+#ifndef FFVPXRuntimeLinker_h_
+#define FFVPXRuntimeLinker_h_
 
 #include "PlatformDecoderModule.h"
 #include "PlatformEncoderModule.h"

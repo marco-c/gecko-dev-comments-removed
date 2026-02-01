@@ -5,8 +5,8 @@
 
 
 
-#ifndef mediapipeline_h__
-#define mediapipeline_h__
+#ifndef mediapipeline_h_
+#define mediapipeline_h_
 
 #include <map>
 

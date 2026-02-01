@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIContent_h___
-#define nsIContent_h___
+#ifndef nsIContent_h_
+#define nsIContent_h_
 
 #include "mozilla/FlushType.h"
 #include "nsINode.h"

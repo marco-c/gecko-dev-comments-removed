@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RTCRtpSender_h_
-#define _RTCRtpSender_h_
+#ifndef RTCRtpSender_h_
+#define RTCRtpSender_h_
 
 #include "RTCStatsReport.h"
 #include "js/RootingAPI.h"

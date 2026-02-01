@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTERROR__H_
-#define DOM_WEBTRANSPORT_API_WEBTRANSPORTERROR__H_
+#ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTERROR_H_
+#define DOM_WEBTRANSPORT_API_WEBTRANSPORTERROR_H_
 
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/WebTransportErrorBinding.h"

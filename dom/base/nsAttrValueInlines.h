@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsAttrValueInlines_h__
-#define nsAttrValueInlines_h__
+#ifndef nsAttrValueInlines_h_
+#define nsAttrValueInlines_h_
 
 #include <stdint.h>
 

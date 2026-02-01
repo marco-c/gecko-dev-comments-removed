@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ConstraintValidition_h___
-#define mozilla_dom_ConstraintValidition_h___
+#ifndef mozilla_dom_ConstraintValidition_h_
+#define mozilla_dom_ConstraintValidition_h_
 
 #include "nsIConstraintValidation.h"
 #include "nsString.h"

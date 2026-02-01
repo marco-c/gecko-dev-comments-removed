@@ -3,8 +3,8 @@
 
 
 
-#ifndef __TX_XPATH_SET_CONTEXT
-#define __TX_XPATH_SET_CONTEXT
+#ifndef TX_XPATH_SET_CONTEXT
+#define TX_XPATH_SET_CONTEXT
 
 #include "txIXPathContext.h"
 #include "txNodeSet.h"

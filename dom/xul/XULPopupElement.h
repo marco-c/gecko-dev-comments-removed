@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULPopupElement_h__
-#define XULPopupElement_h__
+#ifndef XULPopupElement_h_
+#define XULPopupElement_h_
 
 #include "XULMenuParentElement.h"
 #include "mozilla/Attributes.h"

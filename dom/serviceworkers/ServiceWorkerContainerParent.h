@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_serviceworkercontainerparent_h__
-#define mozilla_dom_serviceworkercontainerparent_h__
+#ifndef mozilla_dom_serviceworkercontainerparent_h_
+#define mozilla_dom_serviceworkercontainerparent_h_
 
 #include "mozilla/dom/PServiceWorkerContainerParent.h"
 

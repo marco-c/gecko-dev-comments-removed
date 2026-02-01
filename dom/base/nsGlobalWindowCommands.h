@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsGlobalWindowCommands_h__
-#define nsGlobalWindowCommands_h__
+#ifndef nsGlobalWindowCommands_h_
+#define nsGlobalWindowCommands_h_
 
 #include "nsStringFwd.h"
 #include "nscore.h"

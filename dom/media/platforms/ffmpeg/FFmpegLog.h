@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegLog_h__
-#define __FFmpegLog_h__
+#ifndef FFmpegLog_h_
+#define FFmpegLog_h_
 
 #include "mozilla/Logging.h"
 

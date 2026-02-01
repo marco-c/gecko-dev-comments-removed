@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PerformanceInteractionMetrics_h__
-#define mozilla_dom_PerformanceInteractionMetrics_h__
+#ifndef mozilla_dom_PerformanceInteractionMetrics_h_
+#define mozilla_dom_PerformanceInteractionMetrics_h_
 
 #include "PerformanceEventTiming.h"
 #include "nsHashtablesFwd.h"

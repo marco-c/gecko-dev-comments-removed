@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ButtonInputTypes_h__
-#define mozilla_dom_ButtonInputTypes_h__
+#ifndef mozilla_dom_ButtonInputTypes_h_
+#define mozilla_dom_ButtonInputTypes_h_
 
 #include "mozilla/dom/InputType.h"
 

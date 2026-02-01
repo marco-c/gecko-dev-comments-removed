@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SIPCCSDP_H_
-#define _SIPCCSDP_H_
+#ifndef SIPCCSDP_H_
+#define SIPCCSDP_H_
 
 #include <vector>
 

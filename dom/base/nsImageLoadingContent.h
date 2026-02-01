@@ -10,8 +10,8 @@
 
 
 
-#ifndef nsImageLoadingContent_h__
-#define nsImageLoadingContent_h__
+#ifndef nsImageLoadingContent_h_
+#define nsImageLoadingContent_h_
 
 #include "Units.h"
 #include "imgINotificationObserver.h"

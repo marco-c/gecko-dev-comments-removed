@@ -4,8 +4,8 @@
 
 
 
-#ifndef webrtc_tcp_socket_wrapper__
-#define webrtc_tcp_socket_wrapper__
+#ifndef webrtc_tcp_socket_wrapper_
+#define webrtc_tcp_socket_wrapper_
 
 #include <memory>
 

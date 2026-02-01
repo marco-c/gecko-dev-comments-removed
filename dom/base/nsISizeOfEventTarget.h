@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsISizeOfEventTarget_h___
-#define nsISizeOfEventTarget_h___
+#ifndef nsISizeOfEventTarget_h_
+#define nsISizeOfEventTarget_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "nsISupports.h"

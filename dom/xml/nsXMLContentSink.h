@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXMLContentSink_h__
-#define nsXMLContentSink_h__
+#ifndef nsXMLContentSink_h_
+#define nsXMLContentSink_h_
 
 #include "js/ColumnNumber.h"  
 #include "mozilla/dom/FromParser.h"

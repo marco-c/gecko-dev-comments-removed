@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_runtimeservice_h__
-#define mozilla_dom_workers_runtimeservice_h__
+#ifndef mozilla_dom_workers_runtimeservice_h_
+#define mozilla_dom_workers_runtimeservice_h_
 
 #include "MainThreadUtils.h"
 #include "js/ContextOptions.h"

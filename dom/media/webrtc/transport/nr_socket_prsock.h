@@ -42,8 +42,8 @@
 
 
 
-#ifndef nr_socket_prsock__
-#define nr_socket_prsock__
+#ifndef nr_socket_prsock_
+#define nr_socket_prsock_
 
 #include <memory>
 #include <queue>

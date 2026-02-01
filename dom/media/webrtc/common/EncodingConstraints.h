@@ -4,8 +4,8 @@
 
 
 
-#ifndef _ENCODING_CONSTRAINTS_H_
-#define _ENCODING_CONSTRAINTS_H_
+#ifndef ENCODING_CONSTRAINTS_H_
+#define ENCODING_CONSTRAINTS_H_
 
 #include "mozilla/Maybe.h"
 

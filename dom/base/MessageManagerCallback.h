@@ -4,8 +4,8 @@
 
 
 
-#ifndef dom_base_MessageManagerCallback_h__
-#define dom_base_MessageManagerCallback_h__
+#ifndef dom_base_MessageManagerCallback_h_
+#define dom_base_MessageManagerCallback_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsError.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __D3D11TextureWrapper_h__
-#define __D3D11TextureWrapper_h__
+#ifndef D3D11TextureWrapper_h_
+#define D3D11TextureWrapper_h_
 
 #include <functional>
 

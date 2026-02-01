@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWrapperCacheInline_h___
-#define nsWrapperCacheInline_h___
+#ifndef nsWrapperCacheInline_h_
+#define nsWrapperCacheInline_h_
 
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"

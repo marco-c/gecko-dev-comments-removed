@@ -3,8 +3,8 @@
 
 
 
-#ifndef FAKE_DECRYPTOR_H__
-#define FAKE_DECRYPTOR_H__
+#ifndef FAKE_DECRYPTOR_H_
+#define FAKE_DECRYPTOR_H_
 
 #include <string>
 

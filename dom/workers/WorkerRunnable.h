@@ -4,10 +4,9 @@
 
 
 
-#ifndef mozilla_dom_workers_workerrunnable_h__
-#define mozilla_dom_workers_workerrunnable_h__
+#ifndef mozilla_dom_workers_workerrunnable_h_
+#define mozilla_dom_workers_workerrunnable_h_
 
-#include <cstdint>
 #include <utility>
 
 #include "MainThreadUtils.h"

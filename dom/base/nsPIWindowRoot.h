@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPIWindowRoot_h__
-#define nsPIWindowRoot_h__
+#ifndef nsPIWindowRoot_h_
+#define nsPIWindowRoot_h_
 
 #include "mozilla/dom/EventTarget.h"
 #include "nsISupports.h"

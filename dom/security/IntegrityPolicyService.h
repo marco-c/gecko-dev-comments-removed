@@ -4,8 +4,8 @@
 
 
 
-#ifndef IntegrityPolicyService_h___
-#define IntegrityPolicyService_h___
+#ifndef IntegrityPolicyService_h_
+#define IntegrityPolicyService_h_
 
 #include "mozilla/dom/IntegrityPolicy.h"
 #include "nsIContentPolicy.h"

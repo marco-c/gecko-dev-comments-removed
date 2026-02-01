@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPluginArray_h___
-#define nsPluginArray_h___
+#ifndef nsPluginArray_h_
+#define nsPluginArray_h_
 
 #include "mozilla/Array.h"
 #include "nsCOMPtr.h"

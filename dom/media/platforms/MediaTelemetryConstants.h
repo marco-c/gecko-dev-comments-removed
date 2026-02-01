@@ -3,8 +3,8 @@
 
 
 
-#ifndef dom_media_platforms_MediaTelemetryConstants_h___
-#define dom_media_platforms_MediaTelemetryConstants_h___
+#ifndef dom_media_platforms_MediaTelemetryConstants_h_
+#define dom_media_platforms_MediaTelemetryConstants_h_
 
 namespace mozilla {
 namespace media {

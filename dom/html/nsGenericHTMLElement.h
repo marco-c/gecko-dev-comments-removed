@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsGenericHTMLElement_h___
-#define nsGenericHTMLElement_h___
+#ifndef nsGenericHTMLElement_h_
+#define nsGenericHTMLElement_h_
 
 #include <cstdint>
 

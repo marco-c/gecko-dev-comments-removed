@@ -4,8 +4,8 @@
 
 
 
-#ifndef __PlayPromise_h__
-#define __PlayPromise_h__
+#ifndef PlayPromise_h_
+#define PlayPromise_h_
 
 #include "mozilla/dom/Promise.h"
 

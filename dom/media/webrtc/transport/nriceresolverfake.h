@@ -40,8 +40,8 @@
 
 
 
-#ifndef nriceresolverfake_h__
-#define nriceresolverfake_h__
+#ifndef nriceresolverfake_h_
+#define nriceresolverfake_h_
 
 #include <map>
 #include <string>

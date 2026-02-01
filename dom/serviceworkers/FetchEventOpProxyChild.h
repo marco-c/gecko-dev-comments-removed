@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_fetcheventopproxychild_h__
-#define mozilla_dom_fetcheventopproxychild_h__
+#ifndef mozilla_dom_fetcheventopproxychild_h_
+#define mozilla_dom_fetcheventopproxychild_h_
 
 #include "ServiceWorkerOp.h"
 #include "ServiceWorkerOpPromise.h"

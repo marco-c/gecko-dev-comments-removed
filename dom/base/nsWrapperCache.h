@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWrapperCache_h___
-#define nsWrapperCache_h___
+#ifndef nsWrapperCache_h_
+#define nsWrapperCache_h_
 
 #include <type_traits>
 

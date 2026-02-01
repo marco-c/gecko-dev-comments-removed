@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCommandManager_h__
-#define nsCommandManager_h__
+#ifndef nsCommandManager_h_
+#define nsCommandManager_h_
 
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"

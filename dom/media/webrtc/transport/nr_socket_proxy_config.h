@@ -4,8 +4,8 @@
 
 
 
-#ifndef nr_socket_proxy_config__
-#define nr_socket_proxy_config__
+#ifndef nr_socket_proxy_config_
+#define nr_socket_proxy_config_
 
 #include <memory>
 

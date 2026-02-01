@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPHELPER_H_
-#define _SDPHELPER_H_
+#ifndef SDPHELPER_H_
+#define SDPHELPER_H_
 
 #include <map>
 #include <string>

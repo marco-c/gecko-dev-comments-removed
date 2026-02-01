@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsXULCommandDispatcher_h__
-#define nsXULCommandDispatcher_h__
+#ifndef nsXULCommandDispatcher_h_
+#define nsXULCommandDispatcher_h_
 
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"

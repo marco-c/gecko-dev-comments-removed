@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMException_h__
-#define mozilla_dom_DOMException_h__
+#ifndef mozilla_dom_DOMException_h_
+#define mozilla_dom_DOMException_h_
 
 
 #ifdef __GNUC__

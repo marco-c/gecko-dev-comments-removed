@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFocusManager_h___
-#define nsFocusManager_h___
+#ifndef nsFocusManager_h_
+#define nsFocusManager_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"

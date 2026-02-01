@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsINode_h___
-#define nsINode_h___
+#ifndef nsINode_h_
+#define nsINode_h_
 
 #include <iosfwd>
 

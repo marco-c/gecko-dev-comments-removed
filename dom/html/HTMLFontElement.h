@@ -3,8 +3,8 @@
 
 
 
-#ifndef HTMLFontElement_h___
-#define HTMLFontElement_h___
+#ifndef HTMLFontElement_h_
+#define HTMLFontElement_h_
 
 #include "nsGenericHTMLElement.h"
 

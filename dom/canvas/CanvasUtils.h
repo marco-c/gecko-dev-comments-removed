@@ -3,8 +3,8 @@
 
 
 
-#ifndef _CANVASUTILS_H_
-#define _CANVASUTILS_H_
+#ifndef CANVASUTILS_H_
+#define CANVASUTILS_H_
 
 #include "CanvasRenderingContextHelper.h"
 #include "js/Array.h"               

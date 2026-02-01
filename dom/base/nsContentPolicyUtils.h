@@ -11,8 +11,8 @@
 
 
 
-#ifndef __nsContentPolicyUtils_h__
-#define __nsContentPolicyUtils_h__
+#ifndef _nsContentPolicyUtils_h_
+#define _nsContentPolicyUtils_h_
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/nsCSPService.h"

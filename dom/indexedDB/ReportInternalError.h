@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_reportinternalerror_h__
-#define mozilla_dom_indexeddb_reportinternalerror_h__
+#ifndef mozilla_dom_indexeddb_reportinternalerror_h_
+#define mozilla_dom_indexeddb_reportinternalerror_h_
 
 #include "IndexedDatabase.h"
 #include "nsDebug.h"

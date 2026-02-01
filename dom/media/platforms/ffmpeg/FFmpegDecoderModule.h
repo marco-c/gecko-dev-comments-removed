@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegDecoderModule_h__
-#define __FFmpegDecoderModule_h__
+#ifndef FFmpegDecoderModule_h_
+#define FFmpegDecoderModule_h_
 
 #include "FFmpegAudioDecoder.h"
 #include "FFmpegLibWrapper.h"

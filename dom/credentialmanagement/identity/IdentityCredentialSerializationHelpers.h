@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_identitycredentialserializationhelpers_h__
-#define mozilla_dom_identitycredentialserializationhelpers_h__
+#ifndef mozilla_dom_identitycredentialserializationhelpers_h_
+#define mozilla_dom_identitycredentialserializationhelpers_h_
 
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/CredentialManagementBinding.h"

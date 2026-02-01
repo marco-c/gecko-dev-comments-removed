@@ -3,8 +3,8 @@
 
 
 
-#ifndef _RUSTSDPINC_H_
-#define _RUSTSDPINC_H_
+#ifndef RUSTSDPINC_H_
+#define RUSTSDPINC_H_
 
 #include <stdbool.h>
 #include <stdint.h>

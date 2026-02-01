@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_WorkerThread_h__
-#define mozilla_dom_workers_WorkerThread_h__
+#ifndef mozilla_dom_workers_WorkerThread_h_
+#define mozilla_dom_workers_WorkerThread_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/CondVar.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef __RTPRTCP_CONFIG_H__
-#define __RTPRTCP_CONFIG_H__
+#ifndef RTPRTCP_CONFIG_H_
+#define RTPRTCP_CONFIG_H_
 #include "api/rtp_headers.h"
 
 namespace mozilla {

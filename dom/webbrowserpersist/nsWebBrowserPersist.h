@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWebBrowserPersist_h__
-#define nsWebBrowserPersist_h__
+#ifndef nsWebBrowserPersist_h_
+#define nsWebBrowserPersist_h_
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"

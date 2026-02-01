@@ -14,12 +14,11 @@
 
 
 
-#ifndef __ClearKeyPersistence_h__
-#define __ClearKeyPersistence_h__
+#ifndef ClearKeyPersistence_h_
+#define ClearKeyPersistence_h_
 
 
 
-#include <stddef.h>
 
 #include <functional>
 #include <set>

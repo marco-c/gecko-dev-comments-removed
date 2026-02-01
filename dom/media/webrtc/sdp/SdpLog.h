@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDP_LOG_H_
-#define _SDP_LOG_H_
+#ifndef SDP_LOG_H_
+#define SDP_LOG_H_
 
 #include "mozilla/Logging.h"
 #include "sdp_log.h"

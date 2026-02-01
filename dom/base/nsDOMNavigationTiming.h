@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDOMNavigationTiming_h___
-#define nsDOMNavigationTiming_h___
+#ifndef nsDOMNavigationTiming_h_
+#define nsDOMNavigationTiming_h_
 
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/RelativeTimeline.h"

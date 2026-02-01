@@ -2,8 +2,8 @@
 
 
 
-#ifndef _MURMURHASH3_H_
-#define _MURMURHASH3_H_
+#ifndef MURMURHASH3_H_
+#define MURMURHASH3_H_
 
 
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef txPatternOptimizer_h__
-#define txPatternOptimizer_h__
+#ifndef txPatternOptimizer_h_
+#define txPatternOptimizer_h_
 
 #include "txXPathOptimizer.h"
 

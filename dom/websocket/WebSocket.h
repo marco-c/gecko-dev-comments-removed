@@ -4,8 +4,8 @@
 
 
 
-#ifndef WebSocket_h__
-#define WebSocket_h__
+#ifndef WebSocket_h_
+#define WebSocket_h_
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DOMEventTargetHelper.h"

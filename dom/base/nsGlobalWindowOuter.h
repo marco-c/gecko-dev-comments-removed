@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsGlobalWindowOuter_h___
-#define nsGlobalWindowOuter_h___
+#ifndef nsGlobalWindowOuter_h_
+#define nsGlobalWindowOuter_h_
 
 #include "nsHashKeys.h"
 #include "nsInterfaceHashtable.h"

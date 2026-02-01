@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ColorInputType_h__
-#define mozilla_dom_ColorInputType_h__
+#ifndef mozilla_dom_ColorInputType_h_
+#define mozilla_dom_ColorInputType_h_
 
 #include "mozilla/dom/InputType.h"
 

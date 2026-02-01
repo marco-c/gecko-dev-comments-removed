@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_client_h__
-#define mozilla_dom_quota_client_h__
+#ifndef mozilla_dom_quota_client_h_
+#define mozilla_dom_quota_client_h_
 
 #include "ErrorList.h"
 #include "mozilla/Atomics.h"

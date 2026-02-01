@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbkeyrange_h__
-#define mozilla_dom_idbkeyrange_h__
+#ifndef mozilla_dom_idbkeyrange_h_
+#define mozilla_dom_idbkeyrange_h_
 
 #include "js/RootingAPI.h"
 #include "js/Value.h"

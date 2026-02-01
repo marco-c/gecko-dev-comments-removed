@@ -4,8 +4,8 @@
 
 
 
-#ifndef _HYBRIDSDPPARSER_H_
-#define _HYBRIDSDPPARSER_H_
+#ifndef HYBRIDSDPPARSER_H_
+#define HYBRIDSDPPARSER_H_
 
 #include "sdp/SdpParser.h"
 

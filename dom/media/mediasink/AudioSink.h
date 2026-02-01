@@ -3,8 +3,8 @@
 
 
 
-#ifndef AudioSink_h__
-#define AudioSink_h__
+#ifndef AudioSink_h_
+#define AudioSink_h_
 
 #include "AudibilityMonitor.h"
 #include "AudioStream.h"

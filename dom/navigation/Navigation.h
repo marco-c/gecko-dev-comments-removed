@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_Navigation_h___
-#define mozilla_dom_Navigation_h___
+#ifndef mozilla_dom_Navigation_h_
+#define mozilla_dom_Navigation_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/DOMEventTargetHelper.h"

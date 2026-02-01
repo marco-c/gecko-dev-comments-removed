@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPMEDIASECTION_H_
-#define _SDPMEDIASECTION_H_
+#ifndef SDPMEDIASECTION_H_
+#define SDPMEDIASECTION_H_
 
 #include <sstream>
 #include <string>

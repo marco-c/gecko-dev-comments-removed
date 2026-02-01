@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsXULControllers_h__
-#define nsXULControllers_h__
+#ifndef nsXULControllers_h_
+#define nsXULControllers_h_
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"

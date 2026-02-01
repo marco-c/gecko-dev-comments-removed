@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_fetcheventopproxyparent_h__
-#define mozilla_dom_fetcheventopproxyparent_h__
+#ifndef mozilla_dom_fetcheventopproxyparent_h_
+#define mozilla_dom_fetcheventopproxyparent_h_
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PFetchEventOpProxyParent.h"

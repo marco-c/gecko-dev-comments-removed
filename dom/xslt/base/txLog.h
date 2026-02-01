@@ -3,8 +3,8 @@
 
 
 
-#ifndef txLog_h__
-#define txLog_h__
+#ifndef txLog_h_
+#define txLog_h_
 
 #include "mozilla/Logging.h"
 

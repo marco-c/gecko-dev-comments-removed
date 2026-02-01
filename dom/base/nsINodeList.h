@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsINodeList_h___
-#define nsINodeList_h___
+#ifndef nsINodeList_h_
+#define nsINodeList_h_
 
 #include "nsIContent.h"
 #include "nsISupports.h"

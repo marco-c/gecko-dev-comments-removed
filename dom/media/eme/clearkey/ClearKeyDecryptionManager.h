@@ -14,8 +14,8 @@
 
 
 
-#ifndef __ClearKeyDecryptionManager_h__
-#define __ClearKeyDecryptionManager_h__
+#ifndef ClearKeyDecryptionManager_h_
+#define ClearKeyDecryptionManager_h_
 
 
 

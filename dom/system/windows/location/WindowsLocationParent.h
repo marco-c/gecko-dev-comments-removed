@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WindowsLocationParent_h__
-#define mozilla_dom_WindowsLocationParent_h__
+#ifndef mozilla_dom_WindowsLocationParent_h_
+#define mozilla_dom_WindowsLocationParent_h_
 
 #include "mozilla/dom/PWindowsLocationParent.h"
 #include "nsCOMPtr.h"

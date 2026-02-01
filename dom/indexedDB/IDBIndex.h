@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_idbindex_h__
-#define mozilla_dom_idbindex_h__
+#ifndef mozilla_dom_idbindex_h_
+#define mozilla_dom_idbindex_h_
 
 #include "js/RootingAPI.h"
 #include "mozilla/UniquePtr.h"

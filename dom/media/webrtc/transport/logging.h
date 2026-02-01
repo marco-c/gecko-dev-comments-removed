@@ -6,8 +6,8 @@
 
 
 
-#ifndef logging_h__
-#define logging_h__
+#ifndef logging_h_
+#define logging_h_
 
 #include <sstream>
 

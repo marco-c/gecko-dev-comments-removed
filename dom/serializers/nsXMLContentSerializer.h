@@ -10,8 +10,8 @@
 
 
 
-#ifndef nsXMLContentSerializer_h__
-#define nsXMLContentSerializer_h__
+#ifndef nsXMLContentSerializer_h_
+#define nsXMLContentSerializer_h_
 
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"

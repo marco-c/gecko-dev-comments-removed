@@ -8,8 +8,8 @@
 
 
 
-#ifndef nsRange_h___
-#define nsRange_h___
+#ifndef nsRange_h_
+#define nsRange_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"

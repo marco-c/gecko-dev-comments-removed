@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsContentPolicy_h__
-#define __nsContentPolicy_h__
+#ifndef _nsContentPolicy_h_
+#define _nsContentPolicy_h_
 
 #include "nsCategoryCache.h"
 #include "nsIContentPolicy.h"

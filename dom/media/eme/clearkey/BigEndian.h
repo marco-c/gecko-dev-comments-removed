@@ -14,8 +14,8 @@
 
 
 
-#ifndef __BigEndian_h__
-#define __BigEndian_h__
+#ifndef BigEndian_h_
+#define BigEndian_h_
 
 #include <stdint.h>
 

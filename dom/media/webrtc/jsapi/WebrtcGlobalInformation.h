@@ -2,8 +2,8 @@
 
 
 
-#ifndef _WEBRTC_GLOBAL_INFORMATION_H_
-#define _WEBRTC_GLOBAL_INFORMATION_H_
+#ifndef WEBRTC_GLOBAL_INFORMATION_H_
+#define WEBRTC_GLOBAL_INFORMATION_H_
 
 #include "WebrtcGlobalStatsHistory.h"
 #include "mozilla/Attributes.h"

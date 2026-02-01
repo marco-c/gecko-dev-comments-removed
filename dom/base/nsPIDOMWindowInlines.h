@@ -4,8 +4,8 @@
 
 
 
-#ifndef dom_base_nsPIDOMWindowInlines_h___
-#define dom_base_nsPIDOMWindowInlines_h___
+#ifndef dom_base_nsPIDOMWindowInlines_h_
+#define dom_base_nsPIDOMWindowInlines_h_
 
 inline bool nsPIDOMWindowOuter::IsLoading() const {
   auto* win = GetCurrentInnerWindow();

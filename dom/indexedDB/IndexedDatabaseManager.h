@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddatabasemanager_h__
-#define mozilla_dom_indexeddatabasemanager_h__
+#ifndef mozilla_dom_indexeddatabasemanager_h_
+#define mozilla_dom_indexeddatabasemanager_h_
 
 #include "MainThreadUtils.h"
 #include "SafeRefPtr.h"

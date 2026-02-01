@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULTooltipElement_h__
-#define XULTooltipElement_h__
+#ifndef XULTooltipElement_h_
+#define XULTooltipElement_h_
 
 #include "XULPopupElement.h"
 

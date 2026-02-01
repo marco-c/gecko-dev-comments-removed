@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DateTimeInputTypes_h__
-#define mozilla_dom_DateTimeInputTypes_h__
+#ifndef mozilla_dom_DateTimeInputTypes_h_
+#define mozilla_dom_DateTimeInputTypes_h_
 
 #include "mozilla/dom/InputType.h"
 

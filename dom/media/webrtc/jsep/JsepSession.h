@@ -2,8 +2,8 @@
 
 
 
-#ifndef _JSEPSESSION_H_
-#define _JSEPSESSION_H_
+#ifndef JSEPSESSION_H_
+#define JSEPSESSION_H_
 
 #include <string>
 #include <vector>

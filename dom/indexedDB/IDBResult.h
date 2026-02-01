@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbresult_h__
-#define mozilla_dom_indexeddb_idbresult_h__
+#ifndef mozilla_dom_indexeddb_idbresult_h_
+#define mozilla_dom_indexeddb_idbresult_h_
 
 #include <type_traits>
 #include <utility>

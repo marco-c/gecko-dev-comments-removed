@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPPARSER_H_
-#define _SDPPARSER_H_
+#ifndef SDPPARSER_H_
+#define SDPPARSER_H_
 
 #include <string>
 #include <vector>

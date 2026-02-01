@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIDocumentObserver_h___
-#define nsIDocumentObserver_h___
+#ifndef nsIDocumentObserver_h_
+#define nsIDocumentObserver_h_
 
 #include "mozilla/dom/RustTypes.h"
 #include "nsIMutationObserver.h"

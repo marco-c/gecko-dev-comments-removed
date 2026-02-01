@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_MediaKeyMessageEvent_h__
-#define mozilla_dom_MediaKeyMessageEvent_h__
+#ifndef mozilla_dom_MediaKeyMessageEvent_h_
+#define mozilla_dom_MediaKeyMessageEvent_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/Event.h"

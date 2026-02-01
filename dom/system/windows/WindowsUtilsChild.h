@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WindowsUtilsChild_h__
-#define mozilla_dom_WindowsUtilsChild_h__
+#ifndef mozilla_dom_WindowsUtilsChild_h_
+#define mozilla_dom_WindowsUtilsChild_h_
 
 #include "mozilla/dom/PWindowsUtilsChild.h"
 #include "mozilla/dom/WindowsLocationChild.h"

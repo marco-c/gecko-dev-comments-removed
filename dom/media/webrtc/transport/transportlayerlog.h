@@ -6,8 +6,8 @@
 
 
 
-#ifndef transportlayerlog_h__
-#define transportlayerlog_h__
+#ifndef transportlayerlog_h_
+#define transportlayerlog_h_
 
 #include "m_cpp_utils.h"
 #include "transportlayer.h"

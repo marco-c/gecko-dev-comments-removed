@@ -4,8 +4,8 @@
 
 
 
-#ifndef CustomEvent_h__
-#define CustomEvent_h__
+#ifndef CustomEvent_h_
+#define CustomEvent_h_
 
 #include "js/Value.h"
 #include "mozilla/dom/Event.h"

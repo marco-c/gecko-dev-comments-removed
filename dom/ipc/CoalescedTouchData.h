@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom__CoalescedTouchData_h
-#define mozilla_dom__CoalescedTouchData_h
+#ifndef mozilla_dom_CoalescedTouchData_h
+#define mozilla_dom_CoalescedTouchData_h
 
 #include "CoalescedInputData.h"
 #include "mozilla/TouchEvents.h"

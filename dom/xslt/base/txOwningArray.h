@@ -4,8 +4,8 @@
 
 
 
-#ifndef txOwningArray_h__
-#define txOwningArray_h__
+#ifndef txOwningArray_h_
+#define txOwningArray_h_
 
 
 

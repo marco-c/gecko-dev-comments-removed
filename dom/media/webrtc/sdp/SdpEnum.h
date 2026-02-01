@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SDPENUM_H_
-#define _SDPENUM_H_
+#ifndef SDPENUM_H_
+#define SDPENUM_H_
 
 #include <ostream>
 

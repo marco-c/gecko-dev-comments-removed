@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_MediaKeyNeededEvent_h__
-#define mozilla_dom_MediaKeyNeededEvent_h__
+#ifndef mozilla_dom_MediaKeyNeededEvent_h_
+#define mozilla_dom_MediaKeyNeededEvent_h_
 
 #include <cstdint>
 

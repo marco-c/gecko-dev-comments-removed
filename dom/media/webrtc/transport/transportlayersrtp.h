@@ -4,8 +4,8 @@
 
 
 
-#ifndef transportlayersrtp_h__
-#define transportlayersrtp_h__
+#ifndef transportlayersrtp_h_
+#define transportlayersrtp_h_
 
 #include "SrtpFlow.h"
 #include "mozilla/RefPtr.h"

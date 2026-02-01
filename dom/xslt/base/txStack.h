@@ -3,8 +3,8 @@
 
 
 
-#ifndef txStack_h___
-#define txStack_h___
+#ifndef txStack_h_
+#define txStack_h_
 
 #include "nsTArray.h"
 

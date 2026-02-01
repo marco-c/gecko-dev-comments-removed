@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_serviceworkeroppromise_h__
-#define mozilla_dom_serviceworkeroppromise_h__
+#ifndef mozilla_dom_serviceworkeroppromise_h_
+#define mozilla_dom_serviceworkeroppromise_h_
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/SafeRefPtr.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef PolicyTokenizer_h___
-#define PolicyTokenizer_h___
+#ifndef PolicyTokenizer_h_
+#define PolicyTokenizer_h_
 
 #include "nsContentUtils.h"
 #include "nsString.h"

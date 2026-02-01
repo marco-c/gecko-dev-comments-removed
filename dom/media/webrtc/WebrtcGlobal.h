@@ -2,8 +2,8 @@
 
 
 
-#ifndef _WEBRTC_GLOBAL_H_
-#define _WEBRTC_GLOBAL_H_
+#ifndef WEBRTC_GLOBAL_H_
+#define WEBRTC_GLOBAL_H_
 
 #include "WebrtcIPCTraits.h"
 #include "ipc/EnumSerializer.h"

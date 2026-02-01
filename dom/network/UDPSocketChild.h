@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_UDPSocketChild_h__
-#define mozilla_dom_UDPSocketChild_h__
+#ifndef mozilla_dom_UDPSocketChild_h_
+#define mozilla_dom_UDPSocketChild_h_
 
 #include "mozilla/net/PUDPSocketChild.h"
 #include "nsCOMPtr.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_flippedonce_h__
-#define mozilla_dom_indexeddb_flippedonce_h__
+#ifndef mozilla_dom_indexeddb_flippedonce_h_
+#define mozilla_dom_indexeddb_flippedonce_h_
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"

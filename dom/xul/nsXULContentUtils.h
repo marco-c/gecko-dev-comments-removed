@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsXULContentUtils_h__
-#define nsXULContentUtils_h__
+#ifndef nsXULContentUtils_h_
+#define nsXULContentUtils_h_
 
 #include "nsISupports.h"
 

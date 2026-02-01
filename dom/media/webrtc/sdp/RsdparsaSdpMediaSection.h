@@ -4,8 +4,8 @@
 
 
 
-#ifndef _RUSTSDPMEDIASECTION_H_
-#define _RUSTSDPMEDIASECTION_H_
+#ifndef RUSTSDPMEDIASECTION_H_
+#define RUSTSDPMEDIASECTION_H_
 
 #include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpAttributeList.h"

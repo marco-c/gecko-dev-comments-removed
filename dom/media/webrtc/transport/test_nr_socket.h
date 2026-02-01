@@ -80,8 +80,8 @@
 
 
 
-#ifndef test_nr_socket__
-#define test_nr_socket__
+#ifndef test_nr_socket_
+#define test_nr_socket_
 
 extern "C" {
 #include "transport_addr.h"

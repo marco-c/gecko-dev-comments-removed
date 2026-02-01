@@ -4,8 +4,8 @@
 
 
 
-#ifndef PolicyContainer_h___
-#define PolicyContainer_h___
+#ifndef PolicyContainer_h_
+#define PolicyContainer_h_
 
 #include "nsCOMPtr.h"
 #include "nsIContentSecurityPolicy.h"

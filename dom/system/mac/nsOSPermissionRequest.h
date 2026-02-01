@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsOSPermissionRequest_h__
-#define nsOSPermissionRequest_h__
+#ifndef nsOSPermissionRequest_h_
+#define nsOSPermissionRequest_h_
 
 #include "nsOSPermissionRequestBase.h"
 

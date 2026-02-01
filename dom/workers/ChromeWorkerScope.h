@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_chromeworkerscope_h__
-#define mozilla_dom_workers_chromeworkerscope_h__
+#ifndef mozilla_dom_workers_chromeworkerscope_h_
+#define mozilla_dom_workers_chromeworkerscope_h_
 
 #include "js/TypeDecls.h"
 

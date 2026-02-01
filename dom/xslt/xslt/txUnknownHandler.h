@@ -3,8 +3,8 @@
 
 
 
-#ifndef txUnknownHandler_h___
-#define txUnknownHandler_h___
+#ifndef txUnknownHandler_h_
+#define txUnknownHandler_h_
 
 #include "txBufferingHandler.h"
 #include "txOutputFormat.h"

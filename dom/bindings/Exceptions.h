@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_Exceptions_h__
-#define mozilla_dom_Exceptions_h__
+#ifndef mozilla_dom_Exceptions_h_
+#define mozilla_dom_Exceptions_h_
 
 
 

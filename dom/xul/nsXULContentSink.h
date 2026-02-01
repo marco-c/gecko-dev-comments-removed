@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsXULContentSink_h__
-#define nsXULContentSink_h__
+#ifndef nsXULContentSink_h_
+#define nsXULContentSink_h_
 
 #include "mozilla/WeakPtr.h"
 #include "nsIExpatSink.h"

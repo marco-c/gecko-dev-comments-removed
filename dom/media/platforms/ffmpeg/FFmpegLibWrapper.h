@@ -2,8 +2,8 @@
 
 
 
-#ifndef __FFmpegLibWrapper_h__
-#define __FFmpegLibWrapper_h__
+#ifndef FFmpegLibWrapper_h_
+#define FFmpegLibWrapper_h_
 
 #include "ffvpx/tx.h"
 #include "mozilla/Attributes.h"

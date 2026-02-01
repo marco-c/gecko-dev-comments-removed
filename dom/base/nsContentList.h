@@ -10,8 +10,8 @@
 
 
 
-#ifndef nsContentList_h___
-#define nsContentList_h___
+#ifndef nsContentList_h_
+#define nsContentList_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/HashFunctions.h"

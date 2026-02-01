@@ -2,8 +2,8 @@
 
 
 
-#ifndef _JSEPTRACK_H_
-#define _JSEPTRACK_H_
+#ifndef JSEPTRACK_H_
+#define JSEPTRACK_H_
 
 #include <mozilla/UniquePtr.h>
 

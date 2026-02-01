@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WorkerTestUtils__
-#define mozilla_dom_WorkerTestUtils__
+#ifndef mozilla_dom_WorkerTestUtils_
+#define mozilla_dom_WorkerTestUtils_
 
 #include "nsStringFwd.h"
 

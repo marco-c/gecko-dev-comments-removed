@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsGlobalWindowInner_h___
-#define nsGlobalWindowInner_h___
+#ifndef nsGlobalWindowInner_h_
+#define nsGlobalWindowInner_h_
 
 #include "nsHashKeys.h"
 #include "nsPIDOMWindow.h"

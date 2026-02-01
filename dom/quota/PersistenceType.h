@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_persistencetype_h__
-#define mozilla_dom_quota_persistencetype_h__
+#ifndef mozilla_dom_quota_persistencetype_h_
+#define mozilla_dom_quota_persistencetype_h_
 
 #include <array>
 #include <cstdint>

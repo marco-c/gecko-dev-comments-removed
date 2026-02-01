@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsContentAreaDragDrop_h__
-#define nsContentAreaDragDrop_h__
+#ifndef nsContentAreaDragDrop_h_
+#define nsContentAreaDragDrop_h_
 
 #include "nsCOMPtr.h"
 #include "nsITransferable.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef AlignmentUtils_h__
-#define AlignmentUtils_h__
+#ifndef AlignmentUtils_h_
+#define AlignmentUtils_h_
 
 #define IS_ALIGNED16(ptr) ((((uintptr_t)ptr + 15) & ~0x0F) == (uintptr_t)ptr)
 

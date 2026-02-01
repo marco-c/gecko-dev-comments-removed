@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsXULPrototypeDocument_h__
-#define nsXULPrototypeDocument_h__
+#ifndef nsXULPrototypeDocument_h_
+#define nsXULPrototypeDocument_h_
 
 #include <functional>
 

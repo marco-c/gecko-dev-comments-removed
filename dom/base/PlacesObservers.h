@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PlacesObservers__
-#define mozilla_dom_PlacesObservers__
+#ifndef mozilla_dom_PlacesObservers_
+#define mozilla_dom_PlacesObservers_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/BindingDeclarations.h"

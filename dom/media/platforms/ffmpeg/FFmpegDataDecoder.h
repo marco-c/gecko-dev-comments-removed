@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FFmpegDataDecoder_h__
-#define __FFmpegDataDecoder_h__
+#ifndef FFmpegDataDecoder_h_
+#define FFmpegDataDecoder_h_
 
 #include "FFmpegLibWrapper.h"
 #include "PlatformDecoderModule.h"

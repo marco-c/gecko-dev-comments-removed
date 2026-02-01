@@ -3,8 +3,8 @@
 
 
 
-#ifndef dtls_identity_h__
-#define dtls_identity_h__
+#ifndef dtls_identity_h_
+#define dtls_identity_h_
 
 #include <utility>
 #include <vector>

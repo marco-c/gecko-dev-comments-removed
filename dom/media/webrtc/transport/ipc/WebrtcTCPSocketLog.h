@@ -4,8 +4,8 @@
 
 
 
-#ifndef webrtc_tcp_socket_log_h__
-#define webrtc_tcp_socket_log_h__
+#ifndef webrtc_tcp_socket_log_h_
+#define webrtc_tcp_socket_log_h_
 
 #include "mozilla/Logging.h"
 

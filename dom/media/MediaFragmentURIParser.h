@@ -3,8 +3,8 @@
 
 
 
-#if !defined(MediaFragmentURIParser_h__)
-#  define MediaFragmentURIParser_h__
+#if !defined(MediaFragmentURIParser_h_)
+#  define MediaFragmentURIParser_h_
 
 #  include "mozilla/Maybe.h"
 #  include "nsRect.h"

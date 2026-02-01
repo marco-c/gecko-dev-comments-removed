@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_NavigationUtils_h___
-#define mozilla_dom_NavigationUtils_h___
+#ifndef mozilla_dom_NavigationUtils_h_
+#define mozilla_dom_NavigationUtils_h_
 
 #include "mozilla/Maybe.h"
 

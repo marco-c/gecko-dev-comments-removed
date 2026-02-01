@@ -3,8 +3,8 @@
 
 
 
-#ifndef txStringUtils_h__
-#define txStringUtils_h__
+#ifndef txStringUtils_h_
+#define txStringUtils_h_
 
 #include "nsAString.h"
 #include "nsAtom.h"

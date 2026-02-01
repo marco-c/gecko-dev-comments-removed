@@ -50,8 +50,8 @@
 
 
 
-#ifndef rlogconnector_h__
-#define rlogconnector_h__
+#ifndef rlogconnector_h_
+#define rlogconnector_h_
 
 #include <stdint.h>
 

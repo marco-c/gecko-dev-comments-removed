@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workernavigator_h__
-#define mozilla_dom_workernavigator_h__
+#ifndef mozilla_dom_workernavigator_h_
+#define mozilla_dom_workernavigator_h_
 
 #include <stdint.h>
 

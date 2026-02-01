@@ -4,8 +4,8 @@
 
 
 
-#ifndef __DetailedPromise_h__
-#define __DetailedPromise_h__
+#ifndef DetailedPromise_h_
+#define DetailedPromise_h_
 
 #include "EMEUtils.h"
 #include "mozilla/dom/Promise.h"

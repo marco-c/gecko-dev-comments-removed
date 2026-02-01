@@ -4,8 +4,8 @@
 
 
 
-#ifndef XULMenuParentElement_h__
-#define XULMenuParentElement_h__
+#ifndef XULMenuParentElement_h_
+#define XULMenuParentElement_h_
 
 #include "mozilla/Attributes.h"
 #include "nsISupports.h"

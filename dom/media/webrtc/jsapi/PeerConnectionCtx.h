@@ -2,8 +2,8 @@
 
 
 
-#ifndef peerconnectionctx_h___h__
-#define peerconnectionctx_h___h__
+#ifndef peerconnectionctx_h_h_
+#define peerconnectionctx_h_h_
 
 #include <map>
 #include <string>

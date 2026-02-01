@@ -16,8 +16,8 @@
 
 
 
-#ifndef nsAttrValueOrString_h___
-#define nsAttrValueOrString_h___
+#ifndef nsAttrValueOrString_h_
+#define nsAttrValueOrString_h_
 
 #include "nsAttrValue.h"
 #include "nsString.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_serviceworkershutdownblocker_h__
-#define mozilla_dom_serviceworkershutdownblocker_h__
+#ifndef mozilla_dom_serviceworkershutdownblocker_h_
+#define mozilla_dom_serviceworkershutdownblocker_h_
 
 #include "ServiceWorkerShutdownState.h"
 #include "mozilla/HashTable.h"

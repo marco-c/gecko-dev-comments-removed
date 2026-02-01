@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_quota_originorpatternstring_h__
-#define mozilla_dom_quota_originorpatternstring_h__
+#ifndef mozilla_dom_quota_originorpatternstring_h_
+#define mozilla_dom_quota_originorpatternstring_h_
 
 #include <utility>
 

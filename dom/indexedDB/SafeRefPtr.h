@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_saferefptr_h__
-#define mozilla_saferefptr_h__
+#ifndef mozilla_saferefptr_h_
+#define mozilla_saferefptr_h_
 
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Maybe.h"

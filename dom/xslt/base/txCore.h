@@ -3,8 +3,8 @@
 
 
 
-#ifndef __txCore_h__
-#define __txCore_h__
+#ifndef _txCore_h_
+#define _txCore_h_
 
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"

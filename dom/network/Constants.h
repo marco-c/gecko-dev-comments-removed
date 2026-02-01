@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_network_Constants_h__
-#define mozilla_dom_network_Constants_h__
+#ifndef mozilla_dom_network_Constants_h_
+#define mozilla_dom_network_Constants_h_
 
 
 

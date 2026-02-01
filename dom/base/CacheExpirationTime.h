@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_CacheExpirationTime_h___
-#define mozilla_dom_CacheExpirationTime_h___
+#ifndef mozilla_dom_CacheExpirationTime_h_
+#define mozilla_dom_CacheExpirationTime_h_
 
 #include <stdint.h>  
 

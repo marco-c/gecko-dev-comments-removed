@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_Document_h___
-#define mozilla_dom_Document_h___
+#ifndef mozilla_dom_Document_h_
+#define mozilla_dom_Document_h_
 
 #include <bitset>
 #include <cstddef>

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_remoteworkercontrollerchild_h__
-#define mozilla_dom_remoteworkercontrollerchild_h__
+#ifndef mozilla_dom_remoteworkercontrollerchild_h_
+#define mozilla_dom_remoteworkercontrollerchild_h_
 
 #include "RemoteWorkerController.h"
 #include "mozilla/RefPtr.h"
