@@ -8,10 +8,7 @@ const defaultFaviconName = "defaultFavicon.svg";
 
 add_task(async function setupTestingPref() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["media.mediacontrol.testingevents.enabled", true],
-      ["dom.media.mediasession.enabled", true],
-    ],
+    set: [["media.mediacontrol.testingevents.enabled", true]],
   });
 });
 
@@ -374,6 +371,50 @@ add_task(async function testUpdateDefaultMetadataWhenPageTitleChanges() {
   await setMediaMetadata(tab, metadata);
   await changePageTitle(tab, { shouldAffectMetadata: false });
   await isCurrentMetadataEqualTo(metadata);
+
+  info(`remove tab`);
+  await tab.close();
+});
+
+add_task(async function testMetadataMutation() {
+  info(`open media page`);
+  const tab = await createLoadedTabWrapper(PAGE_NON_AUTOPLAY);
+
+  info(`start media`);
+  await playMedia(tab, testVideoId);
+
+  info(`set initial metadata`);
+  const initialMetadata = {
+    title: "initial title",
+    artist: "initial artist",
+    album: "initial album",
+    artwork: [{ src: "initial.jpg", sizes: "128x128", type: "image/jpeg" }],
+  };
+  await setMediaMetadata(tab, initialMetadata);
+
+  info(`verify initial metadata`);
+  await isCurrentMetadataEqualTo(initialMetadata);
+
+  info(`mutate existing MediaMetadata object`);
+  const controller = tab.linkedBrowser.browsingContext.mediaController;
+  const metadataChanged = new Promise(r => (controller.onmetadatachange = r));
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    const metadata = content.navigator.mediaSession.metadata;
+    metadata.title = "mutated title";
+    metadata.artist = "mutated artist";
+    metadata.album = "mutated album";
+  });
+
+  await metadataChanged;
+
+  info(`verify mutated metadata is reflected`);
+  await isCurrentMetadataEqualTo({
+    title: "mutated title",
+    artist: "mutated artist",
+    album: "mutated album",
+    artwork: [{ src: "initial.jpg", sizes: "128x128", type: "image/jpeg" }],
+  });
 
   info(`remove tab`);
   await tab.close();
