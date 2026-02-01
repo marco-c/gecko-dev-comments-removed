@@ -23,6 +23,7 @@
 #include "MsaaRootAccessible.h"
 #include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsIAccessiblePivot.h"
 #include "nsTextEquivUtils.h"
 #include "Pivot.h"
@@ -278,6 +279,34 @@ void uiaRawElmProvider::RaiseUiaEventForStateChange(Accessible* aAcc,
   
   _variant_t oldVal;
   ::UiaRaiseAutomationPropertyChangedEvent(uia, property, oldVal, newVal);
+}
+
+
+void uiaRawElmProvider::RaiseUiaNotificationEvent(
+    Accessible* aAcc, const nsAString& aAnnouncement, uint16_t aPriority) {
+  if (!Compatibility::IsUiaEnabled() || !::UiaClientsAreListening()) {
+    return;
+  }
+  
+  uiaRawElmProvider* uia = nullptr;
+  for (Accessible* acc = aAcc; acc; acc = acc->Parent()) {
+    auto* maybeUia = MsaaAccessible::GetFrom(acc);
+    if (!maybeUia) {
+      break;
+    }
+    if (maybeUia->IsControl()) {
+      uia = maybeUia;
+      break;
+    }
+  }
+  if (uia) {
+    ::UiaRaiseNotificationEvent(
+        uia, NotificationKind_ActionCompleted,
+        aPriority == nsIAccessibleAnnouncementEvent::ASSERTIVE
+            ? NotificationProcessing_ImportantAll
+            : NotificationProcessing_All,
+        _bstr_t(PromiseFlatString(aAnnouncement).get()), _bstr_t(L""));
+  }
 }
 
 
