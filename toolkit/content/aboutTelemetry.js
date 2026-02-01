@@ -2426,7 +2426,7 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   
-  let isMainPing = ping.type == "main";
+  let isMainPing = ping.type == "main" || ping.type == "saved-session";
   let isEventPing = ping.type == "event";
   togglePingSections(isMainPing);
 
