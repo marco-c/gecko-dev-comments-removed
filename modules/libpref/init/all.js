@@ -3491,27 +3491,6 @@ pref("media.gmp-manager.url", "https://aus5.mozilla.org/update/3/GMP/%VERSION%/%
 
 
 
-pref("media.gmp-manager.checkContentSignature", true);
-
-
-
-
-
-
-
-
-pref("media.gmp-manager.cert.requireBuiltIn", true);
-
-
-
-
-
-
-
-
-
-
-
 
 
 
