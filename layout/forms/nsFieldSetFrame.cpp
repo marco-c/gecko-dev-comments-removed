@@ -231,7 +231,6 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   nsDisplayListCollection contentDisplayItems(aBuilder);
@@ -250,6 +249,11 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsDisplayListSet set(aLists, aLists.BlockBorderBackgrounds());
     BuildDisplayListForChild(aBuilder, legend, set);
   }
+
+  if (GetPrevInFlow()) {
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+  }
+
   
   
   
