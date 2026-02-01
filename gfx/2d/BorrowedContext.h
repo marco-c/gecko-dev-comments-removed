@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_GFX_BORROWED_CONTEXT_H
-#define _MOZILLA_GFX_BORROWED_CONTEXT_H
+#ifndef MOZILLA_GFX_BORROWED_CONTEXT_H
+#define MOZILLA_GFX_BORROWED_CONTEXT_H
 
 #include "2D.h"
 
@@ -17,63 +17,6 @@
 namespace mozilla {
 
 namespace gfx {
-
-#ifdef MOZ_X11
-
-
-
-
-
-
-class BorrowedXlibDrawable {
- public:
-  BorrowedXlibDrawable()
-      : mDT(nullptr),
-        mDisplay(nullptr),
-        mDrawable(X11None),
-        mScreen(nullptr),
-        mVisual(nullptr) {}
-
-  explicit BorrowedXlibDrawable(DrawTarget* aDT)
-      : mDT(nullptr),
-        mDisplay(nullptr),
-        mDrawable(X11None),
-        mScreen(nullptr),
-        mVisual(nullptr) {
-    Init(aDT);
-  }
-
-  
-  
-  
-  bool Init(DrawTarget* aDT);
-
-  
-  
-  
-  
-  
-  void Finish();
-
-  ~BorrowedXlibDrawable() { MOZ_ASSERT(!mDrawable); }
-
-  Display* GetDisplay() const { return mDisplay; }
-  Drawable GetDrawable() const { return mDrawable; }
-  Screen* GetScreen() const { return mScreen; }
-  Visual* GetVisual() const { return mVisual; }
-  IntSize GetSize() const { return mSize; }
-  Point GetOffset() const { return mOffset; }
-
- private:
-  DrawTarget* mDT;
-  Display* mDisplay;
-  Drawable mDrawable;
-  Screen* mScreen;
-  Visual* mVisual;
-  IntSize mSize;
-  Point mOffset;
-};
-#endif
 
 #ifdef XP_DARWIN
 

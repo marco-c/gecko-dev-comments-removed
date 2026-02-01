@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_GFX_DRAWTARGET_CAIRO_H_
-#define _MOZILLA_GFX_DRAWTARGET_CAIRO_H_
+#ifndef MOZILLA_GFX_DRAWTARGET_CAIRO_H_
+#define MOZILLA_GFX_DRAWTARGET_CAIRO_H_
 
 #include "2D.h"
 #include "cairo.h"
@@ -48,7 +48,6 @@ class GradientStopsCairo : public GradientStops {
 class DrawTargetCairo final : public DrawTarget {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawTargetCairo, override)
-  friend class BorrowedXlibDrawable;
 
   DrawTargetCairo();
   virtual ~DrawTargetCairo();

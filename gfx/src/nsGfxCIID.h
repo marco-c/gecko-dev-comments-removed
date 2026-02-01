@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsGfxCIID_h__
-#define nsGfxCIID_h__
+#ifndef nsGfxCIID_h_
+#define nsGfxCIID_h_
 
 #define NS_FONT_ENUMERATOR_CID \
   {0xa6cf9115, 0x15b3, 0x11d2, {0x93, 0x2e, 0x00, 0x80, 0x5f, 0x8a, 0xdd, 0x32}}

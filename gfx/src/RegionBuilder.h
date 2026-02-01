@@ -4,8 +4,8 @@
 
 
 
-#ifndef RegionBuilder_h__
-#define RegionBuilder_h__
+#ifndef RegionBuilder_h_
+#define RegionBuilder_h_
 
 #include "nsTArray.h"
 #include "pixman.h"

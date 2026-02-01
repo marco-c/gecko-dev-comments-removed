@@ -4,8 +4,8 @@
 
 
 
-#ifndef _NSTHEBESFONTENUMERATOR_H_
-#define _NSTHEBESFONTENUMERATOR_H_
+#ifndef NSTHEBESFONTENUMERATOR_H_
+#define NSTHEBESFONTENUMERATOR_H_
 
 #include "nsIFontEnumerator.h"  
 #include "nsISupports.h"        

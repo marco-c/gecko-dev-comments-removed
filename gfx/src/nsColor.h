@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsColor_h___
-#define nsColor_h___
+#ifndef nsColor_h_
+#define nsColor_h_
 
 #include <stdint.h>   
 #include "nsCoord.h"  

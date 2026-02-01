@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_gfx_ipc_D3DMessageUtils_h__
-#define _include_gfx_ipc_D3DMessageUtils_h__
+#ifndef _include_gfx_ipc_D3DMessageUtils_h_
+#define _include_gfx_ipc_D3DMessageUtils_h_
 
 #include "chrome/common/ipc_message_utils.h"
 #include "ipc/IPCMessageUtils.h"

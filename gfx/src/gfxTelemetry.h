@@ -3,8 +3,8 @@
 
 
 
-#ifndef gfx_src_gfxTelemetry_h__
-#define gfx_src_gfxTelemetry_h__
+#ifndef gfx_src_gfxTelemetry_h_
+#define gfx_src_gfxTelemetry_h_
 
 #include <cstdint>
 

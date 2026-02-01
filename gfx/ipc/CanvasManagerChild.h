@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_gfx_ipc_CanvasManagerChild_h__
-#define _include_gfx_ipc_CanvasManagerChild_h__
+#ifndef _include_gfx_ipc_CanvasManagerChild_h_
+#define _include_gfx_ipc_CanvasManagerChild_h_
 
 #include "mozilla/Atomics.h"
 #include "mozilla/gfx/PCanvasManagerChild.h"

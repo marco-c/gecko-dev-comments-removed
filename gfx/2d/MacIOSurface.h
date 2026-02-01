@@ -4,8 +4,8 @@
 
 
 
-#ifndef MacIOSurface_h__
-#define MacIOSurface_h__
+#ifndef MacIOSurface_h_
+#define MacIOSurface_h_
 #ifdef XP_DARWIN
 #  include <CoreVideo/CoreVideo.h>
 #  include <IOSurface/IOSurfaceRef.h>

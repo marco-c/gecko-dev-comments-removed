@@ -3,8 +3,8 @@
 
 
 
-#ifndef _GFXALPHARECOVERY_H_
-#define _GFXALPHARECOVERY_H_
+#ifndef GFXALPHARECOVERY_H_
+#define GFXALPHARECOVERY_H_
 
 #include "gfxTypes.h"
 #include "mozilla/gfx/Rect.h"

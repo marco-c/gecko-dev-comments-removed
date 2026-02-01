@@ -4,8 +4,8 @@
 
 
 
-#ifndef _include_gfx_ipc_FileHandleWrapper_h__
-#define _include_gfx_ipc_FileHandleWrapper_h__
+#ifndef _include_gfx_ipc_FileHandleWrapper_h_
+#define _include_gfx_ipc_FileHandleWrapper_h_
 
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsISupportsImpl.h"

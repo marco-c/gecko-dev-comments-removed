@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FilterDescription_h
-#define __FilterDescription_h
+#ifndef FilterDescription_h
+#define FilterDescription_h
 
 #include "FilterSupport.h"
 #include "mozilla/Variant.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef NSFONTMETRICS__H__
-#define NSFONTMETRICS__H__
+#ifndef NSFONTMETRICS_H_
+#define NSFONTMETRICS_H_
 
 #include <stdint.h>          
 #include <sys/types.h>       

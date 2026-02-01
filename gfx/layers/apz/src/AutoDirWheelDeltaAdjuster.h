@@ -4,8 +4,8 @@
 
 
 
-#ifndef __mozilla_layers_AutoDirWheelDeltaAdjuster_h__
-#define __mozilla_layers_AutoDirWheelDeltaAdjuster_h__
+#ifndef _mozilla_layers_AutoDirWheelDeltaAdjuster_h_
+#define _mozilla_layers_AutoDirWheelDeltaAdjuster_h_
 
 #include "Axis.h"                         
 #include "mozilla/WheelHandlingHelper.h"  

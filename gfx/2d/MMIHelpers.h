@@ -8,8 +8,8 @@
 
 
 
-#ifndef __MMI_HELPERS_H__
-#define __MMI_HELPERS_H__
+#ifndef MMI_HELPERS_H_
+#define MMI_HELPERS_H_
 
 #define __mm_packxxxx(_f, _D, _d, _s, _t)                                     \
   #_f " %[" #_t "], %[" #_d "h], %[" #_s "h] \n\t" #_f " %[" #_D "l], %[" #_d \

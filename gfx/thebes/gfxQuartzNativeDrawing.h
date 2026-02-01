@@ -3,8 +3,8 @@
 
 
 
-#ifndef _GFXQUARTZNATIVEDRAWING_H_
-#define _GFXQUARTZNATIVEDRAWING_H_
+#ifndef GFXQUARTZNATIVEDRAWING_H_
+#define GFXQUARTZNATIVEDRAWING_H_
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BorrowedContext.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FilterSupport_h
-#define __FilterSupport_h
+#ifndef FilterSupport_h
+#define FilterSupport_h
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Matrix.h"

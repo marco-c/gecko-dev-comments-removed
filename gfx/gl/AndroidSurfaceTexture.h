@@ -4,8 +4,8 @@
 
 
 
-#ifndef AndroidSurfaceTexture_h__
-#define AndroidSurfaceTexture_h__
+#ifndef AndroidSurfaceTexture_h_
+#define AndroidSurfaceTexture_h_
 
 #include "mozilla/gfx/Matrix.h"
 

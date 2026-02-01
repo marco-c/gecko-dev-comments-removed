@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTransform2D_h___
-#define nsTransform2D_h___
+#ifndef nsTransform2D_h_
+#define nsTransform2D_h_
 
 #include "nsCoord.h"
 

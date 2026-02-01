@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_GFX_DRAWTARGETSKIA_H
-#define _MOZILLA_GFX_DRAWTARGETSKIA_H
+#ifndef MOZILLA_GFX_DRAWTARGETSKIA_H
+#define MOZILLA_GFX_DRAWTARGETSKIA_H
 
 #include "2D.h"
 #include <sstream>

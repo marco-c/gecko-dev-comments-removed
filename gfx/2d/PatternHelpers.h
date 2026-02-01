@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_GFX_PATTERNHELPERS_H
-#define _MOZILLA_GFX_PATTERNHELPERS_H
+#ifndef MOZILLA_GFX_PATTERNHELPERS_H
+#define MOZILLA_GFX_PATTERNHELPERS_H
 
 #include "mozilla/Alignment.h"
 #include "mozilla/gfx/2D.h"

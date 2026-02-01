@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsRegionFwd_h__
-#define nsRegionFwd_h__
+#ifndef nsRegionFwd_h_
+#define nsRegionFwd_h_
 
 
 

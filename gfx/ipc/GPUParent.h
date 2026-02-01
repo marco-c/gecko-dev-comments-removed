@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_gfx_ipc_GPUParent_h__
-#define _include_gfx_ipc_GPUParent_h__
+#ifndef _include_gfx_ipc_GPUParent_h_
+#define _include_gfx_ipc_GPUParent_h_
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PGPUParent.h"

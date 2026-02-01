@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_gfx_ipc_CanvasManagerParent_h__
-#define _include_gfx_ipc_CanvasManagerParent_h__
+#ifndef _include_gfx_ipc_CanvasManagerParent_h_
+#define _include_gfx_ipc_CanvasManagerParent_h_
 
 #include "mozilla/gfx/PCanvasManagerParent.h"
 #include "mozilla/dom/ipc/IdType.h"

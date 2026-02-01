@@ -3,8 +3,8 @@
 
 
 
-#ifndef AndroidSystemFontIterator_h__
-#define AndroidSystemFontIterator_h__
+#ifndef AndroidSystemFontIterator_h_
+#define AndroidSystemFontIterator_h_
 
 #include "mozilla/Maybe.h"
 

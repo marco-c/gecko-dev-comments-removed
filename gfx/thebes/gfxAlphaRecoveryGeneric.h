@@ -2,8 +2,8 @@
 
 
 
-#ifndef _GFXALPHARECOVERY_GENERIC_H_
-#define _GFXALPHARECOVERY_GENERIC_H_
+#ifndef GFXALPHARECOVERY_GENERIC_H_
+#define GFXALPHARECOVERY_GENERIC_H_
 
 #include "gfxAlphaRecovery.h"
 #include "gfxImageSurface.h"

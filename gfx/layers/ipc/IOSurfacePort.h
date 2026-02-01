@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_gfx_IOSurfacePort_h__
-#define mozilla_gfx_IOSurfacePort_h__
+#ifndef mozilla_gfx_IOSurfacePort_h_
+#define mozilla_gfx_IOSurfacePort_h_
 
 #include "chrome/common/ipc_message_utils.h"
 

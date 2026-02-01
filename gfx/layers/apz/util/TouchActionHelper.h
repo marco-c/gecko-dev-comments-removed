@@ -4,8 +4,8 @@
 
 
 
-#ifndef __mozilla_layers_TouchActionHelper_h__
-#define __mozilla_layers_TouchActionHelper_h__
+#ifndef _mozilla_layers_TouchActionHelper_h_
+#define _mozilla_layers_TouchActionHelper_h_
 
 #include "mozilla/layers/LayersTypes.h"  
 #include "RelativeTo.h"                  

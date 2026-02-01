@@ -3,8 +3,8 @@
 
 
 
-#ifndef _NS_DEVICECONTEXT_H_
-#define _NS_DEVICECONTEXT_H_
+#ifndef NS_DEVICECONTEXT_H_
+#define NS_DEVICECONTEXT_H_
 
 #include <stdint.h>                    
 #include "gfxTypes.h"                  

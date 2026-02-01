@@ -3,8 +3,8 @@
 
 
 
-#ifndef _NS_FONTCACHE_H_
-#define _NS_FONTCACHE_H_
+#ifndef NS_FONTCACHE_H_
+#define NS_FONTCACHE_H_
 
 #include <stdint.h>
 #include <sys/types.h>

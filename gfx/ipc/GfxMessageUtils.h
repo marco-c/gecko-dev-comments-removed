@@ -4,8 +4,8 @@
 
 
 
-#ifndef __GFXMESSAGEUTILS_H__
-#define __GFXMESSAGEUTILS_H__
+#ifndef GFXMESSAGEUTILS_H_
+#define GFXMESSAGEUTILS_H_
 
 #include "FilterSupport.h"
 #include "ImageTypes.h"

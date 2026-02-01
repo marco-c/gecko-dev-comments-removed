@@ -4,8 +4,8 @@
 
 
 
-#ifndef _include_gfx_ipc_CanvasRenderThread_h__
-#define _include_gfx_ipc_CanvasRenderThread_h__
+#ifndef _include_gfx_ipc_CanvasRenderThread_h_
+#define _include_gfx_ipc_CanvasRenderThread_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Mutex.h"

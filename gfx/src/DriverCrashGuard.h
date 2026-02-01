@@ -3,8 +3,8 @@
 
 
 
-#ifndef gfx_src_DriverCrashGuard_h__
-#define gfx_src_DriverCrashGuard_h__
+#ifndef gfx_src_DriverCrashGuard_h_
+#define gfx_src_DriverCrashGuard_h_
 
 #include "nsCOMPtr.h"
 #include "nsIGfxInfo.h"

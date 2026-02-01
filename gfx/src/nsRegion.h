@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsRegion_h__
-#define nsRegion_h__
+#ifndef nsRegion_h_
+#define nsRegion_h_
 
 #include <stddef.h>  
 #include <stdint.h>  

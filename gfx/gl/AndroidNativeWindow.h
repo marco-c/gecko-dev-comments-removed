@@ -4,8 +4,8 @@
 
 
 
-#ifndef AndroidNativeWindow_h__
-#define AndroidNativeWindow_h__
+#ifndef AndroidNativeWindow_h_
+#define AndroidNativeWindow_h_
 
 #include <jni.h>
 #include <android/native_window.h>

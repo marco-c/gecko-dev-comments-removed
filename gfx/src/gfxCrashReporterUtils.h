@@ -4,8 +4,8 @@
 
 
 
-#ifndef gfxCrashReporterUtils_h__
-#define gfxCrashReporterUtils_h__
+#ifndef gfxCrashReporterUtils_h_
+#define gfxCrashReporterUtils_h_
 
 #include "nsString.h"
 

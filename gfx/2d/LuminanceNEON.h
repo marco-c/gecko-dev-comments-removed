@@ -4,8 +4,8 @@
 
 
 
-#ifndef __LUMINANCENEON_H__
-#define __LUMINANCENEON_H__
+#ifndef LUMINANCENEON_H_
+#define LUMINANCENEON_H_
 
 #include "mozilla/gfx/Point.h"
 
