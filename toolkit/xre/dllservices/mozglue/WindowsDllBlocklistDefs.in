@@ -372,6 +372,9 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("MFCopyHook.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("printguard64.dll", (25, 11, 21, 1)),
 ]
 
 CHILD_PROCESSES += [
