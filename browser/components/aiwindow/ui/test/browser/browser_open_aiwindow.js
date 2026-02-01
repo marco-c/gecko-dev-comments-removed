@@ -199,26 +199,28 @@ add_task(async function test_aiwindow_html_mode_detection() {
   });
 
   
-  await BrowserTestUtils.withNewTab(
-    "chrome://browser/content/aiwindow/aiWindow.html",
-    async browser => {
-      await SpecialPowers.spawn(browser, [], async () => {
-        await content.customElements.whenDefined("ai-window");
+  const newAIWindow = await BrowserTestUtils.openNewBrowserWindow({
+    openerWindow: null,
+    aiWindow: true,
+  });
+  const browser = newAIWindow.gBrowser.selectedBrowser;
 
-        const aiWindowElement = content.document.querySelector("ai-window");
-        Assert.ok(aiWindowElement, "ai-window element should exist");
+  await SpecialPowers.spawn(browser, [], async () => {
+    await content.customElements.whenDefined("ai-window");
 
-        
-        info(`aiWindowElement.mode: ${aiWindowElement.mode}`);
-        Assert.strictEqual(
-          aiWindowElement.mode,
-          "fullpage",
-          `Mode should be detected as fullpage, got: ${aiWindowElement.mode}`
-        );
-      });
-    }
-  );
+    const aiWindowElement = content.document.querySelector("ai-window");
+    Assert.ok(aiWindowElement, "ai-window element should exist");
 
+    
+    info(`aiWindowElement.mode: ${aiWindowElement.mode}`);
+    Assert.strictEqual(
+      aiWindowElement.mode,
+      "fullpage",
+      `Mode should be detected as fullpage, got: ${aiWindowElement.mode}`
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(newAIWindow);
   await SpecialPowers.popPrefEnv();
 });
 
