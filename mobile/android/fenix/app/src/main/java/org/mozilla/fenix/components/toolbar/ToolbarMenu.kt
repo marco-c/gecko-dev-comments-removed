@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.components.toolbar
 
-import mozilla.components.browser.menu.BrowserMenuBuilder
-import mozilla.components.browser.menu.item.BrowserMenuItemToolbar
 import org.mozilla.fenix.components.accounts.AccountState
 
 interface ToolbarMenu {
@@ -26,20 +24,17 @@ interface ToolbarMenu {
         object Share : Item()
         data class Back(
             val viewHistory: Boolean,
-            val isOnNavBar: Boolean = false,
             val isOnToolbar: Boolean = false,
             val isCustomTab: Boolean = false,
         ) : Item()
         data class Forward(
             val viewHistory: Boolean,
-            val isOnNavBar: Boolean = false,
             val isOnToolbar: Boolean = false,
             val isCustomTab: Boolean = false,
         ) : Item()
         data class Reload(val bypassCache: Boolean) : Item()
         object Stop : Item()
         data class OpenInFenix(
-            val isOnNavBar: Boolean = false,
             val isOnToolbar: Boolean = false,
         ) : Item()
         object SaveToCollection : Item()
@@ -74,7 +69,4 @@ interface ToolbarMenu {
         object Downloads : Item()
         object NewTab : Item()
     }
-
-    val menuBuilder: BrowserMenuBuilder
-    val menuToolbar: BrowserMenuItemToolbar
 }
