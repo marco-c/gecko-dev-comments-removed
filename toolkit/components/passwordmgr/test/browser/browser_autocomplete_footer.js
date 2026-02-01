@@ -48,6 +48,10 @@ add_task(async function test_autocomplete_footer_onclick() {
       let footer = popup.querySelector(`[originaltype="loginsFooter"]`);
       Assert.ok(footer, "Got footer richlistitem");
 
+      
+      
+      
+      await new Promise(requestAnimationFrame);
       await TestUtils.waitForCondition(() => {
         return !EventUtils.isHidden(footer);
       }, "Waiting for footer to become visible");
