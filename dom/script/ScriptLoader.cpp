@@ -1244,6 +1244,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
 void ScriptLoader::EmulateNetworkEvents(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsCachedStencil());
   MOZ_ASSERT(aRequest->mNetworkMetadata);
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   nsIScriptElement* element = aRequest->GetScriptLoadContext()->mScriptElement;
 
@@ -2078,6 +2079,10 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
       TRACE_FOR_TEST(aRequest, "compile:main thread");
       return NS_OK;
     }
+  } else if (aRequest->IsWasmBytes()) {
+    
+    
+    return NS_OK;
   } else {
     MOZ_ASSERT(aRequest->IsSerializedStencil());
 
@@ -2372,6 +2377,7 @@ nsresult ScriptLoader::CreateOffThreadTask(
     compileTask.forget(aCompileOrDecodeTask);
     return NS_OK;
   }
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   if (StaticPrefs::dom_expose_test_interfaces()) {
     switch (aOptions.eagerDelazificationStrategy()) {
@@ -2780,14 +2786,13 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
       
       
       if (moduleLoadRequest->HasWasmMimeTypeEssence()) {
+        MOZ_ASSERT(aRequest->IsWasmBytes());
         LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: wasm module",
              aRequest));
         aRequest->MarkNotCacheable();
         
         
         MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
-        MOZ_ASSERT_IF(aRequest->IsTextSource(),
-                      aRequest->HasNoSRIOrSRIAndSerializedStencil());
         return;
       }
 #endif
@@ -2801,6 +2806,8 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
       return;
     }
   }
+
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   if (!aRequest->IsCachedStencil() && aRequest->ExpirationTime().IsExpired()) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: Expired",
@@ -3086,6 +3093,7 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
   if (aRequest->IsModuleRequest()) {
     rv = aRequest->AsModuleRequest()->EvaluateModule();
   } else {
+    MOZ_ASSERT(!aRequest->IsWasmBytes());
     rv = EvaluateScript(globalObject, aRequest);
   }
 
@@ -3171,6 +3179,7 @@ void ScriptLoader::InstantiateClassicScriptFromMaybeEncodedSource(
     ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
     JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
   nsAutoCString profilerLabelString;
   aRequest->GetScriptLoadContext()->GetProfilerLabel(profilerLabelString);
 
@@ -3293,6 +3302,7 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
     JS::MutableHandle<JSScript*> aScript,
     JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
   nsAutoCString profilerLabelString;
   aRequest->GetScriptLoadContext()->GetProfilerLabel(profilerLabelString);
 
@@ -3320,6 +3330,7 @@ void ScriptLoader::InstantiateClassicScriptFromAny(
     ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
     JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv) {
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
   if (aRequest->IsCachedStencil()) {
     RefPtr<JS::Stencil> stencil = aRequest->GetStencil();
     InstantiateClassicScriptFromCachedStencil(
@@ -3374,6 +3385,7 @@ ScriptLoader::CacheBehavior ScriptLoader::GetCacheBehavior(
 void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->HasStencil());
   MOZ_ASSERT(!aRequest->IsCachedStencil());
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   if (aRequest->IsMarkedNotCacheable()) {
     aRequest->ClearStencil();
@@ -3442,6 +3454,7 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
 
 nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
   if (mCache) {
     
     return NS_OK;
@@ -3475,6 +3488,7 @@ nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
 nsresult ScriptLoader::MaybePrepareModuleForDiskCacheAfterExecute(
     ModuleLoadRequest* aRequest, nsresult aRv) {
   MOZ_ASSERT(aRequest->IsTopLevel() || aRequest->IsDynamicImport());
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   if (mCache) {
     
@@ -3508,6 +3522,7 @@ nsresult ScriptLoader::MaybePrepareModuleForDiskCacheAfterExecute(
 
 nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
                                       ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
   nsAutoMicroTask mt;
   AutoEntryScript aes(aGlobalObject, "EvaluateScript", true);
   JSContext* cx = aes.cx();
@@ -4740,26 +4755,6 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
       if (policy != ReferrerPolicy::_empty) {
         aRequest->AsModuleRequest()->UpdateReferrerPolicy(policy);
       }
-
-#ifdef NIGHTLY_BUILD
-      if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
-        
-        
-        
-        nsAutoCString mimeType;
-        if (NS_SUCCEEDED(httpChannel->GetContentType(mimeType))) {
-          if (nsContentUtils::HasWasmMimeTypeEssence(
-                  NS_ConvertUTF8toUTF16(mimeType))) {
-            aRequest->AsModuleRequest()->SetHasWasmMimeTypeEssence();
-            
-            
-            
-            
-            aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
-          }
-        }
-      }
-#endif
     }
 
     nsAutoCString sourceMapURL;
