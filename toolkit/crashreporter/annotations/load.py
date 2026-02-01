@@ -21,10 +21,11 @@ def sort_annotations(annotations):
 
 
 
+
 def camel_to_snake(s):
     if s.islower():
         return s
-    lowers = [c.islower() for c in s] + [False]
+    lowers = [c.islower() or c.isnumeric() for c in s] + [False]
     words = []
     last = 0
     for i in range(1, len(s)):
