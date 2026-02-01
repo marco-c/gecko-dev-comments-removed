@@ -2452,6 +2452,8 @@ extern "C" {
         uint32_t            poll;                        
         bool                strict_cpu;                  
         bool                paused;                      
+        void              (*thread_create_callback)(void);  
+        void              (*thread_destroy_callback)(void); 
     };
 
     struct ggml_threadpool;     
