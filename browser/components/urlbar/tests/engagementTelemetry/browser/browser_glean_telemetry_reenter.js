@@ -35,7 +35,8 @@ add_task(async function () {
       });
     },
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
   
   let engagementSpy = sinon.spy(provider, "onEngagement");
 
@@ -52,7 +53,7 @@ add_task(async function () {
 
   registerCleanupFunction(() => {
     sinon.restore();
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
   });
 
   await doTest(async () => {

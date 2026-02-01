@@ -127,12 +127,13 @@ add_task(async function testIsActive() {
     },
   ];
 
-  let interventionsProviderInstance = UrlbarProvidersManager.getProvider(
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  let interventionsProviderInstance = providersManager.getProvider(
     "UrlbarProviderInterventions"
   );
   
   interventionsProviderInstance.queryInstance = {
-    getProvider: name => UrlbarProvidersManager.getProvider(name),
+    getProvider: name => providersManager.getProvider(name),
   };
   for (const {
     description,

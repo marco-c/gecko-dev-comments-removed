@@ -47,7 +47,8 @@ add_task(async function test() {
       }),
     ],
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   
   let blobUrl = await doSearches(provider, spies);
@@ -71,7 +72,7 @@ add_task(async function test() {
 
   
   
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "test",

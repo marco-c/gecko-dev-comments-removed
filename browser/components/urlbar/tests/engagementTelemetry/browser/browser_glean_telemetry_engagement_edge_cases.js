@@ -79,20 +79,21 @@ add_task(async function engagement_before_showing_results() {
   });
 
   
-  let originalChunkTimeout = UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS;
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = 1000000;
+  let originalChunkTimeout = ProvidersManager.chunkResultsDelayMs;
+  ProvidersManager.chunkResultsDelayMs = 1000000;
 
   
   
-  UrlbarProvidersManager.registerProvider(noResponseProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(noResponseProvider);
 
   
-  UrlbarProvidersManager.registerProvider(anotherHeuristicProvider);
+  providersManager.registerProvider(anotherHeuristicProvider);
 
   const cleanup = () => {
-    UrlbarProvidersManager.unregisterProvider(noResponseProvider);
-    UrlbarProvidersManager.unregisterProvider(anotherHeuristicProvider);
-    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = originalChunkTimeout;
+    providersManager.unregisterProvider(noResponseProvider);
+    providersManager.unregisterProvider(anotherHeuristicProvider);
+    ProvidersManager.chunkResultsDelayMs = originalChunkTimeout;
   };
   registerCleanupFunction(cleanup);
 
@@ -102,7 +103,7 @@ add_task(async function engagement_before_showing_results() {
 
     
     const context = await anotherHeuristicProvider.onQueryStarted();
-    const query = UrlbarProvidersManager.queries.get(context);
+    const query = providersManager.queries.get(context);
     await BrowserTestUtils.waitForCondition(
       () =>
         query.unsortedResults.some(

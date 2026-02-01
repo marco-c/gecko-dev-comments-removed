@@ -115,7 +115,7 @@ async function doHelpTest({
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  ProvidersManager.getInstanceForSap("urlbar").unregisterProvider(provider);
 }
 
 
@@ -165,7 +165,7 @@ add_task(async function keyboardSelection_secondResult() {
   assertOtherResultSelected(0, "previous result");
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  ProvidersManager.getInstanceForSap("urlbar").unregisterProvider(provider);
 });
 
 
@@ -236,7 +236,7 @@ add_task(async function keyboardSelection_lastResult() {
   assertOtherResultSelected(numSelectable - 3, "previous result");
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  ProvidersManager.getInstanceForSap("urlbar").unregisterProvider(provider);
 });
 
 
@@ -314,7 +314,7 @@ async function doPickTest({ pickHelp, useKeyboard }) {
     if (pickHelp) {
       BrowserTestUtils.removeTab(gBrowser.selectedTab);
     }
-    UrlbarProvidersManager.unregisterProvider(provider);
+    ProvidersManager.getInstanceForSap("urlbar").unregisterProvider(provider);
 
     
     await PlacesTestUtils.clearInputHistory();
@@ -358,7 +358,7 @@ function registerTestProvider({
       }),
     ],
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  ProvidersManager.getInstanceForSap("urlbar").registerProvider(provider);
   return provider;
 }
 

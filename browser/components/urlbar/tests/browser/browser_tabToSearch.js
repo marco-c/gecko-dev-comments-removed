@@ -297,9 +297,10 @@ add_task(async function tab_key_race() {
       }
     }
     let provider = new ListeningTestProvider();
-    UrlbarProvidersManager.registerProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.registerProvider(provider);
     registerCleanupFunction(async function () {
-      UrlbarProvidersManager.unregisterProvider(provider);
+      providersManager.unregisterProvider(provider);
     });
   });
   gURLBar.focus();

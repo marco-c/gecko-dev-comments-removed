@@ -207,7 +207,8 @@ add_task(async function topSites_nonTopSitesResults() {
         }),
       ],
     });
-    UrlbarProvidersManager.registerProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.registerProvider(provider);
 
     
     
@@ -242,7 +243,7 @@ add_task(async function topSites_nonTopSitesResults() {
       urls: [suggestedIndexURL, ...TEST_URLS],
     });
 
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
   });
 });
 
