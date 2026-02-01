@@ -13090,6 +13090,7 @@ function EditableTimerFields({
 
 
 
+
 function WeatherForecast({
   dispatch
 }) {
@@ -13171,93 +13172,93 @@ function WeatherForecast({
       }
     }));
   }
-  return React.createElement("article", {
+  return external_React_default().createElement("article", {
     className: "weather-forecast-widget"
-  }, React.createElement("div", {
+  }, external_React_default().createElement("div", {
     className: "city-wrapper"
-  }, React.createElement("div", {
+  }, external_React_default().createElement("div", {
     className: "city-name"
-  }, searchActive ? React.createElement(LocationSearch, {
+  }, searchActive ? external_React_default().createElement(LocationSearch, {
     outerClassName: ""
-  }) : React.createElement("h3", null, weatherData.locationData.city)), React.createElement("div", {
+  }) : external_React_default().createElement("h3", null, weatherData.locationData.city)), external_React_default().createElement("div", {
     className: "weather-forecast-context-menu-wrapper"
-  }, React.createElement("moz-button", {
+  }, external_React_default().createElement("moz-button", {
     className: "weather-forecast-context-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "weather-forecast-context-menu",
     type: "ghost"
-  }), React.createElement("panel-list", {
+  }), external_React_default().createElement("panel-list", {
     id: "weather-forecast-context-menu"
-  }, prefs["weather.locationSearchEnabled"] && React.createElement("panel-item", {
+  }, prefs["weather.locationSearchEnabled"] && external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-location",
     onClick: handleChangeLocation
-  }), isOptInEnabled && React.createElement("panel-item", {
+  }), isOptInEnabled && external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-detect-my-location",
     onClick: handleDetectLocation
-  }), prefs["weather.temperatureUnits"] === "f" ? React.createElement("panel-item", {
+  }), prefs["weather.temperatureUnits"] === "f" ? external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
     onClick: () => handleChangeTempUnit("c")
-  }) : React.createElement("panel-item", {
+  }) : external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-temperature-units-fahrenheit",
     onClick: () => handleChangeTempUnit("f")
-  }), !showDetailedView ? React.createElement("panel-item", {
+  }), !showDetailedView ? external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-weather-display-detailed",
     onClick: () => handleChangeDisplay("detailed")
-  }) : React.createElement("panel-item", {
+  }) : external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
     onClick: () => handleChangeDisplay("simple")
-  }), React.createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
     onClick: handleHideWeather
-  }), React.createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-learn-more",
     onClick: handleLearnMore
-  })))), React.createElement("div", {
+  })))), external_React_default().createElement("div", {
     className: "current-weather-wrapper"
-  }, React.createElement("div", {
+  }, external_React_default().createElement("div", {
     className: "weather-icon-column"
-  }, React.createElement("span", {
+  }, external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  })), React.createElement("div", {
+  })), external_React_default().createElement("div", {
     className: "weather-info-column"
-  }, React.createElement("span", {
+  }, external_React_default().createElement("span", {
     className: "temperature-unit"
-  }, WEATHER_SUGGESTION.current_conditions.temperature[prefs["weather.temperatureUnits"]], "\xB0", prefs["weather.temperatureUnits"]), React.createElement("span", {
+  }, WEATHER_SUGGESTION.current_conditions.temperature[prefs["weather.temperatureUnits"]], "\xB0", prefs["weather.temperatureUnits"]), external_React_default().createElement("span", {
     className: "temperature-description"
-  }, WEATHER_SUGGESTION.current_conditions.summary)), React.createElement("div", {
+  }, WEATHER_SUGGESTION.current_conditions.summary)), external_React_default().createElement("div", {
     className: "high-low-column"
-  }, React.createElement("span", {
+  }, external_React_default().createElement("span", {
     className: "high-temperature"
-  }, React.createElement("span", {
+  }, external_React_default().createElement("span", {
     className: "arrow-icon arrow-up"
-  }), WEATHER_SUGGESTION.forecast.high[prefs["weather.temperatureUnits"]], "\xB0"), React.createElement("span", {
+  }), WEATHER_SUGGESTION.forecast.high[prefs["weather.temperatureUnits"]], "\xB0"), external_React_default().createElement("span", {
     className: "low-temperature"
-  }, React.createElement("span", {
+  }, external_React_default().createElement("span", {
     className: "arrow-icon arrow-down"
-  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), React.createElement("hr", null), React.createElement("div", {
+  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), external_React_default().createElement("hr", null), external_React_default().createElement("div", {
     className: "forecast-row"
-  }, React.createElement("p", {
+  }, external_React_default().createElement("p", {
     className: "today-forecast",
     "data-l10n-id": "newtab-weather-todays-forecast"
-  }), React.createElement("ul", {
+  }), external_React_default().createElement("ul", {
     className: "forecast-row-items"
-  }, React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+  }, external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), React.createElement("span", null, "7:00")))), React.createElement("div", {
+  }), external_React_default().createElement("span", null, "7:00")))), external_React_default().createElement("div", {
     className: "weather-forecast-footer"
-  }, React.createElement("a", {
+  }, external_React_default().createElement("a", {
     href: "#",
     className: "full-forecast",
     "data-l10n-id": "newtab-weather-see-full-forecast"
-  }), React.createElement("span", {
+  }), external_React_default().createElement("span", {
     className: "sponsored-text",
     "data-l10n-id": "newtab-weather-sponsored",
     "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
