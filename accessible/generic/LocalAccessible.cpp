@@ -3445,6 +3445,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     
     
     
+    
     bool cacheValueText = false;
     if (HasNumericValue()) {
       fields->SetAttribute(CacheKey::NumericValue, CurValue());
@@ -3455,8 +3456,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                        (mContent->IsElement() &&
                         nsAccUtils::HasARIAAttr(mContent->AsElement(),
                                                 nsGkAtoms::aria_valuetext));
-    } else {
-      cacheValueText = IsTextField() || IsHTMLLink();
+    } else if (IsTextField() || IsHTMLLink()) {
+      cacheValueText = true;
+    } else if (auto* input = dom::HTMLInputElement::FromNode(mContent)) {
+      cacheValueText = input->IsInputColor();
     }
 
     if (cacheValueText) {

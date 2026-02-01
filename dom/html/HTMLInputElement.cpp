@@ -121,6 +121,10 @@
 
 #include "js/Date.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Input)
 
 
@@ -2890,6 +2894,11 @@ nsresult HTMLInputElement::SetValueInternal(
             do_QueryFrame(GetPrimaryFrame());
         if (colorControlFrame) {
           colorControlFrame->UpdateColor();
+#ifdef ACCESSIBILITY
+          if (nsAccessibilityService* accService = GetAccService()) {
+            accService->ColorValueChanged(colorControlFrame->PresShell(), this);
+          }
+#endif
         }
       }
       return NS_OK;
