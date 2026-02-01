@@ -22,7 +22,7 @@ from mozbuild.repackaging.utils import (
 
 
 
-FREEDESKTOP_VERSION = "24.08"
+FREEDESKTOP_VERSION = "25.08"
 
 FIREFOX_BASEAPP = "org.mozilla.firefox.BaseApp"
 FIREFOX_BASEAPP_CHANNEL = FREEDESKTOP_VERSION
