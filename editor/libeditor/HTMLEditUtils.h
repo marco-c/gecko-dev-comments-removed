@@ -240,7 +240,9 @@ class HTMLEditUtils final {
 
 
 
-  static bool IsVisibleElementEvenIfLeafNode(const nsIContent& aContent);
+
+  [[nodiscard]] static bool IsVisibleElementEvenIfLeafNode(
+      const nsIContent& aContent);
 
   
 
