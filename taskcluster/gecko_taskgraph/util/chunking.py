@@ -93,7 +93,8 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
     info["appname"] = "fennec" if info["os"] == "android" else "firefox"
     info["buildapp"] = "browser"
 
-    info["processor"] = platform_info.arch
+    
+    info["processor"] = info["arch"] = platform_info.arch
 
     
     if info["os"] == "android":
