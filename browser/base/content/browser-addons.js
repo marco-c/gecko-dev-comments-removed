@@ -819,7 +819,6 @@ customElements.define(
   class MozAddonInstalledNotification extends customElements.get(
     "popupnotification"
   ) {
-    #shouldIgnoreCheckboxStateChangeEvent = false;
     #browserActionWidgetObserver;
     connectedCallback() {
       this.descriptionEl = this.querySelector("#addon-install-description");
@@ -828,13 +827,13 @@ customElements.define(
       );
 
       this.addEventListener("click", this);
-      this.pinExtensionEl.addEventListener("CheckboxStateChange", this);
+      this.pinExtensionEl.addEventListener("command", this);
       this.#browserActionWidgetObserver?.startObserving();
     }
 
     disconnectedCallback() {
       this.removeEventListener("click", this);
-      this.pinExtensionEl.removeEventListener("CheckboxStateChange", this);
+      this.pinExtensionEl.removeEventListener("command", this);
       this.#browserActionWidgetObserver?.stopObserving();
     }
 
@@ -862,10 +861,8 @@ customElements.define(
           }
           break;
         }
-        case "CheckboxStateChange":
-          
-          
-          if (!this.#shouldIgnoreCheckboxStateChangeEvent) {
+        case "command":
+          if (target == this.pinExtensionEl) {
             this.#handlePinnedCheckboxStateChange();
           }
           break;
@@ -904,7 +901,7 @@ customElements.define(
       this.querySelector(`#${this.#settingsLinkId}`)?.remove();
 
       if (this.#dataCollectionPermissionsEnabled) {
-        const HTML_NS = "http:
+        const HTML_NS = "http://www.w3.org/1999/xhtml";
         const link = document.createElementNS(HTML_NS, "a");
         link.setAttribute("id", this.#settingsLinkId);
         link.setAttribute("data-l10n-name", "settings-link");
@@ -949,9 +946,7 @@ customElements.define(
         
         return;
       }
-      this.#shouldIgnoreCheckboxStateChangeEvent = true;
       this.pinExtensionEl.checked = shouldPinToToolbar;
-      this.#shouldIgnoreCheckboxStateChangeEvent = false;
       this.pinExtensionEl.hidden = false;
     }
 
@@ -1826,9 +1821,9 @@ var BrowserAddonUI = {
     } = Services.prompt;
     let btnFlags = BUTTON_POS_0 * titleString + BUTTON_POS_1 * titleCancel;
 
-    
-    
-    
+    // Enable abuse report checkbox in the remove extension dialog,
+    // if enabled by the about:config prefs and the addon type
+    // is currently supported.
     let checkboxMessage = null;
     if (
       gAddonAbuseReportEnabled &&
@@ -1839,7 +1834,7 @@ var BrowserAddonUI = {
       );
     }
 
-    
+    // If the prompt is being used for ML model removal, use a body message
     let body = null;
     if (addon.type === "mlmodel") {
       body = await lazy.l10n.formatValue("addon-mlmodel-removal-body");
@@ -1852,8 +1847,8 @@ var BrowserAddonUI = {
       body,
       btnFlags,
       btnTitle,
-       null,
-       null,
+      /* button1 */ null,
+      /* button2 */ null,
       checkboxMessage,
       checkboxState
     );
@@ -1869,8 +1864,8 @@ var BrowserAddonUI = {
 
     const amoUrl = lazy.AbuseReporter.getAMOFormURL({ addonId });
     window.openTrustedLinkIn(amoUrl, "tab", {
-      
-      
+      // Make sure the newly open tab is going to be focused, independently
+      // from general user prefs.
       forceForeground: true,
     });
   },
@@ -1884,8 +1879,8 @@ var BrowserAddonUI = {
     let { remove, report } = await this.promptRemoveExtension(addon);
 
     if (remove) {
-      
-      
+      // Leave the extension in pending uninstall if we are also reporting the
+      // add-on.
       await addon.uninstall(report);
 
       if (report) {
@@ -1903,27 +1898,27 @@ var BrowserAddonUI = {
     this.openAddonsMgr("addons://detail/" + encodeURIComponent(addon.id));
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Open about:addons page by given view id.
+   *
+   * @param {string} aView
+   *                 View id of page that will open.
+   *                 e.g. "addons://discover/"
+   * @param {object} options
+   *        {
+   *          selectTabByViewId: If true, if there is the tab opening page having
+   *                             same view id, select the tab. Else if the current
+   *                             page is blank, load on it. Otherwise, open a new
+   *                             tab, then load on it.
+   *                             If false, if there is the tab opening
+   *                             about:addoons page, select the tab and load page
+   *                             for view id on it. Otherwise, leave the loading
+   *                             behavior to switchToTabHavingURI().
+   *                             If no options, handles as false.
+   *        }
+   * @returns {Promise} When the Promise resolves, returns window object loaded the
+   *                    view id.
+   */
   openAddonsMgr(aView, { selectTabByViewId = false } = {}) {
     return new Promise(resolve => {
       let emWindow;
@@ -1931,7 +1926,7 @@ var BrowserAddonUI = {
 
       const receivePong = function (aSubject) {
         const browserWin = aSubject.browsingContext.topChromeWindow;
-        if (!emWindow || browserWin == window ) {
+        if (!emWindow || browserWin == window /* favor the current window */) {
           if (
             selectTabByViewId &&
             aSubject.gViewController.currentViewId !== aView
@@ -1966,8 +1961,8 @@ var BrowserAddonUI = {
           : "tab";
         openTrustedLinkIn("about:addons", target);
       } else {
-        
-        
+        // This must be a new load, else the ping/pong would have
+        // found the window above.
         switchToTabHavingURI("about:addons", true);
       }
 
@@ -1983,20 +1978,20 @@ var BrowserAddonUI = {
   },
 };
 
-
-
+// We must declare `gUnifiedExtensions` using `var` below to avoid a
+// "redeclaration" syntax error.
 var gUnifiedExtensions = {
   _initialized: false,
-  
+  // buttonAlwaysVisible: true, -- based on pref, declared later.
   _buttonShownBeforeButtonOpen: null,
   _buttonBarHasMouse: false,
 
-  
-  
-  
-  
-  
-  
+  // We use a `<deck>` in the extension items to show/hide messages below each
+  // extension name. We have a default message for origin controls, and
+  // optionally a second message shown on hover, which describes the action
+  // (when clicking on the action button). We have another message shown when
+  // the menu button is hovered/focused. The constants below define the indexes
+  // of each message in the `<deck>`.
   MESSAGE_DECK_INDEX_DEFAULT: 0,
   MESSAGE_DECK_INDEX_HOVER: 1,
   MESSAGE_DECK_INDEX_MENU_HOVER: 2,
@@ -2006,7 +2001,7 @@ var gUnifiedExtensions = {
       return;
     }
 
-    
+    // Button is hidden by default, declared in navigator-toolbox.inc.xhtml.
     this._button = document.getElementById("unified-extensions-button");
     this._navbar = document.getElementById("nav-bar");
     this.updateButtonVisibility();
@@ -2055,18 +2050,18 @@ var gUnifiedExtensions = {
   },
 
   _updateButtonBarListeners() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Called from init() and when the buttonAlwaysVisible flag changes.
+    //
+    // We don't expect the user to be interacting with the Extensions Button or
+    // the navbar when the buttonAlwaysVisible flag changes. Still, we reset
+    // the _buttonBarHasMouse flag to false to make sure that the button can be
+    // hidden eventually if there are no other triggers:
+    // - on registration, we don't know whether the mouse is on the navbar.
+    // - after unregistration, the flag is no longer maintained, and false is a
+    //   safe default value.
     this._buttonBarHasMouse = false;
-    
-    
+    // We need mouse listeners on _navbar to maintain _buttonBarHasMouse,
+    // but only if the button is conditionally visible/hidden.
     if (this.buttonAlwaysVisible) {
       this._navbar.removeEventListener("mouseover", this);
       this._navbar.removeEventListener("mouseout", this);
@@ -2088,7 +2083,7 @@ var gUnifiedExtensions = {
   },
 
   onLocationChange(browser, webProgress, _request, _uri, flags) {
-    
+    // Only update on top-level cross-document navigations in the selected tab.
     if (
       webProgress.isTopLevel &&
       browser === gBrowser.selectedBrowser &&
@@ -2099,22 +2094,22 @@ var gUnifiedExtensions = {
   },
 
   updateButtonVisibility() {
-    
+    // TODO: Bug 1778684 - Auto-hide button when there is no active extension.
     let shouldShowButton =
       this.buttonAlwaysVisible ||
-      
+      // If anything is anchored to the button, keep it visible.
       this._button.open ||
-      
+      // Button will be open soon - see ensureButtonShownBeforeAttachingPanel.
       this._buttonShownBeforeButtonOpen ||
-      
-      
-      
+      // Items in the toolbar shift when the button hides. To prevent the user
+      // from clicking on something different than they intended, never hide an
+      // already-visible button while the mouse is still in the toolbar.
       (!this.button.hidden && this._buttonBarHasMouse) ||
-      
+      // Attention dot - see comment at buttonIgnoresAttention.
       (!this.buttonIgnoresAttention && this.button.hasAttribute("attention")) ||
-      
-      
-      
+      // Always show when customizing, because even if the button should mostly
+      // be hidden, the user should be able to specify the desired location for
+      // cases where the button is forcibly shown.
       CustomizationHandler.isCustomizing();
 
     if (shouldShowButton) {
@@ -2128,10 +2123,10 @@ var gUnifiedExtensions = {
 
   ensureButtonShownBeforeAttachingPanel(panel) {
     if (!this.buttonAlwaysVisible && !this._button.open) {
-      
-      
-      
-      
+      // When the panel is anchored to the button, its "open" attribute will be
+      // set, which visually renders as a "button pressed". Until we get there,
+      // we need to make sure that the button is visible so that it can serve
+      // as anchor.
       this._buttonShownBeforeButtonOpen = panel;
       this.updateButtonVisibility();
     }
@@ -2146,20 +2141,20 @@ var gUnifiedExtensions = {
     }
   },
 
-  
+  // Update the attention indicator for the whole unified extensions button.
   updateAttention() {
     let permissionsAttention = false;
     let quarantinedAttention = false;
     let blocklistAttention = AddonManager.shouldShowBlocklistAttention();
 
-    
-    
-    
+    // Computing the OriginControls state for all active extensions is potentially
+    // more expensive, and so we don't compute it if we have already determined that
+    // there is a blocklist attention to be shown.
     if (!blocklistAttention) {
       for (let policy of this.getActivePolicies()) {
         let widget = this.browserActionFor(policy)?.widget;
 
-        
+        // Only show for extensions which are not already visible in the toolbar.
         if (!widget || widget.areaType !== CustomizableUI.TYPE_TOOLBAR) {
           if (lazy.OriginControls.getAttentionState(policy, window).attention) {
             permissionsAttention = true;
@@ -2168,9 +2163,9 @@ var gUnifiedExtensions = {
         }
       }
 
-      
-      
-      
+      // If the domain is quarantined and we have extensions not allowed, we'll
+      // show a notification in the panel so we want to let the user know about
+      // it.
       quarantinedAttention = this._shouldShowQuarantinedNotification();
     }
 
@@ -2181,13 +2176,13 @@ var gUnifiedExtensions = {
     let msgId = permissionsAttention
       ? "unified-extensions-button-permissions-needed"
       : "unified-extensions-button";
-    
+    // Quarantined state takes precedence over anything else.
     if (quarantinedAttention) {
       msgId = "unified-extensions-button-quarantined";
     }
-    
-    
-    
+    // blocklistAttention state takes precedence over the other ones
+    // because it is dismissible and, once dismissed, the tooltip will
+    // show one of the other messages if appropriate.
     if (blocklistAttention) {
       msgId = "unified-extensions-button-blocklisted";
     }
@@ -2202,22 +2197,22 @@ var gUnifiedExtensions = {
     }
   },
 
-  
-  
-  
-  
+  // Get the anchor to use with PopupNotifications.show(). If you add a new use
+  // of this method, make sure to update gXPInstallObserver.NOTIFICATION_IDS!
+  // If the new ID is not added in NOTIFICATION_IDS, consider handling the case
+  // in the "PopupNotificationsBeforeAnchor" handler elsewhere in this file.
   getPopupAnchorID(aBrowser, aWindow) {
     const anchorID = "unified-extensions-button";
     const attr = anchorID + "popupnotificationanchor";
 
     if (!aBrowser[attr]) {
-      
-      
-      
+      // A hacky way of setting the popup anchor outside the usual url bar
+      // icon box, similar to how it was done for CFR.
+      // See: https://searchfox.org/mozilla-central/rev/c5c002f81f08a73e04868e0c2bf0eb113f200b03/toolkit/modules/PopupNotifications.sys.mjs#40
       aBrowser[attr] = aWindow.document.getElementById(
         anchorID
-        
-        
+        // Anchor on the toolbar icon to position the popup right below the
+        // button.
       ).firstElementChild;
     }
 
@@ -2228,33 +2223,33 @@ var gUnifiedExtensions = {
     return this._button;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Gets a list of active WebExtensionPolicy instances of type "extension",
+   * excluding hidden extensions, available to this window.
+   *
+   * @param {boolean} skipPBMCheck When false (the default), the result
+   *                  excludes extensions that cannot access the current window
+   *                  due to the window being a private browsing window that
+   *                  the extension is not allowed to access.
+   * @returns {Array<WebExtensionPolicy>} An array of active policies.
+   */
   getActivePolicies(skipPBMCheck = false) {
     let policies = WebExtensionPolicy.getActiveExtensions();
     policies = policies.filter(policy => {
       let { extension } = policy;
       if (extension?.type !== "extension") {
-        
-        
+        // extension can only be null due to bugs (bug 1642012).
+        // Exclude non-extension types such as themes, dictionaries, etc.
         return false;
       }
 
-      
-      
-      
+      // Ignore hidden and extensions that cannot access the current window
+      // (because of PB mode when we are in a private window), since users
+      // cannot do anything with those extensions anyway.
       if (
         extension.isHidden ||
-        
-        
+        // NOTE: policy.canAccessWindow() sounds generic, but it really only
+        // enforces private browsing access.
         (!skipPBMCheck && !policy.canAccessWindow(window))
       ) {
         return false;
@@ -2266,16 +2261,16 @@ var gUnifiedExtensions = {
     return policies;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns true when there are active extensions listed/shown in the unified
+   * extensions panel, and false otherwise (e.g. when extensions are pinned in
+   * the toolbar OR there are 0 active extensions).
+   *
+   * @param {Array<WebExtensionPolicy> [policies] The list of extensions to
+   *   evaluate. Defaults to the active extensions with access to this window
+   *   (see getActivePolicies).
+   * @returns {boolean} Whether there are extensions listed in the panel.
+   */
   hasExtensionsInPanel(policies = this.getActivePolicies()) {
     return policies.some(policy => {
       let widget = this.browserActionFor(policy)?.widget;
@@ -2291,27 +2286,27 @@ var gUnifiedExtensions = {
     if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
       return false;
     }
-    const policies = this.getActivePolicies( true);
+    const policies = this.getActivePolicies(/* skipPBMCheck */ true);
     return policies.some(p => !p.privateBrowsingAllowed);
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns whether there is any active extension without private browsing
+   * access, for which the user can toggle the "Run in Private Windows" option.
+   * This complements the isPrivateWindowMissingExtensionsWithoutPBMAccess()
+   * method, by distinguishing cases where the user can enable any extension
+   * in the private window, vs cases where the user cannot.
+   *
+   * @returns {Promise<boolean>} Whether there is any "Run in Private Windows"
+   *                             option that is Off and can be set to On.
+   */
   async isAtLeastOneExtensionWithPBMOptIn() {
     const addons = await AddonManager.getAddonsByTypes(["extension"]);
     return addons.some(addon => {
       if (
-        
+        // We only care about extensions shown in the panel and about:addons.
         addon.hidden ||
-        
+        // We only care about extensions whose PBM access can be toggled.
         !(
           addon.permissions &
           lazy.AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS
@@ -2320,7 +2315,7 @@ var gUnifiedExtensions = {
         return false;
       }
       const policy = WebExtensionPolicy.getByID(addon.id);
-      
+      // policy can be null if the extension is not active.
       return policy && !policy.privateBrowsingAllowed;
     });
   },
@@ -2350,8 +2345,8 @@ var gUnifiedExtensions = {
           const popupnotification = PopupNotifications.panel.firstElementChild;
           const popupid = popupnotification?.getAttribute("popupid");
           if (popupid === "addon-webext-permissions") {
-            
-            
+            // "addon-webext-permissions" is also in NOTIFICATION_IDS, but to
+            // distinguish it from other cases, give it a separate reason.
             this.recordButtonTelemetry("extension_permission_prompt");
           } else if (gXPInstallObserver.NOTIFICATION_IDS.includes(popupid)) {
             this.recordButtonTelemetry("addon_install_doorhanger");
@@ -2395,9 +2390,9 @@ var gUnifiedExtensions = {
   onPanelViewShowing(panelview) {
     const policies = this.getActivePolicies();
 
-    
-    
-    
+    // Only add extensions that do not have a browser action in this list since
+    // the extensions with browser action have CUI widgets and will appear in
+    // the panel (or toolbar) via the CUI mechanism.
     const policiesForList = policies.filter(
       p => !p.extension.hasBrowserActionUI
     );
@@ -2414,7 +2409,7 @@ var gUnifiedExtensions = {
       "#unified-extensions-empty-state"
     );
     if (this.hasExtensionsInPanel(policies)) {
-      
+      // Any of the extension lists are non-empty.
       emptyStateBox.hidden = true;
     } else if (this.isPrivateWindowMissingExtensionsWithoutPBMAccess()) {
       document.l10n.setAttributes(
@@ -2427,8 +2422,8 @@ var gUnifiedExtensions = {
       );
       emptyStateBox.hidden = false;
       this.isAtLeastOneExtensionWithPBMOptIn().then(result => {
-        
-        
+        // The "enable" message is somewhat misleading when the user cannot
+        // enable the extension, show a generic message instead (bug 1992179).
         if (!result) {
           document.l10n.setAttributes(
             emptyStateBox.querySelector("description"),
@@ -2462,16 +2457,16 @@ var gUnifiedExtensions = {
           );
           emptyStateBox.hidden = false;
 
-          
-          
-          
+          // Replace the "Manage Extensions" button with "Discover Extensions".
+          // We add the "Discover Extensions" button, and "Manage Extensions"
+          // button (#unified-extensions-manage-extensions) is hidden by CSS.
           const discoverButton = this._createDiscoverButton(panelview);
 
           const manageExtensionsButton = panelview.querySelector(
             "#unified-extensions-manage-extensions"
           );
-          
-          
+          // Insert before toolbarseparator, to make it easier to hide the
+          // toolbarseparator and manageExtensionsButton with CSS.
           manageExtensionsButton.previousElementSibling.before(discoverButton);
         }
       });
@@ -2488,7 +2483,7 @@ var gUnifiedExtensions = {
         type: "info",
       });
       container.prepend(this._messageBarSafemode);
-    } 
+    } // No "else" case; inSafeMode flag is fixed at browser startup.
 
     if (this.blocklistAttentionInfo?.shouldShow) {
       this._messageBarBlocklist = this._createBlocklistMessageBar(container);
@@ -2539,12 +2534,12 @@ var gUnifiedExtensions = {
       .querySelector("#unified-extensions-discover-extensions")
       ?.remove();
 
-    
+    // If temporary access was granted, (maybe) clear attention indicator.
     requestAnimationFrame(() => this.updateAttention());
   },
 
   onToolbarVisibilityChange(toolbarId, isVisible) {
-    
+    // A list of extension widget IDs (possibly empty).
     let widgetIDs;
 
     try {
@@ -2552,22 +2547,22 @@ var gUnifiedExtensions = {
         CustomizableUI.isWebExtensionWidget
       );
     } catch {
-      
+      // Do nothing if the area does not exist for some reason.
       return;
     }
 
-    
+    // The list of overflowed extensions in the extensions panel.
     const overflowedExtensionsList = this.panel.querySelector(
       "#overflowed-extensions-list"
     );
 
-    
-    
-    
-    
-    
-    
-    
+    // We are going to move all the extension widgets via DOM manipulation
+    // *only* so that it looks like these widgets have moved (and users will
+    // see that) but CUI still thinks the widgets haven't been moved.
+    //
+    // We can move the extension widgets either from the toolbar to the
+    // extensions panel OR the other way around (when the toolbar becomes
+    // visible again).
     for (const widgetID of widgetIDs) {
       const widget = CustomizableUI.getWidget(widgetID);
       if (!widget) {
@@ -2578,16 +2573,16 @@ var gUnifiedExtensions = {
         this._maybeMoveWidgetNodeBack(widget.id);
       } else {
         const { node } = widget.forWindow(window);
-        
-        
+        // Artificially overflow the extension widget in the extensions panel
+        // when the toolbar is hidden.
         node.setAttribute("overflowedItem", true);
         node.setAttribute("artificallyOverflowed", true);
-        
-        
+        // This attribute forces browser action popups to be anchored to the
+        // extensions button.
         node.setAttribute("cui-anchorid", "unified-extensions-button");
         overflowedExtensionsList.appendChild(node);
 
-        this._updateWidgetClassName(widgetID,  true);
+        this._updateWidgetClassName(widgetID, /* inPanel */ true);
       }
     }
   },
@@ -2598,8 +2593,8 @@ var gUnifiedExtensions = {
       return;
     }
 
-    
-    
+    // We only want to move back widget nodes that have been manually moved
+    // previously via `onToolbarVisibilityChange()`.
     const { node } = widget.forWindow(window);
     if (!node.hasAttribute("artificallyOverflowed")) {
       return;
@@ -2607,9 +2602,9 @@ var gUnifiedExtensions = {
 
     const { area, position } = CustomizableUI.getPlacementOfWidget(widgetID);
 
-    
-    
-    
+    // This is where we are going to re-insert the extension widgets (DOM
+    // nodes) but we need to account for some hidden DOM nodes already present
+    // in this container when determining where to put the nodes back.
     const container = CustomizableUI.getCustomizationTarget(
       document.getElementById(area)
     );
@@ -2639,19 +2634,19 @@ var gUnifiedExtensions = {
     }
 
     if (moved) {
-      
+      // Remove the attribute set when we artificially overflow the widget.
       node.removeAttribute("overflowedItem");
       node.removeAttribute("artificallyOverflowed");
       node.removeAttribute("cui-anchorid");
 
-      this._updateWidgetClassName(widgetID,  false);
+      this._updateWidgetClassName(widgetID, /* inPanel */ false);
     }
   },
 
   _panel: null,
   get panel() {
-    
-    
+    // Lazy load the unified-extensions-panel panel the first time we need to
+    // display it.
     if (!this._panel) {
       let template = document.getElementById(
         "unified-extensions-panel-template"
@@ -2673,8 +2668,8 @@ var gUnifiedExtensions = {
           BrowserAddonUI.openAddonsMgr("addons://list/extension");
         });
 
-      
-      
+      // Lazy-load the l10n strings. Those strings are used for the CUI and
+      // non-CUI extensions in the unified extensions panel.
       document
         .getElementById("unified-extensions-context-menu")
         .querySelectorAll("[data-lazy-l10n-id]")
@@ -2686,15 +2681,15 @@ var gUnifiedExtensions = {
     return this._panel;
   },
 
-  
-  
+  // `aEvent` and `reason` are optional. If `reason` is specified, it should be
+  // a valid argument to gUnifiedExtensions.recordButtonTelemetry().
   async togglePanel(aEvent, reason) {
     if (!CustomizationHandler.isCustomizing()) {
       if (aEvent) {
         if (
-          
-          
-          
+          // On MacOS, ctrl-click will send a context menu event from the
+          // widget, so we don't want to bring up the panel when ctrl key is
+          // pressed.
           (aEvent.type == "mousedown" &&
             (aEvent.button !== 0 ||
               (AppConstants.platform === "macosx" && aEvent.ctrlKey))) ||
@@ -2705,9 +2700,9 @@ var gUnifiedExtensions = {
           return;
         }
 
-        
-        
-        
+        // The button should directly open `about:addons` when the user does not
+        // have any active extensions listed in the unified extensions panel,
+        // and no alternative content is available for display in the panel.
         const policies = this.getActivePolicies();
         if (
           policies.length &&
@@ -2715,8 +2710,8 @@ var gUnifiedExtensions = {
           !this.isPrivateWindowMissingExtensionsWithoutPBMAccess() &&
           !(await this.getDisabledExtensionsInfo()).isAnyDisabled
         ) {
-          
-          
+          // This may happen if the user has pinned all of their extensions.
+          // In that case, the extensions panel is empty.
           await BrowserAddonUI.openAddonsMgr("addons://list/extension");
           return;
         }
@@ -2740,10 +2735,10 @@ var gUnifiedExtensions = {
         PanelMultiView.hidePopup(panel);
         this._button.open = false;
       } else {
-        
+        // Overflow extensions placed in collapsed toolbars, if any.
         for (const toolbarId of CustomizableUI.getCollapsedToolbarIds(window)) {
-          
-          this.onToolbarVisibilityChange(toolbarId,  false);
+          // We pass `false` because all these toolbars are collapsed.
+          this.onToolbarVisibilityChange(toolbarId, /* isVisible */ false);
         }
 
         panel.hidden = false;
@@ -2756,7 +2751,7 @@ var gUnifiedExtensions = {
       }
     }
 
-    
+    // We always dispatch an event (useful for testing purposes).
     window.dispatchEvent(new CustomEvent("UnifiedExtensionsTogglePanel"));
   },
 
@@ -2779,9 +2774,9 @@ var gUnifiedExtensions = {
   },
 
   updateContextMenu(menu, event) {
-    
-    
-    
+    // When the context menu is open, `onpopupshowing` is called when menu
+    // items open sub-menus. We don't want to update the context menu in this
+    // case.
     if (event.target.id !== "unified-extensions-context-menu") {
       return;
     }
@@ -2814,9 +2809,9 @@ var gUnifiedExtensions = {
     }
 
     reportButton.hidden = !gAddonAbuseReportEnabled;
-    
-    
-    
+    // We use this syntax instead of async/await to not block this method that
+    // updates the context menu. This avoids the context menu to be out of sync
+    // on macOS.
     AddonManager.getAddonByID(id).then(addon => {
       removeButton.disabled = !(
         addon.permissions & AddonManager.PERM_CAN_UNINSTALL
@@ -2830,10 +2825,10 @@ var gUnifiedExtensions = {
 
       const placement = CustomizableUI.getPlacementOfWidget(widgetId);
       const notInPanel = placement?.area !== CustomizableUI.AREA_ADDONS;
-      
-      
-      
-      
+      // We rely on the DOM nodes because CUI widgets will always exist but
+      // not necessarily with DOM nodes created depending on the window. For
+      // example, in PB mode, not all extensions will be listed in the panel
+      // but the CUI widgets may be all created.
       if (
         notInPanel ||
         document.querySelector("#unified-extensions-area > :first-child")
@@ -2859,10 +2854,10 @@ var gUnifiedExtensions = {
     }
   },
 
-  
+  // This is registered on the top-level unified extensions context menu.
   onContextMenuCommand(menu, event) {
-    
-    
+    // Do not close the extensions panel automatically when we move extension
+    // widgets.
     const { classList } = event.target;
     if (
       classList.contains("unified-extensions-context-menu-move-widget-up") ||
@@ -2875,9 +2870,9 @@ var gUnifiedExtensions = {
   },
 
   browserActionFor(policy) {
-    
-    
-    
+    // Ideally, we wouldn't do that because `browserActionFor()` will only be
+    // defined in `global` when at least one extension has required loading the
+    // `ext-browserAction` code.
     let method = lazy.ExtensionParent.apiManager.global.browserActionFor;
     return method?.(policy?.extension);
   },
@@ -2914,12 +2909,12 @@ var gUnifiedExtensions = {
 
   async onPinToToolbarChange(menu, event) {
     let shouldPinToToolbar = event.target.hasAttribute("checked");
-    
-    
-    
-    
-    
-    
+    // Revert the checkbox back to its original state. This is because the
+    // addon context menu handlers are asynchronous, and there seems to be
+    // a race where the checkbox state won't get set in time to show the
+    // right state. So we err on the side of caution, and presume that future
+    // attempts to open this context menu on an extension button will show
+    // the same checked state that we started in.
     event.target.toggleAttribute("checked", !shouldPinToToolbar);
 
     let widgetId = this._getWidgetId(menu);
@@ -2927,12 +2922,12 @@ var gUnifiedExtensions = {
       return;
     }
 
-    
-    
-    
-    
-    
-    
+    // We artificially overflow extension widgets that are placed in collapsed
+    // toolbars and CUI does not know about it. For end users, these widgets
+    // appear in the list of overflowed extensions in the panel. When we unpin
+    // and then pin one of these extensions to the toolbar, we need to first
+    // move the DOM node back to where it was (i.e.  in the collapsed toolbar)
+    // so that CUI can retrieve the DOM node and do the pinning correctly.
     if (shouldPinToToolbar) {
       this._maybeMoveWidgetNodeBack(widgetId);
     }
@@ -2947,21 +2942,21 @@ var gUnifiedExtensions = {
     let newPosition = shouldPinToToolbar ? undefined : 0;
 
     CustomizableUI.addWidgetToArea(widgetId, newArea, newPosition);
-    
-    
+    // addWidgetToArea() will trigger onWidgetAdded or onWidgetMoved as needed,
+    // and our handlers will call updateAttention() as needed.
   },
 
   async moveWidget(menu, direction) {
-    
-    
-    
-    
+    // We'll move the widgets based on the DOM node positions. This is because
+    // in PB mode (for example), we might not have the same extensions listed
+    // in the panel but CUI does not know that. As far as CUI is concerned, all
+    // extensions will likely have widgets.
     const node = menu.triggerNode.closest(".unified-extensions-item");
 
-    
-    
-    
-    
+    // Find the element that is before or after the current widget/node to
+    // move. `element` might be `null`, e.g. if the current node is the first
+    // one listed in the panel (though it shouldn't be possible to call this
+    // method in this case).
     let element;
     if (direction === "up" && node.previousElementSibling) {
       element = node.previousElementSibling;
@@ -2969,13 +2964,13 @@ var gUnifiedExtensions = {
       element = node.nextElementSibling;
     }
 
-    
+    // Now we need to retrieve the position of the CUI placement.
     const placement = CustomizableUI.getPlacementOfWidget(element?.id);
     if (placement) {
       let newPosition = placement.position;
-      
-      
-      
+      // That, I am not sure why this is required but it looks like we need to
+      // always add one to the current position if we want to move a widget
+      // down in the list.
       if (direction === "down") {
         newPosition += 1;
       }
@@ -2989,10 +2984,10 @@ var gUnifiedExtensions = {
       this.updateAttention();
     }
 
-    
-    
-    
-    
+    // When we pin a widget to the toolbar from a narrow window, the widget
+    // will be overflowed directly. In this case, we do not want to change the
+    // class name since it is going to be changed by `onWidgetOverflow()`
+    // below.
     if (CustomizableUI.getWidget(aWidgetId)?.forWindow(window)?.overflowed) {
       return;
     }
@@ -3010,8 +3005,8 @@ var gUnifiedExtensions = {
   },
 
   onWidgetOverflow(aNode) {
-    
-    
+    // We register a CUI listener for each window so we make sure that we
+    // handle the event for the right window here.
     if (window !== aNode.ownerGlobal) {
       return;
     }
@@ -3020,8 +3015,8 @@ var gUnifiedExtensions = {
   },
 
   onWidgetUnderflow(aNode) {
-    
-    
+    // We register a CUI listener for each window so we make sure that we
+    // handle the event for the right window here.
     if (window !== aNode.ownerGlobal) {
       return;
     }
@@ -3030,8 +3025,8 @@ var gUnifiedExtensions = {
   },
 
   onAreaNodeRegistered(aArea, aContainer) {
-    
-    
+    // We register a CUI listener for each window so we make sure that we
+    // handle the event for the right window here.
     if (window !== aContainer.ownerGlobal) {
       return;
     }
@@ -3044,11 +3039,11 @@ var gUnifiedExtensions = {
     }
   },
 
-  
-  
-  
-  
-  
+  // This internal method is used to change some CSS classnames on the action
+  // and menu buttons of an extension (CUI) widget. When the widget is placed
+  // in the panel, the action and menu buttons should have the `.subviewbutton`
+  // class and not the `.toolbarbutton-1` one. When NOT placed in the panel,
+  // it is the other way around.
   _updateWidgetClassName(aWidgetId, inPanel) {
     if (!CustomizableUI.isWebExtensionWidget(aWidgetId)) {
       return;
@@ -3148,7 +3143,7 @@ var gUnifiedExtensions = {
     messageBar.classList.add("unified-extensions-message-bar");
 
     if (dismissible) {
-      
+      // NOTE: the moz-message-bar is currently expected to be called `dismissable`.
       messageBar.setAttribute("dismissable", dismissible);
     }
 
@@ -3204,18 +3199,18 @@ var gUnifiedExtensions = {
 
     discoverButton.addEventListener("click", () => {
       if (
-        
-        
-        
-        
-        
+        // The "Discover Extensions" button is only shown if the user has not
+        // installed any extension. In that case, we direct to the discopane
+        // in about:addons. If the discopane is disabled, open the default
+        // view (Extensions list) instead. This view shows a link to AMO when
+        // the user does not have any extensions installed.
         Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
       ) {
         BrowserAddonUI.openAddonsMgr("addons://list/discover");
       } else {
         BrowserAddonUI.openAddonsMgr("addons://list/extension");
       }
-      
+      // Close panel.
       this.togglePanel();
     });
 
@@ -3224,10 +3219,10 @@ var gUnifiedExtensions = {
 
   _shouldShowQuarantinedNotification() {
     const { currentURI, selectedTab } = window.gBrowser;
-    
-    
-    
-    
+    // We should show the quarantined notification when the domain is in the
+    // list of quarantined domains and we have at least one extension
+    // quarantined. In addition, we check that we have extensions in the panel
+    // until Bug 1778684 is resolved.
     return (
       WebExtensionPolicy.isQuarantinedURI(currentURI) &&
       this.hasExtensionsInPanel() &&
@@ -3237,10 +3232,10 @@ var gUnifiedExtensions = {
     );
   },
 
-  
-  
-  
-  
+  // Records telemetry when the button is about to temporarily be shown,
+  // provided that the button is hidden at the time of invocation.
+  //
+  // `reason` is one of the labels in extensions_button.temporarily_unhidden
   
   
   

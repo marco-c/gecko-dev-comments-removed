@@ -643,6 +643,11 @@ bool XULButtonElement::OnPointerClicked(WidgetGUIEvent& aEvent) {
     return false;
   }
 
+  if (NodeInfo()->Equals(nsGkAtoms::checkbox)) {
+    
+    SetBoolAttr(nsGkAtoms::checked, !GetBoolAttr(nsGkAtoms::checked));
+  }
+
   
   
   RefPtr<mozilla::PresShell> presShell = OwnerDoc()->GetPresShell();
