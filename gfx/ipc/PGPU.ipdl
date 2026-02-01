@@ -187,6 +187,10 @@ child:
   
   
   async FOGData(ByteBuf buf);
+
+  
+  
+  async ReportGLStrings(GfxInfoGLStrings aStrings);
 };
 
 } 

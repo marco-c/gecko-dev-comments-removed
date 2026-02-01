@@ -121,6 +121,11 @@ class GfxInfoBase : public nsIGfxInfo,
   virtual GfxVersionEx OperatingSystemVersionEx() { return GfxVersionEx(); }
 
   
+  
+  
+  virtual void ReportGLStrings(gfx::GfxInfoGLStrings&& aStrings) {}
+
+  
   static const nsCString& GetApplicationVersion();
 
   virtual nsresult FindMonitors(JSContext* cx, JS::Handle<JSObject*> array);
