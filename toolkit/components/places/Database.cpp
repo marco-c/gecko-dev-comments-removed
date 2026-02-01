@@ -1353,8 +1353,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
-      if (currentSchemaVersion < 84) {
-        rv = MigrateV84Up();
+      
+      
+
+      if (currentSchemaVersion < 85) {
+        rv = MigrateV85Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
@@ -2285,7 +2288,8 @@ nsresult Database::MigrateV83Up() {
   return NS_OK;
 }
 
-nsresult Database::MigrateV84Up() {
+nsresult Database::MigrateV85Up() {
+  
   
   nsresult rv = mMainConn->ExecuteSimpleSQL(
       "UPDATE moz_origins "
