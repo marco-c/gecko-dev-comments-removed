@@ -377,7 +377,11 @@ struct diplomat_c_span_convert {
     using type = diplomat::capi::Diplomat##name##ViewMut; \
   }; \
 
+#if !defined(__sun) || !defined(_CHAR_IS_SIGNED)
+
+
 MAKE_SLICE_CONVERTERS(I8, int8_t)
+#endif
 MAKE_SLICE_CONVERTERS(U8, uint8_t)
 MAKE_SLICE_CONVERTERS(I16, int16_t)
 MAKE_SLICE_CONVERTERS(U16, uint16_t)
