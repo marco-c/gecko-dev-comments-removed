@@ -1137,7 +1137,7 @@ static constexpr auto AsciiRegExpEscapeMap() {
 
 template <typename CharT>
 [[nodiscard]] static bool EncodeForRegExpEscape(
-    mozilla::Span<const CharT> chars, JSStringBuilder& sb) {
+    JSContext* cx, mozilla::Span<const CharT> chars, JSStringBuilder& sb) {
   MOZ_ASSERT(sb.empty());
 
   const size_t length = chars.size();
@@ -1154,7 +1154,7 @@ template <typename CharT>
 
   
   
-  size_t outLength = length;
+  mozilla::CheckedInt<size_t> outLength = length;
 
   
   size_t scanStart = 0;
@@ -1194,12 +1194,16 @@ template <typename CharT>
       outLength += UnicodeEscapeAddLength;
     }
   }
+  if (!outLength.isValid()) {
+    ReportAllocationOverflow(cx);
+    return false;
+  }
 
   
-  if (outLength == length) {
+  if (outLength.value() == length) {
     return true;
   }
-  MOZ_ASSERT(outLength > length);
+  MOZ_ASSERT(outLength.value() > length);
 
   
   if constexpr (std::is_same_v<CharT, char16_t>) {
@@ -1209,7 +1213,7 @@ template <typename CharT>
   }
 
   
-  if (!sb.reserve(outLength)) {
+  if (!sb.reserve(outLength.value())) {
     return false;
   }
 
@@ -1309,19 +1313,20 @@ template <typename CharT>
     appendUnescaped(length);
   }
 
-  MOZ_ASSERT(sb.length() == outLength, "all characters were written");
+  MOZ_ASSERT(sb.length() == outLength.value(), "all characters were written");
   return true;
 }
 
-[[nodiscard]] static bool EncodeForRegExpEscape(JSLinearString* string,
+[[nodiscard]] static bool EncodeForRegExpEscape(JSContext* cx,
+                                                JSLinearString* string,
                                                 JSStringBuilder& sb) {
   JS::AutoCheckCannotGC nogc;
   if (string->hasLatin1Chars()) {
     auto chars = mozilla::Span(string->latin1Range(nogc));
-    return EncodeForRegExpEscape(chars, sb);
+    return EncodeForRegExpEscape(cx, chars, sb);
   }
   auto chars = mozilla::Span(string->twoByteRange(nogc));
-  return EncodeForRegExpEscape(chars, sb);
+  return EncodeForRegExpEscape(cx, chars, sb);
 }
 
 
@@ -1345,7 +1350,7 @@ static bool regexp_escape(JSContext* cx, unsigned argc, Value* vp) {
 
   
   JSStringBuilder sb(cx);
-  if (!EncodeForRegExpEscape(string, sb)) {
+  if (!EncodeForRegExpEscape(cx, string, sb)) {
     return false;
   }
 
