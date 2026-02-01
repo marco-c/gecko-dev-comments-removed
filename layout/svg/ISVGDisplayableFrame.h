@@ -10,6 +10,7 @@
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
 #include "gfxRect.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "nsQueryFrame.h"
 #include "nsRect.h"
@@ -102,11 +103,13 @@ class ISVGDisplayableFrame : public nsQueryFrame {
   
   
   
-  enum SVGChangedFlags {
-    TRANSFORM_CHANGED = 0x01,
-    COORD_CONTEXT_CHANGED = 0x02,
-    FULL_ZOOM_CHANGED = 0x04
+  enum class ChangeFlag {
+    TransformChanged,
+    CoordContextChanged,
+    FullZoomChanged
   };
+  using ChangeFlags = EnumSet<ChangeFlag>;
+
   
 
 
@@ -116,7 +119,7 @@ class ISVGDisplayableFrame : public nsQueryFrame {
 
 
 
-  virtual void NotifySVGChanged(uint32_t aFlags) = 0;
+  virtual void NotifySVGChanged(ChangeFlags aFlags) = 0;
 
   
 

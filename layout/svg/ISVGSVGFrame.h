@@ -7,6 +7,7 @@
 #ifndef LAYOUT_SVG_ISVGSVGFRAME_H_
 #define LAYOUT_SVG_ISVGSVGFRAME_H_
 
+#include "mozilla/ISVGDisplayableFrame.h"
 #include "nsQueryFrame.h"
 
 namespace mozilla {
@@ -22,7 +23,8 @@ class ISVGSVGFrame {
 
 
 
-  virtual void NotifyViewportOrTransformChanged(uint32_t aFlags) = 0;
+  virtual void NotifyViewportOrTransformChanged(
+      ISVGDisplayableFrame::ChangeFlags aFlags) = 0;
 };
 
 }  

@@ -55,7 +55,7 @@ void SVGUseFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     
     mCanvasTM = nullptr;
     SVGUtils::ScheduleReflowSVG(this);
-    SVGUtils::NotifyChildrenOfSVGChange(this, TRANSFORM_CHANGED);
+    SVGUtils::NotifyChildrenOfSVGChange(this, ChangeFlag::TransformChanged);
   }
 }
 
@@ -105,12 +105,13 @@ void SVGUseFrame::ReflowSVG() {
   SVGGFrame::ReflowSVG();
 }
 
-void SVGUseFrame::NotifySVGChanged(uint32_t aFlags) {
-  if (aFlags & COORD_CONTEXT_CHANGED && !(aFlags & TRANSFORM_CHANGED)) {
+void SVGUseFrame::NotifySVGChanged(ChangeFlags aFlags) {
+  if (aFlags.contains(ChangeFlag::CoordContextChanged) &&
+      !aFlags.contains(ChangeFlag::TransformChanged)) {
     
     
     if (StyleSVGReset()->mX.HasPercent() || StyleSVGReset()->mY.HasPercent()) {
-      aFlags |= TRANSFORM_CHANGED;
+      aFlags += ChangeFlag::TransformChanged;
       
       
       

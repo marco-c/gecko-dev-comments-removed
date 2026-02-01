@@ -49,7 +49,7 @@ nsresult SVGGFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
     
     
     
-    NotifySVGChanged(TRANSFORM_CHANGED);
+    NotifySVGChanged(ChangeFlag::TransformChanged);
   }
 
   return NS_OK;

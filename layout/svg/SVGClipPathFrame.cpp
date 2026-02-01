@@ -172,7 +172,7 @@ void SVGClipPathFrame::PaintFrameIntoMask(nsIFrame* aFrame,
   }
 
   
-  frame->NotifySVGChanged(ISVGDisplayableFrame::TRANSFORM_CHANGED);
+  frame->NotifySVGChanged(ISVGDisplayableFrame::ChangeFlag::TransformChanged);
 
   
   SVGClipPathFrame* clipPathThatClipsChild;

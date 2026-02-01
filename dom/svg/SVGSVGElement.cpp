@@ -490,7 +490,7 @@ void SVGSVGElement::InvalidateTransformNotifyFrame() {
   
   if (ISVGSVGFrame* svgframe = do_QueryFrame(GetPrimaryFrame())) {
     svgframe->NotifyViewportOrTransformChanged(
-        ISVGDisplayableFrame::TRANSFORM_CHANGED);
+        ISVGDisplayableFrame::ChangeFlag::TransformChanged);
   }
 }
 

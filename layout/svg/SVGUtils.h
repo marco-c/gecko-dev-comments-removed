@@ -18,6 +18,7 @@
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
 #include "gfxRect.h"
+#include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/gfx/Rect.h"
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"
@@ -260,7 +261,8 @@ class SVGUtils final {
 
 
 
-  static void NotifyChildrenOfSVGChange(nsIFrame* aFrame, uint32_t aFlags);
+  static void NotifyChildrenOfSVGChange(
+      nsIFrame* aFrame, ISVGDisplayableFrame::ChangeFlags aFlags);
 
   
 
