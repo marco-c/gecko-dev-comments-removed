@@ -467,7 +467,15 @@ interface nsIContentPolicy : nsISupports
 
 
 
-    TYPE_END = 64,
+    TYPE_INTERNAL_IMAGE_NOTIFICATION = 64,
+
+    
+
+
+
+
+
+    TYPE_END = 65,
 
     
 
