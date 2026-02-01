@@ -3,6 +3,7 @@
 
 
 
+
 'use strict';
 
 const kValidImagePath = '/images/computer.jpg';
