@@ -3,8 +3,8 @@
 
 
 
-#ifndef IDNBlocklistUtils_h__
-#define IDNBlocklistUtils_h__
+#ifndef IDNBlocklistUtils_h_
+#define IDNBlocklistUtils_h_
 
 #include <utility>
 #include "nsTArray.h"

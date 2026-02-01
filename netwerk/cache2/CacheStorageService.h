@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheStorageService__h__
-#define CacheStorageService__h__
+#ifndef CacheStorageService_h_
+#define CacheStorageService_h_
 
 #include "mozilla/LinkedList.h"
 #include "nsICacheStorageService.h"

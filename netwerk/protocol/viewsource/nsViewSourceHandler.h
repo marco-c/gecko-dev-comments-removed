@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsViewSourceHandler_h___
-#define nsViewSourceHandler_h___
+#ifndef nsViewSourceHandler_h_
+#define nsViewSourceHandler_h_
 
 #include "nsIProtocolHandler.h"
 #include "nsNetUtil.h"

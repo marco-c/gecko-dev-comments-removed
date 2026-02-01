@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAboutCache_h__
-#define nsAboutCache_h__
+#ifndef nsAboutCache_h_
+#define nsAboutCache_h_
 
 #include "nsIAboutModule.h"
 #include "nsICacheStorageVisitor.h"

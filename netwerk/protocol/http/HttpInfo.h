@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsHttpInfo__
-#define nsHttpInfo__
+#ifndef nsHttpInfo_
+#define nsHttpInfo_
 
 #include "nsTArrayForwardDeclare.h"
 

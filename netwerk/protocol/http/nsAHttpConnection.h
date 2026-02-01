@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsAHttpConnection_h__
-#define nsAHttpConnection_h__
+#ifndef nsAHttpConnection_h_
+#define nsAHttpConnection_h_
 
 #include "mozilla/net/DNS.h"
 #include "nsHttp.h"

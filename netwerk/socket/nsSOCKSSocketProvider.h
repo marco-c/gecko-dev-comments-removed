@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSOCKSSocketProvider_h__
-#define nsSOCKSSocketProvider_h__
+#ifndef nsSOCKSSocketProvider_h_
+#define nsSOCKSSocketProvider_h_
 
 #include "nsISocketProvider.h"
 

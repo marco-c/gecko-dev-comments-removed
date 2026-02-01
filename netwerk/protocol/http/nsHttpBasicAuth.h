@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBasicAuth_h__
-#define nsBasicAuth_h__
+#ifndef nsBasicAuth_h_
+#define nsBasicAuth_h_
 
 #include "nsIHttpAuthenticator.h"
 #include "mozilla/StaticPtr.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef HttpWinUtils_h__
-#define HttpWinUtils_h__
+#ifndef HttpWinUtils_h_
+#define HttpWinUtils_h_
 
 namespace mozilla {
 namespace net {

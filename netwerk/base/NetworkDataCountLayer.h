@@ -4,8 +4,8 @@
 
 
 
-#ifndef NetworkDataCountLayer_h__
-#define NetworkDataCountLayer_h__
+#ifndef NetworkDataCountLayer_h_
+#define NetworkDataCountLayer_h_
 
 #include "prerror.h"
 #include "prio.h"

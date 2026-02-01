@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAboutProtocolHandler_h___
-#define nsAboutProtocolHandler_h___
+#ifndef nsAboutProtocolHandler_h_
+#define nsAboutProtocolHandler_h_
 
 #include "nsIProtocolHandler.h"
 #include "nsSimpleNestedURI.h"

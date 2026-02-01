@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSOCKSIOLayer_h__
-#define nsSOCKSIOLayer_h__
+#ifndef nsSOCKSIOLayer_h_
+#define nsSOCKSIOLayer_h_
 
 #include "prio.h"
 #include "nscore.h"

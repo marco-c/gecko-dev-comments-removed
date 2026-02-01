@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsServerTiming_h__
-#define nsServerTiming_h__
+#ifndef nsServerTiming_h_
+#define nsServerTiming_h_
 
 #include "nsITimedChannel.h"
 #include "nsString.h"

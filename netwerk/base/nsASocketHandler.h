@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsASocketHandler_h__
-#define nsASocketHandler_h__
+#ifndef nsASocketHandler_h_
+#define nsASocketHandler_h_
 
 #include "nsError.h"
 #include "nsINetAddr.h"

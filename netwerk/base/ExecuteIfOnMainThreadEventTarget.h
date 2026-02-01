@@ -4,8 +4,8 @@
 
 
 
-#ifndef ExecuteIfOnMainThreadEventTarget_h__
-#define ExecuteIfOnMainThreadEventTarget_h__
+#ifndef ExecuteIfOnMainThreadEventTarget_h_
+#define ExecuteIfOnMainThreadEventTarget_h_
 
 #include "nsISerialEventTarget.h"
 

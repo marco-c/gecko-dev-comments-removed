@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHostResolver_h__
-#define nsHostResolver_h__
+#ifndef nsHostResolver_h_
+#define nsHostResolver_h_
 
 #include "nscore.h"
 #include "prnetdb.h"

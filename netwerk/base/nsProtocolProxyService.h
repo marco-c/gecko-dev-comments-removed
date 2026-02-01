@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsProtocolProxyService_h__
-#define nsProtocolProxyService_h__
+#ifndef nsProtocolProxyService_h_
+#define nsProtocolProxyService_h_
 
 #include "nsString.h"
 #include "nsCOMPtr.h"

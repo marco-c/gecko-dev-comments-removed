@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsUDPSocketProvider_h__
-#define nsUDPSocketProvider_h__
+#ifndef nsUDPSocketProvider_h_
+#define nsUDPSocketProvider_h_
 
 #include "nsISocketProvider.h"
 

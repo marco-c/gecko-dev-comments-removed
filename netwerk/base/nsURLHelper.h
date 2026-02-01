@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsURLHelper_h__
-#define nsURLHelper_h__
+#ifndef nsURLHelper_h_
+#define nsURLHelper_h_
 
 #include "nsString.h"
 #include "nsTArray.h"

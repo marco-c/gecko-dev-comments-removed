@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsProxyInfo_h__
-#define nsProxyInfo_h__
+#ifndef nsProxyInfo_h_
+#define nsProxyInfo_h_
 
 #include "nsIProxyInfo.h"
 #include "nsString.h"

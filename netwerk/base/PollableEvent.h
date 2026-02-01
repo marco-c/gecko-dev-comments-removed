@@ -4,8 +4,8 @@
 
 
 
-#ifndef PollableEvent_h__
-#define PollableEvent_h__
+#ifndef PollableEvent_h_
+#define PollableEvent_h_
 
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"

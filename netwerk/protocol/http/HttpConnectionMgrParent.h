@@ -3,8 +3,8 @@
 
 
 
-#ifndef HttpConnectionMgrParent_h__
-#define HttpConnectionMgrParent_h__
+#ifndef HttpConnectionMgrParent_h_
+#define HttpConnectionMgrParent_h_
 
 #include "HttpConnectionMgrShell.h"
 #include "mozilla/net/PHttpConnectionMgrParent.h"

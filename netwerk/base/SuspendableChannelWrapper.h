@@ -3,8 +3,8 @@
 
 
 
-#ifndef SuspendableChannelWrapper_h__
-#define SuspendableChannelWrapper_h__
+#ifndef SuspendableChannelWrapper_h_
+#define SuspendableChannelWrapper_h_
 
 #include "nsISuspendableChannelWrapper.h"
 

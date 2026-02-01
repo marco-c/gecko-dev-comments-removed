@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsNetSegmentUtils_h__
-#define nsNetSegmentUtils_h__
+#ifndef nsNetSegmentUtils_h_
+#define nsNetSegmentUtils_h_
 
 #include "nsIOService.h"
 

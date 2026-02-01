@@ -2,8 +2,8 @@
 
 
 
-#ifndef MicrosoftEntraSSOUtils_h__
-#define MicrosoftEntraSSOUtils_h__
+#ifndef MicrosoftEntraSSOUtils_h_
+#define MicrosoftEntraSSOUtils_h_
 
 #include "ErrorList.h"  
 #include "nsHttpChannel.h"

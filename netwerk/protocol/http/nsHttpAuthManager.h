@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpAuthManager_h__
-#define nsHttpAuthManager_h__
+#ifndef nsHttpAuthManager_h_
+#define nsHttpAuthManager_h_
 
 #include "nsIHttpAuthManager.h"
 

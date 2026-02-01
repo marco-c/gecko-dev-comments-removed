@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsUDPSocket_h__
-#define nsUDPSocket_h__
+#ifndef nsUDPSocket_h_
+#define nsUDPSocket_h_
 
 #include "nsIUDPSocket.h"
 #include "mozilla/Mutex.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpConnection_h__
-#define nsHttpConnection_h__
+#ifndef nsHttpConnection_h_
+#define nsHttpConnection_h_
 
 #include <functional>
 #include "HttpConnectionBase.h"

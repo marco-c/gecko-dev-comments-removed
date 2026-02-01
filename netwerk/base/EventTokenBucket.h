@@ -4,8 +4,8 @@
 
 
 
-#ifndef NetEventTokenBucket_h__
-#define NetEventTokenBucket_h__
+#ifndef NetEventTokenBucket_h_
+#define NetEventTokenBucket_h_
 
 #include "ARefBase.h"
 #include "nsCOMPtr.h"

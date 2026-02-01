@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsSyncStreamListener_h__
-#define nsSyncStreamListener_h__
+#ifndef nsSyncStreamListener_h_
+#define nsSyncStreamListener_h_
 
 #include "nsISyncStreamListener.h"
 #include "nsIInputStream.h"

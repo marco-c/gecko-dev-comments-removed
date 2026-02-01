@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsAsyncStreamCopier_h__
-#define nsAsyncStreamCopier_h__
+#ifndef nsAsyncStreamCopier_h_
+#define nsAsyncStreamCopier_h_
 
 #include "nsIAsyncStreamCopier.h"
 #include "nsIAsyncStreamCopier2.h"

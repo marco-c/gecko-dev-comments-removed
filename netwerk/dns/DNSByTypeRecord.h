@@ -2,8 +2,8 @@
 
 
 
-#ifndef DNSByTypeRecord_h__
-#define DNSByTypeRecord_h__
+#ifndef DNSByTypeRecord_h_
+#define DNSByTypeRecord_h_
 
 #include "mozilla/net/HTTPSSVC.h"
 #include "ipc/IPCMessageUtils.h"

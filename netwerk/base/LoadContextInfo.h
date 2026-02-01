@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsLoadContextInfo_h__
-#define nsLoadContextInfo_h__
+#ifndef nsLoadContextInfo_h_
+#define nsLoadContextInfo_h_
 
 #include "nsILoadContextInfo.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef HTTPSSVC_h__
-#define HTTPSSVC_h__
+#ifndef HTTPSSVC_h_
+#define HTTPSSVC_h_
 
 #include "nsIDNSByTypeRecord.h"
 #include "mozilla/net/DNS.h"

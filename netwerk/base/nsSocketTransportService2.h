@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsSocketTransportService2_h__
-#define nsSocketTransportService2_h__
+#ifndef nsSocketTransportService2_h_
+#define nsSocketTransportService2_h_
 
 #include "PollableEvent.h"
 #include "mozilla/Atomics.h"

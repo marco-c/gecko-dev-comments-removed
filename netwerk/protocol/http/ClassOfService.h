@@ -2,8 +2,8 @@
 
 
 
-#ifndef __ClassOfService_h__
-#define __ClassOfService_h__
+#ifndef ClassOfService_h_
+#define ClassOfService_h_
 
 #include "nsIClassOfService.h"
 #include "nsPrintfCString.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef MockHttpAuth_h__
-#define MockHttpAuth_h__
+#ifndef MockHttpAuth_h_
+#define MockHttpAuth_h_
 
 #include "nsIHttpAuthenticator.h"
 

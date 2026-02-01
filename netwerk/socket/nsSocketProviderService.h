@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsSocketProviderService_h__
-#define nsSocketProviderService_h__
+#ifndef nsSocketProviderService_h_
+#define nsSocketProviderService_h_
 
 #include "nsISocketProviderService.h"
 #include "mozilla/StaticPtr.h"

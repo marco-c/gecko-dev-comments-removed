@@ -3,8 +3,8 @@
 
 
 
-#ifndef PageThumbProtocolHandler_h_
-#define PageThumbProtocolHandler_h_
+#ifndef MozNewTabWallpaperProtocolHandler_h_
+#define MozNewTabWallpaperProtocolHandler_h_
 
 #include "mozilla/Result.h"
 #include "mozilla/MozPromise.h"
@@ -18,23 +18,18 @@ namespace net {
 
 class RemoteStreamGetter;
 
-class PageThumbProtocolHandler final : public nsISubstitutingProtocolHandler,
-                                       public SubstitutingProtocolHandler,
-                                       public nsSupportsWeakReference {
+class MozNewTabWallpaperProtocolHandler final
+    : public nsISubstitutingProtocolHandler,
+      public SubstitutingProtocolHandler,
+      public nsSupportsWeakReference {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_FORWARD_NSIPROTOCOLHANDLER(SubstitutingProtocolHandler::)
   NS_FORWARD_NSISUBSTITUTINGPROTOCOLHANDLER(SubstitutingProtocolHandler::)
 
-  static already_AddRefed<PageThumbProtocolHandler> GetSingleton();
+  static already_AddRefed<MozNewTabWallpaperProtocolHandler> GetSingleton();
 
   
-
-
-
-
-
-
 
 
 
@@ -46,10 +41,10 @@ class PageThumbProtocolHandler final : public nsISubstitutingProtocolHandler,
                                         bool* aTerminateSender);
 
  protected:
-  ~PageThumbProtocolHandler() = default;
+  ~MozNewTabWallpaperProtocolHandler() = default;
 
  private:
-  explicit PageThumbProtocolHandler();
+  explicit MozNewTabWallpaperProtocolHandler();
 
   [[nodiscard]] bool ResolveSpecialCases(const nsACString& aHost,
                                          const nsACString& aPath,
@@ -57,11 +52,6 @@ class PageThumbProtocolHandler final : public nsISubstitutingProtocolHandler,
                                          nsACString& aResult) override;
 
   
-
-
-
-
-
 
 
 
@@ -81,32 +71,13 @@ class PageThumbProtocolHandler final : public nsISubstitutingProtocolHandler,
 
 
 
-
-
-
   Result<Ok, nsresult> SubstituteRemoteChannel(nsIURI* aURI,
                                                nsILoadInfo* aLoadInfo,
                                                nsIChannel** aRetVal);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult GetThumbnailPath(const nsACString& aPath, const nsACString& aHost,
-                            nsString& aThumbnailPath);
-
   
-  
-  static StaticRefPtr<PageThumbProtocolHandler> sSingleton;
+  static StaticRefPtr<MozNewTabWallpaperProtocolHandler> sSingleton;
 
   
   static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,

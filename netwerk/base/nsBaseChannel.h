@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBaseChannel_h__
-#define nsBaseChannel_h__
+#ifndef nsBaseChannel_h_
+#define nsBaseChannel_h_
 
 #include "mozilla/dom/MimeType.h"
 #include "mozilla/Maybe.h"

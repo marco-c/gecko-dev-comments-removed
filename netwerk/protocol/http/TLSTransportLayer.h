@@ -2,8 +2,8 @@
 
 
 
-#ifndef TLSTransportLayer_h__
-#define TLSTransportLayer_h__
+#ifndef TLSTransportLayer_h_
+#define TLSTransportLayer_h_
 
 #include "nsSocketTransportService2.h"
 #include "nsIInterfaceRequestor.h"

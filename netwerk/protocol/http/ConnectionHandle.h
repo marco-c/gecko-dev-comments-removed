@@ -3,8 +3,8 @@
 
 
 
-#ifndef ConnectionHandle_h__
-#define ConnectionHandle_h__
+#ifndef ConnectionHandle_h_
+#define ConnectionHandle_h_
 
 #include "nsAHttpConnection.h"
 #include "HttpConnectionBase.h"

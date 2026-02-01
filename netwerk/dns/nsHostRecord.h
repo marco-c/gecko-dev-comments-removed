@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHostRecord_h__
-#define nsHostRecord_h__
+#ifndef nsHostRecord_h_
+#define nsHostRecord_h_
 
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/DataMutex.h"

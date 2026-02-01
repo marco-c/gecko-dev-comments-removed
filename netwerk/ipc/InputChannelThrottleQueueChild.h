@@ -3,8 +3,8 @@
 
 
 
-#ifndef InputChannelThrottleQueueChild_h__
-#define InputChannelThrottleQueueChild_h__
+#ifndef InputChannelThrottleQueueChild_h_
+#define InputChannelThrottleQueueChild_h_
 
 #include "mozilla/net/PInputChannelThrottleQueueChild.h"
 #include "mozilla/net/ThrottleQueue.h"

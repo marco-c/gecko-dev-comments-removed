@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheIndexIterator__h__
-#define CacheIndexIterator__h__
+#ifndef CacheIndexIterator_h_
+#define CacheIndexIterator_h_
 
 #include "nsTArray.h"
 #include "nsCOMPtr.h"

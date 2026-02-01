@@ -4,8 +4,8 @@
 
 
 
-#ifndef FuzzySocketControl_h__
-#define FuzzySocketControl_h__
+#ifndef FuzzySocketControl_h_
+#define FuzzySocketControl_h_
 
 #include "nsITLSSocketControl.h"
 

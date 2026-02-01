@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCORSListenerProxy_h__
-#define nsCORSListenerProxy_h__
+#ifndef nsCORSListenerProxy_h_
+#define nsCORSListenerProxy_h_
 
 #include "nsIStreamListener.h"
 #include "nsIInterfaceRequestor.h"

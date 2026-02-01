@@ -2,8 +2,8 @@
 
 
 
-#ifndef __nsmultimixedconv__h__
-#define __nsmultimixedconv__h__
+#ifndef _nsmultimixedconv_h_
+#define _nsmultimixedconv_h_
 
 #include "nsIStreamConverter.h"
 #include "nsIChannel.h"

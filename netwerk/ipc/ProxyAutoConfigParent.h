@@ -3,8 +3,8 @@
 
 
 
-#ifndef ProxyAutoConfigParent_h__
-#define ProxyAutoConfigParent_h__
+#ifndef ProxyAutoConfigParent_h_
+#define ProxyAutoConfigParent_h_
 
 #include "mozilla/net/PProxyAutoConfigParent.h"
 

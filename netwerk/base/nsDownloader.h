@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsDownloader_h__
-#define nsDownloader_h__
+#ifndef nsDownloader_h_
+#define nsDownloader_h_
 
 #include "nsIDownloader.h"
 #include "nsCOMPtr.h"

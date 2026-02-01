@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsNetCID_h__
-#define nsNetCID_h__
+#ifndef nsNetCID_h_
+#define nsNetCID_h_
 
 
 

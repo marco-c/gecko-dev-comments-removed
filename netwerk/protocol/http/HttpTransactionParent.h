@@ -3,8 +3,8 @@
 
 
 
-#ifndef HttpTransactionParent_h__
-#define HttpTransactionParent_h__
+#ifndef HttpTransactionParent_h_
+#define HttpTransactionParent_h_
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"

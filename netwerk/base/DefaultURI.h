@@ -2,8 +2,8 @@
 
 
 
-#ifndef DefaultURI_h__
-#define DefaultURI_h__
+#ifndef DefaultURI_h_
+#define DefaultURI_h_
 
 #include "nsIURI.h"
 #include "nsISerializable.h"

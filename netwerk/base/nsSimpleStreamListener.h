@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsSimpleStreamListener_h__
-#define nsSimpleStreamListener_h__
+#ifndef nsSimpleStreamListener_h_
+#define nsSimpleStreamListener_h_
 
 #include "nsISimpleStreamListener.h"
 #include "nsIOutputStream.h"

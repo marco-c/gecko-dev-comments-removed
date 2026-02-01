@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDataHandler_h___
-#define nsDataHandler_h___
+#ifndef nsDataHandler_h_
+#define nsDataHandler_h_
 
 #include "mozilla/dom/MimeType.h"
 #include "nsIProtocolHandler.h"

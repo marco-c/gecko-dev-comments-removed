@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDirIndex_h__
-#define nsDirIndex_h__
+#ifndef nsDirIndex_h_
+#define nsDirIndex_h_
 
 #include "nsIDirIndex.h"
 #include "nsString.h"

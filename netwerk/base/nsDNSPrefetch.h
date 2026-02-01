@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDNSPrefetch_h___
-#define nsDNSPrefetch_h___
+#ifndef nsDNSPrefetch_h_
+#define nsDNSPrefetch_h_
 
 #include <functional>
 

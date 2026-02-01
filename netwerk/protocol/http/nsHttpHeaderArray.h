@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHttpHeaderArray_h__
-#define nsHttpHeaderArray_h__
+#ifndef nsHttpHeaderArray_h_
+#define nsHttpHeaderArray_h_
 
 #include "nsHttp.h"
 #include "nsTArray.h"

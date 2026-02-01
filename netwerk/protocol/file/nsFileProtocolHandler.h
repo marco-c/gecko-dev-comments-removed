@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsFileProtocolHandler_h__
-#define nsFileProtocolHandler_h__
+#ifndef nsFileProtocolHandler_h_
+#define nsFileProtocolHandler_h_
 
 #include "nsIFileProtocolHandler.h"
 #include "nsWeakReference.h"

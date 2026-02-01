@@ -4,8 +4,8 @@
 
 
 
-#ifndef ContentRange_h__
-#define ContentRange_h__
+#ifndef ContentRange_h_
+#define ContentRange_h_
 
 #include "nsString.h"
 #include "nsISupportsImpl.h"

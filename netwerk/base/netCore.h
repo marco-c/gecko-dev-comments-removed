@@ -3,8 +3,8 @@
 
 
 
-#ifndef __netCore_h__
-#define __netCore_h__
+#ifndef _netCore_h_
+#define _netCore_h_
 
 #include "nsError.h"
 

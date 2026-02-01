@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsNetAddr_h__
-#define nsNetAddr_h__
+#ifndef nsNetAddr_h_
+#define nsNetAddr_h_
 
 #include "nsINetAddr.h"
 #include "mozilla/net/DNS.h"

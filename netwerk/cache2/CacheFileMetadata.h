@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheFileMetadata__h__
-#define CacheFileMetadata__h__
+#ifndef CacheFileMetadata_h_
+#define CacheFileMetadata_h_
 
 #include "CacheFileIOManager.h"
 #include "CacheStorageService.h"

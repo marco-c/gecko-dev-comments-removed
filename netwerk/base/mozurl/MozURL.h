@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozURL_h__
-#define mozURL_h__
+#ifndef mozURL_h_
+#define mozURL_h_
 
 #include "mozilla/net/MozURL_ffi.h"
 #include "mozilla/RefPtr.h"

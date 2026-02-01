@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsStandardURL_h__
-#define nsStandardURL_h__
+#ifndef nsStandardURL_h_
+#define nsStandardURL_h_
 
 #include <bitset>
 

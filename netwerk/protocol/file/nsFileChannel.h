@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFileChannel_h__
-#define nsFileChannel_h__
+#ifndef nsFileChannel_h_
+#define nsFileChannel_h_
 
 #include "nsBaseChannel.h"
 #include "nsIChildChannel.h"

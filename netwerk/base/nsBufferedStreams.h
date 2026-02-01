@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBufferedStreams_h__
-#define nsBufferedStreams_h__
+#ifndef nsBufferedStreams_h_
+#define nsBufferedStreams_h_
 
 #include "nsIBufferedStreams.h"
 #include "nsIInputStream.h"

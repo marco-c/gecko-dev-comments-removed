@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheFileChunk__h__
-#define CacheFileChunk__h__
+#ifndef CacheFileChunk_h_
+#define CacheFileChunk_h_
 
 #include "CacheFileIOManager.h"
 #include "CacheStorageService.h"

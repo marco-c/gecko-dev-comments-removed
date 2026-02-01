@@ -3,8 +3,8 @@
 
 
 
-#ifndef HttpConnectionUDP_h__
-#define HttpConnectionUDP_h__
+#ifndef HttpConnectionUDP_h_
+#define HttpConnectionUDP_h_
 
 #include "HttpConnectionBase.h"
 #include "nsHttpConnectionInfo.h"

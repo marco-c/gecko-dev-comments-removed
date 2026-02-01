@@ -3,8 +3,8 @@
 
 
 
-#ifndef InputChannelThrottleQueueParent_h__
-#define InputChannelThrottleQueueParent_h__
+#ifndef InputChannelThrottleQueueParent_h_
+#define InputChannelThrottleQueueParent_h_
 
 #include "nsISupportsImpl.h"
 #include "nsIThrottledInputChannel.h"

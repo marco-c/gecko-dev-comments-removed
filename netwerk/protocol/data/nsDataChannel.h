@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsDataChannel_h___
-#define nsDataChannel_h___
+#ifndef nsDataChannel_h_
+#define nsDataChannel_h_
 
 #include "nsBaseChannel.h"
 #include "nsIChildChannel.h"

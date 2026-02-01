@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheIndexContextIterator__h__
-#define CacheIndexContextIterator__h__
+#ifndef CacheIndexContextIterator_h_
+#define CacheIndexContextIterator_h_
 
 #include "CacheIndexIterator.h"
 

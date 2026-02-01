@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsICorsPreflightCallback_h__
-#define nsICorsPreflightCallback_h__
+#ifndef nsICorsPreflightCallback_h_
+#define nsICorsPreflightCallback_h_
 
 #include "nsISupports.h"
 #include "nsID.h"

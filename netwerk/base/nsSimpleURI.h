@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsSimpleURI_h__
-#define nsSimpleURI_h__
+#ifndef nsSimpleURI_h_
+#define nsSimpleURI_h_
 
 #include "nsIURI.h"
 #include "nsISerializable.h"

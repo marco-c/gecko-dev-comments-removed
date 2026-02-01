@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAboutCacheEntry_h__
-#define nsAboutCacheEntry_h__
+#ifndef nsAboutCacheEntry_h_
+#define nsAboutCacheEntry_h_
 
 #include "nsIAboutModule.h"
 #include "nsICacheEntryOpenCallback.h"

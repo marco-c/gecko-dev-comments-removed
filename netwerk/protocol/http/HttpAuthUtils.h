@@ -2,8 +2,8 @@
 
 
 
-#ifndef HttpAuthUtils_h__
-#define HttpAuthUtils_h__
+#ifndef HttpAuthUtils_h_
+#define HttpAuthUtils_h_
 
 class nsIURI;
 

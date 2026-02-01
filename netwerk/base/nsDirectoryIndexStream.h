@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDirectoryIndexStream_h__
-#define nsDirectoryIndexStream_h__
+#ifndef nsDirectoryIndexStream_h_
+#define nsDirectoryIndexStream_h_
 
 #include "nsString.h"
 #include "nsIInputStream.h"

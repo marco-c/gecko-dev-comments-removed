@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsTransportUtils_h__
-#define nsTransportUtils_h__
+#ifndef nsTransportUtils_h_
+#define nsTransportUtils_h_
 
 #include "nsITransport.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_net_DNSAdditionalInfo_h__
-#define mozilla_net_DNSAdditionalInfo_h__
+#ifndef mozilla_net_DNSAdditionalInfo_h_
+#define mozilla_net_DNSAdditionalInfo_h_
 
 #include "nsIDNSAdditionalInfo.h"
 #include "nsString.h"

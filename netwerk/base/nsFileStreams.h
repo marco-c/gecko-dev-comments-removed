@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsFileStreams_h__
-#define nsFileStreams_h__
+#ifndef nsFileStreams_h_
+#define nsFileStreams_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsIFileStreams.h"

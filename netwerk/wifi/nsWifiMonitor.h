@@ -2,8 +2,8 @@
 
 
 
-#ifndef __nsWifiMonitor__
-#define __nsWifiMonitor__
+#ifndef _nsWifiMonitor_
+#define _nsWifiMonitor_
 
 #include "nsIWifiMonitor.h"
 #include "nsCOMPtr.h"

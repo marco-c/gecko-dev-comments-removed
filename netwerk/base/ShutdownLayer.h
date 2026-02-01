@@ -4,8 +4,8 @@
 
 
 
-#ifndef SHUTDOWNLAYER_H___
-#define SHUTDOWNLAYER_H___
+#ifndef SHUTDOWNLAYER_H_
+#define SHUTDOWNLAYER_H_
 
 #include "nscore.h"
 #include "prio.h"

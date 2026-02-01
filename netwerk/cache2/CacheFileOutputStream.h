@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheFileOutputStream__h__
-#define CacheFileOutputStream__h__
+#ifndef CacheFileOutputStream_h_
+#define CacheFileOutputStream_h_
 
 #include "nsIAsyncOutputStream.h"
 #include "nsISeekableStream.h"

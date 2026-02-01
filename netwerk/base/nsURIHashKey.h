@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsURIHashKey_h__
-#define nsURIHashKey_h__
+#ifndef nsURIHashKey_h_
+#define nsURIHashKey_h_
 
 #include <utility>
 

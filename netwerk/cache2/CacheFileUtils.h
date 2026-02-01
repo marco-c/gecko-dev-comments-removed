@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheFileUtils__h__
-#define CacheFileUtils__h__
+#ifndef CacheFileUtils_h_
+#define CacheFileUtils_h_
 
 #include "nsError.h"
 #include "nsCOMPtr.h"

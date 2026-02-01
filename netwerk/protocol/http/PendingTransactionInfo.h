@@ -3,8 +3,8 @@
 
 
 
-#ifndef PendingTransactionInfo_h__
-#define PendingTransactionInfo_h__
+#ifndef PendingTransactionInfo_h_
+#define PendingTransactionInfo_h_
 
 #include "DnsAndConnectSocket.h"
 

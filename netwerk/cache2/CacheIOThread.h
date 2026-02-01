@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheIOThread__h__
-#define CacheIOThread__h__
+#ifndef CacheIOThread_h_
+#define CacheIOThread_h_
 
 #include "nsIThreadInternal.h"
 #include "nsISupportsImpl.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef SpeculativeTransaction_h__
-#define SpeculativeTransaction_h__
+#ifndef SpeculativeTransaction_h_
+#define SpeculativeTransaction_h_
 
 #include "mozilla/Maybe.h"
 #include "NullHttpTransaction.h"

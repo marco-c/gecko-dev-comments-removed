@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsAHttpTransaction_h__
-#define nsAHttpTransaction_h__
+#ifndef nsAHttpTransaction_h_
+#define nsAHttpTransaction_h_
 
 #include "nsTArray.h"
 #include "nsWeakReference.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsRedirectHistoryEntry_h__
-#define nsRedirectHistoryEntry_h__
+#ifndef nsRedirectHistoryEntry_h_
+#define nsRedirectHistoryEntry_h_
 
 #include "nsCOMPtr.h"
 #include "nsString.h"

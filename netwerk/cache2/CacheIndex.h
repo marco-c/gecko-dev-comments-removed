@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheIndex__h__
-#define CacheIndex__h__
+#ifndef CacheIndex_h_
+#define CacheIndex_h_
 
 #include "CacheLog.h"
 #include "CacheFileIOManager.h"

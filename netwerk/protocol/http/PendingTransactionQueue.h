@@ -3,8 +3,8 @@
 
 
 
-#ifndef PendingTransactionQueue_h__
-#define PendingTransactionQueue_h__
+#ifndef PendingTransactionQueue_h_
+#define PendingTransactionQueue_h_
 
 #include "nsClassHashtable.h"
 #include "nsHttpTransaction.h"

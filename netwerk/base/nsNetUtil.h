@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsNetUtil_h__
-#define nsNetUtil_h__
+#ifndef nsNetUtil_h_
+#define nsNetUtil_h_
 
 #include <functional>
 #include "mozilla/Maybe.h"

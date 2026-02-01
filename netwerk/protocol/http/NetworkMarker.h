@@ -4,8 +4,8 @@
 
 
 
-#ifndef NetworkMarker_h__
-#define NetworkMarker_h__
+#ifndef NetworkMarker_h_
+#define NetworkMarker_h_
 
 #include "mozilla/ProfilerMarkers.h"
 #include "nsHttp.h"

@@ -2,10 +2,9 @@
 
 
 
-#ifndef TestCommon_h__
-#define TestCommon_h__
+#ifndef TestCommon_h_
+#define TestCommon_h_
 
-#include <stdlib.h>
 #include "nsThreadUtils.h"
 #include "mozilla/SpinEventLoopUntil.h"
 

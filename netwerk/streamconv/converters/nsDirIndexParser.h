@@ -3,8 +3,8 @@
 
 
 
-#ifndef __NSDIRINDEX_H_
-#define __NSDIRINDEX_H_
+#ifndef NSDIRINDEX_H_
+#define NSDIRINDEX_H_
 
 #include "nsString.h"
 #include "nsCOMPtr.h"

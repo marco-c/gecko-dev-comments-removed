@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheStorage__h__
-#define CacheStorage__h__
+#ifndef CacheStorage_h_
+#define CacheStorage_h_
 
 #include "nsICacheStorage.h"
 #include "CacheEntry.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBaseContentStream_h__
-#define nsBaseContentStream_h__
+#ifndef nsBaseContentStream_h_
+#define nsBaseContentStream_h_
 
 #include "nsIAsyncInputStream.h"
 #include "nsIEventTarget.h"

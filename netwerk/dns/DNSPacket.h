@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_net_DNSPacket_h__
-#define mozilla_net_DNSPacket_h__
+#ifndef mozilla_net_DNSPacket_h_
+#define mozilla_net_DNSPacket_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef RemoteStreamGetter_h___
-#define RemoteStreamGetter_h___
+#ifndef RemoteStreamGetter_h_
+#define RemoteStreamGetter_h_
 
 #include "nsIChannel.h"
 #include "nsIInputStreamPump.h"

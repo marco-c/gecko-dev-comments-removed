@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsStreamTransportService_h__
-#define nsStreamTransportService_h__
+#ifndef nsStreamTransportService_h_
+#define nsStreamTransportService_h_
 
 #include "nsIStreamTransportService.h"
 #include "nsIEventTarget.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHttpChannel_h__
-#define nsHttpChannel_h__
+#ifndef nsHttpChannel_h_
+#define nsHttpChannel_h_
 
 #include "AlternateServices.h"
 #include "AutoClose.h"

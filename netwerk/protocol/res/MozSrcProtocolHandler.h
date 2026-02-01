@@ -3,8 +3,8 @@
 
 
 
-#ifndef MozSrcProtocolHandler_h___
-#define MozSrcProtocolHandler_h___
+#ifndef MozSrcProtocolHandler_h_
+#define MozSrcProtocolHandler_h_
 
 #include "nsIProtocolHandler.h"
 #include "nsISubstitutingProtocolHandler.h"

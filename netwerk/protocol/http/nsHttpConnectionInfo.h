@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHttpConnectionInfo_h__
-#define nsHttpConnectionInfo_h__
+#ifndef nsHttpConnectionInfo_h_
+#define nsHttpConnectionInfo_h_
 
 #include "nsHttp.h"
 #include "nsProxyInfo.h"

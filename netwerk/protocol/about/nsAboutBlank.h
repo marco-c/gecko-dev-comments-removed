@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAboutBlank_h__
-#define nsAboutBlank_h__
+#ifndef nsAboutBlank_h_
+#define nsAboutBlank_h_
 
 #include "nsIAboutModule.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef NeqoHttp3Conn_h__
-#define NeqoHttp3Conn_h__
+#ifndef NeqoHttp3Conn_h_
+#define NeqoHttp3Conn_h_
 
 #include <cstdint>
 #include "mozilla/net/neqo_glue_ffi_generated.h"

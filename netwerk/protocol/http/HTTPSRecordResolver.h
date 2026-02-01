@@ -4,8 +4,8 @@
 
 
 
-#ifndef HTTPSRecordResolver_h__
-#define HTTPSRecordResolver_h__
+#ifndef HTTPSRecordResolver_h_
+#define HTTPSRecordResolver_h_
 
 #include "mozilla/Mutex.h"
 #include "nsICancelable.h"

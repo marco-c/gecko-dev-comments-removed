@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsHttpActivityDistributor_h__
-#define nsHttpActivityDistributor_h__
+#ifndef nsHttpActivityDistributor_h_
+#define nsHttpActivityDistributor_h_
 
 #include "nsIHttpActivityObserver.h"
 #include "nsTArray.h"

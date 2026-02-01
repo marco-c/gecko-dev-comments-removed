@@ -2,8 +2,8 @@
 
 
 
-#ifndef HttpConnectionMgrShell_h__
-#define HttpConnectionMgrShell_h__
+#ifndef HttpConnectionMgrShell_h_
+#define HttpConnectionMgrShell_h_
 
 #include "nsISupports.h"
 

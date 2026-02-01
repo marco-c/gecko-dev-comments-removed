@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsServerSocket_h__
-#define nsServerSocket_h__
+#ifndef nsServerSocket_h_
+#define nsServerSocket_h_
 
 #include "prio.h"
 #include "nsASocketHandler.h"

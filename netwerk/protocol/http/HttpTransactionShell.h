@@ -2,8 +2,8 @@
 
 
 
-#ifndef HttpTransactionShell_h__
-#define HttpTransactionShell_h__
+#ifndef HttpTransactionShell_h_
+#define HttpTransactionShell_h_
 
 #include <functional>
 

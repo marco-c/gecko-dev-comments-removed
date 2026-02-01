@@ -3,8 +3,8 @@
 
 
 
-#ifndef HostRecordQueue_h__
-#define HostRecordQueue_h__
+#ifndef HostRecordQueue_h_
+#define HostRecordQueue_h_
 
 #include <functional>
 #include "mozilla/Mutex.h"

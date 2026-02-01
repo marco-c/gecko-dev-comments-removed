@@ -4,8 +4,8 @@
 
 
 
-#ifndef SubstitutingProtocolHandler_h___
-#define SubstitutingProtocolHandler_h___
+#ifndef SubstitutingProtocolHandler_h_
+#define SubstitutingProtocolHandler_h_
 
 #include "nsISubstitutingProtocolHandler.h"
 

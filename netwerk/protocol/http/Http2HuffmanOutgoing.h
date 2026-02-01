@@ -1,8 +1,8 @@
 
 
 
-#ifndef mozilla__net__Http2HuffmanOutgoing_h
-#define mozilla__net__Http2HuffmanOutgoing_h
+#ifndef mozilla_net_Http2HuffmanOutgoing_h
+#define mozilla_net_Http2HuffmanOutgoing_h
 
 namespace mozilla {
 namespace net {

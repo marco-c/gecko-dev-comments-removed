@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheHashUtils__h__
-#define CacheHashUtils__h__
+#ifndef CacheHashUtils_h_
+#define CacheHashUtils_h_
 
 #include "nsISupports.h"
 #include "prnetdb.h"

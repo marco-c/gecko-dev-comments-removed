@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsStreamListenerWrapper_h__
-#define nsStreamListenerWrapper_h__
+#ifndef nsStreamListenerWrapper_h_
+#define nsStreamListenerWrapper_h_
 
 #include "nsCOMPtr.h"
 #include "nsIRequest.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsResProtocolHandler_h___
-#define nsResProtocolHandler_h___
+#ifndef nsResProtocolHandler_h_
+#define nsResProtocolHandler_h_
 
 #include "mozilla/net/SubstitutingProtocolHandler.h"
 

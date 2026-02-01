@@ -3,8 +3,8 @@
 
 
 
-#ifndef AltSvcTransactionParent_h__
-#define AltSvcTransactionParent_h__
+#ifndef AltSvcTransactionParent_h_
+#define AltSvcTransactionParent_h_
 
 #include "mozilla/net/PAltSvcTransactionParent.h"
 #include "mozilla/net/SpeculativeTransaction.h"

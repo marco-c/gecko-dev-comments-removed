@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsLoadGroup_h__
-#define nsLoadGroup_h__
+#ifndef nsLoadGroup_h_
+#define nsLoadGroup_h_
 
 #include "nsILoadGroup.h"
 #include "nsILoadGroupChild.h"

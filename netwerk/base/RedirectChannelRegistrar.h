@@ -2,8 +2,8 @@
 
 
 
-#ifndef RedirectChannelRegistrar_h__
-#define RedirectChannelRegistrar_h__
+#ifndef RedirectChannelRegistrar_h_
+#define RedirectChannelRegistrar_h_
 
 #include "nsIRedirectChannelRegistrar.h"
 

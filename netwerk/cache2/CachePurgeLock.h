@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_net_CachePurgeLock_h__
-#define mozilla_net_CachePurgeLock_h__
+#ifndef mozilla_net_CachePurgeLock_h_
+#define mozilla_net_CachePurgeLock_h_
 
 #include "nsICachePurgeLock.h"
 #include "mozilla/MultiInstanceLock.h"

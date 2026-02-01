@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsstreamconverterservice__h___
-#define __nsstreamconverterservice__h___
+#ifndef _nsstreamconverterservice_h_
+#define _nsstreamconverterservice_h_
 
 #include "nsIStreamConverterService.h"
 

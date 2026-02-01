@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheObserver__h__
-#define CacheObserver__h__
+#ifndef CacheObserver_h_
+#define CacheObserver_h_
 
 #include "nsIObserver.h"
 #include "nsIFile.h"

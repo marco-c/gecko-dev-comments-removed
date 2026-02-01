@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsURLParsers_h__
-#define nsURLParsers_h__
+#ifndef nsURLParsers_h_
+#define nsURLParsers_h_
 
 #include "nsIURLParser.h"
 

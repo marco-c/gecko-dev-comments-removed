@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsChannelClassifier_h__
-#define nsChannelClassifier_h__
+#ifndef nsChannelClassifier_h_
+#define nsChannelClassifier_h_
 
 #include "nsIObserver.h"
 #include "nsIURIClassifier.h"

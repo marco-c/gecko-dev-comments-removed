@@ -2,8 +2,8 @@
 
 
 
-#ifndef __nsWifiAccessPoint__
-#define __nsWifiAccessPoint__
+#ifndef _nsWifiAccessPoint_
+#define _nsWifiAccessPoint_
 
 #include <algorithm>
 #include "nsWifiMonitor.h"

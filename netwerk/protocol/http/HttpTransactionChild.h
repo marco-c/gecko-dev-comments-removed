@@ -3,8 +3,8 @@
 
 
 
-#ifndef HttpTransactionChild_h__
-#define HttpTransactionChild_h__
+#ifndef HttpTransactionChild_h_
+#define HttpTransactionChild_h_
 
 #include "mozilla/Atomics.h"
 #include "mozilla/net/NeckoChannelParams.h"

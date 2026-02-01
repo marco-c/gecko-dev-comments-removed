@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHttpChannelAuthProvider_h__
-#define nsHttpChannelAuthProvider_h__
+#ifndef nsHttpChannelAuthProvider_h_
+#define nsHttpChannelAuthProvider_h_
 
 #include "nsIHttpChannelAuthProvider.h"
 #include "nsIAuthPromptCallback.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIDNService_h__
-#define nsIDNService_h__
+#ifndef nsIDNService_h_
+#define nsIDNService_h_
 
 #include "nsIIDNService.h"
 

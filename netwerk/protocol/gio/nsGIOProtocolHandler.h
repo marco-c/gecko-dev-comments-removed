@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsGIOProtocolHandler_h___
-#define nsGIOProtocolHandler_h___
+#ifndef nsGIOProtocolHandler_h_
+#define nsGIOProtocolHandler_h_
 
 #include "nsIProtocolHandler.h"
 #include "nsIObserver.h"

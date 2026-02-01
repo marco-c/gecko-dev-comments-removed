@@ -4,8 +4,8 @@
 
 
 
-#if !defined(__nsHTTPCompressConv__h__)
-#  define __nsHTTPCompressConv__h__ 1
+#if !defined(_nsHTTPCompressConv_h_)
+#  define _nsHTTPCompressConv_h_ 1
 
 #  include "nsIStreamConverter.h"
 #  include "nsICompressConvStats.h"

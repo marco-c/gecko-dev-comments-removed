@@ -4,8 +4,8 @@
 
 
 
-#ifndef FuzzySecurityInfo_h__
-#define FuzzySecurityInfo_h__
+#ifndef FuzzySecurityInfo_h_
+#define FuzzySecurityInfo_h_
 
 #include "nsCOMPtr.h"
 #include "nsITransportSecurityInfo.h"

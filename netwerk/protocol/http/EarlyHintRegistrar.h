@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_net_EarlyHintRegistrar_h__
-#define mozilla_net_EarlyHintRegistrar_h__
+#ifndef mozilla_net_EarlyHintRegistrar_h_
+#define mozilla_net_EarlyHintRegistrar_h_
 
 #include "mozilla/RefCounted.h"
 #include "mozilla/dom/ipc/IdType.h"

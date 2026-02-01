@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIncrementalStreamLoader_h__
-#define nsIncrementalStreamLoader_h__
+#ifndef nsIncrementalStreamLoader_h_
+#define nsIncrementalStreamLoader_h_
 
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIIncrementalStreamLoader.h"

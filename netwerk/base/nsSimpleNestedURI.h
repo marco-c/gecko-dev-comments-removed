@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsSimpleNestedURI_h__
-#define nsSimpleNestedURI_h__
+#ifndef nsSimpleNestedURI_h_
+#define nsSimpleNestedURI_h_
 
 #include "nsCOMPtr.h"
 #include "nsSimpleURI.h"

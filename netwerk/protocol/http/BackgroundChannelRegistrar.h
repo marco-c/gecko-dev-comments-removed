@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_net_BackgroundChannelRegistrar_h__
-#define mozilla_net_BackgroundChannelRegistrar_h__
+#ifndef mozilla_net_BackgroundChannelRegistrar_h_
+#define mozilla_net_BackgroundChannelRegistrar_h_
 
 #include "nsIBackgroundChannelRegistrar.h"
 #include "nsRefPtrHashtable.h"

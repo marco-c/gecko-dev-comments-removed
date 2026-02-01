@@ -3,8 +3,8 @@
 
 
 
-#ifndef HttpConnectionMgrChild_h__
-#define HttpConnectionMgrChild_h__
+#ifndef HttpConnectionMgrChild_h_
+#define HttpConnectionMgrChild_h_
 
 #include "mozilla/net/PHttpConnectionMgrChild.h"
 #include "mozilla/RefPtr.h"

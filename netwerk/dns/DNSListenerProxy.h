@@ -4,8 +4,8 @@
 
 
 
-#ifndef DNSListenerProxy_h__
-#define DNSListenerProxy_h__
+#ifndef DNSListenerProxy_h_
+#define DNSListenerProxy_h_
 
 #include "nsIDNSListener.h"
 #include "nsIDNSRecord.h"

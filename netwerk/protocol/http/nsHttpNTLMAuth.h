@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsHttpNTLMAuth_h__
-#define nsHttpNTLMAuth_h__
+#ifndef nsHttpNTLMAuth_h_
+#define nsHttpNTLMAuth_h_
 
 #include "nsIHttpAuthenticator.h"
 #include "mozilla/StaticPtr.h"

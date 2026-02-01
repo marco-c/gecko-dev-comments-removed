@@ -3,8 +3,8 @@
 
 
 
-#ifndef ProxyAutoConfigChild_h__
-#define ProxyAutoConfigChild_h__
+#ifndef ProxyAutoConfigChild_h_
+#define ProxyAutoConfigChild_h_
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/net/PProxyAutoConfigChild.h"

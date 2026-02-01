@@ -3,8 +3,8 @@
 
 
 
-#ifndef ConnectionEntry_h__
-#define ConnectionEntry_h__
+#ifndef ConnectionEntry_h_
+#define ConnectionEntry_h_
 
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"

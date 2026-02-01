@@ -3,8 +3,8 @@
 
 
 
-#ifndef ____nsindexedtohtml___h___
-#define ____nsindexedtohtml___h___
+#ifndef _nsindexedtohtml_h_
+#define _nsindexedtohtml_h_
 
 #include "nsCOMPtr.h"
 #include "nsIThreadRetargetableStreamListener.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDNSService2_h__
-#define nsDNSService2_h__
+#ifndef nsDNSService2_h_
+#define nsDNSService2_h_
 
 #include "DNSServiceBase.h"
 #include "nsClassHashtable.h"

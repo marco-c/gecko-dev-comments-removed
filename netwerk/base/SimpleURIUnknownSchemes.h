@@ -4,8 +4,8 @@
 
 
 
-#ifndef SimpleURIUnknownSchemes_h__
-#define SimpleURIUnknownSchemes_h__
+#ifndef SimpleURIUnknownSchemes_h_
+#define SimpleURIUnknownSchemes_h_
 
 #include "nsString.h"
 #include "mozilla/RWLock.h"

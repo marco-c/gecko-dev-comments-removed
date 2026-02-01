@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheEntry__h__
-#define CacheEntry__h__
+#ifndef CacheEntry_h_
+#define CacheEntry_h_
 
 #include "mozilla/LinkedList.h"
 #include "nsICacheEntry.h"

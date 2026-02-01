@@ -2,8 +2,8 @@
 
 
 
-#ifndef CacheFileContextEvictor__h__
-#define CacheFileContextEvictor__h__
+#ifndef CacheFileContextEvictor_h_
+#define CacheFileContextEvictor_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"

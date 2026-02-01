@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpResponseHead_h__
-#define nsHttpResponseHead_h__
+#ifndef nsHttpResponseHead_h_
+#define nsHttpResponseHead_h_
 
 #include "nsHttpHeaderArray.h"
 #include "nsHttp.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpTransaction_h__
-#define nsHttpTransaction_h__
+#ifndef nsHttpTransaction_h_
+#define nsHttpTransaction_h_
 
 #include "ARefBase.h"
 #include "EventTokenBucket.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsInputStreamChannel_h__
-#define nsInputStreamChannel_h__
+#ifndef nsInputStreamChannel_h_
+#define nsInputStreamChannel_h_
 
 #include "nsBaseChannel.h"
 #include "nsIInputStreamChannel.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef ProxyAutoConfig_h__
-#define ProxyAutoConfig_h__
+#ifndef ProxyAutoConfig_h_
+#define ProxyAutoConfig_h_
 
 #include <functional>
 #include "nsString.h"

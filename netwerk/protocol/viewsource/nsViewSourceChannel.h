@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsViewSourceChannel_h___
-#define nsViewSourceChannel_h___
+#ifndef nsViewSourceChannel_h_
+#define nsViewSourceChannel_h_
 
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsCOMPtr.h"

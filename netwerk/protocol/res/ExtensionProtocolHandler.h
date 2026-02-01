@@ -3,8 +3,8 @@
 
 
 
-#ifndef ExtensionProtocolHandler_h___
-#define ExtensionProtocolHandler_h___
+#ifndef ExtensionProtocolHandler_h_
+#define ExtensionProtocolHandler_h_
 
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/LazyIdleThread.h"

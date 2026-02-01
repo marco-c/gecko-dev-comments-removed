@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsStreamListenerTee_h__
-#define nsStreamListenerTee_h__
+#ifndef nsStreamListenerTee_h_
+#define nsStreamListenerTee_h_
 
 #include "nsIStreamListenerTee.h"
 #include "nsIThreadRetargetableStreamListener.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_net_CookieServiceChild_h__
-#define mozilla_net_CookieServiceChild_h__
+#ifndef mozilla_net_CookieServiceChild_h_
+#define mozilla_net_CookieServiceChild_h_
 
 #include "CookieKey.h"
 #include "mozilla/net/PCookieServiceChild.h"

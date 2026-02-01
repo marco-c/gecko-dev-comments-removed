@@ -3,8 +3,8 @@
 
 
 
-#ifndef DnsAndConnectSocket_h__
-#define DnsAndConnectSocket_h__
+#ifndef DnsAndConnectSocket_h_
+#define DnsAndConnectSocket_h_
 
 #include "mozilla/TimeStamp.h"
 #include "nsAHttpConnection.h"

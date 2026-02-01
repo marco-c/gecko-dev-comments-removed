@@ -3,8 +3,8 @@
 
 
 
-#ifndef AltServiceParent_h__
-#define AltServiceParent_h__
+#ifndef AltServiceParent_h_
+#define AltServiceParent_h_
 
 #include "mozilla/net/PAltServiceParent.h"
 

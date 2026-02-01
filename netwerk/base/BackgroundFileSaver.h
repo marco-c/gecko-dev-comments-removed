@@ -9,8 +9,8 @@
 
 
 
-#ifndef BackgroundFileSaver_h__
-#define BackgroundFileSaver_h__
+#ifndef BackgroundFileSaver_h_
+#define BackgroundFileSaver_h_
 
 #include "ScopedNSSTypes.h"
 #include "mozilla/Mutex.h"

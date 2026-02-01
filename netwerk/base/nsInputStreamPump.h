@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsInputStreamPump_h__
-#define nsInputStreamPump_h__
+#ifndef nsInputStreamPump_h_
+#define nsInputStreamPump_h_
 
 #include "nsIInputStreamPump.h"
 #include "nsIAsyncInputStream.h"

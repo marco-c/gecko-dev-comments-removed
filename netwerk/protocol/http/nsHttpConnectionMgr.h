@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpConnectionMgr_h__
-#define nsHttpConnectionMgr_h__
+#ifndef nsHttpConnectionMgr_h_
+#define nsHttpConnectionMgr_h_
 
 #include "DnsAndConnectSocket.h"
 #include "HttpConnectionBase.h"

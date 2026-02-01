@@ -3,8 +3,8 @@
 
 
 
-#ifndef AltSvcTransactionChild_h__
-#define AltSvcTransactionChild_h__
+#ifndef AltSvcTransactionChild_h_
+#define AltSvcTransactionChild_h_
 
 #include "mozilla/net/PAltSvcTransactionChild.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef MockNetworkLayer_h__
-#define MockNetworkLayer_h__
+#ifndef MockNetworkLayer_h_
+#define MockNetworkLayer_h_
 
 #include "prerror.h"
 #include "prio.h"

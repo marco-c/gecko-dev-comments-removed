@@ -4,8 +4,8 @@
 
 
 
-#ifndef FuzzyLayer_h__
-#define FuzzyLayer_h__
+#ifndef FuzzyLayer_h_
+#define FuzzyLayer_h_
 
 #include "prerror.h"
 #include "nsError.h"

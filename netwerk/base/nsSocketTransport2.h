@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsSocketTransport2_h__
-#define nsSocketTransport2_h__
+#ifndef nsSocketTransport2_h_
+#define nsSocketTransport2_h_
 
 #ifdef DEBUG_darinf
 #  define ENABLE_SOCKET_TRACING

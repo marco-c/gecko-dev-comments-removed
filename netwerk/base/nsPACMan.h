@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPACMan_h__
-#define nsPACMan_h__
+#ifndef nsPACMan_h_
+#define nsPACMan_h_
 
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"

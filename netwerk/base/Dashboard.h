@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsDashboard_h__
-#define nsDashboard_h__
+#ifndef nsDashboard_h_
+#define nsDashboard_h_
 
 #include "mozilla/Mutex.h"
 #include "mozilla/net/DashboardTypes.h"

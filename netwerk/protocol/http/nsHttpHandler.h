@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpHandler_h__
-#define nsHttpHandler_h__
+#ifndef nsHttpHandler_h_
+#define nsHttpHandler_h_
 
 #include <functional>
 

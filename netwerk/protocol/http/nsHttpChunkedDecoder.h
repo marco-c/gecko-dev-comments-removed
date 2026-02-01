@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpChunkedDecoder_h__
-#define nsHttpChunkedDecoder_h__
+#ifndef nsHttpChunkedDecoder_h_
+#define nsHttpChunkedDecoder_h_
 
 #include "nsError.h"
 #include "nsString.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef Cache2Log__h__
-#define Cache2Log__h__
+#ifndef Cache2Log_h_
+#define Cache2Log_h_
 
 #include "mozilla/Logging.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef SimpleBuffer_h__
-#define SimpleBuffer_h__
+#ifndef SimpleBuffer_h_
+#define SimpleBuffer_h_
 
 
 

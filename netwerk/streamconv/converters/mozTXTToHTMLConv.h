@@ -8,8 +8,8 @@
 
 
 
-#ifndef _mozTXTToHTMLConv_h__
-#define _mozTXTToHTMLConv_h__
+#ifndef _mozTXTToHTMLConv_h_
+#define _mozTXTToHTMLConv_h_
 
 #include "mozITXTToHTMLConv.h"
 #include "nsIThreadRetargetableStreamListener.h"

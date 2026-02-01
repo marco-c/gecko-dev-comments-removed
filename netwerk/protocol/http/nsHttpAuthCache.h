@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpAuthCache_h__
-#define nsHttpAuthCache_h__
+#ifndef nsHttpAuthCache_h_
+#define nsHttpAuthCache_h_
 
 #include "nsError.h"
 #include "nsTArray.h"

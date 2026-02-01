@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIOService_h__
-#define nsIOService_h__
+#ifndef nsIOService_h_
+#define nsIOService_h_
 
 #include "nsStringFwd.h"
 #include "nsIIOService.h"

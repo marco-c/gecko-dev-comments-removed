@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsRequestObserverProxy_h__
-#define nsRequestObserverProxy_h__
+#ifndef nsRequestObserverProxy_h_
+#define nsRequestObserverProxy_h_
 
 #include "nsIRequestObserver.h"
 #include "nsIRequestObserverProxy.h"

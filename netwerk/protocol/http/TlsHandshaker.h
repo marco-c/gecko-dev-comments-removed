@@ -3,8 +3,8 @@
 
 
 
-#ifndef TlsHandshaker_h__
-#define TlsHandshaker_h__
+#ifndef TlsHandshaker_h_
+#define TlsHandshaker_h_
 
 #include "nsITlsHandshakeListener.h"
 

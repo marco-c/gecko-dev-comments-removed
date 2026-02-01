@@ -4,8 +4,8 @@
 
 
 
-#ifndef HttpLog_h__
-#define HttpLog_h__
+#ifndef HttpLog_h_
+#define HttpLog_h_
 
 
 

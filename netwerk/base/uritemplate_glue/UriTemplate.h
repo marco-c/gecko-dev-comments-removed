@@ -2,8 +2,8 @@
 
 
 
-#ifndef UriTemplateGlue_h__
-#define UriTemplateGlue_h__
+#ifndef UriTemplateGlue_h_
+#define UriTemplateGlue_h_
 
 #include "mozilla/net/uritemplate_glue.h"
 

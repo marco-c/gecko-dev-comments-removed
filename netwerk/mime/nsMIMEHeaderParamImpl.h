@@ -3,9 +3,10 @@
 
 
 
-#ifndef __nsmimeheaderparamimpl_h___
-#define __nsmimeheaderparamimpl_h___
+#ifndef _nsmimeheaderparamimpl_h_
+#define _nsmimeheaderparamimpl_h_
 #include "nsIMIMEHeaderParam.h"
+
 class nsMIMEHeaderParamImpl : public nsIMIMEHeaderParam {
  public:
   NS_DECL_ISUPPORTS

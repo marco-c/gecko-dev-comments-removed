@@ -2,8 +2,8 @@
 
 
 
-#ifndef URLPatternGlue_h__
-#define URLPatternGlue_h__
+#ifndef URLPatternGlue_h_
+#define URLPatternGlue_h_
 
 #include "mozilla/net/urlpattern_glue.h"
 #include "nsTHashMap.h"

@@ -60,8 +60,8 @@
 
 
 
-#ifndef GEARS_GEOLOCATION_OSX_WIFI_H__
-#define GEARS_GEOLOCATION_OSX_WIFI_H__
+#ifndef GEARS_GEOLOCATION_OSX_WIFI_H_
+#define GEARS_GEOLOCATION_OSX_WIFI_H_
 
 #include <CoreFoundation/CoreFoundation.h>
 

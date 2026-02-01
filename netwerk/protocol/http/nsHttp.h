@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHttp_h__
-#define nsHttp_h__
+#ifndef nsHttp_h_
+#define nsHttp_h_
 
 #include <stdint.h>
 #include "prtime.h"

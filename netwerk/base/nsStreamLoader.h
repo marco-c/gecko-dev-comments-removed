@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsStreamLoader_h__
-#define nsStreamLoader_h__
+#ifndef nsStreamLoader_h_
+#define nsStreamLoader_h_
 
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIStreamLoader.h"
