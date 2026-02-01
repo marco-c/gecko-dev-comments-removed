@@ -78,6 +78,10 @@ enum class MathMLEmbellishFlag : uint8_t {
 
   
   
+  LargeOp,
+
+  
+  
   AccentOver,
 
   
@@ -269,6 +273,10 @@ class nsIMathMLFrame {
   
   
   virtual bool IsMrowLike() = 0;
+
+  
+  
+  virtual nscoord ItalicCorrection() = 0;
 };
 
 

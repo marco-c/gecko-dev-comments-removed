@@ -94,6 +94,9 @@ class nsMathMLFrame : public nsIMathMLFrame {
   bool IsMrowLike() override { return false; }
 
   
+  nscoord ItalicCorrection() override { return 0; }
+
+  
   
   
   

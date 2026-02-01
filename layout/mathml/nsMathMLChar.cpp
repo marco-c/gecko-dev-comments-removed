@@ -819,26 +819,6 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     RefPtr<gfxTextRun> textRun =
         aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
     nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
-    if (ch.isGlyphID) {
-      RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
-      if (mathFont) {
-        
-        
-        
-        
-        
-        
-        
-        gfxFloat italicCorrection =
-            mathFont->MathTable()->ItalicsCorrection(ch.glyphID);
-        if (italicCorrection) {
-          bm.width -= NSToCoordRound(italicCorrection * oneDevPixel);
-          if (bm.width < 0) {
-            bm.width = 0;
-          }
-        }
-      }
-    }
 
     nscoord charSize =
         isVertical ? bm.ascent + bm.descent : bm.rightBearing - bm.leftBearing;
@@ -866,6 +846,16 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
         bestSize = charSize;
         mChar->mGlyphs[0] = std::move(textRun);
         mChar->mDrawingMethod = DrawingMethod::Variant;
+
+        mChar->mItalicCorrection = 0;
+        if (ch.isGlyphID) {
+          if (RefPtr<gfxFont> mathFont =
+                  aFontGroup->get()->GetFirstMathFont()) {
+            mChar->mItalicCorrection = NSToCoordRound(
+                mathFont->MathTable()->ItalicsCorrection(ch.glyphID) *
+                oneDevPixel);
+          }
+        }
       }
 #ifdef NOISY_SEARCH
       printf("    size:%d Current best\n", size);
@@ -1054,6 +1044,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     mBoundingMetrics.leftBearing = 0;
     mBoundingMetrics.rightBearing = computedSize;
   }
+  
+  
+
   mGlyphFound = true;
   if (maxWidth) {
     return false;  

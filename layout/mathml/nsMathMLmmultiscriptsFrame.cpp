@@ -286,6 +286,7 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   bmMultiSub.ascent = bmMultiSup.ascent = -0x7FFFFFFF;
   bmMultiSub.descent = bmMultiSup.descent = -0x7FFFFFFF;
   nscoord italicCorrection = 0;
+  nscoord largeOpItalicCorrection = 0;
 
   nsBoundingMetrics boundingMetrics;
   boundingMetrics.width = 0;
@@ -338,6 +339,19 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
         
         
         italicCorrection += onePixel;
+      }
+
+      if (tag != nsGkAtoms::msup) {
+        
+        
+        if (nsIMathMLFrame* mathMLFrame = do_QueryFrame(baseFrame)) {
+          nsEmbellishData baseFrameEmbellishData;
+          mathMLFrame->GetEmbellishData(baseFrameEmbellishData);
+          if (baseFrameEmbellishData.flags.contains(
+                  MathMLEmbellishFlag::LargeOp)) {
+            largeOpItalicCorrection = mathMLFrame->ItalicCorrection();
+          }
+        }
       }
 
       
@@ -674,6 +688,10 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
             
             if (isPreScript) {
               x += width - subScriptSize.Width() - subScriptMargin.LeftRight();
+            } else {
+              
+              
+              x -= largeOpItalicCorrection;
             }
             dy = aDesiredSize.BlockStartAscent() -
                  subScriptSize.BlockStartAscent() + maxSubScriptShift;
