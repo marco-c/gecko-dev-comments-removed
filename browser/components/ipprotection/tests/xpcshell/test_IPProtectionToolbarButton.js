@@ -3,9 +3,10 @@
 
 "use strict";
 
-const { IPProtection } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs"
+const { IPProtectionToolbarButton } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ipprotection/IPProtectionToolbarButton.sys.mjs"
 );
+
 
 
 
@@ -15,7 +16,23 @@ add_task(function test_update_icon_status() {
   const principal = Services.scriptSecurityManager.getSystemPrincipal();
   browser.docShell.createAboutBlankDocumentViewer(principal, principal);
   const document = browser.docShell.docViewer.DOMDocument;
+
+  
+  const fakeWindow = {
+    gBrowser: {
+      addTabsProgressListener: () => {},
+      removeTabsProgressListener: () => {},
+      contentPrincipal: principal,
+    },
+    document,
+  };
+
   let fakeToolbarItem = document.createXULElement("toolbaritem");
+  
+  let fakeToolbarButton = new IPProtectionToolbarButton(
+    fakeWindow,
+    "test-toolbarbutton"
+  );
 
   Assert.equal(
     fakeToolbarItem.classList.length,
@@ -23,11 +40,12 @@ add_task(function test_update_icon_status() {
     "Toolbaritem class list should be empty"
   );
 
-  let ipProtectionOn = {
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
     isActive: true,
     isError: false,
-  };
-  IPProtection.updateIconStatus(fakeToolbarItem, ipProtectionOn);
+    isExcluded: false,
+  });
 
   Assert.ok(
     fakeToolbarItem.classList.contains("ipprotection-on"),
@@ -35,11 +53,25 @@ add_task(function test_update_icon_status() {
   );
 
   
-  let ipProtectionError = {
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: true,
+    isError: false,
+    isExcluded: true,
+  });
+
+  Assert.ok(
+    fakeToolbarItem.classList.contains("ipprotection-excluded"),
+    "Toolbaritem classlist should include ipprotection-excluded"
+  );
+
+  
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
     isActive: true,
     isError: true,
-  };
-  IPProtection.updateIconStatus(fakeToolbarItem, ipProtectionError);
+    isExcluded: false,
+  });
 
   Assert.ok(
     fakeToolbarItem.classList.contains("ipprotection-error"),
@@ -49,12 +81,17 @@ add_task(function test_update_icon_status() {
     !fakeToolbarItem.classList.contains("ipprotection-on"),
     "Toolbaritem classlist should not include ipprotection-on"
   );
+  Assert.ok(
+    !fakeToolbarItem.classList.contains("ipprotection-excluded"),
+    "Toolbaritem classlist should not include ipprotection-excluded"
+  );
 
-  let ipProtectionOff = {
+  
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
     isActive: false,
     isError: false,
-  };
-  IPProtection.updateIconStatus(fakeToolbarItem, ipProtectionOff);
+    isExcluded: false,
+  });
 
   Assert.ok(
     !fakeToolbarItem.classList.contains("ipprotection-error"),
@@ -64,4 +101,11 @@ add_task(function test_update_icon_status() {
     !fakeToolbarItem.classList.contains("ipprotection-on"),
     "Toolbaritem classlist should not include ipprotection-on"
   );
+  Assert.ok(
+    !fakeToolbarItem.classList.contains("ipprotection-excluded"),
+    "Toolbaritem classlist should not include ipprotection-excluded"
+  );
+
+  
+  fakeToolbarButton.uninit();
 });
