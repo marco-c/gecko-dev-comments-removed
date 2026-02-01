@@ -7,10 +7,12 @@
 
 use std::fmt::Write;
 
+use style_derive::Animate;
 use style_traits::CssWriter;
 use style_traits::SpecifiedValueInfo;
 use style_traits::ToCss;
 
+use crate::derives::*;
 use crate::logical_geometry::PhysicalSide;
 use crate::values::animated::ToAnimatedZero;
 use crate::values::computed::position::TryTacticAdjustment;
@@ -19,6 +21,73 @@ use crate::values::generics::length::GenericAnchorSizeFunction;
 use crate::values::generics::ratio::Ratio;
 use crate::values::generics::Optional;
 use crate::values::DashedIdent;
+
+use crate::rule_tree::CascadeLevel;
+use crate::values::computed::Context;
+use crate::values::computed::ToComputedValue;
+
+
+
+#[repr(C)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+    Serialize,
+    Deserialize,
+)]
+pub struct TreeScoped<T> {
+    
+    pub value: T,
+    
+    #[css(skip)]
+    pub scope: CascadeLevel,
+}
+
+impl<T> TreeScoped<T> {
+    
+    pub fn new(value: T, scope: CascadeLevel) -> Self {
+        Self { value, scope }
+    }
+
+    
+    
+    pub fn with_default_level(value: T) -> Self {
+        Self {
+            value,
+            scope: CascadeLevel::same_tree_author_normal(),
+        }
+    }
+}
+
+impl<T: ToComputedValue> ToComputedValue for TreeScoped<T> {
+    type ComputedValue = TreeScoped<T::ComputedValue>;
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        TreeScoped {
+            value: self.value.to_computed_value(context),
+            scope: if context.current_scope().is_tree() {
+                context.current_scope()
+            } else {
+                self.scope.clone()
+            },
+        }
+    }
+
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        Self {
+            value: ToComputedValue::from_computed_value(&computed.value),
+            scope: computed.scope.clone(),
+        }
+    }
+}
 
 
 #[derive(
