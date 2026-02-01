@@ -163,6 +163,23 @@ class MockAudioDataListener : public AudioDataListener {
               (MediaTrackGraph*, int,
                (const Result<cubeb_input_processing_params, int>&)));
 };
+
+class MockProcessedMediaTrack : public ProcessedMediaTrack {
+ public:
+  explicit MockProcessedMediaTrack(TrackRate aRate)
+      : ProcessedMediaTrack(aRate, MediaSegment::AUDIO, new AudioSegment()) {
+    ON_CALL(*this, ProcessInput)
+        .WillByDefault([segment = GetData<AudioSegment>()](
+                           GraphTime aFrom, GraphTime aTo, uint32_t aFlags) {
+          segment->AppendNullData(aTo - aFrom);
+        });
+  }
+
+  MOCK_METHOD(void, ProcessInput,
+              (GraphTime aFrom, GraphTime aTo, uint32_t aFlags), (override));
+
+  uint32_t NumberOfChannels() const override { return 2; };
+};
 }  
 
 
@@ -295,6 +312,21 @@ TEST(TestAudioTrackGraph, StreamName)
   
   DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
   WaitFor(cubeb->StreamDestroyEvent());
+}
+
+TEST(TestAudioTrackGraph, OfflineDestruction)
+{
+  RefPtr graph = static_cast<MediaTrackGraphImpl*>(
+      MediaTrackGraph::CreateNonRealtimeInstance(48000));
+  
+  RefPtr dummyTrack = new MockProcessedMediaTrack(graph->GraphRate());
+  graph->AddTrack(dummyTrack);
+  dummyTrack->Destroy();
+  
+  SpinEventLoopUntil("TestAudioTrackGraph, OfflineDestruction"_ns, [&] {
+    graph.get()->AddRef();
+    return graph.get()->Release() == 1;
+  });
 }
 
 TEST(TestAudioTrackGraph, NotifyDeviceStarted)
@@ -3285,23 +3317,6 @@ TEST(TestAudioTrackGraph, PlatformProcessingNonNativeToNativeSwitch)
     ASSERT_TRUE(!native);
   }
 }
-
-class MockProcessedMediaTrack : public ProcessedMediaTrack {
- public:
-  explicit MockProcessedMediaTrack(TrackRate aRate)
-      : ProcessedMediaTrack(aRate, MediaSegment::AUDIO, new AudioSegment()) {
-    ON_CALL(*this, ProcessInput)
-        .WillByDefault([segment = GetData<AudioSegment>()](
-                           GraphTime aFrom, GraphTime aTo, uint32_t aFlags) {
-          segment->AppendNullData(aTo - aFrom);
-        });
-  }
-
-  MOCK_METHOD(void, ProcessInput,
-              (GraphTime aFrom, GraphTime aTo, uint32_t aFlags), (override));
-
-  uint32_t NumberOfChannels() const override { return 2; };
-};
 
 TEST(TestAudioTrackGraph, EmptyProcessingInterval)
 {
