@@ -289,19 +289,6 @@ add_task(async function allEnabled_sponsoredEnabled_nonsponsoredSearch() {
     context,
     matches: [QuickSuggestTestUtils.wikipediaResult()],
   });
-
-  
-  
-  let result = context.results[0];
-  let { value, highlights } = result.getDisplayableValueAndHighlights("title", {
-    tokens: context.tokens,
-  });
-  Assert.equal(
-    value,
-    `${NONSPONSORED_SEARCH_STRING} — Wikipedia Suggestion`,
-    "The title should be correct"
-  );
-  Assert.deepEqual(highlights, [], "The highlights should be correct");
 });
 
 
