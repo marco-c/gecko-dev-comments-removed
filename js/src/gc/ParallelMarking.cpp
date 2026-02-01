@@ -12,6 +12,8 @@
 #include "vm/HelperThreadState.h"
 #include "vm/Runtime.h"
 
+#include "gc/WeakMap-inl.h"
+
 using namespace js;
 using namespace js::gc;
 
@@ -65,7 +67,7 @@ bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
   
   
 
-  if (!hasWork(color)) {
+  if (gc->deferredMapsList(color).isEmpty() && !anyMarkerHasEntries()) {
     return true;
   }
 
@@ -109,10 +111,10 @@ bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
   MOZ_ASSERT(!hasWaitingTasks());
   MOZ_ASSERT(!hasActiveTasks(lock));
 
-  return !hasWork(color);
+  return gc->deferredMapsList(color).isEmpty() && !anyMarkerHasEntries();
 }
 
-bool ParallelMarker::hasWork(MarkColor color) const {
+bool ParallelMarker::anyMarkerHasEntries() const {
   for (const auto& marker : gc->markers) {
     if (marker->hasEntries(color)) {
       return true;
@@ -172,6 +174,9 @@ void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
       if (!requestWork(lock)) {
         break;  
       }
+    } else if (gc->hasDeferredWeakMaps(pm->color)) {
+      
+      markDeferredWeakmaps(lock);
     } else {
       
       break;
@@ -206,6 +211,20 @@ bool ParallelMarkTask::tryMarking(AutoLockHelperThreadState& lock) {
   pm->setTaskInactive(this, lock);
 
   return finished;
+}
+
+void ParallelMarkTask::markDeferredWeakmaps(AutoLockHelperThreadState& lock) {
+  MOZ_ASSERT(!pm->hasActiveTasks(lock));
+
+  {
+    
+    
+    AutoUnlockHelperThreadState unlock(lock);
+    marker->markDeferredWeakMapChildren(gc->deferredMapsList(pm->color));
+  }
+  if (hasWork()) {
+    pm->setTaskActive(this, lock);
+  }
 }
 
 bool ParallelMarkTask::requestWork(AutoLockHelperThreadState& lock) {

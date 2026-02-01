@@ -118,6 +118,9 @@ struct MightBeInNursery<JS::Value> {
 using WeakMapColors = HashMap<WeakMapBase*, js::gc::CellColor,
                               DefaultHasher<WeakMapBase*>, SystemAllocPolicy>;
 
+class WeakMapBase;
+using WeakMapList = mozilla::LinkedList<js::WeakMapBase>;
+
 
 
 class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
@@ -125,6 +128,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
 
  public:
   using CellColor = js::gc::CellColor;
+  using ListElement = mozilla::LinkedListElement<WeakMapBase>;
 
   WeakMapBase(JSObject* memOf, JS::Zone* zone);
   virtual ~WeakMapBase() {}

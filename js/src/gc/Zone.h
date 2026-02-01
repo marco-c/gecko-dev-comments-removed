@@ -461,6 +461,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   uint32_t tenuredAllocsSinceMinorGC_ = 0;
 
   
+  
   js::MainThreadOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>>
       gcWeakMapList_;
 

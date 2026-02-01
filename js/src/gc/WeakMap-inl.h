@@ -277,7 +277,37 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
     MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
     GCMarker* marker = GCMarker::fromTracer(trc);
     if (markMap(marker->markColor())) {
-      (void)markEntries(marker);
+      if (!memberOf) {
+        (void)markEntries(marker);
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      mozilla::Maybe<AutoLockGC> lock;
+      if (marker->isParallelMarking()) {
+        lock.emplace(marker->runtime());
+      }
+
+      
+      
+      
+      
+      
+      ListElement::remove();
+      gc::GCRuntime& gcrt = marker->runtime()->gc;
+      gcrt.deferredMapsList(marker->markColor()).insertBack(this);
     }
     return;
   }
