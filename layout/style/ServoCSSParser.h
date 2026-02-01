@@ -92,8 +92,12 @@ class ServoCSSParser {
 
 
 
-  static Maybe<StyleAbsoluteColor> ComputeAbsoluteColor(
-      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue);
+
+
+
+  static Maybe<StyleAbsoluteColor> ComputeColorWellControlColor(
+      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue,
+      StyleColorSpace aToColorSpace);
 
   
 
