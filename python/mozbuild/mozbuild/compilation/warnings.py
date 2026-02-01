@@ -18,10 +18,9 @@ from mozbuild.util import hash_file
 RE_STRIP_COLORS = re.compile(r"\x1b\[[\d;]+m")
 
 
-
 RE_CLANG_WARNING_AND_ERROR = re.compile(
     r"""
-    (?P<file>(?:[A-Za-z]:)?[^:]+)
+    (?P<file>[^:]+)
     :
     (?P<line>\d+)
     :
