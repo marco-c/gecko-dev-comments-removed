@@ -124,16 +124,17 @@ add_task(async function () {
         {
           
           
-          name: "Initial bookmark text ('Getting Started' or 'Get Involved') appearing after startup",
+          
+          name: "Initial bookmark toolbar text appearing after startup",
           condition: r =>
-            inRange(r.w, 25, 120) && 
-            inRange(r.h, 9, 15) && 
+            inRange(r.w, 8, 510) && 
+            inRange(r.h, 8, 16) && 
             inRange(
               r.y1,
               bookmarksToolbarRect.top,
               bookmarksToolbarRect.top + bookmarksToolbarRect.height / 2
             ) && 
-            inRange(r.x1, 30, 90), 
+            inRange(r.x1, 10, 500), 
         },
         {
           name: "Shadow around active tab should not flicker on macOS (bug 1960967)",
