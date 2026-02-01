@@ -1,3 +1,7 @@
 
 
 
+
+import os
+
+TRYSELECT_METRICS_PATH = os.path.abspath(os.path.join(__file__, "..", "metrics.yaml"))
