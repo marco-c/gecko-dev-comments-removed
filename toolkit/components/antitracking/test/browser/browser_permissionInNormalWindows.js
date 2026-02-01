@@ -13,7 +13,6 @@ AntiTracking.runTest(
     try {
       
       let chromeScript = SpecialPowers.loadChromeScript(_ => {
-        
         addMessageListener("go", _ => {
           function ok(what, msg) {
             sendAsyncMessage("ok", { what: !!what, msg });

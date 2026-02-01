@@ -2,8 +2,6 @@
 
 
 
-
-
 const StyleDictionary = require("style-dictionary");
 
 const COLLECTIONS = {
