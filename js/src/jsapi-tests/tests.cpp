@@ -188,16 +188,6 @@ void RunTests(int& total, int& failures, CommandOptions& options,
     
     fflush(stdout);
 
-    
-    
-    
-    
-    
-    
-
-    
-    JS::AutoSuppressGCAnalysis ignore;
-
     if (!init(test)) {
       printf("TEST-UNEXPECTED-FAIL | %s | Failed to initialize.\n", name);
       failures++;
