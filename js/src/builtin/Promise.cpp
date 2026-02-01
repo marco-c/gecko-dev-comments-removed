@@ -6226,15 +6226,19 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   MOZ_ASSERT(thisVal.isObject());
   MOZ_ASSERT(thisVal.toObject().is<AsyncFromSyncIteratorObject>());
 
+  RootedTuple<PromiseObject*, AsyncFromSyncIteratorObject*, JSObject*, Value,
+              Value, Value, JSObject*, Value, Value, Value>
+      roots(cx);
+
   
-  Rooted<PromiseObject*> resultPromise(
-      cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
+  RootedField<PromiseObject*, 0> resultPromise(
+      roots, CreatePromiseObjectWithoutResolutionFunctions(cx));
   if (!resultPromise) {
     return false;
   }
 
-  Rooted<AsyncFromSyncIteratorObject*> asyncIter(
-      cx, &thisVal.toObject().as<AsyncFromSyncIteratorObject>());
+  RootedField<AsyncFromSyncIteratorObject*, 1> asyncIter(
+      roots, &thisVal.toObject().as<AsyncFromSyncIteratorObject>());
 
   
   
@@ -6244,9 +6248,9 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
-  RootedObject iter(cx, asyncIter->iterator());
+  RootedField<JSObject*, 2> iter(roots, asyncIter->iterator());
 
-  RootedValue func(cx);
+  RootedField<Value, 3> func(roots);
   if (completionKind == CompletionKind::Normal) {
     
     func.set(asyncIter->nextMethod());
@@ -6268,7 +6272,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
       }
 
-      RootedValue resultVal(cx, ObjectValue(*resultObj));
+      RootedField<Value, 4> resultVal(roots, ObjectValue(*resultObj));
 
       
       
@@ -6313,7 +6317,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
       
       
       
-      Rooted<Value> noThrowMethodError(cx);
+      RootedField<Value, 4> noThrowMethodError(roots);
       if (!GetTypeError(cx, JSMSG_ITERATOR_NO_THROW, &noThrowMethodError)) {
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
       }
@@ -6349,8 +6353,8 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
-  RootedValue iterVal(cx, ObjectValue(*iter));
-  RootedValue resultVal(cx);
+  RootedField<Value, 4> iterVal(roots, ObjectValue(*iter));
+  RootedField<Value, 5> resultVal(roots);
   bool ok;
   if (args.length() == 0) {
     ok = Call(cx, func, iterVal, &resultVal);
@@ -6395,7 +6399,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
-  RootedObject resultObj(cx, &resultVal.toObject());
+  RootedField<JSObject*, 6> resultObj(roots, &resultVal.toObject());
 
   
   
@@ -6426,7 +6430,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
-  RootedValue doneVal(cx);
+  RootedField<Value, 7> doneVal(roots);
   if (!GetProperty(cx, resultObj, resultObj, cx->names().done, &doneVal)) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
@@ -6434,7 +6438,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
 
   
   
-  RootedValue value(cx);
+  RootedField<Value, 8> value(roots);
   if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value)) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
