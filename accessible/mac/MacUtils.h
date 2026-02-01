@@ -5,8 +5,8 @@
 
 
 
-#ifndef _MacUtils_H_
-#define _MacUtils_H_
+#ifndef MacUtils_H_
+#define MacUtils_H_
 
 #include "nsStringFwd.h"
 #include "mozAccessible.h"

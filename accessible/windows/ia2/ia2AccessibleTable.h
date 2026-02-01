@@ -5,8 +5,8 @@
 
 
 
-#ifndef _ACCESSIBLE_TABLE_H
-#define _ACCESSIBLE_TABLE_H
+#ifndef ACCESSIBLE_TABLE_H
+#define ACCESSIBLE_TABLE_H
 
 #include "AccessibleTable.h"
 #include "AccessibleTable2.h"

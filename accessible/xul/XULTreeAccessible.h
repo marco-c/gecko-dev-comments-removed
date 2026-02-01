@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_XULTreeAccessible_h__
-#define mozilla_a11y_XULTreeAccessible_h__
+#ifndef mozilla_a11y_XULTreeAccessible_h_
+#define mozilla_a11y_XULTreeAccessible_h_
 
 #include "nsITreeView.h"
 #include "XULListboxAccessible.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_SelectionManager_h__
-#define mozilla_a11y_SelectionManager_h__
+#ifndef mozilla_a11y_SelectionManager_h_
+#define mozilla_a11y_SelectionManager_h_
 
 #include "nsISelectionController.h"
 #include "nsISelectionListener.h"

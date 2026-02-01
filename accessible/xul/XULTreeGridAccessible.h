@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_XULTreeGridAccessible_h__
-#define mozilla_a11y_XULTreeGridAccessible_h__
+#ifndef mozilla_a11y_XULTreeGridAccessible_h_
+#define mozilla_a11y_XULTreeGridAccessible_h_
 
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"

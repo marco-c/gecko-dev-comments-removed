@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_MsaaXULMenuAccessible_h__
-#define mozilla_a11y_MsaaXULMenuAccessible_h__
+#ifndef mozilla_a11y_MsaaXULMenuAccessible_h_
+#define mozilla_a11y_MsaaXULMenuAccessible_h_
 
 #include "MsaaAccessible.h"
 

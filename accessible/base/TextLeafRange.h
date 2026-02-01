@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_TextLeafRange_h__
-#define mozilla_a11y_TextLeafRange_h__
+#ifndef mozilla_a11y_TextLeafRange_h_
+#define mozilla_a11y_TextLeafRange_h_
 
 #include <stdint.h>
 

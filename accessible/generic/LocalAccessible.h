@@ -3,8 +3,8 @@
 
 
 
-#ifndef _LocalAccessible_H_
-#define _LocalAccessible_H_
+#ifndef LocalAccessible_H_
+#define LocalAccessible_H_
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/a11y/Accessible.h"

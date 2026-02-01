@@ -5,8 +5,8 @@
 
 
 
-#ifndef _ACCESSIBLE_HYPERLINK_H
-#define _ACCESSIBLE_HYPERLINK_H
+#ifndef ACCESSIBLE_HYPERLINK_H
+#define ACCESSIBLE_HYPERLINK_H
 
 #include "nsISupports.h"
 

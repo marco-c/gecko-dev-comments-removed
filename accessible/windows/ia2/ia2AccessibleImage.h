@@ -5,8 +5,8 @@
 
 
 
-#ifndef _ACCESSIBLE_IMAGE_H
-#define _ACCESSIBLE_IMAGE_H
+#ifndef ACCESSIBLE_IMAGE_H
+#define ACCESSIBLE_IMAGE_H
 
 #include "AccessibleImage.h"
 #include "IUnknownImpl.h"

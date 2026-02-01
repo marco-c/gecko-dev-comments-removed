@@ -4,8 +4,8 @@
 
 
 
-#ifndef _CacheConstants_h_
-#define _CacheConstants_h_
+#ifndef CacheConstants_h_
+#define CacheConstants_h_
 
 #include "nsGkAtoms.h"
 #include "mozilla/a11y/RelationType.h"

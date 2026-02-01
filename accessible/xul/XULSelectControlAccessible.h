@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_XULSelectControlAccessible_h__
-#define mozilla_a11y_XULSelectControlAccessible_h__
+#ifndef mozilla_a11y_XULSelectControlAccessible_h_
+#define mozilla_a11y_XULSelectControlAccessible_h_
 
 #include "AccessibleWrap.h"
 

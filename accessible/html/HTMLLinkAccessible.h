@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_HTMLLinkAccessible_h__
-#define mozilla_a11y_HTMLLinkAccessible_h__
+#ifndef mozilla_a11y_HTMLLinkAccessible_h_
+#define mozilla_a11y_HTMLLinkAccessible_h_
 
 #include "HyperTextAccessible.h"
 

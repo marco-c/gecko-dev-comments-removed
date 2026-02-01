@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_a11y_Filters_h__
-#define mozilla_a11y_Filters_h__
+#ifndef mozilla_a11y_Filters_h_
+#define mozilla_a11y_Filters_h_
 
 #include <stdint.h>
 

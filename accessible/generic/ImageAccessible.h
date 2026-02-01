@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_ImageAccessible_h__
-#define mozilla_a11y_ImageAccessible_h__
+#ifndef mozilla_a11y_ImageAccessible_h_
+#define mozilla_a11y_ImageAccessible_h_
 
 #include "BaseAccessibles.h"
 #include "imgINotificationObserver.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_XULListboxAccessible_h__
-#define mozilla_a11y_XULListboxAccessible_h__
+#ifndef mozilla_a11y_XULListboxAccessible_h_
+#define mozilla_a11y_XULListboxAccessible_h_
 
 #include "BaseAccessibles.h"
 #include "mozilla/a11y/TableAccessible.h"

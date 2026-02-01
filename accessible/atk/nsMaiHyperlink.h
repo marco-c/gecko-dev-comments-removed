@@ -4,8 +4,8 @@
 
 
 
-#ifndef __MAI_HYPERLINK_H__
-#define __MAI_HYPERLINK_H__
+#ifndef MAI_HYPERLINK_H_
+#define MAI_HYPERLINK_H_
 
 #include "nsMai.h"
 #include "mozilla/a11y/Accessible.h"

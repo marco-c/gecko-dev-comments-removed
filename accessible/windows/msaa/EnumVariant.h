@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_EnumVariant_h__
-#define mozilla_a11y_EnumVariant_h__
+#ifndef mozilla_a11y_EnumVariant_h_
+#define mozilla_a11y_EnumVariant_h_
 
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"

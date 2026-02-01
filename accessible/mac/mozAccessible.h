@@ -5,8 +5,8 @@
 
 
 
-#ifndef _MozAccessible_H_
-#define _MozAccessible_H_
+#ifndef MozAccessible_H_
+#define MozAccessible_H_
 
 #include "AccessibleWrap.h"
 #include "RemoteAccessible.h"

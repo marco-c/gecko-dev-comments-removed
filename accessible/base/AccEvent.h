@@ -3,8 +3,8 @@
 
 
 
-#ifndef _AccEvent_H_
-#define _AccEvent_H_
+#ifndef AccEvent_H_
+#define AccEvent_H_
 
 #include "nsIAccessibleEvent.h"
 

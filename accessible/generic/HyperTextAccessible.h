@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_HyperTextAccessible_h__
-#define mozilla_a11y_HyperTextAccessible_h__
+#ifndef mozilla_a11y_HyperTextAccessible_h_
+#define mozilla_a11y_HyperTextAccessible_h_
 
 #include "AccessibleWrap.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"

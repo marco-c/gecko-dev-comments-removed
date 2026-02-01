@@ -3,8 +3,8 @@
 
 
 
-#ifndef _HyperTextAccessibleBase_H_
-#define _HyperTextAccessibleBase_H_
+#ifndef HyperTextAccessibleBase_H_
+#define HyperTextAccessibleBase_H_
 
 #include "AccAttributes.h"
 #include "nsIAccessibleText.h"

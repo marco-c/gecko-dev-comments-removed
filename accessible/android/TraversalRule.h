@@ -4,8 +4,8 @@
 
 
 
-#ifndef _TraversalRule_H_
-#define _TraversalRule_H_
+#ifndef TraversalRule_H_
+#define TraversalRule_H_
 
 #include "Pivot.h"
 

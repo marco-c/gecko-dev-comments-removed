@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_TextRange_inl_h__
-#define mozilla_a11y_TextRange_inl_h__
+#ifndef mozilla_a11y_TextRange_inl_h_
+#define mozilla_a11y_TextRange_inl_h_
 
 #include "TextRange.h"
 

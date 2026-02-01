@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_HTMLImageMapAccessible_h__
-#define mozilla_a11y_HTMLImageMapAccessible_h__
+#ifndef mozilla_a11y_HTMLImageMapAccessible_h_
+#define mozilla_a11y_HTMLImageMapAccessible_h_
 
 #include "HTMLLinkAccessible.h"
 #include "ImageAccessible.h"

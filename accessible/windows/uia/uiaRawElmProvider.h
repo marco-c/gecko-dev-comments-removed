@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_uiaRawElmProvider_h__
-#define mozilla_a11y_uiaRawElmProvider_h__
+#ifndef mozilla_a11y_uiaRawElmProvider_h_
+#define mozilla_a11y_uiaRawElmProvider_h_
 
 #include <objbase.h>
 #include <stdint.h>

@@ -5,8 +5,8 @@
 
 
 
-#ifndef _ACCESSIBLE_VALUE_H
-#define _ACCESSIBLE_VALUE_H
+#ifndef ACCESSIBLE_VALUE_H
+#define ACCESSIBLE_VALUE_H
 
 #include "mozilla/a11y/Accessible.h"
 #include "AccessibleValue.h"

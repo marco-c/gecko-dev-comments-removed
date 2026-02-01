@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_AccIterator_h__
-#define mozilla_a11y_AccIterator_h__
+#ifndef mozilla_a11y_AccIterator_h_
+#define mozilla_a11y_AccIterator_h_
 
 #include "Filters.h"
 #include "mozilla/a11y/DocAccessible.h"

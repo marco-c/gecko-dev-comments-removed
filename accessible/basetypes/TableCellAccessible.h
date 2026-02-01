@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_TableCellAccessible_h__
-#define mozilla_a11y_TableCellAccessible_h__
+#ifndef mozilla_a11y_TableCellAccessible_h_
+#define mozilla_a11y_TableCellAccessible_h_
 
 #include "nsTArray.h"
 #include <stdint.h>

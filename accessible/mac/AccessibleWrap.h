@@ -9,8 +9,8 @@
 
 
 
-#ifndef _AccessibleWrap_H_
-#define _AccessibleWrap_H_
+#ifndef AccessibleWrap_H_
+#define AccessibleWrap_H_
 
 #include <objc/objc.h>
 

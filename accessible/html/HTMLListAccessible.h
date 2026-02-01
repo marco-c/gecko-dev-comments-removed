@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_a11y_HTMLListAccessible_h__
-#define mozilla_a11y_HTMLListAccessible_h__
+#ifndef mozilla_a11y_HTMLListAccessible_h_
+#define mozilla_a11y_HTMLListAccessible_h_
 
 #include "BaseAccessibles.h"
 #include "HyperTextAccessible.h"

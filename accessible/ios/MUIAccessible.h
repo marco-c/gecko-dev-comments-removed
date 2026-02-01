@@ -5,8 +5,8 @@
 
 
 
-#ifndef _MUIAccessible_H_
-#define _MUIAccessible_H_
+#ifndef MUIAccessible_H_
+#define MUIAccessible_H_
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIAccessibility.h>

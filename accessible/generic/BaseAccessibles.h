@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_BaseAccessibles_h__
-#define mozilla_a11y_BaseAccessibles_h__
+#ifndef mozilla_a11y_BaseAccessibles_h_
+#define mozilla_a11y_BaseAccessibles_h_
 
 #include "AccessibleWrap.h"
 #include "HyperTextAccessible.h"

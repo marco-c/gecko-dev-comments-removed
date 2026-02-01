@@ -3,8 +3,8 @@
 
 
 
-#ifndef _Accessible_H_
-#define _Accessible_H_
+#ifndef Accessible_H_
+#define Accessible_H_
 
 #include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/AccTypes.h"

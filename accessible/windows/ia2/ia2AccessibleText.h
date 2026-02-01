@@ -5,8 +5,8 @@
 
 
 
-#ifndef _ACCESSIBLE_TEXT_H
-#define _ACCESSIBLE_TEXT_H
+#ifndef ACCESSIBLE_TEXT_H
+#define ACCESSIBLE_TEXT_H
 
 #include "AccessibleText.h"
 #include "nsIAccessibleText.h"

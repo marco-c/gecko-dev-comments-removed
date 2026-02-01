@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_ACCESSIBLE_WRAP_H__
-#define __NS_ACCESSIBLE_WRAP_H__
+#ifndef NS_ACCESSIBLE_WRAP_H_
+#define NS_ACCESSIBLE_WRAP_H_
 
 #include "nsCOMPtr.h"
 #include "LocalAccessible.h"

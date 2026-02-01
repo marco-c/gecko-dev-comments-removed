@@ -6,8 +6,8 @@
 
 
 
-#ifndef _GeckoTextMarker_H_
-#define _GeckoTextMarker_H_
+#ifndef GeckoTextMarker_H_
+#define GeckoTextMarker_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <Foundation/Foundation.h>

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_MAI_H__
-#define __NS_MAI_H__
+#ifndef NS_MAI_H_
+#define NS_MAI_H_
 
 #include <atk/atk.h>
 #include <glib.h>

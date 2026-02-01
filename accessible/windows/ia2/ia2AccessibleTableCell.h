@@ -5,8 +5,8 @@
 
 
 
-#ifndef _ACCESSIBLE_TABLECELL_H
-#define _ACCESSIBLE_TABLECELL_H
+#ifndef ACCESSIBLE_TABLECELL_H
+#define ACCESSIBLE_TABLECELL_H
 
 #include "AccessibleTableCell.h"
 #include "ia2AccessibleHypertext.h"

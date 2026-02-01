@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_MsaaRootAccessible_h__
-#define mozilla_a11y_MsaaRootAccessible_h__
+#ifndef mozilla_a11y_MsaaRootAccessible_h_
+#define mozilla_a11y_MsaaRootAccessible_h_
 
 #include "mozilla/mscom/Aggregation.h"
 #include "MsaaDocAccessible.h"

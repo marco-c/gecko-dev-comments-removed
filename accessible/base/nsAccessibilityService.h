@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsAccessibilityService_h__
-#define __nsAccessibilityService_h__
+#ifndef _nsAccessibilityService_h_
+#define _nsAccessibilityService_h_
 
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/DocManager.h"
