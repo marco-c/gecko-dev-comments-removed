@@ -96,6 +96,11 @@ ConvertYCbCrToRGB32(const uint8_t* y_buf,
                     YUVColorSpace yuv_color_space,
                     ColorRange color_range,
                     RGB32Type rgb32_type) {
+  if (pic_x < 0 || pic_y < 0 || y_pitch < 0 || uv_pitch < 0 || rgb_pitch < 0) {
+    NS_WARNING("Negative origin or pitch is unsupported");
+    return  NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   
   
   
