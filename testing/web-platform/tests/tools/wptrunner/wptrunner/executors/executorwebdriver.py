@@ -627,54 +627,31 @@ class WebDriverActionSequenceProtocolPart(ActionSequenceProtocolPart):
 class WebDriverTestDriverProtocolPart(TestDriverProtocolPart):
     def setup(self):
         self.webdriver = self.parent.webdriver
+        
+        self._test_window = self.parent.base.current_window
+        
+        
+        self._unexpected_exceptions = []
+        if hasattr(self.parent, 'bidi_events'):
+            
+            
+            self.parent.bidi_events.add_event_listener(None, self._process_bidi_event)
 
     def run(self, url, script_resume, test_window=None):
+        if test_window is None:
+            self._test_window = self.parent.base.current_window
+        else:
+            self._test_window = test_window
+
         
+        self._unexpected_exceptions = []
+
         if hasattr(self.parent, 'bidi_events'):
             
             self.parent.loop.run_until_complete(self.parent.bidi_events.unsubscribe_all())
-
-        if test_window is None:
-            test_window = self.parent.base.current_window
-
-        
-        unexpected_exceptions = []
-
-        if hasattr(self.parent, 'bidi_events'):
             
-            async def process_bidi_event(method, params):
-                try:
-                    self.logger.debug(f"Received bidi event: {method}, {params}")
-                    if hasattr(self.parent, 'bidi_browsing_context') and method == "browsingContext.userPromptOpened" and \
-                            params["context"] == test_window:
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        try:
-                            await self.parent.bidi_browsing_context.handle_user_prompt(params["context"])
-                        except Exception as e:
-                            if "no such alert" in str(e):
-                                
-                                pass
-                            else:
-                                
-                                raise e
-                        raise Exception("Unexpected user prompt in test window: %s" % params)
-                    else:
-                        self.send_message(-1, "event", method, json.dumps({
-                            "params": params,
-                            "method": method}))
-                except Exception as e:
-                    
-                    
-                    self.logger.error("BiDi event processing failed: %s" % e)
-                    unexpected_exceptions.append(e)
-
-            self.parent.bidi_events.add_event_listener(None, process_bidi_event)
+            
+            
             self.parent.loop.run_until_complete(self.parent.bidi_events.subscribe(['browsingContext.userPromptOpened'], None))
 
         
@@ -686,9 +663,9 @@ class WebDriverTestDriverProtocolPart(TestDriverProtocolPart):
         self.webdriver.url = url
 
         while True:
-            if len(unexpected_exceptions) > 0:
+            if len(self._unexpected_exceptions) > 0:
                 
-                raise unexpected_exceptions[0]
+                raise self._unexpected_exceptions[0]
 
             test_driver_message = self.get_next_message(url, script_resume, test_window)
             self.logger.debug("Receive message from testdriver: %s" % test_driver_message)
@@ -723,9 +700,9 @@ class WebDriverTestDriverProtocolPart(TestDriverProtocolPart):
             
             self.parent.loop.run_until_complete(self.parent.bidi_events.unsubscribe_all())
 
-        if len(unexpected_exceptions) > 0:
+        if len(self._unexpected_exceptions) > 0:
             
-            raise unexpected_exceptions[0]
+            raise self._unexpected_exceptions[0]
 
         return rv
 
@@ -775,6 +752,44 @@ class WebDriverTestDriverProtocolPart(TestDriverProtocolPart):
         
         deserialized_message = bidi_deserialize(message)
         return deserialized_message
+
+    async def _process_bidi_event(self, method, params):
+        """
+        Forwards WebDriver BiDi session's events to testdriver.js. Also automatically handles user
+        prompts to prevent deadlocks. Any exceptions are added to `self._unexpected_exceptions`.
+        """
+        try:
+            self.logger.debug(f"Received bidi event: {method}, {params}")
+            if hasattr(self.parent, 'bidi_browsing_context') and \
+                    method == "browsingContext.userPromptOpened" and \
+                    params["context"] == self._test_window:
+                
+                
+                
+                
+                
+                
+                
+                try:
+                    await self.parent.bidi_browsing_context.handle_user_prompt(params["context"])
+                except Exception as e:
+                    if "no such alert" in str(e):
+                        
+                        
+                        pass
+                    else:
+                        
+                        raise e
+                raise Exception("Unexpected user prompt in test window: %s" % params)
+            else:
+                self.send_message(-1, "event", method, json.dumps({
+                    "params": params,
+                    "method": method}))
+        except Exception as e:
+            
+            
+            self.logger.error("BiDi event processing failed: %s" % e)
+            self._unexpected_exceptions.append(e)
 
     def send_message(self, cmd_id, message_type, status, message=None):
         self.webdriver.execute_script(
