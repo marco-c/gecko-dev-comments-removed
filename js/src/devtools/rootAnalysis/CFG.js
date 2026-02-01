@@ -782,7 +782,25 @@ function edgeEndsValueLiveRange(edge, variable, body)
     if (edge.Kind == "Assign") {
         
         const [lhs, rhs] = edge.Exp;
-        return expressionIsVariable(lhs, variable) && isImmobileValue(rhs);
+        if (expressionIsVariable(lhs, variable) && isImmobileValue(rhs)) {
+            return true;
+        }
+        
+        
+        if (isImmobileValue(rhs) && lhs.Kind == "Fld") {
+            if (lhs.Field.Name[0] == "mIsSome" &&
+                lhs.Field.FieldCSU.Type.Name.includes("::MaybeStorage<") &&
+                str(rhs) == "0")
+            {
+                
+                let inner = lhs;
+                while (inner.Kind == "Fld") {
+                    inner = inner.Exp[0];
+                }
+                return expressionIsVariable(inner, variable);
+            }
+        }
+        return false;
     }
 
     if (edge.Kind != "Call")
