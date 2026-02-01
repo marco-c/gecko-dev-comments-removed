@@ -3563,7 +3563,13 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
           if (aState.mReflowInput.WillReflowAgainForClearance()) {
             line->MarkDirty();
             keepGoing = false;
-            aState.mReflowStatus.SetIncomplete();
+            
+            
+            
+            
+            
+            
+            aState.mReflowStatus.Reset();
             break;
           }
 
