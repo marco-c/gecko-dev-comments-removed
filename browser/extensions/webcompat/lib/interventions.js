@@ -6,15 +6,6 @@
 
 
 
-const debugLoggingPrefValue = browser.aboutConfigPrefs.getPref(
-  "disable_debug_logging"
-);
-let debugLog = function () {
-  if (debugLoggingPrefValue !== true) {
-    console.debug.apply(this, arguments);
-  }
-};
-
 const ENABLE_INTERVENTIONS_PREF = "enable_interventions";
 
 function getTLDForUrl(url) {
@@ -653,10 +644,9 @@ class Interventions {
       this.#uaOverridesListener.restartListener();
     }
 
-    return InterventionHelpers._registerContentScripts(
+    return InterventionHelpers.registerContentScripts(
       contentScriptsToRegister,
-      "webcompat",
-      debugLog
+      "webcompat"
     ).then(() => {
       if (enabledUAoverrides.length) {
         debugLog(
