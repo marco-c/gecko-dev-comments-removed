@@ -375,6 +375,11 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
     if (result.isDead()) {
       auto* registry = result.initialTarget();
       registry->queue()->setHasRegistry(false);
+
+      
+      
+      registry->queue()->clear();
+
       e.removeFront();
     } else {
       FinalizationRegistryObject* registry = result.finalTarget();
@@ -414,8 +419,16 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
         auto* record = &iter->as<FinalizationRecordObject>();
         record->setInRecordMap(false);
         record->unlink();
+
+        
+        
+        
+        
+        
+        
         FinalizationQueueObject* queue = record->queue();
         queue->queueRecordToBeCleanedUp(record);
+
         if (shouldQueueFinalizationRegistryForCleanup(queue)) {
           gc->queueFinalizationRegistryForCleanup(queue);
         }
@@ -435,6 +448,7 @@ bool FinalizationObservers::shouldQueueFinalizationRegistryForCleanup(
   
   
   
+  MOZ_ASSERT(queue->hasRegistry());
   Zone* zone = queue->zone();
   return !zone->wasGCStarted() || zone->gcState() >= Zone::Sweep;
 }
