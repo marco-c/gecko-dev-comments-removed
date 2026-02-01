@@ -3285,12 +3285,15 @@ bool GenericMethod(JSContext* cx, unsigned argc, JS::Value* vp) {
     bool ok = ThisPolicy::HandleInvalidThis(cx, args, false, protoID);
     return ExceptionPolicy::HandleException(cx, args, info, ok);
   }
-  JS::Rooted<JSObject*> obj(cx, ThisPolicy::ExtractThisObject(args));
+
+  JS::RootedTuple<JSObject*, JSObject*> roots(cx);
+  JS::RootedField<JSObject*, 0> obj(roots, ThisPolicy::ExtractThisObject(args));
 
   
   
   
-  JS::Rooted<JSObject*> rootSelf(cx, ThisPolicy::MaybeUnwrapThisObject(obj));
+  JS::RootedField<JSObject*, 1> rootSelf(
+      roots, ThisPolicy::MaybeUnwrapThisObject(obj));
   void* self;
   {
     nsresult rv =
