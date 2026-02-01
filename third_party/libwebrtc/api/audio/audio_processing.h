@@ -145,7 +145,7 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
 
       
       
-      int maximum_internal_processing_rate = 48000;
+      int maximum_internal_processing_rate = 32000;
       
       bool multi_channel_render = false;
       
