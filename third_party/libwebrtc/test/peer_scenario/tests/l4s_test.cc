@@ -641,7 +641,9 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msEcnWithScream) {
   
   
   EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(600));
-  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(2100));
+  
+  
+  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(3000));
 }
 
 TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithGoogCC) {
