@@ -43,12 +43,10 @@ inline constexpr bool IsAscii(char aChar) {
   return IsAscii(static_cast<unsigned char>(aChar));
 }
 
-#ifdef __cpp_char8_t
 
 inline constexpr bool IsAscii(char8_t aChar) {
   return IsAscii(static_cast<unsigned char>(aChar));
 }
-#endif
 
 
 inline constexpr bool IsAscii(char16_t aChar) { return aChar < 0x80; }

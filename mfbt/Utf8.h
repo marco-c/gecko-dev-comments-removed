@@ -176,10 +176,8 @@ union Utf8Unit {
     
   }
 
-#ifdef __cpp_char8_t
   explicit constexpr Utf8Unit(char8_t aUnit)
       : mValue(static_cast<char>(aUnit)) {}
-#endif
 
   constexpr bool operator==(const Utf8Unit& aOther) const {
     return mValue == aOther.mValue;
