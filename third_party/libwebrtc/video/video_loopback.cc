@@ -9,8 +9,7 @@
 
 #include "video/video_loopback.h"
 
-#include <stdio.h>
-
+#include <cstdio>
 #include <optional>
 #include <string>
 #include <vector>
@@ -24,10 +23,8 @@
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/field_trial.h"
 #include "test/gtest.h"
 #include "test/run_test.h"
-#include "test/test_flags.h"
 #include "video/video_quality_test.h"
 
 
@@ -436,12 +433,12 @@ int RunLoopbackTest(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   absl::ParseCommandLine(argc, argv);
 
-  LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs));
-
-  
-  
-  const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
-  field_trial::InitFieldTrialsFromString(field_trials.c_str());
+  if (absl::GetFlag(FLAGS_logs)) {
+    
+    
+    LogMessage::LogToDebug(LoggingSeverity::LS_INFO);
+    LogMessage::SetLogToStderr(true);
+  }
 
   test::RunTest(Loopback);
   return 0;
