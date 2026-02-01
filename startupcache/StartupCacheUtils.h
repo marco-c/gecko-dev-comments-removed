@@ -16,6 +16,14 @@ class nsIURI;
 namespace mozilla {
 namespace scache {
 
+enum class ResourceType {
+  Gre,   
+  App,   
+  Xpi,   
+  File,  
+  Other  
+};
+
 nsresult NewObjectInputStreamFromBuffer(const char* buffer, uint32_t len,
                                         nsIObjectInputStream** stream);
 
@@ -63,11 +71,12 @@ nsresult ResolveURI(nsIURI* in, nsIURI** out);
 
 
 nsresult PathifyURI(const char* loaderType, size_t loaderTypeLength, nsIURI* in,
-                    nsACString& out);
+                    nsACString& out, ResourceType* aResourceType);
 
 template <int N>
-nsresult PathifyURI(const char (&loaderType)[N], nsIURI* in, nsACString& out) {
-  return PathifyURI(loaderType, N - 1, in, out);
+nsresult PathifyURI(const char (&loaderType)[N], nsIURI* in, nsACString& out,
+                    ResourceType* aResourceType) {
+  return PathifyURI(loaderType, N - 1, in, out, aResourceType);
 }
 
 }  

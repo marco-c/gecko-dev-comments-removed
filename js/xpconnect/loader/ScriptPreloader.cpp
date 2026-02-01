@@ -29,6 +29,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/scache/StartupCache.h"
+#include "mozilla/scache/StartupCacheUtils.h"
 
 #include "crc32c.h"
 #include "js/CompileOptions.h"              
@@ -986,6 +987,14 @@ already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(
       !(XRE_IsContentProcess() && !mCacheInitialized),
       "ScriptPreloader must be initialized before getting cached "
       "scripts in the content process.");
+
+#ifdef DEBUG
+  
+  
+  MOZ_ASSERT(path.Find("/resource/gre/"_ns) != kNotFound ||
+                 path.Find("/resource/app/"_ns) != kNotFound,
+             "GetCachedStencil should only be called for omni.ja scripts");
+#endif
 
   
   
