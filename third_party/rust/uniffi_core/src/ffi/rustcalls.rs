@@ -134,6 +134,14 @@ pub struct LiftArgsError {
     pub error: anyhow::Error,
 }
 
+impl LiftArgsError {
+    pub fn to_internal_error(self) -> RustCallError {
+        let LiftArgsError { arg_name, error } = self;
+
+        RustCallError::InternalError(format!("Failed to convert arg '{arg_name}':\n{error:?}"))
+    }
+}
+
 
 
 
@@ -159,6 +167,28 @@ where
     R: FfiDefault,
 {
     rust_call_with_out_status(out_status, callback).unwrap_or_else(R::ffi_default)
+}
+
+
+
+
+
+
+pub type RustCallResult<T> = Result<T, RustCallStatus>;
+
+
+
+
+
+pub(crate) fn try_rust_call<F, R>(callback: F) -> Result<R, RustCallStatus>
+where
+    F: panic::UnwindSafe + FnOnce() -> Result<R, RustCallError>,
+{
+    let mut out_status = RustCallStatus::default();
+    match rust_call_with_out_status(&mut out_status, callback) {
+        Some(r) => Ok(r),
+        None => Err(out_status),
+    }
 }
 
 
@@ -263,7 +293,7 @@ mod test {
         assert_eq!(
             <String as Lift<UniFfiTag>>::try_lift(ManuallyDrop::into_inner(status.error_buf))
                 .unwrap(),
-            "Failed to convert arg 'foo': invalid handle"
+            "Failed to convert arg 'foo':\ninvalid handle"
         );
 
         

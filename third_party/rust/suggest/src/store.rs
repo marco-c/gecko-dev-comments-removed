@@ -633,6 +633,9 @@ where
         let ingested_records = write_scope.read(|dao| dao.get_ingested_records())?;
 
         
+        let mut has_changes = false;
+
+        
         for (collection, record_types) in record_types_by_collection {
             breadcrumb!("Ingesting collection {}", collection.name());
             let records = self.settings_client.get_records(collection)?;
@@ -641,14 +644,14 @@ where
             
             for record_type in record_types {
                 breadcrumb!("Ingesting record_type: {record_type}");
+                let changes = RecordChanges::new(
+                    records.iter().filter(|r| r.record_type() == record_type),
+                    ingested_records.iter().filter(|i| {
+                        i.record_type == record_type.as_str() && i.collection == collection.name()
+                    }),
+                );
+                has_changes |= changes.has_changes();
                 metrics.measure_ingest(record_type.to_string(), |context| {
-                    let changes = RecordChanges::new(
-                        records.iter().filter(|r| r.record_type() == record_type),
-                        ingested_records.iter().filter(|i| {
-                            i.record_type == record_type.as_str()
-                                && i.collection == collection.name()
-                        }),
-                    );
                     write_scope.write(|dao| {
                         self.process_changes(dao, collection, changes, &constraints, context)
                     })
@@ -656,6 +659,18 @@ where
                 write_scope.err_if_interrupted()?;
             }
         }
+
+        
+        
+        
+        if has_changes {
+            write_scope.err_if_interrupted()?;
+            breadcrumb!("Truncating WAL on changes");
+            write_scope
+                .conn
+                .pragma_update(None, "wal_checkpoint", "TRUNCATE")?;
+        }
+
         breadcrumb!("Ingestion complete");
 
         Ok(metrics)
@@ -869,6 +884,10 @@ impl<'a> RecordChanges<'a> {
             updated,
             unchanged,
         }
+    }
+
+    fn has_changes(&self) -> bool {
+        !self.new.is_empty() || !self.updated.is_empty() || !self.deleted.is_empty()
     }
 }
 
@@ -3997,6 +4016,24 @@ pub(crate) mod tests {
                 },
             ],
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn record_changes_change_detection() -> anyhow::Result<()> {
+        let mut rc = RecordChanges::new(std::iter::empty(), std::iter::empty());
+        assert!(!rc.has_changes(), "No changes");
+
+        let record = Record {
+            id: SuggestRecordId::new("42".to_string()),
+            last_modified: 0,
+            attachment: None,
+            payload: SuggestRecord::Icon,
+            collection: Collection::Other,
+        };
+        rc = RecordChanges::new(std::iter::once(&record), std::iter::empty());
+        assert!(rc.has_changes(), "Has changes");
 
         Ok(())
     }

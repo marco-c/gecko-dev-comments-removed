@@ -2,18 +2,34 @@
 
 
 
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
+
 use parking_lot::Mutex;
 
-static RECENT_BREADCRUMBS: Mutex<BreadcrumbRingBuffer> = Mutex::new(BreadcrumbRingBuffer::new());
+static GLOBALS: Mutex<Globals> = Mutex::new(Globals::new());
 
 pub fn report_error_to_app(type_name: String, message: String) {
     
+    let breadcrumbs = {
+        let mut globals = GLOBALS.lock();
+        if !globals
+            .rate_limiter
+            .should_send_report(&type_name, Instant::now())
+        {
+            return;
+        }
+        globals.breadcrumbs.get_breadcrumbs()
+    };
     
     
     
     
     
-    let breadcrumbs = RECENT_BREADCRUMBS.lock().get_breadcrumbs().join("\n");
+    
+    let breadcrumbs = breadcrumbs.join("\n");
     tracing_support::error!(target: "app-services-error-reporter::error", message, type_name, breadcrumbs);
 }
 
@@ -22,8 +38,23 @@ pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32
     
     
     
-    RECENT_BREADCRUMBS.lock().push(message.clone());
+    GLOBALS.lock().breadcrumbs.push(message.clone());
     tracing_support::info!(target: "app-services-error-reporter::breadcrumb", message, module, line, column);
+}
+
+
+struct Globals {
+    breadcrumbs: BreadcrumbRingBuffer,
+    rate_limiter: RateLimiter,
+}
+
+impl Globals {
+    const fn new() -> Self {
+        Self {
+            breadcrumbs: BreadcrumbRingBuffer::new(),
+            rate_limiter: RateLimiter::new(),
+        }
+    }
 }
 
 
@@ -71,6 +102,49 @@ fn truncate_breadcrumb(breadcrumb: String) -> String {
         .find(|i| breadcrumb.is_char_boundary(*i))
         .unwrap_or(0);
     breadcrumb[0..split_point].to_string()
+}
+
+
+
+
+
+
+struct RateLimiter {
+    
+    last_report: Option<HashMap<String, Instant>>,
+}
+
+impl RateLimiter {
+    
+    const INTERVAL: Duration = Duration::from_secs(180);
+
+    const fn new() -> Self {
+        Self { last_report: None }
+    }
+
+    fn should_send_report(&mut self, error_type: &str, now: Instant) -> bool {
+        let component = error_type.split("-").next().unwrap();
+        let last_report = self.last_report.get_or_insert_with(HashMap::default);
+
+        if let Some(last_report) = last_report.get(component) {
+            match now.checked_duration_since(*last_report) {
+                
+                Some(elapsed) if elapsed < Self::INTERVAL => {
+                    return false;
+                }
+                
+                
+                
+                
+                
+                
+                
+                _ => (),
+            }
+        }
+        last_report.insert(component.to_string(), now);
+        true
+    }
 }
 
 #[cfg(test)]
@@ -211,5 +285,42 @@ mod test {
         
         
         assert_eq!(truncate_breadcrumb("0".repeat(99) + "🔥").len(), 99);
+    }
+
+    #[test]
+    fn test_rate_limiter() {
+        let mut rate_limiter = RateLimiter::new();
+        let start = Instant::now();
+        let min = Duration::from_secs(60);
+        
+        assert!(rate_limiter.should_send_report("test-type", start));
+        
+        
+        assert!(!rate_limiter.should_send_report("test-type", start));
+        assert!(!rate_limiter.should_send_report("test-type", start + min * 1));
+        assert!(!rate_limiter.should_send_report("test-type", start + min * 2));
+        assert!(rate_limiter.should_send_report("test-type", start + min * 3));
+        assert!(!rate_limiter.should_send_report("test-type", start + min * 4));
+        assert!(!rate_limiter.should_send_report("test-type", start + min * 5));
+        assert!(rate_limiter.should_send_report("test-type", start + min * 6));
+
+        assert!(rate_limiter.should_send_report("test-type", start + min * 60));
+        assert!(!rate_limiter.should_send_report("test-type", start + min * 61));
+        assert!(!rate_limiter.should_send_report("test-type", start + min * 62));
+        assert!(rate_limiter.should_send_report("test-type", start + min * 63));
+    }
+
+    #[test]
+    fn test_rate_limiter_type_matching() {
+        let mut rate_limiter = RateLimiter::new();
+        let start = Instant::now();
+        
+        assert!(rate_limiter.should_send_report("componenta-network-error", start));
+        assert!(!rate_limiter.should_send_report("componenta-network-error", start));
+        
+        assert!(!rate_limiter.should_send_report("componenta-database-error", start));
+        
+        assert!(rate_limiter.should_send_report("componentb-database-error", start));
+        assert!(rate_limiter.should_send_report("componentaa-network-error", start));
     }
 }

@@ -13,8 +13,9 @@ use uniffi_bindgen::bindings::{generate_swift_bindings, SwiftBindingsOptions};
 struct Cli {
     #[command(flatten)]
     kinds: Kinds,
+    #[clap(name = "PATH_TO_LIBRARY_OR_UDL")]
     
-    library_path: Utf8PathBuf,
+    source: Utf8PathBuf,
     
     out_dir: Utf8PathBuf,
     
@@ -65,7 +66,7 @@ impl From<Cli> for SwiftBindingsOptions {
             generate_swift_sources: cli.kinds.swift_sources,
             generate_headers: cli.kinds.headers,
             generate_modulemap: cli.kinds.modulemap,
-            library_path: cli.library_path,
+            source: cli.source,
             out_dir: cli.out_dir,
             xcframework: cli.xcframework,
             module_name: cli.module_name,

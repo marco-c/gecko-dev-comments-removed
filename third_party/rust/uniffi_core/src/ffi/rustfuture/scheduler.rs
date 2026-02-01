@@ -52,7 +52,7 @@ impl Scheduler {
             }
             Self::Waked => {
                 *self = Self::Empty;
-                callback(data, RustFuturePoll::MaybeReady);
+                callback(data, RustFuturePoll::Wake);
             }
             Self::Cancelled => {
                 callback(data, RustFuturePoll::Ready);
@@ -67,7 +67,7 @@ impl Scheduler {
                 let old_data = *old_data;
                 let callback = *callback;
                 *self = Self::Empty;
-                callback(old_data, RustFuturePoll::MaybeReady);
+                callback(old_data, RustFuturePoll::Wake);
             }
             
             

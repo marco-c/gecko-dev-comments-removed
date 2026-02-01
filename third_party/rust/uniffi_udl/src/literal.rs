@@ -3,7 +3,7 @@
 
 
 use anyhow::{bail, Result};
-use uniffi_meta::{LiteralMetadata, Radix, Type};
+use uniffi_meta::{DefaultValueMetadata, LiteralMetadata, Radix, Type};
 
 
 pub type Literal = LiteralMetadata;
@@ -87,7 +87,10 @@ pub(super) fn convert_default_value(
         }
         (weedle::literal::DefaultValue::Null(_), Type::Optional { .. }) => Literal::None,
         (_, Type::Optional { inner_type, .. }) => Literal::Some {
-            inner: Box::new(convert_default_value(default_value, inner_type)?),
+            inner: Box::new(DefaultValueMetadata::Literal(convert_default_value(
+                default_value,
+                inner_type,
+            )?)),
         },
 
         

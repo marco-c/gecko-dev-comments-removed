@@ -2,10 +2,37 @@
 
 
 
-use crate::pipeline::{general, initial, Pipeline};
+use anyhow::{bail, Result};
+
+pub use crate::pipeline::{general, initial};
+use uniffi_pipeline::{Node, Pipeline};
+mod callback_interfaces;
+mod config;
+mod default;
+mod error;
+mod external_types;
+mod ffi_types;
+mod interfaces;
+mod modules;
+mod names;
+pub mod nodes;
+mod types;
+
+pub use nodes::*;
 
 
 
-pub fn pipeline() -> Pipeline<initial::Root, general::Root> {
-    general::pipeline()
+pub fn pipeline() -> Pipeline<initial::Root, Root> {
+    general::pipeline("python")
+        .convert_ir_pass::<Root>()
+        .pass(config::pass)
+        .pass(external_types::pass)
+        .pass(names::pass)
+        .pass(interfaces::pass)
+        .pass(modules::pass)
+        .pass(callback_interfaces::pass)
+        .pass(types::pass)
+        .pass(default::pass)
+        .pass(ffi_types::pass)
+        .pass(error::pass)
 }

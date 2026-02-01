@@ -34,6 +34,9 @@ use uniffi_meta::{
 
 
 
+
+
+
 pub fn generate_bindings<T: BindingGenerator>(
     library_path: &Utf8Path,
     crate_name: Option<String>,
@@ -61,6 +64,21 @@ pub fn generate_bindings<T: BindingGenerator>(
         cdylib: calc_cdylib_name(library_path).map(ToOwned::to_owned),
     };
     binding_generator.update_component_configs(&settings, &mut components)?;
+
+    
+    for component in &mut components {
+        component
+            .ci
+            .derive_ffi_funcs()
+            .context("Failed to derive FFI functions")?;
+    }
+
+    
+    
+    let all_cis = components.iter().map(|c| c.ci.clone()).collect::<Vec<_>>();
+    components
+        .iter_mut()
+        .for_each(|c| c.ci.set_all_component_interfaces(all_cis.clone()));
 
     fs::create_dir_all(out_dir)?;
     if let Some(crate_name) = &crate_name {
@@ -100,10 +118,10 @@ pub fn calc_cdylib_name(library_path: &Utf8Path) -> Option<&str> {
 
 
 
-pub fn find_components(
+pub fn find_cis(
     library_path: &Utf8Path,
     config_supplier: &dyn BindgenCrateConfigSupplier,
-) -> Result<Vec<Component<TomlTable>>> {
+) -> Result<Vec<ComponentInterface>> {
     let items = macro_metadata::extract_from_library(library_path)?;
     let mut metadata_groups = create_metadata_groups(&items);
     group_metadata(&mut metadata_groups, items)?;
@@ -111,14 +129,7 @@ pub fn find_components(
     for group in metadata_groups.values_mut() {
         let crate_name = group.namespace.crate_name.clone();
         if let Some(udl_group) = load_udl_metadata(group, &crate_name, config_supplier)? {
-            let mut udl_items = udl_group
-                .items
-                .into_iter()
-                
-                
-                
-                .filter(|item| !matches!(item, Metadata::UniffiTrait { .. }))
-                .collect();
+            let mut udl_items = udl_group.items.into_iter().collect();
             group.items.append(&mut udl_items);
             if group.namespace_docstring.is_none() {
                 group.namespace_docstring = udl_group.namespace_docstring;
@@ -137,10 +148,29 @@ pub fn find_components(
             let crate_name = &group.namespace.crate_name;
             let mut ci = ComponentInterface::new(crate_name);
             ci.add_metadata(group)?;
+            ci.set_crate_to_namespace_map(crate_to_namespace_map.clone());
+            Ok(ci)
+        })
+        .collect()
+}
+
+
+
+
+
+
+
+
+pub fn find_components(
+    library_path: &Utf8Path,
+    config_supplier: &dyn BindgenCrateConfigSupplier,
+) -> Result<Vec<Component<TomlTable>>> {
+    find_cis(library_path, config_supplier)?
+        .into_iter()
+        .map(|ci| {
             let config = config_supplier
                 .get_toml(ci.crate_name())?
                 .unwrap_or_default();
-            ci.set_crate_to_namespace_map(crate_to_namespace_map.clone());
             Ok(Component { ci, config })
         })
         .collect()

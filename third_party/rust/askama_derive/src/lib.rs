@@ -597,22 +597,3 @@ macro_rules! fmt_right {
 }
 
 pub(crate) use {fmt_left, fmt_right};
-
-
-
-const BUILTIN_FILTERS: &[&str] = &[
-    "capitalize",
-    "center",
-    "indent",
-    "lower",
-    "lowercase",
-    "title",
-    "trim",
-    "truncate",
-    "upper",
-    "uppercase",
-    "wordcount",
-];
-
-
-const BUILTIN_FILTERS_NEED_ALLOC: &[&str] = &["center", "truncate"];

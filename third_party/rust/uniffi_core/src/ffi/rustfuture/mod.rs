@@ -12,7 +12,7 @@ use scheduler::*;
 #[cfg(test)]
 mod tests;
 
-use crate::{derive_ffi_traits, Handle, HandleAlloc, LiftArgsError, LowerReturn, RustCallStatus};
+use crate::{FfiDefault, Handle, LiftArgsError, LowerReturn, RustCallStatus};
 
 
 #[repr(i8)]
@@ -21,7 +21,7 @@ pub enum RustFuturePoll {
     
     Ready = 0,
     
-    MaybeReady = 1,
+    Wake = 1,
 }
 
 
@@ -39,7 +39,8 @@ pub type RustFutureContinuationCallback = extern "C" fn(callback_data: u64, Rust
 
 
 #[doc(hidden)]
-pub trait UniffiCompatibleFuture<T>: Future<Output = T> {}
+#[cfg(not(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded")))]
+pub trait UniffiCompatibleFuture<T>: Future<Output = T> + Send {}
 
 #[doc(hidden)]
 pub trait FutureLowerReturn<UT>: LowerReturn<UT> {}
@@ -88,6 +89,9 @@ impl<UT, LR> FutureLowerReturn<UT> for LR where LR: LowerReturn<UT> + Send {}
 
 
 
+#[cfg(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded"))]
+pub trait UniffiCompatibleFuture<T>: Future<Output = T> {}
+
 #[cfg(target_arch = "wasm32")]
 impl<T, F> UniffiCompatibleFuture<T> for F where F: Future<Output = T> {}
 #[cfg(all(target_arch = "wasm32", feature = "wasm-unstable-single-threaded"))]
@@ -103,22 +107,11 @@ impl<UT, LR> FutureLowerReturn<UT> for LR where LR: LowerReturn<UT> {}
 #[allow(clippy::let_and_return)]
 pub fn rust_future_new<F, T, UT>(future: F, tag: UT) -> Handle
 where
-    
-    
-    
-    
     F: UniffiCompatibleFuture<Result<T, LiftArgsError>> + 'static,
-    
-    
     T: FutureLowerReturn<UT> + 'static,
-    
-    UT: Send + 'static,
-    
-    dyn RustFutureFfi<T::ReturnType>: HandleAlloc<UT>,
 {
-    let handle = HandleAlloc::new_handle(
-        RustFuture::new(Box::pin(future), tag) as Arc<dyn RustFutureFfi<T::ReturnType>>
-    );
+    let rust_future = Arc::new(RustFuture::new(future, tag));
+    let handle = Handle::from_arc(rust_future);
     trace!("rust_future_new: {handle:?}");
     handle
 }
@@ -132,15 +125,13 @@ where
 
 
 
-pub unsafe fn rust_future_poll<ReturnType, UT>(
+pub unsafe fn rust_future_poll<FfiType>(
     handle: Handle,
     callback: RustFutureContinuationCallback,
     data: u64,
-) where
-    dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
-{
+) {
     trace!("rust_future_poll: {handle:?}");
-    <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::get_arc(handle).ffi_poll(callback, data)
+    Handle::into_arc_borrowed::<RustFuture<FfiType>>(handle).poll(callback, data)
 }
 
 
@@ -153,12 +144,9 @@ pub unsafe fn rust_future_poll<ReturnType, UT>(
 
 
 
-pub unsafe fn rust_future_cancel<ReturnType, UT>(handle: Handle)
-where
-    dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
-{
+pub unsafe fn rust_future_cancel<FfiType>(handle: Handle) {
     trace!("rust_future_cancel: {handle:?}");
-    <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::get_arc(handle).ffi_cancel()
+    Handle::into_arc_borrowed::<RustFuture<FfiType>>(handle).cancel()
 }
 
 
@@ -171,15 +159,15 @@ where
 
 
 
-pub unsafe fn rust_future_complete<ReturnType, UT>(
+pub unsafe fn rust_future_complete<FfiType>(
     handle: Handle,
     out_status: &mut RustCallStatus,
-) -> ReturnType
+) -> FfiType
 where
-    dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
+    FfiType: FfiDefault,
 {
     trace!("rust_future_complete: {handle:?}");
-    <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::get_arc(handle).ffi_complete(out_status)
+    Handle::into_arc_borrowed::<RustFuture<FfiType>>(handle).complete(out_status)
 }
 
 
@@ -188,25 +176,7 @@ where
 
 
 
-pub unsafe fn rust_future_free<ReturnType, UT>(handle: Handle)
-where
-    dyn RustFutureFfi<ReturnType>: HandleAlloc<UT>,
-{
+pub unsafe fn rust_future_free<FfiType>(handle: Handle) {
     trace!("rust_future_free: {handle:?}");
-    <dyn RustFutureFfi<ReturnType> as HandleAlloc<UT>>::consume_handle(handle).ffi_free()
+    Handle::into_arc_borrowed::<RustFuture<FfiType>>(handle).free()
 }
-
-
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<u8>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<i8>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<u16>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<i16>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<u32>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<i32>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<u64>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<i64>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<f32>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<f64>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<*const std::ffi::c_void>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<crate::RustBuffer>);
-derive_ffi_traits!(impl<UT> HandleAlloc<UT> for dyn RustFutureFfi<()>);

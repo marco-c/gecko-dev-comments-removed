@@ -72,6 +72,7 @@ use nss::pk11::sym_key::{
 
 
 
+#[uniffi::trait_interface]
 pub trait EncryptorDecryptor: Send + Sync {
     fn encrypt(&self, cleartext: Vec<u8>) -> ApiResult<Vec<u8>>;
     fn decrypt(&self, ciphertext: Vec<u8>) -> ApiResult<Vec<u8>>;
@@ -152,6 +153,7 @@ impl EncryptorDecryptor for ManagedEncryptorDecryptor {
 
 
 
+#[uniffi::trait_interface]
 pub trait KeyManager: Send + Sync {
     fn get_key(&self) -> ApiResult<Vec<u8>>;
 }

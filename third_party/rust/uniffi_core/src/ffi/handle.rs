@@ -2,6 +2,7 @@
 
 
 
+use std::{fmt, sync::Arc};
 
 
 
@@ -15,7 +16,8 @@
 
 
 
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
+
+#[derive(Clone, Default, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Handle(u64);
 
@@ -26,6 +28,14 @@ impl Handle {
 
     pub fn as_pointer<T>(&self) -> *const T {
         self.0 as *const T
+    }
+
+    
+    pub fn is_foreign(&self) -> bool {
+        
+        
+        
+        (self.0 & 1) == 1
     }
 
     
@@ -44,5 +54,54 @@ impl Handle {
 
     pub fn as_raw(&self) -> u64 {
         self.0
+    }
+
+    
+    pub fn from_arc<T>(arc: Arc<T>) -> Self {
+        Self::from_pointer(Arc::into_raw(arc))
+    }
+
+    
+    
+    
+    
+    
+    
+    pub unsafe fn into_arc<T>(self) -> Arc<T> {
+        Arc::from_raw(self.as_pointer())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn into_arc_borrowed<T>(self) -> Arc<T> {
+        self.clone_arc_handle::<T>();
+        Arc::from_raw(self.as_pointer())
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn clone_arc_handle<T>(&self) -> Self {
+        Arc::increment_strong_count(self.as_pointer::<T>());
+        
+        Self(self.0)
+    }
+}
+
+impl fmt::Debug for Handle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Handle(0x{:x})", self.0)
     }
 }

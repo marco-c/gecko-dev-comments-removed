@@ -2,7 +2,12 @@
 
 
 
-use crate::{new_backend::get_backend, settings::validate_request, Request, Response, Result};
+use crate::{
+    header_names::USER_AGENT,
+    new_backend::get_backend,
+    settings::{validate_request, GLOBAL_SETTINGS},
+    Request, Response, Result,
+};
 
 
 
@@ -14,7 +19,8 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(settings: ClientSettings) -> Self {
+    pub fn new(mut settings: ClientSettings) -> Self {
+        settings.update_from_global_settings();
         Self { settings }
     }
 
@@ -31,13 +37,19 @@ impl Client {
         }
         let mut client_settings = settings;
         client_settings.ohttp_channel = Some(channel.to_string());
-        Ok(Self {
-            settings: client_settings,
-        })
+        Ok(Self::new(client_settings))
     }
 
-    pub async fn send(&self, request: Request) -> Result<Response> {
+    fn set_user_agent(&self, request: &mut Request) -> Result<()> {
+        if let Some(user_agent) = &self.settings.user_agent {
+            request.headers.insert_if_missing(USER_AGENT, user_agent)?;
+        }
+        Ok(())
+    }
+
+    pub async fn send(&self, mut request: Request) -> Result<Response> {
         validate_request(&request)?;
+        self.set_user_agent(&mut request)?;
 
         
         #[cfg(feature = "ohttp")]
@@ -74,6 +86,21 @@ pub struct ClientSettings {
     
     #[cfg(feature = "ohttp")]
     pub ohttp_channel: Option<String>,
+    
+    
+    
+    
+    #[uniffi(default = None)]
+    pub user_agent: Option<String>,
+}
+
+impl ClientSettings {
+    pub fn update_from_global_settings(&mut self) {
+        let settings = GLOBAL_SETTINGS.read();
+        if self.user_agent.is_none() {
+            self.user_agent = settings.default_user_agent.clone();
+        }
+    }
 }
 
 impl Default for ClientSettings {
@@ -84,8 +111,50 @@ impl Default for ClientSettings {
             #[cfg(not(target_os = "ios"))]
             timeout: 10000,
             redirect_limit: 10,
+            user_agent: None,
             #[cfg(feature = "ohttp")]
             ohttp_channel: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use url::Url;
+
+    use super::*;
+    use crate::settings;
+
+    #[test]
+    fn test_user_agent() {
+        let mut req = Request::get(Url::parse("http://example.com/").unwrap());
+        
+        let client = Client::new(ClientSettings::default());
+        client.set_user_agent(&mut req).unwrap();
+        assert_eq!(req.headers.get(USER_AGENT), None);
+        
+        settings::set_global_default_user_agent("global-user-agent".into());
+        let client = Client::new(ClientSettings::default());
+        let mut req = Request::get(Url::parse("http://example.com/").unwrap());
+        client.set_user_agent(&mut req).unwrap();
+        assert_eq!(req.headers.get(USER_AGENT), Some("global-user-agent"));
+        
+        let client = Client::new(ClientSettings {
+            user_agent: Some("client-settings-user-agent".into()),
+            ..ClientSettings::default()
+        });
+        let mut req = Request::get(Url::parse("http://example.com/").unwrap());
+        client.set_user_agent(&mut req).unwrap();
+        assert_eq!(
+            req.headers.get(USER_AGENT),
+            Some("client-settings-user-agent")
+        );
+        
+        let mut req = Request::get(Url::parse("http://example.com/").unwrap());
+        req.headers
+            .insert(USER_AGENT, "request-user-agent")
+            .unwrap();
+        client.set_user_agent(&mut req).unwrap();
+        assert_eq!(req.headers.get(USER_AGENT), Some("request-user-agent"));
     }
 }

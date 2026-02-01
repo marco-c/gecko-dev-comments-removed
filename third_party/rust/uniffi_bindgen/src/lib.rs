@@ -96,14 +96,16 @@ use anyhow::{anyhow, bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use fs_err::{self as fs, File};
 use serde::Deserialize;
+use std::fmt;
 use std::io::prelude::*;
 use std::io::ErrorKind;
 use std::process::Command;
 
-pub mod backend;
+mod bindgen_paths;
 pub mod bindings;
 pub mod interface;
 pub mod library_mode;
+mod loader;
 pub mod macro_metadata;
 pub mod pipeline;
 pub mod scaffolding;
@@ -111,14 +113,18 @@ pub mod scaffolding;
 #[cfg(feature = "cargo-metadata")]
 pub mod cargo_metadata;
 
+use crate::interface::CallbackInterface;
 use crate::interface::{
     Argument, Constructor, Enum, FfiArgument, FfiField, Field, Function, Method, Object, Record,
     Variant,
 };
+pub use bindgen_paths::{BindgenPaths, BindgenPathsLayer};
 pub use interface::ComponentInterface;
 pub use library_mode::find_components;
 use scaffolding::RustScaffolding;
 use uniffi_meta::Type;
+
+pub use loader::BindgenLoader;
 
 
 
@@ -131,6 +137,9 @@ pub struct GenerationSettings {
     pub try_format_code: bool,
     pub cdylib: Option<String>,
 }
+
+
+
 
 
 
@@ -183,15 +192,23 @@ pub trait VisitMut {
 
     
     
-    fn visit_field(&self, field: &mut Field);
+    fn visit_callback_interface(&self, _iface: &mut CallbackInterface) {}
 
     
     
-    fn visit_ffi_field(&self, ffi_field: &mut FfiField);
+    fn visit_field(&self, _field: &mut Field) {}
 
     
     
-    fn visit_ffi_argument(&self, ffi_argument: &mut FfiArgument);
+    fn visit_ffi_field(&self, _ffi_field: &mut FfiField) {}
+
+    
+    
+    fn visit_ffi_argument(&self, _ffi_argument: &mut FfiArgument) {}
+
+    
+    
+    fn visit_ffi_type(&self, _ffi_type: &mut interface::FfiType) {}
 
     
     
@@ -199,12 +216,7 @@ pub trait VisitMut {
 
     
     
-    
-    fn visit_enum_key(&self, key: &mut String) -> String;
-
-    
-    
-    fn visit_variant(&self, is_error: bool, variant: &mut Variant);
+    fn visit_variant(&self, _is_error: bool, _variant: &mut Variant) {}
 
     
     
@@ -218,15 +230,15 @@ pub trait VisitMut {
 
     
     
-    fn visit_method(&self, method: &mut Method);
+    fn visit_method(&self, object_name: &str, method: &mut Method);
 
     
     
-    fn visit_argument(&self, argument: &mut Argument);
+    fn visit_argument(&self, _argument: &mut Argument) {}
 
     
     
-    fn visit_constructor(&self, constructor: &mut Constructor);
+    fn visit_constructor(&self, object_name: &str, constructor: &mut Constructor);
 
     
     
@@ -267,6 +279,20 @@ pub trait BindgenCrateConfigSupplier {
 
 pub struct EmptyCrateConfigSupplier;
 impl BindgenCrateConfigSupplier for EmptyCrateConfigSupplier {}
+
+impl BindgenCrateConfigSupplier for &&dyn BindgenCrateConfigSupplier {
+    fn get_toml(&self, crate_name: &str) -> Result<Option<toml::value::Table>> {
+        (**self).get_toml(crate_name)
+    }
+
+    fn get_toml_path(&self, crate_name: &str) -> Option<Utf8PathBuf> {
+        (**self).get_toml_path(crate_name)
+    }
+
+    fn get_udl(&self, crate_name: &str, udl_name: &str) -> Result<String> {
+        (**self).get_udl(crate_name, udl_name)
+    }
+}
 
 
 
@@ -333,6 +359,13 @@ pub fn generate_external_bindings<T: BindingGenerator>(
 
     let mut components = vec![Component { ci, config }];
     binding_generator.update_component_configs(&settings, &mut components)?;
+
+    
+    components[0]
+        .ci
+        .derive_ffi_funcs()
+        .context("Failed to derive FFI functions")?;
+
     binding_generator.write_bindings(&settings, &components)
 }
 
@@ -380,6 +413,9 @@ fn generate_component_scaffolding_inner(
     }
     Ok(())
 }
+
+
+
 
 
 
@@ -432,10 +468,10 @@ fn crate_name_from_cargo_toml(udl_file: &Utf8Path) -> Result<String> {
     }
 
     let file = guess_crate_root(udl_file)?.join("Cargo.toml");
-    let cargo_toml_bytes =
-        fs::read(file).context("Can't find Cargo.toml to determine the crate name")?;
+    let cargo_toml_str =
+        fs::read_to_string(file).context("Can't find Cargo.toml to determine the crate name")?;
 
-    let cargo_toml = toml::from_slice::<CargoToml>(&cargo_toml_bytes)?;
+    let cargo_toml = toml::from_str::<CargoToml>(&cargo_toml_str)?;
 
     let lib_crate_name = cargo_toml
         .lib
@@ -540,6 +576,25 @@ fn merge_toml(a: &mut toml::value::Table, b: toml::value::Table) {
         }
     }
 }
+
+
+
+pub fn to_askama_error<T: ToString + ?Sized>(t: &T) -> askama::Error {
+    askama::Error::Custom(Box::new(BindingsTemplateError(t.to_string())))
+}
+
+
+
+#[derive(Debug)]
+struct BindingsTemplateError(String);
+
+impl fmt::Display for BindingsTemplateError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for BindingsTemplateError {}
 
 
 

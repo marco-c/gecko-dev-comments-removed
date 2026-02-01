@@ -33,7 +33,7 @@ uniffi::deps::static_assertions::assert_impl_all!({{ k|type_rs }}: ::std::cmp::E
 
 {%- for func in ci.function_definitions() %}
 {% include "TopLevelFunctionTemplate.rs" %}
-{% endfor -%}
+{% endfor %}
 
 
 {% for obj in ci.object_definitions() %}

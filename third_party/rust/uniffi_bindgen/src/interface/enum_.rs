@@ -162,15 +162,19 @@
 use anyhow::Result;
 use uniffi_meta::{Checksum, EnumShape};
 
+use super::function::Callable;
 use super::record::Field;
-use super::{AsType, Literal, Type, TypeIterator};
+use super::{
+    AsType, Constructor, FfiFunction, Literal, Method, Type, TypeIterator, UniffiTrait,
+    UniffiTraitMethods,
+};
 
 
 
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Checksum)]
+#[derive(Debug, Clone, Checksum)]
 pub struct Enum {
     pub(super) name: String,
     pub(super) module_path: String,
@@ -179,6 +183,10 @@ pub struct Enum {
     pub(super) variants: Vec<Variant>,
     pub(super) shape: EnumShape,
     pub(super) non_exhaustive: bool,
+    pub(super) constructors: Vec<Constructor>,
+    pub(super) methods: Vec<Method>,
+    
+    uniffi_traits: Vec<UniffiTrait>,
     #[checksum_ignore]
     pub(super) docstring: Option<String>,
 }
@@ -198,6 +206,14 @@ impl Enum {
 
     pub fn variants(&self) -> &[Variant] {
         &self.variants
+    }
+
+    pub fn constructors(&self) -> &[Constructor] {
+        &self.constructors
+    }
+
+    pub fn methods(&self) -> &[Method] {
+        &self.methods
     }
 
     
@@ -257,7 +273,13 @@ impl Enum {
     }
 
     pub fn iter_types(&self) -> TypeIterator<'_> {
-        Box::new(self.variants.iter().flat_map(Variant::iter_types))
+        Box::new(
+            self.variants
+                .iter()
+                .flat_map(Variant::iter_types)
+                .chain(self.constructors.iter().flat_map(Constructor::iter_types))
+                .chain(self.methods.iter().flat_map(Method::iter_types)),
+        )
     }
 
     pub fn docstring(&self) -> Option<&str> {
@@ -266,6 +288,46 @@ impl Enum {
 
     pub fn contains_variant_fields(&self) -> bool {
         self.variants().iter().any(|v| v.has_fields())
+    }
+
+    pub fn uniffi_trait_methods(&self) -> UniffiTraitMethods {
+        UniffiTraitMethods::new(&self.uniffi_traits)
+    }
+
+    pub fn add_uniffi_trait(&mut self, t: UniffiTrait) {
+        self.uniffi_traits.push(t);
+    }
+
+    pub fn derive_ffi_funcs(&mut self) -> Result<()> {
+        for c in self.constructors.iter_mut() {
+            c.derive_ffi_func();
+        }
+        for m in self.methods.iter_mut() {
+            m.derive_ffi_func()?;
+        }
+        for ut in self.uniffi_traits.iter_mut() {
+            ut.derive_ffi_func()?;
+        }
+        Ok(())
+    }
+
+    pub fn iter_ffi_function_definitions(&self) -> impl Iterator<Item = &FfiFunction> {
+        self.constructors
+            .iter()
+            .map(|f| &f.ffi_func)
+            .chain(self.methods.iter().map(|f| &f.ffi_func))
+            .chain(
+                self.uniffi_traits
+                    .iter()
+                    .flat_map(|ut| match ut {
+                        UniffiTrait::Display { fmt: m }
+                        | UniffiTrait::Debug { fmt: m }
+                        | UniffiTrait::Hash { hash: m }
+                        | UniffiTrait::Ord { cmp: m } => vec![m],
+                        UniffiTrait::Eq { eq, ne } => vec![eq, ne],
+                    })
+                    .map(|m| &m.ffi_func),
+            )
     }
 }
 
@@ -285,6 +347,9 @@ impl TryFrom<uniffi_meta::EnumMetadata> for Enum {
                 .collect::<Result<_>>()?,
             shape: meta.shape,
             non_exhaustive: meta.non_exhaustive,
+            constructors: vec![],
+            methods: vec![],
+            uniffi_traits: vec![],
             docstring: meta.docstring.clone(),
         })
     }
@@ -372,7 +437,7 @@ mod test {
             enum Testing { "one", "two", "one" };
         "#;
         let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
-        assert_eq!(ci.enum_definitions().count(), 1);
+        assert_eq!(ci.enum_definitions().len(), 1);
         assert_eq!(
             ci.get_enum_definition("Testing").unwrap().variants().len(),
             3
@@ -404,8 +469,9 @@ mod test {
                 Two();
             };
         "#;
-        let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
-        assert_eq!(ci.enum_definitions().count(), 3);
+        let mut ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
+        ci.derive_ffi_funcs().unwrap();
+        assert_eq!(ci.enum_definitions().len(), 3);
         assert_eq!(ci.function_definitions().len(), 4);
 
         
@@ -537,7 +603,7 @@ mod test {
             enum Testing { "one", "two", "three" };
         "#;
         let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
-        assert_eq!(ci.enum_definitions().count(), 1);
+        assert_eq!(ci.enum_definitions().len(), 1);
         let error = ci.get_enum_definition("Testing").unwrap();
         assert_eq!(
             error
@@ -561,7 +627,7 @@ mod test {
             enum Testing { "one", "two", "one" };
         "#;
         let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
-        assert_eq!(ci.enum_definitions().count(), 1);
+        assert_eq!(ci.enum_definitions().len(), 1);
         assert_eq!(
             ci.get_enum_definition("Testing").unwrap().variants().len(),
             3
@@ -583,7 +649,7 @@ mod test {
             };
         "#;
         let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
-        assert_eq!(ci.enum_definitions().count(), 1);
+        assert_eq!(ci.enum_definitions().len(), 1);
         let error: &Enum = ci.get_enum_definition("Testing").unwrap();
         assert_eq!(
             error
@@ -609,7 +675,7 @@ mod test {
             };
         "#;
         let ci = ComponentInterface::from_webidl(UDL, "crate_name").unwrap();
-        assert_eq!(ci.enum_definitions().count(), 1);
+        assert_eq!(ci.enum_definitions().len(), 1);
         let testing: &Enum = ci.get_enum_definition("Testing").unwrap();
         assert_eq!(
             testing.variants()[0]
@@ -683,6 +749,9 @@ mod test {
             variants: vec![],
             shape: EnumShape::Enum,
             non_exhaustive: false,
+            constructors: vec![],
+            methods: vec![],
+            uniffi_traits: vec![],
             docstring: None,
         };
 

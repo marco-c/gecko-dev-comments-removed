@@ -42,8 +42,12 @@ trait CodeType: Debug {
         self.type_label()
     }
 
-    fn literal(&self, _literal: &Literal) -> Result<String> {
-        unimplemented!("Unimplemented for {}", self.type_label())
+    
+    fn default(&self, default: &DefaultValue) -> Result<String> {
+        match default {
+            DefaultValue::Default => Ok(format!("{}()", self.type_label())),
+            DefaultValue::Literal(_) => crate::bail!("Literals for named types are not supported"),
+        }
     }
 
     
@@ -176,6 +180,8 @@ pub struct Config {
     custom_types: HashMap<String, CustomTypeConfig>,
     #[serde(default)]
     link_frameworks: Vec<String>,
+    #[serde(default)]
+    pub(super) rename: toml::Table,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -280,21 +286,218 @@ impl Config {
     pub fn link_frameworks(&self) -> Vec<String> {
         self.link_frameworks.clone()
     }
+
+    
+    
+    
+    pub fn record_has_conformances(&self, rec: &Record, contains_object_references: &bool) -> bool {
+        !self
+            .conformance_list_for_record(rec, contains_object_references)
+            .is_empty()
+    }
+
+    
+    pub fn conformance_list_for_record(
+        &self,
+        rec: &Record,
+        contains_object_references: &bool,
+    ) -> String {
+        let mut conformances = vec![];
+
+        let uniffi_trait_methods = rec.uniffi_trait_methods();
+
+        
+        if !contains_object_references || uniffi_trait_methods.eq_eq.is_some() {
+            conformances.push("Equatable");
+        }
+
+        if !contains_object_references || uniffi_trait_methods.hash_hash.is_some() {
+            conformances.push("Hashable");
+        }
+
+        if uniffi_trait_methods.ord_cmp.is_some() {
+            conformances.push("Comparable");
+        }
+
+        if uniffi_trait_methods.debug_fmt.is_some() {
+            conformances.push("CustomDebugStringConvertible");
+        }
+
+        if uniffi_trait_methods.display_fmt.is_some() {
+            conformances.push("CustomStringConvertible");
+        }
+
+        
+        if !contains_object_references && self.generate_codable_conformance() {
+            conformances.push("Codable");
+        }
+
+        conformances.join(", ")
+    }
+
+    
+    
+    
+    pub fn enum_has_conformances(&self, e: &Enum, contains_object_references: &bool) -> bool {
+        !self
+            .conformance_list_for_enum(e, contains_object_references)
+            .is_empty()
+    }
+
+    
+    pub fn conformance_list_for_enum(&self, e: &Enum, contains_object_references: &bool) -> String {
+        let uniffi_trait_methods = e.uniffi_trait_methods();
+
+        let mut conformances = vec![];
+
+        
+        if !contains_object_references || uniffi_trait_methods.eq_eq.is_some() {
+            conformances.push("Equatable");
+        }
+
+        if !contains_object_references || uniffi_trait_methods.hash_hash.is_some() {
+            conformances.push("Hashable");
+        }
+
+        if uniffi_trait_methods.ord_cmp.is_some() {
+            conformances.push("Comparable");
+        }
+
+        if uniffi_trait_methods.debug_fmt.is_some() {
+            conformances.push("CustomDebugStringConvertible");
+        }
+
+        if uniffi_trait_methods.display_fmt.is_some() {
+            conformances.push("CustomStringConvertible");
+        }
+
+        
+        if !contains_object_references && self.generate_codable_conformance() {
+            conformances.push("Codable");
+        }
+
+        if self.generate_case_iterable_conformance() && !e.contains_variant_fields() {
+            conformances.push("CaseIterable");
+        }
+
+        conformances.join(", ")
+    }
+
+    
+    
+    
+    pub fn error_has_additional_conformances(
+        &self,
+        e: &Enum,
+        contains_object_references: &bool,
+    ) -> bool {
+        !self
+            .additional_conformance_list_for_error(e, contains_object_references)
+            .is_empty()
+    }
+
+    
+    pub fn additional_conformance_list_for_error(
+        &self,
+        e: &Enum,
+        contains_object_references: &bool,
+    ) -> String {
+        let uniffi_trait_methods = e.uniffi_trait_methods();
+
+        let mut conformances = vec![];
+
+        
+        if !contains_object_references || uniffi_trait_methods.eq_eq.is_some() {
+            conformances.push("Equatable");
+        }
+
+        if !contains_object_references || uniffi_trait_methods.hash_hash.is_some() {
+            conformances.push("Hashable");
+        }
+
+        if uniffi_trait_methods.ord_cmp.is_some() {
+            conformances.push("Comparable");
+        }
+
+        
+        if !contains_object_references && self.generate_codable_conformance() {
+            conformances.push("Codable");
+        }
+
+        if !self.omit_localized_error_conformance() {
+            conformances.push("Foundation.LocalizedError");
+        }
+
+        if self.generate_case_iterable_conformance() && !e.is_flat() && !e.contains_variant_fields()
+        {
+            conformances.push("CaseIterable");
+        }
+
+        conformances.join(", ")
+    }
+
+    
+    pub fn conformance_list_for_object(&self, o: &Object, is_error: &bool) -> String {
+        let uniffi_trait_methods = o.uniffi_trait_methods();
+
+        let mut conformances = vec!["@unchecked Sendable"];
+
+        if *is_error {
+            conformances.push("Swift.Error");
+
+            if !self.omit_localized_error_conformance() {
+                conformances.push("Foundation.LocalizedError");
+            }
+        }
+
+        if uniffi_trait_methods.eq_eq.is_some() {
+            conformances.push("Equatable");
+        }
+
+        if uniffi_trait_methods.hash_hash.is_some() {
+            conformances.push("Hashable");
+        }
+
+        if uniffi_trait_methods.ord_cmp.is_some() {
+            conformances.push("Comparable");
+        }
+
+        if uniffi_trait_methods.debug_fmt.is_some() {
+            conformances.push("CustomDebugStringConvertible");
+        }
+
+        if uniffi_trait_methods.display_fmt.is_some() {
+            conformances.push("CustomStringConvertible");
+        }
+
+        conformances.join(", ")
+    }
 }
 
 
 
 
-fn trait_protocol_name(ci: &ComponentInterface, name: &str) -> Result<String> {
-    let (obj_name, has_callback_interface) = match ci.get_object_definition(name) {
-        Some(obj) => (obj.name(), obj.has_callback_interface()),
-        None => (
-            ci.get_callback_interface_definition(name)
-                .ok_or_else(|| anyhow::anyhow!("no interface {}", name))?
-                .name(),
-            true,
-        ),
+fn trait_protocol_name(ci: &ComponentInterface, trait_ty: &Type) -> Result<String> {
+    let Some(module_path) = &trait_ty.crate_name() else {
+        anyhow::bail!("Invalid trait_type: {trait_ty:?}");
     };
+    let Some(ci_look) = ci.find_component_interface(module_path) else {
+        anyhow::bail!("no interface with module_path: {}", module_path);
+    };
+
+    let (obj_name, has_callback_interface) = match trait_ty {
+        Type::Object { name, .. } => {
+            let Some(obj) = ci_look.get_object_definition(name) else {
+                anyhow::bail!("trait interface not found: {}", name);
+            };
+            (name, obj.has_callback_interface())
+        }
+        Type::CallbackInterface { name, .. } => (name, true),
+        _ => {
+            anyhow::bail!("Invalid trait_type: {trait_ty:?}")
+        }
+    };
+
     let class_name = SwiftCodeOracle.class_name(obj_name);
     if has_callback_interface {
         Ok(class_name)
@@ -484,7 +687,7 @@ impl<'a> SwiftWrapper<'a> {
         let extern_module_init_fns = self
             .ci
             .iter_external_types()
-            .filter_map(|t| t.module_path())
+            .filter_map(|t| t.crate_name())
             .map(|module_path| {
                 format!(
                     "uniffiEnsure{}Initialized",
@@ -492,7 +695,7 @@ impl<'a> SwiftWrapper<'a> {
                 )
             })
             
-            .collect::<HashSet<_>>();
+            .collect::<BTreeSet<_>>();
 
         init_fns.chain(extern_module_init_fns).collect()
     }
@@ -509,6 +712,7 @@ impl SwiftCodeOracle {
     
     
     
+    #[allow(clippy::only_used_in_recursion)]
     fn create_code_type(&self, type_: Type) -> Box<dyn CodeType> {
         match type_ {
             Type::UInt8 => Box::new(primitives::UInt8CodeType),
@@ -544,7 +748,10 @@ impl SwiftCodeOracle {
                 key_type,
                 value_type,
             } => Box::new(compounds::MapCodeType::new(*key_type, *value_type)),
-            Type::Custom { name, .. } => Box::new(custom::CustomCodeType::new(name)),
+            Type::Custom { name, builtin, .. } => Box::new(custom::CustomCodeType::new(
+                name,
+                self.create_code_type(*builtin),
+            )),
         }
     }
 
@@ -600,7 +807,6 @@ impl SwiftCodeOracle {
             FfiType::Float32 => "Float".into(),
             FfiType::Float64 => "Double".into(),
             FfiType::Handle => "UInt64".into(),
-            FfiType::RustArcPtr(_) => "UnsafeMutableRawPointer".into(),
             FfiType::RustBuffer(_) => "RustBuffer".into(),
             FfiType::RustCallStatus => "RustCallStatus".into(),
             FfiType::ForeignBytes => "ForeignBytes".into(),
@@ -634,7 +840,7 @@ impl SwiftCodeOracle {
                 | FfiType::UInt64
                 | FfiType::Int64 => "0".to_owned(),
                 FfiType::Float32 | FfiType::Float64 => "0.0".to_owned(),
-                FfiType::RustArcPtr(_) => "nil".to_owned(),
+                FfiType::Handle => "0".to_owned(),
                 FfiType::RustBuffer(_) => "RustBuffer.empty()".to_owned(),
                 _ => unimplemented!("FFI return type: {t:?}"),
             },
@@ -664,33 +870,47 @@ impl SwiftCodeOracle {
 
 pub mod filters {
     use super::*;
-    pub use crate::backend::filters::*;
     use uniffi_meta::LiteralMetadata;
 
     fn oracle() -> &'static SwiftCodeOracle {
         &SwiftCodeOracle
     }
 
-    pub fn type_name(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn type_name(
+        as_type: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(oracle().find(&as_type.as_type()).type_label())
     }
 
-    pub fn return_type_name(as_type: Option<&impl AsType>) -> Result<String, askama::Error> {
+    pub fn return_type_name(
+        as_type: Option<&impl AsType>,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(match as_type {
             Some(as_type) => oracle().find(&as_type.as_type()).type_label(),
             None => "()".to_owned(),
         })
     }
 
-    pub fn canonical_name(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn canonical_name(
+        as_type: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(oracle().find(&as_type.as_type()).canonical_name())
     }
 
-    pub fn ffi_converter_name(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn ffi_converter_name(
+        as_type: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(oracle().find(&as_type.as_type()).ffi_converter_name())
     }
 
-    pub fn ffi_error_converter_name(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn ffi_error_converter_name(
+        as_type: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         
         let mut name = oracle().find(&as_type.as_type()).ffi_converter_name();
         if matches!(&as_type.as_type(), Type::Object { .. }) {
@@ -699,10 +919,20 @@ pub mod filters {
         Ok(name)
     }
 
+    pub(super) fn ffi_type(
+        type_: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> askama::Result<FfiType, askama::Error> {
+        Ok(type_.as_type().into())
+    }
+
     
     
     
-    pub fn lower_fn(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn lower_fn(
+        as_type: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         let ty = &as_type.as_type();
         let ffi_converter_name = oracle().find(ty).ffi_converter_name();
         Ok(match ty.name() {
@@ -711,14 +941,17 @@ pub mod filters {
         })
     }
 
-    pub fn write_fn(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn write_fn(
+        as_type: &impl AsType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         let ty = &as_type.as_type();
         let ffi_converter_name = oracle().find(ty).ffi_converter_name();
         Ok(format!("{}.write", ffi_converter_name))
     }
 
     
-    pub fn lift_fn(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn lift_fn(as_type: &impl AsType, _: &dyn askama::Values) -> Result<String, askama::Error> {
         let ty = &as_type.as_type();
         let ffi_converter_name = oracle().find(ty).ffi_converter_name();
         Ok(match ty.name() {
@@ -727,24 +960,29 @@ pub mod filters {
         })
     }
 
-    pub fn read_fn(as_type: &impl AsType) -> Result<String, askama::Error> {
+    pub fn read_fn(as_type: &impl AsType, _: &dyn askama::Values) -> Result<String, askama::Error> {
         let ty = &as_type.as_type();
         let ffi_converter_name = oracle().find(ty).ffi_converter_name();
         Ok(format!("{}.read", ffi_converter_name))
     }
 
-    pub fn literal_swift(
-        literal: &Literal,
+    pub fn default_swift(
+        default: &DefaultValue,
+        _: &dyn askama::Values,
         as_type: &impl AsType,
     ) -> Result<String, askama::Error> {
-        oracle()
+        Ok(oracle()
             .find(&as_type.as_type())
-            .literal(literal)
-            .map_err(|e| to_askama_error(&e))
+            .default(default)
+            .expect("invalid default: {default:?}"))
     }
 
     
-    pub fn variant_discr_literal(e: &Enum, index: &usize) -> Result<String, askama::Error> {
+    pub fn variant_discr_literal(
+        e: &Enum,
+        _: &dyn askama::Values,
+        index: &usize,
+    ) -> Result<String, askama::Error> {
         let literal = e.variant_discr(*index).expect("invalid index");
         match literal {
             LiteralMetadata::UInt(v, _, _) => Ok(v.to_string()),
@@ -754,17 +992,26 @@ pub mod filters {
     }
 
     
-    pub fn ffi_type_name(ffi_type: &FfiType) -> Result<String, askama::Error> {
+    pub fn ffi_type_name(
+        ffi_type: &FfiType,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(oracle().ffi_type_label(ffi_type))
     }
 
-    pub fn ffi_default_value(return_type: Option<FfiType>) -> Result<String, askama::Error> {
+    pub fn ffi_default_value(
+        return_type: Option<FfiType>,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(oracle().ffi_default_value(return_type.as_ref()))
     }
 
     
     
-    pub fn header_ffi_type_name(ffi_type: &FfiType) -> Result<String, askama::Error> {
+    pub fn header_ffi_type_name(
+        ffi_type: &FfiType,
+        _values: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(match ffi_type {
             FfiType::Int8 => "int8_t".into(),
             FfiType::UInt8 => "uint8_t".into(),
@@ -777,7 +1024,6 @@ pub mod filters {
             FfiType::Float32 => "float".into(),
             FfiType::Float64 => "double".into(),
             FfiType::Handle => "uint64_t".into(),
-            FfiType::RustArcPtr(_) => "void*_Nonnull".into(),
             FfiType::RustBuffer(_) => "RustBuffer".into(),
             FfiType::RustCallStatus => "RustCallStatus".into(),
             FfiType::ForeignBytes => "ForeignBytes".into(),
@@ -786,61 +1032,73 @@ pub mod filters {
             }
             FfiType::Struct(name) => SwiftCodeOracle.ffi_struct_name(name),
             FfiType::Reference(inner) => {
-                format!("const {}* _Nonnull", header_ffi_type_name(inner)?)
+                format!("const {}* _Nonnull", header_ffi_type_name(inner, _values)?)
             }
-            FfiType::MutReference(inner) => format!("{}* _Nonnull", header_ffi_type_name(inner)?),
+            FfiType::MutReference(inner) => {
+                format!("{}* _Nonnull", header_ffi_type_name(inner, _values)?)
+            }
             FfiType::VoidPointer => "void* _Nonnull".into(),
         })
     }
 
     
-    pub fn class_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn class_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(oracle().class_name(nm))
     }
 
     
-    pub fn fn_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn fn_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(quote_general_keyword(oracle().fn_name(nm)))
     }
 
     
-    pub fn var_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn var_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(quote_general_keyword(oracle().var_name(nm)))
     }
 
     
     
-    pub fn arg_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn arg_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(quote_arg_keyword(oracle().var_name(nm)))
     }
 
     
-    pub fn enum_variant_swift_quoted(nm: &str) -> Result<String, askama::Error> {
+    pub fn enum_variant_swift_quoted(
+        nm: &str,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(quote_general_keyword(oracle().enum_variant_name(nm)))
     }
 
     
-    pub fn error_variant_swift_quoted(nm: &str) -> Result<String, askama::Error> {
+    pub fn error_variant_swift_quoted(
+        nm: &str,
+        _: &dyn askama::Values,
+    ) -> Result<String, askama::Error> {
         Ok(quote_general_keyword(oracle().class_name(nm)))
     }
 
     
-    pub fn ffi_callback_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn ffi_callback_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(oracle().ffi_callback_name(nm))
     }
 
     
-    pub fn ffi_struct_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn ffi_struct_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(oracle().ffi_struct_name(nm))
     }
 
     
-    pub fn if_guard_name(nm: &str) -> Result<String, askama::Error> {
+    pub fn if_guard_name(nm: &str, _: &dyn askama::Values) -> Result<String, askama::Error> {
         Ok(oracle().if_guard_name(nm))
     }
 
     
-    pub fn docstring(docstring: &str, spaces: &i32) -> Result<String, askama::Error> {
+    pub fn docstring(
+        docstring: &str,
+        _: &dyn askama::Values,
+        spaces: &i32,
+    ) -> Result<String, askama::Error> {
         let middle = textwrap::indent(&textwrap::dedent(docstring), " * ");
         let wrapped = format!("/**\n{middle}\n */");
 
@@ -848,7 +1106,10 @@ pub mod filters {
         Ok(textwrap::indent(&wrapped, &" ".repeat(spaces)))
     }
 
-    pub fn object_names(obj: &Object) -> Result<(String, String), askama::Error> {
+    pub fn object_names(
+        obj: &Object,
+        _: &dyn askama::Values,
+    ) -> Result<(String, String), askama::Error> {
         Ok(SwiftCodeOracle.object_names(obj))
     }
 }

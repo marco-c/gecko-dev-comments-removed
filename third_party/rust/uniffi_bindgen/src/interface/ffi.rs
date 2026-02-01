@@ -37,11 +37,6 @@ pub enum FfiType {
     
     
     
-    RustArcPtr(String),
-    
-    
-    
-    
     
     RustBuffer(Option<ExternalFfiMetadata>),
     
@@ -89,7 +84,7 @@ impl FfiType {
                 FfiType::Int64 => "i64".to_owned(),
                 FfiType::Float32 => "f32".to_owned(),
                 FfiType::Float64 => "f64".to_owned(),
-                FfiType::RustArcPtr(_) => "pointer".to_owned(),
+                FfiType::Handle => "u64".to_owned(),
                 FfiType::RustBuffer(_) => "rust_buffer".to_owned(),
                 _ => unimplemented!("FFI return type: {t:?}"),
             },
@@ -126,7 +121,7 @@ impl From<&Type> for FfiType {
             
             Type::Bytes => FfiType::RustBuffer(None),
             
-            Type::Object { name, .. } => FfiType::RustArcPtr(name.to_owned()),
+            Type::Object { .. } => FfiType::Handle,
             
             Type::CallbackInterface { .. } => FfiType::UInt64,
             
@@ -167,6 +162,12 @@ impl From<&Type> for FfiType {
 pub struct ExternalFfiMetadata {
     pub name: String,
     pub module_path: String,
+}
+
+impl ExternalFfiMetadata {
+    pub fn crate_name(&self) -> &str {
+        self.module_path.split("::").next().unwrap()
+    }
 }
 
 

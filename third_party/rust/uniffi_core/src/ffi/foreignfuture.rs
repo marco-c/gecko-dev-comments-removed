@@ -20,12 +20,6 @@
 use crate::{oneshot, LiftReturn, RustCallStatus};
 
 
-pub type ForeignFutureHandle = u64;
-
-
-pub type ForeignFutureCallbackData = *mut ();
-
-
 
 
 pub type ForeignFutureCallback<FfiType> =
@@ -41,32 +35,57 @@ pub struct ForeignFutureResult<T> {
 }
 
 
+pub type ForeignFutureDroppedCallback = extern "C" fn(data: u64);
 
 
 #[repr(C)]
-pub struct ForeignFuture {
-    pub handle: ForeignFutureHandle,
-    pub free: extern "C" fn(handle: ForeignFutureHandle),
+pub struct ForeignFutureDroppedCallbackStruct {
+    pub callback_data: u64,
+    pub callback: ForeignFutureDroppedCallback,
 }
 
-impl Drop for ForeignFuture {
-    fn drop(&mut self) {
-        (self.free)(self.handle)
+impl Default for ForeignFutureDroppedCallbackStruct {
+    
+    
+    fn default() -> Self {
+        extern "C" fn callback(_data: u64) {}
+        Self {
+            callback_data: 0,
+            callback,
+        }
     }
 }
 
-unsafe impl Send for ForeignFuture {}
+impl Drop for ForeignFutureDroppedCallbackStruct {
+    fn drop(&mut self) {
+        (self.callback)(self.callback_data)
+    }
+}
+
+unsafe impl Send for ForeignFutureDroppedCallbackStruct {}
 
 pub async fn foreign_async_call<F, T, UT>(call_scaffolding_function: F) -> T
 where
-    F: FnOnce(ForeignFutureCallback<T::ReturnType>, u64) -> ForeignFuture,
+    F: FnOnce(ForeignFutureCallback<T::ReturnType>, u64, &mut ForeignFutureDroppedCallbackStruct),
     T: LiftReturn<UT>,
 {
+    
     let (sender, receiver) = oneshot::channel::<ForeignFutureResult<T::ReturnType>>();
     
+    let complete_callback = foreign_future_complete::<T, UT>;
+    let complete_callback_data = sender.into_raw() as u64;
     
-    let _foreign_future =
-        call_scaffolding_function(foreign_future_complete::<T, UT>, sender.into_raw() as u64);
+    
+    
+    
+    let mut foreign_future_dropped_callback = ForeignFutureDroppedCallbackStruct::default();
+    
+    call_scaffolding_function(
+        complete_callback,
+        complete_callback_data,
+        &mut foreign_future_dropped_callback,
+    );
+    
     let result = receiver.await;
     T::lift_foreign_return(result.return_value, result.call_status)
 }
@@ -103,24 +122,25 @@ mod test {
     impl MockForeignFuture {
         fn new() -> Self {
             let callback_info = Arc::new(OnceCell::new());
-            let freed = Arc::new(AtomicU32::new(0));
+            let future_dropped_call_count = Arc::new(AtomicU32::new(0));
 
             let rust_future: Pin<Box<dyn Future<Output = String>>> = {
                 let callback_info = callback_info.clone();
-                let freed = freed.clone();
+                let future_dropped_call_count = future_dropped_call_count.clone();
                 Box::pin(foreign_async_call::<_, String, crate::UniFfiTag>(
-                    move |callback, data| {
+                    move |callback, data, out_dropped_callback| {
                         callback_info.set((callback, data)).unwrap();
-                        ForeignFuture {
-                            handle: Arc::into_raw(freed) as *mut () as u64,
-                            free: Self::free,
-                        }
+                        *out_dropped_callback = ForeignFutureDroppedCallbackStruct {
+                            callback_data: Arc::into_raw(future_dropped_call_count) as *mut ()
+                                as u64,
+                            callback: Self::future_drapped_callback,
+                        };
                     },
                 ))
             };
             let rust_future = Some(rust_future);
             let mut mock_foreign_future = Self {
-                freed,
+                freed: future_dropped_call_count,
                 callback_info,
                 rust_future,
             };
@@ -169,7 +189,7 @@ mod test {
             self.freed.load(Ordering::Relaxed)
         }
 
-        extern "C" fn free(handle: u64) {
+        extern "C" fn future_drapped_callback(handle: u64) {
             let flag = unsafe { Arc::from_raw(handle as *mut AtomicU32) };
             flag.fetch_add(1, Ordering::Relaxed);
         }
