@@ -4430,12 +4430,18 @@ void MediaDecoderStateMachine::UpdateOutputCaptured() {
                     MediaDecoder::OutputCaptureState::Capture,
                 mOutputCaptureInfo.Ref().mDummyTrack);
 
+  LOG("UpdateOutputCaptured, shouldConfigAudioOutput=%d",
+      static_cast<int>(mOutputCaptureInfo.Ref().mShouldConfigAudioOutput));
+
   
   
   
   mAudioCompleted = false;
   mVideoCompleted = false;
 
+  
+  
+  
   
   if (!mIsMediaSinkSuspended) {
     const bool wasPlaying = IsPlaying();
