@@ -3281,6 +3281,11 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
     switch (kind) {
       case StackMap::Kind::ArrayDataPointer: {
         
+        
+        
+        
+
+        
         uint8_t* oldDataPointer = (uint8_t*)stackWords[i];
         if (WasmArrayObject::isDataInline(oldDataPointer)) {
           
@@ -3292,18 +3297,29 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
               (WasmArrayObject*)gc::MaybeForwarded(oldArray);
           if (newArray != oldArray) {
             stackWords[i] =
-                uintptr_t(WasmArrayObject::addressOfInlineData(newArray));
+                uintptr_t(WasmArrayObject::addressOfInlineArrayData(newArray));
             MOZ_ASSERT(WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
           }
         } else {
-          WasmArrayObject::DataHeader* oldHeader =
-              WasmArrayObject::dataHeaderFromDataPointer(oldDataPointer);
-          WasmArrayObject::DataHeader* newHeader = oldHeader;
-          nursery.forwardBufferPointer((uintptr_t*)&newHeader);
-          if (newHeader != oldHeader) {
-            stackWords[i] =
-                uintptr_t(WasmArrayObject::dataHeaderToDataPointer(newHeader));
-            MOZ_ASSERT(!WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
+          
+          
+          
+          WasmArrayObject::OOLDataHeader* oldHeader =
+              WasmArrayObject::oolDataHeaderFromDataPointer(oldDataPointer);
+          if (nursery.isInside((const void*)oldHeader)) {
+            
+            
+            
+            if (oldHeader->word != WasmArrayObject::OOLDataHeader_Magic) {
+              MOZ_ASSERT(oldHeader->word & 1);
+              WasmArrayObject::OOLDataHeader* newHeader =
+                  (WasmArrayObject::OOLDataHeader*)(oldHeader->word &
+                                                    ~uintptr_t(1));
+              MOZ_ASSERT(newHeader != oldHeader);
+              stackWords[i] = uintptr_t(
+                  WasmArrayObject::oolDataHeaderToDataPointer(newHeader));
+              newHeader->word = WasmArrayObject::OOLDataHeader_Magic;
+            }
           }
         }
         break;

@@ -10,7 +10,6 @@ const MaxArrayPayloadBytes = 1987654321;
 function maxNumElementsForSize(bytes, elemSize) {
   let n = bytes;
   n = bytes & ~0b111; 
-  n -= getBuildConfiguration()['pointer-byte-size']; 
   n = Math.floor(n / elemSize); 
   return n;
 }

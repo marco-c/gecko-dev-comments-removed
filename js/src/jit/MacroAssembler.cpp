@@ -7664,7 +7664,6 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 #endif
 
   
-  
   branchTestPtr(Assembler::NonZero,
                 Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
@@ -7692,8 +7691,6 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 
   
   mul32(Imm32(elemSize), numElements);
-  
-  add32(Imm32(sizeof(WasmArrayObject::DataHeader)), numElements);
   
   
   add32(Imm32(gc::CellAlignBytes - 1), numElements);
@@ -7728,8 +7725,6 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   storePtr(temp, Address(result, WasmArrayObject::offsetOfSuperTypeVector()));
 
   
-  storePtr(ImmWord(WasmArrayObject::DataIsIL),
-           Address(result, WasmArrayObject::offsetOfInlineStorage()));
   computeEffectiveAddress(
       Address(result, WasmArrayObject::offsetOfInlineArrayData()), temp);
   
@@ -7803,8 +7798,8 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 void MacroAssembler::wasmNewArrayObjectFixed(
     Register instance, Register result, Register allocSite, Register temp1,
     Register temp2, size_t offsetOfTypeDefData, Label* fail,
-    uint32_t numElements, uint32_t storageBytes, bool zeroFields) {
-  MOZ_ASSERT(storageBytes <= WasmArrayObject_MaxInlineBytes);
+    uint32_t numElements, uint32_t arrayDataBytes, bool zeroFields) {
+  MOZ_ASSERT(arrayDataBytes <= WasmArrayObject_MaxInlineBytes);
   MOZ_ASSERT(instance != result);
 
   
@@ -7828,12 +7823,11 @@ void MacroAssembler::wasmNewArrayObjectFixed(
 #endif
 
   
-  
   branchTestPtr(Assembler::NonZero,
                 Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
 
-  gc::AllocKind allocKind = WasmArrayObject::allocKindForIL(storageBytes);
+  gc::AllocKind allocKind = WasmArrayObject::allocKindForIL(arrayDataBytes);
   uint32_t totalSize = gc::Arena::thingSize(allocKind);
   wasmBumpPointerAllocate(instance, result, allocSite, temp1, fail, totalSize);
 
@@ -7850,22 +7844,18 @@ void MacroAssembler::wasmNewArrayObjectFixed(
           Address(result, WasmArrayObject::offsetOfNumElements()));
 
   
-  storePtr(ImmWord(WasmArrayObject::DataIsIL),
-           Address(result, WasmArrayObject::offsetOfInlineStorage()));
   computeEffectiveAddress(
       Address(result, WasmArrayObject::offsetOfInlineArrayData()), temp2);
   
   storePtr(temp2, Address(result, WasmArrayObject::offsetOfData()));
 
   if (zeroFields) {
-    MOZ_ASSERT(storageBytes % sizeof(void*) == 0);
+    MOZ_ASSERT(arrayDataBytes % sizeof(void*) == 0);
 
     
     
     Label done;
-    computeEffectiveAddress(
-        Address(temp2, -sizeof(WasmArrayObject::DataHeader) + storageBytes),
-        temp1);
+    computeEffectiveAddress(Address(temp2, arrayDataBytes), temp1);
     branchPtr(Assembler::Equal, temp1, temp2, &done);
 
     

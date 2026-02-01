@@ -21422,10 +21422,10 @@ void CodeGenerator::visitWasmNewArrayObject(LWasmNewArrayObject* lir) {
   if (lir->numElements()->isConstant()) {
     
     uint32_t numElements = lir->numElements()->toConstant()->toInt32();
-    CheckedUint32 storageBytes =
-        WasmArrayObject::calcStorageBytesChecked(mir->elemSize(), numElements);
-    if (!storageBytes.isValid() ||
-        storageBytes.value() > WasmArrayObject_MaxInlineBytes) {
+    CheckedUint32 arrayDataBytes = WasmArrayObject::calcArrayDataBytesChecked(
+        mir->elemSize(), numElements);
+    if (!arrayDataBytes.isValid() ||
+        arrayDataBytes.value() > WasmArrayObject_MaxInlineBytes) {
       
       
       masm.move32(Imm32(typeDefIndex), temp0);
@@ -21453,7 +21453,7 @@ void CodeGenerator::visitWasmNewArrayObject(LWasmNewArrayObject* lir) {
           wasmCodeMeta()->offsetOfTypeDefInstanceData(typeDefIndex));
       masm.wasmNewArrayObjectFixed(
           instance, output, allocSite, temp0, temp1, offsetOfTypeDefData,
-          ool->entry(), numElements, storageBytes.value(), mir->zeroFields());
+          ool->entry(), numElements, arrayDataBytes.value(), mir->zeroFields());
 
       masm.bind(ool->rejoin());
     }

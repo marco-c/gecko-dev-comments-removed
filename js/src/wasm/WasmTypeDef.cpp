@@ -325,6 +325,13 @@ bool StructType::init() {
 
   if (layout.hasOOL()) {
     totalSizeOOL_ = layout.totalSizeOOL();
+    MOZ_ASSERT(totalSizeOOL_ > 0);
+    if (totalSizeOOL_ < sizeof(uintptr_t)) {
+      
+      
+      
+      totalSizeOOL_ = sizeof(uintptr_t);
+    }
     FieldAccessPath oolPointerPath = layout.oolPointerPath();
     MOZ_ASSERT(!oolPointerPath.hasOOL());
     oolPointerOffset_ = oolPointerPath.ilOffset();

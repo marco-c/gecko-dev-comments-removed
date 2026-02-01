@@ -6,6 +6,8 @@
 
 #include "wasm/WasmGcObject-inl.h"
 
+#include "mozilla/DebugOnly.h"
+
 #include "gc/Tracer.h"
 #include "js/CharacterEncoding.h"
 #include "js/friend/ErrorMessages.h"  
@@ -252,11 +254,15 @@ static void WriteValTo(WasmGcObject* owner, const Val& val, StorageType ty,
 
 
 size_t js::WasmArrayObject::sizeOfExcludingThis() const {
-  if (!isDataInline() || !gc::IsBufferAlloc(dataHeader())) {
+  if (!isDataInline()) {
+    return 0;
+  }
+  OOLDataHeader* oolHeader = oolDataHeaderFromDataPointer(data_);
+  if (!gc::IsBufferAlloc(oolHeader)) {
     return 0;
   }
 
-  return gc::GetAllocSize(zone(), dataHeader());
+  return gc::GetAllocSize(zone(), oolHeader);
 }
 
 
@@ -265,11 +271,11 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   uint8_t* data = arrayObj.data_;
 
   if (!arrayObj.isDataInline()) {
-    uint8_t* outlineAlloc = (uint8_t*)dataHeaderFromDataPointer(arrayObj.data_);
-    uint8_t* prior = outlineAlloc;
-    TraceBufferEdge(trc, &arrayObj, &outlineAlloc, "WasmArrayObject storage");
-    if (outlineAlloc != prior) {
-      arrayObj.data_ = (uint8_t*)(((DataHeader*)outlineAlloc) + 1);
+    OOLDataHeader* oolHeader = oolDataHeaderFromDataPointer(arrayObj.data_);
+    OOLDataHeader* prior = oolHeader;
+    TraceBufferEdge(trc, &arrayObj, &oolHeader, "WasmArrayObject storage");
+    if (oolHeader != prior) {
+      arrayObj.data_ = oolDataHeaderToDataPointer(oolHeader);
     }
   }
 
@@ -310,7 +316,7 @@ size_t WasmArrayObject::obj_moved(JSObject* objNew, JSObject* objOld) {
   if (arrayOld.isDataInline()) {
     
     
-    arrayNew.data_ = WasmArrayObject::addressOfInlineData(&arrayNew);
+    arrayNew.data_ = WasmArrayObject::addressOfInlineArrayData(&arrayNew);
     MOZ_ASSERT(arrayNew.isDataInline());
     return 0;
   }
@@ -339,29 +345,37 @@ size_t WasmArrayObject::obj_moved(JSObject* objNew, JSObject* objOld) {
 
   
   
-  size_t oolBlockSize = calcStorageBytesUnchecked(
+  size_t oolBlockSize = calcArrayDataBytesUnchecked(
       typeDefNew->arrayType().elementType().size(), arrayNew.numElements_);
   
-  MOZ_RELEASE_ASSERT(oolBlockSize <= size_t(MaxArrayPayloadBytes) +
-                                         sizeof(WasmArrayObject::DataHeader));
+  MOZ_RELEASE_ASSERT(oolBlockSize <= size_t(MaxArrayPayloadBytes));
+  oolBlockSize += sizeof(WasmArrayObject::OOLDataHeader);
 
   
   
   
-  DataHeader* oolHeaderOld = dataHeaderFromDataPointer(arrayNew.data_);
-  DataHeader* oolHeaderNew = oolHeaderOld;
+  OOLDataHeader* oolHeaderOld = oolDataHeaderFromDataPointer(arrayNew.data_);
+  OOLDataHeader* oolHeaderNew = oolHeaderOld;
   Nursery& nursery = objNew->runtimeFromMainThread()->gc.nursery();
   nursery.maybeMoveBufferOnPromotion(&oolHeaderNew, objNew, oolBlockSize);
 
   if (oolHeaderNew != oolHeaderOld) {
     
     
-    arrayNew.data_ = dataHeaderToDataPointer(oolHeaderNew);
+    arrayNew.data_ = oolDataHeaderToDataPointer(oolHeaderNew);
     
     
     
-    nursery.setForwardingPointerWhileTenuring(oolHeaderOld, oolHeaderNew,
-                                              false);
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(oolBlockSize > sizeof(OOLDataHeader));
+    if (nursery.isInside(oolHeaderOld)) {
+      
+      oolHeaderOld->word = uintptr_t(oolHeaderNew) & 1;
+      oolHeaderNew->word = WasmArrayObject::OOLDataHeader_Magic;
+    }
   }
 
   return 0;
@@ -535,11 +549,17 @@ size_t WasmStructObject::obj_moved(JSObject* objNew, JSObject* objOld) {
   
   
   
+  
+  
+  
+  
+  
   uint8_t* oolPointerOld = structOld.getOOLPointer();
   uint8_t* oolPointerNew = structNew.getOOLPointer();
+  MOZ_RELEASE_ASSERT(outlineBytes >= sizeof(uintptr_t));
   if (oolPointerOld != oolPointerNew) {
     nursery.setForwardingPointerWhileTenuring(oolPointerOld, oolPointerNew,
-                                              false);
+                                              true);
   }
 
   return 0;
