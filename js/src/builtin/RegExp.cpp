@@ -872,7 +872,12 @@ bool js::regexp_construct_raw_flags(JSContext* cx, unsigned argc, Value* vp) {
   uint32_t rawFlags = args[1].toInt32();
   JS::RegExpFlags flags =
       AssertedCast<uint8_t>(rawFlags & RegExpFlag::AllFlags);
-  bool legacy = args[2].toBoolean();
+
+  
+  
+  
+  
+  bool legacy = args[2].toBoolean() && JS::Prefs::experimental_legacy_regexp();
 
   
   RegExpObject* regexp = RegExpAlloc(cx, GenericObject);
