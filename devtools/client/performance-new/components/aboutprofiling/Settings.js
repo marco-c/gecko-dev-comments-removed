@@ -51,6 +51,11 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 const {
@@ -89,9 +94,8 @@ const selectors = require("resource://devtools/client/performance-new/store/sele
 const {
   openFilePickerForObjdir,
 } = require("resource://devtools/client/performance-new/shared/browser.js");
-const Localized = createFactory(
-  require("resource://devtools/client/shared/vendor/fluent-react.js").Localized
-);
+const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
+const Localized = createFactory(FluentReact.Localized);
 
 
 const PROFILE_ENTRY_SIZE = 8;
@@ -275,7 +279,10 @@ class Settings extends PureComponent {
 
   _handleAddObjdir = () => {
     const { objdirs, changeObjdirs } = this.props;
-    openFilePickerForObjdir(window, objdirs, changeObjdirs);
+    const pickerTitle = this.props.getString(
+      "perftools-pick-local-build-directory"
+    );
+    openFilePickerForObjdir(window, pickerTitle, objdirs, changeObjdirs);
   };
 
   
@@ -684,4 +691,4 @@ const SettingsConnected = connect(
   mapDispatchToProps
 )(Settings);
 
-module.exports = SettingsConnected;
+module.exports = FluentReact.withLocalization(SettingsConnected);

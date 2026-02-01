@@ -140,13 +140,14 @@ function restartBrowserWithEnvironmentVariable(env) {
 
 
 
-function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
+
+function openFilePickerForObjdir(window, pickerTitle, objdirs, changeObjdirs) {
   const FilePicker = Cc["@mozilla.org/filepicker;1"].createInstance(
     Ci.nsIFilePicker
   );
   FilePicker.init(
     window.browsingContext,
-    "Pick build directory",
+    pickerTitle,
     FilePicker.modeGetFolder
   );
   FilePicker.open(rv => {
