@@ -56,7 +56,6 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
   void OnTRRModeChange();
   void OnTRRURIChange();
 
-  void DoReadEtcHostsFile(ParsingCallback aCallback);
   virtual void ReadEtcHostsFile() = 0;
   
   

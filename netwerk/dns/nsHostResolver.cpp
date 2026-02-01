@@ -1007,6 +1007,15 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec,
   MOZ_ASSERT(aRec->IsAddrRecord() || IsNativeHTTPSEnabled());
   mLock.AssertCurrentThreadOwns();
 
+  if (aRec->type == nsIDNSService::RESOLVE_TYPE_HTTPSSVC &&
+      TRRService::Get()->IsExcludedFromTRR(aRec->host)) {
+    
+    
+    
+    
+    return NS_ERROR_UNKNOWN_HOST;
+  }
+
   RefPtr<nsHostRecord> rec(aRec);
 
   rec->mNativeStart = TimeStamp::Now();
