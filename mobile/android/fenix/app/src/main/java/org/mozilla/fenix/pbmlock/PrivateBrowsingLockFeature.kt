@@ -13,16 +13,22 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.lib.state.ext.consumeFlow
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.flowScoped
 import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.R
@@ -98,6 +104,7 @@ class PrivateBrowsingLockFeature(
     private val appStore: AppStore,
     private val browserStore: BrowserStore,
     private val storage: PrivateBrowsingLockStorage,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : DefaultLifecycleObserver {
     private var browserStoreScope: CoroutineScope? = null
     private var appStoreScope: CoroutineScope? = null
@@ -168,7 +175,7 @@ class PrivateBrowsingLockFeature(
     }
 
     private fun observePrivateTabsClosure() {
-        browserStoreScope = browserStore.flowScoped { flow ->
+        browserStoreScope = browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow
                 .map { it.privateTabs.size }
                 .distinctUntilChanged()
@@ -185,7 +192,7 @@ class PrivateBrowsingLockFeature(
     }
 
     private fun observeOpenInFirefoxRequest() {
-        appStoreScope = appStore.flowScoped { flow ->
+        appStoreScope = appStore.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.map { it.openInFirefoxRequested }
                 .distinctUntilChanged()
                 .filter { it }
@@ -267,8 +274,12 @@ fun Fragment.observePrivateModeLock(
     lockNormalMode: Boolean = false,
     onPrivateModeLocked: () -> Unit,
 ) {
-    consumeFlow(requireComponents.appStore) {
-        observePrivateModeLock(it, lockNormalMode, onPrivateModeLocked)
+    viewLifecycleOwner.run {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                observePrivateModeLock(requireComponents.appStore.flow(), lockNormalMode, onPrivateModeLocked)
+            }
+        }
     }
 }
 
