@@ -1,4 +1,3 @@
-
 importScripts("filesystem_commons.js");
 
 function finish() {

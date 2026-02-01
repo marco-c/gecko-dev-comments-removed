@@ -1,5 +1,4 @@
 
-
 Cu.importGlobalProperties(["File", "Directory"]);
 var tmpFile, tmpDir;
 

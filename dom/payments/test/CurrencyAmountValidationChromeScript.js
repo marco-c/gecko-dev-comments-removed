@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(

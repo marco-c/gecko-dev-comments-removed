@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-
-
 var gift = require("gift"),
   fs = require("fs"),
   argv = require("optimist")
