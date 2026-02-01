@@ -25,7 +25,7 @@ var gBrowserInit = {
 
 
   _translationsEnabledStateObserver: {
-    observe(_subject, topic, _data) {
+    observe(_subject, topic, data) {
       if (topic !== "translations:enabled-state-changed") {
         console.warn(`received unexpected topic: ${topic}`);
         return;
@@ -33,6 +33,23 @@ var gBrowserInit = {
 
       
       XULBrowserWindow._updateElementsForContentType();
+
+      if (data === "enabled") {
+        
+        
+        
+        for (const tab of gBrowser.tabs) {
+          try {
+            
+            tab.linkedBrowser?.browsingContext?.currentWindowGlobal?.getActor(
+              "Translations"
+            );
+          } catch {
+            
+            
+          }
+        }
+      }
     },
   },
 
@@ -232,6 +249,14 @@ var gBrowserInit = {
       "TranslationsParent:OfferTranslation",
       FullPageTranslationsPanel
     );
+    gBrowser.tabContainer.addEventListener("TabSelect", () => {
+      
+      
+      
+      if (!TranslationsParent.AIFeature.isEnabled) {
+        FullPageTranslationsPanel.buttonElements.button.hidden = true;
+      }
+    });
     gBrowser.addTabsProgressListener(FullPageTranslationsPanel);
 
     window.addEventListener("AppCommand", HandleAppCommandEvent, true);
