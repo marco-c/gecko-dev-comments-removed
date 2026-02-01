@@ -11,9 +11,7 @@
 #include "video/video_receive_stream2.h"
 
 #include <algorithm>
-#include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <deque>
 #include <limits>
 #include <memory>
@@ -913,18 +911,31 @@ TEST_P(VideoReceiveStream2Test, FramesScheduledInOrder) {
   EXPECT_CALL(mock_decoder_,
               Decode(test::RtpTimestamp(RtpTimestampForFrame(2)), _))
       .Times(1);
+
+  
   key_frame->SetReceivedTime(env_.clock().CurrentTime().ms());
   video_receive_stream_->OnCompleteFrame(std::move(key_frame));
+  
   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()), RenderedFrame());
 
-  delta_frame2->SetReceivedTime(env_.clock().CurrentTime().ms());
+  
+  time_controller_.AdvanceTime(2 * k30FpsDelay);
+  int64_t delta_frame2_received_time_ms = env_.clock().CurrentTime().ms();
+  delta_frame2->SetReceivedTime(delta_frame2_received_time_ms);
   video_receive_stream_->OnCompleteFrame(std::move(delta_frame2));
-  EXPECT_THAT(fake_renderer_.WaitForFrame(k30FpsDelay), DidNotReceiveFrame());
+  
+  EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()),
+              DidNotReceiveFrame());
+
   
   delta_frame1->SetReceivedTime(env_.clock().CurrentTime().ms());
+  EXPECT_EQ(delta_frame1->ReceivedTime(), delta_frame2_received_time_ms);
   video_receive_stream_->OnCompleteFrame(std::move(delta_frame1));
+  
+  EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()), RenderedFrame());
+  
   EXPECT_THAT(fake_renderer_.WaitForFrame(k30FpsDelay), RenderedFrame());
-  EXPECT_THAT(fake_renderer_.WaitForFrame(k30FpsDelay * 2), RenderedFrame());
+
   video_receive_stream_->Stop();
 }
 

@@ -26,6 +26,22 @@
 namespace webrtc {
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TimestampExtrapolator {
  public:
   
@@ -42,6 +58,13 @@ class TimestampExtrapolator {
       
       return StructParametersParser::Create(
         "hard_reset_timeout", &hard_reset_timeout,
+        "hard_reset_rtp_timestamp_jump_threshold",
+          &hard_reset_rtp_timestamp_jump_threshold,
+        "outlier_rejection_startup_delay", &outlier_rejection_startup_delay,
+        "outlier_rejection_max_consecutive", &outlier_rejection_max_consecutive,
+        "outlier_rejection_forgetting_factor",
+          &outlier_rejection_forgetting_factor,
+        "outlier_rejection_stddev", &outlier_rejection_stddev,
         "alarm_threshold", &alarm_threshold,
         "acc_drift", &acc_drift,
         "acc_max_error", &acc_max_error,
@@ -49,8 +72,43 @@ class TimestampExtrapolator {
       
     }
 
+    bool OutlierRejectionEnabled() const {
+      return outlier_rejection_stddev.has_value();
+    }
+
+    
+
     
     TimeDelta hard_reset_timeout = TimeDelta::Seconds(10);
+
+    
+    
+    
+    
+    int hard_reset_rtp_timestamp_jump_threshold = 900'000;
+
+    
+
+    
+    
+    int outlier_rejection_startup_delay = 300;
+
+    
+    
+    
+    
+    int outlier_rejection_max_consecutive = 150;
+
+    
+    
+    double outlier_rejection_forgetting_factor = 0.999;
+
+    
+    
+    
+    std::optional<double> outlier_rejection_stddev = 2.0;
+
+    
 
     
     
@@ -74,15 +132,21 @@ class TimestampExtrapolator {
 
   TimestampExtrapolator(Timestamp start, const FieldTrialsView& field_trials);
   ~TimestampExtrapolator();
+
+  
   void Update(Timestamp now, uint32_t ts90khz);
+
+  
   std::optional<Timestamp> ExtrapolateLocalTime(uint32_t timestamp90khz) const;
+
   void Reset(Timestamp start);
 
   Config GetConfigForTest() const { return config_; }
 
  private:
-  void CheckForWrapArounds(uint32_t ts90khz);
-  bool DelayChangeDetection(double error);
+  void SoftReset();
+  bool OutlierDetection(double residual);
+  bool DelayChangeDetection(double residual);
 
   const Config config_;
 
@@ -94,6 +158,13 @@ class TimestampExtrapolator {
   RtpTimestampUnwrapper unwrapper_;
   std::optional<int64_t> prev_unwrapped_timestamp_;
   int packet_count_;
+
+  
+  double residual_mean_;
+  double residual_variance_;
+  int outliers_consecutive_count_;
+
+  
   double detector_accumulator_pos_;
   double detector_accumulator_neg_;
 };

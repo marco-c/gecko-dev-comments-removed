@@ -10,8 +10,7 @@
 
 #include "modules/video_coding/timing/timestamp_extrapolator.h"
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <cstdlib>
 #include <limits>
 #include <optional>
@@ -340,6 +339,11 @@ TEST(TimestampExtrapolatorTest, SetsValidConfig) {
       clock.CurrentTime(), CreateTestFieldTrials(
           "WebRTC-TimestampExtrapolatorConfig/"
             "hard_reset_timeout:1s,"
+            "hard_reset_rtp_timestamp_jump_threshold:45000,"
+            "outlier_rejection_startup_delay:123,"
+            "outlier_rejection_max_consecutive:456,"
+            "outlier_rejection_forgetting_factor:0.987,"
+            "outlier_rejection_stddev:3.5,"
             "alarm_threshold:123,"
             "acc_drift:456,"
             "acc_max_error:789,"
@@ -347,7 +351,13 @@ TEST(TimestampExtrapolatorTest, SetsValidConfig) {
   
 
   TimestampExtrapolator::Config config = ts_extrapolator.GetConfigForTest();
+  EXPECT_TRUE(config.OutlierRejectionEnabled());
   EXPECT_EQ(config.hard_reset_timeout, TimeDelta::Seconds(1));
+  EXPECT_EQ(config.hard_reset_rtp_timestamp_jump_threshold, 45000);
+  EXPECT_EQ(config.outlier_rejection_startup_delay, 123);
+  EXPECT_EQ(config.outlier_rejection_max_consecutive, 456);
+  EXPECT_EQ(config.outlier_rejection_forgetting_factor, 0.987);
+  EXPECT_EQ(config.outlier_rejection_stddev, 3.5);
   EXPECT_EQ(config.alarm_threshold, 123);
   EXPECT_EQ(config.acc_drift, 456);
   EXPECT_EQ(config.acc_max_error, 789);
@@ -361,16 +371,181 @@ TEST(TimestampExtrapolatorTest, DoesNotSetInvalidConfig) {
       clock.CurrentTime(), CreateTestFieldTrials(
           "WebRTC-TimestampExtrapolatorConfig/"
             "hard_reset_timeout:-1s,"
+            "hard_reset_rtp_timestamp_jump_threshold:-1,"
+            "outlier_rejection_startup_delay:-1,"
+            "outlier_rejection_max_consecutive:0,"
+            "outlier_rejection_forgetting_factor:1.1,"
+            "outlier_rejection_stddev:-1,"
             "alarm_threshold:-123,"
             "acc_drift:-456,"
             "acc_max_error:-789/"));
   
 
   TimestampExtrapolator::Config config = ts_extrapolator.GetConfigForTest();
+  EXPECT_TRUE(config.OutlierRejectionEnabled());
   EXPECT_EQ(config.hard_reset_timeout, TimeDelta::Seconds(10));
+  EXPECT_EQ(config.hard_reset_rtp_timestamp_jump_threshold, 900000);
+  EXPECT_EQ(config.outlier_rejection_startup_delay, 300);
+  EXPECT_EQ(config.outlier_rejection_max_consecutive, 150);
+  EXPECT_EQ(config.outlier_rejection_forgetting_factor, 0.999);
+  EXPECT_EQ(config.outlier_rejection_stddev, 2.0);
   EXPECT_EQ(config.alarm_threshold, 60000);
   EXPECT_EQ(config.acc_drift, 6600);
   EXPECT_EQ(config.acc_max_error, 7000);
+}
+
+TEST(TimestampExtrapolatorTest, ExtrapolationNotAffectedByRtpTimestampJump) {
+  SimulatedClock clock(Timestamp::Millis(1337));
+  TimestampExtrapolator extrapolator(
+      clock.CurrentTime(),
+      CreateTestFieldTrials("WebRTC-TimestampExtrapolatorConfig/"
+                            "outlier_rejection_stddev:3,hard_reset_rtp_"
+                            "timestamp_jump_threshold:900000/"));
+
+  
+  uint32_t rtp = 0;
+  for (int i = 0; i < 2000; ++i) {
+    rtp += kRtpHz / k25Fps;
+    clock.AdvanceTime(k25FpsDelay);
+    extrapolator.Update(clock.CurrentTime(), rtp);
+  }
+
+  
+  rtp += kRtpHz / k25Fps;
+  clock.AdvanceTime(k25FpsDelay);
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+
+  
+  rtp += 2 * 900000;  
+  clock.AdvanceTime(k25FpsDelay);
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+
+  
+  rtp += kRtpHz / k25Fps;
+  clock.AdvanceTime(k25FpsDelay);
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+}
+
+TEST(TimestampExtrapolatorTest, ExtrapolationNotAffectedByFrameOutliers) {
+  SimulatedClock clock(Timestamp::Millis(1337));
+  TimestampExtrapolator extrapolator(
+      clock.CurrentTime(),
+      CreateTestFieldTrials(
+          "WebRTC-TimestampExtrapolatorConfig/outlier_rejection_stddev:3/"));
+
+  
+  uint32_t rtp = 0;
+  for (int i = 0; i < 2000; ++i) {
+    rtp += kRtpHz / k25Fps;
+    clock.AdvanceTime(k25FpsDelay);
+    extrapolator.Update(clock.CurrentTime(), rtp);
+  }
+
+  
+  rtp += kRtpHz / k25Fps;
+  clock.AdvanceTime(k25FpsDelay);
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+
+  
+  rtp += kRtpHz / k25Fps;
+  Timestamp expected = clock.CurrentTime() + k25FpsDelay;
+  clock.AdvanceTime(TimeDelta::Millis(1000));
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), expected);
+
+  
+  for (int i = 0; i < 24; ++i) {
+    rtp += kRtpHz / k25Fps;
+    expected += k25FpsDelay;
+    extrapolator.Update(clock.CurrentTime(), rtp);
+    EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), expected);
+  }
+
+  
+  rtp += kRtpHz / k25Fps;
+  clock.AdvanceTime(k25FpsDelay);
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+}
+
+TEST(TimestampExtrapolatorTest,
+     ExtrapolationAffectedByFrameOutliersAfterRejectionPeriod) {
+  SimulatedClock clock(Timestamp::Millis(1337));
+  TimestampExtrapolator extrapolator(
+      clock.CurrentTime(),
+      CreateTestFieldTrials(
+          "WebRTC-TimestampExtrapolatorConfig/"
+          "outlier_rejection_stddev:3,outlier_rejection_max_consecutive:20/"));
+
+  
+  uint32_t rtp = 0;
+  for (int i = 0; i < 2000; ++i) {
+    rtp += kRtpHz / k25Fps;
+    clock.AdvanceTime(k25FpsDelay);
+    extrapolator.Update(clock.CurrentTime(), rtp);
+  }
+
+  
+  rtp += kRtpHz / k25Fps;
+  clock.AdvanceTime(k25FpsDelay);
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+
+  
+  rtp += kRtpHz / k25Fps;
+  Timestamp expected = clock.CurrentTime() + k25FpsDelay;
+  clock.AdvanceTime(TimeDelta::Millis(1000));
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), expected);
+
+  
+  for (int i = 0; i < 19; ++i) {
+    rtp += kRtpHz / k25Fps;
+    expected += k25FpsDelay;
+    extrapolator.Update(clock.CurrentTime(), rtp);
+    EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), expected);
+  }
+
+  
+  
+  rtp += kRtpHz / k25Fps;
+  extrapolator.Update(clock.CurrentTime(), rtp);
+  EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+  for (int i = 0; i < 4; ++i) {
+    rtp += kRtpHz / k25Fps;
+    extrapolator.Update(clock.CurrentTime(), rtp);
+    EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp),
+              clock.CurrentTime() + (i + 1) * k25FpsDelay);
+  }
+
+  
+  
+  for (int i = 0; i < 10; ++i) {
+    rtp += kRtpHz / k25Fps;
+    clock.AdvanceTime(k25FpsDelay);
+    extrapolator.Update(clock.CurrentTime(), rtp);
+    EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp),
+              clock.CurrentTime() + 4 * k25FpsDelay);
+  }
+
+  
+  for (int i = 0; i < 2000; ++i) {
+    rtp += kRtpHz / k25Fps;
+    clock.AdvanceTime(k25FpsDelay);
+    extrapolator.Update(clock.CurrentTime(), rtp);
+  }
+
+  
+  for (int i = 0; i < 10; ++i) {
+    rtp += kRtpHz / k25Fps;
+    clock.AdvanceTime(k25FpsDelay);
+    extrapolator.Update(clock.CurrentTime(), rtp);
+    EXPECT_EQ(extrapolator.ExtrapolateLocalTime(rtp), clock.CurrentTime());
+  }
 }
 
 }  
