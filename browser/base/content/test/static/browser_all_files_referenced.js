@@ -334,6 +334,16 @@ var allowlist = [
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   },
   
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistoryScheduler.sys.mjs",
+  },
+  
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesConversationScheduler.sys.mjs",
+  },
+  
   {
     file: "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   },
@@ -343,10 +353,6 @@ var allowlist = [
   },
   {
     file: "moz-src:///browser/components/qrcode/QRCodeWorker.sys.mjs",
-  },
-  
-  {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
   },
 ];
 
