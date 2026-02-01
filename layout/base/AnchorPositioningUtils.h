@@ -65,6 +65,11 @@ struct AnchorPosOffsetData {
   DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
 };
 
+struct ScopedNameRef {
+  const nsAtom* mName;
+  StyleCascadeLevel mTreeScope;
+};
+
 
 struct AnchorPosResolutionData {
   
@@ -72,6 +77,7 @@ struct AnchorPosResolutionData {
   
   
   Maybe<AnchorPosOffsetData> mOffsetData;
+  StyleCascadeLevel mAnchorTreeScope;
 };
 
 
@@ -112,8 +118,8 @@ class AnchorPosReferenceData {
     Value* mEntry;
   };
 
-  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
-  const Value* Lookup(const nsAtom* aAnchorName) const;
+  Result InsertOrModify(const ScopedNameRef& aKey, bool aNeedOffset);
+  const Value* Lookup(const ScopedNameRef& aKey) const;
 
   bool IsEmpty() const { return mMap.IsEmpty(); }
 
@@ -181,6 +187,8 @@ class AnchorPosReferenceData {
   
   
   nsMargin mInsets;
+
+  StyleCascadeLevel mAnchorTreeScope = StyleCascadeLevel::Default();
 
  private:
   ResolutionMap mMap;
@@ -251,6 +259,8 @@ enum class StylePositionTryFallbacksTryTacticKeyword : uint8_t;
 using StylePositionTryFallbacksTryTactic =
     CopyableTArray<StylePositionTryFallbacksTryTacticKeyword>;
 
+struct ScopedNameRef;
+
 
 
 
@@ -263,7 +273,7 @@ struct AnchorPositioningUtils {
 
 
   static nsIFrame* FindFirstAcceptableAnchor(
-      const nsAtom* aName, const nsIFrame* aPositionedFrame,
+      const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
       const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
 
   static Maybe<nsRect> GetAnchorPosRect(
@@ -272,12 +282,11 @@ struct AnchorPositioningUtils {
 
   static Maybe<AnchorPosInfo> ResolveAnchorPosRect(
       const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-      const nsAtom* aAnchorName, StyleCascadeLevel aAnchorTreeScope,
-      bool aCBRectIsvalid, AnchorPosResolutionCache* aResolutionCache);
+      const ScopedNameRef& aAnchorName, bool aCBRectIsvalid,
+      AnchorPosResolutionCache* aResolutionCache);
 
   static Maybe<nsSize> ResolveAnchorPosSize(
-      const nsIFrame* aPositioned, const nsAtom* aAnchorName,
-      StyleCascadeLevel aAnchorTreeScope,
+      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName,
       AnchorPosResolutionCache* aResolutionCache);
 
   
@@ -301,8 +310,8 @@ struct AnchorPositioningUtils {
 
 
 
-  static const nsAtom* GetUsedAnchorName(const nsIFrame* aPositioned,
-                                         const nsAtom* aAnchorName);
+  static Maybe<ScopedNameRef> GetUsedAnchorName(
+      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName);
 
   
 
