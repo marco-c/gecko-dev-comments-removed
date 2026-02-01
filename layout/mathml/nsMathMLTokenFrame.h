@@ -29,7 +29,7 @@ class nsMathMLTokenFrame : public nsMathMLContainerFrame {
     
     
     if (mContent->IsMathMLElement(nsGkAtoms::mtext)) {
-      mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
+      mPresentationData.flags += MathMLPresentationFlag::SpaceLike;
     }
     return NS_OK;
   }

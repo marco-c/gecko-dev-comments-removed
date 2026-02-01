@@ -55,16 +55,19 @@ nsresult nsMathMLmunderoverFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 NS_IMETHODIMP
-nsMathMLmunderoverFrame::UpdatePresentationData(uint32_t aFlagsValues,
-                                                uint32_t aFlagsToUpdate) {
+nsMathMLmunderoverFrame::UpdatePresentationData(
+    MathMLPresentationFlags aFlagsValues,
+    MathMLPresentationFlags aFlagsToUpdate) {
   nsMathMLContainerFrame::UpdatePresentationData(aFlagsValues, aFlagsToUpdate);
   
   
   if (NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact) {
-    mPresentationData.flags &= ~NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
+    mPresentationData.flags -=
+        MathMLPresentationFlag::StretchAllChildrenHorizontally;
   } else {
-    mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
+    mPresentationData.flags +=
+        MathMLPresentationFlag::StretchAllChildrenHorizontally;
   }
   return NS_OK;
 }
@@ -74,7 +77,8 @@ nsMathMLmunderoverFrame::InheritAutomaticData(nsIFrame* aParent) {
   
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
 
-  mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
+  mPresentationData.flags +=
+      MathMLPresentationFlag::StretchAllChildrenHorizontally;
 
   return NS_OK;
 }
@@ -275,7 +279,8 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
   
   if (subsupDisplay) {
-    mPresentationData.flags &= ~NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY;
+    mPresentationData.flags -=
+        MathMLPresentationFlag::StretchAllChildrenHorizontally;
   }
 
   
@@ -308,11 +313,11 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
       PropagateFrameFlagFor(overscriptFrame, NS_FRAME_MATHML_SCRIPT_DESCENDANT);
     }
     if (!StaticPrefs::mathml_math_shift_enabled()) {
-      uint32_t compress =
-          NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)
-              ? NS_MATHML_COMPRESSED
-              : 0;
-      PropagatePresentationDataFor(overscriptFrame, compress, compress);
+      MathMLPresentationFlags flags;
+      if (NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
+        flags += MathMLPresentationFlag::Compressed;
+      }
+      PropagatePresentationDataFor(overscriptFrame, flags, flags);
     }
   }
   
@@ -330,8 +335,9 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
                             NS_FRAME_MATHML_SCRIPT_DESCENDANT);
     }
     if (!StaticPrefs::mathml_math_shift_enabled()) {
-      PropagatePresentationDataFor(underscriptFrame, NS_MATHML_COMPRESSED,
-                                   NS_MATHML_COMPRESSED);
+      PropagatePresentationDataFor(underscriptFrame,
+                                   MathMLPresentationFlag::Compressed,
+                                   MathMLPresentationFlag::Compressed);
     }
   }
 
@@ -353,7 +359,8 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   if (overscriptFrame &&
       NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags) &&
       !NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags)) {
-    PropagatePresentationDataFor(baseFrame, NS_MATHML_DTLS, NS_MATHML_DTLS);
+    PropagatePresentationDataFor(baseFrame, MathMLPresentationFlag::Dtls,
+                                 MathMLPresentationFlag::Dtls);
   }
 
   return NS_OK;

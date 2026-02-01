@@ -32,6 +32,37 @@ enum eMathMLFrameType {
 };
 
 
+
+enum class MathMLPresentationFlag : uint8_t {
+  
+  
+  Compressed,
+
+  
+  
+  
+  
+  StretchAllChildrenVertically,
+
+  
+  
+  
+  
+  StretchAllChildrenHorizontally,
+
+  
+  SpaceLike,
+
+  
+  
+  Dtls,
+
+  
+  StretchDone,
+};
+using MathMLPresentationFlags = mozilla::EnumSet<MathMLPresentationFlag>;
+
+
 class nsIMathMLFrame {
  public:
   NS_DECL_QUERYFRAME_TARGET(nsIMathMLFrame)
@@ -168,7 +199,8 @@ class nsIMathMLFrame {
 
 
   NS_IMETHOD
-  UpdatePresentationData(uint32_t aFlagsValues, uint32_t aWhichFlags) = 0;
+  UpdatePresentationData(MathMLPresentationFlags aFlagsValues,
+                         MathMLPresentationFlags aWhichFlags) = 0;
 
   
 
@@ -193,8 +225,8 @@ class nsIMathMLFrame {
 
   NS_IMETHOD
   UpdatePresentationDataFromChildAt(int32_t aFirstIndex, int32_t aLastIndex,
-                                    uint32_t aFlagsValues,
-                                    uint32_t aWhichFlags) = 0;
+                                    MathMLPresentationFlags aFlagsValues,
+                                    MathMLPresentationFlags aWhichFlags) = 0;
 
   
   
@@ -242,65 +274,13 @@ struct nsEmbellishData {
 
 struct nsPresentationData {
   
-  uint32_t flags = 0;
+  MathMLPresentationFlags flags;
 
   
   
   
   nsIFrame* baseFrame = nullptr;
 };
-
-
-
-
-
-
-
-#define NS_MATHML_COMPRESSED 0x00000002U
-
-
-
-
-
-#define NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY 0x00000004U
-
-
-
-
-
-#define NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY 0x00000008U
-
-
-#define NS_MATHML_SPACE_LIKE 0x00000040U
-
-
-
-#define NS_MATHML_DTLS 0x00000080U
-
-
-#define NS_MATHML_STRETCH_DONE 0x20000000U
-
-
-
-#define NS_MATHML_IS_COMPRESSED(_flags) \
-  (NS_MATHML_COMPRESSED == ((_flags) & NS_MATHML_COMPRESSED))
-
-#define NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(_flags) \
-  (NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY ==                \
-   ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY))
-
-#define NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(_flags) \
-  (NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY ==                \
-   ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY))
-
-#define NS_MATHML_IS_SPACE_LIKE(_flags) \
-  (NS_MATHML_SPACE_LIKE == ((_flags) & NS_MATHML_SPACE_LIKE))
-
-#define NS_MATHML_IS_DTLS_SET(_flags) \
-  (NS_MATHML_DTLS == ((_flags) & NS_MATHML_DTLS))
-
-#define NS_MATHML_STRETCH_WAS_DONE(_flags) \
-  (NS_MATHML_STRETCH_DONE == ((_flags) & NS_MATHML_STRETCH_DONE))
 
 
 

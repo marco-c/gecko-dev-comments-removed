@@ -29,7 +29,7 @@ class nsMathMLmspaceFrame final : public nsMathMLContainerFrame {
   TransmitAutomaticData() override {
     
     
-    mPresentationData.flags |= NS_MATHML_SPACE_LIKE;
+    mPresentationData.flags += MathMLPresentationFlag::SpaceLike;
     return NS_OK;
   }
 

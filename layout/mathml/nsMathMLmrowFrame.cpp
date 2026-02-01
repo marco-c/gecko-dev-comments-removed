@@ -29,7 +29,8 @@ nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent) {
   
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
 
-  mPresentationData.flags |= NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY;
+  mPresentationData.flags +=
+      MathMLPresentationFlag::StretchAllChildrenVertically;
 
   return NS_OK;
 }
