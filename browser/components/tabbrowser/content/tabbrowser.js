@@ -4802,7 +4802,8 @@
         (a, b) => b.lastSeenActive - a.lastSeenActive
       );
       let duplicateTabs = [];
-      let keys = [];
+      
+      let userContextIdsPerUri = new Map();
       for (let tab of lastSeenTabs) {
         const uri = tab.linkedBrowser?.currentURI;
         if (!uri) {
@@ -4810,20 +4811,15 @@
           
           continue;
         }
-
-        const key = {
-          uri,
-          userContextId: tab.userContextId,
-        };
-        if (
-          !tab.pinned &&
-          keys.some(
-            k => k.userContextId == key.userContextId && k.uri.equals(key.uri)
-          )
-        ) {
+        let userContextIds = userContextIdsPerUri.getOrInsertComputed(
+          uri.spec,
+          () => new Set()
+        );
+        let userContextId = tab.userContextId;
+        if (!tab.pinned && userContextIds.has(userContextId)) {
           duplicateTabs.push(tab);
         }
-        keys.push(key);
+        userContextIds.add(userContextId);
       }
       return duplicateTabs;
     }
