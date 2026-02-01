@@ -165,7 +165,14 @@ class PeerConnectionPrAnswerSwitchTest
 };
 
 #ifdef WEBRTC_HAVE_SCTP
-TEST_F(PeerConnectionPrAnswerSwitchTest, DtlsRestartOneCalleAtATime) {
+TEST_F(PeerConnectionPrAnswerSwitchTest, DtlsRestartOneCalleeAtATime) {
+  
+  
+  
+  
+  std::atomic<int> caller_sent_on_dc(0);
+  std::atomic<int> callee2_sent_on_dc(0);
+
   auto callee2 = SetupCallee2AndDc( false);
   std::unique_ptr<SessionDescriptionInterface> offer;
   callee()->SetReceivedSdpMunger(
@@ -183,8 +190,6 @@ TEST_F(PeerConnectionPrAnswerSwitchTest, DtlsRestartOneCalleAtATime) {
   WaitConnectedAndDcOpen( true, caller(), callee());
   ASSERT_FALSE(HasFailure());
 
-  std::atomic<int> caller_sent_on_dc(0);
-  std::atomic<int> callee2_sent_on_dc(0);
   caller()->set_connection_change_callback([&](auto new_state) {
     SendOnDatachannelWhenConnectedCallback(caller(), "KESO", caller_sent_on_dc);
   });
