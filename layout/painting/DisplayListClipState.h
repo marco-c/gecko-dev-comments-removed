@@ -62,7 +62,6 @@ class DisplayListClipState {
     mClipChainContainingBlockDescendants = nullptr;
     mCurrentCombinedClipChain = nullptr;
     mCurrentCombinedClipChainIsValid = false;
-    mClippedToDisplayPort = false;
   }
 
   void SetClipChainForContainingBlockDescendants(
@@ -130,11 +129,6 @@ class DisplayListClipState {
 
   const DisplayItemClipChain* mCurrentCombinedClipChain;
   bool mCurrentCombinedClipChainIsValid;
-  
-
-
-
-  bool mClippedToDisplayPort;
 };
 
 
