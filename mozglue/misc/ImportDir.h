@@ -4,6 +4,9 @@
 
 
 
+#ifndef MOZGLUE_MISC_IMPORTDIR_H_
+#define MOZGLUE_MISC_IMPORTDIR_H_
+
 #include "mozilla/NativeNt.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
@@ -92,3 +95,5 @@ inline LauncherVoidResult RestoreImportDirectory(
 }
 
 }  
+
+#endif  
