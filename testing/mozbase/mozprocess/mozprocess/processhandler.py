@@ -676,7 +676,7 @@ falling back to not using job objects for managing child processes""",
                         pass
                     elif rc == winprocess.WAIT_OBJECT_0:
                         
-                        print("Single process terminated successfully")
+                        self.debug("Single process terminated successfully")
                         self.returncode = winprocess.GetExitCodeProcess(self._handle)
                     else:
                         
