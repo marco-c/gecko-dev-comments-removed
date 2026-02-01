@@ -194,6 +194,12 @@ bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 
 
 
+
+
+
+
+
+
 class JSString : public js::gc::CellWithLengthAndFlags {
  protected:
   using Base = js::gc::CellWithLengthAndFlags;
@@ -862,11 +868,30 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     return nurseryZone();
   }
 
-  void setLengthAndFlags(uint32_t len, uint32_t flags) {
+  void initLengthAndFlags(uint32_t len, uint32_t flags) {
     setHeaderLengthAndFlags(len, flags);
   }
-  void setFlagBit(uint32_t flag) { setHeaderFlagBit(flag); }
-  void clearFlagBit(uint32_t flag) { clearHeaderFlagBit(flag); }
+  void setLengthAndFlags(uint32_t len, uint32_t flags) {
+    assertTypeUnchanged(flags);
+    setHeaderLengthAndFlags(len, flags);
+  }
+  void setFlagBit(uint32_t flag) {
+    assertTypeUnchanged(flags() | flag);
+    setHeaderFlagBit(flag);
+  }
+  void clearFlagBit(uint32_t flag) {
+    assertTypeUnchanged(flags() & ~flag);
+    clearHeaderFlagBit(flag);
+  }
+  void changeStringType(uint32_t len, uint32_t flags) {
+    setHeaderLengthAndFlags(len, flags);
+  }
+
+#ifdef DEBUG
+  void assertTypeUnchanged(uint32_t newFlags) const;
+#else
+  void assertTypeUnchanged(uint32_t newFlags) const {}
+#endif
 
   void fixupAfterMovingGC() {}
 
