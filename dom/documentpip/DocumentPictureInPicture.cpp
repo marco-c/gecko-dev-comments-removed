@@ -103,8 +103,7 @@ nsGlobalWindowInner* DocumentPictureInPicture::GetWindow() {
 }
 
 
-
-const CSSIntSize DocumentPictureInPicture::sDefaultSize = {700, 650};
+const CSSIntSize DocumentPictureInPicture::sDefaultSize = {400, 300};
 const CSSIntSize DocumentPictureInPicture::sMinSize = {240, 50};
 
 static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
@@ -160,55 +159,70 @@ Maybe<CSSIntRect> DocumentPictureInPicture::GetScreenRect(
 }
 
 
-static CSSIntPoint CalcInitialPos(const CSSIntRect& screen,
-                                  const CSSIntSize& aSize) {
+static CSSIntRect CalcInitialExtent(const CSSIntRect& aScreen,
+                                    const CSSIntSize& aSize) {
   
   
   
-  return {std::max(screen.X(), screen.XMost() - aSize.width - 100),
-          std::max(screen.Y(), screen.YMost() - aSize.height - 100 - 80)};
+  const CSSIntPoint pos = {
+      std::max(aScreen.X(), aScreen.XMost() - aSize.width - 100),
+      std::max(aScreen.Y(), aScreen.YMost() - aSize.height - 100 - 80)};
+  return CSSIntRect(pos, aSize);
 }
 
 
 CSSIntSize DocumentPictureInPicture::CalcMaxDimensions(
-    const CSSIntRect& screen) {
+    const CSSIntRect& aScreen) {
   
   
   CSSIntSize size =
-      RoundedToInt(screen.Size() * gfx::ScaleFactor<CSSPixel, CSSPixel>(0.8));
+      RoundedToInt(aScreen.Size() * gfx::ScaleFactor<CSSPixel, CSSPixel>(0.8));
   size.width = std::max(size.width, sMinSize.width);
   size.height = std::max(size.height, sMinSize.height);
   return size;
 }
 
 CSSIntRect DocumentPictureInPicture::DetermineExtent(
-    bool aPreferInitialWindowPlacement, int aRequestedWidth,
-    int aRequestedHeight, const CSSIntRect& screen) {
+    bool aPreferInitialWindowPlacement, const CSSIntSize& aRequestedSize,
+    const CSSIntRect& aScreen) {
   
   
-  const bool shouldUseInitialPlacement =
-      !mPreviousExtent.isSome() || aPreferInitialWindowPlacement ||
-      (mLastRequestedSize.isSome() &&
-       (mLastRequestedSize->Width() != aRequestedWidth ||
-        mLastRequestedSize->Height() != aRequestedHeight));
 
-  CSSIntRect extent;
-  if (shouldUseInitialPlacement) {
-    CSSIntSize size = sDefaultSize;
-    if (aRequestedWidth > 0 && aRequestedHeight > 0) {
-      size = CSSIntSize(aRequestedWidth, aRequestedHeight);
-    }
-    CSSIntPoint initialPos = CalcInitialPos(screen, size);
-    extent = CSSIntRect(initialPos, size);
+  
+  const bool emptyRequest = aRequestedSize == CSSIntSize(0, 0);
+  const bool requestChanged =
+      !emptyRequest &&
+      (mLastRequestedSize.isNothing() || *mLastRequestedSize != aRequestedSize);
 
-    MOZ_LOG(gDPIPLog, LogLevel::Debug,
-            ("Calculated initial PiP rect %s", ToString(extent).c_str()));
-  } else {
-    extent = mPreviousExtent.value();
+  if (!emptyRequest) {
+    mLastRequestedSize = Some(aRequestedSize);
   }
 
   
-  CSSIntSize maxSize = CalcMaxDimensions(screen);
+  
+  const bool reusePreviousExtent = mPreviousExtent.isSome() &&
+                                   !aPreferInitialWindowPlacement &&
+                                   !requestChanged;
+
+  MOZ_LOG_FMT(gDPIPLog, LogLevel::Debug,
+              "{} reuse previous extent (hasPrevious={}, preferInitial={}, "
+              "requestChanged={})",
+              reusePreviousExtent ? "Will" : "Won't", mPreviousExtent.isSome(),
+              aPreferInitialWindowPlacement, requestChanged);
+
+  CSSIntRect extent;
+  if (reusePreviousExtent) {
+    extent = mPreviousExtent.value();
+  } else {
+    extent = CalcInitialExtent(aScreen,
+                               emptyRequest ? sDefaultSize : aRequestedSize);
+
+    MOZ_LOG(gDPIPLog, LogLevel::Debug,
+            ("Calculated initial PiP rect %s", ToString(extent).c_str()));
+  }
+
+  
+  CSSIntSize maxSize = CalcMaxDimensions(aScreen);
   extent.width = std::clamp(extent.width, sMinSize.width, maxSize.width);
   extent.height = std::clamp(extent.height, sMinSize.height, maxSize.height);
 
@@ -269,11 +283,10 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   }
 
   
-  const int requestedWidth = SaturatingCast<int>(aOptions.mWidth),
-            requestedHeight = SaturatingCast<int>(aOptions.mHeight);
+  const CSSIntSize requestedSize = {SaturatingCast<int>(aOptions.mWidth),
+                                    SaturatingCast<int>(aOptions.mHeight)};
   CSSIntRect extent = DetermineExtent(aOptions.mPreferInitialWindowPlacement,
-                                      requestedWidth, requestedHeight, screen);
-  mLastRequestedSize = Some(CSSIntSize(requestedWidth, requestedHeight));
+                                      requestedSize, screen);
 
   MOZ_LOG(gDPIPLog, LogLevel::Debug,
           ("Will place PiP at rect %s", ToString(extent).c_str()));
