@@ -477,8 +477,16 @@ class Shims {
       return;
     }
 
+    let shims = availableShims;
+    if (browser.appConstants.isInAutomation()) {
+      const override = browser.aboutConfigPrefs.getPref("test_shims");
+      if (override) {
+        shims = JSON.parse(override);
+      }
+    }
+
     this._readyPromise = new Promise(done => (this._resolveReady = done));
-    this._registerShims(availableShims);
+    this._registerShims(shims);
 
     onMessageFromTab(this._onMessageFromShim.bind(this));
 
@@ -635,7 +643,7 @@ class Shims {
     }
 
     
-    this._registerContentScriptsForShims();
+    this._registerContentScriptsForShims(this.shims.values(), true);
 
     
     
@@ -1299,10 +1307,13 @@ class Shims {
     return undefined;
   }
 
-  async _registerContentScriptsForShims(shims) {
+  async _registerContentScriptsForShims(
+    shims,
+    alsoClearObsoleteContentScripts
+  ) {
     const contentScriptsToRegister = [];
 
-    for (const shim of shims ?? this.shims.values()) {
+    for (const shim of shims) {
       if (
         shim.disabledReason ||
         !shim.contentScripts.length ||
@@ -1322,7 +1333,7 @@ class Shims {
           Object.assign(
             {
               id,
-              persistAcrossSessions: false,
+              persistAcrossSessions: true,
             },
             options
           )
@@ -1330,11 +1341,28 @@ class Shims {
       }
     }
 
-    if (contentScriptsToRegister.length) {
+    
+    
+    
+    if (alsoClearObsoleteContentScripts) {
+      const info = await InterventionHelpers.ensureOnlyTheseContentScripts(
+        contentScriptsToRegister,
+        "SmartBlock shim"
+      );
+      if (browser.appConstants.isInAutomation()) {
+        this._lastEnabledInfo = info;
+      }
+    } else {
       await InterventionHelpers.registerContentScripts(
         contentScriptsToRegister,
         "SmartBlock"
       );
+    }
+
+    if (alsoClearObsoleteContentScripts) {
+      
+      
+      
     }
   }
 
@@ -1344,10 +1372,16 @@ class Shims {
       ids.push(...shim._contentScriptRegistrations);
       shim._contentScriptRegistrations = [];
     }
-    for (const id of ids) {
-      try {
-        await browser.scripting.unregisterContentScripts({ ids: [id] });
-      } catch (_) {}
+    try {
+      await browser.scripting.unregisterContentScripts({ ids });
+    } catch (_) {
+      for (const id of ids) {
+        try {
+          await browser.scripting.unregisterContentScripts({ ids: [id] });
+        } catch (e) {
+          console.error(`Error while unregistering shim content script`, id, e);
+        }
+      }
     }
   }
 }
