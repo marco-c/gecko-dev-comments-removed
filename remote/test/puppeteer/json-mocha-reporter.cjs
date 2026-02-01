@@ -3,15 +3,15 @@ module.exports = JSONExtra;
 
 const constants = mocha.Runner.constants;
 
+/*
 
+This is a copy of
+https://github.com/mochajs/mocha/blob/master/lib/reporters/json-stream.js
+with more event hooks. mocha does not support extending reporters or using
+multiple reporters so a custom reporter is needed and it must be local
+to the project.
 
-
-
-
-
-
-
-
+*/
 
 function JSONExtra(runner, options) {
   mocha.reporters.Base.call(this, runner, options);
@@ -50,14 +50,14 @@ function writeEvent(event) {
   process.stdout.write(JSON.stringify(event) + '\n');
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Returns an object literal representation of `test`
+ * free of cyclic properties, etc.
+ *
+ * @private
+ * @param {Object} test - Instance used as data source.
+ * @return {Object} object containing pared-down test instance data
+ */
 function clean(test) {
   return {
     title: test.title,
