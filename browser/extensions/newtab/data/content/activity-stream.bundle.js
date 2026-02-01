@@ -11031,6 +11031,13 @@ class _Weather extends (external_React_default()).PureComponent {
     const showDetailedView = Prefs.values["weather.display"] === "detailed";
     const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
     const nimbusWeatherOptInEnabled = Prefs.values.trainhopConfig?.weather?.weatherOptInEnabled;
+    
+    
+    
+    
+    
+    
+    const reverseOptInButtons = Prefs.values.trainhopConfig?.weather?.reverseOptInButtons;
     const optInDisplayed = Prefs.values["weather.optInDisplayed"];
     const optInUserChoice = Prefs.values["weather.optInAccepted"];
     const staticWeather = Prefs.values["weather.staticData.enabled"];
@@ -11147,15 +11154,17 @@ class _Weather extends (external_React_default()).PureComponent {
       }, external_React_default().createElement("moz-button", {
         size: "small",
         type: "default",
-        "data-l10n-id": "newtab-weather-opt-in-not-now",
-        onClick: this.handleRejectOptIn,
-        id: "reject-opt-in"
+        "data-l10n-id": "newtab-weather-opt-in-yes",
+        onClick: this.handleAcceptOptIn,
+        id: "accept-opt-in",
+        slot: reverseOptInButtons ? "" : "primary"
       }), external_React_default().createElement("moz-button", {
         size: "small",
         type: "default",
-        "data-l10n-id": "newtab-weather-opt-in-yes",
-        onClick: this.handleAcceptOptIn,
-        id: "accept-opt-in"
+        "data-l10n-id": "newtab-weather-opt-in-not-now",
+        onClick: this.handleRejectOptIn,
+        id: "reject-opt-in",
+        slot: reverseOptInButtons ? "primary" : ""
       }))))));
     }
     return external_React_default().createElement("div", {
