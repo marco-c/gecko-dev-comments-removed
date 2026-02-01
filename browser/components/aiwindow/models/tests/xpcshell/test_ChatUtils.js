@@ -265,6 +265,9 @@ add_task(async function test_constructRelevantMemoriesContextMessage() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
       run() {
         return {
           finalOutput: `{
@@ -277,12 +280,15 @@ add_task(async function test_constructRelevantMemoriesContextMessage() {
 
     
     const stub = sb
-      .stub(MemoriesManager, "ensureOpenAIEngine")
-      .returns(fakeEngine);
+      .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
+      .resolves(fakeEngine);
 
     const relevantMemoriesContextMessage =
       await constructRelevantMemoriesContextMessage("I love drinking coffee");
-    Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
+    Assert.ok(
+      stub.calledOnce,
+      "ensureOpenAIEngineForUsage should be called once"
+    );
 
     
     Assert.strictEqual(
@@ -335,6 +341,9 @@ add_task(
     const sb = sinon.createSandbox();
     try {
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -347,12 +356,15 @@ add_task(
 
       
       const stub = sb
-        .stub(MemoriesManager, "ensureOpenAIEngine")
-        .returns(fakeEngine);
+        .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
+        .resolves(fakeEngine);
 
       const relevantMemoriesContextMessage =
         await constructRelevantMemoriesContextMessage("I love drinking coffee");
-      Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
+      Assert.ok(
+        stub.calledOnce,
+        "ensureOpenAIEngineForUsage should be called once"
+      );
 
       
       Assert.equal(
