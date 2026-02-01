@@ -216,18 +216,15 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
       "telemetrySearchIdentifier"
     );
     engine.hidden = false;
-    await SearchService.setDefault(
-      engine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
+    await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
     await SearchService.setDefaultPrivate(
       SearchService.getEngineByName(SEARCH_ENGINE_ID),
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   } else {
     await SearchService.setDefault(
       SearchService.getEngineByName(SEARCH_ENGINE_ID),
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   }
   await deferred.promise;
@@ -295,7 +292,7 @@ add_task(async function test_defaultSearchEngine() {
   
   await SearchService.setDefault(
     SearchService.getEngineByName(SEARCH_ENGINE_ID),
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   
@@ -348,10 +345,7 @@ add_task(async function test_defaultSearchEngine_paramsChanged() {
     );
   });
   let engine = SearchService.getEngineByName("TestEngine");
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   await promise;
 
   let data = TelemetryEnvironment.currentEnvironment;
