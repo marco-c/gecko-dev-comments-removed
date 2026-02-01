@@ -53,6 +53,42 @@ function standardAvatarURL(avatar, size = "80") {
 }
 
 /**
+ * Resolve a relative path against an absolute path. The relative path may only
+ * contain parent directory or child directory parts.
+ *
+ * @param {string} absolute The absolute path
+ * @param {string} relative The relative path
+ * @returns {string} The resolved path
+ */
+function resolveDir(absolute, relative) {
+  let target = absolute;
+
+  for (let pathPart of PathUtils.splitRelative(relative, {
+    allowParentDir: true,
+  })) {
+    if (pathPart === "..") {
+      target = PathUtils.parent(target);
+
+      // On Windows there is no notion of a single root directory. Instead each
+      // disk has a root directory. Traversing to a different disk means allowing
+      // going above the root of the first disk then the next path part will be
+      // the new disk.
+      if (!target && AppConstants.platform != "win") {
+        throw new Error("Invalid path");
+      }
+    } else {
+      target = target ? PathUtils.join(target, pathPart) : pathPart;
+    }
+  }
+
+  if (!target) {
+    throw new Error("Invalid path");
+  }
+
+  return target;
+}
+
+/**
  * The selectable profile
  */
 export class SelectableProfile {
@@ -131,7 +167,7 @@ export class SelectableProfile {
    * @returns {string} Path of profile
    */
   get path() {
-    return PathUtils.joinRelative(
+    return resolveDir(
       ProfilesDatastoreService.constructor.getDirectory("UAppData").path,
       this.#path
     );
@@ -154,15 +190,11 @@ export class SelectableProfile {
    * the profile local directory
    */
   get localDir() {
-    return this.rootDir.then(root => {
-      let relative = root.getRelativePath(
-        ProfilesDatastoreService.constructor.getDirectory("DefProfRt")
-      );
-      let local =
-        ProfilesDatastoreService.constructor.getDirectory("DefProfLRt");
-      local.appendRelativePath(relative);
-      return local;
-    });
+    return this.rootDir.then(root =>
+      ProfilesDatastoreService.toolkitProfileService.getLocalDirFromRootDir(
+        root
+      )
+    );
   }
 
   /**
@@ -479,6 +511,18 @@ export class SelectableProfile {
     // We set the pref here so the copied profile will inherit this pref and
     // the copied profile will not show the backup welcome messaging.
     Services.prefs.setBoolPref("browser.profiles.profile-copied", true);
+
+    // If the user has created a desktop shortcut, clear the shortcut name pref
+    // to prevent the copied profile trying to manage the original profile's
+    // shortcut.
+    let shortcutFileName = Services.prefs.getCharPref(
+      "browser.profiles.shortcutFileName",
+      ""
+    );
+    if (shortcutFileName !== "") {
+      Services.prefs.clearUserPref("browser.profiles.shortcutFileName");
+    }
+
     const backupServiceInstance = new BackupService();
 
     let encState = await backupServiceInstance.loadEncryptionState(this.path);
@@ -499,6 +543,15 @@ export class SelectableProfile {
 
     // Clear the pref now that the copied profile has inherited it.
     Services.prefs.clearUserPref("browser.profiles.profile-copied");
+
+    // Restore the desktop shortcut pref now that the copied profile will not
+    // inherit it.
+    if (shortcutFileName !== "") {
+      Services.prefs.setCharPref(
+        "browser.profiles.shortcutFileName",
+        shortcutFileName
+      );
+    }
 
     if (result.error) {
       throw result.error;

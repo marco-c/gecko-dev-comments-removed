@@ -13,6 +13,10 @@ add_task(
     let hash = xreDirProvider.getInstallHash();
     let defaultProfile = makeRandomProfileDir("default");
     let otherProfile = makeRandomProfileDir("other");
+    let absoluteProfile = gProfD.clone();
+    absoluteProfile.append("absolute");
+    absoluteProfile.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+
     let storeID = "b0bacafe";
     let profilesIni = {
       profiles: [
@@ -67,21 +71,37 @@ add_task(
     
     
     
-    let asyncRewriteDefault = async () => {
+    let asyncRewriteDefault = async (expectedPath, expectedRelative) => {
       await service.asyncFlushCurrentProfile();
       let profileData = readProfilesIni();
 
       Assert.equal(
         profileData.profiles[0].path,
-        defaultProfile.leafName,
+        expectedPath,
+        "AsyncFlushCurrentProfile should have updated the path to the path of the current managed profile"
+      );
+
+      Assert.equal(
+        profileData.profiles[0].isRelative,
+        expectedRelative,
+        "AsyncFlushCurrentProfile should have updated IsRelative correctly"
+      );
+
+      Assert.equal(
+        profileData.installs[hash].default,
+        expectedPath,
         "AsyncFlushCurrentProfile should have updated the path to the path of the current managed profile"
       );
     };
-    await asyncRewriteDefault();
+    await asyncRewriteDefault(defaultProfile.leafName, true);
 
     
     
     overwriteProfilesIni();
-    await asyncRewriteDefault();
+    await asyncRewriteDefault(defaultProfile.leafName, true);
+
+    
+    service.currentProfile.rootDir = absoluteProfile;
+    await asyncRewriteDefault(absoluteProfile.path, false);
   }
 );
