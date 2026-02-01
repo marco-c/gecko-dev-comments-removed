@@ -20,7 +20,7 @@ using namespace mozilla;
 
  const uint32_t nsCSSPseudoElements::kPseudoElementFlags[] = {
 #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) flags_,
-#include "nsCSSPseudoElementList.h"
+#include "nsCSSPseudoElementList.inc"
 #undef CSS_PSEUDO_ELEMENT
 };
 
@@ -117,7 +117,7 @@ void nsCSSPseudoElements::AssertAtoms() {
       MOZ_ASSERT(atom == &base[index],                                \
                  "Static atom for " #name_ " not at expected index"); \
     }
-#  include "nsCSSPseudoElementList.h"
+#  include "nsCSSPseudoElementList.inc"
 #  undef CSS_PSEUDO_ELEMENT
 }
 #endif

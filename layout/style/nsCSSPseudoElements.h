@@ -67,7 +67,7 @@ class nsCSSPseudoElements {
         static_cast<const nsCSSPseudoElementStaticAtom*>( \
             nsGkAtoms::PseudoElement_##name_));           \
   }
-#include "nsCSSPseudoElementList.h"
+#include "nsCSSPseudoElementList.inc"
 #undef CSS_PSEUDO_ELEMENT
 
   
