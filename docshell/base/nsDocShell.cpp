@@ -11345,11 +11345,28 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  nsCOMPtr<nsIChannel> aboutBlankChannel;
+  rv = NS_NewChannelInternal(getter_AddRefs(aboutBlankChannel),
+                             aLoadState->URI(), aLoadInfo, nullptr, mLoadGroup,
+                             nullptr, nsIChannel::LOAD_DOCUMENT_URI);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!aboutBlankChannel) {
+    return NS_ERROR_FAILURE;
+  }
+
   nsCOMPtr<nsIPrincipal> expectedPrincipal = aLoadState->PrincipalToInherit();
-  nsCOMPtr<nsIPrincipal> expectedPartitionedPrincipal =
-      aLoadState->PartitionedPrincipalToInherit();
-  if (!expectedPartitionedPrincipal) {
-    expectedPartitionedPrincipal = expectedPrincipal;
+  nsCOMPtr<nsIPrincipal> expectedPartitionedPrincipal = expectedPrincipal;
+  
+  if (expectedPrincipal && expectedPrincipal->GetIsContentPrincipal()) {
+    
+    StoragePrincipalHelper::Create(
+        aboutBlankChannel, expectedPrincipal,  true,
+        getter_AddRefs(expectedPartitionedPrincipal));
   }
 
   const bool principalMismatch =
@@ -11412,20 +11429,6 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
               ? doc->PartitionedPrincipal()
               : doc->GetPrincipal());
     }
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIChannel> aboutBlankChannel;
-  rv = NS_NewChannelInternal(getter_AddRefs(aboutBlankChannel),
-                             aLoadState->URI(), aLoadInfo, nullptr, mLoadGroup,
-                             nullptr, nsIChannel::LOAD_DOCUMENT_URI);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!aboutBlankChannel) {
-    return NS_ERROR_FAILURE;
   }
 
   MOZ_ASSERT(!mIsLoadingDocument);
