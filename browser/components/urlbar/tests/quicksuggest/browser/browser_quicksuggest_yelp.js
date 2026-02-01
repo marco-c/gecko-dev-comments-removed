@@ -455,7 +455,7 @@ add_task(async function resultMenu_manage() {
 
 add_task(async function rowLabel() {
   let tests = [
-    { topPick: true, label: "Local recommendations" },
+    { topPick: true, label: null },
     { topPick: false, label: "Firefox Suggest" },
   ];
 
