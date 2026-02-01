@@ -37,6 +37,8 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
     kDtlsSrtp,
   };
 
+  using PacketId = uint32_t;
+
   class Observer {
    public:
     virtual ~Observer() = default;
@@ -46,15 +48,27 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
       Timestamp receive_time;
     };
     virtual void OnPacketReceived(ArrayView<const uint8_t> data,
-                                  PacketMetadata metadata) {
-      OnPacketReceived(data);
-    }
-    
-    virtual void OnPacketReceived(ArrayView<const uint8_t> data) {}
+                                  PacketMetadata metadata) = 0;
 
     
+    struct SendOutcome {
+      PacketId id;
+
+      enum class Status {
+        kSuccess,
+        kNotSent,
+      };
+      Status status;
+      
+      Timestamp send_time = Timestamp::MinusInfinity();
+      
+      size_t bytes_sent = 0;
+    };
+    virtual void OnSendOutcome(SendOutcome send_outcome) {}
+
     
-    virtual void OnSendError() = 0;
+    virtual void OnSendError() {}
+
     
     
     virtual void OnConnectionError() = 0;
@@ -76,8 +90,23 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
                                        const uint8_t* digest,
                                        size_t digest_len,
                                        SSLRole ssl_role) = 0;
+  struct PacketSendParameters {
+    
+    
+    
+    PacketId id = 0;
+  };
+
   
-  virtual bool SendPacket(ArrayView<const uint8_t> data) = 0;
+  
+  virtual void SendPacket(ArrayView<const uint8_t> data,
+                          PacketSendParameters params) {}
+
+  
+  virtual bool SendPacket(ArrayView<const uint8_t> data) {
+    SendPacket(data, PacketSendParameters());
+    return true;
+  }
 
   
   
