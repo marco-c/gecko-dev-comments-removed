@@ -59,6 +59,8 @@ AsyncImagePipelineManager::AsyncImagePipelineManager(
           gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin()),
       mUseWebRenderDCompVideoSwOverlayWin(
           gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin()),
+      mUseWebRenderDCompositionTextureOverlayWin(
+          gfx::gfxVars::UseWebRenderDCompositionTextureOverlayWin()),
 #endif
       mRenderSubmittedUpdatesLock("SubmittedUpdatesLock"),
       mLastCompletedFrameId(0) {
@@ -377,13 +379,17 @@ void AsyncImagePipelineManager::ApplyAsyncImagesOfImageBridge(
   bool isChanged = (mUseWebRenderDCompVideoHwOverlayWin !=
                     gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin()) ||
                    (mUseWebRenderDCompVideoSwOverlayWin !=
-                    gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin());
+                    gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin()) ||
+                   (mUseWebRenderDCompositionTextureOverlayWin !=
+                    gfx::gfxVars::UseWebRenderDCompositionTextureOverlayWin());
 
   if (isChanged) {
     mUseWebRenderDCompVideoHwOverlayWin =
         gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin();
     mUseWebRenderDCompVideoSwOverlayWin =
         gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin();
+    mUseWebRenderDCompositionTextureOverlayWin =
+        gfx::gfxVars::UseWebRenderDCompositionTextureOverlayWin();
   }
 #endif
 
