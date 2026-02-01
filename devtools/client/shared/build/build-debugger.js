@@ -57,7 +57,7 @@ function transformMC({ types: t }) {
             
             
             if (!newValue.startsWith("devtools")) {
-              newValue = newValue.match(/^(.*?)(devtools.*)/)[2];
+              newValue = newValue.match(/.*(devtools.*)/)[1];
             }
 
             
