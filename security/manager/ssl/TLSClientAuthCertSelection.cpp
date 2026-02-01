@@ -912,7 +912,7 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
                              rememberedCertBytes, rememberedCertChainBytes)) {
     continuation->SetSelectedClientAuthData(
         std::move(rememberedCertBytes), std::move(rememberedCertChainBytes));
-    (void)NS_DispatchToCurrentThread(continuation);
+    (void)continuation->Run();
     return;
   }
 
@@ -944,7 +944,7 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
         ("[%p] no client certificates available after filtering by CA", &info));
     
     
-    (void)NS_DispatchToCurrentThread(continuation);
+    (void)continuation->Run();
     return;
   }
 #endif  
