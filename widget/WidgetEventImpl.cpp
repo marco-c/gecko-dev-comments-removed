@@ -277,7 +277,7 @@ const nsCString GetDOMKeyCodeName(uint32_t aKeyCode) {
   case aDOMKeyCode:                            \
     return nsLiteralCString(#aDOMKeyName);
 
-#include "mozilla/VirtualKeyCodeList.h"
+#include "mozilla/VirtualKeyCodeList.inc"
 
 #undef NS_DEFINE_VK
 #undef NS_DISALLOW_SAME_KEYCODE
@@ -1174,14 +1174,14 @@ double WidgetWheelEvent::OverriddenDeltaY() const {
 
 #define NS_DEFINE_KEYNAME(aCPPName, aDOMKeyName) (u"" aDOMKeyName),
 const char16_t* const WidgetKeyboardEvent::kKeyNames[] = {
-#include "mozilla/KeyNameList.h"
+#include "mozilla/KeyNameList.inc"
 };
 #undef NS_DEFINE_KEYNAME
 
 #define NS_DEFINE_PHYSICAL_KEY_CODE_NAME(aCPPName, aDOMCodeName) \
   (u"" aDOMCodeName),
 const char16_t* const WidgetKeyboardEvent::kCodeNames[] = {
-#include "mozilla/PhysicalKeyCodeNameList.h"
+#include "mozilla/PhysicalKeyCodeNameList.inc"
 };
 #undef NS_DEFINE_PHYSICAL_KEY_CODE_NAME
 
@@ -2299,7 +2299,7 @@ bool WidgetKeyboardEvent::IsLockableModifier(KeyNameIndex aKeyNameIndex) {
 
 #define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) (u"" aDOMName),
 const char16_t* const InternalEditorInputEvent::kInputTypeNames[] = {
-#include "mozilla/InputTypeList.h"
+#include "mozilla/InputTypeList.inc"
 };
 #undef NS_DEFINE_INPUTTYPE
 

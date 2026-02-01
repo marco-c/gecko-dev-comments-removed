@@ -906,7 +906,7 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
 #define FORWARDED_EVENT(name_, id_, type_, struct_) \
   || nsGkAtoms::on##name_ == aAttrName
 #define WINDOW_EVENT FORWARDED_EVENT
-#include "mozilla/EventNameList.h"  
+#include "mozilla/EventNameList.inc"  
 #undef WINDOW_EVENT
 #undef FORWARDED_EVENT
 #undef EVENT
@@ -997,7 +997,7 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
                                                                                \
     return nsINode::SetOn##name_(handler);                                     \
   }
-#include "mozilla/EventNameList.h"  
+#include "mozilla/EventNameList.inc"  
 #undef ERROR_EVENT
 #undef FORWARDED_EVENT
 #undef EVENT
