@@ -12,6 +12,7 @@
 
 #include "BufferReader.h"
 #include "EncoderConfig.h"
+#include "FFmpegEncoderModule.h"
 #include "FFmpegLog.h"
 #include "FFmpegRuntimeLinker.h"
 #include "FFmpegUtils.h"
@@ -25,6 +26,9 @@
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 #include "mozilla/dom/VideoFrameBinding.h"
+#ifdef MOZ_WIDGET_ANDROID
+#include "mozilla/gfx/gfxVars.h"
+#endif
 #include "nsPrintfCString.h"
 
 
@@ -322,10 +326,18 @@ bool FFmpegVideoEncoder<LIBAV_VER>::ShouldTryHardware() const {
   
   
   if (mCodecID == AV_CODEC_ID_H264 || mCodecID == AV_CODEC_ID_HEVC) {
-    return true;
+    return StaticPrefs::media_ffvpx_hw_enabled();
   }
 #endif
-  return mConfig.mHardwarePreference != HardwarePreference::RequireSoftware;
+
+  if (mConfig.mHardwarePreference == HardwarePreference::RequireSoftware) {
+    return false;
+  }
+
+  RefPtr<PlatformEncoderModule> pem =
+      FFmpegEncoderModule<LIBAV_VER>::Create(mLib);
+  return pem->SupportsCodec(mConfig.mCodec)
+      .contains(media::EncodeSupport::HardwareEncode);
 }
 
 MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoder() {
@@ -353,6 +365,24 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   }
   mCodecContext = r.unwrap();
   mCodecName = mCodecContext->codec->name;
+
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  switch (mCodecID) {
+    case AV_CODEC_ID_H264:
+      mIsHardwareAccelerated = aHardware && gfx::gfxVars::UseH264HwEncode();
+      break;
+    case AV_CODEC_ID_HEVC:
+      mIsHardwareAccelerated = aHardware && gfx::gfxVars::UseHEVCHwEncode();
+      break;
+    default:
+      mIsHardwareAccelerated = aHardware;
+      break;
+  }
+#else
+  mIsHardwareAccelerated = aHardware;
+#endif
 
   
   mCodecContext->pix_fmt = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
