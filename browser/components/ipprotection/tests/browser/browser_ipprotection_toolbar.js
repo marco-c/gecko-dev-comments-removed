@@ -86,8 +86,8 @@ add_task(async function toolbar_icon_status() {
   Assert.ok(content, "Panel content should be present");
 
   let statusCard = content.statusCardEl;
-  let turnOnButton = statusCard.actionButtonEl;
-  Assert.ok(turnOnButton, "Status card turn on button should be present");
+  let toggle = statusCard.connectionToggleEl;
+  Assert.ok(toggle, "Status card connection toggle should be present");
 
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
@@ -96,7 +96,7 @@ add_task(async function toolbar_icon_status() {
     () => !!IPPProxyManager.activatedAt
   );
   
-  turnOnButton.click();
+  toggle.click();
   await vpnOnPromise;
   Assert.ok(
     button.classList.contains("ipprotection-on"),
@@ -109,8 +109,7 @@ add_task(async function toolbar_icon_status() {
     () => lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
   );
   
-  let turnOffButton = statusCard.actionButtonEl;
-  turnOffButton.click();
+  toggle.click();
   await vpnOffPromise;
   Assert.ok(
     !button.classList.contains("ipprotection-on"),
@@ -145,8 +144,7 @@ add_task(async function toolbar_icon_status_new_window() {
   );
   
   let statusCard = content.statusCardEl;
-  let turnOnButton = statusCard.actionButtonEl;
-  turnOnButton.click();
+  statusCard.connectionToggleEl.click();
   await vpnOnPromise;
 
   let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
