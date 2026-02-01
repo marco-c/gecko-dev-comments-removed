@@ -925,10 +925,6 @@ this.downloads = class extends ExtensionAPIPersistent {
               downloadLastDir.setFile(extension.baseURI, lastDir);
             }
 
-            
-            
-            
-            const window = global.windowTracker.getTopWindow().window;
             const basename = PathUtils.filename(target);
             const ext = basename.match(/\.([^.]+)$/)?.[1];
 
@@ -945,8 +941,15 @@ this.downloads = class extends ExtensionAPIPersistent {
             const picker = Cc["@mozilla.org/filepicker;1"].createInstance(
               Ci.nsIFilePicker
             );
+            
+            
+            
+            
+            
+            
+            
             picker.init(
-              window.browsingContext,
+              context.browsingContext.topChromeWindow.browsingContext,
               null,
               Ci.nsIFilePicker.modeSave
             );
