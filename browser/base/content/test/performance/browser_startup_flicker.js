@@ -89,14 +89,8 @@ add_task(async function () {
       continue;
     }
 
-    
-    
-    
-    if (!unexpectedRects) {
-      dumpFrame(previousFrame);
-    }
+    await reportFlickerWithAPNG(previousFrame, frame, i);
     unexpectedRects += rects.length;
-    dumpFrame(frame);
   }
   is(unexpectedRects, 0, "should have 0 unknown flickering areas");
 });
