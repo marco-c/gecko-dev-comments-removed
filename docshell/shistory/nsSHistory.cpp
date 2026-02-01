@@ -2651,10 +2651,22 @@ bool nsSHistory::ForEachDifferingEntry(
   uint32_t prevID = aPrevEntry->GetID();
   uint32_t nextID = aNextEntry->GetID();
 
+  bool differenceFound = false;
   
   if (prevID != nextID) {
     aCallback(aNextEntry, aParent);
-    return true;
+    
+    
+    
+    
+    
+    
+    bool sameDoc = false;
+    aPrevEntry->SharesDocumentWith(aNextEntry, &sameDoc);
+    if (!sameDoc) {
+      return true;
+    }
+    differenceFound = true;
   }
 
   
@@ -2666,7 +2678,6 @@ bool nsSHistory::ForEachDifferingEntry(
   aParent->GetChildren(browsingContexts);
 
   
-  bool differenceFound = false;
   for (int32_t i = 0; i < ncnt; ++i) {
     
     nsCOMPtr<nsISHEntry> nChild;
