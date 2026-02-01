@@ -1,5 +1,21 @@
 "use strict";
 
+let SearchService;
+
+
+
+
+
+
+if (Services.search) {
+  SearchService = Services.search;
+} else {
+  SearchService = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+  ).SearchService;
+}
+
+
 
 test_newtab({
   before: setTestTopSites,
@@ -210,7 +226,8 @@ test_newtab({
       gURLBar.focused,
       "We clicked a search topsite the focus should be in location bar"
     );
-    let engine = await Services.search.getEngineByAlias(searchTopSiteTag);
+
+    let engine = await SearchService.getEngineByAlias(searchTopSiteTag);
 
     
     
@@ -280,12 +297,12 @@ add_task(async function test_search_topsite_remove_engine() {
     }
   );
 
-  await Services.search.removeEngine(
-    await Services.search.getEngineByAlias(topSiteAlias)
+  await SearchService.removeEngine(
+    await SearchService.getEngineByAlias(topSiteAlias)
   );
 
   registerCleanupFunction(() => {
-    Services.search.restoreDefaultEngines();
+    SearchService.restoreDefaultEngines();
   });
 
   await SpecialPowers.spawn(
