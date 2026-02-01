@@ -138,6 +138,9 @@ extern "C" {
 #    endif
 #  endif
 
+
+#if 0
+
 #  ifdef XML_UNICODE 
 #    ifdef XML_UNICODE_WCHAR_T
 typedef wchar_t XML_Char;
@@ -150,6 +153,9 @@ typedef char XML_LChar;
 typedef char XML_Char;
 typedef char XML_LChar;
 #  endif   
+
+#endif
+
 
 #  ifdef XML_LARGE_SIZE 
 typedef long long XML_Index;
