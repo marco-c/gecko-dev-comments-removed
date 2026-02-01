@@ -316,3 +316,5 @@ Maybe<GLuint> SurfacePoolHandleWayland::GetFramebufferForBuffer(
 }
 
 }  
+#undef LOG
+#undef LOGVERBOSE

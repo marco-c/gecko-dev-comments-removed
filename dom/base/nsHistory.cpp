@@ -260,3 +260,4 @@ void nsHistory::DeltaTraverse(mozilla::Maybe<NotNull<JSContext*>> aCx,
   session_history->AsyncGo(aDelta,  false,
                            userActivation);
 }
+#undef LOG

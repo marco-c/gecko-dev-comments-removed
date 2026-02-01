@@ -2990,3 +2990,4 @@ WebRenderBridgeParentRef::~WebRenderBridgeParentRef() {
 }
 
 }  
+#undef LOG

@@ -38,6 +38,9 @@
 #include "nsTHashtable.h"
 #include "nsUnicharInputStream.h"
 
+
+#undef small
+
 using namespace mozilla;
 using namespace mozilla::dom;
 

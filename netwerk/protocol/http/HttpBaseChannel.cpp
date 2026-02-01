@@ -6948,3 +6948,4 @@ void HttpBaseChannel::SetFetchPriorityDOM(
 
 }  
 }  
+#undef LOGORB
