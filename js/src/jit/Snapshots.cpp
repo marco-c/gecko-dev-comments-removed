@@ -155,6 +155,9 @@ using namespace js::jit;
 
 
 
+
+
+
 const RValueAllocation::Layout& RValueAllocation::layoutFromMode(Mode mode) {
   switch (mode) {
     case CONSTANT: {
@@ -306,6 +309,12 @@ const RValueAllocation::Layout& RValueAllocation::layoutFromMode(Mode mode) {
     case INT64_STACK: {
       static const RValueAllocation::Layout layout = {
           PAYLOAD_STACK_OFFSET, PAYLOAD_NONE, "unpacked int64"};
+      return layout;
+    }
+
+    case INT64_INT32_STACK: {
+      static const RValueAllocation::Layout layout = {
+          PAYLOAD_STACK_OFFSET, PAYLOAD_NONE, "unpacked int64 (int32)"};
       return layout;
     }
 #endif
