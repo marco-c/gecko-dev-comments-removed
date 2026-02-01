@@ -4,9 +4,6 @@
 
 
 
-#ifndef NETWERK_PROTOCOL_HTTP_REPLACEDHTTPRESPONSE_H_
-#define NETWERK_PROTOCOL_HTTP_REPLACEDHTTPRESPONSE_H_
-
 #include "nsString.h"
 #include "nsHttpHeaderArray.h"
 #include "nsIReplacedHttpResponse.h"
@@ -30,5 +27,3 @@ class ReplacedHttpResponse : nsIReplacedHttpResponse {
 };
 
 }  
-
-#endif  

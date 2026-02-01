@@ -2,9 +2,6 @@
 
 
 
-#ifndef MOBILE_IOS_GECKOTESTBROWSER_GECKOVIEW_GECKOVIEW_H_
-#define MOBILE_IOS_GECKOTESTBROWSER_GECKOVIEW_GECKOVIEW_H_
-
 #import <Foundation/Foundation.h>
 
 
@@ -18,5 +15,3 @@ FOUNDATION_EXPORT const unsigned char GeckoViewVersionString[];
 
 #import <GeckoView/IOSBootstrap.h>
 #import <GeckoView/GeckoViewSwiftSupport.h>
-
-#endif  
