@@ -10,6 +10,16 @@ function base64urlToUint8Array(encoded) {
 }
 
 
+
+function getCoseKeyType(encodedCoseKey) {
+  const parsed = new Cbor(encodedCoseKey);
+  const cbor = parsed.getCBOR();
+  
+  
+  return cbor[1];
+}
+
+
 const BrowserBoundKeyVerificationResult = Object.freeze({
   
   NoBrowserBoundKey: 'NoBrowserBoundKey',
