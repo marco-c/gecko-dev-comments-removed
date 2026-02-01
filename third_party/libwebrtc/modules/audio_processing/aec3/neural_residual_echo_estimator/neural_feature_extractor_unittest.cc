@@ -49,7 +49,7 @@
 
 
 
-#include "modules/audio_processing/aec3/neural_feature_extractor.h"
+#include "modules/audio_processing/aec3/neural_residual_echo_estimator/neural_feature_extractor.h"
 
 #include <vector>
 
