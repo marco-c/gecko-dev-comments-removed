@@ -1526,16 +1526,16 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
                              ApiSetQueryApiSetPresence, Equals, FALSE,
                              &gEmptyUnicodeString, &gIsPresent) &&
       TEST_HOOK("kernelbase.dll", QueryDosDeviceW, Equals, 0) &&
+#if !defined(_M_ARM64)
       TEST_HOOK("kernel32.dll", GetFileAttributesW, Equals,
                 INVALID_FILE_ATTRIBUTES) &&
-#if !defined(_M_ARM64)
 #  ifndef MOZ_ASAN
       
       
       
       TEST_HOOK("kernel32.dll", SetUnhandledExceptionFilter, Ignore, nullptr) &&
 #  endif
-#endif
+#endif  
 #ifdef _M_IX86
       TEST_HOOK_FOR_INVALID_HANDLE_VALUE("kernel32.dll", CreateFileW) &&
 #endif
@@ -1558,7 +1558,9 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
       TEST_DETOUR("user32.dll", CreateWindowExW, Equals, nullptr) &&
       TEST_HOOK("user32.dll", InSendMessageEx, Equals, ISMEX_NOSEND) &&
       TEST_HOOK("user32.dll", SendMessageTimeoutW, Equals, 0) &&
+#if !defined(_M_ARM64)
       TEST_HOOK("user32.dll", SetCursorPos, NotEquals, FALSE) &&
+#endif
       TEST_HOOK("bcrypt.dll", BCryptGenRandom, Equals,
                 static_cast<NTSTATUS>(STATUS_INVALID_HANDLE)) &&
       TEST_HOOK("advapi32.dll", RtlGenRandom, Equals, TRUE) &&

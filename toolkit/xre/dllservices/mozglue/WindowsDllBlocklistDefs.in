@@ -372,9 +372,6 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("MFCopyHook.dll", ALL_VERSIONS),
-
-    
-    DllBlocklistEntry("InProcessClient64.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [
