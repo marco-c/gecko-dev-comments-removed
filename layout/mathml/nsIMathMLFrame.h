@@ -20,7 +20,6 @@ class ReflowOutput;
 
 
 enum class MathMLFrameType {
-  Unknown = -1,
   Ordinary,
   OperatorOrdinary,
   OperatorInvisible,
@@ -28,8 +27,9 @@ enum class MathMLFrameType {
   Inner,
   ItalicIdentifier,
   UprightIdentifier,
-  Count
+  Unknown,
 };
+constexpr auto MathMLFrameTypeCount = size_t(MathMLFrameType::Unknown);
 
 
 
