@@ -1,17 +1,23 @@
 
 
+use crate::Error;
 use crate::error::ParserError;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenType;
-use crate::Error;
+
+use serde::Deserialize;
+use serde::Serialize;
 
 
 pub const FULL_WILDCARD_REGEXP_VALUE: &str = ".*";
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(
+  Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize,
+)]
 pub enum RegexSyntax {
   
+  #[default]
   Rust,
   
   

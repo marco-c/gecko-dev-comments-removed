@@ -1,10 +1,10 @@
 
 
+use crate::UrlPatternInit;
 use crate::error::Error;
 use crate::regexp::RegExp;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenType;
-use crate::UrlPatternInit;
 
 
 #[derive(Debug, Eq, PartialEq)]
