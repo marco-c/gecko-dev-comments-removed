@@ -1157,7 +1157,7 @@
           ) {
             
             let size = Math.floor(16 * window.devicePixelRatio);
-            url = this.FaviconUtils.getMozRemoteImageURL(url, size);
+            url = this.FaviconUtils.getMozRemoteImageURL(url, { size });
           }
           aTab.setAttribute("image", url);
         } else {

@@ -7003,7 +7003,7 @@ var gMainPane = {
     ) {
       
       
-      return getMozRemoteImageURL(uri.prePath + "/favicon.ico", 16);
+      return getMozRemoteImageURL(uri.prePath + "/favicon.ico", { size: 16 });
     }
 
     return "";
