@@ -1,12 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-disable jsdoc/valid-types */
-/**
- * @typedef {import("../../../../toolkit/components/translations/translations").LangTags} LangTags
- */
-/* eslint-enable jsdoc/valid-types */
+
+
+
+
+
+
+
+
 
 ChromeUtils.defineESModuleGetters(this, {
   PageActions: "resource:///modules/PageActions.sys.mjs",
@@ -16,10 +16,10 @@ ChromeUtils.defineESModuleGetters(this, {
     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
 });
 
-/**
- * The set of actions that can occur from interaction with the
- * translations panel.
- */
+
+
+
+
 const PageAction = Object.freeze({
   NO_CHANGE: "NO_CHANGE",
   RESTORE_PAGE: "RESTORE_PAGE",
@@ -27,49 +27,49 @@ const PageAction = Object.freeze({
   CLOSE_PANEL: "CLOSE_PANEL",
 });
 
-/**
- * A mechanism for determining the next relevant page action
- * based on the current translated state of the page and the state
- * of the persistent options in the translations panel settings.
- */
+
+
+
+
+
 class CheckboxPageAction {
-  /**
-   * Whether or not translations is active on the page.
-   *
-   * @type {boolean}
-   */
+  
+
+
+
+
   #translationsActive = false;
 
-  /**
-   * Whether the always-translate-language menuitem is checked
-   * in the translations panel settings menu.
-   *
-   * @type {boolean}
-   */
+  
+
+
+
+
+
   #alwaysTranslateLanguage = false;
 
-  /**
-   * Whether the never-translate-language menuitem is checked
-   * in the translations panel settings menu.
-   *
-   * @type {boolean}
-   */
+  
+
+
+
+
+
   #neverTranslateLanguage = false;
 
-  /**
-   * Whether the never-translate-site menuitem is checked
-   * in the translations panel settings menu.
-   *
-   * @type {boolean}
-   */
+  
+
+
+
+
+
   #neverTranslateSite = false;
 
-  /**
-   * @param {boolean} translationsActive
-   * @param {boolean} alwaysTranslateLanguage
-   * @param {boolean} neverTranslateLanguage
-   * @param {boolean} neverTranslateSite
-   */
+  
+
+
+
+
+
   constructor(
     translationsActive,
     alwaysTranslateLanguage,
@@ -82,18 +82,18 @@ class CheckboxPageAction {
     this.#neverTranslateSite = neverTranslateSite;
   }
 
-  /**
-   * Accepts four integers that are either 0 or 1 and returns
-   * a single, unique number for each possible combination of
-   * values.
-   *
-   * @param {number} translationsActive
-   * @param {number} alwaysTranslateLanguage
-   * @param {number} neverTranslateLanguage
-   * @param {number} neverTranslateSite
-   *
-   * @returns {number} - An integer representation of the state
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   static #computeState(
     translationsActive,
     alwaysTranslateLanguage,
@@ -108,11 +108,11 @@ class CheckboxPageAction {
     );
   }
 
-  /**
-   * Returns the current state of the data members as a single number.
-   *
-   * @returns {number} - An integer representation of the state
-   */
+  
+
+
+
+
   #state() {
     return CheckboxPageAction.#computeState(
       Number(this.#translationsActive),
@@ -122,12 +122,12 @@ class CheckboxPageAction {
     );
   }
 
-  /**
-   * Returns the next page action to take when the always-translate-language
-   * menuitem is toggled in the translations panel settings menu.
-   *
-   * @returns {PageAction}
-   */
+  
+
+
+
+
+
   alwaysTranslateLanguage() {
     switch (this.#state()) {
       case CheckboxPageAction.#computeState(1, 1, 0, 1):
@@ -140,12 +140,12 @@ class CheckboxPageAction {
     return PageAction.NO_CHANGE;
   }
 
-  /**
-   * Returns the next page action to take when the never-translate-language
-   * menuitem is toggled in the translations panel settings menu.
-   *
-   * @returns {PageAction}
-   */
+  
+
+
+
+
+
   neverTranslateLanguage() {
     switch (this.#state()) {
       case CheckboxPageAction.#computeState(1, 1, 0, 1):
@@ -162,12 +162,12 @@ class CheckboxPageAction {
     return PageAction.NO_CHANGE;
   }
 
-  /**
-   * Returns the next page action to take when the never-translate-site
-   * menuitem is toggled in the translations panel settings menu.
-   *
-   * @returns {PageAction}
-   */
+  
+
+
+
+
+
   neverTranslateSite() {
     switch (this.#state()) {
       case CheckboxPageAction.#computeState(1, 1, 0, 0):
@@ -185,39 +185,39 @@ class CheckboxPageAction {
   }
 }
 
-/**
- * This singleton class controls the FullPageTranslations panel.
- *
- * This component is a `/browser` component, and the actor is a `/toolkit` actor, so care
- * must be taken to keep the presentation (this component) from the state management
- * (the Translations actor). This class reacts to state changes coming from the
- * Translations actor.
- *
- * A global instance of this class is created once per top ChromeWindow and is initialized
- * when the new window is created.
- *
- * See the comment above TranslationsParent for more details.
- *
- * @see TranslationsParent
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var FullPageTranslationsPanel = new (class {
-  /** @type {Console?} */
+  
   #console;
 
-  /**
-   * The cached detected languages for both the document and the user.
-   *
-   * @type {null | LangTags}
-   */
+  
+
+
+
+
   detectedLanguages = null;
 
-  /**
-   * Lazily get a console instance. Note that this script is loaded in very early to
-   * the browser loading process, and may run before the console is avialable. In
-   * this case the console will return as `undefined`.
-   *
-   * @returns {Console | void}
-   */
+  
+
+
+
+
+
+
   get console() {
     if (!this.#console) {
       try {
@@ -226,35 +226,35 @@ var FullPageTranslationsPanel = new (class {
           prefix: "Translations",
         });
       } catch {
-        // The console may not be initialized yet.
+        
       }
     }
     return this.#console;
   }
 
-  /**
-   * Tracks if the popup is open, or scheduled to be open.
-   *
-   * @type {boolean}
-   */
+  
+
+
+
+
   #isPopupOpen = false;
 
-  /**
-   * Where the lazy elements are stored.
-   *
-   * @type {Record<string, Element>?}
-   */
+  
+
+
+
+
   #lazyElements;
 
-  /**
-   * Lazily creates the dom elements, and lazily selects them.
-   *
-   * @returns {Record<string, Element>}
-   */
+  
+
+
+
+
   get elements() {
     if (!this.#lazyElements) {
-      // Lazily turn the template into a DOM element.
-      /** @type {HTMLTemplateElement} */
+      
+      
       const wrapper = document.getElementById("template-translations-panel");
       const panel = wrapper.content.firstElementChild;
       wrapper.replaceWith(wrapper.content);
@@ -267,7 +267,7 @@ var FullPageTranslationsPanel = new (class {
       const settingsButton = document.getElementById(
         "translations-panel-settings"
       );
-      // Clone the settings toolbarbutton across all the views.
+      
       for (const header of panel.querySelectorAll(".panel-header")) {
         if (header.contains(settingsButton)) {
           continue;
@@ -277,11 +277,11 @@ var FullPageTranslationsPanel = new (class {
         header.appendChild(settingsButtonClone);
       }
 
-      // Lazily select the elements.
+      
       this.#lazyElements = {
         panel,
         settingsButton,
-        // The rest of the elements are set by the getter below.
+        
       };
 
       TranslationsPanelShared.defineLazyElements(document, this.#lazyElements, {
@@ -456,27 +456,27 @@ var FullPageTranslationsPanel = new (class {
         requestedLanguagePair.targetLanguage
       )
     ) {
-      // A translation has been requested, but is not ready yet.
+      
       document.l10n.setAttributes(
         translateButton,
         "translations-panel-translate-button-loading"
       );
       translateButton.disabled = true;
       cancelButton.hidden = false;
-      this.updateUIForReTranslation(false /* isReTranslation */);
+      this.updateUIForReTranslation(false );
     } else {
       document.l10n.setAttributes(
         translateButton,
         "translations-panel-translate-button"
       );
       translateButton.disabled =
-        // No "to" language was provided.
+        
         !toMenuList.value ||
-        // No "from" language was provided.
+        
         !fromMenuList.value ||
-        // The translation languages are the same, don't allow this translation.
+        
         TranslationsUtils.langTagsMatch(selectedFrom, selectedTo) ||
-        // This is the requested language pair.
+        
         (requestedLanguagePair &&
           TranslationsUtils.langTagsMatch(
             requestedLanguagePair.sourceLanguage,
@@ -493,7 +493,7 @@ var FullPageTranslationsPanel = new (class {
       const languageDisplayNames =
         TranslationsParent.createLanguageDisplayNames();
       cancelButton.hidden = true;
-      this.updateUIForReTranslation(true /* isReTranslation */);
+      this.updateUIForReTranslation(true );
 
       document.l10n.setAttributes(header, "translations-panel-revisit-header", {
         fromLanguage: languageDisplayNames.of(sourceLanguage),
@@ -504,14 +504,14 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * @param {boolean} isReTranslation
-   */
+  
+
+
   updateUIForReTranslation(isReTranslation) {
     const { restoreButton, fromLabel, fromMenuList, toLabel } = this.elements;
     restoreButton.hidden = !isReTranslation;
-    // When offering to re-translate a page, hide the "from" language so users don't
-    // get confused.
+    
+    
     fromLabel.hidden = isReTranslation;
     fromMenuList.hidden = isReTranslation;
     if (isReTranslation) {
@@ -523,14 +523,14 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Returns true if the panel is currently showing the default view, otherwise false.
-   *
-   * @returns {boolean}
-   */
+  
+
+
+
+
   #isShowingDefaultView() {
     if (!this.#lazyElements) {
-      // Nothing has been initialized.
+      
       return false;
     }
     const { multiview } = this.elements;
@@ -540,12 +540,12 @@ var FullPageTranslationsPanel = new (class {
     );
   }
 
-  /**
-   * Show the default view of choosing a source and target language.
-   *
-   * @param {TranslationsParent} actor
-   * @param {boolean} force - Force the page to show translation options.
-   */
+  
+
+
+
+
+
   async #showDefaultView(actor, force = false) {
     const {
       fromMenuList,
@@ -561,12 +561,12 @@ var FullPageTranslationsPanel = new (class {
 
     this.#updateViewFromTranslationStatus();
 
-    // Unconditionally hide the intro text in case the panel is re-shown.
+    
     intro.hidden = true;
 
     if (TranslationsPanelShared.getLangListsInitState(this) === "error") {
-      // There was an error, display it in the view rather than the language
-      // dropdowns.
+      
+      
       const { cancelButton, errorHintAction } = this.elements;
 
       this.#showError({
@@ -577,18 +577,18 @@ var FullPageTranslationsPanel = new (class {
       });
 
       translateButton.disabled = true;
-      this.updateUIForReTranslation(false /* isReTranslation */);
+      this.updateUIForReTranslation(false );
       cancelButton.hidden = false;
       langSelection.hidden = true;
       errorHintAction.disabled = false;
       return;
     }
 
-    // Remove any old selected values synchronously before asking for new ones.
+    
     fromMenuList.value = "";
     error.hidden = true;
     langSelection.hidden = false;
-    // Remove the model variant. e.g. "ru,base" -> "ru"
+    
     const selectedSource = fromMenuList.value.split(",")[0];
 
     const { userLangTag, docLangTag, isDocLangTagSupported } =
@@ -637,16 +637,16 @@ var FullPageTranslationsPanel = new (class {
       const resolvedTarget = toMenuList.value.split(",")[0];
 
       if (TranslationsUtils.langTagsMatch(resolvedSource, resolvedTarget)) {
-        // The best possible user-preferred language tag that we were able to find for the
-        // toMenuList is the same as the fromMenuList, but same-language to same-language
-        // translations are not allowed in Full Page Translations, so we will just show the
-        // "Choose a language" option in this case.
+        
+        
+        
+        
         toMenuList.value = "";
       }
 
       this.onChangeLanguages();
 
-      this.updateUIForReTranslation(false /* isReTranslation */);
+      this.updateUIForReTranslation(false );
       cancelButton.hidden = false;
       multiview.setAttribute(
         "mainViewId",
@@ -661,7 +661,7 @@ var FullPageTranslationsPanel = new (class {
         document.l10n.setAttributes(header, "translations-panel-intro-header");
       }
     } else {
-      // Show the "unsupported language" view.
+      
       const { unsupportedHint } = this.elements;
       multiview.setAttribute(
         "mainViewId",
@@ -689,7 +689,7 @@ var FullPageTranslationsPanel = new (class {
       }
     }
 
-    // Focus the "from" language, as it is the only field not set.
+    
     panel.addEventListener(
       "ViewShown",
       () => {
@@ -704,10 +704,10 @@ var FullPageTranslationsPanel = new (class {
     );
   }
 
-  /**
-   * Updates the checked states of the settings menu checkboxes that
-   * pertain to languages.
-   */
+  
+
+
+
   async #updateSettingsMenuLanguageCheckboxStates() {
     const langTags = await this.#getCachedDetectedLanguages();
     const { docLangTag, isDocLangTagSupported } = langTags;
@@ -749,10 +749,10 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Updates the checked states of the settings menu checkboxes that
-   * pertain to site permissions.
-   */
+  
+
+
+
   async #updateSettingsMenuSiteCheckboxStates() {
     const { panel } = this.elements;
     const neverTranslateSiteMenuItems = panel.ownerDocument.querySelectorAll(
@@ -767,10 +767,10 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Populates the language-related settings menuitems by adding the
-   * localized display name of the document's detected language tag.
-   */
+  
+
+
+
   async #populateSettingsMenuItems() {
     const { docLangTag } = await this.#getCachedDetectedLanguages();
 
@@ -783,14 +783,14 @@ var FullPageTranslationsPanel = new (class {
       ".never-translate-language-menuitem"
     );
 
-    /** @type {string | undefined} */
+    
     let docLangDisplayName;
     if (docLangTag) {
       const languageDisplayNames =
         TranslationsParent.createLanguageDisplayNames({
           fallback: "none",
         });
-      // The display name will still be empty if the docLangTag is not known.
+      
       docLangDisplayName = languageDisplayNames.of(docLangTag);
     }
 
@@ -830,11 +830,11 @@ var FullPageTranslationsPanel = new (class {
     ]);
   }
 
-  /**
-   * Configures the panel for the user to reset the page after it has been translated.
-   *
-   * @param {LanguagePair} languagePair
-   */
+  
+
+
+
+
   async #showRevisitView({ sourceLanguage, targetLanguage, sourceVariant }) {
     const { fromMenuList, toMenuList, intro } = this.elements;
     if (!this.#isShowingDefaultView()) {
@@ -850,29 +850,29 @@ var FullPageTranslationsPanel = new (class {
     }
     toMenuList.value = await TranslationsParent.getTopPreferredSupportedToLang({
       excludeLangTags: [
-        // Avoid offering to translate into the original source language.
+        
         sourceLanguage,
-        // Avoid offering to translate into current active target language.
+        
         targetLanguage,
       ],
     });
     this.onChangeLanguages();
   }
 
-  /**
-   * Handle the disable logic for when the menulist is changed for the "Translate to"
-   * on the "revisit" subview.
-   */
+  
+
+
+
   onChangeRevisitTo() {
     const { revisitTranslate, revisitMenuList } = this.elements;
     revisitTranslate.disabled = !revisitMenuList.value;
   }
 
-  /**
-   * Handle logic and telemetry for changing the selected from-language option.
-   *
-   * @param {Event} event
-   */
+  
+
+
+
+
   onChangeFromLanguage(event) {
     const { target } = event;
     if (target?.value) {
@@ -883,11 +883,11 @@ var FullPageTranslationsPanel = new (class {
     this.onChangeLanguages();
   }
 
-  /**
-   * Handle logic and telemetry for changing the selected to-language option.
-   *
-   * @param {Event} event
-   */
+  
+
+
+
+
   onChangeToLanguage(event) {
     const { target } = event;
     if (target?.value) {
@@ -896,36 +896,36 @@ var FullPageTranslationsPanel = new (class {
         .onChangeToLanguage(target.value);
     }
     this.onChangeLanguages();
-    // Update the manually selected language when the user changes the target language.
+    
     this.#manuallySelectedToLanguage = target.value;
   }
 
-  /**
-   * When changing the language selection, the translate button will need updating.
-   */
+  
+
+
   onChangeLanguages() {
     this.#updateViewFromTranslationStatus();
   }
 
-  /**
-   * Hide the pop up (for event handlers).
-   */
+  
+
+
   close() {
     PanelMultiView.hidePopup(this.elements.panel);
   }
 
-  /*
-   * Handler for clicking the learn more link from linked text
-   * within the translations panel.
-   */
+  
+
+
+
   onLearnMoreLink() {
     TranslationsParent.telemetry().fullPagePanel().onLearnMoreLink();
     FullPageTranslationsPanel.close();
   }
 
-  /*
-   * Handler for clicking the learn more link from the gear menu.
-   */
+  
+
+
   onAboutTranslations() {
     TranslationsParent.telemetry().fullPagePanel().onAboutTranslations();
     PanelMultiView.hidePopup(this.elements.panel);
@@ -942,19 +942,19 @@ var FullPageTranslationsPanel = new (class {
     );
   }
 
-  /**
-   * When a language is not supported and the menu is manually invoked, an error message
-   * is shown. This method switches the panel back to the language selection view.
-   * Note that this bypasses the showSubView method since the main view doesn't support
-   * a subview.
-   */
+  
+
+
+
+
+
   async onChangeSourceLanguage(event) {
     const { panel } = this.elements;
     PanelMultiView.hidePopup(panel);
 
     await this.#showDefaultView(
       TranslationsParent.getTranslationsActor(gBrowser.selectedBrowser),
-      true /* force this view to be shown */
+      true 
     );
 
     await this.#openPanelPopup(this.elements.appMenuButton, {
@@ -964,9 +964,9 @@ var FullPageTranslationsPanel = new (class {
     });
   }
 
-  /**
-   * @param {TranslationsActor} actor
-   */
+  
+
+
   async #reloadLangList(actor) {
     try {
       await this.#ensureLangListsBuilt();
@@ -976,11 +976,11 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Handle telemetry events when buttons are invoked in the panel.
-   *
-   * @param {Event} event
-   */
+  
+
+
+
+
   handlePanelButtonEvent(event) {
     const {
       cancelButton,
@@ -1015,18 +1015,18 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Handle telemetry events when popups are shown in the panel.
-   *
-   * @param {Event} event
-   */
+  
+
+
+
+
   handlePanelPopupShownEvent(event) {
     const { panel, fromMenuList, toMenuList } = this.elements;
     switch (event.target.id) {
       case panel.id: {
-        // This telemetry event is invoked externally because it requires
-        // extra logic about from where the panel was opened and whether
-        // or not the flow should be maintained or started anew.
+        
+        
+        
         break;
       }
       case fromMenuList.firstChild.id: {
@@ -1040,11 +1040,11 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Handle telemetry events when popups are hidden in the panel.
-   *
-   * @param {Event} event
-   */
+  
+
+
+
+
   handlePanelPopupHiddenEvent(event) {
     const { panel, fromMenuList, toMenuList } = this.elements;
     switch (event.target.id) {
@@ -1067,34 +1067,34 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Handle telemetry events when the settings menu is shown.
-   */
+  
+
+
   handleSettingsPopupShownEvent() {
     TranslationsParent.telemetry().fullPagePanel().onOpenSettingsMenu();
   }
 
-  /**
-   * Handle telemetry events when the settings menu is hidden.
-   */
+  
+
+
   handleSettingsPopupHiddenEvent() {
     TranslationsParent.telemetry().fullPagePanel().onCloseSettingsMenu();
   }
 
-  /**
-   * Opens the Translations panel popup at the given target.
-   *
-   * @param {object} target - The target element at which to open the popup.
-   * @param {object} telemetryData
-   * @param {string} telemetryData.event
-   *   The trigger event for opening the popup.
-   * @param {string} telemetryData.viewName
-   *   The name of the view shown by the panel.
-   * @param {boolean} telemetryData.autoShow
-   *   True if the panel was automatically opened, otherwise false.
-   * @param {boolean} telemetryData.maintainFlow
-   *   Whether or not to maintain the flow of telemetry.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   async #openPanelPopup(
     target,
     { event = null, viewName = null, autoShow = false, maintainFlow = false }
@@ -1119,23 +1119,23 @@ var FullPageTranslationsPanel = new (class {
     }).catch(error => this.console?.error(error));
   }
 
-  /**
-   * Keeps track of open requests to guard against race conditions.
-   *
-   * @type {Promise<void> | null}
-   */
+  
+
+
+
+
   #openPromise = null;
 
-  /**
-   * Opens the FullPageTranslationsPanel.
-   *
-   * @param {Event} event
-   * @param {boolean} reportAsAutoShow
-   *   True to report to telemetry that the panel was opened automatically, otherwise false.
-   */
+  
+
+
+
+
+
+
   async open(event, reportAsAutoShow = false) {
     if (this.#openPromise) {
-      // There is already an open event happening, do not open.
+      
       return;
     }
 
@@ -1145,19 +1145,19 @@ var FullPageTranslationsPanel = new (class {
     });
   }
 
-  /**
-   * The language tag that was manually selected by the user.
-   * This is used to remember the selection if the user happens to close and then reopen the panel prior to translating.
-   *
-   * @type {string | null}
-   */
+  
+
+
+
+
+
   #manuallySelectedToLanguage = null;
 
-  /**
-   * Implementation function for opening the panel. Prefer FullPageTranslationsPanel.open.
-   *
-   * @param {Event} event
-   */
+  
+
+
+
+
   async #openImpl(event, reportAsAutoShow) {
     event.stopPropagation();
     if (
@@ -1166,7 +1166,7 @@ var FullPageTranslationsPanel = new (class {
         event.charCode != KeyEvent.DOM_VK_SPACE &&
         event.keyCode != KeyEvent.DOM_VK_RETURN)
     ) {
-      // Allow only left click, space, or enter.
+      
       return;
     }
 
@@ -1208,11 +1208,11 @@ var FullPageTranslationsPanel = new (class {
     });
   }
 
-  /**
-   * Returns true if translations is currently active, otherwise false.
-   *
-   * @returns {boolean}
-   */
+  
+
+
+
+
   #isTranslationsActive() {
     const { requestedLanguagePair } = TranslationsParent.getTranslationsActor(
       gBrowser.selectedBrowser
@@ -1220,9 +1220,9 @@ var FullPageTranslationsPanel = new (class {
     return requestedLanguagePair !== null;
   }
 
-  /**
-   * Handle the translation button being clicked when there are two language options.
-   */
+  
+
+
   async onTranslate() {
     this.#manuallySelectedToLanguage = null;
     PanelMultiView.hidePopup(this.elements.panel);
@@ -1237,20 +1237,20 @@ var FullPageTranslationsPanel = new (class {
 
     actor.translate(
       { sourceLanguage, targetLanguage, sourceVariant, targetVariant },
-      false // reportAsAutoTranslate
+      false 
     );
   }
 
-  /**
-   * Handle the cancel button being clicked.
-   */
+  
+
+
   onCancel() {
     PanelMultiView.hidePopup(this.elements.panel);
   }
 
-  /**
-   * A handler for opening the settings context menu.
-   */
+  
+
+
   async openSettingsPopup(button) {
     await Promise.all([
       this.#updateSettingsMenuLanguageCheckboxStates(),
@@ -1262,13 +1262,13 @@ var FullPageTranslationsPanel = new (class {
     popup.openPopup(button, "after_end");
   }
 
-  /**
-   * Creates a new CheckboxPageAction based on the current translated
-   * state of the page and the state of the persistent options in the
-   * translations panel settings.
-   *
-   * @returns {CheckboxPageAction}
-   */
+  
+
+
+
+
+
+
   getCheckboxPageActionFor() {
     const {
       alwaysTranslateLanguageMenuItem,
@@ -1291,9 +1291,9 @@ var FullPageTranslationsPanel = new (class {
     );
   }
 
-  /**
-   * Redirect the user to about:preferences
-   */
+  
+
+
   openManageLanguages() {
     TranslationsParent.telemetry().fullPagePanel().onManageLanguages();
     const window =
@@ -1301,11 +1301,11 @@ var FullPageTranslationsPanel = new (class {
     window.openTrustedLinkIn("about:preferences#general-translations", "tab");
   }
 
-  /**
-   * Performs the given page action.
-   *
-   * @param {PageAction} pageAction
-   */
+  
+
+
+
+
   async #doPageAction(pageAction) {
     switch (pageAction) {
       case PageAction.NO_CHANGE: {
@@ -1326,11 +1326,11 @@ var FullPageTranslationsPanel = new (class {
     }
   }
 
-  /**
-   * Updates the always-translate-language menuitem prefs and checked state.
-   * If auto-translate is currently active for the doc language, deactivates it.
-   * If auto-translate is currently inactive for the doc language, activates it.
-   */
+  
+
+
+
+
   async onAlwaysTranslateLanguage() {
     const langTags = await this.#getCachedDetectedLanguages();
     const { docLangTag } = langTags;
@@ -1348,9 +1348,9 @@ var FullPageTranslationsPanel = new (class {
     await this.#doPageAction(pageAction);
   }
 
-  /**
-   * Toggle offering translations.
-   */
+  
+
+
   async onAlwaysOfferTranslations() {
     const toggledOn = TranslationsParent.toggleAutomaticallyPopupPref();
     TranslationsParent.telemetry()
@@ -1358,11 +1358,11 @@ var FullPageTranslationsPanel = new (class {
       .onAlwaysOfferTranslations(toggledOn);
   }
 
-  /**
-   * Updates the never-translate-language menuitem prefs and checked state.
-   * If never-translate is currently active for the doc language, deactivates it.
-   * If never-translate is currently inactive for the doc language, activates it.
-   */
+  
+
+
+
+
   async onNeverTranslateLanguage() {
     const { docLangTag } = await this.#getCachedDetectedLanguages();
     if (!docLangTag) {
@@ -1378,11 +1378,11 @@ var FullPageTranslationsPanel = new (class {
     await this.#doPageAction(pageAction);
   }
 
-  /**
-   * Updates the never-translate-site menuitem permissions and checked state.
-   * If never-translate is currently active for the site, deactivates it.
-   * If never-translate is currently inactive for the site, activates it.
-   */
+  
+
+
+
+
   async onNeverTranslateSite() {
     const pageAction = this.getCheckboxPageActionFor().neverTranslateSite();
     const toggledOn = await TranslationsParent.getTranslationsActor(
@@ -1395,9 +1395,9 @@ var FullPageTranslationsPanel = new (class {
     await this.#doPageAction(pageAction);
   }
 
-  /**
-   * Handle the restore button being clicked.
-   */
+  
+
+
   async onRestore() {
     const { panel } = this.elements;
     PanelMultiView.hidePopup(panel);
@@ -1411,24 +1411,34 @@ var FullPageTranslationsPanel = new (class {
     ).restorePage(docLangTag);
   }
 
-  /**
-   * An event handler that allows the FullPageTranslationsPanel object
-   * to be compatible with the addTabsProgressListener function.
-   *
-   * @param {tabbrowser} browser
-   */
+  
+
+
+
+
+
   onLocationChange(browser) {
+    if (browser !== gBrowser.selectedBrowser) {
+      
+      
+      return;
+    }
+
     if (browser.currentURI.spec.startsWith("about:reader")) {
-      // Hide the translations button when entering reader mode.
+      
+      this.buttonElements.button.hidden = true;
+    } else if (!TranslationsParent.AIFeature.isEnabled) {
+      
+      
       this.buttonElements.button.hidden = true;
     }
   }
 
-  /**
-   * Update the view to show an error.
-   *
-   * @param {TranslationParent} actor
-   */
+  
+
+
+
+
   async #showEngineError(actor) {
     const { button } = this.buttonElements;
     await this.#ensureLangListsBuilt();
@@ -1441,7 +1451,7 @@ var FullPageTranslationsPanel = new (class {
     });
     const targetButton = button.hidden ? this.elements.appMenuButton : button;
 
-    // Re-open the menu on an error.
+    
     await this.#openPanelPopup(targetButton, {
       autoShow: true,
       viewName: "errorView",
@@ -1449,17 +1459,17 @@ var FullPageTranslationsPanel = new (class {
     });
   }
 
-  /**
-   * Set the state of the translations button in the URL bar.
-   *
-   * @param {CustomEvent} event
-   */
+  
+
+
+
+
   handleEvent = event => {
     const target = event.target;
     let { id } = target;
 
-    // If a menuitem within a menulist is the target, it will not have an id,
-    // so we want to grab the closest relevant id.
+    
+    
     if (!id) {
       id = target.closest("[id]")?.id;
     }
@@ -1511,7 +1521,7 @@ var FullPageTranslationsPanel = new (class {
         break;
       case "TranslationsParent:OfferTranslation": {
         if (Services.wm.getMostRecentBrowserWindow()?.gBrowser === gBrowser) {
-          this.open(event, /* reportAsAutoShow */ true);
+          this.open(event,  true);
         }
         break;
       }
@@ -1529,14 +1539,14 @@ var FullPageTranslationsPanel = new (class {
         });
 
         if (innerWindowId !== actor.innerWindowId) {
-          // The id of the currently active tab does not match the id of the tab that was active when the event was dispatched.
-          // This likely means that the tab was changed after the event was dispatched, but before it was received by this class.
-          //
-          // Keep in mind that there is only one instance of this class (FullPageTranslationsPanel) for each open Firefox window,
-          // but there is one instance of the TranslationsParent actor for each open tab within a Firefox window. As such, it is
-          // possible for a tab-specific actor to fire an event that is received by the window-global panel after switching tabs.
-          //
-          // Since the dispatched event did not originate in the currently active tab, we should not react to it any further.
+          
+          
+          
+          
+          
+          
+          
+          
           return;
         }
 
@@ -1556,37 +1566,39 @@ var FullPageTranslationsPanel = new (class {
           detectedLanguages?.isDocLangTagSupported;
 
         if (detectedLanguages) {
-          // Ensure the cached detected languages are up to date, for instance whenever
-          // the user switches tabs.
+          
+          
           FullPageTranslationsPanel.detectedLanguages = detectedLanguages;
-          // Reset the manually selected language when the user switches tabs.
+          
           this.#manuallySelectedToLanguage = null;
         }
 
         if (this.#isPopupOpen) {
-          // Make sure to use the language state that is passed by the event.detail, and
-          // don't read it from the actor here, as it's possible the actor isn't available
-          // via the gBrowser.selectedBrowser.
+          
+          
+          
           this.#updateViewFromTranslationStatus(actor.languageState);
         }
 
         if (
-          // We've already requested to translate this page, so always show the icon.
-          requestedLanguagePair ||
-          // There was an error translating, so always show the icon. This can happen
-          // when a user manually invokes the translation and we wouldn't normally show
-          // the icon.
-          error ||
-          // Finally check that we can translate this language.
-          (hasSupportedLanguage &&
-            TranslationsParent.getIsTranslationsEngineSupported())
+          
+          TranslationsParent.AIFeature.isEnabled &&
+          
+          (requestedLanguagePair ||
+            
+            
+            
+            error ||
+            
+            (hasSupportedLanguage &&
+              TranslationsParent.getIsTranslationsEngineSupported()))
         ) {
-          // Keep track if the button was originally hidden, because it will be shown now.
+          
           const wasButtonHidden = button.hidden;
 
           button.hidden = false;
           if (requestedLanguagePair) {
-            // The translation is active, update the urlbar button.
+            
             button.setAttribute("translationsactive", true);
             if (isEngineReady) {
               const languageDisplayNames =
@@ -1604,7 +1616,7 @@ var FullPageTranslationsPanel = new (class {
                   ),
                 }
               );
-              // Show the language tag of translated the page in the button.
+              
               buttonLocale.hidden = false;
               buttonCircleArrows.hidden = true;
               buttonLocale.innerText =
@@ -1614,19 +1626,19 @@ var FullPageTranslationsPanel = new (class {
                 button,
                 "urlbar-translations-button-loading"
               );
-              // Show the spinning circle arrows to indicate that the engine is
-              // still loading.
+              
+              
               buttonCircleArrows.hidden = false;
               buttonLocale.hidden = true;
             }
           } else {
-            // The translation is not active, update the urlbar button.
+            
             button.removeAttribute("translationsactive");
             buttonLocale.hidden = true;
             buttonCircleArrows.hidden = true;
 
-            // Follow the same rules for displaying the first-run intro text for the
-            // button's accessible tooltip label.
+            
+            
             if (TranslationsParent.hasUserEverTranslated()) {
               document.l10n.setAttributes(
                 button,
@@ -1640,12 +1652,12 @@ var FullPageTranslationsPanel = new (class {
             }
           }
 
-          // The button was hidden, but now it is shown.
+          
           if (wasButtonHidden) {
             PageActions.sendPlacedInUrlbarTrigger(button);
           }
         } else if (!button.hidden) {
-          // There are no translations visible, hide the button.
+          
           button.hidden = true;
         }
 
