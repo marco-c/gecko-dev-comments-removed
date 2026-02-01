@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
@@ -175,19 +171,7 @@ async function evaluateSearchResults(
     if (!includeExperiments && child.id?.startsWith("pane-experimental")) {
       continue;
     }
-    if (child.localName == "setting-group") {
-      if (searchResults.includes(child.groupId)) {
-        is_element_visible(
-          child,
-          `${child.groupId} should be in search results`
-        );
-      } else {
-        is_element_hidden(
-          child,
-          `${child.groupId} should not be in search results`
-        );
-      }
-    } else if (searchResults.includes(child.id)) {
+    if (searchResults.includes(child.id)) {
       is_element_visible(child, `${child.id} should be in search results`);
     } else if (child.id) {
       is_element_hidden(child, `${child.id} should not be in search results`);
@@ -790,30 +774,13 @@ async function waitForSettingControlChange(control) {
 
 
 
-
-async function waitForPaneChange(
-  paneId,
-  win = gBrowser.selectedBrowser.ownerGlobal
-) {
-  let event = await BrowserTestUtils.waitForEvent(win.document, "paneshown");
+async function waitForPaneChange(paneId) {
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
   let expectId = paneId.startsWith("pane")
     ? paneId
     : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
   is(event.detail.category, expectId, "Loaded the correct pane");
-}
-
-
-
-
-
-
-
-
-function getSettingControl(
-  settingId,
-  win = gBrowser.selectedBrowser.ownerGlobal
-) {
-  return win.document.getElementById(`setting-control-${settingId}`);
 }
 
 function getControl(doc, id) {
