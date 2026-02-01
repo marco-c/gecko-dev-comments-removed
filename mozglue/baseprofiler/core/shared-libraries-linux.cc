@@ -4,7 +4,7 @@
 
 
 
-#include "SharedLibraries.h"
+#include "mozilla/SharedLibraries.h"
 
 #define PATH_MAX_TOSTRING(x) #x
 #define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)

@@ -3,7 +3,7 @@
 
 
 
-#include "SharedLibraries.h"
+#include "mozilla/SharedLibraries.h"
 
 #include "platform.h"
 
@@ -19,7 +19,6 @@
 #include <mach/task_info.h>
 #include <mach/task.h>
 #include <sstream>
-#include <stdlib.h>
 #include <string.h>
 #include <vector>
 

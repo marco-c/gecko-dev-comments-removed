@@ -7,10 +7,10 @@
 #ifndef js_ProfilingCategory_h
 #define js_ProfilingCategory_h
 
+
+#include "mozilla/ProfilingCategoryList.h"  
+
 #include "jstypes.h"  
-
-
-#include "js/ProfilingCategoryList.h"  
 
 namespace JS {
 

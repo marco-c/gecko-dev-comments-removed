@@ -4,11 +4,10 @@
 
 
 
-#include "BaseProfiler.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/BaseProfileJSONWriter.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/FailureLatch.h"
 #include "mozilla/NotNull.h"

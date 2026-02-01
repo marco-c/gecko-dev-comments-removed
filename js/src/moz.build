@@ -216,12 +216,6 @@ EXPORTS.js += [
 
 
 
-EXPORTS.js += [
-    "!/mozglue/baseprofiler/public/ProfilingCategoryList.h",
-]
-
-
-
 
 EXPORTS.js.experimental += [
     "../public/experimental/BindingAllocs.h",

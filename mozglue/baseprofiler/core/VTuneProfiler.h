@@ -24,14 +24,13 @@
 
 #else
 
-#  include "BaseProfiler.h"
+#  include "mozilla/BaseProfiler.h"
 
 
 
 
 #  include "vtune/ittnotify.h"
 
-#  include <stddef.h>
 #  include <unordered_map>
 #  include <string>
 

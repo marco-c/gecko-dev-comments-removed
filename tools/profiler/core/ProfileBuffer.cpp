@@ -6,10 +6,10 @@
 
 #include "ProfileBuffer.h"
 
-#include "BaseProfiler.h"
 #include "js/ColumnNumber.h"  
 #include "js/GCAPI.h"
 #include "jsfriendapi.h"
+#include "mozilla/BaseProfiler.h"
 #include "nsJSPrincipals.h"
 #include "nsScriptSecurityManager.h"
 

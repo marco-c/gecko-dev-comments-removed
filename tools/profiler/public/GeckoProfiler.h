@@ -21,8 +21,8 @@
 
 
 
-#include "BaseProfiler.h"
 #include "ProfileAdditionalInformation.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
