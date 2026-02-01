@@ -1326,6 +1326,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       nsRect containingBlock = aOriginalContainingBlockRect;
+      nsRect scrollableContainingBlock = aOriginalScrollableContainingBlockRect;
       const auto defaultAnchorInfo = [&]() -> Maybe<AnchorPosInfo> {
         if (!aAnchorPosResolutionCache) {
           return Nothing{};
@@ -1339,6 +1340,18 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         containingBlock = aOriginalScrollableContainingBlockRect;
+      }
+
+      if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
+        if (IsSnapshotContainingBlock(aKidFrame)) {
+          return ContainingBlockRect{
+              dom::ViewTransition::SnapshotContainingBlockRect(
+                  viewport->PresContext())};
+        }
+        MOZ_ASSERT(aOriginalScrollableContainingBlockRect ==
+                   aOriginalContainingBlockRect);
+        containingBlock = scrollableContainingBlock =
+            viewport->GetContainingBlockAdjustedForScrollbars(aReflowInput);
       }
 
       
@@ -1382,24 +1395,12 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
           aAnchorPosResolutionCache->mReferenceData->mScrollCompensatedSides =
               GetScrollCompensatedSidesFor(resolvedPositionArea);
           return ContainingBlockRect{
-              offset, resolvedPositionArea,
-              aOriginalScrollableContainingBlockRect,
+              offset, resolvedPositionArea, scrollableContainingBlock,
               
               
               scrolledAnchorCb + offset};
         }
-        return ContainingBlockRect{aOriginalScrollableContainingBlockRect,
-                                   containingBlock};
-      }
-
-      if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
-        if (!IsSnapshotContainingBlock(aKidFrame)) {
-          return ContainingBlockRect{
-              viewport->GetContainingBlockAdjustedForScrollbars(aReflowInput)};
-        }
-        return ContainingBlockRect{
-            dom::ViewTransition::SnapshotContainingBlockRect(
-                viewport->PresContext())};
+        return ContainingBlockRect{scrollableContainingBlock, containingBlock};
       }
       return ContainingBlockRect{containingBlock};
     }();
