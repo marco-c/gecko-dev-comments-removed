@@ -6,9 +6,8 @@ onmessage = async event => {
   
   
 
-  const namespaceWithURI = await import(
-    "resource://test/data/base_uri_module.mjs"
-  );
+  const namespaceWithURI =
+    await import("resource://test/data/base_uri_module.mjs");
   const namespaceWithCurrentDir = await import("./base_uri_module.mjs");
   const namespaceWithParentDir = await import("../data/base_uri_module.mjs");
   const namespaceWithAbsoluteDir = await import("/data/base_uri_module.mjs");

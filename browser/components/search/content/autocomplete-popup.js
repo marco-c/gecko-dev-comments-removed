@@ -18,7 +18,9 @@
 
 
 
-  class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteRichlistboxPopup {
+  class MozSearchAutocompleteRichlistboxPopup
+    extends MozElements.MozAutocompleteRichlistboxPopup
+  {
     constructor() {
       super();
 
