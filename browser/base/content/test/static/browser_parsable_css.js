@@ -198,6 +198,13 @@ let propNameAllowlist = [
   { propName: "--tab-group-color-gray-pale", isFromDevTools: false },
 
   
+  
+  
+  
+  
+  { propName: "--ai-controls-description", isFromDevTools: false },
+
+  
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
 
   
