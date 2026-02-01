@@ -2049,7 +2049,8 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
 
     
     StyleAlignmentBaseline alignmentBaseline = frame->AlignmentBaseline();
-    const StyleBaselineShift& baselineShift = frame->BaselineShift();
+    const StyleBaselineShift& baselineShift =
+        frame->StyleDisplay()->mBaselineShift;
     Maybe<StyleBaselineShiftKeyword> baselineShiftEnum =
         baselineShift.IsKeyword() ? Some(baselineShift.AsKeyword()) : Nothing();
 
