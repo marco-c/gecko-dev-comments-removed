@@ -85,7 +85,7 @@ class RemoteMediaManagerChild final
       const EncoderConfig& aConfig);
 
   
-  static nsISerialEventTarget* GetManagerThread();
+  static nsCOMPtr<nsISerialEventTarget> GetManagerThread();
 
   
   
