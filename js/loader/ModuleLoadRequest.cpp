@@ -127,9 +127,14 @@ void ModuleLoadRequest::ModuleErrored() {
 
   MOZ_ASSERT(!IsFinished());
 
+  
+  
+  
+  
+  
+  
   mozilla::DebugOnly<bool> hasRethrow =
       mModuleScript && mModuleScript->HasErrorToRethrow();
-  MOZ_ASSERT_IF(hasRethrow, !IsDynamicImport());
 
   
   
