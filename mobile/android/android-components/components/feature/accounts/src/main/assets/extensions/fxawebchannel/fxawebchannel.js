@@ -5,8 +5,6 @@
 
 
 
-
-
 let port = browser.runtime.connectNative("mozacWebchannel");
 
 

@@ -8,7 +8,6 @@
 
 
 
-
 const supportedProtocols = ["http:", "https:"];
 
 

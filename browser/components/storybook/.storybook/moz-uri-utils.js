@@ -2,7 +2,6 @@
 
 
 
-
 const path = require("path");
 const [prefixMap, aliasMap, sourceMap] = require("./chrome-map.js");
 const projectRoot = path.resolve(__dirname, "../../../../");

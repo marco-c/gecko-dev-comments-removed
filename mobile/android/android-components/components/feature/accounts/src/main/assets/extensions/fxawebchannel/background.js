@@ -5,8 +5,6 @@
 
 
 
-
-
 const WEB_CHANNEL_BACKGROUND_MESSAGING_ID = "mozacWebchannelBackground";
 let port = browser.runtime.connectNative(WEB_CHANNEL_BACKGROUND_MESSAGING_ID);
 
