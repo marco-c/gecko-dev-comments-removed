@@ -624,7 +624,12 @@ SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
   var result = test.result ? passInfo : failInfo;
   var diagnostic = test.diag || null;
   
-  var subtest = test.name ? String(test.name) : null;
+  var message = test.name ? String(test.name) : null;
+  
+  if (diagnostic) {
+    message = message ? message + " - " + diagnostic : diagnostic;
+  }
+
   var isError = !test.result == !test.todo;
 
   if (parentRunner) {
@@ -641,10 +646,10 @@ SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
 
     parentRunner.structuredLogger.testStatus(
       url,
-      subtest,
+      null, 
       result.status,
       result.expected,
-      diagnostic,
+      message,
       stack
     );
   } else if (typeof dump === "function") {
