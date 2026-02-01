@@ -366,6 +366,10 @@ class GCMarker {
 
     
     
+    ParallelMarkingSingleThread,
+
+    
+    
     
     
     WeakMarking,
@@ -386,7 +390,12 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
-  bool isParallelMarking() const { return state == ParallelMarking; }
+  bool isParallelMarking() const {
+    return state == ParallelMarking || state == ParallelMarkingSingleThread;
+  }
+  bool isParallelMarkingMultipleThreads() const {
+    return state == ParallelMarking;
+  }
   bool isWeakMarking() const { return state == WeakMarking; }
 
   gc::MarkColor markColor() const { return markColor_; }
@@ -416,6 +425,11 @@ class GCMarker {
 
   void enterParallelMarkingMode();
   void leaveParallelMarkingMode();
+
+  
+  
+  void enterSingleThreadedMode();
+  void leaveSingleThreadedMode();
 
   
   

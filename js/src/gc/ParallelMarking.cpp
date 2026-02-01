@@ -218,7 +218,6 @@ void ParallelMarkTask::markDeferredWeakmaps(AutoLockHelperThreadState& lock) {
 
   {
     
-    
     AutoUnlockHelperThreadState unlock(lock);
     marker->markDeferredWeakMapChildren(gc->deferredMapsList(pm->color));
   }
