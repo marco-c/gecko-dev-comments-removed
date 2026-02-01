@@ -731,6 +731,11 @@ add_task(
       "about:preferences#sync",
       async browser => {
         await waitInitialRequestStateSettled();
+        
+        
+        let sandbox = sinon.createSandbox();
+        sandbox.stub(BackupService.prototype, "createBackup").resolves(true);
+
         const mockCustomParentDir = await IOUtils.createUniqueDirectory(
           PathUtils.tempDir,
           "our-dummy-folder"
@@ -790,6 +795,8 @@ add_task(
           {},
           "Our persistent path should be flushed"
         );
+
+        sandbox.restore();
       }
     );
 
