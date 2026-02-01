@@ -5,6 +5,7 @@
 
 
 use super::{Context, Number, ToComputedValue};
+use crate::derives::*;
 use crate::logical_geometry::PhysicalSide;
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
 use crate::values::computed::position::TryTacticAdjustment;
@@ -578,9 +579,10 @@ impl TryTacticAdjustment for MaxSize {
             | Self::MaxContent
             | Self::MinContent
             | Self::FitContent
-            | Self::MozAvailable
             | Self::WebkitFillAvailable
             | Self::Stretch => {},
+            #[cfg(feature = "gecko")]
+            Self::MozAvailable => {},
         }
     }
 }
@@ -602,9 +604,10 @@ impl TryTacticAdjustment for Size {
             | Self::MaxContent
             | Self::MinContent
             | Self::FitContent
-            | Self::MozAvailable
             | Self::WebkitFillAvailable
             | Self::Stretch => {},
+            #[cfg(feature = "gecko")]
+            Self::MozAvailable => {},
         }
     }
 }
