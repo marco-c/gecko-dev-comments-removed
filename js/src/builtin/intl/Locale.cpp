@@ -26,9 +26,7 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/LocaleNegotiation.h"
-#include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/StringAsciiChars.h"
-#include "builtin/intl/UsingEnum.h"
 #include "builtin/String.h"
 #include "js/Conversions.h"
 #include "js/friend/ErrorMessages.h"  
@@ -236,82 +234,69 @@ class SepKeywordIterator {
   }
 };
 
-enum class LocaleHourCycle { H11, H12, H23, H24 };
 
-static constexpr std::string_view HourCycleToString(LocaleHourCycle hourCycle) {
-#ifndef USING_ENUM
-  using enum LocaleHourCycle;
-#else
-  USING_ENUM(LocaleHourCycle, H11, H12, H23, H24);
-#endif
-  switch (hourCycle) {
-    case H11:
-      return "h11";
-    case H12:
-      return "h12";
-    case H23:
-      return "h23";
-    case H24:
-      return "h24";
+
+
+
+
+
+static bool GetStringOption(JSContext* cx, HandleObject options,
+                            Handle<PropertyName*> name,
+                            MutableHandle<JSLinearString*> string) {
+  
+  RootedValue option(cx);
+  if (!GetProperty(cx, options, options, name, &option)) {
+    return false;
   }
-  MOZ_CRASH("invalid locale hour cycle");
+
+  
+  JSLinearString* linear = nullptr;
+  if (!option.isUndefined()) {
+    
+
+    
+    JSString* str = ToString(cx, option);
+    if (!str) {
+      return false;
+    }
+    linear = str->ensureLinear(cx);
+    if (!linear) {
+      return false;
+    }
+  }
+
+  
+  string.set(linear);
+  return true;
 }
 
-static JSLinearString* ToUnicodeValue(JSContext* cx,
-                                      LocaleHourCycle hourCycle) {
-#ifndef USING_ENUM
-  using enum LocaleHourCycle;
-#else
-  USING_ENUM(LocaleHourCycle, H11, H12, H23, H24);
-#endif
-  switch (hourCycle) {
-    case H11:
-      return cx->names().h11;
-    case H12:
-      return cx->names().h12;
-    case H23:
-      return cx->names().h23;
-    case H24:
-      return cx->names().h24;
-  }
-  MOZ_CRASH("invalid locale hour cycle");
-}
 
-enum class LocaleCaseFirst { Upper, Lower, False };
 
-static constexpr std::string_view CaseFirstToString(LocaleCaseFirst caseFirst) {
-#ifndef USING_ENUM
-  using enum LocaleCaseFirst;
-#else
-  USING_ENUM(LocaleCaseFirst, False, Lower, Upper);
-#endif
-  switch (caseFirst) {
-    case False:
-      return "false";
-    case Lower:
-      return "lower";
-    case Upper:
-      return "upper";
-  }
-  MOZ_CRASH("invalid locale case first");
-}
 
-static JSLinearString* ToUnicodeValue(JSContext* cx,
-                                      LocaleCaseFirst caseFirst) {
-#ifndef USING_ENUM
-  using enum LocaleCaseFirst;
-#else
-  USING_ENUM(LocaleCaseFirst, False, Lower, Upper);
-#endif
-  switch (caseFirst) {
-    case False:
-      return cx->names().false_;
-    case Lower:
-      return cx->names().lower;
-    case Upper:
-      return cx->names().upper;
+
+
+
+static bool GetBooleanOption(JSContext* cx, HandleObject options,
+                             Handle<PropertyName*> name,
+                             MutableHandle<JSLinearString*> string) {
+  
+  RootedValue option(cx);
+  if (!GetProperty(cx, options, options, name, &option)) {
+    return false;
   }
-  MOZ_CRASH("invalid locale case first");
+
+  
+  JSLinearString* linear = nullptr;
+  if (!option.isUndefined()) {
+    
+
+    
+    linear = BooleanToString(cx, ToBoolean(option));
+  }
+
+  
+  string.set(linear);
+  return true;
 }
 
 
@@ -633,11 +618,26 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
 
     
     Rooted<JSLinearString*> calendar(cx);
-    if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Calendar,
-                                   &calendar)) {
+    if (!GetStringOption(cx, options, cx->names().calendar, &calendar)) {
       return false;
     }
+
+    
     if (calendar) {
+      bool isValid;
+      if (!IsValidUnicodeExtensionValue(cx, calendar, &isValid)) {
+        return false;
+      }
+
+      if (!isValid) {
+        if (UniqueChars str = QuoteString(cx, calendar, '"')) {
+          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                    JSMSG_INVALID_OPTION_VALUE, "calendar",
+                                    str.get());
+        }
+        return false;
+      }
+
       if (!keywords.emplaceBack("ca", calendar)) {
         return false;
       }
@@ -645,70 +645,115 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
 
     
     Rooted<JSLinearString*> collation(cx);
-    if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Collation,
-                                   &collation)) {
+    if (!GetStringOption(cx, options, cx->names().collation, &collation)) {
       return false;
     }
+
+    
     if (collation) {
+      bool isValid;
+      if (!IsValidUnicodeExtensionValue(cx, collation, &isValid)) {
+        return false;
+      }
+
+      if (!isValid) {
+        if (UniqueChars str = QuoteString(cx, collation, '"')) {
+          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                    JSMSG_INVALID_OPTION_VALUE, "collation",
+                                    str.get());
+        }
+        return false;
+      }
+
       if (!keywords.emplaceBack("co", collation)) {
         return false;
       }
     }
 
     
-    static constexpr auto hourCycles = MapOptions<HourCycleToString>(
-        LocaleHourCycle::H11, LocaleHourCycle::H12, LocaleHourCycle::H23,
-        LocaleHourCycle::H24);
-    mozilla::Maybe<LocaleHourCycle> hourCycle{};
-    if (!GetStringOption(cx, options, cx->names().hourCycle, hourCycles,
-                         &hourCycle)) {
+    Rooted<JSLinearString*> hourCycle(cx);
+    if (!GetStringOption(cx, options, cx->names().hourCycle, &hourCycle)) {
       return false;
     }
 
     
     if (hourCycle) {
-      if (!keywords.emplaceBack("hc", ToUnicodeValue(cx, *hourCycle))) {
+      if (!StringEqualsLiteral(hourCycle, "h11") &&
+          !StringEqualsLiteral(hourCycle, "h12") &&
+          !StringEqualsLiteral(hourCycle, "h23") &&
+          !StringEqualsLiteral(hourCycle, "h24")) {
+        if (UniqueChars str = QuoteString(cx, hourCycle, '"')) {
+          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                    JSMSG_INVALID_OPTION_VALUE, "hourCycle",
+                                    str.get());
+        }
+        return false;
+      }
+
+      if (!keywords.emplaceBack("hc", hourCycle)) {
         return false;
       }
     }
 
     
-    static constexpr auto caseFirsts = MapOptions<CaseFirstToString>(
-        LocaleCaseFirst::Upper, LocaleCaseFirst::Lower, LocaleCaseFirst::False);
-    mozilla::Maybe<LocaleCaseFirst> caseFirst{};
-    if (!GetStringOption(cx, options, cx->names().caseFirst, caseFirsts,
-                         &caseFirst)) {
+    Rooted<JSLinearString*> caseFirst(cx);
+    if (!GetStringOption(cx, options, cx->names().caseFirst, &caseFirst)) {
       return false;
     }
 
     
     if (caseFirst) {
-      if (!keywords.emplaceBack("kf", ToUnicodeValue(cx, *caseFirst))) {
+      if (!StringEqualsLiteral(caseFirst, "upper") &&
+          !StringEqualsLiteral(caseFirst, "lower") &&
+          !StringEqualsLiteral(caseFirst, "false")) {
+        if (UniqueChars str = QuoteString(cx, caseFirst, '"')) {
+          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                    JSMSG_INVALID_OPTION_VALUE, "caseFirst",
+                                    str.get());
+        }
+        return false;
+      }
+
+      if (!keywords.emplaceBack("kf", caseFirst)) {
         return false;
       }
     }
 
     
-    mozilla::Maybe<bool> numeric{};
+    Rooted<JSLinearString*> numeric(cx);
     if (!GetBooleanOption(cx, options, cx->names().numeric, &numeric)) {
       return false;
     }
 
     
     if (numeric) {
-      if (!keywords.emplaceBack("kn", BooleanToString(cx, *numeric))) {
+      if (!keywords.emplaceBack("kn", numeric)) {
         return false;
       }
     }
 
     
     Rooted<JSLinearString*> numberingSystem(cx);
-    if (!GetUnicodeExtensionOption(cx, options,
-                                   UnicodeExtensionKey::NumberingSystem,
-                                   &numberingSystem)) {
+    if (!GetStringOption(cx, options, cx->names().numberingSystem,
+                         &numberingSystem)) {
       return false;
     }
+
+    
     if (numberingSystem) {
+      bool isValid;
+      if (!IsValidUnicodeExtensionValue(cx, numberingSystem, &isValid)) {
+        return false;
+      }
+      if (!isValid) {
+        if (UniqueChars str = QuoteString(cx, numberingSystem, '"')) {
+          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                    JSMSG_INVALID_OPTION_VALUE,
+                                    "numberingSystem", str.get());
+        }
+        return false;
+      }
+
       if (!keywords.emplaceBack("nu", numberingSystem)) {
         return false;
       }
