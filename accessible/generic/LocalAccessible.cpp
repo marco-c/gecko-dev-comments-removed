@@ -1759,7 +1759,8 @@ void LocalAccessible::Value(nsString& aValue) const {
   
   if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
       (IsGeneric() && IsEditableRoot())) {
-    nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
+    TextLeafRange::FromAccessible(const_cast<LocalAccessible*>(this))
+        .GetFlattenedText(aValue);
     return;
   }
 
