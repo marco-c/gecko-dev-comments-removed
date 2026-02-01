@@ -2604,6 +2604,7 @@ void TextInputHandler::InsertText(NSString* aString,
     
     
     
+    mPendingDismissTextSubstitution = false;
     AutoRestore<bool> block(mBlockDismissTextSubstitutionPanel);
     mBlockDismissTextSubstitutionPanel = true;
 
@@ -2612,11 +2613,16 @@ void TextInputHandler::InsertText(NSString* aString,
   }();
   bool keyPressHandled = (status == nsEventStatus_eConsumeNoDefault);
 
-  
-  
-  if (keypressEvent.mKeyCode == NS_VK_SPACE && keyPressDispatched) {
-    mProcessTextSubstitution = true;
-    DismissTextSubstitutionPanel();
+  if (keyPressDispatched) {
+    
+    
+    const bool isSpaceKeyPress = (keypressEvent.mKeyCode == NS_VK_SPACE);
+    
+    mProcessTextSubstitution = isSpaceKeyPress;
+
+    if (isSpaceKeyPress || mPendingDismissTextSubstitution) {
+      DismissTextSubstitutionPanel();
+    }
   }
 
   
@@ -3116,6 +3122,7 @@ bool TextInputHandler::DoCommandBySelector(const char* aSelector) {
     
     
     {
+      mPendingDismissTextSubstitution = false;
       AutoRestore<bool> block(mBlockDismissTextSubstitutionPanel);
       mBlockDismissTextSubstitutionPanel = true;
 
@@ -3132,10 +3139,17 @@ bool TextInputHandler::DoCommandBySelector(const char* aSelector) {
          this, TrueOrFalse(Destroyed()),
          TrueOrFalse(currentKeyEvent->mKeyPressHandled)));
 
-    
-    
-    mProcessTextSubstitution = (keypressEvent.mKeyCode == NS_VK_RETURN);
-    DismissTextSubstitutionPanel();
+    if (currentKeyEvent->mKeyPressDispatched) {
+      
+      
+      const bool isEnterKeyPress = (keypressEvent.mKeyCode == NS_VK_RETURN);
+      
+      mProcessTextSubstitution = isEnterKeyPress;
+
+      if (isEnterKeyPress || mPendingDismissTextSubstitution) {
+        DismissTextSubstitutionPanel();
+      }
+    }
 
     
     
@@ -5078,6 +5092,14 @@ void IMEInputHandler::HandleTextSubstitution(
           &IMEInputHandler::OnTextSubstitution,
           aIMENotification.mTextChangeData.mAddedEndOffset),
       100, EventQueuePriority::Idle);
+
+  
+  
+  
+  
+  if (mBlockDismissTextSubstitutionPanel) {
+    mPendingDismissTextSubstitution = true;
+  }
 }
 
 void IMEInputHandler::OnTextSubstitution(uint32_t aStartOffset) {
