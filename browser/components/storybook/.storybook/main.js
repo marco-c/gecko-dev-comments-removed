@@ -41,7 +41,7 @@ module.exports = {
     
     `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
     
-    `${projectRoot}/browser/components/multilineeditor/**/*.stories.mjs`,
+    `${projectRoot}/browser/components/multilineeditor/**/*.stories.@(mjs|md)`,
     
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
