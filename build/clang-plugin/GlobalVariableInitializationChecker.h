@@ -2,8 +2,8 @@
 
 
 
-#ifndef GlobalVariableInitializationChecker_h__
-#define GlobalVariableInitializationChecker_h__
+#ifndef GlobalVariableInitializationChecker_h_
+#define GlobalVariableInitializationChecker_h_
 
 #include "plugin.h"
 

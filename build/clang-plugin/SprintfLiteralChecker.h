@@ -2,8 +2,8 @@
 
 
 
-#ifndef SprintfLiteralChecker_h__
-#define SprintfLiteralChecker_h__
+#ifndef SprintfLiteralChecker_h_
+#define SprintfLiteralChecker_h_
 
 #include "plugin.h"
 

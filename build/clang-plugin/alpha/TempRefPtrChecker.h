@@ -2,8 +2,8 @@
 
 
 
-#ifndef TempRefPtrChecker_h__
-#define TempRefPtrChecker_h__
+#ifndef TempRefPtrChecker_h_
+#define TempRefPtrChecker_h_
 
 #include "plugin.h"
 

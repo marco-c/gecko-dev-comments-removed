@@ -2,8 +2,8 @@
 
 
 
-#ifndef CustomTypeAnnotation_h__
-#define CustomTypeAnnotation_h__
+#ifndef CustomTypeAnnotation_h_
+#define CustomTypeAnnotation_h_
 
 #include "CustomAttributes.h"
 #include "plugin.h"

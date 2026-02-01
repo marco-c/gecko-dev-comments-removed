@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoNewThreadsChecker_h__
-#define NoNewThreadsChecker_h__
+#ifndef NoNewThreadsChecker_h_
+#define NoNewThreadsChecker_h_
 
 #include "plugin.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef MustOverrideChecker_h__
-#define MustOverrideChecker_h__
+#ifndef MustOverrideChecker_h_
+#define MustOverrideChecker_h_
 
 #include "plugin.h"
 

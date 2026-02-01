@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoExplicitMoveConstructorChecker_h__
-#define NoExplicitMoveConstructorChecker_h__
+#ifndef NoExplicitMoveConstructorChecker_h_
+#define NoExplicitMoveConstructorChecker_h_
 
 #include "plugin.h"
 

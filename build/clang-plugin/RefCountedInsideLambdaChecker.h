@@ -2,8 +2,8 @@
 
 
 
-#ifndef RefCountedInsideLambdaChecker_h__
-#define RefCountedInsideLambdaChecker_h__
+#ifndef RefCountedInsideLambdaChecker_h_
+#define RefCountedInsideLambdaChecker_h_
 
 #include "plugin.h"
 

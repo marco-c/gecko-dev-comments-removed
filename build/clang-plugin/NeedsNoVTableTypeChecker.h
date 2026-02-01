@@ -2,8 +2,8 @@
 
 
 
-#ifndef NeedsNoVTableTypeChecker_h__
-#define NeedsNoVTableTypeChecker_h__
+#ifndef NeedsNoVTableTypeChecker_h_
+#define NeedsNoVTableTypeChecker_h_
 
 #include "plugin.h"
 

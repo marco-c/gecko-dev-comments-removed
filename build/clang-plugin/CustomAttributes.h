@@ -2,8 +2,8 @@
 
 
 
-#ifndef CustomAttributes_h__
-#define CustomAttributes_h__
+#ifndef CustomAttributes_h_
+#define CustomAttributes_h_
 
 #include "clang/AST/DeclBase.h"
 #include "llvm/ADT/StringRef.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoPrincipalGetURI_h__
-#define NoPrincipalGetURI_h__
+#ifndef NoPrincipalGetURI_h_
+#define NoPrincipalGetURI_h_
 
 #include "plugin.h"
 

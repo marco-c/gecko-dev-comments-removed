@@ -2,8 +2,8 @@
 
 
 
-#ifndef OverrideBaseCallChecker_h__
-#define OverrideBaseCallChecker_h__
+#ifndef OverrideBaseCallChecker_h_
+#define OverrideBaseCallChecker_h_
 
 #include "plugin.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef MustReturnFromCallerChecker_h__
-#define MustReturnFromCallerChecker_h__
+#ifndef MustReturnFromCallerChecker_h_
+#define MustReturnFromCallerChecker_h_
 
 #include "RecurseGuard.h"
 #include "StmtToBlockMap.h"

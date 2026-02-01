@@ -2,8 +2,8 @@
 
 
 
-#ifndef NonStdMoveChecker_h__
-#define NonStdMoveChecker_h__
+#ifndef NonStdMoveChecker_h_
+#define NonStdMoveChecker_h_
 
 #include "plugin.h"
 

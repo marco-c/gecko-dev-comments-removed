@@ -2,8 +2,8 @@
 
 
 
-#ifndef CanRunScriptChecker_h__
-#define CanRunScriptChecker_h__
+#ifndef CanRunScriptChecker_h_
+#define CanRunScriptChecker_h_
 
 #include "plugin.h"
 #include <unordered_set>

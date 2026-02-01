@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoDuplicateRefCntMemberChecker_h__
-#define NoDuplicateRefCntMemberChecker_h__
+#ifndef NoDuplicateRefCntMemberChecker_h_
+#define NoDuplicateRefCntMemberChecker_h_
 
 #include "plugin.h"
 

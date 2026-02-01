@@ -2,8 +2,8 @@
 
 
 
-#ifndef TrivialDtorChecker_h__
-#define TrivialDtorChecker_h__
+#ifndef TrivialDtorChecker_h_
+#define TrivialDtorChecker_h_
 
 #include "plugin.h"
 

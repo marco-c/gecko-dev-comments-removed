@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoAddRefReleaseOnReturnChecker_h__
-#define NoAddRefReleaseOnReturnChecker_h__
+#ifndef NoAddRefReleaseOnReturnChecker_h_
+#define NoAddRefReleaseOnReturnChecker_h_
 
 #include "plugin.h"
 

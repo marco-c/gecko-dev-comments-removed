@@ -2,8 +2,8 @@
 
 
 
-#ifndef KungFuDeathGripChecker_h__
-#define KungFuDeathGripChecker_h__
+#ifndef KungFuDeathGripChecker_h_
+#define KungFuDeathGripChecker_h_
 
 #include "plugin.h"
 

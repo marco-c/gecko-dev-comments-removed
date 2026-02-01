@@ -2,8 +2,8 @@
 
 
 
-#ifndef FopenUsageChecker_h__
-#define FopenUsageChecker_h__
+#ifndef FopenUsageChecker_h_
+#define FopenUsageChecker_h_
 
 #include "plugin.h"
 

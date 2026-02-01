@@ -2,8 +2,8 @@
 
 
 
-#ifndef NaNExprChecker_h__
-#define NaNExprChecker_h__
+#ifndef NaNExprChecker_h_
+#define NaNExprChecker_h_
 
 #include "plugin.h"
 

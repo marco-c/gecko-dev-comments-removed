@@ -2,8 +2,8 @@
 
 
 
-#ifndef ParamTraitsEnumChecker_h__
-#define ParamTraitsEnumChecker_h__
+#ifndef ParamTraitsEnumChecker_h_
+#define ParamTraitsEnumChecker_h_
 
 #include "plugin.h"
 

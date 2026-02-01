@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoUsingNamespaceMozillaJavaChecker_h__
-#define NoUsingNamespaceMozillaJavaChecker_h__
+#ifndef NoUsingNamespaceMozillaJavaChecker_h_
+#define NoUsingNamespaceMozillaJavaChecker_h_
 
 #include "plugin.h"
 

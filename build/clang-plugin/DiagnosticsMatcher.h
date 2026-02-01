@@ -2,8 +2,8 @@
 
 
 
-#ifndef DiagnosticsMatcher_h__
-#define DiagnosticsMatcher_h__
+#ifndef DiagnosticsMatcher_h_
+#define DiagnosticsMatcher_h_
 
 #include "ChecksIncludes.inc"
 #include "external/ExternalIncludes.inc"

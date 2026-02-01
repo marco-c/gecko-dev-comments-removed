@@ -2,8 +2,8 @@
 
 
 
-#ifndef LoadLibraryUsageChecker_h__
-#define LoadLibraryUsageChecker_h__
+#ifndef LoadLibraryUsageChecker_h_
+#define LoadLibraryUsageChecker_h_
 
 #include "plugin.h"
 

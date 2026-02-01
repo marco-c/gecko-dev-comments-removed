@@ -2,8 +2,8 @@
 
 
 
-#ifndef NoAutoTypeChecker_h__
-#define NoAutoTypeChecker_h__
+#ifndef NoAutoTypeChecker_h_
+#define NoAutoTypeChecker_h_
 
 #include "plugin.h"
 

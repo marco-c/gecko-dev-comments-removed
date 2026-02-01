@@ -2,8 +2,8 @@
 
 
 
-#ifndef StmtToBlockMap_h__
-#define StmtToBlockMap_h__
+#ifndef StmtToBlockMap_h_
+#define StmtToBlockMap_h_
 
 #include "Utils.h"
 

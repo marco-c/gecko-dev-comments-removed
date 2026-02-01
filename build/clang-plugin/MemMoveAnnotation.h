@@ -2,8 +2,8 @@
 
 
 
-#ifndef MemMoveAnnotation_h__
-#define MemMoveAnnotation_h__
+#ifndef MemMoveAnnotation_h_
+#define MemMoveAnnotation_h_
 
 #include "CustomMatchers.h"
 #include "CustomTypeAnnotation.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef ArithmeticArgChecker_h__
-#define ArithmeticArgChecker_h__
+#ifndef ArithmeticArgChecker_h_
+#define ArithmeticArgChecker_h_
 
 #include "plugin.h"
 

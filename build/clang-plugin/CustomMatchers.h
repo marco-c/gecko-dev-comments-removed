@@ -2,8 +2,8 @@
 
 
 
-#ifndef CustomMatchers_h__
-#define CustomMatchers_h__
+#ifndef CustomMatchers_h_
+#define CustomMatchers_h_
 
 #include "MemMoveAnnotation.h"
 #include "Utils.h"

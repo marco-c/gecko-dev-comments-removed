@@ -2,8 +2,8 @@
 
 
 
-#ifndef DanglingOnTemporaryChecker_h__
-#define DanglingOnTemporaryChecker_h__
+#ifndef DanglingOnTemporaryChecker_h_
+#define DanglingOnTemporaryChecker_h_
 
 #include "plugin.h"
 

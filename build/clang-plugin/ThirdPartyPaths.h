@@ -2,8 +2,8 @@
 
 
 
-#ifndef ThirdPartyPaths_h__
-#define ThirdPartyPaths_h__
+#ifndef ThirdPartyPaths_h_
+#define ThirdPartyPaths_h_
 
 #include <stdint.h>
 

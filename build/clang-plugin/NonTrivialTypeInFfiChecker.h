@@ -2,8 +2,8 @@
 
 
 
-#ifndef NonTrivialTypeInFfiChecker_h__
-#define NonTrivialTypeInFfiChecker_h__
+#ifndef NonTrivialTypeInFfiChecker_h_
+#define NonTrivialTypeInFfiChecker_h_
 
 #include "plugin.h"
 

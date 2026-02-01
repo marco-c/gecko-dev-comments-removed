@@ -2,8 +2,8 @@
 
 
 
-#ifndef plugin_h__
-#define plugin_h__
+#ifndef plugin_h_
+#define plugin_h_
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"

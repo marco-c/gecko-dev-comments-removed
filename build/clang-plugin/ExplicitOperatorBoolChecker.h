@@ -2,8 +2,8 @@
 
 
 
-#ifndef ExplicitOperatorBoolChecker_h__
-#define ExplicitOperatorBoolChecker_h__
+#ifndef ExplicitOperatorBoolChecker_h_
+#define ExplicitOperatorBoolChecker_h_
 
 #include "plugin.h"
 

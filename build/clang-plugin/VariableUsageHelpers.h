@@ -2,8 +2,8 @@
 
 
 
-#ifndef VariableUsageHelpers_h__
-#define VariableUsageHelpers_h__
+#ifndef VariableUsageHelpers_h_
+#define VariableUsageHelpers_h_
 
 #include "plugin.h"
 

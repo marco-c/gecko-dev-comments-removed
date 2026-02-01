@@ -2,8 +2,8 @@
 
 
 
-#ifndef AssertAssignmentChecker_h__
-#define AssertAssignmentChecker_h__
+#ifndef AssertAssignmentChecker_h_
+#define AssertAssignmentChecker_h_
 
 #include "plugin.h"
 

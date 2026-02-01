@@ -2,8 +2,8 @@
 
 
 
-#ifndef RecurseGuard_h__
-#define RecurseGuard_h__
+#ifndef RecurseGuard_h_
+#define RecurseGuard_h_
 
 #include "Utils.h"
 

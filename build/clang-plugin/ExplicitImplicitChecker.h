@@ -2,8 +2,8 @@
 
 
 
-#ifndef ExplicitImplicitChecker_h__
-#define ExplicitImplicitChecker_h__
+#ifndef ExplicitImplicitChecker_h_
+#define ExplicitImplicitChecker_h_
 
 #include "plugin.h"
 

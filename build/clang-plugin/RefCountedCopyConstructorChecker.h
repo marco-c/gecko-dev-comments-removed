@@ -2,8 +2,8 @@
 
 
 
-#ifndef RefCountedCopyConstructorChecker_h__
-#define RefCountedCopyConstructorChecker_h__
+#ifndef RefCountedCopyConstructorChecker_h_
+#define RefCountedCopyConstructorChecker_h_
 
 #include "plugin.h"
 

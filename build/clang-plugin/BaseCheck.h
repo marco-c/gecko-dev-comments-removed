@@ -2,8 +2,8 @@
 
 
 
-#ifndef BaseCheck_h__
-#define BaseCheck_h__
+#ifndef BaseCheck_h_
+#define BaseCheck_h_
 
 class MozContext {};
 typedef MozContext ContextType;

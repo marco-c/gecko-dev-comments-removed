@@ -2,8 +2,8 @@
 
 
 
-#ifndef Utils_h__
-#define Utils_h__
+#ifndef Utils_h_
+#define Utils_h_
 
 #include "CustomAttributes.h"
 #include "ThirdPartyPaths.h"

@@ -2,8 +2,8 @@
 
 
 
-#ifndef ScopeChecker_h__
-#define ScopeChecker_h__
+#ifndef ScopeChecker_h_
+#define ScopeChecker_h_
 
 #include "plugin.h"
 

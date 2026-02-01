@@ -2,8 +2,8 @@
 
 
 
-#ifndef NonMemMovableTemplateArgChecker_h__
-#define NonMemMovableTemplateArgChecker_h__
+#ifndef NonMemMovableTemplateArgChecker_h_
+#define NonMemMovableTemplateArgChecker_h_
 
 #include "plugin.h"
 

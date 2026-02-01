@@ -2,8 +2,8 @@
 
 
 
-#ifndef NonParamInsideFunctionDeclChecker_h__
-#define NonParamInsideFunctionDeclChecker_h__
+#ifndef NonParamInsideFunctionDeclChecker_h_
+#define NonParamInsideFunctionDeclChecker_h_
 
 #include "plugin.h"
 

@@ -2,8 +2,8 @@
 
 
 
-#ifndef __RELRHACK_H__
-#define __RELRHACK_H__
+#ifndef RELRHACK_H_
+#define RELRHACK_H_
 
 #include <elf.h>
 

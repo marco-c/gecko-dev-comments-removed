@@ -2,8 +2,8 @@
 
 
 
-#ifndef NonMemMovableMemberChecker_h__
-#define NonMemMovableMemberChecker_h__
+#ifndef NonMemMovableMemberChecker_h_
+#define NonMemMovableMemberChecker_h_
 
 #include "plugin.h"
 
