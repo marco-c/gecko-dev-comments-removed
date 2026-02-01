@@ -32,8 +32,10 @@ SizeTrackingConfig::SizeTrackingConfig(sandbox::TargetConfig* aConfig,
 
   
   
+  
   MOZ_ASSERT(aStoragePages > 0);
-  MOZ_ASSERT(static_cast<size_t>(aStoragePages) < sandbox::kPolMemPageCount);
+  MOZ_ASSERT(static_cast<size_t>(aStoragePages) <=
+             sandbox::kPolMemPageCount - 2);
 
   constexpr int32_t kOneMemPage = 4096;
   mRemainingSize = kOneMemPage * aStoragePages;
