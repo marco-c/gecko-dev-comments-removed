@@ -44,6 +44,7 @@
 #include "modules/video_coding/utility/framerate_controller_deprecated.h"
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
+#include "rtc_base/experiments/psnr_experiment.h"
 #include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
 #include "third_party/libvpx/source/libvpx/vpx/vpx_codec.h"
 #include "third_party/libvpx/source/libvpx/vpx/vpx_encoder.h"
@@ -255,9 +256,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
   const LibvpxVp9EncoderInfoSettings encoder_info_override_;
 
   
-  FrameSampler psnr_frame_sampler_;
   
-  const bool calculate_psnr_;
+  const PsnrExperiment psnr_experiment_;
+  FrameSampler psnr_frame_sampler_;
 };
 
 }  

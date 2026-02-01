@@ -12,20 +12,21 @@
 
 #include <cstdint>
 
+#include "api/units/time_delta.h"
 #include "api/video/video_frame.h"
 #include "modules/include/module_common_types_public.h"
 
 namespace webrtc {
 
-constexpr int kTimestampDifference =
-    90'000;  
+FrameSampler::FrameSampler(TimeDelta interval) : sampling_interval_(interval) {}
 
 bool FrameSampler::ShouldBeSampled(const VideoFrame& frame) {
+  
+  const int64_t interval_rtp = sampling_interval_.ms() * 90;
   if (!last_rtp_timestamp_sampled_) {
     
     
-    last_rtp_timestamp_ =
-        frame.rtp_timestamp() + kTimestampDifference / 30;
+    last_rtp_timestamp_ = frame.rtp_timestamp() + interval_rtp / 30;
     last_rtp_timestamp_sampled_ = frame.rtp_timestamp();
     return true;
   }
@@ -38,7 +39,7 @@ bool FrameSampler::ShouldBeSampled(const VideoFrame& frame) {
   last_rtp_timestamp_ = frame.rtp_timestamp();
 
   if (IsNewerTimestamp(extrapolated_rtp_timestamp,
-                       *last_rtp_timestamp_sampled_ + kTimestampDifference)) {
+                       *last_rtp_timestamp_sampled_ + interval_rtp)) {
     last_rtp_timestamp_sampled_ = frame.rtp_timestamp();
     return true;
   }
