@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_DocumentOrShadowRoot_h__
 #define mozilla_dom_DocumentOrShadowRoot_h__
@@ -39,13 +39,13 @@ class ShadowRoot;
 template <typename T>
 class Sequence;
 
-/**
- * A class meant to be shared by ShadowRoot and Document, that holds a list of
- * stylesheets.
- *
- * TODO(emilio, bug 1418159): In the future this should hold most of the
- * relevant style state, this should allow us to fix bug 548397.
- */
+
+
+
+
+
+
+
 class DocumentOrShadowRoot {
   enum class Kind {
     Document,
@@ -53,13 +53,13 @@ class DocumentOrShadowRoot {
   };
 
  public:
-  // These should always be non-null, but can't use a reference because
-  // dereferencing `this` on initializer lists is UB, apparently, see
-  // bug 1596499.
+  
+  
+  
   explicit DocumentOrShadowRoot(Document*);
   explicit DocumentOrShadowRoot(ShadowRoot*);
 
-  // Unusual argument naming is because of cycle collection macros.
+  
   static void Traverse(DocumentOrShadowRoot* tmp,
                        nsCycleCollectionTraversalCallback& cb);
   static void Unlink(DocumentOrShadowRoot* tmp);
@@ -80,13 +80,13 @@ class DocumentOrShadowRoot {
 
   size_t FindSheetInsertionPointInTree(const StyleSheet&) const;
 
-  /**
-   * Returns an index for the sheet in relative style order.
-   * If there are non-applicable sheets, then this index may
-   * not match 1:1 with the sheet's actual index in the style set.
-   *
-   * Handles sheets from both mStyleSheets and mAdoptedStyleSheets
-   */
+  
+
+
+
+
+
+
   size_t StyleOrderIndexOfSheet(const StyleSheet& aSheet) const;
 
   StyleSheetList* StyleSheets();
@@ -96,12 +96,12 @@ class DocumentOrShadowRoot {
   Element* GetElementById(const nsAString& aElementId) const;
   Element* GetElementById(nsAtom* aElementId) const;
 
-  /**
-   * This method returns _all_ the elements in this scope which have id
-   * aElementId, if there are any.  Otherwise it returns null.
-   *
-   * This is useful for stuff like QuerySelector optimization and such.
-   */
+  
+
+
+
+
+
   Span<Element* const> GetAllElementsForId(
       const IdentifierMapEntry::DependentAtomOrString& aElementId) const {
     if (IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aElementId)) {
@@ -136,12 +136,12 @@ class DocumentOrShadowRoot {
   void ElementsFromPoint(float aX, float aY, nsTArray<RefPtr<Element>>&);
   void NodesFromPoint(float aX, float aY, nsTArray<RefPtr<nsINode>>&);
 
-  /**
-   * Helper for elementFromPoint implementation that allows
-   * ignoring the scroll frame and/or avoiding layout flushes.
-   *
-   * @see nsIDOMWindowUtils::elementFromPoint
-   */
+  
+
+
+
+
+
   Element* ElementFromPointHelper(float aX, float aY,
                                   bool aIgnoreRootScrollFrame,
                                   bool aFlushLayout, ViewportType aViewportType,
@@ -153,52 +153,86 @@ class DocumentOrShadowRoot {
                      bool aOnlyVisible, float aVisibleThreshold,
                      nsTArray<RefPtr<nsINode>>&);
 
-  /**
-   * This gets fired when the element that an id refers to changes.
-   * This fires at difficult times. It is generally not safe to do anything
-   * which could modify the DOM in any way. Use
-   * nsContentUtils::AddScriptRunner.
-   * @return true to keep the callback in the callback set, false
-   * to remove it.
-   */
+  
+
+
+
+
+
+
+
   typedef bool (*IDTargetObserver)(Element* aOldElement, Element* aNewelement,
                                    void* aData);
 
-  /**
-   * Add an IDTargetObserver for a specific ID. The IDTargetObserver
-   * will be fired whenever the content associated with the ID changes
-   * in the future. If aForImage is true, mozSetImageElement can override
-   * what content is associated with the ID. In that case the IDTargetObserver
-   * will be notified at those times when the result of LookupImageElement
-   * changes.
-   * At most one (aObserver, aData, aForImage) triple can be
-   * registered for each ID.
-   * @return the content currently associated with the ID.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   Element* AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
                                void* aData, bool aForImage);
 
-  /**
-   * Remove the (aObserver, aData, aForImage) triple for a specific ID, if
-   * registered.
-   */
+  
+
+
+
   void RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
                               void* aData, bool aForImage);
 
-  /**
-   * Lookup an image element using its associated ID, which is usually provided
-   * by |-moz-element()|. Similar to GetElementById, with the difference that
-   * elements set using mozSetImageElement have higher priority.
-   * @param aId the ID associated the element we want to lookup
-   * @return the element associated with |aId|
-   */
+  
+
+
+
+  typedef bool (*ReferenceTargetChangeObserver)(void* aData);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void AddReferenceTargetChangeObserver(Element* aElement,
+                                        ReferenceTargetChangeObserver aObserver,
+                                        void* aData);
+  void RemoveReferenceTargetChangeObserver(
+      Element* aElement, ReferenceTargetChangeObserver aObserver, void* aData);
+  
+
+
+  void NotifyReferenceTargetChanged(Element* aElement);
+
+  
+
+
+
+
+
+
   Element* LookupImageElement(nsAtom* aId);
 
-  /**
-   * Check that aId is not empty and log a message to the console
-   * service if it is.
-   * @returns true if aId looks correct, false otherwise.
-   */
+  
+
+
+
+
   inline bool CheckGetElementByIdArg(const nsAString& aId) {
     if (aId.IsEmpty()) {
       ReportEmptyGetElementByIdArg();
@@ -209,7 +243,7 @@ class DocumentOrShadowRoot {
 
   void ReportEmptyGetElementByIdArg() const;
 
-  // Web Animations
+  
   MOZ_CAN_RUN_SCRIPT
   void GetAnimations(nsTArray<RefPtr<Animation>>& aAnimations);
 
@@ -218,10 +252,10 @@ class DocumentOrShadowRoot {
   void OnSetAdoptedStyleSheets(StyleSheet&, uint32_t aIndex, ErrorResult&);
   void OnDeleteAdoptedStyleSheets(StyleSheet&, uint32_t aIndex, ErrorResult&);
 
-  // This is needed because ServoStyleSet / ServoAuthorData don't deal with
-  // duplicate stylesheets (and it's unclear we'd want to support that as it'd
-  // be a bunch of duplicate work), while adopted stylesheets do need to deal
-  // with them.
+  
+  
+  
+  
   template <typename Callback>
   void EnumerateUniqueAdoptedStyleSheetsBackToFront(Callback aCallback) {
     StyleSheetSet set(mAdoptedStyleSheets.Length());
@@ -234,7 +268,7 @@ class DocumentOrShadowRoot {
   }
 
  protected:
-  // Cycle collection helper functions
+  
   void TraverseSheetRefInStylesIfApplicable(
       StyleSheet&, nsCycleCollectionTraversalCallback&);
   void TraverseStyleSheets(nsTArray<RefPtr<StyleSheet>>&, const char*,
@@ -245,10 +279,10 @@ class DocumentOrShadowRoot {
   void RemoveSheetFromStylesIfApplicable(StyleSheet&);
   void ClearAdoptedStyleSheets();
 
-  /**
-   * Clone's the argument's adopted style sheets into this.
-   * This should only be used when cloning a static document for printing.
-   */
+  
+
+
+
   void CloneAdoptedSheetsFrom(const DocumentOrShadowRoot&);
 
   void InsertSheetAt(size_t aIndex, StyleSheet& aSheet);
@@ -257,40 +291,76 @@ class DocumentOrShadowRoot {
   void AddSizeOfOwnedSheetArrayExcludingThis(
       nsWindowSizes&, const nsTArray<RefPtr<StyleSheet>>&) const;
 
-  /**
-   * If focused element's subtree root is this document or shadow root, return
-   * focused element, otherwise, get the shadow host recursively until the
-   * shadow host's subtree root is this document or shadow root.
-   */
+  
+
+
+
+
   Element* GetRetargetedFocusedElement();
 
   nsTArray<RefPtr<StyleSheet>> mStyleSheets;
   RefPtr<StyleSheetList> mDOMStyleSheets;
 
-  /**
-   * Style sheets that are adopted by assinging to the `adoptedStyleSheets`
-   * WebIDL atribute. These can only be constructed stylesheets.
-   */
+  
+
+
+
   nsTArray<RefPtr<StyleSheet>> mAdoptedStyleSheets;
 
-  /*
-   * mIdentifierMap works as follows for IDs:
-   * 1) Attribute changes affect the table immediately (removing and adding
-   *    entries as needed).
-   * 2) Removals from the DOM affect the table immediately
-   * 3) Additions to the DOM always update existing entries for names, and add
-   *    new ones for IDs.
-   */
+  
+
+
+
+
+
+
+
   nsTHashtable<IdentifierMapEntry> mIdentifierMap;
 
-  // Always non-null, see comment in the constructor as to why a pointer instead
-  // of a reference.
+  
+
+
+
+
+  struct ReferenceTargetChangeCallback {
+    ReferenceTargetChangeObserver mObserver;
+    void* mData;
+  };
+  struct ReferenceTargetChangeCallbackEntry : public PLDHashEntryHdr {
+    typedef const ReferenceTargetChangeCallback KeyType;
+    typedef const ReferenceTargetChangeCallback* KeyTypePointer;
+
+    explicit ReferenceTargetChangeCallbackEntry(
+        const ReferenceTargetChangeCallback* aKey)
+        : mKey(*aKey) {}
+    ReferenceTargetChangeCallbackEntry(
+        ReferenceTargetChangeCallbackEntry&& aOther)
+        : PLDHashEntryHdr(std::move(aOther)), mKey(std::move(aOther.mKey)) {}
+
+    KeyType GetKey() const { return mKey; }
+    bool KeyEquals(KeyTypePointer aKey) const {
+      return aKey->mObserver == mKey.mObserver && aKey->mData == mKey.mData;
+    }
+
+    static KeyTypePointer KeyToPointer(KeyType& aKey) { return &aKey; }
+    static PLDHashNumber HashKey(KeyTypePointer aKey) {
+      return HashGeneric(aKey->mObserver, aKey->mData);
+    }
+    enum { ALLOW_MEMMOVE = true };
+
+    ReferenceTargetChangeCallback mKey;
+  };
+  nsTHashMap<Element*, nsTHashSet<ReferenceTargetChangeCallbackEntry>>
+      mReferenceTargetObserverMap;
+
+  
+  
   nsINode* mAsNode;
   const Kind mKind;
 };
 
-}  // namespace dom
+}  
 
-}  // namespace mozilla
+}  
 
 #endif

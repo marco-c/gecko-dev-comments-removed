@@ -1138,20 +1138,21 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
 
 
-  Element* AddFormIdObserver();
+
+  Element* AddFormAttributeObserver();
 
   
 
 
-  void RemoveFormIdObserver();
+  void RemoveFormAttributeObserver();
 
   
 
 
 
 
-  static bool FormIdUpdated(Element* aOldElement, Element* aNewElement,
-                            void* aData);
+  static bool FormAttributeUpdated(Element* aOldElement, Element* aNewElement,
+                                   Element* thisElement);
 
   
   bool IsElementDisabledForEvents(mozilla::WidgetEvent* aEvent,
@@ -1215,7 +1216,8 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
 
   
   mozilla::dom::HTMLFieldSetElement* GetFieldSet() override;
-  mozilla::dom::HTMLFormElement* GetForm() const override { return mForm; }
+  mozilla::dom::Element* GetFormForBindings() const override;
+  mozilla::dom::HTMLFormElement* GetFormInternal() const override;
   void SetForm(mozilla::dom::HTMLFormElement* aForm) override;
   void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) override;
 
@@ -1230,7 +1232,6 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   bool DoesReadWriteApply() const override;
   void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
                        bool aBindToTree) override;
-  mozilla::dom::HTMLFormElement* GetFormInternal() const override;
   mozilla::dom::HTMLFieldSetElement* GetFieldSetInternal() const override;
   void SetFieldSetInternal(
       mozilla::dom::HTMLFieldSetElement* aFieldset) override;

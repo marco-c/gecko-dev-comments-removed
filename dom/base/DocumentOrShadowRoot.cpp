@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "DocumentOrShadowRoot.h"
 
@@ -42,7 +42,7 @@ void DocumentOrShadowRoot::AddSizeOfOwnedSheetArrayExcludingThis(
   n += aSheets.ShallowSizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
   for (StyleSheet* sheet : aSheets) {
     if (!sheet->GetAssociatedDocumentOrShadowRoot()) {
-      // Avoid over-reporting shared sheets.
+      
       continue;
     }
     n += sheet->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
@@ -82,8 +82,8 @@ void DocumentOrShadowRoot::InsertSheetAt(size_t aIndex, StyleSheet& aSheet) {
 void DocumentOrShadowRoot::RemoveStyleSheet(StyleSheet& aSheet) {
   auto index = mStyleSheets.IndexOf(&aSheet);
   if (index == mStyleSheets.NoIndex) {
-    // We should only hit this case if we are unlinking
-    // in which case mStyleSheets should be cleared.
+    
+    
     MOZ_ASSERT(mKind != Kind::Document ||
                AsNode().AsDocument()->InUnlinkOrDeletion());
     MOZ_ASSERT(mStyleSheets.IsEmpty());
@@ -109,14 +109,14 @@ void DocumentOrShadowRoot::RemoveSheetFromStylesIfApplicable(
   }
 }
 
-// https://drafts.csswg.org/cssom/#dom-documentorshadowroot-adoptedstylesheets
+
 void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
                                                    uint32_t aIndex,
                                                    ErrorResult& aRv) {
   Document& doc = *AsNode().OwnerDoc();
-  // 1. If value’s constructed flag is not set, or its constructor document is
-  // not equal to this DocumentOrShadowRoot's node document, throw a
-  // "NotAllowedError" DOMException.
+  
+  
+  
 
   if (!StaticPrefs::
           dom_webcomponents_lift_adoptedstylesheets_restriction_enabled()) {
@@ -137,19 +137,19 @@ void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
   MOZ_ASSERT((mKind == Kind::ShadowRoot) == !!shadow);
 
   auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
-  // Ensure it's in the backing array at the right index.
+  
   mAdoptedStyleSheets.InsertElementAt(aIndex, &aSheet);
   if (existingIndex == mAdoptedStyleSheets.NoIndex) {
-    // common case: we're not already adopting this sheet.
+    
     aSheet.AddAdopter(*this);
   } else if (existingIndex < aIndex) {
-    // We're inserting an already-adopted stylesheet in a later position, so
-    // this one should take precedent and we should remove the old one.
+    
+    
     RemoveSheetFromStylesIfApplicable(aSheet);
   } else {
-    // The sheet is already at a position later than or equal to the current
-    // one, and is already adopted by us, we have nothing to do here other than
-    // adding to the current list.
+    
+    
+    
     return;
   }
 
@@ -169,17 +169,17 @@ void DocumentOrShadowRoot::OnDeleteAdoptedStyleSheets(StyleSheet& aSheet,
   mAdoptedStyleSheets.RemoveElementAt(aIndex);
   auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
   if (existingIndex != mAdoptedStyleSheets.NoIndex && existingIndex >= aIndex) {
-    // The sheet is still adopted by us and was already later from the one we're
-    // removing, so nothing to do.
+    
+    
     return;
   }
 
   RemoveSheetFromStylesIfApplicable(aSheet);
   if (existingIndex == mAdoptedStyleSheets.NoIndex) {
-    // The sheet is no longer adopted by us.
+    
     aSheet.RemoveAdopter(*this);
   } else if (aSheet.IsApplicable()) {
-    // We need to re-insert the sheet at the right (pre-existing) index.
+    
     nsINode& node = AsNode();
     if (mKind == Kind::Document) {
       node.AsDocument()->AddStyleSheetToStyleSets(aSheet);
@@ -218,8 +218,8 @@ void DocumentOrShadowRoot::CloneAdoptedSheetsFrom(
       sourceDoc.GetProperty(nsGkAtoms::adoptedsheetclones));
   MOZ_ASSERT(clonedSheetMap);
 
-  // We don't need to care about the reflector (AdoptedStyleSheetsHelpers and
-  // so) because this is only used for static documents.
+  
+  
   for (const StyleSheet* sheet : aSource.mAdoptedStyleSheets) {
     RefPtr<StyleSheet> clone = clonedSheetMap->LookupOrInsertWith(
         sheet, [&] { return sheet->CloneAdoptedSheet(ownerDoc); });
@@ -333,13 +333,13 @@ namespace {
 using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 using FrameForPointOptions = nsLayoutUtils::FrameForPointOptions;
 
-// Whether only one node or multiple nodes is requested.
+
 enum class Multiple {
   No,
   Yes,
 };
 
-// Whether we should flush layout or not.
+
 enum class FlushLayout {
   No,
   Yes,
@@ -380,8 +380,8 @@ static void QueryNodesFromRect(DocumentOrShadowRoot& aRoot, const nsRect& aRect,
 
   nsCOMPtr<Document> doc = aRoot.AsNode().OwnerDoc();
 
-  // Make sure the layout information we get is up-to-date, and
-  // ensure we get a root frame (for everything but XUL)
+  
+  
   if (aShouldFlushLayout == FlushLayout::Yes) {
     doc->FlushPendingNotifications(FlushType::Layout);
   }
@@ -392,9 +392,9 @@ static void QueryNodesFromRect(DocumentOrShadowRoot& aRoot, const nsRect& aRect,
   }
 
   nsIFrame* rootFrame = presShell->GetRootFrame();
-  // XUL docs, unlike HTML, have no frame tree until everything's done loading
+  
   if (!rootFrame) {
-    return;  // return null to premature XUL callers as a reminder to wait
+    return;  
   }
 
   aOptions.mBits += FrameForPointOption::IgnorePaintSuppression;
@@ -411,7 +411,7 @@ static void QueryNodesFromRect(DocumentOrShadowRoot& aRoot, const nsRect& aRect,
       MOZ_ASSERT(root, "content is connected");
       MOZ_ASSERT(root->IsRootOfNativeAnonymousSubtree(), "wat");
       if (root == &aRoot.AsNode()) {
-        // If we're in the anonymous subtree root we care about, don't retarget.
+        
         break;
       }
       node = root->GetParentOrShadowHostNode();
@@ -422,12 +422,12 @@ static void QueryNodesFromRect(DocumentOrShadowRoot& aRoot, const nsRect& aRect,
     }
 
     if (returningElements && !node->IsElement()) {
-      // If this helper is called via ElementsFromPoint, we need to make sure
-      // our frame is an element. Otherwise return whatever the top frame is
-      // even if it isn't the top-painted element.
-      // SVG 'text' element's SVGTextFrame doesn't respond to hit-testing, so
-      // if 'content' is a child of such an element then we need to manually
-      // defer to the parent here.
+      
+      
+      
+      
+      
+      
       if (aMultiple == Multiple::Yes && !frame->IsInSVGTextSubtree()) {
         continue;
       }
@@ -438,9 +438,9 @@ static void QueryNodesFromRect(DocumentOrShadowRoot& aRoot, const nsRect& aRect,
       }
     }
 
-    // XXXsmaug There is plenty of unspec'ed behavior here
-    //         https://github.com/w3c/webcomponents/issues/735
-    //         https://github.com/w3c/webcomponents/issues/736
+    
+    
+    
     if (retargeting) {
       node = aRoot.Retarget(node);
     }
@@ -461,7 +461,7 @@ static void QueryNodesFromPoint(DocumentOrShadowRoot& aRoot, float aX, float aY,
                                 Multiple aMultiple, ViewportType aViewportType,
                                 PerformRetargeting aPerformRetargeting,
                                 nsTArray<RefPtr<NodeOrElement>>& aNodes) {
-  // As per the spec, we return null if either coord is negative.
+  
   if (!aOptions.mBits.contains(FrameForPointOption::IgnoreRootScrollFrame) &&
       (aX < 0 || aY < 0)) {
     return;
@@ -475,7 +475,7 @@ static void QueryNodesFromPoint(DocumentOrShadowRoot& aRoot, float aX, float aY,
                      aPerformRetargeting, aNodes);
 }
 
-}  // namespace
+}  
 
 Element* DocumentOrShadowRoot::ElementFromPoint(float aX, float aY) {
   return ElementFromPointHelper(aX, aY, false, true, ViewportType::Layout);
@@ -525,8 +525,8 @@ void DocumentOrShadowRoot::NodesFromRect(float aX, float aY, float aTopSize,
                                          bool aFlushLayout, bool aOnlyVisible,
                                          float aVisibleThreshold,
                                          nsTArray<RefPtr<nsINode>>& aReturn) {
-  // Following the same behavior of elementFromPoint,
-  // we don't return anything if either coord is negative
+  
+  
   if (!aIgnoreRootScrollFrame && (aX < 0 || aY < 0)) {
     return;
   }
@@ -586,6 +586,62 @@ void DocumentOrShadowRoot::RemoveIDTargetObserver(nsAtom* aID,
   entry->RemoveContentChangeCallback(aObserver, aData, aForImage);
 }
 
+void DocumentOrShadowRoot::AddReferenceTargetChangeObserver(
+    Element* aElement, ReferenceTargetChangeObserver aObserver, void* aData) {
+  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return;
+  }
+
+  MOZ_ASSERT(aElement);
+  MOZ_ASSERT(aElement->GetContainingDocumentOrShadowRoot() == this);
+  auto& callbackEntries = mReferenceTargetObserverMap.LookupOrInsert(aElement);
+  callbackEntries.Insert({aObserver, aData});
+}
+
+void DocumentOrShadowRoot::RemoveReferenceTargetChangeObserver(
+    Element* aElement, ReferenceTargetChangeObserver aObserver, void* aData) {
+  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return;
+  }
+
+  MOZ_ASSERT(aElement);
+
+  auto entry = mReferenceTargetObserverMap.Lookup(aElement);
+  if (!entry) {
+    return;
+  }
+  nsTHashSet<ReferenceTargetChangeCallbackEntry>& callbacks = entry.Data();
+  callbacks.Remove({aObserver, aData});
+
+  if (entry.Data().IsEmpty()) {
+    entry.Remove();
+  }
+}
+
+void DocumentOrShadowRoot::NotifyReferenceTargetChanged(Element* aElement) {
+  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return;
+  }
+
+  MOZ_ASSERT(aElement);
+
+  auto entry = mReferenceTargetObserverMap.Lookup(aElement);
+  if (!entry) {
+    return;
+  }
+
+  for (auto iter = entry.Data().begin(); iter != entry.Data().end(); ++iter) {
+    const ReferenceTargetChangeCallback& callback = *iter;
+    bool keep = callback.mObserver(callback.mData);
+    if (!keep) {
+      entry.Data().Remove(iter);
+    }
+  }
+  if (entry.Data().IsEmpty()) {
+    entry.Remove();
+  }
+}
+
 Element* DocumentOrShadowRoot::LookupImageElement(nsAtom* aId) {
   if (aId->IsEmpty()) {
     return nullptr;
@@ -601,13 +657,13 @@ void DocumentOrShadowRoot::ReportEmptyGetElementByIdArg() const {
 
 void DocumentOrShadowRoot::GetAnimations(
     nsTArray<RefPtr<Animation>>& aAnimations) {
-  // As with Element::GetAnimations we initially flush style here.
-  // This should ensure that there are no subsequent changes to the tree
-  // structure while iterating over the children below.
+  
+  
+  
   if (Document* doc = AsNode().GetComposedDoc()) {
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Style, /* aFlushAnimations = */ false,
-                       /* aUpdateRelevancy = */ false));
+        ChangesToFlush(FlushType::Style,  false,
+                        false));
   }
 
   GetAnimationsOptions options;
@@ -633,7 +689,7 @@ struct SheetTreeOrderComparator {
     auto* sheetNode = aSheet->GetOwnerNode();
     MOZ_ASSERT(sheetNode != mNode, "Sheet already in the list?");
     if (!sheetNode) {
-      // We go after all the link headers.
+      
       return 1;
     }
     return nsContentUtils::CompareTreePosition<TreeKind::DOM>(mNode, sheetNode,
@@ -645,7 +701,7 @@ size_t DocumentOrShadowRoot::FindSheetInsertionPointInTree(
     const StyleSheet& aSheet) const {
   MOZ_ASSERT(!aSheet.IsConstructed());
   nsINode* owningNode = aSheet.GetOwnerNode();
-  // We should always have an owning node unless Link: headers are at play.
+  
   MOZ_ASSERT_IF(!owningNode, AsNode().IsDocument());
   MOZ_ASSERT_IF(owningNode, owningNode->SubtreeRoot() == &AsNode());
   if (mStyleSheets.IsEmpty()) {
@@ -653,8 +709,8 @@ size_t DocumentOrShadowRoot::FindSheetInsertionPointInTree(
   }
 
   if (!owningNode) {
-    // We come from a link header, our position is after all the other link
-    // headers, but before any link-owned node.
+    
+    
     size_t i = 0;
     for (const auto& sheet : mStyleSheets) {
       if (sheet->GetOwnerNode()) {
@@ -667,7 +723,7 @@ size_t DocumentOrShadowRoot::FindSheetInsertionPointInTree(
 
   SheetTreeOrderComparator cmp{owningNode};
   if (cmp(mStyleSheets.LastElement()) > 0) {
-    // Optimize for append.
+    
     return mStyleSheets.Length();
   }
   size_t idx;
@@ -678,8 +734,8 @@ size_t DocumentOrShadowRoot::FindSheetInsertionPointInTree(
 size_t DocumentOrShadowRoot::StyleOrderIndexOfSheet(
     const StyleSheet& aSheet) const {
   if (aSheet.IsConstructed()) {
-    // NOTE: constructable sheets can have duplicates, so we need to start
-    // looking from behind.
+    
+    
     size_t index = mAdoptedStyleSheets.LastIndexOf(&aSheet);
     return index == mAdoptedStyleSheets.NoIndex ? index : index + SheetCount();
   }
@@ -749,4 +805,4 @@ void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
   tmp->mIdentifierMap.Clear();
 }
 
-}  // namespace mozilla::dom
+}  

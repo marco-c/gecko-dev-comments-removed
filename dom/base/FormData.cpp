@@ -331,7 +331,7 @@ already_AddRefed<FormData> FormData::Constructor(
 
       
       
-      if (fc->GetForm() != aFormElement) {
+      if (fc->GetFormInternal() != aFormElement) {
         aRv.ThrowNotFoundError("The submitter is not owned by this form.");
         return nullptr;
       }
