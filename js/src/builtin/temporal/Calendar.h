@@ -57,9 +57,7 @@ enum class CalendarId : int32_t {
   Indian,
 
   
-  Islamic,
   IslamicCivil,
-  IslamicRGSA,
   IslamicTabular,
   IslamicUmmAlQura,
 
@@ -84,23 +82,9 @@ inline constexpr auto availableCalendars = {
     CalendarId::Gregorian,
     CalendarId::Hebrew,
     CalendarId::Indian,
-
-
-#ifdef NIGHTLY_BUILD
-    CalendarId::Islamic,
-#endif
     CalendarId::IslamicCivil,
-
-
-#ifdef NIGHTLY_BUILD
-    CalendarId::IslamicRGSA,
-#endif
     CalendarId::IslamicTabular,
-
-
-#ifdef NIGHTLY_BUILD
     CalendarId::IslamicUmmAlQura,
-#endif
     CalendarId::Japanese,
     CalendarId::Persian,
     CalendarId::ROC,
