@@ -534,9 +534,6 @@ void WebRtcVoiceEngine::Init() {
   adm_helpers::Init(adm());
 
   
-  adm()->RegisterAudioCallback(audio_state()->audio_transport());
-
-  
   {
     AudioOptions options;
     options.echo_cancellation = true;
@@ -554,6 +551,12 @@ void WebRtcVoiceEngine::Init() {
     options.audio_jitter_buffer_min_delay_ms = 0;
     ApplyOptions(options);
   }
+
+  
+  
+  
+  adm()->RegisterAudioCallback(audio_state()->audio_transport());
+
   initialized_ = true;
 }
 
