@@ -3180,7 +3180,7 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   }
 
   const float epsilon = 0.0001;
-  if (std::abs(mLengthAdjustScaleFactor) < epsilon) {
+  if (abs(mLengthAdjustScaleFactor) < epsilon) {
     
     
     return;
