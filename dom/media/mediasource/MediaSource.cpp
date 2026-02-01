@@ -180,12 +180,6 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
     return;
   }
   if (mimeType == MEDIAMIMETYPE("video/webm")) {
-    if (!StaticPrefs::media_mediasource_webm_enabled() &&
-        !shouldResistFingerprinting) {
-      
-      
-      return aRv.ThrowNotSupportedError("Can't play type");
-    }
     if (!StaticPrefs::media_mediasource_vp9_enabled() && hasVP9 &&
         !IsVP9Forced(aDiagnostics) && !shouldResistFingerprinting) {
       
@@ -195,12 +189,6 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
     return;
   }
   if (mimeType == MEDIAMIMETYPE("audio/webm")) {
-    if (!StaticPrefs::media_mediasource_webm_enabled() &&
-        !shouldResistFingerprinting) {
-      
-      
-      return aRv.ThrowNotSupportedError("Can't play type");
-    }
     return;
   }
 

@@ -14,8 +14,6 @@
 user_pref("dom.w3c_touch_events.enabled", 1);
 
 user_pref("layout.css.initial-letter.enabled", true);
-
-user_pref("media.mediasource.webm.enabled", true);
 user_pref("media.av1.enabled", true);
 user_pref("media.eme.enabled", true);
 user_pref("dom.forms.datetime.others", true);
