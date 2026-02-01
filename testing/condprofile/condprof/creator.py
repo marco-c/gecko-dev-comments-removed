@@ -123,6 +123,7 @@ class ProfileCreator:
 
         for name in names:
             
+            
             shutil.rmtree(os.path.join(self.env.profile, "cache"), ignore_errors=True)
             shutil.rmtree(os.path.join(self.env.profile, "cache2"), ignore_errors=True)
 

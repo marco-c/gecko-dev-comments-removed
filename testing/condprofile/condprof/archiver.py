@@ -38,6 +38,21 @@ class Archiver:
         return os.path.join(self.archives_dir, archive), archive
 
     def create_archive(self, when, iterator=None):
+
+        def _filter(tarinfo):
+            name = tarinfo.name
+            if name.endswith((".dmp", ".extra")) and "minidumps" in name:
+                
+                
+                
+                
+                
+                
+                
+                
+                return None
+            return tarinfo
+
         if iterator is None:
 
             def _files(tar):
@@ -45,7 +60,7 @@ class Archiver:
                 yield len(files)
                 for filename in files:
                     try:
-                        tar.add(filename, os.path.basename(filename))
+                        tar.add(filename, os.path.basename(filename), filter=_filter)
                         yield filename
                     except FileNotFoundError:  
                         
