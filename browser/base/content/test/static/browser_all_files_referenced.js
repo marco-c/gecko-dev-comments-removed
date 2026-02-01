@@ -358,6 +358,10 @@ var allowlist = [
   {
     file: "chrome://browser/content/aiwindow/components/ai-website-chip.mjs",
   },
+  
+  {
+    file: "chrome://browser/content/aiwindow/components/memories-icon-button.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
