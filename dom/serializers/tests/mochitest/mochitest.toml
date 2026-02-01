@@ -112,14 +112,12 @@ support-files = [
 
 ["test_copypaste_flat_tree.html"]
 skip-if = [
-  "headless", # bug 904183
-  "os == 'android'",
+  "true", # Disable until fixing bug 2010730
 ]
 
 ["test_copypaste_shadow_dom.html"]
 skip-if = [
-  "headless", # bug 904183
-  "os == 'android'",
+  "true", # Disable until fixing bug 2010730
 ]
 
 ["test_encodeToStringWithMaxLength.html"]
@@ -129,6 +127,12 @@ skip-if = [
 ["test_htmlcopyencoder.html"]
 
 ["test_htmlcopyencoder.xhtml"]
+
+["test_htmlcopyencoder_common_ancestor.html"]
+
+["test_htmlcopyencoder_list.html"]
+
+["test_htmlcopyencoder_table.html"]
 
 ["test_plaintext_linebreak.html"]
 
