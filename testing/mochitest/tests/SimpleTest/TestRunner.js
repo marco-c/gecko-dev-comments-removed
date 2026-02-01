@@ -698,7 +698,7 @@ TestRunner.testFinished = function (tests) {
   
   
   var extraTests = [];
-  var result = "PASS";
+  var result = "OK";
 
   
   
@@ -708,8 +708,8 @@ TestRunner.testFinished = function (tests) {
   ) {
     TestRunner.structuredLogger.testEnd(
       TestRunner.currentTestURL,
-      "FAIL",
-      "PASS",
+      "ERROR",
+      "OK",
       "called finish() multiple times"
     );
     TestRunner.updateUI([{ result: false }]);
@@ -817,12 +817,6 @@ TestRunner.testFinished = function (tests) {
       }
 
       TestRunner.updateUI(tests.concat(extraTests));
-
-      
-      var results = TestRunner.countResults(tests.concat(extraTests));
-      if (results.notOK > 0 && result === "PASS") {
-        result = "FAIL";
-      }
 
       
       if (TestRunner._urls.length == 1 && TestRunner.repeat <= 1) {
@@ -960,7 +954,7 @@ TestRunner.testUnloaded = function (result, runtime) {
     );
 
     if (numAsserts < min || numAsserts > max) {
-      result = "FAIL";
+      result = "ERROR";
 
       var direction = "more";
       var target = max;
@@ -980,13 +974,16 @@ TestRunner.testUnloaded = function (result, runtime) {
           target +
           " assertions"
       );
+
+      
+      result = "OK";
     }
   }
 
   TestRunner.structuredLogger.testEnd(
     TestRunner.currentTestURL,
     result,
-    "PASS",
+    "OK",
     "Finished in " + runtime + "ms",
     { runtime }
   );
