@@ -3224,6 +3224,14 @@ static void StreamCustomMarkerSchemas(
   }
 }
 
+static void ClearCustomMarkerSchemas() {
+  mozilla::StaticMutexAutoLock lock(sCustomMarkerSchemasMutex);
+  if (sCustomMarkerSchemas) {
+    sCustomMarkerSchemas->Clear();
+    sCustomMarkerSchemas = nullptr;
+  }
+}
+
 static void StreamMarkerSchema(SpliceableJSONWriter& aWriter) {
   
   base_profiler_markers_detail::Streaming::LockedMarkerTypeFunctionsList
@@ -6352,6 +6360,10 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
+
+  
+  
+  ClearCustomMarkerSchemas();
 
   
   ThreadRegistration::UnregisterThread();
