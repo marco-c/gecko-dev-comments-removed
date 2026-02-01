@@ -10,7 +10,6 @@ variants, as well as both 'auth' and 'auth-int' quality of protection (qop) opti
 import hashlib
 import os
 import re
-import sys
 import time
 from typing import (
     Callable,
@@ -61,10 +60,7 @@ DigestFunctions: Dict[str, Callable[[bytes], "hashlib._Hash"]] = {
 
 
 _HEADER_PAIRS_PATTERN = re.compile(
-    r'(?:^|\s|,\s*)(\w+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^\s,]+))'
-    if sys.version_info < (3, 11)
-    else r'(?:^|\s|,\s*)((?>\w+))\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^\s,]+))'
-    
+    r'(\w+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^\s,]+))'
     
     
     
@@ -249,9 +245,7 @@ class DigestAuthMiddleware:
             )
 
         qop_raw = challenge.get("qop", "")
-        
-        algorithm_original = challenge.get("algorithm", "MD5")
-        algorithm = algorithm_original.upper()
+        algorithm = challenge.get("algorithm", "MD5").upper()
         opaque = challenge.get("opaque", "")
 
         
@@ -348,7 +342,7 @@ class DigestAuthMiddleware:
             "nonce": escape_quotes(nonce),
             "uri": path,
             "response": response_digest.decode(),
-            "algorithm": algorithm_original,
+            "algorithm": algorithm,
         }
 
         

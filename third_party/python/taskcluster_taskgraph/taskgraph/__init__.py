@@ -1,0 +1,18 @@
+
+
+
+
+import importlib.metadata
+
+__version__ = importlib.metadata.version("taskcluster-taskgraph")
+
+
+
+
+
+MAX_DEPENDENCIES = 9999
+
+
+
+
+fast = False
