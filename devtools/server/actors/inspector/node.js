@@ -222,10 +222,7 @@ class NodeActor extends Actor {
       isInHTMLDocument:
         this.rawNode.ownerDocument &&
         this.rawNode.ownerDocument.contentType === "text/html",
-      traits: {
-        
-        hasPseudoElementNameInDisplayName: true,
-      },
+      traits: {},
     };
 
     
