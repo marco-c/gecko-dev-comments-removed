@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { FormAutofill } = ChromeUtils.importESModule(

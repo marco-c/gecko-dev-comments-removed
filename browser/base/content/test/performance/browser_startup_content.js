@@ -121,7 +121,6 @@ add_task(async function () {
   mm.loadFrameScript(
     "data:text/javascript,(" +
       function () {
-        
         const Cm = Components.manager;
         Cm.QueryInterface(Ci.nsIServiceManager);
         const { AppConstants } = ChromeUtils.importESModule(

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 browser.runtime.onUpdateAvailable.addListener(_details => {
