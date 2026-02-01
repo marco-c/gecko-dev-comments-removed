@@ -136,23 +136,19 @@ void AtomMarkingRuntime::refineZoneBitmapsForCollectedZones(GCRuntime* gc) {
   DenseBitmap marked;
   if (MultipleNonAtomZonesAreBeingCollected(gc) &&
       computeBitmapFromChunkMarkBits(gc, marked)) {
-    for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-      if (!zone->isAtomsZone()) {
-        refineZoneBitmapForCollectedZone(zone, marked);
-      }
+    for (GCZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
+      refineZoneBitmapForCollectedZone(zone, marked);
     }
     return;
   }
 
   
   
-  for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-    if (!zone->isAtomsZone()) {
-      for (auto thingKind : AllAllocKinds()) {
-        for (ArenaIterInGC aiter(gc->atomsZone(), thingKind); !aiter.done();
-             aiter.next()) {
-          refineZoneBitmapForCollectedZone(zone, aiter);
-        }
+  for (GCZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
+    for (auto thingKind : AllAllocKinds()) {
+      for (ArenaIterInGC aiter(gc->atomsZone(), thingKind); !aiter.done();
+           aiter.next()) {
+        refineZoneBitmapForCollectedZone(zone, aiter);
       }
     }
   }
