@@ -2,8 +2,6 @@
 
 
 
-
-
 const { logTest, logTask } = require("./utils/profiling");
 
 async function get_command_function(cmd, commands) {

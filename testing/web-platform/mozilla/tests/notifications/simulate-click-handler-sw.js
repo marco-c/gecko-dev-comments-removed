@@ -2,8 +2,6 @@
 
 
 
-
-
 onnotificationclick = (e) => {
   const {
     notification: {

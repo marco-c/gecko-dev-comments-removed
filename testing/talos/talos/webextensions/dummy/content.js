@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 browser.runtime.sendMessage({
   msg: "Hello from content script",
   url: location.href,

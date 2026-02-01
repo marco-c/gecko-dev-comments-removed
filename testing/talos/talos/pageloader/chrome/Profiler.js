@@ -14,8 +14,6 @@
 
 
 
-
-
 var Profiler;
 
 (function () {

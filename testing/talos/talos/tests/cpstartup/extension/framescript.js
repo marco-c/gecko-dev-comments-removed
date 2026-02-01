@@ -1,5 +1,3 @@
-
-
 (function () {
   sendAsyncMessage("CPStartup:BrowserChildReady", {
     time: Services.telemetry.msSystemNow(),

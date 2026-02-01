@@ -2,8 +2,6 @@
 
 
 
-
-
 function sendBackResponse(messageId, evalResult, e) {
   const output = { result: evalResult, error: "", errorStack: "", messageId };
   if (e) {
