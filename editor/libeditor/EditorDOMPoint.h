@@ -1335,7 +1335,7 @@ class EditorDOMPointBase final {
       
       return RawRangeBoundary(mParent, mOffset.value(),
                               
-                              RangeBoundaryIsMutationObserved::No);
+                              RangeBoundarySetBy::Offset);
     }
     if (mIsChildInitialized && mOffset.isSome()) {
       
@@ -1350,14 +1350,14 @@ class EditorDOMPointBase final {
 #endif  
       return RawRangeBoundary(mParent, mOffset.value(),
                               
-                              RangeBoundaryIsMutationObserved::No);
+                              RangeBoundarySetBy::Offset);
     }
     
     
     if (mOffset.isSome()) {
       return RawRangeBoundary(mParent, mOffset.value(),
                               
-                              RangeBoundaryIsMutationObserved::No);
+                              RangeBoundarySetBy::Offset);
     }
     if (mChild) {
       return RawRangeBoundary(mParent, mChild->GetPreviousSibling());
