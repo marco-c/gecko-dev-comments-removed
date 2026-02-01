@@ -70,14 +70,14 @@ const certBlocklist = [
   },
   {
     issuerName: "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=",
-    serialNumber: "AxPrsRjtbFinLUfRzhtR8EeYh4Y=",
+    serialNumber: "ZSuNTV5Ngi1A5RSkCkCRd6fZ3sM=",
   },
   
   
   
   {
     issuerName: "MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E=",
-    serialNumber: "VTTv5DQM+fh01nnfm3AoUJt4UIY=",
+    serialNumber: "adOFCYMS/nqQ3tCvQzINT8fdE+s=",
   },
   
   
