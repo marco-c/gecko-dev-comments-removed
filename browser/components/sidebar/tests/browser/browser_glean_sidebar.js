@@ -25,6 +25,13 @@ add_setup(async () => {
 
 registerCleanupFunction(() => {
   cleanUpExtraTabs();
+
+  
+  
+  if (window.SidebarPopupNotifications) {
+    window.SidebarPopupNotifications._currentAnchorElement = null;
+    delete window.SidebarPopupNotifications;
+  }
 });
 
 function getExpectedVersionString() {

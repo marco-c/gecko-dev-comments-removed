@@ -741,44 +741,50 @@ var gIdentityHandler = {
   
 
 
-  getEffectiveHost() {
+
+
+  getEffectiveHost(uri = this._uri) {
     if (!this._IDNService) {
       this._IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(
         Ci.nsIIDNService
       );
     }
     try {
-      return this._IDNService.convertToDisplayIDN(this._uri.host);
+      return this._IDNService.convertToDisplayIDN(uri.host);
     } catch (e) {
       
       
-      return this._uri.host;
+      return uri.host;
     }
   },
 
-  getHostForDisplay() {
+  getHostForDisplay(uri = this._uri) {
+    if (!uri) {
+      return "";
+    }
+
     let host = "";
 
     try {
-      host = this.getEffectiveHost();
+      host = this.getEffectiveHost(uri);
     } catch (e) {
       
     }
 
-    if (this._uri.schemeIs("about")) {
+    if (uri.schemeIs("about")) {
       
       
       
       
-      host = "about:" + this._uri.filePath;
+      host = "about:" + uri.filePath;
     }
 
-    if (this._uri.schemeIs("chrome")) {
-      host = this._uri.spec;
+    if (uri.schemeIs("chrome")) {
+      host = uri.spec;
     }
 
     let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(
-      this._uri.displaySpec
+      uri.displaySpec
     );
     if (readerStrippedURI) {
       host = readerStrippedURI.host;
@@ -790,7 +796,7 @@ var gIdentityHandler = {
 
     
     if (!host) {
-      host = this._uri.specIgnoringRef;
+      host = uri.specIgnoringRef;
     }
 
     return host;

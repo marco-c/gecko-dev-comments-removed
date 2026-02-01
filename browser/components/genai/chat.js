@@ -296,6 +296,12 @@ function handleChange({ target }) {
         });
       } else {
         Services.prefs.setStringPref("browser.ml.chat.provider", value);
+        
+        topChromeWindow.dispatchEvent(
+          new CustomEvent("sidebarbrowserchanged", {
+            bubble: true,
+          })
+        );
       }
       break;
   }
