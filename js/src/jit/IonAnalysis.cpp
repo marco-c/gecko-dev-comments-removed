@@ -4315,19 +4315,9 @@ bool jit::MarkLoadsUsedAsPropertyKeys(MIRGraph& graph) {
 }
 
 
-
 static bool UpdateWasmRefType(MDefinition* def) {
   wasm::MaybeRefType newRefType = def->computeWasmRefType();
   bool changed = newRefType != def->wasmRefType();
-
-  
-  MOZ_ASSERT(!(def->wasmRefType().isSome() && newRefType.isNothing()));
-  
-  
-  MOZ_ASSERT_IF(def->wasmRefType().isSome(),
-                wasm::RefType::isSubTypeOf(newRefType.value(),
-                                           def->wasmRefType().value()));
-
   def->setWasmRefType(newRefType);
   return changed;
 }

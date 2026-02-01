@@ -143,6 +143,35 @@ RefType RefType::leastUpperBound(RefType a, RefType b) {
   return common.withIsNullable(nullable);
 }
 
+RefType RefType::greatestLowerBound(RefType a, RefType b) {
+  
+  
+  MOZ_RELEASE_ASSERT(a.hierarchy() == b.hierarchy());
+
+  
+  
+  
+  
+
+  
+  
+  bool nullable = a.isNullable() && b.isNullable();
+
+  
+  
+  if (RefType::isSubTypeOf(a, b)) {
+    MOZ_RELEASE_ASSERT(a.isNullable() == nullable);
+    return a;
+  }
+  if (RefType::isSubTypeOf(b, a)) {
+    MOZ_RELEASE_ASSERT(b.isNullable() == nullable);
+    return b;
+  }
+
+  
+  return a.bottomType().withIsNullable(nullable);
+}
+
 TypeDefKind RefType::typeDefKind() const {
   switch (kind()) {
     case RefType::Struct:

@@ -125,8 +125,44 @@ static void ReplaceAllUsesWith(MDefinition* from, MDefinition* to) {
 
   
   
-  to->setWasmRefType(wasm::MaybeRefType::leastUpperBound(from->wasmRefType(),
-                                                         to->wasmRefType()));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  to->setWasmRefType(wasm::MaybeRefType::greatestLowerBound(from->wasmRefType(),
+                                                            to->wasmRefType()));
 
   
   
