@@ -544,7 +544,7 @@ def transform_error_regexp():
     
     
     return re.compile(
-        os.path.join(manager().staging_dir, "") + r"(.*?)(:[0-9]*)?:\s*(.*)"
+        re.escape(os.path.join(manager().staging_dir, "")) + r"(.*?)(:[0-9]*)?:\s*(.*)"
     )
 
 
