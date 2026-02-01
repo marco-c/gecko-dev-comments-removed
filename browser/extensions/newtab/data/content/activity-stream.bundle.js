@@ -13301,6 +13301,7 @@ function WeatherForecast({
   const {
     searchActive
   } = weatherData;
+  const maximizedWidgets = prefs["widgets.maximized"];
   function handleChangeLocation() {
     dispatch(actionCreators.BroadcastToContent({
       type: actionTypes.WEATHER_SEARCH_ACTIVE,
@@ -13348,7 +13349,7 @@ function WeatherForecast({
     }));
   }
   return external_React_default().createElement("article", {
-    className: "weather-forecast-widget"
+    className: `weather-forecast-widget${maximizedWidgets ? "" : " small-widget"}`
   }, external_React_default().createElement("div", {
     className: "city-wrapper"
   }, external_React_default().createElement("div", {
@@ -13361,7 +13362,8 @@ function WeatherForecast({
     className: "weather-forecast-context-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "weather-forecast-context-menu",
-    type: "ghost"
+    type: "ghost",
+    size: `${maximizedWidgets ? "default" : "small"}`
   }), external_React_default().createElement("panel-list", {
     id: "weather-forecast-context-menu"
   }, prefs["weather.locationSearchEnabled"] && external_React_default().createElement("panel-item", {
@@ -13388,7 +13390,7 @@ function WeatherForecast({
   }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-learn-more",
     onClick: handleLearnMore
-  })))), external_React_default().createElement("div", {
+  })))), maximizedWidgets && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
     className: "current-weather-wrapper"
   }, external_React_default().createElement("div", {
     className: "weather-icon-column"
@@ -13410,9 +13412,9 @@ function WeatherForecast({
     className: "low-temperature"
   }, external_React_default().createElement("span", {
     className: "arrow-icon arrow-down"
-  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), external_React_default().createElement("hr", null), external_React_default().createElement("div", {
+  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), external_React_default().createElement("hr", null)), external_React_default().createElement("div", {
     className: "forecast-row"
-  }, external_React_default().createElement("p", {
+  }, maximizedWidgets && external_React_default().createElement("p", {
     className: "today-forecast",
     "data-l10n-id": "newtab-weather-todays-forecast"
   }), external_React_default().createElement("ul", {
@@ -13428,7 +13430,7 @@ function WeatherForecast({
   }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
   }), external_React_default().createElement("span", null, "7:00")))), external_React_default().createElement("div", {
-    className: "weather-forecast-footer"
+    className: "forecast-footer"
   }, external_React_default().createElement("a", {
     href: "#",
     className: "full-forecast",
@@ -13543,6 +13545,7 @@ function Widgets() {
   const nimbusListsTrainhopEnabled = prefs.trainhopConfig?.widgets?.listsEnabled;
   const nimbusTimerTrainhopEnabled = prefs.trainhopConfig?.widgets?.timerEnabled;
   const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
+  const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
   const listsEnabled = (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
   const weatherForecastEnabled = nimbusWeatherForecastTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
@@ -13612,14 +13615,14 @@ function Widgets() {
     className: "widgets-title-container"
   }, external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-widget-section-title"
-  }), prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED] && external_React_default().createElement("moz-button", {
+  }), (nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED]) && external_React_default().createElement("moz-button", {
     id: "toggle-widgets-size-button",
     type: "icon ghost",
     size: "small"
     
     ,
-    "data-l10n-id": isMaximized ? "newtab-widget-section-maximize" : "newtab-widget-section-minimize",
-    iconsrc: `chrome://browser/skin/${isMaximized ? "fullscreen" : "fullscreen-exit"}.svg`,
+    "data-l10n-id": isMaximized ? "newtab-widget-section-minimize" : "newtab-widget-section-maximize",
+    iconsrc: `chrome://browser/skin/${isMaximized ? "fullscreen-exit" : "fullscreen"}.svg`,
     onClick: handleToggleMaximizeClick,
     onKeyDown: handleToggleMaximizeKeyDown
   }), external_React_default().createElement("moz-button", {
@@ -13631,7 +13634,7 @@ function Widgets() {
     onClick: handleHideAllWidgetsClick,
     onKeyDown: handleHideAllWidgetsKeyDown
   })), external_React_default().createElement("div", {
-    className: `widgets-container ${isMaximized ? "is-maximized" : ""}`
+    className: `widgets-container${isMaximized ? " is-maximized" : ""}`
   }, listsEnabled && external_React_default().createElement(Lists, {
     dispatch: dispatch,
     handleUserInteraction: handleUserInteraction,
