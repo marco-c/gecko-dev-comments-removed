@@ -385,7 +385,7 @@ enum class StyleTextOrientation : uint8_t {
 
 
 
-enum class StyleMozBoxCollapse : uint8_t {
+enum class StyleBoxCollapse : uint8_t {
   Flex,
   Legacy,
 };
