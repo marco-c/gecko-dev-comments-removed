@@ -1151,6 +1151,10 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         mouseEvent->mMessage = eMouseMove;
         mouseEvent->mReason = WidgetMouseEvent::eSynthesized;
         
+        
+        
+        GeneratePointerEnterExit(ePointerMove, mouseEvent);
+        
       } else {
         MOZ_ASSERT_IF(XRE_IsParentProcess(),
                       mouseEvent->mExitFrom.value() ==
