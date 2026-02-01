@@ -7,6 +7,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "HTMLDataListElement.h"
 #include "HTMLFormSubmissionConstants.h"
@@ -774,26 +775,52 @@ static void SerializeColorForHTMLCompatibility(const StyleAbsoluteColor& aColor,
                        NS_GET_B(color));
 }
 
+static void ClampColorComponents(StyleAbsoluteColor& aColor) {
+  MOZ_ASSERT(aColor.color_space == StyleColorSpace::Srgb);
+  aColor.components._0 = std::clamp(aColor.components._0, 0.0f, 1.0f);
+  aColor.components._1 = std::clamp(aColor.components._1, 0.0f, 1.0f);
+  aColor.components._2 = std::clamp(aColor.components._2, 0.0f, 1.0f);
+}
+
 
 static void SerializeColor(const StyleAbsoluteColor& aColor,
                            StyleColorSpace aTargetColorSpace,
-                           nsAString& aResult) {
+                           bool aSpecifiedAlpha, nsAString& aResult) {
   
+  bool htmlCompatible = false;
 
   
   
   
   StyleAbsoluteColor color = aColor.ToColorSpace(aTargetColorSpace);
-  color.alpha = 1.0;
+  if (!aSpecifiedAlpha) {
+    color.alpha = 1.0;
+  }
 
   
   if (color.color_space == StyleColorSpace::Srgb) {
     
-    SerializeColorForHTMLCompatibility(color, aResult);
-    return;
+    
+    ClampColorComponents(color);
+
+    if (!aSpecifiedAlpha) {
+      
+      
+      htmlCompatible = true;
+    } else {
+      
+      
+      
+      color.flags &= ~StyleColorFlags::IS_LEGACY_SRGB;
+    }
   }
 
   
+  
+  if (htmlCompatible) {
+    SerializeColorForHTMLCompatibility(color, aResult);
+    return;
+  }
   nsAutoCString result;
   Servo_AbsoluteColor_ToCss(&color, &result);
   CopyUTF8toUTF16(result, aResult);
@@ -821,7 +848,7 @@ nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
     
     if (Maybe<StyleAbsoluteColor> result =
             MaybeComputeColor(OwnerDoc(), value)) {
-      SerializeColor(*result, GetColorSpaceEnum(), value);
+      SerializeColor(*result, GetColorSpaceEnum(), Alpha(), value);
       colors.AppendElement(value);
     }
   }
@@ -1595,6 +1622,11 @@ void HTMLInputElement::ResultForDialogSubmit(nsAString& aResult) {
   }
 }
 
+void HTMLInputElement::SetAlpha(bool aValue, ErrorResult& aRv) {
+  SetHTMLBoolAttr(nsGkAtoms::alpha, aValue, aRv);
+  UpdateColor();
+}
+
 void HTMLInputElement::GetAutocomplete(nsAString& aValue) {
   if (!DoesAutocompleteApply()) {
     return;
@@ -2128,8 +2160,8 @@ void HTMLInputElement::GetColor(InputPickerColor& aValue) {
   aValue.mComponent1 = color.components._0;
   aValue.mComponent2 = color.components._1;
   aValue.mComponent3 = color.components._2;
+  aValue.mAlpha = Alpha() ? color.alpha : NAN;
 
-  
   
 }
 
@@ -2162,10 +2194,10 @@ void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
                   ._1 = aValue.mComponent2,
                   ._2 = aValue.mComponent3,
               },
-          .alpha = 1,
+          .alpha = aValue.mAlpha,
           .color_space = StyleColorSpace::Srgb,
       },
-      GetColorSpaceEnum(), serialized);
+      GetColorSpaceEnum(), Alpha(), serialized);
 
   
   SetUserInput(serialized, *NodePrincipal());
@@ -5136,7 +5168,7 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
       StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), aValue);
       
       
-      SerializeColor(color, GetColorSpaceEnum(), aValue);
+      SerializeColor(color, GetColorSpaceEnum(), Alpha(), aValue);
       break;
     }
     default:

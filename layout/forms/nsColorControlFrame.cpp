@@ -84,7 +84,7 @@ void nsColorControlFrame::UpdateColor() {
 
   
   mColorContent->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                         u"background-color:"_ns + color,
+                         u"color:"_ns + color,
                           true);
 }
 
