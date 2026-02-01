@@ -43,7 +43,7 @@ add_setup(async function () {
   let engine2 = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "POSTSearchEngine.xml",
   });
-  await Services.search.moveEngine(engine2, 0);
+  await SearchService.moveEngine(engine2, 0);
 
   
   await SearchTestUtils.installSearchExtension({
@@ -111,7 +111,7 @@ add_task(async function test_search() {
     window,
     value: "unique198273982173",
   });
-  await AssertPrivateResult(window, await Services.search.getDefault(), false);
+  await AssertPrivateResult(window, await SearchService.getDefault(), false);
 });
 
 add_task(async function test_search_urlbar_result_disabled() {
@@ -140,7 +140,7 @@ add_task(async function test_search_disabled_suggestions() {
     window,
     value: "unique198273982173",
   });
-  await AssertPrivateResult(window, await Services.search.getDefault(), false);
+  await AssertPrivateResult(window, await SearchService.getDefault(), false);
   await SpecialPowers.popPrefEnv();
 });
 

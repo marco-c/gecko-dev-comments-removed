@@ -11,7 +11,7 @@ const SEARCH_CONFIG = [
 
 add_setup(async function setup() {
   
-  await Services.search.init();
+  await SearchService.init();
 });
 
 
@@ -25,7 +25,7 @@ add_task(async function test_keyword_disabled() {
   await BrowserTestUtils.waitForCondition(
     async () =>
       SearchbarTestUtils.getSearchModeSwitcherIcon(win) ==
-      (await Services.search.defaultEngine.getIconURL())
+      (await SearchService.defaultEngine.getIconURL())
   );
 
   Assert.ok(
