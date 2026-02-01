@@ -72,6 +72,12 @@ class NotificationParent final : public PNotificationParent,
   
   
   bool mDangling = false;
+
+  
+  
+  
+  bool mShowPending = false;
+  bool mClosePending = false;
 };
 
 }  

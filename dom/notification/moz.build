@@ -55,6 +55,8 @@ LOCAL_INCLUDES += [
     "/dom/ipc",
     
     "/js/xpconnect/src",
+    
+    "/netwerk/url-classifier",
 ]
 
 BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
