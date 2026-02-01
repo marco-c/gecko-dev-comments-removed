@@ -184,6 +184,14 @@ static constexpr nsAttrValue::EnumTableEntry kCaptureTable[] = {
 static constexpr const nsAttrValue::EnumTableEntry* kCaptureDefault =
     &kCaptureTable[2];
 
+static constexpr nsAttrValue::EnumTableEntry kColorSpaceTable[] = {
+    {"limited-srgb", StyleColorSpace::Srgb},
+    {"display-p3", StyleColorSpace::DisplayP3},
+};
+
+static constexpr const nsAttrValue::EnumTableEntry* kColorSpaceDefault =
+    &kColorSpaceTable[0];
+
 using namespace blink;
 
 constexpr Decimal HTMLInputElement::kStepScaleFactorDate(86400000_d);
@@ -726,13 +734,26 @@ static bool IsPickerBlocked(Document* aDoc) {
 
 
 
+
+
+
+
 static Maybe<StyleAbsoluteColor> MaybeComputeColor(Document* aDocument,
                                                    const nsAString& aValue) {
   
-  
-  return ServoCSSParser::ComputeColorWellControlColor(
-      aDocument->EnsureStyleSet().RawData(), NS_ConvertUTF16toUTF8(aValue),
-      StyleColorSpace::Srgb);
+  return ServoCSSParser::ComputeAbsoluteColor(
+      aDocument->EnsureStyleSet().RawData(), NS_ConvertUTF16toUTF8(aValue));
+}
+
+
+
+
+
+static StyleAbsoluteColor MaybeComputeColorOrBlack(Document* aDocument,
+                                                   const nsAString& aValue) {
+  return MaybeComputeColor(aDocument, aValue)
+      
+      .valueOr(StyleAbsoluteColor::BLACK);
 }
 
 
@@ -751,6 +772,31 @@ static void SerializeColorForHTMLCompatibility(const StyleAbsoluteColor& aColor,
   aResult.Truncate();
   aResult.AppendPrintf("#%02x%02x%02x", NS_GET_R(color), NS_GET_G(color),
                        NS_GET_B(color));
+}
+
+
+static void SerializeColor(const StyleAbsoluteColor& aColor,
+                           StyleColorSpace aTargetColorSpace,
+                           nsAString& aResult) {
+  
+
+  
+  
+  
+  StyleAbsoluteColor color = aColor.ToColorSpace(aTargetColorSpace);
+  color.alpha = 1.0;
+
+  
+  if (color.color_space == StyleColorSpace::Srgb) {
+    
+    SerializeColorForHTMLCompatibility(color, aResult);
+    return;
+  }
+
+  
+  nsAutoCString result;
+  Servo_AbsoluteColor_ToCss(&color, &result);
+  CopyUTF8toUTF16(result, aResult);
 }
 
 nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
@@ -775,9 +821,7 @@ nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
     
     if (Maybe<StyleAbsoluteColor> result =
             MaybeComputeColor(OwnerDoc(), value)) {
-      
-      
-      SerializeColorForHTMLCompatibility(*result, value);
+      SerializeColor(*result, GetColorSpaceEnum(), value);
       colors.AppendElement(value);
     }
   }
@@ -1578,6 +1622,23 @@ void HTMLInputElement::GetCapture(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::capture, kCaptureDefault->tag, aValue);
 }
 
+void HTMLInputElement::GetColorSpace(nsAString& aValue) const {
+  GetEnumAttr(nsGkAtoms::colorspace, kColorSpaceDefault->tag, aValue);
+}
+
+StyleColorSpace HTMLInputElement::GetColorSpaceEnum() const {
+  if (const nsAttrValue* captureVal = GetParsedAttr(nsGkAtoms::colorspace)) {
+    return static_cast<StyleColorSpace>(captureVal->GetEnumValue());
+  }
+  return StyleColorSpace::Srgb;
+}
+
+void HTMLInputElement::SetColorSpace(const nsAString& aValue,
+                                     ErrorResult& aRv) {
+  SetHTMLAttr(nsGkAtoms::colorspace, aValue, aRv);
+  UpdateColor();
+}
+
 void HTMLInputElement::GetFormEnctype(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::formenctype, "", kFormDefaultEnctype->tag, aValue);
 }
@@ -2063,23 +2124,37 @@ void HTMLInputElement::GetColor(InputPickerColor& aValue) {
   nsAutoString value;
   GetValue(value, CallerType::System);
 
-  StyleAbsoluteColor color =
-      MaybeComputeColor(OwnerDoc(), value).valueOr(StyleAbsoluteColor::BLACK);
+  StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), value);
   aValue.mComponent1 = color.components._0;
   aValue.mComponent2 = color.components._1;
   aValue.mComponent3 = color.components._2;
+
   
   
+}
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLInputElement::UpdateColor() {
+  
+  
+  
+  
+  
+  if (!mValueChanged) {
+    SetDefaultValueAsValue();
+    return;
+  }
+  nsAutoString value;
+  GetValue(value, CallerType::NonSystem);
+  SetValueInternal(value, {ValueSetterOption::ByInternalAPI});
 }
 
 void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
   MOZ_ASSERT(mType == FormControlType::InputColor,
              "setUserInputColor is only for type=color.");
 
-  
-  
   nsAutoString serialized;
-  SerializeColorForHTMLCompatibility(
+  SerializeColor(
       StyleAbsoluteColor{
           .components =
               StyleColorComponents{
@@ -2090,7 +2165,7 @@ void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
           .alpha = 1,
           .color_space = StyleColorSpace::Srgb,
       },
-      serialized);
+      GetColorSpaceEnum(), serialized);
 
   
   SetUserInput(serialized, *NodePrincipal());
@@ -5058,11 +5133,10 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
     case FormControlType::InputColor: {
       
       
-      StyleAbsoluteColor color = MaybeComputeColor(OwnerDoc(), aValue)
-                                     .valueOr(StyleAbsoluteColor::BLACK);
+      StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), aValue);
       
       
-      SerializeColorForHTMLCompatibility(color, aValue);
+      SerializeColor(color, GetColorSpaceEnum(), aValue);
       break;
     }
     default:
@@ -5544,6 +5618,10 @@ bool HTMLInputElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (aAttribute == nsGkAtoms::capture) {
       return aResult.ParseEnumValue(aValue, kCaptureTable, false,
                                     kCaptureDefault);
+    }
+    if (aAttribute == nsGkAtoms::colorspace) {
+      return aResult.ParseEnumValue(aValue, kColorSpaceTable, false,
+                                    kColorSpaceDefault);
     }
     if (ParseImageAttribute(aAttribute, aValue, aResult)) {
       
