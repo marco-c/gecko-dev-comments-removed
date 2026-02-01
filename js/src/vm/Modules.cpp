@@ -2655,6 +2655,25 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
   return promise;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+JSObject* js::StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
+                                             HandleValue specifierArg) {
+  JS::Rooted<PromiseObject*> promise(cx,
+                                     PromiseObject::createSkippingExecutor(cx));
+  if (!promise) {
+    return nullptr;
+  }
+
+  
+  JS_ReportErrorASCII(cx, "source phase imports are not yet implemented");
+  if (!RejectPromiseWithPendingError(cx, promise)) {
+    return nullptr;
+  }
+
+  return promise;
+}
+#endif
+
 
 static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue specifierArg,
