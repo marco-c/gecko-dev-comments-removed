@@ -1898,6 +1898,15 @@ class nsContentUtils {
                             const mozilla::dom::SetHTMLUnsafeOptions& aOptions,
                             bool aIsShadowRoot, nsIPrincipal* aSubjectPrincipal,
                             mozilla::ErrorResult& aError);
+
+  
+  
+  
+  static const int32_t kParseFragmentPrivilegedDefaultSanitization = -1;
+  
+  
+  static const int32_t kParseFragmentNoSanitization = -2;
+
   
 
 
@@ -1923,12 +1932,12 @@ class nsContentUtils {
 
 
 
-  static nsresult ParseFragmentHTML(const nsAString& aSourceBuffer,
-                                    nsIContent* aTargetNode,
-                                    nsAtom* aContextLocalName,
-                                    int32_t aContextNamespace, bool aQuirks,
-                                    bool aPreventScriptExecution,
-                                    int32_t aFlags = -1);
+
+  static nsresult ParseFragmentHTML(
+      const nsAString& aSourceBuffer, nsIContent* aTargetNode,
+      nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
+      bool aPreventScriptExecution,
+      int32_t aFlags = kParseFragmentPrivilegedDefaultSanitization);
 
   
 

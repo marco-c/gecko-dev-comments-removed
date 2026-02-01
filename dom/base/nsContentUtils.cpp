@@ -6092,7 +6092,8 @@ already_AddRefed<DocumentFragment> nsContentUtils::CreateContextualFragment(
 
   RefPtr<DocumentFragment> frag;
   aRv = ParseFragmentXML(aFragment, document, tagStack, aPreventScriptExecution,
-                         -1, getter_AddRefs(frag));
+                         kParseFragmentPrivilegedDefaultSanitization,
+                         getter_AddRefs(frag));
   return frag.forget();
 }
 
@@ -6105,32 +6106,6 @@ void nsContentUtils::DropFragmentParsers() {
 
 
 void nsContentUtils::XPCOMShutdown() { nsContentUtils::DropFragmentParsers(); }
-
-
-uint32_t computeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
-  uint32_t sanitizationFlags = 0;
-  if (aPrincipal->IsSystemPrincipal()) {
-    if (aFlags < 0) {
-      
-      
-      sanitizationFlags = nsIParserUtils::SanitizerAllowStyle |
-                          nsIParserUtils::SanitizerAllowComments |
-                          nsIParserUtils::SanitizerDropForms |
-                          nsIParserUtils::SanitizerLogRemovals;
-    } else {
-      
-      
-      sanitizationFlags = aFlags | nsIParserUtils::SanitizerDropForms;
-    }
-  } else if (aFlags >= 0) {
-    
-    
-    
-    
-    sanitizationFlags = aFlags;
-  }
-  return sanitizationFlags;
-}
 
 
 static void SetAndFilterHTML(
@@ -6195,8 +6170,12 @@ static void SetAndFilterHTML(
 
   nsAtom* contextLocalName = aContext->NodeInfo()->NameAtom();
   int32_t contextNameSpaceID = aContext->GetNameSpaceID();
-  aError = nsContentUtils::ParseFragmentHTML(aHTML, fragment, contextLocalName,
-                                             contextNameSpaceID, false, true);
+  int32_t flags =
+      aSafe ? nsContentUtils::kParseFragmentNoSanitization
+            : nsContentUtils::kParseFragmentPrivilegedDefaultSanitization;
+  aError = nsContentUtils::ParseFragmentHTML(
+      aHTML, fragment, contextLocalName, contextNameSpaceID,
+       false,  true, flags);
   if (aError.Failed()) {
     return;
   }
@@ -6285,6 +6264,63 @@ void nsContentUtils::SetHTMLUnsafe(
 }
 
 
+
+
+
+
+bool ShouldSanitize(nsIPrincipal* aPrincipal, int32_t aFlags) {
+  
+  
+  if (aFlags == nsContentUtils::kParseFragmentNoSanitization) {
+    return false;
+  }
+
+  if (aFlags >= 0) {
+    return true;
+  }
+
+  MOZ_ASSERT(aFlags ==
+             nsContentUtils::kParseFragmentPrivilegedDefaultSanitization);
+  return aPrincipal->IsSystemPrincipal() || aPrincipal->SchemeIs("about");
+}
+
+
+uint32_t ComputeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
+  MOZ_ASSERT(aFlags ==
+                 nsContentUtils::kParseFragmentPrivilegedDefaultSanitization ||
+             aFlags >= 0);
+
+  if (aPrincipal->IsSystemPrincipal() || aPrincipal->SchemeIs("about")) {
+    if (aFlags == nsContentUtils::kParseFragmentPrivilegedDefaultSanitization) {
+      
+      
+      return nsIParserUtils::SanitizerAllowStyle |
+             nsIParserUtils::SanitizerAllowComments |
+             
+             (aPrincipal->IsSystemPrincipal()
+                  ? nsIParserUtils::SanitizerDropForms
+                  : 0) |
+             nsIParserUtils::SanitizerLogRemovals;
+    }
+
+    
+    
+    return aFlags | nsIParserUtils::SanitizerDropForms;
+  }
+
+  if (aFlags >= 0) {
+    
+    
+    
+    
+    return aFlags;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("We should have explicit flags");
+  return 0;
+}
+
+
 nsresult nsContentUtils::ParseFragmentHTML(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
     nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
@@ -6307,7 +6343,10 @@ nsresult nsContentUtils::ParseFragmentHTML(
   
   
   
-  if (aFlags < 0) {
+  
+  
+  
+  if (aFlags == kParseFragmentPrivilegedDefaultSanitization) {
     DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(nodePrincipal,
                                                        aSourceBuffer);
   }
@@ -6317,14 +6356,8 @@ nsresult nsContentUtils::ParseFragmentHTML(
 
   RefPtr<Document> doc = aTargetNode->OwnerDoc();
   RefPtr<DocumentFragment> fragment;
-  
-  
-  
-  
-  
-  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() ||
-                        nodePrincipal->SchemeIs("about") || aFlags >= 0;
-  if (shouldSanitize) {
+
+  if (ShouldSanitize(nodePrincipal, aFlags)) {
     if (!doc->IsLoadedAsData()) {
       doc = nsContentUtils::CreateInertHTMLDocument(doc);
       if (!doc) {
@@ -6343,7 +6376,7 @@ nsresult nsContentUtils::ParseFragmentHTML(
 
   if (fragment) {
     uint32_t sanitizationFlags =
-        computeSanitizationFlags(nodePrincipal, aFlags);
+        ComputeSanitizationFlags(nodePrincipal, aFlags);
     
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
     nsTreeSanitizer sanitizer(sanitizationFlags);
@@ -6410,19 +6443,13 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
   
   
   
-  if (aFlags < 0) {
+  if (aFlags == kParseFragmentPrivilegedDefaultSanitization) {
     DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(nodePrincipal,
                                                        aSourceBuffer);
   }
 #endif
 
-  
-  
-  
-  
-  
-  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() ||
-                        nodePrincipal->SchemeIs("about") || aFlags >= 0;
+  bool shouldSanitize = ShouldSanitize(nodePrincipal, aFlags);
   if (shouldSanitize && !aDocument->IsLoadedAsData()) {
     doc = nsContentUtils::CreateInertXMLDocument(aDocument);
   } else {
@@ -6447,7 +6474,7 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
 
   if (shouldSanitize) {
     uint32_t sanitizationFlags =
-        computeSanitizationFlags(nodePrincipal, aFlags);
+        ComputeSanitizationFlags(nodePrincipal, aFlags);
     
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
     nsTreeSanitizer sanitizer(sanitizationFlags);
