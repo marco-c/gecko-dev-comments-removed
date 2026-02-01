@@ -738,11 +738,23 @@ bool ViewTransition::GetGroupKeyframes(
 bool ViewTransition::MatchClassList(
     nsAtom* aTransitionName,
     const nsTArray<StyleAtom>& aPtNameAndClassSelector) const {
-  MOZ_ASSERT(aPtNameAndClassSelector.Length() > 1);
+  MOZ_ASSERT(aPtNameAndClassSelector.Length() > 1,
+             "Should have a vt-class selector");
+  MOZ_ASSERT(aTransitionName, "No transition name?");
 
   const auto* el = mNamedElements.Get(aTransitionName);
-  MOZ_ASSERT(el);
+  MOZ_ASSERT(el,
+             "Our caller should have the view transition pseudo handy, how do "
+             "we have no capture?");
+  if (MOZ_UNLIKELY(!el)) {
+    
+    
+    return false;
+  }
   const auto& classList = el->mClassList._0.AsSpan();
+  if (classList.IsEmpty()) {
+    return false;
+  }
   auto hasClass = [&classList](nsAtom* aClass) {
     
     for (const auto& ident : classList) {
