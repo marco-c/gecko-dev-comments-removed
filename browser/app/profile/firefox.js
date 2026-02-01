@@ -1371,6 +1371,8 @@ pref("browser.preferences.experimental.hidden", false);
 
 pref("browser.preferences.moreFromMozilla", true);
 
+pref("browser.preferences.aiControls", false);
+
 
 
 
