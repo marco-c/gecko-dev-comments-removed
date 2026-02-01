@@ -2,8 +2,7 @@
 
 
 
-"""Python environment for ATK a11y browser tests.
-"""
+"""Python environment for ATK a11y browser tests."""
 
 import os
 import subprocess
@@ -13,19 +12,24 @@ import psutil
 
 
 
-pyatspiFile = subprocess.check_output(
-    (
-        os.path.join(sys.base_prefix, "bin", "python3"),
-        "-c",
-        "import pyatspi; print(pyatspi.__file__)",
-    ),
-    encoding="utf-8",
-).rstrip()
-sys.path.append(os.path.dirname(os.path.dirname(pyatspiFile)))
-import pyatspi
 
-sys.path.pop()
-del pyatspiFile
+extraPaths = eval(
+    subprocess.check_output(
+        (
+            os.path.join(sys.base_prefix, "bin", "python3"),
+            "-c",
+            "import pyatspi, gi; print(repr([pyatspi.__file__, gi.__file__]))",
+        ),
+        encoding="utf-8",
+    ).rstrip()
+)
+
+sys.path += [os.path.dirname(os.path.dirname(p)) for p in extraPaths]
+import pyatspi
+from gi.repository import GObject
+
+del sys.path[-len(extraPaths) :]
+del extraPaths
 
 
 def setup():
@@ -67,3 +71,59 @@ def findByDomId(root, id):
         descendant = findByDomId(child, id)
         if descendant:
             return descendant
+
+
+class WaitForEvent:
+    """Wait for an event.
+    This should be used as follows:
+    1. Create an instance to wait for the desired event.
+    2. Perform the action that should fire the event.
+    3. Call wait() on the instance you created in 1) to wait for the event.
+    """
+
+    def __init__(self, eventName, match):
+        """eventName is the name of the event to wait for.
+        match is either None to match any object, an str containing the DOM id
+        of the desired object, or a function taking an Atspi.Event object
+        which should return True if this is the requested event.
+        """
+        self._match = match
+        self._matched = None
+        
+        
+        self._onEventBound = self._onEvent
+        pyatspi.Registry.registerEventListener(self._onEventBound, eventName)
+        self._timeoutId = GObject.timeout_add_seconds(10, self._onTimeout)
+
+    def _onEvent(self, event):
+        if isinstance(self._match, str):
+            if event.source.get_attributes().get("id") == self._match:
+                self._matched = event
+        elif callable(self._match):
+            try:
+                if self._match(event):
+                    self._matched = event
+            except Exception as e:
+                self._matched = e
+        if self._matched:
+            pyatspi.Registry.stop()
+
+    def _onTimeout(self):
+        pyatspi.Registry.stop()
+        return False  
+
+    def wait(self):
+        """Wait for and return the desired Atspi.Event object."""
+        
+        pyatspi.Registry.start()
+        
+        
+        pyatspi.Registry.deregisterEventListener(self._onEventBound)
+        self._onEventBound = None  
+        if not self._matched:
+            raise TimeoutError("Timeout before desired event received")
+        
+        GObject.source_remove(self._timeoutId)
+        if isinstance(self._matched, Exception):
+            raise self._matched from self._matched
+        return self._matched
