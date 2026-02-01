@@ -429,10 +429,19 @@ add_task(async function selected_result_tab_adaptive() {
     await PlacesTestUtils.addVisits("https://example.com/");
     await UrlbarUtils.addToInputHistory("https://example.com/", "exa");
 
+    
+    
+    
+    await openPopup("warmup");
+    await UrlbarTestUtils.promisePopupClose(window);
+
     await openPopup("exa");
     await selectRowByProvider("UrlbarProviderInputHistory");
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await BrowserTestUtils.waitForCondition(
+      () => gBrowser.selectedTab === tab,
+      "Waiting for selected tab to be the tab we opened."
+    );
 
     assertEngagementTelemetry([
       {
@@ -471,7 +480,10 @@ add_task(async function selected_result_tab_adaptive_serp() {
     await selectRowByProvider("UrlbarProviderInputHistory");
 
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await BrowserTestUtils.waitForCondition(
+      () => gBrowser.selectedTab === tab,
+      "Waiting for selected tab to be the tab we opened."
+    );
 
     assertEngagementTelemetry([
       {
