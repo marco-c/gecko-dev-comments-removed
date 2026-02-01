@@ -4790,6 +4790,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  const mozilla::StyleBaselineShift& BaselineShift() const;
+
+  
+
+
+
   static void AddInPopupStateBitToDescendants(nsIFrame* aFrame);
   
 

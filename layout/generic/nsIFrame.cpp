@@ -11649,6 +11649,18 @@ StyleAlignmentBaseline nsIFrame::AlignmentBaseline() const {
   return StyleDisplay()->mAlignmentBaseline;
 }
 
+const StyleBaselineShift& nsIFrame::BaselineShift() const {
+  if (IsInSVGTextSubtree()) {
+    
+    
+    static StyleBaselineShift BASELINE_SHIFT_ZERO =
+        StyleBaselineShift::Length(LengthPercentage::Zero());
+    return BASELINE_SHIFT_ZERO;
+  }
+
+  return StyleDisplay()->mBaselineShift;
+}
+
 void nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
                                          ServoRestyleState& aRestyleState) {
 #ifdef DEBUG
