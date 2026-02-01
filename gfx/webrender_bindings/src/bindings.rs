@@ -2069,15 +2069,13 @@ pub extern "C" fn wr_window_new(
                 use_native_compositor,
             )),
         }
+    } else if use_layer_compositor {
+        CompositorConfig::Layer {
+            compositor: Box::new(WrLayerCompositor::new(compositor)),
+        }
     } else if use_native_compositor {
-        if use_layer_compositor {
-            CompositorConfig::Layer {
-                compositor: Box::new(WrLayerCompositor::new(compositor)),
-            }
-        } else {
-            CompositorConfig::Native {
-                compositor: Box::new(WrCompositor(compositor)),
-            }
+        CompositorConfig::Native {
+            compositor: Box::new(WrCompositor(compositor)),
         }
     } else {
         CompositorConfig::Draw {
@@ -4373,6 +4371,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
     blur_radius: f32,
     spread_radius: f32,
     border_radius: BorderRadius,
+    shadow_radius: BorderRadius,
     clip_mode: BoxShadowClipMode,
 ) {
     debug_assert!(unsafe { is_in_main_thread() });
@@ -4394,6 +4393,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
         blur_radius,
         spread_radius,
         border_radius,
+        shadow_radius,
         clip_mode,
     );
 }
