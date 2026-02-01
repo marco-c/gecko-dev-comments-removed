@@ -310,10 +310,6 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
   }
 
   bool CanUserGestureActivateTarget() const {
-    if (IsModifierKeyEvent()) {
-      return false;
-    }
-
     if (mFlags.mIsShortcutKey) {
       
       return mKeyCode == NS_VK_SPACE ||
