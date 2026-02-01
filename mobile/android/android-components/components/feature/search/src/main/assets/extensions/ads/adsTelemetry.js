@@ -9,6 +9,8 @@
 
 
 
+
+
 function sendCurrentState() {
   let message = {
     url: document.location.href,

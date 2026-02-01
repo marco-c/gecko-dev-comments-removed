@@ -2,6 +2,8 @@
 
 
 
+
+
 function _contentPaintHandler() {
   var utils = content.windowUtils;
   if (utils.isMozAfterPaintPending) {

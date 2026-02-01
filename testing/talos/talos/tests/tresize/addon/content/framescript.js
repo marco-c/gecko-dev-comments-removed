@@ -1,3 +1,5 @@
+
+
 (function () {
   const TRESIZE_PREFIX = "tresize@mozilla.org:";
 

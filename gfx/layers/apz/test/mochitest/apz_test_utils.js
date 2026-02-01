@@ -664,6 +664,7 @@ function isKeyApzEnabled() {
 
 function getSnapshot(rect) {
   function parentProcessSnapshot() {
+    
     addMessageListener("snapshot", function (parentRect) {
       var topWin = Services.wm.getMostRecentWindow("navigator:browser");
       if (!topWin) {

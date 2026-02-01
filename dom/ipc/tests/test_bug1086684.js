@@ -29,6 +29,7 @@ server.registerPathHandler(childFramePath, (request, response) => {
 });
 
 function childFrameScript() {
+  
   "use strict";
 
   let { MockFilePicker } = ChromeUtils.importESModule(

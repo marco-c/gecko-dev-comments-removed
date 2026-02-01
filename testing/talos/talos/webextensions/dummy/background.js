@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 let skipFilters = false;
 
 browser.webRequest.onBeforeRequest.addListener(

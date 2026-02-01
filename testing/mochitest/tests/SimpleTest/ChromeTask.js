@@ -7,6 +7,8 @@
 "use strict";
 
 function ChromeTask_ChromeScript() {
+  
+
   "use strict";
 
   const { Assert: AssertCls } = ChromeUtils.importESModule(

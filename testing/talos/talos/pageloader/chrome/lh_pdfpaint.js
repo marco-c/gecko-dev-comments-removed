@@ -2,6 +2,8 @@
 
 
 
+
+
 function _pdfPaintHandler() {
   content.window.addEventListener(
     "pagerendered",

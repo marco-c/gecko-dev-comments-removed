@@ -43,6 +43,7 @@ add_task(async function test() {
 
     
     page.loadFrameScript(async function () {
+      
       var chromeEventHandler = docShell.chromeEventHandler;
       sendAsyncMessage("chromeEventHandler", {
         processType: Services.appinfo.processType,

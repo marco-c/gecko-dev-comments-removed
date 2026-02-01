@@ -838,10 +838,12 @@ function runInParent(aFunctionOrURL) {
 
 function manageLoginsInParent() {
   return runInParent(function addLoginsInParentInner() {
+    
     addMessageListener("removeAllUserFacingLogins", () => {
       Services.logins.removeAllUserFacingLogins();
     });
 
+    
     addMessageListener("getLogins", async () => {
       const logins = await Services.logins.getAllLogins();
       return logins.map(
@@ -865,6 +867,7 @@ function manageLoginsInParent() {
       );
     });
 
+    
     addMessageListener("addLogins", async logins => {
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
@@ -1011,6 +1014,7 @@ SimpleTest.registerCleanupFunction(() => {
   PWMGR_COMMON_PARENT.sendAsyncMessage("cleanup");
 
   runInParent(function cleanupParent() {
+    
     
     const { LoginManagerParent } = ChromeUtils.importESModule(
       "resource://gre/modules/LoginManagerParent.sys.mjs"

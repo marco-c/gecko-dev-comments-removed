@@ -1,5 +1,7 @@
 
 
+
+
 Uint8Array.prototype.equals = function equals(other) {
   if (this.byteLength !== other.byteLength) {
     return false;

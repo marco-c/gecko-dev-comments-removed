@@ -5,6 +5,8 @@
 
 
 
+
+
 browser.runtime.onMessage.addListener(message => {
   switch (message.action) {
     case "addSerializedDoc":

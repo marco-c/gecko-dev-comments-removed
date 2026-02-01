@@ -2,6 +2,8 @@
 
 
 
+
+
 const TalosContent = {
   init() {
     addMessageListener("Talos:ForceGC", this);

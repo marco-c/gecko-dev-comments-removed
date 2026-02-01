@@ -46,7 +46,7 @@ async function idbCheckFunc() {
 
 async function workerDriverFunc() {
   const resultPromise = idbCheckFunc();
-
+  
   
   if (!("postMessage" in self)) {
     addEventListener("connect", function (evt) {

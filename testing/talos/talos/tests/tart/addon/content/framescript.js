@@ -1,3 +1,5 @@
+
+
 (function () {
   const TART_PREFIX = "tart@mozilla.org:";
 

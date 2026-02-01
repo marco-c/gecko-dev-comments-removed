@@ -1,3 +1,4 @@
+
 addEventListener("load", () => {
   browser.damp.startTest().then(results => {
     window.tpRecordTime(

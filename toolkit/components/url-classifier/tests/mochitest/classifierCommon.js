@@ -1,6 +1,8 @@
 
 
 
+
+
 var dbService = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
   Ci.nsIUrlClassifierDBService
 );

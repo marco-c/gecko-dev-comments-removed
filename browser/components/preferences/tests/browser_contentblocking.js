@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const { Preferences } = ChromeUtils.importESModule(

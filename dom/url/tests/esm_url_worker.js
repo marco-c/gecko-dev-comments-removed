@@ -1,3 +1,5 @@
+
+
 onmessage = function (event) {
   if (event.data != 0) {
     var worker = new Worker("esm_url_worker.js");
