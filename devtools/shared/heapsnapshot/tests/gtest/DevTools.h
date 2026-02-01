@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_devtools_gtest_DevTools__
-#define mozilla_devtools_gtest_DevTools__
+#ifndef mozilla_devtools_gtest_DevTools_
+#define mozilla_devtools_gtest_DevTools_
 
 #include <utility>
 

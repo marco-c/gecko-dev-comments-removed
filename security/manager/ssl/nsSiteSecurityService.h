@@ -2,8 +2,8 @@
 
 
 
-#ifndef __nsSiteSecurityService_h__
-#define __nsSiteSecurityService_h__
+#ifndef _nsSiteSecurityService_h_
+#define _nsSiteSecurityService_h_
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Dafsa.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsDBusHandlerAppImpl_h__
-#define __nsDBusHandlerAppImpl_h__
+#ifndef _nsDBusHandlerAppImpl_h_
+#define _nsDBusHandlerAppImpl_h_
 
 #include "nsString.h"
 #include "nsIMIMEInfo.h"

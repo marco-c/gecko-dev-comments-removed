@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsAuth_h__
-#define nsAuth_h__
+#ifndef nsAuth_h_
+#define nsAuth_h_
 
 
 enum pType { PACKAGE_TYPE_KERBEROS, PACKAGE_TYPE_NEGOTIATE, PACKAGE_TYPE_NTLM };

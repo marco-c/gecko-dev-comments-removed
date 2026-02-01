@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHTMLTags_h___
-#define nsHTMLTags_h___
+#ifndef nsHTMLTags_h_
+#define nsHTMLTags_h_
 
 #include "nsAtomHashKeys.h"
 #include "nsString.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsExternalProtocolHandler_h___
-#define nsExternalProtocolHandler_h___
+#ifndef nsExternalProtocolHandler_h_
+#define nsExternalProtocolHandler_h_
 
 #include "nsIExternalProtocolHandler.h"
 #include "nsCOMPtr.h"

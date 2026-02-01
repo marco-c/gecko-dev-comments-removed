@@ -3,8 +3,8 @@
 
 
 
-#ifndef pathsub_h___
-#define pathsub_h___
+#ifndef pathsub_h_
+#define pathsub_h_
 
 
 

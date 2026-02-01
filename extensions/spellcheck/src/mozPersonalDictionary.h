@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozPersonalDictionary_h__
-#define mozPersonalDictionary_h__
+#ifndef mozPersonalDictionary_h_
+#define mozPersonalDictionary_h_
 
 #include "nsCOMPtr.h"
 #include "nsString.h"

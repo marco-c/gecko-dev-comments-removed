@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsAppShellService_h
-#define __nsAppShellService_h
+#ifndef _nsAppShellService_h
+#define _nsAppShellService_h
 
 #include "nsIAppShellService.h"
 #include "nsIObserver.h"

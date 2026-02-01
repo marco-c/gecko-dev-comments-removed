@@ -5,8 +5,8 @@
 
 
 
-#ifndef mozilla_psm_VerifySSLServerCertChild_h__
-#define mozilla_psm_VerifySSLServerCertChild_h__
+#ifndef mozilla_psm_VerifySSLServerCertChild_h_
+#define mozilla_psm_VerifySSLServerCertChild_h_
 
 #include "mozilla/psm/PVerifySSLServerCertChild.h"
 

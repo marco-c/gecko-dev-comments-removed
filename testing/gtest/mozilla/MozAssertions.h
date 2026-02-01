@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_gtest_MozAssertions_h__
-#define mozilla_gtest_MozAssertions_h__
+#ifndef mozilla_gtest_MozAssertions_h_
+#define mozilla_gtest_MozAssertions_h_
 
 #include "gtest/gtest.h"
 #include "nsError.h"

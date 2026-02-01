@@ -4,8 +4,8 @@
 
 
 
-#ifndef __HAL_SENSOR_H_
-#define __HAL_SENSOR_H_
+#ifndef HAL_SENSOR_H_
+#define HAL_SENSOR_H_
 
 #include "mozilla/Observer.h"
 

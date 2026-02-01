@@ -5,8 +5,8 @@
 
 
 
-#ifndef mozilla_psm_VerifySSLServerCertParent_h__
-#define mozilla_psm_VerifySSLServerCertParent_h__
+#ifndef mozilla_psm_VerifySSLServerCertParent_h_
+#define mozilla_psm_VerifySSLServerCertParent_h_
 
 #include "mozilla/psm/PVerifySSLServerCertParent.h"
 #include "mozpkix/Time.h"

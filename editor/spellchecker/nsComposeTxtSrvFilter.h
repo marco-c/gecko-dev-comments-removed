@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsComposeTxtSrvFilter_h__
-#define nsComposeTxtSrvFilter_h__
+#ifndef nsComposeTxtSrvFilter_h_
+#define nsComposeTxtSrvFilter_h_
 
 #include "mozilla/UniquePtr.h"
 

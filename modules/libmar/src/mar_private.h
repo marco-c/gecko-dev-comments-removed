@@ -4,8 +4,8 @@
 
 
 
-#ifndef MAR_PRIVATE_H__
-#define MAR_PRIVATE_H__
+#ifndef MAR_PRIVATE_H_
+#define MAR_PRIVATE_H_
 
 #include <assert.h>  
 #include "limits.h"

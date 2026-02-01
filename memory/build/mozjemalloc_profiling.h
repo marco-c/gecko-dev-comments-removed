@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZJEMALLOC_PROFILING_H
-#define _MOZJEMALLOC_PROFILING_H
+#ifndef MOZJEMALLOC_PROFILING_H
+#define MOZJEMALLOC_PROFILING_H
 
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"

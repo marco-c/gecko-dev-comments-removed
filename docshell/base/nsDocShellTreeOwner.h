@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDocShellTreeOwner_h__
-#define nsDocShellTreeOwner_h__
+#ifndef nsDocShellTreeOwner_h_
+#define nsDocShellTreeOwner_h_
 
 
 #include "nsCOMPtr.h"

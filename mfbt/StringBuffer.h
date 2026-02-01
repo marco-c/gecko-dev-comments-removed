@@ -4,8 +4,8 @@
 
 
 
-#ifndef StringBuffer_h__
-#define StringBuffer_h__
+#ifndef StringBuffer_h_
+#define StringBuffer_h_
 
 #include <atomic>
 #include <cstring>

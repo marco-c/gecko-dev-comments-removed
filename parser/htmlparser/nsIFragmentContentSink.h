@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsIFragmentContentSink_h___
-#define nsIFragmentContentSink_h___
+#ifndef nsIFragmentContentSink_h_
+#define nsIFragmentContentSink_h_
 
 #include "nsISupports.h"
 

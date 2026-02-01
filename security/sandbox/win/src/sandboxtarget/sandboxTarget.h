@@ -4,8 +4,8 @@
 
 
 
-#ifndef __SECURITY_SANDBOX_SANDBOXTARGET_H__
-#define __SECURITY_SANDBOX_SANDBOXTARGET_H__
+#ifndef SECURITY_SANDBOX_SANDBOXTARGET_H_
+#define SECURITY_SANDBOX_SANDBOXTARGET_H_
 
 #include <windows.h>
 
@@ -53,14 +53,6 @@ class SandboxTarget {
 
 
   void StartSandbox();
-
-  
-
-
-
-  bool BrokerDuplicateHandle(HANDLE aSourceHandle, DWORD aTargetProcessId,
-                             HANDLE* aTargetHandle, DWORD aDesiredAccess,
-                             DWORD aOptions);
 
   bool GetComplexLineBreaks(const WCHAR* text, uint32_t length,
                             uint8_t* break_before);

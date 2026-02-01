@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIScrollObserver_h___
-#define nsIScrollObserver_h___
+#ifndef nsIScrollObserver_h_
+#define nsIScrollObserver_h_
 
 #include "nsISupports.h"
 #include "Units.h"

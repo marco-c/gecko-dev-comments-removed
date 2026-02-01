@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_devtools_DeserializedNode__
-#define mozilla_devtools_DeserializedNode__
+#ifndef mozilla_devtools_DeserializedNode_
+#define mozilla_devtools_DeserializedNode_
 
 #include <utility>
 

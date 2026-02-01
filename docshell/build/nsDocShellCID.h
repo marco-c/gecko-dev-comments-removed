@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDocShellCID_h__
-#define nsDocShellCID_h__
+#ifndef nsDocShellCID_h_
+#define nsDocShellCID_h_
 
 
 

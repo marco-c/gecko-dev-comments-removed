@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_devtools_DominatorTree__
-#define mozilla_devtools_DominatorTree__
+#ifndef mozilla_devtools_DominatorTree_
+#define mozilla_devtools_DominatorTree_
 
 #include "mozilla/devtools/HeapSnapshot.h"
 #include "mozilla/dom/BindingDeclarations.h"

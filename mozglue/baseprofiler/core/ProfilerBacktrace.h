@@ -4,8 +4,8 @@
 
 
 
-#ifndef __PROFILER_BACKTRACE_H
-#define __PROFILER_BACKTRACE_H
+#ifndef PROFILER_BACKTRACE_H
+#define PROFILER_BACKTRACE_H
 
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/UniquePtr.h"

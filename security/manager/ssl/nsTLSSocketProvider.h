@@ -4,8 +4,8 @@
 
 
 
-#ifndef _NSTLSSOCKETPROVIDER_H_
-#define _NSTLSSOCKETPROVIDER_H_
+#ifndef NSTLSSOCKETPROVIDER_H_
+#define NSTLSSOCKETPROVIDER_H_
 
 #include "nsISocketProvider.h"
 

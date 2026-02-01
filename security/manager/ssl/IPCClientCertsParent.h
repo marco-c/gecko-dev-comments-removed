@@ -5,8 +5,8 @@
 
 
 
-#ifndef mozilla_psm_IPCClientCertsParent_h__
-#define mozilla_psm_IPCClientCertsParent_h__
+#ifndef mozilla_psm_IPCClientCertsParent_h_
+#define mozilla_psm_IPCClientCertsParent_h_
 
 #include "mozilla/psm/PIPCClientCertsParent.h"
 

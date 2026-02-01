@@ -2,8 +2,8 @@
 
 
 
-#ifndef _NS_CERTTREE_H_
-#define _NS_CERTTREE_H_
+#ifndef NS_CERTTREE_H_
+#define NS_CERTTREE_H_
 
 #include "nsCOMPtr.h"
 #include "nsICertTree.h"

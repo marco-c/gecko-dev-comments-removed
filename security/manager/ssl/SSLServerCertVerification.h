@@ -3,8 +3,8 @@
 
 
 
-#ifndef _SSLSERVERCERTVERIFICATION_H
-#define _SSLSERVERCERTVERIFICATION_H
+#ifndef SSLSERVERCERTVERIFICATION_H
+#define SSLSERVERCERTVERIFICATION_H
 
 #include "CertVerifier.h"
 #include "CommonSocketControl.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef NS_EXPAT_DRIVER__
-#define NS_EXPAT_DRIVER__
+#ifndef NS_EXPAT_DRIVER_
+#define NS_EXPAT_DRIVER_
 
 #include "expat_config.h"
 #include "moz_expat.h"

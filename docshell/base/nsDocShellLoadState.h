@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDocShellLoadState_h__
-#define nsDocShellLoadState_h__
+#ifndef nsDocShellLoadState_h_
+#define nsDocShellLoadState_h_
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"

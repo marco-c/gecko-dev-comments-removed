@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozEnglishWordUtils_h__
-#define mozEnglishWordUtils_h__
+#ifndef mozEnglishWordUtils_h_
+#define mozEnglishWordUtils_h_
 
 #include "nsCOMPtr.h"
 #include "nsString.h"
