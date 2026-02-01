@@ -613,9 +613,9 @@ void UDPPort::MaybeSetPortCompleteOrError() {
   
   if (server_addresses_.empty() || !bind_request_succeeded_servers_.empty() ||
       SharedSocket()) {
-    SignalPortComplete(this);
+    NotifyPortComplete(this);
   } else {
-    SignalPortError(this);
+    NotifyPortError(this);
   }
 }
 

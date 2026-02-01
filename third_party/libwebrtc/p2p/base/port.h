@@ -264,13 +264,9 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   void SubscribeCandidateReadyCallback(
       absl::AnyInvocable<void(Port*, const Candidate&)> callback);
-  
-  
-  
   void NotifyCandidateReady(Port* port, const Candidate& candidate) {
     SignalCandidateReady(port, candidate);
   }
-  sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
   
   const std::vector<Candidate>& Candidates() const override;
   
@@ -282,7 +278,6 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   void SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback);
   void NotifyPortComplete(Port* port) { SignalPortComplete(port); }
-  sigslot::signal1<Port*> SignalPortComplete;
 
   
   
@@ -291,10 +286,6 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   void SubscribePortError(absl::AnyInvocable<void(Port*)> callback);
   void NotifyPortError(Port* port) { SignalPortError(port); }
-  
-  
-  
-  sigslot::signal1<Port*> SignalPortError;
 
   void SubscribePortDestroyed(
       std::function<void(PortInterface*)> callback) override;
@@ -604,7 +595,18 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   absl::AnyInvocable<void()> role_conflict_callback_ RTC_GUARDED_BY(thread_);
 
   
-  WeakPtrFactory<Port> weak_factory_ RTC_GUARDED_BY(thread_);
+  
+  
+
+  
+  
+  
+  sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
+  sigslot::signal1<Port*> SignalPortComplete;
+  
+  
+  
+  sigslot::signal1<Port*> SignalPortError;
 
   SignalTrampoline<PortInterface, &PortInterface::SignalUnknownAddress>
       unknown_address_trampoline_;
@@ -612,6 +614,9 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
       read_packet_trampoline_;
   SignalTrampoline<PortInterface, &PortInterface::SignalSentPacket>
       sent_packet_trampoline_;
+
+  
+  WeakPtrFactory<Port> weak_factory_ RTC_GUARDED_BY(thread_);
 };
 
 }  
