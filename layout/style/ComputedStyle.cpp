@@ -432,14 +432,14 @@ void ComputedStyle::DumpMatchedRules() const {
 
 bool ComputedStyle::HasAnchorPosReference() const {
   const auto* pos = StylePosition();
-  if (pos->mPositionAnchor.IsIdent()) {
+  if (pos->mPositionAnchor.value.IsIdent()) {
     
     
     
     return true;
   }
 
-  if (pos->mPositionAnchor.IsAuto()) {
+  if (pos->mPositionAnchor.value.IsAuto()) {
     if (!pos->mPositionArea.IsNone()) {
       
       return true;
