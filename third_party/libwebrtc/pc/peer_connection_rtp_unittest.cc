@@ -8,8 +8,7 @@
 
 
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -49,7 +48,6 @@
 #include "media/base/stream_params.h"
 #include "pc/media_session.h"
 #include "pc/peer_connection_wrapper.h"
-#include "pc/sdp_utils.h"
 #include "pc/session_description.h"
 #include "pc/test/fake_audio_capture_module.h"
 #include "pc/test/integration_test_helpers.h"
@@ -181,16 +179,16 @@ class PeerConnectionRtpTestUnifiedPlan : public PeerConnectionRtpBaseTest {
       PeerConnectionWrapper* caller,
       PeerConnectionWrapper* callee,
       size_t mid_to_stop) {
-    auto offer = caller->CreateOffer();
-    caller->SetLocalDescription(CloneSessionDescription(offer.get()));
+    std::unique_ptr<SessionDescriptionInterface> offer = caller->CreateOffer();
+    caller->SetLocalDescription(offer->Clone());
     callee->SetRemoteDescription(std::move(offer));
     EXPECT_LT(mid_to_stop, callee->pc()->GetTransceivers().size());
     
     callee->pc()->GetTransceivers()[mid_to_stop]->StopInternal();
-    auto answer = callee->CreateAnswer();
+    std::unique_ptr<SessionDescriptionInterface> answer =
+        callee->CreateAnswer();
     EXPECT_TRUE(answer);
-    bool set_local_answer =
-        callee->SetLocalDescription(CloneSessionDescription(answer.get()));
+    bool set_local_answer = callee->SetLocalDescription(answer->Clone());
     EXPECT_TRUE(set_local_answer);
     bool set_remote_answer = caller->SetRemoteDescription(std::move(answer));
     EXPECT_TRUE(set_remote_answer);
@@ -321,7 +319,8 @@ TEST_F(PeerConnectionRtpTestPlanB,
   EXPECT_EQ(callee->observer()->add_track_events_.size(), 1u);
 
   
-  auto offer = caller->CreateOfferAndSetAsLocal();
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller->CreateOfferAndSetAsLocal();
   auto* audio_desc = GetFirstAudioContentDescription(offer->description());
   ASSERT_EQ(audio_desc->mutable_streams().size(), 1u);
   audio_desc->mutable_streams()[0].set_stream_ids({kStreamId2});
@@ -772,7 +771,8 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, UnsignaledSsrcCreatesReceiverStreams) {
   caller->AddTrack(caller->CreateAudioTrack("audio_track1"),
                    {kStreamId1, kStreamId2});
 
-  auto offer = caller->CreateOfferAndSetAsLocal();
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller->CreateOfferAndSetAsLocal();
   
   auto contents = offer->description()->contents();
   ASSERT_TRUE(!contents.empty());
@@ -786,8 +786,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, UnsignaledSsrcCreatesReceiverStreams) {
 
   
   
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(callee->SetRemoteDescription(offer->Clone()));
   auto receivers = callee->pc()->GetReceivers();
   ASSERT_EQ(receivers.size(), 1u);
   ASSERT_EQ(receivers[0]->streams().size(), 2u);
@@ -819,7 +818,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, TracksDoNotEndWhenSsrcChanges) {
 
   
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  auto answer = callee->CreateAnswer();
+  std::unique_ptr<SessionDescriptionInterface> answer = callee->CreateAnswer();
   auto& contents = answer->description()->contents();
   ASSERT_TRUE(!contents.empty());
   for (size_t i = 0; i < contents.size(); ++i) {
@@ -828,10 +827,8 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, TracksDoNotEndWhenSsrcChanges) {
     ReplaceFirstSsrc(mutable_streams[0],
                      kFirstMungedSsrc + static_cast<uint32_t>(i));
   }
-  ASSERT_TRUE(
-      callee->SetLocalDescription(CloneSessionDescription(answer.get())));
-  ASSERT_TRUE(
-      caller->SetRemoteDescription(CloneSessionDescription(answer.get())));
+  ASSERT_TRUE(callee->SetLocalDescription(answer->Clone()));
+  ASSERT_TRUE(caller->SetRemoteDescription(answer->Clone()));
 
   
   
@@ -863,7 +860,8 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   EXPECT_EQ(callee->observer()->add_track_events_.size(), 1u);
 
   
-  auto offer = caller->CreateOfferAndSetAsLocal();
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller->CreateOfferAndSetAsLocal();
   auto contents = offer->description()->contents();
   ASSERT_EQ(contents.size(), 1u);
   ASSERT_EQ(contents[0].media_description()->mutable_streams().size(), 1u);
@@ -895,15 +893,15 @@ TEST_F(PeerConnectionRtpTestPlanB,
   caller->AddAudioTrack("audio_track1", {kStreamId1});
   caller->AddAudioTrack("audio_track2", {kStreamId2});
 
-  auto offer = caller->CreateOfferAndSetAsLocal();
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller->CreateOfferAndSetAsLocal();
   auto mutable_streams =
       GetFirstAudioContentDescription(offer->description())->mutable_streams();
   ASSERT_EQ(mutable_streams.size(), 2u);
   
   mutable_streams[0].id.clear();
   mutable_streams[1].id.clear();
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(callee->SetRemoteDescription(offer->Clone()));
 
   auto receivers = callee->pc()->GetReceivers();
   ASSERT_EQ(receivers.size(), 2u);
@@ -936,7 +934,8 @@ TEST_P(PeerConnectionRtpTest,
   scoped_refptr<MockSetSessionDescriptionObserver> observer =
       make_ref_counted<MockSetSessionDescriptionObserver>();
 
-  auto offer = caller->CreateOfferAndSetAsLocal();
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller->CreateOfferAndSetAsLocal();
   callee->pc()->SetRemoteDescription(observer.get(), offer.release());
   callee = nullptr;
   Thread::Current()->ProcessMessages(0);
@@ -1912,18 +1911,17 @@ TEST_F(PeerConnectionMsidSignalingTest, PureUnifiedPlanToUs) {
   auto callee = CreatePeerConnectionWithUnifiedPlan();
   callee->AddAudioTrack("callee_audio");
 
-  auto offer = caller->CreateOffer();
+  std::unique_ptr<SessionDescriptionInterface> offer = caller->CreateOffer();
   
   
   offer->description()->set_msid_signaling(kMsidSignalingSemantic |
                                            kMsidSignalingMediaSection);
 
-  ASSERT_TRUE(
-      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(caller->SetLocalDescription(offer->Clone()));
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
 
   
-  auto answer = callee->CreateAnswer();
+  std::unique_ptr<SessionDescriptionInterface> answer = callee->CreateAnswer();
   EXPECT_EQ(kMsidSignalingSemantic | kMsidSignalingMediaSection,
             answer->description()->msid_signaling());
 }
