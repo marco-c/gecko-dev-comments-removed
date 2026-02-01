@@ -186,15 +186,9 @@ TEST(BweRampupTest, RampUpWithUndemuxableRtpPackets) {
 
   
   
-  
-  
-  
-  
-  
   auto callee_inbound_stats =
       GetStatsAndProcess(s, callee)->GetStatsOfType<RTCInboundRtpStreamStats>();
-  ASSERT_TRUE(callee_inbound_stats.empty() ||
-              *callee_inbound_stats[0]->frames_received == 0u);
+  ASSERT_THAT(callee_inbound_stats, SizeIs(0));
 
   DataRate final_bwe = GetAvailableSendBitrate(GetStatsAndProcess(s, caller));
   
