@@ -73,7 +73,7 @@ static const size_t gRealPageSize = 16_KiB;
 #  else
 static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gPageSize = gRealPageSize;
+static const size_t gPageSize = 4_KiB;
 #else
 
 
