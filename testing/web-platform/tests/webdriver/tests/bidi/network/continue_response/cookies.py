@@ -74,7 +74,8 @@ async def test_cookie_response_started(
     
     response_completed_event = await wait_for_future_safe(on_response_completed)
     assert_response_event(
-        response_completed_event, expected_response={"headers": [set_cookie_header]}
+        response_completed_event,
+        expected_event={"response": {"headers": [set_cookie_header]}},
     )
 
     
@@ -87,7 +88,8 @@ async def test_cookie_response_started(
 
     
     assert_response_event(
-        response_completed_event, expected_request={"cookies": [request_cookie]}
+        response_completed_event,
+        expected_event={"request": {"cookies": [request_cookie]}},
     )
 
     await bidi_session.storage.delete_cookies()
