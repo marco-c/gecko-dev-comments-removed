@@ -54,7 +54,7 @@ class MockRTPVideoFrameSenderInterface : public RTPVideoFrameSenderInterface {
   MOCK_METHOD(bool,
               SendVideo,
               (int payload_type,
-               std::optional<VideoCodecType> codec_type,
+               VideoCodecType codec_type,
                uint32_t rtp_timestamp,
                Timestamp capture_time,
                ArrayView<const uint8_t> payload,
@@ -302,7 +302,7 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
   Event event;
   EXPECT_CALL(
       test_sender_,
-      SendVideo(payload_type, std::make_optional(kVideoCodecVP8), timestamp,
+      SendVideo(payload_type, kVideoCodecVP8, timestamp,
                 Timestamp::MinusInfinity(), buffer, _, _,
                 TimeDelta::Millis(10),
                 frame_csrcs))
