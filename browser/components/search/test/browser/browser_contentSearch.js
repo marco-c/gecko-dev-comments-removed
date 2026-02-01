@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 ChromeUtils.defineESModuleGetters(this, {
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
@@ -51,8 +51,8 @@ add_setup(async function () {
     url: getRootDirectory(gTestPath) + "testEngine_chromeicon.xml",
   });
 
-  // Install a WebExtension based engine to allow testing passing of plain
-  // URIs (moz-extension://) to the content process.
+  
+  
   await SearchTestUtils.installSearchExtension({
     icons: {
       16: "favicon.ico",
@@ -71,7 +71,7 @@ add_task(async function test_GetEngine() {
   checkMsg(msg, {
     type: "Engine",
     data: {
-      isPrivateEngine: false,
+      inPrivateBrowsing: false,
       engine: await constructEngineObj(await Services.search.getDefault()),
     },
   });
@@ -93,9 +93,9 @@ add_task(async function test_GetHandoffSearchModePrefs() {
 
 add_task(async function badImage() {
   let { browser } = await addTab();
-  // If the bad image URI caused an exception to be thrown within ContentSearch,
-  // then we'll hang waiting for the CurrentState responses triggered by the new
-  // engine.  That's what we're testing, and obviously it shouldn't happen.
+  
+  
+  
   let [engine, currentEngineMsg] = await waitForNewEngineAsDefault(
     browser,
     "contentSearchBadImage.xml"
@@ -113,8 +113,8 @@ add_task(async function badImage() {
     type: "CurrentEngine",
     data: expectedCurrentState,
   });
-  // Removing the engine triggers a final CurrentState message.  Wait for it so
-  // it doesn't trip up subsequent tests.
+  
+  
   let statePromise = await waitForTestMsg(browser, "CurrentEngine");
   await Services.search.removeEngine(engine);
   await statePromise.donePromise;
@@ -162,16 +162,16 @@ function checkArrayBuffers(actual, expected) {
 function checkMsg(actualMsg, expectedMsgData) {
   SimpleTest.isDeeply(actualMsg, expectedMsgData, "Checking message");
 
-  // Engines contain ArrayBuffers which we have to compare byte by byte and
-  // not as Objects (like SimpleTest.isDeeply does).
+  
+  
   checkArrayBuffers(actualMsg, expectedMsgData);
 }
 
 async function waitForTestMsg(browser, type) {
-  // We call SpecialPowers.spawn twice because we must let the first one
-  // complete so that the listener is added before we return from this function.
-  // In the second one, we wait for the signal that the expected message has
-  // been received.
+  
+  
+  
+  
   await SpecialPowers.spawn(
     browser,
     [SERVICE_EVENT_TYPE, type],
@@ -184,8 +184,8 @@ async function waitForTestMsg(browser, type) {
         content.eventDetails = event.detail;
         content.removeEventListener(childEvent, listener, true);
       }
-      // Ensure any previous details are cleared, so that we don't
-      // get the wrong ones by mistake.
+      
+      
       content.eventDetails = undefined;
       content.addEventListener(childEvent, listener, true);
     }
@@ -207,8 +207,8 @@ async function waitForTestMsg(browser, type) {
 async function waitForNewEngineAsDefault(browser, basename) {
   info("Waiting for engine to be added: " + basename);
 
-  // Wait for the search events triggered by adding the new engine.
-  // There are two events triggerd by engine-added and engine-loaded
+  
+  
   let statePromise = await waitForTestMsg(browser, "CurrentEngine");
 
   let engine = await SearchTestUtils.installOpenSearchEngine({
