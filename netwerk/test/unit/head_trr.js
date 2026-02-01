@@ -9,8 +9,11 @@
 
 
 
-var { NodeHTTP2Server: TRRNodeHttp2Server, NodeServer: TRRNodeServer } =
-  ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
+var {
+  NodeHTTP2Server: TRRNodeHttp2Server,
+  NodeServer: TRRNodeServer,
+  NodeHTTPServer: TRRNodeHttpServer,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 const { AppConstants: TRRAppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
@@ -281,7 +284,8 @@ function answerHandler(req, resp) {
 
 function trrQueryHandler(req, resp) {
   let requestBody = Buffer.from("");
-  let method = req.headers[global.http2.constants.HTTP2_HEADER_METHOD];
+  let method =
+    req.method || req.headers[global.http2.constants.HTTP2_HEADER_METHOD];
   let contentLength = req.headers["content-length"];
 
   if (method == "POST") {
@@ -1056,6 +1060,63 @@ class TRRServer extends TRRNodeHttp2Server {
       res.write(originHeader);
       res.end();
     });
+
+    await this.execute(getRequestCount);
+    await this.execute(`global.serverPort = ${this.port()}`);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  async registerDoHAnswers(name, type, response = {}) {
+    let text = `global.dns_query_answers["${name}/${type}"] = ${JSON.stringify(
+      response
+    )}`;
+    return this.execute(text);
+  }
+
+  async requestCount(domain, type) {
+    return this.execute(`getRequestCount("${domain}", "${type}")`);
+  }
+}
+
+class PlainHttpTRRServer extends TRRNodeHttpServer {
+  
+  
+  
+  async start(port = 0) {
+    await super.start(port);
+    await this.execute(`( () => {
+      // key: string "name/type"
+      // value: array [answer1, answer2]
+      global.dns_query_answers = {};
+
+      // key: domain
+      // value: a map containing {key: type, value: number of requests}
+      global.dns_query_counts = {};
+
+      global.gDoHPortsLog = [];
+      global.gDoHNewConnLog = {};
+      global.gDoHRequestCount = 0;
+
+      global.dnsPacket = require(\`\${__dirname}/../dns-packet\`);
+      global.ip = require(\`\${__dirname}/../node_ip\`);
+      global.url = require("url");
+      global.zlib = require("zlib");
+    })()`);
+    await this.registerPathHandler("/dns-query", trrQueryHandler);
 
     await this.execute(getRequestCount);
     await this.execute(`global.serverPort = ${this.port()}`);
