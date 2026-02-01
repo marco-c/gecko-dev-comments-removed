@@ -187,9 +187,6 @@ class IceCandidateCollection final {
 };
 
 
-using JsepCandidateCollection = IceCandidateCollection;
-
-
 
 
 enum class SdpType {
@@ -224,47 +221,7 @@ RTC_EXPORT std::optional<SdpType> SdpTypeFromString(
 
 
 
-
-
-
-
-
-
-class SessionDescriptionInternal {
- public:
-  explicit SessionDescriptionInternal(
-      SdpType type,
-      absl_nullable std::unique_ptr<SessionDescription> description,
-      absl::string_view id,
-      absl::string_view version);
-
-  ~SessionDescriptionInternal();
-
- protected:
-  
-  SdpType sdp_type() const { return sdp_type_; }
-  absl::string_view id() const { return id_; }
-  absl::string_view version() const { return version_; }
-  const SessionDescription* description() const { return description_.get(); }
-  SessionDescription* description() { return description_.get(); }
-  size_t mediasection_count() const;
-
-
- private:
-  const SdpType sdp_type_;
-  const std::string id_;
-  const std::string version_;
-  absl_nullable const std::unique_ptr<SessionDescription> description_;
-};
-
-
-
-
-
-
-
-class RTC_EXPORT SessionDescriptionInterface final
-    : public SessionDescriptionInternal {
+class RTC_EXPORT SessionDescriptionInterface final {
  public:
   static std::unique_ptr<SessionDescriptionInterface> Create(
       SdpType type,
@@ -289,13 +246,12 @@ class RTC_EXPORT SessionDescriptionInterface final
   
   std::unique_ptr<SessionDescriptionInterface> Clone() const;
 
+  absl::string_view id() const { return id_; }
+  absl::string_view version() const { return version_; }
+
   
-  SessionDescription* description() {
-    return SessionDescriptionInternal::description();
-  }
-  const SessionDescription* description() const {
-    return SessionDescriptionInternal::description();
-  }
+  const SessionDescription* description() const { return description_.get(); }
+  SessionDescription* description() { return description_.get(); }
 
   
   
@@ -304,10 +260,10 @@ class RTC_EXPORT SessionDescriptionInterface final
 
   
   
-  SdpType GetType() const { return sdp_type(); }
+  SdpType GetType() const { return sdp_type_; }
 
   
-  std::string type() const { return SdpTypeToString(sdp_type()); }
+  std::string type() const { return SdpTypeToString(sdp_type_); }
 
   
   
@@ -327,7 +283,7 @@ class RTC_EXPORT SessionDescriptionInterface final
   bool RemoveCandidate(const IceCandidate* candidate);
 
   
-  size_t number_of_mediasections() const { return mediasection_count(); }
+  size_t number_of_mediasections() const;
 
   
   
@@ -372,21 +328,20 @@ class RTC_EXPORT SessionDescriptionInterface final
       absl::string_view version,
       std::vector<IceCandidateCollection> candidates = {});
 
- protected:
-  
-  
-  
-  const SequenceChecker* sequence_checker() const { return &sequence_checker_; }
-
  private:
   bool IsValidMLineIndex(int index) const;
   bool GetMediasectionIndex(const IceCandidate* candidate, size_t* index) const;
   int GetMediasectionIndex(absl::string_view mid) const;
 
+  const SdpType sdp_type_;
+  const std::string id_;
+  const std::string version_;
+  absl_nullable const std::unique_ptr<SessionDescription> description_;
+
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       SequenceChecker::kDetached};
   std::vector<IceCandidateCollection> candidate_collection_
-      RTC_GUARDED_BY(sequence_checker());
+      RTC_GUARDED_BY(sequence_checker_);
 };
 
 
@@ -394,18 +349,18 @@ class RTC_EXPORT SessionDescriptionInterface final
 
 
 RTC_EXPORT std::unique_ptr<SessionDescriptionInterface>
-CreateSessionDescription(SdpType type, const std::string& sdp);
+CreateSessionDescription(SdpType type, absl::string_view sdp);
 RTC_EXPORT std::unique_ptr<SessionDescriptionInterface>
 CreateSessionDescription(SdpType type,
-                         const std::string& sdp,
+                         absl::string_view sdp,
                          SdpParseError* error_out);
 
 
 
 std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     SdpType type,
-    const std::string& session_id,
-    const std::string& session_version,
+    absl::string_view session_id,
+    absl::string_view session_version,
     std::unique_ptr<SessionDescription> description);
 
 
