@@ -4619,7 +4619,9 @@ var gDialogBox = {
 
     try {
       
-      gURLBar.incrementBreakoutBlockerCount();
+      for (let mozUrlbar of document.querySelectorAll("moz-urlbar")) {
+        mozUrlbar.incrementBreakoutBlockerCount();
+      }
     } catch (ex) {
       console.error(ex);
     }
@@ -4648,7 +4650,9 @@ var gDialogBox = {
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
       
-      gURLBar.decrementBreakoutBlockerCount();
+      for (let mozUrlbar of document.querySelectorAll("moz-urlbar")) {
+        mozUrlbar.decrementBreakoutBlockerCount();
+      }
     }
     if (this._queued.length) {
       setTimeout(() => this._openNextDialog(), 0);
