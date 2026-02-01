@@ -1,5 +1,5 @@
 
-#![cfg(all(feature = "http", feature = "bhttp"))]
+#![cfg(feature = "http")]
 
 use std::{io::Cursor, mem::drop};
 

@@ -1,8 +1,4 @@
-
-
-
-
-
+#![allow(clippy::incompatible_msrv)] 
 
 mod err;
 #[macro_use]
@@ -11,10 +7,12 @@ pub mod aead;
 pub mod hkdf;
 pub mod hpke;
 
-pub use self::p11::{random, PrivateKey, PublicKey};
+use std::{ptr::null, sync::OnceLock};
+
 use err::secstatus_to_res;
 pub use err::Error;
-use std::{ptr::null, sync::OnceLock};
+
+pub use self::p11::{random, PrivateKey, PublicKey, SymKey};
 
 #[allow(clippy::pedantic, non_upper_case_globals, clippy::upper_case_acronyms)]
 mod nss_init {
