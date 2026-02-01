@@ -704,6 +704,10 @@ pref("browser.urlbar.mdn.featureGate", false);
 
 
 
+pref("browser.urlbar.mdn.minKeywordLength", 0);
+
+
+
 pref("browser.urlbar.suggest.mdn", true);
 
 
