@@ -759,6 +759,14 @@ static struct sigaction sPrevSEGVHandler;
 static struct sigaction sPrevSIGBUSHandler;
 static struct sigaction sPrevWasmTrapHandler;
 
+typedef void (*sa_sigaction_t)(int, siginfo_t*, void*);
+
+
+
+
+#    define SIG_ACTION_DFL ((sa_sigaction_t)SIG_DFL)
+#    define SIG_ACTION_IGN ((sa_sigaction_t)SIG_IGN)
+
 static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
   if (!sAlreadyHandlingTrap.get()) {
     AutoHandlingTrap aht;
@@ -796,7 +804,15 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
   
   
   
-  if (previousSignal->sa_flags & SA_SIGINFO) {
+  
+  
+  
+  
+  
+  
+  if ((previousSignal->sa_flags & SA_SIGINFO) &&
+      previousSignal->sa_sigaction != SIG_ACTION_DFL &&
+      previousSignal->sa_sigaction != SIG_ACTION_IGN) {
     previousSignal->sa_sigaction(signum, info, context);
   } else if (previousSignal->sa_handler == SIG_DFL ||
              previousSignal->sa_handler == SIG_IGN) {
