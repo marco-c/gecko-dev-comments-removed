@@ -63,10 +63,6 @@ nsresult RegisterScalars(const nsACString& aCategoryName,
                          JS::Handle<JS::Value> aScalarData, JSContext* cx);
 
 
-void SummarizeEvent(const nsCString& aUniqueEventName,
-                    mozilla::Telemetry::ProcessID aProcessType);
-
-
 void ClearScalars();
 
 size_t GetMapShallowSizesOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
