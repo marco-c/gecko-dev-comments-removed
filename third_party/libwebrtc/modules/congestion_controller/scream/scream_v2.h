@@ -14,13 +14,13 @@
 #include <algorithm>
 
 #include "api/environment/environment.h"
-#include "api/field_trials_view.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/experiments/field_trial_parser.h"
+#include "modules/congestion_controller/scream/delay_based_congestion_control.h"
+#include "modules/congestion_controller/scream/scream_v2_parameters.h"
 
 namespace webrtc {
 
@@ -49,52 +49,6 @@ class ScreamV2 {
   double l4s_alpha() const { return l4s_alpha_; }
 
  private:
-  struct Parameters {
-    explicit Parameters(const FieldTrialsView& trials);
-
-    
-    FieldTrialParameter<DataSize> min_ref_window;
-
-    
-    FieldTrialParameter<double> l4s_avg_g;
-
-    
-    
-    
-    FieldTrialParameter<DataSize> max_segment_size;
-
-    
-    FieldTrialParameter<double> bytes_in_flight_head_room;
-
-    
-    FieldTrialParameter<double> beta_loss;
-
-    
-    
-    FieldTrialParameter<int> post_congestion_delay_rtts;
-
-    
-    
-    FieldTrialParameter<double> multiplicative_increase_factor;
-
-    
-    
-    FieldTrialParameter<TimeDelta> virtual_rtt;
-
-    
-    
-    
-    
-    FieldTrialParameter<double> backoff_scale_factor_close_to_ref_window_i;
-
-    FieldTrialParameter<int> number_of_rtts_between_ref_window_i_updates;
-
-    
-    
-    FieldTrialParameter<int>
-        number_of_rtts_between_reset_ref_window_i_on_congestion;
-  };
-
   void UpdateL4SAlpha(const TransportPacketsFeedback& msg);
   void UpdateRefWindowAndTargetRate(const TransportPacketsFeedback& msg);
 
@@ -124,7 +78,7 @@ class ScreamV2 {
   }
 
   const Environment env_;
-  const Parameters params_;
+  const ScreamV2Parameters params_;
 
   DataRate max_target_bitrate_ = DataRate::PlusInfinity();
   DataRate min_target_bitrate_ = DataRate::Zero();
@@ -157,6 +111,8 @@ class ScreamV2 {
   
   
   Timestamp last_reaction_to_congestion_time_ = Timestamp::MinusInfinity();
+
+  DelayBasedCongestionControl delay_based_congestion_control_;
 };
 
 }  
