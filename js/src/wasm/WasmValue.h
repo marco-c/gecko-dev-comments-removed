@@ -321,7 +321,8 @@ class MOZ_NON_PARAM Val : public LitVal {
   
   void readFromHeapLocation(const void* loc);
   
-  void writeToHeapLocation(void* loc) const;
+  void writeToHeapLocation(gc::Cell* owner, void* loc) const;
+  void writeToTenuredHeapLocation(void* loc) const;
 
   
   static bool fromJSValue(JSContext* cx, ValType targetType, HandleValue val,

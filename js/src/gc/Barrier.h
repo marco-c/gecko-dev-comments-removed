@@ -298,6 +298,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 namespace js {
 
 class NativeObject;
@@ -362,6 +373,7 @@ struct InternalBarrierMethods<T*> {
 };
 
 namespace gc {
+
 MOZ_ALWAYS_INLINE void ValuePostWriteBarrier(Value* vp, const Value& prev,
                                              const Value& next) {
   MOZ_ASSERT(!CurrentThreadIsOffThreadCompiling());
@@ -385,6 +397,7 @@ MOZ_ALWAYS_INLINE void ValuePostWriteBarrier(Value* vp, const Value& prev,
     sb->unputValue(vp);
   }
 }
+
 }  
 
 template <>
@@ -1050,6 +1063,61 @@ static inline void BarrieredSetPair(Zone* zone, HeapPtr<T1*>& v1, T1* val1,
   }
   v1.postBarrieredSet(val1);
   v2.postBarrieredSet(val2);
+}
+
+
+
+
+template <typename T>
+MOZ_ALWAYS_INLINE void BarrieredInit(bool nurseryOwned, void* dst, T value) {
+  AssertTargetIsNotGray(value);
+
+  
+
+  T* ptr = reinterpret_cast<T*>(dst);
+  *ptr = value;
+
+  if (!nurseryOwned) {
+    T prev = JS::SafelyInitialized<T>::create();
+    InternalBarrierMethods<T>::postBarrier(ptr, prev, value);
+  }
+}
+template <typename T>
+MOZ_ALWAYS_INLINE void BarrieredInit(gc::Cell* owner, void* dst, T value) {
+  BarrieredInit(!owner->isTenured(), dst, value);
+}
+
+namespace gc {
+template <typename T, bool PreBarrier = true, bool PostBarrier = true>
+MOZ_ALWAYS_INLINE void BarrieredSetImpl(bool nurseryOwned, void* dst, T value) {
+  AssertTargetIsNotGray(value);
+
+  T* ptr = reinterpret_cast<T*>(dst);
+  T prev = *ptr;
+  if constexpr (PreBarrier) {
+    InternalBarrierMethods<T>::preBarrier(prev);
+  }
+
+  *ptr = value;
+
+  if constexpr (PostBarrier) {
+    if (!nurseryOwned) {
+      InternalBarrierMethods<T>::postBarrier(ptr, prev, value);
+    }
+  }
+}
+}  
+
+
+
+
+template <typename T>
+MOZ_ALWAYS_INLINE void BarrieredSet(bool nurseryOwned, void* dst, T value) {
+  gc::BarrieredSetImpl(nurseryOwned, dst, value);
+}
+template <typename T>
+MOZ_ALWAYS_INLINE void BarrieredSet(gc::Cell* owner, void* dst, T value) {
+  BarrieredSet(!owner->isTenured(), dst, value);
 }
 
 
