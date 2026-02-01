@@ -194,6 +194,14 @@ def setup_zed(command_context, interactive):
 
     
     new_settings["languages"] = {"C": {"tab_size": 2}, "C++": {"tab_size": 2}}
+    
+    
+    new_settings["file_types"] = {
+        "Python": [
+            "**/moz.build",
+            "**/*.configure",
+        ],
+    }
 
     zed_settings_dir = mozpath.join(command_context.topsrcdir, ".zed")
     zed_settings_file = mozpath.join(zed_settings_dir, "settings.json")
