@@ -105,7 +105,7 @@ nsresult SVGOrientSMILType::ComputeDistance(const SMILValue& aFrom,
   }
 
   
-  aDistance = fabs(ValueInDegrees(aTo) - ValueInDegrees(aFrom));
+  aDistance = std::abs(ValueInDegrees(aTo) - ValueInDegrees(aFrom));
 
   return NS_OK;
 }
