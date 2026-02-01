@@ -94,6 +94,12 @@ static void LogLocationPermissionState() {
 
   LogLocationPermissionState();
 
+  if ([aError code] == kCLErrorLocationUnknown) {
+    
+    
+    return;
+  }
+
   NSString* message = [@"Failed to acquire position: "
       stringByAppendingString:[aError localizedDescription]];
 
