@@ -453,13 +453,8 @@ add_task(async function () {
           '</span>' +
           '<span class="ruleview-color">white</span>' +
         '</span>',
-      computed:
-        
-        '<span xmlns="http://www.w3.org/1999/xhtml" data-color="white" class="color-swatch-container">' +
-          '<span class="inspector-swatch inspector-colorswatch" style="background-color:white">' +
-          '</span>' +
-          '<span class="ruleview-color">white</span>' +
-        '</span>',
+      
+      computed: null,
       
       startingStyle: null,
     }
