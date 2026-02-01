@@ -216,28 +216,20 @@ class nsIMathMLFrame {
 
 struct nsEmbellishData {
   
-  uint32_t flags;
+  uint32_t flags = 0;
 
   
-  nsIFrame* coreFrame;
+  nsIFrame* coreFrame = nullptr;
 
   
-  nsStretchDirection direction;
+  nsStretchDirection direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
 
   
   
   
   
-  nscoord leadingSpace;
-  nscoord trailingSpace;
-
-  nsEmbellishData() {
-    flags = 0;
-    coreFrame = nullptr;
-    direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
-    leadingSpace = 0;
-    trailingSpace = 0;
-  }
+  nscoord leadingSpace = 0;
+  nscoord trailingSpace = 0;
 };
 
 
@@ -250,17 +242,12 @@ struct nsEmbellishData {
 
 struct nsPresentationData {
   
-  uint32_t flags;
+  uint32_t flags = 0;
 
   
   
   
-  nsIFrame* baseFrame;
-
-  nsPresentationData() {
-    flags = 0;
-    baseFrame = nullptr;
-  }
+  nsIFrame* baseFrame = nullptr;
 };
 
 
