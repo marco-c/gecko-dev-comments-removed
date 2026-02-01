@@ -136,14 +136,13 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
       
       const Maybe<uint32_t> originalNextGoodSpace = nextGoodSpace;
       while (*nextGoodSpace > 0 &&
-             mContent.CharAt(*nextGoodSpace - 1) == 0x20) {
-        nextGoodSpace = Some(*nextGoodSpace - 1);
+             mContent.CharAt(*nextGoodSpace - 1) == u' ') {
+        *nextGoodSpace -= 1;
       }
       if (*nextGoodSpace == 0) {
         
         nextGoodSpace = originalNextGoodSpace;
       }
-
       width += GetUnicharStringWidth(Span<const char16_t>(
           mContent.get() + goodSpace, *nextGoodSpace - goodSpace));
       if (prefixwidth + width > aWrapColumn) {
@@ -152,8 +151,12 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
         break;
       }
       goodSpace = AssertedCast<int32_t>(*nextGoodSpace);
+      if (mContent.CharAt(*nextGoodSpace) == u'\n') {
+        
+        goodSpace += 1;
+        break;
+      }
     }
-
     return goodSpace;
   }
 
@@ -319,17 +322,27 @@ void nsPlainTextSerializer::HardWrapString(nsAString& aString,
   settings.Init(aFlags, aWrapColumn);
 
   
-  CurrentLine line;
-  line.mContent.Assign(aString);
-
   nsAutoString output;
   {
     OutputManager manager(aFlags, output);
-    PerformWrapAndOutputCompleteLines(settings, line, manager,
-                                       true, nullptr);
+    CurrentLine line;
+    bool first = true;
+    for (const auto& content : aString.Split(u'\n')) {
+      if (first) {
+        first = false;
+      } else {
+        manager.Flush(line);
+        manager.AppendLineBreak();
+      }
+      line.mContent.Assign(content);
+      PerformWrapAndOutputCompleteLines(settings, line, manager,
+                                         true,
+                                         false,
+                                        nullptr);
+    }
     manager.Flush(line);
   }
-  aString.Assign(output);
+  aString.Assign(std::move(output));
 }
 
 NS_IMETHODIMP
@@ -1273,23 +1286,26 @@ static bool IsSpaceStuffable(const char16_t* s) {
 
 void nsPlainTextSerializer::PerformWrapAndOutputCompleteLines(
     const Settings& aSettings, CurrentLine& aLine, OutputManager& aOutput,
-    bool aUseLineBreaker, nsPlainTextSerializer* aSerializer) {
+    bool aUseLineBreaker, bool aAllowBonusWidth,
+    nsPlainTextSerializer* aSerializer) {
   if (!aSettings.MayWrap()) {
     return;
   }
 
   
-  
-  
-  
   const uint32_t wrapColumn = aSettings.GetWrapColumn();
-  uint32_t bonuswidth = (wrapColumn > 20) ? 4 : 0;
+  
+  
+  
+  
+  
+  const uint32_t bonusWidth = (wrapColumn > 20 && aAllowBonusWidth) ? 4 : 0;
   while (!aLine.mContent.IsEmpty()) {
     const uint32_t prefixwidth = aLine.DeterminePrefixWidth();
     
     const uint32_t currentLineContentWidth =
         GetUnicharStringWidth(aLine.mContent);
-    if (currentLineContentWidth + prefixwidth <= wrapColumn + bonuswidth) {
+    if (currentLineContentWidth + prefixwidth <= wrapColumn + bonusWidth) {
       break;
     }
 
@@ -1358,7 +1374,8 @@ void nsPlainTextSerializer::PerformWrapAndOutputCompleteLines(
 
 void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
   PerformWrapAndOutputCompleteLines(mSettings, mCurrentLine, *mOutputManager,
-                                    mUseLineBreaker, this);
+                                    mUseLineBreaker,
+                                     true, this);
 }
 
 
