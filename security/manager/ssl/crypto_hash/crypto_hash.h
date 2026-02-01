@@ -2,6 +2,9 @@
 
 
 
+#ifndef crypto_hash_h
+#define crypto_hash_h
+
 #include "nsICryptoHash.h"
 
 extern "C" {
@@ -44,3 +47,5 @@ nsresult NS_NewCryptoHash(const nsACString& aHashType,
 
   return NS_OK;
 }
+
+#endif  

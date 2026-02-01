@@ -4,6 +4,9 @@
 
 
 
+#ifndef SECURITY_SANDBOX_COMMON_TEST_SANDBOXTESTINGCHILDTESTS_H_
+#define SECURITY_SANDBOX_COMMON_TEST_SANDBOXTESTINGCHILDTESTS_H_
+
 #include "SandboxTestingChild.h"
 
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
@@ -1349,3 +1352,5 @@ void RunTestsGPU(SandboxTestingChild* child) {
 }
 
 }  
+
+#endif  
