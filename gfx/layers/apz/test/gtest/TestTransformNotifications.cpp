@@ -274,9 +274,7 @@ TEST_F(APZCTransformNotificationTester,
   MockFunction<void(std::string checkPointName)> check;
   {
     InSequence s;
-
     EXPECT_CALL(check, Call("Pan Start"));
-
     EXPECT_CALL(
         *mcc,
         NotifyAPZStateChange(
@@ -307,10 +305,6 @@ TEST_F(APZCTransformNotificationTester,
 
     EXPECT_CALL(check, Call("Done"));
   }
-
-  
-  
-  mRootApzc->GetFrameMetrics().SetVisualScrollOffset(CSSPoint(250, 250));
 
   check.Call("Pan Start");
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
