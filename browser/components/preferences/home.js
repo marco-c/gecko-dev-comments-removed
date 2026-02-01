@@ -86,11 +86,37 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     id: "homepageGoToCustomHomepageUrlPanel",
     deps: ["homepageNewWindows"],
     visible: ({ homepageNewWindows }) => {
-      return homepageNewWindows.value == "custom";
+      return homepageNewWindows.value === "custom";
     },
     onUserClick: () => {
-      
+      gotoPref("customHomepage");
     },
+  });
+
+  
+  Preferences.addSetting({
+    id: "customHomepageCard",
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageBoxGroup",
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageBoxForm",
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageBoxUrlList",
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageBoxActions",
+  });
+
+  
+  Preferences.addSetting({
+    id: "customHomepagePlaceholderButton",
   });
 
   
