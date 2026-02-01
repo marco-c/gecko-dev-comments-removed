@@ -474,6 +474,10 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
     return RecordEventResult::CannotRecord;
   }
 
+  
+  TelemetryScalar::SummarizeEvent(UniqueEventName(category, method, object),
+                                  processType);
+
   EventRecordArray* eventRecords = GetEventRecordsForProcess(lock, processType);
   eventRecords->AppendElement(EventRecord(timestamp, eventKey, value, extra));
 

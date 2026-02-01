@@ -1782,7 +1782,17 @@ void TelemetryScalar::InitializeGlobalState(bool aCanRecordBase,
   }
 
   
-  internal_RegisterScalars(locker, {});
+  const nsTArray<DynamicScalarInfo> initialDynamicScalars({
+      DynamicScalarInfo{
+          nsITelemetry::SCALAR_TYPE_COUNT,
+          true ,
+          false ,
+          nsAutoCString("telemetry.dynamic_event_counts"),
+          true ,
+          {} ,
+      },
+  });
+  internal_RegisterScalars(locker, initialDynamicScalars);
 
   gTelemetryScalarInitDone = true;
 }
@@ -2452,6 +2462,42 @@ nsresult TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
   ::internal_BroadcastDefinitions(ipcDefinitions);
 
   return NS_OK;
+}
+
+
+
+
+
+
+
+
+
+
+
+void TelemetryScalar::SummarizeEvent(const nsCString& aUniqueEventName,
+                                     ProcessID aProcessType) {
+  MOZ_ASSERT(XRE_IsParentProcess(),
+             "Only summarize events in the parent process");
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
+  StaticMutexAutoLock lock(gTelemetryScalarsMutex);
+
+  ScalarKey scalarKey{static_cast<uint32_t>(ScalarID::TELEMETRY_EVENT_COUNTS)};
+  KeyedScalar* scalar = nullptr;
+  nsresult rv =
+      internal_GetKeyedScalarByEnum(lock, scalarKey, aProcessType, &scalar);
+
+  if (NS_FAILED(rv)) {
+    NS_WARNING("NS_FAILED getting keyed scalar for event summary. Wut.");
+    return;
+  }
+
+  
+  scalar->SetMaximumNumberOfKeys(kMaxEventSummaryKeys);
+
+  scalar->AddValue(lock, NS_ConvertASCIItoUTF16(aUniqueEventName), 1);
 }
 
 
