@@ -465,23 +465,27 @@ void WebGPUChild::ClearActorState() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
-  
-  
-  while (true) {
-    
-    if (!mPendingRequestAdapterPromises.empty()) {
-      auto pending_promise = std::move(mPendingRequestAdapterPromises.front());
-      mPendingRequestAdapterPromises.pop_front();
-
+  {
+    for (auto& pending_promise : mPendingRequestAdapterPromises) {
       promise::MaybeResolveWithNull(std::move(pending_promise.promise));
     }
-    
-    else if (!mPendingRequestDevicePromises.empty()) {
-      auto pending_promise = std::move(mPendingRequestDevicePromises.front());
-      mPendingRequestDevicePromises.pop_front();
+    mPendingRequestAdapterPromises.clear();
+  }
 
+  
+  {
+    for (auto& pending_promise : mPendingRequestDevicePromises) {
       RefPtr<Device> device =
           new Device(pending_promise.adapter, pending_promise.device_id,
                      pending_promise.queue_id, pending_promise.features,
@@ -493,41 +497,47 @@ void WebGPUChild::ClearActorState() {
       promise::MaybeResolve(std::move(pending_promise.promise),
                             std::move(device));
     }
-    
-    
-    else if (!mPendingDeviceLostPromises.empty()) {
-      auto pending_promise_entry = mPendingDeviceLostPromises.begin();
-      auto pending_promise = std::move(pending_promise_entry->second);
-      mPendingDeviceLostPromises.erase(pending_promise_entry->first);
+    mPendingRequestDevicePromises.clear();
+  }
+
+  
+  
+  {
+    for (auto& pending_promise_entry : mPendingDeviceLostPromises) {
+      auto pending_promise = std::move(pending_promise_entry.second);
 
       RefPtr<DeviceLostInfo> info = new DeviceLostInfo(
           pending_promise->GetParentObject(),
           dom::GPUDeviceLostReason::Destroyed, u"Device destroyed"_ns);
       promise::MaybeResolve(std::move(pending_promise), std::move(info));
     }
-    
-    else if (!mDeviceMap.empty()) {
-      auto device_map_entry = mDeviceMap.begin();
-      RefPtr<Device> device = device_map_entry->second.get();
-      mDeviceMap.erase(device_map_entry->first);
+    mPendingDeviceLostPromises.clear();
+  }
+
+  
+  {
+    for (auto& device_map_entry : mDeviceMap) {
+      RefPtr<Device> device = device_map_entry.second.get();
 
       if (device) {
         device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
                             u"WebGPUChild destroyed"_ns);
       }
     }
-    
-    else if (!mPendingPopErrorScopePromises.empty()) {
-      auto pending_promise = std::move(mPendingPopErrorScopePromises.front());
-      mPendingPopErrorScopePromises.pop_front();
+    mDeviceMap.clear();
+  }
 
+  
+  {
+    for (auto& pending_promise : mPendingPopErrorScopePromises) {
       promise::MaybeResolveWithNull(std::move(pending_promise.promise));
     }
-    
-    else if (!mPendingCreatePipelinePromises.empty()) {
-      auto pending_promise = std::move(mPendingCreatePipelinePromises.front());
-      mPendingCreatePipelinePromises.pop_front();
+    mPendingPopErrorScopePromises.clear();
+  }
 
+  
+  {
+    for (auto& pending_promise : mPendingCreatePipelinePromises) {
       if (pending_promise.is_render_pipeline) {
         RefPtr<RenderPipeline> object = new RenderPipeline(
             pending_promise.device, pending_promise.pipeline_id);
@@ -542,12 +552,12 @@ void WebGPUChild::ClearActorState() {
                               std::move(object));
       }
     }
-    
-    else if (!mPendingCreateShaderModulePromises.empty()) {
-      auto pending_promise =
-          std::move(mPendingCreateShaderModulePromises.front());
-      mPendingCreateShaderModulePromises.pop_front();
+    mPendingCreatePipelinePromises.clear();
+  }
 
+  
+  {
+    for (auto& pending_promise : mPendingCreateShaderModulePromises) {
       nsTArray<WebGPUCompilationMessage> messages;
       RefPtr<CompilationInfo> infoObject(
           new CompilationInfo(pending_promise.device));
@@ -555,41 +565,33 @@ void WebGPUChild::ClearActorState() {
       promise::MaybeResolve(std::move(pending_promise.promise),
                             std::move(infoObject));
     }
-    
-    else if (!mPendingBufferMapPromises.empty()) {
-      auto pending_promises = mPendingBufferMapPromises.begin();
-      auto pending_promise = std::move(pending_promises->second.front());
-      pending_promises->second.pop_front();
-      if (pending_promises->second.empty()) {
-        mPendingBufferMapPromises.erase(pending_promises->first);
-      }
+    mPendingCreateShaderModulePromises.clear();
+  }
 
-      
-      if (pending_promise.promise->State() !=
-          dom::Promise::PromiseState::Pending) {
-        continue;
+  
+  {
+    for (auto& pending_promises : mPendingBufferMapPromises) {
+      for (auto& pending_promise : pending_promises.second) {
+        
+        if (pending_promise.promise->State() !=
+            dom::Promise::PromiseState::Pending) {
+          continue;
+        }
+        pending_promise.buffer->RejectMapRequestWithAbortError(
+            pending_promise.promise);
       }
-      pending_promise.buffer->RejectMapRequestWithAbortError(
-          pending_promise.promise);
     }
-    
-    else if (auto it = mPendingOnSubmittedWorkDonePromises.begin();
-             it != mPendingOnSubmittedWorkDonePromises.end()) {
-      auto& pending_promises = it->second;
-      MOZ_ASSERT(!pending_promises.empty(),
-                 "Empty queues should have been removed from the map");
+    mPendingBufferMapPromises.clear();
+  }
 
-      auto pending_promise = std::move(pending_promises.front());
-      pending_promises.pop_front();
-
-      if (pending_promises.empty()) {
-        mPendingOnSubmittedWorkDonePromises.erase(it);
+  
+  {
+    for (auto& pending_promises : mPendingOnSubmittedWorkDonePromises) {
+      for (auto& pending_promise : pending_promises.second) {
+        promise::MaybeResolveWithUndefined(std::move(pending_promise));
       }
-
-      promise::MaybeResolveWithUndefined(std::move(pending_promise));
-    } else {
-      break;
     }
+    mPendingOnSubmittedWorkDonePromises.clear();
   }
 }
 
