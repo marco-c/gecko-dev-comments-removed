@@ -14,10 +14,8 @@ const FAR_FUTURE = 4102405200000;
 
 add_task(async function setup() {
   
-  TabProvider.shouldSkipWindow = mockShouldSkipWindow;
-  TabProvider.getWindowEnumerator = mockGetWindowEnumerator.bind(this, [
-    "http://foo.com",
-  ]);
+  TabProvider.getOrderedNonPrivateWindows =
+    mockGetOrderedNonPrivateWindows.bind(this, ["http://foo.com"]);
 });
 
 async function prepareServer() {
