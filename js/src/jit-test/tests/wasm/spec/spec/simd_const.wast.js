@@ -377,6 +377,12 @@ assert_malformed(
 
 
 assert_malformed(
+  () => instantiate(`(func (v128.const i8x16 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101 -0x101) drop) `),
+  `constant out of range`,
+);
+
+
+assert_malformed(
   () => instantiate(`(func (v128.const i8x16 256 256 256 256 256 256 256 256 256 256 256 256 256 256 256 256) drop) `),
   `constant out of range`,
 );

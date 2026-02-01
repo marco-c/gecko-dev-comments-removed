@@ -98,54 +98,6 @@ assert_invalid(
 
 
 
-let $15 = instantiate(`(module (table i64 0 funcref))`);
-
-
-let $16 = instantiate(`(module (table i64 1 funcref))`);
-
-
-let $17 = instantiate(`(module (table i64 0 0 funcref))`);
-
-
-let $18 = instantiate(`(module (table i64 0 1 funcref))`);
-
-
-let $19 = instantiate(`(module (table i64 1 256 funcref))`);
-
-
-let $20 = instantiate(`(module (table i64 0 65536 funcref))`);
-
-
-let $21 = instantiate(`(module (table i64 0 0xffff_ffff funcref))`);
-
-
-let $22 = instantiate(`(module (table i64 0 0x1_0000_0000 funcref))`);
-
-
-let _anon_57 = module(`(module (table i64 0xffff_ffff_ffff_ffff funcref))`);
-
-
-let $23 = instantiate(`(module (table i64 0 0xffff_ffff_ffff_ffff funcref))`);
-
-
-let $24 = instantiate(`(module (table i64 0 funcref) (table i64 0 funcref))`);
-
-
-let $25 = instantiate(`(module (table (import "spectest" "table64") i64 0 funcref) (table i64 0 funcref))`);
-
-
-assert_invalid(
-  () => instantiate(`(module (table i64 1 0 funcref))`),
-  `size minimum must not be greater than maximum`,
-);
-
-
-assert_invalid(
-  () => instantiate(`(module (table i64 0xffff_ffff 0 funcref))`),
-  `size minimum must not be greater than maximum`,
-);
-
-
 assert_invalid(() => instantiate(`(module (elem (i32.const 0)))`), `unknown table`);
 
 
@@ -191,17 +143,17 @@ assert_invalid(
 );
 
 
-let $26 = instantiate(`(module
+let $15 = instantiate(`(module
   (global (export "g") (ref \$f) (ref.func \$f))
   (type \$f (func))
   (func \$f)
 )`);
 
 
-register($26, `M`);
+register($15, `M`);
 
 
-let $27 = instantiate(`(module
+let $16 = instantiate(`(module
   (global \$g (import "M" "g") (ref \$dummy))
 
   (type \$dummy (func))
@@ -221,19 +173,19 @@ let $27 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($27, `get1`, []), [null]);
+assert_return(() => invoke($16, `get1`, []), [null]);
 
 
-assert_return(() => invoke($27, `get2`, []), [new RefWithType('funcref')]);
+assert_return(() => invoke($16, `get2`, []), [new RefWithType('funcref')]);
 
 
-assert_return(() => invoke($27, `get3`, []), [new RefWithType('funcref')]);
+assert_return(() => invoke($16, `get3`, []), [new RefWithType('funcref')]);
 
 
-assert_return(() => invoke($27, `get4`, []), [new RefWithType('funcref')]);
+assert_return(() => invoke($16, `get4`, []), [new RefWithType('funcref')]);
 
 
-assert_return(() => invoke($27, `get5`, []), [new RefWithType('funcref')]);
+assert_return(() => invoke($16, `get5`, []), [new RefWithType('funcref')]);
 
 
 assert_invalid(

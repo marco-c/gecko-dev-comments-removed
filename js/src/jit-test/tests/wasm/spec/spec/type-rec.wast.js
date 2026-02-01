@@ -54,6 +54,40 @@ assert_invalid(
 
 
 let $1 = instantiate(`(module
+  (rec (type \$ft (func)) (type (struct)))
+  (func \$f (type \$ft))
+  (global (ref \$ft) (ref.func \$f))
+)`);
+
+
+let $2 = instantiate(`(module
+  (rec (type \$ft (func)))
+  (func \$f)  ;; the implicit type of \$f is \$ft
+  (global (ref \$ft) (ref.func \$f))
+)`);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (rec (type \$ft (func)) (type (func)))
+    (func \$f)  ;; the implicit type of \$f is not \$ft
+    (global (ref \$ft) (ref.func \$f))
+  )`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (rec (type (func)) (type \$ft (func)))
+    (func \$f)  ;; the implicit type of \$f is not \$ft
+    (global (ref \$ft) (ref.func \$f))
+  )`),
+  `type mismatch`,
+);
+
+
+let $3 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct (field (ref \$f1)))))
   (rec (type \$f2 (func)) (type (struct (field (ref \$f2)))))
   (func \$f (type \$f2))
@@ -61,7 +95,7 @@ let $1 = instantiate(`(module
 )`);
 
 
-let $2 = instantiate(`(module
+let $4 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct (field (ref \$f1)))))
   (rec (type \$f2 (func)) (type (struct (field (ref \$f2)))))
   (rec
@@ -122,17 +156,17 @@ assert_invalid(
 );
 
 
-let $3 = instantiate(`(module \$M
+let $5 = instantiate(`(module \$M
   (rec (type \$f1 (func)) (type (struct)))
   (func (export "f") (type \$f1))
 )`);
-let $M = $3;
+let $M = $5;
 
 
 register($M, `M`);
 
 
-let $4 = instantiate(`(module
+let $6 = instantiate(`(module
   (rec (type \$f2 (func)) (type (struct)))
   (func (import "M" "f") (type \$f2))
 )`);
@@ -156,7 +190,7 @@ assert_unlinkable(
 );
 
 
-let $5 = instantiate(`(module
+let $7 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct)))
   (rec (type \$f2 (func)) (type (struct)))
   (table funcref (elem \$f1))
@@ -165,10 +199,10 @@ let $5 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($5, `run`, []), []);
+assert_return(() => invoke($7, `run`, []), []);
 
 
-let $6 = instantiate(`(module
+let $8 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct)))
   (rec (type (struct)) (type \$f2 (func)))
   (table funcref (elem \$f1))
@@ -177,10 +211,10 @@ let $6 = instantiate(`(module
 )`);
 
 
-assert_trap(() => invoke($6, `run`, []), `indirect call type mismatch`);
+assert_trap(() => invoke($8, `run`, []), `indirect call type mismatch`);
 
 
-let $7 = instantiate(`(module
+let $9 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct)))
   (rec (type \$f2 (func)))
   (table funcref (elem \$f1))
@@ -189,10 +223,10 @@ let $7 = instantiate(`(module
 )`);
 
 
-assert_trap(() => invoke($7, `run`, []), `indirect call type mismatch`);
+assert_trap(() => invoke($9, `run`, []), `indirect call type mismatch`);
 
 
-let $8 = instantiate(`(module
+let $10 = instantiate(`(module
   (rec (type \$s (struct)))
   (rec (type \$t (func (param (ref \$s)))))
   (func \$f (param (ref \$s)))  ;; okay, type is equivalent to \$t

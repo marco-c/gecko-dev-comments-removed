@@ -24,7 +24,7 @@ assert_invalid(
       (array.fill \$a (local.get \$1) (i32.const 0) (local.get \$2) (i32.const 0))
     )
   )`),
-  `array is immutable`,
+  `immutable array`,
 );
 
 
@@ -110,3 +110,42 @@ assert_return(() => invoke($0, `array_get_nth`, [3]), [value("i32", 11)]);
 
 
 assert_return(() => invoke($0, `array_get_nth`, [4]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($0, `array_fill`, [0, 42, 12]), []);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [0]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [2]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [5]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [11]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_fill`, [0, 7, 1]), []);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [0]), [value("i32", 7)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [1]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [11]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_fill`, [10, 9, 2]), []);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [9]), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [10]), [value("i32", 9)]);
+
+
+assert_return(() => invoke($0, `array_get_nth`, [11]), [value("i32", 9)]);
