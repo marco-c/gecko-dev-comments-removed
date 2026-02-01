@@ -3,7 +3,6 @@
 
 "use strict";
 
-
 const { Sqlite } = ChromeUtils.importESModule(
   "resource://gre/modules/Sqlite.sys.mjs"
 );
