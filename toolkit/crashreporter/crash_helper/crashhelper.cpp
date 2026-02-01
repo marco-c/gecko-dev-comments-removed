@@ -7,9 +7,9 @@
 
 #if defined(XP_WIN)
 #  include <windows.h>  
-#elif defined(XP_DARWIN)
-#  include <mach/port.h>  
-#elif defined(XP_LINUX)
+#endif                  
+
+#if defined(XP_LINUX)
 
 #  include "mozilla/toolkit/crashreporter/rust_minidump_writer_linux_ffi_generated.h"
 #endif  

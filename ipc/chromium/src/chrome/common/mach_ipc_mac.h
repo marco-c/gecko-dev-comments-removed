@@ -44,8 +44,7 @@ kern_return_t MachReceivePortSendRight(
 
 bool MachChildProcessCheckIn(
     const char* bootstrap_service_name, mach_msg_timeout_t timeout,
-    std::vector<mozilla::UniqueMachSendRight>& send_rights,
-    std::vector<mozilla::UniqueMachReceiveRight>& receive_rights);
+    std::vector<mozilla::UniqueMachSendRight>& send_rights);
 
 
 
@@ -55,8 +54,7 @@ using MachHandleProcessCheckInPromise =
 RefPtr<MachHandleProcessCheckInPromise> MachHandleProcessCheckIn(
     mozilla::UniqueMachReceiveRight endpoint, pid_t child_pid,
     mozilla::TimeDuration timeout,
-    std::vector<mozilla::UniqueMachSendRight> send_rights,
-    std::vector<mozilla::UniqueMachReceiveRight> receive_rights);
+    std::vector<mozilla::UniqueMachSendRight> send_rights);
 #endif
 
 #endif  

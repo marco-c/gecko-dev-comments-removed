@@ -16,8 +16,8 @@ pub enum IPCChannelError {
     Connector(#[from] IPCError),
     #[error("Could not create a listener: {0}")]
     Listener(#[from] IPCListenerError),
-    #[error("Could not create an IPC channel: {0}")]
-    Channel(#[from] PlatformError),
+    #[error("Could not create a socketpair: {0}")]
+    SocketPair(#[from] PlatformError),
 }
 
 
@@ -34,18 +34,8 @@ pub(crate) mod windows;
 
 
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
 pub use unix::{IPCChannel, IPCClientChannel};
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
 pub(crate) mod unix;
-
-
-
-
-
-#[cfg(target_os = "macos")]
-pub use mach::{IPCChannel, IPCClientChannel};
-
-#[cfg(target_os = "macos")]
-pub(crate) mod mach;

@@ -4,7 +4,7 @@
 
 use std::ffi::CStr;
 
-use crate::{IPCListenerError, Pid};
+use crate::{errors::IPCError, Pid};
 
 pub struct IPCListener {}
 
@@ -12,14 +12,14 @@ impl IPCListener {
     
     
     
-    pub fn new(_pid: Pid) -> Result<IPCListener, IPCListenerError> {
+    pub fn new(_pid: Pid) -> Result<IPCListener, IPCError> {
         Ok(IPCListener {})
     }
 
     
     
     
-    pub fn deserialize(_string: &CStr, _pid: Pid) -> Result<IPCListener, IPCListenerError> {
+    pub fn deserialize(_string: &CStr, _pid: Pid) -> Result<IPCListener, IPCError> {
         Ok(IPCListener {})
     }
 }

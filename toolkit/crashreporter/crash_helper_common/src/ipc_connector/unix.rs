@@ -7,11 +7,7 @@ use crate::platform::linux::{set_socket_cloexec, set_socket_default_flags};
 #[cfg(target_os = "macos")]
 use crate::platform::macos::{set_socket_cloexec, set_socket_default_flags};
 use crate::{
-    errors::IPCError,
-    ignore_eintr,
-    messages::{self, Message},
-    platform::PlatformError,
-    ProcessHandle, IO_TIMEOUT,
+    ignore_eintr, platform::PlatformError, IntoRawAncillaryData, ProcessHandle, IO_TIMEOUT,
 };
 
 use nix::{
@@ -23,18 +19,26 @@ use nix::{
 use std::{
     ffi::{CStr, CString},
     io::{IoSlice, IoSliceMut},
-    os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd},
+    os::fd::{AsFd, AsRawFd, FromRawFd, IntoRawFd, OwnedFd, RawFd},
     str::FromStr,
 };
 
+use crate::{
+    errors::IPCError,
+    messages::{self, Message},
+};
+
+pub type RawAncillaryData = RawFd;
 pub type AncillaryData = OwnedFd;
 
-pub const CONNECTOR_ANCILLARY_DATA_LEN: usize = 1;
-
-#[repr(C)]
-pub struct RawIPCConnector {
-    pub socket: RawFd,
+impl IntoRawAncillaryData for AncillaryData {
+    fn into_raw(self) -> RawAncillaryData {
+        self.into_raw_fd()
+    }
 }
+
+
+pub const INVALID_ANCILLARY_DATA: RawAncillaryData = -1;
 
 pub type IPCConnectorKey = RawFd;
 
@@ -60,10 +64,8 @@ impl IPCConnector {
         Ok(IPCConnector { socket })
     }
 
-    pub fn from_ancillary(
-        ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN],
-    ) -> Result<IPCConnector, IPCError> {
-        IPCConnector::from_fd(ancillary_data.into_iter().next().unwrap())
+    pub fn from_ancillary(socket: AncillaryData) -> Result<IPCConnector, IPCError> {
+        IPCConnector::from_fd(socket)
     }
 
     
@@ -72,11 +74,10 @@ impl IPCConnector {
     
     
     
-    
-    
-    
-    pub unsafe fn from_raw_connector(connector: RawIPCConnector) -> Result<IPCConnector, IPCError> {
-        IPCConnector::from_fd(OwnedFd::from_raw_fd(connector.socket))
+    pub unsafe fn from_raw_ancillary(
+        ancillary_data: RawAncillaryData,
+    ) -> Result<IPCConnector, IPCError> {
+        IPCConnector::from_fd(OwnedFd::from_raw_fd(ancillary_data))
     }
 
     pub fn set_process(&mut self, _process: ProcessHandle) {}
@@ -84,40 +85,29 @@ impl IPCConnector {
     
     
     
-    pub fn serialize(&self) -> Result<CString, IPCError> {
-        CString::new(self.as_raw().to_string())
-            .map_err(|e| IPCError::Serialize(PlatformError::InteriorNul(e)))
+    pub fn serialize(&self) -> CString {
+        CString::new(self.as_raw().to_string()).unwrap()
     }
 
     
     pub fn deserialize(string: &CStr) -> Result<IPCConnector, IPCError> {
-        let string = string
-            .to_str()
-            .map_err(|_e| IPCError::Deserialize(PlatformError::ParseFileDescriptor))?;
-        let fd = RawFd::from_str(string)
-            .map_err(|_e| IPCError::Deserialize(PlatformError::ParseFileDescriptor))?;
-
+        let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
+        let fd = RawFd::from_str(string).map_err(|_e| IPCError::ParseError)?;
         
         let socket = unsafe { OwnedFd::from_raw_fd(fd) };
         Ok(IPCConnector { socket })
     }
 
-    pub fn into_ancillary(self) -> [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN] {
-        [self.socket]
+    pub fn into_ancillary(self) -> AncillaryData {
+        self.socket
     }
 
-    pub fn into_raw_connector(self) -> RawIPCConnector {
-        RawIPCConnector {
-            socket: self.socket.into_raw_fd(),
-        }
+    pub fn into_raw_ancillary(self) -> RawAncillaryData {
+        self.socket.into_raw()
     }
 
     pub(crate) fn as_raw(&self) -> RawFd {
         self.socket.as_raw_fd()
-    }
-
-    pub fn as_raw_ref(&self) -> BorrowedFd<'_> {
-        self.socket.as_fd()
     }
 
     pub fn key(&self) -> IPCConnectorKey {
@@ -142,12 +132,14 @@ impl IPCConnector {
         T: Message,
     {
         let expected_payload_len = message.payload_size();
-        let expected_ancillary_len = message.ancillary_data_len();
-        self.send(&message.header(), vec![])
+        let expected_ancillary_data = message.has_ancillary_data();
+        self.send(&message.header(), None)
             .map_err(IPCError::TransmissionFailure)?;
         let (payload, ancillary_data) = message.into_payload();
-        assert!(payload.len() == expected_payload_len);
-        assert!(ancillary_data.len() == expected_ancillary_len);
+        assert!(
+            payload.len() == expected_payload_len
+        );
+        assert!(ancillary_data.is_some() == expected_ancillary_data);
         self.send(&payload, ancillary_data)
             .map_err(IPCError::TransmissionFailure)
     }
@@ -167,13 +159,13 @@ impl IPCConnector {
             return Err(IPCError::UnexpectedMessage(header.kind));
         }
 
-        let (data, ancillary_data) = self.recv(header.size)?;
-        T::decode(&data, ancillary_data).map_err(IPCError::from)
+        let (data, _) = self.recv(header.size)?;
+        T::decode(&data, None).map_err(IPCError::from)
     }
 
-    fn send_nonblock(&self, buff: &[u8], fds: &[AncillaryData]) -> Result<(), PlatformError> {
+    fn send_nonblock(&self, buff: &[u8], fd: &Option<AncillaryData>) -> Result<(), PlatformError> {
         let iov = [IoSlice::new(buff)];
-        let scm_fds: Vec<i32> = fds.iter().map(|fd| fd.as_raw_fd()).collect();
+        let scm_fds: Vec<i32> = fd.iter().map(|fd| fd.as_raw_fd()).collect();
         let scm = ControlMessage::ScmRights(&scm_fds);
 
         let res = ignore_eintr!(sendmsg::<()>(
@@ -199,14 +191,14 @@ impl IPCConnector {
         }
     }
 
-    fn send(&self, buff: &[u8], fds: Vec<AncillaryData>) -> Result<(), PlatformError> {
-        let res = self.send_nonblock(buff, &fds);
+    fn send(&self, buff: &[u8], fd: Option<AncillaryData>) -> Result<(), PlatformError> {
+        let res = self.send_nonblock(buff, &fd);
         match res {
             Err(PlatformError::SendFailure(Errno::EAGAIN)) => {
                 
                 
                 self.poll(PollFlags::POLLOUT)?;
-                self.send_nonblock(buff, &fds)
+                self.send_nonblock(buff, &fd)
             }
             _ => res,
         }
@@ -220,7 +212,7 @@ impl IPCConnector {
     fn recv_nonblock(
         &self,
         expected_size: usize,
-    ) -> Result<(Vec<u8>, Vec<AncillaryData>), PlatformError> {
+    ) -> Result<(Vec<u8>, Option<AncillaryData>), PlatformError> {
         let mut buff: Vec<u8> = vec![0; expected_size];
         let mut cmsg_buffer = cmsg_space!(RawFd);
         let mut iov = [IoSliceMut::new(&mut buff)];
@@ -251,15 +243,15 @@ impl IPCConnector {
             Ok(val) => val,
         };
 
-        let mut owned_fds = Vec::<OwnedFd>::with_capacity(1);
-        let cmsgs = res.cmsgs().map_err(PlatformError::ReceiveFailure)?;
-        for cmsg in cmsgs {
+        let fd = if let Some(cmsg) = res.cmsgs()?.next() {
             if let ControlMessageOwned::ScmRights(fds) = cmsg {
-                owned_fds.extend(fds.iter().map(|&fd| unsafe { OwnedFd::from_raw_fd(fd) }));
+                fds.first().map(|&fd| unsafe { OwnedFd::from_raw_fd(fd) })
             } else {
                 return Err(PlatformError::ReceiveMissingCredentials);
             }
-        }
+        } else {
+            None
+        };
 
         if res.bytes != expected_size {
             return Err(PlatformError::ReceiveTooShort {
@@ -268,10 +260,10 @@ impl IPCConnector {
             });
         }
 
-        Ok((buff, owned_fds))
+        Ok((buff, fd))
     }
 
-    pub fn recv(&self, expected_size: usize) -> Result<(Vec<u8>, Vec<AncillaryData>), IPCError> {
+    pub fn recv(&self, expected_size: usize) -> Result<(Vec<u8>, Option<AncillaryData>), IPCError> {
         let res = self.recv_nonblock(expected_size);
         match res {
             Err(PlatformError::ReceiveFailure(Errno::EAGAIN)) => {

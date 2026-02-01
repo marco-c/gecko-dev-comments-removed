@@ -39,6 +39,7 @@ impl IPCChannel {
 
     
     
+    
     pub fn deconstruct(self) -> (IPCListener, IPCConnector, IPCConnector) {
         (self.listener, self.server_endpoint, self.client_endpoint)
     }
@@ -95,6 +96,7 @@ impl IPCClientChannel {
         ))
     }
 
+    
     
     
     pub fn deconstruct(self) -> (IPCConnector, IPCConnector) {

@@ -6,6 +6,8 @@ use std::process;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::platform::linux::unix_socketpair;
+#[cfg(target_os = "macos")]
+use crate::platform::macos::unix_socketpair;
 use crate::{ipc_channel::IPCChannelError, IPCConnector, IPCListener, Pid};
 
 pub struct IPCChannel {
@@ -23,7 +25,7 @@ impl IPCChannel {
         let listener = IPCListener::new(process::id() as Pid)?;
 
         
-        let pair = unix_socketpair()?;
+        let pair = unix_socketpair().map_err(IPCChannelError::SocketPair)?;
         let client_endpoint = IPCConnector::from_fd(pair.0)?;
         let server_endpoint = IPCConnector::from_fd_inheritable(pair.1)?;
 
@@ -34,6 +36,7 @@ impl IPCChannel {
         })
     }
 
+    
     
     
     pub fn deconstruct(self) -> (IPCListener, IPCConnector, IPCConnector) {
@@ -50,7 +53,7 @@ impl IPCClientChannel {
     
     
     pub fn new() -> Result<IPCClientChannel, IPCChannelError> {
-        let pair = unix_socketpair()?;
+        let pair = unix_socketpair().map_err(IPCChannelError::SocketPair)?;
         let client_endpoint = IPCConnector::from_fd(pair.0)?;
         let server_endpoint = IPCConnector::from_fd(pair.1)?;
 
@@ -60,6 +63,7 @@ impl IPCClientChannel {
         })
     }
 
+    
     
     
     pub fn deconstruct(self) -> (IPCConnector, IPCConnector) {

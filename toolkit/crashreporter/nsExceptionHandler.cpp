@@ -17,7 +17,6 @@
 #include "nsNetUtil.h"
 #include "nsString.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/GeckoArgs.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
@@ -3329,80 +3328,21 @@ CrashPipeType GetChildNotificationPipe() {
 #endif
 }
 
-bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs) {
+UniqueFileHandle RegisterChildIPCChannel() {
   StaticMutexAutoLock lock(gCrashHelperClientMutex);
   if (gCrashHelperClient) {
-    RawIPCConnector connector = {};
-    if (!register_child_ipc_channel(gCrashHelperClient, &connector)) {
-      return false;
-    }
-
-#if defined(XP_DARWIN)
-    UniqueMachSendRight send_right{connector.send};
-    UniqueMachReceiveRight recv_right{connector.recv};
-
-    if (!send_right || !recv_right) {
-      return false;
-    }
-
-    geckoargs::sCrashHelperSend.Put(std::move(send_right), aArgs);
-    geckoargs::sCrashHelperRecv.Put(std::move(recv_right), aArgs);
-#else
-#  if defined(XP_WIN)
-    UniqueFileHandle endpoint{connector.handle};
-#  else
-    UniqueFileHandle endpoint{connector.socket};
-#  endif  
-
-    if (!endpoint) {
-      return false;
-    }
-
-    geckoargs::sCrashHelper.Put(std::move(endpoint), aArgs);
-#endif
-    return true;
+    RawAncillaryData ipc_endpoint =
+        register_child_ipc_channel(gCrashHelperClient);
+    return UniqueFileHandle{ipc_endpoint};
   }
 
-  return false;
+  return UniqueFileHandle();
 }
 
-bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
+bool SetRemoteExceptionHandler(CrashPipeType aCrashPipe,
+                               UniqueFileHandle aCrashHelperPipe) {
   MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
-  auto crash_pipe = geckoargs::sCrashReporter.Get(aArgc, aArgv);
-
-  if (crash_pipe.isNothing()) {
-    return false;
-  }
-
-#if defined(XP_DARWIN)
-  auto send_right = geckoargs::sCrashHelperSend.Get(aArgc, aArgv);
-  auto recv_right = geckoargs::sCrashHelperRecv.Get(aArgc, aArgv);
-
-  if (send_right.isNothing() || recv_right.isNothing()) {
-    return false;
-  }
-
-  struct RawIPCConnector raw_connector = {
-      .send = send_right->release(),
-      .recv = recv_right->release(),
-  };
-
-  crash_helper_rendezvous(raw_connector);
-#else
-  auto endpoint = geckoargs::sCrashHelper.Get(aArgc, aArgv);
-
-  if (endpoint.isNothing()) {
-    return false;
-  }
-
-#  if defined(XP_WIN)
-  RawIPCConnector raw_connector = {.handle = endpoint->release()};
-#  else
-  RawIPCConnector raw_connector = {.socket = endpoint->release()};
-#  endif  
-
-  crash_helper_rendezvous(raw_connector);
-#endif    
+  crash_helper_rendezvous(aCrashHelperPipe.release());
   RegisterRuntimeExceptionModule();
   InitializeAppNotes();
   RegisterAnnotations();
@@ -3423,7 +3363,7 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
       nullptr,  
       nullptr,  
       google_breakpad::ExceptionHandler::HANDLER_ALL, GetMinidumpType(),
-      (const wchar_t*)NS_ConvertUTF8toUTF16(*crash_pipe).BeginReading(),
+      (const wchar_t*)NS_ConvertUTF8toUTF16(aCrashPipe).BeginReading(),
       nullptr  
   );
   gExceptionHandler->set_handle_debug_exceptions(true);
@@ -3440,14 +3380,14 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
                                             nullptr,  
                                             nullptr,  
                                             true,     
-                                            crash_pipe->release());
+                                            aCrashPipe.release());
 #elif defined(XP_MACOSX)
   gExceptionHandler =
       new google_breakpad::ExceptionHandler("", ChildFilter,
                                             nullptr,  
                                             nullptr,  
                                             true,     
-                                            *crash_pipe);
+                                            aCrashPipe);
 #endif
 
   RecordMainThreadId();
@@ -3455,12 +3395,8 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
 
   
-  
-  MOZ_ASSERT(gExceptionHandler->IsOutOfProcess(),
-             "Should have been able to set remote exception handler");
-
   return gExceptionHandler->IsOutOfProcess();
-}  
+}
 
 bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
                           AnnotationTable& aAnnotations) {

@@ -3,14 +3,16 @@
 
 
 use anyhow::Result;
-use crash_helper_common::{IPCConnector, Pid, RawIPCConnector};
+use crash_helper_common::{IPCConnector, Pid, RawAncillaryData};
 
 use crate::CrashHelperClient;
 
 impl CrashHelperClient {
-    pub(crate) fn new(server_socket: RawIPCConnector) -> Result<CrashHelperClient> {
+    pub(crate) fn new(server_socket: RawAncillaryData) -> Result<CrashHelperClient> {
         
-        let connector = unsafe { IPCConnector::from_raw_connector(server_socket)? };
+        let connector = unsafe {
+          IPCConnector::from_raw_ancillary(server_socket)?
+        };
 
         Ok(CrashHelperClient {
             connector,
