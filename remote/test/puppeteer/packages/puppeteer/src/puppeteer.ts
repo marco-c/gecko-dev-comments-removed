@@ -4,11 +4,9 @@
 
 
 
-export type {Protocol} from 'puppeteer-core';
+export * from 'puppeteer-core';
 
-export * from 'puppeteer-core/internal/puppeteer-core.js';
-
-import * as PuppeteerCore from 'puppeteer-core/internal/puppeteer-core.js';
+import {PuppeteerNode} from 'puppeteer-core';
 
 import {getConfiguration} from './getConfiguration.js';
 
@@ -17,7 +15,8 @@ const configuration = getConfiguration();
 
 
 
-const puppeteer = new PuppeteerCore.PuppeteerNode({
+
+const puppeteer = new PuppeteerNode({
   isPuppeteerCore: false,
   configuration,
 });

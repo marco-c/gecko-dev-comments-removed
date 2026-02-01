@@ -1,11 +1,17 @@
+/**
+ * @license
+ * Copyright 2022 Google Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-
-
-
-
+/**
+ * This file needs to be kept CJS until Mocha starts accepting ESM
+ * for custom interfaces
+ */
 
 import Mocha from 'mocha';
-import commonInterface from 'mocha/lib/interfaces/common';
+// @ts-expect-error
+import commonInterface from 'mocha/lib/interfaces/common.js';
 import {
   setLogCapture,
   getCapturedLogs,
@@ -31,7 +37,7 @@ const deflakeTestPattern: string | undefined =
   process.env['PUPPETEER_DEFLAKE_TESTS'];
 
 function shouldSkipTest(test: Mocha.Test): boolean {
-  
+  // TODO: more efficient lookup.
   const definition = skippedTests.find(skippedTest => {
     return testIdMatchesExpectationPattern(test, skippedTest.testIdPattern);
   });
@@ -43,7 +49,7 @@ function shouldSkipTest(test: Mocha.Test): boolean {
 
 function shouldDeflakeTest(test: Mocha.Test): boolean {
   if (deflakeTestPattern) {
-    
+    // TODO: cache if we have seen it already
     return testIdMatchesExpectationPattern(test, deflakeTestPattern);
   }
   return false;
@@ -111,7 +117,7 @@ function customBDDInterface(suite: Mocha.Suite) {
         });
       };
 
-      
+      // @ts-expect-error override the method to support custom functionality
       context['describe'] = describe;
 
       function it(title: string, fn: Mocha.TestFunction, itOnly = false) {
@@ -121,7 +127,7 @@ function customBDDInterface(suite: Mocha.Suite) {
         test.parent = suite;
 
         const describeOnly = Boolean(
-          
+          // @ts-expect-error pokes at internal methods
           suite.parent?._onlySuites.find(child => {
             return child === suite;
           }),
@@ -160,7 +166,7 @@ function customBDDInterface(suite: Mocha.Suite) {
       };
 
       function wrapDeflake(
-        
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
         func: Function,
       ): (repeats: number, title: string, fn: Mocha.AsyncFunc) => void {
         return (repeats: number, title: string, fn: Mocha.AsyncFunc): void => {
@@ -178,7 +184,7 @@ function customBDDInterface(suite: Mocha.Suite) {
       it.deflake = wrapDeflake(it);
       it.deflakeOnly = wrapDeflake(it.only);
 
-      
+      // @ts-expect-error override the method to support custom functionality
       context.it = it;
     },
   );

@@ -15,7 +15,6 @@ import type {
   WaitTimeoutOptions,
 } from '../api/Page.js';
 import type {Accessibility} from '../cdp/Accessibility.js';
-import type {DeviceRequestPrompt} from '../cdp/DeviceRequestPrompt.js';
 import type {PuppeteerLifeCycleEvent} from '../cdp/LifecycleWatcher.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {getQueryHandlerAndSelector} from '../common/GetQueryHandler.js';
@@ -33,6 +32,7 @@ import {assert} from '../util/assert.js';
 import {throwIfDisposed} from '../util/decorators.js';
 
 import type {CDPSession} from './CDPSession.js';
+import type {DeviceRequestPrompt} from './DeviceRequestPrompt.js';
 import type {KeyboardTypeOptions} from './Input.js';
 import {
   FunctionLocator,
@@ -212,8 +212,6 @@ export namespace FrameEvent {
 export const throwIfDetached = throwIfDisposed<Frame>(frame => {
   return `Attempted to use detached Frame '${frame._id}'.`;
 });
-
-
 
 
 
@@ -524,13 +522,13 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
 
 
   @throwIfDetached
-  locator<Selector extends string, Ret>(
-    selectorOrFunc: Selector | (() => Awaitable<Ret>),
-  ): Locator<NodeFor<Selector>> | Locator<Ret> {
-    if (typeof selectorOrFunc === 'string') {
-      return NodeLocator.create(this, selectorOrFunc);
+  locator<Selector extends string, Ret, T extends Node>(
+    input: Selector | (() => Awaitable<Ret>),
+  ): Locator<NodeFor<Selector>> | Locator<Ret> | Locator<T> {
+    if (typeof input === 'string') {
+      return NodeLocator.create(this, input);
     } else {
-      return FunctionLocator.create(this, selectorOrFunc);
+      return FunctionLocator.create(this, input);
     }
   }
   
@@ -687,10 +685,8 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
   async $$eval<
     Selector extends string,
     Params extends unknown[],
-    Func extends EvaluateFuncWith<
-      Array<NodeFor<Selector>>,
-      Params
-    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>,
+    Func extends EvaluateFuncWith<Array<NodeFor<Selector>>, Params> =
+      EvaluateFuncWith<Array<NodeFor<Selector>>, Params>,
   >(
     selector: Selector,
     pageFunction: string | Func,
@@ -703,8 +699,6 @@ export abstract class Frame extends EventEmitter<FrameEvents> {
   }
 
   
-
-
 
 
 

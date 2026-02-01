@@ -17,6 +17,8 @@ declare global {
   }
 }
 
+
+
 export const ariaQuerySelector = (
   root: Node,
   selector: string,
@@ -24,6 +26,9 @@ export const ariaQuerySelector = (
   
   return (globalThis as unknown as Window).__ariaQuerySelector(root, selector);
 };
+
+
+
 export const ariaQuerySelectorAll = async function* (
   root: Node,
   selector: string,

@@ -29,34 +29,29 @@ export const createFunction = (
 
 export function stringifyFunction(fn: (...args: never) => unknown): string {
   let value = fn.toString();
-  try {
-    new Function(`(${value})`);
-  } catch (err) {
-    if (
-      (err as Error).message.includes(
-        `Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive`,
-      )
-    ) {
-      
-      
-      return value;
-    }
-    
-    
-    let prefix = 'function ';
-    if (value.startsWith('async ')) {
-      prefix = `async ${prefix}`;
-      value = value.substring('async '.length);
-    }
-    value = `${prefix}${value}`;
-    try {
-      new Function(`(${value})`);
-    } catch {
-      
-      throw new Error('Passed function cannot be serialized!');
-    }
+  if (
+    value.match(/^(async )*function(\(|\s)/) ||
+    value.match(/^(async )*function\s*\*\s*/)
+  ) {
+    return value;
   }
-  return value;
+  const isArrow =
+    value.startsWith('(') ||
+    value.match(/^async\s*\(/) ||
+    value.match(
+      /^(async)*\s*(?:[$_\p{ID_Start}])(?:[$\u200C\u200D\p{ID_Continue}])*\s*=>/u,
+    );
+  if (isArrow) {
+    return value;
+  }
+  
+  
+  let prefix = 'function ';
+  if (value.startsWith('async ')) {
+    prefix = `async ${prefix}`;
+    value = value.substring('async '.length);
+  }
+  return `${prefix}${value}`;
 }
 
 

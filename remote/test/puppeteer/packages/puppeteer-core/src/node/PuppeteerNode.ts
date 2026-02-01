@@ -57,8 +57,6 @@ import type {ChromeReleaseChannel, LaunchOptions} from './LaunchOptions.js';
 
 
 
-
-
 export class PuppeteerNode extends Puppeteer {
   #launcher?: BrowserLauncher;
   #lastLaunchedBrowser?: SupportedBrowser;

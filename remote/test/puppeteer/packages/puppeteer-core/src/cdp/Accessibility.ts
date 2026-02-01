@@ -8,6 +8,7 @@ import type {Protocol} from 'devtools-protocol';
 
 import type {ElementHandle} from '../api/ElementHandle.js';
 import type {Realm} from '../api/Realm.js';
+import {debugError} from '../common/util.js';
 
 
 
@@ -76,10 +77,22 @@ export interface SerializedAXNode {
 
   invalid?: string;
   orientation?: string;
+
+  
+
+
+  url?: string;
   
 
 
   children?: SerializedAXNode[];
+
+  
+
+
+
+
+  backendNodeId?: number;
 
   
 
@@ -226,8 +239,13 @@ export class Accessibility {
         if (!frame) {
           return;
         }
-        const iframeSnapshot = await frame.accessibility.snapshot(options);
-        root.iframeSnapshot = iframeSnapshot ?? undefined;
+        try {
+          const iframeSnapshot = await frame.accessibility.snapshot(options);
+          root.iframeSnapshot = iframeSnapshot ?? undefined;
+        } catch (error) {
+          
+          debugError(error);
+        }
       }
       for (const child of root.children) {
         await populateIframes(child);
@@ -259,9 +277,7 @@ export class Accessibility {
 
     const interestingNodes = new Set<AXNode>();
     this.collectInterestingNodes(interestingNodes, defaultRoot, false);
-    if (!interestingNodes.has(needle)) {
-      return null;
-    }
+
     return this.serializeTree(needle, interestingNodes)[0] ?? null;
   }
 
@@ -422,16 +438,14 @@ class AXNode {
         break;
     }
 
-    
     if (this.#hasFocusableChild()) {
       return false;
     }
-    if (this.#focusable && this.#name) {
-      return true;
-    }
+
     if (this.#role === 'heading' && this.#name) {
       return true;
     }
+
     return false;
   }
 
@@ -464,10 +478,30 @@ class AXNode {
     }
   }
 
+  public isLandmark(): boolean {
+    switch (this.#role) {
+      case 'banner':
+      case 'complementary':
+      case 'contentinfo':
+      case 'form':
+      case 'main':
+      case 'navigation':
+      case 'region':
+      case 'search':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   public isInteresting(insideControl: boolean): boolean {
     const role = this.#role;
     if (role === 'Ignored' || this.#hidden || this.#ignored) {
       return false;
+    }
+
+    if (this.isLandmark()) {
+      return true;
     }
 
     if (this.#focusable || this.#richlyEditable) {
@@ -508,10 +542,17 @@ class AXNode {
         if (!this.payload.backendDOMNodeId) {
           return null;
         }
-        return (await this.#realm.adoptBackendNode(
+        using handle = await this.#realm.adoptBackendNode(
           this.payload.backendDOMNodeId,
-        )) as ElementHandle<Element>;
+        );
+
+        
+        
+        return (await handle.evaluateHandle(node => {
+          return node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        })) as ElementHandle<Element>;
       },
+      backendNodeId: this.payload.backendDOMNodeId,
     };
 
     type UserStringProperty =
@@ -520,7 +561,8 @@ class AXNode {
       | 'description'
       | 'keyshortcuts'
       | 'roledescription'
-      | 'valuetext';
+      | 'valuetext'
+      | 'url';
 
     const userStringProperties: UserStringProperty[] = [
       'name',
@@ -529,6 +571,7 @@ class AXNode {
       'keyshortcuts',
       'roledescription',
       'valuetext',
+      'url',
     ];
     const getUserStringPropertyValue = (key: UserStringProperty): string => {
       return properties.get(key) as string;
@@ -575,7 +618,7 @@ class AXNode {
         continue;
       }
       const value = getBooleanPropertyValue(booleanProperty);
-      if (!value) {
+      if (value === undefined) {
         continue;
       }
       node[booleanProperty] = getBooleanPropertyValue(booleanProperty);

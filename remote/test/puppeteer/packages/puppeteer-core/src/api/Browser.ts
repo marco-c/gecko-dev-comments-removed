@@ -15,7 +15,11 @@ import {
   raceWith,
 } from '../../third_party/rxjs/rxjs.js';
 import type {ProtocolType} from '../common/ConnectOptions.js';
-import type {Cookie, CookieData} from '../common/Cookie.js';
+import type {
+  Cookie,
+  CookieData,
+  DeleteCookiesRequest,
+} from '../common/Cookie.js';
 import type {DownloadBehavior} from '../common/DownloadBehavior.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {
@@ -209,6 +213,103 @@ export interface DebugInfo {
 
 
 
+export type WindowState = 'normal' | 'minimized' | 'maximized' | 'fullscreen';
+
+
+
+
+export interface WindowBounds {
+  left?: number;
+  top?: number;
+  width?: number;
+  height?: number;
+  windowState?: WindowState;
+}
+
+
+
+
+export type WindowId = string;
+
+
+
+
+export type CreatePageOptions = (
+  | {
+      type?: 'tab';
+    }
+  | {
+      type: 'window';
+      windowBounds?: WindowBounds;
+    }
+) & {
+  
+
+
+
+
+  background?: boolean;
+};
+
+
+
+
+export interface ScreenOrientation {
+  angle: number;
+  type: string;
+}
+
+
+
+
+export interface ScreenInfo {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  availLeft: number;
+  availTop: number;
+  availWidth: number;
+  availHeight: number;
+  devicePixelRatio: number;
+  colorDepth: number;
+  orientation: ScreenOrientation;
+  isExtended: boolean;
+  isInternal: boolean;
+  isPrimary: boolean;
+  label: string;
+  id: string;
+}
+
+
+
+
+export interface WorkAreaInsets {
+  top?: number;
+  left?: number;
+  bottom?: number;
+  right?: number;
+}
+
+
+
+
+export interface AddScreenParams {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  workAreaInsets?: WorkAreaInsets;
+  devicePixelRatio?: number;
+  rotation?: number;
+  colorDepth?: number;
+  label?: string;
+  isInternal?: boolean;
+}
+
+
+
+
 
 
 
@@ -320,7 +421,20 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
-  abstract newPage(): Promise<Page>;
+  abstract newPage(options?: CreatePageOptions): Promise<Page>;
+
+  
+
+
+  abstract getWindowBounds(windowId: WindowId): Promise<WindowBounds>;
+
+  
+
+
+  abstract setWindowBounds(
+    windowId: WindowId,
+    windowBounds: WindowBounds,
+  ): Promise<void>;
 
   
 
@@ -379,10 +493,12 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
-  async pages(): Promise<Page[]> {
+
+
+  async pages(includeAll = false): Promise<Page[]> {
     const contextPages = await Promise.all(
       this.browserContexts().map(context => {
-        return context.pages();
+        return context.pages(includeAll);
       }),
     );
     
@@ -466,6 +582,22 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
 
+
+
+
+
+
+  async deleteMatchingCookies(
+    ...filters: DeleteCookiesRequest[]
+  ): Promise<void> {
+    return await this.defaultBrowserContext().deleteMatchingCookies(...filters);
+  }
+
+  
+
+
+
+
   abstract installExtension(path: string): Promise<string>;
 
   
@@ -474,6 +606,29 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
   abstract uninstallExtension(id: string): Promise<void>;
+
+  
+
+
+  abstract screens(): Promise<ScreenInfo[]>;
+
+  
+
+
+
+
+
+
+  abstract addScreen(params: AddScreenParams): Promise<ScreenInfo>;
+
+  
+
+
+
+
+
+
+  abstract removeScreen(screenId: string): Promise<void>;
 
   
 
@@ -521,4 +676,9 @@ export abstract class Browser extends EventEmitter<BrowserEvents> {
 
 
   abstract get debugInfo(): DebugInfo;
+
+  
+
+
+  abstract isNetworkEnabled(): boolean;
 }

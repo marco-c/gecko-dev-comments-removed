@@ -7,6 +7,9 @@
 import type {CustomQueryHandler} from '../common/CustomQueryHandler.js';
 import type {Awaitable, AwaitableIterable} from '../common/types.js';
 
+
+
+
 export interface CustomQuerySelector {
   querySelector(root: Node, selector: string): Awaitable<Node | null>;
   querySelectorAll(root: Node, selector: string): AwaitableIterable<Node>;
@@ -55,5 +58,8 @@ class CustomQuerySelectorRegistry {
     this.#selectors.clear();
   }
 }
+
+
+
 
 export const customQuerySelectors = new CustomQuerySelectorRegistry();

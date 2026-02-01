@@ -20,6 +20,9 @@ const puppeteer = require('puppeteer');
   await page.goto('https://developers.google.com/web/');
 
   
+  await page.keyboard.press('/');
+
+  
   await page.type('.devsite-search-field', 'Headless Chrome');
 
   

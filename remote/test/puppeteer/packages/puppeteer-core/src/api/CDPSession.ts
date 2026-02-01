@@ -41,8 +41,7 @@ export namespace CDPSessionEvent {
 
 
 export interface CDPSessionEvents
-  extends CDPEvents,
-    Record<EventType, unknown> {
+  extends CDPEvents, Record<EventType, unknown> {
   
   [CDPSessionEvent.Disconnected]: undefined;
   

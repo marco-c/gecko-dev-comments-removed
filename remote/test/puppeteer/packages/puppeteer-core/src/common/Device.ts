@@ -1748,6 +1748,4 @@ for (const device of knownDevices) {
 
 
 
-
-
 export const KnownDevices = Object.freeze(knownDevicesByName);

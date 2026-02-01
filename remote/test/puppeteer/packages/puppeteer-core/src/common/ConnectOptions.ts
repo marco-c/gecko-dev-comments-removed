@@ -4,7 +4,7 @@
 
 
 
-import type {Session} from 'chromium-bidi/lib/cjs/protocol/protocol.js';
+import type {Session} from 'webdriver-bidi-protocol';
 
 import type {
   IsPageTargetCallback,
@@ -41,6 +41,15 @@ export interface SupportedWebDriverCapabilities {
 
 
 
+export type ChromeReleaseChannel =
+  | 'chrome'
+  | 'chrome-beta'
+  | 'chrome-canary'
+  | 'chrome-dev';
+
+
+
+
 
 
 export interface ConnectOptions {
@@ -49,6 +58,26 @@ export interface ConnectOptions {
 
 
   acceptInsecureCerts?: boolean;
+  
+
+
+
+
+
+
+
+
+
+  channel?: ChromeReleaseChannel;
+  
+
+
+
+
+
+
+
+  networkEnabled?: boolean;
   
 
 
@@ -79,6 +108,14 @@ export interface ConnectOptions {
 
 
 
+  handleDevToolsAsPage?: boolean;
+
+  
+
+
+
+
+
 
 
 
@@ -95,6 +132,14 @@ export interface ConnectOptions {
   browserWSEndpoint?: string;
   browserURL?: string;
   transport?: ConnectionTransport;
+  
+
+
+
+
+
+  idGenerator?: () => number;
+
   
 
 

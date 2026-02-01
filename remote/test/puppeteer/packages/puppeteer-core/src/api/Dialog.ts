@@ -30,8 +30,6 @@ import {assert} from '../util/assert.js';
 
 
 
-
-
 export abstract class Dialog {
   #type: Protocol.Page.DialogType;
   #message: string;

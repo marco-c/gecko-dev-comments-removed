@@ -97,10 +97,18 @@ export function downloadFile(
         return;
       }
       const file = createWriteStream(destinationPath);
-      file.on('finish', () => {
+      file.on('close', () => {
+        
+        
+        
+        
         return resolve();
       });
       file.on('error', error => {
+        
+        
+        
+        
         return reject(error);
       });
       response.pipe(file);

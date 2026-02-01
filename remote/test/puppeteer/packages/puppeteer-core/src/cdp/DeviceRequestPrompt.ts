@@ -7,6 +7,8 @@
 import type Protocol from 'devtools-protocol';
 
 import type {CDPSession} from '../api/CDPSession.js';
+import {DeviceRequestPrompt} from '../api/DeviceRequestPrompt.js';
+import type {DeviceRequestPromptDevice} from '../api/DeviceRequestPrompt.js';
 import type {WaitTimeoutOptions} from '../api/Page.js';
 import type {TimeoutSettings} from '../common/TimeoutSettings.js';
 import {assert} from '../util/assert.js';
@@ -15,51 +17,7 @@ import {Deferred} from '../util/Deferred.js';
 
 
 
-
-
-export class DeviceRequestPromptDevice {
-  
-
-
-  id: string;
-
-  
-
-
-  name: string;
-
-  
-
-
-  constructor(id: string, name: string) {
-    this.id = id;
-    this.name = name;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class DeviceRequestPrompt {
+export class CdpDeviceRequestPrompt extends DeviceRequestPrompt {
   #client: CDPSession | null;
   #timeoutSettings: TimeoutSettings;
   #id: string;
@@ -70,19 +28,12 @@ export class DeviceRequestPrompt {
     promise: Deferred<DeviceRequestPromptDevice>;
   }>();
 
-  
-
-
-  devices: DeviceRequestPromptDevice[] = [];
-
-  
-
-
   constructor(
     client: CDPSession,
     timeoutSettings: TimeoutSettings,
     firstEvent: Protocol.DeviceAccess.DeviceRequestPromptedEvent,
   ) {
+    super();
     this.#client = client;
     this.#timeoutSettings = timeoutSettings;
     this.#id = firstEvent.id;
@@ -112,10 +63,7 @@ export class DeviceRequestPrompt {
         continue;
       }
 
-      const newDevice = new DeviceRequestPromptDevice(
-        rawDevice.id,
-        rawDevice.name,
-      );
+      const newDevice = {id: rawDevice.id, name: rawDevice.name};
       this.devices.push(newDevice);
 
       for (const waitForDevicePromise of this.#waitForDevicePromises) {
@@ -125,9 +73,6 @@ export class DeviceRequestPrompt {
       }
     }
   }
-
-  
-
 
   async waitForDevice(
     filter: (device: DeviceRequestPromptDevice) => boolean,
@@ -164,9 +109,6 @@ export class DeviceRequestPrompt {
     }
   }
 
-  
-
-
   async select(device: DeviceRequestPromptDevice): Promise<void> {
     assert(
       this.#client !== null,
@@ -187,9 +129,6 @@ export class DeviceRequestPrompt {
       deviceId: device.id,
     });
   }
-
-  
-
 
   async cancel(): Promise<void> {
     assert(
@@ -212,13 +151,10 @@ export class DeviceRequestPrompt {
 
 
 
-export class DeviceRequestPromptManager {
+export class CdpDeviceRequestPromptManager {
   #client: CDPSession | null;
   #timeoutSettings: TimeoutSettings;
   #deviceRequestPromptDeferreds = new Set<Deferred<DeviceRequestPrompt>>();
-
-  
-
 
   constructor(client: CDPSession, timeoutSettings: TimeoutSettings) {
     this.#client = client;
@@ -231,10 +167,6 @@ export class DeviceRequestPromptManager {
       this.#client = null;
     });
   }
-
-  
-
-
 
   async waitForDevicePrompt(
     options: WaitTimeoutOptions = {},
@@ -277,9 +209,6 @@ export class DeviceRequestPromptManager {
     }
   }
 
-  
-
-
   #onDeviceRequestPrompted(
     event: Protocol.DeviceAccess.DeviceRequestPromptedEvent,
   ) {
@@ -288,7 +217,7 @@ export class DeviceRequestPromptManager {
     }
 
     assert(this.#client !== null);
-    const devicePrompt = new DeviceRequestPrompt(
+    const devicePrompt = new CdpDeviceRequestPrompt(
       this.#client,
       this.#timeoutSettings,
       event,

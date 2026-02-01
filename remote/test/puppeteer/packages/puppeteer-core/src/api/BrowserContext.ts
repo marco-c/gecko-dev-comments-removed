@@ -10,7 +10,11 @@ import {
   merge,
   raceWith,
 } from '../../third_party/rxjs/rxjs.js';
-import type {Cookie, CookieData} from '../common/Cookie.js';
+import type {
+  Cookie,
+  CookieData,
+  DeleteCookiesRequest,
+} from '../common/Cookie.js';
 import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {
   debugError,
@@ -21,7 +25,12 @@ import {
 import {asyncDisposeSymbol, disposeSymbol} from '../util/disposable.js';
 import {Mutex} from '../util/Mutex.js';
 
-import type {Browser, Permission, WaitForTargetOptions} from './Browser.js';
+import type {
+  Browser,
+  CreatePageOptions,
+  Permission,
+  WaitForTargetOptions,
+} from './Browser.js';
 import type {Page} from './Page.js';
 import type {Target} from './Target.js';
 
@@ -180,7 +189,9 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
 
 
-  abstract pages(): Promise<Page[]>;
+
+
+  abstract pages(includeAll?: boolean): Promise<Page[]>;
 
   
 
@@ -226,7 +237,7 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
 
 
-  abstract newPage(): Promise<Page>;
+  abstract newPage(options?: CreatePageOptions): Promise<Page>;
 
   
 
@@ -258,6 +269,7 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
 
 
 
+
   async deleteCookie(...cookies: Cookie[]): Promise<void> {
     return await this.setCookie(
       ...cookies.map(cookie => {
@@ -267,6 +279,62 @@ export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> 
         };
       }),
     );
+  }
+
+  
+
+
+
+
+  async deleteMatchingCookies(
+    ...filters: DeleteCookiesRequest[]
+  ): Promise<void> {
+    const cookies = await this.cookies();
+    const cookiesToDelete = cookies.filter(cookie => {
+      return filters.some(filter => {
+        if (filter.name === cookie.name) {
+          if (filter.domain !== undefined && filter.domain === cookie.domain) {
+            return true;
+          }
+
+          if (filter.path !== undefined && filter.path === cookie.path) {
+            return true;
+          }
+          if (
+            filter.partitionKey !== undefined &&
+            cookie.partitionKey !== undefined
+          ) {
+            if (typeof cookie.partitionKey !== 'object') {
+              throw new Error('Unexpected string partition key');
+            }
+            if (typeof filter.partitionKey === 'string') {
+              if (filter.partitionKey === cookie.partitionKey?.sourceOrigin) {
+                return true;
+              }
+            } else {
+              if (
+                filter.partitionKey.sourceOrigin ===
+                cookie.partitionKey?.sourceOrigin
+              ) {
+                return true;
+              }
+            }
+          }
+          if (filter.url !== undefined) {
+            const url = new URL(filter.url);
+            if (
+              url.hostname === cookie.domain &&
+              url.pathname === cookie.path
+            ) {
+              return true;
+            }
+          }
+          return true;
+        }
+        return false;
+      });
+    });
+    await this.deleteCookie(...cookiesToDelete);
   }
 
   

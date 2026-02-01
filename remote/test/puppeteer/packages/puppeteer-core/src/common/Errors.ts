@@ -89,3 +89,10 @@ export class UnsupportedOperation extends PuppeteerError {}
 
 
 export class TargetCloseError extends ProtocolError {}
+
+
+
+
+
+
+export class ConnectionClosedError extends ProtocolError {}

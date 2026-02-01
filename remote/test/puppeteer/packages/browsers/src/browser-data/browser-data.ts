@@ -221,6 +221,8 @@ export async function createProfile(
 
 
 
+
+
 export function resolveSystemExecutablePath(
   browser: Browser,
   platform: BrowserPlatform,
@@ -235,7 +237,55 @@ export function resolveSystemExecutablePath(
         `System browser detection is not supported for ${browser} yet.`,
       );
     case Browser.CHROME:
-      return chrome.resolveSystemExecutablePath(platform, channel);
+      return chrome.resolveSystemExecutablePaths(platform, channel)[0];
+  }
+}
+
+
+
+
+
+
+
+export function resolveDefaultUserDataDir(
+  browser: Browser,
+  platform: BrowserPlatform,
+  channel: ChromeReleaseChannel,
+): string {
+  switch (browser) {
+    case Browser.CHROMEDRIVER:
+    case Browser.CHROMEHEADLESSSHELL:
+    case Browser.FIREFOX:
+    case Browser.CHROMIUM:
+      throw new Error(
+        `Default user dir detection is not supported for ${browser} yet.`,
+      );
+    case Browser.CHROME:
+      return chrome.resolveDefaultUserDataDir(platform, channel);
+  }
+}
+
+
+
+
+
+
+
+export function resolveSystemExecutablePaths(
+  browser: Browser,
+  platform: BrowserPlatform,
+  channel: ChromeReleaseChannel,
+): [string, ...string[]] {
+  switch (browser) {
+    case Browser.CHROMEDRIVER:
+    case Browser.CHROMEHEADLESSSHELL:
+    case Browser.FIREFOX:
+    case Browser.CHROMIUM:
+      throw new Error(
+        `System browser detection is not supported for ${browser} yet.`,
+      );
+    case Browser.CHROME:
+      return chrome.resolveSystemExecutablePaths(platform, channel);
   }
 }
 

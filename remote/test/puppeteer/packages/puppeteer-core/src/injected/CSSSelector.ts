@@ -4,6 +4,9 @@
 
 
 
+
+
+
 export const cssQuerySelector = (
   root: Node,
   selector: string,
@@ -11,6 +14,9 @@ export const cssQuerySelector = (
   
   return root.querySelector(selector);
 };
+
+
+
 export const cssQuerySelectorAll = function (
   root: Node,
   selector: string,

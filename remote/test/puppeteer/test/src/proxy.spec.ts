@@ -47,7 +47,7 @@ describe('request proxy', () => {
   const defaultArgs = [
     
     
-    '--disable-features=NetworkTimeServiceQuerying',
+    '--disable-features=NetworkTimeServiceQuerying,AimEnabled',
   ];
 
   beforeEach(() => {

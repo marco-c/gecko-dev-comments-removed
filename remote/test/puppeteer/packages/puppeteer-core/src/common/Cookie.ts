@@ -60,18 +60,6 @@ export interface Cookie extends CookieData {
   
 
 
-  name: string;
-  
-
-
-  value: string;
-  
-
-
-  domain: string;
-  
-
-
   path: string;
   
 
@@ -85,38 +73,11 @@ export interface Cookie extends CookieData {
   
 
 
-  httpOnly: boolean;
-  
-
-
   secure: boolean;
   
 
 
   session: boolean;
-  
-
-
-  sameSite?: CookieSameSite;
-  
-
-
-  priority?: CookiePriority;
-  
-
-
-  sameParty?: boolean;
-  
-
-
-  sourceScheme?: CookieSourceScheme;
-  
-
-
-
-
-
-  partitionKey?: CookiePartitionKey | string;
   
 
 

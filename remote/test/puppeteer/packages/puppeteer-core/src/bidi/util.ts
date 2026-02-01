@@ -4,7 +4,7 @@
 
 
 
-import type * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
+import type * as Bidi from 'webdriver-bidi-protocol';
 
 import {ProtocolError, TimeoutError} from '../common/Errors.js';
 import {PuppeteerURL} from '../common/util.js';
@@ -17,6 +17,14 @@ import {BidiDeserializer} from './Deserializer.js';
 export function createEvaluationError(
   details: Bidi.Script.ExceptionDetails,
 ): unknown {
+  if (details.exception.type === 'object' && !('value' in details.exception)) {
+    
+    
+    
+    
+    return new Error(details.text);
+  }
+
   if (details.exception.type !== 'error') {
     return BidiDeserializer.deserialize(details.exception);
   }
