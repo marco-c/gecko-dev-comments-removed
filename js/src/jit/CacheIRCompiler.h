@@ -325,8 +325,6 @@ class MOZ_RAII CacheRegisterAllocator {
   
   LiveGeneralRegisterSet currentOpRegs_;
 
-  const AllocatableGeneralRegisterSet allocatableRegs_;
-
   
   AllocatableGeneralRegisterSet availableRegs_;
 
@@ -378,8 +376,7 @@ class MOZ_RAII CacheRegisterAllocator {
   friend class AutoScratchRegisterExcluding;
 
   explicit CacheRegisterAllocator(const CacheIRWriter& writer)
-      : allocatableRegs_(GeneralRegisterSet::All()),
-        stackPushed_(0),
+      : stackPushed_(0),
 #ifdef DEBUG
         addedFailurePath_(false),
 #endif
@@ -467,8 +464,6 @@ class MOZ_RAII CacheRegisterAllocator {
 
   uint32_t stackPushed() const { return stackPushed_; }
   void setStackPushed(uint32_t pushed) { stackPushed_ = pushed; }
-
-  bool isAllocatable(Register reg) const { return allocatableRegs_.has(reg); }
 
   
   Register allocateRegister(MacroAssembler& masm);
