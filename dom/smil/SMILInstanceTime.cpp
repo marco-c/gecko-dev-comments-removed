@@ -20,7 +20,6 @@ SMILInstanceTime::SMILInstanceTime(const SMILTimeValue& aTime,
                                    SMILTimeValueSpec* aCreator,
                                    SMILInterval* aBaseInterval)
     : mTime(aTime),
-      mFlags(0),
       mVisited(false),
       mFixedEndpointRefCnt(0),
       mSerial(0),
@@ -29,20 +28,20 @@ SMILInstanceTime::SMILInstanceTime(const SMILTimeValue& aTime,
                               
 {
   switch (aSource) {
-    case SOURCE_NONE:
+    case SMILInstanceTimeSource::None:
       
       break;
 
-    case SOURCE_DOM:
-      mFlags = kDynamic | kFromDOM;
+    case SMILInstanceTimeSource::DOM:
+      mFlags = Flags(Flag::Dynamic, Flag::FromDOM);
       break;
 
-    case SOURCE_SYNCBASE:
-      mFlags = kMayUpdate;
+    case SMILInstanceTimeSource::Syncbase:
+      mFlags = Flag::MayUpdate;
       break;
 
-    case SOURCE_EVENT:
-      mFlags = kDynamic;
+    case SMILInstanceTimeSource::Event:
+      mFlags = Flag::Dynamic;
       break;
   }
 
@@ -101,7 +100,7 @@ void SMILInstanceTime::HandleDeletedInterval() {
   MOZ_ASSERT(mCreator, "Base interval is set but creator is not");
 
   mBaseInterval = nullptr;
-  mFlags &= ~kMayUpdate;  
+  mFlags -= Flag::MayUpdate;  
 
   RefPtr<SMILInstanceTime> deathGrip(this);
   mCreator->HandleDeletedInstanceTime(*this);
@@ -114,30 +113,30 @@ void SMILInstanceTime::HandleFilteredInterval() {
              "time");
 
   mBaseInterval = nullptr;
-  mFlags &= ~kMayUpdate;  
+  mFlags -= Flag::MayUpdate;  
   mCreator = nullptr;
 }
 
 bool SMILInstanceTime::ShouldPreserve() const {
-  return mFixedEndpointRefCnt > 0 || (mFlags & kWasDynamicEndpoint);
+  return mFixedEndpointRefCnt > 0 || mFlags.contains(Flag::WasDynamicEndpoint);
 }
 
 void SMILInstanceTime::UnmarkShouldPreserve() {
-  mFlags &= ~kWasDynamicEndpoint;
+  mFlags -= Flag::WasDynamicEndpoint;
 }
 
 void SMILInstanceTime::AddRefFixedEndpoint() {
   MOZ_ASSERT(mFixedEndpointRefCnt < UINT16_MAX,
              "Fixed endpoint reference count upper limit reached");
   ++mFixedEndpointRefCnt;
-  mFlags &= ~kMayUpdate;  
+  mFlags -= Flag::MayUpdate;  
 }
 
 void SMILInstanceTime::ReleaseFixedEndpoint() {
   MOZ_ASSERT(mFixedEndpointRefCnt > 0, "Duplicate release");
   --mFixedEndpointRefCnt;
   if (mFixedEndpointRefCnt == 0 && IsDynamic()) {
-    mFlags |= kWasDynamicEndpoint;
+    mFlags += Flag::WasDynamicEndpoint;
   }
 }
 

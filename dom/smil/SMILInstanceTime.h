@@ -7,6 +7,7 @@
 #ifndef DOM_SMIL_SMILINSTANCETIME_H_
 #define DOM_SMIL_SMILINSTANCETIME_H_
 
+#include "mozilla/EnumSet.h"
 #include "mozilla/SMILTimeValue.h"
 #include "nsISupportsImpl.h"
 
@@ -40,21 +41,22 @@ class SMILInstanceTime final {
   
   
   
-  enum SMILInstanceTimeSource {
+  enum class SMILInstanceTimeSource {
     
-    SOURCE_NONE,
+    None,
     
-    SOURCE_DOM,
+    DOM,
     
-    SOURCE_SYNCBASE,
+    Syncbase,
     
-    SOURCE_EVENT
+    Event
   };
 
-  explicit SMILInstanceTime(const SMILTimeValue& aTime,
-                            SMILInstanceTimeSource aSource = SOURCE_NONE,
-                            SMILTimeValueSpec* aCreator = nullptr,
-                            SMILInterval* aBaseInterval = nullptr);
+  explicit SMILInstanceTime(
+      const SMILTimeValue& aTime,
+      SMILInstanceTimeSource aSource = SMILInstanceTimeSource::None,
+      SMILTimeValueSpec* aCreator = nullptr,
+      SMILInterval* aBaseInterval = nullptr);
 
   void Unlink();
   void HandleChangedInterval(const SMILTimeContainer* aSrcContainer,
@@ -65,9 +67,9 @@ class SMILInstanceTime final {
   const SMILTimeValue& Time() const { return mTime; }
   const SMILTimeValueSpec* GetCreator() const { return mCreator; }
 
-  bool IsDynamic() const { return !!(mFlags & kDynamic); }
-  bool IsFixedTime() const { return !(mFlags & kMayUpdate); }
-  bool FromDOM() const { return !!(mFlags & kFromDOM); }
+  bool IsDynamic() const { return mFlags.contains(Flag::Dynamic); }
+  bool IsFixedTime() const { return !mFlags.contains(Flag::MayUpdate); }
+  bool FromDOM() const { return mFlags.contains(Flag::FromDOM); }
 
   bool ShouldPreserve() const;
   void UnmarkShouldPreserve();
@@ -106,33 +108,34 @@ class SMILInstanceTime final {
   SMILTimeValue mTime;
 
   
-  enum {
+  enum class Flag : uint8_t {
     
     
     
     
     
-    kDynamic = 1,
+    Dynamic,
 
     
     
     
     
-    kMayUpdate = 2,
+    MayUpdate,
 
     
     
     
     
     
-    kFromDOM = 4,
+    FromDOM,
 
     
     
     
-    kWasDynamicEndpoint = 8
+    WasDynamicEndpoint
   };
-  uint8_t mFlags;         
+  using Flags = EnumSet<Flag>;
+  Flags mFlags;
   mutable bool mVisited;  
 
   
