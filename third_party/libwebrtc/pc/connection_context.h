@@ -12,6 +12,7 @@
 #define PC_CONNECTION_CONTEXT_H_
 
 #include <memory>
+#include <utility>
 
 #include "api/environment/environment.h"
 #include "api/packet_socket_factory.h"
@@ -46,6 +47,29 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
       const Environment& env,
       PeerConnectionFactoryDependencies* dependencies);
 
+  class MediaEngineReference {
+   public:
+    explicit MediaEngineReference(scoped_refptr<ConnectionContext> c)
+        : c_(std::move(c)) {
+      if (c_->media_engine()) {
+        c_->AddRefMediaEngine();
+      }
+    }
+    ~MediaEngineReference() {
+      if (c_->media_engine()) {
+        c_->ReleaseMediaEngine();
+      }
+    }
+
+    
+    
+    
+    MediaEngineInterface* media_engine() const;
+
+   private:
+    const scoped_refptr<ConnectionContext> c_;
+  };
+
   
   ConnectionContext(const ConnectionContext&) = delete;
   ConnectionContext& operator=(const ConnectionContext&) = delete;
@@ -56,8 +80,11 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   }
 
   
-  
-  MediaEngineInterface* media_engine() const { return media_engine_.get(); }
+  const MediaEngineInterface* media_engine() const {
+    return media_engine_.get();
+  }
+
+  bool is_configured_for_media() const { return is_configured_for_media_; }
 
   Thread* signaling_thread() { return signaling_thread_; }
   const Thread* signaling_thread() const { return signaling_thread_; }
@@ -89,6 +116,8 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   void set_use_rtx(bool use_rtx) { use_rtx_ = use_rtx; }
 
+ protected:
+  friend class MediaEngineReference;
   
   
   void AddRefMediaEngine();
@@ -97,7 +126,10 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   void ReleaseMediaEngine();
 
- protected:
+  
+  
+  MediaEngineInterface* media_engine_w();
+
   ConnectionContext(const Environment& env,
                     PeerConnectionFactoryDependencies* dependencies);
 
@@ -108,6 +140,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   
   bool wraps_current_thread_;
+  const bool is_configured_for_media_;
   std::unique_ptr<SocketFactory> owned_socket_factory_;
   std::unique_ptr<Thread> owned_network_thread_
       RTC_GUARDED_BY(signaling_thread_);

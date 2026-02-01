@@ -126,7 +126,7 @@ RtpTransceiver::RtpTransceiver(const Environment& env,
       codec_lookup_helper_(codec_lookup_helper) {
   RTC_DCHECK(media_type == MediaType::AUDIO || media_type == MediaType::VIDEO);
   RTC_DCHECK(context_);
-  RTC_DCHECK(context_->media_engine());
+  RTC_DCHECK(context_->is_configured_for_media());
   RTC_DCHECK(codec_lookup_helper_);
 }
 
@@ -148,7 +148,7 @@ RtpTransceiver::RtpTransceiver(
           std::move(header_extensions_to_negotiate)),
       on_negotiation_needed_(std::move(on_negotiation_needed)) {
   RTC_DCHECK(context_);
-  RTC_DCHECK(context_->media_engine());
+  RTC_DCHECK(context_->is_configured_for_media());
   RTC_DCHECK(media_type_ == MediaType::AUDIO ||
              media_type_ == MediaType::VIDEO);
   RTC_DCHECK_EQ(sender->media_type(), receiver->media_type());
@@ -360,6 +360,7 @@ void RtpTransceiver::PushNewMediaChannel() {
     return;
   }
   context()->worker_thread()->BlockingCall([&]() {
+    RTC_DCHECK_RUN_ON(context()->worker_thread());
     
     auto* media_send_channel = channel_->media_send_channel();
     for (const auto& sender : senders_) {
@@ -378,6 +379,7 @@ void RtpTransceiver::DeleteChannel() {
   
   
   context()->worker_thread()->BlockingCall([&]() {
+    RTC_DCHECK_RUN_ON(context()->worker_thread());
     auto channel_to_delete = std::move(channel_);
     
     for (const auto& sender : senders_) {
@@ -389,6 +391,7 @@ void RtpTransceiver::DeleteChannel() {
     
     
     channel_to_delete.reset();
+    media_engine_ref_.reset();
   });
 }
 
@@ -473,6 +476,16 @@ MediaType RtpTransceiver::media_type() const {
 
 std::optional<std::string> RtpTransceiver::mid() const {
   return mid_;
+}
+
+
+MediaEngineInterface* RtpTransceiver::media_engine() {
+  if (!media_engine_ref_) {
+    media_engine_ref_ =
+        std::make_unique<ConnectionContext::MediaEngineReference>(
+            scoped_refptr<ConnectionContext>(context_));
+  }
+  return media_engine_ref_->media_engine();
 }
 
 void RtpTransceiver::OnFirstPacketReceived() {
