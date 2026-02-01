@@ -48,13 +48,7 @@ add_task(async function test_generateChatTitle_success() {
   try {
     
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "Weather Forecast Query",
-          },
-        },
-      ],
+      finalOutput: "Weather Forecast Query",
     };
 
     const fakeEngineInstance = {
@@ -138,13 +132,7 @@ add_task(async function test_generateChatTitle_no_tab_info() {
   const sb = sinon.createSandbox();
   try {
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "General Question",
-          },
-        },
-      ],
+      finalOutput: "General Question",
     };
 
     const fakeEngineInstance = {
@@ -183,13 +171,7 @@ add_task(async function test_generateChatTitle_empty_tab_fields() {
   const sb = sinon.createSandbox();
   try {
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "Untitled Chat",
-          },
-        },
-      ],
+      finalOutput: "Untitled Chat",
     };
 
     const fakeEngineInstance = {
@@ -273,13 +255,13 @@ add_task(async function test_generateChatTitle_malformed_response() {
     Assert.equal(
       title,
       "test message one two...",
-      "Should return first four words for missing choices"
+      "Should return first four words for missing finalOutput"
     );
 
     
     sb.restore();
     const sb2 = sinon.createSandbox();
-    const mockResponse2 = { choices: [] };
+    const mockResponse2 = { finalOutput: "" };
     fakeEngineInstance = {
       run: sb2.stub().resolves(mockResponse2),
     };
@@ -289,15 +271,13 @@ add_task(async function test_generateChatTitle_malformed_response() {
     Assert.equal(
       title,
       "another test message here...",
-      "Should return first four words for empty choices"
+      "Should return first four words for empty finalOutput"
     );
 
     
     sb2.restore();
     const sb3 = sinon.createSandbox();
-    const mockResponse3 = {
-      choices: [{ message: { content: null } }],
-    };
+    const mockResponse3 = { finalOutput: null };
     fakeEngineInstance = {
       run: sb3.stub().resolves(mockResponse3),
     };
@@ -307,7 +287,7 @@ add_task(async function test_generateChatTitle_malformed_response() {
     Assert.equal(
       title,
       "short test here...",
-      "Should return first four words for null content"
+      "Should return first four words for null finalOutput"
     );
 
     sb3.restore();
@@ -327,13 +307,7 @@ add_task(async function test_generateChatTitle_trim_whitespace() {
   const sb = sinon.createSandbox();
   try {
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "  Title With Spaces  \n\n",
-          },
-        },
-      ],
+      finalOutput: "  Title With Spaces  \n\n",
     };
 
     const fakeEngineInstance = {
