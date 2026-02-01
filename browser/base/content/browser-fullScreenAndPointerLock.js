@@ -290,44 +290,6 @@ var PointerLock = {
   },
 };
 
-
-
-
-
-function moveDocumentPiPForFullscreen(win) {
-  const { availLeft, availTop, availHeight, availWidth } = win.screen;
-
-  
-  
-  const maxWidth = availWidth * 0.5;
-  const maxHeight = availHeight * 0.5;
-
-  const newWidth = Math.min(win.outerWidth, maxWidth);
-  const newHeight = Math.min(win.outerHeight, maxHeight);
-
-  win.resizeTo(newWidth, newHeight);
-
-  
-  
-  const xMost = availLeft + availWidth;
-  const yMost = availTop + availHeight;
-
-  const offset = 100;
-  const newX = Math.max(availLeft, xMost - newWidth - offset);
-  const newY = Math.max(availTop, yMost - newHeight - offset);
-
-  win.moveTo(newX, newY);
-}
-
-function moveAllDocumentPiPForFullscreen() {
-  const windowList = Services.wm.getEnumerator("navigator:browser");
-  for (const win of windowList) {
-    if (win.browsingContext?.isDocumentPiP) {
-      moveDocumentPiPForFullscreen(win);
-    }
-  }
-}
-
 var FullScreen = {
   init() {
     XPCOMUtils.defineLazyPreferenceGetter(
@@ -422,8 +384,6 @@ var FullScreen = {
       if (!document.fullscreenElement) {
         this.hideNavToolbox(true);
       }
-
-      moveAllDocumentPiPForFullscreen();
     } else {
       this.showNavToolbox(false);
       
