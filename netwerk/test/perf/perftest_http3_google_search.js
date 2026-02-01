@@ -7,7 +7,6 @@
 
 
 
-
 async function test(context, commands) {
   let rootUrl = "https://www.google.com/";
   let waitTime = 1000;
