@@ -432,11 +432,12 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
   
   
   
-  if (proto && !JSObject::setFlag(cx, proto, ObjectFlag::IsUsedAsPrototype)) {
+  if (proto && !JSObject::setIsUsedAsPrototype(cx, proto)) {
     return false;
   }
 
-  if (JS::Prefs::objectfuse_for_js_builtin_ctors_protos()) {
+  if (ShouldUseObjectFuses() &&
+      JS::Prefs::objectfuse_for_js_builtin_ctors_protos()) {
     if (proto &&
         !NativeObject::setHasObjectFuse(cx, proto.as<NativeObject>())) {
       return false;
