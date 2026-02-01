@@ -80,7 +80,7 @@ export interface StaticEmbeddingsOptions {
   
 
 
-  mockedValues?: {};
+  mockedValues?: Record<string, Iterable<number>>;
 }
 
 
