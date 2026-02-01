@@ -459,6 +459,11 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
   }
 
   if (canUseCache) {
+    glean::geolocation::geolocation_cache_hit
+        .EnumGet(
+            glean::geolocation::GeolocationCacheHitLabel::eNsgeolocationrequest)
+        .Add();
+
     
     
     
@@ -468,7 +473,6 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     if (!mIsWatchPositionRequest) {
       return NS_OK;
     }
-
   } else {
     
     
