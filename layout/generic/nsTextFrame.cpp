@@ -776,6 +776,8 @@ static void InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame) {
       
       
       
+      
+      
       presShell->FrameNeedsReflow(f, IntrinsicDirty::None, NS_FRAME_IS_DIRTY);
     }
   }
@@ -8428,13 +8430,15 @@ void nsTextFrame::SelectionStateChanged(uint32_t aStart, uint32_t aEnd,
     
     
     if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations) {
-      bool didHaveOverflowingSelection =
+      const bool didHaveOverflowingSelection =
           f->HasAnyStateBits(TEXT_SELECTION_UNDERLINE_OVERFLOWED);
-      nsRect r(nsPoint(0, 0), GetSize());
+      nsRect r(nsPoint(), GetSize());
       if (didHaveOverflowingSelection ||
           (aSelected && f->CombineSelectionUnderlineRect(presContext, r))) {
-        presContext->PresShell()->FrameNeedsReflow(
-            f, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+        
+        
+        presContext->PresShell()->FrameNeedsReflow(f, IntrinsicDirty::None,
+                                                   NS_FRAME_IS_DIRTY);
       }
     }
     
