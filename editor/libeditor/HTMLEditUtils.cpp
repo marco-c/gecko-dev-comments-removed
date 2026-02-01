@@ -466,7 +466,8 @@ bool HTMLEditUtils::IsFlexOrGridItem(const nsIContent& aContent) {
 }
 
 bool HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
-    const nsIContent& aContent) {
+    const nsIContent& aContent,
+    const nsIContent* aAncestorLimiter ) {
   if (NS_WARN_IF(!aContent.IsInComposedDoc())) {
     return true;
   }
@@ -474,12 +475,14 @@ bool HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
        aContent.InclusiveFlatTreeAncestorsOfType<Element>()) {
     RefPtr<const ComputedStyle> elementStyle =
         nsComputedDOMStyle::GetComputedStyleNoFlush(element);
-    if (NS_WARN_IF(!elementStyle)) {
-      continue;
+    if (MOZ_LIKELY(elementStyle)) {
+      const nsStyleDisplay* styleDisplay = elementStyle->StyleDisplay();
+      if (MOZ_UNLIKELY(styleDisplay->mDisplay == StyleDisplay::None)) {
+        return true;
+      }
     }
-    const nsStyleDisplay* styleDisplay = elementStyle->StyleDisplay();
-    if (MOZ_UNLIKELY(styleDisplay->mDisplay == StyleDisplay::None)) {
-      return true;
+    if (element == aAncestorLimiter) {
+      break;
     }
   }
   return false;
@@ -1539,6 +1542,10 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
               : IsVisibleTextNode(*text)) {
         return false;
       }
+      continue;
+    }
+
+    if (childContent->IsComment()) {
       continue;
     }
 
@@ -2824,17 +2831,14 @@ nsIContent* HTMLEditUtils::GetContentToPreserveInlineStyles(
     if (nextVisibleThing.InVisibleOrCollapsibleCharacters()) {
       return nextVisibleThing.TextPtr();
     }
-    if (nextVisibleThing.IsContentEditableRoot()) {
+    if (nextVisibleThing.ContentIsEditableRoot()) {
       break;
     }
     
     
     
-    if (nextVisibleThing.ReachedSpecialContent() &&
-        nextVisibleThing.IsContentEditable() &&
-        nextVisibleThing.ContentIsElement() &&
-        !nextVisibleThing.ElementPtr()->HasChildNodes() &&
-        HTMLEditUtils::IsContainerNode(*nextVisibleThing.ElementPtr())) {
+    if (nextVisibleThing.ReachedEditableInvisibleEmptyInlineContainerElement(
+            &aEditingHost)) {
       point.SetAfter(nextVisibleThing.ElementPtr());
       continue;
     }

@@ -783,7 +783,8 @@ class HTMLEditUtils final {
   
 
 
-  static bool IsInclusiveAncestorCSSDisplayNone(const nsIContent& aContent);
+  [[nodiscard]] static bool IsInclusiveAncestorCSSDisplayNone(
+      const nsIContent& aContent, const nsIContent* aAncestorLimiter = nullptr);
 
   
 
