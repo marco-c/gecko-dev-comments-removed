@@ -2,6 +2,8 @@
 
 
 
+from unittest import mock
+
 import mozunit
 import pytest
 from tryselect.selectors.auto import AutoParser
@@ -26,6 +28,29 @@ def test_strategy_validation():
 
     with pytest.raises(SystemExit):
         parser.parse_args(["--strategy", "foo:bar"])
+
+
+def test_returns_zero_exit_code(run_mach):
+    """Test that mach try auto returns exit code 0 when selector returns None."""
+    
+    
+    assert run_mach(["try", "auto", "--no-push"]) == 0
+
+
+def test_returns_zero_with_job_id(run_mach):
+    """Test that mach try auto returns 0 even when push_to_lando_try returns a job_id."""
+    
+    with mock.patch("tryselect.push.push_to_lando_try") as mock_push:
+        mock_push.return_value = 42  
+        
+        assert run_mach(["try", "auto"]) == 0
+
+
+def test_returns_error_exit_code(run_mach):
+    """Test that mach try commands return exit code 1 for runtime validation errors."""
+    
+    
+    assert run_mach(["try", "again", "--index", "invalid_value"]) == 1
 
 
 if __name__ == "__main__":

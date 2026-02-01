@@ -171,7 +171,18 @@ def run(command_context, **kwargs):
     mod = importlib.import_module(
         f"tryselect.selectors.{command_context._mach_context.handler.subcommand}"
     )
-    return mod.run(**kwargs)
+    result = mod.run(**kwargs)
+
+    
+    
+    
+    
+    
+    
+    
+    if result == 1:
+        return 1
+    return 0
 
 
 @Command(
