@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+
+
+this.urlHelpers = class extends ExtensionAPI {
+  getAPI() {
+    return {
+      urlHelpers: {
+        getBaseDomainFromHost(host) {
+          return Services.eTLD.getBaseDomainFromHost(host);
+        },
+      },
+    };
+  }
+};
