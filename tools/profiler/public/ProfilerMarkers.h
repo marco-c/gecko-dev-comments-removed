@@ -604,11 +604,6 @@ class MOZ_RAII AutoProfilerTracing {
 
 #ifdef MOZ_GECKO_PROFILER
 
-
-
-void profiler_register_marker_schema(const nsCString& aSchemaName,
-                                     const nsString& aSchemaJSON);
-
 extern template mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     mozilla::ProfileChunkedBuffer&, const mozilla::ProfilerString8View&,
     const mozilla::MarkerCategory&, mozilla::MarkerOptions&&,
@@ -633,6 +628,17 @@ extern template mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
     const mozilla::ProfilerString8View&, const mozilla::MarkerCategory&,
     mozilla::MarkerOptions&&, mozilla::baseprofiler::markers::Tracing,
     const mozilla::ProfilerString8View&);
+
+
+
+void profiler_register_marker_schema(const nsCString& aSchemaName,
+                                     const nsString& aSchemaJSON);
+
+#else
+
+inline void profiler_register_marker_schema(const nsCString& aSchemaName,
+                                            const nsString& aSchemaJSON) {}
+
 #endif  
 
 namespace mozilla {
