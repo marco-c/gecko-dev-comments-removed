@@ -337,23 +337,43 @@
         let firstRowRect = rows[0].getBoundingClientRect();
         if (this._rlbPadding == undefined) {
           let style = window.getComputedStyle(this.richlistbox);
-          let paddingTop = parseInt(style.paddingTop) || 0;
-          let paddingBottom = parseInt(style.paddingBottom) || 0;
+          let paddingTop = parseFloat(style.paddingTop) || 0;
+          let paddingBottom = parseFloat(style.paddingBottom) || 0;
           this._rlbPadding = paddingTop + paddingBottom;
         }
 
+        let lastRowMarginBottom = 0;
+        let firstRowMarginTop = 0;
         
         
         
         for (let i = 0; i < numRows; i++) {
-          if (rows[i].classList.contains("forceHandleUnderflow")) {
-            rows[i].handleOverUnderflow();
+          let child = rows[i];
+          if (child.classList.contains("forceHandleUnderflow")) {
+            child.handleOverUnderflow();
+          }
+
+          const styles = getComputedStyle(child);
+
+          
+          if (i == 0) {
+            firstRowMarginTop = parseFloat(styles.marginTop);
+          }
+
+          
+          if (i == numRows - 1) {
+            lastRowMarginBottom = parseFloat(styles.marginBottom);
           }
         }
 
         let lastRowRect = rows[numRows - 1].getBoundingClientRect();
         
-        height = lastRowRect.bottom - firstRowRect.top + this._rlbPadding;
+        height =
+          lastRowRect.bottom -
+          firstRowRect.top +
+          this._rlbPadding +
+          firstRowMarginTop +
+          lastRowMarginBottom;
       }
 
       this._collapseUnusedItems();
