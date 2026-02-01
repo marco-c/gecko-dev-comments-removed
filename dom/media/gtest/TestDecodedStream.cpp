@@ -102,7 +102,9 @@ class TestDecodedStream : public Test {
             AbstractThread::GetCurrent(), mDummyTrack, mOutputTracks,
             &mCanonicalOutputPrincipal,  1.0,
              1.0,
-             true, mAudioQueue, mVideoQueue)) {
+             true,
+             false,
+             nullptr, mAudioQueue, mVideoQueue)) {
     MOZ_ASSERT(NS_IsMainThread());
   };
 
