@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_Snapshot_h
 #define jit_Snapshot_h
@@ -23,18 +23,18 @@ namespace jit {
 
 class RValueAllocation;
 
-
-
-
-
-
-
-
-
-
+// A Recover Value Allocation mirror what is known at compiled time as being the
+// MIRType and the LAllocation.  This is read out of the snapshot to recover the
+// value which would be there if this frame was an interpreter frame instead of
+// an Ion frame.
+//
+// It is used with the SnapshotIterator to recover a Value from the stack,
+// spilled registers or the list of constant of the compiled script.
+//
+// Unit tests are located in jsapi-tests/testJitRValueAlloc.cpp.
 class RValueAllocation {
  public:
-  
+  // See RValueAllocation encoding in Snapshots.cpp
   enum Mode {
     CONSTANT = 0x00,
     CST_UNDEFINED = 0x01,
@@ -52,27 +52,27 @@ class RValueAllocation {
     UNTYPED_STACK = 0x07,
 #endif
 
-    
+    // Recover instructions.
     RECOVER_INSTRUCTION = 0x0a,
     RI_WITH_DEFAULT_CST = 0x0b,
 
-    
+    // IntPtr value.
     INTPTR_CST = 0x0c,
     INTPTR_REG = 0x0d,
     INTPTR_STACK = 0x0e,
     INTPTR_INT32_STACK = 0x0f,
 
-    
+    // The JSValueType is packed in the Mode.
     TYPED_REG_MIN = 0x10,
     TYPED_REG_MAX = 0x1f,
     TYPED_REG = TYPED_REG_MIN,
 
-    
+    // The JSValueType is packed in the Mode.
     TYPED_STACK_MIN = 0x20,
     TYPED_STACK_MAX = 0x2f,
     TYPED_STACK = TYPED_STACK_MIN,
 
-    
+    // Int64 value.
     INT64_CST = 0x30,
 #if defined(JS_NUNBOX32)
     INT64_REG_REG = 0x31,
@@ -82,18 +82,17 @@ class RValueAllocation {
 #elif defined(JS_PUNBOX64)
     INT64_REG = 0x31,
     INT64_STACK = 0x32,
-    INT64_INT32_STACK = 0x33,
 #endif
 
-    
-    
-    
-    
+    // This mask can be used with any other valid mode. When this flag is
+    // set on the mode, this inform the snapshot iterator that even if the
+    // allocation is readable, the content of if might be incomplete unless
+    // all side-effects are executed.
     RECOVER_SIDE_EFFECT_MASK = 0x80,
 
-    
-    
-    
+    // This mask represents the set of bits which can be used to encode a
+    // value in a snapshot. The mode is used to determine how to interpret
+    // the union of values and how to pack the value in memory.
     MODE_BITS_MASK = 0x17f,
 
     INVALID = 0x100,
@@ -101,7 +100,7 @@ class RValueAllocation {
 
   enum { PACKED_TAG_MASK = 0x0f };
 
-  
+  // See Payload encoding in Snapshots.cpp
   enum PayloadType {
     PAYLOAD_NONE,
     PAYLOAD_INDEX,
@@ -120,7 +119,7 @@ class RValueAllocation {
  private:
   Mode mode_;
 
-  
+  // Additional information to recover the content of the allocation.
   struct FloatRegisterBits {
     uint32_t data;
     bool operator==(const FloatRegisterBits& other) const {
@@ -207,12 +206,12 @@ class RValueAllocation {
     arg2_.index = 0;
   }
 
-  
+  // DOUBLE_REG
   static RValueAllocation Double(FloatRegister reg) {
     return RValueAllocation(DOUBLE_REG, payloadOfFloatRegister(reg));
   }
 
-  
+  // FLOAT32_REG or FLOAT32_STACK
   static RValueAllocation Float32(FloatRegister reg) {
     return RValueAllocation(FLOAT32_REG, payloadOfFloatRegister(reg));
   }
@@ -220,7 +219,7 @@ class RValueAllocation {
     return RValueAllocation(FLOAT32_STACK, payloadOfStackOffset(offset));
   }
 
-  
+  // TYPED_REG or TYPED_STACK
   static RValueAllocation Typed(JSValueType type, Register reg) {
     MOZ_ASSERT(type != JSVAL_TYPE_DOUBLE && type != JSVAL_TYPE_MAGIC &&
                type != JSVAL_TYPE_NULL && type != JSVAL_TYPE_UNDEFINED);
@@ -234,7 +233,7 @@ class RValueAllocation {
                             payloadOfStackOffset(offset));
   }
 
-  
+  // UNTYPED
 #if defined(JS_NUNBOX32)
   static RValueAllocation Untyped(Register type, Register payload) {
     return RValueAllocation(UNTYPED_REG_REG, payloadOfRegister(type),
@@ -269,18 +268,18 @@ class RValueAllocation {
   }
 #endif
 
-  
+  // common constants.
   static RValueAllocation Undefined() {
     return RValueAllocation(CST_UNDEFINED);
   }
   static RValueAllocation Null() { return RValueAllocation(CST_NULL); }
 
-  
+  // CONSTANT's index
   static RValueAllocation ConstantPool(uint32_t index) {
     return RValueAllocation(CONSTANT, payloadOfIndex(index));
   }
 
-  
+  // Recover instruction's index
   static RValueAllocation RecoverInstruction(uint32_t index) {
     return RValueAllocation(RECOVER_INSTRUCTION, payloadOfIndex(index));
   }
@@ -290,7 +289,7 @@ class RValueAllocation {
                             payloadOfIndex(cstIndex));
   }
 
-  
+  // IntPtr
 #if !defined(JS_64BIT)
   static RValueAllocation IntPtrConstant(uint32_t index) {
     return RValueAllocation(INTPTR_CST, payloadOfIndex(index));
@@ -312,7 +311,7 @@ class RValueAllocation {
     return RValueAllocation(INTPTR_INT32_STACK, payloadOfStackOffset(offset));
   }
 
-  
+  // Int64
   static RValueAllocation Int64Constant(uint32_t lowIndex, uint32_t highIndex) {
     return RValueAllocation(INT64_CST, payloadOfIndex(lowIndex),
                             payloadOfIndex(highIndex));
@@ -348,11 +347,6 @@ class RValueAllocation {
 
   static RValueAllocation Int64(int32_t stackOffset) {
     return RValueAllocation(INT64_STACK, payloadOfStackOffset(stackOffset));
-  }
-
-  static RValueAllocation Int64Int32(int32_t stackOffset) {
-    return RValueAllocation(INT64_INT32_STACK,
-                            payloadOfStackOffset(stackOffset));
   }
 #endif
 
@@ -414,9 +408,9 @@ class RValueAllocation {
 #endif
 
   bool operator==(const RValueAllocation& rhs) const {
-    
-    
-    
+    // Note, this equality compares the verbatim content of the payload,
+    // which is made possible because we ensure that the payload content is
+    // fully initialized during the creation.
     static_assert(sizeof(int32_t) == sizeof(Payload),
                   "All Payload bits are compared.");
     return mode_ == rhs.mode_ && arg1_.index == rhs.arg1_.index &&
@@ -435,22 +429,22 @@ class RValueAllocation {
 
 class RecoverWriter;
 
-
-
+// Collects snapshots in a contiguous buffer, which is copied into IonScript
+// memory after code generation.
 class SnapshotWriter {
   CompactBufferWriter writer_;
   CompactBufferWriter allocWriter_;
 
-  
-  
+  // Map RValueAllocations to an offset in the allocWriter_ buffer.  This is
+  // useful as value allocations are repeated frequently.
   using RVA = RValueAllocation;
   using RValueAllocMap = HashMap<RVA, uint32_t, RVA::Hasher, SystemAllocPolicy>;
   RValueAllocMap allocMap_;
 
-  
+  // This is only used to assert sanity.
   uint32_t allocWritten_;
 
-  
+  // Used to report size of the snapshot in the spew messages.
   SnapshotOffset lastStart_;
 
  public:
@@ -503,18 +497,18 @@ class RecoverWriter {
 
 class RecoverReader;
 
-
-
-
-
+// A snapshot reader reads the entries out of the compressed snapshot buffer in
+// a script. These entries describe the equivalent interpreter frames at a given
+// position in JIT code. Each entry is an Ion's value allocations, used to
+// recover the corresponding Value from an Ion frame.
 class SnapshotReader {
   CompactBufferReader reader_;
   CompactBufferReader allocReader_;
   const uint8_t* allocTable_;
 
   BailoutKind bailoutKind_;
-  uint32_t allocRead_;           
-  RecoverOffset recoverOffset_;  
+  uint32_t allocRead_;           // Number of slots that have been read.
+  RecoverOffset recoverOffset_;  // Offset of the recover instructions.
 
 #ifdef TRACK_SNAPSHOTS
  private:
@@ -550,9 +544,9 @@ class SnapshotReader {
 class MOZ_NON_PARAM RInstructionStorage {
   static constexpr size_t Size = 4 * sizeof(uint32_t);
 
-  
-  
-  
+  // This presumes all RInstructionStorage are safely void*-alignable.
+  // RInstruction::readRecoverData asserts that no RInstruction subclass
+  // has stricter alignment requirements than RInstructionStorage.
   static constexpr size_t Alignment = alignof(void*);
 
   alignas(Alignment) unsigned char mem[Size];
@@ -563,9 +557,9 @@ class MOZ_NON_PARAM RInstructionStorage {
 
   RInstructionStorage() = default;
 
-  
-  
-  
+  // Making a copy of raw bytes holding a RInstruction instance would be a
+  // strict aliasing violation: see bug 1269319 for an instance of bytewise
+  // copying having caused crashes.
   RInstructionStorage(const RInstructionStorage&) = delete;
   RInstructionStorage& operator=(const RInstructionStorage& other) = delete;
 };
@@ -575,14 +569,14 @@ class RInstruction;
 class RecoverReader {
   CompactBufferReader reader_;
 
-  
+  // Number of encoded instructions.
   uint32_t numInstructions_;
 
-  
+  // Number of instruction read.
   uint32_t numInstructionsRead_;
 
-  
-  
+  // Space is reserved as part of the RecoverReader to avoid allocations of
+  // data which is needed to decode the current instruction.
   RInstructionStorage rawData_;
 
  private:
@@ -608,7 +602,7 @@ class RecoverReader {
   }
 };
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_Snapshot_h */
