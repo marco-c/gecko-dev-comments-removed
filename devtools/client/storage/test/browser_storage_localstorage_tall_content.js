@@ -16,28 +16,32 @@ add_task(async function test_storage_layout_tall_content() {
   await selectTreeItem(["localStorage", "https://test1.example.org"]);
 
   
-  testRowHeights(ROW_IDS, "initial layout");
+  await testRowHeights(ROW_IDS, "initial layout");
 
   
   clickColumnHeader("value");
-  testRowHeights(ROW_IDS, "after sorting by value");
+  await testRowHeights(ROW_IDS, "after sorting by value");
 
   
   await updateLocalStorageItem("newTall", "add", "🧵".repeat(300));
-  testRowHeights(["newTall"], "after adding new tall value");
+  await testRowHeights(["newTall"], "after adding new tall value");
 
   
   await updateLocalStorageItem("emoji", "edit", "🧵".repeat(400));
-  testRowHeights(["emoji"], "after editing 'emoji' to be taller");
+  await testRowHeights(["emoji"], "after editing 'emoji' to be taller");
 
   
   await updateLocalStorageItem("newTall", "remove");
-  testRowHeights(ROW_IDS, "after removing 'newTall'");
+  await testRowHeights(ROW_IDS, "after removing 'newTall'");
 });
 
-function testRowHeights(rowIds, description) {
+async function testRowHeights(rowIds, description) {
   info(`Checking row heights: ${description}`);
   for (const rowId of rowIds) {
+    await waitFor(
+      () => getRowItem(rowId),
+      `Wait for row ${rowId} to be available`
+    );
     checkRowHeights(rowId);
   }
 }
