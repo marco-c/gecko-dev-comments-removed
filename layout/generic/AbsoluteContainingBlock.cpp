@@ -1301,7 +1301,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     return SeekFallbackTo(Some(nextFallbackIndex));
   };
 
-  Maybe<nsRect> firstTryNormalRect;
+  Maybe<nsRect> firstTryRect;
   if (auto* lastSuccessfulPosition =
           aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback())) {
     if (SeekFallbackTo(Some(lastSuccessfulPosition->mIndex))) {
@@ -1661,26 +1661,14 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       r += cb.mFinalRect.TopLeft();
 
-      aKidFrame->SetRect(r);
-    }
-
-    aKidFrame->DidReflow(aPresContext, &kidReflowInput);
-
-    [&]() {
-      const auto rect = aKidFrame->GetRect();
-      if (!firstTryNormalRect) {
-        firstTryNormalRect = Some(rect);
-      }
-      if (!aAnchorPosResolutionCache) {
-        return;
-      }
-      auto* referenceData = aAnchorPosResolutionCache->mReferenceData;
-      if (referenceData->CompensatingForScrollAxes().isEmpty()) {
-        return;
-      }
-      
-      
-      const auto offset = [&]() {
+      const auto scrollShift = [&]() -> nsPoint {
+        if (!aAnchorPosResolutionCache) {
+          return {};
+        }
+        auto* referenceData = aAnchorPosResolutionCache->mReferenceData;
+        if (referenceData->CompensatingForScrollAxes().isEmpty()) {
+          return {};
+        }
         if (cb.mAnchorShiftInfo) {
           
           return cb.mAnchorShiftInfo->mOffset;
@@ -1689,19 +1677,19 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             referenceData->CompensatingForScrollAxes(), aKidFrame,
             aAnchorPosResolutionCache->mDefaultAnchorCache);
       }();
-      
-      
-      
-      aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(),
-                             rect.TopLeft());
-      if (offset != nsPoint{}) {
-        aKidFrame->SetPosition(rect.TopLeft() - offset);
-        
-        
-        aKidFrame->UpdateOverflow();
+      if (aAnchorPosResolutionCache) {
+        aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift =
+            scrollShift;
       }
-      aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift = offset;
-    }();
+      r -= scrollShift;
+      aKidFrame->SetRect(r);
+    }
+
+    aKidFrame->DidReflow(aPresContext, &kidReflowInput);
+
+    if (!firstTryRect) {
+      firstTryRect.emplace(aKidFrame->GetRect());
+    }
 
     const auto FitsInContainingBlock = [&]() {
       if (aAnchorPosResolutionCache) {
@@ -1761,8 +1749,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         
-        if (isOverflowingCB && firstTryNormalRect &&
-            firstTryNormalRect->Size() != aKidFrame->GetSize()) {
+        if (isOverflowingCB && firstTryRect &&
+            firstTryRect->Size() != aKidFrame->GetSize()) {
           SeekFallbackTo(firstTryIndex);
         } else {
           break;
@@ -1779,7 +1767,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   } while (true);
 
   [&]() {
-    if (!isOverflowingCB || !firstTryNormalRect) {
+    if (!isOverflowingCB || !firstTryRect) {
       return;
     }
     
@@ -1787,18 +1775,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     currentFallbackIndex = firstTryIndex;
     currentFallbackStyle = firstTryStyle;
-    const auto normalRect = *firstTryNormalRect;
-    const auto oldNormalPosition = aKidFrame->GetNormalPosition();
-    if (normalRect.TopLeft() != oldNormalPosition) {
-      aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(),
-                             normalRect.TopLeft());
-    }
-    auto rect = normalRect;
-    if (aAnchorPosResolutionCache) {
-      rect.MoveBy(
-          -aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift);
-    }
-
+    auto rect = *firstTryRect;
     if (isOverflowingCB &&
         !aKidFrame->StylePosition()->mPositionArea.IsNone()) {
       
@@ -1817,9 +1794,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         }
       }
     }
-
-    const auto oldPosition = aKidFrame->GetPosition();
-    if (rect.TopLeft() == oldPosition) {
+    if (rect.TopLeft() == aKidFrame->GetPosition()) {
       return;
     }
     aKidFrame->SetPosition(rect.TopLeft());

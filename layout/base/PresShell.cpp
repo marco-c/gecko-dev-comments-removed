@@ -11756,6 +11756,7 @@ void PresShell::UpdateAnchorPosForScroll(
   nsTArray<AffectedAnchorGroup> affectedAnchors =
       FindAnchorsAffectedByScroll(mAnchorPosAnchors, aScrollContainer);
   
+  OverflowChangedTracker oct;
 
   
   for (auto* positioned : mAnchorPosPositioned) {
@@ -11778,11 +11779,14 @@ void PresShell::UpdateAnchorPosForScroll(
       if (referenceData->mDefaultScrollShift == offset) {
         return false;
       }
-      positioned->SetPosition(positioned->GetNormalPosition() - offset);
-      
-      
+      const auto diff = offset - referenceData->mDefaultScrollShift;
+      positioned->SetPosition(positioned->GetPosition() - diff);
       positioned->UpdateOverflow();
-      positioned->GetParent()->UpdateOverflow();
+      
+      
+      oct.AddFrame(positioned->GetParent(),
+                   OverflowChangedTracker::CHILDREN_CHANGED);
+
       
       
       
@@ -11816,6 +11820,7 @@ void PresShell::UpdateAnchorPosForScroll(
       }
     }
   }
+  oct.Flush();
 }
 
 void PresShell::ActivenessMaybeChanged() {
