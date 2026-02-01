@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::values::generics::length::{GenericLengthPercentageOrAuto, LengthPercentageOrAuto};
 
 
@@ -30,7 +31,7 @@ pub enum GenericBackgroundSize<LengthPercent> {
         
         width: GenericLengthPercentageOrAuto<LengthPercent>,
         
-        #[css(skip_if = "GenericLengthPercentageOrAuto::is_auto")]
+        #[css(contextual_skip_if = "width_and_height_are_auto")]
         height: GenericLengthPercentageOrAuto<LengthPercent>,
     },
     
@@ -39,6 +40,11 @@ pub enum GenericBackgroundSize<LengthPercent> {
     
     #[animation(error)]
     Contain,
+}
+
+#[inline]
+fn width_and_height_are_auto<LengthPercent>(width: &GenericLengthPercentageOrAuto<LengthPercent>, height: &GenericLengthPercentageOrAuto<LengthPercent>) -> bool {
+    width.is_auto() && height.is_auto()
 }
 
 pub use self::GenericBackgroundSize as BackgroundSize;
