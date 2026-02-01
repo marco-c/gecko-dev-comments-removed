@@ -180,16 +180,18 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
   encoded->data()[header_offset] = info.payload_type;
 
   
-  auto rit = redundant_encodings_.rbegin();
-  for (auto next = std::next(rit); next != redundant_encodings_.rend();
-       rit++, next = std::next(rit)) {
-    rit->first = next->first;
-    rit->second.SetData(next->second);
-  }
-  it = redundant_encodings_.begin();
-  if (it != redundant_encodings_.end()) {
-    it->first = info;
-    it->second.SetData(primary_encoded_);
+  if (info.speech) {
+    auto rit = redundant_encodings_.rbegin();
+    for (auto next = std::next(rit); next != redundant_encodings_.rend();
+         rit++, next = std::next(rit)) {
+      rit->first = next->first;
+      rit->second.SetData(next->second);
+    }
+    it = redundant_encodings_.begin();
+    if (it != redundant_encodings_.end()) {
+      it->first = info;
+      it->second.SetData(primary_encoded_);
+    }
   }
 
   
