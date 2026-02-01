@@ -475,7 +475,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     scoped_refptr<AudioProcessing> audio_processing,
     std::unique_ptr<AudioFrameProcessor> audio_frame_processor)
     : env_(env),
-      minimized_remsampling_on_mobile_trial_enabled_(
+      minimized_resampling_on_mobile_trial_enabled_(
           env_.field_trials().IsEnabled(
               "WebRTC-Audio-MinimizeResamplingOnMobile")),
       payload_types_in_transport_trial_enabled_(
@@ -640,7 +640,7 @@ void WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   
   
   
-  if (minimized_remsampling_on_mobile_trial_enabled_) {
+  if (minimized_resampling_on_mobile_trial_enabled_) {
     options.auto_gain_control = false;
     RTC_LOG(LS_INFO) << "Disable AGC according to field trial.";
     if (!(options.noise_suppression.value_or(false) ||
