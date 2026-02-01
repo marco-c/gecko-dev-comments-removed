@@ -49,15 +49,15 @@ class SVGMotionSMILAnimationFunction final : public SMILAnimationFunction {
   void MpathChanged() { mIsPathStale = mHasChanged = true; }
 
  protected:
-  enum PathSourceType {
+  enum class PathSourceType {
     
     
-    ePathSourceType_None,    
-    ePathSourceType_ByAttr,  
-    ePathSourceType_ToAttr,  
-    ePathSourceType_ValuesAttr,
-    ePathSourceType_PathAttr,
-    ePathSourceType_Mpath
+    None,    
+    ByAttr,  
+    ToAttr,  
+    ValuesAttr,
+    PathAttr,
+    Mpath
   };
 
   SMILCalcMode GetCalcMode() const override;

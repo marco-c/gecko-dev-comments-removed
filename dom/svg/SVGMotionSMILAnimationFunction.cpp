@@ -25,9 +25,9 @@ using namespace mozilla::gfx;
 namespace mozilla {
 
 SVGMotionSMILAnimationFunction::SVGMotionSMILAnimationFunction()
-    : mRotateType(eRotateType_Explicit),
+    : mRotateType(RotateType::Explicit),
       mRotateAngle(0.0f),
-      mPathSourceType(ePathSourceType_None),
+      mPathSourceType(PathSourceType::None),
       mIsPathStale(true)  
 {}
 
@@ -35,13 +35,13 @@ void SVGMotionSMILAnimationFunction::MarkStaleIfAttributeAffectsPath(
     nsAtom* aAttribute) {
   bool isAffected;
   if (aAttribute == nsGkAtoms::path) {
-    isAffected = (mPathSourceType <= ePathSourceType_PathAttr);
+    isAffected = (mPathSourceType <= PathSourceType::PathAttr);
   } else if (aAttribute == nsGkAtoms::values) {
-    isAffected = (mPathSourceType <= ePathSourceType_ValuesAttr);
+    isAffected = (mPathSourceType <= PathSourceType::ValuesAttr);
   } else if (aAttribute == nsGkAtoms::from || aAttribute == nsGkAtoms::to) {
-    isAffected = (mPathSourceType <= ePathSourceType_ToAttr);
+    isAffected = (mPathSourceType <= PathSourceType::ToAttr);
   } else if (aAttribute == nsGkAtoms::by) {
-    isAffected = (mPathSourceType <= ePathSourceType_ByAttr);
+    isAffected = (mPathSourceType <= PathSourceType::ByAttr);
   } else {
     MOZ_ASSERT_UNREACHABLE(
         "Should only call this method for path-describing "
@@ -150,7 +150,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
   bool success = false;
   if (HasAttr(nsGkAtoms::values)) {
     
-    mPathSourceType = ePathSourceType_ValuesAttr;
+    mPathSourceType = PathSourceType::ValuesAttr;
     nsAttrValueOrString valuesVal(GetAttr(nsGkAtoms::values));
     SVGMotionSMILPathUtils::MotionValueParser parser(&pathGenerator,
                                                      &mPathVertices);
@@ -181,11 +181,11 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
     if (success) {
       double dist;
       if (HasAttr(nsGkAtoms::to)) {
-        mPathSourceType = ePathSourceType_ToAttr;
+        mPathSourceType = PathSourceType::ToAttr;
         nsAttrValueOrString toVal(GetAttr(nsGkAtoms::to));
         success = pathGenerator.LineToAbsolute(toVal.String(), dist);
       } else {  
-        mPathSourceType = ePathSourceType_ByAttr;
+        mPathSourceType = PathSourceType::ByAttr;
         nsAttrValueOrString byVal(GetAttr(nsGkAtoms::by));
         success = pathGenerator.LineToRelative(byVal.String(), dist);
       }
@@ -206,7 +206,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
 
 void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromMpathElem(
     SVGMPathElement* aMpathElem) {
-  mPathSourceType = ePathSourceType_Mpath;
+  mPathSourceType = PathSourceType::Mpath;
 
   
   SVGGeometryElement* shape = aMpathElem->GetReferencedPath();
@@ -229,7 +229,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromMpathElem(
 
 void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromPathAttr() {
   nsString pathSpec(nsAttrValueOrString(GetAttr(nsGkAtoms::path)).String());
-  mPathSourceType = ePathSourceType_PathAttr;
+  mPathSourceType = PathSourceType::PathAttr;
 
   
   SVGPathData path{NS_ConvertUTF16toUTF8(pathSpec)};
@@ -256,7 +256,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVertices(
   
   mPath = nullptr;
   mPathVertices.Clear();
-  mPathSourceType = ePathSourceType_None;
+  mPathSourceType = PathSourceType::None;
 
   
   
@@ -391,11 +391,11 @@ nsresult SVGMotionSMILAnimationFunction::SetRotate(const nsAString& aRotate,
 
   aResult.SetTo(aRotate);
   if (aRotate.EqualsLiteral("auto")) {
-    mRotateType = eRotateType_Auto;
+    mRotateType = RotateType::Auto;
   } else if (aRotate.EqualsLiteral("auto-reverse")) {
-    mRotateType = eRotateType_AutoReverse;
+    mRotateType = RotateType::AutoReverse;
   } else {
-    mRotateType = eRotateType_Explicit;
+    mRotateType = RotateType::Explicit;
 
     uint16_t angleUnit;
     if (!SVGAnimatedOrient::GetValueFromString(aRotate, mRotateAngle,
@@ -416,7 +416,7 @@ nsresult SVGMotionSMILAnimationFunction::SetRotate(const nsAString& aRotate,
 
 void SVGMotionSMILAnimationFunction::UnsetRotate() {
   mRotateAngle = 0.0f;  
-  mRotateType = eRotateType_Explicit;
+  mRotateType = RotateType::Explicit;
   mHasChanged = true;
 }
 

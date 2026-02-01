@@ -19,10 +19,10 @@ class SMILValue;
 
 
 
-enum RotateType {
-  eRotateType_Explicit,    
-  eRotateType_Auto,        
-  eRotateType_AutoReverse  
+enum class RotateType {
+  Explicit,    
+  Auto,        
+  AutoReverse  
 };
 
 

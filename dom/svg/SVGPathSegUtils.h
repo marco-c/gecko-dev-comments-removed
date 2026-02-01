@@ -40,10 +40,10 @@ using StylePathCommand =
 
 
 
-struct SVGPathTraversalState {
+struct MOZ_STACK_CLASS SVGPathTraversalState {
   using Point = gfx::Point;
 
-  enum TraversalMode { eUpdateAll, eUpdateOnlyStartAndCurrentPos };
+  enum class TraversalMode { UpdateAll, UpdateOnlyStartAndCurrentPos };
 
   SVGPathTraversalState()
       : start(0.0, 0.0),
@@ -51,9 +51,11 @@ struct SVGPathTraversalState {
         cp1(0.0, 0.0),
         cp2(0.0, 0.0),
         length(0.0),
-        mode(eUpdateAll) {}
+        mode(TraversalMode::UpdateAll) {}
 
-  bool ShouldUpdateLengthAndControlPoints() { return mode == eUpdateAll; }
+  bool ShouldUpdateLengthAndControlPoints() const {
+    return mode == TraversalMode::UpdateAll;
+  }
 
   Point start;  
 
