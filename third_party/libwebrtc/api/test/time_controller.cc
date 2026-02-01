@@ -9,10 +9,10 @@
 
 #include "api/test/time_controller.h"
 
-#include <functional>
 #include <memory>
 
 #include "absl/strings/string_view.h"
+#include "api/function_view.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/units/time_delta.h"
@@ -34,8 +34,15 @@ std::unique_ptr<TaskQueueFactory> TimeController::CreateTaskQueueFactory() {
   };
   return std::make_unique<FactoryWrapper>(GetTaskQueueFactory());
 }
-bool TimeController::Wait(const std::function<bool()>& condition,
+bool TimeController::Wait(FunctionView<bool()> condition,
                           TimeDelta max_duration) {
+  if (condition()) {
+    return true;
+  }
+  
+  
+  AdvanceTime(TimeDelta::Zero());
+
   
   
   

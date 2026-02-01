@@ -59,7 +59,16 @@ namespace webrtc {
                settings.clock);
   };
 
+  if (fn()) {
+    return true;
+  }
+
   Timestamp deadline = now() + settings.timeout;
+
+  
+  
+  sleep(TimeDelta::Zero());
+
   for (;;) {
     if (fn()) {
       return true;
