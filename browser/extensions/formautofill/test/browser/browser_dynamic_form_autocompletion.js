@@ -517,3 +517,37 @@ add_task(
     );
   }
 );
+
+
+
+
+add_task(async function address_fields_filled_in_during_form_replacement() {
+  
+  let expectedResult = structuredClone(expectedFilledAddressFields);
+  expectedResult.fields.splice(6, 1);
+
+  
+  for (let mode of ["direct", "timeout"]) {
+    const url = FORMS_REPLACING_FORM_ON_INPUT + "?mode=" + mode;
+    await BrowserTestUtils.withNewTab(url, async browser => {
+      await openPopupOn(browser, "#country-node-addition");
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+      await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
+
+      await waitForAutofill(
+        browser,
+        "#phone-node-addition",
+        TEST_ADDRESS_1.tel
+      );
+
+      info("Verifying that all fields are filled correctly.");
+      const actor =
+        browser.browsingContext.currentWindowGlobal.getActor("FormAutofill");
+      
+      
+      let section = Array.from(actor.sectionsByRootId.values()).flat()[1];
+
+      await verifyAutofillResult(browser, section, expectedResult);
+    });
+  }
+});
