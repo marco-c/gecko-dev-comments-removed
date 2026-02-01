@@ -13096,11 +13096,17 @@ bool BytecodeEmitter::emitTree(
 
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr: {
+      BinaryNode* spec = &pn->as<BinaryNode>().right()->as<BinaryNode>();
+
+      if (!emitTree(spec->left())) {
+        
+        return false;
+      }
+
       
-      
-      
-      
-      if (!emit1(JSOp::Undefined)) {
+      MOZ_ASSERT(spec->right()->isKind(ParseNodeKind::PosHolder));
+
+      if (!emit1(JSOp::DynamicImportSource)) {
         return false;
       }
       break;
