@@ -1013,6 +1013,10 @@ class MaybeRefType {
     return mozilla::Nothing();
   }
 
+  
+  
+  
+  
   static MaybeRefType leastUpperBound(MaybeRefType a, MaybeRefType b) {
     if (a.isSome() && b.isSome()) {
       return MaybeRefType(RefType::leastUpperBound(a.value(), b.value()));
@@ -1020,11 +1024,19 @@ class MaybeRefType {
     return MaybeRefType();
   }
 
+  
+  
+  
+  
+  
   static MaybeRefType greatestLowerBound(MaybeRefType a, MaybeRefType b) {
-    if (a.isSome() && b.isSome()) {
-      return MaybeRefType(RefType::greatestLowerBound(a.value(), b.value()));
+    if (!a.isSome()) {
+      return b;
     }
-    return MaybeRefType();
+    if (!b.isSome()) {
+      return a;
+    }
+    return MaybeRefType(RefType::greatestLowerBound(a.value(), b.value()));
   }
 };
 
