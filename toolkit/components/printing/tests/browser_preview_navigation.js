@@ -53,6 +53,17 @@ add_task(async function testToolbarVisibility() {
   await PrintHelper.withTestPage(async helper => {
     await helper.startPrint();
 
+    
+    
+    
+    
+    
+    
+    await TestUtils.waitForCondition(
+      () => getComputedStyle(helper.paginationElem).opacity === "0",
+      "Waiting for initial opacity transition to complete"
+    );
+
     let previewStack = document.querySelector(".previewStack");
 
     
