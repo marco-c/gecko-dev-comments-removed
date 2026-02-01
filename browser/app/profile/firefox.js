@@ -3586,6 +3586,8 @@ pref("browser.ipProtection.added", false);
 
 pref("browser.ipProtection.bandwidth.enabled", false);
 
+pref("browser.ipProtection.bandwidthThreshold", 0);
+
 
 pref("about.glean.redesign.enabled", false);
 
