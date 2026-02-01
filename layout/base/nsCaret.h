@@ -195,6 +195,7 @@ class nsCaret final : public nsISelectionListener {
   
   
   void UpdateCaretPositionFromSelectionIfNeeded();
+  void UpdateHiddenDuringSelection();
 
   mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
 
