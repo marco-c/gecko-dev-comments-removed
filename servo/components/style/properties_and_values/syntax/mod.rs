@@ -58,8 +58,19 @@ impl Descriptor {
     
     #[inline]
     pub fn from_css_parser<'i>(input: &mut CSSParser<'i, '_>) -> Result<Self, StyleParseError<'i>> {
-        
         let mut components = vec![];
+
+        if input.try_parse(|i| i.expect_delim('*')).is_ok() {
+            return Ok(Self::universal());
+        }
+
+        
+        if let Ok(syntax_string) = input.try_parse(|i| i.expect_string_cloned()) {
+            return Self::from_str(syntax_string.as_ref(),  true).or_else(
+                |err| Err(input.new_custom_error(StyleParseErrorKind::PropertySyntaxField(err))),
+            );
+        }
+
         loop {
             let name = Self::try_parse_component_name(input).map_err(|err| {
                 input.new_custom_error(StyleParseErrorKind::PropertySyntaxField(err))
