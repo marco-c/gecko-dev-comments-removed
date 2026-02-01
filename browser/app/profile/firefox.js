@@ -1864,6 +1864,18 @@ pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-c", false);
 pref("browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled", true);
 
 
+
+
+
+
+
+
+
+
+pref("browser.newtabpage.activity-stream.search.useHandoffComponent", true);
+pref("browser.newtabpage.activity-stream.externalComponents.enabled", true);
+
+
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", true);
 pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://ads.mozilla.org/");
@@ -2177,11 +2189,12 @@ pref("pdfjs.handleOctetStream", true);
 
 
 pref("sidebar.position_start", true);
-pref("sidebar.revamp", false);
-
 #ifdef NIGHTLY_BUILD
+pref("sidebar.revamp", true);
+
 pref("sidebar.revamp.round-content-area", true);
 #else
+pref("sidebar.revamp", false);
 pref("sidebar.revamp.round-content-area", false);
 #endif
 pref("sidebar.animation.enabled", true);
@@ -2630,6 +2643,10 @@ pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 
 
 pref("privacy.webrtc.showIndicatorsOnMacos14AndAbove", true);
+
+
+
+pref("privacy.webrtc.preview.testGumDelayMs", 0);
 
 
 pref("extensions.webcompat.smartblockEmbeds.enabled", true);

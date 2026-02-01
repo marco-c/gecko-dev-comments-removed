@@ -210,6 +210,7 @@ for (const type of [
   "PROMO_CARD_CLICK",
   "PROMO_CARD_DISMISS",
   "PROMO_CARD_IMPRESSION",
+  "REFRESH_EXTERNAL_COMPONENTS",
   "REMOVE_DOWNLOAD_FILE",
   "REPORT_AD_OPEN",
   "REPORT_AD_SUBMIT",
@@ -6623,6 +6624,9 @@ const INITIAL_STATE = {
       isRunning: false,
     },
   },
+  ExternalComponents: {
+    components: [],
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -7597,6 +7601,18 @@ function ListsWidget(prevState = INITIAL_STATE.ListsWidget, action) {
   }
 }
 
+function ExternalComponents(
+  prevState = INITIAL_STATE.ExternalComponents,
+  action
+) {
+  switch (action.type) {
+    case actionTypes.REFRESH_EXTERNAL_COMPONENTS:
+      return { ...prevState, components: action.data };
+    default:
+      return prevState;
+  }
+}
+
 const reducers = {
   TopSites,
   App,
@@ -7615,6 +7631,7 @@ const reducers = {
   ListsWidget,
   Wallpapers,
   Weather,
+  ExternalComponents,
 };
 
 ;
@@ -14872,6 +14889,128 @@ function Logo() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ExternalComponentWrapper({
+  type,
+  className,
+  
+  
+  
+  importModule = url => import(url)
+}) {
+  const containerRef = external_React_default().useRef(null);
+  const customElementRef = external_React_default().useRef(null);
+  const l10nLinksRef = external_React_default().useRef([]);
+  const [error, setError] = external_React_default().useState(null);
+  const {
+    components
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.ExternalComponents);
+  external_React_default().useEffect(() => {
+    const container = containerRef.current;
+    const loadComponent = async () => {
+      try {
+        const config = components.find(c => c.type === type);
+        if (!config) {
+          console.warn(`No external component configuration found for type: ${type}`);
+          return;
+        }
+        await importModule(config.componentURL);
+        l10nLinksRef.current = [];
+        for (let l10nURL of config.l10nURLs) {
+          const l10nEl = document.createElement("link");
+          l10nEl.rel = "localization";
+          l10nEl.href = l10nURL;
+          document.head.appendChild(l10nEl);
+          l10nLinksRef.current.push(l10nEl);
+        }
+        if (containerRef.current && !customElementRef.current) {
+          const element = document.createElement(config.tagName);
+          if (config.attributes) {
+            for (const [key, value] of Object.entries(config.attributes)) {
+              element.setAttribute(key, value);
+            }
+          }
+          if (config.cssVariables) {
+            for (const [variable, style] of Object.entries(config.cssVariables)) {
+              element.style.setProperty(variable, style);
+            }
+          }
+          customElementRef.current = element;
+          containerRef.current.appendChild(element);
+        }
+      } catch (err) {
+        console.error(`Failed to load external component for type ${type}:`, err);
+        setError(err);
+      }
+    };
+    loadComponent();
+    return () => {
+      if (customElementRef.current && container) {
+        container.removeChild(customElementRef.current);
+        customElementRef.current = null;
+      }
+      for (const link of l10nLinksRef.current) {
+        link.remove();
+      }
+      l10nLinksRef.current = [];
+    };
+  }, [type, components, importModule]);
+  if (error) {
+    return null;
+  }
+  return external_React_default().createElement("div", {
+    ref: containerRef,
+    className: className
+  });
+}
+
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class _Search extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -14928,17 +15067,37 @@ class _Search extends (external_React_default()).PureComponent {
     }
   }
   componentDidMount() {
-    const caret = this.fakeCaret;
     const {
       caretBlinkCount,
-      caretBlinkTime
+      caretBlinkTime,
+      "search.useHandoffComponent": useHandoffComponent,
+      "externalComponents.enabled": useExternalComponents
     } = this.props.Prefs.values;
-    if (caret) {
+    if (useExternalComponents) {
       
-      caret.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
+      
+      return;
+    }
+    if (useHandoffComponent) {
+      const {
+        handoffUI
+      } = this;
+      if (handoffUI) {
+        
+        handoffUI.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
 
-      
-      caret.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
+        
+        handoffUI.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
+      }
+    } else {
+      const caret = this.fakeCaret;
+      if (caret) {
+        
+        caret.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
+
+        
+        caret.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
+      }
     }
   }
   onInputMountHandoff(input) {
@@ -14959,6 +15118,27 @@ class _Search extends (external_React_default()).PureComponent {
 
 
   render() {
+    const useHandoffComponent = this.props.Prefs.values["search.useHandoffComponent"];
+    const useExternalComponents = this.props.Prefs.values["externalComponents.enabled"];
+    if (useHandoffComponent) {
+      if (useExternalComponents) {
+        return external_React_default().createElement("div", {
+          className: "search-wrapper"
+        }, this.props.showLogo && external_React_default().createElement(Logo, null), external_React_default().createElement(ExternalComponentWrapper, {
+          type: "SEARCH",
+          className: "search-inner-wrapper"
+        }));
+      }
+      return external_React_default().createElement("div", {
+        className: "search-wrapper"
+      }, this.props.showLogo && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
+        className: "search-inner-wrapper"
+      }, external_React_default().createElement("content-search-handoff-ui", {
+        ref: el => {
+          this.handoffUI = el;
+        }
+      })));
+    }
     const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return external_React_default().createElement("div", {
       className: wrapperClassName
@@ -15705,6 +15885,18 @@ class BaseContent extends (external_React_default()).PureComponent {
     __webpack_require__.g.addEventListener("keydown", this.handleOnKeyDown);
     const prefs = this.props.Prefs.values;
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
+    if (!prefs["externalComponents.enabled"]) {
+      if (prefs["search.useHandoffComponent"]) {
+        
+        
+        import("chrome://browser/content/contentSearchHandoffUI.mjs");
+      } else {
+        const scriptURL = "chrome://browser/content/contentSearchHandoffUI.js";
+        const scriptEl = document.createElement("script");
+        scriptEl.src = scriptURL;
+        document.head.appendChild(scriptEl);
+      }
+    }
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.onVisible();
     } else {
