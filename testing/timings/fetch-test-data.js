@@ -1773,6 +1773,7 @@ async function createAggregatedFailuresFile(dates) {
 }
 
 async function main() {
+  const scriptStartTime = Date.now();
   const forceRefetch = process.argv.includes("--force");
 
   
@@ -1843,14 +1844,25 @@ async function main() {
     `Fetching ${HARNESS} test data for the last ${numDays} day${numDays > 1 ? "s" : ""}: ${dates.join(", ")}`
   );
 
+  const processedDates = [];
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+
   for (const date of dates) {
     console.log(`\n=== Processing ${date} ===`);
     await processDateData(date, forceRefetch);
-  }
+    processedDates.push(date);
 
-  
-  if (numDays > 1) {
-    await createAggregatedFailuresFile(dates);
+    
+    const elapsedTime = Date.now() - scriptStartTime;
+    if (elapsedTime > ONE_HOUR_MS) {
+      const remainingDates = dates.length - processedDates.length;
+      if (remainingDates > 0) {
+        console.log(
+          `\nStopping after 1 hour of processing. Skipping ${remainingDates} remaining date${remainingDates > 1 ? "s" : ""}.`
+        );
+      }
+      break;
+    }
   }
 
   
@@ -1877,6 +1889,11 @@ async function main() {
   console.log(
     `\nIndex file saved as ${indexFile} with ${availableDates.length} dates`
   );
+
+  
+  if (processedDates.length > 1) {
+    await createAggregatedFailuresFile(processedDates);
+  }
 }
 
 main().catch(console.error);
