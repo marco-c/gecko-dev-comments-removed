@@ -432,6 +432,10 @@
       return this.tabContainer.allGroups;
     }
 
+    get splitViews() {
+      return this.tabContainer.allSplitViews;
+    }
+
     get tabsInCollapsedTabGroups() {
       return this.tabGroups
         .filter(tabGroup => tabGroup.collapsed)
@@ -4125,11 +4129,20 @@
 
 
 
+    
+
+
+
+
+
+
+
     createTabsForSessionRestore(
       restoreTabsLazily,
       selectTab,
       tabDataList,
-      tabGroupDataList
+      tabGroupDataList,
+      splitViewDataList
     ) {
       let tabs = [];
       let tabsFragment = document.createDocumentFragment();
@@ -4137,12 +4150,21 @@
       let hiddenTabs = new Map();
       
       let tabGroupWorkingData = new Map();
+      
+      let splitViewWorkingData = new Map();
 
       for (const tabGroupData of tabGroupDataList) {
         tabGroupWorkingData.set(tabGroupData.id, {
           stateData: tabGroupData,
           node: undefined,
           containingTabsFragment: document.createDocumentFragment(),
+        });
+      }
+      for (const splitViewData of splitViewDataList) {
+        splitViewWorkingData.set(splitViewData.id, {
+          numberOfTabs: splitViewData.numberOfTabs,
+          node: undefined,
+          tabs: [],
         });
       }
 
@@ -4224,6 +4246,14 @@
           }
         }
 
+        let splitView = splitViewWorkingData.get(tabData.splitViewId);
+        if (tabData.splitViewId) {
+          splitView.tabs.push(tab);
+          if (splitView.tabs.length == splitView.numberOfTabs) {
+            splitView.node = this._createTabSplitView(tabData.splitViewId);
+          }
+        }
+
         tabs.push(tab);
 
         if (tabData.pinned) {
@@ -4235,8 +4265,14 @@
           const tabGroup = tabGroupWorkingData.get(groupId);
           
           
+
           if (tabGroup) {
-            tabGroup.containingTabsFragment.appendChild(tab);
+            if (!splitView) {
+              tabGroup.containingTabsFragment.appendChild(tab);
+            } else if (splitView?.node) {
+              tabGroup.containingTabsFragment.appendChild(splitView.node);
+            }
+
             
             
             if (!tabGroup.node) {
@@ -4255,7 +4291,12 @@
             hiddenTabs.set(tab, tabData.extData && tabData.extData.hiddenBy);
           }
 
-          tabsFragment.appendChild(tab);
+          if (!splitView) {
+            tabsFragment.appendChild(tab);
+          } else if (splitView?.node) {
+            tabsFragment.appendChild(splitView.node);
+          }
+
           if (tabWasReused) {
             this.tabContainer._invalidateCachedTabs();
           }
@@ -4271,6 +4312,11 @@
       for (const tabGroup of tabGroupWorkingData.values()) {
         if (tabGroup.node) {
           tabGroup.node.appendChild(tabGroup.containingTabsFragment);
+        }
+      }
+      for (const splitView of splitViewWorkingData.values()) {
+        if (splitView.node) {
+          splitView.node.addTabs(splitView.tabs, true);
         }
       }
 
