@@ -4,8 +4,9 @@
 
 
 #include "Windows11TaskbarPinning.h"
-#include "Windows11LimitedAccessFeatures.h"
 
+#include "nsDebug.h"
+#include "nsILimitedAccessFeature.h"
 #include "nsWindowsHelpers.h"
 #include "MainThreadUtils.h"
 #include "nsThreadUtils.h"
@@ -14,7 +15,6 @@
 
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/widget/WinTaskbar.h"
 #include "WinUtils.h"
@@ -69,24 +69,39 @@ using namespace ABI::Windows::UI::Shell;
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::ApplicationModel;
 
-static Win11PinToTaskBarResult UnlockLimitedAccessFeature(
-    Win11LimitedAccessFeatureType featureType) {
-  RefPtr<Win11LimitedAccessFeaturesInterface> limitedAccessFeatures =
-      CreateWin11LimitedAccessFeaturesInterface();
-  auto result = limitedAccessFeatures->Unlock(featureType);
-  if (result.isErr()) {
-    auto hr = result.unwrapErr();
-    TASKBAR_PINNING_LOG(LogLevel::Debug,
-                        "Taskbar unlock: Error. HRESULT = 0x%lx", hr);
-    return {hr, Win11PinToTaskBarResultStatus::NotSupported};
+static Win11PinToTaskBarResult UnlockTaskbarPinFeature() {
+  nsCOMPtr<nsILimitedAccessFeatureService> lafService =
+      do_GetService("@mozilla.org/limited-access-feature-service;1");
+
+  nsAutoCString pinFeatureId;
+  nsresult rv = lafService->GetTaskbarPinFeatureId(pinFeatureId);
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return {E_FAIL, Win11PinToTaskBarResultStatus::NotSupported};
   }
 
-  if (result.unwrap() == false) {
+  nsCOMPtr<nsILimitedAccessFeature> feature;
+  rv = lafService->GenerateLimitedAccessFeature(pinFeatureId,
+                                                getter_AddRefs(feature));
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return {E_FAIL, Win11PinToTaskBarResultStatus::NotSupported};
+  }
+
+  bool unlocked = false;
+  rv = feature->Unlock(&unlocked);
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return {E_FAIL, Win11PinToTaskBarResultStatus::NotSupported};
+  }
+
+  if (!unlocked) {
     TASKBAR_PINNING_LOG(
         LogLevel::Debug,
         "Taskbar unlock: failed. Not supported on this version of Windows.");
     return {S_OK, Win11PinToTaskBarResultStatus::NotSupported};
   }
+
   return {S_OK, Win11PinToTaskBarResultStatus::Success};
 }
 
@@ -183,8 +198,7 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
                         "thread only. It blocks, waiting on things to execute "
                         "asynchronously on the main thread.");
 
-  Win11PinToTaskBarResult unlockStatus =
-      UnlockLimitedAccessFeature(Win11LimitedAccessFeatureType::Taskbar);
+  Win11PinToTaskBarResult unlockStatus = UnlockTaskbarPinFeature();
   if (unlockStatus.result != Win11PinToTaskBarResultStatus::Success) {
     return unlockStatus;
   }
@@ -404,8 +418,7 @@ Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly) {
       "thread only. It blocks, waiting on things to execute "
       "asynchronously on the main thread.");
 
-  Win11PinToTaskBarResult unlockStatus =
-      UnlockLimitedAccessFeature(Win11LimitedAccessFeatureType::Taskbar);
+  Win11PinToTaskBarResult unlockStatus = UnlockTaskbarPinFeature();
   if (unlockStatus.result != Win11PinToTaskBarResultStatus::Success) {
     return unlockStatus;
   }
