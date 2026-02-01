@@ -25,9 +25,7 @@ NS_INTERFACE_MAP_END
 
 NavigationPrecommitController::NavigationPrecommitController(
     NavigateEvent* aEvent, nsIGlobalObject* aGlobalObject)
-    : mGlobalObject(aGlobalObject), mEvent(aEvent) {
-  MOZ_DIAGNOSTIC_ASSERT(mEvent);
-}
+    : mGlobalObject(aGlobalObject), mEvent(aEvent) {}
 
 NavigationPrecommitController::~NavigationPrecommitController() {}
 
@@ -47,6 +45,7 @@ void NavigationPrecommitController::Redirect(
   
 
   
+  MOZ_DIAGNOSTIC_ASSERT(mEvent);
   MOZ_DIAGNOSTIC_ASSERT(mEvent->InterceptionState() !=
                         NavigateEvent::InterceptionState::None);
 
@@ -149,32 +148,6 @@ void NavigationPrecommitController::Redirect(
   if (!aOptions.mInfo.isUndefined()) {
     mEvent->SetInfo(aOptions.mInfo);
   }
-}
-
-
-void NavigationPrecommitController::AddHandler(
-    NavigationInterceptHandler& aHandler, ErrorResult& aRv) {
-  
-  MOZ_DIAGNOSTIC_ASSERT(mEvent->InterceptionState() !=
-                        NavigateEvent::InterceptionState::None);
-
-  
-  mEvent->PerformSharedChecks(aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  
-  if (mEvent->InterceptionState() !=
-      NavigateEvent::InterceptionState::Intercepted) {
-    aRv.ThrowInvalidStateError(
-        "Cannot add handler after navigation has committed");
-    return;
-  }
-
-  
-  mEvent->NavigationHandlerList().AppendElement(&aHandler);
 }
 
 }  
