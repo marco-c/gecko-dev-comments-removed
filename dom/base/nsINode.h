@@ -118,6 +118,7 @@ struct DOMPointInit;
 struct GetRootNodeOptions;
 enum class AllowRangeCrossShadowBoundary : bool;  
 enum class CallerType : uint32_t;
+struct AriaNotificationOptions;
 }  
 }  
 
@@ -2639,6 +2640,9 @@ class nsINode : public mozilla::dom::EventTarget {
   NodeSelectorFlags GetSelectorFlags() const {
     return static_cast<NodeSelectorFlags>(mSelectorFlags.Get());
   }
+
+  void AriaNotify(const nsAString& aAnnouncement,
+                  const mozilla::dom::AriaNotificationOptions& aOptions);
 
  protected:
   static bool Traverse(nsINode* tmp, nsCycleCollectionTraversalCallback& cb);
