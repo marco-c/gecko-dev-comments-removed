@@ -61,7 +61,7 @@ nsMathMLmunderoverFrame::UpdatePresentationData(
   nsMathMLContainerFrame::UpdatePresentationData(aFlagsValues, aFlagsToUpdate);
   
   
-  if (NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
+  if (mEmbellishData.flags.contains(MathMLEmbellishFlag::MovableLimits) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact) {
     mPresentationData.flags -=
         MathMLPresentationFlag::StretchAllChildrenHorizontally;
@@ -222,21 +222,22 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
                                       nsGkAtoms::munderover)) {
     GetEmbellishDataFrom(underscriptFrame, embellishData);
-    if (NS_MATHML_EMBELLISH_IS_ACCENT(embellishData.flags)) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTUNDER;
+    if (embellishData.flags.contains(MathMLEmbellishFlag::Accent)) {
+      mEmbellishData.flags += MathMLEmbellishFlag::AccentUnder;
     } else {
-      mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTUNDER;
+      mEmbellishData.flags -= MathMLEmbellishFlag::AccentUnder;
     }
 
     
     
     if (mContent->AsElement()->GetAttr(nsGkAtoms::accentunder, value)) {
       if (value.LowerCaseEqualsLiteral("true")) {
-        mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTUNDER;
+        mEmbellishData.flags += MathMLEmbellishFlag::AccentUnder;
       } else if (value.LowerCaseEqualsLiteral("false")) {
-        mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTUNDER;
+        mEmbellishData.flags -= MathMLEmbellishFlag::AccentUnder;
       }
-    } else if (NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags)) {
+    } else if (mEmbellishData.flags.contains(
+                   MathMLEmbellishFlag::AccentUnder)) {
       AutoTArray<nsString, 1> params;
       params.AppendElement(mContent->NodeInfo()->NodeName());
       PresContext()->Document()->WarnOnceAbout(
@@ -251,20 +252,20 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover,
                                       nsGkAtoms::munderover)) {
     GetEmbellishDataFrom(overscriptFrame, embellishData);
-    if (NS_MATHML_EMBELLISH_IS_ACCENT(embellishData.flags)) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
+    if (embellishData.flags.contains(MathMLEmbellishFlag::Accent)) {
+      mEmbellishData.flags += MathMLEmbellishFlag::AccentOver;
     } else {
-      mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTOVER;
+      mEmbellishData.flags -= MathMLEmbellishFlag::AccentOver;
     }
 
     
     if (mContent->AsElement()->GetAttr(nsGkAtoms::accent, value)) {
       if (value.LowerCaseEqualsLiteral("true")) {
-        mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENTOVER;
+        mEmbellishData.flags += MathMLEmbellishFlag::AccentOver;
       } else if (value.LowerCaseEqualsLiteral("false")) {
-        mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENTOVER;
+        mEmbellishData.flags -= MathMLEmbellishFlag::AccentOver;
       }
-    } else if (NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
+    } else if (mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver)) {
       AutoTArray<nsString, 1> params;
       params.AppendElement(mContent->NodeInfo()->NodeName());
       PresContext()->Document()->WarnOnceAbout(
@@ -274,7 +275,7 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   }
 
   bool subsupDisplay =
-      NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
+      mEmbellishData.flags.contains(MathMLEmbellishFlag::MovableLimits) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact;
 
   
@@ -305,8 +306,9 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
   if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover,
                                       nsGkAtoms::munderover)) {
-    mIncrementOver = !NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags) ||
-                     subsupDisplay;
+    mIncrementOver =
+        !mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver) ||
+        subsupDisplay;
     SetIncrementScriptLevel(mContent->IsMathMLElement(nsGkAtoms::mover) ? 1 : 2,
                             mIncrementOver);
     if (mIncrementOver) {
@@ -314,7 +316,7 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
     }
     if (!StaticPrefs::mathml_math_shift_enabled()) {
       MathMLPresentationFlags flags;
-      if (NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
+      if (mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver)) {
         flags += MathMLPresentationFlag::Compressed;
       }
       PropagatePresentationDataFor(overscriptFrame, flags, flags);
@@ -327,7 +329,7 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
   if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
                                       nsGkAtoms::munderover)) {
     mIncrementUnder =
-        !NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags) ||
+        !mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentUnder) ||
         subsupDisplay;
     SetIncrementScriptLevel(1, mIncrementUnder);
     if (mIncrementUnder) {
@@ -357,8 +359,8 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
 
   if (overscriptFrame &&
-      NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags) &&
-      !NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags)) {
+      mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver) &&
+      !mEmbellishData.flags.contains(MathMLEmbellishFlag::MovableLimits)) {
     PropagatePresentationDataFor(baseFrame, MathMLPresentationFlag::Dtls,
                                  MathMLPresentationFlag::Dtls);
   }
@@ -390,7 +392,7 @@ void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
                                     const PlaceFlags& aFlags,
                                     ReflowOutput& aDesiredSize) {
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
-  if (NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
+  if (mEmbellishData.flags.contains(MathMLEmbellishFlag::MovableLimits) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact) {
     
     if (mContent->IsMathMLElement(nsGkAtoms::munderover)) {
@@ -496,7 +498,7 @@ void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
   nscoord underDelta1 = 0;  
   nscoord underDelta2 = 0;  
 
-  if (!NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags)) {
+  if (!mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentUnder)) {
     
     nscoord bigOpSpacing2, bigOpSpacing4, bigOpSpacing5, dummy;
     GetBigOpSpacings(fm, dummy, bigOpSpacing2, dummy, bigOpSpacing4,
@@ -532,7 +534,7 @@ void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
   nscoord overDelta1 = 0;  
   nscoord overDelta2 = 0;  
 
-  if (!NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
+  if (!mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver)) {
     
     
     
@@ -626,7 +628,7 @@ void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
     dxOver = -bmOver.leftBearing;
   }
 
-  if (NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
+  if (mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver)) {
     mBoundingMetrics.width = bmBase.width + baseMargin.LeftRight();
     dxOver += correction;
   } else {
@@ -672,7 +674,7 @@ void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
   }
 
   nscoord maxWidth = std::max(bmAnonymousBase.width, underWidth);
-  if (!NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags)) {
+  if (!mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentUnder)) {
     GetItalicCorrection(bmAnonymousBase, correction);
     dxUnder += -correction / 2;
   }
@@ -757,7 +759,7 @@ void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
 
 bool nsMathMLmunderoverFrame::IsMathContentBoxHorizontallyCentered() const {
   bool subsupDisplay =
-      NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
+      mEmbellishData.flags.contains(MathMLEmbellishFlag::MovableLimits) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact;
   return !subsupDisplay;
 }

@@ -196,7 +196,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
 
     
     
-    mEmbellishData.flags = 0;
+    mEmbellishData.flags.clear();
     mEmbellishData.coreFrame = nullptr;
     mEmbellishData.leadingSpace = 0;
     mEmbellishData.trailingSpace = 0;
@@ -209,7 +209,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
       return;
     }
 
-    mEmbellishData.flags |= NS_MATHML_EMBELLISH_OPERATOR;
+    mEmbellishData.flags += MathMLEmbellishFlag::EmbellishedOperator;
     mEmbellishData.coreFrame = this;
 
     
@@ -223,10 +223,10 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     
     
     if (NS_MATHML_OPERATOR_IS_ACCENT(mFlags)) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENT;
+      mEmbellishData.flags += MathMLEmbellishFlag::Accent;
     }
     if (NS_MATHML_OPERATOR_IS_MOVABLELIMITS(mFlags)) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_MOVABLELIMITS;
+      mEmbellishData.flags += MathMLEmbellishFlag::MovableLimits;
     }
 
     
@@ -251,18 +251,18 @@ void nsMathMLmoFrame::ProcessOperatorData() {
             false, params);
       }();
       if (value.LowerCaseEqualsLiteral("true")) {
-        mEmbellishData.flags |= NS_MATHML_EMBELLISH_ACCENT;
+        mEmbellishData.flags += MathMLEmbellishFlag::Accent;
       } else if (value.LowerCaseEqualsLiteral("false")) {
-        mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_ACCENT;
+        mEmbellishData.flags -= MathMLEmbellishFlag::Accent;
       }
     }
 
     
     mContent->AsElement()->GetAttr(nsGkAtoms::movablelimits, value);
     if (value.LowerCaseEqualsLiteral("true")) {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_MOVABLELIMITS;
+      mEmbellishData.flags += MathMLEmbellishFlag::MovableLimits;
     } else if (value.LowerCaseEqualsLiteral("false")) {
-      mEmbellishData.flags &= ~NS_MATHML_EMBELLISH_MOVABLELIMITS;
+      mEmbellishData.flags -= MathMLEmbellishFlag::MovableLimits;
     }
 
     
@@ -477,7 +477,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     if (value.LowerCaseEqualsLiteral("false")) {
       mFlags &= ~NS_MATHML_OPERATOR_FENCE;
     } else {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_FENCE;
+      mEmbellishData.flags += MathMLEmbellishFlag::Fence;
     }
   }
   mContent->AsElement()->GetAttr(nsGkAtoms::largeop, value);
@@ -491,7 +491,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     if (value.LowerCaseEqualsLiteral("false")) {
       mFlags &= ~NS_MATHML_OPERATOR_SEPARATOR;
     } else {
-      mEmbellishData.flags |= NS_MATHML_EMBELLISH_SEPARATOR;
+      mEmbellishData.flags += MathMLEmbellishFlag::Separator;
     }
   }
   mContent->AsElement()->GetAttr(nsGkAtoms::symmetric, value);
@@ -801,12 +801,12 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   
   
   
-  bool isAccent = NS_MATHML_EMBELLISH_IS_ACCENT(mEmbellishData.flags);
+  bool isAccent = mEmbellishData.flags.contains(MathMLEmbellishFlag::Accent);
   if (isAccent) {
     nsEmbellishData parentData;
     GetEmbellishDataFrom(GetParent(), parentData);
-    isAccent = (NS_MATHML_EMBELLISH_IS_ACCENTOVER(parentData.flags) ||
-                NS_MATHML_EMBELLISH_IS_ACCENTUNDER(parentData.flags)) &&
+    isAccent = (parentData.flags.contains(MathMLEmbellishFlag::AccentOver) ||
+                parentData.flags.contains(MathMLEmbellishFlag::AccentUnder)) &&
                parentData.coreFrame != this;
   }
   if (isAccent && firstChild) {

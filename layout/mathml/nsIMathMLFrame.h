@@ -63,6 +63,36 @@ enum class MathMLPresentationFlag : uint8_t {
 using MathMLPresentationFlags = mozilla::EnumSet<MathMLPresentationFlag>;
 
 
+
+enum class MathMLEmbellishFlag : uint8_t {
+  
+  EmbellishedOperator,
+
+  
+  
+  MovableLimits,
+
+  
+  
+  Accent,
+
+  
+  
+  AccentOver,
+
+  
+  
+  AccentUnder,
+
+  
+  Fence,
+
+  
+  Separator,
+};
+using MathMLEmbellishFlags = mozilla::EnumSet<MathMLEmbellishFlag>;
+
+
 class nsIMathMLFrame {
  public:
   NS_DECL_QUERYFRAME_TARGET(nsIMathMLFrame)
@@ -248,7 +278,7 @@ class nsIMathMLFrame {
 
 struct nsEmbellishData {
   
-  uint32_t flags = 0;
+  MathMLEmbellishFlags flags;
 
   
   nsIFrame* coreFrame = nullptr;
@@ -281,60 +311,5 @@ struct nsPresentationData {
   
   nsIFrame* baseFrame = nullptr;
 };
-
-
-
-
-
-
-#define NS_MATHML_EMBELLISH_OPERATOR 0x00000001
-
-
-
-#define NS_MATHML_EMBELLISH_MOVABLELIMITS 0x00000002
-
-
-
-#define NS_MATHML_EMBELLISH_ACCENT 0x00000004
-
-
-
-#define NS_MATHML_EMBELLISH_ACCENTOVER 0x00000008
-
-
-
-#define NS_MATHML_EMBELLISH_ACCENTUNDER 0x00000010
-
-
-#define NS_MATHML_EMBELLISH_FENCE 0x00000020
-
-
-#define NS_MATHML_EMBELLISH_SEPARATOR 0x00000040
-
-
-
-#define NS_MATHML_IS_EMBELLISH_OPERATOR(_flags) \
-  (NS_MATHML_EMBELLISH_OPERATOR == ((_flags) & NS_MATHML_EMBELLISH_OPERATOR))
-
-#define NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(_flags) \
-  (NS_MATHML_EMBELLISH_MOVABLELIMITS ==              \
-   ((_flags) & NS_MATHML_EMBELLISH_MOVABLELIMITS))
-
-#define NS_MATHML_EMBELLISH_IS_ACCENT(_flags) \
-  (NS_MATHML_EMBELLISH_ACCENT == ((_flags) & NS_MATHML_EMBELLISH_ACCENT))
-
-#define NS_MATHML_EMBELLISH_IS_ACCENTOVER(_flags) \
-  (NS_MATHML_EMBELLISH_ACCENTOVER ==              \
-   ((_flags) & NS_MATHML_EMBELLISH_ACCENTOVER))
-
-#define NS_MATHML_EMBELLISH_IS_ACCENTUNDER(_flags) \
-  (NS_MATHML_EMBELLISH_ACCENTUNDER ==              \
-   ((_flags) & NS_MATHML_EMBELLISH_ACCENTUNDER))
-
-#define NS_MATHML_EMBELLISH_IS_FENCE(_flags) \
-  (NS_MATHML_EMBELLISH_FENCE == ((_flags) & NS_MATHML_EMBELLISH_FENCE))
-
-#define NS_MATHML_EMBELLISH_IS_SEPARATOR(_flags) \
-  (NS_MATHML_EMBELLISH_SEPARATOR == ((_flags) & NS_MATHML_EMBELLISH_SEPARATOR))
 
 #endif 
