@@ -200,6 +200,10 @@ class RTC_EXPORT RTCReceivedRtpStreamStats : public RTCRtpStreamStats {
   std::optional<int64_t> packets_received_with_ect1;
   
   std::optional<int64_t> packets_received_with_ce;
+  
+  std::optional<int64_t> packets_reported_as_lost;
+  
+  std::optional<int64_t> packets_reported_as_lost_but_recovered;
 
  protected:
   RTCReceivedRtpStreamStats(std::string id, Timestamp timestamp);

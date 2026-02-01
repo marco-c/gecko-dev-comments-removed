@@ -15,6 +15,7 @@
 
 #include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
+#include "modules/congestion_controller/rtp/congestion_controller_feedback_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/congestion_control_feedback.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/numerics/sequence_number_unwrapper.h"
@@ -39,16 +40,7 @@ class CongestionControlFeedbackTracker {
       std::vector<rtcp::CongestionControlFeedback::PacketInfo>&
           packet_feedback);
 
-  
-  
-  int64_t NumPacketsReportedAsLost() const { return num_reported_lost_; }
-
-  
-  
-  
-  int64_t NumPacketsReportedAsLostButRecovered() const {
-    return num_reported_recovered_;
-  }
+  SentCongestionControllerFeedbackStats GetStats() const { return stats_; }
 
  private:
   struct PacketInfo {
@@ -87,8 +79,7 @@ class CongestionControlFeedbackTracker {
   
   int num_ignored_packets_since_last_feedback_ = 0;
 
-  int64_t num_reported_lost_ = 0;
-  int64_t num_reported_recovered_ = 0;
+  SentCongestionControllerFeedbackStats stats_;
 };
 
 }  
