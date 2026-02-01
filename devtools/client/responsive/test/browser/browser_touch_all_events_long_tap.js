@@ -1,0 +1,26 @@
+
+
+
+
+"use strict";
+
+
+Services.scriptloader.loadSubScript(
+  CHROME_URL_ROOT + "helper_touch_all_events.js",
+  this
+);
+
+const TEST_URL = `${URL_ROOT_COM_SSL}touch_iframe_parent.html`;
+
+
+
+addRDMTask(TEST_URL, async function ({ ui }) {
+  reloadOnTouchChange(true);
+  await toggleTouchSimulation(ui);
+  await runTouchAllEventsTests(
+    ui,
+    ["topFrame", "localIFrame", "remoteIFrame"],
+    "long_tap"
+  );
+  await toggleTouchSimulation(ui);
+});
