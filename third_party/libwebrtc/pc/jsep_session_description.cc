@@ -14,7 +14,6 @@
 #include <cstddef>
 #include <iterator>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,6 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
+#include "api/sequence_checker.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/transport_info.h"
@@ -31,7 +31,6 @@
 #include "pc/webrtc_sdp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ip_address.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/socket_address.h"
@@ -181,7 +180,7 @@ size_t SessionDescriptionInternal::mediasection_count() const {
   return description_ ? description_->contents().size() : 0u;
 }
 
-void SessionDescriptionInternal::RelinquishThreadOwnership() {
+void SessionDescriptionInterface::RelinquishThreadOwnership() {
   
   
   
@@ -189,6 +188,13 @@ void SessionDescriptionInternal::RelinquishThreadOwnership() {
   
   
   sequence_checker_.Detach();
+  
+  
+  RTC_DCHECK_RUN_ON(sequence_checker());
+  for (IceCandidateCollection& collection : candidate_collection_) {
+    collection.RelinquishThreadOwnership();
+  }
+  sequence_checker_.Detach();  
 }
 
 SessionDescriptionInterface::SessionDescriptionInterface(
@@ -335,4 +341,5 @@ int SessionDescriptionInterface::GetMediasectionIndex(
                    [&](const auto& content) { return mid == content.mid(); });
   return it == contents.end() ? -1 : std::distance(contents.begin(), it);
 }
+
 }  
