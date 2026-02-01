@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_intl_LineBreakCache_h__
-#define mozilla_intl_LineBreakCache_h__
+#ifndef mozilla_intl_LineBreakCache_h_
+#define mozilla_intl_LineBreakCache_h_
 
 #include "nsIObserver.h"
 #include "nsString.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsStringBundleService_h__
-#define nsStringBundleService_h__
+#ifndef nsStringBundleService_h_
+#define nsStringBundleService_h_
 
 #include "nsCOMPtr.h"
 #include "nsTHashMap.h"

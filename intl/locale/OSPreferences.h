@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_intl_IntlOSPreferences_h__
-#define mozilla_intl_IntlOSPreferences_h__
+#ifndef mozilla_intl_IntlOSPreferences_h_
+#define mozilla_intl_IntlOSPreferences_h_
 
 #include "mozilla/StaticPtr.h"
 #include "nsTHashMap.h"

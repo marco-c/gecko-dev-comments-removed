@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_intl_LocaleService_h__
-#define mozilla_intl_LocaleService_h__
+#ifndef mozilla_intl_LocaleService_h_
+#define mozilla_intl_LocaleService_h_
 
 #include "nsIObserver.h"
 #include "nsString.h"

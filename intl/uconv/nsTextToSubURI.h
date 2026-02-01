@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsTextToSubURI_h__
-#define nsTextToSubURI_h__
+#ifndef nsTextToSubURI_h_
+#define nsTextToSubURI_h_
 
 #include "nsITextToSubURI.h"
 #include "nsString.h"

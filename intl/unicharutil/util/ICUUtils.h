@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_ICUUtils_h__
-#define mozilla_ICUUtils_h__
+#ifndef mozilla_ICUUtils_h_
+#define mozilla_ICUUtils_h_
 
 
 

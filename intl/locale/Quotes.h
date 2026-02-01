@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_intl_Quotes_h__
-#define mozilla_intl_Quotes_h__
+#ifndef mozilla_intl_Quotes_h_
+#define mozilla_intl_Quotes_h_
 
 #include "nsAtom.h"
 

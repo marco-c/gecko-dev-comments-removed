@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsScriptableUConv_h_
-#define __nsScriptableUConv_h_
+#ifndef _nsScriptableUConv_h_
+#define _nsScriptableUConv_h_
 
 #include "nsIScriptableUConv.h"
 #include "nsCOMPtr.h"

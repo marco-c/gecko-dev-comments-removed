@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsUnicharUtils_h__
-#define nsUnicharUtils_h__
+#ifndef nsUnicharUtils_h_
+#define nsUnicharUtils_h_
 
 #include "nsString.h"
 

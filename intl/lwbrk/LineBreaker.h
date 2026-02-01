@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_intl_LineBreaker_h__
-#define mozilla_intl_LineBreaker_h__
+#ifndef mozilla_intl_LineBreaker_h_
+#define mozilla_intl_LineBreaker_h_
 
 #include <cstdint>
 

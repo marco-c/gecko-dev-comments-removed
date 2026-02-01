@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHyphenator_h__
-#define nsHyphenator_h__
+#ifndef nsHyphenator_h_
+#define nsHyphenator_h_
 
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"

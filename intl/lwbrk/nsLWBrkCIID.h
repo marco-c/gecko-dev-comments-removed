@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsLWBrkCIID_h__
-#define nsLWBrkCIID_h__
+#ifndef nsLWBrkCIID_h_
+#define nsLWBrkCIID_h_
 
 
 #define NS_LBRK_CID \

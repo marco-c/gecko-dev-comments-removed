@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsComplexBreaker_h__
-#define nsComplexBreaker_h__
+#ifndef nsComplexBreaker_h_
+#define nsComplexBreaker_h_
 
 #include <stdint.h>
 

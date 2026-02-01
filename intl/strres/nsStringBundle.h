@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsStringBundle_h__
-#define nsStringBundle_h__
+#ifndef nsStringBundle_h_
+#define nsStringBundle_h_
 
 #include "mozilla/Mutex.h"
 #include "nsIStringBundle.h"

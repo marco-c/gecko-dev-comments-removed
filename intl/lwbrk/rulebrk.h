@@ -8,8 +8,8 @@
 
 
 
-#ifndef __RULEBRK_H__
-#define __RULEBRK_H__
+#ifndef RULEBRK_H_
+#define RULEBRK_H_
 #include "th_char.h"
 
 #ifdef __cplusplus

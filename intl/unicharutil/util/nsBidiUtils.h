@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBidiUtils_h__
-#define nsBidiUtils_h__
+#ifndef nsBidiUtils_h_
+#define nsBidiUtils_h_
 
 #include "mozilla/intl/BidiClass.h"
 

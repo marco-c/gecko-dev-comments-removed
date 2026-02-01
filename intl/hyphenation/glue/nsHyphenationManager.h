@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHyphenationManager_h__
-#define nsHyphenationManager_h__
+#ifndef nsHyphenationManager_h_
+#define nsHyphenationManager_h_
 
 #include "base/process.h"
 #include "mozilla/Omnijar.h"

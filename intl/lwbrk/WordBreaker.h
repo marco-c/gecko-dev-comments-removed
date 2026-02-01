@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_intl_WordBreaker_h__
-#define mozilla_intl_WordBreaker_h__
+#ifndef mozilla_intl_WordBreaker_h_
+#define mozilla_intl_WordBreaker_h_
 
 #include "nsStringFwd.h"
 #include <cstdint>
