@@ -848,11 +848,8 @@ class PropertiesData(object):
         return [s for s in self.style_structs if s.longhands]
 
     def add_prefixed_aliases(self, property):
-        
-        
-        if self.engine == "gecko":
-            for prefix, pref in property.extra_prefixes:
-                property.aliases.append(("-%s-%s" % (prefix, property.name), pref))
+        for prefix, pref in property.extra_prefixes:
+            property.aliases.append(("-%s-%s" % (prefix, property.name), pref))
 
     def declare_longhand(self, name, engines=None, **kwargs):
         engines = engines.split()
