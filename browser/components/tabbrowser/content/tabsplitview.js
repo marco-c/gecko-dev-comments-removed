@@ -115,6 +115,7 @@
               
               tab.setAttribute("aria-posinset", index + 1);
               tab.setAttribute("aria-setsize", this.tabs.length);
+              tab.updateSplitViewAriaLabel(index);
             });
           } else {
             this.remove();
@@ -223,6 +224,17 @@
           panel.style.setProperty("width", width + "px");
         }
       }
+    }
+
+    
+
+
+
+    resetRightPanelWidth() {
+      const panel = this.panels[1];
+      this.#storedPanelWidths.delete(panel);
+      panel.removeAttribute("width");
+      panel.style.removeProperty("width");
     }
 
     
