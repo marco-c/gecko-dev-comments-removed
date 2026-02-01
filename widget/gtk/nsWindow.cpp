@@ -2304,7 +2304,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   
   
   
-  if (aMove || !mPopupMoveToRectParams.mAnchorSet) {
+  if (aMove) {
     mPopupMoveToRectParams = WaylandPopupGetPositionFromLayout();
   }
   if (!trackedInHierarchy) {
@@ -2631,9 +2631,9 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
   }
 
   if (!mPopupMoveToRectParams.mAnchorSet) {
-    LOG("  can't use move-to-rect due missing anchor");
-    return false;
+    mPopupMoveToRectParams = WaylandPopupGetPositionFromLayout();
   }
+
   
   
   
@@ -6803,15 +6803,19 @@ void nsWindow::NativeShow(bool aAction) {
 
     if (IsWaylandPopup()) {
       mPopupClosed = false;
-      if (WaylandPopupConfigure()) {
+      const bool trackedInHierarchy = WaylandPopupConfigure();
+      if (trackedInHierarchy) {
         AddWindowToPopupHierarchy();
-        UpdateWaylandPopupHierarchy();
-        if (mPopupClosed) {
-          return;
-        }
       }
       if (mWaylandApplyPopupPositionBeforeShow) {
+        
+        
         NativeMoveResize( true,  false);
+      } else if (trackedInHierarchy) {
+        UpdateWaylandPopupHierarchy();
+      }
+      if (mPopupClosed) {
+        return;
       }
     }
     
