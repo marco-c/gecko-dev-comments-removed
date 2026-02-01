@@ -23,8 +23,10 @@ const halfQuota = Math.ceil(quota / 2);
 
 
 test(
-    () => {
+    (t) => {
       const controller = new AbortController();
+      
+      t.add_cleanup(() => controller.abort());
 
       
       fetchLater(requestUrl, {
@@ -37,21 +39,15 @@ test(
 
       
       
-      assert_throws_quotaexceedederror(
-        () => {
-          fetchLater(requestUrl, {
-            method: 'POST',
-            signal: controller.signal,
-            body: makeBeaconData(generatePayload(quota), dataType),
-            
-            referrer: '',
-          });
-        },
-        
-        
-        (requested) => [QUOTA_PER_ORIGIN, null].includes(requested),
-        (remaining) => [halfQuota - 1, null].includes(remaining)
-      );
+      assert_throws_quotaexceedederror(() => {
+        fetchLater(requestUrl, {
+          method: 'POST',
+          signal: controller.signal,
+          body: makeBeaconData(generatePayload(quota), dataType),
+          
+          referrer: '',
+        });
+      }, QUOTA_PER_ORIGIN, halfQuota - 1);
 
       
       
@@ -61,9 +57,6 @@ test(
         
         referrer: '',
       });
-
-      
-      controller.abort();
     },
     `The 2nd fetchLater(same-origin) call in the top-level document is not allowed to exceed per-origin quota for its POST body of ${
         dataType}.`);

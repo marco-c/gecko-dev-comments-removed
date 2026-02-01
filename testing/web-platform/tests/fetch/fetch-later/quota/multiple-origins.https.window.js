@@ -9,8 +9,10 @@ const {HTTPS_ORIGIN, HTTPS_NOTSAMESITE_ORIGIN} = get_host_info();
 for (const dataType in BeaconDataType) {
   
   test(
-      () => {
+      (t) => {
         const controller = new AbortController();
+        
+        t.add_cleanup(() => controller.abort());
 
         
         fetchLater(`${HTTPS_ORIGIN}/`, {
@@ -34,9 +36,6 @@ for (const dataType in BeaconDataType) {
           method: 'GET',
           signal: controller.signal,
         });
-
-        
-        controller.abort();
       },
       `fetchLater() has per-request-origin quota for its POST body of ${
           dataType}.`);
