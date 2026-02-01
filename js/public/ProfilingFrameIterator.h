@@ -32,6 +32,10 @@ struct CallStackFrameInfo {
   
   
   uint32_t sourceId;
+  
+  uint32_t line;
+  
+  uint32_t column;
 };
 
 }  
@@ -173,6 +177,8 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
     JSScript* interpreterScript;
     uint64_t realmID;
     uint32_t sourceId;
+    uint32_t line;
+    uint32_t column;
 
    public:
     void* returnAddress() const {
@@ -265,6 +271,10 @@ class MOZ_STACK_CLASS ProfiledFrameHandle {
   JS_PUBLIC_API uint64_t realmID() const;
 
   JS_PUBLIC_API uint32_t sourceId() const { return frameInfo_.sourceId; }
+
+  JS_PUBLIC_API uint32_t line() const { return frameInfo_.line; }
+
+  JS_PUBLIC_API uint32_t column() const { return frameInfo_.column; }
 };
 
 class ProfiledFrameRange {

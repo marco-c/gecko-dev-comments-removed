@@ -33,6 +33,10 @@ struct JitCodeRecord {
   SourceInfoVector sourceInfo;
 };
 
+
+
+JitCodeRecord* LookupJitCodeRecord(uint64_t addr);
+
 }  
 
 #endif 
