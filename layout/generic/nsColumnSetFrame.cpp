@@ -672,8 +672,6 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mIsBalancing;
       kidReflowInput.mFlags.mIsInLastColumnBalancingReflow =
           aConfig.mIsLastBalancingReflow;
-      kidReflowInput.mFlags.mIsInColumnMeasuringReflow =
-          aConfig.mIsInMeasuringReflow;
       kidReflowInput.mBreakType = ReflowInput::BreakType::Column;
 
       
@@ -1229,11 +1227,10 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
 
   
 
-  const bool isNestedMulticol =
-      aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
-          NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
-  COLUMN_SET_LOG("%s: Begin Reflow: this=%p, is nested multicol? %s", __func__,
-                 this, YesOrNo(isNestedMulticol));
+  COLUMN_SET_LOG("%s: Begin Reflow: this=%p, is nested multicol=%d", __func__,
+                 this,
+                 aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
+                     NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
 
   
   
@@ -1241,61 +1238,6 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   
   ReflowConfig config = ChooseColumnStrategy(
       aReflowInput, aReflowInput.ComputedISize() == NS_UNCONSTRAINEDSIZE);
-
-  const bool shouldDoMeasuringReflow = [&]() {
-    if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
-      return false;
-    }
-    if (isNestedMulticol) {
-      
-      
-      
-      return aReflowInput.mFlags.mIsInColumnMeasuringReflow;
-    }
-    
-    if (GetPrevInFlow()) {
-      
-      return false;
-    }
-    
-    
-    return nsLayoutUtils::HasAbsolutelyPositionedDescendants(this);
-  }();
-  if (shouldDoMeasuringReflow) {
-    
-    
-    
-    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
-      
-      
-      MarkPrincipalChildrenDirty(this);
-    }
-
-    ReflowConfig measuringConfig = config;
-    measuringConfig.mColBSize = NS_UNCONSTRAINEDSIZE;
-    measuringConfig.mIsInMeasuringReflow = true;
-
-    COLUMN_SET_LOG(
-        "%s: Doing column measuring reflow with an unconstrained block-size",
-        __func__);
-    ReflowColumns(aDesiredSize, aReflowInput, aStatus, measuringConfig, true);
-
-    if (isNestedMulticol) {
-      
-      
-      
-      
-      
-      
-      COLUMN_SET_LOG(
-          "%s: Nested multicol returns early after the column measuring reflow",
-          __func__);
-      return;
-    }
-
-    
-    MarkPrincipalChildrenDirty(this);
-  }
 
   
   
@@ -1305,7 +1247,6 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   
   nsIFrame* nextInFlow = GetNextInFlow();
   bool unboundedLastColumn = config.mIsBalancing && !nextInFlow;
-  COLUMN_SET_LOG("%s: Doing column normal reflow", __func__);
   const ColumnBalanceData colData = ReflowColumns(
       aDesiredSize, aReflowInput, aStatus, config, unboundedLastColumn);
 
@@ -1313,7 +1254,6 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (config.mIsBalancing && !aPresContext->HasPendingInterrupt()) {
-    COLUMN_SET_LOG("%s: Doing the column balancing reflow", __func__);
     FindBestBalanceBSize(aReflowInput, aPresContext, config, colData,
                          aDesiredSize, unboundedLastColumn, aStatus);
   }

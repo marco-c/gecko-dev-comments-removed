@@ -3901,25 +3901,6 @@ nsIFrame* nsLayoutUtils::FindChildContainingDescendant(
   return result;
 }
 
-bool nsLayoutUtils::HasAbsolutelyPositionedDescendants(const nsIFrame* aFrame) {
-  
-  
-  
-  
-  
-  if (aFrame->HasAbsolutelyPositionedChildren()) {
-    return true;
-  }
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (const nsIFrame* child : childList.mList) {
-      if (HasAbsolutelyPositionedDescendants(child)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 nsBlockFrame* nsLayoutUtils::FindNearestBlockAncestor(nsIFrame* aFrame) {
   nsIFrame* nextAncestor;
   for (nextAncestor = aFrame->GetParent(); nextAncestor;

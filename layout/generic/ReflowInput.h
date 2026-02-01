@@ -474,14 +474,6 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
-    
-    
-    bool mIsInColumnMeasuringReflow : 1;
-
-    
-    
-    
-    
     bool mColumnSetWrapperHasNoBSizeLeft : 1;
 
     
