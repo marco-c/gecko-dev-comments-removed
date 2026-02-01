@@ -14931,7 +14931,7 @@ void CodeGenerator::visitStringIncludes(LStringIncludes* lir) {
 }
 
 template <typename LIns>
-static void CallStringMatch(MacroAssembler& masm, LIns* lir, OutOfLineCode* ool,
+static void CallStringMatch(MacroAssembler& masm, LIns* lir,
                             LiveRegisterSet volatileRegs) {
   Register string = ToRegister(lir->string());
   Register output = ToRegister(lir->output());
@@ -14957,7 +14957,7 @@ static void CallStringMatch(MacroAssembler& masm, LIns* lir, OutOfLineCode* ool,
 
   
   Label done;
-  masm.branch32(Assembler::Below, tempLength, Imm32(length), ool->rejoin());
+  masm.branch32(Assembler::Below, tempLength, Imm32(length), &done);
 
   bool searchStringIsPureTwoByte = false;
   if (searchString->hasTwoByteChars()) {
@@ -14968,11 +14968,16 @@ static void CallStringMatch(MacroAssembler& masm, LIns* lir, OutOfLineCode* ool,
 
   
   if (searchStringIsPureTwoByte) {
-    masm.branchLatin1String(string, ool->rejoin());
+    masm.branchLatin1String(string, &done);
   }
 
+#ifdef DEBUG
   
-  masm.branchIfRope(string, ool->entry());
+  Label notRope;
+  masm.branchIfNotRope(string, &notRope);
+  masm.assumeUnreachable("input string must be linearized");
+  masm.bind(&notRope);
+#endif
 
   Label restoreVolatile;
 
@@ -15117,19 +15122,11 @@ static void CallStringMatch(MacroAssembler& masm, LIns* lir, OutOfLineCode* ool,
     masm.cmpPtrSet(Assembler::NotEqual, output, ImmPtr(nullptr), output);
   }
 
-  masm.bind(ool->rejoin());
+  masm.bind(&done);
 }
 
 void CodeGenerator::visitStringIncludesSIMD(LStringIncludesSIMD* lir) {
-  Register string = ToRegister(lir->string());
-  Register output = ToRegister(lir->output());
-  const JSOffThreadAtom* searchString = lir->searchString();
-
-  using Fn = bool (*)(JSContext*, HandleString, HandleString, bool*);
-  auto* ool = oolCallVM<Fn, js::StringIncludes>(
-      lir, ArgList(string, ImmGCPtr(searchString)), StoreRegisterTo(output));
-
-  CallStringMatch(masm, lir, ool, liveVolatileRegs(lir));
+  CallStringMatch(masm, lir, liveVolatileRegs(lir));
 }
 
 void CodeGenerator::visitStringIndexOf(LStringIndexOf* lir) {
@@ -15141,15 +15138,7 @@ void CodeGenerator::visitStringIndexOf(LStringIndexOf* lir) {
 }
 
 void CodeGenerator::visitStringIndexOfSIMD(LStringIndexOfSIMD* lir) {
-  Register string = ToRegister(lir->string());
-  Register output = ToRegister(lir->output());
-  const JSOffThreadAtom* searchString = lir->searchString();
-
-  using Fn = bool (*)(JSContext*, HandleString, HandleString, int32_t*);
-  auto* ool = oolCallVM<Fn, js::StringIndexOf>(
-      lir, ArgList(string, ImmGCPtr(searchString)), StoreRegisterTo(output));
-
-  CallStringMatch(masm, lir, ool, liveVolatileRegs(lir));
+  CallStringMatch(masm, lir, liveVolatileRegs(lir));
 }
 
 void CodeGenerator::visitStringLastIndexOf(LStringLastIndexOf* lir) {
