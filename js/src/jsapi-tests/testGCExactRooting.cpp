@@ -656,7 +656,6 @@ BEGIN_TEST_WITH_ATTRIBUTES(testGCRootedResult, JS_EXPECT_HAZARDS) {
   
   Result<mozilla::Maybe<int>, int> confusing(mozilla::Some(7));
   CHECK(confusing.unwrap().isSome());
-  CHECK(!confusing.unwrap().isSome());
 
   Result<mozilla::Maybe<JS::Value>, JSObject*> maybevalobj(
       mozilla::Some(val.get()));
