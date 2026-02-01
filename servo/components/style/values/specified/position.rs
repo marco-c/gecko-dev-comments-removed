@@ -488,13 +488,30 @@ impl Parse for AnchorScope {
     ToTyped,
 )]
 #[repr(u8)]
-pub enum PositionAnchor {
+pub enum PositionAnchorKeyword {
     
     None,
     
     Auto,
     
     Ident(DashedIdent),
+}
+
+impl PositionAnchorKeyword {
+    
+    pub fn none() -> Self {
+        Self::None
+    }
+}
+
+
+pub type PositionAnchor = TreeScoped<PositionAnchorKeyword>;
+
+impl PositionAnchor {
+    
+    pub fn none() -> Self {
+        Self::with_default_level(PositionAnchorKeyword::none())
+    }
 }
 
 #[derive(
@@ -1392,9 +1409,10 @@ impl PositionArea {
         
         
         
-        if self.first.axis() == PositionAreaAxis::None &&
-            self.second.axis() == PositionAreaAxis::None &&
-            !cb_wm.is_vertical() {
+        if self.first.axis() == PositionAreaAxis::None
+            && self.second.axis() == PositionAreaAxis::None
+            && !cb_wm.is_vertical()
+        {
             std::mem::swap(&mut self.first, &mut self.second);
         } else {
             self.first = self.first.to_physical(cb_wm, self_wm, LogicalAxis::Block);
