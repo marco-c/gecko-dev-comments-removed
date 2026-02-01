@@ -97,7 +97,6 @@ add_task(async function test_valid_content_signature() {
     const res = await ProductAddonChecker.getProductAddonList(
       signedBaseUri + goodXmlPath + "?" + validSignatureQuery,
        false,
-       false,
        true,
        Ci.nsIX509CertDB.AppXPCShellRoot
     );
@@ -122,7 +121,6 @@ add_task(async function test_invalid_content_signature() {
     await ProductAddonChecker.getProductAddonList(
       signedBaseUri + goodXmlPath + "?" + invalidSignatureQuery,
        false,
-       false,
        true,
        Ci.nsIX509CertDB.AppXPCShellRoot
     );
@@ -143,7 +141,6 @@ add_task(async function test_missing_content_signature_header() {
   try {
     await ProductAddonChecker.getProductAddonList(
       signedBaseUri + goodXmlPath + "?" + missingSignatureQuery,
-       false,
        false,
        true,
        Ci.nsIX509CertDB.AppXPCShellRoot
@@ -167,7 +164,6 @@ add_task(async function test_incomplete_content_signature_header() {
     await ProductAddonChecker.getProductAddonList(
       signedBaseUri + goodXmlPath + "?" + incompleteSignatureQuery,
        false,
-       false,
        true,
        Ci.nsIX509CertDB.AppXPCShellRoot
     );
@@ -189,7 +185,6 @@ add_task(async function test_bad_x5u_content_signature_header() {
   try {
     await ProductAddonChecker.getProductAddonList(
       signedBaseUri + goodXmlPath + "?" + badX5uSignatureQuery,
-       false,
        false,
        true,
        Ci.nsIX509CertDB.AppXPCShellRoot
