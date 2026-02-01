@@ -70,8 +70,6 @@ export function makeTestGroup<F extends Fixture>(fixture: FixtureClass<F>): Test
 export interface IterableTestGroup {
   iterate(): Iterable<IterableTest>;
   validate(fileQuery: TestQueryMultiFile): void;
-  
-  collectNonEmptyTests(): { testPath: string[] }[];
 }
 export interface IterableTest {
   testPath: string[];
