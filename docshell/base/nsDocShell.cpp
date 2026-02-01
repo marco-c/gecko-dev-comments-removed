@@ -8020,8 +8020,8 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   
   
   bool isReplace =
-      mActiveEntry && mLoadingEntry && IsValidLoadType(mLoadType) &&
-      NavigationUtils::NavigationTypeFromLoadType(mLoadType)
+      mActiveEntry && mLoadingEntry &&
+      mLoadingEntry->mTriggeringNavigationType
           .map([](auto type) { return type == NavigationType::Replace; })
           .valueOr(false);
   if (isReplace) {
@@ -11021,7 +11021,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   const bool doInitialSyncLoad = ShouldDoInitialAboutBlankSyncLoad(
       uri, aLoadState, aLoadState->PrincipalToInherit());
 
-  if (!doInitialSyncLoad) {
+  if (!doInitialSyncLoad && mBrowsingContext->IsContent()) {
+    
+    
+    
     
     if (Document* doc = GetExtantDocument()) {
       NS_DispatchToMainThread(NS_NewRunnableFunction(
@@ -11029,7 +11032,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
             doc->CloseAnyAssociatedDocumentPiPWindows();
           }));
     }
-    if (GetBrowsingContext()->GetIsDocumentPiP()) {
+    if (mBrowsingContext->GetIsDocumentPiP()) {
       return NS_OK;
     }
   }
