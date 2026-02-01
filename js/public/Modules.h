@@ -221,15 +221,7 @@ extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
 
 extern JS_PUBLIC_API JSObject* CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<char16_t>& srcBuf);
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* CompileWasmModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf);
+    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
 
 
 
