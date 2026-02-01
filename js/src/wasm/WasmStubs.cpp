@@ -1125,25 +1125,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         
         
         
-        Label notDouble;
-        masm.branchTestDouble(Assembler::NotEqual, scratchV, &notDouble);
-
-        
-        masm.unboxDouble(scratchV, scratchF);
-
-        {
-          
-          
-          ScratchDoubleScope tmpD(masm);
-          masm.canonicalizeDoubleZero(scratchF, tmpD);
-
-          
-          
-          masm.boxDouble(scratchF, scratchV, tmpD);
-        }
+        masm.canonicalizeValueZero(scratchV, scratchF);
         masm.storeValue(scratchV, jitArgAddr);
-
-        masm.bind(&notDouble);
 
         masm.branchValueConvertsToWasmAnyRefInline(scratchV, scratchG, scratchF,
                                                    &next);

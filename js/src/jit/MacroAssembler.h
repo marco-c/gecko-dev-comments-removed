@@ -2251,6 +2251,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   inline void canonicalizeDoubleZero(FloatRegister reg, FloatRegister scratch);
 
+  
+  inline void canonicalizeValueZero(ValueOperand value, FloatRegister scratch);
+
  public:
   
   
