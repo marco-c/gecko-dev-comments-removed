@@ -108,7 +108,7 @@ SMILAnimationFunction::SMILCalcMode
 SVGMotionSMILAnimationFunction::GetCalcMode() const {
   const nsAttrValue* value = GetAttr(nsGkAtoms::calcMode);
   if (!value) {
-    return CALC_PACED;  
+    return SMILCalcMode::Paced;  
   }
 
   return SMILCalcMode(value->GetEnumValue());
@@ -345,7 +345,7 @@ void SVGMotionSMILAnimationFunction::CheckKeyPoints() {
   if (!HasAttr(nsGkAtoms::keyPoints)) return;
 
   
-  if (GetCalcMode() == CALC_PACED) {
+  if (GetCalcMode() == SMILCalcMode::Paced) {
     SetKeyPointsErrorFlag(false);
     return;
   }

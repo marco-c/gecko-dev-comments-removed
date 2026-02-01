@@ -44,8 +44,7 @@ class SMILAnimationFunction {
 
 
 
-  void SetAnimationElement(
-      mozilla::dom::SVGAnimationElement* aAnimationElement);
+  void SetAnimationElement(dom::SVGAnimationElement* aAnimationElement);
 
   bool HasSameAnimationElement(const SMILAnimationFunction* aOther) const {
     return aOther && aOther->mAnimationElement == mAnimationElement;
@@ -269,12 +268,7 @@ class SMILAnimationFunction {
   using SMILValueArray = FallibleTArray<SMILValue>;
 
   
-  enum SMILCalcMode : uint8_t {
-    CALC_LINEAR,
-    CALC_DISCRETE,
-    CALC_PACED,
-    CALC_SPLINE
-  };
+  enum class SMILCalcMode : uint8_t { Linear, Discrete, Paced, Spline };
 
   
   SMILTime GetBeginTime() const { return mBeginTime; }
@@ -364,40 +358,39 @@ class SMILAnimationFunction {
 
   
   
-  
-  
-  enum AnimationAttributeIdx {
-    BF_ACCUMULATE = 0,
-    BF_ADDITIVE = 1,
-    BF_CALC_MODE = 2,
-    BF_KEY_TIMES = 3,
-    BF_KEY_SPLINES = 4,
-    BF_KEY_POINTS = 5  
+  enum class ErrorFlag {
+    Accumulate,
+    Additive,
+    CalcMode,
+    KeyTimes,
+    KeySplines,
+    KeyPoints  
   };
+  using ErrorFlags = EnumSet<ErrorFlag>;
 
   inline void SetAccumulateErrorFlag(bool aNewValue) {
-    SetErrorFlag(BF_ACCUMULATE, aNewValue);
+    SetErrorFlag(ErrorFlag::Accumulate, aNewValue);
   }
   inline void SetAdditiveErrorFlag(bool aNewValue) {
-    SetErrorFlag(BF_ADDITIVE, aNewValue);
+    SetErrorFlag(ErrorFlag::Additive, aNewValue);
   }
   inline void SetCalcModeErrorFlag(bool aNewValue) {
-    SetErrorFlag(BF_CALC_MODE, aNewValue);
+    SetErrorFlag(ErrorFlag::CalcMode, aNewValue);
   }
   inline void SetKeyTimesErrorFlag(bool aNewValue) {
-    SetErrorFlag(BF_KEY_TIMES, aNewValue);
+    SetErrorFlag(ErrorFlag::KeyTimes, aNewValue);
   }
   inline void SetKeySplinesErrorFlag(bool aNewValue) {
-    SetErrorFlag(BF_KEY_SPLINES, aNewValue);
+    SetErrorFlag(ErrorFlag::KeySplines, aNewValue);
   }
   inline void SetKeyPointsErrorFlag(bool aNewValue) {
-    SetErrorFlag(BF_KEY_POINTS, aNewValue);
+    SetErrorFlag(ErrorFlag::KeyPoints, aNewValue);
   }
-  inline void SetErrorFlag(AnimationAttributeIdx aField, bool aValue) {
+  inline void SetErrorFlag(ErrorFlag aField, bool aValue) {
     if (aValue) {
-      mErrorFlags |= (0x01 << aField);
+      mErrorFlags += aField;
     } else {
-      mErrorFlags &= ~(0x01 << aField);
+      mErrorFlags -= aField;
     }
   }
 
@@ -415,10 +408,10 @@ class SMILAnimationFunction {
   };
 
   static constexpr nsAttrValue::EnumTableEntry sCalcModeTable[] = {
-      {"linear", CALC_LINEAR},
-      {"discrete", CALC_DISCRETE},
-      {"paced", CALC_PACED},
-      {"spline", CALC_SPLINE},
+      {"linear", SMILCalcMode::Linear},
+      {"discrete", SMILCalcMode::Discrete},
+      {"paced", SMILCalcMode::Paced},
+      {"spline", SMILCalcMode::Spline},
   };
 
   FallibleTArray<double> mKeyTimes;
@@ -439,12 +432,12 @@ class SMILAnimationFunction {
   
   
   
-  mozilla::dom::SVGAnimationElement* mAnimationElement;
+  dom::SVGAnimationElement* mAnimationElement;
 
   
   
   
-  uint16_t mErrorFlags;
+  ErrorFlags mErrorFlags;
 
   
   
