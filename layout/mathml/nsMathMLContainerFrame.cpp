@@ -1001,14 +1001,16 @@ static int32_t
          {0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01},
          {0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00}};
 
-#define GET_INTERSPACE(frametype1_, frametype2_, space_)
-               \
-  if (frametype1_ == MathMLFrameType::Unknown ||                              \
-      frametype2_ == MathMLFrameType::Unknown)                                \
-    space_ = 0;                                                               \
-  else {                                                                      \
-    return kInterFrameSpacingTable[size_t(frametype1_)][size_t(frametype2_)]; \
+static int32_t GetInterFrameSpacing(MathMLFrameType aFirstFrameType,
+                                    MathMLFrameType aSecondFrameType) {
+  
+  if (aFirstFrameType == MathMLFrameType::Unknown ||
+      aSecondFrameType == MathMLFrameType::Unknown) {
+    return 0;
   }
+  return kInterFrameSpacingTable[size_t(aFirstFrameType)]
+                                [size_t(aSecondFrameType)];
+};
 
 
 
@@ -1028,8 +1030,7 @@ static nscoord GetInterFrameSpacing(MathMLFrameType aFirstFrameType,
   MathMLFrameType firstType = aFirstFrameType;
   MathMLFrameType secondType = aSecondFrameType;
 
-  int32_t space;
-  GET_INTERSPACE(firstType, secondType, space);
+  int32_t space = GetInterFrameSpacing(firstType, secondType);
 
   
   if (secondType == MathMLFrameType::OperatorInvisible) {
@@ -1062,7 +1063,7 @@ static nscoord GetInterFrameSpacing(MathMLFrameType aFirstFrameType,
       secondType = MathMLFrameType::OperatorUserDefined;
     }
 
-    GET_INTERSPACE(firstType, secondType, space);
+    space = GetInterFrameSpacing(firstType, secondType);
 
     
     
