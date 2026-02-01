@@ -1330,6 +1330,9 @@ class TrustPanel {
   }
 
   async observe(subject, topic) {
+    if (!this.#enabled) {
+      return;
+    }
     switch (topic) {
       case "smartblock:open-protections-panel": {
         if (gBrowser.selectedBrowser.browserId !== subject.browserId) {
@@ -1337,10 +1340,10 @@ class TrustPanel {
         }
         this.#initializePopup();
         let multiview = document.getElementById("trustpanel-popup-multiView");
-        // TODO: https://bugzilla.mozilla.org/show_bug.cgi?id=1999928
-        // This currently opens as a standalone panel, we would like to open
-        // the panel with a back button and title the same way as if it
-        // were accessed via the urlbar icon.
+        
+        
+        
+        
         let initialMainViewId = multiview.getAttribute("mainViewId");
         this.#popup.addEventListener(
           "popuphidden",
