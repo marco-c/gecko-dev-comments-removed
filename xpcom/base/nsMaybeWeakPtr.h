@@ -11,6 +11,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsTArray.h"
 #include "nsCycleCollectionNoteChild.h"
+#include "xpcpublic.h"
 
 
 
@@ -81,6 +82,17 @@ class nsMaybeWeakPtrArray : public CopyableTArray<nsMaybeWeakPtr<T>> {
     nsMaybeWeakPtr<T> ref;
     MOZ_TRY(SetMaybeWeakPtr(ref, aElement, aOwnsWeak));
 
+#if (defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && !defined(MOZ_THUNDERBIRD))
+    
+    
+    if (IsAssertOnDoubleAdd()) {
+      if (MaybeWeakArray::Contains(aElement)) {
+        xpc_DumpJSStack(true, true, false);
+        MOZ_DIAGNOSTIC_ASSERT(false, "Element already in array.");
+      }
+    }
+#endif
+
     MaybeWeakArray::AppendElement(ref);
     return NS_OK;
   }
@@ -119,6 +131,21 @@ class nsMaybeWeakPtrArray : public CopyableTArray<nsMaybeWeakPtr<T>> {
 
     return NS_ERROR_INVALID_ARG;
   }
+
+ private:
+#if (defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && !defined(MOZ_THUNDERBIRD))
+  
+  
+  
+  
+  static inline bool IsAssertOnDoubleAdd() {
+#  if defined(DEBUG) || defined(FUZZING)
+    return true;
+#  else
+    return xpc::IsInAutomation();
+#  endif
+  }
+#endif
 };
 
 template <class T>
