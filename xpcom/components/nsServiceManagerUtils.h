@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsServiceManagerUtils_h__
-#define nsServiceManagerUtils_h__
+#ifndef nsServiceManagerUtils_h_
+#define nsServiceManagerUtils_h_
 
 #include "nsCOMPtr.h"
 #include "nsString.h"

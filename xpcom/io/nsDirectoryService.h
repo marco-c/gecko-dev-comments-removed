@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDirectoryService_h___
-#define nsDirectoryService_h___
+#ifndef nsDirectoryService_h_
+#define nsDirectoryService_h_
 
 #include "nsIDirectoryService.h"
 #include "nsInterfaceHashtable.h"

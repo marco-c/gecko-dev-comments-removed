@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsCharSeparatedTokenizer_h
-#define __nsCharSeparatedTokenizer_h
+#ifndef _nsCharSeparatedTokenizer_h
+#define _nsCharSeparatedTokenizer_h
 
 #include "mozilla/Maybe.h"
 #include "mozilla/RangedPtr.h"

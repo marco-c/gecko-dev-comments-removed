@@ -7,8 +7,8 @@
 
 
 
-#ifndef nsTHashtable_h__
-#define nsTHashtable_h__
+#ifndef nsTHashtable_h_
+#define nsTHashtable_h_
 
 #include <iterator>
 #include <new>

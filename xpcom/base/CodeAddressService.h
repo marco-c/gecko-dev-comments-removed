@@ -4,8 +4,8 @@
 
 
 
-#ifndef CodeAddressService_h__
-#define CodeAddressService_h__
+#ifndef CodeAddressService_h_
+#define CodeAddressService_h_
 
 #include <cstddef>
 #include <cstdint>

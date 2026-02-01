@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsThreadUtils_h__
-#define nsThreadUtils_h__
+#ifndef nsThreadUtils_h_
+#define nsThreadUtils_h_
 
 #include <type_traits>
 #include <tuple>

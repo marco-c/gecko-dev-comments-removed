@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCycleCollector_h__
-#define nsCycleCollector_h__
+#ifndef nsCycleCollector_h_
+#define nsCycleCollector_h_
 
 class nsICycleCollectorListener;
 class nsICycleCollectorLogSink;

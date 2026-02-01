@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXPCOMPrivate_h__
-#define nsXPCOMPrivate_h__
+#ifndef nsXPCOMPrivate_h_
+#define nsXPCOMPrivate_h_
 
 #include "nscore.h"
 #include "nsXPCOM.h"

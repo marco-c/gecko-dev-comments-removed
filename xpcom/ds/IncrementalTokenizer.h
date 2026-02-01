@@ -4,8 +4,8 @@
 
 
 
-#ifndef INCREMENTAL_TOKENIZER_H__
-#define INCREMENTAL_TOKENIZER_H__
+#ifndef INCREMENTAL_TOKENIZER_H_
+#define INCREMENTAL_TOKENIZER_H_
 
 #include "mozilla/Tokenizer.h"
 

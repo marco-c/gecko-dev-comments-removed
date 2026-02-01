@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCharTraits_h___
-#define nsCharTraits_h___
+#ifndef nsCharTraits_h_
+#define nsCharTraits_h_
 
 #include <ctype.h>   
 #include <stdint.h>  

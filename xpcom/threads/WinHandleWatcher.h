@@ -4,8 +4,8 @@
 
 
 
-#ifndef WinHandleWatcher_h__
-#define WinHandleWatcher_h__
+#ifndef WinHandleWatcher_h_
+#define WinHandleWatcher_h_
 
 #include <minwindef.h>
 

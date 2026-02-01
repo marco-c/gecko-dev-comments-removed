@@ -4,8 +4,8 @@
 
 
 
-#ifndef ___nsscriptableinputstream___h_
-#define ___nsscriptableinputstream___h_
+#ifndef _nsscriptableinputstream_h_
+#define _nsscriptableinputstream_h_
 
 #include "nsIScriptableInputStream.h"
 #include "nsIInputStream.h"

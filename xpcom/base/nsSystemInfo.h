@@ -4,8 +4,8 @@
 
 
 
-#ifndef _NSSYSTEMINFO_H_
-#define _NSSYSTEMINFO_H_
+#ifndef NSSYSTEMINFO_H_
+#define NSSYSTEMINFO_H_
 
 #include "nsHashPropertyBag.h"
 #include "nsISystemInfo.h"

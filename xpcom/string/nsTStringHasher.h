@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTStringHasher_h___
-#define nsTStringHasher_h___
+#ifndef nsTStringHasher_h_
+#define nsTStringHasher_h_
 
 #include "mozilla/HashTable.h"  
 

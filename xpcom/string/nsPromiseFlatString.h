@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPromiseFlatString_h___
-#define nsPromiseFlatString_h___
+#ifndef nsPromiseFlatString_h_
+#define nsPromiseFlatString_h_
 
 #include "nsString.h"
 

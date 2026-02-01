@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsRefPtrHashtable_h__
-#define nsRefPtrHashtable_h__
+#ifndef nsRefPtrHashtable_h_
+#define nsRefPtrHashtable_h_
 
 #include "nsRefCountedHashtable.h"
 

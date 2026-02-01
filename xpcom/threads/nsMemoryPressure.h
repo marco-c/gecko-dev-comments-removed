@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMemoryPressure_h__
-#define nsMemoryPressure_h__
+#ifndef nsMemoryPressure_h_
+#define nsMemoryPressure_h_
 
 #include "nscore.h"
 

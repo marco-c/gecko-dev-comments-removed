@@ -5,8 +5,8 @@
 
 
 
-#ifndef xptcall_h___
-#define xptcall_h___
+#ifndef xptcall_h_
+#define xptcall_h_
 
 #include "nscore.h"
 #include "nsISupports.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTArrayForwardDeclare_h__
-#define nsTArrayForwardDeclare_h__
+#ifndef nsTArrayForwardDeclare_h_
+#define nsTArrayForwardDeclare_h_
 
 
 

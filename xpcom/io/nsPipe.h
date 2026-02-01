@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPipe_h__
-#define nsPipe_h__
+#ifndef nsPipe_h_
+#define nsPipe_h_
 
 #define NS_PIPE_CONTRACTID "@mozilla.org/pipe;1"
 #define NS_PIPE_CID                           \

@@ -2,8 +2,8 @@
 
 
 
-#ifndef resources_h___
-#define resources_h___
+#ifndef resources_h_
+#define resources_h_
 
 #define TIMER_1SECOND 40000
 #define TIMER_5SECOND 40001

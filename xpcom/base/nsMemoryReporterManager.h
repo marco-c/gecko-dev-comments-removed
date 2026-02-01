@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMemoryReporterManager_h__
-#define nsMemoryReporterManager_h__
+#ifndef nsMemoryReporterManager_h_
+#define nsMemoryReporterManager_h_
 
 #include "mozilla/Mutex.h"
 #include "nsTHashMap.h"

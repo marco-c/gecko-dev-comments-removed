@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXPCOM_h__
-#define nsXPCOM_h__
+#ifndef nsXPCOM_h_
+#define nsXPCOM_h_
 
 #include "nscore.h"
 #include "nsXPCOMCID.h"

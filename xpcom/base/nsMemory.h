@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMemory_h__
-#define nsMemory_h__
+#ifndef nsMemory_h_
+#define nsMemory_h_
 
 #include "nsError.h"
 

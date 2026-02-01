@@ -4,7 +4,7 @@
 
 
 
-#ifndef nsCom_h__
-#define nsCom_h__
+#ifndef nsCom_h_
+#define nsCom_h_
 #include "nscore.h"
 #endif

@@ -18,8 +18,8 @@
 
 
 
-#ifndef nsWildCard_h__
-#define nsWildCard_h__
+#ifndef nsWildCard_h_
+#define nsWildCard_h_
 
 #include "nscore.h"
 

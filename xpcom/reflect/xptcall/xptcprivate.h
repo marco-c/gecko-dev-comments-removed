@@ -5,8 +5,8 @@
 
 
 
-#ifndef xptcprivate_h___
-#define xptcprivate_h___
+#ifndef xptcprivate_h_
+#define xptcprivate_h_
 
 #include "xptcall.h"
 

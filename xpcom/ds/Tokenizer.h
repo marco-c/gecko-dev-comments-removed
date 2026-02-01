@@ -4,8 +4,8 @@
 
 
 
-#ifndef Tokenizer_h__
-#define Tokenizer_h__
+#ifndef Tokenizer_h_
+#define Tokenizer_h_
 
 #include <type_traits>
 

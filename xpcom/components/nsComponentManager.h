@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsComponentManager_h__
-#define nsComponentManager_h__
+#ifndef nsComponentManager_h_
+#define nsComponentManager_h_
 
 #include "nsXPCOM.h"
 

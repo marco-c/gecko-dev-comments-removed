@@ -8,8 +8,8 @@
 
 
 
-#ifndef __nsconsoleservice_h__
-#define __nsconsoleservice_h__
+#ifndef _nsconsoleservice_h_
+#define _nsconsoleservice_h_
 
 #include <cstdint>
 

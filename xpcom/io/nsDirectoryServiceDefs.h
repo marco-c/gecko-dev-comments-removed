@@ -19,8 +19,8 @@
 
 
 
-#ifndef nsDirectoryServiceDefs_h___
-#define nsDirectoryServiceDefs_h___
+#ifndef nsDirectoryServiceDefs_h_
+#define nsDirectoryServiceDefs_h_
 
 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTHashKeys_h__
-#define nsTHashKeys_h__
+#ifndef nsTHashKeys_h_
+#define nsTHashKeys_h_
 
 #include "nsID.h"
 #include "nsISupports.h"

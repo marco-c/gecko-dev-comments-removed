@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXPCOMCID_h__
-#define nsXPCOMCID_h__
+#ifndef nsXPCOMCID_h_
+#define nsXPCOMCID_h_
 
 
 

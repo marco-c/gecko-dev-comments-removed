@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsObserverService_h___
-#define nsObserverService_h___
+#ifndef nsObserverService_h_
+#define nsObserverService_h_
 
 #include "nsIObserverService.h"
 #include "nsObserverList.h"

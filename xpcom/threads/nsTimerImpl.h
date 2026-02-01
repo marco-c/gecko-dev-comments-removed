@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTimerImpl_h___
-#define nsTimerImpl_h___
+#ifndef nsTimerImpl_h_
+#define nsTimerImpl_h_
 
 #include "nsITimer.h"
 #include "nsIEventTarget.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsInterfaceRequestorAgg_h__
-#define nsInterfaceRequestorAgg_h__
+#ifndef nsInterfaceRequestorAgg_h_
+#define nsInterfaceRequestorAgg_h_
 
 #include "nsError.h"
 

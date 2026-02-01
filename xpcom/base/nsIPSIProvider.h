@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIPSIProvider_h__
-#define nsIPSIProvider_h__
+#ifndef nsIPSIProvider_h_
+#define nsIPSIProvider_h_
 
 #include "nsISupports.h"
 

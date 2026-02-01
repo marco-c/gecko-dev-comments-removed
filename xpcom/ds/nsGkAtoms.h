@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsGkAtoms_h___
-#define nsGkAtoms_h___
+#ifndef nsGkAtoms_h_
+#define nsGkAtoms_h_
 
 #include "nsAtom.h"
 

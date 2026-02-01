@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathUtils_h__
-#define nsMathUtils_h__
+#ifndef nsMathUtils_h_
+#define nsMathUtils_h_
 
 #include "nscore.h"
 #include <cmath>

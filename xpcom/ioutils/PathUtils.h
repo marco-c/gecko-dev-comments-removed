@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PathUtils__
-#define mozilla_dom_PathUtils__
+#ifndef mozilla_dom_PathUtils_
+#define mozilla_dom_PathUtils_
 
 #include "mozilla/DataMutex.h"
 #include "mozilla/EnumeratedArray.h"

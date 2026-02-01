@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SnappyFrameUtils_h__
-#define mozilla_SnappyFrameUtils_h__
+#ifndef mozilla_SnappyFrameUtils_h_
+#define mozilla_SnappyFrameUtils_h_
 
 #include <cstddef>
 

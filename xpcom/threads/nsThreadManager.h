@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsThreadManager_h__
-#define nsThreadManager_h__
+#ifndef nsThreadManager_h_
+#define nsThreadManager_h_
 
 #include "nsIThreadManager.h"
 #include "nsThread.h"

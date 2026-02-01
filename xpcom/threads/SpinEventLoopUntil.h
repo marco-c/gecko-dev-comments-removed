@@ -4,8 +4,8 @@
 
 
 
-#ifndef xpcom_threads_SpinEventLoopUntil_h__
-#define xpcom_threads_SpinEventLoopUntil_h__
+#ifndef xpcom_threads_SpinEventLoopUntil_h_
+#define xpcom_threads_SpinEventLoopUntil_h_
 
 #include "MainThreadUtils.h"
 #include "mozilla/Maybe.h"

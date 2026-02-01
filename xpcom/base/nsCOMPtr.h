@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCOMPtr_h___
-#define nsCOMPtr_h___
+#ifndef nsCOMPtr_h_
+#define nsCOMPtr_h_
 
 
 

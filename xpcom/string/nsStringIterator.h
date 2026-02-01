@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsStringIterator_h___
-#define nsStringIterator_h___
+#ifndef nsStringIterator_h_
+#define nsStringIterator_h_
 
 #include "nsCharTraits.h"
 #include "nsAlgorithm.h"

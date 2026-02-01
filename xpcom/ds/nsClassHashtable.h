@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsClassHashtable_h__
-#define nsClassHashtable_h__
+#ifndef nsClassHashtable_h_
+#define nsClassHashtable_h_
 
 #include <utility>
 

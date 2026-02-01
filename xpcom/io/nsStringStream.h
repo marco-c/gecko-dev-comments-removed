@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsStringStream_h__
-#define nsStringStream_h__
+#ifndef nsStringStream_h_
+#define nsStringStream_h_
 
 #include "nsIStringStream.h"
 #include "nsString.h"

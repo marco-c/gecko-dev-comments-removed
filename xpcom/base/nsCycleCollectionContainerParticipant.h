@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCycleCollectionContainerParticipant_h__
-#define nsCycleCollectionContainerParticipant_h__
+#ifndef nsCycleCollectionContainerParticipant_h_
+#define nsCycleCollectionContainerParticipant_h_
 
 #include <type_traits>
 

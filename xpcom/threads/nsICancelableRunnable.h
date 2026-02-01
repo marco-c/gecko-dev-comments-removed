@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsICancelableRunnable_h__
-#define nsICancelableRunnable_h__
+#ifndef nsICancelableRunnable_h_
+#define nsICancelableRunnable_h_
 
 #include "nsISupports.h"
 

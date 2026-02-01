@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHashPropertyBag_h___
-#define nsHashPropertyBag_h___
+#ifndef nsHashPropertyBag_h_
+#define nsHashPropertyBag_h_
 
 #include "nsIVariant.h"
 #include "nsIWritablePropertyBag.h"

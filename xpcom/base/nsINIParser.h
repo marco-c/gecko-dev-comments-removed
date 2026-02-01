@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsINIParser_h__
-#define nsINIParser_h__
+#ifndef nsINIParser_h_
+#define nsINIParser_h_
 
 #ifdef MOZILLA_INTERNAL_API
 #  define nsINIParser nsINIParser_internal

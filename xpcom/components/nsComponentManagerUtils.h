@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsComponentManagerUtils_h__
-#define nsComponentManagerUtils_h__
+#ifndef nsComponentManagerUtils_h_
+#define nsComponentManagerUtils_h_
 
 #include "nscore.h"
 #include "nsCOMPtr.h"

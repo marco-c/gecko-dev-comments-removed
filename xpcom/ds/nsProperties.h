@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsProperties_h___
-#define nsProperties_h___
+#ifndef nsProperties_h_
+#define nsProperties_h_
 
 #include "nsIProperties.h"
 #include "nsInterfaceHashtable.h"

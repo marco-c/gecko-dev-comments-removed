@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsAppDirectoryServiceDefs_h___
-#define nsAppDirectoryServiceDefs_h___
+#ifndef nsAppDirectoryServiceDefs_h_
+#define nsAppDirectoryServiceDefs_h_
 
 
 

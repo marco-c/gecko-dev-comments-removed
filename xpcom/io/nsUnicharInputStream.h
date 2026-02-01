@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsUnicharInputStream_h__
-#define nsUnicharInputStream_h__
+#ifndef nsUnicharInputStream_h_
+#define nsUnicharInputStream_h_
 
 #include "nsIUnicharInputStream.h"
 

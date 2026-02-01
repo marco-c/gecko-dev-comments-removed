@@ -4,8 +4,8 @@
 
 
 
-#ifndef nscore_h___
-#define nscore_h___
+#ifndef nscore_h_
+#define nscore_h_
 
 
 #if !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
@@ -15,7 +15,6 @@
 
 
 
-#include <stddef.h>  
 #include <stdint.h>  
 
 #include "mozilla/RefCountType.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTObserverArray_h___
-#define nsTObserverArray_h___
+#ifndef nsTObserverArray_h_
+#define nsTObserverArray_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ReverseIterator.h"

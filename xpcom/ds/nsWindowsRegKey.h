@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWindowsRegKey_h__
-#define nsWindowsRegKey_h__
+#ifndef nsWindowsRegKey_h_
+#define nsWindowsRegKey_h_
 
 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef _NSUUIDGENERATOR_H_
-#define _NSUUIDGENERATOR_H_
+#ifndef NSUUIDGENERATOR_H_
+#define NSUUIDGENERATOR_H_
 
 #include "nsIUUIDGenerator.h"
 

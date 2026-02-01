@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDirectoryServiceUtils_h___
-#define nsDirectoryServiceUtils_h___
+#ifndef nsDirectoryServiceUtils_h_
+#define nsDirectoryServiceUtils_h_
 
 #include "nsIProperties.h"
 #include "nsServiceManagerUtils.h"

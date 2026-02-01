@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMacUtilsImpl_h___
-#define nsMacUtilsImpl_h___
+#ifndef nsMacUtilsImpl_h_
+#define nsMacUtilsImpl_h_
 
 #include "nsString.h"
 #include "mozilla/Atomics.h"

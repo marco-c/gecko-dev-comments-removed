@@ -2,8 +2,8 @@
 
 
 
-#ifndef MacPreferencesReader_h__
-#define MacPreferencesReader_h__
+#ifndef MacPreferencesReader_h_
+#define MacPreferencesReader_h_
 
 
 

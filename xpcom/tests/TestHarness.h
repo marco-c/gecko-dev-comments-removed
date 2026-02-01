@@ -9,8 +9,8 @@
 
 
 
-#ifndef TestHarness_h__
-#define TestHarness_h__
+#ifndef TestHarness_h_
+#define TestHarness_h_
 
 #include "mozilla/Attributes.h"
 

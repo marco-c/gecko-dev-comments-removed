@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWeakReference_h__
-#define nsWeakReference_h__
+#ifndef nsWeakReference_h_
+#define nsWeakReference_h_
 
 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsStreamUtils_h__
-#define nsStreamUtils_h__
+#ifndef nsStreamUtils_h_
+#define nsStreamUtils_h_
 
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"

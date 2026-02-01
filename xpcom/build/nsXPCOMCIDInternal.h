@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXPCOMCIDInternal_h__
-#define nsXPCOMCIDInternal_h__
+#ifndef nsXPCOMCIDInternal_h_
+#define nsXPCOMCIDInternal_h_
 
 #include "nsXPCOMCID.h"
 

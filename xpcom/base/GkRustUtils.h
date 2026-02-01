@@ -4,8 +4,8 @@
 
 
 
-#ifndef __mozilla_GkRustUtils_h
-#define __mozilla_GkRustUtils_h
+#ifndef _mozilla_GkRustUtils_h
+#define _mozilla_GkRustUtils_h
 
 #include "nsString.h"
 

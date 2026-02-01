@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_IOUtils__
-#define mozilla_dom_IOUtils__
+#ifndef mozilla_dom_IOUtils_
+#define mozilla_dom_IOUtils_
 
 #include "js/Utility.h"
 #include "mozilla/AlreadyAddRefed.h"

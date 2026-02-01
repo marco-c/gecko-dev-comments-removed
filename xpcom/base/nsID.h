@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsID_h__
-#define nsID_h__
+#ifndef nsID_h_
+#define nsID_h_
 
 #include <string.h>
 

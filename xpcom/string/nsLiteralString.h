@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsLiteralString_h___
-#define nsLiteralString_h___
+#ifndef nsLiteralString_h_
+#define nsLiteralString_h_
 
 #include "nscore.h"
 #include "nsString.h"

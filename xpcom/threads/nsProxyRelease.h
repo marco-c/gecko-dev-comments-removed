@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsProxyRelease_h__
-#define nsProxyRelease_h__
+#ifndef nsProxyRelease_h_
+#define nsProxyRelease_h_
 
 #include <utility>
 

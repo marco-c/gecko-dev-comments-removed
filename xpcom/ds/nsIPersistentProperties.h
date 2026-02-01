@@ -4,8 +4,8 @@
 
 
 
-#ifndef __gen_nsIPersistentProperties_h__
-#define __gen_nsIPersistentProperties_h__
+#ifndef _gen_nsIPersistentProperties_h_
+#define _gen_nsIPersistentProperties_h_
 
 
 #include "nsIPersistentProperties2.h"

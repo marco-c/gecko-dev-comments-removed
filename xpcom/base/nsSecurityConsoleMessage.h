@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSecurityConsoleMessage_h__
-#define nsSecurityConsoleMessage_h__
+#ifndef nsSecurityConsoleMessage_h_
+#define nsSecurityConsoleMessage_h_
 #include "nsISecurityConsoleMessage.h"
 #include "nsString.h"
 

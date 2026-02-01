@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsThread_h__
-#define nsThread_h__
+#ifndef nsThread_h_
+#define nsThread_h_
 
 #include "MainThreadUtils.h"
 #include "mozilla/AlreadyAddRefed.h"

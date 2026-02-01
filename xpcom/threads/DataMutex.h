@@ -4,8 +4,8 @@
 
 
 
-#ifndef DataMutex_h__
-#define DataMutex_h__
+#ifndef DataMutex_h_
+#define DataMutex_h_
 
 #include <utility>
 #include "mozilla/Mutex.h"

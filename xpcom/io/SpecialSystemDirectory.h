@@ -4,8 +4,8 @@
 
 
 
-#ifndef _SPECIALSYSTEMDIRECTORY_H_
-#define _SPECIALSYSTEMDIRECTORY_H_
+#ifndef SPECIALSYSTEMDIRECTORY_H_
+#define SPECIALSYSTEMDIRECTORY_H_
 
 #include "nsCOMArray.h"
 #include "nscore.h"

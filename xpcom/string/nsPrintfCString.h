@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintfCString_h___
-#define nsPrintfCString_h___
+#ifndef nsPrintfCString_h_
+#define nsPrintfCString_h_
 
 #include "nsString.h"
 

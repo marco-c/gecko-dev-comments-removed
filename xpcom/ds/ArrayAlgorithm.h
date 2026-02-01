@@ -4,8 +4,8 @@
 
 
 
-#ifndef ArrayAlgorithm_h___
-#define ArrayAlgorithm_h___
+#ifndef ArrayAlgorithm_h_
+#define ArrayAlgorithm_h_
 
 #include "nsTArray.h"
 

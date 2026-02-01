@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsInterfaceRequestorUtils_h
-#define __nsInterfaceRequestorUtils_h
+#ifndef _nsInterfaceRequestorUtils_h
+#define _nsInterfaceRequestorUtils_h
 
 #include "nsCOMPtr.h"
 

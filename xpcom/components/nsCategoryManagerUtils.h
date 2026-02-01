@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCategoryManagerUtils_h__
-#define nsCategoryManagerUtils_h__
+#ifndef nsCategoryManagerUtils_h_
+#define nsCategoryManagerUtils_h_
 
 void NS_CreateServicesFromCategory(const char* aCategory, nsISupports* aOrigin,
                                    const char* aObserverTopic,

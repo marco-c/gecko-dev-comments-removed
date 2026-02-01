@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsNativeCharsetUtils_h__
-#define nsNativeCharsetUtils_h__
+#ifndef nsNativeCharsetUtils_h_
+#define nsNativeCharsetUtils_h_
 
 
 

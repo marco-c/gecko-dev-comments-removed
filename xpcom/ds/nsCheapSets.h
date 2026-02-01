@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsCheapSets_h__
-#define __nsCheapSets_h__
+#ifndef _nsCheapSets_h_
+#define _nsCheapSets_h_
 
 #include "nsTHashtable.h"
 #include <stdint.h>

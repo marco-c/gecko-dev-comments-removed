@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsBinaryStream_h___
-#define nsBinaryStream_h___
+#ifndef nsBinaryStream_h_
+#define nsBinaryStream_h_
 
 #include "nsCOMPtr.h"
 #include "nsAString.h"

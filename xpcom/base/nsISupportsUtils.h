@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsISupportsUtils_h__
-#define nsISupportsUtils_h__
+#ifndef nsISupportsUtils_h_
+#define nsISupportsUtils_h_
 
 #include <type_traits>
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIWeakReferenceUtils_h__
-#define nsIWeakReferenceUtils_h__
+#ifndef nsIWeakReferenceUtils_h_
+#define nsIWeakReferenceUtils_h_
 
 #include "nsCOMPtr.h"
 #include "nsIWeakReference.h"

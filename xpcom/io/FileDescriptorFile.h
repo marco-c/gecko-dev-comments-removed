@@ -4,8 +4,8 @@
 
 
 
-#ifndef _FileDescriptorFile_h
-#define _FileDescriptorFile_h
+#ifndef FileDescriptorFile_h
+#define FileDescriptorFile_h
 
 #include "mozilla/ipc/FileDescriptor.h"
 #include "nsIFile.h"

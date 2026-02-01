@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsINIParserImpl_h__
-#define nsINIParserImpl_h__
+#ifndef nsINIParserImpl_h_
+#define nsINIParserImpl_h_
 
 #include "nsIINIParser.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsBaseHashtable_h__
-#define nsBaseHashtable_h__
+#ifndef nsBaseHashtable_h_
+#define nsBaseHashtable_h_
 
 #include <functional>
 #include <utility>

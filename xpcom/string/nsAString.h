@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsAString_h___
-#define nsAString_h___
+#ifndef nsAString_h_
+#define nsAString_h_
 
 #include "nsStringFwd.h"
 #include "nsStringIterator.h"

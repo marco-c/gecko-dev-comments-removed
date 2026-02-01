@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsArrayEnumerator_h__
-#define nsArrayEnumerator_h__
+#ifndef nsArrayEnumerator_h_
+#define nsArrayEnumerator_h_
 
 
 

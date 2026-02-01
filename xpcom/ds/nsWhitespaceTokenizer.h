@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsWhitespaceTokenizer_h
-#define __nsWhitespaceTokenizer_h
+#ifndef _nsWhitespaceTokenizer_h
+#define _nsWhitespaceTokenizer_h
 
 #include "mozilla/RangedPtr.h"
 #include "nsDependentSubstring.h"

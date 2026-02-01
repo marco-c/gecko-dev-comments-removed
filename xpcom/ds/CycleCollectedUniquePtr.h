@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_CycleCollectedUniquePtr_h__
-#define mozilla_CycleCollectedUniquePtr_h__
+#ifndef mozilla_CycleCollectedUniquePtr_h_
+#define mozilla_CycleCollectedUniquePtr_h_
 
 #include "nsCycleCollectionContainerParticipant.h"
 

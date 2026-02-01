@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsError_h__
-#define nsError_h__
+#ifndef nsError_h_
+#define nsError_h_
 
 #ifndef __cplusplus
 #  error nsError.h no longer supports C sources

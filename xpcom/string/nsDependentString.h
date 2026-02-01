@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDependentString_h___
-#define nsDependentString_h___
+#ifndef nsDependentString_h_
+#define nsDependentString_h_
 
 #include "nsString.h"
 #include "nsDebug.h"

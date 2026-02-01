@@ -10,8 +10,8 @@
 
 
 
-#ifndef nsTextFormatter_h___
-#define nsTextFormatter_h___
+#ifndef nsTextFormatter_h_
+#define nsTextFormatter_h_
 
 
 
@@ -31,7 +31,6 @@
 
 
 #include <stdio.h>
-#include <stdarg.h>
 #include "nscore.h"
 #include "nsString.h"
 #include "mozilla/Span.h"

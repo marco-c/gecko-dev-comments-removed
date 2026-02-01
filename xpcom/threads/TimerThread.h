@@ -4,8 +4,8 @@
 
 
 
-#ifndef TimerThread_h___
-#define TimerThread_h___
+#ifndef TimerThread_h_
+#define TimerThread_h_
 
 #include "nsIObserver.h"
 #include "nsIRunnable.h"

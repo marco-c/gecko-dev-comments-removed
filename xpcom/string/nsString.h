@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsString_h___
-#define nsString_h___
+#ifndef nsString_h_
+#define nsString_h_
 
 #include <ostream>
 

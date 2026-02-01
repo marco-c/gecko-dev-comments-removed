@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsReadableUtils_h___
-#define nsReadableUtils_h___
+#ifndef nsReadableUtils_h_
+#define nsReadableUtils_h_
 
 
 

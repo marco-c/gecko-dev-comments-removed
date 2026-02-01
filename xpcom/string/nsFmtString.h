@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFmtCString_h___
-#define nsFmtCString_h___
+#ifndef nsFmtCString_h_
+#define nsFmtCString_h_
 
 #include "fmt/format.h"
 #include "fmt/xchar.h"

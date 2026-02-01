@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIClassInfoImpl_h__
-#define nsIClassInfoImpl_h__
+#ifndef nsIClassInfoImpl_h_
+#define nsIClassInfoImpl_h_
 
 #include "mozilla/Alignment.h"
 #include "mozilla/MacroArgs.h"

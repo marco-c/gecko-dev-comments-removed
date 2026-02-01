@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPersistentProperties_h___
-#define nsPersistentProperties_h___
+#ifndef nsPersistentProperties_h_
+#define nsPersistentProperties_h_
 
 #include "nsIPersistentProperties2.h"
 #include "PLDHashTable.h"

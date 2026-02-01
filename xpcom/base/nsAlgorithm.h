@@ -4,10 +4,8 @@
 
 
 
-#ifndef nsAlgorithm_h___
-#define nsAlgorithm_h___
-
-#include <cstdint>
+#ifndef nsAlgorithm_h_
+#define nsAlgorithm_h_
 
 
 

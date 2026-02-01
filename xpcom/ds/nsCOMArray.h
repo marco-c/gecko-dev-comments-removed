@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCOMArray_h__
-#define nsCOMArray_h__
+#ifndef nsCOMArray_h_
+#define nsCOMArray_h_
 
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/MemoryReporting.h"

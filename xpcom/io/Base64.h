@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_Base64_h__
-#define mozilla_Base64_h__
+#ifndef mozilla_Base64_h_
+#define mozilla_Base64_h_
 
 #include "nsString.h"
 

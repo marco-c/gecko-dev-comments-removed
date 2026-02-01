@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCycleCollectionNoteRootCallback_h__
-#define nsCycleCollectionNoteRootCallback_h__
+#ifndef nsCycleCollectionNoteRootCallback_h_
+#define nsCycleCollectionNoteRootCallback_h_
 
 #include "nscore.h"
 

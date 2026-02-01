@@ -4,8 +4,8 @@
 
 
 
-#ifndef utfstrings_h__
-#define utfstrings_h__
+#ifndef utfstrings_h_
+#define utfstrings_h_
 
 struct UTFStringsStringPair {
   char16_t m16[16];

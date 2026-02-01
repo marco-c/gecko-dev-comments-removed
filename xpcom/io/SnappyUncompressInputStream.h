@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SnappyUncompressInputStream_h__
-#define mozilla_SnappyUncompressInputStream_h__
+#ifndef mozilla_SnappyUncompressInputStream_h_
+#define mozilla_SnappyUncompressInputStream_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"

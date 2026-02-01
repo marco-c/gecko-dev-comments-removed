@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsArrayUtils_h__
-#define nsArrayUtils_h__
+#ifndef nsArrayUtils_h_
+#define nsArrayUtils_h_
 
 #include "nsCOMPtr.h"
 #include "nsIArray.h"

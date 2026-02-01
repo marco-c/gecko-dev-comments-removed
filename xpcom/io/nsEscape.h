@@ -7,8 +7,8 @@
 
 
 
-#ifndef _ESCAPE_H_
-#define _ESCAPE_H_
+#ifndef ESCAPE_H_
+#define ESCAPE_H_
 
 #include "nscore.h"
 #include "nsError.h"

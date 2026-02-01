@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCRT_h___
-#define nsCRT_h___
+#ifndef nsCRT_h_
+#define nsCRT_h_
 
 #include <stdlib.h>
 #include <ctype.h>

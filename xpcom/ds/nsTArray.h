@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTArray_h__
-#define nsTArray_h__
+#ifndef nsTArray_h_
+#define nsTArray_h_
 
 #include <string.h>
 

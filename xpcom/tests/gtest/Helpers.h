@@ -4,8 +4,8 @@
 
 
 
-#ifndef __Helpers_h
-#define __Helpers_h
+#ifndef Helpers_h
+#define Helpers_h
 
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsconsolemessage_h__
-#define __nsconsolemessage_h__
+#ifndef _nsconsolemessage_h_
+#define _nsconsolemessage_h_
 
 #include "nsIConsoleMessage.h"
 #include "nsString.h"

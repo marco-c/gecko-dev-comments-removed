@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSegmentedBuffer_h__
-#define nsSegmentedBuffer_h__
+#ifndef nsSegmentedBuffer_h_
+#define nsSegmentedBuffer_h_
 
 #include <stddef.h>
 #include <functional>

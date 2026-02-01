@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDebug_h___
-#define nsDebug_h___
+#ifndef nsDebug_h_
+#define nsDebug_h_
 
 #include "nscore.h"
 #include "nsError.h"
@@ -14,7 +14,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/Likely.h"
-#include <stdarg.h>
 
 #ifdef DEBUG
 #  include "mozilla/ErrorNames.h"

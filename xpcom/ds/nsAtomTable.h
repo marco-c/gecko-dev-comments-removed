@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsAtomTable_h__
-#define nsAtomTable_h__
+#ifndef nsAtomTable_h_
+#define nsAtomTable_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "nsAtom.h"

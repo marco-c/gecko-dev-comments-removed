@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_lazyidlethread_h__
-#define mozilla_lazyidlethread_h__
+#ifndef mozilla_lazyidlethread_h_
+#define mozilla_lazyidlethread_h_
 
 #ifndef MOZILLA_INTERNAL_API
 #  error "This header is only usable from within libxul (MOZILLA_INTERNAL_API)."

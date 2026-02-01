@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXPTCUtils_h__
-#define nsXPTCUtils_h__
+#ifndef nsXPTCUtils_h_
+#define nsXPTCUtils_h_
 
 #include "xptcall.h"
 #include "mozilla/MemoryReporting.h"

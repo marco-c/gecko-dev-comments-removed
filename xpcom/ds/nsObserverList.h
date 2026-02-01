@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsObserverList_h___
-#define nsObserverList_h___
+#ifndef nsObserverList_h_
+#define nsObserverList_h_
 
 #include "nsISupports.h"
 #include "nsCOMArray.h"

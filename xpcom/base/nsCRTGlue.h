@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCRTGlue_h__
-#define nsCRTGlue_h__
+#ifndef nsCRTGlue_h_
+#define nsCRTGlue_h_
 
 #include "nscore.h"
 

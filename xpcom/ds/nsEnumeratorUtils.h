@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsEnumeratorUtils_h__
-#define nsEnumeratorUtils_h__
+#ifndef nsEnumeratorUtils_h_
+#define nsEnumeratorUtils_h_
 
 #include "nscore.h"
 

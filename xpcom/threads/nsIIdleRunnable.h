@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIIdleRunnable_h__
-#define nsIIdleRunnable_h__
+#ifndef nsIIdleRunnable_h_
+#define nsIIdleRunnable_h_
 
 #include "nsISupports.h"
 #include "mozilla/TimeStamp.h"

@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsISupportsImpl_h__
-#define nsISupportsImpl_h__
+#ifndef nsISupportsImpl_h_
+#define nsISupportsImpl_h_
 
 #include "nscore.h"
 #include "nsISupports.h"

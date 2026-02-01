@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsThreadPool_h__
-#define nsThreadPool_h__
+#ifndef nsThreadPool_h_
+#define nsThreadPool_h_
 
 #include "nsITargetShutdownTask.h"
 #include "nsIThread.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDependentSubstring_h___
-#define nsDependentSubstring_h___
+#ifndef nsDependentSubstring_h_
+#define nsDependentSubstring_h_
 
 #include "nsAString.h"
 #include "nsTDependentSubstring.h"

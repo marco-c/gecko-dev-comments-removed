@@ -4,8 +4,8 @@
 
 
 
-#ifndef _nsXULAppAPI_h__
-#define _nsXULAppAPI_h__
+#ifndef _nsXULAppAPI_h_
+#define _nsXULAppAPI_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/ProcessType.h"

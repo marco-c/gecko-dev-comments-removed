@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsEnvironment_h__
-#define nsEnvironment_h__
+#ifndef nsEnvironment_h_
+#define nsEnvironment_h_
 
 #include "mozilla/Mutex.h"
 #include "nsIEnvironment.h"
