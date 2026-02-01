@@ -1923,8 +1923,6 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
 nsresult nsPrintJob::FinishPrintPreview() {
   nsresult rv = NS_OK;
 
-#ifdef NS_PRINT_PREVIEW
-
   
   
   
@@ -1977,9 +1975,6 @@ nsresult nsPrintJob::FinishPrintPreview() {
   
 
   printData->OnEndPrinting();
-
-#endif  
-
   return NS_OK;
 }
 
@@ -2171,11 +2166,9 @@ void DumpLayoutData(const char* aTitleStr, const char* aURLStr,
     return;
   }
 
-#  ifdef NS_PRINT_PREVIEW
   if (aPresContext->Type() == nsPresContext::eContext_PrintPreview) {
     return;
   }
-#  endif
 
   NS_ASSERTION(aRootFrame, "Pointer is null!");
   NS_ASSERTION(aDocShell, "Pointer is null!");
