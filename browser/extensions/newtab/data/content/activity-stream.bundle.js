@@ -13108,8 +13108,9 @@ function WeatherForecast() {
   }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), React.createElement("hr", null), React.createElement("div", {
     className: "forecast-row"
   }, React.createElement("p", {
-    className: "today-forecast"
-  }, "Today's forecast"), React.createElement("ul", {
+    className: "today-forecast",
+    "data-l10n-id": "newtab-weather-todays-forecast"
+  }), React.createElement("ul", {
     className: "forecast-row-items"
   }, React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
@@ -13125,10 +13126,13 @@ function WeatherForecast() {
     className: "weather-forecast-footer"
   }, React.createElement("a", {
     href: "#",
-    className: "full-forecast"
-  }, "See full forecast"), React.createElement("span", {
-    className: "sponsored-text"
-  }, "Accuweather Sponsored")));
+    className: "full-forecast",
+    "data-l10n-id": "newtab-weather-see-full-forecast"
+  }), React.createElement("span", {
+    className: "sponsored-text",
+    "data-l10n-id": "newtab-weather-sponsored",
+    "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
+  })));
 }
 
 ;
