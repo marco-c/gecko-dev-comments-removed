@@ -250,19 +250,22 @@ bool Compatibility::IsUiaEnabled() {
     }
     return *sIsNvdaVersionSupported;
   }
-  if (IsJAWS()) {
+  if (IsVisperoShared()) {
     
-    static Maybe<bool> sIsJawsVersionSupported;
-    if (sIsJawsVersionSupported.isNothing()) {
-      if (HMODULE jawsHandle = ::GetModuleHandleW(L"jhook")) {
+    static Maybe<bool> sIsVisperoVersionSupported;
+    if (sIsVisperoVersionSupported.isNothing()) {
+      if (HMODULE visperoHandle = ::GetModuleHandleW(L"AccEventCache")) {
         
-        sIsJawsVersionSupported = Some(!IsModuleVersionLessThan(
-            jawsHandle, MAKE_FILE_VERSION(27, 0, 0, 0)));
+        
+        sIsVisperoVersionSupported = Some(!IsModuleVersionLessThan(
+            visperoHandle, MAKE_FILE_VERSION(6, 0, 0, 0)));
       } else {
-        sIsJawsVersionSupported = Some(false);
+        sIsVisperoVersionSupported = Some(false);
       }
     }
-    return *sIsJawsVersionSupported;
+    return *sIsVisperoVersionSupported;
   }
-  return !IsOldJAWS() && !IsVisperoShared();
+  
+  
+  return !IsJAWS() && !(sConsumers & ZOOMTEXT);
 }
