@@ -19,6 +19,7 @@
 #include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -147,12 +148,17 @@ void AsyncUDPSocket::OnReadEvent(Socket* socket) {
     
     receive_buffer.arrival_time = env_.clock().CurrentTime();
   } else {
-    if (!socket_time_offset_) {
+    Timestamp current_time = env_.clock().CurrentTime();
+    if (!socket_time_offset_ ||
+        *receive_buffer.arrival_time + *socket_time_offset_ > current_time) {
       
-      socket_time_offset_ =
-          env_.clock().CurrentTime() - *receive_buffer.arrival_time;
+      
+      
+      
+      socket_time_offset_ = current_time - *receive_buffer.arrival_time;
     }
     *receive_buffer.arrival_time += *socket_time_offset_;
+    RTC_DCHECK_LE(*receive_buffer.arrival_time, current_time);
   }
   NotifyPacketReceived(
       ReceivedIpPacket(receive_buffer.payload, receive_buffer.source_address,
