@@ -3344,12 +3344,40 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const EmbeddedMigrationWizard = ({
   handleAction,
   content
 }) => {
   const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)();
-  const options = content.migration_wizard_options;
+  const options = content.tiles?.migration_wizard_options;
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const handleBeginMigration = () => {
       handleAction({
@@ -3384,7 +3412,7 @@ const EmbeddedMigrationWizard = ({
     "option-expander-title-string": options?.option_expander_title_string || "",
     "hide-option-expander-subtitle": options?.hide_option_expander_subtitle || false,
     "data-import-complete-success-string": options?.data_import_complete_success_string || "",
-    "selection-header-string": options?.selection_header_string,
+    "selection-header-string": options?.selection_header_string || "",
     "selection-subheader-string": options?.selection_subheader_string || "",
     "hide-select-all": options?.hide_select_all || false,
     "checkbox-margin-inline": options?.checkbox_margin_inline || "",
