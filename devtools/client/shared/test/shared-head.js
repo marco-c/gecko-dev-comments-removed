@@ -427,7 +427,6 @@ async function safeCloseBrowserConsole({ clearOutput = false } = {}) {
 
 
 function highlighterTestActorBootstrap() {
-  
   const HIGHLIGHTER_TEST_ACTOR_URL =
     "chrome://mochitests/content/browser/devtools/client/shared/test/highlighter-test-actor.js";
 
