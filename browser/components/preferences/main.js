@@ -5664,9 +5664,13 @@ var gMainPane = {
 
 
   manageProfiles() {
-    SelectableProfileService.maybeSetupDataStore().then(() => {
-      gSubDialog.open("about:profilemanager");
-    });
+    const win = window.browsingContext.topChromeWindow;
+
+    win.toOpenWindowByType(
+      "about:profilemanager",
+      "about:profilemanager",
+      "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar,centerscreen"
+    );
   },
 
   

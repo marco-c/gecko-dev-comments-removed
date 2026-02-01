@@ -41,60 +41,6 @@ async function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {
 
 
 
-function promiseLoadSubDialog(aURL) {
-  return new Promise(resolve => {
-    content.gSubDialog._dialogStack.addEventListener(
-      "dialogopen",
-      function dialogopen(aEvent) {
-        if (
-          aEvent.detail.dialog._frame.contentWindow.location == "about:blank"
-        ) {
-          return;
-        }
-        content.gSubDialog._dialogStack.removeEventListener(
-          "dialogopen",
-          dialogopen
-        );
-
-        is(
-          aEvent.detail.dialog._frame.contentWindow.location.toString(),
-          aURL,
-          "Check the proper URL is loaded"
-        );
-
-        
-        ok(
-          BrowserTestUtils.isVisible(aEvent.detail.dialog._overlay),
-          "Overlay is visible"
-        );
-
-        
-        let expectedStyleSheetURLs =
-          aEvent.detail.dialog._injectedStyleSheets.slice(0);
-        for (let styleSheet of aEvent.detail.dialog._frame.contentDocument
-          .styleSheets) {
-          let i = expectedStyleSheetURLs.indexOf(styleSheet.href);
-          if (i >= 0) {
-            info("found " + styleSheet.href);
-            expectedStyleSheetURLs.splice(i, 1);
-          }
-        }
-        is(
-          expectedStyleSheetURLs.length,
-          0,
-          "All expectedStyleSheetURLs should have been found"
-        );
-
-        
-        
-        executeSoon(() => resolve(aEvent.detail.dialog._frame.contentWindow));
-      }
-    );
-  });
-}
-
-
-
 async function waitForPaneChange(paneId) {
   let doc = gBrowser.selectedBrowser.contentDocument;
   let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
@@ -208,9 +154,15 @@ add_task(async function subpaneContentsWithOneProfile() {
 
   
   manageProfilesButton.scrollIntoView();
-  let promiseSubDialogLoaded = promiseLoadSubDialog("about:profilemanager");
+  let windowOpened = BrowserTestUtils.domWindowOpenedAndLoaded();
   EventUtils.synthesizeMouseAtCenter(manageProfilesButton, {}, win);
-  await promiseSubDialogLoaded;
+  let dialog = await windowOpened;
+  Assert.equal(
+    dialog.location.href,
+    "about:profilemanager",
+    "The profile manager window should open"
+  );
+  await BrowserTestUtils.closeWindow(dialog);
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -303,15 +255,23 @@ add_task(async function testPrivacyInfoEnabled() {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  let win = doc.ownerGlobal;
   let profilesNote = doc.getElementById("preferences-privacy-profiles");
 
   ok(BrowserTestUtils.isVisible(profilesNote), "The profiles note is visible");
 
   
-  let promiseSubDialogLoaded = promiseLoadSubDialog("about:profilemanager");
   let profilesButton = doc.getElementById("dataCollectionViewProfiles");
-  profilesButton.click();
-  await promiseSubDialogLoaded;
+  profilesButton.scrollIntoView();
+  let windowOpened = BrowserTestUtils.domWindowOpenedAndLoaded();
+  EventUtils.synthesizeMouseAtCenter(profilesButton, {}, win);
+  let dialog = await windowOpened;
+  Assert.equal(
+    dialog.location.href,
+    "about:profilemanager",
+    "The profile manager window should open"
+  );
+  await BrowserTestUtils.closeWindow(dialog);
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
