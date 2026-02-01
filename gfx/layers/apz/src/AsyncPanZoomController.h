@@ -568,6 +568,10 @@ class AsyncPanZoomController {
 
   
   
+  bool CanScrollOrOverscroll(const ParentLayerPoint& aDelta) const;
+
+  
+  
   bool CanScrollWithWheel(const ParentLayerPoint& aDelta) const;
 
   
