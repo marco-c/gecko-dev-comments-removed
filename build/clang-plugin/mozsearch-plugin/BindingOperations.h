@@ -3,6 +3,9 @@
 
 
 
+#ifndef BUILD_CLANG_PLUGIN_MOZSEARCH_PLUGIN_BINDINGOPERATIONS_H_
+#define BUILD_CLANG_PLUGIN_MOZSEARCH_PLUGIN_BINDINGOPERATIONS_H_
+
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Decl.h>
 #include <clang/AST/DeclCXX.h>
@@ -17,3 +20,5 @@ void findBindingToJavaMember(clang::ASTContext &C,
 void findBindingToJavaConstant(clang::ASTContext &C, clang::VarDecl &field);
 
 void emitBindingAttributes(llvm::json::OStream &json, const clang::Decl &decl);
+
+#endif  

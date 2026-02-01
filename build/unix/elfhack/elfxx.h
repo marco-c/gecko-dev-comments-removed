@@ -2,6 +2,9 @@
 
 
 
+#ifndef BUILD_UNIX_ELFHACK_ELFXX_H_
+#define BUILD_UNIX_ELFHACK_ELFXX_H_
+
 #include <stdexcept>
 #include <list>
 #include <vector>
@@ -697,3 +700,5 @@ inline const char* ElfLocation::getBuffer() {
 inline unsigned int ElfSize::getValue() { return section->getSize(); }
 
 inline unsigned int ElfEntSize::getValue() { return section->getEntSize(); }
+
+#endif  
