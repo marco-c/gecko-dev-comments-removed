@@ -764,7 +764,7 @@ class CssRuleView extends EventEmitter {
     const pseudoClasses = element.pseudoClassLocks;
 
     
-    this._onClearSearch();
+    this._onClearSearch({ focusSearchField: false });
 
     this._focusNextUserAddedRule = true;
     this.pageStyle.addNewRule(element, pseudoClasses);
@@ -844,9 +844,14 @@ class CssRuleView extends EventEmitter {
 
 
 
-  setFilterStyles(value = "") {
+
+
+
+  setFilterStyles(value = "", { focusSearchField = true } = {}) {
     this.searchField.value = value;
-    this.searchField.focus();
+    if (focusSearchField) {
+      this.searchField.focus();
+    }
     this._onFilterStyles();
   }
 
@@ -949,9 +954,12 @@ class CssRuleView extends EventEmitter {
 
 
 
-  _onClearSearch() {
+
+
+
+  _onClearSearch(options) {
     if (this.searchField.value) {
-      this.setFilterStyles("");
+      this.setFilterStyles("", options);
       return true;
     }
 
@@ -2236,7 +2244,7 @@ class CssRuleView extends EventEmitter {
 
   highlightProperty(name, { ruleValidator } = {}) {
     
-    this._onClearSearch();
+    this._onClearSearch({ focusSearchField: false });
 
     let scrollBehavior = "auto";
     const hasRuleValidator = typeof ruleValidator === "function";
@@ -2274,7 +2282,8 @@ class CssRuleView extends EventEmitter {
           this._highlightElementInRule(
             rule,
             textProp.editor.element,
-            scrollBehavior
+            scrollBehavior,
+            textProp.editor.nameSpan
           );
           return true;
         }
@@ -2364,12 +2373,21 @@ class CssRuleView extends EventEmitter {
 
 
 
-  _highlightElementInRule(rule, element, scrollBehavior) {
+
+  _highlightElementInRule(rule, element, scrollBehavior, elementToFocus) {
     if (rule) {
       this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
     } else {
       this._scrollToElement(element, null, scrollBehavior);
     }
+
+    
+    if (elementToFocus) {
+      elementToFocus.focus({ focusVisible: true });
+      this.emitForTests("element-highlighted", element);
+      return;
+    }
+
     this._flashElement(element).then(() =>
       this.emitForTests("element-highlighted", element)
     );
