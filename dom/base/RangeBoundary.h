@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/ToString.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsCOMPtr.h"
@@ -158,8 +159,12 @@ class RangeBoundaryBase {
       } else if (aOffset > 0) {
         mRef = GetChildAt(mParent, aOffset - 1);
       }
-      NS_WARNING_ASSERTION(mRef || aOffset == 0,
-                           "Constructing RangeBoundary with invalid value");
+      NS_WARNING_ASSERTION(
+          mRef || aOffset == 0,
+          nsPrintfCString("Constructing RangeBoundary with invalid "
+                          "value:\nthis=%s",
+                          ToString(*this).c_str())
+              .get());
     }
     NS_WARNING_ASSERTION(!mRef || IsValidParent(mParent, mRef),
                          "Constructing RangeBoundary with invalid value");
@@ -168,6 +173,10 @@ class RangeBoundaryBase {
   [[nodiscard]] TreeKind GetTreeKind() const { return mTreeKind; }
 
   RangeBoundaryBase AsRangeBoundaryInFlatTree() const {
+    
+    
+    
+    
     if (mOffset) {
       if (mTreeKind == TreeKind::Flat) {
         MOZ_ASSERT_IF(IsSet(), IsSetAndValid());
@@ -291,8 +300,12 @@ class RangeBoundaryBase {
         
         return nullptr;
       }
-      MOZ_ASSERT(*Offset(OffsetFilter::kValidOrInvalidOffsets) == 0,
-                 "invalid RangeBoundary");
+      MOZ_ASSERT_IF(mTreeKind == TreeKind::DOM,
+                    *Offset(OffsetFilter::kValidOrInvalidOffsets) == 0);
+      NS_ASSERTION(*Offset(OffsetFilter::kValidOrInvalidOffsets) == 0,
+                   nsPrintfCString("Invalid range boundary:\nthis=%s",
+                                   ToString(*this).c_str())
+                       .get());
       return GetFirstChild(mParent);
     }
     MOZ_ASSERT(
@@ -404,9 +417,8 @@ class RangeBoundaryBase {
       const RangeBoundaryBase<ParentType, RefType>& aRangeBoundary) {
     aStream << "{ mParent=" << aRangeBoundary.GetContainer();
     if (aRangeBoundary.GetContainer()) {
-      aStream << " (" << *aRangeBoundary.GetContainer()
-              << ", Length()=" << aRangeBoundary.GetContainer()->Length()
-              << ")";
+      aStream << " (" << *aRangeBoundary.GetContainer() << ", Length="
+              << aRangeBoundary.GetLength(aRangeBoundary.GetContainer()) << ")";
     }
     if (aRangeBoundary.mIsMutationObserved) {
       aStream << ", mRef=" << aRangeBoundary.mRef;
@@ -417,7 +429,9 @@ class RangeBoundaryBase {
 
     aStream << ", mOffset=" << aRangeBoundary.mOffset;
     aStream << ", mIsMutationObserved="
-            << (aRangeBoundary.mIsMutationObserved ? "true" : "false") << " }";
+            << (aRangeBoundary.mIsMutationObserved ? "true" : "false");
+    aStream << ", mTreeKind=" << aRangeBoundary.mTreeKind;
+    aStream << " }";
     return aStream;
   }
 
