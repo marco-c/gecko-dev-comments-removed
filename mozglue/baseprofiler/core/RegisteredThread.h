@@ -19,9 +19,18 @@ namespace baseprofiler {
 
 
 class RacyRegisteredThread final {
+ private:
+  enum class SleepState {
+    Awake,
+    SleepingNotObserved,
+    SleepingObserved,
+  };
+
  public:
   explicit RacyRegisteredThread(BaseProfilerThreadId aThreadId)
-      : mThreadId(aThreadId), mSleep(AWAKE), mIsBeingProfiled(false) {}
+      : mThreadId(aThreadId),
+        mSleep(SleepState::Awake),
+        mIsBeingProfiled(false) {}
 
   ~RacyRegisteredThread() {}
 
@@ -38,16 +47,18 @@ class RacyRegisteredThread final {
     
     
     
-    (void)mSleep.compareExchange(SLEEPING_OBSERVED, SLEEPING_NOT_OBSERVED);
+    (void)mSleep.compareExchange(SleepState::SleepingObserved,
+                                 SleepState::SleepingNotObserved);
   }
 
   
   bool CanDuplicateLastSampleDueToSleep() {
-    if (mSleep == AWAKE) {
+    if (mSleep == SleepState::Awake) {
       return false;
     }
 
-    if (mSleep.compareExchange(SLEEPING_NOT_OBSERVED, SLEEPING_OBSERVED)) {
+    if (mSleep.compareExchange(SleepState::SleepingNotObserved,
+                               SleepState::SleepingObserved)) {
       return false;
     }
 
@@ -57,18 +68,18 @@ class RacyRegisteredThread final {
   
   
   void SetSleeping() {
-    MOZ_ASSERT(mSleep == AWAKE);
-    mSleep = SLEEPING_NOT_OBSERVED;
+    MOZ_ASSERT(mSleep == SleepState::Awake);
+    mSleep = SleepState::SleepingNotObserved;
   }
 
   
   
   void SetAwake() {
-    MOZ_ASSERT(mSleep != AWAKE);
-    mSleep = AWAKE;
+    MOZ_ASSERT(mSleep != SleepState::Awake);
+    mSleep = SleepState::Awake;
   }
 
-  bool IsSleeping() { return mSleep != AWAKE; }
+  bool IsSleeping() { return mSleep != SleepState::Awake; }
 
   BaseProfilerThreadId ThreadId() const { return mThreadId; }
 
@@ -115,10 +126,7 @@ class RacyRegisteredThread final {
   
   
   
-  static const int AWAKE = 0;
-  static const int SLEEPING_NOT_OBSERVED = 1;
-  static const int SLEEPING_OBSERVED = 2;
-  Atomic<int> mSleep;
+  Atomic<SleepState> mSleep;
 
   
   Atomic<bool, MemoryOrdering::Relaxed> mIsBeingProfiled;
