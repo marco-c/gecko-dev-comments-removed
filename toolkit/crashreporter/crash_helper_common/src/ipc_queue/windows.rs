@@ -128,7 +128,7 @@ impl IPCQueue {
             }
         }
 
-        if self.connectors.len() == 0 {
+        if self.connectors.is_empty() {
             
             return Ok(events);
         }
