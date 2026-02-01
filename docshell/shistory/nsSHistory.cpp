@@ -1846,7 +1846,7 @@ class EntryAndDistance {
   nsCOMPtr<nsIDocumentViewer> mViewer;
   RefPtr<nsFrameLoader> mFrameLoader;
   uint32_t mLastTouched;
-  int32_t mDistance;
+  uint32_t mDistance;
 };
 
 }  
@@ -1896,7 +1896,7 @@ void nsSHistory::GloballyEvictDocumentViewers() {
           EntryAndDistance& container = shEntries[j];
           if (container.mViewer == viewer) {
             container.mDistance =
-                std::min(container.mDistance, DeprecatedAbs(i - shist->mIndex));
+                std::min(container.mDistance, Abs(i - shist->mIndex));
             found = true;
             break;
           }
@@ -1908,8 +1908,8 @@ void nsSHistory::GloballyEvictDocumentViewers() {
           for (uint32_t j = 0; j < shEntries.Length(); j++) {
             EntryAndDistance& container = shEntries[j];
             if (container.mFrameLoader == frameLoader) {
-              container.mDistance = std::min(container.mDistance,
-                                             DeprecatedAbs(i - shist->mIndex));
+              container.mDistance =
+                  std::min(container.mDistance, Abs(i - shist->mIndex));
               found = true;
               break;
             }
@@ -1920,8 +1920,7 @@ void nsSHistory::GloballyEvictDocumentViewers() {
       
       
       if (hasDocumentViewerOrFrameLoader && !found) {
-        EntryAndDistance container(shist, entry,
-                                   DeprecatedAbs(i - shist->mIndex));
+        EntryAndDistance container(shist, entry, Abs(i - shist->mIndex));
         shEntries.AppendElement(container);
       }
     }
