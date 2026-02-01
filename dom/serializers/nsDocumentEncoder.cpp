@@ -1931,7 +1931,6 @@ nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
   }
 
   nsresult rv = NS_OK;
-  bool done = false;
 
   nsCOMPtr<nsINode> frontNode, endNode, parent;
   uint32_t frontOffset, endOffset;
@@ -1942,33 +1941,31 @@ nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
   bool isEditable = node->IsEditable();
 
   
-  while (!done) {
+  while (true) {
     node = *ioNode;
     parent = node->GetParentNode();
     if (!parent) {
-      done = true;
-    } else {
-      
-      
-      rv = GetPromotedStartPoint(*ioNode, *aIOStartOffset,
-                                 address_of(frontNode), &frontOffset, parent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      
-      rv = GetPromotedEndPoint(*ioNode, *aIOEndOffset, address_of(endNode),
-                               &endOffset, parent);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      
-      if ((frontNode != parent) || (endNode != parent) ||
-          (frontNode->IsEditable() != isEditable))
-        done = true;
-      else {
-        *ioNode = frontNode;
-        *aIOStartOffset = frontOffset;
-        *aIOEndOffset = endOffset;
-      }
+      break;
     }
+    
+    
+    rv = GetPromotedStartPoint(*ioNode, *aIOStartOffset, address_of(frontNode),
+                               &frontOffset, parent);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = GetPromotedEndPoint(*ioNode, *aIOEndOffset, address_of(endNode),
+                             &endOffset, parent);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    if ((frontNode != parent) || (endNode != parent) ||
+        (frontNode->IsEditable() != isEditable)) {
+      break;
+    }
+    *ioNode = frontNode;
+    *aIOStartOffset = frontOffset;
+    *aIOEndOffset = endOffset;
   }
   return rv;
 }
