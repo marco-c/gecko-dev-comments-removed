@@ -23,9 +23,6 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
 AddonTestUtils.initMochitest(this);
 
 
-DEFAULT_EXPERIMENT = null;
-
-
 
 
 
@@ -64,6 +61,7 @@ add_task(async function test_IPProtectionService_updateEligibility() {
 
 
 add_task(async function test_IPProtectionService_updateEnrollment() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -132,6 +130,7 @@ add_task(async function test_IPProtectionService_enroll() {
 
 add_task(
   async function test_IPProtectionService_enroll_when_enrolled_in_experiment() {
+    Services.prefs.clearUserPref("browser.ipProtection.enabled");
     setupService({
       isEnrolledAndEntitled: false,
       isSignedIn: true,
@@ -210,6 +209,7 @@ add_task(
 
 
 add_task(async function test_IPProtectionService_updateEntitlement() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -232,6 +232,7 @@ add_task(async function test_IPProtectionService_updateEntitlement() {
 });
 
 add_task(async function test_ipprotection_ready() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
