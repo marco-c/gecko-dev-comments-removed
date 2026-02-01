@@ -37,20 +37,6 @@ chai.use(chaiAssertions);
 
 const overrider = new GlobalOverrider();
 
-
-if (typeof window.HTMLDialogElement === "undefined") {
-  window.HTMLDialogElement = function () {};
-  window.HTMLDialogElement.prototype = Object.create(HTMLElement.prototype);
-}
-
-
-window.HTMLDialogElement.prototype.showModal = function () {
-  this.open = true;
-};
-window.HTMLDialogElement.prototype.close = function () {
-  this.open = false;
-};
-
 const RemoteSettings = name => ({
   get: () => {
     if (name === "attachment") {
