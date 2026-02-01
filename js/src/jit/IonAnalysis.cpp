@@ -3736,6 +3736,8 @@ SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space,
   }
   MOZ_ASSERT(space == MathSpace::Modulo || space == MathSpace::Infinite);
 
+  
+  
   if (space == MathSpace::Modulo) {
     return SimpleLinearSum(ins, 0);
   }
