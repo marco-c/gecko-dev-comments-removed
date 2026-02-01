@@ -48,9 +48,8 @@
 #include "nsINodeList.h"
 
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLFormElement.h"
-#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsIContent.h"
 #include "nsIFormControl.h"
@@ -3444,7 +3443,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     
     
     
-    
     bool cacheValueText = false;
     if (HasNumericValue()) {
       fields->SetAttribute(CacheKey::NumericValue, CurValue());
@@ -3455,10 +3453,8 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                        (mContent->IsElement() &&
                         nsAccUtils::HasARIAAttr(mContent->AsElement(),
                                                 nsGkAtoms::aria_valuetext));
-    } else if (IsTextField() || IsHTMLLink()) {
-      cacheValueText = true;
-    } else if (auto* input = dom::HTMLInputElement::FromNode(mContent)) {
-      cacheValueText = input->IsInputColor();
+    } else {
+      cacheValueText = IsTextField() || IsHTMLLink();
     }
 
     if (cacheValueText) {

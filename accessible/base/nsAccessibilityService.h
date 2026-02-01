@@ -224,11 +224,6 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  void ColorValueChanged(mozilla::PresShell* aPresShell, nsIContent* aContent);
-
-  
-
-
   void UpdateImageMap(nsImageFrame* aImageFrame);
 
   
