@@ -463,7 +463,7 @@ Moof::Moof(const Box& aBox, const TrackParseMode& aTrackParseMode,
   
   
   for (size_t i = 0; i < psshBoxes.Length(); ++i) {
-    Box box = psshBoxes[i];
+    const Box& box = psshBoxes[i];
     if (i == 0 || box.Offset() != psshBoxes[i - 1].NextOffset()) {
       mPsshes.AppendElement();
     }
