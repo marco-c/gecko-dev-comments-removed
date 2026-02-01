@@ -5,6 +5,7 @@
 
 use nsstring::nsCString;
 use std::ffi::c_void;
+use thin_vec::ThinVec;
 
 
 
@@ -38,21 +39,8 @@ impl MaybeString {
 
 
 
-
 #[repr(C)]
 pub struct UrlpPattern(pub *mut c_void); 
-
-
-#[repr(transparent)]
-pub struct UrlpComponentPtr(pub *mut c_void);
-
-
-#[repr(transparent)]
-pub struct UrlpMatcherPtr(pub *mut c_void);
-
-
-#[repr(transparent)]
-pub struct RegExpObjWrapper(pub *mut c_void);
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -129,4 +117,40 @@ pub struct UrlpMatchInputAndInputs {
 #[repr(C)]
 pub struct UrlpOptions {
     pub ignore_case: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
+pub enum UrlpInnerMatcherType {
+    Literal,
+    SingleCapture,
+    RegExp,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
+pub struct UrlpInnerMatcher {
+    pub inner_type: UrlpInnerMatcherType,
+    pub literal: nsCString, 
+    pub allow_empty: bool,  
+    pub filter_exists: bool,
+    pub filter: char,      
+    pub regexp: nsCString, 
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
+pub struct UrlpMatcher {
+    pub prefix: nsCString,
+    pub suffix: nsCString,
+    pub inner: UrlpInnerMatcher,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
+pub struct UrlpComponent {
+    pub pattern_string: nsCString,
+    pub regexp_string: nsCString,
+    pub matcher: UrlpMatcher,
+    pub group_name_list: ThinVec<nsCString>,
 }

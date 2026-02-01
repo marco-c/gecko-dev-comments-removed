@@ -1,10 +1,10 @@
 
 
-use crate::Error;
 use crate::error::TokenizerError;
+use crate::Error;
 use icu_properties::{
-  CodePointSetDataBorrowed,
   props::{IdContinue, IdStart},
+  CodePointSetDataBorrowed,
 };
 
 
