@@ -230,26 +230,46 @@ TEST(NeuralFeatureExtractorTest, FrequencyDomainFeatureExtractor) {
   for (int i = 0; i < kStepSize; ++i) {
     input[i] = noise1_scaled[i];
   }
-  extractor.PushFeaturesToModelInput(input, output);
+  extractor.PushFeaturesToModelInput(
+      input, output, FeatureExtractor::ModelInputEnum::kLinearAecOutput);
+  EXPECT_THAT(input.size(), 0);
+  input.resize(kStepSize);
   for (int i = 0; i < kStepSize; ++i) {
     input[i] = noise1_scaled[i + kStepSize];
   }
-  extractor.PushFeaturesToModelInput(input, output);
+  extractor.PushFeaturesToModelInput(
+      input, output, FeatureExtractor::ModelInputEnum::kLinearAecOutput);
   
   EXPECT_THAT(output, Pointwise(FloatNear(kTolerance), expected_output1));
-
+  EXPECT_THAT(input.size(), 0);
+  input.resize(kStepSize);
   
   for (int i = 0; i < kStepSize; ++i) {
     input[i] = noise2_scaled[i];
   }
-  extractor.PushFeaturesToModelInput(input, output);
+  extractor.PushFeaturesToModelInput(
+      input, output, FeatureExtractor::ModelInputEnum::kLinearAecOutput);
+  EXPECT_THAT(input.size(), 0);
+  input.resize(kStepSize);
   for (int i = 0; i < kStepSize; ++i) {
     input[i] = noise2_scaled[i + kStepSize];
   }
-  extractor.PushFeaturesToModelInput(input, output);
-
+  extractor.PushFeaturesToModelInput(
+      input, output, FeatureExtractor::ModelInputEnum::kLinearAecOutput);
+  EXPECT_THAT(input.size(), 0);
   
   EXPECT_THAT(output, Pointwise(FloatNear(kTolerance), expected_output2));
+}
+
+TEST(NeuralFeatureExtractorTest, InputVectorCleared) {
+  
+  constexpr int kStepSize = 128;
+  FrequencyDomainFeatureExtractor feature_extractor(kStepSize);
+  std::vector<float> input(kStepSize, 33.0f);
+  std::vector<float> output(kStepSize + 1);
+  feature_extractor.PushFeaturesToModelInput(
+      input, output, FeatureExtractor::ModelInputEnum::kLinearAecOutput);
+  EXPECT_THAT(input.size(), 0);
 }
 
 }  
