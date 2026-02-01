@@ -7,7 +7,6 @@
 
 
 
-
 async function captureNetworkRequest(commands) {
   var capture_network_request = [];
   var capture_resource = await commands.js.run(`

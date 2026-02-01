@@ -7,7 +7,6 @@
 
 
 
-
 async function getNumImagesLoaded(elementSelector, commands) {
   return commands.js.run(`
     let sum = 0;

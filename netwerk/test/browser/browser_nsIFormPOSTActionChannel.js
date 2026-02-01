@@ -182,7 +182,6 @@ document.getElementById('form').submit();
 
 function frameScript() {
   
-  
   addMessageListener("Test:WaitForIFrame", function () {
     var check = function () {
       if (content) {

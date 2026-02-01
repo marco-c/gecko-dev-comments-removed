@@ -7,7 +7,6 @@
 
 
 
-
 async function getNumLoaded(commands) {
   return commands.js.run(`
     let sum = 0;
