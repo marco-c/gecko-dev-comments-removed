@@ -280,7 +280,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(smallFunctionMaxBytecodeLength, 140);
 
   
-  SET_DEFAULT(inliningEntryThreshold, 100);
+  SET_DEFAULT(inliningEntryThreshold, 90);
 
   
   
