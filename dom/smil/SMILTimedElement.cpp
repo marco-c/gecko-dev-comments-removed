@@ -497,7 +497,7 @@ void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
   
   
   
-  if (GetTimeContainer()->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN))
+  if (GetTimeContainer()->IsPausedByType(SMILTimeContainer::PauseType::Begin))
     return;
 
   

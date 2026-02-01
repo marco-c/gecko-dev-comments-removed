@@ -7,6 +7,7 @@
 #ifndef DOM_SMIL_SMILTIMECONTAINER_H_
 #define DOM_SMIL_SMILTIMECONTAINER_H_
 
+#include "mozilla/EnumSet.h"
 #include "mozilla/SMILMilestone.h"
 #include "mozilla/SMILTypes.h"
 #include "mozilla/dom/SVGAnimationElement.h"
@@ -30,13 +31,14 @@ class SMILTimeContainer {
   
 
 
-  enum {
-    PAUSE_BEGIN = 1,     
-    PAUSE_SCRIPT = 2,    
-    PAUSE_PAGEHIDE = 4,  
-    PAUSE_USERPREF = 8,  
-    PAUSE_IMAGE = 16     
+  enum class PauseType : uint8_t {
+    Begin,     
+    Script,    
+    PageHide,  
+    UserPref,  
+    Image      
   };
+  using PauseTypes = EnumSet<PauseType>;
 
   
 
@@ -51,7 +53,7 @@ class SMILTimeContainer {
 
 
 
-  virtual void Pause(uint32_t aType);
+  virtual void Pause(PauseType aType);
 
   
 
@@ -66,7 +68,7 @@ class SMILTimeContainer {
 
 
 
-  virtual void Resume(uint32_t aType);
+  virtual void Resume(PauseType aType);
 
   
 
@@ -76,7 +78,9 @@ class SMILTimeContainer {
 
 
 
-  bool IsPausedByType(uint32_t aType) const { return mPauseState & aType; }
+  bool IsPausedByType(PauseTypes aType) const {
+    return !(mPauseTypes & aType).isEmpty();
+  }
 
   
 
@@ -85,7 +89,7 @@ class SMILTimeContainer {
 
 
 
-  bool IsPaused() const { return mPauseState != 0; }
+  bool IsPaused() const { return !mPauseTypes.isEmpty(); }
 
   
 
@@ -144,7 +148,7 @@ class SMILTimeContainer {
 
 
 
-  bool NeedsSample() const { return !mPauseState || mNeedsPauseSample; }
+  bool NeedsSample() const { return !IsPaused() || mNeedsPauseSample; }
 
   
 
@@ -280,7 +284,7 @@ class SMILTimeContainer {
 #endif
 
   
-  uint32_t mPauseState;
+  PauseTypes mPauseTypes;
 
   struct MilestoneEntry {
     MilestoneEntry(const SMILMilestone& aMilestone,

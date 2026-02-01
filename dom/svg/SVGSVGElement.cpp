@@ -166,7 +166,7 @@ void SVGSVGElement::ForceRedraw() {
 
 void SVGSVGElement::PauseAnimations() {
   if (mTimedDocumentRoot) {
-    mTimedDocumentRoot->Pause(SMILTimeContainer::PAUSE_SCRIPT);
+    mTimedDocumentRoot->Pause(SMILTimeContainer::PauseType::Script);
   }
   
 }
@@ -187,14 +187,14 @@ void SVGSVGElement::PauseAnimationsAt(float aSeconds) {
 
 void SVGSVGElement::UnpauseAnimations() {
   if (mTimedDocumentRoot) {
-    mTimedDocumentRoot->Resume(SMILTimeContainer::PAUSE_SCRIPT);
+    mTimedDocumentRoot->Resume(SMILTimeContainer::PauseType::Script);
   }
   
 }
 
 bool SVGSVGElement::AnimationsPaused() {
   SMILTimeContainer* root = GetTimedDocumentRoot();
-  return root && root->IsPausedByType(SMILTimeContainer::PAUSE_SCRIPT);
+  return root && root->IsPausedByType(SMILTimeContainer::PauseType::Script);
 }
 
 float SVGSVGElement::GetCurrentTimeAsFloat() {
