@@ -240,64 +240,18 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
     
 
     AssertNoUnderflow(aSize, mSize);
-    delta = aSize - mSize;
+    const uint64_t increase = aSize - mSize;
 
-    AssertNoOverflow(mOriginInfo->mClientUsages[mClientType].valueOr(0), delta);
-    newClientUsage = mOriginInfo->mClientUsages[mClientType].valueOr(0) + delta;
+    if (!mOriginInfo->LockedUpdateUsagesForEviction(mClientType, increase)) {
+      
+      
 
-    AssertNoOverflow(mOriginInfo->mUsage, delta);
-    newUsage = mOriginInfo->mUsage + delta;
+      
+      MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
 
-    newGroupUsage = groupInfo->mUsage;
-    if (!mOriginInfo->LockedPersisted()) {
-      AssertNoOverflow(groupInfo->mUsage, delta);
-      newGroupUsage += delta;
-
-      uint64_t groupUsage = groupInfo->mUsage;
-
-      for (const auto& complementaryPersistenceType :
-           complementaryPersistenceTypes) {
-        const auto& complementaryGroupInfo =
-            groupInfo->mGroupInfoPair->LockedGetGroupInfo(
-                complementaryPersistenceType);
-
-        if (complementaryGroupInfo) {
-          AssertNoOverflow(groupUsage, complementaryGroupInfo->mUsage);
-          groupUsage += complementaryGroupInfo->mUsage;
-        }
-      }
-
-      AssertNoOverflow(groupUsage, delta);
-      if (groupUsage + delta > quotaManager->GetGroupLimit()) {
-        
-        
-
-        
-        MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
-
-        quotaManager->FinalizeOriginEviction(std::move(locks));
-
-        return false;
-      }
+      quotaManager->FinalizeOriginEviction(std::move(locks));
+      return false;
     }
-
-    AssertNoOverflow(quotaManager->mTemporaryStorageUsage, delta);
-    newTemporaryStorageUsage = quotaManager->mTemporaryStorageUsage + delta;
-
-    NS_ASSERTION(
-        newTemporaryStorageUsage <= quotaManager->mTemporaryStorageLimit,
-        "How come?!");
-
-    
-    
-    mOriginInfo->mClientUsages[mClientType] = Some(newClientUsage);
-
-    mOriginInfo->mUsage = newUsage;
-    if (!mOriginInfo->LockedPersisted()) {
-      groupInfo->mUsage = newGroupUsage;
-    }
-    quotaManager->mTemporaryStorageUsage = newTemporaryStorageUsage;
-    ;
 
     
     
