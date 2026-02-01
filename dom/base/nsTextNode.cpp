@@ -35,7 +35,6 @@ class nsAttributeTextNode final : public nsTextNode,
                       int32_t aNameSpaceID, nsAtom* aAttrName,
                       nsAtom* aFallback)
       : nsTextNode(std::move(aNodeInfo)),
-        mGrandparent(nullptr),
         mNameSpaceID(aNameSpaceID),
         mAttrName(aAttrName),
         mFallback(aFallback) {
@@ -66,7 +65,7 @@ class nsAttributeTextNode final : public nsTextNode,
 
  private:
   virtual ~nsAttributeTextNode() {
-    NS_ASSERTION(!mGrandparent, "We were not unbound!");
+    NS_ASSERTION(!mOriginatingElement, "We were not unbound!");
   }
 
   
@@ -76,7 +75,7 @@ class nsAttributeTextNode final : public nsTextNode,
   
   
   
-  Element* mGrandparent;
+  Element* mOriginatingElement = nullptr;
   
   int32_t mNameSpaceID;
   RefPtr<nsAtom> mAttrName;
@@ -183,9 +182,13 @@ nsresult nsAttributeTextNode::BindToTree(BindContext& aContext,
   nsresult rv = nsTextNode::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  NS_ASSERTION(!mGrandparent, "We were already bound!");
-  mGrandparent = aParent.GetParent()->AsElement();
-  mGrandparent->AddMutationObserver(this);
+  NS_ASSERTION(!mOriginatingElement, "We were already bound!");
+  mOriginatingElement = aParent.GetParent()->AsElement();
+  while (PseudoStyle::IsPseudoElement(
+      mOriginatingElement->GetPseudoElementType())) {
+    mOriginatingElement = mOriginatingElement->GetParent()->AsElement();
+  }
+  mOriginatingElement->AddMutationObserver(this);
 
   
   
@@ -196,12 +199,12 @@ nsresult nsAttributeTextNode::BindToTree(BindContext& aContext,
 
 void nsAttributeTextNode::UnbindFromTree(UnbindContext& aContext) {
   
-  if (mGrandparent) {
+  if (mOriginatingElement) {
     
     
     
-    mGrandparent->RemoveMutationObserver(this);
-    mGrandparent = nullptr;
+    mOriginatingElement->RemoveMutationObserver(this);
+    mOriginatingElement = nullptr;
   }
   nsTextNode::UnbindFromTree(aContext);
 }
@@ -211,7 +214,7 @@ void nsAttributeTextNode::AttributeChanged(Element* aElement,
                                            nsAtom* aAttribute, AttrModType,
                                            const nsAttrValue* aOldValue) {
   if (aNameSpaceID == mNameSpaceID && aAttribute == mAttrName &&
-      aElement == mGrandparent) {
+      aElement == mOriginatingElement) {
     
     
     
@@ -222,15 +225,16 @@ void nsAttributeTextNode::AttributeChanged(Element* aElement,
 }
 
 void nsAttributeTextNode::NodeWillBeDestroyed(nsINode* aNode) {
-  NS_ASSERTION(aNode == static_cast<nsINode*>(mGrandparent), "Wrong node!");
-  mGrandparent = nullptr;
+  NS_ASSERTION(aNode == static_cast<nsINode*>(mOriginatingElement),
+               "Wrong node!");
+  mOriginatingElement = nullptr;
 }
 
 void nsAttributeTextNode::UpdateText(bool aNotify) {
-  if (mGrandparent) {
+  if (mOriginatingElement) {
     nsAutoString attrValue;
 
-    if (!mGrandparent->GetAttr(mNameSpaceID, mAttrName, attrValue)) {
+    if (!mOriginatingElement->GetAttr(mNameSpaceID, mAttrName, attrValue)) {
       
       mFallback->ToString(attrValue);
     }
