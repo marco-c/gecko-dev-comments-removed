@@ -15,7 +15,8 @@
 
 
 
-#include "jsdate.h"
+#include "builtin/Date.h"
+#include "js/Date.h"
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Casting.h"
@@ -43,7 +44,6 @@
 #include "jit/InlinableNatives.h"
 #include "js/CallAndConstruct.h"  
 #include "js/Conversions.h"
-#include "js/Date.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/LocaleSensitive.h"
 #include "js/Object.h"  

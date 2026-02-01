@@ -8,12 +8,13 @@
 
 
 
-#ifndef jsdate_h
-#define jsdate_h
+#ifndef builtin_Date_h
+#define builtin_Date_h
+
+#include "js/Date.h"
 
 #include "jstypes.h"
 
-#include "js/Date.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 

@@ -13,12 +13,12 @@
 #include <cstdlib>
 #include <stdint.h>
 
-#include "jsdate.h"
 #include "jsnum.h"
 #include "jspubtd.h"
 #include "jstypes.h"
 #include "NamespaceImports.h"
 
+#include "builtin/Date.h"
 #include "builtin/intl/DateTimeFormat.h"
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/CalendarFields.h"
@@ -213,11 +213,11 @@ static PlainDateObject* CreateTemporalDate(JSContext* cx, const CallArgs& args,
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->setFixedSlot(PlainDateObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(PlainDateObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
 
   
-  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
+  object->initFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
 
   
   return object;
@@ -245,11 +245,11 @@ PlainDateObject* js::temporal::CreateTemporalDate(
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->setFixedSlot(PlainDateObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(PlainDateObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
 
   
-  object->setFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
+  object->initFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
 
   
   return object;
