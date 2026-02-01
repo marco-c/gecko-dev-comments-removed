@@ -2,26 +2,32 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use crate::cal::iso::{Iso, IsoDateInner};
-use crate::calendar_arithmetic::{ArithmeticDate, CalendarArithmetic};
-use crate::error::DateError;
-use crate::{types, Calendar, Date, DateDuration, DateDurationUnit, RangeError};
+use crate::calendar_arithmetic::ArithmeticDate;
+use crate::calendar_arithmetic::DateFieldsResolver;
+use crate::error::{DateError, DateFromFieldsError, EcmaReferenceYearError, UnknownEraError};
+use crate::options::DateFromFieldsOptions;
+use crate::options::{DateAddOptions, DateDifferenceOptions};
+use crate::types::DateFields;
+use crate::{types, Calendar, Date, RangeError};
 use calendrical_calculations::rata_die::RataDie;
 use tinystr::tinystr;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -44,16 +50,18 @@ pub struct Indian;
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct IndianDateInner(ArithmeticDate<Indian>);
 
-impl CalendarArithmetic for Indian {
+
+
+const DAY_OFFSET: u16 = 80;
+
+const YEAR_OFFSET: i32 = 78;
+
+impl DateFieldsResolver for Indian {
     type YearInfo = i32;
 
     fn days_in_provided_month(year: i32, month: u8) -> u8 {
         if month == 1 {
-            if Self::provided_year_is_leap(year) {
-                31
-            } else {
-                30
-            }
+            30 + calendrical_calculations::gregorian::is_leap_year(year + YEAR_OFFSET) as u8
         } else if (2..=6).contains(&month) {
             31
         } else if (7..=12).contains(&month) {
@@ -67,33 +75,49 @@ impl CalendarArithmetic for Indian {
         12
     }
 
-    fn provided_year_is_leap(year: i32) -> bool {
-        Iso::provided_year_is_leap(year + 78)
-    }
-
-    fn last_month_day_in_provided_year(_year: i32) -> (u8, u8) {
-        (12, 30)
-    }
-
-    fn days_in_provided_year(year: i32) -> u16 {
-        if Self::provided_year_is_leap(year) {
-            366
-        } else {
-            365
+    #[inline]
+    fn year_info_from_era(
+        &self,
+        era: &[u8],
+        era_year: i32,
+    ) -> Result<Self::YearInfo, UnknownEraError> {
+        match era {
+            b"shaka" => Ok(era_year),
+            _ => Err(UnknownEraError),
         }
     }
+
+    #[inline]
+    fn year_info_from_extended(&self, extended_year: i32) -> Self::YearInfo {
+        extended_year
+    }
+
+    #[inline]
+    fn reference_year_from_month_day(
+        &self,
+        month_code: types::ValidMonthCode,
+        day: u8,
+    ) -> Result<Self::YearInfo, EcmaReferenceYearError> {
+        let (ordinal_month, false) = month_code.to_tuple() else {
+            return Err(EcmaReferenceYearError::MonthCodeNotInCalendar);
+        };
+        
+        
+        let shaka_year = if ordinal_month < 10 || (ordinal_month == 10 && day <= 10) {
+            1894
+        } else {
+            1893
+        };
+        Ok(shaka_year)
+    }
 }
-
-
-
-const DAY_OFFSET: u16 = 80;
-
-const YEAR_OFFSET: i32 = 78;
 
 impl crate::cal::scaffold::UnstableSealed for Indian {}
 impl Calendar for Indian {
     type DateInner = IndianDateInner;
     type Year = types::EraYear;
+    type DifferenceError = core::convert::Infallible;
+
     fn from_codes(
         &self,
         era: Option<&str>,
@@ -101,115 +125,147 @@ impl Calendar for Indian {
         month_code: types::MonthCode,
         day: u8,
     ) -> Result<Self::DateInner, DateError> {
-        let year = match era {
-            Some("shaka") | None => year,
-            Some(_) => return Err(DateError::UnknownEra),
-        };
-        ArithmeticDate::new_from_codes(self, year, month_code, day).map(IndianDateInner)
+        ArithmeticDate::from_codes(era, year, month_code, day, self).map(IndianDateInner)
     }
 
-    fn from_rata_die(&self, rd: RataDie) -> Self::DateInner {
-        self.from_iso(Iso.from_rata_die(rd))
-    }
-
-    fn to_rata_die(&self, date: &Self::DateInner) -> RataDie {
-        Iso.to_rata_die(&self.to_iso(date))
+    #[cfg(feature = "unstable")]
+    fn from_fields(
+        &self,
+        fields: DateFields,
+        options: DateFromFieldsOptions,
+    ) -> Result<Self::DateInner, DateFromFieldsError> {
+        ArithmeticDate::from_fields(fields, options, self).map(IndianDateInner)
     }
 
     
-    fn from_iso(&self, iso: IsoDateInner) -> IndianDateInner {
+    fn from_rata_die(&self, rd: RataDie) -> Self::DateInner {
+        let iso_year = calendrical_calculations::gregorian::year_from_fixed(rd)
+            .unwrap_or_else(|e| e.saturate());
         
-        let day_of_year_iso = Iso::day_of_year(iso);
+        let day_of_year_iso =
+            (rd - calendrical_calculations::gregorian::day_before_year(iso_year)) as u16;
         
-        let mut year = iso.0.year - YEAR_OFFSET;
+        let mut year = iso_year - YEAR_OFFSET;
         
         let day_of_year_indian = if day_of_year_iso <= DAY_OFFSET {
             year -= 1;
-            let n_days = Self::days_in_provided_year(year);
+            let n_days = if calendrical_calculations::gregorian::is_leap_year(year + YEAR_OFFSET) {
+                366
+            } else {
+                365
+            };
 
             
             n_days + day_of_year_iso - DAY_OFFSET
         } else {
             day_of_year_iso - DAY_OFFSET
         };
-        IndianDateInner(ArithmeticDate::date_from_year_day(
-            year,
-            day_of_year_indian as u32,
-        ))
+        let mut month = 1;
+        let mut day = day_of_year_indian as i32;
+        while month <= 12 {
+            let month_days = Self::days_in_provided_month(year, month) as i32;
+            if day <= month_days {
+                break;
+            } else {
+                day -= month_days;
+                month += 1;
+            }
+        }
+
+        debug_assert!(day <= Self::days_in_provided_month(year, month) as i32);
+        let day = day.try_into().unwrap_or(1);
+
+        IndianDateInner(ArithmeticDate::new_unchecked(year, month, day))
     }
 
     
-    fn to_iso(&self, date: &Self::DateInner) -> IsoDateInner {
-        let day_of_year_indian = date.0.day_of_year().0; 
-        let days_in_year = date.0.days_in_year();
+    fn to_rata_die(&self, date: &Self::DateInner) -> RataDie {
+        let day_of_year_indian = self.day_of_year(date).0; 
+        let days_in_year = self.days_in_year(date);
 
-        let mut year = date.0.year + YEAR_OFFSET;
+        let mut year_iso = date.0.year + YEAR_OFFSET;
         
         let day_of_year_iso = if day_of_year_indian + DAY_OFFSET > days_in_year {
-            year += 1;
+            year_iso += 1;
             
             day_of_year_indian + DAY_OFFSET - days_in_year
         } else {
             day_of_year_indian + DAY_OFFSET
         };
-        Iso::iso_from_year_day(year, day_of_year_iso)
+
+        calendrical_calculations::gregorian::day_before_year(year_iso) + day_of_year_iso as i64
+    }
+
+    fn has_cheap_iso_conversion(&self) -> bool {
+        false
     }
 
     fn months_in_year(&self, date: &Self::DateInner) -> u8 {
-        date.0.months_in_year()
+        Self::months_in_provided_year(date.0.year)
     }
 
     fn days_in_year(&self, date: &Self::DateInner) -> u16 {
-        date.0.days_in_year()
+        if self.is_in_leap_year(date) {
+            366
+        } else {
+            365
+        }
     }
 
     fn days_in_month(&self, date: &Self::DateInner) -> u8 {
-        date.0.days_in_month()
+        Self::days_in_provided_month(date.0.year, date.0.month)
     }
 
-    fn offset_date(&self, date: &mut Self::DateInner, offset: DateDuration<Self>) {
-        date.0.offset_date(offset, &());
+    #[cfg(feature = "unstable")]
+    fn add(
+        &self,
+        date: &Self::DateInner,
+        duration: types::DateDuration,
+        options: DateAddOptions,
+    ) -> Result<Self::DateInner, DateError> {
+        date.0.added(duration, self, options).map(IndianDateInner)
     }
 
-    #[allow(clippy::field_reassign_with_default)]
+    #[cfg(feature = "unstable")]
     fn until(
         &self,
         date1: &Self::DateInner,
         date2: &Self::DateInner,
-        _calendar2: &Self,
-        _largest_unit: DateDurationUnit,
-        _smallest_unit: DateDurationUnit,
-    ) -> DateDuration<Self> {
-        date1.0.until(date2.0, _largest_unit, _smallest_unit)
+        options: DateDifferenceOptions,
+    ) -> Result<types::DateDuration, Self::DifferenceError> {
+        Ok(date1.0.until(&date2.0, self, options))
     }
 
     fn year_info(&self, date: &Self::DateInner) -> Self::Year {
+        let extended_year = date.0.year;
         types::EraYear {
             era_index: Some(0),
             era: tinystr!(16, "shaka"),
-            year: self.extended_year(date),
+            year: extended_year,
+            extended_year,
             ambiguity: types::YearAmbiguity::CenturyRequired,
         }
     }
 
-    fn extended_year(&self, date: &Self::DateInner) -> i32 {
-        date.0.extended_year()
-    }
-
     fn is_in_leap_year(&self, date: &Self::DateInner) -> bool {
-        Self::provided_year_is_leap(date.0.year)
+        calendrical_calculations::gregorian::is_leap_year(date.0.year + YEAR_OFFSET)
     }
 
     fn month(&self, date: &Self::DateInner) -> types::MonthInfo {
-        date.0.month()
+        types::MonthInfo::non_lunisolar(date.0.month)
     }
 
     fn day_of_month(&self, date: &Self::DateInner) -> types::DayOfMonth {
-        date.0.day_of_month()
+        types::DayOfMonth(date.0.day)
     }
 
     fn day_of_year(&self, date: &Self::DateInner) -> types::DayOfYear {
-        date.0.day_of_year()
+        types::DayOfYear(
+            (1..date.0.month)
+                .map(|m| Self::days_in_provided_month(date.0.year, m) as u16)
+                .sum::<u16>()
+                + date.0.day as u16,
+        )
     }
 
     fn debug_name(&self) -> &'static str {
@@ -242,7 +298,7 @@ impl Date<Indian> {
     
     
     pub fn try_new_indian(year: i32, month: u8, day: u8) -> Result<Date<Indian>, RangeError> {
-        ArithmeticDate::new_from_ordinals(year, month, day)
+        ArithmeticDate::try_from_ymd(year, month, day)
             .map(IndianDateInner)
             .map(|inner| Date::from_raw(inner, Indian))
     }
@@ -450,10 +506,7 @@ mod tests {
     fn test_roundtrip_near_rd_zero() {
         for i in -1000..=1000 {
             let initial = RataDie::new(i);
-            let result = Date::from_rata_die(initial, Iso)
-                .to_calendar(Indian)
-                .to_iso()
-                .to_rata_die();
+            let result = Date::from_rata_die(initial, Indian).to_rata_die();
             assert_eq!(
                 initial, result,
                 "Roundtrip failed for initial: {initial:?}, result: {result:?}"
@@ -466,10 +519,7 @@ mod tests {
         
         for i in 27570..=29570 {
             let initial = RataDie::new(i);
-            let result = Date::from_rata_die(initial, Iso)
-                .to_calendar(Indian)
-                .to_iso()
-                .to_rata_die();
+            let result = Date::from_rata_die(initial, Indian).to_rata_die();
             assert_eq!(
                 initial, result,
                 "Roundtrip failed for initial: {initial:?}, result: {result:?}"

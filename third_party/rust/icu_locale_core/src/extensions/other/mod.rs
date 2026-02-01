@@ -64,12 +64,16 @@ pub struct Other {
 impl Other {
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
         Self::try_from_utf8(s.as_bytes())
     }
 
+    
+    
     
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
@@ -83,6 +87,8 @@ impl Other {
         Err(ParseError::InvalidExtension)
     }
 
+    
+    
     
     
     
@@ -200,6 +206,7 @@ impl Other {
     }
 }
 
+
 #[cfg(feature = "alloc")]
 impl FromStr for Other {
     type Err = ParseError;
@@ -210,7 +217,7 @@ impl FromStr for Other {
     }
 }
 
-writeable::impl_display_with_writeable!(Other);
+writeable::impl_display_with_writeable!(Other, #[cfg(feature = "alloc")]);
 
 impl writeable::Writeable for Other {
     fn write_to<W: core::fmt::Write + ?Sized>(&self, sink: &mut W) -> core::fmt::Result {
@@ -235,17 +242,6 @@ impl writeable::Writeable for Other {
             result += writeable::Writeable::writeable_length_hint(key) + 1;
         }
         result
-    }
-
-    #[cfg(feature = "alloc")]
-    fn write_to_string(&self) -> alloc::borrow::Cow<str> {
-        if self.keys.is_empty() {
-            return alloc::borrow::Cow::Borrowed("");
-        }
-        let mut string =
-            alloc::string::String::with_capacity(self.writeable_length_hint().capacity());
-        let _ = self.write_to(&mut string);
-        alloc::borrow::Cow::Owned(string)
     }
 }
 

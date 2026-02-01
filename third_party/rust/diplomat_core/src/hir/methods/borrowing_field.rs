@@ -229,8 +229,8 @@ impl<'m> BorrowingFieldVisitor<'m> {
     }
 
     
-    fn visit_slice(
-        slice: &Slice,
+    fn visit_slice<P: TyPosition>(
+        slice: &Slice<P>,
         parent: ParentId,
         method_lifetimes: &Lifetimes,
         leaves: &mut SmallVec<[BorrowingFieldVisitorLeaf; 8]>,

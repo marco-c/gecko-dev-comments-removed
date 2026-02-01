@@ -99,6 +99,7 @@
 use super::lifetimes::{BoundedLifetime, Lifetime, LifetimeEnv, Lifetimes, MaybeStatic};
 use super::LoweringContext;
 use crate::ast;
+use crate::hir::ty_position::Sealed;
 use smallvec::SmallVec;
 
 
@@ -107,7 +108,7 @@ use smallvec::SmallVec;
 
 
 
-pub trait LifetimeLowerer {
+pub trait LifetimeLowerer: Sealed {
     
     fn lower_lifetime(&mut self, lifetime: &ast::Lifetime) -> MaybeStatic<Lifetime>;
 
@@ -227,6 +228,12 @@ pub(super) struct ReturnLifetimeLowerer<'ast> {
     elision_source: ElisionSource,
     base: BaseLifetimeLowerer<'ast>,
 }
+
+impl<'ast> Sealed for BaseLifetimeLowerer<'ast> {}
+impl<'ast> Sealed for SelfParamLifetimeLowerer<'ast> {}
+impl<'ast> Sealed for ParamLifetimeLowerer<'ast> {}
+impl<'ast> Sealed for ReturnLifetimeLowerer<'ast> {}
+impl<'ast> Sealed for &'ast ast::LifetimeEnv {}
 
 impl<'ast> BaseLifetimeLowerer<'ast> {
     

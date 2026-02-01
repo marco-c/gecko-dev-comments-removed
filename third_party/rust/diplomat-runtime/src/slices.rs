@@ -4,6 +4,7 @@ use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 
+
 #[repr(C)]
 pub struct DiplomatSlice<'a, T> {
     
@@ -115,6 +116,11 @@ impl<T> DerefMut for DiplomatSliceMut<'_, T> {
         }
     }
 }
+
+
+
+
+
 
 #[repr(C)]
 pub struct DiplomatOwnedSlice<T> {
@@ -264,10 +270,22 @@ impl Deref for DiplomatOwnedUTF8StrSlice {
 }
 
 
+
+
+
 pub type DiplomatStrSlice<'a> = DiplomatSlice<'a, u8>;
+
+
+
 
 pub type DiplomatOwnedStrSlice = DiplomatOwnedSlice<u8>;
 
+
+
+
 pub type DiplomatStr16Slice<'a> = DiplomatSlice<'a, u16>;
+
+
+
 
 pub type DiplomatOwnedStr16Slice<'a> = DiplomatOwnedSlice<u16>;

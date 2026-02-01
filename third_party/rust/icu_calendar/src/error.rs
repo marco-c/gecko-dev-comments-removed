@@ -2,10 +2,14 @@
 
 
 
-use crate::types::MonthCode;
+
+
+use crate::{options::Overflow, types::MonthCode};
 use displaydoc::Display;
 
 #[derive(Debug, Copy, Clone, PartialEq, Display)]
+
+
 
 #[non_exhaustive]
 pub enum DateError {
@@ -25,11 +29,347 @@ pub enum DateError {
     #[displaydoc("Unknown era")]
     UnknownEra,
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[displaydoc("Unknown month code {0:?}")]
     UnknownMonthCode(MonthCode),
 }
 
 impl core::error::Error for DateError {}
+#[cfg(feature = "unstable")]
+pub use unstable::DateFromFieldsError;
+#[cfg(not(feature = "unstable"))]
+pub(crate) use unstable::DateFromFieldsError;
+
+mod unstable {
+    pub use super::*;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[derive(Debug, Copy, Clone, PartialEq, Display)]
+    #[non_exhaustive]
+    pub enum DateFromFieldsError {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("{0}")]
+        Range(RangeError),
+        
+        #[displaydoc("Unknown era or invalid syntax")]
+        UnknownEra,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("Invalid month code syntax")]
+        MonthCodeInvalidSyntax,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("The specified month code does not exist in this calendar")]
+        MonthCodeNotInCalendar,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("The specified month code exists in calendar, but not for this year")]
+        MonthCodeNotInYear,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("Inconsistent year")]
+        InconsistentYear,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("Inconsistent month")]
+        InconsistentMonth,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[displaydoc("Not enough fields")]
+        NotEnoughFields,
+    }
+
+    impl core::error::Error for DateFromFieldsError {}
+
+    impl From<RangeError> for DateFromFieldsError {
+        #[inline]
+        fn from(value: RangeError) -> Self {
+            DateFromFieldsError::Range(value)
+        }
+    }
+}
+
+
+pub(crate) struct UnknownEraError;
+
+impl From<UnknownEraError> for DateError {
+    #[inline]
+    fn from(_value: UnknownEraError) -> Self {
+        DateError::UnknownEra
+    }
+}
+
+impl From<UnknownEraError> for DateFromFieldsError {
+    #[inline]
+    fn from(_value: UnknownEraError) -> Self {
+        DateFromFieldsError::UnknownEra
+    }
+}
+
+
+#[derive(Debug)]
+pub(crate) enum MonthCodeParseError {
+    InvalidSyntax,
+}
+
+impl From<MonthCodeParseError> for DateFromFieldsError {
+    #[inline]
+    fn from(value: MonthCodeParseError) -> Self {
+        match value {
+            MonthCodeParseError::InvalidSyntax => DateFromFieldsError::MonthCodeInvalidSyntax,
+        }
+    }
+}
+
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum MonthCodeError {
+    NotInCalendar,
+    NotInYear,
+}
+
+impl From<MonthCodeError> for DateFromFieldsError {
+    #[inline]
+    fn from(value: MonthCodeError) -> Self {
+        match value {
+            MonthCodeError::NotInCalendar => DateFromFieldsError::MonthCodeNotInCalendar,
+            MonthCodeError::NotInYear => DateFromFieldsError::MonthCodeNotInYear,
+        }
+    }
+}
+
+mod inner {
+    
+    
+    
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[allow(missing_docs)] 
+    #[non_exhaustive]
+    pub enum EcmaReferenceYearError {
+        Unimplemented,
+        MonthCodeNotInCalendar,
+    }
+}
+
+#[cfg(feature = "unstable")]
+pub use inner::EcmaReferenceYearError;
+#[cfg(not(feature = "unstable"))]
+pub(crate) use inner::EcmaReferenceYearError;
+
+impl From<EcmaReferenceYearError> for DateFromFieldsError {
+    #[inline]
+    fn from(value: EcmaReferenceYearError) -> Self {
+        match value {
+            EcmaReferenceYearError::Unimplemented => DateFromFieldsError::NotEnoughFields,
+            EcmaReferenceYearError::MonthCodeNotInCalendar => {
+                DateFromFieldsError::MonthCodeNotInCalendar
+            }
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Display)]
 
@@ -49,6 +389,7 @@ pub struct RangeError {
 impl core::error::Error for RangeError {}
 
 impl From<RangeError> for DateError {
+    #[inline]
     fn from(value: RangeError) -> Self {
         let RangeError {
             field,
@@ -65,28 +406,31 @@ impl From<RangeError> for DateError {
     }
 }
 
-pub(crate) fn year_check(
-    year: i32,
-    bounds: impl core::ops::RangeBounds<i32>,
-) -> Result<i32, RangeError> {
-    use core::ops::Bound::*;
+pub(crate) fn range_check_with_overflow<T: Ord + Into<i32> + Copy>(
+    value: T,
+    field: &'static str,
+    bounds: core::ops::RangeInclusive<T>,
+    overflow: Overflow,
+) -> Result<T, RangeError> {
+    if matches!(overflow, Overflow::Constrain) {
+        Ok(value.clamp(*bounds.start(), *bounds.end()))
+    } else {
+        range_check(value, field, bounds)
+    }
+}
 
-    if !bounds.contains(&year) {
+pub(crate) fn range_check<T: Ord + Into<i32> + Copy>(
+    value: T,
+    field: &'static str,
+    bounds: core::ops::RangeInclusive<T>,
+) -> Result<T, RangeError> {
+    if !bounds.contains(&value) {
         return Err(RangeError {
-            field: "year",
-            value: year,
-            min: match bounds.start_bound() {
-                Included(&m) => m,
-                Excluded(&m) => m + 1,
-                Unbounded => i32::MIN,
-            },
-            max: match bounds.end_bound() {
-                Included(&m) => m,
-                Excluded(&m) => m - 1,
-                Unbounded => i32::MAX,
-            },
+            field,
+            value: value.into(),
+            min: (*bounds.start()).into(),
+            max: (*bounds.end()).into(),
         });
     }
-
-    Ok(year)
+    Ok(value)
 }

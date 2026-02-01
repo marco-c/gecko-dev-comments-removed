@@ -8,9 +8,213 @@
 pub use calendrical_calculations::rata_die::RataDie;
 use core::fmt;
 use tinystr::TinyAsciiStr;
-use tinystr::{TinyStr16, TinyStr4};
-use zerovec::maps::ZeroMapKV;
 use zerovec::ule::AsULE;
+
+
+#[cfg(feature = "unstable")]
+pub use crate::duration::{DateDuration, DateDurationUnit};
+use crate::error::MonthCodeParseError;
+
+#[cfg(feature = "unstable")]
+pub use unstable::DateFields;
+#[cfg(not(feature = "unstable"))]
+pub(crate) use unstable::DateFields;
+
+mod unstable {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[derive(Copy, Clone, PartialEq, Default)]
+    #[non_exhaustive]
+    pub struct DateFields<'a> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub era: Option<&'a [u8]>,
+        
+        
+        
+        
+        
+        pub era_year: Option<i32>,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub extended_year: Option<i32>,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub month_code: Option<&'a [u8]>,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub ordinal_month: Option<u8>,
+        
+        pub day: Option<u8>,
+    }
+}
+
+
+impl fmt::Debug for DateFields<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        let Self {
+            era,
+            era_year,
+            extended_year,
+            month_code,
+            ordinal_month,
+            day,
+        } = *self;
+        let mut builder = f.debug_struct("DateFields");
+        if let Some(s) = era.and_then(|s| core::str::from_utf8(s).ok()) {
+            builder.field("era", &Some(s));
+        } else {
+            builder.field("era", &era);
+        }
+        builder.field("era_year", &era_year);
+        builder.field("extended_year", &extended_year);
+        if let Some(s) = month_code.and_then(|s| core::str::from_utf8(s).ok()) {
+            builder.field("month_code", &Some(s));
+        } else {
+            builder.field("month_code", &month_code);
+        }
+        builder.field("ordinal_month", &ordinal_month);
+        builder.field("day", &day);
+        builder.finish()
+    }
+}
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -44,6 +248,15 @@ impl YearInfo {
     pub fn era_year_or_related_iso(self) -> i32 {
         match self {
             YearInfo::Era(e) => e.year,
+            YearInfo::Cyclic(c) => c.related_iso,
+        }
+    }
+
+    
+    
+    pub fn extended_year(self) -> i32 {
+        match self {
+            YearInfo::Era(e) => e.extended_year,
             YearInfo::Cyclic(c) => c.related_iso,
         }
     }
@@ -89,7 +302,9 @@ pub struct EraYear {
     
     pub year: i32,
     
-    pub era: TinyStr16,
+    pub extended_year: i32,
+    
+    pub era: TinyAsciiStr<16>,
     
     
     
@@ -126,12 +341,13 @@ pub struct CyclicYear {
 #[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
 #[cfg_attr(feature = "datagen", databake(path = icu_calendar::types))]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-pub struct MonthCode(pub TinyStr4);
+pub struct MonthCode(pub TinyAsciiStr<4>);
 
 impl MonthCode {
     
     
     
+    #[deprecated(since = "2.1.0")]
     pub fn get_normal_if_leap(self) -> Option<MonthCode> {
         let bytes = self.0.all_bytes();
         if bytes[3] == b'L' {
@@ -140,67 +356,65 @@ impl MonthCode {
             None
         }
     }
+
+    #[deprecated(since = "2.1.0")]
     
     pub fn parsed(self) -> Option<(u8, bool)> {
-        
-        
-
-        let bytes = self.0.all_bytes();
-        let is_leap = bytes[3] == b'L';
-        if bytes[0] != b'M' {
-            return None;
-        }
-        if bytes[1] == b'0' {
-            if bytes[2] >= b'1' && bytes[2] <= b'9' {
-                return Some((bytes[2] - b'0', is_leap));
-            }
-        } else if bytes[1] == b'1' && bytes[2] >= b'0' && bytes[2] <= b'3' {
-            return Some((10 + bytes[2] - b'0', is_leap));
-        }
-        None
+        ValidMonthCode::try_from_utf8(self.0.as_bytes())
+            .ok()
+            .map(ValidMonthCode::to_tuple)
     }
 
     
     
     
     pub fn new_normal(number: u8) -> Option<Self> {
-        let tens = number / 10;
-        let ones = number % 10;
-        if tens > 9 {
-            return None;
-        }
+        (1..=99)
+            .contains(&number)
+            .then(|| ValidMonthCode::new_unchecked(number, false).to_month_code())
+    }
 
-        let bytes = [b'M', b'0' + tens, b'0' + ones, 0];
-        Some(MonthCode(TinyAsciiStr::try_from_raw(bytes).ok()?))
+    
+    
+    
+    pub fn new_leap(number: u8) -> Option<Self> {
+        (1..=99)
+            .contains(&number)
+            .then(|| ValidMonthCode::new_unchecked(number, true).to_month_code())
     }
 }
 
 #[test]
 fn test_get_normal_month_code_if_leap() {
-    let mc1 = MonthCode(tinystr::tinystr!(4, "M01L"));
-    let result1 = mc1.get_normal_if_leap();
-    assert_eq!(result1, Some(MonthCode(tinystr::tinystr!(4, "M01"))));
+    #![allow(deprecated)]
+    assert_eq!(
+        MonthCode::new_leap(1).unwrap().get_normal_if_leap(),
+        MonthCode::new_normal(1)
+    );
 
-    let mc2 = MonthCode(tinystr::tinystr!(4, "M11L"));
-    let result2 = mc2.get_normal_if_leap();
-    assert_eq!(result2, Some(MonthCode(tinystr::tinystr!(4, "M11"))));
+    assert_eq!(
+        MonthCode::new_leap(11).unwrap().get_normal_if_leap(),
+        MonthCode::new_normal(11)
+    );
 
-    let mc_invalid = MonthCode(tinystr::tinystr!(4, "M10"));
-    let result_invalid = mc_invalid.get_normal_if_leap();
-    assert_eq!(result_invalid, None);
+    assert_eq!(
+        MonthCode::new_normal(10).unwrap().get_normal_if_leap(),
+        None
+    );
 }
 
 impl AsULE for MonthCode {
-    type ULE = TinyStr4;
-    fn to_unaligned(self) -> TinyStr4 {
+    type ULE = TinyAsciiStr<4>;
+    fn to_unaligned(self) -> TinyAsciiStr<4> {
         self.0
     }
-    fn from_unaligned(u: TinyStr4) -> Self {
+    fn from_unaligned(u: TinyAsciiStr<4>) -> Self {
         Self(u)
     }
 }
 
-impl<'a> ZeroMapKV<'a> for MonthCode {
+#[cfg(feature = "alloc")]
+impl<'a> zerovec::maps::ZeroMapKV<'a> for MonthCode {
     type Container = zerovec::ZeroVec<'a, MonthCode>;
     type Slice = zerovec::ZeroSlice<MonthCode>;
     type GetType = <MonthCode as AsULE>::ULE;
@@ -210,6 +424,89 @@ impl<'a> ZeroMapKV<'a> for MonthCode {
 impl fmt::Display for MonthCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) struct ValidMonthCode {
+    
+    number: u8,
+    is_leap: bool,
+}
+
+impl ValidMonthCode {
+    #[inline]
+    pub(crate) fn try_from_utf8(bytes: &[u8]) -> Result<Self, MonthCodeParseError> {
+        match *bytes {
+            [b'M', tens, ones] => Ok(Self {
+                number: (tens - b'0') * 10 + ones - b'0',
+                is_leap: false,
+            }),
+            [b'M', tens, ones, b'L'] => Ok(Self {
+                number: (tens - b'0') * 10 + ones - b'0',
+                is_leap: true,
+            }),
+            _ => Err(MonthCodeParseError::InvalidSyntax),
+        }
+    }
+
+    
+    #[inline]
+    pub(crate) const fn new_unchecked(number: u8, is_leap: bool) -> Self {
+        debug_assert!(1 <= number && number <= 99);
+        Self { number, is_leap }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn number(self) -> u8 {
+        self.number
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn is_leap(self) -> bool {
+        self.is_leap
+    }
+
+    #[inline]
+    pub(crate) fn to_tuple(self) -> (u8, bool) {
+        (self.number, self.is_leap)
+    }
+
+    pub(crate) fn to_month_code(self) -> MonthCode {
+        #[allow(clippy::unwrap_used)] 
+        MonthCode(
+            TinyAsciiStr::try_from_raw([
+                b'M',
+                b'0' + self.number / 10,
+                b'0' + self.number % 10,
+                if self.is_leap { b'L' } else { 0 },
+            ])
+            .unwrap(),
+        )
     }
 }
 
@@ -228,7 +525,21 @@ pub struct MonthInfo {
     
     
     
+    
+    
+    
+    
+    
     pub standard_code: MonthCode,
+
+    
+    pub(crate) valid_standard_code: ValidMonthCode,
+
+    
+    
+    
+    
+    
     
     
     
@@ -236,22 +547,46 @@ pub struct MonthInfo {
     
     
     pub formatting_code: MonthCode,
+
+    
+    pub(crate) valid_formatting_code: ValidMonthCode,
 }
 
 impl MonthInfo {
+    pub(crate) fn non_lunisolar(number: u8) -> Self {
+        Self::for_code_and_ordinal(ValidMonthCode::new_unchecked(number, false), number)
+    }
+
+    pub(crate) fn for_code_and_ordinal(code: ValidMonthCode, ordinal: u8) -> Self {
+        Self {
+            ordinal,
+            standard_code: code.to_month_code(),
+            valid_standard_code: code,
+            formatting_code: code.to_month_code(),
+            valid_formatting_code: code,
+        }
+    }
+
     
     
     
     pub fn month_number(self) -> u8 {
-        self.standard_code
-            .parsed()
-            .map(|(i, _)| i)
-            .unwrap_or(self.ordinal)
+        self.valid_standard_code.number()
     }
 
     
     pub fn is_leap(self) -> bool {
-        self.standard_code.parsed().map(|(_, l)| l).unwrap_or(false)
+        self.valid_standard_code.is_leap()
+    }
+
+    #[doc(hidden)]
+    pub fn formatting_month_number(self) -> u8 {
+        self.valid_formatting_code.number()
+    }
+
+    #[doc(hidden)]
+    pub fn formatting_is_leap(self) -> bool {
+        self.valid_formatting_code.is_leap()
     }
 }
 

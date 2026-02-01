@@ -19,6 +19,12 @@ pub enum Error {
     
     #[displaydoc("CodePointTrie must be constructed from data vector with at least one element")]
     EmptyDataVector,
+    
+    #[displaydoc("CodePointTrie must be constructed from index vector long enough to accommodate fast-path access")]
+    IndexTooShortForFastAccess,
+    
+    #[displaydoc("CodePointTrie must be constructed from data vector long enough to accommodate fast-path access")]
+    DataTooShortForFastAccess,
 }
 
 impl core::error::Error for Error {}

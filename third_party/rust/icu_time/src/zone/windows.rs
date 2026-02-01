@@ -40,7 +40,7 @@ pub struct WindowsParser {
 
 impl WindowsParser {
     
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     #[cfg(feature = "compiled_data")]
     pub fn new() -> WindowsParserBorrowed<'static> {
         WindowsParserBorrowed::new()
@@ -69,7 +69,7 @@ impl WindowsParser {
     
     
     
-    pub fn as_borrowed(&self) -> WindowsParserBorrowed {
+    pub fn as_borrowed(&self) -> WindowsParserBorrowed<'_> {
         WindowsParserBorrowed {
             data: self.data.get(),
         }

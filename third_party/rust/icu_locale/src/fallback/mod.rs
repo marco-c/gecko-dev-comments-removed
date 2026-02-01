@@ -104,8 +104,7 @@ impl LocaleFallbacker {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)] 
-    #[allow(clippy::new_without_default)] 
+    #[expect(clippy::new_ret_no_self)] 
     pub const fn new<'a>() -> LocaleFallbackerBorrowed<'a> {
         
         
@@ -157,12 +156,12 @@ impl LocaleFallbacker {
 
     
     #[inline]
-    pub fn for_config(&self, config: LocaleFallbackConfig) -> LocaleFallbackerWithConfig {
+    pub fn for_config(&self, config: LocaleFallbackConfig) -> LocaleFallbackerWithConfig<'_> {
         self.as_borrowed().for_config(config)
     }
 
     
-    pub fn as_borrowed(&self) -> LocaleFallbackerBorrowed {
+    pub fn as_borrowed(&self) -> LocaleFallbackerBorrowed<'_> {
         LocaleFallbackerBorrowed {
             likely_subtags: self.likely_subtags.get(),
             parents: self.parents.get(),
@@ -189,7 +188,7 @@ impl LocaleFallbackerBorrowed<'static> {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_without_default)]
+    #[expect(clippy::new_without_default)]
     pub const fn new() -> Self {
         Self {
             likely_subtags: crate::provider::Baked::SINGLETON_LOCALE_LIKELY_SUBTAGS_LANGUAGE_V1,

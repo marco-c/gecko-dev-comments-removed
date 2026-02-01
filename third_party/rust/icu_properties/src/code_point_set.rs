@@ -34,7 +34,7 @@ impl CodePointSetData {
     
     
     
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     #[cfg(feature = "compiled_data")]
     pub const fn new<P: BinaryProperty>() -> CodePointSetDataBorrowed<'static> {
         CodePointSetDataBorrowed::new::<P>()

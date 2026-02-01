@@ -32,7 +32,7 @@ impl CodePointInversionListBuilder {
             .into_iter()
             .map(PotentialCodePoint::from_u24)
             .collect();
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         CodePointInversionList::try_from_inversion_list(inv_list).unwrap()
     }
 
@@ -51,7 +51,7 @@ impl CodePointInversionListBuilder {
         let end_pos_check = (end_ind % 2 == 0) == add;
         let start_eq_end = start_ind == end_ind;
 
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         if start_eq_end && start_pos_check && end_res.is_err() {
             self.intervals.splice(start_ind..end_ind, [start, end]);
         } else {
@@ -182,7 +182,7 @@ impl CodePointInversionListBuilder {
     
     #[allow(unused_assignments)]
     pub fn add_set(&mut self, set: &CodePointInversionList) {
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         set.as_inversion_list()
             .as_ule_slice()
             .chunks(2)
@@ -203,7 +203,7 @@ impl CodePointInversionListBuilder {
             return;
         }
         if let Some(&last) = self.intervals.last() {
-            #[allow(clippy::indexing_slicing)]
+            #[expect(clippy::indexing_slicing)]
             
             if start <= self.intervals[0] && end >= last {
                 self.intervals.clear();
@@ -267,7 +267,7 @@ impl CodePointInversionListBuilder {
     
     
     
-    #[allow(clippy::indexing_slicing)] 
+    #[expect(clippy::indexing_slicing)] 
     pub fn remove_set(&mut self, set: &CodePointInversionList) {
         set.as_inversion_list()
             .as_ule_slice()
@@ -350,7 +350,7 @@ impl CodePointInversionListBuilder {
     
     
     
-    #[allow(clippy::indexing_slicing)] 
+    #[expect(clippy::indexing_slicing)] 
     pub fn retain_set(&mut self, set: &CodePointInversionList) {
         let mut prev = 0;
         for pair in set.as_inversion_list().as_ule_slice().chunks(2) {
@@ -424,7 +424,7 @@ impl CodePointInversionListBuilder {
     
     pub fn complement(&mut self) {
         if !self.intervals.is_empty() {
-            #[allow(clippy::indexing_slicing)] 
+            #[expect(clippy::indexing_slicing)] 
             if self.intervals[0] == 0 {
                 self.intervals.drain(0..1);
             } else {

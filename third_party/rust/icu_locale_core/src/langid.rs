@@ -75,6 +75,14 @@ use alloc::borrow::Cow;
 
 
 
+
+
+
+
+
+
+
+
 #[derive(PartialEq, Eq, Clone, Hash)] 
 #[allow(clippy::exhaustive_structs)] 
 pub struct LanguageIdentifier {
@@ -102,6 +110,8 @@ impl LanguageIdentifier {
     
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
@@ -109,13 +119,15 @@ impl LanguageIdentifier {
     }
 
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
         crate::parser::parse_language_identifier(code_units, parser::ParserMode::LanguageIdentifier)
     }
 
     #[doc(hidden)] 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     
     
     pub const fn try_from_utf8_with_single_variant(
@@ -135,6 +147,8 @@ impl LanguageIdentifier {
         )
     }
 
+    
+    
     
     
     
@@ -178,8 +192,10 @@ impl LanguageIdentifier {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
-    pub fn normalize_utf8(input: &[u8]) -> Result<Cow<str>, ParseError> {
+    pub fn normalize_utf8(input: &[u8]) -> Result<Cow<'_, str>, ParseError> {
         let lang_id = Self::try_from_utf8(input)?;
         Ok(writeable::to_string_or_borrow(&lang_id, input))
     }
@@ -198,8 +214,10 @@ impl LanguageIdentifier {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
-    pub fn normalize(input: &str) -> Result<Cow<str>, ParseError> {
+    pub fn normalize(input: &str) -> Result<Cow<'_, str>, ParseError> {
         Self::normalize_utf8(input.as_bytes())
     }
 
@@ -495,6 +513,7 @@ impl core::fmt::Debug for LanguageIdentifier {
     }
 }
 
+
 #[cfg(feature = "alloc")]
 impl FromStr for LanguageIdentifier {
     type Err = ParseError;
@@ -505,7 +524,7 @@ impl FromStr for LanguageIdentifier {
     }
 }
 
-impl_writeable_for_each_subtag_str_no_test!(LanguageIdentifier, selff, selff.script.is_none() && selff.region.is_none() && selff.variants.is_empty() => selff.language.write_to_string());
+impl_writeable_for_each_subtag_str_no_test!(LanguageIdentifier, selff, selff.script.is_none() && selff.region.is_none() && selff.variants.is_empty() => Some(selff.language.as_str()));
 
 #[test]
 fn test_writeable() {

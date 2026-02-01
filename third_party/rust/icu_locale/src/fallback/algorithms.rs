@@ -204,7 +204,6 @@ impl LocaleFallbackIteratorInner<'_> {
                     locale.variant = self.backup_variant.take();
                 }
                 
-                #[allow(clippy::needless_return)]
                 return;
             } else {
                 
@@ -215,7 +214,6 @@ impl LocaleFallbackIteratorInner<'_> {
                     locale.variant = self.backup_variant.take();
                 }
                 
-                #[allow(clippy::needless_return)]
                 return;
             }
         }

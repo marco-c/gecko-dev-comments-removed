@@ -2,66 +2,78 @@
 
 
 
-use crate::error::DateError;
-use crate::types::DayOfYear;
-use crate::{types, Calendar, DateDuration, DateDurationUnit, RangeError};
+use crate::duration::{DateDuration, DateDurationUnit};
+use crate::error::{
+    range_check, range_check_with_overflow, DateFromFieldsError, EcmaReferenceYearError,
+    MonthCodeError, MonthCodeParseError, UnknownEraError,
+};
+use crate::options::{DateAddOptions, DateDifferenceOptions};
+use crate::options::{DateFromFieldsOptions, MissingFieldsStrategy, Overflow};
+use crate::types::{DateFields, ValidMonthCode};
+use crate::{types, Calendar, DateError, RangeError};
 use core::cmp::Ordering;
-use core::convert::TryInto;
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
-use core::marker::PhantomData;
-use tinystr::tinystr;
+use core::ops::RangeInclusive;
+
+
+
+
+
+
+
+const VALID_YEAR_RANGE: RangeInclusive<i32> = (i32::MIN / 16)..=-(i32::MIN / 16);
 
 #[derive(Debug)]
-#[allow(clippy::exhaustive_structs)] 
-pub(crate) struct ArithmeticDate<C: CalendarArithmetic> {
+pub(crate) struct ArithmeticDate<C: DateFieldsResolver> {
     pub year: C::YearInfo,
     
     pub month: u8,
     
     pub day: u8,
-    marker: PhantomData<C>,
 }
 
 
 
-impl<C: CalendarArithmetic> Copy for ArithmeticDate<C> {}
-impl<C: CalendarArithmetic> Clone for ArithmeticDate<C> {
+impl<C: DateFieldsResolver> Copy for ArithmeticDate<C> {}
+impl<C: DateFieldsResolver> Clone for ArithmeticDate<C> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<C: CalendarArithmetic> PartialEq for ArithmeticDate<C> {
+impl<C: DateFieldsResolver> PartialEq for ArithmeticDate<C> {
     fn eq(&self, other: &Self) -> bool {
-        self.year.into() == other.year.into() && self.month == other.month && self.day == other.day
+        self.year.to_extended_year() == other.year.to_extended_year()
+            && self.month == other.month
+            && self.day == other.day
     }
 }
 
-impl<C: CalendarArithmetic> Eq for ArithmeticDate<C> {}
+impl<C: DateFieldsResolver> Eq for ArithmeticDate<C> {}
 
-impl<C: CalendarArithmetic> Ord for ArithmeticDate<C> {
+impl<C: DateFieldsResolver> Ord for ArithmeticDate<C> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.year
-            .into()
-            .cmp(&other.year.into())
+            .to_extended_year()
+            .cmp(&other.year.to_extended_year())
             .then(self.month.cmp(&other.month))
             .then(self.day.cmp(&other.day))
     }
 }
 
-impl<C: CalendarArithmetic> PartialOrd for ArithmeticDate<C> {
+impl<C: DateFieldsResolver> PartialOrd for ArithmeticDate<C> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<C: CalendarArithmetic> Hash for ArithmeticDate<C> {
+impl<C: DateFieldsResolver> Hash for ArithmeticDate<C> {
     fn hash<H>(&self, state: &mut H)
     where
         H: Hasher,
     {
-        self.year.into().hash(state);
+        self.year.to_extended_year().hash(state);
         self.month.hash(state);
         self.day.hash(state);
     }
@@ -71,341 +83,613 @@ impl<C: CalendarArithmetic> Hash for ArithmeticDate<C> {
 #[allow(dead_code)] 
 pub(crate) const MAX_ITERS_FOR_DAYS_OF_MONTH: u8 = 33;
 
-pub(crate) trait CalendarArithmetic: Calendar {
-    
-    
-    type YearInfo: Copy + Debug + Into<i32>;
+pub(crate) trait ToExtendedYear {
+    fn to_extended_year(&self) -> i32;
+}
 
+impl ToExtendedYear for i32 {
+    fn to_extended_year(&self) -> i32 {
+        *self
+    }
+}
+
+
+pub(crate) trait DateFieldsResolver: Calendar {
     
     
+    type YearInfo: Copy + Debug + PartialEq + ToExtendedYear;
+
     fn days_in_provided_month(year: Self::YearInfo, month: u8) -> u8;
+
     fn months_in_provided_year(year: Self::YearInfo) -> u8;
-    fn provided_year_is_leap(year: Self::YearInfo) -> bool;
-    fn last_month_day_in_provided_year(year: Self::YearInfo) -> (u8, u8);
 
     
     
-    
-    
-    
-    
-    fn days_in_provided_year(year: Self::YearInfo) -> u16 {
-        let months_in_year = Self::months_in_provided_year(year);
-        let mut days: u16 = 0;
-        for month in 1..=months_in_year {
-            days += Self::days_in_provided_month(year, month) as u16;
-        }
-        days
-    }
-}
-
-pub(crate) trait PrecomputedDataSource<YearInfo> {
-    
-    
-    
-    
-    fn load_or_compute_info(&self, year: i32) -> YearInfo;
-}
-
-impl PrecomputedDataSource<i32> for () {
-    fn load_or_compute_info(&self, year: i32) -> i32 {
-        year
-    }
-}
-
-impl<C: CalendarArithmetic> ArithmeticDate<C> {
-    
-    #[inline]
-    pub const fn new_unchecked(year: C::YearInfo, month: u8, day: u8) -> Self {
-        ArithmeticDate {
-            year,
-            month,
-            day,
-            marker: PhantomData,
-        }
-    }
-
-    #[inline]
-    pub fn min_date() -> Self
-    where
-        C: CalendarArithmetic<YearInfo = i32>,
-    {
-        ArithmeticDate {
-            year: i32::MIN,
-            month: 1,
-            day: 1,
-            marker: PhantomData,
-        }
-    }
-
-    #[inline]
-    pub fn max_date() -> Self
-    where
-        C: CalendarArithmetic<YearInfo = i32>,
-    {
-        let year = i32::MAX;
-        let (month, day) = C::last_month_day_in_provided_year(year);
-        ArithmeticDate {
-            year: i32::MAX,
-            month,
-            day,
-            marker: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn offset_days(&mut self, mut day_offset: i32, data: &impl PrecomputedDataSource<C::YearInfo>) {
-        while day_offset != 0 {
-            let month_days = C::days_in_provided_month(self.year, self.month);
-            if self.day as i32 + day_offset > month_days as i32 {
-                self.offset_months(1, data);
-                day_offset -= month_days as i32;
-            } else if self.day as i32 + day_offset < 1 {
-                self.offset_months(-1, data);
-                day_offset += C::days_in_provided_month(self.year, self.month) as i32;
-            } else {
-                self.day = (self.day as i32 + day_offset) as u8;
-                day_offset = 0;
-            }
-        }
-    }
-
-    #[inline]
-    fn offset_months(
-        &mut self,
-        mut month_offset: i32,
-        data: &impl PrecomputedDataSource<C::YearInfo>,
-    ) {
-        while month_offset != 0 {
-            let year_months = C::months_in_provided_year(self.year);
-            if self.month as i32 + month_offset > year_months as i32 {
-                self.year = data.load_or_compute_info(self.year.into() + 1);
-                month_offset -= year_months as i32;
-            } else if self.month as i32 + month_offset < 1 {
-                self.year = data.load_or_compute_info(self.year.into() - 1);
-                month_offset += C::months_in_provided_year(self.year) as i32;
-            } else {
-                self.month = (self.month as i32 + month_offset) as u8;
-                month_offset = 0
-            }
-        }
-    }
-
-    #[inline]
-    pub fn offset_date(
-        &mut self,
-        offset: DateDuration<C>,
-        data: &impl PrecomputedDataSource<C::YearInfo>,
-    ) {
-        if offset.years != 0 {
-            
-            self.year = data.load_or_compute_info(self.year.into() + offset.years);
-        }
-
-        self.offset_months(offset.months, data);
-
-        let day_offset = offset.days + offset.weeks * 7 + self.day as i32 - 1;
-        self.day = 1;
-        self.offset_days(day_offset, data);
-    }
-
-    #[inline]
-    pub fn until(
+    fn year_info_from_era(
         &self,
-        date2: ArithmeticDate<C>,
-        _largest_unit: DateDurationUnit,
-        _smaller_unit: DateDurationUnit,
-    ) -> DateDuration<C> {
-        
-        
-        DateDuration::new(
-            self.year.into() - date2.year.into(),
-            self.month as i32 - date2.month as i32,
-            0,
-            self.day as i32 - date2.day as i32,
-        )
-    }
+        era: &[u8],
+        era_year: i32,
+    ) -> Result<Self::YearInfo, UnknownEraError>;
 
-    #[inline]
-    pub fn days_in_year(&self) -> u16 {
-        C::days_in_provided_year(self.year)
-    }
+    
+    fn year_info_from_extended(&self, extended_year: i32) -> Self::YearInfo;
 
-    #[inline]
-    pub fn months_in_year(&self) -> u8 {
-        C::months_in_provided_year(self.year)
-    }
+    
+    
+    
+    
+    
+    
+    fn reference_year_from_month_day(
+        &self,
+        month_code: ValidMonthCode,
+        day: u8,
+    ) -> Result<Self::YearInfo, EcmaReferenceYearError>;
 
+    
+    
+    
     #[inline]
-    pub fn days_in_month(&self) -> u8 {
-        C::days_in_provided_month(self.year, self.month)
-    }
-
-    #[inline]
-    pub fn date_from_year_day(year: i32, year_day: u32) -> ArithmeticDate<C>
-    where
-        C: CalendarArithmetic<YearInfo = i32>,
-    {
-        let mut month = 1;
-        let mut day = year_day as i32;
-        while month <= C::months_in_provided_year(year) {
-            let month_days = C::days_in_provided_month(year, month) as i32;
-            if day <= month_days {
-                break;
-            } else {
-                day -= month_days;
-                month += 1;
-            }
+    fn ordinal_month_from_code(
+        &self,
+        _year: &Self::YearInfo,
+        month_code: ValidMonthCode,
+        _options: DateFromFieldsOptions,
+    ) -> Result<u8, MonthCodeError> {
+        match month_code.to_tuple() {
+            (month_number @ 1..=12, false) => Ok(month_number),
+            _ => Err(MonthCodeError::NotInCalendar),
         }
+    }
 
-        debug_assert!(day <= C::days_in_provided_month(year, month) as i32);
-        #[allow(clippy::unwrap_used)]
-        
+    
+    
+    
+    
+    
+    #[inline]
+    fn month_code_from_ordinal(&self, _year: &Self::YearInfo, ordinal_month: u8) -> ValidMonthCode {
+        ValidMonthCode::new_unchecked(ordinal_month, false)
+    }
+}
+
+impl<C: DateFieldsResolver> ArithmeticDate<C> {
+    #[inline]
+    pub(crate) const fn new_unchecked(year: C::YearInfo, month: u8, day: u8) -> Self {
+        ArithmeticDate { year, month, day }
+    }
+
+    pub(crate) const fn cast<C2: DateFieldsResolver<YearInfo = C::YearInfo>>(
+        self,
+    ) -> ArithmeticDate<C2> {
         ArithmeticDate {
-            year,
-            month,
-            day: day.try_into().unwrap_or(1),
-            marker: PhantomData,
+            year: self.year,
+            month: self.month,
+            day: self.day,
         }
     }
 
-    #[inline]
-    pub fn day_of_month(&self) -> types::DayOfMonth {
-        types::DayOfMonth(self.day)
-    }
-
-    #[inline]
-    pub fn day_of_year(&self) -> DayOfYear {
-        let mut day_of_year = 0;
-        for month in 1..self.month {
-            day_of_year += C::days_in_provided_month(self.year, month) as u16;
-        }
-        DayOfYear(day_of_year + (self.day as u16))
-    }
-
-    pub fn extended_year(&self) -> i32 {
-        self.year.into()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn month(&self) -> types::MonthInfo {
-        let code = match self.month {
-            a if a > C::months_in_provided_year(self.year) => tinystr!(4, "und"),
-            1 => tinystr!(4, "M01"),
-            2 => tinystr!(4, "M02"),
-            3 => tinystr!(4, "M03"),
-            4 => tinystr!(4, "M04"),
-            5 => tinystr!(4, "M05"),
-            6 => tinystr!(4, "M06"),
-            7 => tinystr!(4, "M07"),
-            8 => tinystr!(4, "M08"),
-            9 => tinystr!(4, "M09"),
-            10 => tinystr!(4, "M10"),
-            11 => tinystr!(4, "M11"),
-            12 => tinystr!(4, "M12"),
-            13 => tinystr!(4, "M13"),
-            _ => tinystr!(4, "und"),
-        };
-        types::MonthInfo {
-            ordinal: self.month,
-            standard_code: types::MonthCode(code),
-            formatting_code: types::MonthCode(code),
-        }
-    }
-
-    
-    
-    
-    pub fn new_from_codes<C2: Calendar>(
-        
-        
-        _cal: &C2,
+    pub(crate) fn from_codes(
+        era: Option<&str>,
         year: i32,
         month_code: types::MonthCode,
         day: u8,
-    ) -> Result<Self, DateError>
-    where
-        C: CalendarArithmetic<YearInfo = i32>,
-    {
-        let month = if let Some((ordinal, false)) = month_code.parsed() {
-            ordinal
+        calendar: &C,
+    ) -> Result<Self, DateError> {
+        let year = range_check(year, "year", VALID_YEAR_RANGE)?;
+        let year = if let Some(era) = era {
+            calendar.year_info_from_era(era.as_bytes(), year)?
         } else {
-            return Err(DateError::UnknownMonthCode(month_code));
+            calendar.year_info_from_extended(year)
+        };
+        let validated =
+            ValidMonthCode::try_from_utf8(month_code.0.as_bytes()).map_err(|e| match e {
+                MonthCodeParseError::InvalidSyntax => DateError::UnknownMonthCode(month_code),
+            })?;
+        let month = calendar
+            .ordinal_month_from_code(&year, validated, Default::default())
+            .map_err(|e| match e {
+                MonthCodeError::NotInCalendar | MonthCodeError::NotInYear => {
+                    DateError::UnknownMonthCode(month_code)
+                }
+            })?;
+
+        let day = range_check(day, "day", 1..=C::days_in_provided_month(year, month))?;
+
+        Ok(ArithmeticDate::new_unchecked(year, month, day))
+    }
+
+    pub(crate) fn from_fields(
+        fields: DateFields,
+        options: DateFromFieldsOptions,
+        calendar: &C,
+    ) -> Result<Self, DateFromFieldsError> {
+        let missing_fields_strategy = options.missing_fields_strategy.unwrap_or_default();
+
+        let day = match fields.day {
+            Some(day) => day,
+            None => match missing_fields_strategy {
+                MissingFieldsStrategy::Reject => return Err(DateFromFieldsError::NotEnoughFields),
+                MissingFieldsStrategy::Ecma => {
+                    if fields.extended_year.is_some() || fields.era_year.is_some() {
+                        
+                        
+                        1
+                    } else {
+                        return Err(DateFromFieldsError::NotEnoughFields);
+                    }
+                }
+            },
         };
 
-        if month > C::months_in_provided_year(year) {
-            return Err(DateError::UnknownMonthCode(month_code));
+        if fields.month_code.is_none() && fields.ordinal_month.is_none() {
+            
+            
+            return Err(DateFromFieldsError::NotEnoughFields);
         }
 
-        let max_day = C::days_in_provided_month(year, month);
-        if day == 0 || day > max_day {
-            return Err(DateError::Range {
-                field: "day",
-                value: day as i32,
-                min: 1,
-                max: max_day as i32,
-            });
-        }
+        let mut valid_month_code = None;
 
-        Ok(Self::new_unchecked(year, month, day))
+        
+        
+        
+        
+        
+        
+        
+        
+        let year = match (fields.era, fields.era_year) {
+            (None, None) => match fields.extended_year {
+                Some(extended_year) => calendar.year_info_from_extended(range_check(
+                    extended_year,
+                    "year",
+                    VALID_YEAR_RANGE,
+                )?),
+                None => match missing_fields_strategy {
+                    MissingFieldsStrategy::Reject => {
+                        return Err(DateFromFieldsError::NotEnoughFields)
+                    }
+                    MissingFieldsStrategy::Ecma => {
+                        match (fields.month_code, fields.ordinal_month) {
+                            (Some(month_code), None) => {
+                                let validated = ValidMonthCode::try_from_utf8(month_code)?;
+                                valid_month_code = Some(validated);
+                                calendar.reference_year_from_month_day(validated, day)?
+                            }
+                            _ => return Err(DateFromFieldsError::NotEnoughFields),
+                        }
+                    }
+                },
+            },
+            (Some(era), Some(era_year)) => {
+                let era_year_as_year_info = calendar
+                    .year_info_from_era(era, range_check(era_year, "year", VALID_YEAR_RANGE)?)?;
+                if let Some(extended_year) = fields.extended_year {
+                    if era_year_as_year_info
+                        != calendar.year_info_from_extended(range_check(
+                            extended_year,
+                            "year",
+                            VALID_YEAR_RANGE,
+                        )?)
+                    {
+                        return Err(DateFromFieldsError::InconsistentYear);
+                    }
+                }
+                era_year_as_year_info
+            }
+            
+            (Some(_), None) | (None, Some(_)) => return Err(DateFromFieldsError::NotEnoughFields),
+        };
+
+        let month = match fields.month_code {
+            Some(month_code) => {
+                let validated = match valid_month_code {
+                    Some(validated) => validated,
+                    None => ValidMonthCode::try_from_utf8(month_code)?,
+                };
+                let computed_month = calendar.ordinal_month_from_code(&year, validated, options)?;
+                if let Some(ordinal_month) = fields.ordinal_month {
+                    if computed_month != ordinal_month {
+                        return Err(DateFromFieldsError::InconsistentMonth);
+                    }
+                }
+                computed_month
+            }
+            None => match fields.ordinal_month {
+                Some(month) => month,
+                None => {
+                    debug_assert!(false, "Already checked above");
+                    return Err(DateFromFieldsError::NotEnoughFields);
+                }
+            },
+        };
+
+        let constrained_month = range_check_with_overflow(
+            month,
+            "month",
+            1..=C::months_in_provided_year(year),
+            options.overflow.unwrap_or_default(),
+        )?;
+        Ok(Self::new_unchecked(
+            year,
+            constrained_month,
+            range_check_with_overflow(
+                day,
+                "day",
+                1..=C::days_in_provided_month(year, constrained_month),
+                options.overflow.unwrap_or_default(),
+            )?,
+        ))
+    }
+
+    pub(crate) fn try_from_ymd(year: C::YearInfo, month: u8, day: u8) -> Result<Self, RangeError> {
+        range_check(month, "month", 1..=C::months_in_provided_year(year))?;
+        range_check(day, "day", 1..=C::days_in_provided_month(year, month))?;
+        Ok(ArithmeticDate::new_unchecked(year, month, day))
     }
 
     
     
-    pub fn new_from_ordinals(year: C::YearInfo, month: u8, day: u8) -> Result<Self, RangeError> {
-        let max_month = C::months_in_provided_year(year);
-        if month == 0 || month > max_month {
-            return Err(RangeError {
-                field: "month",
-                value: month as i32,
-                min: 1,
-                max: max_month as i32,
-            });
+    
+    
+    pub(crate) fn new_balanced(year: C::YearInfo, ordinal_month: i64, day: i64, cal: &C) -> Self {
+        
+        
+        let mut resolved_year = year;
+        let mut resolved_month = ordinal_month;
+        
+        let mut months_in_year = C::months_in_provided_year(resolved_year);
+        
+        
+        
+        
+        while resolved_month <= 0 {
+            resolved_year = cal.year_info_from_extended(resolved_year.to_extended_year() - 1);
+            months_in_year = C::months_in_provided_year(resolved_year);
+            resolved_month += i64::from(months_in_year);
         }
-        let max_day = C::days_in_provided_month(year, month);
-        if day == 0 || day > max_day {
-            return Err(RangeError {
-                field: "day",
-                value: day as i32,
-                min: 1,
-                max: max_day as i32,
-            });
+        
+        
+        
+        
+        while resolved_month > i64::from(months_in_year) {
+            resolved_month -= i64::from(months_in_year);
+            resolved_year = cal.year_info_from_extended(resolved_year.to_extended_year() + 1);
+            months_in_year = C::months_in_provided_year(resolved_year);
         }
+        debug_assert!(u8::try_from(resolved_month).is_ok());
+        let mut resolved_month = resolved_month as u8;
+        
+        let mut resolved_day = day;
+        
+        let mut days_in_month = C::days_in_provided_month(resolved_year, resolved_month);
+        
+        while resolved_day <= 0 {
+            
+            
+            resolved_month -= 1;
+            if resolved_month == 0 {
+                
+                
+                
+                resolved_year = cal.year_info_from_extended(resolved_year.to_extended_year() - 1);
+                months_in_year = C::months_in_provided_year(resolved_year);
+                resolved_month = months_in_year;
+            }
+            
+            
+            days_in_month = C::days_in_provided_month(resolved_year, resolved_month);
+            resolved_day += i64::from(days_in_month);
+        }
+        
+        while resolved_day > i64::from(days_in_month) {
+            
+            
+            
+            resolved_day -= i64::from(days_in_month);
+            resolved_month += 1;
+            if resolved_month > months_in_year {
+                
+                
+                
+                resolved_year = cal.year_info_from_extended(resolved_year.to_extended_year() + 1);
+                months_in_year = C::months_in_provided_year(resolved_year);
+                resolved_month = 1;
+            }
+            
+            days_in_month = C::days_in_provided_month(resolved_year, resolved_month);
+        }
+        debug_assert!(u8::try_from(resolved_day).is_ok());
+        let resolved_day = resolved_day as u8;
+        
+        Self::new_unchecked(resolved_year, resolved_month, resolved_day)
+    }
 
-        Ok(Self::new_unchecked(year, month, day))
+    
+    
+    
+    
+    
+    pub(crate) fn surpasses(
+        &self,
+        other: &Self,
+        duration: DateDuration,
+        sign: i64,
+        cal: &C,
+    ) -> bool {
+        
+        
+        let y0 = cal.year_info_from_extended(duration.add_years_to(self.year.to_extended_year()));
+        
+        let base_month_code = cal.month_code_from_ordinal(&self.year, self.month);
+        let constrain = DateFromFieldsOptions {
+            overflow: Some(Overflow::Constrain),
+            ..Default::default()
+        };
+        let m0_result = cal.ordinal_month_from_code(&y0, base_month_code, constrain);
+        let m0 = match m0_result {
+            Ok(m0) => m0,
+            Err(_) => {
+                debug_assert!(
+                    false,
+                    "valid month code for calendar, and constrained to the year"
+                );
+                1
+            }
+        };
+        
+        let end_of_month = Self::new_balanced(y0, duration.add_months_to(m0) + 1, 0, cal);
+        
+        let base_day = self.day;
+        let y1;
+        let m1;
+        let d1;
+        
+        if duration.weeks != 0 || duration.days != 0 {
+            
+            
+            
+            
+            let regulated_day = if base_day < end_of_month.day {
+                base_day
+            } else {
+                end_of_month.day
+            };
+            
+            
+            
+            
+            let balanced_date = Self::new_balanced(
+                end_of_month.year,
+                i64::from(end_of_month.month),
+                duration.add_weeks_and_days_to(regulated_day),
+                cal,
+            );
+            y1 = balanced_date.year;
+            m1 = balanced_date.month;
+            d1 = balanced_date.day;
+        } else {
+            
+            
+            
+            
+            y1 = end_of_month.year;
+            m1 = end_of_month.month;
+            d1 = base_day;
+        }
+        
+        
+        
+        
+        
+        
+        
+        #[allow(clippy::collapsible_if)] 
+        if y1 != other.year {
+            if sign * (i64::from(y1.to_extended_year()) - i64::from(other.year.to_extended_year()))
+                > 0
+            {
+                return true;
+            }
+        } else if m1 != other.month {
+            if sign * (i64::from(m1) - i64::from(other.month)) > 0 {
+                return true;
+            }
+        } else if d1 != other.day {
+            if sign * (i64::from(d1) - i64::from(other.day)) > 0 {
+                return true;
+            }
+        }
+        
+        false
+    }
+
+    
+    
+    
+    
+    pub(crate) fn added(
+        &self,
+        duration: DateDuration,
+        cal: &C,
+        options: DateAddOptions,
+    ) -> Result<Self, DateError> {
+        
+        
+        let y0 = cal.year_info_from_extended(duration.add_years_to(self.year.to_extended_year()));
+        
+        let base_month = cal.month_code_from_ordinal(&self.year, self.month);
+        let m0 = cal
+            .ordinal_month_from_code(
+                &y0,
+                base_month,
+                DateFromFieldsOptions::from_add_options(options),
+            )
+            .map_err(|e| {
+                
+                match e {
+                    MonthCodeError::NotInCalendar => {
+                        DateError::UnknownMonthCode(base_month.to_month_code())
+                    }
+                    MonthCodeError::NotInYear => {
+                        DateError::UnknownMonthCode(base_month.to_month_code())
+                    }
+                }
+            })?;
+        
+        let end_of_month = Self::new_balanced(y0, duration.add_months_to(m0) + 1, 0, cal);
+        
+        let base_day = self.day;
+        
+        
+        let regulated_day = if base_day < end_of_month.day {
+            base_day
+        } else {
+            
+            
+            
+            if matches!(options.overflow, Some(Overflow::Reject)) {
+                return Err(DateError::Range {
+                    field: "day",
+                    value: i32::from(base_day),
+                    min: 1,
+                    max: i32::from(end_of_month.day),
+                });
+            }
+            end_of_month.day
+        };
+        
+        
+        
+        Ok(Self::new_balanced(
+            end_of_month.year,
+            i64::from(end_of_month.month),
+            duration.add_weeks_and_days_to(regulated_day),
+            cal,
+        ))
+    }
+
+    
+    
+    
+    
+    pub(crate) fn until(
+        &self,
+        other: &Self,
+        cal: &C,
+        options: DateDifferenceOptions,
+    ) -> DateDuration {
+        
+        
+        let sign = match other.cmp(self) {
+            Ordering::Greater => 1i64,
+            Ordering::Equal => return DateDuration::default(),
+            Ordering::Less => -1i64,
+        };
+        
+        
+        
+        
+        
+        
+        let mut years = 0;
+        if matches!(options.largest_unit, Some(DateDurationUnit::Years)) {
+            let mut candidate_years = sign;
+            while !self.surpasses(
+                other,
+                DateDuration::from_signed_ymwd(candidate_years, 0, 0, 0),
+                sign,
+                cal,
+            ) {
+                years = candidate_years;
+                candidate_years += sign;
+            }
+        }
+        
+        
+        
+        
+        
+        
+        let mut months = 0;
+        if matches!(
+            options.largest_unit,
+            Some(DateDurationUnit::Years) | Some(DateDurationUnit::Months)
+        ) {
+            let mut candidate_months = sign;
+            while !self.surpasses(
+                other,
+                DateDuration::from_signed_ymwd(years, candidate_months, 0, 0),
+                sign,
+                cal,
+            ) {
+                months = candidate_months;
+                candidate_months += sign;
+            }
+        }
+        
+        
+        
+        
+        
+        
+        let mut weeks = 0;
+        if matches!(options.largest_unit, Some(DateDurationUnit::Weeks)) {
+            let mut candidate_weeks = sign;
+            while !self.surpasses(
+                other,
+                DateDuration::from_signed_ymwd(years, months, candidate_weeks, 0),
+                sign,
+                cal,
+            ) {
+                weeks = candidate_weeks;
+                candidate_weeks += sign;
+            }
+        }
+        
+        
+        
+        
+        
+        let mut days = 0;
+        let mut candidate_days = sign;
+        while !self.surpasses(
+            other,
+            DateDuration::from_signed_ymwd(years, months, weeks, candidate_days),
+            sign,
+            cal,
+        ) {
+            days = candidate_days;
+            candidate_days += sign;
+        }
+        
+        DateDuration::from_signed_ymwd(years, months, weeks, days)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cal::Iso;
+    use crate::cal::{abstract_gregorian::AbstractGregorian, iso::IsoEra};
 
     #[test]
     fn test_ord() {
         let dates_in_order = [
-            ArithmeticDate::<Iso>::new_unchecked(-10, 1, 1),
-            ArithmeticDate::<Iso>::new_unchecked(-10, 1, 2),
-            ArithmeticDate::<Iso>::new_unchecked(-10, 2, 1),
-            ArithmeticDate::<Iso>::new_unchecked(-1, 1, 1),
-            ArithmeticDate::<Iso>::new_unchecked(-1, 1, 2),
-            ArithmeticDate::<Iso>::new_unchecked(-1, 2, 1),
-            ArithmeticDate::<Iso>::new_unchecked(0, 1, 1),
-            ArithmeticDate::<Iso>::new_unchecked(0, 1, 2),
-            ArithmeticDate::<Iso>::new_unchecked(0, 2, 1),
-            ArithmeticDate::<Iso>::new_unchecked(1, 1, 1),
-            ArithmeticDate::<Iso>::new_unchecked(1, 1, 2),
-            ArithmeticDate::<Iso>::new_unchecked(1, 2, 1),
-            ArithmeticDate::<Iso>::new_unchecked(10, 1, 1),
-            ArithmeticDate::<Iso>::new_unchecked(10, 1, 2),
-            ArithmeticDate::<Iso>::new_unchecked(10, 2, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(-10, 1, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(-10, 1, 2),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(-10, 2, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(-1, 1, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(-1, 1, 2),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(-1, 2, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(0, 1, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(0, 1, 2),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(0, 2, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(1, 1, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(1, 1, 2),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(1, 2, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(10, 1, 1),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(10, 1, 2),
+            ArithmeticDate::<AbstractGregorian<IsoEra>>::new_unchecked(10, 2, 1),
         ];
         for (i, i_date) in dates_in_order.iter().enumerate() {
             for (j, j_date) in dates_in_order.iter().enumerate() {

@@ -16,7 +16,7 @@ const fn skip_before_separator(slice: &[u8]) -> &[u8] {
     let mut end = 0;
     
 
-    #[allow(clippy::indexing_slicing)] 
+    #[expect(clippy::indexing_slicing)] 
     while end < slice.len() && !matches!(slice[end], b'-') {
         
         

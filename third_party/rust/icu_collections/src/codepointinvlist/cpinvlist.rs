@@ -120,7 +120,7 @@ impl UnicodeCodePoint {
         if cp <= char::MAX as u32 {
             Ok(Self(cp))
         } else {
-            Err(format!("Not a Unicode code point {}", cp))
+            Err(format!("Not a Unicode code point {cp}"))
         }
     }
 
@@ -221,7 +221,7 @@ impl<'data> CodePointInversionList<'data> {
     pub fn try_from_inversion_list(
         inv_list: ZeroVec<'data, PotentialCodePoint>,
     ) -> Result<Self, InvalidSetError> {
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         if is_valid_zv(&inv_list) {
             let size = inv_list
                 .as_ule_slice()
@@ -279,6 +279,8 @@ impl<'data> CodePointInversionList<'data> {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn try_from_u32_inversion_list_slice(inv_list: &[u32]) -> Result<Self, InvalidSetError> {
         let inv_list_zv: ZeroVec<PotentialCodePoint> = inv_list
@@ -290,6 +292,8 @@ impl<'data> CodePointInversionList<'data> {
     }
 
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn into_owned(self) -> CodePointInversionList<'static> {
         CodePointInversionList {
@@ -298,6 +302,8 @@ impl<'data> CodePointInversionList<'data> {
         }
     }
 
+    
+    
     
     #[cfg(feature = "alloc")]
     pub fn get_inversion_list_vec(&self) -> Vec<u32> {
@@ -362,7 +368,7 @@ impl<'data> CodePointInversionList<'data> {
     
     
     #[cfg(feature = "alloc")]
-    pub(crate) fn as_inversion_list(&self) -> &ZeroVec<PotentialCodePoint> {
+    pub(crate) fn as_inversion_list(&self) -> &ZeroVec<'_, PotentialCodePoint> {
         &self.inv_list
     }
 
@@ -385,7 +391,7 @@ impl<'data> CodePointInversionList<'data> {
     
     
     pub fn iter_chars(&self) -> impl Iterator<Item = char> + '_ {
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         self.inv_list
             .as_ule_slice()
             .chunks(2)
@@ -418,7 +424,7 @@ impl<'data> CodePointInversionList<'data> {
     
     
     pub fn iter_ranges(&self) -> impl ExactSizeIterator<Item = RangeInclusive<u32>> + '_ {
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         self.inv_list.as_ule_slice().chunks(2).map(|pair| {
             let range_start = u32::from(PotentialCodePoint::from_unaligned(pair[0]));
             let range_limit = u32::from(PotentialCodePoint::from_unaligned(pair[1]));
@@ -471,7 +477,7 @@ impl<'data> CodePointInversionList<'data> {
         } else {
             None
         };
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         let chunks = middle.chunks(2).map(|pair| {
             let range_start = u32::from(PotentialCodePoint::from_unaligned(pair[0]));
             let range_limit = u32::from(PotentialCodePoint::from_unaligned(pair[1]));

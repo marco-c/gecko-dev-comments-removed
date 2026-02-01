@@ -95,6 +95,8 @@ impl<'a> DataIdentifierBorrowed<'a> {
     }
 
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn into_owned(self) -> DataIdentifierCow<'static> {
         DataIdentifierCow {
@@ -104,6 +106,8 @@ impl<'a> DataIdentifierBorrowed<'a> {
     }
 
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn as_cow(self) -> DataIdentifierCow<'a> {
         DataIdentifierCow {
@@ -112,6 +116,8 @@ impl<'a> DataIdentifierBorrowed<'a> {
         }
     }
 }
+
+
 
 
 
@@ -188,7 +194,6 @@ impl<'a> DataIdentifierCow<'a> {
     }
 
     
-    #[cfg(feature = "alloc")]
     pub fn from_owned(marker_attributes: Box<DataMarkerAttributes>, locale: DataLocale) -> Self {
         Self {
             marker_attributes: Cow::Owned(marker_attributes),
@@ -264,7 +269,7 @@ impl DataMarkerAttributes {
     const fn validate(s: &[u8]) -> Result<(), AttributeParseError> {
         let mut i = 0;
         while i < s.len() {
-            #[allow(clippy::indexing_slicing)] 
+            #[expect(clippy::indexing_slicing)] 
             if !matches!(s[i], b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_') {
                 return Err(AttributeParseError);
             }
@@ -310,6 +315,8 @@ impl DataMarkerAttributes {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn try_from_string(s: String) -> Result<Box<Self>, AttributeParseError> {
         let Ok(()) = Self::validate(s.as_bytes()) else {
@@ -341,6 +348,7 @@ impl DataMarkerAttributes {
         &self.value
     }
 }
+
 
 #[cfg(feature = "alloc")]
 impl ToOwned for DataMarkerAttributes {

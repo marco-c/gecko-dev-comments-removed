@@ -119,7 +119,7 @@ pub struct LocaleError {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]
-#[allow(clippy::large_enum_variant)] 
+#[expect(clippy::large_enum_variant)] 
 pub enum LocaleInfo {
     String(String),
     Error(LocaleError),

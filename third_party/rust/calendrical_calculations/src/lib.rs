@@ -45,6 +45,8 @@ mod error;
 
 pub mod ethiopian;
 
+pub mod gregorian;
+
 pub mod hebrew;
 pub mod hebrew_keviyah;
 
@@ -52,7 +54,20 @@ pub mod helpers;
 
 pub mod islamic;
 
-pub mod iso;
+
+
+#[deprecated(since = "0.2.3", note = "use `gregorian`")]
+pub mod iso {
+    pub use crate::gregorian::day_before_year;
+    pub use crate::gregorian::days_before_month;
+    pub use crate::gregorian::easter;
+    pub use crate::gregorian::fixed_from_gregorian as const_fixed_from_iso;
+    pub use crate::gregorian::fixed_from_gregorian as fixed_from_iso;
+    pub use crate::gregorian::gregorian_from_fixed as iso_from_fixed;
+    pub use crate::gregorian::is_leap_year;
+    pub use crate::gregorian::year_day;
+    pub use crate::gregorian::year_from_fixed as iso_year_from_fixed;
+}
 
 pub mod julian;
 

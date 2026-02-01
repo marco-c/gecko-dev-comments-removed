@@ -1,7 +1,7 @@
 use super::lifetimes::{Lifetimes, LinkedLifetimes};
 use super::{
-    Borrow, EnumDef, EnumId, Everywhere, OpaqueDef, OpaqueId, OpaqueOwner, OutStructDef,
-    OutputOnly, ReturnableStructDef, StructDef, TraitId, TyPosition, TypeContext,
+    Borrow, EnumDef, EnumId, Everywhere, Mutability, OpaqueDef, OpaqueId, OpaqueOwner,
+    OutStructDef, OutputOnly, ReturnableStructDef, StructDef, TraitId, TyPosition, TypeContext,
 };
 
 
@@ -21,6 +21,7 @@ pub type OutStructPath = StructPath<OutputOnly>;
 pub struct StructPath<P: TyPosition = Everywhere> {
     pub lifetimes: Lifetimes,
     pub tcx_id: P::StructId,
+    pub owner: MaybeOwn,
 }
 
 #[derive(Debug, Clone)]
@@ -109,6 +110,7 @@ pub struct EnumPath {
 
 
 
+
 #[derive(Copy, Clone, Debug)]
 #[allow(clippy::exhaustive_enums)] 
 pub enum MaybeOwn {
@@ -123,8 +125,27 @@ impl MaybeOwn {
             MaybeOwn::Borrow(borrow) => Some(borrow),
         }
     }
+
+    pub fn is_owned(&self) -> bool {
+        matches!(*self, Self::Own)
+    }
+
+    
+    
+    
+    pub fn mutability(&self) -> Mutability {
+        match *self {
+            Self::Own => Mutability::Mutable,
+            Self::Borrow(b) => b.mutability,
+        }
+    }
 }
 
+impl From<Option<Borrow>> for MaybeOwn {
+    fn from(other: Option<Borrow>) -> Self {
+        other.map(Self::Borrow).unwrap_or(Self::Own)
+    }
+}
 impl ReturnableStructPath {
     pub fn resolve<'tcx>(&self, tcx: &'tcx TypeContext) -> ReturnableStructDef<'tcx> {
         match self {
@@ -145,8 +166,12 @@ impl ReturnableStructPath {
 
 impl<P: TyPosition> StructPath<P> {
     
-    pub(super) fn new(lifetimes: Lifetimes, tcx_id: P::StructId) -> Self {
-        Self { lifetimes, tcx_id }
+    pub(super) fn new(lifetimes: Lifetimes, tcx_id: P::StructId, owner: MaybeOwn) -> Self {
+        Self {
+            lifetimes,
+            tcx_id,
+            owner,
+        }
     }
 }
 impl StructPath {

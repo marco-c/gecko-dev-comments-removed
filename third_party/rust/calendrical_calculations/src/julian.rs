@@ -7,12 +7,11 @@
 
 
 
-use crate::helpers::{i64_to_i32, I32CastError};
+use crate::helpers::{i64_to_i32, k_day_after, I32CastError};
 use crate::rata_die::RataDie;
 
 
-
-const JULIAN_EPOCH: RataDie = RataDie::new(-1);
+const JULIAN_EPOCH: RataDie = crate::gregorian::fixed_from_gregorian(0, 12, 30);
 
 
 #[inline(always)]
@@ -114,4 +113,29 @@ pub const fn fixed_from_julian_book_version(book_year: i32, month: u8, day: u8) 
         month,
         day,
     )
+}
+
+
+pub fn easter(year: i32) -> RataDie {
+    let shifted_epact = (14 + 11 * year.rem_euclid(19)) % 30;
+    let paschal_moon = fixed_from_julian(year, 4, 19) - shifted_epact as i64;
+    k_day_after(0, paschal_moon)
+}
+
+#[test]
+fn test_easter() {
+    
+    for (y, m, d) in [
+        (2021, 5, 2),
+        (2022, 4, 24),
+        (2023, 4, 16),
+        (2024, 5, 5),
+        (2025, 4, 20),
+        (2026, 4, 12),
+        (2027, 5, 2),
+        (2028, 4, 16),
+        (2029, 4, 8),
+    ] {
+        assert_eq!(easter(y), crate::gregorian::fixed_from_gregorian(y, m, d));
+    }
 }

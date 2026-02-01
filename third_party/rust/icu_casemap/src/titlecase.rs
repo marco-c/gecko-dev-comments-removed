@@ -238,7 +238,7 @@ impl TitlecaseMapper<CaseMapper> {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)] 
+    #[expect(clippy::new_ret_no_self)] 
     pub const fn new() -> TitlecaseMapperBorrowed<'static> {
         TitlecaseMapperBorrowed::new()
     }

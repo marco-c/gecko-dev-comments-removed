@@ -388,12 +388,17 @@
     )
 )]
 
+pub(crate) mod core;
 mod error;
 pub mod parsers;
-
-extern crate alloc;
+pub mod records;
 
 pub use error::ParseError;
+
+
+pub mod encoding {
+    pub use crate::core::{Utf16, Utf8};
+}
 
 
 pub type ParserResult<T> = Result<T, ParseError>;

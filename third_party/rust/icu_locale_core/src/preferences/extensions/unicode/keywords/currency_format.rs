@@ -2,10 +2,8 @@
 
 
 
-#[cfg(feature = "alloc")]
 use crate::preferences::extensions::unicode::enum_keyword;
 
-#[cfg(feature = "alloc")]
 enum_keyword!(
     /// A Unicode Currency Format Identifier defines a style for currency formatting.
     ///

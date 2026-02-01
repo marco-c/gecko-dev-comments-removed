@@ -1,11 +1,28 @@
 #![cfg_attr(not(any(target_arch = "wasm32")), no_std)]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern crate alloc;
 
 use alloc::alloc::Layout;
 
-#[cfg(target_arch = "wasm32")]
-
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 mod wasm_glue;
 
 mod write;
@@ -23,11 +40,26 @@ pub use callback::DiplomatCallback;
 mod result;
 pub use result::{DiplomatOption, DiplomatResult};
 
+pub mod rust_interop;
+
+
+
+
 
 pub type DiplomatChar = u32;
 
 
+
+
+
+
+
 pub type DiplomatStr = [u8];
+
+
+
+
+
 
 
 pub type DiplomatStr16 = [u16];
@@ -35,7 +67,10 @@ pub type DiplomatStr16 = [u16];
 
 
 
+
 pub type DiplomatByte = u8;
+
+
 
 
 
@@ -49,10 +84,16 @@ pub unsafe extern "C" fn diplomat_alloc(size: usize, align: usize) -> *mut u8 {
 
 
 
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn diplomat_free(ptr: *mut u8, size: usize, align: usize) {
     alloc::alloc::dealloc(ptr, Layout::from_size_align(size, align).unwrap())
 }
+
+
+
 
 
 

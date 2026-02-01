@@ -310,7 +310,7 @@ impl ScriptWithExtensions {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub fn new() -> ScriptWithExtensionsBorrowed<'static> {
         ScriptWithExtensionsBorrowed::new()
     }
@@ -601,7 +601,6 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
     
     
     
-    
     pub fn get_script_extensions_ranges(
         self,
         script: Script,
@@ -622,6 +621,8 @@ impl<'a> ScriptWithExtensionsBorrowed<'a> {
             .map(|v| v.range)
     }
 
+    
+    
     
     
     

@@ -3,22 +3,17 @@
 
 
 use crate::{
-    zone::{
-        iana::IanaParserBorrowed, models, InvalidOffsetError, UtcOffset,
-        VariantOffsetsCalculatorBorrowed,
-    },
-    DateTime, Time, TimeZone, TimeZoneInfo, ZonedDateTime,
+    zone::{iana::IanaParserBorrowed, models, InvalidOffsetError, UtcOffset},
+    DateTime, Time, TimeZoneInfo, ZonedDateTime,
 };
 use core::str::FromStr;
 use icu_calendar::{AnyCalendarKind, AsCalendar, Date, DateError, Iso, RangeError};
-use icu_locale_core::subtags::subtag;
 use ixdtf::{
-    parsers::{
-        records::{
-            DateRecord, IxdtfParseRecord, TimeRecord, TimeZoneAnnotation, TimeZoneRecord,
-            UtcOffsetRecord, UtcOffsetRecordOrZ,
-        },
-        IxdtfParser,
+    encoding::Utf8,
+    parsers::IxdtfParser,
+    records::{
+        DateRecord, IxdtfParseRecord, TimeRecord, TimeZoneAnnotation, TimeZoneRecord,
+        UtcOffsetRecord, UtcOffsetRecordOrZ,
     },
     ParseError as Rfc9557ParseError,
 };
@@ -136,7 +131,9 @@ struct Intermediate<'a> {
 }
 
 impl<'a> Intermediate<'a> {
-    fn try_from_ixdtf_record(ixdtf_record: &'a IxdtfParseRecord) -> Result<Self, ParseError> {
+    fn try_from_ixdtf_record(
+        ixdtf_record: &'a IxdtfParseRecord<'_, Utf8>,
+    ) -> Result<Self, ParseError> {
         let (offset, is_z, iana_identifier) = match ixdtf_record {
             
             IxdtfParseRecord {
@@ -283,12 +280,8 @@ impl<'a> Intermediate<'a> {
         let id = iana_parser.parse_from_utf8(iana_identifier);
         let date = Date::<Iso>::try_new_iso(self.date.year, self.date.month, self.date.day)?;
         let time = Time::try_from_time_record(&self.time)?;
-        let offset = match id.as_str() {
-            "utc" | "gmt" => Some(UtcOffset::zero()),
-            _ => None,
-        };
         Ok(id
-            .with_offset(offset)
+            .with_offset(None)
             .at_date_time_iso(DateTime { date, time }))
     }
 
@@ -296,40 +289,56 @@ impl<'a> Intermediate<'a> {
         self,
         iana_parser: IanaParserBorrowed<'_>,
     ) -> Result<TimeZoneInfo<models::AtTime>, ParseError> {
-        let id = match self.iana_identifier {
+        let mut zone = match self.iana_identifier {
             Some(iana_identifier) => {
                 if self.is_z {
                     return Err(ParseError::RequiresCalculation);
                 }
-                iana_parser.parse_from_utf8(iana_identifier)
+                iana_parser
+                    .parse_from_utf8(iana_identifier)
+                    .with_offset(None)
             }
-            None if self.is_z => TimeZone(subtag!("utc")),
-            None => TimeZone::UNKNOWN,
+            None if self.is_z => TimeZoneInfo::utc(),
+            None => TimeZoneInfo::unknown(),
         };
-        let offset = match self.offset {
-            Some(offset) => {
-                if self.is_z && offset != UtcOffsetRecord::zero() {
-                    return Err(ParseError::RequiresCalculation);
-                }
-                Some(UtcOffset::try_from_utc_offset_record(offset)?)
+
+        if let Some(offset) = self.offset {
+            let offset = UtcOffset::try_from_utc_offset_record(offset)?;
+            if zone.offset().is_some_and(|i| i != offset) {
+                return Err(ParseError::RequiresCalculation);
             }
-            None => match id.as_str() {
-                "utc" | "gmt" => Some(UtcOffset::zero()),
-                _ if self.is_z => Some(UtcOffset::zero()),
-                _ => None,
-            },
-        };
+            zone = zone.id().with_offset(Some(offset));
+        }
         let date = Date::<Iso>::try_new_iso(self.date.year, self.date.month, self.date.day)?;
         let time = Time::try_from_time_record(&self.time)?;
-        Ok(id
-            .with_offset(offset)
+        Ok(zone.at_date_time_iso(DateTime { date, time }))
+    }
+
+    #[allow(deprecated)]
+    fn all(
+        self,
+        iana_parser: IanaParserBorrowed<'_>,
+    ) -> Result<TimeZoneInfo<models::AtTime>, ParseError> {
+        let Some(offset) = self.offset else {
+            return Err(ParseError::MismatchedTimeZoneFields);
+        };
+        let Some(iana_identifier) = self.iana_identifier else {
+            return Err(ParseError::MismatchedTimeZoneFields);
+        };
+        let time_zone_id = iana_parser.parse_from_utf8(iana_identifier);
+        let date = Date::try_new_iso(self.date.year, self.date.month, self.date.day)?;
+        let time = Time::try_from_time_record(&self.time)?;
+        let offset = UtcOffset::try_from_utc_offset_record(offset)?;
+        Ok(time_zone_id
+            .with_offset(Some(offset))
             .at_date_time_iso(DateTime { date, time }))
     }
 
+    #[allow(deprecated)]
     fn full(
         self,
         iana_parser: IanaParserBorrowed<'_>,
-        offset_calculator: VariantOffsetsCalculatorBorrowed,
+        offset_calculator: crate::zone::VariantOffsetsCalculatorBorrowed,
     ) -> Result<TimeZoneInfo<models::Full>, ParseError> {
         let Some(offset) = self.offset else {
             return Err(ParseError::MismatchedTimeZoneFields);
@@ -409,9 +418,6 @@ impl<A: AsCalendar> ZonedDateTime<A, TimeZoneInfo<models::AtTime>> {
     
     
     
-    
-    
-    
     pub fn try_lenient_from_str(
         rfc_9557_str: &str,
         calendar: A,
@@ -434,197 +440,187 @@ impl<A: AsCalendar> ZonedDateTime<A, TimeZoneInfo<models::AtTime>> {
         let zone = Intermediate::try_from_ixdtf_record(&ixdtf_record)?.lenient(iana_parser)?;
         Ok(ZonedDateTime { date, time, zone })
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_strict_from_str(
+        rfc_9557_str: &str,
+        calendar: A,
+        iana_parser: IanaParserBorrowed,
+    ) -> Result<Self, ParseError> {
+        Self::try_strict_from_utf8(rfc_9557_str.as_bytes(), calendar, iana_parser)
+    }
+
+    
+    
+    
+    pub fn try_strict_from_utf8(
+        rfc_9557_str: &[u8],
+        calendar: A,
+        iana_parser: IanaParserBorrowed,
+    ) -> Result<Self, ParseError> {
+        let ixdtf_record = IxdtfParser::from_utf8(rfc_9557_str).parse()?;
+        let date = Date::try_from_ixdtf_record(&ixdtf_record, calendar)?;
+        let time = Time::try_from_ixdtf_record(&ixdtf_record)?;
+        let zone = Intermediate::try_from_ixdtf_record(&ixdtf_record)?.all(iana_parser)?;
+
+        Ok(ZonedDateTime { date, time, zone })
+    }
 }
 
+#[allow(deprecated)]
 impl<A: AsCalendar> ZonedDateTime<A, TimeZoneInfo<models::Full>> {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "2.1.0", note = "use `try_strict_from_str`")]
     pub fn try_full_from_str(
         rfc_9557_str: &str,
         calendar: A,
         iana_parser: IanaParserBorrowed,
-        offset_calculator: VariantOffsetsCalculatorBorrowed,
+        offset_calculator: crate::zone::VariantOffsetsCalculatorBorrowed,
     ) -> Result<Self, ParseError> {
         Self::try_full_from_utf8(
             rfc_9557_str.as_bytes(),
@@ -637,11 +633,12 @@ impl<A: AsCalendar> ZonedDateTime<A, TimeZoneInfo<models::Full>> {
     
     
     
+    #[deprecated(since = "2.1.0", note = "use `try_strict_from_utf8`")]
     pub fn try_full_from_utf8(
         rfc_9557_str: &[u8],
         calendar: A,
         iana_parser: IanaParserBorrowed,
-        offset_calculator: VariantOffsetsCalculatorBorrowed,
+        offset_calculator: crate::zone::VariantOffsetsCalculatorBorrowed,
     ) -> Result<Self, ParseError> {
         let ixdtf_record = IxdtfParser::from_utf8(rfc_9557_str).parse()?;
         let date = Date::try_from_ixdtf_record(&ixdtf_record, calendar)?;
@@ -740,7 +737,9 @@ impl Time {
         Self::try_from_ixdtf_record(&ixdtf_record)
     }
 
-    fn try_from_ixdtf_record(ixdtf_record: &IxdtfParseRecord) -> Result<Self, ParseError> {
+    fn try_from_ixdtf_record(
+        ixdtf_record: &IxdtfParseRecord<'_, Utf8>,
+    ) -> Result<Self, ParseError> {
         let time_record = ixdtf_record.time.ok_or(ParseError::MissingFields)?;
         Self::try_from_time_record(&time_record)
     }
@@ -803,7 +802,7 @@ mod test {
 
     #[test]
     fn future_zone() {
-        let result = ZonedDateTime::try_lenient_from_str(
+        let result = ZonedDateTime::try_location_only_from_str(
             "2024-08-08T12:08:19[Future/Zone]",
             Iso,
             IanaParserBorrowed::new(),

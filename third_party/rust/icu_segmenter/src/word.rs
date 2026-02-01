@@ -19,9 +19,52 @@ use utf8_iter::Utf8CharIndices;
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct WordBreakOptions<'a> {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub content_locale: Option<&'a LanguageIdentifier>,
     
     pub invariant_options: WordBreakInvariantOptions,
+}
+
+impl WordBreakOptions<'_> {
+    
+    pub const fn default() -> Self {
+        Self {
+            content_locale: None,
+            invariant_options: WordBreakInvariantOptions::default(),
+        }
+    }
 }
 
 
@@ -30,6 +73,13 @@ pub struct WordBreakOptions<'a> {
 #[non_exhaustive]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct WordBreakInvariantOptions {}
+
+impl WordBreakInvariantOptions {
+    
+    pub const fn default() -> Self {
+        Self {}
+    }
+}
 
 
 
@@ -111,6 +161,23 @@ impl<Y: RuleBreakType> Iterator for WordBreakIteratorWithWordType<'_, '_, Y> {
         Some((ret, self.0 .0.word_type()))
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -463,6 +530,68 @@ impl WordSegmenter {
             },
         })
     }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub const fn new_for_non_complex_scripts(
+        _options: WordBreakInvariantOptions,
+    ) -> WordSegmenterBorrowed<'static> {
+        WordSegmenterBorrowed {
+            data: crate::provider::Baked::SINGLETON_SEGMENTER_BREAK_WORD_V1,
+            complex: ComplexPayloadsBorrowed::empty(),
+            locale_override: None,
+        }
+    }
+
+    icu_provider::gen_buffer_data_constructors!(
+        (options: WordBreakOptions) -> error: DataError,
+        functions: [
+            try_new_for_non_complex_scripts,
+            try_new_for_non_complex_scripts_with_buffer_provider,
+            try_new_for_non_complex_scripts_unstable,
+            Self
+        ]
+    );
+
+    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new_for_non_complex_scripts)]
+    pub fn try_new_for_non_complex_scripts_unstable<D>(
+        provider: &D,
+        options: WordBreakOptions,
+    ) -> Result<Self, DataError>
+    where
+        D: DataProvider<SegmenterBreakWordV1>
+            + DataProvider<SegmenterBreakWordOverrideV1>
+            + DataProvider<SegmenterBreakGraphemeClusterV1>
+            + ?Sized,
+    {
+        Ok(Self {
+            payload: provider.load(Default::default())?.payload,
+            complex: ComplexPayloads::try_new_empty(provider)?,
+            payload_locale_override: if let Some(locale) = options.content_locale {
+                let locale = DataLocale::from(locale);
+                let req = DataRequest {
+                    id: DataIdentifierBorrowed::for_locale(&locale),
+                    metadata: {
+                        let mut metadata = DataRequestMetadata::default();
+                        metadata.silent = true;
+                        metadata
+                    },
+                };
+                provider
+                    .load(req)
+                    .allow_identifier_not_found()?
+                    .map(|r| r.payload)
+            } else {
+                None
+            },
+        })
+    }
+
     
     
     
@@ -642,7 +771,7 @@ where
     
     iter.iter = start_iter;
     iter.current_pos_data = start_point;
-    #[allow(clippy::unwrap_used)] 
+    #[expect(clippy::unwrap_used)] 
     let breaks = iter.complex.unwrap().complex_language_segment_str(&s);
     iter.result_cache = breaks;
     let first_pos = *iter.result_cache.first()?;
@@ -693,7 +822,7 @@ impl WordBreakType for Utf16 {
         
         iter.iter = start_iter;
         iter.current_pos_data = start_point;
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         let breaks = iter.complex.unwrap().complex_language_segment_utf16(&s);
         iter.result_cache = breaks;
         

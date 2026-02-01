@@ -39,9 +39,31 @@ where
         D: Deserializer<'de>,
     {
         let de = CodePointTrieSerde::deserialize(deserializer)?;
-        let error_value = de.data.last().ok_or_else(|| {
-            D::Error::custom("CodePointTrie vector must have at least one element")
-        })?;
+        
+        
+        
+        let error_value = match CodePointTrie::validate_fields(&de.header, &de.index, &de.data) {
+            Ok(v) => v,
+            Err(e) => {
+                match e {
+                    super::CodePointTrieError::FromDeserialized { reason } => {
+                        
+                        debug_assert!(false);
+                        return Err(D::Error::custom(reason));
+                    }
+                    super::CodePointTrieError::EmptyDataVector => {
+                        return Err(D::Error::custom("CodePointTrie must be constructed from data vector with at least one element"));
+                    }
+                    super::CodePointTrieError::IndexTooShortForFastAccess => {
+                        return Err(D::Error::custom("CodePointTrie must be constructed from index vector long enough to accommodate fast-path access"));
+                    }
+                    super::CodePointTrieError::DataTooShortForFastAccess => {
+                        return Err(D::Error::custom("CodePointTrie must be constructed from data vector long enough to accommodate fast-path access"));
+                    }
+                }
+            }
+        };
+        
         Ok(CodePointTrie {
             header: de.header,
             index: de.index,

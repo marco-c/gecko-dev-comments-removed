@@ -79,7 +79,7 @@ impl IanaParser {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub fn new() -> IanaParserBorrowed<'static> {
         IanaParserBorrowed::new()
     }
@@ -111,7 +111,7 @@ impl IanaParser {
     
     
     
-    pub fn as_borrowed(&self) -> IanaParserBorrowed {
+    pub fn as_borrowed(&self) -> IanaParserBorrowed<'_> {
         IanaParserBorrowed {
             data: self.data.get(),
             checksum: self.checksum,
@@ -270,7 +270,7 @@ impl IanaParserExtended<IanaParser> {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub fn new() -> IanaParserExtendedBorrowed<'static> {
         IanaParserExtendedBorrowed::new()
     }
@@ -358,7 +358,7 @@ where
     
     
     
-    pub fn as_borrowed(&self) -> IanaParserExtendedBorrowed {
+    pub fn as_borrowed(&self) -> IanaParserExtendedBorrowed<'_> {
         IanaParserExtendedBorrowed {
             inner: self.inner.as_ref().as_borrowed(),
             data: self.data.get(),

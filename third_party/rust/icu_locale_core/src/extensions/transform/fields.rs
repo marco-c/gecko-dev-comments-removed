@@ -3,7 +3,6 @@
 
 
 use core::borrow::Borrow;
-use core::iter::FromIterator;
 use litemap::LiteMap;
 
 use super::Key;
@@ -32,7 +31,12 @@ use super::Value;
 
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash, PartialOrd, Ord)]
-pub struct Fields(LiteMap<Key, Value>);
+pub struct Fields(Inner);
+
+#[cfg(feature = "alloc")]
+type Inner = LiteMap<Key, Value>;
+#[cfg(not(feature = "alloc"))]
+type Inner = LiteMap<Key, Value, &'static [(Key, Value)]>;
 
 impl Fields {
     
@@ -154,6 +158,9 @@ impl Fields {
     
     
     
+    
+    
+    #[cfg(feature = "alloc")]
     pub fn set(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
@@ -180,6 +187,9 @@ impl Fields {
     
     
     
+    
+    
+    #[cfg(feature = "alloc")]
     pub fn retain_by_key<F>(&mut self, mut predicate: F)
     where
         F: FnMut(&Key) -> bool,
@@ -205,13 +215,17 @@ impl Fields {
     }
 }
 
+
+#[cfg(feature = "alloc")]
 impl From<LiteMap<Key, Value>> for Fields {
     fn from(map: LiteMap<Key, Value>) -> Self {
         Self(map)
     }
 }
 
-impl FromIterator<(Key, Value)> for Fields {
+
+#[cfg(feature = "alloc")]
+impl core::iter::FromIterator<(Key, Value)> for Fields {
     fn from_iter<I: IntoIterator<Item = (Key, Value)>>(iter: I) -> Self {
         LiteMap::from_iter(iter).into()
     }

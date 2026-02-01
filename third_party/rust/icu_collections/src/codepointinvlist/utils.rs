@@ -12,8 +12,8 @@ use zerovec::ZeroVec;
 
 
 
-#[allow(clippy::indexing_slicing)] 
-#[allow(clippy::unwrap_used)] 
+#[expect(clippy::indexing_slicing)] 
+#[expect(clippy::unwrap_used)] 
 pub fn is_valid_zv(inv_list_zv: &ZeroVec<'_, PotentialCodePoint>) -> bool {
     inv_list_zv.is_empty()
         || (inv_list_zv.len() % 2 == 0
@@ -48,7 +48,7 @@ mod tests {
     use core::char;
     use zerovec::ZeroVec;
 
-    fn make_zv(slice: &[u32]) -> ZeroVec<PotentialCodePoint> {
+    fn make_zv(slice: &[u32]) -> ZeroVec<'_, PotentialCodePoint> {
         slice
             .iter()
             .copied()

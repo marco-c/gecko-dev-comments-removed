@@ -2,10 +2,8 @@
 
 
 
-#[cfg(feature = "alloc")]
 use crate::preferences::extensions::unicode::enum_keyword;
 
-#[cfg(feature = "alloc")]
 enum_keyword!(
     /// A Measurement Unit Preference Override defines an override for measurement unit preference.
     ///

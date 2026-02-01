@@ -47,12 +47,16 @@ impl Value {
     
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
         Self::try_from_utf8(s.as_bytes())
     }
 
+    
+    
     
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
@@ -115,6 +119,7 @@ impl Value {
     }
 }
 
+
 #[cfg(feature = "alloc")]
 impl FromStr for Value {
     type Err = ParseError;
@@ -125,7 +130,7 @@ impl FromStr for Value {
     }
 }
 
-impl_writeable_for_each_subtag_str_no_test!(Value, selff, selff.0.is_empty() => alloc::borrow::Cow::Borrowed("true"));
+impl_writeable_for_each_subtag_str_no_test!(Value, selff, selff.0.is_empty() => Some("true"));
 
 #[test]
 fn test_writeable() {

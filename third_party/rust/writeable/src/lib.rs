@@ -66,6 +66,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
 mod cmp;
@@ -74,15 +85,21 @@ mod either;
 mod impls;
 mod ops;
 mod parts_write_adapter;
+#[cfg(feature = "alloc")]
 mod testing;
+#[cfg(feature = "alloc")]
 mod to_string_or_borrow;
 mod try_writeable;
 
+#[cfg(feature = "alloc")]
 use alloc::borrow::Cow;
+
+#[cfg(feature = "alloc")]
 use alloc::string::String;
 use core::fmt;
 
 pub use cmp::{cmp_str, cmp_utf8};
+#[cfg(feature = "alloc")]
 pub use to_string_or_borrow::to_string_or_borrow;
 pub use try_writeable::TryWriteable;
 
@@ -120,8 +137,11 @@ pub mod adapters {
 
 #[doc(hidden)] 
 pub mod _internal {
+    #[cfg(feature = "alloc")]
     pub use super::testing::try_writeable_to_parts_for_test;
+    #[cfg(feature = "alloc")]
     pub use super::testing::writeable_to_parts_for_test;
+    #[cfg(feature = "alloc")]
     pub use alloc::string::String;
 }
 
@@ -266,6 +286,10 @@ pub trait Writeable {
     
     
     
+    fn writeable_borrow(&self) -> Option<&str> {
+        None
+    }
+
     
     
     
@@ -302,7 +326,29 @@ pub trait Writeable {
     
     
     
-    fn write_to_string(&self) -> Cow<str> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    fn write_to_string(&self) -> Cow<'_, str> {
+        if let Some(borrow) = self.writeable_borrow() {
+            return Cow::Borrowed(borrow);
+        }
         let hint = self.writeable_length_hint();
         if hint.is_zero() {
             return Cow::Borrowed("");
@@ -334,8 +380,9 @@ macro_rules! impl_display_with_writeable {
             }
         }
     };
-    ($type:ty) => {
+    ($type:ty $(, #[$alloc_feature:meta])? ) => {
         $crate::impl_display_with_writeable!(@display, $type);
+        $(#[$alloc_feature])?
         impl $type {
             /// Converts the given value to a `String`.
             ///
@@ -410,6 +457,7 @@ macro_rules! impl_display_with_writeable {
 
 
 #[macro_export]
+#[cfg(feature = "alloc")]
 macro_rules! assert_writeable_eq {
     ($actual_writeable:expr, $expected_str:expr $(,)?) => {
         $crate::assert_writeable_eq!($actual_writeable, $expected_str, "")
@@ -422,7 +470,12 @@ macro_rules! assert_writeable_eq {
         let (actual_str, actual_parts) = $crate::_internal::writeable_to_parts_for_test(actual_writeable);
         let actual_len = actual_str.len();
         assert_eq!(actual_str, $expected_str, $($arg)*);
-        assert_eq!(actual_str, $crate::Writeable::write_to_string(actual_writeable), $($arg)+);
+        let cow = $crate::Writeable::write_to_string(actual_writeable);
+        assert_eq!(actual_str, cow, $($arg)+);
+        if let Some(borrowed) = ($crate::Writeable::writeable_borrow(&actual_writeable)) {
+            assert_eq!(borrowed, $expected_str, $($arg)*);
+            assert!(matches!(cow, std::borrow::Cow::Borrowed(_)), $($arg)*);
+        }
         let length_hint = $crate::Writeable::writeable_length_hint(actual_writeable);
         let lower = length_hint.0;
         assert!(
@@ -437,13 +490,14 @@ macro_rules! assert_writeable_eq {
                 format!($($arg)*),
             );
         }
-        assert_eq!(actual_writeable.to_string(), $expected_str);
+        assert_eq!(actual_writeable.to_string(), $expected_str, $($arg)*);
         actual_parts // return for assert_writeable_parts_eq
     }};
 }
 
 
 #[macro_export]
+#[cfg(feature = "alloc")]
 macro_rules! assert_writeable_parts_eq {
     ($actual_writeable:expr, $expected_str:expr, $expected_parts:expr $(,)?) => {
         $crate::assert_writeable_parts_eq!($actual_writeable, $expected_str, $expected_parts, "")

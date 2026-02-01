@@ -33,6 +33,39 @@ use core::{fmt, ptr};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 pub struct DiplomatWrite {
     
@@ -71,6 +104,25 @@ impl DiplomatWrite {
     pub fn flush(&mut self) {
         (self.flush)(self);
     }
+
+    
+    
+    
+    pub fn as_bytes(&self) -> &[u8] {
+        if self.buf.is_null() {
+            return &[];
+        }
+        debug_assert!(self.len <= self.cap);
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe { core::slice::from_raw_parts(self.buf, self.len) }
+    }
 }
 impl fmt::Write for DiplomatWrite {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
@@ -93,6 +145,9 @@ impl fmt::Write for DiplomatWrite {
         Ok(())
     }
 }
+
+
+
 
 
 
@@ -124,6 +179,12 @@ pub unsafe extern "C" fn diplomat_simple_write(buf: *mut u8, buf_size: usize) ->
         grow,
     }
 }
+
+
+
+
+
+
 
 
 
@@ -167,8 +228,11 @@ pub extern "C" fn diplomat_buffer_write_create(cap: usize) -> *mut DiplomatWrite
 
 
 
+
+
 #[no_mangle]
-pub extern "C" fn diplomat_buffer_write_get_bytes(this: &DiplomatWrite) -> *mut u8 {
+pub extern "C" fn diplomat_buffer_write_get_bytes(this: *mut DiplomatWrite) -> *mut u8 {
+    let this = unsafe { &*this };
     if this.grow_failed {
         core::ptr::null_mut()
     } else {

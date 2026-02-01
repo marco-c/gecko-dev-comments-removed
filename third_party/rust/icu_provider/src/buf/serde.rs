@@ -33,7 +33,7 @@ pub trait AsDeserializingBufferProvider {
     
     
     
-    fn as_deserializing(&self) -> DeserializingBufferProvider<Self>;
+    fn as_deserializing(&self) -> DeserializingBufferProvider<'_, Self>;
 }
 
 impl<P> AsDeserializingBufferProvider for P
@@ -48,7 +48,7 @@ where
     
     
     
-    fn as_deserializing(&self) -> DeserializingBufferProvider<Self> {
+    fn as_deserializing(&self) -> DeserializingBufferProvider<'_, Self> {
         DeserializingBufferProvider(self)
     }
 }

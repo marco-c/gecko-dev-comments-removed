@@ -74,10 +74,7 @@ where
     
     
     
-    
-    
-    
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub fn with_filter<'a>(
         self,
         predicate: impl Fn(DataIdentifierBorrowed) -> bool + Sync + 'a,

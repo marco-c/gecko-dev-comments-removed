@@ -96,12 +96,16 @@ impl Keywords {
 
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
         Self::try_from_utf8(s.as_bytes())
     }
 
+    
+    
     
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
@@ -189,6 +193,8 @@ impl Keywords {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Value>
     where
@@ -198,6 +204,8 @@ impl Keywords {
         self.0.get_mut(key)
     }
 
+    
+    
     
     
     
@@ -237,6 +245,8 @@ impl Keywords {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn remove<Q: Borrow<Key>>(&mut self, key: Q) -> Option<Value> {
         self.0.remove(key.borrow())
@@ -259,6 +269,8 @@ impl Keywords {
         core::mem::take(self)
     }
 
+    
+    
     
     
     
@@ -375,6 +387,27 @@ impl Keywords {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    pub fn extend_from_keywords(&mut self, other: Keywords) {
+        for (key, value) in other.0 {
+            self.0.insert(key, value);
+        }
+    }
+
+    
     #[cfg(test)]
     pub(crate) fn from_tuple_vec(v: Vec<(Key, Value)>) -> Self {
         v.into_iter().collect()
@@ -387,12 +420,14 @@ impl From<LiteMap<Key, Value, ShortBoxSlice<(Key, Value)>>> for Keywords {
     }
 }
 
+
 #[cfg(feature = "alloc")]
 impl FromIterator<(Key, Value)> for Keywords {
     fn from_iter<I: IntoIterator<Item = (Key, Value)>>(iter: I) -> Self {
         LiteMap::from_iter(iter).into()
     }
 }
+
 
 #[cfg(feature = "alloc")]
 impl FromStr for Keywords {

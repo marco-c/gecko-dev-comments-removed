@@ -88,12 +88,14 @@ pub struct Char16Trie<'data> {
 
 impl<'data> Char16Trie<'data> {
     
+    #[inline]
     pub fn new(data: ZeroVec<'data, u16>) -> Self {
         Self { data }
     }
 
     
-    pub fn iter(&self) -> Char16TrieIterator {
+    #[inline]
+    pub fn iter(&self) -> Char16TrieIterator<'_> {
         Char16TrieIterator::new(&self.data)
     }
 }
@@ -164,6 +166,7 @@ macro_rules! trie_unwrap {
 
 impl<'a> Char16TrieIterator<'a> {
     
+    #[inline]
     pub fn new(trie: &'a ZeroSlice<u16>) -> Self {
         Self {
             trie,

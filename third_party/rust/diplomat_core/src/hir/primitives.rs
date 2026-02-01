@@ -48,6 +48,8 @@ pub enum PrimitiveType {
     
     
     Byte,
+    
+    Ordering,
     Int(IntType),
     IntSize(IntSizeType),
     Int128(Int128Type),
@@ -129,6 +131,7 @@ impl PrimitiveType {
             PrimitiveType::Bool => "bool",
             PrimitiveType::Char => "char",
             PrimitiveType::Byte => "byte",
+            PrimitiveType::Ordering => "ordering",
             PrimitiveType::Int(ty) => ty.as_str(),
             PrimitiveType::IntSize(ty) => ty.as_str(),
             PrimitiveType::Int128(ty) => ty.as_str(),

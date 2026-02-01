@@ -77,6 +77,8 @@ impl Variants {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn from_vec_unchecked(input: Vec<Variant>) -> Self {
         Self(input.into())

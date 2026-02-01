@@ -2,33 +2,27 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use crate::cal::iso::{Iso, IsoDateInner};
-use crate::calendar_arithmetic::{ArithmeticDate, CalendarArithmetic};
-use crate::error::{year_check, DateError};
-use crate::{types, Calendar, Date, DateDuration, DateDurationUnit, RangeError};
-use calendrical_calculations::helpers::I32CastError;
+use crate::cal::coptic::CopticDateInner;
+use crate::cal::Coptic;
+use crate::calendar_arithmetic::{ArithmeticDate, DateFieldsResolver};
+use crate::error::{
+    DateError, DateFromFieldsError, EcmaReferenceYearError, MonthCodeError, UnknownEraError,
+};
+use crate::options::DateFromFieldsOptions;
+use crate::options::{DateAddOptions, DateDifferenceOptions};
+use crate::types::DateFields;
+use crate::{types, Calendar, Date, RangeError};
 use calendrical_calculations::rata_die::RataDie;
 use tinystr::tinystr;
 
 
-const INCARNATION_OFFSET: i32 = 5500;
+const AMETE_MIHRET_OFFSET: i32 = -276;
 
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+const AMETE_ALEM_OFFSET: i32 = -5776;
+
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum EthiopianEraStyle {
     
@@ -61,51 +55,87 @@ pub enum EthiopianEraStyle {
 
 
 
-#[derive(Copy, Clone, Debug, Hash, Default, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Ethiopian(pub(crate) bool);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub struct EthiopianDateInner(ArithmeticDate<Ethiopian>);
+pub struct Ethiopian(EthiopianEraStyle);
 
-impl CalendarArithmetic for Ethiopian {
+impl Default for Ethiopian {
+    fn default() -> Self {
+        Self(EthiopianEraStyle::AmeteMihret)
+    }
+}
+
+#[allow(missing_docs)] 
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
+pub struct EthiopianDateInner(CopticDateInner);
+
+impl DateFieldsResolver for Ethiopian {
+    
     type YearInfo = i32;
 
-    fn days_in_provided_month(year: i32, month: u8) -> u8 {
-        if (1..=12).contains(&month) {
-            30
-        } else if month == 13 {
-            if Self::provided_year_is_leap(year) {
-                6
+    fn days_in_provided_month(year: Self::YearInfo, month: u8) -> u8 {
+        Coptic::days_in_provided_month(year, month)
+    }
+
+    fn months_in_provided_year(year: Self::YearInfo) -> u8 {
+        Coptic::months_in_provided_year(year)
+    }
+
+    #[inline]
+    fn year_info_from_era(
+        &self,
+        era: &[u8],
+        era_year: i32,
+    ) -> Result<Self::YearInfo, UnknownEraError> {
+        match (self.era_style(), era) {
+            (EthiopianEraStyle::AmeteMihret, b"am") => Ok(era_year + AMETE_MIHRET_OFFSET),
+            (_, b"aa") => Ok(era_year + AMETE_ALEM_OFFSET),
+            (_, _) => Err(UnknownEraError),
+        }
+    }
+
+    #[inline]
+    fn year_info_from_extended(&self, extended_year: i32) -> Self::YearInfo {
+        extended_year
+            + if self.0 == EthiopianEraStyle::AmeteMihret {
+                AMETE_MIHRET_OFFSET
             } else {
-                5
+                AMETE_ALEM_OFFSET
             }
-        } else {
-            0
-        }
     }
 
-    fn months_in_provided_year(_: i32) -> u8 {
-        13
+    #[inline]
+    fn reference_year_from_month_day(
+        &self,
+        month_code: types::ValidMonthCode,
+        day: u8,
+    ) -> Result<Self::YearInfo, EcmaReferenceYearError> {
+        crate::cal::Coptic::reference_year_from_month_day(month_code, day)
     }
 
-    fn provided_year_is_leap(year: i32) -> bool {
-        year.rem_euclid(4) == 3
-    }
-
-    fn last_month_day_in_provided_year(year: i32) -> (u8, u8) {
-        if Self::provided_year_is_leap(year) {
-            (13, 6)
-        } else {
-            (13, 5)
-        }
-    }
-
-    fn days_in_provided_year(year: i32) -> u16 {
-        if Self::provided_year_is_leap(year) {
-            366
-        } else {
-            365
+    #[inline]
+    fn ordinal_month_from_code(
+        &self,
+        _year: &Self::YearInfo,
+        month_code: types::ValidMonthCode,
+        _options: DateFromFieldsOptions,
+    ) -> Result<u8, MonthCodeError> {
+        match month_code.to_tuple() {
+            (month_number @ 1..=13, false) => Ok(month_number),
+            _ => Err(MonthCodeError::NotInCalendar),
         }
     }
 }
@@ -113,7 +143,9 @@ impl CalendarArithmetic for Ethiopian {
 impl crate::cal::scaffold::UnstableSealed for Ethiopian {}
 impl Calendar for Ethiopian {
     type DateInner = EthiopianDateInner;
-    type Year = types::EraYear;
+    type Year = <Coptic as Calendar>::Year;
+    type DifferenceError = <Coptic as Calendar>::DifferenceError;
+
     fn from_codes(
         &self,
         era: Option<&str>,
@@ -121,123 +153,111 @@ impl Calendar for Ethiopian {
         month_code: types::MonthCode,
         day: u8,
     ) -> Result<Self::DateInner, DateError> {
-        let year = match (self.era_style(), era) {
-            (EthiopianEraStyle::AmeteMihret, Some("am") | None) => {
-                year_check(year, 1..)? + INCARNATION_OFFSET
-            }
-            (EthiopianEraStyle::AmeteMihret, Some("aa")) => {
-                year_check(year, ..=INCARNATION_OFFSET)?
-            }
-            (EthiopianEraStyle::AmeteAlem, Some("aa") | None) => year,
-            (_, Some(_)) => {
-                return Err(DateError::UnknownEra);
-            }
-        };
-        ArithmeticDate::new_from_codes(self, year, month_code, day).map(EthiopianDateInner)
+        ArithmeticDate::from_codes(era, year, month_code, day, self)
+            .map(ArithmeticDate::cast)
+            .map(CopticDateInner)
+            .map(EthiopianDateInner)
+    }
+
+    #[cfg(feature = "unstable")]
+    fn from_fields(
+        &self,
+        fields: DateFields,
+        options: DateFromFieldsOptions,
+    ) -> Result<Self::DateInner, DateFromFieldsError> {
+        ArithmeticDate::from_fields(fields, options, self)
+            .map(ArithmeticDate::cast)
+            .map(CopticDateInner)
+            .map(EthiopianDateInner)
     }
 
     fn from_rata_die(&self, rd: RataDie) -> Self::DateInner {
-        EthiopianDateInner(
-            match calendrical_calculations::ethiopian::ethiopian_from_fixed(rd) {
-                Err(I32CastError::BelowMin) => ArithmeticDate::min_date(),
-                Err(I32CastError::AboveMax) => ArithmeticDate::max_date(),
-                Ok((year, month, day)) => ArithmeticDate::new_unchecked(
-                    
-                    year + INCARNATION_OFFSET,
-                    month,
-                    day,
-                ),
-            },
-        )
+        EthiopianDateInner(Coptic.from_rata_die(rd))
     }
 
     fn to_rata_die(&self, date: &Self::DateInner) -> RataDie {
-        
-        calendrical_calculations::ethiopian::fixed_from_ethiopian(
-            date.0.year - INCARNATION_OFFSET,
-            date.0.month,
-            date.0.day,
-        )
+        Coptic.to_rata_die(&date.0)
     }
 
-    fn from_iso(&self, iso: IsoDateInner) -> EthiopianDateInner {
-        self.from_rata_die(Iso.to_rata_die(&iso))
-    }
-
-    fn to_iso(&self, date: &Self::DateInner) -> IsoDateInner {
-        Iso.from_rata_die(self.to_rata_die(date))
+    fn has_cheap_iso_conversion(&self) -> bool {
+        false
     }
 
     fn months_in_year(&self, date: &Self::DateInner) -> u8 {
-        date.0.months_in_year()
+        Coptic.months_in_year(&date.0)
     }
 
     fn days_in_year(&self, date: &Self::DateInner) -> u16 {
-        date.0.days_in_year()
+        Coptic.days_in_year(&date.0)
     }
 
     fn days_in_month(&self, date: &Self::DateInner) -> u8 {
-        date.0.days_in_month()
+        Coptic.days_in_month(&date.0)
     }
 
-    fn offset_date(&self, date: &mut Self::DateInner, offset: DateDuration<Self>) {
-        date.0.offset_date(offset, &());
+    #[cfg(feature = "unstable")]
+    fn add(
+        &self,
+        date: &Self::DateInner,
+        duration: types::DateDuration,
+        options: DateAddOptions,
+    ) -> Result<Self::DateInner, DateError> {
+        Coptic
+            .add(&date.0, duration, options)
+            .map(EthiopianDateInner)
     }
 
-    #[allow(clippy::field_reassign_with_default)]
+    #[cfg(feature = "unstable")]
     fn until(
         &self,
         date1: &Self::DateInner,
         date2: &Self::DateInner,
-        _calendar2: &Self,
-        _largest_unit: DateDurationUnit,
-        _smallest_unit: DateDurationUnit,
-    ) -> DateDuration<Self> {
-        date1.0.until(date2.0, _largest_unit, _smallest_unit)
+        options: DateDifferenceOptions,
+    ) -> Result<types::DateDuration, Self::DifferenceError> {
+        Coptic.until(&date1.0, &date2.0, options)
     }
 
     fn year_info(&self, date: &Self::DateInner) -> Self::Year {
-        let year = date.0.year;
-        if self.0 || year <= INCARNATION_OFFSET {
+        let coptic_year = date.0 .0.year;
+        let extended_year = if self.0 == EthiopianEraStyle::AmeteAlem {
+            coptic_year - AMETE_ALEM_OFFSET
+        } else {
+            coptic_year - AMETE_MIHRET_OFFSET
+        };
+
+        if self.0 == EthiopianEraStyle::AmeteAlem || extended_year <= 0 {
             types::EraYear {
                 era: tinystr!(16, "aa"),
                 era_index: Some(0),
-                year,
+                year: coptic_year - AMETE_ALEM_OFFSET,
+                extended_year,
                 ambiguity: types::YearAmbiguity::CenturyRequired,
             }
         } else {
             types::EraYear {
                 era: tinystr!(16, "am"),
                 era_index: Some(1),
-                year: year - INCARNATION_OFFSET,
+                year: coptic_year - AMETE_MIHRET_OFFSET,
+                extended_year,
                 ambiguity: types::YearAmbiguity::CenturyRequired,
             }
         }
     }
 
-    fn extended_year(&self, date: &Self::DateInner) -> i32 {
-        let year = date.0.extended_year();
-        if self.0 || year <= INCARNATION_OFFSET {
-            year
-        } else {
-            year - INCARNATION_OFFSET
-        }
-    }
-
     fn is_in_leap_year(&self, date: &Self::DateInner) -> bool {
-        Self::provided_year_is_leap(date.0.year)
+        Coptic.is_in_leap_year(&date.0)
     }
 
     fn month(&self, date: &Self::DateInner) -> types::MonthInfo {
-        date.0.month()
+        Coptic.month(&date.0)
     }
 
     fn day_of_month(&self, date: &Self::DateInner) -> types::DayOfMonth {
-        date.0.day_of_month()
+        Coptic.day_of_month(&date.0)
     }
 
     fn day_of_year(&self, date: &Self::DateInner) -> types::DayOfYear {
-        date.0.day_of_year()
+        Coptic.day_of_year(&date.0)
     }
 
     fn debug_name(&self) -> &'static str {
@@ -252,20 +272,17 @@ impl Calendar for Ethiopian {
 impl Ethiopian {
     
     pub const fn new() -> Self {
-        Self(false)
+        Self(EthiopianEraStyle::AmeteMihret)
     }
+
     
     pub const fn new_with_era_style(era_style: EthiopianEraStyle) -> Self {
-        Self(matches!(era_style, EthiopianEraStyle::AmeteAlem))
+        Self(era_style)
     }
 
     
     pub fn era_style(&self) -> EthiopianEraStyle {
-        if self.0 {
-            EthiopianEraStyle::AmeteAlem
-        } else {
-            EthiopianEraStyle::AmeteMihret
-        }
+        self.0
     }
 }
 
@@ -286,16 +303,15 @@ impl Date<Ethiopian> {
     
     pub fn try_new_ethiopian(
         era_style: EthiopianEraStyle,
-        mut year: i32,
+        year: i32,
         month: u8,
         day: u8,
     ) -> Result<Date<Ethiopian>, RangeError> {
-        if era_style == EthiopianEraStyle::AmeteAlem {
-            year -= INCARNATION_OFFSET;
-        }
-        ArithmeticDate::new_from_ordinals(year, month, day)
+        let year = Ethiopian(era_style).year_info_from_extended(year);
+        ArithmeticDate::try_from_ymd(year, month, day)
+            .map(CopticDateInner)
             .map(EthiopianDateInner)
-            .map(|inner| Date::from_raw(inner, Ethiopian::new_with_era_style(era_style)))
+            .map(|inner| Date::from_raw(inner, Ethiopian(era_style)))
     }
 }
 
@@ -331,10 +347,7 @@ mod test {
     #[test]
     fn test_iso_to_ethiopian_aa_conversion_and_back() {
         let iso_date = Date::try_new_iso(1970, 1, 2).unwrap();
-        let date_ethiopian = Date::new_from_iso(
-            iso_date,
-            Ethiopian::new_with_era_style(EthiopianEraStyle::AmeteAlem),
-        );
+        let date_ethiopian = Date::new_from_iso(iso_date, Ethiopian(EthiopianEraStyle::AmeteAlem));
 
         assert_eq!(date_ethiopian.extended_year(), 7462);
         assert_eq!(date_ethiopian.month().ordinal, 4);
@@ -353,5 +366,42 @@ mod test {
         let ethiopian = iso_date.to_calendar(Ethiopian::new());
         let recovered_iso = ethiopian.to_iso();
         assert_eq!(iso_date, recovered_iso);
+    }
+
+    #[test]
+    fn extended_year() {
+        assert_eq!(
+            Date::new_from_iso(
+                Date::try_new_iso(-5500 + 9, 1, 1).unwrap(),
+                Ethiopian(EthiopianEraStyle::AmeteAlem)
+            )
+            .extended_year(),
+            1
+        );
+        assert_eq!(
+            Date::new_from_iso(
+                Date::try_new_iso(9, 1, 1).unwrap(),
+                Ethiopian(EthiopianEraStyle::AmeteAlem)
+            )
+            .extended_year(),
+            5501
+        );
+
+        assert_eq!(
+            Date::new_from_iso(
+                Date::try_new_iso(-5500 + 9, 1, 1).unwrap(),
+                Ethiopian(EthiopianEraStyle::AmeteMihret)
+            )
+            .extended_year(),
+            -5499
+        );
+        assert_eq!(
+            Date::new_from_iso(
+                Date::try_new_iso(9, 1, 1).unwrap(),
+                Ethiopian(EthiopianEraStyle::AmeteMihret)
+            )
+            .extended_year(),
+            1
+        );
     }
 }

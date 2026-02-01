@@ -3,11 +3,12 @@
 
 
 use crate::any_calendar::{AnyCalendar, IntoAnyCalendar};
-use crate::calendar_arithmetic::CalendarArithmetic;
-use crate::error::DateError;
+use crate::error::{DateError, DateFromFieldsError};
+use crate::options::DateFromFieldsOptions;
+use crate::options::{DateAddOptions, DateDifferenceOptions};
 use crate::types::{CyclicYear, EraYear, IsoWeekOfYear};
 use crate::week::{RelativeUnit, WeekCalculator, WeekOf};
-use crate::{types, Calendar, DateDuration, DateDurationUnit, Iso};
+use crate::{types, Calendar, Iso};
 #[cfg(feature = "alloc")]
 use alloc::rc::Rc;
 #[cfg(feature = "alloc")]
@@ -36,6 +37,7 @@ impl<C: Calendar> AsCalendar for C {
 }
 
 #[cfg(feature = "alloc")]
+
 impl<C: AsCalendar> AsCalendar for Rc<C> {
     type Calendar = C::Calendar;
     #[inline]
@@ -45,6 +47,7 @@ impl<C: AsCalendar> AsCalendar for Rc<C> {
 }
 
 #[cfg(feature = "alloc")]
+
 impl<C: AsCalendar> AsCalendar for Arc<C> {
     type Calendar = C::Calendar;
     #[inline]
@@ -120,6 +123,10 @@ impl<A: AsCalendar> Date<A> {
     
     
     
+    
+    
+    
+    
     #[inline]
     pub fn try_new_from_codes(
         era: Option<&str>,
@@ -131,6 +138,59 @@ impl<A: AsCalendar> Date<A> {
         let inner = calendar
             .as_calendar()
             .from_codes(era, year, month_code, day)?;
+        Ok(Date { inner, calendar })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unstable")]
+    #[inline]
+    pub fn try_from_fields(
+        fields: types::DateFields,
+        options: DateFromFieldsOptions,
+        calendar: A,
+    ) -> Result<Self, DateFromFieldsError> {
+        let inner = calendar.as_calendar().from_fields(fields, options)?;
         Ok(Date { inner, calendar })
     }
 
@@ -152,20 +212,26 @@ impl<A: AsCalendar> Date<A> {
     
     #[inline]
     pub fn new_from_iso(iso: Date<Iso>, calendar: A) -> Self {
-        let inner = calendar.as_calendar().from_iso(iso.inner);
-        Date { inner, calendar }
+        iso.to_calendar(calendar)
     }
 
     
     #[inline]
     pub fn to_iso(&self) -> Date<Iso> {
-        Date::from_raw(self.calendar.as_calendar().to_iso(self.inner()), Iso)
+        self.to_calendar(Iso)
     }
 
     
     #[inline]
     pub fn to_calendar<A2: AsCalendar>(&self, calendar: A2) -> Date<A2> {
-        Date::new_from_iso(self.to_iso(), calendar)
+        let c1 = self.calendar.as_calendar();
+        let c2 = calendar.as_calendar();
+        let inner = if c1.has_cheap_iso_conversion() && c2.has_cheap_iso_conversion() {
+            c2.from_iso(c1.to_iso(self.inner()))
+        } else {
+            c2.from_rata_die(c1.to_rata_die(self.inner()))
+        };
+        Date { inner, calendar }
     }
 
     
@@ -193,38 +259,95 @@ impl<A: AsCalendar> Date<A> {
     }
 
     
-    #[doc(hidden)] 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unstable")]
     #[inline]
-    pub fn add(&mut self, duration: DateDuration<A::Calendar>) {
-        self.calendar
+    pub fn try_add_with_options(
+        &mut self,
+        duration: types::DateDuration,
+        options: DateAddOptions,
+    ) -> Result<(), DateError> {
+        let inner = self
+            .calendar
             .as_calendar()
-            .offset_date(&mut self.inner, duration)
+            .add(&self.inner, duration, options)?;
+        self.inner = inner;
+        Ok(())
     }
 
     
-    #[doc(hidden)] 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unstable")]
     #[inline]
-    pub fn added(mut self, duration: DateDuration<A::Calendar>) -> Self {
-        self.add(duration);
-        self
+    pub fn try_added_with_options(
+        mut self,
+        duration: types::DateDuration,
+        options: DateAddOptions,
+    ) -> Result<Self, DateError> {
+        self.try_add_with_options(duration, options)?;
+        Ok(self)
     }
 
     
-    #[doc(hidden)] 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unstable")]
     #[inline]
-    pub fn until<B: AsCalendar<Calendar = A::Calendar>>(
+    pub fn try_until_with_options<B: AsCalendar<Calendar = A::Calendar>>(
         &self,
         other: &Date<B>,
-        largest_unit: DateDurationUnit,
-        smallest_unit: DateDurationUnit,
-    ) -> DateDuration<A::Calendar> {
-        self.calendar.as_calendar().until(
-            self.inner(),
-            other.inner(),
-            other.calendar.as_calendar(),
-            largest_unit,
-            smallest_unit,
-        )
+        options: DateDifferenceOptions,
+    ) -> Result<types::DateDuration, <A::Calendar as Calendar>::DifferenceError> {
+        self.calendar
+            .as_calendar()
+            .until(self.inner(), other.inner(), options)
     }
 
     
@@ -240,9 +363,17 @@ impl<A: AsCalendar> Date<A> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn extended_year(&self) -> i32 {
-        self.calendar.as_calendar().extended_year(&self.inner)
+        self.year().extended_year()
     }
 
     
@@ -339,7 +470,8 @@ impl Date<Iso> {
     pub fn week_of_year(&self) -> IsoWeekOfYear {
         let week_of = WeekCalculator::ISO
             .week_of(
-                Iso::days_in_provided_year(self.inner.0.year.saturating_sub(1)),
+                365 + calendrical_calculations::gregorian::is_leap_year(self.inner.0.year - 1)
+                    as u16,
                 self.days_in_year(),
                 self.day_of_year().0,
                 self.day_of_week(),
@@ -357,8 +489,8 @@ impl Date<Iso> {
             week_number: week_of.week,
             iso_year: match week_of.unit {
                 RelativeUnit::Current => self.inner.0.year,
-                RelativeUnit::Next => self.inner.0.year.saturating_add(1),
-                RelativeUnit::Previous => self.inner.0.year.saturating_sub(1),
+                RelativeUnit::Next => self.inner.0.year + 1,
+                RelativeUnit::Previous => self.inner.0.year - 1,
             },
         }
     }
@@ -378,11 +510,15 @@ impl<A: AsCalendar> Date<A> {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn into_ref_counted(self) -> Date<Rc<A>> {
         Date::from_raw(self.inner, Rc::new(self.calendar))
     }
 
+    
+    
     
     
     
@@ -395,7 +531,7 @@ impl<A: AsCalendar> Date<A> {
     
     
     
-    pub fn as_borrowed(&self) -> Date<Ref<A>> {
+    pub fn as_borrowed(&self) -> Date<Ref<'_, A>> {
         Date::from_raw(self.inner, Ref(&self.calendar))
     }
 }
@@ -416,7 +552,6 @@ impl<A: AsCalendar> Eq for Date<A> {}
 impl<C, A, B> PartialOrd<Date<B>> for Date<A>
 where
     C: Calendar,
-    C::DateInner: PartialOrd,
     A: AsCalendar<Calendar = C>,
     B: AsCalendar<Calendar = C>,
 {

@@ -2,10 +2,8 @@
 
 
 
-#[cfg(feature = "alloc")]
 use crate::preferences::extensions::unicode::enum_keyword;
 
-#[cfg(feature = "alloc")]
 enum_keyword!(
     /// A Unicode Line Break Word Identifier defines preferred line break word handling behavior corresponding to the CSS level 3 word-break option.
     ///

@@ -99,6 +99,7 @@ impl From<&crate::LanguageIdentifier> for LocalePreferences {
     }
 }
 
+
 #[cfg(feature = "alloc")]
 impl From<LocalePreferences> for crate::Locale {
     fn from(prefs: LocalePreferences) -> Self {
@@ -121,7 +122,7 @@ impl From<LocalePreferences> for crate::Locale {
                     );
                 }
                 if let Some(rg) = prefs.ue_region {
-                    #[allow(clippy::unwrap_used)] 
+                    #[expect(clippy::unwrap_used)] 
                     extensions.unicode.keywords.set(
                         crate::extensions::unicode::key!("rg"),
                         crate::extensions::unicode::Value::try_from_str(rg.as_str()).unwrap(),

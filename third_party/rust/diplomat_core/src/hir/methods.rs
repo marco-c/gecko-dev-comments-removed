@@ -9,12 +9,15 @@ use super::{
 };
 
 use super::lifetimes::{Lifetime, LifetimeEnv, Lifetimes, MaybeStatic};
+use super::ty_position::Sealed;
 
 use borrowing_field::BorrowingFieldVisitor;
 use borrowing_param::BorrowingParamVisitor;
 
 pub mod borrowing_field;
 pub mod borrowing_param;
+
+
 
 
 #[derive(Debug)]
@@ -39,20 +42,20 @@ pub struct Method {
     pub attrs: Attrs,
 }
 
-pub trait CallbackInstantiationFunctionality {
+pub trait CallbackInstantiationFunctionality: Sealed {
     #[allow(clippy::result_unit_err)]
     fn get_inputs(&self) -> Result<&[CallbackParam], ()>; 
     #[allow(clippy::result_unit_err)]
-    fn get_output_type(&self) -> Result<&Option<Type>, ()>;
+    fn get_output_type(&self) -> Result<&ReturnType<InputOnly>, ()>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 
 pub struct Callback {
     pub param_self: Option<TraitParamSelf>, 
     pub params: Vec<CallbackParam>,
-    pub output: Box<Option<Type>>, 
+    pub output: Box<ReturnType<InputOnly>>, 
     pub name: Option<IdentBuf>,
     pub attrs: Option<Attrs>,
     pub docs: Option<Docs>,
@@ -63,11 +66,14 @@ pub struct Callback {
 #[non_exhaustive]
 pub enum NoCallback {}
 
+impl Sealed for Callback {}
+impl Sealed for NoCallback {}
+
 impl CallbackInstantiationFunctionality for Callback {
     fn get_inputs(&self) -> Result<&[CallbackParam], ()> {
         Ok(&self.params)
     }
-    fn get_output_type(&self) -> Result<&Option<Type>, ()> {
+    fn get_output_type(&self) -> Result<&ReturnType<InputOnly>, ()> {
         Ok(&self.output)
     }
 }
@@ -76,7 +82,7 @@ impl CallbackInstantiationFunctionality for NoCallback {
     fn get_inputs(&self) -> Result<&[CallbackParam], ()> {
         Err(())
     }
-    fn get_output_type(&self) -> Result<&Option<Type>, ()> {
+    fn get_output_type(&self) -> Result<&ReturnType<InputOnly>, ()> {
         Err(())
     }
 }
@@ -84,22 +90,22 @@ impl CallbackInstantiationFunctionality for NoCallback {
 
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum SuccessType {
+pub enum SuccessType<P: super::TyPosition = OutputOnly> {
     
     Write,
     
-    OutType(OutType),
+    OutType(Type<P>),
     
     Unit,
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(clippy::exhaustive_enums)] 
-pub enum ReturnType {
-    Infallible(SuccessType),
-    Fallible(SuccessType, Option<OutType>),
-    Nullable(SuccessType),
+pub enum ReturnType<P: super::TyPosition = OutputOnly> {
+    Infallible(SuccessType<P>),
+    Fallible(SuccessType<P>, Option<Type<P>>),
+    Nullable(SuccessType<P>),
 }
 
 
@@ -127,7 +133,7 @@ pub struct Param {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct CallbackParam {
     pub ty: Type<OutputOnly>,

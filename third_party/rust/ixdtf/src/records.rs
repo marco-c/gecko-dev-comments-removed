@@ -6,10 +6,12 @@
 
 use core::num::NonZeroU8;
 
+use crate::core::EncodingType;
+
 
 #[non_exhaustive]
 #[derive(Default, Debug, PartialEq)]
-pub struct IxdtfParseRecord<'a> {
+pub struct IxdtfParseRecord<'a, T: EncodingType> {
     
     pub date: Option<DateRecord>,
     
@@ -17,21 +19,21 @@ pub struct IxdtfParseRecord<'a> {
     
     pub offset: Option<UtcOffsetRecordOrZ>,
     
-    pub tz: Option<TimeZoneAnnotation<'a>>,
+    pub tz: Option<TimeZoneAnnotation<'a, T>>,
     
-    pub calendar: Option<&'a [u8]>,
+    pub calendar: Option<&'a [T::CodeUnit]>,
 }
 
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 
-pub struct Annotation<'a> {
+pub struct Annotation<'a, T: EncodingType> {
     
     pub critical: bool,
     
-    pub key: &'a [u8],
+    pub key: &'a [T::CodeUnit],
     
-    pub value: &'a [u8],
+    pub value: &'a [T::CodeUnit],
 }
 
 #[allow(clippy::exhaustive_structs)] 
@@ -63,19 +65,19 @@ pub struct TimeRecord {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
-pub struct TimeZoneAnnotation<'a> {
+pub struct TimeZoneAnnotation<'a, T: EncodingType> {
     
     pub critical: bool,
     
-    pub tz: TimeZoneRecord<'a>,
+    pub tz: TimeZoneRecord<'a, T>,
 }
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
-pub enum TimeZoneRecord<'a> {
+pub enum TimeZoneRecord<'a, T: EncodingType> {
     
-    Name(&'a [u8]),
+    Name(&'a [T::CodeUnit]),
     
     Offset(MinutePrecisionOffset),
 }

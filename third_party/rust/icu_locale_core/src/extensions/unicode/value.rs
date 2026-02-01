@@ -3,7 +3,6 @@
 
 
 use crate::parser::ParseError;
-#[cfg(feature = "alloc")]
 use crate::parser::SubtagIterator;
 use crate::shortvec::{ShortBoxSlice, ShortBoxSliceIntoIter};
 use crate::subtags::{subtag, Subtag};
@@ -51,14 +50,18 @@ impl Value {
     
     
     
+    
+    
+    
+    
+    
+    
     #[inline]
-    #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
         Self::try_from_utf8(s.as_bytes())
     }
 
     
-    #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
         let mut v = ShortBoxSlice::new();
 
@@ -66,7 +69,16 @@ impl Value {
             for chunk in SubtagIterator::new(code_units) {
                 let subtag = Subtag::try_from_utf8(chunk)?;
                 if subtag != TRUE_VALUE {
+                    #[cfg(feature = "alloc")]
                     v.push(subtag);
+                    #[cfg(not(feature = "alloc"))]
+                    if v.is_empty() {
+                        v = ShortBoxSlice::new_single(subtag);
+                    } else if let &[prev] = &*v {
+                        v = ShortBoxSlice::new_double(prev, subtag);
+                    } else {
+                        return Err(ParseError::InvalidSubtag);
+                    }
                 }
             }
         }
@@ -116,6 +128,8 @@ impl Value {
         &self.0
     }
 
+    
+    
     
     
     
@@ -226,6 +240,12 @@ impl Value {
         }
     }
 
+    #[doc(hidden)]
+    pub fn from_two_subtags(f: Subtag, s: Subtag) -> Self {
+        Self(ShortBoxSlice::new_double(f, s))
+    }
+
+    
     
     
     
@@ -283,12 +303,14 @@ impl IntoIterator for Value {
     }
 }
 
+
 #[cfg(feature = "alloc")]
 impl FromIterator<Subtag> for Value {
     fn from_iter<T: IntoIterator<Item = Subtag>>(iter: T) -> Self {
         Self(ShortBoxSlice::from_iter(iter))
     }
 }
+
 
 #[cfg(feature = "alloc")]
 impl Extend<Subtag> for Value {
@@ -298,6 +320,7 @@ impl Extend<Subtag> for Value {
         }
     }
 }
+
 
 #[cfg(feature = "alloc")]
 impl FromStr for Value {

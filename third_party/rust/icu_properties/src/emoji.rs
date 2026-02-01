@@ -22,7 +22,7 @@ impl EmojiSetData {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub const fn new<P: EmojiSet>() -> EmojiSetDataBorrowed<'static> {
         EmojiSetDataBorrowed::new::<P>()
     }
@@ -168,4 +168,8 @@ pub trait EmojiSet: crate::private::Sealed {
     #[doc(hidden)]
     #[cfg(feature = "compiled_data")]
     const SINGLETON: &'static PropertyUnicodeSet<'static>;
+    
+    const NAME: &'static [u8];
+    
+    const SHORT_NAME: &'static [u8];
 }

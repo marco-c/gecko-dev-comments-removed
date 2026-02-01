@@ -47,19 +47,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub mod iana;
 mod offset;
 pub mod windows;
@@ -69,7 +56,9 @@ mod zone_name_timestamp;
 pub use offset::InvalidOffsetError;
 pub use offset::UtcOffset;
 pub use offset::VariantOffsets;
+#[allow(deprecated)]
 pub use offset::VariantOffsetsCalculator;
+#[allow(deprecated)]
 pub use offset::VariantOffsetsCalculatorBorrowed;
 
 #[doc(no_inline)]
@@ -87,7 +76,6 @@ use icu_calendar::Iso;
 use icu_locale_core::subtags::{subtag, Subtag};
 use icu_provider::prelude::yoke;
 use zerovec::ule::{AsULE, ULE};
-use zerovec::{ZeroSlice, ZeroVec};
 
 
 pub mod models {
@@ -134,9 +122,15 @@ pub mod models {
     
     #[derive(Debug, PartialEq, Eq)]
     #[non_exhaustive]
+    #[deprecated(
+        since = "2.1.0",
+        note = "creating a `TimeZoneInfo<Full>` is not required for formatting anymore. use `TimeZoneInfo<AtTime>`"
+    )]
     pub struct Full;
 
+    #[allow(deprecated)]
     impl private::Sealed for Full {}
+    #[allow(deprecated)]
     impl TimeZoneModel for Full {
         type TimeZoneVariant = TimeZoneVariant;
         type ZoneNameTimestamp = ZoneNameTimestamp;
@@ -188,39 +182,6 @@ impl TimeZone {
     }
 }
 
-
-pub(crate) mod ule {
-    
-    
-    
-    
-    
-    #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-    #[zerovec::make_ule(TimeZoneVariantULE)]
-    #[repr(u8)]
-    #[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
-    #[cfg_attr(feature = "datagen", databake(path = icu_time))]
-    #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-    #[non_exhaustive]
-    pub enum TimeZoneVariant {
-        
-        
-        
-        
-        
-        
-        Standard = 0,
-        
-        
-        
-        
-        
-        
-        Daylight = 1,
-    }
-}
-pub use ule::TimeZoneVariant;
-
 impl Deref for TimeZone {
     type Target = Subtag;
 
@@ -243,16 +204,13 @@ impl AsULE for TimeZone {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a> zerovec::maps::ZeroMapKV<'a> for TimeZone {
-    type Container = ZeroVec<'a, TimeZone>;
-    type Slice = ZeroSlice<TimeZone>;
+    type Container = zerovec::ZeroVec<'a, TimeZone>;
+    type Slice = zerovec::ZeroSlice<TimeZone>;
     type GetType = TimeZone;
     type OwnedType = TimeZone;
 }
-
-
-
-
 
 
 
@@ -341,10 +299,65 @@ where
 
 impl TimeZone {
     
-    pub const fn with_offset(self, offset: Option<UtcOffset>) -> TimeZoneInfo<models::Base> {
+    pub const fn with_offset(self, mut offset: Option<UtcOffset>) -> TimeZoneInfo<models::Base> {
+        let mut id = self;
+
+        #[allow(clippy::identity_op, clippy::neg_multiply)]
+        let correct_offset = match self.0.as_str().as_bytes() {
+            b"utc" | b"gmt" => Some(UtcOffset::zero()),
+            b"utce01" => Some(UtcOffset::from_seconds_unchecked(1 * 60 * 60)),
+            b"utce02" => Some(UtcOffset::from_seconds_unchecked(2 * 60 * 60)),
+            b"utce03" => Some(UtcOffset::from_seconds_unchecked(3 * 60 * 60)),
+            b"utce04" => Some(UtcOffset::from_seconds_unchecked(4 * 60 * 60)),
+            b"utce05" => Some(UtcOffset::from_seconds_unchecked(5 * 60 * 60)),
+            b"utce06" => Some(UtcOffset::from_seconds_unchecked(6 * 60 * 60)),
+            b"utce07" => Some(UtcOffset::from_seconds_unchecked(7 * 60 * 60)),
+            b"utce08" => Some(UtcOffset::from_seconds_unchecked(8 * 60 * 60)),
+            b"utce09" => Some(UtcOffset::from_seconds_unchecked(9 * 60 * 60)),
+            b"utce10" => Some(UtcOffset::from_seconds_unchecked(10 * 60 * 60)),
+            b"utce11" => Some(UtcOffset::from_seconds_unchecked(11 * 60 * 60)),
+            b"utce12" => Some(UtcOffset::from_seconds_unchecked(12 * 60 * 60)),
+            b"utce13" => Some(UtcOffset::from_seconds_unchecked(13 * 60 * 60)),
+            b"utce14" => Some(UtcOffset::from_seconds_unchecked(14 * 60 * 60)),
+            b"utcw01" => Some(UtcOffset::from_seconds_unchecked(-1 * 60 * 60)),
+            b"utcw02" => Some(UtcOffset::from_seconds_unchecked(-2 * 60 * 60)),
+            b"utcw03" => Some(UtcOffset::from_seconds_unchecked(-3 * 60 * 60)),
+            b"utcw04" => Some(UtcOffset::from_seconds_unchecked(-4 * 60 * 60)),
+            b"utcw05" => Some(UtcOffset::from_seconds_unchecked(-5 * 60 * 60)),
+            b"utcw06" => Some(UtcOffset::from_seconds_unchecked(-6 * 60 * 60)),
+            b"utcw07" => Some(UtcOffset::from_seconds_unchecked(-7 * 60 * 60)),
+            b"utcw08" => Some(UtcOffset::from_seconds_unchecked(-8 * 60 * 60)),
+            b"utcw09" => Some(UtcOffset::from_seconds_unchecked(-9 * 60 * 60)),
+            b"utcw10" => Some(UtcOffset::from_seconds_unchecked(-10 * 60 * 60)),
+            b"utcw11" => Some(UtcOffset::from_seconds_unchecked(-11 * 60 * 60)),
+            b"utcw12" => Some(UtcOffset::from_seconds_unchecked(-12 * 60 * 60)),
+            _ => None,
+        };
+
+        match (correct_offset, offset) {
+            
+            
+            (Some(c), None) => {
+                offset = Some(c);
+
+                
+                
+                
+                if id.0.as_str().len() > 3 {
+                    id = Self::UNKNOWN;
+                }
+            }
+            
+            (Some(c), Some(o)) if c.to_seconds() != o.to_seconds() => {
+                offset = None;
+                id = Self::UNKNOWN;
+            }
+            _ => {}
+        }
+
         TimeZoneInfo {
+            id,
             offset,
-            id: self,
             zone_name_timestamp: (),
             variant: (),
         }
@@ -352,24 +365,29 @@ impl TimeZone {
 
     
     pub const fn without_offset(self) -> TimeZoneInfo<models::Base> {
-        TimeZoneInfo {
-            offset: None,
-            id: self,
-            zone_name_timestamp: (),
-            variant: (),
-        }
+        self.with_offset(None)
     }
 }
 
 impl TimeZoneInfo<models::Base> {
     
     pub const fn unknown() -> Self {
-        TimeZone::UNKNOWN.with_offset(None)
+        Self {
+            id: TimeZone::UNKNOWN,
+            offset: None,
+            zone_name_timestamp: (),
+            variant: (),
+        }
     }
 
     
     pub const fn utc() -> Self {
-        TimeZone(subtag!("utc")).with_offset(Some(UtcOffset::zero()))
+        TimeZoneInfo {
+            id: TimeZone(subtag!("utc")),
+            offset: Some(UtcOffset::zero()),
+            zone_name_timestamp: (),
+            variant: (),
+        }
     }
 
     
@@ -386,13 +404,35 @@ impl TimeZoneInfo<models::Base> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
     pub fn at_date_time_iso(self, date_time: DateTime<Iso>) -> TimeZoneInfo<models::AtTime> {
-        Self::with_zone_name_timestamp(self, ZoneNameTimestamp::from_date_time_iso(date_time))
+        Self::with_zone_name_timestamp(
+            self,
+            ZoneNameTimestamp::from_zoned_date_time_iso(crate::ZonedDateTime {
+                date: date_time.date,
+                time: date_time.time,
+                
+                
+                
+                zone: self.offset.unwrap_or(UtcOffset::zero()),
+            }),
+        )
     }
 }
 
 impl TimeZoneInfo<models::AtTime> {
     
+    #[deprecated(
+        since = "2.1.0",
+        note = "creating a `TimeZoneInfo<Full>` is not required for formatting anymore"
+    )]
+    #[allow(deprecated)]
     pub const fn with_variant(self, variant: TimeZoneVariant) -> TimeZoneInfo<models::Full> {
         TimeZoneInfo {
             offset: self.offset,
@@ -454,6 +494,11 @@ impl TimeZoneInfo<models::AtTime> {
     
     
     
+    #[deprecated(
+        since = "2.1.0",
+        note = "creating a `TimeZoneInfo<Full>` is not required for formatting anymore"
+    )]
+    #[allow(deprecated)]
     pub fn infer_variant(
         self,
         calculator: VariantOffsetsCalculatorBorrowed,
@@ -485,6 +530,12 @@ impl TimeZoneInfo<models::AtTime> {
     }
 }
 
+#[deprecated(
+    since = "2.1.0",
+    note = "TimeZoneVariants don't need to be constructed in user code"
+)]
+pub use crate::provider::TimeZoneVariant;
+
 impl TimeZoneVariant {
     
     
@@ -497,6 +548,10 @@ impl TimeZoneVariant {
     
     
     
+    #[deprecated(
+        since = "2.1.0",
+        note = "TimeZoneVariants don't need to be constructed in user code"
+    )]
     pub const fn from_rearguard_isdst(isdst: bool) -> Self {
         if isdst {
             TimeZoneVariant::Daylight
@@ -504,4 +559,43 @@ impl TimeZoneVariant {
             TimeZoneVariant::Standard
         }
     }
+}
+
+#[test]
+fn test_zone_info_equality() {
+    
+    assert_eq!(
+        IanaParser::new().parse("Etc/GMT-8").with_offset(None),
+        TimeZone::UNKNOWN.with_offset(Some(UtcOffset::from_seconds_unchecked(8 * 60 * 60)))
+    );
+    assert_eq!(
+        IanaParser::new().parse("Etc/UTC").with_offset(None),
+        TimeZoneInfo::utc()
+    );
+    assert_eq!(
+        IanaParser::new().parse("Etc/GMT").with_offset(None),
+        IanaParser::new()
+            .parse("Etc/GMT")
+            .with_offset(Some(UtcOffset::zero()))
+    );
+
+    
+    assert_eq!(
+        IanaParser::new()
+            .parse("Etc/GMT-8")
+            .with_offset(Some(UtcOffset::from_seconds_unchecked(123))),
+        TimeZoneInfo::unknown()
+    );
+    assert_eq!(
+        IanaParser::new()
+            .parse("Etc/UTC")
+            .with_offset(Some(UtcOffset::from_seconds_unchecked(123))),
+        TimeZoneInfo::unknown(),
+    );
+    assert_eq!(
+        IanaParser::new()
+            .parse("Etc/GMT")
+            .with_offset(Some(UtcOffset::from_seconds_unchecked(123))),
+        TimeZoneInfo::unknown()
+    );
 }

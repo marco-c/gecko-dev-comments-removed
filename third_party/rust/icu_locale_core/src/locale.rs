@@ -89,6 +89,14 @@ use core::str::FromStr;
 
 
 
+
+
+
+
+
+
+
+
 #[derive(PartialEq, Eq, Clone, Hash)] 
 #[allow(clippy::exhaustive_structs)] 
 pub struct Locale {
@@ -99,6 +107,8 @@ pub struct Locale {
 }
 
 #[test]
+
+#[cfg(target_pointer_width = "64")]
 fn test_sizes() {
     assert_eq!(core::mem::size_of::<subtags::Language>(), 3);
     assert_eq!(core::mem::size_of::<subtags::Script>(), 4);
@@ -134,12 +144,16 @@ impl Locale {
     
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
         Self::try_from_utf8(s.as_bytes())
     }
 
+    
+    
     
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
@@ -160,8 +174,10 @@ impl Locale {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
-    pub fn normalize_utf8(input: &[u8]) -> Result<Cow<str>, ParseError> {
+    pub fn normalize_utf8(input: &[u8]) -> Result<Cow<'_, str>, ParseError> {
         let locale = Self::try_from_utf8(input)?;
         Ok(writeable::to_string_or_borrow(&locale, input))
     }
@@ -180,8 +196,10 @@ impl Locale {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
-    pub fn normalize(input: &str) -> Result<Cow<str>, ParseError> {
+    pub fn normalize(input: &str) -> Result<Cow<'_, str>, ParseError> {
         Self::normalize_utf8(input.as_bytes())
     }
 
@@ -243,7 +261,7 @@ impl Locale {
         writeable::cmp_utf8(self, other)
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub(crate) fn as_tuple(
         &self,
     ) -> (
@@ -376,6 +394,8 @@ impl Locale {
     
     
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn normalizing_eq(&self, other: &str) -> bool {
         macro_rules! subtag_matches {
@@ -422,7 +442,7 @@ impl Locale {
     }
 
     #[doc(hidden)] 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub const fn try_from_utf8_with_single_variant_single_keyword_unicode_extension(
         code_units: &[u8],
     ) -> Result<
@@ -450,6 +470,7 @@ impl Locale {
         Ok(())
     }
 }
+
 
 #[cfg(feature = "alloc")]
 impl FromStr for Locale {
@@ -482,7 +503,7 @@ impl core::fmt::Debug for Locale {
     }
 }
 
-impl_writeable_for_each_subtag_str_no_test!(Locale, selff, selff.extensions.is_empty() => selff.id.write_to_string());
+impl_writeable_for_each_subtag_str_no_test!(Locale, selff, selff.extensions.is_empty() => selff.id.writeable_borrow());
 
 #[test]
 fn test_writeable() {

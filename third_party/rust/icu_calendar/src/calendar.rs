@@ -5,8 +5,10 @@
 use calendrical_calculations::rata_die::RataDie;
 
 use crate::cal::iso::IsoDateInner;
-use crate::error::DateError;
-use crate::{types, DateDuration, DateDurationUnit};
+use crate::error::{DateError, DateFromFieldsError};
+use crate::options::DateFromFieldsOptions;
+use crate::options::{DateAddOptions, DateDifferenceOptions};
+use crate::{types, Iso};
 use core::fmt;
 
 
@@ -26,14 +28,18 @@ use core::fmt;
 
 pub trait Calendar: crate::cal::scaffold::UnstableSealed {
     
-    type DateInner: Eq + Copy + fmt::Debug;
+    
+    
+    type DateInner: Eq + Copy + PartialOrd + fmt::Debug;
     
     type Year: fmt::Debug + Into<types::YearInfo>;
+    
+    type DifferenceError;
 
     
     
     
-    #[allow(clippy::wrong_self_convention)]
+    #[expect(clippy::wrong_self_convention)]
     fn from_codes(
         &self,
         era: Option<&str>,
@@ -43,13 +49,43 @@ pub trait Calendar: crate::cal::scaffold::UnstableSealed {
     ) -> Result<Self::DateInner, DateError>;
 
     
-    #[allow(clippy::wrong_self_convention)]
-    fn from_iso(&self, iso: IsoDateInner) -> Self::DateInner;
     
-    fn to_iso(&self, date: &Self::DateInner) -> IsoDateInner;
+    
+    
+    
+    
+    
+    
+    
+    
+    #[expect(clippy::wrong_self_convention)]
+    #[cfg(feature = "unstable")]
+    fn from_fields(
+        &self,
+        fields: types::DateFields,
+        options: DateFromFieldsOptions,
+    ) -> Result<Self::DateInner, DateFromFieldsError>;
 
     
-    #[allow(clippy::wrong_self_convention)]
+    
+    fn has_cheap_iso_conversion(&self) -> bool;
+
+    
+    
+    
+    #[expect(clippy::wrong_self_convention)]
+    fn from_iso(&self, iso: IsoDateInner) -> Self::DateInner {
+        self.from_rata_die(Iso.to_rata_die(&iso))
+    }
+    
+    
+    
+    fn to_iso(&self, date: &Self::DateInner) -> IsoDateInner {
+        Iso.from_rata_die(self.to_rata_die(date))
+    }
+
+    
+    #[expect(clippy::wrong_self_convention)]
     fn from_rata_die(&self, rd: RataDie) -> Self::DateInner;
     
     fn to_rata_die(&self, date: &Self::DateInner) -> RataDie;
@@ -68,8 +104,11 @@ pub trait Calendar: crate::cal::scaffold::UnstableSealed {
 
     
     fn year_info(&self, date: &Self::DateInner) -> Self::Year;
+
     
-    fn extended_year(&self, date: &Self::DateInner) -> i32;
+    fn extended_year(&self, date: &Self::DateInner) -> i32 {
+        self.year_info(date).into().extended_year()
+    }
     
     fn month(&self, date: &Self::DateInner) -> types::MonthInfo;
     
@@ -77,22 +116,44 @@ pub trait Calendar: crate::cal::scaffold::UnstableSealed {
     
     fn day_of_year(&self, date: &Self::DateInner) -> types::DayOfYear;
 
-    #[doc(hidden)] 
-    
-    fn offset_date(&self, date: &mut Self::DateInner, offset: DateDuration<Self>);
-    #[doc(hidden)] 
     
     
     
     
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unstable")]
+    fn add(
+        &self,
+        date: &Self::DateInner,
+        duration: types::DateDuration,
+        options: DateAddOptions,
+    ) -> Result<Self::DateInner, DateError>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unstable")]
     fn until(
         &self,
         date1: &Self::DateInner,
         date2: &Self::DateInner,
-        calendar2: &Self,
-        largest_unit: DateDurationUnit,
-        smallest_unit: DateDurationUnit,
-    ) -> DateDuration<Self>;
+        options: DateDifferenceOptions,
+    ) -> Result<types::DateDuration, Self::DifferenceError>;
 
     
     

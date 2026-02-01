@@ -34,7 +34,7 @@ pub struct LifetimeEnv {
 
 impl LifetimeEnv {
     
-    pub fn fmt_lifetime(&self, lt: impl Borrow<Lifetime>) -> Cow<str> {
+    pub fn fmt_lifetime(&self, lt: impl Borrow<Lifetime>) -> Cow<'_, str> {
         
         let lt = *lt.borrow();
         if let Some(lt) = self.nodes.get(lt.0) {

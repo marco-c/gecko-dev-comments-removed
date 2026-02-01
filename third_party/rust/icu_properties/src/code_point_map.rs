@@ -32,7 +32,7 @@ impl<T: TrieValue> CodePointMapData<T> {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub const fn new() -> CodePointMapDataBorrowed<'static, T>
     where
         T: EnumeratedProperty,
@@ -65,6 +65,8 @@ impl<T: TrieValue> CodePointMapData<T> {
         }
     }
 
+    
+    
     
     
     
@@ -162,15 +164,19 @@ impl<'a, T: TrieValue> CodePointMapDataBorrowed<'a, T> {
     
     
     
+    #[inline]
     pub fn get(self, ch: char) -> T {
-        self.map.get32(ch as u32)
+        self.map.get(ch)
     }
 
     
+    #[inline]
     pub fn get32(self, ch: u32) -> T {
         self.map.get32(ch)
     }
 
+    
+    
     
     
     
@@ -265,6 +271,8 @@ impl<'a, T: TrieValue> CodePointMapDataBorrowed<'a, T> {
 }
 
 impl CodePointMapDataBorrowed<'_, GeneralCategory> {
+    
+    
     
     
     

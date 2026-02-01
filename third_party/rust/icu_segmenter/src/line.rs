@@ -10,7 +10,7 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::char;
-use icu_locale_core::subtags::language;
+use icu_locale_core::subtags::{language, Language};
 use icu_locale_core::LanguageIdentifier;
 use icu_provider::prelude::*;
 use utf8_iter::Utf8CharIndices;
@@ -208,6 +208,17 @@ pub struct LineBreakOptions<'a> {
     pub content_locale: Option<&'a LanguageIdentifier>,
 }
 
+impl LineBreakOptions<'_> {
+    
+    pub const fn default() -> Self {
+        Self {
+            strictness: None,
+            word_option: None,
+            content_locale: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 struct ResolvedLineBreakOptions {
     strictness: LineBreakStrictness,
@@ -215,21 +226,27 @@ struct ResolvedLineBreakOptions {
     ja_zh: bool,
 }
 
-impl From<LineBreakOptions<'_>> for ResolvedLineBreakOptions {
-    fn from(options: LineBreakOptions<'_>) -> Self {
-        let ja_zh = if let Some(content_locale) = options.content_locale.as_ref() {
-            content_locale.language == language!("ja") || content_locale.language == language!("zh")
-        } else {
-            false
-        };
-        Self {
-            strictness: options.strictness.unwrap_or_default(),
-            word_option: options.word_option.unwrap_or_default(),
-            ja_zh,
+impl LineBreakOptions<'_> {
+    const fn resolve(self) -> ResolvedLineBreakOptions {
+        ResolvedLineBreakOptions {
+            strictness: match self.strictness {
+                Some(s) => s,
+                None => LineBreakStrictness::Strict,
+            },
+            word_option: match self.word_option {
+                Some(s) => s,
+                None => LineBreakWordOption::Normal,
+            },
+            ja_zh: if let Some(content_locale) = self.content_locale.as_ref() {
+                const JA: Language = language!("ja");
+                const ZH: Language = language!("zh");
+                matches!(content_locale.language, JA | ZH)
+            } else {
+                false
+            },
         }
     }
 }
-
 
 
 
@@ -427,7 +444,7 @@ impl LineSegmenter {
     #[cfg(feature = "compiled_data")]
     pub fn new_lstm(options: LineBreakOptions) -> LineSegmenterBorrowed<'static> {
         LineSegmenterBorrowed {
-            options: options.into(),
+            options: options.resolve(),
             data: crate::provider::Baked::SINGLETON_SEGMENTER_BREAK_LINE_V1,
             complex: ComplexPayloadsBorrowed::new_lstm(),
         }
@@ -457,7 +474,7 @@ impl LineSegmenter {
             + ?Sized,
     {
         Ok(Self {
-            options: options.into(),
+            options: options.resolve(),
             payload: provider.load(Default::default())?.payload,
             complex: ComplexPayloads::try_new_lstm(provider)?,
         })
@@ -472,12 +489,10 @@ impl LineSegmenter {
     
     
     
-    
-    
     #[cfg(feature = "compiled_data")]
     pub fn new_dictionary(options: LineBreakOptions) -> LineSegmenterBorrowed<'static> {
         LineSegmenterBorrowed {
-            options: options.into(),
+            options: options.resolve(),
             data: crate::provider::Baked::SINGLETON_SEGMENTER_BREAK_LINE_V1,
             
             
@@ -511,7 +526,7 @@ impl LineSegmenter {
             + ?Sized,
     {
         Ok(Self {
-            options: options.into(),
+            options: options.resolve(),
             payload: provider.load(Default::default())?.payload,
             
             
@@ -520,6 +535,50 @@ impl LineSegmenter {
             
             
             complex: ComplexPayloads::try_new_southeast_asian(provider)?,
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub const fn new_for_non_complex_scripts(
+        options: LineBreakOptions,
+    ) -> LineSegmenterBorrowed<'static> {
+        LineSegmenterBorrowed {
+            options: options.resolve(),
+            data: crate::provider::Baked::SINGLETON_SEGMENTER_BREAK_LINE_V1,
+            complex: ComplexPayloadsBorrowed::empty(),
+        }
+    }
+
+    icu_provider::gen_buffer_data_constructors!(
+        (options: LineBreakOptions) -> error: DataError,
+        functions: [
+            new_for_non_complex_scripts: skip,
+            try_new_for_non_complex_scripts_with_buffer_provider,
+            try_new_for_non_complex_scripts_unstable,
+            Self,
+        ]
+    );
+
+    #[doc = icu_provider::gen_buffer_unstable_docs!(UNSTABLE, Self::new_for_non_complex_scripts)]
+    pub fn try_new_for_non_complex_scripts_unstable<D>(
+        provider: &D,
+        options: LineBreakOptions,
+    ) -> Result<Self, DataError>
+    where
+        D: DataProvider<SegmenterBreakLineV1>
+            + DataProvider<SegmenterBreakGraphemeClusterV1>
+            + ?Sized,
+    {
+        Ok(Self {
+            options: options.resolve(),
+            payload: provider.load(Default::default())?.payload,
+            complex: ComplexPayloads::try_new_empty(provider)?,
         })
     }
 
@@ -1295,7 +1354,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::bool_assert_comparison)] 
+    #[expect(clippy::bool_assert_comparison)] 
     fn break_rule() {
         let payload =
             DataProvider::<SegmenterBreakLineV1>::load(&crate::provider::Baked, Default::default())

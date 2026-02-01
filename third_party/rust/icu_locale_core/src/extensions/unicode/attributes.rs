@@ -57,6 +57,8 @@ impl Attributes {
 
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
@@ -64,12 +66,15 @@ impl Attributes {
     }
 
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
         let mut iter = SubtagIterator::new(code_units);
         Self::try_from_iter(&mut iter)
     }
 
+    
     
     
     
@@ -143,7 +148,31 @@ impl Attributes {
     {
         self.deref().iter().map(|t| t.as_str()).try_for_each(f)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    pub fn extend_from_attributes(&mut self, other: Attributes) {
+        for attr in other.0 {
+            if let Err(idx) = self.binary_search(&attr) {
+                self.0.insert(idx, attr);
+            }
+        }
+    }
 }
+
 
 #[cfg(feature = "alloc")]
 impl FromStr for Attributes {

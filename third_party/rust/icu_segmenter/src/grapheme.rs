@@ -125,7 +125,7 @@ impl GraphemeClusterSegmenter {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)] 
+    #[expect(clippy::new_ret_no_self)] 
     pub const fn new() -> GraphemeClusterSegmenterBorrowed<'static> {
         GraphemeClusterSegmenterBorrowed {
             data: crate::provider::Baked::SINGLETON_SEGMENTER_BREAK_GRAPHEME_CLUSTER_V1,

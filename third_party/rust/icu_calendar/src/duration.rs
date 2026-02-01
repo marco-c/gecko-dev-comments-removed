@@ -2,9 +2,6 @@
 
 
 
-use crate::Calendar;
-use core::fmt;
-use core::marker::PhantomData;
 
 
 
@@ -62,37 +59,93 @@ use core::marker::PhantomData;
 
 
 
-#[derive(Eq, PartialEq)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[allow(clippy::exhaustive_structs)] 
-#[doc(hidden)] 
-pub struct DateDuration<C: Calendar + ?Sized> {
+pub struct DateDuration {
     
-    pub years: i32,
     
-    pub months: i32,
     
-    pub weeks: i32,
     
-    pub days: i32,
     
-    pub marker: PhantomData<C>,
+    
+    
+    
+    
+    pub is_negative: bool,
+    
+    pub years: u32,
+    
+    pub months: u32,
+    
+    pub weeks: u32,
+    
+    pub days: u64,
 }
 
 
-impl<C: Calendar + ?Sized> Clone for DateDuration<C> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
 
 
-impl<C: Calendar + ?Sized> Copy for DateDuration<C> {}
+
+
+
+
+
 
 
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 #[allow(clippy::exhaustive_enums)] 
-#[doc(hidden)] 
 pub enum DateDurationUnit {
     
     Years,
@@ -104,55 +157,134 @@ pub enum DateDurationUnit {
     Days,
 }
 
-impl<C: Calendar + ?Sized> Default for DateDuration<C> {
-    fn default() -> Self {
+impl DateDuration {
+    
+    pub fn for_years(years: i32) -> Self {
         Self {
-            years: 0,
-            months: 0,
-            weeks: 0,
-            days: 0,
-            marker: PhantomData,
-        }
-    }
-}
-
-impl<C: Calendar + ?Sized> DateDuration<C> {
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(years: i32, months: i32, weeks: i32, days: i32) -> Self {
-        DateDuration {
-            years,
-            months,
-            weeks,
-            days,
-            marker: PhantomData,
+            is_negative: years.is_negative(),
+            years: years.unsigned_abs(),
+            ..Default::default()
         }
     }
 
     
-    pub fn cast_unit<C2: Calendar + ?Sized>(self) -> DateDuration<C2> {
-        DateDuration {
-            years: self.years,
-            months: self.months,
-            days: self.days,
-            weeks: self.weeks,
-            marker: PhantomData,
+    pub fn for_months(months: i32) -> Self {
+        Self {
+            is_negative: months.is_negative(),
+            months: months.unsigned_abs(),
+            ..Default::default()
         }
     }
-}
 
-impl<C: Calendar> fmt::Debug for DateDuration<C> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.debug_struct("DateDuration")
-            .field("years", &self.years)
-            .field("months", &self.months)
-            .field("weeks", &self.weeks)
-            .field("days", &self.days)
-            .finish()
+    
+    pub fn for_weeks(weeks: i32) -> Self {
+        Self {
+            is_negative: weeks.is_negative(),
+            weeks: weeks.unsigned_abs(),
+            ..Default::default()
+        }
+    }
+
+    
+    pub fn for_days(days: i64) -> Self {
+        Self {
+            is_negative: days.is_negative(),
+            days: days.unsigned_abs(),
+            ..Default::default()
+        }
+    }
+
+    
+    pub(crate) fn from_signed_ymwd(years: i64, months: i64, weeks: i64, days: i64) -> Self {
+        let is_negative = years.is_negative()
+            || months.is_negative()
+            || weeks.is_negative()
+            || days.is_negative();
+        if is_negative
+            && (years.is_positive()
+                || months.is_positive()
+                || weeks.is_positive()
+                || days.is_positive())
+        {
+            debug_assert!(false, "mixed signs in from_signed_ymd");
+        }
+        Self {
+            is_negative,
+            years: match u32::try_from(years.unsigned_abs()) {
+                Ok(x) => x,
+                Err(_) => {
+                    debug_assert!(false, "years out of range");
+                    u32::MAX
+                }
+            },
+            months: match u32::try_from(months.unsigned_abs()) {
+                Ok(x) => x,
+                Err(_) => {
+                    debug_assert!(false, "months out of range");
+                    u32::MAX
+                }
+            },
+            weeks: match u32::try_from(weeks.unsigned_abs()) {
+                Ok(x) => x,
+                Err(_) => {
+                    debug_assert!(false, "weeks out of range");
+                    u32::MAX
+                }
+            },
+            days: days.unsigned_abs(),
+        }
+    }
+
+    #[inline]
+    pub(crate) fn add_years_to(&self, year: i32) -> i32 {
+        if !self.is_negative {
+            match year.checked_add_unsigned(self.years) {
+                Some(x) => x,
+                None => {
+                    debug_assert!(false, "{year} + {self:?} out of year range");
+                    i32::MAX
+                }
+            }
+        } else {
+            match year.checked_sub_unsigned(self.years) {
+                Some(x) => x,
+                None => {
+                    debug_assert!(false, "{year} - {self:?} out of year range");
+                    i32::MIN
+                }
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn add_months_to(&self, month: u8) -> i64 {
+        if !self.is_negative {
+            i64::from(month) + i64::from(self.months)
+        } else {
+            i64::from(month) - i64::from(self.months)
+        }
+    }
+
+    #[inline]
+    pub(crate) fn add_weeks_and_days_to(&self, day: u8) -> i64 {
+        if !self.is_negative {
+            let day = i64::from(day) + i64::from(self.weeks) * 7;
+            match day.checked_add_unsigned(self.days) {
+                Some(x) => x,
+                None => {
+                    debug_assert!(false, "{day} + {self:?} out of day range");
+                    i64::MAX
+                }
+            }
+        } else {
+            let day = i64::from(day) - i64::from(self.weeks) * 7;
+            match day.checked_sub_unsigned(self.days) {
+                Some(x) => x,
+                None => {
+                    debug_assert!(false, "{day} - {self:?} out of day range");
+                    i64::MIN
+                }
+            }
+        }
     }
 }

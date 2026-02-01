@@ -2,10 +2,8 @@
 
 
 
-#[cfg(feature = "alloc")]
 use crate::preferences::extensions::unicode::enum_keyword;
 
-#[cfg(feature = "alloc")]
 enum_keyword!(
     /// A Unicode Measurement System Identifier defines a preferred measurement system.
     ///

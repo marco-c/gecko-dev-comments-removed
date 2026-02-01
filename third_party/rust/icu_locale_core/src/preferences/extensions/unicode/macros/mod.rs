@@ -2,12 +2,10 @@
 
 
 
-#[cfg(feature = "alloc")]
 mod enum_keyword;
 mod struct_keyword;
 
 #[doc(inline)]
-#[cfg(feature = "alloc")]
 pub use enum_keyword::enum_keyword;
 #[doc(inline)]
 pub use struct_keyword::struct_keyword;

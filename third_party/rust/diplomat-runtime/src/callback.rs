@@ -10,6 +10,8 @@ use jni::{
 
 
 
+
+
 #[repr(C)]
 pub struct DiplomatCallback<ReturnType> {
     
@@ -18,7 +20,11 @@ pub struct DiplomatCallback<ReturnType> {
     
     
     
+    
+    
     pub run_callback: unsafe extern "C" fn(*mut c_void, ...) -> ReturnType,
+    
+    
     
     pub destructor: Option<unsafe extern "C" fn(*mut c_void)>,
 }

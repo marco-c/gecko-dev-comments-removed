@@ -89,6 +89,9 @@
 )]
 #![warn(missing_docs)]
 
+
+#![cfg_attr(not(feature = "unstable"), allow(unused))]
+
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
@@ -98,6 +101,7 @@ mod date;
 
 mod any_calendar;
 pub mod cal;
+pub mod options;
 pub mod provider;
 pub mod types;
 pub mod week;
@@ -105,7 +109,7 @@ pub mod week;
 mod calendar;
 mod calendar_arithmetic;
 mod duration;
-mod error;
+pub mod error;
 #[cfg(feature = "ixdtf")]
 mod ixdtf;
 
@@ -113,8 +117,6 @@ mod ixdtf;
 pub use any_calendar::IntoAnyCalendar;
 pub use calendar::Calendar;
 pub use date::{AsCalendar, Date, Ref};
-#[doc(hidden)] 
-pub use duration::{DateDuration, DateDurationUnit};
 pub use error::{DateError, RangeError};
 #[cfg(feature = "ixdtf")]
 pub use ixdtf::ParseError;

@@ -51,7 +51,7 @@ impl CaseMapUnfold<'_> {
     
     
     #[cfg(feature = "datagen")]
-    #[allow(clippy::indexing_slicing)] 
+    #[expect(clippy::indexing_slicing)] 
     pub fn try_from_icu(raw: &[u16]) -> Result<Self, DataError> {
         const ROWS_INDEX: usize = 0;
         const ROW_WIDTH_INDEX: usize = 1;

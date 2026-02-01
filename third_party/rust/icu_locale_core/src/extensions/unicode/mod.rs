@@ -115,12 +115,16 @@ impl Unicode {
 
     
     
+    
+    
     #[inline]
     #[cfg(feature = "alloc")]
     pub fn try_from_str(s: &str) -> Result<Self, ParseError> {
         Self::try_from_utf8(s.as_bytes())
     }
 
+    
+    
     
     #[cfg(feature = "alloc")]
     pub fn try_from_utf8(code_units: &[u8]) -> Result<Self, ParseError> {
@@ -210,7 +214,28 @@ impl Unicode {
         }
         Ok(())
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    pub fn extend(&mut self, other: Unicode) {
+        self.keywords.extend_from_keywords(other.keywords);
+        self.attributes.extend_from_attributes(other.attributes);
+    }
 }
+
 
 #[cfg(feature = "alloc")]
 impl FromStr for Unicode {
@@ -222,7 +247,7 @@ impl FromStr for Unicode {
     }
 }
 
-writeable::impl_display_with_writeable!(Unicode);
+writeable::impl_display_with_writeable!(Unicode, #[cfg(feature = "alloc")]);
 
 impl writeable::Writeable for Unicode {
     fn write_to<W: core::fmt::Write + ?Sized>(&self, sink: &mut W) -> core::fmt::Result {

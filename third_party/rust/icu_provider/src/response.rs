@@ -173,7 +173,6 @@ pub(crate) enum DataPayloadOrInnerInner<M: DynamicDataMarker, O> {
 
 
 #[derive(Clone, Debug)]
-#[allow(clippy::redundant_allocation)] 
 pub struct Cart(#[allow(dead_code)] CartInner);
 
 
@@ -198,6 +197,8 @@ unsafe impl stable_deref_trait::StableDeref for Cart {}
 
 impl Cart {
     #[cfg(feature = "alloc")]
+    
+    
     
     pub fn try_make_yoke<Y, F, E>(cart: Box<[u8]>, f: F) -> Result<Yoke<Y, Option<Self>>, E>
     where
@@ -332,17 +333,14 @@ where
 fn test_clone_eq() {
     use crate::hello_world::*;
     let p1 = DataPayload::<HelloWorldV1>::from_static_str("Demo");
-    #[allow(clippy::redundant_clone)]
     let p2 = p1.clone();
     assert_eq!(p1, p2);
 
     let p1 = DataPayloadOr::<HelloWorldV1, usize>::from_payload(p1);
-    #[allow(clippy::redundant_clone)]
     let p2 = p1.clone();
     assert_eq!(p1, p2);
 
     let p3 = DataPayloadOr::<HelloWorldV1, usize>::from_other(555);
-    #[allow(clippy::redundant_clone)]
     let p4 = p3.clone();
     assert_eq!(p3, p4);
 
@@ -462,7 +460,6 @@ where
     
     
     #[inline]
-    #[allow(clippy::needless_lifetimes)]
     pub fn get<'a>(&'a self) -> &'a <M::DataStruct as Yokeable<'a>>::Output {
         match &self.0 {
             DataPayloadInner::Yoke(yoke) => yoke.get(),
@@ -523,7 +520,6 @@ where
     
     
     
-    #[allow(clippy::type_complexity)]
     pub fn map_project<M2, F>(self, f: F) -> DataPayload<M2>
     where
         M2: DynamicDataMarker,
@@ -571,7 +567,6 @@ where
     
     
     
-    #[allow(clippy::type_complexity)]
     pub fn map_project_cloned<'this, M2, F>(&'this self, f: F) -> DataPayload<M2>
     where
         M2: DynamicDataMarker,
@@ -629,7 +624,6 @@ where
     
     
     
-    #[allow(clippy::type_complexity)]
     pub fn try_map_project<M2, F, E>(self, f: F) -> Result<DataPayload<M2>, E>
     where
         M2: DynamicDataMarker,
@@ -687,7 +681,6 @@ where
     
     
     
-    #[allow(clippy::type_complexity)]
     pub fn try_map_project_cloned<'this, M2, F, E>(&'this self, f: F) -> Result<DataPayload<M2>, E>
     where
         M2: DynamicDataMarker,
@@ -905,6 +898,8 @@ where
 
 impl DataPayload<BufferMarker> {
     
+    
+    
     #[cfg(feature = "alloc")]
     pub fn from_owned_buffer(buffer: Box<[u8]>) -> Self {
         let yoke = Yoke::attach_to_cart(SelectedRc::new(buffer), |b| &**b)
@@ -973,7 +968,6 @@ where
     }
 
     
-    #[allow(clippy::needless_lifetimes)]
     #[inline]
     pub fn get<'a>(&'a self) -> Result<&'a <M::DataStruct as Yokeable<'a>>::Output, &'a O> {
         match &self.0 {
@@ -1010,7 +1004,6 @@ where
     }
 
     
-    #[allow(clippy::needless_lifetimes)]
     #[inline]
     pub fn get_option<'a>(&'a self) -> Option<&'a <M::DataStruct as Yokeable<'a>>::Output> {
         self.get().ok()
@@ -1052,6 +1045,24 @@ where
             metadata: self.metadata,
             payload: self.payload.cast(),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn dynamic_cast<M2>(self) -> Result<DataResponse<M2>, DataError>
+    where
+        M2: DynamicDataMarker,
+    {
+        Ok(DataResponse {
+            metadata: self.metadata,
+            payload: self.payload.dynamic_cast()?,
+        })
     }
 }
 

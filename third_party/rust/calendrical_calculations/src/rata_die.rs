@@ -70,8 +70,31 @@ impl RataDie {
     }
 
     
-    pub const fn until(self, rhs: Self) -> i64 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn since(self, rhs: Self) -> i64 {
         self.0 - rhs.0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn until(self, rhs: Self) -> i64 {
+        rhs.0 - self.0
     }
 
     
@@ -91,7 +114,7 @@ impl RataDie {
 impl fmt::Debug for RataDie {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let rd = self.0;
-        if let Ok((y, m, d)) = crate::iso::iso_from_fixed(*self) {
+        if let Ok((y, m, d)) = crate::gregorian::gregorian_from_fixed(*self) {
             write!(f, "{rd} R.D. ({y}-{m:02}-{d:02})")
         } else {
             write!(f, "{rd} R.D. (out of bounds)")
@@ -134,7 +157,7 @@ impl SubAssign<i64> for RataDie {
 impl Sub for RataDie {
     type Output = i64;
     fn sub(self, rhs: Self) -> Self::Output {
-        self.until(rhs)
+        self.since(rhs)
     }
 }
 

@@ -17,6 +17,9 @@ use utf8_iter::Utf8CharIndices;
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceBreakOptions<'a> {
     
+    
+    
+    
     pub content_locale: Option<&'a LanguageIdentifier>,
     
     pub invariant_options: SentenceBreakInvariantOptions,
@@ -101,6 +104,19 @@ derive_usize_iterator_with_type!(SentenceBreakIterator, 'data);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct SentenceSegmenter {
     payload: DataPayload<SegmenterBreakSentenceV1>,
@@ -123,7 +139,7 @@ impl SentenceSegmenter {
     
     
     #[cfg(feature = "compiled_data")]
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub const fn new(
         _options: SentenceBreakInvariantOptions,
     ) -> SentenceSegmenterBorrowed<'static> {
