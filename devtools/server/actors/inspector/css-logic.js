@@ -83,7 +83,15 @@ class CssLogic {
 
 
   static getSelectors(domRule, desugared = false) {
-    if (ChromeUtils.getClassName(domRule) !== "CSSStyleRule") {
+    const className = ChromeUtils.getClassName(domRule);
+
+    if (className === "CSSNestedDeclarations") {
+      
+      
+      return ["&"];
+    }
+
+    if (className !== "CSSStyleRule") {
       
       return [];
     }
@@ -580,12 +588,17 @@ class CssLogic {
 
     for (const matchedRule of this.#matchedRules) {
       const [rule, status, distance] = matchedRule;
+      const includeAllSelectors =
+        rule.domRule.declarationOrigin === "style-attribute" ||
+        rule.domRule.declarationOrigin === "pres-hints" ||
+        
+        
+        ChromeUtils.getClassName(rule.domRule) === "CSSNestedDeclarations";
 
       rule.selectors.forEach(function (selector) {
         if (
           selector.matchId !== this.matchId &&
-          (rule.domRule.declarationOrigin === "style-attribute" ||
-            rule.domRule.declarationOrigin === "pres-hints" ||
+          (includeAllSelectors ||
             this.selectorMatchesElement(rule.domRule, selector.selectorIndex))
         ) {
           selector.matchId = this.matchId;
@@ -1145,15 +1158,9 @@ class CssRule {
       return this.#selectors;
     }
 
-    
     this.#selectors = [];
 
-    if (!this.domRule.selectorText) {
-      return this.#selectors;
-    }
-
     const selectors = CssLogic.getSelectors(this.domRule);
-
     for (let i = 0, len = selectors.length; i < len; i++) {
       this.#selectors.push(new CssSelector(this, selectors[i], i));
     }
@@ -1167,15 +1174,15 @@ class CssRule {
 }
 
 class CssSelector {
-  
-
-
-
-
-
-
-
-
+  /**
+   * The CSS selector class allows us to document the ranking of various CSS
+   * selectors.
+   *
+   * @class
+   * @param {CssRule} cssRule the CssRule instance from where the selector comes.
+   * @param {string} selector The selector that we wish to investigate.
+   * @param {number} index The index of the selector within it's rule.
+   */
   constructor(cssRule, selector, index) {
     this.cssRule = cssRule;
     this.text = selector;
@@ -1187,109 +1194,109 @@ class CssSelector {
 
   #specificity = null;
 
-  
-
-
-
-
-
-
+  /**
+   * Retrieve the CssSelector source element, which is the source of the CssRule
+   * owning the selector. This is only available when the CssSelector comes from
+   * an element.style.
+   *
+   * @return {string} the source element selector.
+   */
   get sourceElement() {
     return this.cssRule.sourceElement;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the address of the CssSelector. This points to the address of the
+   * CssSheet owning this selector.
+   *
+   * @return {string} the address of the CssSelector.
+   */
   get href() {
     return this.cssRule.href;
   }
 
-  
-
-
-
-
+  /**
+   * Check if the selector comes from an agent stylesheet (provided by the browser).
+   *
+   * @return {boolean} true if this is an agent stylesheet, false otherwise.
+   */
   get agentRule() {
     return this.cssRule.agentRule;
   }
 
-  
-
-
-
-
+  /**
+   * Check if the selector comes from an author stylesheet (provided by the content page).
+   *
+   * @return {boolean} true if this is an author stylesheet, false otherwise.
+   */
   get authorRule() {
     return this.cssRule.authorRule;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check if the selector comes from a user stylesheet (provided by userChrome.css or
+   * userContent.css).
+   *
+   * @return {boolean} true if this is a user stylesheet, false otherwise.
+   */
   get userRule() {
     return this.cssRule.userRule;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check if the parent stylesheet is allowed by the CssLogic.sourceFilter.
+   *
+   * @return {boolean} true if the parent stylesheet is allowed by the current
+   * sourceFilter, or false otherwise.
+   */
   get sheetAllowed() {
     return this.cssRule.sheetAllowed;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the parent stylesheet index/position in the viewed document.
+   *
+   * @return {number} the parent stylesheet index/position in the viewed
+   * document.
+   */
   get sheetIndex() {
     return this.cssRule.sheetIndex;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the line of the parent CSSStyleRule in the parent CSSStyleSheet.
+   *
+   * @return {number} the line of the parent CSSStyleRule in the parent
+   * stylesheet.
+   */
   get ruleLine() {
     return this.cssRule.line;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the column of the parent CSSStyleRule in the parent CSSStyleSheet.
+   *
+   * @return {number} the column of the parent CSSStyleRule in the parent
+   * stylesheet.
+   */
   get ruleColumn() {
     return this.cssRule.column;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Retrieve specificity information for the current selector.
+   *
+   * @see http://www.w3.org/TR/css3-selectors/#specificity
+   * @see http://www.w3.org/TR/CSS2/selector.html
+   *
+   * @return {number} The selector's specificity.
+   */
   get specificity() {
     if (this.inlineStyle) {
-      
-      
-      
-      
+      // We don't have an actual rule to call selectorSpecificityAt for element styles.
+      // However, specificity of element style is constant, 1,0,0,0 or 0x40000000,
+      // so just return the constant directly.
+      // @see http://www.w3.org/TR/CSS2/cascade.html#specificity
       return 0x40000000;
     }
 
