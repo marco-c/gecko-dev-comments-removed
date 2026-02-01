@@ -3519,22 +3519,6 @@ class nsContentUtils {
 
   static void RequestGeckoTaskBurst();
 
-  static void SetMayHaveFormCheckboxStateChangeListeners() {
-    sMayHaveFormCheckboxStateChangeListeners = true;
-  }
-
-  static bool MayHaveFormCheckboxStateChangeListeners() {
-    return sMayHaveFormCheckboxStateChangeListeners;
-  }
-
-  static void SetMayHaveFormRadioStateChangeListeners() {
-    sMayHaveFormRadioStateChangeListeners = true;
-  }
-
-  static bool MayHaveFormRadioStateChangeListeners() {
-    return sMayHaveFormRadioStateChangeListeners;
-  }
-
   
 
 
@@ -3743,9 +3727,6 @@ class nsContentUtils {
 
   static int32_t sInnerOrOuterWindowCount;
   static uint32_t sInnerOrOuterWindowSerialCounter;
-
-  static bool sMayHaveFormCheckboxStateChangeListeners;
-  static bool sMayHaveFormRadioStateChangeListeners;
 };
 
  inline ExtContentPolicyType

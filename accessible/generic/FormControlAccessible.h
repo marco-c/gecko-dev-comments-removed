@@ -19,13 +19,7 @@ class CheckboxAccessible : public LeafAccessible {
   enum { eAction_Click = 0 };
 
   CheckboxAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : LeafAccessible(aContent, aDoc) {
-    
-    
-    if (aContent->IsHTMLElement()) {
-      mStateFlags |= eIgnoreDOMUIEvent;
-    }
-  }
+      : LeafAccessible(aContent, aDoc) {}
 
   
   virtual mozilla::a11y::role NativeRole() const override;

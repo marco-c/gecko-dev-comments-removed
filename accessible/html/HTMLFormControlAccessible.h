@@ -25,9 +25,6 @@ class HTMLRadioButtonAccessible : public RadioButtonAccessible {
  public:
   HTMLRadioButtonAccessible(nsIContent* aContent, DocAccessible* aDoc)
       : RadioButtonAccessible(aContent, aDoc) {
-    
-    
-    mStateFlags |= eIgnoreDOMUIEvent;
     mType = eHTMLRadioButtonType;
   }
 
