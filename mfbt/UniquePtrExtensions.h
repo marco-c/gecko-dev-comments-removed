@@ -225,9 +225,18 @@ using UniqueFileHandle =
 
 #ifndef __wasm__
 
+
 MFBT_API UniqueFileHandle DuplicateFileHandle(detail::FileHandleType aFile);
 inline UniqueFileHandle DuplicateFileHandle(const UniqueFileHandle& aFile) {
   return DuplicateFileHandle(aFile.get());
+}
+#endif  
+
+#ifdef XP_UNIX
+
+MFBT_API void SetCloseOnExec(detail::FileHandleType aFile);
+inline void SetCloseOnExec(const UniqueFileHandle& aFile) {
+  SetCloseOnExec(aFile.get());
 }
 #endif
 
