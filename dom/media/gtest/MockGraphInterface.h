@@ -4,6 +4,9 @@
 
 
 
+#ifndef MOCK_GRAPH_INTERFACE_H_
+#define MOCK_GRAPH_INTERFACE_H_
+
 #include <tuple>
 
 #include "GraphDriver.h"
@@ -95,3 +98,5 @@ class MockGraphInterface : public GraphInterface {
 };
 
 }  
+
+#endif

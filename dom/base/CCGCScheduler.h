@@ -2,6 +2,9 @@
 
 
 
+#ifndef mozilla_dom_CCGCScheduler_h
+#define mozilla_dom_CCGCScheduler_h
+
 #include "js/SliceBudget.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/IdleTaskRunner.h"
@@ -541,3 +544,5 @@ class CCGCScheduler {
 };
 
 }  
+
+#endif

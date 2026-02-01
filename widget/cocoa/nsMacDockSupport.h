@@ -3,6 +3,9 @@
 
 
 
+#ifndef mozilla_widget_nsMacDockSupport_h
+#define mozilla_widget_nsMacDockSupport_h
+
 #include "nsIMacDockSupport.h"
 #include "nsIStandaloneNativeMenu.h"
 #include "nsITaskbarProgress.h"
@@ -24,12 +27,17 @@ class nsMacDockSupport : public nsIMacDockSupport, public nsITaskbarProgress {
 
   nsCOMPtr<nsIStandaloneNativeMenu> mDockMenu;
   nsString mBadgeText;
+  bool mHasBadgeImage;
 
   NSView* mDockTileWrapperView;
+  NSImageView* mDockBadgeView;
   MOZProgressDockOverlayView* mProgressDockOverlayView;
 
   nsTaskbarProgressState mProgressState;
   double mProgressFraction;
 
+  void BuildDockTile();
   nsresult UpdateDockTile();
 };
+
+#endif
