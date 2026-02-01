@@ -314,40 +314,39 @@ class SVGUtils final {
                                         nsIFrame* aFrame, uint32_t aFlags);
 
   enum BBoxFlags {
-    eBBoxIncludeFill = 1 << 0,
     
     
-    eBBoxIncludeFillGeometry = 1 << 1,
-    eBBoxIncludeStroke = 1 << 2,
+    eBBoxIncludeFillGeometry = 1 << 0,
+    eBBoxIncludeStroke = 1 << 1,
     
     
-    eBBoxIncludeStrokeGeometry = 1 << 3,
-    eBBoxIncludeMarkers = 1 << 4,
-    eBBoxIncludeClipped = 1 << 5,
-    
-    
-    
-    eUseFrameBoundsForOuterSVG = 1 << 6,
-    
-    eForGetClientRects = 1 << 7,
+    eBBoxIncludeStrokeGeometry = 1 << 2,
+    eBBoxIncludeMarkers = 1 << 3,
+    eBBoxIncludeClipped = 1 << 4,
     
     
     
-    eIncludeOnlyCurrentFrameForNonSVGElement = 1 << 8,
+    eUseFrameBoundsForOuterSVG = 1 << 5,
+    
+    eForGetClientRects = 1 << 6,
     
     
     
-    
-    eUseUserSpaceOfUseElement = 1 << 9,
-    
-    
-    eDoNotClipToBBoxOfContentInsideClipPath = 1 << 10,
+    eIncludeOnlyCurrentFrameForNonSVGElement = 1 << 7,
     
     
     
     
+    eUseUserSpaceOfUseElement = 1 << 8,
     
-    eAvoidCycleIfNonScalingStroke = 1 << 11,
+    
+    eDoNotClipToBBoxOfContentInsideClipPath = 1 << 9,
+    
+    
+    
+    
+    
+    eAvoidCycleIfNonScalingStroke = 1 << 10,
   };
   
 
