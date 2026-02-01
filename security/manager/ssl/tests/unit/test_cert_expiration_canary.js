@@ -20,6 +20,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 add_task(async function () {
   do_get_profile();
   let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
