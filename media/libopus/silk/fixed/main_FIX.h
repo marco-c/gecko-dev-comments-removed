@@ -41,12 +41,6 @@
 #include "fixed/arm/warped_autocorrelation_FIX_arm.h"
 #endif
 
-#ifndef FORCE_CPP_BUILD
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-#endif
 
 #define silk_encoder_state_Fxx      silk_encoder_state_FIX
 #define silk_encode_do_VAD_Fxx      silk_encode_do_VAD_FIX
@@ -236,9 +230,4 @@ void silk_corrVector_FIX(
     int                             arch                                    
 );
 
-#ifndef FORCE_CPP_BUILD
-#ifdef __cplusplus
-}
 #endif 
-#endif 
-#endif

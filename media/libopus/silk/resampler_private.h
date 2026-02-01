@@ -28,10 +28,6 @@
 #ifndef SILK_RESAMPLER_PRIVATE_H
 #define SILK_RESAMPLER_PRIVATE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "SigProc_FIX.h"
 #include "resampler_structs.h"
 #include "resampler_rom.h"
@@ -82,7 +78,4 @@ void silk_resampler_private_AR2(
     opus_int32                      len             
 );
 
-#ifdef __cplusplus
-}
-#endif
 #endif 

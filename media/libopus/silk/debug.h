@@ -42,10 +42,6 @@
 #include <stdio.h>      
 #endif
 
-#ifdef  __cplusplus
-extern "C"
-{
-#endif
 
 #if SILK_TIC_TOC
 
@@ -259,9 +255,5 @@ extern int silk_debug_store_count;
 #define SILK_DEBUG_STORE_CLOSE_FILES
 
 #endif 
-
-#ifdef  __cplusplus
-}
-#endif
 
 #endif 

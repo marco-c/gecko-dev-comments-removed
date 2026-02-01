@@ -32,10 +32,6 @@
 #include "main.h"
 #include "structs.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 
 
@@ -109,9 +105,5 @@ typedef struct {
     silk_encoder_state_FIX      state_Fxx[ ENCODER_NUM_CHANNELS ];
 } silk_encoder;
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

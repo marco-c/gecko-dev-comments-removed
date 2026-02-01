@@ -49,10 +49,6 @@
 #include "osce_structs.h"
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 
 
@@ -357,9 +353,5 @@ typedef struct {
     opus_int                    LTP_scale_Q14;
 } silk_decoder_control;
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

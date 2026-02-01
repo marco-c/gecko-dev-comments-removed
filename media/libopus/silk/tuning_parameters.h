@@ -28,11 +28,6 @@
 #ifndef SILK_TUNING_PARAMETERS_H
 #define SILK_TUNING_PARAMETERS_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 
 #define BITRESERVOIR_DECAY_TIME_MS                      500
 
@@ -147,9 +142,5 @@ extern "C"
 
 
 #define MAX_BANDWIDTH_SWITCH_DELAY_MS                   5000
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif 

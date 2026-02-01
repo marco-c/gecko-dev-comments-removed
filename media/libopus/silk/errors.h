@@ -28,10 +28,6 @@
 #ifndef SILK_ERRORS_H
 #define SILK_ERRORS_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 
 
@@ -90,9 +86,5 @@ extern "C"
 
 
 #define SILK_DEC_INVALID_FRAME_SIZE                 -203
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

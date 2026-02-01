@@ -31,10 +31,6 @@
 #include "define.h"
 #include "structs.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 
 extern const opus_uint8  silk_gain_iCDF[ 3 ][ N_LEVELS_QGAIN / 8 ];                                 
@@ -106,9 +102,5 @@ extern const opus_int32  silk_Transition_LP_A_Q28[ TRANSITION_INT_NUM ][ TRANSIT
 
 
 extern const opus_int16  silk_LSFCosTab_FIX_Q12[ LSF_COS_TAB_SZ_FIX + 1 ];                          
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

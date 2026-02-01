@@ -38,11 +38,6 @@
 #include "lpcnet_private.h"
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 #define SILK_MAX_FRAMES_PER_PACKET  3
 
 
@@ -151,8 +146,5 @@ opus_int silk_get_TOC(
 );
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
