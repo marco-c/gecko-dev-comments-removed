@@ -909,10 +909,20 @@ Preferences.addSetting({
   },
 });
 Preferences.addSetting({ id: "containersPlaceholder" });
+Preferences.addSetting({
+  id: "legacyTranslationsVisible",
+  deps: ["aiControlDefault", "aiControlTranslations"],
+  visible: ({ aiControlDefault, aiControlTranslations }) =>
+    !Services.prefs.getBoolPref("browser.settings-redesign.enable", false) &&
+    canShowAiFeature(aiControlTranslations, aiControlDefault),
+});
 
 Preferences.addSetting({
   id: "offerTranslations",
   pref: "browser.translations.automaticallyPopup",
+  deps: ["aiControlDefault", "aiControlTranslations"],
+  visible: ({ aiControlDefault, aiControlTranslations }) =>
+    canShowAiFeature(aiControlTranslations, aiControlDefault),
 });
 
 function createNeverTranslateSitesDescription() {
@@ -1014,10 +1024,13 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "translationsManageButton",
+  deps: ["aiControlDefault", "aiControlTranslations"],
   onUserClick(e) {
     e.preventDefault();
     gotoPref("paneTranslations");
   },
+  visible: ({ aiControlDefault, aiControlTranslations }) =>
+    canShowAiFeature(aiControlTranslations, aiControlDefault),
 });
 
 Preferences.addSetting({
@@ -5441,19 +5454,34 @@ var gMainPane = {
 
 
   async initTranslations() {
-    if (!Services.prefs.getBoolPref("browser.translations.enable")) {
-      return;
-    }
-
+    let legacyTranslationsVisible = Preferences.getSetting(
+      "legacyTranslationsVisible"
+    );
     
 
 
 
 
 
-    
-    
-    document.getElementById("translationsGroup").hidden = false;
+    let translationsGroup = document.getElementById("translationsGroup");
+    let setTranslationsGroupVisbility = () => {
+      
+      
+      translationsGroup.hidden = !legacyTranslationsVisible.visible;
+      translationsGroup.classList.toggle(
+        "setting-hidden",
+        translationsGroup.hidden
+      );
+    };
+    setTranslationsGroupVisbility();
+
+    legacyTranslationsVisible.on("change", setTranslationsGroupVisbility);
+    window.addEventListener(
+      "unload",
+      () =>
+        legacyTranslationsVisible.off("change", setTranslationsGroupVisbility),
+      { once: true }
+    );
 
     class TranslationsState {
       
