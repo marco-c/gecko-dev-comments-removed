@@ -22,7 +22,7 @@ const selectDownloads = `
 add_task(async function test_removeDownloadsMetadataFromDb() {
   Services.prefs.setStringPref("toolkit.sqlitejsm.loglevel", "Debug");
   
-  const testDbPath = PathUtils.join(do_get_cwd().path, "test_places.sqlite");
+  const testDbPath = await setupPlacesDatabase("test_places.sqlite");
   let dbConnection;
   try {
     dbConnection = await Sqlite.openConnection({
@@ -66,15 +66,8 @@ add_task(async function test_removeDownloadsMetadataFromDb() {
   }
 
   
-  const testDbCopyDir = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "test_removeDownloadsMetadataFromDb"
-  );
-  registerCleanupFunction(async () => {
-    await IOUtils.remove(testDbCopyDir, { recursive: true });
-  });
   const testDbCopyPath = PathUtils.join(
-    testDbCopyDir,
+    PathUtils.profileDir,
     "copy_test_places.sqlite"
   );
   await IOUtils.copy(testDbPath, testDbCopyPath);
