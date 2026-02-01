@@ -27,7 +27,7 @@
 enum nsHTMLTag {
   
   eHTMLTag_unknown = 0,
-#include "nsHTMLTagList.h"
+#include "nsHTMLTagList.inc"
 
   
 

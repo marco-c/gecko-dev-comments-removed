@@ -14,7 +14,7 @@
 const fs = require("fs");
 const { RESERVED_WORDS } = require("peggy");
 
-const TAGLIST = require.resolve("../../parser/htmlparser/nsHTMLTagList.h");
+const TAGLIST = require.resolve("../../parser/htmlparser/nsHTMLTagList.inc");
 const BINDINGS = require.resolve("../../dom/bindings/Bindings.conf");
 
 
