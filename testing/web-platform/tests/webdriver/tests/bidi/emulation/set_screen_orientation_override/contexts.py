@@ -80,6 +80,7 @@ async def test_iframe(
     another_web_screen_orientation,
     inline,
     domain,
+    iframe
 ):
     await bidi_session.emulation.set_screen_orientation_override(
         contexts=[new_tab["context"]],
@@ -89,8 +90,7 @@ async def test_iframe(
     
     assert await get_screen_orientation(new_tab) == some_web_screen_orientation
 
-    iframe_url = inline("<div id='in-iframe'>foo</div>", domain=domain)
-    page_url = inline(f"<iframe src='{iframe_url}'></iframe>")
+    page_url = inline(iframe("<div id='in-iframe'>foo</div>", domain=domain))
 
     
     await bidi_session.browsing_context.navigate(
