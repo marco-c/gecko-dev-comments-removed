@@ -11,10 +11,7 @@ use crate::util::{TransformedRectKind, MatrixHelpers};
 
 
 
-
-
-
-#[derive(Copy, Debug, Clone, PartialEq)]
+#[derive(Copy, Debug, Clone, PartialEq, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
@@ -25,8 +22,17 @@ impl GpuTransformId {
     pub const IDENTITY: Self = GpuTransformId(0);
 
     
+    
+    
+
+    
+    const AXIS_ALIGNED_2D_BIT: u32 = 1 << 23;
+    
+    const SCALE_OFFSET_2D_BIT: u32 = 1 << 22;
+
+    
     pub fn transform_kind(&self) -> TransformedRectKind {
-        if (self.0 >> 23) == 0 {
+        if (self.0 & Self::AXIS_ALIGNED_2D_BIT) == 0 {
             TransformedRectKind::AxisAligned
         } else {
             TransformedRectKind::Complex
@@ -35,10 +41,28 @@ impl GpuTransformId {
 
     
     
+    pub fn is_2d_axis_aligned(&self) -> bool {
+        self.0 & Self::AXIS_ALIGNED_2D_BIT == 0
+    }
+
+    
+    pub fn is_2d_scale_offset(&self) -> bool {
+        self.0 & Self::SCALE_OFFSET_2D_BIT == 0
+    }
+
+    pub fn metadata(&self) -> TransformMetadata {
+        TransformMetadata {
+            is_2d_axis_aligned: self.is_2d_axis_aligned(),
+            is_2d_scale_offset: self.is_2d_scale_offset(),
+        }
+    }
+
+    
+    
     
     
     pub fn override_transform_kind(&self, kind: TransformedRectKind) -> Self {
-        GpuTransformId((self.0 & 0x7FFFFFu32) | ((kind as u32) << 23))
+        GpuTransformId((self.0 & (1 << 23)) | ((kind as u32) << 23))
     }
 }
 
@@ -62,16 +86,30 @@ impl TransformData {
 }
 
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct TransformMetadata {
-    transform_kind: TransformedRectKind,
+    pub is_2d_axis_aligned: bool,
+    pub is_2d_scale_offset: bool,
 }
 
 impl TransformMetadata {
     pub fn invalid() -> Self {
         TransformMetadata {
-            transform_kind: TransformedRectKind::AxisAligned,
+            is_2d_axis_aligned: true,
+            is_2d_scale_offset: true,
         }
+    }
+
+    pub fn flags(&self) -> u32 {
+        let mut flags = 0;
+        if !self.is_2d_axis_aligned {
+            flags |= GpuTransformId::AXIS_ALIGNED_2D_BIT
+        };
+        if !self.is_2d_scale_offset {
+            flags |= GpuTransformId::SCALE_OFFSET_2D_BIT
+        };
+
+        flags
     }
 }
 
@@ -160,14 +198,23 @@ impl GpuTransforms {
                     let transform = spatial_tree.get_relative_transform(
                         child_index,
                         parent_index,
-                    )
-                    .into_transform()
-                    .with_destination::<PicturePixel>();
+                    );
+
+                    let is_2d_axis_aligned = transform.is_2d_axis_aligned();
+                    let is_2d_scale_offset  = transform.is_2d_scale_translation();
+
+                    let transform = transform
+                        .into_transform()
+                        .with_destination::<PicturePixel>();
 
                     register_gpu_transform(
                         metadata,
                         transforms,
                         transform,
+                        TransformMetadata {
+                            is_2d_axis_aligned,
+                            is_2d_scale_offset,
+                        }
                     )
                 })
         }
@@ -188,28 +235,30 @@ impl GpuTransforms {
             to_index,
             spatial_tree,
         );
-        let transform_kind = self.metadata[index].transform_kind as u32;
-        GpuTransformId(
-            (index as u32) |
-            (transform_kind << 23)
-        )
+
+        let flags = self.metadata[index].flags();
+
+        GpuTransformId((index as u32) | flags)
     }
 
     pub fn get_custom(
         &mut self,
         transform: LayoutToPictureTransform,
     ) -> GpuTransformId {
+        let is_2d_scale_offset = transform.is_2d_scale_translation();
+        let is_axis_aligned = transform.preserves_2d_axis_alignment();
+        let metadata = TransformMetadata {
+            is_2d_scale_offset,
+            is_2d_axis_aligned: is_axis_aligned,
+        };
         let index = register_gpu_transform(
             &mut self.metadata,
             &mut self.transforms,
             transform,
+            metadata,
         );
 
-        let transform_kind = self.metadata[index].transform_kind as u32;
-        GpuTransformId(
-            (index as u32) |
-            (transform_kind << 23)
-        )
+        GpuTransformId((index as u32) | metadata.flags())
     }
 }
 
@@ -219,6 +268,7 @@ fn register_gpu_transform(
     metadatas: &mut Vec<TransformMetadata>,
     transforms: &mut FrameVec<TransformData>,
     transform: LayoutToPictureTransform,
+    metadata: TransformMetadata,
 ) -> usize {
     
     
@@ -226,9 +276,6 @@ fn register_gpu_transform(
         .inverse()
         .unwrap_or_else(PictureToLayoutTransform::identity);
 
-    let metadata = TransformMetadata {
-        transform_kind: transform.transform_kind()
-    };
     let data = TransformData {
         transform,
         inv_transform,
