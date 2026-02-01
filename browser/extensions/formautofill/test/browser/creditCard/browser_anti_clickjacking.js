@@ -65,7 +65,13 @@ add_task(async function test_active_delay() {
 
       
       
+      
+      
+      AccessibilityUtils.setEnv({
+        mustBeEnabled: false,
+      });
       firstItem.click();
+      AccessibilityUtils.resetEnv();
       is(
         browser.autoCompletePopup.selectedIndex,
         -1,
