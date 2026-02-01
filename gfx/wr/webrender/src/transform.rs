@@ -81,21 +81,40 @@ struct RelativeTransformKey {
     to_index: SpatialNodeIndex,
 }
 
-
-
-
-
-
-
-
 pub struct TransformPalette {
+    pub gpu: GpuTransforms,
+}
+
+impl TransformPalette {
+    pub fn new(
+        count: usize,
+        memory: &FrameMemory,
+    ) -> Self {
+        TransformPalette {
+            gpu: GpuTransforms::new(count, memory),
+        }
+    }
+
+    pub fn finish(self) -> FrameVec<TransformData> {
+        self.gpu.finish()
+    }
+}
+
+
+
+
+
+
+
+
+pub struct GpuTransforms {
     transforms: FrameVec<TransformData>,
     metadata: Vec<TransformMetadata>,
     map: FastHashMap<RelativeTransformKey, usize>,
 }
 
-impl TransformPalette {
-    pub fn new(
+impl GpuTransforms {
+    fn new(
         count: usize,
         memory: &FrameMemory,
     ) -> Self {
@@ -107,14 +126,14 @@ impl TransformPalette {
         transforms.push(TransformData::invalid());
         metadata.push(TransformMetadata::invalid());
 
-        TransformPalette {
+        GpuTransforms {
             transforms,
             metadata,
             map: FastHashMap::default(),
         }
     }
 
-    pub fn finish(self) -> FrameVec<TransformData> {
+    fn finish(self) -> FrameVec<TransformData> {
         self.transforms
     }
 
@@ -145,7 +164,7 @@ impl TransformPalette {
                     .into_transform()
                     .with_destination::<PicturePixel>();
 
-                    register_transform(
+                    register_gpu_transform(
                         metadata,
                         transforms,
                         transform,
@@ -180,7 +199,7 @@ impl TransformPalette {
         &mut self,
         transform: LayoutToPictureTransform,
     ) -> GpuTransformId {
-        let index = register_transform(
+        let index = register_gpu_transform(
             &mut self.metadata,
             &mut self.transforms,
             transform,
@@ -196,7 +215,7 @@ impl TransformPalette {
 
 
 
-fn register_transform(
+fn register_gpu_transform(
     metadatas: &mut Vec<TransformMetadata>,
     transforms: &mut FrameVec<TransformData>,
     transform: LayoutToPictureTransform,
