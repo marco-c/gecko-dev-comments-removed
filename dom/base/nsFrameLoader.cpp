@@ -779,6 +779,8 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
 nsresult nsFrameLoader::CheckURILoad(nsIURI* aURI,
                                      nsIPrincipal* aTriggeringPrincipal) {
+  NS_ENSURE_STATE(mOwnerContent && mOwnerContent->IsInComposedDoc());
+
   
   
   
@@ -2319,6 +2321,12 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     }
   }
 
+  if (mDestroyCalled) {
+    
+    
+    return nsresult::NS_ERROR_DOCSHELL_DYING;
+  }
+
   return NS_OK;
 }
 
@@ -2886,7 +2894,8 @@ nsresult nsFrameLoader::FinishStaticClone(
   nsCOMPtr<Document> doc = origDocShell->GetDocument();
   NS_ENSURE_STATE(doc);
 
-  MaybeCreateDocShell();
+  nsresult rv = MaybeCreateDocShell();
+  NS_ENSURE_SUCCESS(rv, rv);
   RefPtr<nsDocShell> docShell = GetDocShell();
   NS_ENSURE_STATE(docShell);
 
