@@ -603,6 +603,12 @@ class MOZ_RAII AutoProfilerTracing {
           profiler_get_inner_window_id_from_docshell(docShell))
 
 #ifdef MOZ_GECKO_PROFILER
+
+
+
+void profiler_register_marker_schema(const nsCString& aSchemaName,
+                                     const nsString& aSchemaJSON);
+
 extern template mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     mozilla::ProfileChunkedBuffer&, const mozilla::ProfilerString8View&,
     const mozilla::MarkerCategory&, mozilla::MarkerOptions&&,
