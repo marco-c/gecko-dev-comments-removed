@@ -22,7 +22,10 @@ class CentOSFedoraBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         if self.version >= 33 and "perl" in packages:
             packages.append("perl-FindBin")
         
-        if self.distro in ("centos", "rocky", "oracle"):
+        
+        if self.distro in ("centos", "rocky", "oracle") or (
+            self.distro == "fedora" and self.version >= 42
+        ):
             packages = [p for p in packages if p != "watchman"]
         self.dnf_install(*packages)
 
