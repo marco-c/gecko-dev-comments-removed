@@ -140,7 +140,15 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   nsAtomicContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  aContent->SetPrimaryFrame(this);
+  
+  
+  
+  
+  MOZ_ASSERT_IF(aContent->GetPrimaryFrame(),
+                PresContext()->IsRootPaginatedDocument());
+  if (MOZ_LIKELY(!aContent->GetPrimaryFrame())) {
+    aContent->SetPrimaryFrame(this);
+  }
 
   
   
