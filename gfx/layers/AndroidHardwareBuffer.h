@@ -39,6 +39,23 @@ class AndroidHardwareBuffer
 
   virtual ~AndroidHardwareBuffer();
 
+  
+  
+  
+  
+  
+  
+  UniqueFileHandle SerializeToFileDescriptor() const;
+
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<AndroidHardwareBuffer> DeserializeFromFileDescriptor(
+      UniqueFileHandle&& aFd);
+
   int Lock(uint64_t aUsage, const ARect* aRect, void** aOutVirtualAddress);
   int Unlock();
 
