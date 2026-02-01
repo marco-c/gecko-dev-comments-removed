@@ -55,11 +55,20 @@ class PendingTransactionQueue {
   size_t PendingQueueLengthForWindow(uint64_t windowId) const;
 
   
+  
+  
+  bool PendingQueueIsEmpty() const;
+
+  
   void RemoveEmptyPendingQ();
 
   void PrintDiagnostics(nsCString& log);
 
   size_t UrgentStartQueueLength();
+
+  
+  
+  bool UrgentStartQueueIsEmpty() const;
 
   void PrintPendingQ();
 

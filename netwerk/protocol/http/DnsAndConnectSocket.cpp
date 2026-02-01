@@ -690,8 +690,8 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
     
     
     if (!connTCP || ent->mConnInfo->GetFallbackConnection() ||
-        (ent->mConnInfo->FirstHopSSL() && !ent->UrgentStartQueueLength() &&
-         !ent->PendingQueueLength() && !ent->mConnInfo->UsingConnect())) {
+        (ent->mConnInfo->FirstHopSSL() && ent->UrgentStartQueueIsEmpty() &&
+         ent->PendingQueueIsEmpty() && !ent->mConnInfo->UsingConnect())) {
       LOG(
           ("DnsAndConnectSocket::SetupConn null transaction will "
            "be used to finish SSL handshake on conn %p\n",
