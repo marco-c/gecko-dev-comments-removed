@@ -386,6 +386,12 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
 #endif
 
   
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  mCodecContext->pix_fmt =
+      aHardware ? ffmpeg::FFMPEG_PIX_FMT_NV12 : ffmpeg::FFMPEG_PIX_FMT_YUV420P;
+#else
   mCodecContext->pix_fmt = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
   
   
@@ -402,6 +408,8 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   
   
   
+#endif
+
   mCodecContext->width = static_cast<int>(mConfig.mSize.width);
   mCodecContext->height = static_cast<int>(mConfig.mSize.height);
   
@@ -634,7 +642,7 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegVideoEncoder<
 
   
   
-  mFrame->format = ffmpeg::FFMPEG_PIX_FMT_YUV420P;
+  mFrame->format = mCodecContext->pix_fmt;
   mFrame->width = static_cast<int>(mConfig.mSize.width);
   mFrame->height = static_cast<int>(mConfig.mSize.height);
   mFrame->pict_type =
@@ -654,12 +662,25 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegVideoEncoder<
                                          MakeErrorString(mLib, ret).get())));
   }
 
-  MediaResult rv = ConvertToI420(
-      sample->mImage, mFrame->data[0], mFrame->linesize[0], mFrame->data[1],
-      mFrame->linesize[1], mFrame->data[2], mFrame->linesize[2], mConfig.mSize);
+  nsresult rv;
+  switch (mFrame->format) {
+    case ffmpeg::FFMPEG_PIX_FMT_YUV420P:
+      rv = ConvertToI420(sample->mImage, mFrame->data[0], mFrame->linesize[0],
+                         mFrame->data[1], mFrame->linesize[1], mFrame->data[2],
+                         mFrame->linesize[2], mConfig.mSize);
+      break;
+    case ffmpeg::FFMPEG_PIX_FMT_NV12:
+      rv = ConvertToNV12(sample->mImage, mFrame->data[0], mFrame->linesize[0],
+                         mFrame->data[1], mFrame->linesize[1], mConfig.mSize);
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unhandled ffmpeg format!");
+      rv = NS_ERROR_DOM_MEDIA_FATAL_ERR;
+      break;
+  }
   if (NS_FAILED(rv)) {
     return Err(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                           "failed to convert format to I420"_ns));
+                           "failed to convert format to ffmpeg format"_ns));
   }
 
   
