@@ -60,15 +60,12 @@
 #endif                   
 #include <strings.h>     
 #include <errno.h>
-#include <stdarg.h>
 
 #include "prenv.h"
 #include "mozilla/PodOperations.h"
 #if defined(GP_OS_linux) || defined(GP_OS_android)
 #  include "common/linux/breakpad_getcontext.h"
 #endif
-
-#include <string.h>
 
 using namespace mozilla;
 

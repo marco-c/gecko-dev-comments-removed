@@ -5,8 +5,6 @@
 
 
 
-#include <string.h>
-
 #include "nscore.h"
 #include "prlink.h"
 

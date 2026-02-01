@@ -5,7 +5,6 @@
 
 
 #include <limits>
-#include <string.h>
 
 #include "js/Array.h"  
 #include "js/Exception.h"

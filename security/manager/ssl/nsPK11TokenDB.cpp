@@ -5,8 +5,6 @@
 
 #include "nsPK11TokenDB.h"
 
-#include <string.h>
-
 #include "ScopedNSSTypes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"

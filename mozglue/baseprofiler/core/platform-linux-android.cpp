@@ -60,12 +60,9 @@
 #endif                   
 #include <strings.h>     
 #include <errno.h>
-#include <stdarg.h>
 
 #include "prenv.h"
 #include "mozilla/PodOperations.h"
-
-#include <string.h>
 
 using namespace mozilla;
 

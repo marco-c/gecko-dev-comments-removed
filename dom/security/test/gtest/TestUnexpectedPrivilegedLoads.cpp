@@ -4,9 +4,6 @@
 
 
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "TelemetryFixture.h"
 #include "TelemetryTestHelpers.h"
 #include "core/TelemetryEvent.h"

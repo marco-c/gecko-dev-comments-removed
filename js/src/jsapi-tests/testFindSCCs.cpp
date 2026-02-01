@@ -6,7 +6,6 @@
 
 
 #include <stdarg.h>
-#include <string.h>
 
 #include "gc/FindSCCs.h"
 #include "jsapi-tests/tests.h"

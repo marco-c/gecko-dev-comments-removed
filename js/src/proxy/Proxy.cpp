@@ -9,8 +9,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
-#include <string.h>
-
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  

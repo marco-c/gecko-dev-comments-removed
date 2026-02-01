@@ -4,9 +4,6 @@
 
 
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "gtest/gtest.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/dom/ScriptSettings.h"
