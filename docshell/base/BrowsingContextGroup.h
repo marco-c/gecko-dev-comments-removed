@@ -90,6 +90,12 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
+  bool IsKnownForMessageReader(IPC::MessageReader* aReader);
+
+  
+  
+  
+  
   void AddKeepAlive();
   void RemoveKeepAlive();
 
@@ -259,9 +265,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   uint32_t mKeepAliveCount = 0;
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool mDestroyed = false;
-#endif
 
   
   

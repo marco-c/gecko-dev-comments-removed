@@ -251,6 +251,42 @@ ContentParent* BrowsingContextGroup::GetHostProcess(
   return mHosts.GetWeak(aRemoteType);
 }
 
+bool BrowsingContextGroup::IsKnownForMessageReader(
+    IPC::MessageReader* aReader) {
+  if (!aReader->GetActor()) {
+    aReader->FatalError(
+        "No actor for BrowsingContextGroup::IsKnownForMessageReader");
+    return false;
+  }
+
+  mozilla::ipc::IToplevelProtocol* topActor =
+      aReader->GetActor()->ToplevelProtocol();
+  switch (topActor->GetProtocolId()) {
+    case PInProcessMsgStart:
+      
+      
+      return true;
+
+    case PContentMsgStart:
+      
+      
+      
+      if (topActor->GetSide() == mozilla::ipc::ParentSide && !mDestroyed &&
+          !mSubscribers.Contains(static_cast<ContentParent*>(topActor))) {
+        aReader->FatalError(
+            "Process is not subscribed to this BrowsingContextGroup");
+        return false;
+      }
+      return true;
+
+    default:
+      aReader->FatalError(
+          "Unsupported toplevel actor for "
+          "BrowsingContextGroup::IsKnownForMessageReader");
+      return false;
+  }
+}
+
 void BrowsingContextGroup::UpdateToplevelsSuspendedIfNeeded() {
   if (!StaticPrefs::dom_suspend_inactive_enabled()) {
     return;
@@ -296,8 +332,8 @@ void BrowsingContextGroup::Destroy() {
                              !sBrowsingContextGroups->Contains(Id()) ||
                                  *sBrowsingContextGroups->Lookup(Id()) != this);
   }
-  mDestroyed = true;
 #endif
+  mDestroyed = true;
 
   
   
