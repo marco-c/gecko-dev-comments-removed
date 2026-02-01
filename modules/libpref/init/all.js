@@ -148,6 +148,22 @@ pref("dom.text-recognition.enabled", true);
 
 
 
+pref("editor.texteditor.inputevent.hack.no_dispatch_before_compositionend", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_before_compositionend", "");
+
+pref("editor.texteditor.inputevent.hack.no_dispatch_before_compositionend.addl", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_before_compositionend.addl", "");
+
+
+
+pref("editor.texteditor.inputevent.hack.no_dispatch_after_compositionend", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend", "");
+
+pref("editor.texteditor.inputevent.hack.no_dispatch_after_compositionend.addl", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend.addl", "");
+
+
+
 pref("browser.sessionhistory.max_total_viewers", -1);
 
 

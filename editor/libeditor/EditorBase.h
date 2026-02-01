@@ -2518,6 +2518,18 @@ class EditorBase : public nsIEditor,
   
 
 
+
+  [[nodiscard]] bool CanDispatchInputEventBeforeCompositionEnd() const;
+
+  
+
+
+
+  [[nodiscard]] bool CanDispatchInputEventAfterCompositionEnd() const;
+
+  
+
+
   MOZ_CAN_RUN_SCRIPT void DoAfterDoTransaction(nsITransaction* aTransaction);
 
   
