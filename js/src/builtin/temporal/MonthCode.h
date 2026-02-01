@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
 
+#include <compare>
 #include <initializer_list>
 #include <stddef.h>
 #include <stdint.h>
@@ -89,32 +90,14 @@ class MonthCode final {
 
   constexpr bool isLeapMonth() const { return code_ >= Code::M01L; }
 
-  constexpr bool operator==(const MonthCode& other) const {
-    return other.code_ == code_;
-  }
-
-  constexpr bool operator!=(const MonthCode& other) const {
-    return !(*this == other);
-  }
-
-  constexpr bool operator<(const MonthCode& other) const {
+  constexpr auto operator<=>(const MonthCode& other) const {
     if (ordinal() != other.ordinal()) {
-      return ordinal() < other.ordinal();
+      return ordinal() <=> other.ordinal();
     }
-    return code_ < other.code_;
+    return code_ <=> other.code_;
   }
 
-  constexpr bool operator>(const MonthCode& other) const {
-    return other < *this;
-  }
-
-  constexpr bool operator<=(const MonthCode& other) const {
-    return !(other < *this);
-  }
-
-  constexpr bool operator>=(const MonthCode& other) const {
-    return !(*this < other);
-  }
+  constexpr bool operator==(const MonthCode&) const = default;
 
   constexpr explicit operator std::string_view() const {
     constexpr const char* name =
@@ -148,6 +131,9 @@ class MonthCode final {
 };
 
 class MonthCodes final {
+  
+  
+  
   mozilla::EnumSet<MonthCode::Code> monthCodes_{
       MonthCode::Code::M01, MonthCode::Code::M02, MonthCode::Code::M03,
       MonthCode::Code::M04, MonthCode::Code::M05, MonthCode::Code::M06,
@@ -162,11 +148,11 @@ class MonthCodes final {
     }
   }
 
-  bool contains(MonthCode monthCode) const {
+  constexpr bool contains(MonthCode monthCode) const {
     return monthCodes_.contains(monthCode.code());
   }
 
-  bool contains(const MonthCodes& monthCodes) const {
+  constexpr bool contains(const MonthCodes& monthCodes) const {
     return monthCodes_.contains(monthCodes.monthCodes_);
   }
 };
@@ -189,11 +175,10 @@ class MonthCodes final {
 
 
 
-
-
-
 namespace monthcodes {
+
 inline constexpr MonthCodes ISO8601 = {};
+
 
 inline constexpr MonthCodes ChineseOrDangi = {
     
@@ -211,10 +196,12 @@ inline constexpr MonthCodes ChineseOrDangi = {
     MonthCode{12,  true},
 };
 
+
 inline constexpr MonthCodes CopticOrEthiopian = {
     
     MonthCode{13},
 };
+
 
 inline constexpr MonthCodes Hebrew = {
     
@@ -228,9 +215,7 @@ constexpr auto& CalendarMonthCodes(CalendarId id) {
     case CalendarId::Buddhist:
     case CalendarId::Gregorian:
     case CalendarId::Indian:
-    case CalendarId::Islamic:
     case CalendarId::IslamicCivil:
-    case CalendarId::IslamicRGSA:
     case CalendarId::IslamicTabular:
     case CalendarId::IslamicUmmAlQura:
     case CalendarId::Persian:
@@ -253,6 +238,13 @@ constexpr auto& CalendarMonthCodes(CalendarId id) {
   MOZ_CRASH("invalid calendar id");
 }
 
+
+
+
+constexpr bool IsValidMonthCodeForCalendar(CalendarId id, MonthCode monthCode) {
+  return CalendarMonthCodes(id).contains(monthCode);
+}
+
 constexpr bool CalendarHasLeapMonths(CalendarId id) {
   switch (id) {
     case CalendarId::ISO8601:
@@ -262,9 +254,7 @@ constexpr bool CalendarHasLeapMonths(CalendarId id) {
     case CalendarId::EthiopianAmeteAlem:
     case CalendarId::Gregorian:
     case CalendarId::Indian:
-    case CalendarId::Islamic:
     case CalendarId::IslamicCivil:
-    case CalendarId::IslamicRGSA:
     case CalendarId::IslamicTabular:
     case CalendarId::IslamicUmmAlQura:
     case CalendarId::Japanese:
@@ -289,9 +279,7 @@ constexpr bool CalendarHasEpagomenalMonths(CalendarId id) {
     case CalendarId::Gregorian:
     case CalendarId::Hebrew:
     case CalendarId::Indian:
-    case CalendarId::Islamic:
     case CalendarId::IslamicCivil:
-    case CalendarId::IslamicRGSA:
     case CalendarId::IslamicTabular:
     case CalendarId::IslamicUmmAlQura:
     case CalendarId::Japanese:
@@ -344,9 +332,7 @@ constexpr std::pair<int32_t, int32_t> CalendarDaysInMonth(CalendarId id) {
     case CalendarId::Chinese:
     case CalendarId::Dangi:
     case CalendarId::Hebrew:
-    case CalendarId::Islamic:
     case CalendarId::IslamicCivil:
-    case CalendarId::IslamicRGSA:
     case CalendarId::IslamicTabular:
     case CalendarId::IslamicUmmAlQura:
       return {29, 30};
@@ -450,8 +436,6 @@ constexpr std::pair<int32_t, int32_t> CalendarDaysInMonth(CalendarId id,
     }
 
     
-    case CalendarId::Islamic:
-    case CalendarId::IslamicRGSA:
     case CalendarId::IslamicUmmAlQura:
       return {29, 30};
 
