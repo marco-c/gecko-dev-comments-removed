@@ -746,10 +746,6 @@ pref("browser.urlbar.amp.featureGate", false);
 
 
 
-pref("browser.urlbar.amp.minKeywordLength", 0);
-
-
-
 pref("browser.urlbar.suggest.amp", true);
 
 
