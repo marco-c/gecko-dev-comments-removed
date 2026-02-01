@@ -74,6 +74,9 @@ support-files = ["file_pdfjs_jp2_image.pdf"]
 
 ["browser_pdfjs_js.js"]
 support-files = ["file_pdfjs_js.pdf"]
+skip-if = [
+  "tsan",
+]
 
 ["browser_pdfjs_load_telemetry.js"]
 
@@ -121,6 +124,11 @@ support-files = [
 
 ["browser_pdfjs_stamp_telemetry.js"]
 support-files = ["moz.png"]
+
+["browser_pdfjs_tagged_telemetry.js"]
+support-files = [
+  "file_pdfjs_tagged.pdf",
+]
 
 ["browser_pdfjs_toolbar_density.js"]
 
