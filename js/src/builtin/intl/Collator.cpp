@@ -11,7 +11,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/Locale.h"
-#include "mozilla/Span.h"
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
@@ -182,63 +181,6 @@ void js::CollatorObject::finalize(JS::GCContext* gcx, JSObject* obj) {
     intl::RemoveICUCellMemory(gcx, obj, CollatorObject::EstimatedMemoryUse);
     delete coll;
   }
-}
-
-bool js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-  MOZ_ASSERT(args[0].isString());
-
-  UniqueChars locale = intl::EncodeLocale(cx, args[0].toString());
-  if (!locale) {
-    return false;
-  }
-  auto keywords =
-      mozilla::intl::Collator::GetBcp47KeywordValuesForLocale(locale.get());
-  if (keywords.isErr()) {
-    ReportInternalError(cx, keywords.unwrapErr());
-    return false;
-  }
-
-  RootedObject collations(cx, NewDenseEmptyArray(cx));
-  if (!collations) {
-    return false;
-  }
-
-  
-  
-  if (!NewbornArrayPush(cx, collations, NullValue())) {
-    return false;
-  }
-
-  for (auto result : keywords.unwrap()) {
-    if (result.isErr()) {
-      ReportInternalError(cx);
-      return false;
-    }
-    mozilla::Span<const char> collation = result.unwrap();
-
-    
-    
-    
-    
-    static constexpr auto standard = mozilla::MakeStringSpan("standard");
-    static constexpr auto search = mozilla::MakeStringSpan("search");
-    if (collation == standard || collation == search) {
-      continue;
-    }
-
-    JSString* jscollation = NewStringCopy<CanGC>(cx, collation);
-    if (!jscollation) {
-      return false;
-    }
-    if (!NewbornArrayPush(cx, collations, StringValue(jscollation))) {
-      return false;
-    }
-  }
-
-  args.rval().setObject(*collations);
-  return true;
 }
 
 

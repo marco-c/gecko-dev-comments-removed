@@ -2667,7 +2667,7 @@ bool js::StringLastIndexOf(JSContext* cx, HandleString string,
 
 
 
-bool js::str_startsWith(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_startsWith(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "startsWith");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2742,7 +2742,7 @@ bool js::StringStartsWith(JSContext* cx, HandleString string,
 
 
 
-bool js::str_endsWith(JSContext* cx, unsigned argc, Value* vp) {
+static bool str_endsWith(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "endsWith");
   CallArgs args = CallArgsFromVp(argc, vp);
 

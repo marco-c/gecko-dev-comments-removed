@@ -1,8 +1,5 @@
 
 
-const startOfUnicodeExtensions = getSelfHostedValue("startOfUnicodeExtensions");
-const endOfUnicodeExtensions = getSelfHostedValue("endOfUnicodeExtensions");
-
 const testcases = [
     
     { locale: "en", start: -1, end: 0 },
@@ -63,11 +60,6 @@ const testcases = [
 for (const {locale, start, end} of testcases) {
     
     assertEqArray(Intl.getCanonicalLocales(locale), [locale]);
-
-    assertEq(startOfUnicodeExtensions(locale), start);
-
-    if (start >= 0)
-        assertEq(endOfUnicodeExtensions(locale, start), end);
 }
 
 if (typeof reportCompare === "function")

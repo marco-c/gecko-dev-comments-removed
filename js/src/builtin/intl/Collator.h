@@ -64,17 +64,6 @@ class CollatorObject : public NativeObject {
 
 
 
-[[nodiscard]] extern bool intl_availableCollations(JSContext* cx, unsigned argc,
-                                                   JS::Value* vp);
-
-
-
-
-
-
-
-
-
 
 
 [[nodiscard]] extern bool intl_CompareStrings(JSContext* cx, unsigned argc,

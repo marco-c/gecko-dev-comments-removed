@@ -72,23 +72,6 @@ extern const JSClass IntlClass;
 
 
 
-[[nodiscard]] extern bool intl_LookupMatcher(JSContext* cx, unsigned argc,
-                                             JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 [[nodiscard]] extern bool intl_ResolveLocale(JSContext* cx, unsigned argc,
                                              JS::Value* vp);
 }  
