@@ -5,7 +5,6 @@
 
 
 use crate::config::{buildid, Config};
-use glean::{ClientInfoMetrics, Configuration, ConfigurationBuilder};
 
 const APP_ID: &str = if cfg!(mock) {
     "firefox.crashreporter.mock"
@@ -13,33 +12,35 @@ const APP_ID: &str = if cfg!(mock) {
     "firefox.crashreporter"
 };
 const APP_DISPLAY_VERSION: &str = env!("CARGO_PKG_VERSION");
-const TELEMETRY_SERVER: &str = if cfg!(mock) {
-    "https://incoming.glean.example.com"
-} else {
-    "https://incoming.telemetry.mozilla.org"
-};
 
 
 
 
 #[cfg_attr(test, allow(dead_code))]
-pub fn init(cfg: &Config) {
-    
-    
-    
-    
-    _ = &*crash;
-
-    glean::initialize(config(cfg), client_info_metrics(cfg));
+pub fn init(cfg: &Config) -> std::io::Result<crashping::GleanHandle> {
+    init_glean(cfg).initialize()
 }
 
-fn config(cfg: &Config) -> Configuration {
-    ConfigurationBuilder::new(true, glean_data_dir(cfg), APP_ID)
-        .with_server_endpoint(TELEMETRY_SERVER)
-        .with_use_core_mps(false)
-        .with_internal_pings(false)
-        .with_uploader(uploader::Uploader::new())
-        .build()
+fn init_glean(cfg: &Config) -> crashping::InitGlean {
+    let mut init_glean = crashping::InitGlean::new(
+        glean_data_dir(cfg),
+        APP_ID,
+        crashping::ClientInfoMetrics {
+            app_build: buildid().unwrap_or(APP_DISPLAY_VERSION).into(),
+            app_display_version: APP_DISPLAY_VERSION.into(),
+            channel: None,
+            locale: cfg.strings.as_ref().map(|s| s.locale()),
+        },
+    );
+
+    init_glean.configuration.uploader = Some(Box::new(uploader::Uploader::new()));
+
+    if cfg!(mock) {
+        init_glean.configuration.server_endpoint =
+            Some("https://incoming.glean.example.com".to_owned());
+    }
+
+    init_glean
 }
 
 #[cfg(not(mock))]
@@ -51,15 +52,6 @@ fn glean_data_dir(cfg: &Config) -> ::std::path::PathBuf {
 fn glean_data_dir(_cfg: &Config) -> ::std::path::PathBuf {
     
     ::std::env::temp_dir().join("crashreporter-mock/glean")
-}
-
-fn client_info_metrics(cfg: &Config) -> ClientInfoMetrics {
-    glean::ClientInfoMetrics {
-        app_build: buildid().unwrap_or(APP_DISPLAY_VERSION).into(),
-        app_display_version: APP_DISPLAY_VERSION.into(),
-        channel: None,
-        locale: cfg.strings.as_ref().map(|s| s.locale()),
-    }
 }
 
 mod uploader {
@@ -132,13 +124,7 @@ mod test {
 
             let lock = GLOBAL_LOCK.lock().unwrap();
 
-            
-            
-            
-            
-            _ = &*crash;
-
-            glean::test_reset_glean(config(cfg), client_info_metrics(cfg), true);
+            init_glean(cfg).test_reset_glean(true);
             GleanTest { _guard: lock }
         }
     }
@@ -149,7 +135,8 @@ mod test {
             
             glean::shutdown();
             glean::test_reset_glean(
-                ConfigurationBuilder::new(false, ::std::env::temp_dir(), "none.none").build(),
+                glean::ConfigurationBuilder::new(false, ::std::env::temp_dir(), "none.none")
+                    .build(),
                 glean::ClientInfoMetrics::unknown(),
                 true,
             );
@@ -159,6 +146,3 @@ mod test {
 
 #[cfg(test)]
 pub use test::test_init;
-
-
-include!(env!("GLEAN_METRICS_FILE"));

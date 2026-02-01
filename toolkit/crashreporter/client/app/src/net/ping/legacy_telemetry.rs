@@ -103,7 +103,9 @@ impl<'a> Ping<'a> {
             .map(|map| {
                 map.iter()
                     .filter_map(|(k, v)| {
-                        annotations::send_in_ping(k)
+                        
+                        
+                        (annotations::send_in_ping(k) && k != "MinidumpSha256Hash")
                             .then(|| k.as_str())
                             .zip(v.as_str())
                     })
