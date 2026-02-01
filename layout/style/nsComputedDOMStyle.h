@@ -260,6 +260,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   already_AddRefed<CSSValue> DoGetTransform();
+  already_AddRefed<CSSValue> DoGetWebkitTransform();
   already_AddRefed<CSSValue> DoGetTransformOrigin();
   already_AddRefed<CSSValue> DoGetPerspectiveOrigin();
 
