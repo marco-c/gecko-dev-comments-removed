@@ -397,7 +397,7 @@ namespace nsHttp {
 
 #define HTTP_ATOM(_name, _value) \
   inline constexpr nsHttpAtomLiteral _name(_value);
-#include "nsHttpAtomList.h"
+#include "nsHttpAtomList.inc"
 #undef HTTP_ATOM
 }  
 
