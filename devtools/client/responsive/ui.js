@@ -142,8 +142,13 @@ class ResponsiveUI {
     this.hideBrowserUI();
 
     
+    
+    
+    
+    this.tab.addEventListener("TabBrowserDiscarded", this);
     this.tab.addEventListener("TabClose", this);
     this.browserWindow.addEventListener("unload", this);
+
     this.rdmFrame.contentWindow.addEventListener("message", this);
 
     this.tab.linkedBrowser.enterResponsiveMode();
@@ -296,7 +301,8 @@ class ResponsiveUI {
     const isTabDestroyed = !this.tab.linkedBrowser;
     const isWindowClosing = options?.reason === "unload" || isTabDestroyed;
     const isTabContentDestroying =
-      isWindowClosing || options?.reason === "TabClose";
+      isWindowClosing ||
+      ["TabBrowserDiscarded", "TabClose"].includes(options?.reason);
 
     
     if (!isTabContentDestroying) {
@@ -316,18 +322,26 @@ class ResponsiveUI {
       await this.updateNetworkThrottling();
     }
 
+    this.tab.removeEventListener("TabBrowserDiscarded", this);
     this.tab.removeEventListener("TabClose", this);
     this.browserWindow.removeEventListener("unload", this);
-    this.tab.linkedBrowser.leaveResponsiveMode();
+
+    
+    
+    
+    if (this.tab.linkedBrowser.browsingContext) {
+      this.tab.linkedBrowser.leaveResponsiveMode();
+    }
 
     this.browserWindow.removeEventListener("FullZoomChange", this);
-    this.rdmFrame.contentWindow.removeEventListener("message", this);
+    
+    this.rdmFrame.contentWindow?.removeEventListener("message", this);
 
     
     this.resizeToolbarObserver.unobserve(this.browserStackEl);
 
     
-    this.rdmFrame.contentWindow.destroy();
+    this.rdmFrame.contentWindow?.destroy();
 
     this.rdmFrame.remove();
 
@@ -467,6 +481,7 @@ class ResponsiveUI {
         this.updateViewportSize(width, height);
         break;
       }
+      case "TabBrowserDiscarded":
       case "TabClose":
       case "unload":
         this.manager.closeIfNeeded(browserWindow, tab, {
