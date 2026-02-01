@@ -91,17 +91,16 @@ class ScreamV2 {
   
   
   DataSize ref_window_i_ = DataSize::Bytes(1);
-  Timestamp last_ref_window_i_update_ = Timestamp::MinusInfinity();
+  
+  
+  bool allow_ref_window_i_update_ = true;
 
   
   
   double l4s_alpha_ = 0.0;
-  Timestamp last_l4s_alpha_update_ = Timestamp::MinusInfinity();
   Timestamp last_ce_mark_detected_time_ = Timestamp::MinusInfinity();
 
   
-  int data_units_delivered_this_rtt_ = 0;
-  int data_units_marked_this_rtt_ = 0;
   Timestamp last_data_in_flight_update_ = Timestamp::MinusInfinity();
   DataSize max_data_in_flight_this_rtt_ = DataSize::Zero();
   DataSize max_data_in_flight_prev_rtt_ = DataSize::Zero();

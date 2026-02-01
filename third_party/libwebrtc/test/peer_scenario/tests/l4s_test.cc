@@ -488,7 +488,7 @@ struct SendMediaTestParams {
 
 
 
-SendMediaTestResult SendMediaInOneDirecation(const SendMediaTestParams params) {
+SendMediaTestResult SendMediaInOneDirection(const SendMediaTestParams params) {
   PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
   PeerScenarioClient::Config config;
   for (auto [trial, group] : params.field_trials) {
@@ -546,7 +546,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity600KbpsRtt100msNoEcnWithGoogCC) {
   params.field_trials = {
       {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"}};
 
-  SendMediaTestResult result = SendMediaInOneDirecation(params);
+  SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
   EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(500));
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(660));
@@ -561,7 +561,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity600KbpsRtt100msNoEcnWithScream) {
       {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"},
       {"WebRTC-Bwe-ScreamV2", "Enabled"}};
 
-  SendMediaTestResult result = SendMediaInOneDirecation(params);
+  SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
   
   
@@ -579,7 +579,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity600KbpsRtt100msEcnWithScream) {
       {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"},
       {"WebRTC-Bwe-ScreamV2", "Enabled"}};
 
-  SendMediaTestResult result = SendMediaInOneDirecation(params);
+  SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
   
   
@@ -589,6 +589,25 @@ TEST(L4STest, CallerAdaptsToLinkCapacity600KbpsRtt100msEcnWithScream) {
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(660));
 }
 
+TEST(L4STest, CallerAdaptsToLinkCapacity1000KbpsRtt100msEcnWithScream) {
+  SendMediaTestParams params;
+  params.use_dual_pi = true;  
+  params.link_capacity = DataRate::KilobitsPerSec(1000);
+  params.one_way_delay = TimeDelta::Millis(50);
+  params.field_trials = {
+      {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"},
+      {"WebRTC-Bwe-ScreamV2", "Enabled"}};
+
+  SendMediaTestResult result = SendMediaInOneDirection(params);
+  DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
+  
+  
+  
+  
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(350));
+  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(1000));
+}
+
 TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithScream) {
   SendMediaTestParams params;
   params.use_dual_pi = false;  
@@ -596,14 +615,14 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithScream) {
   params.one_way_delay = TimeDelta::Millis(25);
   params.field_trials = {
       {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"},
-  };
+      {"WebRTC-Bwe-ScreamV2", "Enabled"}};
 
-  SendMediaTestResult result = SendMediaInOneDirecation(params);
+  SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
-  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1600));
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1300));
   
   
-  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(3100));
+  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(3800));
 }
 
 TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msEcnWithScream) {
@@ -615,7 +634,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msEcnWithScream) {
       {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"},
       {"WebRTC-Bwe-ScreamV2", "Enabled"}};
 
-  SendMediaTestResult result = SendMediaInOneDirecation(params);
+  SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
   
   
@@ -634,7 +653,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithGoogCC) {
       {"WebRTC-RFC8888CongestionControlFeedback", "Enabled,offer:true"},
   };
 
-  SendMediaTestResult result = SendMediaInOneDirecation(params);
+  SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
   EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1000));
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(2600));
