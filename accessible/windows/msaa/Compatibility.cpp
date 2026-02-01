@@ -251,6 +251,12 @@ bool Compatibility::IsUiaEnabled() {
     return *sIsNvdaVersionSupported;
   }
   if (IsVisperoShared()) {
+    if (!::GetModuleHandleW(L"firefox.exe")) {
+      
+      
+      
+      return false;
+    }
     
     static Maybe<bool> sIsVisperoVersionSupported;
     if (sIsVisperoVersionSupported.isNothing()) {
