@@ -4128,6 +4128,13 @@ pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th,sh
 pref("privacy.query_stripping.listService.logLevel", "Error");
 
 
+pref("extensions.webcompat.enable_interventions", true);
+
+pref("extensions.webcompat.enable_shims", true);
+
+pref("extensions.webcompat.smartblockEmbeds.enabled", true);
+
+
 pref("privacy.fingerprintingProtection.WebCompatService.logLevel", "Error");
 
 pref("privacy.query_stripping.strip_on_share.enableTestMode", false);

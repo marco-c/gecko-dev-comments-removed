@@ -1,8 +1,14 @@
 "use strict";
 
+const EnableAllPref = "extensions.webcompat.enable_interventions";
+
 add_task(async function test_about_compat_loads_properly() {
   
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
+
+  
+  Services.prefs.setBoolPref(EnableAllPref, false);
+  await WebCompatExtension.interventionsSettled();
 
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -17,23 +23,47 @@ add_task(async function test_about_compat_loads_properly() {
       "Expected origin of about:compat"
     );
 
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector("#interventions tr[data-id]"),
-      "interventions are listed"
-    );
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector("#smartblock tr[data-id]"),
-      "SmartBlock shims are listed"
-    );
-    ok(true, "Interventions are listed");
+    const disabledMsg = "[data-l10n-id=text-disabled-in-about-config]";
+
+    content.verifyAllInterventionsOff = async function () {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector(disabledMsg),
+        "interventions disabled by global pref message is shown"
+      );
+      ok(true, "interventions disabled by global pref message is shown");
+    };
+
+    content.verifyAllInterventionsOn = async function () {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector("#interventions tr[data-id]"),
+        "interventions are listed"
+      );
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector("#smartblock tr[data-id]"),
+        "SmartBlock shims are listed"
+      );
+      ok(true, "Interventions and shims are listed");
+      ok(
+        !content.document.querySelector(disabledMsg),
+        "interventions disabled in about:config message is gone"
+      );
+    };
+
+    await content.verifyAllInterventionsOff();
+  });
+
+  
+  Services.prefs.setBoolPref(EnableAllPref, true);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    await content.verifyAllInterventionsOn();
 
     
     
     const bgWin = content.wrappedJSObject.browser.extension.getBackgroundPage();
-    const interventionWithContentScripts =
-      bgWin.interventions._availableInterventions.find(
-        i => i.active && i.interventions?.find(v => v.content_scripts)
-      );
+    const interventionWithContentScripts = bgWin.interventions
+      .getAvailableInterventions()
+      .find(i => i.active && i.interventions?.find(v => v.content_scripts));
     const shimWithContentScripts = [...bgWin.shims.shims.values()].find(
       s => s._contentScriptRegistrations.length
     );
@@ -119,6 +149,19 @@ add_task(async function test_about_compat_loads_properly() {
       shimRCSId,
       "shim"
     );
+  });
+
+  
+  Services.prefs.setBoolPref(EnableAllPref, false);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    await content.verifyAllInterventionsOff();
+  });
+
+  Services.prefs.setBoolPref(EnableAllPref, true);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    await content.verifyAllInterventionsOn();
   });
 
   await BrowserTestUtils.removeTab(tab);
