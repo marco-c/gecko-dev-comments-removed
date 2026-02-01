@@ -77,6 +77,19 @@ class ScreamV2 {
     
     
     FieldTrialParameter<TimeDelta> virtual_rtt;
+
+    
+    
+    
+    
+    FieldTrialParameter<double> backoff_scale_factor_close_to_ref_window_i;
+
+    FieldTrialParameter<int> number_of_rtts_between_ref_window_i_updates;
+
+    
+    
+    FieldTrialParameter<int>
+        number_of_rtts_between_reset_ref_window_i_on_congestion;
   };
 
   void UpdateL4SAlpha(const TransportPacketsFeedback& msg);
@@ -84,16 +97,19 @@ class ScreamV2 {
 
   
   double ref_window_mss_ratio() const {
-    return ref_window_ / params_.max_segment_size.Get();
+    return params_.max_segment_size.Get() / ref_window_;
   }
 
   
   
   
   double ref_window_scale_factor_close_to_ref_window_i() const {
-    double scl = ref_window_ > ref_window_i_
-                     ? 8.0 * (ref_window_ - ref_window_i_) / ref_window_i_
-                     : 8.0 * (ref_window_i_ - ref_window_) / ref_window_i_;
+    const double scale_factor =
+        params_.backoff_scale_factor_close_to_ref_window_i.Get();
+    double scl =
+        ref_window_ > ref_window_i_
+            ? scale_factor * (ref_window_ - ref_window_i_) / ref_window_i_
+            : scale_factor * (ref_window_i_ - ref_window_) / ref_window_i_;
     return std::clamp(scl * scl, 0.1, 1.0);
   }
 
@@ -116,7 +132,9 @@ class ScreamV2 {
   DataSize ref_window_;
   
   
+  
   DataSize ref_window_i_ = DataSize::Bytes(1);
+  Timestamp last_ref_window_i_update_ = Timestamp::MinusInfinity();
 
   
   
