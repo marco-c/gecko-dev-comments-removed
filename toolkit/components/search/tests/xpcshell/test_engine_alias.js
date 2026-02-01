@@ -22,7 +22,7 @@ add_task(async function upgrade_with_configuration_change_test() {
 
   
   
-  SearchService.wrappedJSObject.reset();
+  SearchService.reset();
   await SearchService.init();
 
   engine = await SearchService.getEngineByAlias("testalias");

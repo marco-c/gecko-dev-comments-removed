@@ -30,10 +30,8 @@ add_setup(async function () {
   
   
   
-  oldRemoveEngineFunc = SearchService.wrappedJSObject.removeEngine.bind(
-    SearchService.wrappedJSObject
-  );
-  SearchService.wrappedJSObject.removeEngine = () => {};
+  oldRemoveEngineFunc = SearchService.removeEngine.bind(SearchService);
+  SearchService.removeEngine = () => {};
 
   registerCleanupFunction(async () => {
     await extensionPostData.unload();

@@ -71,7 +71,7 @@ async function setupPolicyEngineWithJson(json, customSchema) {
 
 
 async function setupPolicyEngineWithJsonWithSearch(json, customSchema) {
-  SearchService.wrappedJSObject.reset();
+  SearchService.reset();
   if (typeof json != "object") {
     let filePath = do_get_file(json ? json : "non-existing-file.json").path;
     await EnterprisePolicyTesting.setupPolicyEngineWithJson(

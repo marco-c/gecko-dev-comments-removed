@@ -60,7 +60,7 @@ add_task(async function test_startup_with_new_addon() {
 });
 
 add_task(async function test_startup_with_existing_addon_from_settings() {
-  SearchService.wrappedJSObject.reset();
+  SearchService.reset();
 
   let settingsWritten = promiseAfterSettings();
   await SearchService.init();
@@ -84,7 +84,7 @@ add_task(
     
     
 
-    SearchService.wrappedJSObject.reset();
+    SearchService.reset();
 
     await SearchService.addEnginesFromExtension(extension.extension);
 

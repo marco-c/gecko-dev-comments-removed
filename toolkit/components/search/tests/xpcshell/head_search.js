@@ -476,7 +476,7 @@ async function assertGleanDefaultEngine(expected) {
 
 
 async function setupPolicyEngineWithJson(policy) {
-  SearchService.wrappedJSObject.reset();
+  SearchService.reset();
 
   await this.EnterprisePolicyTesting.setupPolicyEngineWithJson(policy);
 

@@ -21,8 +21,8 @@ add_setup(async function () {
   
   
   
-  let oldFunc = SearchService.wrappedJSObject.addEnginesFromExtension;
-  SearchService.wrappedJSObject.addEnginesFromExtension = () => {};
+  let oldFunc = SearchService.addEnginesFromExtension;
+  SearchService.addEnginesFromExtension = () => {};
 
   
   await SearchTestUtils.installSearchExtension({
@@ -31,7 +31,7 @@ add_setup(async function () {
     search_url: "https://example.com/",
   });
 
-  SearchService.wrappedJSObject.addEnginesFromExtension = oldFunc;
+  SearchService.addEnginesFromExtension = oldFunc;
 });
 
 add_task(async function test_migrateLegacyEngineDifferentName() {
