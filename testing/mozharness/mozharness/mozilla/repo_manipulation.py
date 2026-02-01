@@ -2,16 +2,9 @@
 
 
 
-import six
-
-
-if six.PY2:
-    from ConfigParser import ConfigParser
-else:
-    from configparser import ConfigParser
-
 import json
 import os
+from configparser import ConfigParser
 
 from mozharness.base.errors import HgErrorList
 from mozharness.base.log import FATAL, INFO

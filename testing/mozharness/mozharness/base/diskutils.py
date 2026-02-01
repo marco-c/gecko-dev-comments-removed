@@ -32,9 +32,6 @@ except DiskutilsError as e:
 import ctypes
 import logging
 import os
-import sys
-
-from six import string_types
 
 from mozharness.base.log import INFO, numeric_log_level
 
@@ -126,11 +123,7 @@ class DiskSize:
         dummy = ctypes.c_ulonglong()  
         total = ctypes.c_ulonglong()  
         free = ctypes.c_ulonglong()  
-        
-        
-        called_function = ctypes.windll.kernel32.GetDiskFreeSpaceExA
-        if isinstance(path, string_types) or sys.version_info >= (3,):
-            called_function = ctypes.windll.kernel32.GetDiskFreeSpaceExW
+        called_function = ctypes.windll.kernel32.GetDiskFreeSpaceExW
         
         if (
             called_function(
