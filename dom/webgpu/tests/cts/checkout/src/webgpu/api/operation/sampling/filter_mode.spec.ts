@@ -49,7 +49,7 @@ class FilterModeTest extends AllFeaturesMaxLimitsGPUTest {
     instanceCount: number
   ) {
     let renderTargetFormat = format;
-    if (!isTextureFormatColorRenderable(this.device, format)) {
+    if (!isTextureFormatColorRenderable(this.device.features, format)) {
       
       
       renderTargetFormat = 'rgba32float';
@@ -953,7 +953,7 @@ g.test('mipmapFilter')
     t.skipIfTextureFormatNotSupported(format);
     t.skipIfTextureFormatNotFilterable(format);
     let renderTargetFormat = format;
-    if (!isTextureFormatColorRenderable(t.device, format)) {
+    if (!isTextureFormatColorRenderable(t.device.features, format)) {
       
       
       renderTargetFormat = 'rgba32float';

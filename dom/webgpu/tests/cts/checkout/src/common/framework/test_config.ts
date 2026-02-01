@@ -88,9 +88,17 @@ export const globalTestConfig: TestConfig = {
 
 
 
-export function isCompatibilityDevice(device: GPUDevice) {
+export function isCompatibilityMode(features: GPUSupportedFeatures) {
   if (globalTestConfig.compatibility) {
-    assert(!hasFeature(device.features, 'core-features-and-limits'));
+    assert(!hasFeature(features, 'core-features-and-limits'));
   }
   return globalTestConfig.compatibility;
+}
+
+
+
+
+
+export function isCompatibilityDevice(device: GPUDevice) {
+  return isCompatibilityMode(device.features);
 }

@@ -88,9 +88,17 @@ export const globalTestConfig = {
 
 
 
-export function isCompatibilityDevice(device) {
+export function isCompatibilityMode(features) {
   if (globalTestConfig.compatibility) {
-    assert(!hasFeature(device.features, 'core-features-and-limits'));
+    assert(!hasFeature(features, 'core-features-and-limits'));
   }
   return globalTestConfig.compatibility;
+}
+
+
+
+
+
+export function isCompatibilityDevice(device) {
+  return isCompatibilityMode(device.features);
 }
