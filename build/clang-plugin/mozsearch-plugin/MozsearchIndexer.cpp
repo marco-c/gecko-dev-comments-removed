@@ -326,6 +326,7 @@ private:
     AutoSetContext *Prev;
     NamedDecl *Decl;
     bool VisitImplicit;
+    unsigned nextLambdaIndex = 1;
   };
   AutoSetContext *CurDeclContext;
 
@@ -492,7 +493,7 @@ private:
   
   std::string getQualifiedName(const NamedDecl *D) {
     const DeclContext *Ctx = D->getDeclContext();
-    if (Ctx->isFunctionOrMethod()) {
+    if (Ctx->isFunctionOrMethod() && !dyn_cast<CXXRecordDecl>(D)) {
       return D->getQualifiedNameAsString();
     }
 
@@ -504,13 +505,26 @@ private:
       Ctx = Ctx->getParent();
     }
 
-    std::string Result;
-
-    std::reverse(Contexts.begin(), Contexts.end());
+    std::vector<std::string> ReversedComponents;
+    if (D->getDeclName()) {
+      ReversedComponents.push_back(D->getNameAsString());
+    } else {
+      auto cxxDecl = dyn_cast<CXXRecordDecl>(D);
+      if (cxxDecl && cxxDecl->isLambda()) {
+        char index[64];
+        sprintf(index, "%u", cxxDecl->getLambdaIndexInContext());
+        std::string Component = "(lambda class";
+        Component += index;
+        Component += ")";
+        ReversedComponents.push_back(Component);
+      } else {
+        ReversedComponents.push_back("(anonymous)");
+      }
+    }
 
     for (const DeclContext *DC : Contexts) {
       if (const auto *Spec = dyn_cast<ClassTemplateSpecializationDecl>(DC)) {
-        Result += Spec->getNameAsString();
+        std::string Component = Spec->getNameAsString();
 
         if (Spec->getSpecializationKind() == TSK_ExplicitSpecialization) {
           std::string Backing;
@@ -518,40 +532,68 @@ private:
           const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
           printTemplateArgumentList(Stream, TemplateArgs.asArray(),
                                     PrintingPolicy(CI.getLangOpts()));
-          Result += Stream.str();
+          Component += Stream.str();
         }
+
+        ReversedComponents.push_back(Component);
       } else if (const auto *Nd = dyn_cast<NamespaceDecl>(DC)) {
         if (Nd->isAnonymousNamespace() || Nd->isInline()) {
           continue;
         }
-        Result += Nd->getNameAsString();
+        ReversedComponents.push_back(Nd->getNameAsString());
       } else if (const auto *Rd = dyn_cast<RecordDecl>(DC)) {
-        if (!Rd->getIdentifier()) {
-          Result += "(anonymous)";
+        auto cxxDecl = dyn_cast<CXXRecordDecl>(Rd);
+        if (cxxDecl && cxxDecl->isLambda()) {
+          
+          
+          
+          
+          
+          
+          
+          
+
+          char index[64];
+          sprintf(index, "%u", cxxDecl->getLambdaIndexInContext());
+
+          std::string Component;
+          if (!ReversedComponents.empty() && ReversedComponents.back() == "operator()") {
+            ReversedComponents.pop_back();
+            Component = "(lambda";
+          } else {
+            Component = "(lambda class";
+          }
+          Component += index;
+          Component += ")";
+          ReversedComponents.push_back(Component);
+        } else if (!Rd->getIdentifier()) {
+          ReversedComponents.push_back("(anonymous)");
         } else {
-          Result += Rd->getNameAsString();
+          ReversedComponents.push_back(Rd->getNameAsString());
         }
       } else if (const auto *Fd = dyn_cast<FunctionDecl>(DC)) {
-        Result += Fd->getNameAsString();
+        ReversedComponents.push_back(Fd->getNameAsString());
       } else if (const auto *Ed = dyn_cast<EnumDecl>(DC)) {
         
         
         
         
-        if (Ed->isScoped() || Ed->getIdentifier())
-          Result += Ed->getNameAsString();
-        else
-          continue;
+        if (Ed->isScoped() || Ed->getIdentifier()) {
+          ReversedComponents.push_back(Ed->getNameAsString());
+        }
       } else {
-        Result += cast<NamedDecl>(DC)->getNameAsString();
+        ReversedComponents.push_back(cast<NamedDecl>(DC)->getNameAsString());
       }
-      Result += "::";
     }
 
-    if (D->getDeclName())
-      Result += D->getNameAsString();
-    else
-      Result += "(anonymous)";
+    std::string Result;
+    for (const auto& Component : ReversedComponents) {
+      if (Result.empty()) {
+        Result = Component;
+      } else {
+        Result = Component + "::" + Result;
+      }
+    }
 
     return Result;
   }
@@ -957,8 +999,29 @@ public:
     return Super::TraverseCXXDestructorDecl(D);
   }
 
+  
+  
+  
+  void AddLambdaNumbering(LambdaExpr *E) {
+    if (!CurDeclContext) {
+      return;
+    }
+
+    CXXRecordDecl *cls = E->getLambdaClass();
+    if (!cls) {
+      return;
+    }
+
+    auto numbering = cls->getLambdaNumbering();
+    numbering.IndexInContext = CurDeclContext->nextLambdaIndex++;
+    cls->setLambdaNumbering(numbering);
+  }
+
   bool TraverseLambdaExpr(LambdaExpr *E) {
+    AddLambdaNumbering(E);
+
     AutoSetContext Asc(this, nullptr, true);
+
     return Super::TraverseLambdaExpr(E);
   }
 
@@ -981,7 +1044,7 @@ public:
       D = F->getTemplateInstantiationPattern();
     }
 
-    return Context(D->getQualifiedNameAsString(),
+    return Context(getQualifiedName(D),
                    getMangledName(CurMangleContext, D));
   }
 
@@ -1504,7 +1567,7 @@ public:
       LangOptions langOptions;
       PrintingPolicy Policy(langOptions);
       Policy.PrintCanonicalTypes = true;
-      J.attribute("type", CanonicalFieldType.getAsString(Policy));
+      J.attribute("type", typeToString(CanonicalFieldType, Policy));
 
       const TagDecl *tagDecl = CanonicalFieldType->getAsTagDecl();
       if (!tagDecl) {
@@ -1577,7 +1640,7 @@ public:
 
       J.attribute("name", param->getName());
       QualType ArgType = param->getOriginalType();
-      J.attribute("type", ArgType.getAsString());
+      J.attribute("type", typeToString(ArgType));
 
       QualType CanonicalArgType = ArgType.getCanonicalType();
       const TagDecl *canonDecl = CanonicalArgType->getAsTagDecl();
@@ -1753,6 +1816,23 @@ public:
     F->Output.push_back(std::move(ros.str()));
   }
 
+  std::string typeToString(QualType Type) {
+    if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
+      if (cxxDecl->isLambda()) {
+        return getQualifiedName(cxxDecl);
+      }
+    }
+    return Type.getAsString();
+  }
+  std::string typeToString(QualType Type, PrintingPolicy policy) {
+    if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
+      if (cxxDecl->isLambda()) {
+        return getQualifiedName(cxxDecl);
+      }
+    }
+    return Type.getAsString(policy);
+  }
+
   
   
   
@@ -1895,7 +1975,7 @@ public:
     }
 
     if (!MaybeType.isNull()) {
-      J.attribute("type", MaybeType.getAsString());
+      J.attribute("type", typeToString(MaybeType));
       QualType canonical = MaybeType.getCanonicalType();
       const TagDecl *decl = canonical->getAsTagDecl();
       if (!decl) {
@@ -2907,7 +2987,7 @@ public:
                     NotIdentifierToken | LocRangeEndValid);
   }
 
-  void inclusionDirective(SourceRange FileNameRange, const FileEntry *File) {
+  void inclusionDirective(SourceLocation HashLoc, SourceRange FileNameRange, const FileEntry *File) {
     std::string includedFile(File->tryGetRealPathName());
     FileType type = relativizePath(includedFile, CI.getHeaderSearchOpts());
     if (type == FileType::Unknown) {
@@ -2932,8 +3012,15 @@ public:
       endMacroExpansion();
     }
 
+    normalizeLocation(&HashLoc);
+    FileInfo *thisFile = getFileInfo(HashLoc);
+    FileType thisType = thisFile->Generated ? FileType::Generated : FileType::Source;
+    std::string thisFilePretty = thisFile->Realname;
+    std::string thisFileSym =
+        std::string("FILE_") + mangleFile(thisFile->Realname, thisType);
+
     visitIdentifier("use", "file", includedFile, FileNameRange, symbol,
-                    QualType(), Context(),
+                    QualType(), Context(thisFilePretty, thisFileSym),
                     NotIdentifierToken | LocRangeEndValid);
   }
 
@@ -3177,10 +3264,10 @@ void PreprocessorHook::InclusionDirective(
   if (!File) {
     return;
   }
-  Indexer->inclusionDirective(FileNameRange.getAsRange(),
+  Indexer->inclusionDirective(HashLoc, FileNameRange.getAsRange(),
                               &File->getFileEntry());
 #else
-  Indexer->inclusionDirective(FileNameRange.getAsRange(), File);
+  Indexer->inclusionDirective(HashLoc, FileNameRange.getAsRange(), File);
 #endif
 }
 
