@@ -249,10 +249,13 @@ nsresult DictionaryCacheEntry::Prefetch(
     
     
     
+    
+    
     if (NS_FAILED(cacheStorage->AsyncOpenURIString(
             mURI, ""_ns,
             nsICacheStorage::OPEN_READONLY |
                 nsICacheStorage::OPEN_COMPLETE_ONLY |
+                nsICacheStorage::OPEN_ALWAYS |
                 nsICacheStorage::CHECK_MULTITHREADED,
             this)) ||
         mNotCached) {
