@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+include!("../../zerocopy-derive/tests/include.rs");
+
+extern crate zerocopy;
+
+use util::NotZerocopy;
+use zerocopy::Immutable;
+
+fn main() {
+    
+    takes_immutable::<NotZerocopy>();
+}
+
+fn takes_immutable<T: Immutable>() {}

@@ -828,12 +828,16 @@ impl LineRow {
             }
 
             LineInstruction::SetAddress(address) => {
-                let tombstone_address = !0 >> (64 - program.header().encoding.address_size * 8);
-                self.tombstone = address == tombstone_address;
+                
+                
+                
+                
+                
+                
+                
+                self.tombstone = address < self.address
+                    || address >= u64::min_tombstone(program.header().encoding.address_size);
                 if !self.tombstone {
-                    if address < self.address {
-                        return Err(Error::InvalidAddressRange);
-                    }
                     self.address = address;
                     self.op_index.0 = 0;
                 }
@@ -2877,13 +2881,14 @@ mod tests {
     #[test]
     fn test_exec_set_address_backwards() {
         let header = make_test_header(EndianSlice::new(&[], LittleEndian));
-        let mut registers = LineRow::new(&header);
-        registers.address = 1;
+        let mut initial_registers = LineRow::new(&header);
+        initial_registers.address = 1;
         let opcode = LineInstruction::SetAddress(0);
 
-        let mut program = IncompleteLineProgram { header };
-        let result = registers.execute(opcode, &mut program);
-        assert_eq!(result, Err(Error::InvalidAddressRange));
+        let mut expected_registers = initial_registers;
+        expected_registers.tombstone = true;
+
+        assert_exec_opcode(header, initial_registers, opcode, expected_registers, false);
     }
 
     #[test]

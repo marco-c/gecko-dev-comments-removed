@@ -367,6 +367,12 @@ impl Abbreviation {
     
     
     fn parse<R: Reader>(input: &mut R) -> Result<Option<Abbreviation>> {
+        if input.is_empty() {
+            
+            
+            
+            return Ok(None);
+        }
         let code = input.read_uleb128()?;
         if code == 0 {
             return Ok(None);

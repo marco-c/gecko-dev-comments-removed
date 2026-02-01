@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![deny(deprecated)]
+
+extern crate zerocopy;
+
+use zerocopy::IntoBytes;
+
+#[derive(IntoBytes)]
+#[repr(C)]
+union Foo {
+    a: u8,
+}
+
+fn main() {}

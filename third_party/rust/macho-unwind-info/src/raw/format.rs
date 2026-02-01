@@ -1,12 +1,12 @@
 use std::fmt::Debug;
-use zerocopy_derive::{FromBytes, FromZeroes, Unaligned};
+use zerocopy_derive::*;
 
 use super::unaligned::{U16, U32};
 
 
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct CompactUnwindInfoHeader {
     
@@ -40,7 +40,7 @@ pub struct CompactUnwindInfoHeader {
 }
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Clone, Copy)]
 #[repr(C)]
 pub struct PageEntry {
     
@@ -63,7 +63,7 @@ pub struct PageEntry {
 }
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct RegularPage {
     
@@ -75,7 +75,7 @@ pub struct RegularPage {
 }
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct CompressedPage {
     
@@ -98,12 +98,12 @@ pub struct CompressedPage {
 }
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct Opcode(pub U32);
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct RegularFunctionEntry {
     

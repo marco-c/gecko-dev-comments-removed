@@ -311,6 +311,10 @@ pub enum MINIDUMP_STREAM_TYPE {
 
     
     
+    StabilityReportStream = 0x4b6b0002,
+
+    
+    
     
     
     MozMacosCrashInfoStream = 0x4d7a0001,
@@ -580,12 +584,12 @@ pub struct GUID {
 
 impl From<[u8; 16]> for GUID {
     fn from(uuid: [u8; 16]) -> Self {
-        let data1 = (uuid[0] as u32) << 24
-            | (uuid[1] as u32) << 16
-            | (uuid[2] as u32) << 8
+        let data1 = ((uuid[0] as u32) << 24)
+            | ((uuid[1] as u32) << 16)
+            | ((uuid[2] as u32) << 8)
             | uuid[3] as u32;
-        let data2 = (uuid[4] as u16) << 8 | uuid[5] as u16;
-        let data3 = (uuid[6] as u16) << 8 | uuid[7] as u16;
+        let data2 = ((uuid[4] as u16) << 8) | uuid[5] as u16;
+        let data3 = ((uuid[6] as u16) << 8) | uuid[7] as u16;
         let mut data4 = [0u8; 8];
         data4.copy_from_slice(&uuid[8..]);
 
@@ -1733,7 +1737,7 @@ impl Default for XSTATE_CONFIG_FEATURE_MSC_INFO {
 
 impl XSTATE_CONFIG_FEATURE_MSC_INFO {
     
-    pub fn iter(&self) -> XstateFeatureIter {
+    pub fn iter(&self) -> XstateFeatureIter<'_> {
         XstateFeatureIter { info: self, idx: 0 }
     }
 }

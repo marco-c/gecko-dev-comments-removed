@@ -6,48 +6,109 @@
 
 
 
-use syn::{Data, DataEnum, DataStruct, DataUnion, Type};
+use proc_macro2::{Span, TokenStream};
+use quote::ToTokens;
+use syn::{Data, DataEnum, DataStruct, DataUnion, Field, Ident, Index, Type, Visibility};
 
-pub trait DataExt {
+pub(crate) trait DataExt {
     
     
-    fn field_types(&self) -> Vec<&Type>;
+    
+    
+    
+    
+    
+    
+    fn fields(&self) -> Vec<(&Visibility, TokenStream, &Type)>;
+
+    fn variants(&self) -> Vec<Vec<(&Visibility, TokenStream, &Type)>>;
+
+    fn tag(&self) -> Option<Ident>;
 }
 
 impl DataExt for Data {
-    fn field_types(&self) -> Vec<&Type> {
+    fn fields(&self) -> Vec<(&Visibility, TokenStream, &Type)> {
         match self {
-            Data::Struct(strc) => strc.field_types(),
-            Data::Enum(enm) => enm.field_types(),
-            Data::Union(un) => un.field_types(),
+            Data::Struct(strc) => strc.fields(),
+            Data::Enum(enm) => enm.fields(),
+            Data::Union(un) => un.fields(),
+        }
+    }
+
+    fn variants(&self) -> Vec<Vec<(&Visibility, TokenStream, &Type)>> {
+        match self {
+            Data::Struct(strc) => strc.variants(),
+            Data::Enum(enm) => enm.variants(),
+            Data::Union(un) => un.variants(),
+        }
+    }
+
+    fn tag(&self) -> Option<Ident> {
+        match self {
+            Data::Struct(strc) => strc.tag(),
+            Data::Enum(enm) => enm.tag(),
+            Data::Union(un) => un.tag(),
         }
     }
 }
 
 impl DataExt for DataStruct {
-    fn field_types(&self) -> Vec<&Type> {
-        self.fields.iter().map(|f| &f.ty).collect()
+    fn fields(&self) -> Vec<(&Visibility, TokenStream, &Type)> {
+        map_fields(&self.fields)
+    }
+
+    fn variants(&self) -> Vec<Vec<(&Visibility, TokenStream, &Type)>> {
+        vec![self.fields()]
+    }
+
+    fn tag(&self) -> Option<Ident> {
+        None
     }
 }
 
 impl DataExt for DataEnum {
-    fn field_types(&self) -> Vec<&Type> {
-        self.variants.iter().flat_map(|var| &var.fields).map(|f| &f.ty).collect()
+    fn fields(&self) -> Vec<(&Visibility, TokenStream, &Type)> {
+        map_fields(self.variants.iter().flat_map(|var| &var.fields))
+    }
+
+    fn variants(&self) -> Vec<Vec<(&Visibility, TokenStream, &Type)>> {
+        self.variants.iter().map(|var| map_fields(&var.fields)).collect()
+    }
+
+    fn tag(&self) -> Option<Ident> {
+        Some(Ident::new("___ZerocopyTag", Span::call_site()))
     }
 }
 
 impl DataExt for DataUnion {
-    fn field_types(&self) -> Vec<&Type> {
-        self.fields.named.iter().map(|f| &f.ty).collect()
+    fn fields(&self) -> Vec<(&Visibility, TokenStream, &Type)> {
+        map_fields(&self.fields.named)
+    }
+
+    fn variants(&self) -> Vec<Vec<(&Visibility, TokenStream, &Type)>> {
+        vec![self.fields()]
+    }
+
+    fn tag(&self) -> Option<Ident> {
+        None
     }
 }
 
-pub trait EnumExt {
-    fn is_c_like(&self) -> bool;
-}
-
-impl EnumExt for DataEnum {
-    fn is_c_like(&self) -> bool {
-        self.field_types().is_empty()
-    }
+fn map_fields<'a>(
+    fields: impl 'a + IntoIterator<Item = &'a Field>,
+) -> Vec<(&'a Visibility, TokenStream, &'a Type)> {
+    fields
+        .into_iter()
+        .enumerate()
+        .map(|(idx, f)| {
+            (
+                &f.vis,
+                f.ident
+                    .as_ref()
+                    .map(ToTokens::to_token_stream)
+                    .unwrap_or_else(|| Index::from(idx).to_token_stream()),
+                &f.ty,
+            )
+        })
+        .collect()
 }

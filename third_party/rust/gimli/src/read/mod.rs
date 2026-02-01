@@ -173,6 +173,8 @@
 
 
 
+
+
 use core::fmt::{self, Debug};
 use core::result;
 #[cfg(feature = "std")]
@@ -232,6 +234,11 @@ pub use self::loclists::*;
 
 #[cfg(feature = "read")]
 mod lookup;
+
+#[cfg(feature = "read")]
+mod macros;
+#[cfg(feature = "read")]
+pub use self::macros::*;
 
 mod op;
 pub use self::op::*;
@@ -384,6 +391,8 @@ pub enum Error {
     
     InvalidShiftExpression,
     
+    InvalidDerefSize(u8),
+    
     UnknownCallFrameInstruction(constants::DwCfa),
     
     InvalidAddressRange,
@@ -448,6 +457,12 @@ pub enum Error {
     UnknownIndexSection(constants::DwSect),
     
     UnknownIndexSectionV2(constants::DwSectV2),
+    
+    InvalidMacinfoType(constants::DwMacinfo),
+    
+    InvalidMacroType(constants::DwMacro),
+    
+    UnsupportedOpcodeOperandsTable,
 }
 
 impl fmt::Display for Error {
@@ -545,7 +560,10 @@ impl Error {
             Error::InvalidShiftExpression => {
                 "The shift value in an expression must be a non-negative integer."
             }
-            Error::UnknownCallFrameInstruction(_) => "An unknown DW_CFA_* instructiion",
+            Error::InvalidDerefSize(_) => {
+                "The size of a deref expression must not be larger than the size of an address."
+            }
+            Error::UnknownCallFrameInstruction(_) => "An unknown DW_CFA_* instruction",
             Error::InvalidAddressRange => {
                 "The end of an address range must not be before the beginning."
             }
@@ -598,6 +616,11 @@ impl Error {
             Error::InvalidIndexRow => "Invalid hash row in `.dwp` index.",
             Error::UnknownIndexSection(_) => "Unknown section type in `.dwp` index.",
             Error::UnknownIndexSectionV2(_) => "Unknown section type in version 2 `.dwp` index.",
+            Error::InvalidMacinfoType(_) => "Invalid macinfo type in `.debug_macinfo`.",
+            Error::InvalidMacroType(_) => "Invalid macro type in `.debug_macro`.",
+            Error::UnsupportedOpcodeOperandsTable => {
+                "The optional `opcode_operands_table` in `.debug_macro` is currently not supported."
+            }
         }
     }
 }

@@ -44,6 +44,17 @@ impl LocationListTable {
     }
 
     
+    
+    
+    
+    
+    #[inline]
+    pub fn get(&self, id: LocationListId) -> &LocationList {
+        debug_assert_eq!(self.base_id, id.base_id);
+        &self.locations[id.index]
+    }
+
+    
     pub(crate) fn write<W: Writer>(
         &self,
         sections: &mut Sections<W>,
@@ -284,7 +295,7 @@ fn write_expression<W: Writer>(
     unit_offsets: Option<&UnitOffsets>,
     val: &Expression,
 ) -> Result<()> {
-    let size = val.size(encoding, unit_offsets) as u64;
+    let size = val.size(encoding, unit_offsets)? as u64;
     if encoding.version <= 4 {
         w.write_udata(size, 2)?;
     } else {

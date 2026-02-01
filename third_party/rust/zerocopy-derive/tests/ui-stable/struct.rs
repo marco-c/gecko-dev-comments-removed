@@ -9,12 +9,12 @@
 #[macro_use]
 extern crate zerocopy;
 
-#[path = "../util.rs"]
+#[path = "../include.rs"]
 mod util;
 
-use zerocopy::KnownLayout;
+use zerocopy::{IntoBytes, KnownLayout};
 
-use self::util::AU16;
+use self::util::util::AU16;
 
 fn main() {}
 
@@ -52,24 +52,155 @@ struct KL09(NotKnownLayout, NotKnownLayout);
 
 
 
-#[derive(AsBytes)]
-#[repr(C)]
-struct AsBytes1<T>(T);
+#[derive(Immutable)]
+struct Immutable1 {
+    a: core::cell::UnsafeCell<()>,
+}
 
-#[derive(AsBytes)]
+#[derive(Immutable)]
+struct Immutable2 {
+    a: [core::cell::UnsafeCell<u8>; 0],
+}
+
+
+
+
+
+#[derive(TryFromBytes)]
+#[repr(packed)]
+struct TryFromBytesPacked {
+    foo: AU16,
+}
+
+#[derive(TryFromBytes)]
+#[repr(packed(1))]
+struct TryFromBytesPackedN {
+    foo: AU16,
+}
+
+#[derive(TryFromBytes)]
+#[repr(C, packed)]
+struct TryFromBytesCPacked {
+    foo: AU16,
+}
+
+#[derive(TryFromBytes)]
+#[repr(C, packed(1))]
+struct TryFromBytesCPackedN {
+    foo: AU16,
+}
+
+
+
+
+
+
+
+
+#[derive(IntoBytes)]
 #[repr(C)]
-struct AsBytes2 {
+struct IntoBytes1<T> {
+    foo: AU16,
+    bar: T,
+}
+
+#[derive(IntoBytes)]
+#[repr(C)]
+struct IntoBytes2 {
     foo: u8,
     bar: AU16,
 }
 
-#[derive(AsBytes)]
+#[derive(IntoBytes)]
 #[repr(C, packed(2))]
-struct AsBytes3 {
+struct IntoBytes3 {
     foo: u8,
     
     
     bar: u64,
+}
+
+type SliceU8 = [u8];
+
+
+
+
+
+
+#[derive(IntoBytes)]
+#[repr(C)]
+struct IntoBytes4 {
+    a: u8,
+    b: SliceU8,
+}
+
+
+
+#[derive(IntoBytes)]
+#[repr(C)]
+struct IntoBytes5 {
+    a: u8,
+    b: [u16],
+}
+
+
+
+#[derive(IntoBytes)]
+#[repr(C)]
+struct IntoBytes6 {
+    a: u16,
+    b: [u8],
+}
+
+
+
+
+#[derive(IntoBytes)]
+#[repr(C)]
+struct IntoBytes7 {
+    a: u8,
+    b: u16,
+    c: [u8],
+}
+
+#[derive(IntoBytes)]
+#[repr(C, C)] 
+struct IntoBytes8 {
+    a: u8,
+}
+
+#[derive(IntoBytes)]
+struct IntoBytes9<T> {
+    t: T,
+}
+
+#[derive(IntoBytes)]
+#[repr(packed(2))]
+struct IntoBytes10<T> {
+    t: T,
+}
+
+
+#[derive(IntoBytes)]
+#[repr(C, packed(2))]
+struct IntoBytes11<T> {
+    t0: T,
+    
+    
+    t1: T,
+}
+
+fn is_into_bytes_11<T: IntoBytes>() {
+    if false {
+        is_into_bytes_11::<IntoBytes11<AU16>>();
+    }
+}
+
+
+#[derive(IntoBytes)]
+#[repr(C, align(2))]
+struct IntoBytes12<T> {
+    t: T,
 }
 
 
@@ -97,3 +228,27 @@ struct Unaligned4;
 #[derive(Unaligned)]
 #[repr(align(2), align(4))]
 struct Unaligned5;
+
+#[derive(Unaligned)]
+struct Unaligned6;
+
+#[derive(Unaligned)]
+#[repr(packed(2))]
+struct Unaligned7;
+
+
+
+
+#[derive(Copy, Clone)]
+#[repr(packed(2), C)]
+#[derive(Unaligned)]
+#[repr(C, packed(2))]
+struct WeirdReprSpan;
+
+#[derive(SplitAt)]
+#[repr(C)]
+struct SplitAtNotKnownLayout([u8]);
+
+#[derive(SplitAt, KnownLayout)]
+#[repr(C)]
+struct SplitAtSized(u8);

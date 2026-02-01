@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+include!("../../zerocopy-derive/tests/include.rs");
+
+extern crate zerocopy;
+
+use util::NotZerocopy;
+use zerocopy::KnownLayout;
+
+fn main() {
+    
+    takes_known_layout::<NotZerocopy>();
+}
+
+fn takes_known_layout<T: KnownLayout>() {}

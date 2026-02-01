@@ -6,22 +6,24 @@
 
 
 
+
+#![no_implicit_prelude]
 #![allow(warnings)]
 
-use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
+include!("include.rs");
 
 
 
 mod foo {
-    use zerocopy::{AsBytes, FromBytes, FromZeroes, Unaligned};
+    use super::*;
 
-    #[derive(FromZeroes, FromBytes, AsBytes, Unaligned)]
+    #[derive(imp::FromBytes, imp::IntoBytes, imp::Unaligned)]
     #[repr(C)]
     pub struct Foo {
         foo: u8,
     }
 
-    #[derive(FromZeroes, FromBytes, AsBytes, Unaligned)]
+    #[derive(imp::FromBytes, imp::IntoBytes, imp::Unaligned)]
     #[repr(C)]
     pub struct Bar {
         bar: u8,
@@ -30,7 +32,7 @@ mod foo {
 
 use foo::Foo;
 
-#[derive(FromZeroes, FromBytes, AsBytes, Unaligned)]
+#[derive(imp::FromBytes, imp::IntoBytes, imp::Unaligned)]
 #[repr(C)]
 struct Baz {
     foo: Foo,

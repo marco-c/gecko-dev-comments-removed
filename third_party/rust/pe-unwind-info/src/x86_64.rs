@@ -4,10 +4,10 @@
 
 
 use arrayvec::ArrayVec;
-use std::ops::ControlFlow;
+use core::ops::ControlFlow;
 use thiserror::Error;
-use zerocopy::{FromBytes, Ref, Unaligned, LE};
-use zerocopy_derive::{FromBytes, FromZeroes, Unaligned};
+use zerocopy::{FromBytes, Immutable, KnownLayout, Ref, LE};
+use zerocopy_derive::*;
 
 type U16 = zerocopy::U16<LE>;
 
@@ -21,7 +21,7 @@ pub struct FunctionTableEntries<'a> {
 }
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct RuntimeFunction {
     
@@ -40,13 +40,13 @@ impl<'a> FunctionTableEntries<'a> {
 
     
     pub fn functions_len(&self) -> usize {
-        self.data.len() / std::mem::size_of::<RuntimeFunction>()
+        self.data.len() / core::mem::size_of::<RuntimeFunction>()
     }
 
     
     
     pub fn functions(&self) -> Option<&'a [RuntimeFunction]> {
-        Ref::new_slice_unaligned(self.data).map(|lv| lv.into_slice())
+        Ref::from_bytes(self.data).ok().map(Ref::into_ref)
     }
 
     
@@ -79,10 +79,15 @@ impl<'a> FunctionTableEntries<'a> {
                 let unwind_info =
                     UnwindInfo::parse(memory_at_rva(function.unwind_info_address.get())?)?;
 
-                if !is_chained {
+                let mut unwind_ops = unwind_info.unwind_operations().peekable();
+
+                if !is_chained
+                    && should_check_for_epilog(address, function.end_address.get(), &mut unwind_ops)
+                {
                     
                     
                     
+
                     let bytes = (function.end_address.get() - address) as usize;
                     let instruction = &memory_at_rva(address)?[..bytes];
                     if let Ok(epilog_instructions) = FunctionEpilogInstruction::parse_sequence(
@@ -114,10 +119,7 @@ impl<'a> FunctionTableEntries<'a> {
                     }
                 }
 
-                for (_, op) in unwind_info
-                    .unwind_operations()
-                    .skip_while(|(o, _)| !is_chained && *o as u32 > offset)
-                {
+                for (_, op) in unwind_ops.skip_while(|(o, _)| !is_chained && *o as u32 > offset) {
                     if let ControlFlow::Break(rip) = unwind_info.resolve_operation(state, &op)? {
                         return Some(rip);
                     }
@@ -160,9 +162,72 @@ impl<'a> Iterator for FunctionTableEntries<'a> {
     type Item = &'a RuntimeFunction;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (rf, rest) = Ref::<_, RuntimeFunction>::new_unaligned_from_prefix(self.data)?;
+        let (rf, rest) = Ref::<_, RuntimeFunction>::from_prefix(self.data).ok()?;
         self.data = rest;
-        Some(rf.into_ref())
+        Some(Ref::into_ref(rf))
+    }
+}
+
+
+
+
+
+fn should_check_for_epilog(
+    address: u32,
+    function_end_address: u32,
+    unwind_ops: &mut core::iter::Peekable<UnwindOperations<'_>>,
+) -> bool {
+    
+    
+    
+    
+    if let Some((_, UnwindOperation::EpilogInformation(info))) = unwind_ops.peek() {
+        struct InEpilog {
+            value: bool,
+            epilog_size: u32,
+            address: u32,
+            function_end: u32,
+        }
+
+        impl InEpilog {
+            fn epilog_at(&mut self, epilog_offset: u32) {
+                let epilog_start = self.function_end - epilog_offset;
+                self.value |=
+                    self.address >= epilog_start && self.address < epilog_start + self.epilog_size;
+            }
+        }
+
+        
+        let header = info.as_header();
+
+        let mut in_epilog = InEpilog {
+            value: false,
+            epilog_size: header.epilog_size() as u32,
+            address,
+            function_end: function_end_address,
+        };
+
+        if header.single_epilog() {
+            in_epilog.epilog_at(header.epilog_size() as u32);
+        }
+        unwind_ops.next();
+
+        
+        
+        while let Some((_, UnwindOperation::EpilogInformation(info))) = unwind_ops.peek() {
+            
+            if !in_epilog.value {
+                let epilog_offset = info.as_offset() as u32;
+                if epilog_offset != 0 {
+                    in_epilog.epilog_at(epilog_offset);
+                }
+            }
+            unwind_ops.next();
+        }
+
+        in_epilog.value
+    } else {
+        true
     }
 }
 
@@ -174,19 +239,24 @@ struct Sections<'a> {
 
 impl<'a> Sections<'a> {
     pub fn parse(image: &'a [u8]) -> Option<Self> {
-        let sig_offset = Ref::<_, U32>::new_unaligned(image.get(0x3c..0x40)?)?.get() as usize;
+        let sig_offset = Ref::<_, U32>::from_bytes(image.get(0x3c..0x40)?)
+            .ok()?
+            .get() as usize;
         
         let coff_image = image.get(sig_offset + 4..)?;
-        let section_count = Ref::<_, U16>::new_unaligned(coff_image.get(2..4)?)?.get() as usize;
-        let size_of_optional_header =
-            Ref::<_, U16>::new_unaligned(coff_image.get(16..18)?)?.get() as usize;
-        let sections = Ref::<_, [Section]>::new_slice_unaligned_from_prefix(
-            &coff_image[20 + size_of_optional_header..],
+        let section_count = Ref::<_, U16>::from_bytes(coff_image.get(2..4)?).ok()?.get() as usize;
+        let size_of_optional_header = Ref::<_, U16>::from_bytes(coff_image.get(16..18)?)
+            .ok()?
+            .get() as usize;
+        let (sections, _rest) = Ref::from_prefix_with_elems(
+            coff_image.get(20 + size_of_optional_header..)?,
             section_count,
-        )?
-        .0
-        .into_slice();
-        Some(Sections { image, sections })
+        )
+        .ok()?;
+        Some(Sections {
+            image,
+            sections: Ref::into_ref(sections),
+        })
     }
 
     pub fn memory_at_rva(&self, rva: u32) -> Option<&'a [u8]> {
@@ -212,7 +282,7 @@ impl<'a> Sections<'a> {
     }
 }
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 struct Section {
     _name: [u8; 8],
@@ -331,7 +401,12 @@ impl TryFrom<u8> for XmmRegister {
 
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+
+
+
+
+
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct UnwindInfoHeader {
     
@@ -452,6 +527,10 @@ impl UnwindInfoHeader {
                 let value = state.read_stack(addr)?;
                 state.write_register(*reg, value);
             }
+            UnwindOperation::EpilogInformation(_) => {
+                
+                
+            }
             UnwindOperation::ReadXMM(reg, offset) => {
                 let addr = self.resolve_offset(|reg| state.read_register(reg), *offset);
                 let value =
@@ -526,8 +605,8 @@ impl FunctionEpilogInstruction {
         if allow_add_sp && ip.len() >= 3 {
             
             if rex & 0x8 != 0 && ip[0] == 0x81 && ip[1] == 0xc4 {
-                let (val, rest) = Ref::<_, U32>::new_unaligned_from_prefix(&ip[2..])
-                    .ok_or(InstructionParseError::NotEnoughData)?;
+                let (val, rest) = Ref::<_, U32>::from_prefix(&ip[2..])
+                    .map_err(|_| InstructionParseError::NotEnoughData)?;
                 return Ok(Some((FunctionEpilogInstruction::AddSP(val.get()), rest)));
             }
             
@@ -551,8 +630,8 @@ impl FunctionEpilogInstruction {
                             )));
                         
                         } else if op_mod == 0b10 {
-                            let (val, rest) = Ref::<_, U32>::new_unaligned_from_prefix(&ip[2..])
-                                .ok_or(InstructionParseError::NotEnoughData)?;
+                            let (val, rest) = Ref::<_, U32>::from_prefix(&ip[2..])
+                                .map_err(|_| InstructionParseError::NotEnoughData)?;
                             return Ok(Some((
                                 FunctionEpilogInstruction::AddSPFromFP(val.get()),
                                 rest,
@@ -693,8 +772,8 @@ pub struct UnwindInfo<'a> {
     rest: &'a [u8],
 }
 
-impl std::fmt::Debug for UnwindInfo<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Debug for UnwindInfo<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.debug_struct("UnwindInfo")
             .field("header", self.header)
             .field("unwind_codes", &self.unwind_codes)
@@ -707,45 +786,45 @@ impl<'a> UnwindInfo<'a> {
     
     
     pub fn parse(data: &'a [u8]) -> Option<Self> {
-        let (header, rest) = Ref::<_, UnwindInfoHeader>::new_unaligned_from_prefix(data)?;
-        if header.version() != 1 {
+        let (header, rest) = Ref::<_, UnwindInfoHeader>::from_prefix(data).ok()?;
+        if !(1..=2).contains(&header.version()) {
             return None;
         }
         let (unwind_codes, rest) =
-            Ref::new_slice_unaligned_from_prefix(rest, header.unwind_codes_len as usize * 2)?;
+            Ref::from_prefix_with_elems(rest, header.unwind_codes_len as usize * 2).ok()?;
         Some(UnwindInfo {
-            header: header.into_ref(),
-            unwind_codes: unwind_codes.into_slice(),
+            header: Ref::into_ref(header),
+            unwind_codes: Ref::into_ref(unwind_codes),
             rest,
         })
     }
 
     
     pub fn unwind_operations(&self) -> UnwindOperations<'a> {
-        UnwindOperations(self.unwind_codes)
+        UnwindOperations {
+            version: self.header.version(),
+            unwind_codes: self.unwind_codes,
+        }
     }
 
     
     pub fn trailer(&self) -> Option<UnwindInfoTrailer<'a>> {
         let flags = self.flags();
         if flags.contains(UnwindInfoFlags::EHANDLER) {
-            let (handler_address, handler_data) =
-                Ref::<_, U32>::new_unaligned_from_prefix(self.rest)?;
+            let (handler_address, handler_data) = Ref::<_, U32>::from_prefix(self.rest).ok()?;
             Some(UnwindInfoTrailer::ExceptionHandler {
-                handler_address: handler_address.into_ref(),
+                handler_address: Ref::into_ref(handler_address),
                 handler_data,
             })
         } else if flags.contains(UnwindInfoFlags::UHANDLER) {
-            let (handler_address, handler_data) =
-                Ref::<_, U32>::new_unaligned_from_prefix(self.rest)?;
+            let (handler_address, handler_data) = Ref::<_, U32>::from_prefix(self.rest).ok()?;
             Some(UnwindInfoTrailer::TerminationHandler {
-                handler_address: handler_address.into_ref(),
+                handler_address: Ref::into_ref(handler_address),
                 handler_data,
             })
         } else if flags.contains(UnwindInfoFlags::CHAININFO) {
-            let (chained, _) = Ref::<_, RuntimeFunction>::new_unaligned_from_prefix(self.rest)?;
             Some(UnwindInfoTrailer::ChainedUnwindInfo {
-                chained: chained.into_ref(),
+                chained: Ref::into_ref(Ref::<_, RuntimeFunction>::from_bytes(self.rest).ok()?),
             })
         } else {
             None
@@ -753,7 +832,7 @@ impl<'a> UnwindInfo<'a> {
     }
 }
 
-impl std::ops::Deref for UnwindInfo<'_> {
+impl core::ops::Deref for UnwindInfo<'_> {
     type Target = UnwindInfoHeader;
 
     fn deref(&self) -> &Self::Target {
@@ -766,7 +845,10 @@ impl std::ops::Deref for UnwindInfo<'_> {
 
 
 #[derive(Clone, Copy, Debug)]
-pub struct UnwindOperations<'a>(&'a [u8]);
+pub struct UnwindOperations<'a> {
+    version: u8,
+    unwind_codes: &'a [u8],
+}
 
 impl<'a> UnwindOperations<'a> {
     
@@ -775,10 +857,10 @@ impl<'a> UnwindOperations<'a> {
         c.read::<UnwindCode>()
     }
 
-    fn read<T: Unaligned + FromBytes>(&mut self) -> Option<&'a T> {
-        let (v, rest) = Ref::<_, T>::new_unaligned_from_prefix(self.0)?;
-        self.0 = rest;
-        Some(v.into_ref())
+    fn read<T: FromBytes + KnownLayout + Immutable>(&mut self) -> Option<&'a T> {
+        let (v, rest) = Ref::<_, T>::from_prefix(self.unwind_codes).ok()?;
+        self.unwind_codes = rest;
+        Some(Ref::into_ref(v))
     }
 }
 
@@ -787,7 +869,7 @@ impl<'a> Iterator for UnwindOperations<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let unwind_code = self.read::<UnwindCode>()?;
-        let op = match unwind_code.operation_code()? {
+        let op = match unwind_code.operation_code(self.version)? {
             UnwindOperationCode::PushNonvol => {
                 UnwindOperation::PopNonVolatile(unwind_code.operation_info_as_register())
             }
@@ -808,6 +890,19 @@ impl<'a> Iterator for UnwindOperations<'a> {
                 unwind_code.operation_info_as_register(),
                 StackFrameOffset(self.read::<U32>()?.get()),
             ),
+            UnwindOperationCode::Epilog => UnwindOperation::EpilogInformation(EpilogInformation {
+                size_or_offset_low: unwind_code.prolog_offset,
+                single_or_offset_high: unwind_code.operation_code_raw(),
+            }),
+            
+            
+            UnwindOperationCode::Spare => {
+                
+                
+                let _ = self.read::<U32>()?;
+                
+                return self.next();
+            }
             UnwindOperationCode::SaveXmm128 => UnwindOperation::ReadXMM(
                 unwind_code.operation_info_as_xmm(),
                 StackFrameOffset(self.read::<U16>()?.get() as u32 * 16),
@@ -826,6 +921,39 @@ impl<'a> Iterator for UnwindOperations<'a> {
 }
 
 
+
+
+
+
+#[derive(Debug, Clone, Copy)]
+pub struct EpilogInformation {
+    size_or_offset_low: u8,
+    single_or_offset_high: u8,
+}
+
+pub struct EpilogHeader<'a>(&'a EpilogInformation);
+
+impl EpilogInformation {
+    pub fn as_header(&self) -> EpilogHeader {
+        EpilogHeader(self)
+    }
+
+    pub fn as_offset(&self) -> u16 {
+        self.size_or_offset_low as u16 + self.single_or_offset_high as u16 * 256
+    }
+}
+
+impl EpilogHeader<'_> {
+    pub fn epilog_size(&self) -> u8 {
+        self.0.size_or_offset_low
+    }
+
+    pub fn single_epilog(&self) -> bool {
+        self.0.single_or_offset_high & 1 != 0
+    }
+}
+
+
 #[derive(Debug, Clone, Copy)]
 pub struct StackFrameOffset(u32);
 
@@ -835,6 +963,8 @@ pub struct StackFrameOffset(u32);
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnwindOperation {
+    
+    EpilogInformation(EpilogInformation),
     
     PopNonVolatile(Register),
     
@@ -861,13 +991,15 @@ pub enum UnwindOperationCode {
     SetFPReg,
     SaveNonvol,
     SaveNonvolFar,
-    SaveXmm128 = 8,
+    Epilog,
+    Spare,
+    SaveXmm128,
     SaveXmm128Far,
     PushMachframe,
 }
 
 
-#[derive(Unaligned, FromZeroes, FromBytes, Debug, Clone, Copy)]
+#[derive(Unaligned, FromBytes, KnownLayout, Immutable, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct UnwindCode {
     
@@ -890,7 +1022,7 @@ impl UnwindCode {
     }
 
     
-    pub fn operation_code(&self) -> Option<UnwindOperationCode> {
+    pub fn operation_code(&self, unwind_info_version: u8) -> Option<UnwindOperationCode> {
         match self.operation_code_raw() {
             0 => Some(UnwindOperationCode::PushNonvol),
             1 => Some(UnwindOperationCode::AllocLarge),
@@ -898,6 +1030,8 @@ impl UnwindCode {
             3 => Some(UnwindOperationCode::SetFPReg),
             4 => Some(UnwindOperationCode::SaveNonvol),
             5 => Some(UnwindOperationCode::SaveNonvolFar),
+            6 if unwind_info_version >= 2 => Some(UnwindOperationCode::Epilog),
+            7 if unwind_info_version >= 2 => Some(UnwindOperationCode::Spare),
             8 => Some(UnwindOperationCode::SaveXmm128),
             9 => Some(UnwindOperationCode::SaveXmm128Far),
             10 => Some(UnwindOperationCode::PushMachframe),

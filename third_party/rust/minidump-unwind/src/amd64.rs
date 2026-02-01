@@ -85,17 +85,6 @@ where
     P: SymbolProvider + Sync,
 {
     let stack_memory = args.stack_memory;
-    
-    
-    
-    
-    
-    
-    
-    
-    if args.system_info.os == Os::Windows {
-        return None;
-    }
 
     trace!("trying frame pointer");
     if let MinidumpContextValidity::Some(ref which) = args.valid() {
@@ -138,32 +127,66 @@ where
         
         return None;
     }
-    let caller_ip = stack_memory.get_memory_at_address(last_bp + POINTER_WIDTH)?;
-    let caller_bp = stack_memory.get_memory_at_address(last_bp)?;
-    let caller_sp = last_bp + POINTER_WIDTH * 2;
 
-    
-    
+    let resolve = |offset_max_scan, offset_step| -> Option<(u64, u64, u64)> {
+        for offset in 0..=offset_max_scan {
+            let offset = offset * offset_step;
+            let caller_ip = stack_memory.get_memory_at_address(last_bp + offset + POINTER_WIDTH)?;
+            let caller_bp = stack_memory.get_memory_at_address(last_bp + offset)?;
+            let caller_sp = last_bp + offset + POINTER_WIDTH * 2;
 
-    
-    
-    if caller_sp <= last_bp || caller_bp < caller_sp {
-        trace!("rejecting frame pointer result for unreasonable frame pointer");
-        return None;
-    }
-    
-    
-    let _unused: Pointer = stack_memory.get_memory_at_address(caller_bp)?;
-    
-    if is_non_canonical(caller_ip) {
-        trace!("rejecting frame pointer result for unreasonable instruction pointer");
-        return None;
-    }
-    
-    if !stack_seems_valid(caller_sp, last_sp, stack_memory) {
-        trace!("rejecting frame pointer result for unreasonable stack pointer");
-        return None;
-    }
+            
+            
+
+            
+            
+            if caller_sp <= last_bp || caller_bp < caller_sp {
+                trace!("rejecting frame pointer result for unreasonable frame pointer");
+                continue;
+            }
+
+            
+            
+            let _unused: Pointer = stack_memory.get_memory_at_address(caller_bp)?;
+            
+            if is_non_canonical(caller_ip) {
+                trace!("rejecting frame pointer result for unreasonable instruction pointer");
+                continue;
+            }
+            
+            if !stack_seems_valid(caller_sp, last_sp, stack_memory) {
+                trace!("rejecting frame pointer result for unreasonable stack pointer");
+                continue;
+            }
+
+            return Some((caller_ip, caller_bp, caller_sp));
+        }
+        None
+    };
+
+    let (caller_ip, caller_bp, caller_sp) = match args.system_info.os {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Os::Windows => resolve(15, 2 * POINTER_WIDTH)?,
+        _ => resolve(0, 0)?,
+    };
 
     trace!(
         "frame pointer seems valid -- caller_ip: 0x{:016x}, caller_sp: 0x{:016x}",

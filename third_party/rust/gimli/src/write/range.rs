@@ -41,6 +41,17 @@ impl RangeListTable {
     }
 
     
+    
+    
+    
+    
+    #[inline]
+    pub fn get(&self, id: RangeListId) -> &RangeList {
+        debug_assert_eq!(self.base_id, id.base_id);
+        &self.ranges[id.index]
+    }
+
+    
     pub(crate) fn write<W: Writer>(
         &self,
         sections: &mut Sections<W>,

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+include!("../../zerocopy-derive/tests/include.rs");
+
+extern crate zerocopy;
+
+use util::NotZerocopy;
+use zerocopy::FromBytes;
+
+fn main() {
+    
+    takes_from_bytes::<NotZerocopy>();
+}
+
+fn takes_from_bytes<T: FromBytes>() {}

@@ -6,7 +6,21 @@
 
 
 
-use testutil::ToolchainVersion;
+
+
+
+
+
+
+
+
+
+
+
+
+#![cfg(feature = "derive")]
+
+use testutil::{set_rustflags_w_warnings, ToolchainVersion};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -16,18 +30,14 @@ fn ui() {
     
     let source_files_dirname = version.get_ui_source_files_dirname_and_maybe_print_warning();
 
+    
+    
+    set_rustflags_w_warnings();
+
     let t = trybuild::TestCases::new();
-    t.compile_fail(format!("tests/{source_files_dirname}/*.rs"));
+    t.compile_fail(format!("tests/{}/*.rs", source_files_dirname));
 }
 
-
-
-
-
-
-
-
-#[cfg(feature = "derive")]
 #[test]
 #[cfg_attr(miri, ignore)]
 fn ui_invalid_impls() {
@@ -36,6 +46,10 @@ fn ui_invalid_impls() {
     
     let source_files_dirname = version.get_ui_source_files_dirname_and_maybe_print_warning();
 
+    
+    
+    set_rustflags_w_warnings();
+
     let t = trybuild::TestCases::new();
-    t.compile_fail(format!("tests/{source_files_dirname}/invalid-impls/*.rs"));
+    t.compile_fail(format!("tests/{}/invalid-impls/*.rs", source_files_dirname));
 }

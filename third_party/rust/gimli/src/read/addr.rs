@@ -1,5 +1,5 @@
-use crate::common::{DebugAddrBase, DebugAddrIndex, SectionId};
-use crate::read::{Reader, ReaderOffset, Result, Section};
+use crate::common::{DebugAddrBase, DebugAddrIndex, DebugAddrOffset, Encoding, SectionId};
+use crate::read::{Error, Reader, ReaderOffset, Result, Section};
 
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -8,9 +8,6 @@ pub struct DebugAddr<R> {
 }
 
 impl<R: Reader> DebugAddr<R> {
-    
-    
-
     
     
     
@@ -37,6 +34,16 @@ impl<R: Reader> DebugAddr<R> {
             index.0.into_u64() * u64::from(address_size),
         )?)?;
         input.read_address(address_size)
+    }
+
+    
+    
+    
+    pub fn headers(&self) -> AddrHeaderIter<R> {
+        AddrHeaderIter {
+            input: self.section.clone(),
+            offset: DebugAddrOffset(R::Offset::from_u8(0)),
+        }
     }
 }
 
@@ -67,6 +74,180 @@ impl<R> Section<R> for DebugAddr<R> {
 impl<R> From<R> for DebugAddr<R> {
     fn from(section: R) -> Self {
         DebugAddr { section }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct AddrHeaderIter<R: Reader> {
+    input: R,
+    offset: DebugAddrOffset<R::Offset>,
+}
+
+impl<R: Reader> AddrHeaderIter<R> {
+    
+    pub fn next(&mut self) -> Result<Option<AddrHeader<R>>> {
+        if self.input.is_empty() {
+            return Ok(None);
+        }
+
+        let len = self.input.len();
+        match AddrHeader::parse(&mut self.input, self.offset) {
+            Ok(header) => {
+                self.offset.0 += len - self.input.len();
+                Ok(Some(header))
+            }
+            Err(e) => {
+                self.input.empty();
+                Err(e)
+            }
+        }
+    }
+}
+
+#[cfg(feature = "fallible-iterator")]
+impl<R: Reader> fallible_iterator::FallibleIterator for AddrHeaderIter<R> {
+    type Item = AddrHeader<R>;
+    type Error = Error;
+
+    fn next(&mut self) -> ::core::result::Result<Option<Self::Item>, Self::Error> {
+        AddrHeaderIter::next(self)
+    }
+}
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AddrHeader<R, Offset = <R as Reader>::Offset>
+where
+    R: Reader<Offset = Offset>,
+    Offset: ReaderOffset,
+{
+    offset: DebugAddrOffset<Offset>,
+    encoding: Encoding,
+    length: Offset,
+    entries: R,
+}
+
+impl<R, Offset> AddrHeader<R, Offset>
+where
+    R: Reader<Offset = Offset>,
+    Offset: ReaderOffset,
+{
+    fn parse(input: &mut R, offset: DebugAddrOffset<Offset>) -> Result<Self> {
+        let (length, format) = input.read_initial_length()?;
+        let mut rest = input.split(length)?;
+
+        
+        let version = rest.read_u16()?;
+        if version != 5 {
+            return Err(Error::UnknownVersion(u64::from(version)));
+        }
+
+        let address_size = rest.read_address_size()?;
+        let segment_size = rest.read_u8()?;
+        if segment_size != 0 {
+            return Err(Error::UnsupportedSegmentSize);
+        }
+
+        
+        let header_length = format.initial_length_size() + 2 + 1 + 1;
+
+        
+        
+        
+        let tuple_length = address_size;
+        if tuple_length == 0 {
+            return Err(Error::UnsupportedAddressSize(address_size));
+        }
+        let padding = if header_length % tuple_length == 0 {
+            0
+        } else {
+            tuple_length - header_length % tuple_length
+        };
+        rest.skip(R::Offset::from_u8(padding))?;
+
+        let encoding = Encoding {
+            format,
+            version,
+            address_size,
+        };
+        Ok(AddrHeader {
+            offset,
+            encoding,
+            length,
+            entries: rest,
+        })
+    }
+
+    
+    #[inline]
+    pub fn offset(&self) -> DebugAddrOffset<Offset> {
+        self.offset
+    }
+
+    
+    #[inline]
+    pub fn length(&self) -> Offset {
+        self.length
+    }
+
+    
+    #[inline]
+    pub fn encoding(&self) -> Encoding {
+        self.encoding
+    }
+
+    
+    #[inline]
+    pub fn entries(&self) -> AddrEntryIter<R> {
+        AddrEntryIter {
+            input: self.entries.clone(),
+            encoding: self.encoding,
+        }
+    }
+}
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct AddrEntryIter<R: Reader> {
+    input: R,
+    encoding: Encoding,
+}
+
+impl<R: Reader> AddrEntryIter<R> {
+    
+    
+    
+    
+    
+    
+    pub fn next(&mut self) -> Result<Option<u64>> {
+        if self.input.is_empty() {
+            return Ok(None);
+        }
+
+        match self.input.read_address(self.encoding.address_size) {
+            Ok(entry) => Ok(Some(entry)),
+            Err(e) => {
+                self.input.empty();
+                Err(e)
+            }
+        }
+    }
+}
+
+#[cfg(feature = "fallible-iterator")]
+impl<R: Reader> fallible_iterator::FallibleIterator for AddrEntryIter<R> {
+    type Item = u64;
+    type Error = Error;
+
+    fn next(&mut self) -> ::core::result::Result<Option<Self::Item>, Self::Error> {
+        AddrEntryIter::next(self)
     }
 }
 
@@ -114,5 +295,59 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_iterator() {
+        let length = Label::new();
+        let start = Label::new();
+        let end = Label::new();
+        
+        let mut section = Section::with_endian(Endian::Little)
+            .initial_length(Format::Dwarf32, &length, &start)
+            .D16(5) 
+            .D8(4) 
+            .D8(0) 
+            .word(4, 0x12345678)
+            .word(4, 0xdeadbeef)
+            .mark(&end);
+        length.set_const((&end - &start) as u64);
+        
+        let length = Label::new();
+        let start = Label::new();
+        let end = Label::new();
+        section = section
+            .initial_length(Format::Dwarf64, &length, &start)
+            .D16(5) 
+            .D8(8) 
+            .D8(0) 
+            .word(8, 0x123456789abcdef0)
+            .word(8, 0xdeadbeefdeadbeef)
+            .mark(&end);
+        length.set_const((&end - &start) as u64);
+        let section = section.get_contents().unwrap();
+        let debug_addr = DebugAddr::from(EndianSlice::new(&section, LittleEndian));
+        let mut iter = debug_addr.headers();
+        let first_header = iter.next().unwrap().unwrap();
+        let first_encoding = first_header.encoding();
+        assert_eq!(first_encoding.address_size, 4);
+        assert_eq!(first_encoding.format, Format::Dwarf32);
+        assert_eq!(first_encoding.version, 5);
+        assert_eq!(first_header.length(), 12);
+        let mut first_entries = first_header.entries();
+        assert_eq!(first_entries.next(), Ok(Some(0x12345678)));
+        assert_eq!(first_entries.next(), Ok(Some(0xdeadbeef)));
+        assert_eq!(first_entries.next(), Ok(None));
+        let second_header = iter.next().unwrap().unwrap();
+        let second_encoding = second_header.encoding();
+        assert_eq!(second_encoding.address_size, 8);
+        assert_eq!(second_encoding.format, Format::Dwarf64);
+        assert_eq!(second_encoding.version, 5);
+        assert_eq!(second_header.length(), 20);
+        let mut second_entries = second_header.entries();
+        assert_eq!(second_entries.next(), Ok(Some(0x123456789abcdef0)));
+        assert_eq!(second_entries.next(), Ok(Some(0xdeadbeefdeadbeef)));
+        assert_eq!(second_entries.next(), Ok(None));
+        assert_eq!(iter.next(), Ok(None));
     }
 }

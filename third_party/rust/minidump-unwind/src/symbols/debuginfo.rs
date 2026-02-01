@@ -6,6 +6,7 @@ use framehop::Unwinder;
 use memmap2::Mmap;
 use minidump::{MinidumpModuleList, MinidumpSystemInfo, Module};
 use object::read::{macho::FatArch, Architecture};
+use std::borrow::Cow;
 use std::cell::UnsafeCell;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -156,7 +157,7 @@ impl SymbolInterface for NoSymbols {
         _module: &(dyn Module + Sync),
         _frame: &mut (dyn FrameSymbolizer + Send),
     ) -> Result<(), FillSymbolError> {
-        Ok(())
+        Err(FillSymbolError {})
     }
 }
 
@@ -167,25 +168,70 @@ mod wholesym_symbol_interface {
     use std::collections::HashMap;
     use wholesym::{LookupAddress, SymbolManager, SymbolManagerConfig, SymbolMap};
 
+    
+    type Symbols = HashMap<ModuleKey, Mutex<SymbolMap>>;
+
     pub struct Impl {
-        
-        symbols: HashMap<ModuleKey, Mutex<SymbolMap>>,
+        symbols: Symbols,
+    }
+
+    struct SymbolLoader {
+        symbols: Symbols,
+        symbol_manager: SymbolManager,
+    }
+
+    impl SymbolLoader {
+        fn new() -> Self {
+            SymbolLoader {
+                symbols: Default::default(),
+                symbol_manager: SymbolManager::with_config(SymbolManagerConfig::new()),
+            }
+        }
+
+        async fn try_load_symbol_map(
+            &mut self,
+            module: &minidump::MinidumpModule,
+            path: &Path,
+        ) -> bool {
+            match self
+                .symbol_manager
+                .load_symbol_map_for_binary_at_path(path, None)
+                .await
+            {
+                Ok(sm) => {
+                    self.symbols.insert(module.into(), Mutex::new(sm));
+                    true
+                }
+                Err(e) => {
+                    tracing::error!("failed to load symbol map for {}: {e}", path.display());
+                    false
+                }
+            }
+        }
+
+        fn into_symbols(self) -> Symbols {
+            self.symbols
+        }
     }
 
     impl Impl {
         pub async fn new(modules: &MinidumpModuleList) -> Self {
-            let mut symbols = HashMap::new();
-            let symbol_manager = SymbolManager::with_config(SymbolManagerConfig::new());
+            let mut symbol_loader = SymbolLoader::new();
+
             for module in modules.iter() {
-                let path = effective_debug_file(module, false);
-                if let Ok(sm) = symbol_manager
-                    .load_symbol_map_for_binary_at_path(&path, None)
+                let debug_file = EffectiveDebugFile::for_module(module, false);
+                if !symbol_loader
+                    .try_load_symbol_map(module, debug_file.path())
                     .await
                 {
-                    symbols.insert(module.into(), Mutex::new(sm));
+                    if let Some(p) = debug_file.fallback() {
+                        symbol_loader.try_load_symbol_map(module, p).await;
+                    }
                 }
             }
-            Impl { symbols }
+            Impl {
+                symbols: symbol_loader.into_symbols(),
+            }
         }
     }
 
@@ -349,50 +395,90 @@ mod object_section_info {
     }
 }
 
+struct EffectiveDebugFile<'a> {
+    path: Cow<'a, Path>,
+    fallback: Option<Cow<'a, Path>>,
+}
 
+fn cow_str_to_path<'a>(s: Cow<'a, str>) -> Cow<'a, Path> {
+    match s {
+        Cow::Borrowed(s) => Cow::Borrowed(s.as_ref()),
+        Cow::Owned(s) => Cow::Owned(s.into()),
+    }
+}
 
-
-fn effective_debug_file(module: &dyn Module, unwind_info: bool) -> PathBuf {
+impl<'a> EffectiveDebugFile<'a> {
     
-    let ignore_debug_file = unwind_info && cfg!(all(windows, target_arch = "x86_64"));
+    
+    
+    fn for_module(module: &'a dyn Module, need_unwind_info: bool) -> Self {
+        
+        
+        
+        
+        let ignore_debug_file = need_unwind_info && cfg!(all(windows, target_arch = "x86_64"));
 
-    let code_file = module.code_file();
-    let code_file_path: &Path = code_file.as_ref().as_ref();
+        let code_file = cow_str_to_path(module.code_file());
 
-    if !ignore_debug_file {
-        if let Some(file) = module.debug_file() {
-            let file_path: &Path = file.as_ref().as_ref();
-            
-            if file_path.is_relative() {
-                if let Some(parent) = code_file_path.parent() {
-                    let path = parent.join(file_path);
-                    if path.exists() {
-                        return path;
+        if !ignore_debug_file {
+            if let Some(file) = module.debug_file() {
+                let file = cow_str_to_path(file);
+                
+                if file.is_relative() {
+                    if let Some(parent) = code_file.parent() {
+                        let path = parent.join(&file);
+                        if path.exists() {
+                            return EffectiveDebugFile {
+                                path: path.into(),
+                                fallback: Some(code_file),
+                            };
+                        }
                     }
                 }
+                if file.exists() {
+                    return EffectiveDebugFile {
+                        path: file,
+                        fallback: Some(code_file),
+                    };
+                }
             }
-            if file_path.exists() {
-                return file_path.to_owned();
-            }
+            
         }
-        
+
+        EffectiveDebugFile {
+            path: code_file,
+            fallback: None,
+        }
     }
 
-    code_file_path.to_owned()
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn fallback(&self) -> Option<&Path> {
+        self.fallback.as_deref()
+    }
 }
 
 fn load_unwind_module(
     module: &dyn Module,
     arch: Architecture,
 ) -> Option<(Mmap, framehop::Module<ModuleData>)> {
-    let path = effective_debug_file(module, true);
-    let file = match File::open(&path) {
-        Ok(file) => file,
-        Err(e) => {
-            tracing::warn!("failed to open {} for debug info: {e}", path.display());
-            return None;
+    let debug_file = EffectiveDebugFile::for_module(module, true);
+
+    fn try_open(path: &Path) -> Option<(&Path, File)> {
+        match File::open(path) {
+            Ok(file) => Some((path, file)),
+            Err(e) => {
+                tracing::warn!("failed to open {} for debug info: {e}", path.display());
+                None
+            }
         }
-    };
+    }
+
+    let (path, file) =
+        try_open(debug_file.path()).or_else(|| debug_file.fallback().and_then(try_open))?;
+
     
     
     let mapped = match unsafe { Mmap::map(&file) } {
@@ -415,13 +501,13 @@ fn load_unwind_module(
             return None;
         }
         Ok(object::read::FileKind::MachOFat64) => get_fat_macho_data(
-            &path,
+            path,
             data,
             object::read::macho::MachOFatFile64::parse(data),
             arch,
         )?,
         Ok(object::read::FileKind::MachOFat32) => get_fat_macho_data(
-            &path,
+            path,
             data,
             object::read::macho::MachOFatFile32::parse(data),
             arch,

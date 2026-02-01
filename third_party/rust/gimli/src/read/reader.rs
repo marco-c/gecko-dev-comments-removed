@@ -204,7 +204,29 @@ pub(crate) trait ReaderAddress: Sized {
     fn wrapping_add_sized(self, length: u64, size: u8) -> Self;
 
     
+    fn zeros() -> Self;
+
+    
     fn ones_sized(size: u8) -> Self;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn min_tombstone(size: u8) -> Self {
+        Self::zeros().wrapping_add_sized(-2i64 as u64, size)
+    }
 }
 
 impl ReaderAddress for u64 {
@@ -222,6 +244,11 @@ impl ReaderAddress for u64 {
     fn wrapping_add_sized(self, length: u64, size: u8) -> Self {
         let mask = Self::ones_sized(size);
         self.wrapping_add(length) & mask
+    }
+
+    #[inline]
+    fn zeros() -> Self {
+        0
     }
 
     #[inline]
@@ -550,5 +577,18 @@ pub trait Reader: Debug + Clone {
             otherwise => Err(Error::UnsupportedOffsetSize(otherwise)),
         }
         .and_then(Self::Offset::from_u64)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_min_tombstone() {
+        assert_eq!(u64::min_tombstone(1), 0xfe);
+        assert_eq!(u64::min_tombstone(2), 0xfffe);
+        assert_eq!(u64::min_tombstone(4), 0xffff_fffe);
+        assert_eq!(u64::min_tombstone(8), 0xffff_ffff_ffff_fffe);
     }
 }

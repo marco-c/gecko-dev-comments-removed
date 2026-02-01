@@ -14,7 +14,7 @@ pub trait Module {
     
     fn size(&self) -> u64;
     
-    fn code_file(&self) -> Cow<str>;
+    fn code_file(&self) -> Cow<'_, str>;
     
     
     
@@ -26,7 +26,7 @@ pub trait Module {
     
     
     
-    fn debug_file(&self) -> Option<Cow<str>>;
+    fn debug_file(&self) -> Option<Cow<'_, str>>;
     
     
     
@@ -34,7 +34,7 @@ pub trait Module {
     
     fn debug_identifier(&self) -> Option<DebugId>;
     
-    fn version(&self) -> Option<Cow<str>>;
+    fn version(&self) -> Option<Cow<'_, str>>;
 }
 
 
@@ -46,13 +46,13 @@ impl Module for (&str, DebugId) {
     fn size(&self) -> u64 {
         0
     }
-    fn code_file(&self) -> Cow<str> {
+    fn code_file(&self) -> Cow<'_, str> {
         Cow::Borrowed("")
     }
     fn code_identifier(&self) -> Option<CodeId> {
         None
     }
-    fn debug_file(&self) -> Option<Cow<str>> {
+    fn debug_file(&self) -> Option<Cow<'_, str>> {
         let &(file, _id) = self;
         Some(Cow::Borrowed(file))
     }
@@ -60,7 +60,7 @@ impl Module for (&str, DebugId) {
         let &(_file, id) = self;
         Some(id)
     }
-    fn version(&self) -> Option<Cow<str>> {
+    fn version(&self) -> Option<Cow<'_, str>> {
         None
     }
 }

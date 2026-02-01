@@ -2,64 +2,113 @@
 
 
 
+
+
+
+
+
+#![no_implicit_prelude]
 #![allow(warnings)]
 
-#[macro_use]
-mod util;
+extern crate rustversion;
 
-use std::{marker::PhantomData, option::IntoIter};
+include!("include.rs");
 
-use {
-    static_assertions::assert_impl_all,
-    zerocopy::{DstLayout, KnownLayout},
-};
-
-use crate::util::AU16;
-
-#[derive(KnownLayout)]
+#[derive(imp::KnownLayout)]
 struct Zst;
 
-assert_impl_all!(Zst: KnownLayout);
+util_assert_impl_all!(Zst: imp::KnownLayout);
 
-#[derive(KnownLayout)]
+#[derive(imp::KnownLayout)]
 struct One {
     a: bool,
 }
 
-assert_impl_all!(One: KnownLayout);
+util_assert_impl_all!(One: imp::KnownLayout);
 
-#[derive(KnownLayout)]
+#[derive(imp::KnownLayout)]
 struct Two {
     a: bool,
     b: Zst,
 }
 
-assert_impl_all!(Two: KnownLayout);
+util_assert_impl_all!(Two: imp::KnownLayout);
 
-#[derive(KnownLayout)]
-struct TypeParams<'a, T, I: Iterator> {
+#[derive(imp::KnownLayout)]
+struct TypeParams<'a, T, I: imp::Iterator> {
     a: I::Item,
     b: u8,
-    c: PhantomData<&'a [u8]>,
-    d: PhantomData<&'static str>,
-    e: PhantomData<String>,
+    c: imp::PhantomData<&'a [::core::primitive::u8]>,
+    d: imp::PhantomData<&'static ::core::primitive::str>,
+    e: imp::PhantomData<imp::String>,
     f: T,
 }
 
-assert_impl_all!(TypeParams<'static, (), IntoIter<()>>: KnownLayout);
-assert_impl_all!(TypeParams<'static, AU16, IntoIter<()>>: KnownLayout);
+util_assert_impl_all!(TypeParams<'static, (), imp::IntoIter<()>>: imp::KnownLayout);
+util_assert_impl_all!(TypeParams<'static, util::AU16, imp::IntoIter<()>>: imp::KnownLayout);
 
 
 
-#[derive(KnownLayout)]
+
+
+
+#[rustversion::since(1.62)]
+const _: () = {
+    #[derive(imp::KnownLayout)]
+    #[repr(C)]
+    struct WithParams<'a: 'b, 'b: 'a, T: 'a + 'b + imp::KnownLayout, const N: usize>(
+        [T; N],
+        imp::PhantomData<&'a &'b ()>,
+    )
+    where
+        'a: 'b,
+        'b: 'a,
+        T: 'a + 'b + imp::KnownLayout;
+
+    util_assert_impl_all!(WithParams<'static, 'static, u8, 42>: imp::KnownLayout);
+};
+
+const _: () = {
+    
+    
+
+    #[derive(imp::KnownLayout)]
+    #[repr(C)]
+    struct WithParams<'a: 'b, 'b: 'a, T: 'a + 'b + imp::KnownLayout, const N: usize>(
+        &'a &'b [T; N],
+        imp::PhantomData<&'static ()>,
+    )
+    where
+        'a: 'b,
+        'b: 'a,
+        T: 'a + 'b + imp::KnownLayout;
+
+    util_assert_impl_all!(WithParams<'static, 'static, u8, 42>: imp::KnownLayout);
+};
+
+
+
+
+#[derive(imp::KnownLayout)]
 #[repr(C)]
-struct WithParams<'a: 'b, 'b: 'a, const N: usize, T: 'a + 'b + KnownLayout>(
-    [T; N],
-    PhantomData<&'a &'b ()>,
-)
-where
-    'a: 'b,
-    'b: 'a,
-    T: 'a + 'b + KnownLayout;
+struct WithSelfReference {
+    leading: [u8; Self::N],
+    trailing: [[u8; Self::N]],
+}
 
-assert_impl_all!(WithParams<'static, 'static, 42, u8>: KnownLayout);
+impl WithSelfReference {
+    const N: usize = 42;
+}
+
+util_assert_impl_all!(WithSelfReference: imp::KnownLayout);
+
+
+
+
+#[derive(imp::KnownLayout)]
+#[repr(C, packed)]
+struct Packet<P> {
+    payload: P,
+}
+
+util_assert_impl_all!(Packet<imp::u8>: imp::KnownLayout);

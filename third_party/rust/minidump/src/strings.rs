@@ -39,7 +39,7 @@ impl LinuxOsStr {
     }
 
     
-    pub fn to_string_lossy(&self) -> Cow<str> {
+    pub fn to_string_lossy(&self) -> Cow<'_, str> {
         
         
         

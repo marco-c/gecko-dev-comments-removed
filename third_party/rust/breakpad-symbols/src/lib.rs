@@ -150,7 +150,7 @@ impl Module for SimpleModule {
     fn size(&self) -> u64 {
         self.size.unwrap_or(0)
     }
-    fn code_file(&self) -> Cow<str> {
+    fn code_file(&self) -> Cow<'_, str> {
         self.code_file
             .as_ref()
             .map_or(Cow::from(""), |s| Cow::Borrowed(&s[..]))
@@ -158,13 +158,13 @@ impl Module for SimpleModule {
     fn code_identifier(&self) -> Option<CodeId> {
         self.code_identifier.as_ref().cloned()
     }
-    fn debug_file(&self) -> Option<Cow<str>> {
+    fn debug_file(&self) -> Option<Cow<'_, str>> {
         self.debug_file.as_ref().map(|s| Cow::Borrowed(&s[..]))
     }
     fn debug_identifier(&self) -> Option<DebugId> {
         self.debug_id
     }
-    fn version(&self) -> Option<Cow<str>> {
+    fn version(&self) -> Option<Cow<'_, str>> {
         self.version.as_ref().map(|s| Cow::Borrowed(&s[..]))
     }
 }
@@ -180,7 +180,7 @@ fn replace_or_add_extension(filename: &str, match_extension: &str, new_extension
     if bits.len() > 1
         && bits
             .last()
-            .map_or(false, |e| e.to_lowercase() == match_extension)
+            .is_some_and(|e| e.to_lowercase() == match_extension)
     {
         bits.pop();
     }
@@ -212,10 +212,16 @@ pub struct FileLookup {
 
 
 
-
-
 pub fn breakpad_sym_lookup(module: &(dyn Module + Sync)) -> Option<FileLookup> {
     let debug_file = module.debug_file()?;
+    let debug_file = if debug_file.is_empty() {
+        
+        
+        
+        module.code_file()
+    } else {
+        debug_file
+    };
     let debug_id = module.debug_identifier()?;
 
     let leaf = leafname(&debug_file);
@@ -476,6 +482,7 @@ impl SymbolSupplier for SimpleSymbolSupplier {
         trace!("SimpleSymbolSupplier search");
         if let Some(lookup) = lookup(module, file_kind) {
             for path in self.paths.iter() {
+                trace!("SimpleSymbolSupplier looking for {}", path.display());
                 if path.is_file() && file_kind == FileKind::BreakpadSym {
                     if let Ok(sf) = SymbolFile::from_file(path) {
                         if sf.module_id == lookup.debug_id {
@@ -485,7 +492,11 @@ impl SymbolSupplier for SimpleSymbolSupplier {
                     }
                 } else if path.is_dir() {
                     let test_path = path.join(lookup.cache_rel.clone());
-                    if fs::metadata(&test_path).ok().map_or(false, |m| m.is_file()) {
+                    trace!(
+                        "SimpleSymbolSupplier looking for file {}",
+                        test_path.display()
+                    );
+                    if fs::metadata(&test_path).ok().is_some_and(|m| m.is_file()) {
                         trace!("SimpleSymbolSupplier found file {}", test_path.display());
                         return Ok(test_path);
                     }
@@ -1006,6 +1017,19 @@ mod test {
     }
 
     #[tokio::test]
+    async fn test_empty_debug_file_breakpad_sym_lookup() {
+        
+        let m = SimpleModule {
+            debug_file: Some("".to_string()),
+            code_file: Some("foo.dll".to_string()),
+            debug_id: DebugId::from_str("abcd1234-0000-0000-0000-abcd12345678-a").ok(),
+            ..SimpleModule::default()
+        };
+
+        assert_eq!(&breakpad_sym_lookup(&m).unwrap().debug_file, "foo.dll.sym");
+    }
+
+    #[tokio::test]
     async fn test_code_info_breakpad_sym_lookup() {
         
         let m = SimpleModule {
@@ -1046,7 +1070,7 @@ mod test {
 
     fn write_symbol_file(path: &Path, contents: &[u8]) {
         let dir = path.parent().unwrap();
-        if !fs::metadata(dir).ok().map_or(false, |m| m.is_dir()) {
+        if !fs::metadata(dir).ok().is_some_and(|m| m.is_dir()) {
             fs::create_dir_all(dir).unwrap();
         }
         let mut f = File::create(path).unwrap();

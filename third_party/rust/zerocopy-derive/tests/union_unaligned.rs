@@ -6,11 +6,11 @@
 
 
 
+
+#![no_implicit_prelude]
 #![allow(warnings)]
 
-use std::{marker::PhantomData, option::IntoIter};
-
-use {static_assertions::assert_impl_all, zerocopy::Unaligned};
+include!("include.rs");
 
 
 
@@ -18,13 +18,13 @@ use {static_assertions::assert_impl_all, zerocopy::Unaligned};
 
 
 
-#[derive(Unaligned)]
+#[derive(imp::Unaligned)]
 #[repr(C)]
 union Foo {
-    a: u8,
+    a: imp::u8,
 }
 
-assert_impl_all!(Foo: Unaligned);
+util_assert_impl_all!(Foo: imp::Unaligned);
 
 
 
@@ -37,7 +37,7 @@ assert_impl_all!(Foo: Unaligned);
 
 
 
-#[derive(Unaligned)]
+#[derive(imp::Unaligned)]
 #[repr(packed)]
 union Baz {
     
@@ -50,28 +50,28 @@ union Baz {
     a: u16,
 }
 
-assert_impl_all!(Baz: Unaligned);
+util_assert_impl_all!(Baz: imp::Unaligned);
 
-#[derive(Unaligned)]
+#[derive(imp::Unaligned)]
 #[repr(C, align(1))]
 union FooAlign {
-    a: u8,
+    a: imp::u8,
 }
 
-assert_impl_all!(FooAlign: Unaligned);
+util_assert_impl_all!(FooAlign: imp::Unaligned);
 
-#[derive(Unaligned)]
+#[derive(imp::Unaligned)]
 #[repr(C)]
-union TypeParams<'a, T: Copy, I: Iterator>
+union TypeParams<'a, T: imp::Copy, I: imp::Iterator>
 where
-    I::Item: Copy,
+    I::Item: imp::Copy,
 {
     a: T,
     c: I::Item,
     d: u8,
-    e: PhantomData<&'a [u8]>,
-    f: PhantomData<&'static str>,
-    g: PhantomData<String>,
+    e: imp::PhantomData<&'a [imp::u8]>,
+    f: imp::PhantomData<&'static imp::str>,
+    g: imp::PhantomData<imp::String>,
 }
 
-assert_impl_all!(TypeParams<'static, (), IntoIter<()>>: Unaligned);
+util_assert_impl_all!(TypeParams<'static, (), imp::IntoIter<()>>: imp::Unaligned);

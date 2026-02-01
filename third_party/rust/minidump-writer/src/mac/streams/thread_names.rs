@@ -49,12 +49,6 @@ impl MinidumpWriter {
         dumper: &TaskDumper,
         tid: u32,
     ) -> Result<MDLocationDescriptor, WriterError> {
-        
-        
-        impl mach::ThreadInfo for libc::proc_threadinfo {
-            const FLAVOR: u32 = 5; 
-        }
-
         let thread_info: libc::proc_threadinfo = dumper.thread_info(tid)?;
 
         let name = std::str::from_utf8(
@@ -76,4 +70,11 @@ impl MinidumpWriter {
 
         Ok(write_string_to_location(buffer, tname)?)
     }
+}
+
+
+
+impl mach::ThreadInfo for libc::proc_threadinfo {
+    
+    const FLAVOR: u32 = 5;
 }

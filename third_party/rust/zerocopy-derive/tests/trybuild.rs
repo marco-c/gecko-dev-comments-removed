@@ -6,14 +6,55 @@
 
 
 
-#[test]
-#[cfg_attr(miri, ignore)]
-fn ui() {
+#![allow(clippy::uninlined_format_args)]
+
+use std::env;
+
+use testutil::set_rustflags_w_warnings;
+
+fn test(subdir: &str) {
     let version = testutil::ToolchainVersion::extract_from_pwd().unwrap();
     
     
     let source_files_dirname = version.get_ui_source_files_dirname_and_maybe_print_warning();
 
+    
+    
+    set_rustflags_w_warnings();
+
     let t = trybuild::TestCases::new();
-    t.compile_fail(format!("tests/{source_files_dirname}/*.rs"));
+    t.compile_fail(format!("tests/{}/{}/*.rs", source_files_dirname, subdir));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn ui() {
+    test("");
+
+    
+    
+    
+    let rustflags = env::var("RUSTFLAGS").unwrap();
+    let new_rustflags = rustflags.replace("--cfg zerocopy_derive_union_into_bytes", "");
+
+    
+    
+    
+    #[allow(unused_unsafe)] 
+    unsafe {
+        env::set_var("RUSTFLAGS", new_rustflags)
+    };
+
+    test("union_into_bytes_cfg");
+
+    
+    
+    
+    
+    
+    
+    #[allow(unused_unsafe)] 
+    unsafe {
+        env::set_var("RUSTFLAGS", rustflags)
+    };
 }

@@ -2,11 +2,18 @@
 
 
 
+
+
+
+
+include!("../../zerocopy-derive/tests/include.rs");
+
 #[macro_use]
 extern crate zerocopy;
+
+use util::NotZerocopy;
 
 fn main() {}
 
 
-const NOT_FROM_BYTES: core::cell::UnsafeCell<u32> =
-    include_value!("../../testdata/include_value/data");
+const NOT_FROM_BYTES: NotZerocopy<u32> = include_value!("../../testdata/include_value/data");

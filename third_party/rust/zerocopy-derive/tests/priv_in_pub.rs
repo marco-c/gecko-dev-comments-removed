@@ -6,19 +6,29 @@
 
 
 
-use zerocopy::{AsBytes, FromBytes, FromZeroes, KnownLayout, Unaligned};
+
+#![no_implicit_prelude]
+#![allow(warnings)]
+
+include!("include.rs");
 
 
+#[::rustversion::stable(1.59)]
+mod test {
+    use super::*;
 
+    
+    
+    
+    
+    
+    
 
+    #[derive(imp::KnownLayout, imp::IntoBytes, imp::FromZeros, imp::FromBytes, imp::Unaligned)]
+    #[repr(C)]
+    pub struct Public(Private);
 
-
-
-
-#[derive(KnownLayout, AsBytes, FromZeroes, FromBytes, Unaligned)]
-#[repr(C)]
-pub struct Public(Private);
-
-#[derive(KnownLayout, AsBytes, FromZeroes, FromBytes, Unaligned)]
-#[repr(C)]
-struct Private(());
+    #[derive(imp::KnownLayout, imp::IntoBytes, imp::FromZeros, imp::FromBytes, imp::Unaligned)]
+    #[repr(C)]
+    struct Private(());
+}

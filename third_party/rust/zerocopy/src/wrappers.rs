@@ -6,14 +6,7 @@
 
 
 
-use core::{
-    cmp::Ordering,
-    fmt::{self, Debug, Display, Formatter},
-    hash::Hash,
-    mem::{self, ManuallyDrop},
-    ops::{Deref, DerefMut},
-    ptr,
-};
+use core::{fmt, hash::Hash};
 
 use super::*;
 
@@ -56,29 +49,97 @@ use super::*;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[allow(missing_debug_implementations)]
 #[derive(Default, Copy)]
-#[cfg_attr(
-    any(feature = "derive", test),
-    derive(KnownLayout, FromZeroes, FromBytes, AsBytes, Unaligned)
-)]
+#[cfg_attr(any(feature = "derive", test), derive(Immutable, FromBytes, IntoBytes, Unaligned))]
 #[repr(C, packed)]
 pub struct Unalign<T>(T);
 
-#[cfg(not(any(feature = "derive", test)))]
+
+
+
 impl_known_layout!(T => Unalign<T>);
 
-safety_comment! {
-    /// SAFETY:
-    /// - `Unalign<T>` is `repr(packed)`, so it is unaligned regardless of the
-    ///   alignment of `T`, and so we don't require that `T: Unaligned`
-    /// - `Unalign<T>` has the same bit validity as `T`, and so it is
-    ///   `FromZeroes`, `FromBytes`, or `AsBytes` exactly when `T` is as well.
+
+
+
+
+
+
+
+
+
+#[allow(unused_unsafe)] 
+const _: () = unsafe {
     impl_or_verify!(T => Unaligned for Unalign<T>);
-    impl_or_verify!(T: FromZeroes => FromZeroes for Unalign<T>);
+    impl_or_verify!(T: Immutable => Immutable for Unalign<T>);
+    impl_or_verify!(
+        T: TryFromBytes => TryFromBytes for Unalign<T>;
+        |c| T::is_bit_valid(c.transmute())
+    );
+    impl_or_verify!(T: FromZeros => FromZeros for Unalign<T>);
     impl_or_verify!(T: FromBytes => FromBytes for Unalign<T>);
-    impl_or_verify!(T: AsBytes => AsBytes for Unalign<T>);
-}
+    impl_or_verify!(T: IntoBytes => IntoBytes for Unalign<T>);
+};
 
 
 
@@ -102,12 +163,6 @@ impl<T> Unalign<T> {
     pub const fn into_inner(self) -> T {
         
         
-        #[repr(C)]
-        union Transmute<T> {
-            u: ManuallyDrop<Unalign<T>>,
-            t: ManuallyDrop<T>,
-        }
-
         
         
         
@@ -115,13 +170,7 @@ impl<T> Unalign<T> {
         
         
         
-        
-        
-        
-        
-        
-        
-        unsafe { ManuallyDrop::into_inner(Transmute { u: ManuallyDrop::new(self) }.t) }
+        unsafe { crate::util::transmute_unchecked(self) }
     }
 
     
@@ -133,17 +182,14 @@ impl<T> Unalign<T> {
     
     
     #[inline(always)]
-    pub fn try_deref(&self) -> Option<&T> {
-        if !crate::util::aligned_to::<_, T>(self) {
-            return None;
+    pub fn try_deref(&self) -> Result<&T, AlignmentError<&Self, T>> {
+        let inner = Ptr::from_ref(self).transmute();
+        match inner.try_into_aligned() {
+            Ok(aligned) => Ok(aligned.as_ref()),
+            Err(err) => Err(err.map_src(|src| src.into_unalign().as_ref())),
         }
-
-        
-        
-        unsafe { Some(self.deref_unchecked()) }
     }
 
-    
     
     
     
@@ -153,17 +199,14 @@ impl<T> Unalign<T> {
     
     
     #[inline(always)]
-    pub fn try_deref_mut(&mut self) -> Option<&mut T> {
-        if !crate::util::aligned_to::<_, T>(&*self) {
-            return None;
+    pub fn try_deref_mut(&mut self) -> Result<&mut T, AlignmentError<&mut Self, T>> {
+        let inner = Ptr::from_mut(self).transmute::<_, _, (_, (_, _))>();
+        match inner.try_into_aligned() {
+            Ok(aligned) => Ok(aligned.as_mut()),
+            Err(err) => Err(err.map_src(|src| src.into_unalign().as_mut())),
         }
-
-        
-        
-        unsafe { Some(self.deref_mut_unchecked()) }
     }
 
-    
     
     
     
@@ -195,7 +238,6 @@ impl<T> Unalign<T> {
     
     
     
-    
     #[inline(always)]
     pub unsafe fn deref_mut_unchecked(&mut self) -> &mut T {
         
@@ -206,6 +248,12 @@ impl<T> Unalign<T> {
         unsafe { &mut *self.get_mut_ptr() }
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -269,6 +317,21 @@ impl<T> Unalign<T> {
     
     #[inline]
     pub fn update<O, F: FnOnce(&mut T) -> O>(&mut self, f: F) -> O {
+        if mem::align_of::<T>() == 1 {
+            
+            
+            
+            
+            
+            
+            
+
+            
+            
+            let t = unsafe { self.deref_mut_unchecked() };
+            return f(t);
+        }
+
         
         
         struct WriteBackOnDrop<T> {
@@ -326,22 +389,14 @@ impl<T: Unaligned> Deref for Unalign<T> {
 
     #[inline(always)]
     fn deref(&self) -> &T {
-        
-        
-        
-        
-        unsafe { self.deref_unchecked() }
+        Ptr::from_ref(self).transmute().bikeshed_recall_aligned().as_ref()
     }
 }
 
 impl<T: Unaligned> DerefMut for Unalign<T> {
     #[inline(always)]
     fn deref_mut(&mut self) -> &mut T {
-        
-        
-        
-        
-        unsafe { self.deref_mut_unchecked() }
+        Ptr::from_mut(self).transmute::<_, _, (_, (_, _))>().bikeshed_recall_aligned().as_mut()
     }
 }
 
@@ -392,33 +447,145 @@ impl<T: Unaligned + Display> Display for Unalign<T> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(transparent)]
+#[doc(hidden)]
+pub struct MaybeUninit<T: ?Sized + KnownLayout>(
+    
+    
+    
+    
+    
+    
+    
+    T::MaybeUninit,
+);
+
+#[doc(hidden)]
+impl<T: ?Sized + KnownLayout> MaybeUninit<T> {
+    
+    #[inline(always)]
+    pub fn new(val: T) -> Self
+    where
+        T: Sized,
+        Self: Sized,
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe { crate::util::transmute_unchecked(val) }
+    }
+
+    
+    #[must_use]
+    #[inline(always)]
+    pub fn uninit() -> Self
+    where
+        T: Sized,
+        Self: Sized,
+    {
+        let uninit = CoreMaybeUninit::<T>::uninit();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe { crate::util::transmute_unchecked(uninit) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    #[inline]
+    pub fn new_boxed_uninit(meta: T::PointerMetadata) -> Result<Box<Self>, AllocError> {
+        
+        
+        
+        
+        
+        unsafe { crate::util::new_box(meta, alloc::alloc::alloc) }
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub unsafe fn assume_init(self) -> T
+    where
+        T: Sized,
+        Self: Sized,
+    {
+        
+        unsafe { crate::util::transmute_unchecked(self) }
+    }
+}
+
+impl<T: ?Sized + KnownLayout> fmt::Debug for MaybeUninit<T> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.pad(core::any::type_name::<Self>())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use core::panic::AssertUnwindSafe;
 
     use super::*;
     use crate::util::testutil::*;
-
-    
-    
-    
-    
-    #[repr(C)]
-    struct ForceUnalign<T, A> {
-        
-        
-        
-        
-        _u: u8,
-        t: T,
-        _a: [A; 0],
-    }
-
-    impl<T, A> ForceUnalign<T, A> {
-        const fn new(t: T) -> ForceUnalign<T, A> {
-            ForceUnalign { _u: 0, t, _a: [] }
-        }
-    }
 
     #[test]
     fn test_unalign() {
@@ -433,8 +600,8 @@ mod tests {
 
         
         let mut u: Align<_, AU64> = Align::new(Unalign::new(AU64(123)));
-        assert_eq!(u.t.try_deref(), Some(&AU64(123)));
-        assert_eq!(u.t.try_deref_mut(), Some(&mut AU64(123)));
+        assert_eq!(u.t.try_deref().unwrap(), &AU64(123));
+        assert_eq!(u.t.try_deref_mut().unwrap(), &mut AU64(123));
         
         assert_eq!(unsafe { u.t.deref_unchecked() }, &AU64(123));
         
@@ -445,13 +612,13 @@ mod tests {
         
         
         let mut u: ForceUnalign<_, AU64> = ForceUnalign::new(Unalign::new(AU64(123)));
-        assert_eq!(u.t.try_deref(), None);
-        assert_eq!(u.t.try_deref_mut(), None);
+        assert!(matches!(u.t.try_deref(), Err(AlignmentError { .. })));
+        assert!(matches!(u.t.try_deref_mut(), Err(AlignmentError { .. })));
 
         
         let mut u = Unalign::new(123u8);
-        assert_eq!(u.try_deref(), Some(&123));
-        assert_eq!(u.try_deref_mut(), Some(&mut 123));
+        assert_eq!(u.try_deref(), Ok(&123));
+        assert_eq!(u.try_deref_mut(), Ok(&mut 123));
         assert_eq!(u.deref(), &123);
         assert_eq!(u.deref_mut(), &mut 123);
         *u = 21;
@@ -474,7 +641,7 @@ mod tests {
             let au64 = unsafe { x.t.deref_unchecked() };
             match au64 {
                 AU64(123) => {}
-                _ => unreachable!(),
+                _ => const_unreachable!(),
             }
         };
     }
@@ -499,5 +666,87 @@ mod tests {
         }));
         assert!(res.is_err());
         assert_eq!(u.into_inner(), Box::new(AU64(124)));
+
+        
+        let mut u = Unalign::new([0u8, 1]);
+        u.update(|a| a[0] += 1);
+        assert_eq!(u.get(), [1u8, 1]);
+    }
+
+    #[test]
+    fn test_unalign_copy_clone() {
+        
+        
+
+        
+        let u = ForceUnalign::<_, AU64>::new(Unalign::new(AU64(123)));
+        #[allow(clippy::clone_on_copy)]
+        let v = u.t.clone();
+        let w = u.t;
+        assert_eq!(u.t.get(), v.get());
+        assert_eq!(u.t.get(), w.get());
+        assert_eq!(v.get(), w.get());
+    }
+
+    #[test]
+    fn test_unalign_trait_impls() {
+        let zero = Unalign::new(0u8);
+        let one = Unalign::new(1u8);
+
+        assert!(zero < one);
+        assert_eq!(PartialOrd::partial_cmp(&zero, &one), Some(Ordering::Less));
+        assert_eq!(Ord::cmp(&zero, &one), Ordering::Less);
+
+        assert_ne!(zero, one);
+        assert_eq!(zero, zero);
+        assert!(!PartialEq::eq(&zero, &one));
+        assert!(PartialEq::eq(&zero, &zero));
+
+        fn hash<T: Hash>(t: &T) -> u64 {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            t.hash(&mut h);
+            h.finish()
+        }
+
+        assert_eq!(hash(&zero), hash(&0u8));
+        assert_eq!(hash(&one), hash(&1u8));
+
+        assert_eq!(format!("{:?}", zero), format!("{:?}", 0u8));
+        assert_eq!(format!("{:?}", one), format!("{:?}", 1u8));
+        assert_eq!(format!("{}", zero), format!("{}", 0u8));
+        assert_eq!(format!("{}", one), format!("{}", 1u8));
+    }
+
+    #[test]
+    #[allow(clippy::as_conversions)]
+    fn test_maybe_uninit() {
+        
+        {
+            let input = 42;
+            let uninit = MaybeUninit::new(input);
+            
+            let output = unsafe { uninit.assume_init() };
+            assert_eq!(input, output);
+        }
+
+        
+        {
+            let input = 42;
+            let uninit = MaybeUninit::new(&input);
+            
+            let output = unsafe { uninit.assume_init() };
+            assert_eq!(&input as *const _, output as *const _);
+            assert_eq!(input, *output);
+        }
+
+        
+        {
+            let input = [1, 2, 3, 4];
+            let uninit = MaybeUninit::new(&input[..]);
+            
+            let output = unsafe { uninit.assume_init() };
+            assert_eq!(&input[..] as *const _, output as *const _);
+            assert_eq!(input, *output);
+        }
     }
 }

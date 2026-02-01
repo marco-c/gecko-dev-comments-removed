@@ -33,6 +33,7 @@
 #![allow(clippy::manual_range_contains)]
 #![allow(clippy::needless_late_init)]
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::needless_lifetimes)]
 
 #![allow(clippy::should_implement_trait)]
 

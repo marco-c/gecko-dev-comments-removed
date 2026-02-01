@@ -101,6 +101,10 @@ pub struct DebugAbbrevOffset<T = usize>(pub T);
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DebugAddrOffset<T = usize>(pub T);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DebugAddrBase<T = usize>(pub T);
 
 
@@ -364,6 +368,13 @@ impl SectionId {
             SectionId::DebugStr => ".dwstr",
             _ => return None,
         })
+    }
+
+    
+    
+    
+    pub fn is_string(self) -> bool {
+        matches!(self, SectionId::DebugStr | SectionId::DebugLineStr)
     }
 }
 

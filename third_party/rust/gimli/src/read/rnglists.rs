@@ -528,12 +528,6 @@ impl<R: Reader> RngListIter<R> {
     #[doc(hidden)]
     pub fn convert_raw(&mut self, raw_range: RawRngListEntry<R::Offset>) -> Result<Option<Range>> {
         let address_size = self.raw.encoding.address_size;
-        let mask = u64::ones_sized(address_size);
-        let tombstone = if self.raw.encoding.version <= 4 {
-            mask - 1
-        } else {
-            mask
-        };
 
         let range = match raw_range {
             RawRngListEntry::BaseAddress { addr } => {
@@ -556,11 +550,12 @@ impl<R: Reader> RngListIter<R> {
             }
             RawRngListEntry::AddressOrOffsetPair { begin, end }
             | RawRngListEntry::OffsetPair { begin, end } => {
-                if self.base_address == tombstone {
+                
+                if self.base_address >= u64::min_tombstone(address_size) {
                     return Ok(None);
                 }
                 let mut range = Range { begin, end };
-                range.add_base_address(self.base_address, self.raw.encoding.address_size);
+                range.add_base_address(self.base_address, address_size);
                 range
             }
             RawRngListEntry::StartEnd { begin, end } => Range { begin, end },
@@ -570,7 +565,17 @@ impl<R: Reader> RngListIter<R> {
             }
         };
 
-        if range.begin == tombstone || range.begin > range.end {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if range.begin >= u64::min_tombstone(address_size) || range.begin >= range.end {
             return Ok(None);
         }
 
@@ -647,455 +652,169 @@ impl Range {
 mod tests {
     use super::*;
     use crate::common::Format;
+    use crate::constants::*;
     use crate::endianity::LittleEndian;
     use crate::test_util::GimliSectionMethods;
+    use alloc::vec::Vec;
     use test_assembler::{Endian, Label, LabelMaker, Section};
 
     #[test]
-    fn test_rnglists_32() {
-        let tombstone = !0u32;
-        let encoding = Encoding {
-            format: Format::Dwarf32,
-            version: 5,
-            address_size: 4,
-        };
-        let section = Section::with_endian(Endian::Little)
-            .L32(0x0300_0000)
-            .L32(0x0301_0300)
-            .L32(0x0301_0400)
-            .L32(0x0301_0500)
-            .L32(tombstone)
-            .L32(0x0301_0600);
-        let buf = section.get_contents().unwrap();
-        let debug_addr = &DebugAddr::from(EndianSlice::new(&buf, LittleEndian));
-        let debug_addr_base = DebugAddrBase(0);
+    fn test_rnglists() {
+        let format = Format::Dwarf32;
+        for size in [4, 8] {
+            let tombstone = u64::ones_sized(size);
+            let tombstone_0 = 0;
+            let encoding = Encoding {
+                format,
+                version: 5,
+                address_size: size,
+            };
+            let section = Section::with_endian(Endian::Little)
+                .word(size, 0x0300_0000)
+                .word(size, 0x0301_0300)
+                .word(size, 0x0301_0400)
+                .word(size, 0x0301_0500)
+                .word(size, tombstone)
+                .word(size, 0x0301_0600)
+                .word(size, tombstone_0);
+            let buf = section.get_contents().unwrap();
+            let debug_addr = &DebugAddr::from(EndianSlice::new(&buf, LittleEndian));
+            let debug_addr_base = DebugAddrBase(0);
 
-        let start = Label::new();
-        let first = Label::new();
-        let size = Label::new();
-        #[rustfmt::skip]
-        let section = Section::with_endian(Endian::Little)
-            
-            .mark(&start)
-            .L32(&size)
-            .L16(encoding.version)
-            .L8(encoding.address_size)
-            .L8(0)
-            .L32(0)
-            .mark(&first)
-            
-            .L8(4).uleb(0x10200).uleb(0x10300)
-            
-            .L8(5).L32(0x0200_0000)
-            .L8(4).uleb(0x10400).uleb(0x10500)
-            
-            .L8(4).uleb(0x10600).uleb(0x10600)
-            .L8(4).uleb(0x10800).uleb(0x10900)
-            
-            .L8(6).L32(0x201_0a00).L32(0x201_0b00)
-            
-            .L8(7).L32(0x201_0c00).uleb(0x100)
-            
-            .L8(4).uleb(0).uleb(1)
-            
-            .L8(4).uleb(0).uleb(0)
-            
-            .L8(5).L32(0)
-            .L8(4).uleb(0).uleb(0xffff_ffff)
-            
-            .L8(1).uleb(0)
-            .L8(4).uleb(0x10100).uleb(0x10200)
-            
-            .L8(2).uleb(1).uleb(2)
-            
-            .L8(3).uleb(3).uleb(0x100)
+            let length = Label::new();
+            let start = Label::new();
+            let first = Label::new();
+            let end = Label::new();
+            let mut section = Section::with_endian(Endian::Little)
+                .initial_length(format, &length, &start)
+                .L16(encoding.version)
+                .L8(encoding.address_size)
+                .L8(0)
+                .L32(0)
+                .mark(&first);
+
+            let mut expected_ranges = Vec::new();
+            let mut expect_range = |begin, end| {
+                expected_ranges.push(Range { begin, end });
+            };
 
             
-            
-            .L8(1).uleb(4)
-            .L8(4).uleb(0x11100).uleb(0x11200)
-            
-            .L8(5).L32(tombstone)
-            .L8(4).uleb(0x11300).uleb(0x11400)
-            
-            .L8(2).uleb(4).uleb(5)
-            
-            .L8(3).uleb(4).uleb(0x100)
-            
-            .L8(6).L32(tombstone).L32(0x201_1500)
-            
-            .L8(7).L32(tombstone).uleb(0x100)
-            
-            .L8(6).L32(0x201_1600).L32(0x201_1700)
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0x10200).uleb(0x10300);
+            expect_range(0x0101_0200, 0x0101_0300);
+
+            section = section.L8(DW_RLE_base_address.0).word(size, 0x0200_0000);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0x10400).uleb(0x10500);
+            expect_range(0x0201_0400, 0x0201_0500);
+
+            section = section
+                .L8(DW_RLE_start_end.0)
+                .word(size, 0x201_0a00)
+                .word(size, 0x201_0b00);
+            expect_range(0x0201_0a00, 0x0201_0b00);
+
+            section = section
+                .L8(DW_RLE_start_length.0)
+                .word(size, 0x201_0c00)
+                .uleb(0x100);
+            expect_range(0x0201_0c00, 0x0201_0d00);
 
             
-            .L8(0)
-            
-            .L32(0xffff_ffff);
-        size.set_const((&section.here() - &start - 4) as u64);
-
-        let buf = section.get_contents().unwrap();
-        let debug_ranges = DebugRanges::new(&[], LittleEndian);
-        let debug_rnglists = DebugRngLists::new(&buf, LittleEndian);
-        let rnglists = RangeLists::new(debug_ranges, debug_rnglists);
-        let offset = RangeListsOffset((&first - &start) as usize);
-        let mut ranges = rnglists
-            .ranges(offset, encoding, 0x0100_0000, debug_addr, debug_addr_base)
-            .unwrap();
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0101_0200,
-                end: 0x0101_0300,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0400,
-                end: 0x0201_0500,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0600,
-                end: 0x0201_0600,
-            }))
-        );
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0800,
-                end: 0x0201_0900,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0a00,
-                end: 0x0201_0b00,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0c00,
-                end: 0x0201_0d00,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0200_0000,
-                end: 0x0200_0001,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0200_0000,
-                end: 0x0200_0000,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0000_0000,
-                end: 0xffff_ffff,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0301_0100,
-                end: 0x0301_0200,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0301_0300,
-                end: 0x0301_0400,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0301_0500,
-                end: 0x0301_0600,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_1600,
-                end: 0x0201_1700,
-            }))
-        );
-
-        
-        assert_eq!(ranges.next(), Ok(None));
-
-        
-        let mut ranges = rnglists
-            .ranges(
-                RangeListsOffset(buf.len()),
-                encoding,
-                0x0100_0000,
-                debug_addr,
-                debug_addr_base,
-            )
-            .unwrap();
-        assert_eq!(ranges.next(), Ok(None));
-    }
-
-    #[test]
-    fn test_rnglists_64() {
-        let tombstone = !0u64;
-        let encoding = Encoding {
-            format: Format::Dwarf64,
-            version: 5,
-            address_size: 8,
-        };
-        let section = Section::with_endian(Endian::Little)
-            .L64(0x0300_0000)
-            .L64(0x0301_0300)
-            .L64(0x0301_0400)
-            .L64(0x0301_0500)
-            .L64(tombstone)
-            .L64(0x0301_0600);
-        let buf = section.get_contents().unwrap();
-        let debug_addr = &DebugAddr::from(EndianSlice::new(&buf, LittleEndian));
-        let debug_addr_base = DebugAddrBase(0);
-
-        let start = Label::new();
-        let first = Label::new();
-        let size = Label::new();
-        #[rustfmt::skip]
-        let section = Section::with_endian(Endian::Little)
-            
-            .mark(&start)
-            .L32(0xffff_ffff)
-            .L64(&size)
-            .L16(encoding.version)
-            .L8(encoding.address_size)
-            .L8(0)
-            .L32(0)
-            .mark(&first)
-            
-            .L8(4).uleb(0x10200).uleb(0x10300)
-            
-            .L8(5).L64(0x0200_0000)
-            .L8(4).uleb(0x10400).uleb(0x10500)
-            
-            .L8(4).uleb(0x10600).uleb(0x10600)
-            .L8(4).uleb(0x10800).uleb(0x10900)
-            
-            .L8(6).L64(0x201_0a00).L64(0x201_0b00)
-            
-            .L8(7).L64(0x201_0c00).uleb(0x100)
-            
-            .L8(4).uleb(0).uleb(1)
-            
-            .L8(4).uleb(0).uleb(0)
-            
-            .L8(5).L64(0)
-            .L8(4).uleb(0).uleb(0xffff_ffff)
-            
-            .L8(1).uleb(0)
-            .L8(4).uleb(0x10100).uleb(0x10200)
-            
-            .L8(2).uleb(1).uleb(2)
-            
-            .L8(3).uleb(3).uleb(0x100)
+            section = section.L8(DW_RLE_base_address.0).word(size, 0);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0).uleb(1);
+            expect_range(0, 1);
 
             
-            
-            .L8(1).uleb(4)
-            .L8(4).uleb(0x11100).uleb(0x11200)
-            
-            .L8(5).L64(tombstone)
-            .L8(4).uleb(0x11300).uleb(0x11400)
-            
-            .L8(2).uleb(4).uleb(5)
-            
-            .L8(3).uleb(4).uleb(0x100)
-            
-            .L8(6).L64(tombstone).L64(0x201_1500)
-            
-            .L8(7).L64(tombstone).uleb(0x100)
-            
-            .L8(6).L64(0x201_1600).L64(0x201_1700)
+            section = section.L8(DW_RLE_base_address.0).word(size, 0);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0).uleb(tombstone);
+            expect_range(0, tombstone);
+
+            section = section.L8(DW_RLE_base_addressx.0).uleb(0);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0x10100).uleb(0x10200);
+            expect_range(0x0301_0100, 0x0301_0200);
+
+            section = section.L8(DW_RLE_startx_endx.0).uleb(1).uleb(2);
+            expect_range(0x0301_0300, 0x0301_0400);
+
+            section = section.L8(DW_RLE_startx_length.0).uleb(3).uleb(0x100);
+            expect_range(0x0301_0500, 0x0301_0600);
 
             
-            .L8(0)
+            section = section.L8(DW_RLE_base_addressx.0).uleb(4);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0x11100).uleb(0x11200);
+
+            section = section.L8(DW_RLE_base_address.0).word(size, tombstone);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0x11300).uleb(0x11400);
+
+            section = section.L8(DW_RLE_startx_endx.0).uleb(4).uleb(5);
+            section = section.L8(DW_RLE_startx_length.0).uleb(4).uleb(0x100);
+            section = section
+                .L8(DW_RLE_start_end.0)
+                .word(size, tombstone)
+                .word(size, 0x201_1500);
+            section = section
+                .L8(DW_RLE_start_length.0)
+                .word(size, tombstone)
+                .uleb(0x100);
+
             
-            .L32(0xffff_ffff);
-        size.set_const((&section.here() - &start - 12) as u64);
+            section = section.L8(DW_RLE_startx_endx.0).uleb(6).uleb(6);
+            section = section
+                .L8(DW_RLE_start_end.0)
+                .word(size, tombstone_0)
+                .word(size, tombstone_0);
 
-        let buf = section.get_contents().unwrap();
-        let debug_ranges = DebugRanges::new(&[], LittleEndian);
-        let debug_rnglists = DebugRngLists::new(&buf, LittleEndian);
-        let rnglists = RangeLists::new(debug_ranges, debug_rnglists);
-        let offset = RangeListsOffset((&first - &start) as usize);
-        let mut ranges = rnglists
-            .ranges(offset, encoding, 0x0100_0000, debug_addr, debug_addr_base)
-            .unwrap();
+            
+            section = section.L8(DW_RLE_base_address.0).word(size, 0);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0).uleb(0);
+            section = section.L8(DW_RLE_base_address.0).word(size, 0x10000);
+            section = section.L8(DW_RLE_offset_pair.0).uleb(0x1234).uleb(0x1234);
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0101_0200,
-                end: 0x0101_0300,
-            }))
-        );
+            
+            section = section
+                .L8(DW_RLE_start_end.0)
+                .word(size, 0x201_1600)
+                .word(size, 0x201_1700);
+            expect_range(0x0201_1600, 0x0201_1700);
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0400,
-                end: 0x0201_0500,
-            }))
-        );
+            section = section.L8(DW_RLE_end_of_list.0);
+            section = section.mark(&end);
+            
+            section = section.word(size, 0x1234_5678);
+            length.set_const((&end - &start) as u64);
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0600,
-                end: 0x0201_0600,
-            }))
-        );
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0800,
-                end: 0x0201_0900,
-            }))
-        );
+            let offset = RangeListsOffset((&first - &section.start()) as usize);
+            let buf = section.get_contents().unwrap();
+            let debug_ranges = DebugRanges::new(&[], LittleEndian);
+            let debug_rnglists = DebugRngLists::new(&buf, LittleEndian);
+            let rnglists = RangeLists::new(debug_ranges, debug_rnglists);
+            let mut ranges = rnglists
+                .ranges(offset, encoding, 0x0100_0000, debug_addr, debug_addr_base)
+                .unwrap();
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0a00,
-                end: 0x0201_0b00,
-            }))
-        );
+            for expected_range in expected_ranges {
+                let range = ranges.next();
+                assert_eq!(
+                    range,
+                    Ok(Some(expected_range)),
+                    "read {:x?}, expect {:x?}",
+                    range,
+                    expected_range
+                );
+            }
+            assert_eq!(ranges.next(), Ok(None));
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0c00,
-                end: 0x0201_0d00,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0200_0000,
-                end: 0x0200_0001,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0200_0000,
-                end: 0x0200_0000,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0000_0000,
-                end: 0xffff_ffff,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0301_0100,
-                end: 0x0301_0200,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0301_0300,
-                end: 0x0301_0400,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0301_0500,
-                end: 0x0301_0600,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_1600,
-                end: 0x0201_1700,
-            }))
-        );
-
-        
-        assert_eq!(ranges.next(), Ok(None));
-
-        
-        let mut ranges = rnglists
-            .ranges(
-                RangeListsOffset(buf.len()),
-                encoding,
-                0x0100_0000,
-                debug_addr,
-                debug_addr_base,
-            )
-            .unwrap();
-        assert_eq!(ranges.next(), Ok(None));
+            
+            let mut ranges = rnglists
+                .ranges(
+                    RangeListsOffset(buf.len()),
+                    encoding,
+                    0x0100_0000,
+                    debug_addr,
+                    debug_addr_base,
+                )
+                .unwrap();
+            assert_eq!(ranges.next(), Ok(None));
+        }
     }
 
     #[test]
@@ -1131,239 +850,93 @@ mod tests {
     }
 
     #[test]
-    fn test_ranges_32() {
-        let tombstone = !0u32 - 1;
-        let start = Label::new();
-        let first = Label::new();
-        #[rustfmt::skip]
-        let section = Section::with_endian(Endian::Little)
-            
-            .mark(&start)
-            .L32(0x10000).L32(0x10100)
-            .mark(&first)
-            
-            .L32(0x10200).L32(0x10300)
-            
-            .L32(0xffff_ffff).L32(0x0200_0000)
-            .L32(0x10400).L32(0x10500)
-            
-            .L32(0x10600).L32(0x10600)
-            .L32(0x10800).L32(0x10900)
-            
-            .L32(0).L32(1)
-            
-            .L32(0xffff_ffff).L32(0x0000_0000)
-            .L32(0).L32(0xffff_ffff)
-            
-            .L32(tombstone).L32(tombstone)
-            
-            .L32(0xffff_ffff).L32(tombstone)
-            .L32(0x10a00).L32(0x10b00)
-            
-            .L32(0).L32(0)
-            
-            .L32(0);
+    fn test_ranges() {
+        for size in [4, 8] {
+            let base = u64::ones_sized(size);
+            let tombstone = u64::ones_sized(size) - 1;
+            let start = Label::new();
+            let first = Label::new();
+            let mut section = Section::with_endian(Endian::Little)
+                
+                .mark(&start)
+                .word(size, 0x10000)
+                .word(size, 0x10100)
+                .mark(&first);
 
-        let buf = section.get_contents().unwrap();
-        let debug_ranges = DebugRanges::new(&buf, LittleEndian);
-        let debug_rnglists = DebugRngLists::new(&[], LittleEndian);
-        let rnglists = RangeLists::new(debug_ranges, debug_rnglists);
-        let offset = RangeListsOffset((&first - &start) as usize);
-        let debug_addr = &DebugAddr::from(EndianSlice::new(&[], LittleEndian));
-        let debug_addr_base = DebugAddrBase(0);
-        let encoding = Encoding {
-            format: Format::Dwarf32,
-            version: 4,
-            address_size: 4,
-        };
-        let mut ranges = rnglists
-            .ranges(offset, encoding, 0x0100_0000, debug_addr, debug_addr_base)
-            .unwrap();
+            let mut expected_ranges = Vec::new();
+            let mut expect_range = |begin, end| {
+                expected_ranges.push(Range { begin, end });
+            };
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0101_0200,
-                end: 0x0101_0300,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0400,
-                end: 0x0201_0500,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0600,
-                end: 0x0201_0600,
-            }))
-        );
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0800,
-                end: 0x0201_0900,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0200_0000,
-                end: 0x0200_0001,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0000_0000,
-                end: 0xffff_ffff,
-            }))
-        );
-
-        
-        assert_eq!(ranges.next(), Ok(None));
-
-        
-        let mut ranges = rnglists
-            .ranges(
-                RangeListsOffset(buf.len()),
-                encoding,
-                0x0100_0000,
-                debug_addr,
-                debug_addr_base,
-            )
-            .unwrap();
-        assert_eq!(ranges.next(), Ok(None));
-    }
-
-    #[test]
-    fn test_ranges_64() {
-        let tombstone = !0u64 - 1;
-        let start = Label::new();
-        let first = Label::new();
-        #[rustfmt::skip]
-        let section = Section::with_endian(Endian::Little)
             
-            .mark(&start)
-            .L64(0x10000).L64(0x10100)
-            .mark(&first)
+            section = section.word(size, 0x10200).word(size, 0x10300);
+            expect_range(0x0101_0200, 0x0101_0300);
             
-            .L64(0x10200).L64(0x10300)
+            section = section.word(size, base).word(size, 0x0200_0000);
+            section = section.word(size, 0x10400).word(size, 0x10500);
+            expect_range(0x0201_0400, 0x0201_0500);
             
-            .L64(0xffff_ffff_ffff_ffff).L64(0x0200_0000)
-            .L64(0x10400).L64(0x10500)
+            section = section.word(size, 0x10600).word(size, 0x10600);
+            section = section.word(size, 0x10800).word(size, 0x10900);
+            expect_range(0x0201_0800, 0x0201_0900);
             
-            .L64(0x10600).L64(0x10600)
-            .L64(0x10800).L64(0x10900)
+            section = section.word(size, base).word(size, 0);
+            section = section.word(size, 0).word(size, 1);
+            expect_range(0, 1);
             
-            .L64(0).L64(1)
+            section = section.word(size, base).word(size, 0);
+            section = section.word(size, 0).word(size, base);
+            expect_range(0, base);
             
-            .L64(0xffff_ffff_ffff_ffff).L64(0x0000_0000)
-            .L64(0).L64(0xffff_ffff_ffff_ffff)
+            section = section.word(size, tombstone).word(size, tombstone);
             
-            .L64(tombstone).L64(tombstone)
+            section = section.word(size, base).word(size, tombstone);
+            section = section.word(size, 0x10a00).word(size, 0x10b00);
             
-            .L64(0xffff_ffff_ffff_ffff).L64(tombstone)
-            .L64(0x10a00).L64(0x10b00)
+            section = section.word(size, 0).word(size, 0);
             
-            .L64(0).L64(0)
-            
-            .L64(0);
+            section = section.word(size, 0x1234_5678);
 
-        let buf = section.get_contents().unwrap();
-        let debug_ranges = DebugRanges::new(&buf, LittleEndian);
-        let debug_rnglists = DebugRngLists::new(&[], LittleEndian);
-        let rnglists = RangeLists::new(debug_ranges, debug_rnglists);
-        let offset = RangeListsOffset((&first - &start) as usize);
-        let debug_addr = &DebugAddr::from(EndianSlice::new(&[], LittleEndian));
-        let debug_addr_base = DebugAddrBase(0);
-        let encoding = Encoding {
-            format: Format::Dwarf64,
-            version: 4,
-            address_size: 8,
-        };
-        let mut ranges = rnglists
-            .ranges(offset, encoding, 0x0100_0000, debug_addr, debug_addr_base)
-            .unwrap();
+            let buf = section.get_contents().unwrap();
+            let debug_ranges = DebugRanges::new(&buf, LittleEndian);
+            let debug_rnglists = DebugRngLists::new(&[], LittleEndian);
+            let rnglists = RangeLists::new(debug_ranges, debug_rnglists);
+            let offset = RangeListsOffset((&first - &start) as usize);
+            let debug_addr = &DebugAddr::from(EndianSlice::new(&[], LittleEndian));
+            let debug_addr_base = DebugAddrBase(0);
+            let encoding = Encoding {
+                format: Format::Dwarf32,
+                version: 4,
+                address_size: size,
+            };
+            let mut ranges = rnglists
+                .ranges(offset, encoding, 0x0100_0000, debug_addr, debug_addr_base)
+                .unwrap();
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0101_0200,
-                end: 0x0101_0300,
-            }))
-        );
+            for expected_range in expected_ranges {
+                let range = ranges.next();
+                assert_eq!(
+                    range,
+                    Ok(Some(expected_range)),
+                    "read {:x?}, expect {:x?}",
+                    range,
+                    expected_range
+                );
+            }
+            assert_eq!(ranges.next(), Ok(None));
 
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0400,
-                end: 0x0201_0500,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0600,
-                end: 0x0201_0600,
-            }))
-        );
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0201_0800,
-                end: 0x0201_0900,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0200_0000,
-                end: 0x0200_0001,
-            }))
-        );
-
-        
-        assert_eq!(
-            ranges.next(),
-            Ok(Some(Range {
-                begin: 0x0,
-                end: 0xffff_ffff_ffff_ffff,
-            }))
-        );
-
-        
-        assert_eq!(ranges.next(), Ok(None));
-
-        
-        let mut ranges = rnglists
-            .ranges(
-                RangeListsOffset(buf.len()),
-                encoding,
-                0x0100_0000,
-                debug_addr,
-                debug_addr_base,
-            )
-            .unwrap();
-        assert_eq!(ranges.next(), Ok(None));
+            
+            let mut ranges = rnglists
+                .ranges(
+                    RangeListsOffset(buf.len()),
+                    encoding,
+                    0x0100_0000,
+                    debug_addr,
+                    debug_addr_base,
+                )
+                .unwrap();
+            assert_eq!(ranges.next(), Ok(None));
+        }
     }
 
     #[test]

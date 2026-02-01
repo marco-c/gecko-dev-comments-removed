@@ -249,6 +249,24 @@ impl<R: Reader> ArangeEntryIter<R> {
     
     
     pub fn next(&mut self) -> Result<Option<ArangeEntry>> {
+        loop {
+            let raw_entry = match self.next_raw()? {
+                Some(entry) => entry,
+                None => return Ok(None),
+            };
+
+            let entry = self.convert_raw(raw_entry)?;
+            if entry.is_some() {
+                return Ok(entry);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    pub fn next_raw(&mut self) -> Result<Option<ArangeEntry>> {
         if self.input.is_empty() {
             return Ok(None);
         }
@@ -264,6 +282,24 @@ impl<R: Reader> ArangeEntryIter<R> {
                 Err(e)
             }
         }
+    }
+
+    
+    
+    
+    #[doc(hidden)]
+    pub fn convert_raw(&self, mut entry: ArangeEntry) -> Result<Option<ArangeEntry>> {
+        
+        
+        
+        let address_size = self.encoding.address_size;
+        if entry.range.begin >= u64::min_tombstone(address_size) {
+            return Ok(None);
+        }
+
+        
+        entry.range.end = entry.range.begin.add_sized(entry.length, address_size)?;
+        Ok(Some(entry))
     }
 }
 
@@ -297,9 +333,7 @@ impl ArangeEntry {
 
         let begin = input.read_address(address_size)?;
         let length = input.read_address(address_size)?;
-        
-        let end = begin.add_sized(length, address_size)?;
-        let range = Range { begin, end };
+        let range = Range { begin, end: 0 };
 
         match (begin, length) {
             
@@ -533,9 +567,15 @@ mod tests {
             address_size: 4,
         };
         let buf = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09];
-        let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry = ArangeEntry::parse(rest, encoding).expect("should parse entry ok");
-        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next().expect("should parse entry ok");
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 1..], LittleEndian)
+        );
         assert_eq!(
             entry,
             Some(ArangeEntry {
@@ -566,9 +606,15 @@ mod tests {
             
             0x09
         ];
-        let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry = ArangeEntry::parse(rest, encoding).expect("should parse entry ok");
-        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next().expect("should parse entry ok");
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 1..], LittleEndian)
+        );
         assert_eq!(
             entry,
             Some(ArangeEntry {
@@ -597,9 +643,15 @@ mod tests {
             
             0x09
         ];
-        let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry = ArangeEntry::parse(rest, encoding);
-        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next();
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 1..], LittleEndian)
+        );
         assert_eq!(entry, Err(Error::AddressOverflow));
     }
 
@@ -619,9 +671,139 @@ mod tests {
             
             0x09
         ];
-        let rest = &mut EndianSlice::new(&buf, LittleEndian);
-        let entry = ArangeEntry::parse(rest, encoding);
-        assert_eq!(*rest, EndianSlice::new(&buf[buf.len() - 1..], LittleEndian));
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next();
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 1..], LittleEndian)
+        );
         assert_eq!(entry, Err(Error::AddressOverflow));
+    }
+
+    #[test]
+    fn test_parse_entry_tombstone_32() {
+        let encoding = Encoding {
+            format: Format::Dwarf32,
+            version: 2,
+            address_size: 4,
+        };
+        #[rustfmt::skip]
+        let buf = [
+            
+            0xff, 0xff, 0xff, 0xff,
+            
+            0x05, 0x06, 0x07, 0x08,
+            
+            0x01, 0x02, 0x03, 0x04,
+            
+            0x05, 0x06, 0x07, 0x08,
+            
+            0x09
+        ];
+
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next_raw().unwrap();
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 9..], LittleEndian)
+        );
+        assert_eq!(
+            entry,
+            Some(ArangeEntry {
+                range: Range {
+                    begin: 0xffff_ffff,
+                    end: 0,
+                },
+                length: 0x0807_0605,
+            })
+        );
+
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next().unwrap();
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 1..], LittleEndian)
+        );
+        assert_eq!(
+            entry,
+            Some(ArangeEntry {
+                range: Range {
+                    begin: 0x0403_0201,
+                    end: 0x0403_0201 + 0x0807_0605,
+                },
+                length: 0x0807_0605,
+            })
+        );
+    }
+
+    #[test]
+    fn test_parse_entry_tombstone_64() {
+        let encoding = Encoding {
+            format: Format::Dwarf32,
+            version: 2,
+            address_size: 8,
+        };
+        #[rustfmt::skip]
+        let buf = [
+            
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            
+            0x05, 0x06, 0x07, 0x08, 0x00, 0x00, 0x00, 0x00,
+            
+            0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00,
+            
+            0x05, 0x06, 0x07, 0x08, 0x00, 0x00, 0x00, 0x00,
+            
+            0x09
+        ];
+
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next_raw().unwrap();
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 17..], LittleEndian)
+        );
+        assert_eq!(
+            entry,
+            Some(ArangeEntry {
+                range: Range {
+                    begin: 0xffff_ffff_ffff_ffff,
+                    end: 0,
+                },
+                length: 0x0807_0605,
+            })
+        );
+
+        let mut iter = ArangeEntryIter {
+            input: EndianSlice::new(&buf, LittleEndian),
+            encoding,
+        };
+        let entry = iter.next().unwrap();
+        assert_eq!(
+            iter.input,
+            EndianSlice::new(&buf[buf.len() - 1..], LittleEndian)
+        );
+        assert_eq!(
+            entry,
+            Some(ArangeEntry {
+                range: Range {
+                    begin: 0x0403_0201,
+                    end: 0x0403_0201 + 0x0807_0605,
+                },
+                length: 0x0807_0605,
+            })
+        );
     }
 }

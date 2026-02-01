@@ -1,5 +1,4 @@
-use super::*;
-use crate::minidump_cpu::RawContextCPU;
+use {super::*, crate::minidump_cpu::RawContextCPU};
 
 impl MinidumpWriter {
     
