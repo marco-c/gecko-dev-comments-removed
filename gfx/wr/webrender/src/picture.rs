@@ -573,9 +573,6 @@ pub struct PicturePrimitive {
     pub segments_are_valid: bool,
 
     
-    pub is_opaque: bool,
-
-    
     pub raster_space: RasterSpace,
 
     
@@ -674,7 +671,6 @@ impl PicturePrimitive {
             spatial_node_index,
             prev_local_rect: LayoutRect::zero(),
             segments_are_valid: false,
-            is_opaque: false,
             raster_space,
             flags,
             clip_root: None,
