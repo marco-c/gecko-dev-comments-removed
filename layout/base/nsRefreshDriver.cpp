@@ -1254,6 +1254,7 @@ static uint32_t GetFirstFrameDelay(imgIRequest* req) {
 }
 
 static constexpr nsLiteralCString sRenderingPhaseNames[] = {
+    "Reveal"_ns,                                     
     "Flush autofocus candidates"_ns,                 
     "Resize steps"_ns,                               
     "Scroll steps"_ns,                               
@@ -2395,6 +2396,12 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   if (!mPresContext || !mPresContext->GetPresShell()) {
     return StopTimer();
   }
+
+  
+  RunRenderingPhase(RenderingPhase::Reveal,
+                    [](Document& aDoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      MOZ_KnownLive(aDoc).Reveal();
+                    });
 
   
   
