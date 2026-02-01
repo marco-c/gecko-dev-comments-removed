@@ -360,7 +360,7 @@ pub(crate) struct Import {
     
     pub(crate) module: String,
     
-    pub(crate) field: String,
+    pub(crate) name: String,
     
     pub(crate) entity_type: EntityType,
 }
@@ -1280,7 +1280,7 @@ impl Module {
                     }
                 }
                 wasmparser::Payload::ImportSection(import_reader) => {
-                    for im in import_reader {
+                    for im in import_reader.into_imports() {
                         let im = im.expect("could not read import");
                         required_imports.push(im);
                     }
@@ -1418,7 +1418,7 @@ impl Module {
             };
             new_imports.push(Import {
                 module: import.module.to_string(),
-                field: import.name.to_string(),
+                name: import.name.to_string(),
                 entity_type,
             });
             self.num_imports += 1;
@@ -1578,7 +1578,7 @@ impl Module {
                 }
                 import_strings.insert(import_pair.clone());
             }
-            let (module, field) = import_pair;
+            let (module, name) = import_pair;
 
             
             
@@ -1593,7 +1593,7 @@ impl Module {
             self.num_imports += 1;
             self.imports.push(Import {
                 module,
-                field,
+                name,
                 entity_type,
             });
             Ok(true)
@@ -1661,7 +1661,7 @@ impl Module {
                     }
                 }
                 wasmparser::Payload::ImportSection(import_reader) => {
-                    for im in import_reader {
+                    for im in import_reader.into_imports() {
                         let im = im.expect("could not read import");
                         
                         
@@ -1773,7 +1773,7 @@ impl Module {
             };
             new_imports.push(Import {
                 module: import.module.to_string(),
-                field: import.name.to_string(),
+                name: import.name.to_string(),
                 entity_type,
             });
             self.num_imports += 1;

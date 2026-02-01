@@ -92,9 +92,6 @@ pub enum CanonicalFunction {
     ThreadAvailableParallelism,
     
     
-    BackpressureSet,
-    
-    
     BackpressureInc,
     
     
@@ -329,7 +326,6 @@ impl<'a> FromReader<'a> for CanonicalFunction {
             0x04 => CanonicalFunction::ResourceRep {
                 resource: reader.read()?,
             },
-            0x08 => CanonicalFunction::BackpressureSet,
             0x24 => CanonicalFunction::BackpressureInc,
             0x25 => CanonicalFunction::BackpressureDec,
             0x09 => CanonicalFunction::TaskReturn {

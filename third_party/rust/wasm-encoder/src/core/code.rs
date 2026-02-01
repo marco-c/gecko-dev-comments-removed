@@ -303,12 +303,12 @@ pub struct Ieee32(pub(crate) u32);
 
 impl Ieee32 {
     
-    pub fn new(bits: u32) -> Self {
+    pub const fn new(bits: u32) -> Self {
         Ieee32(bits)
     }
 
     
-    pub fn bits(self) -> u32 {
+    pub const fn bits(self) -> u32 {
         self.0
     }
 }
@@ -341,12 +341,12 @@ pub struct Ieee64(pub(crate) u64);
 
 impl Ieee64 {
     
-    pub fn new(bits: u64) -> Self {
+    pub const fn new(bits: u64) -> Self {
         Ieee64(bits)
     }
 
     
-    pub fn bits(self) -> u64 {
+    pub const fn bits(self) -> u64 {
         self.0
     }
 }

@@ -198,16 +198,6 @@ impl CanonicalFunctionSection {
 
     
     
-    
-    
-    pub fn backpressure_set(&mut self) -> &mut Self {
-        self.bytes.push(0x08);
-        self.num_added += 1;
-        self
-    }
-
-    
-    
     pub fn backpressure_inc(&mut self) -> &mut Self {
         self.bytes.push(0x24);
         self.num_added += 1;

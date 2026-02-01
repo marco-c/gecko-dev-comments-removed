@@ -1,32 +1,263 @@
 use crate::core::*;
 use crate::kw;
 use crate::parser::{Cursor, Parse, Parser, Peek, Result};
-use crate::token::{Id, NameAnnotation, Span};
+use crate::token::{Id, LParen, NameAnnotation, Span};
 
 
 #[derive(Debug, Clone)]
-pub struct Import<'a> {
+pub struct Imports<'a> {
     
     pub span: Span,
     
-    pub module: &'a str,
-    
-    pub field: &'a str,
-    
-    pub item: ItemSig<'a>,
+    pub items: ImportItems<'a>,
 }
 
-impl<'a> Parse<'a> for Import<'a> {
+
+
+#[derive(Debug, Clone)]
+pub enum ImportItems<'a> {
+    
+    
+    
+    
+    
+    Single {
+        
+        module: &'a str,
+        
+        name: &'a str,
+        
+        sig: ItemSig<'a>,
+    },
+
+    
+    
+    
+    
+    
+    Group1 {
+        
+        module: &'a str,
+        
+        items: Vec<ImportGroup1Item<'a>>,
+    },
+
+    
+    
+    
+    
+    
+    Group2 {
+        
+        module: &'a str,
+        
+        sig: ItemSig<'a>,
+        
+        items: Vec<ImportGroup2Item<'a>>,
+    },
+}
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct ImportGroup1Item<'a> {
+    
+    pub span: Span,
+    
+    pub name: &'a str,
+    
+    pub sig: ItemSig<'a>,
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ImportGroup2Item<'a> {
+    
+    pub span: Span,
+    
+    pub name: &'a str,
+}
+
+enum CompactImportEncoding {
+    Unknown,
+    Encoding1,
+    Encoding2,
+}
+
+impl<'a> Imports<'a> {
+    
+    pub fn single(span: Span, module: &'a str, name: &'a str, sig: ItemSig<'a>) -> Self {
+        Self {
+            span,
+            items: ImportItems::Single { module, name, sig },
+        }
+    }
+
+    
+    pub fn num_items(&self) -> usize {
+        match &self.items {
+            ImportItems::Single {
+                module: _,
+                name: _,
+                sig: _,
+            } => 1,
+            ImportItems::Group1 { module: _, items } => items.len(),
+            ImportItems::Group2 {
+                module: _,
+                sig: _,
+                items,
+            } => items.len(),
+        }
+    }
+
+    
+    
+    pub fn item_sigs(&self) -> Vec<&ItemSig<'a>> {
+        let res = match &self.items {
+            ImportItems::Single {
+                module: _,
+                name: _,
+                sig,
+            } => vec![sig],
+            ImportItems::Group1 { module: _, items } => {
+                items.iter().map(|item| &item.sig).collect()
+            }
+            ImportItems::Group2 {
+                module: _,
+                sig,
+                items,
+            } => vec![sig; items.len()],
+        };
+        debug_assert!(res.len() == self.num_items());
+        res
+    }
+
+    
+    
+    
+    pub fn unique_sigs_mut(&mut self) -> Vec<&mut ItemSig<'a>> {
+        match &mut self.items {
+            ImportItems::Single {
+                module: _,
+                name: _,
+                sig: item,
+            } => vec![item],
+            ImportItems::Group1 { module: _, items } => {
+                items.iter_mut().map(|item| &mut item.sig).collect()
+            }
+            ImportItems::Group2 {
+                module: _,
+                sig,
+                items: _,
+            } => vec![sig],
+        }
+    }
+}
+
+struct ImportGroupItemCommon<'a> {
+    span: Span,
+    name: &'a str,
+    sig: Option<ItemSig<'a>>,
+}
+
+impl<'a> Parse<'a> for Imports<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::import>()?.0;
         let module = parser.parse()?;
-        let field = parser.parse()?;
-        let item = parser.parens(|p| p.parse())?;
-        Ok(Import {
+        if parser.peek::<LParen>()? {
+            let mut encoding = CompactImportEncoding::Unknown;
+            let mut items = Vec::new();
+            while parser.peek2::<kw::item>()? {
+                let item: ImportGroupItemCommon = parser.parens(|p| p.parse())?;
+                match item.sig {
+                    Some(_) => {
+                        
+                        match encoding {
+                            CompactImportEncoding::Unknown => {
+                                encoding = CompactImportEncoding::Encoding1
+                            }
+                            CompactImportEncoding::Encoding1 => {}
+                            CompactImportEncoding::Encoding2 => {
+                                return Err(parser.error("unexpected import type"));
+                            }
+                        }
+                    }
+                    None => {
+                        
+                        match encoding {
+                            CompactImportEncoding::Unknown => {
+                                encoding = CompactImportEncoding::Encoding2
+                            }
+                            CompactImportEncoding::Encoding1 => {
+                                return Err(parser.error("unexpected `)`"));
+                            }
+                            CompactImportEncoding::Encoding2 => {}
+                        }
+                    }
+                }
+                items.push(item);
+            }
+
+            match encoding {
+                CompactImportEncoding::Unknown => Err(parser.error("expected import items")),
+                CompactImportEncoding::Encoding1 => Ok(Imports {
+                    span,
+                    items: ImportItems::Group1 {
+                        module,
+                        items: items
+                            .into_iter()
+                            .map(|item| ImportGroup1Item {
+                                span: item.span,
+                                name: item.name,
+                                sig: item.sig.unwrap(),
+                            })
+                            .collect(),
+                    },
+                }),
+                CompactImportEncoding::Encoding2 => {
+                    let sig: ItemSig = parser.parens(|p| p.parse())?;
+                    if let Some(id) = sig.id {
+                        return Err(parser.error_at(id.span(), "identifier not allowed"));
+                    }
+                    Ok(Imports {
+                        span,
+                        items: ImportItems::Group2 {
+                            module,
+                            sig,
+                            items: items
+                                .into_iter()
+                                .map(|item| ImportGroup2Item {
+                                    span: item.span,
+                                    name: item.name,
+                                })
+                                .collect(),
+                        },
+                    })
+                }
+            }
+        } else {
+            
+            let field = parser.parse()?;
+            let sig = parser.parens(|p| p.parse())?;
+            Ok(Imports::single(span, module, field, sig))
+        }
+    }
+}
+
+impl<'a> Parse<'a> for ImportGroupItemCommon<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let span = parser.parse::<kw::item>()?.0;
+        Ok(ImportGroupItemCommon {
             span,
-            module,
-            field,
-            item,
+            name: parser.parse()?,
+            sig: if parser.is_empty() {
+                None
+            } else {
+                Some(parser.parens(|p| p.parse())?)
+            },
         })
     }
 }

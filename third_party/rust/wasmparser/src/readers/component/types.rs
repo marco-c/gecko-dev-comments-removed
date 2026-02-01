@@ -447,6 +447,8 @@ pub enum ComponentDefinedType<'a> {
     
     List(ComponentValType),
     
+    Map(ComponentValType, ComponentValType),
+    
     FixedSizeList(ComponentValType, u32),
     
     Tuple(Box<[ComponentValType]>),
@@ -487,6 +489,7 @@ impl<'a> ComponentDefinedType<'a> {
                     .collect::<Result<_>>()?,
             ),
             0x70 => ComponentDefinedType::List(reader.read()?),
+            0x63 => ComponentDefinedType::Map(reader.read()?, reader.read()?),
             0x6f => ComponentDefinedType::Tuple(
                 reader
                     .read_iter(MAX_WASM_TUPLE_TYPES, "tuple types")?

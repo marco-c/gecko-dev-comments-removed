@@ -3,6 +3,7 @@ use crate::{
     CORE_TABLE_SORT, CORE_TAG_SORT, Encode, GlobalType, MemoryType, Section, SectionId, TableType,
     TagType, encode_section,
 };
+use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
 
@@ -84,6 +85,49 @@ impl From<TagType> for EntityType {
 }
 
 
+#[derive(Clone, Debug)]
+pub struct Import<'a> {
+    
+    pub module: &'a str,
+    
+    pub name: &'a str,
+    
+    pub ty: EntityType,
+}
+
+
+#[derive(Clone, Debug)]
+pub struct ImportCompact<'a> {
+    
+    pub name: &'a str,
+    
+    pub ty: EntityType,
+}
+
+
+#[derive(Clone, Debug)]
+pub enum Imports<'a> {
+    
+    Single(Import<'a>),
+    
+    Compact1 {
+        
+        module: &'a str,
+        
+        items: Cow<'a, [ImportCompact<'a>]>,
+    },
+    
+    Compact2 {
+        
+        module: &'a str,
+        
+        ty: EntityType,
+        
+        names: Cow<'a, [&'a str]>,
+    },
+}
+
+
 
 
 
@@ -131,12 +175,45 @@ impl ImportSection {
     }
 
     
-    pub fn import(&mut self, module: &str, field: &str, ty: impl Into<EntityType>) -> &mut Self {
-        module.encode(&mut self.bytes);
-        field.encode(&mut self.bytes);
-        ty.into().encode(&mut self.bytes);
+    pub fn imports<'a>(&mut self, imports: Imports<'a>) -> &mut Self {
+        match imports {
+            Imports::Single(import) => {
+                import.module.encode(&mut self.bytes);
+                import.name.encode(&mut self.bytes);
+                import.ty.encode(&mut self.bytes);
+            }
+            Imports::Compact1 { module, items } => {
+                module.encode(&mut self.bytes);
+                self.bytes.push(0x00); 
+                self.bytes.push(0x7F);
+                items.len().encode(&mut self.bytes);
+                for item in items.iter() {
+                    item.name.encode(&mut self.bytes);
+                    item.ty.encode(&mut self.bytes);
+                }
+            }
+            Imports::Compact2 { module, ty, names } => {
+                module.encode(&mut self.bytes);
+                self.bytes.push(0x00); 
+                self.bytes.push(0x7E);
+                ty.encode(&mut self.bytes);
+                names.len().encode(&mut self.bytes);
+                for item in names.iter() {
+                    item.encode(&mut self.bytes);
+                }
+            }
+        }
         self.num_added += 1;
         self
+    }
+
+    
+    pub fn import(&mut self, module: &str, name: &str, ty: impl Into<EntityType>) -> &mut Self {
+        self.imports(Imports::Single(Import {
+            module,
+            name,
+            ty: ty.into(),
+        }))
     }
 }
 

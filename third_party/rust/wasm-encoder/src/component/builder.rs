@@ -479,12 +479,6 @@ impl ComponentBuilder {
     }
 
     
-    pub fn backpressure_set(&mut self) -> u32 {
-        self.canonical_functions().backpressure_set();
-        self.core_funcs.add(Some("backpressure.set"))
-    }
-
-    
     pub fn backpressure_inc(&mut self) -> u32 {
         self.canonical_functions().backpressure_inc();
         self.core_funcs.add(Some("backpressure.inc"))

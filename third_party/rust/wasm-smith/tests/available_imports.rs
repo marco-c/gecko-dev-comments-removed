@@ -54,7 +54,7 @@ fn smoke_test_imports_config() {
                     
                     
                     
-                    for import in rdr {
+                    for import in rdr.into_imports() {
                         let import = import.unwrap();
                         use AvailableImportKind as I;
                         let entry = imports_seen.get_mut(&(import.module, import.name));
