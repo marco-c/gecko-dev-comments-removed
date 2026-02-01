@@ -17,7 +17,7 @@ import android.os.Bundle;
 
 
 public class RTCNativeUnitTestActivity extends Activity {
-  private RTCNativeUnitTest mTest = new RTCNativeUnitTest();
+  private final RTCNativeUnitTest mTest = new RTCNativeUnitTest();
 
   @Override
   public void onCreate(Bundle savedInstanceState) {

@@ -78,7 +78,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   private boolean isClosed;
   private boolean isIceConnected;
   private SessionDescription localDesc;
-  private List<IceCandidate> iceCandidates = new ArrayList<>();
+  private final List<IceCandidate> iceCandidates = new ArrayList<>();
   private final Object localDescEvent = new Object();
   private final Object iceCandidateEvent = new Object();
   private final Object iceConnectedEvent = new Object();
@@ -87,7 +87,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   
   private static class MockSink implements VideoSink {
     
-    private String rendererName;
+    private final String rendererName;
     private boolean renderFrameCalled;
 
     
