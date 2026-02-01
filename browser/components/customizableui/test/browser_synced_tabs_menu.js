@@ -259,6 +259,10 @@ add_task(async function () {
 
 
 add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["identity.tabs.remoteSVGIconDecoding", true]],
+  });
+
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: true,
