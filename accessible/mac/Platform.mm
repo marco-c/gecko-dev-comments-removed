@@ -199,6 +199,10 @@ void PlatformRoleChangedEvent(Accessible* aTarget, const a11y::role& aRole,
   }
 }
 
+void PlatformAnnouncementEvent(Accessible* aTarget,
+                               const nsAString& aAnnouncement,
+                               uint16_t aPriority) {}
+
 
 
 enum class Client : uint64_t {
