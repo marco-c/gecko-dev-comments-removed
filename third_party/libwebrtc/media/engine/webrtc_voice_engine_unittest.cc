@@ -3427,7 +3427,7 @@ TEST_P(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 
 TEST_P(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_TRUE(SetupSendStream());
-  webrtc::FakeNetworkInterface network_interface;
+  webrtc::FakeNetworkInterface network_interface(env_);
   webrtc::MediaConfig config;
   std::unique_ptr<webrtc::VoiceMediaSendChannelInterface> channel;
   webrtc::RtpParameters parameters;
