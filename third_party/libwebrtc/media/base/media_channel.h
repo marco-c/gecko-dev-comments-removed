@@ -238,9 +238,6 @@ class MediaSendChannelInterface {
   
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
-  
-  virtual void SetSendCodecChangedCallback(
-      absl::AnyInvocable<void()> callback) = 0;
 };
 
 class MediaReceiveChannelInterface {
@@ -1009,10 +1006,6 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   
   virtual void ClearRecordableEncodedFrameCallback(uint32_t ssrc) = 0;
   virtual bool GetStats(VideoMediaReceiveInfo* stats) = 0;
-  virtual void SetReceiverFeedbackParameters(bool lntf_enabled,
-                                             bool nack_enabled,
-                                             RtcpMode rtcp_mode,
-                                             std::optional<int> rtx_time) = 0;
   virtual bool AddDefaultRecvStreamForTesting(const StreamParams& sp) = 0;
 };
 

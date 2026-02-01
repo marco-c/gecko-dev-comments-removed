@@ -265,9 +265,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
   bool SenderNonSenderRttEnabled() const override;
   bool SendCodecHasNack() const override { return SenderNackEnabled(); }
 
-  void SetSendCodecChangedCallback(
-      absl::AnyInvocable<void()> callback) override;
-
  private:
   bool SetOptions(const AudioOptions& options);
   bool SetSendCodecs(const std::vector<Codec>& codecs,
@@ -319,10 +316,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
   scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
       RTC_GUARDED_BY(worker_thread_);
 
-  
-  
-  absl::AnyInvocable<void()> send_codec_changed_callback_
-      RTC_GUARDED_BY(worker_thread_);
   
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
       ssrc_list_changed_callback_ RTC_GUARDED_BY(worker_thread_);
