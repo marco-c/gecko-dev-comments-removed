@@ -235,11 +235,6 @@ void LocalStorageCache::WaitForPreload() {
   
   if (!mPreloadTelemetryRecorded) {
     mPreloadTelemetryRecorded = true;
-    glean::localdomstorage::preload_pending_on_first_access
-        .EnumGet(static_cast<
-                 glean::localdomstorage::PreloadPendingOnFirstAccessLabel>(
-            !loaded))
-        .Add();
   }
 
   if (loaded) {
