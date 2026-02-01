@@ -159,7 +159,7 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
 
   uint8_t AttrEnum() const { return mAList->mAttrEnum; }
 
-  uint8_t Axis() const { return mAList->mAxis; }
+  SVGLength::Axis Axis() const { return mAList->mAxis; }
 
   
   bool IsAnimValList() const {

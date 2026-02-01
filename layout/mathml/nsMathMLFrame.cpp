@@ -195,13 +195,10 @@ nscoord nsMathMLFrame::CalcLength(const nsCSSValue& aCSSValue,
   nsCSSUnit unit = aCSSValue.GetUnit();
   mozilla::dom::NonSVGFrameUserSpaceMetrics userSpaceMetrics(aFrame);
 
-  
-  
-  auto axis = SVGContentUtils::X;
-
   return nsPresContext::CSSPixelsToAppUnits(
       aCSSValue.GetFloatValue() *
-      SVGLength::GetPixelsPerCSSUnit(userSpaceMetrics, unit, axis,
+      SVGLength::GetPixelsPerCSSUnit(userSpaceMetrics, unit,
+                                     SVGLength::Axis::XY,
                                       true));
 }
 

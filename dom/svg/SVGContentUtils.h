@@ -12,6 +12,7 @@
 
 #include "gfx2DGlue.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/dom/SVGLength.h"
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/Matrix.h"
 #include "nsDependentSubstring.h"
@@ -192,9 +193,6 @@ class SVGContentUtils {
       const nsIContent* aContent);
 
   
-  enum ctxDirection { X, Y, XY };
-
-  
 
 
   static double ComputeNormalizedHypotenuse(double aWidth, double aHeight);
@@ -293,7 +291,7 @@ class SVGContentUtils {
 
   static float CoordToFloat(const dom::SVGElement* aContent,
                             const StyleLengthPercentageUnion&,
-                            uint8_t aCtxType = SVGContentUtils::XY);
+                            SVGLength::Axis aCtxType = SVGLength::Axis::XY);
   
 
 
