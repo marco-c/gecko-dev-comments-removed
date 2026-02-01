@@ -2399,11 +2399,11 @@ class MockXRPresentationProvider {
   
   updateLayerBounds(frameId, leftBounds, rightBounds, sourceSize) {}
 
-  submitFrameMissing(frameId, mailboxHolder, timeWaited) {
+  submitFrameMissing(frameId, timeWaited) {
     this.missing_frame_count_++;
   }
 
-  submitFrame(frameId, mailboxHolder, timeWaited) {
+  submitFrame(frameId, timeWaited) {
     this.submit_frame_count_++;
 
     
