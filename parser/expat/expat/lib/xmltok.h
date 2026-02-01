@@ -35,113 +35,113 @@
 
 
 #ifndef XmlTok_INCLUDED
-#define XmlTok_INCLUDED 1
+#  define XmlTok_INCLUDED 1
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 
-#define XML_TOK_TRAILING_RSQB                                                  \
-  -5 /* ] or ]] at the end of the scan; might be                               \
-        start of illegal ]]> sequence */
-
-
-
-#define XML_TOK_NONE -4 /* The string to be scanned is empty */
-#define XML_TOK_TRAILING_CR                                                    \
-  -3                            /* A CR at the end of the scan;                \
-                                   might be part of CRLF sequence */
-#define XML_TOK_PARTIAL_CHAR -2 /* only part of a multibyte sequence */
-#define XML_TOK_PARTIAL -1      /* only part of a token */
-#define XML_TOK_INVALID 0
+#  define XML_TOK_TRAILING_RSQB                                                \
+    -5 /* ] or ]] at the end of the scan; might be                             \
+          start of illegal ]]> sequence */
 
 
 
-
-#define XML_TOK_START_TAG_WITH_ATTS 1
-#define XML_TOK_START_TAG_NO_ATTS 2
-#define XML_TOK_EMPTY_ELEMENT_WITH_ATTS 3 /* empty element tag <e/> */
-#define XML_TOK_EMPTY_ELEMENT_NO_ATTS 4
-#define XML_TOK_END_TAG 5
-#define XML_TOK_DATA_CHARS 6
-#define XML_TOK_DATA_NEWLINE 7
-#define XML_TOK_CDATA_SECT_OPEN 8
-#define XML_TOK_ENTITY_REF 9
-#define XML_TOK_CHAR_REF 10 /* numeric character reference */
+#  define XML_TOK_NONE -4 /* The string to be scanned is empty */
+#  define XML_TOK_TRAILING_CR                                                  \
+    -3                            /* A CR at the end of the scan;              \
+                                     might be part of CRLF sequence */
+#  define XML_TOK_PARTIAL_CHAR -2 /* only part of a multibyte sequence */
+#  define XML_TOK_PARTIAL -1      /* only part of a token */
+#  define XML_TOK_INVALID 0
 
 
 
 
-#define XML_TOK_PI 11       /* processing instruction */
-#define XML_TOK_XML_DECL 12 /* XML decl or text decl */
-#define XML_TOK_COMMENT 13
-#define XML_TOK_BOM 14 /* Byte order mark */
-
-
-#define XML_TOK_PROLOG_S 15
-#define XML_TOK_DECL_OPEN 16  /* <!foo */
-#define XML_TOK_DECL_CLOSE 17 /* > */
-#define XML_TOK_NAME 18
-#define XML_TOK_NMTOKEN 19
-#define XML_TOK_POUND_NAME 20 /* #name */
-#define XML_TOK_OR 21         /* | */
-#define XML_TOK_PERCENT 22
-#define XML_TOK_OPEN_PAREN 23
-#define XML_TOK_CLOSE_PAREN 24
-#define XML_TOK_OPEN_BRACKET 25
-#define XML_TOK_CLOSE_BRACKET 26
-#define XML_TOK_LITERAL 27
-#define XML_TOK_PARAM_ENTITY_REF 28
-#define XML_TOK_INSTANCE_START 29
-
-
-#define XML_TOK_NAME_QUESTION 30        /* name? */
-#define XML_TOK_NAME_ASTERISK 31        /* name* */
-#define XML_TOK_NAME_PLUS 32            /* name+ */
-#define XML_TOK_COND_SECT_OPEN 33       /* <![ */
-#define XML_TOK_COND_SECT_CLOSE 34      /* ]]> */
-#define XML_TOK_CLOSE_PAREN_QUESTION 35 /* )? */
-#define XML_TOK_CLOSE_PAREN_ASTERISK 36 /* )* */
-#define XML_TOK_CLOSE_PAREN_PLUS 37     /* )+ */
-#define XML_TOK_COMMA 38
-
-
-#define XML_TOK_ATTRIBUTE_VALUE_S 39
-
-
-#define XML_TOK_CDATA_SECT_CLOSE 40
+#  define XML_TOK_START_TAG_WITH_ATTS 1
+#  define XML_TOK_START_TAG_NO_ATTS 2
+#  define XML_TOK_EMPTY_ELEMENT_WITH_ATTS 3 /* empty element tag <e/> */
+#  define XML_TOK_EMPTY_ELEMENT_NO_ATTS 4
+#  define XML_TOK_END_TAG 5
+#  define XML_TOK_DATA_CHARS 6
+#  define XML_TOK_DATA_NEWLINE 7
+#  define XML_TOK_CDATA_SECT_OPEN 8
+#  define XML_TOK_ENTITY_REF 9
+#  define XML_TOK_CHAR_REF 10 /* numeric character reference */
 
 
 
 
-#define XML_TOK_PREFIXED_NAME 41
-
-#ifdef XML_DTD
-#  define XML_TOK_IGNORE_SECT 42
-#endif 
-
-#ifdef XML_DTD
-#  define XML_N_STATES 4
-#else 
-#  define XML_N_STATES 3
-#endif 
-
-#define XML_PROLOG_STATE 0
-#define XML_CONTENT_STATE 1
-#define XML_CDATA_SECTION_STATE 2
-#ifdef XML_DTD
-#  define XML_IGNORE_SECTION_STATE 3
-#endif 
-
-#define XML_N_LITERAL_TYPES 2
-#define XML_ATTRIBUTE_VALUE_LITERAL 0
-#define XML_ENTITY_VALUE_LITERAL 1
+#  define XML_TOK_PI 11       /* processing instruction */
+#  define XML_TOK_XML_DECL 12 /* XML decl or text decl */
+#  define XML_TOK_COMMENT 13
+#  define XML_TOK_BOM 14 /* Byte order mark */
 
 
-#define XML_UTF8_ENCODE_MAX 4
+#  define XML_TOK_PROLOG_S 15
+#  define XML_TOK_DECL_OPEN 16  /* <!foo */
+#  define XML_TOK_DECL_CLOSE 17 /* > */
+#  define XML_TOK_NAME 18
+#  define XML_TOK_NMTOKEN 19
+#  define XML_TOK_POUND_NAME 20 /* #name */
+#  define XML_TOK_OR 21         /* | */
+#  define XML_TOK_PERCENT 22
+#  define XML_TOK_OPEN_PAREN 23
+#  define XML_TOK_CLOSE_PAREN 24
+#  define XML_TOK_OPEN_BRACKET 25
+#  define XML_TOK_CLOSE_BRACKET 26
+#  define XML_TOK_LITERAL 27
+#  define XML_TOK_PARAM_ENTITY_REF 28
+#  define XML_TOK_INSTANCE_START 29
 
-#define XML_UTF16_ENCODE_MAX 2
+
+#  define XML_TOK_NAME_QUESTION 30        /* name? */
+#  define XML_TOK_NAME_ASTERISK 31        /* name* */
+#  define XML_TOK_NAME_PLUS 32            /* name+ */
+#  define XML_TOK_COND_SECT_OPEN 33       /* <![ */
+#  define XML_TOK_COND_SECT_CLOSE 34      /* ]]> */
+#  define XML_TOK_CLOSE_PAREN_QUESTION 35 /* )? */
+#  define XML_TOK_CLOSE_PAREN_ASTERISK 36 /* )* */
+#  define XML_TOK_CLOSE_PAREN_PLUS 37     /* )+ */
+#  define XML_TOK_COMMA 38
+
+
+#  define XML_TOK_ATTRIBUTE_VALUE_S 39
+
+
+#  define XML_TOK_CDATA_SECT_CLOSE 40
+
+
+
+
+#  define XML_TOK_PREFIXED_NAME 41
+
+#  ifdef XML_DTD
+#    define XML_TOK_IGNORE_SECT 42
+#  endif 
+
+#  ifdef XML_DTD
+#    define XML_N_STATES 4
+#  else 
+#    define XML_N_STATES 3
+#  endif 
+
+#  define XML_PROLOG_STATE 0
+#  define XML_CONTENT_STATE 1
+#  define XML_CDATA_SECTION_STATE 2
+#  ifdef XML_DTD
+#    define XML_IGNORE_SECTION_STATE 3
+#  endif 
+
+#  define XML_N_LITERAL_TYPES 2
+#  define XML_ATTRIBUTE_VALUE_LITERAL 0
+#  define XML_ENTITY_VALUE_LITERAL 1
+
+
+#  define XML_UTF8_ENCODE_MAX 4
+
+#  define XML_UTF16_ENCODE_MAX 2
 
 typedef struct position {
   
@@ -220,63 +220,63 @@ struct encoding {
 
 
 
-#define XmlTok(enc, state, ptr, end, nextTokPtr)                               \
-  (((enc)->scanners[state])(enc, ptr, end, nextTokPtr))
+#  define XmlTok(enc, state, ptr, end, nextTokPtr)                             \
+    (((enc)->scanners[state])(enc, ptr, end, nextTokPtr))
 
-#define XmlPrologTok(enc, ptr, end, nextTokPtr)                                \
-  XmlTok(enc, XML_PROLOG_STATE, ptr, end, nextTokPtr)
+#  define XmlPrologTok(enc, ptr, end, nextTokPtr)                              \
+    XmlTok(enc, XML_PROLOG_STATE, ptr, end, nextTokPtr)
 
-#define XmlContentTok(enc, ptr, end, nextTokPtr)                               \
-  XmlTok(enc, XML_CONTENT_STATE, ptr, end, nextTokPtr)
+#  define XmlContentTok(enc, ptr, end, nextTokPtr)                             \
+    XmlTok(enc, XML_CONTENT_STATE, ptr, end, nextTokPtr)
 
-#define XmlCdataSectionTok(enc, ptr, end, nextTokPtr)                          \
-  XmlTok(enc, XML_CDATA_SECTION_STATE, ptr, end, nextTokPtr)
+#  define XmlCdataSectionTok(enc, ptr, end, nextTokPtr)                        \
+    XmlTok(enc, XML_CDATA_SECTION_STATE, ptr, end, nextTokPtr)
 
-#ifdef XML_DTD
+#  ifdef XML_DTD
 
-#  define XmlIgnoreSectionTok(enc, ptr, end, nextTokPtr)                       \
-    XmlTok(enc, XML_IGNORE_SECTION_STATE, ptr, end, nextTokPtr)
+#    define XmlIgnoreSectionTok(enc, ptr, end, nextTokPtr)                     \
+      XmlTok(enc, XML_IGNORE_SECTION_STATE, ptr, end, nextTokPtr)
 
-#endif 
-
-
+#  endif 
 
 
-#define XmlLiteralTok(enc, literalType, ptr, end, nextTokPtr)                  \
-  (((enc)->literalScanners[literalType])(enc, ptr, end, nextTokPtr))
 
-#define XmlAttributeValueTok(enc, ptr, end, nextTokPtr)                        \
-  XmlLiteralTok(enc, XML_ATTRIBUTE_VALUE_LITERAL, ptr, end, nextTokPtr)
 
-#define XmlEntityValueTok(enc, ptr, end, nextTokPtr)                           \
-  XmlLiteralTok(enc, XML_ENTITY_VALUE_LITERAL, ptr, end, nextTokPtr)
+#  define XmlLiteralTok(enc, literalType, ptr, end, nextTokPtr)                \
+    (((enc)->literalScanners[literalType])(enc, ptr, end, nextTokPtr))
 
-#define XmlNameMatchesAscii(enc, ptr1, end1, ptr2)                             \
-  (((enc)->nameMatchesAscii)(enc, ptr1, end1, ptr2))
+#  define XmlAttributeValueTok(enc, ptr, end, nextTokPtr)                      \
+    XmlLiteralTok(enc, XML_ATTRIBUTE_VALUE_LITERAL, ptr, end, nextTokPtr)
 
-#define XmlNameLength(enc, ptr) (((enc)->nameLength)(enc, ptr))
+#  define XmlEntityValueTok(enc, ptr, end, nextTokPtr)                         \
+    XmlLiteralTok(enc, XML_ENTITY_VALUE_LITERAL, ptr, end, nextTokPtr)
 
-#define XmlSkipS(enc, ptr) (((enc)->skipS)(enc, ptr))
+#  define XmlNameMatchesAscii(enc, ptr1, end1, ptr2)                           \
+    (((enc)->nameMatchesAscii)(enc, ptr1, end1, ptr2))
 
-#define XmlGetAttributes(enc, ptr, attsMax, atts)                              \
-  (((enc)->getAtts)(enc, ptr, attsMax, atts))
+#  define XmlNameLength(enc, ptr) (((enc)->nameLength)(enc, ptr))
 
-#define XmlCharRefNumber(enc, ptr) (((enc)->charRefNumber)(enc, ptr))
+#  define XmlSkipS(enc, ptr) (((enc)->skipS)(enc, ptr))
 
-#define XmlPredefinedEntityName(enc, ptr, end)                                 \
-  (((enc)->predefinedEntityName)(enc, ptr, end))
+#  define XmlGetAttributes(enc, ptr, attsMax, atts)                            \
+    (((enc)->getAtts)(enc, ptr, attsMax, atts))
 
-#define XmlUpdatePosition(enc, ptr, end, pos)                                  \
-  (((enc)->updatePosition)(enc, ptr, end, pos))
+#  define XmlCharRefNumber(enc, ptr) (((enc)->charRefNumber)(enc, ptr))
 
-#define XmlIsPublicId(enc, ptr, end, badPtr)                                   \
-  (((enc)->isPublicId)(enc, ptr, end, badPtr))
+#  define XmlPredefinedEntityName(enc, ptr, end)                               \
+    (((enc)->predefinedEntityName)(enc, ptr, end))
 
-#define XmlUtf8Convert(enc, fromP, fromLim, toP, toLim)                        \
-  (((enc)->utf8Convert)(enc, fromP, fromLim, toP, toLim))
+#  define XmlUpdatePosition(enc, ptr, end, pos)                                \
+    (((enc)->updatePosition)(enc, ptr, end, pos))
 
-#define XmlUtf16Convert(enc, fromP, fromLim, toP, toLim)                       \
-  (((enc)->utf16Convert)(enc, fromP, fromLim, toP, toLim))
+#  define XmlIsPublicId(enc, ptr, end, badPtr)                                 \
+    (((enc)->isPublicId)(enc, ptr, end, badPtr))
+
+#  define XmlUtf8Convert(enc, fromP, fromLim, toP, toLim)                      \
+    (((enc)->utf8Convert)(enc, fromP, fromLim, toP, toLim))
+
+#  define XmlUtf16Convert(enc, fromP, fromLim, toP, toLim)                     \
+    (((enc)->utf16Convert)(enc, fromP, fromLim, toP, toLim))
 
 typedef struct {
   ENCODING initEnc;
@@ -299,7 +299,7 @@ int XmlSizeOfUnknownEncoding(void);
 
 typedef int(XMLCALL *CONVERTER)(void *userData, const char *p);
 
-ENCODING *XmlInitUnknownEncoding(void *mem, int *table, CONVERTER convert,
+ENCODING *XmlInitUnknownEncoding(void *mem, const int *table, CONVERTER convert,
                                  void *userData);
 
 int XmlParseXmlDeclNS(int isGeneralTextEntity, const ENCODING *enc,
@@ -312,10 +312,10 @@ int XmlInitEncodingNS(INIT_ENCODING *p, const ENCODING **encPtr,
                       const char *name);
 const ENCODING *XmlGetUtf8InternalEncodingNS(void);
 const ENCODING *XmlGetUtf16InternalEncodingNS(void);
-ENCODING *XmlInitUnknownEncodingNS(void *mem, int *table, CONVERTER convert,
-                                   void *userData);
-#ifdef __cplusplus
+ENCODING *XmlInitUnknownEncodingNS(void *mem, const int *table,
+                                   CONVERTER convert, void *userData);
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 
 #endif 

@@ -1148,10 +1148,6 @@ static const char KW_yes[] = {ASCII_y, ASCII_e, ASCII_s, '\0'};
 
 static const char KW_no[] = {ASCII_n, ASCII_o, '\0'};
 
-
-static const char KW_XML_1_0[] = {ASCII_1, ASCII_PERIOD, ASCII_0, '\0'};
-
-
 static int
 doParseXmlDecl(const ENCODING *(*encodingFinder)(const ENCODING *, const char *,
                                                  const char *),
@@ -1179,13 +1175,6 @@ doParseXmlDecl(const ENCODING *(*encodingFinder)(const ENCODING *, const char *,
       *versionPtr = val;
     if (versionEndPtr)
       *versionEndPtr = ptr;
-
-     
-     if (!XmlNameMatchesAscii(enc, val, ptr - enc->minBytesPerChar, KW_XML_1_0)) {
-       *badPtr = val;
-       return 0;
-     }
-
     if (! parsePseudoAttribute(enc, ptr, end, &name, &nameEnd, &val, &ptr)) {
       *badPtr = ptr;
       return 0;
@@ -1409,7 +1398,7 @@ unknown_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
 }
 
 ENCODING *
-XmlInitUnknownEncoding(void *mem, int *table, CONVERTER convert,
+XmlInitUnknownEncoding(void *mem, const int *table, CONVERTER convert,
                        void *userData) {
   int i;
   struct unknown_encoding *e = (struct unknown_encoding *)mem;
@@ -1672,7 +1661,7 @@ initScan(const ENCODING *const *encodingTable, const INIT_ENCODING *enc,
 #  undef ns
 
 ENCODING *
-XmlInitUnknownEncodingNS(void *mem, int *table, CONVERTER convert,
+XmlInitUnknownEncodingNS(void *mem, const int *table, CONVERTER convert,
                          void *userData) {
   ENCODING *enc = XmlInitUnknownEncoding(mem, table, convert, userData);
   if (enc)

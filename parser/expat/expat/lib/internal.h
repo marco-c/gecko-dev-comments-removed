@@ -108,6 +108,7 @@
 #endif
 
 #include <limits.h> 
+#include <stddef.h> 
 
 #if defined(_WIN32)                                                            \
     && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
@@ -127,6 +128,9 @@
 #  elif ULONG_MAX == 18446744073709551615u 
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "lu"
+#  elif defined(EMSCRIPTEN) 
+#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
+#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "zu"
 #  else
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "d"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
@@ -145,6 +149,16 @@
   100.0f
 #define EXPAT_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT    \
   8388608 // 8 MiB, 2^23
+
+#define EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT 100.0f
+#define EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT                       \
+  67108864 // 64 MiB, 2^26
+
+
+
+#define EXPAT_MALLOC_ALIGNMENT sizeof(long long) // largest parser (sub)member
+#define EXPAT_MALLOC_PADDING ((EXPAT_MALLOC_ALIGNMENT) - sizeof(size_t))
+
 
 
 #include "expat.h" 
@@ -168,6 +182,9 @@ extern
 #endif
     XML_Bool g_reparseDeferralEnabledDefault; 
 #if defined(XML_TESTING)
+void *expat_malloc(XML_Parser parser, size_t size, int sourceLine);
+void expat_free(XML_Parser parser, void *ptr, int sourceLine);
+void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine);
 extern unsigned int g_bytesScanned; 
 #endif
 

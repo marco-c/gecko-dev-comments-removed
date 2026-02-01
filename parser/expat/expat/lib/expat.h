@@ -41,22 +41,23 @@
 
 
 
+
 #ifndef Expat_INCLUDED
-#define Expat_INCLUDED 1
+#  define Expat_INCLUDED 1
 
-#include <stdlib.h>
-#include "expat_external.h"
+#  include <stdlib.h>
+#  include "expat_external.h"
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 struct XML_ParserStruct;
 typedef struct XML_ParserStruct *XML_Parser;
 
 typedef unsigned char XML_Bool;
-#define XML_TRUE ((XML_Bool)1)
-#define XML_FALSE ((XML_Bool)0)
+#  define XML_TRUE ((XML_Bool)1)
+#  define XML_FALSE ((XML_Bool)0)
 
 
 
@@ -73,11 +74,11 @@ typedef unsigned char XML_Bool;
 
 enum XML_Status {
   XML_STATUS_ERROR = 0,
-#define XML_STATUS_ERROR XML_STATUS_ERROR
+#  define XML_STATUS_ERROR XML_STATUS_ERROR
   XML_STATUS_OK = 1,
-#define XML_STATUS_OK XML_STATUS_OK
+#  define XML_STATUS_OK XML_STATUS_OK
   XML_STATUS_SUSPENDED = 2
-#define XML_STATUS_SUSPENDED XML_STATUS_SUSPENDED
+#  define XML_STATUS_SUSPENDED XML_STATUS_SUSPENDED
 };
 
 enum XML_Error {
@@ -680,7 +681,7 @@ XMLPARSEAPI(void)
 XML_SetUserData(XML_Parser parser, void *userData);
 
 
-#define XML_GetUserData(parser) (*(void **)(parser))
+#  define XML_GetUserData(parser) (*(void **)(parser))
 
 
 
@@ -752,7 +753,7 @@ XML_GetSpecifiedAttributeCount(XML_Parser parser);
 XMLPARSEAPI(int)
 XML_GetIdAttributeIndex(XML_Parser parser);
 
-#ifdef XML_ATTR_INFO
+#  ifdef XML_ATTR_INFO
 
 
 
@@ -773,7 +774,7 @@ typedef struct {
 
 XMLPARSEAPI(const XML_AttrInfo *)
 XML_GetAttributeInfo(XML_Parser parser);
-#endif
+#  endif
 
 
 
@@ -970,9 +971,9 @@ XMLPARSEAPI(const char *)
 XML_GetInputContext(XML_Parser parser, int *offset, int *size);
 
 
-#define XML_GetErrorLineNumber XML_GetCurrentLineNumber
-#define XML_GetErrorColumnNumber XML_GetCurrentColumnNumber
-#define XML_GetErrorByteIndex XML_GetCurrentByteIndex
+#  define XML_GetErrorLineNumber XML_GetCurrentLineNumber
+#  define XML_GetErrorColumnNumber XML_GetCurrentColumnNumber
+#  define XML_GetErrorByteIndex XML_GetCurrentByteIndex
 
 
 XMLPARSEAPI(void)
@@ -1032,7 +1033,10 @@ enum XML_FeatureEnum {
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT,
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT,
   
-  XML_FEATURE_GE
+  XML_FEATURE_GE,
+  
+  XML_FEATURE_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT,
+  XML_FEATURE_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT,
   
 };
 
@@ -1045,7 +1049,7 @@ typedef struct {
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
-#if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
+#  if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
 
 
 XMLPARSEAPI(XML_Bool)
@@ -1057,7 +1061,17 @@ XML_SetBillionLaughsAttackProtectionMaximumAmplification(
 XMLPARSEAPI(XML_Bool)
 XML_SetBillionLaughsAttackProtectionActivationThreshold(
     XML_Parser parser, unsigned long long activationThresholdBytes);
-#endif
+
+
+XMLPARSEAPI(XML_Bool)
+XML_SetAllocTrackerMaximumAmplification(XML_Parser parser,
+                                        float maximumAmplificationFactor);
+
+
+XMLPARSEAPI(XML_Bool)
+XML_SetAllocTrackerActivationThreshold(
+    XML_Parser parser, unsigned long long activationThresholdBytes);
+#  endif
 
 
 XMLPARSEAPI(XML_Bool)
@@ -1066,12 +1080,12 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 
 
 
-#define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 6
-#define XML_MICRO_VERSION 4
+#  define XML_MAJOR_VERSION 2
+#  define XML_MINOR_VERSION 7
+#  define XML_MICRO_VERSION 3
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 
 #endif 
