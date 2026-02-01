@@ -1194,6 +1194,12 @@ class MarkupView extends EventEmitter {
     let scrolled = false;
 
     while (currentNode) {
+      
+      if (currentNode.parentNode.closest("[data-skip-markupview-search]")) {
+        currentNode = treeWalker.nextNode();
+        continue;
+      }
+
       const text = currentNode.textContent.toLowerCase();
       let startPos = 0;
       while (startPos < text.length) {
