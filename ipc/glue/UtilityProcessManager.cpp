@@ -29,7 +29,7 @@
 
 #include "mozilla/GeckoArgs.h"
 
-#ifndef MOZ_NO_SMART_CARDS
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
 #  include "mozilla/psm/PPKCS11ModuleChild.h"
 #endif  
 
@@ -518,7 +518,7 @@ UtilityProcessManager::CreateWinFileDialogActor() {
 
 #endif  
 
-#ifndef MOZ_NO_SMART_CARDS
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
 RefPtr<UtilityProcessManager::PKCS11ModulePromise>
 UtilityProcessManager::StartPKCS11Module() {
   using RetPromise = PKCS11ModulePromise;

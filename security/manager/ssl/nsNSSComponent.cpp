@@ -79,7 +79,7 @@
 #  include <sys/vfs.h>
 #endif
 
-#ifndef MOZ_NO_SMART_CARDS
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
 #  include "mozilla/ipc/UtilityProcessManager.h"
 #endif  
 

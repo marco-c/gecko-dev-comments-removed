@@ -31,7 +31,7 @@ enum SandboxingKind : uint64_t {
   WINDOWS_UTILS,
   WINDOWS_FILE_DIALOG,
 #endif
-#ifndef MOZ_NO_SMART_CARDS
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
   PKCS11_MODULE,
 #endif  
 

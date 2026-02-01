@@ -42,7 +42,7 @@ bool IsUtilitySandboxEnabled(const char* envVar, SandboxingKind aKind) {
   }
 #endif
 
-#ifndef MOZ_NO_SMART_CARDS
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
   
   
   
