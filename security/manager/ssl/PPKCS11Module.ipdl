@@ -1,0 +1,17 @@
+
+
+
+
+
+namespace mozilla {
+
+namespace psm {
+
+[ChildProc=Utility]
+protocol PPKCS11Module
+{
+};
+
+} 
+
+} 
