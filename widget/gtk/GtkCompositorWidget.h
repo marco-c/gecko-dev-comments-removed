@@ -32,7 +32,6 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
   virtual void CleanupResources() = 0;
-  virtual void SetRenderingSurface(const uintptr_t aXWindow) = 0;
 
   
 
@@ -75,9 +74,6 @@ class GtkCompositorWidget : public CompositorWidget,
   
   
   void CleanupResources() override;
-
-  
-  void SetRenderingSurface(const uintptr_t aXWindow) override;
 
   
   void SetEGLNativeWindowSize(const LayoutDeviceIntSize& aEGLWindowSize);
