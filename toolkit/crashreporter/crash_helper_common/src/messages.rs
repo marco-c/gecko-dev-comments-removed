@@ -659,14 +659,6 @@ impl Message for UnregisterAuxvInfo {
 
 
 
-
-
-
-
-
-
-
-
 pub struct RegisterChildProcess {
     pub ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN],
 }
@@ -685,7 +677,7 @@ impl Message for RegisterChildProcess {
     }
 
     fn payload_size(&self) -> usize {
-        1 
+        0
     }
 
     fn ancillary_data_len(&self) -> usize {
@@ -701,13 +693,20 @@ impl Message for RegisterChildProcess {
     }
 
     fn into_payload(self) -> (Vec<u8>, Vec<AncillaryData>) {
-        (vec![0], self.ancillary_data.into())
+        (vec![], self.ancillary_data.into())
     }
 
     fn decode(
         _data: &[u8],
         mut ancillary_data: Vec<AncillaryData>,
     ) -> Result<RegisterChildProcess, MessageError> {
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        let ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN] = {
+            let receive_right = ancillary_data.pop().ok_or(MessageError::MissingAncillary)?;
+            let send_right = ancillary_data.pop().ok_or(MessageError::MissingAncillary)?;
+            [send_right, receive_right]
+        };
+        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
         let ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN] =
             [ancillary_data.pop().ok_or(MessageError::MissingAncillary)?];
 
