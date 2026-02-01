@@ -1593,10 +1593,6 @@ function promiseTransformEnd() {
   return promiseTopic("APZ:TransformEnd");
 }
 
-function promiseScrollend(aTarget = window) {
-  return promiseOneEvent(aTarget, "scrollend");
-}
-
 
 
 function promiseTouchEnd(element, count = 1) {
