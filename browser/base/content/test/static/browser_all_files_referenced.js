@@ -328,6 +328,7 @@ var allowlist = [
   {
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
+
   
   {
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
@@ -345,6 +346,13 @@ var allowlist = [
   
   {
     file: "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
+  },
+  
+  {
+    file: "moz-src:///browser/components/qrcode/QRCodeGenerator.sys.mjs",
+  },
+  {
+    file: "moz-src:///browser/components/qrcode/QRCodeWorker.sys.mjs",
   },
 ];
 
