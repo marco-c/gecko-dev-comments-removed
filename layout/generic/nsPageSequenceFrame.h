@@ -6,7 +6,6 @@
 #ifndef nsPageSequenceFrame_h_
 #define nsPageSequenceFrame_h_
 
-#include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 #include "nsIPrintSettings.h"
 
@@ -52,10 +51,6 @@ class nsSharedPageData {
 
   
   
-  int32_t mRawNumPages = 0;
-
-  
-  
   
   nsTArray<int32_t> mPageRanges;
 
@@ -69,14 +64,18 @@ class nsSharedPageData {
   
   
   
-  float mShrinkToFitRatio = 1.0f;
+  
+  
+  const nsPagesPerSheetInfo* PagesPerSheetInfo();
+
+  
+  
+  int32_t mRawNumPages = 0;
 
   
   
   
-  
-  
-  const nsPagesPerSheetInfo* PagesPerSheetInfo();
+  float mShrinkToFitRatio = 1.0f;
 
  private:
   const nsPagesPerSheetInfo* mPagesPerSheetInfo = nullptr;
@@ -106,7 +105,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
                         const nsDisplayListSet& aLists) override;
 
   
-  float GetSTFPercent() const { return mPageData->mShrinkToFitRatio; }
+  float GetSTFPercent() const { return mPageData.mShrinkToFitRatio; }
 
   
   
@@ -122,7 +121,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   uint32_t GetCurrentSheetIdx() const { return mCurrentSheetIdx; }
 
-  int32_t GetRawNumPages() const { return mPageData->mRawNumPages; }
+  int32_t GetRawNumPages() const { return mPageData.mRawNumPages; }
 
   uint32_t GetPagesInFirstSheet() const;
 
@@ -173,7 +172,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   LogicalSize mScrollportSize;
 
   
-  mozilla::UniquePtr<nsSharedPageData> mPageData;
+  nsSharedPageData mPageData;
 
   
   
