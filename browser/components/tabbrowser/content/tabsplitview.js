@@ -60,26 +60,6 @@
     
 
 
-
-
-
-
-
-
-
-
-
-
-    get state() {
-      return {
-        id: this.splitViewId,
-        numberOfTabs: this.tabs.length,
-      };
-    }
-
-    
-
-
     set hasActiveTab(val) {
       this.toggleAttribute("hasactivetab", val);
     }
@@ -262,8 +242,7 @@
 
 
 
-
-    addTabs(tabs, isSessionRestore = false) {
+    addTabs(tabs) {
       for (let tab of tabs) {
         if (tab.pinned) {
           return;
@@ -276,19 +255,14 @@
                 selectTab: tab.selected,
               });
         this.#tabs.push(tabToMove);
-        isSessionRestore
-          ? this.appendChild(tab)
-          : gBrowser.moveTabToSplitView(tabToMove, this);
+        gBrowser.moveTabToSplitView(tabToMove, this);
         if (tab === gBrowser.selectedTab) {
           this.hasActiveTab = true;
         }
       }
-
       if (this.hasActiveTab) {
         this.#activate();
         gBrowser.setIsSplitViewActive(true, this.#tabs);
-      } else if (isSessionRestore) {
-        this.#activate();
       }
     }
 
