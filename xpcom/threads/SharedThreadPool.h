@@ -108,6 +108,8 @@ class SharedThreadPool : public nsIThreadPool {
   
   static void SpinUntilEmpty();
 
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override { return SUPPORTS_BASE; }
+
  private:
   
   static bool IsEmpty();

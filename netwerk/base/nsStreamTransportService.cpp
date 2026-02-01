@@ -315,6 +315,11 @@ nsStreamTransportService::UnregisterShutdownTask(nsITargetShutdownTask*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags nsStreamTransportService::GetFeatures() {
+  
+  return SUPPORTS_BASE;
+}
+
 NS_IMETHODIMP_(bool)
 nsStreamTransportService::IsOnCurrentThreadInfallible() {
   nsCOMPtr<nsIThreadPool> pool;

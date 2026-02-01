@@ -196,6 +196,11 @@ MessageLoop::EventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mShutdownTasks.RemoveTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags MessageLoop::EventTarget::GetFeatures() {
+  
+  return FeatureFlags::SUPPORTS_SHUTDOWN_TASKS;
+}
+
 
 
 

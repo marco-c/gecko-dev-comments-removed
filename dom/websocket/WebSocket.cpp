@@ -2857,6 +2857,12 @@ WebSocketImpl::UnregisterShutdownTask(nsITargetShutdownTask*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags WebSocketImpl::GetFeatures() {
+  
+  
+  return SUPPORTS_BASE;
+}
+
 NS_IMETHODIMP
 WebSocketImpl::IsOnCurrentThread(bool* aResult) {
   *aResult = IsTargetThread();

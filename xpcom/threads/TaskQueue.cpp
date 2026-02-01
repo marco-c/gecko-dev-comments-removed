@@ -149,6 +149,22 @@ nsresult TaskQueue::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mShutdownTasks.RemoveTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags TaskQueue::GetFeatures() {
+  FeatureFlags supports = SUPPORTS_BASE;
+  nsCOMPtr<nsIEventTarget> target;
+  {
+    MonitorAutoLock mon(mQueueMonitor);
+    target = mTarget;
+  }
+  if (target) {
+    supports = target->GetFeatures();
+  }
+  
+  
+  
+  return supports | SUPPORTS_SHUTDOWN_TASKS;
+}
+
 void TaskQueue::AwaitIdle() {
   MonitorAutoLock mon(mQueueMonitor);
   AwaitIdleLocked();
