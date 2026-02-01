@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_MIDI_MIDIUTILS_H_
+#define DOM_MIDI_MIDIUTILS_H_
+
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 
@@ -25,3 +28,5 @@ bool ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
 bool IsSysexMessage(const MIDIMessage& a);
 }  
 }  
+
+#endif  

@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_BASE_NSOPENURIINFRAMEPARAMS_H_
+#define DOM_BASE_NSOPENURIINFRAMEPARAMS_H_
+
 #include "mozilla/BasePrincipal.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsFrameLoaderOwner.h"
@@ -39,3 +42,5 @@ class nsOpenURIInFrameParams final : public nsIOpenURIInFrameParams {
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
 };
+
+#endif  

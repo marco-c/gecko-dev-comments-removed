@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_QUOTA_ERRORHANDLING_H_
+#define DOM_QUOTA_ERRORHANDLING_H_
+
 #include "ErrorList.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -41,3 +44,5 @@ using ResolveUsageInfoResponseAndReturn =
     ResolveAndReturn<UsageInfoResponseResolver>;
 
 }  
+
+#endif  

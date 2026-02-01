@@ -3,11 +3,11 @@
 
 
 
-#include "Intervals.h"
 #if !defined(OggCodecState_h_)
 #  define OggCodecState_h_
-
 #  include <ogg/ogg.h>
+
+#  include "Intervals.h"
 
 #  include <nsClassHashtable.h>
 #  include <nsDeque.h>
@@ -583,4 +583,4 @@ class FlacState : public OggCodecState {
 
 }  
 
-#endif
+#endif  

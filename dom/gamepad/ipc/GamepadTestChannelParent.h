@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_GAMEPAD_IPC_GAMEPADTESTCHANNELPARENT_H_
+#define DOM_GAMEPAD_IPC_GAMEPADTESTCHANNELPARENT_H_
+
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/PGamepadTestChannelParent.h"
 
@@ -47,3 +50,5 @@ class GamepadTestChannelParent final : public PGamepadTestChannelParent,
 }  
 
 #endif
+
+#endif  

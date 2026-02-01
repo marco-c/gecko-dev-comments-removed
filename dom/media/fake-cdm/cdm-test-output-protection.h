@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_MEDIA_FAKE_CDM_CDM_TEST_OUTPUT_PROTECTION_H_
+#define DOM_MEDIA_FAKE_CDM_CDM_TEST_OUTPUT_PROTECTION_H_
+
 #if defined(XP_WIN)
 #  include <d3d9.h>  
 #  include <stdio.h>
@@ -125,3 +128,5 @@ static void TestOuputProtectionAPIs() {
 }
 
 }  
+
+#endif  

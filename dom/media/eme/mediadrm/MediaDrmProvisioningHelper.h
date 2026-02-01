@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_MEDIA_EME_MEDIADRM_MEDIADRMPROVISIONINGHELPER_H_
+#define DOM_MEDIA_EME_MEDIADRM_MEDIADRMPROVISIONINGHELPER_H_
+
 #include "mozilla/PRemoteCDMChild.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsISerialEventTarget.h"
@@ -58,3 +61,5 @@ class MediaDrmProvisioningHelper final : public dom::PromiseNativeHandler {
 };
 
 }  
+
+#endif  

@@ -3,6 +3,9 @@
 
 
 
+#ifndef DOM_GAMEPAD_IPC_GAMEPADEVENTCHANNELCHILD_H_
+#define DOM_GAMEPAD_IPC_GAMEPADEVENTCHANNELCHILD_H_
+
 #include "mozilla/dom/PGamepadEventChannelChild.h"
 #include "nsRefPtrHashtable.h"
 
@@ -37,3 +40,5 @@ class GamepadEventChannelChild final : public PGamepadEventChannelChild {
 }  
 
 #endif
+
+#endif  

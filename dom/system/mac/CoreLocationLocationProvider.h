@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_SYSTEM_MAC_CORELOCATIONLOCATIONPROVIDER_H_
+#define DOM_SYSTEM_MAC_CORELOCATIONLOCATIONPROVIDER_H_
+
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
@@ -62,3 +65,5 @@ class CoreLocationLocationProvider : public nsIGeolocationProvider {
     virtual ~MLSUpdate() = default;
   };
 };
+
+#endif  

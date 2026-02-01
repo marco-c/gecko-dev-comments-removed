@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_FS_SHARED_IPCREJECTREPORTER_H_
+#define DOM_FS_SHARED_IPCREJECTREPORTER_H_
+
 namespace mozilla {
 
 namespace ipc {
@@ -18,3 +21,5 @@ void IPCRejectReporter(mozilla::ipc::ResponseRejectReason aReason);
 
 }  
 }  
+
+#endif  

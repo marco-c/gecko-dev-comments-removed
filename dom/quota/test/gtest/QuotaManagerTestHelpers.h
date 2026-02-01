@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_QUOTA_TEST_GTEST_QUOTAMANAGERTESTHELPERS_H_
+#define DOM_QUOTA_TEST_GTEST_QUOTAMANAGERTESTHELPERS_H_
+
 #include "nsStringFwd.h"
 
 namespace mozilla::dom::quota {
@@ -122,3 +125,5 @@ FullOriginMetadata GetFullOriginMetadata(const nsCString& aOriginSuffix,
 
 }  
 }  
+
+#endif  

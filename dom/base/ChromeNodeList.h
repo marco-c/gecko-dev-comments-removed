@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_BASE_CHROMENODELIST_H_
+#define DOM_BASE_CHROMENODELIST_H_
+
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsContentList.h"
@@ -34,3 +37,5 @@ class ChromeNodeList final : public nsSimpleContentList {
 
 }  
 }  
+
+#endif  

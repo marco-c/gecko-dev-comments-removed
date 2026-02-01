@@ -4,6 +4,9 @@
 
 
 
+#ifndef DOM_SYSTEM_NSHAPTICFEEDBACK_H_
+#define DOM_SYSTEM_NSHAPTICFEEDBACK_H_
+
 #include "nsIHapticFeedback.h"
 
 class nsHapticFeedback final : public nsIHapticFeedback {
@@ -14,3 +17,5 @@ class nsHapticFeedback final : public nsIHapticFeedback {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIHAPTICFEEDBACK
 };
+
+#endif  
