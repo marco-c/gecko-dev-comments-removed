@@ -30,8 +30,8 @@ add_task(async function test_parseSubmissionURL() {
     keyword: "idn_addParam",
     search_url: "https://www.xn--bcher-kva.ch/search",
   });
-  let engine3 = Services.search.getEngineByName("bacon_addParam");
-  let engine4 = Services.search.getEngineByName("idn_addParam");
+  let engine3 = SearchService.getEngineByName("bacon_addParam");
+  let engine4 = SearchService.getEngineByName("idn_addParam");
 
   
   
@@ -47,21 +47,21 @@ add_task(async function test_parseSubmissionURL() {
     search_url_get_params: "",
   });
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     engine1,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
   
-  for (let engine of await Services.search.getAppProvidedEngines()) {
-    await Services.search.removeEngine(engine);
+  for (let engine of await SearchService.getAppProvidedEngines()) {
+    await SearchService.removeEngine(engine);
   }
 
   
   
   
   let url = "https://www.google.com/search?foo=bar&q=caff%C3%A8";
-  let result = Services.search.parseSubmissionURL(url);
+  let result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, "caff\u00E8");
 
@@ -69,53 +69,52 @@ add_task(async function test_parseSubmissionURL() {
   
   
   url = "https://www.google.fr/search?q=caff%E8";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine2);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   
   url = "https://www.google.co.uk/search?q=caff%C3%A8";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   url = "https://www.bacon.test/find?q=caff%E8";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine, engine3);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   url = "https://www.google.com/search?q=foo+b\u00E4r";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, "foo b\u00E4r");
 
   
   url = "https://www.b\u00FCcher.ch/search?q=foo+bar";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine, engine4);
   Assert.equal(result.terms, "foo bar");
 
   
   url = "https://www.xn--bcher-kva.ch/search?q=foo+bar";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine, engine4);
   Assert.equal(result.terms, "foo bar");
 
   
   
   Assert.equal(
-    Services.search.parseSubmissionURL("https://www.bacon.moz/search?q=")
-      .engine,
+    SearchService.parseSubmissionURL("https://www.bacon.moz/search?q=").engine,
     null
   );
 
   
   
   url = "https://duckduckgo.com/?foo=bar&q=caff%C3%A8";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine5);
   Assert.equal(result.terms, "caff\u00E8");
 
@@ -123,32 +122,32 @@ add_task(async function test_parseSubmissionURL() {
   
   
   url = "https://duckduckgo.com?foo=bar&q=caff%C3%A8";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine5);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   url = "https://www.google.com/search?q=caff%C3%A8";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, "caff\u00E8");
 
   
-  result = Services.search.parseSubmissionURL(
+  result = SearchService.parseSubmissionURL(
     "https://www.google.com/search?q=+with++spaces+"
   );
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, " with  spaces ");
 
   
-  result = Services.search.parseSubmissionURL(
+  result = SearchService.parseSubmissionURL(
     "https://www.google.com/search?q=with%26ampersand"
   );
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, "with&ampersand");
 
   
-  result = Services.search.parseSubmissionURL(
+  result = SearchService.parseSubmissionURL(
     "https://www.google.com/SEARCH?q=caps"
   );
   Assert.equal(result.engine.wrappedJSObject, engine1);
@@ -156,26 +155,26 @@ add_task(async function test_parseSubmissionURL() {
 
   
   url = "https://www.google.com/search?q=";
-  result = Services.search.parseSubmissionURL(url);
+  result = SearchService.parseSubmissionURL(url);
   Assert.equal(result.engine.wrappedJSObject, engine1);
   Assert.equal(result.terms, "");
 
   
-  result = Services.search.parseSubmissionURL(
+  result = SearchService.parseSubmissionURL(
     "https://www.google.com/search/?q=test"
   );
   Assert.equal(result.engine, null);
   Assert.equal(result.terms, "");
 
   
-  result = Services.search.parseSubmissionURL(
+  result = SearchService.parseSubmissionURL(
     "https://www.google.com/search?q2=test"
   );
   Assert.equal(result.engine, null);
   Assert.equal(result.terms, "");
 
   
-  result = Services.search.parseSubmissionURL("file://localhost/search?q=test");
+  result = SearchService.parseSubmissionURL("file://localhost/search?q=test");
   Assert.equal(result.engine, null);
   Assert.equal(result.terms, "");
 });

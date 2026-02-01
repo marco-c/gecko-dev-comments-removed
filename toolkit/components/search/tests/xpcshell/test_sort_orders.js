@@ -68,9 +68,9 @@ add_setup(async function () {
 
 async function checkOrder(type, expectedOrder) {
   
-  Services.search.wrappedJSObject._cachedSortedEngines = null;
+  SearchService.wrappedJSObject._cachedSortedEngines = null;
 
-  const sortedEngines = await Services.search[type]();
+  const sortedEngines = await SearchService[type]();
   Assert.deepEqual(
     sortedEngines.map(s => s.name),
     expectedOrder,
@@ -88,7 +88,7 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
 
   
   
-  Services.search.wrappedJSObject._settings.setMetaDataAttribute(
+  SearchService.wrappedJSObject._settings.setMetaDataAttribute(
     "useSavedOrder",
     false
   );

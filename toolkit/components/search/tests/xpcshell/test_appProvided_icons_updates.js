@@ -32,7 +32,7 @@ async function assertIconMatches(actualIconData, expectedIcon) {
 
 async function assertEngineIcon(engineId, expectedIcon, size = 0) {
   
-  let engine = Services.search.getEngineById(engineId);
+  let engine = SearchService.getEngineById(engineId);
   let engineIconURL = await engine.getIconURL(size);
 
   if (expectedIcon) {
@@ -125,7 +125,7 @@ add_setup(async function setup() {
   await client.db.importChanges({}, record.lastModified);
 
   SearchTestUtils.setRemoteSettingsConfig(CONFIG);
-  await Services.search.init();
+  await SearchService.init();
 
   
   
