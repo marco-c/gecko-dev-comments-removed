@@ -333,10 +333,6 @@ var allowlist = [
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   },
   
-  {
-    file: "chrome://browser/content/aiwindow/firstrun.html",
-  },
-  
   
   {
     file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistoryScheduler.sys.mjs",
