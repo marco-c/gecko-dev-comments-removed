@@ -7,6 +7,7 @@
 use crate::derives::*;
 use crate::values::specified::NoCalcLength;
 use crate::values::CSSFloat;
+use style_traits::ParsingMode;
 
 
 #[derive(Clone, ToTyped)]
@@ -57,5 +58,18 @@ impl NoCalcNumeric {
         match self {
             Self::Length(v) => Ok(Self::Length(v.to(unit)?)),
         }
+    }
+
+    
+    pub fn parse_unit_value(value: CSSFloat, unit: &str) -> Result<Self, ()> {
+        NoCalcLength::parse_dimension_with_flags(
+            ParsingMode::DEFAULT,
+             false,
+            value,
+            unit,
+        )
+        .map(NoCalcNumeric::Length)
+
+        
     }
 }
