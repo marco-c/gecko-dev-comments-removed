@@ -546,8 +546,8 @@ void nsMathMLChar::SetData(nsString& aData) {
 
 
 
-#define NS_MATHML_DELIMITER_FACTOR 0.901f
-#define NS_MATHML_DELIMITER_SHORTFALL_POINTS 5.0f
+static constexpr float kMathMLDelimiterFactor = 0.901;
+static constexpr float kMathMLDelimiterShortfallPoints = 5.0;
 
 static bool IsSizeOK(nscoord a, nscoord b, MathMLStretchFlags aStretchFlags) {
   
@@ -556,7 +556,7 @@ static bool IsSizeOK(nscoord a, nscoord b, MathMLStretchFlags aStretchFlags) {
   
   bool isNormal =
       (aStretchFlags.contains(MathMLStretchFlag::Normal)) &&
-      Abs<float>(a - b) < (1.0f - NS_MATHML_DELIMITER_FACTOR) * float(b);
+      Abs<float>(a - b) < (1.0f - kMathMLDelimiterFactor) * float(b);
 
   
   
@@ -564,16 +564,16 @@ static bool IsSizeOK(nscoord a, nscoord b, MathMLStretchFlags aStretchFlags) {
   bool isNearer = false;
   if (aStretchFlags.contains(MathMLStretchFlag::Nearer) ||
       aStretchFlags.contains(MathMLStretchFlag::LargeOperator)) {
-    float c = std::max(float(b) * NS_MATHML_DELIMITER_FACTOR,
+    float c = std::max(float(b) * kMathMLDelimiterFactor,
                        float(b) - nsPresContext::CSSPointsToAppUnits(
-                                      NS_MATHML_DELIMITER_SHORTFALL_POINTS));
+                                      kMathMLDelimiterShortfallPoints));
     isNearer = Abs<float>(b - a) <= float(b) - c;
   }
 
   
   
   bool isSmaller = aStretchFlags.contains(MathMLStretchFlag::Smaller) &&
-                   float(a) >= NS_MATHML_DELIMITER_FACTOR * float(b) && a <= b;
+                   float(a) >= kMathMLDelimiterFactor * float(b) && a <= b;
 
   
   
@@ -631,7 +631,7 @@ static nscoord ComputeSizeFromParts(nsPresContext* aPresContext,
   }
 
   
-  nscoord minSize = NSToCoordRound(NS_MATHML_DELIMITER_FACTOR * sum);
+  nscoord minSize = NSToCoordRound(kMathMLDelimiterFactor * sum);
 
   if (minSize > aTargetSize) {
     return minSize;  
@@ -1267,13 +1267,13 @@ nsresult nsMathMLChar::StretchInternal(
       if (height == 0) {
         if (aMaxSizeIsAbsolute) {
           aDesiredStretchSize.ascent =
-              NSToCoordRound(aMaxSize / NS_MATHML_DELIMITER_FACTOR);
+              NSToCoordRound(aMaxSize / kMathMLDelimiterFactor);
           aDesiredStretchSize.descent = 0;
         }
         
       } else {
         float scale = aMaxSizeIsAbsolute ? aMaxSize / height : aMaxSize;
-        scale /= NS_MATHML_DELIMITER_FACTOR;
+        scale /= kMathMLDelimiterFactor;
         aDesiredStretchSize.ascent =
             NSToCoordRound(scale * aDesiredStretchSize.ascent);
         aDesiredStretchSize.descent =
@@ -1839,7 +1839,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
       
       
       nscoord height = mBmData[i].ascent + mBmData[i].descent;
-      if (height * (1.0 - NS_MATHML_DELIMITER_FACTOR) > oneDevPixel) {
+      if (height * (1.0 - kMathMLDelimiterFactor) > oneDevPixel) {
         if (0 == i) {  
           clipRect.height = end[i] - clipRect.y;
         } else if (2 == i) {  
@@ -2002,7 +2002,7 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
       
       
       nscoord width = mBmData[i].rightBearing - mBmData[i].leftBearing;
-      if (width * (1.0 - NS_MATHML_DELIMITER_FACTOR) > oneDevPixel) {
+      if (width * (1.0 - kMathMLDelimiterFactor) > oneDevPixel) {
         if (0 == i) {  
           clipRect.width = end[i] - clipRect.x;
         } else if (2 == i) {  
