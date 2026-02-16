@@ -802,6 +802,11 @@ pub trait TElement:
     }
 
     
+    
+    
+    fn note_highlight_pseudo_style_invalidated(&self) {}
+
+    
     fn shadow_root(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
 
     

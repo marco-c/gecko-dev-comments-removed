@@ -7,6 +7,7 @@
 #ifndef mozilla_RestyleManager_h
 #define mozilla_RestyleManager_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/OverflowChangedTracker.h"
 #include "mozilla/ServoElementSnapshot.h"
@@ -417,6 +418,13 @@ class RestyleManager {
   
   
   
+  void NoteHighlightPseudoStyleInvalidated() {
+    mNeedsPseudoElementSelectionsRepaint = true;
+  }
+
+  
+  
+  
   
   
   
@@ -581,6 +589,16 @@ class RestyleManager {
   
   
   bool mRestyleForCSSRuleChanges = false;
+
+  
+  
+  
+  
+  
+  
+  
+  Atomic<bool, MemoryOrdering::Relaxed> mNeedsPseudoElementSelectionsRepaint{
+      false};
 
   
   

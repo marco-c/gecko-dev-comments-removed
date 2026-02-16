@@ -1336,6 +1336,15 @@ class PresShell final : public nsStubDocumentObserver,
       ControllerScrollFlags aFlags) override;
   using nsISelectionController::ScrollSelectionIntoView;
   NS_IMETHOD RepaintSelection(RawSelectionType aRawSelectionType) override;
+
+  
+
+
+
+
+
+  void RepaintPseudoElementStyledSelections();
+
   void SelectionWillTakeFocus() override;
   void SelectionWillLoseFocus() override;
 

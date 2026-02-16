@@ -170,6 +170,12 @@ where
     fn invalidated_sibling(&mut self, sibling: E, of: E);
 
     
+    
+    
+    
+    fn invalidated_highlight_pseudo(&mut self, _element: E) {}
+
+    
     fn invalidated_descendants(&mut self, element: E, child: E);
 
     
@@ -1189,7 +1195,9 @@ where
                     invalidation_kind,
                     DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element)
                 ) || (matches!(invalidation_kind, DependencyInvalidationKind::Scope(_))
-                    && cur_dependency.selector.is_rightmost(cur_dependency.selector_offset))
+                    && cur_dependency
+                        .selector
+                        .is_rightmost(cur_dependency.selector_offset))
                 {
                     
                     to_process.push(cur_dependency);
@@ -1297,15 +1305,19 @@ where
                     
                     
                     
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     result.invalidated_self = true;
+
+                    
+                    
+                    
+                    if next_invalidation
+                        .dependency
+                        .selector
+                        .pseudo_element()
+                        .is_some_and(|p| p.is_lazy_painted_highlight_pseudo())
+                    {
+                        self.processor.invalidated_highlight_pseudo(self.element);
+                    }
                 }
 
                 debug!(

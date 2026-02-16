@@ -94,6 +94,15 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
   
 
+
+
+
+
+
+  void RepaintAllHighlightSelections();
+
+  
+
   Document* GetParentObject() const { return mDocument; };
 
   JSObject* WrapObject(JSContext* aCx,
