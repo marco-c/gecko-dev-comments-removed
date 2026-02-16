@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="shift_jis"> 
+<meta charset="shift_jis"> <!-- test breaks if the server overrides this -->
 <title>Shift_jis encoding (href, misc)</title>
 <meta name="timeout" content="long">
 <meta name="variant" content="?1-1000">
@@ -37,6 +37,6 @@ function normalizeStr(str) {
   return str;
 }
 </script>
-<script src="../../resources/encode-form-common.js"></script>
+<script src="../../resources/encode-href-common.js"></script>
 </body>
 </html>
