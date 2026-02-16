@@ -2240,7 +2240,6 @@ public:
     int Flags = 0;
     const char *Kind = "def";
     const char *PrettyKind = "?";
-    bool wasTemplate = false;
     SourceRange PeekRange(D->getBeginLoc(), D->getEndLoc());
     
     
@@ -2248,7 +2247,6 @@ public:
     QualType qtype = QualType();
     if (FunctionDecl *D2 = dyn_cast<FunctionDecl>(D)) {
       if (D2->isTemplateInstantiation()) {
-        wasTemplate = true;
         D = D2->getTemplateInstantiationPattern();
       }
       
@@ -2397,11 +2395,7 @@ public:
       }
     }
     if (FunctionDecl *D2 = dyn_cast<FunctionDecl>(D)) {
-      if ((D2->isThisDeclarationADefinition() || isPure(D2)) &&
-          
-          
-          !D2->isTemplateInstantiation() && !wasTemplate &&
-          !D2->isFunctionTemplateSpecialization() && !TemplateStack) {
+      if (D2->isThisDeclarationADefinition() || isPure(D2)) {
         if (auto *D3 = dyn_cast<CXXMethodDecl>(D2)) {
           findBindingToJavaMember(*AstContext, *D3);
         } else {
