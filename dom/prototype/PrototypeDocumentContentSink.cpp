@@ -419,8 +419,7 @@ nsresult PrototypeDocumentContentSink::InsertXMLStylesheetPI(
   return NS_OK;
 }
 
-void PrototypeDocumentContentSink::CloseElement(Element* aElement,
-                                                bool aHadChildren) {
+void PrototypeDocumentContentSink::CloseElement(Element* aElement) {
   if (nsIContent::RequiresDoneAddingChildren(
           aElement->NodeInfo()->NamespaceID(),
           aElement->NodeInfo()->NameAtom())) {
@@ -435,11 +434,6 @@ void PrototypeDocumentContentSink::CloseElement(Element* aElement,
     return;
   }
 
-  if (!aHadChildren) {
-    return;
-  }
-
-  
   
   
   
@@ -505,7 +499,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalkInternal() {
       if (indx >= (int32_t)proto->mChildren.Length()) {
         if (element) {
           
-          CloseElement(element->AsElement(),  true);
+          CloseElement(element->AsElement());
         }
         
         
@@ -558,7 +552,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalkInternal() {
             if (NS_FAILED(rv)) return rv;
           } else {
             
-            CloseElement(child,  false);
+            CloseElement(child);
           }
         } break;
 
@@ -1105,10 +1099,10 @@ nsresult PrototypeDocumentContentSink::CreateElementFromPrototype(
     if (aPrototype->mIsAtom &&
         newNodeInfo->NamespaceID() == kNameSpaceID_XHTML) {
       rv = NS_NewHTMLElement(getter_AddRefs(result), newNodeInfo.forget(),
-                             NOT_FROM_PARSER, aPrototype->mIsAtom);
+                             FROM_PARSER_NETWORK, aPrototype->mIsAtom);
     } else {
       rv = NS_NewElement(getter_AddRefs(result), newNodeInfo.forget(),
-                         NOT_FROM_PARSER);
+                         FROM_PARSER_NETWORK);
     }
     if (NS_FAILED(rv)) return rv;
 
@@ -1118,19 +1112,7 @@ nsresult PrototypeDocumentContentSink::CreateElementFromPrototype(
     if (isScript) {
       nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(result);
       MOZ_ASSERT(sele, "Node didn't QI to script.");
-
       sele->FreezeExecutionAttrs(doc);
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!sele->GetScriptIsModule()) {
-        sele->PreventExecution();
-      }
     }
   }
 
