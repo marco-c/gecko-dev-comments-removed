@@ -102,6 +102,8 @@ class TRRService : public TRRServiceBase,
 
   void DontUseTRRThread() { mDontUseTRRThread = true; }
 
+  bool Http3FirstEnabled() const { return mHttp3FirstEnabled; }
+
  private:
   virtual ~TRRService();
 
@@ -142,6 +144,7 @@ class TRRService : public TRRServiceBase,
   void AddEtcHosts(const nsTArray<nsCString>&);
 
   bool mInitialized{false};
+  Mutex mLock;
 
   nsCString mPrivateCred;  
   nsCString mConfirmationNS MOZ_GUARDED_BY(mLock){"example.com"_ns};
@@ -151,6 +154,7 @@ class TRRService : public TRRServiceBase,
       false};  
   Atomic<bool, Relaxed> mShutdown{false};
   Atomic<bool, Relaxed> mDontUseTRRThread{false};
+  Atomic<bool, Relaxed> mHttp3FirstEnabled{false};
 
   
   
