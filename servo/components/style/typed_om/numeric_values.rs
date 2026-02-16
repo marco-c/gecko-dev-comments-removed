@@ -1,0 +1,20 @@
+
+
+
+
+
+
+use crate::derives::*;
+use crate::values::specified::NoCalcLength;
+
+
+#[derive(Clone, ToTyped)]
+#[repr(u8)]
+#[typed_value(derive_fields)]
+pub enum NoCalcNumeric {
+    
+    
+    
+    Length(NoCalcLength),
+    
+}

@@ -9,6 +9,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathSum.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
@@ -109,10 +110,28 @@ already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
 void CSSNumericValue::Type(CSSNumericType& aRetVal) {}
 
 
+
+
 already_AddRefed<CSSNumericValue> CSSNumericValue::Parse(
     const GlobalObject& aGlobal, const nsACString& aCssText, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  
+  auto declaration = WrapUnique(Servo_NumericDeclaration_Parse(&aCssText));
+  if (!declaration) {
+    aRv.ThrowSyntaxError("Failed to parse CSS text");
+    return nullptr;
+  }
+
+  
+  StyleNumericValueResult result = StyleNumericValueResult::Unsupported();
+  Servo_NumericDeclaration_GetValue(declaration.get(), &result);
+  if (result.IsUnsupported()) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+
+  RefPtr<CSSNumericValue> numericValue =
+      Create(aGlobal.GetAsSupports(), result.AsNumeric());
+  return numericValue.forget();
 }
 
 

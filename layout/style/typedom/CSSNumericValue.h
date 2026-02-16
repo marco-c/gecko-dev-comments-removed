@@ -72,6 +72,7 @@ class CSSNumericValue : public CSSStyleValue {
 
   void Type(CSSNumericType& aRetVal);
 
+  
   static already_AddRefed<CSSNumericValue> Parse(const GlobalObject& aGlobal,
                                                  const nsACString& aCssText,
                                                  ErrorResult& aRv);
