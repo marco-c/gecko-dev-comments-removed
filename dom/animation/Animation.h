@@ -424,6 +424,8 @@ class Animation : public DOMEventTargetHelper,
 
   DocGroup* GetDocGroup();
 
+  void PostUpdate();
+
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -462,7 +464,6 @@ class Animation : public DOMEventTargetHelper,
 
 
   void FlushUnanimatedStyle() const;
-  void PostUpdate();
   void ResetFinishedPromise();
   void MaybeResolveFinishedPromise();
   void DoFinishNotification(SyncNotifyFlag aSyncNotifyFlag);
