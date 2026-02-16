@@ -109,7 +109,7 @@ typedef struct {
   size_t quantum_max;        
   size_t quantum_wide;       
   size_t quantum_wide_max;   
-  size_t subpage_max;        
+  size_t unused;             
   size_t large_max;          
   size_t chunksize;          
   size_t page_size;          
