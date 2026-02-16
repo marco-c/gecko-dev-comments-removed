@@ -63,6 +63,7 @@ add_setup(async function () {
       ["browser.urlbar.suggest.searches", true],
       
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
+      ["browser.search.widget.new", true],
     ],
   });
   
@@ -361,21 +362,10 @@ add_task(async function test_source_searchbar() {
     "searchbar",
     async () => {
       tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-
-      let sb = document.getElementById("searchbar");
-      
-      sb.focus();
-      sb.value = "searchSuggestion";
-      sb.textbox.controller.startSearch("searchSuggestion");
-      
-      await BrowserTestUtils.waitForEvent(sb.textbox.popup, "popupshown");
-      
-      await BrowserTestUtils.waitForCondition(
-        () =>
-          sb.textbox.controller.searchStatus >=
-          Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
-        "The search in the searchbar must complete."
-      );
+      await SearchbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "searchSuggestion",
+      });
 
       let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
       EventUtils.synthesizeKey("KEY_Enter");
@@ -394,20 +384,10 @@ add_task(async function test_source_searchbar_newtab() {
     "searchbar",
     "searchbar",
     async () => {
-      let sb = document.getElementById("searchbar");
-      
-      sb.focus();
-      sb.value = "searchSuggestion";
-      sb.textbox.controller.startSearch("searchSuggestion");
-      
-      await BrowserTestUtils.waitForEvent(sb.textbox.popup, "popupshown");
-      
-      await BrowserTestUtils.waitForCondition(
-        () =>
-          sb.textbox.controller.searchStatus >=
-          Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
-        "The search in the searchbar must complete."
-      );
+      await SearchbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "searchSuggestion",
+      });
 
       let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
       EventUtils.synthesizeKey("VK_RETURN", { altKey: true });
