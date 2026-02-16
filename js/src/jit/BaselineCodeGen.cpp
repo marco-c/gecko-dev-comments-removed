@@ -265,6 +265,9 @@ MethodStatus BaselineCompiler::compile(JSContext* cx) {
   JitSpew(JitSpew_Codegen, "# Emitting baseline code for script %s:%u:%u",
           script->filename(), script->lineno(),
           script->column().oneOriginValue());
+  if (runtime->geckoProfiler().enabled()) {
+    masm.enableProfilingInstrumentation();
+  }
 
   MOZ_ASSERT(!script->hasBaselineScript());
 
@@ -892,8 +895,7 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
     masm.push(FrameDescriptor(FrameType::BaselineJS));
   }
   
-  masm.call(code);
-  uint32_t callOffset = masm.currentOffset();
+  uint32_t callOffset = masm.callJit(code);
 
   
   masm.implicitPop(argSize);
@@ -1994,6 +1996,15 @@ void BaselineCodeGen<Handler>::emitProfilerExitFrame() {
   
   MOZ_ASSERT(!profilerExitFrameToggleOffset_.bound());
   profilerExitFrameToggleOffset_ = toggleOffset;
+}
+
+template <typename Handler>
+void BaselineCodeGen<Handler>::emitProfilerCallSiteInstrumentation() {
+  if (!handler.needsProfilerCallSiteInstrumentation()) {
+    return;
+  }
+
+  masm.instrumentProfilerCallSite();
 }
 
 template <typename Handler>
@@ -4732,6 +4743,10 @@ template <>
 bool BaselineCompilerCodeGen::emitCall(JSOp op) {
   MOZ_ASSERT(IsInvokeOp(op));
 
+  
+  
+  emitProfilerCallSiteInstrumentation();
+
   frame.syncStack(0);
 
   uint32_t argc = GET_ARGC(handler.pc());
@@ -4774,6 +4789,10 @@ bool BaselineInterpreterCodeGen::emitCall(JSOp op) {
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emitSpreadCall(JSOp op) {
   MOZ_ASSERT(IsInvokeOp(op));
+
+  
+  
+  emitProfilerCallSiteInstrumentation();
 
   frame.syncStack(0);
   masm.move32(Imm32(1), R0.scratchReg());
