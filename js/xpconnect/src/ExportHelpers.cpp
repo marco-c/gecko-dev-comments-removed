@@ -200,17 +200,20 @@ class MOZ_STACK_CLASS StackScopedCloneData : public StructuredCloneHolderBase {
 
 bool StackScopedClone(JSContext* cx, StackScopedCloneOptions& options,
                       HandleObject sourceScope, MutableHandleValue val) {
+  ErrorResult error;
   StackScopedCloneData data(cx, &options);
   {
     
     JSAutoRealm ar(cx, sourceScope);
-    if (!data.Write(cx, val)) {
+    data.Write(cx, val, error);
+    if (error.MaybeSetPendingException(cx)) {
       return false;
     }
   }
 
   
-  if (!data.Read(cx, val)) {
+  data.Read(cx, val, error);
+  if (error.MaybeSetPendingException(cx)) {
     return false;
   }
 
