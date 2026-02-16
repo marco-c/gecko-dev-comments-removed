@@ -262,6 +262,14 @@ TEST_F(ImageDecoderMetadata, AnimatedAVIF) {
                  true,  false);
 }
 
+#ifdef MOZ_JXL
+TEST_F(ImageDecoderMetadata, AnimatedJXL) {
+  
+  CheckMetadata(GreenFirstFrameAnimatedJXLTestCase(), BMPWithinICO::NO,
+                 false,  true);
+}
+#endif
+
 TEST_F(ImageDecoderMetadata, FirstFramePaddingGIF) {
   CheckMetadata(FirstFramePaddingGIFTestCase());
 }

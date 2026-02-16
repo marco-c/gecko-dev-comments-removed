@@ -754,6 +754,14 @@ ImageTestCase GreenFirstFrameAnimatedAVIFTestCase() {
                         2);
 }
 
+#ifdef MOZ_JXL
+ImageTestCase GreenFirstFrameAnimatedJXLTestCase() {
+  return ImageTestCase("first-frame-green.jxl", "image/jxl", IntSize(100, 100),
+                       TEST_CASE_IS_TRANSPARENT | TEST_CASE_IS_ANIMATED,
+                        2);
+}
+#endif
+
 ImageTestCase BlendAnimatedGIFTestCase() {
   return ImageTestCase("blend.gif", "image/gif", IntSize(100, 100),
                        TEST_CASE_IS_ANIMATED,  2);
