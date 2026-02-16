@@ -10,6 +10,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/glean/bindings/DistributionData.h"
 #include "mozilla/glean/bindings/GleanMetric.h"
+#include "mozilla/glean/bindings/MemoryDistributionStandalone.h"
 #include "mozilla/Maybe.h"
 #include "nsTArray.h"
 
@@ -21,20 +22,10 @@ namespace mozilla::glean {
 
 namespace impl {
 
-class MemoryDistributionMetric {
+class MemoryDistributionMetric : public MemoryDistributionStandalone {
  public:
-  constexpr explicit MemoryDistributionMetric(uint32_t aId) : mId(aId) {}
-
-  
-
-
-
-
-
-
-
-
-  void Accumulate(size_t aSample) const;
+  constexpr explicit MemoryDistributionMetric(uint32_t aId)
+      : MemoryDistributionStandalone(aId) {}
 
   
 
@@ -55,9 +46,6 @@ class MemoryDistributionMetric {
 
   Result<Maybe<DistributionData>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
-
- private:
-  const uint32_t mId;
 };
 }  
 

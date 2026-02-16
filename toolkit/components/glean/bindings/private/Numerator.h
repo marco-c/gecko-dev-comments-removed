@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/glean/bindings/GleanMetric.h"
+#include "mozilla/glean/bindings/NumeratorStandalone.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsString.h"
@@ -23,16 +24,9 @@ namespace impl {
 
 
 
-class NumeratorMetric {
+class NumeratorMetric : public NumeratorStandalone {
  public:
-  constexpr explicit NumeratorMetric(uint32_t aId) : mId(aId) {}
-
-  
-
-
-
-
-  void AddToNumerator(int32_t aAmount = 1) const;
+  constexpr explicit NumeratorMetric(uint32_t aId) : NumeratorStandalone(aId) {}
 
   
 
@@ -53,9 +47,6 @@ class NumeratorMetric {
 
   Result<Maybe<std::pair<int32_t, int32_t>>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
-
- private:
-  const uint32_t mId;
 };
 }  
 

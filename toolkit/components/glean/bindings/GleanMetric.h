@@ -7,6 +7,7 @@
 #ifndef mozilla_glean_GleanMetric_h
 #define mozilla_glean_GleanMetric_h
 
+#include "mozilla/glean/bindings/CommonStandalone.h"
 
 
 #include "mozilla/glean/bindings/GleanWebIDL.h"
@@ -21,8 +22,6 @@ enum HistogramID : uint32_t;
 }  
 
 namespace mozilla::glean {
-
-typedef uint64_t TimerId;
 
 class GleanMetric : public nsISupports, public nsWrapperCache {
  public:

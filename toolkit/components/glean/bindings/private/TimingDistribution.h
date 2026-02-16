@@ -9,10 +9,10 @@
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/glean/bindings/DistributionData.h"
-#include "mozilla/glean/bindings/GleanMetric.h"
+#include "mozilla/glean/bindings/GleanMetric.h"  
+#include "mozilla/glean/bindings/TimingDistributionStandalone.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
-#include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 
 namespace mozilla::dom {
@@ -24,52 +24,10 @@ namespace mozilla::glean {
 class GleanTimingDistribution;
 
 namespace impl {
-class TimingDistributionMetric {
+class TimingDistributionMetric : public TimingDistributionStandalone {
  public:
-  constexpr explicit TimingDistributionMetric(uint32_t aId) : mId(aId) {}
-
-  
-
-
-
-
-  TimerId Start() const;
-
-  
-
-
-
-
-
-
-
-
-
-  void StopAndAccumulate(const TimerId&& aId) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void AccumulateRawDuration(const TimeDuration& aDuration) const;
-
-  
-
-
-
-
-
-  void Cancel(const TimerId&& aId) const;
+  constexpr explicit TimingDistributionMetric(uint32_t aId)
+      : TimingDistributionStandalone(aId) {}
 
   
 
@@ -91,26 +49,7 @@ class TimingDistributionMetric {
   Result<Maybe<DistributionData>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
-  class MOZ_RAII AutoTimer {
-   public:
-    void Cancel();
-    ~AutoTimer();
-
-   private:
-    AutoTimer(uint32_t aMetricId, TimerId aTimerId)
-        : mMetricId(aMetricId), mTimerId(aTimerId) {}
-    AutoTimer(AutoTimer& aOther) = delete;
-
-    const uint32_t mMetricId;
-    TimerId mTimerId;
-
-    friend class TimingDistributionMetric;
-  };
-
-  AutoTimer Measure() const;
-
- private:
-  const uint32_t mId;
+  using TimingDistributionStandalone::AutoTimer;
 
   friend class mozilla::glean::GleanTimingDistribution;
 };

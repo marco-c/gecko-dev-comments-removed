@@ -7,56 +7,20 @@
 #ifndef mozilla_glean_GleanTimespan_h
 #define mozilla_glean_GleanTimespan_h
 
-#include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/glean/bindings/GleanMetric.h"
+#include "mozilla/glean/bindings/TimespanStandalone.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "nsTString.h"
 
 namespace mozilla::glean {
 
 namespace impl {
 
-class TimespanMetric {
+class TimespanMetric : public TimespanStandalone {
  public:
-  constexpr explicit TimespanMetric(uint32_t aId) : mId(aId) {}
-
-  
-
-
-
-
-
-
-  void Start() const;
-
-  
-
-
-
-
-
-
-
-  void Stop() const;
-
-  
-
-
-
-
-  void Cancel() const;
-
-  
-
-
-
-
-
-
-
-
-  void SetRaw(uint32_t aDuration) const;
+  constexpr explicit TimespanMetric(uint32_t aId) : TimespanStandalone(aId) {}
 
   
 
@@ -77,9 +41,6 @@ class TimespanMetric {
 
   Result<Maybe<uint64_t>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
-
- private:
-  const uint32_t mId;
 };
 }  
 

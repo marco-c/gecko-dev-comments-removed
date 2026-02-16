@@ -8,8 +8,9 @@
 #define mozilla_glean_GleanCustomDistribution_h
 
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/glean/bindings/GleanMetric.h"
+#include "mozilla/glean/bindings/CustomDistributionStandalone.h"
 #include "mozilla/glean/bindings/DistributionData.h"
+#include "mozilla/glean/bindings/GleanMetric.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsTArray.h"
@@ -22,9 +23,10 @@ namespace mozilla::glean {
 
 namespace impl {
 
-class CustomDistributionMetric {
+class CustomDistributionMetric : public CustomDistributionStandalone {
  public:
-  constexpr explicit CustomDistributionMetric(uint32_t aId) : mId(aId) {}
+  constexpr explicit CustomDistributionMetric(uint32_t aId)
+      : CustomDistributionStandalone(aId) {}
 
   
 
@@ -39,26 +41,11 @@ class CustomDistributionMetric {
 
 
 
-  void AccumulateSingleSample(uint64_t aSample) const;
-
-  
-
-
-
-
 
 
 
 
   void AccumulateSamplesSigned(const nsTArray<int64_t>& aSamples) const;
-
-  
-
-
-
-
-
-  void AccumulateSingleSampleSigned(int64_t aSample) const;
 
   
 
@@ -79,9 +66,6 @@ class CustomDistributionMetric {
 
   Result<Maybe<DistributionData>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
-
- private:
-  const uint32_t mId;
 };
 }  
 
