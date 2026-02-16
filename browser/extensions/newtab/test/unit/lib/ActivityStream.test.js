@@ -76,6 +76,19 @@ describe("ActivityStream", () => {
   it("should initialize with .initialized=false", () => {
     assert.isFalse(as.initialized, ".initialized");
   });
+  it("should have a null createdInstant if not constructed with one", () => {
+    const noCreatedInstantAS = new ActivityStream();
+    assert.isNull(noCreatedInstantAS.createdInstant);
+  });
+  it("should have a createdInstant value exposed if constructed with one", () => {
+    
+    
+    
+    
+    const instant = new Date();
+    const createdInstantAS = new ActivityStream(instant);
+    assert.equal(createdInstantAS.createdInstant, instant);
+  });
   describe("#init", () => {
     beforeEach(() => {
       as.init();
