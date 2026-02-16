@@ -53,6 +53,12 @@ if not CONFIG["MOZ_CODE_COVERAGE"]:
         
         RUST_TESTS += ["dom_fragmentdirectives"]
 
+
+
+
+if not CONFIG["MOZ_CODE_COVERAGE"]:
+    RUST_TESTS += ["crashping"]
+
 if CONFIG["TARGET_CPU"] != "x86":
     
     
