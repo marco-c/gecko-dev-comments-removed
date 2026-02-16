@@ -866,7 +866,16 @@ async function populateICEFoundations() {
       })
       .catch(reject);
 
-    return promise;
+    
+    const timeout = setTimeout(() => {
+      pc.close();
+      resolve(result);
+    }, 5000);
+
+    return promise.then(res => {
+      clearTimeout(timeout);
+      return res;
+    });
   }
 
   
@@ -985,18 +994,35 @@ async function populateMathML() {
 
 async function populateAudioDeviceProperties() {
   const ctx = new AudioContext();
-  await ctx.resume();
+
+  try {
+    
+    await Promise.race([
+      ctx.resume(),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("AudioContext.resume() timeout")),
+          5000
+        )
+      ),
+    ]);
+  } catch (e) {
+    throw new Error(
+      "AudioContext.resume error, probably a timeout, user may not have audio hardware"
+    );
+  }
 
   
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   
   
-  return {
+  const result = {
     audioFrames: ctx.outputLatency * ctx.sampleRate,
     audioRate: ctx.sampleRate,
     audioChannels: ctx.destination.maxChannelCount,
   };
+  return result;
 }
 
 async function populateTimezoneWeb() {
