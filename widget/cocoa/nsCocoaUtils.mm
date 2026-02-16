@@ -1505,7 +1505,7 @@ nsresult nsCocoaUtils::RequestCapturePermission(
 
   sMediaCaptureMutex.Unlock();
 
-  LOG("RequestCapturePermission(%s): %ld promise(s) unresolved",
+  LOG("RequestCapturePermission(%s): %zu promise(s) unresolved",
       AVMediaTypeToString(aType), nPromises);
 
   
