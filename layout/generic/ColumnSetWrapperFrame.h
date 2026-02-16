@@ -73,10 +73,6 @@ class ColumnSetWrapperFrame final : public nsBlockFrame {
 
 #ifdef DEBUG
   static void AssertColumnSpanWrapperSubtreeIsSane(const nsIFrame* aFrame);
-
-  
-  
-  bool mFinishedBuildingColumns = false;
 #endif
 
   template <typename Iterator>

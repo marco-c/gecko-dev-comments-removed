@@ -98,16 +98,8 @@ nsresult ColumnSetWrapperFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
-
-
-
 void ColumnSetWrapperFrame::AppendFrames(ChildListID aListID,
                                          nsFrameList&& aFrameList) {
-#ifdef DEBUG
-  MOZ_ASSERT(!mFinishedBuildingColumns, "Should only call once!");
-  mFinishedBuildingColumns = true;
-#endif
-
   nsBlockFrame::AppendFrames(aListID, std::move(aFrameList));
 
 #ifdef DEBUG
