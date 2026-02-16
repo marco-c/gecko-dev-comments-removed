@@ -208,9 +208,7 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-  double CurrentOrPendingPlaybackRate() const {
-    return mPendingPlaybackRate.valueOr(PlaybackRateInternal());
-  }
+  double CurrentOrPendingPlaybackRate() const;
   bool HasPendingPlaybackRate() const { return mPendingPlaybackRate.isSome(); }
 
   
