@@ -1206,8 +1206,8 @@ class CssRuleView extends EventEmitter {
     
     const promises = [];
     for (const rule of this.elementStyle.rules) {
-      if (rule._applyingModifications) {
-        promises.push(rule._applyingModifications);
+      if (rule.applyingModifications) {
+        promises.push(rule.applyingModifications);
       }
     }
 

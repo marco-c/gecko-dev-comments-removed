@@ -67,8 +67,8 @@ class Rule {
 
     
     
-    this.textProps = this._getTextProperties();
-    this.textProps = this.textProps.concat(this._getDisabledProperties());
+    this.textProps = this.#getTextProperties();
+    this.textProps = this.textProps.concat(this.#getDisabledProperties());
 
     this.getUniqueSelector = this.getUniqueSelector.bind(this);
     this.onStyleRuleFrontUpdated = this.onStyleRuleFrontUpdated.bind(this);
@@ -77,10 +77,6 @@ class Rule {
   }
 
   destroy() {
-    if (this._unsubscribeSourceMap) {
-      this._unsubscribeSourceMap();
-    }
-
     this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
     this.compatibilityIssues = null;
     this.destroyed = true;
@@ -114,11 +110,12 @@ class Rule {
     return title;
   }
 
+  #inheritedSectionLabel;
   get inheritedSectionLabel() {
-    if (this._inheritedSectionLabel) {
-      return this._inheritedSectionLabel;
+    if (this.#inheritedSectionLabel) {
+      return this.#inheritedSectionLabel;
     }
-    this._inheritedSectionLabel = "";
+    this.#inheritedSectionLabel = "";
     if (this.inherited) {
       let eltText = this.inherited.displayName;
       if (this.inherited.id) {
@@ -127,26 +124,27 @@ class Rule {
       if (CssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(this.pseudoElement)) {
         eltText += this.pseudoElement;
       }
-      this._inheritedSectionLabel = STYLE_INSPECTOR_L10N.getFormatStr(
+      this.#inheritedSectionLabel = STYLE_INSPECTOR_L10N.getFormatStr(
         "rule.inheritedFrom",
         eltText
       );
     }
-    return this._inheritedSectionLabel;
+    return this.#inheritedSectionLabel;
   }
 
+  #keyframesName;
   get keyframesName() {
-    if (this._keyframesName) {
-      return this._keyframesName;
+    if (this.#keyframesName) {
+      return this.#keyframesName;
     }
-    this._keyframesName = "";
+    this.#keyframesName = "";
     if (this.keyframes) {
-      this._keyframesName = STYLE_INSPECTOR_L10N.getFormatStr(
+      this.#keyframesName = STYLE_INSPECTOR_L10N.getFormatStr(
         "rule.keyframe",
         this.keyframes.name
       );
     }
-    return this._keyframesName;
+    return this.#keyframesName;
   }
 
   get keyframesRule() {
@@ -317,7 +315,7 @@ class Rule {
 
 
 
-  async _applyPropertiesNoAuthored(modifications) {
+  async #applyPropertiesNoAuthored(modifications) {
     this.elementStyle.onRuleUpdated();
 
     const disabledProps = [];
@@ -387,7 +385,7 @@ class Rule {
 
 
 
-  async _applyPropertiesAuthored(modifications) {
+  async #applyPropertiesAuthored(modifications) {
     await modifications.apply();
 
     
@@ -421,7 +419,7 @@ class Rule {
   applyProperties(modifier) {
     
     
-    const resultPromise = Promise.resolve(this._applyingModifications)
+    const resultPromise = Promise.resolve(this.applyingModifications)
       .then(() => {
         const modifications = this.domRule.startModifyingProperties(
           this.inspector.panelWin,
@@ -429,21 +427,23 @@ class Rule {
         );
         modifier(modifications);
         if (this.domRule.canSetRuleText) {
-          return this._applyPropertiesAuthored(modifications);
+          return this.#applyPropertiesAuthored(modifications);
         }
-        return this._applyPropertiesNoAuthored(modifications);
+        return this.#applyPropertiesNoAuthored(modifications);
       })
       .then(() => {
         this.elementStyle.onRuleUpdated();
 
-        if (resultPromise === this._applyingModifications) {
-          this._applyingModifications = null;
+        if (resultPromise === this.applyingModifications) {
+          this.applyingModifications = null;
           this.elementStyle.notifyChanged();
         }
       })
       .catch(promiseWarn);
 
-    this._applyingModifications = resultPromise;
+    
+    
+    this.applyingModifications = resultPromise;
     return resultPromise;
   }
 
@@ -580,7 +580,7 @@ class Rule {
 
 
 
-  _getTextProperties() {
+  #getTextProperties() {
     const textProps = [];
     const store = this.elementStyle.store;
 
@@ -618,7 +618,7 @@ class Rule {
   
 
 
-  _getDisabledProperties() {
+  #getDisabledProperties() {
     const store = this.elementStyle.store;
 
     
@@ -657,7 +657,7 @@ class Rule {
     const colorSchemeChanged = this.darkColorScheme !== options.darkColorScheme;
     this.darkColorScheme = options.darkColorScheme;
 
-    const newTextProps = this._getTextProperties();
+    const newTextProps = this.#getTextProperties();
 
     
     
@@ -678,7 +678,7 @@ class Rule {
     
     const brandNewProps = [];
     for (const newProp of newTextProps) {
-      if (!this._updateTextProperty(newProp)) {
+      if (!this.#updateTextProperty(newProp)) {
         brandNewProps.push(newProp);
       }
     }
@@ -733,7 +733,7 @@ class Rule {
 
 
 
-  _updateTextProperty(newProp) {
+  #updateTextProperty(newProp) {
     const match = { rank: 0, prop: null };
 
     for (const prop of this.textProps) {
