@@ -68,13 +68,6 @@ nsHTMLFormatConverter::CanConvert(const char* aFromDataFlavor,
     } else if (!nsCRT::strcmp(aToDataFlavor, kTextMime)) {
       *_retval = true;
     }
-#if NOT_NOW
-    
-    
-    
-    else if (toFlavor.Equals(kAOLMailMime))
-      *_retval = true;
-#endif
   }
   return NS_OK;
 
@@ -100,9 +93,10 @@ nsHTMLFormatConverter::Convert(const char* aFromDataFlavor,
                                nsISupports* aFromData,
                                const char* aToDataFlavor,
                                nsISupports** aToData) {
-  if (!aToData) return NS_ERROR_INVALID_ARG;
+  if (!aToData) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  nsresult rv = NS_OK;
   *aToData = nullptr;
 
   if (!nsCRT::strcmp(aFromDataFlavor, kHTMLMime)) {
@@ -118,43 +112,32 @@ nsHTMLFormatConverter::Convert(const char* aFromDataFlavor,
     }
 
     nsAutoString dataStr;
-    dataWrapper0->GetData(dataStr);  
+    dataWrapper0->GetData(dataStr);
     
     
     if (toFlavor.Equals(kHTMLMime) || toFlavor.Equals(kTextMime)) {
-      nsresult res;
-      if (toFlavor.Equals(kHTMLMime)) {
-        int32_t dataLen = dataStr.Length() * 2;
-        nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, dataStr.get(),
-                                                   dataLen, aToData);
-      } else {
-        nsAutoString outStr;
-        res = ConvertFromHTMLToUnicode(dataStr, outStr);
-        if (NS_SUCCEEDED(res)) {
-          int32_t dataLen = outStr.Length() * 2;
-          nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, outStr.get(),
-                                                     dataLen, aToData);
+      nsAutoString outStr = dataStr;
+
+      if (toFlavor.Equals(kTextMime)) {
+        nsresult res = ConvertFromHTMLToUnicode(dataStr, outStr);
+        if (NS_FAILED(res)) {
+          return NS_ERROR_FAILURE;
         }
       }
-    }  
-    else if (toFlavor.Equals(kAOLMailMime)) {
-      nsAutoString outStr;
-      if (NS_SUCCEEDED(ConvertFromHTMLToAOLMail(dataStr, outStr))) {
-        int32_t dataLen = outStr.Length() * 2;
-        nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, outStr.get(),
-                                                   dataLen, aToData);
+
+      auto len = outStr.Length();
+      if (len > std::numeric_limits<size_t>::max() / 2) {
+        return NS_ERROR_FAILURE;
       }
-    }  
-    else {
-      rv = NS_ERROR_FAILURE;
+      size_t dataLen = len * 2;
+      nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, outStr.get(),
+                                                 dataLen, aToData);
+      return NS_OK;
     }
-  }  
-  else
-    rv = NS_ERROR_FAILURE;
+  }
 
-  return rv;
-
-}  
+  return NS_ERROR_FAILURE;
+}
 
 
 

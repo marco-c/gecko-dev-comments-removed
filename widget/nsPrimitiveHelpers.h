@@ -19,7 +19,7 @@ class nsPrimitiveHelpers {
   
   
   static void CreatePrimitiveForData(const nsACString& aFlavor,
-                                     const void* aDataBuff, uint32_t aDataLen,
+                                     const void* aDataBuff, size_t aDataLen,
                                      nsISupports** aPrimitive);
 
   

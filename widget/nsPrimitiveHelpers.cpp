@@ -39,9 +39,11 @@
 
 void nsPrimitiveHelpers ::CreatePrimitiveForData(const nsACString& aFlavor,
                                                  const void* aDataBuff,
-                                                 uint32_t aDataLen,
+                                                 size_t aDataLen,
                                                  nsISupports** aPrimitive) {
-  if (!aPrimitive) return;
+  if (!aPrimitive) {
+    return;
+  }
 
   if (aFlavor.EqualsLiteral(kNativeHTMLMime) ||
       aFlavor.EqualsLiteral(kRTFMime) ||
@@ -58,19 +60,24 @@ void nsPrimitiveHelpers ::CreatePrimitiveForData(const nsACString& aFlavor,
         do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
     if (primitive) {
       if (aDataLen % 2) {
+        
         auto buffer = mozilla::MakeUnique<char[]>(aDataLen + 1);
-        if (!MOZ_LIKELY(buffer)) return;
+        if (!MOZ_LIKELY(buffer)) {
+          return;
+        }
 
         memcpy(buffer.get(), aDataBuff, aDataLen);
         buffer[aDataLen] = 0;
+
         const char16_t* start = reinterpret_cast<const char16_t*>(buffer.get());
         
-        primitive->SetData(Substring(start, start + (aDataLen + 1) / 2));
+        primitive->SetData(Substring(start, start + ((aDataLen + 1) / 2)));
       } else {
         const char16_t* start = reinterpret_cast<const char16_t*>(aDataBuff);
         
         primitive->SetData(Substring(start, start + (aDataLen / 2)));
       }
+
       NS_ADDREF(*aPrimitive = primitive);
     }
   }
