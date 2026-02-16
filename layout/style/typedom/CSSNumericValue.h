@@ -74,6 +74,7 @@ class CSSNumericValue : public CSSStyleValue {
 
   bool Equals(const Sequence<OwningCSSNumberish>& aValue);
 
+  
   already_AddRefed<CSSUnitValue> To(const nsACString& aUnit, ErrorResult& aRv);
 
   already_AddRefed<CSSMathSum> ToSum(const Sequence<nsCString>& aUnits,

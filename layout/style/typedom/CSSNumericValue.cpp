@@ -97,10 +97,40 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
   return false;
 }
 
+
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
                                                    ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  
+  
+  
+
+  
+  auto styleNumericValueResult = ToStyleNumericValue();
+  if (styleNumericValueResult.IsUnsupported()) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return nullptr;
+  }
+
+  auto sumValue =
+      WrapUnique(Servo_SumValue_Create(&styleNumericValueResult.AsNumeric()));
+  if (!sumValue) {
+    aRv.ThrowTypeError("Failed to create a sum value");
+    return nullptr;
+  }
+
+  
+  StyleUnitValueResult styleUnitValueResult =
+      StyleUnitValueResult::Unsupported();
+  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &styleUnitValueResult);
+  if (styleUnitValueResult.IsUnsupported()) {
+    aRv.ThrowTypeError("Failed to convert to "_ns + aUnit);
+    return nullptr;
+  }
+
+  
+  RefPtr<CSSUnitValue> unitValue =
+      CSSUnitValue::Create(mParent, styleUnitValueResult.AsUnit());
+  return unitValue.forget();
 }
 
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
