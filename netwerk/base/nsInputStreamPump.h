@@ -66,6 +66,14 @@ class nsInputStreamPump final : public nsIInputStreamPump,
 
   nsresult CallOnStateStop();
 
+  
+
+
+  void SetHighPriority(bool aHighPriority) {
+    mHighPriorityStream = aHighPriority;
+  }
+  bool IsHighPriority() { return mHighPriorityStream; }
+
  protected:
   enum { STATE_IDLE, STATE_START, STATE_TRANSFER, STATE_STOP, STATE_DEAD };
 
@@ -118,6 +126,9 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   const bool mOffMainThread;
   
   mozilla::RecursiveMutex mMutex{"nsInputStreamPump"};
+  
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mHighPriorityStream{false};
 };
 
 #endif  
