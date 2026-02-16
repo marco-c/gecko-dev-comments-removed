@@ -94,50 +94,46 @@ class RuleEditor extends EventEmitter {
     
     this.isEditing = false;
 
-    this._onNewProperty = this._onNewProperty.bind(this);
-    this._newPropertyDestroy = this._newPropertyDestroy.bind(this);
-    this._onSelectorDone = this._onSelectorDone.bind(this);
-    this._locationChanged = this._locationChanged.bind(this);
-    this.updateSourceLink = this.updateSourceLink.bind(this);
-    this._onToolChanged = this._onToolChanged.bind(this);
-    this._updateLocation = this._updateLocation.bind(this);
-    this._onSourceClick = this._onSourceClick.bind(this);
-    this._onShowUnusedCustomCssPropertiesButtonClick =
-      this._onShowUnusedCustomCssPropertiesButtonClick.bind(this);
+    this.rule.domRule.on("location-changed", this.#locationChanged);
+    this.toolbox.on("tool-registered", this.#onToolChanged);
+    this.toolbox.on("tool-unregistered", this.#onToolChanged);
 
-    this.rule.domRule.on("location-changed", this._locationChanged);
-    this.toolbox.on("tool-registered", this._onToolChanged);
-    this.toolbox.on("tool-unregistered", this._onToolChanged);
-
-    this._create();
+    this.#create();
   }
+
+  #unusedCssVariableDeclarations;
+  #showUnusedCustomCssPropertiesButton;
+  #unsubscribeSourceMap;
+  #ruleViewIsEditing;
+
   destroy() {
     for (const prop of this.rule.textProps) {
       prop.editor?.destroy();
     }
 
-    this._unusedCssVariableDeclarations = null;
+    this.#unusedCssVariableDeclarations = null;
 
-    if (this._showUnusedCustomCssPropertiesButton) {
-      this._nullifyShowUnusedCustomCssProperties({ removeFromDom: false });
+    if (this.#showUnusedCustomCssPropertiesButton) {
+      this.#nullifyShowUnusedCustomCssProperties({ removeFromDom: false });
     }
 
     this.rule.domRule.off("location-changed");
-    this.toolbox.off("tool-registered", this._onToolChanged);
-    this.toolbox.off("tool-unregistered", this._onToolChanged);
+    this.toolbox.off("tool-registered", this.#onToolChanged);
+    this.toolbox.off("tool-unregistered", this.#onToolChanged);
 
-    if (this._unsubscribeSourceMap) {
-      this._unsubscribeSourceMap();
+    if (this.#unsubscribeSourceMap) {
+      this.#unsubscribeSourceMap();
     }
   }
 
+  #sourceMapURLService;
   get sourceMapURLService() {
-    if (!this._sourceMapURLService) {
+    if (!this.#sourceMapURLService) {
       
-      this._sourceMapURLService = this.toolbox.sourceMapURLService;
+      this.#sourceMapURLService = this.toolbox.sourceMapURLService;
     }
 
-    return this._sourceMapURLService;
+    return this.#sourceMapURLService;
   }
 
   get isSelectorEditable() {
@@ -156,7 +152,7 @@ class RuleEditor extends EventEmitter {
     );
   }
 
-  _create() {
+  #create() {
     this.element = this.doc.createElement("div");
     this.element.className =
       "ruleview-rule devtools-monospace" +
@@ -164,6 +160,8 @@ class RuleEditor extends EventEmitter {
     this.element.dataset.ruleId = this.rule.domRule.actorID;
     this.element.setAttribute("uneditable", !this.isEditable);
     this.element.setAttribute("unmatched", this.rule.isUnmatched);
+
+    
     this.element._ruleEditor = this;
 
     
@@ -179,13 +177,13 @@ class RuleEditor extends EventEmitter {
       this.source = createChild(this.element, "div", {
         class: "ruleview-rule-source theme-link",
       });
-      this.source.addEventListener("click", this._onSourceClick);
+      this.source.addEventListener("click", this.#onSourceClick);
 
       const sourceLabel = this.doc.createElement("a");
       sourceLabel.classList.add("ruleview-rule-source-label");
       this.source.appendChild(sourceLabel);
     }
-    this.updateSourceLink();
+    this.#updateSourceLink();
 
     if (this.rule.domRule.ancestorData.length) {
       const ancestorsFrag = this.doc.createDocumentFragment();
@@ -314,7 +312,7 @@ class RuleEditor extends EventEmitter {
               textContent: selector,
             });
 
-            const warningsContainer = this._createWarningsElementForSelector(
+            const warningsContainer = this.#createWarningsElementForSelector(
               i,
               ancestorData.selectorWarnings
             );
@@ -375,7 +373,7 @@ class RuleEditor extends EventEmitter {
 
       editableField({
         element: this.selectorText,
-        done: this._onSelectorDone,
+        done: this.#onSelectorDone,
         cssProperties: this.rule.cssProperties,
         
         
@@ -458,47 +456,47 @@ class RuleEditor extends EventEmitter {
     }
 
     if (this.isEditable) {
-      
-      
-      
-      this._ruleViewIsEditing = false;
+      // A newProperty editor should only be created when no editor was
+      // previously displayed. Since the editors are cleared on blur,
+      // check this.ruleview.isEditing on mousedown
+      this.#ruleViewIsEditing = false;
 
       this.ruleviewCodeEl.addEventListener("mousedown", () => {
-        this._ruleViewIsEditing = this.ruleView.isEditing;
+        this.#ruleViewIsEditing = this.ruleView.isEditing;
       });
 
       this.ruleviewCodeEl.addEventListener("click", () => {
         const selection = this.doc.defaultView.getSelection();
-        if (selection.isCollapsed && !this._ruleViewIsEditing) {
+        if (selection.isCollapsed && !this.#ruleViewIsEditing) {
           this.newProperty();
         }
-        
-        this._ruleViewIsEditing = false;
+        // Cleanup the #ruleViewIsEditing flag
+        this.#ruleViewIsEditing = false;
       });
 
       this.element.addEventListener("mousedown", () => {
         this.doc.defaultView.focus();
       });
 
-      
+      // Create a property editor when the close brace is clicked.
       editableItem({ element: this.closeBrace }, () => {
         this.newProperty();
       });
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  _createWarningsElementForSelector(selectorIndex, selectorWarnings) {
+  /**
+   * Returns the selector warnings element, or null if selector at selectorIndex
+   * does not have any warning.
+   *
+   * @param {Integer} selectorIndex: The index of the selector we want to create the
+   *        warnings for
+   * @param {Array<object>} selectorWarnings: An array of object of the following shape:
+   *        - {Integer} index: The index of the selector this applies to
+   *        - {String} kind: Identifies the warning
+   * @returns {Element|null}
+   */
+  #createWarningsElementForSelector(selectorIndex, selectorWarnings) {
     if (!selectorWarnings) {
       return null;
     }
@@ -536,7 +534,7 @@ class RuleEditor extends EventEmitter {
   
 
 
-  _onToolChanged() {
+  #onToolChanged = () => {
     if (!this.source) {
       return;
     }
@@ -549,17 +547,17 @@ class RuleEditor extends EventEmitter {
     } else {
       this.source.setAttribute("unselectable", "true");
     }
-  }
+  };
 
   
 
 
 
-  _locationChanged() {
-    this.updateSourceLink();
-  }
+  #locationChanged = () => {
+    this.#updateSourceLink();
+  };
 
-  _onSourceClick(e) {
+  #onSourceClick = e => {
     e.preventDefault();
     if (this.source.hasAttribute("unselectable")) {
       return;
@@ -573,7 +571,7 @@ class RuleEditor extends EventEmitter {
         this.rule.ruleColumn
       );
     }
-  }
+  };
 
   
 
@@ -583,7 +581,7 @@ class RuleEditor extends EventEmitter {
 
 
 
-  _updateLocation(originalLocation) {
+  #updateLocation = originalLocation => {
     let displayURL = this.rule.sheet?.href;
     const constructed = this.rule.sheet?.constructed;
     let line = this.rule.ruleLine;
@@ -613,9 +611,9 @@ class RuleEditor extends EventEmitter {
     sourceLabel.setAttribute("title", title);
     sourceLabel.setAttribute("href", displayURL);
     sourceLabel.textContent = sourceTextContent;
-  }
+  };
 
-  updateSourceLink() {
+  #updateSourceLink() {
     if (this.source) {
       if (this.rule.isSystem) {
         const sourceLabel = this.element.querySelector(
@@ -625,24 +623,24 @@ class RuleEditor extends EventEmitter {
         sourceLabel.textContent = uaLabel + " " + this.rule.title;
         sourceLabel.setAttribute("href", this.rule.sheet?.href);
       } else {
-        this._updateLocation(null);
+        this.#updateLocation(null);
       }
 
       if (this.rule.sheet && !this.rule.isSystem) {
         
         
-        if (this._unsubscribeSourceMap) {
-          this._unsubscribeSourceMap();
+        if (this.#unsubscribeSourceMap) {
+          this.#unsubscribeSourceMap();
         }
-        this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
+        this.#unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
           this.rule.sheet.resourceId,
           this.rule.ruleLine,
           this.rule.ruleColumn,
-          this._updateLocation
+          this.#updateLocation
         );
       }
       
-      this._onToolChanged();
+      this.#onToolChanged();
     }
 
     Promise.resolve().then(() => {
@@ -674,7 +672,7 @@ class RuleEditor extends EventEmitter {
       this.selectorText.textContent = this.rule.domRule.name;
     } else {
       this.rule.domRule.selectors.forEach((selector, i) => {
-        this._populateSelector(selector, i);
+        this.#populateSelector(selector, i);
       });
     }
 
@@ -690,13 +688,13 @@ class RuleEditor extends EventEmitter {
       this.propertyList.replaceChildren();
     }
 
-    this._unusedCssVariableDeclarations =
-      this._getUnusedCssVariableDeclarations();
+    this.#unusedCssVariableDeclarations =
+      this.#getUnusedCssVariableDeclarations();
     const hideUnusedCssVariableDeclarations =
-      this._unusedCssVariableDeclarations.size >=
+      this.#unusedCssVariableDeclarations.size >=
       
       
-      (this._showUnusedCustomCssPropertiesButton
+      (this.#showUnusedCustomCssPropertiesButton
         ? 1
         : UNUSED_CSS_PROPERTIES_HIDE_THRESHOLD);
 
@@ -704,7 +702,7 @@ class RuleEditor extends EventEmitter {
     
     
     if (!hideUnusedCssVariableDeclarations) {
-      this._unusedCssVariableDeclarations.clear();
+      this.#unusedCssVariableDeclarations.clear();
     }
 
     for (const prop of this.rule.textProps) {
@@ -724,34 +722,34 @@ class RuleEditor extends EventEmitter {
     }
 
     if (hideUnusedCssVariableDeclarations) {
-      if (!this._showUnusedCustomCssPropertiesButton) {
-        this._showUnusedCustomCssPropertiesButton =
+      if (!this.#showUnusedCustomCssPropertiesButton) {
+        this.#showUnusedCustomCssPropertiesButton =
           this.doc.createElement("button");
-        this._showUnusedCustomCssPropertiesButton.classList.add(
+        this.#showUnusedCustomCssPropertiesButton.classList.add(
           "devtools-button",
           "devtools-button-standalone",
           "ruleview-show-unused-custom-css-properties"
         );
-        this._showUnusedCustomCssPropertiesButton.addEventListener(
+        this.#showUnusedCustomCssPropertiesButton.addEventListener(
           "click",
-          this._onShowUnusedCustomCssPropertiesButtonClick
+          this.#onShowUnusedCustomCssPropertiesButtonClick
         );
       }
       this.ruleviewCodeEl.insertBefore(
-        this._showUnusedCustomCssPropertiesButton,
+        this.#showUnusedCustomCssPropertiesButton,
         this.closeBrace
       );
-      this._updateShowUnusedCustomCssPropertiesButtonText();
-    } else if (this._showUnusedCustomCssPropertiesButton) {
-      this._nullifyShowUnusedCustomCssProperties();
+      this.#updateShowUnusedCustomCssPropertiesButtonText();
+    } else if (this.#showUnusedCustomCssPropertiesButton) {
+      this.#nullifyShowUnusedCustomCssProperties();
     }
 
-    
-    
+    // Set focus if the focus is still in the current document (avoid stealing
+    // the focus, see Bug 1911627).
     if (this.doc.hasFocus() && focusedElSelector) {
       const elementToFocus = this.doc.querySelector(focusedElSelector);
       if (elementToFocus && this.element.contains(elementToFocus)) {
-        
+        // We need to wait for a tick for the focus to be properly set
         setTimeout(() => {
           elementToFocus.focus();
           this.ruleView.emitForTests("rule-editor-focus-reset");
@@ -762,54 +760,54 @@ class RuleEditor extends EventEmitter {
 
   updateUnusedCssVariables() {
     if (
-      !this._unusedCssVariableDeclarations ||
-      !this._unusedCssVariableDeclarations.size
+      !this.#unusedCssVariableDeclarations ||
+      !this.#unusedCssVariableDeclarations.size
     ) {
       return;
     }
 
-    
-    const previouslyUnused = Array.from(this._unusedCssVariableDeclarations);
-    
-    this._unusedCssVariableDeclarations =
-      this._getUnusedCssVariableDeclarations();
+    // Store the list of what used to be unused
+    const previouslyUnused = Array.from(this.#unusedCssVariableDeclarations);
+    // Then compute the list of unused variables again
+    this.#unusedCssVariableDeclarations =
+      this.#getUnusedCssVariableDeclarations();
 
     for (const prop of previouslyUnused) {
-      if (this._unusedCssVariableDeclarations.has(prop)) {
+      if (this.#unusedCssVariableDeclarations.has(prop)) {
         continue;
       }
 
-      
+      // The prop wasn't used, but now is, so let's show it
       this.showUnusedCssVariable(prop, {
         updateButton: false,
       });
     }
 
-    this._updateShowUnusedCustomCssPropertiesButtonText();
+    this.#updateShowUnusedCustomCssPropertiesButtonText();
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Create a TextPropertyEditor for TextProperty representing an unused CSS variable.
+   *
+   * @param {TextProperty} prop
+   * @param {object} options
+   * @param {boolean} options.updateButton
+   * @returns {TextPropertyEditor|null} Returns null if passed TextProperty isn't found
+   *          in the list of unused css variables
+   */
   showUnusedCssVariable(prop, { updateButton = true } = {}) {
     if (prop.editor) {
       return null;
     }
 
-    this._unusedCssVariableDeclarations.delete(prop);
+    this.#unusedCssVariableDeclarations.delete(prop);
 
     const editor = new TextPropertyEditor(this, prop, {
       elementsWithPendingClicks: this.options.elementsWithPendingClicks,
     });
     const declarationIndex = this.rule.textProps.indexOf(prop);
-    
-    
+    // We need to insert the editor according to its index in the list of declarations.
+    // So let's try to find the prop which is placed higher and is visible
     let nextSibling;
     for (let i = declarationIndex + 1; i < this.rule.textProps.length; i++) {
       const currentProp = this.rule.textProps[i];
@@ -818,33 +816,33 @@ class RuleEditor extends EventEmitter {
         break;
       }
     }
-    
-    
+    // If we couldn't find nextSibling, that means that no declaration with higher index
+    // is visible, so we can put the newly visible property at the end
     this.propertyList.insertBefore(editor.element, nextSibling || null);
 
     if (updateButton) {
-      this._updateShowUnusedCustomCssPropertiesButtonText();
+      this.#updateShowUnusedCustomCssPropertiesButtonText();
     }
 
     return editor;
   }
 
-  
-
-
-
-
-
-  _getUnusedCssVariableDeclarations() {
+  /**
+   * Returns a Set containing the list of unused CSS variable TextProperty which shouldn't
+   * be visible.
+   *
+   * @returns {Set<TextProperty>}
+   */
+  #getUnusedCssVariableDeclarations() {
     const unusedCssVariableDeclarations = new Set();
 
-    
+    // No need to go through the declarations if we shouldn't hide unused custom properties
     if (!this.options.shouldHideUnusedCustomCssProperties) {
       return unusedCssVariableDeclarations;
     }
 
-    
-    
+    // Compute a list of variables that will be visible, as there might be unused variables
+    // that will be visible (e.g. if the user added one in the rules view)
     for (const prop of this.rule.textProps) {
       if (prop.isUnusedVariable) {
         unusedCssVariableDeclarations.add(prop);
@@ -854,22 +852,22 @@ class RuleEditor extends EventEmitter {
     return unusedCssVariableDeclarations;
   }
 
-  
-
-
-
-
-  _onShowUnusedCustomCssPropertiesButtonClick(e) {
+  /**
+   * Handle click on "Show X unused custom CSS properties" button
+   *
+   * @param {Event} e
+   */
+  #onShowUnusedCustomCssPropertiesButtonClick = e => {
     e.stopPropagation();
 
-    this._nullifyShowUnusedCustomCssProperties();
+    this.#nullifyShowUnusedCustomCssProperties();
 
-    for (const prop of this._unusedCssVariableDeclarations) {
+    for (const prop of this.#unusedCssVariableDeclarations) {
       if (!prop.invisible) {
         const editor = new TextPropertyEditor(this, prop, {
           elementsWithPendingClicks: this.options.elementsWithPendingClicks,
         });
-        
+        // Insert at the original declaration index
         this.propertyList.insertBefore(
           editor.element,
           this.propertyList.childNodes[this.rule.textProps.indexOf(prop)] ||
@@ -880,20 +878,20 @@ class RuleEditor extends EventEmitter {
     if (typeof this.options.onShowUnusedCustomCssProperties === "function") {
       this.options.onShowUnusedCustomCssProperties();
     }
-  }
+  };
 
-  
-
-
-
-  _updateShowUnusedCustomCssPropertiesButtonText() {
-    if (!this._showUnusedCustomCssPropertiesButton) {
+  /**
+   * Update the text for the "Show X unused custom CSS properties" button, or remove it
+   * if there's no hidden custom properties anymore
+   */
+  #updateShowUnusedCustomCssPropertiesButtonText() {
+    if (!this.#showUnusedCustomCssPropertiesButton) {
       return;
     }
 
-    const unusedVariablesCount = this._unusedCssVariableDeclarations.size;
+    const unusedVariablesCount = this.#unusedCssVariableDeclarations.size;
     if (!unusedVariablesCount) {
-      this._nullifyShowUnusedCustomCssProperties();
+      this.#nullifyShowUnusedCustomCssProperties();
       return;
     }
 
@@ -902,7 +900,7 @@ class RuleEditor extends EventEmitter {
       STYLE_INSPECTOR_L10N.getStr("rule.showUnusedCssVariable")
     ).replace("#1", unusedVariablesCount);
 
-    this._showUnusedCustomCssPropertiesButton.replaceChildren(label);
+    this.#showUnusedCustomCssPropertiesButton.replaceChildren(label);
   }
 
   
@@ -913,20 +911,20 @@ class RuleEditor extends EventEmitter {
 
 
 
-  _nullifyShowUnusedCustomCssProperties({ removeFromDom = true } = {}) {
-    if (!this._showUnusedCustomCssPropertiesButton) {
+  #nullifyShowUnusedCustomCssProperties({ removeFromDom = true } = {}) {
+    if (!this.#showUnusedCustomCssPropertiesButton) {
       return;
     }
 
-    this._showUnusedCustomCssPropertiesButton.removeEventListener(
+    this.#showUnusedCustomCssPropertiesButton.removeEventListener(
       "click",
-      this._onShowUnusedCustomCssPropertiesButtonClick
+      this.#onShowUnusedCustomCssPropertiesButtonClick
     );
 
     if (removeFromDom) {
-      this._showUnusedCustomCssPropertiesButton.remove();
+      this.#showUnusedCustomCssPropertiesButton.remove();
     }
-    this._showUnusedCustomCssPropertiesButton = null;
+    this.#showUnusedCustomCssPropertiesButton = null;
   }
 
   
@@ -935,7 +933,7 @@ class RuleEditor extends EventEmitter {
 
 
 
-  _populateSelector(selector, selectorIndex) {
+  #populateSelector(selector, selectorIndex) {
     if (selectorIndex !== 0) {
       createChild(this.selectorText, "span", {
         class: "ruleview-selector-separator",
@@ -1000,7 +998,7 @@ class RuleEditor extends EventEmitter {
       });
     }
 
-    const warningsContainer = this._createWarningsElementForSelector(
+    const warningsContainer = this.#createWarningsElementForSelector(
       selectorIndex,
       this.rule.domRule.selectorWarnings
     );
@@ -1109,8 +1107,8 @@ class RuleEditor extends EventEmitter {
     
     
     
-    if (this._showUnusedCustomCssPropertiesButton) {
-      this._showUnusedCustomCssPropertiesButton.setAttribute("tabindex", "-1");
+    if (this.#showUnusedCustomCssPropertiesButton) {
+      this.#showUnusedCustomCssPropertiesButton.setAttribute("tabindex", "-1");
     }
 
     this.newPropItem = createChild(this.propertyList, "div", {
@@ -1127,11 +1125,11 @@ class RuleEditor extends EventEmitter {
 
     this.editor = new InplaceEditor({
       element: this.newPropSpan,
-      done: this._onNewProperty,
+      done: this.#onNewProperty,
       
       focusEditableFieldAfterApply: true,
       focusEditableFieldContainerSelector: ".ruleview-rule",
-      destroy: this._newPropertyDestroy,
+      destroy: this.#newPropertyDestroy,
       advanceChars: ":",
       contentType: InplaceEditor.CONTENT_TYPES.CSS_PROPERTY,
       popup: this.ruleView.popup,
@@ -1156,7 +1154,7 @@ class RuleEditor extends EventEmitter {
 
 
 
-  _onNewProperty(value, commit) {
+  #onNewProperty = (value, commit) => {
     if (!value || !commit) {
       return;
     }
@@ -1175,7 +1173,7 @@ class RuleEditor extends EventEmitter {
     this.editor.input.blur();
 
     this.telemetry.recordEvent("edit_rule", "ruleview");
-  }
+  };
 
   
 
@@ -1183,11 +1181,11 @@ class RuleEditor extends EventEmitter {
 
 
 
-  _newPropertyDestroy() {
+  #newPropertyDestroy = () => {
     
     this.closeBrace.setAttribute("tabindex", "0");
-    if (this._showUnusedCustomCssPropertiesButton) {
-      this._showUnusedCustomCssPropertiesButton.removeAttribute("tabindex");
+    if (this.#showUnusedCustomCssPropertiesButton) {
+      this.#showUnusedCustomCssPropertiesButton.removeAttribute("tabindex");
     }
 
     this.propertyList.removeChild(this.newPropItem);
@@ -1200,7 +1198,7 @@ class RuleEditor extends EventEmitter {
     if (this.multipleAddedProperties && this.multipleAddedProperties.length) {
       this.addProperties(this.multipleAddedProperties);
     }
-  }
+  };
 
   
 
@@ -1214,7 +1212,7 @@ class RuleEditor extends EventEmitter {
 
 
 
-  async _onSelectorDone(value, commit, direction) {
+  #onSelectorDone = async (value, commit, direction) => {
     if (
       !commit ||
       this.isEditing ||
@@ -1301,12 +1299,12 @@ class RuleEditor extends EventEmitter {
       
       
       
-      editor._moveSelectorFocus(direction);
+      editor.#moveSelectorFocus(direction);
     } catch (err) {
       this.isEditing = false;
       promiseWarn(err);
     }
-  }
+  };
 
   
 
@@ -1314,7 +1312,7 @@ class RuleEditor extends EventEmitter {
 
 
 
-  _moveSelectorFocus(direction) {
+  #moveSelectorFocus(direction) {
     if (!direction || direction === Services.focus.MOVEFOCUS_BACKWARD) {
       return;
     }
