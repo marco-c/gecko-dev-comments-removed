@@ -147,6 +147,8 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
   
   const char* GetMimeType() const { return mContentType.get(); }
 
+  int64_t GetContentLength() const { return mContentLength; }
+
   void GetFileName(nsACString& aFileName);
 
   
@@ -248,6 +250,7 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
   nsCOMPtr<nsITimedChannel> mTimedChannel;
 
   nsCString mContentType;
+  int64_t mContentLength;
 
   
   RefPtr<imgCacheEntry> mCacheEntry;
