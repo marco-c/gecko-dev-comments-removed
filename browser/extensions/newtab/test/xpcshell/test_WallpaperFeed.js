@@ -86,6 +86,7 @@ add_task(async function test_onAction_INIT() {
           category: "",
           order: 0,
           wallpaperUrl: "http://localhost:8888/base_url/attachment",
+          thumbnail: null,
         },
       ],
       meta: {
@@ -205,7 +206,7 @@ add_task(async function test_Wallpaper_Upload() {
 
 
 
-add_task(async function test_Wallpaper_objectURI() {
+add_task(async function test_Wallpaper_protocolURI() {
   let sandbox = sinon.createSandbox();
   let feed = getWallpaperFeedForTest(sandbox);
 
@@ -243,22 +244,26 @@ add_task(async function test_Wallpaper_objectURI() {
     feed.store.dispatch.calledWith(
       actionCreators.BroadcastToContent({
         type: actionTypes.WALLPAPERS_CUSTOM_SET,
-        data: sandbox.match("blob:null/"),
+        data: sandbox.match("moz-newtab-wallpaper://"),
       })
-    )
+    ),
+    "Should dispatch WALLPAPERS_CUSTOM_SET with moz-newtab-wallpaper:// URI"
   );
 
   
-  
-  
-  
   const [action] = feed.store.dispatch.getCall(0).args;
-  const wallpaperURL = action.data;
+  const wallpaperURI = action.data;
+
+  Assert.ok(
+    wallpaperURI.startsWith("moz-newtab-wallpaper://"),
+    "Wallpaper URI should use moz-newtab-wallpaper:// protocol"
+  );
+
   const state = reducers.Wallpapers(null, action);
   Assert.equal(
     state.uploadedWallpaper,
-    wallpaperURL,
-    "Should have updated the state to include the object URL"
+    wallpaperURI,
+    "Should have updated the state to include the protocol URI"
   );
 
   
