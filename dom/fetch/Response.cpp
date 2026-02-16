@@ -129,7 +129,7 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
   
   
   
-  Nullable<ResponseBodyInit> body;
+  Nullable<fetch::ResponseBodyInit> body;
   ResponseInit init;
   init.mStatus = aStatus;
   init.mStatusText.AssignASCII("");
@@ -149,7 +149,7 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
 }
 
  already_AddRefed<Response> Response::CreateAndInitializeAResponse(
-    const GlobalObject& aGlobal, const Nullable<ResponseBodyInit>& aBody,
+    const GlobalObject& aGlobal, const Nullable<fetch::ResponseBodyInit>& aBody,
     const nsACString& aDefaultContentType, const ResponseInit& aInit,
     ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
@@ -261,7 +261,7 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
     nsCOMPtr<nsIInputStream> bodyStream;
     int64_t bodySize = InternalResponse::UNKNOWN_BODY_SIZE;
 
-    const ResponseBodyInit& body = aBody.Value();
+    const fetch::ResponseBodyInit& body = aBody.Value();
     if (body.IsReadableStream()) {
       JSContext* cx = aGlobal.Context();
       aRv.MightThrowJSException();
@@ -341,7 +341,7 @@ already_AddRefed<Response> Response::CreateFromJson(const GlobalObject& aGlobal,
     aRv.ThrowTypeError<MSG_JSON_INVALID_VALUE>();
     return nullptr;
   }
-  Nullable<ResponseBodyInit> body;
+  Nullable<fetch::ResponseBodyInit> body;
   body.SetValue().SetAsUSVString().ShareOrDependUpon(serializedValue);
   return CreateAndInitializeAResponse(aGlobal, body, "application/json"_ns,
                                       aInit, aRv);
@@ -349,7 +349,7 @@ already_AddRefed<Response> Response::CreateFromJson(const GlobalObject& aGlobal,
 
 
 already_AddRefed<Response> Response::Constructor(
-    const GlobalObject& aGlobal, const Nullable<ResponseBodyInit>& aBody,
+    const GlobalObject& aGlobal, const Nullable<fetch::ResponseBodyInit>& aBody,
     const ResponseInit& aInit, ErrorResult& aRv) {
   return CreateAndInitializeAResponse(aGlobal, aBody, VoidCString(), aInit,
                                       aRv);
