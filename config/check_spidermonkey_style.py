@@ -78,6 +78,8 @@ included_inclnames_to_ignore = set([
     "js/PrefsGenerated.h",  
     "mozilla/ProfilingCategoryList.h",  
     "mozilla/glue/Debug.h",  
+    "mozilla/glean/JsSrcMetrics.h",  
+    "mozilla/glean/bindings/MetricStandaloneTypes.h",
     "jscustomallocator.h",  
     "js-config.h",  
     "fdlibm.h",  

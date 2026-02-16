@@ -277,6 +277,11 @@ UNIFIED_SOURCES += [
 ]
 
 
+
+SOURCES += [
+    "jsglean.cpp",
+]
+
 if CONFIG["MOZ_INSTRUMENTS"]:
     OS_LIBS += ["-framework CoreFoundation"]
     SOURCES += [
