@@ -273,6 +273,13 @@
       const splitterState = this.#splitViewSplitter.getAttribute("state");
       if (splitterState === "dragging") {
         gBrowser.activeSplitView.resetRightPanelWidth();
+      } else if (!this._splitterPendingUpdate) {
+        
+        this._splitterPendingUpdate = window
+          .promiseDocumentFlushed(() => {})
+          .then(() =>
+            this.updateSplitterAriaAttributes(!!this.#splitViewPanels.length)
+          );
       }
     });
 
@@ -337,15 +344,71 @@
         splitter.className = "split-view-splitter";
         splitter.setAttribute("resizebefore", "sibling");
         splitter.setAttribute("resizeafter", "none");
+        splitter.setAttribute("tabindex", "0");
+        splitter.setAttribute("role", "separator");
+        splitter.setAttribute("data-l10n-id", "tab-splitview-splitter");
         this.#splitViewSplitter = splitter;
-        splitter.addEventListener("command", () =>
-          gBrowser.activeSplitView.resetRightPanelWidth()
-        );
+        splitter.addEventListener("command", () => {
+          gBrowser.activeSplitView.resetRightPanelWidth();
+          
+          if (!this._splitterPendingUpdate) {
+            this._splitterPendingUpdate = window
+              .promiseDocumentFlushed(() => {})
+              .then(() =>
+                this.updateSplitterAriaAttributes(
+                  !!this.#splitViewPanels.length
+                )
+              );
+          }
+        });
         this.#splitViewSplitterObserver.observe(splitter, {
           attributeFilter: ["state"],
         });
       }
       return this.#splitViewSplitter;
+    }
+
+    updateSplitterAriaAttributes(isActive) {
+      delete this._splitterPendingUpdate;
+
+      
+      const splitter = this.#splitViewSplitter;
+      if (!splitter) {
+        return;
+      }
+      
+      const controlledPanel =
+        isActive &&
+        this.splitViewPanels.length &&
+        document.getElementById(this.splitViewPanels[0]);
+      if (controlledPanel) {
+        splitter.setAttribute("aria-controls", controlledPanel.id);
+
+        
+        const { width: containerWidth } =
+          window.windowUtils.getBoundsWithoutFlushing(this);
+        const minWidth = parseFloat(getComputedStyle(controlledPanel).minWidth);
+        
+        
+        const maxWidth = containerWidth - minWidth;
+        
+        
+        
+        const currentWidth =
+          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width;
+
+        splitter.setAttribute("aria-valuemin", String(minWidth));
+        splitter.setAttribute("aria-valuemax", String(maxWidth));
+        splitter.setAttribute(
+          "aria-valuenow",
+          String(Math.floor(currentWidth))
+        );
+      } else {
+        splitter.removeAttribute("aria-controls");
+        splitter.removeAttribute("aria-valuenow");
+        splitter.removeAttribute("aria-valuemin");
+        splitter.removeAttribute("aria-valuemax");
+      }
     }
 
     
@@ -405,7 +468,7 @@
         browser?.addEventListener("focus", this);
       }
       this.#splitViewPanels = newPanels;
-      this.isSplitViewActive = !!newPanels.length;
+      this.setSplitViewActive(!!newPanels.length);
     }
 
     get splitViewPanels() {
@@ -435,10 +498,10 @@
           this.#splitViewPanels.splice(index, 1);
         }
       }
-      this.isSplitViewActive = !!this.#splitViewPanels.length;
+      this.setSplitViewActive(!!this.#splitViewPanels.length);
     }
 
-    set isSplitViewActive(isActive) {
+    setSplitViewActive(isActive) {
       this.toggleAttribute("splitview", isActive);
       this.splitViewSplitter.hidden = !isActive;
       const selectedPanel = this.selectedPanel;
@@ -447,10 +510,11 @@
         const firstPanel = document.getElementById(this.splitViewPanels[0]);
         firstPanel?.after(this.#splitViewSplitter);
       }
-
       
       
       this.selectedPanel = selectedPanel;
+      
+      this.updateSplitterAriaAttributes(isActive);
     }
 
     setSplitViewPanelActive(isActive, panel) {
