@@ -645,6 +645,8 @@ IncrementalProgress GCRuntime::markWeakReferences(
     
     
     
+    
+    MOZ_ASSERT(marker().isWeakMarking());
     while (processTestMarkQueue() == QueueYielded) {
     };
 
@@ -660,6 +662,10 @@ IncrementalProgress GCRuntime::markWeakReferences(
     }
 
     for (ZoneIterT zone(this); !zone.done(); zone.next()) {
+      if (!marker().isWeakMarking()) {
+        
+        break;
+      }
       if (zone->enterWeakMarkingMode(&marker(), budget) == NotFinished) {
         return NotFinished;
       }
