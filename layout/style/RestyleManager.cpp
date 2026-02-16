@@ -1053,6 +1053,11 @@ static bool RecomputePosition(nsIFrame* aFrame) {
 static bool ContainingBlockChangeAffectsDescendants(
     nsIFrame* aPossiblyChangingContainingBlock, nsIFrame* aFrame,
     bool aIsAbsPosContainingBlock, bool aIsFixedPosContainingBlock) {
+  MOZ_ASSERT(!nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(
+                 aPossiblyChangingContainingBlock),
+             "This function cannot handle a containing block that is a "
+             "continuation or ib-split sibling!");
+
   
   MOZ_ASSERT_IF(aIsFixedPosContainingBlock, aIsAbsPosContainingBlock);
 
@@ -1073,9 +1078,8 @@ static bool ContainingBlockChangeAffectsDescendants(
               aIsFixedPosContainingBlock ||
               (aIsAbsPosContainingBlock &&
                display->mPosition == StylePositionProperty::Absolute);
-          
-          
-          nsIFrame* parent = outOfFlow->GetParent()->FirstContinuation();
+          nsIFrame* parent = nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+              outOfFlow->GetParent());
           if (isContainingBlock) {
             
             
@@ -1539,7 +1543,7 @@ static void TryToHandleContainingBlockChange(nsChangeHint& aHint,
         
         
         
-        NS_WARNING("skipping removal of absolute containing block");
+        MOZ_ASSERT_UNREACHABLE("We should've reframed the containing block!");
       } else {
         cont->MarkAsNotAbsoluteContainingBlock();
       }
