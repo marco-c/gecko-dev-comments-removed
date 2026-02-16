@@ -4295,7 +4295,7 @@ inline size_t MozJemalloc::malloc_good_size(size_t aSize) {
     
     
     
-    aSize = PAGE_CEILING(aSize);
+    aSize = REAL_PAGE_CEILING(aSize);
   }
   return aSize;
 }
