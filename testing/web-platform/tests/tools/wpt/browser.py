@@ -2340,8 +2340,8 @@ class Servo(Browser):
             return m.group(0)
 
 
-class ServoWebDriver(Servo):
-    product = "servodriver"
+class ServoLegacy(Servo):
+    product = "servo_legacy"
 
 
 class Sauce(Browser):
