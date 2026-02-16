@@ -81,10 +81,7 @@ struct nsMessageListenerInfo {
     return &aOther == this;
   }
 
-  
-  
-  RefPtr<mozilla::dom::MessageListener> mStrongListener;
-  nsWeakPtr mWeakListener;
+  RefPtr<mozilla::dom::MessageListener> mListener;
   bool mListenWhenClosed;
 };
 
@@ -117,12 +114,6 @@ class nsFrameMessageManager : public nsIMessageSender {
   void RemoveMessageListener(const nsAString& aMessageName,
                              mozilla::dom::MessageListener& aListener,
                              mozilla::ErrorResult& aError);
-  void AddWeakMessageListener(const nsAString& aMessageName,
-                              mozilla::dom::MessageListener& aListener,
-                              mozilla::ErrorResult& aError);
-  void RemoveWeakMessageListener(const nsAString& aMessageName,
-                                 mozilla::dom::MessageListener& aListener,
-                                 mozilla::ErrorResult& aError);
 
   
   void SendAsyncMessage(JSContext* aCx, const nsAString& aMessageName,
