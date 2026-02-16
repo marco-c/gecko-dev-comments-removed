@@ -3465,6 +3465,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetIconForExtension(
 
   
   
+  
   bits->InsertElementsAt(0, aIconSize * aIconSize * 4, 0);
 
   AndroidBridge::Bridge()->GetIconForExtension(aFileExt, aIconSize,
@@ -6587,7 +6588,8 @@ ContentParent::RecvStorageAccessPermissionGrantedForOrigin(
   }
 
   if (!aTrackingPrincipal) {
-    return IPC_FAIL(this, "No principal");
+    aResolver(false);
+    return IPC_OK();
   }
 
   
@@ -6678,38 +6680,6 @@ mozilla::ipc::IPCResult ContentParent::RecvTestCookiePermissionDecided(
       StorageAccessAPIHelper::CheckCookiesPermittedDecidesStorageAccessAPI(
           cjs, aPrincipal);
   aResolver(result);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvTestStorageAccessPermission(
-    nsIPrincipal* aEmbeddingPrincipal, const nsCString& aEmbeddedOrigin,
-    const TestStorageAccessPermissionResolver&& aResolver) {
-  
-  RefPtr<PermissionManager> permManager = PermissionManager::GetInstance();
-  if (!permManager) {
-    aResolver(Nothing());
-    return IPC_OK();
-  }
-  nsCString requestPermissionKey;
-  AntiTrackingUtils::CreateStoragePermissionKey(aEmbeddedOrigin,
-                                                requestPermissionKey);
-
-  
-  uint32_t access = nsIPermissionManager::UNKNOWN_ACTION;
-  nsresult rv = permManager->TestPermissionFromPrincipal(
-      aEmbeddingPrincipal, requestPermissionKey, &access);
-  if (NS_FAILED(rv)) {
-    aResolver(Nothing());
-    return IPC_OK();
-  }
-  if (access == nsIPermissionManager::ALLOW_ACTION) {
-    aResolver(Some(true));
-  } else if (access == nsIPermissionManager::DENY_ACTION) {
-    aResolver(Some(false));
-  } else {
-    aResolver(Nothing());
-  }
-
   return IPC_OK();
 }
 
