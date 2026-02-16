@@ -21,6 +21,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  UserSearchEngine:
+    "moz-src:///toolkit/components/search/UserSearchEngine.sys.mjs",
 });
 
 
@@ -298,6 +300,9 @@ class NewEngineDialog extends EngineDialog {
 
 
 
+
+
+
 class EditEngineDialog extends EngineDialog {
   #engine;
   
@@ -320,6 +325,24 @@ class EditEngineDialog extends EngineDialog {
     this._url.value = url;
     this._postData.value = postData;
 
+    if (!(this.#engine instanceof lazy.UserSearchEngine)) {
+      this._name.closest(".dialogRow").hidden = true;
+      this._url.closest(".dialogRow").hidden = true;
+      this._dialog.getButton("extra1").hidden = true;
+
+      
+      
+      for (let input of this._form.elements) {
+        if (input === this._alias) {
+          continue;
+        }
+        this.setValidity(input, "");
+      }
+
+      this.validateAll();
+      return;
+    }
+
     let [suggestUrl] = this.getSubmissionTemplate(
       lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
     );
@@ -334,38 +357,53 @@ class EditEngineDialog extends EngineDialog {
     this.validateAll();
   }
 
-  onAccept() {
-    this.#engine.rename(this._name.value.trim());
-    this.#engine.alias = this._alias.value.trim();
-
-    let newURL = this._url.value.trim();
-    let newPostData = this._postData.value.trim() || null;
-
+  async validateAll() {
     
-    let [prevURL, prevPostData] = this.getSubmissionTemplate(
-      lazy.SearchUtils.URL_TYPE.SEARCH
-    );
-    if (newURL != prevURL || prevPostData != newPostData) {
-      this.#engine.changeUrl(
-        lazy.SearchUtils.URL_TYPE.SEARCH,
-        newURL.replace(/%s/, "{searchTerms}"),
-        newPostData?.replace(/%s/, "{searchTerms}")
-      );
+    
+    if (this.#engine instanceof lazy.UserSearchEngine) {
+      super.validateAll();
+    } else {
+      await this.validateAlias();
     }
+  }
 
-    let newSuggestURL = this._suggestUrl.value.trim() || null;
-    let [prevSuggestUrl] = this.getSubmissionTemplate(
-      lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
-    );
-    if (newSuggestURL != prevSuggestUrl) {
-      this.#engine.changeUrl(
-        lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
-        newSuggestURL?.replace(/%s/, "{searchTerms}"),
-        null
+  onAccept() {
+    if (this.#engine instanceof lazy.UserSearchEngine) {
+      this.#engine.rename(this._name.value.trim());
+      this.#engine.alias = this._alias.value.trim();
+
+      let newURL = this._url.value.trim();
+      let newPostData = this._postData.value.trim() || null;
+
+      
+      let [prevURL, prevPostData] = this.getSubmissionTemplate(
+        lazy.SearchUtils.URL_TYPE.SEARCH
       );
-    }
+      if (newURL != prevURL || prevPostData != newPostData) {
+        this.#engine.changeUrl(
+          lazy.SearchUtils.URL_TYPE.SEARCH,
+          newURL.replace(/%s/, "{searchTerms}"),
+          newPostData?.replace(/%s/, "{searchTerms}")
+        );
+      }
 
-    this.#engine.updateFavicon();
+      let newSuggestURL = this._suggestUrl.value.trim() || null;
+      let [prevSuggestUrl] = this.getSubmissionTemplate(
+        lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
+      );
+      if (newSuggestURL != prevSuggestUrl) {
+        this.#engine.changeUrl(
+          lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
+          newSuggestURL?.replace(/%s/, "{searchTerms}"),
+          null
+        );
+      }
+
+      this.#engine.updateFavicon();
+    } else {
+      let newAlias = this._alias.value;
+      this.#engine.alias = newAlias.trim().toLowerCase();
+    }
   }
 
   get allowedAliases() {
