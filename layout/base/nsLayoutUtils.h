@@ -1307,7 +1307,6 @@ class nsLayoutUtils {
     UseMarginBox,
     
     UseMarginBoxWithAutoResolvedAsZero,
-    UseInkOverflowAsBox
   };
   using GetAllInFlowRectsFlags = mozilla::EnumSet<GetAllInFlowRectsFlag>;
   static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
@@ -3201,15 +3200,6 @@ class nsLayoutUtils {
 
   static void RecomputeSmoothScrollDefault();
 
-  struct CombinedFragments {
-    
-    
-    const nsIFrame* mSkippedPrevContinuation = nullptr;
-    
-    const nsIFrame* mSkippedNextContinuation = nullptr;
-    
-    nsRect mRect;
-  };
   
 
 
@@ -3219,8 +3209,8 @@ class nsLayoutUtils {
 
 
 
-  static CombinedFragments GetCombinedFragmentRects(
-      const nsIFrame* aFrame, const nsIFrame* aContainingBlock = nullptr);
+  static nsRect GetCombinedFragmentRects(const nsIFrame* aFrame,
+                                         bool aRelativeToSelf = true);
 
  private:
   
