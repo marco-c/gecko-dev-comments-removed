@@ -242,7 +242,7 @@ static void nr_ice_candidate_pair_stun_cb(NR_SOCKET s, int how, void *cb_arg)
 
           return;
         }
-        
+        [[fallthrough]];
       case NR_STUN_CLIENT_STATE_TIMED_OUT:
         nr_ice_candidate_pair_set_state(pair->pctx,pair,NR_ICE_PAIR_STATE_FAILED);
         break;
@@ -499,10 +499,10 @@ int nr_ice_candidate_pair_do_triggered_check(nr_ice_peer_ctx *pctx, nr_ice_cand_
           
 
           r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): received STUN check on failed pair, resurrecting: %s",pctx->label,pair->codeword,pair->as_string);
-          
+          [[fallthrough]];
         case NR_ICE_PAIR_STATE_FROZEN:
           nr_ice_candidate_pair_set_state(pctx,pair,NR_ICE_PAIR_STATE_WAITING);
-          
+          [[fallthrough]];
         case NR_ICE_PAIR_STATE_WAITING:
           
           r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): Inserting pair to trigger check queue: %s",pctx->label,pair->codeword,pair->as_string);
@@ -510,7 +510,7 @@ int nr_ice_candidate_pair_do_triggered_check(nr_ice_peer_ctx *pctx, nr_ice_cand_
           break;
         case NR_ICE_PAIR_STATE_CANCELLED:
           r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): received STUN check on cancelled pair, resurrecting: %s",pctx->label,pair->codeword,pair->as_string);
-          
+          [[fallthrough]];
         case NR_ICE_PAIR_STATE_IN_PROGRESS:
           
 
