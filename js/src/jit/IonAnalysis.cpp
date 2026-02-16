@@ -3491,19 +3491,6 @@ static void AssertResumePointDominatedByOperands(MResumePoint* resume) {
 }
 #endif  
 
-static bool PrecedesInSameBlock(MInstruction* a, MInstruction* b) {
-  MOZ_ASSERT(a->block() == b->block());
-  MBasicBlock* block = a->block();
-  MInstructionIterator opIter = block->begin(a);
-  do {
-    ++opIter;
-    if (opIter == block->end()) {
-      return false;
-    }
-  } while (*opIter != b);
-  return true;
-}
-
 
 
 
@@ -3586,16 +3573,8 @@ void jit::AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer,
       MInstruction* ins = *iter;
       for (size_t i = 0, e = ins->numOperands(); i < e; ++i) {
         MDefinition* op = ins->getOperand(i);
-        MBasicBlock* opBlock = op->block();
-        MOZ_ASSERT(opBlock->dominates(*block),
-                   "Instruction is not dominated by its operands");
-
-        
-        
-        if (opBlock == *block && !op->isPhi()) {
-          MOZ_ASSERT(PrecedesInSameBlock(op->toInstruction(), ins),
-                     "Operand in same block as instruction does not precede");
-        }
+        MOZ_ASSERT(op->dominates(ins),
+                   "instruction is not dominated by its operands");
       }
       AssertIfResumableInstruction(ins);
       if (MResumePoint* resume = ins->resumePoint()) {
@@ -4493,25 +4472,18 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
         refUse->consumer() != cast) {
       MDefinition* otherCast = refUse->consumer()->toDefinition();
       
-      if (otherCast->block()->dominates(cast->block())) {
+      if (otherCast->dominates(cast)) {
         
-        bool precedes = otherCast->block() == cast->block()
-                            ? PrecedesInSameBlock(otherCast->toInstruction(),
-                                                  cast->toInstruction())
-                            : true;
-        if (precedes) {
+        
+        wasm::RefType dominatingDestType =
+            WasmRefTestOrCastDestType(otherCast);
+        wasm::RefType currentDestType = WasmRefTestOrCastDestType(cast);
+        if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           
           
-          wasm::RefType dominatingDestType =
-              WasmRefTestOrCastDestType(otherCast);
-          wasm::RefType currentDestType = WasmRefTestOrCastDestType(cast);
-          if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
-            
-            
-            cast->replaceAllUsesWith(otherCast);
-            cast->block()->discard(cast->toInstruction());
-            return;
-          }
+          cast->replaceAllUsesWith(otherCast);
+          cast->block()->discard(cast->toInstruction());
+          return;
         }
       }
     }
@@ -4581,27 +4553,20 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
     if (IsWasmRefCast(refUse->consumer()->toDefinition())) {
       MDefinition* refCast = refUse->consumer()->toDefinition();
       
-      if (refCast->block()->dominates(refTest->block())) {
+      if (refCast->dominates(refTest)) {
         
-        bool precedes = refCast->block() == refTest->block()
-                            ? PrecedesInSameBlock(refCast->toInstruction(),
-                                                  refTest->toInstruction())
-                            : true;
-        if (precedes) {
+        
+        wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(refCast);
+        wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
+        if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           
           
-          wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(refCast);
-          wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
-          if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
-            
-            
-            auto* replacement = MConstant::NewInt32(graph.alloc(), 1);
-            refTest->block()->insertBefore(refTest->toInstruction(),
-                                           replacement);
-            refTest->replaceAllUsesWith(replacement);
-            refTest->block()->discard(refTest->toInstruction());
-            return;
-          }
+          auto* replacement = MConstant::NewInt32(graph.alloc(), 1);
+          refTest->block()->insertBefore(refTest->toInstruction(),
+                                         replacement);
+          refTest->replaceAllUsesWith(replacement);
+          refTest->block()->discard(refTest->toInstruction());
+          return;
         }
       }
     }

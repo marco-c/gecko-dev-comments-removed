@@ -618,6 +618,33 @@ bool MDefinition::congruentIfOperandsEqual(const MDefinition* ins) const {
   return true;
 }
 
+bool MDefinition::dominates(const MDefinition* other) const {
+  if (block() != other->block()) {
+    return block()->dominates(other->block());
+  }
+
+  
+  if (other->isPhi()) {
+    return false;
+  }
+
+  
+  if (isPhi()) {
+    return true;
+  }
+
+  
+  
+  MInstructionIterator opIter = block()->begin(toInstruction());
+  do {
+    ++opIter;
+    if (opIter == block()->end()) {
+      return false;
+    }
+  } while (*opIter != other);
+  return true;
+}
+
 MDefinition* MDefinition::foldsTo(TempAllocator& alloc) {
   
   return this;
