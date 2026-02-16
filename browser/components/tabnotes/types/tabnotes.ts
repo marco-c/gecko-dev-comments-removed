@@ -57,6 +57,16 @@ interface TabNoteRemovedEvent extends CustomEvent {
   };
 }
 
+
+
+
+
+
+interface TabNoteExpandEvent extends CustomEvent {
+  type: "TabNote:Expand";
+  target: MozTabbrowserTab;
+}
+
 type TabbrowserWebProgressListener<
   ListenerName extends keyof nsIWebProgressListener,
   F = nsIWebProgressListener[ListenerName],
