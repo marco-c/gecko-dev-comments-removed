@@ -285,7 +285,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   void recoverFromOutOfMemory();
 
-  void reportAllocationOverflow();
+  void reportAllocOverflow();
 
   
   JSAtomState& names() { return *runtime_->commonNames; }
