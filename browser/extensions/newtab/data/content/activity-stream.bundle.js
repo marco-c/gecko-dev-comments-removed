@@ -8080,7 +8080,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
 
 
   _allowDrop(e) {
-    return (this.dragged || !isSponsored(this.props.link)) && e.dataTransfer.types.includes("text/topsite-index");
+    return (this.dragged || !isSponsored(this.props.link) && !this.props.isAddButton) && e.dataTransfer.types.includes("text/topsite-index");
   }
   onDragEvent(event) {
     switch (event.type) {
@@ -8786,16 +8786,29 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     topSites.length = this.props.TopSitesRows * TOP_SITES_MAX_SITES_PER_ROW;
     
     
-    let firstPlaceholder = topSites.findIndex(Object.is.bind(null, undefined));
+    const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
+
     
-    if (firstPlaceholder && !topSites.includes(site => site.isAddButton)) {
-      topSites[firstPlaceholder] = {
-        isAddButton: true
-      };
-    } else if (topSites.includes(site => site.isAddButton)) {
-      topSites.push(topSites.splice(topSites.indexOf({
-        isAddButton: true
-      }), 1)[0]);
+    let targetPosition = topSites.length - 1;
+    for (let i = topSites.length - 1; i >= 0; i--) {
+      if (topSites[i] && !topSites[i].isAddButton) {
+        targetPosition = i + 1;
+        break;
+      }
+    }
+    if (addButtonIndex === -1) {
+      
+      if (targetPosition < topSites.length) {
+        topSites[targetPosition] = {
+          isAddButton: true
+        };
+      }
+    } else if (addButtonIndex !== targetPosition) {
+      
+      const [button] = topSites.splice(addButtonIndex, 1);
+      
+      const adjustedTarget = addButtonIndex < targetPosition ? targetPosition - 1 : targetPosition;
+      topSites[adjustedTarget] = button;
     }
     return topSites;
   }
@@ -8807,8 +8820,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
   _makeTopSitesPreview(index) {
     const topSites = this._getTopSites();
     topSites[this.state.draggedIndex] = null;
-    const preview = topSites.map(site => site && (site.isPinned || isSponsored(site)) ? site : null);
-    const unpinned = topSites.filter(site => site && !site.isPinned && !isSponsored(site));
+    const preview = topSites.map(site => site && (site.isPinned || isSponsored(site) || site.isAddButton) ? site : null);
+    const unpinned = topSites.filter(site => site && !site.isPinned && !isSponsored(site) && !site.isAddButton);
     const siteToInsert = Object.assign({}, this.state.draggedSite, {
       isPinned: true,
       isDragged: true
@@ -8828,7 +8841,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       const shiftingStep = index > this.state.draggedIndex ? 1 : -1;
       while (index > this.state.draggedIndex ? holeIndex < index : holeIndex > index) {
         let nextIndex = holeIndex + shiftingStep;
-        while (isSponsored(preview[nextIndex])) {
+        while (preview[nextIndex] && (isSponsored(preview[nextIndex]) || preview[nextIndex].isAddButton)) {
           nextIndex += shiftingStep;
         }
         preview[holeIndex] = preview[nextIndex];
