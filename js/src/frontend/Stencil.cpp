@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"             
 #include "mozilla/CheckedInt.h"             
+#include "mozilla/glean/JsSrcMetrics.h"     
 #include "mozilla/Maybe.h"                  
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/PodOperations.h"          
@@ -3086,6 +3087,8 @@ bool CompilationStencil::delazifySelfHostedFunction(
       JS_LOG(selfHosted, Debug,
              "self_hosted_cache: reusing JIT code for script '%s'",
              nameStr.get());
+      mozilla::glean::javascript_self_hosted_cache::hits.AddToNumerator();
+      mozilla::glean::javascript_self_hosted_cache::total.Add();
 
       if (!cx->zone()->ensureJitZoneExists(cx)) {
         return false;
@@ -3115,6 +3118,7 @@ bool CompilationStencil::delazifySelfHostedFunction(
       JS_LOG(selfHosted, Debug,
              "self_hosted_cache: new JIT code entry for script '%s'",
              nameStr.get());
+      mozilla::glean::javascript_self_hosted_cache::total.Add();
 
       if (!cx->zone()->ensureJitZoneExists(cx)) {
         return false;
