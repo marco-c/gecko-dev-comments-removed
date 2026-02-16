@@ -95,7 +95,6 @@ class DrawTarget;
 class SourceSurface;
 }  
 namespace layers {
-class AndroidHardwareBuffer;
 class APZEventState;
 class AsyncDragMetrics;
 class Compositor;
@@ -2302,16 +2301,6 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
   virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) {}
-
-  
-
-
-
-
-
-
-  virtual void RecvScreenPixels(
-      RefPtr<mozilla::layers::AndroidHardwareBuffer> aHardwareBuffer) {}
 
   virtual void UpdateDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight) {}
   virtual mozilla::ScreenIntCoord GetDynamicToolbarMaxHeight() const {

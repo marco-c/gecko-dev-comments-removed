@@ -23,6 +23,8 @@ class nsIWidget;
 namespace mozilla {
 namespace layers {
 
+class AndroidHardwareBuffer;
+
 class UiCompositorControllerChild final
     : protected PUiCompositorControllerChild {
   friend class PUiCompositorControllerChild;
@@ -45,7 +47,12 @@ class UiCompositorControllerChild final
   bool SetFixedBottomOffset(int32_t aOffset);
   bool ToolbarAnimatorMessageFromUI(const int32_t& aMessage);
   bool SetDefaultClearColor(const uint32_t& aColor);
-  bool RequestScreenPixels(gfx::IntRect aSourceRect, gfx::IntSize aDestSize);
+#ifdef MOZ_WIDGET_ANDROID
+  using ScreenPixelsPromise =
+      MozPromise<RefPtr<layers::AndroidHardwareBuffer>, nsresult, true>;
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntRect aSourceRect,
+                                                  gfx::IntSize aDestSize);
+#endif
   bool EnableLayerUpdateNotifications(const bool& aEnable);
 
   void Destroy();
@@ -79,7 +86,7 @@ class UiCompositorControllerChild final
   mozilla::ipc::IPCResult RecvNotifyCompositorScrollUpdate(
       const CompositorScrollUpdate& aUpdate);
   mozilla::ipc::IPCResult RecvScreenPixels(
-      Maybe<ipc::FileDescriptor>&& aHardwareBuffer,
+      uint64_t aRequestId, Maybe<ipc::FileDescriptor>&& aHardwareBuffer,
       Maybe<ipc::FileDescriptor>&& aAcquireFence);
 
  private:
@@ -100,6 +107,22 @@ class UiCompositorControllerChild final
   Maybe<uint32_t> mDefaultClearColor;
   Maybe<bool> mLayerUpdateEnabled;
   RefPtr<nsIWidget> mWidget;
+
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<std::pair<uint64_t, RefPtr<ScreenPixelsPromise::Private>>>
+      mScreenPixelsPromise;
+#endif
+
   
   RefPtr<UiCompositorControllerParent> mParent;
 
