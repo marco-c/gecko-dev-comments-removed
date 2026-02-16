@@ -3439,9 +3439,6 @@ pref("cookiebanners.ui.desktop.enabled", false);
 pref("cookiebanners.ui.desktop.showCallout", false);
 
 
-pref("cookiebanners.ui.desktop.cfrVariant", 0);
-
-
 
 
 
