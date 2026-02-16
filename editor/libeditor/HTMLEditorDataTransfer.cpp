@@ -497,61 +497,94 @@ HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator final {
 EditorDOMPoint
 HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
     const EditorDOMPoint& aLastInsertedPoint) const {
-  EditorDOMPoint pointToPutCaret;
+  MOZ_ASSERT(aLastInsertedPoint.IsInContentNode());
+  MOZ_ASSERT(
+      HTMLEditUtils::IsSimplyEditableNode(*aLastInsertedPoint.GetContainer()));
+  MOZ_ASSERT(aLastInsertedPoint.GetChild());
+  
+  
+  nsIContent* const lastInsertedContent = aLastInsertedPoint.GetChild();
+  const EditorRawDOMPoint firstEditablePoint = [&]() MOZ_NEVER_INLINE_DEBUG {
+    if (HTMLEditUtils::IsSimplyEditableNode(*lastInsertedContent)) {
+      return aLastInsertedPoint.To<EditorRawDOMPoint>();
+    }
+    MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+        *aLastInsertedPoint.GetContainer()));
+    return aLastInsertedPoint.NextPoint<EditorRawDOMPoint>();
+  }();
+  if (NS_WARN_IF(!firstEditablePoint.IsSet())) {
+    return EditorDOMPoint();  
+  }
 
-  
-  nsIContent* containerContent = nullptr;
-  
-  
-  if (!aLastInsertedPoint.GetChild() ||
-      !aLastInsertedPoint.GetChild()->IsHTMLElement(nsGkAtoms::table)) {
-    containerContent = HTMLEditUtils::GetLastLeafContent(
-        *aLastInsertedPoint.GetChild(),
+  const EditorRawDOMPoint adjustedEditablePoint = [&]() MOZ_NEVER_INLINE_DEBUG {
+    if (firstEditablePoint != aLastInsertedPoint) {
+      return firstEditablePoint;
+    }
+    if (lastInsertedContent->IsText()) {
+      
+      return EditorRawDOMPoint::AtEndOf(*lastInsertedContent);
+    }
+    if (lastInsertedContent->IsHTMLElement(nsGkAtoms::table)) {
+      
+      return aLastInsertedPoint.NextPoint<EditorRawDOMPoint>();
+    }
+    if (!HTMLEditUtils::IsContainerNode(*lastInsertedContent) ||
+        HTMLEditUtils::IsReplacedElement(*lastInsertedContent)) {
+      
+      return aLastInsertedPoint.NextPoint<EditorRawDOMPoint>();
+    }
+    
+    nsIContent* const lastLeaf = HTMLEditUtils::GetLastLeafContent(
+        *lastInsertedContent,
         {
-            LeafNodeOption::IgnoreNonEditableNode,
+            LeafNodeOption::TreatNonEditableNodeAsLeafNode,
             LeafNodeOption::IgnoreInvisibleText,
             
             
         });
-    if (containerContent) {
-      Element* mostDistantInclusiveAncestorTableElement = nullptr;
-      for (Element* maybeTableElement =
-               containerContent->GetAsElementOrParentElement();
+    if (!lastLeaf) {
+      
+      
+      return EditorRawDOMPoint::AtEndOf(*lastInsertedContent);
+    }
+    Element* const mostDistantInclusiveAncestorTableElement =
+        [&]() -> Element* {
+      Element* tableElement = nullptr;
+      for (Element* maybeTableElement = lastLeaf->GetAsElementOrParentElement();
            maybeTableElement &&
            maybeTableElement != aLastInsertedPoint.GetChild();
            maybeTableElement = maybeTableElement->GetParentElement()) {
         if (maybeTableElement->IsHTMLElement(nsGkAtoms::table)) {
-          mostDistantInclusiveAncestorTableElement = maybeTableElement;
+          tableElement = maybeTableElement;
         }
       }
-      
-      
-      if (mostDistantInclusiveAncestorTableElement) {
-        containerContent = mostDistantInclusiveAncestorTableElement;
-      }
+      return tableElement;
+    }();
+    
+    
+    if (mostDistantInclusiveAncestorTableElement) {
+      MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+          *mostDistantInclusiveAncestorTableElement));
+      MOZ_ASSERT(mostDistantInclusiveAncestorTableElement->GetParentNode());
+      MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+          *mostDistantInclusiveAncestorTableElement->GetParentNode()));
+      return EditorRawDOMPoint::After(
+          *mostDistantInclusiveAncestorTableElement);
     }
-  }
-  
-  
-  if (!containerContent) {
-    containerContent = aLastInsertedPoint.GetChild();
-  }
+    MOZ_ASSERT(!lastLeaf->IsHTMLElement(nsGkAtoms::table));
+    if (lastLeaf->IsText()) {
+      
+      return EditorRawDOMPoint::AtEndOf(*lastLeaf);
+    }
+    return !HTMLEditUtils::IsContainerNode(*lastLeaf) ||
+                   HTMLEditUtils::IsReplacedElement(*lastLeaf)
+               ? EditorRawDOMPoint::After(*lastLeaf)
+               : EditorRawDOMPoint::AtEndOf(*lastLeaf);
+  }();
 
   
   
-  if (containerContent->IsText() ||
-      (HTMLEditUtils::IsContainerNode(*containerContent) &&
-       !containerContent->IsHTMLElement(nsGkAtoms::table))) {
-    pointToPutCaret.SetToEndOf(containerContent);
-  }
-  
-  
-  else {
-    pointToPutCaret.SetAfter(containerContent);
-  }
-
-  
-  
+  EditorDOMPoint pointToPutCaret = adjustedEditablePoint.To<EditorDOMPoint>();
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
           

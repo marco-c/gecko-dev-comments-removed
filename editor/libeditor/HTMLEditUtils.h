@@ -461,6 +461,13 @@ class HTMLEditUtils final {
   
 
 
+  [[nodiscard]] static bool IsReplacedElement(const nsIContent& aContent) {
+    return aContent.IsElement() && IsReplacedElement(*aContent.AsElement());
+  }
+
+  
+
+
 
   [[nodiscard]] static bool IsNonVoidReplacedElement(const Element& aElement) {
     return IsReplacedElement(aElement) && IsContainerNode(aElement);
