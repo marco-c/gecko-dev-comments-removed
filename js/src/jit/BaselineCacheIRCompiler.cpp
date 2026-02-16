@@ -3105,8 +3105,9 @@ bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
 }
 
 
-bool BaselineCacheIRCompiler::emitMetaScriptedThisShape(
-    uint32_t thisShapeOffset, uint32_t siteOffset) {
+
+bool BaselineCacheIRCompiler::emitMetaCreateThis(uint32_t thisShapeOffset,
+                                                 uint32_t siteOffset) {
   MOZ_ASSERT(scriptedAllocSiteOffset_.isNothing());
   scriptedAllocSiteOffset_.emplace(siteOffset);
   return true;

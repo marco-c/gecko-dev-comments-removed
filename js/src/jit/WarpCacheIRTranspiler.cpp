@@ -7057,8 +7057,8 @@ bool WarpCacheIRTranspiler::emitCallNativeSetter(ObjOperandId receiverId,
                         nargsAndFlagsOffset);
 }
 
-bool WarpCacheIRTranspiler::emitMetaScriptedThisShape(uint32_t thisShapeOffset,
-                                                      uint32_t siteOffset) {
+bool WarpCacheIRTranspiler::emitMetaCreateThis(uint32_t thisShapeOffset,
+                                               uint32_t siteOffset) {
   SharedShape* shape = &shapeStubField(thisShapeOffset)->asShared();
   MOZ_ASSERT(shape->getObjectClass() == &PlainObject::class_);
 

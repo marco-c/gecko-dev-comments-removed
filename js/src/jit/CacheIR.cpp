@@ -13704,7 +13704,7 @@ void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
       
       
       MOZ_ASSERT(maybeAllocSite);
-      writer.metaScriptedThisShape(thisShape, maybeAllocSite);
+      writer.metaCreateThis(thisShape, maybeAllocSite);
     }
   } else {
     
