@@ -1825,15 +1825,11 @@ impl Stylist {
     where
         E: TElement,
     {
-        
-        
-        let mut matching_context = MatchingContext::new(
-            MatchingMode::Normal,
+        let mut matching_context = MatchingContext::new_for_revalidation(
             bloom,
             selector_caches,
             self.quirks_mode,
             needs_selector_flags,
-            MatchingForInvalidation::No,
         );
 
         
