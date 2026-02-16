@@ -677,11 +677,10 @@ void HTMLLinkElement::UpdatePreload(nsAtom* aName, const nsAttrValue* aValue,
     }
   } else {
     MOZ_ASSERT(aName == nsGkAtoms::media);
-    nsAutoString oldMedia;
-    if (aOldValue) {
-      aOldValue->ToString(oldMedia);
-    }
-    if (net::CheckPreloadAttrs(asAttr, mimeType, oldMedia, OwnerDoc())) {
+    
+    
+    
+    if (mPreload) {
       oldPolicyType = asPolicyType;
     } else {
       oldPolicyType = nsIContentPolicy::TYPE_INVALID;
