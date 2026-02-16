@@ -173,7 +173,7 @@ class nsMathMLChar {
   
   
   
-  enum class DrawingMethod { Normal, Variant, Parts };
+  enum class DrawingMethod : uint8_t { Normal, Variant, Parts };
   DrawingMethod mDrawingMethod;
 
   
