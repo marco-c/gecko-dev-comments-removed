@@ -171,7 +171,7 @@
     }
 
     get splitViewId() {
-      return this.getAttribute("splitViewId");
+      return parseInt(this.getAttribute("splitViewId"));
     }
 
     set splitViewId(val) {
