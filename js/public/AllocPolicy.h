@@ -14,6 +14,8 @@
 #ifndef js_AllocPolicy_h
 #define js_AllocPolicy_h
 
+#include "mozilla/mozalloc.h"  
+
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
@@ -25,7 +27,23 @@ class FrontendContext;
 
 enum class AllocFunction { Malloc, Calloc, Realloc };
 
-class ArenaAllocPolicyBase {
+
+
+
+
+class AllocPolicyBase {
+ public:
+  
+  void reportAllocOverflow() const {}
+
+  
+  
+  bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }
+};
+
+
+
+class MallocArenaAllocPolicyBase : public AllocPolicyBase {
  public:
   template <typename T>
   T* maybe_pod_arena_malloc(arena_id_t arenaId, size_t numElems) {
@@ -56,7 +74,8 @@ class ArenaAllocPolicyBase {
 };
 
 
-class AllocPolicyBase : public ArenaAllocPolicyBase {
+
+class MallocAllocPolicyBase : public MallocArenaAllocPolicyBase {
  public:
   template <typename T>
   T* maybe_pod_malloc(size_t numElems) {
@@ -93,7 +112,7 @@ class AllocPolicyBase : public ArenaAllocPolicyBase {
 
 
 
-class BackgroundAllocPolicyBase : ArenaAllocPolicyBase {
+class BackgroundAllocPolicyBase : public MallocArenaAllocPolicyBase {
  public:
   template <typename T>
   T* maybe_pod_malloc(size_t numElems) {
@@ -128,17 +147,9 @@ class BackgroundAllocPolicyBase : ArenaAllocPolicyBase {
 };
 
 
-class SystemAllocPolicy : public AllocPolicyBase {
- public:
-  void reportAllocOverflow() const {}
-  bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }
-};
+class SystemAllocPolicy : public MallocAllocPolicyBase {};
 
-class BackgroundSystemAllocPolicy : public BackgroundAllocPolicyBase {
- public:
-  void reportAllocOverflow() const {}
-  bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }
-};
+class BackgroundSystemAllocPolicy : public BackgroundAllocPolicyBase {};
 
 MOZ_COLD JS_PUBLIC_API void ReportOutOfMemory(JSContext* cx);
 MOZ_COLD JS_PUBLIC_API void ReportOutOfMemory(FrontendContext* fc);
@@ -156,7 +167,7 @@ MOZ_COLD JS_PUBLIC_API void ReportLargeOutOfMemory(JSContext* cx);
 
 
 
-class JS_PUBLIC_API TempAllocPolicy : public AllocPolicyBase {
+class JS_PUBLIC_API TempAllocPolicy : public MallocAllocPolicyBase {
   
   static constexpr uintptr_t JsContextTag = 0x1;
 
@@ -278,13 +289,20 @@ class JS_PUBLIC_API TempAllocPolicy : public AllocPolicyBase {
 
 
 
-class MallocAllocPolicy : public AllocPolicyBase {
+class MallocAllocPolicy : public MallocAllocPolicyBase {
  public:
-  void reportAllocOverflow() const {}
-
+  
   [[nodiscard]] bool checkSimulatedOOM() const { return true; }
 };
 
 } 
+
+class JSInfallibleAllocPolicy : public js::AllocPolicyBase,
+                                public ::InfallibleAllocPolicy {
+ public:
+  using ::InfallibleAllocPolicy::reportAllocOverflow;
+  
+  using ::InfallibleAllocPolicy::checkSimulatedOOM;
+};
 
 #endif 

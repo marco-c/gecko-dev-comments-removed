@@ -19,7 +19,7 @@ namespace detail {
 
 
 
-class OptionAllocPolicy {
+class OptionAllocPolicy : public AllocPolicyBase {
  public:
   template <typename T>
   T* pod_malloc(size_t numElems) {
@@ -38,9 +38,6 @@ class OptionAllocPolicy {
     }
     return static_cast<T*>(realloc(p, bytes));
   }
-
-  void reportAllocOverflow() const {}
-  bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }
 
   template <typename T>
   void free_(T* p, size_t numElems = 0) {
