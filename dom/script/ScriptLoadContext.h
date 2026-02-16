@@ -283,11 +283,21 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   bool mIsNonAsyncScriptInserted;  
                                    
   bool mIsXSLT;                    
-  bool mInCompilingList;     
-  net::ClassificationFlags   
-      mClassificationFlags;  
-  bool mWasCompiledOMT;      
-                             
+  bool mInCompilingList;  
+  bool mWasCompiledOMT;   
+                          
+  
+  bool mIsPreload;
+
+  
+  
+  nsresult mUnreportedPreloadError;
+
+  uint32_t mLineNo;
+  JS::ColumnNumberOneOrigin mColumnNo;
+
+  
+  net::ClassificationFlags mClassificationFlags;
 
   
   
@@ -295,12 +305,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   
   
   RefPtr<CompileOrDecodeTask> mCompileOrDecodeTask;
-
-  uint32_t mLineNo;
-  JS::ColumnNumberOneOrigin mColumnNo;
-
-  
-  bool mIsPreload;
 
   
   RefPtr<Document> mLoadBlockedDocument;
@@ -310,10 +314,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   nsCOMPtr<nsIScriptElement> mScriptElement;
 
   nsString mSourceText;
-
-  
-  
-  nsresult mUnreportedPreloadError;
 };
 
 }  
