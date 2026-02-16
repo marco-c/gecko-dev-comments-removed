@@ -3206,9 +3206,9 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
     
     
-    
     Register temp = calleeReg;
 
+    masm.push(calleeReg);
     masm.createPlainGCObject(
         result, shape, temp, shape, createThisData_->numFixedSlots,
         createThisData_->numDynamicSlots, createThisData_->allocKind,
@@ -3216,16 +3216,11 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     storeThis(TypedOrValueRegister(MIRType::Object, AnyRegister(result)),
               argcReg, flags);
 
-    
-    
+    masm.pop(calleeReg);
     masm.jump(&done);
 
     masm.bind(&fail);
-    if (isBoundFunction) {
-      
-      
-      loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg);
-    }
+    masm.pop(calleeReg);
   }
 
   
@@ -3289,12 +3284,11 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   MOZ_ASSERT(!liveNonGCRegs.aliases(JSReturnOperand));
   storeThis(TypedOrValueRegister(JSReturnOperand), argcReg, flags);
 
-  masm.bind(&done);
-
   
   
   
   loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg);
+  masm.bind(&done);
 }
 
 void BaselineCacheIRCompiler::updateReturnValue() {
