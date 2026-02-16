@@ -1586,6 +1586,12 @@ Maybe<uvec2> WebGLContext::SnapshotInto(GLuint srcFb, const gfx::IntSize& size,
                        << " > dstByteCount:" << dstByteCount;
     return {};
   }
+
+  
+  
+  
+  gl->fFlush();
+
   uint8_t* dstPtr = dest.begin().get();
   gl->fReadPixels(0, 0, size.width, size.height, LOCAL_GL_RGBA,
                   LOCAL_GL_UNSIGNED_BYTE, dstPtr);
