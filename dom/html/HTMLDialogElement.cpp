@@ -71,7 +71,7 @@ class DialogCloseWatcherListener : public nsIDOMEventListener {
         
         
         
-        Optional<nsAString> retValue;
+        Maybe<nsAutoString> retValue;
         dialog->GetRequestCloseReturnValue(retValue);
         RefPtr<Element> source = dialog->GetRequestCloseSourceElement();
         dialog->Close(source, retValue);
@@ -144,8 +144,8 @@ bool HTMLDialogElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
 
 
-void HTMLDialogElement::Close(
-    Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue) {
+void HTMLDialogElement::Close(Element* aSource,
+                              const Maybe<nsAutoString>& aReturnValue) {
   
   if (!Open()) {
     return;
@@ -176,8 +176,8 @@ void HTMLDialogElement::Close(
 
   
   
-  if (aReturnValue.WasPassed()) {
-    SetReturnValue(aReturnValue.Value());
+  if (aReturnValue.isSome()) {
+    SetReturnValue(aReturnValue.ref());
   }
 
   
@@ -217,8 +217,8 @@ void HTMLDialogElement::Close(
 
 
 
-void HTMLDialogElement::RequestClose(
-    Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue) {
+void HTMLDialogElement::RequestClose(Element* aSource,
+                                     const Maybe<nsAutoString>& aReturnValue) {
   RefPtr closeWatcher = mCloseWatcher;
   
   if (!Open()) {
@@ -245,8 +245,8 @@ void HTMLDialogElement::RequestClose(
   }
 
   
-  if (aReturnValue.WasPassed()) {
-    SetRequestCloseReturnValue(aReturnValue.Value());
+  if (aReturnValue.isSome()) {
+    SetRequestCloseReturnValue(aReturnValue.ref());
   }
 
   
@@ -624,7 +624,7 @@ void HTMLDialogElement::RunCancelDialogSteps() {
   
   
   if (defaultAction) {
-    Optional<nsAString> retValue;
+    Maybe<nsAutoString> retValue;
     GetRequestCloseReturnValue(retValue);
     RefPtr<Element> source = GetRequestCloseSourceElement();
     Close(source, retValue);
@@ -648,19 +648,18 @@ bool HTMLDialogElement::HandleCommandInternal(Element* aSource,
 
   if ((aCommand == Command::Close || aCommand == Command::RequestClose) &&
       Open()) {
-    Optional<nsAString> retValueOpt;
-    nsString retValue;
+    Maybe<nsAutoString> retValue;
     if (aSource->HasAttr(nsGkAtoms::value)) {
       if (auto* button = HTMLButtonElement::FromNodeOrNull(aSource)) {
-        button->GetValue(retValue);
-        retValueOpt = &retValue;
+        retValue.emplace();
+        button->GetValue(retValue.ref());
       }
     }
     if (aCommand == Command::Close) {
-      Close(aSource, retValueOpt);
+      Close(aSource, retValue);
     } else {
       MOZ_ASSERT(aCommand == Command::RequestClose);
-      RequestClose(aSource, retValueOpt);
+      RequestClose(aSource, retValue);
     }
     return true;
   }
