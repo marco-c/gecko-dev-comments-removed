@@ -2,7 +2,10 @@
 
 
 
-type MozTabbrowserTab = EventTarget & { canonicalUrl: string };
+type MozTabbrowserTab = EventTarget & {
+  canonicalUrl: string;
+  hasTabNote: boolean;
+};
 
 type CanonicalURLSource =
   | "link"
