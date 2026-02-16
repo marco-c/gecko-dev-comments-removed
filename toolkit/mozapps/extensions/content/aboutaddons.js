@@ -129,7 +129,6 @@ function isManualUpdate(install) {
   const isExistingHidden = install.existingAddon?.hidden;
   
   
-  
   const isNewHidden = install.addon?.hidden;
   
   
@@ -1420,10 +1419,25 @@ class CategoriesBox extends customElements.get("button-group") {
   }
 
   async updateAvailableCount() {
+    
+    
     let installs = await AddonManager.getAllInstalls();
-    var count = installs.filter(install => {
-      return isManualUpdate(install) && !install.installed;
-    }).length;
+    let addonIdsWithUpdate = new Set();
+    for (const install of installs) {
+      if (isManualUpdate(install) && install.existingAddon) {
+        
+        
+        const addon = await AddonManager.getAddonByID(install.existingAddon.id);
+        if (
+          addon &&
+          getUpdateInstall(addon) === install &&
+          Services.vc.compare(install.version, addon.version) > 0
+        ) {
+          addonIdsWithUpdate.add(addon.id);
+        }
+      }
+    }
+    const count = addonIdsWithUpdate.size;
     let availableButton = this.getButtonByName("available-updates");
     availableButton.hidden = !availableButton.selected && count == 0;
     availableButton.badgeCount = count;
@@ -4435,7 +4449,7 @@ gViewController.defineView("updates", async param => {
           
           
           const install = getUpdateInstall(addon);
-          return install && isManualUpdate(install) && !install.installed;
+          return install && isManualUpdate(install);
         },
       },
     ]);
