@@ -53,6 +53,11 @@ namespace mozilla {
 
 struct StyleCalcLengthPercentage;
 
+
+
+
+struct StyleNumericValue;
+
 namespace gfx {
 struct FontVariation;
 struct FontFeature;

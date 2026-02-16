@@ -620,6 +620,18 @@ pub struct UnitValue {
 
 
 
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathSum {
+    
+    pub values: ThinVec<NumericValue>,
+}
+
+
+
+
+
+
 
 
 
@@ -635,12 +647,7 @@ pub enum NumericValue {
     
     
     
-    
-    
-    Sum {
-        
-        values: ThinVec<NumericValue>,
-    },
+    Sum(MathSum),
 }
 
 
