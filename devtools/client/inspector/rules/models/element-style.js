@@ -45,15 +45,16 @@ class ElementStyle {
 
 
   constructor(element, ruleView, store, pageStyle, showUserAgentStyles) {
+    
     this.element = element;
     this.ruleView = ruleView;
-    this.store = store || {};
-    this.pageStyle = pageStyle;
-    this.pseudoElementTypes = new Set();
-    this.showUserAgentStyles = showUserAgentStyles;
     this.rules = [];
-    this.variablesMap = new Map();
-    this.startingStyleVariablesMap = new Map();
+
+    
+    this.store = store || {};
+    
+    this.pageStyle = pageStyle;
+    this.showUserAgentStyles = showUserAgentStyles;
 
     
     
@@ -66,13 +67,19 @@ class ElementStyle {
     }
   }
 
+  #destroyed = false;
+  #populated = null;
+  #pseudoElementTypes = new Set();
+  #variablesMap = new Map();
+  #startingStyleVariablesMap = new Map();
+
   destroy() {
-    if (this.destroyed) {
+    if (this.#destroyed) {
       return;
     }
+    this.#destroyed = true;
 
-    this.destroyed = true;
-    this.pseudoElementTypes.clear();
+    this.#pseudoElementTypes.clear();
 
     for (const rule of this.rules) {
       if (rule.editor) {
@@ -87,7 +94,8 @@ class ElementStyle {
 
 
 
-  _changed() {
+  notifyChanged() {
+    
     if (this.onChanged) {
       this.onChanged();
     }
@@ -108,7 +116,7 @@ class ElementStyle {
         filter: this.showUserAgentStyles ? "ua" : undefined,
       })
       .then(entries => {
-        if (this.destroyed || this.populated !== populated) {
+        if (this.#destroyed || this.#populated !== populated) {
           return Promise.resolve(undefined);
         }
 
@@ -119,21 +127,21 @@ class ElementStyle {
         this.rules = [];
 
         for (const entry of entries) {
-          this._maybeAddRule(entry, existingRules);
+          this.#maybeAddRule(entry, existingRules);
         }
 
         
-        this.pseudoElementTypes = new Set();
+        this.#pseudoElementTypes = new Set();
         for (const rule of this.rules) {
           if (rule.pseudoElement && !rule.inherited) {
-            this.pseudoElementTypes.add(rule.pseudoElement);
+            this.#pseudoElementTypes.add(rule.pseudoElement);
           }
         }
 
         
         this.onRuleUpdated();
 
-        this._sortRulesForPseudoElement();
+        this.#sortRulesForPseudoElement();
 
         
         for (const r of existingRules) {
@@ -149,13 +157,13 @@ class ElementStyle {
       .catch(e => {
         
         
-        if (this.destroyed) {
+        if (this.#destroyed) {
           return Promise.resolve(undefined);
         }
         return promiseWarn(e);
       });
-    this.populated = populated;
-    return this.populated;
+    this.#populated = populated;
+    return this.#populated;
   }
 
   
@@ -211,7 +219,7 @@ class ElementStyle {
   
 
 
-  _sortRulesForPseudoElement() {
+  #sortRulesForPseudoElement() {
     this.rules = this.rules.sort((a, b) => {
       if (
         !a.inherited === !b.inherited &&
@@ -234,7 +242,7 @@ class ElementStyle {
 
 
 
-  _maybeAddRule(options, existingRules) {
+  #maybeAddRule(options, existingRules) {
     
     
     if (
@@ -275,11 +283,11 @@ class ElementStyle {
 
 
   onRuleUpdated() {
-    this.updateDeclarations();
+    this.#updateDeclarations();
 
     
-    for (const pseudo of this.pseudoElementTypes) {
-      this.updateDeclarations(pseudo);
+    for (const pseudo of this.#pseudoElementTypes) {
+      this.#updateDeclarations(pseudo);
     }
   }
 
@@ -300,14 +308,14 @@ class ElementStyle {
 
 
   
-  updateDeclarations(pseudo = "") {
+  #updateDeclarations(pseudo = "") {
     
-    const textProps = this._getDeclarations(pseudo);
+    const textProps = this.#getDeclarations(pseudo);
 
     
-    const variables = new Map(pseudo ? this.variablesMap.get("") : null);
+    const variables = new Map(pseudo ? this.#variablesMap.get("") : null);
     const startingStyleVariables = new Map(
-      pseudo ? this.startingStyleVariablesMap.get("") : null
+      pseudo ? this.#startingStyleVariablesMap.get("") : null
     );
 
     
@@ -354,12 +362,12 @@ class ElementStyle {
         const isPropInStartingStyle =
           computedProp.textProp.rule?.isInStartingStyle();
 
-        const hasHigherPriority = this._hasHigherPriorityThanEarlierProp(
+        const hasHigherPriority = this.#hasHigherPriorityThanEarlierProp(
           computedProp,
           earlier
         );
         const startingStyleHasHigherPriority =
-          this._hasHigherPriorityThanEarlierProp(
+          this.#hasHigherPriorityThanEarlierProp(
             computedProp,
             earlierInStartingStyle
           );
@@ -429,14 +437,14 @@ class ElementStyle {
     }
 
     
-    const previousVariablesMap = new Map(this.variablesMap.get(pseudo));
+    const previousVariablesMap = new Map(this.#variablesMap.get(pseudo));
     const changedVariableNamesSet = new Set(
       [...variables.keys(), ...previousVariablesMap.keys()].filter(
         k => variables.get(k) !== previousVariablesMap.get(k)
       )
     );
     const previousStartingStyleVariablesMap = new Map(
-      this.startingStyleVariablesMap.get(pseudo)
+      this.#startingStyleVariablesMap.get(pseudo)
     );
     const changedStartingStyleVariableNamesSet = new Set(
       [...variables.keys(), ...previousStartingStyleVariablesMap.keys()].filter(
@@ -444,8 +452,8 @@ class ElementStyle {
       )
     );
 
-    this.variablesMap.set(pseudo, variables);
-    this.startingStyleVariablesMap.set(pseudo, startingStyleVariables);
+    this.#variablesMap.set(pseudo, variables);
+    this.#startingStyleVariablesMap.set(pseudo, startingStyleVariables);
 
     const rulesEditors = new Set();
     const variableTree = new Map();
@@ -467,9 +475,9 @@ class ElementStyle {
       
       
       if (
-        this._updatePropertyOverridden(textProp) ||
-        this._hasUpdatedCSSVariable(textProp, changedVariableNamesSet) ||
-        this._hasUpdatedCSSVariable(
+        this.#updatePropertyOverridden(textProp) ||
+        this.#hasUpdatedCSSVariable(textProp, changedVariableNamesSet) ||
+        this.#hasUpdatedCSSVariable(
           textProp,
           changedStartingStyleVariableNamesSet
         )
@@ -542,7 +550,7 @@ class ElementStyle {
 
 
 
-  _hasHigherPriorityThanEarlierProp(computedProp, earlierProp) {
+  #hasHigherPriorityThanEarlierProp(computedProp, earlierProp) {
     if (!earlierProp) {
       return false;
     }
@@ -588,7 +596,7 @@ class ElementStyle {
   onRegisteredPropertiesChange(registeredPropertyNamesSet) {
     for (const rule of this.rules) {
       for (const textProp of rule.textProps) {
-        if (this._hasUpdatedCSSVariable(textProp, registeredPropertyNamesSet)) {
+        if (this.#hasUpdatedCSSVariable(textProp, registeredPropertyNamesSet)) {
           textProp.updateEditor();
         }
       }
@@ -604,7 +612,7 @@ class ElementStyle {
 
 
 
-  _hasUpdatedCSSVariable(declaration, variableNamesSet) {
+  #hasUpdatedCSSVariable(declaration, variableNamesSet) {
     if (variableNamesSet.size === 0) {
       return false;
     }
@@ -633,7 +641,7 @@ class ElementStyle {
 
 
 
-  _getDeclarations(pseudo = "") {
+  #getDeclarations(pseudo = "") {
     const textProps = [];
 
     for (const rule of this.rules) {
@@ -703,7 +711,7 @@ class ElementStyle {
 
 
 
-  _updatePropertyOverridden(prop) {
+  #updatePropertyOverridden(prop) {
     if (!prop.isValid() && !prop.computed.length) {
       prop.overridden = false;
       return false;
@@ -740,8 +748,8 @@ class ElementStyle {
 
 
   getVariableData(name, pseudo = "") {
-    const variables = this.variablesMap.get(pseudo);
-    const startingStyleVariables = this.startingStyleVariablesMap.get(pseudo);
+    const variables = this.#variablesMap.get(pseudo);
+    const startingStyleVariables = this.#startingStyleVariablesMap.get(pseudo);
     const registeredPropertiesMap =
       this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
 
@@ -777,12 +785,12 @@ class ElementStyle {
     for (const [
       key,
       { computedValue, declarationValue },
-    ] of this.variablesMap.get(pseudo)) {
+    ] of this.#variablesMap.get(pseudo)) {
       customProperties.set(key, computedValue ?? declarationValue);
     }
 
     const startingStyleCustomProperties =
-      this.startingStyleVariablesMap.get(pseudo);
+      this.#startingStyleVariablesMap.get(pseudo);
 
     const registeredPropertiesMap =
       this.ruleView.getRegisteredPropertiesForSelectedNodeTarget();
