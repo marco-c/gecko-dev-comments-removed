@@ -267,39 +267,41 @@ add_task(
 
 add_task(async function test_constructRelevantMemoriesContextMessage() {
   await clearAndAddMemories();
+  MemoriesManager._clearEmbeddingsCache();
 
   const sb = sinon.createSandbox();
   try {
-    const fakeEngine = {
-      loadPrompt() {
-        return "Relevant memories:\n{relevantMemoriesList}";
+    
+    const stub = sb.stub(MemoriesManager, "getRelevantMemories").resolves([
+      {
+        id: "food_drink.16ec1838",
+        memory_summary: "Loves drinking coffee",
+        category: "Food & Drink",
+        intent: "Plan / Organize",
+        score: 3,
+        similarity: 0.95,
       },
-      run() {
-        return {
-          finalOutput: `{
-            "categories": ["Food & Drink"],
-            "intents": ["Plan / Organize"]
-          }`,
-        };
+    ]);
+
+    
+    const fakeEngine = {
+      async loadPrompt() {
+        return `# Existing Memories
+
+Below is a list of existing memory texts with their unique IDs:
+
+{relevantMemoriesList}
+
+Use them to personalized your response using the following guidelines:`;
       },
     };
 
-    
-    const stub = sb
-      .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
-      .resolves(fakeEngine);
-
-    
     const relevantMemoriesContextMessage =
       await constructRelevantMemoriesContextMessage(
         "I love drinking coffee",
         fakeEngine
       );
-
-    Assert.ok(
-      stub.calledOnce,
-      "ensureOpenAIEngineForUsage should be called once"
-    );
+    Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
 
     
     Assert.strictEqual(
@@ -320,7 +322,7 @@ add_task(async function test_constructRelevantMemoriesContextMessage() {
       "Should have role 'system'"
     );
     Assert.ok(
-      relevantMemoriesContextMessage.content.includes("Relevant memories:"),
+      relevantMemoriesContextMessage.content.includes("# Existing Memories"),
       "Should include prompt template text"
     );
     Assert.ok(
@@ -335,34 +337,26 @@ add_task(async function test_constructRelevantMemoriesContextMessage() {
 add_task(
   async function test_constructRelevantMemoriesContextMessage_no_relevant_memories() {
     await clearAndAddMemories();
+    MemoriesManager._clearEmbeddingsCache();
 
     const sb = sinon.createSandbox();
     try {
+      
+      const stub = sb.stub(MemoriesManager, "getRelevantMemories").resolves([]);
+
+      
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
-        run() {
-          return {
-            finalOutput: `{
-            "categories": ["Health & Fitness"],
-            "intents": ["Plan / Organize"]
-          }`,
-          };
+        async loadPrompt() {
+          return "# Existing Memories";
         },
       };
 
-      
-      const stub = sb
-        .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
-        .resolves(fakeEngine);
-
       const relevantMemoriesContextMessage =
-        await constructRelevantMemoriesContextMessage("I love drinking coffee");
-      Assert.ok(
-        stub.calledOnce,
-        "ensureOpenAIEngineForUsage should be called once"
-      );
+        await constructRelevantMemoriesContextMessage(
+          "I love drinking coffee",
+          fakeEngine
+        );
+      Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
 
       
       Assert.equal(
