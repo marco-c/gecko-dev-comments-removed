@@ -306,7 +306,10 @@ addAccessibleTask(
     <li id="li">Number one</li>
   </ol>
   `,
-  async function (browser, docAcc) {
+  async function testApiSelection(browser, docAcc) {
+    
+    
+    docAcc.takeFocus();
     const paragraph = findAccessibleChildByID(docAcc, "paragraph", [
       nsIAccessibleText,
     ]);

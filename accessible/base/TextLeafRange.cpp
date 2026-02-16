@@ -1101,8 +1101,9 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
     
     int32_t htOffset = -1;
     
+    
     HyperTextAccessible* ht = SelectionMgr()->AccessibleWithCaret(&htOffset);
-    if (ht) {
+    if (ht && ht->Document() == localAcc->Document()) {
       MOZ_ASSERT(htOffset != -1);
     } else {
       

@@ -15,6 +15,7 @@
 #include "nsFrameSelection.h"
 #include "TextLeafRange.h"
 
+#include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
@@ -124,10 +125,35 @@ void SelectionManager::ProcessTextSelChangeEvent(AccEvent* aEvent) {
   
   if (!selection) selection = event->mSel;
 
-  mCaretOffset = caretCntr->DOMPointToOffset(selection->GetFocusNode(),
-                                             selection->FocusOffset());
-  mAccWithCaret = caretCntr;
-  if (mCaretOffset != -1) {
+  int32_t caretOffset = caretCntr->DOMPointToOffset(selection->GetFocusNode(),
+                                                    selection->FocusOffset());
+  if (caretOffset != -1) {
+    LocalAccessible* focus =
+        FocusMgr() ? FocusMgr()->FocusedLocalAccessible() : nullptr;
+    DocAccessible* caretDoc = caretCntr->Document();
+    if (!focus || caretDoc != focus->Document()) {
+      
+      
+      
+      
+      
+      if (DocAccessibleChild* ipcDoc = caretDoc->IPCDoc()) {
+        
+        
+        TextLeafPoint caret = TextLeafPoint::GetCaret(caretCntr);
+        ipcDoc->SendCaretMoveEvent(
+            caretCntr->ID(),
+            DocAccessibleChild::GetCaretRectForIPCEvent(caretCntr), caretOffset,
+            selection->IsCollapsed(), caret.mIsEndOfLineInsertionPoint,
+            event->GetGranularity(), aEvent->FromUserInput(),
+             true);
+      }
+      return;
+    }
+    mCaretOffset = caretOffset;
+    mAccWithCaret = caretCntr;
+    
+    
     TextLeafPoint caret = TextLeafPoint::GetCaret(caretCntr);
     RefPtr<AccCaretMoveEvent> caretMoveEvent =
         new AccCaretMoveEvent(caretCntr, mCaretOffset, selection->IsCollapsed(),

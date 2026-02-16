@@ -476,7 +476,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCaretMoveEvent(
     const uint64_t& aID, const LayoutDeviceIntRect& aCaretRect,
     const int32_t& aOffset, const bool& aIsSelectionCollapsed,
     const bool& aIsAtEndOfLine, const int32_t& aGranularity,
-    const bool& aFromUser) {
+    const bool& aFromUser, const bool& aSuppressEvent) {
   ACQUIRE_ANDROID_LOCK
   if (mShutdown) {
     return IPC_OK();
@@ -498,6 +498,11 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCaretMoveEvent(
     
     mTextSelections.ClearAndRetainStorage();
     mTextSelections.AppendElement(TextRangeData(aID, aID, aOffset, aOffset));
+  }
+
+  if (aSuppressEvent) {
+    
+    return IPC_OK();
   }
 
   PlatformCaretMoveEvent(proxy, aOffset, aIsSelectionCollapsed, aGranularity,
