@@ -410,6 +410,20 @@ struct AnchorPositioningUtils {
 
   static StylePositionArea PhysicalizePositionArea(StylePositionArea aPosArea,
                                                    const nsIFrame* aPositioned);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static nsRect ReassembleAnchorRect(const nsIFrame* aAnchor,
+                                     const nsIFrame* aContainingBlock);
 };
 
 }  

@@ -321,7 +321,8 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   
   
   
-  if (anchorContainingBlock != positionedContainingBlock) {
+  if (anchorContainingBlock->FirstContinuation() !=
+      positionedContainingBlock->FirstContinuation()) {
     
     
     if (positionedContainingBlock->IsViewportFrame() &&
@@ -340,7 +341,8 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
           return false;
         }
 
-        if (parentContainingBlock == positionedContainingBlock) {
+        if (parentContainingBlock->FirstContinuation() ==
+            positionedContainingBlock->FirstContinuation()) {
           return !it->IsAbsolutelyPositioned() ||
                  nsLayoutUtils::CompareTreePosition(it, aPositionedFrame,
                                                     aPositionedFrameAncestors,
@@ -596,7 +598,7 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
   auto rect = [&]() -> Maybe<nsRect> {
     if (aCBRectIsvalid) {
       const nsRect result =
-          nsLayoutUtils::GetCombinedFragmentRects(aAnchor, true);
+          nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect;
       const auto offset =
           aAnchor->GetOffsetToIgnoringScrolling(aAbsoluteContainingBlock);
       
@@ -615,13 +617,14 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
 
     if (aAnchor == containerChild) {
       
-      return Some(nsLayoutUtils::GetCombinedFragmentRects(aAnchor, false));
+      return Some(nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect +
+                  aAnchor->GetPositionIgnoringScrolling());
     }
 
     
     
     const nsRect rectToContainerChild =
-        nsLayoutUtils::GetCombinedFragmentRects(aAnchor, true);
+        nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect;
     const auto offset = aAnchor->GetOffsetToIgnoringScrolling(containerChild);
     return Some(rectToContainerChild + offset + containerChild->GetPosition());
   }();
@@ -754,7 +757,8 @@ Maybe<nsSize> AnchorPositioningUtils::ResolveAnchorPosSize(
   if (!anchor) {
     return Nothing{};
   }
-  const auto size = nsLayoutUtils::GetCombinedFragmentRects(anchor).Size();
+  const auto size =
+      nsLayoutUtils::GetCombinedFragmentRects(anchor).mRect.Size();
   if (entry) {
     *entry =
         Some(AnchorPosResolutionData{size, Nothing{}, aAnchorName.mTreeScope});
@@ -1371,6 +1375,153 @@ bool AnchorPositioningUtils::TriggerLayoutOnOverflow(PresShell* aPresShell,
   }
   oct.Flush();
   return didLayoutPositionedItems;
+}
+
+static const nsIFrame* GetMatchingContainingBlock(
+    const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
+  MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+      aContainingBlock, aAnchor));
+  if ((!aContainingBlock->GetPrevContinuation() &&
+       !aContainingBlock->GetNextContinuation()) ||
+      nsLayoutUtils::IsProperAncestorFrame(aContainingBlock, aAnchor)) {
+    return aContainingBlock;
+  }
+  for (const auto* f = aContainingBlock->GetPrevContinuation(); f;
+       f = f->GetPrevContinuation()) {
+    if (nsLayoutUtils::IsProperAncestorFrame(f, aAnchor)) {
+      return f;
+    }
+  }
+  for (const auto* f = aContainingBlock->GetNextContinuation(); f;
+       f = f->GetNextContinuation()) {
+    if (nsLayoutUtils::IsProperAncestorFrame(f, aAnchor)) {
+      return f;
+    }
+  }
+  return nullptr;
+}
+
+static nsSize InkOverflowSize(const nsIFrame* aFrame) {
+  return aFrame->InkOverflowRectRelativeToSelf().Size();
+}
+
+static nscoord BSizeFromPhysicalSize(const nsSize& aSize,
+                                     WritingMode aWritingMode) {
+  return LogicalSize{aWritingMode, aSize}.BSize(aWritingMode);
+}
+
+nsRect AnchorPositioningUtils::ReassembleAnchorRect(
+    const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
+  if (!aAnchor->PresContext()->FragmentainerAwarePositioningEnabled()) {
+    
+    
+    
+    
+    return nsLayoutUtils::GetCombinedFragmentRects(aAnchor, nullptr).mRect +
+           aAnchor->GetOffsetToIgnoringScrolling(aContainingBlock);
+  }
+  aContainingBlock = GetMatchingContainingBlock(aAnchor, aContainingBlock);
+  if (!aContainingBlock) {
+    MOZ_ASSERT_UNREACHABLE("No matching containing block?");
+    return nsRect{};
+  }
+  
+  const auto fragRect =
+      nsLayoutUtils::GetCombinedFragmentRects(aAnchor, aContainingBlock);
+  
+  
+  
+  
+  
+  
+  if ((!fragRect.mSkippedPrevContinuation &&
+       !fragRect.mSkippedNextContinuation) ||
+      aContainingBlock->IsInlineOutside()) {
+    return fragRect.mRect;
+  }
+  
+  
+  const auto cbwm = aContainingBlock->GetWritingMode();
+  
+  const auto cbSize = InkOverflowSize(aContainingBlock);
+  LogicalRect unfragmentedAnchorRect{cbwm, fragRect.mRect, cbSize};
+  LogicalSize relevantCbSize{cbwm, cbSize};
+
+  const auto* prev = fragRect.mSkippedPrevContinuation;
+  const auto* prevCb = aContainingBlock->GetPrevContinuation();
+  while (prev) {
+    MOZ_ASSERT(unfragmentedAnchorRect.BStart(cbwm) == 0,
+               "Prev continuation exists but this continuation didn't hit "
+               "block-start?");
+    MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrame(prevCb, prev));
+
+    const auto r = nsLayoutUtils::GetCombinedFragmentRects(prev, prevCb);
+    const auto inkOverflowSize = InkOverflowSize(prevCb);
+    const auto prevCBBSize = BSizeFromPhysicalSize(inkOverflowSize, cbwm);
+
+    relevantCbSize.BSize(cbwm) += prevCBBSize;
+    LogicalRect rect{cbwm, r.mRect, inkOverflowSize};
+    MOZ_ASSERT(rect.BEnd(cbwm) == prevCBBSize,
+               "Prev contination doesn't end at block-end?");
+
+    
+    
+    unfragmentedAnchorRect = LogicalRect{
+        cbwm, rect.Origin(cbwm),
+        LogicalSize{
+            cbwm,
+            std::max(unfragmentedAnchorRect.ISize(cbwm), rect.ISize(cbwm)),
+            unfragmentedAnchorRect.BSize(cbwm) + rect.BSize(cbwm)}};
+
+    prev = r.mSkippedPrevContinuation;
+    prevCb = prevCb->GetPrevContinuation();
+  }
+
+  
+  
+  while (prevCb) {
+    const auto prevCbBOffset =
+        BSizeFromPhysicalSize(InkOverflowSize(prevCb), cbwm);
+    relevantCbSize.BSize(cbwm) += prevCbBOffset;
+    unfragmentedAnchorRect.MoveBy(cbwm, LogicalPoint{cbwm, 0, prevCbBOffset});
+
+    prevCb = prevCb->GetPrevContinuation();
+  }
+
+  
+  const auto* next = fragRect.mSkippedNextContinuation;
+  const auto* nextCb = aContainingBlock->GetNextContinuation();
+  while (next) {
+    MOZ_ASSERT(
+        unfragmentedAnchorRect.BEnd(cbwm) == relevantCbSize.BSize(cbwm),
+        "Next continuation exists this continuation didn't hit block-end?");
+    MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrame(nextCb, next));
+    const auto r = nsLayoutUtils::GetCombinedFragmentRects(next, nextCb);
+
+    const auto inkOverflowSize = InkOverflowSize(nextCb);
+    relevantCbSize.BSize(cbwm) += BSizeFromPhysicalSize(inkOverflowSize, cbwm);
+    LogicalRect rect{cbwm, r.mRect, inkOverflowSize};
+    MOZ_ASSERT(rect.BStart(cbwm) == 0,
+               "Next continuation doesn't start at block-start?");
+
+    
+    
+    unfragmentedAnchorRect = LogicalRect{
+        cbwm, unfragmentedAnchorRect.Origin(cbwm),
+        LogicalSize{
+            cbwm,
+            std::max(unfragmentedAnchorRect.ISize(cbwm), rect.ISize(cbwm)),
+            unfragmentedAnchorRect.BSize(cbwm) + rect.BSize(cbwm)}};
+
+    next = r.mSkippedNextContinuation;
+    nextCb = nextCb->GetNextContinuation();
+  }
+
+  
+  
+
+  return unfragmentedAnchorRect.GetPhysicalRect(
+      cbwm, relevantCbSize.GetPhysicalSize(cbwm));
 }
 
 }  
