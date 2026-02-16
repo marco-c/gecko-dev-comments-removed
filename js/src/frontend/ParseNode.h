@@ -142,6 +142,7 @@ class FunctionBox;
   F(LexicalScope, LexicalScopeNode)                                       \
   F(LetDecl, DeclarationListNode)                                         \
   F(ImportDecl, BinaryNode)                                               \
+  IF_SOURCE_PHASE_IMPORTS(F(ImportSourceDecl, BinaryNode))                \
   F(ImportSpecList, ListNode)                                             \
   F(ImportSpec, BinaryNode)                                               \
   F(ImportNamespaceSpec, UnaryNode)                                       \
@@ -274,6 +275,18 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
   return ParseNodeKind::TypeOfNameExpr <= kind &&
          kind <= ParseNodeKind::TypeOfExpr;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
