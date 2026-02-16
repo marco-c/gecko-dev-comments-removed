@@ -1587,12 +1587,16 @@ bool JSStructuredCloneWriter::writeSharedWasmMemory(HandleObject obj) {
 
   Rooted<WasmMemoryObject*> memoryObj(context(),
                                       &obj->unwrapAs<WasmMemoryObject>());
-  Rooted<SharedArrayBufferObject*> sab(
-      context(), &memoryObj->buffer().as<SharedArrayBufferObject>());
 
-  return out.writePair(SCTAG_SHARED_WASM_MEMORY_OBJECT, 0) &&
-         out.writePair(SCTAG_BOOLEAN, memoryObj->isHuge()) &&
-         writeSharedArrayBuffer(sab);
+  if (!out.writePair(SCTAG_SHARED_WASM_MEMORY_OBJECT, 0) ||
+      !out.writePair(SCTAG_BOOLEAN, memoryObj->isHuge())) {
+    return false;
+  }
+
+  
+  MOZ_RELEASE_ASSERT(memoryObj->buffer().is<SharedArrayBufferObject>());
+  RootedValue bufferVal(context(), ObjectValue(memoryObj->buffer()));
+  return startWrite(bufferVal);
 }
 
 bool JSStructuredCloneWriter::startObject(HandleObject obj, bool* backref) {
@@ -2975,6 +2979,12 @@ bool JSStructuredCloneReader::readSharedArrayBuffer(StructuredDataType type,
 
   if (callbacks && callbacks->sabCloned &&
       !callbacks->sabCloned(context(), true, closure)) {
+    return false;
+  }
+
+  
+  
+  if (!allObjs.append(ObjectValue(*obj))) {
     return false;
   }
 
