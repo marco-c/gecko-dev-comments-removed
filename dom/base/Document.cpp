@@ -16225,10 +16225,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     }
   });
 
-  PopoverData* popoverData = popoverHTMLEl->GetPopoverData();
-
   
-  if (popoverData &&
+  if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData();
+      popoverData &&
       popoverData->GetOpenedInMode() == PopoverAttributeState::Auto) {
     
     
@@ -16258,9 +16257,6 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
           "popoverHTMLEl should be on top of auto popover list");
     }
   }
-
-  auto* data = popoverHTMLEl->GetPopoverData();
-  MOZ_ASSERT(data, "Should have popover data");
 
   
   
@@ -16292,7 +16288,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     
 
     
-    data->SetInvoker(nullptr);
+    PopoverData* popoverData = popoverHTMLEl->GetPopoverData();
+    MOZ_ASSERT(popoverData, "Should have popover data");
+    popoverData->SetInvoker(nullptr);
   }
 
   
@@ -16300,16 +16298,17 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   
   RemovePopoverFromTopLayer(aPopover);
 
-  
-  data->SetInvoker(nullptr);
+  if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
+    
+    popoverData->SetInvoker(nullptr);
 
-  
-  popoverHTMLEl->GetPopoverData()->SetOpenedInMode(PopoverAttributeState::None);
+    
+    popoverData->SetOpenedInMode(PopoverAttributeState::None);
 
-  
-  popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
-  popoverHTMLEl->GetPopoverData()->SetPopoverVisibilityState(
-      PopoverVisibilityState::Hidden);
+    
+    popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
+    popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Hidden);
+  }
 
   
   
