@@ -88,6 +88,12 @@ class LogModule {
   
 
 
+
+  static bool GetLogJSStacks();
+
+  
+
+
   bool ShouldLog(LogLevel aLevel) const { return mLevel >= aLevel; }
 
   
