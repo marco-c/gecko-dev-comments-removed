@@ -157,6 +157,9 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
       const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize& aSize,
       const WindowKind& aWindowKind) override;
   bool DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor) override;
+  
+  
+  void EnsureWebRenderBridgeParentInitialized() override {}
 
   void ObserveLayersUpdate(LayersId aLayersId, bool aActive) override;
 

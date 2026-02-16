@@ -1085,51 +1085,35 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
     mOMTASampler->SetWebRenderWindowId(windowId);
   }
 
-  nsCString error("FEATURE_FAILURE_WEBRENDER_INITIALIZE_UNSPECIFIED");
-  RefPtr<wr::WebRenderAPI> api = wr::WebRenderAPI::Create(
-      this, std::move(widget), windowId, aSize, aWindowKind, error);
-  if (!api) {
-    mWrBridge =
-        WebRenderBridgeParent::CreateDestroyed(aPipelineId, std::move(error));
-    mWrBridge.get()->AddRef();  
-    return mWrBridge;
-  }
+  const RefPtr<nsIThread> renderThread = wr::RenderThread::GetRenderThread();
+  wr::WebRenderAPI::Create(this, std::move(widget), windowId, aSize,
+                           aWindowKind)
+      ->Then(
+          renderThread, __func__,
+          [self = RefPtr{this}](
+              wr::WebRenderAPI::CreatePromise::ResolveOrRejectValue&& aResult) {
+            
+            
+            
+            MonitorAutoLock lock(self->mWrApiResultMonitor);
+            if (aResult.IsResolve()) {
+              MOZ_RELEASE_ASSERT(aResult.ResolveValue());
+              self->mWrApiResult.emplace(aResult.ResolveValue());
+            } else {
+              self->mWrApiResult.emplace(Err(aResult.RejectValue()));
+            }
+            lock.NotifyAll();
+            return MozPromise<Ok, Ok, true>::CreateAndResolve(Ok{}, __func__);
+          })
+      ->Then(GetCurrentSerialEventTarget(), __func__, [self = RefPtr{this}]() {
+        
+        
+        self->EnsureWebRenderBridgeParentInitialized();
+      });
 
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (!mPaused && mWidget->GetCompositorOptions().UseSoftwareWebRender() &&
-      mWidget->GetCompositorOptions().AllowSoftwareWebRenderOGL()) {
-    api->Resume();
-  }
-#endif
-
-  wr::TransactionBuilder txn(api);
-  txn.SetRootPipeline(aPipelineId);
-  api->SendTransaction(txn);
-
-  bool useCompositorWnd = false;
-#ifdef XP_WIN
-  
-  if (mWidget->AsWindows()) {
-    useCompositorWnd = !!mWidget->AsWindows()->GetCompositorHwnd();
-  }
-#endif
-  mAsyncImageManager =
-      new AsyncImagePipelineManager(api->Clone(), useCompositorWnd);
-  RefPtr<AsyncImagePipelineManager> asyncMgr = mAsyncImageManager;
   mWrBridge = new WebRenderBridgeParent(this, aPipelineId, mWidget, mVsyncRate);
-  mWrBridge->FinishInitialization(std::move(api), std::move(asyncMgr));
   mWrBridge.get()->AddRef();  
-
-  mAsyncImageManager->SetTextureFactoryIdentifier(
-      mWrBridge->GetTextureFactoryIdentifier());
-
-  mCompositorScheduler = mWrBridge->CompositorScheduler();
-  MOZ_ASSERT(mCompositorScheduler);
-  {  
+  {                           
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
     MOZ_ASSERT(sIndirectLayerTrees[mRootLayerTreeID].mWrBridge == nullptr);
     sIndirectLayerTrees[mRootLayerTreeID].mWrBridge = mWrBridge;
@@ -1149,6 +1133,71 @@ bool CompositorBridgeParent::DeallocPWebRenderBridgeParent(
   }
   parent->Release();  
   return true;
+}
+
+void CompositorBridgeParent::EnsureWebRenderBridgeParentInitialized() {
+  MOZ_ASSERT(NS_IsInCompositorThread());
+
+  if (mWrBridgeInitialized) {
+    return;
+  }
+  mWrBridgeInitialized = true;
+
+  
+  mozilla::Result<RefPtr<wr::WebRenderAPI>, nsCString> result = [this]() {
+    MonitorAutoLock lock(mWrApiResultMonitor);
+    while (!mWrApiResult) {
+      lock.Wait();
+    }
+    return mWrApiResult.extract();
+  }();
+
+  
+  
+  
+  if (!mWrBridge) {
+    return;
+  }
+
+  if (result.isErr()) {
+    mWrBridge->FinishInitializationError(result.unwrapErr());
+    return;
+  }
+
+  RefPtr<wr::WebRenderAPI> api = result.unwrap();
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!mPaused && mWidget->GetCompositorOptions().UseSoftwareWebRender() &&
+      mWidget->GetCompositorOptions().AllowSoftwareWebRenderOGL()) {
+    api->Resume();
+  }
+#endif
+
+  wr::TransactionBuilder txn(api);
+  txn.SetRootPipeline(mWrBridge->PipelineId());
+  api->SendTransaction(txn);
+
+  bool useCompositorWnd = false;
+#ifdef XP_WIN
+  
+  if (mWidget->AsWindows()) {
+    useCompositorWnd = !!mWidget->AsWindows()->GetCompositorHwnd();
+  }
+#endif
+  mAsyncImageManager =
+      new AsyncImagePipelineManager(api->Clone(), useCompositorWnd);
+  RefPtr<AsyncImagePipelineManager> asyncMgr = mAsyncImageManager;
+
+  mWrBridge->FinishInitialization(std::move(api), std::move(asyncMgr));
+
+  mAsyncImageManager->SetTextureFactoryIdentifier(
+      mWrBridge->GetTextureFactoryIdentifier());
+
+  mCompositorScheduler = mWrBridge->CompositorScheduler();
+  MOZ_ASSERT(mCompositorScheduler);
 }
 
 void CompositorBridgeParent::NotifyMemoryPressure() {
