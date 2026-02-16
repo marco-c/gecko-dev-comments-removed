@@ -219,26 +219,6 @@ class NumberFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_FormatNumber(JSContext* cx, unsigned argc,
-                                            Value* vp);
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_FormatNumberRange(JSContext* cx, unsigned argc,
-                                                 Value* vp);
-
 namespace intl {
 
 
