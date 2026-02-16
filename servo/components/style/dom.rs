@@ -1030,7 +1030,7 @@ impl<'a> AttributeTracker<'a> {
 
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DummyAttributeProvider;
+struct DummyAttributeProvider;
 
 impl AttributeProvider for DummyAttributeProvider {
     fn get_attr(&self, _attr: &LocalName) -> Option<String> {
