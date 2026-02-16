@@ -386,7 +386,7 @@ bool mozilla::PrintfTarget::cvt_s(const char* s, int width, int prec,
   }
 
   
-  int slen = int(strnlen(s, prec));
+  int slen = int(strlen(s));
   if (0 < prec && prec < slen) {
     slen = prec;
   }
