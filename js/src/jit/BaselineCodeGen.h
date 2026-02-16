@@ -17,6 +17,7 @@
 namespace js {
 
 class NamedLambdaObject;
+class SourceLocationIterator;  
 
 namespace jit {
 
@@ -324,6 +325,9 @@ class BaselineCompilerHandler {
   NamedLambdaObject* namedLambdaTemplate_;
 
   
+  mutable mozilla::Maybe<SourceLocationIterator> srcLocIter_;
+
+  
   uint32_t icEntryIndex_;
 
   uint32_t baseWarmUpThreshold_;
@@ -334,6 +338,8 @@ class BaselineCompilerHandler {
   bool compilingOffThread_ = false;
 
   bool needsEnvAllocSite_ = false;
+
+  const SourceLocationIterator& sourceLocationIterAtCurrentPc() const;
 
  public:
   using FrameInfoT = CompilerFrameInfo;
@@ -349,6 +355,11 @@ class BaselineCompilerHandler {
   jsbytecode* maybePC() const { return pc_; }
 
   void moveToNextPC() { pc_ += GetBytecodeLength(pc_); }
+
+  
+  unsigned line() const;
+  JS::LimitedColumnNumberOneOrigin column() const;
+
   Label* labelOf(jsbytecode* pc) { return &labels_[script_->pcToOffset(pc)]; }
 
   bool isDefinitelyLastOp() const { return pc_ == script_->lastPC(); }
