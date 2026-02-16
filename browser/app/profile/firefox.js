@@ -3594,6 +3594,8 @@ pref("browser.ipProtection.log", false);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("browser.ipProtection.added", false);
 
+pref("browser.ipProtection.hasUpgraded", false);
+
 pref("browser.ipProtection.bandwidth.enabled", false);
 
 pref("browser.ipProtection.egressLocationEnabled", false);
