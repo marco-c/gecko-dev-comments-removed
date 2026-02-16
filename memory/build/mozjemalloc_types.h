@@ -113,6 +113,8 @@ typedef struct {
   size_t large_max;          
   size_t chunksize;          
   size_t page_size;          
+                             
+  size_t real_page_size;     
   size_t dirty_max;          
 
   
