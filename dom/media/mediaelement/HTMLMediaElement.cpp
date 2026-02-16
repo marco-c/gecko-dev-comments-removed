@@ -5122,7 +5122,8 @@ void HTMLMediaElement::UpdatePlaybackPseudoClasses() {
        this, mPaused.Ref(), mNetworkState, mReadyState.Ref(),
        mIsCurrentlyStalled));
   AutoStateChangeNotifier notifier(*this, true);
-  RemoveStatesSilently(ElementState::PAUSED | ElementState::BUFFERING | ElementState::STALLED);
+  RemoveStatesSilently(ElementState::PAUSED | ElementState::BUFFERING |
+                       ElementState::STALLED);
   
   
   
