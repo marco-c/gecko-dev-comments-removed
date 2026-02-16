@@ -3,6 +3,7 @@
 
 
 import json
+import os
 
 from ..reader import LogHandler
 
@@ -13,10 +14,18 @@ class ResourceHandler(LogHandler):
     def __init__(self, command_context, **kwargs):
         super().__init__(**kwargs)
 
+        from mozbuild.util import construct_log_filename
         from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
+        
+        handler = getattr(command_context, "handler", None)
+        command_name = handler.name if handler else "test"
+        log_subdir = os.path.join("logs", command_name)
+
+        
+        command_context._ensure_state_subdir_exists(log_subdir)
         self.build_resources_profile_path = command_context._get_state_filename(
-            "profile_build_resources.json"
+            construct_log_filename("profile"), subdir=log_subdir
         )
         self.resources = SystemResourceMonitor(
             poll_interval=0.1,
