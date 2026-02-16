@@ -37,6 +37,19 @@ async function installAndStartExtension() {
   return extension;
 }
 
+add_task(async function test_default_pref_value() {
+  
+  
+  
+  is(
+    Services.prefs.getBoolPref(
+      "dom.keyboardevent.init_key_event.enabled_in_addons"
+    ),
+    false,
+    "dom.keyboardevent.init_key_event.enabled_in_addons defaults to false"
+  );
+});
+
 add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.keyboardevent.init_key_event.enabled_in_addons", true]],
