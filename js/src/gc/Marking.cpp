@@ -2406,6 +2406,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
   
   
   
+
   if (!isGCMarking()) {
     return IncrementalProgress::Finished;
   }
@@ -2413,8 +2414,8 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
   for (auto r = gcEphemeronEdges().all(); !r.empty(); r.popFront()) {
     Cell* src = r.front().key();
     CellColor srcColor = gc::detail::GetEffectiveColor(marker, src);
-    auto& edges = r.front().value();
 
+    auto& edges = r.front().value();
     size_t numEdges = edges.length();
     if (IsMarked(srcColor) && edges.length() > 0) {
       marker->markEphemeronEdges(edges, AsMarkColor(srcColor));

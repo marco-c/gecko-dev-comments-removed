@@ -192,19 +192,6 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
   gc::Cell* keyCell = gc::ToMarkable(key);
   MOZ_ASSERT(keyCell);
 
-  bool keyIsSymbol = gc::detail::IsSymbol(key.get());
-  MOZ_ASSERT(keyIsSymbol == (keyCell->getTraceKind() == JS::TraceKind::Symbol));
-  if (keyIsSymbol) {
-    
-    
-    
-    auto* sym = static_cast<JS::Symbol*>(keyCell);
-    if (marker->runtime()->gc.isSymbolReferencedByUncollectedZone(
-            sym, marker->markColor())) {
-      TraceEdge(trc, &key, "WeakMap symbol key");
-    }
-  }
-
   bool marked = false;
   CellColor markColor = AsCellColor(marker->markColor());
   CellColor keyColor = gc::detail::GetEffectiveColor(marker, key.get());
