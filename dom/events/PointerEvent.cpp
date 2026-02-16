@@ -36,6 +36,10 @@ PointerEvent::PointerEvent(EventTarget* aOwner, nsPresContext* aPresContext,
     }
     
     
+    if (aEvent->mAngle) {
+      mAltitudeAngle.emplace(aEvent->mAngle->mAltitude);
+      mAzimuthAngle.emplace(aEvent->mAngle->mAzimuth);
+    }
   } else {
     mEventIsInternal = true;
     mEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);

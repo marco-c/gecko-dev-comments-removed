@@ -889,6 +889,8 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
 
 
 
+
+
 function synthesizeTouch(
   aTarget,
   aOffsetX,
@@ -1028,6 +1030,14 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
   const tiltXArray = getSameLengthArrayOfEventProperty("tiltX", 0);
   const tiltYArray = getSameLengthArrayOfEventProperty("tiltY", 0);
   const twistArray = getSameLengthArrayOfEventProperty("twist", 0);
+  const altitudeAngleArray = getSameLengthArrayOfEventProperty(
+    "altitudeAngle",
+    undefined
+  );
+  const azimuthAngleArray = getSameLengthArrayOfEventProperty(
+    "azimuthAngle",
+    undefined
+  );
 
   const touches = [];
   for (let i = 0; i < arrayLength; i++) {
@@ -1042,6 +1052,8 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
       tiltX: tiltXArray[i],
       tiltY: tiltYArray[i],
       twist: twistArray[i],
+      altitudeAngle: altitudeAngleArray[i],
+      azimuthAngle: azimuthAngleArray[i],
     });
   }
 
