@@ -74,7 +74,7 @@ nsMathMLmfracFrame::TransmitAutomaticData() {
   if (mEmbellishData.flags.contains(MathMLEmbellishFlag::EmbellishedOperator)) {
     
     
-    mEmbellishData.direction = StretchDirection::Unsupported;
+    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
   }
 
   return NS_OK;

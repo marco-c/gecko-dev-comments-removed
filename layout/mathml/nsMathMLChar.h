@@ -29,20 +29,22 @@ class ComputedStyle;
 }  
 
 
-enum class MathMLStretchFlag : uint8_t {
-  Normal,         
-  Nearer,         
-  Smaller,        
-  Larger,         
-  LargeOperator,  
-  MaxWidth,       
+enum {
+  
+  NS_STRETCH_NONE = 0x00,
+  
+  NS_STRETCH_VARIABLE_MASK = 0x0F,
+  NS_STRETCH_NORMAL = 0x01,   
+  NS_STRETCH_NEARER = 0x02,   
+  NS_STRETCH_SMALLER = 0x04,  
+  NS_STRETCH_LARGER = 0x08,   
+  
+  NS_STRETCH_LARGEOP = 0x10,
+
+  
+  
+  NS_STRETCH_MAXWIDTH = 0x20
 };
-using MathMLStretchFlags = mozilla::EnumSet<MathMLStretchFlag>;
-constexpr MathMLStretchFlags kMathMLStretchVariableSet(
-    MathMLStretchFlag::Normal, MathMLStretchFlag::Nearer,
-    MathMLStretchFlag::Smaller, MathMLStretchFlag::Larger);
-constexpr MathMLStretchFlags kMathMLStretchSet =
-    kMathMLStretchVariableSet + MathMLStretchFlag::LargeOperator;
 
 
 
@@ -71,7 +73,7 @@ class nsMathMLChar {
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
   
-  nsMathMLChar() : mDirection(StretchDirection::Default) {
+  nsMathMLChar() : mDirection(NS_STRETCH_DIRECTION_DEFAULT) {
     MOZ_COUNT_CTOR(nsMathMLChar);
     mComputedStyle = nullptr;
     mUnscaledAscent = 0;
@@ -94,10 +96,11 @@ class nsMathMLChar {
   
   
   nsresult Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
-                   float aFontSizeInflation, StretchDirection aStretchDirection,
+                   float aFontSizeInflation,
+                   nsStretchDirection aStretchDirection,
                    const nsBoundingMetrics& aContainerSize,
                    nsBoundingMetrics& aDesiredStretchSize,
-                   MathMLStretchFlags aStretchFlags, bool aRTL);
+                   uint32_t aStretchHint, bool aRTL);
 
   void SetData(nsString& aData);
 
@@ -105,7 +108,7 @@ class nsMathMLChar {
 
   int32_t Length() { return mData.Length(); }
 
-  StretchDirection GetStretchDirection() { return mDirection; }
+  nsStretchDirection GetStretchDirection() { return mDirection; }
 
   
   
@@ -120,9 +123,9 @@ class nsMathMLChar {
   
   
   
-  nscoord GetMaxWidth(
-      nsIFrame* aForFrame, DrawTarget* aDrawTarget, float aFontSizeInflation,
-      MathMLStretchFlags aStretchFlags = MathMLStretchFlag::Normal);
+  nscoord GetMaxWidth(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
+                      float aFontSizeInflation,
+                      uint32_t aStretchHint = NS_STRETCH_NORMAL);
 
   
   
@@ -155,7 +158,7 @@ class nsMathMLChar {
 
  private:
   nsRect mRect;
-  StretchDirection mDirection;
+  nsStretchDirection mDirection;
   nsBoundingMetrics mBoundingMetrics;
   RefPtr<mozilla::ComputedStyle> mComputedStyle;
   
@@ -172,7 +175,7 @@ class nsMathMLChar {
   
   
   
-  enum class DrawingMethod : uint8_t { Normal, Variant, Parts };
+  enum class DrawingMethod { Normal, Variant, Parts };
   DrawingMethod mDrawingMethod;
 
   
@@ -204,10 +207,10 @@ class nsMathMLChar {
 
   nsresult StretchInternal(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
                            float aFontSizeInflation,
-                           StretchDirection& aStretchDirection,
+                           nsStretchDirection& aStretchDirection,
                            const nsBoundingMetrics& aContainerSize,
                            nsBoundingMetrics& aDesiredStretchSize,
-                           MathMLStretchFlags aStretchFlags,
+                           uint32_t aStretchHint,
                            float aMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY,
                            bool aMaxSizeIsAbsolute = false);
 

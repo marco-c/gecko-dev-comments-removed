@@ -582,19 +582,19 @@ static void MapAllAttributesIntoCSS(nsMathMLmtableFrame* aTableFrame) {
 
 
 
-enum class TableAlign : uint8_t {
-  Top,
-  Bottom,
-  Center,
-  Baseline,
-  Axis,
+enum eAlign {
+  eAlign_top,
+  eAlign_bottom,
+  eAlign_center,
+  eAlign_baseline,
+  eAlign_axis
 };
 
-static void ParseAlignAttribute(nsString& aValue, TableAlign& aAlign,
+static void ParseAlignAttribute(nsString& aValue, eAlign& aAlign,
                                 int32_t& aRowIndex) {
   
   aRowIndex = 0;
-  aAlign = TableAlign::Axis;
+  aAlign = eAlign_axis;
   int32_t len = 0;
 
   
@@ -603,19 +603,19 @@ static void ParseAlignAttribute(nsString& aValue, TableAlign& aAlign,
 
   if (0 == aValue.Find(u"top")) {
     len = 3;  
-    aAlign = TableAlign::Top;
+    aAlign = eAlign_top;
   } else if (0 == aValue.Find(u"bottom")) {
     len = 6;  
-    aAlign = TableAlign::Bottom;
+    aAlign = eAlign_bottom;
   } else if (0 == aValue.Find(u"center")) {
     len = 6;  
-    aAlign = TableAlign::Center;
+    aAlign = eAlign_center;
   } else if (0 == aValue.Find(u"baseline")) {
     len = 8;  
-    aAlign = TableAlign::Baseline;
+    aAlign = eAlign_baseline;
   } else if (0 == aValue.Find(u"axis")) {
     len = 4;  
-    aAlign = TableAlign::Axis;
+    aAlign = eAlign_axis;
   }
   if (len) {
     nsresult error;
@@ -763,7 +763,7 @@ void nsMathMLmtableWrapperFrame::Reflow(nsPresContext* aPresContext,
 
   
   int32_t rowIndex = 0;
-  TableAlign tableAlign = TableAlign::Axis;
+  eAlign tableAlign = eAlign_axis;
   mContent->AsElement()->GetAttr(nsGkAtoms::align, value);
   if (!value.IsEmpty()) {
     ParseAlignAttribute(value, tableAlign, rowIndex);
@@ -793,16 +793,16 @@ void nsMathMLmtableWrapperFrame::Reflow(nsPresContext* aPresContext,
     }
   }
   switch (tableAlign) {
-    case TableAlign::Top:
+    case eAlign_top:
       aDesiredSize.SetBlockStartAscent(dy);
       break;
-    case TableAlign::Bottom:
+    case eAlign_bottom:
       aDesiredSize.SetBlockStartAscent(dy + blockSize);
       break;
-    case TableAlign::Center:
+    case eAlign_center:
       aDesiredSize.SetBlockStartAscent(dy + blockSize / 2);
       break;
-    case TableAlign::Baseline:
+    case eAlign_baseline:
       if (rowFrame) {
         
         nscoord rowAscent = ((nsTableRowFrame*)rowFrame)->GetMaxCellAscent();
@@ -815,7 +815,8 @@ void nsMathMLmtableWrapperFrame::Reflow(nsPresContext* aPresContext,
       
       aDesiredSize.SetBlockStartAscent(dy + blockSize / 2);
       break;
-    case TableAlign::Axis: {
+    case eAlign_axis:
+    default: {
       
       RefPtr<nsFontMetrics> fm =
           nsLayoutUtils::GetInflatedFontMetricsForFrame(this);

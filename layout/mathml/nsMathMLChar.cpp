@@ -458,7 +458,7 @@ void nsMathMLChar::SetData(nsString& aData) {
   mData = aData;
   
   
-  mDirection = StretchDirection::Unsupported;
+  mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
   mBoundingMetrics = nsBoundingMetrics();
   
   if (1 == mData.Length()) {
@@ -549,21 +549,20 @@ void nsMathMLChar::SetData(nsString& aData) {
 #define NS_MATHML_DELIMITER_FACTOR 0.901f
 #define NS_MATHML_DELIMITER_SHORTFALL_POINTS 5.0f
 
-static bool IsSizeOK(nscoord a, nscoord b, MathMLStretchFlags aStretchFlags) {
+static bool IsSizeOK(nscoord a, nscoord b, uint32_t aHint) {
   
   
   
   
   bool isNormal =
-      (aStretchFlags.contains(MathMLStretchFlag::Normal)) &&
+      (aHint & NS_STRETCH_NORMAL) &&
       Abs<float>(a - b) < (1.0f - NS_MATHML_DELIMITER_FACTOR) * float(b);
 
   
   
   
   bool isNearer = false;
-  if (aStretchFlags.contains(MathMLStretchFlag::Nearer) ||
-      aStretchFlags.contains(MathMLStretchFlag::LargeOperator)) {
+  if (aHint & (NS_STRETCH_NEARER | NS_STRETCH_LARGEOP)) {
     float c = std::max(float(b) * NS_MATHML_DELIMITER_FACTOR,
                        float(b) - nsPresContext::CSSPointsToAppUnits(
                                       NS_MATHML_DELIMITER_SHORTFALL_POINTS));
@@ -572,28 +571,24 @@ static bool IsSizeOK(nscoord a, nscoord b, MathMLStretchFlags aStretchFlags) {
 
   
   
-  bool isSmaller = aStretchFlags.contains(MathMLStretchFlag::Smaller) &&
+  bool isSmaller = (aHint & NS_STRETCH_SMALLER) &&
                    float(a) >= NS_MATHML_DELIMITER_FACTOR * float(b) && a <= b;
 
   
   
-  bool isLarger = (aStretchFlags.contains(MathMLStretchFlag::Larger) ||
-                   aStretchFlags.contains(MathMLStretchFlag::LargeOperator)) &&
-                  a >= b;
+  bool isLarger = (aHint & (NS_STRETCH_LARGER | NS_STRETCH_LARGEOP)) && a >= b;
 
   return (isNormal || isSmaller || isNearer || isLarger);
 }
 
-static bool IsSizeBetter(nscoord a, nscoord olda, nscoord b,
-                         MathMLStretchFlags aStretchFlags) {
+static bool IsSizeBetter(nscoord a, nscoord olda, nscoord b, uint32_t aHint) {
   if (0 == olda) {
     return true;
   }
-  if (aStretchFlags.contains(MathMLStretchFlag::Larger) ||
-      aStretchFlags.contains(MathMLStretchFlag::LargeOperator)) {
+  if (aHint & (NS_STRETCH_LARGER | NS_STRETCH_LARGEOP)) {
     return (a >= olda) ? (olda < b) : (a >= b);
   }
-  if (aStretchFlags.contains(MathMLStretchFlag::Smaller)) {
+  if (aHint & NS_STRETCH_SMALLER) {
     return (a <= olda) ? (olda > b) : (a <= b);
   }
 
@@ -716,8 +711,8 @@ class nsMathMLChar::StretchEnumContext {
  public:
   StretchEnumContext(nsMathMLChar* aChar, nsPresContext* aPresContext,
                      DrawTarget* aDrawTarget, float aFontSizeInflation,
-                     StretchDirection aStretchDirection, nscoord aTargetSize,
-                     MathMLStretchFlags aStretchFlags,
+                     nsStretchDirection aStretchDirection, nscoord aTargetSize,
+                     uint32_t aStretchHint,
                      nsBoundingMetrics& aStretchedMetrics,
                      const StyleFontFamilyList& aFamilyList, bool& aGlyphFound)
       : mChar(aChar),
@@ -726,7 +721,7 @@ class nsMathMLChar::StretchEnumContext {
         mFontSizeInflation(aFontSizeInflation),
         mDirection(aStretchDirection),
         mTargetSize(aTargetSize),
-        mStretchFlags(aStretchFlags),
+        mStretchHint(aStretchHint),
         mBoundingMetrics(aStretchedMetrics),
         mFamilyList(aFamilyList),
         mTryVariants(true),
@@ -746,9 +741,9 @@ class nsMathMLChar::StretchEnumContext {
   nsPresContext* mPresContext;
   DrawTarget* mDrawTarget;
   float mFontSizeInflation;
-  const StretchDirection mDirection;
+  const nsStretchDirection mDirection;
   const nscoord mTargetSize;
-  const MathMLStretchFlags mStretchFlags;
+  const uint32_t mStretchHint;
   nsBoundingMetrics& mBoundingMetrics;
   
   const StyleFontFamilyList& mFamilyList;
@@ -773,13 +768,12 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
   nsFont font = sc->StyleFont()->mFont;
   NormalizeDefaultFont(font, mFontSizeInflation);
 
-  bool isVertical = (mDirection == StretchDirection::Vertical);
+  bool isVertical = (mDirection == NS_STRETCH_DIRECTION_VERTICAL);
   nscoord oneDevPixel = mPresContext->AppUnitsPerDevPixel();
   char16_t uchar = mChar->mData[0];
-  bool largeop = mStretchFlags.contains(MathMLStretchFlag::LargeOperator);
-  bool largeopOnly =
-      largeop && (mStretchFlags & kMathMLStretchVariableSet).isEmpty();
-  bool maxWidth = mStretchFlags.contains(MathMLStretchFlag::MaxWidth);
+  bool largeop = (NS_STRETCH_LARGEOP & mStretchHint) != 0;
+  bool largeopOnly = largeop && (NS_STRETCH_VARIABLE_MASK & mStretchHint) == 0;
+  bool maxWidth = (NS_STRETCH_MAXWIDTH & mStretchHint) != 0;
 
   nscoord bestSize =
       isVertical ? mBoundingMetrics.ascent + mBoundingMetrics.descent
@@ -830,7 +824,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
         isVertical ? bm.ascent + bm.descent : bm.rightBearing - bm.leftBearing;
 
     if (largeopOnly ||
-        IsSizeBetter(charSize, bestSize, mTargetSize, mStretchFlags)) {
+        IsSizeBetter(charSize, bestSize, mTargetSize, mStretchHint)) {
       mGlyphFound = true;
       if (maxWidth) {
         
@@ -883,7 +877,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
   }
 
   return haveBetter &&
-         (largeopOnly || IsSizeOK(bestSize, mTargetSize, mStretchFlags));
+         (largeopOnly || IsSizeOK(bestSize, mTargetSize, mStretchHint));
 }
 
 
@@ -902,10 +896,10 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
   nsBoundingMetrics bmdata[4];
   nscoord sizedata[4];
 
-  bool isVertical = (mDirection == StretchDirection::Vertical);
+  bool isVertical = (mDirection == NS_STRETCH_DIRECTION_VERTICAL);
   nscoord oneDevPixel = mPresContext->AppUnitsPerDevPixel();
   char16_t uchar = mChar->mData[0];
-  bool maxWidth = mStretchFlags.contains(MathMLStretchFlag::MaxWidth);
+  bool maxWidth = (NS_STRETCH_MAXWIDTH & mStretchHint) != 0;
   if (!aGlyphTable->HasPartsOf(mDrawTarget, oneDevPixel, *aFontGroup, uchar,
                                isVertical)) {
     return false;  
@@ -971,7 +965,7 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
       isVertical ? mBoundingMetrics.ascent + mBoundingMetrics.descent
                  : mBoundingMetrics.rightBearing - mBoundingMetrics.leftBearing;
 
-  if (!IsSizeBetter(computedSize, currentSize, mTargetSize, mStretchFlags)) {
+  if (!IsSizeBetter(computedSize, currentSize, mTargetSize, mStretchHint)) {
 #ifdef NOISY_SEARCH
     printf("    Font %s Rejected!\n",
            NS_LossyConvertUTF16toASCII(fontName).get());
@@ -1065,7 +1059,7 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     mChar->mBmData[i] = bmdata[i];
   }
 
-  return IsSizeOK(computedSize, mTargetSize, mStretchFlags);
+  return IsSizeOK(computedSize, mTargetSize, mStretchHint);
 }
 
 
@@ -1163,9 +1157,9 @@ static void InsertMathFallbacks(StyleFontFamilyList& aFamilyList,
 
 nsresult nsMathMLChar::StretchInternal(
     nsIFrame* aForFrame, DrawTarget* aDrawTarget, float aFontSizeInflation,
-    StretchDirection& aStretchDirection,
+    nsStretchDirection& aStretchDirection,
     const nsBoundingMetrics& aContainerSize,
-    nsBoundingMetrics& aDesiredStretchSize, MathMLStretchFlags aStretchFlags,
+    nsBoundingMetrics& aDesiredStretchSize, uint32_t aStretchHint,
     
     
     float aMaxSize, bool aMaxSizeIsAbsolute) {
@@ -1174,7 +1168,7 @@ nsresult nsMathMLChar::StretchInternal(
   
   
   
-  StretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
+  nsStretchDirection direction = nsMathMLOperators::GetStretchyDirection(mData);
 
   
   
@@ -1213,7 +1207,7 @@ nsresult nsMathMLChar::StretchInternal(
       presContext->MissingFontRecorder());
   aDesiredStretchSize = MeasureTextRun(aDrawTarget, mGlyphs[0].get());
 
-  bool maxWidth = aStretchFlags.contains(MathMLStretchFlag::MaxWidth);
+  bool maxWidth = (NS_STRETCH_MAXWIDTH & aStretchHint) != 0;
   if (!maxWidth) {
     mUnscaledAscent = aDesiredStretchSize.ascent;
   }
@@ -1224,23 +1218,23 @@ nsresult nsMathMLChar::StretchInternal(
 
   
   if ((aStretchDirection != direction &&
-       aStretchDirection != StretchDirection::Default) ||
-      (aStretchFlags - MathMLStretchFlag::MaxWidth).isEmpty()) {
-    mDirection = StretchDirection::Unsupported;
+       aStretchDirection != NS_STRETCH_DIRECTION_DEFAULT) ||
+      (aStretchHint & ~NS_STRETCH_MAXWIDTH) == NS_STRETCH_NONE) {
+    mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
     return NS_OK;
   }
 
   
-  if (aStretchDirection == StretchDirection::Default) {
+  if (aStretchDirection == NS_STRETCH_DIRECTION_DEFAULT) {
     aStretchDirection = direction;
   }
 
   
-  bool largeop = aStretchFlags.contains(MathMLStretchFlag::LargeOperator);
-  bool stretchy = !(aStretchFlags & kMathMLStretchVariableSet).isEmpty();
+  bool largeop = (NS_STRETCH_LARGEOP & aStretchHint) != 0;
+  bool stretchy = (NS_STRETCH_VARIABLE_MASK & aStretchHint) != 0;
   bool largeopOnly = largeop && !stretchy;
 
-  bool isVertical = (direction == StretchDirection::Vertical);
+  bool isVertical = (direction == NS_STRETCH_DIRECTION_VERTICAL);
 
   nscoord targetSize =
       isVertical ? aContainerSize.ascent + aContainerSize.descent
@@ -1253,8 +1247,8 @@ nsresult nsMathMLChar::StretchInternal(
     
     if (stretchy) {
       
-      aStretchFlags -= kMathMLStretchVariableSet;
-      aStretchFlags += MathMLStretchFlag::Smaller;
+      aStretchHint =
+          (aStretchHint & ~NS_STRETCH_VARIABLE_MASK) | NS_STRETCH_SMALLER;
     }
 
     
@@ -1293,7 +1287,7 @@ nsresult nsMathMLChar::StretchInternal(
     
     
     if ((targetSize <= 0) || ((isVertical && charSize >= targetSize) ||
-                              IsSizeOK(charSize, targetSize, aStretchFlags))) {
+                              IsSizeOK(charSize, targetSize, aStretchHint))) {
       done = true;
     }
   }
@@ -1333,7 +1327,7 @@ nsresult nsMathMLChar::StretchInternal(
 #endif
     StretchEnumContext enumData(this, presContext, aDrawTarget,
                                 aFontSizeInflation, aStretchDirection,
-                                targetSize, aStretchFlags, aDesiredStretchSize,
+                                targetSize, aStretchHint, aDesiredStretchSize,
                                 font.family.families, glyphFound);
     enumData.mTryParts = !largeopOnly;
 
@@ -1449,12 +1443,13 @@ nsresult nsMathMLChar::StretchInternal(
 
 nsresult nsMathMLChar::Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
                                float aFontSizeInflation,
-                               StretchDirection aStretchDirection,
+                               nsStretchDirection aStretchDirection,
                                const nsBoundingMetrics& aContainerSize,
                                nsBoundingMetrics& aDesiredStretchSize,
-                               MathMLStretchFlags aStretchFlags, bool aRTL) {
-  NS_ASSERTION((aStretchFlags - kMathMLStretchSet).isEmpty(),
-               "Unexpected stretch flags");
+                               uint32_t aStretchHint, bool aRTL) {
+  NS_ASSERTION(
+      !(aStretchHint & ~(NS_STRETCH_VARIABLE_MASK | NS_STRETCH_LARGEOP)),
+      "Unexpected stretch flags");
 
   mDrawingMethod = DrawingMethod::Normal;
   mMirroringMethod = [&] {
@@ -1475,7 +1470,7 @@ nsresult nsMathMLChar::Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
   mDirection = aStretchDirection;
   nsresult rv =
       StretchInternal(aForFrame, aDrawTarget, aFontSizeInflation, mDirection,
-                      aContainerSize, aDesiredStretchSize, aStretchFlags);
+                      aContainerSize, aDesiredStretchSize, aStretchHint);
 
   
   mBoundingMetrics = aDesiredStretchSize;
@@ -1497,13 +1492,13 @@ nsresult nsMathMLChar::Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
 
 nscoord nsMathMLChar::GetMaxWidth(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
                                   float aFontSizeInflation,
-                                  MathMLStretchFlags aStretchFlags) {
+                                  uint32_t aStretchHint) {
   nsBoundingMetrics bm;
-  StretchDirection direction = StretchDirection::Vertical;
+  nsStretchDirection direction = NS_STRETCH_DIRECTION_VERTICAL;
   const nsBoundingMetrics container;  
 
   StretchInternal(aForFrame, aDrawTarget, aFontSizeInflation, direction,
-                  container, bm, aStretchFlags + MathMLStretchFlag::MaxWidth);
+                  container, bm, aStretchHint | NS_STRETCH_MAXWIDTH);
 
   return std::max(bm.width, bm.rightBearing) - std::min(0, bm.leftBearing);
 }
@@ -1707,9 +1702,9 @@ void nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
       break;
     case DrawingMethod::Parts: {
       
-      if (StretchDirection::Vertical == mDirection) {
+      if (NS_STRETCH_DIRECTION_VERTICAL == mDirection) {
         PaintVertically(presContext, &aRenderingContext, r, fgColor);
-      } else if (StretchDirection::Horizontal == mDirection) {
+      } else if (NS_STRETCH_DIRECTION_HORIZONTAL == mDirection) {
         PaintHorizontally(presContext, &aRenderingContext, r, fgColor);
       }
       break;

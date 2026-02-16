@@ -19,7 +19,7 @@ class ReflowOutput;
 
 
 
-enum class MathMLFrameType : uint8_t {
+enum class MathMLFrameType {
   Ordinary,
   OperatorOrdinary,
   OperatorInvisible,
@@ -148,7 +148,8 @@ class nsIMathMLFrame {
 
   NS_IMETHOD
   Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
-          StretchDirection aStretchDirection, nsBoundingMetrics& aContainerSize,
+          nsStretchDirection aStretchDirection,
+          nsBoundingMetrics& aContainerSize,
           mozilla::ReflowOutput& aDesiredStretchSize) = 0;
 
   
@@ -291,7 +292,7 @@ struct nsEmbellishData {
   nsIFrame* coreFrame = nullptr;
 
   
-  StretchDirection direction = StretchDirection::Unsupported;
+  nsStretchDirection direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
 
   
   
