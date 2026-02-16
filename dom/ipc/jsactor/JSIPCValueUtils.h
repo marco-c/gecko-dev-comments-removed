@@ -58,25 +58,6 @@ class JSIPCValueUtils {
 
   
   
-  class SCDHolder final {
-   public:
-    SCDHolder() = default;
-    ~SCDHolder() = default;
-    friend class JSIPCValueUtils;
-
-   private:
-    nsTArray<UniquePtr<ipc::StructuredCloneData>> mSCDs;
-  };
-
-  
-  
-  
-  
-  [[nodiscard]] static bool PrepareForSending(SCDHolder& aHolder,
-                                              JSIPCValue& aValue);
-
-  
-  
   static void ToJSVal(JSContext* aCx, JSIPCValue&& aIn,
                       JS::MutableHandle<JS::Value> aOut, ErrorResult& aError);
 };

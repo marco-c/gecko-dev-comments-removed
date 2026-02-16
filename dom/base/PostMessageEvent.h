@@ -70,16 +70,10 @@ class PostMessageEvent final : public Runnable {
     mHolder.ref<StructuredCloneHolder>().Write(aCx, aMessage, aTransfer,
                                                aClonePolicy, aError);
   }
-  void UnpackFrom(const ClonedOrErrorMessageData& aMessageData) {
-    if (aMessageData.type() != ClonedOrErrorMessageData::TClonedMessageData) {
-      return;
+  void SetMessageData(ipc::StructuredCloneData* aMessageData) {
+    if (aMessageData) {
+      mHolder.construct<RefPtr<ipc::StructuredCloneData>>(aMessageData);
     }
-
-    mHolder.construct<ipc::StructuredCloneData>();
-    
-    
-    mHolder.ref<ipc::StructuredCloneData>().CopyFromClonedMessageData(
-        aMessageData);
   }
 
   void DispatchToTargetThread(ErrorResult& aError);
@@ -108,7 +102,7 @@ class PostMessageEvent final : public Runnable {
   
   
   
-  MaybeOneOf<StructuredCloneHolder, ipc::StructuredCloneData> mHolder;
+  MaybeOneOf<StructuredCloneHolder, RefPtr<ipc::StructuredCloneData>> mHolder;
   uint64_t mCallerWindowID;
   const Maybe<nsID> mCallerAgentClusterId;
   nsCOMPtr<nsIURI> mCallerURI;
