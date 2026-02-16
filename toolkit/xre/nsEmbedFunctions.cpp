@@ -356,7 +356,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
     if (!exceptionHandlerIsSet) {
       
-      NS_WARNING("Could not setup crash reporting\n");
+      NS_WARNING("Could not setup crash reporting");
     } else {
       
       

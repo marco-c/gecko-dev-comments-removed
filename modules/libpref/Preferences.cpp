@@ -4995,7 +4995,7 @@ struct Internals {
       
       
       
-      NS_WARNING(nsPrintfCString("Pref changed failure: %s\n", aPref).get());
+      NS_WARNING(nsPrintfCString("Pref changed failure: %s", aPref).get());
       MOZ_ASSERT(false);
     }
   }
