@@ -1895,6 +1895,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mForcedHidden = false;
 
+  
+  bool mIsCurrentlyStalled = false;
+
   Visibility mVisibilityState = Visibility::Untracked;
 
   UniquePtr<ErrorSink> mErrorSink;
