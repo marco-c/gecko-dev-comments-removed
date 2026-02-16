@@ -5,7 +5,9 @@
 
 
 #include "mozilla/net/DNSListenerProxy.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsICancelable.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {
@@ -23,14 +25,24 @@ DNSListenerProxy::OnLookupComplete(nsICancelable* aRequest,
   RefPtr<DNSListenerProxy> self = this;
   nsCOMPtr<nsICancelable> request = aRequest;
   nsCOMPtr<nsIDNSRecord> record = aRecord;
-  nsresult rv = mTargetThread->Dispatch(
-      NS_NewRunnableFunction("DNSListenerProxy::OnLookupComplete",
-                             [self, request, record, aStatus]() {
-                               (void)self->mListener->OnLookupComplete(
-                                   request, record, aStatus);
-                               self->mListener = nullptr;
-                             }),
-      NS_DISPATCH_NORMAL);
+
+  nsCOMPtr<nsIRunnable> event = NS_NewRunnableFunction(
+      "DNSListenerProxy::OnLookupComplete", [self, request, record, aStatus]() {
+        (void)self->mListener->OnLookupComplete(request, record, aStatus);
+        self->mListener = nullptr;
+      });
+
+  
+  
+  
+
+  if (StaticPrefs::network_dns_high_priority_dispatch() &&
+      (mTargetThread->GetFeatures() &
+       nsIEventTarget::SUPPORTS_PRIORITIZATION)) {
+    event = new PrioritizableRunnable(event.forget(),
+                                      nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+  }
+  nsresult rv = mTargetThread->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
   if (NS_FAILED(rv)) {
     NS_WARNING("DNSListenerProxy::OnLookupComplete dispatch failed.");
   }
