@@ -302,9 +302,10 @@
         }
       }
 
-      this.#activate();
-      gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
-
+      if (this.hasActiveTab || isSessionRestore) {
+        this.#activate();
+        gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
+      }
       
       
       for (let tab of this.tabs) {
