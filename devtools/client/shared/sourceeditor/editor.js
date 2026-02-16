@@ -1584,7 +1584,9 @@ class Editor extends EventEmitter {
 
 
 
-  setGutterEventListeners(domEventHandlers) {
+
+
+  enableGutter(domEventHandlers = {}) {
     const cm = editors.get(this);
     const {
       codemirrorView: { lineNumbers },
@@ -1619,6 +1621,19 @@ class Editor extends EventEmitter {
             domEventHandlers: this.#gutterDOMEventHandlers,
           })
         ),
+      ],
+    });
+  }
+
+  
+
+
+  disableGutter() {
+    const cm = editors.get(this);
+    cm.dispatch({
+      effects: [
+        this.#compartments.lineNumberCompartment.reconfigure([]),
+        this.#compartments.foldGutterCompartment.reconfigure([]),
       ],
     });
   }
