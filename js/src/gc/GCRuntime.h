@@ -462,6 +462,14 @@ class GCRuntime {
     return state() != State::NotActive && !isVerifyPreBarriersEnabled();
   }
 
+  bool isConcurrentMarkingEnabled() const {
+#ifndef JS_GC_CONCURRENT_MARKING
+    return false;
+#else
+    return concurrentMarkingEnabled;
+#endif
+  }
+
   bool hasForegroundWork() const;
 
   bool isShrinkingGC() const { return gcOptions() == JS::GCOptions::Shrink; }
@@ -1354,6 +1362,15 @@ class GCRuntime {
 
 
   MainThreadData<bool> parallelMarkingEnabled;
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  
+
+
+
+
+  MainThreadData<bool> concurrentMarkingEnabled;
+#endif
 
   MainThreadData<bool> rootsRemoved;
 

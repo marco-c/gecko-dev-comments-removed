@@ -524,6 +524,15 @@ typedef enum JSGCParamKey {
 
   JSGC_STORE_BUFFER_ENTRIES = 58,
   JSGC_STORE_BUFFER_SCALING = 59,
+
+  
+
+
+
+
+
+
+  JSGC_CONCURRENT_MARKING_ENABLED = 60,
 } JSGCParamKey;
 
 

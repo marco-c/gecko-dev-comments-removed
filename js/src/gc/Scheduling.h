@@ -558,6 +558,9 @@ static const bool NurseryEnabled = true;
 static const bool ParallelMarkingEnabled = false;
 
 
+static const bool ConcurrentMarkingEnabled = false;
+
+
 static const bool IncrementalWeakMapMarkingEnabled = true;
 
 

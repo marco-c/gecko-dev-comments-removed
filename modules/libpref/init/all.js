@@ -956,6 +956,11 @@ pref("javascript.options.mem.gc_parallel_marking_threshold_mb", 16);
 
 pref("javascript.options.mem.gc_max_parallel_marking_threads", 2);
 
+#ifdef NIGHTLY_BUILD
+
+pref("javascript.options.mem.gc_experimental_concurrent_marking", false);
+#endif
+
 
 pref("javascript.options.mem.gc_high_frequency_time_limit_ms", 1000);
 
