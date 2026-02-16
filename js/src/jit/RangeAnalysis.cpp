@@ -792,12 +792,23 @@ Range* Range::add(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     e = Range::IncludesInfinityAndNaN;
   }
 
-  return new (alloc) Range(
-      l, h,
-      FractionalPartFlag(lhs->canHaveFractionalPart() ||
-                         rhs->canHaveFractionalPart()),
-      NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeNegativeZero()),
-      e);
+  FractionalPartFlag canHaveFractionalPart = FractionalPartFlag(
+      lhs->canHaveFractionalPart() || rhs->canHaveFractionalPart());
+
+  
+  NegativeZeroFlag canBeNegativeZero =
+      NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeNegativeZero());
+
+  
+  
+  
+  
+  
+  if (l <= 0 && h >= 0 && canHaveFractionalPart) {
+    canBeNegativeZero = IncludesNegativeZero;
+  }
+
+  return new (alloc) Range(l, h, canHaveFractionalPart, canBeNegativeZero, e);
 }
 
 Range* Range::sub(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
@@ -823,11 +834,21 @@ Range* Range::sub(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     e = Range::IncludesInfinityAndNaN;
   }
 
-  return new (alloc)
-      Range(l, h,
-            FractionalPartFlag(lhs->canHaveFractionalPart() ||
-                               rhs->canHaveFractionalPart()),
-            NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeZero()), e);
+  FractionalPartFlag canHaveFractionalPart = FractionalPartFlag(
+      lhs->canHaveFractionalPart() || rhs->canHaveFractionalPart());
+
+  
+  NegativeZeroFlag canBeNegativeZero =
+      NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeZero());
+
+  
+  
+  
+  if (l <= 0 && h >= 0 && canHaveFractionalPart) {
+    canBeNegativeZero = IncludesNegativeZero;
+  }
+
+  return new (alloc) Range(l, h, canHaveFractionalPart, canBeNegativeZero, e);
 }
 
 Range* Range::and_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
