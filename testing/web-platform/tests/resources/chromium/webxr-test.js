@@ -2491,7 +2491,7 @@ class MockXRPresentationProvider {
     
     
     
-    this.submitFrameClient_.onSubmitFrameTransferred(true);
+    this.submitFrameClient_.onSubmitFrameTransferred(true, []);
     this.submitFrameClient_.onSubmitFrameRendered();
   }
 
