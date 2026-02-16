@@ -99,22 +99,22 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       gotoPref("customHomepage");
     },
 
-    getControlConfig(config, deps) {
-      const servicePages = [
-        "about:home",
-        "chrome://browser/content/blanktab.html",
-      ];
+    getControlConfig(config, { homepageDisplayPref }) {
       let customURLsDescription;
 
-      if (servicePages.includes(deps.homepageDisplayPref.value.trim())) {
-        
-        
-        
+      
+      
+      
+      if (
+        [DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(
+          homepageDisplayPref.value.trim()
+        )
+      ) {
         customURLsDescription = null;
       } else {
         
         
-        customURLsDescription = deps.homepageDisplayPref.value
+        customURLsDescription = homepageDisplayPref.value
           .split("|")
           .map(uri =>
             BrowserUtils.formatURIStringForDisplay(uri, {
@@ -136,29 +136,113 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
   });
 
   
-  Preferences.addSetting({
-    id: "customHomepageCard",
-  });
+
+
+
+
+
+
+  const getURLs = urls => {
+    return urls
+      .split("|")
+      .map(u => u.trim())
+      .filter(Boolean);
+  };
 
   Preferences.addSetting({
     id: "customHomepageBoxGroup",
-  });
+    deps: ["homepageDisplayPref"],
+    getControlConfig(config, { homepageDisplayPref }) {
+      const urls = getURLs(homepageDisplayPref.value);
+      let listItems = [];
+      let type = "list";
 
-  Preferences.addSetting({
-    id: "customHomepageBoxForm",
-  });
+      
+      
+      
+      if (
+        [DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(
+          homepageDisplayPref.value.trim()
+        ) === false
+      ) {
+        type = "reorderable-list";
+        listItems = urls.map((url, index) => ({
+          id: `customHomepageUrl-${index}`,
+          key: `url-${index}-${url}`,
+          control: "moz-box-item",
+          controlAttrs: { label: url, "data-url": url },
+          options: [
+            {
+              control: "moz-button",
+              iconSrc: "chrome://global/skin/icons/delete.svg",
+              l10nId: "home-custom-homepage-delete-address-button",
+              slot: "actions-start",
+              controlAttrs: {
+                "data-action": "delete",
+                "data-index": index,
+              },
+            },
+          ],
+        }));
+      } else {
+        
+        listItems = [
+          {
+            control: "moz-box-item",
+            l10nId: "home-custom-homepage-no-results",
+            controlAttrs: {
+              class: "description-deemphasized",
+            },
+          },
+        ];
+      }
 
-  Preferences.addSetting({
-    id: "customHomepageBoxUrlList",
-  });
+      return {
+        ...config,
+        controlAttrs: {
+          ...config.controlAttrs,
+          type,
+        },
+        options: [
+          {
+            id: "customHomepageBoxForm",
+            control: "moz-box-item",
+            slot: "header",
+            items: [], 
+          },
+          ...listItems,
+          {
+            id: "customHomepageBoxActions",
+            control: "moz-box-item",
+            slot: "footer",
+            items: [], 
+          },
+        ],
+      };
+    },
+    onUserReorder(e, { homepageDisplayPref }) {
+      let urls = getURLs(homepageDisplayPref.value);
 
-  Preferences.addSetting({
-    id: "customHomepageBoxActions",
-  });
+      let { draggedIndex, targetIndex } = e.detail;
+      let [moved] = urls.splice(draggedIndex, 1);
+      urls.splice(targetIndex, 0, moved);
 
-  
-  Preferences.addSetting({
-    id: "customHomepagePlaceholderButton",
+      homepageDisplayPref.value = urls.join("|");
+    },
+    onUserClick(e, { homepageDisplayPref }) {
+      let urls = getURLs(homepageDisplayPref.value);
+
+      if (
+        e.target.localName === "moz-button" &&
+        e.target.getAttribute("data-action") === "delete"
+      ) {
+        let index = Number(e.target.dataset.index);
+        if (Number.isInteger(index) && index >= 0 && index < urls.length) {
+          urls.splice(index, 1);
+          homepageDisplayPref.value = urls.join("|");
+        }
+      }
+    },
   });
 
   
