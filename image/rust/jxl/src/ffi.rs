@@ -56,6 +56,7 @@ pub unsafe extern "C" fn jxl_decoder_destroy(decoder: *mut JxlApiDecoder) {
 
 
 
+
 #[no_mangle]
 pub unsafe extern "C" fn jxl_decoder_process_data(
     decoder: *mut JxlApiDecoder,
@@ -71,7 +72,12 @@ pub unsafe extern "C" fn jxl_decoder_process_data(
 
     
     
-    let mut data_slice = unsafe { slice::from_raw_parts(*data, *data_len) };
+    
+    let mut data_slice = if unsafe { (*data).is_null() } {
+        &[]
+    } else {
+        unsafe { slice::from_raw_parts(*data, *data_len) }
+    };
 
     let output_slice = if output_buffer.is_null() {
         None
