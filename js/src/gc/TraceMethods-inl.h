@@ -86,6 +86,9 @@ void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
 }
 
 inline void JSString::traceChildren(JSTracer* trc) {
+  
+  MOZ_ASSERT(!js::IsConcurrentMarkingTracer(trc));
+
   if (hasBase()) {
     traceBase(trc);
   } else if (isRope()) {
@@ -94,10 +97,11 @@ inline void JSString::traceChildren(JSTracer* trc) {
 }
 template <uint32_t opts>
 void js::GCMarker::eagerlyMarkChildren(JSString* str) {
-  if (str->isLinear()) {
-    eagerlyMarkChildren<opts>(&str->asLinear());
+  uint32_t flags = str->flags();
+  if (flags & JSString::LINEAR_BIT) {
+    eagerlyMarkChildren<opts>(static_cast<JSLinearString*>(str));
   } else {
-    eagerlyMarkChildren<opts>(&str->asRope());
+    eagerlyMarkChildren<opts>(static_cast<JSRope*>(str));
   }
 }
 
@@ -109,7 +113,6 @@ template <uint32_t opts>
 void js::GCMarker::eagerlyMarkChildren(JSLinearString* linearStr) {
   gc::AssertShouldMarkInZone(this, linearStr);
   MOZ_ASSERT(linearStr->isMarkedAny());
-  MOZ_ASSERT(linearStr->JSString::isLinear());
 
   
   while (linearStr->hasBase()) {
@@ -132,6 +135,9 @@ void js::GCMarker::eagerlyMarkChildren(JSLinearString* linearStr) {
 }
 
 inline void JSRope::traceChildren(JSTracer* trc) {
+  
+  MOZ_ASSERT(!js::IsConcurrentMarkingTracer(trc));
+
   js::TraceManuallyBarrieredEdge(trc, &d.s.u2.left, "left child");
   js::TraceManuallyBarrieredEdge(trc, &d.s.u3.right, "right child");
 }
@@ -143,39 +149,68 @@ void js::GCMarker::eagerlyMarkChildren(JSRope* rope) {
   
   
   
-  
-  
+
   size_t savedPos = stack.position();
   MOZ_DIAGNOSTIC_ASSERT(rope->getTraceKind() == JS::TraceKind::String);
+
   while (true) {
     MOZ_DIAGNOSTIC_ASSERT(rope->getTraceKind() == JS::TraceKind::String);
-    MOZ_DIAGNOSTIC_ASSERT(rope->JSString::isRope());
     gc::AssertShouldMarkInZone(this, rope);
+
     MOZ_ASSERT(rope->isMarkedAny());
     JSRope* next = nullptr;
 
+    JSString* left = rope->leftChild();
     JSString* right = rope->rightChild();
+
+#ifdef JS_GC_CONCURRENT_MARKING
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if constexpr (bool(opts & gc::MarkingOptions::ConcurrentMarking)) {
+      gc::MemoryAcquireFence<opts>(rope->runtimeFromAnyThread());
+      if (!rope->isRopeAtomic()) {
+        continue;
+      }
+    }
+#else
+    MOZ_DIAGNOSTIC_ASSERT(rope->JSString::isRope());
+#endif
+
     if (mark<opts>(right)) {
       MOZ_ASSERT(!right->isPermanentAtom());
       if (right->isLinear()) {
-        eagerlyMarkChildren<opts>(&right->asLinear());
+        eagerlyMarkChildren<opts>(static_cast<JSLinearString*>(right));
       } else {
-        next = &right->asRope();
+        next = static_cast<JSRope*>(right);
       }
     }
 
-    JSString* left = rope->leftChild();
     if (mark<opts>(left)) {
       MOZ_ASSERT(!left->isPermanentAtom());
       if (left->isLinear()) {
-        eagerlyMarkChildren<opts>(&left->asLinear());
+        eagerlyMarkChildren<opts>(static_cast<JSLinearString*>(left));
       } else {
         
         
         if (next && !stack.pushTempRope(next)) {
           delayMarkingChildrenOnOOM(next);
         }
-        next = &left->asRope();
+        next = static_cast<JSRope*>(left);
       }
     }
     if (next) {
@@ -187,6 +222,7 @@ void js::GCMarker::eagerlyMarkChildren(JSRope* rope) {
       break;
     }
   }
+
   MOZ_ASSERT(savedPos == stack.position());
 }
 
