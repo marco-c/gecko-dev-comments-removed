@@ -219,7 +219,7 @@ static auto AddRulesForKey(HKEY aFontKey, const nsAString& aWindowsUserFontDir,
   return sandbox::SBOX_ALL_OK;
 }
 
-void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
+bool UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
   
   nsAutoString windowsUserFontDir(mLocalAppData);
   windowsUserFontDir += uR"(\Microsoft\Windows\Fonts\*)"_ns;
@@ -254,7 +254,9 @@ void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
 
   
   if (!mUserFontKey) {
-    return;
+    
+    
+    return true;
   }
 
   
@@ -273,7 +275,9 @@ void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
   if (result == sandbox::SBOX_ERROR_NO_SPACE) {
     CrashReporter::RecordAnnotationCString(
         CrashReporter::Annotation::UserFontRulesExhausted, "inside");
-    return;
+    
+    
+    return false;
   }
 
   
@@ -288,10 +292,14 @@ void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
       if (result == sandbox::SBOX_ERROR_NO_SPACE) {
         CrashReporter::RecordAnnotationCString(
             CrashReporter::Annotation::UserFontRulesExhausted, "outside");
-        return;
+        
+        
+        return true;
       }
     }
   }
+
+  return true;
 }
 
 }  
