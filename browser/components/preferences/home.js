@@ -149,6 +149,55 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       .filter(Boolean);
   };
 
+  Preferences.addSetting(
+     ({
+      id: "customHomepageAddUrlInput",
+      _inputValue: "",
+      get() {
+        return this._inputValue;
+      },
+
+      set(val, _, setting) {
+        this._inputValue = val.trim() ?? "";
+        setting.onChange();
+      },
+    })
+  );
+
+  Preferences.addSetting({
+    id: "customHomepageAddAddressButton",
+    deps: ["homepageDisplayPref", "customHomepageAddUrlInput"],
+    onUserClick(e, { homepageDisplayPref, customHomepageAddUrlInput }) {
+      
+      
+      e.target.focus();
+
+      let inputVal = customHomepageAddUrlInput.value;
+
+      
+      if (!inputVal) {
+        return;
+      }
+
+      if (
+        [DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(
+          homepageDisplayPref.value.trim()
+        )
+      ) {
+        
+        homepageDisplayPref.value = inputVal;
+      } else {
+        
+        let urls = getURLs(homepageDisplayPref.value);
+        urls.push(inputVal);
+        homepageDisplayPref.value = urls.join("|");
+      }
+
+      
+      customHomepageAddUrlInput.value = "";
+    },
+  });
+
   Preferences.addSetting({
     id: "customHomepageBoxGroup",
     deps: ["homepageDisplayPref"],
@@ -208,7 +257,19 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
             id: "customHomepageBoxForm",
             control: "moz-box-item",
             slot: "header",
-            items: [], 
+            items: [
+              {
+                id: "customHomepageAddUrlInput",
+                l10nId: "home-custom-homepage-address",
+                control: "moz-input-text",
+              },
+              {
+                id: "customHomepageAddAddressButton",
+                l10nId: "home-custom-homepage-address-button",
+                control: "moz-button",
+                slot: "actions",
+              },
+            ],
           },
           ...listItems,
           {
