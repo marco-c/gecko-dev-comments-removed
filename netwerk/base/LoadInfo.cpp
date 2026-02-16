@@ -1347,7 +1347,7 @@ LoadInfo::ResetPrincipalToInheritToNullPrincipal() {
   nsCOMPtr<nsIPrincipal> newNullPrincipal =
       NullPrincipal::Create(mOriginAttributes);
 
-  mPrincipalToInherit = newNullPrincipal;
+  mPrincipalToInherit = std::move(newNullPrincipal);
 
   
   
