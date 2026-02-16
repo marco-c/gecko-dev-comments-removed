@@ -33,8 +33,8 @@ class CSSUnsupportedValue;
 
 class CSSStyleValue : public nsISupports, public nsWrapperCache {
  public:
-  enum class ValueType {
-    Uninitialized,
+  enum class StyleValueType {
+    Uninitialized,  
     UnsupportedValue,
     KeywordValue,
     UnitValue,
@@ -43,7 +43,7 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   explicit CSSStyleValue(nsCOMPtr<nsISupports> aParent);
 
-  CSSStyleValue(nsCOMPtr<nsISupports> aParent, ValueType aValueType);
+  CSSStyleValue(nsCOMPtr<nsISupports> aParent, StyleValueType aStyleValueType);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CSSStyleValue)
@@ -68,7 +68,7 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   
 
-  ValueType GetValueType() const { return mValueType; }
+  StyleValueType GetStyleValueType() const { return mStyleValueType; }
 
   bool IsCSSUnsupportedValue() const;
 
@@ -100,7 +100,7 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
   virtual ~CSSStyleValue() = default;
 
   nsCOMPtr<nsISupports> mParent;
-  const ValueType mValueType;
+  const StyleValueType mStyleValueType;
 };
 
 }  
