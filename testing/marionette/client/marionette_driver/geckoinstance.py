@@ -676,6 +676,8 @@ class DesktopInstance(GeckoInstance):
         
         
         "browser.urlbar.merino.endpointURL": "",
+        "browser.urlbar.merino.ohttpConfigURL": "",
+        "browser.urlbar.merino.ohttpRelayURL": "",
         
         
         "browser.urlbar.suggest.searches": False,

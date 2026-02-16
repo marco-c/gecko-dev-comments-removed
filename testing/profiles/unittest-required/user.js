@@ -46,6 +46,8 @@ user_pref("browser.uitour.url", "http://{server}/uitour-dummy/tour");
 
 
 user_pref("browser.urlbar.merino.endpointURL", "");
+user_pref("browser.urlbar.merino.ohttpConfigURL", "");
+user_pref("browser.urlbar.merino.ohttpRelayURL", "");
 user_pref("browser.urlbar.speculativeConnect.enabled", false);
 
 
