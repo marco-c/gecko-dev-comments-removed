@@ -137,8 +137,6 @@ void nsToolkit::RemoveSleepWakeNotifications() {
 
 
 
-
-
 void nsToolkit::MonitorAllProcessMouseEvents() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
@@ -152,7 +150,7 @@ void nsToolkit::MonitorAllProcessMouseEvents() {
   if (mAllProcessMouseMonitor == nil) {
     mAllProcessMouseMonitor = [NSEvent
         addGlobalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown |
-                                              NSEventMaskLeftMouseDown
+                                              NSEventMaskOtherMouseDown
                                       handler:^(NSEvent* evt) {
                                         if ([NSApp isActive]) {
                                           return;
