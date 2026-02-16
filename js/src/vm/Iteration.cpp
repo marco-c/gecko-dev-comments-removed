@@ -1378,35 +1378,15 @@ PlainObject* GlobalObject::getOrCreateIterResultTemplateObject(JSContext* cx) {
     return obj;
   }
 
-  PlainObject* templateObj =
-      createIterResultTemplateObject(cx, WithObjectPrototype::Yes);
+  PlainObject* templateObj = createIterResultTemplateObject(cx);
   obj.init(templateObj);
   return obj;
 }
 
 
-PlainObject* GlobalObject::getOrCreateIterResultWithoutPrototypeTemplateObject(
-    JSContext* cx) {
-  GCPtr<PlainObject*>& obj =
-      cx->global()->data().iterResultWithoutPrototypeTemplate;
-  if (obj) {
-    return obj;
-  }
-
-  PlainObject* templateObj =
-      createIterResultTemplateObject(cx, WithObjectPrototype::No);
-  obj.init(templateObj);
-  return obj;
-}
-
-
-PlainObject* GlobalObject::createIterResultTemplateObject(
-    JSContext* cx, WithObjectPrototype withProto) {
+PlainObject* GlobalObject::createIterResultTemplateObject(JSContext* cx) {
   
-  Rooted<PlainObject*> templateObject(
-      cx, withProto == WithObjectPrototype::Yes
-              ? NewPlainObject(cx, TenuredObject)
-              : NewPlainObjectWithProto(cx, nullptr));
+  Rooted<PlainObject*> templateObject(cx, NewPlainObject(cx, TenuredObject));
   if (!templateObject) {
     return nullptr;
   }

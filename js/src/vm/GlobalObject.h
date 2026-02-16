@@ -220,7 +220,6 @@ class GlobalObjectData {
   GCPtr<SetObject*> setObjectTemplate;
 
   GCPtr<PlainObject*> iterResultTemplate;
-  GCPtr<PlainObject*> iterResultWithoutPrototypeTemplate;
 
   
   
@@ -1012,13 +1011,9 @@ class GlobalObject : public NativeObject {
   static const size_t IterResultObjectValueSlot = 0;
   static const size_t IterResultObjectDoneSlot = 1;
   static js::PlainObject* getOrCreateIterResultTemplateObject(JSContext* cx);
-  static js::PlainObject* getOrCreateIterResultWithoutPrototypeTemplateObject(
-      JSContext* cx);
 
  private:
-  enum class WithObjectPrototype { No, Yes };
-  static js::PlainObject* createIterResultTemplateObject(
-      JSContext* cx, WithObjectPrototype withProto);
+  static js::PlainObject* createIterResultTemplateObject(JSContext* cx);
 
  public:
   static ScriptSourceObject* getOrCreateSelfHostingScriptSourceObject(
