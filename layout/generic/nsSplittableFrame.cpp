@@ -304,7 +304,7 @@ nscoord nsSplittableFrame::GetEffectiveComputedBSize(
   
   
   if (IsTrueOverflowContainer() &&
-      Style()->GetPseudoType() == PseudoStyleType::MozFieldsetContent) {
+      Style()->GetPseudoType() == PseudoStyleType::fieldsetContent) {
     for (nsFieldSetFrame* fieldset = do_QueryFrame(GetParent()); fieldset;
          fieldset = static_cast<nsFieldSetFrame*>(fieldset->GetPrevInFlow())) {
       bSize -= fieldset->LegendSpace();

@@ -29,11 +29,11 @@ uint32_t nsTreeStyleCache::Transition::Hash() const {
 }
 
 
-ComputedStyle* nsTreeStyleCache::GetComputedStyle(nsPresContext* aPresContext,
-                                                  nsIContent* aContent,
-                                                  ComputedStyle* aStyle,
-                                                  PseudoStyleType aPseudoType,
-                                                  const AtomArray& aInputWord) {
+ComputedStyle* nsTreeStyleCache::GetComputedStyle(
+    nsPresContext* aPresContext, nsIContent* aContent, ComputedStyle* aStyle,
+    nsCSSAnonBoxPseudoStaticAtom* aPseudoElement, const AtomArray& aInputWord) {
+  MOZ_ASSERT(nsCSSAnonBoxes::IsTreePseudoElement(aPseudoElement));
+
   uint32_t count = aInputWord.Length();
 
   
@@ -43,8 +43,7 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(nsPresContext* aPresContext,
   }
 
   
-  const nsStaticAtom* pseudoAtom = PseudoStyle::GetAtom(aPseudoType);
-  Transition transition(0, const_cast<nsStaticAtom*>(pseudoAtom));
+  Transition transition(0, aPseudoElement);
   DFAState currState = mTransitionTable->Get(transition);
 
   if (!currState) {
@@ -76,12 +75,21 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(nsPresContext* aPresContext,
     
     RefPtr<ComputedStyle> newResult =
         aPresContext->StyleSet()->ResolveXULTreePseudoStyle(
-            aContent->AsElement(), aPseudoType, aStyle, aInputWord);
+            aContent->AsElement(), aPseudoElement, aStyle, aInputWord);
 
     
     
     
     newResult->StartImageLoads(*aPresContext->Document());
+
+    
+    
+    
+    
+    
+    MOZ_ASSERT(newResult->GetPseudoType() == PseudoStyleType::XULTree);
+    MOZ_ASSERT(!newResult->IsAnonBox());
+    MOZ_ASSERT(!newResult->IsPseudoElement());
 
     
     

@@ -2952,7 +2952,7 @@ void nsFlexContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   if (displayInside == StyleDisplayInside::Flow) {
     MOZ_ASSERT(StyleDisplay()->mDisplay == StyleDisplay::Block);
-    MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent,
+    MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::scrolledContent,
                "The only way a nsFlexContainerFrame can have 'display:block' "
                "should be if it's the inner part of a scrollable element");
     displayInside = GetParent()->StyleDisplay()->DisplayInside();
@@ -4954,7 +4954,7 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   
   const bool isScrolledContent =
       aAsIfScrolled ||
-      Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent;
+      Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
   bool anyScrolledContentItem = false;
   
   nsRect itemMarginBoxes;

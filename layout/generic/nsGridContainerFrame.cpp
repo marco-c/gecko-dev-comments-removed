@@ -9622,7 +9622,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
   contentBSize =
       ReflowChildren(gridRI, contentArea, containerSize, aDesiredSize, aStatus);
-  if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
+  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
     
     
     

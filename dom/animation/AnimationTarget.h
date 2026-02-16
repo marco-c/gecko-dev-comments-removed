@@ -11,7 +11,7 @@
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/HashTable.h"      
 #include "mozilla/Maybe.h"
-#include "mozilla/PseudoStyleRequest.h"
+#include "mozilla/PseudoStyleType.h"  
 #include "mozilla/RefPtr.h"
 
 class nsAtom;

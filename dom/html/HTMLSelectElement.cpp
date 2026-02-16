@@ -147,7 +147,7 @@ void HTMLSelectElement::SetupShadowTree() {
   
   Document* doc = OwnerDoc();
   RefPtr label = doc->CreateHTMLElement(nsGkAtoms::label);
-  label->SetPseudoElementType(PseudoStyleType::MozSelectContent);
+  label->SetPseudoElementType(PseudoStyleType::mozSelectContent);
   {
     
     RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
@@ -155,7 +155,7 @@ void HTMLSelectElement::SetupShadowTree() {
   }
   sr->AppendChildTo(label, false, IgnoreErrors());
   RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
-  icon->SetPseudoElementType(PseudoStyleType::MozSelectPickerIcon);
+  icon->SetPseudoElementType(PseudoStyleType::mozSelectPickerIcon);
   {
     RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
     icon->AppendChildTo(text, false, IgnoreErrors());

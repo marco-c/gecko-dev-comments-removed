@@ -9,7 +9,6 @@
 #include <algorithm>  
 #include <utility>
 
-#include "PseudoStyleType.h"   
 #include "js/ForOfIterator.h"  
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"                  
@@ -30,6 +29,7 @@
 #include "mozilla/dom/Nullable.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
+#include "nsCSSPseudoElements.h"  
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h"  
 #include "nsIScriptError.h"

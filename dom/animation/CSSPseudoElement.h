@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_CSSPseudoElement_h
 #define mozilla_dom_CSSPseudoElement_h
 
-#include "PseudoStyleType.h"
 #include "js/TypeDecls.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "nsCSSPseudoElements.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {
@@ -34,7 +34,17 @@ class CSSPseudoElement final : public nsWrapperCache {
                                JS::Handle<JSObject*> aGivenProto) override;
 
   PseudoStyleType GetType() const { return mPseudoType; }
-  void GetType(nsString& aRetVal) const;
+  void GetType(nsString& aRetVal) const {
+    MOZ_ASSERT(nsCSSPseudoElements::GetPseudoAtom(mPseudoType),
+               "All pseudo-types allowed by this class should have a"
+               " corresponding atom");
+    
+    
+    
+    aRetVal.Assign(char16_t(':'));
+    aRetVal.Append(
+        nsDependentAtomString(nsCSSPseudoElements::GetPseudoAtom(mPseudoType)));
+  }
   dom::Element* Element() const { return mOriginatingElement.get(); }
 
   

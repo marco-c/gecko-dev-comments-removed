@@ -156,7 +156,8 @@ class KeyframeEffect : public AnimationEffect {
       SetDOMStringToNull(aRetVal);
       return;
     }
-    mTarget.mPseudoRequest.ToString(aRetVal);
+    aRetVal =
+        nsCSSPseudoElements::PseudoRequestAsString(mTarget.mPseudoRequest);
   }
 
   

@@ -1593,7 +1593,7 @@ nsIFrame* nsContainerFrame::GetFirstNonAnonBoxInSubtree(nsIFrame* aFrame) {
     
     
     if (!aFrame->Style()->IsAnonBox() ||
-        PseudoStyle::IsNonElement(aFrame->Style()->GetPseudoType())) {
+        nsCSSAnonBoxes::IsNonElement(aFrame->Style()->GetPseudoType())) {
       break;
     }
 

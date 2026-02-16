@@ -7,9 +7,9 @@
 #include "nsNumberControlFrame.h"
 
 #include "HTMLInputElement.h"
-#include "PseudoStyleType.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/PresShell.h"
+#include "nsCSSPseudoElements.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
@@ -69,13 +69,13 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   }
 
   
-  mButton = MakeAnonElement(PseudoStyleType::MozNumberSpinBox);
+  mButton = MakeAnonElement(PseudoStyleType::mozNumberSpinBox);
 
   
-  mSpinUp = MakeAnonElement(PseudoStyleType::MozNumberSpinUp, mButton);
+  mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mButton);
 
   
-  mSpinDown = MakeAnonElement(PseudoStyleType::MozNumberSpinDown, mButton);
+  mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mButton);
 
   aElements.AppendElement(mButton);
 
