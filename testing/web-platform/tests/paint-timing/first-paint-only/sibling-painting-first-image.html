@@ -2,7 +2,8 @@
 <body>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
- 
+<script src="../resources/utils.js"></script>
+ <!-- This iframe will have a sibling that paints, we want to ensure it does not detect that paint. -->
 <iframe id="listening-iframe" src="../resources/subframe-sending-paint.html"></iframe>
 <script>
 setup({"hide_test_state": true});
@@ -40,15 +41,12 @@ async_test(function (t) {
         // Check the paint-timing entries from the listening iframe.
         assert_equals(e.data, '0');
         // Check that current frame receives first-paint but not first-contentful-paint.
-        const bufferedEntries = performance.getEntriesByType('paint');
-        assert_equals(bufferedEntries.length, 1);
-        assert_equals(bufferedEntries[0].entryType, 'paint');
-        assert_equals(bufferedEntries[0].name, 'first-paint');
+        assertFirstPaint(t, 0);
         t.done();
     }));
 }, 'Frame ignores paint-timing events fired from sibling frame.');
 </script>
-
+<!-- This iframe is where all of the painting occurs. -->
 <iframe id="painting-iframe" src="../resources/subframe-painting.html"></iframe>
 </body>
 </html>
