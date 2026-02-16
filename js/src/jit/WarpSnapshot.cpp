@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/WarpSnapshot.h"
 
@@ -133,7 +133,7 @@ void WarpOpSnapshot::dump(GenericPrinter& out, JSScript* script) const {
   out.printf("  %s (offset %u, JSOp::%s)\n", OpSnapshotKindString(kind_),
              offset_, CodeName(JSOp(*pc)));
 
-  
+  // Dispatch to dumpData() methods.
   switch (kind_) {
 #  define DUMP(kind)             \
     case Kind::kind:             \
@@ -188,7 +188,7 @@ void WarpClassBodyEnvironment::dumpData(GenericPrinter& out) const {
 }
 
 void WarpBailout::dumpData(GenericPrinter& out) const {
-  
+  // No fields.
 }
 
 void WarpCacheIRBase::dumpData(GenericPrinter& out) const {
@@ -243,11 +243,11 @@ void WarpPolymorphicTypes::dumpData(GenericPrinter& out) const {
   }
 }
 
-#endif  
+#endif  // JS_JITSPEW
 
 void WarpSnapshot::trace(JSTracer* trc) {
-  
-  
+  // Nursery objects/values can be tenured in parallel with Warp compilation.
+  // Note: don't use TraceOffthreadGCPtr here as that asserts non-moving.
   for (size_t i = 0; i < nurseryObjects_.length(); i++) {
     TraceManuallyBarrieredEdge(trc, &nurseryObjects_[i], "warp-nursery-object");
   }
@@ -256,7 +256,7 @@ void WarpSnapshot::trace(JSTracer* trc) {
     TraceManuallyBarrieredEdge(trc, &nurseryValues_[i], "warp-nursery-value");
   }
 
-  
+  // Other GC things are not in the nursery.
   if (trc->runtime()->heapState() == JS::HeapState::MinorCollecting) {
     return;
   }
@@ -302,7 +302,7 @@ void WarpScriptSnapshot::trace(JSTracer* trc) {
 }
 
 void WarpOpSnapshot::trace(JSTracer* trc) {
-  
+  // Dispatch to traceData() methods.
   switch (kind_) {
 #define TRACE(kind)             \
   case Kind::kind:              \
@@ -320,7 +320,7 @@ void WarpArguments::traceData(JSTracer* trc) {
 }
 
 void WarpRegExp::traceData(JSTracer* trc) {
-  
+  // No GC pointers.
 }
 
 void WarpBuiltinObject::traceData(JSTracer* trc) {
@@ -356,11 +356,11 @@ void WarpClassBodyEnvironment::traceData(JSTracer* trc) {
 }
 
 void WarpBailout::traceData(JSTracer* trc) {
-  
+  // No GC pointers.
 }
 
 void WarpPolymorphicTypes::traceData(JSTracer* trc) {
-  
+  // No GC pointers.
 }
 
 template <typename T>
@@ -379,19 +379,20 @@ void WarpCacheIRBase::traceData(JSTracer* trc) {
       switch (fieldType) {
         case StubField::Type::RawInt32:
         case StubField::Type::RawPointer:
+        case StubField::Type::ICScript:
         case StubField::Type::RawInt64:
         case StubField::Type::Double:
           break;
         case StubField::Type::Shape:
         case StubField::Type::WeakShape: {
-          
+          // WeakShape pointers are traced strongly in this context.
           uintptr_t word = stubInfo_->getStubRawWord(stubData_, offset);
           TraceWarpStubPtr<Shape>(trc, word, "warp-cacheir-shape");
           break;
         }
         case StubField::Type::JSObject:
         case StubField::Type::WeakObject: {
-          
+          // WeakObject pointers are traced strongly in this context.
           uintptr_t word = stubInfo_->getStubRawWord(stubData_, offset);
           WarpObjectField field = WarpObjectField::fromData(word);
           if (!field.isNurseryIndex()) {
@@ -410,7 +411,7 @@ void WarpCacheIRBase::traceData(JSTracer* trc) {
           break;
         }
         case StubField::Type::WeakBaseScript: {
-          
+          // WeakBaseScript pointers are traced strongly in this context.
           uintptr_t word = stubInfo_->getStubRawWord(stubData_, offset);
           TraceWarpStubPtr<BaseScript>(trc, word, "warp-cacheir-script");
           break;
@@ -429,7 +430,7 @@ void WarpCacheIRBase::traceData(JSTracer* trc) {
         }
         case StubField::Type::Value:
         case StubField::Type::WeakValue: {
-          
+          // WeakValues are traced strongly in this context.
           uint64_t data = stubInfo_->getStubRawInt64(stubData_, offset);
           Value val = Value::fromRawBits(data);
           TraceOffthreadGCPtr(trc, OffthreadGCPtr<Value>(val),
@@ -444,7 +445,7 @@ void WarpCacheIRBase::traceData(JSTracer* trc) {
           break;
         }
         case StubField::Type::Limit:
-          return;  
+          return;  // Done.
       }
       field++;
       offset += StubField::sizeInBytes(fieldType);
@@ -473,6 +474,6 @@ void WarpCacheIRWithShapeListAndOffsets::traceData(JSTracer* trc) {
 }
 
 void WarpInlinedCall::traceData(JSTracer* trc) {
-  
+  // Note: scriptSnapshot_ is traced through WarpSnapshot.
   cacheIRSnapshot_->trace(trc);
 }

@@ -1,8 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
+# This script generates jit/CacheIROpsGenerated.h from CacheIROps.yaml
 
 import io
 import os
@@ -39,8 +39,8 @@ def generate_header(c_out, includeguard, contents):
 
 
 def load_yaml(yaml_path):
-    
-    
+    # First invoke preprocessor.py so that we can use #ifdef JS_SIMULATOR in
+    # the YAML file.
     pp = Preprocessor()
     pp.context.update(buildconfig.defines["ALLDEFINES"])
     pp.out = io.StringIO()
@@ -50,8 +50,8 @@ def load_yaml(yaml_path):
     return yaml.safe_load(contents)
 
 
-
-
+# Information for generating CacheIRWriter code for a single argument. Tuple
+# stores the C++ argument type and the CacheIRWriter method to call.
 arg_writer_info = {
     "ValId": ("ValOperandId", "writeOperandId"),
     "ObjId": ("ObjOperandId", "writeOperandId"),
@@ -75,6 +75,7 @@ arg_writer_info = {
     "JitCodeField": ("JitCode*", "writeJitCodeField"),
     "RawInt32Field": ("uint32_t", "writeRawInt32Field"),
     "RawPointerField": ("const void*", "writeRawPointerField"),
+    "ICScriptField": ("const ICScript*", "writeICScriptField"),
     "IdField": ("jsid", "writeIdField"),
     "ValueField": ("const Value&", "writeValueField"),
     "WeakValueField": ("const Value&", "writeWeakValueField"),
@@ -85,7 +86,7 @@ arg_writer_info = {
     "JSTypeImm": ("JSType", "writeJSTypeImm"),
     "TypeofEqOperandImm": ("TypeofEqOperand", "writeTypeofEqOperandImm"),
     "BoolImm": ("bool", "writeBoolImm"),
-    "ByteImm": ("uint32_t", "writeByteImm"),  
+    "ByteImm": ("uint32_t", "writeByteImm"),  # uint32_t to enable fits-in-byte asserts.
     "GuardClassKindImm": ("GuardClassKind", "writeGuardClassKindImm"),
     "ArrayBufferViewKindImm": ("ArrayBufferViewKind", "writeArrayBufferViewKindImm"),
     "ValueTypeImm": ("ValueType", "writeValueTypeImm"),
@@ -108,20 +109,20 @@ arg_writer_info = {
 def gen_writer_method(name, args, custom_writer):
     """Generates a CacheIRWRiter method for a single opcode."""
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # Generate a single method that writes the opcode and each argument.
+    # For example:
+    #
+    #   void guardShape(ObjOperandId obj, Shape* shape) {
+    #     writeOp(CacheOp::GuardShape);
+    #     writeOperandId(obj);
+    #     writeShapeField(shape);
+    #     assertLengthMatches();
+    #  }
+    #
+    # The assertLengthMatches() call is to assert the information in the
+    # arg_length dictionary below matches what's written.
 
-    
+    # Method names start with a lowercase letter.
     method_name = name[0].lower() + name[1:]
     if custom_writer:
         method_name += "_"
@@ -155,9 +156,9 @@ def gen_writer_method(name, args, custom_writer):
     return code
 
 
-
-
-
+# Information for generating code using CacheIRReader for a single argument.
+# Tuple stores the C++ type, the suffix used for arguments/variables of this
+# type, and the expression to read this type from CacheIRReader.
 arg_reader_info = {
     "ValId": ("ValOperandId", "Id", "reader.valOperandId()"),
     "ObjId": ("ObjOperandId", "Id", "reader.objOperandId()"),
@@ -181,6 +182,7 @@ arg_reader_info = {
     "JitCodeField": ("uint32_t", "Offset", "reader.stubOffset()"),
     "RawInt32Field": ("uint32_t", "Offset", "reader.stubOffset()"),
     "RawPointerField": ("uint32_t", "Offset", "reader.stubOffset()"),
+    "ICScriptField": ("uint32_t", "Offset", "reader.stubOffset()"),
     "IdField": ("uint32_t", "Offset", "reader.stubOffset()"),
     "ValueField": ("uint32_t", "Offset", "reader.stubOffset()"),
     "WeakValueField": ("uint32_t", "Offset", "reader.stubOffset()"),
@@ -221,15 +223,15 @@ def gen_compiler_method(name, args):
 
     method_name = "emit" + name
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # We generate the signature of the method that needs to be implemented and a
+    # separate function forwarding to it. For example:
+    #
+    #   [[nodiscard]] bool emitGuardShape(ObjOperandId objId, uint32_t shapeOffset);
+    #   [[nodiscard]] bool emitGuardShape(CacheIRReader& reader) {
+    #     ObjOperandId objId = reader.objOperandId();
+    #     uint32_t shapeOffset = reader.stubOffset();
+    #     return emitGuardShape(objId, shapeOffset);
+    #   }
     cpp_args = []
     method_args = []
     args_code = ""
@@ -241,10 +243,10 @@ def gen_compiler_method(name, args):
             method_args.append(f"{cpp_type} {cpp_name}")
             args_code += f"  {cpp_type} {cpp_name} = {readexpr};\\\n"
 
-    
+    # Generate signature.
     code = "[[nodiscard]] bool {}({});\\\n".format(method_name, ", ".join(method_args))
 
-    
+    # Generate the method forwarding to it.
     code += f"[[nodiscard]] bool {method_name}(CacheIRReader& reader) {{\\\n"
     code += args_code
     code += "  return {}({});\\\n".format(method_name, ", ".join(cpp_args))
@@ -256,20 +258,20 @@ def gen_compiler_method(name, args):
 def gen_reader_method(name, args):
     """Generates CacheIRReader code for a single opcode."""
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # Generate a struct that holds the opcode's arguments and a CacheIRReader
+    # method that returns this struct. For example for GuardShape:
+    #
+    #   struct GuardShapeArgs final { ObjOperandId objId; uint32_t shapeOffset; };
+    #
+    #   GuardShapeArgs argsForGuardShape() {
+    #     MOZ_ASSERT(*lastOp_ == CacheOp::GuardShape);
+    #     ObjOperandId objId_ = this->objOperandId();
+    #     uint32_t shapeOffset_ = this->stubOffset();
+    #     return { objId_, shapeOffset_ };
+    #   }
+    #
+    # Note that we use a trailing underscore for the variables to ensure variable
+    # names don't conflict with class methods.
 
     struct_name = f"{name}Args"
     method_name = f"argsFor{name}"
@@ -288,10 +290,10 @@ def gen_reader_method(name, args):
             struct_fields.append(f"{cpp_type} {cpp_field_name};")
             read_args_code += f"  {cpp_type} {cpp_var_name} = {readexpr};\\\n"
 
-    
+    # Generate struct.
     code = f"struct {struct_name} final {{ {' '.join(struct_fields)} }};\\\n"
 
-    
+    # Generate reader method.
     code += f"{struct_name} {method_name}() {{\\\n"
     code += f"  MOZ_ASSERT(*lastOp_ == CacheOp::{name});\\\n"
     code += read_args_code
@@ -302,7 +304,7 @@ def gen_reader_method(name, args):
     return code
 
 
-
+# For each argument type, the method name for printing it.
 arg_spewer_method = {
     "ValId": "spewOperandId",
     "ObjId": "spewOperandId",
@@ -326,6 +328,7 @@ arg_spewer_method = {
     "JitCodeField": "spewField",
     "RawInt32Field": "spewField",
     "RawPointerField": "spewField",
+    "ICScriptField": "spewField",
     "IdField": "spewField",
     "ValueField": "spewField",
     "WeakValueField": "spewField",
@@ -361,15 +364,15 @@ def gen_spewer_method(name, args):
 
     method_name = "spew" + name
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # Generate code like this:
+    #
+    #  void spewGuardShape(CacheIRReader& reader) {
+    #     spewOp(CacheOp::GuardShape);
+    #     spewOperandId("objId", reader.objOperandId());
+    #     spewOperandSeparator();
+    #     spewField("shapeOffset", reader.stubOffset());
+    #     spewOpEnd();
+    #  }
     args_code = ""
     if args:
         is_first = True
@@ -396,17 +399,17 @@ def gen_clone_method(name, args):
 
     method_name = "clone" + name
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # Generate code like this:
+    #
+    #  void cloneGuardShape(CacheIRReader& reader, CacheIRWriter& writer) {
+    #    writer.writeOp(CacheOp::GuardShape);
+    #    ObjOperandId objId = reader.objOperandId();
+    #    writer.writeOperandId(objId);
+    #    uint32_t shapeOffset = reader.stubOffset();
+    #    Shape* shape = getShapeField(shapeOffset);
+    #    writer.writeShapeField(shape);
+    #    writer.assertLengthMatches();
+    #  }
 
     args_code = ""
     if args:
@@ -423,8 +426,8 @@ def gen_clone_method(name, args):
             if arg_name == "result":
                 args_code += "  writer.newOperandId();\\\n"
             if suffix == "Offset":
-                
-                
+                # If the write function takes T&, the intermediate variable
+                # should be of type T.
                 if write_type.endswith("&"):
                     write_type = write_type[:-1]
                 value_name = arg_name
@@ -443,9 +446,9 @@ def gen_clone_method(name, args):
     return code
 
 
-
-
-
+# Length in bytes for each argument type, either an integer or a C++ expression.
+# This is used to generate the CacheIROpArgLengths array. CacheIRWriter asserts
+# the number of bytes written matches the value in that array.
 arg_length = {
     "ValId": 1,
     "ObjId": 1,
@@ -469,6 +472,7 @@ arg_length = {
     "JitCodeField": 1,
     "RawInt32Field": 1,
     "RawPointerField": 1,
+    "ICScriptField": 1,
     "RawInt64Field": 1,
     "DoubleField": 1,
     "IdField": 1,
@@ -506,30 +510,30 @@ def generate_cacheirops_header(c_out, yaml_path):
 
     data = load_yaml(yaml_path)
 
-    
-    
+    # CACHE_IR_OPS items. Each item stores an opcode name and arguments length
+    # expression. For example: _(GuardShape, 1 + 1)
     ops_items = []
 
-    
+    # Generated CacheIRWriter methods.
     writer_methods = []
 
-    
+    # Generated CacheIRReader methods.
     reader_methods = []
 
-    
+    # Generated CacheIRCompiler methods.
     compiler_shared_methods = []
     compiler_unshared_methods = []
 
-    
+    # Generated WarpCacheIRTranspiler methods.
     transpiler_methods = []
 
-    
+    # List of ops supported by WarpCacheIRTranspiler.
     transpiler_ops = []
 
-    
+    # Generated methods for spewers.
     spewer_methods = []
 
-    
+    # Generated methods for cloning IC stubs
     clone_methods = []
 
     for op in data:
@@ -544,7 +548,7 @@ def generate_cacheirops_header(c_out, yaml_path):
         transpile = op["transpile"]
         assert isinstance(transpile, bool)
 
-        
+        # Unscored Ops default to UINT32_MAX
         cost_estimate = op.get("cost_estimate", 0xFFFFFFFF)
         assert isinstance(cost_estimate, int)
 
@@ -629,7 +633,7 @@ def read_aot_ics(ic_path):
 def generate_aot_ics_header(c_out, ic_path):
     """Generate CacheIROpsGenerated.h from AOT IC corpus."""
 
-    
+    # Read in all ICs from js/src/ics/IC-*.
     ics = read_aot_ics(ic_path)
 
     contents = "#define JS_AOT_IC_DATA(_) \\\n"
