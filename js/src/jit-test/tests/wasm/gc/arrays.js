@@ -1844,6 +1844,10 @@ for (let [elemTy, valueTy, src, exp1, exp2] of ARRAY_COPY_TESTS) {
     assertEq(eqArrays(srcTO, exp2), true);
 
     
+    arrayCopy(srcTO, 0, srcTO, 0, 6);
+    assertEq(eqArrays(srcTO, exp2), true);
+
+    
     let exp1TO = arrayNew(exp1[0], exp1[1], exp1[2], exp1[3], exp1[4], exp1[5]);
     let exp2TO = arrayNew(exp2[0], exp2[1], exp2[2], exp2[3], exp2[4], exp2[5]);
 
