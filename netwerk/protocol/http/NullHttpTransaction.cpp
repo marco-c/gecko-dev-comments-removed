@@ -9,6 +9,7 @@
 
 #include "mozilla/net/NeckoChannelParams.h"  
 #include "mozilla/Components.h"
+#include "nsAHttpConnection.h"
 #include "nsHttp.h"
 #include "NullHttpTransaction.h"
 #include "nsHttpHandler.h"
