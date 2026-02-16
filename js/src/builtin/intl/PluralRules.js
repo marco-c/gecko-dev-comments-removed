@@ -234,9 +234,6 @@ function Intl_PluralRules_select(value) {
   var n = TO_NUMBER(value);
 
   
-  getPluralRulesInternals(pluralRules);
-
-  
   return intl_SelectPluralRule(pluralRules, n);
 }
 

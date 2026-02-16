@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string_view>
 
+#include "ds/IdValuePair.h"
 #include "js/Class.h"
 #include "vm/NativeObject.h"
 #include "vm/StringType.h"
@@ -18,6 +19,7 @@
 namespace mozilla::intl {
 class NumberFormat;
 class NumberRangeFormat;
+struct PluralRulesOptions;
 }  
 
 namespace js {
@@ -220,6 +222,30 @@ class NumberFormatObject : public NativeObject {
 };
 
 namespace intl {
+struct PluralRulesOptions;
+
+
+
+
+
+bool SetNumberFormatDigitOptions(JSContext* cx, NumberFormatDigitOptions& obj,
+                                 JS::Handle<JSObject*> options,
+                                 int32_t mnfdDefault, int32_t mxfdDefault,
+                                 NumberFormatOptions::Notation notation);
+
+
+
+
+void SetPluralRulesOptions(const PluralRulesOptions& plOptions,
+                           mozilla::intl::PluralRulesOptions& options);
+
+
+
+
+bool ResolvePluralRulesOptions(JSContext* cx,
+                               const PluralRulesOptions& plOptions,
+                               JS::Handle<ArrayObject*> pluralCategories,
+                               JS::MutableHandle<IdValueVector> options);
 
 
 
