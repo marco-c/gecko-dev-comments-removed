@@ -335,33 +335,17 @@ class MOZ_STACK_CLASS AutoWebRenderBridgeParentAsyncMessageSender final {
 WebRenderBridgeParent::WebRenderBridgeParent(
     CompositorBridgeParent* aCompositorBridge,
     const wr::PipelineId& aPipelineId, widget::CompositorWidget* aWidget,
-    RefPtr<wr::WebRenderAPI>&& aApi,
-    RefPtr<AsyncImagePipelineManager>&& aImageMgr, TimeDuration aVsyncRate)
+    TimeDuration aVsyncRate)
     : mCompositorBridge(aCompositorBridge),
       mPipelineId(aPipelineId),
       mWidget(aWidget),
-      mApi(aApi),
-      mAsyncImageManager(aImageMgr),
       mVsyncRate(aVsyncRate),
-      mIdNamespace(aApi->GetNamespace()),
       mDestroyed(false),
       mIsFirstPaint(true) {
-  MOZ_ASSERT(mAsyncImageManager);
   LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64
-      " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
-      IsRootWebRenderBridgeParent());
+      " root %d",
+      wr::AsUint64(mPipelineId), IsRootWebRenderBridgeParent());
 
-  mAsyncImageManager->AddPipeline(mPipelineId, this);
-  mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
-  UpdateDebugFlags();
-  UpdateQualitySettings();
-  UpdateProfilerUI();
-  UpdateParameters();
-  
-  
-  mBoolParameterBits = ~gfxVars::WebRenderBoolParameters();
-  UpdateBoolParameters();
   mRemoteTextureTxnScheduler =
       RemoteTextureTxnScheduler::Create(aCompositorBridge);
 }
@@ -373,20 +357,22 @@ WebRenderBridgeParent::WebRenderBridgeParent(
     RefPtr<AsyncImagePipelineManager>&& aImageMgr, TimeDuration aVsyncRate)
     : mCompositorBridge(aCompositorBridge),
       mPipelineId(aPipelineId),
-      mApi(aApi),
-      mAsyncImageManager(aImageMgr),
-      mCompositorScheduler(aScheduler),
+      mLateInit(Some(LateInit{
+          .mApi = aApi,
+          .mAsyncImageManager = aImageMgr,
+          .mCompositorScheduler = aScheduler,
+          .mIdNamespace = aApi->GetNamespace(),
+      })),
       mVsyncRate(aVsyncRate),
-      mIdNamespace(aApi->GetNamespace()),
       mDestroyed(false),
       mIsFirstPaint(true) {
-  MOZ_ASSERT(mAsyncImageManager);
+  MOZ_ASSERT(mLateInit->mAsyncImageManager);
   LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
-  mAsyncImageManager->AddPipeline(mPipelineId, this);
+  mLateInit->mAsyncImageManager->AddPipeline(mPipelineId, this);
   mRemoteTextureTxnScheduler =
       RemoteTextureTxnScheduler::Create(aCompositorBridge);
 }
@@ -395,7 +381,12 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId,
                                              nsCString&& aError)
     : mCompositorBridge(nullptr),
       mPipelineId(aPipelineId),
-      mIdNamespace{0},
+      mLateInit(Some(LateInit{
+          .mApi = nullptr,
+          .mAsyncImageManager = nullptr,
+          .mCompositorScheduler = nullptr,
+          .mIdNamespace{0},
+      })),
       mInitError(aError),
       mDestroyed(true),
       mIsFirstPaint(false) {
@@ -404,7 +395,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId,
 }
 
 WebRenderBridgeParent::~WebRenderBridgeParent() {
-  LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64 "",
+  LOG("WebRenderBridgeParent::~WebRenderBridgeParent() PipelineId %" PRIx64 "",
       wr::AsUint64(mPipelineId));
 }
 
@@ -412,6 +403,35 @@ WebRenderBridgeParent::~WebRenderBridgeParent() {
 WebRenderBridgeParent* WebRenderBridgeParent::CreateDestroyed(
     const wr::PipelineId& aPipelineId, nsCString&& aError) {
   return new WebRenderBridgeParent(aPipelineId, std::move(aError));
+}
+
+void WebRenderBridgeParent::FinishInitialization(
+    RefPtr<wr::WebRenderAPI>&& aApi,
+    RefPtr<AsyncImagePipelineManager>&& aImageMgr) {
+  MOZ_ASSERT(NS_IsInCompositorThread());
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
+  MOZ_ASSERT(mLateInit.isNothing());
+  LOG("WebRenderBridgeParent::FinishInitialization() PipelineId %" PRIx64
+      " Id %" PRIx64 " root %d",
+      wr::AsUint64(mPipelineId), wr::AsUint64(aApi->GetId()),
+      IsRootWebRenderBridgeParent());
+
+  mLateInit.emplace(LateInit{
+      .mApi = aApi,
+      .mAsyncImageManager = aImageMgr,
+      .mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget),
+      .mIdNamespace = aApi->GetNamespace(),
+  });
+  mLateInit->mAsyncImageManager->AddPipeline(mPipelineId, this);
+
+  UpdateDebugFlags();
+  UpdateQualitySettings();
+  UpdateProfilerUI();
+  UpdateParameters();
+  
+  
+  mBoolParameterBits = ~gfxVars::WebRenderBoolParameters();
+  UpdateBoolParameters();
 }
 
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEnsureConnected(
@@ -430,9 +450,9 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEnsureConnected(
     return IPC_OK();
   }
 
-  MOZ_ASSERT(mIdNamespace.mHandle != 0);
+  MOZ_ASSERT(mLateInit->mIdNamespace.mHandle != 0);
   *aTextureFactoryIdentifier = GetTextureFactoryIdentifier();
-  *aMaybeIdNamespace = Some(mIdNamespace);
+  *aMaybeIdNamespace = Some(mLateInit->mIdNamespace);
 
   return IPC_OK();
 }
@@ -460,7 +480,7 @@ void WebRenderBridgeParent::Destroy() {
   }
   LOG("WebRenderBridgeParent::Destroy() PipelineId %" PRIx64 " Id %" PRIx64
       " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   mDestroyed = true;
@@ -769,9 +789,10 @@ bool WebRenderBridgeParent::UpdateResources(
   if (scheduleRelease) {
     
     
-    wr::Checkpoint when = mApi->GetBackendType() == WebRenderBackend::SOFTWARE
-                              ? wr::Checkpoint::FrameRendered
-                              : wr::Checkpoint::FrameTexturesUpdated;
+    wr::Checkpoint when =
+        mLateInit->mApi->GetBackendType() == WebRenderBackend::SOFTWARE
+            ? wr::Checkpoint::FrameRendered
+            : wr::Checkpoint::FrameTexturesUpdated;
     aUpdates.Notify(when, std::move(scheduleRelease));
   }
 
@@ -807,7 +828,7 @@ bool WebRenderBridgeParent::AddSharedExternalImage(
   
   IntSize surfaceSize = dSurf->GetSize();
   TextureHost::NativeTexturePolicy policy =
-      TextureHost::BackendNativeTexturePolicy(mApi->GetBackendType(),
+      TextureHost::BackendNativeTexturePolicy(mLateInit->mApi->GetBackendType(),
                                               surfaceSize);
   auto imageType =
       policy == TextureHost::NativeTexturePolicy::REQUIRE
@@ -925,7 +946,7 @@ bool WebRenderBridgeParent::UpdateSharedExternalImage(
   
   IntSize surfaceSize = dSurf->GetSize();
   TextureHost::NativeTexturePolicy policy =
-      TextureHost::BackendNativeTexturePolicy(mApi->GetBackendType(),
+      TextureHost::BackendNativeTexturePolicy(mLateInit->mApi->GetBackendType(),
                                               surfaceSize);
   auto imageType =
       policy == TextureHost::NativeTexturePolicy::REQUIRE
@@ -947,11 +968,12 @@ void WebRenderBridgeParent::ObserveSharedSurfaceRelease(
     (void)SendWrReleasedImages(aPairs);
   }
 
-  if (!aFromCheckpoint && mAsyncImageManager) {
+  if (!aFromCheckpoint && mLateInit->mAsyncImageManager) {
     
     
     for (const auto& pair : aPairs) {
-      mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch, pair.id);
+      mLateInit->mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch,
+                                                       pair.id);
     }
     return;
   }
@@ -967,7 +989,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvUpdateResources(
     nsTArray<OpUpdateResource>&& aResourceUpdates,
     nsTArray<RefCountedShmem>&& aSmallShmems,
     nsTArray<ipc::Shmem>&& aLargeShmems) {
-  const bool isValidMessage = aIdNamespace == mIdNamespace;
+  const bool isValidMessage = aIdNamespace == mLateInit->mIdNamespace;
 
   if (mDestroyed || !isValidMessage) {
     wr::IpcResourceUpdateQueue::ReleaseShmems(this, aSmallShmems);
@@ -977,10 +999,10 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvUpdateResources(
 
   LOG("WebRenderBridgeParent::RecvUpdateResources() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
-  wr::TransactionBuilder txn(mApi);
+  wr::TransactionBuilder txn(mLateInit->mApi);
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
   (void)GetNextWrEpoch();
@@ -996,7 +1018,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvUpdateResources(
   if (!txn.IsResourceUpdatesEmpty() || txn.IsRenderedFrameInvalidated()) {
     
     txn.UpdateEpoch(mPipelineId, mWrEpoch);
-    mAsyncImageManager->SetWillGenerateFrame();
+    mLateInit->mAsyncImageManager->SetWillGenerateFrame();
     ScheduleGenerateFrame(wr::RenderReasons::RESOURCE_UPDATE);
   } else {
     
@@ -1006,7 +1028,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvUpdateResources(
     RollbackWrEpoch();
   }
 
-  mApi->SendTransaction(txn);
+  mLateInit->mApi->SendTransaction(txn);
 
   if (!success) {
     return IPC_FAIL(this, "Invalid WebRender resource data shmem or address.");
@@ -1023,7 +1045,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvDeleteCompositorAnimations(
 
   LOG("WebRenderBridgeParent::RecvDeleteCompositorAnimations() PipelineId "
       "%" PRIx64 " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   
@@ -1045,12 +1067,12 @@ bool WebRenderBridgeParent::IsRootWebRenderBridgeParent() const {
 }
 
 void WebRenderBridgeParent::BeginRecording(const TimeStamp& aRecordingStart) {
-  mApi->BeginRecording(aRecordingStart, mPipelineId);
+  mLateInit->mApi->BeginRecording(aRecordingStart, mPipelineId);
 }
 
 RefPtr<wr::WebRenderAPI::EndRecordingPromise>
 WebRenderBridgeParent::EndRecording() {
-  return mApi->EndRecording();
+  return mLateInit->mApi->EndRecording();
 }
 
 void WebRenderBridgeParent::AddPendingScrollPayload(
@@ -1154,7 +1176,7 @@ void WebRenderBridgeParent::SetAPZSampleTime() {
     if (Maybe<TimeStamp> testTime = cbp->GetTestingTimeStamp()) {
       animationTime = SampleTime::FromTest(*testTime);
     } else {
-      animationTime = mCompositorScheduler->GetLastComposeTime();
+      animationTime = mLateInit->mCompositorScheduler->GetLastComposeTime();
     }
     TimeDuration frameInterval = cbp->GetVsyncInterval();
     
@@ -1211,7 +1233,7 @@ bool WebRenderBridgeParent::SetDisplayList(
 
   NeedIncreasedMaxDirtyPageModifier();
 
-  mApi->SendTransaction(aTxn);
+  mLateInit->mApi->SendTransaction(aTxn);
 
   
   
@@ -1222,7 +1244,7 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
     DisplayListData& aDisplayList, wr::Epoch aWrEpoch,
     const TimeStamp& aTxnStartTime, bool aValidTransaction,
     bool aRenderOffscreen, const VsyncId& aVsyncId) {
-  wr::TransactionBuilder txn(mApi,  true,
+  wr::TransactionBuilder txn(mLateInit->mApi,  true,
                              mRemoteTextureTxnScheduler, mFwdTransactionId);
   Maybe<wr::AutoTransactionSender> sender;
 
@@ -1239,7 +1261,7 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
     return true;
   }
 
-  MOZ_ASSERT(aDisplayList.mIdNamespace == mIdNamespace);
+  MOZ_ASSERT(aDisplayList.mIdNamespace == mLateInit->mIdNamespace);
 
   
   
@@ -1249,7 +1271,7 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
   }
 
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
-  sender.emplace(mApi, &txn);
+  sender.emplace(mLateInit->mApi, &txn);
   bool success = true;
 
   success =
@@ -1289,7 +1311,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
 
   LOG("WebRenderBridgeParent::RecvSetDisplayList() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (!IsRootWebRenderBridgeParent()) {
@@ -1315,7 +1337,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
     mIsFirstPaint = true;
   }
 
-  bool validTransaction = aDisplayList.mIdNamespace == mIdNamespace;
+  bool validTransaction = aDisplayList.mIdNamespace == mLateInit->mIdNamespace;
   bool success =
       ProcessDisplayListData(aDisplayList, wrEpoch, aTxnStartTime,
                              validTransaction, aRenderOffscreen, aVsyncId);
@@ -1354,7 +1376,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
 bool WebRenderBridgeParent::ProcessEmptyTransactionUpdates(
     TransactionData& aData, bool* aScheduleComposite) {
   *aScheduleComposite = false;
-  wr::TransactionBuilder txn(mApi,  true,
+  wr::TransactionBuilder txn(mLateInit->mApi,  true,
                              mRemoteTextureTxnScheduler, mFwdTransactionId);
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
@@ -1368,7 +1390,7 @@ bool WebRenderBridgeParent::ProcessEmptyTransactionUpdates(
   
   (void)GetNextWrEpoch();
 
-  const bool validTransaction = aData.mIdNamespace == mIdNamespace;
+  const bool validTransaction = aData.mIdNamespace == mLateInit->mIdNamespace;
   bool success = true;
 
   if (validTransaction) {
@@ -1398,11 +1420,11 @@ bool WebRenderBridgeParent::ProcessEmptyTransactionUpdates(
   }
 
   if (!txn.IsEmpty()) {
-    mApi->SendTransaction(txn);
+    mLateInit->mApi->SendTransaction(txn);
   }
 
   if (*aScheduleComposite) {
-    mAsyncImageManager->SetWillGenerateFrame();
+    mLateInit->mAsyncImageManager->SetWillGenerateFrame();
   }
 
   return success;
@@ -1430,7 +1452,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
 
   LOG("WebRenderBridgeParent::RecvEmptyTransaction() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (!IsRootWebRenderBridgeParent()) {
@@ -1518,21 +1540,21 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvParentCommands(
     return IPC_OK();
   }
 
-  const bool isValidMessage = aIdNamespace == mIdNamespace;
+  const bool isValidMessage = aIdNamespace == mLateInit->mIdNamespace;
   if (!isValidMessage) {
     return IPC_OK();
   }
 
   LOG("WebRenderBridgeParent::RecvParentCommands() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
-  wr::TransactionBuilder txn(mApi);
+  wr::TransactionBuilder txn(mLateInit->mApi);
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
   bool success = ProcessWebRenderParentCommands(aCommands, txn);
   NeedIncreasedMaxDirtyPageModifier();
-  mApi->SendTransaction(txn);
+  mLateInit->mApi->SendTransaction(txn);
 
   if (!success) {
     return IPC_FAIL(this, "Invalid parent command found");
@@ -1546,8 +1568,9 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
     wr::TransactionBuilder& aTxn) {
   
   
-  wr::TransactionBuilder txnForImageBridge(mApi->GetRootAPI());
-  wr::AutoTransactionSender sender(mApi->GetRootAPI(), &txnForImageBridge);
+  wr::TransactionBuilder txnForImageBridge(mLateInit->mApi->GetRootAPI());
+  wr::AutoTransactionSender sender(mLateInit->mApi->GetRootAPI(),
+                                   &txnForImageBridge);
 
   bool success = true;
   for (nsTArray<WebRenderParentCommand>::index_type i = 0;
@@ -1564,7 +1587,8 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpRemovePipelineIdForCompositable: {
         const OpRemovePipelineIdForCompositable& op =
             cmd.get_OpRemovePipelineIdForCompositable();
-        auto* pendingOps = mApi->GetPendingAsyncImagePipelineOps(aTxn);
+        auto* pendingOps =
+            mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
 
         RemovePipelineIdForCompositable(op.pipelineId(), pendingOps, aTxn);
         break;
@@ -1578,14 +1602,16 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
         const OpUpdateAsyncImagePipeline& op =
             cmd.get_OpUpdateAsyncImagePipeline();
 
-        auto* pendingOps = mApi->GetPendingAsyncImagePipelineOps(aTxn);
-        auto* pendingRemotetextures = mApi->GetPendingRemoteTextureInfoList();
+        auto* pendingOps =
+            mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
+        auto* pendingRemotetextures =
+            mLateInit->mApi->GetPendingRemoteTextureInfoList();
 
-        mAsyncImageManager->UpdateAsyncImagePipeline(
+        mLateInit->mAsyncImageManager->UpdateAsyncImagePipeline(
             op.pipelineId(), op.scBounds(), op.rotation(), op.filter(),
             op.mixBlendMode());
         MOZ_ASSERT_IF(IsRootWebRenderBridgeParent(), !pendingRemotetextures);
-        mAsyncImageManager->ApplyAsyncImageForPipeline(
+        mLateInit->mAsyncImageManager->ApplyAsyncImageForPipeline(
             op.pipelineId(), aTxn, txnForImageBridge, pendingOps,
             pendingRemotetextures);
         break;
@@ -1595,11 +1621,13 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
             cmd.get_OpUpdatedAsyncImagePipeline();
         aTxn.InvalidateRenderedFrame(wr::RenderReasons::ASYNC_IMAGE);
 
-        auto* pendingOps = mApi->GetPendingAsyncImagePipelineOps(aTxn);
-        auto* pendingRemotetextures = mApi->GetPendingRemoteTextureInfoList();
+        auto* pendingOps =
+            mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
+        auto* pendingRemotetextures =
+            mLateInit->mApi->GetPendingRemoteTextureInfoList();
 
         MOZ_ASSERT_IF(IsRootWebRenderBridgeParent(), !pendingRemotetextures);
-        mAsyncImageManager->ApplyAsyncImageForPipeline(
+        mLateInit->mAsyncImageManager->ApplyAsyncImageForPipeline(
             op.pipelineId(), aTxn, txnForImageBridge, pendingOps,
             pendingRemotetextures);
         break;
@@ -1654,7 +1682,7 @@ void WebRenderBridgeParent::FlushSceneBuilds() {
   
   
   
-  mApi->FlushSceneBuilder();
+  mLateInit->mApi->FlushSceneBuilder();
   
   
   
@@ -1678,10 +1706,10 @@ void WebRenderBridgeParent::FlushFrameGeneration(wr::RenderReasons aReasons) {
 
   
   
-  if (mCompositorScheduler->NeedsComposite()) {
-    mCompositorScheduler->CancelCurrentCompositeTask();
+  if (mLateInit->mCompositorScheduler->NeedsComposite()) {
+    mLateInit->mCompositorScheduler->CancelCurrentCompositeTask();
     
-    mCompositorScheduler->UpdateLastComposeTime();
+    mLateInit->mCompositorScheduler->UpdateLastComposeTime();
     MaybeGenerateFrame(VsyncId(),  true,
                        aReasons | wr::RenderReasons::FLUSH);
   }
@@ -1695,14 +1723,14 @@ void WebRenderBridgeParent::FlushFramePresentation() {
   
   
   
-  mApi->WaitUntilPresentationFlushed();
+  mLateInit->mApi->WaitUntilPresentationFlushed();
 }
 
 void WebRenderBridgeParent::DisableNativeCompositor() {
   
-  mApi->FlushSceneBuilder();
+  mLateInit->mApi->FlushSceneBuilder();
   
-  mApi->EnableNativeCompositor(false);
+  mLateInit->mApi->EnableNativeCompositor(false);
   
   ScheduleForcedGenerateFrame(wr::RenderReasons::CONFIG_CHANGE);
 
@@ -1714,9 +1742,9 @@ void WebRenderBridgeParent::UpdateQualitySettings() {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return;
   }
-  wr::TransactionBuilder txn(mApi);
+  wr::TransactionBuilder txn(mLateInit->mApi);
   txn.UpdateQualitySettings(gfxVars::ForceSubpixelAAWherePossible());
-  mApi->SendTransaction(txn);
+  mLateInit->mApi->SendTransaction(txn);
 }
 
 void WebRenderBridgeParent::UpdateDebugFlags() {
@@ -1725,7 +1753,7 @@ void WebRenderBridgeParent::UpdateDebugFlags() {
     return;
   }
 
-  mApi->UpdateDebugFlags(gfxVars::WebRenderDebugFlags());
+  mLateInit->mApi->UpdateDebugFlags(gfxVars::WebRenderDebugFlags());
 }
 
 void WebRenderBridgeParent::UpdateProfilerUI() {
@@ -1735,7 +1763,7 @@ void WebRenderBridgeParent::UpdateProfilerUI() {
   }
 
   nsCString uiString = gfxVars::GetWebRenderProfilerUIOrDefault();
-  mApi->SetProfilerUI(uiString);
+  mLateInit->mApi->SetProfilerUI(uiString);
 }
 
 void WebRenderBridgeParent::UpdateParameters() {
@@ -1745,11 +1773,12 @@ void WebRenderBridgeParent::UpdateParameters() {
   }
 
   uint32_t count = gfxVars::WebRenderBatchingLookback();
-  mApi->SetBatchingLookback(count);
-  mApi->SetInt(wr::IntParameter::BatchedUploadThreshold,
-               gfxVars::WebRenderBatchedUploadThreshold());
+  mLateInit->mApi->SetBatchingLookback(count);
+  mLateInit->mApi->SetInt(wr::IntParameter::BatchedUploadThreshold,
+                          gfxVars::WebRenderBatchedUploadThreshold());
   uint32_t slow_cpu_frame = gfxVars::WebRenderSlowCpuFrameThreshold();
-  mApi->SetFloat(wr::FloatParameter::SlowCpuFrameThreshold, slow_cpu_frame);
+  mLateInit->mApi->SetFloat(wr::FloatParameter::SlowCpuFrameThreshold,
+                            slow_cpu_frame);
 
   mBlobTileSize = gfxVars::WebRenderBlobTileSize();
 }
@@ -1767,7 +1796,7 @@ void WebRenderBridgeParent::UpdateBoolParameters() {
     uint32_t i = (uint32_t)paramName;
     if (changedBits & (1 << i)) {
       bool value = (bits & (1 << i)) != 0;
-      mApi->SetBool(paramName, value);
+      mLateInit->mApi->SetBool(paramName, value);
     }
   }
   mBoolParameterBits = bits;
@@ -1813,8 +1842,9 @@ void WebRenderBridgeParent::MaybeCaptureScreenPixels() {
   IntSize size(client_size.width, client_size.height);
 
   bool needsYFlip = false;
-  mApi->Readback(TimeStamp::Now(), size, format,
-                 Range<uint8_t>(mem.get<uint8_t>(), buffer_size), &needsYFlip);
+  mLateInit->mApi->Readback(TimeStamp::Now(), size, format,
+                            Range<uint8_t>(mem.get<uint8_t>(), buffer_size),
+                            &needsYFlip);
 
   (void)mScreenPixelsTarget->SendScreenPixels(
       std::move(mem), ScreenIntSize(client_size.width, client_size.height),
@@ -1838,7 +1868,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
 
   LOG("WebRenderBridgeParent::RecvGetSnapshot() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   
@@ -1894,8 +1924,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
 
   FlushSceneBuilds();
   FlushFrameGeneration(wr::RenderReasons::SNAPSHOT);
-  mApi->Readback(start, size, bufferTexture->GetFormat(),
-                 Range<uint8_t>(buffer, buffer_size), aNeedsYFlip);
+  mLateInit->mApi->Readback(start, size, bufferTexture->GetFormat(),
+                            Range<uint8_t>(buffer, buffer_size), aNeedsYFlip);
 
   return IPC_OK();
 }
@@ -1944,7 +1974,7 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
 
   wrHost->SetWrBridge(aPipelineId, this);
   mAsyncCompositables.emplace(wr::AsUint64(aPipelineId), wrHost);
-  mAsyncImageManager->AddAsyncImagePipeline(aPipelineId, wrHost);
+  mLateInit->mAsyncImageManager->AddAsyncImagePipeline(aPipelineId, wrHost);
 
   
   
@@ -1953,8 +1983,8 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
   
   
   
-  mAsyncImageManager->SetEmptyDisplayList(aPipelineId, aTxn,
-                                          aTxnForImageBridge);
+  mLateInit->mAsyncImageManager->SetEmptyDisplayList(aPipelineId, aTxn,
+                                                     aTxnForImageBridge);
 }
 
 void WebRenderBridgeParent::RemovePipelineIdForCompositable(
@@ -1971,7 +2001,8 @@ void WebRenderBridgeParent::RemovePipelineIdForCompositable(
   RefPtr<WebRenderImageHost>& wrHost = it->second;
 
   wrHost->ClearWrBridge(aPipelineId, this);
-  mAsyncImageManager->RemoveAsyncImagePipeline(aPipelineId, aPendingOps, aTxn);
+  mLateInit->mAsyncImageManager->RemoveAsyncImagePipeline(aPipelineId,
+                                                          aPendingOps, aTxn);
   aTxn.RemovePipeline(aPipelineId);
   mAsyncCompositables.erase(wr::AsUint64(aPipelineId));
 }
@@ -1984,7 +2015,8 @@ void WebRenderBridgeParent::DeleteImage(const ImageKey& aKey,
 
   auto it = mSharedSurfaceIds.find(wr::AsUint64(aKey));
   if (it != mSharedSurfaceIds.end()) {
-    mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch, it->second);
+    mLateInit->mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch,
+                                                     it->second);
     mSharedSurfaceIds.erase(it);
   }
 
@@ -2005,7 +2037,8 @@ void WebRenderBridgeParent::ReleaseTextureOfImage(const wr::ImageKey& aKey) {
     wrTexture = (*it).second->AsWebRenderTextureHost();
   }
   if (wrTexture) {
-    mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch, wrTexture);
+    mLateInit->mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch,
+                                                     wrTexture);
   }
   mTextureHosts.erase(id);
 }
@@ -2029,19 +2062,19 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
 
   LOG("WebRenderBridgeParent::RecvClearCachedResources() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (!IsRootWebRenderBridgeParent()) {
-    mApi->FlushPendingWrTransactionEventsWithoutWait();
+    mLateInit->mApi->FlushPendingWrTransactionEventsWithoutWait();
   }
 
   
-  wr::TransactionBuilder txn(mApi);
+  wr::TransactionBuilder txn(mLateInit->mApi);
   txn.SetLowPriority(true);
   txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
   MaybeNotifyOfLayers(txn, false);
-  mApi->SendTransaction(txn);
+  mLateInit->mApi->SendTransaction(txn);
 
   
   ScheduleGenerateFrame(wr::RenderReasons::CLEAR_RESOURCES);
@@ -2066,7 +2099,7 @@ wr::Epoch WebRenderBridgeParent::UpdateWebRender(
 
   
   
-  mIdNamespace = aApi->GetNamespace();
+  mLateInit->mIdNamespace = aApi->GetNamespace();
   
   
   
@@ -2077,22 +2110,22 @@ wr::Epoch WebRenderBridgeParent::UpdateWebRender(
   
   
   
-  (void)SendWrUpdated(mIdNamespace, aTextureFactoryIdentifier);
+  (void)SendWrUpdated(mLateInit->mIdNamespace, aTextureFactoryIdentifier);
   CompositorBridgeParentBase* cBridge = mCompositorBridge;
   
   
   ClearResources();
   mCompositorBridge = cBridge;
-  mCompositorScheduler = aScheduler;
-  mApi = aApi;
-  mAsyncImageManager = aImageMgr;
+  mLateInit->mCompositorScheduler = aScheduler;
+  mLateInit->mApi = aApi;
+  mLateInit->mAsyncImageManager = aImageMgr;
 
   
-  mAsyncImageManager->AddPipeline(mPipelineId, this);
+  mLateInit->mAsyncImageManager->AddPipeline(mPipelineId, this);
 
   LOG("WebRenderBridgeParent::UpdateWebRender() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   return GetNextWrEpoch();  
@@ -2103,7 +2136,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvInvalidateRenderedFrame() {
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   LOG("WebRenderBridgeParent::RecvInvalidateRenderedFrame() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   InvalidateRenderedFrame(wr::RenderReasons::WIDGET);
@@ -2114,7 +2147,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvScheduleComposite(
     const wr::RenderReasons& aReasons) {
   LOG("WebRenderBridgeParent::RecvScheduleComposite() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   
@@ -2129,9 +2162,10 @@ void WebRenderBridgeParent::InvalidateRenderedFrame(
     return;
   }
 
-  wr::TransactionBuilder fastTxn(mApi,  false);
+  wr::TransactionBuilder fastTxn(mLateInit->mApi,
+                                  false);
   fastTxn.InvalidateRenderedFrame(aReasons);
-  mApi->SendTransaction(fastTxn);
+  mLateInit->mApi->SendTransaction(fastTxn);
 }
 
 void WebRenderBridgeParent::ScheduleForcedGenerateFrame(
@@ -2146,7 +2180,7 @@ void WebRenderBridgeParent::ScheduleForcedGenerateFrame(
 
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvCapture() {
   if (!mDestroyed) {
-    mApi->Capture();
+    mLateInit->mApi->Capture();
   }
   return IPC_OK();
 }
@@ -2154,14 +2188,14 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvCapture() {
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvStartCaptureSequence(
     const nsACString& aPath, const uint32_t& aFlags) {
   if (!mDestroyed) {
-    mApi->StartCaptureSequence(aPath, aFlags);
+    mLateInit->mApi->StartCaptureSequence(aPath, aFlags);
   }
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvStopCaptureSequence() {
   if (!mDestroyed) {
-    mApi->StopCaptureSequence();
+    mLateInit->mApi->StopCaptureSequence();
   }
   return IPC_OK();
 }
@@ -2169,7 +2203,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvStopCaptureSequence() {
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSyncWithCompositor() {
   LOG("WebRenderBridgeParent::RecvSyncWithCompositor() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (mDestroyed) {
@@ -2185,7 +2219,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSyncWithCompositor() {
   
   
   
-  mAsyncImageManager->ProcessPipelineUpdates();
+  mLateInit->mAsyncImageManager->ProcessPipelineUpdates();
 
   return IPC_OK();
 }
@@ -2335,7 +2369,8 @@ RefPtr<OMTASampler> WebRenderBridgeParent::GetOMTASampler() const {
 void WebRenderBridgeParent::SetOMTASampleTime() {
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   if (RefPtr<OMTASampler> sampler = GetOMTASampler()) {
-    sampler->SetSampleTime(mCompositorScheduler->GetLastComposeTime().Time());
+    sampler->SetSampleTime(
+        mLateInit->mCompositorScheduler->GetLastComposeTime().Time());
   }
 }
 
@@ -2345,9 +2380,9 @@ void WebRenderBridgeParent::RetrySkippedComposite() {
   }
 
   mSkippedComposite = false;
-  if (mCompositorScheduler) {
-    mCompositorScheduler->ScheduleComposition(mSkippedCompositeReasons |
-                                              RenderReasons::SKIPPED_COMPOSITE);
+  if (mLateInit->mCompositorScheduler) {
+    mLateInit->mCompositorScheduler->ScheduleComposition(
+        mSkippedCompositeReasons | RenderReasons::SKIPPED_COMPOSITE);
   }
   mSkippedCompositeReasons = wr::RenderReasons::NONE;
 }
@@ -2366,7 +2401,7 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
 
   LOG("WebRenderBridgeParent::CompositeToTarget() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   CompositorBridgeParent* cbp = GetRootCompositorBridgeParent();
@@ -2389,7 +2424,7 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
   }
 
   mSkippedComposite =
-      wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId());
+      wr::RenderThread::Get()->TooManyPendingFrames(mLateInit->mApi->GetId());
 
   if (mSkippedComposite) {
     
@@ -2434,7 +2469,7 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   LOG("WebRenderBridgeParent::MaybeGenerateFrame() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
@@ -2457,27 +2492,30 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   
   
   
-  wr::TransactionBuilder fastTxn(mApi, false );
+  wr::TransactionBuilder fastTxn(mLateInit->mApi,
+                                 false );
   
-  wr::TransactionBuilder sceneBuilderTxn(mApi);
-  wr::AutoTransactionSender sender(mApi, &sceneBuilderTxn);
+  wr::TransactionBuilder sceneBuilderTxn(mLateInit->mApi);
+  wr::AutoTransactionSender sender(mLateInit->mApi, &sceneBuilderTxn);
 
-  mAsyncImageManager->SetCompositionInfo(start, mCompositionOpportunityId);
-  mAsyncImageManager->ApplyAsyncImagesOfImageBridge(sceneBuilderTxn, fastTxn);
-  mAsyncImageManager->SetCompositionInfo(TimeStamp(),
-                                         CompositionOpportunityId{});
+  mLateInit->mAsyncImageManager->SetCompositionInfo(start,
+                                                    mCompositionOpportunityId);
+  mLateInit->mAsyncImageManager->ApplyAsyncImagesOfImageBridge(sceneBuilderTxn,
+                                                               fastTxn);
+  mLateInit->mAsyncImageManager->SetCompositionInfo(TimeStamp(),
+                                                    CompositionOpportunityId{});
 
-  if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
+  if (!mLateInit->mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
     
     
     
-    mCompositorScheduler->ScheduleComposition(
+    mLateInit->mCompositorScheduler->ScheduleComposition(
         wr::RenderReasons::ASYNC_IMAGE_COMPOSITE_UNTIL);
   }
 
   bool generateFrame = !fastTxn.IsEmpty() || aForceGenerateFrame;
 
-  if (mAsyncImageManager->GetAndResetWillGenerateFrame()) {
+  if (mLateInit->mAsyncImageManager->GetAndResetWillGenerateFrame()) {
     aReasons |= wr::RenderReasons::ASYNC_IMAGE;
     generateFrame = true;
   }
@@ -2502,17 +2540,18 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
 
 #if defined(ENABLE_FRAME_LATENCY_LOG)
   auto startTime = TimeStamp::Now();
-  mApi->SetFrameStartTime(startTime);
+  mLateInit->mApi->SetFrameStartTime(startTime);
 #endif
 
   const bool present = true;
   const bool tracked = true;
   fastTxn.GenerateFrame(aId, present, tracked, aReasons);
-  wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId(), aId, start);
+  wr::RenderThread::Get()->IncPendingFrameCount(mLateInit->mApi->GetId(), aId,
+                                                start);
 
   NeedIncreasedMaxDirtyPageModifier();
 
-  mApi->SendTransaction(fastTxn);
+  mLateInit->mApi->SendTransaction(fastTxn);
 
 #if defined(MOZ_WIDGET_ANDROID)
   MaybeCaptureScreenPixels();
@@ -2566,22 +2605,23 @@ void WebRenderBridgeParent::NotifySceneBuiltForEpoch(
 void WebRenderBridgeParent::ScheduleFrameAfterSceneBuild(
     RefPtr<const wr::WebRenderPipelineInfo> aInfo) {
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
-  if (!mCompositorScheduler) {
+  if (!mLateInit->mCompositorScheduler) {
     return;
   }
 
-  mAsyncImageManager->SetWillGenerateFrame();
+  mLateInit->mAsyncImageManager->SetWillGenerateFrame();
 
   
   
   
-  TimeStamp lastVsync = mCompositorScheduler->GetLastVsyncTime();
-  VsyncId lastVsyncId = mCompositorScheduler->GetLastVsyncId();
+  TimeStamp lastVsync = mLateInit->mCompositorScheduler->GetLastVsyncTime();
+  VsyncId lastVsyncId = mLateInit->mCompositorScheduler->GetLastVsyncId();
   if (lastVsyncId == VsyncId() || !mMostRecentComposite ||
       mMostRecentComposite >= lastVsync ||
       ((TimeStamp::Now() - lastVsync).ToMilliseconds() >
        StaticPrefs::gfx_webrender_late_scenebuild_threshold())) {
-    mCompositorScheduler->ScheduleComposition(wr::RenderReasons::SCENE);
+    mLateInit->mCompositorScheduler->ScheduleComposition(
+        wr::RenderReasons::SCENE);
     return;
   }
 
@@ -2591,7 +2631,7 @@ void WebRenderBridgeParent::ScheduleFrameAfterSceneBuild(
   for (const auto& epoch : info.epochs) {
     WebRenderBridgeParent* wrBridge = this;
     if (!(epoch.pipeline_id == PipelineId())) {
-      wrBridge = mAsyncImageManager->GetWrBridge(epoch.pipeline_id);
+      wrBridge = mLateInit->mAsyncImageManager->GetWrBridge(epoch.pipeline_id);
     }
 
     if (wrBridge) {
@@ -2600,13 +2640,14 @@ void WebRenderBridgeParent::ScheduleFrameAfterSceneBuild(
       
       
       if (startId == lastVsyncId) {
-        mCompositorScheduler->ScheduleComposition(wr::RenderReasons::SCENE);
+        mLateInit->mCompositorScheduler->ScheduleComposition(
+            wr::RenderReasons::SCENE);
         return;
       }
     }
   }
 
-  CompositeToTarget(mCompositorScheduler->GetLastVsyncId(),
+  CompositeToTarget(mLateInit->mCompositorScheduler->GetLastVsyncId(),
                     wr::RenderReasons::SCENE, nullptr, nullptr);
 }
 
@@ -2735,9 +2776,9 @@ LayersId WebRenderBridgeParent::GetLayersId() const {
 }
 
 void WebRenderBridgeParent::ScheduleGenerateFrame(wr::RenderReasons aReasons) {
-  if (mCompositorScheduler) {
-    mAsyncImageManager->SetWillGenerateFrame();
-    mCompositorScheduler->ScheduleComposition(aReasons);
+  if (mLateInit->mCompositorScheduler) {
+    mLateInit->mAsyncImageManager->SetWillGenerateFrame();
+    mLateInit->mCompositorScheduler->ScheduleComposition(aReasons);
   }
 }
 
@@ -2769,35 +2810,35 @@ void WebRenderBridgeParent::SetClearColor(const gfx::DeviceColor& aColor) {
     return;
   }
 
-  mApi->SetClearColor(aColor);
+  mLateInit->mApi->SetClearColor(aColor);
 }
 
 void WebRenderBridgeParent::Pause() {
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   LOG("WebRenderBridgeParent::Pause() PipelineId %" PRIx64 " Id %" PRIx64
       " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (!IsRootWebRenderBridgeParent() || mDestroyed) {
     return;
   }
 
-  mApi->Pause();
+  mLateInit->mApi->Pause();
 }
 
 bool WebRenderBridgeParent::Resume() {
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   LOG("WebRenderBridgeParent::Resume() PipelineId %" PRIx64 " Id %" PRIx64
       " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   if (!IsRootWebRenderBridgeParent() || mDestroyed) {
     return false;
   }
 
-  if (!mApi->Resume()) {
+  if (!mLateInit->mApi->Resume()) {
     return false;
   }
 
@@ -2807,17 +2848,17 @@ bool WebRenderBridgeParent::Resume() {
 }
 
 void WebRenderBridgeParent::ClearResources() {
-  if (!mApi) {
+  if (!mLateInit->mApi) {
     return;
   }
 
   if (!IsRootWebRenderBridgeParent()) {
-    mApi->FlushPendingWrTransactionEventsWithoutWait();
+    mLateInit->mApi->FlushPendingWrTransactionEventsWithoutWait();
   }
 
   LOG("WebRenderBridgeParent::ClearResources() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
-      wr::AsUint64(mPipelineId), wr::AsUint64(mApi->GetId()),
+      wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
   wr::Epoch wrEpoch = GetNextWrEpoch();
@@ -2830,19 +2871,21 @@ void WebRenderBridgeParent::ClearResources() {
     WebRenderTextureHost* wrTexture = entry.second->AsWebRenderTextureHost();
     MOZ_ASSERT(wrTexture);
     if (wrTexture) {
-      mAsyncImageManager->HoldExternalImage(mPipelineId, wrEpoch, wrTexture);
+      mLateInit->mAsyncImageManager->HoldExternalImage(mPipelineId, wrEpoch,
+                                                       wrTexture);
     }
   }
   mTextureHosts.clear();
 
   for (const auto& entry : mSharedSurfaceIds) {
-    mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch, entry.second);
+    mLateInit->mAsyncImageManager->HoldExternalImage(mPipelineId, mWrEpoch,
+                                                     entry.second);
   }
   mSharedSurfaceIds.clear();
 
-  mAsyncImageManager->RemovePipeline(mPipelineId, wrEpoch);
+  mLateInit->mAsyncImageManager->RemovePipeline(mPipelineId, wrEpoch);
 
-  wr::TransactionBuilder txn(mApi);
+  wr::TransactionBuilder txn(mLateInit->mApi);
   txn.SetLowPriority(true);
   txn.ClearDisplayList(wrEpoch, mPipelineId);
 
@@ -2850,24 +2893,24 @@ void WebRenderBridgeParent::ClearResources() {
     wr::PipelineId pipelineId = wr::AsPipelineId(entry.first);
     RefPtr<WebRenderImageHost> host = entry.second;
     host->ClearWrBridge(pipelineId, this);
-    mAsyncImageManager->RemoveAsyncImagePipeline(
+    mLateInit->mAsyncImageManager->RemoveAsyncImagePipeline(
         pipelineId,  nullptr, txn);
     txn.RemovePipeline(pipelineId);
   }
   mAsyncCompositables.clear();
   txn.RemovePipeline(mPipelineId);
-  mApi->SendTransaction(txn);
+  mLateInit->mApi->SendTransaction(txn);
 
   ClearAnimationResources();
 
   if (IsRootWebRenderBridgeParent()) {
-    mCompositorScheduler->Destroy();
-    mApi->DestroyRenderer();
+    mLateInit->mCompositorScheduler->Destroy();
+    mLateInit->mApi->DestroyRenderer();
   }
 
-  mCompositorScheduler = nullptr;
-  mAsyncImageManager = nullptr;
-  mApi = nullptr;
+  mLateInit->mCompositorScheduler = nullptr;
+  mLateInit->mAsyncImageManager = nullptr;
+  mLateInit->mApi = nullptr;
   mCompositorBridge = nullptr;
 }
 
@@ -2934,7 +2977,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvReleaseCompositable(
 }
 
 TextureFactoryIdentifier WebRenderBridgeParent::GetTextureFactoryIdentifier() {
-  MOZ_ASSERT(mApi);
+  MOZ_ASSERT(mLateInit->mApi);
 
 #ifdef XP_WIN
   const bool supportsD3D11NV12 = gfx::DeviceManagerDx::Get()->CanUseNV12();
@@ -2943,10 +2986,12 @@ TextureFactoryIdentifier WebRenderBridgeParent::GetTextureFactoryIdentifier() {
 #endif
 
   TextureFactoryIdentifier ident(
-      mApi->GetBackendType(), mApi->GetCompositorType(), XRE_GetProcessType(),
-      mApi->GetMaxTextureSize(), mApi->GetUseANGLE(), mApi->GetUseDComp(),
-      mApi->GetUseLayerCompositor(), mAsyncImageManager->UseCompositorWnd(),
-      false, false, false, supportsD3D11NV12, mApi->GetSyncHandle());
+      mLateInit->mApi->GetBackendType(), mLateInit->mApi->GetCompositorType(),
+      XRE_GetProcessType(), mLateInit->mApi->GetMaxTextureSize(),
+      mLateInit->mApi->GetUseANGLE(), mLateInit->mApi->GetUseDComp(),
+      mLateInit->mApi->GetUseLayerCompositor(),
+      mLateInit->mAsyncImageManager->UseCompositorWnd(), false, false, false,
+      supportsD3D11NV12, mLateInit->mApi->GetSyncHandle());
   return ident;
 }
 
@@ -2967,14 +3012,14 @@ void WebRenderBridgeParent::ExtractImageCompositeNotifications(
   if (mDestroyed) {
     return;
   }
-  mAsyncImageManager->FlushImageNotifications(aNotifications);
+  mLateInit->mAsyncImageManager->FlushImageNotifications(aNotifications);
 }
 
 void WebRenderBridgeParent::FlushPendingWrTransactionEventsWithWait() {
   if (mDestroyed || IsRootWebRenderBridgeParent()) {
     return;
   }
-  mApi->FlushPendingWrTransactionEventsWithWait();
+  mLateInit->mApi->FlushPendingWrTransactionEventsWithWait();
 }
 
 RefPtr<WebRenderBridgeParentRef>
