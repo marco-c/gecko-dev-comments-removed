@@ -1030,7 +1030,7 @@ nsAppStartup::TrackStartupCrashEnd() {
     
     
     int32_t maxResumedCrashes = 0;
-    int32_t prefType;
+    nsIPrefBranch::PreferenceType prefType;
     rv = Preferences::GetRootBranch(PrefValueKind::Default)
              ->GetPrefType(kPrefMaxResumedCrashes, &prefType);
     NS_ENSURE_SUCCESS(rv, rv);

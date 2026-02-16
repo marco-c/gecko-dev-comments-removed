@@ -137,7 +137,7 @@ class Preferences final : public nsIPrefService,
   }
 
   
-  static int32_t GetType(const char* aPrefName);
+  static nsIPrefBranch::PreferenceType GetType(const char* aPrefName);
 
   
   
