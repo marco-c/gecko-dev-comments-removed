@@ -12,9 +12,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/RWLock.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Queue.h"
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/DashboardTypes.h"
@@ -155,12 +153,6 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   already_AddRefed<nsIDirectTaskDispatcher> GetDirectTaskDispatcherSafely();
 
- public:
-  
-  
-  already_AddRefed<nsIThread> GetSocketThread() { return GetThreadSafely(); }
-
- private:
   
   
   
@@ -274,12 +266,6 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
   AutoCleanLinkedList<LinkedRunnableEvent> mPendingSocketQueue;
-
-  
-  
-  
-  Queue<RefPtr<nsIRunnable>> mPriorityEventQueue MOZ_GUARDED_BY(mQueueLock);
-  RWLock mQueueLock{"nsSocketTransportService::mQueueLock"};
 
   
   nsresult UpdatePrefs();
