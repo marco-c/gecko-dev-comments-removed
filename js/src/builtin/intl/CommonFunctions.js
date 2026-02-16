@@ -7,21 +7,6 @@
 
 
 
-function IsASCIIAlphaString(s) {
-  assert(typeof s === "string", "IsASCIIAlphaString");
-
-  for (var i = 0; i < s.length; i++) {
-    var c = callFunction(std_String_charCodeAt, s, i);
-    if (!((0x41 <= c && c <= 0x5a) || (0x61 <= c && c <= 0x7a))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-
 
 
 function CanonicalizeLocaleList(locales) {
@@ -234,26 +219,14 @@ function GetNumberOption(options, property, minimum, maximum, fallback) {
 
 
 
-
-
-
-function intlFallbackSymbol() {
-  return intl_FallbackSymbol();
-}
-
-
-
-
 function initializeIntlObject(obj, type, lazyData) {
   assert(IsObject(obj), "Non-object passed to initializeIntlObject");
   assert(
-    (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
-      (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null),
+    (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null),
     "type must match the object's class"
   );
   assert(IsObject(lazyData), "non-object lazy data");
 
-  
   
   
   
@@ -321,8 +294,7 @@ function maybeInternalProperties(internals) {
 function getIntlObjectInternals(obj) {
   assert(IsObject(obj), "getIntlObjectInternals called with non-Object");
   assert(
-    intl_GuardToNumberFormat(obj) !== null ||
-      intl_GuardToPluralRules(obj) !== null,
+    intl_GuardToPluralRules(obj) !== null,
     "getIntlObjectInternals called with non-Intl object"
   );
 
@@ -331,10 +303,7 @@ function getIntlObjectInternals(obj) {
   assert(IsObject(internals), "internals not an object");
   assert(hasOwn("type", internals), "missing type");
   assert(
-    (internals.type === "NumberFormat" &&
-        intl_GuardToNumberFormat(obj) !== null) ||
-      (internals.type === "PluralRules" &&
-        intl_GuardToPluralRules(obj) !== null),
+    (internals.type === "PluralRules" && intl_GuardToPluralRules(obj) !== null),
     "type must match the object's class"
   );
   assert(hasOwn("lazyData", internals), "missing lazyData");
@@ -358,9 +327,7 @@ function getInternals(obj) {
 
   
   var type = internals.type;
-  if (type === "NumberFormat") {
-    internalProps = resolveNumberFormatInternals(internals.lazyData);
-  } else if (type === "PluralRules") {
+  if (type === "PluralRules") {
     internalProps = resolvePluralRulesInternals(internals.lazyData);
   } else {
     assert(false, "unexpected Intl constructor");
