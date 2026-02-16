@@ -56,23 +56,6 @@ extern void ReportInternalError(JSContext* cx, mozilla::intl::ICUError error);
 
 static inline const char* LastDitchLocale() { return "en-GB"; }
 
-
-
-
-
-
-struct OldStyleLanguageTagMapping {
-  const char* const oldStyle;
-  const char* const modernStyle;
-
-  
-  constexpr OldStyleLanguageTagMapping(const char* oldStyle,
-                                       const char* modernStyle)
-      : oldStyle(oldStyle), modernStyle(modernStyle) {}
-};
-
-extern const OldStyleLanguageTagMapping oldStyleLanguageTagMappings[5];
-
 extern JS::UniqueChars EncodeLocale(JSContext* cx, JSString* locale);
 
 
