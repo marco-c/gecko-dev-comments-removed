@@ -203,10 +203,6 @@ let propNameAllowlist = [
   
   
   { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
-
-  
-  
-  { propName: /--dimension(-relative)?-\d+/, isFromDevTools: false },
 ];
 
 
