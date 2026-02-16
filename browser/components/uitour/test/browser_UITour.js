@@ -511,19 +511,13 @@ var tests = [
       );
       
       
-      let expectedDefault = "default";
-      if (
-        AppConstants.platform === "win" &&
-        Services.sysinfo.getProperty("hasWinPackageId")
-      ) {
-        expectedDefault = "mozilla-MSIX";
-      } else if (Services.appinfo.distributionID) {
-        expectedDefault = Services.appinfo.distributionID;
-      }
       is(
         result.distribution,
-        expectedDefault,
-        "distribution has expected default value"
+        AppConstants.platform === "win" &&
+          Services.sysinfo.getProperty("hasWinPackageId")
+          ? "mozilla-MSIX"
+          : "default",
+        'Should be "default" without preference set.'
       );
 
       let defaults = Services.prefs.getDefaultBranch("distribution.");
