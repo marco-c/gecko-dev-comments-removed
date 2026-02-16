@@ -13,7 +13,6 @@ use crate::renderer::{FullFrameStats, PipelineInfo};
 use crate::gpu_types::BlurEdgeMode;
 use crate::frame_builder::Frame;
 use crate::profiler::TransactionProfile;
-use crate::segment::EdgeMask;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::prim_store::PrimitiveInstanceIndex;
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference};
@@ -830,18 +829,6 @@ pub struct LayoutPrimitiveInfo {
     pub rect: LayoutRect,
     pub clip_rect: LayoutRect,
     pub flags: PrimitiveFlags,
-    
-    
-    
-    
-    
-    pub aligned_aa_edges: EdgeMask,
-    
-    
-    
-    
-    
-    pub transformed_aa_edges: EdgeMask,
 }
 
 impl LayoutPrimitiveInfo {
@@ -850,8 +837,6 @@ impl LayoutPrimitiveInfo {
             rect,
             clip_rect,
             flags: PrimitiveFlags::default(),
-            aligned_aa_edges: EdgeMask::empty(),
-            transformed_aa_edges: EdgeMask::all(),
         }
     }
 }
