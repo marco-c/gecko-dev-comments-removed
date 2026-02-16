@@ -23,7 +23,6 @@ enum class PopoverAttributeState : uint8_t {
   None,
   Auto,    
   Manual,  
-  Hint,    
 };
 
 enum class PopoverVisibilityState : uint8_t {

@@ -51,7 +51,6 @@
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/dom/PopoverData.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsIContent.h"
 #include "nsIFormControl.h"
@@ -424,26 +423,6 @@ uint64_t LocalAccessible::NativeInteractiveState() const {
 }
 
 uint64_t LocalAccessible::NativeLinkState() const { return 0; }
-
-bool LocalAccessible::IsOnlyPlainContent() const {
-  if (!IsPlainContent()) {
-    return false;
-  }
-
-  uint32_t childCount = ChildCount();
-  for (uint32_t i = 0; i < childCount; i++) {
-    LocalAccessible* child = LocalChildAt(i);
-    if (!child) {
-      continue;
-    }
-
-    if (!child->IsOnlyPlainContent()) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 bool LocalAccessible::NativelyUnavailable() const {
   if (mContent->IsHTMLElement()) return mContent->AsElement()->IsDisabled();
@@ -1961,39 +1940,6 @@ nsIContent* LocalAccessible::GetAtomicRegion() const {
   return atomic.EqualsLiteral("true") ? loopContent : nullptr;
 }
 
-static bool IsHintPopover(nsIContent* aContent) {
-  auto* htmlEl = nsGenericHTMLElement::FromNode(aContent);
-  return htmlEl &&
-         htmlEl->GetPopoverAttributeState() == dom::PopoverAttributeState::Hint;
-}
-
-static bool IsOpenHintPopover(nsIContent* aContent) {
-  auto* htmlEl = nsGenericHTMLElement::FromNode(aContent);
-  return htmlEl && htmlEl->PopoverOpen() &&
-         htmlEl->GetPopoverAttributeState() == dom::PopoverAttributeState::Hint;
-}
-
-
-
-
-
-
-static bool ShouldHintPopoverEstablishDetailsRelation(
-    dom::Element* aTargetEl, LocalAccessible* aTargetAcc) {
-  if (!IsHintPopover(aTargetEl)) {
-    return true;
-  }
-  if (!IsOpenHintPopover(aTargetEl)) {
-    return false;
-  }
-  return !aTargetAcc->IsOnlyPlainContent();
-}
-
-static bool ShouldHintPopoverEstablishDescribedByRelation(
-    dom::Element* aTargetEl, LocalAccessible* aTargetAcc) {
-  return IsOpenHintPopover(aTargetEl) && aTargetAcc->IsOnlyPlainContent();
-}
-
 LocalAccessible* LocalAccessible::GetCommandForDetailsRelation() const {
   dom::Element* targetEl = mContent->GetEffectiveCommandForElement();
   if (!targetEl) {
@@ -2019,9 +1965,6 @@ LocalAccessible* LocalAccessible::GetCommandForDetailsRelation() const {
   if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
     return nullptr;
   }
-  if (!ShouldHintPopoverEstablishDetailsRelation(targetEl, targetAcc)) {
-    return nullptr;
-  }
   return targetAcc;
 }
 
@@ -2044,9 +1987,6 @@ LocalAccessible* LocalAccessible::GetPopoverTargetDetailsRelation() const {
     }
   }
   if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
-    return nullptr;
-  }
-  if (!ShouldHintPopoverEstablishDetailsRelation(targetEl, targetAcc)) {
     return nullptr;
   }
   return targetAcc;
@@ -2118,54 +2058,6 @@ LocalAccessible* LocalAccessible::GetAnchorPositionTargetDetailsRelation()
   return targetAcc;
 }
 
-LocalAccessible* LocalAccessible::GetPopoverTargetDescribedByRelation() const {
-  dom::Element* targetEl = mContent->GetEffectivePopoverTargetElement();
-  if (!targetEl) {
-    return nullptr;
-  }
-  LocalAccessible* targetAcc = mDoc->GetAccessible(targetEl);
-  if (!targetAcc) {
-    return nullptr;
-  }
-  if (const nsAttrValue* actionVal =
-          Elm()->GetParsedAttr(nsGkAtoms::popovertargetaction)) {
-    if (static_cast<PopoverTargetAction>(actionVal->GetEnumValue()) ==
-        PopoverTargetAction::Hide) {
-      return nullptr;
-    }
-  }
-  if (ShouldHintPopoverEstablishDescribedByRelation(targetEl, targetAcc)) {
-    return targetAcc;
-  }
-  return nullptr;
-}
-
-LocalAccessible* LocalAccessible::GetCommandForDescribedByRelation() const {
-  dom::Element* targetEl = mContent->GetEffectiveCommandForElement();
-  if (!targetEl) {
-    return nullptr;
-  }
-  LocalAccessible* targetAcc = mDoc->GetAccessible(targetEl);
-  if (!targetAcc) {
-    return nullptr;
-  }
-  if (const nsAttrValue* actionVal = Elm()->GetParsedAttr(nsGkAtoms::command)) {
-    if (actionVal && actionVal->Type() != nsAttrValue::eEnum) {
-      return nullptr;
-    }
-    auto command =
-        static_cast<dom::Element::Command>(actionVal->GetEnumValue());
-    if (command != dom::Element::Command::ShowPopover &&
-        command != dom::Element::Command::TogglePopover) {
-      return nullptr;
-    }
-  }
-  if (ShouldHintPopoverEstablishDescribedByRelation(targetEl, targetAcc)) {
-    return targetAcc;
-  }
-  return nullptr;
-}
-
 Relation LocalAccessible::RelationByType(RelationType aType) const {
   if (!HasOwnContent()) return Relation();
 
@@ -2202,12 +2094,6 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (mContent->IsXULElement()) {
         rel.AppendIter(new XULDescriptionIterator(Document(), mContent));
       }
-      if (LocalAccessible* target = GetCommandForDescribedByRelation()) {
-        rel.AppendTarget(target);
-      }
-      if (LocalAccessible* target = GetPopoverTargetDescribedByRelation()) {
-        rel.AppendTarget(target);
-      }
 
       return rel;
     }
@@ -2222,25 +2108,6 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (mContent->IsXULElement(nsGkAtoms::description)) {
         rel.AppendIter(
             new AssociatedElementsIterator(mDoc, mContent, nsGkAtoms::control));
-      }
-
-      RelatedAccIterator popoverInvokers(mDoc, mContent,
-                                         nsGkAtoms::popovertarget);
-      while (Accessible* invoker = popoverInvokers.Next()) {
-        if (invoker->AsLocal()->GetPopoverTargetDescribedByRelation()) {
-          MOZ_ASSERT(
-              invoker->AsLocal()->GetPopoverTargetDescribedByRelation() ==
-              this);
-          rel.AppendTarget(invoker);
-        }
-      }
-      RelatedAccIterator commandInvokers(mDoc, mContent, nsGkAtoms::commandfor);
-      while (Accessible* invoker = commandInvokers.Next()) {
-        if (invoker->AsLocal()->GetCommandForDescribedByRelation()) {
-          MOZ_ASSERT(invoker->AsLocal()->GetCommandForDescribedByRelation() ==
-                     this);
-          rel.AppendTarget(invoker);
-        }
       }
 
       return rel;
@@ -2910,23 +2777,6 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
   if (IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
   }
-
-  if (mContent && mContent->IsElement()) {
-    
-    
-    
-    if (IsOpenHintPopover(mContent)) {
-      mDoc->QueueCacheUpdateForPopoverInvokers(mContent->AsElement());
-    }
-
-    
-    
-    
-    
-    if (aParent && aParent->Elm() && IsOpenHintPopover(aParent->Elm())) {
-      mDoc->QueueCacheUpdateForPopoverInvokers(aParent->Elm());
-    }
-  }
 }
 
 
@@ -2935,12 +2785,6 @@ void LocalAccessible::UnbindFromParent() {
   
   if (IsTable() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
-  }
-
-  
-  
-  if (mContent && mContent->IsElement() && IsHintPopover(mContent)) {
-    mDoc->QueueCacheUpdateForPopoverInvokers(mContent->AsElement());
   }
 
   mParent = nullptr;
@@ -4274,11 +4118,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
     }
 
-    
-    
-    bool hasAriaDetails = false;
-    bool hasAriaDescribedby = false;
-
     for (auto const& data : kRelationTypeAtoms) {
       nsTArray<uint64_t> ids;
       nsStaticAtom* const relAtom = data.mAtom;
@@ -4301,20 +4140,12 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
           rel.AppendIter(
               new AssociatedElementsIterator(mDoc, mContent, relAtom));
         } else if (relAtom == nsGkAtoms::commandfor) {
-          
-          if (!hasAriaDetails) {
-            if (LocalAccessible* target = GetCommandForDetailsRelation()) {
-              rel.AppendTarget(target);
-              fields->SetAttribute(CacheKey::PopoverInvokerIsDetails, true);
-            }
+          if (LocalAccessible* target = GetCommandForDetailsRelation()) {
+            rel.AppendTarget(target);
           }
         } else if (relAtom == nsGkAtoms::popovertarget) {
-          
-          if (!hasAriaDetails) {
-            if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
-              rel.AppendTarget(target);
-              fields->SetAttribute(CacheKey::PopoverInvokerIsDetails, true);
-            }
+          if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
+            rel.AppendTarget(target);
           }
         } else if (relAtom == nsGkAtoms::target) {
           if (LocalAccessible* target =
@@ -4323,26 +4154,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
           }
         } else {
           MOZ_ASSERT_UNREACHABLE("Unknown details relAtom");
-        }
-      } else if (data.mType == RelationType::DESCRIBED_BY) {
-        if (relAtom == nsGkAtoms::aria_describedby) {
-          rel.AppendIter(
-              new AssociatedElementsIterator(mDoc, mContent, relAtom));
-        } else if (relAtom == nsGkAtoms::commandfor) {
-          
-          if (!hasAriaDescribedby) {
-            if (LocalAccessible* target = GetCommandForDescribedByRelation()) {
-              rel.AppendTarget(target);
-            }
-          }
-        } else if (relAtom == nsGkAtoms::popovertarget) {
-          
-          if (!hasAriaDescribedby) {
-            if (LocalAccessible* target =
-                    GetPopoverTargetDescribedByRelation()) {
-              rel.AppendTarget(target);
-            }
-          }
         }
       } else if (data.mType == RelationType::CONTROLLER_FOR) {
         
@@ -4364,18 +4175,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
       if (ids.Length()) {
         fields->SetAttribute(relAtom, std::move(ids));
-        
-        if (relAtom == nsGkAtoms::aria_details) {
-          hasAriaDetails = true;
-        } else if (relAtom == nsGkAtoms::aria_describedby) {
-          hasAriaDescribedby = true;
-        }
-      } else if (IsUpdatePush(CacheDomain::Relations) &&
-                 !fields->HasAttribute(relAtom)) {
-        
-        
-        
-        
+      } else if (IsUpdatePush(CacheDomain::Relations)) {
         fields->SetAttribute(relAtom, DeleteEntry());
       }
     }

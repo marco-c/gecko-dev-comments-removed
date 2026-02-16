@@ -1268,20 +1268,6 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
 
         
         
-        
-        if (data.mAtom == nsGkAtoms::popovertarget ||
-            data.mAtom == nsGkAtoms::commandfor) {
-          auto isDetails = aAcc->mCachedFields->GetAttribute<bool>(
-              CacheKey::PopoverInvokerIsDetails);
-          bool isDetailsValue = isDetails.isSome() && *isDetails;
-          bool wantDetails = aRelType == RelationType::DETAILS;
-          if (isDetailsValue != wantDetails) {
-            continue;
-          }
-        }
-
-        
-        
         return maybeIds;
       }
     }
@@ -1970,19 +1956,9 @@ already_AddRefed<AccAttributes> RemoteAccessible::Attributes() {
     if (mCachedFields->HasAttribute(nsGkAtoms::aria_details)) {
       detailsFrom.AssignLiteral("aria-details");
     } else if (mCachedFields->HasAttribute(nsGkAtoms::commandfor)) {
-      
-      auto isDetails =
-          mCachedFields->GetAttribute<bool>(CacheKey::PopoverInvokerIsDetails);
-      if (isDetails && *isDetails) {
-        detailsFrom.AssignLiteral("command-for");
-      }
+      detailsFrom.AssignLiteral("command-for");
     } else if (mCachedFields->HasAttribute(nsGkAtoms::popovertarget)) {
-      
-      auto isDetails =
-          mCachedFields->GetAttribute<bool>(CacheKey::PopoverInvokerIsDetails);
-      if (isDetails && *isDetails) {
-        detailsFrom.AssignLiteral("popover-target");
-      }
+      detailsFrom.AssignLiteral("popover-target");
     } else if (mCachedFields->HasAttribute(nsGkAtoms::target)) {
       detailsFrom.AssignLiteral("css-anchor");
     }

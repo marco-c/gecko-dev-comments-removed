@@ -1190,14 +1190,6 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     event = new AccStateChangeEvent(accessible, states::FOCUSABLE);
     FireDelayedEvent(event);
   }
-
-  if (aStateMask.HasState(dom::ElementState::POPOVER_OPEN)) {
-    
-    
-    
-    
-    QueueCacheUpdateForPopoverInvokers(aElement);
-  }
 }
 
 void DocAccessible::CharacterDataWillChange(nsIContent* aContent,
@@ -2387,36 +2379,6 @@ void DocAccessible::MaybeFireEventsForChangedPopover(LocalAccessible* aAcc) {
     RefPtr<AccEvent> expandedChangeEvent =
         new AccStateChangeEvent(invoker->AsLocal(), states::EXPANDED);
     FireDelayedEvent(expandedChangeEvent);
-  }
-
-  
-  
-  
-  
-  if (auto* htmlEl = nsGenericHTMLElement::FromNode(el)) {
-    if (htmlEl->GetPopoverAttributeState() ==
-        dom::PopoverAttributeState::Hint) {
-      QueueCacheUpdateForPopoverInvokers(el);
-    }
-  }
-}
-
-void DocAccessible::QueueCacheUpdateForPopoverInvokers(
-    dom::Element* aPopoverEl) {
-  if (!mIPCDoc) {
-    return;
-  }
-  for (nsStaticAtom* attr : {nsGkAtoms::popovertarget, nsGkAtoms::commandfor}) {
-    RelatedAccIterator invokers(this, aPopoverEl, attr);
-    while (Accessible* invoker = invokers.Next()) {
-      if (LocalAccessible* localInvoker = invoker->AsLocal()) {
-        if (localInvoker->IsDefunct() || !localInvoker->IsInDocument() ||
-            mInsertedAccessibles.Contains(localInvoker)) {
-          continue;
-        }
-        QueueCacheUpdate(localInvoker, CacheDomain::Relations);
-      }
-    }
   }
 }
 
