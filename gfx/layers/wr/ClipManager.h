@@ -128,21 +128,17 @@ class ClipManager {
   
   struct ItemClips {
     ItemClips(const ActiveScrolledRoot* aASR,
-              const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel,
-              bool aSeparateLeaf);
+              const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel);
 
     
     const ActiveScrolledRoot* mASR;
     const DisplayItemClipChain* mChain;
     int32_t mAppUnitsPerDevPixel;
-    bool mSeparateLeaf;
 
     
     wr::WrSpatialId mScrollId;
     Maybe<wr::WrClipChainId> mClipChainId;
 
-    void UpdateSeparateLeaf(wr::DisplayListBuilder& aBuilder,
-                            int32_t aAppUnitsPerDevPixel);
     bool HasSameInputs(const ItemClips& aOther);
     wr::WrSpaceAndClipChain GetSpaceAndClipChain() const;
   };

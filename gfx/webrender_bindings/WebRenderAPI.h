@@ -864,10 +864,6 @@ class DisplayListBuilder final {
   
   wr::WrState* Raw() { return mWrState; }
 
-  void SetClipChainLeaf(const Maybe<wr::LayoutRect>& aClipRect) {
-    mClipChainLeaf = aClipRect;
-  }
-
   
   
   
@@ -910,17 +906,6 @@ class DisplayListBuilder final {
   };
 
  protected:
-  wr::LayoutRect MergeClipLeaf(const wr::LayoutRect& aClip) {
-    if (mClipChainLeaf) {
-      return wr::IntersectLayoutRect(*mClipChainLeaf, aClip);
-    }
-    return aClip;
-  }
-
-  
-  void SuspendClipLeafMerging();
-  void ResumeClipLeafMerging();
-
   wr::WrState* mWrState;
 
   
@@ -937,16 +922,6 @@ class DisplayListBuilder final {
       mASRToSpatialIdMap;
 
   wr::WrSpaceAndClipChain mCurrentSpaceAndClipChain;
-
-  
-  
-  
-  Maybe<wr::LayoutRect> mClipChainLeaf;
-
-  
-  
-  Maybe<wr::WrSpaceAndClipChain> mSuspendedSpaceAndClipChain;
-  Maybe<wr::LayoutRect> mSuspendedClipChainLeaf;
 
   RefPtr<layout::TextDrawTarget> mCachedTextDT;
   mozilla::UniquePtr<gfxContext> mCachedContext;

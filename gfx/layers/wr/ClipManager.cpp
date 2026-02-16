@@ -53,7 +53,7 @@ void ClipManager::BeginList(const StackingContextHelper& aStackingContext) {
            aStackingContext.AffectsClipPositioning(),
            aStackingContext.ReferenceFrameId().isSome());
 
-  ItemClips clips(nullptr, nullptr, 0, false);
+  ItemClips clips(nullptr, nullptr, 0);
   if (!mItemClipStack.empty()) {
     clips = mItemClipStack.top();
   }
@@ -85,7 +85,6 @@ void ClipManager::EndList(const StackingContextHelper& aStackingContext) {
 
   CLIP_LOG("end list %p\n", &aStackingContext);
 
-  mBuilder->SetClipChainLeaf(Nothing());
   mItemClipStack.pop();
 
   if (aStackingContext.AffectsClipPositioning()) {
@@ -201,16 +200,6 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
   
   
   
-  
-  
-  
-  const bool separateLeaf = clip && clip->mASR == asr &&
-                            clip->mClip.GetRoundedRectCount() == 0 &&
-                            !aItem->GetChildren();
-
-  
-  
-  
   const int32_t auPerDevPixel = [&] {
     if (type == DisplayItemType::TYPE_ZOOM) {
       return static_cast<nsDisplayZoom*>(aItem)->GetParentAppUnitsPerDevPixel();
@@ -218,7 +207,7 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
     return aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
   }();
 
-  ItemClips clips(asr, clip, auPerDevPixel, separateLeaf);
+  ItemClips clips(asr, clip, auPerDevPixel);
   MOZ_ASSERT(!mItemClipStack.empty());
   if (clips.HasSameInputs(mItemClipStack.top())) {
     
@@ -234,13 +223,6 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
   
   
   mItemClipStack.pop();
-
-  
-  
-  if (separateLeaf) {
-    CLIP_LOG("\tseparate leaf detected, ignoring the last clip\n");
-    clip = clip->mParent;
-  }
 
   
   
@@ -272,7 +254,6 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
 
   
   
-  clips.UpdateSeparateLeaf(*mBuilder, auPerDevPixel);
   auto spaceAndClipChain = clips.GetSpaceAndClipChain();
 
   CLIP_LOG("  push: clip: %p, asr: %p, scroll = %" PRIuPTR ", clip = %" PRIu64
@@ -727,30 +708,13 @@ ClipManager::~ClipManager() {
 
 ClipManager::ItemClips::ItemClips(const ActiveScrolledRoot* aASR,
                                   const DisplayItemClipChain* aChain,
-                                  int32_t aAppUnitsPerDevPixel,
-                                  bool aSeparateLeaf)
-    : mASR(aASR),
-      mChain(aChain),
-      mAppUnitsPerDevPixel(aAppUnitsPerDevPixel),
-      mSeparateLeaf(aSeparateLeaf) {
+                                  int32_t aAppUnitsPerDevPixel)
+    : mASR(aASR), mChain(aChain), mAppUnitsPerDevPixel(aAppUnitsPerDevPixel) {
   mScrollId = wr::wr_root_scroll_node_id();
 }
 
-void ClipManager::ItemClips::UpdateSeparateLeaf(
-    wr::DisplayListBuilder& aBuilder, int32_t aAppUnitsPerDevPixel) {
-  Maybe<wr::LayoutRect> clipLeaf;
-  if (mSeparateLeaf) {
-    MOZ_ASSERT(mChain);
-    clipLeaf.emplace(wr::ToLayoutRect(LayoutDeviceRect::FromAppUnits(
-        mChain->mClip.GetClipRect(), aAppUnitsPerDevPixel)));
-  }
-
-  aBuilder.SetClipChainLeaf(clipLeaf);
-}
-
 bool ClipManager::ItemClips::HasSameInputs(const ItemClips& aOther) {
-  if (mASR != aOther.mASR || mChain != aOther.mChain ||
-      mSeparateLeaf != aOther.mSeparateLeaf) {
+  if (mASR != aOther.mASR || mChain != aOther.mChain) {
     return false;
   }
   

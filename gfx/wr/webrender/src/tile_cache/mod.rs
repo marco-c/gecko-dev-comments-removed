@@ -2812,7 +2812,12 @@ impl TileCacheInstance {
             
             
             
-            if self.backdrop.opaque_rect.contains_box(&self.local_rect) {
+            
+            
+            let clipped_local_rect = self.local_rect
+                .intersection(&self.local_clip_rect)
+                .unwrap_or(PictureRect::zero());
+            if self.backdrop.opaque_rect.contains_box(&clipped_local_rect) {
                 return SubpixelMode::Allow;
             }
         }
