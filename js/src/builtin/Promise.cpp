@@ -3478,7 +3478,9 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
       
 
       
+      
 
+      
       
       
 
@@ -3527,9 +3529,6 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
         return nullptr;
       }
     }
-
-    
-    
 
     
     
