@@ -158,9 +158,14 @@ void Zone::sweepWeakMaps(JSTracer* trc) {
   for (WeakMapBase* m = gcWeakMapList().getFirst(); m;) {
     WeakMapBase* next = m->getNext();
     if (IsMarked(m->mapColor())) {
+      
       m->traceWeakEdgesDuringSweeping(trc);
     } else {
-      if (!m->empty()) {
+      if (m->memberOf) {
+        
+        MOZ_ASSERT(!m->memberOf->isMarkedAny());
+      } else if (!m->empty()) {
+        
         
         AutoLockSweepingLock lock(trc->runtime());
         m->clearAndCompact();
@@ -220,7 +225,3 @@ void WeakMapBase::setHasNurseryEntries() {
 
   hasNurseryEntries = true;
 }
-
-namespace js {
-template class WeakMap<JSObject*, JSObject*, ZoneAllocPolicy>;
-}  

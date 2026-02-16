@@ -8,11 +8,12 @@
 #include <algorithm>
 
 #include "gc/GCInternals.h"
-#include "gc/WeakMap.h"
 #include "gc/Zone.h"
 #include "js/PropertyAndElement.h"  
 #include "js/Proxy.h"
 #include "jsapi-tests/tests.h"
+
+#include "gc/WeakMap-inl.h"
 
 using namespace js;
 using namespace js::gc;

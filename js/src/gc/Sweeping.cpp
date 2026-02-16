@@ -1402,6 +1402,8 @@ void GCRuntime::sweepCompressionTasks() {
 }
 
 void GCRuntime::sweepWeakMaps() {
+  AutoSetThreadIsSweeping threadIsSweeping;  
+
   SweepingTracer trc(rt);
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
     
