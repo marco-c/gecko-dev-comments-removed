@@ -107,12 +107,12 @@ static PlainYearMonthObject* CreateTemporalYearMonth(
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->setFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
 
   
-  object->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   
   return object;
@@ -136,12 +136,12 @@ PlainYearMonthObject* js::temporal::CreateTemporalYearMonth(
 
   
   auto packedDate = PackedDate::pack(yearMonth);
-  object->setFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
 
   
-  object->setFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                       yearMonth.calendar().toSlotValue());
+  object->initFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
+                        yearMonth.calendar().toSlotValue());
 
   
   return object;
@@ -483,6 +483,34 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   return true;
 }
 
+const char* NonZeroDurationPartAfterMonths(const Duration& duration) {
+  if (duration.weeks != 0) {
+    return "weeks";
+  }
+  if (duration.days != 0) {
+    return "days";
+  }
+  if (duration.hours != 0) {
+    return "hours";
+  }
+  if (duration.minutes != 0) {
+    return "minutes";
+  }
+  if (duration.seconds != 0) {
+    return "seconds";
+  }
+  if (duration.milliseconds != 0) {
+    return "milliseconds";
+  }
+  if (duration.microseconds != 0) {
+    return "microseconds";
+  }
+  if (duration.nanoseconds != 0) {
+    return "nanoseconds";
+  }
+  return nullptr;
+}
+
 
 
 
@@ -504,6 +532,9 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   }
 
   
+  auto internalDuration = ToInternalDurationRecord(duration);
+
+  
   auto overflow = TemporalOverflow::Constrain;
   if (args.hasDefined(1)) {
     
@@ -520,7 +551,16 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   }
 
   
-  int32_t sign = DurationSign(duration);
+  const auto& durationToAdd = internalDuration.date;
+
+  
+  if (durationToAdd.weeks != 0 || durationToAdd.days != 0 ||
+      internalDuration.time != TimeDuration{}) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_YEAR_MONTH_BAD_DURATION,
+                              NonZeroDurationPartAfterMonths(duration));
+    return false;
+  }
 
   
   auto calendar = yearMonth.calendar();
@@ -536,51 +576,11 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   fields.setDay(1);
 
   
-  Rooted<PlainDate> intermediateDate(cx);
+  Rooted<PlainDate> date(cx);
   if (!CalendarDateFromFields(cx, calendar, fields, TemporalOverflow::Constrain,
-                              &intermediateDate)) {
+                              &date)) {
     return false;
   }
-
-  
-  ISODate date;
-  if (sign < 0) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    auto oneMonthDuration = DateDuration{0, 1};
-
-    
-    ISODate nextMonth;
-    if (!CalendarDateAdd(cx, calendar, intermediateDate, oneMonthDuration,
-                         TemporalOverflow::Constrain, &nextMonth)) {
-      return false;
-    }
-
-    
-    date = BalanceISODate(nextMonth, -1);
-
-    
-    MOZ_ASSERT(ISODateWithinLimits(date));
-  } else {
-    
-    date = intermediateDate;
-  }
-
-  
-  auto durationToAdd = ToDateDurationRecordWithoutTime(duration);
 
   
   ISODate addedDate;
@@ -600,14 +600,14 @@ static bool AddDurationToYearMonth(JSContext* cx, TemporalAddDuration operation,
   }
 
   
-  Rooted<PlainYearMonth> result(cx);
+  Rooted<PlainYearMonth> isoDate(cx);
   if (!CalendarYearMonthFromFields(cx, calendar, addedDateFields, overflow,
-                                   &result)) {
+                                   &isoDate)) {
     return false;
   }
 
   
-  auto* obj = CreateTemporalYearMonth(cx, result);
+  auto* obj = CreateTemporalYearMonth(cx, isoDate);
   if (!obj) {
     return false;
   }
