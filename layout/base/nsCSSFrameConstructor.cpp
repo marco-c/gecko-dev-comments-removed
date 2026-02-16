@@ -1159,13 +1159,14 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
     } else {
       containingBlock->SetInitialChildList(aChildListID, std::move(aFrameList));
     }
-  } else if (aChildListID == FrameChildListID::Fixed ||
+  } else if (childList.IsEmpty() || aChildListID == FrameChildListID::Fixed ||
              aChildListID == FrameChildListID::Absolute) {
     
     
     mFrameConstructor->AppendFrames(containingBlock, aChildListID,
                                     std::move(aFrameList));
   } else {
+    MOZ_ASSERT(aChildListID == FrameChildListID::Float);
     
     
     
@@ -1174,34 +1175,32 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
     
     
     nsIFrame* lastChild = childList.LastChild();
+    lastChild = lastChild->FirstContinuation()->GetPlaceholderFrame();
 
     
     
     
     nsIFrame* firstNewFrame = aFrameList.FirstChild();
+    firstNewFrame = firstNewFrame->GetPlaceholderFrame();
 
     
     AutoTArray<const nsIFrame*, 20> firstNewFrameAncestors;
-    const nsIFrame* notCommonAncestor = nullptr;
-    if (lastChild) {
-      notCommonAncestor = nsLayoutUtils::FillAncestors(
-          firstNewFrame, containingBlock, &firstNewFrameAncestors);
-    }
+    const nsIFrame* notCommonAncestor = nsLayoutUtils::FillAncestors(
+        firstNewFrame, containingBlock, &firstNewFrameAncestors);
 
-    if (!lastChild || nsLayoutUtils::CompareTreePosition(
-                          lastChild, firstNewFrame, firstNewFrameAncestors,
-                          notCommonAncestor ? containingBlock : nullptr) < 0) {
-      
+    if (nsLayoutUtils::CompareTreePosition(
+            lastChild, firstNewFrame, firstNewFrameAncestors,
+            notCommonAncestor ? containingBlock : nullptr) < 0) {
       
       mFrameConstructor->AppendFrames(containingBlock, aChildListID,
                                       std::move(aFrameList));
     } else {
       
       
-      AutoTArray<nsIFrame*, 128> children;
-      for (nsIFrame* f = childList.FirstChild(); f != lastChild;
-           f = f->GetNextSibling()) {
-        children.AppendElement(f);
+      AutoTArray<std::pair<nsIFrame*, nsPlaceholderFrame*>, 128> children;
+      for (nsIFrame* f : childList) {
+        children.AppendElement(
+            std::make_pair(f, f->FirstContinuation()->GetPlaceholderFrame()));
       }
 
       nsIFrame* insertionPoint = nullptr;
@@ -1209,32 +1208,31 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
       int32_t max = children.Length();
       while (max > imin) {
         int32_t imid = imin + ((max - imin) / 2);
-        nsIFrame* f = children[imid];
+        const auto& pair = children[imid];
         int32_t compare = nsLayoutUtils::CompareTreePosition(
-            f, firstNewFrame, firstNewFrameAncestors,
+            pair.second, firstNewFrame, firstNewFrameAncestors,
             notCommonAncestor ? containingBlock : nullptr);
         if (compare > 0) {
           
           max = imid;
-          insertionPoint = imid > 0 ? children[imid - 1] : nullptr;
+          insertionPoint = imid > 0 ? children[imid - 1].first : nullptr;
         } else if (compare < 0) {
           
           imin = imid + 1;
-          insertionPoint = f;
+          insertionPoint = pair.first;
         } else {
           
           
           
           NS_WARNING("Something odd happening???");
           insertionPoint = nullptr;
-          for (uint32_t i = 0; i < children.Length(); ++i) {
-            nsIFrame* f = children[i];
+          for (auto [frame, placeholder] : children) {
             if (nsLayoutUtils::CompareTreePosition(
-                    f, firstNewFrame, firstNewFrameAncestors,
+                    placeholder, firstNewFrame, firstNewFrameAncestors,
                     notCommonAncestor ? containingBlock : nullptr) > 0) {
               break;
             }
-            insertionPoint = f;
+            insertionPoint = frame;
           }
           break;
         }
@@ -3431,25 +3429,25 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
                    aParentFrame->GetParent()->IsFieldSetFrame(),
                "Unexpected parent for fieldset content anon box");
 
-  if (aElement.IsInNativeAnonymousSubtree()) {
-    if (aElement.NodeInfo()->NameAtom() == nsGkAtoms::label && aParentFrame) {
-      if (aParentFrame->IsFileControlFrame()) {
-        static constexpr FrameConstructionData sFileLabelData(
-            NS_NewFileControlLabelFrame);
-        return &sFileLabelData;
-      }
-      if (aParentFrame->IsComboboxControlFrame()) {
-        static constexpr FrameConstructionData sComboboxLabelData(
-            NS_NewComboboxLabelFrame);
-        return &sComboboxLabelData;
-      }
-    }
-    if (aStyle.GetPseudoType() == PseudoStyleType::viewTransitionOld ||
-        aStyle.GetPseudoType() == PseudoStyleType::viewTransitionNew) {
+  switch (aStyle.GetPseudoType()) {
+    case PseudoStyleType::viewTransitionOld:
+    case PseudoStyleType::viewTransitionNew: {
       static constexpr FrameConstructionData sViewTransitionData(
           NS_NewImageFrameForViewTransition);
       return &sViewTransitionData;
     }
+    case PseudoStyleType::mozSelectContent: {
+      static constexpr FrameConstructionData sComboboxLabelData(
+          NS_NewComboboxLabelFrame);
+      return &sComboboxLabelData;
+    }
+    case PseudoStyleType::mozFileContent: {
+      static constexpr FrameConstructionData sFileLabelData(
+          NS_NewFileControlLabelFrame);
+      return &sFileLabelData;
+    }
+    default:
+      break;
   }
 
   static constexpr FrameConstructionDataByTag sHTMLData[] = {
@@ -4966,11 +4964,16 @@ void nsCSSFrameConstructor::AddFrameConstructionItems(
 
 
 
-static bool ShouldSuppressFrameInSelect(const nsIContent* aParent,
-                                        const nsIContent& aChild) {
+static bool ShouldSuppressFrameInListboxSelect(const nsIContent* aParent,
+                                               const nsIContent& aChild) {
   if (!aParent ||
       !aParent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup,
                                     nsGkAtoms::option)) {
+    return false;
+  }
+
+  if (const auto* select = HTMLSelectElement::FromNode(aParent);
+      select && select->IsCombobox()) {
     return false;
   }
 
@@ -5152,7 +5155,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   }
 
   nsIContent* parent = aParentFrame ? aParentFrame->GetContent() : nullptr;
-  if (ShouldSuppressFrameInSelect(parent, *aContent)) {
+  if (ShouldSuppressFrameInListboxSelect(parent, *aContent)) {
     return;
   }
 
@@ -6039,17 +6042,12 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aStartChild,
                                               nsIContent* aEndChild,
                                               InsertionKind aInsertionKind) {
   MOZ_ASSERT(aStartChild);
-
-  nsIContent* parent = aStartChild->GetParent();
-  if (!parent) {
-    IssueSingleInsertNofications(aStartChild, aEndChild, aInsertionKind);
-    return {};
-  }
+  MOZ_ASSERT(aStartChild->GetParentNode());
 
   
   
   
-  if (parent->GetShadowRoot()) {
+  if (aStartChild->GetParentNode()->GetShadowRoot()) {
     IssueSingleInsertNofications(aStartChild, aEndChild, aInsertionKind);
     return {};
   }
@@ -6230,16 +6228,22 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   }
 #endif
 
-  const bool isSingleInsert = (aStartChild->GetNextSibling() == aEndChild);
-
   
   
   
   if (!aStartChild->GetParent()) {
-    MOZ_ASSERT(isSingleInsert,
-               "root node insertion should be a single insertion");
     Element* docElement = mDocument->GetRootElement();
-    if (aStartChild != docElement) {
+    const bool foundRoot = [&] {
+      for (nsIContent* cur = aStartChild; cur != aEndChild;
+           cur = cur->GetNextSibling()) {
+        if (cur == docElement) {
+          return true;
+        }
+      }
+      return false;
+    }();
+
+    if (!foundRoot) {
       
       return;
     }
@@ -6253,7 +6257,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
 
     
     if (ConstructDocElementFrame(docElement)) {
-      InvalidateCanvasIfNeeded(mPresShell, aStartChild);
+      InvalidateCanvasIfNeeded(mPresShell, docElement);
 #ifdef DEBUG
       if (gReallyNoisyContentUpdates) {
         printf(
@@ -6269,10 +6273,10 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
       accService->ContentRangeInserted(mPresShell, aStartChild, aEndChild);
     }
 #endif
-
     return;
   }
 
+  const bool isSingleInsert = aStartChild->GetNextSibling() == aEndChild;
   InsertionPoint insertion;
   if (isSingleInsert) {
     
@@ -6387,21 +6391,6 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
       
       
       prevSibling = GetInsertionPrevSibling(&insertion, aStartChild, &isAppend);
-
-      
-      if (!isSingleInsert) {
-        
-        RecoverLetterFrames(state.mFloatedList.mContainingBlock);
-
-        
-        
-        LAYOUT_PHASE_TEMP_EXIT();
-        IssueSingleInsertNofications(aStartChild, aEndChild,
-                                     InsertionKind::Sync);
-        LAYOUT_PHASE_TEMP_REENTER();
-        return;
-      }
-
       frameType = insertion.mParentFrame->Type();
     }
   }

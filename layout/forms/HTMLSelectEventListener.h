@@ -8,7 +8,6 @@
 #define mozilla_HTMLSelectEventListener_h
 
 #include "nsIDOMEventListener.h"
-#include "nsStubMutationObserver.h"
 
 class nsIFrame;
 class nsListControlFrame;
@@ -28,8 +27,7 @@ class Event;
 
 
 
-class HTMLSelectEventListener final : public nsStubMutationObserver,
-                                      public nsIDOMEventListener {
+class HTMLSelectEventListener final : public nsIDOMEventListener {
  public:
   enum class SelectType : uint8_t { Listbox, Combobox };
   HTMLSelectEventListener(dom::HTMLSelectElement& aElement,
@@ -39,13 +37,6 @@ class HTMLSelectEventListener final : public nsStubMutationObserver,
   }
 
   NS_DECL_ISUPPORTS
-
-  
-  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD HandleEvent(dom::Event*) override;
@@ -86,9 +77,6 @@ class HTMLSelectEventListener final : public nsStubMutationObserver,
 
   dom::HTMLOptionElement* GetNonDisabledOptionFrom(
       int32_t aFromIndex, int32_t* aFoundIndex = nullptr) const;
-
-  void ComboboxMightHaveChanged();
-  void OptionValueMightHaveChanged(nsIContent* aMutatingNode);
 
   ~HTMLSelectEventListener();
 

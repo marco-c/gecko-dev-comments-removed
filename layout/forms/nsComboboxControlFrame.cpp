@@ -10,34 +10,20 @@
 
 #include "HTMLSelectEventListener.h"
 #include "gfxContext.h"
-#include "gfxUtils.h"
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSelectElement.h"
-#include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "nsGkAtoms.h"
-#include "nsISelectControlFrame.h"
 #include "nsITheme.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
 #include "nsTextFrameUtils.h"
-#include "nsTextNode.h"
 #include "nsTextRunTransformations.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
-
-NS_IMETHODIMP
-nsComboboxControlFrame::RedisplayTextEvent::Run() {
-  if (mControlFrame) {
-    mControlFrame->HandleRedisplayTextEvent();
-  }
-  return NS_OK;
-}
 
 
 
@@ -67,7 +53,6 @@ nsComboboxControlFrame::~nsComboboxControlFrame() = default;
 
 NS_QUERYFRAME_HEAD(nsComboboxControlFrame)
   NS_QUERYFRAME_ENTRY(nsComboboxControlFrame)
-  NS_QUERYFRAME_ENTRY(nsISelectControlFrame)
 NS_QUERYFRAME_TAIL_INHERITING(ButtonControlFrame)
 
 #ifdef ACCESSIBILITY
@@ -116,8 +101,8 @@ int32_t nsComboboxControlFrame::CharCountOfLargestOptionForInflation() const {
   return int32_t(maxLength);
 }
 
-nscoord nsComboboxControlFrame::GetOptionISize(gfxContext* aRenderingContext,
-                                               Type aType) const {
+nscoord nsComboboxControlFrame::GetLongestOptionISize(
+    gfxContext* aRenderingContext) const {
   
   
   nscoord maxOptionSize = 0;
@@ -150,12 +135,8 @@ nscoord nsComboboxControlFrame::GetOptionISize(gfxContext* aRenderingContext,
     return nsLayoutUtils::AppUnitWidthOfStringBidi(*stringToUse, this, *fm,
                                                    *aRenderingContext);
   };
-  if (aType == Type::Longest) {
-    for (auto i : IntegerRange(Select().Options()->Length())) {
-      maxOptionSize = std::max(maxOptionSize, GetOptionSize(i));
-    }
-  } else {
-    maxOptionSize = GetOptionSize(mDisplayedIndex);
+  for (auto i : IntegerRange(Select().Options()->Length())) {
+    maxOptionSize = std::max(maxOptionSize, GetOptionSize(i));
   }
   if (maxOptionSize) {
     
@@ -173,12 +154,13 @@ nscoord nsComboboxControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
     return *containISize;
   }
 
+  if (StyleUIReset()->mFieldSizing == StyleFieldSizing::Content) {
+    return ButtonControlFrame::IntrinsicISize(aInput, aType);
+  }
+
   nscoord displayISize = 0;
   if (!containISize) {
-    auto optionType = StyleUIReset()->mFieldSizing == StyleFieldSizing::Content
-                          ? Type::Current
-                          : Type::Longest;
-    displayISize += GetOptionISize(aInput.mContext, optionType);
+    displayISize += GetLongestOptionISize(aInput.mContext);
   }
 
   
@@ -237,120 +219,11 @@ void nsComboboxControlFrame::Init(nsIContent* aContent,
   ButtonControlFrame::Init(aContent, aParent, aPrevInFlow);
   mEventListener = new HTMLSelectEventListener(
       Select(), HTMLSelectEventListener::SelectType::Combobox);
-  mDisplayedIndex = Select().SelectedIndex();
-}
-
-nsresult nsComboboxControlFrame::RedisplaySelectedText() {
-  nsAutoScriptBlocker scriptBlocker;
-  mDisplayedIndex = Select().SelectedIndex();
-  return RedisplayText();
-}
-
-nsresult nsComboboxControlFrame::RedisplayText() {
-  nsAutoString currentLabel;
-  mDisplayLabel->GetFirstChild()->AsText()->GetData(currentLabel);
-
-  nsAutoString newLabel;
-  GetLabelText(newLabel);
-
-  
-  
-  mRedisplayTextEvent.Revoke();
-
-  if (currentLabel == newLabel) {
-    return NS_OK;
-  }
-
-  NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
-               "If we happen to run our redisplay event now, we might kill "
-               "ourselves!");
-  mRedisplayTextEvent = new RedisplayTextEvent(this);
-  nsContentUtils::AddScriptRunner(mRedisplayTextEvent.get());
-  return NS_OK;
-}
-
-void nsComboboxControlFrame::UpdateLabelText() {
-  RefPtr<dom::Text> displayContent = mDisplayLabel->GetFirstChild()->AsText();
-  nsAutoString newLabel;
-  GetLabelText(newLabel);
-  displayContent->SetText(newLabel, true);
-}
-
-void nsComboboxControlFrame::HandleRedisplayTextEvent() {
-  
-  
-  
-  
-  
-  AutoWeakFrame weakThis(this);
-  PresContext()->Document()->FlushPendingNotifications(
-      FlushType::ContentAndNotify);
-  if (!weakThis.IsAlive()) {
-    return;
-  }
-  mRedisplayTextEvent.Forget();
-  UpdateLabelText();
-  
-}
-
-void nsComboboxControlFrame::GetLabelText(nsAString& aLabel) {
-  Select().GetPreviewValue(aLabel);
-  
-  if (!aLabel.IsEmpty()) {
-    return;
-  }
-  if (mDisplayedIndex != -1) {
-    GetOptionText(mDisplayedIndex, aLabel);
-  }
-  EnsureNonEmptyLabel(aLabel);
 }
 
 bool nsComboboxControlFrame::IsDroppedDown() const {
   return Select().OpenInParentProcess();
 }
-
-
-
-
-NS_IMETHODIMP
-nsComboboxControlFrame::DoneAddingChildren(bool aIsDone) { return NS_OK; }
-
-NS_IMETHODIMP
-nsComboboxControlFrame::AddOption(int32_t aIndex) {
-  if (aIndex <= mDisplayedIndex) {
-    ++mDisplayedIndex;
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsComboboxControlFrame::RemoveOption(int32_t aIndex) {
-  if (Select().Options()->Length()) {
-    if (aIndex < mDisplayedIndex) {
-      --mDisplayedIndex;
-    } else if (aIndex == mDisplayedIndex) {
-      mDisplayedIndex = 0;  
-      RedisplayText();
-    }
-  } else {
-    
-    mDisplayedIndex = -1;
-    RedisplayText();
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP_(void)
-nsComboboxControlFrame::OnSetSelectedIndex(int32_t aOldIndex,
-                                           int32_t aNewIndex) {
-  nsAutoScriptBlocker scriptBlocker;
-  mDisplayedIndex = aNewIndex;
-  RedisplayText();
-}
-
-
-
 
 nsresult nsComboboxControlFrame::HandleEvent(nsPresContext* aPresContext,
                                              WidgetGUIEvent* aEvent,
@@ -362,50 +235,6 @@ nsresult nsComboboxControlFrame::HandleEvent(nsPresContext* aPresContext,
   }
 
   return ButtonControlFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
-}
-
-nsresult nsComboboxControlFrame::CreateAnonymousContent(
-    nsTArray<ContentInfo>& aElements) {
-  dom::Document* doc = mContent->OwnerDoc();
-  mDisplayLabel = doc->CreateHTMLElement(nsGkAtoms::label);
-  {
-    RefPtr<nsTextNode> text = doc->CreateEmptyTextNode();
-    mDisplayLabel->AppendChildTo(text, false, IgnoreErrors());
-    
-    UpdateLabelText();
-  }
-  aElements.AppendElement(mDisplayLabel);
-
-  if (HasDropDownButton()) {
-    mButtonContent = mContent->OwnerDoc()->CreateHTMLElement(nsGkAtoms::button);
-    {
-      
-      
-      
-      RefPtr<nsTextNode> text = doc->CreateTextNode(u"\ufeff"_ns);
-      mButtonContent->AppendChildTo(text, false, IgnoreErrors());
-    }
-    
-    mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::type, u"button"_ns,
-                            false);
-    
-    mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
-                            false);
-    aElements.AppendElement(mButtonContent);
-  }
-
-  return NS_OK;
-}
-
-void nsComboboxControlFrame::AppendAnonymousContentTo(
-    nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
-  if (mDisplayLabel) {
-    aElements.AppendElement(mDisplayLabel);
-  }
-
-  if (mButtonContent) {
-    aElements.AppendElement(mButtonContent);
-  }
 }
 
 namespace mozilla {
@@ -460,38 +289,23 @@ nsIFrame* NS_NewComboboxLabelFrame(PresShell* aPresShell,
 }
 
 void nsComboboxControlFrame::Destroy(DestroyContext& aContext) {
-  
-  mRedisplayTextEvent.Revoke();
   mEventListener->Detach();
-
-  aContext.AddAnonymousContent(mDisplayLabel.forget());
-  aContext.AddAnonymousContent(mButtonContent.forget());
-  ButtonControlFrame::Destroy(aContext);
-}
-
-
-
-
-
-NS_IMETHODIMP
-nsComboboxControlFrame::OnOptionSelected(int32_t aIndex, bool aSelected) {
-  if (aSelected) {
-    nsAutoScriptBlocker blocker;
-    mDisplayedIndex = aIndex;
-    RedisplayText();
-  } else {
-    AutoWeakFrame weakFrame(this);
-    RedisplaySelectedText();
-    if (weakFrame.IsAlive()) {
-      FireValueChangeEvent();  
-    }
+  auto& select = Select();
+  if (select.OpenInParentProcess()) {
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "nsComboboxControlFrame::Destroy", [element = RefPtr{&select}] {
+          
+          
+          
+          
+          
+          if (!element->IsCombobox() ||
+              !element->GetPrimaryFrame(FlushType::Frames)) {
+            nsContentUtils::DispatchChromeEvent(
+                element->OwnerDoc(), element, u"mozhidedropdown"_ns,
+                CanBubble::eYes, Cancelable::eNo);
+          }
+        }));
   }
-  return NS_OK;
-}
-
-void nsComboboxControlFrame::FireValueChangeEvent() {
-  
-  
-  nsContentUtils::AddScriptRunner(new AsyncEventDispatcher(
-      mContent, u"ValueChange"_ns, CanBubble::eYes, ChromeOnlyDispatch::eNo));
+  ButtonControlFrame::Destroy(aContext);
 }

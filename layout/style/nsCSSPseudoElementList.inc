@@ -75,6 +75,13 @@ CSS_PSEUDO_ELEMENT(mozNumberSpinDown, ":-moz-number-spin-down",
 CSS_PSEUDO_ELEMENT(mozSearchClearButton, ":-moz-search-clear-button",
                    CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE |
                    CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)
+
+CSS_PSEUDO_ELEMENT(mozSelectContent, ":-moz-select-content",
+                   CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)
+
+
+CSS_PSEUDO_ELEMENT(mozSelectPickerIcon, ":-moz-select-picker-icon",
+                   CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)
 CSS_PSEUDO_ELEMENT(mozProgressBar, ":-moz-progress-bar",
                    CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE)
 CSS_PSEUDO_ELEMENT(mozRangeTrack, ":-moz-range-track",
@@ -102,6 +109,9 @@ CSS_PSEUDO_ELEMENT(mozReveal, ":-moz-reveal",
 
 CSS_PSEUDO_ELEMENT(fileSelectorButton, ":file-selector-button",
                    CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE)
+
+CSS_PSEUDO_ELEMENT(mozFileContent, ":-moz-file-content",
+                   CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)
 
 
 CSS_PSEUDO_ELEMENT(sliderTrack, ":slider-track",

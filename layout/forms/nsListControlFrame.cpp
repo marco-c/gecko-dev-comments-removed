@@ -51,9 +51,6 @@ nsListControlFrame::nsListControlFrame(ComputedStyle* aStyle,
                                        nsPresContext* aPresContext)
     : ScrollContainerFrame(aStyle, aPresContext, kClassID, false),
       mChangesSinceDragStart(false),
-      mIsAllContentHere(false),
-      mIsAllFramesHere(false),
-      mHasBeenInitialized(false),
       mNeedToReset(true),
       mPostChildrenLoadedReset(false),
       mMightNeedSecondPass(false),
@@ -181,17 +178,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
   const bool hadPendingInterrupt = aPresContext->HasPendingInterrupt();
 
   SchedulePaint();
-
-  
-  
-  if (mIsAllContentHere && !mHasBeenInitialized) {
-    if (!mIsAllFramesHere) {
-      CheckIfAllFramesHere();
-    }
-    if (mIsAllFramesHere && !mHasBeenInitialized) {
-      mHasBeenInitialized = true;
-    }
-  }
 
   MarkInReflow();
   
@@ -561,20 +547,6 @@ nsresult nsListControlFrame::HandleEvent(nsPresContext* aPresContext,
   return ScrollContainerFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
 }
 
-
-void nsListControlFrame::SetInitialChildList(ChildListID aListID,
-                                             nsFrameList&& aChildList) {
-  if (aListID == FrameChildListID::Principal) {
-    
-    mIsAllContentHere = Select().IsDoneAddingChildren();
-    if (!mIsAllContentHere) {
-      mIsAllFramesHere = false;
-      mHasBeenInitialized = false;
-    }
-  }
-  ScrollContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
-}
-
 bool nsListControlFrame::GetMultiple() const {
   return mContent->AsElement()->HasAttr(nsGkAtoms::multiple);
 }
@@ -619,8 +591,7 @@ void nsListControlFrame::OnContentReset() { ResetList(true); }
 
 void nsListControlFrame::ResetList(bool aAllowScrolling) {
   
-  
-  if (!mIsAllFramesHere) {
+  if (!Select().IsDoneAddingChildren()) {
     return;
   }
 
@@ -678,55 +649,23 @@ uint32_t nsListControlFrame::GetNumberOfOptions() {
 
 
 
-bool nsListControlFrame::CheckIfAllFramesHere() {
-  
-  
-  mIsAllFramesHere = true;
-
-  
-
-  return mIsAllFramesHere;
-}
 
 NS_IMETHODIMP
-nsListControlFrame::DoneAddingChildren(bool aIsDone) {
-  mIsAllContentHere = aIsDone;
-  if (mIsAllContentHere) {
-    
-    
-    
-    if (!mIsAllFramesHere) {
-      
-      if (CheckIfAllFramesHere()) {
-        mHasBeenInitialized = true;
-        ResetList(true);
-      }
-    }
-  }
+nsListControlFrame::DoneAddingChildren() {
+  ResetList(true);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsListControlFrame::AddOption(int32_t aIndex) {
-  if (!mIsAllContentHere) {
-    mIsAllContentHere = Select().IsDoneAddingChildren();
-    if (!mIsAllContentHere) {
-      mIsAllFramesHere = false;
-      mHasBeenInitialized = false;
-    } else {
-      mIsAllFramesHere =
-          (aIndex == static_cast<int32_t>(GetNumberOfOptions() - 1));
-    }
-  }
-
   
   mNeedToReset = true;
 
-  if (!mHasBeenInitialized) {
+  if (!Select().IsDoneAddingChildren()) {
     return NS_OK;
   }
 
-  mPostChildrenLoadedReset = mIsAllContentHere;
+  mPostChildrenLoadedReset = true;
   return NS_OK;
 }
 
@@ -807,14 +746,12 @@ bool nsListControlFrame::ToggleOptionSelectedFromFrame(int32_t aIndex) {
 
 
 bool nsListControlFrame::UpdateSelection() {
-  if (mIsAllFramesHere) {
+  if (Select().IsDoneAddingChildren()) {
     
     
     AutoWeakFrame weakFrame(this);
-    if (mIsAllContentHere) {
-      RefPtr listener = mEventListener;
-      listener->FireOnInputAndOnChange();
-    }
+    RefPtr listener = mEventListener;
+    listener->FireOnInputAndOnChange();
     return weakFrame.IsAlive();
   }
   return true;

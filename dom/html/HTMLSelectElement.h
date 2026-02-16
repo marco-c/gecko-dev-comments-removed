@@ -17,6 +17,7 @@
 #include "nsContentUtils.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
+#include "nsStubMutationObserver.h"
 
 class nsContentList;
 class nsIDOMHTMLOptionElement;
@@ -75,6 +76,7 @@ class MOZ_STACK_CLASS SafeOptionListMutation {
 
 
 class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
+                                public nsStubMutationObserver,
                                 public ConstraintValidation {
  public:
   
@@ -114,6 +116,13 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   NS_DECL_ISUPPORTS_INHERITED
+
+  
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
 
   int32_t TabIndexDefault() override;
 
@@ -324,8 +333,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   }
 
   
-
-
   bool IsCombobox() const { return !Multiple() && Size() <= 1; }
 
   bool OpenInParentProcess() const { return mIsOpenInParentProcess; }
@@ -341,6 +348,13 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
     SetFormAutofillState(aState);
   }
   void GetAutofillState(nsAString& aState) { GetFormAutofillState(aState); }
+
+  void SetupShadowTree();
+
+  
+  
+  Text* GetSelectedContentText() const;
+  void SelectedContentTextMightHaveChanged();
 
  protected:
   virtual ~HTMLSelectElement() = default;

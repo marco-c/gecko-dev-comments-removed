@@ -133,8 +133,8 @@ nsresult nsFileControlFrame::CreateAnonymousContent(
   
   
   mTextContent->SetIsNativeAnonymousRoot();
-  RefPtr<nsTextNode> text =
-      new (doc->NodeInfoManager()) nsTextNode(doc->NodeInfoManager());
+  mTextContent->SetPseudoElementType(PseudoStyleType::mozFileContent);
+  RefPtr<nsTextNode> text = doc->CreateEmptyTextNode();
   mTextContent->AppendChildTo(text, false, IgnoreErrors());
 
   aElements.AppendElement(mTextContent);

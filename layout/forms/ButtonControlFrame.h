@@ -8,7 +8,6 @@
 #define LAYOUT_FORMS_BUTTONCONTROLFRAME_H_
 
 #include "nsBlockFrame.h"
-#include "nsIAnonymousContentCreator.h"
 
 class nsTextNode;
 
@@ -22,18 +21,14 @@ namespace mozilla {
 
 
 
-class ButtonControlFrame : public nsBlockFrame,
-                           public nsIAnonymousContentCreator {
+class ButtonControlFrame : public nsBlockFrame {
  public:
-  NS_DECL_QUERYFRAME_TARGET(ButtonControlFrame)
-  NS_DECL_QUERYFRAME
-  NS_DECL_ABSTRACT_FRAME(ButtonControlFrame)
-
   ButtonControlFrame(ComputedStyle* aStyle, nsPresContext* aPc,
                      ClassID aClassID)
       : nsBlockFrame(aStyle, aPc, aClassID) {
     MOZ_ASSERT(IsReplaced(), "Our subclasses should be replaced elements");
   }
+  NS_DECL_ABSTRACT_FRAME(ButtonControlFrame)
   nsContainerFrame* GetContentInsertionFrame() override { return this; }
   nsresult HandleEvent(nsPresContext* aPresContext,
                        mozilla::WidgetGUIEvent* aEvent,

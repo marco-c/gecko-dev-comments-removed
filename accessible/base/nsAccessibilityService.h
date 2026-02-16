@@ -207,6 +207,8 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   void ComboboxOptionMaybeChanged(mozilla::PresShell*,
                                   nsIContent* aMutatingNode);
+  
+  void ComboboxValueChanged(nsIContent*);
 
   void UpdateText(mozilla::PresShell* aPresShell, nsIContent* aContent);
 

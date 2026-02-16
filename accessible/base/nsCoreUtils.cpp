@@ -24,7 +24,6 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TouchEvents.h"
 #include "nsGkAtoms.h"
 
@@ -36,6 +35,10 @@
 #include "nsTreeColumns.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLOptGroupElement.h"
+#include "mozilla/dom/HTMLOptionElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/ElementInternals.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
@@ -584,26 +587,33 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   if (!element) {
     return false;
   }
-  if (!element->HasServoData() || Servo_Element_IsDisplayNone(element)) {
-    
+  
+  
+  if (auto* option = dom::HTMLOptionElement::FromNode(element)) {
+    if (auto* select = option->GetSelect(); select && select->IsCombobox()) {
+      element = select;
+    }
+  } else if (auto* optgroup = dom::HTMLOptGroupElement::FromNode(element)) {
+    if (auto* select = optgroup->GetSelect(); select && select->IsCombobox()) {
+      element = select;
+    }
+  }
+
+  
+  
+  
+  
+  if (!element->GetPrimaryFrame() && !element->IsDisplayContents()) {
     return false;
   }
 
   
   
-  if (!element->IsDisplayContents() &&
-      !element->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup)) {
-    return false;
-  }
-
   
   
-  
-  
-  for (nsINode* ancestor = element->GetFlattenedTreeParentNode();
-       ancestor && ancestor->IsContent();
-       ancestor = ancestor->GetFlattenedTreeParentNode()) {
-    if (nsIFrame* f = ancestor->AsContent()->GetPrimaryFrame()) {
+  for (nsIContent* c :
+       element->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+    if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
               nsIFrame::IncludeContentVisibility::Hidden)) {

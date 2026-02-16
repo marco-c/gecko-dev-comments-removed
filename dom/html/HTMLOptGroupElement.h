@@ -58,17 +58,12 @@ class HTMLOptGroupElement final : public nsGenericHTMLElement {
     SetHTMLAttr(nsGkAtoms::label, aLabel, aError);
   }
 
+  
+  HTMLSelectElement* GetSelect() const;
+
  protected:
   virtual ~HTMLOptGroupElement();
-
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
- protected:
-  
-
-
-
-  Element* GetSelect();
 };
 
 }  
