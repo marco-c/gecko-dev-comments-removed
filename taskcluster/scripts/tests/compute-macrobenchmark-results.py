@@ -1,9 +1,19 @@
+
+
+
+
+
+
 import json
 import pathlib
 import sys
 from collections import defaultdict
 from os import environ, listdir
 from os.path import isfile, join
+
+
+
+
 
 
 def read_benchmark_data_from_directory(directory):
@@ -27,12 +37,43 @@ def read_benchmark_data(file_path, results):
     benchmarks = data["benchmarks"]
     for benchmark in benchmarks:
         name = benchmark["name"]
-        time_metrics = benchmark["metrics"]["timeToInitialDisplayMs"]
-        results[name] = {
-            "median": time_metrics["median"],
-            "minimum": time_metrics["minimum"],
-            "maximum": time_metrics["maximum"],
-        }
+        metrics = benchmark["metrics"]
+        sampled_metrics = benchmark["sampledMetrics"]
+
+        results[name] = {}
+
+        if "timeToInitialDisplayMs" in metrics:
+            time_metrics = metrics["timeToInitialDisplayMs"]
+            results[name]["ttid"] = {
+                "median": time_metrics["median"],
+                "minimum": time_metrics["minimum"],
+                "maximum": time_metrics["maximum"],
+            }
+
+        if "frameCount" in metrics:
+            frame_counts = metrics["frameCount"]
+            results[name]["frame_counts"] = {
+                "median": frame_counts["median"],
+                "minimum": frame_counts["minimum"],
+                "maximum": frame_counts["maximum"],
+            }
+
+        if "frameDurationCpuMs" in sampled_metrics:
+            frame_duration_cpu = sampled_metrics["frameDurationCpuMs"]
+            results[name]["frame_duration_cpu"] = {
+                "P50": frame_duration_cpu["P50"],
+                "P90": frame_duration_cpu["P90"],
+                "P99": frame_duration_cpu["P99"],
+            }
+
+        if "frameOverrunMs" in sampled_metrics:
+            frame_overruns = sampled_metrics["frameOverrunMs"]
+            results[name]["frame_overruns"] = {
+                "P50": frame_overruns["P50"],
+                "P90": frame_overruns["P90"],
+                "P99": frame_overruns["P99"],
+            }
+
     return results
 
 
@@ -41,15 +82,25 @@ def format_output_content(results):
 
     
     subtests = []
-    for result_name, metrics in results.items():
-        for metric_name, value in metrics.items():
-            subtest = {
-                "name": f"{result_name}.{metric_name}",
-                "lowerIsBetter": True,
-                "value": value,
-                "unit": "ms",
-            }
-            subtests.append(subtest)
+    for result_name, categories in results.items():
+        for category_name, metrics in categories.items():
+            for metric_name, value in metrics.items():
+                if "frame_count" in category_name:
+                    subtest = {
+                        "name": f"{result_name}.{category_name}.{metric_name}",
+                        "lowerIsBetter": False,
+                        "value": value,
+                        "unit": "count",
+                    }
+                    subtests.append(subtest)
+                else:
+                    subtest = {
+                        "name": f"{result_name}.{category_name}.{metric_name}",
+                        "lowerIsBetter": True,
+                        "value": value,
+                        "unit": "ms",
+                    }
+                    subtests.append(subtest)
 
     
     output_json = {
@@ -89,23 +140,31 @@ def output_results(output_json, output_file_path):
     print(f"Results have been written to {output_file_path}")
 
 
+
 def generate_markdown_table(results):
     
-    table_data = defaultdict(lambda: {"median": None, "median None": None})
+    table_data = defaultdict(lambda: {"Median": None, "median None": None})
+    benchmark_title_size = 0
 
-    for name, metrics in results.items():
-        base_name = name.replace("PartialWithBaselineProfiles", "")
-        if "None" in base_name:
-            main_name = base_name.replace("None", "")
-            table_data[main_name]["median None"] = metrics["median"]
-        else:
-            table_data[base_name]["median"] = metrics["median"]
+    for result_name, categories in results.items():
+        for category_name, metrics in categories.items():
+            for metric_name, value in metrics.items():
+                if "median" in metric_name and "frame_counts" not in metric_name:
+                    if "None" in result_name:
+                        base_name = result_name.replace("None", "")
+                        table_data[base_name]["median None"] = value
+                    else:
+                        table_data[result_name]["median"] = value
+                        benchmark_title_size = max(
+                            benchmark_title_size, len(result_name)
+                        )
 
     
     headers = ["Benchmark", "median", "median None", "% diff"]
+    title_string = "-" * (benchmark_title_size - 5)
     lines = [
-        f"| {' | '.join(headers)} |",
-        f"|{':-' + '-:|:-'.join(['-' * len(h) for h in headers])}-:|",
+        f"|{' ' + headers[0] + ' ' * (benchmark_title_size - len(headers[0])) + '| ' + ' | '.join(headers[1:])} |",
+        f"|{':-' + title_string + '-:|:-'.join(['-' * len(h) for h in headers[1:]])}-:|",
     ]
 
     for benchmark, values in sorted(table_data.items()):
@@ -116,7 +175,15 @@ def generate_markdown_table(results):
         else:
             percent_diff = ""
 
-        row = f"| {benchmark} | {median:.3f} | {median_none:.3f} | {percent_diff} |"
+        
+        if median is None:
+            median = 0.0
+        if median_none is None:
+            median_none = 0.0
+
+        benchmark_spacing = " " * (benchmark_title_size - len(benchmark))
+
+        row = f"| {benchmark}{benchmark_spacing} | {median:.3f} | {median_none:.3f} | {percent_diff} |"
         lines.append(row)
 
     return "\n".join(lines)
@@ -132,6 +199,6 @@ if __name__ == "__main__":
 
         
         results = read_benchmark_data_from_directory(input_json_path)
-        print(generate_markdown_table(results))
         output_json = format_output_content(results)
         output_results(output_json, output_file_path)
+        print(generate_markdown_table(results))
