@@ -291,6 +291,12 @@ UtilityProcessManager::StartUtility(RefPtr<Actor> aActor,
         
         
         if (!aActor->CanSend()) {
+          if (!utilityParent->CanSend()) {
+            NS_WARNING("Utility process died before IPC could be established");
+            return RetPromise::CreateAndReject(
+                LaunchError("UPM::UtilityParent died"), __func__);
+          }
+
           nsresult rv = aActor->BindToUtilityProcess(utilityParent);
           if (NS_FAILED(rv)) {
             MOZ_ASSERT(false, "Protocol endpoints failure");
