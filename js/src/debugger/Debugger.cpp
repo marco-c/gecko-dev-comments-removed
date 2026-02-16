@@ -3360,7 +3360,6 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
   
   
   for (size_t i = 0; i < scripts.length(); i++) {
-    MOZ_ASSERT_IF(scripts[i]->isDebuggee(), observing);
     if (!scripts[i]->jitScript()->icScript()->active()) {
       FinishDiscardBaselineScript(gcx, scripts[i]);
     }
