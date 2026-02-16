@@ -590,7 +590,13 @@ nsresult AddonManagerStartup::DecodeBlob(JS::Handle<JS::Value> value,
   auto holder = MakeRefPtr<StructuredCloneData>(
       JS::StructuredCloneScope::DifferentProcess,
       dom::StructuredCloneHolder::TransferringNotSupported);
-  bool ok = holder->CopyExternalData(data.get(), data.Length());
+  
+  
+  
+  
+  
+  bool ok = holder->CopyExternalData(data.get(), data.Length(),
+                                     JS_STRUCTURED_CLONE_VERSION);
   NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
 
   ErrorResult rv;

@@ -704,6 +704,8 @@ class JS_PUBLIC_API JSAutoStructuredCloneBuffer {
 
   JS::StructuredCloneScope scope() const { return data_.scope(); }
 
+  uint32_t version() const { return version_; }
+
   
 
 
