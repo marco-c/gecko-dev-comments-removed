@@ -27,6 +27,9 @@ here = pathlib.Path(__file__).parent
 build = MozbuildObject.from_environment(cwd=str(here))
 
 
+SKIP_ARTIFACT_BUILD_CHECK = False
+
+
 class ParameterConfig:
     __metaclass__ = ABCMeta
 
@@ -107,6 +110,11 @@ class Artifact(TryConfig):
             return {"use-artifact-builds": True, "disable-pgo": True}
 
         if no_artifact:
+            return
+
+        
+        
+        if SKIP_ARTIFACT_BUILD_CHECK:
             return
 
         if self.is_artifact_build():
