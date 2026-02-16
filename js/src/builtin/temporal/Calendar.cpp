@@ -3807,7 +3807,12 @@ static bool DifferenceNonISODateWithLeapMonth(
 
   
   
-  
+  auto unconstrainedDate =
+      CalendarDate{oneDate.year + years, oneDate.monthCode, oneDate.day};
+  if (CompareCalendarDate(unconstrainedDate, twoDate) * sign > 0) {
+    years -= sign;
+  }
+
   auto constrained = CreateDateFromCodes(
       cx, calendarId, cal.get(), oneDate.year + years, oneDate.monthCode,
       oneDate.day, TemporalOverflow::Constrain);
