@@ -565,8 +565,7 @@ void MediaCapabilities::CreateMediaCapabilitiesDecodingInfo(
 
   
   RefPtr<MediaCapabilities> self = this;
-
-  CapabilitiesPromise::All(targetThread, promises)
+  CapabilitiesPromise::All(taskQueue, promises)
       ->Then(targetThread, __func__,
              [promise = RefPtr<Promise>{aPromise}, tracks = std::move(tracks),
               workerRef, holder, aConfiguration, self,
