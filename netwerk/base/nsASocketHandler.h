@@ -97,6 +97,11 @@ class nsASocketHandler : public nsISupports {
   
   virtual uint64_t ByteCountSent() = 0;
   virtual uint64_t ByteCountReceived() = 0;
+
+  
+  
+  
+  virtual bool IsTRRConnection() { return false; }
 };
 
 #endif  
