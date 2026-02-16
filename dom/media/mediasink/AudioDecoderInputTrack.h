@@ -37,7 +37,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   static AudioDecoderInputTrack* Create(MediaTrackGraph* aGraph,
                                         nsISerialEventTarget* aDecoderThread,
                                         const AudioInfo& aInfo,
-                                        float aPlaybackRate, float aVolume,
+                                        float aPlaybackRate,
                                         bool aPreservesPitch);
 
   
@@ -94,7 +94,6 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
                   const PrincipalHandle& aPrincipalHandle);
   void NotifyEndOfStream();
   void ClearFutureData();
-  void SetVolume(float aVolume);
   void SetPlaybackRate(float aPlaybackRate);
   void SetPreservesPitch(bool aPreservesPitch);
   
@@ -114,10 +113,6 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
     AssertOnGraphThread();
     return mWrittenFrames;
   }
-  float Volume() const {
-    AssertOnGraphThread();
-    return mVolume;
-  }
   float PlaybackRate() const {
     AssertOnGraphThread();
     return mPlaybackRate;
@@ -129,8 +124,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
  private:
   AudioDecoderInputTrack(nsISerialEventTarget* aDecoderThread,
                          TrackRate aGraphRate, const AudioInfo& aInfo,
-                         float aPlaybackRate, float aVolume,
-                         bool aPreservesPitch);
+                         float aPlaybackRate, bool aPreservesPitch);
 
   
   bool ConvertAudioDataToSegment(AudioData* aAudio, AudioSegment& aSegment,
@@ -193,7 +187,6 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   bool mReceivedEOS = false;
   TrackTime mWrittenFrames = 0;
   float mPlaybackRate;
-  float mVolume;
   bool mPreservesPitch;
 
   

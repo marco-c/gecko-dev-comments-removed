@@ -3745,6 +3745,7 @@ void HTMLMediaElement::SetVolumeInternal() {
 
   NotifyAudioPlaybackChanged(
       AudioChannelService::AudibleChangedReasons::eVolumeChanged);
+  mEffectiveVolumeChangeEvent.Notify(effectiveVolume);
 }
 
 void HTMLMediaElement::SetMuted(bool aMuted) {
@@ -4199,13 +4200,6 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
   }
 
   if (aStreamCaptureType == StreamCaptureType::CAPTURE_AUDIO) {
-    if (mSrcStream) {
-      
-      
-      ReportToConsole(nsIScriptError::errorFlag,
-                      "MediaElementAudioCaptureOfMediaStreamError");
-    }
-
     
     
     

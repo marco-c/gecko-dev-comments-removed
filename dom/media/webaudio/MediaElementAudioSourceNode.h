@@ -7,6 +7,7 @@
 #ifndef MediaElementAudioSourceNode_h_
 #define MediaElementAudioSourceNode_h_
 
+#include "MediaEventSource.h"
 #include "MediaStreamAudioSourceNode.h"
 
 namespace mozilla::dom {
@@ -57,9 +58,17 @@ class MediaElementAudioSourceNode final : public MediaStreamAudioSourceNode {
   
   void ListenForAllowedToPlay(const MediaElementAudioSourceOptions& aOptions);
 
+  
+  
+  void ListenForEffectiveVolumeChange();
+
+  void UpdateVolume(float aVolume);
+
   MozPromiseRequestHolder<GenericNonExclusivePromise> mAllowedToPlayRequest;
 
   RefPtr<HTMLMediaElement> mElement;
+
+  MediaEventListener mEffectiveVolumeChangeListener;
 };
 
 }  

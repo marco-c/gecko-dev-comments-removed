@@ -817,7 +817,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   virtual void OnVisibilityChange(Visibility aNewVisibility);
 
   
+  
   float ComputedVolume() const;
+
+  
   bool ComputedMuted() const;
 
   
@@ -872,6 +875,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   Maybe<nsAutoString> GetKeySystem() const override;
+
+  MediaEventSource<float>& EffectiveVolumeChangeEvent() {
+    return mEffectiveVolumeChangeEvent;
+  }
 
  protected:
   virtual ~HTMLMediaElement();
@@ -2004,6 +2011,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   AudioOutputConfig mAudioOutputConfig = AudioOutputConfig::Needed;
+
+  MediaEventProducer<float> mEffectiveVolumeChangeEvent;
 };
 
 

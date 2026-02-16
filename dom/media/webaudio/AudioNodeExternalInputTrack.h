@@ -31,6 +31,13 @@ class AudioNodeExternalInputTrack final : public AudioNodeTrack {
  public:
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
+  AudioNodeExternalInputTrack* AsAudioNodeExternalInputTrack() override {
+    return this;
+  }
+
+  
+  void SetVolume(float aVolume);
+
  private:
   
 
@@ -38,6 +45,10 @@ class AudioNodeExternalInputTrack final : public AudioNodeTrack {
 
 
   bool IsEnabled();
+
+  
+  
+  float mVolume = 1.0;
 };
 
 }  
