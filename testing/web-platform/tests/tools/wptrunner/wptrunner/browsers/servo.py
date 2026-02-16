@@ -13,8 +13,8 @@ from .base import get_timeout_multiplier
 from ..executors import executor_kwargs as base_executor_kwargs
 from ..executors.base import WdspecExecutor  
 from ..executors.executorservo import (ServoTestharnessExecutor,  
-                                             ServoRefTestExecutor,  
-                                             ServoCrashtestExecutor)  
+                                       ServoRefTestExecutor,  
+                                       ServoCrashtestExecutor)  
 
 here = os.path.dirname(__file__)
 
