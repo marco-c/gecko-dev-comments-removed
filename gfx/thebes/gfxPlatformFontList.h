@@ -252,18 +252,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   }
 
   FontVisibility GetFontVisibility(nsCString& aFont, bool& aFound);
-
-  
-  
-  
-  
-  
-  
-  void ListFontsUsedForString(
-      const nsAString& aText, const nsTArray<nsCString>& aFontList,
-      nsTArray<nsCString>& aFontsUsed,
-      FontVisibility aMaxVisibility = FontVisibility::User);
-
   bool GetMissingFonts(nsTArray<nsCString>& aMissingFonts);
   void GetMissingFonts(nsCString& aMissingFonts);
 
