@@ -189,20 +189,19 @@ class TrustPanel {
 
   async onContentBlockingEvent(
     event,
-    webProgress,
+    _webProgress,
     _isSimulated,
     _previousState
   ) {
     
     
-    if (!this.#enabled || webProgress.browsingContext.currentURI != this.#uri) {
+    if (!this.#enabled || !this.#uri) {
       return;
     }
 
     
     
     this.anyDetected = false;
-    this.anyBlocking = false;
     this.#lastEvent = event;
 
     
@@ -219,7 +218,6 @@ class TrustPanel {
       
       blocker.activated = blocker.isBlocking(event);
       this.anyDetected = this.anyDetected || blocker.isDetected(event);
-      this.anyBlocking = this.anyBlocking || blocker.activated;
     }
 
     if (this.#popup) {
