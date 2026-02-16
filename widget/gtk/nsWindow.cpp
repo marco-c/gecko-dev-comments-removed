@@ -1941,7 +1941,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       }
       if (popup->WaylandPopupIsFirst() &&
           popup->WaylandPopupFitsToplevelWindow() &&
-          !StaticPrefs::widget_wayland_force_move_to_rect()) {
+          !StaticPrefs::widget_wayland_force_move_to_rect_AtStartup()) {
         
         
         
