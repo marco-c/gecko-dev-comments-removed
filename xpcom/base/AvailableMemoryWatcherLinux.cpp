@@ -239,7 +239,7 @@ nsresult nsAvailableMemoryWatcher::Init() {
     
     return rv;
   }
-  mThread = thread;
+  mThread = std::move(thread);
 
   
   UpdatePSIInfo(lock);

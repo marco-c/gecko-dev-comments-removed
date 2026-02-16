@@ -294,7 +294,7 @@ nsresult nsIncrementalDownload::ProcessTimeout() {
   
   
   
-  mChannel = channel;
+  mChannel = std::move(channel);
   return NS_OK;
 }
 

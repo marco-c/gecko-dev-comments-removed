@@ -41,7 +41,7 @@ nsresult nsSimpleNestedURI::SetPathQueryRef(const nsACString& aPathQueryRef) {
   rv = nsSimpleURI::SetPathQueryRef(aPathQueryRef);
   NS_ENSURE_SUCCESS(rv, rv);
   
-  mInnerURI = inner;
+  mInnerURI = std::move(inner);
   return NS_OK;
 }
 
@@ -54,7 +54,7 @@ nsresult nsSimpleNestedURI::SetQuery(const nsACString& aQuery) {
   rv = nsSimpleURI::SetQuery(aQuery);
   NS_ENSURE_SUCCESS(rv, rv);
   
-  mInnerURI = inner;
+  mInnerURI = std::move(inner);
   return NS_OK;
 }
 
@@ -67,7 +67,7 @@ nsresult nsSimpleNestedURI::SetRef(const nsACString& aRef) {
   rv = nsSimpleURI::SetRef(aRef);
   NS_ENSURE_SUCCESS(rv, rv);
   
-  mInnerURI = inner;
+  mInnerURI = std::move(inner);
   return NS_OK;
 }
 
