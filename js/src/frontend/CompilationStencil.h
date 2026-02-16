@@ -15,8 +15,10 @@
 #include "mozilla/Maybe.h"       
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/RefPtr.h"           
-#include "mozilla/Span.h"             
-#include "mozilla/Variant.h"          
+#include "mozilla/Result.h"           
+#include "mozilla/ResultVariant.h"
+#include "mozilla/Span.h"     
+#include "mozilla/Variant.h"  
 
 #include <algorithm>    
 #include <stddef.h>     
@@ -99,8 +101,17 @@ struct ScopeStencilRef {
 
   
   inline const ScopeStencil& scope() const;
+
   
   inline ScriptStencilRef script() const;
+
+  
+  
+  
+  enum class EnclosingFailure : uint8_t { ModuleScope, GlobalScope };
+
+  
+  Result<ScopeStencilRef, EnclosingFailure> enclosing() const;
 
   
   
@@ -131,6 +142,7 @@ class InputScope {
 
   
   
+  explicit InputScope(const ScopeStencilRef& ref) : scope_(ref) {}
   InputScope(const InitialStencilAndDelazifications& stencils,
              ScriptIndex scriptIndex, ScopeIndex scopeIndex)
       : scope_(ScopeStencilRef{stencils, scriptIndex, scopeIndex}) {}
@@ -201,12 +213,11 @@ class InputScope {
                                 kind == ScopeKind::Global) {
                               return true;
                             }
-                            if (!scope.hasEnclosing()) {
+                            auto result = it.enclosing();
+                            if (result.isErr()) {
                               break;
                             }
-                            new (&it)
-                                ScopeStencilRef{ref.stencils_, ref.scriptIndex_,
-                                                scope.enclosing()};
+                            new (&it) ScopeStencilRef(result.unwrap());
                           }
                           return false;
                         },
@@ -234,11 +245,11 @@ class InputScope {
               MOZ_ASSERT(!scope.hasEnclosing());
               length += js::ModuleScope::EnclosingEnvironmentChainLength;
             }
-            if (!scope.hasEnclosing()) {
+            auto result = it.enclosing();
+            if (result.isErr()) {
               break;
             }
-            new (&it) ScopeStencilRef{ref.stencils_, ref.scriptIndex_,
-                                      scope.enclosing()};
+            new (&it) ScopeStencilRef(result.unwrap());
           }
           return length;
         },
@@ -2422,60 +2433,19 @@ InputScope InputScope::enclosing() const {
         return InputScope(ptr->enclosing());
       },
       [](const ScopeStencilRef& ref) {
-        auto& scope = ref.scope();
-        if (scope.hasEnclosing()) {
-#ifdef DEBUG
-          
-          
-          if (ref.scriptIndex_ != 0) {
-            auto enclosingScript = ref.script().enclosingScript();
-            bool same = ref.context() == enclosingScript.context();
-            MOZ_ASSERT(same == ref.script().isEagerlyCompiledInInitial());
-          }
-#endif
-
-          
-          ScriptIndex scriptIndex = ref.scriptIndex_;
-
-          
-          
-          
-          
-          
-          
-          
-          if (ref.script().isEagerlyCompiledInInitial()) {
-            auto gcThingsFromContext = ref.script().gcThingsFromInitial();
-            if (gcThingsFromContext[0].toScope() == ref.scopeIndex_) {
-              scriptIndex = ref.script().enclosingScript().scriptIndex_;
-            }
-          }
-
-          return InputScope(ref.stencils_, scriptIndex, scope.enclosing());
+        auto result = ref.enclosing();
+        if (result.isOk()) {
+          return InputScope(result.unwrap());
         }
 
-        
-        
-        
-        
-        
-        
-        
-        if (!ref.script().isEagerlyCompiledInInitial()) {
-          auto enclosing = ref.script().enclosingScript();
-          auto& scriptData = ref.script().scriptDataFromEnclosing();
-          MOZ_ASSERT(scriptData.hasLazyFunctionEnclosingScopeIndex());
-          return InputScope(ref.stencils_, enclosing.scriptIndex_,
-                            scriptData.lazyFunctionEnclosingScopeIndex());
+        switch (result.unwrapErr()) {
+          case ScopeStencilRef::EnclosingFailure::ModuleScope:
+            return InputScope(FakeStencilGlobalScope{});
+          case ScopeStencilRef::EnclosingFailure::GlobalScope:
+            return InputScope(nullptr);
         }
-
-        
-        
-        
-        if (ref.scope().kind() == ScopeKind::Module) {
-          return InputScope(FakeStencilGlobalScope{});
-        }
-        return InputScope(nullptr);
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+            "Unknown EnclosingFailure code");
       },
       [](const FakeStencilGlobalScope&) { return InputScope(nullptr); });
 }
