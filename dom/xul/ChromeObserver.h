@@ -30,7 +30,7 @@ class ChromeObserver final : public nsStubMutationObserver {
   void HideWindowChrome(bool aShouldHide);
   void SetCustomTitlebar(bool);
   void SetMica(bool);
-  ~ChromeObserver();
+  ~ChromeObserver() = default;
   
   Document* MOZ_NON_OWNING_REF mDocument;
 };

@@ -36,13 +36,17 @@ namespace detail {
 class NativeThreadHandle {
 #ifdef XP_WIN
   
-  HANDLE mThread;
+  HANDLE mThread = NULL;
 #endif
 
  public:
   
-  NativeThreadHandle();
+  NativeThreadHandle() = default;
+#ifdef XP_WIN
   ~NativeThreadHandle();
+#else
+  ~NativeThreadHandle() = default;
+#endif
 
   
   
@@ -53,8 +57,6 @@ class NativeThreadHandle {
 };
 
 #ifdef XP_WIN
-
-NativeThreadHandle::NativeThreadHandle() : mThread(NULL) {}
 
 NativeThreadHandle::~NativeThreadHandle() {
   if (mThread) {
@@ -94,8 +96,6 @@ void NativeThreadHandle::CancelBlockingIO(Monitor& aMonitor) {
 
 
 
-NativeThreadHandle::NativeThreadHandle() = default;
-NativeThreadHandle::~NativeThreadHandle() = default;
 void NativeThreadHandle::InitThread() {}
 void NativeThreadHandle::CancelBlockingIO(Monitor&) {}
 
