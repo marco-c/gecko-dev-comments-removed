@@ -2460,12 +2460,10 @@ void BaselineCacheIRCompiler::pushArguments(
     Register argcReg, Register calleeReg, Register scratch, Register scratch2,
     Register scratch3, CallFlags flags, uint32_t argcFixed, bool isJitCall) {
   bool isConstructing = flags.isConstructing();
-  if (isJitCall) {
-    if (isConstructing) {
-      createThis(argcReg, calleeReg, scratch, scratch2, scratch3, flags,
-                  false);
-    }
+  MOZ_ASSERT_IF(isConstructing, flags.getArgFormat() == CallFlags::Standard ||
+                                    flags.getArgFormat() == CallFlags::Spread);
 
+  if (isJitCall) {
     
     
     
@@ -2478,6 +2476,14 @@ void BaselineCacheIRCompiler::pushArguments(
     pushNewTarget();
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
       pushStandardArguments(argcReg, scratch, scratch2, argcFixed, isJitCall,
@@ -2505,6 +2511,10 @@ void BaselineCacheIRCompiler::pushArguments(
   }
 
   if (isJitCall) {
+    if (isConstructing) {
+      createThis(argcReg, calleeReg, scratch, scratch2, scratch3, flags);
+    }
+
     
     
     masm.PushCalleeToken(calleeReg, isConstructing);
@@ -2612,7 +2622,9 @@ void BaselineCacheIRCompiler::pushStandardArguments(
   
   
 
-  int additionalArgc = 1 + !isJitCall;  
+  bool shouldCopyCallee = !isJitCall;
+  bool shouldCopyThis = shouldCopyCallee || !isConstructing;
+  int additionalArgc = shouldCopyCallee + shouldCopyThis;
   uint32_t argsOffset = ArgsOffsetFromFP(isConstructing);
 
   if (argcFixed < MaxUnrolledArgCopy) {
@@ -2684,12 +2696,16 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
 
   masm.bind(&emptyArray);
 
-  
-  size_t thisvOffset = arrayOffset + sizeof(Value);
-  masm.pushValue(Address(FramePointer, thisvOffset));
+  bool shouldPushCallee = !isJitCall;
+  bool shouldPushThis = shouldPushCallee || !isConstructing;
+
+  if (shouldPushThis) {
+    size_t thisvOffset = arrayOffset + sizeof(Value);
+    masm.pushValue(Address(FramePointer, thisvOffset));
+  }
 
   
-  if (!isJitCall) {
+  if (shouldPushCallee) {
     size_t calleeOffset = arrayOffset + 2 * sizeof(Value);
     masm.pushValue(Address(FramePointer, calleeOffset));
   }
@@ -2894,14 +2910,7 @@ void BaselineCacheIRCompiler::pushBoundFunctionArguments(
     }
   }
 
-  if (isConstructing) {
-    
-    
-    
-    BaseValueIndex thisAddress(FramePointer, argcReg,
-                               BaselineStubFrameLayout::Size() + sizeof(Value));
-    masm.pushValue(thisAddress, scratch);
-  } else {
+  if (!isConstructing) {
     
     Address boundThis(calleeReg, BoundFunctionObject::offsetOfBoundThisSlot());
     masm.pushValue(boundThis);
@@ -3129,15 +3138,16 @@ bool BaselineCacheIRCompiler::emitMetaCreateThis(uint32_t numFixedSlots,
 
 void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
                                               CallFlags flags, Register argcReg,
-                                              Register dest) {
+                                              Register dest,
+                                              uint32_t extraArgs) {
   MOZ_ASSERT(enteredStubFrame_);
 
   bool addArgc = false;
   int32_t slotIndex = GetIndexOfArgument(kind, flags, &addArgc);
 
   if (addArgc) {
-    int32_t slotOffset =
-        slotIndex * sizeof(JS::Value) + BaselineStubFrameLayout::Size();
+    int32_t slotOffset = (slotIndex - extraArgs) * sizeof(JS::Value) +
+                         BaselineStubFrameLayout::Size();
     BaseValueIndex slotAddr(FramePointer, argcReg, slotOffset);
     masm.unboxObject(slotAddr, dest);
   } else {
@@ -3147,31 +3157,6 @@ void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
     masm.unboxObject(slotAddr, dest);
   }
 }
-
-void BaselineCacheIRCompiler::storeThis(const ConstantOrRegister& newThis,
-                                        Register argcReg, CallFlags flags) {
-  switch (flags.getArgFormat()) {
-    case CallFlags::Standard: {
-      BaseValueIndex thisAddress(
-          FramePointer,
-          argcReg,                               
-          1 * sizeof(Value) +                    
-              BaselineStubFrameLayout::Size());  
-      masm.storeConstantOrRegister(newThis, thisAddress);
-    } break;
-    case CallFlags::Spread: {
-      Address thisAddress(FramePointer,
-                          2 * sizeof(Value) +  
-                              BaselineStubFrameLayout::Size());  
-      masm.storeConstantOrRegister(newThis, thisAddress);
-    } break;
-    default:
-      MOZ_CRASH("Invalid arg format for scripted constructor");
-  }
-}
-
-
-
 
 
 
@@ -3184,11 +3169,14 @@ void BaselineCacheIRCompiler::storeThis(const ConstantOrRegister& newThis,
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
                                          Register scratch, Register scratch2,
                                          Register scratch3, CallFlags flags,
-                                         bool isBoundFunction) {
+                                         Maybe<uint32_t> numBoundArgs) {
   MOZ_ASSERT(flags.isConstructing());
+  bool isBoundFunction = numBoundArgs.isSome();
 
+  
+  
   if (flags.needsUninitializedThis()) {
-    storeThis(MagicValue(JS_UNINITIALIZED_LEXICAL), argcReg, flags);
+    masm.Push(MagicValue(JS_UNINITIALIZED_LEXICAL));
     return;
   }
 
@@ -3208,20 +3196,25 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     
     Register temp = calleeReg;
 
+    
     masm.push(calleeReg);
     masm.createPlainGCObject(
         result, shape, temp, shape, createThisData_->numFixedSlots,
         createThisData_->numDynamicSlots, createThisData_->allocKind,
         gc::Heap::Default, &fail, AllocSiteInput(site));
-    storeThis(TypedOrValueRegister(MIRType::Object, AnyRegister(result)),
-              argcReg, flags);
-
     masm.pop(calleeReg);
+    masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(result)));
+
     masm.jump(&done);
 
     masm.bind(&fail);
     masm.pop(calleeReg);
   }
+
+  
+  
+  Register argvReg = scratch2;
+  masm.moveStackPtrTo(argvReg);
 
   
   LiveGeneralRegisterSet liveNonGCRegs;
@@ -3231,6 +3224,10 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   
   
 
+  
+  masm.push(argcReg);
+  masm.push(argvReg);
+
   if (hasCreateThisData) {
     masm.loadPtr(stubAddress(createThisData_->allocSiteOffset), scratch);
     masm.push(scratch);
@@ -3238,28 +3235,25 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
   if (isBoundFunction) {
     
-    Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
-    masm.unboxObject(boundTarget, scratch);
-    masm.push(scratch);
-    masm.push(scratch);
+    masm.push(calleeReg);
+    masm.push(calleeReg);
   } else {
     
     loadStackObject(ArgumentKind::NewTarget, flags, argcReg, scratch);
     masm.push(scratch);
 
     
-    loadStackObject(ArgumentKind::Callee, flags, argcReg, scratch);
-    masm.push(scratch);
+    masm.push(calleeReg);
   }
 
   if (hasCreateThisData) {
     using Fn = bool (*)(JSContext*, HandleObject, HandleObject, gc::AllocSite*,
-                        MutableHandleValue);
+                        Value*, uint32_t, MutableHandleValue);
     callVM<Fn, CreateThisFromICWithAllocSite>(masm);
   } else {
     
-    using Fn =
-        bool (*)(JSContext*, HandleObject, HandleObject, MutableHandleValue);
+    using Fn = bool (*)(JSContext*, HandleObject, HandleObject, Value*,
+                        uint32_t, MutableHandleValue);
     callVM<Fn, CreateThisFromIC>(masm);
   }
 
@@ -3282,12 +3276,27 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
   
   MOZ_ASSERT(!liveNonGCRegs.aliases(JSReturnOperand));
-  storeThis(TypedOrValueRegister(JSReturnOperand), argcReg, flags);
+  masm.Push(TypedOrValueRegister(JSReturnOperand));
 
   
   
   
-  loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg);
+  if (isBoundFunction) {
+    
+    
+    
+    
+    
+    
+    loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg,
+                    *numBoundArgs);
+
+    
+    Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
+    masm.unboxObject(boundTarget, calleeReg);
+  } else {
+    loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg);
+  }
   masm.bind(&done);
 }
 
@@ -3550,33 +3559,25 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
-
-  
-  
-  
-  if (isConstructing) {
-    if (!isSameRealm) {
-      masm.unboxObject(boundTarget, scratch);
-      masm.switchToObjectRealm(scratch, scratch);
-    }
-    createThis(argcReg, calleeReg, scratch, scratch2, scratch3, flags,
-                true);
-  }
-
   
   pushBoundFunctionArguments(argcReg, calleeReg, scratch, scratch2, flags,
                              numBoundArgs,  true);
 
   
+  Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
   masm.unboxObject(boundTarget, calleeReg);
 
-  if (!isConstructing && !isSameRealm) {
+  if (!isSameRealm) {
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
   
   masm.add32(Imm32(numBoundArgs), argcReg);
+
+  if (isConstructing) {
+    createThis(argcReg, calleeReg, scratch, scratch2, scratch3, flags,
+               mozilla::Some(numBoundArgs));
+  }
 
   
   Register code = scratch2;
