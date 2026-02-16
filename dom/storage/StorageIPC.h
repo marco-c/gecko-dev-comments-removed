@@ -366,7 +366,7 @@ class StorageDBParent final : public PBackgroundStorageParent {
     virtual ~CacheParentBridge() = default;
 
     
-    virtual const nsCString Origin() const override;
+    virtual nsCString Origin() const override;
     virtual const nsCString& OriginNoSuffix() const override {
       return mOriginNoSuffix;
     }

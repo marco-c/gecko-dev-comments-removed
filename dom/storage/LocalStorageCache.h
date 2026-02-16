@@ -31,7 +31,7 @@ class LocalStorageCacheBridge {
 
   
   
-  virtual const nsCString Origin() const = 0;
+  virtual nsCString Origin() const = 0;
 
   
   
@@ -140,7 +140,7 @@ class LocalStorageCache : public LocalStorageCacheBridge {
 
   
 
-  const nsCString Origin() const override;
+  nsCString Origin() const override;
   const nsCString& OriginNoSuffix() const override { return mOriginNoSuffix; }
   const nsCString& OriginSuffix() const override { return mOriginSuffix; }
   bool Loaded() override { return mLoaded; }
