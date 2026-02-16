@@ -2093,6 +2093,18 @@ class Editor extends EventEmitter {
     return info ? info.text : "";
   }
 
+  
+
+
+  getTextBeforeCursor() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      return cm.state.sliceDoc(0, pos);
+    }
+    return cm.getDoc().getRange({ line: 0, ch: 0 }, cm.getCursor());
+  }
+
   getDoc() {
     if (!this.config) {
       return null;
