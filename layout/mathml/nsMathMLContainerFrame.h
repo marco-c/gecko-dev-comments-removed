@@ -27,11 +27,6 @@ class PresShell;
 
 
 
-
-#define STRETCH_CONSIDER_ACTUAL_SIZE 0x00000001  // just use our current size
-#define STRETCH_CONSIDER_EMBELLISHMENTS \
-  0x00000002  // size calculations include embellishments
-
 class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
  public:
   nsMathMLContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
@@ -189,7 +184,12 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
   
   
-  void GetPreferredStretchSize(DrawTarget* aDrawTarget, uint32_t aOptions,
+  enum class PreferredStretchSizeMode {
+    Embellishments,
+    EmbellishmentsIfSameStretchDirection,
+  };
+  void GetPreferredStretchSize(DrawTarget* aDrawTarget,
+                               PreferredStretchSizeMode aMode,
                                StretchDirection aStretchDirection,
                                nsBoundingMetrics& aPreferredStretchSize);
 
