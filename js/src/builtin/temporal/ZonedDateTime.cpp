@@ -263,7 +263,6 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<JSObject*> item,
   
 
   
-  auto offsetBehaviour = OffsetBehaviour::Option;
 
   
   auto matchBehaviour = MatchBehaviour::MatchExactly;
@@ -326,11 +325,6 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<JSObject*> item,
   auto offsetString = fields.offset();
 
   
-  if (!fields.has(CalendarField::Offset)) {
-    offsetBehaviour = OffsetBehaviour::Wall;
-  }
-
-  
   ZonedDateTimeOptions resolvedOptions;
   if (!ToTemporalZonedDateTimeOptions(cx, options, &resolvedOptions)) {
     return false;
@@ -343,6 +337,13 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<JSObject*> item,
                                        &dateTime)) {
     return false;
   }
+
+  
+
+  
+  auto offsetBehaviour = !fields.has(CalendarField::Offset)
+                             ? OffsetBehaviour::Wall
+                             : OffsetBehaviour::Option;
 
   
   int64_t offsetNanoseconds = 0;
@@ -375,10 +376,6 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   
 
   
-  auto offsetBehaviour = OffsetBehaviour::Option;
-
-  
-  auto matchBehaviour = MatchBehaviour::MatchExactly;
 
   
   if (item.isObject()) {
@@ -430,14 +427,7 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   
 
   
-  if (parsed.timeZone().constructed<UTCTimeZone>()) {
-    offsetBehaviour = OffsetBehaviour::Exact;
-  }
-
-  
-  else if (parsed.timeZone().empty()) {
-    offsetBehaviour = OffsetBehaviour::Wall;
-  }
+  bool hasUTCDesignator = parsed.timeZone().constructed<UTCTimeZone>();
 
   
   Rooted<CalendarValue> calendar(cx, CalendarValue(CalendarId::ISO8601));
@@ -448,7 +438,7 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
   }
 
   
-  matchBehaviour = MatchBehaviour::MatchMinutes;
+  auto matchBehaviour = MatchBehaviour::MatchMinutes;
 
   
   if (parsed.timeZone().constructed<OffsetTimeZone>()) {
@@ -467,6 +457,11 @@ static bool ToTemporalZonedDateTime(JSContext* cx, Handle<Value> item,
 
   
   const auto& isoDateTime = parsed.dateTime();
+
+  
+  auto offsetBehaviour = hasUTCDesignator            ? OffsetBehaviour::Exact
+                         : parsed.timeZone().empty() ? OffsetBehaviour::Wall
+                                                     : OffsetBehaviour::Option;
 
   
   int64_t offsetNanoseconds = 0;
@@ -531,18 +526,18 @@ static ZonedDateTimeObject* CreateTemporalZonedDateTime(
 
   
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
-  object->setFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
-                       NumberValue(epochNs.seconds));
-  object->setFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
-                       Int32Value(epochNs.nanoseconds));
+  object->initFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
+                        NumberValue(epochNs.seconds));
+  object->initFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
+                        Int32Value(epochNs.nanoseconds));
 
   
-  object->setFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
-                       timeZone.toSlotValue());
+  object->initFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
+                        timeZone.toSlotValue());
 
   
-  object->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   
   return object;
@@ -565,18 +560,18 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
   }
 
   
-  object->setFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
-                       NumberValue(epochNanoseconds.seconds));
-  object->setFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
-                       Int32Value(epochNanoseconds.nanoseconds));
+  object->initFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
+                        NumberValue(epochNanoseconds.seconds));
+  object->initFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
+                        Int32Value(epochNanoseconds.nanoseconds));
 
   
-  object->setFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
-                       timeZone.toSlotValue());
+  object->initFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
+                        timeZone.toSlotValue());
 
   
-  object->setFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   
   return object;
@@ -2450,7 +2445,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
 
   
-  auto smallestUnit = TemporalUnit::Auto;
+  auto smallestUnit = TemporalUnit::Unset;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
   if (args.get(0).isString()) {
@@ -2459,8 +2454,13 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
     
     Rooted<JSString*> paramString(cx, args[0].toString());
     if (!GetTemporalUnitValuedOption(
-            cx, paramString, TemporalUnitKey::SmallestUnit,
-            TemporalUnitGroup::DayTime, &smallestUnit)) {
+            cx, paramString, TemporalUnitKey::SmallestUnit, &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::DayTime)) {
       return false;
     }
 
@@ -2485,17 +2485,21 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalUnitValuedOption(cx, roundTo, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::DayTime,
                                      &smallestUnit)) {
       return false;
     }
 
-    if (smallestUnit == TemporalUnit::Auto) {
+    if (smallestUnit == TemporalUnit::Unset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_MISSING_OPTION, "smallestUnit");
       return false;
     }
 
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::DayTime)) {
+      return false;
+    }
     MOZ_ASSERT(TemporalUnit::Day <= smallestUnit &&
                smallestUnit <= TemporalUnit::Nanosecond);
 
@@ -2721,9 +2725,20 @@ static bool ZonedDateTime_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto smallestUnit = TemporalUnit::Auto;
+    auto smallestUnit = TemporalUnit::Unset;
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!GetTemporalShowTimeZoneNameOption(cx, options, &showTimeZone)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
@@ -2732,11 +2747,6 @@ static bool ZonedDateTime_toString(JSContext* cx, const CallArgs& args) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_INVALID_UNIT_OPTION, "hour",
                                 "smallestUnit");
-      return false;
-    }
-
-    
-    if (!GetTemporalShowTimeZoneNameOption(cx, options, &showTimeZone)) {
       return false;
     }
 
@@ -2774,8 +2784,7 @@ static bool ZonedDateTime_toLocaleString(JSContext* cx, const CallArgs& args) {
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
 
   
-  Rooted<Value> timeZone(cx,
-                         StringValue(zonedDateTime.timeZone().identifier()));
+  Rooted<JSLinearString*> timeZone(cx, zonedDateTime.timeZone().identifier());
   return intl::TemporalObjectToLocaleString(
       cx, args, intl::DateTimeFormatKind::All, timeZone);
 }

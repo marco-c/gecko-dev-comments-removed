@@ -684,9 +684,6 @@ function Intl_DateTimeFormat_formatToParts(date) {
   }
 
   
-  getDateTimeFormatInternals(dtf);
-
-  
   return intl_FormatDateTime(dtf, date,  true);
 }
 
@@ -720,9 +717,6 @@ function Intl_DateTimeFormat_formatRange(startDate, endDate) {
   }
 
   
-  getDateTimeFormatInternals(dtf);
-
-  
   return intl_FormatDateTimeRange(dtf, startDate, endDate,  false);
 }
 
@@ -754,9 +748,6 @@ function Intl_DateTimeFormat_formatRangeToParts(startDate, endDate) {
       "formatRangeToParts"
     );
   }
-
-  
-  getDateTimeFormatInternals(dtf);
 
   
   return intl_FormatDateTimeRange(dtf, startDate, endDate,  true);
