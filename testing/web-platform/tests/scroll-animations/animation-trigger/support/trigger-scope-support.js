@@ -4,6 +4,7 @@
 async function assert_playstate_and_current_time(target_id, animation, play_state) {
   
   
+  
   await waitForCompositorReady();
 
   assert_equals(animation.playState, play_state,
@@ -17,3 +18,8 @@ async function assert_playstate_and_current_time(target_id, animation, play_stat
       `animation on ${target_id} has currentTime == 0.`);
   }
 }
+
+const assert_element_animation_state = (element, play_state) => {
+  assert_equals(element.getAnimations()[0].playState, play_state,
+      `animation on ${element.id} has playState ${play_state}.`);
+};
