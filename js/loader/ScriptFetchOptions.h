@@ -9,7 +9,6 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/RequestBinding.h"  
 #include "nsCOMPtr.h"
@@ -83,13 +82,6 @@ class ScriptFetchOptions {
     
     return mCORSMode == other->mCORSMode && mNonce == other->mNonce &&
            mFetchPriority == other->mFetchPriority;
-  }
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
-  }
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    return mNonce.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
 
  public:
