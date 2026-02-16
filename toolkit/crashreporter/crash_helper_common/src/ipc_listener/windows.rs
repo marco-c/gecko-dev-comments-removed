@@ -83,7 +83,7 @@ impl IPCListener {
 
         
         
-        Ok(IPCConnector::from_ancillary(
+        Ok(IPCConnector::from_handle(
             Rc::<OwnedHandle>::try_unwrap(connected_pipe).unwrap(),
         )?)
     }
