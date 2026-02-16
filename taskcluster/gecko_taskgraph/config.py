@@ -2,11 +2,11 @@
 
 
 
-from taskgraph.util.schema import Schema, optionally_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by
 from voluptuous import All, Any, Extra, Optional, Required
 from voluptuous.validators import Length
 
-graph_config_schema = Schema({
+graph_config_schema = LegacySchema({
     
     
     Required("trust-domain"): str,

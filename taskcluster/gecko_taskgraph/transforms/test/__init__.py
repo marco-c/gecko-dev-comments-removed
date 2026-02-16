@@ -22,7 +22,7 @@ from importlib import import_module
 
 from mozbuild.schedules import INCLUSIVE_COMPONENTS
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from voluptuous import Any, Exclusive, Optional, Required
 
 from gecko_taskgraph.optimize.schema import OptimizationSchema
@@ -44,7 +44,7 @@ transforms = TransformSequence()
 
 
 
-test_description_schema = Schema({
+test_description_schema = LegacySchema({
     
     Required("description"): str,
     
