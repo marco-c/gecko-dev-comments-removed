@@ -597,7 +597,7 @@ static const JSPropertySpec intl_static_properties[] = {
 };
 
 static JSObject* CreateIntlObject(JSContext* cx, JSProtoKey key) {
-  RootedObject proto(cx, &cx->global()->getObjectPrototype());
+  Rooted<JSObject*> proto(cx, &cx->global()->getObjectPrototype());
 
   
   
@@ -608,11 +608,11 @@ static JSObject* CreateIntlObject(JSContext* cx, JSProtoKey key) {
 
 
 
-static bool IntlClassFinish(JSContext* cx, HandleObject intl,
-                            HandleObject proto) {
+static bool IntlClassFinish(JSContext* cx, Handle<JSObject*> intl,
+                            Handle<JSObject*> proto) {
   
-  RootedId ctorId(cx);
-  RootedValue ctorValue(cx);
+  Rooted<JS::PropertyKey> ctorId(cx);
+  Rooted<JS::Value> ctorValue(cx);
   for (const auto& protoKey : {
            JSProto_Collator,
            JSProto_DateTimeFormat,
