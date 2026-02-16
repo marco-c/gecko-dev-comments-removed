@@ -81,6 +81,7 @@ class gfxFT2FontBase : public gfxFont {
                              const nsTArray<gfxFontVariation>& aVariations,
                              FT_Face aFTFace);
 
+  
   FT_Face LockFTFace() const;
   void UnlockFTFace() const;
 
