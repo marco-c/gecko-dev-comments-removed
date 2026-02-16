@@ -130,15 +130,15 @@ static PlainDateTimeObject* CreateTemporalDateTime(
   
   auto packedDate = PackedDate::pack(isoDateTime.date);
   auto packedTime = PackedTime::pack(isoDateTime.time);
-  object->setFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
-  object->setFixedSlot(
+  object->initFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(
       PlainDateTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
   
-  object->setFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   
   return object;
@@ -168,15 +168,15 @@ PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
   
   auto packedDate = PackedDate::pack(isoDateTime.date);
   auto packedTime = PackedTime::pack(isoDateTime.time);
-  object->setFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
-  object->setFixedSlot(
+  object->initFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(
       PlainDateTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
   
-  object->setFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   
   return object;
@@ -560,7 +560,8 @@ ISODateTime js::temporal::RoundISODateTime(const ISODateTime& isoDateTime,
   MOZ_ASSERT(0 <= roundedTime.days && roundedTime.days <= 1);
 
   
-  auto balanceResult = BalanceISODate(isoDateTime.date, roundedTime.days);
+  auto balanceResult =
+      BalanceISODate(isoDateTime.date, static_cast<int32_t>(roundedTime.days));
 
   
   return {balanceResult, roundedTime.time};
@@ -656,7 +657,8 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
     
     *result = TotalTimeDuration(diff.time, unit);
     return true;
-  } else if (unit == TemporalUnit::Day) {
+  }
+  if (unit == TemporalUnit::Day) {
     
 
     
