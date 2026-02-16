@@ -14,7 +14,6 @@
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -213,11 +212,18 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
                      const JS::CloneDataPolicy& aCloneDataPolicy,
                      ErrorResult& aRv);
 
+  
+  
+
   void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
+  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+            ErrorResult& aRv);
 
   void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue,
+            const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
+  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
 #ifdef MOZ_WEBRTC
@@ -280,10 +286,6 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
     }
     return mStructuredCloneScope;
   }
-
-  
-  
-  nsIGlobalObject* GlobalDuringRead() const { return mGlobal; }
 
   
   
@@ -405,7 +407,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   void SameProcessScopeRequired(bool* aSameProcessScopeRequired);
 
-  already_AddRefed<MessagePort> ReceiveMessagePort(uint64_t aIndex);
+  already_AddRefed<MessagePort> ReceiveMessagePort(nsIGlobalObject* aGlobal,
+                                                   uint64_t aIndex);
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
@@ -452,9 +455,6 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 #endif
 
   
-  nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
-
-  
   
   nsTArray<RefPtr<MessagePort>> mTransferredPorts;
 
@@ -462,10 +462,6 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   mutable nsTArray<MessagePortIdentifier> mPortIdentifiers;
-
-#ifdef DEBUG
-  nsCOMPtr<nsIEventTarget> mCreationEventTarget;
-#endif
 };
 
 }  
