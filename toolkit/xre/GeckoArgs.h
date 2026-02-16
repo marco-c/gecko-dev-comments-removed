@@ -27,6 +27,7 @@ struct ChildProcessArgs {
   std::vector<UniqueFileHandle> mFiles;
 #ifdef XP_DARWIN
   std::vector<UniqueMachSendRight> mSendRights;
+  std::vector<UniqueMachReceiveRight> mReceiveRights;
 #endif
 };
 
@@ -48,7 +49,14 @@ constexpr size_t kMaxPassedMachSendRights = 10;
 
 
 
+
+constexpr size_t kMaxPassedMachReceiveRights = 1;
+
+
+
 void SetPassedMachSendRights(std::vector<UniqueMachSendRight>&& aSendRights);
+void SetPassedMachReceiveRights(
+    std::vector<UniqueMachReceiveRight>&& aReceiveRights);
 #endif
 
 template <typename T>
@@ -135,7 +143,10 @@ Maybe<UniqueFileHandle> CommandLineArg<UniqueFileHandle>::GetCommon(
 template <>
 Maybe<UniqueMachSendRight> CommandLineArg<UniqueMachSendRight>::GetCommon(
     const char* aMatch, int& aArgc, char** aArgv, const CheckArgFlag aFlags);
-#endif
+template <>
+Maybe<UniqueMachReceiveRight> CommandLineArg<UniqueMachReceiveRight>::GetCommon(
+    const char* aMatch, int& aArgc, char** aArgv, const CheckArgFlag aFlags);
+#endif  
 
 template <>
 Maybe<mozilla::ipc::ReadOnlySharedMemoryHandle>
@@ -185,7 +196,10 @@ template <>
 void CommandLineArg<UniqueMachSendRight>::PutCommon(const char* aName,
                                                     UniqueMachSendRight aValue,
                                                     ChildProcessArgs& aArgs);
-#endif
+template <>
+void CommandLineArg<UniqueMachReceiveRight>::PutCommon(
+    const char* aName, UniqueMachReceiveRight aValue, ChildProcessArgs& aArgs);
+#endif  
 
 template <>
 void CommandLineArg<mozilla::ipc::ReadOnlySharedMemoryHandle>::PutCommon(

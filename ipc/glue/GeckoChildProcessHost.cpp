@@ -1548,10 +1548,12 @@ RefPtr<ProcessLaunchPromise> MacProcessLauncher::DoLaunch() {
         
         
         
-        return MachHandleProcessCheckIn(std::move(self->mParentRecvPort),
-                                        base::GetProcId(aResults.mHandle),
-                                        mozilla::TimeDuration::FromSeconds(10),
-                                        std::move(self->mChildArgs.mSendRights))
+        return MachHandleProcessCheckIn(
+                   std::move(self->mParentRecvPort),
+                   base::GetProcId(aResults.mHandle),
+                   mozilla::TimeDuration::FromSeconds(10),
+                   std::move(self->mChildArgs.mSendRights),
+                   std::move(self->mChildArgs.mReceiveRights))
             ->Then(
                 XRE_GetAsyncIOEventTarget(), __func__,
                 [self, results = std::move(aResults)](task_t aTask) mutable {
