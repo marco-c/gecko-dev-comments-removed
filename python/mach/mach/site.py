@@ -21,23 +21,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
+from filelock import FileLock, Timeout
 from mozfile import json
 from packaging.specifiers import SpecifierSet
 
-from mach.filelock import LockTimeout, SoftFileLock
 from mach.requirements import (
     MachEnvRequirements,
     UnexpectedFlexibleRequirementException,
 )
-
-
-class SiteLockTimeout(Exception):
-    def __init__(self, lock_file, site_name, timeout):
-        self.lock_file = lock_file
-        super().__init__(
-            f"Could not acquire the lock at {lock_file} for the {site_name} site after {timeout} seconds"
-        )
-
 
 PTH_FILENAME = "mach.pth"
 METADATA_FILENAME = "moz_virtualenv_metadata.json"
@@ -420,10 +411,12 @@ class MachSiteManager:
             
             
             try:
-                with SoftFileLock(lock_file, timeout=timeout):
+                with FileLock(lock_file, timeout=timeout):
                     self._ensure(force=force)
-            except LockTimeout:
-                raise SiteLockTimeout(lock_file, "mach", timeout)
+            except Timeout:
+                self._log(
+                    f"Could not acquire the lock at {lock_file} for the mach site after {timeout} seconds."
+                )
         else:
             self._ensure(force=force)
 
@@ -668,7 +661,7 @@ class CommandSiteManager:
         
         
         try:
-            with SoftFileLock(lock_file, timeout=timeout):
+            with FileLock(lock_file, timeout=timeout):
                 result = self._up_to_date()
                 if not result.is_up_to_date:
                     active_site = MozSiteMetadata.from_runtime()
@@ -689,8 +682,10 @@ class CommandSiteManager:
                         self._requirements,
                         self._metadata,
                     )
-        except LockTimeout:
-            raise SiteLockTimeout(lock_file, self._site_name, timeout)
+        except Timeout:
+            self._log(
+                f"Could not acquire the lock at {lock_file} for the {self._site_name} site after {timeout} seconds."
+            )
 
     def activate(self):
         """Activate this site in the current Python context.
