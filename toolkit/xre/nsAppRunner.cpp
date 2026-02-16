@@ -6461,6 +6461,12 @@ mozilla::BinPathType XRE_GetChildProcBinPathType(
 #ifdef XP_WIN
   
   
+  if (StaticPrefs::dom_ipc_alwaysUseParentBinary()) {
+    return BinPathType::Self;
+  }
+
+  
+  
   switch (aProcessType) {
 #  define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name,               \
                              proc_typename, process_bin_type,                  \
