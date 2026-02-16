@@ -677,6 +677,13 @@ struct arena_t {
 
   arena_chunk_t* DallocRun(arena_run_t* aRun, bool aDirty) MOZ_REQUIRES(mLock);
 
+#ifndef MALLOC_DECOMMIT
+  
+  
+  void TouchMadvisedPage(arena_chunk_t* aChunk, size_t aPage)
+      MOZ_REQUIRES(mLock);
+#endif
+
   [[nodiscard]] bool SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
                               bool aZero) MOZ_REQUIRES(mLock);
 
@@ -1478,6 +1485,31 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
   run->mRegionsMask[elm] |= (1U << bit);
 }
 
+#ifndef MALLOC_DECOMMIT
+void arena_t::TouchMadvisedPage(arena_chunk_t* aChunk, size_t page) {
+  
+  MOZ_ASSERT(aChunk->mPageMap[page].bits & CHUNK_MAP_MADVISED);
+
+  
+  MOZ_ASSERT((aChunk->mPageMap[page].bits &
+              (CHUNK_MAP_FRESH | CHUNK_MAP_DECOMMITTED | CHUNK_MAP_DIRTY)) ==
+             0);
+
+  
+  
+  aChunk->mPageMap[page].bits =
+      (aChunk->mPageMap[page].bits & ~CHUNK_MAP_MADVISED) | CHUNK_MAP_DIRTY;
+
+  
+  
+  
+  aChunk->mNumDirty++;
+  mNumDirty++;
+  mStats.committed++;
+  mNumMAdvised--;
+}
+#endif
+
 bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
                        bool aZero) {
   arena_chunk_t* chunk = GetChunkForPtr(aRun);
@@ -1575,6 +1607,12 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     chunk->mDirtyRunHint = run_ind + need_pages;
   }
 
+#ifndef MALLOC_DECOMMIT
+  bool first_page_was_madvised =
+      chunk->mPageMap[run_ind].bits & CHUNK_MAP_MADVISED;
+  bool last_page_was_madvised =
+      chunk->mPageMap[run_ind + need_pages - 1].bits & CHUNK_MAP_MADVISED;
+#endif
   for (size_t i = 0; i < need_pages; i++) {
     
     if (aZero) {
@@ -1609,6 +1647,34 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
       chunk->mPageMap[run_ind + i].bits = size_t(aRun) | CHUNK_MAP_ALLOCATED;
     }
   }
+
+#ifndef MALLOC_DECOMMIT
+  
+  
+  
+  
+  if (first_page_was_madvised) {
+    for (size_t i = run_ind - 1;
+         (i & (gPagesPerRealPage - 1)) != (gPagesPerRealPage - 1); i--) {
+      
+      
+      MOZ_ASSERT(gChunkHeaderNumPages <= i);
+
+      TouchMadvisedPage(chunk, i);
+    }
+  }
+
+  if (last_page_was_madvised) {
+    for (size_t i = run_ind + need_pages; (i & (gPagesPerRealPage - 1)) != 0;
+         i++) {
+      
+      
+      MOZ_ASSERT(i < gChunkNumPages - gPagesPerRealPage);
+
+      TouchMadvisedPage(chunk, i);
+    }
+  }
+#endif
 
   
   
