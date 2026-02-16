@@ -225,7 +225,7 @@ IPCResult BrowserBridgeParent::RecvDispatchSynthesizedMouseEvent(
   }
 
   WidgetMouseEvent event = aEvent;
-  event.mWidget = widget;
+  event.mWidget = std::move(widget);
   
   
   
