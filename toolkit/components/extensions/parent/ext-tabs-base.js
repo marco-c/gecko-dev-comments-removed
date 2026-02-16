@@ -538,6 +538,17 @@ class TabBase {
 
 
 
+  get splitViewId() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -593,6 +604,7 @@ class TabBase {
       "pinned",
       "status",
       "groupId",
+      "splitViewId",
     ];
 
     function checkProperty(prop, obj) {
@@ -678,6 +690,7 @@ class TabBase {
       sharingState: this.sharingState,
       successorTabId: this.successorTabId,
       groupId: this.groupId,
+      splitViewId: this.splitViewId,
       cookieStoreId: this.cookieStoreId,
     };
 

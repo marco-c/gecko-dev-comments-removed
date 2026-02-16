@@ -933,6 +933,11 @@ class Tab extends TabBase {
     return group ? getExtTabGroupIdForInternalTabGroupId(group.id) : -1;
   }
 
+  get splitViewId() {
+    const { splitview } = this.nativeTab;
+    return splitview ? splitview.splitViewId : -1;
+  }
+
   
 
 

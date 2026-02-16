@@ -3444,6 +3444,8 @@
         splitview.remove();
       } else {
         aboutOpenTabs.forEach(aboutOpenTab => {
+          
+          
           gBrowser.removeTab(aboutOpenTab);
         });
       }
@@ -7082,6 +7084,7 @@
 
 
 
+
     
 
 
@@ -7121,8 +7124,10 @@
         previousTabState.tabIndex != currentTabState.tabIndex;
       let changedTabGroup =
         previousTabState.tabGroupId != currentTabState.tabGroupId;
+      let changedSplitView =
+        previousTabState.splitViewId != currentTabState.splitViewId;
 
-      if (changedPosition || changedTabGroup) {
+      if (changedPosition || changedTabGroup || changedSplitView) {
         tab.dispatchEvent(
           new CustomEvent("TabMove", {
             bubbles: true,
