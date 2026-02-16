@@ -11,11 +11,13 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMatrixComponentBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
 CSSMatrixComponent::CSSMatrixComponent(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent)) {}
+    : CSSTransformComponent(std::move(aParent),
+                            TransformComponentType::MatrixComponent) {}
 
 JSObject* CSSMatrixComponent::WrapObject(JSContext* aCx,
                                          JS::Handle<JSObject*> aGivenProto) {
@@ -39,5 +41,27 @@ DOMMatrix* CSSMatrixComponent::GetMatrix(ErrorResult& aRv) const {
 void CSSMatrixComponent::SetMatrix(DOMMatrix& aArg) {}
 
 
+
+void CSSMatrixComponent::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                               nsACString& aDest) const {
+  
+
+  aDest.Append("matrix()"_ns);
+}
+
+const CSSMatrixComponent& CSSTransformComponent::GetAsCSSMatrixComponent()
+    const {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::MatrixComponent);
+
+  return *static_cast<const CSSMatrixComponent*>(this);
+}
+
+CSSMatrixComponent& CSSTransformComponent::GetAsCSSMatrixComponent() {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::MatrixComponent);
+
+  return *static_cast<CSSMatrixComponent*>(this);
+}
 
 }  

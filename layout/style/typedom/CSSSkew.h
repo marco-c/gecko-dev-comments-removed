@@ -49,6 +49,9 @@ class CSSSkew final : public CSSTransformComponent {
 
   
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSSkew() = default;
 };

@@ -44,6 +44,9 @@ class CSSPerspective final : public CSSTransformComponent {
 
   
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSPerspective() = default;
 };

@@ -20,13 +20,35 @@ struct already_AddRefed;
 
 namespace mozilla {
 
+struct CSSPropertyId;
 class ErrorResult;
 
 namespace dom {
 
+class CSSTranslate;
+class CSSRotate;
+class CSSScale;
+class CSSSkew;
+class CSSSkewX;
+class CSSSkewY;
+class CSSPerspective;
+class CSSMatrixComponent;
+
 class CSSTransformComponent : public nsISupports, public nsWrapperCache {
  public:
-  explicit CSSTransformComponent(nsCOMPtr<nsISupports> aParent);
+  enum class TransformComponentType {
+    Translate,
+    Rotate,
+    Scale,
+    Skew,
+    SkewX,
+    SkewY,
+    Perspective,
+    MatrixComponent
+  };
+
+  CSSTransformComponent(nsCOMPtr<nsISupports> aParent,
+                        TransformComponentType aTransformComponentType);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CSSTransformComponent)
@@ -47,10 +69,82 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
 
   
 
+  TransformComponentType GetTransformComponentType() const {
+    return mTransformComponentType;
+  }
+
+  bool IsCSSTranslate() const;
+
+  
+  const CSSTranslate& GetAsCSSTranslate() const;
+
+  
+  CSSTranslate& GetAsCSSTranslate();
+
+  bool IsCSSRotate() const;
+
+  
+  const CSSRotate& GetAsCSSRotate() const;
+
+  
+  CSSRotate& GetAsCSSRotate();
+
+  bool IsCSSScale() const;
+
+  
+  const CSSScale& GetAsCSSScale() const;
+
+  
+  CSSScale& GetAsCSSScale();
+
+  bool IsCSSSkew() const;
+
+  
+  const CSSSkew& GetAsCSSSkew() const;
+
+  
+  CSSSkew& GetAsCSSSkew();
+
+  bool IsCSSSkewX() const;
+
+  
+  const CSSSkewX& GetAsCSSSkewX() const;
+
+  
+  CSSSkewX& GetAsCSSSkewX();
+
+  bool IsCSSSkewY() const;
+
+  
+  const CSSSkewY& GetAsCSSSkewY() const;
+
+  
+  CSSSkewY& GetAsCSSSkewY();
+
+  bool IsCSSPerspective() const;
+
+  
+  const CSSPerspective& GetAsCSSPerspective() const;
+
+  
+  CSSPerspective& GetAsCSSPerspective();
+
+  bool IsCSSMatrixComponent() const;
+
+  
+  const CSSMatrixComponent& GetAsCSSMatrixComponent() const;
+
+  
+  CSSMatrixComponent& GetAsCSSMatrixComponent();
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSTransformComponent() = default;
 
   nsCOMPtr<nsISupports> mParent;
+  const TransformComponentType mTransformComponentType;
 };
 
 }  
