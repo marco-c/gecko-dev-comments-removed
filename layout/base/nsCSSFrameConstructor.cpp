@@ -4720,9 +4720,6 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
     
     
     
-    
-    
-    
     return &sSuppressData;
   }
 
@@ -5041,8 +5038,13 @@ nsCSSFrameConstructor::FindElementData(const Element& aElement,
                                        ItemFlags aFlags) {
   
   if (!aElement.IsSVGElement()) {
+    
+    
+    
+    
     if (aParentFrame && IsFrameForSVG(aParentFrame) &&
-        !aParentFrame->IsSVGForeignObjectFrame()) {
+        !aParentFrame->IsSVGForeignObjectFrame() &&
+        aStyle.GetPseudoType() != PseudoStyleType::Backdrop) {
       return nullptr;
     }
     if (aFlags.contains(ItemFlag::IsWithinSVGText)) {
@@ -9184,24 +9186,26 @@ void nsCSSFrameConstructor::ProcessChildren(
   AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
                                 itemsToConstruct, pageNameTracker);
 
+  
+  
+  
+  
+  
+  auto* styleParentFrame =
+      nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
+  ComputedStyle* parentStyle = styleParentFrame->Style();
+  if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
+      !aContent->IsInNativeAnonymousSubtree() &&
+      !aPossiblyLeafFrame->BackdropUnsupported()) {
+    CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                               *parentStyle, PseudoStyleType::Backdrop,
+                               itemsToConstruct);
+  }
+
   nsBlockFrame* listItem = nullptr;
   bool isOutsideMarker = false;
   if (!aPossiblyLeafFrame->IsLeaf()) {
-    
-    
-    
-    
-    
-    auto* styleParentFrame =
-        nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
-    ComputedStyle* parentStyle = styleParentFrame->Style();
     if (aCanHaveGeneratedContent) {
-      if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
-          !aContent->IsInNativeAnonymousSubtree()) {
-        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                                   *parentStyle, PseudoStyleType::Backdrop,
-                                   itemsToConstruct);
-      }
       if (parentStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
           !styleParentFrame->IsFieldSetFrame()) {
