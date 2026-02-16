@@ -1422,16 +1422,6 @@ pref("network.automatic-ntlm-auth.trusted-uris", "");
 
 
 
-pref("network.generic-ntlm-auth.workstation", "WORKSTATION");
-
-
-
-
-
-
-
-
-
 
 
 pref("network.auth.private-browsing-sso", false);
