@@ -1,13 +1,16 @@
-""" Python client for Taskcluster """
-from __future__ import absolute_import, division, print_function, unicode_literals
+"""Python client for Taskcluster"""
 
 import logging
 import os
-from .client import createSession  
-from .client import createTemporaryCredentials  
-from taskcluster.utils import *  
+
 from taskcluster.exceptions import *  
 from taskcluster.generated._client_importer import *  
+from taskcluster.utils import *  
+
+from .client import (
+    createSession,  
+    createTemporaryCredentials,  
+)
 
 log = logging.getLogger(__name__)
 
