@@ -11,17 +11,22 @@
 
 
 
+if (!window.__firefoxWebCompatFixBug1850998) {
+  Object.defineProperty(window, "__firefoxWebCompatFixBug1850998", {
+    configurable: false,
+    value: true,
+  });
 
+  const proto = window.RegExp.prototype;
+  const descriptor = Object.getOwnPropertyDescriptor(proto, "test");
+  const { value } = descriptor;
 
-const proto = window.wrappedJSObject.RegExp.prototype;
-const descriptor = Object.getOwnPropertyDescriptor(proto, "test");
-const { value } = descriptor;
+  descriptor.value = function (test) {
+    if (this.source === "UCBrowser|Firefox|SamsungBrowser") {
+      return false;
+    }
+    return value.call(this, test);
+  };
 
-descriptor.value = exportFunction(function (test) {
-  if (this.source === "UCBrowser|Firefox|SamsungBrowser") {
-    return false;
-  }
-  return value.call(this, test);
-}, window);
-
-Object.defineProperty(proto, "test", descriptor);
+  Object.defineProperty(proto, "test", descriptor);
+}

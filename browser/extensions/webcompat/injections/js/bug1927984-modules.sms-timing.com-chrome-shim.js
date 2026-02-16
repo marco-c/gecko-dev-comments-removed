@@ -10,16 +10,10 @@
 
 
 
+if (!window.chrome) {
+  console.info(
+    "window.chrome has been shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1927984 for details."
+  );
 
-
-console.info(
-  "window.chrome has been shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1927984 for details."
-);
-
-Object.defineProperty(window.wrappedJSObject, "chrome", {
-  get: exportFunction(function () {
-    return true;
-  }, window),
-
-  set: exportFunction(function () {}, window),
-});
+  window.chrome = {};
+}

@@ -12,23 +12,23 @@
 
 
 
+if (!window.PDFJS) {
+  console.info(
+    "window.PDFJS.disableWorker has been set to true for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1579159 for details."
+  );
 
+  let globals = {};
 
-console.info(
-  "window.PDFJS.disableWorker has been set to true for compatibility reasons. See https://webcompat.com/issues/39057 for details."
-);
+  Object.defineProperty(window, "PDFJS", {
+    configurable: true,
 
-let globals = {};
+    get() {
+      return globals;
+    },
 
-Object.defineProperty(window.wrappedJSObject, "PDFJS", {
-  configurable: true,
-
-  get: exportFunction(function () {
-    return globals;
-  }, window),
-
-  set: exportFunction(function (value = {}) {
-    globals = value;
-    globals.disableWorker = true;
-  }, window),
-});
+    set(value = {}) {
+      globals = value;
+      globals.disableWorker = true;
+    },
+  });
+}

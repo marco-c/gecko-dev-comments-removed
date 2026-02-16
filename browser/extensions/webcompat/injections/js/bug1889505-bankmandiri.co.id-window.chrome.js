@@ -10,8 +10,10 @@
 
 
 
-console.info(
-  "window.chrome has been set to an empty object for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1889505 for details."
-);
+if (!window.chrome) {
+  console.info(
+    "window.chrome has been set to an empty object for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1889505 for details."
+  );
 
-window.wrappedJSObject.chrome = new window.wrappedJSObject.Object();
+  window.chrome = {};
+}

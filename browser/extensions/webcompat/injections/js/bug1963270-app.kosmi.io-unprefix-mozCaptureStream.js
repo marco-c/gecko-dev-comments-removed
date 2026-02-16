@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+if (!HTMLMediaElement.captureStream) {
+  console.info(
+    "HTMLMediaElement.captureStream has been set to HTMLMediaElement.mozCaptureStream for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1963270 for details."
+  );
+
+  const { prototype } = HTMLMediaElement;
+  prototype.captureStream = prototype.mozCaptureStream;
+}

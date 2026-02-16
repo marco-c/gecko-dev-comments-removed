@@ -26,12 +26,16 @@
 
 
 
+if (!window.ajaxRequestProcessing) {
+  console.info(
+    "window.ajaxRequetProcessing has been modified for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1799980 for details."
+  );
 
+  Object.defineProperty(window, "ajaxRequestProcessing", {
+    get() {
+      return false;
+    },
 
-Object.defineProperty(window.wrappedJSObject, "ajaxRequestProcessing", {
-  get: exportFunction(function () {
-    return false;
-  }, window),
-
-  set: exportFunction(function () {}, window),
-});
+    set() {},
+  });
+}

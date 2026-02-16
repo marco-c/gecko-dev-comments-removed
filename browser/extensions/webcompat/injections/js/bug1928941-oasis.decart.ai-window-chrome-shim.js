@@ -10,10 +10,10 @@
 
 
 
+if (!window.chrome) {
+  console.info(
+    "window.chrome has been shimmed for compatibility reasons. https://bugzilla.mozilla.org/show_bug.cgi?id=1928941 for details."
+  );
 
-
-console.info(
-  "window.chrome has been shimmed for compatibility reasons. https://bugzilla.mozilla.org/show_bug.cgi?id=1928941 for details."
-);
-
-window.wrappedJSObject.chrome = new window.wrappedJSObject.Object();
+  window.chrome = {};
+}
