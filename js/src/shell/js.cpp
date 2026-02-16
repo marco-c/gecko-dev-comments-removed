@@ -13296,9 +13296,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
 
   
   
-  if (op.getBoolOption("enable-shadow-realms")) {
-    JS::Prefs::set_experimental_shadow_realms(true);
-  }
   if (op.getBoolOption("enable-atomics-pause")) {
     JS::Prefs::setAtStartup_experimental_atomics_pause(true);
   }
