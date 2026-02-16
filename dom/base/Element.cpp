@@ -5480,84 +5480,31 @@ nsGenericHTMLElement* Element::GetAssociatedPopover() const {
   return nullptr;
 }
 
-
 Element* Element::GetTopmostPopoverAncestor(PopoverAttributeState aMode,
                                             const Element* aInvoker,
                                             bool isPopover) const {
   const Element* newPopover = this;
 
-  
   nsTHashMap<nsPtrHashKey<const Element>, size_t> popoverPositions;
   size_t index = 0;
-
-  
   for (Element* popover : OwnerDoc()->PopoverListOf(aMode)) {
-    
     popoverPositions.LookupOrInsert(popover, index++);
   }
 
-  
-  
   if (isPopover) {
     popoverPositions.LookupOrInsert(newPopover, index);
   }
 
-  const auto* newPopoverHTMLEl = nsGenericHTMLElement::FromNode(newPopover);
-  PopoverAttributeState newPopoverAttribute =
-      newPopoverHTMLEl ? newPopoverHTMLEl->GetPopoverAttributeState()
-                       : PopoverAttributeState::None;
-
-  
   Element* topmostPopoverAncestor = nullptr;
 
-  
   auto checkAncestor = [&](const Element* candidate) {
-    
-    
     if (!candidate) {
       return;
     }
-
-    
-    bool okNesting = false;
-    
-    Element* candidateAncestor = nullptr;
-
-    
-    while (!okNesting) {
-      
-      
-      candidateAncestor = candidate->GetNearestInclusiveOpenPopover();
-      
-      
-      
-      if (!candidateAncestor || !popoverPositions.Contains(candidateAncestor)) {
-        return;
-      }
-
-      
-      
-
-      
-      
-      
-      auto* candidateHTMLEl = nsGenericHTMLElement::FromNode(candidateAncestor);
-      okNesting =
-          !isPopover || newPopoverAttribute == PopoverAttributeState::Hint ||
-          (candidateHTMLEl && candidateHTMLEl->GetPopoverAttributeState() ==
-                                  PopoverAttributeState::Auto);
-
-      
-      
-      if (!okNesting) {
-        candidate = candidateAncestor->GetFlattenedTreeParentElement();
-      }
+    Element* candidateAncestor = candidate->GetNearestInclusiveOpenPopover();
+    if (!candidateAncestor) {
+      return;
     }
-
-    
-    
-    
-    
     size_t candidatePosition;
     if (popoverPositions.Get(candidateAncestor, &candidatePosition)) {
       size_t topmostPosition;
@@ -5569,12 +5516,9 @@ Element* Element::GetTopmostPopoverAncestor(PopoverAttributeState aMode,
     }
   };
 
-  
   checkAncestor(newPopover->GetFlattenedTreeParentElement());
-  
   checkAncestor(aInvoker);
 
-  
   return topmostPopoverAncestor;
 }
 
