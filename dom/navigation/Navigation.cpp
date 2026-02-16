@@ -1158,7 +1158,7 @@ nsresult Navigation::FireEvent(const nsAString& aName) {
 static void ExtractErrorInformation(JSContext* aCx,
                                     JS::Handle<JS::Value> aError,
                                     ErrorEventInit& aErrorEventInitDict,
-                                    NavigateEvent* aEvent) {
+                                    const NavigateEvent* aEvent) {
   nsContentUtils::ExtractErrorValues(
       aCx, aError, aErrorEventInitDict.mFilename, &aErrorEventInitDict.mLineno,
       &aErrorEventInitDict.mColno, aErrorEventInitDict.mMessage);
@@ -1887,10 +1887,13 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
 }
 
 
-void Navigation::AbortNavigateEvent(JSContext* aCx, NavigateEvent* aEvent,
+void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
                                     JS::Handle<JS::Value> aReason) {
   
   
+
+  
+  mOngoingNavigateEvent = nullptr;
 
   
   aEvent->AbortController()->Abort(aCx, aReason);
@@ -1898,9 +1901,6 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, NavigateEvent* aEvent,
   
   RootedDictionary<ErrorEventInit> init(aCx);
   ExtractErrorInformation(aCx, aReason, init, aEvent);
-
-  
-  mOngoingNavigateEvent = nullptr;
 
   
   
