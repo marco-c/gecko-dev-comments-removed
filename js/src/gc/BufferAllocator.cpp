@@ -2777,13 +2777,13 @@ void BufferAllocator::freeMedium(void* alloc) {
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
 
+  if (!canModifyAllocations(chunk)) {
+    return;
+  }
+
   size_t bytes = chunk->allocBytes(alloc);
   PoisonAlloc(alloc, JS_FREED_BUFFER_PATTERN, bytes,
               MemCheckKind::MakeUndefined);
-
-  if (isSweepingChunk(chunk)) {
-    return;  
-  }
 
   
   bool updateRetained =
@@ -2862,6 +2862,26 @@ void BufferAllocator::maybeUpdateAvailableLists(ChunkLists* availableChunks,
     availableChunks->remove(oldChunkSizeClass, chunk);
     availableChunks->pushBack(newChunkSizeClass, chunk);
   }
+}
+
+bool BufferAllocator::canModifyAllocations(BufferChunk* chunk) {
+  
+  
+  if (isConcurrentMarking()) {
+    return false;
+  }
+
+  
+  return !isSweepingChunk(chunk);
+}
+
+bool BufferAllocator::isConcurrentMarking() const {
+#ifdef JS_GC_CONCURRENT_MARKING
+  GCRuntime* gc = &zone->runtimeFromAnyThread()->gc;
+  return majorState == State::Marking && gc->isConcurrentMarkingEnabled();
+#else
+  return false;
+#endif
 }
 
 bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
@@ -2978,8 +2998,8 @@ bool BufferAllocator::growMedium(void* alloc, size_t newBytes) {
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
 
-  if (isSweepingChunk(chunk)) {
-    return false;  
+  if (!canModifyAllocations(chunk)) {
+    return false;
   }
 
   size_t currentBytes = chunk->allocBytes(alloc);
@@ -3043,8 +3063,8 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t newBytes) {
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
 
-  if (isSweepingChunk(chunk)) {
-    return false;  
+  if (!canModifyAllocations(chunk)) {
+    return false;
   }
 
   size_t currentBytes = chunk->allocBytes(alloc);
@@ -3360,6 +3380,11 @@ void BufferAllocator::freeLarge(void* alloc) {
   LargeBuffer* buffer = lookupLargeBuffer(alloc, lock);
   MOZ_ASSERT(buffer->zoneFromAnyThread() == zone);
 
+  
+  if (isConcurrentMarking()) {
+    return;
+  }
+
   DebugOnlyPoison(alloc, JS_FREED_BUFFER_PATTERN, buffer->allocBytes(),
                   MemCheckKind::MakeUndefined);
 
@@ -3393,6 +3418,11 @@ bool BufferAllocator::shrinkLarge(LargeBuffer* buffer, size_t newBytes) {
   return false;
 #else
   MOZ_ASSERT(buffer->zone() == zone);
+
+  
+  if (isConcurrentMarking()) {
+    return false;
+  }
 
   if (!buffer->isNurseryOwned && majorState == State::Sweeping &&
       !buffer->allocatedDuringCollection) {
