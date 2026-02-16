@@ -3337,6 +3337,9 @@ pref("devtools.debugger.features.async-captured-stacks", true);
 pref("devtools.debugger.features.async-live-stacks", false);
 
 
+pref("devtools.debugger.features.stylesheets-in-debugger", false);
+
+
 
 pref("devtools.debugger.show-content-scripts", false);
 
