@@ -123,37 +123,6 @@ enum PromiseCombinatorElementFunctionSlots {
   PromiseCombinatorElementFunctionSlot_Data
 };
 
-enum ReactionJobSlots {
-  ReactionJobSlot_ReactionRecord = 0,
-};
-
-
-
-
-enum ThenableJobSlots {
-  
-  
-  
-  
-  ThenableJobSlot_Promise = 0,
-
-  
-  
-  
-  
-  ThenableJobSlot_Thenable,
-
-  
-  
-  
-  ThenableJobSlot_Handler,
-
-  ThenableJobSlot_Count
-};
-
-static_assert(size_t(ThenableJobSlot_Count) <=
-              size_t(FunctionExtended::SlotCount));
-
 struct PromiseCapability {
   JSObject* promise = nullptr;
   JSObject* resolve = nullptr;
