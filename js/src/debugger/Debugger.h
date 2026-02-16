@@ -68,7 +68,7 @@ class Debugger;
 class DebuggerEnvironment;
 class PromiseObject;
 namespace gc {
-struct Cell;
+class Cell;
 } 
 namespace wasm {
 class Instance;

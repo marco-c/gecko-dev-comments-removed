@@ -161,7 +161,7 @@ JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
 
 
 namespace gc {
-struct Cell;
+class Cell;
 } 
 
 

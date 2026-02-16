@@ -141,7 +141,8 @@ class HeaderWord {
 
 
 
-struct Cell {
+class Cell {
+ protected:
   
   HeaderWord header_;
 

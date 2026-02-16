@@ -524,7 +524,7 @@ class ZoneAllocator;
 
 namespace gc {
 
-struct Cell;
+class Cell;
 
 
 

@@ -14,7 +14,7 @@
 
 namespace js::gc {
 
-struct Cell;
+class Cell;
 
 
 [[nodiscard]] bool MaybeGetUniqueId(Cell* cell, uint64_t* uidp);
