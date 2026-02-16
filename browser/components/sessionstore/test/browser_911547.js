@@ -7,14 +7,9 @@
 
 add_task(async function test() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],
-  });
-  
   let testURL =
     "http://mochi.test:8888/browser/browser/components/sessionstore/test/browser_911547_sample.html";
   let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, testURL));
-  gBrowser.selectedTab = tab;
 
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
@@ -26,25 +21,11 @@ add_task(async function test() {
     `document.getElementById("test_id1").value = "id1_modified";`
   );
 
-  let loadedPromise = promiseBrowserLoaded(browser);
   await SpecialPowers.spawn(browser, [], function () {
     is(
       content.document.getElementById("test_id1").value,
       "id1_initial",
       "CSP should block the inline script that modifies test_id"
-    );
-    content.document.getElementById("test_data_link").click();
-  });
-
-  await loadedPromise;
-
-  await SpecialPowers.spawn(browser, [], function () {
-    
-    
-    is(
-      content.document.getElementById("test_id2").value,
-      "id2_initial",
-      "CSP should block the script loaded by the clicked data URI"
     );
   });
 
@@ -56,14 +37,17 @@ add_task(async function test() {
   await promiseTabRestored(tab);
   browser = tab.linkedBrowser;
 
+  
+  let loadedPromise = promiseBrowserLoaded(browser);
+  BrowserTestUtils.synthesizeMouseAtCenter("#blob_nav_link", {}, browser);
+  await loadedPromise;
+
   await SpecialPowers.spawn(browser, [], function () {
-    
-    
     
     is(
       content.document.getElementById("test_id2").value,
       "id2_initial",
-      "CSP should block the script loaded by the clicked data URI after restore"
+      "CSP should block the inline script in the blob: URI after restore"
     );
   });
 

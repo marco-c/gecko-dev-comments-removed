@@ -83,9 +83,6 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   
   
   
-  if (!StaticPrefs::security_data_uri_block_toplevel_data_uri_navigations()) {
-    return true;
-  }
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   if (loadInfo->GetExternalContentPolicyType() !=
       ExtContentPolicy::TYPE_DOCUMENT) {
