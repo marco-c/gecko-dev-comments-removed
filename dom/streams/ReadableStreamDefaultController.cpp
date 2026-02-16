@@ -298,6 +298,11 @@ void ReadableStreamDefaultControllerEnqueue(
       JS_GetPendingException(aCx, &errorValue);
 
       
+      
+      
+      JS_ClearPendingException(aCx);
+
+      
 
       ReadableStreamDefaultControllerError(aCx, aController, errorValue, aRv);
       if (aRv.Failed()) {
