@@ -43,6 +43,24 @@
 
     connectedCallback() {
       this.setAttribute("role", "menu");
+      this.initializePopover();
+    }
+
+    
+    
+    
+    supportsPopover() {
+      return (
+        !this.parentIsXULPanel() &&
+        !this.lastAnchorNode?.hasSubmenu &&
+        this.getAttribute("slot") !== "submenu"
+      );
+    }
+
+    initializePopover() {
+      if (this.supportsPopover() && !this.hasAttribute("popover")) {
+        this.setAttribute("popover", "manual");
+      }
     }
 
     attributeChangedCallback(name, oldVal, newVal) {
@@ -96,8 +114,12 @@
           triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_UNKNOWN ||
           triggeringEvent.code == "ArrowRight" ||
           triggeringEvent.code == "ArrowLeft");
-      this.open = true;
 
+      
+      
+      
+      
+      this.open = true;
       if (this.parentIsXULPanel()) {
         this.toggleAttribute("inxulpanel", true);
         let panel = this.parentElement;
@@ -137,8 +159,8 @@
       }
       let openingEvent = this.triggeringEvent;
       this.triggeringEvent = triggeringEvent;
-      this.open = false;
 
+      this.open = false;
       if (this.parentIsXULPanel()) {
         
         
@@ -304,7 +326,9 @@
         hostElement.style.overflow = "";
         
         const offsetParentIsBody =
-          this.offsetParent === document?.body || !this.offsetParent;
+          this.supportsPopover() ||
+          this.offsetParent === document?.body ||
+          !this.offsetParent;
         if (offsetParentIsBody) {
           
           this.style.left = `${leftOffset + winScrollX}px`;
@@ -376,12 +400,16 @@
         : e.target.closest && e.target.closest("panel-list") == this;
 
       switch (e.type) {
-        case "resize":
         case "scroll":
-          if (inPanelList) {
+        case "resize":
+          
+          
+          
+          if (inPanelList || this.supportsPopover()) {
             break;
           }
-        
+          this.hide();
+          break;
         case "blur":
         case "popuphidden":
           this.hide();
@@ -579,6 +607,20 @@
       }
 
       
+      if (!this.open) {
+        return;
+      }
+
+      
+      if (this.supportsPopover()) {
+        try {
+          this.showPopover();
+        } catch (ex) {
+          console.error("Failed to show popover:", ex);
+        }
+      }
+
+      
       
       this.focusWalker.currentNode = this;
 
@@ -597,6 +639,13 @@
     }
 
     onHide() {
+      if (this.supportsPopover()) {
+        try {
+          this.hidePopover();
+        } catch (ex) {
+          
+        }
+      }
       requestAnimationFrame(() => {
         this.sendEvent("hidden");
         this.lastAnchorNode?.setAttribute("aria-expanded", "false");
