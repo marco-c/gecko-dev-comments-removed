@@ -63,7 +63,7 @@ class StyledRangeCollection {
 
   StyledRange GetStyledRangeAt(size_t aIndex) {
     AbstractRange* range = GetAbstractRangeAt(aIndex);
-    TextRangeStyle* style = FindStyleForRange(range);
+    const TextRangeStyle* style = GetTextRangeStyleIfNotDefault(range);
     if (style) {
       return StyledRange{range, *style};
     }
@@ -111,19 +111,21 @@ class StyledRangeCollection {
   }
 
   
-  TextRangeStyle* FindStyleForRange(AbstractRange* aRange);
+  const TextRangeStyle* GetTextRangeStyleIfNotDefault(
+      const AbstractRange* aRange);
+
+  
+  void SetTextRangeStyle(const AbstractRange* aRange,
+                         const TextRangeStyle& aStyle);
 
  private:
   
-  void AddStyle(AbstractRange* aRange, const TextRangeStyle& aStyle);
-  
-  void RemoveStyle(AbstractRange* aRange);
-
+  void RemoveStyle(const AbstractRange* aRange);
   
   AutoTArray<RefPtr<AbstractRange>, 1> mRanges;
 
   
-  nsTHashMap<AbstractRange*, TextRangeStyle> mRangeStyleData;
+  nsTHashMap<const AbstractRange*, TextRangeStyle> mRangeStyleData;
 };
 
 inline void ImplCycleCollectionUnlink(StyledRangeCollection& aField) {
