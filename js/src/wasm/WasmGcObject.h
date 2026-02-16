@@ -351,6 +351,14 @@ class WasmArrayObject : public WasmGcObject,
   }
 
   
+  template <typename T>
+  inline T get(uint32_t i) const {
+    MOZ_ASSERT(i < numElements_);
+    MOZ_ASSERT(sizeof(T) == typeDef().arrayType().elementType().size());
+    return ((T*)data_)[i];
+  }
+
+  
   static inline gc::AllocKind allocKindForOOL();
   static inline gc::AllocKind allocKindForIL(uint32_t arrayDataBytes);
   inline gc::AllocKind allocKind() const;
@@ -737,40 +745,6 @@ inline void WasmStructObject::setOOLPointer(
 
 static_assert(WasmStructObject_MaxInlineBytes <= wasm::NullPtrGuardSize);
 static_assert(sizeof(WasmArrayObject) <= wasm::NullPtrGuardSize);
-
-
-
-
-template <typename T>
-class MOZ_RAII StableWasmArrayObjectElements {
-  static constexpr size_t MaxInlineElements =
-      WasmArrayObject::maxInlineElementsForElemSize(sizeof(T));
-  Rooted<WasmArrayObject*> array_;
-  T* elements_;
-  mozilla::Maybe<mozilla::Vector<T, MaxInlineElements, SystemAllocPolicy>>
-      ownElements_;
-
- public:
-  StableWasmArrayObjectElements(JSContext* cx, Handle<WasmArrayObject*> array)
-      : array_(cx, array), elements_(nullptr) {
-    if (array->isDataInline()) {
-      ownElements_.emplace();
-      if (!ownElements_->resize(array->numElements_)) {
-        
-        
-        MOZ_CRASH();
-      }
-      const T* src = array->inlineArrayData<T>();
-      std::copy(src, src + array->numElements_, ownElements_->begin());
-      elements_ = ownElements_->begin();
-    } else {
-      elements_ = reinterpret_cast<T*>(array->data_);
-    }
-  }
-
-  T* elements() { return elements_; }
-  size_t length() const { return array_->numElements_; }
-};
 
 }  
 

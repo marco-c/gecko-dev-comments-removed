@@ -2028,21 +2028,18 @@ void* Instance::stringFromCharCodeArray(Instance* instance, void* arrayArg,
   }
   uint32_t arrayCount = arrayEnd - arrayStart;
 
-  
-  
-  JSLinearString* string = NewStringCopyN<NoGC, char16_t>(
-      cx, (char16_t*)array->data_ + arrayStart, arrayCount);
+  JSStringBuilder builder(cx);
+  if (!builder.ensureTwoByteChars() || !builder.reserve(arrayCount)) {
+    return nullptr;
+  }
+  for (uint32_t i = 0; i < arrayCount; i++) {
+    char16_t c = array->get<char16_t>(arrayStart + i);
+    builder.infallibleAppend(c);
+  }
+  JSLinearString* string = builder.finishString();
   if (!string) {
-    
-    
-    
-    StableWasmArrayObjectElements<uint16_t> stableElements(cx, array);
-    string = NewStringCopyN<CanGC, char16_t>(
-        cx, (char16_t*)stableElements.elements() + arrayStart, arrayCount);
-    if (!string) {
-      MOZ_ASSERT(cx->isThrowingOutOfMemory());
-      return nullptr;
-    }
+    MOZ_ASSERT(cx->isThrowingOutOfMemory());
+    return nullptr;
   }
   return AnyRef::fromJSString(string).forCompiledCode();
 }
