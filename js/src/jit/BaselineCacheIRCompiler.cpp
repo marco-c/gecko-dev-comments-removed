@@ -3105,6 +3105,14 @@ bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
 }
 
 
+bool BaselineCacheIRCompiler::emitMetaScriptedThisShape(
+    uint32_t thisShapeOffset, uint32_t siteOffset) {
+  MOZ_ASSERT(scriptedAllocSiteOffset_.isNothing());
+  scriptedAllocSiteOffset_.emplace(siteOffset);
+  return true;
+}
+
+
 
 void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
                                               CallFlags flags, Register argcReg,
@@ -3177,6 +3185,13 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   masm.PushRegsInMask(liveNonGCRegs);
 
   
+  
+
+  bool hasAllocSite = scriptedAllocSiteOffset_.isSome();
+  if (hasAllocSite) {
+    masm.loadPtr(stubAddress(*scriptedAllocSiteOffset_), scratch);
+    masm.push(scratch);
+  }
 
   if (isBoundFunction) {
     
@@ -3194,10 +3209,16 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     masm.push(scratch);
   }
 
-  
-  using Fn =
-      bool (*)(JSContext*, HandleObject, HandleObject, MutableHandleValue);
-  callVM<Fn, CreateThisFromIC>(masm);
+  if (hasAllocSite) {
+    using Fn = bool (*)(JSContext*, HandleObject, HandleObject, gc::AllocSite*,
+                        MutableHandleValue);
+    callVM<Fn, CreateThisFromICWithAllocSite>(masm);
+  } else {
+    
+    using Fn =
+        bool (*)(JSContext*, HandleObject, HandleObject, MutableHandleValue);
+    callVM<Fn, CreateThisFromIC>(masm);
+  }
 
 #ifdef DEBUG
   Label createdThisOK;
@@ -3765,9 +3786,7 @@ static void CallRegExpStub(MacroAssembler& masm, size_t jitZoneStubOffset,
   
   
   
-  masm.loadJSContext(temp);
-  masm.loadPtr(Address(temp, JSContext::offsetOfZone()), temp);
-  masm.loadPtr(Address(temp, Zone::offsetOfJitZone()), temp);
+  masm.movePtr(ImmPtr(masm.realm()->zone()->jitZone()), temp);
   masm.loadPtr(Address(temp, jitZoneStubOffset), temp);
   masm.branchTestPtr(Assembler::Zero, temp, temp, vmCall);
   masm.call(Address(temp, JitCode::offsetOfCode()));

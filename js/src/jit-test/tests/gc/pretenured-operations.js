@@ -51,3 +51,12 @@ f();
 
 let fdo = new FakeDOMObject();
 check(() => { return fdo.doBar(); })
+
+
+class C {}
+class D extends C {}
+let boundC = C.bind({},1,2);
+
+check(() => { return new C() });
+check(() => { return new D() });
+check(() => { return new boundC() });

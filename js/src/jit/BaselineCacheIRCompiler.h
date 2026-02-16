@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include "jstypes.h"
@@ -39,9 +38,6 @@ struct Register;
 
 enum class ICAttachResult { Attached, DuplicateStub, TooLarge, OOM };
 
-bool TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback, JSScript* script,
-                     ICScript* icScript);
-
 ICAttachResult AttachBaselineCacheIRStub(JSContext* cx,
                                          const CacheIRWriter& writer,
                                          CacheKind kind, JSScript* outerScript,
@@ -54,6 +50,8 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   bool makesGCCalls_;
   uint8_t localTracingSlots_ = 0;
   Register baselineFrameReg_ = FramePointer;
+
+  mozilla::Maybe<uint32_t> scriptedAllocSiteOffset_;
 
   
   

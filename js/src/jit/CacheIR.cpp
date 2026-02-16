@@ -13655,6 +13655,7 @@ void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
                                              JSFunction* calleeFunc,
                                              Int32OperandId argcId,
                                              CallFlags flags, Shape* thisShape,
+                                             gc::AllocSite* maybeAllocSite,
                                              bool isBoundFunction) {
   bool isConstructing = flags.isConstructing();
 
@@ -13702,7 +13703,8 @@ void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
 
       
       
-      writer.metaScriptedThisShape(thisShape);
+      MOZ_ASSERT(maybeAllocSite);
+      writer.metaScriptedThisShape(thisShape, maybeAllocSite);
     }
   } else {
     
@@ -13744,10 +13746,15 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   }
 
   Rooted<Shape*> thisShape(cx_);
+  gc::AllocSite* maybeAllocSite = nullptr;
   if (isConstructing && isSpecialized) {
     Rooted<JSObject*> newTarget(cx_, &newTarget_.toObject());
     switch (getThisShapeForScripted(calleeFunc, newTarget, &thisShape)) {
       case ScriptedThisResult::PlainObjectShape:
+        maybeAllocSite = maybeCreateAllocSite();
+        if (!maybeAllocSite) {
+          return AttachDecision::NoAction;
+        }
         break;
       case ScriptedThisResult::UninitializedThis:
         flags.setNeedsUninitializedThis();
@@ -13766,7 +13773,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
 
   emitCallScriptedGuards(calleeObjId, calleeFunc, argcId, flags, thisShape,
-                          false);
+                         maybeAllocSite,  false);
 
   writer.callScriptedFunction(calleeObjId, argcId, flags,
                               ClampFixedArgc(argc_));
@@ -13976,6 +13983,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
   }
 
   Rooted<Shape*> thisShape(cx_);
+  gc::AllocSite* maybeAllocSite = nullptr;
   if (isConstructing) {
     
     
@@ -13987,6 +13995,10 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
       Handle<JSFunction*> newTarget = target;
       switch (getThisShapeForScripted(target, newTarget, &thisShape)) {
         case ScriptedThisResult::PlainObjectShape:
+          maybeAllocSite = maybeCreateAllocSite();
+          if (!maybeAllocSite) {
+            return AttachDecision::NoAction;
+          }
           break;
         case ScriptedThisResult::UninitializedThis:
           flags.setNeedsUninitializedThis();
@@ -14022,7 +14034,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
   ObjOperandId targetId = writer.loadBoundFunctionTarget(calleeObjId);
 
   emitCallScriptedGuards(targetId, target, argcId, flags, thisShape,
-                          true);
+                         maybeAllocSite,  true);
 
   writer.callBoundScriptedFunction(calleeObjId, targetId, argcId, flags,
                                    numBoundArgs);
