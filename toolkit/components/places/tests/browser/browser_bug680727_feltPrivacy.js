@@ -5,7 +5,9 @@
 
 
 
-const kUniqueURI = Services.io.newURI("http://mochi.test:8888/#bug_680727");
+const kUniqueURI = Services.io.newURI(
+  "http://mochi.test:8888/#bug680727_feltPrivacy"
+);
 var proxyPrefValue;
 var ourTab;
 
@@ -16,10 +18,7 @@ function test() {
   
   proxyPrefValue = Services.prefs.getIntPref("network.proxy.type");
   Services.prefs.setIntPref("network.proxy.type", 0);
-  
-  
-  
-  Services.prefs.setBoolPref("security.certerrors.felt-privacy-v1", false);
+  Services.prefs.setBoolPref("security.certerrors.felt-privacy-v1", true);
 
   
   Services.cache2.clear();
@@ -87,21 +86,18 @@ function errorAsyncListener(aURI, aIsVisited) {
   );
 
   SpecialPowers.spawn(ourTab.linkedBrowser, [], async function () {
-    const button = content.document.querySelector(
-      "#netErrorButtonContainer > .try-again"
+    const netErrorCard = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("net-error-card")?.wrappedJSObject
     );
-    Assert.ok(button, "The error page has a .try-again element");
-
-    await ContentTaskUtils.waitForCondition(
-      () => ContentTaskUtils.isVisible(button),
-      "Wait for button to be visible"
-    );
-
     Assert.ok(
-      ContentTaskUtils.isVisible(button),
-      ".try-again button is visible"
+      netErrorCard.tryAgainButton,
+      "The error page has got a .try-again element"
     );
-    button.click();
+    EventUtils.synthesizeMouseAtCenter(
+      netErrorCard.tryAgainButton,
+      {},
+      content
+    );
   });
 }
 
@@ -137,7 +133,6 @@ function reloadAsyncListener(aURI, aIsVisited) {
 
 registerCleanupFunction(async function () {
   Services.prefs.setIntPref("network.proxy.type", proxyPrefValue);
-  Services.prefs.setBoolPref("security.certerrors.felt-privacy-v1", true);
   Services.io.offline = false;
   BrowserTestUtils.removeTab(ourTab);
 });
