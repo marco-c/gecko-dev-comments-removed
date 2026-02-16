@@ -3703,7 +3703,6 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
   CHECK_ONLY_ONE_BIT(FCDATA_FUNC_IS_FULL_CTOR,
                      FCDATA_FORCE_NULL_ABSPOS_CONTAINER);
   CHECK_ONLY_ONE_BIT(FCDATA_FUNC_IS_FULL_CTOR, FCDATA_WRAP_KIDS_IN_BLOCKS);
-  CHECK_ONLY_ONE_BIT(FCDATA_FUNC_IS_FULL_CTOR, FCDATA_IS_POPUP);
   CHECK_ONLY_ONE_BIT(FCDATA_FUNC_IS_FULL_CTOR, FCDATA_SKIP_ABSPOS_PUSH);
   CHECK_ONLY_ONE_BIT(FCDATA_FUNC_IS_FULL_CTOR,
                      FCDATA_DISALLOW_GENERATED_CONTENT);
@@ -3737,12 +3736,9 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
     newFrame = (*data->mFunc.mCreationFunc)(mPresShell, computedStyle);
 
     const bool allowOutOfFlow = !(bits & FCDATA_DISALLOW_OUT_OF_FLOW);
-    const bool isPopup = aItem.mIsPopup;
-
     nsContainerFrame* geometricParent =
-        (isPopup || allowOutOfFlow)
-            ? aState.GetGeometricParent(*display, aParentFrame)
-            : aParentFrame;
+        allowOutOfFlow ? aState.GetGeometricParent(*display, aParentFrame)
+                       : aParentFrame;
 
     
     
@@ -4049,8 +4045,7 @@ const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindXULTagData(const Element& aElement,
                                       ComputedStyle& aStyle) {
   MOZ_ASSERT(aElement.IsXULElement());
-  static constexpr FrameConstructionData kPopupData(NS_NewMenuPopupFrame,
-                                                    FCDATA_IS_POPUP);
+  static constexpr FrameConstructionData kPopupData(NS_NewMenuPopupFrame);
 
   static constexpr FrameConstructionDataByTag sXULTagData[] = {
       SIMPLE_TAG_CREATE(image, NS_NewXULImageFrame),
@@ -5177,8 +5172,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     return;
   }
 
-  const bool isPopup = data->mBits & FCDATA_IS_POPUP;
-
   const uint32_t bits = data->mBits;
 
   
@@ -5212,7 +5205,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     
     item->mContent->AddRef();
   }
-  item->mIsPopup = isPopup;
 
   if (canHavePageBreak && display.BreakAfter()) {
     AppendPageBreakItem(aContent, aItems);
@@ -5236,9 +5228,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
          (!aParentFrame ||  
           aParentFrame->StyleDisplay()->IsInlineFlow())) ||
         
-        display.IsInlineOutsideStyle() ||
-        
-        isPopup;
+        display.IsInlineOutsideStyle();
 
     
     
@@ -11301,9 +11291,8 @@ bool nsCSSFrameConstructor::FrameConstructionItem::NeedsAnonFlexOrGridItem(
       
       return true;
     }
-    if (mIsPopup ||
-        (!(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
-         aState.GetGeometricParent(*mComputedStyle->StyleDisplay(), nullptr))) {
+    if (!(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
+        aState.GetGeometricParent(*mComputedStyle->StyleDisplay(), nullptr)) {
       
       
       

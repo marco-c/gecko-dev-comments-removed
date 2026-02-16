@@ -679,9 +679,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 #define FCDATA_MAY_NEED_SCROLLFRAME 0x80
   
 
-#define FCDATA_IS_POPUP 0x100
-  
-
 #define FCDATA_SKIP_ABSPOS_PUSH 0x200
   
 
@@ -1120,7 +1117,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mIsGeneratedContent(false),
           mIsAllInline(false),
           mIsBlock(false),
-          mIsPopup(false),
           mIsRenderedLegend(false) {
       MOZ_COUNT_CTOR(FrameConstructionItem);
     }
@@ -1188,9 +1184,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     
     bool mIsBlock : 1;
-    
-    
-    bool mIsPopup : 1;
     
     bool mIsRenderedLegend : 1;
 
