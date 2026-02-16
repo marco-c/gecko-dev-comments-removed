@@ -18,6 +18,6 @@ registerCustomDirProvider();
 resetSyncManagerLock();
 
 
-print("child process should now have the lock; will exit in 5 seconds");
-simulateNoScriptActivity(5);
+print("child process should now have the lock; will exit in 3 seconds");
+simulateNoScriptActivity(3);
 print("child process exiting now");
