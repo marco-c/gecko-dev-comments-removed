@@ -66,17 +66,33 @@ add_task(async function test_show_private_browsing_message() {
 
   let tab = privateWin.gBrowser.selectedBrowser;
   
-  await test_private_message_content(
+  await SpecialPowers.spawn(
     tab,
-    "renders the private browsing message",
-    
     [
-      "div.promo.below-search.promo-visible", 
-      "div.promo-image-large", 
-      "h1#promo-header", 
-      "p#private-browsing-promo-text", 
-      "button.vpn-promo.primary", 
-    ]
+      "renders the private browsing message",
+      [
+        "div.promo.below-search.promo-visible", 
+        "div.promo-image-large", 
+        "h1#promo-header", 
+        "p#private-browsing-promo-text", 
+        "button.vpn-promo.primary", 
+      ],
+    ],
+    async function (experiment, selectors) {
+      
+      await ContentTaskUtils.waitForCondition(() =>
+        content.document.documentElement.hasAttribute(
+          "PrivateBrowsingRenderComplete"
+        )
+      );
+
+      for (let selector of selectors) {
+        await ContentTaskUtils.waitForCondition(() =>
+          content.document.documentElement.querySelector(selector)
+        );
+        Assert.ok(true, `Element present with selector ${selector}`);
+      }
+    }
   );
   
   await BrowserTestUtils.closeWindow(privateWin);
