@@ -90,27 +90,3 @@ function createMockPassInputEventPromise(inputEl, mockPassword) {
   inputEl.dispatchEvent(new Event("input"));
   return promise;
 }
-
-
-
-
-
-
-
-
-
-async function waitForBackupSettings(browser) {
-  let settingsGroup = browser.contentDocument.querySelector(
-    "setting-group[groupid='backup']"
-  );
-
-  await BrowserTestUtils.waitForMutationCondition(
-    settingsGroup,
-    { childList: true, subtree: true },
-    () => browser.contentDocument.querySelector("backup-settings")
-  );
-
-  let settings = browser.contentDocument.querySelector("backup-settings");
-  await settings.updateComplete;
-  return settings;
-}
