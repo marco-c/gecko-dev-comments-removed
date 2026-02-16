@@ -1793,11 +1793,7 @@ pref("extensions.manifestV2.actionsPopupURLRestricted", false);
   pref("extensions.backgroundServiceWorker.enabled", false, locked);
 #endif
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.openPopupWithoutUserGesture.enabled", true);
-#else
-  pref("extensions.openPopupWithoutUserGesture.enabled", false);
-#endif
+pref("extensions.openPopupWithoutUserGesture.enabled", true);
 
 pref("extensions.install_origins.enabled", false);
 
