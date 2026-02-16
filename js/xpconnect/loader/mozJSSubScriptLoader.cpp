@@ -451,8 +451,8 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   
   
   bool shouldUseCache =
-      !options.ignoreCache && (resourceType == scache::ResourceType::Gre ||
-                               resourceType == scache::ResourceType::App);
+      !ignoreCache && (resourceType == scache::ResourceType::Gre ||
+                       resourceType == scache::ResourceType::App);
 
   RefPtr<JS::Stencil> stencil;
   if (shouldUseCache) {
@@ -473,7 +473,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   bool storeIntoStartupCache = false;
   if (!stencil) {
     
-    storeIntoStartupCache = cache;
+    storeIntoStartupCache = cache && shouldUseCache;
 
     JS::CompileOptions compileOptions(cx);
     ScriptPreloader::FillCompileOptionsForCachedStencil(compileOptions);
@@ -498,7 +498,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
 
   
   
-  bool storeIntoPreloadCache = !ignoreCache && !options.wantReturnValue;
+  bool storeIntoPreloadCache = shouldUseCache && !options.wantReturnValue;
 
   (void)EvalStencil(cx, targetObj, loadScope, retval, uri,
                     storeIntoStartupCache, storeIntoPreloadCache, stencil);
