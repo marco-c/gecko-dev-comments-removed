@@ -1259,7 +1259,7 @@ nsresult nsMathMLChar::StretchInternal(
 
     
     
-    if (aMaxSize == NS_MATHML_OPERATOR_SIZE_INFINITY) {
+    if (aMaxSize == kMathMLOperatorSizeInfinity) {
       aDesiredStretchSize.ascent = nscoord_MAX;
       aDesiredStretchSize.descent = 0;
     } else {

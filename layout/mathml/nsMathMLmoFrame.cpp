@@ -552,7 +552,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
   
   
   
-  mMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY;
+  mMaxSize = kMathMLOperatorSizeInfinity;
   mContent->AsElement()->GetAttr(nsGkAtoms::maxsize, value);
   if (!value.IsEmpty()) {
     nsCSSValue cssValue;
@@ -672,7 +672,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
       
 
-      if (mMaxSize != NS_MATHML_OPERATOR_SIZE_INFINITY && mMaxSize > 0.0f) {
+      if (mMaxSize != kMathMLOperatorSizeInfinity && mMaxSize > 0.0f) {
         
         
         
