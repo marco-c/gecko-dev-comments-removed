@@ -33,6 +33,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
@@ -3808,7 +3809,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   
   
-  Document* doc = window->GetExtantDoc();
+  RefPtr<Document> doc = window->GetExtantDoc();
   if (!doc) {
     rv.Throw(NS_ERROR_UNEXPECTED);
     return false;
@@ -3851,7 +3852,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   }
 
   
-  CustomElementDefinition* definition =
+  RefPtr<CustomElementDefinition> definition =
       registry->LookupCustomElementDefinition(aCx, newTarget);
   if (!definition) {
     rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
@@ -3951,6 +3952,21 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
   
   JS::Rooted<JSObject*> desiredProto(aCx);
+
+  
+  
+  nsTArray<RefPtr<Element>>& constructionStack = definition->mConstructionStack;
+  const bool isDirectConstruction = constructionStack.IsEmpty();
+
+  
+  
+  
+  
+  mozilla::Maybe<AutoConstructionDepth> autoDepth;
+  if (isDirectConstruction) {
+    autoDepth.emplace(definition);
+  }
+
   if (!GetDesiredProto(aCx, args, aProtoId, aCreator, &desiredProto)) {
     return false;
   }
@@ -3961,14 +3977,12 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   
   RefPtr<Element> element;
-  nsTArray<RefPtr<Element>>& constructionStack = definition->mConstructionStack;
-  if (constructionStack.IsEmpty()) {
+  if (isDirectConstruction) {
     
     
     
     
     JSAutoRealm ar(aCx, global.Get());
-    AutoConstructionDepth acd(definition);
 
     RefPtr<NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
         definition->mLocalName, definition->mPrefixStack.LastElement(), ns,
