@@ -1844,6 +1844,11 @@ WebRenderBridgeParent::RequestScreenPixels(gfx::IntRect aSourceRect,
                                                 __func__);
   }
 
+  
+  
+  if (mScreenPixelsRequest) {
+    mScreenPixelsRequest.extract().mPromise->Reject(NS_ERROR_ABORT, __func__);
+  }
   mScreenPixelsRequest.emplace(ScreenPixelsRequest{
       .mSourceRect = aSourceRect,
       .mDestSize = aDestSize,
