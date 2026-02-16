@@ -12,21 +12,6 @@ pub use self::cascade::*;
 pub use self::declaration_block::*;
 pub use self::generated::*;
 
-macro_rules! expanded {
-    ( $( $name: ident: $value: expr ),+ ) => {
-        expanded!( $( $name: $value, )+ )
-    };
-    ( $( $name: ident: $value: expr, )+ ) => {
-        Longhands {
-            $(
-                $name: $crate::properties::MaybeBoxed::maybe_boxed($value),
-            )+
-        }
-    }
-}
-
-pub(crate) use expanded;
-
 
 
 #[macro_use]
