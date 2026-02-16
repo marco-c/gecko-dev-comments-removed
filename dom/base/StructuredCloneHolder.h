@@ -216,39 +216,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
-#ifdef MOZ_WEBRTC
-#  define IF_WEBRTC(x) x
-#else
-#  define IF_WEBRTC(x)
-#endif
-
-
-
-
-#define CLONED_DATA_MEMBERS                \
-  STMT(mBlobImplArray);                    \
-  STMT(mWasmModuleArray);                  \
-  STMT(mInputStreamArray);                 \
-  STMT(mClonedSurfaces);                   \
-  STMT(mVideoFrames);                      \
-  STMT(mAudioData);                        \
-  STMT(mEncodedVideoChunks);               \
-  STMT(mEncodedAudioChunks);               \
-  IF_WEBRTC(STMT(mRtcEncodedVideoFrames);) \
-  IF_WEBRTC(STMT(mRtcEncodedAudioFrames);) \
-  STMT(mPortIdentifiers);
-
   
-  bool HasClonedDOMObjects() const {
-#define STMT(_member)         \
-  if (!(_member).IsEmpty()) { \
-    return true;              \
-  }
-
-    CLONED_DATA_MEMBERS
-#undef STMT
-    return false;
-  }
+  bool HasClonedDOMObjects();
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {
     MOZ_ASSERT(mSupportsCloning,
@@ -383,6 +352,40 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   already_AddRefed<MessagePort> ReceiveMessagePort(nsIGlobalObject* aGlobal,
                                                    uint64_t aIndex);
+
+#ifdef DEBUG
+  
+  
+  void AssertAttachmentsMatchFlags();
+#else
+  void AssertAttachmentsMatchFlags() {}
+#endif
+
+  
+  
+  
+  auto CloneableAttachmentArrays() {
+    return std::tie(mBlobImplArray, mInputStreamArray);
+  }
+  auto InProcessCloneableAttachmentArrays() {
+    return std::tie(mWasmModuleArray, mClonedSurfaces, mVideoFrames, mAudioData,
+                    mEncodedVideoChunks, mEncodedAudioChunks
+#ifdef MOZ_WEBRTC
+                    ,
+                    mRtcEncodedVideoFrames, mRtcEncodedAudioFrames
+#endif
+    );
+  }
+  auto TransferableAttachmentArrays() {
+    
+    
+    return std::tie(mPortIdentifiers);
+  }
+  auto AttachmentArrays() {
+    return std::tuple_cat(CloneableAttachmentArrays(),
+                          InProcessCloneableAttachmentArrays(),
+                          TransferableAttachmentArrays());
+  }
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
