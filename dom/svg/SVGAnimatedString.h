@@ -33,7 +33,7 @@ class SVGAnimatedString : public SVGAnimatedClassOrString {
   using TrustedScriptURLOrString = dom::TrustedScriptURLOrString;
 
   void Init(uint8_t aAttrEnum) {
-    mAnimVal = VoidString();
+    mAnimVal = nullptr;
     mAttrEnum = aAttrEnum;
     mIsBaseSet = false;
   }
@@ -61,16 +61,18 @@ class SVGAnimatedString : public SVGAnimatedClassOrString {
   
   
   
-  bool IsExplicitlySet() const { return !mAnimVal.IsVoid() || mIsBaseSet; }
+  bool IsExplicitlySet() const { return !!mAnimVal || mIsBaseSet; }
 
   std::unique_ptr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
   SVGAnimatedString() = default;
 
   SVGAnimatedString& operator=(const SVGAnimatedString& aOther) {
-    mAnimVal = aOther.mAnimVal;
     mAttrEnum = aOther.mAttrEnum;
     mIsBaseSet = aOther.mIsBaseSet;
+    if (aOther.mAnimVal) {
+      mAnimVal = std::make_unique<nsString>(*aOther.mAnimVal);
+    }
     return *this;
   }
 
@@ -79,7 +81,9 @@ class SVGAnimatedString : public SVGAnimatedClassOrString {
   }
 
  private:
-  nsString mAnimVal = VoidString();
+  
+  
+  std::unique_ptr<nsString> mAnimVal;
   uint8_t mAttrEnum = 0;  
   bool mIsBaseSet = false;
 

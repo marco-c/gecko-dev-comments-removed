@@ -135,7 +135,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
   
   
   bool IsOverriddenBy(const nsAString& aViewID) const {
-    return !mCurrentViewID.IsVoid() && mCurrentViewID.Equals(aViewID);
+    return mCurrentViewID && mCurrentViewID->Equals(aViewID);
   }
 
   SMILTimeContainer* GetTimedDocumentRoot();
@@ -220,7 +220,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
   bool mImageNeedsTransformInvalidation;
 
   
-  nsString mCurrentViewID = VoidString();
+  
+  std::unique_ptr<nsString> mCurrentViewID;
   std::unique_ptr<SVGView> mSVGView;
 };
 
