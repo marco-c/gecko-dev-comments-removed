@@ -227,6 +227,12 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual bool NativelyUnavailable() const;
 
+  
+
+
+
+  bool IsOnlyPlainContent() const;
+
   virtual already_AddRefed<AccAttributes> Attributes() override;
 
   
@@ -1037,6 +1043,10 @@ class LocalAccessible : public nsISupports, public Accessible {
   LocalAccessible* GetPopoverTargetDetailsRelation() const;
 
   LocalAccessible* GetAnchorPositionTargetDetailsRelation() const;
+
+  LocalAccessible* GetPopoverTargetDescribedByRelation() const;
+
+  LocalAccessible* GetCommandForDescribedByRelation() const;
 };
 
 
