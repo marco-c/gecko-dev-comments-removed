@@ -1710,6 +1710,14 @@
       const oldTabSpec = oldTab.linkedBrowser.currentURI.spec;
       const newTabSpec = newTab.linkedBrowser.currentURI.spec;
 
+      if (
+        [oldTab, newTab].some(
+          tab => tab.linkedBrowser.currentURI.scheme === "about"
+        )
+      ) {
+        return;
+      }
+
       
       this._tabSelectTimestamps = this._tabSelectTimestamps.filter(
         entry => now - entry.timestamp < ONE_MINUTE_MS
