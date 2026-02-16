@@ -252,8 +252,7 @@ def run_tests(tests, summary):
     
     
     embedded_version = (
-        subprocess
-        .check_output([
+        subprocess.check_output([
             OPTIONS.gdb_executable,
             "--batch",
             "--ex",
