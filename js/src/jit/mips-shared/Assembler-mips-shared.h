@@ -872,7 +872,7 @@ class AssemblerMIPSShared : public AssemblerShared {
     if (MOZ_UNLIKELY(printer || JitSpewEnabled(JitSpew_Codegen))) {
       va_list va;
       va_start(va, fmt);
-      spew(fmt, va);
+      spewVA(fmt, va);
       va_end(va);
     }
   }
@@ -883,7 +883,7 @@ class AssemblerMIPSShared : public AssemblerShared {
 #endif
 
 #ifdef JS_JITSPEW
-  MOZ_COLD void spew(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
+  MOZ_COLD void spewVA(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
     
     
     char buf[200];
