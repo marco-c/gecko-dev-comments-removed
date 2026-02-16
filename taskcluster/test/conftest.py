@@ -69,6 +69,7 @@ def create_tgg(responses, datadir):
 
         
         responses.add_passthru("https://hg.mozilla.org")
+        responses.add_passthru("https://firefoxci.taskcluster-artifacts.net")
         responses.add_passthru(ROOT_URL)
         if proxy_url := os.environ.get("TASKCLUSTER_PROXY_URL"):
             responses.add_passthru(proxy_url)
