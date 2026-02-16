@@ -927,6 +927,21 @@ class MOZ_NON_PARAM MOZ_GSL_OWNER Vector final : private AllocPolicy {
 
   void swap(Vector& aOther);
 
+  
+
+
+
+
+
+
+
+  template <typename F>
+  void traceOwnedAllocs(F&& aTraceFunc) {
+    if (!usingInlineStorage()) {
+      aTraceFunc(&mBegin);
+    }
+  }
+
  private:
   Vector(const Vector&) = delete;
   void operator=(const Vector&) = delete;

@@ -426,6 +426,25 @@ class MOZ_STANDALONE_DEBUG HashMap {
   using Enum = typename Impl::Enum;
   Range all() const { return mImpl.all(); }
 
+  
+
+  
+  const AllocPolicy& allocPolicy() const { return mImpl.allocPolicy(); }
+  AllocPolicy& allocPolicy() { return mImpl.allocPolicy(); }
+
+  
+  
+  
+  
+  
+  
+  template <typename F>
+  void traceOwnedAllocs(F&& aTraceFunc) {
+    mImpl.traceOwnedAllocs(std::forward<F>(aTraceFunc));
+  }
+
+  
+
   static size_t offsetOfHashShift() {
     return offsetof(HashMap, mImpl) + Impl::offsetOfHashShift();
   }
@@ -732,6 +751,23 @@ class HashSet {
   using Range = typename Impl::Range;
   using Enum = typename Impl::Enum;
   Range all() const { return mImpl.all(); }
+
+  
+
+  
+  const AllocPolicy& allocPolicy() const { return mImpl.allocPolicy(); }
+  AllocPolicy& allocPolicy() { return mImpl.allocPolicy(); }
+
+  
+  
+  
+  
+  
+  
+  template <typename F>
+  void traceOwnedAllocs(F&& aTraceFunc) {
+    mImpl.traceOwnedAllocs(std::forward<F>(aTraceFunc));
+  }
 };
 
 
@@ -1604,6 +1640,16 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     std::swap(mMutationCount, aOther.mMutationCount);
     std::swap(mEntered, aOther.mEntered);
 #endif
+  }
+
+  AllocPolicy& allocPolicy() { return *this; }
+  const AllocPolicy& allocPolicy() const { return *this; }
+
+  template <typename F>
+  void traceOwnedAllocs(F&& aTraceFunc) {
+    if (mTable) {
+      aTraceFunc(&mTable);
+    }
   }
 
  private:
