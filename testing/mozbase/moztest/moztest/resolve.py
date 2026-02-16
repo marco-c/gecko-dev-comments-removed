@@ -1209,8 +1209,6 @@ class TestResolver(MozbuildObject):
             ]  
 
             for test_type, path, tests in manifest:
-                full_path = mozpath.join(tests_root, path)
-                src_path = mozpath.relpath(full_path, self.topsrcdir)
                 if test_type not in WPT_TYPES:
                     continue
 
