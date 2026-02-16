@@ -566,9 +566,9 @@ nr_stun_form_success_response(nr_stun_message *req, nr_transport_addr *from, Dat
 
 
 void
-nr_stun_form_error_response(nr_stun_message *req, nr_stun_message* res, int number, const char* msg)
+nr_stun_form_error_response(nr_stun_message *req, nr_stun_message* res, int number, char* msg)
 {
-    const char *str;
+    char *str;
     int request_method;
     char server_name[NR_STUN_MAX_SERVER_BYTES+1]; 
 

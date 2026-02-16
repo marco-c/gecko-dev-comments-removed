@@ -155,7 +155,7 @@ stun_convert_netlink(nr_local_addr *addr, struct ifaddrmsg *address_msg, struct 
   
   ecmd.cmd = ETHTOOL_GSET;
   
-  ifr.ifr_data = (char*)&ecmd;
+  ifr.ifr_data = (void*)&ecmd;
 
   e = ioctl(s, SIOCETHTOOL, &ifr);
   if (e == 0)
