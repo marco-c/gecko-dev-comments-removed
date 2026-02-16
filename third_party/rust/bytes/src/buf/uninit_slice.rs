@@ -22,8 +22,42 @@ use core::ops::{
 pub struct UninitSlice([MaybeUninit<u8>]);
 
 impl UninitSlice {
-    pub(crate) fn from_slice(slice: &mut [MaybeUninit<u8>]) -> &mut UninitSlice {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn new(slice: &mut [u8]) -> &mut UninitSlice {
+        unsafe { &mut *(slice as *mut [u8] as *mut [MaybeUninit<u8>] as *mut UninitSlice) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn uninit(slice: &mut [MaybeUninit<u8>]) -> &mut UninitSlice {
         unsafe { &mut *(slice as *mut [MaybeUninit<u8>] as *mut UninitSlice) }
+    }
+
+    fn uninit_ref(slice: &[MaybeUninit<u8>]) -> &UninitSlice {
+        unsafe { &*(slice as *const [MaybeUninit<u8>] as *const UninitSlice) }
     }
 
     
@@ -48,7 +82,7 @@ impl UninitSlice {
     pub unsafe fn from_raw_parts_mut<'a>(ptr: *mut u8, len: usize) -> &'a mut UninitSlice {
         let maybe_init: &mut [MaybeUninit<u8>] =
             core::slice::from_raw_parts_mut(ptr as *mut _, len);
-        Self::from_slice(maybe_init)
+        Self::uninit(maybe_init)
     }
 
     
@@ -150,8 +184,8 @@ impl UninitSlice {
     
     
     #[inline]
-    pub unsafe fn as_uninit_slice_mut<'a>(&'a mut self) -> &'a mut [MaybeUninit<u8>] {
-        &mut *(self as *mut _ as *mut [MaybeUninit<u8>])
+    pub unsafe fn as_uninit_slice_mut(&mut self) -> &mut [MaybeUninit<u8>] {
+        &mut self.0
     }
 
     
@@ -179,6 +213,18 @@ impl fmt::Debug for UninitSlice {
     }
 }
 
+impl<'a> From<&'a mut [u8]> for &'a mut UninitSlice {
+    fn from(slice: &'a mut [u8]) -> Self {
+        UninitSlice::new(slice)
+    }
+}
+
+impl<'a> From<&'a mut [MaybeUninit<u8>]> for &'a mut UninitSlice {
+    fn from(slice: &'a mut [MaybeUninit<u8>]) -> Self {
+        UninitSlice::uninit(slice)
+    }
+}
+
 macro_rules! impl_index {
     ($($t:ty),*) => {
         $(
@@ -187,16 +233,14 @@ macro_rules! impl_index {
 
                 #[inline]
                 fn index(&self, index: $t) -> &UninitSlice {
-                    let maybe_uninit: &[MaybeUninit<u8>] = &self.0[index];
-                    unsafe { &*(maybe_uninit as *const [MaybeUninit<u8>] as *const UninitSlice) }
+                    UninitSlice::uninit_ref(&self.0[index])
                 }
             }
 
             impl IndexMut<$t> for UninitSlice {
                 #[inline]
                 fn index_mut(&mut self, index: $t) -> &mut UninitSlice {
-                    let maybe_uninit: &mut [MaybeUninit<u8>] = &mut self.0[index];
-                    unsafe { &mut *(maybe_uninit as *mut [MaybeUninit<u8>] as *mut UninitSlice) }
+                    UninitSlice::uninit(&mut self.0[index])
                 }
             }
         )*

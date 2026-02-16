@@ -1,10 +1,8 @@
 use crate::buf::{IntoIter, UninitSlice};
-use crate::{Buf, BufMut, Bytes};
+use crate::{Buf, BufMut};
 
 #[cfg(feature = "std")]
 use std::io::IoSlice;
-
-
 
 
 
@@ -135,7 +133,7 @@ where
     U: Buf,
 {
     fn remaining(&self) -> usize {
-        self.a.remaining().checked_add(self.b.remaining()).unwrap()
+        self.a.remaining().saturating_add(self.b.remaining())
     }
 
     fn chunk(&self) -> &[u8] {
@@ -171,7 +169,7 @@ where
         n
     }
 
-    fn copy_to_bytes(&mut self, len: usize) -> Bytes {
+    fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {
         let a_rem = self.a.remaining();
         if a_rem >= len {
             self.a.copy_to_bytes(len)
