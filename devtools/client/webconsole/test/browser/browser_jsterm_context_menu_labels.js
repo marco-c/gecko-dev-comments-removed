@@ -14,7 +14,7 @@ add_task(async function () {
   const toolbox = gDevTools.getToolboxForTab(gBrowser.selectedTab);
 
   
-  const element = jsterm.node.querySelector(".CodeMirror-wrap");
+  const element = jsterm.node.querySelector(codemirrorSelectors.cmContent);
   const menuPopup = await openTextBoxContextMenu(toolbox, element);
 
   
