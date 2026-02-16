@@ -258,6 +258,11 @@ void AbsoluteContainingBlock::StealFrame(nsIFrame* aFrame) {
 #ifdef DEBUG
 void AbsoluteContainingBlock::SanityCheckChildListsBeforeReflow(
     const nsIFrame* aDelegatingFrame) const {
+  if (!aDelegatingFrame->PresContext()
+           ->FragmentainerAwarePositioningEnabled()) {
+    return;
+  }
+
   
   
   
