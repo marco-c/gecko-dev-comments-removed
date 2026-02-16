@@ -1675,6 +1675,21 @@ var PlacesControllerDragHelper = {
           title: data.label,
           type: PlacesUtils.TYPE_X_MOZ_URL,
         });
+      } else if (
+        XULElement.isInstance(data) &&
+        data.localName == "tab-split-view-wrapper" &&
+        data.ownerGlobal.isChromeWindow
+      ) {
+        
+        
+        data.tabs.forEach(tab => {
+          let uri = tab.linkedBrowser.currentURI?.spec ?? "about:blank";
+          nodes.push({
+            uri,
+            title: tab.label,
+            type: PlacesUtils.TYPE_X_MOZ_URL,
+          });
+        });
       } else {
         throw new Error("bogus data was passed as a tab");
       }
