@@ -100,29 +100,33 @@ Maybe<UrlPatternComponentResult> ComponentMatches(
     UrlPatternComponentPtr* aComponentPtr, nsACString& aInput,
     bool aMatchOnly) {
   UrlPatternComponentResult res;
-  nsAutoCString regexpString;
-  urlpattern_component_get_regexp_string(aComponentPtr, &regexpString);
-  if (regexpString == "^$") {  
+  
+  
+  
+  if (urlpattern_component_is_regexp_string_empty(aComponentPtr)) {
     if (aInput != "") {
       return Nothing();
     }
   } else {  
     nsTArray<MaybeString> matches;
-
     if (!urlpattern_component_matches(aComponentPtr, &aInput, aMatchOnly,
                                       &matches)) {
       return Nothing();
     }
 
+    
+    
+    
+    if (aMatchOnly) {
+      return Some(res);
+    }
+
     nsTArray<nsCString> groupNames;
     urlpattern_component_get_group_name_list(aComponentPtr, &groupNames);
-
     for (size_t i = 0; i < matches.Length(); i++) {
       
       
-      nsAutoCString key;
-      key.Assign(groupNames[i]);
-      res.mGroups.InsertOrUpdate(key, matches[i]);
+      res.mGroups.InsertOrUpdate(groupNames[i], std::move(matches[i]));
     }
   }
   res.mInput = aInput;

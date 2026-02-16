@@ -82,10 +82,8 @@ pub struct SpiderMonkeyRegexp(String, *mut RegExpObjWrapper);
 
 impl Drop for SpiderMonkeyRegexp {
     fn drop(&mut self) {
-        if !self.1.is_null() {
-            unsafe {
-                free_regexp_ffi(self.1);
-            }
+        unsafe {
+            free_regexp_ffi(self.1);
         }
     }
 }
@@ -158,12 +156,8 @@ pub fn spidermonkey_regexp_matches<'a>(
         )
     };
 
-    if !success {
-        return None;
-    }
-
     
-    if !match_result {
+    if !success || !match_result {
         return None;
     }
 
@@ -242,13 +236,10 @@ pub fn matcher_matches<'a>(
             Some(vec![Some(input.to_string())])
         }
         InnerMatcher::RegExp { regexp, .. } => {
-            if regexp.is_err() {
-                return None;
-            }
             
             
             
-            let matches = spidermonkey_regexp_matches(regexp.as_ref().unwrap(), input, match_only)?;
+            let matches = spidermonkey_regexp_matches(regexp.as_ref().ok()?, input, match_only)?;
             Some(
                 matches
                     .into_iter()
