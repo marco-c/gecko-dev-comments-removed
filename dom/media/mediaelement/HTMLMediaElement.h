@@ -1842,6 +1842,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mPendingTextTrackChanged = false;
 
+  Visibility mVisibilityState = Visibility::Untracked;
+
  public:
   
   
@@ -1897,8 +1899,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   bool mIsCurrentlyStalled = false;
-
-  Visibility mVisibilityState = Visibility::Untracked;
 
   UniquePtr<ErrorSink> mErrorSink;
 

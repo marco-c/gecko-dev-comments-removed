@@ -768,9 +768,19 @@ void HTMLVideoElement::OnVisibilityChange(Visibility aNewVisibility) {
   if ((aNewVisibility == Visibility::ApproximatelyNonVisible &&
        !IsCloningElementVisually()) &&
       mCanAutoplayFlag) {
-    LOG("pause non-audible autoplay video when it's invisible");
-    PauseInternal();
-    mCanAutoplayFlag = true;
+    
+    
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        __func__, [self = RefPtr<HTMLMediaElement>(this), this] {
+          
+          if (mVisibilityState != Visibility::ApproximatelyNonVisible ||
+              !mCanAutoplayFlag) {
+            return;
+          }
+          LOG("pause non-audible autoplay video when it's invisible");
+          PauseInternal();
+          mCanAutoplayFlag = true;
+        }));
     return;
   }
 }
