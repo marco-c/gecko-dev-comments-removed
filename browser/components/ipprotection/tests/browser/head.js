@@ -48,7 +48,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
 });
 
-const { ProxyPass, Entitlement } = ChromeUtils.importESModule(
+const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
@@ -272,6 +272,7 @@ let DEFAULT_SERVICE_STATUS = {
     status: 200,
     error: undefined,
     pass: makePass(),
+    usage: makeUsage(),
   },
 };
 
@@ -444,6 +445,15 @@ function makePass(
   const encode = obj => btoa(JSON.stringify(obj));
   const token = [encode(header), encode(body), "signature"].join(".");
   return new ProxyPass(token);
+}
+
+
+function makeUsage(
+  max = "5368709120",
+  remaining = "4294967296",
+  reset = "2026-02-01T00:00:00.000Z"
+) {
+  return new ProxyUsage(max, remaining, reset);
 }
 
 
