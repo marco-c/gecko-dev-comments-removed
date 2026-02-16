@@ -42,7 +42,7 @@ bool x86_shared::AssemblerBuffer::swap(
 }
 
 #ifdef JS_JITSPEW
-void js::jit::GenericAssembler::spew(const char* fmt, va_list va) {
+void js::jit::GenericAssembler::spewVA(const char* fmt, va_list va) {
   
   
   char buf[200];
