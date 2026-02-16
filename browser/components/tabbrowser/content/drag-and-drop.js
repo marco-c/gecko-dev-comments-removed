@@ -512,10 +512,6 @@
         gBrowser.adoptTabGroup(draggedTab.group, {
           elementIndex: this._getDropIndex(event),
         });
-      } else if (isSplitViewWrapper(draggedTab)) {
-        gBrowser.adoptSplitView(draggedTab, {
-          elementIndex: this._getDropIndex(event),
-        });
       } else if (draggedTab) {
         
         
@@ -529,10 +525,12 @@
             selectedTab = tab;
             indexForSelectedTab = newIndex;
           } else {
-            const newTab = gBrowser.adoptTab(tab, {
-              elementIndex: newIndex,
-              selectTab: tab == draggedTab,
-            });
+            const newTab = isSplitViewWrapper(tab)
+              ? gBrowser.adoptSplitView(tab, { elementIndex: newIndex })
+              : gBrowser.adoptTab(tab, {
+                  elementIndex: newIndex,
+                  selectTab: tab == draggedTab,
+                });
             if (newTab) {
               ++newIndex;
             }
@@ -1001,7 +999,7 @@
       }
 
       let dataTransferOrderedTabs;
-      if (fromTabList || isTabGroupLabel(tab) || isSplitViewWrapper(tab)) {
+      if (fromTabList || isTabGroupLabel(tab)) {
         
         
         
@@ -1061,7 +1059,13 @@
       canvas.height = 90 * scale;
       let toDrag = canvas;
       let dragImageOffset = -16;
-      let browser = isTab(tab) && tab.linkedBrowser;
+      let splitViewTab;
+      if (isSplitViewWrapper(tab)) {
+        splitViewTab = tab.tabs.find(t => t.selected);
+      }
+      let browser = splitViewTab
+        ? splitViewTab.linkedBrowser
+        : isTab(tab) && tab.linkedBrowser;
       if (isTabGroupLabel(tab)) {
         toDrag = tab;
       } else if (gMultiProcessBrowser) {
@@ -1126,7 +1130,7 @@
 
       let tabOffset = clientPos(tab) - clientPos(this._tabbrowserTabs);
 
-      let movingTabs = tab.multiselected ? gBrowser.selectedTabs : [tab];
+      let movingTabs = tab.multiselected ? gBrowser.selectedElements : [tab];
       let movingTabsSet = new Set(movingTabs);
 
       let dropEffect = this.getDropEffectForTabDrag(event);
@@ -1279,9 +1283,11 @@
       
       
       
-      let movingTabsOffsetX = window.windowUtils.getBoundsWithoutFlushing(
-        tabStripItemElement.offsetParent
-      ).x;
+      let movingTabsOffsetX = tabStripItemElement.offsetParent
+        ? window.windowUtils.getBoundsWithoutFlushing(
+            tabStripItemElement.offsetParent
+          ).x
+        : 0;
 
       for (let movingTab of movingTabs) {
         movingTab = elementToMove(movingTab);
@@ -1309,9 +1315,9 @@
       }
 
       if (movingTabs.length == 2) {
-        tab.setAttribute("small-stack", "");
+        tabStripItemElement.setAttribute("small-stack", "");
       } else if (movingTabs.length > 2) {
-        tab.setAttribute("big-stack", "");
+        tabStripItemElement.setAttribute("big-stack", "");
       }
 
       if (
@@ -1416,9 +1422,10 @@
 
 
     _moveTogetherSelectedTabs(tab) {
-      let selectedTabs = gBrowser.selectedTabs;
-      let tabIndex = selectedTabs.indexOf(tab);
-      if (selectedTabs.some(t => t.pinned != tab.pinned)) {
+      let selectedElement = elementToMove(tab);
+      let selectedElements = gBrowser.selectedElements;
+      let tabIndex = selectedElements.indexOf(selectedElement);
+      if (selectedElements.some(t => t.pinned != tab.pinned)) {
         throw new Error(
           "Cannot move together a mix of pinned and unpinned tabs."
         );
@@ -1432,16 +1439,16 @@
 
       tab.toggleAttribute("multiselected-move-together", true);
 
-      let addAnimationData = movingTab => {
-        movingTab._moveTogetherSelectedTabsData = {
+      let addAnimationData = movingElement => {
+        movingElement._moveTogetherSelectedTabsData = {
           translateX: 0,
           translateY: 0,
           animate: true,
         };
-        movingTab.toggleAttribute("multiselected-move-together", true);
+        movingElement.toggleAttribute("multiselected-move-together", true);
 
         let postTransitionCleanup = () => {
-          movingTab._moveTogetherSelectedTabsData.animate = false;
+          movingElement._moveTogetherSelectedTabsData.animate = false;
         };
         if (gReduceMotion) {
           postTransitionCleanup();
@@ -1449,28 +1456,28 @@
           let onTransitionEnd = transitionendEvent => {
             if (
               transitionendEvent.propertyName != "transform" ||
-              transitionendEvent.originalTarget != movingTab
+              transitionendEvent.originalTarget != movingElement
             ) {
               return;
             }
-            movingTab.removeEventListener("transitionend", onTransitionEnd);
+            movingElement.removeEventListener("transitionend", onTransitionEnd);
             postTransitionCleanup();
           };
 
-          movingTab.addEventListener("transitionend", onTransitionEnd);
+          movingElement.addEventListener("transitionend", onTransitionEnd);
         }
 
-        let tabRect = tab.getBoundingClientRect();
-        let movingTabRect = movingTab.getBoundingClientRect();
-        movingTab._moveTogetherSelectedTabsData.translateX =
+        let tabRect = selectedElement.getBoundingClientRect();
+        let movingTabRect = movingElement.getBoundingClientRect();
+        movingElement._moveTogetherSelectedTabsData.translateX =
           tabRect.x - movingTabRect.x;
-        movingTab._moveTogetherSelectedTabsData.translateY =
+        movingElement._moveTogetherSelectedTabsData.translateY =
           tabRect.y - movingTabRect.y;
       };
 
-      let selectedIndices = selectedTabs.map(t => t.elementIndex);
+      let selectedIndices = selectedElements.map(t => t.elementIndex);
       let currentIndex = 0;
-      let draggedRect = tab.getBoundingClientRect();
+      let draggedRect = selectedElement.getBoundingClientRect();
       let translateX = 0;
       let translateY = 0;
 
@@ -1480,7 +1487,7 @@
       
       for (let unmovingTab of this._tabbrowserTabs.dragAndDropElements) {
         if (unmovingTab.multiselected) {
-          unmovingTab.currentIndex = tab.elementIndex;
+          unmovingTab.currentIndex = selectedElement.elementIndex;
           
           
           continue;
@@ -1490,7 +1497,7 @@
             selectedIndices[currentIndex + 1] &&
             unmovingTab.elementIndex > selectedIndices[currentIndex + 1]
           ) {
-            let currentRect = selectedTabs
+            let currentRect = selectedElements
               .find(t => t.elementIndex == selectedIndices[currentIndex])
               .getBoundingClientRect();
             
@@ -1503,7 +1510,8 @@
           
           
           let isAfterDraggedTab =
-            unmovingTab.elementIndex - currentIndex > tab.elementIndex;
+            unmovingTab.elementIndex - currentIndex >
+            selectedElement.elementIndex;
           let newIndex = isAfterDraggedTab
             ? unmovingTab.elementIndex - currentIndex
             : unmovingTab.elementIndex - currentIndex - 1;
@@ -1544,13 +1552,13 @@
 
       
       for (let i = 0; i < tabIndex; i++) {
-        let movingTab = selectedTabs[i];
-        addAnimationData(movingTab);
+        let movingElement = selectedElements[i];
+        addAnimationData(movingElement);
       }
       
-      for (let i = selectedTabs.length - 1; i > tabIndex; i--) {
-        let movingTab = selectedTabs[i];
-        addAnimationData(movingTab);
+      for (let i = selectedElements.length - 1; i > tabIndex; i--) {
+        let movingElement = selectedElements[i];
+        addAnimationData(movingElement);
       }
 
       
@@ -1573,7 +1581,7 @@
         }
       }
       
-      for (let item of selectedTabs) {
+      for (let item of selectedElements) {
         if (
           item._moveTogetherSelectedTabsData?.translateX ||
           item._moveTogetherSelectedTabsData?.translateY
@@ -1585,8 +1593,8 @@
     }
 
     #isAnimatingMoveTogetherSelectedTabs() {
-      for (let tab of gBrowser.selectedTabs) {
-        if (tab._moveTogetherSelectedTabsData?.animate) {
+      for (let element of gBrowser.selectedElements) {
+        if (element._moveTogetherSelectedTabsData?.animate) {
           return true;
         }
       }
@@ -1605,17 +1613,16 @@
         tab._moveTogetherSelectedTabsData.finished = true;
       }
 
-      let selectedTabs = gBrowser.selectedTabs;
-      let tabIndex = selectedTabs.indexOf(tab);
-
+      let selectedElements = gBrowser.selectedElements;
+      let tabIndex = selectedElements.indexOf(tab);
       
       for (let i = 0; i < tabIndex; i++) {
-        gBrowser.moveTabBefore(selectedTabs[i], tab);
+        gBrowser.moveTabBefore(selectedElements[i], tab);
       }
 
       
-      for (let i = selectedTabs.length - 1; i > tabIndex; i--) {
-        gBrowser.moveTabAfter(selectedTabs[i], tab);
+      for (let i = selectedElements.length - 1; i > tabIndex; i--) {
+        gBrowser.moveTabAfter(selectedElements[i], tab);
       }
 
       for (let item of this._tabbrowserTabs.dragAndDropElements) {
@@ -2231,7 +2238,7 @@
 
       if (
         gBrowser._tabGroupsEnabled &&
-        isTab(draggedTab) &&
+        (isTab(draggedTab) || isSplitViewWrapper(draggedTab)) &&
         !isPinned &&
         (!numPinned || newDropElementIndex >= numPinned)
       ) {
@@ -2244,7 +2251,7 @@
         
         let shouldCreateGroupOnDrop =
           !movingTabsSet.has(dropElement) &&
-          isTab(dropElement) &&
+          (isTab(dropElement) || isSplitViewWrapper(dropElement)) &&
           !dropElement?.group &&
           overlapPercent > dragOverGroupingThreshold;
 
@@ -2525,6 +2532,8 @@
         splitviewWrapper.style.top = "";
         splitviewWrapper.style.pointerEvents = "";
         splitviewWrapper.removeAttribute("dragtarget");
+        splitviewWrapper.removeAttribute("small-stack");
+        splitviewWrapper.removeAttribute("big-stack");
       }
     }
 

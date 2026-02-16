@@ -6602,7 +6602,7 @@
 
       let tabs;
       if (contextTab.multiselected) {
-        tabs = this.selectedTabs;
+        tabs = this.selectedElements;
       } else {
         tabs = [contextTab];
       }
@@ -6642,7 +6642,9 @@
           let tabIndex = 0;
           for (let tab of tabs) {
             if (tab !== selectedTab) {
-              const newTab = win.gBrowser.adoptTab(tab, { tabIndex });
+              const newTab = win.gBrowser.isSplitViewWrapper(tab)
+                ? win.gBrowser.adoptSplitView(tab, { elementIndex: tabIndex })
+                : win.gBrowser.adoptTab(tab, { tabIndex });
               if (!newTab) {
                 
                 tab.setAttribute("fadein", "true");
@@ -7369,6 +7371,10 @@
     }
 
     addToMultiSelectedTabs(aTab) {
+      if (aTab.splitview) {
+        aTab.splitview.setAttribute("multiselected", "true");
+      }
+
       if (aTab.multiselected) {
         return;
       }
@@ -7415,6 +7421,9 @@
         return;
       }
       aTab.removeAttribute("multiselected");
+      if (aTab.splitview) {
+        aTab.splitview.removeAttribute("multiselected");
+      }
       aTab.removeAttribute("aria-selected");
       this._multiSelectedTabsSet.delete(aTab);
       this._startMultiSelectChange();
@@ -7552,6 +7561,22 @@
         tabs.push(selectedTab);
       }
       return tabs.sort((a, b) => a._tPos > b._tPos);
+    }
+
+    
+
+
+
+
+
+
+
+    get selectedElements() {
+      let selectedElements = new Set();
+      for (let selectedTab of this.selectedTabs) {
+        selectedElements.add(selectedTab.splitview ?? selectedTab);
+      }
+      return Array.from(selectedElements.values());
     }
 
     get multiSelectedTabsCount() {
