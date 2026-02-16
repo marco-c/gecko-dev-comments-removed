@@ -839,7 +839,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::Linktext:
       
       
-      color = NS_RGB(0x8c, 0x8c, 0xff);
+      color = NS_RGB(0x00, 0xca, 0xdb);
       break;
     case ColorID::Activetext:
     case ColorID::SpellCheckerUnderline:
