@@ -12097,11 +12097,12 @@ void nsContentUtils::ExtractErrorValues(
     
     
     
-    if (JSErrorReport* err = JS_ErrorFromException(aCx, obj)) {
+    JS::BorrowedErrorReport err(aCx);
+    if (JS_ErrorFromException(aCx, obj, err)) {
       
       
       RefPtr<xpc::ErrorReport> report = new xpc::ErrorReport();
-      report->Init(err,
+      report->Init(err.get(),
                    nullptr,  
                    false,    
                    0);       

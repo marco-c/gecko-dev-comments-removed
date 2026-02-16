@@ -32,6 +32,7 @@
 #include "js/AllocPolicy.h"
 #include "js/CharacterEncoding.h"  
 #include "js/ColumnNumber.h"       
+#include "js/Exception.h"          
 #include "js/RootingAPI.h"         
 #include "js/UniquePtr.h"          
 #include "js/Value.h"              
@@ -421,7 +422,7 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   JSErrorReport ownedReport;
 
   
-  JS::RootedObject exnObject;
+  JS::BorrowedErrorReport borrowedReport;
 
   
   JS::UniqueChars filename;

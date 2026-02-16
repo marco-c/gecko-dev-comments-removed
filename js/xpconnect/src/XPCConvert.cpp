@@ -1191,15 +1191,15 @@ nsresult XPCConvert::JSValToXPCException(JSContext* cx, MutableHandleValue s,
 
       
       
-      const JSErrorReport* report;
-      if (nullptr != (report = JS_ErrorFromException(cx, obj))) {
+      JS::BorrowedErrorReport report(cx);
+      if (JS_ErrorFromException(cx, obj, report)) {
         JS::UniqueChars toStringResult;
         RootedString str(cx, ToString(cx, s));
         if (str) {
           toStringResult = JS_EncodeStringToUTF8(cx, str);
         }
         return JSErrorToXPCException(cx, toStringResult.get(), ifaceName,
-                                     methodName, report, exceptn);
+                                     methodName, report.get(), exceptn);
       }
 
       
