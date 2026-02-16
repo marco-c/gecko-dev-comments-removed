@@ -1138,11 +1138,13 @@ add_task(async function test_uploadOutgoing_toEmptyServer() {
   let collection = new ServerCollection();
   collection._wbos.flying = new ServerWBO("flying");
   collection._wbos.scotsman = new ServerWBO("scotsman");
+  collection._wbos.failed = new ServerWBO("failed");
 
   let server = sync_httpd_setup({
     "/1.1/foo/storage/rotary": collection.handler(),
     "/1.1/foo/storage/rotary/flying": collection.wbo("flying").handler(),
     "/1.1/foo/storage/rotary/scotsman": collection.wbo("scotsman").handler(),
+    "/1.1/foo/storage/rotary/failed": collection.wbo("failed").handler(),
   });
 
   await SyncTestingInfrastructure(server);
@@ -1152,9 +1154,13 @@ add_task(async function test_uploadOutgoing_toEmptyServer() {
   engine._store.items = {
     flying: "LNER Class A3 4472",
     scotsman: "Flying Scotsman",
+    failed: "Previously Failed Item",
+    failagain: "Item that failed and will fail again",
   };
   
   await engine._tracker.addChangedID("scotsman", 0);
+  await engine._tracker.addChangedID("failed", 0);
+  await engine._tracker.addChangedID("failagain", 0);
 
   let syncID = await engine.resetLocalSyncID();
   let meta_global = Service.recordManager.set(
@@ -1165,10 +1171,12 @@ add_task(async function test_uploadOutgoing_toEmptyServer() {
 
   try {
     await engine.setLastSync(123); 
+    engine.previousFailedOut = new SerializableSet(["failed", "failagain"]);
 
     
     Assert.equal(collection.payload("flying"), undefined);
     Assert.equal(collection.payload("scotsman"), undefined);
+    Assert.equal(collection.payload("failed"), undefined);
 
     await engine._syncStartup();
     await engine._uploadOutgoing();
@@ -1180,9 +1188,19 @@ add_task(async function test_uploadOutgoing_toEmptyServer() {
     Assert.equal(collection.cleartext("scotsman").id, "scotsman");
     const changes = await engine._tracker.getChangedIDs();
     Assert.equal(changes.scotsman, undefined);
+    Assert.ok(!!collection.payload("failed"));
+    Assert.equal(collection.cleartext("failed").id, "failed");
+    Assert.equal(changes.failed, undefined);
 
     
+    
     Assert.equal(collection.payload("flying"), undefined);
+    Assert.equal(changes.flying, undefined);
+    Assert.equal(changes.failagain, undefined);
+
+    
+    
+    Assert.equal(engine.previousFailedOut.size, 0);
   } finally {
     await cleanAndGo(engine, server);
   }
@@ -1328,8 +1346,12 @@ add_task(async function test_uploadOutgoing_failed() {
 
     
     
+    
     Assert.equal(changes.scotsman, SCOTSMAN_CHANGED);
     Assert.equal(changes.peppercorn, PEPPERCORN_CHANGED);
+    Assert.equal(engine.previousFailedOut.size, 2);
+    Assert.ok(engine.previousFailedOut.has("scotsman"));
+    Assert.ok(engine.previousFailedOut.has("peppercorn"));
   } finally {
     await promiseClean(engine, server);
   }
@@ -1655,12 +1677,20 @@ add_task(async function test_sync_partialUpload() {
       let id = "record-no-" + i;
       
       
-      
-      
-      if (i == 23 || i == 42 || i >= 200) {
-        Assert.equal(changes[id], i);
+      if (i < 200) {
+        
+        if (i == 23 || i == 42) {
+          Assert.equal(changes[id], i);
+          Assert.ok(engine.previousFailedOut.has(id));
+        } else {
+          Assert.equal(false, id in changes);
+          Assert.ok(!engine.previousFailedOut.has(id));
+        }
       } else {
-        Assert.equal(false, id in changes);
+        
+        
+        Assert.equal(changes[id], i);
+        Assert.ok(!engine.previousFailedOut.has(id));
       }
     }
   } finally {
