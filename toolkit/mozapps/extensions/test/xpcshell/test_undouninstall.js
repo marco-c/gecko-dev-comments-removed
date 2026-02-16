@@ -72,7 +72,7 @@ function getShutdownNewVersion(id) {
 }
 
 
-add_task(async function setup() {
+add_setup(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   await promiseStartupManager();
@@ -81,6 +81,35 @@ add_task(async function setup() {
   for (let [name, files] of Object.entries(ADDONS)) {
     XPIS[name] = await AddonTestUtils.createTempWebExtensionFile(files);
   }
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_stage_dir_empty_and_cleaned_up_eventually() {
+  let stagingDir = profileDir.clone();
+  stagingDir.append("staged");
+
+  
+  
+  let stageAddonDir = stagingDir.clone();
+  stageAddonDir.append(ID);
+  await IOUtils.makeDirectory(stageAddonDir.path);
+
+  
+  
+  
+
+  registerCleanupFunction(() => {
+    Assert.ok(!stagingDir.exists(), "Temp staged directory should be removed");
+  });
 });
 
 
