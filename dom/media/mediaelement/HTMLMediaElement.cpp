@@ -2474,6 +2474,11 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   if (mDecoder) {
     fireTimeUpdate = mDecoder->GetCurrentTime() != 0.0;
+    
+    
+    if (Seeking()) {
+      RemoveStates(ElementState::SEEKING);
+    }
     ShutdownDecoder();
   }
   if (mSrcStream) {
@@ -3555,6 +3560,7 @@ void HTMLMediaElement::Seek(double aTime, SeekTarget::Type aSeekType,
   
   
   LOG(LogLevel::Debug, ("%p SetCurrentTime(%f) starting seek", this, aTime));
+  AddStates(ElementState::SEEKING);
   mDecoder->Seek(aTime, aSeekType);
 
   
@@ -6182,6 +6188,7 @@ void HTMLMediaElement::SeekCompleted() {
   
   
   FireTimeUpdate(TimeupdateType::eMandatory);
+  RemoveStates(ElementState::SEEKING);
   QueueEvent(u"seeked"_ns);
   
   AddRemoveSelfReference();
@@ -6199,6 +6206,7 @@ void HTMLMediaElement::SeekCompleted() {
 }
 
 void HTMLMediaElement::SeekAborted() {
+  RemoveStates(ElementState::SEEKING);
   if (mSeekDOMPromise) {
     AbstractMainThread()->Dispatch(NS_NewRunnableFunction(
         __func__, [promise = std::move(mSeekDOMPromise)] {
