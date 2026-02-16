@@ -12,6 +12,13 @@ function cacheKey(resourceType, resourceId) {
   return `${resourceType}:${resourceId}`;
 }
 
+loader.lazyGetter(this, "logger", function () {
+  return console.createInstance({
+    prefix: "devtools_resourcecommand",
+    maxLogLevel: "Warn",
+  });
+});
+
 class ResourceCommand {
   #destroyed = false;
 
@@ -190,6 +197,8 @@ class ResourceCommand {
       }
     }
 
+    logger.debug("Start watching: " + resources.join(", "));
+
     
     
     resources = [...resources];
@@ -294,6 +303,8 @@ class ResourceCommand {
         );
       }
     }
+
+    logger.debug("Stop watching: " + resources.join(", "));
 
     
     
@@ -703,6 +714,10 @@ class ResourceCommand {
           resource.resourceId = `auto:${++gLastResourceId}`;
         }
 
+        logger.debug(
+          `Received resource available from backend: type=${resource.resourceType}, resourceId=${resource.resourceId}`
+        );
+
         
         let isWillNavigate = false;
         if (resourceType == DOCUMENT_EVENT) {
@@ -831,6 +846,10 @@ class ResourceCommand {
         nestedResourceUpdates,
       } = update;
 
+      logger.debug(
+        `Received resource update from backend: type=${resourceType}, resourceId=${resourceId}`
+      );
+
       if (!resourceId) {
         console.warn(`Expected resource ${resourceType} to have a resourceId`);
       }
@@ -908,6 +927,10 @@ class ResourceCommand {
   async _onResourceDestroyed({ targetFront }, resources) {
     for (const resource of resources) {
       const { resourceType, resourceId } = resource;
+      logger.debug(
+        `Received resource destroyed from backend: type=${resourceType}, resourceId=${resourceId}`
+      );
+
       this._cache.delete(cacheKey(resourceType, resourceId));
       if (!resource.targetFront) {
         resource.targetFront = targetFront;
@@ -941,6 +964,15 @@ class ResourceCommand {
     for (const watcherEntry of this._watchers) {
       const { onAvailable, onUpdated, onDestroyed, pendingEvents } =
         watcherEntry;
+
+      if (!pendingEvents.length) {
+        
+        continue;
+      }
+
+      logger.debug(
+        `Notify a ResourceCommand listener for ${pendingEvents.length} pendingEvents`
+      );
       
       
       watcherEntry.pendingEvents = [];
