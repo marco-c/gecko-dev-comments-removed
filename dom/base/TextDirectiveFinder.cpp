@@ -55,7 +55,6 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
                  ? mDocument->GetDocumentURI()->GetSpecOrDefault()
                  : nsCString();
   TEXT_FRAGMENT_LOG("Trying to find text directives in document '{}'.", uri);
-  mDocument->FlushPendingNotifications(FlushType::Layout);
   
   
   
