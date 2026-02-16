@@ -11,6 +11,7 @@
 using namespace js;
 using JS::SliceBudget;
 using JS::TimeBudget;
+using JS::UnlimitedBudget;
 using JS::WorkBudget;
 
 BEGIN_TEST(testSliceBudgetUnlimited) {
@@ -23,6 +24,9 @@ BEGIN_TEST(testSliceBudgetUnlimited) {
 
   budget.step(1000000);
   CHECK(!budget.isOverBudget());
+
+  SliceBudget budget2 = SliceBudget(UnlimitedBudget());
+  CHECK(budget2.isUnlimited());
 
   return true;
 }
@@ -121,3 +125,40 @@ BEGIN_TEST(testSliceBudgetInterruptibleTime) {
   return true;
 }
 END_TEST(testSliceBudgetInterruptibleTime)
+
+BEGIN_TEST(testSliceBudgetInterruptibleUnlimited) {
+  SliceBudget::InterruptRequestFlag wantInterrupt(false);
+
+  SliceBudget budget = SliceBudget(UnlimitedBudget(), &wantInterrupt);
+  CHECK(budget.isUnlimited());
+  CHECK(!budget.isOverBudget());
+
+  
+  budget.step(1000);
+  CHECK(!budget.isOverBudget());
+
+  
+  budget.step(500);
+  CHECK(!budget.isOverBudget());
+
+  
+  wantInterrupt = true;
+
+  
+  CHECK(!budget.isOverBudget());
+
+  
+  budget.step(1000);
+
+  
+  CHECK(budget.isOverBudget());
+
+  
+  
+  CHECK(wantInterrupt);
+  wantInterrupt = false;
+  CHECK(budget.isOverBudget());
+
+  return true;
+}
+END_TEST(testSliceBudgetInterruptibleUnlimited)
