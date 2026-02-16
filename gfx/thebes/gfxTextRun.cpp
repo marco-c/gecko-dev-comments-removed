@@ -2555,6 +2555,12 @@ template already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
 
 
 
+template void gfxFontGroup::ComputeRanges(nsTArray<TextRange>&, const char16_t*,
+                                          uint32_t, Script,
+                                          gfx::ShapedTextFlags);
+
+
+
 static const nsTHashMap<nsUint32HashKey, Script>* ScriptTagToCodeTable() {
   using TableT = nsTHashMap<nsUint32HashKey, Script>;
 
