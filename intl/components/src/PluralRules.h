@@ -68,25 +68,9 @@ class PluralRules final {
 
 
 
-  Result<PluralRules::Keyword, ICUError> Select(std::string_view aNumber) const;
-
-  
-
-
-
-
 
   Result<PluralRules::Keyword, ICUError> SelectRange(double aStart,
                                                      double aEnd) const;
-
-  
-
-
-
-
-
-  Result<PluralRules::Keyword, ICUError> SelectRange(
-      std::string_view aStart, std::string_view aEnd) const;
 
   
 

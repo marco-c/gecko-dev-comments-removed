@@ -368,17 +368,6 @@ class NumberFormat final {
 
 
 
-  Result<int32_t, ICUError> selectFormatted(std::string_view number,
-                                            char16_t* keyword,
-                                            int32_t keywordSize,
-                                            UPluralRules* pluralRules) const;
-
-  
-
-
-
-
-
 
 
   static auto GetAvailableLocales() {
