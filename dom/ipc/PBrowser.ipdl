@@ -631,7 +631,8 @@ parent:
     
     
     
-    sync EnsureLayersConnected() returns (CompositorOptions compositorOptions);
+    
+    sync EnsureLayersConnected() returns (CompositorOptions? compositorOptions);
 
     
 

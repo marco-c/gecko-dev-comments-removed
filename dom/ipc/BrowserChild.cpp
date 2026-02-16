@@ -3547,25 +3547,25 @@ void BrowserChild::ReinitRendering() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  CompositorOptions options;
-  SendEnsureLayersConnected(&options);
-  mCompositorOptions = Some(options);
-
   bool success = false;
-  RefPtr<CompositorBridgeChild> cb = CompositorBridgeChild::Get();
-
-  if (cb) {
-    success = CreateRemoteLayerManager(cb);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<CompositorOptions> options;
+  SendEnsureLayersConnected(&options);
+  if (options) {
+    mCompositorOptions = options;
+    RefPtr<CompositorBridgeChild> cb = CompositorBridgeChild::Get();
+    if (cb) {
+      success = CreateRemoteLayerManager(cb);
+    }
   }
 
   if (!success) {

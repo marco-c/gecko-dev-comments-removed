@@ -341,7 +341,7 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
 
         
         
-        aRenderThread.BeginShaderWarmupIfNeeded();
+        renderThread->BeginShaderWarmupIfNeeded();
 
         RefPtr<WebRenderAPI> api = new WebRenderAPI(
             docHandle, aWindowId, backend, compositorType, maxTextureSize,
