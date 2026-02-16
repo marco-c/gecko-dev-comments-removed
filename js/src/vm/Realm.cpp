@@ -252,6 +252,12 @@ void Realm::traceGlobalData(JSTracer* trc) {
   DebugAPI::traceFromRealm(trc, this);
 }
 
+void Realm::traceGlobalRoot(JSTracer* trc, const char* name) {
+  if (global_) {
+    TraceRoot(trc, global_.unbarrieredAddress(), name);
+  }
+}
+
 void ObjectRealm::trace(JSTracer* trc) {
   if (objectMetadataTable) {
     objectMetadataTable->trace(trc);
@@ -274,8 +280,8 @@ void Realm::traceRoots(JSTracer* trc,
     
     
     
-    if (shouldTraceGlobal() && global_) {
-      TraceRoot(trc, global_.unbarrieredAddress(), "on-stack realm global");
+    if (shouldTraceGlobal()) {
+      traceGlobalRoot(trc, "on-stack realm global");
     }
 
     
@@ -690,16 +696,16 @@ void AutoSetNewObjectMetadata::setPendingMetadata() {
   (void)SetNewObjectMetadata(cx_, obj);
 }
 
-JS_PUBLIC_API void gc::TraceRealm(JSTracer* trc, JS::Realm* realm,
-                                  const char* name) {
+JS_PUBLIC_API void gc::TraceRealmRoot(JSTracer* trc, JS::Realm* realm,
+                                      const char* name) {
   
   
   
   
-  
-  
-  
-  realm->traceGlobalData(trc);
+  MOZ_RELEASE_ASSERT(realm->hasLiveGlobal(),
+                     "we need to have a global to keep the realm alive");
+  gc::AssertRootMarkingPhase(trc);
+  realm->traceGlobalRoot(trc, "rooted realm");
 }
 
 JS_PUBLIC_API JS::Realm* JS::GetCurrentRealmOrNull(JSContext* cx) {
