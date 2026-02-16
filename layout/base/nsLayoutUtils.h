@@ -3200,6 +3200,15 @@ class nsLayoutUtils {
 
   static void RecomputeSmoothScrollDefault();
 
+  struct CombinedFragments {
+    
+    
+    const nsIFrame* mSkippedPrevContinuation = nullptr;
+    
+    const nsIFrame* mSkippedNextContinuation = nullptr;
+    
+    nsRect mRect;
+  };
   
 
 
@@ -3209,8 +3218,8 @@ class nsLayoutUtils {
 
 
 
-  static nsRect GetCombinedFragmentRects(const nsIFrame* aFrame,
-                                         bool aRelativeToSelf = true);
+  static CombinedFragments GetCombinedFragmentRects(
+      const nsIFrame* aFrame, const nsIFrame* aContainingBlock = nullptr);
 
  private:
   
