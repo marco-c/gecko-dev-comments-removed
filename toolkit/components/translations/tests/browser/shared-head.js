@@ -138,49 +138,6 @@ function languageModelNames(languagePairs) {
 
 
 
-
-function serveOnce(html) {
-  
-  const { HttpServer } = ChromeUtils.importESModule(
-    "resource://testing-common/httpd.sys.mjs"
-  );
-  info("Create server");
-  const server = new HttpServer();
-
-  const { promise, resolve } = Promise.withResolvers();
-  const encoder = new TextEncoder();
-  const htmlUtf8 = encoder.encode(html);
-
-  server.registerPathHandler("/page.html", (_request, response) => {
-    info("Request received for: " + url);
-    response.setHeader("Content-Type", "text/html");
-
-    const binaryOutputStream = Cc[
-      "@mozilla.org/binaryoutputstream;1"
-    ].createInstance(Ci.nsIBinaryOutputStream);
-
-    binaryOutputStream.setOutputStream(response.bodyOutputStream);
-    binaryOutputStream.writeByteArray(htmlUtf8);
-
-    resolve(server.stop());
-  });
-
-  server.start(-1);
-
-  let { primaryHost, primaryPort } = server.identity;
-  
-  const url = `http://${primaryHost}:${primaryPort}/page.html`;
-  info("Server listening for: " + url);
-
-  return { url, serverClosed: promise };
-}
-
-
-
-
-
-
-
 async function loadNewPage(browser, url) {
   BrowserTestUtils.startLoadingURIString(browser, url);
   await BrowserTestUtils.browserLoaded(
@@ -2705,44 +2662,11 @@ async function ensureWindowSize(win, width, height) {
   await resizePromise;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function loadTestPage({
   languagePairs,
   endToEndTest = false,
   autoDownloadFromRemoteSettings = false,
   page,
-  html,
   prefs,
   autoOffer,
   permissionsUrls,
@@ -2753,17 +2677,7 @@ async function loadTestPage({
   contentEagerMode = false,
   win = window,
 }) {
-  
-  const hasPage = page !== undefined;
-  const hasHtml = html !== undefined;
-
-  if (hasPage === hasHtml) {
-    throw new Error(
-      "Provide either the `page` or the `html` option when loading a test page."
-    );
-  }
-
-  const { url, serverClosed } = hasHtml ? serveOnce(html) : {};
+  info(`Loading test page starting at url: ${page}`);
 
   
   const isFirstTimeSetup = win === window;
@@ -2859,13 +2773,7 @@ async function loadTestPage({
     );
   }
 
-  if (page) {
-    info(`Loading test page starting at url: ${page}`);
-    await loadNewPage(tab.linkedBrowser, page);
-  } else {
-    info(`Loading test html at: ${url}`);
-    await loadNewPage(tab.linkedBrowser, url);
-  }
+  await loadNewPage(tab.linkedBrowser, page);
 
   if (autoOffer && TranslationsParent.shouldAlwaysOfferTranslations()) {
     info("Waiting for the popup to be automatically shown.");
@@ -2965,9 +2873,6 @@ async function loadTestPage({
       await removeMocks();
       if (cleanupLocales) {
         await cleanupLocales();
-      }
-      if (serverClosed) {
-        await serverClosed;
       }
       restoreA11yUtils();
       TranslationsParent.testAutomaticPopup = false;
