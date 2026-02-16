@@ -2099,7 +2099,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 #endif
 
     arena_chunk_t* chunk_to_release = nullptr;
-    bool is_dying;
+    bool arena_is_dying;
     {
       
       
@@ -2109,7 +2109,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       
       
       
-      is_dying = purge_info.mArena.mMustDeleteAfterPurge;
+      arena_is_dying = purge_info.mArena.mMustDeleteAfterPurge;
 
       auto [cpc, ctr] = purge_info.UpdatePagesAndCounts();
       continue_purge_chunk = cpc;
@@ -2128,7 +2128,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     if (chunk_to_release) {
       chunk_dealloc((void*)chunk_to_release, kChunkSize, ARENA_CHUNK);
     }
-    if (is_dying) {
+    if (arena_is_dying) {
       return Dying;
     }
     purged_once = true;
