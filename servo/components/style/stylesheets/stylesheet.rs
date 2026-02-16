@@ -30,16 +30,6 @@ use style_traits::ParsingMode;
 use super::scope_rule::ImplicitScopeRoot;
 
 
-pub struct UserAgentStylesheets {
-    
-    pub shared_lock: SharedRwLock,
-    
-    pub user_or_user_agent_stylesheets: Vec<DocumentStyleSheet>,
-    
-    pub quirks_mode_stylesheet: DocumentStyleSheet,
-}
-
-
 
 
 #[derive(Clone, Debug, Default, MallocSizeOf)]
