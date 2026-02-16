@@ -11,6 +11,7 @@
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
+#include "nsILoadInfo.h"
 #include "nsNodeInfoManager.h"
 
 namespace mozilla::dom {
@@ -102,8 +103,13 @@ nsresult VideoDocument::CreateVideoElement() {
 
   RefPtr<HTMLMediaElement> element = static_cast<HTMLMediaElement*>(
       NS_NewHTMLVideoElement(nodeInfo.forget(), NOT_FROM_PARSER));
-  if (!element) return NS_ERROR_OUT_OF_MEMORY;
-  element->SetAutoplay(true, IgnoreErrors());
+
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  element->SetAutoplay(
+      loadInfo->GetForceMediaDocument() == ForceMediaDocument::None,
+      IgnoreErrors());
+
   element->SetControls(true, IgnoreErrors());
   element->LoadWithChannel(mChannel,
                            getter_AddRefs(mStreamListener->mNextStream));
