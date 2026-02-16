@@ -499,10 +499,15 @@ this.browserAction = class extends ExtensionAPIPersistent {
       return;
     }
 
-    
-    
-    
-    window.focus();
+    if (Services.focus.activeWindow !== window) {
+      
+      
+      
+      this.extension.logger.warn(
+        "Refused to open action popup for non-focused window"
+      );
+      return;
+    }
 
     const toolbarButton = widgetForWindow.node.querySelector(
       ".unified-extensions-item-action-button"
@@ -1099,6 +1104,18 @@ this.browserAction = class extends ExtensionAPIPersistent {
             typeof options?.windowId === "number"
               ? windowTracker.getWindow(options.windowId, context)
               : windowTracker.getTopNormalWindow(context);
+
+          if (
+            
+            
+            
+            
+            
+            Services.focus.activeWindow !== window ||
+            window.windowState === window.STATE_MINIMIZED
+          ) {
+            throw new ExtensionError(BrowserActionBase.ERROR_WIN_NOT_FOCUSED);
+          }
 
           if (action.getPopupUrl(window.gBrowser.selectedTab, true)) {
             action.throwIfOpenPopupIsBlockedByAnyAction(window);
