@@ -68,6 +68,11 @@ class ObjectBase {
   JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto) \
       override;
 
+
+
+
+
+
 #define GPU_DECL_CYCLE_COLLECTION(T)                    \
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(T) \
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(T)
@@ -76,6 +81,15 @@ class ObjectBase {
   JSObject* T::WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto) { \
     return dom::GPU##T##_Binding::Wrap(cx, this, givenProto);                \
   }
+
+
+
+
+
+
+
+
+
 
 #define GPU_IMPL_CYCLE_COLLECTION(T, ...) \
   NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(T, __VA_ARGS__)
