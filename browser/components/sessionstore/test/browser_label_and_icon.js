@@ -16,10 +16,7 @@ add_task(async function test_label_and_icon() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.sessionstore.restore_on_demand", true],
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-    ],
+    set: [["browser.sessionstore.restore_on_demand", true]],
   });
 
   
