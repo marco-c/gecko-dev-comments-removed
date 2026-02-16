@@ -291,6 +291,7 @@ for (const type of [
   "WEATHER_USER_OPT_IN_LOCATION",
   "WEBEXT_CLICK",
   "WEBEXT_DISMISS",
+  "WIDGETS_CONTAINER_ACTION",
   "WIDGETS_ENABLED",
   "WIDGETS_ERROR",
   "WIDGETS_IMPRESSION",
@@ -13219,6 +13220,10 @@ function WidgetsFeatureHighlight({
 
 
 
+const CONTAINER_ACTION_TYPES = {
+  HIDE_ALL: "hide_all",
+  CHANGE_SIZE_ALL: "change_size_all"
+};
 const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
@@ -13275,6 +13280,10 @@ function Widgets() {
   const weatherForecastEnabled = nimbusWeatherForecastTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
 
   
+  
+  const widgetSize = widgetsMayBeMaximized && !isMaximized ? "small" : "medium";
+
+  
   const prevTimerEnabledRef = (0,external_React_namespaceObject.useRef)(timerEnabled);
 
   
@@ -13292,32 +13301,78 @@ function Widgets() {
   }, [timerEnabled, timerData, dispatch, timerType]);
 
   
-  function handleHideAllWidgetsClick(e) {
-    e.preventDefault();
+  function hideAllWidgets() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
       dispatch(actionCreators.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
+      const telemetryData = {
+        action_type: CONTAINER_ACTION_TYPES.HIDE_ALL,
+        widget_size: widgetSize
+      };
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_CONTAINER_ACTION,
+        data: telemetryData
+      }));
+
+      
+      if (listsEnabled) {
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_ENABLED,
+          data: {
+            widget_name: "lists",
+            widget_source: "widget",
+            enabled: false,
+            widget_size: widgetSize
+          }
+        }));
+      }
+      if (timerEnabled) {
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_ENABLED,
+          data: {
+            widget_name: "focus_timer",
+            widget_source: "widget",
+            enabled: false,
+            widget_size: widgetSize
+          }
+        }));
+      }
     });
+  }
+  function handleHideAllWidgetsClick(e) {
+    e.preventDefault();
+    hideAllWidgets();
   }
   function handleHideAllWidgetsKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      (0,external_ReactRedux_namespaceObject.batch)(() => {
-        dispatch(actionCreators.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
-        dispatch(actionCreators.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
-      });
+      hideAllWidgets();
     }
   }
-
-  
+  function toggleMaximize() {
+    const newMaximizedState = !isMaximized;
+    const newWidgetSize = widgetsMayBeMaximized && !newMaximizedState ? "small" : "medium";
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));
+      const telemetryData = {
+        action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
+        action_value: newMaximizedState ? "maximize widgets" : "minimize widgets",
+        widget_size: newWidgetSize
+      };
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_CONTAINER_ACTION,
+        data: telemetryData
+      }));
+    });
+  }
   function handleToggleMaximizeClick(e) {
     e.preventDefault();
-    dispatch(actionCreators.SetPref(PREF_WIDGETS_MAXIMIZED, !isMaximized));
+    toggleMaximize();
   }
   function handleToggleMaximizeKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      dispatch(actionCreators.SetPref(PREF_WIDGETS_MAXIMIZED, !isMaximized));
+      toggleMaximize();
     }
   }
   function handleUserInteraction(widgetName) {
