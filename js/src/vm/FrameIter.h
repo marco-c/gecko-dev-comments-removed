@@ -492,6 +492,7 @@ class NonBuiltinScriptFrameIter : public ScriptFrameIter {
 
 
 
+
 class AllFramesIter : public FrameIter {
  public:
   explicit AllFramesIter(JSContext* cx)

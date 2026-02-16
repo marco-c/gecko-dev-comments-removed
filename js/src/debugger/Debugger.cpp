@@ -4864,18 +4864,15 @@ bool Debugger::CallData::getDebuggees() {
 
 bool Debugger::CallData::getNewestFrame() {
   
-  for (AllFramesIter i(cx); !i.done(); ++i) {
-    if (dbg->observesFrame(i)) {
+  
+  
+  
+  for (FrameIter iter(cx); !iter.done(); ++iter) {
+    if (dbg->observesFrame(iter)) {
       
       
-      if (i.isIon() && !i.ensureHasRematerializedFrame(cx)) {
+      if (iter.isIon() && !iter.ensureHasRematerializedFrame(cx)) {
         return false;
-      }
-      AbstractFramePtr frame = i.abstractFramePtr();
-      FrameIter iter(i.activation()->cx());
-      while (!iter.hasUsableAbstractFramePtr() ||
-             iter.abstractFramePtr() != frame) {
-        ++iter;
       }
       return dbg->getFrame(cx, iter, args.rval());
     }
