@@ -4475,8 +4475,7 @@ static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
       if (otherCast->dominates(cast)) {
         
         
-        wasm::RefType dominatingDestType =
-            WasmRefTestOrCastDestType(otherCast);
+        wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(otherCast);
         wasm::RefType currentDestType = WasmRefTestOrCastDestType(cast);
         if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           
@@ -4562,8 +4561,7 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
           
           
           auto* replacement = MConstant::NewInt32(graph.alloc(), 1);
-          refTest->block()->insertBefore(refTest->toInstruction(),
-                                         replacement);
+          refTest->block()->insertBefore(refTest->toInstruction(), replacement);
           refTest->replaceAllUsesWith(replacement);
           refTest->block()->discard(refTest->toInstruction());
           return;
