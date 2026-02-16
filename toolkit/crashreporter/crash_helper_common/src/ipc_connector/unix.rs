@@ -84,14 +84,19 @@ impl IPCConnector {
     
     
     
-    pub fn serialize(&self) -> CString {
-        CString::new(self.as_raw().to_string()).unwrap()
+    pub fn serialize(&self) -> Result<CString, IPCError> {
+        CString::new(self.as_raw().to_string())
+            .map_err(|e| IPCError::Serialize(PlatformError::InteriorNul(e)))
     }
 
     
     pub fn deserialize(string: &CStr) -> Result<IPCConnector, IPCError> {
-        let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
-        let fd = RawFd::from_str(string).map_err(|_e| IPCError::ParseError)?;
+        let string = string
+            .to_str()
+            .map_err(|_e| IPCError::Deserialize(PlatformError::ParseFileDescriptor))?;
+        let fd = RawFd::from_str(string)
+            .map_err(|_e| IPCError::Deserialize(PlatformError::ParseFileDescriptor))?;
+
         
         let socket = unsafe { OwnedFd::from_raw_fd(fd) };
         Ok(IPCConnector { socket })
@@ -247,7 +252,8 @@ impl IPCConnector {
         };
 
         let mut owned_fds = Vec::<OwnedFd>::with_capacity(1);
-        for cmsg in res.cmsgs()? {
+        let cmsgs = res.cmsgs().map_err(PlatformError::ReceiveFailure)?;
+        for cmsg in cmsgs {
             if let ControlMessageOwned::ScmRights(fds) = cmsg {
                 owned_fds.extend(fds.iter().map(|&fd| unsafe { OwnedFd::from_raw_fd(fd) }));
             } else {

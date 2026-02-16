@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 use std::{
     collections::HashMap,
@@ -46,18 +46,20 @@ impl IPCQueue {
     pub fn new(listener: IPCListener) -> Result<IPCQueue, IPCQueueError> {
         let listener_port = listener.as_raw();
 
-        // Create a new completion port that allows only one active thread.
+        
         let port = unsafe {
             CreateIoCompletionPort(
-                /* FileHandle */ INVALID_HANDLE_VALUE,
-                /* ExistingCompletionPort */ 0,
-                /* CompletionKey */ 0,
+                 INVALID_HANDLE_VALUE,
+                 0,
+                 0,
                 CONCURRENT_THREADS,
             ) as RawHandle
         };
 
         if port.is_null() {
-            return Err(IPCQueueError::CreationFailure(get_last_error()));
+            return Err(IPCQueueError::CreationFailure(
+                PlatformError::CreateIoCompletionPortFailed(get_last_error()),
+            ));
         }
 
         let mut queue = IPCQueue {
@@ -94,14 +96,16 @@ impl IPCQueue {
             CreateIoCompletionPort(
                 handle,
                 self.port.as_raw_handle() as HANDLE,
-                // Use the connector's handle as the events' key
+                
                 handle as usize,
                 CONCURRENT_THREADS,
             ) as RawHandle
         };
 
         if port.is_null() {
-            return Err(IPCQueueError::RegistrationFailure(get_last_error()));
+            return Err(IPCQueueError::RegistrationFailure(
+                PlatformError::CreateIoCompletionPortFailed(get_last_error()),
+            ));
         }
 
         Ok(())
@@ -129,7 +133,7 @@ impl IPCQueue {
         }
 
         if self.connectors.is_empty() {
-            // The last client disconnected.
+            
             return Ok(events);
         }
 
@@ -151,29 +155,29 @@ impl IPCQueue {
             )
         };
 
-        // SAFETY: `overlapped` will always be populated by
-        // `GetQueueCompletionStatus()` so it's safe to assume initialization.
+        
+        
         let overlapped = unsafe { overlapped.assume_init() };
 
         if res == FALSE {
             let err = get_last_error();
 
-            // If `overlapped` is non-null then the completion packet contained
-            // the result of a failed I/O operation. We only handle failures
-            // caused by a broken pipes, all others are considered fatal.
+            
+            
+            
             if !overlapped.is_null() && (err == ERROR_BROKEN_PIPE) {
-                // SAFETY: `overlapped` was non-null, so `completion_key` has
-                // also been populated by `GetQueuedCompletionStatus()`.
+                
+                
                 let completion_key = unsafe { completion_key.assume_init() };
                 let element = self.connectors.remove(&completion_key);
                 debug_assert!(element.is_some(), "Completion on missing connector");
                 events.push(IPCEvent::Disconnect(completion_key));
             } else {
-                return Err(IPCQueueError::WaitError(err));
+                return Err(IPCQueueError::WaitError(PlatformError::IOError(err)));
             }
         } else {
-            // SAFETY: `GetQueueCompletionStatus()` successfully retrieved a
-            // completed I/O operation, all parameters have been populated.
+            
+            
             let (number_of_bytes_transferred, completion_key) = unsafe {
                 (
                     number_of_bytes_transferred.assume_init(),
@@ -182,23 +186,21 @@ impl IPCQueue {
             };
 
             if number_of_bytes_transferred == 0 {
-                // This is an event on the listener
+                
                 debug_assert!(
                     self.listener.as_raw() as IPCConnectorKey == completion_key,
                     "Completion event doesn't match the listener"
                 );
                 let operation = self.listen_operation.take();
                 if let Some(operation) = operation {
-                    operation
-                        .accept()
-                        .map_err(|_e| IPCQueueError::RegistrationFailure(0))?;
+                    operation.accept().map_err(IPCQueueError::WaitError)?;
                 }
                 let connector = Rc::new(self.listener.replace_pipe()?);
                 self.insert_connector(&connector);
 
-                // After the pipe is connected the listener handle will have been
-                // replaced with a new one, so associate the new handle with the
-                // completion queue.
+                
+                
+                
                 self.add_handle(self.listener.as_raw())?;
 
                 events.push(IPCEvent::Connect(connector));
@@ -224,9 +226,9 @@ impl IPCQueue {
                         ));
                     }
                     Err(_error @ IPCError::ReceptionFailure(PlatformError::BrokenPipe)) => {
-                        // This connector will generate a disconnection event
-                        // when `wait_for_events()` is called again. Do nothing
-                        // for the time being.
+                        
+                        
+                        
                     }
                     Err(error) => return Err(IPCQueueError::from(error)),
                 }
@@ -239,7 +241,7 @@ impl IPCQueue {
 
 impl Drop for IPCQueue {
     fn drop(&mut self) {
-        // Cancel all the pending operations.
+        
         for element in self.connectors.values_mut() {
             if let Some(operation) = &mut element.operation {
                 if !operation.cancel() {
@@ -254,7 +256,7 @@ impl Drop for IPCQueue {
             }
         }
 
-        // Drain the queue, once no more events are left we can safely drop it.
+        
         loop {
             let mut number_of_bytes_transferred: u32 = 0;
             let mut completion_key: IPCConnectorKey = 0;
@@ -270,10 +272,10 @@ impl Drop for IPCQueue {
                 )
             };
 
-            // TODO: Check that we got enough completion events?
+            
 
             if res == FALSE && overlapped.is_null() {
-                // TODO: Maybe check the error and report odd ones?
+                
                 break;
             }
         }
