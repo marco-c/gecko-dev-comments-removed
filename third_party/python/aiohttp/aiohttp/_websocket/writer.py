@@ -2,8 +2,9 @@
 
 import asyncio
 import random
+import sys
 from functools import partial
-from typing import Any, Final, Optional, Union
+from typing import Final, Optional, Set, Union
 
 from ..base_protocol import BaseProtocol
 from ..client_exceptions import ClientConnectionResetError
@@ -24,12 +25,16 @@ DEFAULT_LIMIT: Final[int] = 2**16
 
 
 
+WS_CONTROL_FRAME_OPCODE: Final[int] = 8
 
 
 
 
 
-WEBSOCKET_MAX_SYNC_CHUNK_SIZE = 5 * 1024
+
+
+
+WEBSOCKET_MAX_SYNC_CHUNK_SIZE = 16 * 1024
 
 
 class WebSocketWriter:
@@ -62,7 +67,9 @@ class WebSocketWriter:
         self._closing = False
         self._limit = limit
         self._output_size = 0
-        self._compressobj: Any = None  
+        self._compressobj: Optional[ZLibCompressor] = None
+        self._send_lock = asyncio.Lock()
+        self._background_tasks: Set[asyncio.Task[None]] = set()
 
     async def send_frame(
         self, message: bytes, opcode: int, compress: Optional[int] = None
@@ -71,39 +78,57 @@ class WebSocketWriter:
         if self._closing and not (opcode & WSMsgType.CLOSE):
             raise ClientConnectionResetError("Cannot write to closing transport")
 
-        
-        
-        
-        rsv = 0
-        
-        
-        
-        if (compress or self.compress) and opcode < 8:
+        if not (compress or self.compress) or opcode >= WS_CONTROL_FRAME_OPCODE:
+            
+            self._write_websocket_frame(message, opcode, 0)
+        elif len(message) <= WEBSOCKET_MAX_SYNC_CHUNK_SIZE:
             
             
-            rsv = 0x40
+            
+            
+            async with self._send_lock:
+                self._send_compressed_frame_sync(message, opcode, compress)
+        else:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            loop = asyncio.get_running_loop()
+            coro = self._send_compressed_frame_async_locked(message, opcode, compress)
+            if sys.version_info >= (3, 12):
+                send_task = asyncio.Task(coro, loop=loop, eager_start=True)
+            else:
+                send_task = loop.create_task(coro)
+            
+            self._background_tasks.add(send_task)
+            send_task.add_done_callback(self._background_tasks.discard)
+            await asyncio.shield(send_task)
 
-            if compress:
-                
-                compressobj = self._make_compress_obj(compress)
-            else:  
-                if not self._compressobj:
-                    self._compressobj = self._make_compress_obj(self.compress)
-                compressobj = self._compressobj
+        
+        
+        
+        
+        
+        
+        
+        if self._output_size > self._limit:
+            self._output_size = 0
+            if self.protocol._paused:
+                await self.protocol._drain_helper()
 
-            message = (
-                await compressobj.compress(message)
-                + compressobj.flush(
-                    ZLibBackend.Z_FULL_FLUSH
-                    if self.notakeover
-                    else ZLibBackend.Z_SYNC_FLUSH
-                )
-            ).removesuffix(WS_DEFLATE_TRAILING)
-            
-            
-            
-            
+    def _write_websocket_frame(self, message: bytes, opcode: int, rsv: int) -> None:
+        """
+        Write a websocket frame to the transport.
 
+        This method handles frame header construction, masking, and writing to transport.
+        It does not handle compression or flow control - those are the responsibility
+        of the caller.
+        """
         msg_length = len(message)
 
         use_mask = self.use_mask
@@ -146,25 +171,84 @@ class WebSocketWriter:
 
         self._output_size += header_len + msg_length
 
-        
-        
+    def _get_compressor(self, compress: Optional[int]) -> ZLibCompressor:
+        """Get or create a compressor object for the given compression level."""
+        if compress:
+            
+            return ZLibCompressor(
+                level=ZLibBackend.Z_BEST_SPEED,
+                wbits=-compress,
+                max_sync_chunk_size=WEBSOCKET_MAX_SYNC_CHUNK_SIZE,
+            )
+        if not self._compressobj:
+            self._compressobj = ZLibCompressor(
+                level=ZLibBackend.Z_BEST_SPEED,
+                wbits=-self.compress,
+                max_sync_chunk_size=WEBSOCKET_MAX_SYNC_CHUNK_SIZE,
+            )
+        return self._compressobj
 
-        
-        
-        
-        
-        
-        if self._output_size > self._limit:
-            self._output_size = 0
-            if self.protocol._paused:
-                await self.protocol._drain_helper()
+    def _send_compressed_frame_sync(
+        self, message: bytes, opcode: int, compress: Optional[int]
+    ) -> None:
+        """
+        Synchronous send for small compressed frames.
 
-    def _make_compress_obj(self, compress: int) -> ZLibCompressor:
-        return ZLibCompressor(
-            level=ZLibBackend.Z_BEST_SPEED,
-            wbits=-compress,
-            max_sync_chunk_size=WEBSOCKET_MAX_SYNC_CHUNK_SIZE,
+        This is used for small compressed payloads that compress synchronously in the event loop.
+        Since there are no await points, this is inherently cancellation-safe.
+        """
+        
+        
+        
+        compressobj = self._get_compressor(compress)
+        
+        
+        self._write_websocket_frame(
+            (
+                compressobj.compress_sync(message)
+                + compressobj.flush(
+                    ZLibBackend.Z_FULL_FLUSH
+                    if self.notakeover
+                    else ZLibBackend.Z_SYNC_FLUSH
+                )
+            ).removesuffix(WS_DEFLATE_TRAILING),
+            opcode,
+            0x40,
         )
+
+    async def _send_compressed_frame_async_locked(
+        self, message: bytes, opcode: int, compress: Optional[int]
+    ) -> None:
+        """
+        Async send for large compressed frames with lock.
+
+        Acquires the lock and compresses large payloads asynchronously in
+        the executor. The lock is held for the entire operation to ensure
+        the compressor state is not corrupted by concurrent sends.
+
+        MUST be run shielded from cancellation. If cancelled after
+        compression but before sending, the compressor state would be
+        advanced but data not sent, corrupting subsequent frames.
+        """
+        async with self._send_lock:
+            
+            
+            
+            compressobj = self._get_compressor(compress)
+            
+            
+            self._write_websocket_frame(
+                (
+                    await compressobj.compress(message)
+                    + compressobj.flush(
+                        ZLibBackend.Z_FULL_FLUSH
+                        if self.notakeover
+                        else ZLibBackend.Z_SYNC_FLUSH
+                    )
+                ).removesuffix(WS_DEFLATE_TRAILING),
+                opcode,
+                0x40,
+            )
 
     async def close(self, code: int = 1000, message: Union[bytes, str] = b"") -> None:
         """Close the websocket, sending the specified code and message."""

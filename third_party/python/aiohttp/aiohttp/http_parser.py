@@ -26,7 +26,14 @@ from yarl import URL
 
 from . import hdrs
 from .base_protocol import BaseProtocol
-from .compression_utils import HAS_BROTLI, BrotliDecompressor, ZLibDecompressor
+from .compression_utils import (
+    DEFAULT_MAX_DECOMPRESS_SIZE,
+    HAS_BROTLI,
+    HAS_ZSTD,
+    BrotliDecompressor,
+    ZLibDecompressor,
+    ZSTDDecompressor,
+)
 from .helpers import (
     _EXC_SENTINEL,
     DEBUG,
@@ -42,6 +49,7 @@ from .http_exceptions import (
     BadStatusLine,
     ContentEncodingError,
     ContentLengthError,
+    DecompressSizeError,
     InvalidHeader,
     InvalidURLError,
     LineTooLong,
@@ -142,8 +150,8 @@ class HeadersParser:
         
         raw_headers = []
 
-        lines_idx = 1
-        line = lines[1]
+        lines_idx = 0
+        line = lines[lines_idx]
         line_count = len(lines)
 
         while line:
@@ -232,7 +240,9 @@ class HeadersParser:
 
 def _is_supported_upgrade(headers: CIMultiDictProxy[str]) -> bool:
     """Check if the upgrade header is supported."""
-    return headers.get(hdrs.UPGRADE, "").lower() in {"tcp", "websocket"}
+    u = headers.get(hdrs.UPGRADE, "")
+    
+    return u.isascii() and u.lower() in {"tcp", "websocket"}
 
 
 class HttpParser(abc.ABC, Generic[_MsgT]):
@@ -400,6 +410,7 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
                                 response_with_body=self.response_with_body,
                                 auto_decompress=self._auto_decompress,
                                 lax=self.lax,
+                                headers_parser=self._headers_parser,
                             )
                             if not payload_parser.done:
                                 self._payload_parser = payload_parser
@@ -418,6 +429,7 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
                                 compression=msg.compression,
                                 auto_decompress=self._auto_decompress,
                                 lax=self.lax,
+                                headers_parser=self._headers_parser,
                             )
                         elif not empty_body and length is None and self.read_until_eof:
                             payload = StreamReader(
@@ -436,6 +448,7 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
                                 response_with_body=self.response_with_body,
                                 auto_decompress=self._auto_decompress,
                                 lax=self.lax,
+                                headers_parser=self._headers_parser,
                             )
                             if not payload_parser.done:
                                 self._payload_parser = payload_parser
@@ -473,6 +486,10 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
 
                     eof = True
                     data = b""
+                    if isinstance(
+                        underlying_exc, (InvalidHeader, TransferEncodingError)
+                    ):
+                        raise
 
                 if eof:
                     start_pos = 0
@@ -536,11 +553,9 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
                 upgrade = True
 
         
-        enc = headers.get(hdrs.CONTENT_ENCODING)
-        if enc:
-            enc = enc.lower()
-            if enc in ("gzip", "deflate", "br"):
-                encoding = enc
+        enc = headers.get(hdrs.CONTENT_ENCODING, "")
+        if enc.isascii() and enc.lower() in {"gzip", "deflate", "br", "zstd"}:
+            encoding = enc
 
         
         te = headers.get(hdrs.TRANSFER_ENCODING)
@@ -635,7 +650,7 @@ class HttpRequestParser(HttpParser[RawRequestMessage]):
             compression,
             upgrade,
             chunked,
-        ) = self.parse_headers(lines)
+        ) = self.parse_headers(lines[1:])
 
         if close is None:  
             if version_o <= HttpVersion10:  
@@ -657,7 +672,9 @@ class HttpRequestParser(HttpParser[RawRequestMessage]):
         )
 
     def _is_chunked_te(self, te: str) -> bool:
-        if te.rsplit(",", maxsplit=1)[-1].strip(" \t").lower() == "chunked":
+        te = te.rsplit(",", maxsplit=1)[-1].strip(" \t")
+        
+        if te.isascii() and te.lower() == "chunked":
             return True
         
         raise BadHttpMessage("Request has invalid `Transfer-Encoding`")
@@ -721,7 +738,7 @@ class HttpResponseParser(HttpParser[RawResponseMessage]):
             compression,
             upgrade,
             chunked,
-        ) = self.parse_headers(lines)
+        ) = self.parse_headers(lines[1:])
 
         if close is None:
             if version_o <= HttpVersion10:
@@ -764,6 +781,8 @@ class HttpPayloadParser:
         response_with_body: bool = True,
         auto_decompress: bool = True,
         lax: bool = False,
+        *,
+        headers_parser: HeadersParser,
     ) -> None:
         self._length = 0
         self._type = ParseState.PARSE_UNTIL_EOF
@@ -772,6 +791,8 @@ class HttpPayloadParser:
         self._chunk_tail = b""
         self._auto_decompress = auto_decompress
         self._lax = lax
+        self._headers_parser = headers_parser
+        self._trailer_lines: list[bytes] = []
         self.done = False
 
         
@@ -848,7 +869,7 @@ class HttpPayloadParser:
                             size_b = chunk[:i]  
                             
                             if b"\n" in (ext := chunk[i:pos]):
-                                exc = BadHttpMessage(
+                                exc = TransferEncodingError(
                                     f"Unexpected LF in chunk-extension: {ext!r}"
                                 )
                                 set_exception(self.payload, exc)
@@ -869,7 +890,7 @@ class HttpPayloadParser:
 
                         chunk = chunk[pos + len(SEP) :]
                         if size == 0:  
-                            self._chunk = ChunkState.PARSE_MAYBE_TRAILERS
+                            self._chunk = ChunkState.PARSE_TRAILERS
                             if self._lax and chunk.startswith(b"\r"):
                                 chunk = chunk[1:]
                         else:
@@ -907,37 +928,30 @@ class HttpPayloadParser:
                         self._chunk_tail = chunk
                         return False, b""
 
-                
-                
-                
-                if self._chunk == ChunkState.PARSE_MAYBE_TRAILERS:
-                    head = chunk[: len(SEP)]
-                    if head == SEP:
-                        
-                        self.payload.feed_eof()
-                        return True, chunk[len(SEP) :]
-                    
-                    
-                    
-                    
-                    
-                    
-                    if not head:
-                        return False, b""
-                    if head == SEP[:1]:
-                        self._chunk_tail = head
-                        return False, b""
-                    self._chunk = ChunkState.PARSE_TRAILERS
-
-                
                 if self._chunk == ChunkState.PARSE_TRAILERS:
                     pos = chunk.find(SEP)
-                    if pos >= 0:
-                        chunk = chunk[pos + len(SEP) :]
-                        self._chunk = ChunkState.PARSE_MAYBE_TRAILERS
-                    else:
+                    if pos < 0:  
                         self._chunk_tail = chunk
                         return False, b""
+
+                    line = chunk[:pos]
+                    chunk = chunk[pos + len(SEP) :]
+                    if SEP == b"\n":  
+                        line = line.rstrip(b"\r")
+                    self._trailer_lines.append(line)
+
+                    
+                    if self._trailer_lines[-1] == b"":
+                        
+                        
+                        try:
+                            trailers, raw_trailers = self._headers_parser.parse_headers(
+                                self._trailer_lines
+                            )
+                        finally:
+                            self._trailer_lines.clear()
+                        self.payload.feed_eof()
+                        return True, chunk
 
         
         elif self._type == ParseState.PARSE_UNTIL_EOF:
@@ -951,13 +965,19 @@ class DeflateBuffer:
 
     decompressor: Any
 
-    def __init__(self, out: StreamReader, encoding: Optional[str]) -> None:
+    def __init__(
+        self,
+        out: StreamReader,
+        encoding: Optional[str],
+        max_decompress_size: int = DEFAULT_MAX_DECOMPRESS_SIZE,
+    ) -> None:
         self.out = out
         self.size = 0
+        out.total_compressed_bytes = self.size
         self.encoding = encoding
         self._started_decoding = False
 
-        self.decompressor: Union[BrotliDecompressor, ZLibDecompressor]
+        self.decompressor: Union[BrotliDecompressor, ZLibDecompressor, ZSTDDecompressor]
         if encoding == "br":
             if not HAS_BROTLI:  
                 raise ContentEncodingError(
@@ -965,8 +985,17 @@ class DeflateBuffer:
                     "Please install `Brotli`"
                 )
             self.decompressor = BrotliDecompressor()
+        elif encoding == "zstd":
+            if not HAS_ZSTD:
+                raise ContentEncodingError(
+                    "Can not decode content-encoding: zstandard (zstd). "
+                    "Please install `backports.zstd`"
+                )
+            self.decompressor = ZSTDDecompressor()
         else:
             self.decompressor = ZLibDecompressor(encoding=encoding)
+
+        self._max_decompress_size = max_decompress_size
 
     def set_exception(
         self,
@@ -980,6 +1009,7 @@ class DeflateBuffer:
             return
 
         self.size += size
+        self.out.total_compressed_bytes = self.size
 
         
         
@@ -996,13 +1026,23 @@ class DeflateBuffer:
             )
 
         try:
-            chunk = self.decompressor.decompress_sync(chunk)
+            
+            chunk = self.decompressor.decompress_sync(
+                chunk, max_length=self._max_decompress_size + 1
+            )
         except Exception:
             raise ContentEncodingError(
                 "Can not decode content-encoding: %s" % self.encoding
             )
 
         self._started_decoding = True
+
+        
+        if len(chunk) > self._max_decompress_size:
+            raise DecompressSizeError(
+                "Decompressed data exceeds the configured limit of %d bytes"
+                % self._max_decompress_size
+            )
 
         if chunk:
             self.out.feed_data(chunk, len(chunk))

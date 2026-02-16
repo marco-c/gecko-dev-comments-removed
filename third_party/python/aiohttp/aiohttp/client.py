@@ -98,7 +98,9 @@ from .helpers import (
     EMPTY_BODY_METHODS,
     BasicAuth,
     TimeoutHandle,
+    basicauth_from_netrc,
     get_env_proxy_for_url,
+    netrc_from_env,
     sentinel,
     strip_auth_from_url,
 )
@@ -657,6 +659,13 @@ class ClientSession:
                         )
                     ):
                         auth = self._default_auth
+
+                    
+                    if auth is None and self._trust_env and url.host is not None:
+                        auth = await self._loop.run_in_executor(
+                            None, self._get_netrc_auth, url.host
+                        )
+
                     
                     
                     if (
@@ -821,6 +830,12 @@ class ClientSession:
                             data = None
                             if headers.get(hdrs.CONTENT_LENGTH):
                                 headers.pop(hdrs.CONTENT_LENGTH)
+                        else:
+                            
+                            
+                            
+                            
+                            data = req._body
 
                         r_url = resp.headers.get(hdrs.LOCATION) or resp.headers.get(
                             hdrs.URI
@@ -1204,6 +1219,19 @@ class ClientSession:
                     result[key] = value
                     added_names.add(key)
         return result
+
+    def _get_netrc_auth(self, host: str) -> Optional[BasicAuth]:
+        """
+        Get auth from netrc for the given host.
+
+        This method is designed to be called in an executor to avoid
+        blocking I/O in the event loop.
+        """
+        netrc_obj = netrc_from_env()
+        try:
+            return basicauth_from_netrc(netrc_obj, host)
+        except LookupError:
+            return None
 
     if sys.version_info >= (3, 11) and TYPE_CHECKING:
 

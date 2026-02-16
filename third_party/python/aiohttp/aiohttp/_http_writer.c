@@ -14,8 +14,8 @@
 #elif PY_VERSION_HEX < 0x03080000
     #error Cython requires Python 3.8+.
 #else
-#define __PYX_ABI_VERSION "3_1_1"
-#define CYTHON_HEX_VERSION 0x030101F0
+#define __PYX_ABI_VERSION "3_1_4"
+#define CYTHON_HEX_VERSION 0x030104F0
 #define CYTHON_FUTURE_DIVISION 1
 
 #include <stddef.h>
@@ -378,6 +378,9 @@
     enum { __pyx_check_sizeof_voidp = 1 / (int)(SIZEOF_VOID_P == sizeof(void*)) };
   #endif
 #endif
+#ifndef CYTHON_LOCK_AND_GIL_DEADLOCK_AVOIDANCE_TIME
+  #define CYTHON_LOCK_AND_GIL_DEADLOCK_AVOIDANCE_TIME 100
+#endif
 #ifndef __has_attribute
   #define __has_attribute(x) 0
 #endif
@@ -430,7 +433,7 @@
   #define CYTHON_MAYBE_UNUSED_VAR(x) CYTHON_UNUSED_VAR(x)
 #endif
 #ifndef CYTHON_NCP_UNUSED
-# if CYTHON_COMPILING_IN_CPYTHON
+# if CYTHON_COMPILING_IN_CPYTHON && !CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
 #  define CYTHON_NCP_UNUSED
 # else
 #  define CYTHON_NCP_UNUSED CYTHON_UNUSED
@@ -875,11 +878,19 @@ static CYTHON_INLINE PyObject * __Pyx_PyDict_GetItemStrWithError(PyObject *dict,
   #define __Pyx_SET_REFCNT(obj, refcnt) Py_REFCNT(obj) = (refcnt)
   #define __Pyx_SET_SIZE(obj, size) Py_SIZE(obj) = (size)
 #endif
-#if CYTHON_COMPILING_IN_LIMITED_API || CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS || !CYTHON_ASSUME_SAFE_MACROS
+#if CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS
+  #if __PYX_LIMITED_VERSION_HEX >= 0x030d0000
+    #define __Pyx_PyList_GetItemRef(o, i) PyList_GetItemRef(o, i)
+  #elif CYTHON_COMPILING_IN_LIMITED_API || !CYTHON_ASSUME_SAFE_MACROS
+    #define __Pyx_PyList_GetItemRef(o, i) (likely((i) >= 0) ? PySequence_GetItem(o, i) : (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL))
+  #else
+    #define __Pyx_PyList_GetItemRef(o, i) PySequence_ITEM(o, i)
+  #endif
+#elif CYTHON_COMPILING_IN_LIMITED_API || !CYTHON_ASSUME_SAFE_MACROS
   #if __PYX_LIMITED_VERSION_HEX >= 0x030d0000
     #define __Pyx_PyList_GetItemRef(o, i) PyList_GetItemRef(o, i)
   #else
-    #define __Pyx_PyList_GetItemRef(o, i) PySequence_GetItem(o, i)
+    #define __Pyx_PyList_GetItemRef(o, i) __Pyx_XNewRef(PyList_GetItem(o, i))
   #endif
 #else
   #define __Pyx_PyList_GetItemRef(o, i) __Pyx_NewRef(PyList_GET_ITEM(o, i))
@@ -1290,7 +1301,9 @@ static CYTHON_INLINE Py_hash_t __Pyx_PyIndex_AsHash_t(PyObject*);
 #endif 
 
 #ifdef __cplusplus
+#if __cplusplus > 201103L
 #include <type_traits>
+#endif
 template <typename T>
 static void __Pyx_pretend_to_initialize(T* ptr) {
 #if __cplusplus > 201103L
@@ -1496,6 +1509,7 @@ struct __pyx_t_7aiohttp_12_http_writer_Writer {
   char *buf;
   Py_ssize_t size;
   Py_ssize_t pos;
+  int heap_allocated;
 };
 
 
@@ -1910,22 +1924,22 @@ static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject 
 #endif
 
 
-#ifndef __PYX_HAVE_RT_ImportType_proto_3_1_1
-#define __PYX_HAVE_RT_ImportType_proto_3_1_1
+#ifndef __PYX_HAVE_RT_ImportType_proto_3_1_4
+#define __PYX_HAVE_RT_ImportType_proto_3_1_4
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #include <stdalign.h>
 #endif
 #if (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) || __cplusplus >= 201103L
-#define __PYX_GET_STRUCT_ALIGNMENT_3_1_1(s) alignof(s)
+#define __PYX_GET_STRUCT_ALIGNMENT_3_1_4(s) alignof(s)
 #else
-#define __PYX_GET_STRUCT_ALIGNMENT_3_1_1(s) sizeof(void*)
+#define __PYX_GET_STRUCT_ALIGNMENT_3_1_4(s) sizeof(void*)
 #endif
-enum __Pyx_ImportType_CheckSize_3_1_1 {
-   __Pyx_ImportType_CheckSize_Error_3_1_1 = 0,
-   __Pyx_ImportType_CheckSize_Warn_3_1_1 = 1,
-   __Pyx_ImportType_CheckSize_Ignore_3_1_1 = 2
+enum __Pyx_ImportType_CheckSize_3_1_4 {
+   __Pyx_ImportType_CheckSize_Error_3_1_4 = 0,
+   __Pyx_ImportType_CheckSize_Warn_3_1_4 = 1,
+   __Pyx_ImportType_CheckSize_Ignore_3_1_4 = 2
 };
-static PyTypeObject *__Pyx_ImportType_3_1_1(PyObject* module, const char *module_name, const char *class_name, size_t size, size_t alignment, enum __Pyx_ImportType_CheckSize_3_1_1 check_size);
+static PyTypeObject *__Pyx_ImportType_3_1_4(PyObject* module, const char *module_name, const char *class_name, size_t size, size_t alignment, enum __Pyx_ImportType_CheckSize_3_1_4 check_size);
 #endif
 
 
@@ -1985,6 +1999,15 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 #endif
 
 
+#if CYTHON_COMPILING_IN_LIMITED_API
+static PyObject *__Pyx_GetTypeDict(PyTypeObject *tp);
+#endif
+
+
+static int __Pyx__SetItemOnTypeDict(PyTypeObject *tp, PyObject *k, PyObject *v);
+#define __Pyx_SetItemOnTypeDict(tp, k, v) __Pyx__SetItemOnTypeDict((PyTypeObject*)tp, k, v)
+
+
 static CYTHON_INLINE int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject *type);
 
 
@@ -1994,7 +2017,11 @@ static PyObject *__Pyx_FetchSharedCythonABIModule(void);
 static CYTHON_INLINE PyObject *__Pyx_PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *default_value, int is_safe_type);
 
 
-static PyTypeObject* __Pyx_FetchCommonTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases);
+static PyTypeObject* __Pyx_FetchCommonTypeFromSpec(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases);
+
+
+static int __pyx_CommonTypesMetaclass_init(PyObject *module);
+#define __Pyx_CommonTypesMetaclass_USED
 
 
 #if !CYTHON_USE_TYPE_SPECS || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x03090000)
@@ -2288,9 +2315,8 @@ static int __Pyx_State_RemoveModule(void*);
 
 
 
-static char __pyx_v_7aiohttp_12_http_writer_BUFFER[0x4000];
 static PyObject *__pyx_v_7aiohttp_12_http_writer__istr = 0;
-static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __pyx_t_7aiohttp_12_http_writer_Writer *); 
+static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __pyx_t_7aiohttp_12_http_writer_Writer *, char *); 
 static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__release_writer(struct __pyx_t_7aiohttp_12_http_writer_Writer *); 
 static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_byte(struct __pyx_t_7aiohttp_12_http_writer_Writer *, uint8_t); 
 static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __pyx_t_7aiohttp_12_http_writer_Writer *, Py_UCS4); 
@@ -2309,6 +2335,7 @@ static PyObject *__pyx_builtin_ValueError;
 
 static const char __pyx_k_[] = ".";
 static const char __pyx_k__2[] = "?";
+static const char __pyx_k_buf[] = "buf";
 static const char __pyx_k_key[] = "key";
 static const char __pyx_k_pop[] = "pop";
 static const char __pyx_k_val[] = "val";
@@ -2324,6 +2351,7 @@ static const char __pyx_k_writer[] = "writer";
 static const char __pyx_k_headers[] = "headers";
 static const char __pyx_k_add_note[] = "add_note";
 static const char __pyx_k_qualname[] = "__qualname__";
+static const char __pyx_k_set_name[] = "__set_name__";
 static const char __pyx_k_TypeError[] = "TypeError";
 static const char __pyx_k_multidict[] = "multidict";
 static const char __pyx_k_ValueError[] = "ValueError";
@@ -2335,7 +2363,7 @@ static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_aiohttp__http_writer[] = "aiohttp._http_writer";
 static const char __pyx_k_aiohttp__http_writer_pyx[] = "aiohttp/_http_writer.pyx";
 static const char __pyx_k_Cannot_serialize_non_str_key_r[] = "Cannot serialize non-str key {!r}";
-static const char __pyx_k_Qax_Ba_aq_r_aq_r_E_vQ_q_b_1HF_A[] = "\200\001\360\n\000\005\021\220\001\220\021\220!\340\004\005\330\010\013\210:\220Q\220a\220x\230}\250B\250a\330\014\r\330\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\330\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\340\010\014\210E\220\027\230\007\230v\240Q\330\014\017\320\017'\240q\250\001\250\030\260\025\260b\270\001\330\020\021\330\014\017\210{\230!\2301\230H\240F\250\"\250A\330\020\021\330\014\017\210{\230!\2301\230H\240F\250\"\250A\330\020\021\330\014\017\320\017'\240q\250\001\250\030\260\025\260b\270\001\330\020\021\330\014\017\210{\230!\2301\230H\240G\2502\250Q\330\020\021\330\014\017\210{\230!\2301\230H\240G\2502\250Q\330\020\021\340\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\330\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\340\010\017\320\017(\250\001\250\026\250v\260V\2701\340\010\027\220q\230\001\230\021";
+static const char __pyx_k_Qax_Ba_aq_r_aq_r_E_vQ_q_b_1HF_A[] = "\200\001\360\014\000\005\021\220\001\220\021\220(\230!\340\004\005\330\010\013\210:\220Q\220a\220x\230}\250B\250a\330\014\r\330\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\330\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\340\010\014\210E\220\027\230\007\230v\240Q\330\014\017\320\017'\240q\250\001\250\030\260\025\260b\270\001\330\020\021\330\014\017\210{\230!\2301\230H\240F\250\"\250A\330\020\021\330\014\017\210{\230!\2301\230H\240F\250\"\250A\330\020\021\330\014\017\320\017'\240q\250\001\250\030\260\025\260b\270\001\330\020\021\330\014\017\210{\230!\2301\230H\240G\2502\250Q\330\020\021\330\014\017\210{\230!\2301\230H\240G\2502\250Q\330\020\021\340\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\330\010\013\210;\220a\220q\230\010\240\007\240r\250\021\330\014\r\340\010\017\320\017(\250\001\250\026\250v\260V\2701\340\010\027\220q\230\001\230\021";
 static const char __pyx_k_Newline_or_carriage_return_detec[] = "Newline or carriage return detected in headers. Potential header injection attack.";
 static const char __pyx_k_Note_that_Cython_is_deliberately[] = "Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.";
 
@@ -2381,7 +2409,10 @@ typedef struct {
   PyTypeObject *__pyx_ptype_7cpython_4type_type;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_pop;
   PyObject *__pyx_codeobj_tab[1];
-  PyObject *__pyx_string_tab[30];
+  PyObject *__pyx_string_tab[32];
+
+
+PyTypeObject *__pyx_CommonTypesMetaclassType;
 
 
 #if CYTHON_COMPILING_IN_LIMITED_API
@@ -2427,25 +2458,27 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_n_u_aiohttp__http_writer __pyx_string_tab[8]
 #define __pyx_kp_u_aiohttp__http_writer_pyx __pyx_string_tab[9]
 #define __pyx_n_u_asyncio_coroutines __pyx_string_tab[10]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[11]
-#define __pyx_n_u_format __pyx_string_tab[12]
-#define __pyx_n_u_func __pyx_string_tab[13]
-#define __pyx_n_u_headers __pyx_string_tab[14]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[15]
-#define __pyx_n_u_istr __pyx_string_tab[16]
-#define __pyx_n_u_items __pyx_string_tab[17]
-#define __pyx_n_u_key __pyx_string_tab[18]
-#define __pyx_n_u_main __pyx_string_tab[19]
-#define __pyx_n_u_module __pyx_string_tab[20]
-#define __pyx_n_u_multidict __pyx_string_tab[21]
-#define __pyx_n_u_name __pyx_string_tab[22]
-#define __pyx_n_u_pop __pyx_string_tab[23]
-#define __pyx_n_u_qualname __pyx_string_tab[24]
-#define __pyx_n_u_serialize_headers __pyx_string_tab[25]
-#define __pyx_n_u_status_line __pyx_string_tab[26]
-#define __pyx_n_u_test __pyx_string_tab[27]
-#define __pyx_n_u_val __pyx_string_tab[28]
-#define __pyx_n_u_writer __pyx_string_tab[29]
+#define __pyx_n_u_buf __pyx_string_tab[11]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[12]
+#define __pyx_n_u_format __pyx_string_tab[13]
+#define __pyx_n_u_func __pyx_string_tab[14]
+#define __pyx_n_u_headers __pyx_string_tab[15]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[16]
+#define __pyx_n_u_istr __pyx_string_tab[17]
+#define __pyx_n_u_items __pyx_string_tab[18]
+#define __pyx_n_u_key __pyx_string_tab[19]
+#define __pyx_n_u_main __pyx_string_tab[20]
+#define __pyx_n_u_module __pyx_string_tab[21]
+#define __pyx_n_u_multidict __pyx_string_tab[22]
+#define __pyx_n_u_name __pyx_string_tab[23]
+#define __pyx_n_u_pop __pyx_string_tab[24]
+#define __pyx_n_u_qualname __pyx_string_tab[25]
+#define __pyx_n_u_serialize_headers __pyx_string_tab[26]
+#define __pyx_n_u_set_name __pyx_string_tab[27]
+#define __pyx_n_u_status_line __pyx_string_tab[28]
+#define __pyx_n_u_test __pyx_string_tab[29]
+#define __pyx_n_u_val __pyx_string_tab[30]
+#define __pyx_n_u_writer __pyx_string_tab[31]
 
 #if CYTHON_USE_MODULE_STATE
 static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
@@ -2468,7 +2501,7 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   #endif
   Py_CLEAR(clear_module_state->__pyx_ptype_7cpython_4type_type);
   for (int i=0; i<1; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<30; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<32; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
   return 0;
 }
 #endif
@@ -2491,7 +2524,7 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   #endif
   Py_VISIT(traverse_module_state->__pyx_ptype_7cpython_4type_type);
   for (int i=0; i<1; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<30; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<32; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
   return 0;
 }
 #endif
@@ -2505,7 +2538,7 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
 
 
 
-static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __pyx_t_7aiohttp_12_http_writer_Writer *__pyx_v_writer) {
+static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __pyx_t_7aiohttp_12_http_writer_Writer *__pyx_v_writer, char *__pyx_v_buf) {
 
   
 
@@ -2514,7 +2547,7 @@ static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __
 
 
 
-  __pyx_v_writer->buf = (&(__pyx_v_7aiohttp_12_http_writer_BUFFER[0]));
+  __pyx_v_writer->buf = __pyx_v_buf;
 
   
 
@@ -2541,6 +2574,15 @@ static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __
 
 
 
+  __pyx_v_writer->heap_allocated = 0;
+
+  
+
+
+
+
+
+
 
   
 }
@@ -2554,7 +2596,6 @@ static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__init_writer(struct __
 
 
 static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__release_writer(struct __pyx_t_7aiohttp_12_http_writer_Writer *__pyx_v_writer) {
-  int __pyx_t_1;
 
   
 
@@ -2563,8 +2604,7 @@ static CYTHON_INLINE void __pyx_f_7aiohttp_12_http_writer__release_writer(struct
 
 
 
-  __pyx_t_1 = (__pyx_v_writer->buf != __pyx_v_7aiohttp_12_http_writer_BUFFER);
-  if (__pyx_t_1) {
+  if (__pyx_v_writer->heap_allocated) {
 
     
 
@@ -2639,7 +2679,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_byte(struct __py
 
 
 
-    __pyx_t_1 = (__pyx_v_writer->buf == __pyx_v_7aiohttp_12_http_writer_BUFFER);
+    __pyx_t_1 = (!__pyx_v_writer->heap_allocated);
     if (__pyx_t_1) {
 
       
@@ -2783,6 +2823,15 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_byte(struct __py
 
 
 
+    __pyx_v_writer->heap_allocated = 1;
+
+    
+
+
+
+
+
+
   }
 
   
@@ -2872,7 +2921,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)__pyx_v_utf)); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)__pyx_v_utf)); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 65, __pyx_L1_error)
     __pyx_r = __pyx_t_2;
     goto __pyx_L0;
 
@@ -2902,7 +2951,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0xc0 | (__pyx_v_utf >> 6)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 66, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0xc0 | (__pyx_v_utf >> 6)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 67, __pyx_L1_error)
     __pyx_t_1 = (__pyx_t_2 < 0);
     if (__pyx_t_1) {
 
@@ -2932,7 +2981,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | (__pyx_v_utf & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 68, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | (__pyx_v_utf & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 69, __pyx_L1_error)
     __pyx_r = __pyx_t_2;
     goto __pyx_L0;
 
@@ -2994,7 +3043,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0xe0 | (__pyx_v_utf >> 12)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 73, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0xe0 | (__pyx_v_utf >> 12)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 74, __pyx_L1_error)
     __pyx_t_1 = (__pyx_t_2 < 0);
     if (__pyx_t_1) {
 
@@ -3024,7 +3073,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | ((__pyx_v_utf >> 6) & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 75, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | ((__pyx_v_utf >> 6) & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L1_error)
     __pyx_t_1 = (__pyx_t_2 < 0);
     if (__pyx_t_1) {
 
@@ -3054,7 +3103,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | (__pyx_v_utf & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 77, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | (__pyx_v_utf & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 78, __pyx_L1_error)
     __pyx_r = __pyx_t_2;
     goto __pyx_L0;
 
@@ -3104,7 +3153,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
    {
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0xf0 | (__pyx_v_utf >> 18)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 82, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0xf0 | (__pyx_v_utf >> 18)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 83, __pyx_L1_error)
     __pyx_t_1 = (__pyx_t_2 < 0);
     if (__pyx_t_1) {
 
@@ -3134,53 +3183,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | ((__pyx_v_utf >> 12) & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 84, __pyx_L1_error)
-
-    
-
-
-
-
-
-
-    __pyx_t_1 = (__pyx_t_2 < 0);
-
-    
-
-
-
-
-
-
-    if (__pyx_t_1) {
-
-      
-
-
-
-
-
-
-      __pyx_r = -1;
-      goto __pyx_L0;
-
-      
-
-
-
-
-
-
-    }
-
-    
-
-
-
-
-
-
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | ((__pyx_v_utf >> 6) & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | ((__pyx_v_utf >> 12) & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 85, __pyx_L1_error)
 
     
 
@@ -3226,7 +3229,53 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_utf8(struct __py
 
 
 
-    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | (__pyx_v_utf & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | ((__pyx_v_utf >> 6) & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L1_error)
+
+    
+
+
+
+
+
+
+    __pyx_t_1 = (__pyx_t_2 < 0);
+
+    
+
+
+
+
+
+
+    if (__pyx_t_1) {
+
+      
+
+
+
+
+
+
+      __pyx_r = -1;
+      goto __pyx_L0;
+
+      
+
+
+
+
+
+
+    }
+
+    
+
+
+
+
+
+
+    __pyx_t_2 = __pyx_f_7aiohttp_12_http_writer__write_byte(__pyx_v_writer, ((uint8_t)(0x80 | (__pyx_v_utf & 0x3f)))); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 91, __pyx_L1_error)
     __pyx_r = __pyx_t_2;
     goto __pyx_L0;
   }
@@ -3281,11 +3330,11 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str(struct __pyx
 
   if (unlikely(__pyx_v_s == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' is not iterable");
-    __PYX_ERR(0, 95, __pyx_L1_error)
+    __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __Pyx_INCREF(__pyx_v_s);
   __pyx_t_1 = __pyx_v_s;
-  __pyx_t_6 = __Pyx_init_unicode_iteration(__pyx_t_1, (&__pyx_t_3), (&__pyx_t_4), (&__pyx_t_5)); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_init_unicode_iteration(__pyx_t_1, (&__pyx_t_3), (&__pyx_t_4), (&__pyx_t_5)); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 96, __pyx_L1_error)
   for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_3; __pyx_t_7++) {
     __pyx_t_2 = __pyx_t_7;
     __pyx_v_ch = __Pyx_PyUnicode_READ(__pyx_t_5, __pyx_t_4, __pyx_t_2);
@@ -3297,7 +3346,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str(struct __pyx
 
 
 
-    __pyx_t_6 = __pyx_f_7aiohttp_12_http_writer__write_utf8(__pyx_v_writer, __pyx_v_ch); if (unlikely(__pyx_t_6 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 96, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_7aiohttp_12_http_writer__write_utf8(__pyx_v_writer, __pyx_v_ch); if (unlikely(__pyx_t_6 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L1_error)
     __pyx_t_8 = (__pyx_t_6 < 0);
     if (__pyx_t_8) {
 
@@ -3425,9 +3474,9 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
 
 
 
-    __pyx_t_2 = PyObject_Str(__pyx_v_s); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 106, __pyx_L1_error)
+    __pyx_t_2 = PyObject_Str(__pyx_v_s); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 107, __pyx_L1_error)
     __pyx_v_out_str = ((PyObject*)__pyx_t_2);
     __pyx_t_2 = 0;
 
@@ -3469,7 +3518,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
       PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_v_s};
       __pyx_t_6 = __Pyx_PyObject_FastCallMethod(__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 108, __pyx_L1_error)
+      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 109, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
     }
     __pyx_t_8 = 1;
@@ -3479,12 +3528,12 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 109, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     }
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 108, __pyx_L1_error)
+    __PYX_ERR(0, 109, __pyx_L1_error)
 
     
 
@@ -3503,7 +3552,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
 
 
    {
-    __pyx_t_2 = __Pyx_PyObject_Unicode(__pyx_v_s); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Unicode(__pyx_v_s); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_v_out_str = ((PyObject*)__pyx_t_2);
     __pyx_t_2 = 0;
@@ -3519,11 +3568,11 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
 
   if (unlikely(__pyx_v_out_str == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' is not iterable");
-    __PYX_ERR(0, 112, __pyx_L1_error)
+    __PYX_ERR(0, 113, __pyx_L1_error)
   }
   __Pyx_INCREF(__pyx_v_out_str);
   __pyx_t_9 = __pyx_v_out_str;
-  __pyx_t_14 = __Pyx_init_unicode_iteration(__pyx_t_9, (&__pyx_t_11), (&__pyx_t_12), (&__pyx_t_13)); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_14 = __Pyx_init_unicode_iteration(__pyx_t_9, (&__pyx_t_11), (&__pyx_t_12), (&__pyx_t_13)); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 113, __pyx_L1_error)
   for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_11; __pyx_t_15++) {
     __pyx_t_10 = __pyx_t_15;
     __pyx_v_ch = __Pyx_PyUnicode_READ(__pyx_t_13, __pyx_t_12, __pyx_t_10);
@@ -3555,12 +3604,12 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
         __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __Pyx_Raise(__pyx_t_2, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __PYX_ERR(0, 114, __pyx_L1_error)
+      __PYX_ERR(0, 115, __pyx_L1_error)
 
       
 
@@ -3580,7 +3629,7 @@ static CYTHON_INLINE int __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlc
 
 
 
-    __pyx_t_14 = __pyx_f_7aiohttp_12_http_writer__write_utf8(__pyx_v_writer, __pyx_v_ch); if (unlikely(__pyx_t_14 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 118, __pyx_L1_error)
+    __pyx_t_14 = __pyx_f_7aiohttp_12_http_writer__write_utf8(__pyx_v_writer, __pyx_v_ch); if (unlikely(__pyx_t_14 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 119, __pyx_L1_error)
     __pyx_t_3 = (__pyx_t_14 < 0);
     if (__pyx_t_3) {
 
@@ -3680,39 +3729,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_status_line,&__pyx_mstate_global->__pyx_n_u_headers,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 124, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 125, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 124, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 125, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 124, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 125, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_serialize_headers", 0) < 0) __PYX_ERR(0, 124, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_serialize_headers", 0) < 0) __PYX_ERR(0, 125, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_serialize_headers", 1, 2, 2, i); __PYX_ERR(0, 124, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_serialize_headers", 1, 2, 2, i); __PYX_ERR(0, 125, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 124, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 125, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 124, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 125, __pyx_L3_error)
     }
     __pyx_v_status_line = ((PyObject*)values[0]);
     __pyx_v_headers = values[1];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_serialize_headers", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 124, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_serialize_headers", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 125, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3723,7 +3772,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_status_line), (&PyUnicode_Type), 1, "status_line", 1))) __PYX_ERR(0, 124, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_status_line), (&PyUnicode_Type), 1, "status_line", 1))) __PYX_ERR(0, 125, __pyx_L1_error)
   __pyx_r = __pyx_pf_7aiohttp_12_http_writer__serialize_headers(__pyx_self, __pyx_v_status_line, __pyx_v_headers);
 
   
@@ -3747,6 +3796,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
   struct __pyx_t_7aiohttp_12_http_writer_Writer __pyx_v_writer;
   PyObject *__pyx_v_key = 0;
   PyObject *__pyx_v_val = 0;
+  char __pyx_v_buf[0x4000];
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -3776,7 +3826,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-  __pyx_f_7aiohttp_12_http_writer__init_writer((&__pyx_v_writer)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 129, __pyx_L1_error)
+  __pyx_f_7aiohttp_12_http_writer__init_writer((&__pyx_v_writer), __pyx_v_buf); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 131, __pyx_L1_error)
 
   
 
@@ -3794,37 +3844,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_str((&__pyx_v_writer), __pyx_v_status_line); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 132, __pyx_L4_error)
-    __pyx_t_2 = (__pyx_t_1 < 0);
-    if (unlikely(__pyx_t_2)) {
-
-      
-
-
-
-
-
-
-      __Pyx_ReraiseException();
-      __PYX_ERR(0, 133, __pyx_L4_error)
-
-      
-
-
-
-
-
-
-    }
-
-    
-
-
-
-
-
-
-    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\r'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 134, __pyx_L4_error)
+    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_str((&__pyx_v_writer), __pyx_v_status_line); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 134, __pyx_L4_error)
     __pyx_t_2 = (__pyx_t_1 < 0);
     if (unlikely(__pyx_t_2)) {
 
@@ -3854,7 +3874,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\n'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 136, __pyx_L4_error)
+    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\r'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 136, __pyx_L4_error)
     __pyx_t_2 = (__pyx_t_1 < 0);
     if (unlikely(__pyx_t_2)) {
 
@@ -3884,12 +3904,42 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
+    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\n'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 138, __pyx_L4_error)
+    __pyx_t_2 = (__pyx_t_1 < 0);
+    if (unlikely(__pyx_t_2)) {
+
+      
+
+
+
+
+
+
+      __Pyx_ReraiseException();
+      __PYX_ERR(0, 139, __pyx_L4_error)
+
+      
+
+
+
+
+
+
+    }
+
+    
+
+
+
+
+
+
     __pyx_t_4 = 0;
     if (unlikely(__pyx_v_headers == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "items");
-      __PYX_ERR(0, 139, __pyx_L4_error)
+      __PYX_ERR(0, 141, __pyx_L4_error)
     }
-    __pyx_t_6 = __Pyx_dict_iterator(__pyx_v_headers, 0, __pyx_mstate_global->__pyx_n_u_items, (&__pyx_t_5), (&__pyx_t_1)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 139, __pyx_L4_error)
+    __pyx_t_6 = __Pyx_dict_iterator(__pyx_v_headers, 0, __pyx_mstate_global->__pyx_n_u_items, (&__pyx_t_5), (&__pyx_t_1)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 141, __pyx_L4_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3);
     __pyx_t_3 = __pyx_t_6;
@@ -3897,7 +3947,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
     while (1) {
       __pyx_t_8 = __Pyx_dict_iter_next(__pyx_t_3, __pyx_t_5, &__pyx_t_4, &__pyx_t_6, &__pyx_t_7, NULL, __pyx_t_1);
       if (unlikely(__pyx_t_8 == 0)) break;
-      if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 139, __pyx_L4_error)
+      if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 141, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_6);
@@ -3912,37 +3962,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlcr((&__pyx_v_writer), __pyx_v_key); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 140, __pyx_L4_error)
-      __pyx_t_2 = (__pyx_t_8 < 0);
-      if (unlikely(__pyx_t_2)) {
-
-        
-
-
-
-
-
-
-        __Pyx_ReraiseException();
-        __PYX_ERR(0, 141, __pyx_L4_error)
-
-        
-
-
-
-
-
-
-      }
-
-      
-
-
-
-
-
-
-      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), ':'); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L4_error)
+      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlcr((&__pyx_v_writer), __pyx_v_key); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L4_error)
       __pyx_t_2 = (__pyx_t_8 < 0);
       if (unlikely(__pyx_t_2)) {
 
@@ -3972,7 +3992,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), ' '); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 144, __pyx_L4_error)
+      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), ':'); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 144, __pyx_L4_error)
       __pyx_t_2 = (__pyx_t_8 < 0);
       if (unlikely(__pyx_t_2)) {
 
@@ -4002,7 +4022,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlcr((&__pyx_v_writer), __pyx_v_val); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L4_error)
+      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), ' '); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L4_error)
       __pyx_t_2 = (__pyx_t_8 < 0);
       if (unlikely(__pyx_t_2)) {
 
@@ -4032,7 +4052,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\r'); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L4_error)
+      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_str_raise_on_nlcr((&__pyx_v_writer), __pyx_v_val); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L4_error)
       __pyx_t_2 = (__pyx_t_8 < 0);
       if (unlikely(__pyx_t_2)) {
 
@@ -4062,7 +4082,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\n'); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 150, __pyx_L4_error)
+      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\r'); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 150, __pyx_L4_error)
       __pyx_t_2 = (__pyx_t_8 < 0);
       if (unlikely(__pyx_t_2)) {
 
@@ -4084,6 +4104,36 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
       }
+
+      
+
+
+
+
+
+
+      __pyx_t_8 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\n'); if (unlikely(__pyx_t_8 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 152, __pyx_L4_error)
+      __pyx_t_2 = (__pyx_t_8 < 0);
+      if (unlikely(__pyx_t_2)) {
+
+        
+
+
+
+
+
+
+        __Pyx_ReraiseException();
+        __PYX_ERR(0, 153, __pyx_L4_error)
+
+        
+
+
+
+
+
+
+      }
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
@@ -4094,37 +4144,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
-    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\r'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 153, __pyx_L4_error)
-    __pyx_t_2 = (__pyx_t_1 < 0);
-    if (unlikely(__pyx_t_2)) {
-
-      
-
-
-
-
-
-
-      __Pyx_ReraiseException();
-      __PYX_ERR(0, 154, __pyx_L4_error)
-
-      
-
-
-
-
-
-
-    }
-
-    
-
-
-
-
-
-
-    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\n'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 155, __pyx_L4_error)
+    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\r'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 155, __pyx_L4_error)
     __pyx_t_2 = (__pyx_t_1 < 0);
     if (unlikely(__pyx_t_2)) {
 
@@ -4154,8 +4174,38 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
 
 
 
+    __pyx_t_1 = __pyx_f_7aiohttp_12_http_writer__write_byte((&__pyx_v_writer), '\n'); if (unlikely(__pyx_t_1 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 157, __pyx_L4_error)
+    __pyx_t_2 = (__pyx_t_1 < 0);
+    if (unlikely(__pyx_t_2)) {
+
+      
+
+
+
+
+
+
+      __Pyx_ReraiseException();
+      __PYX_ERR(0, 158, __pyx_L4_error)
+
+      
+
+
+
+
+
+
+    }
+
+    
+
+
+
+
+
+
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = PyBytes_FromStringAndSize(__pyx_v_writer.buf, __pyx_v_writer.pos); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L4_error)
+    __pyx_t_3 = PyBytes_FromStringAndSize(__pyx_v_writer.buf, __pyx_v_writer.pos); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 160, __pyx_L4_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -4186,7 +4236,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
       __Pyx_XGOTREF(__pyx_t_15);
       __pyx_t_1 = __pyx_lineno; __pyx_t_8 = __pyx_clineno; __pyx_t_9 = __pyx_filename;
       {
-        __pyx_f_7aiohttp_12_http_writer__release_writer((&__pyx_v_writer)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 160, __pyx_L20_error)
+        __pyx_f_7aiohttp_12_http_writer__release_writer((&__pyx_v_writer)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L20_error)
       }
       __Pyx_XGIVEREF(__pyx_t_13);
       __Pyx_XGIVEREF(__pyx_t_14);
@@ -4213,7 +4263,7 @@ static PyObject *__pyx_pf_7aiohttp_12_http_writer__serialize_headers(CYTHON_UNUS
     __pyx_L3_return: {
       __pyx_t_15 = __pyx_r;
       __pyx_r = 0;
-      __pyx_f_7aiohttp_12_http_writer__release_writer((&__pyx_v_writer)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 160, __pyx_L1_error)
+      __pyx_f_7aiohttp_12_http_writer__release_writer((&__pyx_v_writer)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L1_error)
       __pyx_r = __pyx_t_15;
       __pyx_t_15 = 0;
       goto __pyx_L0;
@@ -4310,15 +4360,15 @@ static int __Pyx_modinit_type_import_code(__pyx_mstatetype *__pyx_mstate) {
   
   __pyx_t_1 = PyImport_ImportModule(__Pyx_BUILTIN_MODULE_NAME); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_mstate->__pyx_ptype_7cpython_4type_type = __Pyx_ImportType_3_1_1(__pyx_t_1, __Pyx_BUILTIN_MODULE_NAME, "type",
+  __pyx_mstate->__pyx_ptype_7cpython_4type_type = __Pyx_ImportType_3_1_4(__pyx_t_1, __Pyx_BUILTIN_MODULE_NAME, "type",
   #if defined(PYPY_VERSION_NUM) && PYPY_VERSION_NUM < 0x050B0000
-  sizeof(PyTypeObject), __PYX_GET_STRUCT_ALIGNMENT_3_1_1(PyTypeObject),
+  sizeof(PyTypeObject), __PYX_GET_STRUCT_ALIGNMENT_3_1_4(PyTypeObject),
   #elif CYTHON_COMPILING_IN_LIMITED_API
   0, 0,
   #else
-  sizeof(PyHeapTypeObject), __PYX_GET_STRUCT_ALIGNMENT_3_1_1(PyHeapTypeObject),
+  sizeof(PyHeapTypeObject), __PYX_GET_STRUCT_ALIGNMENT_3_1_4(PyHeapTypeObject),
   #endif
-  __Pyx_ImportType_CheckSize_Warn_3_1_1); if (!__pyx_mstate->__pyx_ptype_7cpython_4type_type) __PYX_ERR(1, 9, __pyx_L1_error)
+  __Pyx_ImportType_CheckSize_Warn_3_1_4); if (!__pyx_mstate->__pyx_ptype_7cpython_4type_type) __PYX_ERR(1, 9, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -4353,7 +4403,7 @@ static PyModuleDef_Slot __pyx_moduledef_slots[] = {
   {Py_mod_create, (void*)__pyx_pymod_create},
   {Py_mod_exec, (void*)__pyx_pymod_exec__http_writer},
   #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
-  {Py_mod_gil, Py_MOD_GIL_USED},
+  {Py_mod_gil, Py_MOD_GIL_NOT_USED},
   #endif
   #if PY_VERSION_HEX >= 0x030C0000 && CYTHON_USE_MODULE_STATE
   {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
@@ -4554,7 +4604,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec__http_writer(PyObject *__pyx_pyini
   __pyx_m = __pyx_t_1;
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
-  PyUnstable_Module_SetGIL(__pyx_m, Py_MOD_GIL_USED);
+  PyUnstable_Module_SetGIL(__pyx_m, Py_MOD_GIL_NOT_USED);
   #endif
   __pyx_mstate = __pyx_mstate_global;
   CYTHON_UNUSED_VAR(__pyx_t_1);
@@ -4582,6 +4632,13 @@ __Pyx_RefNannySetupContext("PyInit__http_writer", 0);
   __pyx_mstate->__pyx_empty_tuple = PyTuple_New(0); if (unlikely(!__pyx_mstate->__pyx_empty_tuple)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_mstate->__pyx_empty_bytes = PyBytes_FromStringAndSize("", 0); if (unlikely(!__pyx_mstate->__pyx_empty_bytes)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_mstate->__pyx_empty_unicode = PyUnicode_FromStringAndSize("", 0); if (unlikely(!__pyx_mstate->__pyx_empty_unicode)) __PYX_ERR(0, 1, __pyx_L1_error)
+  
+  if (__Pyx_InitConstants(__pyx_mstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  stringtab_initialized = 1;
+  if (__Pyx_InitGlobals() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  #if 0 || defined(__Pyx_CyFunction_USED) || defined(__Pyx_FusedFunction_USED) || defined(__Pyx_Coroutine_USED) || defined(__Pyx_Generator_USED) || defined(__Pyx_AsyncGen_USED)
+  if (__pyx_CommonTypesMetaclass_init(__pyx_m) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  #endif
   #ifdef __Pyx_CyFunction_USED
   if (__pyx_CyFunction_init(__pyx_m) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
@@ -4598,10 +4655,6 @@ __Pyx_RefNannySetupContext("PyInit__http_writer", 0);
   if (__pyx_AsyncGen_init(__pyx_m) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
   
-  
-  if (__Pyx_InitConstants(__pyx_mstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  stringtab_initialized = 1;
-  if (__Pyx_InitGlobals() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   if (__pyx_module_is_main_aiohttp___http_writer) {
     if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
@@ -4651,7 +4704,7 @@ __Pyx_RefNannySetupContext("PyInit__http_writer", 0);
 
 
 
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_istr); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_istr); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_XGOTREF(__pyx_v_7aiohttp_12_http_writer__istr);
   __Pyx_DECREF_SET(__pyx_v_7aiohttp_12_http_writer__istr, __pyx_t_3);
@@ -4665,9 +4718,9 @@ __Pyx_RefNannySetupContext("PyInit__http_writer", 0);
 
 
 
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7aiohttp_12_http_writer_1_serialize_headers, 0, __pyx_mstate_global->__pyx_n_u_serialize_headers, NULL, __pyx_mstate_global->__pyx_n_u_aiohttp__http_writer, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 124, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7aiohttp_12_http_writer_1_serialize_headers, 0, __pyx_mstate_global->__pyx_n_u_serialize_headers, NULL, __pyx_mstate_global->__pyx_n_u_aiohttp__http_writer, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_serialize_headers, __pyx_t_3) < 0) __PYX_ERR(0, 124, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_serialize_headers, __pyx_t_3) < 0) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   
@@ -4750,6 +4803,7 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_aiohttp__http_writer, sizeof(__pyx_k_aiohttp__http_writer), 0, 1, 1}, 
   {__pyx_k_aiohttp__http_writer_pyx, sizeof(__pyx_k_aiohttp__http_writer_pyx), 0, 1, 0}, 
   {__pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 1, 1}, 
+  {__pyx_k_buf, sizeof(__pyx_k_buf), 0, 1, 1}, 
   {__pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 1, 1}, 
   {__pyx_k_format, sizeof(__pyx_k_format), 0, 1, 1}, 
   {__pyx_k_func, sizeof(__pyx_k_func), 0, 1, 1}, 
@@ -4765,6 +4819,7 @@ static const __Pyx_StringTabEntry __pyx_string_tab[] = {
   {__pyx_k_pop, sizeof(__pyx_k_pop), 0, 1, 1}, 
   {__pyx_k_qualname, sizeof(__pyx_k_qualname), 0, 1, 1}, 
   {__pyx_k_serialize_headers, sizeof(__pyx_k_serialize_headers), 0, 1, 1}, 
+  {__pyx_k_set_name, sizeof(__pyx_k_set_name), 0, 1, 1}, 
   {__pyx_k_status_line, sizeof(__pyx_k_status_line), 0, 1, 1}, 
   {__pyx_k_test, sizeof(__pyx_k_test), 0, 1, 1}, 
   {__pyx_k_val, sizeof(__pyx_k_val), 0, 1, 1}, 
@@ -4778,8 +4833,8 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry const *t, PyObject **target, c
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 108, __pyx_L1_error)
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 115, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -4830,8 +4885,8 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 5, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 124, 276};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_status_line, __pyx_mstate->__pyx_n_u_headers, __pyx_mstate->__pyx_n_u_writer, __pyx_mstate->__pyx_n_u_key, __pyx_mstate->__pyx_n_u_val};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 125, 278};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_status_line, __pyx_mstate->__pyx_n_u_headers, __pyx_mstate->__pyx_n_u_writer, __pyx_mstate->__pyx_n_u_key, __pyx_mstate->__pyx_n_u_val, __pyx_mstate->__pyx_n_u_buf};
     __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_aiohttp__http_writer_pyx, __pyx_mstate->__pyx_n_u_serialize_headers, __pyx_k_Qax_Ba_aq_r_aq_r_E_vQ_q_b_1HF_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   Py_DECREF(tuple_dedup_map);
@@ -6457,6 +6512,13 @@ try_unpack:
 
 
 static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name) {
+#if CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000))
+    PyObject *args[1] = {obj};
+    (void) __Pyx_PyObject_GetMethod;
+    (void) __Pyx_PyObject_CallOneArg;
+    (void) __Pyx_PyObject_CallNoArg;
+    return PyObject_VectorcallMethod(method_name, args, 1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+#else
     PyObject *method = NULL, *result = NULL;
     int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
     if (likely(is_method)) {
@@ -6469,6 +6531,7 @@ static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name
     Py_DECREF(method);
 bad:
     return result;
+#endif
 }
 
 
@@ -6977,15 +7040,15 @@ static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject 
 #endif
 
 
-#ifndef __PYX_HAVE_RT_ImportType_3_1_1
-#define __PYX_HAVE_RT_ImportType_3_1_1
-static PyTypeObject *__Pyx_ImportType_3_1_1(PyObject *module, const char *module_name, const char *class_name,
-    size_t size, size_t alignment, enum __Pyx_ImportType_CheckSize_3_1_1 check_size)
+#ifndef __PYX_HAVE_RT_ImportType_3_1_4
+#define __PYX_HAVE_RT_ImportType_3_1_4
+static PyTypeObject *__Pyx_ImportType_3_1_4(PyObject *module, const char *module_name, const char *class_name,
+    size_t size, size_t alignment, enum __Pyx_ImportType_CheckSize_3_1_4 check_size)
 {
     PyObject *result = 0;
     Py_ssize_t basicsize;
     Py_ssize_t itemsize;
-#if CYTHON_COMPILING_IN_LIMITED_API
+#ifdef Py_LIMITED_API
     PyObject *py_basicsize;
     PyObject *py_itemsize;
 #endif
@@ -6998,7 +7061,7 @@ static PyTypeObject *__Pyx_ImportType_3_1_1(PyObject *module, const char *module
             module_name, class_name);
         goto bad;
     }
-#if !CYTHON_COMPILING_IN_LIMITED_API
+#ifndef Py_LIMITED_API
     basicsize = ((PyTypeObject *)result)->tp_basicsize;
     itemsize = ((PyTypeObject *)result)->tp_itemsize;
 #else
@@ -7036,7 +7099,7 @@ static PyTypeObject *__Pyx_ImportType_3_1_1(PyObject *module, const char *module
             module_name, class_name, size, basicsize+itemsize);
         goto bad;
     }
-    if (check_size == __Pyx_ImportType_CheckSize_Error_3_1_1 &&
+    if (check_size == __Pyx_ImportType_CheckSize_Error_3_1_4 &&
             ((size_t)basicsize > size || (size_t)(basicsize + itemsize) < size)) {
         PyErr_Format(PyExc_ValueError,
             "%.200s.%.200s size changed, may indicate binary incompatibility. "
@@ -7044,7 +7107,7 @@ static PyTypeObject *__Pyx_ImportType_3_1_1(PyObject *module, const char *module
             module_name, class_name, size, basicsize, basicsize+itemsize);
         goto bad;
     }
-    else if (check_size == __Pyx_ImportType_CheckSize_Warn_3_1_1 && (size_t)basicsize > size) {
+    else if (check_size == __Pyx_ImportType_CheckSize_Warn_3_1_4 && (size_t)basicsize > size) {
         if (PyErr_WarnFormat(NULL, 0,
                 "%.200s.%.200s size changed, may indicate binary incompatibility. "
                 "Expected %zd from C header, got %zd from PyObject",
@@ -7211,23 +7274,82 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
 }
 
 
+#if CYTHON_COMPILING_IN_LIMITED_API
+static Py_ssize_t __Pyx_GetTypeDictOffset(void) {
+    PyObject *tp_dictoffset_o;
+    Py_ssize_t tp_dictoffset;
+    tp_dictoffset_o = PyObject_GetAttrString((PyObject*)(&PyType_Type), "__dictoffset__");
+    if (unlikely(!tp_dictoffset_o)) return -1;
+    tp_dictoffset = PyLong_AsSsize_t(tp_dictoffset_o);
+    Py_DECREF(tp_dictoffset_o);
+    if (unlikely(tp_dictoffset == 0)) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "'type' doesn't have a dictoffset");
+        return -1;
+    } else if (unlikely(tp_dictoffset < 0)) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "'type' has an unexpected negative dictoffset. "
+            "Please report this as Cython bug");
+        return -1;
+    }
+    return tp_dictoffset;
+}
+static PyObject *__Pyx_GetTypeDict(PyTypeObject *tp) {
+    static Py_ssize_t tp_dictoffset = 0;
+    if (unlikely(tp_dictoffset == 0)) {
+        tp_dictoffset = __Pyx_GetTypeDictOffset();
+        if (unlikely(tp_dictoffset == -1 && PyErr_Occurred())) {
+            tp_dictoffset = 0; 
+            return NULL;
+        }
+    }
+    return *(PyObject**)((char*)tp + tp_dictoffset);
+}
+#endif
+
+
+static int __Pyx__SetItemOnTypeDict(PyTypeObject *tp, PyObject *k, PyObject *v) {
+    int result;
+    PyObject *tp_dict;
+#if CYTHON_COMPILING_IN_LIMITED_API
+    tp_dict = __Pyx_GetTypeDict(tp);
+    if (unlikely(!tp_dict)) return -1;
+#else
+    tp_dict = tp->tp_dict;
+#endif
+    result = PyDict_SetItem(tp_dict, k, v);
+    if (likely(!result)) {
+        PyType_Modified(tp);
+        if (unlikely(PyObject_HasAttr(v, __pyx_mstate_global->__pyx_n_u_set_name))) {
+            PyObject *setNameResult = PyObject_CallMethodObjArgs(v, __pyx_mstate_global->__pyx_n_u_set_name,  (PyObject *) tp, k, NULL);
+            if (!setNameResult) return -1;
+            Py_DECREF(setNameResult);
+        }
+    }
+    return result;
+}
+
+
 static int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject *type) {
-#if PY_VERSION_HEX > 0x030900B1 || CYTHON_COMPILING_IN_LIMITED_API
+#if __PYX_LIMITED_VERSION_HEX > 0x030900B1
     CYTHON_UNUSED_VAR(spec);
     CYTHON_UNUSED_VAR(type);
+    CYTHON_UNUSED_VAR(__Pyx__SetItemOnTypeDict);
 #else
     const PyType_Slot *slot = spec->slots;
+    int changed = 0;
+#if !CYTHON_COMPILING_IN_LIMITED_API
     while (slot && slot->slot && slot->slot != Py_tp_members)
         slot++;
     if (slot && slot->slot == Py_tp_members) {
-        int changed = 0;
-#if !(PY_VERSION_HEX <= 0x030900b1 && CYTHON_COMPILING_IN_CPYTHON)
+#if !CYTHON_COMPILING_IN_CPYTHON
         const
-#endif
+#endif  
             PyMemberDef *memb = (PyMemberDef*) slot->pfunc;
         while (memb && memb->name) {
             if (memb->name[0] == '_' && memb->name[1] == '_') {
-#if PY_VERSION_HEX < 0x030900b1
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
                     assert(memb->type == T_PYSSIZET);
                     assert(memb->flags == READONLY);
@@ -7251,11 +7373,8 @@ static int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject
 #endif
                     changed = 1;
                 }
-#endif
-#else
-                if ((0));
-#endif
-#if PY_VERSION_HEX <= 0x030900b1 && CYTHON_COMPILING_IN_CPYTHON
+#endif  
+#if !CYTHON_COMPILING_IN_PYPY
                 else if (strcmp(memb->name, "__module__") == 0) {
                     PyObject *descr;
                     assert(memb->type == T_OBJECT);
@@ -7263,21 +7382,55 @@ static int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject
                     descr = PyDescr_NewMember(type, memb);
                     if (unlikely(!descr))
                         return -1;
-                    if (unlikely(PyDict_SetItem(type->tp_dict, PyDescr_NAME(descr), descr) < 0)) {
-                        Py_DECREF(descr);
+                    int set_item_result = PyDict_SetItem(type->tp_dict, PyDescr_NAME(descr), descr);
+                    Py_DECREF(descr);
+                    if (unlikely(set_item_result < 0)) {
                         return -1;
                     }
-                    Py_DECREF(descr);
                     changed = 1;
                 }
-#endif
+#endif  
             }
             memb++;
         }
-        if (changed)
-            PyType_Modified(type);
     }
-#endif
+#endif  
+#if !CYTHON_COMPILING_IN_PYPY
+    slot = spec->slots;
+    while (slot && slot->slot && slot->slot != Py_tp_getset)
+        slot++;
+    if (slot && slot->slot == Py_tp_getset) {
+        PyGetSetDef *getset = (PyGetSetDef*) slot->pfunc;
+        while (getset && getset->name) {
+            if (getset->name[0] == '_' && getset->name[1] == '_' && strcmp(getset->name, "__module__") == 0) {
+                PyObject *descr = PyDescr_NewGetSet(type, getset);
+                if (unlikely(!descr))
+                    return -1;
+                #if CYTHON_COMPILING_IN_LIMITED_API
+                PyObject *pyname = PyUnicode_FromString(getset->name);
+                if (unlikely(!pyname)) {
+                    Py_DECREF(descr);
+                    return -1;
+                }
+                int set_item_result = __Pyx_SetItemOnTypeDict(type, pyname, descr);
+                Py_DECREF(pyname);
+                #else
+                CYTHON_UNUSED_VAR(__Pyx__SetItemOnTypeDict);
+                int set_item_result = PyDict_SetItem(type->tp_dict, PyDescr_NAME(descr), descr);
+                #endif
+                Py_DECREF(descr);
+                if (unlikely(set_item_result < 0)) {
+                    return -1;
+                }
+                changed = 1;
+            }
+            ++getset;
+        }
+    }
+#endif  
+    if (changed)
+        PyType_Modified(type);
+#endif  
     return 0;
 }
 
@@ -7304,6 +7457,24 @@ static CYTHON_INLINE PyObject *__Pyx_PyDict_SetDefault(PyObject *d, PyObject *ke
 }
 
 
+#if __PYX_LIMITED_VERSION_HEX < 0x030C0000
+static PyObject* __Pyx_PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases) {
+    PyObject *result = __Pyx_PyType_FromModuleAndSpec(module, spec, bases);
+    if (result && metaclass) {
+        PyObject *old_tp = (PyObject*)Py_TYPE(result);
+    Py_INCREF((PyObject*)metaclass);
+#if __PYX_LIMITED_VERSION_HEX >= 0x03090000
+        Py_SET_TYPE(result, metaclass);
+#else
+        result->ob_type = metaclass;
+#endif
+        Py_DECREF(old_tp);
+    }
+    return result;
+}
+#else
+#define __Pyx_PyType_FromMetaclass(me, mo, s, b) PyType_FromMetaclass(me, mo, s, b)
+#endif
 static int __Pyx_VerifyCachedType(PyObject *cached_type,
                                const char *name,
                                Py_ssize_t expected_basicsize) {
@@ -7312,6 +7483,9 @@ static int __Pyx_VerifyCachedType(PyObject *cached_type,
         PyErr_Format(PyExc_TypeError,
             "Shared Cython type %.200s is not a type object", name);
         return -1;
+    }
+    if (expected_basicsize == 0) {
+        return 0; 
     }
 #if CYTHON_COMPILING_IN_LIMITED_API
     PyObject *py_basicsize;
@@ -7332,7 +7506,7 @@ static int __Pyx_VerifyCachedType(PyObject *cached_type,
     }
     return 0;
 }
-static PyTypeObject *__Pyx_FetchCommonTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases) {
+static PyTypeObject *__Pyx_FetchCommonTypeFromSpec(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases) {
     PyObject *abi_module = NULL, *cached_type = NULL, *abi_module_dict, *new_cached_type, *py_object_name;
     int get_item_ref_result;
     const char* object_name = strrchr(spec->name, '.');
@@ -7356,7 +7530,7 @@ static PyTypeObject *__Pyx_FetchCommonTypeFromSpec(PyObject *module, PyType_Spec
         goto bad;
     }
     CYTHON_UNUSED_VAR(module);
-    cached_type = __Pyx_PyType_FromModuleAndSpec(abi_module, spec, bases);
+    cached_type = __Pyx_PyType_FromMetaclass(metaclass, abi_module, spec, bases);
     if (unlikely(!cached_type)) goto bad;
     if (unlikely(__Pyx_fix_up_extension_type_from_spec(spec, (PyTypeObject *) cached_type) < 0)) goto bad;
     new_cached_type = __Pyx_PyDict_SetDefault(abi_module_dict, py_object_name, cached_type, 1);
@@ -7383,6 +7557,43 @@ bad:
     Py_XDECREF(cached_type);
     cached_type = NULL;
     goto done;
+}
+
+
+static PyObject* __pyx_CommonTypesMetaclass_get_module(CYTHON_UNUSED PyObject *self, CYTHON_UNUSED void* context) {
+    return PyUnicode_FromString(__PYX_ABI_MODULE_NAME);
+}
+static PyGetSetDef __pyx_CommonTypesMetaclass_getset[] = {
+    {"__module__", __pyx_CommonTypesMetaclass_get_module, NULL, NULL, NULL},
+    {0, 0, 0, 0, 0}
+};
+static PyType_Slot __pyx_CommonTypesMetaclass_slots[] = {
+    {Py_tp_getset, (void *)__pyx_CommonTypesMetaclass_getset},
+    {0, 0}
+};
+static PyType_Spec __pyx_CommonTypesMetaclass_spec = {
+    __PYX_TYPE_MODULE_PREFIX "_common_types_metatype",
+    0,
+    0,
+#if PY_VERSION_HEX >= 0x030A0000
+    Py_TPFLAGS_IMMUTABLETYPE |
+    Py_TPFLAGS_DISALLOW_INSTANTIATION |
+#endif
+    Py_TPFLAGS_DEFAULT,
+    __pyx_CommonTypesMetaclass_slots
+};
+static int __pyx_CommonTypesMetaclass_init(PyObject *module) {
+    __pyx_mstatetype *mstate = __Pyx_PyModule_GetState(module);
+    PyObject *bases = PyTuple_Pack(1, &PyType_Type);
+    if (unlikely(!bases)) {
+        return -1;
+    }
+    mstate->__pyx_CommonTypesMetaclassType = __Pyx_FetchCommonTypeFromSpec(NULL, module, &__pyx_CommonTypesMetaclass_spec, bases);
+    Py_DECREF(bases);
+    if (unlikely(mstate->__pyx_CommonTypesMetaclassType == NULL)) {
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -8501,7 +8712,8 @@ static PyType_Spec __pyx_CyFunctionType_spec = {
 };
 static int __pyx_CyFunction_init(PyObject *module) {
     __pyx_mstatetype *mstate = __Pyx_PyModule_GetState(module);
-    mstate->__pyx_CyFunctionType = __Pyx_FetchCommonTypeFromSpec(module, &__pyx_CyFunctionType_spec, NULL);
+    mstate->__pyx_CyFunctionType = __Pyx_FetchCommonTypeFromSpec(
+        mstate->__pyx_CommonTypesMetaclassType, module, &__pyx_CyFunctionType_spec, NULL);
     if (unlikely(mstate->__pyx_CyFunctionType == NULL)) {
         return -1;
     }
@@ -9717,6 +9929,10 @@ static int __Pyx_check_binary_version(unsigned long ct_version, unsigned long rt
         PyCode_NewWithPosOnlyArgs
       #endif
         (a, p, k, l, s, f, code, c, n, v, fv, cell, fn, name, name, fline, lnos, __pyx_mstate_global->__pyx_empty_bytes);
+    #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030c00A1
+    if (likely(result))
+        result->_co_firsttraceable = 0;
+    #endif
     return result;
   }
 #elif PY_VERSION_HEX >= 0x030800B2 && !CYTHON_COMPILING_IN_PYPY
