@@ -198,24 +198,11 @@ let propNameAllowlist = [
   { propName: "--tab-group-color-gray-pale", isFromDevTools: false },
 
   
-  
-  
-  
-  
-  { propName: "--ai-controls-description", isFromDevTools: false },
-  { propName: "--browser-with-dialog", isFromDevTools: false },
-
-  
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
 
   
   
   { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
-
-  
-  
-  { propName: "--selected-session-history-entry-info", isFromDevTools: true },
-  { propName: "--session-history-entry-bottom-end", isFromDevTools: true },
 ];
 
 
@@ -391,57 +378,99 @@ function processCSSRules(container) {
     if (!rule.style) {
       continue; 
     }
+
     
     
     
     let cssText = rule.style.cssText;
-    let urls = cssText.match(/url\("[^"]*"\)/g);
-    
-    
-    let props = cssText.match(/(var\(\s*|\W|^)(--[\w\-]+)/g);
-    if (!urls && !props) {
-      continue;
-    }
+    {
+      const lexer = new InspectorCSSParser(cssText);
+      let token;
+      let currentDeclarationName;
+      let foundVarFunc = false;
+      let foundUrlFunc = false;
 
-    for (let url of urls || []) {
-      
-      url = url.replace(/url\("(.*)"\)/, "$1");
-      if (url.startsWith("data:")) {
-        continue;
-      }
-
-      
-      let baseURI = Services.io.newURI(rule.parentStyleSheet.href);
-      url = Services.io.newURI(url, null, baseURI).specIgnoringRef;
-
-      
-      let baseUrl = baseURI.spec.split("?always-parse-css")[0];
-      if (!imageURIsToReferencesMap.has(url)) {
-        imageURIsToReferencesMap.set(url, new Set([baseUrl]));
-      } else {
-        imageURIsToReferencesMap.get(url).add(baseUrl);
-      }
-    }
-
-    for (let prop of props || []) {
-      if (prop.startsWith("var(")) {
-        prop = prop.substring(4).trim();
-        let prevValue = customPropsToReferencesMap.get(prop) || 0;
-        customPropsToReferencesMap.set(prop, prevValue + 1);
-      } else {
+      while ((token = lexer.nextToken())) {
         
-        
-        if (prop[0] != "-") {
-          prop = prop.substring(1);
-        }
-        if (!customPropsToReferencesMap.has(prop)) {
-          customPropsToReferencesMap.set(prop, undefined);
-          if (!customPropsDefinitionFileMap.has(prop)) {
-            customPropsDefinitionFileMap.set(prop, new Set());
+        if (!currentDeclarationName) {
+          
+          if (token.tokenType === "Ident") {
+            currentDeclarationName = token.text;
+
+            
+            if (token.text.startsWith("--")) {
+              const prop = token.text;
+              if (!customPropsToReferencesMap.has(prop)) {
+                customPropsToReferencesMap.set(prop, undefined);
+                if (!customPropsDefinitionFileMap.has(prop)) {
+                  customPropsDefinitionFileMap.set(prop, new Set());
+                }
+                customPropsDefinitionFileMap
+                  .get(prop)
+                  .add(container.href || container.parentStyleSheet.href);
+              }
+            }
           }
-          customPropsDefinitionFileMap
-            .get(prop)
-            .add(container.href || container.parentStyleSheet.href);
+          continue;
+        }
+        
+
+        
+        if (token.tokenType === "Function" && token.value === "var") {
+          foundVarFunc = true;
+          continue;
+        }
+        
+        
+        if (
+          foundVarFunc &&
+          token.tokenType === "Ident" &&
+          token.text.startsWith("--")
+        ) {
+          foundVarFunc = false;
+          const prop = token.text;
+          let prevValue = customPropsToReferencesMap.get(prop) || 0;
+          customPropsToReferencesMap.set(prop, prevValue + 1);
+          continue;
+        }
+
+        
+        if (token.tokenType === "Function" && token.value === "url") {
+          foundUrlFunc = true;
+          continue;
+        }
+        
+        
+        
+        if (foundUrlFunc && token.tokenType === "QuotedString") {
+          foundUrlFunc = false;
+          let url = token.value;
+          if (url.startsWith("data:")) {
+            continue;
+          }
+
+          
+          let baseURI = Services.io.newURI(rule.parentStyleSheet.href);
+          url = Services.io.newURI(url, null, baseURI).specIgnoringRef;
+
+          
+          let baseUrl = baseURI.spec.split("?always-parse-css")[0];
+          if (!imageURIsToReferencesMap.has(url)) {
+            imageURIsToReferencesMap.set(url, new Set([baseUrl]));
+          } else {
+            imageURIsToReferencesMap.get(url).add(baseUrl);
+          }
+
+          continue;
+        }
+
+        
+        
+        if (token.tokenType === "Semicolon") {
+          foundVarFunc = false;
+          foundUrlFunc = false;
+          currentDeclarationName = null;
+          continue;
         }
       }
     }
