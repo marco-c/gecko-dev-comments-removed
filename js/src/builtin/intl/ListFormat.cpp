@@ -382,7 +382,7 @@ class TwoByteStringList final {
   
   
   Vector<UniqueTwoByteChars, mozilla::intl::DEFAULT_LIST_LENGTH> strings_;
-  mozilla::intl::ListFormat::StringList list_{};
+  mozilla::intl::ListFormat::StringList list_;
 
  public:
   explicit TwoByteStringList(JSContext* cx) : cx_(cx), strings_(cx) {}

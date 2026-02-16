@@ -200,6 +200,8 @@ static int32_t CurrencyDigits(
     return digits;
     CURRENCIES_WITH_NON_DEFAULT_DIGITS(CURRENCY)
 #undef CURRENCY
+    default:
+      break;
   }
 
   
@@ -322,13 +324,8 @@ static bool IsWellFormedUnitIdentifier(std::string_view unitIdentifier) {
   auto denominator = unitIdentifier.substr(pos + separator.length());
 
   
-  if (IsSanctionedSingleUnitIdentifier(numerator) &&
-      IsSanctionedSingleUnitIdentifier(denominator)) {
-    return true;
-  }
-
-  
-  return false;
+  return IsSanctionedSingleUnitIdentifier(numerator) &&
+         IsSanctionedSingleUnitIdentifier(denominator);
 }
 
 
@@ -788,7 +785,7 @@ bool js::intl::SetNumberFormatDigitOptions(
   }
 
   
-  obj.minimumIntegerDigits = mnid;
+  obj.minimumIntegerDigits = static_cast<int8_t>(mnid);
 
   
   int32_t roundingIncrement;
@@ -879,7 +876,7 @@ bool js::intl::SetNumberFormatDigitOptions(
   }
 
   
-  obj.roundingIncrement = roundingIncrement;
+  obj.roundingIncrement = static_cast<int16_t>(roundingIncrement);
 
   
   obj.roundingMode = roundingMode;
@@ -920,7 +917,8 @@ bool js::intl::SetNumberFormatDigitOptions(
       if (!DefaultNumberOption(cx, mnsd, 1, 21, 1, &minimumSignificantDigits)) {
         return false;
       }
-      obj.minimumSignificantDigits = minimumSignificantDigits;
+      obj.minimumSignificantDigits =
+          static_cast<int8_t>(minimumSignificantDigits);
 
       
       int32_t maximumSignificantDigits;
@@ -928,7 +926,8 @@ bool js::intl::SetNumberFormatDigitOptions(
                                &maximumSignificantDigits)) {
         return false;
       }
-      obj.maximumSignificantDigits = maximumSignificantDigits;
+      obj.maximumSignificantDigits =
+          static_cast<int8_t>(maximumSignificantDigits);
     } else {
       
       obj.minimumSignificantDigits = 1;
@@ -978,16 +977,16 @@ bool js::intl::SetNumberFormatDigitOptions(
       }
 
       
-      obj.minimumFractionDigits = *minFracDigits;
+      obj.minimumFractionDigits = static_cast<int8_t>(*minFracDigits);
 
       
-      obj.maximumFractionDigits = *maxFracDigits;
+      obj.maximumFractionDigits = static_cast<int8_t>(*maxFracDigits);
     } else {
       
-      obj.minimumFractionDigits = mnfdDefault;
+      obj.minimumFractionDigits = static_cast<int8_t>(mnfdDefault);
 
       
-      obj.maximumFractionDigits = mxfdDefault;
+      obj.maximumFractionDigits = static_cast<int8_t>(mxfdDefault);
     }
   } else {
     
@@ -1479,7 +1478,7 @@ static bool ResolveLocale(JSContext* cx,
 
   
   Rooted<LocaleOptions> localeOptions(cx);
-  if (auto nu = numberFormat->getNumberingSystem()) {
+  if (auto* nu = numberFormat->getNumberingSystem()) {
     localeOptions.setUnicodeExtension(UnicodeExtensionKey::NumberingSystem, nu);
   }
 
