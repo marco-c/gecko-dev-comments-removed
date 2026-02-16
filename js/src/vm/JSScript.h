@@ -1380,13 +1380,8 @@ static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
 
 
 
-
-
-
-
 class alignas(uintptr_t) PrivateScriptData final
     : public TrailingArray<PrivateScriptData> {
- private:
   uint32_t ngcthings = 0;
 
   
@@ -1396,7 +1391,6 @@ class alignas(uintptr_t) PrivateScriptData final
 
   
 
- private:
   
   Offset gcThingsOffset() { return offsetOfGCThings(); }
   Offset endOffset() const {
@@ -1404,10 +1398,10 @@ class alignas(uintptr_t) PrivateScriptData final
     return offsetOfGCThings() + size;
   }
 
+ public:
   
   explicit PrivateScriptData(uint32_t ngcthings);
 
- public:
   static constexpr size_t offsetOfGCThings() {
     return sizeof(PrivateScriptData);
   }
@@ -1705,7 +1699,8 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   bool hasPrivateScriptData() const { return data_ != nullptr; }
 
   
-  void swapData(UniquePtr<PrivateScriptData>& other);
+  void swapData(MutableHandleBuffer<PrivateScriptData> other);
+  PrivateScriptData* releaseData();
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
     return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
@@ -1752,9 +1747,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   void traceChildrenConcurrently(JSTracer* trc, bool* skippedJitScript);
   void finalize(JS::GCContext* gcx);
 
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(data_);
-  }
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   inline JSScript* asJSScript();
 

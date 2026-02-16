@@ -164,14 +164,6 @@ void js::BaseScript::finalize(JS::GCContext* gcx) {
   }
 #endif
 
-  if (data_) {
-    
-    size_t size = data_->allocationSize();
-    AlwaysPoison(data_, JS_POISONED_JSSCRIPT_DATA_PATTERN, size,
-                 MemCheckKind::MakeNoAccess);
-    gcx->free_(this, data_, size, MemoryUse::ScriptPrivateData);
-  }
-
   freeSharedData();
 }
 
@@ -181,19 +173,16 @@ js::Scope* js::BaseScript::releaseEnclosingScope() {
   return enclosing;
 }
 
-void js::BaseScript::swapData(UniquePtr<PrivateScriptData>& other) {
-  if (data_) {
-    RemoveCellMemory(this, data_->allocationSize(),
-                     MemoryUse::ScriptPrivateData);
-  }
-
+void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
   PrivateScriptData* old = data_;
-  data_.set(zone(), other.release());
-  other.reset(old);
+  data_.set(zone(), other);  
+  other.set(old);
+}
 
-  if (data_) {
-    AddCellMemory(this, data_->allocationSize(), MemoryUse::ScriptPrivateData);
-  }
+PrivateScriptData* js::BaseScript::releaseData() {
+  PrivateScriptData* old = data_;
+  data_.set(zone(), nullptr);  
+  return old;
 }
 
 js::Scope* js::BaseScript::enclosingScope() const {
@@ -2346,7 +2335,6 @@ SharedImmutableScriptData* SharedImmutableScriptData::createWith(
 
 void JSScript::relazify(JSRuntime* rt) {
   js::Scope* scope = enclosingScope();
-  UniquePtr<PrivateScriptData> scriptData;
 
   
   
@@ -2362,7 +2350,8 @@ void JSScript::relazify(JSRuntime* rt) {
   
   
   
-  swapData(scriptData);
+  gc::FreeBuffer(zone(), releaseData());
+
   freeSharedData();
 
   
@@ -2471,20 +2460,16 @@ PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t ngcthings) {
   }
 
   
-  void* raw = cx->pod_malloc<uint8_t>(size.value());
-  MOZ_ASSERT(uintptr_t(raw) % alignof(PrivateScriptData) == 0);
-  if (!raw) {
-    return nullptr;
-  }
-
   
-  
-  PrivateScriptData* result = new (raw) PrivateScriptData(ngcthings);
+  auto* result = gc::NewSizedBuffer<PrivateScriptData>(cx->zone(), size.value(),
+                                                       false, ngcthings);
   if (!result) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
 
   
+  MOZ_ASSERT(uintptr_t(result) % alignof(PrivateScriptData) == 0);
   MOZ_ASSERT(result->endOffset() == size.value());
 
   return result;
@@ -2566,12 +2551,13 @@ bool JSScript::createPrivateScriptData(JSContext* cx, HandleScript script,
                                        uint32_t ngcthings) {
   cx->check(script);
 
-  UniquePtr<PrivateScriptData> data(PrivateScriptData::new_(cx, ngcthings));
+  RootedBuffer<PrivateScriptData> data(cx,
+                                       PrivateScriptData::new_(cx, ngcthings));
   if (!data) {
     return false;
   }
 
-  script->swapData(data);
+  script->swapData(&data);
   MOZ_ASSERT(!data);
 
   return true;
@@ -2592,7 +2578,7 @@ bool JSScript::fullyInitFromStencil(
   
   
   
-  Rooted<UniquePtr<PrivateScriptData>> lazyData(cx);
+  RootedBuffer<PrivateScriptData> lazyData(cx);
 
   
   
@@ -2604,7 +2590,7 @@ bool JSScript::fullyInitFromStencil(
   if (script->isReadyForDelazification()) {
     lazyMutableFlags = script->mutableFlags_;
     lazyEnclosingScope = script->releaseEnclosingScope();
-    script->swapData(lazyData.get());
+    script->swapData(&lazyData);
     MOZ_ASSERT(script->sharedData_ == nullptr);
   }
 
@@ -2614,7 +2600,7 @@ bool JSScript::fullyInitFromStencil(
     if (lazyEnclosingScope) {
       script->mutableFlags_ = lazyMutableFlags;
       script->warmUpData_.initEnclosingScope(lazyEnclosingScope);
-      script->swapData(lazyData.get());
+      script->swapData(&lazyData);
       script->sharedData_ = nullptr;
 
       MOZ_ASSERT(script->isReadyForDelazification());
@@ -2790,6 +2776,10 @@ void JSScript::assertValidJumpTargets() const {
   }
 }
 #endif
+
+size_t BaseScript::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+  return gc::GetAllocSize(zone(), data_);
+}
 
 void JSScript::addSizeOfJitScript(mozilla::MallocSizeOf mallocSizeOf,
                                   size_t* sizeOfJitScript,
@@ -3396,11 +3386,12 @@ BaseScript* BaseScript::CreateRawLazy(JSContext* cx, uint32_t ngcthings,
   
   
   if (ngcthings || lazy->useMemberInitializers()) {
-    UniquePtr<PrivateScriptData> data(PrivateScriptData::new_(cx, ngcthings));
+    RootedBuffer<PrivateScriptData> data(
+        cx, PrivateScriptData::new_(cx, ngcthings));
     if (!data) {
       return nullptr;
     }
-    lazy->swapData(data);
+    lazy->swapData(&data);
     MOZ_ASSERT(!data);
   }
 
