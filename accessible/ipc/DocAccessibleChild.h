@@ -147,6 +147,13 @@ class DocAccessibleChild : public PDocAccessibleChild {
 
   virtual mozilla::ipc::IPCResult RecvAckMutationEvents() override;
 
+  
+
+
+
+  static mozilla::LayoutDeviceIntRect GetCaretRectForIPCEvent(
+      LocalAccessible* aAcc);
+
  private:
   
   
