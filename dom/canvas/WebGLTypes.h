@@ -1155,6 +1155,9 @@ struct ExplicitPixelPackingState final {
     size_t bytesPerRowStride = 0;
 
     
+    size_t usedPixelsPerRow = 0;
+
+    
     size_t totalRows = 0;
 
     
