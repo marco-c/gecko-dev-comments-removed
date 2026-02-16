@@ -326,15 +326,15 @@ class WebRenderAPI final {
 
   RefPtr<EndRecordingPromise> EndRecording();
 
+#ifdef MOZ_WIDGET_ANDROID
+  using ScreenPixelsPromise =
+      MozPromise<RefPtr<layers::AndroidHardwareBuffer>, nsresult, true>;
   
-  using ScreenPixelsPromise = MozPromise<bool, nsresult, true>;
   
   
-  
-  
-  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntSize aSize,
-                                                  wr::ImageFormat aFormat,
-                                                  Span<uint8_t> aBuffer);
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntRect aSourceRect,
+                                                  gfx::IntSize aDestSize);
+#endif
 
   layers::RemoteTextureInfoList* GetPendingRemoteTextureInfoList();
   layers::AsyncImagePipelineOps* GetPendingAsyncImagePipelineOps(

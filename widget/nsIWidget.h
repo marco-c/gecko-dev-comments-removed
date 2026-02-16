@@ -85,11 +85,6 @@ enum class WindowShadow : uint8_t {
   Tooltip,
 };
 
-#if defined(MOZ_WIDGET_ANDROID)
-namespace ipc {
-class Shmem;
-}
-#endif  
 namespace dom {
 class BrowserChild;
 enum class CallerType : uint32_t;
@@ -100,6 +95,7 @@ class DrawTarget;
 class SourceSurface;
 }  
 namespace layers {
+class AndroidHardwareBuffer;
 class APZEventState;
 class AsyncDragMetrics;
 class Compositor;
@@ -2314,8 +2310,8 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void RecvScreenPixels(mozilla::ipc::Shmem&& aMem,
-                                const ScreenIntSize& aSize, bool aNeedsYFlip) {}
+  virtual void RecvScreenPixels(
+      RefPtr<mozilla::layers::AndroidHardwareBuffer> aHardwareBuffer) {}
 
   virtual void UpdateDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight) {}
   virtual mozilla::ScreenIntCoord GetDynamicToolbarMaxHeight() const {

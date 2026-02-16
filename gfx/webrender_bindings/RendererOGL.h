@@ -25,6 +25,7 @@ class GLContext;
 }
 
 namespace layers {
+class AndroidHardwareBuffer;
 class CompositorBridgeParent;
 class Fence;
 class SyncObjectHost;
@@ -93,15 +94,14 @@ class RendererOGL {
 
   Maybe<layers::FrameRecording> EndRecording();
 
+#ifdef MOZ_WIDGET_ANDROID
+  using ScreenPixelsPromise =
+      MozPromise<RefPtr<layers::AndroidHardwareBuffer>, nsresult, true>;
   
-  using ScreenPixelsPromise = MozPromise<bool, nsresult, true>;
   
-  
-  
-  
-  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntSize aSize,
-                                                  wr::ImageFormat aFormat,
-                                                  Span<uint8_t> aBuffer);
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntRect aSourceRect,
+                                                  gfx::IntSize aDestSize);
+#endif
 
   
   ~RendererOGL();
@@ -157,11 +157,13 @@ class RendererOGL {
 
   bool DidPaintContent(const wr::WebRenderPipelineInfo* aFrameEpochs);
 
+#ifdef MOZ_WIDGET_ANDROID
   
   
   
   
   void MaybeCaptureScreenPixels();
+#endif
 
   RefPtr<RenderThread> mThread;
   UniquePtr<RenderCompositor> mCompositor;
@@ -173,13 +175,14 @@ class RendererOGL {
 
   bool mDisableNativeCompositor;
 
+#ifdef MOZ_WIDGET_ANDROID
   struct ScreenPixelsRequest {
-    gfx::IntSize mSize;
-    wr::ImageFormat mFormat;
-    Span<uint8_t> mBuffer;
+    gfx::IntRect mSourceRect;
+    gfx::IntSize mDestSize;
     RefPtr<ScreenPixelsPromise::Private> mPromise;
   };
   Maybe<ScreenPixelsRequest> mPendingScreenPixelsRequest;
+#endif
 
   RendererScreenshotGrabber mScreenshotGrabber;
 
