@@ -67,6 +67,8 @@ function initPage() {
     
     RPMTryPingSecureWWWLink();
   }
+
+  resetClickjackingTimeout();
 }
 
 
