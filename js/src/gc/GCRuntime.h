@@ -139,11 +139,18 @@ class ChunkPool {
 class BackgroundMarkTask : public GCParallelTask {
  public:
   explicit BackgroundMarkTask(GCRuntime* gc);
-  void setBudget(const JS::SliceBudget& budget) { this->budget = budget; }
+  void initialize(bool isConcurrent, const JS::SliceBudget& budget,
+                  AutoLockHelperThreadState& lock);
   void run(AutoLockHelperThreadState& lock) override;
+  void pause();
+  void unpause();
+  bool isOverBudget() { return budget.isOverBudget(); }
 
  private:
+  bool isConcurrent;
   JS::SliceBudget budget;
+  JS::SliceBudget::InterruptRequestFlag interruptRequest;
+  friend class GCRuntime;
 };
 
 class BackgroundUnmarkTask : public GCParallelTask {
@@ -432,6 +439,8 @@ class GCRuntime {
   void waitBackgroundFreeEnd();
   void waitForBackgroundTasks();
   bool isWaitingOnBackgroundTask() const;
+  bool pauseBackgroundMarking();
+  void resumeBackgroundMarking();
 
   void lockGC() { lock.lock(); }
   void unlockGC() { lock.unlock(); }
@@ -526,6 +535,13 @@ class GCRuntime {
 
   
   GCMarker& marker() { return *markers[0]; }
+  const GCMarker& marker() const { return *markers[0]; }
+
+  
+  GCMarker& concurrentMarker() {
+    MOZ_ASSERT(isConcurrentMarkingEnabled());
+    return *markers[1];
+  }
 
   JS::Zone* getCurrentSweepGroup() { return currentSweepGroup; }
   unsigned getCurrentSweepGroupIndex() {
@@ -677,8 +693,11 @@ class GCRuntime {
 
   
   bool setParallelMarkingEnabled(bool enabled);
-  bool initOrDisableParallelMarking();
-  [[nodiscard]] bool updateMarkersVector();
+#ifdef JS_GC_CONCURRENT_MARKING
+  bool setConcurrentMarkingEnabled(bool enabled);
+#endif
+  bool initOrDisableMultiThreadedMarking();
+  [[nodiscard]] bool resizeMarkersVector();
   size_t markingWorkerCount() const;
 
   
@@ -843,23 +862,32 @@ class GCRuntime {
   void maybeDoCycleCollection();
   void findDeadCompartments();
 
+  std::tuple<JS::SliceBudget, JS::SliceBudget> budgetConcurrentMarking(
+      const JS::SliceBudget& requestedBudget);
+  void maybeStartConcurrentMarking(JS::SliceBudget& budget);
+  void finishAnyConcurrentMarking(JS::SliceBudget& budget);
   friend class BackgroundMarkTask;
   enum ParallelMarking : bool {
-    SingleThreadedMarking = false,
+    NoParallelMarking = false,
     AllowParallelMarking = true
   };
-  IncrementalProgress markUntilBudgetExhausted(
+  enum ConcurrentMarking : bool {
+    NoConcurrentMarking = false,
+    AllowConcurrentMarking = true
+  };
+  IncrementalProgress markPhase(JS::SliceBudget& sliceBudget);
+  IncrementalProgress markSynchronously(
       JS::SliceBudget& sliceBudget,
-      ParallelMarking allowParallelMarking = SingleThreadedMarking,
+      ParallelMarking allowParallelMarking = NoParallelMarking,
       ShouldReportMarkTime reportTime = ReportMarkTime);
   bool canMarkInParallel() const;
-  bool initParallelMarking();
-  void finishParallelMarkers();
+  bool canMarkConcurrently() const;
+  bool initMultiThreadedMarkers();
 
   bool reserveMarkingThreads(size_t count);
   void releaseMarkingThreads();
 
-  bool hasMarkingWork(MarkColor color) const;
+  bool hasMarkingWork() const;
 
   void drainMarkStack();
 
@@ -1199,6 +1227,9 @@ class GCRuntime {
   MainThreadData<ParallelMarking> useParallelMarking;
 
   
+  MainThreadData<ConcurrentMarking> useConcurrentMarking;
+
+  
   MainThreadOrGCTaskData<mozilla::Maybe<JS::GCOptions>> maybeGcOptions;
 
   
@@ -1234,6 +1265,8 @@ class GCRuntime {
   
   
   MainThreadData<bool> useBackgroundThreads;
+
+  MainThreadData<size_t> markSliceCount;
 
 #ifdef DEBUG
   
@@ -1369,7 +1402,7 @@ class GCRuntime {
 
 
 
-  MainThreadData<bool> concurrentMarkingEnabled;
+  MainThreadOrGCTaskData<bool> concurrentMarkingEnabled;
 #endif
 
   MainThreadData<bool> rootsRemoved;

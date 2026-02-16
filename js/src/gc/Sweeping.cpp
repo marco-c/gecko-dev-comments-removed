@@ -1308,7 +1308,8 @@ IncrementalProgress GCRuntime::markGray(JS::GCContext* gcx,
                                         SliceBudget& budget) {
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
 
-  if (markUntilBudgetExhausted(budget, useParallelMarking) == NotFinished) {
+  
+  if (markSynchronously(budget, useParallelMarking) == NotFinished) {
     return NotFinished;
   }
 
@@ -1902,14 +1903,14 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
     if (!marker().isDrained() || hasDelayedMarking()) {
       AutoLockHelperThreadState lock;
       MOZ_ASSERT(markTask.isIdle(lock));
-      markTask.setBudget(budget);
+      markTask.initialize(false, budget, lock);
       markTask.startOrRunIfIdle(lock);
     }
     return Finished;  
   }
 
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
-  return markUntilBudgetExhausted(budget, useParallelMarking);
+  return markSynchronously(budget, useParallelMarking);
 }
 
 void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
@@ -1968,12 +1969,58 @@ BackgroundMarkTask::BackgroundMarkTask(GCRuntime* gc)
     : GCParallelTask(gc, gcstats::PhaseKind::MARK, GCUse::Marking),
       budget(SliceBudget::unlimited()) {}
 
+void js::gc::BackgroundMarkTask::initialize(bool isConcurrent,
+                                            const SliceBudget& budget,
+                                            AutoLockHelperThreadState& lock) {
+  MOZ_ASSERT(isIdle(lock));
+  this->isConcurrent = isConcurrent;
+  this->budget = budget;
+  this->interruptRequest = false;
+}
+
 void js::gc::BackgroundMarkTask::run(AutoLockHelperThreadState& lock) {
-  AutoUnlockHelperThreadState unlock(lock);
+  {
+    AutoUnlockHelperThreadState unlock(lock);
+    AutoSetThreadIsMarking threadIsMarking;
+
+    GCMarker* marker;
+    if (isConcurrent) {
+      marker = &gc->concurrentMarker();
+      marker->enterConcurrentMarkingMode();
+    } else {
+      marker = &gc->marker();
+    }
+
+    
+    bool finished =
+        marker->markUntilBudgetExhausted(budget, DontReportMarkTime);
+    gc->sweepMarkResult = finished ? Finished : NotFinished;
+
+    if (isConcurrent) {
+      marker->leaveConcurrentMarkingMode();
+    }
+  }
+
+  gc->maybeRequestGCAfterBackgroundTask(lock);
+}
+
+void js::gc::BackgroundMarkTask::pause() {
+  MOZ_ASSERT(isConcurrent);
 
   
-  gc->sweepMarkResult = gc->markUntilBudgetExhausted(
-      this->budget, GCRuntime::SingleThreadedMarking, DontReportMarkTime);
+  
+  MOZ_ASSERT(budget.isUnlimited() || budget.isWorkBudget());
+  MOZ_ASSERT(!interruptRequest);
+
+  interruptRequest = true;
+}
+
+void js::gc::BackgroundMarkTask::unpause() {
+  MOZ_ASSERT(isConcurrent);
+
+  
+  
+  interruptRequest = false;
 }
 
 IncrementalProgress GCRuntime::joinBackgroundMarkTask() {
@@ -1987,6 +2034,44 @@ IncrementalProgress GCRuntime::joinBackgroundMarkTask() {
   IncrementalProgress result = sweepMarkResult;
   sweepMarkResult = Finished;
   return result;
+}
+
+bool GCRuntime::pauseBackgroundMarking() {
+  AutoLockHelperThreadState lock;
+  if (markTask.isIdle(lock)) {
+    MOZ_ASSERT(!markTask.interruptRequest);
+    return false;
+  }
+
+  if (markTask.isFinished(lock)) {
+    MOZ_ASSERT(!markTask.interruptRequest);
+    markTask.joinWithLockHeld(lock);
+    return false;
+  }
+
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
+
+  bool wasSliceRequested = requestSliceAfterBackgroundTask;
+
+  markTask.pause();
+  markTask.joinWithLockHeld(lock);
+  markTask.unpause();
+
+  MOZ_ASSERT(!requestSliceAfterBackgroundTask);
+  if (wasSliceRequested) {
+    requestSliceAfterBackgroundTask = true;
+  }
+
+  return true;
+}
+
+void GCRuntime::resumeBackgroundMarking() {
+  MOZ_ASSERT(!markTask.interruptRequest);
+  if (markTask.isOverBudget()) {
+    return;
+  }
+
+  markTask.start();
 }
 
 template <typename T>
