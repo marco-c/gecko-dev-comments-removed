@@ -296,30 +296,6 @@ class DateTimeFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_FormatDateTime(JSContext* cx, unsigned argc,
-                                              JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_FormatDateTimeRange(JSContext* cx, unsigned argc,
-                                                   JS::Value* vp);
-
 namespace intl {
 
 enum class DateTimeFormatKind {

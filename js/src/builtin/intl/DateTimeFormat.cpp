@@ -93,6 +93,14 @@ static bool dateTimeFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
 
 static bool dateTimeFormat_format(JSContext* cx, unsigned argc, Value* vp);
 
+static bool dateTimeFormat_formatToParts(JSContext* cx, unsigned argc,
+                                         Value* vp);
+
+static bool dateTimeFormat_formatRange(JSContext* cx, unsigned argc, Value* vp);
+
+static bool dateTimeFormat_formatRangeToParts(JSContext* cx, unsigned argc,
+                                              Value* vp);
+
 static bool dateTimeFormat_resolvedOptions(JSContext* cx, unsigned argc,
                                            Value* vp);
 
@@ -109,11 +117,9 @@ static const JSFunctionSpec dateTimeFormat_static_methods[] = {
 
 static const JSFunctionSpec dateTimeFormat_methods[] = {
     JS_FN("resolvedOptions", dateTimeFormat_resolvedOptions, 0, 0),
-    JS_SELF_HOSTED_FN("formatToParts", "Intl_DateTimeFormat_formatToParts", 1,
-                      0),
-    JS_SELF_HOSTED_FN("formatRange", "Intl_DateTimeFormat_formatRange", 2, 0),
-    JS_SELF_HOSTED_FN("formatRangeToParts",
-                      "Intl_DateTimeFormat_formatRangeToParts", 2, 0),
+    JS_FN("formatToParts", dateTimeFormat_formatToParts, 1, 0),
+    JS_FN("formatRange", dateTimeFormat_formatRange, 2, 0),
+    JS_FN("formatRangeToParts", dateTimeFormat_formatRangeToParts, 2, 0),
     JS_FN("toSource", dateTimeFormat_toSource, 0, 0),
     JS_FS_END,
 };
@@ -2129,6 +2135,8 @@ static bool ResolveDateTimeFormatComponents(
 
 
 static auto ToDateTimeFormattable(const Value& value) {
+  MOZ_ASSERT(!value.isUndefined());
+
   
   if (value.isObject()) {
     auto* obj = CheckedUnwrapStatic(&value.toObject());
@@ -2503,72 +2511,133 @@ static bool HandleDateTimeOthers(JSContext* cx, const char* method, double x,
 
 static bool HandleDateTimeValue(JSContext* cx, const char* method,
                                 Handle<DateTimeFormatObject*> dateTimeFormat,
-                                Handle<Value> x, ClippedTime* result) {
-  MOZ_ASSERT(x.isObject() || x.isNumber());
-
+                                JSObject* x, ClippedTime* result) {
   
-  if (x.isObject()) {
-    Rooted<JSObject*> unwrapped(cx, CheckedUnwrapStatic(&x.toObject()));
-    if (!unwrapped) {
-      ReportAccessDenied(cx);
-      return false;
-    }
-
-    
-    if (unwrapped->is<PlainDateObject>()) {
-      return HandleDateTimeTemporalDate(
-          cx, dateTimeFormat, unwrapped.as<PlainDateObject>(), result);
-    }
-
-    
-    if (unwrapped->is<PlainYearMonthObject>()) {
-      return HandleDateTimeTemporalYearMonth(
-          cx, dateTimeFormat, unwrapped.as<PlainYearMonthObject>(), result);
-    }
-
-    
-    if (unwrapped->is<PlainMonthDayObject>()) {
-      return HandleDateTimeTemporalMonthDay(
-          cx, dateTimeFormat, unwrapped.as<PlainMonthDayObject>(), result);
-    }
-
-    
-    if (unwrapped->is<PlainTimeObject>()) {
-      return HandleDateTimeTemporalTime(
-          cx, dateTimeFormat, unwrapped.as<PlainTimeObject>(), result);
-    }
-
-    
-    if (unwrapped->is<PlainDateTimeObject>()) {
-      return HandleDateTimeTemporalDateTime(
-          cx, dateTimeFormat, unwrapped.as<PlainDateTimeObject>(), result);
-    }
-
-    
-    if (unwrapped->is<InstantObject>()) {
-      return HandleDateTimeTemporalInstant(&unwrapped->as<InstantObject>(),
-                                           result);
-    }
-
-    
-    MOZ_ASSERT(unwrapped->is<ZonedDateTimeObject>());
-
-    
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_UNEXPECTED_TYPE, "object",
-                              unwrapped->getClass()->name);
+  Rooted<JSObject*> unwrapped(cx, CheckedUnwrapStatic(x));
+  if (!unwrapped) {
+    ReportAccessDenied(cx);
     return false;
   }
 
   
-  return HandleDateTimeOthers(cx, method, x.toNumber(), result);
+  if (unwrapped->is<PlainDateObject>()) {
+    return HandleDateTimeTemporalDate(cx, dateTimeFormat,
+                                      unwrapped.as<PlainDateObject>(), result);
+  }
+
+  
+  if (unwrapped->is<PlainYearMonthObject>()) {
+    return HandleDateTimeTemporalYearMonth(
+        cx, dateTimeFormat, unwrapped.as<PlainYearMonthObject>(), result);
+  }
+
+  
+  if (unwrapped->is<PlainMonthDayObject>()) {
+    return HandleDateTimeTemporalMonthDay(
+        cx, dateTimeFormat, unwrapped.as<PlainMonthDayObject>(), result);
+  }
+
+  
+  if (unwrapped->is<PlainTimeObject>()) {
+    return HandleDateTimeTemporalTime(cx, dateTimeFormat,
+                                      unwrapped.as<PlainTimeObject>(), result);
+  }
+
+  
+  if (unwrapped->is<PlainDateTimeObject>()) {
+    return HandleDateTimeTemporalDateTime(
+        cx, dateTimeFormat, unwrapped.as<PlainDateTimeObject>(), result);
+  }
+
+  
+  if (unwrapped->is<InstantObject>()) {
+    return HandleDateTimeTemporalInstant(&unwrapped->as<InstantObject>(),
+                                         result);
+  }
+
+  
+  MOZ_ASSERT(unwrapped->is<ZonedDateTimeObject>());
+
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
+                            "object", unwrapped->getClass()->name);
+  return false;
 }
 
-static bool intl_FormatDateTime(JSContext* cx,
-                                const mozilla::intl::DateTimeFormat* df,
-                                ClippedTime x, MutableHandleValue result) {
+struct DateTimeValue {
+  ClippedTime time;
+  DateTimeValueKind kind;
+};
+
+
+
+
+
+static bool ToDateTimeValue(JSContext* cx, const char* method,
+                            Handle<DateTimeFormatObject*> dateTimeFormat,
+                            Handle<JS::Value> date, DateTimeValue* result) {
+  
+  
+  if (date.isUndefined()) {
+    result->time = DateNow(cx);
+    result->kind = DateTimeValueKind::Number;
+    return true;
+  }
+
+  
+  
+  auto kind = ToDateTimeFormattable(date);
+  result->kind = kind;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (kind != DateTimeValueKind::Number) {
+    MOZ_ASSERT(date.isObject());
+    return HandleDateTimeValue(cx, method, dateTimeFormat, &date.toObject(),
+                               &result->time);
+  }
+
+  
+  double num;
+  if (!JS::ToNumber(cx, date, &num)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return HandleDateTimeOthers(cx, method, num, &result->time);
+}
+
+
+
+
+
+
+
+
+static bool FormatDateTime(JSContext* cx,
+                           const mozilla::intl::DateTimeFormat* df,
+                           ClippedTime x, MutableHandle<JS::Value> result) {
+  
+
+  
   MOZ_ASSERT(x.isValid());
 
+  
   FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
   auto dfResult = df->TryFormat(x.toDouble(), buffer);
   if (dfResult.isErr()) {
@@ -2576,13 +2645,24 @@ static bool intl_FormatDateTime(JSContext* cx,
     return false;
   }
 
-  JSString* str = buffer.toString(cx);
+  
+  auto* str = buffer.toString(cx);
   if (!str) {
     return false;
   }
-
   result.setString(str);
   return true;
+}
+
+static bool FormatDateTime(JSContext* cx,
+                           Handle<DateTimeFormatObject*> dateTimeFormat,
+                           const DateTimeValue& date,
+                           MutableHandle<JS::Value> result) {
+  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, date.kind);
+  if (!df) {
+    return false;
+  }
+  return FormatDateTime(cx, df, date.time, result);
 }
 
 using FieldType = js::ImmutableTenuredPtr<PropertyName*> JSAtomState::*;
@@ -2642,14 +2722,54 @@ static FieldType GetFieldTypeForPartSource(
       "by iterator");
 }
 
+enum class DateTimeSource : bool { No, Yes };
+
+
+
+
+
+
+
+static PlainObject* CreateDateTimePart(JSContext* cx,
+                                       const mozilla::intl::DateTimePart& part,
+                                       Handle<JSString*> value,
+                                       DateTimeSource dateTimeSource) {
+  Rooted<IdValueVector> properties(cx, cx);
+
+  FieldType typeName = GetFieldTypeForPartType(part.mType);
+  if (!properties.emplaceBack(NameToId(cx->names().type),
+                              StringValue(cx->names().*typeName))) {
+    return nullptr;
+  }
+
+  if (!properties.emplaceBack(NameToId(cx->names().value),
+                              StringValue(value))) {
+    return nullptr;
+  }
+
+  if (dateTimeSource == DateTimeSource::Yes) {
+    FieldType sourceName = GetFieldTypeForPartSource(part.mSource);
+    if (!properties.emplaceBack(NameToId(cx->names().source),
+                                StringValue(cx->names().*sourceName))) {
+      return nullptr;
+    }
+  }
+
+  return NewPlainObjectWithUniqueNames(cx, properties);
+}
+
+
+
+
 
 
 
 static bool CreateDateTimePartArray(
     JSContext* cx, mozilla::Span<const char16_t> formattedSpan,
-    bool hasNoSource, const mozilla::intl::DateTimePartVector& parts,
-    MutableHandleValue result) {
-  RootedString overallResult(cx, NewStringCopy<CanGC>(cx, formattedSpan));
+    DateTimeSource dateTimeSource,
+    const mozilla::intl::DateTimePartVector& parts,
+    MutableHandle<JS::Value> result) {
+  Rooted<JSString*> overallResult(cx, NewStringCopy<CanGC>(cx, formattedSpan));
   if (!overallResult) {
     return false;
   }
@@ -2667,56 +2787,36 @@ static bool CreateDateTimePartArray(
     return true;
   }
 
-  RootedObject singlePart(cx);
-  RootedValue val(cx);
+  Rooted<JSString*> value(cx);
 
   size_t index = 0;
   size_t beginIndex = 0;
-  for (const mozilla::intl::DateTimePart& part : parts) {
-    singlePart = NewPlainObject(cx);
-    if (!singlePart) {
-      return false;
-    }
-
-    FieldType type = GetFieldTypeForPartType(part.mType);
-    val = StringValue(cx->names().*type);
-    if (!DefineDataProperty(cx, singlePart, cx->names().type, val)) {
-      return false;
-    }
-
+  for (const auto& part : parts) {
     MOZ_ASSERT(part.mEndIndex > beginIndex);
-    JSLinearString* partStr = NewDependentString(cx, overallResult, beginIndex,
-                                                 part.mEndIndex - beginIndex);
-    if (!partStr) {
+    value = NewDependentString(cx, overallResult, beginIndex,
+                               part.mEndIndex - beginIndex);
+    if (!value) {
       return false;
     }
-    val = StringValue(partStr);
-    if (!DefineDataProperty(cx, singlePart, cx->names().value, val)) {
-      return false;
-    }
-
-    if (!hasNoSource) {
-      FieldType source = GetFieldTypeForPartSource(part.mSource);
-      val = StringValue(cx->names().*source);
-      if (!DefineDataProperty(cx, singlePart, cx->names().source, val)) {
-        return false;
-      }
-    }
-
     beginIndex = part.mEndIndex;
-    partsArray->initDenseElement(index++, ObjectValue(*singlePart));
-  }
 
+    auto* obj = CreateDateTimePart(cx, part, value, dateTimeSource);
+    if (!obj) {
+      return false;
+    }
+    partsArray->initDenseElement(index++, ObjectValue(*obj));
+  }
   MOZ_ASSERT(index == parts.length());
   MOZ_ASSERT(beginIndex == formattedSpan.size());
+
   result.setObject(*partsArray);
   return true;
 }
 
-static bool intl_FormatToPartsDateTime(JSContext* cx,
-                                       const mozilla::intl::DateTimeFormat* df,
-                                       ClippedTime x, bool hasNoSource,
-                                       MutableHandleValue result) {
+static bool FormatToPartsDateTime(JSContext* cx,
+                                  const mozilla::intl::DateTimeFormat* df,
+                                  ClippedTime x, DateTimeSource dateTimeSource,
+                                  MutableHandle<JS::Value> result) {
   MOZ_ASSERT(x.isValid());
 
   FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
@@ -2727,59 +2827,102 @@ static bool intl_FormatToPartsDateTime(JSContext* cx,
     return false;
   }
 
-  return CreateDateTimePartArray(cx, buffer, hasNoSource, parts, result);
+  return CreateDateTimePartArray(cx, buffer, dateTimeSource, parts, result);
 }
 
-static bool DateToClippedTime(JSContext* cx, const char* method,
-                              Handle<DateTimeFormatObject*> dateTimeFormat,
-                              DateTimeValueKind kind, Handle<JS::Value> date,
-                              ClippedTime* result) {
-  if (kind == DateTimeValueKind::Number) {
-    if (date.isUndefined()) {
-      *result = DateNow(cx);
-      return true;
-    }
-
-    double num;
-    if (!JS::ToNumber(cx, date, &num)) {
-      return false;
-    }
-    return HandleDateTimeOthers(cx, method, num, result);
-  }
-
-  MOZ_ASSERT(date.isObject());
-  return HandleDateTimeValue(cx, method, dateTimeFormat, date, result);
-}
-
-bool js::intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 3);
-  MOZ_ASSERT(args[0].isObject());
-  MOZ_ASSERT(args[2].isBoolean());
-
-  Rooted<DateTimeFormatObject*> dateTimeFormat(cx);
-  dateTimeFormat = &args[0].toObject().as<DateTimeFormatObject>();
-
-  bool formatToParts = args[2].toBoolean();
-  const char* method = formatToParts ? "formatToParts" : "format";
-
-  auto kind = ToDateTimeFormattable(args[1]);
-
-  JS::ClippedTime x;
-  if (!DateToClippedTime(cx, method, dateTimeFormat, kind, args[1], &x)) {
+static bool FormatToPartsDateTime(JSContext* cx,
+                                  Handle<DateTimeFormatObject*> dateTimeFormat,
+                                  const DateTimeValue& date,
+                                  MutableHandle<JS::Value> result) {
+  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, date.kind);
+  if (!df) {
     return false;
   }
-  MOZ_ASSERT(x.isValid());
+  return FormatToPartsDateTime(cx, df, date.time, DateTimeSource::No, result);
+}
 
-  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, kind);
-  if (!df) {
+struct DateTimeRangeValue {
+  ClippedTime start;
+  ClippedTime end;
+  DateTimeValueKind kind;
+};
+
+
+
+
+
+static bool ToDateTimeRangeValue(JSContext* cx, const char* method,
+                                 Handle<DateTimeFormatObject*> dateTimeFormat,
+                                 Handle<JS::Value> start, Handle<JS::Value> end,
+                                 DateTimeRangeValue* result) {
+  
+  
+  if (start.isUndefined() || end.isUndefined()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_UNDEFINED_DATE,
+                              start.isUndefined() ? "start" : "end", method);
     return false;
   }
 
   
-  return formatToParts ? intl_FormatToPartsDateTime(
-                             cx, df, x,  true, args.rval())
-                       : intl_FormatDateTime(cx, df, x, args.rval());
+  
+  auto startKind = ToDateTimeFormattable(start);
+
+  
+  
+  auto endKind = ToDateTimeFormattable(end);
+
+  
+  double startNum;
+  if (startKind == DateTimeValueKind::Number) {
+    if (!JS::ToNumber(cx, start, &startNum)) {
+      return false;
+    }
+  }
+
+  
+  double endNum;
+  if (endKind == DateTimeValueKind::Number) {
+    if (!JS::ToNumber(cx, end, &endNum)) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  if (startKind != endKind) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_EXPECTED_TYPE, method,
+                              DateTimeValueKindToString(startKind),
+                              DateTimeValueKindToString(endKind));
+    return false;
+  }
+  result->kind = startKind;
+
+  
+
+  
+  if (startKind != DateTimeValueKind::Number) {
+    MOZ_ASSERT(start.isObject());
+    MOZ_ASSERT(end.isObject());
+    return HandleDateTimeValue(cx, method, dateTimeFormat, &start.toObject(),
+                               &result->start) &&
+           HandleDateTimeValue(cx, method, dateTimeFormat, &end.toObject(),
+                               &result->end);
+  }
+
+  
+  return HandleDateTimeOthers(cx, method, startNum, &result->start) &&
+         HandleDateTimeOthers(cx, method, endNum, &result->end);
 }
 
 bool js::intl::FormatDateTime(JSContext* cx,
@@ -2788,13 +2931,8 @@ bool js::intl::FormatDateTime(JSContext* cx,
   auto x = JS::TimeClip(millis);
   MOZ_ASSERT(x.isValid());
 
-  auto* df =
-      GetOrCreateDateTimeFormat(cx, dateTimeFormat, DateTimeValueKind::Number);
-  if (!df) {
-    return false;
-  }
-
-  return intl_FormatDateTime(cx, df, x, result);
+  return FormatDateTime(cx, dateTimeFormat, {x, DateTimeValueKind::Number},
+                        result);
 }
 
 
@@ -2888,11 +3026,23 @@ static bool PartitionDateTimeRangePattern(
 
 
 
+
+
+
 static bool FormatDateTimeRange(JSContext* cx,
-                                const mozilla::intl::DateTimeFormat* df,
-                                const mozilla::intl::DateIntervalFormat* dif,
-                                ClippedTime x, ClippedTime y,
-                                MutableHandleValue result) {
+                                Handle<DateTimeFormatObject*> dateTimeFormat,
+                                const DateTimeRangeValue& values,
+                                MutableHandle<JS::Value> result) {
+  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, values.kind);
+  if (!df) {
+    return false;
+  }
+  auto* dif =
+      GetOrCreateDateIntervalFormat(cx, dateTimeFormat, *df, values.kind);
+  if (!dif) {
+    return false;
+  }
+
   mozilla::intl::AutoFormattedDateInterval formatted;
   if (!formatted.IsValid()) {
     ReportInternalError(cx, formatted.GetError());
@@ -2900,13 +3050,14 @@ static bool FormatDateTimeRange(JSContext* cx,
   }
 
   bool equal;
-  if (!PartitionDateTimeRangePattern(cx, df, dif, formatted, x, y, &equal)) {
+  if (!PartitionDateTimeRangePattern(cx, df, dif, formatted, values.start,
+                                     values.end, &equal)) {
     return false;
   }
 
   
   if (equal) {
-    return intl_FormatDateTime(cx, df, x, result);
+    return FormatDateTime(cx, df, values.start, result);
   }
 
   auto spanResult = formatted.ToSpan();
@@ -2915,7 +3066,7 @@ static bool FormatDateTimeRange(JSContext* cx,
     return false;
   }
 
-  JSString* resultStr = NewStringCopy<CanGC>(cx, spanResult.unwrap());
+  auto* resultStr = NewStringCopy<CanGC>(cx, spanResult.unwrap());
   if (!resultStr) {
     return false;
   }
@@ -2927,9 +3078,18 @@ static bool FormatDateTimeRange(JSContext* cx,
 
 
 static bool FormatDateTimeRangeToParts(
-    JSContext* cx, const mozilla::intl::DateTimeFormat* df,
-    const mozilla::intl::DateIntervalFormat* dif, ClippedTime x, ClippedTime y,
-    MutableHandleValue result) {
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    const DateTimeRangeValue& values, MutableHandle<JS::Value> result) {
+  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, values.kind);
+  if (!df) {
+    return false;
+  }
+  auto* dif =
+      GetOrCreateDateIntervalFormat(cx, dateTimeFormat, *df, values.kind);
+  if (!dif) {
+    return false;
+  }
+
   mozilla::intl::AutoFormattedDateInterval formatted;
   if (!formatted.IsValid()) {
     ReportInternalError(cx, formatted.GetError());
@@ -2937,14 +3097,15 @@ static bool FormatDateTimeRangeToParts(
   }
 
   bool equal;
-  if (!PartitionDateTimeRangePattern(cx, df, dif, formatted, x, y, &equal)) {
+  if (!PartitionDateTimeRangePattern(cx, df, dif, formatted, values.start,
+                                     values.end, &equal)) {
     return false;
   }
 
   
   if (equal) {
-    return intl_FormatToPartsDateTime(cx, df, x,  false,
-                                      result);
+    return FormatToPartsDateTime(cx, df, values.start, DateTimeSource::Yes,
+                                 result);
   }
 
   mozilla::intl::DateTimePartVector parts;
@@ -2959,78 +3120,8 @@ static bool FormatDateTimeRangeToParts(
     ReportInternalError(cx, spanResult.unwrapErr());
     return false;
   }
-  return CreateDateTimePartArray(cx, spanResult.unwrap(),
-                                  false, parts, result);
-}
-
-bool js::intl_FormatDateTimeRange(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 4);
-  MOZ_ASSERT(args[0].isObject());
-  MOZ_ASSERT(!args[1].isUndefined());
-  MOZ_ASSERT(!args[2].isUndefined());
-  MOZ_ASSERT(args[3].isBoolean());
-
-  Rooted<DateTimeFormatObject*> dateTimeFormat(cx);
-  dateTimeFormat = &args[0].toObject().as<DateTimeFormatObject>();
-
-  bool formatToParts = args[3].toBoolean();
-  const char* method = formatToParts ? "formatRangeToParts" : "formatRange";
-
-  Rooted<Value> start(cx, args[1]);
-  auto startKind = ToDateTimeFormattable(start);
-  if (startKind == DateTimeValueKind::Number) {
-    if (!ToNumber(cx, &start)) {
-      return false;
-    }
-  }
-  MOZ_ASSERT(start.isNumber() || start.isObject());
-
-  Rooted<Value> end(cx, args[2]);
-  auto endKind = ToDateTimeFormattable(end);
-  if (endKind == DateTimeValueKind::Number) {
-    if (!ToNumber(cx, &end)) {
-      return false;
-    }
-  }
-  MOZ_ASSERT(end.isNumber() || end.isObject());
-
-  if (startKind != endKind) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_NOT_EXPECTED_TYPE, method,
-                              DateTimeValueKindToString(startKind),
-                              DateTimeValueKindToString(endKind));
-    return false;
-  }
-
-  
-  JS::ClippedTime x;
-  if (!HandleDateTimeValue(cx, method, dateTimeFormat, start, &x)) {
-    return false;
-  }
-  MOZ_ASSERT(x.isValid());
-
-  
-  JS::ClippedTime y;
-  if (!HandleDateTimeValue(cx, method, dateTimeFormat, end, &y)) {
-    return false;
-  }
-  MOZ_ASSERT(y.isValid());
-
-  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, startKind);
-  if (!df) {
-    return false;
-  }
-
-  auto* dif = GetOrCreateDateIntervalFormat(cx, dateTimeFormat, *df, startKind);
-  if (!dif) {
-    return false;
-  }
-
-  
-  return formatToParts
-             ? FormatDateTimeRangeToParts(cx, df, dif, x, y, args.rval())
-             : FormatDateTimeRange(cx, df, dif, x, y, args.rval());
+  return CreateDateTimePartArray(cx, spanResult.unwrap(), DateTimeSource::Yes,
+                                 parts, result);
 }
 
 static bool IsDateTimeFormat(Handle<JS::Value> v) {
@@ -3071,21 +3162,13 @@ static bool DateTimeCompareFunction(JSContext* cx, unsigned argc, Value* vp) {
       cx, &dtfValue.toObject().as<DateTimeFormatObject>());
 
   
-  auto date = args.get(0);
-  auto kind = ToDateTimeFormattable(date);
-
-  JS::ClippedTime x;
-  if (!DateToClippedTime(cx, "format", dateTimeFormat, kind, date, &x)) {
+  DateTimeValue x;
+  if (!ToDateTimeValue(cx, "format", dateTimeFormat, args.get(0), &x)) {
     return false;
   }
-  MOZ_ASSERT(x.isValid());
 
   
-  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, kind);
-  if (!df) {
-    return false;
-  }
-  return intl_FormatDateTime(cx, df, x, args.rval());
+  return FormatDateTime(cx, dateTimeFormat, x, args.rval());
 }
 
 
@@ -3128,6 +3211,93 @@ static bool dateTimeFormat_format(JSContext* cx, unsigned argc, Value* vp) {
   }
   return CallNonGenericMethod<IsDateTimeFormat, dateTimeFormat_format>(cx,
                                                                        args);
+}
+
+
+
+
+static bool dateTimeFormat_formatToParts(JSContext* cx, const CallArgs& args) {
+  Rooted<DateTimeFormatObject*> dateTimeFormat(
+      cx, &args.thisv().toObject().as<DateTimeFormatObject>());
+
+  
+  DateTimeValue x;
+  if (!ToDateTimeValue(cx, "formatRange", dateTimeFormat, args.get(0), &x)) {
+    return false;
+  }
+
+  
+  return FormatToPartsDateTime(cx, dateTimeFormat, x, args.rval());
+}
+
+
+
+
+static bool dateTimeFormat_formatToParts(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDateTimeFormat, dateTimeFormat_formatToParts>(
+      cx, args);
+}
+
+
+
+
+static bool dateTimeFormat_formatRange(JSContext* cx, const CallArgs& args) {
+  Rooted<DateTimeFormatObject*> dateTimeFormat(
+      cx, &args.thisv().toObject().as<DateTimeFormatObject>());
+
+  
+  DateTimeRangeValue values;
+  if (!ToDateTimeRangeValue(cx, "formatRange", dateTimeFormat, args.get(0),
+                            args.get(1), &values)) {
+    return false;
+  }
+
+  
+  return FormatDateTimeRange(cx, dateTimeFormat, values, args.rval());
+}
+
+
+
+
+static bool dateTimeFormat_formatRange(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDateTimeFormat, dateTimeFormat_formatRange>(
+      cx, args);
+}
+
+
+
+
+static bool dateTimeFormat_formatRangeToParts(JSContext* cx,
+                                              const CallArgs& args) {
+  Rooted<DateTimeFormatObject*> dateTimeFormat(
+      cx, &args.thisv().toObject().as<DateTimeFormatObject>());
+
+  
+  DateTimeRangeValue values;
+  if (!ToDateTimeRangeValue(cx, "formatRangeToParts", dateTimeFormat,
+                            args.get(0), args.get(1), &values)) {
+    return false;
+  }
+
+  
+  return FormatDateTimeRangeToParts(cx, dateTimeFormat, values, args.rval());
+}
+
+
+
+
+static bool dateTimeFormat_formatRangeToParts(JSContext* cx, unsigned argc,
+                                              Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDateTimeFormat,
+                              dateTimeFormat_formatRangeToParts>(cx, args);
 }
 
 
@@ -3262,7 +3432,7 @@ static bool dateTimeFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
 bool js::intl::TemporalObjectToLocaleString(
     JSContext* cx, const CallArgs& args, DateTimeFormatKind formatKind,
     Handle<JSLinearString*> toLocaleStringTimeZone) {
-  MOZ_ASSERT(args.thisv().isObject());
+  Rooted<JSObject*> thisValue(cx, &args.thisv().toObject());
 
   auto kind = ToDateTimeFormattable(args.thisv());
   MOZ_ASSERT(kind != DateTimeValueKind::Number);
@@ -3271,8 +3441,8 @@ bool js::intl::TemporalObjectToLocaleString(
   MOZ_ASSERT_IF(kind == DateTimeValueKind::TemporalZonedDateTime,
                 toLocaleStringTimeZone != nullptr);
 
-  HandleValue locales = args.get(0);
-  HandleValue options = args.get(1);
+  auto locales = args.get(0);
+  auto options = args.get(1);
 
   Rooted<DateTimeFormatObject*> dateTimeFormat(cx);
   if (kind != DateTimeValueKind::TemporalZonedDateTime) {
@@ -3289,24 +3459,17 @@ bool js::intl::TemporalObjectToLocaleString(
 
   JS::ClippedTime x;
   if (kind == DateTimeValueKind::TemporalZonedDateTime) {
-    Rooted<ZonedDateTimeObject*> zonedDateTime(
-        cx, &args.thisv().toObject().as<ZonedDateTimeObject>());
+    auto zonedDateTime = thisValue.as<ZonedDateTimeObject>();
     if (!HandleDateTimeTemporalZonedDateTime(cx, dateTimeFormat, zonedDateTime,
                                              &x)) {
       return false;
     }
   } else {
-    if (!HandleDateTimeValue(cx, "toLocaleString", dateTimeFormat, args.thisv(),
+    if (!HandleDateTimeValue(cx, "toLocaleString", dateTimeFormat, thisValue,
                              &x)) {
       return false;
     }
   }
-  MOZ_ASSERT(x.isValid());
 
-  auto* df = GetOrCreateDateTimeFormat(cx, dateTimeFormat, kind);
-  if (!df) {
-    return false;
-  }
-
-  return intl_FormatDateTime(cx, df, x, args.rval());
+  return FormatDateTime(cx, dateTimeFormat, {x, kind}, args.rval());
 }
