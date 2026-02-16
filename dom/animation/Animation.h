@@ -188,7 +188,7 @@ class Animation : public DOMEventTargetHelper,
             
             
             
-            PlaybackRate() != 0.0) ||
+            PlaybackRateInternal() != 0.0) ||
            
            
            
@@ -209,7 +209,7 @@ class Animation : public DOMEventTargetHelper,
 
 
   double CurrentOrPendingPlaybackRate() const {
-    return mPendingPlaybackRate.valueOr(mPlaybackRate);
+    return mPendingPlaybackRate.valueOr(PlaybackRateInternal());
   }
   bool HasPendingPlaybackRate() const { return mPendingPlaybackRate.isSome(); }
 
@@ -271,7 +271,7 @@ class Animation : public DOMEventTargetHelper,
   bool IsInEffect() const;
 
   bool IsPlaying() const {
-    return mPlaybackRate != 0.0 && mTimeline &&
+    return PlaybackRateInternal() != 0.0 && mTimeline &&
            !mTimeline->GetCurrentTimeAsDuration().IsNull() &&
            PlayState() == AnimationPlayState::Running;
   }
@@ -415,7 +415,7 @@ class Animation : public DOMEventTargetHelper,
         
         !currentTime.IsNull() ? currentTime : GetCurrentTimeAsDuration(),
         mStartTime.IsNull() ? TimeDuration() : mStartTime.Value(),
-        mPlaybackRate);
+        PlaybackRateInternal());
   }
 
   void SetHiddenByContentVisibility(bool hidden);
