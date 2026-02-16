@@ -198,9 +198,17 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   nsCString mHash;
   uint32_t mUsers{0};  
+
+  
   
   Vector<uint8_t> mDictionaryData;
-  bool mDictionaryDataComplete{false};
+
+  
+  Atomic<bool, Relaxed> mDictionaryDataComplete{false};
+
+  
+  
+  Vector<uint8_t> mPendingDictionaryData;
 
   
   nsCOMPtr<nsICryptoHash> mCrypto;
@@ -211,8 +219,10 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   
   RefPtr<DictionaryOrigin> mOrigin;
+
   
-  bool mStopReceived{false};
+  Atomic<bool, Relaxed> mStopReceived{false};
+  Atomic<bool, Relaxed> mNotCached{false};
 
   
   
@@ -222,9 +232,6 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   
   bool mShouldSuspend{false};
-
-  
-  bool mNotCached{false};
 
   
   bool mBlocked{false};
