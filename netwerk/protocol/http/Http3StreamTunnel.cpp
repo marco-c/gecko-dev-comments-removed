@@ -7,7 +7,6 @@
 
 #include "HttpLog.h"
 
-#include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 #include "Http3StreamTunnel.h"
 #include "Http3Session.h"
