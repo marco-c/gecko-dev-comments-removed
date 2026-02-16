@@ -5239,6 +5239,10 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   ListNodeType importSpecSet =
       MOZ_TRY(handler_.newList(ParseNodeKind::ImportSpecList, pos()));
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  bool isSourcePhaseImport = false;
+  NameNodeType importSourceBinding;
+#endif
   if (tt == TokenKind::String) {
     
     
@@ -5257,46 +5261,94 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
       
       
       
-      NameNodeType importName =
-          MOZ_TRY(newName(TaggedParserAtomIndex::WellKnown::default_()));
-
-      TaggedParserAtomIndex bindingAtom = importedBinding();
-      if (!bindingAtom) {
-        return errorResult();
-      }
-
-      NameNodeType bindingName = MOZ_TRY(newName(bindingAtom));
-
-      if (!noteDeclaredName(bindingAtom, DeclarationKind::Import, pos())) {
-        return errorResult();
-      }
-
-      BinaryNodeType importSpec =
-          MOZ_TRY(handler_.newImportSpec(importName, bindingName));
-
-      handler_.addList(importSpecSet, importSpec);
-
-      if (!tokenStream.peekToken(&tt)) {
-        return errorResult();
-      }
-
-      if (tt == TokenKind::Comma) {
-        tokenStream.consumeKnownToken(tt);
-        if (!tokenStream.getToken(&tt)) {
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+      if (tt == TokenKind::Source) {
+        isSourcePhaseImport = true;
+        
+        if (!tokenStream.peekToken(&tt)) {
           return errorResult();
         }
 
-        if (tt == TokenKind::LeftCurly) {
-          if (!namedImports(importSpecSet)) {
+        
+        if (tt == TokenKind::From) {
+          tokenStream.consumeKnownToken(tt);
+          if (!tokenStream.peekToken(&tt)) {
             return errorResult();
           }
-        } else if (tt == TokenKind::Mul) {
-          if (!namespaceImport(importSpecSet)) {
+          if (tt != TokenKind::From) {
+            isSourcePhaseImport = false;
+          }
+          anyChars.ungetToken();
+        } else if (tt == TokenKind::Comma) {
+          isSourcePhaseImport = false;
+        }
+
+        if (isSourcePhaseImport) {
+          if (!tokenStream.getToken(&tt)) {
             return errorResult();
           }
-        } else {
-          error(JSMSG_NAMED_IMPORTS_OR_NAMESPACE_IMPORT);
+
+          if (!TokenKindIsPossibleIdentifierName(tt)) {
+            error(JSMSG_DECLARATION_AFTER_IMPORT_SOURCE);
+            return errorResult();
+          }
+
+          TaggedParserAtomIndex bindingAtom = importedBinding();
+          if (!bindingAtom) {
+            return errorResult();
+          }
+
+          importSourceBinding = MOZ_TRY(newName(bindingAtom));
+
+          if (!noteDeclaredName(bindingAtom, DeclarationKind::Import, pos())) {
+            return errorResult();
+          }
+        }
+      }
+      if (!isSourcePhaseImport)
+#endif
+      {
+        NameNodeType importName =
+            MOZ_TRY(newName(TaggedParserAtomIndex::WellKnown::default_()));
+
+        TaggedParserAtomIndex bindingAtom = importedBinding();
+        if (!bindingAtom) {
           return errorResult();
+        }
+
+        NameNodeType bindingName = MOZ_TRY(newName(bindingAtom));
+
+        if (!noteDeclaredName(bindingAtom, DeclarationKind::Import, pos())) {
+          return errorResult();
+        }
+
+        BinaryNodeType importSpec =
+            MOZ_TRY(handler_.newImportSpec(importName, bindingName));
+
+        handler_.addList(importSpecSet, importSpec);
+
+        if (!tokenStream.peekToken(&tt)) {
+          return errorResult();
+        }
+
+        if (tt == TokenKind::Comma) {
+          tokenStream.consumeKnownToken(tt);
+          if (!tokenStream.getToken(&tt)) {
+            return errorResult();
+          }
+
+          if (tt == TokenKind::LeftCurly) {
+            if (!namedImports(importSpecSet)) {
+              return errorResult();
+            }
+          } else if (tt == TokenKind::Mul) {
+            if (!namespaceImport(importSpecSet)) {
+              return errorResult();
+            }
+          } else {
+            error(JSMSG_NAMED_IMPORTS_OR_NAMESPACE_IMPORT);
+            return errorResult();
+          }
         }
       }
     } else {
@@ -5319,15 +5371,26 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
     return errorResult();
   }
 
-  ListNodeType importAttributeList =
-      MOZ_TRY(handler_.newList(ParseNodeKind::ImportAttributeList, pos()));
+  Node importAttributeList;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (isSourcePhaseImport) {
+    
+    importAttributeList = MOZ_TRY(handler_.newPosHolder(pos()));
+  } else
+#endif
+  {
+    ListNodeType attributeList =
+        MOZ_TRY(handler_.newList(ParseNodeKind::ImportAttributeList, pos()));
 
-  if (tt == TokenKind::With) {
-    tokenStream.consumeKnownToken(tt, TokenStream::SlashIsRegExp);
+    if (tt == TokenKind::With) {
+      tokenStream.consumeKnownToken(tt, TokenStream::SlashIsRegExp);
 
-    if (!withClause(importAttributeList)) {
-      return errorResult();
+      if (!withClause(attributeList)) {
+        return errorResult();
+      }
     }
+
+    importAttributeList = attributeList;
   }
 
   if (!matchOrInsertSemicolon(TokenStream::SlashIsRegExp)) {
@@ -5336,6 +5399,18 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
 
   BinaryNodeType moduleRequest = MOZ_TRY(handler_.newModuleRequest(
       moduleSpec, importAttributeList, TokenPos(begin, pos().end)));
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (isSourcePhaseImport) {
+    BinaryNodeType node = MOZ_TRY(handler_.newImportSourceDeclaration(
+        importSourceBinding, moduleRequest, TokenPos(begin, pos().end)));
+    if (!processImportSource(node)) {
+      return errorResult();
+    }
+
+    return node;
+  }
+#endif
 
   BinaryNodeType node = MOZ_TRY(handler_.newImportDeclaration(
       importSpecSet, moduleRequest, TokenPos(begin, pos().end)));
