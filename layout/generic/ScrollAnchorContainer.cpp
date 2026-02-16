@@ -722,7 +722,6 @@ nsIFrame* ScrollAnchorContainer::FindAnchorIn(nsIFrame* aFrame) const {
     
     
     if (listID == FrameChildListID::Absolute ||
-        listID == FrameChildListID::Fixed ||
         listID == FrameChildListID::Float ||
         listID == FrameChildListID::OverflowOutOfFlow) {
       continue;

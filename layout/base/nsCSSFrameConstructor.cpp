@@ -827,8 +827,8 @@ void nsFrameConstructorState::ProcessFrameInsertionsForAllLists() {
   ProcessFrameInsertions(mFloatedList, FrameChildListID::Float);
   ProcessFrameInsertions(mAbsoluteList, FrameChildListID::Absolute);
   ProcessFrameInsertions(mTopLayerAbsoluteList, FrameChildListID::Absolute);
-  ProcessFrameInsertions(*mFixedList, FrameChildListID::Fixed);
-  ProcessFrameInsertions(mRealFixedList, FrameChildListID::Fixed);
+  ProcessFrameInsertions(*mFixedList, FrameChildListID::Absolute);
+  ProcessFrameInsertions(mRealFixedList, FrameChildListID::Absolute);
 }
 
 void nsFrameConstructorState::PushAbsoluteContainingBlock(
@@ -1121,16 +1121,15 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
   MOZ_ASSERT_IF(&aFrameList == &mFloatedList,
                 aChildListID == FrameChildListID::Float);
   MOZ_ASSERT_IF(&aFrameList == &mAbsoluteList || &aFrameList == mFixedList,
-                aChildListID == FrameChildListID::Absolute ||
-                    aChildListID == FrameChildListID::Fixed);
+                aChildListID == FrameChildListID::Absolute);
   MOZ_ASSERT_IF(&aFrameList == &mTopLayerAbsoluteList,
                 aChildListID == FrameChildListID::Absolute);
   MOZ_ASSERT_IF(&aFrameList == mFixedList && &aFrameList != &mAbsoluteList,
-                aChildListID == FrameChildListID::Fixed);
+                aChildListID == FrameChildListID::Absolute);
   MOZ_ASSERT_IF(&aFrameList == &mAncestorFixedList,
-                aChildListID == FrameChildListID::Fixed);
+                aChildListID == FrameChildListID::Absolute);
   MOZ_ASSERT_IF(&aFrameList == &mRealFixedList,
-                aChildListID == FrameChildListID::Fixed);
+                aChildListID == FrameChildListID::Absolute);
 
   if (aFrameList.IsEmpty()) {
     return;
@@ -1140,12 +1139,6 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
 
   NS_ASSERTION(containingBlock, "Child list without containing block?");
 
-  if (aChildListID == FrameChildListID::Fixed) {
-    
-    
-    aChildListID = containingBlock->GetAbsoluteListID();
-  }
-
   
   
   
@@ -1154,13 +1147,13 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
       containingBlock->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     
-    if (aChildListID == containingBlock->GetAbsoluteListID()) {
+    if (aChildListID == FrameChildListID::Absolute) {
       containingBlock->GetAbsoluteContainingBlock()->SetInitialChildList(
           containingBlock, aChildListID, std::move(aFrameList));
     } else {
       containingBlock->SetInitialChildList(aChildListID, std::move(aFrameList));
     }
-  } else if (childList.IsEmpty() || aChildListID == FrameChildListID::Fixed ||
+  } else if (childList.IsEmpty() ||
              aChildListID == FrameChildListID::Absolute) {
     
     
@@ -7609,7 +7602,8 @@ nsresult nsCSSFrameConstructor::ReplicateFixedFrames(
 
   nsFrameList fixedPlaceholders;
   nsIFrame* firstFixed =
-      prevPageContentFrame->GetChildList(FrameChildListID::Fixed).FirstChild();
+      prevPageContentFrame->GetChildList(FrameChildListID::Absolute)
+          .FirstChild();
   if (!firstFixed) {
     return NS_OK;
   }
