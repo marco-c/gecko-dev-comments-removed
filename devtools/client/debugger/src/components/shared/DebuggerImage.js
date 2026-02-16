@@ -9,6 +9,17 @@ const classnames = require("resource://devtools/client/shared/classnames.js");
 
 const DebuggerImage = props => {
   const { name, className, ...attributes } = props;
+
+  
+  
+  
+  if (/\s/.test(name)) {
+    throw new Error(
+      `DebuggerImage name should not contain any space character ("${name}").` +
+        ` Use the className property for optional classes.`
+    );
+  }
+
   return React.createElement("span", {
     ...attributes,
     className: classnames("dbg-img", `dbg-img-${name}`, className),
