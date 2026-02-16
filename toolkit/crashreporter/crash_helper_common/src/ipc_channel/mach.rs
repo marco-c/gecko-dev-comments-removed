@@ -4,9 +4,9 @@
 
 use std::process;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
-use crate::platform::linux::unix_socketpair;
-use crate::{ipc_channel::IPCChannelError, IPCConnector, IPCListener, Pid};
+use crate::{
+    ipc_channel::IPCChannelError, platform::mach::ReceiveRight, IPCConnector, IPCListener, Pid,
+};
 
 pub struct IPCChannel {
     listener: IPCListener,
@@ -18,14 +18,15 @@ impl IPCChannel {
     
     
     
-    
     pub fn new() -> Result<IPCChannel, IPCChannelError> {
         let listener = IPCListener::new(process::id() as Pid)?;
+        let client_recv = ReceiveRight::new()?;
+        let helper_recv = ReceiveRight::new()?;
+        let client_send = helper_recv.insert_send_right()?;
+        let helper_send = client_recv.insert_send_right()?;
 
-        
-        let pair = unix_socketpair()?;
-        let client_endpoint = IPCConnector::from_fd(pair.0)?;
-        let server_endpoint = IPCConnector::from_fd_inheritable(pair.1)?;
+        let client_endpoint = IPCConnector::from_rights(client_send, client_recv)?;
+        let server_endpoint = IPCConnector::from_rights(helper_send, helper_recv)?;
 
         Ok(IPCChannel {
             listener,
@@ -50,9 +51,13 @@ impl IPCClientChannel {
     
     
     pub fn new() -> Result<IPCClientChannel, IPCChannelError> {
-        let pair = unix_socketpair()?;
-        let client_endpoint = IPCConnector::from_fd(pair.0)?;
-        let server_endpoint = IPCConnector::from_fd(pair.1)?;
+        let client_recv = ReceiveRight::new()?;
+        let helper_recv = ReceiveRight::new()?;
+        let client_send = helper_recv.insert_send_right()?;
+        let helper_send = client_recv.insert_send_right()?;
+
+        let client_endpoint = IPCConnector::from_rights(client_send, client_recv)?;
+        let server_endpoint = IPCConnector::from_rights(helper_send, helper_recv)?;
 
         Ok(IPCClientChannel {
             client_endpoint,

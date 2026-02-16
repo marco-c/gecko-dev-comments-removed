@@ -28,10 +28,22 @@ pub(crate) mod windows;
 
 
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub use unix::{
     AncillaryData, IPCConnector, IPCConnectorKey, RawIPCConnector, CONNECTOR_ANCILLARY_DATA_LEN,
 };
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) mod unix;
+
+
+
+
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+pub use mach::{
+    AncillaryData, IPCConnector, IPCConnectorKey, RawIPCConnector, CONNECTOR_ANCILLARY_DATA_LEN,
+};
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+pub(crate) mod mach;
