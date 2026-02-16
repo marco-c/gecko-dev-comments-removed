@@ -915,11 +915,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   virtual void WakeLockRelease();
   virtual void UpdateWakeLock();
 
-  
-  
-  
-  void UpdatePlaybackPseudoClasses();
-
   void CreateAudioWakeLockIfNeeded();
   void ReleaseAudioWakeLockIfExists();
   void ReleaseAudioWakeLockInternal();
@@ -1894,9 +1889,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   bool mForcedHidden = false;
-
-  
-  bool mIsCurrentlyStalled = false;
 
   Visibility mVisibilityState = Visibility::Untracked;
 
