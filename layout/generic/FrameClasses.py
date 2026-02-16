@@ -39,11 +39,6 @@ TEXT = COMMON | LINE_PARTICIPANT | {"Replaced"} | LEAF
 
 
 
-BACKDROP_UNSUPPORTED = {"BackdropUnsupported"}
-
-
-
-
 
 
 
@@ -55,9 +50,7 @@ FRAME_CLASSES = [
     Frame("nsBCTableCellFrame", "TableCell", TABLE_CELL),
     Frame("nsBlockFrame", "Block", BLOCK),
     Frame("nsCanvasFrame", "Canvas", BLOCK),
-    Frame(
-        "nsCheckboxRadioFrame", "CheckboxRadio", REPLACED | LEAF | BACKDROP_UNSUPPORTED
-    ),
+    Frame("nsCheckboxRadioFrame", "CheckboxRadio", REPLACED | LEAF),
     Frame("InputButtonControlFrame", "InputButtonControl", REPLACED | LEAF),
     Frame("nsColorControlFrame", "ColorControl", REPLACED | LEAF),
     Frame("nsColumnSetFrame", "ColumnSet", COMMON),
