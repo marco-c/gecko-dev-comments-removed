@@ -154,6 +154,8 @@ class SVGViewportElement : public SVGGraphicsElement {
     return mViewBox;
   }
 
+  SVGAnimatedViewBox mViewBox;
+
   
   
   
@@ -164,7 +166,6 @@ class SVGViewportElement : public SVGGraphicsElement {
   
   gfx::Size mViewportSize;
 
-  SVGAnimatedViewBox mViewBox;
   SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
 
   enum { ATTR_X, ATTR_Y, ATTR_WIDTH, ATTR_HEIGHT };

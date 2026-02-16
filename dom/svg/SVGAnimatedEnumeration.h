@@ -38,6 +38,7 @@ class SVGAnimatedEnumeration {
   using SVGElement = dom::SVGElement;
 
   void Init(uint8_t aAttrEnum, uint16_t aValue) {
+    MOZ_ASSERT(aAttrEnum < (2 << 6), "aAttrEnum is too large");
     mAnimVal = mBaseVal = uint8_t(aValue);
     mAttrEnum = aAttrEnum;
     mIsAnimated = false;
@@ -63,9 +64,11 @@ class SVGAnimatedEnumeration {
  private:
   SVGEnumValue mAnimVal;
   SVGEnumValue mBaseVal;
-  uint8_t mAttrEnum;  
-  bool mIsAnimated;
-  bool mIsBaseSet;
+  
+  
+  uint8_t mAttrEnum : 6;  
+  bool mIsAnimated : 1;
+  bool mIsBaseSet : 1;
 
   const SVGEnumMapping* GetMapping(SVGElement* aSVGElement);
 

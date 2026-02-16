@@ -567,20 +567,7 @@ class SMILTimedElement {
   SMILTimeValue mMin = SMILTimeValue::Zero();
   SMILTimeValue mMax;
 
-  InstanceTimeList mBeginInstances;
-  InstanceTimeList mEndInstances;
-  uint32_t mInstanceSerialIndex = 0;
-
-  IntervalList mOldIntervals;
-  uint32_t mCurrentRepeatIteration = 0;
   SMILMilestone mPrevRegisteredMilestone = sMaxMilestone;
-  static constexpr SMILMilestone sMaxMilestone = {
-      std::numeric_limits<SMILTime>::max(), false};
-
-  
-  
-  static constexpr uint8_t sMaxNumIntervals = 20;
-  static constexpr uint8_t sMaxNumInstanceTimes = 100;
 
   
   
@@ -589,6 +576,20 @@ class SMILTimedElement {
   
   
   TimeValueSpecHashSet mTimeDependents;
+
+  InstanceTimeList mBeginInstances;
+  InstanceTimeList mEndInstances;
+  IntervalList mOldIntervals;
+  uint32_t mInstanceSerialIndex = 0;
+
+  uint32_t mCurrentRepeatIteration = 0;
+  static constexpr SMILMilestone sMaxMilestone = {
+      std::numeric_limits<SMILTime>::max(), false};
+
+  
+  
+  static constexpr uint8_t sMaxNumIntervals = 20;
+  static constexpr uint8_t sMaxNumInstanceTimes = 100;
 
   enum class SMILFillMode : uint8_t { Remove, Freeze };
   SMILFillMode mFillMode = SMILFillMode::Remove;
@@ -628,14 +629,14 @@ class SMILTimedElement {
 
   
   class AutoIntervalUpdateBatcher;
-  bool mDeferIntervalUpdates = false;
+  bool mDeferIntervalUpdates : 1 = false;
 
   
 
 
 
-  bool mDoDeferredUpdate = false;
-  bool mIsDisabled = false;
+  bool mDoDeferredUpdate : 1 = false;
+  bool mIsDisabled : 1 = false;
 
   
   class AutoIntervalUpdater;

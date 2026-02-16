@@ -115,6 +115,27 @@ class SMILInstanceTime final {
   SMILTimeValue mTime;
 
   
+  
+  uint32_t mSerial = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint16_t mFixedEndpointRefCnt = 0;
+
+  mutable bool mVisited = false;  
+
+  
   enum class Flag : uint8_t {
     
     
@@ -143,27 +164,6 @@ class SMILInstanceTime final {
   };
   using Flags = EnumSet<Flag>;
   Flags mFlags;
-
-  
-  
-  uint32_t mSerial = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint16_t mFixedEndpointRefCnt = 0;
-
-  mutable bool mVisited = false;  
 };
 
 }  
