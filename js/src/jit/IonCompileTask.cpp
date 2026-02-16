@@ -156,7 +156,7 @@ void jit::AttachFinishedCompilations(JSContext* cx) {
 static UniquePtr<LifoAlloc> FreeIonCompileTask(IonCompileTask* task) {
   
   
-  task->mirGen().tracker.reset();
+  task->mirGen().cleanup();
 
   
   
