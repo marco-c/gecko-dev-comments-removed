@@ -153,6 +153,7 @@ async function setPanelState(state = defaultState, win = window) {
 async function closePanel(win = window) {
   
   let panel = IPProtection.getPanel(win);
+
   panel.setState(defaultState);
   
   let panelHiddenPromise = waitForPanelEvent(win.document, "popuphidden");
@@ -296,6 +297,8 @@ add_setup(async function setupVPN() {
     Services.prefs.clearUserPref("browser.ipProtection.usageCache");
     Services.prefs.clearUserPref("browser.ipProtection.onboardingMessageMask");
     Services.prefs.clearUserPref("browser.ipProtection.egressLocationEnabled");
+    Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+    Services.prefs.clearUserPref("browser.ipProtection.userEnabled");
   });
 });
 
