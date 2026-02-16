@@ -900,6 +900,7 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
   TitlebarColors result;
 
   
+  
   result.mActiveLight = {GetColorForSysColorIndex(COLOR_ACTIVECAPTION),
                          GetColorForSysColorIndex(COLOR_CAPTIONTEXT),
                          GetColorForSysColorIndex(COLOR_ACTIVEBORDER)};
@@ -907,6 +908,12 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
   result.mInactiveLight = {GetColorForSysColorIndex(COLOR_INACTIVECAPTION),
                            GetColorForSysColorIndex(COLOR_INACTIVECAPTIONTEXT),
                            GetColorForSysColorIndex(COLOR_INACTIVEBORDER)};
+  result.mActiveDark = {*GenericDarkColor(ColorID::Activecaption),
+                        *GenericDarkColor(ColorID::Captiontext),
+                        *GenericDarkColor(ColorID::Activeborder)};
+  result.mInactiveDark = {*GenericDarkColor(ColorID::Inactivecaption),
+                          *GenericDarkColor(ColorID::Inactivecaptiontext),
+                          *GenericDarkColor(ColorID::Inactiveborder)};
 
   if (!mHighContrastOn) {
     
@@ -919,15 +926,12 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
         GetStandinForNativeColor(ColorID::Inactivecaptiontext,
                                  ColorScheme::Light),
         GetStandinForNativeColor(ColorID::Inactiveborder, ColorScheme::Light)};
+    if (WinUtils::MicaEnabled()) {
+      
+      result.mActiveDark.mBg = result.mActiveLight.mBg =
+          result.mInactiveDark.mBg = result.mInactiveLight.mBg = NS_TRANSPARENT;
+    }
   }
-
-  
-  result.mActiveDark = {*GenericDarkColor(ColorID::Activecaption),
-                        *GenericDarkColor(ColorID::Captiontext),
-                        *GenericDarkColor(ColorID::Activeborder)};
-  result.mInactiveDark = {*GenericDarkColor(ColorID::Inactivecaption),
-                          *GenericDarkColor(ColorID::Inactivecaptiontext),
-                          *GenericDarkColor(ColorID::Inactiveborder)};
 
   
   
@@ -951,16 +955,12 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
   result.mAccentInactive = dwmKey.GetValueAsDword(u"AccentColorInactive"_ns);
   result.mAccentInactiveText = GetAccentColorText(result.mAccentInactive);
 
-  if (WinUtils::MicaEnabled()) {
-    
-    result.mActiveDark.mBg = result.mActiveLight.mBg =
-        result.mInactiveDark.mBg = result.mInactiveLight.mBg = NS_TRANSPARENT;
-  }
-
+  
   
   
   
   result.mUseAccent =
+      !mHighContrastOn &&
       dwmKey.GetValueAsDword(u"ColorPrevalence"_ns).valueOr(0) == 1;
   if (!result.mUseAccent) {
     return result;
