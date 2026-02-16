@@ -46,14 +46,14 @@ add_task(async function testSendPendingOnIdleDaily() {
   );
 
   let gatherPromise = Promise.withResolvers();
-  Services.obs.addObserver(gatherPromise.resolve, "gather-telemetry");
+  Services.obs.addObserver(gatherPromise.resolve, "idle-daily");
 
   
   TelemetrySession.observe(null, "idle-daily", null);
-  await gatherPromise.promise;
-  Assert.ok(true, "Received gather-telemetry notification.");
+  await gatherPromise.resolve;
+  Assert.ok(true, "Received idle-daily notification.");
 
-  Services.obs.removeObserver(gatherPromise.resolve, "gather-telemetry");
+  Services.obs.removeObserver(gatherPromise.resolve, "idle-daily");
 
   
   let { TelemetrySendImpl } = ChromeUtils.importESModule(
