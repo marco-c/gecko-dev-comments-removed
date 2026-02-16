@@ -3357,6 +3357,12 @@
 
 
     _createTabSplitView(id) {
+      if (id && typeof id !== "number") {
+        throw new Error("Unexpected id type: " + typeof id);
+      }
+      if (!id) {
+        id = SessionStore.getNextSplitViewId();
+      }
       let splitview = document.createXULElement("tab-split-view-wrapper", {
         is: "tab-split-view-wrapper",
       });
@@ -3384,9 +3390,6 @@
         throw new Error("Cannot create split view with zero tabs");
       }
 
-      if (!id) {
-        id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
-      }
       let splitview = this._createTabSplitView(id);
       this.tabContainer.insertBefore(
         splitview,
@@ -4330,9 +4333,11 @@
           }
         }
 
-        let splitView = splitViewWorkingData.get(tabData.splitViewId);
-        if (tabData.splitViewId) {
+        let splitView =
+          tabData.splitViewId && splitViewWorkingData.get(tabData.splitViewId);
+        if (splitView) {
           splitView.tabs.push(tab);
+          
           if (splitView.tabs.length == splitView.numberOfTabs) {
             splitView.node = this._createTabSplitView(tabData.splitViewId);
           }
