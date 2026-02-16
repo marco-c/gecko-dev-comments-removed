@@ -3,7 +3,6 @@
 
 
 
-
 let resolved = false;
 Promise.resolve(42).then(value => {
   assertEq(value, 42);

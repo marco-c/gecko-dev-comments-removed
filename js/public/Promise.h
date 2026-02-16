@@ -80,32 +80,8 @@ class JS_PUBLIC_API JobQueue {
 
 
 
-  virtual bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
-                                 JS::HandleObject job,
-                                 JS::HandleObject allocationSite,
-                                 JS::HandleObject hostDefinedData) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   virtual void runJobs(JSContext* cx) = 0;
-
-  
-
-
-  virtual bool empty() const = 0;
 
   
 

@@ -1869,94 +1869,66 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
-  if (JS::Prefs::use_js_microtask_queue()) {
-    MOZ_ASSERT(reactionVal.isObject());
+  MOZ_ASSERT(reactionVal.isObject());
 
-    
-    
-    
-    
-    
-    
-    RootedField<JSObject*, 6> globalRepresentative(
-        roots, &cx->global()->getObjectPrototype());
+  
+  
+  
+  
+  
+  
+  RootedField<JSObject*, 6> globalRepresentative(
+      roots, &cx->global()->getObjectPrototype());
 
-    
-    
-    
-    
-    
-    {
-      AutoRealm ar(cx, reaction);
+  
+  
+  
+  
+  
+  {
+    AutoRealm ar(cx, reaction);
 
-      RootedField<JSObject*, 7> stack(
-          roots,
-          JS::MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(promise));
-      if (!cx->compartment()->wrap(cx, &stack)) {
-        return false;
-      }
-      reaction->setAllocationStack(stack);
-
-      if (!reaction->getHostDefinedData().isObject()) {
-        
-        
-        RootedField<JSObject*, 8> hostGlobal(roots);
-        if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostGlobal)) {
-          return false;
-        }
-
-        if (hostGlobal) {
-          MOZ_ASSERT(hostGlobal->is<GlobalObject>());
-          
-          
-          hostGlobal = &hostGlobal->as<GlobalObject>().getObjectPrototype();
-        }
-
-        if (!cx->compartment()->wrap(cx, &hostGlobal)) {
-          return false;
-        }
-        reaction->setHostDefinedGlobalRepresentative(hostGlobal);
-      }
-
-      if (!cx->compartment()->wrap(cx, &globalRepresentative)) {
-        return false;
-      }
-      reaction->setEnqueueGlobalRepresentative(globalRepresentative);
-    }
-
-    if (!cx->compartment()->wrap(cx, &reactionVal)) {
+    RootedField<JSObject*, 7> stack(
+        roots,
+        JS::MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(promise));
+    if (!cx->compartment()->wrap(cx, &stack)) {
       return false;
     }
+    reaction->setAllocationStack(stack);
 
-    
-    return EnqueueJob(cx, &reactionVal.toObject());
-  }
+    if (!reaction->getHostDefinedData().isObject()) {
+      
+      
+      RootedField<JSObject*, 8> hostGlobal(roots);
+      if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostGlobal)) {
+        return false;
+      }
 
-  RootedField<JSObject*, 6> hostDefinedData(roots);
-  if (JSObject* hostDefined = reaction->getAndClearHostDefinedData()) {
-    hostDefined = CheckedUnwrapStatic(hostDefined);
-    MOZ_ASSERT(hostDefined);
-    
-    
-    
-    if (JS_IsDeadWrapper(hostDefined)) {
-      return true;
+      if (hostGlobal) {
+        MOZ_ASSERT(hostGlobal->is<GlobalObject>());
+        
+        
+        hostGlobal = &hostGlobal->as<GlobalObject>().getObjectPrototype();
+      }
+
+      if (!cx->compartment()->wrap(cx, &hostGlobal)) {
+        return false;
+      }
+      reaction->setHostDefinedGlobalRepresentative(hostGlobal);
     }
-    hostDefinedData = hostDefined;
+
+    if (!cx->compartment()->wrap(cx, &globalRepresentative)) {
+      return false;
+    }
+    reaction->setEnqueueGlobalRepresentative(globalRepresentative);
   }
 
-  Handle<PropertyName*> funName = cx->names().empty_;
-  RootedField<JSFunction*, 5> job(
-      roots,
-      NewNativeFunction(cx, PromiseReactionJob, 0, funName,
-                        gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!job) {
+  if (!cx->compartment()->wrap(cx, &reactionVal)) {
     return false;
   }
 
-  job->setExtendedSlot(ReactionJobSlot_ReactionRecord, reactionVal);
-
-  return cx->runtime()->enqueuePromiseJob(cx, job, promise, hostDefinedData);
+  
+  return EnqueueJob(cx, &reactionVal.toObject());
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
@@ -2931,59 +2903,35 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   RootedField<JSObject*, 3> promise(roots, &promiseToResolve.toObject());
 
-  if (JS::Prefs::use_js_microtask_queue()) {
-    RootedField<JSObject*, 4> hostDefinedGlobalRepresentative(roots);
-    {
-      RootedField<JSObject*, 5> hostDefinedGlobal(roots);
-      if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostDefinedGlobal)) {
-        return false;
-      }
-
-      MOZ_ASSERT_IF(hostDefinedGlobal, hostDefinedGlobal->is<GlobalObject>());
-      if (hostDefinedGlobal) {
-        hostDefinedGlobalRepresentative =
-            &hostDefinedGlobal->as<GlobalObject>().getObjectPrototype();
-      }
-    }
-
-    
-    if (!cx->compartment()->wrap(cx, &hostDefinedGlobalRepresentative)) {
+  RootedField<JSObject*, 4> hostDefinedGlobalRepresentative(roots);
+  {
+    RootedField<JSObject*, 5> hostDefinedGlobal(roots);
+    if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostDefinedGlobal)) {
       return false;
     }
 
-    ThenableJob* thenableJob =
-        NewThenableJob(cx, ThenableJob::PromiseResolveThenableJob, promise,
-                       thenable, then, HostDefinedDataIsOptimizedOut);
-    if (!thenableJob) {
-      return false;
+    MOZ_ASSERT_IF(hostDefinedGlobal, hostDefinedGlobal->is<GlobalObject>());
+    if (hostDefinedGlobal) {
+      hostDefinedGlobalRepresentative =
+          &hostDefinedGlobal->as<GlobalObject>().getObjectPrototype();
     }
-
-    thenableJob->setHostDefinedGlobalRepresentative(
-        hostDefinedGlobalRepresentative);
-    return EnqueueJob(cx, thenableJob);
   }
 
   
-  
-  
-  Handle<PropertyName*> funName = cx->names().empty_;
-  RootedField<JSFunction*, 6> job(
-      roots,
-      NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
-                        gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!job) {
+  if (!cx->compartment()->wrap(cx, &hostDefinedGlobalRepresentative)) {
     return false;
   }
 
-  
-  
-  job->setExtendedSlot(ThenableJobSlot_Promise, promiseToResolve);
-  job->setExtendedSlot(ThenableJobSlot_Thenable, thenable);
-  job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
+  ThenableJob* thenableJob =
+      NewThenableJob(cx, ThenableJob::PromiseResolveThenableJob, promise,
+                     thenable, then, HostDefinedDataIsOptimizedOut);
+  if (!thenableJob) {
+    return false;
+  }
 
-  
-  return cx->runtime()->enqueuePromiseJob(cx, job, promise,
-                                          HostDefinedDataIsOptimizedOut);
+  thenableJob->setHostDefinedGlobalRepresentative(
+      hostDefinedGlobalRepresentative);
+  return EnqueueJob(cx, thenableJob);
 }
 
 
@@ -3005,53 +2953,23 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   MOZ_ASSERT(promiseToResolve->is<PromiseObject>());
   MOZ_ASSERT(thenable->is<PromiseObject>());
 
-  if (JS::Prefs::use_js_microtask_queue()) {
-    
-
-    Rooted<JSObject*> hostDefinedData(cx);
-    if (!cx->runtime()->getHostDefinedData(cx, &hostDefinedData)) {
-      return false;
-    }
-
-    RootedValue thenableValue(cx, ObjectValue(*thenable));
-    ThenableJob* thenableJob = NewThenableJob(
-        cx, ThenableJob::PromiseResolveBuiltinThenableJob, promiseToResolve,
-        thenableValue, nullptr, hostDefinedData);
-    if (!thenableJob) {
-      return false;
-    }
-
-    return EnqueueJob(cx, thenableJob);
-  }
-
   
   
   
-  Handle<PropertyName*> funName = cx->names().empty_;
-  RootedFunction job(
-      cx, NewNativeFunction(cx, PromiseResolveBuiltinThenableJob, 0, funName,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!job) {
-    return false;
-  }
-
-  
-  
-  
-  
-
-  
-  job->setExtendedSlot(ThenableJobSlot_Promise, ObjectValue(*promiseToResolve));
-  job->setExtendedSlot(ThenableJobSlot_Thenable, ObjectValue(*thenable));
-
   Rooted<JSObject*> hostDefinedData(cx);
   if (!cx->runtime()->getHostDefinedData(cx, &hostDefinedData)) {
     return false;
   }
 
-  
-  return cx->runtime()->enqueuePromiseJob(cx, job, promiseToResolve,
-                                          hostDefinedData);
+  RootedValue thenableValue(cx, ObjectValue(*thenable));
+  ThenableJob* thenableJob =
+      NewThenableJob(cx, ThenableJob::PromiseResolveBuiltinThenableJob,
+                     promiseToResolve, thenableValue, nullptr, hostDefinedData);
+  if (!thenableJob) {
+    return false;
+  }
+
+  return EnqueueJob(cx, thenableJob);
 }
 
 [[nodiscard]] static bool AddDummyPromiseReactionForDebugger(
@@ -7922,9 +7840,7 @@ JS::AutoDebuggerJobQueueInterruption::AutoDebuggerJobQueueInterruption()
 JS::AutoDebuggerJobQueueInterruption::~AutoDebuggerJobQueueInterruption() {
 #ifdef DEBUG
   if (initialized() && !cx->jobQueue->isDrainingStopped()) {
-    MOZ_ASSERT_IF(JS::Prefs::use_js_microtask_queue(),
-                  !JS::HasRegularMicroTasks(cx));
-    MOZ_ASSERT_IF(!JS::Prefs::use_js_microtask_queue(), cx->jobQueue->empty());
+    MOZ_ASSERT(!JS::HasRegularMicroTasks(cx));
   }
 #endif
 }

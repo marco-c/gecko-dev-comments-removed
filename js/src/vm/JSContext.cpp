@@ -781,48 +781,35 @@ JSObject* InternalJobQueue::copyJobs(JSContext* cx) {
     return nullptr;
   }
 
-  if (JS::Prefs::use_js_microtask_queue()) {
-    auto& queues = cx->microTaskQueues;
-    auto addToArray = [&](auto& queue) -> bool {
-      for (const auto& e : queue) {
-        JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(e);
-        if (task) {
-          
-          RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(task));
-          if (!global) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                      JSMSG_DEAD_OBJECT);
-            return false;
-          }
-          if (!cx->compartment()->wrap(cx, &global)) {
-            return false;
-          }
-          if (!NewbornArrayPush(cx, jobs, ObjectValue(*global))) {
-            return false;
-          }
+  auto& queues = cx->microTaskQueues;
+  auto addToArray = [&](auto& queue) -> bool {
+    for (const auto& e : queue) {
+      JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(e);
+      if (task) {
+        
+        RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(task));
+        if (!global) {
+          JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                    JSMSG_DEAD_OBJECT);
+          return false;
+        }
+        if (!cx->compartment()->wrap(cx, &global)) {
+          return false;
+        }
+        if (!NewbornArrayPush(cx, jobs, ObjectValue(*global))) {
+          return false;
         }
       }
-
-      return true;
-    };
-
-    if (!addToArray(queues->debugMicroTaskQueue)) {
-      return nullptr;
     }
-    if (!addToArray(queues->microTaskQueue)) {
-      return nullptr;
-    }
-  } else {
-    for (const JSObject* unwrappedJob : queue.get()) {
-      RootedObject job(cx, const_cast<JSObject*>(unwrappedJob));
-      if (!cx->compartment()->wrap(cx, &job)) {
-        return nullptr;
-      }
 
-      if (!NewbornArrayPush(cx, jobs, ObjectValue(*job))) {
-        return nullptr;
-      }
-    }
+    return true;
+  };
+
+  if (!addToArray(queues->debugMicroTaskQueue)) {
+    return nullptr;
+  }
+  if (!addToArray(queues->microTaskQueue)) {
+    return nullptr;
   }
 
   return jobs;
@@ -862,21 +849,6 @@ bool InternalJobQueue::getHostDefinedData(
   return true;
 }
 
-bool InternalJobQueue::enqueuePromiseJob(JSContext* cx,
-                                         JS::HandleObject promise,
-                                         JS::HandleObject job,
-                                         JS::HandleObject allocationSite,
-                                         JS::HandleObject hostDefinedData) {
-  MOZ_ASSERT(job);
-  if (!queue.pushBack(job)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  JS::JobQueueMayNotBeEmpty(cx);
-  return true;
-}
-
 void InternalJobQueue::runJobs(JSContext* cx) {
   if (draining_ || interrupted_) {
     return;
@@ -891,96 +863,50 @@ void InternalJobQueue::runJobs(JSContext* cx) {
     
     draining_ = true;
 
-    if (JS::Prefs::use_js_microtask_queue()) {
+    
+    JS::Rooted<JS::JSMicroTask*> job(cx);
+    JS::Rooted<JS::GenericMicroTask> dequeueJob(cx);
+    while (JS::HasAnyMicroTasks(cx)) {
+      MOZ_ASSERT(queue.empty());
       
-      JS::Rooted<JS::JSMicroTask*> job(cx);
-      JS::Rooted<JS::GenericMicroTask> dequeueJob(cx);
-      while (JS::HasAnyMicroTasks(cx)) {
-        MOZ_ASSERT(queue.empty());
-        
-        
-        if (interrupted_) {
-          break;
-        }
-
-        cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
-
-        dequeueJob = JS::DequeueNextMicroTask(cx);
-        MOZ_ASSERT(!dequeueJob.isNull());
-        job = JS::ToMaybeWrappedJSMicroTask(dequeueJob);
-        MOZ_ASSERT(job);
-
-        
-        
-        if (!JS::HasAnyMicroTasks(cx)) {
-          JS::JobQueueIsEmpty(cx);
-        }
-
-        if (!JS::GetExecutionGlobalFromJSMicroTask(job)) {
-          continue;
-        }
-        AutoRealm ar(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
-        {
-          if (!JS::RunJSMicroTask(cx, job)) {
-            
-            if (!cx->isExceptionPending()) {
-              continue;
-            }
-
-            
-            
-            
-            RootedValue exn(cx);
-            bool success = cx->getPendingException(&exn);
-            cx->clearPendingException();
-            if (success) {
-              js::ReportExceptionClosure reportExn(exn);
-              PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
-            }
-          }
-        }
+      
+      if (interrupted_) {
+        break;
       }
-    } else {
-      RootedObject job(cx);
-      JS::HandleValueArray args(JS::HandleValueArray::empty());
-      RootedValue rval(cx);
+
+      cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
+
+      dequeueJob = JS::DequeueNextMicroTask(cx);
+      MOZ_ASSERT(!dequeueJob.isNull());
+      job = JS::ToMaybeWrappedJSMicroTask(dequeueJob);
+      MOZ_ASSERT(job);
+
       
-      while (!queue.empty()) {
-        
-        
-        if (interrupted_) {
-          break;
-        }
+      
+      if (!JS::HasAnyMicroTasks(cx)) {
+        JS::JobQueueIsEmpty(cx);
+      }
 
-        cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
+      if (!JS::GetExecutionGlobalFromJSMicroTask(job)) {
+        continue;
+      }
+      AutoRealm ar(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
+      {
+        if (!JS::RunJSMicroTask(cx, job)) {
+          
+          if (!cx->isExceptionPending()) {
+            continue;
+          }
 
-        job = queue.front();
-        queue.popFront();
-
-        
-        
-        if (queue.empty()) {
-          JS::JobQueueIsEmpty(cx);
-        }
-
-        AutoRealm ar(cx, &job->as<JSFunction>());
-        {
-          if (!JS::Call(cx, UndefinedHandleValue, job, args, &rval)) {
-            
-            if (!cx->isExceptionPending()) {
-              continue;
-            }
-
-            
-            
-            
-            RootedValue exn(cx);
-            bool success = cx->getPendingException(&exn);
-            cx->clearPendingException();
-            if (success) {
-              js::ReportExceptionClosure reportExn(exn);
-              PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
-            }
+          
+          
+          
+          RootedValue exn(cx);
+          bool success = cx->getPendingException(&exn);
+          cx->clearPendingException();
+          if (success) {
+            js::ReportExceptionClosure reportExn(exn);
+            PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
           }
         }
       }
@@ -992,12 +918,8 @@ void InternalJobQueue::runJobs(JSContext* cx) {
       break;
     }
 
-    if (JS::Prefs::use_js_microtask_queue()) {
-      
-      cx->microTaskQueues->clear();
-    } else {
-      queue.clear();
-    }
+    
+    cx->microTaskQueues->clear();
 
     
     if (!cx->runtime()->offThreadPromiseState.ref().internalHasPending()) {
@@ -1005,8 +927,6 @@ void InternalJobQueue::runJobs(JSContext* cx) {
     }
   }
 }
-
-bool InternalJobQueue::empty() const { return queue.empty(); }
 
 JSObject* InternalJobQueue::maybeFront() const {
   if (queue.empty()) {
@@ -1025,11 +945,7 @@ class js::InternalJobQueue::SavedQueue : public JobQueue::SavedJobQueue {
         savedQueues(cx, std::move(queueSet)),
         draining_(draining) {
     MOZ_ASSERT(cx->internalJobQueue.ref());
-    if (JS::Prefs::use_js_microtask_queue()) {
-      MOZ_ASSERT(saved.empty());
-    } else {
-      MOZ_ASSERT(queueSet.empty());
-    }
+    MOZ_ASSERT(saved.empty());
   }
 
   ~SavedQueue() {
