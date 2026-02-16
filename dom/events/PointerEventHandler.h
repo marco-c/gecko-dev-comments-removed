@@ -123,8 +123,8 @@ struct PointerInfo final {
     
     
     if (aMouseOrPointerEvent.mClass != eDragEventClass) {
-      mLastTiltX = aMouseOrPointerEvent.tiltX;
-      mLastTiltY = aMouseOrPointerEvent.tiltY;
+      mLastTiltX = aMouseOrPointerEvent.ComputeTiltX();
+      mLastTiltY = aMouseOrPointerEvent.ComputeTiltY();
       mLastButtons = aMouseOrPointerEvent.mButtons;
       mLastPressure = aMouseOrPointerEvent.mPressure;
     }

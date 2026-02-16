@@ -188,8 +188,7 @@ void WinPointerEvents::ConvertAndCachePointerInfo(WPARAM aWParam,
   MOZ_ASSERT(GetPointerType(aInfo->pointerId) == PT_PEN);
   POINTER_PEN_INFO penInfo;
   GetPointerPenInfo(aInfo->pointerId, &penInfo);
-  aInfo->tiltX = penInfo.tiltX;
-  aInfo->tiltY = penInfo.tiltY;
+  aInfo->mTilt.emplace(penInfo.tiltX, penInfo.tiltY);
   
   
   aInfo->mPressure = penInfo.pressure ? (float)penInfo.pressure / 1024 : 0;
