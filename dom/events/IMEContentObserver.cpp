@@ -911,19 +911,15 @@ bool IMEContentObserver::OnMouseButtonEvent(nsPresContext& aPresContext,
 
 void IMEContentObserver::CharacterDataWillChange(
     nsIContent* aContent, const CharacterDataChangeInfo& aInfo) {
-  if (!aContent->IsText()) {
-    return;  
-             
+  if (!NeedsTextChangeNotification() || !aContent->IsText() ||
+      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
+    
+    
+    return;
   }
   MOZ_ASSERT(mPreCharacterDataChangeLength < 0,
              "CharacterDataChanged() should've reset "
              "mPreCharacterDataChangeLength");
-
-  if (!NeedsTextChangeNotification() ||
-      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
-    return;
-  }
-
   mEndOfAddedTextCache.Clear(__FUNCTION__);
   mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
 
@@ -944,9 +940,11 @@ void IMEContentObserver::CharacterDataWillChange(
 
 void IMEContentObserver::CharacterDataChanged(
     nsIContent* aContent, const CharacterDataChangeInfo& aInfo) {
-  if (!aContent->IsText()) {
-    return;  
-             
+  if (!aContent->IsText() ||
+      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
+    
+    
+    return;
   }
 
   
@@ -958,8 +956,7 @@ void IMEContentObserver::CharacterDataChanged(
     }
   }
 
-  if (!NeedsTextChangeNotification() ||
-      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
+  if (!NeedsTextChangeNotification()) {
     return;
   }
 
