@@ -547,130 +547,114 @@ class MMListenerRemover {
 };
 
 void nsFrameMessageManager::ReceiveMessage(
-    nsISupports* aTarget, nsFrameLoader* aTargetFrameLoader, bool aTargetClosed,
+    nsISupports* aTarget, nsFrameLoader* aTargetFrameLoader,
     const nsAString& aMessage, bool aIsSync, StructuredCloneData* aCloneData,
-    nsTArray<UniquePtr<StructuredCloneData>>* aRetVal, ErrorResult& aError) {
+    nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) {
   MOZ_ASSERT(aTarget);
   profiler_add_marker("ReceiveMessage", geckoprofiler::category::IPC, {},
                       FrameMessageMarker{}, aMessage, aIsSync);
 
-  nsAutoTObserverArray<nsMessageListenerInfo, 1>* listeners =
-      mListeners.Get(aMessage);
-  if (listeners) {
-    MMListenerRemover lr(this);
+  
+  
+  AutoEntryScript aes(xpc::PrivilegedJunkScope(), "message manager receive");
+  JSContext* cx = aes.cx();
 
-    nsAutoTObserverArray<nsMessageListenerInfo, 1>::EndLimitedIterator iter(
-        *listeners);
-    while (iter.HasMore()) {
-      nsMessageListenerInfo& listener = iter.GetNext();
+  RootedDictionary<ReceiveMessageArgument> argument(RootingCx());
+  argument.mName = aMessage;
+  argument.mSync = aIsSync;
+  argument.mTarget = aTarget;
+  argument.mTargetFrameLoader = aTargetFrameLoader;
 
-      if (!listener.mListenWhenClosed && aTargetClosed) {
-        continue;
-      }
+  
+  if (aCloneData && aCloneData->DataLength()) {
+    
+    
+    
+    
 
-      RefPtr<MessageListener> webIDLListener = listener.mListener;
-      MOZ_ASSERT(webIDLListener);
+    ErrorResult error;
+    JS::Rooted<JS::Value> data(RootingCx(), JS::NullValue());
+    aCloneData->Read(cx, &data, error);
+    if (error.MaybeSetPendingException(cx)) {
+      NS_WARNING("Deserializing nsFrameMessageManager message failed");
+      return;
+    }
 
-      JS::Rooted<JSObject*> object(RootingCx(),
-                                   webIDLListener->CallbackOrNull());
-      if (!object) {
-        continue;
-      }
+    argument.mData = data;
+    argument.mJson = data;
 
-      AutoEntryScript aes(js::UncheckedUnwrap(object),
-                          "message manager handler");
-      JSContext* cx = aes.cx();
-
-      
-      
-      
-      JSAutoRealm ar(cx, webIDLListener->CallbackGlobalOrNull());
-
-      RootedDictionary<ReceiveMessageArgument> argument(cx);
-
-      JS::Rooted<JS::Value> json(cx, JS::NullValue());
-      if (aCloneData && aCloneData->DataLength()) {
-        aCloneData->Read(cx, &json, aError);
-        if (NS_WARN_IF(aError.Failed())) {
-          aError.SuppressException();
-          JS_ClearPendingException(cx);
-          return;
-        }
-      }
-      argument.mData = json;
-      argument.mJson = json;
-
-      
-      if (aCloneData) {
-        Sequence<OwningNonNull<MessagePort>> ports;
-        if (aCloneData->SupportsTransferring() &&
-            !aCloneData->TakeTransferredPortsAsSequence(ports)) {
-          aError.Throw(NS_ERROR_FAILURE);
-          return;
-        }
-        argument.mPorts.Construct(std::move(ports));
-      }
-
-      argument.mName = aMessage;
-      argument.mSync = aIsSync;
-      argument.mTarget = aTarget;
-      if (aTargetFrameLoader) {
-        argument.mTargetFrameLoader.Construct(*aTargetFrameLoader);
-      }
-
-      
-      
-      nsCOMPtr<nsISupports> defaultThisValue;
-      if (mChrome) {
-        defaultThisValue = do_QueryObject(this);
-      } else {
-        defaultThisValue = aTarget;
-      }
-
-      JS::Rooted<JS::Value> rval(cx, JS::UndefinedValue());
-      webIDLListener->ReceiveMessage(defaultThisValue, argument, &rval, aError);
-      if (aError.Failed()) {
-        
-        
-        
-        aError.SuppressException();
-        continue;
-      }
-
-      if (aRetVal) {
-        UniquePtr<StructuredCloneData>* data =
-            aRetVal->AppendElement(MakeUnique<StructuredCloneData>());
-        (*data)->InitScope(JS::StructuredCloneScope::DifferentProcess);
-        (*data)->Write(cx, rval, aError);
-        if (NS_WARN_IF(aError.Failed())) {
-          aRetVal->RemoveLastElement();
-          nsString msg = aMessage +
-                         u": message reply cannot be cloned. Are "
-                         "you trying to send an XPCOM object?"_ns;
-
-          nsCOMPtr<nsIConsoleService> console(
-              do_GetService(NS_CONSOLESERVICE_CONTRACTID));
-          if (console) {
-            nsCOMPtr<nsIScriptError> error(
-                do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
-            error->Init(msg, ""_ns, 0, 0, nsIScriptError::warningFlag,
-                        "chrome javascript"_ns, false ,
-                        true );
-            console->LogMessage(error);
-          }
-
-          JS_ClearPendingException(cx);
-          continue;
-        }
-      }
+    if (aCloneData->SupportsTransferring() &&
+        !aCloneData->TakeTransferredPortsAsSequence(argument.mPorts)) {
+      NS_WARNING("OOM taking transferred ports from StructuredCloneData");
+      JS_ReportOutOfMemory(cx);
+      return;
     }
   }
 
-  RefPtr<nsFrameMessageManager> kungFuDeathGrip = GetParentManager();
-  if (kungFuDeathGrip) {
-    kungFuDeathGrip->ReceiveMessage(aTarget, aTargetFrameLoader, aTargetClosed,
-                                    aMessage, aIsSync, aCloneData, aRetVal,
-                                    aError);
+  for (RefPtr<nsFrameMessageManager> current = this; current;
+       current = current->GetParentManager()) {
+    
+    
+    
+    
+    nsCOMPtr<nsISupports> thisValue;
+    if (mChrome) {
+      thisValue = do_QueryObject(current);
+    } else {
+      thisValue = aTarget;
+    }
+
+    nsAutoTObserverArray<nsMessageListenerInfo, 1>* listeners =
+        current->mListeners.Get(aMessage);
+    if (listeners) {
+      MMListenerRemover lr(this);
+
+      nsAutoTObserverArray<nsMessageListenerInfo, 1>::EndLimitedIterator iter(
+          *listeners);
+      while (iter.HasMore()) {
+        auto& listenerInfo = iter.GetNext();
+
+        RefPtr<MessageListener> listener = listenerInfo.mListener;
+
+        
+        
+        
+        if (!listener || (!listenerInfo.mListenWhenClosed && mClosed)) {
+          continue;
+        }
+
+        IgnoredErrorResult error;
+        JS::Rooted<JS::Value> rval(RootingCx());
+        listener->ReceiveMessage(thisValue, argument, &rval, error);
+        if (error.Failed()) {
+          continue;
+        }
+
+        if (aRetVal) {
+          auto data = MakeUnique<StructuredCloneData>();
+          data->Write(cx, rval, error);
+          if (NS_WARN_IF(error.Failed())) {
+            nsString msg = aMessage +
+                           u": message reply cannot be cloned. Are "
+                           "you trying to send an XPCOM object?"_ns;
+
+            nsCOMPtr<nsIConsoleService> console(
+                do_GetService(NS_CONSOLESERVICE_CONTRACTID));
+            if (console) {
+              nsCOMPtr<nsIScriptError> error(
+                  do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
+              error->Init(msg, ""_ns, 0, 0, nsIScriptError::warningFlag,
+                          "chrome javascript"_ns,
+                          false ,
+                          true );
+              console->LogMessage(error);
+            }
+            continue;
+          }
+          aRetVal->AppendElement(std::move(data));
+        }
+      }
+    }
   }
 }
 
@@ -1364,8 +1348,7 @@ class SameChildProcessMessageManagerCallback : public MessageManagerCallback {
     if (nsFrameMessageManager::sSameProcessParentManager) {
       RefPtr<nsFrameMessageManager> ppm =
           nsFrameMessageManager::sSameProcessParentManager;
-      ppm->ReceiveMessage(ppm, nullptr, aMessage, true, &aData, aRetVal,
-                          IgnoreErrors());
+      ppm->ReceiveMessage(ppm, nullptr, aMessage, true, &aData, aRetVal);
     }
     return true;
   }
@@ -1484,6 +1467,6 @@ void nsSameProcessAsyncMessageBase::ReceiveMessage(
   if (aManager) {
     RefPtr<nsFrameMessageManager> mm = aManager;
     mm->ReceiveMessage(aTarget, aTargetFrameLoader, mMessage, false, &mData,
-                       nullptr, IgnoreErrors());
+                       nullptr);
   }
 }
