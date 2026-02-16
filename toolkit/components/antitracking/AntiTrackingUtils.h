@@ -59,13 +59,6 @@ class AntiTrackingUtils final {
 
   
   
-  
-  
-  static bool CreateStorageRequestPermissionKey(nsIURI* aURI,
-                                                nsACString& aPermissionKey);
-
-  
-  
   static bool IsStorageAccessPermission(nsIPermission* aPermission,
                                         nsIPrincipal* aPrincipal);
 

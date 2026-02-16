@@ -158,8 +158,8 @@ bool IsPreloadPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 2> kStripOAPermissions = {
-    {"cookie"_ns, "https-only-load-insecure"_ns}};
+static constexpr std::array<nsLiteralCString, 3> kStripOAPermissions = {
+    {"cookie"_ns, "https-only-load-insecure"_ns, "ipp-vpn"_ns}};
 
 bool IsOAForceStripPermission(const nsACString& aType) {
   if (aType.IsEmpty()) {
@@ -176,9 +176,8 @@ bool IsOAForceStripPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 3> kSiteScopedPermissions = {
-    {"3rdPartyStorage^"_ns, "AllowStorageAccessRequest^"_ns,
-     "3rdPartyFrameStorage^"_ns}};
+static constexpr std::array<nsLiteralCString, 2> kSiteScopedPermissions = {
+    {"3rdPartyStorage^"_ns, "3rdPartyFrameStorage^"_ns}};
 
 bool IsSiteScopedPermission(const nsACString& aType) {
   if (aType.IsEmpty()) {
@@ -197,9 +196,8 @@ bool IsSiteScopedPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 3> kSecondaryKeyedPermissions = {
-    {"3rdPartyStorage^"_ns, "AllowStorageAccessRequest^"_ns,
-     "3rdPartyFrameStorage^"_ns}};
+static constexpr std::array<nsLiteralCString, 2> kSecondaryKeyedPermissions = {
+    {"3rdPartyStorage^"_ns, "3rdPartyFrameStorage^"_ns}};
 
 bool GetSecondaryKey(const nsACString& aType, nsACString& aSecondaryKey) {
   aSecondaryKey.Truncate();

@@ -9,7 +9,6 @@
 
 #include <functional>
 
-#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "nsContentPermissionHelper.h"
 
@@ -40,14 +39,8 @@ class StorageAccessPermissionRequest final
       nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
       AllowCallback&& aAllowCallback, CancelCallback&& aCancelCallback);
 
-  
-  
-  
-  
-  
   static already_AddRefed<StorageAccessPermissionRequest> Create(
-      nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
-      const Maybe<nsCString>& aTopLevelBaseDomain, bool aFrameOnly,
+      nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal, bool aFrameOnly,
       AllowCallback&& aAllowCallback, CancelCallback&& aCancelCallback);
 
   using AutoGrantDelayPromise = MozPromise<bool, bool, true>;
@@ -56,7 +49,6 @@ class StorageAccessPermissionRequest final
  private:
   StorageAccessPermissionRequest(nsPIDOMWindowInner* aWindow,
                                  nsIPrincipal* aNodePrincipal,
-                                 const Maybe<nsCString>& aTopLevelBaseDomain,
                                  bool aFrameOnly,
                                  AllowCallback&& aAllowCallback,
                                  CancelCallback&& aCancelCallback);

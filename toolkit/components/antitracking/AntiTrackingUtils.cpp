@@ -160,28 +160,6 @@ bool AntiTrackingUtils::CreateStorageFramePermissionKey(
 }
 
 
-bool AntiTrackingUtils::CreateStorageRequestPermissionKey(
-    nsIURI* aURI, nsACString& aPermissionKey) {
-  MOZ_ASSERT(aPermissionKey.IsEmpty());
-  nsCOMPtr<nsIEffectiveTLDService> eTLDService =
-      mozilla::components::EffectiveTLD::Service();
-  if (!eTLDService) {
-    return false;
-  }
-  nsCString site;
-  nsresult rv = eTLDService->GetSite(aURI, site);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-  static const nsLiteralCString prefix =
-      nsLiteralCString("AllowStorageAccessRequest^");
-  aPermissionKey.SetCapacity(prefix.Length() + site.Length());
-  aPermissionKey.Append(prefix);
-  aPermissionKey.Append(site);
-  return true;
-}
-
-
 bool AntiTrackingUtils::IsStorageAccessPermission(nsIPermission* aPermission,
                                                   nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(aPermission);
@@ -1349,7 +1327,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   nsCOMPtr<nsIURI> uri;
   (void)aChannel->GetURI(getter_AddRefs(uri));
-  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri, false);
+  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
 
   
   
