@@ -309,8 +309,21 @@ def chunk_manifests(suite, platform, chunks, manifests):
                 f"chunk_manifests({suite}, {platform}): Missing runtime data for {len(manifests_without_data)}/{len(manifests)} manifests: {missing_list}"
             )
 
+        
+        
+        
+        
+        
+        zero_runtime_manifests = sorted(m for m in manifests if runtimes.get(m, 0) == 0)
+        nonzero_manifests = [m for m in manifests if runtimes.get(m, 0) != 0]
+
         cbr = chunk_by_runtime(None, chunks, runtimes)
-        return [c for _, c in cbr.get_chunked_manifests(manifests)]
+        chunked = [c for _, c in cbr.get_chunked_manifests(nonzero_manifests)]
+
+        for i, m in enumerate(zero_runtime_manifests):
+            chunked[i % chunks].append(m)
+
+        return chunked
 
     
     
