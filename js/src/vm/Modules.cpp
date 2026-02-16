@@ -1441,6 +1441,11 @@ static bool InnerModuleLoading(JSContext* cx,
   MOZ_ASSERT(state);
   MOZ_ASSERT(module);
 
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   
   MOZ_ASSERT(state->isLoading());
 
