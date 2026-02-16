@@ -39,8 +39,8 @@ impl MaybeString {
 
 
 
-#[repr(C)]
-pub struct UrlPatternGlue(pub *mut c_void); 
+#[repr(transparent)]
+pub struct UrlPatternGlue(pub *mut c_void);
 
 
 #[repr(transparent)]
