@@ -9,8 +9,11 @@ const kArrowRight = '\uE014';
 const kArrowDown = '\uE015';
 
 
-function focusAndKeyPress(target, key) {
+async function focusAndKeyPress(target, key) {
   target.focus();
+  
+  
+  await new Promise(resolve => requestAnimationFrame(resolve));
   return test_driver.send_keys(target, key);
 }
 
