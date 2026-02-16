@@ -189,6 +189,16 @@ class ComputedStyle {
   }
 
   
+  bool UsesViewportUnits() const {
+    return bool(Flags() & Flag::USES_VIEWPORT_UNITS);
+  }
+
+  
+  void GetCachedLazyPseudoStyles(nsTArray<const ComputedStyle*>& aArray) const {
+    mCachedInheritingStyles.AppendTo(aArray);
+  }
+
+  
   
   
   bool RelevantLinkVisited() const {
@@ -237,12 +247,6 @@ class ComputedStyle {
     
     
     if (PseudoStyle::SupportsUserActionState(aStyle->GetPseudoType())) {
-      return;
-    }
-
-    
-    
-    if (aStyle->UsesContainerUnits()) {
       return;
     }
 

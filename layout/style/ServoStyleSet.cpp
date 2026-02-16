@@ -477,7 +477,28 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
       return nullptr;
     }
     if (cacheable) {
-      aParentStyle->SetCachedLazyPseudoStyle(style, aFunctionalPseudoParameter);
+      
+      
+      
+      
+      
+      
+      
+      const bool shouldCache = [&] {
+        if (style->UsesViewportUnits()) {
+          if (const auto* primaryFrame =
+                  aOriginatingElement.GetPrimaryFrame()) {
+            if (primaryFrame->Style() != aParentStyle) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }();
+      if (shouldCache) {
+        aParentStyle->SetCachedLazyPseudoStyle(style,
+                                               aFunctionalPseudoParameter);
+      }
     }
   }
 
