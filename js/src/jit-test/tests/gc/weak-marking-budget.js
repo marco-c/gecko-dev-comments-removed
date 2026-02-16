@@ -1,6 +1,16 @@
 
 
-gczeal(0); 
+
+gcparam("concurrentMarkingEnabled", 0);
+gczeal(0);
+gc();
+assertEq(gcstate(), "NotActive");
+
+function checkFinishMarkingDuringSweeping(expected) {
+  if (hasFunction["currentgc"]) {
+    assertEq(currentgc().finishMarkingDuringSweeping, expected);
+  }
+}
 
 var keys = [];
 var maps = Array(1000).fill().map(() => new WeakMap);
@@ -26,26 +36,26 @@ assertEq(gcstate(), "Mark");
 
 
 
-print("gcslice(10000) #1");
-gcslice(10000);
-assertEq(gcstate(), "Mark");
 
 
 
-print("gcslice(10000) #2");
-gcslice(10000);
+
+
+while (gcstate() === "Mark") {
+    gcslice(10000);
+}
 assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, true);
+checkFinishMarkingDuringSweeping(true);
 
 
 
 
-print("gcslice(1) #3");
+
 
 
 gcslice(100);
 assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, false);
+checkFinishMarkingDuringSweeping(false);
 
 
 
@@ -61,13 +71,12 @@ while (["Prepare", "MarkRoots"].includes(gcstate())) {
 }
 assertEq(gcstate(), "Mark");
 
-gcslice(10000);
-assertEq(gcstate(), "Mark");
+while (gcstate() === "Mark") {
+    gcslice(100);
+}
+assertEq(gcstate(), "Sweep");
+checkFinishMarkingDuringSweeping(false);
 
 gcslice(1);
 assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, false);
-
-gcslice(1);
-assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, false);
+checkFinishMarkingDuringSweeping(false);

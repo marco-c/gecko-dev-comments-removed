@@ -5,6 +5,7 @@
 
 
 gczeal(0);
+gcparam("concurrentMarkingEnabled", 0);
 
 
 

@@ -310,12 +310,12 @@ JSObject* newDelegate() {
 
 void performIncrementalGC() {
   JSRuntime* rt = cx->runtime();
-  JS::SliceBudget budget(JS::WorkBudget(1000));
+  JS::SliceBudget budget(JS::WorkBudget(200));
   rt->gc.startDebugGC(JS::GCOptions::Normal, budget);
 
   
   
-  while (rt->gc.state() == gc::State::Prepare) {
+  while (rt->gc.state() < gc::State::Sweep) {
     rt->gc.debugGCSlice(budget);
   }
   if (JS::IsIncrementalGCInProgress(cx)) {

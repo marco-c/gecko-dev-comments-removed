@@ -48,7 +48,10 @@ testChangeParam("smallHeapIncrementalLimit");
 testChangeParam("largeHeapIncrementalLimit");
 testChangeParam("minEmptyChunkCount");
 testChangeParam("compactingEnabled");
-testChangeParam("parallelMarkingEnabled");
+if (gcparam("helperThreadCount") > 1) {
+  
+  testChangeParam("parallelMarkingEnabled");
+}
 testChangeParam("parallelMarkingThresholdMB");
 testChangeParam("minLastDitchGCPeriod");
 testChangeParam("nurseryEagerCollectionThresholdKB");
