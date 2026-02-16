@@ -396,11 +396,7 @@ def get_decision_parameters(graph_config, options):
     
     parameters.setdefault("release_history", dict())
     if "nightly" in parameters.get("target_tasks_method", ""):
-        
-        
-        parameters["release_history"] = populate_release_history(
-            "Firefox", project, maxbuilds=16, maxsearch=32
-        )
+        parameters["release_history"] = populate_release_history("Firefox", project)
 
     if options.get("try_task_config_file"):
         task_config_file = os.path.abspath(options.get("try_task_config_file"))
