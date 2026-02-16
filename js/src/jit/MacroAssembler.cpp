@@ -352,7 +352,18 @@ void MacroAssembler::nurseryAllocateObject(Register result, Register temp,
             Address(result, thingSize + ObjectSlots::offsetOfMaybeUniqueId()));
     computeEffectiveAddress(
         Address(result, thingSize + ObjectSlots::offsetOfSlots()), temp);
+
     storePtr(temp, Address(result, NativeObject::offsetOfSlots()));
+
+#ifdef JS_GC_CONCURRENT_MARKING
+    
+    
+    
+    
+    push(result);
+    fillSlotsWithUndefined(Address(temp, 0), result, 0, nDynamicSlots);
+    pop(result);
+#endif
   }
 }
 
