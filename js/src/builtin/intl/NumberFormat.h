@@ -23,10 +23,10 @@ struct PluralRulesOptions;
 }  
 
 namespace js {
-
 class ArrayObject;
+}
 
-namespace intl {
+namespace js::intl {
 
 struct NumberFormatDigitOptions {
   
@@ -104,8 +104,6 @@ struct NumberFormatOptions {
   enum class SignDisplay : int8_t { Auto, Never, Always, ExceptZero, Negative };
   SignDisplay signDisplay = SignDisplay::Auto;
 };
-
-}  
 
 class NumberFormatObject : public NativeObject {
  public:
@@ -221,7 +219,6 @@ class NumberFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-namespace intl {
 struct PluralRulesOptions;
 
 
@@ -292,8 +289,6 @@ using NumberFormatUnit = js::ImmutableTenuredPtr<PropertyName*> JSAtomState::*;
 [[nodiscard]] extern ArrayObject* FormatNumberToParts(
     JSContext* cx, mozilla::intl::NumberFormat* numberFormat,
     std::string_view x, NumberFormatUnit unit = nullptr);
-
-}  
 
 }  
 

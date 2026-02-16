@@ -37,9 +37,9 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
 #ifdef JS_HAS_INTL_API
     
     case InlinableNative::IntlGuardToSegments:
-      return &SegmentsObject::class_;
+      return &intl::SegmentsObject::class_;
     case InlinableNative::IntlGuardToSegmentIterator:
-      return &SegmentIteratorObject::class_;
+      return &intl::SegmentIteratorObject::class_;
 #else
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:

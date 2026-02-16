@@ -20,9 +20,7 @@ struct JS_PUBLIC_API JSContext;
 class JSLinearString;
 class JS_PUBLIC_API JSTracer;
 
-namespace js {
-
-namespace intl {
+namespace js::intl {
 
 
 
@@ -96,8 +94,6 @@ class UnicodeExtensionKeyword final {
 JS::UniqueChars FormatLocale(
     JSContext* cx, JS::Handle<JSLinearString*> locale,
     JS::HandleVector<UnicodeExtensionKeyword> keywords);
-
-}  
 
 }  
 

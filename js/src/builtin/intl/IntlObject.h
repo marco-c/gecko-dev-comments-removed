@@ -9,7 +9,7 @@
 
 #include "js/Class.h"
 
-namespace js {
+namespace js::intl {
 
 extern const JSClass IntlClass;
 

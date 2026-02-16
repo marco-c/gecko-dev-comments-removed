@@ -20,9 +20,8 @@ namespace mozilla::intl {
 class ListFormat;
 }  
 
-namespace js {
+namespace js::intl {
 
-namespace intl {
 struct ListFormatOptions {
   enum class Type : int8_t { Conjunction, Disjunction, Unit };
   Type type = Type::Conjunction;
@@ -30,7 +29,6 @@ struct ListFormatOptions {
   enum class Style : int8_t { Long, Short, Narrow };
   Style style = Style::Long;
 };
-}  
 
 class ListFormatObject : public NativeObject {
  public:

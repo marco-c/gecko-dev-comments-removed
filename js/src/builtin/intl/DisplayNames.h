@@ -27,8 +27,10 @@ class DisplayNames;
 
 namespace js {
 struct ClassSpec;
+}
 
-namespace intl {
+namespace js::intl {
+
 
 
 struct DisplayNamesOptions {
@@ -57,7 +59,6 @@ struct DisplayNamesOptions {
 
   bool mozExtensions = false;
 };
-}  
 
 class DisplayNamesObject : public NativeObject {
  public:

@@ -12,7 +12,7 @@
 #include "js/Class.h"
 #include "vm/NativeObject.h"
 
-namespace js {
+namespace js::intl {
 
 class LocaleObject : public NativeObject {
  public:

@@ -21,9 +21,8 @@ namespace mozilla::intl {
 class Collator;
 }
 
-namespace js {
+namespace js::intl {
 
-namespace intl {
 struct CollatorOptions {
   enum class Usage : int8_t { Sort, Search };
   Usage usage = Usage::Sort;
@@ -38,7 +37,6 @@ struct CollatorOptions {
   enum class CaseFirst : int8_t { Upper, Lower, False };
   mozilla::Maybe<CaseFirst> caseFirst{};
 };
-}  
 
 class CollatorObject : public NativeObject {
  public:
@@ -136,8 +134,6 @@ class CollatorObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-namespace intl {
-
 
 
 
@@ -163,8 +159,6 @@ namespace intl {
                                          JS::Handle<JSString*> str1,
                                          JS::Handle<JSString*> str2,
                                          JS::MutableHandle<JS::Value> result);
-
-}  
 
 }  
 
