@@ -276,8 +276,7 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
         
         if (up_32 == 0) {
           
-          slli(rd, rd, 32);
-          srli(rd, rd, 32);
+          ZeroExtendWord(rd, rd);
           return;
         }
         
@@ -409,8 +408,7 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
         
         if (up_32 == 0) {
           
-          count++;
-          count++;
+          count += HasZbaExtension() ?  1 :  2;
           return count;
         }
         
