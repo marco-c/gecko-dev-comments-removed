@@ -17,7 +17,7 @@ pub trait RegExp: Sized {
   
   fn matches<'a>(&self, text: &'a str) -> Option<Vec<Option<&'a str>>>;
 
-  fn pattern_string(&self) -> String;
+  fn pattern_string(&self) -> &str;
 }
 
 impl RegExp for regex::Regex {
@@ -41,7 +41,7 @@ impl RegExp for regex::Regex {
     Some(captures)
   }
 
-  fn pattern_string(&self) -> String {
-    self.as_str().to_string()
+  fn pattern_string(&self) -> &str {
+    self.as_str()
   }
 }

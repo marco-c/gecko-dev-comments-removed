@@ -27,10 +27,10 @@ pub enum TokenType {
 
 
 #[derive(Debug, Clone)]
-pub struct Token {
+pub struct Token<'a> {
   pub kind: TokenType,
   pub index: usize,
-  pub value: String,
+  pub value: &'a str,
 }
 
 
@@ -41,21 +41,22 @@ pub enum TokenizePolicy {
 }
 
 
-struct Tokenizer {
-  input: Vec<char>,
+struct Tokenizer<'a> {
+  input: &'a str,
   policy: TokenizePolicy,
-  token_list: Vec<Token>,
+  token_list: Vec<Token<'a>>,
   index: usize,
   next_index: usize,
   code_point: Option<char>, 
 }
 
-impl Tokenizer {
+impl<'a> Tokenizer<'a> {
   
   #[inline]
   fn get_next_codepoint(&mut self) {
-    self.code_point = Some(self.input[self.next_index]);
-    self.next_index += 1;
+    let next_char = self.input[self.next_index..].chars().next().unwrap();
+    self.code_point = Some(next_char);
+    self.next_index += next_char.len_utf8();
   }
 
   
@@ -85,7 +86,7 @@ impl Tokenizer {
     value_len: usize,
   ) {
     let range = value_pos..(value_pos + value_len);
-    let value = self.input[range].iter().collect::<String>();
+    let value = &self.input[range];
     self.token_list.push(Token {
       kind,
       index: self.index,
@@ -127,7 +128,7 @@ pub fn tokenize(
   policy: TokenizePolicy,
 ) -> Result<Vec<Token>, Error> {
   let mut tokenizer = Tokenizer {
-    input: input.chars().collect::<Vec<char>>(),
+    input,
     policy,
     token_list: vec![],
     index: 0,
@@ -318,7 +319,6 @@ pub fn tokenize(
 
     tokenizer.add_token_with_default_pos_and_len(TokenType::Char);
   }
-
   tokenizer.add_token_with_default_len(
     TokenType::End,
     tokenizer.index,
