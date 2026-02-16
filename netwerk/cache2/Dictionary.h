@@ -81,18 +81,9 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsresult Prefetch(nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
                     const std::function<void(nsresult)>& aFunc);
 
-  const nsCString& GetHash() const { return mHash; }
-
-  bool HasHash() {
-    
-    
-    return !mHash.IsEmpty();
-  }
-
-  void SetHash(const nsACString& aHash) {
-    MOZ_ASSERT(NS_IsMainThread());
-    mHash = aHash;
-  }
+  nsCString GetHash() const;
+  bool HasHash();
+  void SetHash(const nsACString& aHash);
 
   void WriteOnHash();
 
@@ -103,7 +94,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   void InUse();
   void UseCompleted();
-  bool IsReading() const { return mUsers > 0 && !mWaitingPrefetch.IsEmpty(); }
+  bool IsReading() const;
 
   void SetReplacement(DictionaryCacheEntry* aEntry, DictionaryOrigin* aOrigin) {
     mReplacement = aEntry;
@@ -118,33 +109,24 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   
   
-  void CallbackOnCacheRead(const std::function<void(nsresult)>& aFunc) {
-    
-    mWaitingPrefetch.AppendElement(aFunc);
-  }
+  void CallbackOnCacheRead(const std::function<void(nsresult)>& aFunc);
 
   const nsACString& GetURI() const { return mURI; }
 
-  const Vector<uint8_t>& GetDictionary() const { return mDictionaryData; }
+  const Vector<uint8_t>& GetDictionary() const;
 
   
   
-  void ClearDataForTesting() {
-    mDictionaryData.clear();
-    mDictionaryDataComplete = false;
-  }
+  void ClearDataForTesting();
 
   
   void AccumulateHash(const char* aBuf, int32_t aCount);
   void FinishHash();
 
   
-  uint8_t* DictionaryData(size_t* aLength) const {
-    *aLength = mDictionaryData.length();
-    return (uint8_t*)mDictionaryData.begin();
-  }
+  uint8_t* DictionaryData(size_t* aLength) const;
 
-  bool DictionaryReady() const { return mDictionaryDataComplete; }
+  bool DictionaryReady() const;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     
@@ -196,7 +178,10 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   Maybe<UrlPatternGlue> mCachedPattern;
 
   
+  
+  
   nsCString mHash;
+
   uint32_t mUsers{0};  
 
   
@@ -210,6 +195,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   Vector<uint8_t> mPendingDictionaryData;
 
+  
   
   nsCOMPtr<nsICryptoHash> mCrypto;
 
@@ -353,12 +339,12 @@ class DictionaryCache final {
   already_AddRefed<DictionaryCacheEntry> AddEntry(
       nsIURI* aURI, bool aNewEntry, DictionaryCacheEntry* aDictEntry);
 
-  static void RemoveDictionaryFor(const nsACString& aKey);
+  static void RemoveDictionaryOMT(const nsACString& aKey);
   
   static void RemoveOriginFor(const nsACString& aKey);
 
   
-  void RemoveDictionary(const nsACString& aKey);
+  static void RemoveDictionary(const nsACString& aKey);
   
   void RemoveOrigin(const nsACString& aOrigin);
 
