@@ -73,15 +73,24 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
   bool IsCSSUnsupportedValue() const;
 
   
+  const CSSUnsupportedValue& GetAsCSSUnsupportedValue() const;
+
+  
   CSSUnsupportedValue& GetAsCSSUnsupportedValue();
 
   
   
   
   
-  const CSSPropertyId* GetPropertyId();
+  const CSSPropertyId* GetPropertyId() const;
+
+  
+  CSSPropertyId* GetPropertyId();
 
   bool IsCSSKeywordValue() const;
+
+  
+  const CSSKeywordValue& GetAsCSSKeywordValue() const;
 
   
   CSSKeywordValue& GetAsCSSKeywordValue();
@@ -89,12 +98,21 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
   bool IsCSSNumericValue() const;
 
   
+  const CSSNumericValue& GetAsCSSNumericValue() const;
+
+  
   CSSNumericValue& GetAsCSSNumericValue();
 
   bool IsCSSTransformValue() const;
 
   
+  const CSSTransformValue& GetAsCSSTransformValue() const;
+
+  
   CSSTransformValue& GetAsCSSTransformValue();
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
 
  protected:
   virtual ~CSSStyleValue() = default;
