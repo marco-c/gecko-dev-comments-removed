@@ -9,6 +9,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/RequestBinding.h"  
 #include "nsCOMPtr.h"
@@ -19,7 +20,7 @@ namespace JS::loader {
 
 
 
-enum class ParserMetadata {
+enum class ParserMetadata : uint8_t {
   NotParserInserted,
   ParserInserted,
 };
@@ -63,37 +64,6 @@ class ScriptFetchOptions {
   void SetTriggeringPrincipal(nsIPrincipal* aTriggeringPrincipal);
 
   
-
-
-
-
-  const mozilla::CORSMode mCORSMode;
-
-  
-
-
-
-  const nsString mNonce;
-
-  
-
-
-  const mozilla::dom::RequestPriority mFetchPriority;
-
-  
-
-
-
-  const ParserMetadata mParserMetadata;
-
-  
-
-
-
-
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-
-  
   
   inline bool IsCompatible(ScriptFetchOptions* other) {
     if (this == other) {
@@ -114,6 +84,47 @@ class ScriptFetchOptions {
     return mCORSMode == other->mCORSMode && mNonce == other->mNonce &&
            mFetchPriority == other->mFetchPriority;
   }
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return mNonce.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  }
+
+ public:
+  
+
+  
+
+
+
+
+  const mozilla::CORSMode mCORSMode;
+
+  
+
+
+  const mozilla::dom::RequestPriority mFetchPriority;
+
+  
+
+
+
+  const ParserMetadata mParserMetadata;
+
+  
+
+
+
+
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
+
+
+
+  const nsString mNonce;
 };
 
 }  
