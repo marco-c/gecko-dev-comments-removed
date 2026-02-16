@@ -300,28 +300,32 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                   return MediaResult(NS_ERROR_FAILURE,
                                      "Timecode appeared before SegmentInfo");
                 }
-                uint64_t absTimecode = mClusterTimecode + mBlockTimecode;
-                absTimecode *= mTimecodeScale;
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if ((idx == 0 || aMapping[idx - 1].mTimecode <= absTimecode) &&
-                    (idx == aMapping.Length() ||
-                     aMapping[idx].mTimecode >= absTimecode)) {
-                  WebMTimeDataOffset entry(endOffset, absTimecode,
-                                           mLastInitStartOffset, mClusterOffset,
-                                           mClusterEndOffset);
-                  aMapping.InsertElementAt(idx, entry);
-                } else {
-                  WEBM_DEBUG("Out of order timecode %" PRIu64
+                CheckedInt<uint64_t> checkedTimecode =
+                    CheckedInt<uint64_t>(mClusterTimecode + mBlockTimecode) *
+                    mTimecodeScale;
+                if (!checkedTimecode.isValid() ||
+                    checkedTimecode.value() >
+                        static_cast<uint64_t>(INT64_MAX)) {
+                  WEBM_DEBUG("Timecode overflow: %" PRIu64
                              " in Cluster at %" PRId64 " ignored",
-                             absTimecode, mClusterOffset);
+                             checkedTimecode.isValid() ? checkedTimecode.value()
+                                                       : UINT64_MAX,
+                             mClusterOffset);
+                } else {
+                  uint64_t absTimecode = checkedTimecode.value();
+                  if ((idx == 0 ||
+                       aMapping[idx - 1].mTimecode <= absTimecode) &&
+                      (idx == aMapping.Length() ||
+                       aMapping[idx].mTimecode >= absTimecode)) {
+                    WebMTimeDataOffset entry(endOffset, absTimecode,
+                                             mLastInitStartOffset,
+                                             mClusterOffset, mClusterEndOffset);
+                    aMapping.InsertElementAt(idx, entry);
+                  } else {
+                    WEBM_DEBUG("Out of order timecode %" PRIu64
+                               " in Cluster at %" PRId64 " ignored",
+                               absTimecode, mClusterOffset);
+                  }
                 }
               }
             }
