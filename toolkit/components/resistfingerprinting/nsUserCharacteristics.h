@@ -30,6 +30,9 @@ extern "C" {
 
 int MaxTouchPoints();
 
+
+void PopulateMathMLPrefs();
+
 }  
 };  
 
