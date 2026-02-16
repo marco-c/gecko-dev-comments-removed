@@ -6,14 +6,26 @@
 
 
 
-const PATH = getRootDirectory(gTestPath).replace(
-  "chrome://mochitests/content",
-  "https://example.com"
-);
-const POPUP_LINK = PATH + "file_newtab_from_popup.html";
-const WINDOW_SOURCE = PATH + "file_newtab_from_popup_source.html";
+
+
+
+const POPUP_BODY_BASE64 = btoa(`<a href="http://example.com/" target="_blank"
+                                   id="second">
+                                  Now click this
+                                </a>`);
+const POPUP_LINK = `data:text/html;charset=utf-8;base64,${POPUP_BODY_BASE64}`;
+const WINDOW_BODY = `data:text/html,
+                     <a href="%23" id="first"
+                        onclick="window.open('${POPUP_LINK}', '_blank',
+                                             'width=630,height=500')">
+                       First click this.
+                     </a>`;
 
 add_task(async function test_private_popup_window_opens_private_tabs() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],
+  });
   let privWin = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   
@@ -25,7 +37,7 @@ add_task(async function test_private_popup_window_opens_private_tabs() {
   
   
   let privBrowser = privWin.gBrowser.selectedBrowser;
-  BrowserTestUtils.startLoadingURIString(privBrowser, WINDOW_SOURCE);
+  BrowserTestUtils.startLoadingURIString(privBrowser, WINDOW_BODY);
   await BrowserTestUtils.browserLoaded(privBrowser);
 
   
