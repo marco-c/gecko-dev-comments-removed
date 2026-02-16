@@ -661,6 +661,18 @@ static bool IsCaretValid(TextLeafPoint aPoint) {
   return focus->State() & states::EDITABLE;
 }
 
+static bool IsStartOfFocusedEditor(TextLeafPoint& aPoint) {
+  if (aPoint.mOffset != 0) {
+    return false;
+  }
+  Accessible* focus = FocusMgr() ? FocusMgr()->FocusedAccessible() : nullptr;
+  if (!focus || !(focus->State() & states::EDITABLE)) {
+    
+    return false;
+  }
+  return aPoint == TextLeafPoint(focus, 0);
+}
+
 
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
@@ -1149,6 +1161,8 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
       
       
       
+      
+      
       if (point.mOffset <
           static_cast<int32_t>(nsAccUtils::TextLength(point.mAcc))) {
         
@@ -1156,7 +1170,7 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
         point.mIsEndOfLineInsertionPoint =
             point.FindPrevLineStartSameLocalAcc( true) ==
                 point &&
-            !point.IsParagraphStart();
+            !IsStartOfFocusedEditor(point);
       } else {
         
         
