@@ -3782,15 +3782,18 @@ static ArrayObject* CharSplitHelper(JSContext* cx, Handle<JSLinearString*> str,
 }
 
 template <typename TextChar>
-static MOZ_ALWAYS_INLINE ArrayObject* SplitSingleCharHelper(
-    JSContext* cx, Handle<JSLinearString*> str, const TextChar* text,
-    uint32_t textLen, char16_t patCh) {
+static ArrayObject* SplitSingleCharHelper(JSContext* cx,
+                                          Handle<JSLinearString*> str,
+                                          char16_t patCh) {
   
   uint32_t count = 0;
-  for (size_t index = 0; index < textLen; index++) {
-    if (static_cast<char16_t>(text[index]) == patCh) {
-      count++;
-    }
+  if (patCh <= std::numeric_limits<TextChar>::max()) {
+    JS::AutoCheckCannotGC nogc;
+
+    auto text = str->range<TextChar>(nogc);
+
+    count = std::count(text.begin().get(), text.end().get(),
+                       static_cast<TextChar>(patCh));
   }
 
   
@@ -3808,17 +3811,31 @@ static MOZ_ALWAYS_INLINE ArrayObject* SplitSingleCharHelper(
   
   uint32_t splitsIndex = 0;
   size_t lastEndIndex = 0;
-  for (size_t index = 0; index < textLen; index++) {
-    if (static_cast<char16_t>(text[index]) == patCh) {
-      size_t subLength = size_t(index - lastEndIndex);
-      JSString* sub = NewDependentString(cx, str, lastEndIndex, subLength);
-      if (!sub) {
-        return nullptr;
-      }
-      splits->initDenseElement(splitsIndex++, StringValue(sub));
-      lastEndIndex = index + 1;
+  size_t textLen = str->length();
+  while (splitsIndex < count) {
+    
+    size_t index;
+    {
+      JS::AutoCheckCannotGC nogc;
+
+      auto text = str->range<TextChar>(nogc);
+
+      auto* p = std::find(text.begin().get() + lastEndIndex, text.end().get(),
+                          static_cast<TextChar>(patCh));
+      MOZ_ASSERT(p != text.end().get());
+
+      index = std::distance(text.begin().get(), p);
     }
+
+    size_t subLength = index - lastEndIndex;
+    JSString* sub = NewDependentString(cx, str, lastEndIndex, subLength);
+    if (!sub) {
+      return nullptr;
+    }
+    splits->initDenseElement(splitsIndex++, StringValue(sub));
+    lastEndIndex = index + 1;
   }
+  MOZ_ASSERT(lastEndIndex <= textLen);
 
   
   JSString* sub =
@@ -3829,27 +3846,6 @@ static MOZ_ALWAYS_INLINE ArrayObject* SplitSingleCharHelper(
   splits->initDenseElement(splitsIndex++, StringValue(sub));
 
   return splits;
-}
-
-
-static ArrayObject* SplitSingleCharHelper(JSContext* cx,
-                                          Handle<JSLinearString*> str,
-                                          char16_t ch) {
-  
-  size_t strLength = str->length();
-
-  AutoStableStringChars linearChars(cx);
-  if (!linearChars.init(cx, str)) {
-    return nullptr;
-  }
-
-  if (linearChars.isLatin1()) {
-    return SplitSingleCharHelper(cx, str, linearChars.latin1Chars(), strLength,
-                                 ch);
-  }
-
-  return SplitSingleCharHelper(cx, str, linearChars.twoByteChars(), strLength,
-                               ch);
 }
 
 
@@ -3873,7 +3869,10 @@ ArrayObject* js::StringSplitString(JSContext* cx, HandleString str,
 
   if (linearSep->length() == 1 && limit >= static_cast<uint32_t>(INT32_MAX)) {
     char16_t ch = linearSep->latin1OrTwoByteChar(0);
-    return SplitSingleCharHelper(cx, linearStr, ch);
+    if (linearStr->hasLatin1Chars()) {
+      return SplitSingleCharHelper<Latin1Char>(cx, linearStr, ch);
+    }
+    return SplitSingleCharHelper<char16_t>(cx, linearStr, ch);
   }
 
   return SplitHelper(cx, linearStr, limit, linearSep);
