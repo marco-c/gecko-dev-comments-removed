@@ -25,10 +25,6 @@ static void MmapSIGBUSHandler(int signum, siginfo_t* info, void* context) {
 
   if (mas && mas->IsInsideBuffer(info->si_addr)) {
     
-    
-    mas->CrashWithInfo(info->si_addr);
-
-    
     siglongjmp(mas->mJmpBuf, signum);
   }
 
