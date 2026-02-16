@@ -6557,21 +6557,14 @@
 
 
 
-    replaceTabWithWindow(aTab, aOptions) {
+
+
+    replaceTabWithWindow(aTab, aOptions = {}) {
       if (this.tabs.length == 1) {
         return null;
       }
       
       
-
-      var options = "chrome,dialog=no,all";
-      for (var name in aOptions) {
-        options += "," + name + "=" + aOptions[name];
-      }
-
-      if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-        options += ",private=1";
-      }
 
       
       
@@ -6581,12 +6574,16 @@
       }
 
       
-      return window.openDialog(
-        AppConstants.BROWSER_CHROME_URL,
-        "_blank",
-        options,
-        aTab
-      );
+      let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+      args.appendElement(aTab);
+      return BrowserWindowTracker.openWindow({
+        private: PrivateBrowsingUtils.isWindowPrivate(window),
+        features: Object.entries(aOptions)
+          .map(([key, value]) => `${key}=${value}`)
+          .join(","),
+        openerWindow: window,
+        args,
+      });
     }
 
     
