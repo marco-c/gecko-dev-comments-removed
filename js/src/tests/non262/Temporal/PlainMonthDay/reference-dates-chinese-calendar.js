@@ -70,10 +70,10 @@ const tests = [
       "1941-08-22[u-ca=chinese]",
       "1938-09-23[u-ca=chinese]",
       "1691-10-21[u-ca=chinese]",
-      "-005738-11-17[u-ca=chinese]",
-      "-004098-12-19[u-ca=chinese]",
-      "-002172-01-19[u-ca=chinese]",
-      "-000179-02-18[u-ca=chinese]",
+      "1843-11-21[u-ca=chinese]",
+      "1737-12-21[u-ca=chinese]",
+      "1890-01-20[u-ca=chinese]",
+      "1784-02-20[u-ca=chinese]",
     ],
   },
 ];
@@ -83,14 +83,30 @@ for (let {day, leapMonth, expected} of tests) {
 
   for (let i = 1; i <= 12; ++i) {
     let expectedToString = expected[i - 1];
+    let monthCode = "M" + String(i).padStart(2, "0") + (leapMonth ? "L" : "");
 
     
     
-    if (expectedToString.startsWith("-")) {
-      continue;
+    let pd = Temporal.PlainDate.from(expectedToString);
+    assertEq(pd.monthCode, monthCode);
+    assertEq(pd.day, day);
+    assertEq(pd.toString(), expectedToString);
+
+    
+    
+    {
+      let pmd = pd.toPlainMonthDay();
+      assertEq(pmd.monthCode, monthCode);
+      assertEq(pmd.day, day);
+      assertEq(pmd.toString(), expectedToString);
     }
 
-    let monthCode = "M" + String(i).padStart(2, "0") + (leapMonth ? "L" : "");
+    
+    if (leapMonth && pd.withCalendar("iso8601").year < 1900) {
+      
+      expectedToString = tests.find(e => e.day === day && !e.leapMonth).expected[i - 1];
+      monthCode = monthCode.slice(0, -1);
+    }
 
     let pmd = Temporal.PlainMonthDay.from({calendar, monthCode, day});
     assertEq(pmd.monthCode, monthCode);
