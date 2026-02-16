@@ -572,7 +572,7 @@ class JSTerm extends Component {
       this.resizeObserver.observe(this.node);
 
       
-      this._inputCharWidth = this._getInputCharWidth();
+      this._inputCharWidth = this.editor?.getInputCharWidth() || null;
       this.lastInputValue && this._setValue(this.lastInputValue);
     }
   }
@@ -1461,16 +1461,6 @@ class JSTerm extends Component {
     const lineContent = this.editor.getLine(line);
     const textAfterCursor = lineContent.substring(ch);
     return textAfterCursor === "";
-  }
-
-  
-
-
-
-
-
-  _getInputCharWidth() {
-    return this.editor ? this.editor.defaultCharWidth() : null;
   }
 
   onContextMenu(e) {

@@ -1996,6 +1996,20 @@ class Editor extends EventEmitter {
 
 
 
+
+  getInputCharWidth() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      return cm.defaultCharacterWidth;
+    }
+    return cm.defaultCharWidth();
+  }
+
+  
+
+
+
+
   isTextSelected() {
     const cm = editors.get(this);
     if (this.config.cm6) {
