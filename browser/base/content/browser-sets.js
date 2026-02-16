@@ -228,7 +228,7 @@ document.addEventListener(
             OpenBrowserWindow({ aiWindow: false });
             break;
           case "Tools:AIWindow":
-            OpenBrowserWindow({ aiWindow: true });
+            AIWindow.launchWindow(gBrowser.selectedBrowser, true);
             break;
           case "Tools:ChatsHistory":
             
