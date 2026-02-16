@@ -8805,23 +8805,21 @@ bool BaseCompiler::emitArrayFill() {
   
   Label done;
   Label loop;
-  
   masm.branch32(Assembler::Equal, numElements, Imm32(0), &done);
-  masm.bind(&loop);
 
-  
+  masm.bind(&loop);
   masm.sub32(Imm32(1), numElements);
 
   
   if (!emitGcArraySet(rp, rdata, numElements, arrayType, value,
-                      PreBarrierKind::None, PostBarrierKind::Imprecise)) {
+                      PreBarrierKind::Normal, PostBarrierKind::Imprecise)) {
     return false;
   }
 
-  
   masm.branch32(Assembler::NotEqual, numElements, Imm32(0), &loop);
   masm.bind(&done);
 
+  
   freePtr(rdata);
   freeRef(rp);
   freeI32(numElements);
