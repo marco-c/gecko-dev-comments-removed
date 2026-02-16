@@ -676,10 +676,6 @@ class Rule {
 
     
     
-    
-    
-    
-    
     const brandNewProps = [];
     for (const newProp of newTextProps) {
       if (!this._updateTextProperty(newProp)) {
@@ -690,15 +686,6 @@ class Rule {
     
     
     for (const prop of this.textProps) {
-      
-      
-      if (!prop._visited) {
-        prop.enabled = false;
-        prop.updateEditor();
-      } else {
-        delete prop._visited;
-      }
-
       
       if (
         prop.enabled &&
@@ -751,9 +738,6 @@ class Rule {
       }
 
       
-      prop._visited = true;
-
-      
       let rank = 1;
 
       
@@ -771,17 +755,8 @@ class Rule {
       }
 
       if (rank > match.rank) {
-        if (match.prop) {
-          
-          match.prop.enabled = false;
-          match.prop.updateEditor();
-        }
         match.rank = rank;
         match.prop = prop;
-      } else if (rank) {
-        
-        prop.enabled = false;
-        prop.updateEditor();
       }
     }
 
