@@ -7386,14 +7386,36 @@
 
 
 
-    _updateMultiselectedTabCloseButtonTooltip() {
-      const tabCount = gBrowser.selectedTabs.length;
-      gBrowser.selectedTabs.forEach(selectedTab => {
-        document.l10n.setArgs(selectedTab.querySelector(".tab-close-button"), {
-          tabCount,
-        });
+
+
+
+
+
+    _updateMultiselectedTabCloseButtonTooltip(aTabsRemovedFromMultiselection) {
+      const { selectedTabs } = gBrowser;
+      const args = { tabCount: selectedTabs.length };
+      selectedTabs.forEach(selectedTab => {
+        document.l10n.setArgs(
+          selectedTab.querySelector(".tab-close-button"),
+          args
+        );
+      });
+      args.tabCount = 1;
+      aTabsRemovedFromMultiselection?.forEach(unselectedTab => {
+        document.l10n.setArgs(
+          unselectedTab.querySelector(".tab-close-button"),
+          args
+        );
       });
     }
+
+    
+
+
+
+
+
+
 
     addToMultiSelectedTabs(aTab) {
       if (aTab.splitview) {
@@ -7408,13 +7430,9 @@
       aTab.setAttribute("aria-selected", "true");
       this._multiSelectedTabsSet.add(aTab);
       this._startMultiSelectChange();
-      if (this._multiSelectChangeRemovals.has(aTab)) {
-        this._multiSelectChangeRemovals.delete(aTab);
-      } else {
+      if (!this._multiSelectChangeRemovals.delete(aTab)) {
         this._multiSelectChangeAdditions.add(aTab);
       }
-
-      this._updateMultiselectedTabCloseButtonTooltip();
     }
 
     
@@ -7437,9 +7455,15 @@
       for (let i = lowerIndex; i <= higherIndex; i++) {
         this.addToMultiSelectedTabs(tabs[i]);
       }
-
-      this._updateMultiselectedTabCloseButtonTooltip();
     }
+
+    
+
+
+
+
+
+
 
     removeFromMultiSelectedTabs(aTab) {
       if (!aTab.multiselected) {
@@ -7452,18 +7476,9 @@
       aTab.removeAttribute("aria-selected");
       this._multiSelectedTabsSet.delete(aTab);
       this._startMultiSelectChange();
-      if (this._multiSelectChangeAdditions.has(aTab)) {
-        this._multiSelectChangeAdditions.delete(aTab);
-      } else {
+      if (!this._multiSelectChangeAdditions.delete(aTab)) {
         this._multiSelectChangeRemovals.add(aTab);
       }
-      
-      this._updateMultiselectedTabCloseButtonTooltip();
-      
-      
-      document.l10n.setArgs(aTab.querySelector(".tab-close-button"), {
-        tabCount: 1,
-      });
     }
 
     clearMultiSelectedTabs() {
@@ -7652,6 +7667,11 @@
         }
         this._avoidSingleSelectedTab();
         noticeable = true;
+      }
+      if (noticeable) {
+        this._updateMultiselectedTabCloseButtonTooltip(
+          this._multiSelectChangeRemovals
+        );
       }
       this._multiSelectChangeStarted = false;
       if (noticeable || this._multiSelectChangeSelected) {
