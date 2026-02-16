@@ -25,6 +25,20 @@ def classname_for_test(test, test_path):
     )
 
 
+def project_for_test(test, prefix):
+    """Get android project that test belongs to"""
+    
+    
+    
+    
+    return (
+        os.path.normpath(test)
+        .split(os.path.normpath(prefix))[-1]
+        .removeprefix(os.path.sep)
+        .split(os.path.sep)[0]
+    )
+
+
 def project_for_ac(test, prefix, test_path):
     """Get project name for android-component subprojects from path of test file"""
     
@@ -50,57 +64,77 @@ def project_for_ac(test, prefix, test_path):
 @CommandArgument(
     "--subproject",
     default="fenix",
-    choices=["fenix", "focus", "android-components", "ac"],
+    choices=["fenix", "focus", "android-components", "ac", "geckoview", "gv"],
     help="Android subproject to run tests for.",
 )
 @CommandArgument(
     "--test",
     default=None,
-    help="Test to run",
+    help="File path of test to run.",
 )
 def run_android_test(command_context, subproject, test=None, test_objects=[], **kwargs):
-    gradle_command = []
-    AC = ("android-components", "ac")
+    
+    tests = [test["name"] for test in test_objects]
+    if test:
+        tests.append(test.strip())
+
+    
+    if test:
+        prefix = os.path.join("mobile", "android")
+        subproject = project_for_test(test, prefix)
+
+    
+    ALIASES = {
+        "focus": "focus-android",
+        "ac": "android-components",
+        "gv": "geckoview",
+    }
+    subproject = ALIASES.get(subproject, subproject)
+
+    
+    test_path = os.path.join("src", "test", "java")
+
+    
     if subproject == "fenix":
-        gradle_command = ["testDebug", "testDebugUnitTest"]
         subdir = os.path.join("mobile", "android", "fenix", "app")
-        test_path = os.path.join(subdir, "src", "test", "java")
-    elif subproject == "focus":
-        gradle_command = ["testFocusDebugUnitTest"]
+    elif subproject == "focus-android":
         subdir = os.path.join("mobile", "android", "focus-android", "app")
-        test_path = os.path.join(subdir, "src", "test", "java")
-    elif subproject in AC:
+    elif subproject == "android-components":
         subdir = os.path.join("mobile", "android", "android-components")
-        project_prefix = os.path.join(subdir, "components")
-        if not test_objects and not test:
-            return command_context._mach_context.commands.dispatch(
-                "gradle",
-                command_context._mach_context,
-                args=["-q", "test", "--rerun", "-p", subdir],
-            )
-        test_path = os.path.join("src", "test", "java")
+    elif subproject == "geckoview":
+        subdir = os.path.join("mobile", "android", "geckoview")
     else:
         return None
-    for test_object in test_objects:
-        if subproject in AC:
-            gradle_command.append(
-                ":components:"
-                + project_for_ac(test_object["name"], project_prefix, test_path)
-                + ":testDebugUnitTest"
-            )
+
+    
+    if subproject == "fenix":
+        gradle_command = ["testDebugUnitTest"]
+    elif subproject == "focus-android":
+        gradle_command = ["testFocusDebugUnitTest"]
+    elif subproject == "android-components":
+        if tests:
+            
+            def project_name(test):
+                prefix = os.path.join(subdir, "components")
+                return project_for_ac(test, prefix, test_path)
+
+            projects = dict.fromkeys(project_name(t) for t in tests)
+            gradle_command = [f":components:{p}:testDebugUnitTest" for p in projects]
+        else:
+            gradle_command = ["testDebugUnitTest"]
+    elif subproject == "geckoview":
+        gradle_command = ["testDebugUnitTest"]
+    else:
+        return None
+
+    
+    gradle_command.append("--rerun")
+    for t in tests:
         gradle_command.append("--tests")
-        gradle_command.append(classname_for_test(test_object["name"], test_path))
-    if test:
-        if subproject in AC:
-            gradle_command.append(
-                ":components:"
-                + project_for_ac(test, project_prefix, test_path)
-                + ":testDebugUnitTest"
-            )
-        gradle_command.append("--tests")
-        gradle_command.append(classname_for_test(test, test_path))
+        gradle_command.append(classname_for_test(t, test_path))
+
     return command_context._mach_context.commands.dispatch(
         "gradle",
         command_context._mach_context,
-        args=gradle_command + ["-q", "--rerun", "-p", subdir],
+        args=["-q", "-p", subdir] + gradle_command,
     )
