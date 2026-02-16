@@ -1127,6 +1127,8 @@ class nsPresContext : public nsISupports,
 
   void DoForceReflowForFontInfoUpdateFromStyle();
 
+  void UpdateAnimationsPlayBackRateMultiplier(double aMultiplier);
+
  public:
   
   
@@ -1161,6 +1163,10 @@ class nsPresContext : public nsISupports,
   float RubyPositioningFactor() const {
     MOZ_ASSERT(mRubyPositioningFactor > 0.0f);
     return mRubyPositioningFactor;
+  }
+
+  double AnimationsPlayBackRateMultiplier() const {
+    return mAnimationsPlayBackRateMultiplier;
   }
 
  protected:
@@ -1307,12 +1313,12 @@ class nsPresContext : public nsISupports,
   mozilla::TimeStamp mFirstScrollTime;
 
   
+  mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
+
+  
   
   
   uint32_t mLastScrollGeneration;
-
-  
-  mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
 
   uint32_t mInterruptChecksToSkip;
 
@@ -1337,6 +1343,12 @@ class nsPresContext : public nsISupports,
   
   
   nsTHashSet<nsIContent*> mUpdatedContainerQueryContents;
+
+  
+  
+  
+  
+  double mAnimationsPlayBackRateMultiplier = 1.0;
 
   ScrollStyles mViewportScrollStyles;
 
