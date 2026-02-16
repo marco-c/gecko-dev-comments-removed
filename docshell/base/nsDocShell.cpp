@@ -6667,7 +6667,7 @@ nsresult nsDocShell::CreateInitialDocumentViewer(
       aWindowActor->DocumentPrincipal() ==
           aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank());
 
-  nsresult rv = CreateAboutBlankDocumentViewer(
+  MOZ_TRY(CreateAboutBlankDocumentViewer(
       aOpenWindowInfo->PrincipalToInheritForAboutBlank(),
       aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank(),
       aOpenWindowInfo->PolicyContainerToInheritForAboutBlank(),
@@ -6675,28 +6675,25 @@ nsresult nsDocShell::CreateInitialDocumentViewer(
        true,
       aOpenWindowInfo->CoepToInheritForAboutBlank(),
        true,
-       true, aWindowActor);
+       true, aWindowActor));
 
   NS_ENSURE_STATE(mDocumentViewer);
 
-  if (NS_SUCCEEDED(rv)) {
-    RefPtr<Document> doc(GetDocument());
-    MOZ_ASSERT(doc,
-               "Should have doc if CreateAboutBlankDocumentViewer "
-               "succeeded!");
-    MOZ_ASSERT(doc->IsInitialDocument(), "Document should be initial document");
+  RefPtr<Document> doc(GetDocument());
+  MOZ_ASSERT(doc,
+             "Should have doc if CreateAboutBlankDocumentViewer succeeded!");
+  MOZ_ASSERT(doc->IsInitialDocument(), "Document should be initial document");
 
-    
-    
-    
-    
-    
-    
-    
-    doc->IgnoreDocGroupMismatches();
-  }
+  
+  
+  
+  
+  
+  
+  
+  doc->IgnoreDocGroupMismatches();
 
-  return rv;
+  return NS_OK;
 }
 
 
