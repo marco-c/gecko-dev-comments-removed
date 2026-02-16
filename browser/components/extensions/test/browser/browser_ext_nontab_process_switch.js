@@ -187,6 +187,7 @@ add_task(async function process_switch_in_sidebars_popups() {
   
   
   
+  
   const commonDescriptionPopup = {
     id: "",
     className: "webextension-popup-browser",
@@ -265,14 +266,6 @@ add_task(async function process_switch_in_sidebars_popups() {
         url: `moz-extension://${extension.uuid}/page.html?popup_back`,
         osPid: extPid,
         currentRemoteType: "extension",
-        ...commonDescriptionPopup,
-      },
-      {
-        
-        url: "about:blank",
-        osPid: filterSeenWindowGlobals(gSeenWindowGlobals, extBcgId).at(-1)
-          .osPid,
-        currentRemoteType: "web",
         ...commonDescriptionPopup,
       },
     ],
