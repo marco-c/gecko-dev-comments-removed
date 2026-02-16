@@ -66,10 +66,8 @@ void ClipManager::BeginList(const StackingContextHelper& aStackingContext) {
       
       mCacheStack.emplace();
     }
-    if (clips.mChain) {
-      clips.mClipChainId =
-          DefineClipChain(clips.mChain, clips.mAppUnitsPerDevPixel);
-    }
+    
+    clips.mClipChainId.reset();
   }
 
   CLIP_LOG("  push: clip: %p, asr: %p, scroll =%" PRIuPTR ", clip =%" PRIu64
@@ -114,10 +112,7 @@ void ClipManager::PushOverrideForASR(const ActiveScrolledRoot* aASR,
     auto& top = mItemClipStack.top();
     if (top.mASR == aASR) {
       top.mScrollId = aSpatialId;
-      if (top.mChain) {
-        top.mClipChainId =
-            DefineClipChain(top.mChain, top.mAppUnitsPerDevPixel);
-      }
+      top.mClipChainId.reset();
     }
   }
 }
@@ -142,10 +137,7 @@ void ClipManager::PopOverrideForASR(const ActiveScrolledRoot* aASR) {
       top.mScrollId = (it == mASROverride.end() || it->second.empty())
                           ? space
                           : it->second.top();
-      if (top.mChain) {
-        top.mClipChainId =
-            DefineClipChain(top.mChain, top.mAppUnitsPerDevPixel);
-      }
+      top.mClipChainId.reset();
     }
   }
 
@@ -217,7 +209,14 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
     
     
     CLIP_LOG("\tearly-exit for %p\n", aItem);
-    return mItemClipStack.top().GetSpaceAndClipChain();
+    auto& clips = mItemClipStack.top();
+    if (!clips.mClipChainId && clips.mChain) {
+      clips.mClipChainId =
+          DefineClipChain(clips.mChain, clips.mAppUnitsPerDevPixel);
+    }
+    return wr::WrSpaceAndClipChain{clips.mScrollId, clips.mClipChainId
+                                                        ? clips.mClipChainId->id
+                                                        : wr::ROOT_CLIP_CHAIN};
   }
 
   
@@ -254,12 +253,14 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
 
   
   
-  auto spaceAndClipChain = clips.GetSpaceAndClipChain();
+  const wr::WrSpaceAndClipChain spaceAndClipChain{
+      clips.mScrollId,
+      clips.mClipChainId ? clips.mClipChainId->id : wr::ROOT_CLIP_CHAIN};
 
   CLIP_LOG("  push: clip: %p, asr: %p, scroll = %" PRIuPTR ", clip = %" PRIu64
            "\n",
-           clips.mChain, clips.mASR, clips.mScrollId.id,
-           clips.mClipChainId.valueOr(wr::WrClipChainId{0}).id);
+           clips.mChain, clips.mASR, spaceAndClipChain.space.id,
+           spaceAndClipChain.clip_chain);
 
   mItemClipStack.push(clips);
 
@@ -723,15 +724,6 @@ bool ClipManager::ItemClips::HasSameInputs(const ItemClips& aOther) {
     return false;
   }
   return true;
-}
-
-wr::WrSpaceAndClipChain ClipManager::ItemClips::GetSpaceAndClipChain() const {
-  auto spaceAndClipChain = wr::RootScrollNodeWithChain();
-  spaceAndClipChain.space = mScrollId;
-  if (mClipChainId) {
-    spaceAndClipChain.clip_chain = mClipChainId->id;
-  }
-  return spaceAndClipChain;
 }
 
 }  

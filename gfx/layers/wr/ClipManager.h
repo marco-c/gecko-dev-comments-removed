@@ -140,7 +140,6 @@ class ClipManager {
     Maybe<wr::WrClipChainId> mClipChainId;
 
     bool HasSameInputs(const ItemClips& aOther);
-    wr::WrSpaceAndClipChain GetSpaceAndClipChain() const;
   };
 
   
