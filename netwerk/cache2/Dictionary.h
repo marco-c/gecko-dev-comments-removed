@@ -193,7 +193,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
 
   
-  Maybe<UrlpPattern> mCachedPattern;
+  Maybe<UrlPatternGlue> mCachedPattern;
 
   
   nsCString mHash;
