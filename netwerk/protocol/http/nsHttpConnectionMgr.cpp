@@ -77,6 +77,8 @@ struct UrlMarker {
     schema.SetTableLabel("{marker.data.url}");
     schema.AddKeyFormat("url", MS::Format::Url);
     schema.AddKeyLabelFormat("duration", "Duration", MS::Format::Duration);
+    
+    schema.AddKeyFormat("channelId", MS::Format::Integer);
     return schema;
   }
 };
