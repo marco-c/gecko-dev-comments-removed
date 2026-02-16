@@ -3828,20 +3828,17 @@ static bool IsPromiseSpecies(JSContext* cx, JSFunction* species);
 
 
 
-template <typename T>
+template <typename GetNextFuncT, typename GetResolveAndRejectFuncT>
 [[nodiscard]] static bool CommonPerformPromiseCombinator(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    HandleObject resultPromise, HandleValue promiseResolve, bool* done,
-    bool resolveReturnsUndefined, T getResolveAndReject) {
+    JSContext* cx, HandleObject C, HandleObject resultPromise,
+    HandleValue promiseResolve, bool iterationMayHaveSideEffects, bool* done,
+    bool resolveReturnsUndefined, GetNextFuncT getNextFunc,
+    GetResolveAndRejectFuncT getResolveAndReject) {
   RootedObject promiseCtor(
       cx, GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
   if (!promiseCtor) {
     return false;
   }
-
-  
-  
-  bool iterationMayHaveSideEffects = !iterator.isOptimizedDenseArrayIteration();
 
   
   
@@ -3870,8 +3867,7 @@ template <typename T>
   while (true) {
     
     RootedValue& nextValue = nextValueOrNextPromise;
-    if (!iterator.next(&nextValue, done)) {
-      *done = true;
+    if (!getNextFunc(&nextValue, done)) {
       return false;
     }
 
@@ -4136,6 +4132,32 @@ template <typename T>
   }
 }
 
+template <typename T>
+[[nodiscard]] static bool CommonPerformIterPromiseCombinator(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    HandleObject resultPromise, HandleValue promiseResolve, bool* done,
+    bool resolveReturnsUndefined, T getResolveAndReject) {
+  
+  
+  bool iterationMayHaveSideEffects = !iterator.isOptimizedDenseArrayIteration();
+
+  auto getNextFunc = [&](JS::MutableHandle<JS::Value> nextValue, bool* done) {
+    
+    
+    
+    
+    if (!iterator.next(nextValue, done)) {
+      *done = true;
+      return false;
+    }
+    return true;
+  };
+
+  return CommonPerformPromiseCombinator(
+      cx, C, resultPromise, promiseResolve, iterationMayHaveSideEffects, done,
+      resolveReturnsUndefined, getNextFunc, getResolveAndReject);
+}
+
 
 
 
@@ -4390,7 +4412,7 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   };
 
   
-  if (!CommonPerformPromiseCombinator(
+  if (!CommonPerformIterPromiseCombinator(
           cx, iterator, C, resultCapability.promise(), promiseResolve, done,
           true, getResolveAndReject)) {
     return false;
@@ -4521,7 +4543,7 @@ static bool Promise_static_race(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   
-  return CommonPerformPromiseCombinator(
+  return CommonPerformIterPromiseCombinator(
       cx, iterator, C, resultCapability.promise(), promiseResolve, done,
       isDefaultResolveFn, getResolveAndReject);
 }
@@ -4627,7 +4649,7 @@ static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   
-  if (!CommonPerformPromiseCombinator(
+  if (!CommonPerformIterPromiseCombinator(
           cx, iterator, C, resultCapability.promise(), promiseResolve, done,
           true, getResolveAndReject)) {
     return false;
@@ -4849,7 +4871,7 @@ static void ThrowAggregateError(JSContext* cx,
       IsNativeFunction(resultCapability.resolve(), ResolvePromiseFunction);
 
   
-  if (!CommonPerformPromiseCombinator(
+  if (!CommonPerformIterPromiseCombinator(
           cx, iterator, C, resultCapability.promise(), promiseResolve, done,
           isDefaultResolveFn, getResolveAndReject)) {
     return false;
