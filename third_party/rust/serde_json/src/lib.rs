@@ -299,7 +299,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.140")]
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.149")]
 
 #![allow(
     clippy::collapsible_else_if,
@@ -320,6 +320,7 @@
     clippy::transmute_ptr_to_ptr,
     clippy::unbuffered_bytes,
     clippy::unconditional_recursion, 
+    clippy::uninlined_format_args,
     clippy::unnecessary_wraps
 )]
 
@@ -366,6 +367,7 @@
 #![deny(missing_docs)]
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![allow(unknown_lints, mismatched_lifetime_syntaxes)]
 
 #[cfg(not(any(feature = "std", feature = "alloc")))]
 compile_error! {
@@ -376,6 +378,8 @@ extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std;
+
+extern crate serde_core as serde;
 
 
 #[doc(hidden)]

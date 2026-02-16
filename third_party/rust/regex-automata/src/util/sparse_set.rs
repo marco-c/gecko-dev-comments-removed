@@ -129,7 +129,7 @@ impl SparseSet {
     pub(crate) fn resize(&mut self, new_capacity: usize) {
         assert!(
             new_capacity <= StateID::LIMIT,
-            "sparse set capacity cannot excced {:?}",
+            "sparse set capacity cannot exceed {:?}",
             StateID::LIMIT
         );
         self.clear();
@@ -234,6 +234,6 @@ impl<'a> Iterator for SparseSetIter<'a> {
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
     fn next(&mut self) -> Option<StateID> {
-        self.0.next().map(|&id| id)
+        self.0.next().copied()
     }
 }
