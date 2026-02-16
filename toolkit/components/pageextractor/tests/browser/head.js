@@ -75,17 +75,28 @@ async function html(strings, ...values) {
 
 
 
+
+
 function serveOnce(html, statusCode = 200) {
   info("Create server");
   const server = new HttpServer();
 
   const { promise, resolve } = Promise.withResolvers();
+  const encoder = new TextEncoder();
+  const htmlUtf8 = encoder.encode(html);
 
   server.registerPathHandler("/page.html", (request, response) => {
     info("Request received for: " + url);
-    response.setHeader("Content-Type", "text/html");
+    response.setHeader("Content-Type", "text/html; charset=utf-8");
     response.setStatusLine(request.httpVersion, statusCode);
-    response.write(html);
+
+    const binaryOutputStream = Cc[
+      "@mozilla.org/binaryoutputstream;1"
+    ].createInstance(Ci.nsIBinaryOutputStream);
+
+    binaryOutputStream.setOutputStream(response.bodyOutputStream);
+    binaryOutputStream.writeByteArray(htmlUtf8);
+
     resolve(server.stop());
   });
 
