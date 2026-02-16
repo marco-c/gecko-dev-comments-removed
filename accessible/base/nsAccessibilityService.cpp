@@ -1515,7 +1515,9 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   }
 
   
-  if (!newAcc && content->IsXULElement()) {
+  
+  
+  if (!newAcc && content->IsXULElement() && !IPCAccessibilityActive()) {
     if (content->IsXULElement(nsGkAtoms::panel)) {
       
       
