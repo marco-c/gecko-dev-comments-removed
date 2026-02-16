@@ -64,6 +64,8 @@ class NormalizedConstraintSet {
 
     
     ValueType Clamp(ValueType n) const { return std::clamp(n, mMin, mMax); }
+    
+    
     ValueType Get(ValueType defaultValue) const {
       return Clamp(mIdeal.valueOr(defaultValue));
     }
