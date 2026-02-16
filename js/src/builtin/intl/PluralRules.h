@@ -110,31 +110,6 @@ class PluralRulesObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_SelectPluralRule(JSContext* cx, unsigned argc,
-                                                JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_SelectPluralRuleRange(JSContext* cx,
-                                                     unsigned argc,
-                                                     JS::Value* vp);
-
 }  
 
 #endif 
