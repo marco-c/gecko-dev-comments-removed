@@ -1,0 +1,14 @@
+
+enableGeckoProfilingWithSlowAssertions();
+
+function f() {
+  class C {
+    static #c;
+  }
+  (function() {
+    "".substring("");
+    return [];
+  })();
+}
+
+oomTest(f);
