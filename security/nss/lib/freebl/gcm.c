@@ -436,7 +436,7 @@ gcmHash_Update(gcmHashContext *ghash, const unsigned char *buf,
     unsigned int blocks;
     SECStatus rv;
 
-    ghash->cLen += (len * PR_BITS_PER_BYTE);
+    ghash->cLen += ((uint64_t)len * PR_BITS_PER_BYTE);
 
     
 
