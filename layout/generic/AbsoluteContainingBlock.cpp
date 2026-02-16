@@ -122,6 +122,13 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(UnfragmentedPositionProperty, LogicalPoint)
 
 
 
+
+
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(UnfragmentedSizeProperty, LogicalSize)
+
+
+
+
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(
     UnfragmentedContainingBlockProperty,
     AbsoluteContainingBlock::ContainingBlockRects)
@@ -134,6 +141,15 @@ static LogicalPoint* GetUnfragmentedPosition(const ReflowInput& aCBReflowInput,
   return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
              ? nullptr
              : aFrame->GetProperty(UnfragmentedPositionProperty());
+}
+
+static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
+                                        const nsIFrame* aFrame) {
+  return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
+             ? nullptr
+             
+             
+             : aFrame->FirstInFlow()->GetProperty(UnfragmentedSizeProperty());
 }
 
 nsFrameList AbsoluteContainingBlock::StealPushedChildList() {
@@ -544,15 +560,23 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
               UnfragmentedPositionProperty(),
               kidFrame->GetLogicalPosition(containerWM, cbBorderBoxSize));
 
+          const LogicalSize kidSize =
+              kidFrame->StylePosition()->mBoxSizing == StyleBoxSizing::BorderBox
+                  ? kidFrame->GetLogicalSize()
+                  : kidFrame->ContentSize();
+          kidFrame->SetOrUpdateDeletableProperty(UnfragmentedSizeProperty(),
+                                                 kidSize);
+
           
           
           
           
           
           
-          NS_ASSERTION(!kidFrame->GetPrevInFlow(),
-                       "UnfragmentedPositionProperty should only be set on "
-                       "first-in-flow!");
+          NS_ASSERTION(
+              !kidFrame->GetPrevInFlow(),
+              "UnfragmentedPositionProperty and UnfragmentedSizeProperty "
+              "should only be set on first-in-flow!");
         }
         MOZ_ASSERT(!kidStatus.IsInlineBreakBefore(),
                    "ShouldAvoidBreakInside should prevent this from happening");
@@ -1709,11 +1733,28 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     } else {
       availBSize = NS_UNCONSTRAINEDSIZE;
     }
+    StyleSizeOverrides sizeOverrides;
+    if (const auto* unfragmentedSize =
+            GetUnfragmentedSize(aReflowInput, aKidFrame)) {
+      
+      
+      
+      auto resolutionParams =
+          AnchorPosResolutionParams::From(aKidFrame, aAnchorPosResolutionCache);
+      if (aKidFrame->StylePosition()->ISize(wm, resolutionParams)->IsAuto()) {
+        sizeOverrides.mStyleISize.emplace(
+            StyleSizeOverrides::SizeFrom(unfragmentedSize->ISize(wm)));
+      }
+      if (aKidFrame->StylePosition()->BSize(wm, resolutionParams)->IsAuto()) {
+        sizeOverrides.mStyleBSize.emplace(
+            StyleSizeOverrides::SizeFrom(unfragmentedSize->BSize(wm)));
+      }
+    }
     const LogicalSize availSize(outerWM, cbSize.ISize(outerWM), availBSize);
     ReflowInput kidReflowInput(aPresContext, aReflowInput, aKidFrame,
                                availSize.ConvertTo(wm, outerWM),
                                Some(cbSize.ConvertTo(wm, outerWM)), initFlags,
-                               {}, {}, aAnchorPosResolutionCache);
+                               sizeOverrides, {}, aAnchorPosResolutionCache);
 
     if (unfragmentedPosition) {
       
