@@ -19,6 +19,10 @@
 
 
 #include "mozilla/Logging.h"
+
+#define MOZ_NOTIFICATION_SERVER_NAME \
+  L"" MOZ_APP_DISPLAYNAME " Notification Server"
+
 #ifdef IMPL_LIBXUL
 namespace mozilla::widget {
 extern LazyLogModule sWASLog;
@@ -34,9 +38,9 @@ bool gVerbose = false;
     if (gVerbose || _level == mozilla::LogLevel::Error) { \
       POST_EXPAND_NOTIFY_LOG(MOZ_LOG_EXPAND_ARGS _args);  \
     }
-#  define POST_EXPAND_NOTIFY_LOG(...) \
-    MOZ_WIN_EVENT_LOG_ERROR_MESSAGE(  \
-        L"" MOZ_APP_DISPLAYNAME " Notification Server", L"" __VA_ARGS__)
+#  define POST_EXPAND_NOTIFY_LOG(...)                             \
+    MOZ_WIN_EVENT_LOG_ERROR_MESSAGE(MOZ_NOTIFICATION_SERVER_NAME, \
+                                    L"" __VA_ARGS__)
 #endif
 
 #include <functional>
