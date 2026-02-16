@@ -15,6 +15,7 @@ add_task(async function test_new_chat_button_sidebar() {
     set: [
       ["browser.smartwindow.enabled", true],
       ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
     ],
   });
 
@@ -65,6 +66,7 @@ add_task(async function test_new_chat_button_not_in_fullpage() {
     set: [
       ["browser.smartwindow.enabled", true],
       ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
     ],
   });
 
@@ -74,6 +76,11 @@ add_task(async function test_new_chat_button_not_in_fullpage() {
   
   const result = await SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
+
+    
+    
+    
+    await new Promise(resolve => content.setTimeout(resolve, 100));
 
     
     await ContentTaskUtils.waitForCondition(
