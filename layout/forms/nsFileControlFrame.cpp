@@ -90,7 +90,7 @@ static already_AddRefed<Element> MakeAnonButton(
   
   
   button->SetIsNativeAnonymousRoot();
-  button->SetPseudoElementType(PseudoStyleType::fileSelectorButton);
+  button->SetPseudoElementType(PseudoStyleType::FileSelectorButton);
 
   
   nsAutoString buttonTxt;
@@ -133,7 +133,7 @@ nsresult nsFileControlFrame::CreateAnonymousContent(
   
   
   mTextContent->SetIsNativeAnonymousRoot();
-  mTextContent->SetPseudoElementType(PseudoStyleType::mozFileContent);
+  mTextContent->SetPseudoElementType(PseudoStyleType::MozFileContent);
   RefPtr<nsTextNode> text = doc->CreateEmptyTextNode();
   mTextContent->AppendChildTo(text, false, IgnoreErrors());
 

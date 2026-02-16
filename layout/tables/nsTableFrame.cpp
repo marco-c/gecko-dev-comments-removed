@@ -25,7 +25,6 @@
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "nsCOMPtr.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSProps.h"
 #include "nsCSSRendering.h"
@@ -628,7 +627,7 @@ nsTableColGroupFrame* nsTableFrame::CreateSyntheticColGroupFrame() {
 
   RefPtr<ComputedStyle> colGroupStyle;
   colGroupStyle = presShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-      PseudoStyleType::tableColGroup);
+      PseudoStyleType::MozTableColumnGroup);
   
   nsTableColGroupFrame* newFrame =
       NS_NewTableColGroupFrame(presShell, colGroupStyle);
@@ -682,7 +681,7 @@ void nsTableFrame::AppendAnonymousColFrames(
     nsIContent* iContent = aColGroupFrame->GetContent();
     RefPtr<ComputedStyle> computedStyle =
         presShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-            PseudoStyleType::tableCol);
+            PseudoStyleType::MozTableColumn);
     
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
@@ -7304,8 +7303,9 @@ void nsTableFrame::InvalidateTableFrame(nsIFrame* aFrame,
 void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
     nsTArray<OwnedAnonBox>& aResult) {
   nsIFrame* wrapper = GetParent();
-  MOZ_ASSERT(wrapper->Style()->GetPseudoType() == PseudoStyleType::tableWrapper,
-             "What happened to our parent?");
+  MOZ_ASSERT(
+      wrapper->Style()->GetPseudoType() == PseudoStyleType::MozTableWrapper,
+      "What happened to our parent?");
   aResult.AppendElement(
       OwnedAnonBox(wrapper, &UpdateStyleOfOwnedAnonBoxesForTableWrapper));
 }
@@ -7314,13 +7314,13 @@ void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
 void nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
     nsIFrame* aOwningFrame, nsIFrame* aWrapperFrame,
     ServoRestyleState& aRestyleState) {
-  MOZ_ASSERT(
-      aWrapperFrame->Style()->GetPseudoType() == PseudoStyleType::tableWrapper,
-      "What happened to our parent?");
+  MOZ_ASSERT(aWrapperFrame->Style()->GetPseudoType() ==
+                 PseudoStyleType::MozTableWrapper,
+             "What happened to our parent?");
 
   RefPtr<ComputedStyle> newStyle =
       aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-          PseudoStyleType::tableWrapper, aOwningFrame->Style());
+          PseudoStyleType::MozTableWrapper, aOwningFrame->Style());
 
   
   

@@ -102,14 +102,14 @@ nsresult nsRangeFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   Document* doc = mContent->OwnerDoc();
   
-  mTrackDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeTrack,
-                               PseudoStyleType::sliderTrack, aElements);
+  mTrackDiv = MakeAnonymousDiv(*doc, PseudoStyleType::MozRangeTrack,
+                               PseudoStyleType::SliderTrack, aElements);
   
-  mProgressDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeProgress,
-                                  PseudoStyleType::sliderFill, aElements);
+  mProgressDiv = MakeAnonymousDiv(*doc, PseudoStyleType::MozRangeProgress,
+                                  PseudoStyleType::SliderFill, aElements);
   
-  mThumbDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeThumb,
-                               PseudoStyleType::sliderThumb, aElements);
+  mThumbDiv = MakeAnonymousDiv(*doc, PseudoStyleType::MozRangeThumb,
+                               PseudoStyleType::SliderThumb, aElements);
   return NS_OK;
 }
 

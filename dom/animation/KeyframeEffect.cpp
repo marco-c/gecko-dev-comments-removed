@@ -11,6 +11,7 @@
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 
 #include "NonCustomCSSPropertyId.h"
+#include "PseudoStyleType.h"  
 #include "WindowRenderer.h"
 #include "js/PropertyAndElement.h"  
 #include "mozilla/AnimationUtils.h"
@@ -32,9 +33,8 @@
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/layers/AnimationInfo.h"
 #include "nsCSSPropertyIDSet.h"
-#include "nsCSSProps.h"           
-#include "nsCSSPseudoElements.h"  
-#include "nsComputedDOMStyle.h"   
+#include "nsCSSProps.h"          
+#include "nsComputedDOMStyle.h"  
 #include "nsContentUtils.h"
 #include "nsDOMMutationObserver.h"  
 #include "nsIFrame.h"
@@ -795,7 +795,7 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
   }
 
   Maybe<PseudoStyleRequest> pseudoRequest =
-      nsCSSPseudoElements::ParsePseudoElement(options.mPseudoElement);
+      PseudoStyleRequest::Parse(options.mPseudoElement);
   if (!pseudoRequest) {
     
     aRv.ThrowSyntaxError(
@@ -1103,7 +1103,7 @@ void KeyframeEffect::SetPseudoElement(const nsAString& aPseudoElement,
   
   
   Maybe<PseudoStyleRequest> pseudoRequest =
-      nsCSSPseudoElements::ParsePseudoElement(aPseudoElement);
+      PseudoStyleRequest::Parse(aPseudoElement);
   if (!pseudoRequest || pseudoRequest->IsNotPseudo()) {
     
     aRv.ThrowSyntaxError(
@@ -1559,23 +1559,23 @@ nsIFrame* KeyframeEffect::GetPrimaryFrame() const {
   }
 
   switch (mTarget.mPseudoRequest.mType) {
-    case PseudoStyleType::before:
+    case PseudoStyleType::Before:
       frame = nsLayoutUtils::GetBeforeFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::after:
+    case PseudoStyleType::After:
       frame = nsLayoutUtils::GetAfterFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::marker:
+    case PseudoStyleType::Marker:
       frame = nsLayoutUtils::GetMarkerFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::backdrop:
+    case PseudoStyleType::Backdrop:
       frame = nsLayoutUtils::GetBackdropFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::viewTransition:
-    case PseudoStyleType::viewTransitionGroup:
-    case PseudoStyleType::viewTransitionImagePair:
-    case PseudoStyleType::viewTransitionOld:
-    case PseudoStyleType::viewTransitionNew:
+    case PseudoStyleType::ViewTransition:
+    case PseudoStyleType::ViewTransitionGroup:
+    case PseudoStyleType::ViewTransitionImagePair:
+    case PseudoStyleType::ViewTransitionOld:
+    case PseudoStyleType::ViewTransitionNew:
       if (Element* pseudoElement =
               mTarget.mElement->GetPseudoElement(mTarget.mPseudoRequest)) {
         frame = pseudoElement->GetPrimaryFrame();
