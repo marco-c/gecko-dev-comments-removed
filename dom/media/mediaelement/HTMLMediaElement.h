@@ -915,6 +915,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   virtual void WakeLockRelease();
   virtual void UpdateWakeLock();
 
+  
+  
+  
+  void UpdatePlaybackPseudoClasses();
+
   void CreateAudioWakeLockIfNeeded();
   void ReleaseAudioWakeLockIfExists();
   void ReleaseAudioWakeLockInternal();
