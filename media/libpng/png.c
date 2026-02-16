@@ -13,7 +13,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_54 Your_png_h_is_not_version_1_6_54;
+typedef png_libpng_version_1_6_55 Your_png_h_is_not_version_1_6_55;
 
 
 
@@ -820,7 +820,7 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.54" PNG_STRING_NEWLINE \
+      "libpng version 1.6.55" PNG_STRING_NEWLINE \
       "Copyright (c) 2018-2026 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
