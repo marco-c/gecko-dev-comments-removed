@@ -1009,6 +1009,18 @@ class ScreenshotsHelper {
 
 
 
+async function addTabAndLoadBrowser(url = TEST_PAGE) {
+  const tab = BrowserTestUtils.addTab(gBrowser, url);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  return tab;
+}
+
+
+
+
+
+
+
 function getRawClipboardData(flavor) {
   const whichClipboard = Services.clipboard.kGlobalClipboard;
   const xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
