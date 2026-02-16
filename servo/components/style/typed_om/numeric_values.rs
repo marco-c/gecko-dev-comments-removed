@@ -32,9 +32,30 @@ impl NoCalcNumeric {
     
     
     
+    
     pub fn unit(&self) -> &'static str {
         match *self {
             Self::Length(v) => v.unit(),
+        }
+    }
+
+    
+    
+    
+    
+    pub fn canonical_unit(&self) -> Option<&'static str> {
+        match *self {
+            Self::Length(v) => v.canonical_unit(),
+        }
+    }
+
+    
+    
+    
+    
+    pub fn to(&self, unit: &str) -> Result<Self, ()> {
+        match self {
+            Self::Length(v) => Ok(Self::Length(v.to(unit)?)),
         }
     }
 }
