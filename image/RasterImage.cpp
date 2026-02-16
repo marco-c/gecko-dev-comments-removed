@@ -127,11 +127,6 @@ nsresult RasterImage::Init(const char* aMimeType, uint32_t aFlags) {
   }
 
   
-  
-  mDefaultDecoderFlags =
-      DecoderFactory::GetDefaultDecoderFlagsForType(mDecoderType);
-
-  
   mInitialized = true;
 
   return NS_OK;
@@ -1185,7 +1180,7 @@ void RasterImage::Decode(const OrientedIntSize& aSize, uint32_t aFlags,
   SurfaceCache::UnlockEntries(ImageKey(this));
 
   
-  DecoderFlags decoderFlags = mDefaultDecoderFlags;
+  DecoderFlags decoderFlags = DefaultDecoderFlags();
   if (aFlags & FLAG_ASYNC_NOTIFY) {
     decoderFlags |= DecoderFlags::ASYNC_NOTIFY;
   }
@@ -1269,7 +1264,7 @@ RasterImage::DecodeMetadata(uint32_t aFlags) {
 
   
   RefPtr<IDecodingTask> task = DecoderFactory::CreateMetadataDecoder(
-      mDecoderType, WrapNotNull(this), mDefaultDecoderFlags, mSourceBuffer);
+      mDecoderType, WrapNotNull(this), DefaultDecoderFlags(), mSourceBuffer);
 
   
   if (!task) {

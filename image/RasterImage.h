@@ -417,12 +417,6 @@ class RasterImage final : public ImageResource,
   
   
   
-  
-  DecoderFlags mDefaultDecoderFlags = DefaultDecoderFlags();
-
-  
-  
-  
 
   
   
