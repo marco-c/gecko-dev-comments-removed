@@ -848,12 +848,23 @@ nsresult nsSplitterFrameInner::KeyDown(Event* aKeyEvent) {
     return NS_OK;
   }
 
-  
   for (auto& info : mChildInfosBefore) {
+    
+    
+    
+    if (info.pref > info.current) {
+      info.pref = info.current;
+    }
+
     info.changed = info.current;
   }
 
   for (auto& info : mChildInfosAfter) {
+    
+    if (info.pref > info.current) {
+      info.pref = info.current;
+    }
+
     info.changed = info.current;
   }
 
