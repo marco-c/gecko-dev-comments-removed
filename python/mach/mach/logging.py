@@ -441,9 +441,7 @@ class LoggingManager:
         """
 
         
-        
         logging.getLogger("glean").setLevel(logging.CRITICAL)
-        logging.getLogger("filelock").setLevel(logging.CRITICAL)
 
         
         
