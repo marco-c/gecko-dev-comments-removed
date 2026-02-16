@@ -1124,7 +1124,8 @@ static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
   
   
   auto origDisplay = [&] {
-    if (aFrame->Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    if (aFrame->Style()->GetPseudoType() ==
+        PseudoStyleType::MozScrolledContent) {
       
       
       MOZ_ASSERT(aFrame->GetParent());
@@ -2429,7 +2430,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
         inFlowScrollableOverflow.Union(line.ScrollableOverflowRect());
   }
 
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+  if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
     
     const auto paddingInflatedOverflow =
         ComputePaddingInflatedScrollableOverflow(inFlowChildBounds);
@@ -2465,7 +2466,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 
 static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
-  if (aFrame->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
+  if (aFrame->Style()->GetPseudoType() != PseudoStyleType::MozScrolledContent) {
     
     
     return false;
@@ -2564,8 +2565,9 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
   
   
   
-  const bool isScrolled = aAsIfScrolled || Style()->GetPseudoType() ==
-                                               PseudoStyleType::scrolledContent;
+  const bool isScrolled =
+      aAsIfScrolled ||
+      Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent;
   
   
   
@@ -4331,7 +4333,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     Maybe<LogicalSize> cbSize;
     LogicalSize availSize = availSpace.Size(wm);
     bool columnSetWrapperHasNoBSizeLeft = false;
-    if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
+    if (Style()->GetPseudoType() == PseudoStyleType::MozColumnContent) {
       
       
       const ReflowInput* cbReflowInput =
@@ -4583,7 +4585,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
         }
       }
 
-      if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+      if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
         auto lineFrameBounds = GetLineFrameInFlowBounds(*aLine, *frame);
         MOZ_ASSERT(aLine->GetChildCount() == 1,
                    "More than one child in block line?");
@@ -5568,7 +5570,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
   
   OverflowAreas overflowAreas;
   aLineLayout.RelativePositionFrames(overflowAreas);
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+  if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
     Maybe<nsRect> inFlowBounds;
     int32_t n = aLine->GetChildCount();
     for (nsIFrame* lineFrame = aLine->mFirstChild; n > 0;
@@ -5661,7 +5663,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     OverflowAreas lineOverflowAreas = aState.mFloatOverflowAreas;
     lineOverflowAreas.UnionWith(aLine->GetOverflowAreas());
     aLine->SetOverflowAreas(lineOverflowAreas);
-    if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
       Span<const nsIFrame* const> floats(aLine->Floats());
       
       auto floatRect = GetNormalMarginRect(*floats[0]);
@@ -6500,7 +6502,7 @@ nsContainerFrame* nsBlockFrame::GetRubyContentPseudoFrame() {
   auto* firstChild = PrincipalChildList().FirstChild();
   if (firstChild && firstChild->IsRubyFrame() &&
       firstChild->Style()->GetPseudoType() ==
-          PseudoStyleType::blockRubyContent) {
+          PseudoStyleType::MozBlockRubyContent) {
     return static_cast<nsContainerFrame*>(firstChild);
   }
   return nullptr;
@@ -6646,11 +6648,11 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
 
 static bool AnonymousBoxIsBFC(const ComputedStyle* aStyle) {
   switch (aStyle->GetPseudoType()) {
-    case PseudoStyleType::fieldsetContent:
-    case PseudoStyleType::columnContent:
-    case PseudoStyleType::cellContent:
-    case PseudoStyleType::scrolledContent:
-    case PseudoStyleType::anonymousItem:
+    case PseudoStyleType::MozFieldsetContent:
+    case PseudoStyleType::MozColumnContent:
+    case PseudoStyleType::MozCellContent:
+    case PseudoStyleType::MozScrolledContent:
+    case PseudoStyleType::MozAnonymousItem:
       return true;
     default:
       return false;
@@ -6712,7 +6714,7 @@ static bool EstablishesBFC(const nsBlockFrame* aFrame) {
   }
 
   const auto* style = aFrame->Style();
-  if (style->GetPseudoType() == PseudoStyleType::marker) {
+  if (style->GetPseudoType() == PseudoStyleType::Marker) {
     if (aFrame->GetParent() &&
         aFrame->GetParent()->StyleList()->mListStylePosition ==
             StyleListStylePosition::Outside) {
@@ -6764,11 +6766,11 @@ void nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState) {
     inFlowFrame = inFlowFrame->GetPlaceholderFrame();
   }
   nsIFrame* styleParent = CorrectStyleParentFrame(inFlowFrame->GetParent(),
-                                                  PseudoStyleType::firstLetter);
+                                                  PseudoStyleType::FirstLetter);
   ComputedStyle* parentStyle = styleParent->Style();
   RefPtr<ComputedStyle> firstLetterStyle =
       aRestyleState.StyleSet().ResolvePseudoElementStyle(
-          *mContent->AsElement(), PseudoStyleType::firstLetter, nullptr,
+          *mContent->AsElement(), PseudoStyleType::FirstLetter, nullptr,
           parentStyle);
   
   
@@ -8194,13 +8196,13 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
     bool haveFirstLetterStyle =
         (pseudo == PseudoStyleType::NotPseudo ||
          PseudoStyle::IsElementBackedPseudo(pseudo) ||
-         (pseudo == PseudoStyleType::cellContent &&
+         (pseudo == PseudoStyleType::MozCellContent &&
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
-         pseudo == PseudoStyleType::fieldsetContent ||
-         pseudo == PseudoStyleType::columnContent ||
-         (pseudo == PseudoStyleType::scrolledContent &&
+         pseudo == PseudoStyleType::MozFieldsetContent ||
+         pseudo == PseudoStyleType::MozColumnContent ||
+         (pseudo == PseudoStyleType::MozScrolledContent &&
           !GetParent()->IsListControlFrame()) ||
-         pseudo == PseudoStyleType::mozSVGText) &&
+         pseudo == PseudoStyleType::MozSvgText) &&
         !IsMathMLFrame() && !IsColumnSetWrapperFrame() &&
         !IsComboboxControlFrame() &&
         RefPtr<ComputedStyle>(GetFirstLetterStyle(PresContext())) != nullptr;
@@ -8736,19 +8738,19 @@ void nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState) {
 
   if (nsIFrame* firstLineFrame = GetFirstLineFrame()) {
     nsIFrame* styleParent = CorrectStyleParentFrame(firstLineFrame->GetParent(),
-                                                    PseudoStyleType::firstLine);
+                                                    PseudoStyleType::FirstLine);
 
     ComputedStyle* parentStyle = styleParent->Style();
     RefPtr<ComputedStyle> firstLineStyle =
         aRestyleState.StyleSet().ResolvePseudoElementStyle(
-            *mContent->AsElement(), PseudoStyleType::firstLine, nullptr,
+            *mContent->AsElement(), PseudoStyleType::FirstLine, nullptr,
             parentStyle);
 
     
     
     RefPtr<ComputedStyle> continuationStyle =
         aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-            PseudoStyleType::mozLineFrame, parentStyle);
+            PseudoStyleType::MozLineFrame, parentStyle);
 
     UpdateStyleOfOwnedChildFrame(firstLineFrame, firstLineStyle, aRestyleState,
                                  Some(continuationStyle.get()));
@@ -8943,6 +8945,6 @@ int32_t nsBlockFrame::GetDepth() const {
 already_AddRefed<ComputedStyle> nsBlockFrame::GetFirstLetterStyle(
     nsPresContext* aPresContext) {
   return aPresContext->StyleSet()->ProbePseudoElementStyle(
-      *mContent->AsElement(), PseudoStyleType::firstLetter, nullptr, Style());
+      *mContent->AsElement(), PseudoStyleType::FirstLetter, nullptr, Style());
 }
 #endif

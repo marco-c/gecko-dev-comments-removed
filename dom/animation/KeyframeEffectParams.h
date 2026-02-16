@@ -7,7 +7,7 @@
 #ifndef mozilla_KeyframeEffectParams_h
 #define mozilla_KeyframeEffectParams_h
 
-#include "mozilla/PseudoStyleType.h"            
+#include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"  
 
 namespace mozilla {

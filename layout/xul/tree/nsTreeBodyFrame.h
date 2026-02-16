@@ -277,15 +277,15 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
                          nsFontMetrics& aFontMetrics, nsRect& aTextRect);
 
   
-  nsCSSAnonBoxPseudoStaticAtom* GetItemWithinCellAt(nscoord aX,
-                                                    const nsRect& aCellRect,
-                                                    int32_t aRowIndex,
-                                                    nsTreeColumn* aColumn);
+  mozilla::PseudoStyleType GetItemWithinCellAt(nscoord aX,
+                                               const nsRect& aCellRect,
+                                               int32_t aRowIndex,
+                                               nsTreeColumn* aColumn);
 
   
   
   void GetCellAt(nscoord aX, nscoord aY, int32_t* aRow, nsTreeColumn** aCol,
-                 nsCSSAnonBoxPseudoStaticAtom** aChildElt);
+                 mozilla::PseudoStyleType* aChildElt);
 
   
   void GetTwistyRect(int32_t aRowIndex, nsTreeColumn* aColumn,
@@ -325,7 +325,7 @@ class nsTreeBodyFrame final : public mozilla::SimpleXULLeafFrame,
   
   
   ComputedStyle* GetPseudoComputedStyle(
-      nsCSSAnonBoxPseudoStaticAtom* aPseudoElement);
+      mozilla::PseudoStyleType aPseudoElement);
 
   
   

@@ -20,6 +20,7 @@
 #include "DOMMatrix.h"
 #include "ExpandedPrincipal.h"
 #include "PresShellInlines.h"
+#include "PseudoStyleType.h"
 #include "jsapi.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AnimationComparator.h"
@@ -133,7 +134,6 @@
 #include "nsBaseHashtable.h"
 #include "nsBlockFrame.h"
 #include "nsCOMPtr.h"
-#include "nsCSSPseudoElements.h"
 #include "nsCompatibility.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContainerFrame.h"
@@ -4834,7 +4834,7 @@ static void GetAnimationsUnsorted(const Element* aElement,
 
 static inline bool IsSupportedForGetAnimationsSubtree(PseudoStyleType aType) {
   return aType == PseudoStyleType::NotPseudo ||
-         aType == PseudoStyleType::mozSnapshotContainingBlock ||
+         aType == PseudoStyleType::MozSnapshotContainingBlock ||
          PseudoStyle::IsViewTransitionPseudoElement(aType);
 }
 
@@ -4918,16 +4918,16 @@ void Element::GetAnimationsWithoutFlush(
   
   if (IsGeneratedContentContainerForBefore()) {
     elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::before;
+    pseudoRequest.mType = PseudoStyleType::Before;
   } else if (IsGeneratedContentContainerForAfter()) {
     elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::after;
+    pseudoRequest.mType = PseudoStyleType::After;
   } else if (IsGeneratedContentContainerForMarker()) {
     elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::marker;
+    pseudoRequest.mType = PseudoStyleType::Marker;
   } else if (IsGeneratedContentContainerForBackdrop()) {
     elem = GetParentElement();
-    pseudoRequest.mType = PseudoStyleType::backdrop;
+    pseudoRequest.mType = PseudoStyleType::Backdrop;
   }
 
   if (!elem) {
@@ -4935,10 +4935,10 @@ void Element::GetAnimationsWithoutFlush(
   }
 
   
-  if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::before ||
-                             pseudoRequest.mType == PseudoStyleType::after ||
-                             pseudoRequest.mType == PseudoStyleType::backdrop ||
-                             pseudoRequest.mType == PseudoStyleType::marker)) {
+  if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::Before ||
+                             pseudoRequest.mType == PseudoStyleType::After ||
+                             pseudoRequest.mType == PseudoStyleType::Backdrop ||
+                             pseudoRequest.mType == PseudoStyleType::Marker)) {
     
     
     
@@ -4962,9 +4962,9 @@ void Element::CloneAnimationsFrom(const Element& aOther) {
   
   
   for (PseudoStyleType pseudoType :
-       {PseudoStyleType::NotPseudo, PseudoStyleType::before,
-        PseudoStyleType::after, PseudoStyleType::marker,
-        PseudoStyleType::backdrop}) {
+       {PseudoStyleType::NotPseudo, PseudoStyleType::Before,
+        PseudoStyleType::After, PseudoStyleType::Marker,
+        PseudoStyleType::Backdrop}) {
     
     
     const PseudoStyleRequest request(pseudoType);
@@ -5326,7 +5326,7 @@ void Element::GetImplementedPseudoElement(nsAString& aPseudo) const {
   if (pseudoType == PseudoStyleType::NotPseudo) {
     return SetDOMStringToNull(aPseudo);
   }
-  nsDependentAtomString pseudo(nsCSSPseudoElements::GetPseudoAtom(pseudoType));
+  nsDependentAtomString pseudo(PseudoStyle::GetAtom(pseudoType));
 
   
   
@@ -5362,19 +5362,19 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
       
       
       return const_cast<Element*>(this);
-    case PseudoStyleType::before:
+    case PseudoStyleType::Before:
       return nsLayoutUtils::GetBeforePseudo(this);
-    case PseudoStyleType::after:
+    case PseudoStyleType::After:
       return nsLayoutUtils::GetAfterPseudo(this);
-    case PseudoStyleType::marker:
+    case PseudoStyleType::Marker:
       return nsLayoutUtils::GetMarkerPseudo(this);
-    case PseudoStyleType::backdrop:
+    case PseudoStyleType::Backdrop:
       return nsLayoutUtils::GetBackdropPseudo(this);
-    case PseudoStyleType::viewTransition:
-    case PseudoStyleType::viewTransitionGroup:
-    case PseudoStyleType::viewTransitionImagePair:
-    case PseudoStyleType::viewTransitionOld:
-    case PseudoStyleType::viewTransitionNew: {
+    case PseudoStyleType::ViewTransition:
+    case PseudoStyleType::ViewTransitionGroup:
+    case PseudoStyleType::ViewTransitionImagePair:
+    case PseudoStyleType::ViewTransitionOld:
+    case PseudoStyleType::ViewTransitionNew: {
       Element* result = SearchViewTransitionPseudo(this, aRequest);
       MOZ_ASSERT(!result || result->GetPseudoElementType() == aRequest.mType,
                  "The type should match");

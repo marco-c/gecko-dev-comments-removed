@@ -58,12 +58,12 @@ nsresult nsProgressFrame::CreateAnonymousContent(
 
   if (StaticPrefs::layout_css_modern_range_pseudos_enabled()) {
     
-    mBarDiv->SetPseudoElementType(PseudoStyleType::sliderFill);
+    mBarDiv->SetPseudoElementType(PseudoStyleType::SliderFill);
   } else {
     
     mBarDiv->SetPseudoElementType(mType == Type::Progress
-                                      ? PseudoStyleType::mozProgressBar
-                                      : PseudoStyleType::mozMeterBar);
+                                      ? PseudoStyleType::MozProgressBar
+                                      : PseudoStyleType::MozMeterBar);
   }
 
   

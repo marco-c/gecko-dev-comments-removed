@@ -52,23 +52,6 @@
 
 
 
-
-
-
-
-#define DEFINE_STATIC_ATOM_SUBCLASS(name_)                              \
-  class name_ : public nsStaticAtom {                                   \
-   public:                                                              \
-    constexpr name_(uint32_t aLength, uint32_t aHash, uint32_t aOffset, \
-                    bool aIsAsciiLowercase)                             \
-        : nsStaticAtom(aLength, aHash, aOffset, aIsAsciiLowercase) {}   \
-  };
-
-DEFINE_STATIC_ATOM_SUBCLASS(nsCSSAnonBoxPseudoStaticAtom)
-DEFINE_STATIC_ATOM_SUBCLASS(nsCSSPseudoElementStaticAtom)
-
-#undef DEFINE_STATIC_ATOM_SUBCLASS
-
 namespace mozilla {
 namespace detail {
 
@@ -87,7 +70,7 @@ struct GkAtoms {
 
 
 
-#define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) \
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_) \
   const char16_t name_##_string[sizeof(value_)];
 #include "nsGkAtomList.h"
 #undef GK_ATOM
@@ -100,7 +83,7 @@ struct GkAtoms {
 
 
 
-#define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) name_,
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_) name_,
 #include "nsGkAtomList.h"
 #undef GK_ATOM
     AtomsCount
@@ -171,9 +154,9 @@ class nsGkAtoms {
 
 
 
-#define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) \
-  static constexpr nsStaticAtom* name_ = const_cast<nsStaticAtom*>(       \
-      &mozilla::detail::gGkAtoms.mAtoms[static_cast<size_t>(              \
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_)              \
+  static constexpr nsStaticAtom* name_ = const_cast<nsStaticAtom*>( \
+      &mozilla::detail::gGkAtoms.mAtoms[static_cast<size_t>(        \
           mozilla::detail::GkAtoms::Atoms::name_)]);
 #include "nsGkAtomList.h"
 #undef GK_ATOM
