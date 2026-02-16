@@ -887,7 +887,7 @@ nsresult ScriptPreloader::Run() {
   
   
   if (!mCacheInvalidated) {
-    mal.Wait(TimeDuration::FromSeconds(10));
+    mal.Wait(TimeDuration::FromSeconds(3));
   }
 
   auto result = URLPreloader::GetSingleton().WriteCache();
