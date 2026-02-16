@@ -6944,7 +6944,7 @@ function Messages(prevState = INITIAL_STATE.Messages, action) {
         portID: action.data.portID || "",
       };
     case actionTypes.MESSAGE_TOGGLE_VISIBILITY:
-      return { ...prevState, isVisible: action.data.isVisible };
+      return { ...prevState, isVisible: action.data };
     default:
       return prevState;
   }
@@ -15165,15 +15165,13 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     }
   }
   render() {
-    const activationWindowVariant = this.props.Prefs.values["activationWindow.variant"];
-    const activationWindowClass = activationWindowVariant ? `activation-window-variant-${activationWindowVariant}` : "";
     return external_React_default().createElement("span", null, external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       timeout: 300,
       classNames: "personalize-animate",
       in: !this.props.showing,
       appear: true
     }, external_React_default().createElement("button", {
-      className: `${activationWindowClass} personalize-button`,
+      className: "personalize-button",
       "data-l10n-id": "newtab-customize-panel-icon-button",
       onClick: () => this.props.onOpen(),
       onKeyDown: e => {
@@ -15232,8 +15230,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
   }
 }
 const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  DiscoveryStream: state.DiscoveryStream,
-  Prefs: state.Prefs
+  DiscoveryStream: state.DiscoveryStream
 }))(_CustomizeMenu);
 ;
 
@@ -16085,87 +16082,7 @@ function WallpaperFeatureHighlight({
   }));
 }
 ;
-
-
-
-
-
-
-function ActivationWindowMessage({
-  dispatch,
-  handleBlock,
-  handleClick,
-  handleDismiss,
-  messageData
-}) {
-  const {
-    content
-  } = messageData;
-  const hasButtons = content.primaryButton || content.secondaryButton;
-  const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
-    handleDismiss();
-    handleBlock();
-  }, [handleDismiss, handleBlock]);
-  const onPrimaryClick = (0,external_React_namespaceObject.useCallback)(() => {
-    handleClick("primary-button");
-    if (content.primaryButton?.action?.dismiss) {
-      handleDismiss();
-      handleBlock();
-    }
-    if (content.primaryButton?.action?.type === "SHOW_PERSONALIZE") {
-      dispatch({
-        type: actionTypes.SHOW_PERSONALIZE
-      });
-      dispatch(actionCreators.UserEvent({
-        event: "SHOW_PERSONALIZE"
-      }));
-    }
-  }, [dispatch, handleClick, handleDismiss, handleBlock, content]);
-  const onSecondaryClick = (0,external_React_namespaceObject.useCallback)(() => {
-    handleClick("secondary-button");
-    if (content.secondaryButton?.action?.dismiss) {
-      handleDismiss();
-      handleBlock();
-    }
-  }, [handleClick, handleDismiss, handleBlock, content]);
-  return external_React_default().createElement("aside", {
-    className: hasButtons ? "activation-window-message" : "activation-window-message no-buttons"
-  }, external_React_default().createElement("div", {
-    className: "activation-window-message-dismiss"
-  }, external_React_default().createElement("moz-button", {
-    type: "icon ghost",
-    iconSrc: "chrome://global/skin/icons/close.svg",
-    onClick: onDismiss,
-    "data-l10n-id": "newtab-activation-window-message-dismiss-button"
-  })), external_React_default().createElement("div", {
-    className: "activation-window-message-inner"
-  }, external_React_default().createElement("img", {
-    src: content.imageSrc || "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
-    alt: "",
-    role: "presentation"
-  }), external_React_default().createElement("div", null, content.heading && (typeof content.heading === "string" ? external_React_default().createElement("h2", null, content.heading) : external_React_default().createElement("h2", {
-    "data-l10n-id": content.heading.string_id
-  })), content.message && (typeof content.message === "string" ? external_React_default().createElement("p", null, content.message) : external_React_default().createElement("p", {
-    "data-l10n-id": content.message.string_id
-  })), (content.primaryButton || content.secondaryButton) && external_React_default().createElement("moz-button-group", null, content.primaryButton && (typeof content.primaryButton.label === "string" ? external_React_default().createElement("moz-button", {
-    type: "primary",
-    onClick: onPrimaryClick
-  }, content.primaryButton.label) : external_React_default().createElement("moz-button", {
-    type: "primary",
-    onClick: onPrimaryClick,
-    "data-l10n-id": content.primaryButton.label.string_id
-  })), content.secondaryButton && (typeof content.secondaryButton.label === "string" ? external_React_default().createElement("moz-button", {
-    type: "default",
-    onClick: onSecondaryClick
-  }, content.secondaryButton.label) : external_React_default().createElement("moz-button", {
-    type: "default",
-    onClick: onSecondaryClick,
-    "data-l10n-id": content.secondaryButton.label.string_id
-  }))))));
-}
-;
 function Base_extends() { return Base_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Base_extends.apply(null, arguments); }
-
 
 
 
@@ -16699,8 +16616,7 @@ class BaseContent extends (external_React_default()).PureComponent {
   }
   shouldShowOMCHighlight(componentId) {
     const messageData = this.props.Messages?.messageData;
-    const isVisible = this.props.Messages?.isVisible;
-    if (!messageData || Object.keys(messageData).length === 0 || !isVisible) {
+    if (!messageData || Object.keys(messageData).length === 0) {
       return false;
     }
     return messageData?.content?.messageType === componentId;
@@ -16882,12 +16798,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"]
     }, props.Search)))), !prefs.showSearch && !noSectionsEnabled && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
-    }, this.shouldShowOMCHighlight("ActivationWindowMessage") && external_React_default().createElement(MessageWrapper, {
-      dispatch: this.props.dispatch
-    }, external_React_default().createElement(ActivationWindowMessage, {
-      dispatch: this.props.dispatch,
-      messageData: this.props.Messages.messageData
-    })), isDiscoveryStream ? external_React_default().createElement(ErrorBoundary, {
+    }, isDiscoveryStream ? external_React_default().createElement(ErrorBoundary, {
       className: "borderless-error"
     }, external_React_default().createElement(DiscoveryStreamBase, {
       locale: props.App.locale,
