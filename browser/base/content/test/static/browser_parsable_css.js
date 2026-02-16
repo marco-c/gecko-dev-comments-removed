@@ -210,6 +210,11 @@ let propNameAllowlist = [
   
   
   { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
+
+  
+  
+  { propName: "--selected-session-history-entry-info", isFromDevTools: true },
+  { propName: "--session-history-entry-bottom-end", isFromDevTools: true },
 ];
 
 
