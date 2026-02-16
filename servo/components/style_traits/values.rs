@@ -605,6 +605,20 @@ pub mod specified {
 
 
 
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct UnitValue {
+    
+    pub value: f32,
+
+    
+    pub unit: CssString,
+}
+
+
+
+
+
 
 
 
@@ -616,14 +630,7 @@ pub enum NumericValue {
     
     
     
-    
-    
-    Unit {
-        
-        value: f32,
-        
-        unit: CssString,
-    },
+    Unit(UnitValue),
 
     
     
@@ -712,7 +719,10 @@ impl ToTyped for Au {
     fn to_typed(&self) -> Option<TypedValue> {
         let value = self.to_f32_px();
         let unit = CssString::from("px");
-        Some(TypedValue::Numeric(NumericValue::Unit { value, unit }))
+        Some(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            value,
+            unit,
+        })))
     }
 }
 
