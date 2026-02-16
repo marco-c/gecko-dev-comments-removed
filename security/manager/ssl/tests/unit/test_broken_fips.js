@@ -33,10 +33,13 @@ function run_test() {
   let pkcs11modDBFile = do_get_file(`test_broken_fips/${pkcs11modDBName}`);
   pkcs11modDBFile.copyTo(profile, pkcs11modDBName);
 
-  let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
-    Ci.nsIPKCS11ModuleDB
+  
+  Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+
+  const fipsUtils = Cc["@mozilla.org/security/fipsutils;1"].getService(
+    Ci.nsIFIPSUtils
   );
-  ok(!moduleDB.isFIPSEnabled, "FIPS should not be enabled");
+  ok(!fipsUtils.isFIPSEnabled, "FIPS should not be enabled");
 
   let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
     Ci.nsISecretDecoderRing

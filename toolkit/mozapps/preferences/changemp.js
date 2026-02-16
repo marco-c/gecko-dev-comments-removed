@@ -107,8 +107,10 @@ function setPassword() {
           
         } else {
           if (pw1.value == "") {
-            var secmoddb = Cc[nsPKCS11ModuleDB].getService(nsIPKCS11ModuleDB);
-            if (secmoddb.isFIPSEnabled) {
+            const fipsUtils = Cc[
+              "@mozilla.org/security/fipsutils;1"
+            ].getService(Ci.nsIFIPSUtils);
+            if (fipsUtils.isFIPSEnabled) {
               
               createAlert(
                 "pw-change-failed-title",

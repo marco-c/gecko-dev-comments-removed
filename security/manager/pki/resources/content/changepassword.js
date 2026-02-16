@@ -104,10 +104,10 @@ function setPassword(event) {
           
         } else {
           if (pw1.value == "") {
-            var secmoddb = Cc[
-              "@mozilla.org/security/pkcs11moduledb;1"
-            ].getService(Ci.nsIPKCS11ModuleDB);
-            if (secmoddb.isFIPSEnabled) {
+            const fipsUtils = Cc[
+              "@mozilla.org/security/fipsutils;1"
+            ].getService(Ci.nsIFIPSUtils);
+            if (fipsUtils.isFIPSEnabled) {
               
               doPrompt("pippki-pw-change2empty-in-fips-mode");
               passok = 0;
