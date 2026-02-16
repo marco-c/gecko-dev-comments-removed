@@ -14,10 +14,13 @@
 #ifndef js_AllocPolicy_h
 #define js_AllocPolicy_h
 
-#include "mozilla/mozalloc.h"  
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/mozalloc.h"         
 
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
+
+class JS_PUBLIC_API JSTracer;
 
 extern MOZ_COLD JS_PUBLIC_API void JS_ReportOutOfMemory(JSContext* cx);
 
@@ -26,6 +29,10 @@ namespace js {
 class FrontendContext;
 
 enum class AllocFunction { Malloc, Calloc, Realloc };
+
+namespace gc {
+class Cell;
+}  
 
 
 
@@ -39,7 +46,54 @@ class AllocPolicyBase {
   
   
   bool checkSimulatedOOM() const { return !js::oom::ShouldFailWithOOM(); }
+
+  
+  
+  
+  void updateOwningGCThing(gc::Cell* maybeOwner) {}
+
+  
+  
+  template <typename T>
+  void traceOwnedAlloc(JSTracer* trc, gc::Cell* maybeOwner, T** ptrp,
+                       const char* name) {}
+
+  
+  
+  size_t getAllocSize(void* ptr, mozilla::MallocSizeOf mallocSizeOf) {
+    return mallocSizeOf(ptr);
+  }
 };
+
+
+
+
+
+
+
+
+template <typename Container>
+void TraceOwnedAllocs(JSTracer* trc, gc::Cell* maybeOwner, Container& container,
+                      const char* name) {
+  auto& allocPolicy = container.allocPolicy();
+  allocPolicy.updateOwningGCThing(maybeOwner);
+  container.traceOwnedAllocs([&](auto** ptrp) {
+    allocPolicy.traceOwnedAlloc(trc, maybeOwner, ptrp, name);
+  });
+}
+
+
+
+template <typename Container>
+size_t SizeOfOwnedAllocs(Container& container,
+                         mozilla::MallocSizeOf mallocSizeOf) {
+  size_t size = 0;
+  auto& allocPolicy = container.allocPolicy();
+  container.traceOwnedAllocs([&](auto** ptrp) {
+    size += allocPolicy.getAllocSize(*ptrp, mallocSizeOf);
+  });
+  return size;
+}
 
 
 
