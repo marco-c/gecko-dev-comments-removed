@@ -82,7 +82,7 @@ bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
     
     
     if (!marker->hasEntriesForCurrentColor() && gc->marker().canDonateWork()) {
-      GCMarker::moveWork(marker, &gc->marker(), false);
+      GCMarker::moveSomeWork(marker, &gc->marker(), false);
     }
   }
 
@@ -357,7 +357,7 @@ void ParallelMarker::donateWorkFrom(GCMarker* src) {
 
   
   MOZ_ASSERT(!waitingTask->hasWork());
-  size_t wordsMoved = GCMarker::moveWork(waitingTask->marker, src, true);
+  size_t wordsMoved = GCMarker::moveSomeWork(waitingTask->marker, src, true);
 
   gc->stats().count(gcstats::COUNT_PARALLEL_MARK_INTERRUPTIONS);
 
