@@ -5,7 +5,7 @@
 
 add_task(async function test_handleTokens_builds_memoriesApplied_array() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.aiwindow.enabled", true]],
+    set: [["browser.smartwindow.enabled", true]],
   });
 
   
