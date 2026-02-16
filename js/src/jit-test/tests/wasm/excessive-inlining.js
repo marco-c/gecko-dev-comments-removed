@@ -5,12 +5,6 @@
 
 
 
-
-
-
-
-
-
 let t = `
 (module
   (func $recursive (export "recursive") (param i32) (result i32)
@@ -44,15 +38,84 @@ let t = `
       i32.add
       (call $recursive (i32.sub (local.get 0) (i32.const 2)))
       i32.add
+
+      (call $recursive (i32.sub (local.get 0) (i32.const 1)))
+      i32.add
+      (call $recursive (i32.sub (local.get 0) (i32.const 2)))
+      i32.add
     end
   )
 )`;
 
-let i = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(t)));
-
-assertEq(i.exports.recursive(10), 14517361);
-
+let m = new WebAssembly.Module(wasmTextToBinary(t));
+let i = new WebAssembly.Instance(m);
 
 
 
-assertEq(wasmFunctionTier(i.exports.recursive), "optimized");
+let numIters = 0;
+while (wasmFunctionTier(i.exports.recursive) !== "optimized") {
+    assertEq(i.exports.recursive(6), 27805);
+    
+    
+    numIters++;
+    assertEq(numIters < 10000, true);
+}
+
+let ma = wasmMetadataAnalysis(m);
+
+let tier1codeBytesUsed = ma["tier1 code bytes used"];
+let tier2codeBytesUsed = ma["tier2 code bytes used"];
+
+
+assertEq(tier1codeBytesUsed > 500, true);
+
+
+assertEq(tier2codeBytesUsed > 2000, true);
+
+
+
+assertEq(tier2codeBytesUsed < 15000, true);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
