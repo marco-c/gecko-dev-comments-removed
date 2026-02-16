@@ -1322,7 +1322,6 @@ void SVGElement::UpdateMappedDeclarationBlock() {
 
   const bool lengthAffectsStyle =
       SVGGeometryProperty::ElementMapsLengthsToStyle(this);
-  bool sawTransform = false;
   uint32_t i = 0;
   while (BorrowedAttrInfo info = GetAttrInfoAt(i++)) {
     const nsAttrName* attrName = info.mName;
@@ -1357,7 +1356,6 @@ void SVGElement::UpdateMappedDeclarationBlock() {
     if (nameAtom == nsGkAtoms::transform ||
         nameAtom == nsGkAtoms::patternTransform ||
         nameAtom == nsGkAtoms::gradientTransform) {
-      sawTransform = true;
       const auto* transform = GetExistingAnimatedTransformList();
       MOZ_ASSERT(GetTransformListAttrName() == nameAtom);
       MOZ_ASSERT(transform);
@@ -1397,8 +1395,8 @@ void SVGElement::UpdateMappedDeclarationBlock() {
   }
 
   
-  if (NodeInfo()->NameAtom() == nsGkAtoms::svg && !sawTransform) {
-    if (const auto* transform = GetExistingAnimatedTransformList()) {
+  if (auto* svg = SVGSVGElement::FromNode(this)) {
+    if (const auto* transform = svg->GetViewTransformList()) {
       mappedAttrParser.TellStyleAlreadyParsedResult(*transform);
     }
   }
