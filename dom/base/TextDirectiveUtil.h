@@ -138,7 +138,10 @@ class TextDirectiveUtil final {
 
 
 
-  static void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
+
+
+
+  static bool AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
 
   
 

@@ -185,11 +185,15 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         return nullptr;
       }
       
-      TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(*matchRange);
+      const bool thereIsMoreNonWhitespaceText =
+          TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(
+              *matchRange);
       
       
       
-      if (matchRange->Collapsed()) {
+      
+      
+      if (!thereIsMoreNonWhitespaceText) {
         return nullptr;
       }
       
@@ -332,7 +336,15 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         return nullptr;
       }
       
-      TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(*suffixRange);
+      const bool thereIsMoreNonWhitespaceText =
+          TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(
+              *suffixRange);
+      if (!thereIsMoreNonWhitespaceText) {
+        
+        
+        
+        break;
+      }
       auto nextBlockBoundary =
           TextDirectiveUtil::FindNextBlockBoundary<TextScanDirection::Right>(
               suffixRange->StartRef());

@@ -191,7 +191,7 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
   return false;
 }
 
- void TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(
+ bool TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(
     nsRange& aRange) {
   
   while (!aRange.Collapsed()) {
@@ -208,7 +208,7 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
       
       
       if (NS_FAILED(aRange.SetStart(node->GetNextNode(), 0))) {
-        return;
+        return false;
       }
       
       continue;
@@ -227,11 +227,12 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
     
     
     if (!IsWhitespaceAtPosition(text, offset)) {
-      return;
+      return true;
     }
 
     aRange.SetStart(node, offset + 1);
   }
+  return false;
 }
 
 
