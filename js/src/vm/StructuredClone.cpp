@@ -3438,25 +3438,30 @@ bool JSStructuredCloneReader::readHeader() {
     storedScope = JS::StructuredCloneScope::DifferentProcessForIndexedDB;
   }
 
-  
-  
-  if ((int)storedScope == 0) {
-    storedScope = JS::StructuredCloneScope::SameProcess;
+  if (allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
+    
+    
+    
+    
+    
+    
+    
+    allowedScope = JS::StructuredCloneScope::DifferentProcess;
+    if (int(storedScope) == 0) {
+      storedScope = JS::StructuredCloneScope::DifferentProcess;
+    }
   }
 
+  
+  
+  
+  
   if (storedScope < JS::StructuredCloneScope::SameProcess ||
       storedScope > JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
                               "invalid structured clone scope");
     return false;
-  }
-
-  if (allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
-    
-    
-    allowedScope = JS::StructuredCloneScope::DifferentProcess;
-    return true;
   }
 
   if (storedScope < allowedScope) {
