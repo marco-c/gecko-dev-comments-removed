@@ -14,6 +14,9 @@ LOCAL_INCLUDES += [
     "/third_party/sipcc",
 ]
 
-UNIFIED_SOURCES += ["JsepSessionImpl.cpp", "JsepTrack.cpp", "SsrcGenerator.cpp"]
+UNIFIED_SOURCES += ["JsepSessionImpl.cpp", "SsrcGenerator.cpp"]
+
+
+SOURCES += ["JsepTrack.cpp"]
 
 FINAL_LIBRARY = "xul"
