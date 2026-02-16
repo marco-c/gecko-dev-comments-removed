@@ -605,21 +605,6 @@ Preferences.addSetting({
   },
 });
 
-
-
-Preferences.addSetting({
-  id: "backupSettings",
-  setup(emitChange) {
-    Services.obs.addObserver(emitChange, "backup-service-status-updated");
-    return () =>
-      Services.obs.removeObserver(emitChange, "backup-service-status-updated");
-  },
-  visible: () => {
-    let bs = lazy.BackupService.init();
-    return bs.archiveEnabledStatus.enabled || bs.restoreEnabledStatus.enabled;
-  },
-});
-
 var gSyncPane = {
   get page() {
     return document.getElementById("weavePrefsDeck").selectedIndex;
@@ -671,6 +656,26 @@ var gSyncPane = {
     xps.ensureLoaded();
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+  handlePrefControlledSection() {
+    let bs = lazy.BackupService.init();
+
+    if (!bs.archiveEnabledStatus.enabled && !bs.restoreEnabledStatus.enabled) {
+      document.getElementById("backupCategory").hidden = true;
+      document.getElementById("dataBackupGroup").hidden = true;
+    }
+  },
+
   _showLoadPage() {
     let maybeAcct = false;
     let username = Services.prefs.getCharPref("services.sync.username", "");
@@ -694,7 +699,6 @@ var gSyncPane = {
     initSettingGroup("defaultBrowserSync");
     initSettingGroup("sync");
     initSettingGroup("account");
-    initSettingGroup("backup");
 
     Weave.Svc.Obs.add(UIState.ON_UPDATE, this.updateWeavePrefs, this);
 

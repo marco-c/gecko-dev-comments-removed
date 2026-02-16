@@ -572,6 +572,14 @@ async function gotoPref(
   }
 
   
+  
+  
+  
+  
+  
+  categoryModule.handlePrefControlledSection?.();
+
+  
   let gleanId =  (
     "show" + aShowReason
   );
