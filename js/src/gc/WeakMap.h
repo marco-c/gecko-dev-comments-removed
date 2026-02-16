@@ -362,8 +362,12 @@ class WeakMap : public WeakMapBase {
     explicit Enum(WeakMap& map) : Map::Enum(map.map()) {}
   };
 
-  explicit WeakMap(JSContext* cx, JSObject* memOf = nullptr);
-  explicit WeakMap(JS::Zone* zone, JSObject* memOf = nullptr);
+  
+  explicit WeakMap(JSContext* cx, JSObject* memOf);
+
+  
+  explicit WeakMap(JS::Zone* zone);
+
   ~WeakMap() override;
 
   Range all() const { return map().all(); }
@@ -492,6 +496,8 @@ class WeakMap : public WeakMapBase {
 #endif
 
  private:
+  static void staticAssertions();
+
   
   Map& map() { return reinterpret_cast<Map&>(map_); }
   const Map& map() const { return reinterpret_cast<const Map&>(map_); }
