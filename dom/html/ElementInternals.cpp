@@ -219,23 +219,22 @@ void ElementInternals::SetValidity(
   mValidationMessage =
       (!aMessage.WasPassed() || IsValid()) ? EmptyString() : aMessage.Value();
 
-  
-
-
-
-
-
-  nsGenericHTMLElement* anchor =
-      aAnchor.WasPassed() ? &aAnchor.Value() : nullptr;
-  
-  
-  if (anchor && (anchor == mTarget ||
-                 !anchor->IsShadowIncludingInclusiveDescendantOf(mTarget))) {
-    aRv.ThrowNotFoundError(
-        "Validation anchor is not a shadow-including descendant of target"
-        "element");
-    return;
+  nsGenericHTMLElement* anchor;
+  if (!aAnchor.WasPassed()) {
+    
+    anchor = mTarget;
+  } else {
+    anchor = &aAnchor.Value();
+    
+    
+    if (!anchor->IsShadowIncludingInclusiveDescendantOf(mTarget)) {
+      aRv.ThrowNotFoundError(
+          "Validation anchor is not a shadow-including inclusive "
+          "descendant of target element");
+      return;
+    }
   }
+  
   mValidationAnchor = anchor;
 }
 
