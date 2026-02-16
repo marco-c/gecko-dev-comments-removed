@@ -14,6 +14,7 @@
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/AudioParamDescriptorBinding.h"
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/AudioWorkletProcessor.h"
@@ -85,6 +86,15 @@ void AudioWorkletGlobalScope::RegisterProcessor(
         "registered.");
     return;
   }
+
+  if (!mNameToProcessorMap.InsertOrUpdate(aName, RefPtr{&aProcessorCtor},
+                                          fallible)) {
+    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
+
+  auto removeOnError =
+      MakeScopeExit([&] { mNameToProcessorMap.Remove(aName); });
 
   
   JS::Rooted<JSObject*> constructorUnwrapped(
@@ -170,11 +180,7 @@ void AudioWorkletGlobalScope::RegisterProcessor(
 
 
 
-  if (!mNameToProcessorMap.InsertOrUpdate(aName, RefPtr{&aProcessorCtor},
-                                          fallible)) {
-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
+
 
   
 
@@ -192,6 +198,8 @@ void AudioWorkletGlobalScope::RegisterProcessor(
         }
         destinationNode->Context()->SetParamMapForWorkletName(name, &map);
       }));
+
+  removeOnError.release();
 }
 
 uint64_t AudioWorkletGlobalScope::CurrentFrame() const {
