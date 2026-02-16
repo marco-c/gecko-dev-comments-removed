@@ -296,18 +296,65 @@ function handlingUserInputFrameScript() {
   const { MessageChannel } = ChromeUtils.importESModule(
     "resource://testing-common/MessageChannel.sys.mjs"
   );
+  const { Assert } = ChromeUtils.importESModule(
+    "resource://testing-common/Assert.sys.mjs"
+  );
 
+  let targetInnerWindowId = content.windowGlobalChild.innerWindowId;
   let handle;
-  MessageChannel.addListener(this, "ExtensionTest:HandleUserInput", {
+  const handlingUserInputHelper = {
+    
     receiveMessage({ data }) {
+      
+      
+      
+      if (handle && data) {
+        handle.destruct();
+        handle = null;
+        Assert.ok(false, "leaked HandlingUserInput handle found");
+      }
+
       if (data) {
         handle = content.windowUtils.setHandlingUserInput(true);
-      } else if (handle) {
-        handle.destruct();
+      } else {
+        handle?.destruct();
         handle = null;
       }
     },
-  });
+    
+    observe(subject, topic) {
+      if (topic !== "inner-window-destroyed") {
+        return;
+      }
+      const innerWindowId = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+      if (innerWindowId != targetInnerWindowId) {
+        
+        
+        
+        return;
+      }
+      Services.obs.removeObserver(this, "inner-window-destroyed");
+      if (handle) {
+        handle.destruct();
+        handle = null;
+        
+        
+        
+        
+        
+        throw new Error(
+          "Unexpected leaked HandlingUserInput handle found while handling inner-window-destroyed"
+        );
+      }
+    },
+  };
+
+  MessageChannel.addListener(
+    this,
+    "ExtensionTest:HandleUserInput",
+    handlingUserInputHelper
+  );
+  Services.obs.addObserver(handlingUserInputHelper, "inner-window-destroyed");
 }
 
 
@@ -315,6 +362,10 @@ function handlingUserInputFrameScript() {
 function resetHandlingUserInput() {
   extensionHandlers = new WeakSet();
 }
+
+
+
+
 
 async function withHandlingUserInput(extension, fn) {
   let { messageManager } = extension.extension.groupFrameLoader;
@@ -333,12 +384,26 @@ async function withHandlingUserInput(extension, fn) {
     "ExtensionTest:HandleUserInput",
     true
   );
-  await fn();
-  await MessageChannel.sendMessage(
-    messageManager,
-    "ExtensionTest:HandleUserInput",
-    false
-  );
+  try {
+    await fn();
+  } catch (err) {
+    
+    
+    Cu.reportError(err);
+    
+    
+    
+    ok(
+      false,
+      `Unexpected error raised from withHandlingUserInput callback: ${err}`
+    );
+  } finally {
+    await MessageChannel.sendMessage(
+      messageManager,
+      "ExtensionTest:HandleUserInput",
+      false
+    );
+  }
 }
 
 
