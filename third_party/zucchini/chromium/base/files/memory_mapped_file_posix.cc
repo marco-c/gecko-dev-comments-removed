@@ -85,9 +85,18 @@ bool MemoryMappedFile::MapFileRegionToMemory(
       break;
   }
 
+#if defined(MOZ_ZUCCHINI)
+  auto* data = static_cast<uint8_t*>(mmap(nullptr, map_size, flags, MAP_SHARED,
+                                          file_.GetPlatformFile(), map_start));
+  if (data != MAP_FAILED) {
+    data_ = data;
+  }
+  else {
+#else
   data_ = static_cast<uint8_t*>(mmap(nullptr, map_size, flags, MAP_SHARED,
                                      file_.GetPlatformFile(), map_start));
   if (data_ == MAP_FAILED) {
+#endif
     DPLOG(ERROR) << "mmap " << file_.GetPlatformFile();
     return false;
   }
@@ -106,5 +115,23 @@ void MemoryMappedFile::CloseHandles() {
   file_.Close();
   length_ = 0;
 }
+
+#if defined(MOZ_ZUCCHINI)
+bool MemoryMappedFile::Flush() {
+  if (!data_) {
+    return false;
+  }
+
+  
+  
+  
+  
+  bool success = msync(data_, length_, MS_SYNC | MS_INVALIDATE) == 0;
+  if (!success) {
+    PLOG(ERROR) << "msync failed";
+  }
+  return success;
+}
+#endif  
 
 }  

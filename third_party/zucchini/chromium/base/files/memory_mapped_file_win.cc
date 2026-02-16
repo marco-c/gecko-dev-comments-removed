@@ -149,4 +149,26 @@ void MemoryMappedFile::CloseHandles() {
   length_ = 0;
 }
 
+#if defined(MOZ_ZUCCHINI)
+bool MemoryMappedFile::Flush() {
+  if (!data_) {
+    return false;
+  }
+
+  
+  if (!::FlushViewOfFile(data_, length_)) {
+    PLOG(ERROR) << "FlushViewOfFile failed";
+    return false;
+  }
+
+  
+  if (file_.IsValid() && !::FlushFileBuffers(file_.GetPlatformFile())) {
+    PLOG(ERROR) << "FlushFileBuffers failed";
+    return false;
+  }
+
+  return true;
+}
+#endif  
+
 }  

@@ -114,6 +114,12 @@ class BASE_EXPORT MemoryMappedFile {
   
   bool IsValid() const;
 
+#if defined(MOZ_ZUCCHINI)
+  
+  
+  bool Flush();
+#endif  
+
  private:
   
   

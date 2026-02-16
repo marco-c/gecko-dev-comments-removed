@@ -74,6 +74,12 @@ class MappedFileWriter {
   
   bool Keep();
 
+#if defined(MOZ_ZUCCHINI)
+  
+  
+  bool Flush();
+#endif  
+
  private:
   enum OnCloseDeleteBehavior {
     kKeep,
