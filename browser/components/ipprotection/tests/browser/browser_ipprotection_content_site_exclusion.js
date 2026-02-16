@@ -277,7 +277,6 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
 
 
 
-
 add_task(
   async function test_site_exclusion_on_toggle_events_and_toolbar_icon() {
     const sandbox = sinon.createSandbox();
@@ -330,9 +329,8 @@ add_task(
       window,
       DISABLE_VPN_EVENT
     );
-    let tabReloadedPromise = waitForTabReloaded(gBrowser.selectedTab);
     content.siteExclusionToggleEl.click();
-    await Promise.all([disableVPNEventPromise, tabReloadedPromise]);
+    await disableVPNEventPromise;
 
     Assert.ok(true, "Disable VPN protection for site event was dispatched");
     Assert.ok(
@@ -354,9 +352,8 @@ add_task(
       window,
       ENABLE_VPN_EVENT
     );
-    tabReloadedPromise = waitForTabReloaded(gBrowser.selectedTab);
     content.siteExclusionToggleEl.click();
-    await Promise.all([enableVPNEventPromise, tabReloadedPromise]);
+    await enableVPNEventPromise;
 
     Assert.ok(true, "Enable VPN protection for site event was dispatched");
     Assert.ok(

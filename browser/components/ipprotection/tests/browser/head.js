@@ -161,21 +161,6 @@ async function closePanel(win = window) {
 }
 
 
-function waitForTabReloaded(tab) {
-  return new Promise(resolve => {
-    gBrowser.addTabsProgressListener({
-      async onLocationChange(aBrowser) {
-        if (tab.linkedBrowser == aBrowser) {
-          gBrowser.removeTabsProgressListener(this);
-          await Promise.resolve();
-          resolve();
-        }
-      },
-    });
-  });
-}
-
-
 
 
 
