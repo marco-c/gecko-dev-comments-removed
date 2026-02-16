@@ -6497,6 +6497,8 @@ void SharedContextWebgl::CachePrefs() {
 
 void DrawTargetWebgl::BeginFrame(bool aInvalidContents) {
   
+  mSharedContext->ClearTarget();
+  
   
   if (!mWebglValid) {
     if (aInvalidContents) {
@@ -6552,8 +6554,12 @@ bool DrawTargetWebgl::CopyToSwapChain(
       StaticPrefs::gfx_canvas_accelerated_async_present();
   options.remoteTextureId = aId;
   options.remoteTextureOwnerId = aOwnerId;
-  return mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, aTextureType,
-                                                 options, aOwnerClient);
+  bool success = mSharedContext->mWebgl->CopyToSwapChain(
+      mFramebuffer, aTextureType, options, aOwnerClient);
+  
+  
+  mSharedContext->RestoreCurrentTarget();
+  return success;
 }
 
 std::shared_ptr<gl::SharedSurface> SharedContextWebgl::ExportSharedSurface(
