@@ -162,6 +162,8 @@ already_AddRefed<nsIWebProgress> BrowsingContextWebProgress::ResolveWebProgress(
 void BrowsingContextWebProgress::ContextDiscarded() {
   if (mBounceTrackingState) {
     mBounceTrackingState->OnBrowsingContextDiscarded();
+    
+    mBounceTrackingState = nullptr;
   }
 
   if (!mIsLoadingDocument) {
@@ -190,6 +192,10 @@ void BrowsingContextWebProgress::ContextReplaced(
 
 already_AddRefed<BounceTrackingState>
 BrowsingContextWebProgress::GetBounceTrackingState() {
+  
+  if (!mCurrentBrowsingContext || mCurrentBrowsingContext->IsDiscarded()) {
+    return nullptr;
+  }
   if (!mBounceTrackingState) {
     nsresult rv = NS_OK;
     mBounceTrackingState = BounceTrackingState::GetOrCreate(this, rv);
