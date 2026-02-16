@@ -4467,7 +4467,7 @@ static bool SearchElementDense(JSContext* cx, HandleValue val, Iter iterator,
 
 
 
-bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "indexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -4583,7 +4583,7 @@ bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-bool js::array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "lastIndexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -4697,7 +4697,7 @@ bool js::array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-bool js::array_includes(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_includes(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "includes");
   CallArgs args = CallArgsFromVp(argc, vp);
 
