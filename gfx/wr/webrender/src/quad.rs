@@ -132,8 +132,8 @@ pub fn prepare_quad(
         pic_context.raster_spatial_node_index,
     );
 
-    let can_use_nine_patch = map_prim_to_raster.is_2d_scale_translation()
-        && pattern_builder.can_use_nine_patch();
+    let prim_is_scale_offset = map_prim_to_raster.is_2d_scale_translation();
+    let can_use_nine_patch = prim_is_scale_offset && pattern_builder.can_use_nine_patch();
 
     let strategy = match cache_key {
         Some(_) => QuadRenderStrategy::Indirect,
@@ -143,6 +143,7 @@ pub fn prepare_quad(
             frame_state.clip_store,
             interned_clips,
             can_use_nine_patch,
+            prim_is_scale_offset,
             pattern_ctx.spatial_tree,
         ),
     };
@@ -215,8 +216,8 @@ pub fn prepare_repeatable_quad(
         pic_context.raster_spatial_node_index,
     );
 
-    let can_use_nine_patch = map_prim_to_raster.is_2d_scale_translation()
-        && pattern_builder.can_use_nine_patch();
+    let prim_is_scale_offset = map_prim_to_raster.is_2d_scale_translation();
+    let can_use_nine_patch = prim_is_scale_offset && pattern_builder.can_use_nine_patch();
 
     
     
@@ -230,6 +231,7 @@ pub fn prepare_repeatable_quad(
             frame_state.clip_store,
             interned_clips,
             can_use_nine_patch,
+            prim_is_scale_offset,
             pattern_ctx.spatial_tree,
         ),
     };
@@ -1039,6 +1041,7 @@ fn get_prim_render_strategy(
     clip_store: &ClipStore,
     interned_clips: &DataStore<ClipIntern>,
     can_use_nine_patch: bool,
+    prim_is_scale_offset: bool,
     spatial_tree: &SpatialTree,
 ) -> QuadRenderStrategy {
     if !clip_chain.needs_mask {
@@ -1047,16 +1050,27 @@ fn get_prim_render_strategy(
 
     
     
-    let prim_coverage_size = clip_chain.pic_coverage_rect.size();
-    let x_tiles = (prim_coverage_size.width / MIN_QUAD_SPLIT_SIZE)
-        .min(MAX_TILES_PER_QUAD_X as f32)
-        .max(1.0)
-        .ceil() as u16;
-    let y_tiles = (prim_coverage_size.height / MIN_QUAD_SPLIT_SIZE)
-        .min(MAX_TILES_PER_QUAD_Y as f32)
-        .max(1.0)
-        .ceil() as u16;
-    let try_split_prim = x_tiles > 1 || y_tiles > 1;
+    
+    
+    let mut x_tiles = 0;
+    let mut y_tiles = 0;
+    let try_split_prim = if prim_is_scale_offset {
+        
+        
+        let prim_coverage_size = clip_chain.pic_coverage_rect.size();
+        x_tiles = (prim_coverage_size.width / MIN_QUAD_SPLIT_SIZE)
+            .min(MAX_TILES_PER_QUAD_X as f32)
+            .max(1.0)
+            .ceil() as u16;
+        y_tiles = (prim_coverage_size.height / MIN_QUAD_SPLIT_SIZE)
+            .min(MAX_TILES_PER_QUAD_Y as f32)
+            .max(1.0)
+            .ceil() as u16;
+
+        x_tiles > 1 || y_tiles > 1
+    } else {
+        false
+    };
 
     if !try_split_prim {
         return QuadRenderStrategy::Indirect;
