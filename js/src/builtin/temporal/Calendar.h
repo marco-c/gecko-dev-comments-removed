@@ -115,7 +115,7 @@ class CalendarObject : public NativeObject {
 
 
 class MOZ_STACK_CLASS CalendarValue final {
-  JS::Value value_{};
+  JS::Value value_;
 
  public:
   

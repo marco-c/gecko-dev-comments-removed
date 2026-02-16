@@ -560,7 +560,8 @@ ISODateTime js::temporal::RoundISODateTime(const ISODateTime& isoDateTime,
   MOZ_ASSERT(0 <= roundedTime.days && roundedTime.days <= 1);
 
   
-  auto balanceResult = BalanceISODate(isoDateTime.date, roundedTime.days);
+  auto balanceResult =
+      BalanceISODate(isoDateTime.date, static_cast<int32_t>(roundedTime.days));
 
   
   return {balanceResult, roundedTime.time};
@@ -656,7 +657,8 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
     
     *result = TotalTimeDuration(diff.time, unit);
     return true;
-  } else if (unit == TemporalUnit::Day) {
+  }
+  if (unit == TemporalUnit::Day) {
     
 
     
