@@ -155,12 +155,14 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
 
   
   void start();
-  void join(mozilla::Maybe<mozilla::TimeStamp> deadline = mozilla::Nothing());
+
+  
+  bool join(mozilla::Maybe<mozilla::TimeStamp> deadline = mozilla::Nothing());
 
   
   
   void startWithLockHeld(AutoLockHelperThreadState& lock);
-  void joinWithLockHeld(
+  bool joinWithLockHeld(
       AutoLockHelperThreadState& lock,
       mozilla::Maybe<mozilla::TimeStamp> deadline = mozilla::Nothing());
 
@@ -173,7 +175,8 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
   void startOrRunIfIdle(AutoLockHelperThreadState& lock);
 
   
-  void cancelAndWait();
+  
+  bool cancelAndWait();
 
   
   
