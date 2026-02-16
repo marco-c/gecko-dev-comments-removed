@@ -202,9 +202,11 @@ this.browserAction = class extends ExtensionAPIPersistent {
               : currentWindow;
 
           if (window !== currentWindow) {
-            throw new ExtensionError(
-              "Only the current window is supported on Android."
-            );
+            
+            
+            
+            
+            throw new ExtensionError(BrowserActionBase.ERROR_WIN_NOT_FOCUSED);
           }
 
           if (action.getPopupUrl(window.tab, true)) {
