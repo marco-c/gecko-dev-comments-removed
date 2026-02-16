@@ -111,10 +111,13 @@ impl PatternBuilder for LinearGradientTemplate {
         } else {
             (self.start_point, self.end_point)
         };
-
+        
+        
+        
+        let offset = self.common.prim_rect.min.to_vector();
         linear_gradient_pattern(
-            start,
-            end,
+            start + offset,
+            end + offset,
             self.extend_mode,
             &self.stops,
             ctx.fb_config.is_software,
