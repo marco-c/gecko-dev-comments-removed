@@ -1761,6 +1761,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
     
     
     
+    [mClickThroughMouseDownEvent release];
     mClickThroughMouseDownEvent = [aEvent retain];
   }
   return YES;
