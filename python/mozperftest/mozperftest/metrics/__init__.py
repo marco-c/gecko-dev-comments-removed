@@ -3,6 +3,7 @@
 
 from mozperftest.layers import Layers
 from mozperftest.metrics.consoleoutput import ConsoleOutput
+from mozperftest.metrics.eval import EvalMetrics
 from mozperftest.metrics.notebookupload import Notebook
 from mozperftest.metrics.perfboard.influx import Influx
 from mozperftest.metrics.perfherder import Perfherder
@@ -17,7 +18,9 @@ def pick_metrics(env, flavor, mach_cmd):
     if flavor in ("desktop-browser", "mobile-browser"):
         layers = get_layers()
     elif flavor == "eval-mochitest":
-        layers = Perfherder, ConsoleOutput
+        
+        
+        layers = EvalMetrics, Perfherder, ConsoleOutput
     elif flavor == "alert":
         
         
