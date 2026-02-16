@@ -212,14 +212,20 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
       mIntervalMicroseconds(
           std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))),
       mNoTimerResolutionChange(
-          ProfilerFeature::HasNoTimerResolutionChange(aFeatures)) {
-  if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
-    
-    
-    
-    
-    
-    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
+          ProfilerFeature::HasNoTimerResolutionChange(aFeatures)),
+      mHiResTimer(::CreateWaitableTimerExA(
+          nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+          TIMER_ALL_ACCESS)) {
+  if (!mHiResTimer) {
+    if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
+      
+      
+      
+      
+      
+      
+      ::timeBeginPeriod(mIntervalMicroseconds / 1000);
+    }
   }
 
   
@@ -244,38 +250,52 @@ SamplerThread::~SamplerThread() {
 }
 
 void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
-  
-  
-  
-  if (mIntervalMicroseconds >= 1000) {
-    ::Sleep(std::max(1u, aMicroseconds / 1000));
+  if (mHiResTimer) {
+    
+    
+    const LARGE_INTEGER duration{
+        .QuadPart = static_cast<int64_t>(aMicroseconds) * -10LL};
+    const bool b = ::SetWaitableTimerEx(mHiResTimer, &duration, 0, nullptr,
+                                        nullptr, nullptr, 0);
+    MOZ_RELEASE_ASSERT(b);
+    const DWORD r = ::WaitForSingleObject(mHiResTimer, INFINITE);
+    MOZ_RELEASE_ASSERT(r == WAIT_OBJECT_0);
   } else {
-    TimeStamp start = TimeStamp::Now();
-    TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
-
     
-    if (aMicroseconds >= 1000) {
-      ::Sleep(aMicroseconds / 1000);
-    }
-
     
-    while (TimeStamp::Now() < end) {
-      YieldProcessor();
+    
+    if (mIntervalMicroseconds >= 1000) {
+      ::Sleep(std::max(1u, aMicroseconds / 1000));
+    } else {
+      TimeStamp start = TimeStamp::Now();
+      TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
+
+      
+      if (aMicroseconds >= 1000) {
+        ::Sleep(aMicroseconds / 1000);
+      }
+
+      
+      while (TimeStamp::Now() < end) {
+        YieldProcessor();
+      }
     }
   }
 }
 
 void SamplerThread::Stop(PSLockRef aLock) {
-  if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    ::timeEndPeriod(mIntervalMicroseconds / 1000);
+  if (!mHiResTimer) {
+    if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      ::timeEndPeriod(mIntervalMicroseconds / 1000);
+    }
   }
 
   mSampler.Disable(aLock);
