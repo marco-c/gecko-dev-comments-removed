@@ -19,7 +19,7 @@ class ReflowOutput;
 
 
 
-enum class MathMLFrameType {
+enum class MathMLFrameType : uint8_t {
   Ordinary,
   OperatorOrdinary,
   OperatorInvisible,
