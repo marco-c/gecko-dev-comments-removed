@@ -8241,7 +8241,7 @@ void MacroAssembler::emitValueReadBarrierFastPath(
 
   
   
-  branchTestNeedsIncrementalBarrierAnyZone(Assembler::NonZero, barrier, temp1);
+  branchTestNeedsMarkingBarrierAnyZone(Assembler::NonZero, barrier, temp1);
   bind(&done);
 }
 

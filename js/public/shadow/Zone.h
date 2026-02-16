@@ -38,6 +38,17 @@ struct Zone {
     Limit
   };
 
+  
+  enum BarrierFlags : uint32_t {
+    
+    
+    Incremental = 1,
+
+    
+    
+    Concurrent = 2
+  };
+
   using BarrierState = mozilla::Atomic<uint32_t, mozilla::Relaxed>;
 
   enum Kind : uint8_t { NormalZone, AtomsZone, SystemZone };
@@ -45,20 +56,23 @@ struct Zone {
  protected:
   JSRuntime* const runtime_;
   JSTracer* const barrierTracer_;  
-  BarrierState needsIncrementalBarrier_;
+  BarrierState needsMarkingBarrier_;
   GCState gcState_ = NoGC;
   const Kind kind_;
 
   Zone(JSRuntime* runtime, JSTracer* barrierTracerArg, Kind kind)
       : runtime_(runtime), barrierTracer_(barrierTracerArg), kind_(kind) {
-    MOZ_ASSERT(!needsIncrementalBarrier());
+    MOZ_ASSERT(!needsMarkingBarrier());
   }
 
  public:
-  bool needsIncrementalBarrier() const { return needsIncrementalBarrier_; }
+  bool needsMarkingBarrier() const { return needsMarkingBarrier_; }
+  bool needsMarkingBarrier(BarrierFlags kind) const {
+    return needsMarkingBarrier_ & kind;
+  }
 
   JSTracer* barrierTracer() {
-    MOZ_ASSERT(needsIncrementalBarrier_);
+    MOZ_ASSERT(needsMarkingBarrier(Incremental));
     MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(runtime_));
     return barrierTracer_;
   }

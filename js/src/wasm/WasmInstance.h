@@ -127,7 +127,7 @@ class alignas(16) Instance {
   
   
   
-  const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
+  const JS::shadow::Zone::BarrierState* addressOfNeedsMarkingBarrier_;
 
   
   
@@ -322,8 +322,8 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfAddressOfLastBufferedWholeCell() {
     return offsetof(Instance, addressOfLastBufferedWholeCell_);
   }
-  static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
-    return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
+  static constexpr size_t offsetOfAddressOfNeedsMarkingBarrier() {
+    return offsetof(Instance, addressOfNeedsMarkingBarrier_);
   }
   static constexpr size_t offsetOfJumpTable() {
     return offsetof(Instance, jumpTable_);

@@ -74,7 +74,7 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
     
     return false;
   }
-  virtual bool needsIncrementalBarrier() const {
+  virtual bool needsMarkingBarrier() const {
     
     return false;
   }

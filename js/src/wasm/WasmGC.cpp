@@ -172,7 +172,7 @@ void wasm::EmitWasmPreBarrierGuard(MacroAssembler& masm, Register instance,
                                    MaybeTrapSiteDesc trapSiteDesc) {
   
   masm.loadPtr(
-      Address(instance, Instance::offsetOfAddressOfNeedsIncrementalBarrier()),
+      Address(instance, Instance::offsetOfAddressOfNeedsMarkingBarrier()),
       scratch);
   masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1),
                     skipBarrier);

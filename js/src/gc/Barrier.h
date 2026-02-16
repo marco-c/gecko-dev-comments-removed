@@ -1151,7 +1151,7 @@ void BarrieredMoveRangeImpl(gc::Cell* owner, void* dst, const T* src,
   
 
   bool nurseryOwned = !owner->isTenured();
-  if (owner->shadowZone()->needsIncrementalBarrier()) {
+  if (owner->shadowZone()->needsMarkingBarrier()) {
     
     BarrieredMoveRangeInner<T, true, true>(nurseryOwned, dst, src, count);
     return;
@@ -1179,7 +1179,7 @@ void BarrieredMoveRange(gc::Cell* owner, void* dst, const T* src,
     return;
   }
 
-  if (owner->isTenured() || owner->shadowZone()->needsIncrementalBarrier()) {
+  if (owner->isTenured() || owner->shadowZone()->needsMarkingBarrier()) {
     gc::BarrieredMoveRangeImpl(owner, dst, src, count);
     return;
   }
