@@ -204,8 +204,12 @@ class SVGSVGElement final : public SVGSVGElementBase {
   
   std::unique_ptr<SMILTimeContainer> mTimedDocumentRoot;
 
+  
+  nsString mCurrentViewID = VoidString();
+  std::unique_ptr<SVGView> mSVGView;
+
   SVGPoint mCurrentTranslate;
-  float mCurrentScale;
+  float mCurrentScale = 1.0f;
 
   enum { ZOOMANDPAN };
   SVGAnimatedEnumeration mEnumAttributes[1];
@@ -216,13 +220,9 @@ class SVGSVGElement final : public SVGSVGElementBase {
   
   
   
-  bool mStartAnimationOnBindToTree;
+  bool mStartAnimationOnBindToTree : 1;
 
-  bool mImageNeedsTransformInvalidation;
-
-  
-  nsString mCurrentViewID = VoidString();
-  std::unique_ptr<SVGView> mSVGView;
+  bool mImageNeedsTransformInvalidation : 1 = false;
 };
 
 }  
