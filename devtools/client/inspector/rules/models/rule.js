@@ -691,8 +691,12 @@ class Rule {
         prop.enabled &&
         prop.isValid() &&
         
-        colorSchemeChanged &&
-        prop.value.includes("light-dark")
+        
+        ((colorSchemeChanged && prop.value.includes("light-dark(")) ||
+          
+          
+          
+          prop.value.includes("attr("))
       ) {
         prop.updateEditor();
       }
