@@ -3,10 +3,3 @@
 
 
 
-
-
-
-#ifdef NIGHTLY_BUILD
-DESKTOP_DEFAULT(ScreenAvailToResolution)
-DESKTOP_DEFAULT(MaxTouchPointsCollapse)
-#endif
