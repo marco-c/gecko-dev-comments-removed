@@ -151,6 +151,11 @@
               tab.setAttribute("aria-setsize", this.tabs.length);
               tab.updateSplitViewAriaLabel(index);
             });
+            this.dispatchEvent(
+              new CustomEvent("SplitViewTabChange", {
+                bubbles: true,
+              })
+            );
           } else {
             this.remove();
           }
@@ -281,7 +286,9 @@
 
 
 
-    addTabs(tabs, isSessionRestore = false) {
+
+
+    addTabs(tabs, { isSessionRestore = false, indexOfReplacedTab = -1 } = {}) {
       for (let tab of tabs) {
         if (tab.pinned) {
           return;
@@ -293,10 +300,14 @@
                 tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
                 selectTab: tab.selected,
               });
-        this.#tabs.push(tabToMove);
+        if (indexOfReplacedTab > -1 && indexOfReplacedTab < this.#tabs.length) {
+          this.#tabs[indexOfReplacedTab] = tabToMove;
+        } else {
+          this.#tabs.push(tabToMove);
+        }
         isSessionRestore
           ? this.appendChild(tab)
-          : gBrowser.moveTabToSplitView(tabToMove, this);
+          : gBrowser.moveTabToSplitView(tabToMove, this, indexOfReplacedTab);
         if (tab === gBrowser.selectedTab) {
           this.hasActiveTab = true;
         }
@@ -331,8 +342,8 @@
 
 
     replaceTab(tabToReplace, newTab) {
-      this.#tabs = this.#tabs.filter(tab => tab != tabToReplace);
-      this.addTabs([newTab]);
+      let indexOfReplacedTab = this.tabs.indexOf(tabToReplace);
+      this.addTabs([newTab], { isSessionRestore: false, indexOfReplacedTab });
       gBrowser.removeTab(tabToReplace);
     }
 
