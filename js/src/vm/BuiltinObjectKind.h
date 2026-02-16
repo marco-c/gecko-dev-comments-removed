@@ -40,10 +40,6 @@ enum class BuiltinObjectKind : uint8_t {
   IteratorPrototype,
 
   
-  DateTimeFormatPrototype,
-  NumberFormatPrototype,
-
-  
   None,
 };
 

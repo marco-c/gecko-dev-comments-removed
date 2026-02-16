@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "js/GCVector.h"
 #include "js/ProtoKey.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
@@ -24,11 +23,7 @@ namespace JS {
 class CallArgs;
 }
 
-namespace js {
-
-class PropertyName;
-
-namespace intl {
+namespace js::intl {
 
 
 
@@ -45,19 +40,6 @@ extern bool ChainLegacyIntlFormat(JSContext* cx, JSProtoKey protoKey,
 extern bool UnwrapLegacyIntlFormat(JSContext* cx, JSProtoKey protoKey,
                                    JS::Handle<JSObject*> format,
                                    JS::MutableHandle<JS::Value> result);
-
-
-
-
-extern bool InitializeObject(JSContext* cx, JS::Handle<JSObject*> obj,
-                             JS::Handle<PropertyName*> initializer,
-                             JS::Handle<JS::Value> locales,
-                             JS::Handle<JS::Value> options);
-
-
-
-
-extern JSObject* GetInternalsObject(JSContext* cx, JS::Handle<JSObject*> obj);
 
 
 extern void ReportInternalError(JSContext* cx);
@@ -103,7 +85,6 @@ void AddICUCellMemory(JSObject* obj, size_t nbytes);
 void RemoveICUCellMemory(JSObject* obj, size_t nbytes);
 
 void RemoveICUCellMemory(JS::GCContext* gcx, JSObject* obj, size_t nbytes);
-}  
 
 }  
 

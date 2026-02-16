@@ -7,49 +7,12 @@
 #ifndef builtin_intl_IntlObject_h
 #define builtin_intl_IntlObject_h
 
-#include "js/TypeDecls.h"
-
-class JSLinearString;
+#include "js/Class.h"
 
 namespace js {
 
 extern const JSClass IntlClass;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_BestAvailableLocale(JSContext* cx, unsigned argc,
-                                                   JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_ResolveLocale(JSContext* cx, unsigned argc,
-                                             JS::Value* vp);
 }  
 
 #endif 
