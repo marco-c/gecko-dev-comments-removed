@@ -3,6 +3,7 @@
 
 import json
 import os
+import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -295,6 +296,10 @@ class _Mochitest(Layer):
         log_processor = self._get_log_processor()
 
         with redirect_stdout(log_processor):
+            
+            
+            
+            args.log_tbpl = [sys.stdout]
             if self.get_arg("android"):
                 result = runtestsremote.run_test_harness(parser, args)
             else:
