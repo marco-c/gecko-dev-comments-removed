@@ -6,6 +6,7 @@
 
 use crate::derives::*;
 use crate::values::specified::NoCalcLength;
+use crate::values::CSSFloat;
 
 
 #[derive(Clone, ToTyped)]
@@ -17,4 +18,23 @@ pub enum NoCalcNumeric {
     
     Length(NoCalcLength),
     
+}
+
+impl NoCalcNumeric {
+    
+    pub fn unitless_value(&self) -> CSSFloat {
+        match *self {
+            Self::Length(v) => v.unitless_value(),
+        }
+    }
+
+    
+    
+    
+    
+    pub fn unit(&self) -> &'static str {
+        match *self {
+            Self::Length(v) => v.unit(),
+        }
+    }
 }

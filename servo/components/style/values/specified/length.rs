@@ -1092,7 +1092,7 @@ impl NoCalcLength {
     }
 
     
-    fn unit(&self) -> &'static str {
+    pub fn unit(&self) -> &'static str {
         match *self {
             Self::Absolute(v) => v.unit(),
             Self::FontRelative(v) => v.unit(),
