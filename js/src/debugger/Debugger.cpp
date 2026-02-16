@@ -2034,25 +2034,26 @@ Completion Completion::fromJSFramePop(JSContext* cx, AbstractFramePtr frame,
   
   
   
-  
   Rooted<AbstractGeneratorObject*> generatorObj(
       cx, GetGeneratorObjectForFrame(cx, frame));
-  switch (JSOp(*pc)) {
-    case JSOp::InitialYield:
-      MOZ_ASSERT(!generatorObj->isClosed());
-      return Completion(InitialYield(generatorObj));
 
-    case JSOp::Yield:
-      MOZ_ASSERT(!generatorObj->isClosed());
-      return Completion(Yield(generatorObj, frame.returnValue()));
+  if (generatorObj && !generatorObj->isClosed()) {
+    switch (JSOp(*pc)) {
+      case JSOp::InitialYield:
+        return Completion(InitialYield(generatorObj));
 
-    case JSOp::Await:
-      MOZ_ASSERT(!generatorObj->isClosed());
-      return Completion(Await(generatorObj, frame.returnValue()));
+      case JSOp::Yield:
+        return Completion(Yield(generatorObj, frame.returnValue()));
 
-    default:
-      return Completion(Return(frame.returnValue()));
+      case JSOp::Await:
+        return Completion(Await(generatorObj, frame.returnValue()));
+
+      default:
+        break;
+    }
   }
+
+  return Completion(Return(frame.returnValue()));
 }
 
 void Completion::trace(JSTracer* trc) {
