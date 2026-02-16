@@ -52,17 +52,6 @@ void convolve_vertically_avx2(
     };
 
     int i = 0;
-    if (i < filterLen && (reinterpret_cast<uintptr_t>(filter) & 2) != 0) {
-      
-      
-      
-      
-      convolve_16_pixels(
-          _mm256_set1_epi32(*(const int16_t*)(filter + i)),
-          _mm256_loadu_si256((const __m256i*)(srcRows[i] + x * 4)),
-          _mm256_setzero_si256());
-      i++;
-    }
     for (; i < filterLen / 2 * 2; i += 2) {
       convolve_16_pixels(
           _mm256_set1_epi32(*(const int32_t*)(filter + i)),
