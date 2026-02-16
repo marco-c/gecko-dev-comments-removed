@@ -304,6 +304,18 @@
 
       this.#activate();
       gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
+
+      
+      
+      for (let tab of this.tabs) {
+        let tabURI = tab.linkedBrowser.currentURI.spec;
+        if (!isBlankPageURL(tabURI) && tabURI !== "about:opentabs") {
+          
+          const index = tabs.indexOf(tab);
+          const label = String(index + 1); 
+          Glean.splitview.uriCount[label].add(1);
+        }
+      }
     }
 
     
