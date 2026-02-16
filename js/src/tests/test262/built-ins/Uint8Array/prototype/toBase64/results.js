@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue((new Uint8Array([])).toBase64(), "");
 assert.sameValue((new Uint8Array([102])).toBase64(), "Zg==");
 assert.sameValue((new Uint8Array([102, 111])).toBase64(), "Zm8=");

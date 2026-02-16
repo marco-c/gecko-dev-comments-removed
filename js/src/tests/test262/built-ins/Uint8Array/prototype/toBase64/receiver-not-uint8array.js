@@ -7,7 +7,6 @@
 
 
 
-
 var toBase64 = Uint8Array.prototype.toBase64;
 
 var options = {};

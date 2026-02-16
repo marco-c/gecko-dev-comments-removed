@@ -7,7 +7,6 @@
 
 
 
-
 assert.compareArray(Uint8Array.fromBase64('x+/y'), [199, 239, 242]);
 assert.compareArray(Uint8Array.fromBase64('x+/y', { alphabet: 'base64' }), [199, 239, 242]);
 assert.throws(SyntaxError, function() {

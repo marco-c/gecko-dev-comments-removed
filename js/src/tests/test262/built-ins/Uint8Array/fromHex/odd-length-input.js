@@ -6,7 +6,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   Uint8Array.fromHex('a');
 });

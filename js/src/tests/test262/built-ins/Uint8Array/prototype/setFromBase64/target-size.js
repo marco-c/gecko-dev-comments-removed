@@ -8,7 +8,6 @@
 
 
 
-
 var target = new Uint8Array([255, 255, 255, 255, 255]);
 var result = target.setFromBase64('Zm9vYmFy');
 assert.sameValue(result.read, 4);

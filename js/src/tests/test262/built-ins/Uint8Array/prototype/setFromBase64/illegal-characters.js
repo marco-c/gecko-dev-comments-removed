@@ -6,7 +6,6 @@
 
 
 
-
 var illegal = [
   'Zm.9v',
   'Zm9v^',

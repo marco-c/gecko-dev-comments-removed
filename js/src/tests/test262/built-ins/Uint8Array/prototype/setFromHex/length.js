@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(Uint8Array.prototype.setFromHex, 'length', {
   value: 1,
   enumerable: false,

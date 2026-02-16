@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   var target = new Uint8Array([255, 255, 255]);
   target.setFromBase64("Zg==", { alphabet: Object("base64") });

@@ -8,7 +8,6 @@
 
 
 
-
 assert(!isConstructor(Uint8Array.prototype.toBase64), "Uint8Array.prototype.toBase64 is not a constructor");
 
 var uint8Array = new Uint8Array(8);

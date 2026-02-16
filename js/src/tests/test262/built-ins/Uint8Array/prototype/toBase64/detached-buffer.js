@@ -7,7 +7,6 @@
 
 
 
-
 var array = new Uint8Array(2);
 var getterCalls = 0;
 var receiverDetachingOptions = {};

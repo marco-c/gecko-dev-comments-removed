@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue((new Uint8Array([])).toHex(), "");
 assert.sameValue((new Uint8Array([102])).toHex(), "66");
 assert.sameValue((new Uint8Array([102, 111])).toHex(), "666f");

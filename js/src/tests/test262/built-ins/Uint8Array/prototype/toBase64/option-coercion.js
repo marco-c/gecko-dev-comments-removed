@@ -6,7 +6,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   (new Uint8Array(2)).toBase64({ alphabet: Object("base64") });
 });

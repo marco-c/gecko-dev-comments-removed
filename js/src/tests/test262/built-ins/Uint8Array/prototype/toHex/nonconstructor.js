@@ -8,7 +8,6 @@
 
 
 
-
 assert(!isConstructor(Uint8Array.prototype.toHex), "Uint8Array.prototype.toHex is not a constructor");
 
 var uint8Array = new Uint8Array(8);

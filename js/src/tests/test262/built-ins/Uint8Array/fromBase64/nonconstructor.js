@@ -8,7 +8,6 @@
 
 
 
-
 assert(!isConstructor(Uint8Array.fromBase64), "Uint8Array.fromBase64 is not a constructor");
 
 assert.throws(TypeError, function() {

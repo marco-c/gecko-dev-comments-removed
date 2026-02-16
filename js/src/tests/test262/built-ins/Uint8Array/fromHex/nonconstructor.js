@@ -8,7 +8,6 @@
 
 
 
-
 assert(!isConstructor(Uint8Array.fromHex), "Uint8Array.fromHex is not a constructor");
 
 assert.throws(TypeError, function() {

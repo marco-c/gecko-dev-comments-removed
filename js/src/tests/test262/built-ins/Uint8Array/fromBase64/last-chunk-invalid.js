@@ -8,7 +8,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   Uint8Array.fromBase64('A');
 });

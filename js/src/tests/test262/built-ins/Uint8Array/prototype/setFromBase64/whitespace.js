@@ -7,7 +7,6 @@
 
 
 
-
 var whitespaceKinds = [
   ["Z g==", "space"],
   ["Z\tg==", "tab"],

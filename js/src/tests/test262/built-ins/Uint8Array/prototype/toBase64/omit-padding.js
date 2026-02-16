@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue((new Uint8Array([199, 239])).toBase64(), "x+8=");
 assert.sameValue((new Uint8Array([199, 239])).toBase64({ omitPadding: false }), "x+8=");
 assert.sameValue((new Uint8Array([199, 239])).toBase64({ omitPadding: true }), "x+8");

@@ -6,7 +6,6 @@
 
 
 
-
 var toStringCalls = 0;
 var throwyToString = {
   toString: function() {

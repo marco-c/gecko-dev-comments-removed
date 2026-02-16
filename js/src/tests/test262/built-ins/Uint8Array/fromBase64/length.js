@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(Uint8Array.fromBase64, 'length', {
   value: 1,
   enumerable: false,

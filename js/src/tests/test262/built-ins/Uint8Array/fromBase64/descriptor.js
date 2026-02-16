@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(Uint8Array, 'fromBase64', {
   enumerable: false,
   writable: true,

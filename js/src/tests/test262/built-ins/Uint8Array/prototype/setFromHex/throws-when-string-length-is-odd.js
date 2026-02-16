@@ -26,7 +26,6 @@
 
 
 
-
 var zeroLength = new Uint8Array(0);
 
 assert.throws(SyntaxError, function() {

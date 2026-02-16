@@ -6,7 +6,6 @@
 
 
 
-
 var illegal = [
   'a.a',
   'aa^',

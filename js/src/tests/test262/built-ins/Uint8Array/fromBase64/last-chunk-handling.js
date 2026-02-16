@@ -8,7 +8,6 @@
 
 
 
-
 assert.compareArray(Uint8Array.fromBase64('ZXhhZg=='), [101, 120, 97, 102]);
 assert.compareArray(Uint8Array.fromBase64('ZXhhZg==', { lastChunkHandling: 'loose' }), [101, 120, 97, 102]);
 assert.compareArray(Uint8Array.fromBase64('ZXhhZg==', { lastChunkHandling: 'stop-before-partial' }), [101, 120, 97, 102]);

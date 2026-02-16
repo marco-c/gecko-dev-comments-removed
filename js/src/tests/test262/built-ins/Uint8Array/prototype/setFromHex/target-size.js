@@ -8,7 +8,6 @@
 
 
 
-
 var target = new Uint8Array([255, 255]);
 var result = target.setFromHex('aabbcc');
 assert.sameValue(result.read, 4);

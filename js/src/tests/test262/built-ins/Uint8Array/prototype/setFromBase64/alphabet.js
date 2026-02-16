@@ -7,7 +7,6 @@
 
 
 
-
 var target = new Uint8Array([255, 255, 255, 255]);
 var result = target.setFromBase64('x+/y');
 assert.sameValue(result.read, 4);

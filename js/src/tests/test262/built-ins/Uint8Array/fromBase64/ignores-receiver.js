@@ -6,7 +6,6 @@
 
 
 
-
 var fromBase64 = Uint8Array.fromBase64;
 var noReceiver = fromBase64("Zg==");
 assert.sameValue(Object.getPrototypeOf(noReceiver), Uint8Array.prototype);

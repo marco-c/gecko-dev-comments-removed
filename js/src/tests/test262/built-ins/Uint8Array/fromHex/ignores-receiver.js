@@ -6,7 +6,6 @@
 
 
 
-
 var fromHex = Uint8Array.fromHex;
 var noReceiver = fromHex("aa");
 assert.sameValue(Object.getPrototypeOf(noReceiver), Uint8Array.prototype);

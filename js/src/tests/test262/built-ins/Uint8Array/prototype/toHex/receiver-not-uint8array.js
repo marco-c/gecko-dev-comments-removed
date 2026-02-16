@@ -7,7 +7,6 @@
 
 
 
-
 var toHex = Uint8Array.prototype.toHex;
 
 testWithTypedArrayConstructors(function(TA) {

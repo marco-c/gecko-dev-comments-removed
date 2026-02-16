@@ -10,7 +10,6 @@
 
 
 
-
 let string = 'SGVsbG8gV29ybGQ=';
 assert.compareArray(
     Uint8Array.fromBase64(string),

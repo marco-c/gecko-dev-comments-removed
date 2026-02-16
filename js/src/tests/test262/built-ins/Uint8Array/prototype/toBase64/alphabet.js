@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue((new Uint8Array([199, 239, 242])).toBase64(), "x+/y");
 
 assert.sameValue((new Uint8Array([199, 239, 242])).toBase64({ alphabet: 'base64' }), "x+/y");
