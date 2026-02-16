@@ -137,9 +137,6 @@ class Animation : public DOMEventTargetHelper,
 
   double PlaybackRate() const { return mPlaybackRate; }
   void SetPlaybackRate(double aPlaybackRate);
-  
-  
-  double PlaybackRateInternal() const;
 
   AnimationPlayState PlayState() const;
   virtual AnimationPlayState PlayStateFromJS() const { return PlayState(); }
@@ -188,7 +185,7 @@ class Animation : public DOMEventTargetHelper,
             
             
             
-            PlaybackRateInternal() != 0.0) ||
+            PlaybackRate() != 0.0) ||
            
            
            
@@ -208,7 +205,9 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-  double CurrentOrPendingPlaybackRate() const;
+  double CurrentOrPendingPlaybackRate() const {
+    return mPendingPlaybackRate.valueOr(mPlaybackRate);
+  }
   bool HasPendingPlaybackRate() const { return mPendingPlaybackRate.isSome(); }
 
   
@@ -222,7 +221,7 @@ class Animation : public DOMEventTargetHelper,
 
   static TimeDuration CurrentTimeFromTimelineTime(
       const TimeDuration& aTimelineTime, const TimeDuration& aStartTime,
-      double aPlaybackRate) {
+      float aPlaybackRate) {
     return (aTimelineTime - aStartTime).MultDouble(aPlaybackRate);
   }
 
@@ -237,7 +236,7 @@ class Animation : public DOMEventTargetHelper,
 
   static TimeDuration StartTimeFromTimelineTime(
       const TimeDuration& aTimelineTime, const TimeDuration& aCurrentTime,
-      double aPlaybackRate) {
+      float aPlaybackRate) {
     TimeDuration result = aTimelineTime;
     if (aPlaybackRate == 0) {
       return result;
@@ -269,7 +268,7 @@ class Animation : public DOMEventTargetHelper,
   bool IsInEffect() const;
 
   bool IsPlaying() const {
-    return PlaybackRateInternal() != 0.0 && mTimeline &&
+    return mPlaybackRate != 0.0 && mTimeline &&
            !mTimeline->GetCurrentTimeAsDuration().IsNull() &&
            PlayState() == AnimationPlayState::Running;
   }
@@ -413,7 +412,7 @@ class Animation : public DOMEventTargetHelper,
         
         !currentTime.IsNull() ? currentTime : GetCurrentTimeAsDuration(),
         mStartTime.IsNull() ? TimeDuration() : mStartTime.Value(),
-        PlaybackRateInternal());
+        mPlaybackRate);
   }
 
   void SetHiddenByContentVisibility(bool hidden);
@@ -423,8 +422,6 @@ class Animation : public DOMEventTargetHelper,
   void UpdateHiddenByContentVisibility();
 
   DocGroup* GetDocGroup();
-
-  void PostUpdate();
 
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -464,6 +461,7 @@ class Animation : public DOMEventTargetHelper,
 
 
   void FlushUnanimatedStyle() const;
+  void PostUpdate();
   void ResetFinishedPromise();
   void MaybeResolveFinishedPromise();
   void DoFinishNotification(SyncNotifyFlag aSyncNotifyFlag);
@@ -591,10 +589,6 @@ class Animation : public DOMEventTargetHelper,
   TimeStamp mPendingReadyTime;
 
  private:
-  
-  
-  double AnimationsPlayBackRateMultiplier() const;
-
   
   uint64_t mIdOnCompositor = 0;
   bool mIsPartialPrerendered = false;

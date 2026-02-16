@@ -1127,8 +1127,6 @@ class nsPresContext : public nsISupports,
 
   void DoForceReflowForFontInfoUpdateFromStyle();
 
-  void UpdateAnimationsPlayBackRateMultiplier(double aMultiplier);
-
  public:
   
   
@@ -1163,10 +1161,6 @@ class nsPresContext : public nsISupports,
   float RubyPositioningFactor() const {
     MOZ_ASSERT(mRubyPositioningFactor > 0.0f);
     return mRubyPositioningFactor;
-  }
-
-  double AnimationsPlayBackRateMultiplier() const {
-    return mAnimationsPlayBackRateMultiplier;
   }
 
  protected:
@@ -1350,12 +1344,6 @@ class nsPresContext : public nsISupports,
   uint16_t mImageAnimationModePref;
 
   nsPresContextType mType;
-
-  
-  
-  
-  
-  double mAnimationsPlayBackRateMultiplier = 1.0;
 
  public:
   
