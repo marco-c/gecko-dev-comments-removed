@@ -460,8 +460,7 @@ class nsFlexContainerFrame::FlexItem final {
     if (Frame()->StylePosition()->mBoxSizing == StyleBoxSizing::BorderBox) {
       mainSize += BorderPaddingSizeInMainAxis();
     }
-    return StyleSize::LengthPercentage(
-        LengthPercentage::FromAppUnits(mainSize));
+    return StyleSize::FromAppUnits(mainSize);
   }
 
   StyleSize StyleCrossSize() const {
@@ -469,8 +468,7 @@ class nsFlexContainerFrame::FlexItem final {
     if (Frame()->StylePosition()->mBoxSizing == StyleBoxSizing::BorderBox) {
       crossSize += BorderPaddingSizeInCrossAxis();
     }
-    return StyleSize::LengthPercentage(
-        LengthPercentage::FromAppUnits(crossSize));
+    return StyleSize::FromAppUnits(crossSize);
   }
 
   
@@ -6581,8 +6579,8 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       const nscoord stretchedCrossSize =
           std::max(0, aInput.mPercentageBasisForChildren->BSize(flexWM) -
                           boxSizingToMarginEdgeSize);
-      const auto stretchedStyleCrossSize = StyleSize::LengthPercentage(
-          LengthPercentage::FromAppUnits(stretchedCrossSize));
+      const auto stretchedStyleCrossSize =
+          StyleSize::FromAppUnits(stretchedCrossSize);
       
       if (flexWM.IsOrthogonalTo(childWM)) {
         sizeOverrides.mStyleISize.emplace(stretchedStyleCrossSize);

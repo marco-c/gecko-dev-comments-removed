@@ -905,16 +905,14 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
       StyleSizeOverrides sizeOverride;
       
       
-      sizeOverride.mStyleISize.emplace(
-          StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(
-              frame->StylePosition()->mBoxSizing == StyleBoxSizing::BorderBox
-                  ? prevInFlow->ISize(wm)
-                  : prevInFlow->ContentISize(wm))));
+      sizeOverride.mStyleISize.emplace(StyleSize::FromAppUnits(
+          frame->StylePosition()->mBoxSizing == StyleBoxSizing::BorderBox
+              ? prevInFlow->ISize(wm)
+              : prevInFlow->ContentISize(wm)));
 
       if (frame->IsFlexItem()) {
         
-        sizeOverride.mStyleBSize.emplace(
-            StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(0)));
+        sizeOverride.mStyleBSize.emplace(StyleSize::FromAppUnits(0));
       }
       ReflowOutput desiredSize(wm);
       ReflowInput reflowInput(aPresContext, aReflowInput, frame, availSpace,
