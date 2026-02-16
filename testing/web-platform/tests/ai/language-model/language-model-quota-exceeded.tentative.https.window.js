@@ -6,13 +6,6 @@
 
 'use strict';
 
-
-function isValueInRange(actual, expected, delta = 5) {
-  const lowerBound = expected - delta;
-  const upperBound = expected + delta;
-  return actual >= lowerBound && actual <= upperBound;
-}
-
 promise_test(async t => {
   await ensureLanguageModel();
 
