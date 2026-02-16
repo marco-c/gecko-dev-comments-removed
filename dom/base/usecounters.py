@@ -188,7 +188,8 @@ def gen_use_counter_metrics():
       * dom/base/UseCounters.conf
       * dom/base/UseCountersWorker.conf
       * dom/base/nsDeprecatedOperationsList.h
-      * !/layout/style/ServoCSSPropList.py
+      * servo/components/style/properties/longhands.toml
+      * servo/components/style/properties/shorthands.toml
       * servo/components/style/properties/counted_unknown_properties.py
     and overwrites the Glean metrics definition file
     `dom/base/use_counter_metrics.yaml` with definitions for each use counter found.
@@ -345,7 +346,8 @@ def parse_use_counters():
       * dom/base/UseCounters.conf
       * dom/base/UseCountersWorker.conf
       * dom/base/nsDeprecatedOperationsList.h
-      * !/layout/style/ServoCSSPropList.py
+      * servo/components/style/properties/longhands.toml
+      * servo/components/style/properties/shorthands.toml
       * servo/components/style/properties/counted_unknown_properties.py
     and returns them as a tuple of lists of tuples of the form:
     (page, doc, dedicated, shared, service, ops_page, ops_doc, css_page, css_doc)
@@ -522,32 +524,22 @@ def parse_use_counters():
             ops_page.append((enum_name, op_name, f"Whether a page used {op}."))
             ops_doc.append((enum_name, op_name, f"Whether a document used {op}."))
 
-    
-    
-    
-    
-    
+    import sys
 
-    import runpy
-
-    proplist_path = os.path.join(
-        buildconfig.topobjdir, "layout", "style", "ServoCSSPropList.py"
+    SERVO_PROPS = os.path.join(
+        buildconfig.topsrcdir, "servo", "components", "style", "properties"
     )
-    css_properties = runpy.run_path(proplist_path)["data"]
+    sys.path.insert(0, SERVO_PROPS)
+    import data
+
+    css_properties = data.PropertiesData("gecko")
     css_page = []
     css_doc = []
-    for prop in css_properties.values():
+    for prop in css_properties.all_properties_and_aliases():
         
         
-        prop_name = "css_" + to_snake_case(prop.name)
-
-        
-        method = "Float" if prop.method == "CssFloat" else prop.method
-        
-        if method.startswith("Moz") and prop.type() != "alias":
-            method = method[3:]  
-
-        enum_name = f"eUseCounter_property_{method}"
+        prop_name = "css_" + prop.ident.lstrip("_")
+        enum_name = f"eUseCounter_property_{prop.ident}"
         css_page.append((
             enum_name,
             prop_name,
@@ -564,35 +556,20 @@ def parse_use_counters():
     
     
     
-
-    import sys
-
-    sys.path.append(os.path.join(buildconfig.topsrcdir, "layout", "style"))
-    from GenerateCountedUnknownProperties import to_camel_case
-
-    unknown_proplist_path = os.path.join(
-        buildconfig.topsrcdir,
-        "servo",
-        "components",
-        "style",
-        "properties",
-        "counted_unknown_properties.py",
-    )
-    unknown_properties = runpy.run_path(unknown_proplist_path)[
-        "COUNTED_UNKNOWN_PROPERTIES"
-    ]
-    for prop in unknown_properties:
-        enum_name = f"eUseCounter_unknown_property_{to_camel_case(prop)}"
-        prop_name = to_snake_case(prop)
+    for prop in css_properties.counted_unknown_properties:
+        enum_name = f"eUseCounter_unknown_property_{prop.ident}"
+        
+        
+        prop_name = prop.ident.lstrip("_")
         css_page.append((
             enum_name,
             prop_name,
-            f"Whether a page used the (unknown, counted) CSS property {prop}.",
+            f"Whether a page used the (unknown, counted) CSS property {prop.name}.",
         ))
         css_doc.append((
             enum_name,
             prop_name,
-            f"Whether a document used the (unknown, counted) CSS property {prop}.",
+            f"Whether a document used the (unknown, counted) CSS property {prop.name}.",
         ))
 
     return (page, doc, dedicated, shared, service, ops_page, ops_doc, css_page, css_doc)
