@@ -351,9 +351,6 @@ pref("pdfjs.handleOctetStream", true);
 
 pref("privacy.trackingprotection.pbmode.enabled", false);
 
-
-pref("signon.firefoxRelay.feature", "not available");
-
 pref("signon.showAutoCompleteFooter", true);
 
 

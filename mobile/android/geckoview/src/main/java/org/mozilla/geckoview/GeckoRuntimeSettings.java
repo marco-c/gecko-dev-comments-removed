@@ -19,6 +19,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
@@ -775,6 +776,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<>("fission.webContentIsolationStrategy");
    final Pref<Boolean> mAutofillLogins =
       new Pref<Boolean>("signon.autofillForms", true);
+   final PrefWithoutDefault<String> mFirefoxRelay =
+      new PrefWithoutDefault<>("signon.firefoxRelay.feature");
    final Pref<Boolean> mAutomaticallyOfferPopup =
       new Pref<Boolean>("browser.translations.automaticallyPopup", true);
    final Pref<Boolean> mHttpsOnly =
@@ -2026,6 +2029,58 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setLoginAutofillEnabled(final boolean enabled) {
     mAutofillLogins.commit(enabled);
+    return this;
+  }
+
+  
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef(
+      value = {
+        FIREFOX_RELAY_AVAILABLE,
+        FIREFOX_RELAY_OFFERED,
+        FIREFOX_RELAY_ENABLED,
+        FIREFOX_RELAY_DISABLED
+      })
+  public @interface FirefoxRelayMode {}
+
+  
+  public static final String FIREFOX_RELAY_AVAILABLE = "available";
+
+  
+  public static final String FIREFOX_RELAY_OFFERED = "offered";
+
+  
+  public static final String FIREFOX_RELAY_ENABLED = "enabled";
+
+  
+  public static final String FIREFOX_RELAY_DISABLED = "disabled";
+
+  
+
+
+
+
+
+
+
+  @ExperimentalGeckoViewApi
+  public @Nullable @FirefoxRelayMode String getFirefoxRelay() {
+    return mFirefoxRelay.get();
+  }
+
+  
+
+
+
+
+
+
+
+
+  @ExperimentalGeckoViewApi
+  public @NonNull GeckoRuntimeSettings setFirefoxRelay(
+      @NonNull final @FirefoxRelayMode String state) {
+    mFirefoxRelay.commit(state);
     return this;
   }
 
