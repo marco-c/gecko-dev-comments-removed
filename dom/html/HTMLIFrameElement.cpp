@@ -172,7 +172,7 @@ void HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         SetLazyLoading();
       } else if (aOldValue &&
                  Loading(aOldValue->GetEnumValue()) == Loading::Lazy) {
-        StopLazyLoading();
+        StopLazyLoading(TriggerLoad::Yes);
       }
     }
 
@@ -340,71 +340,55 @@ void HTMLIFrameElement::UpdateLazyLoadState() {
 
 nsresult HTMLIFrameElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  
-  
   if (mLazyLoading) {
+    LazyLoadingElementBindToTree(aContext);
+    
+    
     UpdateLazyLoadState();
   }
-
   return nsGenericHTMLFrameElement::BindToTree(aContext, aParent);
 }
 
-void HTMLIFrameElement::SetLazyLoading() {
+void HTMLIFrameElement::UnbindFromTree(UnbindContext& aContext) {
   if (mLazyLoading) {
-    return;
+    LazyLoadingElementUnbindFromTree(aContext);
   }
-
-  
-  
-  Document* doc = OwnerDoc();
-  if (!doc->IsScriptEnabled() || doc->IsStaticDocument()) {
-    return;
-  }
-
-  doc->EnsureLazyLoadObserver().Observe(*this);
-  mLazyLoading = true;
-
-  UpdateLazyLoadState();
-}
-
-void HTMLIFrameElement::StopLazyLoading() {
-  CancelLazyLoading(false );
-
-  LoadSrc();
-
-  mLazyLoadState.Clear();
-  if (nsSubDocumentFrame* ourFrame = do_QueryFrame(GetPrimaryFrame())) {
-    ourFrame->ResetFrameLoader(nsSubDocumentFrame::RetainPaintData::No);
-  }
+  nsGenericHTMLFrameElement::UnbindFromTree(aContext);
 }
 
 void HTMLIFrameElement::NodeInfoChanged(Document* aOldDoc) {
-  nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
-
-  if (mLazyLoading) {
-    aOldDoc->GetLazyLoadObserver()->Unobserve(*this);
-    mLazyLoading = false;
-  }
-
+  nsGenericHTMLFrameElement::NodeInfoChanged(aOldDoc);
+  
+  
+  StopLazyLoading(TriggerLoad::No);
   if (LoadingState() == Loading::Lazy) {
     SetLazyLoading();
   }
 }
 
-void HTMLIFrameElement::CancelLazyLoading(bool aClearLazyLoadState) {
-  if (!mLazyLoading) {
+void HTMLIFrameElement::SetLazyLoading() {
+  if (mLazyLoading || !MaybeStartLazyLoading()) {
     return;
   }
 
-  Document* doc = OwnerDoc();
-  if (auto* obs = doc->GetLazyLoadObserver()) {
-    obs->Unobserve(*this);
+  mLazyLoading = true;
+  UpdateLazyLoadState();
+}
+
+void HTMLIFrameElement::StopLazyLoading(TriggerLoad aTriggerLoad) {
+  if (!mLazyLoading) {
+    return;
   }
-
+  Element::StopLazyLoading();
   mLazyLoading = false;
-
-  if (aClearLazyLoadState) {
-    mLazyLoadState.Clear();
+  if (aTriggerLoad == TriggerLoad::Yes) {
+    LoadSrc();
+  }
+  mLazyLoadState.Clear();
+  if (aTriggerLoad == TriggerLoad::Yes) {
+    if (nsSubDocumentFrame* ourFrame = do_QueryFrame(GetPrimaryFrame())) {
+      ourFrame->ResetFrameLoader(nsSubDocumentFrame::RetainPaintData::No);
+    }
   }
 }
 

@@ -22,10 +22,22 @@ struct MOZ_STACK_CLASS UnbindContext final {
   
   nsINode* GetOriginalSubtreeParent() const { return mOriginalParent; }
 
+  
+  Document& OwnerDoc() const { return mDoc; }
+
+  
+  bool WasInComposedDoc() const { return mWasInComposedDoc; }
+
+  
+  bool WasInUncomposedDoc() const { return mWasInUncomposedDoc; }
+
   explicit UnbindContext(nsINode& aRoot, const BatchRemovalState* aBatchState)
       : mRoot(aRoot),
         mOriginalParent(aRoot.GetParentNode()),
-        mBatchState(aBatchState) {}
+        mDoc(*aRoot.OwnerDoc()),
+        mBatchState(aBatchState),
+        mWasInComposedDoc(aRoot.IsInComposedDoc()),
+        mWasInUncomposedDoc(aRoot.IsInUncomposedDoc()) {}
 
   void SetIsMove(bool aIsMove) { mIsMove = aIsMove; }
 
@@ -36,7 +48,11 @@ struct MOZ_STACK_CLASS UnbindContext final {
  private:
   nsINode& mRoot;
   nsINode* const mOriginalParent;
+  Document& mDoc;
   const BatchRemovalState* const mBatchState = nullptr;
+
+  const bool mWasInComposedDoc;
+  const bool mWasInUncomposedDoc;
 
   
   bool mIsMove = false;

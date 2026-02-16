@@ -1588,6 +1588,16 @@ class Element : public FragmentOrElement {
   void GetLoading(nsAString& aValue) const;
   bool ParseLoadingAttribute(const nsAString& aValue, nsAttrValue& aResult);
 
+ protected:
+  
+  
+  
+  [[nodiscard]] bool MaybeStartLazyLoading();
+  void StopLazyLoading();
+  void LazyLoadingElementBindToTree(BindContext&);
+  void LazyLoadingElementUnbindFromTree(UnbindContext&);
+
+ public:
   
   virtual bool IsPotentiallyRenderBlocking() { return false; }
   bool BlockingContainsRender() const;

@@ -10,10 +10,8 @@
 #include "mozilla/FocusModel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLImageElementBinding.h"
@@ -436,11 +434,14 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   if (IsInPicture()) {
     if (!mInDocResponsiveContent) {
-      OwnerDoc()->AddResponsiveContent(this);
+      aContext.OwnerDoc().AddResponsiveContent(this);
       mInDocResponsiveContent = true;
     }
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
     UpdateSourceSyncAndQueueImageTask(false,  false);
+  }
+  if (mLazyLoading) {
+    LazyLoadingElementBindToTree(aContext);
   }
   return NS_OK;
 }
@@ -453,6 +454,11 @@ void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
       UnsetFlags(MAYBE_ORPHAN_FORM_ELEMENT);
     }
   }
+
+  if (mLazyLoading) {
+    LazyLoadingElementUnbindFromTree(aContext);
+  }
+
   
   const bool wasInPicture = IsInPicture();
 
@@ -464,7 +470,7 @@ void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
     MOZ_ASSERT(aContext.IsUnbindRoot(this));
     MOZ_ASSERT(mInDocResponsiveContent);
     if (!HasAttr(nsGkAtoms::srcset)) {
-      OwnerDoc()->RemoveResponsiveContent(this);
+      aContext.OwnerDoc().RemoveResponsiveContent(this);
       mInDocResponsiveContent = false;
     }
     UpdateSourceSyncAndQueueImageTask(false,  false);
@@ -505,18 +511,18 @@ void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   }
 
   
+  StopLazyLoading(StartLoad::No);
+  if (LoadingState() == Loading::Lazy) {
+    SetLazyLoading();
+  }
+
+  
   
   
   mSrcURI = nullptr;
   nsAutoString src;
   if (GetAttr(nsGkAtoms::src, src) && !src.IsEmpty()) {
     StringToURI(src, OwnerDoc(), getter_AddRefs(mSrcURI));
-  }
-
-  if (mLazyLoading) {
-    aOldDoc->GetLazyLoadObserver()->Unobserve(*this);
-    mLazyLoading = false;
-    SetLazyLoading();
   }
 
   
@@ -1051,20 +1057,9 @@ void HTMLImageElement::MediaFeatureValuesChanged() {
 }
 
 void HTMLImageElement::SetLazyLoading() {
-  if (mLazyLoading) {
+  if (mLazyLoading || !MaybeStartLazyLoading()) {
     return;
   }
-
-  
-  
-  
-  
-  Document* doc = OwnerDoc();
-  if (!doc->IsScriptEnabled() || doc->IsStaticDocument()) {
-    return;
-  }
-
-  doc->EnsureLazyLoadObserver().Observe(*this);
   mLazyLoading = true;
   UpdateImageState(true);
 }
@@ -1073,12 +1068,9 @@ void HTMLImageElement::StopLazyLoading(StartLoad aStartLoad) {
   if (!mLazyLoading) {
     return;
   }
+  Element::StopLazyLoading();
   mLazyLoading = false;
-  Document* doc = OwnerDoc();
-  if (auto* obs = doc->GetLazyLoadObserver()) {
-    obs->Unobserve(*this);
-  }
-
+  
   if (aStartLoad == StartLoad::Yes) {
     UpdateSourceSyncAndQueueImageTask(true,  true);
   }

@@ -9832,7 +9832,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
             mBrowsingContext->GetEmbedderElement())) {
       
       if (!(aLoadState->LoadType() & LOAD_RELOAD_NORMAL)) {
-        iframe->CancelLazyLoading(true );
+        iframe->StopLazyLoading(HTMLIFrameElement::TriggerLoad::No);
       }
     }
   }
