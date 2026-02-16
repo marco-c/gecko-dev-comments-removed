@@ -28,7 +28,7 @@ add_setup(async function () {
 
   
   
-  Services.logins.removeLogin(TEST_LOGIN3);
+  await Services.logins.removeLoginAsync(TEST_LOGIN3);
 
   await BrowserTestUtils.openNewForegroundTab({
     gBrowser,

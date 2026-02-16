@@ -94,7 +94,7 @@ async function addLogin(login) {
     
     
     
-    Services.logins.removeLogin(logins[0]);
+    await Services.logins.removeLoginAsync(logins[0]);
   });
   return result;
 }
