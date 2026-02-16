@@ -137,6 +137,9 @@ class Animation : public DOMEventTargetHelper,
 
   double PlaybackRate() const { return mPlaybackRate; }
   void SetPlaybackRate(double aPlaybackRate);
+  
+  
+  double PlaybackRateInternal() const;
 
   AnimationPlayState PlayState() const;
   virtual AnimationPlayState PlayStateFromJS() const { return PlayState(); }
@@ -589,6 +592,10 @@ class Animation : public DOMEventTargetHelper,
   TimeStamp mPendingReadyTime;
 
  private:
+  
+  
+  double AnimationsPlayBackRateMultiplier() const;
+
   
   uint64_t mIdOnCompositor = 0;
   bool mIsPartialPrerendered = false;
