@@ -150,7 +150,6 @@ void DictionaryCacheEntry::ConvertMatchDestToEnumArray(
 bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
                                  ExtContentPolicyType aType, uint32_t aNow,
                                  uint32_t& aLongest) {
-  MOZ_ASSERT(NS_IsMainThread());
   if (mHash.IsEmpty()) {
     
     return false;
@@ -206,7 +205,6 @@ void DictionaryCacheEntry::InUse() {
 }
 
 void DictionaryCacheEntry::UseCompleted() {
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mUsers > 0);
   mUsers--;
   
@@ -220,129 +218,74 @@ void DictionaryCacheEntry::UseCompleted() {
   }
 }
 
-nsCString DictionaryCacheEntry::GetHash() const {
-  MOZ_ASSERT(NS_IsMainThread());
-  return mHash;
-}
-
-bool DictionaryCacheEntry::HasHash() {
-  MOZ_ASSERT(NS_IsMainThread());
-  return !mHash.IsEmpty();
-}
-
-void DictionaryCacheEntry::SetHash(const nsACString& aHash) {
-  MOZ_ASSERT(NS_IsMainThread());
-  mHash = aHash;
-}
-
-bool DictionaryCacheEntry::IsReading() const {
-  MOZ_ASSERT(NS_IsMainThread());
-  return mUsers > 0 && !mWaitingPrefetch.IsEmpty();
-}
-
-void DictionaryCacheEntry::CallbackOnCacheRead(
-    const std::function<void(nsresult)>& aFunc) {
-  MOZ_ASSERT(NS_IsMainThread());
-  mWaitingPrefetch.AppendElement(aFunc);
-}
-
-const Vector<uint8_t>& DictionaryCacheEntry::GetDictionary() const
-    MOZ_NO_THREAD_SAFETY_ANALYSIS {
-  MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  return mDictionaryData;
-}
-
-void DictionaryCacheEntry::ClearDataForTesting() {
-  MOZ_ASSERT(NS_IsMainThread());
-  mDictionaryData.clear();
-  mDictionaryDataComplete = false;
-}
-
-uint8_t* DictionaryCacheEntry::DictionaryData(size_t* aLength) const {
-  MOZ_ASSERT(NS_IsMainThread());
-  *aLength = mDictionaryData.length();
-  return (uint8_t*)mDictionaryData.begin();
-}
-
-bool DictionaryCacheEntry::DictionaryReady() const {
-  return mDictionaryDataComplete;
-}
-
 
 nsresult DictionaryCacheEntry::Prefetch(
     nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
     const std::function<void(nsresult)>& aFunc) {
-  MOZ_ASSERT(NS_IsMainThread());
   DICTIONARY_LOG(("Prefetch for %s", mURI.get()));
   
   
-  if (!mWaitingPrefetch.IsEmpty()) {
-    DICTIONARY_LOG(("Prefetch for %s - already waiting", mURI.get()));
+  if (mWaitingPrefetch.IsEmpty()) {
+    
+    
+    
+    
+    if (mDictionaryDataComplete) {
+      DICTIONARY_LOG(
+          ("Prefetch for %s - already have data in memory (%u users)",
+           mURI.get(), mUsers));
+      aShouldSuspend = false;
+      return NS_OK;
+    }
+
+    
+    
+    
+    nsCOMPtr<nsICacheStorageService> cacheStorageService(
+        components::CacheStorage::Service());
+    if (!cacheStorageService) {
+      aShouldSuspend = false;
+      return NS_ERROR_FAILURE;
+    }
+    nsCOMPtr<nsICacheStorage> cacheStorage;
+    nsresult rv = cacheStorageService->DiskCacheStorage(
+        aLoadContextInfo, getter_AddRefs(cacheStorage));
+    if (NS_FAILED(rv)) {
+      aShouldSuspend = false;
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    
+    
+    
+    
+    if (NS_FAILED(cacheStorage->AsyncOpenURIString(
+            mURI, ""_ns,
+            nsICacheStorage::OPEN_READONLY |
+                nsICacheStorage::OPEN_COMPLETE_ONLY |
+                nsICacheStorage::OPEN_ALWAYS |
+                nsICacheStorage::CHECK_MULTITHREADED,
+            this)) ||
+        mNotCached) {
+      DICTIONARY_LOG(("AsyncOpenURIString failed for %s", mURI.get()));
+      
+      
+      aShouldSuspend = false;
+      
+      if (mOrigin) {
+        mOrigin->RemoveEntry(this);
+        mOrigin = nullptr;
+      }
+      return NS_ERROR_FAILURE;
+    }
     mWaitingPrefetch.AppendElement(aFunc);
+    DICTIONARY_LOG(("Started Prefetch for %s, anonymous=%d", mURI.get(),
+                    aLoadContextInfo->IsAnonymous()));
     aShouldSuspend = true;
     return NS_OK;
   }
-
-  
-  
-  
-  
-  if (mDictionaryDataComplete) {
-    DICTIONARY_LOG(("Prefetch for %s - already have data in memory (%u users)",
-                    mURI.get(), mUsers));
-    aShouldSuspend = false;
-    return NS_OK;
-  }
-
-  
-  
-  mWaitingPrefetch.AppendElement(aFunc);
-
-  
-  nsCOMPtr<nsICacheStorageService> cacheStorageService(
-      components::CacheStorage::Service());
-  if (!cacheStorageService) {
-    mWaitingPrefetch.Clear();
-    aShouldSuspend = false;
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsICacheStorage> cacheStorage;
-  nsresult rv = cacheStorageService->DiskCacheStorage(
-      aLoadContextInfo, getter_AddRefs(cacheStorage));
-  if (NS_FAILED(rv)) {
-    mWaitingPrefetch.Clear();
-    aShouldSuspend = false;
-    return NS_ERROR_FAILURE;
-  }
-  
-  
-  
-  
-  
-  
-  if (NS_FAILED(cacheStorage->AsyncOpenURIString(
-          mURI, ""_ns,
-          nsICacheStorage::OPEN_READONLY | nsICacheStorage::OPEN_COMPLETE_ONLY |
-              nsICacheStorage::OPEN_ALWAYS |
-              nsICacheStorage::CHECK_MULTITHREADED,
-          this)) ||
-      mNotCached) {
-    DICTIONARY_LOG(("AsyncOpenURIString failed for %s", mURI.get()));
-    
-    
-    mWaitingPrefetch.Clear();
-    aShouldSuspend = false;
-    
-    if (mOrigin) {
-      mOrigin->RemoveEntry(this);
-      mOrigin = nullptr;
-    }
-    return NS_ERROR_FAILURE;
-  }
-  DICTIONARY_LOG(("Started Prefetch for %s, anonymous=%d", mURI.get(),
-                  aLoadContextInfo->IsAnonymous()));
+  DICTIONARY_LOG(("Prefetch for %s - already waiting", mURI.get()));
   aShouldSuspend = true;
   return NS_OK;
 }
@@ -354,9 +297,6 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
       
       
       
-      MOZ_DIAGNOSTIC_ASSERT(
-          false,
-          "Accumulate Dictionary hash when we already have a hash and data");
       return;
     }
     
@@ -366,11 +306,8 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(
-        false, "Accumulate Dictionary hash when we already have a hash");
     return;  
   }
-  size_t dataLen = mDictionaryData.length();
   if (!mCrypto) {
     DICTIONARY_LOG(("Calculating new hash for %s", mURI.get()));
     
@@ -384,8 +321,8 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Cache InitCrypto failed");
   }
   mCrypto->Update(reinterpret_cast<const uint8_t*>(aBuf), aCount);
-  DICTIONARY_LOG(
-      ("Accumulate Hash %p: %d bytes, total %zu", this, aCount, dataLen));
+  DICTIONARY_LOG(("Accumulate Hash %p: %d bytes, total %zu", this, aCount,
+                  mDictionaryData.length()));
 }
 
 void DictionaryCacheEntry::FinishHash() {
@@ -455,7 +392,6 @@ static void EscapeMetadataString(const nsACString& aInput, nsCString& aOutput) {
 }
 
 void DictionaryCacheEntry::MakeMetadataEntry(nsCString& aNewValue) {
-  MOZ_ASSERT(NS_IsMainThread());
   aNewValue.AppendLiteral("|"), aNewValue.AppendInt(METADATA_VERSION),
       EscapeMetadataString(mHash, aNewValue);
   EscapeMetadataString(mPattern, aNewValue);
@@ -518,7 +454,6 @@ static const char* GetEncodedString(const char* aSrc, nsACString& aOutput) {
 
 
 bool DictionaryCacheEntry::ParseMetadata(const char* aSrc) {
-  MOZ_ASSERT(NS_IsMainThread());
   
   aSrc = GetEncodedString(aSrc, mHash);
   const char* tmp = mHash.get();
@@ -592,37 +527,30 @@ nsresult DictionaryCacheEntry::ReadCacheData(
     uint32_t aToOffset, uint32_t aCount, uint32_t* aWriteCount) {
   DictionaryCacheEntry* self = static_cast<DictionaryCacheEntry*>(aClosure);
 
-  (void)self->mPendingDictionaryData.append(aFromSegment, aCount);
+  (void)self->mDictionaryData.append(aFromSegment, aCount);
   DICTIONARY_LOG(("Accumulate %p (%s): %d bytes, total %zu", self,
-                  self->mURI.get(), aCount,
-                  self->mPendingDictionaryData.length()));
+                  self->mURI.get(), aCount, self->mDictionaryData.length()));
   *aWriteCount = aCount;
   return NS_OK;
 }
 
 void DictionaryCacheEntry::CleanupOnCacheData(nsresult result) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  DICTIONARY_LOG(("Unsuspending %zu channels", mWaitingPrefetch.Length()));
-
+  DICTIONARY_LOG(("Unsuspending %zu channels, Dictionary len %zu",
+                  mWaitingPrefetch.Length(), mDictionaryData.length()));
   
-  nsTArray<std::function<void(nsresult)>> callbacks =
-      std::move(mWaitingPrefetch);
-
-  for (auto& lambda : callbacks) {
+  for (auto& lambda : mWaitingPrefetch) {
     (lambda)(result);
   }
+  mWaitingPrefetch.Clear();
 
   
   if (mReplacement) {
     DICTIONARY_LOG(("Unsuspending %zu replacement channels",
                     mReplacement->mWaitingPrefetch.Length()));
-    nsTArray<std::function<void(nsresult)>> replacementCallbacks =
-        std::move(mReplacement->mWaitingPrefetch);
-
-    for (auto& lambda : replacementCallbacks) {
+    for (auto& lambda : mReplacement->mWaitingPrefetch) {
       (lambda)(result);
     }
+    mReplacement->mWaitingPrefetch.Clear();
   }
 
   
@@ -644,58 +572,38 @@ NS_IMETHODIMP
 DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   DICTIONARY_LOG(("DictionaryCacheEntry %s OnStopRequest", mURI.get()));
 
-  Vector<uint8_t> pendingData;
-  nsCString computedHash;
+  auto cleanup = MakeScopeExit([&] {
+    CleanupOnCacheData(result);
+    mStopReceived = true;
+  });
+  if (NS_FAILED(result)) {
+    return result;
+  }
+  mDictionaryDataComplete = true;
 
-  if (NS_SUCCEEDED(result)) {
+  
+  if (mHash.IsEmpty()) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsICryptoHash> hasher = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+  if (!hasher) {
+    return NS_OK;
+  }
+  hasher->Init(nsICryptoHash::SHA256);
+  hasher->Update(mDictionaryData.begin(),
+                 static_cast<uint32_t>(mDictionaryData.length()));
+  nsAutoCString computedHash;
+  MOZ_ALWAYS_SUCCEEDS(hasher->Finish(true, computedHash));
+
+  if (!computedHash.Equals(mHash)) {
+    DICTIONARY_LOG(("Hash mismatch for %s: expected %s, computed %s",
+                    mURI.get(), mHash.get(), computedHash.get()));
+    result = NS_ERROR_CORRUPTED_CONTENT;
+    mDictionaryDataComplete = false;
+    mDictionaryData.clear();
     
-    pendingData = std::move(mPendingDictionaryData);
+    DictionaryCache::RemoveDictionaryFor(mURI);
   }
-
-  
-  if (NS_SUCCEEDED(result) && !pendingData.empty()) {
-    nsCOMPtr<nsICryptoHash> hasher =
-        do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
-    if (hasher) {
-      hasher->Init(nsICryptoHash::SHA256);
-      hasher->Update(pendingData.begin(),
-                     static_cast<uint32_t>(pendingData.length()));
-      MOZ_ALWAYS_SUCCEEDS(hasher->Finish(true, computedHash));
-    }
-  }
-
-  
-  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-      "DictionaryCacheEntry::OnStopRequest",
-      [self = RefPtr{this}, result, computedHash,
-       pendingData = std::move(pendingData)]() mutable {
-        nsresult finalResult = result;
-        bool shouldRemoveDictionary = false;
-
-        
-        if (NS_SUCCEEDED(finalResult) && !pendingData.empty()) {
-          if (!self->mHash.IsEmpty() && !computedHash.Equals(self->mHash)) {
-            DICTIONARY_LOG(("Hash mismatch for %s: expected %s, computed %s",
-                            self->mURI.get(), self->mHash.get(),
-                            computedHash.get()));
-            finalResult = NS_ERROR_CORRUPTED_CONTENT;
-            pendingData.clear();
-            shouldRemoveDictionary = true;
-          } else {
-            
-            self->mDictionaryData = std::move(pendingData);
-            self->mDictionaryDataComplete = true;
-          }
-        }
-
-        self->CleanupOnCacheData(finalResult);
-        self->mStopReceived = true;
-        if (shouldRemoveDictionary) {
-          
-          DictionaryCache::RemoveDictionary(self->mURI);
-        }
-      });
-  NS_DispatchToMainThread(runnable);
 
   return result;
 }
@@ -710,8 +618,14 @@ void DictionaryCacheEntry::UnblockAddEntry(DictionaryOrigin* aOrigin) {
 }
 
 void DictionaryCacheEntry::WriteOnHash() {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!mHash.IsEmpty() && mOrigin) {
+  bool hasHash = false;
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (!mHash.IsEmpty()) {
+      hasHash = true;
+    }
+  }
+  if (hasHash && mOrigin) {
     DICTIONARY_LOG(("Write already hashed"));
     mOrigin->Write(this);
   }
@@ -729,17 +643,15 @@ void DictionaryCacheEntry::WriteOnHash() {
 NS_IMETHODIMP
 DictionaryCacheEntry::OnCacheEntryCheck(nsICacheEntry* aEntry,
                                         uint32_t* result) {
-  DICTIONARY_LOG(("OnCacheEntryCheck %p", this));
+  DICTIONARY_LOG(("OnCacheEntryCheck %s", mURI.get()));
   *result = nsICacheEntryOpenCallback::ENTRY_WANTED;
   return NS_OK;
 }
 
-
-
 NS_IMETHODIMP
 DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
                                             nsresult status) {
-  DICTIONARY_LOG(("OnCacheEntryAvailable %p, result %u, entry %p", this,
+  DICTIONARY_LOG(("OnCacheEntryAvailable %s, result %u, entry %p", mURI.get(),
                   (uint32_t)status, entry));
   if (entry) {
     nsCOMPtr<nsIInputStream> stream;
@@ -765,15 +677,9 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
     mNotCached = true;  
     DICTIONARY_LOG(("Prefetched cache entry not available!!!"));
 
+    CleanupOnCacheData(NS_ERROR_CORRUPTED_CONTENT);
     
-    nsCString uriCopy = mURI;
-    nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-        "DictionaryCacheEntry::OnCacheEntryAvailable",
-        [self = RefPtr{this}, uriCopy]() {
-          self->CleanupOnCacheData(NS_ERROR_CORRUPTED_CONTENT);
-          DictionaryCache::RemoveDictionary(self->mURI);
-        });
-    NS_DispatchToMainThread(runnable);
+    DictionaryCache::RemoveDictionaryFor(mURI);
   }
 
   return NS_OK;
@@ -1109,29 +1015,27 @@ void DictionaryCache::ClearDictionaryDataForTesting(const nsACString& aURI) {
 
 
 
-void DictionaryCache::RemoveDictionaryOMT(const nsACString& aKey) {
+void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
+  RefPtr<DictionaryCache> cache = GetInstance();
   DICTIONARY_LOG(
       ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "DictionaryCache::RemoveDictionaryOMT",
-      [key = nsCString(aKey)]() { DictionaryCache::RemoveDictionary(key); }));
+  NS_DispatchToMainThread(NewRunnableMethod<const nsCString>(
+      "DictionaryCache::RemoveDictionaryFor", cache,
+      &DictionaryCache::RemoveDictionary, aKey));
 }
 
 
-
 void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
-  MOZ_ASSERT(NS_IsMainThread());
   DICTIONARY_LOG(
       ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
 
-  RefPtr<DictionaryCache> cache = GetInstance();
   nsCOMPtr<nsIURI> uri;
   if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), aKey))) {
     return;
   }
   nsAutoCString prepath;
   if (NS_SUCCEEDED(GetDictPath(uri, prepath))) {
-    if (auto origin = cache->mDictionaryCache.Lookup(prepath)) {
+    if (auto origin = mDictionaryCache.Lookup(prepath)) {
       origin.Data()->RemoveEntry(aKey);
     }
   }
@@ -1564,7 +1468,7 @@ void DictionaryOrigin::DumpEntries() {
          dict->mMatchDest.IsEmpty()
              ? ""
              : dom::GetEnumString(dict->mMatchDest[0]).get(),
-         dict->GetHash().get(), dict->mExpiration));
+         dict->mHash.get(), dict->mExpiration));
   }
   DICTIONARY_LOG(("*** Pending ***"));
   for (const auto& dict : mPendingEntries) {
@@ -1575,7 +1479,7 @@ void DictionaryOrigin::DumpEntries() {
          dict->mMatchDest.IsEmpty()
              ? ""
              : dom::GetEnumString(dict->mMatchDest[0]).get(),
-         dict->GetHash().get(), dict->mExpiration));
+         dict->mHash.get(), dict->mExpiration));
   }
 }
 

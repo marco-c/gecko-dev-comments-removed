@@ -860,7 +860,7 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
   
   
   if (aClearDictionary) {
-    DictionaryCache::RemoveDictionaryOMT(aKey);
+    DictionaryCache::RemoveDictionaryFor(aKey);
   }
 
   StaticMutexAutoLock lock(sLock);

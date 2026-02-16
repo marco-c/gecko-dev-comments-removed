@@ -1792,7 +1792,7 @@ void CacheEntry::DoomAlreadyRemoved() {
   if (mEnhanceID.EqualsLiteral("dict:")) {
     DictionaryCache::RemoveOriginFor(mURI);
   } else {
-    DictionaryCache::RemoveDictionaryOMT(mURI);
+    DictionaryCache::RemoveDictionaryFor(mURI);
   }
 
   
