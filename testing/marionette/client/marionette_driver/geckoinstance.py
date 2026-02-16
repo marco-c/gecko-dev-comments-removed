@@ -149,6 +149,9 @@ class GeckoInstance:
         "media.sanity-test.disabled": True,
         "media.volume_scale": "0.01",
         
+        
+        "mousewheel.allow_scrolling_more_than_one_page": True,
+        
         "network.connectivity-service.enabled": False,
         
         "network.http.prompt-temp-redirect": False,
