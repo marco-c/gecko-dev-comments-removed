@@ -255,7 +255,7 @@ void nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
   } else {
     mSqrChar.Stretch(this, aDrawTarget, fontSizeInflation,
                      StretchDirection::Vertical, contSize, radicalSize,
-                     NS_STRETCH_LARGER,
+                     MathMLStretchFlag::Larger,
                      StyleVisibility()->mDirection == StyleDirection::Rtl);
     
     
