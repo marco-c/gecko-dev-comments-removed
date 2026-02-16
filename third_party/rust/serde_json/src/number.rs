@@ -189,7 +189,7 @@ impl Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    zmij::Buffer::new().format_finite(f).to_owned()
+                    ryu::Buffer::new().format_finite(f).to_owned()
                 }
             };
             Some(Number { n })
@@ -300,9 +300,6 @@ impl Number {
     
     
     
-    
-    
-    
     #[cfg(feature = "arbitrary_precision")]
     #[cfg_attr(docsrs, doc(cfg(feature = "arbitrary_precision")))]
     pub fn as_str(&self) -> &str {
@@ -329,7 +326,7 @@ impl Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    zmij::Buffer::new().format_finite(f).to_owned()
+                    ryu::Buffer::new().format_finite(f).to_owned()
                 }
             };
             Some(Number { n })
@@ -353,7 +350,7 @@ impl Display for Number {
         match self.n {
             N::PosInt(u) => formatter.write_str(itoa::Buffer::new().format(u)),
             N::NegInt(i) => formatter.write_str(itoa::Buffer::new().format(i)),
-            N::Float(f) => formatter.write_str(zmij::Buffer::new().format_finite(f)),
+            N::Float(f) => formatter.write_str(ryu::Buffer::new().format_finite(f)),
         }
     }
 
@@ -559,7 +556,7 @@ macro_rules! deserialize_any {
             } else if let Some(i) = self.as_i128() {
                 return visitor.visit_i128(i);
             } else if let Some(f) = self.as_f64() {
-                if zmij::Buffer::new().format_finite(f) == self.n || f.to_string() == self.n {
+                if ryu::Buffer::new().format_finite(f) == self.n || f.to_string() == self.n {
                     return visitor.visit_f64(f);
                 }
             }
@@ -707,7 +704,7 @@ impl From<ParserNumber> for Number {
                 }
                 #[cfg(feature = "arbitrary_precision")]
                 {
-                    zmij::Buffer::new().format_finite(f).to_owned()
+                    ryu::Buffer::new().format_finite(f).to_owned()
                 }
             }
             ParserNumber::U64(u) => {

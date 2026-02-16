@@ -590,7 +590,7 @@ impl<'h> Input<'h> {
     
     
     #[inline]
-    pub fn haystack(&self) -> &'h [u8] {
+    pub fn haystack(&self) -> &[u8] {
         self.haystack
     }
 
@@ -1346,7 +1346,7 @@ impl core::fmt::Display for PatternSetInsertError {
         write!(
             f,
             "failed to insert pattern ID {} into pattern set \
-             with insufficient capacity of {}",
+             with insufficiet capacity of {}",
             self.attempted.as_usize(),
             self.capacity,
         )
@@ -1694,14 +1694,13 @@ impl Anchored {
 
 
 #[non_exhaustive]
-#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MatchKind {
     
     All,
     
     
     
-    #[default]
     LeftmostFirst,
     
     
@@ -1724,6 +1723,12 @@ impl MatchKind {
     #[cfg(feature = "alloc")]
     pub(crate) fn continue_past_first_match(&self) -> bool {
         *self == MatchKind::All
+    }
+}
+
+impl Default for MatchKind {
+    fn default() -> MatchKind {
+        MatchKind::LeftmostFirst
     }
 }
 
@@ -1902,10 +1907,10 @@ impl core::fmt::Display for MatchError {
                 offset,
             ),
             MatchErrorKind::GaveUp { offset } => {
-                write!(f, "gave up searching at offset {offset}")
+                write!(f, "gave up searching at offset {}", offset)
             }
             MatchErrorKind::HaystackTooLong { len } => {
-                write!(f, "haystack of length {len} is too long")
+                write!(f, "haystack of length {} is too long", len)
             }
             MatchErrorKind::UnsupportedAnchored { mode: Anchored::Yes } => {
                 write!(f, "anchored searches are not supported or enabled")

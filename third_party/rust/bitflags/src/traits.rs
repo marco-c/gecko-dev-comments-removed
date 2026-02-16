@@ -219,11 +219,6 @@ pub trait Flags: Sized + 'static {
     }
 
     
-    fn iter_defined_names() -> iter::IterDefinedNames<Self> {
-        iter::IterDefinedNames::new()
-    }
-
-    
     fn is_empty(&self) -> bool {
         self.bits() == Self::Bits::EMPTY
     }

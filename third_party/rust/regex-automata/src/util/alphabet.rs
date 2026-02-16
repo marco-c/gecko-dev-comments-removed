@@ -117,8 +117,8 @@ impl Unit {
     pub fn eoi(num_byte_equiv_classes: usize) -> Unit {
         assert!(
             num_byte_equiv_classes <= 256,
-            "max number of byte-based equivalent classes is 256, but got \
-             {num_byte_equiv_classes}",
+            "max number of byte-based equivalent classes is 256, but got {}",
+            num_byte_equiv_classes,
         );
         Unit(UnitKind::EOI(u16::try_from(num_byte_equiv_classes).unwrap()))
     }
@@ -469,7 +469,7 @@ impl ByteClasses {
     
     
     #[inline]
-    pub fn elements(&self, class: Unit) -> ByteClassElements<'_> {
+    pub fn elements(&self, class: Unit) -> ByteClassElements {
         ByteClassElements { classes: self, class, byte: 0 }
     }
 
@@ -477,7 +477,7 @@ impl ByteClasses {
     
     
     
-    fn element_ranges(&self, class: Unit) -> ByteClassElementRanges<'_> {
+    fn element_ranges(&self, class: Unit) -> ByteClassElementRanges {
         ByteClassElementRanges { elements: self.elements(class), range: None }
     }
 }
@@ -501,9 +501,9 @@ impl core::fmt::Debug for ByteClasses {
                 write!(f, "{:?} => [", class.as_usize())?;
                 for (start, end) in self.element_ranges(class) {
                     if start == end {
-                        write!(f, "{start:?}")?;
+                        write!(f, "{:?}", start)?;
                     } else {
-                        write!(f, "{start:?}-{end:?}")?;
+                        write!(f, "{:?}-{:?}", start, end)?;
                     }
                 }
                 write!(f, "]")?;
@@ -786,12 +786,12 @@ impl ByteSet {
     }
 
     
-    pub(crate) fn iter(&self) -> ByteSetIter<'_> {
+    pub(crate) fn iter(&self) -> ByteSetIter {
         ByteSetIter { set: self, b: 0 }
     }
 
     
-    pub(crate) fn iter_ranges(&self) -> ByteSetRangeIter<'_> {
+    pub(crate) fn iter_ranges(&self) -> ByteSetRangeIter {
         ByteSetRangeIter { set: self, b: 0 }
     }
 

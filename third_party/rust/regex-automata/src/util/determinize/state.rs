@@ -115,7 +115,7 @@ pub(crate) struct State(Arc<[u8]>);
 
 impl core::borrow::Borrow<[u8]> for State {
     fn borrow(&self) -> &[u8] {
-        &self.0
+        &*self.0
     }
 }
 
@@ -177,7 +177,7 @@ impl State {
     }
 
     fn repr(&self) -> Repr<'_> {
-        Repr(&self.0)
+        Repr(&*self.0)
     }
 }
 
@@ -461,7 +461,7 @@ impl<'a> Repr<'a> {
     
     fn match_len(&self) -> usize {
         if !self.is_match() {
-            0
+            return 0;
         } else if !self.has_pattern_ids() {
             1
         } else {

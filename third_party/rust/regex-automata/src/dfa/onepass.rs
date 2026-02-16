@@ -722,8 +722,6 @@ impl<'a> InternalBuilder<'a> {
             }
         }
         self.shuffle_states();
-        self.dfa.starts.shrink_to_fit();
-        self.dfa.table.shrink_to_fit();
         Ok(self.dfa)
     }
 
@@ -2093,20 +2091,9 @@ impl DFA {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
         let explicit_slots_len = core::cmp::min(
             Slots::LIMIT,
-            core::cmp::min(
-                slots.len().saturating_sub(self.explicit_slot_start),
-                cache.explicit_slots.len(),
-            ),
+            slots.len().saturating_sub(self.explicit_slot_start),
         );
         cache.setup_search(explicit_slots_len);
         for slot in cache.explicit_slots() {
@@ -2229,13 +2216,8 @@ impl DFA {
             
             
             
-            
-            
-            
-            
-            let cache_slots = cache.explicit_slots();
-            slots[self.explicit_slot_start..][..cache_slots.len()]
-                .copy_from_slice(cache_slots);
+            slots[self.explicit_slot_start..]
+                .copy_from_slice(cache.explicit_slots());
             epsilons.slots().apply(at, &mut slots[self.explicit_slot_start..]);
         }
         *matched_pid = Some(pid);
@@ -2426,7 +2408,7 @@ impl core::fmt::Debug for DFA {
             }
             write!(f, "{:06?}", sid.as_usize())?;
             if !pateps.is_empty() {
-                write!(f, " ({pateps:?})")?;
+                write!(f, " ({:?})", pateps)?;
             }
             write!(f, ": ")?;
             debug_state_transitions(f, self, sid)?;
@@ -2957,7 +2939,7 @@ impl core::fmt::Debug for Slots {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(f, "S")?;
         for slot in self.iter() {
-            write!(f, "-{slot:?}")?;
+            write!(f, "-{:?}", slot)?;
         }
         Ok(())
     }
@@ -3068,21 +3050,23 @@ impl core::fmt::Display for BuildError {
             Word(_) => write!(f, "NFA contains Unicode word boundary"),
             TooManyStates { limit } => write!(
                 f,
-                "one-pass DFA exceeded a limit of {limit:?} \
-                 for number of states",
+                "one-pass DFA exceeded a limit of {:?} for number of states",
+                limit,
             ),
             TooManyPatterns { limit } => write!(
                 f,
-                "one-pass DFA exceeded a limit of {limit:?} \
-                 for number of patterns",
+                "one-pass DFA exceeded a limit of {:?} for number of patterns",
+                limit,
             ),
             UnsupportedLook { look } => write!(
                 f,
-                "one-pass DFA does not support the {look:?} assertion",
+                "one-pass DFA does not support the {:?} assertion",
+                look,
             ),
             ExceededSizeLimit { limit } => write!(
                 f,
-                "one-pass DFA exceeded size limit of {limit:?} during building",
+                "one-pass DFA exceeded size limit of {:?} during building",
+                limit,
             ),
             NotOnePass { msg } => write!(
                 f,
@@ -3105,7 +3089,7 @@ mod tests {
         let predicate = |err: &str| err.contains("conflicting transition");
 
         let err = DFA::new(r"a*[ab]").unwrap_err().to_string();
-        assert!(predicate(&err), "{err}");
+        assert!(predicate(&err), "{}", err);
     }
 
     #[test]
@@ -3115,7 +3099,7 @@ mod tests {
         };
 
         let err = DFA::new(r"(^|$)a").unwrap_err().to_string();
-        assert!(predicate(&err), "{err}");
+        assert!(predicate(&err), "{}", err);
     }
 
     #[test]
@@ -3125,7 +3109,7 @@ mod tests {
         };
 
         let err = DFA::new_many(&[r"^", r"$"]).unwrap_err().to_string();
-        assert!(predicate(&err), "{err}");
+        assert!(predicate(&err), "{}", err);
     }
 
     
