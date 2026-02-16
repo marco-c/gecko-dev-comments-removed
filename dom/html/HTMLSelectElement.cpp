@@ -1252,6 +1252,9 @@ void HTMLSelectElement::DoneAddingChildren(bool aHaveNotified) {
 
     
     UpdateValidityElementStates(aHaveNotified);
+
+    
+    SelectedContentTextMightHaveChanged();
   }
 
   mDefaultSelectionSet = true;
