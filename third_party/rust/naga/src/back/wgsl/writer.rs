@@ -103,6 +103,7 @@ impl<W: Write> Writer<W> {
         self.namer.reset(
             module,
             &crate::keywords::wgsl::RESERVED_SET,
+            &crate::keywords::wgsl::BUILTIN_IDENTIFIER_SET,
             
             proc::CaseInsensitiveKeywordSet::empty(),
             &["__", "_naga"],
@@ -1955,7 +1956,6 @@ impl<W: Write> Writer<W> {
     }
 
     
-    #[allow(clippy::missing_const_for_fn)]
     pub fn finish(self) -> W {
         self.out
     }

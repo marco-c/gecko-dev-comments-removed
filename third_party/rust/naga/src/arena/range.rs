@@ -106,7 +106,7 @@ impl<T> Range<T> {
     
     
     
-    pub fn first_and_last(&self) -> Option<(Handle<T>, Handle<T>)> {
+    pub const fn first_and_last(&self) -> Option<(Handle<T>, Handle<T>)> {
         if self.inner.start < self.inner.end {
             Some((
                 

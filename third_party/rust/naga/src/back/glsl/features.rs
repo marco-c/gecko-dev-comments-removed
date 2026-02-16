@@ -64,7 +64,7 @@ bitflags::bitflags! {
 
 
 
-pub struct FeaturesManager(Features);
+pub(crate) struct FeaturesManager(Features);
 
 impl FeaturesManager {
     
@@ -78,7 +78,7 @@ impl FeaturesManager {
     }
 
     
-    pub fn contains(&mut self, features: Features) -> bool {
+    pub const fn contains(&mut self, features: Features) -> bool {
         self.0.contains(features)
     }
 

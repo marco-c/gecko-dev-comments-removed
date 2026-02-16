@@ -864,7 +864,6 @@ impl<W: Write> Writer<W> {
 
     
     
-    #[allow(clippy::missing_const_for_fn)]
     pub fn finish(self) -> W {
         self.out
     }
@@ -3035,7 +3034,6 @@ impl<W: Write> Writer<W> {
     
     
     
-    #[allow(unused_variables)]
     fn put_bounds_checks(
         &mut self,
         chain: Handle<crate::Expression>,
@@ -4361,6 +4359,7 @@ impl<W: Write> Writer<W> {
         self.namer.reset(
             module,
             &super::keywords::RESERVED_SET,
+            proc::KeywordSet::empty(),
             proc::CaseInsensitiveKeywordSet::empty(),
             &[CLAMPED_LOD_LOAD_PREFIX],
             &mut self.names,

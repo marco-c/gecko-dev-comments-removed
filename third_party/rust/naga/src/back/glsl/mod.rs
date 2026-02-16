@@ -454,7 +454,7 @@ struct IdGenerator(u32);
 
 impl IdGenerator {
     
-    fn generate(&mut self) -> u32 {
+    const fn generate(&mut self) -> u32 {
         
         let ret = self.0;
         self.0 += 1;

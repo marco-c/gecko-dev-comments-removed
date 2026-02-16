@@ -178,7 +178,6 @@ impl<E> WithSpan<E> {
     }
 
     
-    #[allow(clippy::missing_const_for_fn)] 
     pub fn into_inner(self) -> E {
         self.inner
     }

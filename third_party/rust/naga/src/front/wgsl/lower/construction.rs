@@ -1,10 +1,4 @@
-use alloc::{
-    boxed::Box,
-    format,
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::num::NonZeroU32;
 
 use crate::common::wgsl::{TryToWgsl, TypeContext};
@@ -15,7 +9,20 @@ use crate::{Handle, Span};
 
 
 
-enum Constructor<T> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub enum Constructor<T> {
     
     
     PartialVector { size: crate::VectorSize },
@@ -62,21 +69,6 @@ impl Constructor<Handle<crate::Type>> {
     }
 }
 
-impl Constructor<(Handle<crate::Type>, &crate::TypeInner)> {
-    fn to_error_string(&self, ctx: &ExpressionContext) -> String {
-        match *self {
-            Self::PartialVector { size } => {
-                format!("vec{}<?>", size as u32,)
-            }
-            Self::PartialMatrix { columns, rows } => {
-                format!("mat{}x{}<?>", columns as u32, rows as u32,)
-            }
-            Self::PartialArray => "array<?, ?>".to_string(),
-            Self::Type((handle, _inner)) => ctx.type_to_string(handle),
-        }
-    }
-}
-
 enum Components<'a> {
     None,
     One {
@@ -112,19 +104,15 @@ impl<'source> Lowerer<'source, '_> {
     
     
     
-    
-    
     pub fn construct(
         &mut self,
         span: Span,
-        constructor: &ast::ConstructorType<'source>,
+        constructor: Constructor<Handle<crate::Type>>,
         ty_span: Span,
         components: &[Handle<ast::Expression<'source>>],
         ctx: &mut ExpressionContext<'source, '_, '_>,
     ) -> Result<'source, Handle<crate::Expression>> {
         use crate::proc::TypeResolution as Tr;
-
-        let constructor_h = self.constructor(constructor, ctx)?;
 
         let components = match *components {
             [] => Components::None,
@@ -160,7 +148,7 @@ impl<'source> Lowerer<'source, '_> {
         
         
         
-        let constructor = constructor_h.borrow_inner(ctx.module);
+        let constructor = constructor.borrow_inner(ctx.module);
 
         let expr;
         match (components, constructor) {
@@ -573,14 +561,19 @@ impl<'source> Lowerer<'source, '_> {
                 Components::One {
                     span, component, ..
                 },
-                constructor,
+                Constructor::Type((
+                    ty,
+                    &(crate::TypeInner::Scalar { .. }
+                    | crate::TypeInner::Vector { .. }
+                    | crate::TypeInner::Matrix { .. }),
+                )),
             ) => {
                 let component_ty = &ctx.typifier()[component];
                 let from_type = ctx.type_resolution_to_string(component_ty);
                 return Err(Box::new(Error::BadTypeCast {
                     span,
                     from_type,
-                    to_type: constructor.to_error_string(ctx),
+                    to_type: ctx.type_to_string(ty),
                 }));
             }
 
@@ -599,101 +592,5 @@ impl<'source> Lowerer<'source, '_> {
 
         let expr = ctx.append_expression(expr, span)?;
         Ok(expr)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn constructor<'out>(
-        &mut self,
-        constructor: &ast::ConstructorType<'source>,
-        ctx: &mut ExpressionContext<'source, '_, 'out>,
-    ) -> Result<'source, Constructor<Handle<crate::Type>>> {
-        let handle = match *constructor {
-            ast::ConstructorType::Scalar(scalar) => {
-                let ty = ctx.ensure_type_exists(scalar.to_inner_scalar());
-                Constructor::Type(ty)
-            }
-            ast::ConstructorType::PartialVector { size } => Constructor::PartialVector { size },
-            ast::ConstructorType::Vector { size, ty, ty_span } => {
-                let ty = self.resolve_ast_type(ty, &mut ctx.as_const())?;
-                let scalar = match ctx.module.types[ty].inner {
-                    crate::TypeInner::Scalar(sc) => sc,
-                    _ => return Err(Box::new(Error::UnknownScalarType(ty_span))),
-                };
-                let ty = ctx.ensure_type_exists(crate::TypeInner::Vector { size, scalar });
-                Constructor::Type(ty)
-            }
-            ast::ConstructorType::PartialMatrix { columns, rows } => {
-                Constructor::PartialMatrix { columns, rows }
-            }
-            ast::ConstructorType::Matrix {
-                rows,
-                columns,
-                ty,
-                ty_span,
-            } => {
-                let ty = self.resolve_ast_type(ty, &mut ctx.as_const())?;
-                let scalar = match ctx.module.types[ty].inner {
-                    crate::TypeInner::Scalar(sc) => sc,
-                    _ => return Err(Box::new(Error::UnknownScalarType(ty_span))),
-                };
-                let ty = match scalar.kind {
-                    crate::ScalarKind::Float => ctx.ensure_type_exists(crate::TypeInner::Matrix {
-                        columns,
-                        rows,
-                        scalar,
-                    }),
-                    _ => return Err(Box::new(Error::BadMatrixScalarKind(ty_span, scalar))),
-                };
-                Constructor::Type(ty)
-            }
-            ast::ConstructorType::PartialCooperativeMatrix { .. } => {
-                return Err(Box::new(Error::UnderspecifiedCooperativeMatrix));
-            }
-            ast::ConstructorType::CooperativeMatrix {
-                rows,
-                columns,
-                ty,
-                ty_span,
-                role,
-            } => {
-                let ty = self.resolve_ast_type(ty, &mut ctx.as_const())?;
-                let scalar = match ctx.module.types[ty].inner {
-                    crate::TypeInner::Scalar(s) => s,
-                    _ => return Err(Box::new(Error::UnsupportedCooperativeScalar(ty_span))),
-                };
-                let ty = ctx.ensure_type_exists(crate::TypeInner::CooperativeMatrix {
-                    columns,
-                    rows,
-                    scalar,
-                    role,
-                });
-                Constructor::Type(ty)
-            }
-            ast::ConstructorType::PartialArray => Constructor::PartialArray,
-            ast::ConstructorType::Array { base, size } => {
-                let base = self.resolve_ast_type(base, &mut ctx.as_const())?;
-                let size = self.array_size(size, &mut ctx.as_const())?;
-
-                ctx.layouter.update(ctx.module.to_ctx()).unwrap();
-                let stride = ctx.layouter[base].to_stride();
-
-                let ty = ctx.ensure_type_exists(crate::TypeInner::Array { base, size, stride });
-                Constructor::Type(ty)
-            }
-            ast::ConstructorType::Type(ty) => Constructor::Type(ty),
-        };
-
-        Ok(handle)
     }
 }

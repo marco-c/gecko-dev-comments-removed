@@ -7,7 +7,6 @@
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum LanguageExtension {
-    #[allow(unused)]
     Implemented(ImplementedLanguageExtension),
     Unimplemented(UnimplementedLanguageExtension),
 }

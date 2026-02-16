@@ -360,7 +360,6 @@ struct ObservationLog {
     buffer: String,
 }
 
-#[allow(trivial_casts)]
 impl ObservationLog {
     
     fn create(dir: impl AsRef<Path>) -> Result<Self, std::io::Error> {

@@ -951,7 +951,6 @@ impl crate::CommandEncoder for super::CommandEncoder {
         });
 
         let list = self.list.as_ref().unwrap();
-        #[allow(trivial_casts)] 
         unsafe {
             list.OMSetRenderTargets(
                 desc.color_attachments.len() as u32,

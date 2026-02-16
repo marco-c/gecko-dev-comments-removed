@@ -4,7 +4,6 @@ use core::hash::Hash;
 use crate::diagnostic_filter::DiagnosticFilterNode;
 use crate::front::wgsl::parse::directive::enable_extension::EnableExtensions;
 use crate::front::wgsl::parse::number::Number;
-use crate::front::wgsl::Scalar;
 use crate::{Arena, FastIndexSet, Handle, Span};
 
 #[derive(Debug, Default)]
@@ -28,12 +27,6 @@ pub struct TranslationUnit<'a> {
     
     
     
-    pub types: Arena<Type<'a>>,
-
-    
-    
-    
-    
     pub diagnostic_filters: Arena<DiagnosticFilterNode>,
     
     
@@ -52,10 +45,107 @@ pub struct Ident<'a> {
     pub span: Span,
 }
 
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub enum IdentExpr<'a> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Unresolved(&'a str),
+
+    
     Local(Handle<Local>),
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct TemplateElaboratedIdent<'a> {
+    pub ident: IdentExpr<'a>,
+    pub ident_span: Span,
+
+    
+    pub template_list: Vec<Handle<Expression<'a>>>,
+    pub template_list_span: Span,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct CallPhrase<'a> {
+    pub function: TemplateElaboratedIdent<'a>,
+    pub arguments: Vec<Handle<Expression<'a>>>,
 }
 
 
@@ -111,14 +201,14 @@ pub enum GlobalDeclKind<'a> {
 #[derive(Debug)]
 pub struct FunctionArgument<'a> {
     pub name: Ident<'a>,
-    pub ty: Handle<Type<'a>>,
+    pub ty: TemplateElaboratedIdent<'a>,
     pub binding: Option<Binding<'a>>,
     pub handle: Handle<Local>,
 }
 
 #[derive(Debug)]
 pub struct FunctionResult<'a> {
-    pub ty: Handle<Type<'a>>,
+    pub ty: TemplateElaboratedIdent<'a>,
     pub binding: Option<Binding<'a>>,
     pub must_use: bool,
 }
@@ -167,9 +257,15 @@ pub struct ResourceBinding<'a> {
 #[derive(Debug)]
 pub struct GlobalVariable<'a> {
     pub name: Ident<'a>,
-    pub space: crate::AddressSpace,
+
+    
+    
+    pub template_list: Vec<Handle<Expression<'a>>>,
+
+    
     pub binding: Option<ResourceBinding<'a>>,
-    pub ty: Option<Handle<Type<'a>>>,
+
+    pub ty: Option<TemplateElaboratedIdent<'a>>,
     pub init: Option<Handle<Expression<'a>>>,
     pub doc_comments: Vec<&'a str>,
 }
@@ -177,7 +273,7 @@ pub struct GlobalVariable<'a> {
 #[derive(Debug)]
 pub struct StructMember<'a> {
     pub name: Ident<'a>,
-    pub ty: Handle<Type<'a>>,
+    pub ty: TemplateElaboratedIdent<'a>,
     pub binding: Option<Binding<'a>>,
     pub align: Option<Handle<Expression<'a>>>,
     pub size: Option<Handle<Expression<'a>>>,
@@ -194,13 +290,13 @@ pub struct Struct<'a> {
 #[derive(Debug)]
 pub struct TypeAlias<'a> {
     pub name: Ident<'a>,
-    pub ty: Handle<Type<'a>>,
+    pub ty: TemplateElaboratedIdent<'a>,
 }
 
 #[derive(Debug)]
 pub struct Const<'a> {
     pub name: Ident<'a>,
-    pub ty: Option<Handle<Type<'a>>>,
+    pub ty: Option<TemplateElaboratedIdent<'a>>,
     pub init: Handle<Expression<'a>>,
     pub doc_comments: Vec<&'a str>,
 }
@@ -209,74 +305,8 @@ pub struct Const<'a> {
 pub struct Override<'a> {
     pub name: Ident<'a>,
     pub id: Option<Handle<Expression<'a>>>,
-    pub ty: Option<Handle<Type<'a>>>,
+    pub ty: Option<TemplateElaboratedIdent<'a>>,
     pub init: Option<Handle<Expression<'a>>>,
-}
-
-
-
-
-
-#[derive(Debug, Copy, Clone)]
-pub enum ArraySize<'a> {
-    
-    Constant(Handle<Expression<'a>>),
-    Dynamic,
-}
-
-#[derive(Debug)]
-pub enum Type<'a> {
-    Scalar(Scalar),
-    Vector {
-        size: crate::VectorSize,
-        ty: Handle<Type<'a>>,
-        ty_span: Span,
-    },
-    Matrix {
-        columns: crate::VectorSize,
-        rows: crate::VectorSize,
-        ty: Handle<Type<'a>>,
-        ty_span: Span,
-    },
-    CooperativeMatrix {
-        columns: crate::CooperativeSize,
-        rows: crate::CooperativeSize,
-        ty: Handle<Type<'a>>,
-        ty_span: Span,
-        role: crate::CooperativeRole,
-    },
-    Atomic(Scalar),
-    Pointer {
-        base: Handle<Type<'a>>,
-        space: crate::AddressSpace,
-    },
-    Array {
-        base: Handle<Type<'a>>,
-        size: ArraySize<'a>,
-    },
-    Image {
-        dim: crate::ImageDimension,
-        arrayed: bool,
-        class: crate::ImageClass,
-    },
-    Sampler {
-        comparison: bool,
-    },
-    AccelerationStructure {
-        vertex_return: bool,
-    },
-    RayQuery {
-        vertex_return: bool,
-    },
-    RayDesc,
-    RayIntersection,
-    BindingArray {
-        base: Handle<Type<'a>>,
-        size: ArraySize<'a>,
-    },
-
-    
-    User(Ident<'a>),
 }
 
 #[derive(Debug, Default)]
@@ -314,10 +344,7 @@ pub enum StatementKind<'a> {
         value: Option<Handle<Expression<'a>>>,
     },
     Kill,
-    Call {
-        function: Ident<'a>,
-        arguments: Vec<Handle<Expression<'a>>>,
-    },
+    Call(CallPhrase<'a>),
     Assign {
         target: Handle<Expression<'a>>,
         op: Option<crate::BinaryOperator>,
@@ -342,92 +369,6 @@ pub struct SwitchCase<'a> {
     pub fall_through: bool,
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Debug)]
-pub enum ConstructorType<'a> {
-    
-    Scalar(Scalar),
-
-    
-    
-    PartialVector { size: crate::VectorSize },
-
-    
-    
-    Vector {
-        size: crate::VectorSize,
-        ty: Handle<Type<'a>>,
-        ty_span: Span,
-    },
-
-    
-    
-    PartialMatrix {
-        columns: crate::VectorSize,
-        rows: crate::VectorSize,
-    },
-
-    
-    
-    Matrix {
-        columns: crate::VectorSize,
-        rows: crate::VectorSize,
-        ty: Handle<Type<'a>>,
-        ty_span: Span,
-    },
-
-    
-    PartialCooperativeMatrix {
-        columns: crate::CooperativeSize,
-        rows: crate::CooperativeSize,
-    },
-
-    
-    CooperativeMatrix {
-        columns: crate::CooperativeSize,
-        rows: crate::CooperativeSize,
-        ty: Handle<Type<'a>>,
-        ty_span: Span,
-        role: crate::CooperativeRole,
-    },
-
-    
-    
-    PartialArray,
-
-    
-    
-    Array {
-        base: Handle<Type<'a>>,
-        size: ArraySize<'a>,
-    },
-
-    
-    
-    
-    
-    Type(Handle<crate::Type>),
-}
-
 #[derive(Debug, Copy, Clone)]
 pub enum Literal {
     Bool(bool),
@@ -440,27 +381,7 @@ use crate::front::wgsl::lower::Lowerer;
 #[derive(Debug)]
 pub enum Expression<'a> {
     Literal(Literal),
-    Ident(IdentExpr<'a>),
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Construct {
-        ty: ConstructorType<'a>,
-        ty_span: Span,
-        components: Vec<Handle<Expression<'a>>>,
-    },
+    Ident(TemplateElaboratedIdent<'a>),
     Unary {
         op: crate::UnaryOperator,
         expr: Handle<Expression<'a>>,
@@ -472,26 +393,7 @@ pub enum Expression<'a> {
         left: Handle<Expression<'a>>,
         right: Handle<Expression<'a>>,
     },
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Call {
-        function: Ident<'a>,
-        arguments: Vec<Handle<Expression<'a>>>,
-        result_ty: Option<(Handle<Type<'a>>, Span)>,
-    },
+    Call(CallPhrase<'a>),
     Index {
         base: Handle<Expression<'a>>,
         index: Handle<Expression<'a>>,
@@ -500,17 +402,12 @@ pub enum Expression<'a> {
         base: Handle<Expression<'a>>,
         field: Ident<'a>,
     },
-    Bitcast {
-        expr: Handle<Expression<'a>>,
-        to: Handle<Type<'a>>,
-        ty_span: Span,
-    },
 }
 
 #[derive(Debug)]
 pub struct LocalVariable<'a> {
     pub name: Ident<'a>,
-    pub ty: Option<Handle<Type<'a>>>,
+    pub ty: Option<TemplateElaboratedIdent<'a>>,
     pub init: Option<Handle<Expression<'a>>>,
     pub handle: Handle<Local>,
 }
@@ -518,7 +415,7 @@ pub struct LocalVariable<'a> {
 #[derive(Debug)]
 pub struct Let<'a> {
     pub name: Ident<'a>,
-    pub ty: Option<Handle<Type<'a>>>,
+    pub ty: Option<TemplateElaboratedIdent<'a>>,
     pub init: Handle<Expression<'a>>,
     pub handle: Handle<Local>,
 }
@@ -526,7 +423,7 @@ pub struct Let<'a> {
 #[derive(Debug)]
 pub struct LocalConst<'a> {
     pub name: Ident<'a>,
-    pub ty: Option<Handle<Type<'a>>>,
+    pub ty: Option<TemplateElaboratedIdent<'a>>,
     pub init: Handle<Expression<'a>>,
     pub handle: Handle<Local>,
 }

@@ -1,15 +1,35 @@
+#[cfg(no_std)]
 use alloc::boxed::Box;
+#[cfg(no_std)]
 use once_cell::race::OnceBox;
+#[cfg(std)]
+use std::sync::LazyLock;
+
+#[cfg(std)]
+type Inner<T> = LazyLock<T, fn() -> T>;
+#[cfg(no_std)]
+type Inner<T> = OnceBox<T>;
+
 
 
 
 
 pub struct RacyLock<T: 'static> {
-    inner: OnceBox<T>,
+    inner: Inner<T>,
+    #[cfg(no_std)]
     init: fn() -> T,
 }
 
 impl<T: 'static> RacyLock<T> {
+    #[cfg(std)]
+    
+    pub const fn new(init: fn() -> T) -> Self {
+        Self {
+            inner: LazyLock::new(init),
+        }
+    }
+
+    #[cfg(no_std)]
     
     pub const fn new(init: fn() -> T) -> Self {
         Self {
@@ -19,6 +39,17 @@ impl<T: 'static> RacyLock<T> {
     }
 }
 
+#[cfg(std)]
+impl<T: 'static> core::ops::Deref for RacyLock<T> {
+    type Target = T;
+
+    
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+#[cfg(no_std)]
 impl<T: 'static> core::ops::Deref for RacyLock<T> {
     type Target = T;
 

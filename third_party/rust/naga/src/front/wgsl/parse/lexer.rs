@@ -1,32 +1,95 @@
 use super::{number::consume_number, Error, ExpectedToken, Result};
 use crate::front::wgsl::error::NumberError;
-use crate::front::wgsl::parse::directive::enable_extension::EnableExtensions;
-use crate::front::wgsl::parse::{conv, Number};
-use crate::front::wgsl::{ImplementedEnableExtension, Scalar};
+use crate::front::wgsl::parse::directive::enable_extension::{
+    EnableExtensions, ImplementedEnableExtension,
+};
+use crate::front::wgsl::parse::Number;
 use crate::Span;
 
 use alloc::{boxed::Box, vec::Vec};
 
-type TokenSpan<'a> = (Token<'a>, Span);
+pub type TokenSpan<'a> = (Token<'a>, Span);
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Token<'a> {
+    
+    
     Separator(char),
+
+    
+    
+    
+    
+    
+    
+    
+    
     Paren(char),
+
+    
     Attribute,
+
+    
+    
     Number(core::result::Result<Number, NumberError>),
+
+    
     Word(&'a str),
+
+    
+    
     Operation(char),
+
+    
+    
+    
+    
+    
     LogicalOperation(char),
+
+    
     ShiftOperation(char),
+
+    
+    
+    
+    
     AssignmentOperation(char),
+
+    
     IncrementOperation,
+
+    
     DecrementOperation,
+
+    
     Arrow,
+
+    
+    
+    
+    
+    TemplateArgsStart,
+
+    
+    
+    
+    
+    TemplateArgsEnd,
+
+    
     Unknown(char),
+
+    
     Trivia,
+
+    
     DocComment(&'a str),
+
+    
     ModuleDocComment(&'a str),
+
+    
     End,
 }
 
@@ -35,6 +98,10 @@ fn consume_any(input: &str, what: impl Fn(char) -> bool) -> (&str, &str) {
     input.split_at(pos)
 }
 
+struct UnclosedCandidate {
+    index: usize,
+    depth: usize,
+}
 
 
 
@@ -52,7 +119,146 @@ fn consume_any(input: &str, what: impl Fn(char) -> bool) -> (&str, &str) {
 
 
 
-fn consume_token(input: &str, generic: bool, ignore_doc_comments: bool) -> (Token<'_>, &str) {
+
+
+
+
+
+
+
+
+fn discover_template_lists<'a>(
+    tokens: &mut Vec<(TokenSpan<'a>, &'a str)>,
+    source: &'a str,
+    mut input: &'a str,
+    ignore_doc_comments: bool,
+) {
+    assert!(tokens.is_empty());
+
+    let mut looking_for_template_start = false;
+    let mut pending: Vec<UnclosedCandidate> = Vec::new();
+
+    
+    
+    let mut depth = 0;
+
+    fn pop_until(pending: &mut Vec<UnclosedCandidate>, depth: usize) {
+        while pending
+            .last()
+            .map(|candidate| candidate.depth >= depth)
+            .unwrap_or(false)
+        {
+            pending.pop();
+        }
+    }
+
+    loop {
+        
+        
+        
+        
+        
+        
+        
+        let waiting_for_template_end = pending
+            .last()
+            .is_some_and(|candidate| candidate.depth == depth);
+
+        
+        
+        
+        
+        
+        
+        let (token, rest) = consume_token(input, waiting_for_template_end, ignore_doc_comments);
+        let span = Span::from(source.len() - input.len()..source.len() - rest.len());
+        tokens.push(((token, span), rest));
+        input = rest;
+
+        
+        
+        
+        match token {
+            Token::Word(_) => {
+                looking_for_template_start = true;
+                continue;
+            }
+            Token::Trivia | Token::DocComment(_) | Token::ModuleDocComment(_)
+                if looking_for_template_start =>
+            {
+                continue;
+            }
+            Token::Paren('<') if looking_for_template_start => {
+                pending.push(UnclosedCandidate {
+                    index: tokens.len() - 1,
+                    depth,
+                });
+            }
+            Token::TemplateArgsEnd => {
+                
+                
+                
+                
+                
+                
+                let candidate = pending.pop().unwrap();
+                let &mut ((ref mut token, _), _) = tokens.get_mut(candidate.index).unwrap();
+                *token = Token::TemplateArgsStart;
+            }
+            Token::Paren('(' | '[') => {
+                depth += 1;
+            }
+            Token::Paren(')' | ']') => {
+                pop_until(&mut pending, depth);
+                depth = depth.saturating_sub(1);
+            }
+            Token::Operation('=') | Token::Separator(':' | ';') | Token::Paren('{') => {
+                pending.clear();
+                depth = 0;
+            }
+            Token::LogicalOperation('&') | Token::LogicalOperation('|') => {
+                pop_until(&mut pending, depth);
+            }
+            Token::End => break,
+            _ => {}
+        }
+
+        looking_for_template_start = false;
+
+        
+        
+        
+        
+        if pending.is_empty() {
+            break;
+        }
+    }
+
+    tokens.reverse();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn consume_token(
+    input: &str,
+    waiting_for_template_end: bool,
+    ignore_doc_comments: bool,
+) -> (Token<'_>, &str) {
     let mut chars = input.chars();
     let cur = match chars.next() {
         Some(c) => c,
@@ -71,9 +277,12 @@ fn consume_token(input: &str, generic: bool, ignore_doc_comments: bool) -> (Toke
         '(' | ')' | '{' | '}' | '[' | ']' => (Token::Paren(cur), chars.as_str()),
         '<' | '>' => {
             let og_chars = chars.as_str();
+            if cur == '>' && waiting_for_template_end {
+                return (Token::TemplateArgsEnd, og_chars);
+            }
             match chars.next() {
-                Some('=') if !generic => (Token::LogicalOperation(cur), chars.as_str()),
-                Some(c) if c == cur && !generic => {
+                Some('=') => (Token::LogicalOperation(cur), chars.as_str()),
+                Some(c) if c == cur => {
                     let og_chars = chars.as_str();
                     match chars.next() {
                         Some('=') => (Token::AssignmentOperation(cur), chars.as_str()),
@@ -243,7 +452,6 @@ fn is_word_part(c: char) -> bool {
     unicode_ident::is_xid_continue(c)
 }
 
-#[derive(Clone)]
 pub(in crate::front::wgsl) struct Lexer<'a> {
     
     input: &'a str,
@@ -264,6 +472,19 @@ pub(in crate::front::wgsl) struct Lexer<'a> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    tokens: Vec<(TokenSpan<'a>, &'a str)>,
+
+    
+    
     ignore_doc_comments: bool,
 
     
@@ -278,6 +499,7 @@ impl<'a> Lexer<'a> {
             input,
             source: input,
             last_end_offset: 0,
+            tokens: Vec::new(),
             enable_extensions: EnableExtensions::empty(),
             ignore_doc_comments,
         }
@@ -330,13 +552,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn peek_token_and_rest(&mut self) -> (TokenSpan<'a>, &'a str) {
-        let mut cloned = self.clone();
-        let token = cloned.next();
-        let rest = cloned.input;
-        (token, rest)
-    }
-
     
     pub(in crate::front::wgsl) fn accumulate_module_doc_comments(&mut self) -> Vec<&'a str> {
         let mut doc_comments = Vec::new();
@@ -378,6 +593,9 @@ impl<'a> Lexer<'a> {
     pub(in crate::front::wgsl) fn span_from(&self, offset: usize) -> Span {
         Span::from(offset..self.last_end_offset)
     }
+    pub(in crate::front::wgsl) fn span_with_start(&self, span: Span) -> Span {
+        span.until(&Span::from(0..self.last_end_offset))
+    }
 
     
     
@@ -385,49 +603,62 @@ impl<'a> Lexer<'a> {
     
     #[must_use]
     pub(in crate::front::wgsl) fn next(&mut self) -> TokenSpan<'a> {
-        self.next_impl(false, true)
-    }
-
-    
-    
-    
-    
-    #[must_use]
-    pub(in crate::front::wgsl) fn next_generic(&mut self) -> TokenSpan<'a> {
-        self.next_impl(true, true)
+        self.next_impl(true)
     }
 
     #[cfg(test)]
     pub fn next_with_unignored_doc_comments(&mut self) -> TokenSpan<'a> {
-        self.next_impl(false, false)
+        self.next_impl(false)
     }
 
     
-    
-    
-    fn next_impl(&mut self, generic: bool, ignore_doc_comments: bool) -> TokenSpan<'a> {
-        let mut start_byte_offset = self.current_byte_offset();
+    fn next_impl(&mut self, ignore_doc_comments: bool) -> TokenSpan<'a> {
         loop {
-            let (token, rest) = consume_token(
-                self.input,
-                generic,
-                ignore_doc_comments || self.ignore_doc_comments,
-            );
+            if self.tokens.is_empty() {
+                discover_template_lists(
+                    &mut self.tokens,
+                    self.source,
+                    self.input,
+                    ignore_doc_comments || self.ignore_doc_comments,
+                );
+            }
+            assert!(!self.tokens.is_empty());
+            let (token, rest) = self.tokens.pop().unwrap();
+
             self.input = rest;
-            match token {
-                Token::Trivia => start_byte_offset = self.current_byte_offset(),
-                _ => {
-                    self.last_end_offset = self.current_byte_offset();
-                    return (token, self.span_from(start_byte_offset));
-                }
+            self.last_end_offset = self.current_byte_offset();
+
+            match token.0 {
+                Token::Trivia => {}
+                _ => return token,
             }
         }
     }
 
     #[must_use]
     pub(in crate::front::wgsl) fn peek(&mut self) -> TokenSpan<'a> {
-        let (token, _) = self.peek_token_and_rest();
+        let input = self.input;
+        let last_end_offset = self.last_end_offset;
+        let token = self.next();
+        self.tokens.push((token, self.input));
+        self.input = input;
+        self.last_end_offset = last_end_offset;
         token
+    }
+
+    
+    pub(in crate::front::wgsl) fn next_if(&mut self, what: Token<'_>) -> bool {
+        let input = self.input;
+        let last_end_offset = self.last_end_offset;
+        let token = self.next();
+        if token.0 == what {
+            true
+        } else {
+            self.tokens.push((token, self.input));
+            self.input = input;
+            self.last_end_offset = last_end_offset;
+            false
+        }
     }
 
     pub(in crate::front::wgsl) fn expect_span(&mut self, expected: Token<'a>) -> Result<'a, Span> {
@@ -447,61 +678,17 @@ impl<'a> Lexer<'a> {
         Ok(())
     }
 
-    pub(in crate::front::wgsl) fn expect_generic_paren(
-        &mut self,
-        expected: char,
-    ) -> Result<'a, ()> {
-        let next = self.next_generic();
-        if next.0 == Token::Paren(expected) {
-            Ok(())
-        } else {
-            Err(Box::new(Error::Unexpected(
-                next.1,
-                ExpectedToken::Token(Token::Paren(expected)),
-            )))
-        }
-    }
-
-    pub(in crate::front::wgsl) fn end_of_generic_arguments(&mut self) -> bool {
-        self.skip(Token::Separator(',')) && self.peek().0 != Token::Paren('>')
-    }
-
-    
-    pub(in crate::front::wgsl) fn skip(&mut self, what: Token<'_>) -> bool {
-        let (peeked_token, rest) = self.peek_token_and_rest();
-        if peeked_token.0 == what {
-            self.input = rest;
-            true
-        } else {
-            false
-        }
-    }
-
     pub(in crate::front::wgsl) fn next_ident_with_span(&mut self) -> Result<'a, (&'a str, Span)> {
         match self.next() {
-            (Token::Word(word), span) => Self::word_as_ident_with_span(word, span),
-            other => Err(Box::new(Error::Unexpected(
-                other.1,
-                ExpectedToken::Identifier,
-            ))),
-        }
-    }
-
-    pub(in crate::front::wgsl) fn peek_ident_with_span(&mut self) -> Result<'a, (&'a str, Span)> {
-        match self.peek() {
-            (Token::Word(word), span) => Self::word_as_ident_with_span(word, span),
-            other => Err(Box::new(Error::Unexpected(
-                other.1,
-                ExpectedToken::Identifier,
-            ))),
-        }
-    }
-
-    fn word_as_ident_with_span(word: &'a str, span: Span) -> Result<'a, (&'a str, Span)> {
-        match word {
-            "_" => Err(Box::new(Error::InvalidIdentifierUnderscore(span))),
-            word if word.starts_with("__") => Err(Box::new(Error::ReservedIdentifierPrefix(span))),
-            word => Ok((word, span)),
+            (Token::Word("_"), span) => Err(Box::new(Error::InvalidIdentifierUnderscore(span))),
+            (Token::Word(word), span) => {
+                if word.starts_with("__") {
+                    Err(Box::new(Error::ReservedIdentifierPrefix(span)))
+                } else {
+                    Ok((word, span))
+                }
+            }
+            (_, span) => Err(Box::new(Error::Unexpected(span, ExpectedToken::Identifier))),
         }
     }
 
@@ -519,115 +706,14 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    
-    pub(in crate::front::wgsl) fn next_scalar_generic(&mut self) -> Result<'a, Scalar> {
-        self.expect_generic_paren('<')?;
-        let (scalar, _span) = match self.next() {
-            (Token::Word(word), span) => {
-                conv::get_scalar_type(&self.enable_extensions, span, word)?
-                    .map(|scalar| (scalar, span))
-                    .ok_or(Error::UnknownScalarType(span))?
-            }
-            (_, span) => return Err(Box::new(Error::UnknownScalarType(span))),
-        };
-
-        self.expect_generic_paren('>')?;
-        Ok(scalar)
-    }
-
-    
-    
-    
-    pub(in crate::front::wgsl) fn next_scalar_generic_with_span(
-        &mut self,
-    ) -> Result<'a, (Scalar, Span)> {
-        self.expect_generic_paren('<')?;
-
-        let (scalar, span) = match self.next() {
-            (Token::Word(word), span) => {
-                conv::get_scalar_type(&self.enable_extensions, span, word)?
-                    .map(|scalar| (scalar, span))
-                    .ok_or(Error::UnknownScalarType(span))?
-            }
-            (_, span) => return Err(Box::new(Error::UnknownScalarType(span))),
-        };
-
-        self.expect_generic_paren('>')?;
-        Ok((scalar, span))
-    }
-
-    pub(in crate::front::wgsl) fn next_storage_access(
-        &mut self,
-    ) -> Result<'a, crate::StorageAccess> {
-        let (ident, span) = self.next_ident_with_span()?;
-        match ident {
-            "read" => Ok(crate::StorageAccess::LOAD),
-            "write" => Ok(crate::StorageAccess::STORE),
-            "read_write" => Ok(crate::StorageAccess::LOAD | crate::StorageAccess::STORE),
-            "atomic" => Ok(crate::StorageAccess::ATOMIC
-                | crate::StorageAccess::LOAD
-                | crate::StorageAccess::STORE),
-            _ => Err(Box::new(Error::UnknownAccess(span))),
-        }
-    }
-
-    pub(in crate::front::wgsl) fn next_format_generic(
-        &mut self,
-    ) -> Result<'a, (crate::StorageFormat, crate::StorageAccess)> {
-        self.expect(Token::Paren('<'))?;
-        let (ident, ident_span) = self.next_ident_with_span()?;
-        let format = conv::map_storage_format(ident, ident_span)?;
-        self.expect(Token::Separator(','))?;
-        let access = self.next_storage_access()?;
-        self.expect(Token::Paren('>'))?;
-        Ok((format, access))
-    }
-
-    pub(in crate::front::wgsl) fn next_acceleration_structure_flags(&mut self) -> Result<'a, bool> {
-        Ok(if self.skip(Token::Paren('<')) {
-            if !self.skip(Token::Paren('>')) {
-                let (name, span) = self.next_ident_with_span()?;
-                let ret = if name == "vertex_return" {
-                    true
-                } else {
-                    return Err(Box::new(Error::UnknownAttribute(span)));
-                };
-                self.skip(Token::Separator(','));
-                self.expect(Token::Paren('>'))?;
-                ret
-            } else {
-                false
-            }
-        } else {
-            false
-        })
-    }
-
-    pub(in crate::front::wgsl) fn next_cooperative_role(
-        &mut self,
-    ) -> Result<'a, crate::CooperativeRole> {
-        let (ident, span) = self.next_ident_with_span()?;
-        match ident {
-            "A" => Ok(crate::CooperativeRole::A),
-            "B" => Ok(crate::CooperativeRole::B),
-            "C" => Ok(crate::CooperativeRole::C),
-            _ => Err(Box::new(Error::UnknownAccess(span))),
-        }
-    }
-
     pub(in crate::front::wgsl) fn open_arguments(&mut self) -> Result<'a, ()> {
         self.expect(Token::Paren('('))
     }
 
-    pub(in crate::front::wgsl) fn close_arguments(&mut self) -> Result<'a, ()> {
-        let _ = self.skip(Token::Separator(','));
-        self.expect(Token::Paren(')'))
-    }
-
     pub(in crate::front::wgsl) fn next_argument(&mut self) -> Result<'a, bool> {
         let paren = Token::Paren(')');
-        if self.skip(Token::Separator(',')) {
-            Ok(!self.skip(paren))
+        if self.next_if(Token::Separator(',')) {
+            Ok(!self.next_if(paren))
         } else {
             self.expect(paren).map(|()| false)
         }
@@ -921,15 +1007,15 @@ fn test_variable_decl() {
             Token::Number(Ok(Number::AbstractInt(0))),
             Token::Paren(')'),
             Token::Word("var"),
-            Token::Paren('<'),
+            Token::TemplateArgsStart,
             Token::Word("uniform"),
-            Token::Paren('>'),
+            Token::TemplateArgsEnd,
             Token::Word("texture"),
             Token::Separator(':'),
             Token::Word("texture_multisampled_2d"),
-            Token::Paren('<'),
+            Token::TemplateArgsStart,
             Token::Word("f32"),
-            Token::Paren('>'),
+            Token::TemplateArgsEnd,
             Token::Separator(';'),
         ],
     );
@@ -937,18 +1023,120 @@ fn test_variable_decl() {
         "var<storage,read_write> buffer: array<u32>;",
         &[
             Token::Word("var"),
-            Token::Paren('<'),
+            Token::TemplateArgsStart,
             Token::Word("storage"),
             Token::Separator(','),
             Token::Word("read_write"),
-            Token::Paren('>'),
+            Token::TemplateArgsEnd,
             Token::Word("buffer"),
             Token::Separator(':'),
             Token::Word("array"),
-            Token::Paren('<'),
+            Token::TemplateArgsStart,
             Token::Word("u32"),
-            Token::Paren('>'),
+            Token::TemplateArgsEnd,
             Token::Separator(';'),
+        ],
+    );
+}
+
+#[test]
+fn test_template_list() {
+    sub_test(
+        "A<B||C>D",
+        &[
+            Token::Word("A"),
+            Token::Paren('<'),
+            Token::Word("B"),
+            Token::LogicalOperation('|'),
+            Token::Word("C"),
+            Token::Paren('>'),
+            Token::Word("D"),
+        ],
+    );
+    sub_test(
+        "A(B<C,D>(E))",
+        &[
+            Token::Word("A"),
+            Token::Paren('('),
+            Token::Word("B"),
+            Token::TemplateArgsStart,
+            Token::Word("C"),
+            Token::Separator(','),
+            Token::Word("D"),
+            Token::TemplateArgsEnd,
+            Token::Paren('('),
+            Token::Word("E"),
+            Token::Paren(')'),
+            Token::Paren(')'),
+        ],
+    );
+    sub_test(
+        "array<i32,select(2,3,A>B)>",
+        &[
+            Token::Word("array"),
+            Token::TemplateArgsStart,
+            Token::Word("i32"),
+            Token::Separator(','),
+            Token::Word("select"),
+            Token::Paren('('),
+            Token::Number(Ok(Number::AbstractInt(2))),
+            Token::Separator(','),
+            Token::Number(Ok(Number::AbstractInt(3))),
+            Token::Separator(','),
+            Token::Word("A"),
+            Token::Paren('>'),
+            Token::Word("B"),
+            Token::Paren(')'),
+            Token::TemplateArgsEnd,
+        ],
+    );
+    sub_test(
+        "A[B<C]>D",
+        &[
+            Token::Word("A"),
+            Token::Paren('['),
+            Token::Word("B"),
+            Token::Paren('<'),
+            Token::Word("C"),
+            Token::Paren(']'),
+            Token::Paren('>'),
+            Token::Word("D"),
+        ],
+    );
+    sub_test(
+        "A<B<<C>",
+        &[
+            Token::Word("A"),
+            Token::TemplateArgsStart,
+            Token::Word("B"),
+            Token::ShiftOperation('<'),
+            Token::Word("C"),
+            Token::TemplateArgsEnd,
+        ],
+    );
+    sub_test(
+        "A<(B>=C)>",
+        &[
+            Token::Word("A"),
+            Token::TemplateArgsStart,
+            Token::Paren('('),
+            Token::Word("B"),
+            Token::LogicalOperation('>'),
+            Token::Word("C"),
+            Token::Paren(')'),
+            Token::TemplateArgsEnd,
+        ],
+    );
+    sub_test(
+        "A<B>=C>",
+        &[
+            Token::Word("A"),
+            Token::TemplateArgsStart,
+            Token::Word("B"),
+            Token::TemplateArgsEnd,
+            Token::Operation('='),
+            Token::Word("C"),
+            Token::Paren('>'),
         ],
     );
 }
@@ -1078,6 +1266,7 @@ fn test_doc_comments_module() {
             Token::ModuleDocComment("/*! Different module comment again */"),
             Token::ModuleDocComment("//! After a break is supported."),
             Token::Word("const"),
+            Token::ModuleDocComment("//! After anything else is not."),
         ],
     );
 }

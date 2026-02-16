@@ -45,7 +45,7 @@ impl ExprPos {
 }
 
 #[derive(Debug)]
-pub struct Context<'a> {
+pub(crate) struct Context<'a> {
     pub expressions: Arena<Expression>,
     pub locals: Arena<LocalVariable>,
 
@@ -409,7 +409,7 @@ impl<'a> Context<'a> {
     
     
     #[must_use]
-    pub fn stmt_ctx(&mut self) -> StmtContext {
+    pub const fn stmt_ctx(&mut self) -> StmtContext {
         self.stmt_ctx.take().unwrap()
     }
 

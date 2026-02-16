@@ -1059,7 +1059,6 @@ impl Global {
         (id, Some(error))
     }
 
-    #[allow(unused_unsafe)]
     
     
     

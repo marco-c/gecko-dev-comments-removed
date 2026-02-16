@@ -239,7 +239,6 @@ struct Sampling {
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct FunctionInfo {
     
-    #[allow(dead_code)]
     flags: ValidationFlags,
     
     pub available_stages: ShaderStages,

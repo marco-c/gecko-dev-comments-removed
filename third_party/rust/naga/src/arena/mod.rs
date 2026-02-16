@@ -78,18 +78,17 @@ impl<T> Arena<T> {
     }
 
     
-    #[allow(clippy::missing_const_for_fn)] 
     pub fn into_inner(self) -> Vec<T> {
         self.data
     }
 
     
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.data.len()
     }
 
     
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 
