@@ -385,7 +385,7 @@ async function testBackdrop(inspector, view) {
   info("Request fullscreen");
   
   
-  let onInspectorUpdated = view.once("ruleview-refreshed");
+  let onInspectorUpdated = inspector.once("rule-view-refreshed");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     const canvas = content.document.querySelector("canvas");
     canvas.requestFullscreen();
@@ -406,7 +406,7 @@ async function testBackdrop(inspector, view) {
 
   
   
-  onInspectorUpdated = view.once("ruleview-refreshed");
+  onInspectorUpdated = inspector.once("rule-view-refreshed");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     content.document.exitFullscreen();
     await ContentTaskUtils.waitForCondition(
