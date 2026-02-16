@@ -1388,6 +1388,9 @@ pref("browser.preferences.moreFromMozilla", true);
 pref("browser.preferences.aiControls", true);
 
 
+pref("browser.preferences.aiControls.showUnavailable", false);
+
+
 
 
 
