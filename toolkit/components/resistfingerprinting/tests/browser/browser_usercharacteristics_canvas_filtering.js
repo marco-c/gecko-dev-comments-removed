@@ -77,7 +77,9 @@ add_task(async function test_all_known_hashes_removed() {
   info(`Known hash ${KNOWN_HASH} has probability ${probability}`);
 
   
-  const iterations = 50;
+  
+  
+  const iterations = 200;
   const totalEntries = 26; 
   let totalKept = 0;
 
