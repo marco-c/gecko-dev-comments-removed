@@ -286,7 +286,6 @@ static bool PackAndPostMessageHandlingError(
   PackAndPostMessage(aCx, aPort, aType, aValue, rv);
 
   
-  rv.WouldReportJSException();
   if (rv.Failed()) {
     
     MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), aError));

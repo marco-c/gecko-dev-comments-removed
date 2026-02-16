@@ -38,7 +38,7 @@ bool MessagePortParent::Entangle(const nsID& aDestinationUUID,
 }
 
 mozilla::ipc::IPCResult MessagePortParent::RecvPostMessages(
-    nsTArray<NotNull<RefPtr<SharedMessageBody>>>&& aMessages) {
+    nsTArray<MessageData>&& aMessages) {
   if (!mService) {
     NS_WARNING("PostMessages is called after a shutdown!");
     
@@ -52,12 +52,22 @@ mozilla::ipc::IPCResult MessagePortParent::RecvPostMessages(
     return IPC_FAIL(this, "RecvPostMessages not entangled");
   }
 
-  if (aMessages.IsEmpty()) {
+  
+  FallibleTArray<RefPtr<SharedMessageBody>> messages;
+  if (NS_WARN_IF(!SharedMessageBody::FromMessagesToSharedParent(aMessages,
+                                                                messages))) {
+    
+    
+    
+    return IPC_FAIL(this, "SharedMessageBody::FromMessagesToSharedParent");
+  }
+
+  if (messages.IsEmpty()) {
     
     return IPC_OK();
   }
 
-  if (!mService->PostMessages(this, std::move(aMessages))) {
+  if (!mService->PostMessages(this, std::move(messages))) {
     
     
     return IPC_FAIL(this, "RecvPostMessages->PostMessages");
@@ -66,7 +76,7 @@ mozilla::ipc::IPCResult MessagePortParent::RecvPostMessages(
 }
 
 mozilla::ipc::IPCResult MessagePortParent::RecvDisentangle(
-    nsTArray<NotNull<RefPtr<SharedMessageBody>>>&& aMessages) {
+    nsTArray<MessageData>&& aMessages) {
   if (!mService) {
     NS_WARNING("Entangle is called after a shutdown!");
     
@@ -80,7 +90,15 @@ mozilla::ipc::IPCResult MessagePortParent::RecvDisentangle(
     return IPC_FAIL(this, "RecvDisentangle not entangled");
   }
 
-  if (!mService->DisentanglePort(this, std::move(aMessages))) {
+  
+  FallibleTArray<RefPtr<SharedMessageBody>> messages;
+  if (NS_WARN_IF(!SharedMessageBody::FromMessagesToSharedParent(aMessages,
+                                                                messages))) {
+    
+    return IPC_FAIL(this, "SharedMessageBody::FromMessagesToSharedParent");
+  }
+
+  if (!mService->DisentanglePort(this, std::move(messages))) {
     
     
     return IPC_FAIL(this, "RecvDisentangle->DisentanglePort");
@@ -126,8 +144,7 @@ void MessagePortParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 }
 
-bool MessagePortParent::Entangled(
-    nsTArray<NotNull<RefPtr<SharedMessageBody>>>&& aMessages) {
+bool MessagePortParent::Entangled(nsTArray<MessageData>&& aMessages) {
   MOZ_ASSERT(!mEntangled);
   mEntangled = true;
   return SendEntangled(aMessages);

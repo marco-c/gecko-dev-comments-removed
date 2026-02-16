@@ -6,7 +6,7 @@
 
 using mozilla::dom::MaybeDiscardedBrowsingContext from "mozilla/dom/BrowsingContext.h";
 using mozilla::null_t from "mozilla/ipc/IPCCore.h";
-[RefCounted] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
+using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 using mozilla::void_t from "mozilla/ipc/IPCCore.h";
 
 include ClientIPCTypes;
@@ -85,7 +85,9 @@ union JSIPCValue {
 
     
     
-    StructuredCloneData;
+    
+    UniquePtr<StructuredCloneData>;
+    UniquePtr<ClonedMessageData>;
 
     
     nsIPrincipal;

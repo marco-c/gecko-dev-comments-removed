@@ -320,7 +320,7 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     agentClusterId = global->GetAgentClusterId();
   }
 
-  auto data = MakeNotNull<RefPtr<SharedMessageBody>>(
+  RefPtr<SharedMessageBody> data = new SharedMessageBody(
       StructuredCloneHolder::TransferringSupported, agentClusterId);
 
   data->Write(aCx, aMessage, transferable, mIdentifier->uuid(),
@@ -366,9 +366,15 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   MOZ_ASSERT(mActor);
   MOZ_ASSERT(mMessagesForTheOtherPort.IsEmpty());
 
-  AutoTArray<NotNull<RefPtr<SharedMessageBody>>, 1> messages;
-  messages.AppendElement(data);
+  AutoTArray<RefPtr<SharedMessageBody>, 1> array;
+  array.AppendElement(data);
 
+  AutoTArray<MessageData, 1> messages;
+  
+  
+  
+  SharedMessageBody::FromSharedToMessagesChild(mActor->Manager(), array,
+                                               messages);
   mActor->SendPostMessages(messages);
 }
 
@@ -542,8 +548,7 @@ void MessagePort::SetOnmessage(EventHandlerNonNull* aCallback) {
 
 
 
-void MessagePort::Entangled(
-    nsTArray<NotNull<RefPtr<SharedMessageBody>>>& aMessages) {
+void MessagePort::Entangled(nsTArray<MessageData>& aMessages) {
   MOZ_ASSERT(mState == eStateEntangling ||
              mState == eStateEntanglingForDisentangle ||
              mState == eStateEntanglingForClose);
@@ -553,10 +558,23 @@ void MessagePort::Entangled(
 
   
   if (!mMessagesForTheOtherPort.IsEmpty()) {
-    mActor->SendPostMessages(mMessagesForTheOtherPort);
+    {
+      nsTArray<MessageData> messages;
+      SharedMessageBody::FromSharedToMessagesChild(
+          mActor->Manager(), mMessagesForTheOtherPort, messages);
+      mActor->SendPostMessages(messages);
+    }
     
     
     mMessagesForTheOtherPort.Clear();
+  }
+
+  
+  FallibleTArray<RefPtr<SharedMessageBody>> data;
+  if (NS_WARN_IF(
+          !SharedMessageBody::FromMessagesToSharedChild(aMessages, data))) {
+    DispatchError();
+    return;
   }
 
   
@@ -566,7 +584,7 @@ void MessagePort::Entangled(
     return;
   }
 
-  mMessages.AppendElements(aMessages);
+  mMessages.AppendElements(data);
 
   
   
@@ -591,8 +609,7 @@ void MessagePort::StartDisentangling() {
   mActor->SendStopSendingData();
 }
 
-void MessagePort::MessagesReceived(
-    nsTArray<NotNull<RefPtr<SharedMessageBody>>>& aMessages) {
+void MessagePort::MessagesReceived(nsTArray<MessageData>& aMessages) {
   MOZ_ASSERT(mState == eStateEntangled || mState == eStateDisentangling ||
              
              
@@ -602,7 +619,14 @@ void MessagePort::MessagesReceived(
 
   RemoveDocFromBFCache();
 
-  mMessages.AppendElements(aMessages);
+  FallibleTArray<RefPtr<SharedMessageBody>> data;
+  if (NS_WARN_IF(
+          !SharedMessageBody::FromMessagesToSharedChild(aMessages, data))) {
+    DispatchError();
+    return;
+  }
+
+  mMessages.AppendElements(data);
 
   if (mState == eStateEntangled) {
     Dispatch();
@@ -622,12 +646,19 @@ void MessagePort::Disentangle() {
 
   mState = eStateDisentangled;
 
-  mActor->SendDisentangle(mMessages);
+  {
+    nsTArray<MessageData> messages;
+    SharedMessageBody::FromSharedToMessagesChild(mActor->Manager(), mMessages,
+                                                 messages);
+    mActor->SendDisentangle(messages);
+  }
 
   
   
   mRefMessageBodyService->ForgetPort(mIdentifier->uuid());
 
+  
+  
   mMessages.Clear();
 
   mActor->SetPort(nullptr);

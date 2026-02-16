@@ -30,6 +30,54 @@ class SharedMessageBody final {
       StructuredCloneHolder::TransferringSupport aSupportsTransferring,
       const Maybe<nsID>& aAgentClusterId);
 
+  
+  
+  
+  
+  static void FromSharedToMessageChild(
+      mozilla::ipc::PBackgroundChild* aBackgroundManager,
+      SharedMessageBody* aData, MessageData& aMessage);
+  static void FromSharedToMessagesChild(
+      mozilla::ipc::PBackgroundChild* aBackgroundManager,
+      const nsTArray<RefPtr<SharedMessageBody>>& aData,
+      nsTArray<MessageData>& aArray);
+
+  
+  static already_AddRefed<SharedMessageBody> FromMessageToSharedChild(
+      MessageData& aMessage,
+      StructuredCloneHolder::TransferringSupport aSupportsTransferring =
+          StructuredCloneHolder::TransferringSupported);
+  
+  static already_AddRefed<SharedMessageBody> FromMessageToSharedChild(
+      const MessageData& aMessage,
+      StructuredCloneHolder::TransferringSupport aSupportsTransferring =
+          StructuredCloneHolder::TransferringSupported);
+  
+  static bool FromMessagesToSharedChild(
+      nsTArray<MessageData>& aArray,
+      FallibleTArray<RefPtr<SharedMessageBody>>& aData,
+      StructuredCloneHolder::TransferringSupport aSupportsTransferring =
+          StructuredCloneHolder::TransferringSupported);
+
+  
+  
+  
+  
+  static bool FromSharedToMessagesParent(
+      mozilla::ipc::PBackgroundParent* aManager,
+      const nsTArray<RefPtr<SharedMessageBody>>& aData,
+      nsTArray<MessageData>& aArray);
+
+  static already_AddRefed<SharedMessageBody> FromMessageToSharedParent(
+      MessageData& aMessage,
+      StructuredCloneHolder::TransferringSupport aSupportsTransferring =
+          StructuredCloneHolder::TransferringSupported);
+  static bool FromMessagesToSharedParent(
+      nsTArray<MessageData>& aArray,
+      FallibleTArray<RefPtr<SharedMessageBody>>& aData,
+      StructuredCloneHolder::TransferringSupport aSupportsTransferring =
+          StructuredCloneHolder::TransferringSupported);
+
   enum ReadMethod {
     StealRefMessageBody,
     KeepRefMessageBody,
@@ -46,14 +94,10 @@ class SharedMessageBody final {
   bool TakeTransferredPortsAsSequence(
       Sequence<OwningNonNull<mozilla::dom::MessagePort>>& aPorts);
 
-  const Maybe<nsID>& GetRefDataId() const { return mRefDataId; }
-
  private:
-  friend struct IPC::ParamTraits<mozilla::dom::SharedMessageBody*>;
+  ~SharedMessageBody() = default;
 
-  ~SharedMessageBody();
-
-  RefPtr<ipc::StructuredCloneData> mCloneData;
+  UniquePtr<ipc::StructuredCloneData> mCloneData;
 
   RefPtr<RefMessageBody> mRefData;
   Maybe<nsID> mRefDataId;
@@ -63,17 +107,6 @@ class SharedMessageBody final {
 };
 
 }  
-}  
-
-namespace IPC {
-
-template <>
-struct ParamTraits<mozilla::dom::SharedMessageBody*> {
-  using paramType = mozilla::dom::SharedMessageBody;
-  static void Write(MessageWriter* aWriter, paramType* aParam);
-  static bool Read(MessageReader* aReader, RefPtr<paramType>* aResult);
-};
-
 }  
 
 #endif  

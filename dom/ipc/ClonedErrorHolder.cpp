@@ -264,7 +264,7 @@ bool ClonedErrorHolder::ToErrorValue(JSContext* aCx,
   JS::Rooted<JSObject*> stack(aCx);
 
   IgnoredErrorResult rv;
-  mStack.Read(aCx, &stackVal, rv);
+  mStack.Read(xpc::CurrentNativeGlobal(aCx), aCx, &stackVal, rv);
   
   
   

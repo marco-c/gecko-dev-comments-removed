@@ -39,7 +39,36 @@ void ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
               (void)PClientHandleOpParent::Send__delete__(this, rv);
               return;
             }
-            RefPtr<ClientOpPromise> p = source->StartOp(std::move(args));
+            RefPtr<ClientOpPromise> p;
+
+            
+            
+            
+            
+            if (args.type() ==
+                ClientOpConstructorArgs::TClientPostMessageArgs) {
+              const ClientPostMessageArgs& orig =
+                  args.get_ClientPostMessageArgs();
+
+              ClientPostMessageArgs rebuild;
+              rebuild.serviceWorker() = orig.serviceWorker();
+
+              ipc::StructuredCloneData data;
+              data.BorrowFromClonedMessageData(orig.clonedData());
+              if (!data.BuildClonedMessageData(rebuild.clonedData())) {
+                CopyableErrorResult rv;
+                rv.ThrowAbortError("Aborting client operation");
+                (void)PClientHandleOpParent::Send__delete__(this, rv);
+                return;
+              }
+
+              p = source->StartOp(std::move(rebuild));
+            }
+
+            
+            else {
+              p = source->StartOp(std::move(args));
+            }
 
             
             

@@ -213,10 +213,9 @@ bool MessageManagerFuzzer::MutateValue(
 }
 
 
-bool MessageManagerFuzzer::Mutate(
-    JSContext* aCx, const nsAString& aMessageName,
-    NotNull<RefPtr<ipc::StructuredCloneData>>& aData,
-    const JS::Value& aTransfer) {
+bool MessageManagerFuzzer::Mutate(JSContext* aCx, const nsAString& aMessageName,
+                                  ipc::StructuredCloneData* aData,
+                                  const JS::Value& aTransfer) {
   MSGMGR_FUZZER_LOG("Message: %s in process: %d",
                     NS_ConvertUTF16toUTF8(aMessageName).get(),
                     XRE_GetProcessType());
@@ -239,17 +238,17 @@ bool MessageManagerFuzzer::Mutate(
       MutateValue(aCx, scdContent, &scdMutationContent, aRecursionCounter);
 
   
-  auto mutatedStructuredCloneData =
-      MakeNotNull<RefPtr<ipc::StructuredCloneData>>();
-  mutatedStructuredCloneData->Write(aCx, scdMutationContent, t,
-                                    JS::CloneDataPolicy(), rv);
+  ipc::StructuredCloneData mutatedStructuredCloneData;
+  mutatedStructuredCloneData.Write(aCx, scdMutationContent, t,
+                                   JS::CloneDataPolicy(), rv);
   if (NS_WARN_IF(rv.Failed())) {
     rv.SuppressException();
     JS_ClearPendingException(aCx);
     return false;
   }
 
-  aData = mutatedStructuredCloneData;
+  
+  aData->Copy(mutatedStructuredCloneData);
 
   
   if (isMutated) {
@@ -307,10 +306,10 @@ bool MessageManagerFuzzer::IsEnabled() {
 }
 
 
-void MessageManagerFuzzer::TryMutate(
-    JSContext* aCx, const nsAString& aMessageName,
-    NotNull<RefPtr<ipc::StructuredCloneData>>& aData,
-    const JS::Value& aTransfer) {
+void MessageManagerFuzzer::TryMutate(JSContext* aCx,
+                                     const nsAString& aMessageName,
+                                     ipc::StructuredCloneData* aData,
+                                     const JS::Value& aTransfer) {
   if (!IsEnabled()) {
     return;
   }
