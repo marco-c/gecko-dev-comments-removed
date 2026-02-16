@@ -22,7 +22,7 @@
 class nsContentList;
 class nsIDOMHTMLOptionElement;
 class nsIHTMLCollection;
-class nsISelectControlFrame;
+class nsListControlFrame;
 
 namespace mozilla {
 
@@ -396,7 +396,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
 
-  void OnOptionSelected(nsISelectControlFrame* aSelectFrame, int32_t aIndex,
+  void OnOptionSelected(nsListControlFrame* aSelectFrame, int32_t aIndex,
                         bool aSelected, bool aChangeOptionState, bool aNotify);
   
 
@@ -459,10 +459,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
                                    int32_t aEndIndex);
 
   
-
-
-
-  nsISelectControlFrame* GetSelectFrame();
+  nsListControlFrame* GetListBoxFrame();
 
   
 

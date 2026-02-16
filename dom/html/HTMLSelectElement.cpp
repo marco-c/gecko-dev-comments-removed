@@ -27,7 +27,6 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
-#include "nsISelectControlFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsListControlFrame.h"
 #include "nsTextNode.h"
@@ -349,21 +348,21 @@ void HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
     
     
     
-    nsISelectControlFrame* selectFrame = nullptr;
+    nsListControlFrame* listBoxFrame = nullptr;
     AutoWeakFrame weakSelectFrame;
     bool didGetFrame = false;
 
     
     for (int32_t i = aListIndex; i < insertIndex; i++) {
       
-      if (!didGetFrame || (selectFrame && !weakSelectFrame.IsAlive())) {
-        selectFrame = GetSelectFrame();
-        weakSelectFrame = do_QueryFrame(selectFrame);
+      if (!didGetFrame || (listBoxFrame && !weakSelectFrame.IsAlive())) {
+        listBoxFrame = GetListBoxFrame();
+        weakSelectFrame = do_QueryFrame(listBoxFrame);
         didGetFrame = true;
       }
 
-      if (selectFrame) {
-        selectFrame->AddOption(i);
+      if (listBoxFrame) {
+        listBoxFrame->AddOption(i);
       }
 
       RefPtr<HTMLOptionElement> option = Item(i);
@@ -379,7 +378,7 @@ void HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
         
         
         
-        OnOptionSelected(selectFrame, i, true, false, aNotify);
+        OnOptionSelected(listBoxFrame, i, true, false, aNotify);
       }
     }
 
@@ -427,10 +426,10 @@ nsresult HTMLSelectElement::RemoveOptionsFromList(nsIContent* aOptions,
 
   if (numRemoved) {
     
-    if (nsISelectControlFrame* selectFrame = GetSelectFrame()) {
+    if (nsListControlFrame* listBoxFrame = GetListBoxFrame()) {
       nsAutoScriptBlocker scriptBlocker;
       for (int32_t i = aListIndex; i < aListIndex + numRemoved; ++i) {
-        selectFrame->RemoveOption(i);
+        listBoxFrame->RemoveOption(i);
       }
     }
 
@@ -607,7 +606,7 @@ int32_t HTMLSelectElement::GetFirstChildOptionIndex(nsIContent* aOptions,
   return retval;
 }
 
-nsISelectControlFrame* HTMLSelectElement::GetSelectFrame() {
+nsListControlFrame* HTMLSelectElement::GetListBoxFrame() {
   return do_QueryFrame(GetPrimaryFrame());
 }
 
@@ -748,8 +747,8 @@ void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
 
   SetOptionsSelectedByIndex(aIndex, aIndex, mask);
 
-  if (nsISelectControlFrame* selectFrame = GetSelectFrame()) {
-    selectFrame->OnSetSelectedIndex(oldSelectedIndex, mSelectedIndex);
+  if (nsListControlFrame* listBoxFrame = GetListBoxFrame()) {
+    listBoxFrame->OnSetSelectedIndex(oldSelectedIndex, mSelectedIndex);
   }
   OnSelectionChanged();
 }
@@ -759,7 +758,7 @@ bool HTMLSelectElement::IsOptionSelectedByIndex(int32_t aIndex) const {
   return option && option->Selected();
 }
 
-void HTMLSelectElement::OnOptionSelected(nsISelectControlFrame* aSelectFrame,
+void HTMLSelectElement::OnOptionSelected(nsListControlFrame* aSelectFrame,
                                          int32_t aIndex, bool aSelected,
                                          bool aChangeOptionState,
                                          bool aNotify) {
@@ -858,7 +857,7 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
   bool optionsSelected = false;
   bool optionsDeselected = false;
 
-  nsISelectControlFrame* selectFrame = nullptr;
+  nsListControlFrame* listBoxFrame = nullptr;
   bool didGetFrame = false;
   AutoWeakFrame weakSelectFrame;
 
@@ -915,11 +914,11 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
           
           
           
-          selectFrame = GetSelectFrame();
-          weakSelectFrame = do_QueryFrame(selectFrame);
+          listBoxFrame = GetListBoxFrame();
+          weakSelectFrame = do_QueryFrame(listBoxFrame);
           didGetFrame = true;
 
-          OnOptionSelected(selectFrame, optIndex, true, !option->Selected(),
+          OnOptionSelected(listBoxFrame, optIndex, true, !option->Selected(),
                            aOptionsMask.contains(OptionFlag::Notify));
           optionsSelected = true;
         }
@@ -939,17 +938,17 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
           HTMLOptionElement* option = Item(optIndex);
           
           if (option && option->Selected()) {
-            if (!didGetFrame || (selectFrame && !weakSelectFrame.IsAlive())) {
+            if (!didGetFrame || (listBoxFrame && !weakSelectFrame.IsAlive())) {
               
               
               
-              selectFrame = GetSelectFrame();
-              weakSelectFrame = do_QueryFrame(selectFrame);
+              listBoxFrame = GetListBoxFrame();
+              weakSelectFrame = do_QueryFrame(listBoxFrame);
 
               didGetFrame = true;
             }
 
-            OnOptionSelected(selectFrame, optIndex, false, true,
+            OnOptionSelected(listBoxFrame, optIndex, false, true,
                              aOptionsMask.contains(OptionFlag::Notify));
             optionsDeselected = true;
 
@@ -973,17 +972,17 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
 
       
       if (option && option->Selected()) {
-        if (!didGetFrame || (selectFrame && !weakSelectFrame.IsAlive())) {
+        if (!didGetFrame || (listBoxFrame && !weakSelectFrame.IsAlive())) {
           
           
           
-          selectFrame = GetSelectFrame();
-          weakSelectFrame = do_QueryFrame(selectFrame);
+          listBoxFrame = GetListBoxFrame();
+          weakSelectFrame = do_QueryFrame(listBoxFrame);
 
           didGetFrame = true;
         }
 
-        OnOptionSelected(selectFrame, optIndex, false, true,
+        OnOptionSelected(listBoxFrame, optIndex, false, true,
                          aOptionsMask.contains(OptionFlag::Notify));
         optionsDeselected = true;
       }
@@ -1234,8 +1233,8 @@ void HTMLSelectElement::DoneAddingChildren(bool aHaveNotified) {
   }
 
   
-  if (nsISelectControlFrame* selectFrame = GetSelectFrame()) {
-    selectFrame->DoneAddingChildren();
+  if (auto* listBoxFrame = GetListBoxFrame()) {
+    listBoxFrame->DoneAddingChildren();
   }
 
   if (!mInhibitStateRestoration) {
@@ -1520,7 +1519,7 @@ HTMLSelectElement::SubmitNamesValues(FormData* aFormData) {
 }
 
 void HTMLSelectElement::DispatchContentReset() {
-  if (nsListControlFrame* listFrame = do_QueryFrame(GetPrimaryFrame())) {
+  if (nsListControlFrame* listFrame = GetListBoxFrame()) {
     listFrame->OnContentReset();
   }
 }
