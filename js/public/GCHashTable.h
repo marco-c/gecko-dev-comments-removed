@@ -445,7 +445,7 @@ class WeakCache<
 
     
     
-    mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
+    mozilla::Maybe<js::gc::AutoLockSweepingLock> lock;
     if (needsLock) {
       lock.emplace(trc->runtime());
     }
@@ -641,7 +641,7 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
     
     
     
-    mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
+    mozilla::Maybe<js::gc::AutoLockSweepingLock> lock;
     if (needsLock) {
       lock.emplace(trc->runtime());
     }

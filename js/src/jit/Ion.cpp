@@ -920,7 +920,7 @@ void IonScript::Destroy(JS::GCContext* gcx, IonScript* script) {
   
   
   
-  mozilla::Maybe<gc::AutoLockStoreBuffer> lock;
+  mozilla::Maybe<gc::AutoLockSweepingLock> lock;
   for (size_t i = 0, len = script->numNurseryObjects(); i < len; i++) {
     JSObject* obj = script->nurseryObjects()[i];
     if (lock.isNothing() && IsInsideNursery(obj)) {

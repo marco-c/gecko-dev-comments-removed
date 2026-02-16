@@ -1239,7 +1239,7 @@ ICCacheIRStub* ICCacheIRStub::clone(JSRuntime* rt, ICStubSpace& newSpace,
 
   
   
-  gc::AutoLockStoreBuffer lock(rt);
+  gc::AutoLockSweepingLock lock(rt);
 
   uint32_t field = 0;
   while (true) {

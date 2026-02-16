@@ -1903,7 +1903,7 @@ void Nursery::requestMinorGC(JS::GCReason reason) {
     
     
     MOZ_ASSERT(!CurrentThreadIsGCMarking());
-    runtime()->gc.assertCurrentThreadHasLockedStoreBuffer();
+    runtime()->gc.assertCurrentThreadHasLockedSweepingLock();
   } else {
     MOZ_CRASH("Unexpected heap state");
   }

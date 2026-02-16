@@ -19,17 +19,17 @@
 namespace js {
 namespace gc {
 
-JS_PUBLIC_API void LockStoreBuffer(JSRuntime* runtime);
-JS_PUBLIC_API void UnlockStoreBuffer(JSRuntime* runtim);
+JS_PUBLIC_API void LockSweepingLock(JSRuntime* runtime);
+JS_PUBLIC_API void UnlockSweepingLock(JSRuntime* runtim);
 
-class AutoLockStoreBuffer {
+class AutoLockSweepingLock {
   JSRuntime* runtime;
 
  public:
-  explicit AutoLockStoreBuffer(JSRuntime* runtime) : runtime(runtime) {
-    LockStoreBuffer(runtime);
+  explicit AutoLockSweepingLock(JSRuntime* runtime) : runtime(runtime) {
+    LockSweepingLock(runtime);
   }
-  ~AutoLockStoreBuffer() { UnlockStoreBuffer(runtime); }
+  ~AutoLockSweepingLock() { UnlockSweepingLock(runtime); }
 };
 
 }  
@@ -54,7 +54,7 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
   explicit WeakCacheBase(const WeakCacheBase&) = delete;
 
  public:
-  enum NeedsLock : bool { LockStoreBuffer = true, DontLockStoreBuffer = false };
+  enum NeedsLock : bool { Lock = true, DontLock = false };
 
   explicit WeakCacheBase(JS::Zone* zone) {
     shadow::RegisterWeakCache(zone, this);
@@ -108,7 +108,7 @@ class WeakCache : protected detail::WeakCacheBase,
     
     
     
-    mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
+    mozilla::Maybe<js::gc::AutoLockSweepingLock> lock;
     if (needsLock) {
       lock.emplace(trc->runtime());
     }

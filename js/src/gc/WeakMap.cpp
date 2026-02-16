@@ -157,7 +157,7 @@ void Zone::sweepWeakMaps(JSTracer* trc) {
     } else {
       if (!m->empty()) {
         
-        AutoLockStoreBuffer lock(trc->runtime());
+        AutoLockSweepingLock lock(trc->runtime());
         m->clearAndCompact();
       }
       m->removeFrom(gcWeakMapList());

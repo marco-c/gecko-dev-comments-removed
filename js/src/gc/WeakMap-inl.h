@@ -379,7 +379,7 @@ void WeakMap<K, V, AP>::traceWeakEdgesDuringSweeping(JSTracer* trc) {
     
     
     
-    gc::AutoLockStoreBuffer lock(trc->runtime());
+    gc::AutoLockSweepingLock lock(trc->runtime());
     e.reset();
   }
 
