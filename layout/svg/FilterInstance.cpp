@@ -7,8 +7,7 @@
 
 #include "FilterInstance.h"
 
-
-#include "mozilla/UniquePtr.h"
+#include <memory>
 
 
 #include "CSSFilterInstance.h"
@@ -60,11 +59,12 @@ FilterDescription FilterInstance::GetFilterDescription(
   return instance.ExtractDescriptionAndAdditionalImages(aOutAdditionalImages);
 }
 
-static UniquePtr<UserSpaceMetrics> UserSpaceMetricsForFrame(nsIFrame* aFrame) {
+static std::unique_ptr<UserSpaceMetrics> UserSpaceMetricsForFrame(
+    nsIFrame* aFrame) {
   if (auto* element = SVGElement::FromNodeOrNull(aFrame->GetContent())) {
-    return MakeUnique<SVGElementMetrics>(element);
+    return std::make_unique<SVGElementMetrics>(element);
   }
-  return MakeUnique<NonSVGFrameUserSpaceMetrics>(aFrame);
+  return std::make_unique<NonSVGFrameUserSpaceMetrics>(aFrame);
 }
 
 void FilterInstance::PaintFilteredFrame(
@@ -73,7 +73,7 @@ void FilterInstance::PaintFilteredFrame(
     const SVGFilterPaintCallback& aPaintCallback, const nsRegion* aDirtyArea,
     imgDrawingParams& aImgParams, float aOpacity,
     const gfxRect* aOverrideBBox) {
-  UniquePtr<UserSpaceMetrics> metrics =
+  std::unique_ptr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
 
   gfxContextMatrixAutoSaveRestore autoSR(aCtx);
@@ -170,7 +170,8 @@ WrFiltersStatus FilterInstance::BuildWebRenderFiltersImpl(
     return WrFiltersStatus::UNSUPPORTED;
   }
 
-  UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(firstFrame);
+  std::unique_ptr<UserSpaceMetrics> metrics =
+      UserSpaceMetricsForFrame(firstFrame);
 
   
   
@@ -1227,7 +1228,8 @@ WrFiltersStatus FilterInstance::BuildWebRenderSVGFiltersImpl(
     return WrFiltersStatus::UNSUPPORTED;
   }
 
-  UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(firstFrame);
+  std::unique_ptr<UserSpaceMetrics> metrics =
+      UserSpaceMetricsForFrame(firstFrame);
 
   gfxRect filterSpaceBoundsNotSnapped;
 
@@ -1475,7 +1477,7 @@ nsRegion FilterInstance::GetPreFilterNeededArea(
     const nsRegion& aPostFilterDirtyRegion) {
   gfxMatrix tm = SVGUtils::GetCanvasTM(aFilteredFrame);
   auto filterChain = aFilteredFrame->StyleEffects()->mFilters.AsSpan();
-  UniquePtr<UserSpaceMetrics> metrics =
+  std::unique_ptr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
   
   
@@ -1508,7 +1510,7 @@ Maybe<nsRect> FilterInstance::GetPostFilterBounds(
 
   gfxMatrix tm = SVGUtils::GetCanvasTM(aFilteredFrame);
   auto filterChain = aFilteredFrame->StyleEffects()->mFilters.AsSpan();
-  UniquePtr<UserSpaceMetrics> metrics =
+  std::unique_ptr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
   
   

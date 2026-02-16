@@ -7,6 +7,7 @@
 #ifndef DOM_SMIL_SMILCOMPOSITOR_H_
 #define DOM_SMIL_SMILCOMPOSITOR_H_
 
+#include <memory>
 #include <utility>
 
 #include "NonCustomCSSPropertyId.h"
@@ -14,7 +15,6 @@
 #include "SMILTargetIdentifier.h"
 #include "mozilla/SMILAnimationFunction.h"
 #include "mozilla/SMILCompositorTable.h"
-#include "mozilla/UniquePtr.h"
 #include "nsString.h"
 #include "nsTHashtable.h"
 
@@ -83,7 +83,8 @@ class SMILCompositor : public PLDHashEntryHdr {
   
   
   
-  UniquePtr<SMILAttr> CreateSMILAttr(const ComputedStyle* aBaseComputedStyle);
+  std::unique_ptr<SMILAttr> CreateSMILAttr(
+      const ComputedStyle* aBaseComputedStyle);
 
   
   

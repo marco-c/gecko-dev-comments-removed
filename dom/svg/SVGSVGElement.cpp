@@ -328,7 +328,7 @@ nsresult SVGSVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
       if (WillBeOutermostSVG(aParent)) {
         
         if (!mTimedDocumentRoot) {
-          mTimedDocumentRoot = MakeUnique<SMILTimeContainer>();
+          mTimedDocumentRoot = std::make_unique<SMILTimeContainer>();
         }
       } else {
         

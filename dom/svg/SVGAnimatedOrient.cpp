@@ -431,9 +431,10 @@ SVGAnimatedOrient::DOMAnimatedEnum::~DOMAnimatedEnum() {
   sSVGAnimatedEnumTearoffTable.RemoveTearoff(mVal);
 }
 
-UniquePtr<SMILAttr> SVGAnimatedOrient::ToSMILAttr(SVGElement* aSVGElement) {
+std::unique_ptr<SMILAttr> SVGAnimatedOrient::ToSMILAttr(
+    SVGElement* aSVGElement) {
   if (aSVGElement->IsSVGElement(nsGkAtoms::marker)) {
-    return MakeUnique<SMILOrient>(this, aSVGElement);
+    return std::make_unique<SMILOrient>(this, aSVGElement);
   }
   
   

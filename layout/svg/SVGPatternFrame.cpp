@@ -319,7 +319,7 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
   if (patternWithChildren->mCTM) {
     *patternWithChildren->mCTM = ctm;
   } else {
-    patternWithChildren->mCTM = MakeUnique<gfxMatrix>(ctm);
+    patternWithChildren->mCTM = std::make_unique<gfxMatrix>(ctm);
   }
 
   

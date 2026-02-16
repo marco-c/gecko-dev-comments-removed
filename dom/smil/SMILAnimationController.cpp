@@ -279,7 +279,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
 
   
-  UniquePtr<SMILCompositorTable> currentCompositorTable(
+  std::unique_ptr<SMILCompositorTable> currentCompositorTable(
       new SMILCompositorTable(0));
   nsTArray<RefPtr<SVGAnimationElement>> animElems(
       mAnimationElementTable.Count());

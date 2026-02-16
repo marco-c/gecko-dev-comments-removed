@@ -68,7 +68,7 @@ void SMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
 
   
   
-  UniquePtr<SMILAttr> smilAttr = CreateSMILAttr(baseComputedStyle);
+  std::unique_ptr<SMILAttr> smilAttr = CreateSMILAttr(baseComputedStyle);
   if (!smilAttr) {
     
     return;
@@ -122,7 +122,7 @@ void SMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
 void SMILCompositor::ClearAnimationEffects() {
   if (!mKey.mElement || !mKey.mAttributeName) return;
 
-  UniquePtr<SMILAttr> smilAttr = CreateSMILAttr(nullptr);
+  std::unique_ptr<SMILAttr> smilAttr = CreateSMILAttr(nullptr);
   if (!smilAttr) {
     
     return;
@@ -132,13 +132,13 @@ void SMILCompositor::ClearAnimationEffects() {
 
 
 
-UniquePtr<SMILAttr> SMILCompositor::CreateSMILAttr(
+std::unique_ptr<SMILAttr> SMILCompositor::CreateSMILAttr(
     const ComputedStyle* aBaseComputedStyle) {
   NonCustomCSSPropertyId propId = GetCSSPropertyToAnimate();
 
   if (propId != eCSSProperty_UNKNOWN) {
-    return MakeUnique<SMILCSSProperty>(propId, mKey.mElement.get(),
-                                       aBaseComputedStyle);
+    return std::make_unique<SMILCSSProperty>(propId, mKey.mElement.get(),
+                                             aBaseComputedStyle);
   }
 
   return mKey.mElement->GetAnimatedAttr(mKey.mAttributeNamespaceID,

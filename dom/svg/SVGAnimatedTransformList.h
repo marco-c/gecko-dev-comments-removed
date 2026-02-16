@@ -7,8 +7,9 @@
 #ifndef DOM_SVG_SVGANIMATEDTRANSFORMLIST_H_
 #define DOM_SVG_SVGANIMATEDTRANSFORMLIST_H_
 
+#include <memory>
+
 #include "mozilla/SMILAttr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGTransformList.h"
 
 class nsAtom;
@@ -49,7 +50,7 @@ class SVGAnimatedTransformList {
   SVGAnimatedTransformList& operator=(const SVGAnimatedTransformList& aOther) {
     mBaseVal = aOther.mBaseVal;
     if (aOther.mAnimVal) {
-      mAnimVal = MakeUnique<SVGTransformList>(*aOther.mAnimVal);
+      mAnimVal = std::make_unique<SVGTransformList>(*aOther.mAnimVal);
     }
     mIsBaseSet = aOther.mIsBaseSet;
     mCreatedOrRemovedOnLastChange = aOther.mCreatedOrRemovedOnLastChange;
@@ -116,7 +117,7 @@ class SVGAnimatedTransformList {
     return mCreatedOrRemovedOnLastChange;
   }
 
-  UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
+  std::unique_ptr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
 
  private:
   
@@ -125,7 +126,7 @@ class SVGAnimatedTransformList {
   
 
   SVGTransformList mBaseVal;
-  UniquePtr<SVGTransformList> mAnimVal;
+  std::unique_ptr<SVGTransformList> mAnimVal;
   bool mIsBaseSet;
   
   bool mCreatedOrRemovedOnLastChange;

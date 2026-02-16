@@ -43,7 +43,7 @@ class SVGView {
   SVGAnimatedEnumeration mZoomAndPan;
   SVGAnimatedViewBox mViewBox;
   SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
-  UniquePtr<SVGAnimatedTransformList> mTransforms;
+  std::unique_ptr<SVGAnimatedTransformList> mTransforms;
 };
 
 using SVGSVGElementBase = SVGViewportElement;
@@ -206,7 +206,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
   
-  UniquePtr<SMILTimeContainer> mTimedDocumentRoot;
+  std::unique_ptr<SMILTimeContainer> mTimedDocumentRoot;
 
   SVGPoint mCurrentTranslate;
   float mCurrentScale;
@@ -221,8 +221,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   
   
-  UniquePtr<nsString> mCurrentViewID;
-  UniquePtr<SVGView> mSVGView;
+  std::unique_ptr<nsString> mCurrentViewID;
+  std::unique_ptr<SVGView> mSVGView;
 };
 
 }  

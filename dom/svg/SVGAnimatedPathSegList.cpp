@@ -250,7 +250,7 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData& aNewAnimValue,
   
 
   if (!mAnimVal) {
-    mAnimVal = MakeUnique<SVGPathData>();
+    mAnimVal = std::make_unique<SVGPathData>();
   }
   *mAnimVal = aNewAnimValue;
   aElement->DidAnimatePathSegList();
@@ -266,8 +266,9 @@ bool SVGAnimatedPathSegList::IsRendered() const {
   return mAnimVal ? !mAnimVal->IsEmpty() : !mBaseVal.IsEmpty();
 }
 
-UniquePtr<SMILAttr> SVGAnimatedPathSegList::ToSMILAttr(SVGElement* aElement) {
-  return MakeUnique<SMILAnimatedPathSegList>(this, aElement);
+std::unique_ptr<SMILAttr> SVGAnimatedPathSegList::ToSMILAttr(
+    SVGElement* aElement) {
+  return std::make_unique<SMILAnimatedPathSegList>(this, aElement);
 }
 
 nsresult SVGAnimatedPathSegList::SMILAnimatedPathSegList::ValueFromString(

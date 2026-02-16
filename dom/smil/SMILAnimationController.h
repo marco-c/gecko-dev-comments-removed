@@ -7,10 +7,11 @@
 #ifndef DOM_SMIL_SMILANIMATIONCONTROLLER_H_
 #define DOM_SMIL_SMILANIMATIONCONTROLLER_H_
 
+#include <memory>
+
 #include "mozilla/SMILCompositorTable.h"
 #include "mozilla/SMILMilestone.h"
 #include "mozilla/SMILTimeContainer.h"
-#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
@@ -184,7 +185,7 @@ class SMILAnimationController final : public SMILTimeContainer {
   
   
   
-  UniquePtr<SMILCompositorTable> mLastCompositorTable;
+  std::unique_ptr<SMILCompositorTable> mLastCompositorTable;
 };
 
 }  

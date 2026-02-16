@@ -7,10 +7,11 @@
 #ifndef DOM_SVG_DOMSVGTRANSFORM_H_
 #define DOM_SVG_DOMSVGTRANSFORM_H_
 
+#include <memory>
+
 #include "DOMSVGTransformList.h"
 #include "SVGTransform.h"
 #include "gfxMatrix.h"
-#include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "nsID.h"
@@ -169,7 +170,7 @@ class DOMSVGTransform final : public nsWrapperCache {
   
   
   
-  UniquePtr<SVGTransform> mTransform;
+  std::unique_ptr<SVGTransform> mTransform;
 };
 
 }  
