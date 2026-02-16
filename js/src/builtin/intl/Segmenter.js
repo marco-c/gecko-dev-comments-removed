@@ -162,9 +162,6 @@ function Intl_Segmenter_segment(value) {
   }
 
   
-  getSegmenterInternals(segmenter);
-
-  
   var string = ToString(value);
 
   
