@@ -234,22 +234,11 @@ function GetNumberOption(options, property, minimum, maximum, fallback) {
 
 
 
-var intlFallbackSymbolHolder = { value: undefined };
-
-
-
-
 
 
 
 function intlFallbackSymbol() {
-  var fallbackSymbol = intlFallbackSymbolHolder.value;
-  if (!fallbackSymbol) {
-    var Symbol = GetBuiltinConstructor("Symbol");
-    fallbackSymbol = Symbol("IntlLegacyConstructedSymbol");
-    intlFallbackSymbolHolder.value = fallbackSymbol;
-  }
-  return fallbackSymbol;
+  return intl_FallbackSymbol();
 }
 
 

@@ -11,6 +11,7 @@
 #include "js/TypeDecls.h"
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
+#include "vm/SymbolType.h"
 
 class JS_PUBLIC_API JSTracer;
 
@@ -125,6 +126,14 @@ class GlobalIntlData {
 
   GCPtr<JSObject*> dateTimeFormatToLocaleTime_;
 
+  
+
+
+
+
+
+  GCPtr<JS::Symbol*> fallbackSymbol_;
+
  public:
   
 
@@ -172,6 +181,12 @@ class GlobalIntlData {
   DateTimeFormatObject* getOrCreateDateTimeFormat(
       JSContext* cx, DateTimeFormatKind kind,
       JS::Handle<JSLinearString*> locale);
+
+  
+
+
+
+  JS::Symbol* fallbackSymbol(JSContext* cx);
 
   void trace(JSTracer* trc);
 
