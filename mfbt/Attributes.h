@@ -84,6 +84,15 @@
 
 
 
+#if MOZ_HAS_CLANG_ATTRIBUTE(__trivial_abi__)
+#  define MOZ_TRIVIAL_ABI __attribute__((__trivial_abi__))
+#else
+#  define MOZ_TRIVIAL_ABI
+#endif
+
+
+
+
 
 #ifdef __clang_analyzer__
 #  if __has_extension(attribute_analyzer_noreturn)
