@@ -1,8 +1,6 @@
 import json
 import base64
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+import hashlib
 
 
 
@@ -23,14 +21,16 @@ def decode_jwt(token, key=None):
         
         if key == None:
             key = decoded_header.get('jwk')
-        public_key = serialization.load_pem_public_key(jwk_to_pem(key))
+
+        n, e = get_rsa_components(key)
+
         
-        verify_rs256_signature(header, payload, signature, public_key)
+        verify_rs256_signature(header, payload, signature, n, e)
         return decoded_header, decoded_payload, True
     except Exception:
         return None, None, False
 
-def jwk_to_pem(jwk_data):
+def get_rsa_components(jwk_data):
     jwk = json.loads(jwk_data) if isinstance(jwk_data, str) else jwk_data
     key_type = jwk.get("kty")
 
@@ -39,23 +39,80 @@ def jwk_to_pem(jwk_data):
 
     n = int.from_bytes(decode_base64url(jwk["n"]), 'big')
     e = int.from_bytes(decode_base64url(jwk["e"]), 'big')
-    public_key = rsa.RSAPublicNumbers(e, n).public_key()
-    pem_public_key = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-    return pem_public_key
+    return n, e
 
-def verify_rs256_signature(encoded_header, encoded_payload, signature, public_key):
-    message = (f'{encoded_header}.{encoded_payload}').encode('utf-8')
-    signature_bytes = decode_base64(signature)
+class SignatureVerificationError(Exception):
+    pass
+
+
+def i2osp(x, x_len):
+    if x >= 256**x_len:
+        raise ValueError("integer too large")
+    return x.to_bytes(x_len, byteorder='big')
+
+
+def os2ip(octet_string):
+    return int.from_bytes(octet_string, byteorder='big')
+
+
+def verify_rs256_signature(encoded_header, encoded_payload, signature, n, e):
+    signature_bytes = decode_base64url(signature)
+    M = f"{encoded_header}.{encoded_payload}".encode('ascii')
+    k = (n.bit_length() + 7) // 8
+
     
-    public_key.verify(
-        signature_bytes,
-        message,
-        padding.PKCS1v15(),
-        hashes.SHA256()
-    )
+    if len(signature_bytes) != k:
+        raise SignatureVerificationError(
+            f"Invalid signature length. Expected {k} bytes, got {len(signature_bytes)}."
+        )
+
+    
+    
+    s = os2ip(signature_bytes)
+
+    
+    if s >= n:
+        raise SignatureVerificationError("Signature representative out of range (s >= n).")
+    m = pow(s, e, n)
+
+    
+    try:
+        EM = i2osp(m, k)
+    except ValueError:
+        raise SignatureVerificationError("Integer too large for encoded message.")
+
+    
+    
+
+    
+    sha256 = hashlib.sha256()
+    sha256.update(M)
+    H = sha256.digest()
+
+    
+    
+    T = bytes([
+        0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
+        0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20
+    ]) + H
+    t_len = len(T)
+
+    
+    if k < t_len + 11:
+        raise SignatureVerificationError("RSA modulus too short.")
+
+    
+    
+    ps_len = k - t_len - 3
+    PS = b'\xff' * ps_len
+
+    
+    
+    EM_prime = b'\x00' + b'\x01' + PS + b'\x00' + T
+
+    
+    if EM != EM_prime:
+        raise SignatureVerificationError("Invalid signature.")
 
 def add_base64_padding(encoded_data):
     remainder = len(encoded_data) % 4
@@ -93,8 +150,8 @@ def thumbprint_for_jwk(jwk):
 
     serialized_jwk = json.dumps(filtered_jwk, sort_keys=True, separators=(',',':'))
 
-    digest = hashes.Hash(hashes.SHA256())
+    digest = hashlib.sha256()
     digest.update(serialized_jwk.encode("utf-8"))
 
-    thumbprint_base64 = base64.b64encode(digest.finalize(), altchars=b"-_").rstrip(b"=")
+    thumbprint_base64 = base64.b64encode(digest.digest(), altchars=b"-_").rstrip(b"=")
     return thumbprint_base64.decode('ascii')
