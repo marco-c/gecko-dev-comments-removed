@@ -5891,7 +5891,6 @@ static void InitAlwaysPref(const nsCString& aName, DataMutexString& aCache,
 }
 
 static Atomic<bool> sOncePrefRead(false);
-static StaticMutex sOncePrefMutex MOZ_UNANNOTATED;
 
 namespace StaticPrefs {
 
@@ -5901,16 +5900,18 @@ void MaybeInitOncePrefs() {
     
     return;
   }
-  StaticMutexAutoLock lock(sOncePrefMutex);
+
   if (NS_IsMainThread()) {
+    
+    
     InitOncePrefs();
+    sOncePrefRead = true;
   } else {
     RefPtr<Runnable> runnable = NS_NewRunnableFunction(
-        "Preferences::MaybeInitOncePrefs", [&]() { InitOncePrefs(); });
+        "Preferences::MaybeInitOncePrefs", [&]() { MaybeInitOncePrefs(); });
     
     SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), runnable);
   }
-  sOncePrefRead = true;
 }
 
 
@@ -5972,7 +5973,7 @@ static void StartObservingAlwaysPrefs() {
 #undef ONCE_PREF
 }
 
-static void InitOncePrefs() {
+static void InitOncePrefs() MOZ_REQUIRES(sMainThreadCapability) {
   
   
   
