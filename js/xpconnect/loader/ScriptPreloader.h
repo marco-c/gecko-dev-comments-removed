@@ -402,6 +402,11 @@ class ScriptPreloader : public nsIObserver,
   
   Result<Ok, nsresult> WriteCache() MOZ_REQUIRES(mSaveMonitor.Lock());
 
+  
+  
+  
+  void StartCacheWriteIfReady();
+
   void StartCacheWrite();
 
   
@@ -489,6 +494,9 @@ class ScriptPreloader : public nsIObserver,
   
   
   bool mStartupFinished = false;
+
+  
+  bool mStartupHasAdvancedToCacheWritingStage = false;
 
   bool mCacheInitialized = false;
   bool mSaveComplete = false;

@@ -262,6 +262,28 @@ void ScriptPreloader::Cleanup() {
   UnregisterWeakMemoryReporter(this);
 }
 
+void ScriptPreloader::StartCacheWriteIfReady() {
+  
+  
+  if (!mChildCache) {
+    
+    return;
+  }
+
+  if (mSaveComplete || mSaveThread) {
+    
+    return;
+  }
+
+  if (!mStartupHasAdvancedToCacheWritingStage) {
+    
+    return;
+  }
+
+  
+  StartCacheWrite();
+}
+
 void ScriptPreloader::StartCacheWrite() {
   MOZ_DIAGNOSTIC_ASSERT(!mSaveThread);
 
@@ -330,10 +352,9 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
 
     MOZ_ASSERT(mStartupFinished);
     MOZ_ASSERT(XRE_IsParentProcess());
+    mStartupHasAdvancedToCacheWritingStage = true;
 
-    if (mChildCache && !mSaveComplete && !mSaveThread) {
-      StartCacheWrite();
-    }
+    StartCacheWriteIfReady();
   } else if (mContentStartupFinishedTopic.Equals(topic)) {
     
     
