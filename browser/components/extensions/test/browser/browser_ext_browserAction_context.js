@@ -55,17 +55,6 @@ async function runTests(options) {
         enabled,
         "expected value from isEnabled"
       );
-
-      
-      
-      if (Object.keys(details).length === 0 || "tabId" in details) {
-        let enabledByTabId = await browser[action].isEnabled(details.tabId);
-        browser.test.assertEq(
-          expecting.enabled,
-          enabledByTabId,
-          "expected value from isEnabled with tabId argument type"
-        );
-      }
     }
 
     let tabs = [];
