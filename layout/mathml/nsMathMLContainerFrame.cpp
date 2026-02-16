@@ -189,7 +189,7 @@ nscoord nsMathMLContainerFrame::ApplyAdjustmentForWidthAndHeight(
 
 void nsMathMLContainerFrame::GetPreferredStretchSize(
     DrawTarget* aDrawTarget, uint32_t aOptions,
-    nsStretchDirection aStretchDirection,
+    StretchDirection aStretchDirection,
     nsBoundingMetrics& aPreferredStretchSize) {
   if (aOptions & STRETCH_CONSIDER_ACTUAL_SIZE) {
     
@@ -204,11 +204,11 @@ void nsMathMLContainerFrame::GetPreferredStretchSize(
     
     
     bool stretchAll = mPresentationData.flags.contains(
-        aStretchDirection == NS_STRETCH_DIRECTION_VERTICAL
+        aStretchDirection == StretchDirection::Vertical
             ? MathMLPresentationFlag::StretchAllChildrenVertically
             : MathMLPresentationFlag::StretchAllChildrenHorizontally);
-    NS_ASSERTION(aStretchDirection == NS_STRETCH_DIRECTION_HORIZONTAL ||
-                     aStretchDirection == NS_STRETCH_DIRECTION_VERTICAL,
+    NS_ASSERTION(aStretchDirection == StretchDirection::Horizontal ||
+                     aStretchDirection == StretchDirection::Vertical,
                  "You must specify a direction in which to stretch");
     NS_ASSERTION(mEmbellishData.flags.contains(
                      MathMLEmbellishFlag::EmbellishedOperator) ||
@@ -255,7 +255,7 @@ void nsMathMLContainerFrame::GetPreferredStretchSize(
           break;
         }
       } else {
-        if (aStretchDirection == NS_STRETCH_DIRECTION_HORIZONTAL) {
+        if (aStretchDirection == StretchDirection::Horizontal) {
           
           
           
@@ -275,7 +275,7 @@ void nsMathMLContainerFrame::GetPreferredStretchSize(
           if (bm.rightBearing < bmChild.rightBearing) {
             bm.rightBearing = bmChild.rightBearing;
           }
-        } else if (aStretchDirection == NS_STRETCH_DIRECTION_VERTICAL) {
+        } else if (aStretchDirection == StretchDirection::Vertical) {
           
           bm += bmChild;
         } else {
@@ -291,7 +291,7 @@ void nsMathMLContainerFrame::GetPreferredStretchSize(
 
 NS_IMETHODIMP
 nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
-                                nsStretchDirection aStretchDirection,
+                                StretchDirection aStretchDirection,
                                 nsBoundingMetrics& aContainerSize,
                                 ReflowOutput& aDesiredStretchSize) {
   if (mEmbellishData.flags.contains(MathMLEmbellishFlag::EmbellishedOperator)) {
@@ -327,12 +327,12 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
         
         nsBoundingMetrics containerSize = aContainerSize;
         if (aStretchDirection != mEmbellishData.direction &&
-            mEmbellishData.direction != NS_STRETCH_DIRECTION_UNSUPPORTED) {
+            mEmbellishData.direction != StretchDirection::Unsupported) {
           NS_ASSERTION(
-              mEmbellishData.direction != NS_STRETCH_DIRECTION_DEFAULT,
+              mEmbellishData.direction != StretchDirection::Default,
               "Stretches may have a default direction, operators can not.");
           if (mPresentationData.flags.contains(
-                  mEmbellishData.direction == NS_STRETCH_DIRECTION_VERTICAL
+                  mEmbellishData.direction == StretchDirection::Vertical
                       ? MathMLPresentationFlag::StretchAllChildrenVertically
                       : MathMLPresentationFlag::
                             StretchAllChildrenHorizontally)) {
@@ -362,11 +362,11 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
                 MathMLPresentationFlag::StretchAllChildrenVertically) ||
             mPresentationData.flags.contains(
                 MathMLPresentationFlag::StretchAllChildrenHorizontally)) {
-          nsStretchDirection stretchDir =
+          StretchDirection stretchDir =
               mPresentationData.flags.contains(
                   MathMLPresentationFlag::StretchAllChildrenVertically)
-                  ? NS_STRETCH_DIRECTION_VERTICAL
-                  : NS_STRETCH_DIRECTION_HORIZONTAL;
+                  ? StretchDirection::Vertical
+                  : StretchDirection::Horizontal;
 
           GetPreferredStretchSize(aDrawTarget, STRETCH_CONSIDER_EMBELLISHMENTS,
                                   stretchDir, containerSize);
@@ -471,7 +471,7 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
       !mEmbellishData.flags.contains(
           MathMLEmbellishFlag::EmbellishedOperator) ||
       (mEmbellishData.coreFrame != this && !mPresentationData.baseFrame &&
-       mEmbellishData.direction == NS_STRETCH_DIRECTION_UNSUPPORTED);
+       mEmbellishData.direction == StretchDirection::Unsupported);
   PlaceFlags flags;
   if (!placeOrigin) {
     flags += PlaceFlag::MeasureOnly;
@@ -509,17 +509,17 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
           mPresentationData.flags.contains(
               MathMLPresentationFlag::StretchAllChildrenHorizontally);
 
-      nsStretchDirection stretchDir;
+      StretchDirection stretchDir;
       if (mEmbellishData.coreFrame ==
               this || 
-          (mEmbellishData.direction == NS_STRETCH_DIRECTION_HORIZONTAL &&
+          (mEmbellishData.direction == StretchDirection::Horizontal &&
            stretchAll) || 
           mEmbellishData.direction ==
-              NS_STRETCH_DIRECTION_UNSUPPORTED) { 
+              StretchDirection::Unsupported) { 
         stretchDir = mEmbellishData.direction;
       } else {
         
-        stretchDir = NS_STRETCH_DIRECTION_DEFAULT;
+        stretchDir = StretchDirection::Default;
       }
       
       
@@ -873,11 +873,11 @@ void nsMathMLContainerFrame::Reflow(nsPresContext* aPresContext,
        mPresentationData.flags.contains(
            MathMLPresentationFlag::StretchAllChildrenHorizontally))) {
     
-    nsStretchDirection stretchDir =
+    StretchDirection stretchDir =
         mPresentationData.flags.contains(
             MathMLPresentationFlag::StretchAllChildrenVertically)
-            ? NS_STRETCH_DIRECTION_VERTICAL
-            : NS_STRETCH_DIRECTION_HORIZONTAL;
+            ? StretchDirection::Vertical
+            : StretchDirection::Horizontal;
 
     
     
@@ -1413,7 +1413,7 @@ nsresult nsMathMLContainerFrame::TransmitAutomaticDataForMrowLikeElement() {
     mPresentationData.baseFrame = nullptr;
     mEmbellishData.flags.clear();
     mEmbellishData.coreFrame = nullptr;
-    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+    mEmbellishData.direction = StretchDirection::Unsupported;
     mEmbellishData.leadingSpace = 0;
     mEmbellishData.trailingSpace = 0;
   }

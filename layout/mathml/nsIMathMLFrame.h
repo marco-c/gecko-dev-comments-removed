@@ -148,8 +148,7 @@ class nsIMathMLFrame {
 
   NS_IMETHOD
   Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
-          nsStretchDirection aStretchDirection,
-          nsBoundingMetrics& aContainerSize,
+          StretchDirection aStretchDirection, nsBoundingMetrics& aContainerSize,
           mozilla::ReflowOutput& aDesiredStretchSize) = 0;
 
   
@@ -292,7 +291,7 @@ struct nsEmbellishData {
   nsIFrame* coreFrame = nullptr;
 
   
-  nsStretchDirection direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+  StretchDirection direction = StretchDirection::Unsupported;
 
   
   

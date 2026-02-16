@@ -455,7 +455,7 @@ bool nsMathMLOperators::IsIntegralOperator(const nsString& aOperator) {
 }
 
 
-nsStretchDirection nsMathMLOperators::GetStretchyDirection(
+StretchDirection nsMathMLOperators::GetStretchyDirection(
     const nsString& aOperator) {
   
   
@@ -467,12 +467,12 @@ nsStretchDirection nsMathMLOperators::GetStretchyDirection(
     if (nsMathMLOperators::LookupOperator(aOperator, form, &flags, &dummy,
                                           &dummy)) {
       if (NS_MATHML_OPERATOR_IS_DIRECTION_VERTICAL(flags)) {
-        return NS_STRETCH_DIRECTION_VERTICAL;
+        return StretchDirection::Vertical;
       }
       if (NS_MATHML_OPERATOR_IS_DIRECTION_HORIZONTAL(flags)) {
-        return NS_STRETCH_DIRECTION_HORIZONTAL;
+        return StretchDirection::Horizontal;
       }
     }
   }
-  return NS_STRETCH_DIRECTION_UNSUPPORTED;
+  return StretchDirection::Unsupported;
 }
