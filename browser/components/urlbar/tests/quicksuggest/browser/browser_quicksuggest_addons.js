@@ -176,7 +176,7 @@ add_task(async function resultMenu_showLessFrequently() {
   Assert.equal(UrlbarPrefs.get("addons.showLessFrequentlyCount"), 1);
 
   await doShowLessFrequently({
-    input: "aaa b",
+    input: "aaa bb",
     expected: {
       isSuggestionShown: true,
       isMenuItemShown: true,
@@ -188,7 +188,7 @@ add_task(async function resultMenu_showLessFrequently() {
   
   await doShowLessFrequently({
     keepViewOpen: true,
-    input: "aaa b",
+    input: "aaa bbb",
     expected: {
       isSuggestionShown: true,
       isMenuItemShown: true,
@@ -208,17 +208,14 @@ add_task(async function resultMenu_showLessFrequently() {
   await UrlbarTestUtils.promisePopupClose(window);
 
   await doShowLessFrequently({
-    input: "aaa b",
+    input: "aaa bbb",
     expected: {
-      
-      
-      
       isSuggestionShown: false,
     },
   });
 
   await doShowLessFrequently({
-    input: "aaa bb",
+    input: "aaa bbbc",
     expected: {
       
       

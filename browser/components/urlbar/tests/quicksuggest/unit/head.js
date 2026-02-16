@@ -465,235 +465,120 @@ async function getActualResult({
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function doShowLessFrequentlyTests({
+async function doShowLessFrequentlyTest({
   feature,
-  expectedResult,
-  showLessFrequentlyCountPref,
-  nimbusCapVariable,
   keyword,
-  keywordBaseIndex = keyword.indexOf(" "),
-}) {
-  
-  
-  if (keywordBaseIndex <= 0) {
-    throw new Error(
-      "keywordBaseIndex must be > 0, but it's " + keywordBaseIndex
-    );
-  }
-  if (keyword.length < keywordBaseIndex + 3) {
-    throw new Error(
-      "keyword must have at least two chars after keywordBaseIndex"
-    );
-  }
-
-  let tests = [
-    {
-      showLessFrequentlyCount: 0,
-      canShowLessFrequently: true,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex - 1)]: false,
-        [keyword.substring(0, keywordBaseIndex)]: true,
-        [keyword.substring(0, keywordBaseIndex + 1)]: true,
-        [keyword.substring(0, keywordBaseIndex + 2)]: true,
-        [keyword.substring(0, keywordBaseIndex + 3)]: true,
-      },
-    },
-    {
-      showLessFrequentlyCount: 1,
-      canShowLessFrequently: true,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex)]: false,
-      },
-    },
-    {
-      showLessFrequentlyCount: 2,
-      canShowLessFrequently: true,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex + 1)]: false,
-      },
-    },
-    {
-      showLessFrequentlyCount: 3,
-      canShowLessFrequently: false,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex + 2)]: false,
-      },
-    },
-    {
-      showLessFrequentlyCount: 3,
-      canShowLessFrequently: false,
-      newSearches: {},
-    },
-  ];
-
-  info("Testing 'show less frequently' with cap in remote settings");
-  await doOneShowLessFrequentlyTest({
-    tests,
-    feature,
-    expectedResult,
-    showLessFrequentlyCountPref,
-    rs: {
-      show_less_frequently_cap: 3,
-    },
-  });
-
-  
-  info("Testing 'show less frequently' with cap in Nimbus and remote settings");
-  await doOneShowLessFrequentlyTest({
-    tests,
-    feature,
-    expectedResult,
-    showLessFrequentlyCountPref,
-    rs: {
-      show_less_frequently_cap: 10,
-    },
-    nimbus: {
-      [nimbusCapVariable]: 3,
-    },
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function doOneShowLessFrequentlyTest({
-  feature,
   expectedResult,
+  minKeywordLengthPref,
   showLessFrequentlyCountPref,
-  tests,
-  rs = {},
-  nimbus = {},
 }) {
-  
-  
-  
-  
-  
-  
-  UrlbarPrefs.set("quicksuggest.online.enabled", false);
+  let showLessFrequentlyCap = 3;
 
-  
-  let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(nimbus);
+  if (keyword.length < showLessFrequentlyCap) {
+    throw new Error(
+      "keyword must be long enough to 'Show less frequently' enough times"
+    );
+  }
+
   await QuickSuggestTestUtils.withConfig({
-    config: rs,
+    config: { show_less_frequently_cap: showLessFrequentlyCap },
     callback: async () => {
-      let cumulativeSearches = {};
+      
+      
+      
+      for (let count = 0; count < showLessFrequentlyCap; count++) {
+        let searchString = keyword.substring(
+          0,
+          keyword.length - showLessFrequentlyCap + count + 1
+        );
 
-      for (let {
-        showLessFrequentlyCount,
-        canShowLessFrequently,
-        newSearches,
-      } of tests) {
         info(
-          "Starting subtest: " +
+          "Doing search: " +
             JSON.stringify({
-              showLessFrequentlyCount,
-              canShowLessFrequently,
-              newSearches,
+              count,
+              searchString,
             })
         );
 
+        
+        Assert.equal(
+          UrlbarPrefs.get(minKeywordLengthPref),
+          count == 0 ? 0 : searchString.length,
+          "minKeywordLength pref should be correct before search " + count
+        );
         Assert.equal(
           feature.showLessFrequentlyCount,
-          showLessFrequentlyCount,
-          "showLessFrequentlyCount should be correct initially"
+          count,
+          "showLessFrequentlyCount should be correct before search " + count
         );
         Assert.equal(
           UrlbarPrefs.get(showLessFrequentlyCountPref),
-          showLessFrequentlyCount,
-          "Pref should be correct initially"
+          count,
+          "showLessFrequentlyCount pref should be correct before search " +
+            count
         );
-        Assert.equal(
+        Assert.ok(
           feature.canShowLessFrequently,
-          canShowLessFrequently,
-          "canShowLessFrequently should be correct initially"
+          "canShowLessFrequently should be correct before search " + count
         );
 
         
-        cumulativeSearches = {
-          ...cumulativeSearches,
-          ...newSearches,
-        };
+        await check_results({
+          context: createContext(searchString, {
+            providers: [UrlbarProviderQuickSuggest.name],
+            isPrivate: false,
+          }),
+          matches: [expectedResult],
+        });
 
-        for (let [searchString, isExpected] of Object.entries(
-          cumulativeSearches
-        )) {
-          info("Doing search: " + JSON.stringify({ searchString, isExpected }));
+        
+        triggerCommand({
+          feature,
+          searchString,
+          command: "show_less_frequently",
+          result: expectedResult,
+          expectedCountsByCall: {
+            acknowledgeFeedback: 1,
+            invalidateResultMenuCommands:
+              count == showLessFrequentlyCap - 1 ? 1 : 0,
+          },
+        });
 
-          let results = [];
-          if (isExpected) {
-            results.push(
-              typeof expectedResult == "function"
-                ? expectedResult(searchString)
-                : expectedResult
-            );
-          }
-
-          await check_results({
-            context: createContext(searchString, {
-              providers: [UrlbarProviderQuickSuggest.name],
-              isPrivate: false,
-            }),
-            matches: results,
-          });
-        }
-
-        feature.incrementShowLessFrequentlyCount();
+        
+        await check_results({
+          context: createContext(searchString, {
+            providers: [UrlbarProviderQuickSuggest.name],
+            isPrivate: false,
+          }),
+          matches: [],
+        });
       }
+
+      
+      Assert.equal(
+        UrlbarPrefs.get(minKeywordLengthPref),
+        keyword.length + 1,
+        "minKeywordLength pref should be correct after all searches"
+      );
+      Assert.equal(
+        feature.showLessFrequentlyCount,
+        showLessFrequentlyCap,
+        "showLessFrequentlyCount should be correct after all searches"
+      );
+      Assert.equal(
+        UrlbarPrefs.get(showLessFrequentlyCountPref),
+        showLessFrequentlyCap,
+        "showLessFrequentlyCap pref should be correct after all searches"
+      );
+      Assert.ok(
+        !feature.canShowLessFrequently,
+        "canShowLessFrequently should be correct after all searches"
+      );
     },
   });
 
-  await cleanUpNimbus();
+  UrlbarPrefs.clear(minKeywordLengthPref);
   UrlbarPrefs.clear(showLessFrequentlyCountPref);
-  UrlbarPrefs.clear("quicksuggest.online.enabled");
 }
 
 
