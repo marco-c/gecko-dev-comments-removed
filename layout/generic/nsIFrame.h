@@ -1015,25 +1015,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-  virtual ComputedStyle* GetAdditionalComputedStyle(int32_t aIndex) const;
-
-  virtual void SetAdditionalComputedStyle(int32_t aIndex,
-                                          ComputedStyle* aComputedStyle);
-
-  
-
-
   already_AddRefed<ComputedStyle> ComputeSelectionStyle(
       int16_t aSelectionStatus) const;
 

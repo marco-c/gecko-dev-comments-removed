@@ -138,12 +138,6 @@ class nsMathMLChar {
     mBoundingMetrics = aBoundingMetrics;
   }
 
-  
-  
-  
-  
-  mozilla::ComputedStyle* GetComputedStyle() const;
-
   void SetComputedStyle(mozilla::ComputedStyle* aComputedStyle);
 
   nscoord ItalicCorrection() const { return mItalicCorrection; }

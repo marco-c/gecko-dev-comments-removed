@@ -2609,52 +2609,6 @@ static void UpdateFirstLetterIfNeeded(nsIFrame* aFrame,
       ->UpdateFirstLetterStyle(aRestyleState);
 }
 
-static void UpdateOneAdditionalComputedStyle(nsIFrame* aFrame, uint32_t aIndex,
-                                             ComputedStyle& aOldContext,
-                                             ServoRestyleState& aRestyleState) {
-  auto pseudoType = aOldContext.GetPseudoType();
-  MOZ_ASSERT(pseudoType != PseudoStyleType::NotPseudo);
-  MOZ_ASSERT(!PseudoStyle::SupportsUserActionState(pseudoType));
-
-  RefPtr<ComputedStyle> newStyle =
-      aRestyleState.StyleSet().ResolvePseudoElementStyle(
-          *aFrame->GetContent()->AsElement(), pseudoType, nullptr,
-          aFrame->Style());
-
-  uint32_t equalStructs;  
-  nsChangeHint childHint =
-      aOldContext.CalcStyleDifference(*newStyle, &equalStructs);
-  if (CanUseHandledHintsFromAncestors(aFrame)) {
-    childHint = NS_RemoveSubsumedHints(childHint,
-                                       aRestyleState.ChangesHandledFor(aFrame));
-  }
-
-  if (childHint) {
-    if (childHint & nsChangeHint_ReconstructFrame) {
-      
-      
-      aRestyleState.ChangeList().PopChangesForContent(aFrame->GetContent());
-    }
-    aRestyleState.ChangeList().AppendChange(aFrame, aFrame->GetContent(),
-                                            childHint);
-  }
-
-  aFrame->SetAdditionalComputedStyle(aIndex, newStyle);
-}
-
-static void UpdateAdditionalComputedStyles(nsIFrame* aFrame,
-                                           ServoRestyleState& aRestyleState) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aFrame->GetContent() && aFrame->GetContent()->IsElement());
-
-  
-  
-  uint32_t index = 0;
-  while (auto* oldStyle = aFrame->GetAdditionalComputedStyle(index)) {
-    UpdateOneAdditionalComputedStyle(aFrame, index++, *oldStyle, aRestyleState);
-  }
-}
-
 static void UpdateFramePseudoElementStyles(nsIFrame* aFrame,
                                            ServoRestyleState& aRestyleState) {
   if (nsBlockFrame* blockFrame = do_QueryFrame(aFrame)) {
@@ -2964,12 +2918,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     for (nsIFrame* f = styleFrame; f; f = f->GetNextContinuation()) {
-      MOZ_ASSERT_IF(f != styleFrame, !f->GetAdditionalComputedStyle(0));
       f->SetComputedStyle(upToDateStyle);
-    }
-
-    if (styleFrame) {
-      UpdateAdditionalComputedStyles(styleFrame, aRestyleState);
     }
 
     if (!aElement->GetParent()) {
@@ -3858,23 +3807,6 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
   RefPtr<ComputedStyle> newStyle = aStyleSet.ReparentComputedStyle(
       oldStyle, newParent, layoutParent, ourElement);
   aFrame->SetComputedStyle(newStyle);
-
-  
-  
-  if (isElement) {
-    
-    
-    
-    int32_t index = 0;
-    while (auto* oldAdditionalStyle =
-               aFrame->GetAdditionalComputedStyle(index)) {
-      RefPtr<ComputedStyle> newAdditionalContext =
-          aStyleSet.ReparentComputedStyle(oldAdditionalStyle, newStyle,
-                                          newStyle, nullptr);
-      aFrame->SetAdditionalComputedStyle(index, newAdditionalContext);
-      ++index;
-    }
-  }
 
   
   

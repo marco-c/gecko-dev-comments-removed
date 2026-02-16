@@ -65,8 +65,6 @@ nsresult nsMathMLmencloseFrame::AllocateMathMLChar(MencloseNotation mask) {
   }
 
   
-  
-  
   uint32_t i = mMathMLChar.Length();
   nsAutoString Char;
 

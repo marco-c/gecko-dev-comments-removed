@@ -48,8 +48,7 @@ static bool IsFontReferenced(const ComputedStyle& aStyle,
 static FontUsageKind StyleFontUsage(nsIFrame* aFrame, ComputedStyle* aStyle,
                                     nsPresContext* aPresContext,
                                     const gfxUserFontEntry* aFont,
-                                    const nsAString& aFamilyName,
-                                    bool aIsExtraStyle) {
+                                    const nsAString& aFamilyName) {
   MOZ_ASSERT(NS_ConvertUTF8toUTF16(aFont->FamilyName()) == aFamilyName);
 
   auto FontIsUsed = [&aFont, &aPresContext,
@@ -79,15 +78,9 @@ static FontUsageKind StyleFontUsage(nsIFrame* aFrame, ComputedStyle* aStyle,
 
   if (aStyle->DependsOnInheritedFontMetrics() &&
       !(usage & FontUsageKind::FontMetrics)) {
-    ComputedStyle* parentStyle = nullptr;
-    if (aIsExtraStyle) {
-      parentStyle = aFrame->Style();
-    } else {
-      nsIFrame* provider = nullptr;
-      parentStyle = aFrame->GetParentComputedStyle(&provider);
-    }
-
-    if (parentStyle && FontIsUsed(parentStyle)) {
+    nsIFrame* provider = nullptr;
+    if (auto* parentStyle = aFrame->GetParentComputedStyle(&provider);
+        parentStyle && FontIsUsed(parentStyle)) {
       usage |= FontUsageKind::FontMetrics;
     }
   }
@@ -100,25 +93,8 @@ static FontUsageKind FrameFontUsage(nsIFrame* aFrame,
                                     const gfxUserFontEntry* aFont,
                                     const nsAString& aFamilyName) {
   
-  FontUsageKind kind = StyleFontUsage(aFrame, aFrame->Style(), aPresContext,
-                                      aFont, aFamilyName,  false);
-  if (kind == FontUsageKind::Max) {
-    return kind;
-  }
-
-  
-  int32_t contextIndex = 0;
-  for (ComputedStyle* extraContext;
-       (extraContext = aFrame->GetAdditionalComputedStyle(contextIndex));
-       ++contextIndex) {
-    kind |= StyleFontUsage(aFrame, extraContext, aPresContext, aFont,
-                           aFamilyName,  true);
-    if (kind == FontUsageKind::Max) {
-      break;
-    }
-  }
-
-  return kind;
+  return StyleFontUsage(aFrame, aFrame->Style(), aPresContext, aFont,
+                        aFamilyName);
 }
 
 
