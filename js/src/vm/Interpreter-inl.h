@@ -21,6 +21,7 @@
 #include "vm/Realm.h"
 #include "vm/StaticStrings.h"
 #include "vm/ThrowMsgKind.h"
+#include "vm/Watchtower.h"
 
 #include "vm/GlobalObject-inl.h"
 #include "vm/JSAtomUtils-inl.h"  
@@ -255,14 +256,25 @@ inline void InitGlobalLexicalOperation(
                 lexicalEnv == &cx->global()->lexicalEnvironment());
   MOZ_ASSERT(JSOp(*pc) == JSOp::InitGLexical);
 
-  mozilla::Maybe<PropertyInfo> prop =
-      lexicalEnv->lookup(cx, script->getName(pc));
+  PropertyName* name = script->getName(pc);
+  mozilla::Maybe<PropertyInfo> prop = lexicalEnv->lookup(cx, name);
   MOZ_ASSERT(prop.isSome());
-  MOZ_ASSERT(IsUninitializedLexical(lexicalEnv->getSlot(prop->slot())));
 
   
   
   
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(cx->hasDebuggerForcedLexicalInit)) {
+    if (!IsUninitializedLexical(lexicalEnv->getSlot(prop->slot()))) {
+      Watchtower::watchPropertyValueChange<AllowGC::NoGC>(
+          cx, lexicalEnv, NameToId(name), value, *prop);
+    }
+  } else {
+    MOZ_ASSERT(IsUninitializedLexical(lexicalEnv->getSlot(prop->slot())));
+  }
   lexicalEnv->setSlot(prop->slot(), value);
 }
 
