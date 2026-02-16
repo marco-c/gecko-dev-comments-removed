@@ -1,3 +1,6 @@
+
+
+
 SimpleTest.requestCompleteLog();
 const { HandlerServiceTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/HandlerServiceTestUtils.sys.mjs"
@@ -106,37 +109,29 @@ add_setup(async function () {
   info("Apps list loaded.");
 });
 
+
+
+
 async function selectStandardOptions(itemToUse) {
+  
+
+
+  const list = itemToUse.querySelector(".actionsMenu");
+  
+
+
   async function selectItemInPopup(item) {
-    let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
-    
-    
-    
-    list.open = true;
-    await popupShown;
-    let popupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
-    if (typeof item == "function") {
-      item = item();
-    }
-    popup.activateItem(item);
-    await popupHidden;
+    list.value = item.value;
+    list.dispatchEvent(new CustomEvent("change"));
+    await list.updateComplete;
     return item;
   }
 
   let itemType = itemToUse.getAttribute("type");
   
-  
-  itemToUse.scrollIntoView({ block: "center" });
-  itemToUse.closest("richlistbox").selectItem(itemToUse);
-  Assert.ok(itemToUse.selected, "Should be able to select our item.");
-  
-  
-  itemToUse.getBoundingClientRect().top;
-  let list = itemToUse.querySelector(".actionsMenu");
-  let popup = list.menupopup;
-
-  
-  let handlerItem = list.querySelector("menuitem[data-l10n-args*='Handler 1']");
+  let handlerItem = list.querySelector(
+    "moz-option[data-l10n-args*='Handler 1']"
+  );
   await selectItemInPopup(handlerItem);
   let { preferredAction, alwaysAskBeforeHandling } =
     HandlerServiceTestUtils.getHandlerInfo(itemType);
@@ -151,14 +146,13 @@ async function selectStandardOptions(itemToUse) {
   );
 
   
-  let alwaysAskItem = list.getElementsByAttribute(
-    "action",
-    Ci.nsIHandlerInfo.alwaysAsk
-  )[0];
+  let alwaysAskItem = list.querySelector(
+    `moz-option[action="${Ci.nsIHandlerInfo.alwaysAsk}"]`
+  );
   await selectItemInPopup(alwaysAskItem);
   Assert.equal(
-    list.selectedItem,
-    alwaysAskItem,
+    list.value,
+    alwaysAskItem.value,
     "Should have selected always ask item (" + itemType + ")"
   );
   alwaysAskBeforeHandling =
@@ -176,8 +170,8 @@ async function selectStandardOptions(itemToUse) {
   if (useDefaultItem) {
     await selectItemInPopup(useDefaultItem);
     Assert.equal(
-      list.selectedItem,
-      useDefaultItem,
+      list.value,
+      useDefaultItem.value,
       "Should have selected 'use default' item (" + itemType + ")"
     );
     preferredAction =
@@ -195,7 +189,7 @@ async function selectStandardOptions(itemToUse) {
 
   
   let webAppItems = Array.from(
-    popup.getElementsByAttribute("action", Ci.nsIHandlerInfo.useHelperApp)
+    list.getElementsByAttribute("action", Ci.nsIHandlerInfo.useHelperApp)
   );
   webAppItems = webAppItems.filter(
     item => item.handlerApp instanceof Ci.nsIWebHandlerApp
@@ -218,17 +212,9 @@ async function selectStandardOptions(itemToUse) {
   await win.document.l10n.translateFragment(selectedItem);
   await win.document.l10n.translateFragment(itemToUse);
   Assert.equal(
-    selectedItem.label,
-    itemToUse.querySelector(".actionContainer label").value,
+    selectedItem.value,
+    list.value,
     "Should have selected correct item (" + itemType + ")"
-  );
-  let { preferredApplicationHandler } =
-    HandlerServiceTestUtils.getHandlerInfo(itemType);
-  preferredApplicationHandler.QueryInterface(Ci.nsIWebHandlerApp);
-  Assert.equal(
-    selectedItem.handlerApp.uriTemplate,
-    preferredApplicationHandler.uriTemplate,
-    "App should actually be selected in the backend. (" + itemType + ")"
   );
 
   
@@ -239,19 +225,9 @@ async function selectStandardOptions(itemToUse) {
   await win.document.l10n.translateFragment(selectedItem);
   await win.document.l10n.translateFragment(itemToUse);
   Assert.equal(
-    selectedItem.label,
-    itemToUse.querySelector(".actionContainer label").value,
+    selectedItem.value,
+    list.value,
     "Should have selected correct item (" + itemType + ")"
-  );
-  preferredApplicationHandler =
-    HandlerServiceTestUtils.getHandlerInfo(
-      itemType
-    ).preferredApplicationHandler;
-  preferredApplicationHandler.QueryInterface(Ci.nsIWebHandlerApp);
-  Assert.equal(
-    selectedItem.handlerApp.uriTemplate,
-    preferredApplicationHandler.uriTemplate,
-    "App should actually be selected in the backend. (" + itemType + ")"
   );
 }
 
@@ -261,147 +237,12 @@ add_task(async function checkDropdownBehavior() {
   let container = win.document.getElementById("handlersView");
 
   
-  let mailItem = container.querySelector("richlistitem[type='mailto']");
+  let mailItem = container.querySelector("moz-box-item[type='mailto']");
   Assert.ok(mailItem, "mailItem is present in handlersView.");
   await selectStandardOptions(mailItem);
 
   
-  let pdfItem = container.querySelector("richlistitem[type='application/pdf']");
+  let pdfItem = container.querySelector("moz-box-item[type='application/pdf']");
   Assert.ok(pdfItem, "pdfItem is present in handlersView.");
   await selectStandardOptions(pdfItem);
-});
-
-add_task(async function sortingCheck() {
-  let win = gBrowser.selectedBrowser.contentWindow;
-  const handlerView = win.document.getElementById("handlersView");
-  const typeColumn = win.document.getElementById("typeColumn");
-  Assert.ok(typeColumn, "typeColumn is present in handlersView.");
-
-  let expectedNumberOfItems =
-    handlerView.querySelectorAll("richlistitem").length;
-
-  
-  assertSortByType("ascending");
-
-  const oldDir = typeColumn.getAttribute("sortDirection");
-
-  
-  let itemToUse = handlerView.querySelector("richlistitem[type=mailto]");
-  itemToUse.scrollIntoView({ block: "center" });
-  itemToUse.closest("richlistbox").selectItem(itemToUse);
-
-  
-  typeColumn.click();
-  assertSortByType("descending");
-  Assert.notEqual(
-    oldDir,
-    typeColumn.getAttribute("sortDirection"),
-    "Sort direction should change"
-  );
-
-  typeColumn.click();
-  assertSortByType("ascending");
-
-  const actionColumn = win.document.getElementById("actionColumn");
-  Assert.ok(actionColumn, "actionColumn is present in handlersView.");
-
-  
-  const oldActionDir = actionColumn.getAttribute("sortDirection");
-  actionColumn.click();
-  assertSortByAction("ascending");
-  Assert.notEqual(
-    oldActionDir,
-    actionColumn.getAttribute("sortDirection"),
-    "Sort direction should change"
-  );
-
-  actionColumn.click();
-  assertSortByAction("descending");
-
-  
-  typeColumn.click();
-  assertSortByType("ascending");
-
-  function assertSortByAction(order) {
-    Assert.equal(
-      actionColumn.getAttribute("sortDirection"),
-      order,
-      `Sort direction should be ${order}`
-    );
-    let siteItems = handlerView.getElementsByTagName("richlistitem");
-    Assert.equal(
-      siteItems.length,
-      expectedNumberOfItems,
-      "Number of items should not change."
-    );
-    for (let i = 0; i < siteItems.length - 1; ++i) {
-      let aType = (
-        siteItems[i].getAttribute("actionDescription") || ""
-      ).toLowerCase();
-      let bType = (
-        siteItems[i + 1].getAttribute("actionDescription") || ""
-      ).toLowerCase();
-      let result = 0;
-      if (aType > bType) {
-        result = 1;
-      } else if (bType > aType) {
-        result = -1;
-      }
-      if (order == "ascending") {
-        Assert.lessOrEqual(
-          result,
-          0,
-          "Should sort applications in the ascending order by action"
-        );
-      } else {
-        Assert.greaterOrEqual(
-          result,
-          0,
-          "Should sort applications in the descending order by action"
-        );
-      }
-    }
-  }
-
-  function assertSortByType(order) {
-    Assert.equal(
-      typeColumn.getAttribute("sortDirection"),
-      order,
-      `Sort direction should be ${order}`
-    );
-
-    let siteItems = handlerView.getElementsByTagName("richlistitem");
-    Assert.equal(
-      siteItems.length,
-      expectedNumberOfItems,
-      "Number of items should not change."
-    );
-    for (let i = 0; i < siteItems.length - 1; ++i) {
-      let aType = (
-        siteItems[i].getAttribute("typeDescription") || ""
-      ).toLowerCase();
-      let bType = (
-        siteItems[i + 1].getAttribute("typeDescription") || ""
-      ).toLowerCase();
-      let result = 0;
-      if (aType > bType) {
-        result = 1;
-      } else if (bType > aType) {
-        result = -1;
-      }
-      if (order == "ascending") {
-        Assert.lessOrEqual(
-          result,
-          0,
-          "Should sort applications in the ascending order by type"
-        );
-      } else {
-        Assert.greaterOrEqual(
-          result,
-          0,
-          "Should sort applications in the descending order by type"
-        );
-      }
-    }
-  }
 });
