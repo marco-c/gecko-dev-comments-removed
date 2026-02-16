@@ -322,6 +322,21 @@ bool StructuredCloneHolderBase::Read(
   return ok;
 }
 
+void StructuredCloneHolderBase::Adopt(JSStructuredCloneData&& aData) {
+  MOZ_ASSERT(!mBuffer, "Double Adopt is not allowed");
+  MOZ_ASSERT(!mClearCalled, "This method cannot be called after Clear.");
+
+  mBuffer = MakeUnique<JSAutoStructuredCloneBuffer>(
+      mStructuredCloneScope, &StructuredCloneHolder::sCallbacks, this);
+  mBuffer->adopt(std::move(aData), JS_STRUCTURED_CLONE_VERSION,
+                 &StructuredCloneHolder::sCallbacks, this);
+
+  
+  
+  MOZ_ASSERT(mStructuredCloneScope >= mBuffer->scope());
+  mStructuredCloneScope = mBuffer->scope();
+}
+
 bool StructuredCloneHolderBase::CustomReadTransferHandler(
     JSContext* aCx, JSStructuredCloneReader* aReader,
     const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t aTag, void* aContent,
