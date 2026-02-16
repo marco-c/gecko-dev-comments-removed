@@ -232,6 +232,29 @@ class ScreenshotTest : BaseSessionTest() {
 
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
+    fun capturePixelsBeforeAndAfterCompositorPausedRestarted() {
+        sessionRule.display?.let {
+            val result1 = it.capturePixels()
+            val texture = SurfaceTexture(0)
+            it.surfaceDestroyed()
+
+            val result2 = it.capturePixels()
+            texture.setDefaultBufferSize(SCREEN_WIDTH, SCREEN_HEIGHT / 2)
+            val surface = Surface(texture)
+            it.surfaceChanged(SurfaceInfo.Builder(surface).size(SCREEN_WIDTH, SCREEN_HEIGHT / 2).build())
+
+            
+            
+            try {
+                sessionRule.waitForResult(result1)
+            } catch (e: IllegalStateException) {
+            }
+            sessionRule.waitForResult(result2)
+        }
+    }
+
+    @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
+    @Test
     fun capturePixelsWhileSessionDeactivated() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
