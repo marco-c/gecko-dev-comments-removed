@@ -25,6 +25,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     
     keywords="mozilla manifests",
@@ -39,5 +40,5 @@ setup(
       [console_scripts]
       manifestparser = manifestparser.cli:main
       """,
-    python_requires=">=3.8, <3.13",
+    python_requires=">=3.8",
 )
