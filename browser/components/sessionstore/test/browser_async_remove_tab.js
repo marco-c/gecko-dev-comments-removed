@@ -82,6 +82,17 @@ add_task(async function save_worthy_tabs_remote_final() {
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
+  
+  await TabStateFlusher.flush(browser);
+  let state = JSON.parse(ss.getTabState(tab));
+  is(state.entries.length, 1, "Should have one SH entry");
+  is(state.entries[0].url, "about:blank", "Should be about:blank SH entry");
+  ok(
+    state.entries[0].transient,
+    "Initial about:blank SH entry should be marked for replacement"
+  );
+
+  
   let entryReplaced = promiseOnHistoryReplaceEntry(browser);
   browser.loadURI(Services.io.newURI("https://example.com/"), {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
