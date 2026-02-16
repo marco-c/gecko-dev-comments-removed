@@ -305,9 +305,15 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                 
                 
                 
-                if (idx == 0 || aMapping[idx - 1].mTimecode <= absTimecode ||
-                    (idx + 1 < aMapping.Length() &&
-                     aMapping[idx + 1].mTimecode >= absTimecode)) {
+                
+                
+                
+                
+                
+                
+                if ((idx == 0 || aMapping[idx - 1].mTimecode <= absTimecode) &&
+                    (idx == aMapping.Length() ||
+                     aMapping[idx].mTimecode >= absTimecode)) {
                   WebMTimeDataOffset entry(endOffset, absTimecode,
                                            mLastInitStartOffset, mClusterOffset,
                                            mClusterEndOffset);
