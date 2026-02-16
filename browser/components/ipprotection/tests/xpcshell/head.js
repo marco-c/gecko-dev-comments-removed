@@ -13,7 +13,7 @@ const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs"
 );
-const { ProxyPass } = ChromeUtils.importESModule(
+const { ProxyPass, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
@@ -61,17 +61,14 @@ async function putServerInRemoteSettings(
 }
 
 
+
 function setupStubs(
   sandbox,
   options = {
     signedIn: true,
     isLinkedToGuardian: true,
     validProxyPass: true,
-    entitlement: {
-      subscribed: false,
-      uid: 42,
-      created_at: "2023-01-01T12:00:00.000Z",
-    },
+    entitlement: createTestEntitlement(),
   }
 ) {
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
@@ -132,5 +129,26 @@ function createExpiredProxyPassToken() {
     Temporal.Now.instant().subtract({ hours: 2 }),
     Temporal.Now.instant().subtract({ hours: 1 })
   );
+}
+
+
+
+
+
+
+
+
+function createTestEntitlement(overrides = {}) {
+  return new Entitlement({
+    autostart: false,
+    created_at: "2023-01-01T12:00:00.000Z",
+    limited_bandwidth: false,
+    location_controls: false,
+    subscribed: false,
+    uid: 42,
+    website_inclusion: false,
+    maxBytes: "0",
+    ...overrides,
+  });
 }
 
