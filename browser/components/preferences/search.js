@@ -572,9 +572,146 @@ Preferences.addSetting({
   id: "dismissedSuggestionsDescription",
 });
 
+
+
+
+
+let searchEngineUpdateNotifier;
+Preferences.addSetting(
+   ({
+    id: "updateSearchEngineSuccess",
+    _engineUpdateTriggered: false,
+    _emitChange: null,
+    setup(emitChange) {
+      this._emitChange = emitChange;
+      searchEngineUpdateNotifier = () => {
+        this._engineUpdateTriggered = true;
+        emitChange();
+      };
+      return () => {
+        searchEngineUpdateNotifier = null;
+        this._emitChange = null;
+      };
+    },
+    onMessageBarDismiss(e) {
+      e.preventDefault();
+      this._engineUpdateTriggered = false;
+      this._emitChange?.();
+    },
+    visible() {
+      return this._engineUpdateTriggered;
+    },
+  })
+);
+
+
+
+
+
+
+
+
+function EngineListItemSetting(settingId, engine) {
+  return class extends Preferences.AsyncSetting {
+    static id = settingId;
+
+    setup() {
+      
+      let onTargetEngineChanged = (subject, _topic, data) => {
+        if (
+          (data == lazy.SearchUtils.MODIFIED_TYPE.CHANGED ||
+            data == lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED) &&
+          subject.wrappedJSObject == engine
+        ) {
+          this.emitChange();
+        }
+      };
+
+      Services.obs.addObserver(
+        onTargetEngineChanged,
+        lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+      );
+      return () =>
+        Services.obs.removeObserver(
+          onTargetEngineChanged,
+          lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+        );
+    }
+
+    async getControlConfig() {
+      return {
+        iconSrc: await engine.getIconURL(),
+        controlAttrs: {
+          label: engine.name,
+          description: engine.aliases.join(", "),
+          layout: "medium-icon",
+        },
+      };
+    }
+  };
+}
+
 Preferences.addSetting({
   id: "addEngineButton",
+  onUserClick() {
+    gSubDialog.open(
+      "chrome://browser/content/search/addEngine.xhtml",
+      { features: "resizable=no, modal=yes" },
+      { mode: "NEW" }
+    );
+  },
 });
+
+
+
+
+function maybeMakeSetting(config) {
+  if (!Preferences.getSetting(config.id)) {
+    Preferences.addSetting(config);
+  }
+}
+
+
+
+
+
+
+
+
+
+function ToggleSetting(toggleId, engine) {
+  return {
+    id: toggleId,
+    setup(emitChange) {
+      
+      let onTargetEngineChanged = (subject, _topic, data) => {
+        if (
+          (data == lazy.SearchUtils.MODIFIED_TYPE.CHANGED ||
+            data == lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED) &&
+          subject.wrappedJSObject == engine
+        ) {
+          emitChange();
+        }
+      };
+
+      Services.obs.addObserver(
+        onTargetEngineChanged,
+        lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+      );
+      return () =>
+        Services.obs.removeObserver(
+          onTargetEngineChanged,
+          lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+        );
+    },
+    get() {
+      return !engine.hidden;
+    },
+    onUserChange() {
+      engine.hidden = !engine.hidden;
+    },
+  };
+}
 
 Preferences.addSetting(
   class extends Preferences.AsyncSetting {
@@ -654,15 +791,7 @@ Preferences.addSetting(
       let deletionOptions;
       if (engine.isConfigEngine) {
         let toggleId = `toggleEngine-${engine.id}`;
-        Preferences.addSetting({
-          id: toggleId,
-          get() {
-            return !engine.hidden;
-          },
-          onUserChange() {
-            engine.hidden = !engine.hidden;
-          },
-        });
+        maybeMakeSetting(ToggleSetting(toggleId, engine));
 
         deletionOptions = {
           id: toggleId,
@@ -671,7 +800,7 @@ Preferences.addSetting(
         };
       } else {
         let deletionId = `deleteEngine-${engine.id}`;
-        Preferences.addSetting({
+        maybeMakeSetting({
           id: deletionId,
           async onUserClick() {
             let [body, removeLabel] = await document.l10n.formatValues([
@@ -707,9 +836,7 @@ Preferences.addSetting(
         deletionOptions = {
           id: deletionId,
           control: "moz-button",
-          controlAttrs: {
-            iconsrc: "chrome://global/skin/icons/delete.svg",
-          },
+          iconSrc: "chrome://global/skin/icons/delete.svg",
           slot: "actions",
         };
       }
@@ -725,41 +852,41 @@ Preferences.addSetting(
       
       let configs = [];
       for (let engine of await lazy.SearchService.getEngines()) {
-        let setting = {
-          get id() {
-            return `engineList-${engine.id}`;
-          },
-        };
-        Preferences.addSetting(setting);
-
-        
-        let config = {
-          id: setting.id,
-          control: "moz-box-item",
-          controlAttrs: {
-            label: engine.name,
-            description: engine.aliases.join(", "),
-            layout: "medium-icon",
-            iconsrc: await engine.getIconURL(),
-          },
-        };
-
+        let settingId = `engineList-${engine.id}`;
         let editId = `editEngine-${engine.id}`;
-        Preferences.addSetting({
+
+        maybeMakeSetting(EngineListItemSetting(settingId, engine));
+        maybeMakeSetting({
           id: editId,
           onUserClick() {
-            
+            gSubDialog.open(
+              "chrome://browser/content/search/addEngine.xhtml",
+              {
+                features: "resizable=no, modal=yes",
+                closingCallback: event => {
+                  if (event.detail.button == "accept") {
+                    searchEngineUpdateNotifier?.();
+                  }
+                },
+              },
+              { engine, mode: "EDIT" }
+            );
           },
         });
 
-        config.items = [
-          {
-            id: editId,
-            control: "moz-button",
-            iconSrc: "chrome://global/skin/icons/edit-outline.svg",
-            slot: "actions",
-          },
-        ];
+        
+        let config = {
+          id: settingId,
+          control: "moz-box-item",
+          items: [
+            {
+              id: editId,
+              control: "moz-button",
+              iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+              slot: "actions",
+            },
+          ],
+        };
 
         
         
@@ -784,7 +911,7 @@ Preferences.addSetting(
       let configs = [];
       for (let searchMode of lazy.UrlbarUtils.LOCAL_SEARCH_MODES) {
         let id = `searchmode-${searchMode.telemetryLabel}`;
-        Preferences.addSetting({ id });
+        maybeMakeSetting({ id });
 
         
         
@@ -800,11 +927,11 @@ Preferences.addSetting(
           id,
           control: "moz-box-item",
           slot: "static",
+          iconSrc: searchMode.icon,
           controlAttrs: {
             label: l10nNames.get(searchMode.source)[0],
             description: keywords,
             layout: "medium-icon",
-            iconsrc: searchMode.icon,
           },
         });
       }
