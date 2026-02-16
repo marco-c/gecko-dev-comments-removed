@@ -40,7 +40,7 @@ LOGIN_QUERY = """query {
 
 MANIFEST_QUERY = """query {
   repository(owner:"%(owner)s", name:"%(repo)s") {
-    object(expression: "master:%(file)s") {
+    object(expression: "HEAD:%(file)s") {
       ... on Blob {
         text
       }
