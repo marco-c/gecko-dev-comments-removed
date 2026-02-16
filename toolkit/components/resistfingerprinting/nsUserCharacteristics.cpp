@@ -550,6 +550,33 @@ already_AddRefed<PopulatePromise> PopulateFingerprintedFonts() {
       glean::characteristics::fonts_variant_h_nonallowlisted.Set(
           emojisNonAllowlisted);
     }
+
+    
+    nsAutoString textVariantIEmojis;
+    for (auto emoji : variantIEmojis) {
+      AppendUCS4ToUTF16(emoji, textVariantIEmojis);
+    }
+
+    nsTArray<nsCString> variantIFontList;
+    for (size_t i = 0; variantI_FontList[i] != nullptr; ++i) {
+      variantIFontList.AppendElement(nsCString(variantI_FontList[i]));
+    }
+
+    nsTArray<nsCString> variantIAllowlisted;
+    pfl->ListFontsUsedForString(textVariantIEmojis, variantIFontList,
+                                variantIAllowlisted, FontVisibility::LangPack);
+    nsTArray<nsCString> variantINonAllowlisted;
+    pfl->ListFontsUsedForString(textVariantIEmojis, variantIFontList,
+                                variantINonAllowlisted, FontVisibility::User);
+
+    nsCString iAllowlisted, iNonAllowlisted;
+    if (NS_SUCCEEDED(HashFontList(variantIAllowlisted, iAllowlisted))) {
+      glean::characteristics::fonts_variant_i_allowlisted.Set(iAllowlisted);
+    }
+    if (NS_SUCCEEDED(HashFontList(variantINonAllowlisted, iNonAllowlisted))) {
+      glean::characteristics::fonts_variant_i_nonallowlisted.Set(
+          iNonAllowlisted);
+    }
   }
 
   populatePromise->Resolve(void_t(), __func__);
@@ -1096,7 +1123,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 30;
+const int kSubmissionSchema = 31;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
