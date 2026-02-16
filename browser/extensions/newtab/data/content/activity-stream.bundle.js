@@ -5086,37 +5086,6 @@ const CollapsibleSection = (0,external_ReactRedux_namespaceObject.connect)(state
 
 
 
-
-class DSMessage extends (external_React_default()).PureComponent {
-  render() {
-    return external_React_default().createElement("div", {
-      className: "ds-message"
-    }, external_React_default().createElement("header", {
-      className: "title"
-    }, this.props.icon && external_React_default().createElement("div", {
-      className: "glyph",
-      style: {
-        backgroundImage: `url(${this.props.icon})`
-      }
-    }), this.props.title && external_React_default().createElement("span", {
-      className: "title-text"
-    }, external_React_default().createElement(FluentOrText, {
-      message: this.props.title
-    })), this.props.link_text && this.props.link_url && external_React_default().createElement(SafeAnchor, {
-      className: "link",
-      url: this.props.link_url
-    }, external_React_default().createElement(FluentOrText, {
-      message: this.props.link_text
-    }))));
-  }
-}
-;
-
-
-
-
-
-
 const ReportContent = spocs => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const modal = (0,external_React_namespaceObject.useRef)(null);
@@ -13584,7 +13553,6 @@ function Widgets() {
 
 
 
-
 const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
 const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
 
@@ -13666,14 +13634,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           isFixed: true,
           title: component.header?.title
         }));
-      case "Message":
-        return external_React_default().createElement(DSMessage, {
-          title: component.header && component.header.title,
-          subtitle: component.header && component.header.subtitle,
-          link_text: component.header && component.header.link_text,
-          link_url: component.header && component.header.link_url,
-          icon: component.header && component.header.icon
-        });
       case "SectionTitle":
         return external_React_default().createElement(SectionTitle, {
           header: component.header
@@ -13765,17 +13725,9 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       locale
     });
     const sectionsEnabled = this.props.Prefs.values["discoverystream.sections.enabled"];
-    const {
-      config
-    } = this.props.DiscoveryStream;
     const topicSelectionEnabled = this.props.Prefs.values["discoverystream.topicSelection.enabled"];
     const reportAdsEnabled = this.props.Prefs.values["discoverystream.reportAds.enabled"];
     const spocsEnabled = this.props.Prefs.values["unifiedAds.spocs.enabled"];
-
-    
-    if (!config.collapsible) {
-      return this.renderLayout(layoutRender);
-    }
 
     
     const extractComponent = type => {
