@@ -641,6 +641,7 @@ async function populateMediaCapabilities() {
 async function populateAudioFingerprint() {
   
   
+  
   const hashFromIndex = 4500;
   const hashToIndex = 5000;
   const context = new window.OfflineAudioContext(1, hashToIndex, 44100);
@@ -656,7 +657,12 @@ async function populateAudioFingerprint() {
   compressor.attack.value = 0;
   compressor.release.value = 0.25;
 
+  
+  const analyser = context.createAnalyser();
+
+  
   oscillator.connect(compressor);
+  compressor.connect(analyser);
   compressor.connect(context.destination);
   oscillator.start(0);
 
@@ -668,6 +674,60 @@ async function populateAudioFingerprint() {
         return "TIMEOUT";
       }
       throw error;
+    }
+  );
+
+  
+  const detailedMetricsPromise = renderPromise.then(
+    buffer => {
+      const bins = buffer.getChannelData(0);
+
+      
+      const compressorGainReduction = String(
+        compressor.reduction?.value ?? compressor.reduction ?? 0
+      );
+
+      
+      const floatFrequencyData = new Float32Array(analyser.frequencyBinCount);
+      analyser.getFloatFrequencyData(floatFrequencyData);
+      const floatFrequencySum = String(
+        [...floatFrequencyData].reduce((acc, n) => acc + Math.abs(n), 0)
+      );
+
+      
+      let floatTimeDomainSum = "0";
+      if ("getFloatTimeDomainData" in analyser) {
+        const floatTimeDomainData = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(floatTimeDomainData);
+        floatTimeDomainSum = String(
+          [...floatTimeDomainData].reduce((acc, n) => acc + Math.abs(n), 0)
+        );
+      }
+
+      
+      const sampleSnapshot = [...bins].slice(4500, 4600);
+      const sampleHash = hashAudioSamples(sampleSnapshot);
+
+      
+      const uniqueSamples = new Set(bins).size;
+
+      return {
+        audioCompressorGainReduction: compressorGainReduction,
+        audioFloatFrequencySum: floatFrequencySum,
+        audioFloatTimeDomainSum: floatTimeDomainSum,
+        audioFingerprint2: sampleHash,
+        audioUniqueSamples: uniqueSamples,
+      };
+    },
+    _error => {
+      
+      return {
+        audioCompressorGainReduction: "0",
+        audioFloatFrequencySum: "0",
+        audioFloatTimeDomainSum: "0",
+        audioFingerprint2: "00000000",
+        audioUniqueSamples: 0,
+      };
     }
   );
 
@@ -761,11 +821,27 @@ async function populateAudioFingerprint() {
     return hash * 10e13;
   }
 
+  function hashAudioSamples(samples) {
+    
+    const sum = samples.reduce((acc, n) => acc + Math.abs(n), 0);
+    const hash = Math.floor(sum * 1000000)
+      .toString(16)
+      .substring(0, 8);
+    return hash;
+  }
+
   finishRendering();
 
-  return {
-    audioFingerprint: fingerprintPromise,
-  };
+  
+  const combinedPromise = Promise.all([
+    fingerprintPromise,
+    detailedMetricsPromise,
+  ]).then(([fingerprint, detailedMetrics]) => ({
+    audioFingerprint: fingerprint,
+    ...detailedMetrics,
+  }));
+
+  return combinedPromise;
 }
 
 async function populateCSSQueries() {
