@@ -452,6 +452,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
   static const uint32_t LATIN1_CHARS_BIT = js::Bit(10);
 
+  
   static const uint32_t INDEX_VALUE_BIT = js::Bit(11);
   static const uint32_t INDEX_VALUE_SHIFT = 16;
 
@@ -489,6 +490,28 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const uint32_t PINNED_ATOM_BIT = js::Bit(15);
   static const uint32_t PERMANENT_ATOM_MASK =
       ATOM_BIT | PINNED_ATOM_BIT | ATOM_IS_PERMANENT_BIT;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const uint32_t PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE =
+      DEPENDED_ON_BIT | IN_STRING_TO_ATOM_CACHE | INDEX_VALUE_BIT |
+      ~uint32_t(0) << INDEX_VALUE_SHIFT;
+  static const uint32_t PRESERVE_ROPE_BITS_ON_REPLACE = IN_STRING_TO_ATOM_CACHE;
 
   static const uint32_t MAX_LENGTH = JS::MaxStringLength;
 

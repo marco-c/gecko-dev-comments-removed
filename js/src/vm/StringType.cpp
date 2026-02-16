@@ -1202,8 +1202,9 @@ finish_node: {
 
   
   
-  str->changeStringType(str->length(),
-                        StringFlagsForCharType<CharT>(INIT_DEPENDENT_FLAGS));
+  uint32_t flags = INIT_DEPENDENT_FLAGS;
+  flags |= str->flags() & PRESERVE_ROPE_BITS_ON_REPLACE;
+  str->changeStringType(str->length(), StringFlagsForCharType<CharT>(flags));
   str->d.s.u3.base =
       reinterpret_cast<JSLinearString*>(root); 
   newRootFlags |= DEPENDED_ON_BIT;
@@ -1235,6 +1236,7 @@ finish_root:
 
   
   uint32_t flags = StringFlagsForCharType<CharT>(EXTENSIBLE_FLAGS);
+  flags |= root->flags() & PRESERVE_ROPE_BITS_ON_REPLACE;
   if (hasStringBuffer) {
     flags |= HAS_STRING_BUFFER_BIT;
     wholeChars[wholeLength] = '\0';
@@ -1259,16 +1261,7 @@ finish_root:
 
     
     uint32_t flags = INIT_DEPENDENT_FLAGS;
-    if (left.inStringToAtomCache()) {
-      flags |= IN_STRING_TO_ATOM_CACHE;
-    }
-    
-    
-    
-    
-    if (left.isDependedOn()) {
-      flags |= DEPENDED_ON_BIT;
-    }
+    flags |= left.flags() & PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE;
     left.changeStringType(left.length(), StringFlagsForCharType<CharT>(flags));
     left.d.s.u3.base = &root->asLinear();
     if (left.isTenured() && !root->isTenured()) {
@@ -2926,6 +2919,8 @@ bool JSString::tryReplaceWithAtomRef(JSAtom* atom) {
 
   
   uint32_t flags = INIT_ATOM_REF_FLAGS;
+  flags |= this->flags() & (isRope() ? PRESERVE_ROPE_BITS_ON_REPLACE
+                                     : PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE);
   d.s.u3.atom = atom;
   if (atom->hasLatin1Chars()) {
     flags |= LATIN1_CHARS_BIT;

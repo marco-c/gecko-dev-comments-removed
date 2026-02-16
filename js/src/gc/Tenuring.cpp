@@ -705,7 +705,14 @@ void JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
   js_memcpy(data, chars, nbytes);
 
   
+  
+  
+  uint32_t saved_flags = str->flags() & PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE;
+
+  
   new (str) JSLinearString(data, len, false );
+  MOZ_ASSERT((str->flags() & PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE) == 0);
+  str->setHeaderLengthAndFlags(len, str->flags() | saved_flags);
   if (str->isTenured()) {
     str->zone()->addCellMemory(str, nbytes, js::MemoryUse::StringContents);
   } else {
