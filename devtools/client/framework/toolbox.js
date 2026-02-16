@@ -332,6 +332,7 @@ class Toolbox extends EventEmitter {
     this.enableAccentedPseudoLocale = () => this.changePseudoLocale("accented");
     this.enableBidiPseudoLocale = () => this.changePseudoLocale("bidi");
     this._updateFrames = this._updateFrames.bind(this);
+    this._onKeydown = this._onKeydown.bind(this);
     this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
     this.closeToolbox = this.closeToolbox.bind(this);
     this.destroy = this.destroy.bind(this);
@@ -1218,6 +1219,13 @@ class Toolbox extends EventEmitter {
     this._addShortcuts();
     this._addWindowHostShortcuts();
 
+    
+    
+    
+    
+    
+    
+    this._chromeEventHandler.addEventListener("keydown", this._onKeydown);
     this._chromeEventHandler.addEventListener(
       "keypress",
       this._splitConsoleOnKeypress
@@ -1245,6 +1253,7 @@ class Toolbox extends EventEmitter {
       "keypress",
       this._splitConsoleOnKeypress
     );
+    this._chromeEventHandler.removeEventListener("keydown", this._onKeydown);
     this._chromeEventHandler.removeEventListener("focus", this._onFocus, true);
     this._chromeEventHandler.removeEventListener("focus", this._onBlur, true);
     this._chromeEventHandler.removeEventListener(
@@ -1768,8 +1777,8 @@ class Toolbox extends EventEmitter {
     return button;
   }
 
-  _splitConsoleOnKeypress(e) {
-    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE || !this.isSplitConsoleEnabled()) {
+  _onKeydown(e) {
+    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE) {
       return;
     }
 
@@ -1781,8 +1790,15 @@ class Toolbox extends EventEmitter {
       const ac = new this.win.AbortController();
       currentPanel.onToolboxChromeEventHandlerEscapeKeyDown(ac);
       if (ac.signal.aborted) {
-        return;
+        
+        e.preventDefault();
       }
+    }
+  }
+
+  _splitConsoleOnKeypress(e) {
+    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE || !this.isSplitConsoleEnabled()) {
+      return;
     }
 
     this.toggleSplitConsole();
