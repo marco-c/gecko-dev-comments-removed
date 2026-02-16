@@ -82,6 +82,51 @@ class nsFontMetrics final {
   
 
 
+  nscoord AlphabeticBaseline() const;
+
+  
+
+
+  nscoord CentralBaseline() const;
+
+  
+
+
+  nscoord XMiddleBaseline() const;
+
+  
+
+
+  nscoord IdeographicUnderBaseline() const;
+
+  
+
+
+  nscoord IdeographicOverBaseline() const;
+
+  
+
+
+  nscoord IdeographicInkUnderBaseline() const;
+
+  
+
+
+  nscoord IdeographicInkOverBaseline() const;
+
+  
+
+
+  nscoord HangingBaseline() const;
+
+  
+
+
+  nscoord MathBaseline() const;
+
+  
+
+
   nscoord XHeight() const;
 
   

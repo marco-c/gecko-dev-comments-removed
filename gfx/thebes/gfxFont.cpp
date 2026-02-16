@@ -997,6 +997,8 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
     mAntialiasOption = kAntialiasNone;
   }
 
+  InitBaselines(mHorizontalBaselines, nsFontMetrics::eHorizontal);
+
   mKerningSet = HasFeatureSet(HB_TAG('k', 'e', 'r', 'n'), mKerningEnabled);
 
   
@@ -1009,6 +1011,7 @@ gfxFont::~gfxFont() {
 
   
   
+  delete mVerticalBaselines.exchange(nullptr);
   delete mVerticalMetrics.exchange(nullptr);
   delete mHarfBuzzShaper.exchange(nullptr);
   delete mGraphiteShaper.exchange(nullptr);
@@ -4424,69 +4427,58 @@ void gfxFont::SanitizeMetrics(gfxFont::Metrics* aMetrics,
   }
 }
 
-gfxFont::Baselines gfxFont::GetBaselines(Orientation aOrientation) {
+void gfxFont::InitBaselines(Baselines& aBaselines, Orientation aOrientation) {
   
   
-  const double kHangingBaselineDefault = 0.8;       
-  const double kIdeographicBaselineDefault = -0.5;  
-
   
-  if (!mFontEntry->HasFontTable(TRUETYPE_TAG('B', 'A', 'S', 'E'))) {
-    
-    const Metrics& metrics = GetMetrics(aOrientation);
-    return Baselines{
-        0.0,                                             
-        kHangingBaselineDefault * metrics.emAscent,      
-        kIdeographicBaselineDefault * metrics.emDescent  
-    };
-  }
-
-  
-  Baselines result{NAN, NAN, NAN};
   hb_font_t* hbFont = gfxHarfBuzzShaper::CreateHBFont(this);
   hb_direction_t hbDir = aOrientation == nsFontMetrics::eHorizontal
                              ? HB_DIRECTION_LTR
                              : HB_DIRECTION_TTB;
   hb_position_t position;
-  unsigned count = 0;
   auto Fix2Float = [](hb_position_t f) -> gfxFloat { return f / 65536.0; };
-  if (hb_ot_layout_get_baseline(hbFont, HB_OT_LAYOUT_BASELINE_TAG_ROMAN, hbDir,
-                                HB_OT_TAG_DEFAULT_SCRIPT,
-                                HB_OT_TAG_DEFAULT_LANGUAGE, &position)) {
-    result.mAlphabetic = Fix2Float(position);
-    count++;
-  }
-  if (hb_ot_layout_get_baseline(hbFont, HB_OT_LAYOUT_BASELINE_TAG_HANGING,
-                                hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
-                                HB_OT_TAG_DEFAULT_LANGUAGE, &position)) {
-    result.mHanging = Fix2Float(position);
-    count++;
-  }
-  if (hb_ot_layout_get_baseline(
-          hbFont, HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_BOTTOM_OR_LEFT, hbDir,
-          HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position)) {
-    result.mIdeographic = Fix2Float(position);
-    count++;
-  }
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_ROMAN, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
+      HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mAlphabetic = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_HANGING, hbDir,
+      HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mHanging = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_BOTTOM_OR_LEFT, hbDir,
+      HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mIdeographicUnder = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_TOP_OR_RIGHT, hbDir,
+      HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mIdeographicOver = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_BOTTOM_OR_LEFT, hbDir,
+      HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mIdeographicInkUnder = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_TOP_OR_RIGHT, hbDir,
+      HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mIdeographicInkOver = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_CENTRAL, hbDir,
+      HB_OT_TAG_DEFAULT_SCRIPT, HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mCentral = Fix2Float(position);
+
+  hb_ot_layout_get_baseline_with_fallback(
+      hbFont, HB_OT_LAYOUT_BASELINE_TAG_MATH, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
+      HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+  aBaselines.mMath = Fix2Float(position);
+
   hb_font_destroy(hbFont);
-  
-  if (count == 3) {
-    return result;
-  }
-
-  
-  const Metrics& metrics = GetMetrics(aOrientation);
-  if (std::isnan(result.mAlphabetic)) {
-    result.mAlphabetic = 0.0;
-  }
-  if (std::isnan(result.mHanging)) {
-    result.mHanging = kHangingBaselineDefault * metrics.emAscent;
-  }
-  if (std::isnan(result.mIdeographic)) {
-    result.mIdeographic = kIdeographicBaselineDefault * metrics.emDescent;
-  }
-
-  return result;
 }
 
 
@@ -4683,6 +4675,15 @@ void gfxFont::CreateVerticalMetrics() {
 
   if (!mVerticalMetrics.compareExchange(nullptr, metrics)) {
     delete metrics;
+  }
+}
+
+void gfxFont::CreateVerticalBaselines() {
+  auto* baselines = new Baselines();
+  InitBaselines(*baselines, nsFontMetrics::eVertical);
+
+  if (!mVerticalBaselines.compareExchange(nullptr, baselines)) {
+    delete baselines;
   }
 }
 
