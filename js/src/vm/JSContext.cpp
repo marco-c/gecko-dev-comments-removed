@@ -867,7 +867,6 @@ void InternalJobQueue::runJobs(JSContext* cx) {
     JS::Rooted<JS::JSMicroTask*> job(cx);
     JS::Rooted<JS::GenericMicroTask> dequeueJob(cx);
     while (JS::HasAnyMicroTasks(cx)) {
-      MOZ_ASSERT(queue.empty());
       
       
       if (interrupted_) {
@@ -928,53 +927,34 @@ void InternalJobQueue::runJobs(JSContext* cx) {
   }
 }
 
-JSObject* InternalJobQueue::maybeFront() const {
-  if (queue.empty()) {
-    return nullptr;
-  }
-
-  return queue.get().front();
-}
-
 class js::InternalJobQueue::SavedQueue : public JobQueue::SavedJobQueue {
  public:
-  SavedQueue(JSContext* cx, Queue&& saved, MicroTaskQueueSet&& queueSet,
-             bool draining)
-      : cx(cx),
-        saved(cx, std::move(saved)),
-        savedQueues(cx, std::move(queueSet)),
-        draining_(draining) {
+  SavedQueue(JSContext* cx, MicroTaskQueueSet&& queueSet, bool draining)
+      : cx(cx), savedQueues(cx, std::move(queueSet)), draining_(draining) {
     MOZ_ASSERT(cx->internalJobQueue.ref());
-    MOZ_ASSERT(saved.empty());
   }
 
   ~SavedQueue() {
     MOZ_ASSERT(cx->internalJobQueue.ref());
-    cx->internalJobQueue->queue = std::move(saved.get());
     cx->internalJobQueue->draining_ = draining_;
     *cx->microTaskQueues.get() = std::move(savedQueues.get());
   }
 
  private:
   JSContext* cx;
-  PersistentRooted<Queue> saved;
   PersistentRooted<MicroTaskQueueSet> savedQueues;
   bool draining_;
 };
 
 js::UniquePtr<JS::JobQueue::SavedJobQueue> InternalJobQueue::saveJobQueue(
     JSContext* cx) {
-  auto saved = js::MakeUnique<SavedQueue>(
-      cx, std::move(queue.get()), std::move(*cx->microTaskQueues), draining_);
+  auto saved = js::MakeUnique<SavedQueue>(cx, std::move(*cx->microTaskQueues),
+                                          draining_);
   if (!saved) {
-    
-    
-    
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  queue = Queue(SystemAllocPolicy());
   draining_ = false;
   return saved;
 }
