@@ -20,7 +20,6 @@ const RegisteredPropertyEditor = require("resource://devtools/client/inspector/r
 const TooltipsOverlay = require("resource://devtools/client/inspector/shared/tooltips-overlay.js");
 const {
   createChild,
-  promiseWarn,
 } = require("resource://devtools/client/inspector/shared/utils.js");
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
@@ -1099,10 +1098,10 @@ class CssRuleView extends EventEmitter {
 
 
 
-  selectElement(element, allowRefresh = false) {
+  async selectElement(element, allowRefresh = false) {
     const refresh = this.viewedElement === element;
     if (refresh && !allowRefresh) {
-      return Promise.resolve(undefined);
+      return;
     }
 
     if (this.#popup && this.#popup.isOpen) {
@@ -1124,7 +1123,7 @@ class CssRuleView extends EventEmitter {
         this.pageStyle.off("stylesheet-updated", this.refreshPanel);
         this.pageStyle = null;
       }
-      return Promise.resolve(undefined);
+      return;
     }
 
     const isProfilerActive = Services.profiler?.IsActive();
@@ -1136,17 +1135,18 @@ class CssRuleView extends EventEmitter {
     
     
     
-    const dummyElementPromise = Promise.resolve(this.styleDocument)
-      .then(document => {
-        
-        const namespaceURI =
-          this.element.namespaceURI || document.documentElement.namespaceURI;
-        this.#dummyElement = document.createElementNS(
-          namespaceURI,
-          this.element.tagName
-        );
-      })
-      .catch(promiseWarn);
+    try {
+      
+      const namespaceURI =
+        this.element.namespaceURI ||
+        this.styleDocument.documentElement.namespaceURI;
+      this.#dummyElement = this.styleDocument.createElementNS(
+        namespaceURI,
+        this.element.tagName
+      );
+    } catch (e) {
+      console.error("Error while creating dummy element", e);
+    }
 
     const elementStyle = new ElementStyle(
       element,
@@ -1159,51 +1159,48 @@ class CssRuleView extends EventEmitter {
 
     this.#startSelectingElement();
 
-    return dummyElementPromise
-      .then(() => {
-        if (this.elementStyle === elementStyle) {
-          return this.#populate();
+    try {
+      
+      await Promise.resolve(null);
+
+      await this.#populate();
+      if (this.elementStyle !== elementStyle) {
+        return;
+      }
+      if (!refresh) {
+        this.element.scrollTop = 0;
+      }
+      this.#stopSelectingElement();
+      this.elementStyle.onChanged = () => {
+        this.#onElementStyleChanged();
+      };
+      if (isProfilerActive && this.elementStyle.rules) {
+        let declarations = 0;
+        for (const rule of this.elementStyle.rules) {
+          declarations += rule.textProps.length;
         }
-        return undefined;
-      })
-      .then(() => {
-        if (this.elementStyle === elementStyle) {
-          if (!refresh) {
-            this.element.scrollTop = 0;
-          }
-          this.#stopSelectingElement();
-          this.elementStyle.onChanged = () => {
-            this.#onElementStyleChanged();
-          };
-        }
-        if (isProfilerActive && this.elementStyle.rules) {
-          let declarations = 0;
-          for (const rule of this.elementStyle.rules) {
-            declarations += rule.textProps.length;
-          }
-          ChromeUtils.addProfilerMarker(
-            "DevTools:CssRuleView.selectElement",
-            startTime,
-            `${declarations} CSS declarations in ${this.elementStyle.rules.length} rules`
-          );
-        }
-      })
-      .catch(e => {
-        if (this.elementStyle === elementStyle) {
-          this.#stopSelectingElement();
-          this.#clearRules();
-        }
-        console.error(e);
-      });
+        ChromeUtils.addProfilerMarker(
+          "DevTools:CssRuleView.selectElement",
+          startTime,
+          `${declarations} CSS declarations in ${this.elementStyle.rules.length} rules`
+        );
+      }
+    } catch (e) {
+      if (this.elementStyle === elementStyle) {
+        this.#stopSelectingElement();
+        this.#clearRules();
+      }
+      console.error("Error while updating the rule view", e);
+    }
   }
 
   
 
 
-  refreshPanel() {
+  async refreshPanel() {
     
     if (!this.isPanelVisible() || this.isEditing || !this.elementStyle) {
-      return Promise.resolve(undefined);
+      return;
     }
 
     
@@ -1214,9 +1211,8 @@ class CssRuleView extends EventEmitter {
       }
     }
 
-    return Promise.all(promises).then(() => {
-      return this.#populate();
-    });
+    await Promise.all(promises);
+    await this.#populate();
   }
 
   
@@ -1280,25 +1276,28 @@ class CssRuleView extends EventEmitter {
     });
   }
 
-  #populate() {
-    const elementStyle = this.elementStyle;
-    return this.elementStyle
-      .populate()
-      .then(() => {
-        if (this.elementStyle !== elementStyle || this.isDestroyed) {
-          return null;
-        }
+  async #populate() {
+    try {
+      const elementStyle = this.elementStyle;
 
-        this.#clearRules();
-        const onEditorsReady = this.#createEditors();
-        this.refreshPseudoClassPanel();
+      await this.elementStyle.populate();
 
-        
-        return onEditorsReady.then(() => {
-          this.inspector.emit("rule-view-refreshed");
-        }, console.error);
-      })
-      .catch(promiseWarn);
+      if (this.elementStyle !== elementStyle || this.isDestroyed) {
+        return;
+      }
+
+      this.#clearRules();
+      const onEditorsReady = this.#createEditors();
+      this.refreshPseudoClassPanel();
+
+      await onEditorsReady;
+
+      
+      this.inspector.emit("rule-view-refreshed");
+    } catch (e) {
+      console.error("Exception while populating the rule view", e);
+      throw e;
+    }
   }
 
   
@@ -2383,7 +2382,7 @@ class CssRuleView extends EventEmitter {
 
 
 
-  #highlightElementInRule(rule, element, scrollBehavior, elementToFocus) {
+  async #highlightElementInRule(rule, element, scrollBehavior, elementToFocus) {
     if (rule) {
       this.#scrollToElement(rule.editor.selectorText, element, scrollBehavior);
     } else {
@@ -2397,9 +2396,8 @@ class CssRuleView extends EventEmitter {
       return;
     }
 
-    this.#flashElement(element).then(() =>
-      this.emitForTests("element-highlighted", element)
-    );
+    await this.#flashElement(element);
+    this.emitForTests("element-highlighted", element);
   }
 
   
@@ -2518,36 +2516,39 @@ class RuleViewTool {
     this.onSelected(false);
   }
 
-  onSelected(selectElement = true) {
+  async onSelected(selectElement = true) {
     
     
     
     
     if (!this.view) {
-      return null;
+      return;
     }
 
     const isInactive =
       !this.isPanelVisible() && this.inspector.selection.nodeFront;
     if (isInactive) {
-      return null;
+      return;
     }
 
     if (
       !this.inspector.selection.isConnected() ||
       !this.inspector.selection.isElementNode()
     ) {
-      return this.view.selectElement(null);
+      this.view.selectElement(null);
+      return;
     }
 
     if (!selectElement) {
-      return null;
+      return;
     }
 
     const done = this.inspector.updating("rule-view");
-    return this.view
-      .selectElement(this.inspector.selection.nodeFront)
-      .then(done, done);
+    try {
+      await this.view.selectElement(this.inspector.selection.nodeFront);
+    } finally {
+      done();
+    }
   }
 
   refresh() {

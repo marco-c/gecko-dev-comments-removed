@@ -411,16 +411,16 @@ class TextPropertyEditor {
         start: this.#onStartEditing,
         element: this.valueSpan,
         done: this.#onValueDone,
-        destroy: onValueDonePromise => {
+        destroy: async onValueDonePromise => {
           const cb = this.update;
           
           
           
-          if (
-            onValueDonePromise &&
-            typeof onValueDonePromise.then === "function"
-          ) {
-            return onValueDonePromise.then(cb);
+          
+          
+          
+          if (typeof onValueDonePromise?.then == "function") {
+            await onValueDonePromise;
           }
           return cb();
         },
@@ -675,9 +675,11 @@ class TextPropertyEditor {
       "." + FONT_FAMILY_CLASS
     );
     if (fontFamilySpans.length && this.prop.enabled && !this.prop.overridden) {
-      this.rule.elementStyle
-        .getUsedFontFamilies()
-        .then(families => {
+      
+      
+      (async () => {
+        try {
+          const families = await this.rule.elementStyle.getUsedFontFamilies();
           for (const span of fontFamilySpans) {
             const authoredFont = span.textContent.toLowerCase();
             if (families.has(authoredFont)) {
@@ -689,10 +691,10 @@ class TextPropertyEditor {
           }
 
           this.ruleView.emit("font-highlighted", this.valueSpan);
-        })
-        .catch(e =>
-          console.error("Could not get the list of font families", e)
-        );
+        } catch (e) {
+          console.error("Could not get the list of font families", e);
+        }
+      })();
     }
 
     
@@ -1745,7 +1747,7 @@ class TextPropertyEditor {
     });
   };
 
-  #draggingOnMouseMove = throttle(event => {
+  #draggingOnMouseMove = throttle(async event => {
     if (!this.#isDragging) {
       return;
     }
@@ -1787,10 +1789,13 @@ class TextPropertyEditor {
     const { value, unit } = this.#draggingValueCache;
     
     const roundedValue = Number.isInteger(value) ? value : value.toFixed(1);
-    this.prop
-      .setValue(roundedValue + unit, this.prop.priority)
-      .then(() => this.ruleView.emitForTests("property-updated-by-dragging"));
+    const onValueSet = this.prop.setValue(
+      roundedValue + unit,
+      this.prop.priority
+    );
     this.#hasDragged = true;
+    await onValueSet;
+    this.ruleView.emitForTests("property-updated-by-dragging");
   }, 30);
 
   #draggingOnPointerUp = () => {
