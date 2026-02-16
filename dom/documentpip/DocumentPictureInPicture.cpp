@@ -108,6 +108,7 @@ const CSSIntSize DocumentPictureInPicture::sMinSize = {240, 50};
 
 static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
                                      const CSSIntRect& aExtent, bool aPrivate,
+                                     bool aDisallowReturnToOpener,
                                      mozilla::dom::BrowsingContext** aRet) {
   MOZ_DIAGNOSTIC_ASSERT(aParent);
 
@@ -127,8 +128,12 @@ static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
       nsWindowWatcher::CreateLoadState(uri, aParent);
 
   
+  
   nsPrintfCString features("pictureinpicture,top=%d,left=%d,width=%d,height=%d",
                            aExtent.y, aExtent.x, aExtent.width, aExtent.height);
+  if (aDisallowReturnToOpener) {
+    features += ",disallow_return_to_opener";
+  }
 
   rv = pww->OpenWindow2(aParent, uri, "_blank"_ns, features,
                         mozilla::dom::UserActivation::Modifiers::None(), false,
@@ -297,13 +302,10 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   
   
   
-
-  
-  
   RefPtr<BrowsingContext> pipTraversable;
-  nsresult rv = OpenPiPWindowUtility(ownerWin->GetOuterWindow(), extent,
-                                     bc->UsePrivateBrowsing(),
-                                     getter_AddRefs(pipTraversable));
+  nsresult rv = OpenPiPWindowUtility(
+      ownerWin->GetOuterWindow(), extent, bc->UsePrivateBrowsing(),
+      aOptions.mDisallowReturnToOpener, getter_AddRefs(pipTraversable));
   if (NS_FAILED(rv)) {
     aRv.ThrowUnknownError("Failed to create PIP window");
     return nullptr;

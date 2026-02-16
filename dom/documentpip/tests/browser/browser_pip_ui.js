@@ -64,7 +64,10 @@ add_task(async function pip_ui_buttons() {
   
   
   
-  const expectedButtons = ["trust-icon-container"];
+  const expectedButtons = [
+    "trust-icon-container",
+    "document-pip-return-to-opener-button",
+  ];
 
   buttons.forEach(btn => {
     const idx = expectedButtons.indexOf(btn.id);

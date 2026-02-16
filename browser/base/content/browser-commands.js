@@ -432,6 +432,25 @@ var BrowserCommands = {
 
 
 
+  returnToOpenerFromPiP(event) {
+    
+    const openerBC = gBrowser.selectedBrowser.browsingContext.opener;
+    const openerBrowser = openerBC.embedderElement;
+    const openerWindow = openerBrowser.ownerGlobal;
+    const openerTab = openerWindow.gBrowser.getTabForBrowser(openerBrowser);
+    openerWindow.gBrowser.selectedTab = openerTab;
+    openerWindow.focus();
+
+    this.tryToCloseWindow(event);
+  },
+
+  
+
+
+
+
+
+
 
 
 
