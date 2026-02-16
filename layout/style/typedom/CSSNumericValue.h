@@ -22,6 +22,7 @@ class nsISupports;
 
 namespace mozilla {
 
+struct CSSPropertyId;
 class ErrorResult;
 struct StyleNumericValue;
 
@@ -33,10 +34,16 @@ class Sequence;
 
 class CSSNumericValue : public CSSStyleValue {
  public:
+  enum class NumericValueType {
+    Uninitialized,  
+    UnitValue,
+    MathSum,
+  };
+
   explicit CSSNumericValue(nsCOMPtr<nsISupports> aParent);
 
   CSSNumericValue(nsCOMPtr<nsISupports> aParent,
-                  StyleValueType aStyleValueType);
+                  NumericValueType aNumericValueType);
 
   static RefPtr<CSSNumericValue> Create(nsCOMPtr<nsISupports> aParent,
                                         const StyleNumericValue& aNumericValue);
@@ -80,8 +87,31 @@ class CSSNumericValue : public CSSStyleValue {
 
   
 
+  NumericValueType GetNumericValueType() const { return mNumericValueType; }
+
+  bool IsCSSUnitValue() const;
+
+  
+  const CSSUnitValue& GetAsCSSUnitValue() const;
+
+  
+  CSSUnitValue& GetAsCSSUnitValue();
+
+  bool IsCSSMathSum() const;
+
+  
+  const CSSMathSum& GetAsCSSMathSum() const;
+
+  
+  CSSMathSum& GetAsCSSMathSum();
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSNumericValue() = default;
+
+  const NumericValueType mNumericValueType;
 };
 
 }  

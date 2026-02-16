@@ -27,9 +27,8 @@ namespace dom {
 
 class GlobalObject;
 class CSSKeywordValue;
-class CSSMathSum;
-class CSSUnitValue;
 class CSSUnsupportedValue;
+class CSSNumericValue;
 
 class CSSStyleValue : public nsISupports, public nsWrapperCache {
  public:
@@ -37,8 +36,7 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
     Uninitialized,  
     UnsupportedValue,
     KeywordValue,
-    UnitValue,
-    MathSum,
+    NumericValue,
   };
 
   explicit CSSStyleValue(nsCOMPtr<nsISupports> aParent);
@@ -86,15 +84,10 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
   
   CSSKeywordValue& GetAsCSSKeywordValue();
 
-  bool IsCSSUnitValue() const;
+  bool IsCSSNumericValue() const;
 
   
-  CSSUnitValue& GetAsCSSUnitValue();
-
-  bool IsCSSMathSum() const;
-
-  
-  CSSMathSum& GetAsCSSMathSum();
+  CSSNumericValue& GetAsCSSNumericValue();
 
  protected:
   virtual ~CSSStyleValue() = default;
