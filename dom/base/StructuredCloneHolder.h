@@ -131,6 +131,11 @@ class StructuredCloneHolderBase {
   bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy);
 
+  
+  
+  
+  void Adopt(JSStructuredCloneData&& aData);
+
   bool HasData() const { return !!mBuffer; }
 
   JSStructuredCloneData& BufferData() const {
