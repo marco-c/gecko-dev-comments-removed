@@ -43,7 +43,8 @@ class StructuredCloneData : public StructuredCloneHolder {
 
   
   
-  bool CopyExternalData(const char* aData, size_t aDataLength);
+  bool CopyExternalData(const char* aData, size_t aDataLength,
+                        uint32_t aVersion = JS_STRUCTURED_CLONE_VERSION);
 
   bool SupportsTransferring() { return mSupportsTransferring; }
 
