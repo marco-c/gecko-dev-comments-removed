@@ -1059,7 +1059,8 @@ class TestInfoReport(TestInfo):
 
             
             if (
-                task.get("task", {})
+                task
+                .get("task", {})
                 .get("extra", {})
                 .get("treeherder", {})
                 .get("tier", 3)

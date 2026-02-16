@@ -38,7 +38,8 @@ def generate_cpp_events(output_fd, *inputs):
             
             
             
-            input_hash=hashlib.sha256("".join(inputs).encode())
+            input_hash=hashlib
+            .sha256("".join(inputs).encode())
             .hexdigest()
             .upper()[:15],
         )
