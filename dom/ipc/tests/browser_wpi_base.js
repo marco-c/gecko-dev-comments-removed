@@ -245,7 +245,7 @@ async function do_tests(expected) {
     info(`Starting ${heuristic.name} test`);
     
     
-    Services.logins.removeAllLogins();
+    await Services.logins.removeAllLoginsAsync();
     await new Promise(resolve =>
       Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve)
     );

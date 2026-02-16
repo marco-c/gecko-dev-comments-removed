@@ -106,7 +106,7 @@ add_task(
     
     
     
-    Services.logins.removeAllLogins();
+    await Services.logins.removeAllLoginsAsync();
     await IOUtils.remove(loginStorePath);
   }
 );
@@ -180,7 +180,7 @@ add_task(async function test_deleteLoginsBackup_removeAllLogins() {
 
   storageUpdatePromise = TestUtils.topicObserved("password-storage-updated");
   info("Removing all logins");
-  Services.logins.removeAllLogins();
+  await Services.logins.removeAllLoginsAsync();
 
   await storageUpdatePromise;
   info("Writes to storage are complete when removeAllLogins() is called");
@@ -203,7 +203,7 @@ add_task(async function test_deleteLoginsBackup_removeAllLogins() {
 
   storageUpdatePromise = TestUtils.topicObserved("password-storage-updated");
   info("Removing all logins, including FxA key");
-  Services.logins.removeAllLogins();
+  await Services.logins.removeAllLoginsAsync();
   await storageUpdatePromise;
   info("Writes to storage are complete after the last removeAllLogins call");
   await loginBackupDeleted();
@@ -277,6 +277,6 @@ add_task(async function test_deleteLoginsBackup_removeLogin() {
   
   
   
-  Services.logins.removeAllLogins();
+  await Services.logins.removeAllLoginsAsync();
   await IOUtils.remove(loginStorePath);
 });
