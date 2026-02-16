@@ -2820,9 +2820,25 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   }
 
   if (mCache) {
-    LOG(("ScriptLoadRequest (%p): Bytecode-cache: Mark in-memory: Stencil",
-         aRequest));
-    aRequest->MarkPassedConditionForMemoryCache();
+    if (mCache->IsLowMemory()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      LOG(
+          ("ScriptLoadRequest (%p): Bytecode-cache: Skip in-memory: memory "
+           "pressure",
+           aRequest));
+      aRequest->MarkSkippedMemoryCaching();
+    } else {
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Mark in-memory: Stencil",
+           aRequest));
+      aRequest->MarkPassedConditionForMemoryCache();
+    }
 
     
     return;
@@ -3402,6 +3418,11 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
   }
 
   MOZ_ASSERT(mCache);
+
+  if (mCache->IsLowMemory()) {
+    TRACE_FOR_TEST(aRequest, "memorycache:memorypressure");
+    return;
+  }
 
   if (!JS::IsStencilCacheable(aRequest->GetStencil())) {
     

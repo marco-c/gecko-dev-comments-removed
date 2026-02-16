@@ -22,6 +22,7 @@
 #include "mozilla/dom/CacheExpirationTime.h"  
 #include "mozilla/dom/SRIMetadata.h"          
 #include "nsIMemoryReporter.h"  
+#include "nsIObserver.h"        
 #include "nsIPrincipal.h"       
 #include "nsISupports.h"        
 #include "nsStringFwd.h"        
@@ -191,7 +192,8 @@ struct SharedScriptCacheTraits {
 
 class SharedScriptCache final
     : public SharedSubResourceCache<SharedScriptCacheTraits, SharedScriptCache>,
-      public nsIMemoryReporter {
+      public nsIMemoryReporter,
+      public nsIObserver {
  public:
   using Base =
       SharedSubResourceCache<SharedScriptCacheTraits, SharedScriptCache>;
@@ -201,6 +203,11 @@ class SharedScriptCache final
 
   SharedScriptCache();
   void Init();
+
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    return Base::DoObserve(aSubject, aTopic, aData);
+  }
 
   bool MaybeScheduleUpdateDiskCache();
   void UpdateDiskCache();
@@ -226,6 +233,8 @@ class SharedScriptCache final
 
  protected:
   ~SharedScriptCache();
+
+  bool ShouldIgnoreMemoryPressure() override;
 
  private:
   class EncodeItem {
