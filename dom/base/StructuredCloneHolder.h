@@ -373,22 +373,6 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   static const JSStructuredCloneCallbacks sCallbacks;
 
  protected:
-  
-  
-  
-  void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
-                      JSStructuredCloneData& aBuffer,
-                      JS::MutableHandle<JS::Value> aValue,
-                      const JS::CloneDataPolicy& aCloneDataPolicy,
-                      ErrorResult& aRv);
-
-  void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
-                      JSStructuredCloneData& aBuffer,
-                      uint32_t aAlgorithmVersion,
-                      JS::MutableHandle<JS::Value> aValue,
-                      const JS::CloneDataPolicy& aCloneDataPolicy,
-                      ErrorResult& aRv);
-
   void SameProcessScopeRequired(bool* aSameProcessScopeRequired);
 
   already_AddRefed<MessagePort> ReceiveMessagePort(nsIGlobalObject* aGlobal,
