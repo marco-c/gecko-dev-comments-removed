@@ -676,7 +676,7 @@ add_task(async function test_processIncoming_resume_toFetch() {
   let engine = makeRotaryEngine();
   await engine.setLastSync(LASTSYNC);
   engine.toFetch = new SerializableSet(["flying", "scotsman"]);
-  engine.previousFailed = new SerializableSet([
+  engine.previousFailedIn = new SerializableSet([
     "failed0",
     "failed1",
     "failed2",
@@ -710,7 +710,7 @@ add_task(async function test_processIncoming_resume_toFetch() {
     Assert.equal(engine._store.items.failed0, "Record No. 0");
     Assert.equal(engine._store.items.failed1, "Record No. 1");
     Assert.equal(engine._store.items.failed2, "Record No. 2");
-    Assert.equal(engine.previousFailed.size, 0);
+    Assert.equal(engine.previousFailedIn.size, 0);
   } finally {
     await cleanAndGo(engine, server);
   }
@@ -763,7 +763,7 @@ add_task(async function test_processIncoming_notify_count() {
     
     Assert.equal(await engine.getLastSync(), 0);
     Assert.equal(engine.toFetch.size, 0);
-    Assert.equal(engine.previousFailed.size, 0);
+    Assert.equal(engine.previousFailedIn.size, 0);
     do_check_empty(engine._store.items);
 
     let called = 0;
@@ -782,7 +782,7 @@ add_task(async function test_processIncoming_notify_count() {
     
     do_check_attribute_count(engine._store.items, 12);
     Assert.deepEqual(
-      Array.from(engine.previousFailed).sort(),
+      Array.from(engine.previousFailedIn).sort(),
       ["record-no-00", "record-no-05", "record-no-10"].sort()
     );
 
@@ -802,7 +802,7 @@ add_task(async function test_processIncoming_notify_count() {
     do_check_attribute_count(engine._store.items, 14);
     
     
-    Assert.deepEqual(Array.from(engine.previousFailed), []);
+    Assert.deepEqual(Array.from(engine.previousFailedIn), []);
 
     Assert.equal(called, 2);
     Assert.equal(counts.failed, 1);
@@ -862,17 +862,17 @@ add_task(async function test_processIncoming_previousFailed() {
     
     Assert.equal(await engine.getLastSync(), 0);
     Assert.equal(engine.toFetch.size, 0);
-    Assert.equal(engine.previousFailed.size, 0);
+    Assert.equal(engine.previousFailedIn.size, 0);
     do_check_empty(engine._store.items);
 
     
-    let previousFailed = new SerializableSet([
+    let previousFailedIn = new SerializableSet([
       Utils.makeGUID(),
       Utils.makeGUID(),
       Utils.makeGUID(),
     ]);
-    engine.previousFailed = previousFailed;
-    Assert.equal(engine.previousFailed, previousFailed);
+    engine.previousFailedIn = previousFailedIn;
+    Assert.equal(engine.previousFailedIn, previousFailedIn);
 
     
     await engine._syncStartup();
@@ -881,7 +881,7 @@ add_task(async function test_processIncoming_previousFailed() {
     
     do_check_attribute_count(engine._store.items, 6);
     Assert.deepEqual(
-      Array.from(engine.previousFailed).sort(),
+      Array.from(engine.previousFailedIn).sort(),
       [
         "record-no-00",
         "record-no-01",
@@ -900,7 +900,7 @@ add_task(async function test_processIncoming_previousFailed() {
     do_check_attribute_count(engine._store.items, 10);
     
     
-    Assert.deepEqual(Array.from(engine.previousFailed).sort(), []);
+    Assert.deepEqual(Array.from(engine.previousFailedIn).sort(), []);
 
     
     Assert.equal(engine._store.items["record-no-04"], "Record No. 4");
@@ -987,7 +987,7 @@ add_task(async function test_processIncoming_failed_records() {
     
     Assert.equal(await engine.getLastSync(), 0);
     Assert.equal(engine.toFetch.size, 0);
-    Assert.equal(engine.previousFailed.size, 0);
+    Assert.equal(engine.previousFailedIn.size, 0);
     do_check_empty(engine._store.items);
 
     let observerSubject;
@@ -1008,9 +1008,9 @@ add_task(async function test_processIncoming_failed_records() {
     );
 
     
-    Assert.equal(engine.previousFailed.size, BOGUS_RECORDS.length);
+    Assert.equal(engine.previousFailedIn.size, BOGUS_RECORDS.length);
     Assert.deepEqual(
-      Array.from(engine.previousFailed).sort(),
+      Array.from(engine.previousFailedIn).sort(),
       BOGUS_RECORDS.sort()
     );
 
@@ -1094,7 +1094,7 @@ add_task(async function test_processIncoming_decrypt_failed() {
   try {
     
     Assert.equal(engine.toFetch.size, 0);
-    Assert.equal(engine.previousFailed.size, 0);
+    Assert.equal(engine.previousFailedIn.size, 0);
 
     let observerSubject;
     let observerData;
@@ -1116,11 +1116,11 @@ add_task(async function test_processIncoming_decrypt_failed() {
     
     Assert.equal(ping.engines[0].incoming.failedReasons[0].count, 4);
 
-    Assert.equal(engine.previousFailed.size, 4);
-    Assert.ok(engine.previousFailed.has("nojson"));
-    Assert.ok(engine.previousFailed.has("nojson2"));
-    Assert.ok(engine.previousFailed.has("nodecrypt"));
-    Assert.ok(engine.previousFailed.has("nodecrypt2"));
+    Assert.equal(engine.previousFailedIn.size, 4);
+    Assert.ok(engine.previousFailedIn.has("nojson"));
+    Assert.ok(engine.previousFailedIn.has("nojson2"));
+    Assert.ok(engine.previousFailedIn.has("nodecrypt"));
+    Assert.ok(engine.previousFailedIn.has("nodecrypt2"));
 
     
     Assert.equal(observerData, engine.name);
