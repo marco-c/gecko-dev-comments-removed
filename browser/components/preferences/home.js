@@ -11,6 +11,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  HomePage: "resource:///modules/HomePage.sys.mjs",
 });
 
 
@@ -88,6 +89,16 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     pref: "browser.startup.homepage",
   });
 
+  Preferences.addSetting({
+    id: "disableCurrentPagesButton",
+    pref: "pref.browser.homepage.disable_button.current_page",
+  });
+
+  Preferences.addSetting({
+    id: "disableBookmarkButton",
+    pref: "pref.browser.homepage.disable_button.bookmark_page",
+  });
+
   
   Preferences.addSetting({
     id: "homepageGoToCustomHomepageUrlPanel",
@@ -116,11 +127,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
         
         customURLsDescription = homepageDisplayPref.value
           .split("|")
-          .map(uri =>
-            BrowserUtils.formatURIStringForDisplay(uri, {
-              onlyBaseDomain: true,
-            })
-          )
+          .map(uri => BrowserUtils.formatURIStringForDisplay(uri))
           .filter(Boolean)
           .join(", ");
       }
@@ -134,20 +141,6 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       };
     },
   });
-
-  
-
-
-
-
-
-
-  const getURLs = urls => {
-    return urls
-      .split("|")
-      .map(u => u.trim())
-      .filter(Boolean);
-  };
 
   Preferences.addSetting(
      ({
@@ -188,7 +181,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
         homepageDisplayPref.value = inputVal;
       } else {
         
-        let urls = getURLs(homepageDisplayPref.value);
+        let urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
         urls.push(inputVal);
         homepageDisplayPref.value = urls.join("|");
       }
@@ -199,10 +192,59 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
   });
 
   Preferences.addSetting({
+    id: "customHomepageReplaceWithCurrentPagesButton",
+    deps: ["homepageDisplayPref", "disableCurrentPagesButton"],
+    onUserClick(e, { homepageDisplayPref }) {
+      let tabs = HomePage.getTabsForCustomHomepage();
+
+      if (tabs.length) {
+        homepageDisplayPref.value = tabs
+          .map(t => t.linkedBrowser.currentURI.spec)
+          .join("|");
+      }
+    },
+    disabled: ({ disableCurrentPagesButton }) =>
+      
+      
+      HomePage.getTabsForCustomHomepage().length < 1 ||
+      disableCurrentPagesButton?.value === true,
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageReplaceWithBookmarksButton",
+    deps: ["homepageDisplayPref", "disableBookmarkButton"],
+    onUserClick(e, { homepageDisplayPref }) {
+      const rv = { urls: null, names: null };
+
+      
+      const closingCallback = event => {
+        if (event.detail.button !== "accept") {
+          return;
+        }
+        if (rv.urls) {
+          homepageDisplayPref.value = rv.urls.join("|");
+        }
+      };
+
+      gSubDialog.open(
+        "chrome://browser/content/preferences/dialogs/selectBookmark.xhtml",
+        {
+          features: "resizable=yes, modal=yes",
+          closingCallback,
+        },
+        rv
+      );
+    },
+    disabled: ({ disableBookmarkButton }) =>
+      
+      disableBookmarkButton?.value === true,
+  });
+
+  Preferences.addSetting({
     id: "customHomepageBoxGroup",
     deps: ["homepageDisplayPref"],
     getControlConfig(config, { homepageDisplayPref }) {
-      const urls = getURLs(homepageDisplayPref.value);
+      const urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
       let listItems = [];
       let type = "list";
 
@@ -275,14 +317,28 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
           {
             id: "customHomepageBoxActions",
             control: "moz-box-item",
+            l10nId: "home-custom-homepage-replace-with-prompt",
             slot: "footer",
-            items: [], 
+            items: [
+              {
+                id: "customHomepageReplaceWithCurrentPagesButton",
+                l10nId: "home-custom-homepage-current-pages-button",
+                control: "moz-button",
+                slot: "actions",
+              },
+              {
+                id: "customHomepageReplaceWithBookmarksButton",
+                l10nId: "home-custom-homepage-bookmarks-button",
+                control: "moz-button",
+                slot: "actions",
+              },
+            ],
           },
         ],
       };
     },
     onUserReorder(e, { homepageDisplayPref }) {
-      let urls = getURLs(homepageDisplayPref.value);
+      let urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
 
       let { draggedIndex, targetIndex } = e.detail;
       let [moved] = urls.splice(draggedIndex, 1);
@@ -291,7 +347,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       homepageDisplayPref.value = urls.join("|");
     },
     onUserClick(e, { homepageDisplayPref }) {
-      let urls = getURLs(homepageDisplayPref.value);
+      let urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
 
       if (
         e.target.localName === "moz-button" &&
