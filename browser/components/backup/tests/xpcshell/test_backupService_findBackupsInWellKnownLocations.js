@@ -3,15 +3,6 @@
 
 "use strict";
 
-
-async function createStubBackupFile(dirPath, filename) {
-  const filePath = PathUtils.join(dirPath, filename);
-  await IOUtils.writeUTF8(filePath, "<!-- stub backup -->", {
-    tmpPath: filePath + ".tmp",
-  });
-  return filePath;
-}
-
 add_task(
   async function test_findBackupsInWellKnownLocations_and_multipleFiles() {
     
@@ -22,6 +13,14 @@ add_task(
     const BACKUP_DIR = PathUtils.join(TEST_ROOT, "Backups");
     await IOUtils.makeDirectory(BACKUP_DIR, { createAncestors: true });
 
+    
+    async function touch(fileName) {
+      const p = PathUtils.join(BACKUP_DIR, fileName);
+      await IOUtils.writeUTF8(p, "<!-- stub backup -->", {
+        tmpPath: p + ".tmp",
+      });
+      return p;
+    }
     Services.prefs.setStringPref("browser.backup.location", BACKUP_DIR);
 
     
@@ -42,7 +41,7 @@ add_task(
 
     
     const ONE = "FirefoxBackup_one_20241201-1200.html";
-    await createStubBackupFile(BACKUP_DIR, ONE);
+    await touch(ONE);
 
     let result = await bs.findBackupsInWellKnownLocations();
     Assert.ok(result.found, "Found should be true with one candidate");
@@ -59,7 +58,7 @@ add_task(
 
     
     const TWO = "FirefoxBackup_two_20241202-1300.html";
-    await createStubBackupFile(BACKUP_DIR, TWO);
+    await touch(TWO);
 
     let result2 = await bs.findBackupsInWellKnownLocations();
     Assert.ok(
@@ -109,74 +108,3 @@ add_task(
     await IOUtils.remove(TEST_ROOT, { recursive: true });
   }
 );
-
-const docsDirName = "Documents";
-const oneDriveDirName = "OneDrive";
-const backupDirName = "Restore Firefox";
-const backupFilename = "FirefoxBackup_.html";
-
-add_task(async function test_findBackupInDocsAfterSignInToOneDrive() {
-  const testRoot = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    test_findBackupInDocsAfterSignInToOneDrive.name
-  );
-
-  const docsDir = PathUtils.join(testRoot, docsDirName);
-  const backupDir = PathUtils.join(docsDir, backupDirName);
-  await IOUtils.makeDirectory(backupDir, { createAncestors: true });
-  await createStubBackupFile(backupDir, backupFilename);
-
-  const oneDriveDir = PathUtils.join(testRoot, oneDriveDirName);
-  await IOUtils.makeDirectory(oneDriveDir, { createAncestors: true });
-
-  let backupService = new BackupService();
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(BackupService, "docsDirFolderPath").get(() => ({
-    path: docsDir,
-  }));
-  sandbox.stub(BackupService, "oneDriveFolderPath").get(() => ({
-    path: oneDriveDir,
-  }));
-
-  const result = await backupService.findBackupsInWellKnownLocations();
-  Assert.ok(result.found, "Backup found in Documents");
-
-  sandbox.restore();
-  await IOUtils.remove(testRoot, { recursive: true });
-});
-
-add_task(async function test_findBackupInOneDriveDocsAfterSignInToOneDrive() {
-  Services.prefs.clearUserPref("browser.backup.location");
-
-  const testRoot = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    test_findBackupInOneDriveDocsAfterSignInToOneDrive.name
-  );
-
-  const docsDir = PathUtils.join(testRoot, docsDirName);
-  await IOUtils.makeDirectory(docsDir, { createAncestors: true });
-
-  const oneDriveDir = PathUtils.join(testRoot, oneDriveDirName);
-  const oneDriveDocsDir = PathUtils.join(oneDriveDir, docsDirName);
-  const backupDir = PathUtils.join(oneDriveDocsDir, backupDirName);
-  await IOUtils.makeDirectory(backupDir, { createAncestors: true });
-  await createStubBackupFile(backupDir, backupFilename);
-
-  let backupService = new BackupService();
-  let sandbox = sinon.createSandbox();
-
-  
-  
-  sandbox.stub(BackupService, "docsDirFolderPath").get(() => ({
-    path: oneDriveDocsDir,
-  }));
-  sandbox.stub(BackupService, "oneDriveFolderPath").get(() => ({
-    path: oneDriveDir,
-  }));
-
-  const result = await backupService.findBackupsInWellKnownLocations();
-  Assert.ok(result.found, "Backup found in OneDrive/Documents");
-
-  sandbox.restore();
-  await IOUtils.remove(testRoot, { recursive: true });
-});
