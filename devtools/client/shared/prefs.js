@@ -233,6 +233,8 @@ class PrefObserver extends EventEmitter {
 
   destroy() {
     this.#branch.removeObserver("", this);
+    
+    super.off();
   }
 }
 
