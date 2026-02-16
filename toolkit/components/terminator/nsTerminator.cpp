@@ -295,18 +295,28 @@ void nsTerminator::StartWatchdog() {
   int32_t crashAfterMS =
       Preferences::GetInt("toolkit.asyncshutdown.crash_timeout",
                           FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS);
+
+  int32_t additionalWaitBeforeCrashMs =
+      Preferences::GetInt("toolkit.asyncshutdown.crash_timeout_additional_wait",
+                          ADDITIONAL_WAIT_BEFORE_CRASH_MS);
+
   
   if (crashAfterMS <= 0) {
     crashAfterMS = FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS;
   }
 
   
+  if (additionalWaitBeforeCrashMs <= 0) {
+    additionalWaitBeforeCrashMs = ADDITIONAL_WAIT_BEFORE_CRASH_MS;
+  }
+
   
-  if (crashAfterMS > INT32_MAX - ADDITIONAL_WAIT_BEFORE_CRASH_MS) {
+  
+  if (crashAfterMS > INT32_MAX - additionalWaitBeforeCrashMs) {
     
     crashAfterMS = INT32_MAX;
   } else {
-    crashAfterMS += ADDITIONAL_WAIT_BEFORE_CRASH_MS;
+    crashAfterMS += additionalWaitBeforeCrashMs;
   }
 
 #ifdef MOZ_VALGRIND
@@ -330,8 +340,7 @@ void nsTerminator::StartWatchdog() {
 
   UniquePtr<Options> options(new Options());
   
-  
-  options->crashAfterTicks = crashAfterMS / HEARTBEAT_INTERVAL_MS;
+  options->crashAfterTicks = std::max(1, crashAfterMS / HEARTBEAT_INTERVAL_MS);
 
   DebugOnly<PRThread*> watchdogThread =
       CreateSystemThread(RunWatchdog, options.release());
