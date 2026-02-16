@@ -143,7 +143,7 @@ function populateWebGLCanvases(contextOptions = {}) {
   
 
   const data = {};
-  const suffix = contextOptions.forceSoftwareRendering ? "software" : "";
+  const suffix = contextOptions.forceSoftwareRendering ? "Software" : "";
 
   
   
