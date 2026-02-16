@@ -773,7 +773,7 @@ class ModuleEnvironmentObject : public EnvironmentObject {
   
   static ModuleEnvironmentObject* find(JSObject* env);
 
-  uint32_t firstSyntheticValueSlot() { return RESERVED_SLOTS; }
+  uint32_t firstSyntheticValueSlot() { return RESERVED_SLOTS + 1; }
 
  private:
   static bool lookupProperty(JSContext* cx, HandleObject obj, HandleId id,

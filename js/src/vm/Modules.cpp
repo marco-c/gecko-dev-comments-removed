@@ -1707,6 +1707,7 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   if (!module->hasCyclicModuleFields()) {
     
     
+    
     *indexOut = index;
     return true;
   }
