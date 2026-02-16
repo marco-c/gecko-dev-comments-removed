@@ -2055,6 +2055,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     
     PurgeInfo purge_info(*this, chunk, aStats);
 
+    bool chunk_is_dying;
     {
       
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
@@ -2068,6 +2069,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 
       continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
+      chunk_is_dying = chunk->mDying;
 
       
       
@@ -2076,7 +2078,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       }
     }
     if (!continue_purge_chunk) {
-      if (chunk->mDying) {
+      if (chunk_is_dying) {
         
         
         chunk_dealloc((void*)chunk, kChunkSize, ARENA_CHUNK);
