@@ -31,6 +31,9 @@ class DecoderFactory {
   static DecoderType GetDecoderType(const char* aMimeType);
 
   
+  static DecoderFlags GetDefaultDecoderFlagsForType(DecoderType aType);
+
+  
 
 
 

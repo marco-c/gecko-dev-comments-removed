@@ -32,13 +32,24 @@ enum class DecoderFlags : uint8_t {
 
   CANNOT_SUBSTITUTE = 1 << 4,
 
+#ifdef MOZ_AV1
+  
+  
+
+  
+  AVIF_SEQUENCES_ENABLED = 1 << 5,
+  
+  
+  AVIF_ANIMATE_AVIF_MAJOR = 1 << 6,
+#endif
+
   
 
 
 
 
 
-  COUNT_FRAMES = 1 << 5,
+  COUNT_FRAMES = 1 << 7,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DecoderFlags)
 
