@@ -1064,7 +1064,7 @@ void TISInputSourceWrapper::InitKeyEvent(NSEvent* aNativeKeyEvent,
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   MOZ_ASSERT(!aIsProcessedByIME || aKeyEvent.mMessage != eKeyPress,
-             "eKeyPress event should not be marked as proccessed by IME");
+             "eKeyPress event should not be marked as processed by IME");
 
   MOZ_LOG(gKeyLog, LogLevel::Info,
           ("%p TISInputSourceWrapper::InitKeyEvent, aNativeKeyEvent=%p, "
