@@ -233,6 +233,9 @@ const DEFAULT_IMPRESSION = {
   source: "unknown",
   is_private: "false",
   is_signed_in: "false",
+  is_shopping_page: "false",
+  shopping_tab_displayed: "false",
+  has_ai_summary: "false",
 };
 
 
@@ -249,7 +252,7 @@ function assertSERPTelemetry(expectedEvents) {
   
   
   
-  expectedEvents = JSON.parse(JSON.stringify(expectedEvents));
+  expectedEvents = structuredClone(expectedEvents);
 
   for (let expectedEvent of expectedEvents) {
     if (expectedEvent.impression) {
