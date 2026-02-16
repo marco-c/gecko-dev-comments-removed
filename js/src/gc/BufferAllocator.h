@@ -202,6 +202,10 @@ struct SmallBufferRegion;
 
 
 
+
+
+
+
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinSmallAllocShift = 4;    
@@ -349,14 +353,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  MainThreadData<BufferChunkList> mixedChunks;
+  MainThreadOrGCTaskData<BufferChunkList> mixedChunks;
 
   
-  MainThreadData<BufferChunkList> tenuredChunks;
+  MainThreadOrGCTaskData<BufferChunkList> tenuredChunks;
 
   
   
-  MainThreadData<FreeLists> freeLists;
+  MainThreadOrGCTaskData<FreeLists> freeLists;
 
   
   
@@ -372,14 +376,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  MainThreadData<ChunkLists> availableMixedChunks;
-  MainThreadData<ChunkLists> availableTenuredChunks;
+  MainThreadOrGCTaskData<ChunkLists> availableMixedChunks;
+  MainThreadOrGCTaskData<ChunkLists> availableTenuredChunks;
 
   
-  MainThreadData<LargeAllocList> largeNurseryAllocs;
+  MainThreadOrGCTaskData<LargeAllocList> largeNurseryAllocs;
 
   
-  MainThreadData<LargeAllocList> largeTenuredAllocs;
+  MainThreadOrGCTaskData<LargeAllocList> largeTenuredAllocs;
 
   
   
@@ -398,8 +402,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   mozilla::Atomic<bool, mozilla::Relaxed> hasMinorSweepDataToMerge;
 
   
-  MainThreadData<State> minorState;
-  MainThreadData<State> majorState;
+  MainThreadOrGCTaskData<State> minorState;
+  MainThreadOrGCTaskData<State> majorState;
 
   
   
@@ -409,11 +413,15 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   
   
   
-  MainThreadData<bool> majorStartedWhileMinorSweeping;
+  MainThreadOrGCTaskData<bool> majorStartedWhileMinorSweeping;
 
   
   
-  MainThreadData<bool> majorFinishedWhileMinorSweeping;
+  MainThreadOrGCTaskData<bool> majorFinishedWhileMinorSweeping;
+
+#ifdef DEBUG
+  Mutex* multiThreadedMutex = nullptr;
+#endif
 
  public:
   explicit BufferAllocator(JS::Zone* zone);
@@ -450,6 +458,11 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void traceEdge(JSTracer* trc, Cell* owner, void** bufferp, const char* name);
   bool markTenuredAlloc(void* alloc);
   bool isMarkedBlack(void* alloc);
+
+  
+  
+  void setMultiThreadedUse(Mutex* mutex);
+  void clearMultiThreadedUse();
 
   
   
@@ -490,6 +503,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 #endif
 
  private:
+  void checkAccess() const;
+  void checkMainThread() const;
+
   void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;
 
