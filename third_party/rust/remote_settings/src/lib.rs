@@ -68,6 +68,9 @@ impl RemoteSettingsService {
     }
 
     
+    
+    
+    
     #[handle_error(Error)]
     pub fn sync(&self) -> ApiResult<Vec<String>> {
         self.internal.sync()
