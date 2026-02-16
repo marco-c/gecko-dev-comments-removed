@@ -23,8 +23,11 @@ use firefox_on_glean::{ipc, metrics};
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
 use nsstring::{nsACString, nsAString, nsCString};
 use std::cell::UnsafeCell;
+use std::ffi::{c_char, CStr};
 use std::fs;
 use std::io::ErrorKind;
+use std::mem;
+use std::sync::RwLock;
 use thin_vec::ThinVec;
 
 #[macro_use]
@@ -41,6 +44,37 @@ use glean::{AttributionMetrics, DistributionMetrics};
 #[no_mangle]
 pub extern "C" fn fog_shutdown() {
     glean::shutdown();
+}
+
+
+
+
+
+pub(crate) static APP_ID: RwLock<String> = RwLock::new(String::new());
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn fog_set_application_id(c_app_id: *const c_char) {
+    let app_id = unsafe {
+        debug_assert!(!c_app_id.is_null());
+        let app_id = CStr::from_ptr(c_app_id);
+        app_id.to_string_lossy().to_string()
+    };
+
+    log::debug!("Setting global app id to: {app_id}");
+    let mut global_app_id = APP_ID.write().unwrap();
+    let old_app_id = mem::replace(&mut *global_app_id, app_id);
+    if !old_app_id.is_empty() {
+        log::warn!("App ID was overriden. Old app ID: {old_app_id}");
+    }
 }
 
 #[no_mangle]

@@ -22,6 +22,14 @@ class FOG final : public nsIFOG, public nsIObserver, public nsIMemoryReporter {
   static already_AddRefed<FOG> GetSingleton();
   void InitMemoryReporter();
 
+  
+
+
+
+
+
+  static void SetApplicationID(const nsACString& aAppId);
+
  private:
   ~FOG() = default;
   static bool ApplyInterestingServerKnobs();
