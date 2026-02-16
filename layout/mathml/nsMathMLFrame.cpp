@@ -219,15 +219,13 @@ void nsMathMLFrame::GetSupDropFromChild(nsIFrame* aChild, nscoord& aSupDrop,
 }
 
 
-void nsMathMLFrame::ParseAndCalcNumericValue(const nsString& aString,
-                                             nscoord* aLengthValue,
-                                             uint32_t aFlags,
-                                             float aFontSizeInflation,
-                                             nsIFrame* aFrame) {
+void nsMathMLFrame::ParseAndCalcNumericValue(
+    const nsString& aString, nscoord* aLengthValue, float aFontSizeInflation,
+    nsIFrame* aFrame, dom::MathMLElement::ParseFlags aFlags) {
   nsCSSValue cssValue;
 
   if (!dom::MathMLElement::ParseNumericValue(
-          aString, cssValue, aFlags, aFrame->PresContext()->Document())) {
+          aString, cssValue, aFrame->PresContext()->Document(), aFlags)) {
     
     
     return;

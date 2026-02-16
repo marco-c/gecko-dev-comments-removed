@@ -55,17 +55,16 @@ nsresult nsMathMLmspaceFrame::AttributeChanged(int32_t aNameSpaceID,
                                                   aModType);
 }
 
-nscoord nsMathMLmspaceFrame::CalculateAttributeValue(nsAtom* aAtom,
-                                                     Attribute& aAttribute,
-                                                     uint32_t aFlags,
-                                                     float aFontSizeInflation) {
+nscoord nsMathMLmspaceFrame::CalculateAttributeValue(
+    nsAtom* aAtom, Attribute& aAttribute, float aFontSizeInflation,
+    dom::MathMLElement::ParseFlags aFlags) {
   if (aAttribute.mState == Attribute::ParsingState::Dirty) {
     nsAutoString value;
     aAttribute.mState = Attribute::ParsingState::Invalid;
     mContent->AsElement()->GetAttr(aAtom, value);
     if (!value.IsEmpty()) {
       if (dom::MathMLElement::ParseNumericValue(
-              value, aAttribute.mValue, aFlags, PresContext()->Document())) {
+              value, aAttribute.mValue, PresContext()->Document(), aFlags)) {
         aAttribute.mState = Attribute::ParsingState::Valid;
       } else {
         ReportParseError(aAtom->GetUTF16String(), value.get());
@@ -89,16 +88,16 @@ void nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
   
   
   
-  nscoord width = CalculateAttributeValue(
-      nsGkAtoms::width, mWidth, dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
-      fontSizeInflation);
+  nscoord width =
+      CalculateAttributeValue(nsGkAtoms::width, mWidth, fontSizeInflation,
+                              dom::MathMLElement::ParseFlag::AllowNegative);
 
   
   
   nscoord height =
-      CalculateAttributeValue(nsGkAtoms::height, mHeight, 0, fontSizeInflation);
+      CalculateAttributeValue(nsGkAtoms::height, mHeight, fontSizeInflation);
   nscoord depth =
-      CalculateAttributeValue(nsGkAtoms::depth, mDepth, 0, fontSizeInflation);
+      CalculateAttributeValue(nsGkAtoms::depth, mDepth, fontSizeInflation);
 
   mBoundingMetrics = nsBoundingMetrics();
   mBoundingMetrics.width = width;

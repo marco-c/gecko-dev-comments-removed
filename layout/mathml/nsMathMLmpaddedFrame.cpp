@@ -185,8 +185,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString,
 
     
     if (dom::MathMLElement::ParseNamedSpaceValue(
-            unit, aAttribute.mValue, dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
-            *mContent->OwnerDoc())) {
+            unit, aAttribute.mValue, *mContent->OwnerDoc(),
+            dom::MathMLElement::ParseFlag::AllowNegative)) {
       
       floatValue *= aAttribute.mValue.GetFloatValue();
       aAttribute.mValue.SetFloatValue(floatValue, eCSSUnit_EM);
@@ -200,8 +200,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString,
     
     number.Append(unit);  
     if (dom::MathMLElement::ParseNumericValue(
-            number, aAttribute.mValue,
-            dom::MathMLElement::PARSE_SUPPRESS_WARNINGS, nullptr)) {
+            number, aAttribute.mValue, nullptr,
+            dom::MathMLElement::ParseFlag::SuppressWarnings)) {
       aAttribute.mState = Attribute::ParsingState::Valid;
       return true;
     }
