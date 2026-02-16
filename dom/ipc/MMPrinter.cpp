@@ -70,8 +70,6 @@ void MMPrinter::PrintData(uint64_t aMsgId, ClonedMessageData const& aData) {
     return;
   }
 
-  ErrorResult rv;
-
   AutoJSAPI jsapi;
   
   
@@ -84,13 +82,13 @@ void MMPrinter::PrintData(uint64_t aMsgId, ClonedMessageData const& aData) {
   ipc::UnpackClonedMessageData(aData, data);
 
   
+  IgnoredErrorResult rv;
   JS::Rooted<JS::Value> scdContent(cx);
   data.Read(cx, &scdContent, rv);
   if (rv.Failed()) {
     
     
     MMPrinter::PrintNoData(aMsgId);
-    rv.SuppressException();
     return;
   }
 

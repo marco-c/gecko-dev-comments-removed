@@ -684,19 +684,17 @@ void ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage) {
   
   RunWithJSContext([this, message = std::move(aMessage)](
                        JSContext* const aCx, nsIGlobalObject* const aGlobal) {
-    ErrorResult result;
     bool deserializationFailed = false;
     RootedDictionary<MessageEventInit> init(aCx);
-    auto res = FillInMessageEventInit(aCx, aGlobal, *message, init, result);
+    auto res = FillInMessageEventInit(aCx, aGlobal, *message, init);
     if (res.isErr()) {
       deserializationFailed = res.unwrapErr();
       MOZ_ASSERT_IF(deserializationFailed, init.mData.isNull());
       MOZ_ASSERT_IF(deserializationFailed, init.mPorts.IsEmpty());
       MOZ_ASSERT_IF(deserializationFailed, !init.mOrigin.IsEmpty());
       MOZ_ASSERT_IF(deserializationFailed, !init.mSource.IsNull());
-      result.SuppressException();
 
-      if (!deserializationFailed && result.MaybeSetPendingException(aCx)) {
+      if (!deserializationFailed) {
         return;
       }
     }
@@ -705,11 +703,7 @@ void ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage) {
         this, deserializationFailed ? u"messageerror"_ns : u"message"_ns, init);
     event->SetTrusted(true);
 
-    result = NS_OK;
-    DispatchEvent(*event, result);
-    if (result.Failed()) {
-      result.SuppressException();
-    }
+    DispatchEvent(*event, IgnoreErrors());
   });
 }
 
@@ -741,7 +735,7 @@ nsresult FillInOriginNoSuffix(const ServiceWorkerDescriptor& aServiceWorker,
 
 Result<Ok, bool> ServiceWorkerContainer::FillInMessageEventInit(
     JSContext* const aCx, nsIGlobalObject* const aGlobal,
-    ReceivedMessage& aMessage, MessageEventInit& aInit, ErrorResult& aRv) {
+    ReceivedMessage& aMessage, MessageEventInit& aInit) {
   
   
   
@@ -763,9 +757,10 @@ Result<Ok, bool> ServiceWorkerContainer::FillInMessageEventInit(
     return Err(false);
   }
 
+  IgnoredErrorResult readError;
   JS::Rooted<JS::Value> messageData(aCx);
-  aMessage.mClonedData.Read(aCx, &messageData, aRv);
-  if (aRv.Failed()) {
+  aMessage.mClonedData.Read(aCx, &messageData, readError);
+  if (readError.Failed()) {
     return Err(true);
   }
 
