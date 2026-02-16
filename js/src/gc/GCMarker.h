@@ -309,16 +309,24 @@ enum : uint32_t {
 
   
   
-  ParallelMarking = 2,
+  AtomicMarking = 2,
 
   
-  MarkImplicitEdges = 4,
+  
+  
+  ConcurrentMarking = 4,
+
+  
+  MarkImplicitEdges = 8,
 };
 }  
 
 
 
 constexpr uint32_t NormalMarkingOptions = MarkingOptions::MarkImplicitEdges;
+
+constexpr uint32_t ConcurrentMarkingOptions =
+    MarkingOptions::AtomicMarking | MarkingOptions::ConcurrentMarking;
 
 template <uint32_t markingOptions>
 class MarkingTracerT
@@ -337,7 +345,8 @@ class MarkingTracerT
 using MarkingTracer = MarkingTracerT<MarkingOptions::None>;
 using RootMarkingTracer = MarkingTracerT<MarkingOptions::MarkRootCompartments>;
 using WeakMarkingTracer = MarkingTracerT<MarkingOptions::MarkImplicitEdges>;
-using ParallelMarkingTracer = MarkingTracerT<MarkingOptions::ParallelMarking>;
+using ParallelMarkingTracer = MarkingTracerT<MarkingOptions::AtomicMarking>;
+using ConcurrentMarkingTracer = MarkingTracerT<ConcurrentMarkingOptions>;
 
 enum ShouldReportMarkTime : bool {
   ReportMarkTime = true,
@@ -365,6 +374,9 @@ class GCMarker {
     ParallelMarking,
 
     
+    ConcurrentMarking,
+
+    
     
     
     
@@ -388,10 +400,14 @@ class GCMarker {
   bool isRegularMarking() const { return state == RegularMarking; }
   bool isParallelMarking() const { return state == ParallelMarking; }
   bool isWeakMarking() const { return state == WeakMarking; }
+  bool isConcurrentMarking() const { return state == ConcurrentMarking; }
 
   gc::MarkColor markColor() const { return markColor_; }
 
-  bool isDrained() const { return stack.isEmpty() && otherStack.isEmpty(); }
+  bool isDrained() const;
+  bool isMarkStackEmpty() const {
+    return stack.isEmpty() && otherStack.isEmpty();
+  }
 
   bool hasEntriesForCurrentColor() { return stack.hasEntries(); }
   bool hasBlackEntries() const { return hasEntries(gc::MarkColor::Black); }
@@ -416,6 +432,9 @@ class GCMarker {
 
   void enterParallelMarkingMode();
   void leaveParallelMarkingMode();
+
+  void enterConcurrentMarkingMode();
+  void leaveConcurrentMarkingMode();
 
   
   
@@ -465,6 +484,23 @@ class GCMarker {
   template <typename T>
   void markImplicitEdges(T* markedThing);
 
+#ifdef JS_GC_CONCURRENT_MARKING
+
+  using MainThreadBuffer = js::Vector<JS::GCCellPtr, 0, SystemAllocPolicy>;
+
+  bool processMainThreadBuffers(JS::SliceBudget& budget);
+  bool processMainThreadBuffer(MainThreadBuffer& buffer,
+                               JS::SliceBudget& budget);
+
+  bool mainThreadBuffersAreEmpty() const {
+    return blackMainThreadBuffer_.ref().empty() &&
+           grayMainThreadBuffer_.ref().empty();
+  }
+
+  bool addToMainThreadBuffer(JS::GCCellPtr cell);
+
+#endif  
+
  private:
   
 
@@ -489,6 +525,9 @@ class GCMarker {
   template <uint32_t markingOptions>
   bool processMarkStackTop(JS::SliceBudget& budget);
   friend class gc::GCRuntime;
+
+  template <uint32_t markingOptions>
+  bool callOrDelayTraceHook(JSObject* obj, const JSClass* clasp);
 
   
   
@@ -584,7 +623,8 @@ class GCMarker {
 
 
   mozilla::Variant<gc::MarkingTracer, gc::RootMarkingTracer,
-                   gc::WeakMarkingTracer, gc::ParallelMarkingTracer>
+                   gc::WeakMarkingTracer, gc::ParallelMarkingTracer,
+                   gc::ConcurrentMarkingTracer>
       tracer_;
 
   JSRuntime* const runtime_;
@@ -600,6 +640,13 @@ class GCMarker {
 
   
   MainThreadOrGCTaskData<gc::MarkColor> markColor_;
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  
+  
+  MainThreadOrGCTaskData<MainThreadBuffer> blackMainThreadBuffer_;
+  MainThreadOrGCTaskData<MainThreadBuffer> grayMainThreadBuffer_;
+#endif
 
   Vector<JS::GCCellPtr, 0, SystemAllocPolicy> unmarkGrayStack;
   friend class gc::UnmarkGrayTracer;

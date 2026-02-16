@@ -16,11 +16,13 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "debugger/Debugger.h"
 #include "gc/BufferAllocator.h"
 #include "gc/GCInternals.h"
 #include "gc/ParallelMarking.h"
 #include "gc/TraceKind.h"
 #include "jit/JitCode.h"
+#include "jit/JitScript.h"
 #include "js/GCTypeMacros.h"  
 #include "js/SliceBudget.h"
 #include "util/Poison.h"
@@ -905,7 +907,10 @@ JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
   TenuredCell* cell = &thing.asCell()->asTenured();
+
+#ifndef JS_GC_CONCURRENT_MARKING
   MOZ_ASSERT(!cell->isMarkedBlack());
+#endif
 
   Zone* zone = cell->zone();
   MOZ_ASSERT(zone->needsMarkingBarrier());
@@ -1228,29 +1233,28 @@ bool js::GCMarker::mark(T* thing) {
   MarkColor color =
       TraceKindCanBeGray<T>::value ? markColor() : MarkColor::Black;
 
-  if constexpr (bool(opts & MarkingOptions::ParallelMarking)) {
+#ifdef JS_GC_CONCURRENT_MARKING
+  
+  
+  
+  return thing->asTenured().markIfUnmarkedThreadSafe(color);
+#else
+  if constexpr (bool(opts & MarkingOptions::AtomicMarking)) {
     return thing->asTenured().markIfUnmarkedThreadSafe(color);
   }
 
   return thing->asTenured().markIfUnmarked(color);
+#endif
 }
 
 
-
-
-static inline void CallTraceHook(JSTracer* trc, JSObject* obj) {
-  const JSClass* clasp = obj->getClass();
-  MOZ_ASSERT(clasp);
-
-  if (clasp->hasTrace()) {
-    AutoSetTracingSource asts(trc, obj);
-    clasp->doTrace(trc, obj);
-  }
-}
 
 static gcstats::PhaseKind GrayMarkingPhaseForCurrentPhase(
     const gcstats::Statistics& stats) {
   using namespace gcstats;
+
+  MOZ_ASSERT(CurrentThreadIsMainThread());
+
   switch (stats.currentPhaseKind()) {
     case PhaseKind::MARK:
       return PhaseKind::MARK_GRAY;
@@ -1312,6 +1316,11 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
     return doMarking<MarkingOptions::MarkImplicitEdges>(budget, reportTime);
   }
 
+  if (isConcurrentMarking()) {
+    return doMarking<ConcurrentMarkingOptions>(budget, reportTime);
+  }
+
+  MOZ_ASSERT(isRegularMarking());
   return doMarking<MarkingOptions::None>(budget, reportTime);
 }
 
@@ -1339,12 +1348,12 @@ bool GCMarker::doMarking(SliceBudget& budget, ShouldReportMarkTime reportTime) {
 
   
   
-  if (gc.hasDelayedMarking()) {
+  if (this == &gc.marker() && gc.hasDelayedMarking()) {
     gc.markAllDelayedChildren(reportTime);
+    MOZ_ASSERT(!gc.hasDelayedMarking());
   }
 
-  MOZ_ASSERT(!gc.hasDelayedMarking());
-  MOZ_ASSERT(isDrained());
+  MOZ_ASSERT(isMarkStackEmpty());
 
   return true;
 }
@@ -1369,7 +1378,7 @@ bool GCMarker::markCurrentColorInParallel(ParallelMarkTask* task,
 
   ParallelMarkTask::AtomicCount& waitingTaskCount = task->waitingTaskCountRef();
 
-  while (processMarkStackTop<MarkingOptions::ParallelMarking>(budget)) {
+  while (processMarkStackTop<MarkingOptions::AtomicMarking>(budget)) {
     if (stack.isEmpty()) {
       return true;
     }
@@ -1405,6 +1414,82 @@ bool GCMarker::markOneObjectForTest(JSObject* obj) {
 }
 #endif
 
+#ifdef JS_GC_CONCURRENT_MARKING
+
+
+
+static constexpr size_t MainThreadBufferThreshold = 16384;
+
+inline bool GCMarker::addToMainThreadBuffer(JS::GCCellPtr ptr) {
+  auto& buffer = markColor() == MarkColor::Black ? blackMainThreadBuffer_.ref()
+                                                 : grayMainThreadBuffer_.ref();
+  if (!buffer.append(ptr)) {
+    return false;
+  }
+
+  if (MOZ_UNLIKELY(buffer.length() == MainThreadBufferThreshold)) {
+    AutoLockHelperThreadState lock;
+    GCRuntime* gc = &runtime()->gc;
+    gc->maybeRequestGCAfterBackgroundTask(lock);
+  }
+
+  return true;
+}
+
+bool GCMarker::processMainThreadBuffers(SliceBudget& budget) {
+  
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()) ||
+             JS::RuntimeHeapIsMajorCollecting());
+
+  MOZ_ASSERT(markColor() == MarkColor::Black);
+  if (!processMainThreadBuffer(blackMainThreadBuffer_.ref(), budget)) {
+    return false;
+  }
+
+  if (!grayMainThreadBuffer_.ref().empty()) {
+    AutoSetMarkColor autoSetGray(*this, MarkColor::Gray);
+    if (!processMainThreadBuffer(grayMainThreadBuffer_.ref(), budget)) {
+      return false;
+    }
+  }
+
+  MOZ_ASSERT(mainThreadBuffersAreEmpty());
+
+  return true;
+}
+
+bool GCMarker::processMainThreadBuffer(MainThreadBuffer& buffer,
+                                       SliceBudget& budget) {
+  while (!buffer.empty()) {
+    JS::GCCellPtr cell = buffer.popCopy();
+    if (cell.is<JSObject>()) {
+      JSObject* obj = &cell.as<JSObject>();
+      const JSClass* clasp = obj->getClass();
+      
+      
+      
+      if (clasp->hasTrace()) {
+        AutoSetTracingSource asts(tracer(), obj);
+        clasp->doTrace(tracer(), obj);
+      }
+    } else {
+      BaseScript* script = &cell.as<BaseScript>();
+      if (script->hasJitScript()) {
+        script->jitScript()->trace(tracer());
+      }
+    }
+
+    budget.step();
+    if (budget.isOverBudget()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+#endif  
+
 static inline void CheckForCompartmentMismatch(JSObject* obj, JSObject* obj2) {
 #ifdef DEBUG
   if (MOZ_UNLIKELY(obj->compartment() != obj2->compartment())) {
@@ -1418,9 +1503,18 @@ static inline void CheckForCompartmentMismatch(JSObject* obj, JSObject* obj2) {
 }
 
 static inline size_t NumUsedFixedSlots(NativeObject* obj) {
-  return std::min(obj->numFixedSlots(), obj->slotSpan());
+  
+  
+  
+  
+  
+  Shape* shape = obj->shape();
+  ObjectSlots* slotsHeader = obj->getSlotsHeader();
+  return std::min(NumNativeObjectFixedSlots(shape),
+                  NativeObjectSlotSpan(shape, slotsHeader));
 }
 
+#ifndef JS_GC_CONCURRENT_MARKING
 static inline size_t NumUsedDynamicSlots(NativeObject* obj) {
   size_t nfixed = obj->numFixedSlots();
   size_t nslots = obj->slotSpan();
@@ -1430,6 +1524,7 @@ static inline size_t NumUsedDynamicSlots(NativeObject* obj) {
 
   return nslots - nfixed;
 }
+#endif
 
 void GCMarker::updateRangesAtStartOfSlice() {
   MOZ_ASSERT(!stack.elementsRangesAreValid);
@@ -1518,7 +1613,13 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
 
       case SlotsOrElementsKind::DynamicSlots: {
         base = nobj->slots_;
+#ifdef JS_GC_CONCURRENT_MARKING
+        
+        
+        end = ObjectSlots::fromSlots(base)->capacity();
+#else
         end = NumUsedDynamicSlots(nobj);
+#endif
         break;
       }
 
@@ -1573,6 +1674,21 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
           markImplicitEdges(script);
         }
         AutoSetTracingSource asts(tracer(), script);
+
+#ifdef JS_GC_CONCURRENT_MARKING
+        
+        
+        if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
+          bool skippedJitScript = false;
+          script->traceChildrenConcurrently(tracer(), &skippedJitScript);
+          if (skippedJitScript &&
+              MOZ_UNLIKELY(!addToMainThreadBuffer(JS::GCCellPtr(script)))) {
+            delayMarkingChildrenOnOOM(script);
+          }
+          return true;
+        }
+#endif
+
         script->traceChildren(tracer());
         return true;
       }
@@ -1594,7 +1710,7 @@ scan_value_range:
       return false;
     }
 
-    const Value& v = base[index];
+    Value v = base[index];
     index++;
 
     if (!v.isGCThing()) {
@@ -1646,13 +1762,14 @@ scan_obj: {
   }
   markAndTraverseEdge<opts>(obj, obj->shape());
 
-  CallTraceHook(tracer(), obj);
+  const JSClass* clasp = obj->getClass();
+  if (clasp->hasTrace() && !callOrDelayTraceHook<opts>(obj, clasp)) {
+    return false;
+  }
 
   if (!obj->is<NativeObject>()) {
     return true;
   }
-
-  NativeObject* nobj = &obj->as<NativeObject>();
 
   
   
@@ -1661,23 +1778,33 @@ scan_obj: {
     return true;
   }
 
-  unsigned nslots = nobj->slotSpan();
+  
+  
+  NativeObject* nobj = &obj->as<NativeObject>();
+  Shape* shape = nobj->shape();
+  HeapSlot* slotsPtr = nobj->slots_;
+  HeapSlot* elementsPtr = nobj->elements_;
 
-  if (nobj->hasDynamicSlots()) {
-    ObjectSlots* slots = nobj->getSlotsHeader();
-    MarkTenuredBuffer(nobj->zone(), slots);
+  
+  ObjectSlots* slotsHeader = ObjectSlots::fromSlots(slotsPtr);
+  unsigned nslots = NativeObjectSlotSpan(shape, slotsHeader);
+  unsigned nfixed = NumNativeObjectFixedSlots(shape);
+
+  if (IsNativeObjectDynamicSlots(slotsPtr)) {
+    MarkTenuredBuffer(nobj->zone(), slotsHeader);
   }
 
-  if (nobj->hasDynamicElements()) {
-    void* elements = nobj->getUnshiftedElementsHeader();
-    MarkTenuredBuffer(nobj->zone(), elements);
+  ObjectElements* elementsHeader = ObjectElements::fromElements(elementsPtr);
+  if (IsNativeObjectDynamicElements(elementsPtr)) {
+    void* unshiftedHeader = elementsHeader->getUnshiftedHeader();
+    MarkTenuredBuffer(nobj->zone(), unshiftedHeader);
   }
 
-  if (!nobj->hasEmptyElements()) {
-    base = nobj->getDenseElements();
+  if (!IsNativeObjectEmptyElements(elementsPtr)) {
+    base = elementsPtr;
     kind = SlotsOrElementsKind::Elements;
     index = 0;
-    end = nobj->getDenseInitializedLength();
+    end = elementsHeader->getInitializedLength();
 
     if (!nslots) {
       
@@ -1687,7 +1814,6 @@ scan_obj: {
     pushValueRange(nobj, kind, index, end);
   }
 
-  unsigned nfixed = nobj->numFixedSlots();
   base = nobj->fixedSlots();
   kind = SlotsOrElementsKind::FixedSlots;
   index = 0;
@@ -1703,6 +1829,28 @@ scan_obj: {
   
   goto scan_value_range;
 }
+}
+
+template <uint32_t opts>
+bool GCMarker::callOrDelayTraceHook(JSObject* obj, const JSClass* clasp) {
+  MOZ_ASSERT(clasp->hasTrace());
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
+    
+    
+    if (MOZ_UNLIKELY(!addToMainThreadBuffer(JS::GCCellPtr(obj)))) {
+      delayMarkingChildrenOnOOM(obj);
+      return false;
+    }
+    return true;
+  }
+#endif
+
+  JSTracer* trc = tracer();
+  AutoSetTracingSource asts(trc, obj);
+  clasp->doTrace(trc, obj);
+  return true;
 }
 
 
@@ -2265,6 +2413,16 @@ GCMarker::GCMarker(JSRuntime* rt)
 
 bool GCMarker::init() { return stack.init(); }
 
+bool GCMarker::isDrained() const {
+#ifdef JS_GC_CONCURRENT_MARKING
+  if (!mainThreadBuffersAreEmpty()) {
+    return false;
+  }
+#endif
+
+  return isMarkStackEmpty();
+}
+
 void GCMarker::start() {
   MOZ_ASSERT(state == NotActive);
   MOZ_ASSERT(stack.isEmpty());
@@ -2300,6 +2458,12 @@ void GCMarker::reset() {
   stack.clearAndResetCapacity();
   otherStack.clearAndFreeStack();
   ClearEphemeronEdges(runtime());
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  blackMainThreadBuffer_.ref().clearAndFree();
+  grayMainThreadBuffer_.ref().clearAndFree();
+#endif
+
   MOZ_ASSERT(isDrained());
 
   setMarkColor(MarkColor::Black);
@@ -2333,6 +2497,7 @@ bool GCMarker::hasEntries(MarkColor color) const {
 
 template <typename T>
 inline void GCMarker::pushTaggedPtr(T* ptr) {
+  MOZ_ASSERT(ptr->isTenured());
   checkZone(ptr);
   if (!stack.push(ptr)) {
     delayMarkingChildrenOnOOM(ptr);
@@ -2341,6 +2506,7 @@ inline void GCMarker::pushTaggedPtr(T* ptr) {
 
 inline void GCMarker::pushValueRange(JSObject* obj, SlotsOrElementsKind kind,
                                      size_t start, size_t end) {
+  MOZ_ASSERT(obj->isTenured());
   checkZone(obj);
   MOZ_ASSERT(obj->is<NativeObject>());
   MOZ_ASSERT(start <= end);
@@ -2365,6 +2531,15 @@ void GCMarker::enterParallelMarkingMode() {
 
 void GCMarker::leaveParallelMarkingMode() {
   setMarkingStateAndTracer<MarkingTracer>(ParallelMarking, RegularMarking);
+}
+
+void GCMarker::enterConcurrentMarkingMode() {
+  setMarkingStateAndTracer<ConcurrentMarkingTracer>(RegularMarking,
+                                                    ConcurrentMarking);
+}
+
+void GCMarker::leaveConcurrentMarkingMode() {
+  setMarkingStateAndTracer<MarkingTracer>(ConcurrentMarking, RegularMarking);
 }
 
 
@@ -2562,7 +2737,7 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
 
 void GCRuntime::markAllDelayedChildren(ShouldReportMarkTime reportTime) {
   MOZ_ASSERT(CurrentThreadIsMainThread() || CurrentThreadIsPerformingGC());
-  MOZ_ASSERT(marker().isDrained());
+  MOZ_ASSERT(marker().isMarkStackEmpty());
   MOZ_ASSERT(hasDelayedMarking());
 
   mozilla::Maybe<gcstats::AutoPhase> ap;
@@ -3006,13 +3181,6 @@ void UnmarkGrayTracer::unmark(JS::GCCellPtr cell) {
 
 bool js::gc::UnmarkGrayGCThingUnchecked(GCMarker* marker, JS::GCCellPtr thing) {
   MOZ_ASSERT(thing);
-
-  mozilla::Maybe<AutoGeckoProfilerEntry> profilingStackFrame;
-  if (JSContext* cx = TlsContext.get()) {
-    profilingStackFrame.emplace(cx, "UnmarkGrayGCThing",
-                                JS::ProfilingCategoryPair::GCCC_UnmarkGray);
-  }
-
   UnmarkGrayTracer unmarker(marker);
   unmarker.unmark(thing);
   return unmarker.unmarkedAny;
@@ -3021,6 +3189,12 @@ bool js::gc::UnmarkGrayGCThingUnchecked(GCMarker* marker, JS::GCCellPtr thing) {
 JS_PUBLIC_API bool JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr thing) {
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
+
+  mozilla::Maybe<AutoGeckoProfilerEntry> profilingStackFrame;
+  if (JSContext* cx = TlsContext.get()) {
+    profilingStackFrame.emplace(cx, "UnmarkGrayGCThing",
+                                JS::ProfilingCategoryPair::GCCC_UnmarkGray);
+  }
 
   JSRuntime* rt = thing.asCell()->runtimeFromMainThread();
   if (thing.asCell()->zone()->isGCPreparing()) {
