@@ -12,6 +12,27 @@ use url::Url;
 use crate::{Headers, Method, Request, Response, Result, ViaductError};
 
 
+
+
+
+
+
+
+
+async fn send_request(request: Request, settings: crate::ClientSettings) -> Result<Response> {
+    
+    if let Ok(backend) = crate::new_backend::get_backend() {
+        return backend.send_request(request, settings).await;
+    }
+
+    
+    crate::trace!(
+        "OHTTP: Using old backend (global settings will be used instead of per-request settings)"
+    );
+    crate::backend::send(request)
+}
+
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct OhttpConfig {
     
@@ -198,14 +219,13 @@ async fn fetch_config_from_network(gateway_host: &str) -> Result<Vec<u8>> {
     let config_url = Url::parse(&gateway_url)?.join("ohttp-configs")?;
 
     let request = Request::get(config_url.clone());
-    let backend = crate::new_backend::get_backend()?;
     let settings = crate::ClientSettings {
         timeout: 10000,
         redirect_limit: 5,
         ..crate::ClientSettings::default()
     };
 
-    let response = backend.send_request(request, settings).await?;
+    let response = send_request(request, settings).await?;
 
     if !response.is_success() {
         return Err(ViaductError::OhttpConfigFetchFailed(format!(
@@ -338,8 +358,7 @@ pub async fn process_ohttp_request(
     
     crate::trace!("Sending to relay with timeout: {}ms", settings.timeout);
     let relay_start = std::time::Instant::now();
-    let backend = crate::new_backend::get_backend()?;
-    let relay_response = backend.send_request(relay_request, settings).await?;
+    let relay_response = send_request(relay_request, settings).await?;
     let relay_duration = relay_start.elapsed();
 
     crate::trace!(
