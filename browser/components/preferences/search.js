@@ -856,6 +856,7 @@ Preferences.addSetting(
       for (let engine of await lazy.SearchService.getEngines()) {
         let settingId = `engineList-${engine.id}`;
         let editId = `editEngine-${engine.id}`;
+        let outlinkId = `outlink-${engine.id}`;
 
         maybeMakeSetting(EngineListItemSetting(settingId, engine));
         maybeMakeSetting({
@@ -893,8 +894,27 @@ Preferences.addSetting(
 
         
         
-        if (!engine.loadPath.startsWith("[addon]")) {
+        
+        if (!(engine instanceof lazy.AddonSearchEngine)) {
           config.items.push(this.handleDeletionOptions(engine));
+        } else {
+          maybeMakeSetting({
+            id: outlinkId,
+            onUserClick(e) {
+              e.preventDefault();
+              
+              window.browsingContext.topChromeWindow.BrowserAddonUI.manageAddon(
+                engine.extensionID
+              );
+            },
+          });
+
+          config.items.push({
+            id: outlinkId,
+            control: "moz-button",
+            iconSrc: "chrome://global/skin/icons/open-in-new.svg",
+            slot: "actions",
+          });
         }
 
         configs.push(config);
