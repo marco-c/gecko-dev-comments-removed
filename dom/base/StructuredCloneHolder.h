@@ -212,17 +212,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
                      const JS::CloneDataPolicy& aCloneDataPolicy,
                      ErrorResult& aRv);
 
-  
-  
-
-  void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
-            JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
   void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
             ErrorResult& aRv);
 
-  void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
-            JS::MutableHandle<JS::Value> aValue,
-            const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
   void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
