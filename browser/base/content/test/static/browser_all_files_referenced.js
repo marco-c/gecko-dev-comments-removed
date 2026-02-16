@@ -331,10 +331,6 @@ var allowlist = [
 
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
-  },
-  
-  {
     file: "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   },
   
