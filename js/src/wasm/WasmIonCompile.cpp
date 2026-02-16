@@ -8619,6 +8619,9 @@ bool FunctionCompiler::emitSpeculativeInlineCallRef(
     elseBlocks.infallibleAppend(elseBlock);
   }
 
+  
+  curBlock_->setFrequency(Frequency::Unlikely);
+
   DefVector callResults;
   if (!callRef(funcType, actualCalleeFunc, bytecodeOffset, args,
                &callResults)) {
