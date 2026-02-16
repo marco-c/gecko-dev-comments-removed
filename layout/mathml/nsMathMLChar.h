@@ -73,7 +73,7 @@ class nsMathMLChar {
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
   
-  nsMathMLChar() : mDirection(NS_STRETCH_DIRECTION_DEFAULT) {
+  nsMathMLChar() : mDirection(StretchDirection::Default) {
     MOZ_COUNT_CTOR(nsMathMLChar);
     mComputedStyle = nullptr;
     mUnscaledAscent = 0;
@@ -96,8 +96,7 @@ class nsMathMLChar {
   
   
   nsresult Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
-                   float aFontSizeInflation,
-                   nsStretchDirection aStretchDirection,
+                   float aFontSizeInflation, StretchDirection aStretchDirection,
                    const nsBoundingMetrics& aContainerSize,
                    nsBoundingMetrics& aDesiredStretchSize,
                    uint32_t aStretchHint, bool aRTL);
@@ -108,7 +107,7 @@ class nsMathMLChar {
 
   int32_t Length() { return mData.Length(); }
 
-  nsStretchDirection GetStretchDirection() { return mDirection; }
+  StretchDirection GetStretchDirection() { return mDirection; }
 
   
   
@@ -158,7 +157,7 @@ class nsMathMLChar {
 
  private:
   nsRect mRect;
-  nsStretchDirection mDirection;
+  StretchDirection mDirection;
   nsBoundingMetrics mBoundingMetrics;
   RefPtr<mozilla::ComputedStyle> mComputedStyle;
   
@@ -207,7 +206,7 @@ class nsMathMLChar {
 
   nsresult StretchInternal(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
                            float aFontSizeInflation,
-                           nsStretchDirection& aStretchDirection,
+                           StretchDirection& aStretchDirection,
                            const nsBoundingMetrics& aContainerSize,
                            nsBoundingMetrics& aDesiredStretchSize,
                            uint32_t aStretchHint,

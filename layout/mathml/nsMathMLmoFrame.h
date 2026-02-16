@@ -59,7 +59,7 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
   
   
   NS_IMETHOD
-  Stretch(DrawTarget* aDrawTarget, nsStretchDirection aStretchDirection,
+  Stretch(DrawTarget* aDrawTarget, StretchDirection aStretchDirection,
           nsBoundingMetrics& aContainerSize,
           ReflowOutput& aDesiredStretchSize) override;
 

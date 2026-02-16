@@ -46,7 +46,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
 
   NS_IMETHOD
-  Stretch(DrawTarget* aDrawTarget, nsStretchDirection aStretchDirection,
+  Stretch(DrawTarget* aDrawTarget, StretchDirection aStretchDirection,
           nsBoundingMetrics& aContainerSize,
           ReflowOutput& aDesiredStretchSize) override;
 
@@ -190,7 +190,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   void GetPreferredStretchSize(DrawTarget* aDrawTarget, uint32_t aOptions,
-                               nsStretchDirection aStretchDirection,
+                               StretchDirection aStretchDirection,
                                nsBoundingMetrics& aPreferredStretchSize);
 
   
