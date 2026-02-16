@@ -114,21 +114,22 @@ class StructuredCloneHolderBase {
 
   
   
-  bool Write(JSContext* aCx, JS::Handle<JS::Value> aValue);
+  void Write(JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv);
 
   
   
-  bool Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
+  void Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
              JS::Handle<JS::Value> aTransfer,
-             const JS::CloneDataPolicy& aCloneDataPolicy);
+             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
   
   
-  bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue);
+  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+            ErrorResult& aRv);
 
   
-  bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
-            const JS::CloneDataPolicy& aCloneDataPolicy);
+  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+            const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
   
   
@@ -150,19 +151,10 @@ class StructuredCloneHolderBase {
     return size;
   }
 
-  void SetErrorMessage(const char* aErrorMessage) {
-    mErrorMessage.Assign(aErrorMessage);
-  }
-
  protected:
   UniquePtr<JSAutoStructuredCloneBuffer> mBuffer;
 
   StructuredCloneScope mStructuredCloneScope;
-
-  
-  
-  
-  nsCString mErrorMessage;
 
 #ifdef DEBUG
   bool mClearCalled;

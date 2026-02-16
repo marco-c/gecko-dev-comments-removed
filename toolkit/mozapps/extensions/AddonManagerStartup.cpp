@@ -46,8 +46,6 @@
 #include "nsReadableUtils.h"
 #include "nsXULAppAPI.h"
 
-#include <stdlib.h>
-
 namespace mozilla {
 
 using Compression::LZ4;
@@ -540,6 +538,7 @@ nsresult AddonManagerStartup::EncodeBlob(JS::Handle<JS::Value> value,
 
   ErrorResult rv;
   holder.Write(cx, value, rv);
+  rv.WouldReportJSException();
   if (rv.Failed()) {
     return rv.StealNSResult();
   }
