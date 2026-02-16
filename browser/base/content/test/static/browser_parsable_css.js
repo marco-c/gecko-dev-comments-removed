@@ -203,6 +203,7 @@ let propNameAllowlist = [
   
   
   { propName: "--ai-controls-description", isFromDevTools: false },
+  { propName: "--browser-with-dialog", isFromDevTools: false },
 
   
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
