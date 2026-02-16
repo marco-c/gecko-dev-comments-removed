@@ -3370,6 +3370,7 @@ static bool AddYearMonthDuration(JSContext* cx, CalendarId calendarId,
                                  const icu4x::capi::Calendar* calendar,
                                  const CalendarDate& calendarDate,
                                  const DateDuration& duration,
+                                 TemporalOverflow overflow,
                                  CalendarDate* result) {
   MOZ_ASSERT(CalendarHasLeapMonths(calendarId));
   MOZ_ASSERT(IsValidDuration(duration));
@@ -3386,16 +3387,16 @@ static bool AddYearMonthDuration(JSContext* cx, CalendarId calendarId,
   year = durationYear.value();
 
   
+  auto firstDayOfMonth = CreateDateFromCodes(cx, calendarId, calendar, year,
+                                             monthCode, 1, overflow);
+  if (!firstDayOfMonth) {
+    return false;
+  }
+
+  
   
   int64_t months = duration.months;
   if (months != 0) {
-    auto firstDayOfMonth =
-        CreateDateFromCodes(cx, calendarId, calendar, year, monthCode, 1,
-                            TemporalOverflow::Constrain);
-    if (!firstDayOfMonth) {
-      return false;
-    }
-
     if (months > 0) {
       while (true) {
         
@@ -3477,7 +3478,7 @@ static bool AddNonISODate(JSContext* cx, CalendarId calendarId,
   } else {
     auto date = ToCalendarDate(calendarId, dt.get());
     if (!AddYearMonthDuration(cx, calendarId, cal.get(), date, duration,
-                              &calendarDate)) {
+                              overflow, &calendarDate)) {
       return false;
     }
   }
@@ -3797,8 +3798,9 @@ static bool DifferenceNonISODate(JSContext* cx, CalendarId calendarId,
     
     while (true) {
       CalendarDate intermediateDate;
-      if (!AddYearMonthDuration(cx, calendarId, cal.get(), oneDate,
-                                {years, months + sign}, &intermediateDate)) {
+      if (!AddYearMonthDuration(
+              cx, calendarId, cal.get(), oneDate, {years, months + sign},
+              TemporalOverflow::Constrain, &intermediateDate)) {
         return false;
       }
       if (CompareCalendarDate(intermediateDate, twoDate) * sign > 0) {
