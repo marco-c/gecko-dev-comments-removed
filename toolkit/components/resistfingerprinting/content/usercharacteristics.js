@@ -1221,13 +1221,33 @@ async function populateMathML() {
   
   
   
-  const mathElements = [...document.querySelectorAll("math[id]")];
 
-  return mathElements.reduce((acc, el) => {
-    
+  
+  const oldMathElements = [...document.querySelectorAll("math[id]")].filter(
+    el => /^\d+$/.test(el.id)
+  );
+  const oldMetrics = oldMathElements.reduce((acc, el) => {
     acc["mathml" + el.id] = el.getBoundingClientRect().width.toString();
     return acc;
   }, {});
+
+  
+  const newMathElements = [...document.querySelectorAll("math[id^='new-']")];
+  const mathmlValues = newMathElements.map(
+    el => el.getBoundingClientRect().width
+  );
+
+  
+  const firstMathElement = document.querySelector("math");
+  const mathmlFontFamily = firstMathElement
+    ? getComputedStyle(firstMathElement).fontFamily
+    : "";
+
+  return {
+    ...oldMetrics,
+    mathmlDiagValues: mathmlValues,
+    mathmlDiagFontFamily: mathmlFontFamily,
+  };
 }
 
 async function populateAudioDeviceProperties() {
