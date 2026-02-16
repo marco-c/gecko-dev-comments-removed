@@ -135,6 +135,9 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
 
   
   static void unmarkZone(JS::Zone* zone);
+#ifdef DEBUG
+  static void checkZoneUnmarked(JS::Zone* zone);
+#endif
 
   
   
@@ -151,12 +154,14 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   static void traceAllMappings(WeakMapTracer* tracer);
 
+#if defined(JS_GC_ZEAL)
   
   static bool saveZoneMarkedWeakMaps(JS::Zone* zone,
                                      WeakMapColors& markedWeakMaps);
 
   
   static void restoreMarkedWeakMaps(WeakMapColors& markedWeakMaps);
+#endif
 
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
   static bool checkMarkingForZone(JS::Zone* zone);
