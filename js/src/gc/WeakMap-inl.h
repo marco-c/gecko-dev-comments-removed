@@ -348,27 +348,40 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
 }
 
 template <class K, class V, class AP>
-void WeakMap<K, V, AP>::traceWeakEdges(JSTracer* trc) {
+void WeakMap<K, V, AP>::traceWeakEdgesDuringSweeping(JSTracer* trc) {
   
-  MOZ_ASSERT(!trc->isTenuringTracer() && trc->kind() != JS::TracerKind::Moving);
+  MOZ_ASSERT(trc->kind() == JS::TracerKind::Sweeping);
+  MOZ_ASSERT(zone()->isGCSweeping());
 
   
   
   mayHaveSymbolKeys = false;
   mayHaveKeyDelegates = false;
-  for (Enum e(*this); !e.empty(); e.popFront()) {
+
+  mozilla::Maybe<Enum> e;
+  e.emplace(*this);
+  for (; !e->empty(); e->popFront()) {
 #ifdef DEBUG
-    K prior = e.front().key();
+    K prior = e->front().key();
 #endif
-    if (TraceWeakEdge(trc, &e.front().mutableKey(), "WeakMap key")) {
-      MOZ_ASSERT(e.front().key() == prior);
-      keyKindBarrier(e.front().key());
+    if (TraceWeakEdge(trc, &e->front().mutableKey(), "WeakMap key")) {
+      MOZ_ASSERT(e->front().key() == prior);
+      keyKindBarrier(e->front().key());
     } else {
-      e.removeFront();
+      e->removeFront();
     }
   }
 
   
+
+  {
+    
+    
+    
+    
+    gc::AutoLockStoreBuffer lock(trc->runtime());
+    e.reset();
+  }
 
 #if DEBUG
   

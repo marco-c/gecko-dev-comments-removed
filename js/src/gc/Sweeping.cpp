@@ -1407,9 +1407,6 @@ void GCRuntime::sweepWeakMaps() {
     
     zone->gcEphemeronEdges().clearAndCompact();
 
-    
-    
-    AutoLockStoreBuffer lock(rt);
     zone->sweepWeakMaps(&trc);
   }
 }
@@ -1656,6 +1653,8 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     zone->arenas.unmarkPreMarkedFreeCells();
     zone->arenas.clearFreeLists();
 
+    zone->bufferAllocator.setMultiThreadedUse(&storeBufferLock);
+
     if (zone->isAtomsZone()) {
       sweepingAtoms = true;
     }
@@ -1763,6 +1762,7 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   
 
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
+    zone->bufferAllocator.clearMultiThreadedUse();
     zone->arenas.queueForegroundThingsForSweep();
     constexpr AllocKinds backgroundKinds =
         BackgroundObjectFinalizePhase + BackgroundTrivialFinalizePhase;
