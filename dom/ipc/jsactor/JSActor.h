@@ -67,15 +67,15 @@ class JSActor : public nsISupports, public nsWrapperCache {
   
   virtual void SendRawMessage(const JSActorMessageMeta& aMetadata,
                               JSIPCValue&& aData,
-                              ipc::StructuredCloneData* aStack,
+                              UniquePtr<ipc::StructuredCloneData> aStack,
                               ErrorResult& aRv) = 0;
 
   
   using OtherSideCallback = std::function<already_AddRefed<JSActorManager>()>;
-  static void SendRawMessageInProcess(const JSActorMessageMeta& aMeta,
-                                      JSIPCValue&& aData,
-                                      ipc::StructuredCloneData* aStack,
-                                      OtherSideCallback&& aGetOtherSide);
+  static void SendRawMessageInProcess(
+      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
+      UniquePtr<ipc::StructuredCloneData> aStack,
+      OtherSideCallback&& aGetOtherSide);
 
   virtual ~JSActor() = default;
 

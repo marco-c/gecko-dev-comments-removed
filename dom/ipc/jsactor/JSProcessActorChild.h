@@ -40,7 +40,7 @@ class JSProcessActorChild final : public JSActor {
   
   
   void SendRawMessage(const JSActorMessageMeta& aMetadata, JSIPCValue&& aData,
-                      ipc::StructuredCloneData* aStack,
+                      UniquePtr<ipc::StructuredCloneData> aStack,
                       ErrorResult& aRv) override;
 
  private:

@@ -14,6 +14,7 @@
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -114,39 +115,27 @@ class StructuredCloneHolderBase {
 
   
   
-  void Write(JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv);
+  bool Write(JSContext* aCx, JS::Handle<JS::Value> aValue);
 
   
   
-  void Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
+  bool Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
              JS::Handle<JS::Value> aTransfer,
-             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
+             const JS::CloneDataPolicy& aCloneDataPolicy);
 
   
   
-  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
-            ErrorResult& aRv);
+  bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue);
 
   
-  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
-            const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
-
-  
-  
-  
-  void Adopt(JSStructuredCloneData&& aData,
-             uint32_t aVersion = JS_STRUCTURED_CLONE_VERSION);
+  bool Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+            const JS::CloneDataPolicy& aCloneDataPolicy);
 
   bool HasData() const { return !!mBuffer; }
 
   JSStructuredCloneData& BufferData() const {
     MOZ_ASSERT(mBuffer, "Write() has never been called.");
     return mBuffer->data();
-  }
-
-  uint32_t BufferVersion() const {
-    MOZ_ASSERT(mBuffer, "Write() has never been called.");
-    return mBuffer->version();
   }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
@@ -157,10 +146,19 @@ class StructuredCloneHolderBase {
     return size;
   }
 
+  void SetErrorMessage(const char* aErrorMessage) {
+    mErrorMessage.Assign(aErrorMessage);
+  }
+
  protected:
   UniquePtr<JSAutoStructuredCloneBuffer> mBuffer;
 
   StructuredCloneScope mStructuredCloneScope;
+
+  
+  
+  
+  nsCString mErrorMessage;
 
 #ifdef DEBUG
   bool mClearCalled;
@@ -210,14 +208,46 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
                      const JS::CloneDataPolicy& aCloneDataPolicy,
                      ErrorResult& aRv);
 
-  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
-            ErrorResult& aRv);
+  void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
+            JS::MutableHandle<JS::Value> aValue, ErrorResult& aRv);
 
-  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+  void Read(nsIGlobalObject* aGlobal, JSContext* aCx,
+            JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
+#ifdef MOZ_WEBRTC
+#  define IF_WEBRTC(x) x
+#else
+#  define IF_WEBRTC(x)
+#endif
+
+
+
+
+#define CLONED_DATA_MEMBERS                \
+  STMT(mBlobImplArray);                    \
+  STMT(mWasmModuleArray);                  \
+  STMT(mInputStreamArray);                 \
+  STMT(mClonedSurfaces);                   \
+  STMT(mVideoFrames);                      \
+  STMT(mAudioData);                        \
+  STMT(mEncodedVideoChunks);               \
+  STMT(mEncodedAudioChunks);               \
+  IF_WEBRTC(STMT(mRtcEncodedVideoFrames);) \
+  IF_WEBRTC(STMT(mRtcEncodedAudioFrames);) \
+  STMT(mPortIdentifiers);
+
   
-  bool HasClonedDOMObjects();
+  bool HasClonedDOMObjects() const {
+#define STMT(_member)         \
+  if (!(_member).IsEmpty()) { \
+    return true;              \
+  }
+
+    CLONED_DATA_MEMBERS
+#undef STMT
+    return false;
+  }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {
     MOZ_ASSERT(mSupportsCloning,
@@ -245,6 +275,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
     }
     return mStructuredCloneScope;
   }
+
+  
+  
+  nsIGlobalObject* GlobalDuringRead() const { return mGlobal; }
 
   
   
@@ -348,44 +382,25 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   static const JSStructuredCloneCallbacks sCallbacks;
 
  protected:
+  
+  
+  
+  void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
+                      JSStructuredCloneData& aBuffer,
+                      JS::MutableHandle<JS::Value> aValue,
+                      const JS::CloneDataPolicy& aCloneDataPolicy,
+                      ErrorResult& aRv);
+
+  void ReadFromBuffer(nsIGlobalObject* aGlobal, JSContext* aCx,
+                      JSStructuredCloneData& aBuffer,
+                      uint32_t aAlgorithmVersion,
+                      JS::MutableHandle<JS::Value> aValue,
+                      const JS::CloneDataPolicy& aCloneDataPolicy,
+                      ErrorResult& aRv);
+
   void SameProcessScopeRequired(bool* aSameProcessScopeRequired);
 
-  already_AddRefed<MessagePort> ReceiveMessagePort(nsIGlobalObject* aGlobal,
-                                                   uint64_t aIndex);
-
-#ifdef DEBUG
-  
-  
-  void AssertAttachmentsMatchFlags();
-#else
-  void AssertAttachmentsMatchFlags() {}
-#endif
-
-  
-  
-  
-  auto CloneableAttachmentArrays() {
-    return std::tie(mBlobImplArray, mInputStreamArray);
-  }
-  auto InProcessCloneableAttachmentArrays() {
-    return std::tie(mWasmModuleArray, mClonedSurfaces, mVideoFrames, mAudioData,
-                    mEncodedVideoChunks, mEncodedAudioChunks
-#ifdef MOZ_WEBRTC
-                    ,
-                    mRtcEncodedVideoFrames, mRtcEncodedAudioFrames
-#endif
-    );
-  }
-  auto TransferableAttachmentArrays() {
-    
-    
-    return std::tie(mPortIdentifiers);
-  }
-  auto AttachmentArrays() {
-    return std::tuple_cat(CloneableAttachmentArrays(),
-                          InProcessCloneableAttachmentArrays(),
-                          TransferableAttachmentArrays());
-  }
+  already_AddRefed<MessagePort> ReceiveMessagePort(uint64_t aIndex);
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
@@ -432,6 +447,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 #endif
 
   
+  nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
+
+  
   
   nsTArray<RefPtr<MessagePort>> mTransferredPorts;
 
@@ -439,6 +457,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   mutable nsTArray<MessagePortIdentifier> mPortIdentifiers;
+
+#ifdef DEBUG
+  nsCOMPtr<nsIEventTarget> mCreationEventTarget;
+#endif
 };
 
 }  

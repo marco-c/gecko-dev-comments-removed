@@ -85,8 +85,7 @@ class ClientHandle final : public ClientThing<ClientHandleChild> {
   
   
   RefPtr<GenericErrorResultPromise> PostMessage(
-      NotNull<ipc::StructuredCloneData*> aData,
-      const ServiceWorkerDescriptor& aSource);
+      ipc::StructuredCloneData& aData, const ServiceWorkerDescriptor& aSource);
 
   
   

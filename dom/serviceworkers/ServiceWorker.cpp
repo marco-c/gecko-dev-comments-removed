@@ -7,6 +7,7 @@
 #include "ServiceWorker.h"
 
 #include "ServiceWorkerChild.h"
+#include "ServiceWorkerCloneData.h"
 #include "ServiceWorkerManager.h"
 #include "ServiceWorkerPrivate.h"
 #include "ServiceWorkerRegistration.h"
@@ -199,14 +200,13 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   
   
   
+  
   JS::CloneDataPolicy clonePolicy;
   if (global->IsSharedMemoryAllowed()) {
     clonePolicy.allowSharedMemoryObjects();
   }
 
-  auto data = MakeRefPtr<ipc::StructuredCloneData>(
-      JS::StructuredCloneScope::UnknownDestination,
-      StructuredCloneHolder::TransferringSupported);
+  RefPtr<ServiceWorkerCloneData> data = new ServiceWorkerCloneData();
   data->Write(aCx, aMessage, transferable, clonePolicy, aRv);
   if (aRv.Failed()) {
     return;
@@ -219,11 +219,17 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   
   
   
-  if (data->CloneScope() != JS::StructuredCloneScope::DifferentProcess) {
-    data = nullptr;
+  if (data->CloneScope() ==
+      StructuredCloneHolder::StructuredCloneScope::SameProcess) {
+    data->SetAsErrorMessageData();
   }
 
   if (!mActor) {
+    return;
+  }
+
+  ClonedOrErrorMessageData clonedData;
+  if (!data->BuildClonedMessageData(clonedData)) {
     return;
   }
 
@@ -249,7 +255,7 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
         ClientInfoAndState(clientInfo.ref().ToIPC(), clientState.ref().ToIPC());
   }
 
-  mActor->SendPostMessage(data, source);
+  mActor->SendPostMessage(clonedData, source);
 }
 
 void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
