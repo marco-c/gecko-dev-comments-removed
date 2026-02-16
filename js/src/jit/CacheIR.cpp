@@ -11249,6 +11249,9 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   if (callee->native() != fun_call) {
     return AttachDecision::NoAction;
   }
+  if (args_.length() > JIT_ARGS_LENGTH_MAX) {
+    return AttachDecision::NoAction;
+  }
 
   if (!thisval_.isObject() || !thisval_.toObject().is<JSFunction>()) {
     return AttachDecision::NoAction;
@@ -13746,7 +13749,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   }
 
   
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+  if (args_.length() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
