@@ -407,6 +407,9 @@ struct AnchorPositioningUtils {
   
   
   static bool TriggerLayoutOnOverflow(PresShell*, bool aFirstIteration);
+
+  static StylePositionArea PhysicalizePositionArea(StylePositionArea aPosArea,
+                                                   const nsIFrame* aPositioned);
 };
 
 }  
