@@ -128,7 +128,7 @@
 #  elif ULONG_MAX == 18446744073709551615u 
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "lu"
-#  elif defined(EMSCRIPTEN) 
+#  elif defined(__wasm32__) 
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "zu"
 #  else
