@@ -7143,12 +7143,6 @@ AsyncPanZoomController::MaybeAdjustDeltaForScrollSnappingOnWheelInput(
     CSSPoint& aStartPosition) {
   
   
-  if (aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_PIXEL) {
-    return Nothing();
-  }
-
-  
-  
   
   
   
