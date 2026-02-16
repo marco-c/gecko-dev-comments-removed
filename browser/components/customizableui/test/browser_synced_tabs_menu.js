@@ -164,12 +164,6 @@ async function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   }
 }
 
-function hideOverflow() {
-  let panelHidePromise = promiseOverflowHidden(window);
-  PanelUI.overflowPanel.hidePopup();
-  return panelHidePromise;
-}
-
 async function asyncCleanup() {
   
   await resetCustomization();
