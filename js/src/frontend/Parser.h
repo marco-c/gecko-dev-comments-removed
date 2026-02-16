@@ -548,6 +548,9 @@ class MOZ_STACK_CLASS PerHandlerParser : public ParserBase {
   inline bool processExport(Node node);
   inline bool processExportFrom(BinaryNodeType node);
   inline bool processImport(BinaryNodeType node);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  inline bool processImportSource(BinaryNodeType node);
+#endif
 
   
   
@@ -788,6 +791,9 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   using Base::processExport;
   using Base::processExportFrom;
   using Base::processImport;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  using Base::processImportSource;
+#endif
   using Base::setFunctionEndFromCurrentToken;
 
  private:
