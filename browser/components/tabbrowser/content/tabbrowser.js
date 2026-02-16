@@ -15,6 +15,8 @@
     "about:welcome": "chrome://branding/content/icon32.png",
     "about:privatebrowsing":
       "chrome://browser/skin/privatebrowsing/favicon.svg",
+    "chrome://browser/content/aiwindow/aiWindow.html":
+      "chrome://global/skin/icons/highlights.svg",
   };
 
   const {
@@ -9144,7 +9146,7 @@
           
           
           
-          gBrowser.setDefaultIcon(this.mTab, this.mBrowser._documentURI);
+          gBrowser.setDefaultIcon(this.mTab, this.mBrowser.documentURI);
         }
 
         
