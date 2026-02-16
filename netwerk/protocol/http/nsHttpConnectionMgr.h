@@ -91,7 +91,9 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   [[nodiscard]] nsresult RemoveIdleConnection(nsHttpConnection*);
 
   
-  [[nodiscard]] nsresult DoSingleConnectionCleanup(nsHttpConnectionInfo*);
+  [[nodiscard]] nsresult DoSingleConnectionCleanup(
+      nsHttpConnectionInfo*,
+      uint32_t aPriority = nsIRunnablePriority::PRIORITY_NORMAL);
 
   
   
@@ -314,9 +316,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
                             ConnectionEntry* ent, HttpConnectionBase* connH2,
                             HttpConnectionBase* connH3);
   
-  [[nodiscard]] nsresult PostEvent(nsConnEventHandler handler,
-                                   int32_t iparam = 0,
-                                   ARefBase* vparam = nullptr);
+  [[nodiscard]] nsresult PostEvent(
+      nsConnEventHandler handler, int32_t iparam = 0,
+      ARefBase* vparam = nullptr,
+      uint32_t priority = nsIRunnablePriority::PRIORITY_NORMAL);
 
   void OnMsgReclaimConnection(HttpConnectionBase*);
 
