@@ -1126,6 +1126,12 @@ class GCRuntime {
 
   MainThreadData<JS::CreateSliceBudgetCallback> createBudgetCallback;
 
+#ifdef MOZ_TSAN
+  
+  
+  mozilla::Atomic<int, mozilla::SequentiallyConsistent> tsanMemoryBarrier;
+#endif
+
  private:
   
   

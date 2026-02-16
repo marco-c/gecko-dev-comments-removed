@@ -5911,3 +5911,13 @@ void GCRuntime::setPerformanceHint(PerformanceHint hint) {
     inPageLoadCount--;
   }
 }
+
+#ifdef MOZ_TSAN
+void js::FullMemoryFence(JSRuntime* runtime) {
+  
+  
+  
+  
+  runtime->gc.tsanMemoryBarrier++;
+}
+#endif

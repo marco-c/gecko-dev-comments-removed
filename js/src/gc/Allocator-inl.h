@@ -11,17 +11,35 @@
 
 
 
+
 #ifndef gc_Allocator_inl_h
 #define gc_Allocator_inl_h
 
 #include "gc/Allocator.h"
 
+#include "gc/Barrier.h"
 #include "gc/Cell.h"
 #include "gc/Zone.h"
 #include "js/Class.h"
 #include "js/RootingAPI.h"
 
 #include "gc/Nursery-inl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 namespace js {
 namespace gc {
@@ -73,7 +91,9 @@ T* CellAllocator::NewString(JSContext* cx, gc::Heap heap, Args&&... args) {
   if (MOZ_UNLIKELY(!ptr)) {
     return nullptr;
   }
-  return new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
+  T* string = new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
+  MemoryReleaseFence(cx->zone());  
+  return string;
 }
 
 template <typename T, AllowGC allowGC>
@@ -84,7 +104,9 @@ T* CellAllocator::NewBigInt(JSContext* cx, Heap heap) {
   if (MOZ_UNLIKELY(!ptr)) {
     return nullptr;
   }
-  return new (mozilla::KnownNotNull, ptr) T();
+  T* bigInt = new (mozilla::KnownNotNull, ptr) T();
+  MemoryReleaseFence(cx->zone());  
+  return bigInt;
 }
 
 template <typename T, AllowGC allowGC, typename... Args>
@@ -97,7 +119,9 @@ T* CellAllocator::NewGetterSetter(JSContext* cx, gc::Heap heap,
   if (MOZ_UNLIKELY(!ptr)) {
     return nullptr;
   }
-  return new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
+  T* gs = new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
+  MemoryReleaseFence(cx->zone());  
+  return gs;
 }
 
 template <typename T, AllowGC allowGC>
@@ -114,7 +138,9 @@ T* CellAllocator::NewObject(JSContext* cx, gc::AllocKind kind, gc::Heap heap,
   if (MOZ_UNLIKELY(!cell)) {
     return nullptr;
   }
-  return new (mozilla::KnownNotNull, cell) T();
+  T* object = new (mozilla::KnownNotNull, cell) T();
+  MemoryReleaseFence(cx->zone());  
+  return object;
 }
 
 template <typename T, AllowGC allowGC, typename... Args>
@@ -122,11 +148,13 @@ template <typename T, AllowGC allowGC, typename... Args>
 T* CellAllocator::NewTenuredCell(JSContext* cx, Args&&... args) {
   gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
   MOZ_ASSERT(Arena::thingSize(kind) == sizeof(T));
-  void* cell = AllocTenuredCell<allowGC>(cx, kind);
-  if (MOZ_UNLIKELY(!cell)) {
+  void* ptr = AllocTenuredCell<allowGC>(cx, kind);
+  if (MOZ_UNLIKELY(!ptr)) {
     return nullptr;
   }
-  return new (mozilla::KnownNotNull, cell) T(std::forward<Args>(args)...);
+  T* cell = new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
+  MemoryReleaseFence(cx->zone());  
+  return cell;
 }
 
 #if defined(DEBUG) || defined(JS_GC_ZEAL) || defined(JS_OOM_BREAKPOINT)
@@ -230,6 +258,20 @@ MOZ_ALWAYS_INLINE gc::Heap CellAllocator::CheckedHeap(gc::Heap heap) {
   }
 
   return heap;
+}
+
+template <typename T, typename... Args>
+T* NewSizedBuffer(JS::Zone* zone, size_t bytes, bool nurseryOwned,
+                  Args&&... args) {
+  MOZ_ASSERT(sizeof(T) <= bytes);
+  void* ptr = AllocBuffer(zone, bytes, nurseryOwned);
+  if (!ptr) {
+    return nullptr;
+  }
+
+  T* buffer = new (ptr) T(std::forward<Args>(args)...);
+  MemoryReleaseFence(zone);  
+  return buffer;
 }
 
 }  
