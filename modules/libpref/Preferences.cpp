@@ -2063,7 +2063,10 @@ typedef void (*PrefsParserPrefFn)(const char* aPrefName, PrefType aType,
 
 
 
-typedef void (*PrefsParserErrorFn)(const char* aMsg);
+
+
+typedef void (*PrefsParserErrorFn)(const char* aFullMsg,
+                                   uint64_t aStaticMsgOffset);
 
 
 bool prefs_parser_parse(const char* aPath, PrefValueKind aKind,
@@ -2092,17 +2095,29 @@ class Parser {
                   true);
   }
 
-  static void HandleError(const char* aMsg) {
+  static void HandleError(const char* aFullMsg, uint64_t aStaticMsgOffset) {
     nsresult rv;
     nsCOMPtr<nsIConsoleService> console =
         do_GetService("@mozilla.org/consoleservice;1", &rv);
     if (NS_SUCCEEDED(rv)) {
-      console->LogStringMessage(NS_ConvertUTF8toUTF16(aMsg).get());
+      console->LogStringMessage(NS_ConvertUTF8toUTF16(aFullMsg).get());
+    }
+    
+    
+    
+    static Atomic<bool, Relaxed> haveLoggedError(false);
+    if (haveLoggedError.compareExchange(false, true)) {
+      MOZ_RELEASE_ASSERT(aStaticMsgOffset < strlen(aFullMsg));
+      
+      
+      
+      glean::preferences::prefs_file_first_parse_error.Set(
+          nsCString(aFullMsg + aStaticMsgOffset));
     }
 #ifdef DEBUG
-    NS_ERROR(aMsg);
+    NS_ERROR(aFullMsg);
 #else
-    printf_stderr("%s\n", aMsg);
+    printf_stderr("%s\n", aFullMsg);
 #endif
   }
 };
@@ -2115,8 +2130,11 @@ static void TestParseErrorHandlePref(const char* aPrefName, PrefType aType,
 
 constinit static nsCString gTestParseErrorMsgs;
 
-static void TestParseErrorHandleError(const char* aMsg) {
-  gTestParseErrorMsgs.Append(aMsg);
+static void TestParseErrorHandleError(const char* aFullMsg,
+                                      uint64_t aStaticMsgOffset) {
+  gTestParseErrorMsgs.Append(aFullMsg);
+  gTestParseErrorMsgs.Append('\n');
+  gTestParseErrorMsgs.Append(aFullMsg + aStaticMsgOffset);
   gTestParseErrorMsgs.Append('\n');
 }
 
@@ -4449,14 +4467,15 @@ void HandlePref(const char* aPrefName, PrefType aType, PrefValueKind aKind,
   }
 }
 
-void HandleError(const char* aMsg) {
+void HandleError(const char* aFullMsg, uint64_t aStaticMsgOffset) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!PrefObserver) {
     return;
   }
 
-  PrefObserver->OnError(aMsg);
+  
+  PrefObserver->OnError(aFullMsg);
 }
 
 NS_IMETHODIMP
