@@ -63,7 +63,7 @@ class MessagePortService::MessagePortServiceData final {
   CheckedUnsafePtr<MessagePortParent> mParent;
 
   FallibleTArray<NextParent> mNextParents;
-  FallibleTArray<RefPtr<SharedMessageBody>> mMessages;
+  nsTArray<NotNull<RefPtr<SharedMessageBody>>> mMessages;
 
   bool mWaitingForNewParent;
   bool mNextStepCloseAll;
@@ -140,20 +140,11 @@ bool MessagePortService::RequestEntangling(MessagePortParent* aParent,
 
     
     
-    
-    
-    
-    FallibleTArray<RefPtr<SharedMessageBody>> messages(
+    nsTArray<NotNull<RefPtr<SharedMessageBody>>> messages(
         std::move(data->mMessages));
-    nsTArray<MessageData> array;
-    if (!SharedMessageBody::FromSharedToMessagesParent(aParent->Manager(),
-                                                       messages, array)) {
-      CloseAll(aParent->ID());
-      return false;
-    }
 
     
-    if (!aParent->Entangled(std::move(array))) {
+    if (!aParent->Entangled(std::move(messages))) {
       CloseAll(aParent->ID());
       return false;
     }
@@ -183,7 +174,7 @@ bool MessagePortService::RequestEntangling(MessagePortParent* aParent,
 
 bool MessagePortService::DisentanglePort(
     MessagePortParent* aParent,
-    FallibleTArray<RefPtr<SharedMessageBody>> aMessages) {
+    nsTArray<NotNull<RefPtr<SharedMessageBody>>> aMessages) {
   MessagePortServiceData* data;
   if (!mPorts.Get(aParent->ID(), &data)) {
     MOZ_ASSERT(false, "Unknown MessagePortParent should not happen.");
@@ -227,13 +218,7 @@ bool MessagePortService::DisentanglePort(
   data->mParent = nextParent;
   data->mNextParents.RemoveElementAt(index);
 
-  nsTArray<MessageData> array;
-  if (!SharedMessageBody::FromSharedToMessagesParent(data->mParent->Manager(),
-                                                     aMessages, array)) {
-    return false;
-  }
-
-  (void)data->mParent->Entangled(std::move(array));
+  (void)data->mParent->Entangled(std::move(aMessages));
   return true;
 }
 
@@ -322,7 +307,7 @@ void MessagePortService::MaybeShutdown() {
 
 bool MessagePortService::PostMessages(
     MessagePortParent* aParent,
-    FallibleTArray<RefPtr<SharedMessageBody>> aMessages) {
+    nsTArray<NotNull<RefPtr<SharedMessageBody>>> aMessages) {
   MessagePortServiceData* data;
   if (!mPorts.Get(aParent->ID(), &data)) {
     MOZ_ASSERT(false, "Unknown MessagePortParent should not happend.");
@@ -344,16 +329,8 @@ bool MessagePortService::PostMessages(
 
   
   if (data->mParent && data->mParent->CanSendData()) {
-    {
-      nsTArray<MessageData> messages;
-      if (!SharedMessageBody::FromSharedToMessagesParent(
-              data->mParent->Manager(), data->mMessages, messages)) {
-        return false;
-      }
+    (void)data->mParent->SendReceiveData(data->mMessages);
 
-      (void)data->mParent->SendReceiveData(messages);
-    }
-    
     
     data->mMessages.Clear();
   }

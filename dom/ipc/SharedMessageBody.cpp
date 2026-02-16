@@ -27,6 +27,8 @@ SharedMessageBody::SharedMessageBody(
       mSupportsTransferring(aSupportsTransferring),
       mAgentClusterId(aAgentClusterId) {}
 
+SharedMessageBody::~SharedMessageBody() = default;
+
 void SharedMessageBody::Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
                               JS::Handle<JS::Value> aTransfers, nsID& aPortID,
                               RefMessageBodyService* aRefMessageBodyService,
@@ -46,7 +48,7 @@ void SharedMessageBody::Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
     cloneDataPolicy.allowSharedMemoryObjects();
   }
 
-  mCloneData = MakeUnique<ipc::StructuredCloneData>(
+  mCloneData = MakeRefPtr<ipc::StructuredCloneData>(
       JS::StructuredCloneScope::UnknownDestination, mSupportsTransferring);
   mCloneData->Write(aCx, aValue, aTransfers, cloneDataPolicy, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
@@ -58,8 +60,8 @@ void SharedMessageBody::Write(JSContext* aCx, JS::Handle<JS::Value> aValue,
   }
 
   MOZ_ASSERT(mCloneData->CloneScope() == JS::StructuredCloneScope::SameProcess);
-  RefPtr<RefMessageBody> refData =
-      new RefMessageBody(aPortID, std::move(mCloneData));
+  RefPtr<RefMessageBody> refData = new RefMessageBody(aPortID, mCloneData);
+  mCloneData = nullptr;
 
   mRefDataId.emplace(aRefMessageBodyService->Register(refData.forget(), aRv));
 }
@@ -124,176 +126,62 @@ bool SharedMessageBody::TakeTransferredPortsAsSequence(
   return mRefData->TakeTransferredPortsAsSequence(aPorts);
 }
 
+}  
+}  
 
-void SharedMessageBody::FromSharedToMessageChild(
-    mozilla::ipc::PBackgroundChild* aManager, SharedMessageBody* aData,
-    MessageData& aMessage) {
-  MOZ_ASSERT(aManager);
-  MOZ_ASSERT(aData);
+namespace IPC {
 
-  aMessage.agentClusterId() = aData->mAgentClusterId;
-
-  if (aData->mCloneData) {
-    ClonedMessageData clonedData;
-    aData->mCloneData->BuildClonedMessageData(clonedData);
-    aMessage.data() = std::move(clonedData);
+void ParamTraits<mozilla::dom::SharedMessageBody*>::Write(
+    MessageWriter* aWriter, paramType* aParam) {
+  bool isNull = aParam == nullptr;
+  WriteParam(aWriter, isNull);
+  if (isNull) {
     return;
   }
 
-  MOZ_ASSERT(aData->mRefDataId.isSome());
-  aMessage.data() = RefMessageData(aData->mRefDataId.value());
-}
+  bool supportsTransferring =
+      aParam->mSupportsTransferring ==
+      mozilla::dom::StructuredCloneHolder::TransferringSupported;
+  WriteParam(aWriter, supportsTransferring);
+  WriteParam(aWriter, aParam->mAgentClusterId);
 
-
-void SharedMessageBody::FromSharedToMessagesChild(
-    PBackgroundChild* aManager,
-    const nsTArray<RefPtr<SharedMessageBody>>& aData,
-    nsTArray<MessageData>& aArray) {
-  MOZ_ASSERT(aManager);
-  MOZ_ASSERT(aArray.IsEmpty());
-  aArray.SetCapacity(aData.Length());
-
-  for (auto& data : aData) {
-    MessageData* message = aArray.AppendElement();
-    FromSharedToMessageChild(aManager, data, *message);
+  WriteParam(aWriter, aParam->mCloneData);
+  if (!aParam->mCloneData) {
+    WriteParam(aWriter, aParam->mRefDataId);
   }
 }
 
-
-already_AddRefed<SharedMessageBody> SharedMessageBody::FromMessageToSharedChild(
-    MessageData& aMessage,
-    StructuredCloneHolder::TransferringSupport aSupportsTransferring) {
-  RefPtr<SharedMessageBody> data =
-      new SharedMessageBody(aSupportsTransferring, aMessage.agentClusterId());
-
-  if (aMessage.data().type() == MessageDataType::TClonedMessageData) {
-    data->mCloneData = MakeUnique<ipc::StructuredCloneData>(
-        JS::StructuredCloneScope::UnknownDestination, aSupportsTransferring);
-    data->mCloneData->StealFromClonedMessageData(
-        aMessage.data().get_ClonedMessageData());
-  } else {
-    MOZ_ASSERT(aMessage.data().type() == MessageDataType::TRefMessageData);
-    data->mRefDataId.emplace(aMessage.data().get_RefMessageData().uuid());
+bool ParamTraits<mozilla::dom::SharedMessageBody*>::Read(
+    MessageReader* aReader, RefPtr<paramType>* aResult) {
+  bool isNull;
+  if (!ReadParam(aReader, &isNull)) {
+    return false;
+  }
+  if (isNull) {
+    *aResult = nullptr;
+    return true;
   }
 
-  return data.forget();
-}
-
-
-already_AddRefed<SharedMessageBody> SharedMessageBody::FromMessageToSharedChild(
-    const MessageData& aMessage,
-    StructuredCloneHolder::TransferringSupport aSupportsTransferring) {
-  RefPtr<SharedMessageBody> data =
-      new SharedMessageBody(aSupportsTransferring, aMessage.agentClusterId());
-
-  if (aMessage.data().type() == MessageDataType::TClonedMessageData) {
-    data->mCloneData = MakeUnique<ipc::StructuredCloneData>(
-        JS::StructuredCloneScope::UnknownDestination, aSupportsTransferring);
-    data->mCloneData->BorrowFromClonedMessageData(
-        aMessage.data().get_ClonedMessageData());
-  } else {
-    MOZ_ASSERT(aMessage.data().type() == MessageDataType::TRefMessageData);
-    data->mRefDataId.emplace(aMessage.data().get_RefMessageData().uuid());
-  }
-
-  return data.forget();
-}
-
-
-bool SharedMessageBody::FromMessagesToSharedChild(
-    nsTArray<MessageData>& aArray,
-    FallibleTArray<RefPtr<SharedMessageBody>>& aData,
-    StructuredCloneHolder::TransferringSupport aSupportsTransferring) {
-  MOZ_ASSERT(aData.IsEmpty());
-
-  if (NS_WARN_IF(!aData.SetCapacity(aArray.Length(), mozilla::fallible))) {
+  bool supportsTransferring;
+  mozilla::Maybe<nsID> agentClusterId;
+  if (!ReadParam(aReader, &supportsTransferring) ||
+      !ReadParam(aReader, &agentClusterId)) {
     return false;
   }
 
-  for (auto& message : aArray) {
-    RefPtr<SharedMessageBody> data =
-        FromMessageToSharedChild(message, aSupportsTransferring);
-    if (!data || !aData.AppendElement(data, mozilla::fallible)) {
-      return false;
-    }
-  }
+  RefPtr<paramType> result = new mozilla::dom::SharedMessageBody(
+      supportsTransferring
+          ? mozilla::dom::StructuredCloneHolder::TransferringSupported
+          : mozilla::dom::StructuredCloneHolder::TransferringNotSupported,
+      agentClusterId);
 
-  return true;
-}
-
-
-bool SharedMessageBody::FromSharedToMessagesParent(
-    PBackgroundParent* aManager,
-    const nsTArray<RefPtr<SharedMessageBody>>& aData,
-    nsTArray<MessageData>& aArray) {
-  MOZ_ASSERT(aManager);
-  MOZ_ASSERT(aArray.IsEmpty());
-
-  if (NS_WARN_IF(!aArray.SetCapacity(aData.Length(), mozilla::fallible))) {
+  if (!ReadParam(aReader, &result->mCloneData) ||
+      (!result->mCloneData && !ReadParam(aReader, &result->mRefDataId))) {
     return false;
   }
 
-  for (auto& data : aData) {
-    MessageData* message = aArray.AppendElement();
-    message->agentClusterId() = data->mAgentClusterId;
-
-    if (data->mCloneData) {
-      ClonedMessageData clonedData;
-      data->mCloneData->BuildClonedMessageData(clonedData);
-      message->data() = std::move(clonedData);
-      continue;
-    }
-
-    MOZ_ASSERT(data->mRefDataId.isSome());
-    message->data() = RefMessageData(data->mRefDataId.value());
-  }
-
+  *aResult = result.forget();
   return true;
 }
 
-
-already_AddRefed<SharedMessageBody>
-SharedMessageBody::FromMessageToSharedParent(
-    MessageData& aMessage,
-    StructuredCloneHolder::TransferringSupport aSupportsTransferring) {
-  
-  
-  
-  RefPtr<SharedMessageBody> data =
-      new SharedMessageBody(aSupportsTransferring, aMessage.agentClusterId());
-
-  if (aMessage.data().type() == MessageDataType::TClonedMessageData) {
-    data->mCloneData = MakeUnique<ipc::StructuredCloneData>(
-        JS::StructuredCloneScope::UnknownDestination, aSupportsTransferring);
-    data->mCloneData->StealFromClonedMessageData(
-        aMessage.data().get_ClonedMessageData());
-  } else {
-    MOZ_ASSERT(aMessage.data().type() == MessageDataType::TRefMessageData);
-    data->mRefDataId.emplace(aMessage.data().get_RefMessageData().uuid());
-  }
-
-  return data.forget();
-}
-
-bool SharedMessageBody::FromMessagesToSharedParent(
-    nsTArray<MessageData>& aArray,
-    FallibleTArray<RefPtr<SharedMessageBody>>& aData,
-    StructuredCloneHolder::TransferringSupport aSupportsTransferring) {
-  MOZ_ASSERT(aData.IsEmpty());
-
-  if (NS_WARN_IF(!aData.SetCapacity(aArray.Length(), mozilla::fallible))) {
-    return false;
-  }
-
-  for (auto& message : aArray) {
-    RefPtr<SharedMessageBody> data = FromMessageToSharedParent(message);
-    if (!data || !aData.AppendElement(data, mozilla::fallible)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-}  
 }  
