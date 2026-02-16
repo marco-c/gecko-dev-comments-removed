@@ -10,12 +10,19 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/CSSTransformValueBinding.h"
 
 namespace mozilla::dom {
 
-CSSTransformValue::CSSTransformValue(nsCOMPtr<nsISupports> aParent)
-    : CSSStyleValue(std::move(aParent)) {}
+CSSTransformValue::CSSTransformValue(
+    nsCOMPtr<nsISupports> aParent,
+    nsTArray<RefPtr<CSSTransformComponent>> aValues)
+    : CSSStyleValue(std::move(aParent), StyleValueType::TransformValue),
+      mValues(std::move(aValues)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSTransformValue, CSSStyleValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSTransformValue, CSSStyleValue, mValues)
 
 JSObject* CSSTransformValue::WrapObject(JSContext* aCx,
                                         JS::Handle<JSObject*> aGivenProto) {
@@ -25,14 +32,30 @@ JSObject* CSSTransformValue::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSTransformValue> CSSTransformValue::Constructor(
     const GlobalObject& aGlobal,
     const Sequence<OwningNonNull<CSSTransformComponent>>& aTransforms,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSTransformValue>(aGlobal.GetAsSupports());
+  
+
+  if (aTransforms.IsEmpty()) {
+    aRv.ThrowTypeError("Transforms can't be empty");
+    return nullptr;
+  }
+
+  
+
+  nsTArray<RefPtr<CSSTransformComponent>> values;
+  values.AppendElements(aTransforms);
+
+  return MakeAndAddRef<CSSTransformValue>(aGlobal.GetAsSupports(),
+                                          std::move(values));
 }
 
-uint32_t CSSTransformValue::Length() const { return 0; }
+
+uint32_t CSSTransformValue::Length() const { return mValues.Length(); }
 
 bool CSSTransformValue::Is2D() const { return true; }
 
@@ -42,9 +65,13 @@ already_AddRefed<DOMMatrix> CSSTransformValue::ToMatrix(ErrorResult& aRv) {
 }
 
 CSSTransformComponent* CSSTransformValue::IndexedGetter(uint32_t aIndex,
-                                                        bool& aFound,
-                                                        ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+                                                        bool& aFound) {
+  if (aIndex < mValues.Length()) {
+    aFound = true;
+    return mValues[aIndex];
+  }
+
+  aFound = false;
   return nullptr;
 }
 
@@ -55,5 +82,16 @@ void CSSTransformValue::IndexedSetter(uint32_t aIndex,
 }
 
 
+
+void CSSTransformValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                              nsACString& aDest) const {
+  
+}
+
+CSSTransformValue& CSSStyleValue::GetAsCSSTransformValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::TransformValue);
+
+  return *static_cast<CSSTransformValue*>(this);
+}
 
 }  
