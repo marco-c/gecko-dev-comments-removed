@@ -20,7 +20,12 @@ graph_config_schema = LegacySchema({
     Required("product-dir"): str,
     Required("treeherder"): {
         
-        Required("group-names"): {str: Length(max=100)}
+        Required("group-names"): {str: Length(max=100)},
+        
+        Optional("branch-map"): optionally_keyed_by(
+            "project",
+            {str: str},
+        ),
     },
     Required("index"): {Required("products"): [str]},
     Required("try"): {
