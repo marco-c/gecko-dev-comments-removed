@@ -20,7 +20,7 @@ BroadcastChannelChild::BroadcastChannelChild()
 BroadcastChannelChild::~BroadcastChannelChild() { MOZ_ASSERT(!mBC); }
 
 mozilla::ipc::IPCResult BroadcastChannelChild::RecvNotify(
-    const MessageData& aData) {
+    NotNull<SharedMessageBody*> aData) {
   if (!mBC) {
     
     return IPC_OK();

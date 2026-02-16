@@ -56,17 +56,27 @@ Maybe<uint64_t> MMPrinter::PrintHeader(char const* aLocation,
 }
 
 
-void MMPrinter::PrintNoData(uint64_t aMsgId) {
+void MMPrinter::PrintData(uint64_t aMsgId, ipc::StructuredCloneData* aData) {
   if (!MOZ_LOG_TEST(sMMLog, LogLevel::Verbose)) {
     return;
   }
-  MOZ_LOG(MMPrinter::sMMLog, LogLevel::Verbose,
-          ("%" PRIu64 " (No Data)", aMsgId));
-}
 
+  if (!aData) {
+    MOZ_LOG(MMPrinter::sMMLog, LogLevel::Verbose,
+            ("%" PRIu64 " (No Data)", aMsgId));
+    return;
+  }
 
-void MMPrinter::PrintData(uint64_t aMsgId, ClonedMessageData const& aData) {
-  if (!MOZ_LOG_TEST(sMMLog, LogLevel::Verbose)) {
+  
+  
+  
+  
+  
+  
+  
+  if (aData->SupportsTransferring()) {
+    MOZ_LOG(MMPrinter::sMMLog, LogLevel::Verbose,
+            ("%" PRIu64 " (Supports Transferring)", aMsgId));
     return;
   }
 
@@ -78,17 +88,15 @@ void MMPrinter::PrintData(uint64_t aMsgId, ClonedMessageData const& aData) {
   MOZ_ALWAYS_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
   JSContext* cx = jsapi.cx();
 
-  ipc::StructuredCloneData data;
-  ipc::UnpackClonedMessageData(aData, data);
-
   
   IgnoredErrorResult rv;
   JS::Rooted<JS::Value> scdContent(cx);
-  data.Read(cx, &scdContent, rv);
+  aData->Read(cx, &scdContent, rv);
   if (rv.Failed()) {
     
     
-    MMPrinter::PrintNoData(aMsgId);
+    MOZ_LOG(MMPrinter::sMMLog, LogLevel::Verbose,
+            ("%" PRIu64 " (Read Failed)", aMsgId));
     return;
   }
 

@@ -26,7 +26,7 @@ interface nsIVariant;
 
 
 
-[scriptable, uuid(c664aae7-0d67-4155-a2dd-a3861778626f)]
+[scriptable, builtinclass, uuid(c664aae7-0d67-4155-a2dd-a3861778626f)]
 interface nsIStructuredCloneContainer : nsISupports
 {
   
