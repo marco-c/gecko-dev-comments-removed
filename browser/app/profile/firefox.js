@@ -3576,6 +3576,8 @@ pref("browser.ipProtection.added", false);
 
 pref("browser.ipProtection.bandwidth.enabled", false);
 
+pref("browser.ipProtection.egressLocationEnabled", false);
+
 pref("browser.ipProtection.bandwidthThreshold", 0);
 
 
