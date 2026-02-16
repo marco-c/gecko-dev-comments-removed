@@ -165,7 +165,6 @@ class CssRuleView extends EventEmitter {
     this.childHasDragged = false;
 
     this._outputParser = new OutputParser(document, this.cssProperties);
-    this._abortController = new this.styleWindow.AbortController();
 
     this.addNewRule = this.addNewRule.bind(this);
     this._onContextMenu = this._onContextMenu.bind(this);
@@ -183,12 +182,19 @@ class CssRuleView extends EventEmitter {
     this.highlightProperty = this.highlightProperty.bind(this);
     this.refreshPanel = this.refreshPanel.bind(this);
 
+    this.#abortController = new this.styleWindow.AbortController();
+    const { signal } = this.#abortController;
+    const baseEventConfig = { signal };
+
     const doc = this.styleDocument;
     
     
     
     
-    this.styleDocument.addEventListener("click", this, { capture: true });
+    this.styleDocument.addEventListener("click", this, {
+      capture: true,
+      signal,
+    });
     this.element = doc.getElementById("ruleview-container-focusable");
     this.addRuleButton = doc.getElementById("ruleview-add-rule-button");
     this.searchField = doc.getElementById("ruleview-searchbox");
@@ -230,18 +236,43 @@ class CssRuleView extends EventEmitter {
     this.shortcuts.on("CmdOrCtrl+F", event =>
       this._onShortcut("CmdOrCtrl+F", event)
     );
-    this.element.addEventListener("copy", this._onCopy);
-    this.element.addEventListener("contextmenu", this._onContextMenu);
-    this.addRuleButton.addEventListener("click", this.addNewRule);
-    this.searchField.addEventListener("input", this._onFilterStyles);
-    this.searchClearButton.addEventListener("click", this._onClearSearch);
+    this.element.addEventListener("copy", this._onCopy, baseEventConfig);
+    this.element.addEventListener(
+      "contextmenu",
+      this._onContextMenu,
+      baseEventConfig
+    );
+    this.addRuleButton.addEventListener(
+      "click",
+      this.addNewRule,
+      baseEventConfig
+    );
+    this.searchField.addEventListener(
+      "input",
+      this._onFilterStyles,
+      baseEventConfig
+    );
+    this.searchClearButton.addEventListener(
+      "click",
+      this._onClearSearch,
+      baseEventConfig
+    );
     this.pseudoClassToggle.addEventListener(
       "click",
-      this._onTogglePseudoClassPanel
+      this._onTogglePseudoClassPanel,
+      baseEventConfig
     );
-    this.classToggle.addEventListener("click", this._onToggleClassPanel);
+    this.classToggle.addEventListener(
+      "click",
+      this._onToggleClassPanel,
+      baseEventConfig
+    );
     
-    this.pseudoClassPanel.addEventListener("change", this._onTogglePseudoClass);
+    this.pseudoClassPanel.addEventListener(
+      "change",
+      this._onTogglePseudoClass,
+      baseEventConfig
+    );
 
     if (flags.testing) {
       
@@ -252,7 +283,7 @@ class CssRuleView extends EventEmitter {
         () => {
           this.highlighters.addToView(this);
         },
-        { once: true }
+        { once: true, signal }
       );
     }
 
@@ -291,6 +322,8 @@ class CssRuleView extends EventEmitter {
     this.cssRegisteredPropertiesByTarget = new Map();
     this._elementsWithPendingClicks = new this.styleWindow.WeakSet();
   }
+
+  #abortController;
 
   
   _viewedElement = null;
@@ -627,17 +660,22 @@ class CssRuleView extends EventEmitter {
     this.colorSchemeLightSimulationButton.removeAttribute("hidden");
     this.colorSchemeDarkSimulationButton.removeAttribute("hidden");
     this.printSimulationButton.removeAttribute("hidden");
+    const { signal } = this.#abortController;
+    const baseEventConfig = { signal };
     this.printSimulationButton.addEventListener(
       "click",
-      this._onTogglePrintSimulation
+      this._onTogglePrintSimulation,
+      baseEventConfig
     );
     this.colorSchemeLightSimulationButton.addEventListener(
       "click",
-      this._onToggleLightColorSchemeSimulation
+      this._onToggleLightColorSchemeSimulation,
+      baseEventConfig
     );
     this.colorSchemeDarkSimulationButton.addEventListener(
       "click",
-      this._onToggleDarkColorSchemeSimulation
+      this._onToggleDarkColorSchemeSimulation,
+      baseEventConfig
     );
     const { rfpCSSColorScheme } = this.inspector.walker;
     if (rfpCSSColorScheme) {
@@ -1001,45 +1039,17 @@ class CssRuleView extends EventEmitter {
       this._highlighters = null;
     }
 
-    
-    this.colorSchemeLightSimulationButton.removeEventListener(
-      "click",
-      this._onToggleLightColorSchemeSimulation
-    );
-    this.colorSchemeDarkSimulationButton.removeEventListener(
-      "click",
-      this._onToggleDarkColorSchemeSimulation
-    );
-    this.printSimulationButton.removeEventListener(
-      "click",
-      this._onTogglePrintSimulation
-    );
-
     this.colorSchemeLightSimulationButton = null;
     this.colorSchemeDarkSimulationButton = null;
     this.printSimulationButton = null;
 
     this.tooltips.destroy();
 
-    
-    this._abortController.abort();
-    this._abortController = null;
+    this.#abortController.abort();
+    this.#abortController = null;
+
     this.shortcuts.destroy();
-    this.styleDocument.removeEventListener("click", this, { capture: true });
-    this.element.removeEventListener("copy", this._onCopy);
-    this.element.removeEventListener("contextmenu", this._onContextMenu);
-    this.addRuleButton.removeEventListener("click", this.addNewRule);
-    this.searchField.removeEventListener("input", this._onFilterStyles);
-    this.searchClearButton.removeEventListener("click", this._onClearSearch);
-    this.pseudoClassPanel.removeEventListener(
-      "change",
-      this._onTogglePseudoClass
-    );
-    this.pseudoClassToggle.removeEventListener(
-      "click",
-      this._onTogglePseudoClassPanel
-    );
-    this.classToggle.removeEventListener("click", this._onToggleClassPanel);
+
     this.inspector.highlighters.off(
       "highlighter-shown",
       this.onHighlighterShown
@@ -1422,14 +1432,19 @@ class CssRuleView extends EventEmitter {
 
     this.element.append(header, container);
 
-    toggleButton.addEventListener("click", () => {
-      this._toggleContainerVisibility(
-        toggleButton,
-        container,
-        isPseudo,
-        !this.showPseudoElements
-      );
-    });
+    const { signal } = this.#abortController;
+    toggleButton.addEventListener(
+      "click",
+      () => {
+        this._toggleContainerVisibility(
+          toggleButton,
+          container,
+          isPseudo,
+          !this.showPseudoElements
+        );
+      },
+      { signal }
+    );
 
     if (isPseudo) {
       this._toggleContainerVisibility(
