@@ -7,7 +7,11 @@ use crate::platform::linux::{set_socket_cloexec, set_socket_default_flags};
 #[cfg(target_os = "macos")]
 use crate::platform::macos::{set_socket_cloexec, set_socket_default_flags};
 use crate::{
-    ignore_eintr, platform::PlatformError, IntoRawAncillaryData, ProcessHandle, IO_TIMEOUT,
+    errors::IPCError,
+    ignore_eintr,
+    messages::{self, Message},
+    platform::PlatformError,
+    ProcessHandle, IO_TIMEOUT,
 };
 
 use nix::{
@@ -19,26 +23,16 @@ use nix::{
 use std::{
     ffi::{CStr, CString},
     io::{IoSlice, IoSliceMut},
-    os::fd::{AsFd, AsRawFd, FromRawFd, IntoRawFd, OwnedFd, RawFd},
+    os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd},
     str::FromStr,
 };
 
-use crate::{
-    errors::IPCError,
-    messages::{self, Message},
-};
-
-pub type RawAncillaryData = RawFd;
 pub type AncillaryData = OwnedFd;
 
-impl IntoRawAncillaryData for AncillaryData {
-    fn into_raw(self) -> RawAncillaryData {
-        self.into_raw_fd()
-    }
+#[repr(C)]
+pub struct RawIPCConnector {
+    pub socket: RawFd,
 }
-
-
-pub const INVALID_ANCILLARY_DATA: RawAncillaryData = -1;
 
 pub type IPCConnectorKey = RawFd;
 
@@ -74,10 +68,11 @@ impl IPCConnector {
     
     
     
-    pub unsafe fn from_raw_ancillary(
-        ancillary_data: RawAncillaryData,
-    ) -> Result<IPCConnector, IPCError> {
-        IPCConnector::from_fd(OwnedFd::from_raw_fd(ancillary_data))
+    
+    
+    
+    pub unsafe fn from_raw_connector(connector: RawIPCConnector) -> Result<IPCConnector, IPCError> {
+        IPCConnector::from_fd(OwnedFd::from_raw_fd(connector.socket))
     }
 
     pub fn set_process(&mut self, _process: ProcessHandle) {}
@@ -102,12 +97,18 @@ impl IPCConnector {
         self.socket
     }
 
-    pub fn into_raw_ancillary(self) -> RawAncillaryData {
-        self.socket.into_raw()
+    pub fn into_raw_connector(self) -> RawIPCConnector {
+        RawIPCConnector {
+            socket: self.socket.into_raw_fd(),
+        }
     }
 
     pub(crate) fn as_raw(&self) -> RawFd {
         self.socket.as_raw_fd()
+    }
+
+    pub fn as_raw_ref(&self) -> BorrowedFd<'_> {
+        self.socket.as_fd()
     }
 
     pub fn key(&self) -> IPCConnectorKey {
@@ -136,9 +137,7 @@ impl IPCConnector {
         self.send(&message.header(), None)
             .map_err(IPCError::TransmissionFailure)?;
         let (payload, ancillary_data) = message.into_payload();
-        assert!(
-            payload.len() == expected_payload_len
-        );
+        assert!(payload.len() == expected_payload_len);
         assert!(ancillary_data.is_some() == expected_ancillary_data);
         self.send(&payload, ancillary_data)
             .map_err(IPCError::TransmissionFailure)
