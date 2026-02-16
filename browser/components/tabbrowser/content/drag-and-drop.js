@@ -850,6 +850,12 @@
 
     _getDragTarget(event, { ignoreSides = false } = {}) {
       let { target } = event;
+      if (
+        target === this._tabbrowserTabs.arrowScrollbox &&
+        !this._tabbrowserTabs.verticalMode
+      ) {
+        return this.#getHorizontalScrollboxDragTarget(event, ignoreSides);
+      }
       while (target) {
         if (
           isTab(target) ||
@@ -873,6 +879,30 @@
         }
       }
       return target;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    #getHorizontalScrollboxDragTarget(event, ignoreSides) {
+      function isWithinBounds(el) {
+        let { width } = window.windowUtils.getBoundsWithoutFlushing(el);
+        const offset = ignoreSides ? width * 0.25 : 0;
+        const startX = el.screenX + offset;
+        const endX = el.screenX + width - offset;
+        return startX <= event.screenX && event.screenX <= endX;
+      }
+      return this._tabbrowserTabs.dragAndDropElements.find(isWithinBounds);
     }
 
     #isMovingTab() {
