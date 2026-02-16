@@ -11,95 +11,127 @@ const { AIWindowUI } = ChromeUtils.importESModule(
 
 
 add_task(async function test_new_chat_button_sidebar() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.smartwindow.firstrun.hasCompleted", true],
-    ],
-  });
+  const sb = this.sinon.createSandbox();
 
-  const win = await BrowserTestUtils.openNewBrowserWindow();
-  AIWindowUI.toggleSidebar(win);
+  try {
+    sb.stub(this.openAIEngine, "build");
 
-  
-  await BrowserTestUtils.waitForCondition(() => {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.enabled", true],
+        ["browser.smartwindow.firstrun.hasCompleted", true],
+        ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
+      ],
+    });
+
+    const win = await BrowserTestUtils.openNewBrowserWindow();
+    AIWindowUI.toggleSidebar(win);
+
+    
+    await BrowserTestUtils.waitForCondition(() => {
+      const sidebarBrowser = win.document.getElementById("ai-window-browser");
+      return sidebarBrowser && sidebarBrowser.contentDocument;
+    }, "Sidebar browser should be loaded");
+
     const sidebarBrowser = win.document.getElementById("ai-window-browser");
-    return sidebarBrowser && sidebarBrowser.contentDocument;
-  }, "Sidebar browser should be loaded");
 
-  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+    
+    await BrowserTestUtils.waitForCondition(() => {
+      const aiWindow =
+        sidebarBrowser.contentDocument.querySelector("ai-window");
+      return aiWindow && aiWindow.shadowRoot;
+    }, "AI Window component should be loaded with shadow root");
 
-  
-  await BrowserTestUtils.waitForCondition(() => {
     const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
-    return aiWindow && aiWindow.shadowRoot;
-  }, "AI Window component should be loaded with shadow root");
 
-  const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
+    Assert.ok(aiWindow, "AI Window component should exist in sidebar");
+    Assert.equal(
+      aiWindow.mode,
+      "sidebar",
+      "AI Window should be in sidebar mode"
+    );
 
-  Assert.ok(aiWindow, "AI Window component should exist in sidebar");
-  Assert.equal(aiWindow.mode, "sidebar", "AI Window should be in sidebar mode");
+    
+    const newChatButton = aiWindow.shadowRoot.querySelector(
+      ".new-chat-icon-button"
+    );
+    Assert.ok(newChatButton, "New chat button should exist in sidebar mode");
 
-  
-  const newChatButton = aiWindow.shadowRoot.querySelector(
-    ".new-chat-icon-button"
-  );
-  Assert.ok(newChatButton, "New chat button should exist in sidebar mode");
+    
+    Assert.equal(
+      newChatButton.getAttribute("data-l10n-id"),
+      "aiwindow-new-chat",
+      "Button should have correct l10n ID"
+    );
 
-  
-  Assert.equal(
-    newChatButton.getAttribute("data-l10n-id"),
-    "aiwindow-new-chat",
-    "Button should have correct l10n ID"
-  );
-
-  await BrowserTestUtils.closeWindow(win);
-  await SpecialPowers.popPrefEnv();
+    await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+  } finally {
+    sb.restore();
+  }
 });
 
 
 
 
 add_task(async function test_new_chat_button_not_in_fullpage() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.smartwindow.firstrun.hasCompleted", true],
-    ],
-  });
+  const sb = this.sinon.createSandbox();
 
-  const aiWin = await openAIWindow();
-  const browser = aiWin.gBrowser.selectedBrowser;
+  try {
+    sb.stub(this.openAIEngine, "build");
 
-  
-  const result = await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.enabled", true],
+        ["browser.smartwindow.firstrun.hasCompleted", true],
+        ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
+      ],
+    });
 
-    
-    await ContentTaskUtils.waitForCondition(
-      () => aiWindowElement && aiWindowElement.shadowRoot,
-      "Wait for AI Window to be rendered with shadow root"
-    );
+    const aiWin = await openAIWindow();
+    const browser = aiWin.gBrowser.selectedBrowser;
 
     
-    const mode = aiWindowElement.mode;
-    const newChatButton = aiWindowElement.shadowRoot.querySelector(
-      ".new-chat-icon-button"
+    const result = await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+
+      
+      
+      
+      await new Promise(resolve => content.setTimeout(resolve, 100));
+
+      
+      await ContentTaskUtils.waitForCondition(
+        () => aiWindowElement && aiWindowElement.shadowRoot,
+        "Wait for AI Window to be rendered with shadow root"
+      );
+
+      
+      const mode = aiWindowElement.mode;
+      const newChatButton = aiWindowElement.shadowRoot.querySelector(
+        ".new-chat-icon-button"
+      );
+
+      return {
+        mode,
+        hasButton: !!newChatButton,
+      };
+    });
+
+    Assert.equal(
+      result.mode,
+      "fullpage",
+      "AI Window should be in fullpage mode"
+    );
+    Assert.equal(
+      result.hasButton,
+      false,
+      "New chat button should not exist in fullpage mode"
     );
 
-    return {
-      mode,
-      hasButton: !!newChatButton,
-    };
-  });
-
-  Assert.equal(result.mode, "fullpage", "AI Window should be in fullpage mode");
-  Assert.equal(
-    result.hasButton,
-    false,
-    "New chat button should not exist in fullpage mode"
-  );
-
-  await BrowserTestUtils.closeWindow(aiWin);
-  await SpecialPowers.popPrefEnv();
+    await BrowserTestUtils.closeWindow(aiWin);
+    await SpecialPowers.popPrefEnv();
+  } finally {
+    sb.restore();
+  }
 });
