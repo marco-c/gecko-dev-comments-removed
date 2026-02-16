@@ -50,8 +50,7 @@ async_test(t => {
   iframe.contentWindow.persistedString = "Hello world!";
 
   
-
-  iframe.src = "/common/blank.html";
+  
 
   iframe.addEventListener("load", t.step_func_done(() => {
     assert_equals(
