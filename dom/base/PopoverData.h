@@ -23,6 +23,7 @@ enum class PopoverAttributeState : uint8_t {
   None,
   Auto,    
   Manual,  
+  Hint,    
 };
 
 enum class PopoverVisibilityState : uint8_t {
@@ -63,6 +64,9 @@ class PopoverData {
     mState = aState;
   }
 
+  PopoverAttributeState GetOpenedInMode() const { return mOpenedInMode; }
+  void SetOpenedInMode(PopoverAttributeState aMode) { mOpenedInMode = aMode; }
+
   PopoverVisibilityState GetPopoverVisibilityState() const {
     return mVisibilityState;
   }
@@ -97,6 +101,7 @@ class PopoverData {
  private:
   PopoverVisibilityState mVisibilityState = PopoverVisibilityState::Hidden;
   PopoverAttributeState mState = PopoverAttributeState::None;
+  PopoverAttributeState mOpenedInMode = PopoverAttributeState::None;
   
   
   

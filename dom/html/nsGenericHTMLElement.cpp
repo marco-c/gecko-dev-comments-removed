@@ -173,21 +173,28 @@ static constexpr nsAttrValue::EnumTableEntry kDirTable[] = {
 
 namespace {
 
-enum class PopoverAttributeKeyword : uint8_t { Auto, EmptyString, Manual };
+enum class PopoverAttributeKeyword : uint8_t {
+  Auto,
+  Hint,
+  EmptyString,
+  Manual
+};
 
 static constexpr const char kPopoverAttributeValueAuto[] = "auto";
+static constexpr const char kPopoverAttributeValueHint[] = "hint";
 static constexpr const char kPopoverAttributeValueEmptyString[] = "";
 static constexpr const char kPopoverAttributeValueManual[] = "manual";
 
 static constexpr nsAttrValue::EnumTableEntry kPopoverTable[] = {
     {kPopoverAttributeValueAuto, PopoverAttributeKeyword::Auto},
+    {kPopoverAttributeValueHint, PopoverAttributeKeyword::Hint},
     {kPopoverAttributeValueEmptyString, PopoverAttributeKeyword::EmptyString},
     {kPopoverAttributeValueManual, PopoverAttributeKeyword::Manual},
 };
 
 
 static const nsAttrValue::EnumTableEntry* kPopoverTableInvalidValueDefault =
-    &kPopoverTable[2];
+    &kPopoverTable[3];
 }  
 
 void nsGenericHTMLElement::GetFetchPriority(nsAString& aFetchPriority) const {
@@ -651,6 +658,11 @@ constexpr PopoverAttributeState ToPopoverAttributeState(
   switch (aPopoverAttributeKeyword) {
     case PopoverAttributeKeyword::Auto:
       return PopoverAttributeState::Auto;
+    case PopoverAttributeKeyword::Hint:
+      if (!StaticPrefs::dom_element_popoverhint_enabled()) {
+        return PopoverAttributeState::Manual;
+      }
+      return PopoverAttributeState::Hint;
     case PopoverAttributeKeyword::EmptyString:
       return PopoverAttributeState::Auto;
     case PopoverAttributeKeyword::Manual:
@@ -680,6 +692,11 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
   PopoverAttributeState newState =
       mapPopoverState(GetParsedAttr(nsGkAtoms::popover));
 
+  if (!StaticPrefs::dom_element_popoverhint_enabled() &&
+      newState == PopoverAttributeState::Hint) {
+    newState = PopoverAttributeState::Manual;
+  }
+
   const PopoverAttributeState oldState = GetPopoverAttributeState();
 
   if (newState != oldState) {
@@ -701,6 +718,9 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
     } else {
       
       EnsurePopoverData().SetPopoverAttributeState(newState);
+      if (IsPopoverOpen()) {
+        PopoverPseudoStateUpdate(true, true);
+      }
     }
   }
 }
@@ -3565,12 +3585,14 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
   
   
   
-  
+  RefPtr<nsINode> autoAncestor =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
 
   
   
   
-  
+  RefPtr<nsINode> hintAncestor =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, aSource, true);
 
   nsWeakPtr originallyFocusedElement;
 
@@ -3578,7 +3600,8 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
   if (originalType == PopoverAttributeState::Auto) {
     
     
-    
+    document->CloseEntirePopoverList(PopoverAttributeState::Hint,
+                                     shouldRestoreFocus, fireEvents);
 
     
     
@@ -3600,24 +3623,40 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  if (originalType == PopoverAttributeState::Hint) {
+    
+    if (hintAncestor) {
+      MOZ_ASSERT(StaticPrefs::dom_element_popoverhint_enabled());
+      
+      
+      document->HideAllPopoversUntil(*hintAncestor, shouldRestoreFocus,
+                                     fireEvents);
+      
+      stackToAppendTo = PopoverAttributeState::Hint;
+    } else {
+      
+      
+      
+      document->CloseEntirePopoverList(PopoverAttributeState::Hint,
+                                       shouldRestoreFocus, fireEvents);
+      
+      if (autoAncestor) {
+        
+        
+        document->HideAllPopoversUntil(*autoAncestor, shouldRestoreFocus,
+                                       fireEvents);
+        
+        stackToAppendTo = PopoverAttributeState::Auto;
+      } else {
+        
+        stackToAppendTo = PopoverAttributeState::Hint;
+      }
+    }
+  }
 
   
-  
-  if (originalType == PopoverAttributeState::Auto) {
+  if (originalType == PopoverAttributeState::Auto ||
+      originalType == PopoverAttributeState::Hint) {
     
     MOZ_ASSERT(stackToAppendTo != PopoverAttributeState::None);
 
@@ -3656,13 +3695,16 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
       
       GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Auto);
     } else {
+      MOZ_ASSERT(StaticPrefs::dom_element_popoverhint_enabled());
       
       
+      MOZ_ASSERT(stackToAppendTo == PopoverAttributeState::Hint);
       
       
+      MOZ_ASSERT(
+          !document->PopoverListOf(PopoverAttributeState::Hint).Contains(this));
       
-      
-      MOZ_ASSERT_UNREACHABLE("stackToAppendTo was not Auto!");
+      GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Hint);
     }
     
     
