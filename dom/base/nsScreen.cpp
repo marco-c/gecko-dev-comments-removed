@@ -101,15 +101,7 @@ CSSIntRect nsScreen::GetAvailRect() {
     return GetTopWindowInnerRectForRFP();
   }
 
-  if (ShouldResistFingerprinting(RFPTarget::ScreenAvailToResolution)) {
-    nsDeviceContext* context = GetDeviceContext();
-    if (NS_WARN_IF(!context)) {
-      return {};
-    }
-    return nsRFPService::GetSpoofedScreenAvailSize(
-        context->GetRect(), context->GetFullZoom(), IsFullscreen());
-  }
-
+  
   
   
   if (nsPIDOMWindowInner* owner = GetOwnerWindow()) {
@@ -127,6 +119,15 @@ CSSIntRect nsScreen::GetAvailRect() {
         return {{}, *size};
       }
     }
+  }
+
+  if (ShouldResistFingerprinting(RFPTarget::ScreenAvailToResolution)) {
+    nsDeviceContext* context = GetDeviceContext();
+    if (NS_WARN_IF(!context)) {
+      return {};
+    }
+    return nsRFPService::GetSpoofedScreenAvailSize(
+        context->GetRect(), context->GetFullZoom(), IsFullscreen());
   }
 
   nsDeviceContext* context = GetDeviceContext();
