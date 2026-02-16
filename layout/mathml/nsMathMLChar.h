@@ -8,6 +8,7 @@
 #define nsMathMLChar_h_
 
 #include "gfxTextRun.h"
+#include "mozilla/EnumSet.h"
 #include "nsBoundingMetrics.h"
 #include "nsColor.h"
 #include "nsMathMLOperators.h"
@@ -29,22 +30,20 @@ class ComputedStyle;
 }  
 
 
-enum {
-  
-  NS_STRETCH_NONE = 0x00,
-  
-  NS_STRETCH_VARIABLE_MASK = 0x0F,
-  NS_STRETCH_NORMAL = 0x01,   
-  NS_STRETCH_NEARER = 0x02,   
-  NS_STRETCH_SMALLER = 0x04,  
-  NS_STRETCH_LARGER = 0x08,   
-  
-  NS_STRETCH_LARGEOP = 0x10,
-
-  
-  
-  NS_STRETCH_MAXWIDTH = 0x20
+enum class MathMLStretchFlag : uint8_t {
+  Normal,         
+  Nearer,         
+  Smaller,        
+  Larger,         
+  LargeOperator,  
+  MaxWidth,       
 };
+using MathMLStretchFlags = mozilla::EnumSet<MathMLStretchFlag>;
+constexpr MathMLStretchFlags kMathMLStretchVariableSet(
+    MathMLStretchFlag::Normal, MathMLStretchFlag::Nearer,
+    MathMLStretchFlag::Smaller, MathMLStretchFlag::Larger);
+constexpr MathMLStretchFlags kMathMLStretchSet =
+    kMathMLStretchVariableSet + MathMLStretchFlag::LargeOperator;
 
 
 
@@ -99,7 +98,7 @@ class nsMathMLChar {
                    float aFontSizeInflation, StretchDirection aStretchDirection,
                    const nsBoundingMetrics& aContainerSize,
                    nsBoundingMetrics& aDesiredStretchSize,
-                   uint32_t aStretchHint, bool aRTL);
+                   MathMLStretchFlags aStretchFlags, bool aRTL);
 
   void SetData(nsString& aData);
 
@@ -122,9 +121,9 @@ class nsMathMLChar {
   
   
   
-  nscoord GetMaxWidth(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
-                      float aFontSizeInflation,
-                      uint32_t aStretchHint = NS_STRETCH_NORMAL);
+  nscoord GetMaxWidth(
+      nsIFrame* aForFrame, DrawTarget* aDrawTarget, float aFontSizeInflation,
+      MathMLStretchFlags aStretchFlags = MathMLStretchFlag::Normal);
 
   
   
@@ -209,7 +208,7 @@ class nsMathMLChar {
                            StretchDirection& aStretchDirection,
                            const nsBoundingMetrics& aContainerSize,
                            nsBoundingMetrics& aDesiredStretchSize,
-                           uint32_t aStretchHint,
+                           MathMLStretchFlags aStretchFlags,
                            float aMaxSize = NS_MATHML_OPERATOR_SIZE_INFINITY,
                            bool aMaxSizeIsAbsolute = false);
 
