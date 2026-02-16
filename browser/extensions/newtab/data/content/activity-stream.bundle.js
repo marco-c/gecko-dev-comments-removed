@@ -13282,8 +13282,8 @@ function WidgetsFeatureHighlight({
     messageData
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   return React.createElement(FeatureHighlight, {
-    position: "inset-inline-center inset-block-end",
-    arrowPosition: "arrow-top-center",
+    position: "inset-inline-end inset-block-end",
+    arrowPosition: "arrow-top-start",
     openedOverride: true,
     showButtonIcon: false,
     feature: messageData?.content?.feature,
@@ -13534,9 +13534,15 @@ function Widgets() {
     className: "widgets-section-container"
   }, external_React_default().createElement("div", {
     className: "widgets-title-container"
+  }, external_React_default().createElement("div", {
+    className: "widgets-title-container-text"
   }, external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-widget-section-title"
-  }), (nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED]) && external_React_default().createElement("moz-button", {
+  }), messageData?.content?.messageType === "WidgetMessage" && external_React_default().createElement(MessageWrapper, {
+    dispatch: dispatch
+  }, external_React_default().createElement(WidgetsFeatureHighlight, {
+    dispatch: dispatch
+  }))), (nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED]) && external_React_default().createElement("moz-button", {
     id: "toggle-widgets-size-button",
     type: "icon ghost",
     size: "small"
@@ -13571,11 +13577,7 @@ function Widgets() {
     handleUserInteraction: handleUserInteraction,
     isMaximized: isMaximized,
     widgetsMayBeMaximized: widgetsMayBeMaximized
-  }))), messageData?.content?.messageType === "WidgetMessage" && external_React_default().createElement(MessageWrapper, {
-    dispatch: dispatch
-  }, external_React_default().createElement(WidgetsFeatureHighlight, {
-    dispatch: dispatch
-  })));
+  }))));
 }
 
 ;
