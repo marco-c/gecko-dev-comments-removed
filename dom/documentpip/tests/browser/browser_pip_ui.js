@@ -7,9 +7,17 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlbarTestUtils.sys.mjs"
 );
 
-add_task(async function pip_urlbar_shows_readonly_opener_url() {
-  const [tab, chromePiP] = await newTabWithPiP();
 
+let tab, chromePiP;
+add_setup(async function open_pip() {
+  [tab, chromePiP] = await newTabWithPiP();
+});
+registerCleanupFunction(async function close_pip() {
+  await BrowserTestUtils.closeWindow(chromePiP);
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function pip_urlbar_shows_readonly_opener_url() {
   
   const expectedURL = UrlbarTestUtils.trimURL(
     tab.linkedBrowser.currentURI.spec
@@ -27,15 +35,9 @@ add_task(async function pip_urlbar_shows_readonly_opener_url() {
   });
   await onLocationChange;
   is(chromePiP.gURLBar.value, expectedURL, "PiP urlbar shows opener url");
-
-  
-  await BrowserTestUtils.closeWindow(chromePiP);
-  BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function pip_alwaysontop_chromeFlag() {
-  const [tab, chromePiP] = await newTabWithPiP();
-
   
   
   const chromeFlags = chromePiP.docShell.treeOwner
@@ -45,8 +47,34 @@ add_task(async function pip_alwaysontop_chromeFlag() {
     chromeFlags & Ci.nsIWebBrowserChrome.CHROME_ALWAYS_ON_TOP,
     "PiP has alwaysontop chrome flag"
   );
+});
+
+const isVisible = el => el.checkVisibility();
+
+add_task(async function pip_ui_buttons() {
+  let buttons = Array.from(
+    chromePiP.document.querySelectorAll("button, toolbarbutton, [role=button]")
+  ).filter(isVisible);
 
   
-  await BrowserTestUtils.closeWindow(chromePiP);
-  BrowserTestUtils.removeTab(tab);
+  const tabsToolbar = chromePiP.document.getElementById("TabsToolbar");
+  buttons = buttons.filter(btn => !tabsToolbar.contains(btn));
+
+  
+  
+  
+  
+  const expectedButtons = ["trust-icon-container"];
+
+  buttons.forEach(btn => {
+    const idx = expectedButtons.indexOf(btn.id);
+    Assert.greater(
+      idx,
+      -1,
+      `Expected '${btn.id}' to be ${idx > 0 ? "" : "not"} be visible for PiP`
+    );
+    expectedButtons.splice(idx, 1);
+  });
+
+  Assert.deepEqual(expectedButtons, [], "Expected buttons to be visible");
 });
