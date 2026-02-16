@@ -60,6 +60,9 @@ var ModuleManager = {
     this._settings = initData.settings;
     this._frozenSettings = Object.freeze(Object.assign({}, this._settings));
 
+    
+    this._applinkNavigation = null;
+
     const self = this;
     this._modules = new Map(
       (function* () {
@@ -167,6 +170,24 @@ var ModuleManager = {
     return this.browser.browsingContext.currentWindowGlobal?.getActor(
       aActorName
     );
+  },
+
+  
+  
+  
+  _maybeDeferForApplink(notifyFn, timeoutMs = 5000) {
+    const applinkNav = this._applinkNavigation;
+    if (applinkNav) {
+      const timeoutPromise = new Promise(resolve => {
+        setTimeout(resolve, timeoutMs);
+      });
+      Promise.race([applinkNav.promise, timeoutPromise]).then(() => {
+        this._applinkNavigation = null;
+        Services.tm.idleDispatchToMainThread(notifyFn);
+      });
+    } else {
+      notifyFn();
+    }
   },
 
   
@@ -902,7 +923,9 @@ function startup() {
     
     
     InitLater(() => {
-      Services.obs.notifyObservers(window, "extensions-late-startup");
+      window.moduleManager._maybeDeferForApplink(() => {
+        Services.obs.notifyObservers(window, "extensions-late-startup");
+      });
     });
 
     InitLater(() => {
