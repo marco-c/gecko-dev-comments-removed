@@ -6,9 +6,8 @@
 
 #[cfg(feature = "gecko")]
 use crate::counter_style::{CounterStyle, CounterStyleParsingFlags};
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
-#[cfg(feature = "servo")]
-use crate::properties::longhands::list_style_type::SpecifiedValue as ListStyleType;
 use cssparser::{Parser, Token};
 use style_traits::{ParseError, StyleParseErrorKind};
 
@@ -85,6 +84,127 @@ impl Parse for ListStyleType {
         let flags = CounterStyleParsingFlags::ALLOW_NONE | CounterStyleParsingFlags::ALLOW_STRING;
         Ok(Self(CounterStyle::parse(context, input, flags)?))
     }
+}
+
+
+#[cfg(feature = "servo")]
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+pub enum ListStyleType {
+    
+    
+    Disc,
+    
+    
+    None,
+    
+    
+    Circle,
+    
+    
+    Square,
+    
+    
+    DisclosureOpen,
+    
+    
+    DisclosureClosed,
+    
+    
+    Decimal,
+    
+    
+    LowerAlpha,
+    
+    
+    UpperAlpha,
+    
+    
+    ArabicIndic,
+    
+    
+    Bengali,
+    
+    
+    Cambodian,
+    
+    
+    CjkDecimal,
+    
+    
+    Devanagari,
+    
+    
+    Gujarati,
+    
+    
+    Gurmukhi,
+    
+    
+    Kannada,
+    
+    
+    Khmer,
+    
+    
+    Lao,
+    
+    
+    Malayalam,
+    
+    
+    Mongolian,
+    
+    
+    Myanmar,
+    
+    
+    Oriya,
+    
+    
+    Persian,
+    
+    
+    Telugu,
+    
+    
+    Thai,
+    
+    
+    Tibetan,
+    
+    
+    CjkEarthlyBranch,
+    
+    
+    CjkHeavenlyStem,
+    
+    
+    LowerGreek,
+    
+    
+    Hiragana,
+    
+    
+    HiraganaIroha,
+    
+    
+    Katakana,
+    
+    
+    KatakanaIroha,
 }
 
 #[cfg(feature = "servo")]
