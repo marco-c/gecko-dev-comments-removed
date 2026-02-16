@@ -3465,6 +3465,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetIconForExtension(
 
   
   
+  
   bits->InsertElementsAt(0, aIconSize * aIconSize * 4, 0);
 
   AndroidBridge::Bridge()->GetIconForExtension(aFileExt, aIconSize,
@@ -6586,8 +6587,10 @@ ContentParent::RecvStorageAccessPermissionGrantedForOrigin(
     return IPC_OK();
   }
 
-  if (!aTrackingPrincipal) {
-    return IPC_FAIL(this, "No principal");
+  if (!ValidatePrincipal(aTrackingPrincipal)) {
+    LogAndAssertFailedPrincipalValidationInfo(aTrackingPrincipal, __func__);
+    aResolver(false);
+    return IPC_OK();
   }
 
   
@@ -6621,6 +6624,12 @@ mozilla::ipc::IPCResult ContentParent::RecvCompleteAllowAccessFor(
         aReason,
     CompleteAllowAccessForResolver&& aResolver) {
   if (aParentContext.IsNullOrDiscarded()) {
+    return IPC_OK();
+  }
+
+  if (!ValidatePrincipal(aTrackingPrincipal)) {
+    LogAndAssertFailedPrincipalValidationInfo(aTrackingPrincipal, __func__);
+    aResolver(Nothing());
     return IPC_OK();
   }
 
@@ -6684,6 +6693,12 @@ mozilla::ipc::IPCResult ContentParent::RecvTestCookiePermissionDecided(
 mozilla::ipc::IPCResult ContentParent::RecvTestStorageAccessPermission(
     nsIPrincipal* aEmbeddingPrincipal, const nsCString& aEmbeddedOrigin,
     const TestStorageAccessPermissionResolver&& aResolver) {
+  if (!ValidatePrincipal(aEmbeddingPrincipal)) {
+    LogAndAssertFailedPrincipalValidationInfo(aEmbeddingPrincipal, __func__);
+    aResolver(Nothing());
+    return IPC_OK();
+  }
+
   
   RefPtr<PermissionManager> permManager = PermissionManager::GetInstance();
   if (!permManager) {
