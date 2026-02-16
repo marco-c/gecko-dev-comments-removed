@@ -337,8 +337,14 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode) {
 
   Progress imageProgress = tracker->GetProgress();
 
-  EXPECT_TRUE(bool(imageProgress & FLAG_HAS_TRANSPARENCY) == false);
+  
+  
+  
   EXPECT_TRUE(bool(imageProgress & FLAG_IS_ANIMATED) == true);
+  EXPECT_TRUE(bool(testCase.mFlags & TEST_CASE_IS_ANIMATED) == false);
+
+  EXPECT_EQ(bool(testCase.mFlags & TEST_CASE_IS_TRANSPARENT),
+            bool(imageProgress & FLAG_HAS_TRANSPARENCY));
 
   
   LookupResult result =

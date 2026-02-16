@@ -881,7 +881,8 @@ ImageTestCase ExtraImageSubBlocksAnimatedGIFTestCase() {
   
   
   return ImageTestCase("animated-with-extra-image-sub-blocks.gif", "image/gif",
-                       IntSize(100, 100));
+                       IntSize(100, 100), TEST_CASE_IS_ANIMATED,
+                        2);
 }
 
 ImageTestCase DownscaledPNGTestCase() {
