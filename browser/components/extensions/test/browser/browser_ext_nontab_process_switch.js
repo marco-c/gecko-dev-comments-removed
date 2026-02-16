@@ -1,5 +1,52 @@
 "use strict";
 
+const gSeenWindowGlobals = [];
+
+add_setup(function setup_window_global_parent_observer() {
+  const observer = wgp => {
+    const browser = wgp.rootFrameLoader?.ownerElement;
+    if (!browser?.hasAttribute("webextension-view-type")) {
+      
+      return;
+    }
+
+    let desc = {
+      url: wgp.documentURI?.spec,
+      osPid: wgp.osPid,
+      
+      id: browser.id,
+      className: browser.className,
+      viewType: browser.getAttribute("webextension-view-type"),
+      currentRemoteType: wgp.browsingContext.currentRemoteType,
+      initialBCGId: +browser.getAttribute("initialBrowsingContextGroupId"),
+      
+      
+      
+      
+    };
+
+    info(`Observed WindowGlobalParent: ${uneval(desc)}}`);
+    gSeenWindowGlobals.push(desc);
+  };
+  Services.obs.addObserver(observer, "window-global-created");
+  registerCleanupFunction(() => {
+    Services.obs.removeObserver(observer, "window-global-created");
+  });
+});
+
+
+
+
+function filterSeenWindowGlobals(seenWindowGlobals, extBcgId) {
+  const res = seenWindowGlobals.filter(desc => desc.initialBCGId === extBcgId);
+  info(`Found ${res.length} window globals for BCG ID ${extBcgId}`);
+  return res;
+}
+
+function getExtBcgId(extension) {
+  return WebExtensionPolicy.getByID(extension.id).browsingContextGroupId;
+}
+
 add_task(async function process_switch_in_sidebars_popups() {
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.content_web_accessible.enabled", true]],
@@ -53,14 +100,68 @@ add_task(async function process_switch_in_sidebars_popups() {
     },
   });
 
+  
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mouseover" }, window);
+
+  
+  
+  
+  
+  
+
   await extension.startup();
+
+  const extBcgId = getExtBcgId(extension);
 
   let sidebar = await extension.awaitMessage("extension_page");
   is(sidebar.place, "?sidebar", "Message from the extension sidebar");
+  const extPid = sidebar.pid;
 
   let cs1 = await extension.awaitMessage("content_script");
   is(cs1.url, "http://example.com/?sidebar", "CS on example.com in sidebar");
   isnot(sidebar.pid, cs1.pid, "Navigating to example.com changed process");
+
+  const commonDescriptionSidebar = {
+    id: "webext-panels-browser",
+    className: "",
+    viewType: "sidebar",
+    initialBCGId: extBcgId,
+  };
+  SimpleTest.isDeeply(
+    filterSeenWindowGlobals(gSeenWindowGlobals, extBcgId),
+    [
+      {
+        url: "about:blank",
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionSidebar,
+      },
+      {
+        url: `moz-extension://${extension.uuid}/page.html?sidebar`,
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionSidebar,
+      },
+      {
+        url: "about:blank",
+        osPid: cs1.pid,
+        currentRemoteType: "webIsolated=http://example.com",
+        ...commonDescriptionSidebar,
+      },
+      {
+        url: "http://example.com/?sidebar",
+        osPid: cs1.pid,
+        currentRemoteType: "webIsolated=http://example.com",
+        ...commonDescriptionSidebar,
+      },
+    ],
+    "Seen expected window globals for sidebar"
+  );
+
+  gSeenWindowGlobals.length = 0;
+  
+  
 
   await clickBrowserAction(extension);
   let popup = await extension.awaitMessage("extension_page");
@@ -81,6 +182,103 @@ add_task(async function process_switch_in_sidebars_popups() {
 
   await closeBrowserAction(extension);
   await extension.unload();
+
+  
+  
+  
+  
+  const commonDescriptionPopup = {
+    id: "",
+    className: "webextension-popup-browser",
+    viewType: "popup",
+    initialBCGId: extBcgId,
+  };
+  const seenForPopup = filterSeenWindowGlobals(gSeenWindowGlobals, extBcgId);
+  if (
+    seenForPopup[1].url === "about:blank" &&
+    seenForPopup[2].url.endsWith("/page.html?popup")
+  ) {
+    
+    
+    
+    const [seenPreloadedAboutBlank] = seenForPopup.splice(1, 1);
+    
+    
+    
+    
+    
+    
+    
+    seenForPopup.unshift(seenPreloadedAboutBlank);
+  }
+  SimpleTest.isDeeply(
+    seenForPopup,
+    [
+      {
+        url: "about:blank",
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionPopup,
+        
+        
+        
+        
+      },
+      {
+        url: `moz-extension://${extension.uuid}/page.html?popup`,
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionPopup,
+        
+        className: "webextension-popup-browser webextension-preload-browser",
+      },
+      {
+        
+        
+        
+        
+        
+        url: "about:blank",
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionPopup,
+      },
+      {
+        url: "about:blank",
+        osPid: cs2.pid,
+        currentRemoteType: "webIsolated=http://example.com",
+        ...commonDescriptionPopup,
+      },
+      {
+        url: "http://example.com/?popup",
+        osPid: cs2.pid,
+        currentRemoteType: "webIsolated=http://example.com",
+        ...commonDescriptionPopup,
+      },
+      {
+        url: "about:blank",
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionPopup,
+      },
+      {
+        url: `moz-extension://${extension.uuid}/page.html?popup_back`,
+        osPid: extPid,
+        currentRemoteType: "extension",
+        ...commonDescriptionPopup,
+      },
+      {
+        
+        url: "about:blank",
+        osPid: filterSeenWindowGlobals(gSeenWindowGlobals, extBcgId).at(-1)
+          .osPid,
+        currentRemoteType: "web",
+        ...commonDescriptionPopup,
+      },
+    ],
+    "Seen expected window globals for popup"
+  );
+  gSeenWindowGlobals.length = 0;
 });
 
 
