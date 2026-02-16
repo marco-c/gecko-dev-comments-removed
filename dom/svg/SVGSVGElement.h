@@ -41,10 +41,10 @@ class SVGView {
  public:
   SVGView();
 
-  SVGAnimatedEnumeration mZoomAndPan;
   SVGAnimatedViewBox mViewBox;
-  SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
   std::unique_ptr<SVGAnimatedTransformList> mTransforms;
+  SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
+  SVGAnimatedEnumeration mZoomAndPan;
 };
 
 using SVGSVGElementBase = SVGViewportElement;
@@ -200,17 +200,17 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   EnumAttributesInfo GetEnumInfo() override;
 
-  enum { ZOOMANDPAN };
-  SVGAnimatedEnumeration mEnumAttributes[1];
-  static SVGEnumMapping sZoomAndPanMap[];
-  static EnumInfo sEnumInfo[1];
-
   
   
   std::unique_ptr<SMILTimeContainer> mTimedDocumentRoot;
 
   SVGPoint mCurrentTranslate;
   float mCurrentScale;
+
+  enum { ZOOMANDPAN };
+  SVGAnimatedEnumeration mEnumAttributes[1];
+  static SVGEnumMapping sZoomAndPanMap[];
+  static EnumInfo sEnumInfo[1];
 
   
   

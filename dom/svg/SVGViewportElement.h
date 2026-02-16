@@ -148,18 +148,11 @@ class SVGViewportElement : public SVGGraphicsElement {
   SVGViewBox GetViewBoxWithSynthesis(float aViewportWidth,
                                      float aViewportHeight) const;
 
-  enum { ATTR_X, ATTR_Y, ATTR_WIDTH, ATTR_HEIGHT };
-  SVGAnimatedLength mLengthAttributes[4];
-  static LengthInfo sLengthInfo[4];
-  LengthAttributesInfo GetLengthInfo() override;
-
   SVGAnimatedPreserveAspectRatio* GetAnimatedPreserveAspectRatio() override;
 
   virtual const SVGAnimatedViewBox& GetViewBoxInternal() const {
     return mViewBox;
   }
-  SVGAnimatedViewBox mViewBox;
-  SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
 
   
   
@@ -170,6 +163,14 @@ class SVGViewportElement : public SVGGraphicsElement {
   
   
   gfx::Size mViewportSize;
+
+  SVGAnimatedViewBox mViewBox;
+  SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
+
+  enum { ATTR_X, ATTR_Y, ATTR_WIDTH, ATTR_HEIGHT };
+  SVGAnimatedLength mLengthAttributes[4];
+  static LengthInfo sLengthInfo[4];
+  LengthAttributesInfo GetLengthInfo() override;
 
   bool mHasChildrenOnlyTransform;
 };

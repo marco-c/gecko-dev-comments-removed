@@ -36,7 +36,7 @@ class SVGMotionSMILAnimationFunction final : public SMILAnimationFunction {
   using Path = mozilla::gfx::Path;
 
  public:
-  SVGMotionSMILAnimationFunction();
+  SVGMotionSMILAnimationFunction() = default;
   bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
                nsAttrValue& aResult, nsresult* aParseResult = nullptr) override;
   bool UnsetAttr(nsAtom* aAttribute) override;
@@ -49,7 +49,7 @@ class SVGMotionSMILAnimationFunction final : public SMILAnimationFunction {
   void MpathChanged() { mIsPathStale = mHasChanged = true; }
 
  protected:
-  enum class PathSourceType {
+  enum class PathSourceType : uint8_t {
     
     
     None,    
@@ -85,16 +85,15 @@ class SVGMotionSMILAnimationFunction final : public SMILAnimationFunction {
 
   
   
-  FallibleTArray<double> mKeyPoints;  
-
-  RotateType mRotateType;  
-  float mRotateAngle;      
-
-  PathSourceType mPathSourceType;        
+  FallibleTArray<double> mKeyPoints;     
   RefPtr<Path> mPath;                    
   FallibleTArray<double> mPathVertices;  
 
-  bool mIsPathStale;
+  float mRotateAngle = 0.0f;
+  RotateType mRotateType = RotateType::Explicit;
+  PathSourceType mPathSourceType = PathSourceType::None;
+
+  bool mIsPathStale = true;
 };
 
 }  

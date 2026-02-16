@@ -38,7 +38,7 @@ class SVGAnimationElement;
 
 class SMILAnimationFunction {
  public:
-  SMILAnimationFunction();
+  SMILAnimationFunction() = default;
 
   
 
@@ -358,7 +358,7 @@ class SMILAnimationFunction {
 
   
   
-  enum class ErrorFlag {
+  enum class ErrorFlag : uint8_t {
     Accumulate,
     Additive,
     CalcMode,
@@ -422,17 +422,23 @@ class SMILAnimationFunction {
   
   
   
-  SMILTime mSampleTime;  
+  SMILTime mSampleTime = -1;  
   SMILTimeValue mSimpleDuration;
-  uint32_t mRepeatIteration;
 
-  SMILTime mBeginTime;  
+  SMILTime mBeginTime = std::numeric_limits<SMILTime>::min();  
 
   
   
   
   
-  dom::SVGAnimationElement* mAnimationElement;
+  dom::SVGAnimationElement* mAnimationElement = nullptr;
+
+  
+  
+  
+  SMILWeakTargetIdentifier mLastTarget;
+
+  uint32_t mRepeatIteration = 0;
 
   
   
@@ -440,18 +446,13 @@ class SMILAnimationFunction {
   ErrorFlags mErrorFlags;
 
   
-  
-  
-  SMILWeakTargetIdentifier mLastTarget;
-
-  
-  bool mIsActive : 1;
-  bool mIsFrozen : 1;
-  bool mLastValue : 1;
-  bool mHasChanged : 1;
-  bool mValueNeedsReparsingEverySample : 1;
-  bool mPrevSampleWasSingleValueAnimation : 1;
-  bool mWasSkippedInPrevSample : 1;
+  bool mIsActive : 1 = false;
+  bool mIsFrozen : 1 = false;
+  bool mLastValue : 1 = false;
+  bool mHasChanged : 1 = true;
+  bool mValueNeedsReparsingEverySample : 1 = false;
+  bool mPrevSampleWasSingleValueAnimation : 1 = false;
+  bool mWasSkippedInPrevSample : 1 = false;
 };
 
 }  

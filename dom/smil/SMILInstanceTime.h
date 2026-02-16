@@ -105,6 +105,13 @@ class SMILInstanceTime final {
 
   void SetBaseInterval(SMILInterval* aBaseInterval);
 
+  
+  
+  SMILTimeValueSpec* mCreator;
+  
+  
+  SMILInterval* mBaseInterval = nullptr;
+
   SMILTimeValue mTime;
 
   
@@ -136,7 +143,10 @@ class SMILInstanceTime final {
   };
   using Flags = EnumSet<Flag>;
   Flags mFlags;
-  mutable bool mVisited;  
+
+  
+  
+  uint32_t mSerial = 0;
 
   
   
@@ -151,17 +161,9 @@ class SMILInstanceTime final {
   
   
   
-  uint16_t mFixedEndpointRefCnt;
+  uint16_t mFixedEndpointRefCnt = 0;
 
-  uint32_t mSerial;  
-                     
-                     
-
-  SMILTimeValueSpec* mCreator;  
-                                
-                                
-  SMILInterval* mBaseInterval;  
-                                
+  mutable bool mVisited = false;  
 };
 
 }  

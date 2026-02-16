@@ -167,16 +167,6 @@ class SMILAnimationController final : public SMILTimeContainer {
   
   SMILTime mAvgTimeBetweenSamples = 0;
 
-  bool mResampleNeeded = false;
-  bool mRunningSample = false;
-
-  
-  bool mMightHavePendingStyleUpdates = false;
-
-  
-  
-  bool mIsSampling = false;
-
   
   
   mozilla::dom::Document* mDocument;
@@ -186,6 +176,16 @@ class SMILAnimationController final : public SMILTimeContainer {
   
   
   std::unique_ptr<SMILCompositorTable> mLastCompositorTable;
+
+  bool mResampleNeeded = false;
+  bool mRunningSample = false;
+
+  
+  bool mMightHavePendingStyleUpdates = false;
+
+  
+  
+  bool mIsSampling = false;
 };
 
 }  

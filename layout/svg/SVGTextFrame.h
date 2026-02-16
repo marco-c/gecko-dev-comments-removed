@@ -551,17 +551,17 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   
 
 
+  nsTArray<CharPosition> mPositions;
+
+  
+
+
 
 
 
 
 
   uint32_t mTrailingUndisplayedCharacters = 0;
-
-  
-
-
-  nsTArray<CharPosition> mPositions;
 
   
 

@@ -19,7 +19,7 @@ class SMILValue;
 
 
 
-enum class RotateType {
+enum class RotateType : uint8_t {
   Explicit,    
   Auto,        
   AutoReverse  

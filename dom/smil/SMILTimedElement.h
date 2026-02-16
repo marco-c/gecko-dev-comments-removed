@@ -552,47 +552,35 @@ class SMILTimedElement {
   
   
   
-  mozilla::dom::SVGAnimationElement* mAnimationElement;  
-                                                         
-  TimeValueSpecList mBeginSpecs;                         
-  TimeValueSpecList mEndSpecs;                           
+  dom::SVGAnimationElement* mAnimationElement = nullptr;  
+                                                          
+  SMILAnimationFunction* mClient = nullptr;
+  std::unique_ptr<SMILInterval> mCurrentInterval;
+  TimeValueSpecList mBeginSpecs;  
+  TimeValueSpecList mEndSpecs;    
 
   SMILTimeValue mSimpleDur;
 
   SMILRepeatCount mRepeatCount;
   SMILTimeValue mRepeatDur;
 
-  SMILTimeValue mMin;
+  SMILTimeValue mMin = SMILTimeValue::Zero();
   SMILTimeValue mMax;
-
-  enum class SMILFillMode : uint8_t { Remove, Freeze };
-  SMILFillMode mFillMode;
-  static constexpr nsAttrValue::EnumTableEntry sFillModeTable[] = {
-      {"remove", SMILFillMode::Remove},
-      {"freeze", SMILFillMode::Freeze},
-  };
-
-  enum class SMILRestartMode : uint8_t { Always, WhenNotActive, Never };
-  SMILRestartMode mRestartMode;
-  static constexpr nsAttrValue::EnumTableEntry sRestartModeTable[] = {
-      {"always", SMILRestartMode::Always},
-      {"whenNotActive", SMILRestartMode::WhenNotActive},
-      {"never", SMILRestartMode::Never},
-  };
 
   InstanceTimeList mBeginInstances;
   InstanceTimeList mEndInstances;
-  uint32_t mInstanceSerialIndex;
+  uint32_t mInstanceSerialIndex = 0;
 
-  SMILAnimationFunction* mClient;
-  std::unique_ptr<SMILInterval> mCurrentInterval;
   IntervalList mOldIntervals;
-  uint32_t mCurrentRepeatIteration;
-  SMILMilestone mPrevRegisteredMilestone;
+  uint32_t mCurrentRepeatIteration = 0;
+  SMILMilestone mPrevRegisteredMilestone = sMaxMilestone;
   static constexpr SMILMilestone sMaxMilestone = {
       std::numeric_limits<SMILTime>::max(), false};
-  static const uint8_t sMaxNumIntervals;
-  static const uint8_t sMaxNumInstanceTimes;
+
+  
+  
+  static constexpr uint8_t sMaxNumIntervals = 20;
+  static constexpr uint8_t sMaxNumInstanceTimes = 100;
 
   
   
@@ -601,6 +589,21 @@ class SMILTimedElement {
   
   
   TimeValueSpecHashSet mTimeDependents;
+
+  enum class SMILFillMode : uint8_t { Remove, Freeze };
+  SMILFillMode mFillMode = SMILFillMode::Remove;
+  static constexpr nsAttrValue::EnumTableEntry sFillModeTable[] = {
+      {"remove", SMILFillMode::Remove},
+      {"freeze", SMILFillMode::Freeze},
+  };
+
+  enum class SMILRestartMode : uint8_t { Always, WhenNotActive, Never };
+  SMILRestartMode mRestartMode = SMILRestartMode::Always;
+  static constexpr nsAttrValue::EnumTableEntry sRestartModeTable[] = {
+      {"always", SMILRestartMode::Always},
+      {"whenNotActive", SMILRestartMode::WhenNotActive},
+      {"never", SMILRestartMode::Never},
+  };
 
   
 
@@ -612,7 +615,7 @@ class SMILTimedElement {
     Active,
     PostActive
   };
-  SMILElementState mElementState;
+  SMILElementState mElementState = SMILElementState::Startup;
 
   enum class SMILSeekState : uint8_t {
     NotSeeking,
@@ -621,22 +624,28 @@ class SMILTimedElement {
     BackwardFromActive,
     BackwardFromInactive
   };
-  SMILSeekState mSeekState;
+  SMILSeekState mSeekState = SMILSeekState::NotSeeking;
 
   
   class AutoIntervalUpdateBatcher;
-  bool mDeferIntervalUpdates;
-  bool mDoDeferredUpdate;  
-                           
-  bool mIsDisabled;
+  bool mDeferIntervalUpdates = false;
+
+  
+
+
+
+  bool mDoDeferredUpdate = false;
+  bool mIsDisabled = false;
 
   
   class AutoIntervalUpdater;
 
   
-  uint8_t mDeleteCount;
-  uint8_t mUpdateIntervalRecursionDepth;
-  static const uint8_t sMaxUpdateIntervalRecursionDepth;
+  uint8_t mDeleteCount = 0;
+  uint8_t mUpdateIntervalRecursionDepth = 0;
+  
+  
+  static constexpr uint8_t sMaxUpdateIntervalRecursionDepth = 20;
 };
 
 inline void ImplCycleCollectionUnlink(SMILTimedElement& aField) {

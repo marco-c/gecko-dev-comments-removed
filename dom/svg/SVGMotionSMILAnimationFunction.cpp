@@ -24,13 +24,6 @@ using namespace mozilla::gfx;
 
 namespace mozilla {
 
-SVGMotionSMILAnimationFunction::SVGMotionSMILAnimationFunction()
-    : mRotateType(RotateType::Explicit),
-      mRotateAngle(0.0f),
-      mPathSourceType(PathSourceType::None),
-      mIsPathStale(true)  
-{}
-
 void SVGMotionSMILAnimationFunction::MarkStaleIfAttributeAffectsPath(
     nsAtom* aAttribute) {
   bool isAffected;

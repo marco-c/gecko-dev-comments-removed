@@ -58,10 +58,10 @@ namespace mozilla {
 
 
 class MOZ_RAII AutoReferenceChainGuard {
-  static const int16_t sDefaultMaxChainLength = 10;  
+  static constexpr int16_t sDefaultMaxChainLength = 10;  
 
  public:
-  static const int16_t noChain = -2;
+  static constexpr int16_t noChain = -2;
 
   
 

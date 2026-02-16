@@ -120,12 +120,6 @@ class CSSFilterInstance {
 
 
 
-  nscolor mShadowFallbackColor;
-
-  
-
-
-
   nsIntRect mTargetBoundsInFilterSpace;
 
   
@@ -133,6 +127,12 @@ class CSSFilterInstance {
 
 
   gfxMatrix mFrameSpaceInCSSPxToFilterSpaceTransform;
+
+  
+
+
+
+  nscolor mShadowFallbackColor;
 };
 
 }  

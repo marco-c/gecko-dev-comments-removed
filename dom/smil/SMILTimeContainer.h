@@ -25,7 +25,7 @@ class SMILTimeValue;
 
 class SMILTimeContainer {
  public:
-  SMILTimeContainer();
+  SMILTimeContainer() = default;
   virtual ~SMILTimeContainer();
 
   
@@ -253,10 +253,10 @@ class SMILTimeContainer {
   void NotifyTimeChange();
 
   
-  SMILTimeContainer* mParent;
+  SMILTimeContainer* mParent = nullptr;
 
   
-  SMILTime mCurrentTime;
+  SMILTime mCurrentTime = 0L;
 
   
   
@@ -264,27 +264,13 @@ class SMILTimeContainer {
   
   
   
-  SMILTime mParentOffset;
+  SMILTime mParentOffset = 0L;
 
   
   Maybe<SMILTime> mPauseTime;
 
   
-  SMILTime mPauseStart;
-
-  
-  bool mNeedsPauseSample;
-
-  bool mNeedsRewind;  
-  bool mIsSeeking;    
-
-#ifdef DEBUG
-  bool mHoldingEntries;  
-                         
-#endif
-
-  
-  PauseTypes mPauseTypes;
+  SMILTime mPauseStart = 0L;
 
   struct MilestoneEntry {
     MilestoneEntry(const SMILMilestone& aMilestone,
@@ -305,6 +291,23 @@ class SMILTimeContainer {
   
   
   nsTPriorityQueue<MilestoneEntry> mMilestoneEntries;
+
+  
+  PauseTypes mPauseTypes = PauseType::Begin;
+
+  
+  bool mNeedsPauseSample = false;
+
+  
+  bool mNeedsRewind = false;
+  
+  bool mIsSeeking = false;
+
+#ifdef DEBUG
+  
+  
+  bool mHoldingEntries = false;
+#endif
 };
 
 }  
