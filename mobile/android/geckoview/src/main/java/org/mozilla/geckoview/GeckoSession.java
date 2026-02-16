@@ -44,6 +44,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StringDef;
 import androidx.annotation.UiThread;
@@ -161,6 +162,10 @@ public class GeckoSession {
   private SessionPdfFileSaver mPdfFileSaver;
   private TranslationsController.SessionTranslation mTranslations =
       new TranslationsController.SessionTranslation(this);
+
+  
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  private PageExtractionController.SessionPageExtractor mPageExtractor;
 
   
    interface SessionMagnifier {
@@ -3608,6 +3613,20 @@ public class GeckoSession {
   public @Nullable TranslationsController.SessionTranslation.Delegate
       getTranslationsSessionDelegate() {
     return mTranslationsHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  @ExperimentalGeckoViewApi
+  public @NonNull PageExtractionController.SessionPageExtractor getSessionPageExtractor() {
+    if (mPageExtractor == null) {
+      mPageExtractor = new PageExtractionController.SessionPageExtractor(this);
+    }
+    return mPageExtractor;
   }
 
   
