@@ -79,10 +79,6 @@ class BrowserAction extends BrowserActionBase {
   dispatchClick() {
     this.clickDelegate.onClick();
   }
-
-  isPanelShownBlockingOpenPopup(_window) {
-    return ExtensionActionHelper.isShowingAnyExtensionActionPopup();
-  }
 }
 
 this.browserAction = class extends ExtensionAPIPersistent {
@@ -202,16 +198,12 @@ this.browserAction = class extends ExtensionAPIPersistent {
               : currentWindow;
 
           if (window !== currentWindow) {
-            
-            
-            
-            
-            throw new ExtensionError(BrowserActionBase.ERROR_WIN_NOT_FOCUSED);
+            throw new ExtensionError(
+              "Only the current window is supported on Android."
+            );
           }
 
-          if (action.getPopupUrl(window.tab, true)) {
-            action.throwIfOpenPopupIsBlockedByAnyAction(window);
-            
+          if (this.action.getPopupUrl(window.tab, true)) {
             action.openPopup(window.tab, !isHandlingUserInput);
           }
         },
