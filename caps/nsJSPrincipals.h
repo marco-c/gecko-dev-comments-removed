@@ -44,7 +44,8 @@ class nsJSPrincipals : public nsIPrincipal, public JSPrincipals {
 
   bool write(JSContext* aCx, JSStructuredCloneWriter* aWriter) final;
 
-  bool isSystemOrAddonPrincipal() final;
+  bool isSystemPrincipal() final;
+  bool isAddonPrincipal() final;
 
   
 

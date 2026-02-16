@@ -55,8 +55,21 @@ struct JSPrincipals {
   
 
 
+  virtual bool isSystemPrincipal() = 0;
 
-  virtual bool isSystemOrAddonPrincipal() = 0;
+  
+
+
+
+  virtual bool isAddonPrincipal() = 0;
+
+  
+
+
+
+  bool isSystemOrAddonPrincipal() {
+    return isSystemPrincipal() || isAddonPrincipal();
+  }
 
   
 
