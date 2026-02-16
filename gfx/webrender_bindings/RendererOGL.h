@@ -94,6 +94,16 @@ class RendererOGL {
   Maybe<layers::FrameRecording> EndRecording();
 
   
+  using ScreenPixelsPromise = MozPromise<bool, nsresult, true>;
+  
+  
+  
+  
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntSize aSize,
+                                                  wr::ImageFormat aFormat,
+                                                  Span<uint8_t> aBuffer);
+
+  
   ~RendererOGL();
 
   
@@ -147,6 +157,12 @@ class RendererOGL {
 
   bool DidPaintContent(const wr::WebRenderPipelineInfo* aFrameEpochs);
 
+  
+  
+  
+  
+  void MaybeCaptureScreenPixels();
+
   RefPtr<RenderThread> mThread;
   UniquePtr<RenderCompositor> mCompositor;
   UniquePtr<layers::CompositionRecorder> mCompositionRecorder;  
@@ -156,6 +172,14 @@ class RendererOGL {
   TimeStamp mFrameStartTime;
 
   bool mDisableNativeCompositor;
+
+  struct ScreenPixelsRequest {
+    gfx::IntSize mSize;
+    wr::ImageFormat mFormat;
+    Span<uint8_t> mBuffer;
+    RefPtr<ScreenPixelsPromise::Private> mPromise;
+  };
+  Maybe<ScreenPixelsRequest> mPendingScreenPixelsRequest;
 
   RendererScreenshotGrabber mScreenshotGrabber;
 

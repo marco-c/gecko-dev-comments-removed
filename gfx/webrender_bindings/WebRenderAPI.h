@@ -326,6 +326,16 @@ class WebRenderAPI final {
 
   RefPtr<EndRecordingPromise> EndRecording();
 
+  
+  using ScreenPixelsPromise = MozPromise<bool, nsresult, true>;
+  
+  
+  
+  
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntSize aSize,
+                                                  wr::ImageFormat aFormat,
+                                                  Span<uint8_t> aBuffer);
+
   layers::RemoteTextureInfoList* GetPendingRemoteTextureInfoList();
   layers::AsyncImagePipelineOps* GetPendingAsyncImagePipelineOps(
       TransactionBuilder& aTxn);

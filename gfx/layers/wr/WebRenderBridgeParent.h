@@ -310,11 +310,15 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
 #if defined(MOZ_WIDGET_ANDROID)
   
+  using ScreenPixelsPromise =
+      MozPromise<std::tuple<ipc::Shmem, ScreenIntSize, bool>, nsresult, true>;
+  
 
 
-  void RequestScreenPixels(UiCompositorControllerParent* aController);
-  void MaybeCaptureScreenPixels();
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(
+      UiCompositorControllerParent* aController);
 #endif
+
   
 
 
@@ -428,6 +432,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   void MaybeGenerateFrame(VsyncId aId, bool aForceGenerateFrame,
                           wr::RenderReasons aReasons);
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  void MaybeCaptureScreenPixels();
+#endif
+
   VsyncId GetVsyncIdForEpoch(const wr::Epoch& aEpoch) {
     for (auto& id : mPendingTransactionIds) {
       if (id.mEpoch.mHandle == aEpoch.mHandle) {
@@ -513,8 +524,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   RefPtr<WebRenderBridgeParentRef> mWebRenderBridgeRef;
 
 #if defined(MOZ_WIDGET_ANDROID)
-  UiCompositorControllerParent* mScreenPixelsTarget = nullptr;
+  struct ScreenPixelsRequest {
+    RefPtr<UiCompositorControllerParent> mTarget;
+    RefPtr<ScreenPixelsPromise::Private> mPromise;
+  };
+  Maybe<ScreenPixelsRequest> mScreenPixelsRequest;
 #endif
+
   uint32_t mBoolParameterBits;
   uint16_t mBlobTileSize = 256;
   wr::RenderReasons mSkippedCompositeReasons = wr::RenderReasons::NONE;
