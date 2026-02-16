@@ -207,8 +207,15 @@ void ScriptPreloader::InitContentChild(ContentParent& parent) {
   
   
   auto processType = GetChildProcessType(parent.GetRemoteType());
-  bool wantScriptData = !cache.mInitializedProcesses.contains(processType);
-  cache.mInitializedProcesses += processType;
+  bool wantScriptData =
+      !cache.mRequestedChildProcessStencils.contains(processType);
+  cache.mRequestedChildProcessStencils += processType;
+
+  
+  
+  if (processType == ProcessType::Web) {
+    cache.mRequiredChildProcessStencils += processType;
+  }
 
   auto fd = cache.mCacheData->cloneFileDescriptor();
   
@@ -276,6 +283,12 @@ void ScriptPreloader::StartCacheWriteIfReady() {
   }
 
   if (!mStartupHasAdvancedToCacheWritingStage) {
+    
+    return;
+  }
+
+  if (!mChildCache->mReceivedChildProcessStencils.contains(
+          mChildCache->mRequiredChildProcessStencils)) {
     
     return;
   }
@@ -991,6 +1004,14 @@ void ScriptPreloader::NoteStencil(const nsCString& url,
 
   script->UpdateLoadTime(loadTime);
   script->mProcessTypes += processType;
+}
+
+void ScriptPreloader::NoteReceivedAllChildStencilsForProcess(
+    ProcessType aProcessType) {
+  mReceivedChildProcessStencils += aProcessType;
+
+  
+  GetSingleton().StartCacheWriteIfReady();
 }
 
 

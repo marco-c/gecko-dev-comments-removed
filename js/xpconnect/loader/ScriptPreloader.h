@@ -128,6 +128,10 @@ class ScriptPreloader : public nsIObserver,
                    TimeStamp loadTime);
 
   
+  
+  void NoteReceivedAllChildStencilsForProcess(ProcessType processType);
+
+  
   Result<Ok, nsresult> InitCache(const nsAString& = u"scriptCache"_ns)
       MOZ_REQUIRES(sMainThreadCapability);
 
@@ -525,7 +529,15 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  EnumSet<ProcessType> mInitializedProcesses{};
+  EnumSet<ProcessType> mRequiredChildProcessStencils;
+
+  
+  
+  
+  EnumSet<ProcessType> mRequestedChildProcessStencils;
+
+  
+  EnumSet<ProcessType> mReceivedChildProcessStencils;
 
   RefPtr<ScriptPreloader> mChildCache;
   ScriptCacheChild* mChildActor = nullptr;
