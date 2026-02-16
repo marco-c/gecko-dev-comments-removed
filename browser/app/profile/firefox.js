@@ -2939,6 +2939,13 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 
 
+
+
+#ifndef XP_LINUX
+  pref("browser.toolbars.share-button.enabled", true);
+#endif
+
+
 pref("browser.privatebrowsing.felt-privacy-v1", false);
 #if defined(NIGHTLY_BUILD)
   pref("security.certerrors.felt-privacy-v1", true);
