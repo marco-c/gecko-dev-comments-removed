@@ -1307,6 +1307,7 @@ class nsLayoutUtils {
     UseMarginBox,
     
     UseMarginBoxWithAutoResolvedAsZero,
+    UseInkOverflowAsBox
   };
   using GetAllInFlowRectsFlags = mozilla::EnumSet<GetAllInFlowRectsFlag>;
   static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,

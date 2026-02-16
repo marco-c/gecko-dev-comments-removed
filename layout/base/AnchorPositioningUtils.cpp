@@ -1293,13 +1293,16 @@ static bool ComputePositionVisibility(
       if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
         return false;
       }
+      auto* containingBlock = aPositioned->GetParent()->FirstInFlow();
       
       
       
       if (defaultAnchor &&
-          defaultAnchor->GetParent() != aPositioned->GetParent()) {
-        auto* intersectionRoot = aPositioned->GetParent();
-        nsRect rootRect = intersectionRoot->InkOverflowRectRelativeToSelf();
+          defaultAnchor->GetParent()->FirstInFlow() != containingBlock) {
+        auto* intersectionRoot = containingBlock;
+        nsRect rootRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+            intersectionRoot, containingBlock,
+            nsLayoutUtils::GetAllInFlowRectsFlag::UseInkOverflowAsBox);
         if (IsScrolled(intersectionRoot)) {
           intersectionRoot = intersectionRoot->GetParent();
           ScrollContainerFrame* sc = do_QueryFrame(intersectionRoot);
