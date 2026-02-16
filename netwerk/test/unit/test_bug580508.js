@@ -22,8 +22,12 @@ function run_test() {
 
   
   
-  let greNetUtilURI = ioService.newURI("resource://gre/modules/NetUtil.jsm");
-  let myNetUtilURI = ioService.newURI("resource://my-gre-modules/NetUtil.jsm");
+  let greNetUtilURI = ioService.newURI(
+    "resource://gre/modules/NetUtil.sys.mjs"
+  );
+  let myNetUtilURI = ioService.newURI(
+    "resource://my-gre-modules/NetUtil.sys.mjs"
+  );
   Assert.equal(
     resProt.resolveURI(greNetUtilURI),
     resProt.resolveURI(myNetUtilURI)
