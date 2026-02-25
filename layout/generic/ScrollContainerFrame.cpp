@@ -5363,6 +5363,16 @@ void ScrollContainerFrame::PostScrollEndEvent() {
   }
 
   
+  
+  if (mIsRoot && PresContext()->IsRootContentDocumentCrossProcess() &&
+      PresShell()->IsVisualViewportOffsetSet()) {
+    if (auto* window = nsGlobalWindowInner::Cast(
+            PresContext()->Document()->GetInnerWindow())) {
+      window->VisualViewport()->PostScrollEndEvent();
+    }
+  }
+
+  
   mScrollEndEvent = new ScrollEndEvent(this);
 }
 
