@@ -988,6 +988,31 @@
             
 
 
+            user_agent_client_hints: {
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                set_client_hints_override: function (params) {
+                    assertBidiIsEnabled();
+                    return window.test_driver_internal.bidi.user_agent_client_hints.set_client_hints_override(
+                        params);
+                }
+            },
+            
+
+
             log: {
                 entry_added: {
                     
@@ -2424,6 +2449,12 @@
                 set_touch_override: function (params) {
                     throw new Error(
                         "bidi.emulation.set_touch_override is not implemented by testdriver-vendor.js");
+                }
+            },
+            user_agent_client_hints: {
+                set_client_hints_override: function (params) {
+                    throw new Error(
+                        "bidi.user_agent_client_hints.set_client_hints_override is not implemented by testdriver-vendor.js");
                 }
             },
             log: {
