@@ -2952,11 +2952,7 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 
 pref("browser.privatebrowsing.felt-privacy-v1", false);
-#if defined(NIGHTLY_BUILD)
-  pref("security.certerrors.felt-privacy-v1", true);
-#else
-  pref("security.certerrors.felt-privacy-v1", false);
-#endif
+pref("security.certerrors.felt-privacy-v1", true);
 
 
 
