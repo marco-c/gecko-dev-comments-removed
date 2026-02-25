@@ -136,9 +136,6 @@ class RenderingSimulator {
 
   
   static constexpr TimeDelta kRenderDelay = TimeDelta::Millis(10);
-  
-  static constexpr TimeDelta kMaxWaitForKeyframe = TimeDelta::Seconds(10);
-  static constexpr TimeDelta kMaxWaitForFrame = TimeDelta::Seconds(10);
 
   explicit RenderingSimulator(Config config);
   ~RenderingSimulator();

@@ -62,10 +62,6 @@ class RenderingTracker : public AssembledFrameCallback,
   struct Config {
     uint32_t ssrc = 0;
     
-    TimeDelta max_wait_for_keyframe = TimeDelta::MinusInfinity();
-    
-    TimeDelta max_wait_for_frame = TimeDelta::MinusInfinity();
-    
     TimeDelta render_delay = TimeDelta::MinusInfinity();
   };
 
