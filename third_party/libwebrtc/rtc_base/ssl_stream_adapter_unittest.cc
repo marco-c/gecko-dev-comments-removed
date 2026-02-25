@@ -50,7 +50,6 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "test/create_test_field_trials.h"
@@ -68,7 +67,7 @@ using ::testing::Values;
 using ::testing::WithParamInterface;
 
 
-const char kRSA_PRIVATE_KEY_PEM[] =
+constexpr char kRSA_PRIVATE_KEY_PEM[] =
     "-----BEGIN RSA PRI"  
     "VATE KEY-----\n"     
     "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4XOJ6agj673j+\n"
@@ -104,7 +103,7 @@ const char kRSA_PRIVATE_KEY_PEM[] =
 
 
 
-const char kCERT_PEM[] =
+constexpr char kCERT_PEM[] =
     "-----BEGIN CERTIFICATE-----\n"
     "MIIDjTCCAnWgAwIBAgIUTkCy4o8+4W/86RYmgWc8FEhWTzYwDQYJKoZIhvcNAQEL\n"
     "BQAwVjELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\n"
@@ -129,7 +128,7 @@ const char kCERT_PEM[] =
     "-----END CERTIFICATE-----\n";
 
 
-const char kIntCert1[] =
+constexpr char kIntCert1[] =
     "-----BEGIN CERTIFICATE-----\n"
     "MIIFljCCA36gAwIBAgINAgO8U1lrNMcY9QFQZjANBgkqhkiG9w0BAQsFADBHMQsw\n"
     "CQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExMQzEU\n"
@@ -164,7 +163,7 @@ const char kIntCert1[] =
     "-----END CERTIFICATE-----\n";
 
 
-const char kCACert[] =
+constexpr char kCACert[] =
     "-----BEGIN CERTIFICATE-----\n"
     "MIIFWjCCA0KgAwIBAgIQbkepxUtHDA3sM9CJuRz04TANBgkqhkiG9w0BAQwFADBH\n"
     "MQswCQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExM\n"
@@ -403,11 +402,10 @@ class BufferQueueStream : public StreamInterface {
   BufferQueue buffer_;
 };
 
-const int kBufferCapacity = 1;
-const size_t kDefaultBufferSize = 2048;
+constexpr int kBufferCapacity = 1;
+constexpr size_t kDefaultBufferSize = 2048;
 
-class SSLStreamAdapterTestBase : public ::testing::Test,
-                                 public sigslot::has_slots<> {
+class SSLStreamAdapterTestBase : public ::testing::Test {
  public:
   SSLStreamAdapterTestBase(absl::string_view client_cert_pem,
                            absl::string_view client_private_key_pem,

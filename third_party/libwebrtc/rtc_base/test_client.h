@@ -25,14 +25,13 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "test/wait_until.h"
 
 namespace webrtc {
 
 
 
-class TestClient : public sigslot::has_slots<> {
+class TestClient {
  public:
   
   struct Packet {
@@ -55,7 +54,7 @@ class TestClient : public sigslot::has_slots<> {
   
   
   TestClient(std::unique_ptr<AsyncPacketSocket> socket, ClockVariant clock);
-  ~TestClient() override;
+  ~TestClient();
 
   TestClient(const TestClient&) = delete;
   TestClient& operator=(const TestClient&) = delete;
