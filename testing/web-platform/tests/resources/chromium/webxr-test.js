@@ -1295,6 +1295,9 @@ class MockRuntime {
               
               depthConfiguration: this.depthConfiguration_,
               views: this._getDefaultViews(),
+              
+              
+              maxRenderLayers: (16 - 1) / 2,
             },
             enviromentBlendMode: this.enviromentBlendMode_,
             interactionMode: this.interactionMode_
