@@ -2948,12 +2948,7 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 #endif
 
 
-pref("browser.privatebrowsing.felt-privacy-v1", false);
-#if defined(NIGHTLY_BUILD)
-  pref("security.certerrors.felt-privacy-v1", true);
-#else
-  pref("security.certerrors.felt-privacy-v1", false);
-#endif
+pref("browser.privatebrowsing.felt-privacy-v1", true);
 
 
 
