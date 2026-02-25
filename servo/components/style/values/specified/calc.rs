@@ -20,7 +20,9 @@ use crate::values::generics::position::{
 use crate::values::specified::length::{AbsoluteLength, FontRelativeLength, NoCalcLength};
 use crate::values::specified::length::{ContainerRelativeLength, ViewportPercentageLength};
 use crate::values::specified::{self, Angle, Resolution, Time};
-use crate::values::{serialize_number, serialize_percentage, CSSFloat, DashedIdent};
+use crate::values::{
+    reify_percentage, serialize_number, serialize_percentage, CSSFloat, DashedIdent,
+};
 use cssparser::{match_ignore_ascii_case, CowRcStr, Parser, Token};
 use debug_unreachable::debug_unreachable;
 use smallvec::SmallVec;
@@ -129,6 +131,7 @@ impl ToTyped for Leaf {
         
         match *self {
             Self::Length(ref l) => l.to_typed(),
+            Self::Percentage(p) => Some(TypedValue::Numeric(reify_percentage(p))),
             _ => None,
         }
     }
