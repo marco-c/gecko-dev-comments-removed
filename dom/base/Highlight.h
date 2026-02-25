@@ -88,12 +88,6 @@ class Highlight final : public nsISupports, public nsWrapperCache {
                                    nsAtom& aHighlightName);
 
   
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Selection> CreateHighlightSelection(
-      nsAtom* aHighlightName, nsFrameSelection* aFrameSelection);
-
-  
   nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
   JSObject* WrapObject(JSContext* aCx,
@@ -134,6 +128,11 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
   uint32_t Size() const { return mRanges.Length(); }
+
+  
+
+
+  const nsTArray<RefPtr<AbstractRange>>& Ranges() const { return mRanges; }
 
   
 

@@ -1615,22 +1615,43 @@ Selection* nsFrameSelection::GetSelection(SelectionType aSelectionType) const {
   return mDomSelections[index];
 }
 
+void nsFrameSelection::PopulateHighlightSelection(
+    Selection& aSelection, mozilla::dom::Highlight& aHighlight) {
+  MOZ_ASSERT(GetPresShell());
+  AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__);
+  selectionBatcher.AddFrameSelection(this);
+  for (const RefPtr<AbstractRange>& range : aHighlight.Ranges()) {
+    if (range->GetComposedDocOfContainers() == GetPresShell()->GetDocument()) {
+      
+      
+      aSelection.AddHighlightRangeAndSelectFramesAndNotifyListeners(
+          MOZ_KnownLive(*range));
+    }
+  }
+}
+
 void nsFrameSelection::AddHighlightSelection(
     nsAtom* aHighlightName, mozilla::dom::Highlight& aHighlight) {
+  
+  
+  
   RefPtr<Selection> selection =
-      aHighlight.CreateHighlightSelection(aHighlightName, this);
+      MakeRefPtr<Selection>(SelectionType::eHighlight, this);
+  selection->SetHighlightSelectionData({aHighlightName, &aHighlight});
   if (auto iter =
           std::find_if(mHighlightSelections.begin(), mHighlightSelections.end(),
                        [&aHighlightName](auto const& aElm) {
                          return aElm.first() == aHighlightName;
                        });
       iter != mHighlightSelections.end()) {
-    iter->second() = std::move(selection);
+    iter->second() = selection;
   } else {
     mHighlightSelections.AppendElement(
         CompactPair<RefPtr<nsAtom>, RefPtr<Selection>>(aHighlightName,
-                                                       std::move(selection)));
+                                                       selection));
   }
+  
+  PopulateHighlightSelection(*selection, aHighlight);
 }
 
 void nsFrameSelection::RepaintHighlightSelection(nsAtom* aHighlightName) {
@@ -1670,12 +1691,7 @@ void nsFrameSelection::AddHighlightSelectionRange(
     RefPtr<Selection> selection = iter->second();
     selection->AddHighlightRangeAndSelectFramesAndNotifyListeners(aRange);
   } else {
-    
-    RefPtr<Selection> selection =
-        aHighlight.CreateHighlightSelection(aHighlightName, this);
-    mHighlightSelections.AppendElement(
-        CompactPair<RefPtr<nsAtom>, RefPtr<Selection>>(aHighlightName,
-                                                       std::move(selection)));
+    AddHighlightSelection(aHighlightName, aHighlight);
   }
 }
 
