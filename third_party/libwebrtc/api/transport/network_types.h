@@ -213,6 +213,9 @@ struct RTC_EXPORT TransportPacketsFeedback {
   std::vector<PacketResult> LostWithSendInfo() const;
   std::vector<PacketResult> PacketsWithFeedback() const;
   std::vector<PacketResult> SortedByReceiveTime() const;
+
+  
+  bool HasPacketWithEcnCe() const;
 };
 
 
