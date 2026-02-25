@@ -1020,6 +1020,11 @@ nsresult ScriptLoader::StartLoadInternal(
     
     aRequest->GetScriptLoadContext()->NotifyStart(channel);
     aRequest->GetScriptLoadContext()->NotifyStop(rv);
+    
+    
+    if (aRequest->GetScriptLoadContext()->IsPreload()) {
+      mDocument->Preloads().DeregisterPreload(key);
+    }
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
