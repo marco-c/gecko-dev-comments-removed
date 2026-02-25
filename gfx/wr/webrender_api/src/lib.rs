@@ -776,17 +776,6 @@ impl core::fmt::Debug for DebugFlags {
 }
 
 
-
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
-pub enum PrimitiveKeyKind {
-    
-    Rectangle {
-        
-        color: PropertyBinding<ColorU>,
-    },
-}
-
-
 #[derive(Clone, Copy, Debug)]
 pub enum ScrollLocation {
     

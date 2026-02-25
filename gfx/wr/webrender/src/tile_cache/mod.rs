@@ -31,7 +31,7 @@ use crate::picture::{SurfaceTextureDescriptor, PictureCompositeMode, SurfaceInde
 use crate::picture::{get_relative_scale_offset, PicturePrimitive};
 use crate::picture::MAX_COMPOSITOR_SURFACES_SIZE;
 use crate::prim_store::{PrimitiveInstance, PrimitiveInstanceKind, PrimitiveScratchBuffer, PictureIndex};
-use crate::prim_store::{ColorBindingStorage, ColorBindingIndex, PrimitiveTemplateKind};
+use crate::prim_store::{ColorBindingStorage, ColorBindingIndex};
 use crate::print_tree::{PrintTreePrinter, PrintTree};
 use crate::{profiler, render_backend::DataStores};
 use crate::profiler::TransactionProfile;
@@ -2296,7 +2296,7 @@ impl TileCacheInstance {
                 
                 
                 
-                let PrimitiveTemplateKind::Rectangle { color, .. } = data_stores.prim[data_handle].kind;
+                let color = data_stores.prim[data_handle].kind.color;
                 let color = frame_context.scene_properties.resolve_color(&color);
                 if color.a >= 1.0 {
                     backdrop_candidate = Some(BackdropInfo {
