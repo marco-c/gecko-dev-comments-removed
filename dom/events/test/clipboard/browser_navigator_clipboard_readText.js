@@ -37,13 +37,6 @@ add_setup(async function () {
 });
 
 add_task(async function test_paste_button_position() {
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-  ) {
-    info("Skipping test_paste_button_position with native menus");
-    return;
-  }
   
   await promiseWritingRandomTextToClipboard();
 

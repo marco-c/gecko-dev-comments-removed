@@ -26,8 +26,6 @@ unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
 nsMenuBarX* GetHiddenWindowMenuBar();   
 NSMenuItem* GetStandardEditMenuItem();  
 bool NodeIsHiddenOrCollapsed(nsIContent* aContent);
-NSAttributedString* AttributedStringForContent(nsIContent* aContent,
-                                               NSString* aLabel);
 
 
 

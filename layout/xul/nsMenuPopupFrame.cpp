@@ -822,10 +822,14 @@ static FlipType FlipFromAttribute(nsMenuPopupFrame* aFrame) {
   return FlipType::Default;
 }
 
-void nsMenuPopupFrame::InitializePopupProperties(
-    nsIContent* aAnchorContent, nsIContent* aTriggerContent,
-    const nsAString& aPosition, int32_t aXPos, int32_t aYPos,
-    MenuPopupAnchorType aAnchorType, bool aAttributesOverride) {
+void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
+                                       nsIContent* aTriggerContent,
+                                       const nsAString& aPosition,
+                                       int32_t aXPos, int32_t aYPos,
+                                       MenuPopupAnchorType aAnchorType,
+                                       bool aAttributesOverride) {
+  PrepareWidget();
+
   mPopupState = ePopupShowing;
   mAnchorContent = aAnchorContent;
   mAnchorType = aAnchorType;
@@ -951,18 +955,6 @@ void nsMenuPopupFrame::InitializePopupProperties(
   }
 }
 
-void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
-                                       nsIContent* aTriggerContent,
-                                       const nsAString& aPosition,
-                                       int32_t aXPos, int32_t aYPos,
-                                       MenuPopupAnchorType aAnchorType,
-                                       bool aAttributesOverride) {
-  PrepareWidget();
-
-  InitializePopupProperties(aAnchorContent, aTriggerContent, aPosition, aXPos,
-                            aYPos, aAnchorType, aAttributesOverride);
-}
-
 void nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
                                                int32_t aXPos, int32_t aYPos,
                                                bool aIsContextMenu) {
@@ -1004,26 +996,6 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mAnchorType = MenuPopupAnchorType::Point;
   mPositionedOffset = 0;
   mPositionedByMoveToRect = false;
-  
-  
-  
-  
-  if (mExpirationState.IsTracked()) {
-    PopupExpirationTracker::Get()->RemoveObject(this);
-  }
-  DestroyWidget();
-}
-
-void nsMenuPopupFrame::InitializePopupAsNativeAnchoredMenu(
-    nsIContent* aAnchorContent, nsIContent* aTriggerContent,
-    const nsAString& aPosition, const CSSIntRect& aRect, bool aIsContextMenu) {
-  InitializePopupProperties(aAnchorContent, aTriggerContent, aPosition, 0, 0,
-                            MenuPopupAnchorType::Rect, false);
-  mIsContextMenu = aIsContextMenu;
-  mIsTopLevelContextMenu = aIsContextMenu;
-  mIsNativeMenu = true;
-  mScreenRect = ToAppUnits(aRect, AppUnitsPerCSSPixel());
-
   
   
   

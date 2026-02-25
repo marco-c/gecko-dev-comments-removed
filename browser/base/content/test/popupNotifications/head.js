@@ -324,13 +324,12 @@ function triggerSecondaryCommand(popup, index) {
     function () {
       info("Command popup open for notification " + notification.id);
       
-      let actualExtraSecondaryActions = Array.prototype.filter.call(
-        notification.menupopup.childNodes,
-        child => child.nodeName == "menuitem"
-      );
-      notification.menupopup.activateItem(
-        actualExtraSecondaryActions[index - 1]
-      );
+      
+      for (let i = 0; i <= index - 1; i++) {
+        EventUtils.synthesizeKey("KEY_ArrowDown");
+      }
+      
+      EventUtils.synthesizeKey("KEY_Enter");
     },
     { once: true }
   );
