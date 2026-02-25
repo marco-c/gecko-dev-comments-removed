@@ -7,6 +7,13 @@
 
 
 
+Services.prefs.setBoolPref(
+  "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+  false
+);
+
+
+
 function testBug1091706() {
   const loader = new DevToolsLoader();
   const require = loader.require;
