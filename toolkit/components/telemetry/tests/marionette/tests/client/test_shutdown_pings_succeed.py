@@ -41,8 +41,10 @@ class TestShutdownPingsSucced(TelemetryTestCase):
         
         
         
+        
+        
         pings = self.wait_for_pings(
-            self.restart_browser,
+            lambda: self.quit_browser() and self.start_browser(),
             lambda p: p["type"] in ping_types.keys(),
             len(ping_types),
         )
