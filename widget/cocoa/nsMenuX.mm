@@ -167,6 +167,10 @@ nsMenuX::~nsMenuX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
+  
+  DetachFromGroupOwnerRecursive();
+
+  
   FlushMenuOpenedRunnable();
 
   if (mIsOpen) {
@@ -186,8 +190,6 @@ nsMenuX::~nsMenuX() {
   
   
   [mNativeMenuItem autorelease];
-
-  DetachFromGroupOwnerRecursive();
 
   MOZ_COUNT_DTOR(nsMenuX);
 
@@ -413,7 +415,7 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(
 }
 
 nsresult nsMenuX::RemoveAll() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   [mNativeMenu removeAllItems];
 
@@ -427,7 +429,7 @@ nsresult nsMenuX::RemoveAll() {
 
   return NS_OK;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 void nsMenuX::WillInsertChild(const MenuChild& aChild) {
@@ -681,7 +683,7 @@ void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem,
 }
 
 bool nsMenuX::Close() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (mDidFirePopupshowingAndIsApprovedToOpen && !mIsOpen) {
     
@@ -715,15 +717,20 @@ bool nsMenuX::Close() {
 
   return wasOpen;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_BLOCK_RETURN(false);
 }
 
 void nsMenuX::OnHighlightedItemChanged(
     const Maybe<uint32_t>& aNewHighlightedIndex) {
   Maybe<uint32_t> newIndex = aNewHighlightedIndex;
-  if (mIsPullDownPlaceholderPresent && newIndex && newIndex.ref() > 0) {
-    
-    newIndex.ref()--;
+  if (mIsPullDownPlaceholderPresent && newIndex) {
+    if (newIndex.ref() > 0) {
+      
+      newIndex.ref()--;
+    } else {
+      
+      newIndex = Nothing();
+    }
   }
 
   if (mHighlightedItemIndex == newIndex) {
@@ -842,6 +849,9 @@ void nsMenuX::RefreshMenuChildren(const MenuChild& aChildInserted) {
     if (current < startIndex) {
       continue;
     }
+    if (!child->IsElement()) {
+      continue;
+    }
     if (Maybe<MenuChild> menuChild = GetItemForElement(child->AsElement())) {
       RemoveMenuChild(*menuChild);
     }
@@ -951,7 +961,7 @@ nsresult nsMenuX::GetEnabled(bool* aIsEnabled) {
 
 GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(const nsString& aMenuTitle,
                                                 bool aShowServices) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NSString* title = [NSString stringWithCharacters:(UniChar*)aMenuTitle.get()
                                             length:aMenuTitle.Length()];
@@ -973,7 +983,7 @@ GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(const nsString& aMenuTitle,
 
   return myMenu;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
 }
 
 Maybe<nsMenuX::MenuChild> nsMenuX::CreateMenuChild(nsIContent* aContent) {
@@ -1350,9 +1360,13 @@ void nsMenuX::Dump(uint32_t aIndent) const {
     return;
   }
 
-  Maybe<uint32_t> index =
-      aItem ? Some(static_cast<uint32_t>([aMenu indexOfItem:aItem]))
-            : Nothing();
+  Maybe<uint32_t> index;
+  if (aItem) {
+    NSInteger nativeIndex = [aMenu indexOfItem:aItem];
+    if (nativeIndex != -1) {
+      index = Some(static_cast<uint32_t>(nativeIndex));
+    }
+  }
   mGeckoMenu->OnHighlightedItemChanged(index);
 }
 
