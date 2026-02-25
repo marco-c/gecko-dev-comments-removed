@@ -1722,6 +1722,33 @@ nsresult nsUrlClassifierRealTimeLookupHandler::HandleRealTimeLookupComplete(
   bool hasGlobalCacheHit = aResults && !aResults->IsEmpty();
 
   
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "nsUrlClassifierRealTimeLookupHandler::RecordGlobalCacheTelemetry",
+      [hasGlobalCacheHit, isPrivate = mIsPrivate]() {
+        nsAutoCString etpCategory;
+        nsresult rv = Preferences::GetCString(
+            "browser.contentblocking.category", etpCategory);
+        if (NS_SUCCEEDED(rv)) {
+          nsAutoCString label;
+          if (etpCategory.EqualsLiteral("standard") ||
+              etpCategory.EqualsLiteral("strict") ||
+              etpCategory.EqualsLiteral("custom")) {
+            label = etpCategory;
+          } else {
+            label = "other"_ns;
+          }
+          label.Append('_');
+          label.Append(isPrivate ? "private"_ns : "normal"_ns);
+
+          if (hasGlobalCacheHit) {
+            glean::urlclassifier::global_cache_hit.Get(label).Add(1);
+          } else {
+            glean::urlclassifier::global_cache_miss.Get(label).Add(1);
+          }
+        }
+      }));
+
+  
   if (mDebugEnabled) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "nsUrlClassifierRealTimeLookupHandler::NotifyGlobalCacheResult",
