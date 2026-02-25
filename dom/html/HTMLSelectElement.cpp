@@ -124,16 +124,9 @@ HTMLSelectElement::HTMLSelectElement(
       mOptGroupCount(0),
       mSelectedIndex(-1) {
   SetHasWeirdParserInsertionMode();
-
-  
-  
-
   
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
                     ElementState::VALID);
-
-  AddMutationObserver(this);
-  SetupShadowTree();
 }
 
 void HTMLSelectElement::SetupShadowTree() {
@@ -1131,9 +1124,8 @@ bool HTMLSelectElement::SelectSomething(bool aNotify) {
 
 nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  nsresult rv =
-      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(
+      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent));
 
   
   
@@ -1144,10 +1136,20 @@ nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
   
   UpdateValidityElementStates(false);
 
-  return rv;
+  if (IsInComposedDoc()) {
+    AddMutationObserver(this);
+    SetupShadowTree();
+  }
+
+  return NS_OK;
 }
 
 void HTMLSelectElement::UnbindFromTree(UnbindContext& aContext) {
+  if (IsInComposedDoc()) {
+    RemoveMutationObserver(this);
+    TeardownUAShadowRoot(NotifyUAWidget::No);
+  }
+
   nsGenericHTMLFormControlElementWithState::UnbindFromTree(aContext);
 
   
