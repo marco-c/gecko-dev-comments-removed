@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "SSLTokensCache.h"
 
@@ -11,6 +11,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "nsIOService.h"
+#include "prtime.h"
 #include "ssl.h"
 #include "sslexp.h"
 
@@ -150,15 +151,15 @@ SSLTokensCache::TokenCacheEntry::Get() {
 
 NS_IMPL_ISUPPORTS(SSLTokensCache, nsIMemoryReporter)
 
-// static
+
 nsresult SSLTokensCache::Init() {
   StaticMutexAutoLock lock(sLock);
 
-  // SSLTokensCache should be only used in parent process and socket process.
-  // Ideally, parent process should not use this when socket process is enabled.
-  // However, some xpcsehll tests may need to create and use sockets directly,
-  // so we still allow to use this in parent process no matter socket process is
-  // enabled or not.
+  
+  
+  
+  
+  
   if (!(XRE_IsSocketProcess() || XRE_IsParentProcess())) {
     return NS_OK;
   }
@@ -172,7 +173,7 @@ nsresult SSLTokensCache::Init() {
   return NS_OK;
 }
 
-// static
+
 nsresult SSLTokensCache::Shutdown() {
   StaticMutexAutoLock lock(sLock);
 
@@ -191,11 +192,11 @@ SSLTokensCache::SSLTokensCache() { LOG(("SSLTokensCache::SSLTokensCache")); }
 
 SSLTokensCache::~SSLTokensCache() { LOG(("SSLTokensCache::~SSLTokensCache")); }
 
-// static
+
 nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
                              uint32_t aTokenLen,
                              CommonSocketControl* aSocketControl) {
-  PRUint32 expirationTime;
+  PRTime expirationTime;
   SSLResumptionTokenInfo tokenInfo;
   if (SSL_GetResumptionTokenInfo(aToken, aTokenLen, &tokenInfo,
                                  sizeof(tokenInfo)) != SECSuccess) {
@@ -210,11 +211,11 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
   return Put(aKey, aToken, aTokenLen, aSocketControl, expirationTime);
 }
 
-// static
+
 nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
                              uint32_t aTokenLen,
                              CommonSocketControl* aSocketControl,
-                             PRUint32 aExpirationTime) {
+                             PRTime aExpirationTime) {
   StaticMutexAutoLock lock(sLock);
 
   LOG(("SSLTokensCache::Put [key=%s, tokenLen=%u]",
@@ -341,8 +342,8 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
           cacheEntry->AddRecord(std::move(rec), gInstance->mExpirationArray);
           entry.Insert(std::move(cacheEntry));
         } else {
-          // To make sure the cache size is synced, we take away the size of
-          // whole entry and add it back later.
+          
+          
           gInstance->mCacheSize -= entry.Data()->Size();
           entry.Data()->AddRecord(makeUniqueRecord(),
                                   gInstance->mExpirationArray);
@@ -360,7 +361,26 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
   return NS_OK;
 }
 
-// static
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 nsresult SSLTokensCache::Get(const nsACString& aKey, nsTArray<uint8_t>& aToken,
                              SessionCacheInfo& aResult, uint64_t* aTokenId) {
   StaticMutexAutoLock lock(sLock);
@@ -390,25 +410,40 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
       return NS_ERROR_NOT_AVAILABLE;
     }
 
-    const UniquePtr<TokenCacheRecord>& rec = cacheEntry->Get();
-    aToken = rec->mToken.Clone();
-    aResult = rec->mSessionCacheInfo.Clone();
-    if (aTokenId) {
-      *aTokenId = rec->mId;
+    PRTime now = PR_Now();
+
+    while (cacheEntry->RecordCount() > 0) {
+      const UniquePtr<TokenCacheRecord>& rec = cacheEntry->Get();
+
+      if (rec->mExpirationTime > now) {
+        aToken = rec->mToken.Clone();
+        aResult = rec->mSessionCacheInfo.Clone();
+        if (aTokenId) {
+          *aTokenId = rec->mId;
+        }
+        mCacheSize -= rec->Size();
+        cacheEntry->RemoveWithId(rec->mId);
+        if (cacheEntry->RecordCount() == 0) {
+          mTokenCacheRecords.Remove(aKey);
+        }
+        return NS_OK;
+      }
+
+      LOG(("  skipping expired token [expirationTime=%" PRId64 ", now=%" PRId64
+           "]",
+           rec->mExpirationTime, now));
+      mCacheSize -= rec->Size();
+      cacheEntry->RemoveWithId(rec->mId);
     }
-    mCacheSize -= rec->Size();
-    cacheEntry->RemoveWithId(rec->mId);
-    if (cacheEntry->RecordCount() == 0) {
-      mTokenCacheRecords.Remove(aKey);
-    }
-    return NS_OK;
+
+    mTokenCacheRecords.Remove(aKey);
   }
 
   LOG(("  token not found"));
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-// static
+
 nsresult SSLTokensCache::Remove(const nsACString& aKey, uint64_t aId) {
   StaticMutexAutoLock lock(sLock);
 
@@ -443,7 +478,7 @@ nsresult SSLTokensCache::RemoveLocked(const nsACString& aKey, uint64_t aId) {
     mTokenCacheRecords.Remove(aKey);
   }
 
-  // Release the record immediately, so mExpirationArray can be also updated.
+  
   rec = nullptr;
 
   LogStats();
@@ -451,7 +486,7 @@ nsresult SSLTokensCache::RemoveLocked(const nsACString& aKey, uint64_t aId) {
   return NS_OK;
 }
 
-// static
+
 nsresult SSLTokensCache::RemoveAll(const nsACString& aKey) {
   StaticMutexAutoLock lock(sLock);
 
@@ -489,7 +524,7 @@ void SSLTokensCache::OnRecordDestroyed(TokenCacheRecord* aRec) {
 }
 
 void SSLTokensCache::EvictIfNecessary() {
-  // kilobytes to bytes
+  
   uint32_t capacity = StaticPrefs::network_ssl_tokens_cache_capacity() << 10;
   if (mCacheSize <= capacity) {
     return;
@@ -550,7 +585,7 @@ SSLTokensCache::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-// static
+
 void SSLTokensCache::Clear() {
   LOG(("SSLTokensCache::Clear"));
 
@@ -565,5 +600,5 @@ void SSLTokensCache::Clear() {
   gInstance->mCacheSize = 0;
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
