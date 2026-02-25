@@ -121,14 +121,6 @@ void ReceiveSideCongestionController::OnReceivedPacket(
   if (send_rfc8888_congestion_feedback_) {
     RTC_DCHECK_RUN_ON(&sequence_checker_);
     congestion_control_feedback_generator_.OnReceivedPacket(packet);
-    
-    
-    
-    
-    
-    if (has_transport_sequence_number) {
-      transport_sequence_number_feedback_generator_.OnReceivedPacket(packet);
-    }
     return;
   }
   if (media_type == MediaType::AUDIO && !has_transport_sequence_number) {
