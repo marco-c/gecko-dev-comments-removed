@@ -53,8 +53,6 @@
 #include "test/create_test_field_trials.h"
 
 namespace webrtc {
-using ::webrtc::SafeTask;
-using ::webrtc::TimeDelta;
 
 
 
