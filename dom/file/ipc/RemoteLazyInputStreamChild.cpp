@@ -38,7 +38,8 @@ void RemoteLazyInputStreamChild::StreamConsumed() {
                                    if (self->CanSend()) {
                                      self->SendGoodbye();
                                    }
-                                 }));
+                                 }),
+          NS_DISPATCH_FALLIBLE);
     }  
   }
 }
