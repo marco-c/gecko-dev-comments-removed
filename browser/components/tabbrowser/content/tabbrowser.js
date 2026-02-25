@@ -32,6 +32,7 @@
 
   const DIRECTION_FORWARD = 1;
   const DIRECTION_BACKWARD = -1;
+  const TAB_LABEL_MAX_LENGTH = 256;
 
   
 
@@ -2123,6 +2124,11 @@
           this._regex_shortenURLForTabLabel = /^[^:]+:\/\/(?:www\.)?/;
         }
         aLabel = aLabel.replace(this._regex_shortenURLForTabLabel, "");
+      }
+
+      if (aLabel.length > TAB_LABEL_MAX_LENGTH) {
+        
+        aLabel = aLabel.substring(0, TAB_LABEL_MAX_LENGTH);
       }
 
       aTab._labelIsContentTitle = isContentTitle;
