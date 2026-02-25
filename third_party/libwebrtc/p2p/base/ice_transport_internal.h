@@ -26,7 +26,6 @@
 #include "api/transport/enums.h"
 #include "api/units/time_delta.h"
 #include "p2p/base/candidate_pair_interface.h"
-#include "p2p/base/connection.h"
 #include "p2p/base/connection_info.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port.h"
@@ -276,19 +275,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   
   
-  
-  virtual void SetIceTiebreaker(uint64_t ) {
-    RTC_CHECK_NOTREACHED();
-  }
-
-  
-  
-  virtual const IceParameters* remote_ice_parameters() const {
-    RTC_CHECK_NOTREACHED();
-  }
-
-  
-  
   virtual void SetIceParameters(const IceParameters& ice_params) = 0;
 
   virtual void SetRemoteIceParameters(const IceParameters& ice_params) = 0;
@@ -319,10 +305,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   
   
   virtual std::optional<int> GetRttEstimate() = 0;
-
-  
-  
-  virtual const Connection* selected_connection() const { return nullptr; }
 
   
   
@@ -384,13 +366,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   
-  void SubscribeDestroyed(
-      void* tag,
-      absl::AnyInvocable<void(IceTransportInternal*)> callback) {}
-  
-  void UnsubscribeDestroyed(void* tag) {}
-
-  
   
   
   template <typename F>
@@ -442,7 +417,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   
   sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
   sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
-  sigslot::signal1<IceTransportInternal*> SignalDestroyed;
 
   CallbackList<IceTransportInternal*, const Candidate&>
       candidate_gathered_callbacks_;
@@ -452,8 +426,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   SignalTrampoline<IceTransportInternal,
                    &IceTransportInternal::SignalIceTransportStateChanged>
       ice_transport_state_changed_trampoline_;
-  SignalTrampoline<IceTransportInternal, &IceTransportInternal::SignalDestroyed>
-      destroyed_trampoline_;
 };
 
 }  
