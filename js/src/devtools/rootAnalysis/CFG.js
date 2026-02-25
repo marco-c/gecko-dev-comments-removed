@@ -880,6 +880,22 @@ function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
         if (exprCoversVariable(typeInfo, lhs, decl) && isImmobileValue(rhs)) {
             return true;
         }
+        
+        
+        if (isImmobileValue(rhs) && lhs.Kind == "Fld") {
+            if (lhs.Field.Name[0] == "mIsSome" &&
+                lhs.Field.FieldCSU.Type.Name.includes("::MaybeStorage<") &&
+                rhs.Kind === "Int" &&
+                rhs.String === "0")
+            {
+                
+                let inner = lhs;
+                while (inner.Kind == "Fld") {
+                    inner = inner.Exp[0];
+                }
+                return expressionIsVariable(inner, decl.Variable);
+            }
+        }
         return false;
     }
 
