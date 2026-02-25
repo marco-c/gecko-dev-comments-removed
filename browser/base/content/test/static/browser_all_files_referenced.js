@@ -338,10 +338,6 @@ var allowlist = [
   {
     file: "moz-src:///browser/components/qrcode/QRCodeWorker.sys.mjs",
   },
-  
-  {
-    file: "chrome://browser/content/aiwindow/components/website-chip-container.mjs",
-  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
