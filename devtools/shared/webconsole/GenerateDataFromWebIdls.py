@@ -12,9 +12,12 @@ with a mozconfig that references a built non-artifact build.
 """
 
 from os import path, remove, system
-import json
+
 import WebIDL
 import buildconfig
+
+from mozfile import json
+
 
 
 
