@@ -310,11 +310,13 @@ GeneratorObject* GeneratorObject::create(JSContext* cx, HandleFunction fun) {
 
   
   
-  RootedValue pval(cx);
+  RootedTuple<Value, JSObject*> roots(cx);
+  RootedField<Value, 0> pval(roots);
   if (!GetProperty(cx, fun, fun, cx->names().prototype, &pval)) {
     return nullptr;
   }
-  RootedObject proto(cx, pval.isObject() ? &pval.toObject() : nullptr);
+  RootedField<JSObject*, 1> proto(roots,
+                                  pval.isObject() ? &pval.toObject() : nullptr);
   if (!proto) {
     proto = GlobalObject::getOrCreateGeneratorObjectPrototype(cx, cx->global());
     if (!proto) {
