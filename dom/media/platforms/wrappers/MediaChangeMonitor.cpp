@@ -354,7 +354,8 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     }
     
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
-    if ((!extraData || extraData->IsEmpty()) && curConfig.unwrap().HasSPS()) {
+    if ((!extraData || extraData->IsEmpty()) && curConfig.isOk() &&
+        curConfig.inspect().HasSPS()) {
       LOG("No SPS in sample. Use existing config");
       return NS_OK;
     }
