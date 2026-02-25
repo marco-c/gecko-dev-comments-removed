@@ -202,7 +202,7 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem,
+    Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 pub struct Value<Component> {
     
@@ -211,13 +211,6 @@ pub struct Value<Component> {
     
     #[css(skip)]
     url_data: UrlExtraData,
-}
-
-impl<Component: PartialEq> PartialEq for Value<Component> {
-    
-    fn eq(&self, other: &Self) -> bool {
-        self.v == other.v
-    }
 }
 
 impl<Component: Animate> Animate for Value<Component> {
