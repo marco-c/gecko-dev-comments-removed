@@ -47,14 +47,17 @@ class ApplicationPanel {
 
 
 
-  onToolboxChromeEventHandlerEscapeKeyDown(abortController) {
+
+  shouldPreventSplitConsoleToggle() {
     
     
     const popoverEl = this.panelWin.document.querySelector(":popover-open");
     if (popoverEl) {
-      abortController.abort();
       popoverEl.hidePopover();
+      return true;
     }
+
+    return false;
   }
 }
 
