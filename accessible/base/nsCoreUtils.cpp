@@ -199,6 +199,9 @@ nsINode* nsCoreUtils::GetDOMNodeFromDOMPoint(nsINode* aNode, uint32_t aOffset) {
     if (aNode->IsTextControlElement()) {
       
       
+      
+      
+      
       return aNode;
     }
 
