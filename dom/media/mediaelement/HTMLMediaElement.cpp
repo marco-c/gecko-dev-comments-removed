@@ -4077,16 +4077,22 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   }
 }
 
-bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType) {
+bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType,
+                                     ErrorResult& aRv) {
   
-  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
-  if (!window) {
+  
+  
+  if (!OwnerDoc()->GetInnerWindow()) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return false;
   }
 
   
+  
   if (aCaptureType == StreamCaptureType::CAPTURE_ALL_TRACKS &&
       ContainsRestrictedContent()) {
+    aRv.ThrowNotSupportedError(
+        "Capture of media from an EME-protected element is not supported");
     return false;
   }
   return true;
@@ -4095,7 +4101,8 @@ bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType) {
 already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
     StreamCaptureBehavior aFinishBehavior, StreamCaptureType aStreamCaptureType,
     AudioOutputConfig aAudioOutputConfig, MediaTrackGraph* aGraph) {
-  MOZ_ASSERT(CanBeCaptured(aStreamCaptureType));
+  IgnoredErrorResult rv;
+  MOZ_ASSERT(CanBeCaptured(aStreamCaptureType, rv));
 
   LogVisibility(CallerAPI::CAPTURE_STREAM);
   MarkAsTainted();
@@ -4215,8 +4222,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureAudio(
     ErrorResult& aRv, MediaTrackGraph* aGraph) {
   MOZ_RELEASE_ASSERT(aGraph);
 
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_AUDIO)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_AUDIO, aRv)) {
     return nullptr;
   }
 
@@ -4253,8 +4259,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStream(
     ReportToConsole(nsIScriptError::warningFlag,
                     "MozCaptureStreamDeprecatedWarning");
   }
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 
@@ -4285,8 +4290,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStreamUntilEnded(
     ReportToConsole(nsIScriptError::warningFlag,
                     "MozCaptureStreamDeprecatedWarning");
   }
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 
@@ -4315,8 +4319,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStream(
     ErrorResult& aRv) {
   
   
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 

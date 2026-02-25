@@ -1364,7 +1364,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   StreamCaptureType CaptureTypeForElement();
 
   
-  bool CanBeCaptured(StreamCaptureType aCaptureType);
+  
+  
+  bool CanBeCaptured(StreamCaptureType aCaptureType, ErrorResult& aRv);
 
   using nsGenericHTMLElement::DispatchEvent;
   
