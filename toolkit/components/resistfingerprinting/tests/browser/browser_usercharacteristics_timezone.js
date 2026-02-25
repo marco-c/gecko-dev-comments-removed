@@ -25,15 +25,16 @@ add_task(async function test_timezone_metrics() {
           Glean.characteristics.timezoneOffsetWeb.testGetValue();
         Assert.strictEqual(
           typeof timezoneOffsetWeb,
-          "number",
-          "timezone_offset_web should be a number"
+          "string",
+          "timezone_offset_web should be a string"
         );
         info(`timezone_offset_web: ${timezoneOffsetWeb} minutes`);
 
         
         
+        const offsetNum = Number(timezoneOffsetWeb);
         Assert.ok(
-          timezoneOffsetWeb >= -720 && timezoneOffsetWeb <= 840,
+          offsetNum >= -720 && offsetNum <= 840,
           `timezone_offset_web (${timezoneOffsetWeb}) should be in valid range`
         );
       },
