@@ -162,11 +162,6 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
         
         
         
-        
-        backoff = std::max(backoff, 0.25);
-        
-        
-        
         l4s_alpha_ = 0.25;
       }
       ref_window_ = (1.0 - backoff) * ref_window_;
