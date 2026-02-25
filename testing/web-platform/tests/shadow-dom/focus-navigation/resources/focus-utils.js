@@ -1,20 +1,50 @@
 'use strict';
 
+
+
 function waitForRender() {
   return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
+
+const kArrowLeft = '\uE012';
+const kArrowUp = '\uE013';
+const kArrowRight = '\uE014';
+const kArrowDown = '\uE015';
+const kTab = '\uE004';
+const kShift = '\uE008';
+
+
+
+
+
+async function focusAndWait(element) {
+  element.focus();
+  await waitForRender();
+}
+
+
+
+async function focusAndKeyPress(target, key) {
+  target.focus();
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  return test_driver.send_keys(target, key);
+}
+
+
+
+function sendKey(key) {
+  return new test_driver.Actions().keyDown(key).keyUp(key).send();
+}
+
 async function navigateFocusForward() {
   await waitForRender();
-  const kTab = '\uE004';
-  await new test_driver.send_keys(document.body, kTab);
+  await sendKey(kTab);
   await waitForRender();
 }
 
 async function navigateFocusBackward() {
   await waitForRender();
-  const kShift = '\uE008';
-  const kTab = '\uE004';
   await new test_driver.Actions()
     .keyDown(kShift)
     .keyDown(kTab)
