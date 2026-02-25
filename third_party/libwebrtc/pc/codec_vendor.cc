@@ -960,7 +960,7 @@ CodecList CodecVendor::video_sendrecv_codecs() const {
 }
 
 void CodecVendor::ModifyVideoCodecs(
-    std::vector<std::pair<Codec, Codec>> changes) {
+    const std::vector<std::pair<Codec, Codec>>& changes) {
   
   
   
@@ -970,6 +970,7 @@ void CodecVendor::ModifyVideoCodecs(
       bool changed = false;
       for (Codec& codec : send_codecs.writable_codecs()) {
         if (codec == change.first) {
+          codec = change.second;
           changed = true;
         }
       }

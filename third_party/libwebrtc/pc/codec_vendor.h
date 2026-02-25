@@ -68,7 +68,7 @@ class CodecVendor {
   
   
   
-  void ModifyVideoCodecs(std::vector<std::pair<Codec, Codec>> changes);
+  void ModifyVideoCodecs(const std::vector<std::pair<Codec, Codec>>& changes);
   
   void set_audio_codecs(const CodecList& send_codecs,
                         const CodecList& recv_codecs);
