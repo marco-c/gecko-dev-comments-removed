@@ -44,10 +44,7 @@ void DtlsSrtpTransport::SetDtlsTransports(
   
   
   
-  
-  
-  if (IsSrtpActive() && (rtp_dtls_transport != rtp_dtls_transport_ ||
-                         active_reset_srtp_params_)) {
+  if (IsSrtpActive() && rtp_dtls_transport != rtp_dtls_transport_) {
     ResetParams();
   }
 

@@ -216,8 +216,6 @@ class JsepTransport {
       const RTCCertificate* certificate,
       const SSLFingerprint* fingerprint) const;
 
-  void SetActiveResetSrtpParams(bool active_reset_srtp_params);
-
   
   
   RTCError RecordPayloadTypes(bool local,

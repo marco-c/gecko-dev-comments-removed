@@ -643,14 +643,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
 
     
     
-    
-    
-    
-    
-    bool active_reset_srtp_params = false;
-
-    
-    
     CryptoOptions crypto_options;
 
     
