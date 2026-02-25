@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_SPEECH_LEVEL_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_SPEECH_LEVEL_ESTIMATOR_H_
 
-#include <type_traits>
+#include <memory>
 
 #include "api/audio/audio_processing.h"
 
@@ -20,57 +20,22 @@ class ApmDataDumper;
 
 
 
-
 class SpeechLevelEstimator {
  public:
-  SpeechLevelEstimator(
+  virtual ~SpeechLevelEstimator() {}
+  
+  virtual void Update(float rms_dbfs, float speech_probability) = 0;
+  
+  virtual float GetLevelDbfs() const = 0;
+  
+  virtual bool IsConfident() const = 0;
+
+  virtual void Reset() = 0;
+
+  static std::unique_ptr<SpeechLevelEstimator> Create(
       ApmDataDumper* apm_data_dumper,
       const AudioProcessing::Config::GainController2::AdaptiveDigital& config,
       int adjacent_speech_frames_threshold);
-  SpeechLevelEstimator(const SpeechLevelEstimator&) = delete;
-  SpeechLevelEstimator& operator=(const SpeechLevelEstimator&) = delete;
-
-  
-  void Update(float rms_dbfs, float speech_probability);
-  
-  float level_dbfs() const { return level_dbfs_; }
-  
-  bool is_confident() const { return is_confident_; }
-
-  void Reset();
-
- private:
-  
-  struct LevelEstimatorState {
-    bool operator==(const LevelEstimatorState& s) const;
-    inline bool operator!=(const LevelEstimatorState& s) const {
-      return !(*this == s);
-    }
-    
-    int time_to_confidence_ms;
-    struct Ratio {
-      float numerator;
-      float denominator;
-      float GetRatio() const;
-    } level_dbfs;
-  };
-  static_assert(std::is_trivially_copyable<LevelEstimatorState>::value, "");
-
-  void UpdateIsConfident();
-
-  void ResetLevelEstimatorState(LevelEstimatorState& state) const;
-
-  void DumpDebugData() const;
-
-  ApmDataDumper* const apm_data_dumper_;
-
-  const float initial_speech_level_dbfs_;
-  const int adjacent_speech_frames_threshold_;
-  LevelEstimatorState preliminary_state_;
-  LevelEstimatorState reliable_state_;
-  float level_dbfs_;
-  bool is_confident_;
-  int num_adjacent_speech_frames_;
 };
 
 }  

@@ -12,6 +12,8 @@ rtc_library("speech_level_estimator") {
   sources = [
     "speech_level_estimator.cc",
     "speech_level_estimator.h",
+    "speech_level_estimator_impl.cc",
+    "speech_level_estimator_impl.h",
   ]
 
   visibility = [
@@ -97,7 +99,7 @@ rtc_library("biquad_filter") {
 
 rtc_library("clipping_predictor") {
   visibility = [
-    "../agc:agc",
+    "../agc",
     "./*",
   ]
 
@@ -181,7 +183,7 @@ rtc_library("gain_applier") {
 rtc_source_set("gain_map") {
   visibility = [
     "..:analog_mic_simulation",
-    "../agc:agc",
+    "../agc",
     "./*",
   ]
 
@@ -214,8 +216,6 @@ rtc_library("input_volume_controller") {
     "../../../api:array_view",
     "../../../api/audio:audio_processing",
     "../../../rtc_base:checks",
-    "../../../rtc_base:checks",
-    "../../../rtc_base:gtest_prod",
     "../../../rtc_base:gtest_prod",
     "../../../rtc_base:logging",
     "../../../rtc_base:safe_minmax",
@@ -425,7 +425,6 @@ rtc_library("input_volume_controller_unittests") {
     "../../../rtc_base:safe_minmax",
     "../../../rtc_base:stringutils",
     "../../../system_wrappers:metrics",
-    "../../../test:field_trial",
     "../../../test:fileutils",
     "../../../test:test_support",
     "//testing/gtest",
