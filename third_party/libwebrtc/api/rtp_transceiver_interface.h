@@ -119,6 +119,12 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   
   
   
+  virtual bool receptive() const;
+
+  
+  
+  
+  
   virtual std::optional<RtpTransceiverDirection> current_direction() const = 0;
 
   
