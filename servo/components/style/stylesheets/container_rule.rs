@@ -286,18 +286,22 @@ impl ContainerCondition {
             },
         };
         let (container, info) = match result {
-            Some(r) => (Some(r.element), Some((r.info, r.style))),
-            None => (None, None),
+            Some(r) => (r.element, (r.info, r.style)),
+            None => {
+                
+                
+                return KleeneValue::False;
+            },
         };
         
         
-        let size_query_container_lookup = ContainerSizeQuery::for_option_element(
+        let size_query_container_lookup = ContainerSizeQuery::for_element(
             container,  None,  false,
         );
         Context::for_container_query_evaluation(
             stylist.device(),
             Some(stylist),
-            info,
+            Some(info),
             size_query_container_lookup,
             |context| {
                 let matches = condition.matches(context, &mut CustomMediaEvaluator::none());
