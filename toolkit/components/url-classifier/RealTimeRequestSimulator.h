@@ -26,6 +26,9 @@ class RealTimeRequestSimulator final {
   
   void CleanCache();
 
+  static const nsCString& ContentBlockingCategory();
+  static bool RealTimeDebugEnabled();
+
  private:
   RealTimeRequestSimulator() = default;
   ~RealTimeRequestSimulator() = default;
