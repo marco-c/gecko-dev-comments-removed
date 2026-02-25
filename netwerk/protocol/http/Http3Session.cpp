@@ -237,35 +237,47 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   
   
   
-  if (StaticPrefs::network_http_http3_enable_0rtt() && !hasServCertHashes() &&
-      NS_SUCCEEDED(SSLTokensCache::Get(peerId, token, info))) {
-    LOG(("Found a resumption token in the cache."));
-    mHttp3Connection->SetResumptionToken(token);
-    mSocketControl->SetSessionCacheInfo(std::move(info));
-    if (mHttp3Connection->IsZeroRtt()) {
-      LOG(("Can send ZeroRtt data"));
-      RefPtr<Http3Session> self(this);
-      mState = ZERORTT;
-      udpConn->ChangeConnectionState(ConnectionState::ZERORTT);
-      mZeroRttStarted = TimeStamp::Now();
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIRunnable> event =
-          NS_NewRunnableFunction("Http3Session::ReportHttp3Connection",
-                                 [self]() { self->ReportHttp3Connection(); });
-      if (StaticPrefs::network_trr_high_priority_events() &&
-          mConnInfo->GetIsTrrServiceChannel()) {
-        event = new PrioritizableRunnable(
-            event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+  if (StaticPrefs::network_http_http3_enable_0rtt() && !hasServCertHashes()) {
+    uint32_t maxAttempts =
+        StaticPrefs::network_ssl_tokens_cache_records_per_entry();
+    for (uint32_t attempt = 0; attempt < maxAttempts; ++attempt) {
+      if (NS_FAILED(SSLTokensCache::Get(peerId, token, info))) {
+        break;
       }
-      DebugOnly<nsresult> rv = NS_DispatchToCurrentThread(event);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "NS_DispatchToCurrentThread failed");
+      LOG(("Found a resumption token in the cache [attempt=%u].", attempt));
+      nsresult rv = mHttp3Connection->SetResumptionToken(token);
+      if (NS_FAILED(rv)) {
+        LOG(("SetResumptionToken failed [attempt=%u], trying next token",
+             attempt));
+        continue;
+      }
+      mSocketControl->SetSessionCacheInfo(std::move(info));
+      if (mHttp3Connection->IsZeroRtt()) {
+        LOG(("Can send ZeroRtt data"));
+        RefPtr<Http3Session> self(this);
+        mState = ZERORTT;
+        udpConn->ChangeConnectionState(ConnectionState::ZERORTT);
+        mZeroRttStarted = TimeStamp::Now();
+        
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIRunnable> event =
+            NS_NewRunnableFunction("Http3Session::ReportHttp3Connection",
+                                   [self]() { self->ReportHttp3Connection(); });
+        if (StaticPrefs::network_trr_high_priority_events() &&
+            mConnInfo->GetIsTrrServiceChannel()) {
+          event = new PrioritizableRunnable(
+              event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+        }
+        DebugOnly<nsresult> rv = NS_DispatchToCurrentThread(event);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "NS_DispatchToCurrentThread failed");
+      }
+      break;
     }
   }
 
