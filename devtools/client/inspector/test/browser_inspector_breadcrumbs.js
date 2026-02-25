@@ -275,7 +275,9 @@ async function testComments(inspector, container) {
   const button = container.childNodes[pressedButtonIndex];
 
   let onBreadcrumbsUpdated = inspector.once("breadcrumbs-updated");
-  button.click();
+  
+  
+  EventUtils.synthesizeMouseAtCenter(button, {}, inspector.panelWin);
   await onBreadcrumbsUpdated;
 
   is(breadcrumbs.currentIndex, pressedButtonIndex, "New button is selected");
@@ -304,7 +306,9 @@ async function testComments(inspector, container) {
 
   onInspectorUpdated = inspector.once("inspector-updated");
   onBreadcrumbsUpdated = inspector.once("breadcrumbs-updated");
-  button.click();
+  
+  
+  EventUtils.synthesizeMouseAtCenter(button, {}, inspector.panelWin);
   await Promise.all([onInspectorUpdated, onBreadcrumbsUpdated]);
 
   is(

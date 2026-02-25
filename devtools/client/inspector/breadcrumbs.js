@@ -4,7 +4,6 @@
 
 "use strict";
 
-const flags = require("resource://devtools/shared/flags.js");
 const { ELLIPSIS } = require("resource://devtools/shared/l10n.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
@@ -391,18 +390,13 @@ class HTMLBreadcrumbs {
 
     this.handleShortcut = this.handleShortcut.bind(this);
 
-    if (flags.testing) {
-      
-      this.initKeyShortcuts();
-    } else {
-      this.outer.addEventListener(
-        "focus",
-        () => {
-          this.initKeyShortcuts();
-        },
-        { once: true }
-      );
-    }
+    this.outer.addEventListener(
+      "focus",
+      () => {
+        this.initKeyShortcuts();
+      },
+      { once: true }
+    );
 
     
     this.nodeHierarchy = [];
@@ -547,11 +541,7 @@ class HTMLBreadcrumbs {
 
 
 
-
-
   handleFocus(event) {
-    event.stopPropagation();
-
     const node = this.nodeHierarchy[this.currentIndex];
     if (node) {
       this.outer.setAttribute("aria-activedescendant", node.button.id);
@@ -559,7 +549,10 @@ class HTMLBreadcrumbs {
       this.outer.removeAttribute("aria-activedescendant");
     }
 
-    this.outer.focus();
+    
+    if (event.target !== this.outer) {
+      this.outer.focus();
+    }
   }
 
   
