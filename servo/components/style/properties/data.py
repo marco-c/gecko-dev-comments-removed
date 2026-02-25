@@ -868,44 +868,6 @@ class PropertiesData(object):
             if logical_count * 2 != len(props):
                 raise RuntimeError(f"Logical group {group} has unbalanced logical / physical properties")
 
-        shorthands_toml = toml.loads(open(os.path.join(os.path.dirname(__file__), "shorthands.toml")).read())
-        for name, args in shorthands_toml.items():
-            self.declare_shorthand(name, **args)
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        logical_longhands = []
-        other_longhands = []
-        for p in self.longhands:
-            if p.name in ['direction', 'unicode-bidi']:
-                continue;
-            if not p.enabled_in_content() and not p.experimental(engine):
-                continue;
-            if "style" not in p.rule_types_allowed_names():
-                continue;
-            if p.logical:
-                logical_longhands.append(p.name)
-            else:
-                other_longhands.append(p.name)
-
-        self.all_shorthand_length = len(logical_longhands) + len(other_longhands);
-        self.declare_shorthand(
-            "all",
-            logical_longhands + other_longhands,
-            spec="https://drafts.csswg.org/css-cascade-3/#all-shorthand"
-        )
-
         
         
         
@@ -922,10 +884,13 @@ class PropertiesData(object):
                 "doc": "`" + property.name + "`",
                 "copy": property.specified_is_copy(),
             })
-
         groups = {}
         keyfunc = lambda x: x["type"]
         sortkeys = {}
+        
+        
+        
+        
         for ty, group in groupby(sorted(self.declaration_variants, key=keyfunc), keyfunc):
             group = list(group)
             groups[ty] = group
@@ -934,17 +899,11 @@ class PropertiesData(object):
                     sortkeys[v["name"]] = (not v["copy"], 1, v["name"], "")
                 else:
                     sortkeys[v["name"]] = (not v["copy"], len(group), ty, v["name"])
-        self.declaration_variants.sort(key=lambda x: sortkeys[x["name"]])
-
         
         
         
         self.longhands.sort(key=lambda x: sortkeys[x.camel_case])
-
-        
-        
-        
-        
+        self.declaration_variants.sort(key=lambda x: sortkeys[x["name"]])
         self.declaration_extra_variants = [
             {
                 "name": "CSSWideKeyword",
@@ -968,6 +927,57 @@ class PropertiesData(object):
         for v in self.declaration_extra_variants:
             self.declaration_variants.append(v)
             groups[v["type"]] = [v]
+
+        shorthands_toml = toml.loads(open(os.path.join(os.path.dirname(__file__), "shorthands.toml")).read())
+        for name, args in shorthands_toml.items():
+            self.declare_shorthand(name, **args)
+        self.declare_all_shorthand()
+
+
+    def declare_all_shorthand(self):
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        logical_longhands = []
+        other_longhands = []
+        for p in self.longhands:
+            if p.name in ['direction', 'unicode-bidi']:
+                continue;
+            if not p.enabled_in_content() and not p.experimental(self.engine):
+                continue;
+            if "style" not in p.rule_types_allowed_names():
+                continue;
+            if p.logical:
+                logical_longhands.append(p)
+            else:
+                other_longhands.append(p)
+
+        
+        
+        
+        
+        
+        logical_longhands.sort(key=lambda p: p.style_struct.name)
+        other_longhands.sort(key=lambda p: p.style_struct.name)
+
+        all_names = list(map(lambda p: p.name, logical_longhands + other_longhands))
+
+        self.all_shorthand_length = len(all_names)
+        self.declare_shorthand(
+            "all",
+            all_names,
+            spec="https://drafts.csswg.org/css-cascade-3/#all-shorthand"
+        )
 
 
     def style_struct_by_name_lower(self, name):
