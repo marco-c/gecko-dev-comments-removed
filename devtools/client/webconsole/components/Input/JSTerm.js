@@ -135,6 +135,9 @@ class JSTerm extends Component {
     };
   }
 
+  
+  #abortController = null;
+
   constructor(props) {
     super(props);
 
@@ -588,9 +591,6 @@ class JSTerm extends Component {
       this.props.editorMode !== nextProps.editorMode
     );
   }
-
-  
-  #abortController = null;
 
   
 
