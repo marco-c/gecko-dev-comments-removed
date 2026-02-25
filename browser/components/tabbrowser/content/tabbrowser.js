@@ -1703,6 +1703,13 @@
       }
     }
 
+    
+
+
+
+
+
+
     async _checkIfShouldTriggerTabSelectMessage(oldTab, newTab) {
       const ONE_MINUTE_MS = 60000;
       const LIMIT_FOR_TRIGGER = 2;
@@ -1738,6 +1745,9 @@
           this.ASRouter.sendTriggerMessage({
             browser: newTab.linkedBrowser,
             id: "tabSwitch",
+            context: {
+              currentTabsOpen: gBrowser.visibleTabs.length,
+            },
           });
           this._tabSelectTimestamps = this._tabSelectTimestamps.filter(
             entry => entry !== existingEntry
