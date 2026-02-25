@@ -7,11 +7,13 @@
 
 use super::feature::{Evaluator, QueryFeatureDescription};
 use super::feature::{FeatureFlags, KeywordDiscriminant};
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::properties::CSSWideKeyword;
 use crate::str::{starts_with_ignore_ascii_case, string_as_ascii_lowercase};
 use crate::values::computed::{self, Ratio, ToComputedValue};
-use crate::values::specified::{Integer, Length, Number, Resolution};
-use crate::values::CSSFloat;
+use crate::values::specified::{Angle, Integer, Length, Number, Percentage, Resolution, Time};
+use crate::values::{CSSFloat, DashedIdent};
 use crate::{Atom, Zero};
 use cssparser::{Parser, Token};
 use selectors::kleene_value::KleeneValue;
@@ -62,7 +64,7 @@ enum LegacyRange {
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
-enum Operator {
+pub enum Operator {
     
     Equal,
     
@@ -271,14 +273,14 @@ impl ToCss for QueryFeatureExpression {
             | QueryFeatureExpressionKind::LegacyRange(_, ref v) => {
                 self.write_name(dest)?;
                 dest.write_str(": ")?;
-                v.to_css(dest, self)?;
+                v.to_css(dest, Some(self))?;
             },
             QueryFeatureExpressionKind::Range {
                 ref left,
                 ref right,
             } => {
                 if let Some((ref op, ref val)) = left {
-                    val.to_css(dest, self)?;
+                    val.to_css(dest, Some(self))?;
                     dest.write_char(' ')?;
                     op.to_css(dest)?;
                     dest.write_char(' ')?;
@@ -288,7 +290,7 @@ impl ToCss for QueryFeatureExpression {
                     dest.write_char(' ')?;
                     op.to_css(dest)?;
                     dest.write_char(' ')?;
-                    val.to_css(dest, self)?;
+                    val.to_css(dest, Some(self))?;
                 }
             },
         }
@@ -661,10 +663,25 @@ pub enum QueryExpressionValue {
     
     
     Enumerated(KeywordDiscriminant),
+    
+    
+    Keyword(CSSWideKeyword),
+    
+    Percentage(Percentage),
+    
+    Angle(Angle),
+    
+    Time(Time),
+    
+    Custom(DashedIdent),
 }
 
 impl QueryExpressionValue {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>, for_expr: &QueryFeatureExpression) -> fmt::Result
+    fn to_css<W>(
+        &self,
+        dest: &mut CssWriter<W>,
+        for_expr: Option<&QueryFeatureExpression>,
+    ) -> fmt::Result
     where
         W: fmt::Write,
     {
@@ -675,7 +692,16 @@ impl QueryExpressionValue {
             QueryExpressionValue::BoolInteger(v) => dest.write_str(if v { "1" } else { "0" }),
             QueryExpressionValue::NumberRatio(ratio) => ratio.to_css(dest),
             QueryExpressionValue::Resolution(ref r) => r.to_css(dest),
-            QueryExpressionValue::Enumerated(value) => match for_expr.feature().evaluator {
+            QueryExpressionValue::Keyword(k) => k.to_css(dest),
+            QueryExpressionValue::Percentage(v) => v.to_css(dest),
+            QueryExpressionValue::Angle(v) => v.to_css(dest),
+            QueryExpressionValue::Time(v) => v.to_css(dest),
+            QueryExpressionValue::Custom(ref v) => v.to_css(dest),
+            QueryExpressionValue::Enumerated(value) => match for_expr
+                .expect("caller should have passed for_expr")
+                .feature()
+                .evaluator
+            {
                 Evaluator::Enumerated { serializer, .. } => dest.write_str(&*serializer(value)),
                 _ => unreachable!(),
             },
@@ -719,6 +745,143 @@ impl QueryExpressionValue {
             Evaluator::Enumerated { parser, .. } => {
                 QueryExpressionValue::Enumerated(parser(context, input)?)
             },
+        })
+    }
+
+    
+    
+    
+    
+    
+    fn parse_for_style_range<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(number) = input.try_parse(|i| Number::parse(context, i)) {
+            return Ok(Self::Float(number.get()));
+        }
+        if let Ok(percent) = input.try_parse(|i| Percentage::parse(context, i)) {
+            return Ok(Self::Percentage(percent));
+        }
+        if let Ok(length) = input.try_parse(|i| Length::parse(context, i)) {
+            return Ok(Self::Length(length));
+        }
+        if let Ok(angle) = input.try_parse(|i| Angle::parse(context, i)) {
+            return Ok(Self::Angle(angle));
+        }
+        if let Ok(time) = input.try_parse(|i| Time::parse(context, i)) {
+            return Ok(Self::Time(time));
+        }
+        if let Ok(resolution) = input.try_parse(|i| Resolution::parse(context, i)) {
+            return Ok(Self::Resolution(resolution));
+        }
+        if let Ok(ident) = input.try_parse(|i| DashedIdent::parse(context, i)) {
+            return Ok(Self::Custom(ident));
+        }
+        if let Ok(keyword) = input.try_parse(|i| CSSWideKeyword::parse(i)) {
+            return Ok(Self::Keyword(keyword));
+        }
+        Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+    }
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf, ToShmem, PartialEq)]
+pub enum QueryStyleRange {
+    
+    
+    #[allow(missing_docs)]
+    StyleRange2 {
+        value1: QueryExpressionValue,
+        op1: Operator,
+        value2: QueryExpressionValue,
+    },
+
+    
+    
+    #[allow(missing_docs)]
+    StyleRange3 {
+        value1: QueryExpressionValue,
+        op1: Operator,
+        value2: QueryExpressionValue,
+        op2: Operator,
+        value3: QueryExpressionValue,
+    },
+}
+
+impl ToCss for QueryStyleRange {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        dest.write_char('(')?;
+        match self {
+            Self::StyleRange2 {
+                ref value1,
+                ref op1,
+                ref value2,
+            } => {
+                value1.to_css(dest, None)?;
+                dest.write_char(' ')?;
+                op1.to_css(dest)?;
+                dest.write_char(' ')?;
+                value2.to_css(dest, None)?;
+            },
+            Self::StyleRange3 {
+                ref value1,
+                ref op1,
+                ref value2,
+                ref op2,
+                ref value3,
+            } => {
+                value1.to_css(dest, None)?;
+                dest.write_char(' ')?;
+                op1.to_css(dest)?;
+                dest.write_char(' ')?;
+                value2.to_css(dest, None)?;
+                dest.write_char(' ')?;
+                op2.to_css(dest)?;
+                dest.write_char(' ')?;
+                value3.to_css(dest, None)?;
+            },
+        }
+        dest.write_char(')')
+    }
+}
+
+impl QueryStyleRange {
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let value1 = QueryExpressionValue::parse_for_style_range(context, input)?;
+        let op1 = Operator::parse(input)?;
+        let value2 = QueryExpressionValue::parse_for_style_range(context, input)?;
+
+        if let Ok(op2) = input.try_parse(|i| Operator::parse(i)) {
+            if op1.is_compatible_with(op2) {
+                let value3 = QueryExpressionValue::parse_for_style_range(context, input)?;
+                return Ok(Self::StyleRange3 {
+                    value1,
+                    op1,
+                    value2,
+                    op2,
+                    value3,
+                });
+            }
+        }
+
+        Ok(Self::StyleRange2 {
+            value1,
+            op1,
+            value2,
         })
     }
 }
