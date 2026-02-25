@@ -60,6 +60,8 @@ class HRTFPanner {
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  HRTFDatabaseLoader* DatabaseLoader() const { return m_databaseLoader; }
+
  private:
   
   
@@ -67,7 +69,7 @@ class HRTFPanner {
   int calculateDesiredAzimuthIndexAndBlend(double azimuth,
                                            double& azimuthBlend);
 
-  RefPtr<HRTFDatabaseLoader> m_databaseLoader;
+  const RefPtr<HRTFDatabaseLoader> m_databaseLoader;
 
   float m_sampleRate;
 
