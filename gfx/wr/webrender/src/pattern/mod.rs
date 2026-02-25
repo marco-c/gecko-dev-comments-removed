@@ -2,6 +2,8 @@
 
 
 
+pub mod gradient;
+
 use api::{ColorF, units::DeviceRect};
 
 use crate::clip::{ClipIntern, ClipStore};
