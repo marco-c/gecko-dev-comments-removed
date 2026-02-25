@@ -430,135 +430,37 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
-function getTypeNameAttributes(typeName, typeInfo) {
-    let attrs = 0;
-    if (typeName in typeInfo.GCSuppressors)
-        attrs = attrs | ATTR_GC_SUPPRESSED;
-    return attrs;
-}
 
 
-
-
-function assignEdgeIsMaybeConstructor(edge) {
-    assertEq(edge.Kind, "Assign");
-
-    const [lhs, rhs] = edge.Exp;
-    
-    
-    
-    
-    
-    
-    
-
-    
-    if (lhs.Kind != "Fld") {
-        return;
-    }
-    if (rhs.Kind != "Int" || rhs.String != "0") {
-        return;
-    }
-    if (lhs.Field.Name[0] != "empty") {
-        return;
-    }
-
-    
-    
-    
-    
-    
-    const fields = [];
-    for (let f = lhs; f.Kind == "Fld"; f = f.Exp[0]) {
-        fields.push(f);
-    }
-    const names = fields.map(f => f.Field.Name[0]);
-
-    
-    
-    
-    
-    
-
-    
-    if (names.length > 2 && names[0] == "empty" && names[1] == "mStorage") {
-        let i = 2;
-        while (i < names.length) {
-            if (!names[i].startsWith("field:")) {
-                return;  
-            }
-            i++;
-        }
-        
-        
-        const maybe = fields.at(-1);
-        if (maybe.Field.FieldCSU.Type.Name.startsWith("mozilla::Maybe<")) {
-            return maybe;
-        }
-    }
-
-    return;
-}
-
-
-
-
-function matchConstructorEdge(typeInfo, edge)
+function isLimitConstructor(typeInfo, edgeType, varName)
 {
-    if (edge.Kind == "Assign") {
-        const fld = assignEdgeIsMaybeConstructor(edge);
-        if (fld) {
-            const constructed = fld.Exp[0];
-            if (!constructed) {
-                return;
-            }
-            const attrs = getTypeNameAttributes(fld.Field.FieldCSU.Type.Name, typeInfo);
-            return { attrs, constructed };
-        }
-
-        
-        return;
-    }
-
-    if (edge.Kind != "Call") {
-        return; 
-    }
-
-    const callee = edge.Exp[0];
-    if (callee.Kind != "Var") {
-        return;
-    }
-    const variable = callee.Variable;
-    assert(variable.Kind == "Func");
-    const varName = variable.Name;
-
-    const edgeType = edge.Type;
-
     
     if (edgeType.Kind != 'Function')
-        return;
+        return 0;
     if (!('TypeFunctionCSU' in edgeType))
-        return;
+        return 0;
     if (edgeType.Type.Kind != 'Void')
-        return;
+        return 0;
 
-    const typeName = edgeType.TypeFunctionCSU.Type.Name;
+    
+    var type = edgeType.TypeFunctionCSU.Type.Name;
+    let attrs = 0;
+    if (type in typeInfo.GCSuppressors)
+        attrs = attrs | ATTR_GC_SUPPRESSED;
 
     
     
     var [ mangled, unmangled ] = splitFunction(varName[0]);
     if (mangled.search(/C\d[EI]/) == -1)
-        return; 
+        return 0; 
     var m = unmangled.match(/([~\w]+)(?:<.*>)?\(/);
     if (!m)
-        return;
-    var type_stem = typeName.replace(/\w+::/g, '').replace(/\<.*\>/g, '');
+        return 0;
+    var type_stem = type.replace(/\w+::/g, '').replace(/\<.*\>/g, '');
     if (m[1] != type_stem)
-        return;
+        return 0;
 
-    const attrs = getTypeNameAttributes(typeName, typeInfo);
-    const constructed = edge.PEdgeCallInstance.Exp;
-    return { attrs, constructed };
+    return attrs;
 }
 
 

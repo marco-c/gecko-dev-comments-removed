@@ -227,7 +227,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
 
 
 
-function isMatchingDestructor(edge, constructed)
+function isMatchingDestructor(constructor, edge)
 {
     if (edge.Kind != "Call")
         return false;
@@ -247,17 +247,14 @@ function isMatchingDestructor(edge, constructed)
     if (!("PEdgeCallInstance" in edge))
         return false;
 
-    if (constructed.Kind != "Var") {
-        
-        
-        return false;
-    }
+    var constructExp = constructor.PEdgeCallInstance.Exp;
+    assert(constructExp.Kind == "Var");
 
     var destructExp = edge.PEdgeCallInstance.Exp;
     if (destructExp.Kind != "Var")
         return false;
 
-    return sameVariable(constructed.Variable, destructExp.Variable);
+    return sameVariable(constructExp.Variable, destructExp.Variable);
 }
 
 
@@ -265,18 +262,30 @@ function isMatchingDestructor(edge, constructed)
 
 
 
-function allRAIIGuardedCallPoints(typeInfo, bodies, body)
+function allRAIIGuardedCallPoints(typeInfo, bodies, body, isConstructor)
 {
     if (!("PEdge" in body))
         return [];
 
     var points = [];
 
-    for (const edge of body.PEdge) {
-        const result = matchConstructorEdge(typeInfo, edge);
-        if (result && result.attrs != 0) {
-            points.push(...pointsInRAIIScope(bodies, body, edge, result.attrs, result.constructed));
-        }
+    for (var edge of body.PEdge) {
+        if (edge.Kind != "Call")
+            continue;
+        var callee = edge.Exp[0];
+        if (callee.Kind != "Var")
+            continue;
+        var variable = callee.Variable;
+        assert(variable.Kind == "Func");
+        const bits = isConstructor(typeInfo, edge.Type, variable.Name);
+        if (!bits)
+            continue;
+        if (!("PEdgeCallInstance" in edge))
+            continue;
+        if (edge.PEdgeCallInstance.Exp.Kind != "Var")
+            continue;
+
+        points.push(...pointsInRAIIScope(bodies, body, edge, bits));
     }
 
     return points;
@@ -334,19 +343,7 @@ function findMatchingConstructor(destructorEdge, body, warnIfNotFound=true)
     return undefined;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-function pointsInRAIIScope(bodies, body, constructorEdge, bits, constructed) {
+function pointsInRAIIScope(bodies, body, constructorEdge, bits) {
     var seen = {};
     var worklist = [constructorEdge.Index[1]];
     var points = [];
@@ -360,7 +357,7 @@ function pointsInRAIIScope(bodies, body, constructorEdge, bits, constructed) {
         if (!(point in successors))
             continue;
         for (var nedge of successors[point]) {
-            if (isMatchingDestructor(nedge, constructed))
+            if (isMatchingDestructor(constructorEdge, nedge))
                 continue;
             if (nedge.Kind == "Loop")
                 points.push(...findAllPoints(bodies, nedge.BlockId, bits));
@@ -777,30 +774,13 @@ function parseTypeName(typeName) {
 
 
 
+
 function edgeEndsValueLiveRange(edge, variable, body)
 {
+    
     if (edge.Kind == "Assign") {
-        
         const [lhs, rhs] = edge.Exp;
-        if (expressionIsVariable(lhs, variable) && isImmobileValue(rhs)) {
-            return true;
-        }
-        
-        
-        if (isImmobileValue(rhs) && lhs.Kind == "Fld") {
-            if (lhs.Field.Name[0] == "mIsSome" &&
-                lhs.Field.FieldCSU.Type.Name.includes("::MaybeStorage<") &&
-                str(rhs) == "0")
-            {
-                
-                let inner = lhs;
-                while (inner.Kind == "Fld") {
-                    inner = inner.Exp[0];
-                }
-                return expressionIsVariable(inner, variable);
-            }
-        }
-        return false;
+        return expressionIsVariable(lhs, variable) && isImmobileValue(rhs);
     }
 
     if (edge.Kind != "Call")
