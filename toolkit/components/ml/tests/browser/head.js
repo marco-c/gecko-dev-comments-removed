@@ -780,7 +780,6 @@ function assertFloatArraysMatch(a, b, message, epsilon) {
 
 
 function readRequestBody(request) {
-  info("readRequestBody");
   
   const stream = request.bodyInputStream;
   const available = stream.available();
@@ -796,7 +795,7 @@ function startMockOpenAI({
   const server = new HttpServer();
 
   server.registerPathHandler("/v1/chat/completions", (request, response) => {
-    info("GET /v1/chat/completions");
+    info("[openai] GET /v1/chat/completions");
 
     
     if (onRequest) {
@@ -809,7 +808,7 @@ function startMockOpenAI({
         bodyText = readRequestBody(request);
       } catch (_) {}
     }
-    info("bodyText: " + bodyText);
+    info("[openai] bodyText: " + bodyText);
 
     let body;
     try {
@@ -849,6 +848,7 @@ function startMockOpenAI({
     
     
     if (wantsStream && askedForTools && !hasToolResult) {
+      info("[openai] Streaming tool call, without tool results");
       
       startSSE();
 
@@ -917,6 +917,8 @@ function startMockOpenAI({
 
     if (wantsStream && askedForTools && hasToolResult) {
       
+      info("[openai] Streaming tool call, with results");
+
       startSSE();
 
       sendSSE({
@@ -952,11 +954,82 @@ function startMockOpenAI({
     }
 
     
+    if (wantsStream && !askedForTools) {
+      info("[openai] Simple streaming (no tools)");
+      startSSE();
+
+      
+      sendSSE({
+        id: "chatcmpl-mock-stream-1",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: { content: "Hello, " },
+            finish_reason: null,
+          },
+        ],
+      });
+
+      sendSSE({
+        id: "chatcmpl-mock-stream-2",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: { content: "this is " },
+            finish_reason: null,
+          },
+        ],
+      });
+
+      sendSSE({
+        id: "chatcmpl-mock-stream-3",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: { content: echo },
+            finish_reason: null,
+          },
+        ],
+      });
+
+      
+      sendSSE({
+        id: "chatcmpl-mock-stream-4",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: { content: "" },
+            finish_reason: "stop",
+          },
+        ],
+      });
+
+      endSSE();
+      return;
+    }
+
     
     
+    
+    if (wantsStream) {
+      throw new Error("Unhandled streaming case.");
+    }
 
     
     if (askedForTools && !hasToolResult) {
+      info("[openai] Non-streaming tool call without results");
       const payload = {
         id: "chatcmpl-mock-tools-1",
         object: "chat.completion",
@@ -994,11 +1067,13 @@ function startMockOpenAI({
       );
       response.setHeader("Access-Control-Allow-Origin", "*", false);
       response.write(JSON.stringify(payload));
+      info("[openai] Sending back payload: " + JSON.stringify(payload));
       return;
     }
 
     
     if (askedForTools && hasToolResult) {
+      info("[openai] Non-streaming tool call with results");
       const payload = {
         id: "chatcmpl-mock-tools-2",
         object: "chat.completion",
@@ -1026,8 +1101,11 @@ function startMockOpenAI({
       );
       response.setHeader("Access-Control-Allow-Origin", "*", false);
       response.write(JSON.stringify(payload));
+      info("[openai] Sending back payload: " + JSON.stringify(payload));
       return;
     }
+
+    info("[openai] Non-streaming call");
 
     const payload = {
       id: "chatcmpl-mock-1",
@@ -1048,7 +1126,7 @@ function startMockOpenAI({
       echo,
     };
 
-    info("Sending back payload: " + JSON.stringify(payload));
+    info("[openai] Sending back payload: " + JSON.stringify(payload));
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.setHeader(
       "Content-Type",
