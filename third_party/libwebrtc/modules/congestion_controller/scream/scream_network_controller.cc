@@ -20,6 +20,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/congestion_controller/scream/scream_v2.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 namespace webrtc {
 
@@ -29,9 +30,12 @@ ScreamNetworkController::ScreamNetworkController(NetworkControllerConfig config)
     : env_(config.env),
       params_(env_.field_trials()),
       default_pacing_window_(config.default_pacing_time_window),
+      allow_initial_bwe_before_media_(
+          config.stream_based_config.enable_repeated_initial_probing),
       current_pacing_window_(config.default_pacing_time_window),
       scream_(std::in_place, env_),
       target_rate_constraints_(config.constraints),
+      streams_config_(config.stream_based_config),
       last_padding_interval_started_(Timestamp::Zero()) {
   if (config.constraints.min_data_rate.has_value() ||
       config.constraints.max_data_rate.has_value()) {
@@ -41,17 +45,39 @@ ScreamNetworkController::ScreamNetworkController(NetworkControllerConfig config)
   }
 }
 
+NetworkControlUpdate ScreamNetworkController::CreateFirstUpdate(Timestamp now) {
+  RTC_DCHECK(network_available_);
+  RTC_DCHECK(!first_update_created_);
+  first_update_created_ = true;
+  
+  
+  NetworkControlUpdate update = CreateUpdate(
+      now, target_rate_constraints_.starting_rate.value_or(kDefaultStartRate),
+      TimeDelta::Zero());
+
+  if (allow_initial_bwe_before_media_) {
+    
+    
+    update.probe_cluster_configs.emplace_back(ProbeClusterConfig{
+        .at_time = now,
+        .target_data_rate = DataRate::KilobitsPerSec(50),
+        .target_duration = TimeDelta::Millis(1),
+        .min_probe_delta = TimeDelta::Millis(10),
+        
+        
+        
+        .target_probe_count = 2,
+    });
+  }
+  return update;
+}
+
 NetworkControlUpdate ScreamNetworkController::OnNetworkAvailability(
     NetworkAvailability msg) {
-  RTC_LOG(LS_INFO) << " OnNetworkAvailability network_available:"
-                   << msg.network_available;
-  if (msg.network_available) {
-    
-    
-    return CreateUpdate(
-        msg.at_time,
-        target_rate_constraints_.starting_rate.value_or(kDefaultStartRate),
-        TimeDelta::Zero());
+  network_available_ = msg.network_available;
+  if (!first_update_created_ && network_available_ &&
+      streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {
+    return CreateFirstUpdate(msg.at_time);
   }
   return NetworkControlUpdate();
 }
@@ -61,18 +87,19 @@ NetworkControlUpdate ScreamNetworkController::OnNetworkRouteChange(
   RTC_LOG(LS_INFO) << " OnNetworkRouteChange, resetting ScreamV2.";
   target_rate_constraints_ = msg.constraints;
   scream_.emplace(env_);
+  first_update_created_ = false;
   
   
   scream_->SetTargetBitrateConstraints(
       target_rate_constraints_.min_data_rate.value_or(DataRate::Zero()),
       target_rate_constraints_.max_data_rate.value_or(
           DataRate::PlusInfinity()));
-  
-  
-  return CreateUpdate(
-      msg.at_time,
-      target_rate_constraints_.starting_rate.value_or(kDefaultStartRate),
-      TimeDelta::Zero());
+
+  if (network_available_ &&
+      streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {
+    return CreateFirstUpdate(msg.at_time);
+  }
+  return NetworkControlUpdate();
 }
 
 NetworkControlUpdate ScreamNetworkController::OnProcessInterval(
@@ -107,6 +134,10 @@ NetworkControlUpdate ScreamNetworkController::OnReceivedPacket(
 NetworkControlUpdate ScreamNetworkController::OnStreamsConfig(
     StreamsConfig msg) {
   streams_config_ = msg;
+  if (!first_update_created_ && network_available_ &&
+      streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {
+    return CreateFirstUpdate(msg.at_time);
+  }
   return NetworkControlUpdate();
 }
 
