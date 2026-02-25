@@ -63,12 +63,14 @@ struct ScreamV2Parameters {
       number_of_rtts_between_reset_ref_window_i_on_congestion;
 
   
-  FieldTrialParameter<double> data_in_flight_limit;
-  FieldTrialParameter<double> max_data_in_flight_limit_compensation;
+  
+  FieldTrialParameter<double> ref_window_overhead_min;
+  FieldTrialParameter<double> ref_window_overhead_max;
 
   
   
   FieldTrialParameter<double> queue_delay_avg_g;
+  FieldTrialParameter<double> queue_delay_dev_avg_g;
 
   
   
@@ -88,13 +90,6 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<double> queue_delay_threshold;
-
-  
-  
-  
-  
-  
-  FieldTrialParameter<bool> use_all_packets_when_calculating_queue_delay;
 
   
   

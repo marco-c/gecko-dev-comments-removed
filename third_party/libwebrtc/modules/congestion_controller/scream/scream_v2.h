@@ -12,6 +12,7 @@
 #define MODULES_CONGESTION_CONTROLLER_SCREAM_SCREAM_V2_H_
 
 #include <algorithm>
+#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/transport/network_types.h"
@@ -38,8 +39,19 @@ class ScreamV2 {
   ~ScreamV2() = default;
 
   void SetTargetBitrateConstraints(DataRate min, DataRate max);
+
+  void OnTransportPacketsFeedback(const TransportPacketsFeedback& msg);
   
-  DataRate OnTransportPacketsFeedback(const TransportPacketsFeedback& msg);
+  bool OnSentPacket(const SentPacket& msg);
+
+  DataRate target_rate() const { return target_rate_; }
+  TimeDelta rtt() const { return delay_based_congestion_control_.rtt(); }
+
+  
+  std::optional<DataSize> congestion_window() const;
+
+  
+  DataSize max_data_in_flight() const;
 
   
   
@@ -50,7 +62,8 @@ class ScreamV2 {
 
  private:
   void UpdateL4SAlpha(const TransportPacketsFeedback& msg);
-  void UpdateRefWindowAndTargetRate(const TransportPacketsFeedback& msg);
+  void UpdateRefWindow(const TransportPacketsFeedback& msg);
+  DataRate CalculateTargetRate() const;
 
   
   double ref_window_mss_ratio() const {

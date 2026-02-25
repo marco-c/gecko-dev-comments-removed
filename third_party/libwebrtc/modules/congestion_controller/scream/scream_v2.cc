@@ -67,16 +67,15 @@ void ScreamV2::SetTargetBitrateConstraints(DataRate min, DataRate max) {
                      << " max_target_bitrate_=" << max_target_bitrate_;
 }
 
-DataRate ScreamV2::OnTransportPacketsFeedback(
-    const TransportPacketsFeedback& msg) {
+void ScreamV2::OnTransportPacketsFeedback(const TransportPacketsFeedback& msg) {
   delay_based_congestion_control_.OnTransportPacketsFeedback(msg);
   UpdateL4SAlpha(msg);
-  UpdateRefWindowAndTargetRate(msg);
+  UpdateRefWindow(msg);
+  target_rate_ = CalculateTargetRate();
   env_.event_log().Log(std::make_unique<RtcEventBweUpdateScream>(
       ref_window_, msg.data_in_flight, target_rate_, msg.smoothed_rtt,
       delay_based_congestion_control_.queue_delay(),
        l4s_alpha_ * 1000));
-  return target_rate_;
 }
 
 void ScreamV2::UpdateL4SAlpha(const TransportPacketsFeedback& msg) {
@@ -103,23 +102,14 @@ void ScreamV2::UpdateL4SAlpha(const TransportPacketsFeedback& msg) {
   }
 }
 
-void ScreamV2::UpdateRefWindowAndTargetRate(
-    const TransportPacketsFeedback& msg) {
+void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
   max_data_in_flight_this_rtt_ =
       std::max(max_data_in_flight_this_rtt_, msg.data_in_flight);
-
-  
-  const TimeDelta non_zero_smoothed_rtt =
-      std::max(msg.smoothed_rtt, TimeDelta::Millis(1));
 
   bool is_ce = msg.HasPacketWithEcnCe();
   bool is_loss = HasLostPackets(msg);
   bool is_virtual_ce = false;
-  double virtual_alpha_lim =
-      ((2 * params_.max_segment_size.Get()) / non_zero_smoothed_rtt) /
-      target_rate_;
-  if (l4s_alpha_ < virtual_alpha_lim &&
-      delay_based_congestion_control_.ShouldReduceReferenceWindow()) {
+  if (delay_based_congestion_control_.ShouldReduceReferenceWindow()) {
     
     is_virtual_ce = true;
   }
@@ -148,6 +138,13 @@ void ScreamV2::UpdateRefWindowAndTargetRate(
         
         backoff *=
             std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
+        
+        
+        
+        backoff *= std::max(
+            0.1,
+            (0.1 - delay_based_congestion_control_.queue_delay_dev_norm()) /
+                0.1);
       }
 
       if (msg.feedback_time - last_reaction_to_congestion_time_ >
@@ -172,10 +169,9 @@ void ScreamV2::UpdateRefWindowAndTargetRate(
         l4s_alpha_ = 0.25;
       }
       ref_window_ = (1.0 - backoff) * ref_window_;
-    }  
-    if (is_virtual_ce) {  
+    } else if (is_virtual_ce) {  
       ref_window_ = delay_based_congestion_control_.UpdateReferenceWindow(
-          ref_window_, ref_window_mss_ratio(), virtual_alpha_lim);
+          ref_window_, ref_window_mss_ratio());
     }
 
     if (allow_ref_window_i_update_) {
@@ -204,17 +200,25 @@ void ScreamV2::UpdateRefWindowAndTargetRate(
       double rtt_ratio = msg.smoothed_rtt / params_.virtual_rtt.Get();
       increase = increase * (rtt_ratio * rtt_ratio);
     }
-    if (l4s_alpha_ < virtual_alpha_lim) {
-      
-      increase = increase * delay_based_congestion_control_.scale_increase();
-    }
-    
+
     
     increase = increase *
                std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
-    
+
     
     increase = increase * std::max(0.5, 1.0 - ref_window_mss_ratio());
+
+    
+    if (l4s_alpha_ < 0.0001) {
+      increase = increase * delay_based_congestion_control_.scale_increase();
+    }
+
+    
+    increase =
+        increase *
+        std::max(0.1, (0.1 -
+                       delay_based_congestion_control_.queue_delay_dev_norm()) /
+                          0.1);
 
     
     
@@ -247,54 +251,59 @@ void ScreamV2::UpdateRefWindowAndTargetRate(
     }
   }
 
-  double scale_target_rate = 1.0;
-  if (delay_based_congestion_control_.IsQueueDelayDetected()) {
-    
-    
-    
-    
-    
-    
-    double data_in_flight_ratio = msg.data_in_flight / ref_window_;
-    if (data_in_flight_ratio > params_.data_in_flight_limit.Get()) {
-      scale_target_rate /=
-          std::min(params_.max_data_in_flight_limit_compensation.Get(),
-                   data_in_flight_ratio / params_.data_in_flight_limit.Get());
-    }
-  }
-  
-  
-  scale_target_rate =
-      scale_target_rate *
-      (1.0 - std::clamp(ref_window_mss_ratio() - 0.1, 0.0, 0.2));
-  target_rate_ =
-      std::clamp(scale_target_rate * (ref_window_ / non_zero_smoothed_rtt),
-                 min_target_bitrate_, max_target_bitrate_);
-
-  RTC_LOG_IF(LS_VERBOSE, previous_ref_window != ref_window_)
-      << "ScreamV2: "
-      << ", ref_window = " << ref_window_ << " ref_window_i_=" << ref_window_i_
-      << ", change=" << ref_window_.bytes() - previous_ref_window.bytes()
-      << " bytes "
-      << ", l4s_alpha=" << l4s_alpha_
-      << ", scale_target_rate=" << scale_target_rate << ", is_ce=" << is_ce
-      << " is_virtual_ce=" << is_virtual_ce << " is_loss=" << is_loss
-      << " smoothed_rtt=" << msg.smoothed_rtt.ms()
-      << ", queue_delay=" << delay_based_congestion_control_.queue_delay().ms()
-      << ", target_rate_=" << target_rate_.kbps();
-
   if (previous_ref_window < ref_window_) {
     
     
     
     allow_ref_window_i_update_ = true;
   }
+
   if (msg.feedback_time - last_data_in_flight_update_ >=
       max_of_virtual_and_smothed_rtt) {
     last_data_in_flight_update_ = msg.feedback_time;
     max_data_in_flight_prev_rtt_ = max_data_in_flight_this_rtt_;
     max_data_in_flight_this_rtt_ = DataSize::Zero();
   }
+
+  RTC_LOG_IF(LS_VERBOSE, previous_ref_window != ref_window_)
+      << "ScreamV2: "
+      << ", ref_window = " << ref_window_ << " ref_window_i_=" << ref_window_i_
+      << ", change=" << ref_window_.bytes() - previous_ref_window.bytes()
+      << " bytes "
+      << ", l4s_alpha=" << l4s_alpha_ << ", is_ce=" << is_ce
+      << " is_virtual_ce=" << is_virtual_ce << " is_loss=" << is_loss
+      << " smoothed_rtt=" << msg.smoothed_rtt.ms()
+      << ", queue_delay=" << delay_based_congestion_control_.queue_delay().ms()
+      << ", queue_delay_dev_norm="
+      << delay_based_congestion_control_.queue_delay_dev_norm()
+      << ", target_rate =" << target_rate_.kbps();
+}
+
+DataSize ScreamV2::max_data_in_flight() const {
+  
+  double ref_window_overhead =
+      params_.ref_window_overhead_min.Get() +
+      (params_.ref_window_overhead_max.Get() -
+       params_.ref_window_overhead_min.Get()) *
+          std::max(
+              0.0,
+              (0.1 - delay_based_congestion_control_.queue_delay_dev_norm()) /
+                  0.1);
+  return ref_window_ * ref_window_overhead;
+}
+
+DataRate ScreamV2::CalculateTargetRate() const {
+  
+  const TimeDelta non_zero_smoothed_rtt =
+      std::max(delay_based_congestion_control_.rtt(), TimeDelta::Millis(1));
+  double scale_target_rate = 1.0;
+  
+  
+  scale_target_rate *=
+      (1.0 - std::clamp(ref_window_mss_ratio() - 0.1, 0.0, 0.2));
+
+  return std::clamp(scale_target_rate * (ref_window_ / non_zero_smoothed_rtt),
+                    min_target_bitrate_, max_target_bitrate_);
 }
 
 }  
