@@ -1577,7 +1577,7 @@ DSImage.defaultProps = {
   
   optimize: true,
   
-  alt_text: null,
+  alt_text: "",
   windowObj: window,
   
   sizes: []
