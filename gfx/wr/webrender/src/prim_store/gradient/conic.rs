@@ -107,6 +107,7 @@ impl PatternBuilder for ConicGradientTemplate {
     fn build(
         &self,
         _sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
         _ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
@@ -117,7 +118,7 @@ impl PatternBuilder for ConicGradientTemplate {
         
         
         
-        let center = self.center + self.common.prim_rect.min.to_vector();
+        let center = self.center + self.common.prim_rect.min.to_vector() + offset;
 
         conic_gradient_pattern(
             center,

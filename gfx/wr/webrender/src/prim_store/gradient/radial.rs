@@ -112,6 +112,7 @@ impl PatternBuilder for RadialGradientTemplate {
     fn build(
         &self,
         _sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
         ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
@@ -122,7 +123,7 @@ impl PatternBuilder for RadialGradientTemplate {
         
         
         
-        let center = self.center.cast_unit() + self.common.prim_rect.min.to_vector();
+        let center = self.center.cast_unit() + self.common.prim_rect.min.to_vector() + offset;
 
         radial_gradient_pattern(
             center,

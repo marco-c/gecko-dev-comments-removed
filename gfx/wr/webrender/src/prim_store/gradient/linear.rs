@@ -101,6 +101,7 @@ impl PatternBuilder for LinearGradientTemplate {
     fn build(
         &self,
         _sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
         ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
@@ -112,7 +113,7 @@ impl PatternBuilder for LinearGradientTemplate {
         
         
         
-        let offset = self.common.prim_rect.min.to_vector();
+        let offset = offset + self.common.prim_rect.min.to_vector();
         linear_gradient_pattern(
             start + offset,
             end + offset,
