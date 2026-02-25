@@ -8476,6 +8476,19 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoResult<Boolean> processBackPressed() {
+    return mEventDispatcher.queryBoolean("GeckoView:ProcessBackPressed");
+  }
+
+  
   @WrapForJNI
   public static class GeckoPrintException extends Exception {
     
