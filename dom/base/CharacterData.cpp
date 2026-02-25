@@ -404,34 +404,22 @@ nsresult CharacterData::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
   MOZ_ASSERT(!!GetParent() == aParent.IsContent());
 
-  if (aParent.IsInUncomposedDoc() || aParent.IsInShadowTree()) {
+  SetSubtreeRootPointer(aParent.SubtreeRoot());
+  const bool connected = aParent.IsInComposedDoc();
+  SetIsConnected(connected);
+  if (connected) {
     
-    
-    ClearSubtreeRootPointer();
-    SetIsConnected(aParent.IsInComposedDoc());
-
-    if (aParent.IsInUncomposedDoc()) {
-      SetIsInDocument();
-    } else {
-      SetFlags(NODE_IS_IN_SHADOW_TREE);
-      MOZ_ASSERT(aParent.IsContent() &&
-                 aParent.AsContent()->GetContainingShadow());
-      ExtendedContentSlots()->mContainingShadow =
-          aParent.AsContent()->GetContainingShadow();
-    }
-
-    if (IsInComposedDoc() && mBuffer.IsBidi()) {
-      aContext.OwnerDoc().SetBidiEnabled();
-    }
-
     
     UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
-  } else {
-    
-    
-    SetSubtreeRootPointer(aParent.SubtreeRoot());
+    if (mBuffer.IsBidi()) {
+      aContext.OwnerDoc().SetBidiEnabled();
+    }
   }
-
+  if (aParent.IsInUncomposedDoc()) {
+    SetIsInDocument();
+  } else if (aParent.IsInShadowTree()) {
+    SetFlags(NODE_IS_IN_SHADOW_TREE);
+  }
   MutationObservers::NotifyParentChainChanged(this);
 
   UpdateEditableState(false);
@@ -472,14 +460,9 @@ void CharacterData::UnbindFromTree(UnbindContext& aContext) {
 
   if (nullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);
-
-    
-    SetSubtreeRootPointer(nullParent ? this : mParent->SubtreeRoot());
-
-    if (nsExtendedContentSlots* slots = GetExistingExtendedContentSlots()) {
-      slots->mContainingShadow = nullptr;
-    }
   }
+
+  SetSubtreeRootPointer(nullParent ? this : mParent->SubtreeRoot());
 
   MutationObservers::NotifyParentChainChanged(this);
 

@@ -1266,7 +1266,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsINode* SubtreeRoot() const;
+  nsINode* SubtreeRoot() const {
+#ifdef DEBUG
+    AssertSubtreeRootIsInSync();
+#endif
+    return mSubtreeRoot;
+  }
 
   
 
@@ -1391,6 +1396,9 @@ class nsINode : public mozilla::dom::EventTarget {
   T* FirstAncestorOfType() const;
 
  private:
+#ifdef DEBUG
+  void AssertSubtreeRootIsInSync() const;
+#endif
   
 
 
@@ -1657,7 +1665,12 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
-  mozilla::dom::ShadowRoot* GetContainingShadow() const;
+  mozilla::dom::ShadowRoot* GetContainingShadow() const {
+    return IsInShadowTree()
+               ? reinterpret_cast<mozilla::dom::ShadowRoot*>(mSubtreeRoot)
+               : nullptr;
+  }
+
   
 
 
@@ -2343,13 +2356,9 @@ class nsINode : public mozilla::dom::EventTarget {
   void ClearHandlingClick() { ClearBoolFlag(NodeHandlingClick); }
 
   void SetSubtreeRootPointer(nsINode* aSubtreeRoot) {
-    NS_ASSERTION(aSubtreeRoot, "aSubtreeRoot can never be null!");
-    NS_ASSERTION(!(IsContent() && IsInUncomposedDoc()) && !IsInShadowTree(),
-                 "Shouldn't be here!");
+    MOZ_ASSERT(aSubtreeRoot, "aSubtreeRoot can never be null!");
     mSubtreeRoot = aSubtreeRoot;
   }
-
-  void ClearSubtreeRootPointer() { mSubtreeRoot = nullptr; }
 
  public:
   
@@ -2685,15 +2694,13 @@ class nsINode : public mozilla::dom::EventTarget {
   nsCOMPtr<nsIContent> mNextSibling;
   nsIContent* MOZ_NON_OWNING_REF mPreviousOrLastSibling;
 
-  union {
-    
-    nsIFrame* mPrimaryFrame;
+  
+  
+  
+  nsINode* MOZ_NON_OWNING_REF mSubtreeRoot;
 
-    
-    
-    
-    nsINode* MOZ_NON_OWNING_REF mSubtreeRoot;
-  };
+  
+  nsIFrame* mPrimaryFrame = nullptr;
 
   
   nsSlots* mSlots;

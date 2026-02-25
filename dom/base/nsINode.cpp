@@ -607,7 +607,8 @@ nsIContent* nsINode::GetFirstChildOfTemplateOrNode() {
   return GetFirstChild();
 }
 
-nsINode* nsINode::SubtreeRoot() const {
+#ifdef DEBUG
+void nsINode::AssertSubtreeRootIsInSync() const {
   auto RootOfNode = [](const nsINode* aStart) -> nsINode* {
     const nsINode* node = aStart;
     const nsINode* iter = node;
@@ -616,37 +617,15 @@ nsINode* nsINode::SubtreeRoot() const {
     }
     return const_cast<nsINode*>(node);
   };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nsINode* node;
-  if (IsInUncomposedDoc()) {
-    node = OwnerDocAsNode();
-  } else if (IsContent()) {
-    ShadowRoot* containingShadow = AsContent()->GetContainingShadow();
-    node = containingShadow ? containingShadow : mSubtreeRoot;
-    if (!node) {
-      NS_WARNING("Using SubtreeRoot() on unlinked element?");
-      node = RootOfNode(this);
-    }
-  } else {
-    node = mSubtreeRoot;
-  }
-  MOZ_ASSERT(node, "Should always have a node here!");
-#ifdef DEBUG
-  {
-    const nsINode* slowNode = RootOfNode(this);
-    MOZ_ASSERT(slowNode == node, "These should always be in sync!");
-  }
-#endif
-  return node;
+  MOZ_ASSERT(mSubtreeRoot, "Should always have a node here!");
+  MOZ_ASSERT(RootOfNode(this) == mSubtreeRoot,
+             "These should always be in sync!");
+  MOZ_ASSERT(!IsInShadowTree() || mSubtreeRoot->IsShadowRoot(),
+             "Subtree root should be a shadow root if in shadow tree");
+  MOZ_ASSERT(!IsInUncomposedDoc() || mSubtreeRoot == OwnerDoc(),
+             "Subtree root should be doc if in uncomposed doc");
 }
+#endif
 
 static nsIContent* GetRootForContentSubtree(nsIContent* aContent) {
   NS_ENSURE_TRUE(aContent, nullptr);
@@ -1005,13 +984,6 @@ std::ostream& operator<<(std::ostream& aStream, const nsINode& aNode) {
 nsIContent* nsINode::DoGetShadowHost() const {
   MOZ_ASSERT(IsShadowRoot());
   return static_cast<const ShadowRoot*>(this)->GetHost();
-}
-
-ShadowRoot* nsINode::GetContainingShadow() const {
-  if (!IsInShadowTree()) {
-    return nullptr;
-  }
-  return AsContent()->GetContainingShadow();
 }
 
 Element* nsINode::GetContainingShadowHost() const {

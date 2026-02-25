@@ -25,7 +25,9 @@ inline bool nsIContent::IsInChromeDocument() const {
 }
 
 inline void nsIContent::SetPrimaryFrame(nsIFrame* aFrame) {
-  MOZ_ASSERT(IsInUncomposedDoc() || IsInShadowTree(), "This will end badly!");
+  MOZ_ASSERT(!aFrame || IsInUncomposedDoc() || IsInShadowTree(),
+             "This will end badly!");
+  MOZ_ASSERT(!aFrame || IsInComposedDoc(), "This will end badly!");
 
   
   MOZ_ASSERT(IsHTMLElement(nsGkAtoms::area) || !aFrame || !mPrimaryFrame ||

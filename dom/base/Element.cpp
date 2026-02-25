@@ -244,14 +244,14 @@ namespace mozilla::dom {
 
 
 
-ASSERT_NODE_SIZE(Element, 128, 80);
-ASSERT_NODE_SIZE(HTMLDivElement, 128, 80);
-ASSERT_NODE_SIZE(HTMLElement, 128, 80);
-ASSERT_NODE_SIZE(HTMLParagraphElement, 128, 80);
-ASSERT_NODE_SIZE(HTMLPreElement, 128, 80);
-ASSERT_NODE_SIZE(HTMLSpanElement, 128, 80);
-ASSERT_NODE_SIZE(HTMLTableCellElement, 128, 80);
-ASSERT_NODE_SIZE(Text, 120, 80);
+ASSERT_NODE_SIZE(Element, 136, 84);
+ASSERT_NODE_SIZE(HTMLDivElement, 136, 84);
+ASSERT_NODE_SIZE(HTMLElement, 136, 84);
+ASSERT_NODE_SIZE(HTMLParagraphElement, 136, 84);
+ASSERT_NODE_SIZE(HTMLPreElement, 136, 84);
+ASSERT_NODE_SIZE(HTMLSpanElement, 136, 84);
+ASSERT_NODE_SIZE(HTMLTableCellElement, 136, 84);
+ASSERT_NODE_SIZE(Text, 128, 84);
 
 #undef ASSERT_NODE_SIZE
 #undef EXTRA_DOM_NODE_BYTES
@@ -2866,31 +2866,21 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_ASSERT_IF(!aContext.IsMove(),
                 !HasAnyOfFlags(Element::kAllServoDescendantBits));
 
-  
-  if (aParent.IsInUncomposedDoc() || aParent.IsInShadowTree()) {
+  SetSubtreeRootPointer(aParent.SubtreeRoot());
+  const bool connected = aParent.IsInComposedDoc();
+  SetIsConnected(connected);
+  if (connected) {
     
-    
-    ClearSubtreeRootPointer();
-    SetIsConnected(aParent.IsInComposedDoc());
-
-    if (aParent.IsInUncomposedDoc()) {
-      SetIsInDocument();
-    } else {
-      SetFlags(NODE_IS_IN_SHADOW_TREE);
-      MOZ_ASSERT(aParent.IsContent() &&
-                 aParent.AsContent()->GetContainingShadow());
-      ExtendedDOMSlots()->mContainingShadow =
-          aParent.AsContent()->GetContainingShadow();
-    }
     
     UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
-  } else {
-    
-    
-    SetSubtreeRootPointer(aParent.SubtreeRoot());
+  }
+  if (aParent.IsInUncomposedDoc()) {
+    SetIsInDocument();
+  } else if (aParent.IsInShadowTree()) {
+    SetFlags(NODE_IS_IN_SHADOW_TREE);
   }
 
-  if (IsInComposedDoc()) {
+  if (connected) {
     if (IsPendingMappedAttributeEvaluation()) {
       aContext.OwnerDoc().ScheduleForPresAttrEvaluation(this);
     }
@@ -3113,14 +3103,9 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
 
   if (nullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);
-
-    
-    SetSubtreeRootPointer(nullParent ? this : mParent->SubtreeRoot());
-
-    if (nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots()) {
-      slots->mContainingShadow = nullptr;
-    }
   }
+
+  SetSubtreeRootPointer(nullParent ? this : mParent->SubtreeRoot());
 
   if (document) {
     

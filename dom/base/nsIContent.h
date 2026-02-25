@@ -305,16 +305,6 @@ class nsIContent : public nsINode {
 
 
 
-  mozilla::dom::ShadowRoot* GetContainingShadow() const {
-    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
-    return slots ? slots->mContainingShadow : nullptr;
-  }
-
-  
-
-
-
-
   mozilla::dom::HTMLSlotElement* GetAssignedSlot() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mAssignedSlot.get() : nullptr;
@@ -518,9 +508,7 @@ class nsIContent : public nsINode {
 
 
 
-  nsIFrame* GetPrimaryFrame() const {
-    return IsInComposedDoc() ? mPrimaryFrame : nullptr;
-  }
+  nsIFrame* GetPrimaryFrame() const { return mPrimaryFrame; }
 
   
 
@@ -645,12 +633,6 @@ class nsIContent : public nsINode {
 
     virtual size_t SizeOfExcludingThis(
         mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    
-
-
-
-    mozilla::dom::ShadowRoot* mContainingShadow = nullptr;
 
     
 
