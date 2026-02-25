@@ -1110,6 +1110,7 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
   
   mSelectedStringRemovedByComposition.Truncate();
   mContentSelection.reset();
+  mPendingSetSurrounding = false;
 
   if (aFocus) {
     if (mSetInputPurposeAndInputHints) {
@@ -1606,6 +1607,20 @@ void IMContextWrapper::OnSelectionChange(
       ResetIME();
     }
   }
+
+  if (mPendingSetSurrounding) {
+    MOZ_LOG(gIMELog, LogLevel::Debug,
+            ("0x%p   OnSelectionChange(), retrying "
+             "OnRetrieveSurroundingNative()",
+             this));
+    if (GtkIMContext* currentContext = GetCurrentContext()) {
+      AutoRestore<bool> restore(mRetrieveSurroundingSignalReceived);
+      OnRetrieveSurroundingNative(currentContext);
+    }
+    
+    
+    mPendingSetSurrounding = false;
+  }
 }
 
 
@@ -1801,6 +1816,8 @@ gboolean IMContextWrapper::OnRetrieveSurroundingNative(GtkIMContext* aContext) {
            "current context=0x%p",
            this, aContext, GetCurrentContext()));
 
+  mPendingSetSurrounding = false;
+
   
   if (GetCurrentContext() != aContext) {
     MOZ_LOG(gIMELog, LogLevel::Error,
@@ -1813,6 +1830,10 @@ gboolean IMContextWrapper::OnRetrieveSurroundingNative(GtkIMContext* aContext) {
   nsAutoString uniStr;
   uint32_t cursorPos;
   if (NS_FAILED(GetCurrentParagraph(uniStr, cursorPos))) {
+    
+    
+    
+    mPendingSetSurrounding = true;
     return FALSE;
   }
 

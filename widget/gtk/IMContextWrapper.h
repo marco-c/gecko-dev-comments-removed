@@ -486,6 +486,10 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   
   bool mSetInputPurposeAndInputHints;
+  
+  
+  
+  bool mPendingSetSurrounding = false;
 
   
   
