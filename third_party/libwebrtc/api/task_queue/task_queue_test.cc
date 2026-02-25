@@ -21,6 +21,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
+#include "api/make_ref_counted.h"
 #include "api/ref_count.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
@@ -405,13 +406,67 @@ TaskQueueCoTask HoppingCoroutine(absl::AnyInvocable<void() &&> done_cb,
   std::move(done_cb)();
 }
 
+
+
+
+
+TaskQueueCoTask ActuallySynchronous(absl::AnyInvocable<void() &&> done_cb) {
+  TaskQueueBase* current_tq = TaskQueueBase::Current();
+  co_await TaskQueueCoroutine{current_tq};
+  std::move(done_cb)();
+}
+
 TEST_P(TaskQueueTest, Coroutine) {
   std::unique_ptr<TaskQueueFactory> factory = GetParam()(nullptr);
   Event event;
   auto queue1 = CreateTaskQueue(factory, "CoroutineTQ1");
   auto queue2 = CreateTaskQueue(factory, "CoroutineTQ2");
   queue1->PostTask([&event, &queue2] {
-    HoppingCoroutine([&event]() { event.Set(); }, queue2.get());
+    struct Called {
+      bool callback_called = false;
+    };
+    auto called = make_ref_counted<Called>();
+    HoppingCoroutine(
+        [&event, called]() {
+          called->callback_called = true;
+          event.Set();
+        },
+        queue2.get());
+    
+    
+    EXPECT_FALSE(called->callback_called);
+    EXPECT_FALSE(called->HasOneRef());
+  });
+  EXPECT_TRUE(event.Wait(TimeDelta::Seconds(1)));
+}
+
+
+
+
+
+
+
+
+
+
+TEST_P(TaskQueueTest, CoroutineSynchronous) {
+  std::unique_ptr<TaskQueueFactory> factory = GetParam()(nullptr);
+  Event event;
+  auto q = CreateTaskQueue(factory, "TQ");
+  q->PostTask([&event] {
+    bool done = false;
+    
+    
+    
+    
+    
+    
+    ActuallySynchronous([&]() { done = true; });
+    
+    
+    
+    EXPECT_TRUE(done);
+    event.Set();
   });
   EXPECT_TRUE(event.Wait(TimeDelta::Seconds(1)));
 }
