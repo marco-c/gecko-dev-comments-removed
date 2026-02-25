@@ -78,12 +78,24 @@ constexpr int CursorMetaSize(int w, int h) {
           w * h * kCursorBpp);
 }
 
+#if defined(__GNUC__) && defined(WEBRTC_MOZILLA_BUILD)
+
+
+
+static const PipeWireVersion kDmaBufModifierMinVersion = {.major = 0,
+                                                          .minor = 3,
+                                                          .micro = 33};
+static const PipeWireVersion kDropSingleModifierMinVersion = {.major = 0,
+                                                              .minor = 3,
+                                                              .micro = 40};
+#else
 constexpr PipeWireVersion kDmaBufModifierMinVersion = {.major = 0,
                                                        .minor = 3,
                                                        .micro = 33};
 constexpr PipeWireVersion kDropSingleModifierMinVersion = {.major = 0,
                                                            .minor = 3,
                                                            .micro = 40};
+#endif
 
 class SharedScreenCastStreamPrivate {
  public:
