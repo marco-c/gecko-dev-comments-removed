@@ -192,13 +192,11 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   MdnsResponderInterface* GetMdnsResponder() const override;
 
   virtual void set_vpn_list(const std::vector<NetworkMask>& ) {}
-  void SubscribeNetworksChanged(absl::AnyInvocable<void()> callback) {
-    networks_changed_trampoline_.Subscribe(std::move(callback));
-  }
+  
+  
+  void SubscribeNetworksChanged(absl::AnyInvocable<void()> callback);
   void NotifyNetworksChanged() { SignalNetworksChanged(); }
-  void SubscribeError(absl::AnyInvocable<void()> callback) {
-    error_trampoline_.Subscribe(std::move(callback));
-  }
+  void SubscribeError(absl::AnyInvocable<void()> callback);
   void NotifyError() { SignalError(); }
 
  private:
