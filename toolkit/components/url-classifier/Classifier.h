@@ -110,8 +110,6 @@ class Classifier {
                                            const nsACString& aProvider,
                                            nsIFile** aPrivateStoreDirectory);
 
-  static bool IsRealTimeModeEnabled();
-
   
   
   nsresult SwapInNewTablesAndCleanup();

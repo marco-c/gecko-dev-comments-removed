@@ -3399,6 +3399,9 @@ pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", true);
 pref("browser.safebrowsing.downloads.remote.block_uncommon",             true);
 
 
+pref("browser.safebrowsing.globalCache.enabled", false);
+
+
 #ifndef MOZ_WIDGET_ANDROID
 
 

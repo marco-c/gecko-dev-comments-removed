@@ -12,7 +12,6 @@
 #include "nsIPrefBranch.h"
 #include "nsIXULRuntime.h"
 #include "nsToolkitCompsCID.h"
-#include "RealTimeRequestSimulator.h"
 #include "nsUrlClassifierDBService.h"
 #include "nsUrlClassifierUtils.h"
 #include "nsUrlClassifierProxies.h"
@@ -42,6 +41,7 @@
 #include "nsIHttpChannel.h"
 #include "nsIPrincipal.h"
 #include "nsIUrlListManager.h"
+#include "Classifier.h"
 #include "ProtocolParser.h"
 #include "nsContentUtils.h"
 #include "mozilla/Components.h"
@@ -51,7 +51,6 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/net/UrlClassifierFeatureResult.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/SyncRunnable.h"
 #include "UrlClassifierTelemetryUtils.h"
 #include "nsIURLFormatter.h"
@@ -917,11 +916,6 @@ nsUrlClassifierDBServiceWorker::ClearCache() {
 }
 
 NS_IMETHODIMP
-nsUrlClassifierDBServiceWorker::CleanRealTimeSimulatorCache() {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::CancelUpdate() {
   LOG(("nsUrlClassifierDBServiceWorker::CancelUpdate"));
 
@@ -1193,57 +1187,65 @@ bool nsUrlClassifierDBServiceWorker::IsSameAsLastResults(
 
 
 
-class nsUrlClassifierHashCompleterBase
-    : public nsIUrlClassifierHashCompleterCallback {
+class nsUrlClassifierLookupCallback final
+    : public nsIUrlClassifierLookupCallback,
+      public nsIUrlClassifierHashCompleterCallback {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIURLCLASSIFIERLOOKUPCALLBACK
   NS_DECL_NSIURLCLASSIFIERHASHCOMPLETERCALLBACK
 
- protected:
-  nsUrlClassifierHashCompleterBase(nsUrlClassifierDBService* aDBService,
-                                   nsIUrlClassifierCallback* aCallback)
-      : mDBService(aDBService), mCallback(aCallback) {}
+  nsUrlClassifierLookupCallback(nsUrlClassifierDBService* dbservice,
+                                nsIUrlClassifierCallback* c)
+      : mDBService(dbservice),
+        mResults(nullptr),
+        mPendingCompletions(0),
+        mCallback(c) {}
 
-  virtual ~nsUrlClassifierHashCompleterBase();
+ private:
+  ~nsUrlClassifierLookupCallback();
 
-  
-  nsresult RequestHashCompletions(LookupResultArray* aResults);
-
-  
-  
+  nsresult HandleResults();
   nsresult ProcessComplete(RefPtr<CacheResult> aCacheResult);
-
-  
-  nsresult OnAllCompletionsFinished();
-
-  
-  virtual LookupResultArray* GetResultsForCompletion() = 0;
-
-  
-  virtual void OnBeforeCacheCompletions() {}
+  nsresult CacheMisses();
 
   RefPtr<nsUrlClassifierDBService> mDBService;
-  nsCOMPtr<nsIUrlClassifierCallback> mCallback;
+  UniquePtr<LookupResultArray> mResults;
+
+  
   ConstCacheResultArray mCacheResults;
-  uint32_t mPendingCompletions = 0;
+
+  uint32_t mPendingCompletions;
+  nsCOMPtr<nsIUrlClassifierCallback> mCallback;
 };
 
-NS_IMPL_ISUPPORTS(nsUrlClassifierHashCompleterBase,
+NS_IMPL_ISUPPORTS(nsUrlClassifierLookupCallback, nsIUrlClassifierLookupCallback,
                   nsIUrlClassifierHashCompleterCallback)
 
-nsUrlClassifierHashCompleterBase::~nsUrlClassifierHashCompleterBase() {
+nsUrlClassifierLookupCallback::~nsUrlClassifierLookupCallback() {
   if (mCallback) {
-    NS_ReleaseOnMainThread("nsUrlClassifierHashCompleterBase::mCallback",
+    NS_ReleaseOnMainThread("nsUrlClassifierLookupCallback::mCallback",
                            mCallback.forget());
   }
 }
 
-nsresult nsUrlClassifierHashCompleterBase::RequestHashCompletions(
-    LookupResultArray* aResults) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG_POINTER(aResults);
+NS_IMETHODIMP
+nsUrlClassifierLookupCallback::LookupComplete(
+    UniquePtr<LookupResultArray> results) {
+  NS_ASSERTION(
+      mResults == nullptr,
+      "Should only get one set of results per nsUrlClassifierLookupCallback!");
 
-  for (const auto& result : *aResults) {
+  if (!results) {
+    HandleResults();
+    return NS_OK;
+  }
+
+  mResults = std::move(results);
+
+  
+  for (const auto& result : *mResults) {
+    
     if (!result->Confirmed()) {
       nsCOMPtr<nsIUrlClassifierHashCompleter> completer;
       nsCString gethashUrl;
@@ -1265,8 +1267,8 @@ nsresult nsUrlClassifierHashCompleterBase::RequestHashCompletions(
                                    getter_AddRefs(completer))) {
         
         
-        rv = completer->Complete(result->PartialHash(), gethashUrl,
-                                 result->mTableName, this);
+        nsresult rv = completer->Complete(result->PartialHash(), gethashUrl,
+                                          result->mTableName, this);
         if (NS_SUCCEEDED(rv)) {
           mPendingCompletions++;
         }
@@ -1286,43 +1288,60 @@ nsresult nsUrlClassifierHashCompleterBase::RequestHashCompletions(
     }
   }
 
-  return NS_OK;
-}
-
-nsresult nsUrlClassifierHashCompleterBase::ProcessComplete(
-    RefPtr<CacheResult> aCacheResult) {
-  LookupResultArray* results = GetResultsForCompletion();
-  NS_ENSURE_TRUE(results, NS_ERROR_FAILURE);
-
-  if (!mCacheResults.AppendElement(aCacheResult, fallible)) {
+  LOG(
+      ("nsUrlClassifierLookupCallback::LookupComplete [%p] "
+       "%u pending completions",
+       this, mPendingCompletions));
+  if (mPendingCompletions == 0) {
     
-  }
-
-  for (const auto& result : *results) {
-    if (!result->mNoise && result->mTableName.Equals(aCacheResult->table) &&
-        aCacheResult->findCompletion(result->CompleteHash())) {
-      result->mProtocolConfirmed = true;
-    }
+    HandleResults();
   }
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsUrlClassifierHashCompleterBase::CompletionV2(const nsACString& aCompleteHash,
-                                               const nsACString& aTableName,
-                                               uint32_t aChunkId) {
-  MOZ_ASSERT_UNREACHABLE(
-      "CompletionV2 should be overridden by subclasses that need it");
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsUrlClassifierLookupCallback::CompletionFinished(nsresult status) {
+  if (LOG_ENABLED()) {
+    nsAutoCString errorName;
+    mozilla::GetErrorName(status, errorName);
+    LOG(("nsUrlClassifierLookupCallback::CompletionFinished [%p, %s]", this,
+         errorName.get()));
+  }
+
+  mPendingCompletions--;
+  if (mPendingCompletions == 0) {
+    HandleResults();
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsUrlClassifierHashCompleterBase::CompletionV4(const nsACString& aPartialHash,
-                                               const nsACString& aTableName,
-                                               uint32_t aNegativeCacheDuration,
-                                               nsIArray* aFullHashes) {
-  LOG(("nsUrlClassifierHashCompleterBase::CompletionV4 [%p, %s, %d]", this,
+nsUrlClassifierLookupCallback::CompletionV2(const nsACString& aCompleteHash,
+                                            const nsACString& aTableName,
+                                            uint32_t aChunkId) {
+  LOG(("nsUrlClassifierLookupCallback::Completion [%p, %s, %d]", this,
+       PromiseFlatCString(aTableName).get(), aChunkId));
+
+  MOZ_ASSERT(!StringEndsWith(aTableName, "-proto"_ns));
+
+  RefPtr<CacheResultV2> result = new CacheResultV2();
+
+  result->table = aTableName;
+  result->prefix.Assign(aCompleteHash);
+  result->completion.Assign(aCompleteHash);
+  result->addChunk = aChunkId;
+
+  return ProcessComplete(result);
+}
+
+NS_IMETHODIMP
+nsUrlClassifierLookupCallback::CompletionV4(const nsACString& aPartialHash,
+                                            const nsACString& aTableName,
+                                            uint32_t aNegativeCacheDuration,
+                                            nsIArray* aFullHashes) {
+  LOG(("nsUrlClassifierLookupCallback::CompletionV4 [%p, %s, %d]", this,
        PromiseFlatCString(aTableName).get(), aNegativeCacheDuration));
 
   MOZ_ASSERT(StringEndsWith(aTableName, "-proto"_ns));
@@ -1333,7 +1352,7 @@ nsUrlClassifierHashCompleterBase::CompletionV4(const nsACString& aPartialHash,
 
   if (aNegativeCacheDuration > MAXIMUM_NEGATIVE_CACHE_DURATION_SEC) {
     LOG(
-        ("Negative cache duration too large, clamping it down to "
+        ("Negative cache duration too large, clamping it down to"
          "a reasonable value."));
     aNegativeCacheDuration = MAXIMUM_NEGATIVE_CACHE_DURATION_SEC;
   }
@@ -1346,6 +1365,7 @@ nsUrlClassifierHashCompleterBase::CompletionV4(const nsACString& aPartialHash,
   result->prefix.Assign(aPartialHash);
   result->response.negativeCacheExpirySec = nowSec + aNegativeCacheDuration;
 
+  
   uint32_t fullHashCount = 0;
   nsresult rv = aFullHashes->GetLength(&fullHashCount);
   if (NS_FAILED(rv)) {
@@ -1367,55 +1387,49 @@ nsUrlClassifierHashCompleterBase::CompletionV4(const nsACString& aPartialHash,
   return ProcessComplete(result);
 }
 
-NS_IMETHODIMP
-nsUrlClassifierHashCompleterBase::CompletionFinished(nsresult aStatus) {
-  if (LOG_ENABLED()) {
-    nsAutoCString errorName;
-    mozilla::GetErrorName(aStatus, errorName);
-    LOG(("nsUrlClassifierHashCompleterBase::CompletionFinished [%p, %s]", this,
-         errorName.get()));
+nsresult nsUrlClassifierLookupCallback::ProcessComplete(
+    RefPtr<CacheResult> aCacheResult) {
+  NS_ENSURE_ARG_POINTER(mResults);
+
+  if (!mCacheResults.AppendElement(aCacheResult, fallible)) {
+    
   }
 
-  mPendingCompletions--;
-  if (mPendingCompletions == 0) {
-    OnAllCompletionsFinished();
+  
+  for (const auto& result : *mResults) {
+    
+    if (!result->mNoise && result->mTableName.Equals(aCacheResult->table) &&
+        aCacheResult->findCompletion(result->CompleteHash())) {
+      result->mProtocolConfirmed = true;
+    }
   }
 
   return NS_OK;
 }
 
-nsresult nsUrlClassifierHashCompleterBase::OnAllCompletionsFinished() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mPendingCompletions == 0);
-  MOZ_ASSERT(mCallback);
-
-  if (NS_WARN_IF(!mCallback)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  LookupResultArray* results = GetResultsForCompletion();
-  if (!results) {
-    LOG(
-        ("nsUrlClassifierHashCompleterBase::OnAllCompletionsFinished "
-         "[%p, no results]",
+nsresult nsUrlClassifierLookupCallback::HandleResults() {
+  if (!mResults) {
+    
+    LOG(("nsUrlClassifierLookupCallback::HandleResults [%p, no results]",
          this));
     return mCallback->HandleEvent(""_ns);
   }
-
   MOZ_ASSERT(mPendingCompletions == 0,
-             "OnAllCompletionsFinished() should never be "
+             "HandleResults() should never be "
              "called while there are pending completions");
 
-  LOG(
-      ("nsUrlClassifierHashCompleterBase::OnAllCompletionsFinished "
-       "[%p, %zu results]",
-       this, results->Length()));
+  LOG(("nsUrlClassifierLookupCallback::HandleResults [%p, %zu results]", this,
+       mResults->Length()));
 
   nsCOMPtr<nsIUrlClassifierClassifyCallback> classifyCallback =
       do_QueryInterface(mCallback);
 
   nsTArray<nsCString> tables;
-  for (const auto& result : *results) {
+  
+  for (const auto& result : *mResults) {
+    
+    
+    
     if (result->mNoise) {
       LOG(("Skipping result %s from table %s (noise)",
            result->PartialHashHex().get(), result->mTableName.get()));
@@ -1448,104 +1462,16 @@ nsresult nsUrlClassifierHashCompleterBase::OnAllCompletionsFinished() {
     }
   }
 
-  OnBeforeCacheCompletions();
+  
+  
+  CacheMisses();
 
+  
+  
   mDBService->CacheCompletions(mCacheResults);
   mCacheResults.Clear();
 
   return mCallback->HandleEvent(StringJoin(","_ns, tables));
-}
-
-
-
-
-
-
-
-
-class nsUrlClassifierLookupCallback final
-    : public nsUrlClassifierHashCompleterBase,
-      public nsIUrlClassifierLookupCallback {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIURLCLASSIFIERLOOKUPCALLBACK
-
-  NS_IMETHOD CompletionV2(const nsACString& aCompleteHash,
-                          const nsACString& aTableName,
-                          uint32_t aChunkId) override;
-
-  nsUrlClassifierLookupCallback(nsUrlClassifierDBService* aDBService,
-                                nsIUrlClassifierCallback* aCallback)
-      : nsUrlClassifierHashCompleterBase(aDBService, aCallback) {}
-
- private:
-  ~nsUrlClassifierLookupCallback() = default;
-
-  LookupResultArray* GetResultsForCompletion() override {
-    return mResults.get();
-  }
-  void OnBeforeCacheCompletions() override;
-  nsresult CacheMisses();
-
-  UniquePtr<LookupResultArray> mResults;
-};
-
-NS_IMPL_ISUPPORTS_INHERITED(nsUrlClassifierLookupCallback,
-                            nsUrlClassifierHashCompleterBase,
-                            nsIUrlClassifierLookupCallback)
-
-NS_IMETHODIMP
-nsUrlClassifierLookupCallback::LookupComplete(
-    UniquePtr<LookupResultArray> results) {
-  NS_ASSERTION(
-      mResults == nullptr,
-      "Should only get one set of results per nsUrlClassifierLookupCallback!");
-
-  if (!results) {
-    OnAllCompletionsFinished();
-    return NS_OK;
-  }
-
-  mResults = std::move(results);
-
-  nsresult rv = RequestHashCompletions(mResults.get());
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  LOG(
-      ("nsUrlClassifierLookupCallback::LookupComplete [%p] "
-       "%u pending completions",
-       this, mPendingCompletions));
-
-  if (mPendingCompletions == 0) {
-    OnAllCompletionsFinished();
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsUrlClassifierLookupCallback::CompletionV2(const nsACString& aCompleteHash,
-                                            const nsACString& aTableName,
-                                            uint32_t aChunkId) {
-  LOG(("nsUrlClassifierLookupCallback::Completion [%p, %s, %d]", this,
-       PromiseFlatCString(aTableName).get(), aChunkId));
-
-  MOZ_ASSERT(!StringEndsWith(aTableName, "-proto"_ns));
-
-  RefPtr<CacheResultV2> result = new CacheResultV2();
-
-  result->table = aTableName;
-  result->prefix.Assign(aCompleteHash);
-  result->completion.Assign(aCompleteHash);
-  result->addChunk = aChunkId;
-
-  return ProcessComplete(result);
-}
-
-void nsUrlClassifierLookupCallback::OnBeforeCacheCompletions() {
-  
-  
-  CacheMisses();
 }
 
 nsresult nsUrlClassifierLookupCallback::CacheMisses() {
@@ -1568,255 +1494,6 @@ nsresult nsUrlClassifierLookupCallback::CacheMisses() {
     }
   }
   return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-class nsUrlClassifierRealTimeLookupHandler final
-    : public nsUrlClassifierHashCompleterBase,
-      public nsIUrlClassifierLookupCallback {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIURLCLASSIFIERLOOKUPCALLBACK
-
-  nsUrlClassifierRealTimeLookupHandler(nsUrlClassifierDBService* aDBService,
-                                       nsIUrlClassifierCallback* aCallback,
-                                       bool aIsPrivate)
-      : nsUrlClassifierHashCompleterBase(aDBService, aCallback),
-        mDebugEnabled(
-            Preferences::GetBool("browser.safebrowsing.realTime.debug", false)),
-        mSimulator(
-            StaticPrefs::browser_safebrowsing_realTime_simulation_enabled()
-                ? RealTimeRequestSimulator::GetInstance()
-                : nullptr),
-        mIsPrivate(aIsPrivate) {}
-
-  nsresult StartRealTimeLookup(nsIPrincipal* aPrincipal);
-
- private:
-  ~nsUrlClassifierRealTimeLookupHandler() = default;
-
-  nsresult CreateFeatureHolders(nsIURI* aURI);
-
-  nsresult HandleRealTimeLookupComplete(UniquePtr<LookupResultArray>& aResults);
-  nsresult HandleLocalListLookupComplete(
-      UniquePtr<LookupResultArray>& aResults);
-
-  LookupResultArray* GetResultsForCompletion() override {
-    return mLocalListResults.get();
-  }
-
-  
-  RefPtr<nsUrlClassifierDBService::FeatureHolder> mRealTimeFeatureHolder;
-  RefPtr<nsUrlClassifierDBService::FeatureHolder> mLocalListFeatureHolder;
-
-  UniquePtr<LookupResultArray> mLocalListResults;
-
-  
-  Atomic<bool> mHasCompletedRealTimeLookup{false};
-  nsCString mKey;
-
-  
-  Atomic<bool> mDebugEnabled{false};
-
-  
-  RefPtr<RealTimeRequestSimulator> mSimulator;
-
-  
-  bool mIsPrivate;
-};
-
-NS_IMPL_ISUPPORTS_INHERITED(nsUrlClassifierRealTimeLookupHandler,
-                            nsUrlClassifierHashCompleterBase,
-                            nsIUrlClassifierLookupCallback)
-
-nsresult nsUrlClassifierRealTimeLookupHandler::StartRealTimeLookup(
-    nsIPrincipal* aPrincipal) {
-  LOG(("nsUrlClassifierRealTimeLookupHandler::StartRealTimeLookup [%p]", this));
-  NS_ENSURE_ARG_POINTER(aPrincipal);
-
-  nsCOMPtr<nsIURI> uri;
-  
-  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
-  nsresult rv = basePrincipal->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
-
-  rv = CreateFeatureHolders(uri);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsUrlClassifierUtils* utilsService = nsUrlClassifierUtils::GetInstance();
-  if (NS_WARN_IF(!utilsService)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  rv = utilsService->GetKeyForURI(uri, mKey);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  mDBService->LookupURIWithoutProxy(mKey, mRealTimeFeatureHolder, this);
-
-  return NS_OK;
-}
-
-nsresult nsUrlClassifierRealTimeLookupHandler::CreateFeatureHolders(
-    nsIURI* aURI) {
-  LOG(("nsUrlClassifierRealTimeLookupHandler::CreateFeatureHolders [%p]",
-       this));
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!mRealTimeFeatureHolder && !mLocalListFeatureHolder);
-
-  
-  nsTArray<RefPtr<nsIUrlClassifierFeature>> realTimeFeatures;
-  mozilla::net::UrlClassifierFeatureFactory::GetRealTimeProtectionFeatures(
-      realTimeFeatures);
-
-  
-  if (realTimeFeatures.IsEmpty()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  mRealTimeFeatureHolder = nsUrlClassifierDBService::FeatureHolder::Create(
-      aURI, realTimeFeatures, nsIUrlClassifierFeature::blocklist);
-  if (NS_WARN_IF(!mRealTimeFeatureHolder)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  nsTArray<RefPtr<nsIUrlClassifierFeature>> localListFeatures;
-  mozilla::net::UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
-      localListFeatures);
-
-  
-  if (localListFeatures.IsEmpty()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  mLocalListFeatureHolder = nsUrlClassifierDBService::FeatureHolder::Create(
-      aURI, localListFeatures, nsIUrlClassifierFeature::blocklist);
-  if (NS_WARN_IF(!mLocalListFeatureHolder)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-nsresult nsUrlClassifierRealTimeLookupHandler::HandleRealTimeLookupComplete(
-    UniquePtr<LookupResultArray>& aResults) {
-  MOZ_ASSERT(!mHasCompletedRealTimeLookup);
-
-  mHasCompletedRealTimeLookup = true;
-
-  bool hasGlobalCacheHit = aResults && !aResults->IsEmpty();
-
-  
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "nsUrlClassifierRealTimeLookupHandler::RecordGlobalCacheTelemetry",
-      [hasGlobalCacheHit, isPrivate = mIsPrivate]() {
-        nsAutoCString etpCategory;
-        nsresult rv = Preferences::GetCString(
-            "browser.contentblocking.category", etpCategory);
-        if (NS_SUCCEEDED(rv)) {
-          nsAutoCString label;
-          if (etpCategory.EqualsLiteral("standard") ||
-              etpCategory.EqualsLiteral("strict") ||
-              etpCategory.EqualsLiteral("custom")) {
-            label = etpCategory;
-          } else {
-            label = "other"_ns;
-          }
-          label.Append('_');
-          label.Append(isPrivate ? "private"_ns : "normal"_ns);
-
-          if (hasGlobalCacheHit) {
-            glean::urlclassifier::global_cache_hit.Get(label).Add(1);
-          } else {
-            glean::urlclassifier::global_cache_miss.Get(label).Add(1);
-          }
-        }
-      }));
-
-  
-  if (mDebugEnabled) {
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "nsUrlClassifierRealTimeLookupHandler::NotifyGlobalCacheResult",
-        [hasGlobalCacheHit]() {
-          nsCOMPtr<nsIObserverService> observerService =
-              mozilla::services::GetObserverService();
-          if (observerService) {
-            const char16_t* result = hasGlobalCacheHit ? u"hit" : u"miss";
-            observerService->NotifyObservers(
-                nullptr, "urlclassifier-globalcache-result", result);
-          }
-        }));
-  }
-
-  
-  if (!hasGlobalCacheHit && mSimulator) {
-    mSimulator->SimulateRealTimeRequest(mKey, mIsPrivate);
-  }
-
-  
-  
-
-  
-  mDBService->LookupURIWithoutProxy(mKey, mLocalListFeatureHolder, this);
-
-  return NS_OK;
-}
-
-nsresult nsUrlClassifierRealTimeLookupHandler::HandleLocalListLookupComplete(
-    UniquePtr<LookupResultArray>& aResults) {
-  MOZ_ASSERT(mHasCompletedRealTimeLookup);
-
-  
-  
-  
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "nsUrlClassifierRealTimeLookupHandler::HandleLocalListLookupComplete",
-      [self = RefPtr{this}, results = std::move(aResults)]() mutable {
-        self->mLocalListResults = std::move(results);
-
-        if (self->mLocalListResults) {
-          nsresult rv =
-              self->RequestHashCompletions(self->mLocalListResults.get());
-          if (NS_FAILED(rv)) {
-            NS_WARNING("Failed to request hash completions");
-            self->OnAllCompletionsFinished();
-            return;
-          }
-        }
-
-        if (self->mPendingCompletions == 0) {
-          self->OnAllCompletionsFinished();
-        }
-      }));
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsUrlClassifierRealTimeLookupHandler::LookupComplete(
-    UniquePtr<LookupResultArray> aResults) {
-  MOZ_ASSERT(!NS_IsMainThread());
-
-  if (!mHasCompletedRealTimeLookup) {
-    return HandleRealTimeLookupComplete(aResults);
-  }
-
-  return HandleLocalListLookupComplete(aResults);
 }
 
 struct LiteralProvider {
@@ -2104,27 +1781,6 @@ nsUrlClassifierDBService::Classify(nsIPrincipal* aPrincipal,
 
   if (perm == nsIPermissionManager::ALLOW_ACTION) {
     *aResult = false;
-    return NS_OK;
-  }
-
-  if (Classifier::IsRealTimeModeEnabled()) {
-    RefPtr<nsUrlClassifierClassifyCallback> callback =
-        new (fallible) nsUrlClassifierClassifyCallback(c);
-    if (NS_WARN_IF(!callback)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    RefPtr<nsUrlClassifierRealTimeLookupHandler> handler =
-        new (fallible) nsUrlClassifierRealTimeLookupHandler(
-            this, callback, aPrincipal->GetIsInPrivateBrowsing());
-    if (NS_WARN_IF(!handler)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    rv = handler->StartRealTimeLookup(aPrincipal);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    *aResult = true;
     return NS_OK;
   }
 
@@ -2439,24 +2095,6 @@ nsUrlClassifierDBService::Lookup(nsIPrincipal* aPrincipal,
   return LookupURI(key, holder, aCallback);
 }
 
-nsresult nsUrlClassifierDBService::LookupURIWithoutProxy(
-    const nsACString& aKey, FeatureHolder* aHolder,
-    nsIUrlClassifierLookupCallback* aCallback) {
-  MOZ_ASSERT(aHolder);
-  MOZ_ASSERT(aCallback);
-
-  NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
-
-  
-  
-  nsresult rv = mWorker->QueueLookup(aKey, aHolder, aCallback);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsAutoCString dummy;
-  return mWorkerProxy->Lookup(nullptr, dummy, nullptr);
-}
-
 nsresult nsUrlClassifierDBService::LookupURI(
     const nsACString& aKey, FeatureHolder* aHolder,
     nsIUrlClassifierCallback* aCallback) {
@@ -2629,23 +2267,6 @@ nsUrlClassifierDBService::ClearCache() {
   NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
 
   return mWorkerProxy->ClearCache();
-}
-
-NS_IMETHODIMP
-nsUrlClassifierDBService::CleanRealTimeSimulatorCache() {
-  NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
-
-  RefPtr<RealTimeRequestSimulator> simulator =
-      RealTimeRequestSimulator::GetInstance();
-
-  BackgroundThread()->Dispatch(NS_NewRunnableFunction(
-      "nsUrlClassifierDBService::CleanRealTimeSimulatorCache", [simulator]() {
-        if (simulator) {
-          simulator->CleanCache();
-        }
-      }));
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP

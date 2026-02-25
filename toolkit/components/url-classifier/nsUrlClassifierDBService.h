@@ -92,12 +92,6 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   nsresult CacheCompletions(
       const mozilla::safebrowsing::ConstCacheResultArray& results);
 
-  
-  
-  
-  nsresult LookupURIWithoutProxy(const nsACString& aKey, FeatureHolder* aHolder,
-                                 nsIUrlClassifierLookupCallback* aCallback);
-
   static nsIThread* BackgroundThread();
 
   static bool ShutdownHasStarted();
