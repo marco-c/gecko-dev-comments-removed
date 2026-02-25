@@ -307,7 +307,7 @@ class nsIContent : public nsINode {
 
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
-    return slots ? slots->mContainingShadow.get() : nullptr;
+    return slots ? slots->mContainingShadow : nullptr;
   }
 
   
@@ -649,7 +649,8 @@ class nsIContent : public nsINode {
     
 
 
-    RefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
+
+    mozilla::dom::ShadowRoot* mContainingShadow = nullptr;
 
     
 
