@@ -678,7 +678,7 @@ mod inner {
         #[inline]
         pub(super) fn value(&self) -> &T {
             match self.value {
-                Ok(ref v) => &**v,
+                Ok(ref v) => v,
                 
                 
                 
@@ -703,7 +703,7 @@ mod inner {
         #[inline]
         pub(super) fn value_mut(&mut self) -> &mut T {
             match self.value {
-                Ok(ref mut v) => &mut **v,
+                Ok(ref mut v) => v,
                 
                 
                 

@@ -1338,6 +1338,8 @@ impl Inner {
             self.look_set_prefix_any =
                 self.look_set_prefix_any.union(prefix_any);
         }
+        self.states.shrink_to_fit();
+        self.start_pattern.shrink_to_fit();
         NFA(Arc::new(self))
     }
 
@@ -1471,13 +1473,13 @@ impl fmt::Debug for Inner {
         }
         let pattern_len = self.start_pattern.len();
         if pattern_len > 1 {
-            writeln!(f, "")?;
+            writeln!(f)?;
             for pid in 0..pattern_len {
                 let sid = self.start_pattern[pid];
                 writeln!(f, "START({:06?}): {:?}", pid, sid.as_usize())?;
             }
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
         writeln!(
             f,
             "transition equivalence classes: {:?}",
@@ -1730,10 +1732,10 @@ impl fmt::Debug for State {
             State::Sparse(SparseTransitions { ref transitions }) => {
                 let rs = transitions
                     .iter()
-                    .map(|t| format!("{:?}", t))
+                    .map(|t| format!("{t:?}"))
                     .collect::<Vec<String>>()
                     .join(", ");
-                write!(f, "sparse({})", rs)
+                write!(f, "sparse({rs})")
             }
             State::Dense(ref dense) => {
                 write!(f, "dense(")?;
@@ -1741,7 +1743,7 @@ impl fmt::Debug for State {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{:?}", t)?;
+                    write!(f, "{t:?}")?;
                 }
                 write!(f, ")")
             }
@@ -1754,7 +1756,7 @@ impl fmt::Debug for State {
                     .map(|id| format!("{:?}", id.as_usize()))
                     .collect::<Vec<String>>()
                     .join(", ");
-                write!(f, "union({})", alts)
+                write!(f, "union({alts})")
             }
             State::BinaryUnion { alt1, alt2 } => {
                 write!(
@@ -1819,7 +1821,7 @@ impl SparseTransitions {
         &self,
         unit: alphabet::Unit,
     ) -> Option<StateID> {
-        unit.as_u8().map_or(None, |byte| self.matches_byte(byte))
+        unit.as_u8().and_then(|byte| self.matches_byte(byte))
     }
 
     
@@ -1903,17 +1905,14 @@ impl DenseTransitions {
     
     
     
-    
     #[inline]
     pub(crate) fn matches_unit(
         &self,
         unit: alphabet::Unit,
     ) -> Option<StateID> {
-        unit.as_u8().map_or(None, |byte| self.matches_byte(byte))
+        unit.as_u8().and_then(|byte| self.matches_byte(byte))
     }
 
-    
-    
     
     
     
