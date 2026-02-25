@@ -332,6 +332,11 @@ interface nsICookieManager : nsISupports
   Array<ACString> testGet3PCBExceptions();
 
   
+  
+  void testCloseCookieDB();
+  void testOpenCookieDB();
+
+  
 
 
 
