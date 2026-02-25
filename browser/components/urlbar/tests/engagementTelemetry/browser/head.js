@@ -159,7 +159,12 @@ async function ensureQuickSuggestInit({ ...args } = {}) {
             data: {
               result: {
                 payload: {
-                  dates: ["2025-03-05", "2026-02-18"],
+                  dates: [
+                    
+                    
+                    Temporal.Now.plainDateISO().add({ months: 1 }).toString(),
+                    Temporal.Now.plainDateISO().add({ years: 1 }).toString(),
+                  ],
                   name: "Event 1",
                 },
               },
