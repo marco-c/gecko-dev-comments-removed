@@ -301,7 +301,11 @@ this.windows = class extends ExtensionAPIPersistent {
               );
             }
 
-            args.appendElement(tab);
+            
+            
+            const tabToAdopt = tab.splitview ?? tab;
+            
+            args.appendElement(tabToAdopt);
           } else if (createData.url !== null) {
             if (Array.isArray(createData.url)) {
               let array = Cc["@mozilla.org/array;1"].createInstance(
