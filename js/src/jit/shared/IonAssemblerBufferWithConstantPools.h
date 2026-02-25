@@ -189,22 +189,22 @@ class BranchDeadlineSet {
   
   
   
-  using RangeVector = Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>>;
+  using DeadlineList = Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>>;
 
   
   
   
   
   
-  mozilla::AlignedStorage2<RangeVector[NumRanges]> deadlineStorage_;
+  mozilla::AlignedStorage2<DeadlineList[NumRanges]> deadlineStorage_;
 
   
-  RangeVector& vectorForRange(unsigned rangeIdx) {
+  DeadlineList& listForRange(unsigned rangeIdx) {
     MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
     return (*deadlineStorage_.addr())[rangeIdx];
   }
 
-  const RangeVector& vectorForRange(unsigned rangeIdx) const {
+  const DeadlineList& listForRange(unsigned rangeIdx) const {
     MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
     return (*deadlineStorage_.addr())[rangeIdx];
   }
@@ -220,9 +220,9 @@ class BranchDeadlineSet {
   void recomputeEarliest() {
     earliest_ = BufferOffset();
     for (unsigned r = 0; r < NumRanges; r++) {
-      auto& vec = vectorForRange(r);
-      if (!vec.empty() && (!earliest_.assigned() || vec[0] < earliest_)) {
-        earliest_ = vec[0];
+      auto& list = listForRange(r);
+      if (!list.empty() && (!earliest_.assigned() || list[0] < earliest_)) {
+        earliest_ = list[0];
         earliestRange_ = r;
       }
     }
@@ -245,14 +245,14 @@ class BranchDeadlineSet {
     
     
     for (unsigned r = 0; r < NumRanges; r++) {
-      new (&vectorForRange(r)) RangeVector(alloc);
+      new (&listForRange(r)) DeadlineList(alloc);
     }
   }
 
   ~BranchDeadlineSet() {
     
     for (unsigned r = 0; r < NumRanges; r++) {
-      vectorForRange(r).~RangeVector();
+      listForRange(r).~DeadlineList();
     }
   }
 
@@ -263,7 +263,7 @@ class BranchDeadlineSet {
   size_t size() const {
     size_t count = 0;
     for (unsigned r = 0; r < NumRanges; r++) {
-      count += vectorForRange(r).length();
+      count += listForRange(r).length();
     }
     return count;
   }
@@ -272,7 +272,7 @@ class BranchDeadlineSet {
   size_t maxRangeSize() const {
     size_t count = 0;
     for (unsigned r = 0; r < NumRanges; r++) {
-      count = std::max(count, vectorForRange(r).length());
+      count = std::max(count, listForRange(r).length());
     }
     return count;
   }
@@ -300,17 +300,17 @@ class BranchDeadlineSet {
   bool addDeadline(unsigned rangeIdx, BufferOffset deadline) {
     MOZ_ASSERT(deadline.assigned(), "Can only store assigned buffer offsets");
     
-    auto& vec = vectorForRange(rangeIdx);
+    auto& list = listForRange(rangeIdx);
 
     
     
-    if (!vec.empty() && vec.back() < deadline) {
-      return vec.append(deadline);
+    if (!list.empty() && list.back() < deadline) {
+      return list.append(deadline);
     }
 
     
-    if (vec.empty()) {
-      return vec.append(deadline) && updateEarliest(rangeIdx, deadline);
+    if (list.empty()) {
+      return list.append(deadline) && updateEarliest(rangeIdx, deadline);
     }
 
     return addDeadlineSlow(rangeIdx, deadline);
@@ -321,38 +321,38 @@ class BranchDeadlineSet {
   
   
   bool addDeadlineSlow(unsigned rangeIdx, BufferOffset deadline) {
-    auto& vec = vectorForRange(rangeIdx);
+    auto& list = listForRange(rangeIdx);
 
     
     
     
-    auto at = std::lower_bound(vec.begin(), vec.end(), deadline);
-    MOZ_ASSERT(at == vec.end() || *at != deadline,
+    auto at = std::lower_bound(list.begin(), list.end(), deadline);
+    MOZ_ASSERT(at == list.end() || *at != deadline,
                "Cannot insert duplicate deadlines");
-    return vec.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
+    return list.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
   }
 
  public:
   
   
   void removeDeadline(unsigned rangeIdx, BufferOffset deadline) {
-    auto& vec = vectorForRange(rangeIdx);
+    auto& list = listForRange(rangeIdx);
 
-    if (vec.empty()) {
+    if (list.empty()) {
       return;
     }
 
-    if (deadline == vec.back()) {
+    if (deadline == list.back()) {
       
       
-      vec.popBack();
+      list.popBack();
     } else {
       
-      auto where = std::lower_bound(vec.begin(), vec.end(), deadline);
-      if (where == vec.end() || *where != deadline) {
+      auto where = std::lower_bound(list.begin(), list.end(), deadline);
+      if (where == list.end() || *where != deadline) {
         return;
       }
-      vec.erase(where);
+      list.erase(where);
     }
     if (deadline == earliest_) {
       recomputeEarliest();
@@ -620,6 +620,11 @@ struct AssemblerBufferWithConstantPools
   
   
   size_t inhibitPoolsMaxInst_;
+  
+  
+  size_t inhibitPoolsMaxNewDeadlines_;
+  
+  size_t inhibitPoolsActualNewDeadlines_;
 #endif
 
   
@@ -660,6 +665,8 @@ struct AssemblerBufferWithConstantPools
 #ifdef DEBUG
         inhibitPoolsStartOffset_(~size_t(0) ),
         inhibitPoolsMaxInst_(0),
+        inhibitPoolsMaxNewDeadlines_(0),
+        inhibitPoolsActualNewDeadlines_(0),
 #endif
         alignFillInst_(alignFillInst),
         nopFillInst_(nopFillInst),
@@ -703,7 +710,8 @@ struct AssemblerBufferWithConstantPools
 
   
   
-  bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries) const {
+  bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries,
+                        unsigned numNewDeadlines = 0) const {
     size_t nextOffset = sizeExcludingCurrentPool();
     
     
@@ -746,8 +754,11 @@ struct AssemblerBufferWithConstantPools
       
 
       
-      size_t secondaryVeneers = guardSize_ * (branchDeadlines_.size() -
-                                              branchDeadlines_.maxRangeSize());
+      size_t secondaryVeneers =
+          guardSize_ *
+          (branchDeadlines_.size() - branchDeadlines_.maxRangeSize() +
+           numNewDeadlines) *
+          InstSize;
 
       if (deadline < poolEnd + secondaryVeneers) {
         return false;
@@ -917,6 +928,13 @@ struct AssemblerBufferWithConstantPools
     if (!this->oom() && !branchDeadlines_.addDeadline(rangeIdx, deadline)) {
       this->fail_oom();
     }
+#ifdef DEBUG
+    if (inhibitPools_ > 0) {
+      inhibitPoolsActualNewDeadlines_++;
+      MOZ_ASSERT(inhibitPoolsActualNewDeadlines_ <=
+                 inhibitPoolsMaxNewDeadlines_);
+    }
+#endif
   }
 
   
@@ -930,6 +948,12 @@ struct AssemblerBufferWithConstantPools
     if (!this->oom()) {
       branchDeadlines_.removeDeadline(rangeIdx, deadline);
     }
+#ifdef DEBUG
+    if (inhibitPools_ > 0) {
+      MOZ_ASSERT(inhibitPoolsMaxNewDeadlines_ > 0);
+      inhibitPoolsActualNewDeadlines_--;
+    }
+#endif
   }
 
  private:
@@ -1054,7 +1078,7 @@ struct AssemblerBufferWithConstantPools
     finishPool(SIZE_MAX);
   }
 
-  void enterNoPool(size_t maxInst) {
+  void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {
     
     MOZ_ASSERT(maxInst > 0);
 
@@ -1075,6 +1099,8 @@ struct AssemblerBufferWithConstantPools
                  inhibitPoolsStartOffset_);
       MOZ_ASSERT(size_t(this->nextOffset().getOffset()) + maxInst * InstSize <=
                  inhibitPoolsStartOffset_ + inhibitPoolsMaxInst_ * InstSize);
+      MOZ_ASSERT(inhibitPoolsActualNewDeadlines_ + maxNewDeadlines <=
+                 inhibitPoolsMaxNewDeadlines_);
       inhibitPools_++;
       return;
     }
@@ -1083,6 +1109,8 @@ struct AssemblerBufferWithConstantPools
     MOZ_ASSERT(inhibitPools_ == 0);
     MOZ_ASSERT(inhibitPoolsStartOffset_ == ~size_t(0));
     MOZ_ASSERT(inhibitPoolsMaxInst_ == 0);
+    MOZ_ASSERT(inhibitPoolsMaxNewDeadlines_ == 0);
+    MOZ_ASSERT(inhibitPoolsActualNewDeadlines_ == 0);
 
     insertNopFill();
 
@@ -1090,14 +1118,14 @@ struct AssemblerBufferWithConstantPools
     
     
     
-    if (!hasSpaceForInsts(maxInst, 0)) {
+    if (!hasSpaceForInsts(maxInst, 0, maxNewDeadlines)) {
       JitSpew(JitSpew_Pools, "No-Pool instruction(%zu) caused a spill.",
               sizeExcludingCurrentPool());
       finishPool(maxInst * InstSize);
       if (this->oom()) {
         return;
       }
-      MOZ_ASSERT(hasSpaceForInsts(maxInst, 0));
+      MOZ_ASSERT(hasSpaceForInsts(maxInst, 0, maxNewDeadlines));
     }
 
 #ifdef DEBUG
@@ -1105,6 +1133,8 @@ struct AssemblerBufferWithConstantPools
     
     inhibitPoolsStartOffset_ = this->nextOffset().getOffset();
     inhibitPoolsMaxInst_ = maxInst;
+    inhibitPoolsMaxNewDeadlines_ = maxNewDeadlines;
+    inhibitPoolsActualNewDeadlines_ = 0;
     MOZ_ASSERT(inhibitPoolsStartOffset_ != ~size_t(0));
 #endif
 
@@ -1134,10 +1164,13 @@ struct AssemblerBufferWithConstantPools
     
     MOZ_ASSERT(this->nextOffset().getOffset() - inhibitPoolsStartOffset_ <=
                inhibitPoolsMaxInst_ * InstSize);
+    MOZ_ASSERT(inhibitPoolsActualNewDeadlines_ <= inhibitPoolsMaxNewDeadlines_);
 
 #ifdef DEBUG
     inhibitPoolsStartOffset_ = ~size_t(0);
     inhibitPoolsMaxInst_ = 0;
+    inhibitPoolsMaxNewDeadlines_ = 0;
+    inhibitPoolsActualNewDeadlines_ = 0;
 #endif
 
     inhibitPools_ = 0;
