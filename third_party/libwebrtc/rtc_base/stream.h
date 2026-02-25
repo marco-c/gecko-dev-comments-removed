@@ -21,7 +21,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/system/rtc_export.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -102,26 +101,7 @@ class RTC_EXPORT StreamInterface {
   }
 
   
-  sigslot::signal3<StreamInterface*, int, int> SignalEvent
-      [[deprecated("Use SetEventCallback instead")]];
-
-  
   virtual bool Flush();
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  StreamResult WriteAll(ArrayView<const uint8_t> data,
-                        size_t& written,
-                        int& error);
 
  protected:
   StreamInterface();
@@ -131,12 +111,6 @@ class RTC_EXPORT StreamInterface {
     if (callback_) {
       callback_(stream_events, err);
     }
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    
-    
-    SignalEvent(this, stream_events, err);
-#pragma clang diagnostic pop
   }
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker callback_sequence_{
@@ -149,26 +123,5 @@ class RTC_EXPORT StreamInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::SE_CLOSE;
-using ::webrtc::SE_OPEN;
-using ::webrtc::SE_READ;
-using ::webrtc::SE_WRITE;
-using ::webrtc::SR_BLOCK;
-using ::webrtc::SR_EOS;
-using ::webrtc::SR_ERROR;
-using ::webrtc::SR_SUCCESS;
-using ::webrtc::SS_CLOSED;
-using ::webrtc::SS_OPEN;
-using ::webrtc::SS_OPENING;
-using ::webrtc::StreamEvent;
-using ::webrtc::StreamInterface;
-using ::webrtc::StreamResult;
-using ::webrtc::StreamState;
-}  
-#endif  
 
 #endif  

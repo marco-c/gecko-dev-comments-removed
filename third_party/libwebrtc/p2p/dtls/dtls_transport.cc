@@ -591,7 +591,7 @@ int DtlsTransportInternalImpl::SendPacket(
         
         
         
-        StreamResult result = dtls_->WriteAll(
+        StreamResult result = dtls_->Write(
             MakeArrayView(reinterpret_cast<const uint8_t*>(data), size),
             written, error);
         if (result != SR_SUCCESS) {
@@ -600,6 +600,10 @@ int DtlsTransportInternalImpl::SendPacket(
           downward_->ClearNextPacketOptions();
           return -1;
         }
+        
+        
+        
+        RTC_CHECK(written == size);
         return static_cast<int>(size);
       }
     case DtlsTransportState::kFailed:
