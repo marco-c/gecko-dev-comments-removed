@@ -107,6 +107,9 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
   
   virtual void Terminate(
       absl::AnyInvocable<void()> terminate_complete_callback) = 0;
+
+  virtual std::string_view IceUsernameFragment() = 0;
+  virtual std::string_view IcePassword() = 0;
 };
 
 }  
