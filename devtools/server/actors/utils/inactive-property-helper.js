@@ -672,6 +672,27 @@ class InactivePropertyHelper {
         fixId: "inactive-css-no-principal-box-fix",
         msgId: "inactive-css-no-principal-box",
       },
+      
+      
+      {
+        invalidProperties: ["position-area"],
+        when: () =>
+          !this.isAbsolutelyPositioned &&
+          ChromeUtils.getClassName(this.cssRule) !== "CSSPositionTryRule",
+        msgId: "inactive-css-not-absolutely-positioned-item",
+        fixId: "inactive-css-not-absolutely-positioned-item-fix",
+      },
+      
+      
+      {
+        invalidProperties: ["position-area"],
+        when: () =>
+          this.isAbsolutelyPositioned &&
+          !this.hasDefaultAnchorElement() &&
+          ChromeUtils.getClassName(this.cssRule) !== "CSSPositionTryRule",
+        msgId: "inactive-css-no-default-anchor",
+        fixId: "inactive-css-no-default-anchor-fix",
+      },
     ];
   }
 
@@ -1622,6 +1643,10 @@ class InactivePropertyHelper {
     
     
     return computedStyle(node).writingMode !== "horizontal-tb";
+  }
+
+  hasDefaultAnchorElement() {
+    return InspectorUtils.getAnchorFor(this.node) !== null;
   }
 
   
