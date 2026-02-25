@@ -345,6 +345,10 @@
       let indexOfReplacedTab = this.tabs.indexOf(tabToReplace);
       this.addTabs([newTab], { isSessionRestore: false, indexOfReplacedTab });
       gBrowser.removeTab(tabToReplace);
+
+      
+      this.#activate();
+      gBrowser.setIsSplitViewActive(true, this.#tabs);
     }
 
     
