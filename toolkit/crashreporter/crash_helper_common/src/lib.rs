@@ -14,6 +14,7 @@ mod ipc_listener;
 mod ipc_queue;
 mod platform;
 
+use bytes::Bytes;
 use messages::MessageError;
 
 
@@ -39,11 +40,11 @@ pub use crate::platform::{
 
 pub trait BreakpadString {
     
-    fn serialize(&self) -> Vec<u8>;
+    fn serialize(self) -> Bytes;
 
     
     
-    fn deserialize(bytes: &[u8]) -> Result<OsString, MessageError>;
+    fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError>;
 
     
     
