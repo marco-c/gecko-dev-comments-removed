@@ -894,14 +894,18 @@ public class GeckoAppShell {
   }
 
   
+
+
+
+
   @WrapForJNI(calledFrom = "gecko")
   public static synchronized int getScreenDepth() {
     if (sScreenDepth == 0) {
-      sScreenDepth = 16;
+      sScreenDepth = 24;
       final Context applicationContext = getApplicationContext();
       final PixelFormat info = new PixelFormat();
       PixelFormat.getPixelFormatInfo(sScreenCompat.getDisplay(sDisplayId).getPixelFormat(), info);
-      if (info.bitsPerPixel >= 24 && isHighMemoryDevice(applicationContext)) {
+      if (info.bitsPerPixel >= 24) {
         sScreenDepth = sUseMaxScreenDepth ? info.bitsPerPixel : 24;
       }
     }
