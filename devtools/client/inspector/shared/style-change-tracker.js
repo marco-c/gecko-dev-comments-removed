@@ -17,8 +17,9 @@ const WalkerEventListener = require("resource://devtools/client/inspector/shared
 
 
 
-class InspectorStyleChangeTracker {
+class InspectorStyleChangeTracker extends EventEmitter {
   constructor(inspector) {
+    super();
     this.selection = inspector.selection;
 
     this.onMutations = this.onMutations.bind(this);
@@ -28,8 +29,6 @@ class InspectorStyleChangeTracker {
       mutations: this.onMutations,
       resize: this.onResized,
     });
-
-    EventEmitter.decorate(this);
   }
 
   destroy() {

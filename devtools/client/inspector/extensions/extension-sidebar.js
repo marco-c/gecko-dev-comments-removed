@@ -42,9 +42,9 @@ const {
 
 
 
-class ExtensionSidebar {
+class ExtensionSidebar extends EventEmitter {
   constructor(inspector, { id, title }) {
-    EventEmitter.decorate(this);
+    super();
     this.inspector = inspector;
     this.store = inspector.store;
     this.id = id;

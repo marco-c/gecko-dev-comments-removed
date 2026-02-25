@@ -26,9 +26,9 @@ loader.lazyRequireGetter(
 
 
 
-class SwatchBasedEditorTooltip {
+class SwatchBasedEditorTooltip extends EventEmitter {
   constructor(document) {
-    EventEmitter.decorate(this);
+    super();
 
     
     

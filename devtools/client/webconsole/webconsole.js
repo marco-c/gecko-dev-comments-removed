@@ -48,7 +48,7 @@ const isMacOS = Services.appinfo.OS === "Darwin";
 
 
 
-class WebConsole {
+class WebConsole extends EventEmitter {
   
 
 
@@ -68,6 +68,7 @@ class WebConsole {
     chromeWindow,
     isBrowserConsole = false
   ) {
+    super();
     this.toolbox = toolbox;
     this.commands = commands;
     this.iframeWindow = iframeWindow;
@@ -87,8 +88,6 @@ class WebConsole {
     }
     this.ui = new WebConsoleUI(this);
     this._destroyer = null;
-
-    EventEmitter.decorate(this);
   }
 
   recordEvent(event, extra = {}) {

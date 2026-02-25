@@ -60,11 +60,11 @@ function copyStream(input, output, length) {
   return copier.copy();
 }
 
-class StreamCopier {
+class StreamCopier extends EventEmitter {
   static _nextId = 0;
 
   constructor(input, output, length) {
-    EventEmitter.decorate(this);
+    super();
     this._id = StreamCopier._nextId++;
     this.input = input;
     

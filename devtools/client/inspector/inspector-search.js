@@ -19,7 +19,7 @@ const MAX_SUGGESTIONS = 15;
 
 
 
-class InspectorSearch {
+class InspectorSearch extends EventEmitter {
   
 
 
@@ -37,6 +37,7 @@ class InspectorSearch {
 
 
   constructor(inspector, input, clearBtn, prevBtn, nextBtn) {
+    super();
     this.inspector = inspector;
     this.searchBox = input;
     this.searchClearButton = clearBtn;
@@ -57,7 +58,6 @@ class InspectorSearch {
     this.searchClearButton.addEventListener("click", this._onClearSearch);
 
     this.autocompleter = new SelectorAutocompleter(inspector, input);
-    EventEmitter.decorate(this);
   }
   destroy() {
     this.searchBox.removeEventListener("keydown", this._onKeyDown, true);

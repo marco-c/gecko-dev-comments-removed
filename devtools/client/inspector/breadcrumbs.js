@@ -28,16 +28,16 @@ const SHADOW_ROOT_TAGNAME = "#shadow-root";
 
 
 
-class ArrowScrollBox {
+class ArrowScrollBox extends EventEmitter {
   
 
 
 
   constructor(win, container) {
+    super();
     this.win = win;
     this.doc = win.document;
     this.container = container;
-    EventEmitter.decorate(this);
     this.init();
   }
   

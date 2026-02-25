@@ -30,9 +30,9 @@ var gTestTransports = {};
 
 
 
-class TestTransport {
+class TestTransport extends EventEmitter {
   constructor(port) {
-    EventEmitter.decorate(this);
+    super();
     this.port = port;
     gTestTransports[this.port] = this;
   }

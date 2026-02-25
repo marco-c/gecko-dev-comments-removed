@@ -46,11 +46,11 @@ const CLOSE_DELAY = 750;
 
 
 
-class EyeDropper {
+class EyeDropper extends EventEmitter {
   #pageEventListenersAbortController;
   #debouncedUpdateScreenshot;
   constructor(highlighterEnv) {
-    EventEmitter.decorate(this);
+    super();
 
     this.highlighterEnv = highlighterEnv;
     this.markup = new CanvasFrameAnonymousContentHelper(

@@ -113,12 +113,13 @@ const GLEAN_COUNTER_NAMES = {
 
 
 
-class HighlightersOverlay {
+class HighlightersOverlay extends EventEmitter {
   
 
 
 
   constructor(inspector) {
+    super();
     this.inspector = inspector;
     this.store = this.inspector.store;
 
@@ -213,8 +214,6 @@ class HighlightersOverlay {
     if (this.toolbox.win.matchMedia("(prefers-reduced-motion)").matches) {
       this.#showSimpleHighlightersMessage();
     }
-
-    EventEmitter.decorate(this);
   }
 
   

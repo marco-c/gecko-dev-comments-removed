@@ -77,7 +77,7 @@ const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 
 
 
-class DevTools {
+class DevTools extends EventEmitter {
   
   
   
@@ -96,13 +96,14 @@ class DevTools {
       );
     }
 
+    super();
+
     this._tools = new Map(); 
     this._themes = new Map(); 
     this._toolboxesPerCommands = new Map(); 
     
     this._creatingToolboxes = new Map(); 
 
-    EventEmitter.decorate(this);
     this._telemetry = new Telemetry();
 
     

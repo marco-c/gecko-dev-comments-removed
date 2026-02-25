@@ -133,9 +133,9 @@ const HEADERS_NON_L10N_STRINGS = {
 
 
 
-class StorageUI {
+class StorageUI extends EventEmitter {
   constructor(panelWin, toolbox, commands) {
-    EventEmitter.decorate(this);
+    super();
     this._window = panelWin;
     this._panelDoc = panelWin.document;
     this._toolbox = toolbox;

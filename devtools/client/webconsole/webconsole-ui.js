@@ -54,11 +54,12 @@ const PREF_BROWSERTOOLBOX_SCOPE = "devtools.browsertoolbox.scope";
 
 
 
-class WebConsoleUI {
+class WebConsoleUI extends EventEmitter {
   
 
 
   constructor(hud) {
+    super();
     this.hud = hud;
     this.hudId = this.hud.hudId;
     this.isBrowserConsole = this.hud.isBrowserConsole;
@@ -85,8 +86,6 @@ class WebConsoleUI {
         this._onScopePrefChanged
       );
     }
-
-    EventEmitter.decorate(this);
   }
 
   

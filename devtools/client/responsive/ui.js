@@ -68,7 +68,7 @@ function debug(_msg) {
 
 
 
-class ResponsiveUI {
+class ResponsiveUI extends EventEmitter {
   
 
 
@@ -78,6 +78,7 @@ class ResponsiveUI {
 
 
   constructor(manager, window, tab) {
+    super();
     this.manager = manager;
     
     this.browserWindow = window;
@@ -106,7 +107,6 @@ class ResponsiveUI {
     this.resolveInited = resolve;
 
     this.dynamicToolbar = null;
-    EventEmitter.decorate(this);
   }
 
   get toolWindow() {

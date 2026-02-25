@@ -11,6 +11,7 @@
 
 
 
+const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 
@@ -18,19 +19,18 @@
 
 
 
-class PerformancePanel {
+
+class PerformancePanel extends EventEmitter {
   
 
 
 
 
   constructor(iframeWindow, toolbox, commands) {
+    super();
     this.panelWin = iframeWindow;
     this.toolbox = toolbox;
     this.commands = commands;
-
-    const EventEmitter = require("resource://devtools/shared/event-emitter.js");
-    EventEmitter.decorate(this);
   }
 
   

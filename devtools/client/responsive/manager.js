@@ -56,13 +56,12 @@ loader.lazyRequireGetter(
 
 
 
-class ResponsiveUIManager {
+class ResponsiveUIManager extends EventEmitter {
   constructor() {
+    super();
     this.activeTabs = new Map();
 
     this.handleMenuCheck = this.handleMenuCheck.bind(this);
-
-    EventEmitter.decorate(this);
   }
 
   get telemetry() {

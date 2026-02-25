@@ -312,7 +312,7 @@ const getRelativeRect = function (node, relativeTo) {
 
 
 
-class HTMLTooltip {
+class HTMLTooltip extends EventEmitter {
   
 
 
@@ -352,7 +352,7 @@ class HTMLTooltip {
       noAutoHide = false,
     } = {}
   ) {
-    EventEmitter.decorate(this);
+    super();
 
     this.doc = toolboxDoc;
     this.id = id;

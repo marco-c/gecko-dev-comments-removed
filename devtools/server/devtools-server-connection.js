@@ -27,7 +27,7 @@ loader.lazyRequireGetter(
 
 
 
-class DevToolsServerConnection {
+class DevToolsServerConnection extends EventEmitter {
   
 
 
@@ -39,6 +39,7 @@ class DevToolsServerConnection {
 
 
   constructor(prefix, transport, socketListener) {
+    super();
     this._prefix = prefix;
     this._transport = transport;
     this._transport.hooks = this;
@@ -64,8 +65,6 @@ class DevToolsServerConnection {
 
 
     this._forwardingPrefixes = new Map();
-
-    EventEmitter.decorate(this);
   }
 
   _prefix = null;
