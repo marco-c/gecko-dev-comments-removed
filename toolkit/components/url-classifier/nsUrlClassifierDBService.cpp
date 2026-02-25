@@ -12,6 +12,7 @@
 #include "nsIPrefBranch.h"
 #include "nsIXULRuntime.h"
 #include "nsToolkitCompsCID.h"
+#include "RealTimeRequestSimulator.h"
 #include "nsUrlClassifierDBService.h"
 #include "nsUrlClassifierUtils.h"
 #include "nsUrlClassifierProxies.h"
@@ -1579,11 +1580,16 @@ class nsUrlClassifierRealTimeLookupHandler final
   NS_DECL_NSIURLCLASSIFIERLOOKUPCALLBACK
 
   nsUrlClassifierRealTimeLookupHandler(nsUrlClassifierDBService* aDBService,
-                                       nsIUrlClassifierCallback* aCallback)
+                                       nsIUrlClassifierCallback* aCallback,
+                                       bool aIsPrivate)
       : nsUrlClassifierHashCompleterBase(aDBService, aCallback),
         mDebugEnabled(
-            Preferences::GetBool("browser.safebrowsing.realTime.debug", false)) {
-  }
+            Preferences::GetBool("browser.safebrowsing.realTime.debug", false)),
+        mSimulator(
+            StaticPrefs::browser_safebrowsing_realTime_simulation_enabled()
+                ? RealTimeRequestSimulator::GetInstance()
+                : nullptr),
+        mIsPrivate(aIsPrivate) {}
 
   nsresult StartRealTimeLookup(nsIPrincipal* aPrincipal);
 
@@ -1612,6 +1618,12 @@ class nsUrlClassifierRealTimeLookupHandler final
 
   
   Atomic<bool> mDebugEnabled{false};
+
+  
+  RefPtr<RealTimeRequestSimulator> mSimulator;
+
+  
+  bool mIsPrivate;
 };
 
 NS_IMPL_ISUPPORTS_INHERITED(nsUrlClassifierRealTimeLookupHandler,
@@ -1716,6 +1728,11 @@ nsresult nsUrlClassifierRealTimeLookupHandler::HandleRealTimeLookupComplete(
                 nullptr, "urlclassifier-globalcache-result", result);
           }
         }));
+  }
+
+  
+  if (!hasGlobalCacheHit && mSimulator) {
+    mSimulator->SimulateRealTimeRequest(mKey, mIsPrivate);
   }
 
   
@@ -2065,7 +2082,8 @@ nsUrlClassifierDBService::Classify(nsIPrincipal* aPrincipal,
     }
 
     RefPtr<nsUrlClassifierRealTimeLookupHandler> handler =
-        new (fallible) nsUrlClassifierRealTimeLookupHandler(this, callback);
+        new (fallible) nsUrlClassifierRealTimeLookupHandler(
+            this, callback, aPrincipal->GetIsInPrivateBrowsing());
     if (NS_WARN_IF(!handler)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
