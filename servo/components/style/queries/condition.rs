@@ -322,10 +322,7 @@ impl StyleFeature {
     fn matches(&self, ctx: &computed::Context) -> KleeneValue {
         match self {
             Self::Plain(plain) => plain.matches(ctx),
-            Self::Range(_range) => {
-                
-                KleeneValue::False
-            },
+            Self::Range(range) => range.evaluate(ctx),
         }
     }
 }
