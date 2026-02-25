@@ -63,7 +63,7 @@ class ScreamV2 {
  private:
   void UpdateL4SAlpha(const TransportPacketsFeedback& msg);
   void UpdateRefWindow(const TransportPacketsFeedback& msg);
-  DataRate CalculateTargetRate() const;
+  void UpdateTargetRate(const TransportPacketsFeedback& msg);
 
   
   double ref_window_mss_ratio() const {
@@ -123,6 +123,8 @@ class ScreamV2 {
   
   
   Timestamp last_reaction_to_congestion_time_ = Timestamp::MinusInfinity();
+
+  Timestamp drain_queue_start_ = Timestamp::MinusInfinity();
 
   DelayBasedCongestionControl delay_based_congestion_control_;
 };

@@ -93,6 +93,16 @@ struct ScreamV2Parameters {
 
   
   
+  FieldTrialParameter<TimeDelta> queue_delay_drain_threshold;
+  
+  
+  
+  FieldTrialParameter<TimeDelta> queue_delay_drain_period;
+  
+  FieldTrialParameter<int> queue_delay_drain_rtts;
+
+  
+  
   FieldTrialParameter<TimeDelta> periodic_padding_interval;
 
   
