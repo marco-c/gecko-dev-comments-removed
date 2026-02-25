@@ -170,7 +170,9 @@ if CONFIG["OS_TARGET"] == "WINNT":
     ]
     if CONFIG["TARGET_CPU"] == "x86":
         
-        sandbox_vars["ASFLAGS"] = ["-safeseh"]
+        
+        if CONFIG["CC_TYPE"] == "clang-cl":
+            sandbox_vars["ASFLAGS"] = ["-safeseh"]
 
     DELAYLOAD_DLLS += [
         "winmm.dll",
