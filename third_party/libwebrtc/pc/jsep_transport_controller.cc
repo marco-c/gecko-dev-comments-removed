@@ -638,6 +638,38 @@ JsepTransportController::CreateDtlsSrtpTransport(
   return dtls_srtp_transport;
 }
 
+std::unique_ptr<RtpTransport> JsepTransportController::CreateRtpTransport(
+    const std::string& transport_name,
+    std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
+    std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport) {
+  std::unique_ptr<RtpTransport> rtp_transport;
+  if (config_.disable_encryption) {
+    RTC_LOG(LS_INFO)
+        << "Creating UnencryptedRtpTransport, because encryption is disabled.";
+    rtp_transport = CreateUnencryptedRtpTransport(
+        transport_name, std::move(rtp_dtls_transport),
+        std::move(rtcp_dtls_transport));
+  } else {
+    RTC_LOG(LS_INFO) << "Creating DtlsSrtpTransport.";
+    rtp_transport =
+        CreateDtlsSrtpTransport(transport_name, std::move(rtp_dtls_transport),
+                                std::move(rtcp_dtls_transport));
+  }
+
+  rtp_transport->SubscribeRtcpPacketReceived(
+      this, [this](CopyOnWriteBuffer packet,
+                   std::optional<Timestamp> arrival_time, EcnMarking ecn) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnRtcpPacketReceived_n(std::move(packet), arrival_time, ecn);
+      });
+  rtp_transport->SetUnDemuxableRtpPacketReceivedHandler(
+      [this](RtpPacketReceived& packet) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnUnDemuxableRtpPacketReceived_n(packet);
+      });
+  return rtp_transport;
+}
+
 std::vector<DtlsTransportInternal*>
 JsepTransportController::GetDtlsTransports() {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -1169,20 +1201,9 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
     rtcp_dtls_transport = CreateDtlsTransport(content_info, true);
   }
 
-  std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
-  std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
-  if (config_.disable_encryption) {
-    RTC_LOG(LS_INFO)
-        << "Creating UnencryptedRtpTransport, becayse encryption is disabled.";
-    unencrypted_rtp_transport = CreateUnencryptedRtpTransport(
-        content_info.mid(), std::move(rtp_dtls_transport),
-        std::move(rtcp_dtls_transport));
-  } else {
-    RTC_LOG(LS_INFO) << "Creating DtlsSrtpTransport.";
-    dtls_srtp_transport = CreateDtlsSrtpTransport(
-        content_info.mid(), std::move(rtp_dtls_transport),
-        std::move(rtcp_dtls_transport));
-  }
+  std::unique_ptr<RtpTransport> rtp_transport =
+      CreateRtpTransport(content_info.mid(), std::move(rtp_dtls_transport),
+                         std::move(rtcp_dtls_transport));
 
   std::unique_ptr<SctpTransportInternal> sctp_transport;
   if (config_.sctp_factory) {
@@ -1195,8 +1216,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
 
   std::unique_ptr<JsepTransport> jsep_transport =
       std::make_unique<JsepTransport>(
-          certificate_, std::move(unencrypted_rtp_transport),
-          std::move(dtls_srtp_transport), std::move(dtls_transport),
+          certificate_, std::move(rtp_transport), std::move(dtls_transport),
           std::move(sctp_transport),
           [&]() {
             RTC_DCHECK_RUN_ON(network_thread_);
@@ -1227,19 +1247,6 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   
   
   
-  
-
-  jsep_transport->rtp_transport()->SubscribeRtcpPacketReceived(
-      this, [this](CopyOnWriteBuffer packet,
-                   std::optional<Timestamp> arrival_time, EcnMarking ecn) {
-        RTC_DCHECK_RUN_ON(network_thread_);
-        OnRtcpPacketReceived_n(std::move(packet), arrival_time, ecn);
-      });
-  jsep_transport->rtp_transport()->SetUnDemuxableRtpPacketReceivedHandler(
-      [this](RtpPacketReceived& packet) {
-        RTC_DCHECK_RUN_ON(network_thread_);
-        OnUnDemuxableRtpPacketReceived_n(packet);
-      });
 
   transports_.RegisterTransport(std::move(jsep_transport));
   UpdateAggregateStates_n();
