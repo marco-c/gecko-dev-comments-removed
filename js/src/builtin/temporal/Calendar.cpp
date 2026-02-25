@@ -156,7 +156,7 @@ static int32_t WeekDay(int32_t day) {
 
 
 static int32_t ISODayOfWeek(const ISODate& isoDate) {
-  MOZ_ASSERT(ISODateWithinLimits(isoDate));
+  MOZ_ASSERT(IsValidISODate(isoDate));
 
   
   int32_t day = MakeDay(isoDate);
@@ -182,7 +182,7 @@ static constexpr auto FirstDayOfMonth(int32_t year) {
 
 
 static int32_t ISODayOfYear(const ISODate& isoDate) {
-  MOZ_ASSERT(ISODateWithinLimits(isoDate));
+  MOZ_ASSERT(IsValidISODate(isoDate));
 
   const auto& [year, month, day] = isoDate;
 
@@ -247,7 +247,7 @@ static int64_t MakeTime(const Time& time) {
 
 
 int32_t js::temporal::MakeDay(const ISODate& date) {
-  MOZ_ASSERT(ISODateWithinLimits(date));
+  MOZ_ASSERT(IsValidISODate(date));
 
   return DayFromYear(date.year) + ISODayOfYear(date) - 1;
 }
@@ -256,7 +256,7 @@ int32_t js::temporal::MakeDay(const ISODate& date) {
 
 
 int64_t js::temporal::MakeDate(const ISODateTime& dateTime) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+  MOZ_ASSERT(IsValidISODateTime(dateTime));
 
   
 
@@ -277,7 +277,7 @@ struct YearWeek final {
 
 
 static YearWeek ISOWeekOfYear(const ISODate& isoDate) {
-  MOZ_ASSERT(ISODateWithinLimits(isoDate));
+  MOZ_ASSERT(IsValidISODate(isoDate));
 
   
   int32_t year = isoDate.year;
