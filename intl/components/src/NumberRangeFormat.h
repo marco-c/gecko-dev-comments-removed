@@ -212,6 +212,16 @@ class NumberRangeFormat final {
       double start, double end, char16_t* keyword, int32_t keywordSize,
       const UPluralRules* pluralRules) const;
 
+  
+
+
+
+
+
+  Result<int32_t, ICUError> selectForRange(
+      std::string_view start, std::string_view end, char16_t* keyword,
+      int32_t keywordSize, const UPluralRules* pluralRules) const;
+
  private:
   UNumberRangeFormatter* mNumberRangeFormatter = nullptr;
   UFormattedNumberRange* mFormattedNumberRange = nullptr;
