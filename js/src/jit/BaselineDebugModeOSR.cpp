@@ -435,7 +435,6 @@ bool js::jit::RecompileBaselineScriptForDebugMode(
 
   
   
-  MOZ_ASSERT(script->baselineScript()->hasDebugInstrumentation() == observing);
   return true;
 }
 
