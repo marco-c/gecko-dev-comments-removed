@@ -124,9 +124,10 @@ class RTC_EXPORT PacketTransportInternal {
   
   void SetOnCloseCallback(absl::AnyInvocable<void() &&> callback);
 
+  virtual ~PacketTransportInternal();
+
  protected:
   PacketTransportInternal();
-  virtual ~PacketTransportInternal();
 
   void NotifyPacketReceived(const ReceivedIpPacket& packet);
   void NotifyOnClose();

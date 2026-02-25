@@ -80,8 +80,7 @@ class JsepTransport {
   JsepTransport(const scoped_refptr<RTCCertificate>& local_certificate,
                 std::unique_ptr<RtpTransport> unencrypted_rtp_transport,
                 std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport,
-                std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
-                std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
+                scoped_refptr<DtlsTransport> rtp_dtls_transport,
                 std::unique_ptr<SctpTransportInternal> sctp_transport,
                 absl::AnyInvocable<void()> rtcp_mux_active_callback,
                 PayloadTypePicker& suggester);
@@ -94,7 +93,7 @@ class JsepTransport {
   
   
   absl::string_view name() const {
-    return rtp_dtls_transport_->internal()->ice_transport()->transport_name();
+    return GetRtpDtlsTransportInternal()->ice_transport()->transport_name();
   }
 
   
@@ -163,31 +162,33 @@ class JsepTransport {
   }
 
   const DtlsTransportInternal* rtp_dtls_transport() const {
-    if (rtp_dtls_transport_) {
-      return rtp_dtls_transport_->internal();
-    }
-    return nullptr;
+    return GetRtpDtlsTransportInternal();
   }
 
   DtlsTransportInternal* rtp_dtls_transport() {
-    if (rtp_dtls_transport_) {
-      return rtp_dtls_transport_->internal();
-    }
-    return nullptr;
+    return GetRtpDtlsTransportInternal();
   }
 
-  const DtlsTransportInternal* rtcp_dtls_transport() const {
+  DtlsTransportInternal* rtcp_dtls_transport() const {
     RTC_DCHECK_RUN_ON(&transport_sequence_);
-    if (rtcp_dtls_transport_) {
-      return rtcp_dtls_transport_->internal();
+    if (dtls_srtp_transport_) {
+      return dtls_srtp_transport_->rtcp_dtls_transport();
+    }
+    if (unencrypted_rtp_transport_) {
+      return static_cast<DtlsTransportInternal*>(
+          unencrypted_rtp_transport_->rtcp_packet_transport());
     }
     return nullptr;
   }
 
   DtlsTransportInternal* rtcp_dtls_transport() {
     RTC_DCHECK_RUN_ON(&transport_sequence_);
-    if (rtcp_dtls_transport_) {
-      return rtcp_dtls_transport_->internal();
+    if (dtls_srtp_transport_) {
+      return dtls_srtp_transport_->rtcp_dtls_transport();
+    }
+    if (unencrypted_rtp_transport_) {
+      return static_cast<DtlsTransportInternal*>(
+          unencrypted_rtp_transport_->rtcp_packet_transport());
     }
     return nullptr;
   }
@@ -269,6 +270,17 @@ class JsepTransport {
                          int component,
                          TransportStats* stats) const;
 
+  DtlsTransportInternal* GetRtpDtlsTransportInternal() const {
+    if (dtls_srtp_transport_) {
+      return dtls_srtp_transport_->rtp_dtls_transport();
+    }
+    if (unencrypted_rtp_transport_) {
+      return static_cast<DtlsTransportInternal*>(
+          unencrypted_rtp_transport_->rtp_packet_transport());
+    }
+    return nullptr;
+  }
+
   
   RTC_NO_UNIQUE_ADDRESS SequenceChecker transport_sequence_;
   
@@ -288,8 +300,6 @@ class JsepTransport {
   const scoped_refptr<DtlsTransport> rtp_dtls_transport_;
   
   
-  scoped_refptr<DtlsTransport> rtcp_dtls_transport_
-      RTC_GUARDED_BY(transport_sequence_);
 
   const scoped_refptr<::webrtc::SctpTransport> sctp_transport_;
 
