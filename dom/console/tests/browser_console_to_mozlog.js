@@ -22,7 +22,7 @@ add_task(async function test_console_to_mozlog() {
       lines.push(line);
     },
     extraEnv: {
-      MOZ_LOG: "console:5,my-prefix:2,PageMessages:5",
+      MOZ_LOG: "console:5,my-prefix:2,PageMessages:5,error-only:1",
     },
   });
   const exitCode = await promise;
@@ -40,6 +40,7 @@ add_task(async function test_console_to_mozlog() {
     
     `I/console log: "foo"`,
     `D/console debug: "bar"`,
+    `E/console assert: "assert-failure"`,
 
     
     
@@ -49,11 +50,18 @@ add_task(async function test_console_to_mozlog() {
     
     `E/my-prefix error: ({shouldLogError:true, shouldLogLog:true})`,
     `W/my-prefix warn: "warning"`,
+    `E/my-prefix assert: "prefixed-assert-failure"`,
+
+    
+    `E/error-only error: "error-only-error"`,
+    `E/error-only assert: "error-only-assert"`,
 
     
     `I/PageMessages String message`,
-    `E/PageMessages [JavaScript Error: "Error: Async exception" {file: "resource://testing-common/backgroundtasks/BackgroundTask_console.sys.mjs" line: 40}]`,
+    `E/PageMessages [JavaScript Error: "Error: Async exception" {file: "resource://testing-common/backgroundtasks/BackgroundTask_console.sys.mjs" line: 51}]`,
   ];
+
+  info(lines);
 
   for (const expected of expectedLogs) {
     ok(
@@ -68,7 +76,7 @@ add_task(async function test_console_to_mozlog() {
 
   ok(
     !lines.some(line =>
-      line.includes("BackgroundTask_console.sys.mjs 36 runBackgroundTask")
+      line.includes("BackgroundTask_console.sys.mjs 38 runBackgroundTask")
     ),
     "Stack trace for console calls are **not** logged"
   );
@@ -117,7 +125,7 @@ add_task(async function test_console_to_mozlog_level_override() {
 
   ok(
     lines.some(line =>
-      line.includes("BackgroundTask_console.sys.mjs 36 runBackgroundTask")
+      line.includes("BackgroundTask_console.sys.mjs 38 runBackgroundTask")
     ),
     "Stack trace for console calls are logged"
   );
