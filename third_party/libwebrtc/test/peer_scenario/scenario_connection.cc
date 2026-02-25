@@ -135,7 +135,7 @@ ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(
           CreateRandomString(ICE_PWD_LENGTH),
           IceMode::ICEMODE_FULL,
           ConnectionRole::CONNECTIONROLE_PASSIVE,
-          SSLFingerprint::CreateFromCertificate(*certificate_.get()).get()),
+          SSLFingerprint::CreateFromCertificate(*certificate_).get()),
       network_manager_(manager_->ReleaseNetworkManager()),
       packet_socket_factory_(manager_->socket_factory()),
       port_allocator_(
@@ -144,6 +144,7 @@ ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(
                                                &packet_socket_factory_)),
       jsep_controller_(
           new JsepTransportController(env,
+                                      signaling_thread_,
                                       network_thread_,
                                       port_allocator_.get(),
                                        nullptr,
