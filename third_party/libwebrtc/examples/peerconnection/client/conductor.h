@@ -137,6 +137,11 @@ class Conductor : public webrtc::PeerConnectionObserver,
   MainWindow* main_wnd_;
   std::deque<std::string*> pending_messages_;
   std::string server_;
+  
+  
+  
+  
+  webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> local_video_source_;
 };
 
 #endif  
