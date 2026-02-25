@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#import <CoreAudioTypes/CoreAudioTypes.h>
+
+#include <optional>
+
+namespace webrtc {
+
+std::optional<int64_t> AudioTimeStampGetNanoseconds(
+    const AudioTimeStamp* timeStamp);
+
+}  
