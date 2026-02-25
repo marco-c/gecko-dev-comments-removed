@@ -1929,6 +1929,7 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
 
 
 
+  MOZ_ASSERT(preparedForSweepInThisSlice);
   MOZ_ASSERT(!abortSweepAfterCurrentGroup);
   MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
 
@@ -2628,6 +2629,16 @@ void GCRuntime::prepareForSweepSlice(JS::GCReason reason) {
   
   
   rt->mainContextFromOwnThread()->traceWrapperGCRooters(marker().tracer());
+
+  
+  
+
+  if (state() == State::Mark &&
+      hasZealMode(ZealMode::IncrementalMarkingValidator)) {
+    collectNurseryFromMajorGC(JS::GCReason::EVICT_NURSERY);
+  }
+
+  preparedForSweepInThisSlice = true;
 }
 
 
@@ -2654,6 +2665,7 @@ class js::gc::AutoUpdateBarriersForSweeping {
 };
 
 IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
+  MOZ_ASSERT(preparedForSweepInThisSlice);
   MOZ_ASSERT_IF(storeBuffer().isEnabled(),
                 !storeBuffer().mayHavePointersToDeadCells());
 
