@@ -38,7 +38,6 @@
 #include "api/local_network_access_permission.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/transport/enums.h"
 #include "api/transport/stun.h"
 #include "api/units/time_delta.h"
@@ -71,6 +70,7 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
@@ -172,28 +172,28 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   
   const Connection* best_connection() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return selected_connection_;
   }
 
   void set_incoming_only(bool value) {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     incoming_only_ = value;
   }
 
   
   
   const std::vector<PortInterface*>& ports() {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return ports_;
   }
   const std::vector<PortInterface*>& pruned_ports() {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return pruned_ports_;
   }
 
   IceMode remote_ice_mode() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return remote_ice_mode_;
   }
 
@@ -216,7 +216,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   
   PortAllocatorSession* allocator_session() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     if (allocator_sessions_.empty()) {
       return nullptr;
     }
@@ -225,14 +225,14 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   
   const std::vector<RemoteCandidate>& remote_candidates() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return remote_candidates_;
   }
 
   std::string ToString() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
-    const std::string RECEIVING_ABBREV[2] = {"_", "R"};
-    const std::string WRITABLE_ABBREV[2] = {"_", "W"};
+    RTC_DCHECK_RUN_ON(&network_thread_);
+    const absl::string_view RECEIVING_ABBREV[2] = {"_", "R"};
+    const absl::string_view WRITABLE_ABBREV[2] = {"_", "W"};
     StringBuilder ss;
     ss << "Channel[" << transport_name_ << "|" << component_ << "|"
        << RECEIVING_ABBREV[receiving_] << WRITABLE_ABBREV[writable_] << "]";
@@ -251,7 +251,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   
   const IceParameters* remote_ice_parameters() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return remote_ice_parameters_.empty() ? nullptr
                                           : &remote_ice_parameters_.back();
   }
@@ -293,7 +293,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       ActiveIceControllerFactoryInterface* active_ice_controller_factory);
 
   bool IsGettingPorts() {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return allocator_session()->IsGettingPorts();
   }
 
@@ -381,7 +381,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   
   uint32_t remote_ice_generation() {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    RTC_DCHECK_RUN_ON(&network_thread_);
     return remote_ice_parameters_.empty()
                ? 0
                : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
@@ -435,75 +435,76 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void GoogDeltaAckReceived(RTCErrorOr<const StunUInt64Attribute*>);
 
   const Environment env_;
-  const std::string transport_name_ RTC_GUARDED_BY(network_thread_);
-  int component_ RTC_GUARDED_BY(network_thread_);
-  PortAllocator* const allocator_ RTC_GUARDED_BY(network_thread_);
+  const std::string transport_name_ RTC_GUARDED_BY(&network_thread_);
+  int component_ RTC_GUARDED_BY(&network_thread_);
+  PortAllocator* const allocator_ RTC_GUARDED_BY(&network_thread_);
   AsyncDnsResolverFactoryInterface* const async_dns_resolver_factory_
-      RTC_GUARDED_BY(network_thread_);
+      RTC_GUARDED_BY(&network_thread_);
   const std::unique_ptr<AsyncDnsResolverFactoryInterface>
       owned_dns_resolver_factory_;
   LocalNetworkAccessPermissionFactoryInterface* const lna_permission_factory_
-      RTC_GUARDED_BY(network_thread_);
-  TaskQueueBase* const network_thread_;
-  bool incoming_only_ RTC_GUARDED_BY(network_thread_);
-  int error_ RTC_GUARDED_BY(network_thread_);
+      RTC_GUARDED_BY(&network_thread_);
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_;
+  bool incoming_only_ RTC_GUARDED_BY(&network_thread_);
+  int error_ RTC_GUARDED_BY(&network_thread_);
   std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_
-      RTC_GUARDED_BY(network_thread_);
+      RTC_GUARDED_BY(&network_thread_);
   
   
-  std::vector<PortInterface*> ports_ RTC_GUARDED_BY(network_thread_);
+  std::vector<PortInterface*> ports_ RTC_GUARDED_BY(&network_thread_);
   
   
   
   
-  std::vector<PortInterface*> pruned_ports_ RTC_GUARDED_BY(network_thread_);
+  std::vector<PortInterface*> pruned_ports_ RTC_GUARDED_BY(&network_thread_);
 
-  Connection* selected_connection_ RTC_GUARDED_BY(network_thread_) = nullptr;
-  std::vector<Connection*> connections_ RTC_GUARDED_BY(network_thread_);
+  Connection* selected_connection_ RTC_GUARDED_BY(&network_thread_) = nullptr;
+  std::vector<Connection*> connections_ RTC_GUARDED_BY(&network_thread_);
 
   std::vector<RemoteCandidate> remote_candidates_
-      RTC_GUARDED_BY(network_thread_);
-  bool had_connection_ RTC_GUARDED_BY(network_thread_) =
+      RTC_GUARDED_BY(&network_thread_);
+  bool had_connection_ RTC_GUARDED_BY(&network_thread_) =
       false;  
   typedef std::map<Socket::Option, int> OptionMap;
-  OptionMap options_ RTC_GUARDED_BY(network_thread_);
-  IceParameters ice_parameters_ RTC_GUARDED_BY(network_thread_);
+  OptionMap options_ RTC_GUARDED_BY(&network_thread_);
+  IceParameters ice_parameters_ RTC_GUARDED_BY(&network_thread_);
   std::vector<IceParameters> remote_ice_parameters_
-      RTC_GUARDED_BY(network_thread_);
-  IceMode remote_ice_mode_ RTC_GUARDED_BY(network_thread_);
-  IceRole ice_role_ RTC_GUARDED_BY(network_thread_);
-  IceGatheringState gathering_state_ RTC_GUARDED_BY(network_thread_);
-  RepeatingTaskHandle regathering_task_handle_ RTC_GUARDED_BY(network_thread_);
-  Timestamp last_ping_sent_ RTC_GUARDED_BY(network_thread_) = Timestamp::Zero();
-  int weak_ping_interval_ RTC_GUARDED_BY(network_thread_) =
+      RTC_GUARDED_BY(&network_thread_);
+  IceMode remote_ice_mode_ RTC_GUARDED_BY(&network_thread_);
+  IceRole ice_role_ RTC_GUARDED_BY(&network_thread_);
+  IceGatheringState gathering_state_ RTC_GUARDED_BY(&network_thread_);
+  RepeatingTaskHandle regathering_task_handle_ RTC_GUARDED_BY(&network_thread_);
+  Timestamp last_ping_sent_ RTC_GUARDED_BY(&network_thread_) =
+      Timestamp::Zero();
+  int weak_ping_interval_ RTC_GUARDED_BY(&network_thread_) =
       kWeakPingInterval.ms();
   
   
-  IceTransportStateInternal state_ RTC_GUARDED_BY(network_thread_) =
+  IceTransportStateInternal state_ RTC_GUARDED_BY(&network_thread_) =
       IceTransportStateInternal::STATE_INIT;
-  IceTransportState standardized_state_ RTC_GUARDED_BY(network_thread_) =
+  IceTransportState standardized_state_ RTC_GUARDED_BY(&network_thread_) =
       IceTransportState::kNew;
-  IceConfig config_ RTC_GUARDED_BY(network_thread_);
-  int last_sent_packet_id_ RTC_GUARDED_BY(network_thread_) =
+  IceConfig config_ RTC_GUARDED_BY(&network_thread_);
+  int last_sent_packet_id_ RTC_GUARDED_BY(&network_thread_) =
       -1;  
   
   
-  uint32_t nomination_ RTC_GUARDED_BY(network_thread_) = 0;
-  bool receiving_ RTC_GUARDED_BY(network_thread_) = false;
-  bool writable_ RTC_GUARDED_BY(network_thread_) = false;
-  bool has_been_writable_ RTC_GUARDED_BY(network_thread_) =
+  uint32_t nomination_ RTC_GUARDED_BY(&network_thread_) = 0;
+  bool receiving_ RTC_GUARDED_BY(&network_thread_) = false;
+  bool writable_ RTC_GUARDED_BY(&network_thread_) = false;
+  bool has_been_writable_ RTC_GUARDED_BY(&network_thread_) =
       false;  
 
-  std::optional<NetworkRoute> network_route_ RTC_GUARDED_BY(network_thread_);
-  IceEventLog ice_event_log_ RTC_GUARDED_BY(network_thread_);
+  std::optional<NetworkRoute> network_route_ RTC_GUARDED_BY(&network_thread_);
+  IceEventLog ice_event_log_ RTC_GUARDED_BY(&network_thread_);
 
   std::unique_ptr<ActiveIceControllerInterface> ice_controller_
-      RTC_GUARDED_BY(network_thread_);
+      RTC_GUARDED_BY(&network_thread_);
 
-  std::vector<CandidateAndResolver> resolvers_ RTC_GUARDED_BY(network_thread_);
+  std::vector<CandidateAndResolver> resolvers_ RTC_GUARDED_BY(&network_thread_);
   
   std::vector<CandidateAndPermission> permission_queries_
-      RTC_GUARDED_BY(network_thread_);
+      RTC_GUARDED_BY(&network_thread_);
 
   
   uint64_t bytes_sent_ = 0;
