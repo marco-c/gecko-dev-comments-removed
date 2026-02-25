@@ -159,6 +159,11 @@ void NavigationAPIMethodTracker::CreateResult(JSContext* aCx,
   InitNavigationResult(aResult, mCommittedPromise, mFinishedPromise);
 }
 
+bool NavigationAPIMethodTracker::IsHandled() const {
+  return this != mNavigationObject->mOngoingAPIMethodTracker && mKey &&
+         !mNavigationObject->mUpcomingTraverseAPIMethodTrackers.Contains(*mKey);
+}
+
 NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationAPIMethodTracker,
                                          (mNavigationObject, mSerializedState,
                                           mCommittedToEntry, mCommittedPromise,
@@ -692,6 +697,11 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
     
     
     if (NS_SUCCEEDED(aResult)) {
+      return;
+    }
+
+    
+    if (apiMethodTracker->IsHandled()) {
       return;
     }
 
