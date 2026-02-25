@@ -174,7 +174,18 @@ struct RTC_EXPORT PacketResult {
 
   SentPacket sent_packet;
   Timestamp receive_time = Timestamp::PlusInfinity();
+  
   EcnMarking ecn = EcnMarking::kNotEct;
+
+  
+  bool sent_with_ect1 = false;
+
+  
+  bool reported_lost_for_the_first_time = false;
+
+  
+  
+  bool reported_recovered_for_the_first_time = false;
 
   
   std::optional<RtpPacketInfo> rtp_packet_info;
