@@ -439,8 +439,13 @@ class Subcell : public Cell {
 template <typename T>
 struct RefPtr {
   bool empty = false;
-  ~RefPtr() { if (!empty) GC(); }
-  bool forget() { empty = true; return true; }
+  ~RefPtr() {
+    if (!empty) GC();
+  }
+  bool forget() {
+    empty = true;
+    return true;
+  }
   bool use() { return true; }
   void assign_with_AddRef(T* aRawPtr) { asm(""); }
 };
@@ -621,20 +626,23 @@ void partial_assignments() {
 
   GC();
 
-  a1.cell = makecell(); 
-  a2.i = 7;             
-  b1.a.cell = makecell(); 
-  b2.a.i = 7;           
-  c1.cell = makecell(); 
-  c2.cell2 = makecell(); 
-  aw1.a.cell = makecell(); 
-  aw2.a.i = 7;          
-  aw3.a = A{makecell(), 7}; 
-  bw1.b.a.cell = makecell(); 
-  bw2.b.vp = nullptr;   
+  a1.cell = makecell();    
+  a2.i = 7;                
+  b1.a.cell = makecell();  
+  b2.a.i = 7;              
+  c1.cell = makecell();    
+  c2.cell2 = makecell();   
+  aw1.a.cell =
+      makecell();  
+  aw2.a.i = 7;     
+  aw3.a =
+      A{makecell(), 7};  
+  bw1.b.a.cell =
+      makecell();      
+  bw2.b.vp = nullptr;  
   bw3.b = B{A{makecell(), 7},
             nullptr};  
-  d.as[1].cell = makecell(); 
+  d.as[1].cell = makecell();  
 
   usecell(a1.cell);
   usecell(a2.cell);
@@ -658,7 +666,9 @@ void closure() {
     GC();
     Cell* cell = makecell();
     bool invert = true;
-    auto lambda_safe1 = [cell, invert]() { return invert ^ (cell != makecell()); };
+    auto lambda_safe1 = [cell, invert]() {
+      return invert ^ (cell != makecell());
+    };
     if (lambda_safe1()) break;
   }
 
