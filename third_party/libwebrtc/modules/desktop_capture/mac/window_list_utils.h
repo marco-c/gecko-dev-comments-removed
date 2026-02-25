@@ -81,7 +81,7 @@ int GetWindowOwnerPid(CFDictionaryRef window);
 
 
 
-int GetWindowOwnerPid(CGWindowID id);
+int RTC_EXPORT GetWindowOwnerPid(CGWindowID id);
 
 
 
