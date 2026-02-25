@@ -15,6 +15,12 @@ add_task(async function test_addressbar_shortcut_smartwindow() {
       win.gBrowser.selectedTab.focus();
       EventUtils.synthesizeKey("l", { accelKey: true }, win);
 
+      
+      await TestUtils.waitForCondition(
+        () => win.document.activeElement === win.gURLBar.inputField,
+        "Waiting for URL bar input field to be focused"
+      );
+
       Assert.equal(
         win.document.activeElement,
         win.gURLBar.inputField,
