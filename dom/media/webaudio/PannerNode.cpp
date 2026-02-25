@@ -634,6 +634,10 @@ void PannerNodeEngine::EqualPowerPanningFunction(const AudioBlock& aInput,
 }
 
 
+
+
+
+
 void PannerNodeEngine::ComputeAzimuthAndElevation(const ThreeDPoint& position,
                                                   float& aAzimuth,
                                                   float& aElevation) {
@@ -644,46 +648,37 @@ void PannerNodeEngine::ComputeAzimuthAndElevation(const ThreeDPoint& position,
     return;
   }
 
-  sourceListener.Normalize();
-
-  
   const ThreeDPoint& listenerFront = mListenerEngine->FrontVector();
   const ThreeDPoint& listenerRight = mListenerEngine->RightVector();
-  ThreeDPoint up = listenerRight.CrossProduct(listenerFront);
+  ThreeDPoint listenerUp = listenerRight.CrossProduct(listenerFront);
+  
+  double frontProjection = sourceListener.DotProduct(listenerFront);
+  double rightProjection = sourceListener.DotProduct(listenerRight);
+  double upProjection = sourceListener.DotProduct(listenerUp);
+  
+  double planeMagnitude = fdlibm_hypot(frontProjection, rightProjection);
+  
+  
+  
+  aElevation = fdlibm_atan2(upProjection, planeMagnitude) / M_PI * 180;
+  MOZ_ASSERT(aElevation <= 90);
+  MOZ_ASSERT(aElevation >= -90);
 
-  double upProjection = sourceListener.DotProduct(up);
-  aElevation = 90 - 180 * fdlibm_acos(upProjection) / M_PI;
-
-  if (aElevation > 90) {
-    aElevation = 180 - aElevation;
-  } else if (aElevation < -90) {
-    aElevation = -180 - aElevation;
-  }
-
-  ThreeDPoint projectedSource = sourceListener - up * upProjection;
-  if (projectedSource.IsZero()) {
+  if (planeMagnitude == 0.0) {
     
     aAzimuth = 0.0;
     return;
   }
-  projectedSource.Normalize();
 
   
-  double projection = projectedSource.DotProduct(listenerRight);
-  aAzimuth = 180 * fdlibm_acos(projection) / M_PI;
-
   
-  double frontBack = projectedSource.DotProduct(listenerFront);
-  if (frontBack < 0) {
-    aAzimuth = 360 - aAzimuth;
+  aAzimuth = fdlibm_atan2(rightProjection, frontProjection) / M_PI * 180;
+  
+  if (aAzimuth == -180) {
+    aAzimuth = 180;
   }
-  
-  
-  if ((aAzimuth >= 0) && (aAzimuth <= 270)) {
-    aAzimuth = 90 - aAzimuth;
-  } else {
-    aAzimuth = 450 - aAzimuth;
-  }
+  MOZ_ASSERT(aAzimuth <= 180);
+  MOZ_ASSERT(aAzimuth > -180);
 }
 
 
