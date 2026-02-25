@@ -500,7 +500,7 @@
           } else if (
             shouldDropIntoCollapsedTabGroup &&
             isTabGroupLabel(dropElement) &&
-            isTab(draggedTab)
+            (isTab(draggedTab) || isSplitViewWrapper(draggedTab))
           ) {
             
             
