@@ -19,7 +19,9 @@
 #include "mozilla/Utf8.h"  
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
+#include "mozilla/UniquePtr.h"  
 
+#include "mozilla/dom/SRIMetadata.h"  
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsICacheInfoChannel.h"  
@@ -375,6 +377,12 @@ class LoadedScript : public nsIMemoryReporter {
     }
   }
 
+  void SetSRIMetadata(const mozilla::dom::SRIMetadata& aSRIMetadata);
+
+  
+  
+  bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
+
  public:
   
 
@@ -443,6 +451,11 @@ class LoadedScript : public nsIMemoryReporter {
 
   
   nsCOMPtr<nsIURI> mBaseURL;
+
+  
+  
+  
+  mozilla::UniquePtr<mozilla::dom::SRIMetadata> mSRIMetadata;
 
  public:
   
