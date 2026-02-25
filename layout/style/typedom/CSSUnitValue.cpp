@@ -80,6 +80,7 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   
   const bool isValueOutOfRange = [](NonCustomCSSPropertyId aId, double aValue) {
     switch (aId) {
+      case eCSSProperty_font_stretch:
       case eCSSProperty_column_width:
       case eCSSProperty_perspective:
       case eCSSProperty_border_block_end_width:
