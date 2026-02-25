@@ -3600,7 +3600,7 @@ pref("browser.ipProtection.added", false);
 
 pref("browser.ipProtection.hasUpgraded", false);
 
-pref("browser.ipProtection.bandwidth.enabled", false);
+pref("browser.ipProtection.bandwidth.enabled", true);
 
 pref("browser.ipProtection.egressLocationEnabled", false);
 
