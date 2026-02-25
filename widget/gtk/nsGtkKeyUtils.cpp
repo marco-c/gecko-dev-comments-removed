@@ -1270,7 +1270,16 @@ uint32_t KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent) {
     
     
     guint keyvalWithoutModifier = GetGDKKeyvalWithoutModifier(aGdkKeyEvent);
-    return GetDOMKeyCodeFromKeyPairs(keyvalWithoutModifier);
+    if (auto keyCode = GetDOMKeyCodeFromKeyPairs(keyvalWithoutModifier)) {
+      return keyCode;
+    }
+    
+    
+    
+    if (IsBasicLatinLetterOrNumeral(keyvalWithoutModifier)) {
+      return WidgetUtils::ComputeKeyCodeFromChar(keyvalWithoutModifier);
+    }
+    return 0;
   }
 
   
