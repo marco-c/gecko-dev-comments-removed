@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Array.h"
+#include <cstdint>
 
 void TestInitialValueByConstructor() {
   using namespace mozilla;
