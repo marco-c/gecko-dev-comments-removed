@@ -42,6 +42,13 @@ class CodecList {
     return CodecList(codecs);
   }
   
+  
+  
+  
+  
+  bool PushIfNotPresent(const Codec& codec);
+
+  
   iterator begin() { return codecs_.begin(); }
   iterator end() { return codecs_.end(); }
   const_iterator begin() const { return codecs_.begin(); }
@@ -85,12 +92,5 @@ class CodecList {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CodecList;
-}  
-#endif  
 
 #endif  
