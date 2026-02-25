@@ -11,9 +11,11 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
+#include <deque>
 
 #include "jit/JitSpewer.h"
 #include "jit/shared/IonAssemblerBuffer.h"
+#include "util/PolicyAllocator.h"
 
 
 
@@ -189,7 +191,11 @@ class BranchDeadlineSet {
   
   
   
-  using DeadlineList = Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>>;
+  
+  
+  using LifoAllocator =
+      PolicyAllocator<BufferOffset, LifoAllocPolicy<Fallible>>;
+  using DeadlineList = std::deque<BufferOffset, LifoAllocator>;
 
   
   
@@ -230,13 +236,11 @@ class BranchDeadlineSet {
 
   
   
-  
-  bool updateEarliest(unsigned rangeIdx, BufferOffset deadline) {
+  void updateEarliest(unsigned rangeIdx, BufferOffset deadline) {
     if (!earliest_.assigned() || deadline < earliest_) {
       earliest_ = deadline;
       earliestRange_ = rangeIdx;
     }
-    return true;
   }
 
  public:
@@ -245,7 +249,7 @@ class BranchDeadlineSet {
     
     
     for (unsigned r = 0; r < NumRanges; r++) {
-      new (&listForRange(r)) DeadlineList(alloc);
+      new (&listForRange(r)) DeadlineList(LifoAllocator(alloc));
     }
   }
 
@@ -263,7 +267,7 @@ class BranchDeadlineSet {
   size_t size() const {
     size_t count = 0;
     for (unsigned r = 0; r < NumRanges; r++) {
-      count += listForRange(r).length();
+      count += listForRange(r).size();
     }
     return count;
   }
@@ -272,7 +276,7 @@ class BranchDeadlineSet {
   size_t maxRangeSize() const {
     size_t count = 0;
     for (unsigned r = 0; r < NumRanges; r++) {
-      count = std::max(count, listForRange(r).length());
+      count = std::max(count, listForRange(r).size());
     }
     return count;
   }
@@ -294,33 +298,29 @@ class BranchDeadlineSet {
   
   
   
-  
-  
-  
-  bool addDeadline(unsigned rangeIdx, BufferOffset deadline) {
+  void addDeadline(unsigned rangeIdx, BufferOffset deadline) {
     MOZ_ASSERT(deadline.assigned(), "Can only store assigned buffer offsets");
     
     auto& list = listForRange(rangeIdx);
 
-    
-    
     if (!list.empty() && list.back() < deadline) {
-      return list.append(deadline);
+      
+      
+      list.push_back(deadline);
+    } else if (list.empty()) {
+      
+      list.push_back(deadline);
+      updateEarliest(rangeIdx, deadline);
+    } else {
+      addDeadlineSlow(rangeIdx, deadline);
     }
-
-    
-    if (list.empty()) {
-      return list.append(deadline) && updateEarliest(rangeIdx, deadline);
-    }
-
-    return addDeadlineSlow(rangeIdx, deadline);
   }
 
  private:
   
   
   
-  bool addDeadlineSlow(unsigned rangeIdx, BufferOffset deadline) {
+  void addDeadlineSlow(unsigned rangeIdx, BufferOffset deadline) {
     auto& list = listForRange(rangeIdx);
 
     
@@ -329,7 +329,8 @@ class BranchDeadlineSet {
     auto at = std::lower_bound(list.begin(), list.end(), deadline);
     MOZ_ASSERT(at == list.end() || *at != deadline,
                "Cannot insert duplicate deadlines");
-    return list.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
+    list.insert(at, deadline);
+    updateEarliest(rangeIdx, deadline);
   }
 
  public:
@@ -345,7 +346,7 @@ class BranchDeadlineSet {
     if (deadline == list.back()) {
       
       
-      list.popBack();
+      list.pop_back();
     } else {
       
       auto where = std::lower_bound(list.begin(), list.end(), deadline);
@@ -371,7 +372,7 @@ class BranchDeadlineSet<0u> {
   size_t maxRangeSize() const { return 0; }
   BufferOffset earliestDeadline() const { MOZ_CRASH(); }
   unsigned earliestDeadlineRange() const { MOZ_CRASH(); }
-  bool addDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
+  void addDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
   void removeDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
 };
 
@@ -925,8 +926,8 @@ struct AssemblerBufferWithConstantPools
   
   
   void registerBranchDeadline(unsigned rangeIdx, BufferOffset deadline) {
-    if (!this->oom() && !branchDeadlines_.addDeadline(rangeIdx, deadline)) {
-      this->fail_oom();
+    if (!this->oom()) {
+      branchDeadlines_.addDeadline(rangeIdx, deadline);
     }
 #ifdef DEBUG
     if (inhibitPools_ > 0) {

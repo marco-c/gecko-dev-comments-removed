@@ -2,8 +2,6 @@
 
 
 
-#include <stdlib.h>
-
 #include "jit/shared/IonAssemblerBufferWithConstantPools.h"
 #include "jsapi-tests/tests.h"
 
@@ -114,7 +112,6 @@ BEGIN_TEST(testAssemblerBuffer_BranchDeadlineSet) {
   DLSet dls(alloc);
 
   CHECK(dls.empty());
-  CHECK(alloc.isEmpty());  
   CHECK_EQUAL(dls.size(), 0u);
   CHECK_EQUAL(dls.maxRangeSize(), 0u);
 
