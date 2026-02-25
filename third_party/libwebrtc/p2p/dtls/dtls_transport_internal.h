@@ -11,14 +11,12 @@
 #ifndef P2P_DTLS_DTLS_TRANSPORT_INTERNAL_H_
 #define P2P_DTLS_DTLS_TRANSPORT_INTERNAL_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/dtls_transport_interface.h"
 #include "api/rtc_error.h"
@@ -82,9 +80,6 @@ class DtlsTransportInternal : public PacketTransportInternal {
   
   virtual uint16_t GetSslPeerSignatureAlgorithm() const = 0;
 
-  
-  virtual scoped_refptr<RTCCertificate> GetLocalCertificate() const = 0;
-
   virtual bool SetLocalCertificate(
       const scoped_refptr<RTCCertificate>& certificate) = 0;
 
@@ -96,21 +91,10 @@ class DtlsTransportInternal : public PacketTransportInternal {
       ZeroOnFreeBuffer<uint8_t>& keying_material) = 0;
 
   
-  ABSL_DEPRECATED("Use SetRemoteParameters instead.")
-  virtual bool SetRemoteFingerprint(absl::string_view digest_alg,
-                                    const uint8_t* digest,
-                                    size_t digest_len) = 0;
-
-  
   virtual RTCError SetRemoteParameters(absl::string_view digest_alg,
                                        const uint8_t* digest,
                                        size_t digest_len,
                                        std::optional<SSLRole> role) = 0;
-
-  ABSL_DEPRECATED("Set the max version via construction.")
-  bool SetSslMaxProtocolVersion(SSLProtocolVersion ) {
-    return true;
-  }
 
   
   virtual IceTransportInternal* ice_transport() = 0;
@@ -158,15 +142,5 @@ class DtlsTransportInternal : public PacketTransportInternal {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::DtlsTransportInternal;
-using ::webrtc::PacketFlags;
-using ::webrtc::PF_NORMAL;
-using ::webrtc::PF_SRTP_BYPASS;
-}  
-#endif  
 
 #endif  

@@ -1483,8 +1483,10 @@ TEST_F(DtlsTransportInternalImplTest, TestCertificatesBeforeConnect) {
 
   
   
-  auto certificate1 = client1_.dtls_transport()->GetLocalCertificate();
-  auto certificate2 = client2_.dtls_transport()->GetLocalCertificate();
+  auto certificate1 =
+      client1_.dtls_transport()->GetLocalCertificateForTesting();
+  auto certificate2 =
+      client2_.dtls_transport()->GetLocalCertificateForTesting();
   ASSERT_NE(certificate1->GetSSLCertificate().ToPEMString(),
             certificate2->GetSSLCertificate().ToPEMString());
   ASSERT_FALSE(client1_.dtls_transport()->GetRemoteSSLCertChain());
@@ -1497,8 +1499,10 @@ TEST_F(DtlsTransportInternalImplTest, TestCertificatesAfterConnect) {
   ASSERT_TRUE(Connect());
 
   
-  auto certificate1 = client1_.dtls_transport()->GetLocalCertificate();
-  auto certificate2 = client2_.dtls_transport()->GetLocalCertificate();
+  auto certificate1 =
+      client1_.dtls_transport()->GetLocalCertificateForTesting();
+  auto certificate2 =
+      client2_.dtls_transport()->GetLocalCertificateForTesting();
   ASSERT_NE(certificate1->GetSSLCertificate().ToPEMString(),
             certificate2->GetSSLCertificate().ToPEMString());
 
