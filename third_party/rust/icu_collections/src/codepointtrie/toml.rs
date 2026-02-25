@@ -18,7 +18,7 @@ use zerovec::ZeroVec;
 
 
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct CodePointTrieToml {
     #[serde(skip)]
     _short_name: String,
@@ -55,6 +55,7 @@ pub struct CodePointTrieToml {
 
 
 #[allow(clippy::exhaustive_enums)] 
+#[derive(Debug)]
 pub enum CodePointDataSlice<'a> {
     
     U8(&'a [u8]),

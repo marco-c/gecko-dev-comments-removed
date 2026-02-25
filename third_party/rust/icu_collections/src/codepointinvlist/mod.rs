@@ -51,8 +51,6 @@
 
 
 
-#![warn(missing_docs)]
-
 #[cfg(feature = "alloc")]
 #[macro_use]
 mod builder;
@@ -62,6 +60,8 @@ mod cpinvlist;
 mod utils;
 
 #[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
 pub use builder::CodePointInversionListBuilder;
 pub use cpinvlist::CodePointInversionList;
 pub use cpinvlist::CodePointInversionListULE;
@@ -70,11 +70,11 @@ use displaydoc::Display;
 #[derive(Display, Debug)]
 
 #[cfg_attr(feature = "alloc", displaydoc("Invalid set: {0:?}"))]
-pub struct InvalidSetError(
-    #[cfg(feature = "alloc")] pub alloc::vec::Vec<potential_utf::PotentialCodePoint>,
-);
+#[allow(clippy::exhaustive_structs)] 
+pub struct InvalidSetError(#[cfg(feature = "alloc")] pub Vec<potential_utf::PotentialCodePoint>);
 
 
 #[derive(Display, Debug)]
 #[displaydoc("Invalid range: {0}..{1}")]
+#[allow(clippy::exhaustive_structs)] 
 pub struct RangeError(pub u32, pub u32);

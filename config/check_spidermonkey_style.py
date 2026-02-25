@@ -76,6 +76,7 @@ included_inclnames_to_ignore = set([
     "jit/LIROpsGenerated.h",  
     "jit/MIROpsGenerated.h",  
     "js/PrefsGenerated.h",  
+    "js/normalizer_glue.h",  
     "mozilla/ProfilingCategoryList.h",  
     "mozilla/glue/Debug.h",  
     "mozilla/glean/JsSrcMetrics.h",  

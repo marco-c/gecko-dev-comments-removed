@@ -41,6 +41,7 @@ const _: () = {
     }
     make_provider!(Baked);
     impl_normalizer_nfc_v1!(Baked);
+    impl_normalizer_nfc_v2!(Baked);
     impl_normalizer_nfd_data_v1!(Baked);
     impl_normalizer_nfd_supplement_v1!(Baked);
     impl_normalizer_nfd_tables_v1!(Baked);
@@ -92,6 +93,13 @@ icu_provider::data_marker!(
     is_singleton = true
 );
 icu_provider::data_marker!(
+    /// Marker for data for composition.
+    NormalizerNfcV2,
+    "normalizer/nfc/v2",
+    CanonicalCompositionsNew<'static>,
+    is_singleton = true
+);
+icu_provider::data_marker!(
     /// Marker for additional data for non-recusrsive composition.
     NormalizerNfdSupplementV1,
     "normalizer/nfd/supplement/v1",
@@ -103,6 +111,7 @@ icu_provider::data_marker!(
 
 pub const MARKERS: &[DataMarkerInfo] = &[
     NormalizerNfcV1::INFO,
+    NormalizerNfcV2::INFO,
     NormalizerNfdDataV1::INFO,
     NormalizerNfdTablesV1::INFO,
     NormalizerNfkdDataV1::INFO,
@@ -185,6 +194,41 @@ pub struct CanonicalCompositions<'data> {
 
 icu_provider::data_struct!(
     CanonicalCompositions<'_>,
+    #[cfg(feature = "datagen")]
+);
+
+
+
+
+
+
+
+
+#[derive(Debug, PartialEq, Clone, yoke::Yokeable, zerofrom::ZeroFrom)]
+#[cfg_attr(feature = "datagen", derive(serde::Serialize, databake::Bake))]
+#[cfg_attr(feature = "datagen", databake(path = icu_normalizer::provider))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+pub struct CanonicalCompositionsNew<'data> {
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(borrow))]
+    pub trie: CodePointTrie<'data, u16>,
+
+    
+    #[cfg_attr(feature = "serde", serde(borrow))]
+    pub linear16: ZeroVec<'data, (u16, u16)>,
+    
+    
+    #[cfg_attr(feature = "serde", serde(borrow))]
+    pub linear24: ZeroVec<'data, (char, char)>,
+}
+
+icu_provider::data_struct!(
+    CanonicalCompositionsNew<'_>,
     #[cfg(feature = "datagen")]
 );
 

@@ -13,7 +13,7 @@ use zerovec::{ule::AsULE, ZeroVec};
 
 
 
-#[derive(Default)]
+#[derive(Default, Clone, Debug)]
 pub struct CodePointInversionListBuilder {
     
     intervals: Vec<u32>,

@@ -3,24 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(not(any(test, doc)), no_std)]
 #![cfg_attr(
     not(test),
@@ -28,10 +10,29 @@
         clippy::indexing_slicing,
         clippy::unwrap_used,
         clippy::expect_used,
-        clippy::panic
+        clippy::panic,
     )
 )]
 #![warn(missing_docs)]
+#![allow(non_local_definitions)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

@@ -79,6 +79,7 @@ fn skip_node_value(pos: usize, lead: u16) -> usize {
 #[cfg_attr(feature = "databake", derive(databake::Bake))]
 #[cfg_attr(feature = "databake", databake(path = icu_collections::char16trie))]
 #[derive(Clone, Debug, PartialEq, Eq, ZeroFrom)]
+#[allow(clippy::exhaustive_structs)] 
 pub struct Char16Trie<'data> {
     
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -101,7 +102,7 @@ impl<'data> Char16Trie<'data> {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Char16TrieIterator<'a> {
     
     trie: &'a ZeroSlice<u16>,
@@ -114,6 +115,7 @@ pub struct Char16TrieIterator<'a> {
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(clippy::exhaustive_enums)]
 pub enum TrieResult {
     
     

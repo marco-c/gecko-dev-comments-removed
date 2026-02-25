@@ -174,6 +174,15 @@ impl<'data> CodePointInversionListAndStringList<'data> {
     }
 
     
+    pub fn contains_utf8(&self, s: &[u8]) -> bool {
+        if let Ok(well_formed) = core::str::from_utf8(s) {
+            self.contains_str(well_formed)
+        } else {
+            false
+        }
+    }
+
+    
     
     
     
@@ -267,6 +276,7 @@ impl<'a> FromIterator<&'a str> for CodePointInversionListAndStringList<'_> {
 
 
 #[derive(Display, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum InvalidStringList {
     
     #[cfg_attr(feature = "alloc", displaydoc("Invalid string length for string: {0}"))]

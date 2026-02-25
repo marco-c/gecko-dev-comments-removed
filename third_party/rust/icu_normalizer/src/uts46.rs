@@ -10,12 +10,32 @@
 
 use crate::ComposingNormalizer;
 use crate::ComposingNormalizerBorrowed;
-use crate::NormalizerNfcV1;
+use crate::IgnorableBehavior;
+use crate::IteratorPolicy;
+use crate::NormalizerNfcV2;
 use crate::NormalizerNfdTablesV1;
 use crate::NormalizerNfkdTablesV1;
 use crate::NormalizerUts46DataV1;
+use icu_collections::codepointtrie::CharIterWithTrie;
+use icu_collections::codepointtrie::CodePointTrie;
 use icu_provider::DataError;
 use icu_provider::DataProvider;
+
+type Trie46<'trie> = CodePointTrie<'trie, u32>;
+
+#[derive(Debug)]
+struct Uts46MapNormalizePolicy;
+
+impl IteratorPolicy for Uts46MapNormalizePolicy {
+    const IGNORABLE_BEHAVIOR: IgnorableBehavior = IgnorableBehavior::Ignored;
+}
+
+#[derive(Debug)]
+struct Uts46NormalizeValidatePolicy;
+
+impl IteratorPolicy for Uts46NormalizeValidatePolicy {
+    const IGNORABLE_BEHAVIOR: IgnorableBehavior = IgnorableBehavior::ReplacementCharacter;
+}
 
 
 
@@ -89,8 +109,13 @@ impl Uts46MapperBorrowed<'_> {
         &'delegate self,
         iter: I,
     ) -> impl Iterator<Item = char> + 'delegate {
-        self.normalizer
-            .normalize_iter_private(iter, crate::IgnorableBehavior::Ignored)
+        let mut ret =
+            self.normalizer
+                .normalize_iter_private::<_, Trie46, Uts46MapNormalizePolicy>(
+                    CharIterWithTrie::new(iter, self.normalizer.trie::<Trie46<'_>>()),
+                );
+        ret.decomposition.init(); 
+        ret
     }
 
     
@@ -121,12 +146,18 @@ impl Uts46MapperBorrowed<'_> {
     
     
     
+    #[inline]
     pub fn normalize_validate<'delegate, I: Iterator<Item = char> + 'delegate>(
         &'delegate self,
         iter: I,
     ) -> impl Iterator<Item = char> + 'delegate {
-        self.normalizer
-            .normalize_iter_private(iter, crate::IgnorableBehavior::ReplacementCharacter)
+        let mut ret = self
+            .normalizer
+            .normalize_iter_private::<_, Trie46, Uts46NormalizeValidatePolicy>(
+                CharIterWithTrie::new(iter, self.normalizer.trie::<Trie46<'_>>()),
+            );
+        ret.decomposition.init(); 
+        ret
     }
 }
 
@@ -167,7 +198,7 @@ impl Uts46Mapper {
             + DataProvider<NormalizerNfdTablesV1>
             + DataProvider<NormalizerNfkdTablesV1>
             
-            + DataProvider<NormalizerNfcV1>
+            + DataProvider<NormalizerNfcV2>
             + ?Sized,
     {
         let normalizer = ComposingNormalizer::try_new_uts46_unstable(provider)?;

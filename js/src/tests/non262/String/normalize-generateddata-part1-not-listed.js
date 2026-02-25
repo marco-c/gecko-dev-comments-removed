@@ -15,6 +15,10 @@ function test() {
 
   
   for (var x = 0; x <= 0x2FFFF; x++) {
+    if (x >= 0xD800 && x <= 0xDFFF) {
+      
+      continue;
+    }
     if (part1.has(x)) {
       continue;
     }

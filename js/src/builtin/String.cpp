@@ -44,12 +44,14 @@
 #if !JS_HAS_INTL_API
 #  include "js/LocaleSensitive.h"
 #endif
+#include "js/normalizer_glue.h"
 #include "js/Prefs.h"
 #include "js/Printer.h"
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
 #include "js/UniquePtr.h"
+#include "js/Utility.h"
 #include "util/StringBuilder.h"
 #include "util/Unicode.h"
 #include "vm/GlobalObject.h"
@@ -1537,8 +1539,51 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
 #endif  
 }
 
-#if JS_HAS_INTL_API
 
+
+extern "C" MOZ_EXPORT bool js_call_js_normalize_utf16(JSContext* cx,
+                                                      NormalizationForm form,
+                                                      JSLinearString* str,
+                                                      void* buffer) {
+  MOZ_ASSERT(str->hasTwoByteChars());
+  MOZ_ASSERT(!str->empty(), "empty string must be handled in caller");
+
+  AutoCheckCannotGC nogc;
+  if (!js_normalize_utf16(
+          form, reinterpret_cast<const uint16_t*>(str->twoByteChars(nogc)),
+          str->length(), buffer)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  return true;
+}
+
+extern "C" MOZ_EXPORT bool js_call_js_normalize_latin1(JSContext* cx,
+                                                       NormalizationForm form,
+                                                       JSLinearString* str,
+                                                       void* buffer) {
+  MOZ_ASSERT(str->hasLatin1Chars());
+  MOZ_ASSERT(!str->empty(), "empty string must be handled in caller");
+
+  AutoCheckCannotGC nogc;
+  if (!js_normalize_latin1(
+          form, reinterpret_cast<const uint8_t*>(str->latin1Chars(nogc)),
+          str->length(), buffer)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  return true;
+}
+
+extern "C" MOZ_EXPORT JSLinearString* js_new_ucstring_copy_n(
+    JSContext* cx, const char16_t* ptr, size_t len) {
+  return NewStringCopyN<CanGC>(cx, ptr, len);
+}
+
+extern "C" MOZ_EXPORT JSLinearString* js_new_ucstring_copy_n_dont_deflate(
+    JSContext* cx, const char16_t* ptr, size_t len) {
+  return NewStringCopyNDontDeflate<CanGC>(cx, ptr, len);
+}
 
 
 
@@ -1554,8 +1599,6 @@ static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
   if (!str) {
     return false;
   }
-
-  using NormalizationForm = mozilla::intl::String::NormalizationForm;
 
   NormalizationForm form;
   if (!args.hasDefined(0)) {
@@ -1585,51 +1628,28 @@ static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (form == NormalizationForm::NFC && str->hasLatin1Chars()) {
+  
+  if (str->empty() ||
+      (form == NormalizationForm::NFC && str->hasLatin1Chars())) {
     
     args.rval().setString(str);
     return true;
   }
 
-  
-  AutoStableStringChars stableChars(cx);
-  if (!stableChars.initTwoByte(cx, str)) {
+  JSLinearString* linear = str->ensureLinear(cx);
+  if (!linear) {
     return false;
   }
 
-  mozilla::Range<const char16_t> srcChars = stableChars.twoByteRange();
-
-  static const size_t INLINE_CAPACITY = js::intl::INITIAL_CHAR_BUFFER_SIZE;
-
-  intl::FormatBuffer<char16_t, INLINE_CAPACITY> buffer(cx);
-
-  auto alreadyNormalized =
-      mozilla::intl::String::Normalize(form, srcChars, buffer);
-  if (alreadyNormalized.isErr()) {
-    intl::ReportInternalError(cx, alreadyNormalized.unwrapErr());
-    return false;
-  }
-
-  using AlreadyNormalized = mozilla::intl::String::AlreadyNormalized;
-
-  
-  if (alreadyNormalized.unwrap() == AlreadyNormalized::Yes) {
-    
-    args.rval().setString(str);
-    return true;
-  }
-
-  JSString* ns = buffer.toString(cx);
-  if (!ns) {
+  JSString* ret = js_normalize(cx, form, linear, linear->hasLatin1Chars());
+  if (!ret) {
     return false;
   }
 
   
-  args.rval().setString(ns);
+  args.rval().setString(ret);
   return true;
 }
-
-#endif  
 
 
 
@@ -3907,9 +3927,7 @@ static const JSFunctionSpec string_methods[] = {
                     StringToLocaleUpperCase),
     JS_FN("localeCompare", str_localeCompare, 1, 0),
     JS_SELF_HOSTED_FN("repeat", "String_repeat", 1, 0),
-#if JS_HAS_INTL_API
     JS_FN("normalize", str_normalize, 0, 0),
-#endif
 
     
     JS_SELF_HOSTED_FN("match", "String_match", 1, 0),
