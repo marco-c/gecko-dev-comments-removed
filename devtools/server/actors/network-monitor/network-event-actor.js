@@ -29,13 +29,6 @@ ChromeUtils.defineESModuleGetters(
 
 const CONTENT_TYPE_REGEXP = /^content-type/i;
 
-const REDIRECT_STATES = [
-  301, 
-  302, 
-  303, 
-  307, 
-];
-
 function isDataChannel(channel) {
   return channel instanceof Ci.nsIDataChannel;
 }
@@ -126,6 +119,7 @@ class NetworkEventActor extends Actor {
     
     this._innerWindowId = lazy.NetworkUtils.getChannelInnerWindowId(channel);
     this._isNavigationRequest = lazy.NetworkUtils.isNavigationRequest(channel);
+    this._isRedirect = false;
 
     
     const { cookies, headers } =
@@ -460,7 +454,9 @@ class NetworkEventActor extends Actor {
     
     
     this.manage(this._response.contentLongStringActor);
-    content.text = this._response.contentLongStringActor.form();
+    content.text = this._discardResponseBody
+      ? ""
+      : this._response.contentLongStringActor.form();
 
     return {
       content,
@@ -556,6 +552,7 @@ class NetworkEventActor extends Actor {
     
     const { responseStatus, responseStatusText } = channel;
 
+    this._isRedirect = lazy.NetworkUtils.isRedirect(responseStatus);
     fromCache = fromCache || lazy.NetworkUtils.isFromCache(channel);
     const isDataOrFile = isDataChannel(channel) || isFileChannel(channel);
 
@@ -587,7 +584,7 @@ class NetworkEventActor extends Actor {
     }
 
     
-    if (REDIRECT_STATES.includes(responseStatus)) {
+    if (this._isRedirect) {
       this._discardResponseBody = true;
     }
 
@@ -625,6 +622,7 @@ class NetworkEventActor extends Actor {
       remotePort: fromCache ? "" : channel.remotePort,
       status: isDataOrFile ? "200" : responseStatus + "",
       statusText: isDataOrFile ? "0K" : responseStatusText,
+      isRedirect: this._isRedirect,
       earlyHintsStatus: earlyHintsResponseRawHeaders ? "103" : "",
       waitingTime,
       isResolvedByTRR: channel.isResolvedByTRR,
