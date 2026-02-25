@@ -6,7 +6,9 @@ package mozilla.components.feature.downloads
 
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.DownloadAction
+import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.support.utils.DownloadFileUtils
 
 /**
  * Contains use cases related to the downloads feature.
@@ -15,6 +17,7 @@ import mozilla.components.browser.state.store.BrowserStore
  */
 class DownloadsUseCases(
     store: BrowserStore,
+    downloadFileUtils: DownloadFileUtils,
 ) {
 
     /**
@@ -28,6 +31,30 @@ class DownloadsUseCases(
          */
         operator fun invoke(tabId: String, downloadId: String) {
             store.dispatch(ContentAction.CancelDownloadAction(tabId, downloadId))
+        }
+    }
+
+    /**
+     * Use case that opens an already downloaded file.
+     *
+     * @property store
+     */
+    class OpenAlreadyDownloadedFileUseCase(
+        private val store: BrowserStore,
+        private val downloadFileUtils: DownloadFileUtils,
+    ) {
+        /**
+         * Opens the already downloaded file with the given [downloadId], and cancels the download
+         * request in the session with the given [tabId].
+         */
+        operator fun invoke(tabId: String, download: DownloadState, filePath: String?) {
+            store.dispatch(ContentAction.CancelDownloadAction(tabId, download.id))
+            filePath ?: return
+            downloadFileUtils.openFile(
+                fileName = download.fileName,
+                directoryPath = download.directoryPath,
+                contentType = download.contentType,
+            )
         }
     }
 
@@ -85,6 +112,7 @@ class DownloadsUseCases(
     }
 
     val cancelDownloadRequest = CancelDownloadRequestUseCase(store)
+    val openAlreadyDownloadedFile = OpenAlreadyDownloadedFileUseCase(store, downloadFileUtils)
     val consumeDownload = ConsumeDownloadUseCase(store)
     val restoreDownloads = RestoreDownloadsUseCase(store)
     val removeDownload = RemoveDownloadUseCase(store)
