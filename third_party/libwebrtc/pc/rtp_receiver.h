@@ -63,6 +63,8 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   
   
   virtual void NotifyFirstPacketReceived() = 0;
+  
+  virtual void NotifyFirstPacketReceivedAfterReceptiveChange() = 0;
 
   
   

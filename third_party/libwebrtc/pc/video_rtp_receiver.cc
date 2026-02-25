@@ -10,8 +10,7 @@
 
 #include "pc/video_rtp_receiver.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -331,6 +330,13 @@ void VideoRtpReceiver::NotifyFirstPacketReceived() {
     observer_->OnFirstPacketReceived(media_type());
   }
   received_first_packet_ = true;
+}
+
+void VideoRtpReceiver::NotifyFirstPacketReceivedAfterReceptiveChange() {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  if (observer_) {
+    observer_->OnFirstPacketReceivedAfterReceptiveChange(media_type());
+  }
 }
 
 std::vector<RtpSource> VideoRtpReceiver::GetSources() const {

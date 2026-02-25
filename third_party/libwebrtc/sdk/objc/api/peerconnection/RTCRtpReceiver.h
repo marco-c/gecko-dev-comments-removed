@@ -49,6 +49,14 @@ RTC_OBJC_EXPORT
                               rtpReceiver didReceiveFirstPacketForMediaType
     : (RTCRtpMediaType)mediaType;
 
+
+
+
+@optional
+- (void)rtpReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver
+    didReceiveFirstPacketForMediaTypeAfterReceptiveChange:
+        (RTCRtpMediaType)mediaType;
+
 @end
 
 RTC_OBJC_EXPORT

@@ -41,6 +41,10 @@ class RtpReceiverObserverInterface {
   
   
   virtual void OnFirstPacketReceived(MediaType media_type) = 0;
+  
+  
+  virtual void OnFirstPacketReceivedAfterReceptiveChange(MediaType media_type) {
+  }
 
  protected:
   virtual ~RtpReceiverObserverInterface() {}

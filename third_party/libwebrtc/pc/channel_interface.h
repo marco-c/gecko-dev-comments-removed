@@ -81,6 +81,10 @@ class ChannelInterface {
       absl::AnyInvocable<void() &&> callback) = 0;
 
   
+  virtual void SetPacketReceivedCallback_n(
+      absl::AnyInvocable<void()> callback) = 0;
+
+  
   virtual bool SetLocalContent(const MediaContentDescription* content,
                                SdpType type,
                                std::string& error_desc) = 0;
