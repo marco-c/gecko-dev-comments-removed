@@ -185,21 +185,22 @@ class nsXMLContentSink : public nsContentSink,
   nsCOMPtr<nsIContent> mDocElement;
   nsCOMPtr<nsIContent> mCurrentHead;  
 
-  XMLContentSinkState mState;
+  XMLContentSinkState mState = eXMLContentSinkState_InProlog;
 
   
-  int32_t mTextLength;
+  int32_t mTextLength = 0;
 
-  int32_t mNotifyLevel;
+  int32_t mNotifyLevel = 0;
   RefPtr<nsTextNode> mLastTextNode;
 
-  uint8_t mPrettyPrintXML : 1;
-  uint8_t mPrettyPrintHasSpecialRoot : 1;
-  uint8_t mPrettyPrintHasFactoredElements : 1;
-  uint8_t mPrettyPrinting : 1;  
-                                
+  bool mPrettyPrintXML : 1 = true;
+  bool mPrettyPrintHasSpecialRoot : 1 = false;
+  bool mPrettyPrintHasFactoredElements : 1 = false;
   
-  uint8_t mPreventScriptExecution : 1;
+  
+  bool mPrettyPrinting : 1 = false;
+  
+  bool mPreventScriptExecution : 1 = false;
 
   nsTArray<StackNode> mContentStack;
 
@@ -214,7 +215,7 @@ class nsXMLContentSink : public nsContentSink,
 
   static const int NS_ACCUMULATION_BUFFER_SIZE = 4096;
   
-  char16_t mText[NS_ACCUMULATION_BUFFER_SIZE];
+  char16_t mText[NS_ACCUMULATION_BUFFER_SIZE] = {0};
 };
 
 #endif  
