@@ -251,7 +251,25 @@ nsUDPSocket::nsUDPSocket() {
   mSts = gSocketTransportService;
 }
 
-nsUDPSocket::~nsUDPSocket() { CloseSocket(); }
+nsUDPSocket::~nsUDPSocket() {
+  if (mFD) {
+    bool onSTSThread = false;
+    mSts->IsOnCurrentThread(&onSTSThread);
+    if (!onSTSThread) {
+      
+      PRFileDesc* fd = mFD;
+      mFD = nullptr;
+      if (gSocketTransportService &&
+          NS_SUCCEEDED(gSocketTransportService->Dispatch(
+              NS_NewRunnableFunction("nsUDPSocket::~nsUDPSocket",
+                                     [fd]() { PR_Close(fd); }),
+              NS_DISPATCH_NORMAL))) {
+        return;
+      }
+    }
+    CloseSocket();
+  }
+}
 
 void nsUDPSocket::AddOutputBytes(uint32_t aBytes) {
   mByteWriteCount += aBytes;
@@ -721,19 +739,13 @@ nsUDPSocket::Connect(const NetAddr* aAddr) {
 
 NS_IMETHODIMP
 nsUDPSocket::Close() {
-  {
-    MutexAutoLock lock(mLock);
+  nsresult rv = PostEvent(this, &nsUDPSocket::OnMsgClose);
+  if (NS_FAILED(rv)) {
     
     
-    if (!mListener && !mSyncListener) {
-      
-      
-      CloseSocket();
-
-      return NS_OK;
-    }
+    CloseSocket();
   }
-  return PostEvent(this, &nsUDPSocket::OnMsgClose);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
