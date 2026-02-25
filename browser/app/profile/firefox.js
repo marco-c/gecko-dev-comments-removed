@@ -3003,9 +3003,6 @@ pref("devtools.toolbox.alwaysOnTop", true);
 pref("devtools.browsertoolbox.scope", "parent-process");
 
 
-pref("devtools.target-switching.server.enabled", true);
-
-
 
 pref("devtools.popups.debug", false);
 
