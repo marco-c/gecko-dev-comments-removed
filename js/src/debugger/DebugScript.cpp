@@ -175,6 +175,10 @@ DebugScript* DebugScript::getOrCreate(JSContext* cx, HandleScript script) {
     }
   }
 
+  
+  auto& realmFuses = script->realm()->realmFuses;
+  realmFuses.optimizeGetIteratorBytecodeFuse.popFuse(cx, realmFuses);
+
   return object->debugScript();
 }
 

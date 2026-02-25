@@ -48,10 +48,23 @@ class InvalidatingRealmFuse : public InvalidatingFuse {
 
 
 
-struct OptimizeGetIteratorFuse final : public InvalidatingRealmFuse {
+struct OptimizeGetIteratorFuse final : public RealmFuse {
   virtual const char* name() override { return "OptimizeGetIteratorFuse"; }
   virtual bool checkInvariant(JSContext* cx) override;
   virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
+};
+
+
+
+
+
+
+
+struct OptimizeGetIteratorBytecodeFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override {
+    return "OptimizeGetIteratorBytecodeFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
 };
 
 struct PopsOptimizedGetIteratorFuse : public RealmFuse {
@@ -313,6 +326,7 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
 
 #define FOR_EACH_REALM_FUSE(FUSE)                                              \
   FUSE(OptimizeGetIteratorFuse, optimizeGetIteratorFuse)                       \
+  FUSE(OptimizeGetIteratorBytecodeFuse, optimizeGetIteratorBytecodeFuse)       \
   FUSE(OptimizeArrayIteratorPrototypeFuse, optimizeArrayIteratorPrototypeFuse) \
   FUSE(ArrayPrototypeIteratorFuse, arrayPrototypeIteratorFuse)                 \
   FUSE(ArrayPrototypeIteratorNextFuse, arrayPrototypeIteratorNextFuse)         \

@@ -6080,8 +6080,7 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   writer.guardArrayIsPacked(objId);
 
   
-  
-  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse);
 
   writer.loadObjectResult(objId);
   writer.returnFromIC();
@@ -16982,9 +16981,7 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   writer.guardArrayIsPacked(objId);
 
   
-  
-  
-  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse);
 
   writer.loadBooleanResult(true);
   writer.returnFromIC();

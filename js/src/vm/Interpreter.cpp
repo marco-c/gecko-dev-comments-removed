@@ -5066,7 +5066,12 @@ static bool OptimizeGetIteratorForArray(JSObject* obj, JSContext* cx) {
   
   
   
-  return IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx);
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx)) {
+    return false;
+  }
+  
+  
+  return cx->realm()->realmFuses.optimizeGetIteratorBytecodeFuse.intact();
 }
 
 static bool OptimizeArgumentsSpreadCall(JSContext* cx, HandleObject obj,
