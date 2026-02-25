@@ -3621,7 +3621,7 @@ bool Debugger::updateObservesCoverageOnDebuggees(JSContext* cx,
   
   
   
-  for (FrameIter iter(cx); !iter.done(); ++iter) {
+  for (AllFramesIter iter(cx); !iter.done(); ++iter) {
     if (obs.shouldMarkAsDebuggee(iter)) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_DEBUG_NOT_IDLE);
