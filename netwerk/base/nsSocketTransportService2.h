@@ -153,6 +153,12 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   already_AddRefed<nsIDirectTaskDispatcher> GetDirectTaskDispatcherSafely();
 
+ public:
+  
+  
+  already_AddRefed<nsIThread> GetSocketThread() { return GetThreadSafely(); }
+
+ private:
   
   
   
