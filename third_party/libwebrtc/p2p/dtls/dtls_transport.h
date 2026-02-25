@@ -26,6 +26,7 @@
 #include "api/dtls_transport_interface.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
+#include "api/ice_transport_interface.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
@@ -137,6 +138,15 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   
   
   
+  DtlsTransportInternalImpl(
+      const Environment& env,
+      scoped_refptr<IceTransportInterface> ice_transport,
+      const CryptoOptions& crypto_options,
+      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12,
+      SslStreamFactory ssl_stream_factory = nullptr);
+
+  
+  [[deprecated("Using internal webrtc code from outside webrtc?")]]
   DtlsTransportInternalImpl(
       const Environment& env,
       IceTransportInternal* ice_transport,
@@ -292,7 +302,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   const int component_;
   DtlsTransportState dtls_state_ = DtlsTransportState::kNew;
   
-  IceTransportInternal* const ice_transport_;
+  const scoped_refptr<IceTransportInterface> ice_transport_;
   std::unique_ptr<SSLStreamAdapter> dtls_;  
   StreamInterfaceChannel*
       downward_;  

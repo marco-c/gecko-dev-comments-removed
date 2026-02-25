@@ -78,8 +78,6 @@ class JsepTransport {
   
   
   JsepTransport(const scoped_refptr<RTCCertificate>& local_certificate,
-                scoped_refptr<IceTransportInterface> ice_transport,
-                scoped_refptr<IceTransportInterface> rtcp_ice_transport,
                 std::unique_ptr<RtpTransport> unencrypted_rtp_transport,
                 std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport,
                 std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
@@ -96,7 +94,7 @@ class JsepTransport {
   
   
   absl::string_view name() const {
-    return ice_transport_->internal()->transport_name();
+    return rtp_dtls_transport_->internal()->ice_transport()->transport_name();
   }
 
   
@@ -283,11 +281,6 @@ class JsepTransport {
       RTC_GUARDED_BY(transport_sequence_);
   std::unique_ptr<JsepTransportDescription> remote_description_
       RTC_GUARDED_BY(transport_sequence_);
-
-  
-  
-  const scoped_refptr<IceTransportInterface> ice_transport_;
-  const scoped_refptr<IceTransportInterface> rtcp_ice_transport_;
 
   
   
