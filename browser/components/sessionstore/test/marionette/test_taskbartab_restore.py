@@ -75,13 +75,15 @@ class TestManualRestoreWithTaskbarTabs(SessionStoreTestCase):
         
         
         Wait(self.marionette).until(
-            lambda mn: mn.execute_script(
-                """
+            lambda mn: (
+                mn.execute_script(
+                    """
                 let newWindow = BrowserWindowTracker.getTopWindow({ allowTaskbarTabs: false });
                 return newWindow.gBrowser.tabs.length;
                 """
+                )
+                == 2
             )
-            == 2
         )
 
 
@@ -118,11 +120,13 @@ class TestAutoRestoreWithTaskbarTabs(SessionStoreTestCase):
         
         
         Wait(self.marionette).until(
-            lambda mn: mn.execute_script(
-                """
+            lambda mn: (
+                mn.execute_script(
+                    """
                 let newWindow = BrowserWindowTracker.getTopWindow({ allowTaskbarTabs: false });
                 return newWindow.gBrowser.tabs.length;
                 """
+                )
+                == 3
             )
-            == 3
         )

@@ -123,8 +123,10 @@ class BeaconOnPagehideShutdownTestCase(MarionetteTestCase):
 
         
         Wait(self.marionette, timeout=10).until(
-            lambda _: self.marionette.execute_script("return document.readyState")
-            == "complete"
+            lambda _: (
+                self.marionette.execute_script("return document.readyState")
+                == "complete"
+            )
         )
         time.sleep(2)  
 
