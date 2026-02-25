@@ -91,23 +91,26 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
   mIsVisible = !nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent);
 
   
-  
-  
-  
-  
-  
-  
-  
-  if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
-                                         u"menu_copy"_ns, eCaseMatters)) {
-    mNativeMenuItem.action = @selector(copy:);
-  } else {
-    mNativeMenuItem.action = @selector(menuItemHit:);
-    mNativeMenuItem.target = nsMenuBarX::sNativeEventTarget;
-  }
+  if (mType != eSeparatorMenuItemType) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                                           u"menu_copy"_ns, eCaseMatters)) {
+      mNativeMenuItem.action = @selector(copy:);
+    } else {
+      mNativeMenuItem.action = @selector(menuItemHit:);
+      mNativeMenuItem.target = nsMenuBarX::sNativeEventTarget;
+    }
 
-  mNativeMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
-  mNativeMenuItem.tag = mMenuGroupOwner->RegisterForCommand(this);
+    mNativeMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
+    mNativeMenuItem.tag = mMenuGroupOwner->RegisterForCommand(this);
+  }
 
   if (mIsVisible) {
     SetupIcon();
@@ -149,8 +152,6 @@ void nsMenuItemX::DetachFromGroupOwner() {
 }
 
 nsresult nsMenuItemX::ModifyChecked(bool aIsChecked) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
   
   
   mContent->AsElement()->SetBoolAttr(nsGkAtoms::checked, aIsChecked);
@@ -159,8 +160,6 @@ nsresult nsMenuItemX::ModifyChecked(bool aIsChecked) {
   SetChecked();
 
   return NS_OK;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 EMenuItemType nsMenuItemX::GetMenuItemType() { return mType; }
@@ -302,14 +301,14 @@ void nsMenuItemX::SetBadge() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (@available(macOS 14.0, *)) {
-    
     nsAutoString badgeValue;
     if (!mContent->AsElement()->GetAttr(nsGkAtoms::badge, badgeValue)) {
       mNativeMenuItem.badge = nullptr;
       return;
     }
-    mNativeMenuItem.badge = [[NSMenuItemBadge alloc]
-        initWithString:nsMenuUtilsX::GetTruncatedCocoaLabel(badgeValue)];
+    mNativeMenuItem.badge = [[[NSMenuItemBadge alloc]
+        initWithString:nsMenuUtilsX::GetTruncatedCocoaLabel(badgeValue)]
+        autorelease];
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -504,6 +503,7 @@ void nsMenuItemX::ObserveContentRemoved(dom::Document* aDocument,
   if (aChild == mImageElement) {
     mMenuGroupOwner->UnregisterForContentChanges(mImageElement);
     mImageElement = nullptr;
+    SetupIcon();
   }
   if (IsMenuStructureElement(aChild)) {
     mMenuParent->SetRebuild(true);
@@ -513,6 +513,7 @@ void nsMenuItemX::ObserveContentRemoved(dom::Document* aDocument,
 void nsMenuItemX::ObserveContentInserted(dom::Document* aDocument,
                                          nsIContent* aContainer,
                                          nsIContent* aChild) {
+  MOZ_RELEASE_ASSERT(mMenuGroupOwner);
   MOZ_RELEASE_ASSERT(mMenuParent);
 
   
