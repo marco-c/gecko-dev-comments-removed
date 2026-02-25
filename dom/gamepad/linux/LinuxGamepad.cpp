@@ -94,6 +94,7 @@ class LinuxGamepadService {
   void AddMonitor();
   void RemoveMonitor();
   bool IsDeviceGamepad(struct udev_device* dev);
+  bool IsXpadDevice(struct udev_device* aDev);
   void ReadUdevChange();
 
   
@@ -208,6 +209,17 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
     for (uint8_t button = 0; button < BUTTON_INDEX_COUNT; button++) {
       gamepad->key_map[kStandardButtons[button]] = button;
     }
+
+    if (IsXpadDevice(dev)) {
+      
+      
+      
+      
+      
+
+      std::swap(gamepad->key_map[BTN_WEST], gamepad->key_map[BTN_NORTH]);
+    }
+
     numButtons = BUTTON_INDEX_COUNT;
   }
 
@@ -398,6 +410,15 @@ bool LinuxGamepadService::IsDeviceGamepad(struct udev_device* aDev) {
   }
 
   return strncmp(devpath, kEvdevPath, strlen(kEvdevPath)) == 0;
+}
+
+bool LinuxGamepadService::IsXpadDevice(struct udev_device* aDev) {
+  const char* driver =
+      mUdev.udev_device_get_property_value(aDev, "ID_USB_DRIVER");
+  if (!driver) {
+    return false;
+  }
+  return strcmp(driver, "xpad") == 0;
 }
 
 void LinuxGamepadService::ReadUdevChange() {
