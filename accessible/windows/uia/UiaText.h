@@ -20,7 +20,7 @@ class MsaaAccessible;
 
 
 
-class UiaText : public ITextProvider {
+class UiaText : public ITextProvider2 {
  public:
   explicit UiaText(MsaaAccessible* aMsaa);
 
@@ -47,6 +47,15 @@ class UiaText : public ITextProvider {
 
   virtual  HRESULT STDMETHODCALLTYPE get_SupportedTextSelection(
        __RPC__out enum SupportedTextSelection* aRetVal);
+
+  
+  virtual HRESULT STDMETHODCALLTYPE RangeFromAnnotation(
+       __RPC__in_opt IRawElementProviderSimple* aAnnotationElement,
+       __RPC__deref_out_opt ITextRangeProvider** aRetVal);
+
+  virtual HRESULT STDMETHODCALLTYPE GetCaretRange(
+       __RPC__out BOOL* aIsActive,
+       __RPC__deref_out_opt ITextRangeProvider** aRetVal);
 
  private:
   virtual ~UiaText() = default;
