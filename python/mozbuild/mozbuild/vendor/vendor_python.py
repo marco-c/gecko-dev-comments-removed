@@ -44,6 +44,9 @@ EXCLUDED_PACKAGES = {
     
     
     "jsonschema",
+    
+    
+    "filelock",
 }
 
 
