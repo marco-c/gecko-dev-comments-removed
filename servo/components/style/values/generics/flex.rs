@@ -3,6 +3,7 @@
 
 
 
+use crate::derives::*;
 
 
 #[derive(
@@ -23,6 +24,7 @@
     ToTyped,
 )]
 #[repr(C)]
+#[typed_value(derive_fields)]
 pub enum GenericFlexBasis<S> {
     
     Content,
