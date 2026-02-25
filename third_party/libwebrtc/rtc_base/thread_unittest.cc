@@ -54,6 +54,8 @@ namespace webrtc {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::IsNull;
+using ::testing::NotNull;
 
 
 class TestGenerator {
@@ -197,6 +199,20 @@ TEST(ThreadTest, DISABLED_Main) {
   EXPECT_EQ(34, msg_client.last);
   EXPECT_EQ(5, sock_client.count);
   EXPECT_EQ(55, sock_client.last);
+}
+
+
+
+
+
+TEST(ThreadTest, DisallowBlockingCallsNoThread) {
+  ASSERT_THAT(Thread::Current(), IsNull());
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
+}
+
+TEST(ThreadTest, DisallowBlockingCallsWithThread) {
+  AutoThread current;
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
 }
 
 TEST(ThreadTest, CountBlockingCalls) {
@@ -412,6 +428,18 @@ TEST(ThreadTest, ThreeThreadsInvokeDeathTest) {
   });
 }
 
+TEST(ThreadTest, DisallowBlockingCallDeathTest) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  AutoThread thread;
+  ASSERT_THAT(Thread::Current(), NotNull());
+  auto other_thread = Thread::CreateWithSocketServer();
+  other_thread->Start();
+  {
+    RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
+    RTC_EXPECT_DEATH(other_thread->BlockingCall([] {}),
+                     "blocking_calls_allowed_");
+  }
+}
 #endif
 
 
