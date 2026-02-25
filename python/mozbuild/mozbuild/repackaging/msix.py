@@ -411,7 +411,7 @@ def repackage_msix(
 
     first = next(values)
     if not displayname:
-        displayname = f"Mozilla {first}"
+        displayname = first
 
         
         if channel == "beta":
