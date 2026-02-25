@@ -18,6 +18,7 @@
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 #include "nsIFrame.h"
+#include "nsIHapticFeedback.h"
 #include "nsISelectionListener.h"
 
 class nsFrameSelection;
@@ -193,7 +194,8 @@ class AccessibleCaretManager {
   void UpdateShouldDisableApz();
 
   
-  void ProvideHapticFeedback();
+  
+  void ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType aEffect);
 
   
   

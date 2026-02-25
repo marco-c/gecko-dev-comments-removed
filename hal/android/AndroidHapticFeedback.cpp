@@ -4,15 +4,22 @@
 
 
 
-#include "Hal.h"
-#include "mozilla/java/GeckoAppShellWrappers.h"
-#include "nsIHapticFeedback.h"
+#include "nsFocusManager.h"
+#include "nsWindow.h"
 
 namespace mozilla::hal_impl {
 
 void PerformHapticFeedback(int32_t aType) {
-  java::GeckoAppShell::PerformHapticFeedback(aType ==
-                                             nsIHapticFeedback::LongPress);
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (fm) {
+    nsPIDOMWindowOuter* activeWindow = fm->GetActiveWindow();
+    if (activeWindow) {
+      RefPtr<nsWindow> window = nsWindow::From(activeWindow);
+      if (window) {
+        window->PerformHapticFeedback(aType);
+      }
+    }
+  }
 }
 
 }  
