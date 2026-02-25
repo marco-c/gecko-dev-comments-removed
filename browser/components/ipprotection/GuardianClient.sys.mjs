@@ -265,6 +265,36 @@ export class GuardianClient {
     }
   }
 
+  /**
+   * Returns the user's proxy usage information, without fetching a new proxy pass.
+   *
+   * @returns {ProxyUsage | null}
+   */
+  async fetchProxyUsage() {
+    const response = await this.withToken(async token => {
+      return await fetch(this.#tokenURL, {
+        method: "HEAD",
+        cache: "no-cache",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    });
+    if (!response) {
+      return null;
+    }
+    try {
+      return ProxyUsage.fromResponse(response);
+    } catch (error) {
+      console.warn(
+        "Usage headers missing or invalid, continuing without usage:",
+        error
+      );
+    }
+    return null;
+  }
+
   /** This is the URL that will be used to fetch the proxy pass. */
   get #tokenURL() {
     const url = new URL(this.guardianEndpoint);
@@ -664,12 +694,13 @@ const listeners = new Set();
  */
 async function waitUntilURL(browser, predicate) {
   const prom = Promise.withResolvers();
-  const done = false;
+  let done = false;
   const check = arg => {
     if (done) {
       return;
     }
     if (predicate(arg)) {
+      done = true;
       listeners.delete(listener);
       browser.removeProgressListener(listener);
       prom.resolve(arg);
