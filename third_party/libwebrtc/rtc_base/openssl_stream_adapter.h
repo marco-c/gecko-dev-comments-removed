@@ -33,11 +33,11 @@
 #endif
 #include "api/field_trials_view.h"
 #include "api/task_queue/pending_task_safety_flag.h"
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/task_utils/repeating_task.h"
-#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -210,10 +210,12 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
            !peer_certificate_digest_value_.empty();
   }
 
+  void MaybeSetTimeout();
+
   const std::unique_ptr<StreamInterface> stream_;
   absl::AnyInvocable<void(SSLHandshakeError)> handshake_error_;
 
-  Thread* const owner_;
+  TaskQueueBase* const owner_;
   ScopedTaskSafety task_safety_;
   RepeatingTaskHandle timeout_task_;
 
@@ -277,12 +279,5 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::OpenSSLStreamAdapter;
-}  
-#endif  
 
 #endif  

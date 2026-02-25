@@ -18,8 +18,8 @@
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -31,7 +31,7 @@ class FifoBuffer final : public StreamInterface {
   
   explicit FifoBuffer(size_t length);
   
-  FifoBuffer(size_t length, Thread* owner);
+  FifoBuffer(size_t length, TaskQueueBase* owner);
   ~FifoBuffer() override;
 
   FifoBuffer(const FifoBuffer&) = delete;
@@ -115,17 +115,10 @@ class FifoBuffer final : public StreamInterface {
   
   size_t read_position_ RTC_GUARDED_BY(callback_sequence_);
   
-  Thread* const owner_;
+  TaskQueueBase* const owner_;
 };
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FifoBuffer;
-}  
-#endif  
 
 #endif  
