@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "api/field_trials_view.h"
 #include "api/rtc_error.h"
 #include "api/rtp_transceiver_direction.h"
@@ -41,13 +42,23 @@ namespace webrtc {
 
 
 
+
+
+
+
+
 class CodecVendor {
  public:
-  CodecVendor(const MediaEngineInterface* media_engine,
+  
+  
+  
+  
+  
+  
+  CodecVendor(const MediaEngineInterface* absl_nullable media_engine,
               bool rtx_enabled,
               const FieldTrialsView& trials);
 
- public:
   RTCErrorOr<std::vector<Codec>> GetNegotiatedCodecsForOffer(
       const MediaDescriptionOptions& media_description_options,
       const MediaSessionOptions& session_options,

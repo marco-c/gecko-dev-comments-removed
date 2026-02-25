@@ -264,6 +264,8 @@ RTCErrorOr<PayloadType> JsepTransportController::SuggestPayloadType(
   
   
   if (!network_thread_->IsCurrent()) {
+    
+    
     return network_thread_->BlockingCall([&] {
       RTC_DCHECK_RUN_ON(network_thread_);
       return SuggestPayloadType(mid, codec);
