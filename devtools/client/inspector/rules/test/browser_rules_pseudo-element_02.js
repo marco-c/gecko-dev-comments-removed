@@ -389,8 +389,6 @@ add_task(async function () {
         {
           name: "top",
           value: `1em`,
-          
-          inactiveCSS: true,
         },
         { name: "gap", value: `10px`, inactiveCSS: true },
       ],
