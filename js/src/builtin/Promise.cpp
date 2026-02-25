@@ -3253,26 +3253,6 @@ class MOZ_STACK_CLASS PromiseForOfIterator : public JS::ForOfIterator {
   }
 };
 
-[[nodiscard]] static bool PerformPromiseAll(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
-[[nodiscard]] static bool PerformPromiseAllSettled(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
-[[nodiscard]] static bool PerformPromiseAny(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
-[[nodiscard]] static bool PerformPromiseRace(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
-    bool* done);
-
 
 
 
@@ -3437,6 +3417,11 @@ template <typename PerformFuncT>
       cx, args, performFunc, nonObjectThisErrorMessage, nonIterableErrorMessage,
       initIter, maybeCloseIter);
 }
+
+[[nodiscard]] static bool PerformPromiseAll(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
 
 
 
@@ -4566,6 +4551,11 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   return true;
 }
 
+[[nodiscard]] static bool PerformPromiseRace(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
+
 
 
 
@@ -4619,6 +4609,11 @@ enum class PromiseAllSettledElementFunctionKind { Resolve, Reject };
 template <PromiseAllSettledElementFunctionKind Kind>
 static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
+
+[[nodiscard]] static bool PerformPromiseAllSettled(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
 
 
 
@@ -4841,6 +4836,11 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   args.rval().setUndefined();
   return true;
 }
+
+[[nodiscard]] static bool PerformPromiseAny(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
+    bool* done);
 
 
 
