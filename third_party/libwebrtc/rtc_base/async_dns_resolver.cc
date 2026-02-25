@@ -105,38 +105,35 @@ void PostTaskToGlobalQueue(
 
 class AsyncDnsResolver::State : public RefCountedBase {
  public:
-  enum class Status {
-    kActive,    
-    kFinished,  
-    kDead       
-  };
   static scoped_refptr<AsyncDnsResolver::State> Create() {
     return make_ref_counted<AsyncDnsResolver::State>();
   }
 
   
-  void Finish(absl::AnyInvocable<void()> function) {
+  void PostToCallbackTaskQueue(absl::AnyInvocable<void() &&> function) {
     MutexLock lock(&mutex_);
-    if (status_ != Status::kActive) {
+    if (!task_queue_) {
       return;
     }
-    status_ = Status::kFinished;
-    function();
+    task_queue_->PostTask(std::move(function));
   }
-  void Kill() {
+
+  void Cancel() {
     MutexLock lock(&mutex_);
-    status_ = Status::kDead;
+    task_queue_ = nullptr;
   }
 
  private:
   Mutex mutex_;
-  Status status_ RTC_GUARDED_BY(mutex_) = Status::kActive;
+  TaskQueueBase* task_queue_ RTC_GUARDED_BY(mutex_) = TaskQueueBase::Current();
 };
 
-AsyncDnsResolver::AsyncDnsResolver() : state_(State::Create()) {}
+AsyncDnsResolver::AsyncDnsResolver() = default;
 
 AsyncDnsResolver::~AsyncDnsResolver() {
-  state_->Kill();
+  if (state_) {
+    state_->Cancel();
+  }
 }
 
 void AsyncDnsResolver::Start(const SocketAddress& addr,
@@ -149,29 +146,27 @@ void AsyncDnsResolver::Start(const SocketAddress& addr,
                              int family,
                              absl::AnyInvocable<void()> callback) {
   RTC_DCHECK_RUN_ON(&result_.sequence_checker_);
+  RTC_CHECK(!state_);
+  state_ = State::Create();
   result_.addr_ = addr;
   callback_ = std::move(callback);
-  auto thread_function = [this, addr, family, flag = safety_.flag(),
-                          caller_task_queue = TaskQueueBase::Current(),
-                          state = state_] {
-    std::vector<IPAddress> addresses;
-    int error = ResolveHostname(addr.hostname(), family, addresses);
-    
-    
-    state->Finish([this, error, flag, caller_task_queue,
-                   addresses = std::move(addresses)]() mutable {
-      caller_task_queue->PostTask(
-          SafeTask(flag, [this, error, addresses = std::move(addresses)]() {
-            RTC_DCHECK_RUN_ON(&result_.sequence_checker_);
-            result_.addresses_ = addresses;
-            result_.error_ = error;
-            callback_();
-          }));
-    });
-  };
+  absl::AnyInvocable<void() &&> thread_function =
+      [this, addr, family, flag = safety_.flag(), state = state_]() {
+        std::vector<IPAddress> addresses;
+        int error = ResolveHostname(addr.hostname(), family, addresses);
+        state->PostToCallbackTaskQueue(
+            SafeTask(flag, [this, error, addresses = std::move(addresses)]() {
+              RTC_DCHECK_RUN_ON(&result_.sequence_checker_);
+              state_ = nullptr;
+              result_.addresses_ = addresses;
+              result_.error_ = error;
+              std::move(callback_)();
+            }));
+      };
+
 #if defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
-  PostTaskToGlobalQueue(
-      std::make_unique<absl::AnyInvocable<void() &&>>(thread_function));
+  PostTaskToGlobalQueue(std::make_unique<absl::AnyInvocable<void() &&>>(
+      std::move(thread_function)));
 #else
   PlatformThread::SpawnDetached(std::move(thread_function), "AsyncResolver");
 #endif
