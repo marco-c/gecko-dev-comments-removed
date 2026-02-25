@@ -93,9 +93,9 @@ uint detectCPUextensions(void)
     && defined(SOUNDTOUCH_ALLOW_X86_OPTIMIZATIONS)
 
     if (_dwDisabledISA == 0xffffffff) return 0;
- 
+
     uint res = 0;
- 
+
 #if !defined(__GNUC__)
     
     

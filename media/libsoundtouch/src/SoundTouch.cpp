@@ -74,7 +74,7 @@
 #include "cpu_detect.h"
 
 using namespace soundtouch;
-    
+
 
 #define TEST_FLOAT_EQUAL(a, b)  (fabs(a - b) < 1e-10)
 
@@ -83,7 +83,7 @@ using namespace soundtouch;
 extern "C" void soundtouch_ac_test()
 {
     printf("SoundTouch Version: %s\n",SOUNDTOUCH_VERSION);
-} 
+}
 
 
 SoundTouch::SoundTouch()
@@ -97,8 +97,8 @@ SoundTouch::SoundTouch()
 
     rate = tempo = 0;
 
-    virtualPitch = 
-    virtualRate = 
+    virtualPitch =
+    virtualRate =
     virtualTempo = 1.0;
 
     calcEffectiveRateAndTempo();
@@ -227,9 +227,9 @@ void SoundTouch::calcEffectiveRateAndTempo()
     if (!TEST_FLOAT_EQUAL(tempo, oldTempo)) pTDStretch->setTempo(tempo);
 
 #ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
-    if (rate <= 1.0f) 
+    if (rate <= 1.0f)
     {
-        if (output != pTDStretch) 
+        if (output != pTDStretch)
         {
             FIFOSamplePipe *tempoOut;
 
@@ -246,7 +246,7 @@ void SoundTouch::calcEffectiveRateAndTempo()
     else
 #endif
     {
-        if (output != pRateTransposer) 
+        if (output != pRateTransposer)
         {
             FIFOSamplePipe *transOut;
 
@@ -259,7 +259,7 @@ void SoundTouch::calcEffectiveRateAndTempo()
 
             output = pRateTransposer;
         }
-    } 
+    }
 }
 
 
@@ -276,11 +276,11 @@ void SoundTouch::setSampleRate(uint srate)
 
 void SoundTouch::putSamples(const SAMPLETYPE *samples, uint nSamples)
 {
-    if (bSrateSet == false) 
+    if (bSrateSet == false)
     {
         ST_THROW_RT_ERROR("SoundTouch : Sample rate not defined");
-    } 
-    else if (channels == 0) 
+    }
+    else if (channels == 0)
     {
         ST_THROW_RT_ERROR("SoundTouch : Number of channels not defined");
     }
@@ -290,14 +290,14 @@ void SoundTouch::putSamples(const SAMPLETYPE *samples, uint nSamples)
     samplesExpectedOut += (double)nSamples / ((double)rate * (double)tempo);
 
 #ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
-    if (rate <= 1.0f) 
+    if (rate <= 1.0f)
     {
         
         assert(output == pTDStretch);
         pRateTransposer->putSamples(samples, nSamples);
         pTDStretch->moveSamples(*pRateTransposer);
-    } 
-    else 
+    }
+    else
 #endif
     {
         
@@ -355,7 +355,7 @@ bool SoundTouch::setSetting(int settingId, int value)
     
     pTDStretch->getParameters(&sampleRate, &sequenceMs, &seekWindowMs, &overlapMs);
 
-    switch (settingId) 
+    switch (settingId)
     {
         case SETTING_USE_AA_FILTER :
             
@@ -401,7 +401,7 @@ int SoundTouch::getSetting(int settingId) const
 {
     int temp;
 
-    switch (settingId) 
+    switch (settingId)
     {
         case SETTING_USE_AA_FILTER :
             return (uint)pRateTransposer->isAAFilterEnabled();
@@ -413,15 +413,15 @@ int SoundTouch::getSetting(int settingId) const
             return (uint)pTDStretch->isQuickSeekEnabled();
 
         case SETTING_SEQUENCE_MS:
-            pTDStretch->getParameters(NULL, &temp, NULL, NULL);
+            pTDStretch->getParameters(nullptr, &temp, nullptr, nullptr);
             return temp;
 
         case SETTING_SEEKWINDOW_MS:
-            pTDStretch->getParameters(NULL, NULL, &temp, NULL);
+            pTDStretch->getParameters(nullptr, nullptr, &temp, nullptr);
             return temp;
 
         case SETTING_OVERLAP_MS:
-            pTDStretch->getParameters(NULL, NULL, NULL, &temp);
+            pTDStretch->getParameters(nullptr, nullptr, nullptr, &temp);
             return temp;
 
         case SETTING_NOMINAL_INPUT_SEQUENCE :

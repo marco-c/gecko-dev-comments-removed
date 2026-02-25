@@ -59,14 +59,14 @@ public:
     };
 
 protected:
-    virtual int transposeMono(SAMPLETYPE *dest, 
-                        const SAMPLETYPE *src, 
+    virtual int transposeMono(SAMPLETYPE *dest,
+                        const SAMPLETYPE *src,
                         int &srcSamples)  = 0;
-    virtual int transposeStereo(SAMPLETYPE *dest, 
-                        const SAMPLETYPE *src, 
+    virtual int transposeStereo(SAMPLETYPE *dest,
+                        const SAMPLETYPE *src,
                         int &srcSamples) = 0;
-    virtual int transposeMulti(SAMPLETYPE *dest, 
-                        const SAMPLETYPE *src, 
+    virtual int transposeMulti(SAMPLETYPE *dest,
+                        const SAMPLETYPE *src,
                         int &srcSamples) = 0;
 
     static ALGORITHM algorithm;
@@ -119,12 +119,12 @@ protected:
     
     
     
-    void processSamples(const SAMPLETYPE *src, 
+    void processSamples(const SAMPLETYPE *src,
                         uint numSamples);
 
 public:
     RateTransposer();
-    virtual ~RateTransposer();
+    virtual ~RateTransposer() override;
 
     
     FIFOSamplePipe *getOutput() { return &outputBuffer; };
@@ -147,13 +147,13 @@ public:
 
     
     
-    void putSamples(const SAMPLETYPE *samples, uint numSamples);
+    void putSamples(const SAMPLETYPE *samples, uint numSamples) override;
 
     
-    void clear();
+    void clear() override;
 
     
-    int isEmpty() const;
+    int isEmpty() const override;
 
     
     int getLatency() const;

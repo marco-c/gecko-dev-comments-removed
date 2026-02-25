@@ -74,16 +74,16 @@ public:
     
     
     
-    uint evaluate(SAMPLETYPE *dest, 
-                  const SAMPLETYPE *src, 
-                  uint numSamples, 
+    uint evaluate(SAMPLETYPE *dest,
+                  const SAMPLETYPE *src,
+                  uint numSamples,
                   uint numChannels) const;
 
     
     
     
     
-    uint evaluate(FIFOSampleBuffer &dest, 
+    uint evaluate(FIFOSampleBuffer &dest,
                   FIFOSampleBuffer &src) const;
 
 };

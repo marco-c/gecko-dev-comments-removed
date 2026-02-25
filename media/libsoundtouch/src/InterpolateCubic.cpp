@@ -37,7 +37,7 @@
 using namespace soundtouch;
 
 
-static const float _coeffs[]= 
+static const float _coeffs[]=
 { -0.5f,  1.0f, -0.5f, 0.0f,
    1.5f, -2.5f,  0.0f, 1.0f,
   -1.5f,  2.0f,  0.5f, 0.0f,
@@ -58,8 +58,8 @@ void InterpolateCubic::resetRegisters()
 
 
 
-int InterpolateCubic::transposeMono(SAMPLETYPE *pdest, 
-                    const SAMPLETYPE *psrc, 
+int InterpolateCubic::transposeMono(SAMPLETYPE *pdest,
+                    const SAMPLETYPE *psrc,
                     int &srcSamples)
 {
     int i;
@@ -103,8 +103,8 @@ int InterpolateCubic::transposeMono(SAMPLETYPE *pdest,
 
 
 
-int InterpolateCubic::transposeStereo(SAMPLETYPE *pdest, 
-                    const SAMPLETYPE *psrc, 
+int InterpolateCubic::transposeStereo(SAMPLETYPE *pdest,
+                    const SAMPLETYPE *psrc,
                     int &srcSamples)
 {
     int i;
@@ -150,8 +150,8 @@ int InterpolateCubic::transposeStereo(SAMPLETYPE *pdest,
 
 
 
-int InterpolateCubic::transposeMulti(SAMPLETYPE *pdest, 
-                    const SAMPLETYPE *psrc, 
+int InterpolateCubic::transposeMulti(SAMPLETYPE *pdest,
+                    const SAMPLETYPE *psrc,
                     int &srcSamples)
 {
     int i;

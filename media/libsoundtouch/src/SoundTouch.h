@@ -72,10 +72,10 @@ namespace soundtouch
 {
 
 
-#define SOUNDTOUCH_VERSION          "2.2"
+#define SOUNDTOUCH_VERSION          "2.4.0"
 
 
-#define SOUNDTOUCH_VERSION_ID       (20200)
+#define SOUNDTOUCH_VERSION_ID       (20400)
 
 
 
@@ -209,7 +209,7 @@ protected :
 
 public:
     SoundTouch();
-    virtual ~SoundTouch();
+    virtual ~SoundTouch() override;
 
     
     static const char *getVersionString();
@@ -287,7 +287,7 @@ public:
             uint numSamples                         
                                                     
                                                     
-            );
+            ) override;
 
     
     
@@ -296,7 +296,7 @@ public:
     
     virtual uint receiveSamples(SAMPLETYPE *output, 
         uint maxSamples                 
-        );
+        ) override;
 
     
     
@@ -304,11 +304,11 @@ public:
     
     
     virtual uint receiveSamples(uint maxSamples   
-        );
+        ) override;
 
     
     
-    virtual void clear();
+    virtual void clear() override;
 
     
     

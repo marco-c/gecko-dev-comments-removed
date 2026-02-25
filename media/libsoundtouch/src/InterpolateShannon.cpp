@@ -43,7 +43,7 @@ using namespace soundtouch;
 
 
 
-static const double _kaiser8[8] = 
+static const double _kaiser8[8] =
 {
    0.41778693317814,
    0.64888025049173,
@@ -73,8 +73,8 @@ void InterpolateShannon::resetRegisters()
 
 
 
-int InterpolateShannon::transposeMono(SAMPLETYPE *pdest, 
-                    const SAMPLETYPE *psrc, 
+int InterpolateShannon::transposeMono(SAMPLETYPE *pdest,
+                    const SAMPLETYPE *psrc,
                     int &srcSamples)
 {
     int i;
@@ -121,8 +121,8 @@ int InterpolateShannon::transposeMono(SAMPLETYPE *pdest,
 
 
 
-int InterpolateShannon::transposeStereo(SAMPLETYPE *pdest, 
-                    const SAMPLETYPE *psrc, 
+int InterpolateShannon::transposeStereo(SAMPLETYPE *pdest,
+                    const SAMPLETYPE *psrc,
                     int &srcSamples)
 {
     int i;
@@ -171,9 +171,9 @@ int InterpolateShannon::transposeStereo(SAMPLETYPE *pdest,
 
 
 
-int InterpolateShannon::transposeMulti(SAMPLETYPE *pdest, 
-                    const SAMPLETYPE *psrc, 
-                    int &srcSamples)
+int InterpolateShannon::transposeMulti(SAMPLETYPE *,
+                    const SAMPLETYPE *,
+                    int &)
 {
     
     assert(false);

@@ -50,7 +50,7 @@ TransposerBase::ALGORITHM TransposerBase::algorithm = TransposerBase::CUBIC;
 
 RateTransposer::RateTransposer() : FIFOProcessor(&outputBuffer)
 {
-    bUseAAFilter = 
+    bUseAAFilter =
 #ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
         true;
 #else
@@ -105,11 +105,11 @@ void RateTransposer::setRate(double newRate)
     pTransposer->setRate(newRate);
 
     
-    if (newRate > 1.0) 
+    if (newRate > 1.0)
     {
         fCutoff = 0.5 / newRate;
-    } 
-    else 
+    }
+    else
     {
         fCutoff = 0.5 * newRate;
     }
@@ -131,8 +131,6 @@ void RateTransposer::putSamples(const SAMPLETYPE *samples, uint nSamples)
 
 void RateTransposer::processSamples(const SAMPLETYPE *src, uint nSamples)
 {
-    uint count;
-
     if (nSamples == 0) return;
 
     
@@ -140,16 +138,16 @@ void RateTransposer::processSamples(const SAMPLETYPE *src, uint nSamples)
 
     
     
-    if (bUseAAFilter == false) 
+    if (bUseAAFilter == false)
     {
-        count = pTransposer->transpose(outputBuffer, inputBuffer);
+        (void)pTransposer->transpose(outputBuffer, inputBuffer);
         return;
     }
 
     assert(pAAFilter);
 
     
-    if (pTransposer->rate < 1.0f) 
+    if (pTransposer->rate < 1.0f)
     {
         
         
@@ -159,8 +157,8 @@ void RateTransposer::processSamples(const SAMPLETYPE *src, uint nSamples)
 
         
         pAAFilter->evaluate(outputBuffer, midBuffer);
-    } 
-    else  
+    }
+    else
     {
         
         
@@ -248,11 +246,11 @@ int TransposerBase::transpose(FIFOSampleBuffer &dest, FIFOSampleBuffer &src)
     {
         numOutput = transposeMono(pdest, psrc, numSrcSamples);
     }
-    else if (numChannels == 2) 
+    else if (numChannels == 2)
     {
         numOutput = transposeStereo(pdest, psrc, numSrcSamples);
-    } 
-    else 
+    }
+    else
 #endif 
     {
         assert(numChannels > 0);
@@ -309,7 +307,7 @@ TransposerBase *TransposerBase::newInstance()
 
         default:
             assert(false);
-            return NULL;
+            return nullptr;
     }
 #endif
 }

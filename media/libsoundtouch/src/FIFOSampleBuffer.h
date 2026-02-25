@@ -91,7 +91,7 @@ public:
                      );
 
     
-    ~FIFOSampleBuffer();
+    ~FIFOSampleBuffer() override;
 
     
     
@@ -100,7 +100,7 @@ public:
     
     
     
-    virtual SAMPLETYPE *ptrBegin();
+    virtual SAMPLETYPE *ptrBegin() override;
 
     
     
@@ -121,7 +121,7 @@ public:
     
     virtual void putSamples(const SAMPLETYPE *samples,  
                             uint numSamples                         
-                            );
+                            ) override;
 
     
     
@@ -139,7 +139,7 @@ public:
     
     virtual uint receiveSamples(SAMPLETYPE *output, 
                                 uint maxSamples                 
-                                );
+                                ) override;
 
     
     
@@ -147,29 +147,29 @@ public:
     
     
     virtual uint receiveSamples(uint maxSamples   
-                                );
+                                ) override;
 
     
-    virtual uint numSamples() const;
+    virtual uint numSamples() const override;
 
     
     void setChannels(int numChannels);
 
     
-    int getChannels() 
+    int getChannels()
     {
         return channels;
     }
 
     
-    virtual int isEmpty() const;
+    virtual int isEmpty() const override;
 
     
-    virtual void clear();
+    virtual void clear() override;
 
     
     
-    uint adjustAmountOfSamples(uint numSamples);
+    uint adjustAmountOfSamples(uint numSamples) override;
 
     
     void addSilent(uint nSamples);

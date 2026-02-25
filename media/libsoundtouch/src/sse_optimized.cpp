@@ -98,7 +98,7 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &a
     
     
     #define _MM_LOAD    _mm_loadu_ps
-#endif 
+#endif
 
     
     assert((overlapLength % 8) == 0);
@@ -111,7 +111,7 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &a
 
     
     
-    for (i = 0; i < channels * overlapLength / 16; i ++) 
+    for (i = 0; i < channels * overlapLength / 16; i ++)
     {
         __m128 vTemp;
         
@@ -201,25 +201,22 @@ double TDStretchSSE::calcCrossCorrAccumulate(const float *pV1, const float *pV2,
 
 FIRFilterSSE::FIRFilterSSE() : FIRFilter()
 {
-    filterCoeffsAlign = NULL;
-    filterCoeffsUnalign = NULL;
+    filterCoeffsAlign = nullptr;
+    filterCoeffsUnalign = nullptr;
 }
 
 
 FIRFilterSSE::~FIRFilterSSE()
 {
     delete[] filterCoeffsUnalign;
-    filterCoeffsAlign = NULL;
-    filterCoeffsUnalign = NULL;
+    filterCoeffsAlign = nullptr;
+    filterCoeffsUnalign = nullptr;
 }
 
 
 
 void FIRFilterSSE::setCoefficients(const float *coeffs, uint newLength, uint uResultDivFactor)
 {
-    uint i;
-    float fDivider;
-
     FIRFilter::setCoefficients(coeffs, newLength, uResultDivFactor);
 
     
@@ -229,13 +226,13 @@ void FIRFilterSSE::setCoefficients(const float *coeffs, uint newLength, uint uRe
     filterCoeffsUnalign = new float[2 * newLength + 4];
     filterCoeffsAlign = (float *)SOUNDTOUCH_ALIGN_POINTER_16(filterCoeffsUnalign);
 
-    fDivider = (float)resultDivider;
+    const float scale = ::pow(0.5, (int)resultDivFactor);
 
     
-    for (i = 0; i < newLength; i ++)
+    for (auto i = 0U; i < newLength; i ++)
     {
         filterCoeffsAlign[2 * i + 0] =
-        filterCoeffsAlign[2 * i + 1] = coeffs[i + 0] / fDivider;
+        filterCoeffsAlign[2 * i + 1] = coeffs[i] * scale;
     }
 }
 
@@ -251,10 +248,10 @@ uint FIRFilterSSE::evaluateFilterStereo(float *dest, const float *source, uint n
 
     if (count < 2) return 0;
 
-    assert(source != NULL);
-    assert(dest != NULL);
+    assert(source != nullptr);
+    assert(dest != nullptr);
     assert((length % 8) == 0);
-    assert(filterCoeffsAlign != NULL);
+    assert(filterCoeffsAlign != nullptr);
     assert(((ulongptr)filterCoeffsAlign) % 16 == 0);
 
     
@@ -273,7 +270,7 @@ uint FIRFilterSSE::evaluateFilterStereo(float *dest, const float *source, uint n
                                                   
         sum1 = sum2 = _mm_setzero_ps();
 
-        for (i = 0; i < length / 8; i ++) 
+        for (i = 0; i < length / 8; i ++)
         {
             
             

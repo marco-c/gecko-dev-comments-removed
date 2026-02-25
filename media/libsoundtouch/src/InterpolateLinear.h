@@ -45,23 +45,23 @@ protected:
     int iFract;
     int iRate;
 
-    virtual int transposeMono(SAMPLETYPE *dest, 
-                       const SAMPLETYPE *src, 
-                       int &srcSamples);
-    virtual int transposeStereo(SAMPLETYPE *dest, 
-                         const SAMPLETYPE *src, 
-                         int &srcSamples);
-    virtual int transposeMulti(SAMPLETYPE *dest, const SAMPLETYPE *src, int &srcSamples);
+    virtual int transposeMono(SAMPLETYPE *dest,
+                       const SAMPLETYPE *src,
+                       int &srcSamples) override;
+    virtual int transposeStereo(SAMPLETYPE *dest,
+                         const SAMPLETYPE *src,
+                         int &srcSamples) override;
+    virtual int transposeMulti(SAMPLETYPE *dest, const SAMPLETYPE *src, int &srcSamples) override;
 public:
     InterpolateLinearInteger();
 
     
     
-    virtual void setRate(double newRate);
+    virtual void setRate(double newRate) override;
 
-    virtual void resetRegisters();
+    virtual void resetRegisters() override;
 
-    int getLatency() const
+    virtual int getLatency() const override
     {
         return 0;
     }
@@ -74,11 +74,11 @@ class InterpolateLinearFloat : public TransposerBase
 protected:
     double fract;
 
-    virtual int transposeMono(SAMPLETYPE *dest, 
-                       const SAMPLETYPE *src, 
+    virtual int transposeMono(SAMPLETYPE *dest,
+                       const SAMPLETYPE *src,
                        int &srcSamples);
-    virtual int transposeStereo(SAMPLETYPE *dest, 
-                         const SAMPLETYPE *src, 
+    virtual int transposeStereo(SAMPLETYPE *dest,
+                         const SAMPLETYPE *src,
                          int &srcSamples);
     virtual int transposeMulti(SAMPLETYPE *dest, const SAMPLETYPE *src, int &srcSamples);
 

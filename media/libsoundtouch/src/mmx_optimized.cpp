@@ -68,7 +68,7 @@ double TDStretchMMX::calcCrossCorr(const short *pV1, const short *pV2, double &d
     __m64 accu, normaccu;
     long corr, norm;
     int i;
-   
+
     pVec1 = (__m64*)pV1;
     pVec2 = (__m64*)pV2;
 
@@ -144,7 +144,7 @@ double TDStretchMMX::calcCrossCorrAccumulate(const short *pV1, const short *pV2,
     __m64 accu;
     long corr, lnorm;
     int i;
-   
+
     
     lnorm = 0;
     for (i = 1; i <= channels; i ++)
@@ -232,7 +232,7 @@ void TDStretchMMX::overlapStereo(short *output, const short *input) const
     
     
     
-    
+
     mix1  = _mm_set_pi16(0, overlapLength,   0, overlapLength);
     adder = _mm_set_pi16(1, -1, 1, -1);
     mix2  = _mm_add_pi16(mix1, adder);
@@ -245,7 +245,7 @@ void TDStretchMMX::overlapStereo(short *output, const short *input) const
     for (i = 0; i < overlapLength / 4; i ++)
     {
         __m64 temp1, temp2;
-                
+
         
         temp1 = _mm_unpacklo_pi16(pVMidBuf[0], pVinput[0]);     
         temp2 = _mm_unpackhi_pi16(pVMidBuf[0], pVinput[0]);     
@@ -294,8 +294,8 @@ void TDStretchMMX::overlapStereo(short *output, const short *input) const
 
 FIRFilterMMX::FIRFilterMMX() : FIRFilter()
 {
-    filterCoeffsAlign = NULL;
-    filterCoeffsUnalign = NULL;
+    filterCoeffsAlign = nullptr;
+    filterCoeffsUnalign = nullptr;
 }
 
 
@@ -317,7 +317,7 @@ void FIRFilterMMX::setCoefficients(const short *coeffs, uint newLength, uint uRe
     filterCoeffsAlign = (short *)SOUNDTOUCH_ALIGN_POINTER_16(filterCoeffsUnalign);
 
     
-    for (i = 0;i < length; i += 4) 
+    for (i = 0;i < length; i += 4)
     {
         filterCoeffsAlign[2 * i + 0] = coeffs[i + 0];
         filterCoeffsAlign[2 * i + 1] = coeffs[i + 2];

@@ -49,10 +49,12 @@ typedef unsigned long   ulong;
 
 #include "soundtouch_config.h"
 
+
 namespace soundtouch
 {
     
-    #define SOUNDTOUCH_MAX_CHANNELS     16
+    
+    #define SOUNDTOUCH_MAX_CHANNELS     32
 
     
     
@@ -74,7 +76,7 @@ namespace soundtouch
     #endif
 
     #if !(SOUNDTOUCH_INTEGER_SAMPLES || SOUNDTOUCH_FLOAT_SAMPLES)
-       
+
         
         
         
@@ -91,7 +93,7 @@ namespace soundtouch
         
         
         #define SOUNDTOUCH_FLOAT_SAMPLES       1    //< 32bit float samples
-     
+
     #endif
 
     #if (_M_IX86 || __i386__ || __x86_64__ || _M_X64)
@@ -161,7 +163,7 @@ namespace soundtouch
         #endif
     #endif
 
-};
+}
 
 
 

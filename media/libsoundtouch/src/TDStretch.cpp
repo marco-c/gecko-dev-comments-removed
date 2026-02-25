@@ -61,32 +61,13 @@ using namespace soundtouch;
 
 
 
-const short _scanOffsets[5][24]={
-    { 124,  186,  248,  310,  372,  434,  496,  558,  620,  682,  744, 806,
-      868,  930,  992, 1054, 1116, 1178, 1240, 1302, 1364, 1426, 1488,   0},
-    {-100,  -75,  -50,  -25,   25,   50,   75,  100,    0,    0,    0,   0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   0},
-    { -20,  -15,  -10,   -5,    5,   10,   15,   20,    0,    0,    0,   0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   0},
-    {  -4,   -3,   -2,   -1,    1,    2,    3,    4,    0,    0,    0,   0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   0},
-    { 121,  114,   97,  114,   98,  105,  108,   32,  104,   99,  117,  111,
-      116,  100,  110,  117,  111,  115,    0,    0,    0,    0,    0,   0}};
-
-
-
-
-
-
-
-
 TDStretch::TDStretch() : FIFOProcessor(&outputBuffer)
 {
     bQuickSeek = false;
     channels = 2;
 
-    pMidBuffer = NULL;
-    pMidBufferUnaligned = NULL;
+    pMidBuffer = nullptr;
+    pMidBufferUnaligned = nullptr;
     overlapLength = 0;
 
     bAutoSeqSetting = true;
@@ -117,7 +98,7 @@ TDStretch::~TDStretch()
 
 
 
-void TDStretch::setParameters(int aSampleRate, int aSequenceMS, 
+void TDStretch::setParameters(int aSampleRate, int aSequenceMS,
                               int aSeekWindowMS, int aOverlapMS)
 {
     
@@ -133,19 +114,19 @@ void TDStretch::setParameters(int aSampleRate, int aSequenceMS,
     {
         this->sequenceMs = aSequenceMS;
         bAutoSeqSetting = false;
-    } 
+    }
     else if (aSequenceMS == 0)
     {
         
         bAutoSeqSetting = true;
     }
 
-    if (aSeekWindowMS > 0) 
+    if (aSeekWindowMS > 0)
     {
         this->seekWindowMs = aSeekWindowMS;
         bAutoSeekSetting = false;
-    } 
-    else if (aSeekWindowMS == 0) 
+    }
+    else if (aSeekWindowMS == 0)
     {
         
         bAutoSeekSetting = true;
@@ -251,11 +232,11 @@ bool TDStretch::isQuickSeekEnabled() const
 
 int TDStretch::seekBestOverlapPosition(const SAMPLETYPE *refPos)
 {
-    if (bQuickSeek) 
+    if (bQuickSeek)
     {
         return seekBestOverlapPositionQuick(refPos);
     }
-    else 
+    else
     {
         return seekBestOverlapPositionFull(refPos);
     }
@@ -276,8 +257,8 @@ inline void TDStretch::overlap(SAMPLETYPE *pOutput, const SAMPLETYPE *pInput, ui
     {
         
         overlapStereo(pOutput, pInput + 2 * ovlPos);
-    } 
-    else 
+    }
+    else
 #endif 
     {
         assert(channels > 0);
@@ -292,7 +273,7 @@ inline void TDStretch::overlap(SAMPLETYPE *pOutput, const SAMPLETYPE *pInput, ui
 
 
 
-int TDStretch::seekBestOverlapPositionFull(const SAMPLETYPE *refPos) 
+int TDStretch::seekBestOverlapPositionFull(const SAMPLETYPE *refPos)
 {
     int bestOffs;
     double bestCorr;
@@ -328,7 +309,7 @@ int TDStretch::seekBestOverlapPositionFull(const SAMPLETYPE *refPos)
         corr = ((corr + 0.1) * (1.0 - 0.25 * tmp * tmp));
 
         
-        if (corr > bestCorr) 
+        if (corr > bestCorr)
         {
             
             
@@ -379,7 +360,7 @@ int TDStretch::seekBestOverlapPositionQuick(const SAMPLETYPE *refPos)
 
     bestCorr =
     bestCorr2 = -FLT_MAX;
-    bestOffs = 
+    bestOffs =
     bestOffs2 = SCANWIND;
 
     
@@ -483,7 +464,7 @@ void TDStretch::adaptNormalizer()
     
     
     if ((maxnorm > 1000) || (maxnormf > 40000000))
-    { 
+    {
         
         maxnormf = 0.9f * maxnormf + 0.1f * (float)maxnorm;
 
@@ -534,7 +515,7 @@ void TDStretch::calcSeqParameters()
     #define CHECK_LIMITS(x, mi, ma) (((x) < (mi)) ? (mi) : (((x) > (ma)) ? (ma) : (x)))
 
     double seq, seek;
-    
+
     if (bAutoSeqSetting)
     {
         seq = AUTOSEQ_C + AUTOSEQ_K * tempo;
@@ -551,7 +532,7 @@ void TDStretch::calcSeqParameters()
 
     
     seekWindowLength = (sampleRate * sequenceMs) / 1000;
-    if (seekWindowLength < 2 * overlapLength) 
+    if (seekWindowLength < 2 * overlapLength)
     {
         seekWindowLength = 2 * overlapLength;
     }
@@ -652,7 +633,7 @@ void TDStretch::processSamples()
 
     
     
-    while ((int)inputBuffer.numSamples() >= sampleReq) 
+    while ((int)inputBuffer.numSamples() >= sampleReq)
     {
         if (isBeginning == false)
         {
@@ -709,7 +690,7 @@ void TDStretch::processSamples()
         
         
         assert((offset + temp + overlapLength) <= (int)inputBuffer.numSamples());
-        memcpy(pMidBuffer, inputBuffer.ptrBegin() + channels * (offset + temp), 
+        memcpy(pMidBuffer, inputBuffer.ptrBegin() + channels * (offset + temp),
             channels * sizeof(SAMPLETYPE) * overlapLength);
 
         
@@ -759,7 +740,7 @@ void TDStretch::acceptNewOverlapLength(int newOverlapLength)
 
 
 
-void * TDStretch::operator new(size_t s)
+void * TDStretch::operator new(size_t)
 {
     
     ST_THROW_RT_ERROR("Error in TDStretch::new: Don't use 'new TDStretch' directly, use 'newInstance' member instead!");
@@ -900,9 +881,9 @@ double TDStretch::calcCrossCorr(const short *mixingPos, const short *compare, do
     
     for (i = 0; i < ilength; i += 2)
     {
-        corr += (mixingPos[i] * compare[i] + 
+        corr += (mixingPos[i] * compare[i] +
                  mixingPos[i + 1] * compare[i + 1]) >> overlapDividerBitsNorm;
-        lnorm += (mixingPos[i] * mixingPos[i] + 
+        lnorm += (mixingPos[i] * mixingPos[i] +
                   mixingPos[i + 1] * mixingPos[i + 1]) >> overlapDividerBitsNorm;
         
     }
@@ -942,9 +923,9 @@ double TDStretch::calcCrossCorrAccumulate(const short *mixingPos, const short *c
 
     corr = 0;
     
-    for (i = 0; i < ilength; i += 2) 
+    for (i = 0; i < ilength; i += 2)
     {
-        corr += (mixingPos[i] * compare[i] + 
+        corr += (mixingPos[i] * compare[i] +
                  mixingPos[i + 1] * compare[i + 1]) >> overlapDividerBitsNorm;
     }
 
@@ -988,7 +969,7 @@ void TDStretch::overlapStereo(float *pOutput, const float *pInput) const
     f1 = 0;
     f2 = 1.0f;
 
-    for (i = 0; i < 2 * (int)overlapLength ; i += 2) 
+    for (i = 0; i < 2 * (int)overlapLength ; i += 2)
     {
         pOutput[i + 0] = pInput[i + 0] * f1 + pMidBuffer[i + 0] * f2;
         pOutput[i + 1] = pInput[i + 1] * f1 + pMidBuffer[i + 1] * f2;

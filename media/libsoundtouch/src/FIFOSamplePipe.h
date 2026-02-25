@@ -88,11 +88,11 @@ public:
     void moveSamples(FIFOSamplePipe &other  
          )
     {
-        int oNumSamples = other.numSamples();
+        const uint oNumSamples = other.numSamples();
 
         putSamples(other.ptrBegin(), oNumSamples);
         other.receiveSamples(oNumSamples);
-    };
+    }
 
     
     
@@ -144,8 +144,8 @@ protected:
     
     void setOutPipe(FIFOSamplePipe *pOutput)
     {
-        assert(output == NULL);
-        assert(pOutput != NULL);
+        assert(output == nullptr);
+        assert(pOutput != nullptr);
         output = pOutput;
     }
 
@@ -153,7 +153,7 @@ protected:
     
     FIFOProcessor()
     {
-        output = NULL;
+        output = nullptr;
     }
 
     
@@ -164,7 +164,7 @@ protected:
     }
 
     
-    virtual ~FIFOProcessor()
+    virtual ~FIFOProcessor() override
     {
     }
 
@@ -175,7 +175,7 @@ protected:
     
     
     
-    virtual SAMPLETYPE *ptrBegin()
+    virtual SAMPLETYPE *ptrBegin() override
     {
         return output->ptrBegin();
     }
@@ -189,7 +189,7 @@ public:
     
     virtual uint receiveSamples(SAMPLETYPE *outBuffer, 
                                 uint maxSamples                    
-                                )
+                                ) override
     {
         return output->receiveSamples(outBuffer, maxSamples);
     }
@@ -200,26 +200,26 @@ public:
     
     
     virtual uint receiveSamples(uint maxSamples   
-                                )
+                                ) override
     {
         return output->receiveSamples(maxSamples);
     }
 
     
-    virtual uint numSamples() const
+    virtual uint numSamples() const override
     {
         return output->numSamples();
     }
 
     
-    virtual int isEmpty() const
+    virtual int isEmpty() const override
     {
         return output->isEmpty();
     }
 
     
     
-    virtual uint adjustAmountOfSamples(uint numSamples)
+    virtual uint adjustAmountOfSamples(uint numSamples) override
     {
         return output->adjustAmountOfSamples(numSamples);
     }

@@ -162,10 +162,10 @@ protected:
     
     
     void processSamples();
-    
+
 public:
     TDStretch();
-    virtual ~TDStretch();
+    virtual ~TDStretch() override;
 
     
     
@@ -175,7 +175,7 @@ public:
     
     
     static TDStretch *newInstance();
-    
+
     
     FIFOSamplePipe *getOutput() { return &outputBuffer; };
 
@@ -187,7 +187,7 @@ public:
     void setTempo(double newTempo);
 
     
-    virtual void clear();
+    virtual void clear() override;
 
     
     void clearInput();
@@ -227,7 +227,7 @@ public:
             const SAMPLETYPE *samples,  
             uint numSamples                         
                                                     
-            );
+            ) override;
 
     
     int getInputSampleReq() const
@@ -256,10 +256,10 @@ public:
     class TDStretchMMX : public TDStretch
     {
     protected:
-        double calcCrossCorr(const short *mixingPos, const short *compare, double &norm);
-        double calcCrossCorrAccumulate(const short *mixingPos, const short *compare, double &norm);
-        virtual void overlapStereo(short *output, const short *input) const;
-        virtual void clearCrossCorrState();
+        double calcCrossCorr(const short *mixingPos, const short *compare, double &norm) override;
+        double calcCrossCorrAccumulate(const short *mixingPos, const short *compare, double &norm) override;
+        virtual void overlapStereo(short *output, const short *input) const override;
+        virtual void clearCrossCorrState() override;
     };
 #endif 
 
@@ -269,8 +269,8 @@ public:
     class TDStretchSSE : public TDStretch
     {
     protected:
-        double calcCrossCorr(const float *mixingPos, const float *compare, double &norm);
-        double calcCrossCorrAccumulate(const float *mixingPos, const float *compare, double &norm);
+        double calcCrossCorr(const float *mixingPos, const float *compare, double &norm) override;
+        double calcCrossCorrAccumulate(const float *mixingPos, const float *compare, double &norm) override;
     };
 
 #endif 

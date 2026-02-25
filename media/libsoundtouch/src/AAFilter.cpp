@@ -54,7 +54,7 @@ using namespace soundtouch;
     static void _DEBUG_SAVE_AAFIR_COEFFS(SAMPLETYPE *coeffs, int len)
     {
         FILE *fptr = fopen("aa_filter_coeffs.txt", "wt");
-        if (fptr == NULL) return;
+        if (fptr == nullptr) return;
 
         for (int i = 0; i < len; i ++)
         {
@@ -128,16 +128,16 @@ void AAFilter::calculateCoeffs()
     tempCoeff = TWOPI / (double)length;
 
     sum = 0;
-    for (i = 0; i < length; i ++) 
+    for (i = 0; i < length; i ++)
     {
         cntTemp = (double)i - (double)(length / 2);
 
         temp = cntTemp * wc;
-        if (temp != 0) 
+        if (temp != 0)
         {
             h = sin(temp) / temp;                     
-        } 
-        else 
+        }
+        else
         {
             h = 1.0;
         }
@@ -162,7 +162,7 @@ void AAFilter::calculateCoeffs()
     
     scaleCoeff = 16384.0f / sum;
 
-    for (i = 0; i < length; i ++) 
+    for (i = 0; i < length; i ++)
     {
         temp = work[i] * scaleCoeff;
         
