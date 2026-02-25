@@ -743,17 +743,7 @@ class FontNameCache {
 
   
   
-  FontNameCache() : mMap(&mOps, sizeof(FNCMapEntry), 0), mWriteNeeded(false) {
-    
-    
-    
-    
-    
-    
-    
-    mOps = (PLDHashTableOps){StringHash, HashMatchEntry, MoveEntry,
-                             PLDHashTable::ClearEntryStub, nullptr};
-
+  FontNameCache() : mWriteNeeded(false) {
     MOZ_ASSERT(XRE_IsParentProcess(),
                "FontNameCache should only be used in chrome process");
     mCache = mozilla::scache::StartupCache::GetSingleton();
@@ -761,12 +751,11 @@ class FontNameCache {
 
   ~FontNameCache() { WriteCache(); }
 
-  size_t EntryCount() const { return mMap.EntryCount(); }
+  size_t EntryCount() const { return mMap.Count(); }
 
   void DropStaleEntries() {
-    for (auto iter = mMap.ConstIter(); !iter.Done(); iter.Next()) {
-      auto entry = static_cast<FNCMapEntry*>(iter.Get());
-      if (!entry->mFileExists) {
+    for (auto iter = mMap.Iter(); !iter.Done(); iter.Next()) {
+      if (!iter.Data().mFileExists) {
         iter.Remove();
       }
     }
@@ -779,16 +768,15 @@ class FontNameCache {
 
     LOG(("Writing FontNameCache:"));
     nsAutoCString buf;
-    for (auto iter = mMap.ConstIter(); !iter.Done(); iter.Next()) {
-      auto entry = static_cast<FNCMapEntry*>(iter.Get());
-      MOZ_ASSERT(entry->mFileExists);
-      buf.Append(entry->mFilename);
+    for (auto& entry : mMap) {
+      MOZ_ASSERT(entry.GetData().mFileExists);
+      buf.Append(entry.GetKey());
       buf.Append(kGroupSep);
-      buf.Append(entry->mFaces);
+      buf.Append(entry.GetData().mFaces);
       buf.Append(kGroupSep);
-      buf.AppendInt(entry->mTimestamp);
+      buf.AppendInt(entry.GetData().mTimestamp);
       buf.Append(kGroupSep);
-      buf.AppendInt(entry->mFilesize);
+      buf.AppendInt(entry.GetData().mFilesize);
       buf.Append(kFileSep);
     }
 
@@ -858,17 +846,13 @@ class FontNameCache {
       }
       uint32_t filesize = strtoul(cur, nullptr, 10);
 
-      auto mapEntry =
-          static_cast<FNCMapEntry*>(mMap.Add(filename.get(), fallible));
-      if (mapEntry) {
-        mapEntry->mFilename.Assign(filename);
-        mapEntry->mTimestamp = timestamp;
-        mapEntry->mFilesize = filesize;
-        mapEntry->mFaces.Assign(faceList);
-        
-        
-        mapEntry->mFileExists = false;
-      }
+      auto& mapEntry = mMap.LookupOrInsert(filename);
+      mapEntry.mTimestamp = timestamp;
+      mapEntry.mFilesize = filesize;
+      mapEntry.mFaces.Assign(faceList);
+      
+      
+      mapEntry.mFileExists = false;
 
       cur = fileEnd + 1;
     }
@@ -876,7 +860,7 @@ class FontNameCache {
 
   void GetInfoForFile(const nsCString& aFileName, nsCString& aFaceList,
                       uint32_t* aTimestamp, uint32_t* aFilesize) {
-    auto entry = static_cast<FNCMapEntry*>(mMap.Search(aFileName.get()));
+    auto entry = mMap.Lookup(aFileName);
     if (entry) {
       *aTimestamp = entry->mTimestamp;
       *aFilesize = entry->mFilesize;
@@ -890,52 +874,25 @@ class FontNameCache {
 
   void CacheFileInfo(const nsCString& aFileName, const nsCString& aFaceList,
                      uint32_t aTimestamp, uint32_t aFilesize) {
-    auto entry = static_cast<FNCMapEntry*>(mMap.Add(aFileName.get(), fallible));
-    if (entry) {
-      entry->mFilename.Assign(aFileName);
-      entry->mTimestamp = aTimestamp;
-      entry->mFilesize = aFilesize;
-      entry->mFaces.Assign(aFaceList);
-      entry->mFileExists = true;
-    }
+    auto& entry = mMap.LookupOrInsert(aFileName);
+    entry.mTimestamp = aTimestamp;
+    entry.mFilesize = aFilesize;
+    entry.mFaces.Assign(aFaceList);
+    entry.mFileExists = true;
     mWriteNeeded = true;
   }
 
  private:
-  mozilla::scache::StartupCache* mCache;
-  PLDHashTable mMap;
-  bool mWriteNeeded;
-
-  PLDHashTableOps mOps;
-
-  struct FNCMapEntry : public PLDHashEntryHdr {
-   public:
-    nsCString mFilename;
+  struct FNCEntry {
     uint32_t mTimestamp;
     uint32_t mFilesize;
     nsCString mFaces;
     bool mFileExists;
   };
 
-  static PLDHashNumber StringHash(const void* key) {
-    return HashString(reinterpret_cast<const char*>(key));
-  }
-
-  static bool HashMatchEntry(const PLDHashEntryHdr* aHdr, const void* key) {
-    const FNCMapEntry* entry = static_cast<const FNCMapEntry*>(aHdr);
-    return entry->mFilename.Equals(reinterpret_cast<const char*>(key));
-  }
-
-  static void MoveEntry(PLDHashTable* table, const PLDHashEntryHdr* aFrom,
-                        PLDHashEntryHdr* aTo) {
-    FNCMapEntry* to = static_cast<FNCMapEntry*>(aTo);
-    const FNCMapEntry* from = static_cast<const FNCMapEntry*>(aFrom);
-    to->mFilename.Assign(from->mFilename);
-    to->mTimestamp = from->mTimestamp;
-    to->mFilesize = from->mFilesize;
-    to->mFaces.Assign(from->mFaces);
-    to->mFileExists = from->mFileExists;
-  }
+  mozilla::scache::StartupCache* mCache;
+  nsTHashMap<nsCString, FNCEntry> mMap;
+  bool mWriteNeeded;
 };
 
 
