@@ -22,8 +22,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 function isEventForAutocompleteItem(event) {
-  
-  return event.accessible.role == ROLE_OPTION;
+  return event.accessible.role == ROLE_COMBOBOX_OPTION;
 }
 
 function isEventForButton(event) {
@@ -50,9 +49,9 @@ function isEventForMenuItem(event) {
 
 function isEventForResultButton(event) {
   let parent = event.accessible.parent;
-  
   return (
-    event.accessible.role == ROLE_PUSHBUTTON && parent?.role == ROLE_LISTBOX
+    event.accessible.role == ROLE_PUSHBUTTON &&
+    parent?.role == ROLE_COMBOBOX_LIST
   );
 }
 
@@ -109,10 +108,9 @@ async function runTests() {
   
   await UrlbarTestUtils.promisePopupClose(window);
 
-  
   let focused = waitForEvent(
     EVENT_FOCUS,
-    event => event.accessible.role == ROLE_EDITCOMBOBOX
+    event => event.accessible.role == ROLE_ENTRY
   );
   gURLBar.focus();
   let event = await focused;
@@ -381,10 +379,9 @@ async function runTipTests() {
     providersManager.unregisterProvider(provider);
   });
 
-  
   let focused = waitForEvent(
     EVENT_FOCUS,
-    event => event.accessible.role == ROLE_EDITCOMBOBOX
+    event => event.accessible.role == ROLE_ENTRY
   );
   gURLBar.focus();
   let event = await focused;

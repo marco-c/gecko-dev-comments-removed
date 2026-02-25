@@ -30,8 +30,7 @@ add_task(async function testAutocompleteRichResult() {
 
   info("Confirming that the special case is handled in XULListboxAccessible");
   let accessible = accService.getAccessibleFor(resultsView);
-  
-  todo_is(accessible.role, ROLE_COMBOBOX_LIST, "Right role");
+  is(accessible.role, ROLE_COMBOBOX_LIST, "Right role");
 
   BrowserTestUtils.removeTab(tab);
 });
