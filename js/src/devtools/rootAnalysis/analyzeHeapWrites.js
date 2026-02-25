@@ -13,6 +13,10 @@ loadRelativeToScript('dumpCFG.js');
 
 
 
+var typeInfo = {};
+
+
+
 
 
 function checkExternalFunction(entry)
@@ -961,7 +965,7 @@ function process(entry, body, addCallee)
 
         var location = get_location(body.PPoint[edge.Index[0] - 1].Location);
 
-        var callees = getCallees(edge);
+        var callees = getCallees(typeInfo, edge);
         for (var callee of callees) {
             switch (callee.kind) {
             case "direct":

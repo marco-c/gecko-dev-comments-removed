@@ -157,7 +157,7 @@ function processBody(functionName, body, functionBodies)
         
         const scopeAttrs = body.attrs[edge.Index[0]] | 0;
 
-        for (const { callee, attrs } of getCallees(body, edge, scopeAttrs, functionBodies)) {
+        for (const { callee, attrs } of getCallees(typeInfo, body, edge, scopeAttrs, functionBodies)) {
             
             
             

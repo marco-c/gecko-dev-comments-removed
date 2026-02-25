@@ -30,11 +30,43 @@ var typeInfo = {
     'OtherFieldTags': {},
 
     
+    'SingleGCField': new Map(),
+
+    
     
     'GCSuppressors': {},
 };
 
-var gDescriptors = new Map; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 var structureParents = {}; 
 var pointerParents = {}; 
@@ -43,7 +75,6 @@ var subClasses = {};
 
 var gcTypes = {}; 
 var gcPointers = {}; 
-var gcFields = new Map;
 
 var rootedPointers = {};
 
@@ -381,6 +412,22 @@ function markGCType(typeName, child, childType, typePtrLevel, fieldPtrLevel, ind
     markGCTypeImpl(typeName, child, childType, ptrLevel, indent);
 }
 
+
+
+
+
+var gcFields = new Map();
+
+
+
+
+
+
+
+
+
+
+
 function markGCTypeImpl(typeName, child, childType, ptrLevel, indent) {
     
     
@@ -452,6 +499,82 @@ function addGCPointer(typeName)
 
 for (const pending of pendingGCTypes) {
     markGCType(...pending);
+}
+
+
+
+
+
+
+
+
+function getGCPointerFieldType(type) {
+    if (type.Kind == "Pointer") {
+        var target = type.Type;
+        if (target.Kind == "CSU" && target.Name in gcTypes) {
+            return target.Name;
+        }
+    } else if (type.Kind == "CSU") {
+        if (type.Name in gcPointers) {
+            return type.Name;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkSingleGCPointer(csu, decl) {
+    if (!(csu in gcPointers)) return;
+
+    let singleGCPointerField;
+    for (const field of (decl.DataField || [])) {
+        const pointerField = getGCPointerFieldType(field.Field.Type);
+        if (pointerField) {
+            if (singleGCPointerField) {
+                
+                return;
+            } else {
+                singleGCPointerField = pointerField;
+            }
+        }
+    }
+
+    if (singleGCPointerField) {
+        typeInfo.SingleGCField[csu] = singleGCPointerField;
+    }
+}
+
+for (var csuIndex = minStream; csuIndex <= maxStream; csuIndex++) {
+    var csuData = xdb.read_key(csuIndex);
+    var data = xdb.read_entry(csuData);
+    var decl = JSON.parse(data.readString())[0];
+    const csu = csuData.readString();
+    checkSingleGCPointer(csu, decl);
+    xdb.free_string(csuData);
+    xdb.free_string(data);
+}
+
+
+
+
+for (const typeName of Object.values(typeInfo.SingleGCField)) {
+    if (!(typeName in typeInfo.SingleGCField)) {
+        typeInfo.SingleGCField[typeName] = (typeName in gcTypes) ? "<GC type>" : "<GC pointer>";
+    }
 }
 
 

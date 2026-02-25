@@ -510,8 +510,10 @@ function isReturningImmobileValue(edge, variable)
 
 
 
-function edgeUsesVariable(edge, variable, body, liveToEnd=false)
+function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
 {
+    const variable = decl.Variable;
+
     if (ignoreEdgeUse(edge, variable, body))
         return 0;
 
@@ -540,8 +542,9 @@ function edgeUsesVariable(edge, variable, body, liveToEnd=false)
             return src;
         
         
-        if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
+        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(typeInfo, lhs, decl)) {
             return src;
+        }
         return 0;
     }
 
@@ -554,7 +557,7 @@ function edgeUsesVariable(edge, variable, body, liveToEnd=false)
             return src;
         if ("PEdgeCallInstance" in edge) {
             if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable)) {
-                if (edgeStartsValueLiveRange(edge, variable)) {
+                if (edgeStartsValueLiveRange(typeInfo, edge, decl)) {
                     
                     
                     
@@ -579,7 +582,7 @@ function edgeUsesVariable(edge, variable, body, liveToEnd=false)
 
         
         const lhs = edge.Exp[1];
-        if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
+        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(typeInfo, lhs, decl))
             return src;
         return 0;
     }
@@ -607,9 +610,102 @@ function maybeDereference(exp, decl) {
     return exp;
 }
 
+
 function expressionIsVariable(exp, variable)
 {
     return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+}
+
+function referencedCSUName(type) {
+    if (type.Kind == "Pointer") {
+        return referencedCSUName(type.Type);
+    } else if (type.Kind == "CSU") {
+        return type.Name;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function exprCoversVariable(typeInfo, exp, decl)
+{
+    if (exp.Kind == "Var") {
+        return sameVariable(exp.Variable, decl.Variable);
+    } else if (exp.Kind == "Fld") {
+        
+        
+        
+        
+
+        
+        
+        if (decl.Type.Kind != "CSU") {
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        const lhsCSUName = referencedCSUName(exp.Field.Type);
+        if (!lhsCSUName || !typeInfo.SingleGCField[lhsCSUName]) {
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+
+        let top = exp;
+        let topField;
+        while (top.Kind === "Fld") {
+            topField = top;
+            top = top.Exp[0];
+        }
+
+        
+        if (top.Kind != "Var" || !sameVariable(top.Variable, decl.Variable)) {
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        const typeName = referencedCSUName(topField.Field.FieldCSU.Type);
+        return typeName && (typeName in typeInfo.SingleGCField);
+    }
+
+    return false;
 }
 
 
@@ -638,13 +734,14 @@ function expressionIsMethodOnVariableDecl(exp, decl)
 
 
 
-function edgeStartsValueLiveRange(edge, variable)
+function edgeStartsValueLiveRange(typeInfo, edge, decl)
 {
+    
     
     if (edge.Kind == "Assign") {
         const [lhs, rhs] = edge.Exp;
-        return (expressionIsVariable(lhs, variable) &&
-                !isReturningImmobileValue(edge, variable));
+        return (exprCoversVariable(typeInfo, lhs, decl) &&
+                !isReturningImmobileValue(edge, decl.Variable));
     }
 
     if (edge.Kind != "Call")
@@ -653,7 +750,7 @@ function edgeStartsValueLiveRange(edge, variable)
     
     if (1 in edge.Exp) {
         var lhs = edge.Exp[1];
-        if (expressionIsVariable(lhs, variable))
+        if (exprCoversVariable(typeInfo, lhs, decl))
             return true;
     }
 
@@ -665,7 +762,7 @@ function edgeStartsValueLiveRange(edge, variable)
         if (instance.Kind == "Drf")
             instance = instance.Exp[0];
 
-        if (!expressionIsVariable(instance, variable))
+        if (!exprCoversVariable(typeInfo, instance, decl))
             return false;
 
         var callee = edge.Exp[0];
@@ -773,25 +870,24 @@ function parseTypeName(typeName) {
 
 
 
-
-
-function edgeEndsValueLiveRange(edge, variable, body)
+function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
 {
     
     if (edge.Kind == "Assign") {
         const [lhs, rhs] = edge.Exp;
-        return expressionIsVariable(lhs, variable) && isImmobileValue(rhs);
+        if (exprCoversVariable(typeInfo, lhs, decl) && isImmobileValue(rhs)) {
+            return true;
+        }
+        return false;
     }
 
     if (edge.Kind != "Call")
         return false;
 
-    if (edgeMarksVariableGCSafe(edge, variable)) {
+    if (edgeMarksVariableGCSafe(edge, decl.Variable)) {
         
         return true;
     }
-
-    const decl = lookupVariable(body, variable);
 
     if (matchEdgeCall(edge, (calleeName, argExprs, lhs) => {
         return calleeName[1] == 'move' && calleeName[0].includes('std::move(') &&
@@ -832,7 +928,7 @@ function edgeEndsValueLiveRange(edge, variable, body)
         
 
         const lhs = edge.Exp[1].Variable;
-        if (basicBlockEatsVariable(lhs, body, edge.Index[1]))
+        if (basicBlockEatsVariable(typeInfo, lhs, body, edge.Index[1]))
           return true;
     }
 
@@ -889,7 +985,7 @@ function edgeEndsValueLiveRange(edge, variable, body)
             if (!param.Type.Name.startsWith("mozilla::UniquePtr<"))
                 continue;
             const arg = edge.PEdgeCallArguments.Exp[i];
-            if (expressionIsVariable(arg, variable)) {
+            if (expressionIsVariable(arg, decl.Variable)) {
                 return true;
             }
         }
@@ -908,7 +1004,7 @@ function lookupVariable(body, variable) {
     return undefined;
 }
 
-function edgeMovesVariable(edge, variable, body)
+function edgeMovesVariable(edge, decl)
 {
     if (edge.Kind != 'Call')
         return false;
@@ -927,10 +1023,10 @@ function edgeMovesVariable(edge, variable, body)
         for (const arg of edge.PEdgeCallArguments.Exp) {
             if (arg.Kind != 'Drf') continue;
             const val = arg.Exp[0];
-            if (val.Kind == 'Var' && sameVariable(val.Variable, variable)) {
+            if (val.Kind == 'Var' && sameVariable(val.Variable, decl.Variable)) {
                 
                 
-                const type = lookupVariable(body, variable).Type;
+                const type = decl.Type;
                 if (type.Kind == "Pointer" && type.Reference == PTR_RVALUE_REF) {
                     return true;
                 }
@@ -944,8 +1040,10 @@ function edgeMovesVariable(edge, variable, body)
 
 
 
-function basicBlockEatsVariable(variable, body, startpoint)
+function basicBlockEatsVariable(typeInfo, variable, body, startpoint)
 {
+    let decl = lookupVariable(body, variable);
+
     const successors = getSuccessors(body);
     let point = startpoint;
     while (point in successors) {
@@ -956,7 +1054,7 @@ function basicBlockEatsVariable(variable, body, startpoint)
         }
         const edge = edges[0];
 
-        if (edgeMovesVariable(edge, variable, body)) {
+        if (edgeMovesVariable(edge, decl)) {
             return true;
         }
 
@@ -964,7 +1062,7 @@ function basicBlockEatsVariable(variable, body, startpoint)
         
         
         
-        if (edgeStartsValueLiveRange(edge, variable)) {
+        if (edgeStartsValueLiveRange(typeInfo, edge, decl)) {
             return false;
         }
 
@@ -1020,7 +1118,7 @@ function synthesizeDestructorName(className) {
     return mangled_dtor + "$" + pretty_dtor;
 }
 
-function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
+function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies) {
     let attrs = 0;
     let extraCalls = [];
 
@@ -1091,7 +1189,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     
     
 
-    const variable = instance.Variable;
+    const decl = lookupVariable(body, instance.Variable);
 
     const visitor = new class DominatorVisitor extends Visitor {
         
@@ -1108,12 +1206,12 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
                 return "continue";
             }
 
-            if (!edgeUsesVariable(edge, variable, body)) {
+            if (!edgeUsesVariable(typeInfo, edge, decl, body)) {
                 
                 return "continue";
             }
 
-            if (edgeEndsValueLiveRange(edge, variable, body)) {
+            if (edgeEndsValueLiveRange(typeInfo, edge, decl, body)) {
                 
                 return "prune";
             }
