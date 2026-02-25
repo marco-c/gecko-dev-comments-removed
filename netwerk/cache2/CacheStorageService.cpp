@@ -158,8 +158,16 @@ void CacheStorageService::ShutdownBackground() {
   }
 
 #ifdef NS_FREE_PERMANENT_DATA
-  Pool(MemoryPool::EType::DISK).mManagedEntries.clear();
-  Pool(MemoryPool::EType::MEMORY).mManagedEntries.clear();
+  
+  
+  
+  RefPtr<CacheEntry> entry;
+  while ((entry = Pool(MemoryPool::EType::DISK).mManagedEntries.popFirst())) {
+    entry->SetRegistered(false);
+  }
+  while ((entry = Pool(MemoryPool::EType::MEMORY).mManagedEntries.popFirst())) {
+    entry->SetRegistered(false);
+  }
 #endif
 
   LOG(("CacheStorageService::ShutdownBackground - done"));
