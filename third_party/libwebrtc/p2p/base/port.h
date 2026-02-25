@@ -45,7 +45,6 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/weak_ptr.h"
 
@@ -150,7 +149,7 @@ typedef std::set<SocketAddress> ServerAddresses;
 
 
 
-class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
+class RTC_EXPORT Port : public PortInterface {
  public:
   
   
@@ -264,7 +263,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   void SubscribeCandidateReadyCallback(
       absl::AnyInvocable<void(Port*, const Candidate&)> callback);
   void NotifyCandidateReady(Port* port, const Candidate& candidate) {
-    SignalCandidateReady(port, candidate);
+    RTC_DCHECK_RUN_ON(thread_);
+    candidate_ready_callback_list_.Send(this, candidate);
   }
   
   const std::vector<Candidate>& Candidates() const override;
@@ -276,7 +276,10 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   void SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback);
-  void NotifyPortComplete(Port* port) { SignalPortComplete(port); }
+  void NotifyPortComplete(Port* port) {
+    RTC_DCHECK_RUN_ON(thread_);
+    port_complete_callback_list_.Send(this);
+  }
 
   
   
@@ -284,7 +287,10 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   void SubscribePortError(absl::AnyInvocable<void(Port*)> callback);
-  void NotifyPortError(Port* port) { SignalPortError(port); }
+  void NotifyPortError(Port* port) {
+    RTC_DCHECK_RUN_ON(thread_);
+    port_error_callback_list_.Send(this);
+  }
 
   void SubscribePortDestroyed(
       std::function<void(PortInterface*)> callback) override;
@@ -580,16 +586,6 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   CallbackList<Port*> port_error_callback_list_ RTC_GUARDED_BY(thread_);
 
   absl::AnyInvocable<void()> role_conflict_callback_ RTC_GUARDED_BY(thread_);
-
-  
-  
-  
-  sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
-  sigslot::signal1<Port*> SignalPortComplete;
-  
-  
-  
-  sigslot::signal1<Port*> SignalPortError;
 
   
   WeakPtrFactory<Port> weak_factory_ RTC_GUARDED_BY(thread_);
