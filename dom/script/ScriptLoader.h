@@ -491,9 +491,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void EmulateNetworkEvents(ScriptLoadRequest* aRequest);
+  void EmulateNetworkEvents(ScriptLoadRequest* aRequest,
+                            const Maybe<nsAutoString>& aCharsetForPreload);
 
-  void NotifyObserversForCachedScript(ScriptLoadRequest* aRequest);
+  void NotifyObserversForCachedScript(
+      ScriptLoadRequest* aRequest,
+      const Maybe<nsAutoString>& aCharsetForPreload);
 
   
 

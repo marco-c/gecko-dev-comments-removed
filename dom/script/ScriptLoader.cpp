@@ -638,7 +638,7 @@ nsresult ScriptLoader::StartClassicLoad(
     ScriptLoadRequest* aRequest,
     const Maybe<nsAutoString>& aCharsetForPreload) {
   if (aRequest->IsCachedStencil()) {
-    EmulateNetworkEvents(aRequest);
+    EmulateNetworkEvents(aRequest, aCharsetForPreload);
     return NS_OK;
   }
 
@@ -1080,7 +1080,9 @@ RequestPriority FetchPriorityToRequestPriority(
 }
 }  
 
-void ScriptLoader::NotifyObserversForCachedScript(ScriptLoadRequest* aRequest) {
+void ScriptLoader::NotifyObserversForCachedScript(
+    ScriptLoadRequest* aRequest,
+    const Maybe<nsAutoString>& aCharsetForPreload) {
   nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
 
   if (!obsService->HasObservers("http-on-resource-cache-response")) {
@@ -1116,6 +1118,15 @@ void ScriptLoader::NotifyObserversForCachedScript(ScriptLoadRequest* aRequest) {
   }
 
   
+  
+
+  PrepareLoadInfoForScriptLoading(channel, aRequest);
+
+  rv =
+      PrepareHttpRequestAndInitiatorType(channel, aRequest, aCharsetForPreload);
+  if (NS_FAILED(rv)) {
+    return;
+  }
 
   
   
@@ -1259,12 +1270,14 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   return;
 }
 
-void ScriptLoader::EmulateNetworkEvents(ScriptLoadRequest* aRequest) {
+void ScriptLoader::EmulateNetworkEvents(
+    ScriptLoadRequest* aRequest,
+    const Maybe<nsAutoString>& aCharsetForPreload) {
   MOZ_ASSERT(aRequest->IsCachedStencil());
   MOZ_ASSERT(aRequest->mNetworkMetadata);
   MOZ_ASSERT(!aRequest->IsWasmBytes());
 
-  NotifyObserversForCachedScript(aRequest);
+  NotifyObserversForCachedScript(aRequest, aCharsetForPreload);
 
   {
     nsAutoCString name;
