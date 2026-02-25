@@ -296,6 +296,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     
     
     RUNTIME_LICENSE_WHITELIST = [
+        "0BSD",
         "Apache-2.0",
         "Apache-2.0 WITH LLVM-exception",
         
