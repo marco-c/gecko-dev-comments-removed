@@ -67,8 +67,8 @@ class RtcEventLogDriver {
 
   
   using StreamInterfaceFactory =
-      absl::AnyInvocable<std::unique_ptr<StreamInterface>(Environment, uint32_t)
-                             const>;
+      absl::AnyInvocable<std::unique_ptr<StreamInterface>(const Environment&,
+                                                          uint32_t) const>;
 
   
   static constexpr TimeDelta kShutdownAdvanceTimeSlack = TimeDelta::Millis(100);
