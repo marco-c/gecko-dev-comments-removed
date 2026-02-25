@@ -11,7 +11,7 @@ use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::context::SharedStyleContext;
 #[cfg(feature = "gecko")]
 use crate::context::UpdateAnimationsTasks;
-use crate::data::ElementData;
+use crate::data::{ElementData, ElementDataMut, ElementDataRef};
 use crate::media_queries::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
 use crate::selector_map::PrecomputedHashSet;
@@ -22,7 +22,6 @@ use crate::stylist::CascadeData;
 use crate::values::computed::Display;
 use crate::values::AtomIdent;
 use crate::{LocalName, WeakAtom};
-use atomic_refcell::{AtomicRef, AtomicRefMut};
 use dom::ElementState;
 use selectors::matching::{ElementSelectorFlags, QuirksMode, VisitedHandlingMode};
 use selectors::sink::Push;
@@ -735,7 +734,7 @@ pub trait TElement:
     
     
     
-    unsafe fn ensure_data(&self) -> AtomicRefMut<'_, ElementData>;
+    unsafe fn ensure_data(&self) -> ElementDataMut<'_>;
 
     
     
@@ -746,10 +745,10 @@ pub trait TElement:
     fn has_data(&self) -> bool;
 
     
-    fn borrow_data(&self) -> Option<AtomicRef<'_, ElementData>>;
+    fn borrow_data(&self) -> Option<ElementDataRef<'_>>;
 
     
-    fn mutate_data(&self) -> Option<AtomicRefMut<'_, ElementData>>;
+    fn mutate_data(&self) -> Option<ElementDataMut<'_>>;
 
     
     
