@@ -225,9 +225,18 @@ class RTC_EXPORT Network {
           int prefix_length,
           AdapterType type);
   
-  Network(const Network& o);
-  Network(Network&&) = default;
+  
+  
+  
+  Network(const Network&);
+  Network& operator=(const Network&) = delete;
+  Network(Network&&) = delete;
+  Network& operator=(Network&&) = delete;
   ~Network();
+
+  
+  
+  std::unique_ptr<Network> Clone() const;
 
   
   
