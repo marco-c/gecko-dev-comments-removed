@@ -423,7 +423,7 @@ impl AnchorName {
     ToTyped,
 )]
 #[repr(u8)]
-pub enum ScopedNameKeyword {
+pub enum AnchorScopeKeyword {
     
     None,
     
@@ -437,14 +437,14 @@ pub enum ScopedNameKeyword {
     ),
 }
 
-impl ScopedNameKeyword {
+impl AnchorScopeKeyword {
     
     pub fn none() -> Self {
         Self::None
     }
 }
 
-impl Parse for ScopedNameKeyword {
+impl Parse for AnchorScopeKeyword {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -464,20 +464,19 @@ impl Parse for ScopedNameKeyword {
         while input.try_parse(|input| input.expect_comma()).is_ok() {
             idents.push(DashedIdent::parse(context, input)?);
         }
-        Ok(ScopedNameKeyword::Idents(ArcSlice::from_iter(
+        Ok(AnchorScopeKeyword::Idents(ArcSlice::from_iter(
             idents.drain(..),
         )))
     }
 }
 
 
+pub type AnchorScope = TreeScoped<AnchorScopeKeyword>;
 
-pub type ScopedName = TreeScoped<ScopedNameKeyword>;
-
-impl ScopedName {
+impl AnchorScope {
     
     pub fn none() -> Self {
-        Self::with_default_level(ScopedNameKeyword::none())
+        Self::with_default_level(AnchorScopeKeyword::none())
     }
 }
 
