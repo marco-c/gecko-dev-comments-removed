@@ -180,10 +180,7 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
   }
   relativeTimeFormat->setRequestedLocales(requestedLocalesArray);
 
-  auto rtfOptions = cx->make_unique<RelativeTimeFormatOptions>();
-  if (!rtfOptions) {
-    return false;
-  }
+  RelativeTimeFormatOptions rtfOptions{};
 
   if (args.hasDefined(1)) {
     
@@ -231,7 +228,7 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
                                   RelativeTimeFormatOptions::Style::Narrow);
     if (!GetStringOption(cx, options, cx->names().style, styles,
                          RelativeTimeFormatOptions::Style::Long,
-                         &rtfOptions->style)) {
+                         &rtfOptions.style)) {
       return false;
     }
 
@@ -241,13 +238,11 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
                                     RelativeTimeFormatOptions::Numeric::Auto);
     if (!GetStringOption(cx, options, cx->names().numeric, numerics,
                          RelativeTimeFormatOptions::Numeric::Always,
-                         &rtfOptions->numeric)) {
+                         &rtfOptions.numeric)) {
       return false;
     }
   }
-  relativeTimeFormat->setOptions(rtfOptions.release());
-  AddCellMemory(relativeTimeFormat, sizeof(RelativeTimeFormatOptions),
-                MemoryUse::IntlOptions);
+  relativeTimeFormat->setOptions(rtfOptions);
 
   
 
@@ -259,10 +254,6 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
 void js::intl::RelativeTimeFormatObject::finalize(JS::GCContext* gcx,
                                                   JSObject* obj) {
   auto* rtf = &obj->as<RelativeTimeFormatObject>();
-
-  if (auto* options = rtf->getOptions()) {
-    gcx->delete_(obj, options, MemoryUse::IntlOptions);
-  }
 
   if (auto* formatter = rtf->getRelativeTimeFormatter()) {
     RemoveICUCellMemory(gcx, obj, RelativeTimeFormatObject::EstimatedMemoryUse);
@@ -368,7 +359,7 @@ static mozilla::intl::RelativeTimeFormat* NewRelativeTimeFormatter(
   if (!ResolveLocale(cx, relativeTimeFormat)) {
     return nullptr;
   }
-  auto rtfOptions = *relativeTimeFormat->getOptions();
+  auto rtfOptions = relativeTimeFormat->getOptions();
 
   
 
@@ -648,7 +639,7 @@ static bool relativeTimeFormat_resolvedOptions(JSContext* cx,
   if (!ResolveLocale(cx, relativeTimeFormat)) {
     return false;
   }
-  auto rtfOptions = *relativeTimeFormat->getOptions();
+  auto rtfOptions = relativeTimeFormat->getOptions();
 
   
   Rooted<IdValueVector> options(cx, cx);
