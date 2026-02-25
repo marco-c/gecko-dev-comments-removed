@@ -2085,19 +2085,6 @@ void Document::RecordPageLoadEventTelemetry() {
   }
 #endif
 
-  if (GetChannel()) {
-    nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
-        do_QueryInterface(GetChannel());
-    if (cacheInfoChannel) {
-      nsICacheInfoChannel::CacheDisposition disposition =
-          nsICacheInfoChannel::kCacheUnknown;
-      nsresult rv = cacheInfoChannel->GetCacheDisposition(&disposition);
-      if (NS_SUCCEEDED(rv)) {
-        mPageloadEventData.set_cacheDisposition(disposition);
-      }
-    }
-  }
-
   nsAutoCString loadTypeStr;
   switch (docshell->GetLoadType()) {
     case LOAD_NORMAL:
@@ -2237,6 +2224,17 @@ void Document::AccumulatePageLoadTelemetry() {
     return;
   }
 
+  bool isCacheHit = false;
+  if (nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
+          do_QueryInterface(GetChannel())) {
+    nsICacheInfoChannel::CacheDisposition disposition =
+        nsICacheInfoChannel::kCacheUnknown;
+    if (NS_SUCCEEDED(cacheInfoChannel->GetCacheDisposition(&disposition))) {
+      mPageloadEventData.set_cacheDisposition(disposition);
+      isCacheHit = disposition == nsICacheInfoChannel::kCacheHit;
+    }
+  }
+
   
   const TimeDuration zeroDuration;
 
@@ -2330,7 +2328,11 @@ void Document::AccumulatePageLoadTelemetry() {
         }
       }
 
-      mPageloadEventData.set_httpVer(major);
+      
+      
+      if (!isCacheHit) {
+        mPageloadEventData.set_httpVer(major);
+      }
     }
 
     uint32_t earlyHintType = 0;
