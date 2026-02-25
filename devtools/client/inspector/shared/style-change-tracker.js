@@ -64,9 +64,11 @@ class InspectorStyleChangeTracker {
       
       
       let parent = currentNode.parentNode();
-      const siblings = parent.treeChildren();
-      if (siblings.includes(mutationTarget)) {
-        return true;
+      if (parent) {
+        const siblings = parent.treeChildren();
+        if (siblings.includes(mutationTarget)) {
+          return true;
+        }
       }
 
       
