@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_NACK_TRACKER_H_
-#define MODULES_AUDIO_CODING_NETEQ_NACK_TRACKER_H_
+#ifndef AUDIO_NACK_TRACKER_H_
+#define AUDIO_NACK_TRACKER_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -67,14 +67,10 @@ class NackTracker {
 
   
   
-  
-  
-  
-  
   void UpdateSampleRate(int sample_rate_hz);
 
   
-  void UpdateLastDecodedPacket(uint16_t sequence_number, uint32_t timestamp);
+  void UpdateLastDecodedPacket(uint32_t timestamp);
 
   
   
@@ -183,7 +179,6 @@ class NackTracker {
   bool any_rtp_received_;  
 
   
-  uint16_t sequence_num_last_decoded_rtp_;
   uint32_t timestamp_last_decoded_rtp_;
   bool any_rtp_decoded_;  
 

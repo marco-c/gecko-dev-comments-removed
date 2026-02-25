@@ -8,12 +8,11 @@
 
 
 
-#include "modules/audio_coding/neteq/nack_tracker.h"
-
-#include <stdint.h>
+#include "audio/nack_tracker.h"
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -24,10 +23,10 @@
 namespace webrtc {
 namespace {
 
-const int kSampleRateHz = 16000;
-const int kPacketSizeMs = 30;
-const uint32_t kTimestampIncrement = 480;  
-const int64_t kShortRoundTripTimeMs = 1;
+constexpr int kSampleRateHz = 16000;
+constexpr int kPacketSizeMs = 30;
+constexpr uint32_t kTimestampIncrement = 480;  
+constexpr int64_t kShortRoundTripTimeMs = 1;
 
 bool IsNackListCorrect(const std::vector<uint16_t>& nack_list,
                        const uint16_t* lost_sequence_numbers,
@@ -214,7 +213,6 @@ TEST(NackTrackerTest, EstimateTimestampAndTimeToPlay) {
     uint16_t seq_num = seq_num_lost_packets[0] - 2;
     uint32_t timestamp = timestamp_lost_packets[0] - 2 * kTimestampIncrement;
 
-    const uint16_t first_seq_num = seq_num;
     const uint32_t first_timestamp = timestamp;
 
     
@@ -233,7 +231,7 @@ TEST(NackTrackerTest, EstimateTimestampAndTimeToPlay) {
     EXPECT_EQ(static_cast<size_t>(kNumAllLostPackets), nack_list.size());
 
     
-    nack.UpdateLastDecodedPacket(first_seq_num, first_timestamp);
+    nack.UpdateLastDecodedPacket(first_timestamp);
     nack_list = nack.GetNackList();
 
     NackTracker::NackList::iterator it = nack_list.begin();
@@ -276,16 +274,14 @@ TEST(NackTrackerTest,
     for (int k = 0; k < 2; ++k) {
       
       for (int n = 0; n < kPacketSizeMs / 10; ++n) {
-        nack.UpdateLastDecodedPacket(seq_num_offset + k,
-                                     k * kTimestampIncrement);
+        nack.UpdateLastDecodedPacket(k * kTimestampIncrement);
         nack_list = nack.GetNackList(kShortRoundTripTimeMs);
         EXPECT_EQ(kExpectedListSize, nack_list.size());
       }
     }
 
     
-    nack.UpdateLastDecodedPacket(seq_num + seq_num_offset,
-                                 seq_num * kTimestampIncrement);
+    nack.UpdateLastDecodedPacket(seq_num * kTimestampIncrement);
     nack_list = nack.GetNackList(kShortRoundTripTimeMs);
     EXPECT_TRUE(nack_list.empty());
 

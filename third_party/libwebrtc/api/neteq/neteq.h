@@ -209,11 +209,7 @@ class NetEq {
     return InsertPacket(rtp_header, payload);
   }
 
-  
-  
-  
-  
-  virtual void InsertEmptyPacket(const RTPHeader& rtp_header) = 0;
+  [[deprecated]] virtual void InsertEmptyPacket(const RTPHeader& rtp_header) {}
 
   
   
@@ -311,8 +307,6 @@ class NetEq {
   
   virtual int last_output_sample_rate_hz() const = 0;
 
-  
-  
   [[deprecated(
       "Use GetCurrentDecoderFormat")]] virtual std::optional<DecoderFormat>
   GetDecoderFormat(int ) const {
@@ -327,17 +321,17 @@ class NetEq {
   
   virtual void FlushBuffers() = 0;
 
-  
-  
-  
-  virtual void EnableNack(size_t max_nack_list_size) = 0;
+  [[deprecated("NACK support has been moved from NetEq.")]] virtual void
+  EnableNack(size_t max_nack_list_size) {}
 
-  virtual void DisableNack() = 0;
+  [[deprecated("NACK support has been moved from NetEq.")]] virtual void
+  DisableNack() {}
 
-  
-  
-  virtual std::vector<uint16_t> GetNackList(
-      int64_t round_trip_time_ms) const = 0;
+  [[deprecated(
+      "NACK support has been moved from NetEq.")]] virtual std::vector<uint16_t>
+  GetNackList(int64_t round_trip_time_ms) const {
+    return {};
+  }
 
   
   
