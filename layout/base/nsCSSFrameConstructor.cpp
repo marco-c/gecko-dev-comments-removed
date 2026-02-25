@@ -5173,6 +5173,15 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     return;
   }
 
+  
+  
+  
+  if (auto* input = HTMLInputElement::FromNode(aContent)) {
+    if (auto* sr = input->CreateShadowTreeFromLayoutIfNeeded()) {
+      StyleNewChildRange(sr->GetFirstChild(), nullptr);
+    }
+  }
+
   const bool canHavePageBreak =
       aFlags.contains(ItemFlag::AllowPageBreak) &&
       aState.mPresContext->IsPaginated() &&

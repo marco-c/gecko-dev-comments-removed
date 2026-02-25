@@ -5016,6 +5016,14 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   }
 
   RefPtr<Document> docToPrint = mDoc;
+  if (docToPrint) {
+    
+    
+    
+    
+    docToPrint->FlushPendingNotifications(FlushType::Layout);
+    docToPrint = mDoc;
+  }
   if (NS_WARN_IF(!docToPrint)) {
     aError.ThrowNotSupportedError("Document is gone");
     return nullptr;

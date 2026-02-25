@@ -3980,10 +3980,11 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         
         ShadowRoot* originalShadowRoot = aNode->AsElement()->GetShadowRoot();
         if (originalShadowRoot) {
+          ShadowRootInit init;
+          
+          init.mMode = originalShadowRoot->Mode();
           RefPtr<ShadowRoot> newShadowRoot =
-              clone->AsElement()->AttachShadowWithoutNameChecks(
-                  originalShadowRoot->Mode());
-
+              clone->AsElement()->AttachShadowWithoutNameChecks(init);
           newShadowRoot->CloneInternalDataFrom(originalShadowRoot);
           for (nsIContent* origChild = originalShadowRoot->GetFirstChild();
                origChild; origChild = origChild->GetNextSibling()) {
