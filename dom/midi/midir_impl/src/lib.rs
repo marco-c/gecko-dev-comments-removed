@@ -223,7 +223,13 @@ impl MidirWrapper {
 
         match &mut connection_wrapper.connection {
             MidiConnection::Output(connection) => {
-                connection.send(data).map_err(|_err| ())?;
+                
+                
+                const MAX_PACKET_LEN: usize = u16::MAX as _;
+
+                for chunk in data.chunks(MAX_PACKET_LEN) {
+                    connection.send(chunk).map_err(|_err| ())?;
+                }
             }
             _ => {
                 panic!("Sending on an input port!");
