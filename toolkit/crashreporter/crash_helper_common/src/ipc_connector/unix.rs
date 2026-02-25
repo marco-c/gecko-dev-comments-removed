@@ -156,11 +156,6 @@ impl IPCConnector {
     where
         T: Message,
     {
-        
-        #[cfg(target_os = "macos")]
-        self.poll(PollFlags::POLLIN)
-            .map_err(IPCError::ReceptionFailure)?;
-
         let header = self.recv_header()?;
 
         if header.kind != T::kind() {
@@ -230,26 +225,8 @@ impl IPCConnector {
             &mut iov,
             Some(&mut cmsg_buffer),
             MsgFlags::empty(),
-        ));
-
-        
-        
-        
-        
-        
-        
-        
-        let res = match res {
-            #[cfg(target_os = "macos")]
-            Err(_code @ Errno::ENOMEM) => ignore_eintr!(recvmsg::<()>(
-                self.as_raw(),
-                &mut iov,
-                Some(&mut cmsg_buffer),
-                MsgFlags::empty(),
-            ))?,
-            Err(e) => return Err(PlatformError::ReceiveFailure(e)),
-            Ok(val) => val,
-        };
+        ))
+        .map_err(PlatformError::ReceiveFailure)?;
 
         let mut owned_fds = Vec::<OwnedFd>::with_capacity(1);
         let cmsgs = res.cmsgs().map_err(PlatformError::ReceiveFailure)?;
