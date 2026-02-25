@@ -24,8 +24,10 @@
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
+#include "js/RootingAPI.h"   
 #include "js/SourceText.h"   
 #include "js/Transcoding.h"  
+#include "js/Value.h"        
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSTracer;
@@ -267,6 +269,13 @@ extern JS_PUBLIC_API bool IsStencilCacheable(JS::Stencil* stencil);
 
 
 extern JS_PUBLIC_API size_t GetScriptSourceLength(JS::Stencil* stencil);
+
+
+
+
+
+extern JS_PUBLIC_API bool GetScriptSourceText(
+    JSContext* cx, JS::Stencil* stencil, JS::MutableHandle<JS::Value> result);
 
 }  
 
