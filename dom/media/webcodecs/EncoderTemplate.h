@@ -239,6 +239,7 @@ class EncoderTemplate : public DOMEventTargetHelper {
 
   void Configure(RefPtr<ConfigureMessage> aMessage);
   void Reconfigure(RefPtr<ConfigureMessage> aMessage);
+  void DrainAndReconfigure(RefPtr<ConfigureMessage> aMessage);
 
   
   bool CreateEncoderAgent(WebCodecsId aId, RefPtr<ConfigTypeInternal> aConfig);
@@ -285,6 +286,10 @@ class EncoderTemplate : public DOMEventTargetHelper {
   
   
   RefPtr<EncoderAgent> mAgent;
+  MozPromiseRequestHolder<EncoderAgent::ReconfigurationPromise>
+      mReconfigureRequest;
+  MozPromiseRequestHolder<EncoderAgent::EncodePromise>
+      mDrainAfterReconfigureRequest;
   RefPtr<ConfigTypeInternal> mActiveConfig;
   
   
