@@ -157,6 +157,10 @@ UiCompositorControllerChild::RequestScreenPixels(gfx::IntRect aSourceRect,
   static uint64_t nextRequestId = 0;
   const uint64_t requestId = nextRequestId++;
   auto promise = MakeRefPtr<ScreenPixelsPromise::Private>(__func__);
+  
+  
+  
+  promise->UseSynchronousTaskDispatch(__func__);
   mScreenPixelsPromise.emplace(requestId, promise);
   (void)SendRequestScreenPixels(requestId, aSourceRect, aDestSize);
   return promise;
@@ -257,7 +261,8 @@ UiCompositorControllerChild::RecvNotifyCompositorScrollUpdate(
 
 mozilla::ipc::IPCResult UiCompositorControllerChild::RecvScreenPixels(
     uint64_t aRequestId, Maybe<ipc::FileDescriptor>&& aHardwareBuffer,
-    Maybe<ipc::FileDescriptor>&& aAcquireFence) {
+    Maybe<ipc::FileDescriptor>&& aAcquireFence,
+    ScreenPixelsResolver&& aResolver) {
 #if defined(MOZ_WIDGET_ANDROID)
   if (!mScreenPixelsPromise || mScreenPixelsPromise->first != aRequestId) {
     
@@ -274,10 +279,20 @@ mozilla::ipc::IPCResult UiCompositorControllerChild::RecvScreenPixels(
   if (hardwareBuffer && aAcquireFence) {
     hardwareBuffer->SetAcquireFence(aAcquireFence->TakePlatformHandle());
   }
+  
+  
+  
   mScreenPixelsPromise->second->Resolve(std::move(hardwareBuffer), __func__);
   mScreenPixelsPromise.reset();
 #endif  
 
+  
+  
+  
+  
+  
+  
+  aResolver(void_t{});
   return IPC_OK();
 }
 
