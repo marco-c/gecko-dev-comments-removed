@@ -1700,7 +1700,8 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 
   
   void swapData(MutableHandleBuffer<PrivateScriptData> other);
-  PrivateScriptData* releaseData();
+
+  void freeData();
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
     return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();

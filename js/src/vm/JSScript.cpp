@@ -175,14 +175,26 @@ js::Scope* js::BaseScript::releaseEnclosingScope() {
 
 void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
   PrivateScriptData* old = data_;
-  data_.set(zone(), other);  
+
+  
+  if (data_ && zone()->needsMarkingBarrier()) {
+    JSTracer* trc = zone()->barrierTracer();
+    TraceBufferEdge(trc, this, &data_, "BaseScript::swapData barrier");
+  }
+
+  
+  data_.set(zone(), other);
+
   other.set(old);
 }
 
-PrivateScriptData* js::BaseScript::releaseData() {
+void js::BaseScript::freeData() {
   PrivateScriptData* old = data_;
-  data_.set(zone(), nullptr);  
-  return old;
+
+  
+  data_.set(zone(), nullptr);
+
+  gc::FreeBuffer(zone(), old);
 }
 
 js::Scope* js::BaseScript::enclosingScope() const {
@@ -2350,7 +2362,7 @@ void JSScript::relazify(JSRuntime* rt) {
   
   
   
-  gc::FreeBuffer(zone(), releaseData());
+  freeData();
 
   freeSharedData();
 
