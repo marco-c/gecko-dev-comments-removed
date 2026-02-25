@@ -7,8 +7,9 @@
 #ifndef mozilla_dom_SharedScriptCache_h
 #define mozilla_dom_SharedScriptCache_h
 
-#include "PLDHashTable.h"                    
-#include "js/loader/LoadedScript.h"          
+#include "PLDHashTable.h"            
+#include "js/TypeDecls.h"            
+#include "js/loader/LoadedScript.h"  
 #include "js/loader/ScriptFetchOptions.h"    
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
@@ -254,6 +255,12 @@ class SharedScriptCache final
                     const Maybe<nsCString>& aURL = Nothing());
 
   static void Invalidate();
+
+  static bool GetCachedScriptSource(JSContext* aCx, const nsACString& aKey,
+                                    const nsACString& aURI,
+                                    const nsACString& aNonce,
+                                    const nsACString& aHintCharset,
+                                    JS::MutableHandle<JS::Value> aRetval);
 
   static void PrepareForLastCC();
 

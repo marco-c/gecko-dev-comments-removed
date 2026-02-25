@@ -9,7 +9,10 @@
 #include "ScriptLoadHandler.h"  
 #include "ScriptLoader.h"       
 #include "ScriptTrace.h"        
+#include "js/RootingAPI.h"      
+#include "js/Value.h"           
 #include "js/experimental/CompileScript.h"  
+#include "js/experimental/JSStencil.h"  
 #include "mozilla/Maybe.h"              
 #include "mozilla/TaskController.h"     
 #include "mozilla/dom/ContentParent.h"  
@@ -329,6 +332,41 @@ void SharedScriptCache::Invalidate() {
     sSingleton->InvalidateInProcess();
   }
   TRACE_FOR_TEST_0("memorycache:invalidate");
+}
+
+
+bool SharedScriptCache::GetCachedScriptSource(
+    JSContext* aCx, const nsACString& aKey, const nsACString& aURI,
+    const nsACString& aNonce, const nsACString& aHintCharset,
+    JS::MutableHandle<JS::Value> aRetval) {
+  if (!sSingleton) {
+    aRetval.setUndefined();
+    return true;
+  }
+
+  Maybe<ScriptHashKey> maybeKey =
+      ScriptHashKey::FromStringsForLookup(aKey, aURI, aNonce, aHintCharset);
+  if (!maybeKey) {
+    aRetval.setUndefined();
+    return true;
+  }
+
+  JS::Stencil* stencil = nullptr;
+  if (auto lookup = sSingleton->mComplete.Lookup(*maybeKey)) {
+    JS::loader::LoadedScript* loadedScript = lookup.Data().mResource;
+    
+    
+    stencil = loadedScript->GetStencil();
+  } else {
+    aRetval.setUndefined();
+    return true;
+  }
+
+  if (!JS::GetScriptSourceText(aCx, stencil, aRetval)) {
+    return false;
+  }
+
+  return true;
 }
 
 void SharedScriptCache::InvalidateInProcess() {
