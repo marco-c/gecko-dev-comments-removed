@@ -1538,6 +1538,13 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+
+
+  void* AllocateSlots(size_t aSize);
+
+  
+
+
 #ifdef DEBUG
   nsSlots* DebugGetSlots() { return Slots(); }
 #endif
