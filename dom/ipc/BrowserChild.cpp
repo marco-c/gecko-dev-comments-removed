@@ -2020,6 +2020,18 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
       const auto PostponeDispatchingTouchMove = [&]() {
         return sConsecutiveTouchMoveCount > 1;
       };
+      
+      
+      
+      
+      
+      if (aEvent.mFlags.mIsSynthesizedForTests) {
+        ProcessPendingCoalescedTouchData();
+        if (!RecvRealTouchEvent(aEvent, aGuid, aInputBlockId, aApzResponse)) {
+          return IPC_FAIL_NO_REASON(this);
+        }
+        return IPC_OK();
+      }
       if (mCoalescedTouchData.IsEmpty() ||
           mCoalescedTouchData.CanCoalesce(aEvent, aGuid, aInputBlockId,
                                           aApzResponse)) {
