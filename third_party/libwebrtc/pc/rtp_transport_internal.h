@@ -26,7 +26,6 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 
@@ -36,7 +35,7 @@ class CopyOnWriteBuffer;
 
 
 
-class RtpTransportInternal : public sigslot::has_slots<> {
+class RtpTransportInternal {
  public:
   virtual ~RtpTransportInternal() = default;
 

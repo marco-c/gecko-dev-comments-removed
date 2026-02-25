@@ -20,7 +20,6 @@
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/network_route.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -46,7 +45,7 @@ namespace webrtc {
 
 
 
-class BasicRegatheringController : public sigslot::has_slots<> {
+class BasicRegatheringController {
  public:
   struct Config {
     int regather_on_failed_networks_interval =
@@ -57,7 +56,7 @@ class BasicRegatheringController : public sigslot::has_slots<> {
   BasicRegatheringController(const Config& config,
                              IceTransportInternal* ice_transport,
                              Thread* thread);
-  ~BasicRegatheringController() override;
+  virtual ~BasicRegatheringController();
   
   
   
