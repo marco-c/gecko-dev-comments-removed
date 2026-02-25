@@ -162,6 +162,17 @@ class KeymapWrapper {
 
 
 
+  static void InitKeyEventFromCommitString(WidgetKeyboardEvent& aKeyEvent,
+                                           const nsAString& aCommitString);
+
+  
+
+
+
+
+
+
+
 
 
 

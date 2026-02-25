@@ -653,6 +653,18 @@ class IMContextWrapper final : public TextEventDispatcherListener {
 
 
 
+
+
+  bool DispatchKeyEventsForCommittedCharacter(WidgetKeyboardEvent& aKeyEvent,
+                                              bool aDispatchKeyUp);
+
+  
+
+
+
+
+
+
   bool DispatchCompositionStart(GtkIMContext* aContext);
 
   
