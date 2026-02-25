@@ -41,9 +41,16 @@ class NativeMenu {
   
   
   
-  virtual void ShowAsContextMenu(nsIFrame* aClickedFrame,
-                                 const CSSIntPoint& aPosition,
-                                 bool aIsContextMenu) = 0;
+  virtual void ShowMenuAnchored(nsIFrame* aClickedFrame,
+                                const CSSIntRect& aRect,
+                                const nsAString& aPosition) = 0;
+
+  
+  
+  
+  virtual void ShowMenuAtPosition(nsIFrame* aClickedFrame,
+                                  const CSSIntPoint& aPosition,
+                                  bool aIsContextMenu) = 0;
 
   
   

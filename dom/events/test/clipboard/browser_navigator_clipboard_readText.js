@@ -37,18 +37,18 @@ add_setup(async function () {
 });
 
 add_task(async function test_paste_button_position() {
+  if (
+    AppConstants.platform == "macosx" &&
+    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
+  ) {
+    info("Skipping test_paste_button_position with native menus");
+    return;
+  }
   
   await promiseWritingRandomTextToClipboard();
 
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
-    
-    
-    
-    
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
     const coordsOfClickInContentRelativeToScreenInDevicePixels =
       await promiseClickContentToTriggerClipboardReadText(browser, false);
     info(
@@ -57,7 +57,6 @@ add_task(async function test_paste_button_position() {
         ", " +
         coordsOfClickInContentRelativeToScreenInDevicePixels.y
     );
-    AccessibilityUtils.resetEnv();
 
     const pasteButtonCoordsRelativeToScreenInDevicePixels =
       await pasteButtonIsShown;
@@ -109,15 +108,7 @@ add_task(async function test_accepting_paste_button() {
 
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
-    
-    
-    
-    
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
     await promiseClickContentToTriggerClipboardReadText(browser, false);
-    AccessibilityUtils.resetEnv();
     await pasteButtonIsShown;
     const pasteButtonIsHidden = promisePasteButtonIsHidden();
     const mutatedReadTextResultFromContentElement =
@@ -137,15 +128,7 @@ add_task(async function test_accepting_paste_button() {
 add_task(async function test_dismissing_paste_button() {
   await BrowserTestUtils.withNewTab(kContentFileUrl, async function (browser) {
     const pasteButtonIsShown = promisePasteButtonIsShown();
-    
-    
-    
-    
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
     await promiseClickContentToTriggerClipboardReadText(browser, false);
-    AccessibilityUtils.resetEnv();
     await pasteButtonIsShown;
     const pasteButtonIsHidden = promisePasteButtonIsHidden();
     const mutatedReadTextResultFromContentElement =
@@ -171,15 +154,7 @@ add_task(
       kContentFileUrl,
       async function (browser) {
         const pasteButtonIsShown = promisePasteButtonIsShown();
-        
-        
-        
-        
-        AccessibilityUtils.setEnv({
-          mustHaveAccessibleRule: false,
-        });
         await promiseClickContentToTriggerClipboardReadText(browser, true);
-        AccessibilityUtils.resetEnv();
         await pasteButtonIsShown;
         const mutatedReadTextResultFromContentElement =
           promiseMutatedReadTextResultFromContentElement(browser);
@@ -208,15 +183,7 @@ add_task(async function test_new_user_activation_shows_paste_button_again() {
     for (let i = 0; i < 2; ++i) {
       const pasteButtonIsShown = promisePasteButtonIsShown();
       
-      
-      
-      
-      AccessibilityUtils.setEnv({
-        mustHaveAccessibleRule: false,
-      });
-      
       await promiseClickContentToTriggerClipboardReadText(browser, false);
-      AccessibilityUtils.resetEnv();
       await pasteButtonIsShown;
 
       const pasteButtonIsHidden = promisePasteButtonIsHidden();

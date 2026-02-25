@@ -313,6 +313,12 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   bool IsInContentShell() const { return mInContentShell; }
 
+  void InitializePopupProperties(nsIContent* aAnchorContent,
+                                 nsIContent* aTriggerContent,
+                                 const nsAString& aPosition, int32_t aXPos,
+                                 int32_t aYPos, MenuPopupAnchorType aAnchorType,
+                                 bool aAttributesOverride);
+
   
   
   void InitializePopup(nsIContent* aAnchorContent, nsIContent* aTriggerContent,
@@ -335,6 +341,13 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   void InitializePopupAsNativeContextMenu(nsIContent* aTriggerContent,
                                           int32_t aXPos, int32_t aYPos);
+
+  
+  void InitializePopupAsNativeAnchoredMenu(nsIContent* aAnchorContent,
+                                           nsIContent* aTriggerContent,
+                                           const nsAString& aPosition,
+                                           const mozilla::CSSIntRect& aRect,
+                                           bool aIsContextMenu);
 
   
   void ShowPopup(bool aIsContextMenu);

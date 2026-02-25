@@ -34,8 +34,14 @@ class NativeMenuSupport final {
 
   
   
-  static already_AddRefed<NativeMenu> CreateNativeContextMenu(
+  static already_AddRefed<NativeMenu> CreateNativePopupMenu(
       dom::Element* aPopup);
+
+  
+  static bool ShouldUseNativeAnchoredMenus();
+
+  
+  static bool ShouldUseNativeAnchoredMenulists();
 
   
   static bool ShouldUseNativeContextMenus();
