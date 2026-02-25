@@ -120,7 +120,7 @@ def make_task_description(config, jobs):
 
         dependencies = {"beetmover": dep_job.label}
         
-        if config.params["release_type"] in ("nightly", "beta", "release-rc"):
+        if config.params["release_type"] in ("nightly", "beta"):
             for kind_dep in config.kind_dependencies_tasks.values():
                 if (
                     kind_dep.kind == "startup-test"
