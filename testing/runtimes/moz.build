@@ -4,9 +4,5 @@
 
 
 
-TEST_HARNESS_FILES.testing.mochitest.runtimes += [
-    "**/manifest-runtimes-*.json",
-]
-
 with Files("**"):
     BUG_COMPONENT = ("Testing", "General")
