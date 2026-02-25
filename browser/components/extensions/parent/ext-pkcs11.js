@@ -16,9 +16,6 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIPKCS11ModuleDB
 );
 
-
-Cu.importGlobalProperties(["PathUtils"]);
-
 var { DefaultMap } = ExtensionUtils;
 
 const findModuleByPath = async function (path) {

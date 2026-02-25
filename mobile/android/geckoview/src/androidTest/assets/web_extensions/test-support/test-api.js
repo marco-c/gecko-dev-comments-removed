@@ -13,9 +13,6 @@ const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
 
-
-Cu.importGlobalProperties(["PathUtils"]);
-
 this.test = class extends ExtensionAPI {
   onStartup() {
     ChromeUtils.registerWindowActor("TestSupport", {
