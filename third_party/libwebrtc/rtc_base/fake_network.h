@@ -100,7 +100,7 @@ class FakeNetworkManager : public NetworkManagerBase {
           SafeTask(safety_flag_, [this] { DoUpdateNetworks(); }));
     } else if (sent_first_update_) {
       network_thread_->PostTask(
-          SafeTask(safety_flag_, [this] { SignalNetworksChanged(); }));
+          SafeTask(safety_flag_, [this] { NotifyNetworksChanged(); }));
     }
   }
 
@@ -145,7 +145,7 @@ class FakeNetworkManager : public NetworkManagerBase {
     bool changed;
     MergeNetworkList(std::move(networks), &changed);
     if (changed || !sent_first_update_) {
-      SignalNetworksChanged();
+      NotifyNetworksChanged();
       sent_first_update_ = true;
     }
   }
@@ -163,14 +163,5 @@ class FakeNetworkManager : public NetworkManagerBase {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FakeNetworkManager;
-using ::webrtc::kFakeIPv4NetworkPrefixLength;
-using ::webrtc::kFakeIPv6NetworkPrefixLength;
-}  
-#endif  
 
 #endif  
