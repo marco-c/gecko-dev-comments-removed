@@ -501,6 +501,13 @@ this.tabs = class extends ExtensionAPIPersistent {
             
             return;
           }
+          if (updatedTab.removedByAdoption || updatedTab.addedByAdoption) {
+            
+            
+            
+            
+            return;
+          }
           needed.push("splitViewId");
         } else if (event.type == "TabShow") {
           needed.push("hidden");
@@ -1158,7 +1165,9 @@ this.tabs = class extends ExtensionAPIPersistent {
 
           let lastInsertionMap = new Map();
 
-          for (let nativeTab of getNativeTabsFromIDArray(tabIds)) {
+          const tabsToMove = getNativeTabsFromIDArray(tabIds);
+          while (tabsToMove.length) {
+            let nativeTab = tabsToMove.shift();
             
             let window = destinationWindow || nativeTab.ownerGlobal;
             let isSameWindow = nativeTab.ownerGlobal == window;
@@ -1218,17 +1227,41 @@ this.tabs = class extends ExtensionAPIPersistent {
               continue;
             }
 
+            let splitview = nativeTab.splitview;
+            if (splitview) {
+              
+              
+              
+              for (const tab of splitview.tabs) {
+                let i;
+                while ((i = tabsToMove.indexOf(tab)) !== -1) {
+                  tabsToMove.splice(i, 1);
+                }
+              }
+            }
             if (isSameWindow) {
               
+              
               gBrowser.moveTabTo(nativeTab, { tabIndex: insertionPoint });
+            } else if (splitview) {
+              
+              let tabIndexInSplitview = splitview.tabs.indexOf(nativeTab);
+              splitview = gBrowser.adoptSplitView(splitview, {
+                tabIndex: insertionPoint,
+              });
+              nativeTab = splitview.tabs[tabIndexInSplitview];
             } else {
+              
               
               
               nativeTab = gBrowser.adoptTab(nativeTab, {
                 tabIndex: insertionPoint,
               });
             }
-            lastInsertionMap.set(window, nativeTab._tPos);
+            lastInsertionMap.set(
+              window,
+              splitview ? splitview.lastElementChild._tPos : nativeTab._tPos
+            );
             tabsMoved.push(nativeTab);
           }
 

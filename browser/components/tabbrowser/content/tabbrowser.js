@@ -3845,18 +3845,32 @@
         tabIndex = this.#elementIndexToTabIndex(elementIndex);
       }
 
+      
+      
+      
+      
+      
+      
       for (let tab of container.tabs) {
+        tab.removedByAdoption = true;
         let adoptedTab = this.adoptTab(tab, {
           tabIndex,
         });
+        adoptedTab.addedByAdoption = true;
         newTabs.push(adoptedTab);
         tabIndex = adoptedTab._tPos + 1;
       }
 
-      return this.addTabSplitView(newTabs, {
-        id: container.splitViewId,
-        insertBefore: newTabs[0],
-      });
+      try {
+        return this.addTabSplitView(newTabs, {
+          id: container.splitViewId,
+          insertBefore: newTabs[0],
+        });
+      } finally {
+        for (let tab of newTabs) {
+          delete tab.addedByAdoption;
+        }
+      }
     }
 
     
