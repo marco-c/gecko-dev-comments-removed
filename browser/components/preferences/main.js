@@ -7907,16 +7907,16 @@ const AppFileHandler = (function () {
 
             let originalValue = handlerItem.actionsMenu.value;
 
-            handlerItem.actionsMenu.addEventListener("change", async e => {
+            handlerItem.actionsMenu.addEventListener("change", async () => {
               const newValue = handlerItem.actionsMenu.value;
 
+              
+
+
+
+              await handlerItem.actionsMenu.updateComplete;
+
               if (newValue !== "choose-app" && newValue !== "manage-app") {
-                
-
-
-
-                await handlerItem.actionsMenu.updateComplete;
-
                 this._onSelectActionsMenuOption(handlerItem);
               } else {
                 
@@ -7925,19 +7925,12 @@ const AppFileHandler = (function () {
 
                 handlerItem.actionsMenu.value = originalValue;
 
-                
-
-
-                e.stopPropagation();
-
                 if (newValue === "choose-app") {
                   this.chooseApp(handlerItem);
                 } else {
                   this.manageApp(handlerItem);
                 }
               }
-
-              originalValue = newValue;
             });
           })
         );
