@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/rtc_error.h"
 #include "media/base/codec.h"
 #include "rtc_base/strong_alias.h"
@@ -53,11 +54,11 @@ class PayloadTypeSuggester {
   
   
   
-  virtual RTCErrorOr<PayloadType> SuggestPayloadType(const std::string& mid,
-                                                     Codec codec) = 0;
+  virtual RTCErrorOr<PayloadType> SuggestPayloadType(absl::string_view mid,
+                                                     const Codec& codec) = 0;
   
   
-  virtual RTCError AddLocalMapping(const std::string& mid,
+  virtual RTCError AddLocalMapping(absl::string_view mid,
                                    PayloadType payload_type,
                                    const Codec& codec) = 0;
 };
