@@ -374,6 +374,7 @@ void WeakMap<K, V, AP>::traceWeakEdgesDuringSweeping(JSTracer* trc) {
 
   mozilla::Maybe<Enum> e;
   e.emplace(*this);
+  bool removedEntries = false;
   for (; !e->empty(); e->popFront()) {
 #ifdef DEBUG
     K prior = e->front().key();
@@ -383,6 +384,7 @@ void WeakMap<K, V, AP>::traceWeakEdgesDuringSweeping(JSTracer* trc) {
       keyKindBarrier(e->front().key());
     } else {
       e->removeFront();
+      removedEntries = true;
     }
   }
 
@@ -391,9 +393,10 @@ void WeakMap<K, V, AP>::traceWeakEdgesDuringSweeping(JSTracer* trc) {
   {
     
     
-    
-    
-    gc::AutoLockSweepingLock lock(trc->runtime());
+    mozilla::Maybe<gc::AutoLockSweepingLock> lock;
+    if (removedEntries) {
+      lock.emplace(trc->runtime());
+    }
     e.reset();
   }
 
