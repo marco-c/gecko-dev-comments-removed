@@ -100,25 +100,6 @@ function waitForLoadStartOrTimeout(win = window, timeoutMs = 1000) {
 
 
 
-async function promiseContextualMenuitem(anonid) {
-  let textBox = gURLBar.querySelector("moz-input-box");
-  let cxmenu = textBox.menupopup;
-  let cxmenuPromise = BrowserTestUtils.waitForEvent(cxmenu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {
-    type: "contextmenu",
-    button: 2,
-  });
-  await cxmenuPromise;
-  return textBox.getMenuItem(anonid);
-}
-
-
-
-
-
-
-
-
 
 function resetCUIAndReinitUrlbarInput(win = window) {
   CustomizableUI.reset();
