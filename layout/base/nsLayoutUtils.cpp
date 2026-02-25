@@ -4660,7 +4660,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   
   
   const nsStylePosition* stylePos = aFrame->StylePosition();
-  StyleBoxSizing boxSizing = stylePos->mBoxSizing;
+  const StyleBoxSizing boxSizing = stylePos->mBoxSizing;
   PhysicalAxis ourInlineAxis =
       aFrame->GetWritingMode().PhysicalAxis(LogicalAxis::Inline);
   const bool isInlineAxis = aAxis == ourInlineAxis;
@@ -4810,18 +4810,11 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   
   
   
-  if (styleISize->IsMaxContent() || styleISize->IsMinContent()) {
-    MOZ_ASSERT(isInlineAxis);
-    
-    
-    
-    
-    boxSizing = StyleBoxSizing::ContentBox;
-  } else if (!styleISize->ConvertsToLength() &&
-             !(styleISize->IsFitContentFunction() &&
-               styleISize->AsFitContentFunction().ConvertsToLength()) &&
-             !(fixedMaxISize && fixedMinISize &&
-               *fixedMaxISize <= *fixedMinISize)) {
+  if (!styleISize->ConvertsToLength() && !styleISize->IsMinContent() &&
+      !styleISize->IsMaxContent() &&
+      !(styleISize->IsFitContentFunction() &&
+        styleISize->AsFitContentFunction().ConvertsToLength()) &&
+      !(fixedMaxISize && fixedMinISize && *fixedMaxISize <= *fixedMinISize)) {
     if (MOZ_UNLIKELY(!isInlineAxis)) {
       IntrinsicSize intrinsicSize = aFrame->GetIntrinsicSize();
       const auto& intrinsicBSize =
@@ -4953,16 +4946,11 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
        nsIFrame::IsIntrinsicKeyword(*styleMinISize) ||
        nsIFrame::IsIntrinsicKeyword(*styleMaxISize))) {
     if (Maybe<nscoord> bSize = GetBSize(styleBSize)) {
-      
-      
-      const StyleBoxSizing boxSizingForAR = stylePos->mBoxSizing;
       if (!contentEdgeToBoxSizing) {
-        contentEdgeToBoxSizing.emplace(
-            GetContentEdgeToBoxSizing(boxSizingForAR));
+        contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
       }
-      nscoord bSizeTakenByBoxSizing =
-          GetDefiniteSizeTakenByBoxSizing(boxSizingForAR, aFrame, !isInlineAxis,
-                                          ignorePadding, aPercentageBasis);
+      nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
+          boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
 
       *bSize -= bSizeTakenByBoxSizing;
       iSizeFromAspectRatio.emplace(ar.ComputeRatioDependentSize(
