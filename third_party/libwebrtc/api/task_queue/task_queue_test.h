@@ -17,8 +17,13 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "test/gtest.h"
 
-#if defined(__cpp_impl_coroutine) && (__cpp_impl_coroutine >= 201902L) && \
-    defined(__cpp_lib_coroutine) && (__cpp_lib_coroutine >= 201902L)
+#if !defined(WEBRTC_CHROMIUM_BUILD) && defined(__cpp_impl_coroutine) &&  \
+    (__cpp_impl_coroutine >= 201902L) && defined(__cpp_lib_coroutine) && \
+    (__cpp_lib_coroutine >= 201902L)
+
+
+
+
 #define BUILD_EXPERIMENTAL_TASK_QUEUE_COROUTINE_TESTS 1
 #endif  
 
