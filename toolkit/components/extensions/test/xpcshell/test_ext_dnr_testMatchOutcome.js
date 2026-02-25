@@ -218,7 +218,7 @@ add_task(async function url_validation() {
         
         "about:config",
         
-        "about:logo",
+        "about:mozilla",
         "chrome://extensions/content/dummy.xhtml",
         "resource://pdf.js/web/viewer.html",
         

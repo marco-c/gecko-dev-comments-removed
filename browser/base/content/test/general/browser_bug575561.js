@@ -49,7 +49,7 @@ add_task(async function () {
     function (doc) {
       let link = doc.createElement("a");
       link.textContent = "Link to Mozilla";
-      link.href = "about:logo";
+      link.href = "about:blank";
       doc.body.appendChild(link);
       return link;
     },
@@ -84,7 +84,10 @@ async function testLink(
       return loaded;
     });
   } else {
-    promise = BrowserTestUtils.browserLoaded(browser, testSubFrame);
+    promise = BrowserTestUtils.browserLoaded(browser, {
+      wantLoad: () => true,
+      includeSubFrames: testSubFrame,
+    });
   }
 
   let href;
