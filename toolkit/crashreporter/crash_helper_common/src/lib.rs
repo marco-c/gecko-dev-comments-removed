@@ -18,6 +18,9 @@ use bytes::Bytes;
 use messages::MessageError;
 
 
+pub type GeckoChildId = i32;
+
+
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
 pub use crate::ipc_channel::{IPCChannel, IPCClientChannel};
 pub use crate::ipc_connector::{
