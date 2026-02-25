@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::percentage::Percentage as ComputedPercentage;
 use crate::values::computed::{Context, ToComputedValue};
@@ -85,6 +86,28 @@ impl Percentage {
     pub fn get(&self) -> CSSFloat {
         self.calc_clamping_mode
             .map_or(self.value, |mode| mode.clamp(self.value))
+    }
+
+    
+    pub fn unit(&self) -> &'static str {
+        "percent"
+    }
+
+    
+    pub fn canonical_unit(&self) -> Option<&'static str> {
+        None
+    }
+
+    
+    
+    pub fn to(&self, unit: &str) -> Result<Self, ()> {
+        if !unit.eq_ignore_ascii_case("percent") {
+            return Err(());
+        }
+        Ok(Self {
+            value: self.value,
+            calc_clamping_mode: self.calc_clamping_mode,
+        })
     }
 
     
