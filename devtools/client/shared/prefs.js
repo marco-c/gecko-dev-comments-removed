@@ -27,31 +27,43 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 
+class PrefsHelper extends EventEmitter {
+  
 
 
 
 
-function PrefsHelper(prefsRoot = "", prefsBlueprint = {}) {
-  EventEmitter.decorate(this);
 
-  const cache = new Map();
+  constructor(prefsRoot = "", prefsBlueprint = {}) {
+    super();
 
-  for (const accessorName in prefsBlueprint) {
-    const [prefType, prefName, fallbackValue] = prefsBlueprint[accessorName];
-    map(
-      this,
-      cache,
-      accessorName,
-      prefType,
-      prefsRoot,
-      prefName,
-      fallbackValue
-    );
+    const cache = new Map();
+
+    for (const accessorName in prefsBlueprint) {
+      const [prefType, prefName, fallbackValue] = prefsBlueprint[accessorName];
+      map(
+        this,
+        cache,
+        accessorName,
+        prefType,
+        prefsRoot,
+        prefName,
+        fallbackValue
+      );
+    }
+
+    this.#observer = makeObserver(this, cache, prefsRoot, prefsBlueprint);
   }
 
-  const observer = makeObserver(this, cache, prefsRoot, prefsBlueprint);
-  this.registerObserver = () => observer.register();
-  this.unregisterObserver = () => observer.unregister();
+  #observer;
+
+  registerObserver() {
+    this.#observer.register();
+  }
+
+  unregisterObserver() {
+    this.#observer.unregister();
+  }
 }
 
 
