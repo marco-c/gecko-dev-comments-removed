@@ -54,7 +54,7 @@ static constexpr const char *kProcessCommandLine = "process.command_line";
 
 
 
-static constexpr const char *kProcessContextSwitchType = "process.context_switch_type";
+static constexpr const char *kProcessContextSwitchType = "process.context_switch.type";
 
 
 
@@ -161,7 +161,11 @@ static constexpr const char *kProcessOwner = "process.owner";
 
 
 
-static constexpr const char *kProcessPagingFaultType = "process.paging.fault_type";
+
+
+
+OPENTELEMETRY_DEPRECATED static constexpr const char *kProcessPagingFaultType =
+    "process.paging.fault_type";
 
 
 
@@ -213,6 +217,13 @@ static constexpr const char *kProcessSavedUserName = "process.saved_user.name";
 
 
 static constexpr const char *kProcessSessionLeaderPid = "process.session_leader.pid";
+
+
+
+
+
+
+static constexpr const char *kProcessState = "process.state";
 
 
 
@@ -271,6 +282,19 @@ namespace ProcessPagingFaultTypeValues
 static constexpr const char *kMajor = "major";
 
 static constexpr const char *kMinor = "minor";
+
+}  
+
+namespace ProcessStateValues
+{
+
+static constexpr const char *kRunning = "running";
+
+static constexpr const char *kSleeping = "sleeping";
+
+static constexpr const char *kStopped = "stopped";
+
+static constexpr const char *kDefunct = "defunct";
 
 }  
 

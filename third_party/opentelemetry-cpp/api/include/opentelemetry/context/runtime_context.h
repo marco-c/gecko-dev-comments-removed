@@ -26,11 +26,11 @@ class Token
 public:
   bool operator==(const Context &other) const noexcept { return context_ == other; }
 
-  ~Token() noexcept;
+  virtual ~Token() noexcept;
 
-private:
   friend class RuntimeContextStorage;
 
+protected:
   
   
   Token(const Context &context) : context_(context) {}
@@ -241,6 +241,26 @@ private:
   {
     friend class ThreadLocalContextStorage;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static constexpr size_t max_capacity_ = 1000000;
+
     Stack() noexcept : size_(0), capacity_(0), base_(nullptr) {}
 
     
@@ -248,6 +268,11 @@ private:
     {
       if (size_ == 0)
       {
+        return;
+      }
+      if (size_ > max_capacity_)
+      {
+        size_ -= 1;
         return;
       }
       
@@ -278,6 +303,10 @@ private:
       {
         return Context();
       }
+      if (size_ > max_capacity_)
+      {
+        return Context();
+      }
       return base_[size_ - 1];
     }
 
@@ -286,6 +315,10 @@ private:
     void Push(const Context &context) noexcept
     {
       size_++;
+      if (size_ > max_capacity_)
+      {
+        return;
+      }
       if (size_ > capacity_)
       {
         Resize(size_ * 2);
@@ -299,7 +332,13 @@ private:
       size_t old_size = size_ - 1;
       if (new_capacity == 0)
       {
+        
         new_capacity = 2;
+      }
+      if (new_capacity > max_capacity_)
+      {
+        
+        new_capacity = max_capacity_;
       }
       Context *temp = new Context[new_capacity];
       if (base_ != nullptr)
