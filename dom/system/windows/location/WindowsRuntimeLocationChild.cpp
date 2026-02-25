@@ -122,12 +122,17 @@ WindowsRuntimeLocationChild::OnPositionChanged(
     return UnspecifiedNaN<double>();
   }();
 
-  
-  
-  RefPtr<nsGeoPosition> geckoGeoPosition = new nsGeoPosition(
-      latitude, longitude, altitude, accuracy, altitudeAccuracy, heading, speed,
-      PR_Now() / PR_USEC_PER_MSEC);
-  SendUpdate(geckoGeoPosition);
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "WindowsRuntimeLocationChild::OnPositionChanged",
+      [self = RefPtr{this}, latitude, longitude, altitude, accuracy,
+       altitudeAccuracy, heading, speed]() {
+        
+        
+        RefPtr<nsGeoPosition> geckoGeoPosition = new nsGeoPosition(
+            latitude, longitude, altitude, accuracy, altitudeAccuracy, heading,
+            speed, PR_Now() / PR_USEC_PER_MSEC);
+        self->SendUpdate(geckoGeoPosition);
+      }));
 
   return S_OK;
 }
@@ -161,7 +166,9 @@ WindowsRuntimeLocationChild::OnStatusChanged(
       return S_OK;
   }
 
-  SendFailed(err);
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "WindowsRuntimeLocationChild::OnStatusChanged",
+      [self = RefPtr{this}, err]() { self->SendFailed(err); }));
   return S_OK;
 }
 
