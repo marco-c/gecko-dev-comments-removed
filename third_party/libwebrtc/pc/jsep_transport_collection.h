@@ -11,7 +11,6 @@
 #ifndef PC_JSEP_TRANSPORT_COLLECTION_H_
 #define PC_JSEP_TRANSPORT_COLLECTION_H_
 
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,6 +23,7 @@
 #include "api/sequence_checker.h"
 #include "pc/jsep_transport.h"
 #include "pc/session_description.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -50,16 +50,16 @@ class BundleManager {
     return bundle_groups_;
   }
   
-  const ContentGroup* LookupGroupByMid(const std::string& mid) const;
-  ContentGroup* LookupGroupByMid(const std::string& mid);
+  const ContentGroup* LookupGroupByMid(absl::string_view mid) const;
+  ContentGroup* LookupGroupByMid(absl::string_view mid);
   
   
-  bool IsFirstMidInGroup(const std::string& mid) const;
+  bool IsFirstMidInGroup(absl::string_view mid) const;
   
   
   void Update(const SessionDescription* description, SdpType type);
   
-  void DeleteMid(const ContentGroup* bundle_group, const std::string& mid);
+  void DeleteMid(const ContentGroup* bundle_group, absl::string_view mid);
   
   void DeleteGroup(const ContentGroup* bundle_group);
   
@@ -78,7 +78,7 @@ class BundleManager {
       RTC_GUARDED_BY(sequence_checker_);
   std::vector<std::unique_ptr<ContentGroup>> stable_bundle_groups_
       RTC_GUARDED_BY(sequence_checker_);
-  std::map<std::string, ContentGroup*> established_bundle_groups_by_mid_;
+  flat_map<std::string, ContentGroup*> established_bundle_groups_by_mid_;
 };
 
 
@@ -88,14 +88,14 @@ class BundleManager {
 class JsepTransportCollection {
  public:
   JsepTransportCollection(
-      absl::AnyInvocable<bool(const std::string& mid,
+      absl::AnyInvocable<bool(absl::string_view mid,
                               webrtc::JsepTransport* transport)>
           map_change_callback,
       absl::AnyInvocable<void()> state_change_callback)
       : map_change_callback_(std::move(map_change_callback)),
         state_change_callback_(std::move(state_change_callback)) {}
 
-  void RegisterTransport(const std::string& mid,
+  void RegisterTransport(absl::string_view transport_name,
                          std::unique_ptr<JsepTransport> transport);
   
   
@@ -104,20 +104,18 @@ class JsepTransportCollection {
   std::vector<JsepTransport*> ActiveTransports();
   void DestroyAllTransports();
   
-  JsepTransport* GetTransportByName(const std::string& mid);
-  const JsepTransport* GetTransportByName(const std::string& mid) const;
+  JsepTransport* GetTransportByName(absl::string_view transport_name);
+  const JsepTransport* GetTransportByName(
+      absl::string_view transport_name) const;
   
-  JsepTransport* GetTransportForMid(const std::string& mid);
-  const JsepTransport* GetTransportForMid(const std::string& mid) const;
   JsepTransport* GetTransportForMid(absl::string_view mid);
   const JsepTransport* GetTransportForMid(absl::string_view mid) const;
   
   
-  bool SetTransportForMid(const std::string& mid,
-                          JsepTransport* jsep_transport);
+  bool SetTransportForMid(absl::string_view mid, JsepTransport* jsep_transport);
   
   
-  void RemoveTransportForMid(const std::string& mid);
+  void RemoveTransportForMid(absl::string_view mid);
   
   bool RollbackTransports();
   
@@ -145,19 +143,19 @@ class JsepTransportCollection {
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       SequenceChecker::kDetached};
   
-  std::map<std::string, std::unique_ptr<JsepTransport>> jsep_transports_by_name_
+  flat_map<std::string, std::unique_ptr<JsepTransport>> jsep_transports_by_name_
       RTC_GUARDED_BY(sequence_checker_);
 
   
   
-  std::map<std::string, JsepTransport*> mid_to_transport_
+  flat_map<std::string, JsepTransport*> mid_to_transport_
       RTC_GUARDED_BY(sequence_checker_);
   
   
-  std::map<std::string, JsepTransport*> stable_mid_to_transport_
+  flat_map<std::string, JsepTransport*> stable_mid_to_transport_
       RTC_GUARDED_BY(sequence_checker_);
   
-  absl::AnyInvocable<bool(const std::string& mid,
+  absl::AnyInvocable<bool(absl::string_view mid,
                           webrtc::JsepTransport* transport)>
       map_change_callback_;
   
