@@ -2448,9 +2448,10 @@ void Database::Shutdown() {
 
   
   
+  
   nsCOMPtr<mozIStoragePendingStatement> ps;
   MOZ_ALWAYS_SUCCEEDS(mMainConn->ExecuteSimpleSQLAsync(
-      "PRAGMA optimize(0x02)"_ns, nullptr, getter_AddRefs(ps)));
+      "PRAGMA optimize(0x12)"_ns, nullptr, getter_AddRefs(ps)));
 
   if (NS_FAILED(mMainConn->AsyncClose(connectionShutdown))) {
     (void)connectionShutdown->Complete(NS_ERROR_UNEXPECTED, nullptr);
