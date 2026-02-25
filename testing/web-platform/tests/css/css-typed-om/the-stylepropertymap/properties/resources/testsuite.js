@@ -9,11 +9,32 @@ function assert_is_calc_sum(result) {
     'specified calc must be a CSSMathSum');
 }
 
-function assert_is_equal_with_range_handling(input, result) {
-  if (input instanceof CSSUnitValue && input.value < 0)
+
+
+
+
+
+
+
+
+
+
+
+
+function assert_is_equal_with_range_handling(input, result, alternateExpected) {
+  
+  if (input instanceof CSSUnitValue && input.value < 0) {
     assert_style_value_equals(result, new CSSMathSum(input));
-  else
-    assert_style_value_equals(result, input);
+  } else {
+    try {
+      assert_style_value_equals(result, input);
+    } catch(e) {
+      if (alternateExpected === undefined) {
+        throw e;
+      }
+      assert_style_value_equals(result, alternateExpected);
+    }
+  }
 }
 
 function assert_is_unsupported(result) {
@@ -94,6 +115,10 @@ const gTestSyntaxExamples = {
       {
         description: "a calc percent",
         input: new CSSMathSum(new CSSUnitValue(0, 'percent'), new CSSUnitValue(0, 'percent')),
+        
+        
+        
+        specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(0, 'percent')),
         
         
         defaultSpecified: (_, result) => assert_is_calc_sum(result),
@@ -283,7 +308,7 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
         'Specified value must be a CSSStyleValue');
 
       if (specified || example.defaultSpecified) {
-        (specified || example.defaultSpecified)(example.specifiedExpected || example.input, specifiedResult);
+        (specified || example.defaultSpecified)(example.specifiedExpected || example.input, specifiedResult, example.specifiedAlternateExpected);
       } else {
         assert_style_value_equals(specifiedResult, example.input);
       }
