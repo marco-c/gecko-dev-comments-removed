@@ -1604,9 +1604,8 @@ class ActivePS {
   
   static nsTArray<mozilla::JSSourceEntry> GatherJSSources(PSLockRef aLock) {
     nsTArray<mozilla::JSSourceEntry> jsSourceEntries;
-    if (!ProfilerFeature::HasJSSources(ActivePS::Features(aLock))) {
-      return jsSourceEntries;
-    }
+    bool gatherSourceText =
+        ProfilerFeature::HasJSSources(ActivePS::Features(aLock));
 
     ThreadRegistry::LockedRegistry lockedRegistry;
     ActivePS::ProfiledThreadList threads =
@@ -1625,8 +1624,10 @@ class ActivePS {
     }
     JSContext* jsContext = mainThread->mJSContext;
 
-    js::ProfilerJSSources threadSources =
-        js::GetProfilerScriptSources(JS_GetRuntime(jsContext));
+    
+    
+    js::ProfilerJSSources threadSources = js::GetProfilerScriptSources(
+        JS_GetRuntime(jsContext), gatherSourceText);
 
     
     
@@ -3920,11 +3921,8 @@ locked_profiler_stream_json_for_this_process(
 
   
   
-  Maybe<nsTHashMap<SourceId, IndexIntoSourceTable>> sourceIdToIndexMap;
-  if (!jsSourceEntries.IsEmpty()) {
-    sourceIdToIndexMap.emplace(
-        buffer.StreamSourceTableToJSON(aWriter, jsSourceEntries));
-  }
+  nsTHashMap<SourceId, IndexIntoSourceTable> sourceIdToIndexMap =
+      buffer.StreamSourceTableToJSON(aWriter, jsSourceEntries);
 
   
   aWriter.StartArrayProperty("threads");
@@ -3953,8 +3951,7 @@ locked_profiler_stream_json_for_this_process(
       MOZ_RELEASE_ASSERT(thread.mProfiledThreadData);
       processStreamingContext.AddThreadStreamingContext(
           *thread.mProfiledThreadData, buffer, thread.mJSContext, aService,
-          std::move(progressLogger),
-          sourceIdToIndexMap.isSome() ? sourceIdToIndexMap.ptr() : nullptr);
+          std::move(progressLogger), &sourceIdToIndexMap);
       if (aWriter.Failed()) {
         return Err(ProfilerError::JsonGenerationFailed);
       }

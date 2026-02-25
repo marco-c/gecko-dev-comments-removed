@@ -71,11 +71,14 @@ add_task(async function test_profile_feature_jstracing_objtestutils() {
       const shapes = contentThread.tracedObjectShapes;
 
       
-      const functionDummyStringIndex = contentThread.stringTable.findIndex(s =>
-        s.startsWith("dummy")
-      );
+      const functionDummyStringIndexes = [];
+      contentThread.stringTable.forEach((s, idx) => {
+        if (s.startsWith("dummy")) {
+          functionDummyStringIndexes.push(idx);
+        }
+      });
       Assert.greater(
-        functionDummyStringIndex,
+        functionDummyStringIndexes.length,
         0,
         "Found string for 'dummy' function call"
       );
@@ -85,7 +88,7 @@ add_task(async function test_profile_feature_jstracing_objtestutils() {
       const FRAME_LOCATION_SLOT = frameTable.schema.location;
       const functionDummyFrameIndexes = [];
       frameTable.data.forEach((frame, idx) => {
-        if (frame[FRAME_LOCATION_SLOT] === functionDummyStringIndex) {
+        if (functionDummyStringIndexes.includes(frame[FRAME_LOCATION_SLOT])) {
           functionDummyFrameIndexes.push(idx);
         }
       });

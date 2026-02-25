@@ -191,7 +191,10 @@ using ProfilerJSSources =
 
 
 
-JS_PUBLIC_API ProfilerJSSources GetProfilerScriptSources(JSRuntime* rt);
+
+
+JS_PUBLIC_API ProfilerJSSources GetProfilerScriptSources(JSRuntime* rt,
+                                                         bool gatherSourceText);
 
 
 

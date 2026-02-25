@@ -25,16 +25,17 @@ add_task(async function test_profile_feature_jstracing() {
       const { contentThread } = await stopProfilerNowAndGetThreads(contentPid);
 
       
-      const functionAFrameStringIdx = contentThread.stringTable.indexOf(
-        `a (${url}:7:15)`
+      
+      const functionAFrameStringIdx = contentThread.stringTable.findIndex(s =>
+        s.startsWith(`a (${url}:7:15)`)
       );
       Assert.greater(
         functionAFrameStringIdx,
         0,
         "Found string for 'a' method call"
       );
-      const functionBFrameStringIdx = contentThread.stringTable.indexOf(
-        `b (${url}:10:15)`
+      const functionBFrameStringIdx = contentThread.stringTable.findIndex(s =>
+        s.startWith(`b (${url}:10:15)`)
       );
       Assert.greater(
         functionBFrameStringIdx,
@@ -54,8 +55,8 @@ add_task(async function test_profile_feature_jstracing() {
         0,
         "Found string for 'CustomEvent' DOM event"
       );
-      const customEventHandlerStringIdx = contentThread.stringTable.indexOf(
-        `customEventHandler (${url}:18:71)`
+      const customEventHandlerStringIdx = contentThread.stringTable.findIndex(
+        s => s.startsWith(`customEventHandler (${url}:18:71)`)
       );
       Assert.greater(
         customEventHandlerStringIdx,

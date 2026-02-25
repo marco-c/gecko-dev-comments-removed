@@ -42,9 +42,12 @@ add_task(async () => {
       
       
       
-      /^functionA \(.*test_feature_js\.js:\d+:\d+\)$/,
-      /^functionB \(.*test_feature_js\.js:\d+:\d+\)$/,
-      /^functionC \(.*test_feature_js\.js:\d+:\d+\)$/,
+      
+      
+      
+      /^functionA \(.*test_feature_js\.js:\d+:\d+\)\[\d+\]$/,
+      /^functionB \(.*test_feature_js\.js:\d+:\d+\)\[\d+\]$/,
+      /^functionC \(.*test_feature_js\.js:\d+:\d+\)\[\d+\]$/,
     ],
     "The stack contains a few frame labels, as well as the JS functions that we called."
   );
