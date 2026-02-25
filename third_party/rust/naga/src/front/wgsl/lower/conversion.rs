@@ -302,8 +302,13 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
     
     
     
+    
+    
+    
+    
     pub fn automatic_conversion_consensus<'handle, I>(
         &self,
+        base: Option<crate::Scalar>,
         components: I,
     ) -> core::result::Result<crate::Scalar, usize>
     where
@@ -323,18 +328,17 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
                 .collect::<Vec<String>>()
                 .join(", ")
         );
-        let mut inners = components_iter.map(|&c| self.typifier()[c].inner_with(types));
-        let mut best = inners.next().unwrap().scalar().ok_or(0_usize)?;
-        for (inner, i) in inners.zip(1..) {
-            let scalar = inner.scalar().ok_or(i)?;
-            match best.automatic_conversion_combine(scalar) {
-                Some(new_best) => {
-                    best = new_best;
-                }
-                None => return Err(i),
-            }
-        }
-
+        let mut components_iter = components_iter
+            .map(|&c| self.typifier()[c].inner_with(types).scalar())
+            .enumerate();
+        let base = base
+            .or_else(|| components_iter.next().unwrap().1)
+            .ok_or(0usize)?;
+        let best = components_iter.try_fold(base, |best, (i, scalar)| {
+            scalar
+                .and_then(|scalar| best.automatic_conversion_combine(scalar))
+                .ok_or(i)
+        })?;
         log::debug!("    consensus: {}", best.to_wgsl_for_diagnostics());
         Ok(best)
     }

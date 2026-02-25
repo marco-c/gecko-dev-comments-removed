@@ -628,6 +628,7 @@ impl crate::AddressSpace {
             | Self::Handle
             | Self::TaskPayload => true,
             Self::Function => false,
+            Self::RayPayload | Self::IncomingRayPayload => unreachable!(),
         }
     }
 
@@ -639,7 +640,7 @@ impl crate::AddressSpace {
             
             
             Self::Storage { .. } => true,
-            Self::TaskPayload => unimplemented!(),
+            Self::TaskPayload | Self::RayPayload | Self::IncomingRayPayload => unimplemented!(),
             
             Self::Private | Self::WorkGroup => false,
             
@@ -654,9 +655,13 @@ impl crate::AddressSpace {
             Self::Handle => None,
             Self::Uniform | Self::Immediate => Some("constant"),
             Self::Storage { .. } => Some("device"),
-            Self::Private | Self::Function => Some("thread"),
+            
+            
+            
+            Self::Private | Self::Function | Self::RayPayload => Some("thread"),
             Self::WorkGroup => Some("threadgroup"),
             Self::TaskPayload => Some("object_data"),
+            Self::IncomingRayPayload => Some("ray_data"),
         }
     }
 }
@@ -1838,7 +1843,19 @@ impl<W: Write> Writer<W> {
                             put_expression,
                         )?;
                     }
-                    crate::TypeInner::Array { .. } | crate::TypeInner::Struct { .. } => {
+                    crate::TypeInner::Array { .. } => {
+                        
+                        
+                        write!(self.out, " {{{{")?;
+                        for (index, &component) in components.iter().enumerate() {
+                            if index != 0 {
+                                write!(self.out, ", ")?;
+                            }
+                            put_expression(self, ctx, component)?;
+                        }
+                        write!(self.out, "}}}}")?;
+                    }
+                    crate::TypeInner::Struct { .. } => {
                         write!(self.out, " {{")?;
                         for (index, &component) in components.iter().enumerate() {
                             if index != 0 {
@@ -4279,6 +4296,7 @@ impl<W: Write> Writer<W> {
                     }
                     writeln!(self.out, ");")?;
                 }
+                crate::Statement::RayPipelineFunction(_) => unreachable!(),
             }
         }
 
@@ -6875,6 +6893,10 @@ template <typename A>
                     false,
                 ),
                 crate::ShaderStage::Task | crate::ShaderStage::Mesh => unimplemented!(),
+                crate::ShaderStage::RayGeneration
+                | crate::ShaderStage::AnyHit
+                | crate::ShaderStage::ClosestHit
+                | crate::ShaderStage::Miss => unimplemented!(),
             };
 
             
@@ -6947,6 +6969,8 @@ template <typename A>
                         crate::AddressSpace::Function
                         | crate::AddressSpace::Private
                         | crate::AddressSpace::WorkGroup => {}
+                        crate::AddressSpace::RayPayload
+                        | crate::AddressSpace::IncomingRayPayload => unimplemented!(),
                     }
                 }
                 if needs_buffer_sizes {

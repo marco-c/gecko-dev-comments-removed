@@ -559,21 +559,20 @@ impl<'scope, 'snatch_guard, 'cmd_enc> State<'scope, 'snatch_guard, 'cmd_enc> {
 
             if family == DrawCommandFamily::DrawIndexed {
                 
-                if let Some(pipeline_index_format) = pipeline.strip_index_format {
-                    
-                    let buffer_index_format = self
-                        .index
-                        .buffer_format
-                        .ok_or(DrawError::MissingIndexBuffer)?;
+                
+                let buffer_index_format = self
+                    .index
+                    .buffer_format
+                    .ok_or(DrawError::MissingIndexBuffer)?;
 
-                    
-                    if pipeline_index_format != buffer_index_format {
-                        return Err(DrawError::UnmatchedIndexFormats {
-                            pipeline: pipeline.error_ident(),
-                            pipeline_format: pipeline_index_format,
-                            buffer_format: buffer_index_format,
-                        });
-                    }
+                if pipeline.topology.is_strip()
+                    && pipeline.strip_index_format != Some(buffer_index_format)
+                {
+                    return Err(DrawError::UnmatchedStripIndexFormat {
+                        pipeline: pipeline.error_ident(),
+                        strip_index_format: pipeline.strip_index_format,
+                        buffer_format: buffer_index_format,
+                    });
                 }
             }
             if (family == DrawCommandFamily::DrawMeshTasks) != pipeline.is_mesh {

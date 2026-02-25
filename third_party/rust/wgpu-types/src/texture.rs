@@ -815,6 +815,7 @@ pub struct TexelCopyBufferLayout {
     
     
     
+    
     #[doc = link_to_wgpu_docs!(["CEcbtt"]: "struct.CommandEncoder.html#method.copy_buffer_to_texture")]
     #[doc = link_to_wgpu_docs!(["CEcttb"]: "struct.CommandEncoder.html#method.copy_texture_to_buffer")]
     #[doc = link_to_wgpu_docs!(["Qwt"]: "struct.Queue.html#method.write_texture")]

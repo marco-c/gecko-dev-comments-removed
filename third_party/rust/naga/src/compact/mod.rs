@@ -158,18 +158,14 @@ pub fn compact(module: &mut crate::Module, keep_unused: KeepUnused) {
             }
             if e.stage == crate::ShaderStage::Task || e.stage == crate::ShaderStage::Mesh {
                 
-                let u32_type = module
-                    .types
-                    .iter()
-                    .find_map(|tuple| {
-                        if tuple.1.inner == crate::TypeInner::Scalar(crate::Scalar::U32) {
-                            Some(tuple.0)
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap();
-                module_tracer.types_used.insert(u32_type);
+                
+                
+                if let Some(u32_type) = module.types.iter().find_map(|tuple| {
+                    (tuple.1.inner == crate::TypeInner::Scalar(crate::Scalar::U32))
+                        .then_some(tuple.0)
+                }) {
+                    module_tracer.types_used.insert(u32_type);
+                }
             }
 
             let mut used = module_tracer.as_function(&e.function);

@@ -223,6 +223,7 @@ pub struct SymbolTable<Name, Var> {
     
     
     cursor: usize,
+    lookup_cursor_is_one_behind: bool,
 }
 
 impl<Name, Var> SymbolTable<Name, Var> {
@@ -233,7 +234,12 @@ impl<Name, Var> SymbolTable<Name, Var> {
     
     
     
+    
+    
+    
     pub fn push_scope(&mut self) {
+        self.check_lookup_scope_matches_current_scope();
+
         
         
         
@@ -250,6 +256,7 @@ impl<Name, Var> SymbolTable<Name, Var> {
     
     
     
+    
     pub fn pop_scope(&mut self) {
         
         
@@ -257,8 +264,37 @@ impl<Name, Var> SymbolTable<Name, Var> {
         
         
         assert!(self.cursor != 1, "Tried to pop the root scope");
+        self.check_lookup_scope_matches_current_scope();
 
         self.cursor -= 1;
+    }
+
+    
+    
+    
+    
+    pub fn reduce_lookup_scope(&mut self) {
+        self.check_lookup_scope_matches_current_scope();
+        self.lookup_cursor_is_one_behind = true;
+    }
+
+    
+    
+    
+    
+    pub fn reset_lookup_scope(&mut self) {
+        assert!(
+            self.lookup_cursor_is_one_behind,
+            "current lookup scope already matches the current scope"
+        );
+        self.lookup_cursor_is_one_behind = false;
+    }
+
+    fn check_lookup_scope_matches_current_scope(&self) {
+        assert!(
+            !self.lookup_cursor_is_one_behind,
+            "current lookup scope doesn't match the current scope"
+        );
     }
 }
 
@@ -277,8 +313,11 @@ where
         Name: core::borrow::Borrow<Q>,
         Q: core::hash::Hash + Eq + ?Sized,
     {
+        let cursor = self
+            .cursor
+            .saturating_sub(self.lookup_cursor_is_one_behind.into());
         
-        for scope in self.scopes[..self.cursor].iter().rev() {
+        for scope in self.scopes[..cursor].iter().rev() {
             if let Some(var) = scope.get(name) {
                 return Some(var);
             }
@@ -316,6 +355,7 @@ impl<Name, Var> Default for SymbolTable<Name, Var> {
         Self {
             scopes: vec![FastHashMap::default()],
             cursor: 1,
+            lookup_cursor_is_one_behind: false,
         }
     }
 }

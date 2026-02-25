@@ -110,11 +110,6 @@ impl<T> Handle<T> {
     }
 
     
-    pub(super) const unsafe fn from_usize_unchecked(index: usize) -> Self {
-        Handle::new(Index::new_unchecked(index as u32))
-    }
-
-    
     pub fn write_prefixed(
         &self,
         formatter: &mut fmt::Formatter,

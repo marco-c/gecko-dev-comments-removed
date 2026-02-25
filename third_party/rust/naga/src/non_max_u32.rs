@@ -70,24 +70,6 @@ impl NonMaxU32 {
         self.0.get() - 1
     }
 
-    
-    
-    
-    
-    
-    pub const unsafe fn new_unchecked(n: u32) -> NonMaxU32 {
-        NonMaxU32(unsafe { NonZeroU32::new_unchecked(n + 1) })
-    }
-
-    
-    
-    
-    
-    
-    pub const unsafe fn from_usize_unchecked(index: usize) -> Self {
-        NonMaxU32(unsafe { NonZeroU32::new_unchecked(index as u32 + 1) })
-    }
-
     pub fn checked_add(self, n: u32) -> Option<Self> {
         
         

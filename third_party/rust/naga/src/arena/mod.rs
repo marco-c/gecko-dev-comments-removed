@@ -98,7 +98,7 @@ impl<T> Arena<T> {
         self.data
             .iter()
             .enumerate()
-            .map(|(i, v)| unsafe { (Handle::from_usize_unchecked(i), v) })
+            .map(|(i, v)| (Handle::from_usize(i), v))
     }
 
     
@@ -110,7 +110,7 @@ impl<T> Arena<T> {
             .iter_mut()
             .zip(self.span_info.iter())
             .enumerate()
-            .map(|(i, (v, span))| unsafe { (Handle::from_usize_unchecked(i), v, span) })
+            .map(|(i, (v, span))| (Handle::from_usize(i), v, span))
     }
 
     
@@ -121,7 +121,7 @@ impl<T> Arena<T> {
             .into_iter()
             .zip(arena.span_info)
             .enumerate()
-            .map(|(i, (v, span))| unsafe { (Handle::from_usize_unchecked(i), v, span) })
+            .map(|(i, (v, span))| (Handle::from_usize(i), v, span))
     }
 
     
@@ -130,7 +130,7 @@ impl<T> Arena<T> {
         self.data
             .iter_mut()
             .enumerate()
-            .map(|(i, v)| unsafe { (Handle::from_usize_unchecked(i), v) })
+            .map(|(i, v)| (Handle::from_usize(i), v))
     }
 
     
@@ -146,7 +146,7 @@ impl<T> Arena<T> {
         self.data
             .iter()
             .position(fun)
-            .map(|index| unsafe { Handle::from_usize_unchecked(index) })
+            .map(|index| Handle::from_usize(index))
     }
 
     
@@ -160,7 +160,7 @@ impl<T> Arena<T> {
         fun: F,
     ) -> Handle<T> {
         if let Some(index) = self.data.iter().position(|d| fun(d, &value)) {
-            unsafe { Handle::from_usize_unchecked(index) }
+            Handle::from_usize(index)
         } else {
             self.append(value, span)
         }

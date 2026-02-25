@@ -27,7 +27,6 @@ use crate::{
 use crate::span::{AddSpan as _, WithSpan};
 pub use analyzer::{ExpressionInfo, FunctionInfo, GlobalUse, Uniformity, UniformityRequirements};
 pub use compose::ComposeError;
-pub use expression::builtin::ZeroValueError;
 pub use expression::{check_literal_value, LiteralError};
 pub use expression::{ConstExpressionError, ExpressionError};
 pub use function::{CallError, FunctionError, LocalVariableError, SubgroupError};
@@ -205,6 +204,10 @@ bitflags::bitflags! {
         const COOPERATIVE_MATRIX = 1 << 36;
         /// Support for per-vertex fragment input.
         const PER_VERTEX = 1 << 37;
+        /// Support for ray generation, any hit, closest hit, and miss shaders.
+        const RAY_TRACING_PIPELINE = 1 << 38;
+        /// Support for draw index builtin
+        const DRAW_INDEX = 1 << 39;
     }
 }
 
@@ -225,6 +228,7 @@ impl Capabilities {
             Self::RAY_QUERY => Some(Ext::WgpuRayQuery),
             Self::RAY_HIT_VERTEX_POSITION => Some(Ext::WgpuRayQueryVertexReturn),
             Self::COOPERATIVE_MATRIX => Some(Ext::WgpuCooperativeMatrix),
+            Self::RAY_TRACING_PIPELINE => Some(Ext::WgpuRayTracingPipeline),
             _ => None,
         }
     }
@@ -297,12 +301,16 @@ bitflags::bitflags! {
     #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
     #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub struct ShaderStages: u8 {
+    pub struct ShaderStages: u16 {
         const VERTEX = 0x1;
         const FRAGMENT = 0x2;
         const COMPUTE = 0x4;
         const MESH = 0x8;
         const TASK = 0x10;
+        const RAY_GENERATION = 0x20;
+        const ANY_HIT = 0x40;
+        const CLOSEST_HIT = 0x80;
+        const MISS = 0x100;
         const COMPUTE_LIKE = Self::COMPUTE.bits() | Self::TASK.bits() | Self::MESH.bits();
     }
 }
@@ -377,6 +385,32 @@ pub struct Validator {
     
     
     needs_visit: HandleSet<crate::Expression>,
+
+    
+    
+    
+    trace_rays_vertex_return: TraceRayVertexReturnState,
+
+    
+    
+    trace_rays_payload_type: Option<Handle<crate::Type>>,
+}
+
+#[derive(Debug)]
+enum TraceRayVertexReturnState {
+    
+    NoTraceRays,
+    
+    
+    
+    
+    
+    #[expect(unused)]
+    NoVertexReturn(crate::Span),
+    
+    
+    
+    VertexReturn,
 }
 
 #[derive(Clone, Debug, thiserror::Error)]
@@ -576,6 +610,8 @@ impl Validator {
             override_ids: FastHashSet::default(),
             overrides_resolved: false,
             needs_visit: HandleSet::new(),
+            trace_rays_vertex_return: TraceRayVertexReturnState::NoTraceRays,
+            trace_rays_payload_type: None,
         }
     }
 
@@ -734,6 +770,10 @@ impl Validator {
                     }
                     .with_span_handle(handle, &module.types)
                 })?;
+            debug_assert!(
+                ty_info.flags.contains(TypeFlags::CONSTRUCTIBLE)
+                    == module.types[handle].inner.is_constructible(&module.types)
+            );
             mod_info.type_flags.push(ty_info.flags);
             self.types[handle.index()] = ty_info;
         }

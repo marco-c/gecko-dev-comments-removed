@@ -37,8 +37,6 @@
     clippy::pattern_type_mismatch,
     
     rustdoc::private_intra_doc_links,
-    
-    clippy::result_large_err
 )]
 #![warn(
     clippy::alloc_instead_of_core,

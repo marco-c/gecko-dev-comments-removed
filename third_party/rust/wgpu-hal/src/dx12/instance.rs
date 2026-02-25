@@ -70,20 +70,50 @@ impl crate::Instance for super::Instance {
 
         
         let compiler_container = match desc.backend_options.dx12.shader_compiler.clone() {
-            wgt::Dx12Compiler::DynamicDxc {
-                dxc_path,
-                max_shader_model,
-            } => CompilerContainer::new_dynamic_dxc(dxc_path.into(), max_shader_model).map_err(
-                |e| {
+            wgt::Dx12Compiler::DynamicDxc { dxc_path } => {
+                CompilerContainer::new_dynamic_dxc(dxc_path.into()).map_err(|e| {
                     crate::InstanceError::with_source(String::from("Failed to load dynamic DXC"), e)
-                },
-            )?,
+                })?
+            }
             wgt::Dx12Compiler::StaticDxc => CompilerContainer::new_static_dxc().map_err(|e| {
                 crate::InstanceError::with_source(String::from("Failed to load static DXC"), e)
             })?,
             wgt::Dx12Compiler::Fxc => CompilerContainer::new_fxc().map_err(|e| {
                 crate::InstanceError::with_source(String::from("Failed to load FXC"), e)
             })?,
+            wgt::Dx12Compiler::Auto => {
+                if cfg!(feature = "static-dxc") {
+                    
+                    CompilerContainer::new_static_dxc().map_err(|e| {
+                        crate::InstanceError::with_source(
+                            String::from("Failed to load static DXC"),
+                            e,
+                        )
+                    })?
+                } else {
+                    
+                    let dynamic = CompilerContainer::new_dynamic_dxc("dxcompiler.dll".into());
+                    match dynamic {
+                        Ok(v) => v,
+                        Err(super::shader_compilation::GetContainerError::FailedToLoad(..)) => {
+                            
+                            CompilerContainer::new_fxc().map_err(|e| {
+                                crate::InstanceError::with_source(
+                                    String::from("Failed to load FXC"),
+                                    e,
+                                )
+                            })?
+                        }
+                        Err(e) => {
+                            
+                            return Err(crate::InstanceError::with_source(
+                                String::from("Failed to load dynamic DXC"),
+                                e,
+                            ));
+                        }
+                    }
+                }
+            }
         };
 
         match compiler_container {

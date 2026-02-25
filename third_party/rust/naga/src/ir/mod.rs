@@ -335,6 +335,18 @@ pub enum ShaderStage {
 
     
     Compute,
+
+    
+    RayGeneration,
+
+    
+    Miss,
+
+    
+    AnyHit,
+
+    
+    ClosestHit,
 }
 
 
@@ -373,6 +385,14 @@ pub enum AddressSpace {
     Immediate,
     
     TaskPayload,
+
+    
+    RayPayload,
+    
+    
+    
+    
+    IncomingRayPayload,
 }
 
 
@@ -401,7 +421,7 @@ pub enum BuiltIn {
     
     VertexIndex,
     
-    DrawID,
+    DrawIndex,
 
     
     FragDepth,
@@ -459,6 +479,46 @@ pub enum BuiltIn {
     PrimitiveCount,
     
     Primitives,
+
+    
+    
+    RayInvocationId,
+    
+    NumRayInvocations,
+    
+    
+    InstanceCustomData,
+    
+    
+    GeometryIndex,
+    
+    WorldRayOrigin,
+    
+    
+    WorldRayDirection,
+    
+    
+    ObjectRayOrigin,
+    
+    
+    ObjectRayDirection,
+    
+    
+    RayTmin,
+    
+    
+    
+    RayTCurrentMax,
+    
+    
+    ObjectToWorld,
+    
+    
+    WorldToObject,
+    
+    
+    
+    HitKind,
 }
 
 
@@ -2279,6 +2339,8 @@ pub enum Statement {
         fun: RayQueryFunction,
     },
     
+    RayPipelineFunction(RayPipelineFunction),
+    
     SubgroupBallot {
         
         
@@ -2462,6 +2524,9 @@ pub struct EntryPoint {
     pub mesh_info: Option<MeshStageInfo>,
     
     pub task_payload: Option<Handle<GlobalVariable>>,
+    
+    
+    pub incoming_ray_payload: Option<Handle<GlobalVariable>>,
 }
 
 
@@ -2675,6 +2740,36 @@ pub struct MeshStageInfo {
     pub primitive_output_type: Handle<Type>,
     
     pub output_variable: Handle<GlobalVariable>,
+}
+
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum RayPipelineFunction {
+    
+    TraceRay {
+        
+        
+        
+        
+        
+        acceleration_structure: Handle<Expression>,
+
+        #[allow(rustdoc::private_intra_doc_links)]
+        
+        
+        
+        
+        
+        descriptor: Handle<Expression>,
+
+        
+        payload: Handle<Expression>,
+        
+        
+    },
 }
 
 

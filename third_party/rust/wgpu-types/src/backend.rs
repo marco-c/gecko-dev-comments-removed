@@ -252,6 +252,20 @@ pub struct GlBackendOptions {
     pub gles_minor_version: Gles3MinorVersion,
     
     pub fence_behavior: GlFenceBehavior,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub debug_fns: GlDebugFns,
 }
 
 impl GlBackendOptions {
@@ -261,9 +275,11 @@ impl GlBackendOptions {
     #[must_use]
     pub fn from_env_or_default() -> Self {
         let gles_minor_version = Gles3MinorVersion::from_env().unwrap_or_default();
+        let debug_fns = GlDebugFns::from_env().unwrap_or_default();
         Self {
             gles_minor_version,
             fence_behavior: GlFenceBehavior::Normal,
+            debug_fns,
         }
     }
 
@@ -273,11 +289,96 @@ impl GlBackendOptions {
     #[must_use]
     pub fn with_env(self) -> Self {
         let gles_minor_version = self.gles_minor_version.with_env();
-        let short_circuit_fences = self.fence_behavior.with_env();
+        let fence_behavior = self.fence_behavior.with_env();
+        let debug_fns = self.debug_fns.with_env();
         Self {
             gles_minor_version,
-            fence_behavior: short_circuit_fences,
+            fence_behavior,
+            debug_fns,
         }
+    }
+}
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum GlDebugFns {
+    
+    
+    
+    
+    
+    
+    
+    #[default]
+    Auto,
+    
+    
+    
+    
+    ForceEnabled,
+    
+    
+    
+    Disabled,
+}
+
+impl GlDebugFns {
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn from_env() -> Option<Self> {
+        let value = crate::env::var("WGPU_GL_DEBUG_FNS")
+            .as_deref()?
+            .to_lowercase();
+        match value.as_str() {
+            "auto" => Some(Self::Auto),
+            "forceenabled" | "force_enabled" | "enabled" => Some(Self::ForceEnabled),
+            "disabled" => Some(Self::Disabled),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    #[must_use]
+    pub fn with_env(self) -> Self {
+        if let Some(debug_fns) = Self::from_env() {
+            debug_fns
+        } else {
+            self
+        }
+    }
+}
+
+
+
+#[derive(Default, Clone, Debug)]
+pub struct ForceShaderModelToken {
+    inner: Option<DxcShaderModel>,
+}
+impl ForceShaderModelToken {
+    
+    
+    
+    
+    
+    pub unsafe fn with_shader_model(sm: DxcShaderModel) -> Self {
+        Self { inner: Some(sm) }
+    }
+
+    
+    pub fn get(&self) -> Option<DxcShaderModel> {
+        self.inner.clone()
     }
 }
 
@@ -292,6 +393,11 @@ pub struct Dx12BackendOptions {
     pub presentation_system: Dx12SwapchainKind,
     
     pub latency_waitable_object: Dx12UseFrameLatencyWaitableObject,
+    
+    
+    
+    
+    pub force_shader_model: ForceShaderModelToken,
 }
 
 impl Dx12BackendOptions {
@@ -308,6 +414,7 @@ impl Dx12BackendOptions {
             shader_compiler: compiler,
             presentation_system,
             latency_waitable_object,
+            force_shader_model: ForceShaderModelToken::default(),
         }
     }
 
@@ -323,6 +430,7 @@ impl Dx12BackendOptions {
             shader_compiler,
             presentation_system,
             latency_waitable_object,
+            force_shader_model: ForceShaderModelToken::default(),
         }
     }
 }
@@ -437,6 +545,44 @@ pub enum DxcShaderModel {
     V6_5,
     V6_6,
     V6_7,
+    V6_8,
+    V6_9,
+}
+
+impl DxcShaderModel {
+    
+    pub fn from_dxc_version(major: u32, minor: u32) -> Self {
+        
+        
+        
+        if major > 1 {
+            Self::V6_9
+        } else {
+            Self::from_parts(6, minor)
+        }
+    }
+
+    
+    pub fn from_parts(major: u32, minor: u32) -> Self {
+        if major > 6 || minor > 8 {
+            Self::V6_9
+        } else {
+            match minor {
+                0 => DxcShaderModel::V6_0,
+                1 => DxcShaderModel::V6_1,
+                2 => DxcShaderModel::V6_2,
+                3 => DxcShaderModel::V6_3,
+                4 => DxcShaderModel::V6_4,
+                5 => DxcShaderModel::V6_5,
+                6 => DxcShaderModel::V6_6,
+                7 => DxcShaderModel::V6_7,
+                8 => DxcShaderModel::V6_8,
+                9 => DxcShaderModel::V6_9,
+                
+                _ => DxcShaderModel::V6_9,
+            }
+        }
+    }
 }
 
 
@@ -445,7 +591,6 @@ pub enum Dx12Compiler {
     
     
     
-    #[default]
     Fxc,
     
     
@@ -458,14 +603,15 @@ pub enum Dx12Compiler {
     DynamicDxc {
         
         dxc_path: String,
-        
-        max_shader_model: DxcShaderModel,
     },
     
     
     
     
     StaticDxc,
+    
+    #[default]
+    Auto,
 }
 
 impl Dx12Compiler {
@@ -475,7 +621,6 @@ impl Dx12Compiler {
     pub fn default_dynamic_dxc() -> Self {
         Self::DynamicDxc {
             dxc_path: String::from("dxcompiler.dll"),
-            max_shader_model: DxcShaderModel::V6_7, 
         }
     }
 
@@ -494,6 +639,7 @@ impl Dx12Compiler {
             "dxc" | "dynamicdxc" => Some(Self::default_dynamic_dxc()),
             "staticdxc" => Some(Self::StaticDxc),
             "fxc" => Some(Self::Fxc),
+            "auto" => Some(Self::Auto),
             _ => None,
         }
     }

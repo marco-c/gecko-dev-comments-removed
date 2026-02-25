@@ -298,6 +298,15 @@ impl PrimitiveTopology {
             Self::LineStrip | Self::TriangleStrip => true,
         }
     }
+
+    
+    #[must_use]
+    pub fn is_triangles(&self) -> bool {
+        match *self {
+            Self::TriangleList | Self::TriangleStrip => true,
+            Self::PointList | Self::LineList | Self::LineStrip => false,
+        }
+    }
 }
 
 
@@ -362,6 +371,7 @@ pub enum PolygonMode {
 pub struct PrimitiveState {
     
     pub topology: PrimitiveTopology,
+    
     
     
     

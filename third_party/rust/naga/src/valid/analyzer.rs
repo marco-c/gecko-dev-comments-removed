@@ -269,7 +269,7 @@ pub struct FunctionInfo {
     
     
     
-    global_uses: Box<[GlobalUse]>,
+    pub global_uses: Box<[GlobalUse]>,
 
     
     
@@ -653,7 +653,7 @@ impl FunctionInfo {
                 let var = &resolve_context.global_vars[gh];
                 let uniform = match var.space {
                     
-                    As::Function | As::Private => false,
+                    As::Function | As::Private | As::RayPayload | As::IncomingRayPayload => false,
                     
                     
                     As::WorkGroup | As::TaskPayload => true,
@@ -1190,6 +1190,20 @@ impl FunctionInfo {
                     },
                     exit: ExitFlags::empty(),
                 },
+                S::RayPipelineFunction(ref fun) => {
+                    match *fun {
+                        crate::RayPipelineFunction::TraceRay {
+                            acceleration_structure,
+                            descriptor,
+                            payload,
+                        } => {
+                            let _ = self.add_ref(acceleration_structure);
+                            let _ = self.add_ref(descriptor);
+                            let _ = self.add_ref(payload);
+                        }
+                    }
+                    FunctionUniformity::new()
+                }
             };
 
             disruptor = disruptor.or(uniformity.exit_disruptor());
