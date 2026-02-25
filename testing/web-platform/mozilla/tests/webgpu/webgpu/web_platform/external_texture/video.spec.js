@@ -406,8 +406,7 @@ fn(async (t) => {
     
     
     
-    const srcVideoHeight = source.codedHeight;
-    const srcVideoWidth = source.codedWidth;
+    const visibleRect = source.visibleRect;
 
     const srcColorSpace = kVideoInfo[videoName].colorSpace;
     const presentColors = kVideoExpectedColors[srcColorSpace][dstColorSpace];
@@ -419,36 +418,41 @@ fn(async (t) => {
     const cropParams = [
     
     {
-      subRect: { x: 0, y: 0, width: srcVideoWidth / 2, height: srcVideoHeight / 2 },
+      subRect: {
+        x: visibleRect.x,
+        y: visibleRect.y,
+        width: visibleRect.width / 2,
+        height: visibleRect.height / 2
+      },
       color: convertToUnorm8(presentColors[expect.topLeftColor])
     },
     
     {
       subRect: {
-        x: srcVideoWidth / 2,
-        y: 0,
-        width: srcVideoWidth / 2,
-        height: srcVideoHeight / 2
+        x: visibleRect.x + visibleRect.width / 2,
+        y: visibleRect.y,
+        width: visibleRect.width / 2,
+        height: visibleRect.height / 2
       },
       color: convertToUnorm8(presentColors[expect.topRightColor])
     },
     
     {
       subRect: {
-        x: 0,
-        y: srcVideoHeight / 2,
-        width: srcVideoWidth / 2,
-        height: srcVideoHeight / 2
+        x: visibleRect.x,
+        y: visibleRect.y + visibleRect.height / 2,
+        width: visibleRect.width / 2,
+        height: visibleRect.height / 2
       },
       color: convertToUnorm8(presentColors[expect.bottomLeftColor])
     },
     
     {
       subRect: {
-        x: srcVideoWidth / 2,
-        y: srcVideoHeight / 2,
-        width: srcVideoWidth / 2,
-        height: srcVideoHeight / 2
+        x: visibleRect.x + visibleRect.width / 2,
+        y: visibleRect.y + visibleRect.height / 2,
+        width: visibleRect.width / 2,
+        height: visibleRect.height / 2
       },
       color: convertToUnorm8(presentColors[expect.bottomRightColor])
     }];
@@ -492,10 +496,10 @@ fn(async (t) => {
       
       
       ttu.expectSinglePixelComparisonsAreOkInTexture(t, { texture: colorAttachment }, [
-      { coord: { x: kWidth * 0.1, y: kHeight * 0.1 }, exp: cropParam.color },
-      { coord: { x: kWidth * 0.9, y: kHeight * 0.1 }, exp: cropParam.color },
-      { coord: { x: kWidth * 0.1, y: kHeight * 0.9 }, exp: cropParam.color },
-      { coord: { x: kWidth * 0.9, y: kHeight * 0.9 }, exp: cropParam.color }]
+      { coord: { x: kWidth * 0.2, y: kHeight * 0.2 }, exp: cropParam.color },
+      { coord: { x: kWidth * 0.8, y: kHeight * 0.2 }, exp: cropParam.color },
+      { coord: { x: kWidth * 0.2, y: kHeight * 0.8 }, exp: cropParam.color },
+      { coord: { x: kWidth * 0.8, y: kHeight * 0.8 }, exp: cropParam.color }]
       );
 
       subRect.close();
