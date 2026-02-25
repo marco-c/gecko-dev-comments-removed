@@ -90,7 +90,6 @@ class Scriptability {
 
   
   
-  
   static bool AllowedIfExists(JSObject* aScope);
 
  private:

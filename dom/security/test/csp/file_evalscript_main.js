@@ -195,23 +195,6 @@ addEventListener(
     }
 
     
-    try {
-      var sr = new ShadowRealm();
-      sr.evaluate("var x = 10");
-      onevalexecuted(
-        false,
-        "ShadowRealm.prototype.evaluate(String)",
-        "ShadowRealm.prototype.evaluate(String) was enabled."
-      );
-    } catch (e) {
-      onevalblocked(
-        false,
-        "ShadowRealm.prototype.evaluate(String)",
-        "ShadowRealm.prototype.evaluate(String) was blocked."
-      );
-    }
-
-    
     {
       
       

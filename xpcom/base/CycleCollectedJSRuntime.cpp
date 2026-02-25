@@ -66,7 +66,6 @@
 #include "js/Object.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/Warnings.h"            
-#include "js/ShadowRealmCallbacks.h"
 #include "js/SliceBudget.h"
 #include "jsfriendapi.h"
 #include "mozilla/AutoRestore.h"
