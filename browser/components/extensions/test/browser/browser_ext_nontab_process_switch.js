@@ -194,6 +194,8 @@ add_task(async function process_switch_in_sidebars_popups() {
     viewType: "popup",
     initialBCGId: extBcgId,
   };
+  let expectedInitialClassName =
+    "webextension-popup-browser webextension-preload-browser";
   const seenForPopup = filterSeenWindowGlobals(gSeenWindowGlobals, extBcgId);
   if (
     seenForPopup[1].url === "about:blank" &&
@@ -202,7 +204,6 @@ add_task(async function process_switch_in_sidebars_popups() {
     
     
     
-    const [seenPreloadedAboutBlank] = seenForPopup.splice(1, 1);
     
     
     
@@ -210,7 +211,23 @@ add_task(async function process_switch_in_sidebars_popups() {
     
     
     
-    seenForPopup.unshift(seenPreloadedAboutBlank);
+    
+    
+    
+    
+    
+    
+    
+    const seenPreloadedAboutBlank = seenForPopup[1];
+    const seenExtensionPopupPage = seenForPopup[2];
+    seenForPopup[1] = seenExtensionPopupPage;
+    seenForPopup[2] = seenPreloadedAboutBlank;
+    if (seenExtensionPopupPage.className === commonDescriptionPopup.className) {
+      expectedInitialClassName = commonDescriptionPopup.className;
+      info("Changed expectation: popup loads in non-preloaded browser");
+    } else {
+      info("Changed expectation: popup loads after non-preloaded browser");
+    }
   }
   SimpleTest.isDeeply(
     seenForPopup,
@@ -231,7 +248,7 @@ add_task(async function process_switch_in_sidebars_popups() {
         currentRemoteType: "extension",
         ...commonDescriptionPopup,
         
-        className: "webextension-popup-browser webextension-preload-browser",
+        className: expectedInitialClassName,
       },
       {
         
