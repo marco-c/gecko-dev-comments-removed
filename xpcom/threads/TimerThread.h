@@ -16,7 +16,6 @@
 
 #include "nsTArray.h"
 
-#include "mozilla/HalTypes.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ProfilerUtils.h"
 
@@ -70,14 +69,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   void RemoveLeadingCanceledTimersInternal() MOZ_REQUIRES(mMonitor);
   nsresult Init() MOZ_REQUIRES(mMonitor);
   void AssertTimersSortedAndUnique() MOZ_REQUIRES(mMonitor);
-
-  
-  
-  
-  
-  
-  std::atomic<mozilla::hal::ProcessPriority> mCachedPriority =
-      mozilla::hal::PROCESS_PRIORITY_UNKNOWN;
 
   nsCOMPtr<nsIThread> mThread;
   
