@@ -2993,11 +2993,15 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
     return subarray_->toTypedArraySubarray();
   }
 
+  bool escapes(MArrayBufferViewElements* ins) const;
+
   void visitArrayBufferViewByteOffset(MArrayBufferViewByteOffset* ins);
   void visitArrayBufferViewElements(MArrayBufferViewElements* ins);
   void visitArrayBufferViewLength(MArrayBufferViewLength* ins);
   void visitGuardHasAttachedArrayBuffer(MGuardHasAttachedArrayBuffer* ins);
   void visitGuardShape(MGuardShape* ins);
+  void visitLoadUnboxedScalar(MLoadUnboxedScalar* ins);
+  void visitStoreUnboxedScalar(MStoreUnboxedScalar* ins);
   void visitTypedArrayElementSize(MTypedArrayElementSize* ins);
   void visitTypedArrayFill(MTypedArrayFill* ins);
   void visitTypedArraySet(MTypedArraySet* ins);
@@ -3032,6 +3036,25 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
     }
     return ins;
   }
+
+  bool isSubarrayElements(MArrayBufferViewElements* ins) const {
+    
+    
+    if (isNewInstruction(ins)) {
+      MOZ_ASSERT(ins->object() == subarray()->object());
+      return true;
+    }
+    return false;
+  }
+
+#ifdef DEBUG
+  static bool isBoundsCheck(MDefinition* ins) {
+    if (ins->isSpectreMaskIndex()) {
+      ins = ins->toSpectreMaskIndex()->index();
+    }
+    return ins->isBoundsCheck();
+  }
+#endif
 
   auto* templateObject() const {
     JSObject* obj = subarray()->templateObject();
@@ -3190,12 +3213,74 @@ void SubarrayReplacer::visitArrayBufferViewElements(
     return;
   }
 
-  auto* replacement = MArrayBufferViewElementsWithOffset::New(
-      alloc(), subarray()->object(), subarray()->start(), elementType());
+  auto* replacement =
+      MArrayBufferViewElements::New(alloc(), subarray()->object());
   ins->block()->insertBefore(ins, replacement);
 
   
   ins->replaceAllUsesWith(replacement);
+
+  
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
+  
+  if (!isSubarrayElements(ins->elements()->toArrayBufferViewElements())) {
+    return;
+  }
+  MOZ_ASSERT(isBoundsCheck(ins->index()));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto* adjustedIndex =
+      MAdd::New(alloc(), ins->index(), subarray()->start(), MIRType::IntPtr);
+  ins->block()->insertBefore(ins, adjustedIndex);
+
+  auto* replacement =
+      MLoadUnboxedScalar::New(alloc(), ins->elements(), adjustedIndex,
+                              ins->storageType(), ins->requiresMemoryBarrier());
+  replacement->setResultType(ins->type());
+  if (ins->resumePoint()) {
+    replacement->stealResumePoint(ins);
+  }
+  ins->block()->insertBefore(ins, replacement);
+
+  
+  ins->replaceAllUsesWith(replacement);
+
+  
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitStoreUnboxedScalar(MStoreUnboxedScalar* ins) {
+  
+  if (!isSubarrayElements(ins->elements()->toArrayBufferViewElements())) {
+    return;
+  }
+  MOZ_ASSERT(isBoundsCheck(ins->index()));
+
+  
+  auto* adjustedIndex =
+      MAdd::New(alloc(), ins->index(), subarray()->start(), MIRType::IntPtr);
+  ins->block()->insertBefore(ins, adjustedIndex);
+
+  auto* replacement = MStoreUnboxedScalar::New(
+      alloc(), ins->elements(), adjustedIndex, ins->value(), ins->writeType(),
+      ins->requiresMemoryBarrier());
+  replacement->stealResumePoint(ins);
+  ins->block()->insertBefore(ins, replacement);
 
   
   ins->block()->discard(ins);
@@ -3342,6 +3427,34 @@ void SubarrayReplacer::visitTypedArraySubarray(MTypedArraySubarray* ins) {
 }
 
 
+bool SubarrayReplacer::escapes(MArrayBufferViewElements* ins) const {
+  MOZ_ASSERT(ins->type() == MIRType::Elements);
+
+  JitSpewDef(JitSpew_Escape, "Check subarray typed array elements\n", ins);
+  JitSpewIndent spewIndent(JitSpew_Escape);
+
+  for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
+    
+    
+    MDefinition* def = (*i)->consumer()->toDefinition();
+
+    switch (def->op()) {
+      
+      case MDefinition::Opcode::LoadUnboxedScalar:
+      case MDefinition::Opcode::StoreUnboxedScalar:
+        break;
+
+      default:
+        JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+        return true;
+    }
+  }
+
+  JitSpew(JitSpew_Escape, "Subarray typed array elements is not escaped");
+  return false;
+}
+
+
 bool SubarrayReplacer::escapes(MInstruction* ins) const {
   MOZ_ASSERT(ins->type() == MIRType::Object);
 
@@ -3399,9 +3512,17 @@ bool SubarrayReplacer::escapes(MInstruction* ins) const {
         break;
       }
 
+      case MDefinition::Opcode::ArrayBufferViewElements: {
+        auto* elements = def->toArrayBufferViewElements();
+        if (escapes(elements)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
       
       case MDefinition::Opcode::ArrayBufferViewByteOffset:
-      case MDefinition::Opcode::ArrayBufferViewElements:
       case MDefinition::Opcode::ArrayBufferViewLength:
       case MDefinition::Opcode::TypedArrayElementSize:
       case MDefinition::Opcode::TypedArrayFill:
