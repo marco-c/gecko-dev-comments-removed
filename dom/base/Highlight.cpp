@@ -9,6 +9,7 @@
 #include "AbstractRange.h"
 #include "Document.h"
 #include "HighlightRegistry.h"
+#include "PresShell.h"
 #include "Selection.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
@@ -77,9 +78,31 @@ void Highlight::RemoveFromHighlightRegistry(
   }
 }
 
+already_AddRefed<Selection> Highlight::CreateHighlightSelection(
+    nsAtom* aHighlightName, nsFrameSelection* aFrameSelection) {
+  MOZ_ASSERT(aFrameSelection);
+  MOZ_ASSERT(aFrameSelection->GetPresShell());
+  RefPtr<Selection> selection =
+      MakeRefPtr<Selection>(SelectionType::eHighlight, aFrameSelection);
+  selection->SetHighlightSelectionData({aHighlightName, this});
+  AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__);
+  for (const RefPtr<AbstractRange>& range : mRanges) {
+    if (range->GetComposedDocOfContainers() ==
+        aFrameSelection->GetPresShell()->GetDocument()) {
+      
+      
+      selection->AddHighlightRangeAndSelectFramesAndNotifyListeners(
+          MOZ_KnownLive(*range));
+    }
+  }
+  return selection.forget();
+}
+
 void Highlight::Repaint() {
   for (const RefPtr<HighlightRegistry>& registry :
        mHighlightRegistries.Keys()) {
+    
+    
     registry->RepaintHighlightSelection(*this);
   }
 }

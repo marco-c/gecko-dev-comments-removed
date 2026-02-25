@@ -198,10 +198,6 @@ class ComputedStyle {
     mCachedInheritingStyles.AppendTo(aArray);
   }
 
-  void GetCachedLazyPseudoEntries(nsTArray<CachedStyleEntry>& aArray) const {
-    mCachedInheritingStyles.AppendEntriesTo(aArray);
-  }
-
   
   
   
@@ -229,24 +225,17 @@ class ComputedStyle {
   }
 
   void SetCachedInheritedAnonBoxStyle(ComputedStyle* aStyle) {
-    mCachedInheritingStyles.Insert(aStyle, aStyle->GetPseudoType());
+    mCachedInheritingStyles.Insert(aStyle);
   }
 
   ComputedStyle* GetCachedLazyPseudoStyle(const PseudoStyleRequest&) const;
 
-  
-  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle, PseudoStyleType aType,
+  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle,
                                 nsAtom* aFunctionalPseudoParameter) {
-    MOZ_ASSERT_IF(aStyle, aStyle->IsPseudoElement());
-    MOZ_ASSERT_IF(aStyle, aStyle->GetPseudoType() == aType);
-    
-    
-    
-    if (!aStyle &&
-        mCachedInheritingStyles.HasEntry({aType, aFunctionalPseudoParameter})) {
-      return;
-    }
-    MOZ_ASSERT(!GetCachedLazyPseudoStyle({aType, aFunctionalPseudoParameter}));
+    MOZ_ASSERT(aStyle->IsPseudoElement());
+    MOZ_ASSERT(!GetCachedLazyPseudoStyle(
+        {aStyle->GetPseudoType(), aFunctionalPseudoParameter}));
+    MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
 
     
     
@@ -257,11 +246,11 @@ class ComputedStyle {
     
     
     
-    if (PseudoStyle::SupportsUserActionState(aType)) {
+    if (PseudoStyle::SupportsUserActionState(aStyle->GetPseudoType())) {
       return;
     }
 
-    mCachedInheritingStyles.Insert(aStyle, aType, aFunctionalPseudoParameter);
+    mCachedInheritingStyles.Insert(aStyle, aFunctionalPseudoParameter);
   }
 
 #define GENERATE_ACCESSOR(name_)                                         \
