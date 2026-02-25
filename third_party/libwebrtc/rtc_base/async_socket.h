@@ -18,11 +18,10 @@
 
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 
-class AsyncSocketAdapter : public Socket, public sigslot::has_slots<> {
+class AsyncSocketAdapter : public Socket {
  public:
   
   
@@ -62,12 +61,5 @@ class AsyncSocketAdapter : public Socket, public sigslot::has_slots<> {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::AsyncSocketAdapter;
-}  
-#endif  
 
 #endif  
