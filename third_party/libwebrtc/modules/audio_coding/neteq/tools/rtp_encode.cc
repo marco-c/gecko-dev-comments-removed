@@ -347,7 +347,7 @@ int RunRtpEncode(int argc, char* argv[]) {
 
   
   Packetizer packetizer(out_file, absl::GetFlag(FLAGS_ssrc), timestamp_rate_hz);
-  RTC_DCHECK_EQ(acm->RegisterTransportCallback(&packetizer), 0);
+  RTC_CHECK_EQ(acm->RegisterTransportCallback(&packetizer), 0);
 
   AudioFrame audio_frame;
   audio_frame.samples_per_channel_ =
