@@ -2229,12 +2229,8 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   nsCOMPtr<nsPIDOMWindowOuter> newWindow = docShell->GetWindow();
   if (NS_WARN_IF(!newWindow)) {
-    
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
-    
-    
-    
-    mDocShell = nullptr;
+    Destroy();
     return NS_ERROR_FAILURE;
   }
 
@@ -2302,8 +2298,8 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   openWindowInfo->mCoepToInheritForAboutBlank = doc->GetEmbedderPolicy();
   openWindowInfo->mBaseUriToInheritForAboutBlank = mOwnerContent->GetBaseURI();
   if (NS_FAILED(docShell->Initialize(openWindowInfo, nullptr))) {
-    
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
+    Destroy();
     return NS_ERROR_FAILURE;
   }
 
