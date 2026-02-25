@@ -370,6 +370,20 @@ class FileCopier(FileRegistry):
         have_symlinks = hasattr(os, "symlink")
         destination = os.path.normpath(destination)
 
+        dest_mtimes = {}
+        dest_symlinks = {}
+        src_mtimes = {}
+        src_dirs = set()
+
+        
+        
+        
+        
+        src_future = None
+        if skip_if_older and len(self) > 100:
+            src_executor = futures.ThreadPoolExecutor(1)
+            src_future = src_executor.submit(_collect_source_mtimes, self)
+
         
         
         
@@ -422,11 +436,6 @@ class FileCopier(FileRegistry):
                 os.umask(umask)
                 os.chmod(d, 0o777 & ~umask)
 
-        dest_mtimes = {}
-        dest_symlinks = {}
-        src_mtimes = {}
-        src_dirs = set()
-
         if isinstance(remove_unaccounted, FileRegistry):
             existing_files = set(
                 os.path.normpath(os.path.join(destination, p))
@@ -457,8 +466,9 @@ class FileCopier(FileRegistry):
                         existing_files.discard(path)
                         del dest_symlinks[path]
 
-        if skip_if_older and len(self) > 100:
-            src_mtimes, src_dirs = _collect_source_mtimes(self)
+        if src_future is not None:
+            src_mtimes, src_dirs = src_future.result()
+            src_executor.shutdown(wait=False)
 
         
         dest_files = set()
