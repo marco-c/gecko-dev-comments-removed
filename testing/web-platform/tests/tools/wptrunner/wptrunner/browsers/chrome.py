@@ -148,6 +148,12 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
     
     
     chrome_options["args"].append("--remote-debugging-pipe")
+    
+    chrome_options["args"].append("--enable-features=" + ",".join([
+        "EnableBoundSessionCredentialsSoftwareKeysForManualTesting",
+        "DeviceBoundSessions:RefreshQuota/false/RequireOriginTrialTokens/false",
+        "DeviceBoundSessionsFederatedRegistration",
+    ]))
 
     
     
