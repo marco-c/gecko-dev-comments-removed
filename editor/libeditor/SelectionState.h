@@ -340,7 +340,6 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
         mPoint(*aPoint),
         mRangeItem(do_AddRef(new RangeItem())) {
     Init();
-    mRangeUpdater.RegisterRangeItem(mRangeItem);
   }
 
  private:
@@ -357,6 +356,7 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
     mDocument = mPoint.GetContainer()->OwnerDoc();
     mWasConnected = mPoint.IsInComposedDoc();
     mIsTracking = true;
+    mRangeUpdater.RegisterRangeItem(mRangeItem);
   }
 
  public:
@@ -396,7 +396,25 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
     mPoint.Set(mRangeItem->mStartContainer, mRangeItem->mStartOffset);
   }
 
-  void StopTracking() { mIsTracking = false; }
+  void StopTracking() {
+    if (mIsTracking) {
+      mIsTracking = false;
+      mRangeUpdater.DropRangeItem(mRangeItem);
+    }
+  }
+
+  
+
+
+
+
+
+  void RestartToTrack() {
+    StopTracking();
+    MOZ_ASSERT(mPoint.IsSetAndValid());
+    MOZ_ASSERT(mPoint.GetContainer()->OwnerDoc() == mDocument);
+    Init();
+  }
 
  private:
   RangeUpdater& mRangeUpdater;
