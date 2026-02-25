@@ -1880,7 +1880,7 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
   if (event->IsBeingDispatched()) {
     
     
-    event->PreventDefault(aCx, CallerType::NonSystem);
+    event->Cancel();
   }
 
   

@@ -547,6 +547,12 @@ Document* NavigateEvent::GetAssociatedDocument() const {
   return nullptr;
 }
 
+
+void NavigateEvent::Cancel() {
+  mEvent->mFlags.mDefaultPrevented = true;
+  mEvent->mFlags.mDefaultPreventedByContent = true;
+}
+
 }  
 
 #undef LOG_FMTI
