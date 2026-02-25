@@ -717,15 +717,45 @@ impl CalcNode {
             match function {
                 MathFunction::Calc => Self::parse_argument(context, input, allowed),
                 MathFunction::Clamp => {
-                    let min = Self::parse_argument(context, input, allowed)?;
+                    let min_val = if input
+                        .try_parse(|min| min.expect_ident_matching("none"))
+                        .ok()
+                        .is_none()
+                    {
+                        Some(Self::parse_argument(context, input, allowed)?)
+                    } else {
+                        None
+                    };
+
                     input.expect_comma()?;
                     let center = Self::parse_argument(context, input, allowed)?;
                     input.expect_comma()?;
-                    let max = Self::parse_argument(context, input, allowed)?;
-                    Ok(Self::Clamp {
-                        min: Box::new(min),
-                        center: Box::new(center),
-                        max: Box::new(max),
+
+                    let max_val = if input
+                        .try_parse(|max| max.expect_ident_matching("none"))
+                        .ok()
+                        .is_none()
+                    {
+                        Some(Self::parse_argument(context, input, allowed)?)
+                    } else {
+                        None
+                    };
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    Ok(match (min_val, max_val) {
+                        (None, None) => center,
+                        (None, Some(max)) => Self::MinMax(vec![center, max].into(), MinMaxOp::Min),
+                        (Some(min), None) => Self::MinMax(vec![min, center].into(), MinMaxOp::Max),
+                        (Some(min), Some(max)) => Self::Clamp {
+                            min: Box::new(min),
+                            center: Box::new(center),
+                            max: Box::new(max),
+                        },
                     })
                 },
                 MathFunction::Round => {
