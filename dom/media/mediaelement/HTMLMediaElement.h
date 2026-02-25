@@ -281,6 +281,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  void UpdatePlayedRangesBeforeSeek(double aRangeEndTime) final;
+
+  
+  
   void SeekAborted() final;
 
   

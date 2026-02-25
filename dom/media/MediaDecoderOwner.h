@@ -94,6 +94,10 @@ class MediaDecoderOwner {
 
   
   
+  virtual void UpdatePlayedRangesBeforeSeek(double aRangeEndTime) = 0;
+
+  
+  
   virtual void SeekAborted() = 0;
 
   

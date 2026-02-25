@@ -1033,6 +1033,8 @@ void MediaDecoder::UpdateLogicalPositionInternal() {
       
       
       
+      MOZ_ASSERT(std::isfinite(GetDuration()) && GetDuration() > 0.0);
+      GetOwner()->UpdatePlayedRangesBeforeSeek(GetDuration());
       GetOwner()->SeekStarted();
       SetLogicalPosition(currentPosition);
       GetOwner()->SeekCompleted();

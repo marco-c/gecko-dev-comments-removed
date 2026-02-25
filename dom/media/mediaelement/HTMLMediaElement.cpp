@@ -3476,20 +3476,7 @@ void HTMLMediaElement::Seek(double aTime, SeekTarget::Type aSeekType,
     return;
   }
 
-  if (mPlayed && mCurrentPlayRangeStart != -1.0) {
-    double rangeEndTime = CurrentTime();
-    LOG(LogLevel::Debug, ("%p Adding \'played\' a range : [%f, %f]", this,
-                          mCurrentPlayRangeStart, rangeEndTime));
-    
-    if (mCurrentPlayRangeStart != rangeEndTime) {
-      
-      
-      mPlayed->Add(mCurrentPlayRangeStart, rangeEndTime);
-    }
-    
-    
-    mCurrentPlayRangeStart = -1.0;
-  }
+  UpdatePlayedRangesBeforeSeek(CurrentTime());
 
   if (mReadyState == HAVE_NOTHING) {
     mDefaultPlaybackStartPosition = aTime;
@@ -6190,6 +6177,22 @@ void HTMLMediaElement::UpdateSrcStreamReportPlaybackEnded() {
 }
 
 void HTMLMediaElement::SeekStarted() { QueueEvent(u"seeking"_ns); }
+
+void HTMLMediaElement::UpdatePlayedRangesBeforeSeek(double aRangeEndTime) {
+  if (mPlayed && mCurrentPlayRangeStart != -1.0) {
+    LOG(LogLevel::Debug, ("%p Adding 'played' a range : [%f, %f]", this,
+                          mCurrentPlayRangeStart, aRangeEndTime));
+    
+    if (mCurrentPlayRangeStart != aRangeEndTime) {
+      
+      
+      mPlayed->Add(mCurrentPlayRangeStart, aRangeEndTime);
+    }
+    
+    
+    mCurrentPlayRangeStart = -1.0;
+  }
+}
 
 void HTMLMediaElement::SeekCompleted() {
   mPlayingBeforeSeek = false;
