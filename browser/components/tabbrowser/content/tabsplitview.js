@@ -344,6 +344,18 @@
     replaceTab(tabToReplace, newTab) {
       let indexOfReplacedTab = this.tabs.indexOf(tabToReplace);
       this.addTabs([newTab], { isSessionRestore: false, indexOfReplacedTab });
+
+      
+      
+      
+      let adoptedTab = this.#tabs[indexOfReplacedTab];
+
+      
+      
+      if (tabToReplace.selected) {
+        gBrowser.selectedTab = adoptedTab;
+      }
+
       gBrowser.removeTab(tabToReplace);
 
       
