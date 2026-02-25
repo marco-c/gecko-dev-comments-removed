@@ -188,8 +188,15 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
       classificationFlags.thirdPartyFlags);
   loadInfo->SetHasValidUserGestureActivation(
       aLoadState->HasValidUserGestureActivation());
+  
+  
+  
+  
+  
+  
   loadInfo->SetTextDirectiveUserActivation(
-      aLoadState->GetTextDirectiveUserActivation());
+      aLoadState->GetTextDirectiveUserActivation() ||
+      aLoadState->HasLoadFlags(nsIWebNavigation::LOAD_FLAGS_FROM_EXTERNAL));
   loadInfo->SetIsMetaRefresh(aLoadState->IsMetaRefresh());
 
   return loadInfo.forget();
