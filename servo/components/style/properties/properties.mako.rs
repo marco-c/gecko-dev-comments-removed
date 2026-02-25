@@ -1519,14 +1519,14 @@ pub mod style_structs {
             
             #[cfg(feature = "gecko")]
             pub fn specifies_scroll_timelines(&self) -> bool {
-                self.scroll_timeline_name_iter().any(|name| !name.is_none())
+                self.scroll_timeline_name_iter().any(|name| !name.value.is_none())
             }
 
             
             
             #[cfg(feature = "gecko")]
             pub fn specifies_view_timelines(&self) -> bool {
-                self.view_timeline_name_iter().any(|name| !name.is_none())
+                self.view_timeline_name_iter().any(|name| !name.value.is_none())
             }
 
             
