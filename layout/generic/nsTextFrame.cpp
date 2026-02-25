@@ -8342,7 +8342,53 @@ bool nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
       if (!style || !style->HasTextDecorationLines()) {
         continue;
       }
-      params.style = style->StyleTextReset()->mTextDecorationStyle;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const auto* styleTextReset = style->StyleTextReset();
+      const auto& decThickness = styleTextReset->mTextDecorationThickness;
+      params.lineSize.width = aPresContext->AppUnitsToGfxUnits(aRect.width);
+      params.style = styleTextReset->mTextDecorationStyle;
+      params.descentLimit = -1.f;
+      const bool swapUnderline =
+          wm.IsCentralBaseline() && IsUnderlineRight(*style);
+      const auto* styleText = style->StyleText();
+      auto accumForLine = [&](StyleTextDecorationLine decoration) {
+        if (!(styleTextReset->mTextDecorationLine & decoration)) {
+          return;
+        }
+        params.decoration = decoration;
+        params.offset = ComputeDecorationLineOffset(
+            decoration, styleText->mTextUnderlinePosition,
+            styleText->mTextUnderlineOffset, metrics,
+            aPresContext->AppUnitsPerDevPixel(), this, wm.IsCentralBaseline(),
+            swapUnderline);
+
+        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
+          params.defaultLineThickness = metrics.strikeoutSize;
+        } else {
+          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
+              aPresContext, metrics, sd->mSelectionType);
+        }
+        params.lineSize.height = ComputeDecorationLineThickness(
+            decThickness, params.defaultLineThickness, metrics,
+            aPresContext->AppUnitsPerDevPixel(), this);
+
+        nsRect decorationArea =
+            nsCSSRendering::GetTextDecorationRect(aPresContext, params);
+        aRect.UnionRect(aRect, decorationArea);
+      };
+      accumForLine(StyleTextDecorationLine::UNDERLINE);
+      accumForLine(StyleTextDecorationLine::OVERLINE);
+      accumForLine(StyleTextDecorationLine::LINE_THROUGH);
     } else {
       auto index = nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(
           sd->mSelectionType);
