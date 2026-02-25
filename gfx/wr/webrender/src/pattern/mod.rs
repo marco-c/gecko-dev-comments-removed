@@ -3,6 +3,7 @@
 
 
 pub mod gradient;
+pub mod box_shadow;
 
 use api::{ColorF, units::DeviceRect};
 
