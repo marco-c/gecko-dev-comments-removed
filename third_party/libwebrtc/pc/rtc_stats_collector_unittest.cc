@@ -3339,9 +3339,10 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   
   
   fake_clock_.SetTime(kReportBlockTimestampUtc);
-  auto ssrcs = {12, 13};
+  uint32_t ssrcs[] = {12, 13};
   std::vector<ReportBlockData> report_block_datas;
-  for (auto ssrc : ssrcs) {
+  Call::Stats call_stats;
+  for (uint32_t ssrc : ssrcs) {
     rtcp::ReportBlock report_block;
     
     
@@ -3356,12 +3357,20 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
     
     report_block_data.AddRoundTripTimeSample(kRoundTripTimeSample2);
     report_block_datas.push_back(report_block_data);
+
+    call_stats.received_ccfb_stats_per_ssrc[ssrc] = {
+        .num_packets_received_with_ect1 = 100,
+        .num_packets_received_with_ce = 10,
+        .num_packets_reported_as_lost = 30,
+        .num_packets_reported_as_lost_but_recovered = 20,
+        .num_packets_with_bleached_ect1_marking = 1};
   }
   AddSenderInfoAndMediaChannel("TransportName", report_block_datas,
                                std::nullopt);
+  pc_->SetCallStats(call_stats);
 
   scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
-  for (auto ssrc : ssrcs) {
+  for (uint32_t ssrc : ssrcs) {
     std::string stream_id = "" + std::to_string(ssrc);
     RTCRemoteInboundRtpStreamStats expected_remote_inbound_rtp(
         "RI" + MediaTypeCharStr() + stream_id, kReportBlockTimestampUtc);
@@ -3380,6 +3389,11 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
     expected_remote_inbound_rtp.total_round_trip_time =
         (kRoundTripTimeSample1 + kRoundTripTimeSample2).seconds<double>();
     expected_remote_inbound_rtp.round_trip_time_measurements = 2;
+    expected_remote_inbound_rtp.packets_received_with_ect1 = 100;
+    expected_remote_inbound_rtp.packets_received_with_ce = 10;
+    expected_remote_inbound_rtp.packets_reported_as_lost = 30;
+    expected_remote_inbound_rtp.packets_reported_as_lost_but_recovered = 20;
+    expected_remote_inbound_rtp.packets_with_bleached_ect1_marking = 1;
     
     
 
