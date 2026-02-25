@@ -22,6 +22,7 @@
 #include "absl/functional/any_invocable.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_infos.h"
+#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -63,9 +64,19 @@ class SourceTracker {
   
   
   
+  
+  
+  void SetOnSourceChangedCallback(
+      absl::AnyInvocable<void(bool, bool)> on_source_changed);
+
+  
+  
+  
   std::vector<RtpSource> GetSources() const;
 
  private:
+  void ShouldFireOnSoourceChangedCallback(bool ssrc_changed, bool csrc_changed);
+
   struct SourceKey {
     SourceKey(RtpSourceType source_type, uint32_t source)
         : source_type(source_type), source(source) {}
@@ -144,6 +155,7 @@ class SourceTracker {
   std::vector<uint32_t> last_received_csrcs_;
   
   absl::AnyInvocable<void(bool, bool)> on_source_changed_;
+  ScopedTaskSafety safety_;
 };
 
 }  
