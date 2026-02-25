@@ -32,9 +32,12 @@ struct PipeWireVersion {
   
   bool operator<=(const PipeWireVersion& other);
 
+  absl::string_view ToStringView() const;
+
   int major = 0;
   int minor = 0;
   int micro = 0;
+  std::string full_version;
 };
 
 
