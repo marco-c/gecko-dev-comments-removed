@@ -47,8 +47,9 @@ class RenderCompositorLayerNative : public RenderCompositor {
   bool ShouldUseNativeCompositor() override;
   bool ShouldUseLayerCompositor() const override;
   bool UseLayerCompositor() const override;
-
+  bool EnableAsyncScreenshot() override;
   void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
+  void GetWindowProperties(WindowProperties* aProperties) override;
 
   bool SurfaceOriginIsTopLeft() override { return true; }
 
@@ -135,6 +136,16 @@ class RenderCompositorLayerNative : public RenderCompositor {
   std::unordered_map<wr::NativeSurfaceId, Surface, SurfaceIdHashFn> mSurfaces;
   TimeStamp mBeginFrameTimeStamp;
   std::deque<RefPtr<layers::GpuFence>> mPendingGpuFeces;
+  
+  
+  
+  
+  bool mEnableAsyncScreenshot = false;
+  
+  
+  bool mEnableAsyncScreenshotInNextFrame = false;
+  int mCurrentFrame = 0;
+  int mAsyncScreenshotLastFrameUsed = 0;
 };
 
 

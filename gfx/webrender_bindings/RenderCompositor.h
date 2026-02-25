@@ -125,6 +125,11 @@ class RenderCompositor {
 
   virtual bool UseLayerCompositor() const { return false; }
 
+  
+  
+  
+  
+  
   virtual bool EnableAsyncScreenshot() { return false; }
 
   
@@ -182,6 +187,16 @@ class RenderCompositor {
   virtual void GetCompositorCapabilities(CompositorCapabilities* aCaps);
 
   virtual void GetWindowVisibility(WindowVisibility* aVisibility);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual void GetWindowProperties(WindowProperties* aProperties);
 
   

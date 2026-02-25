@@ -205,6 +205,12 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
     
 
+    if (aReadbackBuffer.isSome() || layers::ProfilerScreenshots::IsEnabled()) {
+      if (mCompositor->UseLayerCompositor()) {
+        mCompositor->EnableAsyncScreenshot();
+      }
+    }
+
     if (!mCompositor->BeginFrame()) {
       beginFrame = false;
     }
