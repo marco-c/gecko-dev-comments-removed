@@ -239,6 +239,16 @@ pub fn matcher_matches<'a>(
             
             
             
+            
+            
+            
+            
+            
+            
+
+            
+            
+            
             let matches = spidermonkey_regexp_matches(regexp.as_ref().ok()?, input, match_only)?;
             Some(
                 matches
