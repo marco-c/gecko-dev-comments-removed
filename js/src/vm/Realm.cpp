@@ -13,6 +13,7 @@
 
 #include "jsfriendapi.h"
 
+#include "builtin/WrappedFunctionObject.h"
 #include "debugger/DebugAPI.h"
 #include "debugger/Debugger.h"
 #include "gc/GC.h"
@@ -837,6 +838,12 @@ JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
     if (obj->is<BoundFunctionObject>()) {
       obj = obj->as<BoundFunctionObject>().getTarget();
       continue;
+    }
+
+    
+    
+    if (obj->is<WrappedFunctionObject>()) {
+      return obj->nonCCWRealm();
     }
 
     

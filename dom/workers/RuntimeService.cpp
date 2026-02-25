@@ -43,6 +43,7 @@
 #include "mozilla/dom/PerformanceService.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/ShadowRealmGlobalScope.h"
 #include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/WorkerBinding.h"
@@ -1008,7 +1009,7 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
   virtual bool useDebugQueue(JS::Handle<JSObject*> global) const override {
     MOZ_ASSERT(!NS_IsMainThread());
 
-    return !IsWorkerGlobal(global);
+    return !(IsWorkerGlobal(global) || IsShadowRealmGlobal(global));
   }
 
   virtual void DispatchToMicroTask(
@@ -1032,7 +1033,7 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
     
     
     
-    if (IsWorkerGlobal(global)) {
+    if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
       if (!EnqueueMicroTask(cx, runnable.forget())) {
         
         

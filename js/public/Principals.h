@@ -111,6 +111,7 @@ enum class CompilationType { DirectEval, IndirectEval, Function, Undefined };
 
 
 
+
 typedef bool (*JSCSPEvalChecker)(
     JSContext* cx, JS::RuntimeCode kind, JS::Handle<JSString*> codeString,
     JS::CompilationType compilationType,
