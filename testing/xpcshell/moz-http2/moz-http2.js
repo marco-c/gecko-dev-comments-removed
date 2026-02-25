@@ -74,6 +74,26 @@ var newTransform = function (frame) {
   originalTransform.apply(this, arguments);
 };
 
+
+
+
+
+var newTransformContinuationStreamZero = function (frame) {
+  if (frame.type == "HEADERS") {
+    const contFrame = Buffer.alloc(9);
+    contFrame[0] = 0x00; 
+    contFrame[1] = 0x00; 
+    contFrame[2] = 0x00; 
+    contFrame[3] = 0x09; 
+    contFrame[4] = 0x04; 
+    
+    this.push(contFrame);
+
+    Serializer.prototype._transform = originalTransform;
+  }
+  originalTransform.apply(this, arguments);
+};
+
 function getHttpContent(pathName) {
   var content =
     "<!doctype html>" +
@@ -561,6 +581,8 @@ function handleRequest(req, res) {
     
     
     Serializer.prototype._transform = newTransform;
+  } else if (u.pathname === "/continuation_stream_zero") {
+    Serializer.prototype._transform = newTransformContinuationStreamZero;
   }
 
   
