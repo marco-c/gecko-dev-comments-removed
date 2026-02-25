@@ -9,6 +9,7 @@
 
 #include "Units.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/VisualViewportBinding.h"
 
 class nsPresContext;
@@ -34,7 +35,6 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
   double Scale() const;
   IMPL_EVENT_HANDLER(resize)
   IMPL_EVENT_HANDLER(scroll)
-  IMPL_EVENT_HANDLER(scrollend)
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -45,10 +45,34 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
 
   void PostScrollEvent(const nsPoint& aPrevVisualOffset,
                        const nsPoint& aPrevLayoutOffset);
-  void PostScrollEndEvent();
 
-  class VisualViewportScrollEvent;
-  class VisualViewportScrollEndEvent;
+  class VisualViewportScrollEvent : public Runnable {
+   public:
+    NS_DECL_NSIRUNNABLE
+    VisualViewportScrollEvent(VisualViewport* aViewport,
+                              nsPresContext* aPresContext,
+                              const nsPoint& aPrevVisualOffset,
+                              const nsPoint& aPrevLayoutOffset);
+    bool HasPresContext(nsPresContext* aContext) const;
+    void Revoke();
+    nsPoint PrevVisualOffset() const { return mPrevVisualOffset; }
+    nsPoint PrevLayoutOffset() const { return mPrevLayoutOffset; }
+
+   private:
+    VisualViewport* mViewport;
+    WeakPtr<nsPresContext> mPresContext;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nsPoint mPrevVisualOffset;
+    const nsPoint mPrevLayoutOffset;
+  };
 
  private:
   virtual ~VisualViewport();
@@ -61,10 +85,8 @@ class VisualViewport final : public mozilla::DOMEventTargetHelper {
   nsPresContext* GetPresContext() const;
 
   MOZ_CAN_RUN_SCRIPT void FireScrollEvent();
-  MOZ_CAN_RUN_SCRIPT void FireScrollEndEvent();
 
   RefPtr<VisualViewportScrollEvent> mScrollEvent;
-  RefPtr<VisualViewportScrollEndEvent> mScrollEndEvent;
 };
 
 }  
