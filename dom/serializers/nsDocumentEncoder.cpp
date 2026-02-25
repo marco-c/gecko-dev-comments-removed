@@ -1714,7 +1714,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   [[nodiscard]] static Maybe<uint32_t> ComputeIndexOfContent(
       const nsINode* aParent, const nsIContent* aChild, TreeKind aTreeKind);
   static bool IsMozBR(Element* aNode);
-  bool IsRoot(nsINode* aNode) const;
+  bool IsRoot(nsINode* aNode, TreeKind aKind) const;
 
   
 
@@ -2095,7 +2095,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
   using OffsetFilter = RawRangeBoundary::OffsetFilter;
 
   
-  if (aCommon == aPoint.GetContainer()) {
+  if (aCommon == aPoint.GetContainer() ||
+      IsRoot(aPoint.GetContainer(), aPoint.GetTreeKind())) {
     return aPoint;
   }
 
@@ -2123,9 +2124,11 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
       return parentPointOrError.propagateErr();
     }
     point = parentPointOrError.unwrap();
-    
-    
-    if (NS_WARN_IF(!point.IsSet())) {
+    if (MOZ_UNLIKELY(!point.IsSet())) {
+      NS_WARNING(fmt::format("aPoint={}", aPoint).c_str());
+      MOZ_ASSERT_UNREACHABLE(
+          "Selection shouldn't start/end in generated content nor content "
+          "being removed");
       return aPoint;
     }
     if (point.GetContainer() == aCommon) {
@@ -2152,9 +2155,11 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
         return parentPointOrError.propagateErr();
       }
       point = parentPointOrError.unwrap();
-      
-      
-      if (NS_WARN_IF(!point.IsSet())) {
+      if (MOZ_UNLIKELY(!point.IsSet())) {
+        NS_WARNING(fmt::format("aPoint={}", aPoint).c_str());
+        MOZ_ASSERT_UNREACHABLE(
+            "Selection shouldn't start/end in generated content nor content "
+            "being removed");
         return aPoint;
       }
     }
@@ -2170,11 +2175,13 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
   
   
   
-  if (IsRoot(point.GetChildAtOffset())) {
+  if (aPoint.GetContainer() != point.GetChildAtOffset() &&
+      IsRoot(point.GetChildAtOffset(), point.GetTreeKind())) {
     return aPoint;
   }
 
-  while (point.GetContainer() != aCommon && !IsRoot(point.GetContainer()) &&
+  while (point.GetContainer() != aCommon &&
+         !IsRoot(point.GetContainer(), point.GetTreeKind()) &&
          ChildIsFirstNode(point)) {
     if (resetPromotion) {
       nsIContent* const parentContent =
@@ -2190,12 +2197,12 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
     if (MOZ_UNLIKELY(parentPointOrError.isErr())) {
       return parentPointOrError.propagateErr();
     }
-    
-    
-    if (NS_WARN_IF(!parentPointOrError.inspect().IsSet())) {
-      point = RawRangeBoundary::StartOfParent(
-          *point.GetContainer(), RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
-      break;
+    if (MOZ_UNLIKELY(!parentPointOrError.inspect().IsSet())) {
+      NS_WARNING(fmt::format("aPoint={}", aPoint).c_str());
+      MOZ_ASSERT_UNREACHABLE(
+          "Selection shouldn't start/end in generated content nor content "
+          "being removed");
+      return Err(NS_ERROR_FAILURE);
     }
     point = parentPointOrError.unwrap();
   }
@@ -2210,7 +2217,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
   using OffsetFilter = RawRangeBoundary::OffsetFilter;
 
   
-  if (aCommon == aPoint.GetContainer()) {
+  if (aCommon == aPoint.GetContainer() ||
+      IsRoot(aPoint.GetContainer(), aPoint.GetTreeKind())) {
     return aPoint;
   }
 
@@ -2238,9 +2246,11 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
       return parentPointOrError.propagateErr();
     }
     point = parentPointOrError.unwrap();
-    
-    
-    if (NS_WARN_IF(!point.IsSet())) {
+    if (MOZ_UNLIKELY(!point.IsSet())) {
+      NS_WARNING(fmt::format("aPoint={}", aPoint).c_str());
+      MOZ_ASSERT_UNREACHABLE(
+          "Selection shouldn't start/end in generated content nor content "
+          "being removed");
       return aPoint;
     }
     if (point.GetContainer() == aCommon) {
@@ -2277,9 +2287,11 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
         return RawRangeBoundary(aPoint.GetTreeKind());
       }
       point = parentPointOrError.unwrap();
-      
-      
-      if (NS_WARN_IF(!point.IsSet())) {
+      if (MOZ_UNLIKELY(!point.IsSet())) {
+        NS_WARNING(fmt::format("aPoint={}", aPoint).c_str());
+        MOZ_ASSERT_UNREACHABLE(
+            "Selection shouldn't start/end in generated content nor content "
+            "being removed");
         return aPoint;
       }
     }
@@ -2295,11 +2307,13 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
   
   
   
-  if (IsRoot(point.GetChildAtOffset())) {
+  if (aPoint.GetContainer() != point.GetChildAtOffset() &&
+      IsRoot(point.GetChildAtOffset(), point.GetTreeKind())) {
     return aPoint;
   }
 
-  while (point.GetContainer() != aCommon && !IsRoot(point.GetContainer()) &&
+  while (point.GetContainer() != aCommon &&
+         !IsRoot(point.GetContainer(), point.GetTreeKind()) &&
          ChildIsLastNode(point)) {
     if (resetPromotion) {
       nsIContent* const parentContent =
@@ -2317,28 +2331,14 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
       return parentPointOrError.propagateErr();
     }
 
-    if (MOZ_LIKELY(parentPointOrError.inspect().IsSet())) {
-      point = parentPointOrError.unwrap();
-      continue;
-    }
-
-    
-    
-
-    
-    
-    const bool isGeneratedContent =
-        ShadowDOMSelectionHelpers::GetShadowRoot(
-            point.GetTreeKind() == TreeKind::Flat
-                ? point.GetContainer()->GetFlattenedTreeParentNodeForSelection()
-                : point.GetContainer()->GetParent(),
-            GetAllowRangeCrossShadowBoundary(mFlags)) != point.GetContainer();
-    if (NS_WARN_IF(!isGeneratedContent)) {
+    if (MOZ_UNLIKELY(!parentPointOrError.inspect().IsSet())) {
+      NS_WARNING(fmt::format("aPoint={}", aPoint).c_str());
+      MOZ_ASSERT_UNREACHABLE(
+          "Selection shouldn't start/end in generated content nor content "
+          "being removed");
       return Err(NS_ERROR_FAILURE);
     }
-    point = RawRangeBoundary::StartOfParent(
-        *point.GetContainer(), RangeBoundarySetBy::Ref, point.GetTreeKind());
-    break;
+    point = parentPointOrError.unwrap();
   }
 
   if (resetPromotion) {
@@ -2396,7 +2396,14 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
       
       
       
-      return RawRangeBoundary::FromChild(*host, aPoint.GetTreeKind());
+      RawRangeBoundary atHost =
+          RawRangeBoundary::FromChild(*host, aPoint.GetTreeKind());
+      if (MOZ_UNLIKELY(!atHost.IsSet())) {
+        
+        
+        return Err(NS_ERROR_NULL_POINTER);
+      }
+      return std::move(atHost);
     }
   }
 
@@ -2420,7 +2427,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
       RangeBoundarySetBy::Offset, aPoint.GetTreeKind());
 }
 
-bool nsHTMLCopyEncoder::IsRoot(nsINode* aNode) const {
+bool nsHTMLCopyEncoder::IsRoot(nsINode* aNode, TreeKind aKind) const {
   nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(aNode);
   if (!content) {
     return false;
@@ -2428,6 +2435,31 @@ bool nsHTMLCopyEncoder::IsRoot(nsINode* aNode) const {
 
   if (mIsTextWidget) {
     return content->IsHTMLElement(nsGkAtoms::div);
+  }
+
+  if (aKind == TreeKind::Flat) {
+    
+    
+    
+    
+    
+    
+    if (const ShadowRoot* const shadowRoot = ShadowRoot::FromNode(*content)) {
+      if (MOZ_UNLIKELY(shadowRoot->IsUAWidget())) {
+        
+        
+        return true;
+      }
+      const Element* const host = shadowRoot->GetHost();
+      if (NS_WARN_IF(!host)) {
+        return true;
+      }
+      const nsINode* const flattenedTreeParentNode =
+          host->GetFlattenedTreeParentNodeForSelection();
+      if (MOZ_UNLIKELY(!flattenedTreeParentNode)) {
+        return true;
+      }
+    }
   }
 
   
