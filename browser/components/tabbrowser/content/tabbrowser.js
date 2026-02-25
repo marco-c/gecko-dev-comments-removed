@@ -6630,7 +6630,7 @@
 
       
       let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-      args.appendElement(aTab);
+      args.appendElement(aTab.splitview ?? aTab);
       return BrowserWindowTracker.openWindow({
         private: PrivateBrowsingUtils.isWindowPrivate(window),
         features: Object.entries(aOptions)
@@ -6652,27 +6652,27 @@
         return this.replaceTabWithWindow(contextTab, aOptions);
       }
 
-      let tabs;
+      let elements;
       if (contextTab.multiselected) {
-        tabs = this.selectedElements;
+        elements = this.selectedElements;
       } else {
-        tabs = [contextTab.splitview ?? contextTab];
+        elements = [contextTab.splitview ?? contextTab];
       }
 
-      if (this.tabs.length == tabs.length) {
+      if (this.tabs.length == elements.length) {
         return null;
       }
 
-      if (tabs.length == 1) {
-        return this.replaceTabWithWindow(tabs[0], aOptions);
+      if (elements.length == 1) {
+        return this.replaceTabWithWindow(elements[0], aOptions);
       }
 
       
       
       if (!gReduceMotion) {
-        for (let tab of tabs) {
-          tab.style.maxWidth = ""; 
-          tab.removeAttribute("fadein");
+        for (let element of elements) {
+          element.style.maxWidth = ""; 
+          element.removeAttribute("fadein");
         }
       }
 
@@ -6683,8 +6683,13 @@
       
       
       let { selectedTab } = gBrowser;
-      if (!tabs.includes(selectedTab)) {
-        selectedTab = tabs[0];
+      if (
+        !elements.includes(selectedTab) &&
+        !elements.includes(selectedTab.splitview)
+      ) {
+        selectedTab = this.isSplitViewWrapper(elements[0])
+          ? elements[0].tabs[0]
+          : elements[0];
       }
 
       let win = this.replaceTabWithWindow(selectedTab, aOptions);
@@ -6692,18 +6697,19 @@
         "before-initial-tab-adopted",
         () => {
           let tabIndex = 0;
-          for (let tab of tabs) {
-            if (tab !== selectedTab) {
-              const newTab = win.gBrowser.isSplitViewWrapper(tab)
-                ? win.gBrowser.adoptSplitView(tab, { elementIndex: tabIndex })
-                : win.gBrowser.adoptTab(tab, { tabIndex });
+          for (let element of elements) {
+            if (element !== selectedTab && element !== selectedTab.splitview) {
+              const newTab = win.gBrowser.isSplitViewWrapper(element)
+                ? win.gBrowser.adoptSplitView(element, {
+                    elementIndex: tabIndex,
+                  })
+                : win.gBrowser.adoptTab(element, { tabIndex });
               if (!newTab) {
                 
-                tab.setAttribute("fadein", "true");
+                element.setAttribute("fadein", "true");
                 continue;
               }
             }
-
             ++tabIndex;
           }
           
@@ -7463,8 +7469,16 @@
 
 
     addToMultiSelectedTabs(aTab) {
+      if (this.isSplitViewWrapper(aTab)) {
+        for (let tab of aTab.tabs) {
+          this.addToMultiSelectedTabs(tab);
+        }
+        return;
+      }
+
       if (aTab.splitview) {
         aTab.splitview.setAttribute("multiselected", "true");
+        aTab.splitview.setAttribute("aria-selected", "true");
       }
 
       if (aTab.multiselected) {
@@ -7514,10 +7528,13 @@
       if (!aTab.multiselected) {
         return;
       }
-      aTab.removeAttribute("multiselected");
+
       if (aTab.splitview) {
         aTab.splitview.removeAttribute("multiselected");
+        aTab.splitview.removeAttribute("aria-selected");
       }
+
+      aTab.removeAttribute("multiselected");
       aTab.removeAttribute("aria-selected");
       this._multiSelectedTabsSet.delete(aTab);
       this._startMultiSelectChange();
