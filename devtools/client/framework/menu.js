@@ -14,204 +14,194 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 
-
-
-
-function Menu({ id = null } = {}) {
-  this.menuitems = [];
-  this.id = id;
-
-  Object.defineProperty(this, "items", {
-    get() {
-      return this.menuitems;
-    },
-  });
-
-  EventEmitter.decorate(this);
-}
-
-
-
-
-
-
-Menu.prototype.append = function (menuItem) {
-  this.menuitems.push(menuItem);
-};
-
-
-
-
-Menu.prototype.clear = function () {
-  this.menuitems = [];
-};
-
-
-
-
-
-
-
-Menu.prototype.insert = function (_pos, _menuItem) {
-  throw Error("Not implemented");
-};
-
-
-
-
-
-
-
-Menu.prototype.popupAtTarget = function (target) {
-  const rect = target.getBoundingClientRect();
-  const doc = target.ownerDocument;
-  const defaultView = doc.defaultView;
-  const x = rect.left + defaultView.mozInnerScreenX;
-  const y = rect.bottom + defaultView.mozInnerScreenY;
-
-  this.popup(x, y, doc);
-};
-
-
-
-
-
-
-
-Menu.prototype.hide = function (doc) {
-  const win = doc.defaultView;
-  doc = DevToolsUtils.getTopWindow(win).document;
-  const popup = doc.querySelector('popupset menupopup[menu-api="true"]');
-  if (!popup) {
-    return;
-  }
-  popup.hidePopup();
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-Menu.prototype.popup = function (screenX, screenY, doc) {
+class Menu extends EventEmitter {
   
-  
-  
-  
-  this.hide(doc);
 
-  
-  
-  
-  const win = doc.defaultView;
-  const topWin = DevToolsUtils.getTopWindow(win);
 
-  
-  const winToTopWinCssScale = win.devicePixelRatio / topWin.devicePixelRatio;
-  screenX = screenX * winToTopWinCssScale;
-  screenY = screenY * winToTopWinCssScale;
 
-  doc = topWin.document;
 
-  let popupset = doc.querySelector("popupset");
-  if (!popupset) {
-    popupset = doc.createXULElement("popupset");
-    doc.documentElement.appendChild(popupset);
+  constructor({ id = null } = {}) {
+    super();
+
+    this.menuitems = [];
+    this.id = id;
   }
 
-  const popup = doc.createXULElement("menupopup");
-  popup.setAttribute("menu-api", "true");
-  popup.setAttribute("consumeoutsideclicks", "false");
-  popup.setAttribute("incontentshell", "false");
-
-  if (this.id) {
-    popup.id = this.id;
+  static getMenuElementById(id, doc) {
+    const menuDoc = DevToolsUtils.getTopWindow(doc.defaultView).document;
+    return menuDoc.getElementById(id);
   }
-  this._createMenuItems(popup);
+
+  get items() {
+    return this.menuitems;
+  }
 
   
-  
-  const onWindowUnload = () => popup.hidePopup();
-  win.addEventListener("unload", onWindowUnload);
+
+
+
+
+  append(menuItem) {
+    this.menuitems.push(menuItem);
+  }
 
   
-  popup.addEventListener("popuphidden", e => {
-    if (e.target === popup) {
-      win.removeEventListener("unload", onWindowUnload);
-      popup.remove();
-      this.emit("close");
-    }
-  });
 
-  popup.addEventListener("popupshown", e => {
-    if (e.target === popup) {
-      this.emit("open");
-    }
-  });
 
-  popupset.appendChild(popup);
-  popup.openPopupAtScreen(screenX, screenY, true);
-};
+  clear() {
+    this.menuitems = [];
+  }
 
-Menu.prototype._createMenuItems = function (parent) {
-  const doc = parent.ownerDocument;
-  this.menuitems.forEach(item => {
-    if (!item.visible) {
+  
+
+
+
+
+
+  insert(_pos, _menuItem) {
+    throw Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  popupAtTarget(target) {
+    const rect = target.getBoundingClientRect();
+    const doc = target.ownerDocument;
+    const defaultView = doc.defaultView;
+    const x = rect.left + defaultView.mozInnerScreenX;
+    const y = rect.bottom + defaultView.mozInnerScreenY;
+
+    this.popup(x, y, doc);
+  }
+
+  
+
+
+
+
+
+  hide(doc) {
+    const win = doc.defaultView;
+    doc = DevToolsUtils.getTopWindow(win).document;
+    const popup = doc.querySelector('popupset menupopup[menu-api="true"]');
+    if (!popup) {
       return;
     }
+    popup.hidePopup();
+  }
 
-    if (item.submenu) {
-      const menupopup = doc.createXULElement("menupopup");
-      menupopup.setAttribute("incontentshell", "false");
+  
 
-      item.submenu._createMenuItems(menupopup);
 
-      const menu = doc.createXULElement("menu");
-      menu.appendChild(menupopup);
-      applyItemAttributesToNode(item, menu);
-      parent.appendChild(menu);
-    } else if (item.type === "separator") {
-      const menusep = doc.createXULElement("menuseparator");
-      parent.appendChild(menusep);
-    } else {
-      const menuitem = doc.createXULElement("menuitem");
-      applyItemAttributesToNode(item, menuitem);
 
-      menuitem.addEventListener("command", () => {
-        item.click();
-      });
-      menuitem.addEventListener("DOMMenuItemActive", () => {
-        item.hover();
-      });
 
-      parent.appendChild(menuitem);
+
+
+
+
+
+
+
+  popup(screenX, screenY, doc) {
+    
+    
+    
+    
+    this.hide(doc);
+
+    
+    
+    
+    const win = doc.defaultView;
+    const topWin = DevToolsUtils.getTopWindow(win);
+
+    
+    const winToTopWinCssScale = win.devicePixelRatio / topWin.devicePixelRatio;
+    screenX = screenX * winToTopWinCssScale;
+    screenY = screenY * winToTopWinCssScale;
+
+    doc = topWin.document;
+
+    let popupset = doc.querySelector("popupset");
+    if (!popupset) {
+      popupset = doc.createXULElement("popupset");
+      doc.documentElement.appendChild(popupset);
     }
-  });
-};
 
-Menu.getMenuElementById = function (id, doc) {
-  const menuDoc = DevToolsUtils.getTopWindow(doc.defaultView).document;
-  return menuDoc.getElementById(id);
-};
+    const popup = doc.createXULElement("menupopup");
+    popup.setAttribute("menu-api", "true");
+    popup.setAttribute("consumeoutsideclicks", "false");
+    popup.setAttribute("incontentshell", "false");
 
-Menu.setApplicationMenu = () => {
-  throw Error("Not implemented");
-};
+    if (this.id) {
+      popup.id = this.id;
+    }
+    this.#createMenuItems(popup);
 
-Menu.sendActionToFirstResponder = () => {
-  throw Error("Not implemented");
-};
+    
+    
+    const onWindowUnload = () => popup.hidePopup();
+    win.addEventListener("unload", onWindowUnload);
 
-Menu.buildFromTemplate = () => {
-  throw Error("Not implemented");
-};
+    
+    popup.addEventListener("popuphidden", e => {
+      if (e.target === popup) {
+        win.removeEventListener("unload", onWindowUnload);
+        popup.remove();
+        this.emit("close");
+      }
+    });
+
+    popup.addEventListener("popupshown", e => {
+      if (e.target === popup) {
+        this.emit("open");
+      }
+    });
+
+    popupset.appendChild(popup);
+    popup.openPopupAtScreen(screenX, screenY, true);
+  }
+
+  #createMenuItems(parent) {
+    const doc = parent.ownerDocument;
+    this.menuitems.forEach(item => {
+      if (!item.visible) {
+        return;
+      }
+
+      if (item.submenu) {
+        const menupopup = doc.createXULElement("menupopup");
+        menupopup.setAttribute("incontentshell", "false");
+
+        item.submenu.#createMenuItems(menupopup);
+
+        const menu = doc.createXULElement("menu");
+        menu.appendChild(menupopup);
+        applyItemAttributesToNode(item, menu);
+        parent.appendChild(menu);
+      } else if (item.type === "separator") {
+        const menusep = doc.createXULElement("menuseparator");
+        parent.appendChild(menusep);
+      } else {
+        const menuitem = doc.createXULElement("menuitem");
+        applyItemAttributesToNode(item, menuitem);
+
+        menuitem.addEventListener("command", () => {
+          item.click();
+        });
+        menuitem.addEventListener("DOMMenuItemActive", () => {
+          item.hover();
+        });
+
+        parent.appendChild(menuitem);
+      }
+    });
+  }
+}
 
 function applyItemAttributesToNode(item, node) {
   if (item.l10nID) {
