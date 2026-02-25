@@ -356,7 +356,7 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonDivWithTextNode(
   RefPtr<Element> div = MakeAnonElement(aPseudoType);
 
   
-  nsNodeInfoManager* nim = div->OwnerDoc()->NodeInfoManager();
+  nsNodeInfoManager* nim = div->NodeInfoManager();
   RefPtr<nsTextNode> textNode = new (nim) nsTextNode(nim);
   
   

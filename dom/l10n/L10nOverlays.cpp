@@ -523,9 +523,8 @@ void L10nOverlays::TranslateElement(Element& aElement,
     } else {
       
       
-      RefPtr<DocumentFragment> fragment =
-          new (aElement.OwnerDoc()->NodeInfoManager())
-              DocumentFragment(aElement.OwnerDoc()->NodeInfoManager());
+      auto* nim = aElement.NodeInfoManager();
+      RefPtr<DocumentFragment> fragment = new (nim) DocumentFragment(nim);
       
       
       

@@ -144,9 +144,10 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
 
     
     
-    nsNodeInfoManager* nodeInfoManager =
-        intendedParent ? intendedParent->OwnerDoc()->NodeInfoManager()
-                       : mBuilder->GetNodeInfoManager();
+    
+    nsNodeInfoManager* nodeInfoManager = intendedParent
+                                             ? intendedParent->NodeInfoManager()
+                                             : mBuilder->GetNodeInfoManager();
 
     nsIContent* elem;
     if (aNamespace == kNameSpaceID_XHTML) {

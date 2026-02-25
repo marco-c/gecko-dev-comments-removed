@@ -803,6 +803,11 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   
+  nsNodeInfoManager* NodeInfoManager() const {
+    return mNodeInfo->NodeInfoManager();
+  }
+
+  
 
 
 
