@@ -11,11 +11,16 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
+#include "api/test/network_emulation/leaky_bucket_network_queue.h"
 #include "api/test/simulated_network.h"
+#include "api/transport/ecn_marking.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "test/gmock.h"
@@ -25,8 +30,10 @@ namespace webrtc {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::MockFunction;
 using ::testing::SizeIs;
+using ::testing::UnorderedElementsAre;
 
 PacketInFlightInfo PacketWithSize(size_t size) {
   return PacketInFlightInfo(size, 0, 1);
@@ -104,6 +111,20 @@ TEST(SimulatedNetworkTest, EnqueueFailsWhenQueueLengthIsReached) {
       PacketInFlightInfo(125,
                          TimeDelta::Seconds(2).us(),
                          3)));
+}
+
+TEST(SimulatedNetworkTest, CanChangeQueueLength) {
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)});
+  ASSERT_TRUE(network.EnqueuePacket(
+      PacketInFlightInfo(125, 0, 1)));
+  ASSERT_TRUE(network.EnqueuePacket(
+      PacketInFlightInfo(125, 0, 2)));
+
+  network.SetConfig({.queue_length_packets = 1,
+                     .link_capacity = DataRate::KilobitsPerSec(1)});
+  EXPECT_FALSE(network.EnqueuePacket(
+      PacketInFlightInfo(125, 0, 3)));
 }
 
 TEST(SimulatedNetworkTest, PacketOverhead) {
@@ -562,17 +583,16 @@ TEST(SimulatedNetworkTest, PacketLossBurst) {
 
   
   
-  
-  int current_packet = 0;
+  int num_lost_packets = 0;
   for (const auto& packet : delivered_packets) {
-    if (current_packet < 12) {
-      EXPECT_NE(packet.receive_time_us, PacketDeliveryInfo::kNotReceived);
-      current_packet++;
-    } else {
+    if (packet.receive_time_us == PacketDeliveryInfo::kNotReceived) {
+      num_lost_packets++;
+    }
+    if (num_lost_packets > 0) {
       EXPECT_EQ(packet.receive_time_us, PacketDeliveryInfo::kNotReceived);
-      current_packet++;
     }
   }
+  EXPECT_GT(num_lost_packets, 5);
 }
 
 TEST(SimulatedNetworkTest, PauseTransmissionUntil) {
@@ -666,6 +686,55 @@ TEST(SimulatedNetworkTest, EnqueuePacketWithSubSecondNonMonotonicBehaviour) {
   ASSERT_EQ(delivered_packets.size(), 1ul);
   EXPECT_EQ(delivered_packets[0].packet_id, 1ul);
   EXPECT_EQ(delivered_packets[0].receive_time_us, TimeDelta::Seconds(3).us());
+}
+
+TEST(SimulatedNetworkTest, CanUseInjectedQueueAndDropPacketsAtQueueHead) {
+  auto queue = std::make_unique<LeakyBucketNetworkQueue>();
+  LeakyBucketNetworkQueue* queue_ptr = queue.get();
+  SimulatedNetwork network =
+      SimulatedNetwork({.link_capacity = DataRate::KilobitsPerSec(1)},
+                       1, std::move(queue));
+  ASSERT_TRUE(network.EnqueuePacket(PacketInFlightInfo(
+      DataSize::Bytes(125), Timestamp::Seconds(1), 0)));
+  ASSERT_TRUE(network.EnqueuePacket(PacketInFlightInfo(
+      DataSize::Bytes(125), Timestamp::Seconds(1), 1)));
+
+  
+  queue_ptr->DropOldestPacket();
+
+  std::vector<PacketDeliveryInfo> delivered_packets =
+      network.DequeueDeliverablePackets(network.NextDeliveryTimeUs().value());
+  ASSERT_EQ(delivered_packets.size(), 2ul);
+  EXPECT_THAT(
+      delivered_packets,
+      UnorderedElementsAre(Field(&PacketDeliveryInfo::packet_id, 0),
+                           AllOf(Field(&PacketDeliveryInfo::packet_id, 1),
+                                 Field(&PacketDeliveryInfo::receive_time_us,
+                                       PacketDeliveryInfo::kNotReceived))));
+}
+
+TEST(SimulatedNetworkTest, DefaultPropagateEcn) {
+  SimulatedNetwork network = SimulatedNetwork({});
+  ASSERT_TRUE(network.EnqueuePacket(
+      PacketInFlightInfo(DataSize::Bytes(125), Timestamp::Seconds(1),
+                         0, EcnMarking::kCe)));
+  EXPECT_THAT(
+      network.DequeueDeliverablePackets(network.NextDeliveryTimeUs().value()),
+      ElementsAre(Field(&PacketDeliveryInfo::ecn, EcnMarking::kCe)));
+}
+
+TEST(SimulatedNetworkTest, CanBleachEcn) {
+  SimulatedNetwork network = SimulatedNetwork({.forward_ecn = false});
+  ASSERT_TRUE(network.EnqueuePacket(
+      PacketInFlightInfo(DataSize::Bytes(125), Timestamp::Seconds(1),
+                         0, EcnMarking::kEct1)));
+  ASSERT_TRUE(network.EnqueuePacket(
+      PacketInFlightInfo(DataSize::Bytes(125), Timestamp::Seconds(1),
+                         0, EcnMarking::kCe)));
+  EXPECT_THAT(
+      network.DequeueDeliverablePackets(network.NextDeliveryTimeUs().value()),
+      ElementsAre(Field(&PacketDeliveryInfo::ecn, EcnMarking::kNotEct),
+                  Field(&PacketDeliveryInfo::ecn, EcnMarking::kNotEct)));
 }
 
 
