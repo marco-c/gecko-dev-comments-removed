@@ -1128,9 +1128,6 @@ void ScriptLoader::NotifyObserversForCachedScript(
     return;
   }
 
-  
-  
-
   obsService->NotifyObservers(channel, "http-on-resource-cache-response",
                               nullptr);
 }
