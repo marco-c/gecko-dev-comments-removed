@@ -70,10 +70,7 @@ class GainController2 {
   
   
   
-  
-  void Process(std::optional<float> speech_probability,
-               bool input_volume_changed,
-               AudioBuffer* audio);
+  void Process(bool input_volume_changed, AudioBuffer* audio);
 
   static bool Validate(const AudioProcessing::Config::GainController2& config);
 

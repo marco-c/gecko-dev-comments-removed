@@ -1471,7 +1471,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
       
       
       submodules_.gain_controller2->Process(
-          std::nullopt,
           capture_.applied_input_volume_changed, capture_buffer);
     }
 
