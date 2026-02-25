@@ -18771,25 +18771,6 @@ class CGRegisterWorkletBindings(CGAbstractMethod):
         )
 
 
-class CGRegisterShadowRealmBindings(CGAbstractMethod):
-    def __init__(self, config):
-        CGAbstractMethod.__init__(
-            self,
-            None,
-            "RegisterShadowRealmBindings",
-            "bool",
-            [Argument("JSContext*", "aCx"), Argument("JS::Handle<JSObject*>", "aObj")],
-        )
-        self.config = config
-
-    def definition_body(self):
-        return RegisterNonWindowBindings(
-            self.config.getDescriptors(
-                hasInterfaceObject=True, isExposedInShadowRealms=True, register=True
-            )
-        )
-
-
 def BindingNamesOffsetEnum(name):
     return CppKeywords.checkMethodName(name.replace(" ", "_"))
 
@@ -24239,32 +24220,6 @@ class GlobalGenRoots:
 
         
         curr = CGIncludeGuard("RegisterWorkletBindings", curr)
-
-        
-        return curr
-
-    @staticmethod
-    def RegisterShadowRealmBindings(config):
-        curr = CGRegisterShadowRealmBindings(config)
-
-        
-        curr = CGNamespace.build(["mozilla", "dom"], CGWrapper(curr, post="\n"))
-        curr = CGWrapper(curr, post="\n")
-
-        
-        defineIncludes = [
-            CGHeaders.getDeclarationFilename(desc.interface)
-            for desc in config.getDescriptors(
-                hasInterfaceObject=True, register=True, isExposedInShadowRealms=True
-            )
-        ]
-
-        curr = CGHeaders(
-            [], [], [], [], [], defineIncludes, "RegisterShadowRealmBindings", curr
-        )
-
-        
-        curr = CGIncludeGuard("RegisterShadowRealmBindings", curr)
 
         
         return curr
