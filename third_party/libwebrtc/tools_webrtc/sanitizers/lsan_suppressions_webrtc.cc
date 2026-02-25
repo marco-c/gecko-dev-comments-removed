@@ -41,6 +41,7 @@ char kLSanDefaultSuppressions[] =
     
 
     
+    "leak:pw_context_load_module\n"
 
     
     
