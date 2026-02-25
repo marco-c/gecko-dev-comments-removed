@@ -425,11 +425,22 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return Err(rv);
   }
 
-  
-  int64_t current;
-  rv = Tell(&current);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  int64_t current = 0;
+  if (baseCurrent > 0) {
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(
+        std::has_single_bit(*mBlockSize) &&
+        (0 == (static_cast<size_t>(baseCurrent) & (*mBlockSize - 1))));
+    
+    
+    
+    current =
+        (baseCurrent / *mBlockSize - 1) * mEncryptedBlock->MaxPayloadLength() +
+        mNextByte;
   }
 
   rv = EnsureDecryptedStreamSize();
@@ -437,11 +448,8 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
     return rv;
   }
 
-  int64_t baseBlocksOffset;
-  int64_t nextByteOffset;
   switch (aWhence) {
     case NS_SEEK_CUR:
-      
       aOffset += current;
       break;
 
@@ -449,7 +457,6 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
       break;
 
     case NS_SEEK_END:
-      
       aOffset += *mDecryptedStreamSize;
       break;
 
@@ -463,6 +470,15 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
 
   
   
+  int64_t blockStart = current - mNextByte;
+  if (blockStart <= aOffset &&
+      aOffset <= blockStart + static_cast<int64_t>(mPlainBytes)) {
+    mNextByte += aOffset - current;
+    return NS_OK;
+  }
+
+  
+  
   auto autoRestorePreviousState =
       MakeScopeExit([baseSeekableStream = *mBaseSeekableStream,
                      savedBaseCurrent = baseCurrent] {
@@ -470,10 +486,10 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
         (void)NS_WARN_IF(NS_FAILED(rv));
       });
 
-  baseBlocksOffset = aOffset / mEncryptedBlock->MaxPayloadLength();
-  nextByteOffset = aOffset % mEncryptedBlock->MaxPayloadLength();
+  const int64_t baseBlocksOffset =
+      aOffset / mEncryptedBlock->MaxPayloadLength();
+  const int64_t nextByteOffset = aOffset % mEncryptedBlock->MaxPayloadLength();
 
-  
   rv =
       (*mBaseSeekableStream)->Seek(NS_SEEK_SET, baseBlocksOffset * *mBlockSize);
   if (NS_WARN_IF(NS_FAILED(rv))) {
