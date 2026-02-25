@@ -215,18 +215,6 @@ class DateTimeFormat final {
 
 
 
-  static const char* ToString(DateTimeFormat::HourCycle aHourCycle);
-  static const char* ToString(DateTimeFormat::Style aStyle);
-  static const char* ToString(DateTimeFormat::Numeric aNumeric);
-  static const char* ToString(DateTimeFormat::Text aText);
-  static const char* ToString(DateTimeFormat::Month aMonth);
-  static const char* ToString(DateTimeFormat::TimeZoneName aTimeZoneName);
-
-  
-
-
-
-
   struct ComponentsBag {
     Maybe<Text> era = Nothing();
     Maybe<Numeric> year = Nothing();
