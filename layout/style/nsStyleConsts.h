@@ -434,19 +434,6 @@ enum class StyleWindowShadow : uint8_t {
 };
 
 
-enum class StyleDominantBaseline : uint8_t {
-  Auto,
-  Ideographic,
-  Alphabetic,
-  Hanging,
-  Mathematical,
-  Central,
-  Middle,
-  TextAfterEdge,
-  TextBeforeEdge,
-};
-
-
 enum class StyleMaskType : uint8_t {
   Luminance,
   Alpha,

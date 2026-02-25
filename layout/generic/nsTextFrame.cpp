@@ -1998,7 +1998,8 @@ gfx::ShapedTextFlags nsTextFrame::GetSpacingFlags() const {
 
 
 static bool HasDefaultVerticalAlignment(const nsIFrame* aFrame) {
-  if (aFrame->AlignmentBaseline() != StyleAlignmentBaseline::Baseline) {
+  const auto& alignmentBaseline = aFrame->StyleDisplay()->mAlignmentBaseline;
+  if (alignmentBaseline != StyleAlignmentBaseline::Baseline) {
     return false;
   }
 

@@ -2048,7 +2048,13 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
     }
 
     
-    StyleAlignmentBaseline alignmentBaseline = frame->AlignmentBaseline();
+    
+    
+    StyleAlignmentBaseline alignmentBaseline = StyleAlignmentBaseline::Baseline;
+    if (!pfd->mIsTextFrame) {
+      alignmentBaseline = frame->AlignmentBaseline();
+    }
+
     const StyleBaselineShift& baselineShift =
         frame->StyleDisplay()->mBaselineShift;
     Maybe<StyleBaselineShiftKeyword> baselineShiftEnum =

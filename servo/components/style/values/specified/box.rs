@@ -657,6 +657,53 @@ impl Parse for BaselineShift {
     ToTyped,
 )]
 #[repr(u8)]
+pub enum DominantBaseline {
+    
+    
+    
+    Auto,
+    
+    #[parse(aliases = "text-before-edge")]
+    TextBottom,
+    
+    Alphabetic,
+    
+    Ideographic,
+    
+    
+    
+    Middle,
+    
+    Central,
+    
+    Mathematical,
+    
+    Hanging,
+    
+    #[parse(aliases = "text-after-edge")]
+    TextTop,
+}
+
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToComputedValue,
+    ToResolvedValue,
+    ToTyped,
+)]
+#[repr(u8)]
 pub enum AlignmentBaseline {
     
     Baseline,
@@ -664,20 +711,28 @@ pub enum AlignmentBaseline {
     TextBottom,
     
     
+    #[css(skip)]
+    Alphabetic,
     
     
-    
-    
+    #[css(skip)]
+    Ideographic,
     
     
     
     Middle,
     
     
+    #[css(skip)]
+    Central,
     
     
+    #[css(skip)]
+    Mathematical,
     
     
+    #[css(skip)]
+    Hanging,
     
     TextTop,
     

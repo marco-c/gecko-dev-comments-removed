@@ -11613,9 +11613,9 @@ static StyleAlignmentBaseline ConvertSVGDominantBaselineToAlignmentBaseline(
   
   switch (aDominantBaseline) {
     case StyleDominantBaseline::Hanging:
-    case StyleDominantBaseline::TextBeforeEdge:
+    case StyleDominantBaseline::TextTop:
       return StyleAlignmentBaseline::TextTop;
-    case StyleDominantBaseline::TextAfterEdge:
+    case StyleDominantBaseline::TextBottom:
     case StyleDominantBaseline::Ideographic:
       return StyleAlignmentBaseline::TextBottom;
     case StyleDominantBaseline::Central:
@@ -11631,12 +11631,62 @@ static StyleAlignmentBaseline ConvertSVGDominantBaselineToAlignmentBaseline(
   }
 }
 
+StyleDominantBaseline nsIFrame::DominantBaseline() const {
+  auto dominantBaseline = StyleVisibility()->mDominantBaseline;
+  if (dominantBaseline != StyleDominantBaseline::Auto) {
+    return dominantBaseline;
+  }
+
+  WritingMode writingMode = GetWritingMode();
+  StyleTextOrientation textOrientation = StyleVisibility()->mTextOrientation;
+
+  
+  
+  
+  
+  
+  if (writingMode.IsVertical() &&
+      textOrientation != StyleTextOrientation::Sideways) {
+    return StyleDominantBaseline::Central;
+  }
+
+  return StyleDominantBaseline::Alphabetic;
+}
+
 StyleAlignmentBaseline nsIFrame::AlignmentBaseline() const {
   if (IsInSVGTextSubtree()) {
     
     
-    StyleDominantBaseline dominantBaseline = StyleSVG()->mDominantBaseline;
+    auto dominantBaseline = StyleVisibility()->mDominantBaseline;
     return ConvertSVGDominantBaselineToAlignmentBaseline(dominantBaseline);
+  }
+
+  if (StyleDisplay()->mAlignmentBaseline == StyleAlignmentBaseline::Baseline) {
+    
+    
+    auto dominantBaseline =
+        GetParent() ? GetParent()->DominantBaseline() : DominantBaseline();
+    switch (dominantBaseline) {
+      case StyleDominantBaseline::TextBottom:
+        return StyleAlignmentBaseline::TextBottom;
+      case StyleDominantBaseline::Alphabetic:
+        return StyleAlignmentBaseline::Alphabetic;
+      case StyleDominantBaseline::Ideographic:
+        return StyleAlignmentBaseline::Ideographic;
+      case StyleDominantBaseline::Middle:
+        return StyleAlignmentBaseline::Middle;
+      case StyleDominantBaseline::Central:
+        return StyleAlignmentBaseline::Central;
+      case StyleDominantBaseline::Mathematical:
+        return StyleAlignmentBaseline::Mathematical;
+      case StyleDominantBaseline::Hanging:
+        return StyleAlignmentBaseline::Hanging;
+      case StyleDominantBaseline::TextTop:
+        return StyleAlignmentBaseline::TextTop;
+      case StyleDominantBaseline::Auto:
+        MOZ_ASSERT_UNREACHABLE("Auto is resolved in DominantBaseline()");
+        break;
+    }
   }
 
   return StyleDisplay()->mAlignmentBaseline;
