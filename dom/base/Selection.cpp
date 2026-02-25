@@ -1145,20 +1145,14 @@ static void UserSelectRangesToAdd(nsRange* aItem,
   }
 }
 
-static nsINode* DetermineSelectstartEventTarget(
-    const bool aSelectionEventsOnTextControlsEnabled, const nsRange& aRange) {
+static nsINode* DetermineSelectstartEventTarget(const nsRange& aRange) {
   nsINode* target = aRange.GetStartContainer();
-  if (aSelectionEventsOnTextControlsEnabled) {
+  if (target && target->IsInNativeAnonymousSubtree()) {
     
-    while (target && target->IsInNativeAnonymousSubtree()) {
-      target = target->GetParent();
-    }
-  } else {
-    if (target->IsInNativeAnonymousSubtree()) {
-      
-      
-      target = nullptr;
-    }
+    
+    target = StaticPrefs::dom_select_events_textcontrols_selectstart_enabled()
+                 ? target->GetClosestNativeAnonymousSubtreeRootParentOrHost()
+                 : nullptr;
   }
   return target;
 }
@@ -1166,11 +1160,10 @@ static nsINode* DetermineSelectstartEventTarget(
 
 
 
-static bool MaybeDispatchSelectstartEvent(
-    const nsRange& aRange, const bool aSelectionEventsOnTextControlsEnabled,
-    Document* aDocument) {
-  nsCOMPtr<nsINode> selectstartEventTarget = DetermineSelectstartEventTarget(
-      aSelectionEventsOnTextControlsEnabled, aRange);
+static bool MaybeDispatchSelectstartEvent(const nsRange& aRange,
+                                          Document* aDocument) {
+  nsCOMPtr<nsINode> selectstartEventTarget =
+      DetermineSelectstartEventTarget(aRange);
 
   bool executeDefaultAction = true;
 
@@ -1241,10 +1234,8 @@ nsresult Selection::AddRangesForUserSelectableNodes(
       
       
       
-      const bool executeDefaultAction = MaybeDispatchSelectstartEvent(
-          *aRange,
-          StaticPrefs::dom_select_events_textcontrols_selectstart_enabled(),
-          doc);
+      const bool executeDefaultAction =
+          MaybeDispatchSelectstartEvent(*aRange, doc);
 
       if (!executeDefaultAction) {
         return NS_OK;

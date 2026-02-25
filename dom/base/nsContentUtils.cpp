@@ -7811,15 +7811,15 @@ void nsContentUtils::FlushLayoutForTree(nsPIDOMWindowOuter* aWindow) {
   }
 }
 
-void nsContentUtils::RemoveNewlines(nsString& aString) { aString.StripCRLF(); }
+void nsContentUtils::RemoveNewlines(nsAString& aString) { aString.StripCRLF(); }
 
-void nsContentUtils::PlatformToDOMLineBreaks(nsString& aString) {
+void nsContentUtils::PlatformToDOMLineBreaks(nsAString& aString) {
   if (!PlatformToDOMLineBreaks(aString, fallible)) {
     aString.AllocFailed(aString.Length());
   }
 }
 
-bool nsContentUtils::PlatformToDOMLineBreaks(nsString& aString,
+bool nsContentUtils::PlatformToDOMLineBreaks(nsAString& aString,
                                              const fallible_t& aFallible) {
   if (aString.FindChar(char16_t('\r')) != -1) {
     
@@ -8191,40 +8191,6 @@ const Document* nsContentUtils::GetInProcessSubtreeRootDocument(
     doc = doc->GetInProcessParentDocument();
   }
   return doc;
-}
-
-
-int32_t nsContentUtils::GetAdjustedOffsetInTextControl(nsIFrame* aOffsetFrame,
-                                                       int32_t aOffset) {
-  
-  
-
-  
-  
-  
-  
-  nsIFrame* firstChild = aOffsetFrame->PrincipalChildList().FirstChild();
-  if (firstChild) {
-    
-    
-    return firstChild->GetContent()->Length();
-  }
-
-  if (aOffsetFrame->GetPrevSibling() && !aOffsetFrame->GetNextSibling()) {
-    
-    
-    
-    int32_t aOutOffset = aOffsetFrame->GetParent()
-                             ->PrincipalChildList()
-                             .FirstChild()
-                             ->GetContent()
-                             ->Length();
-    return aOutOffset;
-  }
-
-  
-  
-  return aOffset;
 }
 
 

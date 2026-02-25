@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/TextControlElement.h"
 #include "nsContainerFrame.h"
-#include "nsIAnonymousContentCreator.h"
 #include "nsIContent.h"
 #include "nsIStatefulFrame.h"
 
@@ -28,9 +27,7 @@ class Element;
 }  
 }  
 
-class nsTextControlFrame : public nsContainerFrame,
-                           public nsIAnonymousContentCreator,
-                           public nsIStatefulFrame {
+class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
   using Element = mozilla::dom::Element;
 
  public:
@@ -99,11 +96,6 @@ class nsTextControlFrame : public nsContainerFrame,
   }
 #endif
 
-  
-  nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
-  void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
-                                uint32_t aFilter) override;
-
   void SetInitialChildList(ChildListID, nsFrameList&&) override;
 
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -119,8 +111,6 @@ class nsTextControlFrame : public nsContainerFrame,
   nsFrameSelection* GetOwnedFrameSelection() {
     return ControlElement()->GetIndependentFrameSelection();
   }
-
-  void PlaceholderChanged(const nsAttrValue* aOld, const nsAttrValue* aNew);
 
   
 
@@ -172,16 +162,21 @@ class nsTextControlFrame : public nsContainerFrame,
   static Maybe<nscoord> ComputeBaseline(const nsIFrame*, const ReflowInput&,
                                         bool aForSingleLineControl);
 
-  Element* GetRootNode() const { return mRootNode; }
+  Element* GetRootNode() const { return ControlElement()->GetTextEditorRoot(); }
 
-  Element* GetPreviewNode() const { return mPreviewDiv; }
+  Element* GetPreviewNode() const {
+    return ControlElement()->GetTextEditorPreview();
+  }
 
-  Element* GetPlaceholderNode() const { return mPlaceholderDiv; }
+  Element* GetPlaceholderNode() const {
+    return ControlElement()->GetTextEditorPlaceholder();
+  }
 
-  Element* GetButton() const { return mButton; }
+  Element* GetButton() const { return ControlElement()->GetTextEditorButton(); }
 
   bool IsButtonBox(const nsIFrame* aFrame) const {
-    return aFrame->GetContent() == GetButton();
+    return mozilla::TextControlElement::IsButtonPseudoElement(
+        aFrame->Style()->GetPseudoType());
   }
 
   
@@ -210,9 +205,10 @@ class nsTextControlFrame : public nsContainerFrame,
  protected:
   class EditorInitializer;
   friend class EditorInitializer;
-  friend class mozilla::AutoTextControlHandlingState;  
-                                                       
-  friend class mozilla::TextControlState;  
+
+  
+  friend class mozilla::AutoTextControlHandlingState;
+  friend class mozilla::TextControlState;
 
   
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(TextControlInitializer, EditorInitializer,
@@ -245,13 +241,6 @@ class nsTextControlFrame : public nsContainerFrame,
 
 
 
-  nsresult UpdateValueDisplay(bool aNotify);
-
-  
-
-
-
-
   bool AttributeExists(nsAtom* aAtt) const {
     return mContent && mContent->AsElement()->HasAttr(aAtt);
   }
@@ -267,6 +256,9 @@ class nsTextControlFrame : public nsContainerFrame,
   
   mozilla::LogicalSize CalcIntrinsicSize(gfxContext* aRenderingContext,
                                          mozilla::WritingMode aWM) const;
+
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
  private:
   
@@ -302,21 +294,10 @@ class nsTextControlFrame : public nsContainerFrame,
   void CreatePlaceholderIfNeeded();
   void UpdatePlaceholderText(nsString&, bool aNotify);
   void CreatePreviewIfNeeded();
-  already_AddRefed<Element> MakeAnonElement(
-      mozilla::PseudoStyleType, Element* aParent = nullptr,
-      nsAtom* aTag = nsGkAtoms::div) const;
-  already_AddRefed<Element> MakeAnonDivWithTextNode(
-      mozilla::PseudoStyleType) const;
 
   bool ShouldInitializeEagerly() const;
   void InitializeEagerlyIfNeeded();
 
-  RefPtr<Element> mRootNode;
-  RefPtr<Element> mPlaceholderDiv;
-  RefPtr<Element> mPreviewDiv;
-  
-  
-  RefPtr<Element> mButton;
   RefPtr<nsAnonDivObserver> mMutationObserver;
   
   

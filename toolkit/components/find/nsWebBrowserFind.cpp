@@ -20,7 +20,7 @@
 #include "nsISelectionController.h"
 #include "nsIFrame.h"
 #include "nsReadableUtils.h"
-#include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsFind.h"
@@ -322,7 +322,7 @@ already_AddRefed<Selection> nsWebBrowserFind::UpdateSelection(
   
   
   nsIFrame* tcFrame = nullptr;
-  for (; content; content = content->GetParent()) {
+  for (; content; content = content->GetFlattenedTreeParent()) {
     if (!content->IsInNativeAnonymousSubtree()) {
       nsIFrame* f = content->GetPrimaryFrame();
       if (!f) {

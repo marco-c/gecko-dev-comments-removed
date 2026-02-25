@@ -1150,6 +1150,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   
+  enum class RootTargetsDocument : bool { No, Yes };
+  RefPtr<nsINode> ScrollEventTargetNode(RootTargetsDocument) const;
+
+  
 
 
 

@@ -196,6 +196,12 @@ nsIContent* nsCoreUtils::GetDOMElementFor(nsIContent* aContent) {
 
 nsINode* nsCoreUtils::GetDOMNodeFromDOMPoint(nsINode* aNode, uint32_t aOffset) {
   if (aNode && aNode->IsElement()) {
+    if (aNode->IsTextControlElement()) {
+      
+      
+      return aNode;
+    }
+
     uint32_t childCount = aNode->GetChildCount();
     NS_ASSERTION(aOffset <= childCount, "Wrong offset of the DOM point!");
 

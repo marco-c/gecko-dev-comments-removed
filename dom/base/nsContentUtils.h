@@ -2457,14 +2457,14 @@ class nsContentUtils {
 
 
 
-  static void RemoveNewlines(nsString& aString);
+  static void RemoveNewlines(nsAString& aString);
 
   
 
 
 
-  static void PlatformToDOMLineBreaks(nsString& aString);
-  [[nodiscard]] static bool PlatformToDOMLineBreaks(nsString& aString,
+  static void PlatformToDOMLineBreaks(nsAString& aString);
+  [[nodiscard]] static bool PlatformToDOMLineBreaks(nsAString& aString,
                                                     const mozilla::fallible_t&);
 
   static bool IsHandlingKeyBoardEvent() { return sIsHandlingKeyBoardEvent; }
@@ -2811,21 +2811,6 @@ class nsContentUtils {
                                         Element* aRoot,
                                         uint32_t& aOutStartOffset,
                                         uint32_t& aOutEndOffset);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static int32_t GetAdjustedOffsetInTextControl(nsIFrame* aOffsetFrame,
-                                                int32_t aOffset);
 
   
 

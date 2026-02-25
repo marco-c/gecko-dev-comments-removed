@@ -1622,22 +1622,19 @@ class Element : public FragmentOrElement {
       const nsAString& aReferenceTarget = VoidString());
 
   
-  enum class NotifyUAWidgetSetup : bool { No, Yes };
-  void AttachAndSetUAShadowRoot(NotifyUAWidgetSetup = NotifyUAWidgetSetup::Yes,
+  enum class NotifyUAWidget : bool { No, Yes };
+  void AttachAndSetUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
                                 DelegatesFocus = DelegatesFocus::No);
 
   
   
   void NotifyUAWidgetSetupOrChange();
 
-  enum class UnattachShadowRoot {
-    No,
-    Yes,
-  };
-
+  enum class UnattachShadowRoot : bool { No, Yes };
   
   
-  void NotifyUAWidgetTeardown(UnattachShadowRoot = UnattachShadowRoot::Yes);
+  void TeardownUAShadowRoot(NotifyUAWidget = NotifyUAWidget::Yes,
+                            UnattachShadowRoot = UnattachShadowRoot::Yes);
 
   void UnattachShadow();
 

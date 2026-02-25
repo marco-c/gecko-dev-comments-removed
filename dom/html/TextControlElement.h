@@ -45,7 +45,17 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
   bool IsTextControlElement() const final { return true; }
 
-  virtual bool IsSingleLineTextControlOrTextArea() const = 0;
+  bool IsSingleLineTextControlOrTextArea() const {
+    return IsSingleLineTextControl() || IsTextArea();
+  }
+
+  
+
+
+
+  bool IsSingleLineTextControl() const {
+    return nsGenericHTMLFormControlElement::IsSingleLineTextControl(false);
+  }
 
   NS_IMPL_FROMNODE_HELPER(TextControlElement, IsTextControlElement())
 
@@ -58,19 +68,15 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
 
-  virtual bool IsSingleLineTextControl() const = 0;
+  bool IsTextArea() const { return mType == FormControlType::Textarea; }
 
   
 
 
 
-  virtual bool IsTextArea() const = 0;
-
-  
-
-
-
-  virtual bool IsPasswordTextControl() const = 0;
+  bool IsPasswordTextControl() const {
+    return mType == FormControlType::InputPassword;
+  }
 
   
 
@@ -159,12 +165,12 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   
 
 
-  virtual void SetPreviewValue(const nsAString& aValue) = 0;
+  void SetPreviewValue(const nsAString& aValue);
 
   
 
 
-  virtual void GetPreviewValue(nsAString& aValue) = 0;
+  void GetPreviewValue(nsAString& aValue);
 
   
 
@@ -175,16 +181,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   virtual void GetAutofillState(nsAString& aState) = 0;
-
-  
-
-
-  virtual void EnablePreview() = 0;
-
-  
-
-
-  virtual bool IsPreviewEnabled() = 0;
 
   
 
@@ -233,7 +229,31 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   static already_AddRefed<TextControlElement>
   GetTextControlElementFromEditingHost(nsIContent* aHost);
 
+  
+  
+  Element* GetTextEditorRoot() const;
+  
+  
+  Element* GetTextEditorPlaceholder() const;
+  
+  
+  Element* GetTextEditorPreview() const;
+  
+  
+  Element* GetTextEditorButton() const;
+  
+  
+  static bool IsButtonPseudoElement(PseudoStyleType);
+
+  
+  void UpdateValueDisplay(bool aNotify);
+
  protected:
+  void SetupShadowTree(dom::ShadowRoot&, bool aNotify);
+  Element* FindShadowPseudo(PseudoStyleType) const;
+  void UpdatePlaceholder(const nsAttrValue* aOldValue,
+                         const nsAttrValue* aNewValue);
+
   virtual ~TextControlElement() = default;
 
   

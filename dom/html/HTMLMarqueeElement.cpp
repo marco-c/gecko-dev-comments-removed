@@ -60,7 +60,7 @@ void HTMLMarqueeElement::UnbindFromTree(UnbindContext& aContext) {
   if (IsInComposedDoc()) {
     
     
-    NotifyUAWidgetTeardown(UnattachShadowRoot::No);
+    TeardownUAShadowRoot(NotifyUAWidget::Yes, UnattachShadowRoot::No);
   }
 
   nsGenericHTMLElement::UnbindFromTree(aContext);

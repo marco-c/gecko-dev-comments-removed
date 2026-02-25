@@ -339,10 +339,6 @@ class TextControlState final : public SupportsWeakPtr {
   }
   int32_t GetRows() { return mTextCtrlElement->GetRows(); }
 
-  
-  void SetPreviewText(const nsAString& aValue, bool aNotify);
-  void GetPreviewText(nsAString& aValue);
-
   struct SelectionProperties {
    public:
     bool IsDefault() const {
@@ -525,8 +521,6 @@ class TextControlState final : public SupportsWeakPtr {
 
   MOZ_CAN_RUN_SCRIPT bool SetValueWithoutTextEditor(
       AutoTextControlHandlingState& aHandlingSetValue);
-
-  IMEContentObserver* GetIMEContentObserver() const;
 
   
   

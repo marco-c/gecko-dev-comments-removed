@@ -986,11 +986,13 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
     return NS_OK;
   }
 
+  bool detachingShadow = false;
   Element* focusWithinElement = [&]() -> Element* {
     if (auto* el = Element::FromNode(aContent)) {
       return el;
     }
     if (auto* shadow = ShadowRoot::FromNode(aContent)) {
+      detachingShadow = true;
       
       
       
@@ -1027,23 +1029,26 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       
       return NS_OK;
     }
-  } else if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-                 previousFocusedElementPtr, focusWithinElement)) {
+  } else {
+    if (detachingShadow && previousFocusedElementPtr == focusWithinElement) {
+      
+      
+      return NS_OK;
+    }
+    if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+            previousFocusedElementPtr, focusWithinElement)) {
+      return NS_OK;
+    }
     
     
-    return NS_OK;
   }
 
   RefPtr previousFocusedElement = previousFocusedElementPtr;
   RefPtr window = windowPtr;
-  RefPtr<Element> newFocusedElement = [&]() -> Element* {
-    if (auto* sr = ShadowRoot::FromNode(aContent)) {
-      if (sr->IsUAWidget() && sr->Host()->IsHTMLElement(nsGkAtoms::input)) {
-        return sr->Host();
-      }
-    }
-    return nullptr;
-  }();
+  RefPtr<Element> newFocusedElement =
+      detachingShadow && focusWithinElement->IsHTMLElement(nsGkAtoms::input)
+          ? focusWithinElement
+          : nullptr;
 
   window->SetFocusedElement(newFocusedElement);
 

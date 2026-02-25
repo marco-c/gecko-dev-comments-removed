@@ -3446,6 +3446,17 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
       }
       break;
     }
+    case PseudoStyleType::MozReveal:
+    case PseudoStyleType::MozNumberSpinBox: {
+      if (aParentFrame && aParentFrame->StyleDisplay()->EffectiveAppearance() ==
+                              StyleAppearance::Textfield) {
+        
+        static constexpr FrameConstructionData sSuppressData =
+            SUPPRESS_FCDATA();
+        return &sSuppressData;
+      }
+      break;
+    }
     default:
       break;
   }
@@ -3560,25 +3571,6 @@ nsCSSFrameConstructor::FindImgControlData(const Element& aElement,
 
 
 const nsCSSFrameConstructor::FrameConstructionData*
-nsCSSFrameConstructor::FindSearchControlData(const Element& aElement,
-                                             ComputedStyle& aStyle) {
-  
-  
-  
-  if (StaticPrefs::layout_forms_input_type_search_enabled() ||
-      aElement.OwnerDoc()->ChromeRulesEnabled()) {
-    static constexpr FrameConstructionData sSearchControlData(
-        NS_NewSearchControlFrame);
-    return &sSearchControlData;
-  }
-
-  static constexpr FrameConstructionData sTextControlData(
-      NS_NewTextControlFrame);
-  return &sTextControlData;
-}
-
-
-const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindInputData(const Element& aElement,
                                      ComputedStyle& aStyle) {
   static constexpr FrameConstructionDataByInt sInputData[] = {
@@ -3596,9 +3588,8 @@ nsCSSFrameConstructor::FindInputData(const Element& aElement,
       SIMPLE_INT_CREATE(FormControlType::InputRange, NS_NewRangeFrame),
       SIMPLE_INT_CREATE(FormControlType::InputPassword, NS_NewTextControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputColor, NS_NewColorControlFrame),
-      SIMPLE_INT_CHAIN(FormControlType::InputSearch,
-                       nsCSSFrameConstructor::FindSearchControlData),
-      SIMPLE_INT_CREATE(FormControlType::InputNumber, NS_NewNumberControlFrame),
+      SIMPLE_INT_CREATE(FormControlType::InputSearch, NS_NewTextControlFrame),
+      SIMPLE_INT_CREATE(FormControlType::InputNumber, NS_NewTextControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputTime, NS_NewDateTimeControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputDate, NS_NewDateTimeControlFrame),
       SIMPLE_INT_CREATE(FormControlType::InputDatetimeLocal,

@@ -206,15 +206,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-  void OnTextControlValueChangedWhileNotObservable(const nsAString& aNewValue);
-
-  
-
-
-
-
-
-
   dom::Element* GetObservingElement() const {
     return mIsObserving ? mRootElement.get() : nullptr;
   }

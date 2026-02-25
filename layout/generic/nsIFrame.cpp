@@ -4776,7 +4776,7 @@ nsresult nsIFrame::GetDataForTableSelection(
   
   
   if (independentSelectionLimiter &&
-      independentSelectionLimiter->IsInclusiveDescendantOf(GetContent())) {
+      !independentSelectionLimiter->Contains(GetContent())) {
     return NS_OK;
   }
 
@@ -4974,11 +4974,11 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   
   
   
-  if (!aPresContext->EventStateManager()->EventStatusOK(aMouseEvent)) {
+  EventStateManager* const esm = aPresContext->EventStateManager();
+  if (!esm->EventStatusOK(aMouseEvent)) {
     return NS_OK;
   }
 
-  EventStateManager* const esm = aPresContext->EventStateManager();
   if (nsIContent* dragGestureContent = esm->GetTrackingDragGestureContent()) {
     if (dragGestureContent != this->GetContent()) {
       
@@ -11514,6 +11514,9 @@ bool nsIFrame::IsFocusableDueToScrollFrame() {
     return false;
   }
   if (!mContent->IsHTMLElement()) {
+    return false;
+  }
+  if (Style()->IsPseudoElement()) {
     return false;
   }
   if (mContent->IsRootOfNativeAnonymousSubtree()) {

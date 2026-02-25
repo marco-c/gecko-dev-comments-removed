@@ -11,7 +11,6 @@
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/InputEventOptions.h"
 #include "mozilla/KeyEventHandler.h"
@@ -80,13 +79,13 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
 
 already_AddRefed<TextControlElement>
 TextControlElement::GetTextControlElementFromEditingHost(nsIContent* aHost) {
-  if (!aHost) {
+  if (!aHost || !aHost->IsInNativeAnonymousSubtree()) {
     return nullptr;
   }
 
-  RefPtr<TextControlElement> parent =
-      TextControlElement::FromNodeOrNull(aHost->GetParent());
-  return parent.forget();
+  auto* parent = TextControlElement::FromNodeOrNull(
+      aHost->GetClosestNativeAnonymousSubtreeRootParentOrHost());
+  return do_AddRef(parent);
 }
 
 TextControlElement::FocusTristate TextControlElement::FocusState() {
@@ -1580,7 +1579,7 @@ nsresult TextControlState::BindToFrame(nsTextControlFrame* aFrame) {
   MOZ_ASSERT(aFrame->GetRootNode());
   Element& editorRootAnonymousDiv = *aFrame->GetRootNode();
 
-  PresShell* presShell = aFrame->PresContext()->GetPresShell();
+  PresShell* presShell = aFrame->PresShell();
   MOZ_ASSERT(presShell);
 
   
@@ -1870,21 +1869,6 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
     rv = SetEditorFlagsIfNecessary(*newTextEditor, editorFlags);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
-    }
-  }
-  
-  
-  
-  
-  
-  
-  
-  else if (mTextCtrlElement && mTextCtrlElement->IsTextArea() &&
-           !mTextCtrlElement->ValueChanged()) {
-    MOZ_ASSERT(defaultValue.IsEmpty());
-    IMEContentObserver* observer = GetIMEContentObserver();
-    if (observer && observer->WasInitializedWith(*newTextEditor)) {
-      observer->OnTextControlValueChangedWhileNotObservable(defaultValue);
     }
   }
 
@@ -2452,8 +2436,7 @@ void TextControlState::GetValue(nsAString& aValue, bool aForDisplay) const {
     return;
   }
 
-  if (mTextEditor && mBoundFrame &&
-      (mEditorInitialized || !IsSingleLineTextControl())) {
+  if (mTextEditor && mBoundFrame && mEditorInitialized) {
     if (!mBoundFrame->CachedValue().IsVoid()) {
       aValue = mBoundFrame->CachedValue();
       MOZ_ASSERT(aValue.FindChar(u'\r') == -1);
@@ -2792,23 +2775,6 @@ bool TextControlState::SetValueWithTextEditor(
     }
   }
 
-  
-  
-  
-  
-  
-  
-  if (mTextCtrlElement && mTextCtrlElement->IsTextArea() &&
-      !mTextCtrlElement->ValueChanged() && textEditor->IsBeingInitialized() &&
-      !textEditor->Destroyed()) {
-    IMEContentObserver* observer = GetIMEContentObserver();
-    if (observer && observer->WasInitializedWith(*textEditor)) {
-      nsAutoString currentValue;
-      textEditor->ComputeTextValue(currentValue);
-      observer->OnTextControlValueChangedWhileNotObservable(currentValue);
-    }
-  }
-
   return rv != NS_ERROR_OUT_OF_MEMORY;
 }
 
@@ -2916,17 +2882,11 @@ bool TextControlState::SetValueWithoutTextEditor(
       }
 
       
-      if (mBoundFrame) {
-        mBoundFrame->UpdateValueDisplay(true);
-      }
-
       
-      
-      
-      
-      if (IMEContentObserver* observer = GetIMEContentObserver()) {
-        observer->OnTextControlValueChangedWhileNotObservable(mValue);
-      }
+      const bool unbindingFromFrame =
+          mHandlingState &&
+          mHandlingState->IsHandling(TextControlAction::UnbindFromFrame);
+      mTextCtrlElement->UpdateValueDisplay(!unbindingFromFrame);
     }
 
     
@@ -2987,49 +2947,8 @@ void TextControlState::InitializeKeyboardEventListeners() {
   mSelCon->SetScrollContainerFrame(mBoundFrame->GetScrollTargetFrame());
 }
 
-void TextControlState::SetPreviewText(const nsAString& aValue, bool aNotify) {
-  
-  Element* previewDiv = GetPreviewNode();
-  if (!previewDiv) {
-    return;
-  }
-
-  nsAutoString previewValue(aValue);
-
-  nsContentUtils::RemoveNewlines(previewValue);
-  MOZ_ASSERT(previewDiv->GetFirstChild(), "preview div has no child");
-  previewDiv->GetFirstChild()->AsText()->SetText(previewValue, aNotify);
-}
-
-void TextControlState::GetPreviewText(nsAString& aValue) {
-  
-  Element* previewDiv = GetPreviewNode();
-  if (!previewDiv) {
-    return;
-  }
-
-  MOZ_ASSERT(previewDiv->GetFirstChild(), "preview div has no child");
-  const CharacterDataBuffer* characterDataBuffer =
-      previewDiv->GetFirstChild()->GetCharacterDataBuffer();
-
-  aValue.Truncate();
-  characterDataBuffer->AppendTo(aValue);
-}
-
 bool TextControlState::EditorHasComposition() {
   return mTextEditor && mTextEditor->IsIMEComposing();
-}
-
-IMEContentObserver* TextControlState::GetIMEContentObserver() const {
-  if (NS_WARN_IF(!mTextCtrlElement) ||
-      mTextCtrlElement != IMEStateManager::GetFocusedElement()) {
-    return nullptr;
-  }
-  IMEContentObserver* observer = IMEStateManager::GetActiveContentObserver();
-  
-  
-  
-  return observer && observer->EditorIsTextEditor() ? observer : nullptr;
 }
 
 }  
