@@ -30,6 +30,7 @@ pub type InitialLetter = GenericInitialLetter<Number, Integer>;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed_value(derive_fields)]
 pub enum Spacing {
     
     Normal,

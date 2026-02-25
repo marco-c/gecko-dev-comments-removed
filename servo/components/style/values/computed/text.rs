@@ -104,13 +104,10 @@ impl ToTyped for LetterSpacing {
     
     
     fn to_typed(&self) -> Option<TypedValue> {
-        if self.0.is_zero() {
+        if !self.0.has_percentage() && self.0.is_zero() {
             return Some(TypedValue::Keyword(CssString::from("normal")));
         }
-        
-        
-        
-        None
+        self.0.to_typed()
     }
 }
 
