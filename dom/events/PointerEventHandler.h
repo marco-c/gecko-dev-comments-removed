@@ -479,7 +479,8 @@ class PointerEventHandler final {
 
 
   static void PostHandlePointerEventsPreventDefault(
-      WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent);
+      PresShell* aPresShell, WidgetPointerEvent* aPointerEvent,
+      WidgetGUIEvent* aMouseOrTouchEvent);
 
   
 

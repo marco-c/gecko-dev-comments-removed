@@ -947,7 +947,10 @@ void PointerEventHandler::PreHandlePointerEventsPreventDefault(
 
 
 void PointerEventHandler::PostHandlePointerEventsPreventDefault(
-    WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent) {
+    PresShell* aPresShell, WidgetPointerEvent* aPointerEvent,
+    WidgetGUIEvent* aMouseOrTouchEvent) {
+  MOZ_ASSERT(aPresShell);
+
   if (!aPointerEvent->mIsPrimary || aPointerEvent->mMessage != ePointerDown ||
       !aPointerEvent->DefaultPreventedByContent()) {
     return;
@@ -957,9 +960,11 @@ void PointerEventHandler::PostHandlePointerEventsPreventDefault(
       !pointerInfo) {
     
     
-#ifdef DEBUG
-    MOZ_CRASH("Got ePointerDown w/o active pointer info!!");
-#endif  
+    
+    
+    MOZ_ASSERT(aPresShell->IsDestroying(),
+               "If we got ePointerDown w/o active pointer info, the PresShell "
+               "should be destroying!!");
     return;
   }
   
@@ -1322,7 +1327,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     
     shell->HandleEventWithTarget(&event, aEventTargetFrame, aEventTargetContent,
                                  aStatus, true, aMouseOrTouchEventTarget);
-    PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+    PostHandlePointerEventsPreventDefault(shell, &event, aMouseOrTouchEvent);
     
     
     mouseEvent->mSynthesizeMoveAfterDispatch |=
@@ -1379,7 +1384,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
         PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
         shell->HandleEventWithTarget(&event, frame, content, aStatus, true,
                                      aMouseOrTouchEventTarget);
-        PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+        PostHandlePointerEventsPreventDefault(shell, &event,
+                                              aMouseOrTouchEvent);
       } else {
         
         
@@ -1391,7 +1397,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
         PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
         shell->HandleEvent(aEventTargetFrame, &event, aDontRetargetEvents,
                            aStatus);
-        PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+        PostHandlePointerEventsPreventDefault(shell, &event,
+                                              aMouseOrTouchEvent);
       }
     }
   }
@@ -1436,6 +1443,8 @@ void PointerEventHandler::NotifyDestroyPresContext(
       ReleasePointerCapturingElementAtLastPointerUp();
     }
   }
+  
+  
   
   for (auto iter = sActivePointersIds->Iter(); !iter.Done(); iter.Next()) {
     PointerInfo* data = iter.UserData();
