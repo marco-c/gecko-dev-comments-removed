@@ -4084,6 +4084,17 @@ set_config("MOZ_SYSTEM_POLICIES", True, when="--enable-system-policies")
 
 
 option(
+    "--disable-system-preferences",
+    help="Disable reading preferences from /etc/firefox",
+)
+
+set_config("MOZ_SYSTEM_PREFERENCES", True, when="--enable-system-preferences")
+set_define("MOZ_SYSTEM_PREFERENCES", True, when="--enable-system-preferences")
+
+
+
+
+option(
     "--disable-legacy-profile-creation",
     help="Disable the creation a legacy profile, to be used by old versions "
     "of Firefox, when no profiles exist",
