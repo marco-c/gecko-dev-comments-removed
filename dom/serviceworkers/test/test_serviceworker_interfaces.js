@@ -490,6 +490,10 @@ let interfaceNamesInGlobalScope = [
   
   "ReadableStreamDefaultReader",
   
+  { name: "ReportBody", insecureContext: true },
+  
+  { name: "ReportingObserver", insecureContext: true },
+  
   "Request",
   
   "Response",
