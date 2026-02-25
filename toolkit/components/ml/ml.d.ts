@@ -31,7 +31,6 @@ type UntypedEngineRequest = {
   args: unknown;
   options: {};
   streamerOptions?: {};
-  telemetryOptions?: {};
 };
 
 export type EngineRequests = EnsureAllFeatures<{
@@ -53,7 +52,6 @@ export type EngineRequests = EnsureAllFeatures<{
 
     options: {};
     streamerOptions?: {};
-    telemetryOptions?: {};
   };
 
   "suggest-NER": {
@@ -66,7 +64,6 @@ export type EngineRequests = EnsureAllFeatures<{
 
     options: {};
     streamerOptions?: {};
-    telemetryOptions?: {};
   };
 }>;
 
@@ -120,7 +117,20 @@ export type EngineCreateOptions = EnsureAllFeatures<{
 export type EngineOptions<FeatureId extends EngineFeatureIds> =
   EngineRequests[FeatureId]["options"];
 
-type UntypedEngineResponse = {};
+
+
+
+
+
+interface ResourceMeasurement {
+  cpuTime: number | null;
+  memory: number | null;
+}
+
+type UntypedEngineResponse = {
+  resourcesBefore: ResourceMeasurement;
+  resourcesAfter: ResourceMeasurement;
+};
 
 
 
@@ -152,13 +162,21 @@ export type EngineResponses = EnsureAllFeatures<{
   "suggest-intent-classification": Array<{
     label: string;
     score: number;
-  }> & { metrics?: ClassificationMetrics };
+  }> & {
+    metrics?: ClassificationMetrics;
+    resourcesBefore: ResourceMeasurement;
+    resourcesAfter: ResourceMeasurement;
+  };
   "suggest-NER": Array<{
     label: string;
     score: number;
     entity: string;
     word: string;
-  }> & { metrics?: ClassificationMetrics };
+  }> & {
+    metrics?: ClassificationMetrics;
+    resourcesBefore: ResourceMeasurement;
+    resourcesAfter: ResourceMeasurement;
+  };
 }>;
 
 
