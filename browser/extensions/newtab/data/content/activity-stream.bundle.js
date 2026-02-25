@@ -1453,7 +1453,7 @@ class DSImage extends (external_React_default()).PureComponent {
     
     
     
-    const formattedUrl = `https://img-getpocket.cdn.mozilla.net/${width}x${height}/${smart}filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
+    const formattedUrl = `https://img-getpocket.cdn.mozilla.net/${width}x${height}/${smart}filters:format(webp):quality(75):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
     return this.secureImageURL(formattedUrl);
   }
 
