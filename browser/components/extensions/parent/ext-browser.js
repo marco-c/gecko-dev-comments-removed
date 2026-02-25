@@ -577,7 +577,7 @@ class TabTracker extends TabTrackerBase {
         
         
         this.maybeWaitForTabOpen(nativeTab).then(() => {
-          if (!nativeTab.parentNode) {
+          if (!nativeTab.parentNode || this.adoptedTabs.has(nativeTab)) {
             
             return;
           }
