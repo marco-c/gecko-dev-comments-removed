@@ -227,10 +227,7 @@ class RTC_EXPORT Network {
           int prefix_length,
           AdapterType type);
   
-  
-  
-  
-  Network(const Network&);
+  Network(const Network&) = delete;
   Network& operator=(const Network&) = delete;
   Network(Network&&) = default;
   Network& operator=(Network&&) = delete;
