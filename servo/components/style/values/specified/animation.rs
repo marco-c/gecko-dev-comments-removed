@@ -4,13 +4,15 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{NonCustomPropertyId, PropertyId, ShorthandId};
 use crate::values::generics::animation as generics;
+use crate::values::generics::position::TreeScoped;
 use crate::values::specified::{LengthPercentage, NonNegativeNumber, Time};
 use crate::values::{CustomIdent, DashedIdent, KeyframesName};
 use crate::Atom;
-use cssparser::Parser;
+use cssparser::{match_ignore_ascii_case, Parser};
 use std::fmt::{self, Write};
 use style_traits::{
     CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss,
@@ -561,6 +563,16 @@ impl generics::ViewFunction<LengthPercentage> {
 
 
 
+pub type TimelineName = TreeScoped<TimelineIdent>;
+
+impl TimelineName {
+    
+    pub fn none() -> Self {
+        Self::with_default_level(TimelineIdent::none())
+    }
+}
+
+
 #[derive(
     Clone,
     Debug,
@@ -574,9 +586,9 @@ impl generics::ViewFunction<LengthPercentage> {
     ToShmem,
 )]
 #[repr(C)]
-pub struct TimelineName(DashedIdent);
+pub struct TimelineIdent(DashedIdent);
 
-impl TimelineName {
+impl TimelineIdent {
     
     pub fn none() -> Self {
         Self(DashedIdent::empty())
@@ -588,7 +600,7 @@ impl TimelineName {
     }
 }
 
-impl Parse for TimelineName {
+impl Parse for TimelineIdent {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -597,11 +609,11 @@ impl Parse for TimelineName {
             return Ok(Self::none());
         }
 
-        DashedIdent::parse(context, input).map(TimelineName)
+        DashedIdent::parse(context, input).map(TimelineIdent)
     }
 }
 
-impl ToCss for TimelineName {
+impl ToCss for TimelineIdent {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
