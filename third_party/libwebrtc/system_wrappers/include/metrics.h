@@ -11,14 +11,14 @@
 #ifndef SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 #define SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 
-#include <stddef.h>
-
 #include <atomic>  
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_utils.h"
 
@@ -131,6 +131,20 @@ void NoOp(const Ts&...) {}
   RTC_HISTOGRAM_COMMON_BLOCK(name, sample,                               \
                              webrtc::metrics::HistogramFactoryGetCounts( \
                                  name, min, max, bucket_count))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define RTC_HISTOGRAM_COUNTS_LINEAR(name, sample, min, max, bucket_count)      \
   RTC_HISTOGRAM_COMMON_BLOCK(name, sample,                                     \
@@ -393,7 +407,7 @@ namespace webrtc {
 namespace metrics {
 
 
-constexpr int kMinRunTimeInSeconds = 10;
+inline constexpr TimeDelta kMinRunTime = TimeDelta::Seconds(10);
 
 class Histogram;
 
