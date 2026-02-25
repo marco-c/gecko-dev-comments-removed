@@ -1647,56 +1647,102 @@ GetDateTimeFormat(const mozilla::intl::DateTimeFormat::ComponentsBag& options,
 
 
 
-static mozilla::Result<mozilla::intl::DateTimeFormat::ComponentsBag,
-                       mozilla::intl::ICUError>
-AdjustDateTimeStyleFormat(mozilla::intl::DateTimeFormat* baseFormat,
-                          mozilla::EnumSet<DateTimeField> allowedOptions) {
+static mozilla::Maybe<mozilla::intl::DateTimeFormat::ComponentsBag>
+AdjustDateTimeStyleFormat(
+    const mozilla::intl::DateTimeFormat::ComponentsBag& baseFormat,
+    mozilla::EnumSet<DateTimeField> allowedOptions) {
+  
+  bool anyConflictingFields = false;
+
   
   mozilla::intl::DateTimeFormat::ComponentsBag formatOptions;
 
   
-  auto result = baseFormat->ResolveComponents();
-  if (result.isErr()) {
-    return result.propagateErr();
+  if (baseFormat.era) {
+    if (allowedOptions.contains(DateTimeField::Era)) {
+      formatOptions.era = baseFormat.era;
+    } else {
+      anyConflictingFields = true;
+    }
   }
-  auto options = result.unwrap();
+  if (baseFormat.weekday) {
+    if (allowedOptions.contains(DateTimeField::Weekday)) {
+      formatOptions.weekday = baseFormat.weekday;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.year) {
+    if (allowedOptions.contains(DateTimeField::Year)) {
+      formatOptions.year = baseFormat.year;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.month) {
+    if (allowedOptions.contains(DateTimeField::Month)) {
+      formatOptions.month = baseFormat.month;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.day) {
+    if (allowedOptions.contains(DateTimeField::Day)) {
+      formatOptions.day = baseFormat.day;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.dayPeriod) {
+    if (allowedOptions.contains(DateTimeField::DayPeriod)) {
+      formatOptions.dayPeriod = baseFormat.dayPeriod;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.hour) {
+    if (allowedOptions.contains(DateTimeField::Hour)) {
+      formatOptions.hour = baseFormat.hour;
+      formatOptions.hourCycle = baseFormat.hourCycle;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.minute) {
+    if (allowedOptions.contains(DateTimeField::Minute)) {
+      formatOptions.minute = baseFormat.minute;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.second) {
+    if (allowedOptions.contains(DateTimeField::Second)) {
+      formatOptions.second = baseFormat.second;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.fractionalSecondDigits) {
+    if (allowedOptions.contains(DateTimeField::FractionalSecondDigits)) {
+      formatOptions.fractionalSecondDigits = baseFormat.fractionalSecondDigits;
+    } else {
+      anyConflictingFields = true;
+    }
+  }
+  if (baseFormat.timeZoneName) {
+    anyConflictingFields = true;
+  }
 
-  if (allowedOptions.contains(DateTimeField::Era) && options.era) {
-    formatOptions.era = options.era;
-  }
-  if (allowedOptions.contains(DateTimeField::Weekday) && options.weekday) {
-    formatOptions.weekday = options.weekday;
-  }
-  if (allowedOptions.contains(DateTimeField::Year) && options.year) {
-    formatOptions.year = options.year;
-  }
-  if (allowedOptions.contains(DateTimeField::Month) && options.month) {
-    formatOptions.month = options.month;
-  }
-  if (allowedOptions.contains(DateTimeField::Day) && options.day) {
-    formatOptions.day = options.day;
-  }
-  if (allowedOptions.contains(DateTimeField::DayPeriod) && options.dayPeriod) {
-    formatOptions.dayPeriod = options.dayPeriod;
-  }
-  if (allowedOptions.contains(DateTimeField::Hour) && options.hour) {
-    formatOptions.hour = options.hour;
-    formatOptions.hourCycle = options.hourCycle;
-  }
-  if (allowedOptions.contains(DateTimeField::Minute) && options.minute) {
-    formatOptions.minute = options.minute;
-  }
-  if (allowedOptions.contains(DateTimeField::Second) && options.second) {
-    formatOptions.second = options.second;
-  }
-  if (allowedOptions.contains(DateTimeField::FractionalSecondDigits) &&
-      options.fractionalSecondDigits) {
-    formatOptions.fractionalSecondDigits = options.fractionalSecondDigits;
+  
+  if (!anyConflictingFields) {
+    return mozilla::Nothing();
   }
 
   
 
-  return formatOptions;
+  
+
+  return mozilla::Some(formatOptions);
 }
 
 static const char* DateTimeValueKindToString(DateTimeValueKind kind) {
@@ -2011,16 +2057,21 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
       return df.release();
     }
 
-    auto adjusted = AdjustDateTimeStyleFormat(df.get(), allowedOptions);
-    if (adjusted.isErr()) {
-      ReportInternalError(cx, adjusted.unwrapErr());
+    auto baseFormatResult = df->ResolveComponents();
+    if (baseFormatResult.isErr()) {
+      ReportInternalError(cx, baseFormatResult.unwrapErr());
       return nullptr;
     }
-    auto bag = adjusted.unwrap();
+    auto baseFormat = baseFormatResult.unwrap();
+
+    auto adjusted = AdjustDateTimeStyleFormat(baseFormat, allowedOptions);
+    if (adjusted.isNothing()) {
+      return df.release();
+    }
 
     auto dfAdjustedResult =
         mozilla::intl::DateTimeFormat::TryCreateFromComponents(
-            mozilla::MakeStringSpan(locale.get()), bag, dtpg, timeZone);
+            mozilla::MakeStringSpan(locale.get()), *adjusted, dtpg, timeZone);
     if (dfAdjustedResult.isErr()) {
       ReportInternalError(cx, dfAdjustedResult.unwrapErr());
       return nullptr;
