@@ -2586,6 +2586,34 @@ public class GeckoSession {
 
 
   @UiThread
+  public @NonNull GeckoResult<X509Certificate> qwacStatus() {
+    return mEventDispatcher
+        .queryString("GeckoView:GetQWACStatus")
+        .map(
+            qwacPem -> {
+              X509Certificate qwac = null;
+              if (qwacPem != null) {
+                try {
+                  final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+                  final byte[] qwacBytes = Base64.decode(qwacPem, Base64.NO_WRAP);
+                  qwac =
+                      (X509Certificate)
+                          factory.generateCertificate(new ByteArrayInputStream(qwacBytes));
+                } catch (final CertificateException e) {
+                  Log.e(LOGTAG, "Failed to decode certificate", e);
+                }
+              }
+              return qwac;
+            });
+  }
+
+  
+
+
+
+
+
+  @UiThread
   public @NonNull WebExtension.SessionController getWebExtensionController() {
     return mWebExtensionController;
   }
