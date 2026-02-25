@@ -2,6 +2,8 @@
 
 
 
+from textwrap import dedent
+
 from mach.decorators import SettingsProvider
 
 
@@ -57,11 +59,11 @@ class MachSettings:
                 (
                     "runprefs.*",
                     "string",
-                    """
+                    dedent("""
         Pass a pref into Firefox when using `mach run`, of the form `foo.bar=value`.
         Prefs will automatically be cast into the appropriate type. Integers can be
         single quoted to force them to be strings.
-        """.strip(),
+        """),
                 ),
             ]
 
