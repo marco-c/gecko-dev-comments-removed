@@ -4,7 +4,6 @@ add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.sessionhistory.max_total_viewers", 3],
-      ["docshell.shistory.testing.bfevict", true],
       
       ["fission.bfcacheInParent", true],
     ],
