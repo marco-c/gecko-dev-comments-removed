@@ -161,7 +161,7 @@
           }
 
           if (this.tabs.length < 2) {
-            this.unsplitTabs("tab_close");
+            this.unsplitTabs();
           }
         });
       }
@@ -333,11 +333,8 @@
     
 
 
-
-
-
-    unsplitTabs(trigger = null) {
-      gBrowser.unsplitTabs(this, trigger);
+    unsplitTabs() {
+      gBrowser.unsplitTabs(this);
       gBrowser.setIsSplitViewActive(false, this.#tabs);
     }
 
@@ -369,41 +366,18 @@
     
 
 
-
-
-
-    reverseTabs(trigger = null) {
+    reverseTabs() {
       const [firstTab, secondTab] = this.#tabs;
       gBrowser.moveTabBefore(secondTab, firstTab);
       this.#tabs = [secondTab, firstTab];
       gBrowser.showSplitViewPanels(this.#tabs);
       updateUrlbarButton.arm();
-
-      
-      if (trigger) {
-        Glean.splitview.reverse.record({ trigger });
-      }
     }
 
     
 
 
-
-
-
-    close(trigger = null) {
-      
-      if (trigger) {
-        const tab_layout = gBrowser.tabContainer.verticalMode
-          ? "vertical"
-          : "horizontal";
-        Glean.splitview.end.record({
-          tab_layout,
-          trigger,
-        });
-      }
-      
-      this.#tabChangeObserver?.disconnect();
+    close() {
       gBrowser.removeTabs(this.#tabs);
     }
 
