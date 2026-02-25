@@ -2,9 +2,10 @@
 
 
 
-import json
 import subprocess
 from os import path
+
+from mozfile import json
 
 from qm_try_analysis.logging import info, warning
 

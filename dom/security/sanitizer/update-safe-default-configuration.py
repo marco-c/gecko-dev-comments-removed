@@ -2,8 +2,9 @@
 
 
 
-import json
 from urllib.request import urlretrieve
+
+from mozfile import json
 
 REVISION = "f0b66021355352cf1e38d08e3659d0a90757d7fd"
 
