@@ -38,6 +38,7 @@
 #include "api/local_network_access_permission.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/transport/enums.h"
 #include "api/transport/stun.h"
 #include "api/units/time_delta.h"
@@ -55,7 +56,6 @@
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
-#include "p2p/base/regathering_controller.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/wrapping_active_ice_controller.h"
 #include "p2p/dtls/dtls_stun_piggyback_callbacks.h"
@@ -74,6 +74,7 @@
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/metrics.h"
@@ -201,11 +202,6 @@ P2PTransportChannel::P2PTransportChannel(
   
   
   RTC_DCHECK(config_.IsValid().ok());
-  BasicRegatheringController::Config regathering_config;
-  regathering_config.regather_on_failed_networks_interval =
-      config_.regather_on_failed_networks_interval_or_default().ms();
-  regathering_controller_ = std::make_unique<BasicRegatheringController>(
-      regathering_config, this, network_thread_);
   
   
   allocator_->SubscribeCandidateFilterChanged(
@@ -242,6 +238,7 @@ P2PTransportChannel::P2PTransportChannel(
 P2PTransportChannel::~P2PTransportChannel() {
   TRACE_EVENT0("webrtc", "P2PTransportChannel::~P2PTransportChannel");
   RTC_DCHECK_RUN_ON(network_thread_);
+  regathering_task_handle_.Stop();
   std::vector<Connection*> copy(connections_.begin(), connections_.end());
   for (Connection* connection : copy) {
     connection->UnsubscribeDestroyed(this);
@@ -292,7 +289,6 @@ void P2PTransportChannel::AddAllocatorSession(
     allocator_session()->PruneAllPorts();
   }
   allocator_sessions_.push_back(std::move(session));
-  regathering_controller_->set_allocator_session(allocator_session());
 
   
   
@@ -629,6 +625,9 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     RTC_LOG(LS_INFO)
         << "Set regather_on_failed_networks_interval to "
         << config_.regather_on_failed_networks_interval_or_default();
+    if (regathering_task_handle_.Running()) {
+      OnStartedPinging();  
+    }
   }
 
   if (config_.receiving_switching_delay != config.receiving_switching_delay) {
@@ -714,11 +713,6 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     RTC_LOG(LS_INFO) << "Set STUN keepalive interval to "
                      << config.stun_keepalive_interval_or_default();
   }
-
-  BasicRegatheringController::Config regathering_config;
-  regathering_config.regather_on_failed_networks_interval =
-      config_.regather_on_failed_networks_interval_or_default().ms();
-  regathering_controller_->SetConfig(regathering_config);
 
   config_.vpn_preference = config.vpn_preference;
   allocator_->SetVpnPreference(config_.vpn_preference);
@@ -1758,7 +1752,20 @@ void P2PTransportChannel::OnStartedPinging() {
   RTC_LOG(LS_INFO) << ToString()
                    << ": Have a pingable connection for the first time; "
                       "starting to ping.";
-  regathering_controller_->Start();
+  regathering_task_handle_.Stop();
+  regathering_task_handle_ = RepeatingTaskHandle::DelayedStart(
+      TaskQueueBase::Current(),
+      config_.regather_on_failed_networks_interval_or_default(), [this]() {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        if (allocator_session() && allocator_session()->IsCleared()) {
+          
+          
+          
+          
+          allocator_session()->RegatherOnFailedNetworks();
+        }
+        return config_.regather_on_failed_networks_interval_or_default();
+      });
 }
 
 bool P2PTransportChannel::IsPortPruned(const PortInterface* port) const {
