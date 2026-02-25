@@ -22,7 +22,9 @@ def main(request, response):
         response.writer.end_headers()
 
         
-        first_size = file_size // 30
+        
+        
+        first_size = 4096
 
         response.writer.write(f.read(first_size))
 
