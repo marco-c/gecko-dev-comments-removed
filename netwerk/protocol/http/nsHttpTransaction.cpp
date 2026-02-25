@@ -423,6 +423,12 @@ nsresult nsHttpTransaction::AsyncRead(nsIStreamListener* listener,
       nsInputStreamPump::Create(getter_AddRefs(transactionPump), mPipeIn);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  if (mIsTRRTransaction) {
+    transactionPump->SetHighPriority(true);
+  }
+
   rv = transactionPump->AsyncRead(listener);
   NS_ENSURE_SUCCESS(rv, rv);
 
