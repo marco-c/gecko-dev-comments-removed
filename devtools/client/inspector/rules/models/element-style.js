@@ -235,12 +235,12 @@ class ElementStyle {
 
 
 
-  #maybeAddRule(options, existingRules) {
+  #maybeAddRule(appliedStyle, existingRules) {
     
     
     if (
-      options.rule &&
-      this.rules.some(rule => rule.domRule === options.rule)
+      appliedStyle.rule &&
+      this.rules.some(rule => rule.domRule === appliedStyle.rule)
     ) {
       return false;
     }
@@ -250,21 +250,21 @@ class ElementStyle {
     
     
     if (existingRules) {
-      const ruleIndex = existingRules.findIndex(r => r.matches(options));
+      const ruleIndex = existingRules.findIndex(r => r.matches(appliedStyle));
       if (ruleIndex >= 0) {
         rule = existingRules[ruleIndex];
-        rule.refresh(options);
+        rule.refresh(appliedStyle);
         existingRules.splice(ruleIndex, 1);
       }
     }
 
     
     if (!rule) {
-      rule = new Rule(this, options);
+      rule = new Rule(this, appliedStyle);
     }
 
     
-    if (options.inherited && !rule.hasAnyVisibleProperties()) {
+    if (appliedStyle.inherited && !rule.hasAnyVisibleProperties()) {
       return false;
     }
 

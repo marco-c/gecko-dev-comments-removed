@@ -683,11 +683,6 @@ class PageStyleActor extends Actor {
 
 
 
-
-
-
-
-
   #getAllElementRules(node, { isInherited, skipPseudo, filter }) {
     const { bindingElement, pseudo } = CssLogic.getBindingElementAndPseudo(
       node.rawNode
@@ -698,53 +693,67 @@ class PageStyleActor extends Actor {
       return rules;
     }
 
+    
+    
     if (bindingElement.style) {
-      const elementStyle = this.styleRef(
-        bindingElement,
-        
-        null
-      );
+      
+      
+      
+      
       const showElementStyles = !isInherited && !pseudo;
       const showInheritedStyles =
         isInherited && this.#hasInheritedProps(bindingElement.style);
 
-      const rule = this.#getRuleItem(elementStyle, node.rawNode, {
-        pseudoElement: null,
-        isSystem: false,
-        inherited: null,
-      });
+      if (showElementStyles || showInheritedStyles) {
+        const elementStyleActor = this.styleRef(
+          bindingElement,
+          
+          null
+        );
 
-      
-      if (showElementStyles) {
-        rules.push(rule);
-      }
-
-      
-      if (showInheritedStyles) {
-        
-        
-        
-        rule.inherited = node;
-        rules.push(rule);
+        if (showElementStyles) {
+          rules.push(
+            this.#getRuleItem(elementStyleActor, node.rawNode, {
+              pseudoElement: null,
+              isSystem: false,
+              inherited: null,
+            })
+          );
+        } else if (showInheritedStyles) {
+          
+          
+          
+          rules.push(
+            this.#getRuleItem(elementStyleActor, node.rawNode, {
+              pseudoElement: null,
+              isSystem: false,
+              inherited: node,
+            })
+          );
+        }
       }
     }
 
     
     
     
-    this.#getElementRules(
+    
+    
+    for (const oneRule of this.#getElementRules(
       bindingElement,
       pseudo,
       isInherited ? node : null,
       filter
-    ).forEach(oneRule => {
+    )) {
+      
       
       
       
       
       oneRule.pseudoElement = null;
+
       rules.push(oneRule);
-    });
+    }
 
     
     if (skipPseudo) {
@@ -810,15 +819,29 @@ class PageStyleActor extends Actor {
 
 
 
-  #getRuleItem(rule, rawNode, { inherited, isSystem, pseudoElement }) {
+
+
+
+  #getRuleItem(
+    rule,
+    rawNode = null,
+    { inherited, isSystem, pseudoElement, keyframes } = {}
+  ) {
     return {
+      
       rule,
       pseudoElement,
       isSystem,
       inherited,
       
       
-      darkColorScheme: InspectorUtils.isUsedColorSchemeDark(rawNode),
+      darkColorScheme: rawNode
+        ? InspectorUtils.isUsedColorSchemeDark(rawNode)
+        : undefined,
+      keyframes,
+
+      
+      matchedSelectorIndexes: undefined,
     };
   }
 
@@ -1144,10 +1167,11 @@ class PageStyleActor extends Actor {
           }
 
           for (const rule of keyframesRule.cssRules) {
-            entries.push({
-              rule: this.styleRef(rule),
-              keyframes: this.styleRef(keyframesRule),
-            });
+            entries.push(
+              this.#getRuleItem(this.styleRef(rule), null, {
+                keyframes: this.styleRef(keyframesRule),
+              })
+            );
           }
         }
       }
@@ -1166,9 +1190,7 @@ class PageStyleActor extends Actor {
           continue;
         }
 
-        entries.push({
-          rule: this.styleRef(positionTryRule),
-        });
+        entries.push(this.#getRuleItem(this.styleRef(positionTryRule)));
       }
     }
 
@@ -1299,7 +1321,7 @@ class PageStyleActor extends Actor {
 
   getNewAppliedProps(node, rule) {
     const ruleActor = this.styleRef(rule);
-    return this.getAppliedProps(node, [{ rule: ruleActor }], {
+    return this.getAppliedProps(node, [this.#getRuleItem(ruleActor)], {
       matchedSelectors: true,
     });
   }

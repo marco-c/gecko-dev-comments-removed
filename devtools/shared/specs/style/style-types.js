@@ -14,8 +14,13 @@ types.addActorType("domstylerule");
 
 
 types.addDictType("appliedstyle", {
+  
   rule: "domstylerule",
+  pseudoElement: "nullable:string",
+  isSystem: "nullable:boolean",
   inherited: "nullable:domnode#actorid",
+  darkColorScheme: "nullable:boolean",
+  matchedSelectorIndexes: "nullable:array:number",
   keyframes: "nullable:domstylerule",
 });
 

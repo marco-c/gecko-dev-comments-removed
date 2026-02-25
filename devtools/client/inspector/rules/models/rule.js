@@ -34,6 +34,37 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Rule {
   
 
@@ -42,24 +73,19 @@ class Rule {
 
 
 
-
-
-
-
-
-  constructor(elementStyle, options) {
+  constructor(elementStyle, appliedStyle) {
     this.elementStyle = elementStyle;
-    this.domRule = options.rule;
+    this.domRule = appliedStyle.rule;
     this.compatibilityIssues = null;
 
-    this.matchedSelectorIndexes = options.matchedSelectorIndexes || [];
-    this.isSystem = options.isSystem;
-    this.isUnmatched = options.isUnmatched || false;
-    this.darkColorScheme = options.darkColorScheme;
-    this.inherited = options.inherited || null;
-    this.pseudoElement = options.pseudoElement || "";
-    this.keyframes = options.keyframes || null;
-    this.userAdded = options.rule.userAdded;
+    this.matchedSelectorIndexes = appliedStyle.matchedSelectorIndexes || [];
+    this.isSystem = appliedStyle.isSystem;
+    this.isUnmatched = appliedStyle.isUnmatched || false;
+    this.darkColorScheme = appliedStyle.darkColorScheme;
+    this.inherited = appliedStyle.inherited || null;
+    this.pseudoElement = appliedStyle.pseudoElement || "";
+    this.keyframes = appliedStyle.keyframes || null;
+    this.userAdded = appliedStyle.rule.userAdded;
 
     this.cssProperties = this.elementStyle.ruleView.cssProperties;
     this.inspector = this.elementStyle.ruleView.inspector;
@@ -261,8 +287,8 @@ class Rule {
 
 
 
-  matches(options) {
-    return this.domRule === options.rule;
+  matches(appliedStyle) {
+    return this.domRule === appliedStyle.rule;
   }
 
   
@@ -652,10 +678,11 @@ class Rule {
 
 
 
-  refresh(options) {
-    this.matchedSelectorIndexes = options.matchedSelectorIndexes || [];
-    const colorSchemeChanged = this.darkColorScheme !== options.darkColorScheme;
-    this.darkColorScheme = options.darkColorScheme;
+  refresh(appliedStyle) {
+    this.matchedSelectorIndexes = appliedStyle.matchedSelectorIndexes || [];
+    const colorSchemeChanged =
+      this.darkColorScheme !== appliedStyle.darkColorScheme;
+    this.darkColorScheme = appliedStyle.darkColorScheme;
 
     const newTextProps = this.#getTextProperties();
 
