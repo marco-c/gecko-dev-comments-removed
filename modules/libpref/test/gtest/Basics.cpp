@@ -9,6 +9,7 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIObserver.h"
 #include "nsThreadUtils.h"
+#include "nsServiceManagerUtils.h"
 #include "nsWeakReference.h"
 
 using namespace mozilla;
@@ -97,6 +98,47 @@ TEST(PrefsBasics, WeakObserverCleanup)
 
   
   Preferences::SetBool(kPref, false);
+  ASSERT_EQ(Preferences::GetCallbackCount(), baselineCount);
+}
+
+TEST(PrefsBasics, FreeObserverListRemovesAllCallbacks)
+{
+  Preferences::SetBool("test.free.a.pref", false);
+  Preferences::SetBool("test.free.b.pref", false);
+
+  uint32_t baselineCount = Preferences::GetCallbackCount();
+
+  nsCOMPtr<nsIPrefService> prefService =
+      do_GetService(NS_PREFSERVICE_CONTRACTID);
+  ASSERT_TRUE(prefService);
+
+  nsCOMPtr<nsIPrefBranch> branchA;
+  nsresult rv = prefService->GetBranch("test.free.a.", getter_AddRefs(branchA));
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  nsCOMPtr<nsIPrefBranch> branchB;
+  rv = prefService->GetBranch("test.free.b.", getter_AddRefs(branchB));
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  RefPtr<TestWeakPrefObserver> obs1 = new TestWeakPrefObserver();
+  RefPtr<TestWeakPrefObserver> obs2 = new TestWeakPrefObserver();
+  RefPtr<TestWeakPrefObserver> obs3 = new TestWeakPrefObserver();
+
+  
+  rv = branchA->AddObserver("pref", obs1, false);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  rv = branchB->AddObserver("pref", obs2, false);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  rv = branchA->AddObserver("pref", obs3, false);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_EQ(Preferences::GetCallbackCount(), baselineCount + 3);
+
+  
+  branchA = nullptr;
+  ASSERT_EQ(Preferences::GetCallbackCount(), baselineCount + 1);
+
+  
+  branchB = nullptr;
   ASSERT_EQ(Preferences::GetCallbackCount(), baselineCount);
 }
 
