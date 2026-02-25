@@ -47,8 +47,7 @@ void ReportingUtils::StripURL(nsIURI* aURI, nsACString& outStrippedURL) {
 void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
                             const nsAString& aGroupName, const nsAString& aURL,
                             ReportBody* aBody) {
-  MOZ_ASSERT(aGlobal);
-  MOZ_ASSERT(aBody);
+  MOZ_RELEASE_ASSERT(aGlobal && aBody);
 
   nsDependentAtomString type(aType);
 
@@ -56,17 +55,7 @@ void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
       new mozilla::dom::Report(aGlobal, type, aURL, aBody);
   aGlobal->BroadcastReport(report);
 
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
-  if (!window) {
-    return;
-  }
-
-  
-  ReportDeliver::Record(window, type, aGroupName, aURL, aBody);
+  ReportDeliver::AttemptDelivery(aGlobal, type, aGroupName, aURL, aBody);
 }
 
 }  

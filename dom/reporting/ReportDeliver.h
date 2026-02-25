@@ -7,20 +7,29 @@
 #ifndef mozilla_dom_ReportDeliver_h
 #define mozilla_dom_ReportDeliver_h
 
+#include "mozilla/dom/ReportingHeader.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
-#include "nsString.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 
 #include "nsIPrincipal.h"
 
 class nsIPrincipal;
 class nsPIDOMWindowInner;
+class nsIGlobalObject;
 
 namespace mozilla::dom {
 
 class ReportBody;
+
+
+
+struct GlobalReportingData {
+  nsString mUserAgentData;
+  EndpointsList mEndpoints;
+};
 
 class ReportDeliver final : public nsIObserver, public nsINamed {
  public:
@@ -38,23 +47,56 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
     nsCString mReportBodyJSON;
     nsCOMPtr<nsIPrincipal> mPrincipal;
     uint32_t mFailures;
+    uintptr_t mGlobalKey;
   };
 
-  static void Record(nsPIDOMWindowInner* aWindow, const nsAString& aType,
-                     const nsAString& aGroupName, const nsAString& aURL,
-                     ReportBody* aBody);
+  static void AttemptDelivery(nsIGlobalObject* aGlobal, const nsAString& aType,
+                              const nsAString& aGroupName,
+                              const nsAString& aURL, ReportBody* aBody);
 
   static void Fetch(const ReportData& aReportData);
 
-  void AppendReportData(const ReportData& aReportData);
-
   void Notify();
+  void EnqueueReport(const ReportData& aReportData);
+
+  
+  static void Initialize();
+
+  
+
+
+
+
+  static void WorkerInitializeReportingEndpoints(
+      uintptr_t aGlobalKey, nsIURI* aResourceURI, nsCString aHeaderContents,
+      bool aShouldResistFingerprinting);
+
+  
+
+
+
+  static void WindowInitializeReportingEndpoints(
+      nsIGlobalObject* aGlobal, mozilla::dom::EndpointsList aEndpointList);
+
+  
+  
+  nsIURI* GetEndpointURLFor(uintptr_t aGlobalKey, const nsAString& aGroupName);
+  void EndpointRespondedWithRemove(uint64_t aGlobalKey,
+                                   const nsAString& aEndpointName);
 
  private:
   ReportDeliver();
   ~ReportDeliver();
 
+  void ScheduleFetch();
+  void SetGlobalAndUserAgentData(ReportDeliver::ReportData& aReportData,
+                                 uintptr_t aGlobalKey);
+  bool mPendingDelivery{false};
   nsTArray<ReportData> mReportQueue;
+  
+  
+  
+  nsTHashMap<uintptr_t, GlobalReportingData> mGlobalsEndpointLists;
 };
 
 }  
