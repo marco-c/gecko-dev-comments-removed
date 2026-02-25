@@ -353,7 +353,22 @@ static PhysicalAxes CheckEarlyCompensatingForScroll(const nsIFrame* aKidFrame) {
   if (!aKidFrame->StylePosition()->mPositionArea.IsNone()) {
     return PhysicalAxes{PhysicalAxis::Horizontal, PhysicalAxis::Vertical};
   }
-  return PhysicalAxes{};
+  PhysicalAxes result;
+  const auto cbwm = aKidFrame->GetParent()->GetWritingMode();
+  
+  
+  
+  if (aKidFrame->StylePosition()->mAlignSelf._0 &
+      StyleAlignFlags::ANCHOR_CENTER) {
+    result +=
+        cbwm.IsVertical() ? PhysicalAxis::Horizontal : PhysicalAxis::Vertical;
+  }
+  if (aKidFrame->StylePosition()->mJustifySelf._0 &
+      StyleAlignFlags::ANCHOR_CENTER) {
+    result +=
+        cbwm.IsVertical() ? PhysicalAxis::Vertical : PhysicalAxis::Horizontal;
+  }
+  return result;
 }
 
 static AnchorPosResolutionCache PopulateAnchorResolutionCache(
@@ -450,13 +465,10 @@ static SideBits GetScrollCompensatedSidesFor(
   return sides;
 }
 
-struct AnchorShiftInfo {
-  nsPoint mOffset;
-  StylePositionArea mResolvedArea;
-};
-
 struct ModifiedContainingBlock {
-  Maybe<AnchorShiftInfo> mAnchorShiftInfo;
+  using AnchorOffsetInfo = AbsoluteContainingBlock::AnchorOffsetInfo;
+
+  Maybe<AnchorOffsetInfo> mAnchorOffsetInfo;
   
   nsRect mMaybeScrollableRect;
   
@@ -471,13 +483,18 @@ struct ModifiedContainingBlock {
                           const StylePositionArea& aResolvedArea,
                           const nsRect& aMaybeScrollableRect,
                           const nsRect& aFinalRect)
-      : mAnchorShiftInfo{Some(AnchorShiftInfo{aOffset, aResolvedArea})},
+      : mAnchorOffsetInfo{Some(AnchorOffsetInfo{aOffset, aResolvedArea})},
         mMaybeScrollableRect{aMaybeScrollableRect},
         mFinalRect{aFinalRect} {}
 
+  AnchorOffsetInfo GetAnchorOffsetInfo() const {
+    return mAnchorOffsetInfo.valueOr(AnchorOffsetInfo{});
+  }
   StylePositionArea ResolvedPositionArea() const {
-    return mAnchorShiftInfo
-        .map([](const AnchorShiftInfo& aInfo) { return aInfo.mResolvedArea; })
+    return mAnchorOffsetInfo
+        .map([](const AnchorOffsetInfo& aInfo) {
+          return aInfo.mResolvedPositionArea;
+        })
         .valueOr(StylePositionArea{});
   }
 };
@@ -548,13 +565,13 @@ static ModifiedContainingBlock ComputeContainingBlock(
   
   if (defaultAnchorInfo) {
     auto positionArea = aKidFrame->StylePosition()->mPositionArea;
+    
+    
+    const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
+        aAnchorPosResolutionCache->mReferenceData->CompensatingForScrollAxes(),
+        aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
+    StylePositionArea resolvedPositionArea{};
     if (!positionArea.IsNone()) {
-      
-      
-      const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
-          aAnchorPosResolutionCache->mReferenceData
-              ->CompensatingForScrollAxes(),
-          aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
       
       
       
@@ -562,7 +579,6 @@ static ModifiedContainingBlock ComputeContainingBlock(
       
       
       const auto scrolledAnchorRect = defaultAnchorInfo->mRect - offset;
-      StylePositionArea resolvedPositionArea{};
       const auto scrolledAnchorCb = AnchorPositioningUtils::
           AdjustAbsoluteContainingBlockRectForPositionArea(
               scrolledAnchorRect + aContainingBlockRects.mLocal.TopLeft(),
@@ -573,13 +589,12 @@ static ModifiedContainingBlock ComputeContainingBlock(
       
       aAnchorPosResolutionCache->mReferenceData->mScrollCompensatedSides =
           GetScrollCompensatedSidesFor(resolvedPositionArea);
-      return ModifiedContainingBlock{
-          offset, resolvedPositionArea, scrollableContainingBlock,
-          
-          
-          scrolledAnchorCb + offset};
+      
+      
+      containingBlock = scrolledAnchorCb + offset;
     }
-    return ModifiedContainingBlock{scrollableContainingBlock, containingBlock};
+    return ModifiedContainingBlock{offset, resolvedPositionArea,
+                                   scrollableContainingBlock, containingBlock};
   }
   return ModifiedContainingBlock{containingBlock};
 }
@@ -1100,7 +1115,7 @@ static nscoord OffsetToAlignedStaticPos(
     const LogicalSize& aAbsPosCBSize,
     const nsContainerFrame* aPlaceholderContainer, WritingMode aAbsPosCBWM,
     LogicalAxis aAbsPosCBAxis, Maybe<NonAutoAlignParams> aNonAutoAlignParams,
-    const StylePositionArea& aPositionArea) {
+    const AbsoluteContainingBlock::AnchorOffsetInfo& aAnchorOffsetInfo) {
   if (!aPlaceholderContainer) {
     
     
@@ -1201,7 +1216,8 @@ static nscoord OffsetToAlignedStaticPos(
       aNonAutoAlignParams
           ? aPlaceholderContainer
                 ->CSSAlignmentForAbsPosChildWithinContainingBlock(
-                    aKidReflowInput, pcAxis, aPositionArea, absPosCBSizeInPCWM)
+                    aKidReflowInput, pcAxis,
+                    aAnchorOffsetInfo.mResolvedPositionArea, absPosCBSizeInPCWM)
           : aPlaceholderContainer->CSSAlignmentForAbsPosChild(aKidReflowInput,
                                                               pcAxis);
   
@@ -1250,7 +1266,12 @@ static nscoord OffsetToAlignedStaticPos(
         if (data.mOffsetData) {
           const nsSize containerSize =
               aAbsPosCBSize.GetPhysicalSize(aAbsPosCBWM);
-          const nsRect anchorRect(data.mOffsetData->mOrigin, data.mSize);
+          
+          const auto cbOffset =
+              referenceData->mAdjustedContainingBlock.TopLeft() -
+              referenceData->mOriginalContainingBlockRect.TopLeft();
+          const nsRect anchorRect(data.mOffsetData->mOrigin - cbOffset,
+                                  data.mSize);
           const LogicalRect logicalAnchorRect{aAbsPosCBWM, anchorRect,
                                               containerSize};
           const auto axisInAbsPosCBWM =
@@ -1311,8 +1332,16 @@ static nscoord OffsetToAlignedStaticPos(
     
     const auto imcbStart = aNonAutoAlignParams->mCurrentStartInset;
     const auto imcbEnd = cbSize - aNonAutoAlignParams->mCurrentEndInset;
+    
+    const auto scrollOffset = aAnchorOffsetInfo.mResolvedPositionArea.IsNone()
+                                  ? aAbsPosCBWM.PhysicalAxis(aAbsPosCBAxis) ==
+                                            PhysicalAxis::Horizontal
+                                        ? aAnchorOffsetInfo.mScrollOffset.x
+                                        : aAnchorOffsetInfo.mScrollOffset.y
+                                  : 0;
     const auto kidSize = aKidSizeInAbsPosCBWM.Size(aAbsPosCBAxis, aAbsPosCBWM);
-    const auto kidStart = aNonAutoAlignParams->mCurrentStartInset + offset;
+    const auto kidStart =
+        aNonAutoAlignParams->mCurrentStartInset + offset - scrollOffset;
     const auto kidEnd = kidStart + kidSize;
     
     
@@ -1361,7 +1390,7 @@ static nscoord OffsetToAlignedStaticPos(
 void AbsoluteContainingBlock::ResolveSizeDependentOffsets(
     ReflowInput& aKidReflowInput, const LogicalSize& aCBSize,
     const LogicalSize& aKidSize, const LogicalMargin& aMargin,
-    const StylePositionArea& aResolvedPositionArea, LogicalMargin& aOffsets) {
+    const AnchorOffsetInfo& aAnchorOffsetInfo, LogicalMargin& aOffsets) {
   WritingMode outerWM = aKidReflowInput.mParentReflowInput->GetWritingMode();
 
   
@@ -1392,7 +1421,7 @@ void AbsoluteContainingBlock::ResolveSizeDependentOffsets(
       placeholderContainer = GetPlaceholderContainer(aKidReflowInput.mFrame);
       nscoord offset = OffsetToAlignedStaticPos(
           aKidReflowInput, aKidSize, aCBSize, placeholderContainer, outerWM,
-          LogicalAxis::Inline, Nothing{}, aResolvedPositionArea);
+          LogicalAxis::Inline, Nothing{}, aAnchorOffsetInfo);
       
       
       
@@ -1412,7 +1441,7 @@ void AbsoluteContainingBlock::ResolveSizeDependentOffsets(
       }
       nscoord offset = OffsetToAlignedStaticPos(
           aKidReflowInput, aKidSize, aCBSize, placeholderContainer, outerWM,
-          LogicalAxis::Block, Nothing{}, aResolvedPositionArea);
+          LogicalAxis::Block, Nothing{}, aAnchorOffsetInfo);
       
       
       
@@ -1704,6 +1733,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                                      aContainingBlockRects, aKidFrame,
                                      aAnchorPosResolutionCache,
                                      aReuseUnfragmentedAnchorPosReferences);
+    PhysicalAxes earlyScrollCompensation;
     if (aAnchorPosResolutionCache) {
       const auto& originalCb = cb.mMaybeScrollableRect;
       aAnchorPosResolutionCache->mReferenceData->mOriginalContainingBlockRect =
@@ -1714,6 +1744,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       aAnchorPosResolutionCache->mReferenceData->mAdjustedContainingBlock =
           cb.mFinalRect;
+      
+      
+      earlyScrollCompensation = aAnchorPosResolutionCache->mReferenceData
+                                    ->CompensatingForScrollAxes();
     }
     const LogicalSize cbSize(outerWM, cb.mFinalRect.Size());
 
@@ -1902,7 +1936,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       ResolveSizeDependentOffsets(kidReflowInput, cbSize, kidSize, margin,
-                                  cb.ResolvedPositionArea(), offsets);
+                                  cb.GetAnchorOffsetInfo(), offsets);
 
       ResolveAutoMarginsAfterLayout(kidReflowInput, cbSize, kidSize, margin,
                                     offsets);
@@ -1978,7 +2012,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                 offsets.IStart(outerWM),
                 offsets.IEnd(outerWM),
             }),
-            cb.ResolvedPositionArea());
+            cb.GetAnchorOffsetInfo());
 
         offsets.IStart(outerWM) += alignOffset;
         offsets.IEnd(outerWM) =
@@ -1996,7 +2030,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                 offsets.BStart(outerWM),
                 offsets.BEnd(outerWM),
             }),
-            cb.ResolvedPositionArea());
+            cb.GetAnchorOffsetInfo());
         offsets.BStart(outerWM) += alignOffset;
         offsets.BEnd(outerWM) =
             cbSize.BSize(outerWM) -
@@ -2021,9 +2055,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         if (referenceData->CompensatingForScrollAxes().isEmpty()) {
           return {};
         }
-        if (cb.mAnchorShiftInfo) {
+        if (cb.mAnchorOffsetInfo &&
+            earlyScrollCompensation ==
+                referenceData->CompensatingForScrollAxes()) {
           
-          return cb.mAnchorShiftInfo->mOffset;
+          return cb.mAnchorOffsetInfo->mScrollOffset;
         }
         return AnchorPositioningUtils::GetScrollOffsetFor(
             referenceData->CompensatingForScrollAxes(), aKidFrame,
