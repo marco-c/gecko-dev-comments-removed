@@ -581,6 +581,8 @@ static bool InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType) {
 #  include <psapi.h>
 #  include <algorithm>
 
+#  include "nsTHashMap.h"
+
 #  define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
 [[nodiscard]] static nsresult VsizeDistinguishedAmount(int64_t* aN) {
   MEMORYSTATUSEX s;
@@ -738,43 +740,21 @@ struct SegmentKind {
   DWORD mType;
   DWORD mProtect;
   int mIsStack;
+
+  PLDHashNumber Hash() const {
+    return mozilla::HashGeneric(mState, mType, mProtect, mIsStack);
+  }
+
+  bool operator==(const SegmentKind& aOther) const {
+    return mState == aOther.mState && mType == aOther.mType &&
+           mProtect == aOther.mProtect && mIsStack == aOther.mIsStack;
+  }
 };
 
-struct SegmentEntry : public PLDHashEntryHdr {
-  static PLDHashNumber HashKey(const void* aKey) {
-    auto kind = static_cast<const SegmentKind*>(aKey);
-    return mozilla::HashGeneric(kind->mState, kind->mType, kind->mProtect,
-                                kind->mIsStack);
-  }
-
-  static bool MatchEntry(const PLDHashEntryHdr* aEntry, const void* aKey) {
-    auto kind = static_cast<const SegmentKind*>(aKey);
-    auto entry = static_cast<const SegmentEntry*>(aEntry);
-    return kind->mState == entry->mKind.mState &&
-           kind->mType == entry->mKind.mType &&
-           kind->mProtect == entry->mKind.mProtect &&
-           kind->mIsStack == entry->mKind.mIsStack;
-  }
-
-  static void InitEntry(PLDHashEntryHdr* aEntry, const void* aKey) {
-    auto kind = static_cast<const SegmentKind*>(aKey);
-    auto entry = static_cast<SegmentEntry*>(aEntry);
-    entry->mKind = *kind;
-    entry->mCount = 0;
-    entry->mSize = 0;
-  }
-
-  static const PLDHashTableOps Ops;
-
-  SegmentKind mKind;  
-  uint32_t mCount;    
-  size_t mSize;       
+struct SegmentStats {
+  uint32_t mCount = 0;
+  size_t mSize = 0;
 };
-
- const PLDHashTableOps SegmentEntry::Ops = {
-    SegmentEntry::HashKey, SegmentEntry::MatchEntry,
-    PLDHashTable::MoveEntryStub, PLDHashTable::ClearEntryStub,
-    SegmentEntry::InitEntry};
 
 class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
   ~WindowsAddressSpaceReporter() {}
@@ -788,7 +768,7 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
     
     
 
-    PLDHashTable table(&SegmentEntry::Ops, sizeof(SegmentEntry));
+    nsTHashMap<nsGenericHashKey<SegmentKind>, SegmentStats> table;
     MEMORY_BASIC_INFORMATION info = {0};
     bool isPrevSegStackGuard = false;
     for (size_t currentAddress = 0;;) {
@@ -808,12 +788,9 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
                      type == MEM_PRIVATE && protect == PAGE_READWRITE;
 
       SegmentKind kind = {state, type, protect, isStack ? 1 : 0};
-      auto entry =
-          static_cast<SegmentEntry*>(table.Add(&kind, mozilla::fallible));
-      if (entry) {
-        entry->mCount += 1;
-        entry->mSize += size;
-      }
+      SegmentStats& stats = table.LookupOrInsert(kind);
+      stats.mCount += 1;
+      stats.mSize += size;
 
       isPrevSegStackGuard = info.State == MEM_COMMIT &&
                             info.Type == MEM_PRIVATE &&
@@ -831,7 +808,7 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
     
     
 
-    for (auto iter = table.Iter(); !iter.Done(); iter.Next()) {
+    for (auto& entry : table) {
       
       
       
@@ -843,11 +820,9 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
       bool doType = false;
       bool doProtect = false;
 
-      auto entry = static_cast<const SegmentEntry*>(iter.Get());
-
       nsCString path("address-space");
 
-      switch (entry->mKind.mState) {
+      switch (entry.GetKey().mState) {
         case MEM_FREE:
           path.AppendLiteral("/free");
           break;
@@ -870,7 +845,7 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
       }
 
       if (doType) {
-        switch (entry->mKind.mType) {
+        switch (entry.GetKey().mType) {
           case MEM_IMAGE:
             path.AppendLiteral("/image");
             break;
@@ -891,7 +866,7 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
       }
 
       if (doProtect) {
-        DWORD protect = entry->mKind.mProtect;
+        DWORD protect = entry.GetKey().mProtect;
         
         if (protect & PAGE_EXECUTE) {
           path.AppendLiteral("/execute");
@@ -930,17 +905,17 @@ class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
         }
 
         
-        if (entry->mKind.mIsStack) {
+        if (entry.GetKey().mIsStack) {
           path.AppendLiteral("+stack");
         }
       }
 
       
-      path.AppendPrintf("(segments=%u)", entry->mCount);
+      path.AppendPrintf("(segments=%" PRIu32 ")", entry.GetData().mCount);
 
       aHandleReport->Callback(""_ns, path, KIND_OTHER, UNITS_BYTES,
-                              entry->mSize, "From MEMORY_BASIC_INFORMATION."_ns,
-                              aData);
+                              entry.GetData().mSize,
+                              "From MEMORY_BASIC_INFORMATION."_ns, aData);
     }
 
     return NS_OK;
