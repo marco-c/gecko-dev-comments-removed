@@ -166,6 +166,13 @@ impl Default for Mp4parseByteData {
 }
 
 impl Mp4parseByteData {
+    
+    
+    
+    
+    
+    
+    
     fn set_data(&mut self, data: &[u8]) {
         self.length = data.len();
         self.data = if data.is_empty() {
@@ -175,6 +182,8 @@ impl Mp4parseByteData {
         };
     }
 
+    
+    
     fn set_indices(&mut self, data: &[Indice]) {
         self.length = data.len();
         self.indices = if data.is_empty() {
@@ -192,16 +201,11 @@ pub struct Mp4parsePsshInfo {
 }
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub enum OptionalFourCc {
+    #[default]
     None,
     Some([u8; 4]),
-}
-
-impl Default for OptionalFourCc {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 #[repr(C)]
@@ -292,6 +296,24 @@ pub struct Mp4parseFragmentInfo {
     
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Default)]
 pub struct Mp4parseParser {
@@ -658,11 +680,22 @@ pub unsafe extern "C" fn mp4parse_get_track_info(
             None => return Mp4parseStatus::Invalid,
         };
 
-        match track.duration {
-            Some(duration) => info.duration = duration.0,
-            None => {
-                
-                info.duration = 0
+        
+        
+        
+        if let Some(edited_duration) = track.edited_duration {
+            
+            match rational_scale(edited_duration.0, context_timescale.0, timescale.0) {
+                Some(duration) => info.duration = duration,
+                None => return Mp4parseStatus::Invalid,
+            }
+        } else {
+            match track.duration {
+                Some(duration) => info.duration = duration.0,
+                None => {
+                    
+                    info.duration = 0
+                }
             }
         }
     } else {
@@ -1806,7 +1839,8 @@ fn minimal_mp4_get_track_info() {
     });
     assert_eq!(info.track_type, Mp4parseTrackType::Audio);
     assert_eq!(info.track_id, 2);
-    assert_eq!(info.duration, 2944);
+    
+    assert_eq!(info.duration, 1920);
     assert_eq!(info.media_time, 1024);
 
     unsafe {
@@ -1888,6 +1922,152 @@ fn minimal_mp4_get_track_info_invalid_track_number() {
     assert_eq!(audio.sample_info_count, 0);
 
     unsafe {
+        mp4parse_free(parser);
+    }
+}
+
+#[test]
+fn repeated_get_track_audio_info_returns_stable_pointer() {
+    let parser = parse_minimal_mp4();
+
+    unsafe {
+        let mut audio1 = Mp4parseTrackAudioInfo::default();
+        assert_eq!(
+            Mp4parseStatus::Ok,
+            mp4parse_get_track_audio_info(parser, 1, &mut audio1)
+        );
+        assert_eq!(audio1.sample_info_count, 1);
+        let ptr1 = audio1.sample_info;
+
+        
+        
+        let mut audio2 = Mp4parseTrackAudioInfo::default();
+        assert_eq!(
+            Mp4parseStatus::Ok,
+            mp4parse_get_track_audio_info(parser, 1, &mut audio2)
+        );
+        assert_eq!(audio2.sample_info_count, 1);
+        let ptr2 = audio2.sample_info;
+
+        
+        assert_eq!(ptr1, ptr2);
+
+        
+        assert_eq!((*audio1.sample_info).channels, 1);
+        assert_eq!((*audio1.sample_info).bit_depth, 16);
+        assert_eq!((*audio1.sample_info).sample_rate, 48000);
+
+        mp4parse_free(parser);
+    }
+}
+
+
+
+
+
+
+
+#[test]
+fn multi_opus_description_codec_specific_pointers_are_valid() {
+    let mut file = std::fs::File::open("tests/opus_audioinit_two_desc.mp4").expect("Unknown file");
+    let io = Mp4parseIo {
+        read: Some(valid_read),
+        userdata: &mut file as *mut _ as *mut std::os::raw::c_void,
+    };
+
+    unsafe {
+        let mut parser = std::ptr::null_mut();
+        let rv = mp4parse_new(&io, &mut parser);
+        assert_eq!(rv, Mp4parseStatus::Ok);
+
+        let mut audio = Mp4parseTrackAudioInfo::default();
+        let rv = mp4parse_get_track_audio_info(parser, 0, &mut audio);
+        assert_eq!(rv, Mp4parseStatus::Ok);
+        assert_eq!(audio.sample_info_count, 2);
+
+        let si0 = &*audio.sample_info;
+        let si1 = &*audio.sample_info.add(1);
+
+        
+        assert_eq!(si0.codec_type, Mp4parseCodec::Opus);
+        assert_eq!(si1.codec_type, Mp4parseCodec::Opus);
+
+        
+        assert_eq!(si0.channels, 1);
+        assert_eq!(si1.channels, 2);
+
+        
+        assert!(si0.codec_specific_config.length > 0);
+        assert!(!si0.codec_specific_config.data.is_null());
+        assert!(si1.codec_specific_config.length > 0);
+        assert!(!si1.codec_specific_config.data.is_null());
+
+        
+        let parser_ref = &*parser;
+        assert_eq!(
+            parser_ref.opus_header.len(),
+            2,
+            "opus_header must have one entry per stsd description, not per track"
+        );
+
+        
+        assert_ne!(
+            si0.codec_specific_config.data,
+            si1.codec_specific_config.data
+        );
+
+        
+        let config0 = std::slice::from_raw_parts(
+            si0.codec_specific_config.data,
+            si0.codec_specific_config.length,
+        );
+        let config1 = std::slice::from_raw_parts(
+            si1.codec_specific_config.data,
+            si1.codec_specific_config.length,
+        );
+
+        
+        assert_eq!(config0.len(), config1.len());
+        assert_ne!(config0, config1);
+
+        mp4parse_free(parser);
+    }
+}
+
+#[test]
+fn repeated_get_track_video_info_returns_stable_pointer() {
+    let parser = parse_minimal_mp4();
+
+    unsafe {
+        let mut video1 = Mp4parseTrackVideoInfo::default();
+        assert_eq!(
+            Mp4parseStatus::Ok,
+            mp4parse_get_track_video_info(parser, 0, &mut video1)
+        );
+        assert_eq!(video1.sample_info_count, 1);
+        let ptr1 = video1.sample_info;
+
+        
+        let mut video2 = Mp4parseTrackVideoInfo::default();
+        assert_eq!(
+            Mp4parseStatus::Ok,
+            mp4parse_get_track_video_info(parser, 0, &mut video2)
+        );
+        assert_eq!(video2.sample_info_count, 1);
+        let ptr2 = video2.sample_info;
+
+        
+        assert_eq!(ptr1, ptr2);
+
+        
+        assert_eq!((*video1.sample_info).image_width, 320);
+        assert_eq!((*video1.sample_info).image_height, 240);
+
+        
+        
+        assert_eq!(video2.display_width, 320);
+        assert_eq!(video2.display_height, 240);
+
         mp4parse_free(parser);
     }
 }
