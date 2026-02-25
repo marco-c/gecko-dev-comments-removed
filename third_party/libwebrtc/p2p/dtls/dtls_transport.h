@@ -65,7 +65,7 @@ class StreamInterfaceChannel : public StreamInterface {
   StreamInterfaceChannel& operator=(const StreamInterfaceChannel&) = delete;
 
   
-  bool OnPacketReceived(const char* data, size_t size);
+  bool OnPacketReceived(ArrayView<const uint8_t> data);
 
   
   
@@ -84,7 +84,6 @@ class StreamInterfaceChannel : public StreamInterface {
   StreamResult Write(ArrayView<const uint8_t> data,
                      size_t& written,
                      int& error) override;
-
   bool Flush() override;
 
  private:

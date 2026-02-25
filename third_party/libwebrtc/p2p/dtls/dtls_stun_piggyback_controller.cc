@@ -203,7 +203,6 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   if (!data.has_value() || data->empty()) {
     return;
   }
-
   
   if (!IsDtlsPacket(*data)) {
     RTC_LOG(LS_WARNING) << "Dropping non-DTLS data.";
@@ -211,9 +210,24 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   }
   data_recv_count_++;
 
+  ReportDtlsPacket(*data);
+
   
   
-  uint32_t hash = ComputeDtlsPacketHash(*data);
+  dtls_data_callback_(*data);
+}
+
+void DtlsStunPiggybackController::ReportDtlsPacket(
+    ArrayView<const uint8_t> data) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+
+  if (state_ == State::OFF || state_ == State::COMPLETE) {
+    return;
+  }
+
+  
+  
+  uint32_t hash = ComputeDtlsPacketHash(data);
 
   
   if (std::find(handshake_messages_received_.begin(),
@@ -225,8 +239,6 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     }
     handshake_messages_received_.push_back(hash);
   }
-
-  dtls_data_callback_(*data);
 }
 
 }  

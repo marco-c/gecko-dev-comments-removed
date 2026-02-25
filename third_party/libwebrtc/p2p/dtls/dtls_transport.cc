@@ -176,18 +176,25 @@ bool StreamInterfaceChannel::Flush() {
   return false;
 }
 
-bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
+bool StreamInterfaceChannel::OnPacketReceived(ArrayView<const uint8_t> data) {
   RTC_DCHECK_RUN_ON(&callback_sequence_);
   if (packets_.size() > 0) {
     RTC_LOG(LS_WARNING) << "Packet already in queue.";
   }
-  bool ret = packets_.WriteBack(data, size, nullptr);
+  bool ret = packets_.WriteBack(reinterpret_cast<const char*>(data.data()),
+                                data.size(), nullptr);
   if (!ret) {
     
     
     
     
     RTC_LOG(LS_ERROR) << "Failed to write packet to queue.";
+  }
+  
+  
+  
+  if (dtls_stun_piggyback_controller_) {
+    dtls_stun_piggyback_controller_->ReportDtlsPacket(data);
   }
   FireEvent(SE_READ, 0);
   return ret;
@@ -1025,8 +1032,7 @@ bool DtlsTransportInternalImpl::HandleDtlsPacket(
     ArrayView<const uint8_t> payload) {
   
   
-  return downward_->OnPacketReceived(
-      reinterpret_cast<const char*>(payload.data()), payload.size());
+  return downward_->OnPacketReceived(payload);
 }
 
 void DtlsTransportInternalImpl::set_receiving(bool receiving) {
