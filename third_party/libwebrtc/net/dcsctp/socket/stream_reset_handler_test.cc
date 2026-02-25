@@ -13,11 +13,12 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "api/array_view.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/time_delta.h"
 #include "net/dcsctp/common/handover_testing.h"
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/packet/chunk/forward_tsn_common.h"
@@ -26,7 +27,9 @@
 #include "net/dcsctp/packet/parameter/outgoing_ssn_reset_request_parameter.h"
 #include "net/dcsctp/packet/parameter/parameter.h"
 #include "net/dcsctp/packet/parameter/reconfiguration_response_parameter.h"
-#include "net/dcsctp/public/dcsctp_message.h"
+#include "net/dcsctp/packet/sctp_packet.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
+#include "net/dcsctp/public/dcsctp_options.h"
 #include "net/dcsctp/public/types.h"
 #include "net/dcsctp/rx/data_tracker.h"
 #include "net/dcsctp/rx/reassembly_queue.h"
@@ -37,8 +40,8 @@
 #include "net/dcsctp/timer/timer.h"
 #include "net/dcsctp/tx/mock_send_queue.h"
 #include "net/dcsctp/tx/retransmission_queue.h"
-#include "rtc_base/gunit.h"
 #include "test/gmock.h"
+#include "test/gtest.h"
 
 namespace dcsctp {
 namespace {
@@ -921,5 +924,153 @@ TEST_F(StreamResetHandlerTest, PerformCloseAfterOneFirstFailing) {
   EXPECT_THAT(responses2, SizeIs(1));
   EXPECT_EQ(responses2[0].result(), ResponseResult::kSuccessPerformed);
 }
+
+TEST_F(StreamResetHandlerTest,
+       ResetStreamsDeferredRetransmissionWithSameSeqNumSuccess) {
+  
+  
+  
+
+  constexpr StreamID kStreamId = StreamID(1);
+
+  
+  data_tracker_->Observe(TSN(10));
+  reasm_->Add(TSN(10), gen_.Ordered({1, 2, 3, 4}, "BE", {.mid = MID(0)}));
+
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(12),
+                          {kStreamId}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kInProgress)));
+
+  
+  data_tracker_->Observe(TSN(11));
+  reasm_->Add(TSN(11), gen_.Ordered({1, 2, 3, 4}, "BE", {.mid = MID(1)}));
+  data_tracker_->Observe(TSN(12));
+  reasm_->Add(TSN(12), gen_.Ordered({1, 2, 3, 4}, "BE", {.mid = MID(2)}));
+
+  
+  
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(12),
+                          {kStreamId}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kSuccessPerformed)));
+
+  
+  
+  EXPECT_THAT(
+      reasm_->GetNextMessage(),
+      Optional(SctpMessageIs(kStreamId, PPID(53), kShortPayload)));  
+  EXPECT_THAT(
+      reasm_->GetNextMessage(),
+      Optional(SctpMessageIs(kStreamId, PPID(53), kShortPayload)));  
+  EXPECT_THAT(
+      reasm_->GetNextMessage(),
+      Optional(SctpMessageIs(kStreamId, PPID(53), kShortPayload)));  
+  EXPECT_FALSE(reasm_->HasMessages());
+}
+
+TEST_F(StreamResetHandlerTest, ResetStreamsDeferredWithNewSeqNumSuccess) {
+  
+  
+  
+  
+
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(11),
+                          {StreamID(1)}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kInProgress)));
+
+  
+  data_tracker_->Observe(TSN(10));
+  reasm_->Add(TSN(10), gen_.Ordered({1}, "BE", {.mid = MID(2)}));
+  data_tracker_->Observe(TSN(11));
+  reasm_->Add(TSN(11), gen_.Ordered({1}, "BE", {.mid = MID(1)}));
+
+  
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(11), ReconfigRequestSN(3), TSN(11),
+                          {StreamID(1)}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kSuccessPerformed)));
+}
+
+TEST_F(StreamResetHandlerTest,
+       ResetStreamsDeferredRetransmissionStillInProgress) {
+  
+  
+  
+  
+
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(11),
+                          {StreamID(1)}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kInProgress)));
+
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(11),
+                          {StreamID(1)}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kInProgress)));
+}
+
+TEST_F(StreamResetHandlerTest, ResetStreamsSuccessIdempotency) {
+  
+  
+  
+
+  data_tracker_->Observe(TSN(10));
+  reasm_->Add(TSN(10), gen_.Ordered({1}, "BE", {.mid = MID(1)}));
+  data_tracker_->Observe(TSN(11));
+  reasm_->Add(TSN(11), gen_.Ordered({1}, "BE", {.mid = MID(1)}));
+
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(11),
+                          {StreamID(1)}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kSuccessPerformed)));
+
+  
+  
+  EXPECT_THAT(HandleAndCatchResponse(ReConfigChunk(
+                  Parameters::Builder()
+                      .Add(OutgoingSSNResetRequestParameter(
+                          ReconfigRequestSN(10), ReconfigRequestSN(3), TSN(11),
+                          {StreamID(1)}))
+                      .Build())),
+              ElementsAre(Property(&ReconfigurationResponseParameter::result,
+                                   ResponseResult::kSuccessPerformed)));
+}
+
 }  
 }  

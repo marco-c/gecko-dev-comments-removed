@@ -12,7 +12,6 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
 #include "api/array_view.h"
@@ -27,15 +26,18 @@
 #include "net/dcsctp/packet/parameter/reconfiguration_response_parameter.h"
 #include "net/dcsctp/packet/parameter/ssn_tsn_reset_request_parameter.h"
 #include "net/dcsctp/packet/sctp_packet.h"
-#include "net/dcsctp/packet/tlv_trait.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_socket.h"
+#include "net/dcsctp/public/types.h"
 #include "net/dcsctp/rx/data_tracker.h"
 #include "net/dcsctp/rx/reassembly_queue.h"
 #include "net/dcsctp/socket/context.h"
 #include "net/dcsctp/timer/timer.h"
 #include "net/dcsctp/tx/retransmission_queue.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/str_join.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace dcsctp {
 namespace {
@@ -132,21 +134,10 @@ void StreamResetHandler::HandleReConfig(ReConfigChunk chunk) {
   }
 }
 
-bool StreamResetHandler::ValidateReqSeqNbr(
-    UnwrappedReconfigRequestSn req_seq_nbr,
-    std::vector<ReconfigurationResponseParameter>& responses) {
+StreamResetHandler::ReqSeqNbrValidationResult
+StreamResetHandler::ValidateReqSeqNbr(UnwrappedReconfigRequestSn req_seq_nbr) {
   if (req_seq_nbr == last_processed_req_seq_nbr_) {
-    
-    
-    
-    
-    
-    RTC_DLOG(LS_VERBOSE) << log_prefix_ << "req=" << *req_seq_nbr
-                         << " already processed, returning result="
-                         << ToString(last_processed_req_result_);
-    responses.push_back(ReconfigurationResponseParameter(
-        req_seq_nbr.Wrap(), last_processed_req_result_));
-    return false;
+    return ReqSeqNbrValidationResult::kRetransmission;
   }
 
   if (req_seq_nbr != last_processed_req_seq_nbr_.next_value()) {
@@ -157,12 +148,10 @@ bool StreamResetHandler::ValidateReqSeqNbr(
     
     RTC_DLOG(LS_VERBOSE) << log_prefix_ << "req=" << *req_seq_nbr
                          << " bad seq_nbr";
-    responses.push_back(ReconfigurationResponseParameter(
-        req_seq_nbr.Wrap(), ResponseResult::kErrorBadSequenceNumber));
-    return false;
+    return ReqSeqNbrValidationResult::kBadSequenceNumber;
   }
 
-  return true;
+  return ReqSeqNbrValidationResult::kValid;
 }
 
 void StreamResetHandler::HandleResetOutgoing(
@@ -180,43 +169,63 @@ void StreamResetHandler::HandleResetOutgoing(
       incoming_reconfig_request_sn_unwrapper_.Unwrap(
           req->request_sequence_number());
 
-  if (ValidateReqSeqNbr(request_sn, responses)) {
-    last_processed_req_seq_nbr_ = request_sn;
-    if (data_tracker_->IsLaterThanCumulativeAckedTsn(
-            req->sender_last_assigned_tsn())) {
-      
-      
-      
-      
-      reassembly_queue_->EnterDeferredReset(req->sender_last_assigned_tsn(),
-                                            req->stream_ids());
-      
-      
-      
-      last_processed_req_result_ = ResponseResult::kInProgress;
-      RTC_DLOG(LS_VERBOSE) << log_prefix_
-                           << "Reset outgoing; Sender last_assigned="
-                           << *req->sender_last_assigned_tsn()
-                           << " - not yet reached -> InProgress";
-    } else {
-      
-      
-      
-      
-      
-      
-      reassembly_queue_->ResetStreamsAndLeaveDeferredReset(req->stream_ids());
-      ctx_->callbacks().OnIncomingStreamsReset(req->stream_ids());
-      last_processed_req_result_ = ResponseResult::kSuccessPerformed;
+  ReqSeqNbrValidationResult validation_result = ValidateReqSeqNbr(request_sn);
 
-      RTC_DLOG(LS_VERBOSE) << log_prefix_
-                           << "Reset outgoing; Sender last_assigned="
-                           << *req->sender_last_assigned_tsn()
-                           << " - reached -> SuccessPerformed";
-    }
+  if (validation_result == ReqSeqNbrValidationResult::kBadSequenceNumber) {
+    responses.push_back(ReconfigurationResponseParameter(
+        req->request_sequence_number(),
+        ResponseResult::kErrorBadSequenceNumber));
+    return;
+  }
+
+  
+  
+  if (validation_result == ReqSeqNbrValidationResult::kRetransmission &&
+      last_processed_req_result_ != ResponseResult::kInProgress) {
     responses.push_back(ReconfigurationResponseParameter(
         req->request_sequence_number(), last_processed_req_result_));
+    return;
   }
+
+  
+  
+  
+  last_processed_req_seq_nbr_ = request_sn;
+  if (data_tracker_->IsLaterThanCumulativeAckedTsn(
+          req->sender_last_assigned_tsn())) {
+    
+    
+    
+    
+    reassembly_queue_->EnterDeferredReset(req->sender_last_assigned_tsn(),
+                                          req->stream_ids());
+    
+    
+    
+    last_processed_req_result_ = ResponseResult::kInProgress;
+    RTC_DLOG(LS_VERBOSE) << log_prefix_
+                         << "Reset outgoing; Sender last_assigned="
+                         << *req->sender_last_assigned_tsn()
+                         << " - not yet reached -> InProgress";
+  } else {
+    
+    
+    
+    
+    
+    
+    reassembly_queue_->ResetStreamsAndLeaveDeferredReset(req->stream_ids());
+    ctx_->callbacks().OnIncomingStreamsReset(req->stream_ids());
+    last_processed_req_result_ = ResponseResult::kSuccessPerformed;
+
+    RTC_DLOG(LS_VERBOSE) << log_prefix_
+                         << "Reset outgoing; Sender last_assigned="
+                         << *req->sender_last_assigned_tsn()
+                         << " - reached -> SuccessPerformed";
+  }
+
+  responses.push_back(ReconfigurationResponseParameter(
+      req->request_sequence_number(), last_processed_req_result_));
 }
 
 void StreamResetHandler::HandleResetIncoming(
@@ -233,11 +242,17 @@ void StreamResetHandler::HandleResetIncoming(
   UnwrappedReconfigRequestSn request_sn =
       incoming_reconfig_request_sn_unwrapper_.Unwrap(
           req->request_sequence_number());
-
-  if (ValidateReqSeqNbr(request_sn, responses)) {
+  ReqSeqNbrValidationResult validation_result = ValidateReqSeqNbr(request_sn);
+  if (validation_result == ReqSeqNbrValidationResult::kValid ||
+      validation_result == ReqSeqNbrValidationResult::kRetransmission) {
     responses.push_back(ReconfigurationResponseParameter(
         req->request_sequence_number(), ResponseResult::kSuccessNothingToDo));
     last_processed_req_seq_nbr_ = request_sn;
+    last_processed_req_result_ = ResponseResult::kSuccessNothingToDo;
+  } else {
+    responses.push_back(ReconfigurationResponseParameter(
+        req->request_sequence_number(),
+        ResponseResult::kErrorBadSequenceNumber));
   }
 }
 
