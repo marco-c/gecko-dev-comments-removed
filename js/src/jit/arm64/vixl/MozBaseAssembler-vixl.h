@@ -60,7 +60,7 @@ void DisassembleInstruction(char* buffer, size_t bufsize, const Instruction* ins
 #endif
 
 class MozBaseAssembler;
-typedef js::jit::AssemblerBufferWithConstantPools<1024, 4, Instruction, MozBaseAssembler,
+typedef js::jit::AssemblerBufferWithConstantPools<4, Instruction, MozBaseAssembler,
                                                   NumShortBranchRangeTypes> ARMBuffer;
 
 

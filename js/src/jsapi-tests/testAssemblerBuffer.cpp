@@ -40,7 +40,7 @@ END_TEST(testAssemblerBuffer_BufferOffset)
 
 BEGIN_TEST(testAssemblerBuffer_AssemblerBuffer) {
   using js::jit::BufferOffset;
-  using AsmBuf = js::jit::AssemblerBuffer<5 * sizeof(uint32_t), uint32_t>;
+  using AsmBuf = js::jit::AssemblerBuffer<uint32_t>;
 
   AsmBuf ab;
   CHECK(ab.isAligned(16));
@@ -91,7 +91,7 @@ BEGIN_TEST(testAssemblerBuffer_AssemblerBuffer) {
 
   
   CHECK_EQUAL(ab.nextOffset().getOffset(), 24);
-  BufferOffset good1 = ab.putBytesLarge(sizeof(fixdata), fixdata);
+  BufferOffset good1 = ab.putBytes(sizeof(fixdata), fixdata);
   CHECK_EQUAL(good1.getOffset(), 24);
   CHECK_EQUAL(ab.nextOffset().getOffset(), 48);
   CHECK_EQUAL(*ab.getInst(good1), 2000036u);
@@ -215,7 +215,6 @@ namespace {
 struct TestAssembler;
 
 using AsmBufWithPool = js::jit::AssemblerBufferWithConstantPools<
-     5 * sizeof(uint32_t),
      4,
      uint32_t,
      TestAssembler,
