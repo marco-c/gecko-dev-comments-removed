@@ -2818,6 +2818,40 @@ add_task(
   }
 );
 
+add_task(
+  async function test_initializePrivacySession_defaults_to_private_sov_enabled() {
+    info(
+      "initializeGleanSession should default to PrivateGleanSession when SOV is enabled"
+    );
+
+    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
+
+    let instance = new TelemetryFeed();
+    instance.store = {
+      getState: () => ({
+        Prefs: {
+          values: {
+            trainhopConfig: {
+              sov: { enabled: true },
+              newtabPrivatePing: { clickOnly: true },
+            },
+          },
+        },
+      }),
+    };
+
+    instance.initializeGleanSession();
+
+    Assert.equal(
+      instance.gleanSessionType,
+      "private",
+      "Should be PrivateGleanSession when SOV is enabled"
+    );
+
+    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
+  }
+);
+
 add_task(async function test_hasRecordedClicksInCIV_with_click_count() {
   info("hasRecordedClicksInCIV should return true when click count > 0");
 
@@ -2933,9 +2967,9 @@ add_task(
 );
 
 add_task(
-  async function test_handleTopSitesSponsoredImpressionStats_click_triggers_transition() {
+  async function test_handleTopSitesSponsoredImpressionStats_frecency_boosted_queued() {
     info(
-      "handleTopSitesSponsoredImpressionStats click should trigger transition and flush queue"
+      "Frecency-boosted topsite events should be queued, not sent immediately"
     );
 
     let sandbox = sinon.createSandbox();
@@ -2964,6 +2998,7 @@ add_task(
       position: 1,
       advertiser: "test advertiser",
       visible_topsites: 8,
+      frecency_boosted: true,
     };
     await instance.handleTopSitesSponsoredImpressionStats({
       data: impressionData,
@@ -2983,28 +3018,77 @@ add_task(
       position: 1,
       advertiser: "test advertiser",
       visible_topsites: 8,
+      frecency_boosted: true,
     };
     await instance.handleTopSitesSponsoredImpressionStats({ data: clickData });
 
     Assert.equal(
       instance.gleanSessionType,
-      "private",
-      "Should have transitioned to PrivateContentSession"
+      "normal",
+      "Topsite clicks should NOT transition to private session"
     );
     Assert.equal(
       recordEventStub.callCount,
-      2,
-      "Both impression and click should be sent to newtab-content ping"
+      0,
+      "Click should also be queued, not sent immediately"
     );
 
     
-    Assert.ok(
-      recordEventStub.calledWith("topSitesImpression"),
-      "Queued impression should be flushed"
+    instance.transitionToPrivateSession();
+
+    Assert.equal(
+      recordEventStub.callCount,
+      2,
+      "Both impression and click should be sent after transition"
     );
-    Assert.ok(
-      recordEventStub.calledWith("topSitesClick"),
-      "Click should be sent"
+
+    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_non_frecency_boosted_content_ping() {
+    info(
+      "Non-frecency-boosted sponsored topsites in SOV mode should go to newtab-content ping"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    Services.fog.testResetFOG();
+    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
+
+    instance.gleanSessionType = "private";
+    instance.store = createMockStore({
+      sov: { enabled: true },
+      newtabPrivatePing: { clickOnly: true },
+    });
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    let recordEventStub = sandbox.stub(
+      instance.newtabContentPing,
+      "recordEvent"
+    );
+
+    let impressionData = {
+      type: "impression",
+      tile_id: 42,
+      source: "newtab",
+      position: 1,
+      advertiser: "test advertiser",
+      visible_topsites: 8,
+      frecency_boosted: false,
+    };
+    await instance.handleTopSitesSponsoredImpressionStats({
+      data: impressionData,
+    });
+
+    Assert.equal(
+      recordEventStub.callCount,
+      1,
+      "Non-frecency-boosted impression should go to newtab-content ping in private session"
     );
 
     Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
