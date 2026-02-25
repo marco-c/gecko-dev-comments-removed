@@ -13,12 +13,12 @@
 
 #include <stddef.h>
 
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/audio_options.h"
@@ -106,7 +106,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
       ConnectionContext* context,
       CodecLookupHelper* codec_lookup_helper,
       std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToNegotiate,
-      std::function<void()> on_negotiation_needed);
+      absl::AnyInvocable<void()> on_negotiation_needed);
   ~RtpTransceiver() override;
 
   
@@ -129,7 +129,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
       const AudioOptions& audio_options,
       const VideoOptions& video_options,
       VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
-      std::function<RtpTransportInternal*(absl::string_view)> transport_lookup);
+      absl::AnyInvocable<RtpTransportInternal*(absl::string_view) &&>
+          transport_lookup);
 
   
   
@@ -156,9 +157,10 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   
-  void SetChannel(std::unique_ptr<ChannelInterface> channel,
-                  std::function<RtpTransportInternal*(const std::string&)>
-                      transport_lookup);
+  void SetChannel(
+      std::unique_ptr<ChannelInterface> channel,
+      absl::AnyInvocable<RtpTransportInternal*(const std::string&) &&>
+          transport_lookup);
 
   
   void ClearChannel();
@@ -373,7 +375,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   RtpHeaderExtensions negotiated_header_extensions_ RTC_GUARDED_BY(thread_);
 
-  const std::function<void()> on_negotiation_needed_;
+  absl::AnyInvocable<void()> on_negotiation_needed_;
 };
 
 BEGIN_PRIMARY_PROXY_MAP(RtpTransceiver)
