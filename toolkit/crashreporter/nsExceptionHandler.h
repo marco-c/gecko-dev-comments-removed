@@ -48,16 +48,19 @@ using mozilla::Nothing;
 
 #if defined(XP_WIN)
 typedef HANDLE ProcessHandle;
+typedef DWORD ProcessId;
 typedef DWORD ThreadId;
 typedef HANDLE FileHandle;
 const FileHandle kInvalidFileHandle = INVALID_HANDLE_VALUE;
 #elif defined(XP_MACOSX)
 typedef task_t ProcessHandle;
+typedef pid_t ProcessId;
 typedef mach_port_t ThreadId;
 typedef int FileHandle;
 const FileHandle kInvalidFileHandle = -1;
 #else
 typedef int ProcessHandle;
+typedef pid_t ProcessId;
 typedef int ThreadId;
 typedef int FileHandle;
 const FileHandle kInvalidFileHandle = -1;
@@ -212,7 +215,7 @@ nsresult SetSubmitReports(bool aSubmitReport);
 
 
 
-bool TakeMinidumpForChild(GeckoChildID aChildID, nsIFile** dump,
+bool TakeMinidumpForChild(ProcessId childPid, nsIFile** dump,
                           AnnotationTable& aAnnotations);
 
 
@@ -226,7 +229,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildID, nsIFile** dump,
 
 
 
-[[nodiscard]] bool FinalizeOrphanedMinidump(GeckoChildID aChildID,
+[[nodiscard]] bool FinalizeOrphanedMinidump(ProcessId aChildPid,
                                             GeckoProcessType aType,
                                             nsString* aDumpId = nullptr);
 

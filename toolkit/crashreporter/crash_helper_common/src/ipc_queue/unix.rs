@@ -56,7 +56,10 @@ impl IPCQueue {
 
             if revents.contains(PollFlags::POLLHUP) {
                 events.push(IPCEvent::Disconnect(key));
-
+                
+                
+                
+                
                 
                 
                 continue;

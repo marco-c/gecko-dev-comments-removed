@@ -14,11 +14,7 @@ mod ipc_listener;
 mod ipc_queue;
 mod platform;
 
-use bytes::Bytes;
 use messages::MessageError;
-
-
-pub type GeckoChildId = i32;
 
 
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
@@ -43,11 +39,11 @@ pub use crate::platform::{
 
 pub trait BreakpadString {
     
-    fn serialize(self) -> Bytes;
+    fn serialize(&self) -> Vec<u8>;
 
     
     
-    fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError>;
+    fn deserialize(bytes: &[u8]) -> Result<OsString, MessageError>;
 
     
     

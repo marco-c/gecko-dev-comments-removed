@@ -5,8 +5,7 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self, Header, Message},
-    AncillaryData, GeckoChildId, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue,
-    Pid,
+    AncillaryData, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue, Pid,
 };
 use std::{collections::HashMap, process, rc::Rc};
 
@@ -29,35 +28,15 @@ enum IPCEndpoint {
     External,
 }
 
-struct ProcessId {
-    
-    pid: Pid,
-    
-    id: GeckoChildId,
-}
-
-impl ProcessId {
-    fn for_child(pid: Pid, id: GeckoChildId) -> ProcessId {
-        ProcessId { pid, id }
-    }
-
-    fn for_parent(pid: Pid) -> ProcessId {
-        ProcessId { pid, id: 0 }
-    }
-}
-
 struct IPCConnection {
     
     connector: Rc<IPCConnector>,
     
     endpoint: IPCEndpoint,
+    #[allow(dead_code)]
     
     
-    
-    
-    
-    
-    process: Option<ProcessId>,
+    pid: Option<Pid>,
 }
 
 pub(crate) struct IPCServer {
@@ -84,7 +63,7 @@ impl IPCServer {
             IPCConnection {
                 connector,
                 endpoint: IPCEndpoint::Parent,
-                process: Some(ProcessId::for_parent(client_pid)),
+                pid: Some(client_pid),
             },
         );
 
@@ -102,7 +81,7 @@ impl IPCServer {
                         IPCConnection {
                             connector,
                             endpoint: IPCEndpoint::External,
-                            process: None,
+                            pid: None,
                         },
                     );
                 }
@@ -121,12 +100,6 @@ impl IPCServer {
                         .connections
                         .remove(&key)
                         .expect("Disconnection event but no corresponding connection");
-
-                    if let Some(process) = connection.process {
-                        generator.move_report_to_id(process.pid, process.id);
-                    } else {
-                        log::error!("TODO");
-                    }
 
                     if connection.endpoint == IPCEndpoint::Parent {
                         
@@ -156,18 +129,18 @@ impl IPCServer {
         match connection.endpoint {
             IPCEndpoint::Parent => match header.kind {
                 messages::Kind::SetCrashReportPath => {
-                    let message = messages::SetCrashReportPath::decode(data, ancillary_data)?;
+                    let message = messages::SetCrashReportPath::decode(&data, ancillary_data)?;
                     generator.set_path(message.path);
                 }
                 messages::Kind::TransferMinidump => {
-                    let message = messages::TransferMinidump::decode(data, ancillary_data)?;
-                    connector.send_message(generator.retrieve_minidump(message.id))?;
+                    let message = messages::TransferMinidump::decode(&data, ancillary_data)?;
+                    connector.send_message(generator.retrieve_minidump(message.pid))?;
                 }
                 messages::Kind::GenerateMinidump => {
                     todo!("Implement all messages");
                 }
                 messages::Kind::RegisterChildProcess => {
-                    let message = messages::RegisterChildProcess::decode(data, ancillary_data)?;
+                    let message = messages::RegisterChildProcess::decode(&data, ancillary_data)?;
                     let connector = IPCConnector::from_ancillary(message.ancillary_data)?;
                     connector.send_message(messages::ChildProcessRendezVous::new(
                         process::id() as Pid
@@ -185,18 +158,18 @@ impl IPCServer {
                         IPCConnection {
                             connector,
                             endpoint: IPCEndpoint::Child,
-                            process: Some(ProcessId::for_child(reply.child_pid, reply.id)),
+                            pid: Some(reply.child_pid),
                         },
                     );
                 }
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 messages::Kind::RegisterAuxvInfo => {
-                    let message = messages::RegisterAuxvInfo::decode(data, ancillary_data)?;
+                    let message = messages::RegisterAuxvInfo::decode(&data, ancillary_data)?;
                     generator.register_auxv_info(message)?;
                 }
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 messages::Kind::UnregisterAuxvInfo => {
-                    let message = messages::UnregisterAuxvInfo::decode(data, ancillary_data)?;
+                    let message = messages::UnregisterAuxvInfo::decode(&data, ancillary_data)?;
                     generator.unregister_auxv_info(message)?;
                 }
                 kind => {
@@ -210,7 +183,7 @@ impl IPCServer {
                 #[cfg(target_os = "windows")]
                 messages::Kind::WindowsErrorReporting => {
                     let message =
-                        messages::WindowsErrorReportingMinidump::decode(data, ancillary_data)?;
+                        messages::WindowsErrorReportingMinidump::decode(&data, ancillary_data)?;
                     let res = generator.generate_wer_minidump(message);
                     match res {
                         Ok(_) => {}
@@ -227,18 +200,5 @@ impl IPCServer {
         };
 
         Ok(())
-    }
-
-    #[allow(dead_code)]
-    fn find_pid(&self, id: GeckoChildId) -> Option<Pid> {
-        for connection in self.connections.values() {
-            if let Some(process) = connection.process.as_ref() {
-                if process.id == id {
-                    return Some(process.pid);
-                }
-            }
-        }
-
-        None
     }
 }
