@@ -58,9 +58,15 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
   }
 
   
-  void SetInitialValue(float aValue) {
+  
+  
+  void SetInitialValue(double aValue) {
     IgnoredErrorResult rv;
-    SetValue(aValue, rv);
+    SetValue(
+        static_cast<float>(std::clamp(
+            aValue, static_cast<double>(std::numeric_limits<float>::lowest()),
+            static_cast<double>(std::numeric_limits<float>::max()))),
+        rv);
   }
 
   void SetValue(float aValue, ErrorResult& aRv) {
