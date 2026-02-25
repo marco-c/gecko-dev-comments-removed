@@ -64,6 +64,7 @@
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
+#include "rtc_base/net_helper.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
@@ -247,11 +248,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void SetDtlsStunPiggybackCallbacks(
       DtlsStunPiggybackCallbacks&& callbacks) override;
 
-  
-  const IceParameters* local_ice_parameters() const override {
-    RTC_DCHECK_RUN_ON(network_thread_);
-    return &ice_parameters_;
-  }
   
   
   const IceParameters* remote_ice_parameters() const override {

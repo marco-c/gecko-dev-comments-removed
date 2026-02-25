@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/peer_connection_interface.h"
@@ -282,18 +281,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
     RTC_CHECK_NOTREACHED();
   }
 
-  virtual void SetIceCredentials(absl::string_view ice_ufrag,
-                                 absl::string_view ice_pwd);
-
-  virtual void SetRemoteIceCredentials(absl::string_view ice_ufrag,
-                                       absl::string_view ice_pwd);
-
-  
-  
-  
-  virtual const IceParameters* local_ice_parameters() const {
-    RTC_CHECK_NOTREACHED();
-  }
   
   
   virtual const IceParameters* remote_ice_parameters() const {
@@ -334,7 +321,8 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   virtual std::optional<int> GetRttEstimate() = 0;
 
   
-  virtual const Connection* selected_connection() const = 0;
+  
+  virtual const Connection* selected_connection() const { return nullptr; }
 
   
   
@@ -396,15 +384,11 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   
-  void NotifyDestroyed(IceTransportInternal* transport) {
-    SignalDestroyed(transport);
-  }
-  void SubscribeDestroyed(
-      absl::AnyInvocable<void(IceTransportInternal*)> callback);
   void SubscribeDestroyed(
       void* tag,
-      absl::AnyInvocable<void(IceTransportInternal*)> callback);
-  void UnsubscribeDestroyed(void* tag);
+      absl::AnyInvocable<void(IceTransportInternal*)> callback) {}
+  
+  void UnsubscribeDestroyed(void* tag) {}
 
   
   
