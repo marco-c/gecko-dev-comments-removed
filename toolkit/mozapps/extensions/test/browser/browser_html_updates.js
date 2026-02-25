@@ -10,6 +10,7 @@ const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
 AddonTestUtils.initMochitest(this);
 
 const server = AddonTestUtils.createHttpServer();
+const serverHost = `http://localhost:${server.identity.primaryPort}`;
 
 const initialAutoUpdate = AddonManager.autoUpdateDefault;
 registerCleanupFunction(() => {
@@ -132,7 +133,7 @@ async function setupExtensionWithUpdate(
   id,
   { releaseNotes, cancelUpdate, policy } = {}
 ) {
-  let serverHost = `http://localhost:${server.identity.primaryPort}`;
+  
   let updatesPath = `/ext-updates-${id}.json`;
 
   let baseManifest = {
@@ -232,6 +233,23 @@ async function setupExtensionWithUpdate(
   return extension;
 }
 
+function fakeUpdateAvailableOnServer(id, version) {
+  info(`Serving update (with missing xpi) for ${id} version ${version}`);
+
+  
+  let updatesPath = `/ext-updates-${id}.json`;
+
+  AddonTestUtils.registerJSON(server, updatesPath, {
+    addons: {
+      [id]: {
+        updates: [
+          { version, update_link: `${serverHost}/non-existing/${id}.xpi` },
+        ],
+      },
+    },
+  });
+}
+
 function disableAutoUpdates(card) {
   
   let updateCheckButton = card.querySelector('button[action="update-check"]');
@@ -268,6 +286,25 @@ async function findUpdatesForAddonId(id) {
       AddonManager.UPDATE_WHEN_USER_REQUESTED
     );
   });
+}
+
+async function waitForUpdateAvailableCountUpdatedAfterUpdateCheck() {
+  
+  
+  
+  
+  
+  
+  await new Promise(executeSoon);
+}
+
+async function cancelIgnoredInstall(id, version) {
+  const installs = (await AddonManager.getAllInstalls()).filter(
+    install => install.existingAddon?.id === id && install.version === version
+  );
+  is(installs.length, 1, `Found AddonInstall for ${id} ${version}`);
+  is(installs[0].state, AddonManager.STATE_AVAILABLE, "State before cancel");
+  installs[0].cancel();
 }
 
 function assertUpdateState({
@@ -664,10 +701,86 @@ add_task(async function testAvailableUpdates() {
   );
 
   
+  await switchView(win, "extension");
+  await switchView(win, "available-updates");
+  is(
+    doc.querySelectorAll("addon-card").length,
+    0,
+    "All cards are gone from updates page after switching away and back"
+  );
+
+  const id0 = ids[0];
+  fakeUpdateAvailableOnServer(id0, "3");
+  await findUpdatesForAddonId(id0);
+  await waitForUpdateAvailableCountUpdatedAfterUpdateCheck();
+  is(availableCat.badgeCount, 1, "Badge count updated after finding update");
+  
+  is(
+    doc.querySelectorAll("addon-card").length,
+    1,
+    "Card appears when an update is found while in the Available Updates view"
+  );
+
+  
+  
+  fakeUpdateAvailableOnServer(id0, "4");
+  await findUpdatesForAddonId(id0);
+  await waitForUpdateAvailableCountUpdatedAfterUpdateCheck();
+  is(availableCat.badgeCount, 1, "Badge count still 1 with a newer version");
+  cards = doc.querySelectorAll("addon-card");
+  is(cards.length, 1, "There is still only one card");
+  assertUpdateState({ card: cards[0], shown: true, expanded: false });
+
+  
+  
+  
+  
+  
+  {
+    info("Re-installing current version (2) of the add-on");
+    const addon = await AddonManager.getAddonByID(id0);
+    const install = await AddonManager.getInstallForURL(addon.sourceURI.spec);
+    await Promise.all([
+      AddonTestUtils.promiseWebExtensionStartup(id0),
+      AddonTestUtils.promiseCompleteInstall(install),
+    ]);
+  }
+
+  is(availableCat.badgeCount, 0, "No updates known any more");
+  cards = doc.querySelectorAll("addon-card");
+  is(cards.length, 1, "Card is still there despite no updates being available");
+  
+  
+  assertUpdateState({ card: cards[0], shown: false, expanded: false });
+
+  await addons[0].unload();
+  cards = doc.querySelectorAll("addon-card");
+  is(cards.length, 0, "Card is gone when the add-on is removed");
+  await cancelIgnoredInstall(id0, "3");
+  await cancelIgnoredInstall(id0, "4");
+
+  
   AddonManager.autoUpdateDefault = true;
 
+  
+  const addon1 = await AddonManager.getAddonByID(ids[1]);
+  ok(AddonManager.shouldAutoUpdate(addon1), "Auto-update enabled");
+
+  fakeUpdateAvailableOnServer(ids[1], "5");
+  
+  
+  await findUpdatesForAddonId(ids[1]);
+  await waitForUpdateAvailableCountUpdatedAfterUpdateCheck();
+  is(availableCat.badgeCount, 0, "Badge count 0 with auto updates re-enabled");
+  cards = doc.querySelectorAll("addon-card");
+  is(cards.length, 0, "Card not shown when automatic updates are enabled");
+  
+  await cancelIgnoredInstall(ids[1], "5");
+
   await closeView(win);
-  await Promise.all(addons.map(addon => addon.unload()));
+
+  
+  await Promise.all(addons.slice(1).map(addon => addon.unload()));
 });
 
 add_task(async function testUpdatesShownOnLoad() {
