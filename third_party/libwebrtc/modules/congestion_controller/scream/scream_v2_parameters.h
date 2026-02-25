@@ -25,7 +25,8 @@ struct ScreamV2Parameters {
   FieldTrialParameter<DataSize> min_ref_window;
 
   
-  FieldTrialParameter<double> l4s_avg_g;
+  FieldTrialParameter<double> l4s_avg_g_up;
+  FieldTrialParameter<double> l4s_avg_g_down;
 
   
   
