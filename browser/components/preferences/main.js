@@ -972,6 +972,21 @@ Preferences.addSetting({
     canShowAiFeature(aiControlTranslations, aiControlDefault),
 });
 
+Preferences.addSetting({
+  id: "checkSpelling",
+  pref: "layout.spellcheckDefault",
+  get: prefVal => prefVal != 0,
+  set: val => (val ? 1 : 0),
+});
+
+Preferences.addSetting({
+  id: "downloadDictionaries",
+});
+
+Preferences.addSetting({
+  id: "spellCheckPromo",
+});
+
 function createNeverTranslateSitesDescription() {
   const description = document.createElement("span");
   description.dataset.l10nId =
@@ -3021,6 +3036,37 @@ SettingGroupManager.registerGroups({
         id: "translationsManageButton",
         l10nId: "settings-translations-more-settings-button",
         control: "moz-box-button",
+      },
+    ],
+  },
+  spellCheck: {
+    l10nId: "settings-spellcheck-header",
+    iconSrc: "chrome://global/skin/icons/check.svg",
+    headingLevel: 2,
+    items: [
+      {
+        id: "checkSpelling",
+        l10nId: "check-user-spelling",
+        supportPage: "how-do-i-use-firefox-spell-checker",
+      },
+      {
+        id: "downloadDictionaries",
+        l10nId: "spellcheck-download-dictionaries",
+        control: "moz-box-link",
+        controlAttrs: {
+          href: Services.urlFormatter.formatURLPref(
+            "browser.dictionaries.download.url"
+          ),
+        },
+      },
+      {
+        id: "spellCheckPromo",
+        l10nId: "spellcheck-promo",
+        control: "moz-promo",
+        controlAttrs: {
+          imagesrc:
+            "chrome://browser/content/preferences/spell-check-promo.svg",
+        },
       },
     ],
   },
@@ -5349,6 +5395,7 @@ var gMainPane = {
     initSettingGroup("fonts");
     initSettingGroup("support");
     initSettingGroup("translations");
+    initSettingGroup("spellCheck");
     initSettingGroup("performance");
     initSettingGroup("defaultBrowser");
     initSettingGroup("startup");
@@ -5539,15 +5586,6 @@ var gMainPane = {
 
     
     Services.obs.notifyObservers(window, "main-pane-loaded");
-
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("checkSpelling"),
-      () => this.readCheckSpelling()
-    );
-    Preferences.addSyncToPrefListener(
-      document.getElementById("checkSpelling"),
-      () => this.writeCheckSpelling()
-    );
     this.setInitialized();
   },
 
@@ -6512,46 +6550,6 @@ var gMainPane = {
     );
 
     migrationWizardDialog.showModal();
-  },
-
-  
-
-
-
-  _storedSpellCheck: 0,
-
-  
-
-
-
-
-
-
-
-
-
-
-  readCheckSpelling() {
-    var pref = Preferences.get("layout.spellcheckDefault");
-    this._storedSpellCheck = pref.value;
-
-    return pref.value != 0;
-  },
-
-  
-
-
-
-
-  writeCheckSpelling() {
-    var checkbox = document.getElementById("checkSpelling");
-    if (checkbox.checked) {
-      if (this._storedSpellCheck == 2) {
-        return 2;
-      }
-      return 1;
-    }
-    return 0;
   },
 
   _minUpdatePrefDisableTime: 1000,
