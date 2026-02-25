@@ -13,13 +13,13 @@
 
 #include <stdint.h>
 
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/crypto/crypto_options.h"
 #include "api/jsep.h"
@@ -148,8 +148,10 @@ class BaseChannel : public ChannelInterface,
   }
 
   
-  void SetFirstPacketReceivedCallback(std::function<void()> callback) override;
-  void SetFirstPacketSentCallback(std::function<void()> callback) override;
+  void SetFirstPacketReceivedCallback(
+      absl::AnyInvocable<void() &&> callback) override;
+  void SetFirstPacketSentCallback(
+      absl::AnyInvocable<void() &&> callback) override;
 
   
   void OnTransportReadyToSend(bool ready);
@@ -316,9 +318,10 @@ class BaseChannel : public ChannelInterface,
   scoped_refptr<PendingTaskSafetyFlag> alive_;
 
   
-  std::function<void()> on_first_packet_received_
+  absl::AnyInvocable<void() &&> on_first_packet_received_
       RTC_GUARDED_BY(network_thread());
-  std::function<void()> on_first_packet_sent_ RTC_GUARDED_BY(network_thread());
+  absl::AnyInvocable<void() &&> on_first_packet_sent_
+      RTC_GUARDED_BY(network_thread());
 
   RtpTransportInternal* rtp_transport_ RTC_GUARDED_BY(network_thread()) =
       nullptr;
@@ -501,14 +504,5 @@ class VideoChannel : public BaseChannel {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::BaseChannel;
-using ::webrtc::VideoChannel;
-using ::webrtc::VoiceChannel;
-}  
-#endif  
 
 #endif  
