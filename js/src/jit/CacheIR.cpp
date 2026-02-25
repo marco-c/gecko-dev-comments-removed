@@ -6066,6 +6066,12 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   }
   ArrayObject* arr = &val_.toObject().as<ArrayObject>();
 
+  
+  
+  if (cx_->realm() != arr->realm()) {
+    return AttachDecision::NoAction;
+  }
+
   ValOperandId valId(writer.setInputOperandId(0));
   ObjOperandId objId = writer.guardToObject(valId);
 
@@ -16961,6 +16967,12 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
     return AttachDecision::NoAction;
   }
   ArrayObject* arr = &val_.toObject().as<ArrayObject>();
+
+  
+  
+  if (cx_->realm() != arr->realm()) {
+    return AttachDecision::NoAction;
+  }
 
   ValOperandId valId(writer.setInputOperandId(0));
   ObjOperandId objId = writer.guardToObject(valId);
