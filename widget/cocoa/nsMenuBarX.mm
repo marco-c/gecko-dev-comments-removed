@@ -634,7 +634,17 @@ void nsMenuBarX::AquifyMenuBar() {
     
     
     HideItem(domDoc, u"menu_PrefsSeparator"_ns);
-    mPrefItemContent = HideItem(domDoc, u"menu_preferences"_ns);
+
+    
+    
+    if (nsCocoaFeatures::OnVenturaOrLater()) {
+      HideItem(domDoc, u"menu_preferences"_ns);
+      mPrefItemContent = HideItem(domDoc, u"menu_settings"_ns);
+    } else {
+      mPrefItemContent = HideItem(domDoc, u"menu_preferences"_ns);
+      HideItem(domDoc, u"menu_settings"_ns);
+    }
+
     if (!sPrefItemContent) {
       sPrefItemContent = mPrefItemContent;
     }
@@ -815,8 +825,11 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
     
     itemBeingAdded = CreateNativeAppMenuItem(
-        aMenu, u"menu_preferences"_ns, @selector(menuItemHit:),
-        eCommand_ID_Prefs, nsMenuBarX::sNativeEventTarget);
+        aMenu,
+        nsCocoaFeatures::OnVenturaOrLater() ? u"menu_settings"_ns
+                                            : u"menu_preferences"_ns,
+        @selector(menuItemHit:), eCommand_ID_Prefs,
+        nsMenuBarX::sNativeEventTarget);
     if (itemBeingAdded) {
       [sApplicationMenu addItem:itemBeingAdded];
       [itemBeingAdded release];
