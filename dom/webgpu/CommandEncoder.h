@@ -141,6 +141,16 @@ void AssignPassTimestampWrites(const T& src,
   dest.query_set = src.mQuerySet->GetId();
 }
 
+
+
+
+
+
+
+inline size_t BindingJSObjectMallocBytes(CommandEncoder* aEncoder) {
+  return 16384;
+}
+
 }  
 }  
 
