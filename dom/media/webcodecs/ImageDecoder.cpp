@@ -441,8 +441,6 @@ void ImageDecoder::CheckOutstandingDecodes() {
     return nullptr;
   }
 
-  RefPtr<ImageDecoderReadRequest> readRequest;
-
   if (aInit.mData.IsReadableStream()) {
     const auto& stream = aInit.mData.GetAsReadableStream();
     
