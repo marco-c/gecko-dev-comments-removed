@@ -35,9 +35,7 @@ function worker_fetch_test(origin, expectation, description) {
     if (expectation === SUCCESS) {
       assert_true(msgEvent.data.success, `Fetch to ${origin} should succeed.`);
     } else {
-      
-      
-      assert_true(msgEvent.data.success, `Fetch to ${origin} currently succeeds but should be blocked.`);
+      assert_false(msgEvent.data.success, `Fetch to ${origin} should be blocked.`);
     }
   }, description);
 }
@@ -50,9 +48,65 @@ worker_fetch_test(
 );
 
 
-
 worker_fetch_test(
   "http://{{hosts[alt][]}}" + port,
   FAILURE,
   "Cross-origin fetch from a dedicated worker (data: URL) should be blocked by inherited policy."
 );
+
+function worker_script_fetch_test(origin, expectation, description) {
+  promise_test(async t => {
+    const script_url = `${origin}/connection-allowlist/tentative/resources/worker-fetch-script.js`;
+    let worker;
+    try {
+      worker = new Worker(script_url);
+    } catch (e) {
+      assert_equals(expectation, FAILURE, "Worker constructor threw unexpectedly");
+      return;
+    }
+
+    const result = await new Promise((resolve) => {
+      worker.onmessage = () => resolve(SUCCESS);
+      worker.onerror = (e) => {
+        e.preventDefault();
+        resolve(FAILURE);
+      };
+      
+      
+      
+      worker.postMessage(`${get_host_info().HTTP_ORIGIN}/common/blank-with-cors.html`);
+    });
+
+    assert_equals(result, expectation, description);
+  }, description);
+}
+
+
+worker_script_fetch_test(
+  get_host_info().HTTP_ORIGIN,
+  SUCCESS,
+  "Same-origin dedicated worker main script fetch succeeds."
+);
+
+
+worker_script_fetch_test(
+  get_host_info().HTTP_REMOTE_ORIGIN,
+  FAILURE,
+  "Cross-origin dedicated worker main script fetch should be blocked by creator policy."
+);
+
+
+promise_test(async t => {
+  const script_url = "resources/worker-fetch-script-empty.js";
+  const worker = new Worker(script_url);
+
+  const fetch_url = `${get_host_info().HTTP_ORIGIN}/common/blank-with-cors.html`;
+  worker.postMessage(fetch_url);
+
+  const msgEvent = await new Promise((resolve) => {
+    worker.onmessage = resolve;
+    worker.onerror = (e) => resolve({ data: { success: false, error: "Worker Error" } });
+  });
+
+  assert_false(msgEvent.data.success, "Fetch from worker with empty allowlist should be blocked.");
+}, "Dedicated worker with empty connection allowlist cannot perform any fetches.");
