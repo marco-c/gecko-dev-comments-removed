@@ -573,7 +573,7 @@ void WebGPUParent::ReportError(RawId aDeviceId, const GPUErrorFilter aType,
     }
   }
   
-  if (!SendUncapturedError(aDeviceId, aMessage)) {
+  if (!SendUncapturedError(aDeviceId, aType, aMessage)) {
     NS_ERROR("SendDeviceUncapturedError failed");
   }
 }
