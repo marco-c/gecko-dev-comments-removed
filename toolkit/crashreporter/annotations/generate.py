@@ -168,8 +168,7 @@ def emit_header(annotations, _output_name):
 
 def javadoc_sanitize(s):
     return (
-        s
-        .replace("<", "&lt;")
+        s.replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace("@", "&#064;")
         

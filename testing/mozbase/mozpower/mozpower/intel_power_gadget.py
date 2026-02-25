@@ -490,8 +490,7 @@ class IPGResultsHandler:
             
             
             fmt_row = [
-                val
-                .replace("\n", "")
+                val.replace("\n", "")
                 .replace("\t", "")
                 .replace("\r", "")
                 .replace("\\n", "")
