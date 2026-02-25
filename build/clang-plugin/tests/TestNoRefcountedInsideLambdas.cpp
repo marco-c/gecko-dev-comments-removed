@@ -632,12 +632,6 @@ R::privateMethod() {
   std::function<void()>([=]() {
     self->privateMethod();
   });
-  std::function<void()>([=]() {
-    this->method(); 
-  });
-  std::function<void()>([=]() {
-    this->privateMethod(); 
-  });
   std::function<void()>([self]() {
     self->method();
   });
@@ -654,12 +648,6 @@ R::privateMethod() {
     method(); 
   });
   std::function<void()>([this]() {
-    privateMethod(); 
-  });
-  std::function<void()>([=]() {
-    method(); 
-  });
-  std::function<void()>([=]() {
     privateMethod(); 
   });
   std::function<void()>([&]() {
