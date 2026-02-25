@@ -24,10 +24,17 @@
 #  include <stdio.h>
 #  ifndef DYNAMIC_CRC_TABLE
 #    define DYNAMIC_CRC_TABLE
-#  endif 
-#endif 
+#  endif
+#endif
+#ifdef DYNAMIC_CRC_TABLE
+#  define Z_ONCE
+#endif
 
 #include "zutil.h"      
+
+#ifdef HAVE_S390X_VX
+#  include "contrib/crc32vx/crc32_vx_hooks.h"
+#endif
 
  
 
@@ -99,7 +106,8 @@
 #endif
 
 
-#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32) && W == 8
+#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32) && \
+    defined(W) && W == 8
 #  define ARMCRC32
 #endif
 
@@ -152,10 +160,10 @@ local z_word_t byte_swap(z_word_t word) {
 
 
 
-local z_crc_t multmodp(z_crc_t a, z_crc_t b) {
-    z_crc_t m, p;
+local uLong multmodp(uLong a, uLong b) {
+    uLong m, p;
 
-    m = (z_crc_t)1 << 31;
+    m = (uLong)1 << 31;
     p = 0;
     for (;;) {
         if (a & m) {
@@ -173,10 +181,10 @@ local z_crc_t multmodp(z_crc_t a, z_crc_t b) {
 
 
 
-local z_crc_t x2nmodp(z_off64_t n, unsigned k) {
-    z_crc_t p;
+local uLong x2nmodp(z_off64_t n, unsigned k) {
+    uLong p;
 
-    p = (z_crc_t)1 << 31;           
+    p = (uLong)1 << 31;             
     while (n) {
         if (n & 1)
             p = multmodp(x2n_table[k & 31], p);
@@ -205,82 +213,7 @@ local z_crc_t FAR crc_table[256];
 #endif 
 
 
-
-
-
-
-
-
-
-
-typedef struct once_s once_t;
-
-
-#if defined(__STDC__) && __STDC_VERSION__ >= 201112L && \
-    !defined(__STDC_NO_ATOMICS__)
-
-#include <stdatomic.h>
-
-
-struct once_s {
-    atomic_flag begun;
-    atomic_int done;
-};
-#define ONCE_INIT {ATOMIC_FLAG_INIT, 0}
-
-
-
-
-
-
-local void once(once_t *state, void (*init)(void)) {
-    if (!atomic_load(&state->done)) {
-        if (atomic_flag_test_and_set(&state->begun))
-            while (!atomic_load(&state->done))
-                ;
-        else {
-            init();
-            atomic_store(&state->done, 1);
-        }
-    }
-}
-
-#else   
-
-
-struct once_s {
-    volatile int begun;
-    volatile int done;
-};
-#define ONCE_INIT {0, 0}
-
-
-
-local int test_and_set(int volatile *flag) {
-    int was;
-
-    was = *flag;
-    *flag = 1;
-    return was;
-}
-
-
-local void once(once_t *state, void (*init)(void)) {
-    if (!state->done) {
-        if (test_and_set(&state->begun))
-            while (!state->done)
-                ;
-        else {
-            init();
-            state->done = 1;
-        }
-    }
-}
-
-#endif
-
-
-local once_t made = ONCE_INIT;
+local z_once_t made = Z_ONCE_INIT;
 
 
 
@@ -326,7 +259,7 @@ local void make_crc_table(void) {
     p = (z_crc_t)1 << 30;         
     x2n_table[0] = p;
     for (n = 1; n < 32; n++)
-        x2n_table[n] = p = multmodp(p, p);
+        x2n_table[n] = p = (z_crc_t)multmodp(p, p);
 
 #ifdef W
     
@@ -529,11 +462,11 @@ local void braid(z_crc_t ltl[][256], z_word_t big[][256], int n, int w) {
     int k;
     z_crc_t i, p, q;
     for (k = 0; k < w; k++) {
-        p = x2nmodp((n * w + 3 - k) << 3, 0);
+        p = (z_crc_t)x2nmodp((n * w + 3 - k) << 3, 0);
         ltl[k][0] = 0;
         big[w - 1 - k][0] = 0;
         for (i = 1; i < 256; i++) {
-            ltl[k][i] = q = multmodp(i << 24, p);
+            ltl[k][i] = q = (z_crc_t)multmodp(i << 24, p);
             big[w - 1 - k][i] = byte_swap(q);
         }
     }
@@ -548,7 +481,7 @@ local void braid(z_crc_t ltl[][256], z_word_t big[][256], int n, int w) {
 
 const z_crc_t FAR * ZEXPORT get_crc_table(void) {
 #ifdef DYNAMIC_CRC_TABLE
-    once(&made, make_crc_table);
+    z_once(&made, make_crc_table);
 #endif 
     return (const z_crc_t FAR *)crc_table;
 }
@@ -572,9 +505,8 @@ const z_crc_t FAR * ZEXPORT get_crc_table(void) {
 #define Z_BATCH_ZEROS 0xa10d3d0c    /* computed from Z_BATCH = 3990 */
 #define Z_BATCH_MIN 800             /* fewest words in a final batch */
 
-unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
-                              z_size_t len) {
-    z_crc_t val;
+uLong ZEXPORT crc32_z(uLong crc, const unsigned char FAR *buf, z_size_t len) {
+    uLong val;
     z_word_t crc1, crc2;
     const z_word_t *word;
     z_word_t val0, val1, val2;
@@ -585,7 +517,7 @@ unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
     if (buf == Z_NULL) return 0;
 
 #ifdef DYNAMIC_CRC_TABLE
-    once(&made, make_crc_table);
+    z_once(&made, make_crc_table);
 #endif 
 
     
@@ -640,7 +572,7 @@ unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
         }
         word += 3 * last;
         num -= 3 * last;
-        val = x2nmodp(last, 6);
+        val = x2nmodp((int)last, 6);
         crc = multmodp(val, crc) ^ crc1;
         crc = multmodp(val, crc) ^ crc2;
     }
@@ -691,13 +623,12 @@ local z_word_t crc_word_big(z_word_t data) {
 #endif
 
 
-unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
-                              z_size_t len) {
+uLong ZEXPORT crc32_z(uLong crc, const unsigned char FAR *buf, z_size_t len) {
     
     if (buf == Z_NULL) return 0;
 
 #ifdef DYNAMIC_CRC_TABLE
-    once(&made, make_crc_table);
+    z_once(&made, make_crc_table);
 #endif 
 
     
@@ -1012,28 +943,19 @@ unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
 #endif
 
 
-unsigned long ZEXPORT crc32(unsigned long crc, const unsigned char FAR *buf,
-                            uInt len) {
+uLong ZEXPORT crc32(uLong crc, const unsigned char FAR *buf, uInt len) {
+    #ifdef HAVE_S390X_VX
+    return crc32_z_hook(crc, buf, len);
+    #endif
     return crc32_z(crc, buf, len);
 }
 
 
-uLong ZEXPORT crc32_combine64(uLong crc1, uLong crc2, z_off64_t len2) {
-#ifdef DYNAMIC_CRC_TABLE
-    once(&made, make_crc_table);
-#endif 
-    return multmodp(x2nmodp(len2, 3), crc1) ^ (crc2 & 0xffffffff);
-}
-
-
-uLong ZEXPORT crc32_combine(uLong crc1, uLong crc2, z_off_t len2) {
-    return crc32_combine64(crc1, crc2, (z_off64_t)len2);
-}
-
-
 uLong ZEXPORT crc32_combine_gen64(z_off64_t len2) {
+    if (len2 < 0)
+        return 0;
 #ifdef DYNAMIC_CRC_TABLE
-    once(&made, make_crc_table);
+    z_once(&made, make_crc_table);
 #endif 
     return x2nmodp(len2, 3);
 }
@@ -1045,5 +967,17 @@ uLong ZEXPORT crc32_combine_gen(z_off_t len2) {
 
 
 uLong ZEXPORT crc32_combine_op(uLong crc1, uLong crc2, uLong op) {
-    return multmodp(op, crc1) ^ (crc2 & 0xffffffff);
+    if (op == 0)
+        return 0;
+    return multmodp(op, crc1 & 0xffffffff) ^ (crc2 & 0xffffffff);
+}
+
+
+uLong ZEXPORT crc32_combine64(uLong crc1, uLong crc2, z_off64_t len2) {
+    return crc32_combine_op(crc1, crc2, crc32_combine_gen64(len2));
+}
+
+
+uLong ZEXPORT crc32_combine(uLong crc1, uLong crc2, z_off_t len2) {
+    return crc32_combine64(crc1, crc2, (z_off64_t)len2);
 }

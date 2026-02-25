@@ -3,13 +3,27 @@
 
 
 
+#ifdef MAKEFIXED
+#  ifndef BUILDFIXED
+#    define BUILDFIXED
+#  endif
+#endif
+#ifdef BUILDFIXED
+#  define Z_ONCE
+#endif
+
 #include "zutil.h"
 #include "inftrees.h"
+#include "inflate.h"
+
+#ifndef NULL
+#  define NULL 0
+#endif
 
 #define MAXBITS 15
 
 const char inflate_copyright[] =
-   " inflate 1.3.1 Copyright 1995-2024 Mark Adler ";
+   " inflate 1.3.2 Copyright 1995-2026 Mark Adler ";
 
 
 
@@ -47,9 +61,9 @@ int ZLIB_INTERNAL inflate_table(codetype type, unsigned short FAR *lens,
     unsigned mask;              
     code here;                  
     code FAR *next;             
-    const unsigned short FAR *base;     
-    const unsigned short FAR *extra;    
-    unsigned match;             
+    const unsigned short FAR *base = NULL;  
+    const unsigned short FAR *extra = NULL; 
+    unsigned match = 0;         
     unsigned short count[MAXBITS+1];    
     unsigned short offs[MAXBITS+1];     
     static const unsigned short lbase[31] = { 
@@ -57,7 +71,7 @@ int ZLIB_INTERNAL inflate_table(codetype type, unsigned short FAR *lens,
         35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0};
     static const unsigned short lext[31] = { 
         16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18,
-        19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 203, 77};
+        19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 199, 75};
     static const unsigned short dbase[32] = { 
         1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
         257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
@@ -175,7 +189,6 @@ int ZLIB_INTERNAL inflate_table(codetype type, unsigned short FAR *lens,
     
     switch (type) {
     case CODES:
-        base = extra = work;    
         match = 20;
         break;
     case LENS:
@@ -183,10 +196,9 @@ int ZLIB_INTERNAL inflate_table(codetype type, unsigned short FAR *lens,
         extra = lext;
         match = 257;
         break;
-    default:    
+    case DISTS:
         base = dbase;
         extra = dext;
-        match = 0;
     }
 
     
@@ -297,3 +309,116 @@ int ZLIB_INTERNAL inflate_table(codetype type, unsigned short FAR *lens,
     *bits = root;
     return 0;
 }
+
+#ifdef BUILDFIXED
+
+
+
+
+
+
+
+static code *lenfix, *distfix;
+static code fixed[544];
+
+
+local z_once_t built = Z_ONCE_INIT;
+
+local void buildtables(void) {
+    unsigned sym, bits;
+    static code *next;
+    unsigned short lens[288], work[288];
+
+    
+    sym = 0;
+    while (sym < 144) lens[sym++] = 8;
+    while (sym < 256) lens[sym++] = 9;
+    while (sym < 280) lens[sym++] = 7;
+    while (sym < 288) lens[sym++] = 8;
+    next = fixed;
+    lenfix = next;
+    bits = 9;
+    inflate_table(LENS, lens, 288, &(next), &(bits), work);
+
+    
+    sym = 0;
+    while (sym < 32) lens[sym++] = 5;
+    distfix = next;
+    bits = 5;
+    inflate_table(DISTS, lens, 32, &(next), &(bits), work);
+}
+#else 
+#  include "inffixed.h"
+#endif 
+
+
+
+
+
+
+
+
+
+
+
+void inflate_fixed(struct inflate_state FAR *state) {
+#ifdef BUILDFIXED
+    z_once(&built, buildtables);
+#endif 
+    state->lencode = lenfix;
+    state->lenbits = 9;
+    state->distcode = distfix;
+    state->distbits = 5;
+}
+
+#ifdef MAKEFIXED
+#include <stdio.h>
+
+
+
+
+
+
+
+
+
+
+int main(void) {
+    unsigned low, size;
+    struct inflate_state state;
+
+    inflate_fixed(&state);
+    puts("/* inffixed.h -- table for decoding fixed codes");
+    puts(" * Generated automatically by makefixed().");
+    puts(" */");
+    puts("");
+    puts("/* WARNING: this file should *not* be used by applications.");
+    puts("   It is part of the implementation of this library and is");
+    puts("   subject to change. Applications should only use zlib.h.");
+    puts(" */");
+    puts("");
+    size = 1U << 9;
+    printf("static const code lenfix[%u] = {", size);
+    low = 0;
+    for (;;) {
+        if ((low % 7) == 0) printf("\n    ");
+        printf("{%u,%u,%d}", (low & 127) == 99 ? 64 : state.lencode[low].op,
+               state.lencode[low].bits, state.lencode[low].val);
+        if (++low == size) break;
+        putchar(',');
+    }
+    puts("\n};");
+    size = 1U << 5;
+    printf("\nstatic const code distfix[%u] = {", size);
+    low = 0;
+    for (;;) {
+        if ((low % 6) == 0) printf("\n    ");
+        printf("{%u,%u,%d}", state.distcode[low].op, state.distcode[low].bits,
+               state.distcode[low].val);
+        if (++low == size) break;
+        putchar(',');
+    }
+    puts("\n};");
+    return 0;
+}
+#endif 
