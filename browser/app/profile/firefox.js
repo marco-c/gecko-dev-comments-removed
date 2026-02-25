@@ -3108,6 +3108,7 @@ pref("devtools.netmonitor.features.requestBlocking", true);
 
 
 pref("devtools.application.enabled", true);
+pref("devtools.application.selectedSidebar", "service-workers");
 
 
 pref("devtools.anti-tracking.enabled", false);

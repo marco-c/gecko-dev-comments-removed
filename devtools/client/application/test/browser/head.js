@@ -12,6 +12,11 @@ Services.scriptloader.loadSubScript(
 );
 
 
+registerCleanupFunction(function () {
+  Services.prefs.clearUserPref("devtools.application.selectedSidebar");
+});
+
+
 
 
 async function enableServiceWorkerDebugging() {
