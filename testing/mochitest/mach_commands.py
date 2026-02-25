@@ -524,10 +524,6 @@ def run_mochitest_general(
 
         harness_args = kwargs.copy()
         harness_args.update(suite["kwargs"])
-        
-        
-        
-        harness_args.update({"suite_name": suite_name})
 
         result = run_mochitest(
             command_context._mach_context, tests=tests, **harness_args
