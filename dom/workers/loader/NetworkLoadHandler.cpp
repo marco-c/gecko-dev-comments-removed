@@ -252,14 +252,6 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     
     mWorkerRef->Private()->SetBaseURI(finalURI);
 
-    if (httpChannel) {
-      nsCString reportingEndpoints;
-      if (NS_SUCCEEDED(httpChannel->GetResponseHeader("Reporting-Endpoints"_ns,
-                                                      reportingEndpoints))) {
-        mWorkerRef->Private()->SetReportingEndpointsHeader(reportingEndpoints);
-      }
-    }
-
     
     mWorkerRef->Private()->InitChannelInfo(channel);
 

@@ -21,10 +21,6 @@ bool CrashReport::Deliver(nsIPrincipal* aPrincipal, bool aIsOOM) {
   MOZ_ASSERT(aPrincipal);
 
   nsAutoCString endpoint_url;
-  
-  
-  
-  
   ReportingHeader::GetEndpointForReport(u"default"_ns, aPrincipal,
                                         endpoint_url);
   if (endpoint_url.IsEmpty()) {
@@ -44,9 +40,6 @@ bool CrashReport::Deliver(nsIPrincipal* aPrincipal, bool aIsOOM) {
   data.mPrincipal = aPrincipal;
   data.mFailures = 0;
   data.mEndpointURL = endpoint_url;
-  
-  
-  data.mGlobalKey = 0;
 
   JSONStringWriteFunc<nsCString> body;
   JSONWriter writer{body};

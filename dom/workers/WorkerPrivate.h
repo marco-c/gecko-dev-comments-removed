@@ -1335,12 +1335,6 @@ class WorkerPrivate final
  public:
   void CancelGCTimers() { SetGCTimerMode(NoTimer); }
 
-  
-  
-  void InitializeGlobalReportingEndpoints();
-
-  void SetReportingEndpointsHeader(const nsACString& aHeader);
-
  private:
   void ShutdownGCTimers();
 

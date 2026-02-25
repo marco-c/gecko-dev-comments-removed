@@ -11,10 +11,8 @@
 #include "nsClassHashtable.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
-#include "nsTHashMap.h"
 #include "nsTObserverArray.h"
 
-class nsIChannel;
 class nsIHttpChannel;
 class nsIPrincipal;
 class nsIURI;
@@ -29,8 +27,6 @@ class PrincipalInfo;
 
 namespace dom {
 
-class EndpointsList;
-
 class ReportingHeader final : public nsIObserver,
                               public nsITimerCallback,
                               public nsINamed {
@@ -44,17 +40,12 @@ class ReportingHeader final : public nsIObserver,
 
   
 
-  
   struct Endpoint {
     nsCOMPtr<nsIURI> mUrl;
-    nsString mEndpointName;
+    nsCString mEndpointName;
     uint32_t mPriority;
     uint32_t mWeight;
     uint32_t mFailures;
-    static Endpoint Create(already_AddRefed<nsIURI> aURL,
-                           const nsAString& aEndpointName) {
-      return Endpoint{aURL, nsString{aEndpointName}, 1, 1, 0};
-    }
   };
 
   struct Group {
@@ -70,15 +61,9 @@ class ReportingHeader final : public nsIObserver,
   };
 
   
-  static EndpointsList ProcessReportingEndpointsListFromResponse(
-      nsIHttpChannel* aChannel);
-
   
-  
-  static size_t ParseReportingEndpointsHeader(
-      const nsACString& aHeaderValue, nsIURI* aURI,
-      std::function<void(const nsAString&, nsCOMPtr<nsIURI>)>&&
-          aOnParsedItemCallback);
+  static UniquePtr<Client> ParseReportingEndpointsHeader(
+      const nsACString& aHeaderValue, nsIURI* aURI);
 
   
   
@@ -106,7 +91,7 @@ class ReportingHeader final : public nsIObserver,
 
   static void RemoveEndpoint(const nsAString& aGroupName,
                              const nsACString& aEndpointURL,
-                             nsIPrincipal* aPrincipal);
+                             const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   
 
@@ -168,15 +153,6 @@ class ReportingHeader final : public nsIObserver,
   nsClassHashtable<nsCStringHashKey, Client> mOrigins;
 
   nsCOMPtr<nsITimer> mCleanupTimer;
-};
-
-class EndpointsList {
- public:
-  ReportingHeader::Endpoint* GetEndpointWithName(
-      const nsAString& aEndpointName);
-  void RemoveEndpoint(const nsAString& aEndpointName);
-
-  nsTArray<ReportingHeader::Endpoint> mData;
 };
 
 }  
