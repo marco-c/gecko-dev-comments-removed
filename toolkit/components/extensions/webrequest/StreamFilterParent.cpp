@@ -335,7 +335,7 @@ IPCResult StreamFilterParent::RecvSuspend() {
     RunOnMainThread(FUNC, [=] {
       self->mChannel->Suspend();
 
-      RunOnActorThread(FUNC, [=] {
+      self->RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->mState = State::Suspended;
           self->CheckResult(self->SendSuspended());
@@ -358,7 +358,7 @@ IPCResult StreamFilterParent::RecvResume() {
     RunOnMainThread(FUNC, [=] {
       self->mChannel->Resume();
 
-      RunOnActorThread(FUNC, [=] {
+      self->RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->CheckResult(self->SendResumed());
         }
@@ -417,13 +417,13 @@ void StreamFilterParent::FinishDisconnect() {
     
     self->FlushBufferedData();
 
-    RunOnActorThread(FUNC, [=] {
+    self->RunOnActorThread(FUNC, [=] {
       if (self->mState != State::Closed) {
         self->mState = State::Disconnected;
       }
       
       
-      RunOnIOThread(FUNC, [=] {
+      self->RunOnIOThread(FUNC, [=] {
         
         
         
@@ -431,7 +431,7 @@ void StreamFilterParent::FinishDisconnect() {
           self->FlushBufferedData();
         }
       });
-      RunOnMainThread(FUNC, [=] {
+      self->RunOnMainThread(FUNC, [=] {
         if (self->mReceivedStop && !self->mSentStop) {
           nsresult rv = self->EmitStopRequest(NS_OK);
           (void)NS_WARN_IF(NS_FAILED(rv));
@@ -612,7 +612,7 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
       RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->mState = State::Disconnected;
-          CheckResult(self->SendError("Channel redirected"_ns));
+          self->CheckResult(self->SendError("Channel redirected"_ns));
         }
       });
     }
@@ -630,7 +630,7 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
       RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->mState = State::Disconnected;
-          CheckResult(
+          self->CheckResult(
               self->SendError("Channel is delivering cached alt-data"_ns));
         }
       });
@@ -696,7 +696,7 @@ StreamFilterParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
       
       
       
-      RunOnMainThread(FUNC, [=] {
+      self->RunOnMainThread(FUNC, [=] {
         if (!self->mSentStop) {
           self->EmitStopRequest(aStatusCode);
         }
