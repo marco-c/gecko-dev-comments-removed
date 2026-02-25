@@ -564,7 +564,7 @@ def run_cppunit_test(command_context, **params):
 
     log = params.get("log")
     if not log:
-        log = commandline.setup_logging("cppunittest", {}, {"tbpl": sys.stdout})
+        log = commandline.setup_logging("cppunittest", {}, {"mach": sys.stdout})
 
     
     symbols_path = os.path.join(command_context.distdir, "crashreporter-symbols")
