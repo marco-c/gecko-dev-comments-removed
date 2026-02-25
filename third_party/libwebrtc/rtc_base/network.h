@@ -230,7 +230,7 @@ class RTC_EXPORT Network {
   
   Network(const Network&);
   Network& operator=(const Network&) = delete;
-  Network(Network&&) = delete;
+  Network(Network&&) = default;
   Network& operator=(Network&&) = delete;
   ~Network();
 
