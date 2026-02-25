@@ -633,26 +633,23 @@ Preferences.addSetting({
   setup: emitChange => {
     emitChange();
     
-    
-    
-    window.addEventListener("pageshow", () => {
-      
 
 
-      if (location.hash && location.hash !== "#general") {
-        return;
+    async function appInitializer(event) {
+      if (event.detail.category == "paneGeneral") {
+        await AppFileHandler.preInit();
+        
+
+
+
+        Services.obs.notifyObservers(window, "app-handler-loaded");
+        window.removeEventListener("paneshown", appInitializer);
       }
-      AppFileHandler.preInit();
-    });
-
+    }
     
-
-
-
-
-    window.addEventListener("hashchange", () => {
-      AppFileHandler.preInit();
-    });
+    
+    
+    window.addEventListener("paneshown", appInitializer);
   },
 });
 
@@ -5556,9 +5553,6 @@ var gMainPane = {
 
   preInit() {
     promiseLoadHandlersList = new Promise((resolve, reject) => {
-      
-      
-      
       window.addEventListener(
         "pageshow",
         () => {
