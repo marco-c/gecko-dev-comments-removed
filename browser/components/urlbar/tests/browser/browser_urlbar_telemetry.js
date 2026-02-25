@@ -266,7 +266,7 @@ add_task(async function test_oneOff_enter() {
   
   await SearchUITestUtils.assertSAPTelemetry({
     engineName: "MozSearch",
-    source: "urlbar_searchmode",
+    source: "urlbar-searchmode",
     count: 1,
   });
 
@@ -356,7 +356,7 @@ add_task(async function test_searchmode_suggestion_click() {
 
     await SearchUITestUtils.assertSAPTelemetry({
       engineName: engine.name,
-      source: "urlbar_searchmode",
+      source: "urlbar-searchmode",
       count: 1,
     });
 
