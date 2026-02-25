@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/utility/corruption_detection_settings_generator.h"
+#include "api/video/corruption_detection/corruption_detection_settings_generator.h"
 
 #include "api/video/corruption_detection/corruption_detection_filter_settings.h"
 #include "test/gmock.h"
