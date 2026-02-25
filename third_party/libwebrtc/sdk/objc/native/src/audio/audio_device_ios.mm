@@ -25,7 +25,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/metrics.h"
 
 #import "base/RTCLogging.h"
@@ -33,6 +32,7 @@
 #import "components/audio/RTCAudioSession.h"
 #import "components/audio/RTCAudioSessionConfiguration.h"
 #import "components/audio/RTCNativeAudioSessionDelegateAdapter.h"
+#import "helpers/AudioTimeStamp+Nanoseconds.h"
 
 namespace webrtc {
 namespace ios_adm {
@@ -130,9 +130,6 @@ AudioDeviceIOS::AudioDeviceIOS(
 
   audio_session_observer_ =
       [[RTCNativeAudioSessionDelegateAdapter alloc] initWithObserver:this];
-  mach_timebase_info_data_t tinfo;
-  mach_timebase_info(&tinfo);
-  machTickUnitsToNanoseconds_ = (double)tinfo.numer / tinfo.denom;
 }
 
 AudioDeviceIOS::~AudioDeviceIOS() {
@@ -417,8 +414,8 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(
   
   
   
-  SInt64 capture_timestamp_ns =
-      time_stamp->mHostTime * machTickUnitsToNanoseconds_;
+  std::optional<int64_t> capture_timestamp_ns =
+      AudioTimeStampGetNanoseconds(time_stamp);
 
   
   
@@ -486,7 +483,7 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
   
   
   ++num_playout_callbacks_;
-  const int64_t now_time = webrtc::TimeMillis();
+  const int64_t now_time = env_.clock().TimeInMilliseconds();
   if (time_stamp->mSampleTime != num_frames) {
     const int64_t delta_time = now_time - last_playout_time_;
     const int glitch_threshold =
@@ -713,7 +710,8 @@ void AudioDeviceIOS::HandlePlayoutGlitchDetected(uint64_t glitch_duration_ms) {
   
   
   if (last_output_volume_change_time_ > 0 &&
-      webrtc::TimeSince(last_output_volume_change_time_) < 2000) {
+      env_.clock().TimeInMilliseconds() - last_output_volume_change_time_ <
+          2000) {
     RTCLog(@"Ignoring audio glitch due to recent output volume change.");
     return;
   }
@@ -736,7 +734,7 @@ void AudioDeviceIOS::HandleOutputVolumeChange() {
   RTCLog(@"Output volume change detected.");
   
   
-  last_output_volume_change_time_ = webrtc::TimeMillis();
+  last_output_volume_change_time_ = env_.clock().TimeInMilliseconds();
 }
 
 void AudioDeviceIOS::UpdateAudioDeviceBuffer() {
