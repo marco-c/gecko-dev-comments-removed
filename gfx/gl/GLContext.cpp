@@ -2003,10 +2003,18 @@ void GLContext::AssertNotPassingStackBufferToTheGL(const void* ptr) {
   
   
   bool isStackAddress = pageDistance <= 1;
+
+#  if !(defined(_WIN32) && !defined(_WIN64))
+  
+  
+  
   MOZ_ASSERT(!isStackAddress,
              "Please don't pass stack arrays to the GL. "
              "Consider using HeapCopyOfStackArray. "
              "See bug 1005658.");
+#  else
+  (void)isStackAddress;
+#  endif
 }
 
 void GLContext::CreatedProgram(GLContext* aOrigin, GLuint aName) {
