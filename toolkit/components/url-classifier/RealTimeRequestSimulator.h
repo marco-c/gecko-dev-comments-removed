@@ -23,6 +23,9 @@ class RealTimeRequestSimulator final {
   
   void SimulateRealTimeRequest(const nsACString& aURL, bool aIsPrivate);
 
+  
+  void CleanCache();
+
  private:
   RealTimeRequestSimulator();
   ~RealTimeRequestSimulator() = default;
