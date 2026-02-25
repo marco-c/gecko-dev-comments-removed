@@ -51,6 +51,30 @@ async function assert_arrow_navigation_bidirectional(elements, shouldWrap = fals
 
 
 
+
+async function sendTabForward() {
+  const kTab = '\uE004';
+  await new test_driver.Actions().keyDown(kTab).keyUp(kTab).send();
+}
+
+
+
+
+async function sendTabBackward() {
+  const kShift = '\uE008';
+  const kTab = '\uE004';
+  await new test_driver.Actions()
+    .keyDown(kShift)
+    .keyDown(kTab)
+    .keyUp(kTab)
+    .keyUp(kShift)
+    .send();
+}
+
+
+
+
+
 async function assert_focusgroup_tab_navigation(elements) {
   if (elements.length === 0) {
     return;
@@ -61,9 +85,28 @@ async function assert_focusgroup_tab_navigation(elements) {
     `Failed to focus starting element ${elements[0].id}`);
 
   for (let i = 0; i < elements.length - 1; i++) {
-    await navigateFocusForward();
+    await sendTabForward();
     assert_equals(document.activeElement, elements[i + 1],
       `Tab from ${elements[i].id} should move to ${elements[i + 1].id}`);
+  }
+}
+
+
+
+async function assert_focusgroup_shift_tab_navigation(elements) {
+  if (elements.length === 0) {
+    return;
+  }
+
+  
+  elements[0].focus();
+  assert_equals(document.activeElement, elements[0],
+    `Failed to focus starting element ${elements[0].id}`);
+
+  for (let i = 0; i < elements.length - 1; i++) {
+    await sendTabBackward();
+    assert_equals(document.activeElement, elements[i + 1],
+      `Shift+Tab from ${elements[i].id} should move to ${elements[i + 1].id}`);
   }
 }
 
