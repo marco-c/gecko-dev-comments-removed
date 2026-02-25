@@ -13,10 +13,10 @@
 
 #include <memory>
 #include <optional>
-#include <string>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/rtc_error.h"
@@ -77,9 +77,7 @@ class JsepTransport {
  public:
   
   
-  
-  JsepTransport(const std::string& mid,
-                const scoped_refptr<RTCCertificate>& local_certificate,
+  JsepTransport(const scoped_refptr<RTCCertificate>& local_certificate,
                 scoped_refptr<IceTransportInterface> ice_transport,
                 scoped_refptr<IceTransportInterface> rtcp_ice_transport,
                 std::unique_ptr<RtpTransport> unencrypted_rtp_transport,
@@ -96,7 +94,10 @@ class JsepTransport {
   JsepTransport& operator=(const JsepTransport&) = delete;
 
   
-  const std::string& mid() const { return mid_; }
+  
+  absl::string_view name() const {
+    return ice_transport_->internal()->transport_name();
+  }
 
   
   
@@ -274,7 +275,6 @@ class JsepTransport {
 
   
   RTC_NO_UNIQUE_ADDRESS SequenceChecker transport_sequence_;
-  const std::string mid_;
   
   bool needs_ice_restart_ RTC_GUARDED_BY(transport_sequence_) = false;
   scoped_refptr<RTCCertificate> local_certificate_

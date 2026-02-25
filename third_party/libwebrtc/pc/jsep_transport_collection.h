@@ -95,8 +95,7 @@ class JsepTransportCollection {
       : map_change_callback_(std::move(map_change_callback)),
         state_change_callback_(std::move(state_change_callback)) {}
 
-  void RegisterTransport(absl::string_view transport_name,
-                         std::unique_ptr<JsepTransport> transport);
+  void RegisterTransport(std::unique_ptr<JsepTransport> transport);
   
   
   std::vector<JsepTransport*> Transports();
