@@ -13,6 +13,7 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "nsHashKeys.h"
+#include "nsTHashtable.h"
 #include "nsThreadUtils.h"
 
 #include "nsAtom.h"
@@ -168,6 +169,34 @@ struct AtomTableKey {
 };
 
 struct AtomTableEntry : public PLDHashEntryHdr {
+  using KeyType = const AtomTableKey&;
+  using KeyTypePointer = const AtomTableKey*;
+
+  explicit AtomTableEntry(KeyTypePointer aKey) : mAtom(nullptr) {
+    
+    
+  }
+  AtomTableEntry(AtomTableEntry&&) = default;
+
+  
+  bool KeyEquals(KeyTypePointer aKey) const {
+    if (aKey->mUTF8String) {
+      bool err = false;
+      return (CompareUTF8toUTF16(
+                  nsDependentCSubstring(aKey->mUTF8String,
+                                        aKey->mUTF8String + aKey->mLength),
+                  nsDependentAtomString(mAtom), &err) == 0) &&
+             !err;
+    }
+
+    return mAtom->Equals(aKey->mUTF16String, aKey->mLength);
+  }
+
+  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+  static PLDHashNumber HashKey(KeyTypePointer aKey) { return aKey->mHash; }
+
+  enum { ALLOW_MEMMOVE = true };
+
   
   
   
@@ -196,7 +225,7 @@ static AtomCache sRecentlyUsedLargeMainThreadAtoms;
 class nsAtomSubTable {
   friend class nsAtomTable;
   mozilla::RWLock mLock;
-  PLDHashTable mTable;
+  nsTHashtable<AtomTableEntry> mTable;
   nsAtomSubTable();
   void GCLocked(GCKind aKind) MOZ_REQUIRES(mLock);
   void AddSizeOfExcludingThisLocked(MallocSizeOf aMallocSizeOf,
@@ -205,12 +234,12 @@ class nsAtomSubTable {
 
   AtomTableEntry* Search(AtomTableKey& aKey) const MOZ_REQUIRES_SHARED(mLock) {
     
-    return static_cast<AtomTableEntry*>(mTable.Search(&aKey));
+    return mTable.GetEntry(aKey);
   }
 
   AtomTableEntry* Add(AtomTableKey& aKey) MOZ_REQUIRES(mLock) {
     MOZ_ASSERT(mLock.LockedForWritingByCurrentThread());
-    return static_cast<AtomTableEntry*>(mTable.Add(&aKey));  
+    return static_cast<AtomTableEntry*>(mTable.PutEntry(aKey));  
   }
 };
 
@@ -232,11 +261,6 @@ class nsAtomTable {
   
   
   size_t RacySlowCount();
-
-  
-  
-  static void AtomTableClearEntry(PLDHashTable* aTable,
-                                  PLDHashEntryHdr* aEntry);
 
   
   
@@ -292,40 +316,6 @@ class nsAtomTable {
 
 
 static nsAtomTable* gAtomTable;
-
-static PLDHashNumber AtomTableGetHash(const void* aKey) {
-  const AtomTableKey* k = static_cast<const AtomTableKey*>(aKey);
-  return k->mHash;
-}
-
-static bool AtomTableMatchKey(const PLDHashEntryHdr* aEntry, const void* aKey) {
-  const AtomTableEntry* he = static_cast<const AtomTableEntry*>(aEntry);
-  const AtomTableKey* k = static_cast<const AtomTableKey*>(aKey);
-
-  if (k->mUTF8String) {
-    bool err = false;
-    return (CompareUTF8toUTF16(nsDependentCSubstring(
-                                   k->mUTF8String, k->mUTF8String + k->mLength),
-                               nsDependentAtomString(he->mAtom), &err) == 0) &&
-           !err;
-  }
-
-  return he->mAtom->Equals(k->mUTF16String, k->mLength);
-}
-
-void nsAtomTable::AtomTableClearEntry(PLDHashTable* aTable,
-                                      PLDHashEntryHdr* aEntry) {
-  auto* entry = static_cast<AtomTableEntry*>(aEntry);
-  entry->mAtom = nullptr;
-}
-
-static void AtomTableInitEntry(PLDHashEntryHdr* aEntry, const void* aKey) {
-  static_cast<AtomTableEntry*>(aEntry)->mAtom = nullptr;
-}
-
-static const PLDHashTableOps AtomTableOps = {
-    AtomTableGetHash, AtomTableMatchKey, PLDHashTable::MoveEntryStub,
-    nsAtomTable::AtomTableClearEntry, AtomTableInitEntry};
 
 nsAtomSubTable& nsAtomTable::SelectSubTable(AtomTableKey& aKey) {
   
@@ -402,16 +392,14 @@ size_t nsAtomTable::RacySlowCount() {
   size_t count = 0;
   for (auto& table : mSubTables) {
     AutoReadLock lock(table.mLock);
-    count += table.mTable.EntryCount();
+    count += table.mTable.Count();
   }
 
   return count;
 }
 
 nsAtomSubTable::nsAtomSubTable()
-    : mLock("Atom Sub-Table Lock"),
-      mTable(&AtomTableOps, sizeof(AtomTableEntry),
-             nsAtomTable::kInitialSubTableSize) {}
+    : mLock("Atom Sub-Table Lock"), mTable(nsAtomTable::kInitialSubTableSize) {}
 
 void nsAtomSubTable::GCLocked(GCKind aKind) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -421,7 +409,7 @@ void nsAtomSubTable::GCLocked(GCKind aKind) {
   nsAutoCString nonZeroRefcountAtoms;
   uint32_t nonZeroRefcountAtomsCount = 0;
   for (auto i = mTable.Iter(); !i.Done(); i.Next()) {
-    auto* entry = static_cast<AtomTableEntry*>(i.Get());
+    auto* entry = i.Get();
     if (entry->mAtom->IsStatic()) {
       continue;
     }
@@ -520,8 +508,7 @@ void nsAtomSubTable::AddSizeOfExcludingThisLocked(MallocSizeOf aMallocSizeOf,
                                                   AtomsSizes& aSizes) {
   aSizes.mTable += mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (auto iter = mTable.Iter(); !iter.Done(); iter.Next()) {
-    auto* entry = static_cast<AtomTableEntry*>(iter.Get());
-    entry->mAtom->AddSizeOfIncludingThis(aMallocSizeOf, aSizes);
+    iter.Get()->mAtom->AddSizeOfIncludingThis(aMallocSizeOf, aSizes);
   }
 }
 
