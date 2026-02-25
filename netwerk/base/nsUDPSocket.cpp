@@ -251,25 +251,7 @@ nsUDPSocket::nsUDPSocket() {
   mSts = gSocketTransportService;
 }
 
-nsUDPSocket::~nsUDPSocket() {
-  if (mFD) {
-    bool onSTSThread = false;
-    mSts->IsOnCurrentThread(&onSTSThread);
-    if (!onSTSThread) {
-      
-      PRFileDesc* fd = mFD;
-      mFD = nullptr;
-      if (gSocketTransportService &&
-          NS_SUCCEEDED(gSocketTransportService->Dispatch(
-              NS_NewRunnableFunction("nsUDPSocket::~nsUDPSocket",
-                                     [fd]() { PR_Close(fd); }),
-              NS_DISPATCH_NORMAL))) {
-        return;
-      }
-    }
-    CloseSocket();
-  }
-}
+nsUDPSocket::~nsUDPSocket() { CloseSocket(); }
 
 void nsUDPSocket::AddOutputBytes(uint32_t aBytes) {
   mByteWriteCount += aBytes;
@@ -670,8 +652,6 @@ nsUDPSocket::InitWithAddress(const NetAddr* aAddr, nsIPrincipal* aPrincipal,
 
   PRNetAddrToNetAddr(&addr, &mAddr);
 
-  gSocketTransportService->AttachNeckoIOLayer(mFD);
-
   if (StaticPrefs::network_socket_attach_mock_network_layer() &&
       xpc::AreNonLocalConnectionsDisabled()) {
     if (NS_FAILED(AttachMockNetworkLayer(mFD))) {
@@ -739,13 +719,19 @@ nsUDPSocket::Connect(const NetAddr* aAddr) {
 
 NS_IMETHODIMP
 nsUDPSocket::Close() {
-  nsresult rv = PostEvent(this, &nsUDPSocket::OnMsgClose);
-  if (NS_FAILED(rv)) {
+  {
+    MutexAutoLock lock(mLock);
     
     
-    CloseSocket();
+    if (!mListener && !mSyncListener) {
+      
+      
+      CloseSocket();
+
+      return NS_OK;
+    }
   }
-  return NS_OK;
+  return PostEvent(this, &nsUDPSocket::OnMsgClose);
 }
 
 NS_IMETHODIMP
