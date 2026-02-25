@@ -300,18 +300,18 @@ LoadInfo::LoadInfo(
     
     
     
-    RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
-        do_QueryObject(aLoadingContext);
-    RefPtr<nsFrameLoader> fl =
-        frameLoaderOwner ? frameLoaderOwner->GetFrameLoader() : nullptr;
-    if (fl) {
-      nsCOMPtr<nsIDocShell> docShell = fl->GetDocShell(IgnoreErrors());
-      if (docShell) {
-        nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_GetInterface(docShell);
-        if (outerWindow) {
-          RefPtr<dom::BrowsingContext> bc = outerWindow->GetBrowsingContext();
-          mFrameBrowsingContextID = bc ? bc->Id() : 0;
-        }
+    if (mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
+      RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
+          do_QueryObject(aLoadingContext);
+      RefPtr<nsFrameLoader> fl =
+          frameLoaderOwner ? frameLoaderOwner->GetFrameLoader() : nullptr;
+      nsCOMPtr<nsIDocShell> docShell =
+          fl ? fl->GetDocShell(IgnoreErrors()) : nullptr;
+      nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_GetInterface(docShell);
+      RefPtr<dom::BrowsingContext> bc =
+          outerWindow ? outerWindow->GetBrowsingContext() : nullptr;
+      if (bc) {
+        mFrameBrowsingContextID = bc->Id();
       }
     }
 
