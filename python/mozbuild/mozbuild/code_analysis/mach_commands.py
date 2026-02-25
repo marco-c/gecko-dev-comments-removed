@@ -363,9 +363,6 @@ def check(
         )
         return 0
 
-    
-    source = [re.escape(f) for f in source]
-
     cwd = command_context.topobjdir
 
     monitor = StaticAnalysisMonitor(
@@ -575,7 +572,7 @@ def _get_clang_tidy_command(
         + common_args
         
         
-        + [os.path.normpath(s).replace("\\", "\\\\") for s in sources]
+        + [re.escape(os.path.normpath(s)) for s in sources]
     )
 
 
