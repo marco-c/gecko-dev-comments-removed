@@ -15,6 +15,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ProcessType.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/EagerIPCStream.h"
@@ -217,8 +218,14 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
+  void Adopt(JSStructuredCloneData&& aData,
+             uint32_t aVersion = JS_STRUCTURED_CLONE_VERSION,
+             GeckoChildID aOriginChildID = kInvalidGeckoChildID);
+
   
   bool HasClonedDOMObjects();
+
+  GeckoChildID GetOriginChildID() const { return mOriginChildID; }
 
   nsTArray<NotNull<RefPtr<BlobImpl>>>& BlobImpls() {
     MOZ_ASSERT(mSupportsCloning,
@@ -390,6 +397,15 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
+
+  
+  
+  
+  
+  
+  
+  
+  GeckoChildID mOriginChildID = kInvalidGeckoChildID;
 
   
   

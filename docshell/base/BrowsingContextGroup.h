@@ -94,6 +94,10 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   
   
+  bool IsKnownForChildID(GeckoChildID aChildID);
+
+  
+  
   
   
   void AddKeepAlive();
