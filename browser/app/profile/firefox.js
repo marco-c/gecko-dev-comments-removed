@@ -694,10 +694,6 @@ pref("browser.urlbar.merino.timeoutMs", 200);
 pref("browser.urlbar.merino.providers", "");
 
 
-pref("browser.urlbar.merino.weather.reportEndpointURL", "https://prod.merino.prod.webservices.mozgcp.net/api/v1/suggest");
-pref("browser.urlbar.merino.weather.hourlyEndpointURL", "");
-
-
 pref("browser.urlbar.merino.clientVariants", "");
 
 

@@ -6389,7 +6389,6 @@ const INITIAL_STATE = {
     lastUpdated: null,
     query: "",
     suggestions: [],
-    hourlyForecasts: [],
     locationData: {
       city: "",
       adminArea: "",
@@ -7263,8 +7262,7 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
       return {
         ...prevState,
         suggestions: action.data.suggestions,
-        hourlyForecasts: action.data.hourlyForecasts || [],
-        lastUpdated: action.data.lastUpdated,
+        lastUpdated: action.data.date,
         locationData: action.data.locationData || prevState.locationData,
         initialized: true,
       };
@@ -12989,8 +12987,6 @@ function WeatherForecast({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const weatherData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
-  const errorTelemetrySent = (0,external_React_namespaceObject.useRef)(false);
-  const errorRef = (0,external_React_namespaceObject.useRef)(null);
   const isSmallSize = !isMaximized && widgetsMayBeMaximized;
   const widgetSize = isSmallSize ? "small" : "medium";
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
@@ -13009,32 +13005,6 @@ function WeatherForecast({
   }, [dispatch, widgetSize, widgetsMayBeMaximized]);
   const forecastRef = useIntersectionObserver(handleIntersection);
   const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
-  const HOURLY_FORECASTS = weatherData.hourlyForecasts ?? [];
-  const hasError = !WEATHER_SUGGESTION?.current_conditions || !WEATHER_SUGGESTION?.forecast || !HOURLY_FORECASTS[0];
-  const handleErrorIntersection = (0,external_React_namespaceObject.useCallback)(entries => {
-    const entry = entries.find(e => e.isIntersecting);
-    if (entry && !errorTelemetrySent.current) {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_ERROR,
-        data: {
-          widget_name: "weather",
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
-          error_type: "load_error"
-        }
-      }));
-      errorTelemetrySent.current = true;
-    }
-  }, [dispatch, widgetSize, widgetsMayBeMaximized]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (errorRef.current && !errorTelemetrySent.current) {
-      const observer = new IntersectionObserver(handleErrorIntersection);
-      observer.observe(errorRef.current);
-      return () => {
-        observer.disconnect();
-      };
-    }
-    return undefined;
-  }, [handleErrorIntersection, hasError]);
   const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
   const showDetailedView = nimbusWeatherDisplay === "detailed" || prefs["weather.display"] === "detailed";
 
@@ -13197,50 +13167,8 @@ function WeatherForecast({
       data: telemetryData
     }));
   }
-  function renderContextMenu() {
-    return external_React_default().createElement("div", {
-      className: "weather-forecast-context-menu-wrapper"
-    }, external_React_default().createElement("moz-button", {
-      className: "weather-forecast-context-menu-button",
-      iconSrc: "chrome://global/skin/icons/more.svg",
-      menuId: "weather-forecast-context-menu",
-      type: "ghost",
-      size: `${isSmallSize ? "small" : "default"}`,
-      onClick: e => e.preventDefault()
-    }), external_React_default().createElement("panel-list", {
-      id: "weather-forecast-context-menu",
-      onClick: e => e.preventDefault()
-    }, prefs["weather.locationSearchEnabled"] && external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-change-location",
-      onClick: handleChangeLocation
-    }), isOptInEnabled && external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-detect-my-location",
-      onClick: handleDetectLocation
-    }), prefs["weather.temperatureUnits"] === "f" ? external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
-      onClick: () => handleChangeTempUnit("c")
-    }) : external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-change-temperature-units-fahrenheit",
-      onClick: () => handleChangeTempUnit("f")
-    }), !showDetailedView ? external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-change-weather-display-detailed",
-      onClick: () => handleChangeDisplay("detailed")
-    }) : external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
-      onClick: () => handleChangeDisplay("simple")
-    }), external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
-      onClick: handleHideWeather
-    }), external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-learn-more",
-      onClick: handleLearnMore
-    })));
-  }
-  return external_React_default().createElement("a", {
-    href: hasError ? "#" : WEATHER_SUGGESTION?.forecast?.url || "#",
-    className: "forecast-anchor"
-  }, external_React_default().createElement("article", {
-    className: `weather-forecast-widget${isSmallSize ? " small-widget" : ""} ${hasError ? "forecast-error-state" : ""}`,
+  return external_React_default().createElement("article", {
+    className: `weather-forecast-widget${isSmallSize ? " small-widget" : ""}`,
     ref: el => {
       forecastRef.current = [el];
     }
@@ -13250,7 +13178,41 @@ function WeatherForecast({
     className: "city-name"
   }, searchActive ? external_React_default().createElement(LocationSearch, {
     outerClassName: ""
-  }) : external_React_default().createElement("h3", null, weatherData.locationData.city)), renderContextMenu()), !isSmallSize && !hasError && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+  }) : external_React_default().createElement("h3", null, weatherData.locationData.city)), external_React_default().createElement("div", {
+    className: "weather-forecast-context-menu-wrapper"
+  }, external_React_default().createElement("moz-button", {
+    className: "weather-forecast-context-menu-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "weather-forecast-context-menu",
+    type: "ghost",
+    size: `${isSmallSize ? "small" : "default"}`
+  }), external_React_default().createElement("panel-list", {
+    id: "weather-forecast-context-menu"
+  }, prefs["weather.locationSearchEnabled"] && external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-location",
+    onClick: handleChangeLocation
+  }), isOptInEnabled && external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-detect-my-location",
+    onClick: handleDetectLocation
+  }), prefs["weather.temperatureUnits"] === "f" ? external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
+    onClick: () => handleChangeTempUnit("c")
+  }) : external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-temperature-units-fahrenheit",
+    onClick: () => handleChangeTempUnit("f")
+  }), !showDetailedView ? external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-weather-display-detailed",
+    onClick: () => handleChangeDisplay("detailed")
+  }) : external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
+    onClick: () => handleChangeDisplay("simple")
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
+    onClick: handleHideWeather
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-learn-more",
+    onClick: handleLearnMore
+  })))), !isSmallSize && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
     className: "current-weather-wrapper"
   }, external_React_default().createElement("div", {
     className: "weather-icon-column"
@@ -13272,39 +13234,35 @@ function WeatherForecast({
     className: "low-temperature"
   }, external_React_default().createElement("span", {
     className: "arrow-icon arrow-down"
-  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), external_React_default().createElement("hr", null)), hasError && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
-    className: "forecast-error",
-    ref: errorRef
-  }, external_React_default().createElement("span", {
-    className: "icon icon-info-warning"
-  }), " ", external_React_default().createElement("p", {
-    "data-l10n-id": "newtab-weather-error-not-available"
-  }))), !hasError && external_React_default().createElement("div", {
+  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), external_React_default().createElement("hr", null)), external_React_default().createElement("div", {
     className: "forecast-row"
   }, !isSmallSize && external_React_default().createElement("p", {
     className: "today-forecast",
     "data-l10n-id": "newtab-weather-todays-forecast"
   }), external_React_default().createElement("ul", {
     className: "forecast-row-items"
-  }, HOURLY_FORECASTS.map(slot => external_React_default().createElement("li", {
-    key: slot.epoch_date_time
-  }, external_React_default().createElement("span", null, slot.temperature[prefs["weather.temperatureUnits"]], "\xB0"), external_React_default().createElement("span", {
-    className: `weather-icon iconId${slot.icon_id}`
-  }), external_React_default().createElement("span", null, (() => {
-    const date = new Date(slot.date_time);
-    const hours = date.getHours() % 12 || 12; 
-    return `${hours}:${String(date.getMinutes()).padStart(2, "0")}`; 
-  })()))))), external_React_default().createElement("div", {
+  }, external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), external_React_default().createElement("span", null, "7:00")))), external_React_default().createElement("div", {
     className: "forecast-footer"
-  }, external_React_default().createElement("span", {
-    className: "sponsored-text",
-    "data-l10n-id": "newtab-weather-sponsored",
-    "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
-  }), external_React_default().createElement("span", {
+  }, external_React_default().createElement("a", {
+    href: WEATHER_SUGGESTION.forecast.url,
     className: "full-forecast",
     "data-l10n-id": "newtab-weather-see-full-forecast",
     onClick: handleProviderLinkClick
-  }))));
+  }), external_React_default().createElement("span", {
+    className: "sponsored-text",
+    "data-l10n-id": "newtab-weather-sponsored",
+    "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
+  })));
 }
 
 ;
@@ -16012,10 +15970,11 @@ class _Weather extends (external_React_default()).PureComponent {
     
     
     const showStaticData = isOptInEnabled && staticWeather;
+    const showFullMenu = !showStaticData;
     const isLocationSearchEnabled = Prefs.values["weather.locationSearchEnabled"];
     const isFahrenheit = Prefs.values["weather.temperatureUnits"] === "f";
     const isSimpleDisplay = Prefs.values["weather.display"] === "simple";
-    const contextMenu = () => external_React_default().createElement("div", {
+    const contextMenu = (showFullContextMenu = true) => external_React_default().createElement("div", {
       className: "weatherButtonContextMenuWrapper"
     }, external_React_default().createElement("button", {
       "aria-haspopup": "true",
@@ -16034,7 +15993,7 @@ class _Weather extends (external_React_default()).PureComponent {
       id: "weather-menu-detect-location",
       "data-l10n-id": "newtab-weather-menu-detect-my-location",
       onClick: this.handleDetectLocation
-    }), isFahrenheit ? external_React_default().createElement("panel-item", {
+    }), showFullContextMenu && (isFahrenheit ? external_React_default().createElement("panel-item", {
       id: "weather-menu-temp-celsius",
       "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
       onClick: () => this.handleChangeTempUnit("c")
@@ -16042,7 +16001,7 @@ class _Weather extends (external_React_default()).PureComponent {
       id: "weather-menu-temp-fahrenheit",
       "data-l10n-id": "newtab-weather-menu-change-temperature-units-fahrenheit",
       onClick: () => this.handleChangeTempUnit("f")
-    }), isSimpleDisplay ? external_React_default().createElement("panel-item", {
+    })), showFullContextMenu && (isSimpleDisplay ? external_React_default().createElement("panel-item", {
       id: "weather-menu-display-detailed",
       "data-l10n-id": "newtab-weather-menu-change-weather-display-detailed",
       onClick: () => this.handleChangeDisplay("detailed")
@@ -16050,7 +16009,7 @@ class _Weather extends (external_React_default()).PureComponent {
       id: "weather-menu-display-simple",
       "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
       onClick: () => this.handleChangeDisplay("simple")
-    }), external_React_default().createElement("panel-item", {
+    })), external_React_default().createElement("panel-item", {
       id: "weather-menu-hide",
       "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
       onClick: this.handleHideWeather
@@ -16113,7 +16072,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherHighLowTemps"
       }, external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.high[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"]), external_React_default().createElement("span", null, "\u2022"), external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.low[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("span", {
         className: "weatherTextSummary"
-      }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), contextMenu()), external_React_default().createElement("span", {
+      }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), contextMenu(showFullMenu)), external_React_default().createElement("span", {
         className: "weatherSponsorText",
         "aria-hidden": "true"
       }, external_React_default().createElement("span", {
@@ -16156,7 +16115,7 @@ class _Weather extends (external_React_default()).PureComponent {
       className: "icon icon-info-warning"
     }), " ", external_React_default().createElement("p", {
       "data-l10n-id": "newtab-weather-error-not-available"
-    }), contextMenu()));
+    }), contextMenu(false)));
   }
 }
 const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state => ({
