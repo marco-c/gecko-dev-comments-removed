@@ -9,23 +9,59 @@
 
 #include <windows.h>
 
+#include "mozilla/Atomics.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/WeakPtr.h"
+#include "nsCOMPtr.h"
 #include "nsError.h"
+#include "nsIObserver.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
+
+namespace mozilla::widget::WinRegistry {
+class KeyWatcher;
+}
 
 namespace mozilla {
 namespace toolkit {
 namespace system {
 
-class WindowsInternetFunctionsWrapper {
+class NetworkLinkObserver;
+
+class WindowsInternetFunctionsWrapper : public mozilla::SupportsWeakPtr {
  public:
-  NS_INLINE_DECL_REFCOUNTING(WindowsInternetFunctionsWrapper)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WindowsInternetFunctionsWrapper)
+
+  WindowsInternetFunctionsWrapper();
+
+  void Init();
 
   virtual nsresult ReadInternetOption(uint32_t aOption, uint32_t& aFlags,
                                       nsAString& aValue);
 
  protected:
-  virtual ~WindowsInternetFunctionsWrapper() = default;
+  virtual ~WindowsInternetFunctionsWrapper();
+
+ private:
+  friend class NetworkLinkObserver;
+
+  nsresult ReadAllOptionsLocked(DWORD aConnFlags, const nsString& aConnName);
+
+  
+  mozilla::Atomic<bool> mConnCacheValid{false};
+  DWORD mCachedConnFlags{0};
+  
+  nsString mCachedConnName;
+
+  
+  mozilla::Atomic<bool> mCacheValid{false};
+  uint32_t mCachedFlags = 0;
+  nsString mCachedProxyServer;
+  nsString mCachedProxyBypass;
+  nsString mCachedAutoConfigUrl;
+
+  mozilla::UniquePtr<mozilla::widget::WinRegistry::KeyWatcher> mKeyWatcher;
+  nsCOMPtr<nsIObserver> mNetworkLinkObserver;
 };
 
 }  
