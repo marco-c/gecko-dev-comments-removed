@@ -8,6 +8,7 @@
 
 
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -145,7 +146,7 @@ class FuzzRtpInput : public NetEqInput {
 
     
     
-    bytes_to_fuzz = bytes_to_fuzz % 16;
+    bytes_to_fuzz = std::min(bytes_to_fuzz % 16, packet_->payload_size());
 
     if (bytes_to_fuzz == 0)
       return;
@@ -155,7 +156,10 @@ class FuzzRtpInput : public NetEqInput {
       return;
     }
 
-    packet_->SetPayload(MakeArrayView(&data_[data_ix_], bytes_to_fuzz));
+    
+    
+    uint8_t* payload = packet_->SetPayloadSize(packet_->payload_size());
+    std::memcpy(payload, &data_[data_ix_], bytes_to_fuzz);
     data_ix_ += bytes_to_fuzz;
   }
 
