@@ -38,6 +38,7 @@ const DEFAULT_EXCLUDED_URL_PREFS = [
   "identity.fxaccounts.remote.profile.uri",
   "identity.fxaccounts.auth.uri",
   "identity.fxaccounts.remote.profile.uri",
+  "captivedetect.canonicalURL",
 ];
 
 const ESSENTIAL_URL_PREFS = [
@@ -174,6 +175,14 @@ export class IPPChannelFilter {
   }
 
   /**
+   * Uninitializes the IPPChannelFilter, removing the proxyInfo and aborting any pending channels.
+   * After this step, the filter will pause channels that should be proxied until a new proxyInfo is set through initialize() again, or the filter is stopped.
+   */
+  uninitialize() {
+    this.proxyInfo = null;
+  }
+
+  /**
    * @param {Array<string>} [excludedPages]
    */
   constructor(excludedPages = []) {
@@ -274,6 +283,10 @@ export class IPPChannelFilter {
         return true;
       }
 
+      if (IPPChannelFilter.isLocal(uri)) {
+        return true;
+      }
+
       const origin = uri.prePath; // scheme://host[:port]
 
       if (!this.proxyInfo && this.#essentialOrigins.has(origin)) {
@@ -294,6 +307,30 @@ export class IPPChannelFilter {
     } catch (_) {
       return true;
     }
+  }
+
+  static isLocal(uri) {
+    if (Services.io.hostnameIsLocalIPAddress(uri)) {
+      return true;
+    }
+
+    const hostname = uri.host;
+    return (
+      /^(.+\.)?localhost$/.test(hostname) ||
+      /^(.+\.)?localhost6$/.test(hostname) ||
+      /^(.+\.)?localhost.localdomain$/.test(hostname) ||
+      /^(.+\.)?localhost6.localdomain6$/.test(hostname) ||
+      // https://tools.ietf.org/html/rfc2606
+      /\.example$/.test(hostname) ||
+      /\.invalid$/.test(hostname) ||
+      /\.test$/.test(hostname) ||
+      // https://tools.ietf.org/html/rfc8375
+      /^(.+\.)?home\.arpa$/.test(hostname) ||
+      // https://tools.ietf.org/html/rfc6762
+      /\.local$/.test(hostname) ||
+      // Loopback
+      /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
+    );
   }
 
   /**
@@ -353,6 +390,9 @@ export class IPPChannelFilter {
    * All ProxyInfo objects related to this Connection will have the same isolation key.
    */
   get isolationKey() {
+    if (!this.proxyInfo) {
+      return null;
+    }
     return this.proxyInfo.connectionIsolationKey;
   }
 

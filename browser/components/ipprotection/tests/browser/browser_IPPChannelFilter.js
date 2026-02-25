@@ -131,14 +131,6 @@ add_task(async function test_exclusion_manager() {
 });
 
 add_task(async function test_channel_suspend_resume() {
-  const server = new HttpServer();
-  server.registerPathHandler("/", (request, response) => {
-    response.setStatusLine(request.httpVersion, 200, "OK");
-    response.setHeader("Content-Type", "text/plain");
-    response.write("Hello World");
-  });
-  server.start(-1);
-
   await withProxyServer(async proxyInfo => {
     
     const filter = IPPChannelFilter.create();
@@ -147,7 +139,8 @@ add_task(async function test_channel_suspend_resume() {
     let tab = BrowserTestUtils.openNewForegroundTab(
       gBrowser,
       
-      "http://localhost:" + server.identity.primaryPort
+      
+      "http://example.com/"
     );
 
     const pendingChannels = new Promise(resolve => {
