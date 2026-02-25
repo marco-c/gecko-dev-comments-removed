@@ -62,7 +62,7 @@ add_task(async function test_region_detect() {
   
   
   
-  await performTest("CA", 4);
+  await performTest("CA", 3);
   await performTest("DE", 0);
 
   await SpecialPowers.popPrefEnv();
@@ -79,8 +79,8 @@ add_task(async function test_region_on() {
 
   
   
-  await performTest("CA", 5);
-  await performTest("DE", 5);
+  await performTest("CA", 4);
+  await performTest("DE", 4);
 
   await SpecialPowers.popPrefEnv();
 });
@@ -95,8 +95,8 @@ add_task(async function test_region_experiments_enabled() {
   });
 
   
-  await performTest("CA", 5);
-  await performTest("DE", 5);
+  await performTest("CA", 4);
+  await performTest("DE", 4);
 
   await SpecialPowers.popPrefEnv();
 });

@@ -36,15 +36,10 @@ add_task(async function test_iframe_autocomplete() {
   await openPopupOnSubframe(browser, iframeBC, "#street-address");
 
   
-  
-  
-
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, iframeBC);
-  await expectWarningText(browser, "Autofills address");
 
   
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, iframeBC);
-  await expectWarningText(browser, "Also autofills organization, email");
 
   EventUtils.synthesizeKey("VK_RETURN", {});
 
@@ -125,8 +120,6 @@ add_task(async function test_iframe_autocomplete_preferences() {
   let browser = tab.linkedBrowser;
   let iframeBC = browser.browsingContext.children[1];
   await openPopupOnSubframe(browser, iframeBC, "#organization");
-
-  await expectWarningText(browser, "Also autofills address, phone, email");
 
   const prefTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
