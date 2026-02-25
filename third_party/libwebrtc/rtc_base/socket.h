@@ -161,7 +161,6 @@ class RTC_EXPORT Socket {
   
   
   
-  sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalReadEvent;
   void SubscribeReadEvent(void* tag,
                           absl::AnyInvocable<void(Socket*)> callback) {
     read_event_trampoline_.Subscribe(tag, std::move(callback));
@@ -171,7 +170,6 @@ class RTC_EXPORT Socket {
   }
   void NotifyReadEvent(Socket* socket) { SignalReadEvent(socket); }
   
-  sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalWriteEvent;
   void SubscribeWriteEvent(void* tag,
                            absl::AnyInvocable<void(Socket*)> callback) {
     write_event_trampoline_.Subscribe(tag, std::move(callback));
@@ -180,7 +178,6 @@ class RTC_EXPORT Socket {
     write_event_trampoline_.Unsubscribe(tag);
   }
   void NotifyWriteEvent(Socket* socket) { SignalWriteEvent(socket); }
-  sigslot::signal1<Socket*> SignalConnectEvent;  
   void SubscribeConnectEvent(void* tag,
                              absl::AnyInvocable<void(Socket*)> callback) {
     connect_event_trampoline_.Subscribe(tag, std::move(callback));
@@ -193,7 +190,6 @@ class RTC_EXPORT Socket {
   }
   void NotifyConnectEvent(Socket* socket) { SignalConnectEvent(socket); }
 
-  sigslot::signal2<Socket*, int> SignalCloseEvent;  
   void SubscribeCloseEvent(void* tag,
                            absl::AnyInvocable<void(Socket*, int)> callback) {
     close_event_trampoline_.Subscribe(tag, std::move(callback));
@@ -216,12 +212,16 @@ class RTC_EXPORT Socket {
         close_event_trampoline_(this) {}
 
  private:
+  sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalReadEvent;
   MultiThreadSignalTrampoline<Socket, &Socket::SignalReadEvent>
       read_event_trampoline_;
+  sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalWriteEvent;
   MultiThreadSignalTrampoline<Socket, &Socket::SignalWriteEvent>
       write_event_trampoline_;
+  sigslot::signal1<Socket*> SignalConnectEvent;  
   SignalTrampoline<Socket, &Socket::SignalConnectEvent>
       connect_event_trampoline_;
+  sigslot::signal2<Socket*, int> SignalCloseEvent;  
   SignalTrampoline<Socket, &Socket::SignalCloseEvent> close_event_trampoline_;
 };
 
