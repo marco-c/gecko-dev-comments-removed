@@ -161,10 +161,14 @@ class JsepTransportController : public PayloadTypeSuggester {
   
   
   
+  
+  
   RTCError SetLocalDescription(SdpType type,
                                const SessionDescription* local_desc,
                                const SessionDescription* remote_desc);
 
+  
+  
   
   
   
@@ -179,8 +183,6 @@ class JsepTransportController : public PayloadTypeSuggester {
   
   RtpTransportInternal* GetRtpTransport(absl::string_view mid) const;
   DtlsTransportInternal* GetDtlsTransport(const std::string& mid);
-  const DtlsTransportInternal* GetRtcpDtlsTransport(
-      const std::string& mid) const;
   
   scoped_refptr<DtlsTransport> LookupDtlsTransportByMid(const std::string& mid);
   scoped_refptr<SctpTransport> GetSctpTransport(const std::string& mid) const;
@@ -202,17 +204,24 @@ class JsepTransportController : public PayloadTypeSuggester {
   
   
   
+  
+  
   bool NeedsIceRestart(const std::string& mid) const;
+  
+  
   
   
   void MaybeStartGathering();
   RTCError AddRemoteCandidates(const std::string& mid,
                                const std::vector<Candidate>& candidates);
+  
   bool RemoveRemoteCandidate(const IceCandidate* candidate);
 
   
 
 
+  
+  
   
   
   bool SetLocalCertificate(const scoped_refptr<RTCCertificate>& certificate);
@@ -223,8 +232,12 @@ class JsepTransportController : public PayloadTypeSuggester {
   std::unique_ptr<SSLCertChain> GetRemoteSSLCertChain(
       const std::string& mid) const;
   
+  
+  
   std::optional<SSLRole> GetDtlsRole(const std::string& mid) const;
 
+  
+  
   
   
   
@@ -242,6 +255,7 @@ class JsepTransportController : public PayloadTypeSuggester {
 
   void SetActiveResetSrtpParams(bool active_reset_srtp_params);
 
+  
   RTCError RollbackTransports();
 
   
@@ -303,21 +317,36 @@ class JsepTransportController : public PayloadTypeSuggester {
 
  private:
   
-  
-  
   RTCError SetLocalDescription_n(SdpType type,
                                  const SessionDescription* local_desc,
                                  const SessionDescription* remote_desc)
       RTC_RUN_ON(network_thread_);
 
+  
   RTCError SetRemoteDescription_n(SdpType type,
                                   const SessionDescription* local_desc,
                                   const SessionDescription* remote_desc)
       RTC_RUN_ON(network_thread_);
 
+  
   bool NeedsIceRestart_n(const std::string& mid) const
       RTC_RUN_ON(network_thread_);
 
+  
+  bool RemoveRemoteCandidate_n(const IceCandidate* candidate)
+      RTC_RUN_ON(network_thread_);
+
+  
+  RTCError RollbackTransports_n() RTC_RUN_ON(network_thread_);
+
+  
+  void MaybeStartGathering_n() RTC_RUN_ON(network_thread_);
+
+  
+  bool SetLocalCertificate_n(const scoped_refptr<RTCCertificate>& certificate)
+      RTC_RUN_ON(network_thread_);
+
+  
   RTCErrorOr<PayloadType> SuggestPayloadType_n(absl::string_view mid,
                                                const Codec& codec)
       RTC_RUN_ON(network_thread_);
