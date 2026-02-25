@@ -51,10 +51,6 @@ void NotificationCallback::HandleActivation(LPCWSTR invokedArgs) {
                (L"Invoked with arguments: '%s'", invokedArgs));
   }
   auto maybeArgs = ParseToastArguments(invokedArgs);
-  if (maybeArgs.isSome() && maybeArgs.ref().skipNotificationServer) {
-    
-    return;
-  }
 
   auto [programPath, cmdLine] = BuildRunCommand(maybeArgs);
 
@@ -108,10 +104,9 @@ mozilla::Maybe<ToastArgs> NotificationCallback::ParseToastArguments(
     return mozilla::Nothing();
   }
   ToastArgs parsedArgs;
-  parsedArgs.skipNotificationServer = false;
 
   std::wistringstream args(invokedArgs);
-  bool hasMozillaArgs = false;  
+  bool hasMozillaArgs = false;
 
   for (std::wstring key, value;
        std::getline(args, key) && std::getline(args, value);) {
@@ -125,15 +120,6 @@ mozilla::Maybe<ToastArgs> NotificationCallback::ParseToastArguments(
       gVerbose = value == L"verbose";
     } else if (key == kLaunchArgAction) {
       parsedArgs.action = value;
-    } else if (key == kSkipNotificationKey) {
-      
-      
-      
-      
-      
-      
-      parsedArgs.skipNotificationServer = true;
-      hasMozillaArgs = true;
     }
   }
 
