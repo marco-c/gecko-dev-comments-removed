@@ -126,6 +126,9 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   bool IsKeepaliveEnabled() { return mKeepaliveEnabledPref; }
 
   bool IsTelemetryEnabledAndNotSleepPhase();
+
+  nsresult AttachNeckoIOLayer(PRFileDesc* aFd);
+
   PRIntervalTime MaxTimeForPrClosePref() { return mMaxTimeForPrClosePref; }
 
   
