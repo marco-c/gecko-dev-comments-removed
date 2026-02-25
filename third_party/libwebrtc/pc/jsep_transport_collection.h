@@ -16,8 +16,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
+#include "api/function_view.h"
 #include "api/jsep.h"
 #include "api/peer_connection_interface.h"
 #include "api/sequence_checker.h"
@@ -96,27 +98,36 @@ class JsepTransportCollection {
         state_change_callback_(std::move(state_change_callback)) {}
 
   void RegisterTransport(std::unique_ptr<JsepTransport> transport);
+
   
   
-  std::vector<JsepTransport*> Transports();
+  void ForEachTransport(FunctionView<void(JsepTransport&)> callback);
+
   
-  std::vector<JsepTransport*> ActiveTransports();
+  void ForEachActiveTransport(FunctionView<void(JsepTransport&)> callback);
+
   void DestroyAllTransports();
+
   
   JsepTransport* GetTransportByName(absl::string_view transport_name);
   const JsepTransport* GetTransportByName(
       absl::string_view transport_name) const;
+
   
   JsepTransport* GetTransportForMid(absl::string_view mid);
   const JsepTransport* GetTransportForMid(absl::string_view mid) const;
+
   
   
   bool SetTransportForMid(absl::string_view mid, JsepTransport* jsep_transport);
+
   
   
   void RemoveTransportForMid(absl::string_view mid);
+
   
   bool RollbackTransports();
+
   
   
   
@@ -142,9 +153,8 @@ class JsepTransportCollection {
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       SequenceChecker::kDetached};
   
-  flat_map<std::string, std::unique_ptr<JsepTransport>> jsep_transports_by_name_
+  std::vector<std::unique_ptr<JsepTransport>> transports_
       RTC_GUARDED_BY(sequence_checker_);
-
   
   
   flat_map<std::string, JsepTransport*> mid_to_transport_
