@@ -36,6 +36,9 @@ nsMenuGroupOwnerX::nsMenuGroupOwnerX(mozilla::dom::Element* aElement,
 nsMenuGroupOwnerX::~nsMenuGroupOwnerX() {
   MOZ_ASSERT(mContentToObserverTable.Count() == 0,
              "have outstanding mutation observers!\n");
+  if (mObservingMutationsOnRoot && mContent) {
+    mContent->RemoveMutationObserver(this);
+  }
   [mRepresentedObject setMenuGroupOwner:nullptr];
   [mRepresentedObject release];
 }
@@ -70,6 +73,7 @@ void nsMenuGroupOwnerX::CharacterDataChanged(nsIContent* aContent,
 
 void nsMenuGroupOwnerX::ContentAppended(nsIContent* aFirstNewContent,
                                         const ContentAppendInfo& aInfo) {
+  nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
   for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
     ContentInserted(cur, aInfo);
   }
@@ -257,6 +261,9 @@ nsMenuItemX* nsMenuGroupOwnerX::GetMenuItemForCommandID(uint32_t aCommandID) {
 
 - (id)initWithMenuGroupOwner:(nsMenuGroupOwnerX*)aMenuGroupOwner {
   self = [super init];
+  if (!self) {
+    return nil;
+  }
   mMenuGroupOwner = aMenuGroupOwner;
   return self;
 }
