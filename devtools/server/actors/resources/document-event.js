@@ -8,6 +8,8 @@ const {
   DocumentEventsListener,
 } = require("resource://devtools/server/actors/webconsole/listeners/document-events.js");
 
+loader.lazyRequireGetter(this, "flags", "resource://devtools/shared/flags.js");
+
 class DocumentEventWatcher {
   #abortController = new AbortController();
   
@@ -29,6 +31,15 @@ class DocumentEventWatcher {
     
     if (!targetActor.window) {
       return;
+    }
+
+    
+    
+    if (
+      flags.testing &&
+      Services.prefs.getBoolPref("devtools.testing.force-server-error", false)
+    ) {
+      throw new TypeError("Test only server error");
     }
 
     const onDocumentEvent = (
