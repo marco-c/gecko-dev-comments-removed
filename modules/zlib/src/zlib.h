@@ -31,17 +31,21 @@
 #ifndef ZLIB_H
 #define ZLIB_H
 
-#include "zconf.h"
+#ifdef ZLIB_BUILD
+#  include <zconf.h>
+#else
+# include "zconf.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.3.1"
-#define ZLIB_VERNUM 0x1310
+#define ZLIB_VERSION "1.3.2"
+#define ZLIB_VERNUM 0x1320
 #define ZLIB_VER_MAJOR 1
 #define ZLIB_VER_MINOR 3
-#define ZLIB_VER_REVISION 1
+#define ZLIB_VER_REVISION 2
 #define ZLIB_VER_SUBREVISION 0
 
 
@@ -608,6 +612,9 @@ ZEXTERN int ZEXPORT inflateEnd(z_streamp strm);
 
 
 
+
+
+
 ZEXTERN int ZEXPORT deflateSetDictionary(z_streamp strm,
                                          const Bytef *dictionary,
                                          uInt  dictLength);
@@ -758,8 +765,11 @@ ZEXTERN int ZEXPORT deflateTune(z_streamp strm,
 
 
 
-ZEXTERN uLong ZEXPORT deflateBound(z_streamp strm,
-                                   uLong sourceLen);
+ZEXTERN uLong ZEXPORT deflateBound(z_streamp strm, uLong sourceLen);
+ZEXTERN z_size_t ZEXPORT deflateBound_z(z_streamp strm, z_size_t sourceLen);
+
+
+
 
 
 
@@ -778,6 +788,21 @@ ZEXTERN int ZEXPORT deflatePending(z_streamp strm,
                                    int *bits);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ZEXTERN int ZEXPORT deflateUsed(z_streamp strm,
+                                int *bits);
 
 
 
@@ -1004,6 +1029,16 @@ ZEXTERN int ZEXPORT inflatePrime(z_streamp strm,
 
 
 
+
+
+
+
+
+
+
+
+
+
 ZEXTERN long ZEXPORT inflateMark(z_streamp strm);
 
 
@@ -1034,6 +1069,8 @@ ZEXTERN long ZEXPORT inflateMark(z_streamp strm);
 
 ZEXTERN int ZEXPORT inflateGetHeader(z_streamp strm,
                                      gz_headerp head);
+
+
 
 
 
@@ -1217,6 +1254,7 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags(void);
 
 
 
+
 #ifndef Z_SOLO
 
                         
@@ -1229,8 +1267,11 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags(void);
 
 
 
-ZEXTERN int ZEXPORT compress(Bytef *dest,   uLongf *destLen,
+
+ZEXTERN int ZEXPORT compress(Bytef *dest, uLongf *destLen,
                              const Bytef *source, uLong sourceLen);
+ZEXTERN int ZEXPORT compress_z(Bytef *dest, z_size_t *destLen,
+                               const Bytef *source, z_size_t sourceLen);
 
 
 
@@ -1244,9 +1285,12 @@ ZEXTERN int ZEXPORT compress(Bytef *dest,   uLongf *destLen,
 
 
 
-ZEXTERN int ZEXPORT compress2(Bytef *dest,   uLongf *destLen,
+ZEXTERN int ZEXPORT compress2(Bytef *dest, uLongf *destLen,
                               const Bytef *source, uLong sourceLen,
                               int level);
+ZEXTERN int ZEXPORT compress2_z(Bytef *dest, z_size_t *destLen,
+                                const Bytef *source, z_size_t sourceLen,
+                                int level);
 
 
 
@@ -1261,14 +1305,17 @@ ZEXTERN int ZEXPORT compress2(Bytef *dest,   uLongf *destLen,
 
 
 ZEXTERN uLong ZEXPORT compressBound(uLong sourceLen);
+ZEXTERN z_size_t ZEXPORT compressBound_z(z_size_t sourceLen);
 
 
 
 
 
 
-ZEXTERN int ZEXPORT uncompress(Bytef *dest,   uLongf *destLen,
+ZEXTERN int ZEXPORT uncompress(Bytef *dest, uLongf *destLen,
                                const Bytef *source, uLong sourceLen);
+ZEXTERN int ZEXPORT uncompress_z(Bytef *dest, z_size_t *destLen,
+                                 const Bytef *source, z_size_t sourceLen);
 
 
 
@@ -1285,8 +1332,10 @@ ZEXTERN int ZEXPORT uncompress(Bytef *dest,   uLongf *destLen,
 
 
 
-ZEXTERN int ZEXPORT uncompress2(Bytef *dest,   uLongf *destLen,
+ZEXTERN int ZEXPORT uncompress2(Bytef *dest, uLongf *destLen,
                                 const Bytef *source, uLong *sourceLen);
+ZEXTERN int ZEXPORT uncompress2_z(Bytef *dest, z_size_t *destLen,
+                                  const Bytef *source, z_size_t *sourceLen);
 
 
 
@@ -1342,7 +1391,19 @@ typedef struct gzFile_s *gzFile;
 
 
 
+
+
+
+
+
+
+
+
+
+
 ZEXTERN gzFile ZEXPORT gzdopen(int fd, const char *mode);
+
+
 
 
 
@@ -1422,8 +1483,15 @@ ZEXTERN int ZEXPORT gzread(gzFile file, voidp buf, unsigned len);
 
 
 
+
+
+
+
+
+
 ZEXTERN z_size_t ZEXPORT gzfread(voidp buf, z_size_t size, z_size_t nitems,
                                  gzFile file);
+
 
 
 
@@ -1454,6 +1522,10 @@ ZEXTERN int ZEXPORT gzwrite(gzFile file, voidpc buf, unsigned len);
 
 
 
+
+
+
+
 ZEXTERN z_size_t ZEXPORT gzfwrite(voidpc buf, z_size_t size,
                                   z_size_t nitems, gzFile file);
 
@@ -1468,7 +1540,24 @@ ZEXTERN z_size_t ZEXPORT gzfwrite(voidpc buf, z_size_t size,
 
 
 
+
+
+
+
+
+#if defined(STDC) || defined(Z_HAVE_STDARG_H)
 ZEXTERN int ZEXPORTVA gzprintf(gzFile file, const char *format, ...);
+#else
+ZEXTERN int ZEXPORTVA gzprintf();
+#endif
+
+
+
+
+
+
+
+
 
 
 
@@ -1491,7 +1580,17 @@ ZEXTERN int ZEXPORT gzputs(gzFile file, const char *s);
 
 
 
+
+
+
+
+
 ZEXTERN char * ZEXPORT gzgets(gzFile file, char *buf, int len);
+
+
+
+
+
 
 
 
@@ -1520,7 +1619,20 @@ ZEXTERN int ZEXPORT gzgetc(gzFile file);
 
 
 
+
+
+
+
+
+
+
+
 ZEXTERN int ZEXPORT gzungetc(int c, gzFile file);
+
+
+
+
+
 
 
 
@@ -1567,7 +1679,8 @@ ZEXTERN int ZEXPORT gzflush(gzFile file, int flush);
 
 
 
-ZEXTERN int ZEXPORT    gzrewind(gzFile file);
+
+ZEXTERN int ZEXPORT gzrewind(gzFile file);
 
 
 
@@ -1631,7 +1744,10 @@ ZEXTERN int ZEXPORT gzdirect(gzFile file);
 
 
 
-ZEXTERN int ZEXPORT    gzclose(gzFile file);
+
+
+
+ZEXTERN int ZEXPORT gzclose(gzFile file);
 
 
 
@@ -1657,6 +1773,7 @@ ZEXTERN int ZEXPORT gzclose_w(gzFile file);
 
 
 ZEXTERN const char * ZEXPORT gzerror(gzFile file, int *errnum);
+
 
 
 
@@ -1727,6 +1844,7 @@ ZEXTERN uLong ZEXPORT adler32_z(uLong adler, const Bytef *buf,
 
 
 
+
 ZEXTERN uLong ZEXPORT crc32(uLong crc, const Bytef *buf, uInt len);
 
 
@@ -1747,6 +1865,7 @@ ZEXTERN uLong ZEXPORT crc32(uLong crc, const Bytef *buf, uInt len);
 
 ZEXTERN uLong ZEXPORT crc32_z(uLong crc, const Bytef *buf,
                               z_size_t len);
+
 
 
 
@@ -1888,9 +2007,9 @@ ZEXTERN int ZEXPORT gzgetc_(gzFile file);
      ZEXTERN z_off_t ZEXPORT gzseek64(gzFile, z_off_t, int);
      ZEXTERN z_off_t ZEXPORT gztell64(gzFile);
      ZEXTERN z_off_t ZEXPORT gzoffset64(gzFile);
-     ZEXTERN uLong ZEXPORT adler32_combine64(uLong, uLong, z_off_t);
-     ZEXTERN uLong ZEXPORT crc32_combine64(uLong, uLong, z_off_t);
-     ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off_t);
+     ZEXTERN uLong ZEXPORT adler32_combine64(uLong, uLong, z_off64_t);
+     ZEXTERN uLong ZEXPORT crc32_combine64(uLong, uLong, z_off64_t);
+     ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off64_t);
 #  endif
 #else
    ZEXTERN gzFile ZEXPORT gzopen(const char *, const char *);

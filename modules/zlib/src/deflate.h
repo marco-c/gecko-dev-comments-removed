@@ -271,6 +271,9 @@ typedef struct internal_state {
     
 
 
+    int bi_used;
+    
+
 
     ulg high_water;
     
@@ -278,6 +281,9 @@ typedef struct internal_state {
 
 
 
+
+    int slid;
+    
 
 } FAR deflate_state;
 

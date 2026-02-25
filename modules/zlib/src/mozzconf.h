@@ -161,8 +161,29 @@
 #define uncompress2 MOZ_Z_uncompress2
 
 
+#define adler32_z MOZ_Z_adler32_z
+#define crc32_z MOZ_Z_crc32_z
+#define deflateGetDictionary MOZ_Z_deflateGetDictionary
+#define gzfread MOZ_Z_gzfread
+#define gzfwrite MOZ_Z_gzfwrite
+#define inflateCodesUsed MOZ_Z_inflateCodesUsed
+#define inflateValidate MOZ_Z_inflateValidate
+
+
 #define crc32_combine_gen     MOZ_Z_crc32_combine_gen
 #define crc32_combine_gen64   MOZ_Z_crc32_combine_gen64
 #define crc32_combine_op      MOZ_Z_crc32_combine_op
+
+
+#define deflateUsed MOZ_Z_deflateUsed
+
+
+#define compress_z MOZ_Z_compress_z
+#define compress2_z MOZ_Z_compress2_z
+#define compressBound_z MOZ_Z_compressBound_z
+#define deflateBound_z MOZ_Z_deflateBound_z
+#define inflate_fixed MOZ_Z_inflate_fixed
+#define uncompress_z MOZ_Z_uncompress_z
+#define uncompress2_z MOZ_Z_uncompress2_z
 
 #endif
