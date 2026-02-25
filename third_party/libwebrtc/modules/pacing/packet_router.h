@@ -59,7 +59,9 @@ class PacketRouter : public PacingController::PacketSender {
   
   
   
-  void ConfigureForRfc8888Feedback(bool send_rtp_packets_as_ect1);
+  
+  void ConfigureForRtcpFeedback(bool set_transport_seq,
+                                bool send_rtp_packets_as_ect1);
 
   void AddSendRtpModule(RtpRtcpInterface* rtp_module, bool remb_candidate);
   void RemoveSendRtpModule(RtpRtcpInterface* rtp_module);
@@ -121,8 +123,9 @@ class PacketRouter : public PacingController::PacketSender {
       RTC_GUARDED_BY(thread_checker_);
 
   uint64_t transport_seq_ RTC_GUARDED_BY(thread_checker_);
-  bool use_cc_feedback_according_to_rfc8888_ RTC_GUARDED_BY(thread_checker_) =
-      false;
+  
+  
+  bool set_transport_seq_ RTC_GUARDED_BY(thread_checker_) = false;
   bool send_rtp_packets_as_ect1_ RTC_GUARDED_BY(thread_checker_) = false;
   absl::AnyInvocable<void(RtpPacketToSend& packet,
                           const PacedPacketInfo& pacing_info)>
