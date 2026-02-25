@@ -239,8 +239,8 @@ class ElementStyle {
     
     
     if (
-      options.system ||
-      (options.rule && this.rules.some(rule => rule.domRule === options.rule))
+      options.rule &&
+      this.rules.some(rule => rule.domRule === options.rule)
     ) {
       return false;
     }
