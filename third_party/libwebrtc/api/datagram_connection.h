@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
@@ -95,18 +96,30 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
     
     
     PacketId id = 0;
+    ArrayView<const uint8_t> payload;
   };
 
   
   
+  
   virtual void SendPacket(ArrayView<const uint8_t> data,
-                          PacketSendParameters params) {}
+                          PacketSendParameters params) {
+    params.payload = data;
+    std::vector<PacketSendParameters> packets;
+    packets.push_back(params);
+    SendPackets(packets);
+  }
 
   
   virtual bool SendPacket(ArrayView<const uint8_t> data) {
     SendPacket(data, PacketSendParameters());
     return true;
   }
+
+  
+  
+  
+  virtual void SendPackets(ArrayView<PacketSendParameters> packets) = 0;
 
   
   

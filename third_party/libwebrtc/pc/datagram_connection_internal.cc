@@ -218,46 +218,57 @@ void DatagramConnectionInternal::SetRemoteDtlsParameters(
                                                    digest_len, mapped_ssl_role);
 }
 
-void DatagramConnectionInternal::SendPacket(ArrayView<const uint8_t> data,
-                                            PacketSendParameters params) {
+void DatagramConnectionInternal::SendPackets(
+    ArrayView<PacketSendParameters> packets) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  for (size_t i = 0; i < packets.size(); ++i) {
+    SendSinglePacket(packets[i],
+                     i == packets.size() - 1);
+  }
+}
+
+void DatagramConnectionInternal::SendSinglePacket(
+    const PacketSendParameters& packet,
+    bool last_packet_in_batch) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   if (current_state_ != State::kActive) {
-    DispatchSendOutcome(params.id, Observer::SendOutcome::Status::kNotSent);
+    DispatchSendOutcome(packet.id, Observer::SendOutcome::Status::kNotSent);
     return;
   }
 
   AsyncSocketPacketOptions options;
-  options.packet_id = params.id;
+  options.packet_id = packet.id;
+  options.batchable = true;
+  options.last_packet_in_batch = last_packet_in_batch;
 
   if (wire_protocol_ == WireProtocol::kDtls) {
     
-    if (!dtls_transport_->internal()->SendPacket(
-            reinterpret_cast<const char*>(data.data()), data.size(), options)) {
-      DispatchSendOutcome(params.id, Observer::SendOutcome::Status::kNotSent);
-    }
+    dtls_transport_->internal()->SendPacket(
+        reinterpret_cast<const char*>(packet.payload.data()),
+        packet.payload.size(), options);
     return;
   }
 
   if (!dtls_srtp_transport_->IsSrtpActive()) {
     
     RTC_LOG(LS_ERROR) << "Dropping packet on non-active DTLS";
-    DispatchSendOutcome(params.id, Observer::SendOutcome::Status::kNotSent);
+    DispatchSendOutcome(packet.id, Observer::SendOutcome::Status::kNotSent);
     return;
   }
   
   
-  RtpPacket packet;
-  packet.SetSequenceNumber(next_seq_num_++);
-  packet.SetTimestamp(next_ts_++);
-  packet.SetSsrc(kDatagramConnectionSsrc);
-  packet.SetPayload(data);
-  CopyOnWriteBuffer buffer = packet.Buffer();
+  RtpPacket rtp_packet;
+  rtp_packet.SetSequenceNumber(next_seq_num_++);
+  rtp_packet.SetTimestamp(next_ts_++);
+  rtp_packet.SetSsrc(kDatagramConnectionSsrc);
+  rtp_packet.SetPayload(packet.payload);
+  CopyOnWriteBuffer buffer = rtp_packet.Buffer();
   
   
   if (!dtls_srtp_transport_->SendRtpPacket(&buffer, options,
                                            PF_SRTP_BYPASS)) {
-    DispatchSendOutcome(params.id, Observer::SendOutcome::Status::kNotSent);
+    DispatchSendOutcome(packet.id, Observer::SendOutcome::Status::kNotSent);
   }
 }
 
