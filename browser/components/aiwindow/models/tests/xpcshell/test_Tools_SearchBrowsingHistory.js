@@ -16,7 +16,6 @@ const { searchBrowsingHistory, stripSearchBrowsingHistoryFields } =
 
 
 
-
 add_task(async function test_searchBrowsingHistory_wrapper() {
   const outputStr = await searchBrowsingHistory({
     searchTerm: "",
@@ -32,7 +31,11 @@ add_task(async function test_searchBrowsingHistory_wrapper() {
   Assert.ok(Array.isArray(output.results), "results is an array");
 
   
-  Assert.ok("error" in output, "error field present");
+  Assert.ok(!("error" in output), "no error field present");
+
+  
+  Assert.ok("count" in output, "count field present");
+  Assert.equal(output.count, output.results.length, "count matches results");
 });
 
 
