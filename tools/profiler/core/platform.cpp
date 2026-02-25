@@ -1629,10 +1629,12 @@ class ActivePS {
         js::GetProfilerScriptSources(JS_GetRuntime(jsContext));
 
     
+    
+    
     for (ProfilerJSSourceData& sourceData : threadSources) {
-      
-      jsSourceEntries.AppendElement(JSSourceEntry(
-          NSID_TrimBracketsASCII(nsID::GenerateUUID()), std::move(sourceData)));
+      nsCString hash = nsPrintfCString("%08x", sourceData.hash());
+      jsSourceEntries.AppendElement(
+          JSSourceEntry(std::move(hash), std::move(sourceData)));
     }
 
     return jsSourceEntries;

@@ -2583,29 +2583,46 @@ ProfileBuffer::StreamSourceTableToJSON(
     }
 
     
+    
+    
+    
+    
     aWriter.StartArrayProperty("data");
+    nsTHashMap<nsCStringHashKey, IndexIntoSourceTable> hashToIndexMap;
     uint32_t index = 0;
     for (const auto& entry : aJSSourceEntries) {
+      IndexIntoSourceTable targetIndex;
+      auto hashEntry = hashToIndexMap.Lookup(entry.uuid);
+
+      if (hashEntry) {
+        
+        targetIndex = hashEntry.Data();
+      } else {
+        
+        aWriter.StartArrayElement();
+        {
+          
+          
+          
+          aWriter.StringElement(MakeStringSpan(entry.uuid.get()));
+          aWriter.StringElement(MakeStringSpan(entry.sourceData.filePath()));
+        }
+        aWriter.EndArray();
+
+        targetIndex = index;
+        hashToIndexMap.InsertOrUpdate(entry.uuid, index);
+        index++;
+      }
+
+      
       
       if (entry.sourceData.sourceId() != 0) {
         MOZ_ASSERT(!sourceIdToIndexMap.Contains(entry.sourceData.sourceId()),
                    "Duplicate sourceId detected! This indicates sourceId "
                    "collision between different sources.");
-        sourceIdToIndexMap.InsertOrUpdate(entry.sourceData.sourceId(), index);
+        sourceIdToIndexMap.InsertOrUpdate(entry.sourceData.sourceId(),
+                                          targetIndex);
       }
-
-      
-      aWriter.StartArrayElement();
-      {
-        
-        
-        
-        aWriter.StringElement(MakeStringSpan(entry.uuid.get()));
-        aWriter.StringElement(MakeStringSpan(entry.sourceData.filePath()));
-      }
-      aWriter.EndArray();
-
-      index++;
     }
     aWriter.EndArray();
   }
