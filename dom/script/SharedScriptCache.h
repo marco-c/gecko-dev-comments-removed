@@ -75,6 +75,30 @@ class ScriptHashKey : public PLDHashEntryHdr {
                 const nsCOMPtr<nsIURI> aURI);
   explicit ScriptHashKey(const ScriptLoadData& aLoadData);
 
+  
+  
+  static Maybe<ScriptHashKey> FromStringsForLookup(
+      const nsACString& aKey, const nsACString& aURI, const nsACString& aNonce,
+      const nsACString& aHintCharset);
+
+ private:
+  ScriptHashKey(nsIURI* aURI, nsIPrincipal* aPartitionPrincipal,
+                JS::loader::ScriptKind aKind, CORSMode aCORSMode,
+                mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                const nsString& aNonce, const nsString& aHintCharset)
+      : PLDHashEntryHdr(),
+        mURI(aURI),
+        mPartitionPrincipal(aPartitionPrincipal),
+        mLoaderPrincipal(nullptr),
+        mKind(aKind),
+        mCORSMode(aCORSMode),
+        mReferrerPolicy(aReferrerPolicy),
+        mNonce(aNonce),
+        mHintCharset(aHintCharset) {
+    MOZ_COUNT_CTOR(ScriptHashKey);
+  }
+
+ public:
   MOZ_COUNTED_DTOR(ScriptHashKey)
 
   const ScriptHashKey& GetKey() const { return *this; }
@@ -97,6 +121,12 @@ class ScriptHashKey : public PLDHashEntryHdr {
   nsIURI* URI() const { return mURI; }
 
   enum { ALLOW_MEMMOVE = true };
+
+  
+  
+  
+  
+  void ToStringForLookup(nsACString& aResult);
 
  protected:
   
