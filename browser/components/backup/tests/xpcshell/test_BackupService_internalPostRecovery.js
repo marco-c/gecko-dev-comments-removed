@@ -48,8 +48,7 @@ add_task(async function test_internal_post_recovery() {
     null,
     false,
     testBackupDirPath,
-    recoveredProfilePath,
-    true
+    recoveredProfilePath
   );
 
   
