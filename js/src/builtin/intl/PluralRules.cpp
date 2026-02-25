@@ -366,21 +366,6 @@ static JSString* KeywordToString(mozilla::intl::PluralRules::Keyword keyword,
   MOZ_CRASH("Unexpected PluralRules keyword");
 }
 
-static auto ToPluralRulesType(PluralRulesOptions::Type type) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::PluralRules::Type;
-#else
-  USING_ENUM(mozilla::intl::PluralRules::Type, Cardinal, Ordinal);
-#endif
-  switch (type) {
-    case PluralRulesOptions::Type::Cardinal:
-      return Cardinal;
-    case PluralRulesOptions::Type::Ordinal:
-      return Ordinal;
-  }
-  MOZ_CRASH("invalid plural rules type");
-}
-
 
 
 
@@ -398,7 +383,7 @@ static mozilla::intl::PluralRules* NewPluralRules(
   }
 
   mozilla::intl::PluralRulesOptions options = {
-      .mPluralType = ToPluralRulesType(plOptions.type),
+      .mPluralType = plOptions.type,
   };
   SetPluralRulesOptions(plOptions, options);
 
