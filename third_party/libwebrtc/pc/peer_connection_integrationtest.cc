@@ -4478,10 +4478,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
             PeerConnectionInterface::kStable);
 }
 
-
-
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
-       DISABLED_OnlyOnePairWantsCorruptionScorePlumbingShouldFailToGetIt) {
+       OnlyOnePairWantsCorruptionScorePlumbingShouldFailToGetIt) {
   
   
   CryptoOptions crypto_options;
@@ -4506,30 +4504,11 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
               IsRtcOk());
   std::vector<RtpHeaderExtensionCapability> negotiated_extensions =
       caller()->pc()->GetTransceivers()[0]->GetNegotiatedHeaderExtensions();
+  
+  
   ASSERT_THAT(negotiated_extensions,
-              Contains(Field("uri", &RtpHeaderExtensionCapability::uri,
-                             RtpExtension::kCorruptionDetectionUri)));
-  ASSERT_THAT(WaitUntil([&] { return caller()->GetCorruptionScoreCount(); },
-                        Eq(3), {.timeout = kMaxWaitForStats}),
-              IsRtcOk())
-      << "Waiting for caller corruption score count > 0";
-  ASSERT_THAT(WaitUntil([&] { return callee()->GetCorruptionScoreCount(); },
-                        Eq(3), {.timeout = kMaxWaitForStats}),
-              IsRtcOk())
-      << "Waiting for callee corruption score count > 0";
-
-  for (const auto& pair : {caller(), callee()}) {
-    scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
-    ASSERT_TRUE(report);
-    auto inbound_stream_stats =
-        report->GetStatsOfType<RTCInboundRtpStreamStats>();
-    for (const auto& stat : inbound_stream_stats) {
-      if (*stat->kind == "video") {
-          EXPECT_FALSE(stat->total_corruption_probability.has_value());
-          EXPECT_FALSE(stat->total_squared_corruption_probability.has_value());
-      }
-    }
-  }
+              Not(Contains(Field("uri", &RtpHeaderExtensionCapability::uri,
+                                 RtpExtension::kCorruptionDetectionUri))));
 }
 
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
