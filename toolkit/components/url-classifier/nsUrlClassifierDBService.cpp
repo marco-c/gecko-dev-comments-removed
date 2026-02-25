@@ -1305,7 +1305,8 @@ NS_IMETHODIMP
 nsUrlClassifierHashCompleterBase::CompletionV2(const nsACString& aCompleteHash,
                                                const nsACString& aTableName,
                                                uint32_t aChunkId) {
-  MOZ_ASSERT_UNREACHABLE("CompletionV2 should be overridden by subclasses that need it");
+  MOZ_ASSERT_UNREACHABLE(
+      "CompletionV2 should be overridden by subclasses that need it");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1579,7 +1580,10 @@ class nsUrlClassifierRealTimeLookupHandler final
 
   nsUrlClassifierRealTimeLookupHandler(nsUrlClassifierDBService* aDBService,
                                        nsIUrlClassifierCallback* aCallback)
-      : nsUrlClassifierHashCompleterBase(aDBService, aCallback) {}
+      : nsUrlClassifierHashCompleterBase(aDBService, aCallback),
+        mDebugEnabled(
+            Preferences::GetBool("browser.safebrowsing.realTime.debug", false)) {
+  }
 
   nsresult StartRealTimeLookup(nsIPrincipal* aPrincipal);
 
@@ -1605,6 +1609,9 @@ class nsUrlClassifierRealTimeLookupHandler final
   
   Atomic<bool> mHasCompletedRealTimeLookup{false};
   nsCString mKey;
+
+  
+  Atomic<bool> mDebugEnabled{false};
 };
 
 NS_IMPL_ISUPPORTS_INHERITED(nsUrlClassifierRealTimeLookupHandler,
@@ -1694,10 +1701,26 @@ nsresult nsUrlClassifierRealTimeLookupHandler::HandleRealTimeLookupComplete(
 
   mHasCompletedRealTimeLookup = true;
 
+  bool hasGlobalCacheHit = aResults && !aResults->IsEmpty();
+
+  
+  if (mDebugEnabled) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "nsUrlClassifierRealTimeLookupHandler::NotifyGlobalCacheResult",
+        [hasGlobalCacheHit]() {
+          nsCOMPtr<nsIObserverService> observerService =
+              mozilla::services::GetObserverService();
+          if (observerService) {
+            const char16_t* result = hasGlobalCacheHit ? u"hit" : u"miss";
+            observerService->NotifyObservers(
+                nullptr, "urlclassifier-globalcache-result", result);
+          }
+        }));
+  }
+
   
   
 
-  
   
   mDBService->LookupURIWithoutProxy(mKey, mLocalListFeatureHolder, this);
 
