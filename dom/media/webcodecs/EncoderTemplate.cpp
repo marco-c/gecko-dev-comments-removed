@@ -705,7 +705,7 @@ void EncoderTemplate<EncoderType>::Reconfigure(
 
   RefPtr<ConfigTypeInternal> config = aMessage->Config();
   RefPtr<WebCodecsConfigurationChangeList> configDiff =
-      config->Diff(*mActiveConfig);
+      mActiveConfig->Diff(*config);
 
   
   
