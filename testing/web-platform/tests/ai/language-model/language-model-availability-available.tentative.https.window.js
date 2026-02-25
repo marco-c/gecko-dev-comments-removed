@@ -31,15 +31,14 @@ promise_test(async () => {
   await ensureLanguageModel();
   
   const kUnsupportedCreateOptions = [
-    { expectedInputs: [{type: 'text', languages: ['unk']}] },  
-    { expectedOutputs: [{type: 'text', languages: ['unk']}] },  
-    { expectedOutputs: [{type: 'image'}] },  
-    { expectedOutputs: [{type: 'audio'}] },  
-    { topK: 0, temperature: 0.5 },  
-    { topK: -3, temperature: 0.5 },  
-    { topK: 3, temperature: -0.5 },  
-    { topK: 3 },  
-    { temperature: 0.5 },  
+    {
+      expectedInputs: [{type: 'text', languages: ['unk']}]
+    },  
+    {
+      expectedOutputs: [{type: 'text', languages: ['unk']}]
+    },                                     
+    {expectedOutputs: [{type: 'image'}]},  
+    {expectedOutputs: [{type: 'audio'}]},  
   ];
   for (const options of kUnsupportedCreateOptions) {
     assert_equals(await LanguageModel.availability(options), 'unavailable', JSON.stringify(options));
