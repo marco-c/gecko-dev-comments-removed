@@ -12,7 +12,6 @@
 #define MODULES_VIDEO_CODING_UTILITY_ENCODER_SPEED_CONTROLLER_IMPL_H_
 
 #include <memory>
-#include <optional>
 
 #include "api/units/time_delta.h"
 #include "api/video_codecs/encoder_speed_controller.h"
@@ -42,10 +41,7 @@ class EncoderSpeedControllerImpl : public webrtc::EncoderSpeedController {
   EncodeSettings GetEncodeSettings(FrameEncodingInfo frame_info) override;
 
   
-  
-  
-  void OnEncodedFrame(EncodeResults results,
-                      std::optional<EncodeResults> baseline_results) override;
+  void OnEncodedFrame(EncodeResults results) override;
 
   const Config& config() const { return config_; }
 

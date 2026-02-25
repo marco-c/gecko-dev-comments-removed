@@ -110,11 +110,7 @@ class EncoderSpeedController {
   virtual EncodeSettings GetEncodeSettings(FrameEncodingInfo frame_info) = 0;
 
   
-  
-  
-  virtual void OnEncodedFrame(
-      EncodeResults results,
-      std::optional<EncodeResults> baseline_results) = 0;
+  virtual void OnEncodedFrame(EncodeResults results) = 0;
 };
 
 }  
