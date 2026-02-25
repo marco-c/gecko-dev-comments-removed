@@ -400,6 +400,24 @@ class DebuggerPanel {
     this._actions.setPrimaryPaneTab("tracer");
   }
 
+  
+
+
+
+
+
+  shouldPreventSplitConsoleToggle() {
+    
+    const popoverEl = this.panelWin.document.querySelector(".popover,.tooltip");
+    if (popoverEl) {
+      
+      
+      return true;
+    }
+
+    return false;
+  }
+
   destroy() {
     this.panelWin.Debugger.destroy();
     this.lazyModules = {};
