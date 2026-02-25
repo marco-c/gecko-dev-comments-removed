@@ -37,8 +37,11 @@
 #include "mozilla/StaticLocalPtr.h"
 #include "mozilla/StaticPrefs_threads.h"
 #include "mozilla/TaskController.h"
+#include "nsExceptionHandler.h"
+#include "nsFmtString.h"
 #include "nsXPCOMPrivate.h"
 #include "mozilla/ChaosMode.h"
+#include "prerror.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/DocGroup.h"
@@ -622,6 +625,15 @@ nsresult nsThread::Init(const nsACString& aName) {
     if (!(thread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, initData.get(),
                                    PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
                                    PR_JOINABLE_THREAD, mStackSize))) {
+      
+      
+      
+      PRErrorCode prError = PR_GetError();
+      PRInt32 osError = PR_GetOSError();
+      CrashReporter::RecordAnnotationNSCString(
+          CrashReporter::Annotation::ThreadLastCreateError,
+          nsFmtCString("{}: prError={:#x} osError={:#x}", aName, prError,
+                       osError));
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
