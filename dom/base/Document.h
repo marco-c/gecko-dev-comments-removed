@@ -130,7 +130,6 @@ class ElementCreationOptionsOrString;
 class InfallibleAllocPolicy;
 class JSObject;
 class JSTracer;
-class PLDHashTable;
 class PolicyContainer;
 class gfxUserFontSet;
 class mozIDOMWindowProxy;
@@ -5509,9 +5508,16 @@ class Document : public nsINode,
 
   
   
-  
-  
-  UniquePtr<PLDHashTable> mSubDocuments;
+  struct ClearParentDocumentDeleter {
+    void operator()(Document* aDocument) {
+      aDocument->SetParentDocument(nullptr);
+      NS_RELEASE(aDocument);
+    }
+  };
+
+  nsTHashMap<RefPtr<Element>,
+             std::unique_ptr<Document, ClearParentDocumentDeleter>>
+      mSubDocuments;
 
   class HeaderData;
   UniquePtr<HeaderData> mHeaderData;
