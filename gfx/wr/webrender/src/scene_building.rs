@@ -3517,10 +3517,11 @@ impl<'a> SceneBuilder<'a> {
 
         let is_tiled = prim_rect.width() > stretch_size.width
          || prim_rect.height() > stretch_size.height;
+
         
         
         
-        let cached = (!self.config.is_software || is_tiled) && !caching_causes_artifacts;
+        let cached = is_tiled && !caching_causes_artifacts;
 
         Some(LinearGradient {
             extend_mode,
