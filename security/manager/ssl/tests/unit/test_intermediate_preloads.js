@@ -307,7 +307,8 @@ add_task(async function test_preload_basic() {
   
   await asyncStartTLSTestServer(
     "BadCertAndPinningServer",
-    "test_intermediate_preloads"
+    "test_intermediate_preloads",
+    false
   );
   
   

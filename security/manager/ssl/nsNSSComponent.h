@@ -17,6 +17,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"
+#include "nsISerialEventTarget.h"
 #include "nsNSSCallbacks.h"
 #include "nsServiceManagerUtils.h"
 #include "prerror.h"
@@ -29,7 +30,6 @@
 
 class nsIDOMWindow;
 class nsIPrompt;
-class nsISerialEventTarget;
 class nsITimer;
 
 namespace mozilla {
@@ -148,6 +148,10 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
 
   
   static int mInstanceCount;
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mNSSTaskQueue;
 };
 
 inline nsresult BlockUntilLoadableCertsLoaded() {
