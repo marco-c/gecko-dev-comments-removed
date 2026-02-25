@@ -132,6 +132,11 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   JS::Zone* zone() const { return zone_; }
 
   
+  
+  
+  bool isSystem() const { return !memberOf; }
+
+  
 
   
   static void unmarkZone(JS::Zone* zone);
@@ -203,6 +208,10 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   bool markMap(gc::MarkColor markColor);
 
   void setHasNurseryEntries();
+
+#ifdef DEBUG
+  virtual void checkCachedFlags() const = 0;
+#endif
 
 #ifdef JS_GC_ZEAL
   virtual bool checkMarking() const = 0;
@@ -441,7 +450,9 @@ class WeakMap : public WeakMapBase {
     nurseryKeys.clear();
     nurseryKeysValid = true;
     mayHaveSymbolKeys = false;
-    mayHaveKeyDelegates = false;
+    if (!isSystem()) {
+      mayHaveKeyDelegates = false;
+    }
   }
 
 #ifdef DEBUG
@@ -483,6 +494,7 @@ class WeakMap : public WeakMapBase {
 
 #if DEBUG
   void assertEntriesNotAboutToBeFinalized();
+  void checkCachedFlags() const override;
 #endif
 
 #ifdef JS_GC_ZEAL
@@ -517,17 +529,19 @@ class WeakMap : public WeakMapBase {
   }
 
   void keyKindBarrier(const JS::Value& key) {
-    if (key.isSymbol()) {
-      mayHaveSymbolKeys = true;
+    if (key.isSymbol() && !mayHaveSymbolKeys) {
+      setMayHaveSymbolKeys();
     }
     if (key.isObject()) {
       keyKindBarrier(&key.toObject());
     }
   }
   void keyKindBarrier(JSObject* key) {
-    JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
-    if (delegate != key || ObjectMayBeSwapped(key)) {
-      mayHaveKeyDelegates = true;
+    if (!mayHaveKeyDelegates) {
+      JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
+      if (delegate != key || ObjectMayBeSwapped(key)) {
+        setMayHaveKeyDelegates();
+      }
     }
   }
   void keyKindBarrier(BaseScript* key) {}
@@ -546,6 +560,8 @@ class WeakMap : public WeakMapBase {
   }
 
   void addNurseryKey(const Key& key);
+  void setMayHaveSymbolKeys();
+  void setMayHaveKeyDelegates();
 
   void traceWeakEdgesDuringSweeping(JSTracer* trc) override;
 
