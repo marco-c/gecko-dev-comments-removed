@@ -32,12 +32,16 @@ var Chart = {
 
 
 
+class PieChart extends EventEmitter {
+  
 
 
-function PieChart(node) {
-  this.node = node;
-  this.slices = new WeakMap();
-  EventEmitter.decorate(this);
+
+  constructor(node) {
+    super();
+    this.node = node;
+    this.slices = new WeakMap();
+  }
 }
 
 
@@ -46,29 +50,37 @@ function PieChart(node) {
 
 
 
+class TableChart extends EventEmitter {
+  
 
 
-function TableChart(node) {
-  this.node = node;
-  this.rows = new WeakMap();
-  EventEmitter.decorate(this);
+
+  constructor(node) {
+    super();
+    this.node = node;
+    this.rows = new WeakMap();
+  }
 }
 
 
 
 
 
+class PieTableChart extends EventEmitter {
+  
 
 
 
 
 
 
-function PieTableChart(node, pie, table) {
-  this.node = node;
-  this.pie = pie;
-  this.table = table;
-  EventEmitter.decorate(this);
+
+  constructor(node, pie, table) {
+    super();
+    this.node = node;
+    this.pie = pie;
+    this.table = table;
+  }
 }
 
 
