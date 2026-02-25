@@ -91,15 +91,6 @@ class nsMenuX final : public nsMenuParentX,
 
   bool IsVisible() const { return mVisible; }
 
-  bool IsAnchoredPopUp() { return mIsAnchoredPopUp; }
-  void SetIsAnchoredPopUp(bool aIsAnchoredPopUp) {
-    mIsAnchoredPopUp = aIsAnchoredPopUp;
-  }
-  void SetIsAnchoredPullDown(bool aIsAnchoredPullDown) {
-    mIsAnchoredPullDown = aIsAnchoredPullDown;
-  }
-  void RefreshMenuChildren(const MenuChild& aChildInserted);
-
   
   
   
@@ -204,8 +195,6 @@ class nsMenuX final : public nsMenuParentX,
 
   void RebuildMenu();
   nsresult RemoveAll();
-  void SetTitle();
-  void SetAttributedTitle();
   nsresult SetEnabled(bool aIsEnabled);
   nsresult GetEnabled(bool* aIsEnabled);
   already_AddRefed<nsIContent> GetMenuPopupContent();
@@ -318,15 +307,6 @@ class nsMenuX final : public nsMenuParentX,
   bool mIsOpenForGecko = false;
 
   bool mVisible = true;
-
-  bool mIsAnchoredPopUp = false;
-  bool mIsAnchoredPullDown = false;
-
-  
-  
-  
-  
-  bool mIsPullDownPlaceholderPresent = false;
 
   
   

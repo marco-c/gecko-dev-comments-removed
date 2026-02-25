@@ -406,7 +406,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   void OnNativeMenuOpened() override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnNativeMenuClosed() override;
+  void OnNativeMenuClosed() override;
   void OnNativeSubMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
   void OnNativeSubMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
   void OnNativeSubMenuClosed(mozilla::dom::Element* aPopupElement) override;
@@ -466,18 +466,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowMenuAsNativeMenu(
-      nsIContent* aMenu, nsMenuPopupFrame* popupFrame,
-      const nsAString& aPosition, bool parentIsContextMenu);
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -519,20 +507,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeMenu(
       Element* aPopup, int32_t aXPos, int32_t aYPos, bool aIsContextMenu,
-      bool aIsScreenPoint, mozilla::dom::Event* aTriggerEvent);
-
-  
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeAnchoredMenu(
-      nsIContent* aAnchorContent, Element* aPopup, const nsAString& aPosition,
-      const mozilla::CSSIntRect& aRect, bool aIsContextMenu,
       mozilla::dom::Event* aTriggerEvent);
 
   
@@ -844,13 +818,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   MOZ_CAN_RUN_SCRIPT bool HandleKeyboardNavigationInPopup(
       nsMenuChainItem* aItem, nsMenuPopupFrame* aFrame,
       nsNavigationDirection aDir);
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowNativeMenuInternal(
-      Element* aPopup, PendingPopup& aPendingPopup,
-      mozilla::FunctionRef<void(nsMenuPopupFrame*)> aInitFn,
-      mozilla::FunctionRef<void(mozilla::widget::NativeMenu*,
-                                nsMenuPopupFrame*)>
-          aShowFn);
 
  protected:
   already_AddRefed<nsINode> GetLastTriggerNode(
