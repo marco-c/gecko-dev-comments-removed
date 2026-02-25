@@ -66,15 +66,10 @@ void CSSStyleValue::ParseAll(const GlobalObject& aGlobal,
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
 }
 
-void CSSStyleValue::Stringify(nsAString& aRetVal) const {
-  nsAutoCString cssText;
-
+void CSSStyleValue::Stringify(nsACString& aRetVal) const {
   const CSSPropertyId* propertyId = GetPropertyId();
   ToCssTextWithProperty(
-      propertyId ? *propertyId : CSSPropertyId(eCSSProperty_UNKNOWN), cssText);
-
-  
-  CopyUTF8toUTF16(cssText, aRetVal);
+      propertyId ? *propertyId : CSSPropertyId(eCSSProperty_UNKNOWN), aRetVal);
 }
 
 
