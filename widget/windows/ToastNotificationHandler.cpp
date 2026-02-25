@@ -195,7 +195,8 @@ Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
           false)) {
     
     
-    launchArg += u"invalid key\ninvalid value"_ns;
+    
+    launchArg += u"skipNotificationServer\ntrue"_ns;
     return launchArg;
   }
 
