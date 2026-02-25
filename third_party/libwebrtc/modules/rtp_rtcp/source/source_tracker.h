@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_infos.h"
 #include "api/transport/rtp/rtp_source.h"
@@ -34,13 +35,20 @@ namespace webrtc {
 
 
 
+
+
+
 class SourceTracker {
  public:
   
   
   static constexpr TimeDelta kTimeout = TimeDelta::Seconds(10);
 
+  
+  
   explicit SourceTracker(Clock* clock);
+  SourceTracker(Clock* clock,
+                absl::AnyInvocable<void(bool, bool)> on_source_changed);
 
   SourceTracker(const SourceTracker& other) = delete;
   SourceTracker(SourceTracker&& other) = delete;
@@ -132,6 +140,10 @@ class SourceTracker {
   
   mutable SourceList list_;
   mutable SourceMap map_;
+  std::optional<uint32_t> last_received_ssrc_;
+  std::vector<uint32_t> last_received_csrcs_;
+  
+  absl::AnyInvocable<void(bool, bool)> on_source_changed_;
 };
 
 }  
