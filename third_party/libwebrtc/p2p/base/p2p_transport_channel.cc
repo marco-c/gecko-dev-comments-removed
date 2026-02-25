@@ -973,7 +973,7 @@ void P2PTransportChannel::OnCandidatesReady(
 void P2PTransportChannel::OnCandidateError(
     PortAllocatorSession* ,
     const IceCandidateErrorEvent& event) {
-  RTC_DCHECK(network_thread_ == Thread::Current());
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (candidate_error_callback_) {
     candidate_error_callback_(this, event);
   }
@@ -1289,11 +1289,6 @@ void P2PTransportChannel::OnCandidateResolved(
   Candidate candidate = p->candidate;
   AddRemoteCandidateWithResult(candidate, resolver->result());
   
-  
-  
-  std::unique_ptr<AsyncDnsResolverInterface> to_delete = std::move(p->resolver);
-  
-  network_thread_->PostTask([to_delete = std::move(to_delete)] {});
   resolvers_.erase(p);
 }
 
