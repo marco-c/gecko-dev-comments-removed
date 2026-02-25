@@ -939,7 +939,6 @@ def verify_threading_annotations(clazz):
         "androidx.annotation.WorkerThread",
         "androidx.annotation.BinderThread",
         "androidx.annotation.AnyThread",
-        "org.mozilla.geckoview.HandlerThread",
     ]
 
     
@@ -959,8 +958,8 @@ def verify_threading_annotations(clazz):
                 f,
                 "GV3",
                 "Method missing threading annotation. Needs "
-                "one of: @MainThread, @UiThread, @WorkerThread, "
-                "@BinderThread, @AnyThread, @HandlerThread.",
+                "one of: @MainThread, @UiThread, @WorkerThread, @BinderThread, "
+                "@AnyThread.",
             )
 
 

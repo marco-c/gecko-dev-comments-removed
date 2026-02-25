@@ -21,7 +21,6 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.gecko.util.ThreadUtils;
 
 
 
@@ -674,10 +673,9 @@ public class Autocomplete {
 
 
 
-    @HandlerThread
+    @AnyThread
     public static @NonNull GeckoResult<List<Field>> getAddressStructure(
         @NonNull final String countryCode) {
-      ThreadUtils.assertOnHandlerThread();
       final GeckoBundle param = new GeckoBundle();
       param.putString("country", countryCode);
       return EventDispatcher.getInstance()

@@ -5,8 +5,8 @@
 
 package org.mozilla.geckoview;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
-import org.mozilla.gecko.util.ThreadUtils;
 
 
 @ExperimentalGeckoViewApi
@@ -43,9 +43,8 @@ public class PageExtractionController {
 
 
 
-    @HandlerThread
+    @AnyThread
     public @NonNull GeckoResult<String> getPageContent() {
-      ThreadUtils.assertOnHandlerThread();
       return mSession
           .getEventDispatcher()
           .queryBundle(GET_TEXT_CONTENT_EVENT)
