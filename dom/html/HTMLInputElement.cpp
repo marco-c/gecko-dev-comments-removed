@@ -1201,11 +1201,11 @@ HTMLInputElement::~HTMLInputElement() {
   FreeData();
 }
 
-void HTMLInputElement::FreeData() {
+void HTMLInputElement::FreeData(bool aFreeInputState) {
   if (!IsSingleLineTextControl(false)) {
     free(mInputData.mValue);
     mInputData.mValue = nullptr;
-  } else if (mInputData.mState) {
+  } else if (aFreeInputState && mInputData.mState) {
     
     UnbindFromFrame(nullptr);
     mInputData.mState->Destroy();
@@ -4796,23 +4796,31 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
     GetValue(oldValue, CallerType::NonSystem);
   }
 
-  TextControlState::SelectionProperties sp;
-
-  if (IsSingleLineTextControl(false) && mInputData.mState) {
-    mInputData.mState->SyncUpSelectionPropertiesBeforeDestruction();
-    sp = mInputData.mState->GetSelectionProperties();
-  }
+  const bool previouslySingleLine = IsSingleLineTextControl(false, oldType);
+  const bool nowSingleLine = IsSingleLineTextControl(false, aNewType);
+  const bool previouslySelectable = SupportsTextSelection();
 
   
-  FreeData();
+  
+  
+  
+  
+  FreeData(!nowSingleLine);
   mType = aNewType;
   void* memory = mInputTypeMem;
   mInputType = InputType::Create(this, mType, memory);
 
-  if (IsSingleLineTextControl()) {
-    mInputData.mState = TextControlState::Construct(this);
-    if (!sp.IsDefault()) {
-      mInputData.mState->SetSelectionProperties(sp);
+  if (nowSingleLine) {
+    const bool nowSelectable = SupportsTextSelection();
+    if (!previouslySingleLine) {
+      mInputData.mState = TextControlState::Construct(this);
+    } else if (!previouslySelectable && nowSelectable && mInputData.mState) {
+      
+      
+      
+      
+      TextControlState::SelectionProperties defaultSp;
+      mInputData.mState->SetSelectionProperties(defaultSp);
     }
   }
 
