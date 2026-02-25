@@ -822,18 +822,12 @@ static bool RecomputePosition(nsIFrame* aFrame) {
     
     
     
-    
-    
-    
-    
-    if (aFrame->HasIntrinsicKeywordForBSize()) {
-      WritingMode wm = aFrame->GetWritingMode();
-      const auto* styleMargin = aFrame->StyleMargin();
-      const auto anchorResolutionParams =
-          AnchorPosResolutionParams::From(aFrame);
-      if (styleMargin->HasBlockAxisAuto(wm, anchorResolutionParams)) {
-        return false;
-      }
+    const auto wm = aFrame->GetWritingMode();
+    const auto* styleMargin = aFrame->StyleMargin();
+    const auto anchorResolutionParams = AnchorPosResolutionParams::From(aFrame);
+    if (styleMargin->HasInlineAxisAuto(wm, anchorResolutionParams) ||
+        styleMargin->HasBlockAxisAuto(wm, anchorResolutionParams)) {
+      return false;
     }
     
     
