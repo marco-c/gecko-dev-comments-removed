@@ -20,6 +20,8 @@
 
 
 
+class MenuItem {
+  
 
 
 
@@ -47,34 +49,36 @@
 
 
 
-function MenuItem({
-  accelerator = null,
-  accesskey = null,
-  l10nID = null,
-  checked = false,
-  click = () => {},
-  disabled = false,
-  hover = () => {},
-  id = null,
-  label = "",
-  image = null,
-  submenu = null,
-  type = "normal",
-  visible = true,
-} = {}) {
-  this.accelerator = accelerator;
-  this.accesskey = accesskey;
-  this.l10nID = l10nID;
-  this.checked = checked;
-  this.click = click;
-  this.disabled = disabled;
-  this.hover = hover;
-  this.id = id;
-  this.label = label;
-  this.image = image;
-  this.submenu = submenu;
-  this.type = type;
-  this.visible = visible;
+
+  constructor({
+    accelerator = null,
+    accesskey = null,
+    l10nID = null,
+    checked = false,
+    click = () => {},
+    disabled = false,
+    hover = () => {},
+    id = null,
+    label = "",
+    image = null,
+    submenu = null,
+    type = "normal",
+    visible = true,
+  } = {}) {
+    this.accelerator = accelerator;
+    this.accesskey = accesskey;
+    this.l10nID = l10nID;
+    this.checked = checked;
+    this.click = click;
+    this.disabled = disabled;
+    this.hover = hover;
+    this.id = id;
+    this.label = label;
+    this.image = image;
+    this.submenu = submenu;
+    this.type = type;
+    this.visible = visible;
+  }
 }
 
 module.exports = MenuItem;
