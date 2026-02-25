@@ -458,10 +458,12 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_DOWN", nullptr, u"control,shift", u"cmd_selectDown2"},   
 #endif  
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", u"VK_UP",   nullptr, u"accel",         u"cmd_moveUp2"},       
-    {u"keypress", u"VK_DOWN", nullptr, u"accel",         u"cmd_moveDown2"},     
-    {u"keypress", u"VK_UP",   nullptr, u"alt,shift",     u"cmd_selectUp2"},     
-    {u"keypress", u"VK_DOWN", nullptr, u"alt,shift",     u"cmd_selectDown2"},   
+    {u"keypress", u"VK_UP",   nullptr, u"accel",         u"cmd_moveUp2"},        
+    {u"keypress", u"VK_DOWN", nullptr, u"accel",         u"cmd_moveDown2"},      
+    {u"keypress", u"VK_UP",   nullptr, u"alt,shift",     u"cmd_selectUp2"},      
+    {u"keypress", u"VK_DOWN", nullptr, u"alt,shift",     u"cmd_selectDown2"},    
+    {u"keypress", u"VK_UP",   nullptr, u"alt",           u"cmd_scrollPageUp"},   
+    {u"keypress", u"VK_DOWN", nullptr, u"alt",           u"cmd_scrollPageDown"}, 
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
     {u"keypress", u"VK_UP",   nullptr, u"alt",           u"cmd_moveTop"},       
