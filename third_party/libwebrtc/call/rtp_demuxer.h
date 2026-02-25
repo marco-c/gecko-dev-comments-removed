@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/containers/flat_set.h"
 
@@ -34,8 +35,12 @@ class RtpDemuxerCriteria {
   RtpDemuxerCriteria();
   ~RtpDemuxerCriteria();
 
+  static RtpDemuxerCriteria MatchAny() { return RtpDemuxerCriteria(true); }
+
   bool operator==(const RtpDemuxerCriteria& other) const;
   bool operator!=(const RtpDemuxerCriteria& other) const;
+
+  bool match_any() const { return match_any_; }
 
   
   const std::string& mid() const { return mid_; }
@@ -54,17 +59,25 @@ class RtpDemuxerCriteria {
   const flat_set<uint32_t>& ssrcs() const { return ssrcs_; }
 
   
-  flat_set<uint32_t>& ssrcs() { return ssrcs_; }
+  flat_set<uint32_t>& ssrcs() {
+    RTC_DCHECK(!match_any_);
+    return ssrcs_;
+  }
 
   
   const flat_set<uint8_t>& payload_types() const { return payload_types_; }
 
   
-  flat_set<uint8_t>& payload_types() { return payload_types_; }
+  flat_set<uint8_t>& payload_types() {
+    RTC_DCHECK(!match_any_);
+    return payload_types_;
+  }
 
  private:
+  explicit RtpDemuxerCriteria(bool match_any);
   
   
+  const bool match_any_ = false;
   const std::string mid_;
   const std::string rsid_;
   flat_set<uint32_t> ssrcs_;
@@ -183,6 +196,9 @@ class RtpDemuxer {
   
   
   void RefreshKnownMids();
+
+  
+  RtpPacketSinkInterface* match_any_sink_ = nullptr;
 
   
   
