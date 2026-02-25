@@ -416,17 +416,14 @@ bool CanvasTranslator::SetDataSurfaceBuffer(
   DataSurfaceBufferWillChange(aId);
 
   
-  {
-    auto& dataSurfaceShmem = mDataSurfaceShmems[aId];
-    dataSurfaceShmem.mShmem = aBufferHandle.Map();
-    if (!dataSurfaceShmem.mShmem) {
-      
-      DataSurfaceBufferWillChange(0, false);
-      
-      dataSurfaceShmem.mShmem = aBufferHandle.Map();
-      if (!dataSurfaceShmem.mShmem) {
-        return false;
-      }
+  mDataSurfaceShmems[aId].mShmem = aBufferHandle.Map();
+  if (!mDataSurfaceShmems[aId].mShmem) {
+    
+    DataSurfaceBufferWillChange(0, false);
+    
+    mDataSurfaceShmems[aId].mShmem = aBufferHandle.Map();
+    if (!mDataSurfaceShmems[aId].mShmem) {
+      return false;
     }
   }
 
