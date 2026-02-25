@@ -297,23 +297,29 @@ void ToastNotificationHandler::HandleCloseFromBrowser() {
 nsresult ToastNotificationHandler::InitAlertAsync() {
   MOZ_TRY(mAlertNotification->GetId(mWindowsTag));
 
+  
+  if (mImageUri.IsEmpty()) {
 #ifdef MOZ_BACKGROUNDTASKS
-  nsAutoString imageUrl;
-  if (BackgroundTasks::IsBackgroundTaskMode() &&
-      NS_SUCCEEDED(mAlertNotification->GetImageURL(imageUrl)) &&
-      !imageUrl.IsEmpty()) {
-    
-    
-    
-    
-    (void)NS_WARN_IF(!gfxPlatform::GetPlatform());
-  }
+    nsAutoString imageUrl;
+    if (BackgroundTasks::IsBackgroundTaskMode() &&
+        NS_SUCCEEDED(mAlertNotification->GetImageURL(imageUrl)) &&
+        !imageUrl.IsEmpty()) {
+      
+      
+      
+      
+      (void)NS_WARN_IF(!gfxPlatform::GetPlatform());
+    }
 #endif
 
-  nsCOMPtr<imgIContainer> image;
-  MOZ_TRY(mAlertNotification->GetImage(getter_AddRefs(image)));
+    nsCOMPtr<imgIContainer> image;
+    MOZ_TRY(mAlertNotification->GetImage(getter_AddRefs(image)));
 
-  return image ? AsyncSaveImage(image) : TryShowAlert();
+    
+    return AsyncSaveImage(image);
+  }
+
+  return TryShowAlert();
 }
 
 nsString ToastNotificationHandler::ActionArgsJSONString(
