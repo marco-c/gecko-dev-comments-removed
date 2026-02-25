@@ -67,7 +67,7 @@
 
 pub(crate) mod __private {
     #[cfg(feature = "serde")]
-    pub use serde;
+    pub use serde_core as serde;
 
     #[cfg(feature = "arbitrary")]
     pub use arbitrary;

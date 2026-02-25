@@ -1290,7 +1290,7 @@ impl PikeVM {
                 
                 
                 
-                if let Some(ref pre) = pre {
+                if let Some(pre) = pre {
                     let span = Span::from(at..input.end());
                     match pre.find(input.haystack(), span) {
                         None => break,
@@ -1344,7 +1344,7 @@ impl PikeVM {
             
             
             
-            if (!hm.is_some() || allmatches)
+            if (hm.is_none() || allmatches)
                 && (!anchored || at == input.start())
             {
                 
@@ -2294,9 +2294,9 @@ impl Counters {
         let mut set_counts =
             self.state_sets.iter().collect::<Vec<(&Vec<StateID>, &u64)>>();
         set_counts.sort_by_key(|(_, &count)| core::cmp::Reverse(count));
-        trace!("## PikeVM frequency of state sets (top {})", LIMIT);
+        trace!("## PikeVM frequency of state sets (top {LIMIT})");
         for (set, count) in set_counts.iter().take(LIMIT) {
-            trace!("{:?}: {}", set, count);
+            trace!("{set:?}: {count}");
         }
         if set_counts.len() > LIMIT {
             trace!(
@@ -2332,7 +2332,7 @@ impl Counters {
 
         trace!("");
         trace!("## NFA debug display");
-        trace!("{:?}", nfa);
+        trace!("{nfa:?}");
         trace!("===== END PikeVM Instrumentation Output =====");
     }
 
