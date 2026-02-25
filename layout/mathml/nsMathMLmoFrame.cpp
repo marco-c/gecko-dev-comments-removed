@@ -380,7 +380,9 @@ void nsMathMLmoFrame::ProcessOperatorData() {
       
       
       
-      if (StyleFont()->mMathDepth > 0 &&
+      if (!StaticPrefs::
+              mathml_adjust_default_lspace_rspace_for_positive_scriptlevel_disabled() &&
+          StyleFont()->mMathDepth > 0 &&
           !mFlags.Booleans().contains(OperatorBoolean::HasEmbellishAncestor)) {
         mEmbellishData.leadingSpace /= 2;
         mEmbellishData.trailingSpace /= 2;
