@@ -1099,7 +1099,6 @@ async function performAdd(store) {
 
 
 
-
 async function performRemoveAll(store) {
   const storeName = store.join(" > ");
   const toolbar = gPanelWindow.document.getElementById("storage-toolbar");
