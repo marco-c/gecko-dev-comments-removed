@@ -68,7 +68,7 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
       absl_nonnull std::unique_ptr<ModelRunner> model_runner);
 
   void Estimate(
-      ArrayView<const float> x,
+      const Block& render,
       ArrayView<const std::array<float, kBlockSize>> y,
       ArrayView<const std::array<float, kBlockSize>> e,
       ArrayView<const std::array<float, kFftLengthBy2Plus1>> S2,
@@ -80,7 +80,9 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
   EchoCanceller3Config GetConfiguration(bool multi_channel) const override;
 
  private:
-  void DumpInputs();
+  void DumpInputs(const Block& render,
+                  ArrayView<const std::array<float, kBlockSize>> y,
+                  ArrayView<const std::array<float, kBlockSize>> e);
 
   
   const std::unique_ptr<ModelRunner> model_runner_;
@@ -88,13 +90,11 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
 
   
   
-  std::vector<float> input_mic_buffer_;
-  std::vector<float> input_linear_aec_output_buffer_;
-  std::vector<float> input_aec_ref_buffer_;
-
-  
-  
   std::array<float, kFftLengthBy2Plus1> output_mask_;
+
+  std::vector<ArrayView<const float, kBlockSize>> render_channels_;
+  std::vector<ArrayView<const float, kBlockSize>> y_channels_;
+  std::vector<ArrayView<const float, kBlockSize>> e_channels_;
 
   static int instance_count_;
   

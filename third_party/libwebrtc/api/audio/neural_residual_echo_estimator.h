@@ -17,6 +17,7 @@
 #include "api/audio/echo_canceller3_config.h"
 
 namespace webrtc {
+class Block;
 
 
 
@@ -40,7 +41,7 @@ class NeuralResidualEchoEstimator {
   
   
   
-  virtual void Estimate(ArrayView<const float> x,
+  virtual void Estimate(const Block& render,
                         ArrayView<const std::array<float, 64>> y,
                         ArrayView<const std::array<float, 64>> e,
                         ArrayView<const std::array<float, 65>> S2,
