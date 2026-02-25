@@ -2,6 +2,7 @@
 
 
 import json
+import time
 from collections import defaultdict, namedtuple
 
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
@@ -98,6 +99,9 @@ class StructuredOutputParser(OutputParser):
             return
 
         self.prev_was_unstructured = False
+
+        if "time" not in data:
+            data["time"] = int(time.time() * 1000)
 
         self.handler(data)
 
