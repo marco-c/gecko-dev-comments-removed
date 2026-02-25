@@ -54,7 +54,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
           }} {
       
       
-      MOZ_RELEASE_ASSERT(GetHiResTimer() != nullptr);
+      
+      
+      
       MOZ_RELEASE_ASSERT(GetEvent() != nullptr);
       MOZ_RELEASE_ASSERT(GetLoResTimer() != nullptr);
     }
@@ -64,8 +66,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       MOZ_ASSERT(b0 != 0);
       [[maybe_unused]] const BOOL b1 = CloseHandle(GetEvent());
       MOZ_ASSERT(b1 != 0);
-      [[maybe_unused]] const BOOL b2 = CloseHandle(GetHiResTimer());
-      MOZ_ASSERT(b2 != 0);
+      if (GetHiResTimer()) {
+        [[maybe_unused]] const BOOL b2 = CloseHandle(GetHiResTimer());
+        MOZ_ASSERT(b2 != 0);
+      }
     }
 
     MOZ_ALWAYS_INLINE void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex.Lock(); }
@@ -114,7 +118,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       const LARGE_INTEGER duration{
           .QuadPart = static_cast<int64_t>(aDuration_us) * -10LL};
 
-      if (aTolerance_ms <= sHiResThreshold_ms) {
+      if (aTolerance_ms <= sHiResThreshold_ms && GetHiResTimer()) {
         WaitHiRes(&duration);
       } else {
         WaitLoRes(&duration, aTolerance_ms);
