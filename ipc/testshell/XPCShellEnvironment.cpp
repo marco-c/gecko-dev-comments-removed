@@ -361,7 +361,7 @@ bool XPCShellEnvironment::Init() {
 
   
   
-  setbuf(stdout, 0);
+  setbuf(stdout, nullptr);
 
   AutoSafeJSContext cx;
 
