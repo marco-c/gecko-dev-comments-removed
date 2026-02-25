@@ -65,16 +65,14 @@ class MOZ_CAPABILITY("monitor") Monitor {
 
 
 
-template <class MonitorType>
-class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS MonitorAutoLockBase {
+class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS MonitorAutoLock {
  public:
-  explicit MonitorAutoLockBase(MonitorType& aMonitor)
-      MOZ_CAPABILITY_ACQUIRE(aMonitor)
+  explicit MonitorAutoLock(Monitor& aMonitor) MOZ_CAPABILITY_ACQUIRE(aMonitor)
       : mMonitor(&aMonitor) {
     mMonitor->Lock();
   }
 
-  ~MonitorAutoLockBase() MOZ_CAPABILITY_RELEASE() { mMonitor->Unlock(); }
+  ~MonitorAutoLock() MOZ_CAPABILITY_RELEASE() { mMonitor->Unlock(); }
   
   
   
@@ -115,23 +113,24 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS MonitorAutoLockBase {
   
   
   
-  void AssertOwns(const MonitorType& aMonitor) const
+  void AssertOwns(const Monitor& aMonitor) const
       MOZ_ASSERT_CAPABILITY(aMonitor) {
     MOZ_ASSERT(&aMonitor == mMonitor);
     mMonitor->AssertCurrentThreadOwns();
   }
 
  private:
-  MonitorAutoLockBase() = delete;
-  MonitorAutoLockBase(const MonitorAutoLockBase&) = delete;
-  MonitorAutoLockBase& operator=(const MonitorAutoLockBase&) = delete;
+  MonitorAutoLock() = delete;
+  MonitorAutoLock(const MonitorAutoLock&) = delete;
+  MonitorAutoLock& operator=(const MonitorAutoLock&) = delete;
   static void* operator new(size_t) noexcept(true);
 
+  friend class MonitorAutoUnlock;
+
  protected:
-  MonitorType* mMonitor;
+  Monitor* mMonitor;
 };
 
-using MonitorAutoLock = MonitorAutoLockBase<Monitor>;
 
 
 
@@ -139,28 +138,25 @@ using MonitorAutoLock = MonitorAutoLockBase<Monitor>;
 
 
 
-
-template <class MonitorType>
-class MOZ_STACK_CLASS MOZ_SCOPED_CAPABILITY MonitorAutoUnlockBase {
+class MOZ_STACK_CLASS MOZ_SCOPED_CAPABILITY MonitorAutoUnlock {
  public:
-  explicit MonitorAutoUnlockBase(MonitorType& aMonitor)
+  explicit MonitorAutoUnlock(Monitor& aMonitor)
       MOZ_SCOPED_UNLOCK_RELEASE(aMonitor)
       : mMonitor(&aMonitor) {
     mMonitor->Unlock();
   }
 
-  ~MonitorAutoUnlockBase() MOZ_SCOPED_UNLOCK_REACQUIRE() { mMonitor->Lock(); }
+  ~MonitorAutoUnlock() MOZ_SCOPED_UNLOCK_REACQUIRE() { mMonitor->Lock(); }
 
  private:
-  MonitorAutoUnlockBase() = delete;
-  MonitorAutoUnlockBase(const MonitorAutoUnlockBase&) = delete;
-  MonitorAutoUnlockBase& operator=(const MonitorAutoUnlockBase&) = delete;
+  MonitorAutoUnlock() = delete;
+  MonitorAutoUnlock(const MonitorAutoUnlock&) = delete;
+  MonitorAutoUnlock& operator=(const MonitorAutoUnlock&) = delete;
   static void* operator new(size_t) noexcept(true);
 
-  MonitorType* mMonitor;
+  Monitor* mMonitor;
 };
 
-using MonitorAutoUnlock = MonitorAutoUnlockBase<Monitor>;
 
 
 
@@ -168,18 +164,16 @@ using MonitorAutoUnlock = MonitorAutoUnlockBase<Monitor>;
 
 
 
-
-template <class MonitorType>
-class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS ReleasableMonitorAutoLockBase {
+class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS ReleasableMonitorAutoLock {
  public:
-  explicit ReleasableMonitorAutoLockBase(MonitorType& aMonitor)
+  explicit ReleasableMonitorAutoLock(Monitor& aMonitor)
       MOZ_CAPABILITY_ACQUIRE(aMonitor)
       : mMonitor(&aMonitor) {
     mMonitor->Lock();
     mLocked = true;
   }
 
-  ~ReleasableMonitorAutoLockBase() MOZ_CAPABILITY_RELEASE() {
+  ~ReleasableMonitorAutoLock() MOZ_CAPABILITY_RELEASE() {
     if (mLocked) {
       mMonitor->Unlock();
     }
@@ -230,16 +224,14 @@ class MOZ_SCOPED_CAPABILITY MOZ_STACK_CLASS ReleasableMonitorAutoLockBase {
 
  private:
   bool mLocked;
-  MonitorType* mMonitor;
+  Monitor* mMonitor;
 
-  ReleasableMonitorAutoLockBase() = delete;
-  ReleasableMonitorAutoLockBase(const ReleasableMonitorAutoLockBase&) = delete;
-  ReleasableMonitorAutoLockBase& operator=(
-      const ReleasableMonitorAutoLockBase&) = delete;
+  ReleasableMonitorAutoLock() = delete;
+  ReleasableMonitorAutoLock(const ReleasableMonitorAutoLock&) = delete;
+  ReleasableMonitorAutoLock& operator=(const ReleasableMonitorAutoLock&) =
+      delete;
   static void* operator new(size_t) noexcept(true);
 };
-
-using ReleasableMonitorAutoLock = ReleasableMonitorAutoLockBase<Monitor>;
 
 }  
 

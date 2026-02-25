@@ -24,6 +24,98 @@
 
 using namespace mozilla;
 
+#ifdef XP_WIN
+
+#  include <windows.h>
+#  include <mmsystem.h>
+
+
+
+class WindowsTimerFrequencyManager {
+ public:
+  explicit WindowsTimerFrequencyManager(
+      const hal::ProcessPriority processPriority)
+      : mTimerPeriodEvalInterval(
+            TimeDuration::FromSeconds(kTimerPeriodEvalIntervalSec)),
+        mNextTimerPeriodEval(TimeStamp::Now() + mTimerPeriodEvalInterval),
+        mLastTimePeriodSet(ComputeDesiredTimerPeriod(processPriority)),
+        mAdjustTimerPeriod(
+            StaticPrefs::timer_auto_increase_timer_resolution()) {
+    if (mAdjustTimerPeriod) {
+      timeBeginPeriod(mLastTimePeriodSet);
+    }
+  }
+
+  ~WindowsTimerFrequencyManager() {
+    
+    if (mAdjustTimerPeriod) {
+      timeEndPeriod(mLastTimePeriodSet);
+    }
+  }
+
+  void Update(const TimeStamp now, const hal::ProcessPriority processPriority) {
+    if (now >= mNextTimerPeriodEval) {
+      const UINT newTimePeriod = ComputeDesiredTimerPeriod(processPriority);
+      if (newTimePeriod != mLastTimePeriodSet) {
+        if (mAdjustTimerPeriod) {
+          timeEndPeriod(mLastTimePeriodSet);
+          timeBeginPeriod(newTimePeriod);
+        }
+        mLastTimePeriodSet = newTimePeriod;
+      }
+      mNextTimerPeriodEval = now + mTimerPeriodEvalInterval;
+    }
+  }
+
+ private:
+  const TimeDuration mTimerPeriodEvalInterval;
+  TimeStamp mNextTimerPeriodEval;
+  UINT mLastTimePeriodSet;
+
+  
+  
+  const bool mAdjustTimerPeriod;
+
+  
+  
+  static constexpr float kTimerPeriodEvalIntervalSec = 2.0f;
+
+  static constexpr UINT kTimerPeriodHiRes = 1;
+  static constexpr UINT kTimerPeriodLowRes = 16;
+
+  
+  static constexpr UINT GetDesiredTimerPeriod(const bool aOnBatteryPower,
+                                              const bool aLowProcessPriority) {
+    const bool useLowResTimer = aOnBatteryPower || aLowProcessPriority;
+    return useLowResTimer ? kTimerPeriodLowRes : kTimerPeriodHiRes;
+  }
+
+  static constexpr void StaticUnitTests() {
+    static_assert(GetDesiredTimerPeriod(true, false) == kTimerPeriodLowRes);
+    static_assert(GetDesiredTimerPeriod(false, true) == kTimerPeriodLowRes);
+    static_assert(GetDesiredTimerPeriod(true, true) == kTimerPeriodLowRes);
+    static_assert(GetDesiredTimerPeriod(false, false) == kTimerPeriodHiRes);
+  }
+
+  static UINT ComputeDesiredTimerPeriod(
+      const hal::ProcessPriority processPriority) {
+    const bool lowPriorityProcess =
+        processPriority < hal::PROCESS_PRIORITY_FOREGROUND;
+
+    
+    
+    
+    
+    SYSTEM_POWER_STATUS status;
+    const bool onBatteryPower = !lowPriorityProcess &&
+                                GetSystemPowerStatus(&status) &&
+                                (status.ACLineStatus == 0);
+
+    return GetDesiredTimerPeriod(onBatteryPower, lowPriorityProcess);
+  }
+};
+#endif
+
 
 
 
@@ -145,7 +237,7 @@ TimerThread::~TimerThread() {
 
 #if TIMER_THREAD_STATISTICS
   {
-    TimerThreadMonitorAutoLock lock(mMonitor);
+    MonitorAutoLock lock(mMonitor);
     PrintStatistics();
   }
 #endif
@@ -174,6 +266,8 @@ TimerObserverRunnable::Run() {
     observerService->AddObserver(mObserver, "suspend_process_notification",
                                  false);
     observerService->AddObserver(mObserver, "resume_process_notification",
+                                 false);
+    observerService->AddObserver(mObserver, "ipc:process-priority-changed",
                                  false);
   }
   return NS_OK;
@@ -512,7 +606,7 @@ nsresult TimerThread::Shutdown() {
   nsTArray<Entry> timers;
   {
     
-    TimerThreadMonitorAutoLock lock(mMonitor);
+    MonitorAutoLock lock(mMonitor);
 
     mShutdown = true;
 
@@ -571,11 +665,11 @@ struct IntervalComparator {
 
 }  
 
-TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
+TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
   if (mTimers.IsEmpty()) {
-    return {{}, {}};
+    return TimeStamp{};
   }
 
   
@@ -585,11 +679,6 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
 
-  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
-  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
-
   
   
   
@@ -598,6 +687,10 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
   
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
   TimeStamp cutoffTime =
       bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
                                                   minTimerDelay, maxTimerDelay);
@@ -620,9 +713,10 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
     
     
     bundleWakeup = curTimerDue;
-    const TimeDuration timerDelay = ComputeAcceptableFiringDelay(
-        curEntry.mDelay, minTimerDelay, maxTimerDelay);
-    cutoffTime = std::min(curTimerDue + timerDelay, cutoffTime);
+    cutoffTime = std::min(
+        curTimerDue + ComputeAcceptableFiringDelay(
+                          curEntry.mDelay, minTimerDelay, maxTimerDelay),
+        cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
@@ -630,7 +724,7 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
              ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
 
-  return {bundleWakeup, cutoffTime - bundleWakeup};
+  return bundleWakeup;
 }
 
 TimeDuration TimerThread::ComputeAcceptableFiringDelay(
@@ -731,24 +825,19 @@ class TelemetryQueue {
   size_t mQueuedTimersFiredCount = 0;
 };
 
-void TimerThread::Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
-    MOZ_REQUIRES(mMonitor) {
+void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
   mWaiting = true;
   mNotified = false;
   {
     AUTO_PROFILER_MARKER("TimerThread::Wait", OTHER);
-#if defined(XP_WIN)
-    mMonitor.Wait(aWaitFor, aTolerance);
-#else
     mMonitor.Wait(aWaitFor);
-#endif
   }
   mWaiting = false;
 }
 
 NS_IMETHODIMP
 TimerThread::Run() {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
 
   mProfilerThreadId = profiler_current_thread_id();
 
@@ -760,11 +849,16 @@ TimerThread::Run() {
 
   TelemetryQueue telemetryQueue;
 
+#ifdef XP_WIN
+  WindowsTimerFrequencyManager wTFM{
+      mCachedPriority.load(std::memory_order_relaxed)};
+#endif
+
   while (!mShutdown) {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
 
-    TimeDuration waitFor, waitTolerance;
+    TimeDuration waitFor;
     if (!mSleeping) {
       
       
@@ -790,9 +884,8 @@ TimerThread::Run() {
       }
 
       
-      const auto [wakeupTime, wakeupTolerance] = ComputeWakeupTimeFromTimers();
+      const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
       mIntendedWakeupTime = wakeupTime;
-      waitTolerance = wakeupTolerance;
 
       
       
@@ -817,24 +910,21 @@ TimerThread::Run() {
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
+
+#ifdef XP_WIN
+      wTFM.Update(now, mCachedPriority.load(std::memory_order_relaxed));
+#endif
     } else {
       mIntendedWakeupTime = TimeStamp{};
-      
-      
       
       uint32_t milliseconds = 100;
       if (chaosModeActive) {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
       waitFor = TimeDuration::FromMilliseconds(milliseconds);
-
-      
-      static constexpr double sWaitToleranceWhenSleeping_ms = 32.0;
-      waitTolerance =
-          TimeDuration::FromMilliseconds(sWaitToleranceWhenSleeping_ms);
     }
 
-    Wait(waitFor, waitTolerance);
+    Wait(waitFor);
 
 #if TIMER_THREAD_STATISTICS
     CollectWakeupStatistics();
@@ -846,7 +936,7 @@ TimerThread::Run() {
 
 nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
                                const MutexAutoLock& aProofOfLock) {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_AddTimer);
 
   if (mShutdown) {
@@ -919,7 +1009,7 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
 
 nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
                                   const MutexAutoLock& aProofOfLock) {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_RemoveTimer);
 
   
@@ -972,7 +1062,7 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
 
 TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
                                                         uint32_t aSearchBound) {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_FindNextFireTimeForCurrentThread);
 
   for (const Entry& entry : mTimers) {
@@ -1148,7 +1238,7 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
   RefPtr<nsTimerEvent> lockedEventPtr = ::new (KnownNotNull, p)
       nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
   {
-    TimerThreadMonitorAutoUnlock unlock(mMonitor);
+    MonitorAutoUnlock unlock(mMonitor);
     
     nsCOMPtr<nsIEventTarget> target = lockedTargetPtr.forget();
     RefPtr<nsTimerEvent> event = lockedEventPtr.forget();
@@ -1160,14 +1250,14 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
 
 void TimerThread::DoBeforeSleep() {
   
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   mSleeping = true;
 }
 
 
 void TimerThread::DoAfterSleep() {
   
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   mSleeping = false;
 
   
@@ -1179,8 +1269,18 @@ void TimerThread::DoAfterSleep() {
 }
 
 NS_IMETHODIMP
-TimerThread::Observe(nsISupports* , const char* aTopic,
-                     const char16_t* ) {
+TimerThread::Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) {
+  if (strcmp(aTopic, "ipc:process-priority-changed") == 0) {
+    nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
+    MOZ_ASSERT(props != nullptr);
+
+    int32_t priority = static_cast<int32_t>(hal::PROCESS_PRIORITY_UNKNOWN);
+    props->GetPropertyAsInt32(u"priority"_ns, &priority);
+    mCachedPriority.store(static_cast<hal::ProcessPriority>(priority),
+                          std::memory_order_relaxed);
+  }
+
   if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
     return NS_OK;
   }
@@ -1197,7 +1297,7 @@ TimerThread::Observe(nsISupports* , const char* aTopic,
 }
 
 uint32_t TimerThread::AllowedEarlyFiringMicroseconds() {
-  TimerThreadMonitorAutoLock lock(mMonitor);
+  MonitorAutoLock lock(mMonitor);
   return mAllowedEarlyFiringMicroseconds;
 }
 
@@ -1377,7 +1477,7 @@ NS_IMPL_ISUPPORTS(nsReadOnlyTimer, nsITimer)
 nsresult TimerThread::GetTimers(nsTArray<RefPtr<nsITimer>>& aRetVal) {
   nsTArray<RefPtr<nsTimerImpl>> timers;
   {
-    TimerThreadMonitorAutoLock lock(mMonitor);
+    MonitorAutoLock lock(mMonitor);
     for (const auto& entry : mTimers) {
       nsTimerImpl* timer = entry.mTimerImpl;
       if (!timer) {
