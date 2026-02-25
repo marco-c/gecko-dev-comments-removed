@@ -234,8 +234,7 @@ document.addEventListener(
             AIWindow.launchWindow(gBrowser.selectedBrowser, true);
             break;
           case "Tools:ChatsHistory":
-            
-            
+            FirefoxViewHandler.openTab("chats");
             break;
           case "Tools:Sanitize":
             Sanitizer.showUI(window);
