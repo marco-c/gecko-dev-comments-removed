@@ -89,7 +89,11 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
     STATE_CONNECTED
   };
 
-  AsyncPacketSocket() : connect_trampoline_(this) {}
+  AsyncPacketSocket()
+      : connect_trampoline_(this),
+        sent_packet_trampoline_(this),
+        ready_to_send_trampoline_(this),
+        address_ready_trampoline_(this) {}
   ~AsyncPacketSocket() override;
 
   AsyncPacketSocket(const AsyncPacketSocket&) = delete;
@@ -139,14 +143,50 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
 
   
   sigslot::signal2<AsyncPacketSocket*, const SentPacketInfo&> SignalSentPacket;
+  void SubscribeSentPacket(
+      void* tag,
+      absl::AnyInvocable<void(AsyncPacketSocket*, const SentPacketInfo&)>
+          callback) {
+    sent_packet_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeSentPacket(void* tag) {
+    sent_packet_trampoline_.Unsubscribe(tag);
+  }
+  void NotifySentPacket(AsyncPacketSocket* socket, const SentPacketInfo& info) {
+    SignalSentPacket(socket, info);
+  }
 
   
   sigslot::signal1<AsyncPacketSocket*> SignalReadyToSend;
+  void SubscribeReadyToSend(
+      void* tag,
+      absl::AnyInvocable<void(AsyncPacketSocket*)> callback) {
+    ready_to_send_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeReadyToSend(void* tag) {
+    ready_to_send_trampoline_.Unsubscribe(tag);
+  }
+  void NotifyReadyToSend(AsyncPacketSocket* socket) {
+    SignalReadyToSend(socket);
+  }
 
   
   
   
   sigslot::signal2<AsyncPacketSocket*, const SocketAddress&> SignalAddressReady;
+  void SubscribeAddressReady(
+      void* tag,
+      absl::AnyInvocable<void(AsyncPacketSocket*, const SocketAddress&)>
+          callback) {
+    address_ready_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeAddressReady(void* tag) {
+    address_ready_trampoline_.Unsubscribe(tag);
+  }
+  void NotifyAddressReady(AsyncPacketSocket* socket,
+                          const SocketAddress& address) {
+    SignalAddressReady(socket, address);
+  }
 
   
   
@@ -187,6 +227,12 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
       received_packet_callback_ RTC_GUARDED_BY(&network_checker_);
   SignalTrampoline<AsyncPacketSocket, &AsyncPacketSocket::SignalConnect>
       connect_trampoline_;
+  SignalTrampoline<AsyncPacketSocket, &AsyncPacketSocket::SignalSentPacket>
+      sent_packet_trampoline_;
+  SignalTrampoline<AsyncPacketSocket, &AsyncPacketSocket::SignalReadyToSend>
+      ready_to_send_trampoline_;
+  SignalTrampoline<AsyncPacketSocket, &AsyncPacketSocket::SignalAddressReady>
+      address_ready_trampoline_;
 };
 
 
@@ -197,6 +243,8 @@ class RTC_EXPORT AsyncListenSocket : public sigslot::has_slots<> {
     kBound,
   };
 
+  AsyncListenSocket() : new_connection_trampoline_(this) {}
+
   
   virtual State GetState() const = 0;
 
@@ -205,6 +253,23 @@ class RTC_EXPORT AsyncListenSocket : public sigslot::has_slots<> {
   virtual SocketAddress GetLocalAddress() const = 0;
 
   sigslot::signal2<AsyncListenSocket*, AsyncPacketSocket*> SignalNewConnection;
+  void SubscribeNewConnection(
+      void* tag,
+      absl::AnyInvocable<void(AsyncListenSocket*, AsyncPacketSocket*)>
+          callback) {
+    new_connection_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeNewConnection(void* tag) {
+    new_connection_trampoline_.Unsubscribe(tag);
+  }
+  void NotifyNewConnection(AsyncListenSocket* listen_socket,
+                           AsyncPacketSocket* packet_socket) {
+    SignalNewConnection(listen_socket, packet_socket);
+  }
+
+ private:
+  SignalTrampoline<AsyncListenSocket, &AsyncListenSocket::SignalNewConnection>
+      new_connection_trampoline_;
 };
 
 void CopySocketInformationToPacketInfo(size_t packet_size_bytes,

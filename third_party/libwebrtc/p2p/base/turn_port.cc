@@ -296,8 +296,11 @@ TurnPort::~TurnPort() {
 
   entries_.clear();
 
-  if (socket_)
+  if (socket_) {
+    socket_->UnsubscribeSentPacket(this);
+    socket_->UnsubscribeConnect(this);
     socket_->UnsubscribeCloseEvent(this);
+  }
 }
 
 void TurnPort::set_realm(absl::string_view realm) {
@@ -480,9 +483,13 @@ bool TurnPort::CreateTurnClientSocket() {
         });
   }
 
-  socket_->SignalReadyToSend.connect(this, &TurnPort::OnReadyToSend);
+  socket_->SubscribeReadyToSend(
+      this, [this](AsyncPacketSocket* socket) { OnReadyToSend(socket); });
 
-  socket_->SignalSentPacket.connect(this, &TurnPort::OnSentPacket);
+  socket_->SubscribeSentPacket(
+      this, [this](AsyncPacketSocket* socket, const SentPacketInfo& info) {
+        OnSentPacket(socket, info);
+      });
 
   
   
