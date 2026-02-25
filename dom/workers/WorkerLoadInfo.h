@@ -141,6 +141,9 @@ struct WorkerLoadInfoData {
   bool mIsThirdPartyContext;
   bool mIsOn3PCBExceptionList;
 
+  
+  nsCString mReportingEndpointsHeader;
+
   enum {
     eNotSet,
     eInsecureContext,
