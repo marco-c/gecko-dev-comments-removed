@@ -1779,6 +1779,7 @@ impl NonNegativeLength {
 
 #[allow(missing_docs)]
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed_value(derive_fields)]
 pub enum LengthPercentage {
     Length(NoCalcLength),
     Percentage(computed::Percentage),
