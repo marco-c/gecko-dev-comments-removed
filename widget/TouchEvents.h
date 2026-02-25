@@ -215,6 +215,13 @@ class WidgetTouchEvent final : public WidgetInputEvent {
   int16_t mButton = eNotPressed;
   int16_t mButtons = 0;
 
+  
+
+
+
+
+  Maybe<uint64_t> mCallbackId;
+
   void AssignTouchEventData(const WidgetTouchEvent& aEvent, bool aCopyTargets) {
     AssignInputEventData(aEvent, aCopyTargets);
 
@@ -222,6 +229,8 @@ class WidgetTouchEvent final : public WidgetInputEvent {
     MOZ_ASSERT(mTouches.IsEmpty());
     mTouches.AppendElements(aEvent.mTouches);
     mInputSource = aEvent.mInputSource;
+    
+    
   }
 
   void SetConvertToPointerRawUpdate(bool aConvert) {

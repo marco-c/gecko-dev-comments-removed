@@ -891,12 +891,15 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
 
 
 
+
+
 function synthesizeTouch(
   aTarget,
   aOffsetX,
   aOffsetY,
   aEvent = {},
-  aWindow = window
+  aWindow = window,
+  aCallback
 ) {
   let rectX, rectY;
   if (Array.isArray(aTarget)) {
@@ -934,7 +937,7 @@ function synthesizeTouch(
     }
     return aOffsetY + rectY[0];
   })();
-  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
+  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow, aCallback);
 }
 
 
@@ -953,7 +956,15 @@ function synthesizeTouch(
 
 
 
-function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
+
+
+function synthesizeTouchAtPoint(
+  aLeft,
+  aTop,
+  aEvent = {},
+  aWindow = window,
+  aCallback
+) {
   let utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
     return false;
@@ -1068,11 +1079,15 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
   ];
 
   if ("type" in aEvent && aEvent.type) {
-    return _EU_maybeWrap(aWindow).synthesizeTouchEvent(aEvent.type, ...args);
+    return _EU_maybeWrap(aWindow).synthesizeTouchEvent(
+      aEvent.type,
+      ...args,
+      aCallback
+    );
   }
 
   _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchstart", ...args);
-  _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchend", ...args);
+  _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchend", ...args, aCallback);
   return false;
 }
 
@@ -1083,13 +1098,18 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
 
 
 
-function synthesizeTouchAtCenter(aTarget, aEvent = {}, aWindow = window) {
+
+
+
+
+function synthesizeTouchAtCenter(aTarget, aEvent, aWindow, aCallback) {
   var rect = aTarget.getBoundingClientRect();
-  synthesizeTouchAtPoint(
+  return synthesizeTouchAtPoint(
     rect.left + rect.width / 2,
     rect.top + rect.height / 2,
     aEvent,
-    aWindow
+    aWindow,
+    aCallback
   );
 }
 

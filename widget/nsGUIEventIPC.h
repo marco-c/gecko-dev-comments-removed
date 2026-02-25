@@ -364,6 +364,9 @@ struct ParamTraits<mozilla::WidgetTouchEvent> {
     WriteParam(aWriter, aParam.mInputSource);
     WriteParam(aWriter, aParam.mButton);
     WriteParam(aWriter, aParam.mButtons);
+    WriteParam(aWriter, aParam.mCallbackId);
+    
+    const_cast<mozilla::WidgetTouchEvent&>(aParam).mCallbackId.reset();
     
     
     const paramType::TouchArray& touches = aParam.mTouches;
@@ -387,6 +390,7 @@ struct ParamTraits<mozilla::WidgetTouchEvent> {
         !ReadParam(aReader, &aResult->mInputSource) ||
         !ReadParam(aReader, &aResult->mButton) ||
         !ReadParam(aReader, &aResult->mButtons) ||
+        !ReadParam(aReader, &aResult->mCallbackId) ||
         !ReadParam(aReader, &numTouches)) {
       return false;
     }
@@ -1053,6 +1057,7 @@ struct ParamTraits<mozilla::InputData> {
     WriteParam(aWriter, aParam.modifiers);
     WriteParam(aWriter, aParam.mFocusSequenceNumber);
     WriteParam(aWriter, aParam.mLayersId);
+    WriteParam(aWriter, aParam.mCallbackId);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -1060,7 +1065,8 @@ struct ParamTraits<mozilla::InputData> {
            ReadParam(aReader, &aResult->mTimeStamp) &&
            ReadParam(aReader, &aResult->modifiers) &&
            ReadParam(aReader, &aResult->mFocusSequenceNumber) &&
-           ReadParam(aReader, &aResult->mLayersId);
+           ReadParam(aReader, &aResult->mLayersId) &&
+           ReadParam(aReader, &aResult->mCallbackId);
   }
 };
 
