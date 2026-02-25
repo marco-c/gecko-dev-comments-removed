@@ -1702,6 +1702,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   
   mozilla::StyleScopedName mAnchorScope;
 
+  mozilla::StyleScopedName mTimelineScope;
+
   mozilla::Maybe<mozilla::WindowButtonType> GetWindowButtonType() const {
     if (MOZ_LIKELY(mDefaultAppearance == mozilla::StyleAppearance::None)) {
       return mozilla::Nothing();
