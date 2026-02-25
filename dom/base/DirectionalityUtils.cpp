@@ -239,9 +239,9 @@ Directionality ContainedTextAutoDirectionality(nsINode* aRoot,
     
     if (auto* slot = HTMLSlotElement::FromNode(child)) {
       if (const ShadowRoot* sr = slot->GetContainingShadow()) {
-        Element* host = sr->GetHost();
-        MOZ_ASSERT(host);
-        return host->GetDirectionality();
+        if (Element* host = sr->GetHost()) {
+          return host->GetDirectionality();
+        }
       }
     }
 
