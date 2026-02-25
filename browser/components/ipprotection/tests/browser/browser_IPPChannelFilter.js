@@ -72,10 +72,6 @@ add_task(async function test_essential_exclusion() {
   await withProxyServer(async proxyInfo => {
     
     const filter = IPPChannelFilter.create();
-    
-    filter.addEssentialExclusion(
-      "http://localhost:" + server.identity.primaryPort
-    );
 
     filter.initialize("", proxyInfo.server);
     proxyInfo.gotConnection.then(() => {
@@ -83,12 +79,12 @@ add_task(async function test_essential_exclusion() {
     });
     filter.start();
 
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
+    let response = await fetch(
       
       "http://localhost:" + server.identity.primaryPort
     );
-    await BrowserTestUtils.removeTab(tab);
+    Assert.equal(response.status, 200, "Should successfully load the URL");
+
     filter.stop();
   });
 });
