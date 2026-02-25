@@ -6929,7 +6929,7 @@ class HandlerListItem {
     }
   }
 
-  createNode() {
+  async createNode() {
     this.node =  (
       document.createElement("moz-box-item")
     );
@@ -6942,9 +6942,8 @@ class HandlerListItem {
     this.setOrRemoveAttributes([[null, "type", this.handlerInfoWrapper.type]]);
 
     let typeDescription = this.handlerInfoWrapper.typeDescription;
-    localizeElement(this.node, typeDescription);
 
-    this.node.setAttribute("label", typeDescription.raw);
+    await setLocalizedLabel(this.node, typeDescription);
 
     this.actionsMenu =  (
       document.createElement("moz-select")
@@ -7292,13 +7291,16 @@ class HandlerListItem {
 
 
 
-function localizeElement(node, l10n) {
+
+async function setLocalizedLabel(item, l10n) {
+  let label;
   if (l10n.hasOwnProperty("raw")) {
-    node.removeAttribute("data-l10n-id");
-    node.textContent = l10n.raw;
+    label = l10n.raw;
   } else {
-    document.l10n.setAttributes(node, l10n.id, l10n.args);
+    [label] = await document.l10n.formatValues([l10n]);
   }
+  item.removeAttribute("data-l10n-id");
+  item.setAttribute("label", label);
 }
 
 
@@ -7875,50 +7877,60 @@ const AppFileHandler = (function () {
 
       const unorderedItems = [];
 
+      
+
+
+      let promises = [];
+
       var visibleTypes = this._visibleTypes;
       for (const visibleType of visibleTypes) {
         const handlerItem = new HandlerListItem(visibleType);
 
-        const node = handlerItem.createNode();
-        unorderedItems.push(node);
+        promises.push(
+          handlerItem.createNode().then(node => {
+            unorderedItems.push(node);
 
-        this.items.push(handlerItem);
+            this.items.push(handlerItem);
 
-        let originalValue = handlerItem.actionsMenu.value;
+            let originalValue = handlerItem.actionsMenu.value;
 
-        handlerItem.actionsMenu.addEventListener("change", async e => {
-          const newValue = handlerItem.actionsMenu.value;
+            handlerItem.actionsMenu.addEventListener("change", async e => {
+              const newValue = handlerItem.actionsMenu.value;
 
-          if (newValue !== "choose-app" && newValue !== "manage-app") {
-            
-
-
-
-            await handlerItem.actionsMenu.updateComplete;
-
-            this._onSelectActionsMenuOption(handlerItem);
-          } else {
-            
+              if (newValue !== "choose-app" && newValue !== "manage-app") {
+                
 
 
 
-            handlerItem.actionsMenu.value = originalValue;
+                await handlerItem.actionsMenu.updateComplete;
 
-            
+                this._onSelectActionsMenuOption(handlerItem);
+              } else {
+                
 
 
-            e.stopPropagation();
 
-            if (newValue === "choose-app") {
-              this.chooseApp(handlerItem);
-            } else {
-              this.manageApp(handlerItem);
-            }
-          }
+                handlerItem.actionsMenu.value = originalValue;
 
-          originalValue = newValue;
-        });
+                
+
+
+                e.stopPropagation();
+
+                if (newValue === "choose-app") {
+                  this.chooseApp(handlerItem);
+                } else {
+                  this.manageApp(handlerItem);
+                }
+              }
+
+              originalValue = newValue;
+            });
+          })
+        );
       }
+
+      await Promise.allSettled(promises);
       
 
 
@@ -7940,9 +7952,7 @@ const AppFileHandler = (function () {
       
       
 
-      for (const element of unorderedItems) {
-        this._list.appendChild(element);
-      }
+      this._list.appendChild(itemsFragment);
 
       this._filter.addEventListener("MozInputSearch:search", () =>
         this.filter()
