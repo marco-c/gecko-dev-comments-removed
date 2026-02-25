@@ -1165,15 +1165,7 @@ class Toolbox extends EventEmitter {
         
         
         if (this._appBoundary && !this._appBoundary.state.errorInfo) {
-          this._appBoundary.setState({
-            errorMsg: error.toString(),
-            errorStack: error.stack,
-            errorInfo: {
-              clientPacket: error.clientPacket,
-              serverPacket: error.serverPacket,
-            },
-            toolbox: this,
-          });
+          this._appBoundary.toolboxDidCatch(error, this);
         }
       } catch (e) {
         

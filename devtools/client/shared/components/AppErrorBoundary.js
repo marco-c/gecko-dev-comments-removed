@@ -12,6 +12,12 @@ const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-t
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const { div, h1, h2, h3, p, a, button } = dom;
 
+loader.lazyRequireGetter(
+  this,
+  "Telemetry",
+  "resource://devtools/client/shared/telemetry.js"
+);
+
 
 loader.lazyGetter(this, "L10N", function () {
   const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
@@ -47,6 +53,10 @@ class AppErrorBoundary extends Component {
     };
   }
 
+  
+  
+  #pingSubmitted = false;
+
   constructor(props) {
     super(props);
 
@@ -54,6 +64,8 @@ class AppErrorBoundary extends Component {
       errorMsg: "No error",
       errorStack: null,
       errorInfo: null,
+      
+      toolbox: null,
     };
   }
 
@@ -160,11 +172,74 @@ class AppErrorBoundary extends Component {
   
   componentDidCatch(error, info) {
     const validInfo = this.getValidInfo(info);
+    const errorMessage = error.toString();
+
     this.setState({
-      errorMsg: error.toString(),
+      errorMsg: errorMessage,
       errorStack: error.stack,
       errorInfo: validInfo,
     });
+
+    if (this.#pingSubmitted) {
+      
+      
+      return;
+    }
+
+    const extras = Telemetry.sanitizeEventExtras(
+      {
+        component_stack: validInfo.componentStack || "",
+        error_name: error.name,
+        stack: error.stack || "",
+      },
+      "devtoolsMain.toolboxComponentError",
+      
+      
+      { limit: 500 }
+    );
+    Glean.devtoolsMain.toolboxComponentError.record(extras);
+    this.#pingSubmitted = true;
+  }
+
+  
+  toolboxDidCatch(error, toolbox) {
+    const errorMessage = error.toString();
+    const clientPacket = error.clientPacket || {};
+    const serverPacket = error.serverPacket || {};
+
+    this.setState({
+      errorMsg: errorMessage,
+      errorStack: error.stack,
+      errorInfo: {
+        clientPacket,
+        serverPacket,
+      },
+      
+      toolbox,
+    });
+
+    if (this.#pingSubmitted) {
+      
+      
+      return;
+    }
+
+    const extras = Telemetry.sanitizeEventExtras(
+      {
+        error_name: error.name,
+        packet_error: serverPacket.error,
+        packet_target: serverPacket.from,
+        packet_type: clientPacket.type,
+        server_stack: serverPacket.stack || "",
+        stack: error.stack || "",
+      },
+      "devtoolsMain.toolboxServerError",
+      
+      
+      { limit: 500 }
+    );
+    Glean.devtoolsMain.toolboxServerError.record(extras);
+    this.#pingSubmitted = true;
   }
 
   getBugLink() {
