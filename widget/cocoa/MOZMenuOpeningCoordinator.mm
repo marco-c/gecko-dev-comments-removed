@@ -27,6 +27,10 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 @property(retain) NSView* view;
 @property(retain) NSAppearance* appearance;
 @property BOOL isContextMenu;
+@property BOOL isAnchoredMenu;
+@property NSRect anchorRect;
+@property NSRectEdge anchorEdge;
+@property BOOL pullsDown;
 @end
 
 @implementation MOZMenuOpeningInfo
@@ -71,7 +75,11 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
                    atScreenPosition:(NSPoint)aPosition
                             forView:(NSView*)aView
                      withAppearance:(NSAppearance*)aAppearance
-                      asContextMenu:(BOOL)aIsContextMenu {
+                      asContextMenu:(BOOL)aIsContextMenu
+                     asAnchoredMenu:(BOOL)aIsAnchoredMenu
+                         anchorRect:(NSRect)aAnchorRect
+                         anchorEdge:(NSRectEdge)aAnchorEdge
+                          pullsDown:(BOOL)aPullsDown {
   MOZ_RELEASE_ASSERT(!mPendingOpening,
                      "A menu is already waiting to open. Before opening the "
                      "next one, either wait "
@@ -86,6 +94,10 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   info.view = aView;
   info.appearance = aAppearance;
   info.isContextMenu = aIsContextMenu;
+  info.isAnchoredMenu = aIsAnchoredMenu;
+  info.anchorRect = aAnchorRect;
+  info.anchorEdge = aAnchorEdge;
+  info.pullsDown = aPullsDown;
   mPendingOpening = info;
 
   if (!mRunMenuIsOnTheStack) {
@@ -110,7 +122,11 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
           atScreenPosition:info.position
                    forView:info.view
             withAppearance:info.appearance
-             asContextMenu:info.isContextMenu];
+             asContextMenu:info.isContextMenu
+            asAnchoredMenu:info.isAnchoredMenu
+                anchorRect:info.anchorRect
+                anchorEdge:info.anchorEdge
+                 pullsDown:info.pullsDown];
     } @catch (NSException* exception) {
       nsObjCExceptionLog(exception);
     }
@@ -138,36 +154,11 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
     atScreenPosition:(NSPoint)aPosition
              forView:(NSView*)aView
       withAppearance:(NSAppearance*)aAppearance
-       asContextMenu:(BOOL)aIsContextMenu {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
+       asContextMenu:(BOOL)aIsContextMenu
+      asAnchoredMenu:(BOOL)aIsAnchoredMenu
+          anchorRect:(NSRect)aAnchorRect
+          anchorEdge:(NSRectEdge)aAnchorEdge
+           pullsDown:(BOOL)aPullsDown {
   if (aAppearance) {
     if (@available(macOS 11.0, *)) {
       
@@ -176,8 +167,66 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
       aMenu.appearance = aAppearance;
     }
   }
+  if (aView && aIsAnchoredMenu) {
+    
+    NSPopUpButtonCell* cell =
+        [[NSPopUpButtonCell alloc] initTextCell:@"" pullsDown:aPullsDown];
+    if (aPullsDown) {
+      
+      
+      
+      
+      cell.bezelStyle = NSBezelStyleSmallSquare;
+    } else {
+      cell.altersStateOfSelectedItem = false;
+    }
+    cell.autoenablesItems = false;
+    cell.menu = aMenu;
+    cell.preferredEdge = aAnchorEdge;
 
-  if (aView) {
+    
+    NSView* anchorView = [[NSView alloc] initWithFrame:aAnchorRect];
+    [aView addSubview:anchorView];
+    [cell attachPopUpWithFrame:[anchorView bounds] inView:anchorView];
+
+    
+    [cell performClickWithFrame:[anchorView bounds] inView:anchorView];
+
+    
+    [cell release];
+    [anchorView removeFromSuperview];
+    [anchorView release];
+  } else if (aView) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     NSWindow* window = aView.window;
     NSPoint locationInWindow =
         nsCocoaUtils::ConvertPointFromScreen(window, aPosition);

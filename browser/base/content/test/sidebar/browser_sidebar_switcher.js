@@ -126,45 +126,63 @@ async function testSidebarMenuKeyToggle(key, sidebarTitle) {
     "open",
     "Sidebar menu popup is open"
   );
+  if (
+    AppConstants.platform == "macosx" &&
+    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
+  ) {
+    
+    
+    let sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+    if (sidebarTitle == "Tabs") {
+      SidebarController._switcherPanel.activateItem(
+        document.getElementById("sidebar-switcher-tabs")
+      );
+    } else {
+      SidebarController._switcherPanel.activateItem(
+        document.getElementById("sidebar-switcher-history")
+      );
+    }
+    await sidebarShown;
+  } else {
+    info("Testing keyboard navigation between sidebar menu popup controls");
 
-  info("Testing keyboard navigation between sidebar menu popup controls");
+    let arrowDown = async (menuitemId, msg) => {
+      let menuItemActive = BrowserTestUtils.waitForEvent(
+        SidebarController._switcherPanel,
+        "DOMMenuItemActive"
+      );
+      EventUtils.synthesizeKey("KEY_ArrowDown", {});
+      await menuItemActive;
+      Assert.ok(
+        document.getElementById(menuitemId).hasAttribute("_moz-menuactive"),
+        msg
+      );
+    };
 
-  let arrowDown = async (menuitemId, msg) => {
-    let menuItemActive = BrowserTestUtils.waitForEvent(
-      SidebarController._switcherPanel,
-      "DOMMenuItemActive"
-    );
-    EventUtils.synthesizeKey("KEY_ArrowDown", {});
-    await menuItemActive;
-    Assert.ok(
-      document.getElementById(menuitemId).hasAttribute("_moz-menuactive"),
-      msg
-    );
-  };
-
-  
-  await arrowDown(
-    "sidebar-switcher-bookmarks",
-    "The 1st sidebar menu item (Bookmarks) is active"
-  );
-
-  
-  await arrowDown(
-    "sidebar-switcher-history",
-    "The 2nd sidebar menu item (History) is active"
-  );
-
-  if (sidebarTitle === "Tabs") {
+    
     await arrowDown(
-      "sidebar-switcher-tabs",
-      "The 3rd sidebar menu item (Synced Tabs) is active"
+      "sidebar-switcher-bookmarks",
+      "The 1st sidebar menu item (Bookmarks) is active"
     );
-  }
 
-  
-  let sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
-  await pickSwitcherMenuitem( null);
-  await sidebarShown;
+    
+    await arrowDown(
+      "sidebar-switcher-history",
+      "The 2nd sidebar menu item (History) is active"
+    );
+
+    if (sidebarTitle === "Tabs") {
+      await arrowDown(
+        "sidebar-switcher-tabs",
+        "The 3rd sidebar menu item (Synced Tabs) is active"
+      );
+    }
+
+    
+    let sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+    await pickSwitcherMenuitem( null);
+    await sidebarShown;
+  }
 
   info("Testing keyboard navigation when a sidebar menu popup is closed");
 
@@ -240,7 +258,7 @@ add_task(async function markup() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Escape", {});
+  sidebarPopup.hidePopup();
   await waitForPopupHidden;
 
   Assert.equal(

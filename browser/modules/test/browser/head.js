@@ -170,7 +170,7 @@ function clickSecondaryAction(actionIndex) {
     
     let actionMenuItem =
       popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
-    await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+    popupNotification.menupopup.activateItem(actionMenuItem);
     await removePromise;
   })();
 }

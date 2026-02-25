@@ -91,6 +91,11 @@ class nsMenuX final : public nsMenuParentX,
 
   bool IsVisible() const { return mVisible; }
 
+  void SetIsAnchoredPullDown(bool aIsAnchoredPullDown) {
+    mIsAnchoredPullDown = aIsAnchoredPullDown;
+  }
+  void RefreshMenuChildren(const MenuChild& aChildInserted);
+
   
   
   
@@ -307,6 +312,14 @@ class nsMenuX final : public nsMenuParentX,
   bool mIsOpenForGecko = false;
 
   bool mVisible = true;
+
+  bool mIsAnchoredPullDown = false;
+
+  
+  
+  
+  
+  bool mIsPullDownPlaceholderPresent = false;
 
   
   
