@@ -1691,27 +1691,6 @@ impl<'h> Captures<'h> {
     
     
     
-    #[inline]
-    pub fn get_match(&self) -> Match<'h> {
-        self.get(0).unwrap()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1818,7 +1797,7 @@ impl<'h> Captures<'h> {
             .expect("number of capture groups can vary in a match")
             .checked_sub(1)
             .expect("number of groups is always greater than zero");
-        assert_eq!(N, len, "asked for {N} groups, but must ask for {len}");
+        assert_eq!(N, len, "asked for {} groups, but must ask for {}", N, len);
         
         
         
@@ -1973,7 +1952,7 @@ impl<'h> core::fmt::Debug for Captures<'h> {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 write!(f, "{}", self.0)?;
                 if let Some(name) = self.1 {
-                    write!(f, "/{name:?}")?;
+                    write!(f, "/{:?}", name)?;
                 }
                 Ok(())
             }
@@ -2021,7 +2000,7 @@ impl<'h> core::ops::Index<usize> for Captures<'h> {
     fn index<'a>(&'a self, i: usize) -> &'a str {
         self.get(i)
             .map(|m| m.as_str())
-            .unwrap_or_else(|| panic!("no group at index '{i}'"))
+            .unwrap_or_else(|| panic!("no group at index '{}'", i))
     }
 }
 
@@ -2047,7 +2026,7 @@ impl<'h, 'n> core::ops::Index<&'n str> for Captures<'h> {
     fn index<'a>(&'a self, name: &'n str) -> &'a str {
         self.name(name)
             .map(|m| m.as_str())
-            .unwrap_or_else(|| panic!("no group named '{name}'"))
+            .unwrap_or_else(|| panic!("no group named '{}'", name))
     }
 }
 

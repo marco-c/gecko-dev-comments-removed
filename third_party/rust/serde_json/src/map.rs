@@ -1056,7 +1056,6 @@ impl<'a> IntoIterator for &'a Map<String, Value> {
 }
 
 
-#[derive(Clone, Debug)]
 pub struct Iter<'a> {
     iter: IterImpl<'a>,
 }
@@ -1082,7 +1081,6 @@ impl<'a> IntoIterator for &'a mut Map<String, Value> {
 }
 
 
-#[derive(Debug)]
 pub struct IterMut<'a> {
     iter: IterMutImpl<'a>,
 }
@@ -1108,7 +1106,6 @@ impl IntoIterator for Map<String, Value> {
 }
 
 
-#[derive(Debug)]
 pub struct IntoIter {
     iter: IntoIterImpl,
 }
@@ -1123,7 +1120,6 @@ delegate_iterator!((IntoIter) => (String, Value));
 
 
 
-#[derive(Clone, Debug)]
 pub struct Keys<'a> {
     iter: KeysImpl<'a>,
 }
@@ -1138,7 +1134,6 @@ delegate_iterator!((Keys<'a>) => &'a String);
 
 
 
-#[derive(Clone, Debug)]
 pub struct Values<'a> {
     iter: ValuesImpl<'a>,
 }
@@ -1153,7 +1148,6 @@ delegate_iterator!((Values<'a>) => &'a Value);
 
 
 
-#[derive(Debug)]
 pub struct ValuesMut<'a> {
     iter: ValuesMutImpl<'a>,
 }
@@ -1168,7 +1162,6 @@ delegate_iterator!((ValuesMut<'a>) => &'a mut Value);
 
 
 
-#[derive(Debug)]
 pub struct IntoValues {
     iter: IntoValuesImpl,
 }

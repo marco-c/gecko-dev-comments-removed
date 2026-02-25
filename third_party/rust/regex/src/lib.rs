@@ -1312,16 +1312,9 @@
 
 
 
-
-
-
-
 #![no_std]
 #![deny(missing_docs)]
 #![cfg_attr(feature = "pattern", feature(pattern))]
-
-
-#![cfg_attr(docsrs_regex, feature(doc_cfg))]
 #![warn(missing_debug_implementations)]
 
 #[cfg(doctest)]
