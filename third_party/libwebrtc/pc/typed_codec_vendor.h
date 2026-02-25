@@ -11,6 +11,8 @@
 #ifndef PC_TYPED_CODEC_VENDOR_H_
 #define PC_TYPED_CODEC_VENDOR_H_
 
+#include <utility>
+
 #include "api/field_trials_view.h"
 #include "api/media_types.h"
 #include "media/base/codec_list.h"
@@ -25,19 +27,28 @@ class TypedCodecVendor {
  public:
   
   
-  TypedCodecVendor() {}
+  TypedCodecVendor() = default;
+
+  
+  TypedCodecVendor(TypedCodecVendor&&) = default;
+  TypedCodecVendor& operator=(TypedCodecVendor&& from) = default;
+  TypedCodecVendor(const TypedCodecVendor& from) = default;
+  TypedCodecVendor& operator=(const TypedCodecVendor& from) = default;
+
+  
+  
+  explicit TypedCodecVendor(CodecList codecs) : codecs_(std::move(codecs)) {}
+
   TypedCodecVendor(const MediaEngineInterface* media_engine,
                    MediaType type,
                    bool is_sender,
                    bool rtx_enabled,
                    const FieldTrialsView& trials);
+
   const CodecList& codecs() const { return codecs_; }
-  void set_codecs(const CodecList& codecs) { codecs_ = codecs; }
-  
-  TypedCodecVendor(const TypedCodecVendor& from) = default;
-  TypedCodecVendor& operator=(const TypedCodecVendor& from) = default;
 
  private:
+  
   CodecList codecs_;
 };
 
