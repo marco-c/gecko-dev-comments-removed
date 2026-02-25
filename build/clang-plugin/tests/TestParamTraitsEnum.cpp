@@ -1,3 +1,5 @@
+#include <cstdint>
+
 typedef enum {
   BadFirst,
   BadSecond,
@@ -25,12 +27,25 @@ enum class ClassEnum {
   ClassLast
 };
 
+enum class TypedClassEnum : uint32_t {
+  TypedFirst,
+  TypedLast
+};
+
+enum class IsEnumCaseEnum {
+  IsEnumCaseFirst,
+  IsEnumCaseLast
+};
+
+enum class nsresult : uint32_t {
+  NS_OK = 0
+};
+
 template <class P> struct ParamTraits;
 
 
 template <typename E, typename EnumValidator>
 struct EnumSerializer {
-  typedef E paramType;
 };
 
 template <typename E,
@@ -38,6 +53,7 @@ template <typename E,
           E HighBound>
 class ContiguousEnumValidator
 {};
+
 
 template <typename E,
           E MinLegal,
@@ -48,22 +64,30 @@ struct ContiguousEnumSerializer
 {};
 
 
+template <typename E>
+struct ParamTraits_IsEnumCase
+{};
+
+
 template<>
 struct ParamTraits<ClassEnum> 
 {
-  typedef ClassEnum paramType;
+  
+};
+
+template<>
+struct ParamTraits<TypedClassEnum> 
+{
 };
 
 template<>
 struct ParamTraits<enum RawEnum> 
 {
-  typedef enum RawEnum paramType;
 };
 
 template<>
 struct ParamTraits<BadEnum> 
 {
-  typedef BadEnum paramType;
 };
 
 
@@ -73,7 +97,6 @@ typedef NestedDefLevel1 NestedDefLevel2;
 template<>
 struct ParamTraits<NestedDefLevel2> 
 {
-  typedef NestedDefLevel2 paramType;
 };
 
 
@@ -82,7 +105,6 @@ typedef int IntTypedef;
 template<>
 struct ParamTraits<IntTypedef>
 {
-  typedef IntTypedef paramType;
 };
 
 
@@ -91,4 +113,15 @@ struct ParamTraits<GoodEnum>
 : public ContiguousEnumSerializer<GoodEnum,
                                   GoodEnum::GoodFirst,
                                   GoodEnum::GoodLast>
+{};
+
+
+template<>
+struct ParamTraits<IsEnumCaseEnum>
+: public ParamTraits_IsEnumCase<IsEnumCaseEnum>
+{};
+
+
+template<>
+struct ParamTraits<nsresult>
 {};
