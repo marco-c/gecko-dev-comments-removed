@@ -365,8 +365,8 @@ class WasmTableObject : public NativeObject {
   
   
 
-  static WasmTableObject* create(JSContext* cx, wasm::Limits limits,
-                                 wasm::RefType tableType, HandleObject proto);
+  static WasmTableObject* create(JSContext* cx, const wasm::TableType& type,
+                                 HandleObject proto);
   wasm::Table& table() const;
 
   

@@ -123,12 +123,10 @@ if (wasmCompactImportsEnabled()) {
         );
 
         
-
-        
-        
-        
-        
-        
+        wasmEval(
+            moduleWithSections([v2vSigSection, importSection([{ module: "a", items: []}])]),
+            { a: { b: () => {}, c: new WebAssembly.Global({ value: "i32", mutable: true }) } },
+        );
     }
 
     
@@ -143,28 +141,26 @@ if (wasmCompactImportsEnabled()) {
         );
 
         
-
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        wasmEval(
+            moduleWithSections([v2vSigSection, importSection([{
+                module: "a",
+                type: externtype({ funcTypeIndex: 0 }),
+                items: [],
+            }])]),
+        );
+        assertErrorMessage(() => wasmEval(
+            moduleWithSections([
+                v2vSigSection,
+                importSection([{
+                    module: "a",
+                    type: externtype({ tableType: tableType(FuncRefCode, limits({ min: 0 })) }),
+                    items: [],
+                }]),
+                elemSection([{ mode: "active", table: 0, offset: 0, indices: [] }]),
+            ]),
+        ), WebAssembly.CompileError, /table index out of range|active elem segment requires a table/);
     }
 }
 
