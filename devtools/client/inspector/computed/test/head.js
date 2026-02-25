@@ -290,6 +290,7 @@ function failClipboardCheck(expectedPattern) {
 
 
 
+
 async function checkMatchedSelectorForProperty(
   view,
   { property, expectedComputedValue, expectedMatchedSelectors }
@@ -336,4 +337,6 @@ async function checkMatchedSelectorForProperty(
       `Selector #${index} ("${expectedMatchedSelectors[index].selector}") element does ${expectedMatch ? "" : "not "}have a matching class`
     );
   });
+
+  return selectorsEl;
 }

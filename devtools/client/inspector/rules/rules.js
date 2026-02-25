@@ -2207,9 +2207,10 @@ class CssRuleView extends EventEmitter {
     
     const win = elementToScrollTo.ownerGlobal;
     const reducedMotion = win.matchMedia("(prefers-reduced-motion)").matches;
-    scrollBehavior = reducedMotion ? "auto" : scrollBehavior;
-
-    elementToScrollTo.scrollIntoView({ behavior: scrollBehavior });
+    scrollBehavior = reducedMotion ? "instant" : scrollBehavior;
+    elementToScrollTo.scrollIntoView({
+      behavior: scrollBehavior,
+    });
   }
 
   
@@ -2231,6 +2232,11 @@ class CssRuleView extends EventEmitter {
 
 
 
+  hasRule(ruleFront) {
+    return this.rules.some(r => r.domRule === ruleFront);
+  }
+
+  
 
 
 
@@ -2238,83 +2244,59 @@ class CssRuleView extends EventEmitter {
 
 
 
-  highlightProperty(name, { ruleValidator } = {}) {
+
+
+
+
+
+
+
+
+
+
+
+  highlightProperty = async (
+    name,
+    { ruleValidator, ruleFront, focusValue = false } = {}
+  ) => {
     
     this.#onClearSearch({ focusSearchField: false });
 
-    let scrollBehavior = "auto";
-    const hasRuleValidator = typeof ruleValidator === "function";
-    for (const rule of this.rules) {
-      if (hasRuleValidator && !ruleValidator(rule)) {
-        continue;
+    if (ruleFront) {
+      const rule = this.rules.find(r => r.domRule === ruleFront);
+      if (!rule) {
+        console.error("Unable to find a rule for actor", ruleFront);
+        return false;
       }
-      for (const textProp of rule.textProps) {
-        if (textProp.overridden || textProp.invisible || !textProp.enabled) {
-          continue;
-        }
 
+      const highlighted = await this.#maybeHighlightPropertyInRule({
+        name,
+        rule,
+        ruleValidator,
         
-        if (textProp.name === name) {
-          
-          if (!this.inspector.isThreePaneModeEnabled) {
-            this.inspector.sidebar.select("ruleview");
-          }
-
-          
-          
-          if (rule.pseudoElement.length && !this.showPseudoElements) {
-            
-            
-            scrollBehavior = "auto";
-            this.#togglePseudoElementRuleContainer();
-          }
-
-          
-          
-          if (!textProp.editor && textProp.isUnusedVariable) {
-            textProp.rule.editor.showUnusedCssVariable(textProp);
-          }
-
-          this.#highlightElementInRule(
-            rule,
-            textProp.editor.element,
-            scrollBehavior,
-            textProp.editor.nameSpan
-          );
-          return true;
-        }
-
         
-        for (const computed of textProp.computed) {
-          if (computed.overridden) {
-            continue;
-          }
+        
+        matchOverridden: true,
+        focusValue,
+      });
+      if (!highlighted) {
+        console.error("Unable to highlight rule", name, rule);
+        return false;
+      }
 
-          if (computed.name === name) {
-            if (!this.inspector.isThreePaneModeEnabled) {
-              this.inspector.sidebar.select("ruleview");
-            }
+      return true;
+    }
 
-            if (
-              textProp.rule.pseudoElement.length &&
-              !this.showPseudoElements
-            ) {
-              scrollBehavior = "auto";
-              this.#togglePseudoElementRuleContainer();
-            }
-
-            
-            textProp.editor.expandForFilter();
-
-            this.#highlightElementInRule(
-              rule,
-              computed.element,
-              scrollBehavior
-            );
-
-            return true;
-          }
-        }
+    for (const rule of this.rules) {
+      if (
+        await this.#maybeHighlightPropertyInRule({
+          name,
+          rule,
+          ruleValidator,
+          focusValue,
+        })
+      ) {
+        return true;
       }
     }
     
@@ -2324,9 +2306,115 @@ class CssRuleView extends EventEmitter {
     }
 
     return false;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async #maybeHighlightPropertyInRule({
+    name,
+    rule,
+    ruleValidator,
+    matchOverridden = false,
+    focusValue = false,
+  }) {
+    const hasRuleValidator = typeof ruleValidator === "function";
+    if (hasRuleValidator && !ruleValidator(rule)) {
+      return false;
+    }
+
+    let matchingTextPropComputed;
+    
+    
+    const textProps = rule.textProps.toReversed();
+    for (const textProp of textProps) {
+      for (const computed of textProp.computed) {
+        if (
+          computed.name === name &&
+          !textProp.invisible &&
+          textProp.enabled &&
+          (!computed.overridden || matchOverridden) &&
+          (!matchingTextPropComputed ||
+            this.elementStyle.hasHigherPriorityThanEarlierProp(
+              computed,
+              matchingTextPropComputed
+            ))
+        ) {
+          matchingTextPropComputed = computed;
+        }
+      }
+    }
+
+    if (!matchingTextPropComputed) {
+      return false;
+    }
+
+    await this.#selectRuleViewIfNeeded();
+
+    let scrollBehavior;
+
+    
+    
+    if (rule.pseudoElement.length && !this.showPseudoElements) {
+      
+      
+      scrollBehavior = "instant";
+      this.#togglePseudoElementRuleContainer();
+    }
+
+    const textProp = matchingTextPropComputed.textProp;
+
+    
+    
+    if (!textProp.editor && textProp.isUnusedVariable) {
+      textProp.rule.editor.showUnusedCssVariable(textProp);
+    }
+
+    
+    
+    const isTextPropAShorthand =
+      textProp.name !== matchingTextPropComputed.name;
+    if (isTextPropAShorthand) {
+      textProp.editor.expandForFilter();
+    }
+
+    this.#highlightElementInRule({
+      rule,
+      elementToHighlight: isTextPropAShorthand
+        ? 
+          matchingTextPropComputed.element
+        : textProp.editor.element,
+      elementToFocus: focusValue
+        ? textProp.editor.valueSpan
+        : textProp.editor.nameSpan,
+      scrollBehavior,
+    });
+    return true;
   }
 
   
+
+
 
 
 
@@ -2358,7 +2446,10 @@ class CssRuleView extends EventEmitter {
       this.#toggleContainerVisibility(toggle, propertyContainer);
     }
 
-    this.#highlightElementInRule(null, propertyEl, scrollBehavior);
+    this.#highlightElementInRule({
+      elementToHighlight: propertyEl,
+      scrollBehavior,
+    });
     return true;
   }
 
@@ -2370,22 +2461,38 @@ class CssRuleView extends EventEmitter {
 
 
 
-  async #highlightElementInRule(rule, element, scrollBehavior, elementToFocus) {
+
+
+
+
+
+
+  async #highlightElementInRule({
+    rule,
+    elementToHighlight,
+    elementToFocus,
+    scrollBehavior,
+  }) {
     if (rule) {
-      this.#scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+      this.#scrollToElement(
+        rule.editor.selectorText,
+        elementToHighlight,
+        scrollBehavior
+      );
     } else {
-      this.#scrollToElement(element, null, scrollBehavior);
+      this.#scrollToElement(elementToHighlight, null, scrollBehavior);
     }
 
-    
     if (elementToFocus) {
-      elementToFocus.focus({ focusVisible: true });
-      this.emitForTests("element-highlighted", element);
-      return;
+      elementToFocus.focus({
+        focusVisible: true,
+        
+        preventScroll: true,
+      });
     }
 
-    await this.#flashElement(element);
-    this.emitForTests("element-highlighted", element);
+    await this.#flashElement(elementToHighlight);
+    this.emitForTests("element-highlighted", elementToHighlight);
   }
 
   
@@ -2398,6 +2505,23 @@ class CssRuleView extends EventEmitter {
     return this.cssRegisteredPropertiesByTarget.get(
       this.inspector.selection.nodeFront.targetFront
     );
+  }
+
+  async #selectRuleViewIfNeeded() {
+    
+    
+    if (
+      this.inspector.isThreePaneModeEnabled ||
+      this.inspector.sidebar.getCurrentTabID() === "ruleview"
+    ) {
+      return;
+    }
+
+    
+    
+    const onRefreshed = this.inspector.once("rule-view-refreshed");
+    await this.inspector.sidebar.select("ruleview");
+    await onRefreshed;
   }
 }
 

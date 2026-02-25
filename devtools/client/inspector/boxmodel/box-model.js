@@ -303,9 +303,9 @@ class BoxModel {
 
 
 
-  onShowRulePreviewTooltip(target, property) {
-    const ruleView = this.inspector.getPanel("ruleview").view;
-    const isHighlighted = ruleView.highlightProperty(property);
+  async onShowRulePreviewTooltip(target, property) {
+    const { highlightProperty } = this.inspector.getPanel("ruleview").view;
+    const isHighlighted = await highlightProperty(property);
 
     
     

@@ -312,7 +312,7 @@ class TextPropertyEditor {
 
       this.valueContainer.addEventListener(
         "click",
-        event => {
+        async event => {
           
           event.stopPropagation();
 
@@ -325,26 +325,29 @@ class TextPropertyEditor {
             const isRuleInStartingStyle =
               this.ruleEditor.rule.isInStartingStyle();
             const rulePseudoElement = this.ruleEditor.rule.pseudoElement;
-            this.ruleView.highlightProperty(event.target.dataset.variableName, {
-              ruleValidator: rule => {
-                
-                
-                
-                
-                if (!isRuleInStartingStyle && rule.isInStartingStyle()) {
-                  return false;
-                }
+            await this.ruleView.highlightProperty(
+              event.target.dataset.variableName,
+              {
+                ruleValidator: rule => {
+                  
+                  
+                  
+                  
+                  if (!isRuleInStartingStyle && rule.isInStartingStyle()) {
+                    return false;
+                  }
 
-                if (
-                  rule.pseudoElement &&
-                  rulePseudoElement !== rule.pseudoElement
-                ) {
-                  return false;
-                }
+                  if (
+                    rule.pseudoElement &&
+                    rulePseudoElement !== rule.pseudoElement
+                  ) {
+                    return false;
+                  }
 
-                return true;
-              },
-            });
+                  return true;
+                },
+              }
+            );
           }
         },
         { signal: this.abortController.signal }
