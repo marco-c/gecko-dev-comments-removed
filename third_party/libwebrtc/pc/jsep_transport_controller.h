@@ -315,6 +315,13 @@ class JsepTransportController : public PayloadTypeSuggester {
                                   const SessionDescription* remote_desc)
       RTC_RUN_ON(network_thread_);
 
+  bool NeedsIceRestart_n(const std::string& mid) const
+      RTC_RUN_ON(network_thread_);
+
+  RTCErrorOr<PayloadType> SuggestPayloadType_n(absl::string_view mid,
+                                               const Codec& codec)
+      RTC_RUN_ON(network_thread_);
+
   
   
   
