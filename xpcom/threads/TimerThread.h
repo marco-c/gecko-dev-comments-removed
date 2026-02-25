@@ -252,10 +252,18 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   
   
+  struct WakeupTime {
+    const TimeStamp mWakeupTime;
+    const TimeDuration mDelayTolerance;
+  };
+
   
   
   
-  TimeStamp ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
+  
+  
+  
+  WakeupTime ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
 
   
   
@@ -277,7 +285,8 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   
   
-  void Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor);
+  void Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
+      MOZ_REQUIRES(mMonitor);
 
   
   
