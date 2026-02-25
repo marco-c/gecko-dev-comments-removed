@@ -162,6 +162,17 @@ void UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
 }
 
 
+void UrlClassifierFeatureFactory::GetRealTimeProtectionFeatures(
+    nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  nsCOMPtr<nsIUrlClassifierFeature> feature;
+
+  feature = UrlClassifierFeatureGlobalCache::MaybeCreate();
+  if (feature) {
+    aFeatures.AppendElement(feature);
+  }
+}
+
+
 already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   if (!XRE_IsParentProcess()) {
