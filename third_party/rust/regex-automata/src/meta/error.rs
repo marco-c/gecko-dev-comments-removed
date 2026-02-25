@@ -234,7 +234,7 @@ impl From<MatchError> for RetryFailError {
             
             
             HaystackTooLong { .. } | UnsupportedAnchored { .. } => {
-                unreachable!("found impossible error in meta engine: {merr}")
+                unreachable!("found impossible error in meta engine: {}", merr)
             }
         }
     }

@@ -538,10 +538,6 @@
 
 
 
-
-
-
-
 #![no_std]
 
 #![deny(missing_docs)]
@@ -605,7 +601,8 @@
 #![warn(missing_debug_implementations)]
 
 
-#![cfg_attr(docsrs_regex, feature(doc_cfg))]
+
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 
 

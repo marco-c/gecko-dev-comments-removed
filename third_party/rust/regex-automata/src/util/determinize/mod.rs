@@ -131,7 +131,7 @@ pub(crate) fn next(
     if !state.look_need().is_empty() {
         
         
-        let mut look_have = state.look_have();
+        let mut look_have = state.look_have().clone();
         match unit.as_u8() {
             Some(b'\r') => {
                 if !rev || !state.is_half_crlf() {

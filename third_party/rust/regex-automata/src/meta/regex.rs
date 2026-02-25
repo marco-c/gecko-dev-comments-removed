@@ -917,9 +917,7 @@ impl Regex {
     
     #[inline]
     pub fn search(&self, input: &Input<'_>) -> Option<Match> {
-        if self.imp.info.captures_disabled()
-            || self.imp.info.is_impossible(input)
-        {
+        if self.imp.info.is_impossible(input) {
             return None;
         }
         let mut guard = self.pool.get();
@@ -975,9 +973,7 @@ impl Regex {
     
     #[inline]
     pub fn search_half(&self, input: &Input<'_>) -> Option<HalfMatch> {
-        if self.imp.info.captures_disabled()
-            || self.imp.info.is_impossible(input)
-        {
+        if self.imp.info.is_impossible(input) {
             return None;
         }
         let mut guard = self.pool.get();
@@ -1132,9 +1128,7 @@ impl Regex {
         input: &Input<'_>,
         slots: &mut [Option<NonMaxUsize>],
     ) -> Option<PatternID> {
-        if self.imp.info.captures_disabled()
-            || self.imp.info.is_impossible(input)
-        {
+        if self.imp.info.is_impossible(input) {
             return None;
         }
         let mut guard = self.pool.get();
@@ -1248,9 +1242,7 @@ impl Regex {
         cache: &mut Cache,
         input: &Input<'_>,
     ) -> Option<Match> {
-        if self.imp.info.captures_disabled()
-            || self.imp.info.is_impossible(input)
-        {
+        if self.imp.info.is_impossible(input) {
             return None;
         }
         self.imp.strat.search(cache, input)
@@ -1292,9 +1284,7 @@ impl Regex {
         cache: &mut Cache,
         input: &Input<'_>,
     ) -> Option<HalfMatch> {
-        if self.imp.info.captures_disabled()
-            || self.imp.info.is_impossible(input)
-        {
+        if self.imp.info.is_impossible(input) {
             return None;
         }
         self.imp.strat.search_half(cache, input)
@@ -1447,9 +1437,7 @@ impl Regex {
         input: &Input<'_>,
         slots: &mut [Option<NonMaxUsize>],
     ) -> Option<PatternID> {
-        if self.imp.info.captures_disabled()
-            || self.imp.info.is_impossible(input)
-        {
+        if self.imp.info.is_impossible(input) {
             return None;
         }
         self.imp.strat.search_slots(cache, input, slots)
@@ -1992,19 +1980,6 @@ impl RegexInfo {
     pub(crate) fn is_always_anchored_end(&self) -> bool {
         use regex_syntax::hir::Look;
         self.props_union().look_set_suffix().contains(Look::End)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn captures_disabled(&self) -> bool {
-        matches!(self.config().get_which_captures(), WhichCaptures::None)
     }
 
     
@@ -2653,38 +2628,6 @@ impl Config {
         Config { pre: Some(pre), ..self }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -3470,9 +3413,9 @@ impl Builder {
                     .last()
                     .unwrap_or(0);
                 if maxoff < p.len() {
-                    debug!("{pid:?}: {}[... snip ...]", &p[..maxoff]);
+                    debug!("{:?}: {}[... snip ...]", pid, &p[..maxoff]);
                 } else {
-                    debug!("{pid:?}: {p}");
+                    debug!("{:?}: {}", pid, p);
                 }
             }
         }
