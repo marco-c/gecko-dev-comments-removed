@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
 
 
 
@@ -44,9 +45,10 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<GeckoPreference<?>> getGeckoPref(
       @NonNull final String prefName) {
+    ThreadUtils.assertOnHandlerThread();
     final GeckoBundle bundle = new GeckoBundle(1);
     bundle.putStringArray("prefs", List.of(prefName));
     return EventDispatcher.getInstance()
@@ -77,9 +79,10 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<List<GeckoPreference<?>>> getGeckoPrefs(
       @NonNull final List<String> prefNames) {
+    ThreadUtils.assertOnHandlerThread();
     final GeckoBundle bundle = new GeckoBundle(1);
     bundle.putStringArray("prefs", prefNames);
     return EventDispatcher.getInstance()
@@ -111,9 +114,10 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<Void> setGeckoPref(
       @NonNull final String prefName, @NonNull final String value, @PrefBranch final int branch) {
+    ThreadUtils.assertOnHandlerThread();
     final var pref = SetGeckoPreference.setStringPref(prefName, value, branch);
     final GeckoBundle requestBundle = new GeckoBundle(1);
     requestBundle.putBundleArray("prefs", List.of(pref.toBundle()));
@@ -142,9 +146,10 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<Void> setGeckoPref(
       @NonNull final String prefName, @NonNull final Integer value, @PrefBranch final int branch) {
+    ThreadUtils.assertOnHandlerThread();
     final var pref = SetGeckoPreference.setIntPref(prefName, value, branch);
     final GeckoBundle requestBundle = new GeckoBundle(1);
     requestBundle.putBundleArray("prefs", List.of(pref.toBundle()));
@@ -173,9 +178,10 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<Void> setGeckoPref(
       @NonNull final String prefName, @NonNull final Boolean value, @PrefBranch final int branch) {
+    ThreadUtils.assertOnHandlerThread();
     final var pref = SetGeckoPreference.setBoolPref(prefName, value, branch);
     final GeckoBundle requestBundle = new GeckoBundle(1);
     requestBundle.putBundleArray("prefs", List.of(pref.toBundle()));
@@ -220,9 +226,10 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<Map<String, Boolean>> setGeckoPrefs(
       @NonNull final List<SetGeckoPreference<?>> prefs) {
+    ThreadUtils.assertOnHandlerThread();
     final List<GeckoBundle> itemBundles = new ArrayList<>(prefs.size());
     for (final SetGeckoPreference<?> pref : prefs) {
       itemBundles.add(pref.toBundle());
@@ -269,8 +276,9 @@ public class GeckoPreferenceController {
 
 
 
-  @AnyThread
+  @HandlerThread
   public static @NonNull GeckoResult<Void> clearGeckoUserPref(@NonNull final String prefName) {
+    ThreadUtils.assertOnHandlerThread();
     final GeckoBundle bundle = new GeckoBundle(1);
     bundle.putString("pref", prefName);
     return EventDispatcher.getInstance().queryVoid(CLEAR_PREF, bundle);
@@ -289,7 +297,7 @@ public class GeckoPreferenceController {
 
 
 
-    @AnyThread
+    @HandlerThread
     public static @NonNull GeckoResult<Void> registerPreference(
         @NonNull final String preferenceName) {
       return registerPreferences(List.of(preferenceName));
@@ -303,9 +311,10 @@ public class GeckoPreferenceController {
 
 
 
-    @AnyThread
+    @HandlerThread
     public static @NonNull GeckoResult<Void> registerPreferences(
         @NonNull final List<String> preferenceNames) {
+      ThreadUtils.assertOnHandlerThread();
       final GeckoBundle bundle = new GeckoBundle();
       bundle.putStringArray("prefs", preferenceNames);
       return EventDispatcher.getInstance().queryVoid(REGISTER_PREF, bundle);
@@ -349,7 +358,7 @@ public class GeckoPreferenceController {
 
 
 
-      @AnyThread
+      @HandlerThread
       default void onGeckoPreferenceChange(
           @NonNull final GeckoPreference<?> observedGeckoPreference) {}
     }
