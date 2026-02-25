@@ -3,10 +3,9 @@
 
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, ColorU, PrimitiveKeyKind, PropertyBinding};
 use api::units::*;
-use crate::border::{ensure_no_corner_overlap, BorderRadiusAu};
-use crate::clip::{ClipDataHandle, ClipInternData, ClipItemKey, ClipItemKeyKind, ClipNodeId};
+use crate::border::{BorderRadiusAu};
+use crate::clip::{ClipItemKey, ClipItemKeyKind, ClipNodeId};
 use crate::intern::{Handle as InternHandle, InternDebug, Internable};
-use crate::pattern::{PatternBuilder, PatternBuilderContext, PatternBuilderState};
 use crate::prim_store::{InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData};
 use crate::prim_store::{PrimitiveInstanceKind, PrimitiveStore, RectangleKey};
 use crate::scene_building::{SceneBuilder, IsVisible};
@@ -14,7 +13,6 @@ use crate::spatial_tree::SpatialNodeIndex;
 use crate::gpu_types::BoxShadowStretchMode;
 use crate::render_task_graph::RenderTaskId;
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::util::extract_inner_rect_k;
 
 pub type BoxShadowKey = PrimKey<BoxShadow>;
 
@@ -42,7 +40,6 @@ pub struct BoxShadow {
     pub inner_shadow_rect: RectangleKey,
     pub outer_shadow_rect: RectangleKey,
     pub shadow_radius: BorderRadiusAu,
-    pub clip: ClipDataHandle,
 }
 
 impl IsVisible for BoxShadow {
@@ -52,46 +49,6 @@ impl IsVisible for BoxShadow {
 }
 
 pub type BoxShadowDataHandle = InternHandle<BoxShadow>;
-
-impl PatternBuilder for BoxShadowTemplate {
-    fn build(
-        &self,
-        sub_rect: Option<DeviceRect>,
-        _offset: LayoutVector2D,
-        ctx: &PatternBuilderContext,
-        state: &mut PatternBuilderState,
-    ) -> crate::pattern::Pattern {
-        
-        
-        debug_assert!(_offset.x == 0.0 && _offset.y == 0.0);
-        crate::pattern::box_shadow::box_shadow_pattern(
-            &self.kind.outer_shadow_rect,
-            self.kind.blur_radius,
-            self.kind.color,
-            self.kind.clip,
-            sub_rect,
-            ctx,
-            state,
-        )
-    }
-
-    fn get_base_color(
-        &self,
-        _ctx: &PatternBuilderContext,
-    ) -> ColorF {
-        self.kind.color
-    }
-
-    fn use_shared_pattern(
-        &self,
-    ) -> bool {
-        false
-    }
-
-    fn can_use_nine_patch(&self) -> bool {
-        false
-    }
-}
 
 impl InternablePrimitive for BoxShadow {
     fn into_key(
@@ -122,7 +79,6 @@ pub struct BoxShadowData {
     pub inner_shadow_rect: LayoutRect,
     pub outer_shadow_rect: LayoutRect,
     pub shadow_radius: BorderRadius,
-    pub clip: ClipDataHandle,
 }
 
 impl From<BoxShadow> for BoxShadowData {
@@ -134,7 +90,6 @@ impl From<BoxShadow> for BoxShadowData {
             inner_shadow_rect: shadow.inner_shadow_rect.into(),
             outer_shadow_rect: shadow.outer_shadow_rect.into(),
             shadow_radius: shadow.shadow_radius.into(),
-            clip: shadow.clip,
         }
     }
 }
@@ -226,9 +181,8 @@ impl<'a> SceneBuilder<'a> {
         mut blur_radius: f32,
         spread_radius: f32,
         border_radius: BorderRadius,
-        mut shadow_radius: BorderRadius,
+        shadow_radius: BorderRadius,
         clip_mode: BoxShadowClipMode,
-        is_root_coord_system: bool,
     ) {
         if color.a == 0.0 {
             return;
@@ -313,159 +267,85 @@ impl<'a> SceneBuilder<'a> {
             );
         } else {
             
+            let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
+            let mut extra_clips = vec![];
+
             
             
-            if is_root_coord_system &&
-               clip_mode == BoxShadowClipMode::Outset &&
-               blur_radius < 32.0 &&
-               false {
-                
-                ensure_no_corner_overlap(&mut shadow_radius, shadow_rect.size());
+            extra_clips.push(ClipItemKey {
+                kind: ClipItemKeyKind::rounded_rect(
+                    prim_info.rect,
+                    border_radius,
+                    prim_clip_mode,
+                ),
+                spatial_node_index,
+            });
 
-                
-                let prim_clip = ClipItemKey {
-                    kind: ClipItemKeyKind::rounded_rect(
-                        prim_info.rect,
-                        border_radius,
-                        ClipMode::ClipOut,
-                    ),
-                    spatial_node_index,
-                };
+            
+            
+            let dest_rect = shadow_rect.inflate(blur_offset, blur_offset);
 
-                
-                let blur_radius = (blur_radius * 0.5).round();
-                
-                let sig3 = blur_radius * 3.0;
+            
+            
+            let prim = PrimitiveKeyKind::Rectangle {
+                color: PropertyBinding::Value(color.into()),
+            };
 
-                
-                let item = ClipItemKey {
-                    kind: ClipItemKeyKind::rounded_rect(
-                        shadow_rect,
-                        shadow_radius,
-                        ClipMode::Clip,
-                    ),
-                    spatial_node_index: self.spatial_tree.root_reference_frame_index(),
-                };
-
-                let clip = self
-                    .interners
-                    .clip
-                    .intern(&item, || {
-                        ClipInternData {
-                            key: item,
-                        }
-                    });
-
-                let inner_shadow_rect = shadow_rect.inflate(-sig3, -sig3);
-                let outer_shadow_rect = shadow_rect.inflate( sig3,  sig3);
-                let inner_shadow_rect = extract_inner_rect_k(&inner_shadow_rect, &shadow_radius, 0.5).unwrap_or(LayoutRect::zero());
-
-                let prim = BoxShadow {
-                    color: color.into(),
-                    blur_radius: Au::from_f32_px(blur_radius),
+            
+            let shadow_clip_source = ClipItemKey {
+                kind: ClipItemKeyKind::box_shadow(
+                    shadow_rect,
+                    shadow_radius,
+                    dest_rect,
+                    blur_radius,
                     clip_mode,
+                ),
+                spatial_node_index,
+            };
 
-                    inner_shadow_rect: inner_shadow_rect.into(),
-                    outer_shadow_rect: outer_shadow_rect.into(),
-                    shadow_radius: shadow_radius.into(),
-                    clip,
-                };
+            let prim_info = match clip_mode {
+                BoxShadowClipMode::Outset => {
+                    
+                    if shadow_rect.is_empty() {
+                        return;
+                    }
 
-                
-                let prim_info = LayoutPrimitiveInfo::with_clip_rect(
-                    outer_shadow_rect,
-                    prim_info.clip_rect,
-                );
+                    
+                    extra_clips.push(shadow_clip_source);
 
-                self.add_nonshadowable_primitive(
-                    spatial_node_index,
-                    clip_node_id,
-                    &prim_info,
-                    vec![prim_clip],
-                    prim,
-                );
-            } else {
-                
-                let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
-                let mut extra_clips = vec![];
+                    
+                    
+                    LayoutPrimitiveInfo::with_clip_rect(dest_rect, prim_info.clip_rect)
+                }
+                BoxShadowClipMode::Inset => {
+                    
+                    
+                    if border_radius.is_zero() && shadow_rect
+                        .inflate(-blur_radius, -blur_radius)
+                        .contains_box(&prim_info.rect)
+                    {
+                        return;
+                    }
 
-                
-                
-                extra_clips.push(ClipItemKey {
-                    kind: ClipItemKeyKind::rounded_rect(
-                        prim_info.rect,
-                        border_radius,
-                        prim_clip_mode,
-                    ),
-                    spatial_node_index,
-                });
-
-                
-                
-                let dest_rect = shadow_rect.inflate(blur_offset, blur_offset);
-
-                
-                
-                let prim = PrimitiveKeyKind::Rectangle {
-                    color: PropertyBinding::Value(color.into()),
-                };
-
-                
-                let shadow_clip_source = ClipItemKey {
-                    kind: ClipItemKeyKind::box_shadow(
-                        shadow_rect,
-                        shadow_radius,
-                        dest_rect,
-                        blur_radius,
-                        clip_mode,
-                    ),
-                    spatial_node_index,
-                };
-
-                let prim_info = match clip_mode {
-                    BoxShadowClipMode::Outset => {
-                        
-                        if shadow_rect.is_empty() {
-                            return;
-                        }
-
-                        
+                    
+                    
+                    
+                    if !shadow_rect.is_empty() {
                         extra_clips.push(shadow_clip_source);
-
-                        
-                        
-                        LayoutPrimitiveInfo::with_clip_rect(dest_rect, prim_info.clip_rect)
                     }
-                    BoxShadowClipMode::Inset => {
-                        
-                        
-                        if border_radius.is_zero() && shadow_rect
-                            .inflate(-blur_radius, -blur_radius)
-                            .contains_box(&prim_info.rect)
-                        {
-                            return;
-                        }
 
-                        
-                        
-                        
-                        if !shadow_rect.is_empty() {
-                            extra_clips.push(shadow_clip_source);
-                        }
+                    
+                    prim_info.clone()
+                }
+            };
 
-                        
-                        prim_info.clone()
-                    }
-                };
-
-                self.add_primitive(
-                    spatial_node_index,
-                    clip_node_id,
-                    &prim_info,
-                    extra_clips,
-                    prim,
-                );
-            }
+            self.add_primitive(
+                spatial_node_index,
+                clip_node_id,
+                &prim_info,
+                extra_clips,
+                prim,
+            );
         }
     }
 }
