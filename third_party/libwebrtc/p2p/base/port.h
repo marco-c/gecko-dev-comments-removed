@@ -43,7 +43,6 @@
 #include "rtc_base/network.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
-#include "rtc_base/sigslot_trampoline.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -585,23 +584,12 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-
-  
-  
-  
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
   sigslot::signal1<Port*> SignalPortComplete;
   
   
   
   sigslot::signal1<Port*> SignalPortError;
-
-  SignalTrampoline<PortInterface, &PortInterface::SignalUnknownAddress>
-      unknown_address_trampoline_;
-  SignalTrampoline<PortInterface, &PortInterface::SignalReadPacket>
-      read_packet_trampoline_;
-  SignalTrampoline<PortInterface, &PortInterface::SignalSentPacket>
-      sent_packet_trampoline_;
 
   
   WeakPtrFactory<Port> weak_factory_ RTC_GUARDED_BY(thread_);
