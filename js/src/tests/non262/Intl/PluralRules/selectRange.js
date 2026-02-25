@@ -75,9 +75,11 @@
 {
   let pr = new Intl.PluralRules("en-US");
 
-  assertThrowsInstanceOf(() => pr.selectRange(0, 0n), TypeError);
-  assertThrowsInstanceOf(() => pr.selectRange(0n, 0), TypeError);
-  assertThrowsInstanceOf(() => pr.selectRange(0n, 0n), TypeError);
+  let zero = pr.selectRange(0, 0);
+
+  assertEq(pr.selectRange(0, 0n), zero);
+  assertEq(pr.selectRange(0n, 0), zero);
+  assertEq(pr.selectRange(0n, 0n), zero);
 }
 
 if (typeof reportCompare === "function")
