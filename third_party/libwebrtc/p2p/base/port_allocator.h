@@ -510,7 +510,7 @@ class RTC_EXPORT PortAllocator {
       const IceParameters* ice_credentials = nullptr) const;
 
   
-  void DiscardCandidatePool();
+  virtual void DiscardCandidatePool();
 
   
   
