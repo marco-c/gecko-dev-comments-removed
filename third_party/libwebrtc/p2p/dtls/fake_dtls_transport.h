@@ -146,15 +146,17 @@ class FakeDtlsTransport : public DtlsTransportInternal {
         do_dtls_ = false;
         RTC_LOG(LS_INFO) << "FakeDtlsTransport is not doing DTLS";
       }
-      SetWritable(true);
-      if (!asymmetric) {
-        dest->SetDestination(this, true);
-      }
       
       if (!dtls_role_) {
         dtls_role_ = std::move(SSL_CLIENT);
       }
       SetDtlsState(DtlsTransportState::kConnected);
+      
+      
+      SetWritable(true);
+      if (!asymmetric) {
+        dest->SetDestination(this, true);
+      }
       ice_transport_->SetDestination(
           static_cast<FakeIceTransportInternal*>(dest->ice_transport()),
           asymmetric);
