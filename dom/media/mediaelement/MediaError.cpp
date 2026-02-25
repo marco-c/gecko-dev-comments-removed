@@ -8,6 +8,7 @@
 
 #include "js/Warnings.h"  
 #include "jsapi.h"
+#include "mozilla/Utf8.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaErrorBinding.h"
 #include "nsContentUtils.h"
@@ -51,16 +52,25 @@ void MediaError::GetMessage(nsAString& aResult) const {
         mMessage;
     Document* ownerDoc = mParent->OwnerDoc();
     AutoJSAPI api;
+    
+    
+    
+    
+    if (!IsUtf8(message)) {
+      nsAutoCString utf8;
+      CopyLatin1toUTF8(message, utf8);
+      message = std::move(utf8);
+    }
     if (api.Init(ownerDoc->GetScopeObject())) {
       
       
-      JS::WarnASCII(api.cx(), "%s", message.get());
+      JS::WarnUTF8(api.cx(), "%s", message.get());
     } else {
       
       
       
       nsContentUtils::ReportToConsoleNonLocalized(
-          NS_ConvertASCIItoUTF16(message), nsIScriptError::warningFlag,
+          NS_ConvertUTF8toUTF16(message), nsIScriptError::warningFlag,
           "MediaError"_ns, ownerDoc);
     }
 
