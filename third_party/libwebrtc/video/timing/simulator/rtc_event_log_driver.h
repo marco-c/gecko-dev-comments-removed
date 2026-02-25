@@ -56,6 +56,14 @@ namespace webrtc::video_timing_simulator {
 class RtcEventLogDriver {
  public:
   
+  struct Config {
+    
+    
+    
+    bool reuse_streams = false;
+  };
+
+  
   class StreamInterface {
    public:
     virtual ~StreamInterface() = default;
@@ -73,7 +81,8 @@ class RtcEventLogDriver {
   
   static constexpr TimeDelta kShutdownAdvanceTimeSlack = TimeDelta::Millis(100);
 
-  RtcEventLogDriver(const ParsedRtcEventLog* absl_nonnull parsed_log,
+  RtcEventLogDriver(const Config& config,
+                    const ParsedRtcEventLog* absl_nonnull parsed_log,
                     absl::string_view field_trials_string,
                     StreamInterfaceFactory stream_factory);
   ~RtcEventLogDriver();
@@ -104,6 +113,7 @@ class RtcEventLogDriver {
   void OnLoggedRtpPacketIncoming(const LoggedRtpPacketIncoming& packet);
 
   
+  const Config config_;
   std::unique_ptr<TimeController> absl_nonnull time_controller_;
   const Environment env_;
 

@@ -174,9 +174,10 @@ DecodabilitySimulator::Results DecodabilitySimulator::Simulate(
   };
   
   
-  RtcEventLogDriver rtc_event_log_simulator(&parsed_log,
-                                            "",
-                                            std::move(stream_factory));
+  
+  RtcEventLogDriver rtc_event_log_simulator(
+      {.reuse_streams = false}, &parsed_log,
+      "", std::move(stream_factory));
   rtc_event_log_simulator.Simulate();
 
   
