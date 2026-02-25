@@ -94,7 +94,9 @@ var embeddedElements = {
     loop: "boolean",
     controls: "boolean",
     controlsList: {type: "tokenlist", domAttrName: "controlsList"},
-    defaultMuted: {type: "boolean", domAttrName: "muted"},
+    defaultMuted: {type: "boolean", domAttrName: "muted"}
+
+
 
     width: "unsigned long",
     height: "unsigned long",
@@ -111,6 +113,8 @@ var embeddedElements = {
     loop: "boolean",
     controls: "boolean",
     defaultMuted: {type: "boolean", domAttrName: "muted"}
+
+
   },
   source: {
     src: "url",
