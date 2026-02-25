@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "api/field_trials_view.h"
+#include "api/units/time_delta.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/gtest_prod_util.h"
 
@@ -111,6 +112,10 @@ class NackTracker {
     int default_rtt_ms = 100;
     
     double max_loss_rate = 1.0;
+    
+    
+    
+    std::optional<TimeDelta> fixed_delay;
   };
 
   struct NackElement {
@@ -171,6 +176,8 @@ class NackTracker {
   
   void UpdatePacketLossRate(int packets_lost);
 
+  bool Nack(const NackElement& packet, int64_t round_trip_time_ms);
+
   const Config config_;
 
   
@@ -195,6 +202,8 @@ class NackTracker {
 
   
   uint32_t packet_loss_rate_ = 0;
+
+  int max_wait_ms_ = 0;
 };
 
 }  

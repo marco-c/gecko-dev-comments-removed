@@ -18,10 +18,14 @@
 
 #include "api/field_trials.h"
 #include "test/create_test_field_trials.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
+
+using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 
 constexpr int kSampleRateHz = 16000;
 constexpr int kPacketSizeMs = 30;
@@ -556,6 +560,32 @@ TEST(NackTrackerTest, OnlyNackIfRttIsValid) {
   add_packet(true);
   EXPECT_TRUE(nack.GetNackList(0).empty());
   EXPECT_FALSE(nack.GetNackList(10).empty());
+}
+
+TEST(NackTrackerTest, FixedDelayMode) {
+  FieldTrials field_trials = CreateTestFieldTrials(
+      "WebRTC-Audio-NetEqNackTrackerConfig/fixed_delay:1s/");
+  const int kNackListSize = 200;
+  NackTracker nack(field_trials);
+  nack.UpdateSampleRate(kSampleRateHz);
+  nack.SetMaxNackListSize(kNackListSize);
+  uint16_t seq_num = 0;
+  uint32_t timestamp = 0x87654321;
+  nack.UpdateLastReceivedPacket(seq_num, timestamp);
+  nack.UpdateLastReceivedPacket(seq_num + 2,
+                                timestamp + 2 * kTimestampIncrement);
+  EXPECT_THAT(nack.GetNackList(10), ElementsAre(seq_num + 1));
+  
+  EXPECT_THAT(nack.GetNackList(1000), IsEmpty());
+  
+  nack.UpdateLastDecodedPacket(timestamp + 2 * kTimestampIncrement);
+  EXPECT_THAT(nack.GetNackList(10), ElementsAre(seq_num + 1));
+
+  
+  
+  nack.UpdateLastReceivedPacket(
+      seq_num + 3, timestamp + 2 * kTimestampIncrement + kSampleRateHz);
+  EXPECT_THAT(nack.GetNackList(10), IsEmpty());
 }
 
 }  
