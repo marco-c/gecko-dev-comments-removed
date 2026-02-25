@@ -3401,9 +3401,23 @@
 
 
 
-    addTabSplitView(tabs, { id = null, insertBefore = null } = {}) {
+
+
+
+    addTabSplitView(
+      tabs,
+      { id = null, insertBefore = null, trigger = null } = {}
+    ) {
       if (!tabs?.length) {
         throw new Error("Cannot create split view with zero tabs");
+      }
+
+      
+      let tabGroupInfo = null;
+      if (trigger && tabs.length >= 2) {
+        const primaryGroup = tabs[0]?.group;
+        const secondaryGroup = tabs[1]?.group;
+        tabGroupInfo = { primaryGroup, secondaryGroup };
       }
 
       let splitview = this._createTabSplitView(id);
@@ -3420,6 +3434,33 @@
         return null;
       }
 
+      
+      if (trigger && tabGroupInfo) {
+        const tab_layout = this.tabContainer.verticalMode
+          ? "vertical"
+          : "horizontal";
+
+        let tabgroup;
+        const { primaryGroup, secondaryGroup } = tabGroupInfo;
+
+        if (!primaryGroup && !secondaryGroup) {
+          tabgroup = "none";
+        } else if (primaryGroup && secondaryGroup) {
+          tabgroup =
+            primaryGroup === secondaryGroup ? "both_same" : "both_different";
+        } else if (primaryGroup) {
+          tabgroup = "main";
+        } else {
+          tabgroup = "other";
+        }
+
+        Glean.splitview.start.record({
+          tab_layout,
+          trigger,
+          tabgroup,
+        });
+      }
+
       this.tabContainer.dispatchEvent(
         new CustomEvent("SplitViewCreated", {
           bubbles: true,
@@ -3434,9 +3475,24 @@
 
 
 
-    unsplitTabs(splitview) {
+
+
+
+    unsplitTabs(splitview, trigger = null) {
       if (!splitview) {
         return;
+      }
+
+      
+      if (trigger) {
+        const tab_layout = this.tabContainer.verticalMode
+          ? "vertical"
+          : "horizontal";
+
+        Glean.splitview.end.record({
+          tab_layout,
+          trigger,
+        });
       }
 
       
@@ -3529,6 +3585,15 @@
 
     openSplitViewMenu(anchorElement) {
       const menu = document.getElementById("split-view-menu");
+      
+      
+      const isFromFooter =
+        anchorElement?.localName === "toolbarbutton" &&
+        anchorElement?.parentElement?.localName === "split-view-footer";
+      menu.setAttribute(
+        "data-trigger-source",
+        isFromFooter ? "footer" : "icon"
+      );
       menu.openPopup(anchorElement, "after_start");
     }
 
@@ -8845,13 +8910,31 @@
       this.splitViewCommandSet.addEventListener("command", event => {
         switch (event.target.id) {
           case "splitViewCmd_separateTabs":
-            this.#activeSplitView.unsplitTabs();
+            {
+              
+              const menu = event.target.parentElement;
+              const source = menu?.getAttribute("data-trigger-source");
+
+              this.#activeSplitView.unsplitTabs(`${source ?? "icon"}_separate`);
+            }
             break;
           case "splitViewCmd_reverseTabs":
-            this.#activeSplitView.reverseTabs();
+            {
+              
+              const menu = event.target.parentElement;
+              const source = menu?.getAttribute("data-trigger-source");
+
+              this.#activeSplitView.reverseTabs(source ?? "icon");
+            }
             break;
           case "splitViewCmd_closeTabs":
-            this.#activeSplitView.close();
+            {
+              
+              const menu = event.target.parentElement;
+              const source = menu?.getAttribute("data-trigger-source");
+
+              this.#activeSplitView.close(`${source ?? "icon"}_close`);
+            }
             break;
         }
       });
@@ -10750,14 +10833,19 @@ var TabContextMenu = {
     }
 
     let newTab = null;
+    let trigger;
     if (this.contextTabs.length < 2) {
       
       newTab = gBrowser.addTrustedTab("about:opentabs");
       tabsToAdd = [this.contextTabs[0], newTab];
+      trigger = "menu_add";
+    } else {
+      trigger = "menu_open";
     }
 
     gBrowser.addTabSplitView(tabsToAdd, {
       insertBefore,
+      trigger,
     });
 
     if (newTab) {
@@ -10769,7 +10857,9 @@ var TabContextMenu = {
     const splitviews = new Set(
       this.contextTabs.map(tab => tab.splitview).filter(Boolean)
     );
-    splitviews.forEach(splitview => gBrowser.unsplitTabs(splitview));
+    splitviews.forEach(splitview =>
+      gBrowser.unsplitTabs(splitview, "menu_separate")
+    );
   },
 
   addNewBadge(menuItem) {
