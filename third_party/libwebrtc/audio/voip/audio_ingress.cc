@@ -78,9 +78,8 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
   
   bool muted = false;
   {
-    MutexLock lock(&lock_);
-    if ((neteq_->GetAudio(audio_frame, &muted) != NetEq::kOK) ||
-        !resampler_helper_.MaybeResample(sampling_rate, audio_frame)) {
+    MutexLock lock(&neteq_mutex_);
+    if (neteq_->GetAudio(audio_frame, &muted) != NetEq::kOK) {
       RTC_DLOG(LS_ERROR) << "GetAudio() failed!";
       
       
@@ -89,6 +88,8 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
       return AudioMixer::Source::AudioFrameInfo::kError;
     }
   }
+
+  resampler_helper_.MaybeResample(sampling_rate, audio_frame);
 
   if (muted) {
     AudioFrameOperations::Mute(audio_frame);
@@ -121,6 +122,7 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
     }
     
     
+    MutexLock lock(&neteq_mutex_);
     std::optional<NetEq::DecoderFormat> decoder =
         neteq_->GetCurrentDecoderFormat();
     int clock_rate = decoder ? decoder->sdp_format.clockrate_hz
@@ -154,6 +156,7 @@ void AudioIngress::SetReceiveCodecs(
       receive_codec_info_[kv.first] = kv.second.clockrate_hz;
     }
   }
+  MutexLock lock(&neteq_mutex_);
   neteq_->SetCodecs(codecs);
 }
 
@@ -204,12 +207,13 @@ void AudioIngress::ReceivedRTPPacket(ArrayView<const uint8_t> rtp_packet) {
   auto data_view = ArrayView<const uint8_t>(payload, payload_data_length);
 
   
-  if (data_view.empty()) {
-    neteq_->InsertEmptyPacket(header);
-  } else if (neteq_->InsertPacket(header, data_view,
-                                  env_.clock().CurrentTime()) < 0) {
-    RTC_DLOG(LS_ERROR) << "ChannelReceive::OnReceivedPayloadData() unable to "
-                          "insert packet into NetEq";
+  if (!data_view.empty()) {
+    MutexLock lock(&neteq_mutex_);
+    if (neteq_->InsertPacket(header, data_view, env_.clock().CurrentTime()) <
+        0) {
+      RTC_DLOG(LS_ERROR) << "ChannelReceive::OnReceivedPayloadData() unable to "
+                            "insert packet into NetEq";
+    }
   }
 }
 
@@ -265,6 +269,7 @@ NetworkStatistics AudioIngress::GetNetworkStatistics() const {
   stats.meanWaitingTimeMs = -1;
   stats.maxWaitingTimeMs = 1;
 
+  MutexLock lock(&neteq_mutex_);
   NetEqNetworkStatistics neteq_stat = neteq_->CurrentNetworkStatistics();
   stats.currentBufferSize = neteq_stat.current_buffer_size_ms;
   stats.preferredBufferSize = neteq_stat.preferred_buffer_size_ms;
@@ -309,8 +314,14 @@ ChannelStatistics AudioIngress::GetChannelStatistics() {
   ChannelStatistics channel_stats;
 
   
-  auto decoder = neteq_->GetCurrentDecoderFormat();
-  const uint32_t clockrate_hz = decoder ? decoder->sdp_format.clockrate_hz : 0;
+  uint32_t clockrate_hz = 0;
+  {
+    MutexLock lock(&neteq_mutex_);
+    auto decoder = neteq_->GetCurrentDecoderFormat();
+    if (decoder) {
+      clockrate_hz = decoder->sdp_format.clockrate_hz;
+    }
+  }
 
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(remote_ssrc_);

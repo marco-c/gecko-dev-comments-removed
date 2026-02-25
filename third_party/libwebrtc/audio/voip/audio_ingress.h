@@ -13,28 +13,30 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
-#include <utility>
 
 #include "api/array_view.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_format.h"
 #include "api/environment/environment.h"
 #include "api/neteq/neteq.h"
-#include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
 #include "api/voip/voip_statistics.h"
 #include "audio/audio_level.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
-#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/sequence_number_unwrapper.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -93,6 +95,7 @@ class AudioIngress : public AudioMixer::Source {
       AudioFrame* audio_frame) override;
   int Ssrc() const override { return dchecked_cast<int>(remote_ssrc_.load()); }
   int PreferredSampleRate() const override {
+    MutexLock lock(&neteq_mutex_);
     std::optional<NetEq::DecoderFormat> decoder =
         neteq_->GetCurrentDecoderFormat();
 
@@ -124,8 +127,8 @@ class AudioIngress : public AudioMixer::Source {
   
   RtpRtcpInterface* const rtp_rtcp_;
 
-  
-  const std::unique_ptr<NetEq> neteq_;
+  mutable Mutex neteq_mutex_;
+  const std::unique_ptr<NetEq> neteq_ RTC_GUARDED_BY(neteq_mutex_);
 
   
   voe::AudioLevel output_audio_level_;
@@ -141,7 +144,7 @@ class AudioIngress : public AudioMixer::Source {
   RtpTimestampUnwrapper timestamp_wrap_handler_ RTC_GUARDED_BY(lock_);
 
   
-  acm2::ResamplerHelper resampler_helper_ RTC_GUARDED_BY(lock_);
+  acm2::ResamplerHelper resampler_helper_;
 };
 
 }  

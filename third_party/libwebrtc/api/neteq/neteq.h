@@ -118,6 +118,7 @@ struct NetEqOperationsAndState {
 };
 
 
+
 class NetEq {
  public:
   struct Config {
@@ -241,6 +242,11 @@ class NetEq {
   
   virtual bool RegisterPayloadType(int rtp_payload_type,
                                    const SdpAudioFormat& audio_format) = 0;
+
+  
+  
+  
+  virtual bool CreateDecoder(int rtp_payload_type) { return false; }
 
   
   
