@@ -257,7 +257,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void RegisterContentScriptModuleLoader(ModuleLoader* aLoader);
 
-
   
 
 
