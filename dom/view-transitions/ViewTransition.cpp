@@ -1468,6 +1468,19 @@ void ViewTransition::Setup() {
                         &ViewTransition::MaybeScheduleUpdateCallback));
 }
 
+void ViewTransition::FinishDone() {
+  if (mPhase != Phase::PendingDone) {
+    return;
+  }
+  
+  
+  ClearActiveTransition(false);
+  
+  if (Promise* finished = GetFinished(IgnoreErrors())) {
+    finished->MaybeResolveWithUndefined();
+  }
+}
+
 
 void ViewTransition::HandleFrame() {
   
@@ -1478,13 +1491,11 @@ void ViewTransition::HandleFrame() {
     AUTO_PROFILER_TERMINATING_FLOW_MARKER("ViewTransition::HandleFrameFinish",
                                           LAYOUT, Flow::FromPointer(this));
     
-    mPhase = Phase::Done;
     
-    ClearActiveTransition(false);
     
-    if (Promise* finished = GetFinished(IgnoreErrors())) {
-      finished->MaybeResolveWithUndefined();
-    }
+    mPhase = Phase::PendingDone;
+    mDocument->Dispatch(NewRunnableMethod("ViewTransition::FinishDone", this,
+                                          &ViewTransition::FinishDone));
     return;
   }
 
