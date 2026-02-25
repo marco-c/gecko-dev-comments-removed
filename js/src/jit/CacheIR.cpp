@@ -1339,12 +1339,6 @@ static bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj) {
   
   
   
-  
-  MOZ_ASSERT(window == &obj->nonCCWGlobal());
-
-  
-  
-  
   MOZ_ASSERT(script->compartment() == obj->compartment());
 
   

@@ -14,7 +14,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -424,11 +423,6 @@ extern JS_PUBLIC_API bool JS_GetPrototype(JSContext* cx, JS::HandleObject obj,
 extern JS_PUBLIC_API bool JS_GetPrototypeIfOrdinary(
     JSContext* cx, JS::HandleObject obj, bool* isOrdinary,
     JS::MutableHandleObject result);
-
-
-
-
-
 
 
 

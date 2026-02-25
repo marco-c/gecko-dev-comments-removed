@@ -1556,8 +1556,6 @@ bool MConstant::valueToBoolean(bool* res) const {
       
       
       
-      
-      
       return false;
     default:
       MOZ_ASSERT(IsMagicType(type()));
