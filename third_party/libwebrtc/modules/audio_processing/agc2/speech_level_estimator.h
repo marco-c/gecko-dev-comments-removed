@@ -11,7 +11,6 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_SPEECH_LEVEL_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_SPEECH_LEVEL_ESTIMATOR_H_
 
-#include <cstddef>
 #include <type_traits>
 
 #include "api/audio/audio_processing.h"
@@ -32,7 +31,7 @@ class SpeechLevelEstimator {
   SpeechLevelEstimator& operator=(const SpeechLevelEstimator&) = delete;
 
   
-  void Update(float rms_dbfs, float peak_dbfs, float speech_probability);
+  void Update(float rms_dbfs, float speech_probability);
   
   float level_dbfs() const { return level_dbfs_; }
   
