@@ -2401,6 +2401,8 @@ NSEvent* gLastDragMouseDownEvent = nil;
     return;
   }
 
+  nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
   [self convertCocoaMouseEvent:theEvent toGeckoEvent:&geckoEvent];
@@ -2418,17 +2420,13 @@ NSEvent* gLastDragMouseDownEvent = nil;
     return;
   }
 
+  nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
   [self convertCocoaMouseEvent:theEvent toGeckoEvent:&geckoEvent];
 
   mGeckoChild->DispatchInputEvent(&geckoEvent);
-
-  
-  
-  
-
-  
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -2510,13 +2508,13 @@ NSEvent* gLastDragMouseDownEvent = nil;
     return;
   }
 
+  nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
   [self convertCocoaMouseEvent:theEvent toGeckoEvent:&geckoEvent];
   geckoEvent.mButton = MouseButton::eSecondary;
 
-  
-  
   mGeckoChild->DispatchInputEvent(&geckoEvent);
 }
 
@@ -2589,18 +2587,22 @@ static bool ShouldDispatchBackForwardCommandForMouseButton(int16_t aButton) {
     return;
   }
 
+  nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
   WidgetMouseEvent geckoEvent(true, eMouseMove, mGeckoChild,
                               WidgetMouseEvent::eReal);
   [self convertCocoaMouseEvent:theEvent toGeckoEvent:&geckoEvent];
   int16_t button = nsCocoaUtils::ButtonForEvent(theEvent);
   geckoEvent.mButton = button;
 
-  
-  
   mGeckoChild->DispatchInputEvent(&geckoEvent);
 }
 
 - (void)sendWheelStartOrStop:(EventMessage)msg forEvent:(NSEvent*)theEvent {
+  if (!mGeckoChild) {
+    return;
+  }
+
   WidgetWheelEvent wheelEvent(true, msg, mGeckoChild);
   [self convertCocoaMouseWheelEvent:theEvent toGeckoEvent:&wheelEvent];
   mExpectingWheelStop = (msg == eWheelOperationStart);
@@ -7637,6 +7639,7 @@ static NSImage* GetMenuMaskImage() {
 }
 
 - (NSTouchBar*)makeTouchBar {
+  [mTouchBar release];
   mTouchBar = [[nsTouchBar alloc] init];
   if (mTouchBar) {
     sTouchBarIsInitialized = YES;
