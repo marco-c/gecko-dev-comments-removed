@@ -4,6 +4,7 @@
 
 import errno
 import os
+import shutil
 import stat
 import sys
 from collections import Counter, OrderedDict, defaultdict
@@ -11,7 +12,79 @@ from concurrent import futures
 
 import mozpack.path as mozpath
 from mozpack.errors import errors
-from mozpack.files import BaseFile, Dest
+from mozpack.files import AbsoluteSymlinkFile, BaseFile, Dest, File
+
+
+def _scandir_dest_info(top):
+    """Walk a destination tree using os.scandir() and collect file metadata.
+
+    Returns (existing_files, existing_dirs, mtimes, symlink_targets).
+    """
+    existing_files = set()
+    existing_dirs = set()
+    mtimes = {}
+    symlink_targets = {}
+    stack = [top]
+    while stack:
+        current = stack.pop()
+        existing_dirs.add(os.path.normpath(current))
+        try:
+            entries = os.scandir(current)
+        except OSError:
+            continue
+        with entries:
+            for entry in entries:
+                try:
+                    normed = os.path.normpath(entry.path)
+                    if entry.is_symlink():
+                        existing_files.add(normed)
+                        symlink_targets[normed] = os.readlink(entry.path)
+                    elif entry.is_dir(follow_symlinks=False):
+                        existing_dirs.add(normed)
+                        stack.append(entry.path)
+                    else:
+                        existing_files.add(normed)
+                        st = entry.stat(follow_symlinks=False)
+                        mtimes[normed] = int(st.st_mtime * 1000)
+                except OSError:
+                    continue
+    return existing_files, existing_dirs, mtimes, symlink_targets
+
+
+def _collect_source_mtimes(copier):
+    """Collect mtimes for source files in a copier, grouped by directory.
+
+    Returns (mtimes, src_dirs) where mtimes is
+    {raw_source_path: mtime_in_ms} and src_dirs is a set of normalized
+    source paths that are directories.
+    """
+    by_dir = defaultdict(set)
+    for _, f in copier:
+        src_path = getattr(f, "path", None)
+        if src_path:
+            parent, name = os.path.split(os.path.normpath(src_path))
+            by_dir[parent].add(name)
+
+    mtimes = {}
+    src_dirs = set()
+    for dirpath, filenames in by_dir.items():
+        try:
+            it = os.scandir(dirpath)
+        except OSError:
+            continue
+        with it:
+            for entry in it:
+                if entry.name in filenames:
+                    try:
+                        normed = os.path.normpath(entry.path)
+                        if entry.is_dir(follow_symlinks=True):
+                            src_dirs.add(normed)
+                        else:
+                            st = entry.stat()
+                            mtimes[normed] = int(st.st_mtime * 1000)
+                    except OSError:
+                        continue
+    return mtimes, src_dirs
 
 
 class FileRegistry:
@@ -273,7 +346,7 @@ class FileCopier(FileRegistry):
         registered are removed and empty directories are deleted. In
         addition, all directory symlinks in the destination directory
         are deleted: this is a conservative approach to ensure that we
-        never accidently write files into a directory that is not the
+        never accidentally write files into a directory that is not the
         destination directory. In the worst case, we might have a
         directory symlink in the object directory to the source
         directory.
@@ -349,6 +422,11 @@ class FileCopier(FileRegistry):
                 os.umask(umask)
                 os.chmod(d, 0o777 & ~umask)
 
+        dest_mtimes = {}
+        dest_symlinks = {}
+        src_mtimes = {}
+        src_dirs = set()
+
         if isinstance(remove_unaccounted, FileRegistry):
             existing_files = set(
                 os.path.normpath(os.path.join(destination, p))
@@ -359,45 +437,95 @@ class FileCopier(FileRegistry):
                 for p in remove_unaccounted.required_directories()
             )
             existing_dirs |= {os.path.normpath(destination)}
+            if skip_if_older and len(self) > 100:
+                _, _, dest_mtimes, dest_symlinks = _scandir_dest_info(destination)
         else:
             
             
             
-            existing_dirs = set()
-            existing_files = set()
-            for root, dirs, files in os.walk(destination):
-                
-                
-                
-                if have_symlinks:
-                    filtered = []
-                    for d in dirs:
-                        full = os.path.join(root, d)
-                        st = os.lstat(full)
-                        if stat.S_ISLNK(st.st_mode):
-                            
-                            
-                            
-                            if remove_all_directory_symlinks:
-                                os.remove(full)
-                                result.removed_files.add(os.path.normpath(full))
-                            else:
-                                existing_files.add(os.path.normpath(full))
-                        else:
-                            filtered.append(d)
+            existing_files, existing_dirs, dest_mtimes, dest_symlinks = (
+                _scandir_dest_info(destination)
+            )
+            
+            
+            
+            if have_symlinks and remove_all_directory_symlinks:
+                for path in list(dest_symlinks):
+                    if os.path.isdir(path):
+                        os.remove(path)
+                        result.removed_files.add(path)
+                        existing_files.discard(path)
+                        del dest_symlinks[path]
 
-                    dirs[:] = filtered
-
-                existing_dirs.add(os.path.normpath(root))
-
-                for d in dirs:
-                    existing_dirs.add(os.path.normpath(os.path.join(root, d)))
-
-                for f in files:
-                    existing_files.add(os.path.normpath(os.path.join(root, f)))
+        if skip_if_older and len(self) > 100:
+            src_mtimes, src_dirs = _collect_source_mtimes(self)
 
         
         dest_files = set()
+
+        
+        
+        files_to_copy = []
+        for p, f in self:
+            destfile = os.path.normpath(os.path.join(destination, p))
+            src_path = getattr(f, "path", None)
+
+            
+            
+            
+            
+            if (
+                isinstance(f, AbsoluteSymlinkFile)
+                and src_path
+                and os.path.normpath(src_path) in src_dirs
+            ):
+                link_target = dest_symlinks.get(destfile)
+                if link_target is not None and link_target == src_path:
+                    dest_files.add(destfile)
+                    result.existing_files.add(destfile)
+                    continue
+                try:
+                    if os.path.lexists(destfile):
+                        os.remove(destfile)
+                    os.symlink(src_path, destfile)
+                    dest_files.add(destfile)
+                    result.updated_files.add(destfile)
+                except OSError:
+                    if skip_if_older and os.path.isdir(destfile):
+                        dest_files.add(destfile)
+                        result.existing_files.add(destfile)
+                    else:
+                        shutil.copytree(src_path, destfile, dirs_exist_ok=True)
+                        dest_files.add(destfile)
+                        result.updated_files.add(destfile)
+                continue
+
+            if src_path and (dest_mtimes or dest_symlinks):
+                
+                
+                
+                
+                if isinstance(f, AbsoluteSymlinkFile):
+                    link_target = dest_symlinks.get(destfile)
+                    if link_target is not None and link_target == src_path:
+                        dest_files.add(destfile)
+                        result.existing_files.add(destfile)
+                        continue
+
+                if isinstance(f, AbsoluteSymlinkFile) or type(f) is File:
+                    normed_src = os.path.normpath(src_path)
+                    src_mtime = src_mtimes.get(normed_src)
+                    dest_mtime = dest_mtimes.get(destfile)
+                    if (
+                        src_mtime is not None
+                        and dest_mtime is not None
+                        and src_mtime <= dest_mtime
+                    ):
+                        dest_files.add(destfile)
+                        result.existing_files.add(destfile)
+                        continue
+
+            files_to_copy.append((destfile, f))
 
         
         
@@ -408,17 +536,15 @@ class FileCopier(FileRegistry):
         
         
         copy_results = []
-        if sys.platform == "win32" and len(self) > 100:
+        if sys.platform == "win32" and len(files_to_copy) > 100:
             with futures.ThreadPoolExecutor(4) as e:
                 fs = []
-                for p, f in self:
-                    destfile = os.path.normpath(os.path.join(destination, p))
+                for destfile, f in files_to_copy:
                     fs.append((destfile, e.submit(f.copy, destfile, skip_if_older)))
 
-            copy_results = [(path, f.result) for path, f in fs]
+            copy_results = [(path, f.result()) for path, f in fs]
         else:
-            for p, f in self:
-                destfile = os.path.normpath(os.path.join(destination, p))
+            for destfile, f in files_to_copy:
                 copy_results.append((destfile, f.copy(destfile, skip_if_older)))
 
         for destfile, copy_result in copy_results:
