@@ -68,13 +68,6 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
   }
 
   
-  
-  const bool isEnabled =
-      mCommandElement
-          ? !mCommandElement->GetBoolAttr(nsGkAtoms::disabled)
-          : !mContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
-
-  
   if (mType == eSeparatorMenuItemType) {
     mNativeMenuItem = [[NSMenuItem separatorItem] retain];
   } else {
@@ -84,14 +77,12 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
                                                       action:nil
                                                keyEquivalent:@""];
 
-    mIsChecked = mContent->AsElement()->GetBoolAttr(nsGkAtoms::checked);
-
-    mNativeMenuItem.enabled = isEnabled;
-    mNativeMenuItem.state =
-        mIsChecked ? NSControlStateValueOn : NSControlStateValueOff;
-
+    SetEnabled();
+    SetChecked();
     SetKeyEquiv();
     SetBadge();
+    SetIndentationLevel();
+    SetTooltip();
   }
 
   mIcon = MakeUnique<nsMenuItemIconX>(this);
@@ -156,18 +147,15 @@ void nsMenuItemX::DetachFromGroupOwner() {
   mMenuGroupOwner = nullptr;
 }
 
-nsresult nsMenuItemX::SetChecked(bool aIsChecked) {
+nsresult nsMenuItemX::ModifyChecked(bool aIsChecked) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  mIsChecked = aIsChecked;
+  
+  
+  mContent->AsElement()->SetBoolAttr(nsGkAtoms::checked, aIsChecked);
 
   
-  
-  mContent->AsElement()->SetBoolAttr(nsGkAtoms::checked, mIsChecked);
-
-  
-  mNativeMenuItem.state =
-      mIsChecked ? NSControlStateValueOn : NSControlStateValueOff;
+  SetChecked();
 
   return NS_OK;
 
@@ -186,7 +174,7 @@ void nsMenuItemX::DoCommand(NSEventModifierFlags aModifierFlags,
     if (!mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
                                             nsGkAtoms::autocheck,
                                             nsGkAtoms::_false, eCaseMatters)) {
-      SetChecked(!mIsChecked);
+      ModifyChecked(!mIsChecked);
     }
     
   }
@@ -326,6 +314,63 @@ void nsMenuItemX::SetBadge() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
+void nsMenuItemX::SetChecked() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  mIsChecked = mContent->AsElement()->GetBoolAttr(nsGkAtoms::checked) ||
+               mContent->AsElement()->GetBoolAttr(nsGkAtoms::selected);
+
+  mNativeMenuItem.state =
+      mIsChecked ? NSControlStateValueOn : NSControlStateValueOff;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuItemX::SetEnabled() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  
+  
+  bool isEnabled;
+  if (mCommandElement) {
+    isEnabled = !mCommandElement->GetBoolAttr(nsGkAtoms::disabled);
+  } else if (mContent->IsXULElement(nsGkAtoms::menucaption)) {
+    isEnabled = false;
+  } else {
+    isEnabled = !mContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
+  }
+
+  mNativeMenuItem.enabled = isEnabled;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuItemX::SetIndentationLevel() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (mContent->AsElement()->GetBoolAttr(nsGkAtoms::indented)) {
+    mNativeMenuItem.indentationLevel = 1;
+  } else {
+    mNativeMenuItem.indentationLevel = 0;
+  }
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuItemX::SetTooltip() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  nsAutoString tooltip;
+  if (!mContent->AsElement()->GetAttr(nsGkAtoms::tooltiptext, tooltip)) {
+    mNativeMenuItem.toolTip = nil;
+    return;
+  }
+
+  mNativeMenuItem.toolTip = nsMenuUtilsX::GetTruncatedCocoaLabel(tooltip);
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
 void nsMenuItemX::Dump(uint32_t aIndent) const {
   printf("%*s - item [%p] %-16s <%s>\n", aIndent * 2, "", this,
          mType == eSeparatorMenuItemType ? "----"
@@ -347,14 +392,15 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
   }
 
   if (aContent == mContent) {  
-    if (aAttribute == nsGkAtoms::checked) {
+    if (aAttribute == nsGkAtoms::checked || aAttribute == nsGkAtoms::selected) {
       
       
       
-      if (mType == eRadioMenuItemType &&
+      if (aAttribute == nsGkAtoms::checked && mType == eRadioMenuItemType &&
           mContent->AsElement()->GetBoolAttr(nsGkAtoms::checked)) {
         UncheckRadioSiblings(mContent);
       }
+      SetChecked();
       mMenuParent->SetRebuild(true);
     } else if (aAttribute == nsGkAtoms::hidden ||
                aAttribute == nsGkAtoms::collapsed) {
@@ -380,8 +426,11 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
     } else if (aAttribute == nsGkAtoms::key) {
       SetKeyEquiv();
     } else if (aAttribute == nsGkAtoms::disabled) {
-      mNativeMenuItem.enabled =
-          !aContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
+      SetEnabled();
+    } else if (aAttribute == nsGkAtoms::indented) {
+      SetIndentationLevel();
+    } else if (aAttribute == nsGkAtoms::tooltiptext) {
+      SetTooltip();
     }
   } else if (aContent == mCommandElement) {
     
@@ -397,7 +446,7 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
                                            commandDisabled);
       }
       
-      mNativeMenuItem.enabled = !commandDisabled;
+      SetEnabled();
     }
   } else if (aContent == mImageElement && aAttribute == nsGkAtoms::srcset) {
     SetupIcon();
@@ -407,7 +456,8 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
 }
 
 bool IsMenuStructureElement(nsIContent* aContent) {
-  return aContent->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menuitem,
+  return aContent->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menucaption,
+                                      nsGkAtoms::menuitem,
                                       nsGkAtoms::menuseparator);
 }
 
