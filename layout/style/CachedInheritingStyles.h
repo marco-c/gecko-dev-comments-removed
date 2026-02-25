@@ -21,10 +21,18 @@ class ComputedStyle;
 
 
 
+
+
 struct CachedStyleEntry {
   RefPtr<ComputedStyle> mStyle;
   RefPtr<nsAtom> mFunctionalPseudoParameter;
+  PseudoStyleType mPseudoType;
 };
+
+
+
+
+
 
 
 
@@ -36,18 +44,27 @@ struct CachedStyleEntry {
 
 class CachedInheritingStyles {
  public:
-  void Insert(ComputedStyle* aStyle,
+  
+  
+  void Insert(ComputedStyle* aStyle, PseudoStyleType aType,
               nsAtom* aFunctionalPseudoParameter = nullptr);
   ComputedStyle* Lookup(const PseudoStyleRequest& aRequest) const;
+  
+  bool HasEntry(const PseudoStyleRequest& aRequest) const;
 
   
+  
   void AppendTo(nsTArray<const ComputedStyle*>& aArray) const;
+
+  
+  
+  void AppendEntriesTo(nsTArray<CachedStyleEntry>& aArray) const;
 
   CachedInheritingStyles() : mBits(0) {}
   ~CachedInheritingStyles() {
     if (IsIndirect()) {
       delete AsIndirect();
-    } else if (!IsEmpty()) {
+    } else if (!IsEmpty() && !IsNullDirect()) {
       RefPtr<ComputedStyle> ref = dont_AddRef(AsDirect());
     }
   }
@@ -60,15 +77,21 @@ class CachedInheritingStyles {
 
   bool IsEmpty() const { return !mBits; }
   bool IsIndirect() const { return (mBits & 1); }
+  bool IsNullDirect() const { return (mBits & 3) == 2; }
 
   ComputedStyle* AsDirect() const {
-    MOZ_ASSERT(!IsIndirect());
+    MOZ_ASSERT(!IsIndirect() && !IsNullDirect());
     return reinterpret_cast<ComputedStyle*>(mBits);
+  }
+
+  PseudoStyleType NullDirectType() const {
+    MOZ_ASSERT(IsNullDirect());
+    return static_cast<PseudoStyleType>(mBits >> 2);
   }
 
   IndirectCache* AsIndirect() const {
     MOZ_ASSERT(IsIndirect());
-    return reinterpret_cast<IndirectCache*>(mBits & ~1);
+    return reinterpret_cast<IndirectCache*>(mBits & ~uintptr_t(1));
   }
 
   uintptr_t mBits;

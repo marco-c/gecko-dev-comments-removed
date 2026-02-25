@@ -11,6 +11,7 @@
 #include "StickyScrollContainer.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/CachedInheritingStyles.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DocumentStyleRootIterator.h"
@@ -2744,6 +2745,42 @@ static bool NeedsToReframeForConditionallyCreatedPseudoElement(
   return false;
 }
 
+
+
+
+
+
+
+static nsChangeHint DiffCachedHighlightPseudos(Element& aElement,
+                                               ServoStyleSet& aStyleSet,
+                                               const ComputedStyle& aOldStyle,
+                                               ComputedStyle& aNewStyle) {
+  nsChangeHint hint = nsChangeHint(0);
+
+  AutoTArray<CachedStyleEntry, 4> oldEntries;
+  aOldStyle.GetCachedLazyPseudoEntries(oldEntries);
+  for (const auto& entry : oldEntries) {
+    if (!PseudoStyle::IsPseudoElement(entry.mPseudoType) ||
+        PseudoStyle::IsEagerlyCascadedInServo(entry.mPseudoType)) {
+      continue;
+    }
+    RefPtr<ComputedStyle> newPseudo = aStyleSet.ProbePseudoElementStyle(
+        aElement, entry.mPseudoType, entry.mFunctionalPseudoParameter,
+        &aNewStyle);
+    if (!entry.mStyle && !newPseudo) {
+      continue;
+    }
+    if (!entry.mStyle || !newPseudo) {
+      hint |= nsChangeHint_RepaintFrame | nsChangeHint_UpdateSubtreeOverflow;
+      continue;
+    }
+    uint32_t equalStructs = 0;
+    hint |= entry.mStyle->CalcStyleDifference(*newPseudo, &equalStructs);
+  }
+
+  return hint;
+}
+
 bool RestyleManager::ProcessPostTraversal(Element* aElement,
                                           ServoRestyleState& aRestyleState,
                                           ServoPostTraversalFlags aFlags) {
@@ -2814,6 +2851,15 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
         NeedsToReframeForConditionallyCreatedPseudoElement(
             aElement, upToDateStyleIfRestyled, styleFrame, aRestyleState)) {
       changeHint |= nsChangeHint_ReconstructFrame;
+    }
+
+    
+    
+    
+    if (wasRestyled && !(changeHint & nsChangeHint_ReconstructFrame)) {
+      changeHint |= DiffCachedHighlightPseudos(
+          *aElement, *mPresContext->StyleSet(), *styleFrame->Style(),
+          *upToDateStyleIfRestyled);
     }
   }
 
