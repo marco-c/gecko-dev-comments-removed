@@ -19,49 +19,53 @@ const SCROLL_LINE_SIZE = 15;
 
 
 
-
-
-
-function DragZoom(container, debounceRate, requestAnimationFrame) {
-  EventEmitter.decorate(this);
-
-  this.isDragging = false;
-
+class DragZoom extends EventEmitter {
   
-  this.mouseX = container.offsetWidth / 2;
-  this.mouseY = container.offsetHeight / 2;
 
-  
-  this.zoomedWidth = container.offsetWidth;
-  this.zoomedHeight = container.offsetHeight;
 
-  
-  this.zoom = 0;
 
-  
-  
-  this.translateX = 0;
-  this.translateY = 0;
 
-  
-  
-  
-  this.offsetX = 0;
-  this.offsetY = 0;
+  constructor(container, debounceRate, requestAnimationFrame) {
+    super();
 
-  
-  
-  this.smoothZoom = 0;
-  this.smoothTranslateX = 0;
-  this.smoothTranslateY = 0;
+    this.isDragging = false;
 
-  
-  this.ZOOM_SPEED = ZOOM_SPEED;
-  this.ZOOM_EPSILON = ZOOM_EPSILON;
+    
+    this.mouseX = container.offsetWidth / 2;
+    this.mouseY = container.offsetHeight / 2;
 
-  const update = createUpdateLoop(container, this, requestAnimationFrame);
+    
+    this.zoomedWidth = container.offsetWidth;
+    this.zoomedHeight = container.offsetHeight;
 
-  this.destroy = setHandlers(this, container, update, debounceRate);
+    
+    this.zoom = 0;
+
+    
+    
+    this.translateX = 0;
+    this.translateY = 0;
+
+    
+    
+    
+    this.offsetX = 0;
+    this.offsetY = 0;
+
+    
+    
+    this.smoothZoom = 0;
+    this.smoothTranslateX = 0;
+    this.smoothTranslateY = 0;
+
+    
+    this.ZOOM_SPEED = ZOOM_SPEED;
+    this.ZOOM_EPSILON = ZOOM_EPSILON;
+
+    const update = createUpdateLoop(container, this, requestAnimationFrame);
+
+    this.destroy = setHandlers(this, container, update, debounceRate);
+  }
 }
 
 module.exports = DragZoom;
