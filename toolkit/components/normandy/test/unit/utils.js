@@ -4,9 +4,6 @@
 
 
 
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );

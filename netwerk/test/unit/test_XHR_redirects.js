@@ -8,9 +8,6 @@
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
 
 var sSame;
 var sOther;
@@ -122,7 +119,9 @@ function run_test() {
   
   
 
-  sRedirectPromptPref = Preferences.get("network.http.prompt-temp-redirect");
+  sRedirectPromptPref = Services.prefs.getBoolPref(
+    "network.http.prompt-temp-redirect"
+  );
   
 
   
