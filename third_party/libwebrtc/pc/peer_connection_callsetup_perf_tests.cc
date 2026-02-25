@@ -227,7 +227,10 @@ INSTANTIATE_TEST_SUITE_P(
             "Enabled/",
             
             "WebRTC-IceHandshakeDtls/Enabled/WebRTC-ForceDtls13/"
-            "Enabled/"),
+            "Enabled/",
+            
+            "WebRTC-IceHandshakeDtls/Enabled/WebRTC-ForceDtls13/"
+            "Enabled/WebRTC-Sctp-Snap/Enabled/"),
         testing::Bool(),  
                           
         testing::Values(
