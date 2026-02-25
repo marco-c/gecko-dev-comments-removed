@@ -269,16 +269,16 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
   nsCOMPtr<nsIChannel> mNewRedirectChannel;
 
   
-  
-  mozilla::CORSMode mCORSMode;
-
-  
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
   nsresult mImageErrorCode;
 
   
   uint32_t mBoostCategoriesRequested = 0;
+
+  
+  
+  mozilla::CORSMode mCORSMode;
 
   
   bool mImageAvailable;
