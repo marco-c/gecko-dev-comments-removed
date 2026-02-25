@@ -210,7 +210,7 @@ void AsyncSSLSocket::ProcessInput(char* data, size_t* len) {
 
   
   if (remainder)
-    SignalReadEvent(this);
+    NotifyReadEvent(this);
 }
 
 }  

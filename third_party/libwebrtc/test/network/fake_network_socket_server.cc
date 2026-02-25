@@ -121,7 +121,7 @@ void FakeNetworkSocket::OnPacketReceived(EmulatedIpPacket packet) {
     
     
     
-    SignalReadEvent(this);
+    NotifyReadEvent(this);
     RTC_DCHECK(!pending_);
   };
   thread_->PostTask(SafeTask(alive_, std::move(task)));

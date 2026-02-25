@@ -86,7 +86,7 @@ TEST(AsyncUDPSocketTest, ArrivalTimeStampCanBeBeforeCurrentTime) {
       .WillRepeatedly([&](AsyncPacketSocket*, const ReceivedIpPacket& packet) {
         EXPECT_EQ(packet.arrival_time(), webrtc_clock.CurrentTime());
       });
-  socket_ptr->SignalReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
 
   
   webrtc_clock.AdvanceTime(TimeDelta::Millis(10));
@@ -103,7 +103,7 @@ TEST(AsyncUDPSocketTest, ArrivalTimeStampCanBeBeforeCurrentTime) {
         EXPECT_EQ(packet.arrival_time(),
                   webrtc_clock.CurrentTime() - TimeDelta::Millis(5));
       });
-  socket_ptr->SignalReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
 }
 
 TEST(AsyncUDPSocketTest, InitiallyBufferedPacketsGetSameArrivalTime) {
@@ -141,9 +141,9 @@ TEST(AsyncUDPSocketTest, InitiallyBufferedPacketsGetSameArrivalTime) {
       });
   
   
-  socket_ptr->SignalReadEvent(socket_ptr);
-  socket_ptr->SignalReadEvent(socket_ptr);
-  socket_ptr->SignalReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
 }
 
 TEST(AsyncUDPSocketTest, ArrivalTimeStampCanNotBeAfterCurrentTime) {
@@ -168,7 +168,7 @@ TEST(AsyncUDPSocketTest, ArrivalTimeStampCanNotBeAfterCurrentTime) {
       .WillRepeatedly([&](AsyncPacketSocket*, const ReceivedIpPacket& packet) {
         EXPECT_EQ(packet.arrival_time(), webrtc_clock.CurrentTime());
       });
-  socket_ptr->SignalReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
 
   
   webrtc_clock.AdvanceTime(TimeDelta::Millis(10));
@@ -186,7 +186,7 @@ TEST(AsyncUDPSocketTest, ArrivalTimeStampCanNotBeAfterCurrentTime) {
         
         EXPECT_EQ(packet.arrival_time(), webrtc_clock.CurrentTime());
       });
-  socket_ptr->SignalReadEvent(socket_ptr);
+  socket_ptr->NotifyReadEvent(socket_ptr);
 }
 
 }  

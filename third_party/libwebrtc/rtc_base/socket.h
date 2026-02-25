@@ -162,8 +162,24 @@ class RTC_EXPORT Socket {
   
   
   sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalReadEvent;
+  void SubscribeReadEvent(void* tag,
+                          absl::AnyInvocable<void(Socket*)> callback) {
+    read_event_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeReadEvent(void* tag) {
+    read_event_trampoline_.Unsubscribe(tag);
+  }
+  void NotifyReadEvent(Socket* socket) { SignalReadEvent(socket); }
   
   sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalWriteEvent;
+  void SubscribeWriteEvent(void* tag,
+                           absl::AnyInvocable<void(Socket*)> callback) {
+    write_event_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeWriteEvent(void* tag) {
+    write_event_trampoline_.Unsubscribe(tag);
+  }
+  void NotifyWriteEvent(Socket* socket) { SignalWriteEvent(socket); }
   sigslot::signal1<Socket*> SignalConnectEvent;  
   void SubscribeConnectEvent(void* tag,
                              absl::AnyInvocable<void(Socket*)> callback) {
@@ -193,9 +209,17 @@ class RTC_EXPORT Socket {
   }
 
  protected:
-  Socket() : connect_event_trampoline_(this), close_event_trampoline_(this) {}
+  Socket()
+      : read_event_trampoline_(this),
+        write_event_trampoline_(this),
+        connect_event_trampoline_(this),
+        close_event_trampoline_(this) {}
 
  private:
+  MultiThreadSignalTrampoline<Socket, &Socket::SignalReadEvent>
+      read_event_trampoline_;
+  MultiThreadSignalTrampoline<Socket, &Socket::SignalWriteEvent>
+      write_event_trampoline_;
   SignalTrampoline<Socket, &Socket::SignalConnectEvent>
       connect_event_trampoline_;
   SignalTrampoline<Socket, &Socket::SignalCloseEvent> close_event_trampoline_;
