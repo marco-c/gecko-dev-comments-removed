@@ -650,6 +650,11 @@ void RtpTransportControllerSend::SetPreferredRtcpCcAckType(
   packet_router_.ConfigureForRtcpFeedback(
       rfc_8888_feedback_negotiated_,
       sending_packets_as_ect1_);
+  
+  
+  
+  
+  pacer_.SetIncludeOverhead();
 }
 
 std::optional<int>
