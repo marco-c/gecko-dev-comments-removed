@@ -73,6 +73,7 @@ inline void DocAccessible::HandleNotification(
 
 inline void DocAccessible::UpdateText(nsIContent* aTextNode) {
   NS_ASSERTION(mNotificationController, "The document was shut down!");
+  MOZ_ASSERT(aTextNode->IsText());
 
   
   if (mNotificationController && HasLoadState(eTreeConstructed)) {

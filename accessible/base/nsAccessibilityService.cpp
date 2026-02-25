@@ -603,13 +603,14 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
   if (IPCAccessibilityActive()) {
     document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
   }
-  if (accessible->IsTextLeaf() &&
+  MOZ_ASSERT(!aContent->IsText() || accessible->IsTextLeaf(),
+             "A DOM Text node should only ever have a TextLeafAccessible");
+  if (aContent->IsText() && accessible->IsTextLeaf() &&
       accessible->AsTextLeaf()->Text().EqualsLiteral(" ")) {
     
     
     
     
-    MOZ_ASSERT(aContent->IsText());
     document->UpdateText(aContent);
   }
 }
