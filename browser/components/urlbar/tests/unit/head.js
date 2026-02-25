@@ -981,6 +981,7 @@ function makeGlobalActionsResult({
 
 
 
+
 async function check_results({
   context,
   incompleteSearch,
@@ -1145,6 +1146,11 @@ async function check_results({
           condition?.ignore ||
           (condition?.optional && !expected.hasOwnProperty(key))
         ) {
+          continue;
+        }
+
+        if (condition?.custom?.(i, actual)) {
+          
           continue;
         }
 
