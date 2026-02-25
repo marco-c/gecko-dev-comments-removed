@@ -2200,12 +2200,10 @@ pref("pdfjs.handleOctetStream", true);
 pref("sidebar.position_start", true);
 #ifdef NIGHTLY_BUILD
 pref("sidebar.revamp", true);
-
-pref("sidebar.revamp.round-content-area", true);
 #else
 pref("sidebar.revamp", false);
-pref("sidebar.revamp.round-content-area", false);
 #endif
+pref("sidebar.revamp.round-content-area", true);
 pref("sidebar.animation.enabled", true);
 pref("sidebar.animation.duration-ms", 200);
 pref("sidebar.animation.expand-on-hover.duration-ms", 400);
