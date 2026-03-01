@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.135
- * pdfjsBuild = 909a700af
+ * pdfjsVersion = 5.5.168
+ * pdfjsBuild = e5656e430
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -80,6 +80,9 @@ const {
   isDataScheme,
   isPdfFile,
   isValidExplicitDest,
+  makeArr,
+  makeMap,
+  makeObj,
   MathClamp,
   noContextMenu,
   normalizeUnicode,
@@ -4678,7 +4681,7 @@ class BaseTreeViewer {
         target.classList.toggle("treeItemsHidden");
         if (e.shiftKey) {
           const shouldShowAll = !target.classList.contains("treeItemsHidden");
-          this._toggleTreeItem(this.container, shouldShowAll);
+          this._toggleTreeItem(target.parentNode, shouldShowAll);
         }
       });
     }
@@ -8496,7 +8499,6 @@ class PDFThumbnailView extends RenderableView {
     const thumbnailContainer = this.div = document.createElement("div");
     thumbnailContainer.className = "thumbnail";
     thumbnailContainer.setAttribute("page-number", id);
-    thumbnailContainer.setAttribute("page-id", id);
     const imageContainer = this.imageContainer = document.createElement("div");
     thumbnailContainer.append(imageContainer);
     imageContainer.classList.add("thumbnailImageContainer", "missingThumbnailImage");
@@ -10778,12 +10780,7 @@ class StructTreeLayerBuilder {
       const label = removeNullCharacters(alt);
       for (const child of structElement.children) {
         if (child.type === "annotation") {
-          let attrs = this.#elementAttributes.get(child.id);
-          if (!attrs) {
-            attrs = new Map();
-            this.#elementAttributes.set(child.id, attrs);
-          }
-          attrs.set("aria-label", label);
+          this.#elementAttributes.getOrInsertComputed(child.id, makeMap).set("aria-label", label);
           added = true;
         }
       }
@@ -12410,7 +12407,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.135";
+    const viewerVersion = "5.5.168";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -13775,7 +13772,7 @@ class PDFViewer {
             if (percent === 0 || widthPercent < 100) {
               continue;
             }
-            pageLayout.getOrInsert(y, []).push(id);
+            pageLayout.getOrInsertComputed(y, makeArr).push(id);
           }
           for (const yArray of pageLayout.values()) {
             const currentIndex = yArray.indexOf(currentPageNumber);
@@ -15615,6 +15612,7 @@ const SIDEBAR_RESIZING_CLASS = "viewsManagerResizing";
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 class ViewsManager extends Sidebar {
   static #l10nDescription = null;
+  #hasAnimations = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   constructor({
     elements: {
       outerContainer,
@@ -15768,9 +15766,16 @@ class ViewsManager extends Sidebar {
     this._sidebar.hidden = false;
     toggleExpandedBtn(this.toggleButton, true);
     this.switchView(this.active);
-    queueMicrotask(() => {
-      this.outerContainer.classList.add("viewsManagerMoving", "viewsManagerOpen");
-    });
+    if (this.#hasAnimations) {
+      queueMicrotask(() => {
+        this.outerContainer.classList.add("viewsManagerMoving", "viewsManagerOpen");
+      });
+    } else {
+      this.outerContainer.classList.add("viewsManagerOpen");
+      this.eventBus.dispatch("resize", {
+        source: this
+      });
+    }
     if (this.active === SidebarView.THUMBS) {
       this.onUpdateThumbnails();
     }
@@ -15829,14 +15834,16 @@ class ViewsManager extends Sidebar {
       eventBus,
       outerContainer
     } = this;
-    this.sidebarContainer.addEventListener("transitionend", evt => {
-      if (evt.target === this.sidebarContainer) {
-        outerContainer.classList.remove("viewsManagerMoving");
-        eventBus.dispatch("resize", {
-          source: this
-        });
-      }
-    });
+    if (this.#hasAnimations) {
+      this.sidebarContainer.addEventListener("transitionend", evt => {
+        if (evt.target === this.sidebarContainer) {
+          outerContainer.classList.remove("viewsManagerMoving");
+          eventBus.dispatch("resize", {
+            source: this
+          });
+        }
+      });
+    }
     this.thumbnailButton.addEventListener("click", () => {
       this.switchView(SidebarView.THUMBS);
     });
