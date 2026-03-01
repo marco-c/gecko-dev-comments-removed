@@ -1166,7 +1166,7 @@ static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
   static const uintptr_t kMaxStackSize = 8 * 1024 * 1024;
   if (uintptr_t(aBp) < uintptr_t(aStackEnd) -
                            std::min(kMaxStackSize, uintptr_t(aStackEnd)) ||
-      aBp >= aStackEnd || (uintptr_t(aBp) & 3)) {
+      aBp >= aStackEnd || (uintptr_t(aBp) & (sizeof(void*) - 1))) {
     return;
   }
 
@@ -1176,9 +1176,8 @@ static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
     
     
     
-    
-    
-    if (next <= aBp || next >= aStackEnd || (uintptr_t(next) & 3)) {
+    if (next <= aBp || next >= aStackEnd ||
+        (uintptr_t(next) & (sizeof(void*) - 1))) {
       break;
     }
 #  if (defined(__ppc__) && defined(XP_MACOSX)) || defined(__powerpc64__)
