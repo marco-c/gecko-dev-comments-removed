@@ -69,3 +69,12 @@ add_task(async function () {
   await checkCertInNameSpace(certFromFile("NameConstraints.dcissallowed"));
   await checkCertNotInNameSpace(certFromFile("NameConstraints.dcissblocked"));
 });
+
+add_task(async function () {
+  
+  
+  
+  loadCertWithTrust("ca-no-constraints", "CTu,,");
+  loadCertWithTrust("int-bar-example-com-excluded", ",,");
+  await checkCertNotInNameSpace(certFromFile("ee-wildcard-example-com"));
+});
