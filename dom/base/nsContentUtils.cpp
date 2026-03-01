@@ -11950,6 +11950,9 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
     clonePolicy.allowSharedMemoryObjects();
   }
 
+  
+  
+  
   StructuredCloneHolder holder(StructuredCloneHolder::CloningSupported,
                                StructuredCloneHolder::TransferringSupported,
                                JS::StructuredCloneScope::SameProcess);
@@ -11958,11 +11961,16 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
     return;
   }
 
+  
+  
+  JSAutoRealm ar(aCx, aGlobal->GetGlobalJSObject());
   holder.Read(aCx, aRetval, clonePolicy, aError);
   if (NS_WARN_IF(aError.Failed())) {
     return;
   }
 
+  
+  
   nsTArray<RefPtr<MessagePort>> ports = holder.TakeTransferredPorts();
   (void)ports;
 }
