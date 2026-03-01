@@ -60,7 +60,7 @@ async function createBackupAndRecover(
 
   sandbox
     .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => !backupIsLegacy);
+    .get(() => (backupIsLegacy ? null : { name: "test-selectable-profile" }));
 
   
   Services.prefs.setBoolPref("browser.profiles.created", !backupIsLegacy);
