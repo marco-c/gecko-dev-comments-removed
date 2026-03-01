@@ -2798,10 +2798,6 @@ pref("browser.migrate.preferences-entrypoint.enabled", true);
 
 
 pref("signon.firefoxRelay.feature", "available");
-
-
-
-pref("signon.firefoxRelay.firstOfferVersionFallback", "control");
 pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
