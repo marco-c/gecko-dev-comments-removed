@@ -2,6 +2,7 @@
 
 
 import concurrent.futures
+import functools
 import json
 import logging
 import ntpath
@@ -24,7 +25,7 @@ from mozversioncontrol import get_repository_object
 
 from mozbuild import build_commands
 from mozbuild.controller.clobber import Clobberer
-from mozbuild.util import cpu_count, memoize
+from mozbuild.util import cpu_count
 
 
 
@@ -295,16 +296,16 @@ def static_analysis(command_context):
 )
 def check(
     command_context,
-    source=None,
-    jobs=2,
-    strip=1,
-    verbose=False,
-    checks="-*",
-    fix=False,
-    header_filter="",
-    output=None,
-    format="text",
-    outgoing=False,
+    source,
+    jobs,
+    strip,
+    verbose,
+    checks,
+    fix,
+    header_filter,
+    output,
+    format,
+    outgoing,
 ):
     from mozbuild.controller.building import (
         StaticAnalysisFooter,
@@ -355,7 +356,7 @@ def check(
 
     if not total or not source:
         command_context.log(
-            logging.INFO,
+            logging.WARNING,
             "static-analysis",
             {},
             "There are no files eligible for analysis. Please note that 'header' files "
@@ -441,7 +442,7 @@ def get_files_with_commands(command_context, compile_db, source):
     return commands_list
 
 
-@memoize
+@functools.cache
 def get_clang_tidy_config(command_context):
     from mozbuild.code_analysis.utils import ClangTidyConfig
 
@@ -1042,7 +1043,7 @@ def print_checks(command_context, verbose=False):
     args = [
         clang_paths._clang_tidy_path,
         "-list-checks",
-        "-checks=%s" % get_clang_tidy_config(command_context).checks,
+        f"-checks={','.join(get_clang_tidy_config(command_context).checks)}",
     ]
 
     return command_context.run_process(args=args, pass_thru=True)
@@ -1395,29 +1396,17 @@ def _build_export(command_context, jobs, verbose=False):
         command_context.log(logging.INFO, "build_output", {"line": line}, "{line}")
 
     
-    rc = command_context._run_make(
+    
+    
+    return command_context._run_make(
         directory=command_context.topobjdir,
-        target="pre-export",
+        target=("pre-export", "export", "pre-compile"),
         line_handler=None,
+        print_directory=verbose,
+        log=verbose,
         silent=not verbose,
+        num_jobs=jobs,
     )
-    if rc != 0:
-        return rc
-
-    
-    
-    for target in ("export", "pre-compile"):
-        rc = command_context._run_make(
-            directory=command_context.topobjdir,
-            target=target,
-            line_handler=None,
-            silent=not verbose,
-            num_jobs=jobs,
-        )
-        if rc != 0:
-            return rc
-
-    return 0
 
 
 def _set_clang_tools_paths(command_context):
