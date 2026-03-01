@@ -975,7 +975,6 @@ bool ModuleGenerator::finishCodeBlock(CodeBlockResult* result) {
     codeBlock_->segment = CodeSegment::allocate(codeSource, nullptr,
                                                  true,
                                                 &codeStart, &allocationLength);
-    
     tierStats_.codeBytesUsed += codeLength;
     tierStats_.codeBytesMapped += allocationLength;
   }
