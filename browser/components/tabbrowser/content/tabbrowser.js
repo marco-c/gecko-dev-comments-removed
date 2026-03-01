@@ -725,8 +725,90 @@
       return this.selectedBrowser.reload();
     }
 
-    reloadWithFlags(aFlags) {
-      return this.selectedBrowser.reloadWithFlags(aFlags);
+    reloadWithFlags(reloadFlags) {
+      const unchangedRemoteness = [];
+
+      for (const tab of this.selectedTabs) {
+        const browser = tab.linkedBrowser;
+        const url = browser.currentURI;
+        const urlSpec = url.spec;
+        
+        
+        
+        const principal = tab.linkedBrowser.contentPrincipal;
+        if (this.updateBrowserRemotenessByURL(browser, urlSpec)) {
+          
+          
+          
+          if (tab.linkedPanel) {
+            loadBrowserURI(browser, url, principal);
+          } else {
+            
+            
+            tab.addEventListener(
+              "SSTabRestoring",
+              () => loadBrowserURI(browser, url, principal),
+              { once: true }
+            );
+            this._insertBrowser(tab);
+          }
+        } else {
+          unchangedRemoteness.push(tab);
+        }
+      }
+
+      if (!unchangedRemoteness.length) {
+        return;
+      }
+
+      
+      
+      
+      for (const tab of unchangedRemoteness) {
+        SitePermissions.clearTemporaryBlockPermissions(tab.linkedBrowser);
+        
+        delete tab.linkedBrowser.authPromptAbuseCounter;
+      }
+      gIdentityHandler.hidePopup();
+      gPermissionPanel.hidePopup();
+
+      if (document.hasValidTransientUserGestureActivation) {
+        reloadFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_USER_ACTIVATION;
+      }
+
+      for (const tab of unchangedRemoteness) {
+        reloadBrowser(tab, reloadFlags);
+      }
+
+      function reloadBrowser(tab) {
+        if (tab.linkedPanel) {
+          const { browsingContext } = tab.linkedBrowser;
+          const { sessionHistory } = browsingContext;
+          if (sessionHistory) {
+            sessionHistory.reload(reloadFlags);
+          } else {
+            browsingContext.reload(reloadFlags);
+          }
+        } else {
+          
+          
+          tab.addEventListener(
+            "SSTabRestoring",
+            () => tab.linkedBrowser.browsingContext.reload(reloadFlags),
+            {
+              once: true,
+            }
+          );
+          this._insertBrowser(tab);
+        }
+      }
+
+      function loadBrowserURI(browser, url, principal) {
+        browser.loadURI(url, {
+          loadFlags: reloadFlags,
+          triggeringPrincipal: principal,
+        });
+      }
     }
 
     stop() {
@@ -1712,7 +1794,7 @@
 
     async _checkIfShouldTriggerTabSelectMessage(oldTab, newTab) {
       const ONE_MINUTE_MS = 60000;
-      const LIMIT_FOR_TRIGGER = 2;
+      const LIMIT_FOR_TRIGGER = 3;
       const now = Date.now();
 
       const oldTabSpec = oldTab.linkedBrowser.currentURI.spec;
@@ -3585,8 +3667,6 @@
 
     openSplitViewMenu(anchorElement) {
       const menu = document.getElementById("split-view-menu");
-      
-      
       const isFromFooter =
         anchorElement?.localName === "toolbarbutton" &&
         anchorElement?.parentElement?.localName === "split-view-footer";
@@ -8908,33 +8988,18 @@
       });
 
       this.splitViewCommandSet.addEventListener("command", event => {
+        const source = document
+          .getElementById("split-view-menu")
+          ?.getAttribute("data-trigger-source");
         switch (event.target.id) {
           case "splitViewCmd_separateTabs":
-            {
-              
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.unsplitTabs(`${source ?? "icon"}_separate`);
-            }
+            this.#activeSplitView.unsplitTabs(`${source}_separate`);
             break;
           case "splitViewCmd_reverseTabs":
-            {
-              
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.reverseTabs(source ?? "icon");
-            }
+            this.#activeSplitView.reverseTabs(source);
             break;
           case "splitViewCmd_closeTabs":
-            {
-              
-              const menu = event.target.parentElement;
-              const source = menu?.getAttribute("data-trigger-source");
-
-              this.#activeSplitView.close(`${source ?? "icon"}_close`);
-            }
+            this.#activeSplitView.close(`${source}_close`);
             break;
         }
       });
