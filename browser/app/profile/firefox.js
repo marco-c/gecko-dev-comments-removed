@@ -694,6 +694,10 @@ pref("browser.urlbar.merino.timeoutMs", 200);
 pref("browser.urlbar.merino.providers", "");
 
 
+pref("browser.urlbar.merino.weather.reportEndpointURL", "https://merino.services.mozilla.com/api/v1/suggest");
+pref("browser.urlbar.merino.weather.hourlyEndpointURL", "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts");
+
+
 pref("browser.urlbar.merino.clientVariants", "");
 
 
@@ -828,6 +832,9 @@ pref("browser.urlbar.suggest.sports", true);
 
 
 pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
+
+
+pref("browser.urlbar.nova.featureGate", false);
 
 pref("browser.altClickSave", false);
 
@@ -1089,11 +1096,7 @@ pref("browser.tabs.groups.hoverPreview.enabled", true);
 
 pref("browser.tabs.groups.smart.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-pref("browser.tabs.notes.enabled", true);
-#else
 pref("browser.tabs.notes.enabled", false);
-#endif
 
 
 pref("browser.tabs.groups.smart.suggestOtherTabsMethod", "LOGISTIC_REGRESSION");
@@ -2280,6 +2283,7 @@ pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.
 pref("browser.smartwindow.memories", true);
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
+pref("browser.smartwindow.showThemesNotice", true);
 pref("browser.smartwindow.firstrun.modelChoice", "");
 pref("browser.smartwindow.model", "");
 pref("browser.smartwindow.preferences.endpoint", "");
@@ -2340,9 +2344,6 @@ pref("identity.fxaccounts.autoconfig.uri", "");
 
 
 pref("identity.sendtabpromo.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/send-tab");
-
-
-pref("identity.tabs.remoteSVGIconDecoding", false);
 
 
 
