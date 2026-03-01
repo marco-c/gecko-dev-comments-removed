@@ -3,6 +3,9 @@
 
 
 
+const initialHomeRegion = Region.home;
+const initialCurrentRegion = Region.current;
+
 
 add_task(
   async function test_doorhanger_shown_when_contain_all_required_fields() {
@@ -90,9 +93,6 @@ add_task(
       ],
     });
 
-    const initialHomeRegion = Region._home;
-    const initialCurrentRegion = Region._current;
-
     const region = "ID";
     Region._setCurrentRegion(region);
     Region._setHomeRegion(region);
@@ -136,9 +136,6 @@ add_task(
         ["extensions.formautofill.addresses.supportedCountries", "US,CA,ID"],
       ],
     });
-
-    const initialHomeRegion = Region._home;
-    const initialCurrentRegion = Region._current;
 
     const region = "ID";
     Region._setCurrentRegion(region);
