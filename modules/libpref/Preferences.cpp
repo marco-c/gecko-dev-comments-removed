@@ -25,6 +25,7 @@
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/LibprefMetrics.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/IdleTaskRunner.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Logging.h"
@@ -145,6 +146,8 @@ using ipc::FileDescriptor;
     }
 
 #endif  
+
+static mozilla::LazyLogModule sPrefLog("Preferences");
 
 
 namespace mozilla::StaticPrefs {
@@ -1429,6 +1432,10 @@ class CallbackNode {
     return mDomain;
   }
 
+  const char* DomainForLog() const {
+    return mDomain.is<nsCString>() ? mDomain.as<nsCString>().get() : "(multi)";
+  }
+
   PrefChangedFunc Func() const { return mFunc; }
   void ClearFunc() { mFunc = nullptr; }
 
@@ -1565,6 +1572,9 @@ static void AddAccessCount(const char* aPrefName) {}
 
 static bool gCallbacksInProgress = false;
 static bool gShouldCleanupDeadNodes = false;
+
+
+static StaticRefPtr<mozilla::IdleTaskRunner> sSweepRunner;
 
 class PrefsHashIter {
   using Iterator = decltype(HashTable()->modIter());
@@ -2009,6 +2019,9 @@ static void NotifyCallbacks(const nsCString& aPrefName,
   for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
     if (node->Func()) {
       if (node->Matches(aPrefName)) {
+        MOZ_LOG(sPrefLog, LogLevel::Debug,
+                ("NotifyCallbacks: pref='%s' -> domain='%s'", aPrefName.get(),
+                 node->DomainForLog()));
         (node->Func())(aPrefName.get(), node->Data());
       }
     }
@@ -2169,20 +2182,20 @@ class PrefCallback : public PLDHashEntryHdr {
 
   static PLDHashNumber HashKey(const PrefCallback* aKey) {
     uint32_t hash = HashString(aKey->mDomain);
-    return AddToHash(hash, aKey->mCanonical);
+    
+    
+    if (aKey->IsWeak()) {
+      return AddToHash(hash, aKey->mWeakRef.get());
+    }
+    return AddToHash(hash, aKey->mStrongRef.get());
   }
 
  public:
   
   PrefCallback(const nsACString& aDomain, nsIObserver* aObserver,
                nsPrefBranch* aBranch)
-      : mDomain(aDomain),
-        mBranch(aBranch),
-        mWeakRef(nullptr),
-        mStrongRef(aObserver) {
+      : mDomain(aDomain), mBranch(aBranch), mStrongRef(aObserver) {
     MOZ_COUNT_CTOR(PrefCallback);
-    nsCOMPtr<nsISupports> canonical = do_QueryInterface(aObserver);
-    mCanonical = canonical;
   }
 
   
@@ -2190,11 +2203,8 @@ class PrefCallback : public PLDHashEntryHdr {
                nsPrefBranch* aBranch)
       : mDomain(aDomain),
         mBranch(aBranch),
-        mWeakRef(do_GetWeakReference(aObserver)),
-        mStrongRef(nullptr) {
+        mWeakRef(do_GetWeakReference(aObserver)) {
     MOZ_COUNT_CTOR(PrefCallback);
-    nsCOMPtr<nsISupports> canonical = do_QueryInterface(aObserver);
-    mCanonical = canonical;
   }
 
   
@@ -2202,8 +2212,7 @@ class PrefCallback : public PLDHashEntryHdr {
       : mDomain(aCopy->mDomain),
         mBranch(aCopy->mBranch),
         mWeakRef(aCopy->mWeakRef),
-        mStrongRef(aCopy->mStrongRef),
-        mCanonical(aCopy->mCanonical) {
+        mStrongRef(aCopy->mStrongRef) {
     MOZ_COUNT_CTOR(PrefCallback);
   }
 
@@ -2213,28 +2222,16 @@ class PrefCallback : public PLDHashEntryHdr {
   MOZ_COUNTED_DTOR(PrefCallback)
 
   bool KeyEquals(const PrefCallback* aKey) const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (IsExpired() || aKey->IsExpired()) {
-      return this == aKey;
-    }
-
-    if (mCanonical != aKey->mCanonical) {
+    if (!mDomain.Equals(aKey->mDomain)) {
       return false;
     }
-
-    return mDomain.Equals(aKey->mDomain);
+    
+    
+    
+    if (IsWeak()) {
+      return mWeakRef == aKey->mWeakRef;
+    }
+    return mStrongRef == aKey->mStrongRef;
   }
 
   PrefCallback* GetKey() const { return const_cast<PrefCallback*>(this); }
@@ -2282,9 +2279,6 @@ class PrefCallback : public PLDHashEntryHdr {
   nsWeakPtr mWeakRef;
   nsCOMPtr<nsIObserver> mStrongRef;
 
-  
-  nsISupports* mCanonical;
-
   bool IsWeak() const { return !!mWeakRef; }
 };
 
@@ -2302,6 +2296,7 @@ class nsPrefBranch final : public nsIPrefBranch,
   nsPrefBranch() = delete;
 
   static void NotifyObserver(const char* aNewpref, void* aData);
+  static void SweepExpiredWeakObservers();
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -2326,8 +2321,6 @@ class nsPrefBranch final : public nsIPrefBranch,
                                      const nsACString& aValue);
   nsresult CheckSanityOfStringLength(const char* aPrefName,
                                      const uint32_t aLength);
-
-  void RemoveExpiredCallback(PrefCallback* aCallback);
 
   PrefName GetPrefName(const char* aPrefName) const {
     return GetPrefName(nsDependentCString(aPrefName));
@@ -3043,13 +3036,32 @@ nsPrefBranch::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 
+
+
+static void MaybeScheduleExpiredWeakObserverSweep() {
+  if (sSweepRunner) {
+    return;
+  }
+  PROFILER_MARKER_UNTYPED("ScheduleWeakObserverSweep", OTHER);
+  static const TimeDuration kMaxDelay = TimeDuration::FromSeconds(2);
+  static const TimeDuration kMinBudget = TimeDuration::FromMilliseconds(15);
+  sSweepRunner = IdleTaskRunner::Create(
+      [](TimeStamp aDeadline) {
+        nsPrefBranch::SweepExpiredWeakObservers();
+        sSweepRunner = nullptr;
+        return true;
+      },
+      "SweepExpiredWeakObservers"_ns, TimeDuration(), kMaxDelay, kMinBudget,
+      false, nullptr);
+}
+
+
 void nsPrefBranch::NotifyObserver(const char* aNewPref, void* aData) {
   PrefCallback* pCallback = (PrefCallback*)aData;
 
   nsCOMPtr<nsIObserver> observer = pCallback->GetObserver();
   if (!observer) {
-    
-    pCallback->GetPrefBranch()->RemoveExpiredCallback(pCallback);
+    MaybeScheduleExpiredWeakObserverSweep();
     return;
   }
 
@@ -3085,9 +3097,11 @@ void nsPrefBranch::FreeObserverList() {
   mFreeingObserverList = true;
   for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
     auto callback = iter.UserData();
-    Preferences::UnregisterCallback(nsPrefBranch::NotifyObserver,
-                                    callback->GetDomain(), callback,
-                                    Preferences::PrefixMatch);
+    DebugOnly<nsresult> rv = Preferences::UnregisterCallback(
+        nsPrefBranch::NotifyObserver, callback->GetDomain(), callback,
+        Preferences::PrefixMatch);
+    MOZ_ASSERT(NS_SUCCEEDED(rv),
+               "Callback node missing for observer in FreeObserverList");
     iter.Remove();
   }
 
@@ -3097,11 +3111,6 @@ void nsPrefBranch::FreeObserverList() {
   }
 
   mFreeingObserverList = false;
-}
-
-void nsPrefBranch::RemoveExpiredCallback(PrefCallback* aCallback) {
-  MOZ_ASSERT(aCallback->IsExpired());
-  mObservers.Remove(aCallback);
 }
 
 nsresult nsPrefBranch::GetDefaultFromPropertiesFile(const char* aPrefName,
@@ -3138,6 +3147,27 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
   }
 
   return PrefName(mPrefRoot + aPrefName);
+}
+
+
+void nsPrefBranch::SweepExpiredWeakObservers() {
+  MOZ_ASSERT(!gCallbacksInProgress);
+
+  CallbackNode* prev_node = nullptr;
+  CallbackNode* node = gFirstCallback;
+
+  while (node) {
+    if (node->Func() == nsPrefBranch::NotifyObserver) {
+      auto* pCallback = static_cast<PrefCallback*>(node->Data());
+      if (pCallback->IsExpired()) {
+        pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
+        node = pref_RemoveCallbackNode(node, prev_node);
+        continue;
+      }
+    }
+    prev_node = node;
+    node = node->Next();
+  }
 }
 
 
@@ -3540,6 +3570,15 @@ void Preferences::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
           ->SizeOfIncludingThis(aMallocSizeOf);
 }
 
+
+uint32_t Preferences::GetCallbackCount() {
+  uint32_t count = 0;
+  for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
+    count++;
+  }
+  return count;
+}
+
 class PreferenceServiceReporter final : public nsIMemoryReporter {
   ~PreferenceServiceReporter() = default;
 
@@ -3894,7 +3933,10 @@ already_AddRefed<Preferences> Preferences::GetInstanceForService() {
 }
 
 
-bool Preferences::IsServiceAvailable() { return !!sPreferences; }
+bool Preferences::IsServiceAvailable() {
+  MOZ_ASSERT(NS_IsMainThread());
+  return !!sPreferences;
+}
 
 
 bool Preferences::InitStaticMembers() {
@@ -3915,8 +3957,13 @@ bool Preferences::InitStaticMembers() {
 
 
 void Preferences::Shutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
   if (!sShutdown) {
     sShutdown = true;  
+    if (sSweepRunner) {
+      sSweepRunner->Cancel();
+      sSweepRunner = nullptr;
+    }
     sPreferences = nullptr;
     StaticPrefs::ShutdownAlwaysPrefs();
   }
@@ -4083,6 +4130,7 @@ void Preferences::InitializeUserPrefs() {
 
 
 void Preferences::FinishInitializingUserPrefs() {
+  MOZ_ASSERT(NS_IsMainThread());
   sPreferences->NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
 }
 
@@ -5597,12 +5645,23 @@ nsresult Preferences::AddWeakObserver(nsIObserver* aObserver,
                                       const nsACString& aPref) {
   MOZ_ASSERT(aObserver);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+
+  
+  
+  static uint32_t sWeakRegistrationsSinceSweep = 0;
+  static constexpr uint32_t kSweepInterval = 512;
+  if (!sSweepRunner && ++sWeakRegistrationsSinceSweep >= kSweepInterval) {
+    sWeakRegistrationsSinceSweep = 0;
+    MaybeScheduleExpiredWeakObserverSweep();
+  }
+
   return sPreferences->mRootBranch->AddObserver(aPref, aObserver, true);
 }
 
 
 nsresult Preferences::RemoveObserver(nsIObserver* aObserver,
                                      const nsACString& aPref) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aObserver);
   if (sShutdown) {
     MOZ_ASSERT(!sPreferences);
@@ -5654,6 +5713,7 @@ nsresult Preferences::AddWeakObservers(nsIObserver* aObserver,
 
 nsresult Preferences::RemoveObservers(nsIObserver* aObserver,
                                       const char* const* aPrefs) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aObserver);
   if (sShutdown) {
     MOZ_ASSERT(!sPreferences);
@@ -5674,6 +5734,7 @@ nsresult Preferences::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                            T& aPrefNode, void* aData,
                                            MatchKind aMatchKind,
                                            bool aIsPriority) {
+  MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
 
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
@@ -5750,6 +5811,7 @@ template <typename T>
 nsresult Preferences::UnregisterCallbackImpl(PrefChangedFunc aCallback,
                                              T& aPrefNode, void* aData,
                                              MatchKind aMatchKind) {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
   if (sShutdown) {
     MOZ_ASSERT(!sPreferences);
