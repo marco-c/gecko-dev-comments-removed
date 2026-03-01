@@ -6382,10 +6382,17 @@ void nsContentUtils::SetHTML(FragmentOrElement* aTarget, Element* aContext,
 }
 
 
+
+
+
 void nsContentUtils::SetHTMLUnsafe(
     FragmentOrElement* aTarget, Element* aContext,
     const TrustedHTMLOrString& aSource, const SetHTMLUnsafeOptions& aOptions,
     bool aIsShadowRoot, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError) {
+  
+  
+  
+  
   constexpr nsLiteralString elementSink = u"Element setHTMLUnsafe"_ns;
   constexpr nsLiteralString shadowRootSink = u"ShadowRoot setHTMLUnsafe"_ns;
   Maybe<nsAutoString> compliantStringHolder;
@@ -6422,6 +6429,8 @@ void nsContentUtils::SetHTMLUnsafe(
     RefPtr<Document> doc = aTarget->OwnerDoc();
     fragment = doc->CreateDocumentFragment();
 
+    
+    
     nsresult rv = sHTMLFragmentParser->ParseFragment(
         *compliantString, fragment, contextLocalName, contextNameSpaceID,
         fragment->OwnerDoc()->GetCompatibilityMode() ==
@@ -6432,6 +6441,7 @@ void nsContentUtils::SetHTMLUnsafe(
     }
   }
 
+  
   aTarget->ReplaceChildren(fragment, IgnoreErrors());
 }
 
@@ -6491,6 +6501,7 @@ uint32_t ComputeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
   MOZ_ASSERT_UNREACHABLE("We should have explicit flags");
   return 0;
 }
+
 
 
 nsresult nsContentUtils::ParseFragmentHTML(
@@ -11247,6 +11258,9 @@ bool nsContentUtils::ComputeIsSecureContext(nsIChannel* aChannel) {
 
 
 void nsContentUtils::TryToUpgradeElement(Element* aElement) {
+  
+  
+  
   NodeInfo* nodeInfo = aElement->NodeInfo();
   RefPtr<nsAtom> typeAtom =
       aElement->GetCustomElementData()->GetCustomElementType();
@@ -11256,6 +11270,8 @@ void nsContentUtils::TryToUpgradeElement(Element* aElement) {
       nsContentUtils::LookupCustomElementDefinition(
           nodeInfo->GetDocument(), nodeInfo->NameAtom(),
           nodeInfo->NamespaceID(), typeAtom);
+  
+  
   if (definition) {
     nsContentUtils::EnqueueUpgradeReaction(aElement, definition);
   } else {
@@ -11361,8 +11377,6 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
 
   
   
-  
-  
   RefPtr<CustomElementDefinition> definition = aDefinition;
   if (isCustomElement && !definition) {
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
@@ -11417,10 +11431,9 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     ErrorResult rv;
 
     
+    
+    
     if (definition->IsCustomBuiltIn()) {
-      
-      
-      
       
       if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
         *aResult =
@@ -11430,11 +11443,15 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       }
       (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
       if (synchronousCustomElements) {
+        
+        
         CustomElementRegistry::Upgrade(*aResult, definition, rv);
         if (rv.MaybeSetPendingException(cx)) {
           aes.ReportException();
         }
       } else {
+        
+        
         nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
       }
 
@@ -11442,13 +11459,22 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     }
 
     
+    
     if (synchronousCustomElements) {
+      
+      
+      
+      
+      
       definition->mPrefixStack.AppendElement(nodeInfo->GetPrefixAtom());
       RefPtr<Document> doc = nodeInfo->GetDocument();
       DoCustomElementCreate(aResult, cx, doc, nodeInfo,
                             MOZ_KnownLive(definition->mConstructor), rv,
                             aFromParser);
       if (rv.MaybeSetPendingException(cx)) {
+        
+        
+        
         if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
           NS_IF_ADDREF(*aResult = NS_NewHTMLUnknownElement(nodeInfo.forget(),
                                                            aFromParser));
@@ -11462,6 +11488,8 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     }
 
     
+    
+    
     if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
       NS_IF_ADDREF(*aResult =
                        NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
@@ -11470,10 +11498,15 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     }
     (*aResult)->SetCustomElementData(
         MakeUnique<CustomElementData>(definition->mType));
+    
+    
     nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
     return NS_OK;
   }
 
+  
+  
+  
   if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
     
     
@@ -11492,16 +11525,29 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+  
+  
+  
   if (isCustomElement) {
     (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
     nsContentUtils::RegisterCallbackUpgradeElement(*aResult, typeAtom);
   }
 
+  
   return NS_OK;
 }
 
+
 CustomElementRegistry* nsContentUtils::GetCustomElementRegistry(
     Document* aDoc) {
+  
+  
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(aDoc);
 
   if (!aDoc->GetDocShell()) {
@@ -11520,15 +11566,25 @@ CustomElementRegistry* nsContentUtils::GetCustomElementRegistry(
 CustomElementDefinition* nsContentUtils::LookupCustomElementDefinition(
     Document* aDoc, nsAtom* aNameAtom, uint32_t aNameSpaceID,
     nsAtom* aTypeAtom) {
+  
   if (aNameSpaceID != kNameSpaceID_XUL && aNameSpaceID != kNameSpaceID_XHTML) {
     return nullptr;
   }
 
+  
+  
   RefPtr<CustomElementRegistry> registry = GetCustomElementRegistry(aDoc);
   if (!registry) {
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  
   return registry->LookupCustomElementDefinition(aNameAtom, aNameSpaceID,
                                                  aTypeAtom);
 }
