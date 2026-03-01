@@ -280,10 +280,13 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
 #  if defined(ANDROID)
   MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
-  MOZ_ASSERT(aDoc || mEmbedderAccessibleDoc,
-             "Embedder doc shouldn't be cleared if it wasn't set");
-  MOZ_ASSERT(!mEmbedderAccessibleDoc || !aDoc || mEmbedderAccessibleDoc == aDoc,
-             "Embedder doc shouldn't change from one doc to another");
+  if (!aDoc && !mEmbedderAccessibleDoc) {
+    return IPC_FAIL(this, "Embedder doc shouldn't be cleared if it wasn't set");
+  }
+  if (mEmbedderAccessibleDoc && aDoc && mEmbedderAccessibleDoc != aDoc) {
+    return IPC_FAIL(this,
+                    "Embedder doc shouldn't change from one doc to another");
+  }
   if (!aDoc && mEmbedderAccessibleDoc &&
       !mEmbedderAccessibleDoc->IsShutdown()) {
     
@@ -293,11 +296,19 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
   mEmbedderAccessibleDoc = static_cast<a11y::DocAccessibleParent*>(aDoc);
   mEmbedderAccessibleID = aID;
   if (!aDoc) {
-    MOZ_ASSERT(!aID);
+    if (aID) {
+      return IPC_FAIL(this, "Attempt to clear embedder but id given");
+    }
     return IPC_OK();
   }
-  MOZ_ASSERT(aID);
+  if (!aID) {
+    return IPC_FAIL(this, "Attempt to set embedder without id");
+  }
   if (GetDocAccessibleParent()) {
+    
+    
+    
+    
     
     
     
