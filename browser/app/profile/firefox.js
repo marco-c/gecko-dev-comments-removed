@@ -3507,6 +3507,7 @@ pref("browser.backup.enabled", true);
 pref("browser.backup.scheduled.enabled", false);
 
 
+
 #ifdef XP_WIN
   pref("browser.backup.archive.enabled", true);
   pref("browser.backup.restore.enabled", true);

@@ -31,6 +31,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
+  TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
@@ -1100,6 +1101,62 @@ add_task(async function check_pinned_tabs() {
       gBrowser.unpinTab(tab);
     }
   );
+});
+
+class FakeTabWithNote extends EventTarget {
+  
+
+
+  constructor(canonicalUrl) {
+    super();
+    this.canonicalUrl = canonicalUrl;
+  }
+}
+
+add_task(async function check_tabNotesCount() {
+  const tab1 = new FakeTabWithNote("https://www.example.com/1");
+  const tab2 = new FakeTabWithNote("https://www.example.com/2");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.notes.enabled", true]],
+  });
+  await TabNotes.init();
+
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    0,
+    "No tab notes yet"
+  );
+
+  await TabNotes.set(tab1, "Test note 1");
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    1,
+    "One tab note"
+  );
+
+  await TabNotes.set(tab2, "Test note 2");
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    2,
+    "Two tab notes"
+  );
+
+  await TabNotes.delete(tab2);
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    1,
+    "One tab note again"
+  );
+
+  await TabNotes.reset();
+  Assert.equal(
+    await ASRouterTargeting.Environment.tabNotesCount,
+    0,
+    "No tab notes again"
+  );
+
+  await TabNotes.deinit();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function check_hasAccessedFxAPanel() {
@@ -2595,10 +2652,7 @@ add_task(async function check_backupArchiveEnabled() {
   const sandbox = sinon.createSandbox();
   registerCleanupFunction(() => sandbox.restore());
 
-  await pushPrefs(
-    ["browser.backup.archive.enabled", true],
-    ["browser.backup.archive.overridePlatformCheck", true]
-  );
+  await pushPrefs(["browser.backup.archive.enabled", true]);
 
   is(
     await ASRouterTargeting.Environment.backupArchiveEnabled,
@@ -2610,10 +2664,7 @@ add_task(async function check_backupArchiveEnabled() {
     featureId: "backupService",
     value: { archiveKillswitch: true },
   });
-  await pushPrefs(
-    ["browser.backup.archive.enabled", true],
-    ["browser.backup.archive.overridePlatformCheck", false]
-  );
+  await pushPrefs(["browser.backup.archive.enabled", true]);
 
   is(
     await ASRouterTargeting.Environment.backupArchiveEnabled,
@@ -2630,10 +2681,7 @@ add_task(async function check_backupRestoreEnabled() {
   const sandbox = sinon.createSandbox();
   registerCleanupFunction(() => sandbox.restore());
 
-  await pushPrefs(
-    ["browser.backup.restore.enabled", true],
-    ["browser.backup.restore.overridePlatformCheck", true]
-  );
+  await pushPrefs(["browser.backup.restore.enabled", true]);
 
   is(
     await ASRouterTargeting.Environment.backupRestoreEnabled,
@@ -2641,10 +2689,7 @@ add_task(async function check_backupRestoreEnabled() {
     "should return true if the killswitch is not on"
   );
   await SpecialPowers.popPrefEnv();
-  await pushPrefs(
-    ["browser.backup.restore.enabled", true],
-    ["browser.backup.restore.overridePlatformCheck", false]
-  );
+  await pushPrefs(["browser.backup.restore.enabled", true]);
 
   const restoreExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "backupService",
