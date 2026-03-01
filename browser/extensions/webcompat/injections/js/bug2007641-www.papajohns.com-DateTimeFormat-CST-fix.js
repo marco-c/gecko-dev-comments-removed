@@ -22,7 +22,9 @@ try {
   const desc = Object.getOwnPropertyDescriptor(window.Intl, "DateTimeFormat");
   const { value } = desc;
   desc.value = function () {
-    switch (arguments[1]?.timeZone.toUpperCase()) {
+    switch (
+      arguments[1]?.timeZone?.toUpperCase().split("/").pop().substr(0, 3)
+    ) {
       case "AST":
         arguments[1].timeZone = "America/Anchorage";
         break;
