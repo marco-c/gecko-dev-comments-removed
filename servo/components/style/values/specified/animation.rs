@@ -857,8 +857,16 @@ pub enum TimelineRangeName {
     Scroll,
 }
 
+impl TimelineRangeName {
+    
+    #[inline]
+    pub fn is_none(&self) -> bool {
+        matches!(*self, Self::None)
+    }
+}
 
-type AnimationRangeValue = generics::GenericAnimationRangeValue<LengthPercentage>;
+
+pub type AnimationRangeValue = generics::GenericAnimationRangeValue<LengthPercentage>;
 
 fn parse_animation_range<'i, 't>(
     context: &ParserContext,
