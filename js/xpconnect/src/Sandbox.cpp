@@ -379,6 +379,31 @@ static bool SandboxCreateStorage(JSContext* cx, JS::HandleObject obj) {
   return JS_DefineProperty(cx, obj, "storage", wrapped, JSPROP_ENUMERATE);
 }
 
+
+
+
+
+
+
+static bool LegacyShouldCloneIntoWindow(JS::Handle<JSObject*> obj) {
+  return IS_INSTANCE_OF(Blob, obj) || IS_INSTANCE_OF(Directory, obj) ||
+         IS_INSTANCE_OF(FileList, obj) || IS_INSTANCE_OF(FormData, obj) ||
+         IS_INSTANCE_OF(ImageBitmap, obj) || IS_INSTANCE_OF(VideoFrame, obj) ||
+         IS_INSTANCE_OF(EncodedVideoChunk, obj) ||
+         IS_INSTANCE_OF(AudioData, obj) ||
+         IS_INSTANCE_OF(EncodedAudioChunk, obj) ||
+#ifdef MOZ_WEBRTC
+         IS_INSTANCE_OF(RTCEncodedVideoFrame, obj) ||
+         IS_INSTANCE_OF(RTCEncodedAudioFrame, obj) ||
+         IS_INSTANCE_OF(RTCDataChannel, obj) ||
+#endif
+         IS_INSTANCE_OF(MessagePort, obj) ||
+         IS_INSTANCE_OF(OffscreenCanvas, obj) ||
+         IS_INSTANCE_OF(ReadableStream, obj) ||
+         IS_INSTANCE_OF(WritableStream, obj) ||
+         IS_INSTANCE_OF(TransformStream, obj);
+}
+
 static bool SandboxStructuredClone(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -387,22 +412,44 @@ static bool SandboxStructuredClone(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedDictionary<dom::StructuredSerializeOptions> options(cx);
-  BindingCallContext callCx(cx, "structuredClone");
   if (!options.Init(cx, args.hasDefined(1) ? args[1] : JS::NullHandleValue,
                     "Argument 2", false)) {
     return false;
   }
 
-  nsIGlobalObject* global = CurrentNativeGlobal(cx);
+  
+  
+  nsCOMPtr<nsIGlobalObject> global = CurrentNativeGlobal(cx);
   if (!global) {
     JS_ReportErrorASCII(cx, "structuredClone: Missing global");
     return false;
+  }
+
+  
+  
+  if (IsWebExtensionContentScriptSandbox(global->GetGlobalJSObject()) &&
+      StaticPrefs::extensions_webextensions_legacyStructuredCloneBehavior() &&
+      args[0].isObject()) {
+    JS::Rooted<JSObject*> obj(cx, &args[0].toObject());
+    if (LegacyShouldCloneIntoWindow(obj)) {
+      RefPtr<nsGlobalWindowInner> window =
+          SandboxWindowOrNull(global->GetGlobalJSObject(), cx);
+      if (window) {
+        global = window;
+      }
+    }
   }
 
   JS::Rooted<JS::Value> result(cx);
   ErrorResult rv;
   nsContentUtils::StructuredClone(cx, global, args[0], options, &result, rv);
   if (rv.MaybeSetPendingException(cx)) {
+    return false;
+  }
+
+  
+  
+  if (!mozilla::dom::MaybeWrapValue(cx, &result)) {
     return false;
   }
 
