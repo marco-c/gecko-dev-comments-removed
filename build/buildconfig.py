@@ -2,18 +2,14 @@
 
 
 
-import sys
-
 from mozbuild.backend.configenvironment import PartialConfigEnvironment
 from mozbuild.base import MozbuildObject
 
 config = MozbuildObject.from_environment()
 partial_config = PartialConfigEnvironment(config.topobjdir)
 
-for var in ("topsrcdir", "topobjdir"):
-    value = getattr(config, var)
-    setattr(sys.modules[__name__], var, value)
-
-for var in ("defines", "substs", "get_dependencies"):
-    value = getattr(partial_config, var)
-    setattr(sys.modules[__name__], var, value)
+topsrcdir = config.topsrcdir
+topobjdir = config.topobjdir
+defines = partial_config.defines
+substs = partial_config.substs
+get_dependencies = partial_config.get_dependencies
