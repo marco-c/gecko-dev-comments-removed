@@ -374,7 +374,7 @@ impl PropertyId {
     pub fn is_animatable(&self) -> bool {
         match self {
             Self::NonCustom(id) => id.is_animatable(),
-            Self::Custom(_) => cfg!(feature = "gecko"),
+            Self::Custom(_) => true,
         }
     }
 
@@ -787,7 +787,11 @@ fn parse_non_custom_property_declaration_value_into<'i>(
         return Err(err);
     }
     input.reset(start);
-    let value = custom_properties::VariableValue::parse(input, &context.url_data)?;
+    let value = custom_properties::VariableValue::parse(
+        input,
+        Some(&context.namespaces.prefixes),
+        &context.url_data,
+    )?;
     parsed_custom(declarations, value);
     Ok(())
 }
@@ -882,7 +886,11 @@ impl PropertyDeclaration {
                 let value = match input.try_parse(CSSWideKeyword::parse) {
                     Ok(keyword) => CustomDeclarationValue::CSSWideKeyword(keyword),
                     Err(()) => CustomDeclarationValue::Unparsed(Arc::new(
-                        custom_properties::VariableValue::parse(input, &context.url_data)?,
+                        custom_properties::VariableValue::parse(
+                            input,
+                            Some(&context.namespaces.prefixes),
+                            &context.url_data,
+                        )?,
                     )),
                 };
                 declarations.push(PropertyDeclaration::Custom(CustomDeclaration {
@@ -1118,7 +1126,7 @@ impl<'a> PropertyDeclarationId<'a> {
     pub fn is_animatable(&self) -> bool {
         match self {
             Self::Longhand(id) => id.is_animatable(),
-            Self::Custom(_) => cfg!(feature = "gecko"),
+            Self::Custom(_) => true,
         }
     }
 
@@ -1128,7 +1136,7 @@ impl<'a> PropertyDeclarationId<'a> {
         match self {
             Self::Longhand(longhand) => longhand.is_discrete_animatable(),
             
-            Self::Custom(_) => cfg!(feature = "gecko"),
+            Self::Custom(_) => true,
         }
     }
 

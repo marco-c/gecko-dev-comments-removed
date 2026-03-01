@@ -5,24 +5,27 @@
 
 
 use std::fmt::{self, Write};
-
+use crate::derives::*;
 use super::{
     registry::PropertyRegistrationData,
     syntax::{
         data_type::DataType, Component as SyntaxComponent, ComponentName, Descriptor, Multiplier,
     },
 };
-use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties;
+use crate::properties::{CSSWideKeyword, CustomDeclarationValue};
+use crate::properties_and_values::rule::Inherits;
 use crate::stylesheets::{CssRuleType, Origin, UrlExtraData};
 use crate::values::{
     animated::{self, Animate, Procedure},
     computed::{self, ToComputedValue},
     specified, CustomIdent,
 };
-use crate::{custom_properties::ComputedValue as ComputedPropertyValue, dom::AttributeTracker};
+use crate::custom_properties::ComputedValue as ComputedPropertyValue;
+use crate::{Namespace, Prefix};
 use cssparser::{BasicParseErrorKind, ParseErrorKind, Parser as CSSParser, TokenSerializationType};
+use rustc_hash::FxHashMap;
 use selectors::matching::QuirksMode;
 use servo_arc::Arc;
 use smallvec::SmallVec;
@@ -201,9 +204,7 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 
 
 
-#[derive(
-    Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem,
-)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
 pub struct Value<Component> {
     
     pub(crate) v: ValueInner<Component>,
@@ -302,6 +303,7 @@ impl SpecifiedValue {
     pub fn compute<'i, 't>(
         input: &mut CSSParser<'i, 't>,
         registration: &PropertyRegistrationData,
+        namespaces: Option<&FxHashMap<Prefix, Namespace>>,
         url_data: &UrlExtraData,
         context: &computed::Context,
         allow_computationally_dependent: AllowComputationallyDependent,
@@ -311,6 +313,7 @@ impl SpecifiedValue {
             input,
             &registration.syntax,
             url_data,
+            namespaces,
             allow_computationally_dependent,
         ) else {
             return Err(());
@@ -325,10 +328,11 @@ impl SpecifiedValue {
         mut input: &mut CSSParser<'i, 't>,
         syntax: &Descriptor,
         url_data: &UrlExtraData,
+        namespaces: Option<&FxHashMap<Prefix, Namespace>>,
         allow_computationally_dependent: AllowComputationallyDependent,
     ) -> Result<Self, StyleParseError<'i>> {
         if syntax.is_universal() {
-            let parsed = ComputedPropertyValue::parse(&mut input, url_data)?;
+            let parsed = ComputedPropertyValue::parse(&mut input, namespaces, url_data)?;
             return Ok(SpecifiedValue {
                 v: ValueInner::Universal(Arc::new(parsed)),
                 url_data: url_data.clone(),
@@ -597,7 +601,8 @@ pub struct CustomAnimatedValue {
     
     pub(crate) name: crate::custom_properties::Name,
     
-    value: ComputedValue,
+    
+    pub(crate) value: Option<ComputedValue>,
 }
 
 impl Animate for CustomAnimatedValue {
@@ -616,22 +621,20 @@ impl Animate for CustomAnimatedValue {
 impl CustomAnimatedValue {
     pub(crate) fn from_computed(
         name: &crate::custom_properties::Name,
-        value: &ComputedValue,
+        value: Option<&ComputedValue>,
     ) -> Self {
         Self {
             name: name.clone(),
-            value: value.clone(),
+            value: value.cloned(),
         }
     }
 
     pub(crate) fn from_declaration(
         declaration: &properties::CustomDeclaration,
         context: &mut computed::Context,
-        _initial: &properties::ComputedValues,
-        _attribute_tracker: &mut AttributeTracker,
     ) -> Option<Self> {
         let computed_value = match declaration.value {
-            properties::CustomDeclarationValue::Unparsed(ref value) => {
+            properties::CustomDeclarationValue::Unparsed(ref value) => Some({
                 debug_assert!(
                     context.builder.stylist.is_some(),
                     "Need a Stylist to get property registration!"
@@ -653,6 +656,7 @@ impl CustomAnimatedValue {
                     SpecifiedValue::compute(
                         &mut input,
                         registration,
+                        None,
                         &value.url_data,
                         context,
                         AllowComputationallyDependent::Yes,
@@ -662,11 +666,41 @@ impl CustomAnimatedValue {
                         url_data: value.url_data.clone(),
                     })
                 }
+            }),
+            properties::CustomDeclarationValue::Parsed(ref v) => Some(v.to_computed_value(context)),
+            properties::CustomDeclarationValue::CSSWideKeyword(keyword) => {
+                let stylist = context.builder.stylist.unwrap();
+                let registration = stylist.get_custom_property_registration(&declaration.name);
+                match keyword {
+                    CSSWideKeyword::Initial => stylist
+                        .get_custom_property_initial_values()
+                        .get(registration, &declaration.name),
+                    CSSWideKeyword::Inherit => context
+                        .builder
+                        .inherited_custom_properties()
+                        .get(registration, &declaration.name),
+                    CSSWideKeyword::Unset => match registration.inherits {
+                        Inherits::False => stylist
+                            .get_custom_property_initial_values()
+                            .get(registration, &declaration.name),
+                        Inherits::True => context
+                            .builder
+                            .inherited_custom_properties()
+                            .get(registration, &declaration.name),
+                    },
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    CSSWideKeyword::Revert | CSSWideKeyword::RevertLayer => return None,
+                }
+                .cloned()
             },
-            properties::CustomDeclarationValue::Parsed(ref v) => v.to_computed_value(context),
-            
-            
-            properties::CustomDeclarationValue::CSSWideKeyword(..) => return None,
         };
         Some(Self {
             name: declaration.name.clone(),
@@ -677,7 +711,10 @@ impl CustomAnimatedValue {
     pub(crate) fn to_declaration(&self) -> properties::PropertyDeclaration {
         properties::PropertyDeclaration::Custom(properties::CustomDeclaration {
             name: self.name.clone(),
-            value: self.value.to_declared_value(),
+            value: match &self.value {
+                Some(value) => value.to_declared_value(),
+                None => CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Initial),
+            },
         })
     }
 }

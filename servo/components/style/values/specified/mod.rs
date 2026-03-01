@@ -21,6 +21,7 @@ use crate::values::specified::calc::CalcNode;
 use crate::values::{serialize_atom_identifier, serialize_number, AtomString};
 use crate::{Atom, Namespace, One, Prefix, Zero};
 use cssparser::{Parser, Token};
+use rustc_hash::FxHashMap;
 use std::fmt::{self, Write};
 use std::ops::Add;
 use style_traits::values::specified::AllowedNumericType;
@@ -87,8 +88,6 @@ pub use self::percentage::{NonNegativePercentage, Percentage};
 pub use self::position::AnchorFunction;
 pub use self::position::AnchorName;
 pub use self::position::AnchorNameIdent;
-pub use self::position::AnchorScope;
-pub use self::position::AnchorScopeKeyword;
 pub use self::position::AspectRatio;
 pub use self::position::Inset;
 pub use self::position::PositionAnchor;
@@ -96,6 +95,8 @@ pub use self::position::PositionAnchorKeyword;
 pub use self::position::PositionTryFallbacks;
 pub use self::position::PositionTryOrder;
 pub use self::position::PositionVisibility;
+pub use self::position::ScopedName;
+pub use self::position::ScopedNameKeyword;
 pub use self::position::{GridAutoFlow, GridTemplateAreas, Position, PositionOrAuto};
 pub use self::position::{MasonryAutoFlow, MasonryItemOrder, MasonryPlacement};
 pub use self::position::{PositionArea, PositionAreaKeyword};
@@ -898,6 +899,37 @@ impl AllowQuirks {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, MallocSizeOf, ToShmem)]
+
+pub enum ParsedNamespace {
+    
+    Unknown,
+    
+    Known(Namespace),
+}
+
+impl ParsedNamespace {
+    
+    
+    pub fn parse<'i, 't>(
+        namespaces: &FxHashMap<Prefix, Namespace>,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        
+        
+        
+        parse_namespace(namespaces, input,  true)
+            .map(|(_prefix, namespace)| namespace)
+    }
+}
+
+impl Default for ParsedNamespace {
+    fn default() -> Self {
+        Self::Known(Namespace::default())
+    }
+}
+
 
 
 
@@ -936,15 +968,12 @@ impl Parse for Attr {
 }
 
 
-fn get_namespace_for_prefix(prefix: &Prefix, context: &ParserContext) -> Option<Namespace> {
-    context.namespaces.prefixes.get(prefix).cloned()
-}
-
-
-fn parse_namespace<'i, 't>(
-    context: &ParserContext,
+pub fn parse_namespace<'i, 't>(
+    namespaces: &FxHashMap<Prefix, Namespace>,
     input: &mut Parser<'i, 't>,
-) -> Result<(Prefix, Namespace), ParseError<'i>> {
+    
+    allow_non_registered: bool,
+) -> Result<(Prefix, ParsedNamespace), ParseError<'i>> {
     let ns_prefix = match input.next()? {
         Token::Ident(ref prefix) => Some(Prefix::from(prefix.as_ref())),
         Token::Delim('|') => None,
@@ -956,13 +985,19 @@ fn parse_namespace<'i, 't>(
     }
 
     if let Some(prefix) = ns_prefix {
-        let ns = match get_namespace_for_prefix(&prefix, context) {
-            Some(ns) => ns,
-            None => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+        let ns = match namespaces.get(&prefix).cloned() {
+            Some(ns) => ParsedNamespace::Known(ns),
+            None => {
+                if allow_non_registered {
+                    ParsedNamespace::Unknown
+                } else {
+                    return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                }
+            },
         };
         Ok((prefix, ns))
     } else {
-        Ok((Prefix::default(), Namespace::default()))
+        Ok((Prefix::default(), ParsedNamespace::default()))
     }
 }
 
@@ -975,10 +1010,19 @@ impl Attr {
     ) -> Result<Attr, ParseError<'i>> {
         
         let namespace = input
-            .try_parse(|input| parse_namespace(context, input))
+            .try_parse(|input| {
+                parse_namespace(
+                    &context.namespaces.prefixes,
+                    input,
+                     false,
+                )
+            })
             .ok();
         let namespace_is_some = namespace.is_some();
         let (namespace_prefix, namespace_url) = namespace.unwrap_or_default();
+        let ParsedNamespace::Known(namespace_url) = namespace_url else {
+            unreachable!("Non-registered url not allowed (see parse namespace flag).")
+        };
 
         
         let attribute = Atom::from(if namespace_is_some {
