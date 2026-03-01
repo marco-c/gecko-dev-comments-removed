@@ -36,6 +36,27 @@ function assertNoStorageLocalCorruptedGleanEvents() {
   );
 }
 
+
+
+
+
+
+
+
+function openSqliteConnectionWithRetry(path) {
+  return TestUtils.waitForCondition(async () => {
+    try {
+      const db = await Sqlite.openConnection({ path });
+      return db;
+    } catch (e) {
+      if (e.result === Cr.NS_ERROR_STORAGE_BUSY) {
+        return null;
+      }
+      throw e;
+    }
+  }, "Waiting for IDB to release the SQLite file");
+}
+
 add_setup(async () => {
   Services.fog.testResetFOG();
   await AddonTestUtils.promiseStartupManager();
@@ -99,7 +120,7 @@ add_task(async function test_idb_reset_on_missing_object_store() {
   info(
     `Mock corrupted IndexedDB by tampering sqlite3 file at ${sqliteFilePath}`
   );
-  let db = await Sqlite.openConnection({ path: sqliteFilePath });
+  let db = await openSqliteConnectionWithRetry(sqliteFilePath);
   let rows = await db.execute("SELECT * FROM object_store;");
   
   Assert.equal(
@@ -363,7 +384,7 @@ add_task(async function test_corrupted_idb_key() {
     filePath => filePath.endsWith(".sqlite")
   );
 
-  let db = await Sqlite.openConnection({ path: sqliteFilePath });
+  let db = await openSqliteConnectionWithRetry(sqliteFilePath);
   let rows = await db.execute(
     "SELECT * FROM object_data WHERE file_ids IS NOT NULL;"
   );
