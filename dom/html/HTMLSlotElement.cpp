@@ -71,6 +71,11 @@ void HTMLSlotElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
+  if (!HasValidDir() && oldContainingShadow) {
+    
+    ResetDirectionSetBySlotHost(this, aContext);
+  }
+
   if (oldContainingShadow && !GetContainingShadow()) {
     oldContainingShadow->RemoveSlot(this);
   }

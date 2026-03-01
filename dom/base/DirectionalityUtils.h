@@ -66,18 +66,8 @@ void SetDirectionalityOnDescendants(mozilla::dom::Element* aElement,
 
 
 
-
-
-
-void WalkDescendantsResetAutoDirection(mozilla::dom::Element* aElement);
-
-
-
-
-
 void SlotAssignedNodeAdded(dom::HTMLSlotElement* aSlot,
                            nsIContent& aAssignedNode);
-
 
 
 
@@ -130,6 +120,13 @@ void SetDirectionFromNewTextNode(dom::Text* aTextNode);
 
 
 void ResetDirectionSetByTextNode(dom::Text*, dom::UnbindContext&);
+
+
+
+
+
+
+void ResetDirectionSetBySlotHost(dom::HTMLSlotElement*, dom::UnbindContext&);
 
 
 
