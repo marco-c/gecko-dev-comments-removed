@@ -1404,7 +1404,6 @@ function getSmallIncrementKey() {
 
 
 
-
 function checkRuleViewContent(view, expectedElements) {
   const elementsInView = _getRuleViewElements(view);
   is(
@@ -1492,6 +1491,22 @@ function checkRuleViewContent(view, expectedElements) {
       `Element #${i} ("${selector}") is ${expectedElement.inherited ? "inherited" : "not inherited"}`
     );
 
+    const highlightedElements = Array.from(
+      elementInView.querySelectorAll(".ruleview-highlight")
+    ).map(el => el.textContent.trim());
+    Assert.deepEqual(
+      highlightedElements,
+      expectedElement.highlighted ?? [],
+      "The expected elements are highlighted"
+    );
+
+    
+    
+    if (!("declarations" in expectedElement)) {
+      info(`Ignore declarations for ${selector}`);
+      return;
+    }
+
     const ruleViewPropertyElements =
       elementInView.querySelectorAll(".ruleview-property");
     is(
@@ -1553,11 +1568,6 @@ function checkRuleViewContent(view, expectedElements) {
         !!ruleViewPropertyElement.hasAttribute("dirty"),
         !!expectedDeclaration?.dirty,
         `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedDeclaration?.dirty ? "dirty" : "not dirty"}`
-      );
-      is(
-        ruleViewPropertyElement.querySelector(".ruleview-highlight") !== null,
-        !!expectedDeclaration?.highlighted,
-        `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedDeclaration?.highlighted ? "highlighted" : "not highlighted"} `
       );
     });
   });
