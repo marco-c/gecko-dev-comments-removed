@@ -152,11 +152,15 @@ export const INITIAL_STATE = {
     categories: [],
     uploadedWallpaper: "",
   },
+  SectionsLayout: {
+    configs: {},
+  },
   Weather: {
     initialized: false,
     lastUpdated: null,
     query: "",
     suggestions: [],
+    hourlyForecasts: [],
     locationData: {
       city: "",
       adminArea: "",
@@ -996,6 +1000,15 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
   }
 }
 
+function SectionsLayout(prevState = INITIAL_STATE.SectionsLayout, action) {
+  switch (action.type) {
+    case at.SECTIONS_LAYOUT_UPDATE:
+      return { ...prevState, configs: action.data.configs };
+    default:
+      return prevState;
+  }
+}
+
 function Notifications(prevState = INITIAL_STATE.Notifications, action) {
   switch (action.type) {
     case at.SHOW_TOAST_MESSAGE:
@@ -1030,7 +1043,8 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
       return {
         ...prevState,
         suggestions: action.data.suggestions,
-        lastUpdated: action.data.date,
+        hourlyForecasts: action.data.hourlyForecasts || [],
+        lastUpdated: action.data.lastUpdated,
         locationData: action.data.locationData || prevState.locationData,
         initialized: true,
       };
@@ -1187,6 +1201,7 @@ export const reducers = {
   TimerWidget,
   ListsWidget,
   Wallpapers,
+  SectionsLayout,
   Weather,
   ExternalComponents,
 };

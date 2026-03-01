@@ -215,6 +215,7 @@ for (const type of [
   "RICH_ICON_MISSING",
   "SAVE_SESSION_PERF_DATA",
   "SCREENSHOT_UPDATED",
+  "SECTIONS_LAYOUT_UPDATE",
   "SECTION_DEREGISTER",
   "SECTION_DISABLE",
   "SECTION_ENABLE",
@@ -6384,11 +6385,15 @@ const INITIAL_STATE = {
     categories: [],
     uploadedWallpaper: "",
   },
+  SectionsLayout: {
+    configs: {},
+  },
   Weather: {
     initialized: false,
     lastUpdated: null,
     query: "",
     suggestions: [],
+    hourlyForecasts: [],
     locationData: {
       city: "",
       adminArea: "",
@@ -7228,6 +7233,15 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
   }
 }
 
+function SectionsLayout(prevState = INITIAL_STATE.SectionsLayout, action) {
+  switch (action.type) {
+    case actionTypes.SECTIONS_LAYOUT_UPDATE:
+      return { ...prevState, configs: action.data.configs };
+    default:
+      return prevState;
+  }
+}
+
 function Notifications(prevState = INITIAL_STATE.Notifications, action) {
   switch (action.type) {
     case actionTypes.SHOW_TOAST_MESSAGE:
@@ -7262,7 +7276,8 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
       return {
         ...prevState,
         suggestions: action.data.suggestions,
-        lastUpdated: action.data.date,
+        hourlyForecasts: action.data.hourlyForecasts || [],
+        lastUpdated: action.data.lastUpdated,
         locationData: action.data.locationData || prevState.locationData,
         initialized: true,
       };
@@ -7419,6 +7434,7 @@ const reducers = {
   TimerWidget,
   ListsWidget,
   Wallpapers,
+  SectionsLayout,
   Weather,
   ExternalComponents,
 };
@@ -13006,6 +13022,7 @@ function WeatherForecast({
   }, [dispatch, widgetSize, widgetsMayBeMaximized]);
   const forecastRef = useIntersectionObserver(handleIntersection);
   const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
+  const HOURLY_FORECASTS = weatherData.hourlyForecasts ?? [];
   const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
   const showDetailedView = nimbusWeatherDisplay === "detailed" || prefs["weather.display"] === "detailed";
 
@@ -13027,7 +13044,7 @@ function WeatherForecast({
   
   
   
-  if (!showDetailedView || !weatherData?.initialized || !weatherForecastWidgetEnabled || !isWeatherEnabled) {
+  if (!showDetailedView || !weatherData?.initialized || !weatherForecastWidgetEnabled || !isWeatherEnabled || !WEATHER_SUGGESTION || !HOURLY_FORECASTS[0]) {
     return null;
   }
   const weatherOptIn = prefs["system.showWeatherOptIn"];
@@ -13242,17 +13259,15 @@ function WeatherForecast({
     "data-l10n-id": "newtab-weather-todays-forecast"
   }), external_React_default().createElement("ul", {
     className: "forecast-row-items"
-  }, external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
-    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
-    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
-    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
-    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), external_React_default().createElement("span", null, "7:00")), external_React_default().createElement("li", null, external_React_default().createElement("span", null, "80\xB0"), external_React_default().createElement("span", {
-    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), external_React_default().createElement("span", null, "7:00")))), external_React_default().createElement("div", {
+  }, HOURLY_FORECASTS.map(slot => external_React_default().createElement("li", {
+    key: slot.epoch_date_time
+  }, external_React_default().createElement("span", null, slot.temperature[prefs["weather.temperatureUnits"]], "\xB0"), external_React_default().createElement("span", {
+    className: `weather-icon iconId${slot.icon_id}`
+  }), external_React_default().createElement("span", null, (() => {
+    const date = new Date(slot.date_time);
+    const hours = date.getHours() % 12 || 12; 
+    return `${hours}:${String(date.getMinutes()).padStart(2, "0")}`; 
+  })()))))), external_React_default().createElement("div", {
     className: "forecast-footer"
   }, external_React_default().createElement("a", {
     href: WEATHER_SUGGESTION.forecast.url,

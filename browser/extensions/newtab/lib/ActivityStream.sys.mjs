@@ -44,6 +44,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesFeed: "resource://newtab/lib/PlacesFeed.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   SectionsFeed: "resource://newtab/lib/SectionsManager.sys.mjs",
+  SectionsLayoutFeed: "resource://newtab/lib/SectionsLayoutFeed.sys.mjs",
   StartupCacheInit: "resource://newtab/lib/StartupCacheInit.sys.mjs",
   Store: "resource://newtab/lib/Store.sys.mjs",
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
@@ -457,6 +458,23 @@ export const PREFS_CONFIG = new Map([
       title:
         "Toggle the weather widget to include a text summary of the current conditions",
       value: "simple",
+    },
+  ],
+  [
+    "weather.reportEndpoint",
+    {
+      title:
+        "Temporary measure for trainhopping. This adds the Merino endpoint for the weather report",
+      value: "https://merino.services.mozilla.com/api/v1/suggest",
+    },
+  ],
+  [
+    "weather.hourlyEndpoint",
+    {
+      title:
+        "Temporary measure for trainhopping. This adds the Merino endpoint for the hourly forecasts to display in Weather Forecast widget",
+      value:
+        "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts",
     },
   ],
   [
@@ -1379,7 +1397,8 @@ export const PREFS_CONFIG = new Map([
   [
     "discoverystream.sections.clientLayout.enabled",
     {
-      title: "Enables client side layout for recommended stories",
+      title:
+        "Enables client side and remote settings layout for recommended stories",
       value: false,
     },
   ],
@@ -1579,9 +1598,15 @@ const FEEDS_DATA = [
     value: true,
   },
   {
+    name: "sectionslayoutfeed",
+    factory: () => new lazy.SectionsLayoutFeed(),
+    title: "Fetches section layout configurations from Remote Settings",
+    value: true,
+  },
+  {
     name: "wallpaperfeed",
     factory: () => new lazy.WallpaperFeed(),
-    title: "Handles fetching and managing wallpaper data from RemoteSettings",
+    title: "Handles fetching and managing wallpaper data from Remote Settings",
     value: true,
   },
   {
