@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-02-23T13:41:12.179641+00:00'
+updated_at: '2026-02-27T10:35:59.553368+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -729,6 +729,10 @@ people:
     bmo_id: 240353
     name: Marco Bonardo
     nick: mak
+  - &manuel
+    bmo_id: 688976
+    name: Manuel Bucher
+    nick: manuel
   - &marco
     bmo_id: 420453
     name: Marco Castelluccio
@@ -1374,6 +1378,7 @@ modules:
       - *dimi
       - *emz
       - *tjr
+      - *manuel
     machine_name: core_antitracking
 
   - name: 'Core: APZ (Graphics submodule)'
@@ -4733,10 +4738,10 @@ modules:
       - netwerk/url-classifier/**/*
     excludes: []
     owners:
-      - *dimi
+      - *timhuang
       - *groovecoder
     peers:
-      - *timhuang
+      - *dimi
       - *gcp
     meta:
       url: https://github.com/mozilla-services/shavar https://wiki.mozilla.org/Phishing_Protection
@@ -4748,5 +4753,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 072f670b7e807c24a12e6c2133d55112e6c34384
-  export: 5adf35005a2942b6477b69874fe896005eb10e95
+  config: 03a255521a82a75b4c121a97131177254c1cb91f
+  export: d61834b341e554ce7160d6bcbf452b85817b6ada
