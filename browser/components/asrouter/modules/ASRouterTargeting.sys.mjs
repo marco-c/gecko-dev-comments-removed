@@ -73,6 +73,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
+  TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetrySession: "resource://gre/modules/TelemetrySession.sys.mjs",
@@ -1261,6 +1262,18 @@ const TargetingGetters = {
   },
 
   /**
+   * Whether the user installed via the Smart Window marketing site.
+   *
+   * @return {boolean} `true` when the link to download the browser was part
+   * of the Smart Window campaign. `false` otherwise.
+   */
+  get isSmartWindow() {
+    const { attributionData } = this;
+
+    return attributionData?.campaign === "smart_window";
+  },
+
+  /**
    * Whether the user opted into a special message action represented by an
    * installer attribution campaign and this choice still needs to be honored.
    *
@@ -1399,6 +1412,14 @@ const TargetingGetters = {
       return false;
     }
     return lazy.PrivateBrowsingUtils.isContentWindowPrivate(win);
+  },
+
+  /**
+   * @returns {Promise<number>}
+   *   The total number of tab notes the user has stored in their current profile.
+   */
+  get tabNotesCount() {
+    return lazy.TabNotes.init().then(() => lazy.TabNotes.count());
   },
 };
 
