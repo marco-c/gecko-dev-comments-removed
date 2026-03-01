@@ -2335,9 +2335,11 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
   if (!element) {
     return nullptr;
   }
+  nsIFrame* primaryFrame = element->GetPrimaryFrame();
+  ComputedStyle* parentStyle = primaryFrame ? primaryFrame->Style() : Style();
   RefPtr<ComputedStyle> pseudoStyle =
       PresContext()->StyleSet()->ProbePseudoElementStyle(
-          *element, PseudoStyleType::Selection, nullptr, Style());
+          *element, PseudoStyleType::Selection, nullptr, parentStyle);
   if (!pseudoStyle) {
     return nullptr;
   }
@@ -2360,8 +2362,10 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeHighlightSelectionStyle(
   if (!element) {
     return nullptr;
   }
+  nsIFrame* primaryFrame = element->GetPrimaryFrame();
+  ComputedStyle* parentStyle = primaryFrame ? primaryFrame->Style() : Style();
   return PresContext()->StyleSet()->ProbePseudoElementStyle(
-      *element, PseudoStyleType::Highlight, aHighlightName, Style());
+      *element, PseudoStyleType::Highlight, aHighlightName, parentStyle);
 }
 
 already_AddRefed<ComputedStyle> nsIFrame::ComputeTargetTextStyle() const {
@@ -2369,8 +2373,10 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeTargetTextStyle() const {
   if (!element) {
     return nullptr;
   }
+  nsIFrame* primaryFrame = element->GetPrimaryFrame();
+  ComputedStyle* parentStyle = primaryFrame ? primaryFrame->Style() : Style();
   RefPtr pseudoStyle = PresContext()->StyleSet()->ProbePseudoElementStyle(
-      *element, PseudoStyleType::TargetText, nullptr, Style());
+      *element, PseudoStyleType::TargetText, nullptr, parentStyle);
   if (!pseudoStyle) {
     return nullptr;
   }
@@ -11636,21 +11642,14 @@ StyleDominantBaseline nsIFrame::DominantBaseline() const {
   if (dominantBaseline != StyleDominantBaseline::Auto) {
     return dominantBaseline;
   }
-
-  WritingMode writingMode = GetWritingMode();
-  StyleTextOrientation textOrientation = StyleVisibility()->mTextOrientation;
-
   
   
   
   
   
-  if (writingMode.IsVertical() &&
-      textOrientation != StyleTextOrientation::Sideways) {
-    return StyleDominantBaseline::Central;
-  }
-
-  return StyleDominantBaseline::Alphabetic;
+  return GetWritingMode().IsCentralBaseline()
+             ? StyleDominantBaseline::Central
+             : StyleDominantBaseline::Alphabetic;
 }
 
 StyleAlignmentBaseline nsIFrame::AlignmentBaseline() const {

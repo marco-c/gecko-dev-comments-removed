@@ -8994,21 +8994,28 @@ bool IsLowercaseASCII(const nsAString& aValue) {
   return true;
 }
 
+
 already_AddRefed<Element> Document::CreateElement(
     const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,
     ErrorResult& rv) {
+  
   
   if (!nsContentUtils::IsValidElementLocalName(aTagName)) {
     rv.ThrowInvalidCharacterError("Invalid element name");
     return nullptr;
   }
 
+  
+  
   bool needsLowercase = IsHTMLDocument() && !IsLowercaseASCII(aTagName);
   nsAutoString lcTagName;
   if (needsLowercase) {
     nsContentUtils::ASCIIToLower(aTagName, lcTagName);
   }
 
+  
+  
+  
   const nsString* is = nullptr;
   PseudoStyleType pseudoType = PseudoStyleType::NotPseudo;
   if (aOptions.IsElementCreationOptions()) {
@@ -9019,6 +9026,7 @@ already_AddRefed<Element> Document::CreateElement(
       is = &options.mIs.Value();
     }
 
+    
     
     
     if (options.mPseudo.WasPassed()) {
@@ -9033,9 +9041,14 @@ already_AddRefed<Element> Document::CreateElement(
     }
   }
 
+  
+  
+  
+  
   RefPtr<Element> elem = CreateElem(needsLowercase ? lcTagName : aTagName,
                                     nullptr, mDefaultElementType, is);
 
+  
   if (pseudoType != PseudoStyleType::NotPseudo) {
     elem->SetPseudoElementType(pseudoType);
   }
@@ -9043,9 +9056,13 @@ already_AddRefed<Element> Document::CreateElement(
   return elem.forget();
 }
 
+
 already_AddRefed<Element> Document::CreateElementNS(
     const nsAString& aNamespaceURI, const nsAString& aQualifiedName,
     const ElementCreationOptionsOrString& aOptions, ErrorResult& rv) {
+  
+  
+  
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
   rv = nsContentUtils::GetNodeInfoFromQName(aNamespaceURI, aQualifiedName,
                                             mNodeInfoManager, ELEMENT_NODE,
@@ -9054,6 +9071,9 @@ already_AddRefed<Element> Document::CreateElementNS(
     return nullptr;
   }
 
+  
+  
+  
   const nsString* is = nullptr;
   if (aOptions.IsElementCreationOptions()) {
     const ElementCreationOptions& options =
@@ -9063,6 +9083,8 @@ already_AddRefed<Element> Document::CreateElementNS(
     }
   }
 
+  
+  
   nsCOMPtr<Element> element;
   rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
                      NOT_FROM_PARSER, is);
@@ -9373,11 +9395,14 @@ void Document::GetCharacterSet(nsAString& aCharacterSet) const {
   CopyASCIItoUTF16(charset, aCharacterSet);
 }
 
+
 already_AddRefed<nsINode> Document::ImportNode(nsINode& aNode, bool aDeep,
                                                ErrorResult& rv) const {
   nsINode* imported = &aNode;
 
   switch (imported->NodeType()) {
+    
+    
     case DOCUMENT_NODE: {
       break;
     }
@@ -9389,6 +9414,24 @@ already_AddRefed<nsINode> Document::ImportNode(nsINode& aNode, bool aDeep,
     case CDATA_SECTION_NODE:
     case COMMENT_NODE:
     case DOCUMENT_TYPE_NODE: {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
       return imported->Clone(aDeep, mNodeInfoManager, rv);
     }
     default: {
@@ -15247,7 +15290,7 @@ class PendingFullscreenChangeList {
 };
 
 
-MOZ_RUNINIT LinkedList<FullscreenChange> PendingFullscreenChangeList::sList;
+constinit LinkedList<FullscreenChange> PendingFullscreenChangeList::sList;
 
 size_t Document::CountFullscreenElements() const {
   size_t count = 0;
