@@ -25,6 +25,7 @@
 #include "debugger/Script.h"     
 #include "debugger/Source.h"     
 #include "gc/Tracer.h"        
+#include "jit/JitOptions.h"   
 #include "js/ColumnNumber.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Conversions.h"               
@@ -1282,6 +1283,11 @@ bool DebuggerObject::CallData::createSource() {
   }
 
   bool forceEnableAsmJS = ToBoolean(v);
+  if (forceEnableAsmJS && !jit::HasJitBackend()) {
+    JS_ReportErrorASCII(cx,
+                        "forceEnableAsmJS cannot be used with no JIT backend");
+    return false;
+  }
 
   RootedScript script(cx);
   {
