@@ -274,9 +274,6 @@ void DocAccessibleParent::AttachChild(RemoteAccessible* aParent,
       }
       MOZ_ASSERT(bridge->GetEmbedderAccessibleDoc() == this);
       if (DocAccessibleParent* childDoc = bridge->GetDocAccessibleParent()) {
-        MOZ_DIAGNOSTIC_ASSERT(!childDoc->RemoteParent(),
-                              "Pending OOP child doc shouldn't have parent "
-                              "once new OuterDoc is attached");
         AddChildDoc(childDoc, aChild->ID(), false);
       }
       return true;
@@ -945,21 +942,13 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
       aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
     }
 #endif  
+    
+    
+    
+    
+    
+    FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
 
   return IPC_OK();
 }
