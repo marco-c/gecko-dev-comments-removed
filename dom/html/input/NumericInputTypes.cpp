@@ -94,14 +94,7 @@ bool NumberInputType::IsValueMissing() const {
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  return mInputElement->GetValueAsDecimal().isNaN();
+  return IsValueEmpty();
 }
 
 bool NumberInputType::HasBadInput() const {
