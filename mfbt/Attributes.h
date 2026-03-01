@@ -9,6 +9,10 @@
 #ifndef mozilla_Attributes_h
 #define mozilla_Attributes_h
 
+#ifdef __cplusplus
+#  include <version>
+#endif
+
 
 
 
@@ -911,6 +915,25 @@
 
 
 
+#    if defined(__GLIBCXX__) && (__GLIBCXX__ <= 20230707)
+#      define MOZ_GLIBCXX_CONSTINIT MOZ_RUNINIT
+#    else
+#      define MOZ_GLIBCXX_CONSTINIT constinit
+#    endif
+
+
+
+
+#    if defined(DEBUG)
+#      define MOZ_RELEASE_CONSTINIT MOZ_RUNINIT
+#    else
+#      define MOZ_RELEASE_CONSTINIT constinit
+#    endif
+
+
+
+
+
 #    ifdef __clang__
 #      define MOZ_HEAP_ALLOCATOR                                         \
         _Pragma("clang diagnostic push")                                 \
@@ -928,6 +951,8 @@
 #    define MOZ_STATIC_CLASS
 #    define MOZ_RUNINIT
 #    define MOZ_GLOBINIT
+#    define MOZ_GLIBCXX_CONSTINIT
+#    define MOZ_RELEASE_CONSTINIT
 #    define MOZ_STATIC_LOCAL_CLASS
 #    define MOZ_STACK_CLASS
 #    define MOZ_NONHEAP_CLASS

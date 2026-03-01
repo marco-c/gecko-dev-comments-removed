@@ -33,7 +33,7 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("mutex")
   
   
 #ifdef DEBUG
-  StaticMutex() { MOZ_ASSERT(!mMutex); }
+  constexpr StaticMutex() { MOZ_ASSERT(!mMutex); }
 #endif
 
   void Lock() MOZ_CAPABILITY_ACQUIRE() { Mutex()->Lock(); }

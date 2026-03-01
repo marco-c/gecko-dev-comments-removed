@@ -48,7 +48,7 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
  private:
   
   const FFmpegLibWrapper* mLib;  
-  MOZ_RUNINIT static inline StaticDataMutex<nsTArray<uint32_t>>
+  MOZ_RELEASE_CONSTINIT static inline StaticDataMutex<nsTArray<uint32_t>>
       sSupportedHWCodecs{"sSupportedHWCodecs"};
 };
 

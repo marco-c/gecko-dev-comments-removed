@@ -65,7 +65,7 @@ static EnumeratedArray<RemoteMediaIn, StaticRefPtr<GenericNonExclusivePromise>,
 
 
 
-MOZ_RUNINIT static StaticDataMutex<StaticRefPtr<nsIThread>>
+MOZ_RELEASE_CONSTINIT static StaticDataMutex<StaticRefPtr<nsIThread>>
     sRemoteMediaManagerChildThread("sRemoteMediaManagerChildThread");
 
 
