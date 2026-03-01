@@ -187,8 +187,8 @@ spec = "https://drafts.csswg.org/css-anchor-position-1/#propdef-anchor-name"
 affects = ""
 
 [anchor-scope]
-type = "AnchorScope"
-initial = "computed::AnchorScope::none()"
+type = "ScopedName"
+initial = "computed::ScopedName::none()"
 struct = "box"
 engine = "gecko"
 animation_type = "discrete"
@@ -276,6 +276,32 @@ vector = { need_index = true }
 animation_type = "none"
 extra_prefixes = ["moz:layout.css.prefixes.animations", "webkit"]
 spec = "https://drafts.csswg.org/css-animations/#propdef-animation-play-state"
+rule_types_allowed = ["style", "scope"]
+affects = ""
+
+[animation-range-end]
+type = "AnimationRangeEnd"
+initial = "computed::AnimationRangeEnd::default()"
+struct = "ui"
+servo_pref = "layout.unimplemented"
+initial_specified_value = "specified::AnimationRangeEnd::default()"
+vector = { need_index = true }
+animation_type = "none"
+gecko_pref = "layout.css.scroll-driven-animations.enabled"
+spec = "https://drafts.csswg.org/scroll-animations-1/#animation-range-end"
+rule_types_allowed = ["style", "scope"]
+affects = ""
+
+[animation-range-start]
+type = "AnimationRangeStart"
+initial = "computed::AnimationRangeStart::default()"
+struct = "ui"
+servo_pref = "layout.unimplemented"
+initial_specified_value = "specified::AnimationRangeStart::default()"
+vector = { need_index = true }
+animation_type = "none"
+gecko_pref = "layout.css.scroll-driven-animations.enabled"
+spec = "https://drafts.csswg.org/scroll-animations-1/#animation-range-start"
 rule_types_allowed = ["style", "scope"]
 affects = ""
 
@@ -4183,3 +4209,13 @@ animation_type = "discrete"
 affects = "layout"
 servo_restyle_damage = "rebuild_box"
 keyword = { values = ["collapse", "preserve", "preserve-breaks", "break-spaces"], extra_gecko_values = ["preserve-spaces"], gecko_aliases = ["-moz-pre-space=preserve-spaces"] }
+
+[timeline-scope]
+type = "ScopedName"
+initial = "computed::ScopedName::none()"
+struct = "box"
+engine = "gecko"
+animation_type = "none"
+gecko_pref = "layout.css.scroll-driven-animations.enabled"
+spec = "https://drafts.csswg.org/scroll-animations-1/#timeline-scope"
+affects = ""

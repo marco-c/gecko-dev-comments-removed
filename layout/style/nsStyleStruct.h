@@ -1539,6 +1539,8 @@ struct StyleAnimation {
   float GetIterationCount() const { return mIterationCount._0; }
   StyleAnimationComposition GetComposition() const { return mComposition; }
   const StyleAnimationTimeline& GetTimeline() const { return mTimeline; }
+  const StyleAnimationRangeStart& GetRangeStart() const { return mRangeStart; }
+  const StyleAnimationRangeEnd& GetRangeEnd() const { return mRangeEnd; }
 
   bool operator==(const StyleAnimation& aOther) const;
   bool operator!=(const StyleAnimation&) const = default;
@@ -1555,13 +1557,15 @@ struct StyleAnimation {
   StyleAnimationIterationCount mIterationCount{1.0f};
   StyleAnimationComposition mComposition = StyleAnimationComposition::Replace;
   StyleAnimationTimeline mTimeline = StyleAnimationTimeline::Auto();
+  StyleAnimationRangeStart mRangeStart;
+  StyleAnimationRangeEnd mRangeEnd;
 };
 
 struct StyleScrollTimeline {
   StyleScrollTimeline() = default;
   explicit StyleScrollTimeline(const StyleScrollTimeline& aCopy) = default;
 
-  nsAtom* GetName() const { return mName.AsAtom(); }
+  nsAtom* GetName() const { return mName.value.AsAtom(); }
   StyleScrollAxis GetAxis() const { return mAxis; }
 
   bool operator==(const StyleScrollTimeline&) const = default;
@@ -1576,7 +1580,7 @@ struct StyleViewTimeline {
   StyleViewTimeline() = default;
   explicit StyleViewTimeline(const StyleViewTimeline& aCopy) = default;
 
-  nsAtom* GetName() const { return mName.AsAtom(); }
+  nsAtom* GetName() const { return mName.value.AsAtom(); }
   StyleScrollAxis GetAxis() const { return mAxis; }
   const StyleViewTimelineInset& GetInset() const { return mInset; }
 
@@ -1700,7 +1704,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   
   
-  mozilla::StyleAnchorScope mAnchorScope;
+  mozilla::StyleScopedName mAnchorScope;
+
+  mozilla::StyleScopedName mTimelineScope;
 
   mozilla::Maybe<mozilla::WindowButtonType> GetWindowButtonType() const {
     if (MOZ_LIKELY(mDefaultAppearance == mozilla::StyleAppearance::None)) {
@@ -2089,6 +2095,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   const mozilla::StyleAnimationTimeline& GetTimeline(uint32_t aIndex) const {
     return mAnimations[aIndex % mAnimationTimelineCount].GetTimeline();
   }
+  const mozilla::StyleAnimationRangeStart& GetRangeStart(
+      uint32_t aIndex) const {
+    return mAnimations[aIndex % mAnimationRangeStartCount].GetRangeStart();
+  }
+  const mozilla::StyleAnimationRangeEnd& GetRangeEnd(uint32_t aIndex) const {
+    return mAnimations[aIndex % mAnimationRangeEndCount].GetRangeEnd();
+  }
 
   mozilla::StyleBoolInteger mMozForceBrokenImageIcon;
   mozilla::StyleBoolInteger mMozSubtreeHiddenOnlyVisually;
@@ -2121,6 +2134,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   uint32_t mAnimationIterationCountCount;
   uint32_t mAnimationCompositionCount;
   uint32_t mAnimationTimelineCount;
+  uint32_t mAnimationRangeStartCount;
+  uint32_t mAnimationRangeEndCount;
 
   nsStyleAutoArray<mozilla::StyleScrollTimeline> mScrollTimelines;
   uint32_t mScrollTimelineNameCount;

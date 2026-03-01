@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::values::computed::{Context, LengthPercentage, Time, ToComputedValue};
 use crate::values::generics::animation as generics;
 use crate::values::specified::animation as specified;
@@ -84,3 +85,9 @@ pub type AnimationTimeline = generics::GenericAnimationTimeline<LengthPercentage
 
 
 pub type ViewTimelineInset = generics::GenericViewTimelineInset<LengthPercentage>;
+
+
+pub type AnimationRangeStart = generics::GenericAnimationRangeStart<LengthPercentage>;
+
+
+pub type AnimationRangeEnd = generics::GenericAnimationRangeEnd<LengthPercentage>;
