@@ -1601,3 +1601,37 @@ function getUnusedVariableButton(view, elementIndexInView) {
     ".ruleview-show-unused-custom-css-properties"
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+function assertRuleViewHeaders(view, expected) {
+  const headers = view.element.querySelectorAll(
+    ".ruleview-header:not([hidden])"
+  );
+
+  is(
+    headers.length,
+    expected.length,
+    "There are " + expected.length + " rule view headers"
+  );
+
+  let i = 0;
+  for (const header of headers) {
+    is(
+      header.textContent,
+      expected[i],
+      "Correct " + header.textContent + " header"
+    );
+    i++;
+  }
+
+  return headers;
+}
