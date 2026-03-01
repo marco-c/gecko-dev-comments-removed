@@ -25,7 +25,13 @@ add_setup(async function () {
 
 
 add_task(async function test_backup_and_recover_with_default_avatar() {
+  let sandbox = sinon.createSandbox();
+
   const SelectableProfileService = getSelectableProfileService();
+  sandbox
+    .stub(SelectableProfileService, "getAllProfiles")
+    .returns([{ id: 202, name: "Profile 1" }]);
+
   let originalProfile = SelectableProfileService.currentProfile;
 
   
@@ -101,13 +107,20 @@ add_task(async function test_backup_and_recover_with_default_avatar() {
   );
 
   await maybeRemovePath(stagingPath);
+  sandbox.restore();
 });
 
 
 
 
 add_task(async function test_backup_and_recover_with_custom_avatar() {
+  let sandbox = sinon.createSandbox();
+
   const SelectableProfileService = getSelectableProfileService();
+  sandbox
+    .stub(SelectableProfileService, "getAllProfiles")
+    .returns([{ id: 202, name: "Profile 1" }]);
+
   let originalProfile = SelectableProfileService.currentProfile;
 
   
@@ -218,4 +231,5 @@ add_task(async function test_backup_and_recover_with_custom_avatar() {
   );
 
   await maybeRemovePath(stagingPath);
+  sandbox.restore();
 });
