@@ -26,7 +26,7 @@ from functools import partial
 from multiprocessing import cpu_count
 from subprocess import PIPE, STDOUT, Popen
 from tempfile import gettempdir, mkdtemp
-from threading import Event, Thread, Timer, current_thread
+from threading import Event, Lock, Thread, Timer, current_thread
 
 import mozdebug
 import six
@@ -254,6 +254,8 @@ class XPCShellTestThread(Thread):
         
         self.event = kwargs.get("event")
         self.done = False  
+        self.timer = None  
+        self.lock = Lock()  
 
     def run(self):
         try:
@@ -425,6 +427,17 @@ class XPCShellTestThread(Thread):
     def testTimeout(self, proc):
         
         
+        self.lock.acquire()
+
+        
+        
+        
+        if self.timer is None:
+            self.lock.release()
+            return
+
+        
+        
         self.done = True
         self.timedout = True
 
@@ -468,6 +481,10 @@ class XPCShellTestThread(Thread):
         self.log.info("xpcshell return code: %s" % self.getReturnCode(proc))
         self.postCheck(proc)
         self.clean_temp_dirs(self.test_object["path"])
+
+        
+        
+        self.lock.release()
 
     def updateTestPrefsFile(self):
         
@@ -963,10 +980,9 @@ class XPCShellTestThread(Thread):
 
         testTimeoutInterval = self.harness_timeout * self.timeout_factor
 
-        testTimer = None
         if not self.interactive and not self.debuggerInfo and not self.jsDebuggerInfo:
-            testTimer = Timer(testTimeoutInterval, lambda: self.testTimeout(proc))
-            testTimer.start()
+            self.timer = Timer(testTimeoutInterval, lambda: self.testTimeout(proc))
+            self.timer.start()
             self.env["MOZ_TEST_TIMEOUT_INTERVAL"] = str(testTimeoutInterval)
 
         proc = None
@@ -1005,8 +1021,16 @@ class XPCShellTestThread(Thread):
                 self.keep_going = True
                 return
 
-            if testTimer:
-                testTimer.cancel()
+            
+            
+            
+            self.lock.acquire()
+
+            if self.timer:
+                self.timer.cancel()
+                self.timer = None
+
+            self.lock.release()
 
             if process_output:
                 
