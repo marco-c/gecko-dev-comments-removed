@@ -230,7 +230,72 @@ add_task(async function test_IPPProxyManager_reset() {
 
 
 
+
+
 add_task(async function test_IPPProxyStates_error() {
+  let sandbox = sinon.createSandbox();
+  setupStubs(sandbox, { validProxyPass: true });
+
+  const readyPromise = waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+  IPProtectionService.init();
+  await readyPromise;
+
+  const activeEvent = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.ACTIVE
+  );
+  IPPProxyManager.start();
+  await activeEvent;
+
+  sandbox.restore();
+  sandbox = sinon.createSandbox();
+  sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
+    status: 500,
+    error: undefined,
+    pass: undefined,
+    usage: undefined,
+  });
+
+  const errorPromise = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.ERROR
+  );
+  await IPPProxyManager.rotateProxyPass();
+  await errorPromise;
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ERROR,
+    "Proxy should be in ERROR state after rotation failure while ACTIVE"
+  );
+
+  const resetPromise = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.READY
+  );
+  await IPPProxyManager.stop();
+  await resetPromise;
+
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.READY,
+    "Proxy should return to READY state after stop() from ERROR"
+  );
+
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+
+
+
+add_task(async function test_IPPProxyManager_activation_failure() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
   sandbox
@@ -257,8 +322,8 @@ add_task(async function test_IPPProxyStates_error() {
 
   Assert.equal(
     IPPProxyManager.state,
-    IPPProxyStates.ERROR,
-    "IP Protection service should be active"
+    IPPProxyStates.READY,
+    "Proxy should return to READY state after activation failure"
   );
 
   IPProtectionService.uninit();
