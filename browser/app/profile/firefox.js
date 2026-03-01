@@ -694,10 +694,6 @@ pref("browser.urlbar.merino.timeoutMs", 200);
 pref("browser.urlbar.merino.providers", "");
 
 
-pref("browser.urlbar.merino.weather.reportEndpointURL", "https://merino.services.mozilla.com/api/v1/suggest");
-pref("browser.urlbar.merino.weather.hourlyEndpointURL", "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts");
-
-
 pref("browser.urlbar.merino.clientVariants", "");
 
 
@@ -1917,7 +1913,7 @@ pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", false);
 
 pref("browser.newtabpage.activity-stream.showWeather", true);
 pref("browser.newtabpage.activity-stream.weather.query", "");
-pref("browser.newtabpage.activity-stream.weather.display", "detailed");
+pref("browser.newtabpage.activity-stream.weather.display", "simple");
 
 pref("browser.newtabpage.activity-stream.images.smart", true);
 
