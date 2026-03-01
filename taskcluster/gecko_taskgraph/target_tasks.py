@@ -331,21 +331,35 @@ def _try_task_config(full_task_graph, parameters, graph_config):
     matched_tasks = []
     missing = set()
     for pattern in pattern_tasks:
+        prefix = pattern.replace("*", "")
         found = [
-            t
-            for t in full_task_graph.graph.nodes
-            if t.split(pattern.replace("*", ""))[-1].isnumeric()
+            t for t in full_task_graph.graph.nodes if t.split(prefix)[-1].isnumeric()
         ]
+        if not found:
+            
+            
+            
+            base = prefix.rstrip("-")
+            if base in full_task_graph.graph.nodes:
+                found = [base]
         if found:
             matched_tasks.extend(found)
         else:
             missing.add(pattern)
 
         if "MOZHARNESS_TEST_PATHS" in parameters["try_task_config"].get("env", {}):
-            matched_tasks = [x for x in matched_tasks if x.endswith("-1")]
+            matched_tasks = [
+                x
+                for x in matched_tasks
+                if x.endswith("-1") or not x.rsplit("-", 1)[-1].isnumeric()
+            ]
 
         if "MOZHARNESS_TEST_TAG" in parameters["try_task_config"].get("env", {}):
-            matched_tasks = [x for x in matched_tasks if x.endswith("-1")]
+            matched_tasks = [
+                x
+                for x in matched_tasks
+                if x.endswith("-1") or not x.rsplit("-", 1)[-1].isnumeric()
+            ]
 
     selected_tasks = set(tasks) | set(matched_tasks)
     missing.update(selected_tasks - set(full_task_graph.tasks))
@@ -956,18 +970,6 @@ def target_tasks_nightly_win64_aarch64(full_task_graph, parameters, graph_config
     return [l for l, t in full_task_graph.tasks.items() if filter(t, parameters)]
 
 
-@register_target_task("nightly_asan")
-def target_tasks_nightly_asan(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required for a nightly build of asan. The
-    nightly build process involves a pipeline of builds, signing,
-    and, eventually, uploading the tasks to balrog."""
-    filter = make_desktop_nightly_filter({
-        "linux64-asan-reporter-shippable",
-        "win64-asan-reporter-shippable",
-    })
-    return [l for l, t in full_task_graph.tasks.items() if filter(t, parameters)]
-
-
 @register_target_task("daily_releases")
 def target_tasks_daily_releases(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to identify if we should release.
@@ -1014,7 +1016,6 @@ def target_tasks_nightly_desktop(full_task_graph, parameters, graph_config):
         )
         | set(target_tasks_nightly_macosx(full_task_graph, parameters, graph_config))
         | set(target_tasks_nightly_linux(full_task_graph, parameters, graph_config))
-        | set(target_tasks_nightly_asan(full_task_graph, parameters, graph_config))
         | set(release_tasks)
     )
 
@@ -1132,13 +1133,14 @@ def target_tasks_customv8_update(full_task_graph, parameters, graph_config):
 
 @register_target_task("file_update")
 def target_tasks_file_update(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required to perform nightly in-tree file updates"""
+    """Select the set of tasks required to perform periodic in-tree file updates"""
+    return ["repo-update-periodic-file-update"]
 
-    def filter(task):
-        
-        return task.kind in ["repo-update"]
 
-    return [l for l, t in full_task_graph.tasks.items() if filter(t)]
+@register_target_task("pinning_update")
+def target_tasks_pinning_update(full_task_graph, parameters, graph_config):
+    """Select the set of tasks required to perform periodic HSTS/HPKP pinning updates"""
+    return ["repo-update-pinning-update"]
 
 
 @register_target_task("l10n_bump")
