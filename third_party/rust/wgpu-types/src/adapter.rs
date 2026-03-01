@@ -13,6 +13,23 @@ use crate::{Features, TextureUsages};
 
 
 
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+pub enum FeatureLevel {
+    #[default]
+    
+    Core,
+    
+    Compatibility,
+}
+
+
+
+
+
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

@@ -20,7 +20,7 @@ use wgt::DynamicOffset;
 
 #[derive(Clone, Debug, Error)]
 #[error(
-    "Bind group index {index} is greater than the device's requested `max_bind_group` limit {max}"
+    "Bind group index {index} is greater than the device's configured `max_bind_groups` limit {max}"
 )]
 pub struct BindGroupIndexOutOfRange {
     pub index: u32,
@@ -97,35 +97,42 @@ where
     );
     state.dynamic_offset_count += num_dynamic_offsets;
 
-    let Some(bind_group) = bind_group else {
-        
-        return Ok(());
-    };
-
-    
-    
-    
-    
-    let bind_group = state.base.tracker.bind_groups.insert_single(bind_group);
-
-    bind_group.same_device(device)?;
-
-    bind_group.validate_dynamic_bindings(index, &state.temp_offsets)?;
-
-    if merge_bind_groups {
+    if let Some(bind_group) = bind_group {
         
         
         
-        unsafe {
-            state.scope.merge_bind_group(&bind_group.used)?;
+        
+        let bind_group = state.base.tracker.bind_groups.insert_single(bind_group);
+
+        bind_group.same_device(device)?;
+
+        bind_group.validate_dynamic_bindings(index, &state.temp_offsets)?;
+
+        if merge_bind_groups {
+            
+            
+            
+            unsafe {
+                state.scope.merge_bind_group(&bind_group.used)?;
+            }
         }
-    }
-    
-    
+        
+        
 
-    state
-        .binder
-        .assign_group(index as usize, bind_group, &state.temp_offsets);
+        state
+            .binder
+            .assign_group(index as usize, bind_group, &state.temp_offsets);
+    } else {
+        if !state.temp_offsets.is_empty() {
+            return Err(BindError::DynamicOffsetCountNotZero {
+                group: index,
+                actual: state.temp_offsets.len(),
+            }
+            .into());
+        }
+
+        state.binder.clear_group(index as usize);
+    };
 
     Ok(())
 }
@@ -135,16 +142,11 @@ where
 
 
 pub(super) fn flush_bindings_helper(state: &mut PassState) -> Result<(), DestroyedResourceError> {
-    let range = state.binder.take_rebind_range();
-    if range.is_empty() {
-        return Ok(());
-    }
+    let start = state.binder.take_rebind_start_index();
+    let entries = state.binder.list_valid_with_start(start);
+    let pipeline_layout = state.binder.pipeline_layout.as_ref().unwrap();
 
-    let entries = state.binder.entries(range);
-
-    for (_, entry) in entries.clone() {
-        let bind_group = entry.group.as_ref().unwrap();
-
+    for (i, bind_group, dynamic_offsets) in entries {
         state.base.buffer_memory_init_actions.extend(
             bind_group.used_buffer_ranges.iter().filter_map(|action| {
                 action
@@ -170,21 +172,15 @@ pub(super) fn flush_bindings_helper(state: &mut PassState) -> Result<(), Destroy
             .map(|tlas| crate::ray_tracing::AsAction::UseTlas(tlas.clone()));
 
         state.base.as_actions.extend(used_resource);
-    }
 
-    if let Some(pipeline_layout) = state.binder.pipeline_layout.as_ref() {
-        for (i, e) in entries {
-            if let Some(group) = e.group.as_ref() {
-                let raw_bg = group.try_raw(state.base.snatch_guard)?;
-                unsafe {
-                    state.base.raw_encoder.set_bind_group(
-                        pipeline_layout.raw(),
-                        i as u32,
-                        Some(raw_bg),
-                        &e.dynamic_offsets,
-                    );
-                }
-            }
+        let raw_bg = bind_group.try_raw(state.base.snatch_guard)?;
+        unsafe {
+            state.base.raw_encoder.set_bind_group(
+                pipeline_layout.raw(),
+                i as u32,
+                raw_bg,
+                dynamic_offsets,
+            );
         }
     }
 

@@ -1119,7 +1119,7 @@ pub struct PipelineLayout {
     shared: PipelineLayoutShared,
     
     
-    bind_group_infos: ArrayVec<BindGroupInfo, { crate::MAX_BIND_GROUPS }>,
+    bind_group_infos: [Option<BindGroupInfo>; crate::MAX_BIND_GROUPS],
     naga_options: naga::back::hlsl::Options,
 }
 

@@ -554,7 +554,7 @@ impl Default for StencilFaceState {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum CompareFunction {
@@ -577,6 +577,7 @@ pub enum CompareFunction {
     
     GreaterEqual = 7,
     
+    #[default]
     Always = 8,
 }
 
@@ -808,9 +809,12 @@ pub struct DepthStencilState {
     #[doc = link_to_wgpu_docs!(["CEbrp"]: "struct.CommandEncoder.html#method.begin_render_pass")]
     pub format: crate::TextureFormat,
     
-    pub depth_write_enabled: bool,
     
-    pub depth_compare: CompareFunction,
+    pub depth_write_enabled: Option<bool>,
+    
+    
+    
+    pub depth_compare: Option<CompareFunction>,
     
     #[cfg_attr(feature = "serde", serde(default))]
     pub stencil: StencilState,
@@ -821,15 +825,33 @@ pub struct DepthStencilState {
 
 impl DepthStencilState {
     
+    
+    
+    pub fn stencil(format: crate::TextureFormat, stencil: StencilState) -> DepthStencilState {
+        assert!(
+            format.has_stencil_aspect(),
+            "{format:?} is not a stencil format"
+        );
+        DepthStencilState {
+            format,
+            depth_write_enabled: None,
+            depth_compare: None,
+            stencil,
+            bias: DepthBiasState::default(),
+        }
+    }
+
+    
     #[must_use]
     pub fn is_depth_enabled(&self) -> bool {
-        self.depth_compare != CompareFunction::Always || self.depth_write_enabled
+        self.depth_compare.unwrap_or_default() != CompareFunction::Always
+            || self.depth_write_enabled.unwrap_or_default()
     }
 
     
     #[must_use]
     pub fn is_depth_read_only(&self) -> bool {
-        !self.depth_write_enabled
+        !self.depth_write_enabled.unwrap_or_default()
     }
 
     

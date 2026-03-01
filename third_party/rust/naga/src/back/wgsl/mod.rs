@@ -88,3 +88,9 @@ impl crate::AtomicFunction {
         }
     }
 }
+
+pub const fn supported_capabilities() -> crate::valid::Capabilities {
+    
+    use crate::valid::Capabilities as Caps;
+    Caps::all()
+}

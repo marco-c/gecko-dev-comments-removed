@@ -495,6 +495,8 @@ struct DeviceShared {
     
     texture_view_identity_factory: ResourceIdentityFactory<vk::ImageView>,
 
+    empty_descriptor_set_layout: vk::DescriptorSetLayout,
+
     
     
     drop_guard: Option<crate::DropGuard>,
@@ -505,6 +507,10 @@ impl Drop for DeviceShared {
         for &raw in self.render_passes.lock().values() {
             unsafe { self.raw.destroy_render_pass(raw, None) };
         }
+        unsafe {
+            self.raw
+                .destroy_descriptor_set_layout(self.empty_descriptor_set_layout, None)
+        };
         if self.drop_guard.is_none() {
             unsafe { self.raw.destroy_device(None) };
         }
