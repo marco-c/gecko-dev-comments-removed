@@ -43,6 +43,15 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+static RefPtr<nsIContent> GetMenuChildContent(
+    const nsMenuParentX::MenuChild& aChild) {
+  return aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->Content();
+      });
+}
+
 static bool gConstructingMenu = false;
 static bool gMenuMethodsSwizzled = false;
 
@@ -314,11 +323,7 @@ size_t nsMenuX::FindInsertionIndex(const MenuChild& aChild) {
   nsCOMPtr<nsIContent> menuPopup = GetMenuPopupContent();
   MOZ_RELEASE_ASSERT(menuPopup);
 
-  RefPtr<nsIContent> insertedContent = aChild.match(
-      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-      [](const RefPtr<nsMenuItemX>& aMenuItem) {
-        return aMenuItem->Content();
-      });
+  RefPtr<nsIContent> insertedContent = GetMenuChildContent(aChild);
 
   MOZ_RELEASE_ASSERT(insertedContent->GetParent() == menuPopup);
 
@@ -333,11 +338,8 @@ size_t nsMenuX::FindInsertionIndex(const MenuChild& aChild) {
       break;
     }
 
-    RefPtr<nsIContent> contentAtIndex = mMenuChildren[index].match(
-        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-        [](const RefPtr<nsMenuItemX>& aMenuItem) {
-          return aMenuItem->Content();
-        });
+    RefPtr<nsIContent> contentAtIndex =
+        GetMenuChildContent(mMenuChildren[index]);
     if (child == contentAtIndex) {
       index++;
     }
@@ -382,11 +384,7 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
   uint32_t visibleNodeIndex = 0;
   for (uint32_t i = 0; i < count; i++) {
     MenuChild item = *GetItemAt(i);
-    RefPtr<nsIContent> content = item.match(
-        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-        [](const RefPtr<nsMenuItemX>& aMenuItem) {
-          return aMenuItem->Content();
-        });
+    RefPtr<nsIContent> content = GetMenuChildContent(item);
     if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(content)) {
       if (aPos == visibleNodeIndex) {
         
@@ -402,11 +400,7 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
 Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(
     Element* aMenuChildElement) {
   for (auto& child : mMenuChildren) {
-    RefPtr<nsIContent> content = child.match(
-        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-        [](const RefPtr<nsMenuItemX>& aMenuItem) {
-          return aMenuItem->Content();
-        });
+    RefPtr<nsIContent> content = GetMenuChildContent(child);
     if (content == aMenuChildElement) {
       return Some(child);
     }
@@ -839,15 +833,18 @@ void nsMenuX::RefreshMenuChildren(const MenuChild& aChildInserted) {
 
   
   
-  NSInteger current = -1;
-  NSInteger startIndex = CalculateNativeInsertionPoint(aChildInserted);
-
   
+  RefPtr<nsIContent> insertedContent = GetMenuChildContent(aChildInserted);
+
+  bool found = false;
   for (nsIContent* child = menuPopup->GetFirstChild(); child;
        child = child->GetNextSibling()) {
-    current = current + 1;
-    if (current < startIndex) {
-      continue;
+    if (!found) {
+      if (child == insertedContent) {
+        found = true;
+      } else {
+        continue;
+      }
     }
     if (!child->IsElement()) {
       continue;
