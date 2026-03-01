@@ -163,7 +163,6 @@
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentL10n.h"
-#include "mozilla/dom/DocumentPictureInPicture.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/ElementBinding.h"
@@ -12223,13 +12222,9 @@ void Document::CloseAnyAssociatedDocumentPiPWindows() {
   }
 
   
-  if (nsPIDOMWindowInner* inner = GetInnerWindow()) {
-    if (DocumentPictureInPicture* dpip =
-            inner->GetExtantDocumentPictureInPicture()) {
-      if (RefPtr<nsGlobalWindowInner> pipWindow = dpip->GetWindow()) {
-        pipWindow->Close();
-      }
-    }
+  if (RefPtr<nsGlobalWindowInner> pipWindow =
+          bc->GetOpenedDocumentPiPWindow()) {
+    pipWindow->Close();
   }
 }
 
@@ -18431,18 +18426,7 @@ static void PropagateUserGestureActivationBetweenPiP(
     
     
     
-    nsPIDOMWindowOuter* outer = currentBC->Top()->GetDOMWindow();
-    if (!outer) {
-      
-      return;
-    }
-    nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
-    NS_ENSURE_TRUE_VOID(inner);
-    DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
-    if (!dpip) {
-      return;
-    }
-    nsGlobalWindowInner* pip = dpip->GetWindow();
+    nsGlobalWindowInner* pip = currentBC->Top()->GetOpenedDocumentPiPWindow();
     if (!pip) {
       return;
     }

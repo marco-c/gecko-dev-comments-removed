@@ -455,6 +455,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return mDocShell ? mDocShell->GetWindow() : nullptr;
   }
 
+  
+  
+  nsGlobalWindowInner* GetOpenedDocumentPiPWindow() const;
+
   uint64_t GetRequestContextId() const { return mRequestContextId; }
 
   
