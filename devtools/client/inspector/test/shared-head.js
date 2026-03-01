@@ -1216,3 +1216,15 @@ async function searchInMarkupView(inspector, search) {
   info("Wait for the search results highlighted to be updated");
   await onSearchResultHighlightingUpdated;
 }
+
+
+
+
+async function assertDisplayedRulesCount(
+  view,
+  expected,
+  message = "Got the expected number of displayed rules in the rules view"
+) {
+  const ruleElements = view.element.querySelectorAll(".ruleview-rule");
+  is(ruleElements.length, expected, message);
+}
