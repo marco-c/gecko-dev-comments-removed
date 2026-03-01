@@ -2041,6 +2041,22 @@ impl ZeroNoPercent for LengthPercentage {
 }
 
 
+pub trait EqualsPercentage {
+    
+    
+    fn equals_percentage(&self, v: CSSFloat) -> bool;
+}
+
+impl EqualsPercentage for LengthPercentage {
+    fn equals_percentage(&self, v: CSSFloat) -> bool {
+        match *self {
+            LengthPercentage::Percentage(p) => p.0 == v,
+            _ => false,
+        }
+    }
+}
+
+
 pub type LengthPercentageOrAuto = generics::LengthPercentageOrAuto<LengthPercentage>;
 
 impl LengthPercentageOrAuto {
