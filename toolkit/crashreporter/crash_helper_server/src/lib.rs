@@ -43,6 +43,14 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     listener: *const c_char,
     pipe: *const c_char,
 ) -> i32 {
+    
+    
+    
+    
+    
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    const BOOTSTRAP_UNKNOWN_SERVICE: std::ffi::c_int = 1102;
+
     daemonize();
     logging::init();
 
@@ -58,10 +66,24 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         "Could not parse the crash generator's listener",
     );
     let pipe = unsafe { CStr::from_ptr(pipe) };
-    let connector = unwrap_with_message(
-        IPCConnector::deserialize(pipe),
-        "Could not parse the crash generator's connector",
-    );
+    let connector = IPCConnector::deserialize(pipe);
+    let connector = match connector {
+        
+        
+        
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        Err(crash_helper_common::errors::IPCError::Deserialize(
+            crash_helper_common::PlatformError::BootstrapLookUp(_rv @ BOOTSTRAP_UNKNOWN_SERVICE),
+        )) => {
+            log::error!("Could not reach out to the main process, shutting down");
+            return -1;
+        }
+        Err(e) => {
+            log::error!("Could not deserialize connector: {e:?}");
+            return -1;
+        }
+        Ok(connector) => connector,
+    };
 
     let crash_generator = unwrap_with_message(
         CrashGenerator::new(breakpad_data, minidump_path),
