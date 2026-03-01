@@ -137,14 +137,13 @@ export class UrlbarInput extends HTMLElement {
         <moz-urlbar-slot name="site-info"> </moz-urlbar-slot>
         <moz-input-box tooltip="aHTMLTooltip"
                        class="urlbar-input-box"
-                       flex="1"
-                       role="combobox"
-                       aria-owns="urlbar-results">
+                       flex="1">
           <html:input id="urlbar-scheme"
                       required="required"/>
           <html:input id="urlbar-input"
                       class="urlbar-input textbox-input"
                       aria-controls="urlbar-results"
+                      role="combobox"
                       aria-autocomplete="both"
                       inputmode="mozAwesomebar"
                       data-l10n-id="urlbar-placeholder"/>
@@ -412,6 +411,23 @@ export class UrlbarInput extends HTMLElement {
       this.readOnly
     ) {
       return;
+    }
+
+    if (
+      this.sapName == "searchbar" &&
+      !document.documentElement.hasAttribute("customizing")
+    ) {
+      // Ensure we get persisted widths back, if we've been in the palette:
+      let storedWidth = Services.xulStore.getValue(
+        document.documentURI,
+        this.parentElement.id,
+        "width"
+      );
+      if (storedWidth) {
+        this.parentElement.setAttribute("width", storedWidth);
+        /** @type {XULElement} */ (this.parentElement).style.width =
+          storedWidth + "px";
+      }
     }
 
     this._initCopyCutController();
