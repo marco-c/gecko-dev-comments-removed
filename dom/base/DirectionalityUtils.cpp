@@ -798,54 +798,6 @@ void ResetDirectionSetByTextNode(Text* aTextNode,
   }
 }
 
-void ResetDirectionSetBySlotHost(HTMLSlotElement* aSlot,
-                                 dom::UnbindContext& aContext) {
-  
-  
-  
-
-  MOZ_ASSERT(!aSlot->IsInComposedDoc(), "Should be disconnected already");
-  if (!AffectsDirAutoElement(aSlot) || EstablishesOwnDirection(aSlot)) {
-    return;
-  }
-  AutoTArray<Element*, 4> autoElements;
-  bool answerIsDefinitive = FindDirAutoElementsFrom(aSlot, autoElements);
-
-  if (answerIsDefinitive) {
-    
-    
-    return;
-  }
-  auto* unboundFrom =
-      nsIContent::FromNodeOrNull(aContext.GetOriginalSubtreeParent());
-  if (!unboundFrom || !AffectsDirAutoElement(unboundFrom)) {
-    return;
-  }
-
-  const ShadowRoot* sr = unboundFrom->GetContainingShadow();
-  if (!sr) {
-    MOZ_ASSERT_UNREACHABLE(
-        "Should only be called if slot was in a shadow tree");
-    return;
-  }
-  Element* host = sr->GetHost();
-  MOZ_ASSERT(host);
-  Directionality dir = host->GetDirectionality();
-  if (dir == Directionality::Unset) {
-    return;
-  }
-
-  autoElements.Clear();
-  FindDirAutoElementsFrom(unboundFrom, autoElements);
-  for (Element* autoElement : autoElements) {
-    if (autoElement->GetDirectionality() != dir) {
-      
-      continue;
-    }
-    ResetAutoDirection(autoElement,  true);
-  }
-}
-
 void ResetDirFormAssociatedElement(Element* aElement, bool aNotify,
                                    bool aHasDirAuto,
                                    const nsAString* aKnownValue) {
@@ -957,7 +909,7 @@ void SetDirOnBind(Element* aElement, nsIContent* aParent) {
     if (aParent->AffectsDirAutoSlot()) {
       aElement->SetAffectsDirAutoSlot();
     }
-    
+    DownwardPropagateDirAutoFlags(aElement);
 
     if (aElement->GetFirstChild() ||
         (aElement->IsInShadowTree() && !aElement->HasValidDir() &&
