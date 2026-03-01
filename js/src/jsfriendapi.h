@@ -332,6 +332,10 @@ JS_PUBLIC_API bool ShouldIgnorePropertyDefinition(JSContext* cx, JSProtoKey key,
 
 JS_PUBLIC_API bool IsFunctionObject(JSObject* obj);
 
+
+
+JS_PUBLIC_API const char* MaybeGetModuleFilename(JSObject* obj);
+
 JS_PUBLIC_API bool UninlinedIsCrossCompartmentWrapper(const JSObject* obj);
 
 
