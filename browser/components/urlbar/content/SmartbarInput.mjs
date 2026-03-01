@@ -89,6 +89,7 @@ const lazy = XPCOMUtils.declareLazy({
 });
 
 const UNLIMITED_MAX_RESULTS = 99;
+const MAX_INPUT_LENGTH = 32000;
 
 let getBoundsWithoutFlushing = element =>
   element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
@@ -157,14 +158,13 @@ export class SmartbarInput extends HTMLElement {
         <moz-urlbar-slot name="site-info"> </moz-urlbar-slot>
         <moz-input-box tooltip="aHTMLTooltip"
                        class="urlbar-input-box"
-                       flex="1"
-                       role="combobox"
-                       aria-owns="urlbar-results">
+                       flex="1">
           <html:input id="urlbar-scheme"
                       required="required"/>
           <html:input id="urlbar-input"
                       class="urlbar-input textbox-input"
                       aria-controls="urlbar-results"
+                      role="combobox"
                       aria-autocomplete="both"
                       inputmode="mozAwesomebar"
                       data-l10n-id="smartbar-placeholder"/>
@@ -668,6 +668,7 @@ export class SmartbarInput extends HTMLElement {
 
   #initSmartbarEditor() {
     const adapter = createEditor(this.inputField);
+    adapter.input.maxLength = MAX_INPUT_LENGTH;
     this.#smartbarInputController = new lazy.SmartbarInputController(adapter);
     this.inputField = adapter.input;
     this.#smartbarEditor = adapter.editor;
