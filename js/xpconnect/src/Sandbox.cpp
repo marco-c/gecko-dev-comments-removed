@@ -1292,6 +1292,14 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
     creationOptions.setNewCompartmentInSystemZone();
   }
 
+  bool freezeBuiltins = isSystemPrincipal;
+  if (options.freezeBuiltins.isSome()) {
+    freezeBuiltins = options.freezeBuiltins.value();
+  }
+  if (freezeBuiltins) {
+    creationOptions.setFreezeBuiltins(true);
+  }
+
   if (options.alwaysUseFdlibm) {
     creationOptions.setAlwaysUseFdlibm(true);
   }
@@ -1744,6 +1752,28 @@ bool OptionsBase::ParseBoolean(const char* name, bool* prop) {
 
 
 
+bool OptionsBase::ParseOptionalBoolean(const char* name, Maybe<bool>& prop) {
+  RootedValue value(mCx);
+  bool found;
+  bool ok = ParseValue(name, &value, &found);
+  NS_ENSURE_TRUE(ok, false);
+
+  if (!found) {
+    return true;
+  }
+
+  if (!value.isBoolean()) {
+    JS_ReportErrorASCII(mCx, "Expected a boolean value for property %s", name);
+    return false;
+  }
+
+  prop = Some(value.toBoolean());
+  return true;
+}
+
+
+
+
 bool OptionsBase::ParseObject(const char* name, MutableHandleObject prop) {
   RootedValue value(mCx);
   bool found;
@@ -1950,6 +1980,7 @@ bool SandboxOptions::Parse() {
                                 sandboxContentSecurityPolicy) &&
             ParseString("sandboxName", sandboxName) &&
             ParseObject("sameZoneAs", &sameZoneAs) &&
+            ParseOptionalBoolean("freezeBuiltins", freezeBuiltins) &&
             ParseBoolean("freshCompartment", &freshCompartment) &&
             ParseBoolean("freshZone", &freshZone) &&
             ParseBoolean("invisibleToDebugger", &invisibleToDebugger) &&
