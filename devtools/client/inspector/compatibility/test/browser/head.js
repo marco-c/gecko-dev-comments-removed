@@ -245,7 +245,7 @@ function getIssueItem(property, element) {
 
 async function togglePropStatusOnRuleView(inspector, ruleIndex, propIndex) {
   const ruleView = inspector.getPanel("ruleview").view;
-  const rule = getRuleViewRuleEditor(ruleView, ruleIndex).rule;
+  const rule = getRuleViewRuleEditorAt(ruleView, ruleIndex).rule;
   
   
   

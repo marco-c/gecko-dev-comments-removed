@@ -146,7 +146,7 @@ add_task(async function () {
 
 
 function assertSelectors(view, ruleIndex, expectedSelectors) {
-  const ruleSelectors = getRuleViewRuleEditor(
+  const ruleSelectors = getRuleViewRuleEditorAt(
     view,
     ruleIndex
   ).selectorText.querySelectorAll(".ruleview-selector");

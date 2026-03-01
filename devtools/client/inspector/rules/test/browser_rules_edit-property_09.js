@@ -41,7 +41,7 @@ function synthesizeMouseOnEmptyArea(view) {
 async function testClickOnEmptyAreaToCloseEditor(inspector, view) {
   
   
-  const ruleEditor = getRuleViewRuleEditor(view, 1);
+  const ruleEditor = getRuleViewRuleEditorAt(view, 1);
   const prop = getTextProperty(view, 1, { "background-color": "blue" });
   const propEditor = prop.editor;
 

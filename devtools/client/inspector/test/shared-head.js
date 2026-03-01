@@ -1028,15 +1028,14 @@ async function removeContentPageElementAttribute(selector, attribute) {
 
 
 
-function getRuleViewRuleEditor(ruleView, childrenIndex, nodeIndex) {
-  const child = ruleView.element.children[childrenIndex];
-  if (!child) {
-    return null;
-  }
 
-  return nodeIndex !== undefined
-    ? child.childNodes[nodeIndex]?._ruleEditor
-    : child._ruleEditor;
+
+
+
+function getRuleViewRuleEditorAt(ruleView, index) {
+  const ruleEl =
+    ruleView.styleDocument.querySelectorAll(".ruleview-rule")[index];
+  return ruleEl?._ruleEditor;
 }
 
 
@@ -1053,7 +1052,7 @@ function getRuleViewRuleEditor(ruleView, childrenIndex, nodeIndex) {
 
 
 function getTextProperty(ruleView, ruleIndex, declaration) {
-  const ruleEditor = getRuleViewRuleEditor(ruleView, ruleIndex);
+  const ruleEditor = getRuleViewRuleEditorAt(ruleView, ruleIndex);
   const [[name, value]] = Object.entries(declaration);
   const textProp = ruleEditor.rule.textProps.find(prop => {
     return prop.name === name && prop.value === value;

@@ -23,7 +23,7 @@ add_task(async function () {
   
   
 
-  const elementRuleEditor = getRuleViewRuleEditor(view, 1);
+  const elementRuleEditor = getRuleViewRuleEditorAt(view, 1);
   const editor = await focusNewRuleViewProperty(elementRuleEditor);
 
   is(
