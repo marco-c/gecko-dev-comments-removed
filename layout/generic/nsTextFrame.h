@@ -685,24 +685,24 @@ class nsTextFrame : public nsIFrame {
   
   
   bool PaintTextWithSelection(const PaintTextSelectionParams& aParams,
-                              const ClipEdges& aClipEdges);
+                              const ClipEdges& aClipEdges,
+                              const SelectionDetails& aDetails);
   
   
   
   
   
-  bool PaintTextWithSelectionColors(
-      const PaintTextSelectionParams& aParams,
-      const mozilla::UniquePtr<SelectionDetails>& aDetails,
-      SelectionTypeMask* aAllSelectionTypeMask, const ClipEdges& aClipEdges);
+  bool PaintTextWithSelectionColors(const PaintTextSelectionParams& aParams,
+                                    const SelectionDetails& aDetails,
+                                    SelectionTypeMask* aAllSelectionTypeMask,
+                                    const ClipEdges& aClipEdges);
   
-  void PaintTextSelectionDecorations(
-      const PaintTextSelectionParams& aParams,
-      const mozilla::UniquePtr<SelectionDetails>& aDetails,
-      SelectionType aSelectionType);
+  void PaintTextSelectionDecorations(const PaintTextSelectionParams& aParams,
+                                     const SelectionDetails& aDetails,
+                                     SelectionType aSelectionType);
 
   SelectionTypeMask ResolveSelections(
-      const PaintTextSelectionParams& aParams, const SelectionDetails* aDetails,
+      const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
       nsTArray<PriorityOrderedSelectionsForRange>& aResult,
       SelectionType aSelectionType, bool* aAnyBackgrounds = nullptr) const;
 
@@ -1090,7 +1090,7 @@ class nsTextFrame : public nsIFrame {
 
 
   static SelectionTypeMask CreateSelectionRangeList(
-      const SelectionDetails* aDetails, SelectionType aSelectionType,
+      const SelectionDetails& aDetails, SelectionType aSelectionType,
       const PaintTextSelectionParams& aParams,
       nsTArray<SelectionRange>& aSelectionRanges, bool* aAnyBackgrounds);
 

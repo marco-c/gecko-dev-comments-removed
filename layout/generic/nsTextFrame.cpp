@@ -122,9 +122,7 @@ namespace mozilla {
 
 bool TextAutospace::ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame) {
   const auto wm = aFrame->GetWritingMode();
-  if (wm.IsVertical() && !wm.IsVerticalSideways() &&
-      aFrame->StyleVisibility()->mTextOrientation ==
-          StyleTextOrientation::Upright) {
+  if (wm.IsUpright()) {
     
     
     return true;
@@ -6389,11 +6387,6 @@ void nsTextFrame::DrawSelectionDecorations(
       params.decoration =
           computedStyleFromPseudo->StyleTextReset()->mTextDecorationLine;
       params.descentLimit = -1.f;
-      params.defaultLineThickness = ComputeSelectionUnderlineHeight(
-          aTextPaintStyle.PresContext(), aFontMetrics, aSelectionType);
-      params.lineSize.height = ComputeDecorationLineThickness(
-          computedStyleFromPseudo->StyleTextReset()->mTextDecorationThickness,
-          params.defaultLineThickness, aFontMetrics, appUnitsPerDevPixel, this);
 
       const bool swapUnderline =
           wm.IsCentralBaseline() && IsUnderlineRight(*Style());
@@ -6414,6 +6407,17 @@ void nsTextFrame::DrawSelectionDecorations(
             computedStyleFromPseudo->StyleText()->mTextUnderlineOffset,
             aFontMetrics, appUnitsPerDevPixel, this, wm.IsCentralBaseline(),
             swapUnderline);
+
+        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
+          params.defaultLineThickness = aFontMetrics.strikeoutSize;
+        } else {
+          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
+              aTextPaintStyle.PresContext(), aFontMetrics, aSelectionType);
+        }
+        params.lineSize.height = ComputeDecorationLineThickness(
+            computedStyleFromPseudo->StyleTextReset()->mTextDecorationThickness,
+            params.defaultLineThickness, aFontMetrics, appUnitsPerDevPixel,
+            this);
 
         PaintDecorationLine(params);
       };
@@ -6857,14 +6861,14 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
 
 
 SelectionTypeMask nsTextFrame::CreateSelectionRangeList(
-    const SelectionDetails* aDetails, SelectionType aSelectionType,
+    const SelectionDetails& aDetails, SelectionType aSelectionType,
     const PaintTextSelectionParams& aParams,
     nsTArray<SelectionRange>& aSelectionRanges, bool* aAnyBackgrounds) {
   SelectionTypeMask allTypes = 0;
   bool anyBackgrounds = false;
 
   uint32_t priorityOfInsertionOrder = 0;
-  for (const SelectionDetails* sd = aDetails; sd; sd = sd->mNext.get()) {
+  for (const SelectionDetails* sd = &aDetails; sd; sd = sd->mNext.get()) {
     MOZ_ASSERT(sd->mStart >= 0 && sd->mEnd >= 0);  
     uint32_t start = std::max(aParams.contentRange.start, uint32_t(sd->mStart));
     uint32_t end = std::min(aParams.contentRange.end, uint32_t(sd->mEnd));
@@ -7033,7 +7037,7 @@ void nsTextFrame::CombineSelectionRanges(
 }
 
 SelectionTypeMask nsTextFrame::ResolveSelections(
-    const PaintTextSelectionParams& aParams, const SelectionDetails* aDetails,
+    const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
     nsTArray<PriorityOrderedSelectionsForRange>& aResult,
     SelectionType aSelectionType, bool* aAnyBackgrounds) const {
   AutoTArray<SelectionRange, 4> selectionRanges;
@@ -7064,14 +7068,13 @@ SelectionTypeMask nsTextFrame::ResolveSelections(
 
 
 bool nsTextFrame::PaintTextWithSelectionColors(
-    const PaintTextSelectionParams& aParams,
-    const UniquePtr<SelectionDetails>& aDetails,
+    const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
     SelectionTypeMask* aAllSelectionTypeMask, const ClipEdges& aClipEdges) {
   bool anyBackgrounds = false;
   AutoTArray<PriorityOrderedSelectionsForRange, 8> selectionRanges;
 
   *aAllSelectionTypeMask =
-      ResolveSelections(aParams, aDetails.get(), selectionRanges,
+      ResolveSelections(aParams, aDetails, selectionRanges,
                         SelectionType::eNone, &anyBackgrounds);
   bool vertical = mTextRun->IsVertical();
   const gfxFloat startIOffset =
@@ -7257,15 +7260,15 @@ bool nsTextFrame::PaintTextWithSelectionColors(
 }
 
 void nsTextFrame::PaintTextSelectionDecorations(
-    const PaintTextSelectionParams& aParams,
-    const UniquePtr<SelectionDetails>& aDetails, SelectionType aSelectionType) {
+    const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
+    SelectionType aSelectionType) {
   
   if (aParams.provider->GetFontGroup()->ShouldSkipDrawing()) {
     return;
   }
 
   AutoTArray<PriorityOrderedSelectionsForRange, 8> selectionRanges;
-  ResolveSelections(aParams, aDetails.get(), selectionRanges, aSelectionType);
+  ResolveSelections(aParams, aDetails, selectionRanges, aSelectionType);
 
   RefPtr<gfxFont> firstFont =
       aParams.provider->GetFontGroup()->GetFirstValidFont();
@@ -7288,13 +7291,24 @@ void nsTextFrame::PaintTextSelectionDecorations(
                                   *aParams.provider, mTextRun, startIOffset);
   gfxFloat iOffset, hyphenWidth;
   Range range;
-  int32_t app = aParams.textPaintStyle->PresContext()->AppUnitsPerDevPixel();
+  gfxFloat app = aParams.textPaintStyle->PresContext()->AppUnitsPerDevPixel();
   
+  
+  
+  
+  const WritingMode parentWM = GetParent()->GetWritingMode();
+  const bool verticalDec = parentWM.IsVertical();
+  gfxFloat decorationAscent = gfxFloat(GetLogicalBaseline(parentWM)) / app;
+  gfxFloat frameBStart = verticalDec ? aParams.framePt.x : aParams.framePt.y;
+  if (parentWM.IsVerticalRL()) {
+    frameBStart += GetSize().width;
+    decorationAscent = -decorationAscent;
+  }
   Point pt;
   if (verticalRun) {
-    pt.x = (aParams.textBaselinePt.x - mAscent) / app;
+    pt.x = frameBStart / app;
   } else {
-    pt.y = (aParams.textBaselinePt.y - mAscent) / app;
+    pt.y = frameBStart / app;
   }
   AutoTArray<SelectionType, 1> nextSelectionTypes;
   AutoTArray<RefPtr<nsAtom>, 1> highlightNames;
@@ -7321,7 +7335,7 @@ void nsTextFrame::PaintTextSelectionDecorations(
         DrawSelectionDecorations(
             aParams.context, aParams.dirtyRect, aSelectionType,
             highlightNames[index], *aParams.textPaintStyle,
-            selectedStyles[index], pt, xInFrame, width, mAscent / app,
+            selectedStyles[index], pt, xInFrame, width, decorationAscent,
             decorationMetrics, aParams.callbacks, verticalRun, kDecoration,
             aParams.glyphRange, aParams.provider);
       }
@@ -7331,16 +7345,12 @@ void nsTextFrame::PaintTextSelectionDecorations(
 }
 
 bool nsTextFrame::PaintTextWithSelection(
-    const PaintTextSelectionParams& aParams, const ClipEdges& aClipEdges) {
+    const PaintTextSelectionParams& aParams, const ClipEdges& aClipEdges,
+    const SelectionDetails& aDetails) {
   NS_ASSERTION(GetContent()->IsMaybeSelected(), "wrong paint path");
 
-  UniquePtr<SelectionDetails> details = GetSelectionDetails();
-  if (!details) {
-    return false;
-  }
-
   SelectionTypeMask allSelectionTypeMask;
-  if (!PaintTextWithSelectionColors(aParams, details, &allSelectionTypeMask,
+  if (!PaintTextWithSelectionColors(aParams, aDetails, &allSelectionTypeMask,
                                     aClipEdges)) {
     return false;
   }
@@ -7359,7 +7369,7 @@ bool nsTextFrame::PaintTextWithSelection(
       
       
       
-      PaintTextSelectionDecorations(aParams, details, selectionType);
+      PaintTextSelectionDecorations(aParams, aDetails, selectionType);
     }
   }
 
@@ -7656,7 +7666,19 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
 
   
   
-  provider.InitializeForDisplay(!aIsSelected);
+  UniquePtr<SelectionDetails> selectionDetails;
+  bool hasNormalSelection = false;
+  if (aIsSelected) {
+    selectionDetails = GetSelectionDetails();
+    for (const SelectionDetails* sd = selectionDetails.get(); sd;
+         sd = sd->mNext.get()) {
+      if (sd->mSelectionType == SelectionType::eNormal) {
+        hasNormalSelection = true;
+        break;
+      }
+    }
+  }
+  provider.InitializeForDisplay(!hasNormalSelection);
 
   const bool reversed = mTextRun->IsInlineReversed();
   const bool verticalRun = mTextRun->IsVertical();
@@ -7702,7 +7724,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
   textPaintStyle.SetResolveColors(!aParams.callbacks);
 
   
-  if (aIsSelected) {
+  if (aIsSelected && selectionDetails) {
     MOZ_ASSERT(aOpacity == 1.0f, "We don't support opacity with selections!");
     gfxSkipCharsIterator tmp(provider.GetStart());
     Range contentRange(
@@ -7714,7 +7736,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
     params.contentRange = contentRange;
     params.textPaintStyle = &textPaintStyle;
     params.glyphRange = range;
-    if (PaintTextWithSelection(params, clipEdges)) {
+    if (PaintTextWithSelection(params, clipEdges, *selectionDetails)) {
       return;
     }
   }
@@ -8336,7 +8358,53 @@ bool nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
       if (!style || !style->HasTextDecorationLines()) {
         continue;
       }
-      params.style = style->StyleTextReset()->mTextDecorationStyle;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const auto* styleTextReset = style->StyleTextReset();
+      const auto& decThickness = styleTextReset->mTextDecorationThickness;
+      params.lineSize.width = aPresContext->AppUnitsToGfxUnits(aRect.width);
+      params.style = styleTextReset->mTextDecorationStyle;
+      params.descentLimit = -1.f;
+      const bool swapUnderline =
+          wm.IsCentralBaseline() && IsUnderlineRight(*style);
+      const auto* styleText = style->StyleText();
+      auto accumForLine = [&](StyleTextDecorationLine decoration) {
+        if (!(styleTextReset->mTextDecorationLine & decoration)) {
+          return;
+        }
+        params.decoration = decoration;
+        params.offset = ComputeDecorationLineOffset(
+            decoration, styleText->mTextUnderlinePosition,
+            styleText->mTextUnderlineOffset, metrics,
+            aPresContext->AppUnitsPerDevPixel(), this, wm.IsCentralBaseline(),
+            swapUnderline);
+
+        if (decoration == StyleTextDecorationLine::LINE_THROUGH) {
+          params.defaultLineThickness = metrics.strikeoutSize;
+        } else {
+          params.defaultLineThickness = ComputeSelectionUnderlineHeight(
+              aPresContext, metrics, sd->mSelectionType);
+        }
+        params.lineSize.height = ComputeDecorationLineThickness(
+            decThickness, params.defaultLineThickness, metrics,
+            aPresContext->AppUnitsPerDevPixel(), this);
+
+        nsRect decorationArea =
+            nsCSSRendering::GetTextDecorationRect(aPresContext, params);
+        aRect.UnionRect(aRect, decorationArea);
+      };
+      accumForLine(StyleTextDecorationLine::UNDERLINE);
+      accumForLine(StyleTextDecorationLine::OVERLINE);
+      accumForLine(StyleTextDecorationLine::LINE_THROUGH);
     } else {
       auto index = nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(
           sd->mSelectionType);
