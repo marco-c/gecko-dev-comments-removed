@@ -79,7 +79,13 @@ class BaseInBrowserHost {
     
     
     
-    if (this.hostTab.linkedBrowser?.browsingContext != subject) {
+    
+    if (this.hostTab.linkedBrowser?.browserId != subject.browserId) {
+      return;
+    }
+
+    
+    if (subject.isReplaced) {
       return;
     }
 
