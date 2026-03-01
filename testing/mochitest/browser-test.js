@@ -91,6 +91,64 @@ var TabDestroyObserver = {
   },
 };
 
+var DOMWindowTracker = {
+  
+  liveWindows: new Map(),
+  initialWindows: new Set(),
+  currentTest: null,
+
+  init() {
+    Services.obs.addObserver(this, "debug-domwindow-created");
+    Services.obs.addObserver(this, "debug-domwindow-destroyed");
+  },
+  destroy() {
+    Services.obs.removeObserver(this, "debug-domwindow-created");
+    Services.obs.removeObserver(this, "debug-domwindow-destroyed");
+  },
+  snapshotInitialWindows() {
+    for (let key of this.liveWindows.keys()) {
+      this.initialWindows.add(key);
+    }
+  },
+  observe(subject, topic, data) {
+    let info = this._parseData(data);
+    if (topic === "debug-domwindow-created") {
+      info.test = this.currentTest;
+      info.time = Date.now();
+      this.liveWindows.set(info.serial, info);
+    } else {
+      this.liveWindows.delete(info.serial);
+    }
+  },
+  _parseData(data) {
+    let info = {};
+    for (let part of data.split(" ")) {
+      let idx = part.indexOf("=");
+      if (idx !== -1) {
+        info[part.substring(0, idx)] = part.substring(idx + 1);
+      }
+    }
+    return info;
+  },
+  getLeakedWindows() {
+    let leaked = [];
+    let innerOuterAddrs = new Set();
+    for (let [key, info] of this.liveWindows) {
+      if (!this.initialWindows.has(key) && info.test) {
+        leaked.push(info);
+        if (info.type === "inner" && info.outer) {
+          innerOuterAddrs.add(info.outer);
+        }
+      }
+    }
+    
+    
+    return leaked.filter(
+      info => info.type !== "outer" || !innerOuterAddrs.has(info.address)
+    );
+  },
+};
+
 function testInit() {
   gConfig = readConfig();
 
@@ -321,6 +379,7 @@ Tester.prototype = {
 
   start: function Tester_start() {
     TabDestroyObserver.init();
+    DOMWindowTracker.init();
 
     
     if (!gConfig) {
@@ -377,6 +436,7 @@ Tester.prototype = {
 
     if (this.tests.length) {
       this.waitForWindowsReady().then(() => {
+        DOMWindowTracker.snapshotInitialWindows();
         this.nextTest();
       });
     } else {
@@ -558,6 +618,7 @@ Tester.prototype = {
     failCount += this.failuresFromInitialWindowState;
 
     TabDestroyObserver.destroy();
+    DOMWindowTracker.destroy();
     Services.console.unregisterListener(this);
 
     this.AccessibilityUtils.uninit();
@@ -1136,6 +1197,7 @@ Tester.prototype = {
         "finished in " + time + "ms"
       );
       this.currentTest.setDuration(time);
+      DOMWindowTracker.currentTest = null;
 
       if (this.runUntilFailure && this.currentTest.failCount > 0) {
         this.haltTests();
@@ -1216,6 +1278,7 @@ Tester.prototype = {
         
 
         let shutdownCleanup = aCallback => {
+          let start = ChromeUtils.now();
           Cu.schedulePreciseShrinkingGC(() => {
             
             
@@ -1224,6 +1287,10 @@ Tester.prototype = {
               Cu.forceGC();
               Cu.forceCC();
             }
+            ChromeUtils.addProfilerMarker("ShutdownLeaks:cleanup", {
+              category: "Test",
+              startTime: start,
+            });
             aCallback();
           });
         };
@@ -1258,7 +1325,28 @@ Tester.prototype = {
 
           shutdownCleanup(() => {
             setTimeout(() => {
-              shutdownCleanup(() => {
+              shutdownCleanup(async () => {
+                
+                
+                
+                await new Promise(resolve =>
+                  Services.tm.dispatchToMainThread(resolve)
+                );
+
+                let leaked = DOMWindowTracker.getLeakedWindows();
+                if (leaked.length) {
+                  try {
+                    let { ShutdownLeakPathFinder } = ChromeUtils.importESModule(
+                      "chrome://mochikit/content/ShutdownLeakPathFinder.sys.mjs"
+                    );
+                    await new ShutdownLeakPathFinder().findAndPrintPaths(
+                      leaked,
+                      this.structuredLogger
+                    );
+                  } catch (ex) {
+                    dump("ShutdownLeakPathFinder failed: " + ex + "\n");
+                  }
+                }
                 this.finish();
               });
             }, 1000);
@@ -1395,6 +1483,10 @@ Tester.prototype = {
   },
 
   execTest: function Tester_execTest() {
+    DOMWindowTracker.currentTest = this.currentTest.path.replace(
+      "chrome://mochitests/content/browser/",
+      ""
+    );
     this.structuredLogger.testStart(this.currentTest.path);
 
     this.SimpleTest.reset();
