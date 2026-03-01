@@ -56,6 +56,11 @@ uint32_t CallbackHandleRelease(uint64_t aHandle);
 
 
 
+void CallbackHandleFree(uint64_t aHandle);
+
+
+
+
 
 
 
