@@ -902,6 +902,7 @@ export class BackupService extends EventTarget {
     embeddedComponentPersistentData: {},
     recoveryErrorCode: ERRORS.NONE,
     backupErrorCode: lazy.backupErrorCode,
+    selectableProfilesAllowed: lazy.SelectableProfileService.isEnabled,
   };
 
   /**
@@ -1002,6 +1003,16 @@ export class BackupService extends EventTarget {
    * @type {Function?}
    */
   #statusPrefObserver = null;
+
+  /**
+   * Called when the SelectableProfileService state is updated. Stored as a
+   * member so it can be unregistered from the SelectableProfileService by
+   * uninitStatusObservers. If null, the conditions are not currently being
+   * monitored.
+   *
+   * @type {Function?}
+   */
+  #profileServiceStateObserver = null;
 
   /**
    * The path of the default parent directory for saving backups.
@@ -2976,6 +2987,8 @@ export class BackupService extends EventTarget {
       // Let's pull in a profile name from the profile directory.
       let profileFolder = PathUtils.split(PathUtils.profileDir).at(-1);
       profileName = profileFolder.substring(profileFolder.indexOf(".") + 1);
+    } else if (lazy.SelectableProfileService.currentProfile) {
+      profileName = lazy.SelectableProfileService.currentProfile.name;
     } else {
       profileName = profileSvc.currentProfile.name;
     }
@@ -3050,7 +3063,7 @@ export class BackupService extends EventTarget {
    *   testing.
    * @param {boolean} [replaceCurrentProfile=false]
    *   An optional argument that determines if the backed up profile should replace
-   *  the current profile, or add a new profile.
+   *   the current profile, or add a new profile.
    * @returns {Promise<nsIToolkitProfile>}
    *   The nsIToolkitProfile that was created for the recovered profile.
    * @throws {Exception}
@@ -3891,6 +3904,21 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * Updates selectableProfilesAllowed in the backup service state. Should be called every time
+   * the SelectableProfileService enabled state is changed.
+   *
+   */
+  onUpdateProfilesEnabledState() {
+    lazy.logConsole.debug(
+      `The profiles enabled state was updated to ${lazy.SelectableProfileService.isEnabled}`
+    );
+
+    this.#_state.selectableProfilesAllowed =
+      lazy.SelectableProfileService.isEnabled;
+    this.stateUpdate();
+  }
+
+  /**
    * Returns the moz-icon URL of a file. To get the moz-icon URL, the
    * file path is convered to a fileURI. If there is a problem retreiving
    * the moz-icon due to an invalid file path, return null instead.
@@ -4414,6 +4442,13 @@ export class BackupService extends EventTarget {
     }
     lazy.NimbusFeatures.backupService.onUpdate(this.#statusPrefObserver);
     this.#handleStatusChange();
+
+    this.#profileServiceStateObserver = () =>
+      this.onUpdateProfilesEnabledState();
+    lazy.SelectableProfileService.on(
+      "enableChanged",
+      this.#profileServiceStateObserver
+    );
   }
 
   /**
@@ -4432,6 +4467,12 @@ export class BackupService extends EventTarget {
     }
     lazy.NimbusFeatures.backupService.offUpdate(this.#statusPrefObserver);
     this.#statusPrefObserver = null;
+
+    lazy.SelectableProfileService.off(
+      "enableChanged",
+      this.#profileServiceStateObserver
+    );
+    this.#profileServiceStateObserver = null;
   }
 
   /**
@@ -4813,6 +4854,7 @@ export class BackupService extends EventTarget {
         osVersion: archiveJSON?.meta?.osVersion,
         healthTelemetryEnabled: archiveJSON?.meta?.healthTelemetryEnabled,
         legacyClientID: archiveJSON?.meta?.legacyClientID,
+        profileName: archiveJSON?.meta?.profileName,
       };
 
       // Clear any existing recovery error from state since we've successfully
@@ -5046,42 +5088,13 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * Shows a native folder picker to set the location to write the single-file
-   * archive files.
+   * Sets the location to write the single-file archive files.
    *
-   * @param {ChromeWindow} window
-   *   The top-level browsing window to associate the file picker with.
+   * @param {string} path
+   *   The parent directory path where backups should be stored.
    * @returns {Promise<undefined>}
    */
-  async editBackupLocation(window) {
-    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    let mode = Ci.nsIFilePicker.modeGetFolder;
-    fp.init(window.browsingContext, "", mode);
-
-    let currentBackupDirPathParent = PathUtils.parent(
-      this.#_state.backupDirPath
-    );
-    if (await IOUtils.exists(currentBackupDirPathParent)) {
-      fp.displayDirectory = await IOUtils.getDirectory(
-        currentBackupDirPathParent
-      );
-    }
-
-    let result = await new Promise(resolve => fp.open(resolve));
-
-    if (result === Ci.nsIFilePicker.returnCancel) {
-      return;
-    }
-
-    let path = fp.file.path;
-
-    // If the same parent directory was chosen, this is a no-op.
-    if (
-      PathUtils.join(path, BackupService.BACKUP_DIR_NAME) == lazy.backupDirPref
-    ) {
-      return;
-    }
-
+  async editBackupLocation(path) {
     // If the location changed, delete the last backup there if one exists.
     try {
       await this.deleteLastBackup();

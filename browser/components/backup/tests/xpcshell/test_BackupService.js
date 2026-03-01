@@ -44,6 +44,7 @@ const OS_NAME = "test-os-name";
 const OS_VERSION = "test-os-version";
 const TELEMETRY_ENABLED = true;
 const LEGACY_CLIENT_ID = "legacy-client-id";
+const PROFILE_NAME = "test-profile-name";
 
 add_setup(function () {
   currentProfile = setupProfile();
@@ -884,17 +885,6 @@ add_task(
       "newBackupLocation"
     );
 
-    let pickerDir = await IOUtils.getDirectory(newBackupLocation);
-    const reg = MockRegistrar.register("@mozilla.org/filepicker;1", {
-      init() {},
-      open(cb) {
-        cb.done(Ci.nsIFilePicker.returnOK);
-      },
-      displayDirectory: null,
-      file: pickerDir,
-      QueryInterface: ChromeUtils.generateQI(["nsIFilePicker"]),
-    });
-
     const backupService = new BackupService({});
 
     const sandbox = sinon.createSandbox();
@@ -902,18 +892,17 @@ add_task(
       .stub(backupService, "deleteLastBackup")
       .rejects(new Error("Exception while deleting backup"));
 
-    await backupService.editBackupLocation({ browsingContext: null });
+    await backupService.editBackupLocation(newBackupLocation);
 
-    pickerDir.append("Restore Firefox");
+    let expectedPath = PathUtils.join(newBackupLocation, "Restore Firefox");
     Assert.equal(
       Services.prefs.getStringPref(backupLocationPref),
-      pickerDir.path,
+      expectedPath,
       "Backup location pref should have updated to the new directory."
     );
 
     Services.prefs.setStringPref(backupLocationPref, resetLocation);
     sinon.restore();
-    MockRegistrar.unregister(reg);
     await Promise.all([
       IOUtils.remove(exceptionBackupLocation, { recursive: true }),
       IOUtils.remove(newBackupLocation, { recursive: true }),
@@ -1110,6 +1099,7 @@ add_task(async function test_getBackupFileInfo() {
         osVersion: OS_VERSION,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
+        profileName: PROFILE_NAME,
       },
       encConfig: {},
     },
@@ -1141,6 +1131,7 @@ add_task(async function test_getBackupFileInfo() {
       osVersion: OS_VERSION,
       healthTelemetryEnabled: TELEMETRY_ENABLED,
       legacyClientID: LEGACY_CLIENT_ID,
+      profileName: PROFILE_NAME,
     },
     "State should match a subset from the archive sample."
   );
@@ -1205,6 +1196,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
           osVersion: OS_VERSION,
           healthTelemetryEnabled: TELEMETRY_ENABLED,
           legacyClientID: LEGACY_CLIENT_ID,
+          profileName: PROFILE_NAME,
         },
         encConfig: {},
       },
@@ -1229,6 +1221,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
         osVersion: OS_VERSION,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
+        profileName: PROFILE_NAME,
       },
       "Initial state should be set correctly"
     );
