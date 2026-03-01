@@ -3094,16 +3094,15 @@ void nsPrefBranch::FreeObserverList() {
   
   
   
+  
   mFreeingObserverList = true;
-  for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
-    auto callback = iter.UserData();
-    DebugOnly<nsresult> rv = Preferences::UnregisterCallback(
-        nsPrefBranch::NotifyObserver, callback->GetDomain(), callback,
-        Preferences::PrefixMatch);
-    MOZ_ASSERT(NS_SUCCEEDED(rv),
-               "Callback node missing for observer in FreeObserverList");
-    iter.Remove();
-  }
+
+  
+  
+  DebugOnly<uint32_t> removed = Preferences::UnregisterCallbacksForBranch(this);
+  MOZ_ASSERT(removed == mObservers.Count(),
+             "Callback list and mObservers are out of sync");
+  mObservers.Clear();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
@@ -5858,6 +5857,37 @@ nsresult Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
                                           const char* const* aPrefs,
                                           void* aData, MatchKind aMatchKind) {
   return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
+}
+
+
+uint32_t Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (sShutdown || !sPreferences) {
+    return 0;
+  }
+
+  uint32_t removedCount = 0;
+  CallbackNode* node = gFirstCallback;
+  CallbackNode* prev_node = nullptr;
+
+  while (node) {
+    if (node->Func() == nsPrefBranch::NotifyObserver &&
+        static_cast<PrefCallback*>(node->Data())->GetPrefBranch() == aBranch) {
+      ++removedCount;
+      if (gCallbacksInProgress) {
+        node->ClearFunc();
+        gShouldCleanupDeadNodes = true;
+        prev_node = node;
+        node = node->Next();
+      } else {
+        node = pref_RemoveCallbackNode(node, prev_node);
+      }
+    } else {
+      prev_node = node;
+      node = node->Next();
+    }
+  }
+  return removedCount;
 }
 
 template <typename T>
