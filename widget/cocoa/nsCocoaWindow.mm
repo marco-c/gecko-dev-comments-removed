@@ -3087,9 +3087,24 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   
   
   
+  
+  
+  
+  
+  
   NSWindow* viewWindow = [self window];
   if (viewWindow && [viewWindow isKeyWindow]) {
-    [viewWindow orderWindow:NSWindowAbove relativeTo:0];
+    bool isInTransition = false;
+    id delegate = [viewWindow delegate];
+    if ([delegate isKindOfClass:[WindowDelegate class]]) {
+      if (nsCocoaWindow* geckoWindow =
+              [(WindowDelegate*)delegate geckoWidget]) {
+        isInTransition = geckoWindow->IsInTransition();
+      }
+    }
+    if (!isInTransition) {
+      [viewWindow orderWindow:NSWindowAbove relativeTo:0];
+    }
   }
 
 #if !defined(RELEASE_OR_BETA) || defined(DEBUG)
@@ -3129,7 +3144,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 #  undef CRASH_MESSAGE
     }
   }
-#endif  
+#endif
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
   if (mGeckoChild) {

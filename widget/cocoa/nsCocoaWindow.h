@@ -375,9 +375,8 @@ class nsCocoaWindow final : public nsIWidget {
   int32_t RoundsWidgetCoordinatesTo() override;
 
   
-  void WillPaintWindow();
-  bool PaintWindow(LayoutDeviceIntRegion aRegion);
-  bool PaintWindowInDrawTarget(mozilla::gfx::DrawTarget* aDT,
+  void PaintWindow();
+  void PaintWindowInDrawTarget(mozilla::gfx::DrawTarget* aDT,
                                const LayoutDeviceIntRegion& aRegion,
                                const mozilla::gfx::IntSize& aSurfaceSize);
 
@@ -498,6 +497,7 @@ class nsCocoaWindow final : public nsIWidget {
     Zoom,
   };
   void FinishCurrentTransitionIfMatching(const TransitionType& aTransition);
+  bool IsInTransition() { return mTransitionCurrent.isSome(); }
 
   
   
@@ -609,7 +609,6 @@ class nsCocoaWindow final : public nsIWidget {
   
   mozilla::Maybe<TransitionType> mUpdateFullscreenOnResize;
 
-  bool IsInTransition() { return mTransitionCurrent.isSome(); }
   void QueueTransition(const TransitionType& aTransition);
   void ProcessTransitions();
 
