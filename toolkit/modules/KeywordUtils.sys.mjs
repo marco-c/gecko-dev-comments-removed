@@ -57,26 +57,14 @@ export var KeywordUtils = {
       }
     }
 
-    
-    
-    
-    
-    
     let encodedParam = "";
     if (charset && charset != "UTF-8") {
       try {
-        let converter = Cc[
-          "@mozilla.org/intl/scriptableunicodeconverter"
-        ].createInstance(Ci.nsIScriptableUnicodeConverter);
-        converter.charset = charset;
-        encodedParam = converter.ConvertFromUnicode(param) + converter.Finish();
+        encodedParam = Services.textToSubURI.ConvertAndEscape(charset, param);
       } catch (ex) {
-        encodedParam = param;
+        
+        encodedParam = encodeURIComponent(param);
       }
-      encodedParam = escape(encodedParam).replace(
-        /[+@\/]+/g,
-        encodeURIComponent
-      );
     } else {
       
       encodedParam = encodeURIComponent(param);
