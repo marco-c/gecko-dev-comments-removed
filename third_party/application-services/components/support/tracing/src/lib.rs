@@ -12,8 +12,8 @@ pub use filters::{
 };
 
 pub use layer::{
-    register_event_sink, register_min_level_event_sink, simple_event_layer, unregister_event_sink,
-    unregister_min_level_event_sink,
+    register_event_sink, simple_event_layer, unregister_event_sink, EventSinkId,
+    EventSinkSpecification, EventTarget,
 };
 
 pub use tracing;
@@ -104,7 +104,7 @@ macro_rules! error {
 pub type Level = TracingLevel;
 
 
-#[derive(uniffi::Enum, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(uniffi::Enum, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TracingLevel {
     Error,
     Warn,
@@ -146,7 +146,7 @@ impl From<Level> for tracing::Level {
 
 pub type Event = TracingEvent;
 
-#[derive(uniffi::Record, Debug)]
+#[derive(uniffi::Record, Clone, Debug, PartialEq, Eq)]
 pub struct TracingEvent {
     pub level: Level,
     pub target: String,
@@ -205,26 +205,37 @@ mod tests {
                 self.events.write().push(event);
             }
         }
+
         let sink = Arc::new(Sink::new());
-        let level_sink = Arc::new(Sink::new());
-
-        crate::layer::register_event_sink("first_target", Level::Info, sink.clone());
-        crate::layer::register_event_sink("second_target", Level::Debug, sink.clone());
 
         
-        
-        crate::layer::register_min_level_event_sink(Level::Warn, sink.clone());
-        crate::layer::register_min_level_event_sink(Level::Error, level_sink.clone());
+        crate::layer::register_event_sink(
+            EventSinkSpecification {
+                targets: vec![
+                    EventTarget {
+                        target: "first_target".into(),
+                        level: Level::Info,
+                    },
+                    EventTarget {
+                        target: "second_target".into(),
+                        level: Level::Debug,
+                    },
+                ],
+                min_level: Some(Level::Warn),
+            },
+            sink.clone(),
+        );
 
         info!(target: "first_target", extra=-1, "event message");
         debug!(target: "first_target", extra=-2, "event message (should be filtered)");
         debug!(target: "second_target::submodule", extra=-3, "event message2");
-        info!(target: "third_target", extra=-4, "event message (should be filtered)");
+        warn!(target: "third_target", extra=-4, "event message3");
+        info!(target: "third_target", extra=-5, "event message (should be filtered)");
         
-        error!(target: "first_target", extra=-5, "event message");
+        
+        error!(target: "first_target", extra=-6, "event message4");
 
-        assert_eq!(sink.events.read().len(), 3);
-        assert_eq!(level_sink.events.read().len(), 1);
+        assert_eq!(sink.events.read().len(), 4);
 
         let event = &sink.events.read()[0];
         assert_eq!(event.target, "first_target");
@@ -239,15 +250,15 @@ mod tests {
         assert_eq!(event2.fields.get("extra").unwrap().as_i64(), Some(-3));
 
         let event3 = &sink.events.read()[2];
-        assert_eq!(event3.target, "first_target");
-        assert_eq!(event3.level, Level::Error);
-        assert_eq!(event3.message, "event message");
-        assert_eq!(event3.fields.get("extra").unwrap().as_i64(), Some(-5));
+        assert_eq!(event3.target, "third_target");
+        assert_eq!(event3.level, Level::Warn);
+        assert_eq!(event3.message, "event message3");
+        assert_eq!(event3.fields.get("extra").unwrap().as_i64(), Some(-4));
 
-        let level_event = &level_sink.events.read()[0];
-        assert_eq!(level_event.target, "first_target");
-        assert_eq!(level_event.level, Level::Error);
-        assert_eq!(level_event.message, "event message");
-        assert_eq!(level_event.fields.get("extra").unwrap().as_i64(), Some(-5));
+        let event4 = &sink.events.read()[3];
+        assert_eq!(event4.target, "first_target");
+        assert_eq!(event4.level, Level::Error);
+        assert_eq!(event4.message, "event message4");
+        assert_eq!(event4.fields.get("extra").unwrap().as_i64(), Some(-6));
     }
 }

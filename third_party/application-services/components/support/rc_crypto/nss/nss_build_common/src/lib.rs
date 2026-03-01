@@ -112,6 +112,7 @@ fn get_nss_libs(kind: LinkingKind) -> Vec<&'static str> {
                 "certhi",
                 "cryptohi",
                 "freebl_static",
+                "gcm",
                 "mozpkix",
                 "nspr4",
                 "nss_static",
@@ -127,32 +128,25 @@ fn get_nss_libs(kind: LinkingKind) -> Vec<&'static str> {
             
             let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
             let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-            
             if target_arch == "arm" || target_arch == "aarch64" {
                 static_libs.push("armv8_c_lib");
             }
             if target_arch == "x86_64" || target_arch == "x86" {
-                static_libs.push("gcm-aes-x86_c_lib");
+                static_libs.push("ghash-aes-x86_c_lib");
                 static_libs.push("sha-x86_c_lib");
             }
             if target_arch == "arm" {
-                static_libs.push("gcm-aes-arm32-neon_c_lib")
+                static_libs.push("ghash-aes-arm32-neon_c_lib")
             }
             if target_arch == "aarch64" {
-                static_libs.push("gcm-aes-aarch64_c_lib");
+                static_libs.push("ghash-aes-aarch64_c_lib");
             }
             if target_arch == "x86_64" {
                 static_libs.push("hw-acc-crypto-avx");
                 static_libs.push("hw-acc-crypto-avx2");
-            }
-            
-            if ((target_os == "android" || target_os == "linux") && target_arch == "x86_64")
-                || target_os == "windows"
-            {
-                static_libs.push("intel-gcm-wrap_c_lib");
                 
-                if (target_os == "android" || target_os == "linux") && target_arch == "x86_64" {
-                    static_libs.push("intel-gcm-s_lib");
+                if target_os != "ios" {
+                    static_libs.push("intel-gcm-wrap_c_lib");
                 }
             }
             static_libs
