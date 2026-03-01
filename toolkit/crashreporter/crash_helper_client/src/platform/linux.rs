@@ -2,20 +2,16 @@
 
 
 
-use crash_helper_common::{messages::ChildProcessRendezVousReply, GeckoChildId, Pid};
+use crash_helper_common::Pid;
 use nix::libc::{prctl, PR_SET_PTRACER};
-use std::process;
 
 use crate::CrashHelperClient;
 
 impl CrashHelperClient {
-    pub(crate) fn prepare_for_minidump(
-        crash_helper_pid: Pid,
-        id: GeckoChildId,
-    ) -> ChildProcessRendezVousReply {
-        
-        let res = unsafe { prctl(PR_SET_PTRACER, crash_helper_pid) };
-
-        ChildProcessRendezVousReply::new( res >= 0, process::id() as Pid, id, [])
+    pub(crate) fn prepare_for_minidump(crash_helper_pid: Pid) -> bool {
+        unsafe {
+            let res = prctl(PR_SET_PTRACER, crash_helper_pid);
+            res >= 0
+        }
     }
 }

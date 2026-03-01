@@ -13,8 +13,6 @@ use minidump_writer::minidump_writer::DirectAuxvDumpInfo;
 use once_cell::sync::Lazy;
 use std::{collections::HashMap, sync::Mutex};
 
-pub(crate) type PlatformData = ();
-
 
 
 static AUXV_INFO_MAP: Lazy<Mutex<HashMap<GeckoChildId, DirectAuxvDumpInfo>>> =
