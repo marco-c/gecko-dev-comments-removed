@@ -304,14 +304,14 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
   if (!aID) {
     return IPC_FAIL(this, "Attempt to set embedder without id");
   }
-  if (a11y::DocAccessibleParent* embeddedDoc = GetDocAccessibleParent()) {
+  if (GetDocAccessibleParent()) {
     
     
     
-    if (embeddedDoc->RemoteParent()) {
-      return IPC_FAIL(this,
-                      "Attempt to embed doc which already has an embedder");
-    }
+    
+    
+    
+    
     mEmbedderAccessibleDoc->AddChildDoc(this);
   }
   return IPC_OK();
