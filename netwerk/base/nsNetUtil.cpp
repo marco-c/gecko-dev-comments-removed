@@ -4222,7 +4222,8 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   nsAutoCString host;
   aURI->GetHost(host);
   
-  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest")) {
+  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest") ||
+      host.EqualsLiteral("testing-common") || host.EqualsLiteral("test")) {
     return;
   }
 
