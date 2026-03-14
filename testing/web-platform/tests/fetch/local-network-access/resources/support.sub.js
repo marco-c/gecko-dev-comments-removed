@@ -85,6 +85,7 @@ class Server {
 
 
 
+
 function resolveUrl(url, options) {
   const result = new URL(url, window.location);
   if (options === undefined) {
@@ -116,13 +117,50 @@ function resolveUrl(url, options) {
 
 
 
+function getPermissionName(url) {
+  permission_name = '';
+  if (url.searchParams.has('permissionName')) {
+    permission_name = url.searchParams.get('permissionName');
+  }
+  return permission_name;
+}
 
 
 
-function sourceResolveOptions({ server, treatAsPublic }) {
+function getPermissionValue(url) {
+  permission_value = '';
+  if (url.searchParams.has('permissionValue')) {
+    permission_value = url.searchParams.get('permissionValue');
+  }
+  return permission_value;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function sourceResolveOptions(
+    {server, treatAsPublic, permissionName, permissionValue}) {
   const options = {...server};
   if (treatAsPublic) {
     options.headers = { "Content-Security-Policy": "treat-as-public-address" };
+  }
+  options.searchParams = {};
+  if (permissionName) {
+    options.searchParams.permissionName = permissionName;
+  }
+  if (permissionValue) {
+    options.searchParams.permissionValue = permissionValue;
   }
   return options;
 }
@@ -177,7 +215,7 @@ const FetchTestResult = {
 };
 
 
-function checkTestResult(actual, expected) {
+function checkFetchTestResult(actual, expected) {
   assert_equals(actual.error, expected.error, "error mismatch");
   assert_equals(actual.ok, expected.ok, "response ok mismatch");
   assert_equals(actual.body, expected.body, "response body mismatch");
@@ -207,10 +245,11 @@ async function iframeTest(
   const targetUrl =
       resolveUrl('resources/openee.html', sourceResolveOptions(target));
 
-  const sourceUrl =
-      resolveUrl('resources/iframer.html', sourceResolveOptions(source));
-  sourceUrl.searchParams.set('permission-name', permissionName);
-  sourceUrl.searchParams.set('permission', permission);
+  const sourceUrlOptions = source;
+  sourceUrlOptions.permissionName = permissionName;
+  sourceUrlOptions.permissionValue = permission;
+  const sourceUrl = resolveUrl(
+      'resources/iframer.html', sourceResolveOptions(sourceUrlOptions));
   sourceUrl.searchParams.set('url', targetUrl);
 
   const popup = window.open(sourceUrl);
