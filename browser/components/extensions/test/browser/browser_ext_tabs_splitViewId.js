@@ -240,7 +240,12 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
       );
 
       
-      await browser.tabs.move(tabId2, { index: 1 });
+      let moved = await browser.tabs.move(tabId2, { index: 1 });
+      browser.test.assertDeepEq(
+        [tabId2],
+        moved.map(t => t.id),
+        "tabs.move() returned tabs after moving right tab in split view"
+      );
       browser.test.assertDeepEq(
         [
           { index: 0, tabId: tabId0, splitViewId: -1 },
@@ -257,7 +262,12 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
       );
 
       
-      await browser.tabs.move(tabId2, { index: 2 });
+      moved = await browser.tabs.move(tabId2, { index: 2 });
+      browser.test.assertDeepEq(
+        [tabId2],
+        moved.map(t => t.id),
+        "tabs.move() return value after moving left tab in split view"
+      );
       browser.test.assertDeepEq(
         [
           { index: 0, tabId: tabId0, splitViewId: -1 },
@@ -289,7 +299,12 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
       );
 
       
-      await browser.tabs.move([tabId1, tabId2], { index: 0 });
+      moved = await browser.tabs.move([tabId1, tabId2], { index: 0 });
+      browser.test.assertDeepEq(
+        [tabId1, tabId2],
+        moved.map(t => t.id),
+        "tabs.move() return value after moving both tabs of split view"
+      );
       browser.test.assertDeepEq(
         [
           { index: 0, tabId: tabId1, splitViewId },
