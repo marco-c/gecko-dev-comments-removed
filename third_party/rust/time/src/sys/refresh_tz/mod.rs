@@ -4,6 +4,7 @@ mod imp;
 
 
 
+#[inline]
 pub(crate) unsafe fn refresh_tz_unchecked() {
     
     unsafe { imp::refresh_tz_unchecked() }
@@ -12,6 +13,7 @@ pub(crate) unsafe fn refresh_tz_unchecked() {
 
 
 
+#[inline]
 pub(crate) fn refresh_tz() -> Option<()> {
     imp::refresh_tz()
 }

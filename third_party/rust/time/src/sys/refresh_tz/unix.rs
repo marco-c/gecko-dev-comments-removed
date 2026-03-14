@@ -8,6 +8,10 @@ const OS_HAS_THREAD_SAFE_ENVIRONMENT: bool = match std::env::consts::OS.as_bytes
     
     
     | b"netbsd"
+    
+    
+    
+    | b"macos"
     => true,
     _ => false,
 };
@@ -15,8 +19,9 @@ const OS_HAS_THREAD_SAFE_ENVIRONMENT: bool = match std::env::consts::OS.as_bytes
 
 
 
+#[inline]
 pub(super) unsafe fn refresh_tz_unchecked() {
-    extern "C" {
+    unsafe extern "C" {
         #[cfg_attr(target_os = "netbsd", link_name = "__tzset50")]
         fn tzset();
     }
@@ -27,6 +32,7 @@ pub(super) unsafe fn refresh_tz_unchecked() {
 
 
 
+#[inline]
 pub(super) fn refresh_tz() -> Option<()> {
     
     

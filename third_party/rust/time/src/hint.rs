@@ -1,7 +1,5 @@
 
 
-#![allow(dead_code)] 
-
 
 #[inline(always)]
 #[cold]

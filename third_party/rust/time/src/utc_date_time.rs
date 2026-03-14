@@ -16,13 +16,12 @@ use crate::convert::*;
 use crate::date::{MAX_YEAR, MIN_YEAR};
 #[cfg(feature = "formatting")]
 use crate::formatting::Formattable;
-use crate::internal_macros::{
-    cascade, const_try, const_try_opt, div_floor, ensure_ranged, expect_opt,
-};
+use crate::internal_macros::{carry, cascade, const_try, const_try_opt, div_floor, ensure_ranged};
 #[cfg(feature = "parsing")]
 use crate::parsing::Parsable;
+use crate::util::days_in_year;
 use crate::{
-    error, util, Date, Duration, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday,
+    Date, Duration, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, error,
 };
 
 
@@ -46,11 +45,7 @@ impl UtcDateTime {
     
     
     
-    pub const UNIX_EPOCH: Self = Self::new(
-        
-        unsafe { Date::__from_ordinal_date_unchecked(1970, 1) },
-        Time::MIDNIGHT,
-    );
+    pub const UNIX_EPOCH: Self = Self::new(Date::UNIX_EPOCH, Time::MIDNIGHT);
 
     
     
@@ -117,6 +112,7 @@ impl UtcDateTime {
     
     
     #[cfg(feature = "std")]
+    #[inline]
     pub fn now() -> Self {
         #[cfg(all(
             target_family = "wasm",
@@ -145,6 +141,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn new(date: Date, time: Time) -> Self {
         Self {
             inner: PrimitiveDateTime::new(date, time),
@@ -152,12 +149,14 @@ impl UtcDateTime {
     }
 
     
+    #[inline]
     pub(crate) const fn from_primitive(date_time: PrimitiveDateTime) -> Self {
         Self { inner: date_time }
     }
 
     
     
+    #[inline]
     pub(crate) const fn as_primitive(self) -> PrimitiveDateTime {
         self.inner
     }
@@ -189,6 +188,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn from_unix_timestamp(timestamp: i64) -> Result<Self, error::ComponentRange> {
         type Timestamp =
             RangedI64<{ UtcDateTime::MIN.unix_timestamp() }, { UtcDateTime::MAX.unix_timestamp() }>;
@@ -198,17 +198,18 @@ impl UtcDateTime {
         
         let date = unsafe {
             Date::from_julian_day_unchecked(
-                UNIX_EPOCH_JULIAN_DAY + div_floor!(timestamp, Second::per(Day) as i64) as i32,
+                UNIX_EPOCH_JULIAN_DAY + div_floor!(timestamp, Second::per_t::<i64>(Day)) as i32,
             )
         };
 
-        let seconds_within_day = timestamp.rem_euclid(Second::per(Day) as i64);
+        let seconds_within_day = timestamp.rem_euclid(Second::per_t::<i64>(Day));
         
         let time = unsafe {
             Time::__from_hms_nanos_unchecked(
-                (seconds_within_day / Second::per(Hour) as i64) as u8,
-                ((seconds_within_day % Second::per(Hour) as i64) / Minute::per(Hour) as i64) as u8,
-                (seconds_within_day % Second::per(Minute) as i64) as u8,
+                (seconds_within_day / Second::per_t::<i64>(Hour)) as u8,
+                ((seconds_within_day % Second::per_t::<i64>(Hour)) / Minute::per_t::<i64>(Hour))
+                    as u8,
+                (seconds_within_day % Second::per_t::<i64>(Minute)) as u8,
                 0,
             )
         };
@@ -230,10 +231,11 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn from_unix_timestamp_nanos(timestamp: i128) -> Result<Self, error::ComponentRange> {
         let datetime = const_try!(Self::from_unix_timestamp(div_floor!(
             timestamp,
-            Nanosecond::per(Second) as i128
+            Nanosecond::per_t::<i128>(Second)
         ) as i64));
 
         Ok(Self::new(
@@ -244,7 +246,7 @@ impl UtcDateTime {
                     datetime.hour(),
                     datetime.minute(),
                     datetime.second(),
-                    timestamp.rem_euclid(Nanosecond::per(Second) as i128) as u32,
+                    timestamp.rem_euclid(Nanosecond::per_t(Second)) as u32,
                 )
             },
         ))
@@ -274,11 +276,11 @@ impl UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     pub const fn to_offset(self, offset: UtcOffset) -> OffsetDateTime {
-        expect_opt!(
-            self.checked_to_offset(offset),
-            "local datetime out of valid range"
-        )
+        self.checked_to_offset(offset)
+            .expect("local datetime out of valid range")
     }
 
     
@@ -300,6 +302,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn checked_to_offset(self, offset: UtcOffset) -> Option<OffsetDateTime> {
         
         if offset.is_utc() {
@@ -322,30 +325,36 @@ impl UtcDateTime {
 
     
     
+    #[inline]
     pub(crate) const fn to_offset_raw(self, offset: UtcOffset) -> (i32, u16, Time) {
-        let mut second = self.second() as i16 + offset.seconds_past_minute() as i16;
-        let mut minute = self.minute() as i16 + offset.minutes_past_hour() as i16;
-        let mut hour = self.hour() as i8 + offset.whole_hours();
+        let (second, carry) = carry!(@most_once
+            self.second().cast_signed() + offset.seconds_past_minute(),
+            0..Second::per_t(Minute)
+        );
+        let (minute, carry) = carry!(@most_once
+            self.minute().cast_signed() + offset.minutes_past_hour() + carry,
+            0..Minute::per_t(Hour)
+        );
+        let (hour, carry) = carry!(@most_twice
+            self.hour().cast_signed() + offset.whole_hours() + carry,
+            0..Hour::per_t(Day)
+        );
         let (mut year, ordinal) = self.to_ordinal_date();
-        let mut ordinal = ordinal as i16;
-
-        cascade!(second in 0..Second::per(Minute) as i16 => minute);
-        cascade!(minute in 0..Minute::per(Hour) as i16 => hour);
-        cascade!(hour in 0..Hour::per(Day) as i8 => ordinal);
+        let mut ordinal = ordinal.cast_signed() + carry;
         cascade!(ordinal => year);
 
         debug_assert!(ordinal > 0);
-        debug_assert!(ordinal <= util::days_in_year(year) as i16);
+        debug_assert!(ordinal <= days_in_year(year).cast_signed());
 
         (
             year,
-            ordinal as u16,
+            ordinal.cast_unsigned(),
             
             unsafe {
                 Time::__from_hms_nanos_unchecked(
-                    hour as u8,
-                    minute as u8,
-                    second as u8,
+                    hour.cast_unsigned(),
+                    minute.cast_unsigned(),
+                    second.cast_unsigned(),
                     self.nanosecond(),
                 )
             },
@@ -359,11 +368,12 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn unix_timestamp(self) -> i64 {
-        let days =
-            (self.to_julian_day() as i64 - UNIX_EPOCH_JULIAN_DAY as i64) * Second::per(Day) as i64;
-        let hours = self.hour() as i64 * Second::per(Hour) as i64;
-        let minutes = self.minute() as i64 * Second::per(Minute) as i64;
+        let days = (self.to_julian_day() as i64 - UNIX_EPOCH_JULIAN_DAY as i64)
+            * Second::per_t::<i64>(Day);
+        let hours = self.hour() as i64 * Second::per_t::<i64>(Hour);
+        let minutes = self.minute() as i64 * Second::per_t::<i64>(Minute);
         let seconds = self.second() as i64;
         days + hours + minutes + seconds
     }
@@ -378,8 +388,10 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn unix_timestamp_nanos(self) -> i128 {
-        self.unix_timestamp() as i128 * Nanosecond::per(Second) as i128 + self.nanosecond() as i128
+        self.unix_timestamp() as i128 * Nanosecond::per_t::<i128>(Second)
+            + self.nanosecond() as i128
     }
 
     
@@ -388,6 +400,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn date(self) -> Date {
         self.inner.date()
     }
@@ -398,6 +411,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn time(self) -> Time {
         self.inner.time()
     }
@@ -410,6 +424,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn year(self) -> i32 {
         self.date().year()
     }
@@ -422,6 +437,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn month(self) -> Month {
         self.date().month()
     }
@@ -435,6 +451,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn day(self) -> u8 {
         self.date().day()
     }
@@ -448,6 +465,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn ordinal(self) -> u16 {
         self.date().ordinal()
     }
@@ -464,6 +482,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn iso_week(self) -> u8 {
         self.date().iso_week()
     }
@@ -479,6 +498,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn sunday_based_week(self) -> u8 {
         self.date().sunday_based_week()
     }
@@ -494,6 +514,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn monday_based_week(self) -> u8 {
         self.date().monday_based_week()
     }
@@ -508,6 +529,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn to_calendar_date(self) -> (i32, Month, u8) {
         self.date().to_calendar_date()
     }
@@ -518,6 +540,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn to_ordinal_date(self) -> (i32, u16) {
         self.date().to_ordinal_date()
     }
@@ -548,6 +571,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn to_iso_week_date(self) -> (i32, u8, Weekday) {
         self.date().to_iso_week_date()
     }
@@ -570,6 +594,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn weekday(self) -> Weekday {
         self.date().weekday()
     }
@@ -583,9 +608,7 @@ impl UtcDateTime {
     
     
     
-    
-    
-    
+    #[inline]
     pub const fn to_julian_day(self) -> i32 {
         self.date().to_julian_day()
     }
@@ -597,6 +620,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms(self) -> (u8, u8, u8) {
         self.time().as_hms()
     }
@@ -611,6 +635,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms_milli(self) -> (u8, u8, u8, u16) {
         self.time().as_hms_milli()
     }
@@ -625,6 +650,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms_micro(self) -> (u8, u8, u8, u32) {
         self.time().as_hms_micro()
     }
@@ -639,6 +665,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms_nano(self) -> (u8, u8, u8, u32) {
         self.time().as_hms_nano()
     }
@@ -652,6 +679,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn hour(self) -> u8 {
         self.time().hour()
     }
@@ -665,6 +693,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn minute(self) -> u8 {
         self.time().minute()
     }
@@ -678,6 +707,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn second(self) -> u8 {
         self.time().second()
     }
@@ -691,6 +721,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn millisecond(self) -> u16 {
         self.time().millisecond()
     }
@@ -707,6 +738,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn microsecond(self) -> u32 {
         self.time().microsecond()
     }
@@ -723,6 +755,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn nanosecond(self) -> u32 {
         self.time().nanosecond()
     }
@@ -739,10 +772,11 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn checked_add(self, duration: Duration) -> Option<Self> {
-        Some(Self::from_primitive(const_try_opt!(self
-            .inner
-            .checked_add(duration))))
+        Some(Self::from_primitive(const_try_opt!(
+            self.inner.checked_add(duration)
+        )))
     }
 
     
@@ -757,10 +791,11 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn checked_sub(self, duration: Duration) -> Option<Self> {
-        Some(Self::from_primitive(const_try_opt!(self
-            .inner
-            .checked_sub(duration))))
+        Some(Self::from_primitive(const_try_opt!(
+            self.inner.checked_sub(duration)
+        )))
     }
 
     
@@ -781,6 +816,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn saturating_add(self, duration: Duration) -> Self {
         Self::from_primitive(self.inner.saturating_add(duration))
     }
@@ -803,6 +839,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub const fn saturating_sub(self, duration: Duration) -> Self {
         Self::from_primitive(self.inner.saturating_sub(duration))
     }
@@ -820,6 +857,7 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_time(self, time: Time) -> Self {
         Self::from_primitive(self.inner.replace_time(time))
     }
@@ -834,6 +872,7 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_date(self, date: Date) -> Self {
         Self::from_primitive(self.inner.replace_date(date))
     }
@@ -850,10 +889,11 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_year(self, year: i32) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_year(year))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_year(year)
+        )))
     }
 
     
@@ -868,10 +908,11 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_month(self, month: Month) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_month(month))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_month(month)
+        )))
     }
 
     
@@ -886,10 +927,11 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_day(self, day: u8) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_day(day))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_day(day)
+        )))
     }
 
     
@@ -901,10 +943,26 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_ordinal(self, ordinal: u16) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_ordinal(ordinal))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_ordinal(ordinal)
+        )))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
+    pub const fn truncate_to_day(self) -> Self {
+        Self::from_primitive(self.inner.truncate_to_day())
     }
 
     
@@ -918,10 +976,26 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_hour(self, hour: u8) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_hour(hour))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_hour(hour)
+        )))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
+    pub const fn truncate_to_hour(self) -> Self {
+        Self::from_primitive(self.inner.truncate_to_hour())
     }
 
     
@@ -935,13 +1009,29 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_minute(
         self,
         sunday_based_week: u8,
     ) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_minute(sunday_based_week))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_minute(sunday_based_week)
+        )))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
+    pub const fn truncate_to_minute(self) -> Self {
+        Self::from_primitive(self.inner.truncate_to_minute())
     }
 
     
@@ -955,13 +1045,29 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_second(
         self,
         monday_based_week: u8,
     ) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_second(monday_based_week))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_second(monday_based_week)
+        )))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
+    pub const fn truncate_to_second(self) -> Self {
+        Self::from_primitive(self.inner.truncate_to_second())
     }
 
     
@@ -975,13 +1081,29 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_millisecond(
         self,
         millisecond: u16,
     ) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_millisecond(millisecond))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_millisecond(millisecond)
+        )))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
+    pub const fn truncate_to_millisecond(self) -> Self {
+        Self::from_primitive(self.inner.truncate_to_millisecond())
     }
 
     
@@ -995,13 +1117,29 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_microsecond(
         self,
         microsecond: u32,
     ) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_microsecond(microsecond))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_microsecond(microsecond)
+        )))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
+    pub const fn truncate_to_microsecond(self) -> Self {
+        Self::from_primitive(self.inner.truncate_to_microsecond())
     }
 
     
@@ -1015,10 +1153,11 @@ impl UtcDateTime {
     
     
     #[must_use = "This method does not mutate the original `UtcDateTime`."]
+    #[inline]
     pub const fn replace_nanosecond(self, nanosecond: u32) -> Result<Self, error::ComponentRange> {
-        Ok(Self::from_primitive(const_try!(self
-            .inner
-            .replace_nanosecond(nanosecond))))
+        Ok(Self::from_primitive(const_try!(
+            self.inner.replace_nanosecond(nanosecond)
+        )))
     }
 }
 
@@ -1026,17 +1165,13 @@ impl UtcDateTime {
 impl UtcDateTime {
     
     
+    #[inline]
     pub fn format_into(
         self,
         output: &mut (impl io::Write + ?Sized),
         format: &(impl Formattable + ?Sized),
     ) -> Result<usize, error::Format> {
-        format.format_into(
-            output,
-            Some(self.date()),
-            Some(self.time()),
-            Some(UtcOffset::UTC),
-        )
+        format.format_into(output, &self, &mut Default::default())
     }
 
     
@@ -1055,8 +1190,9 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub fn format(self, format: &(impl Formattable + ?Sized)) -> Result<String, error::Format> {
-        format.format(Some(self.date()), Some(self.time()), Some(UtcOffset::UTC))
+        format.format(&self, &mut Default::default())
     }
 }
 
@@ -1076,6 +1212,7 @@ impl UtcDateTime {
     
     
     
+    #[inline]
     pub fn parse(
         input: &str,
         description: &(impl Parsable + ?Sized),
@@ -1087,6 +1224,7 @@ impl UtcDateTime {
     
     
     #[cfg(feature = "parsing")]
+    #[inline]
     pub(crate) const fn is_valid_leap_second_stand_in(self) -> bool {
         let dt = self.inner;
 
@@ -1101,11 +1239,13 @@ impl UtcDateTime {
 impl SmartDisplay for UtcDateTime {
     type Metadata = ();
 
-    fn metadata(&self, _: FormatterOptions) -> Metadata<Self> {
+    #[inline]
+    fn metadata(&self, _: FormatterOptions) -> Metadata<'_, Self> {
         let width = smart_display::padded_width_of!(self.date(), " ", self.time(), " +00");
         Metadata::new(width, self, ())
     }
 
+    #[inline]
     fn fmt_with_metadata(
         &self,
         f: &mut fmt::Formatter<'_>,
@@ -1119,12 +1259,14 @@ impl SmartDisplay for UtcDateTime {
 }
 
 impl fmt::Display for UtcDateTime {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         SmartDisplay::fmt(self, f)
     }
 }
 
 impl fmt::Debug for UtcDateTime {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
@@ -1136,6 +1278,8 @@ impl Add<Duration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add(self, duration: Duration) -> Self::Output {
         self.inner.add(duration).as_utc()
     }
@@ -1147,6 +1291,8 @@ impl Add<StdDuration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add(self, duration: StdDuration) -> Self::Output {
         self.inner.add(duration).as_utc()
     }
@@ -1156,6 +1302,8 @@ impl AddAssign<Duration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add_assign(&mut self, rhs: Duration) {
         self.inner.add_assign(rhs);
     }
@@ -1165,6 +1313,8 @@ impl AddAssign<StdDuration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add_assign(&mut self, rhs: StdDuration) {
         self.inner.add_assign(rhs);
     }
@@ -1176,6 +1326,8 @@ impl Sub<Duration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub(self, rhs: Duration) -> Self::Output {
         self.checked_sub(rhs)
             .expect("resulting value is out of range")
@@ -1188,6 +1340,8 @@ impl Sub<StdDuration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub(self, duration: StdDuration) -> Self::Output {
         Self::from_primitive(self.inner.sub(duration))
     }
@@ -1197,6 +1351,8 @@ impl SubAssign<Duration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub_assign(&mut self, rhs: Duration) {
         self.inner.sub_assign(rhs);
     }
@@ -1206,6 +1362,8 @@ impl SubAssign<StdDuration> for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub_assign(&mut self, rhs: StdDuration) {
         self.inner.sub_assign(rhs);
     }
@@ -1217,6 +1375,8 @@ impl Sub for UtcDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub(self, rhs: Self) -> Self::Output {
         self.inner.sub(rhs.inner)
     }

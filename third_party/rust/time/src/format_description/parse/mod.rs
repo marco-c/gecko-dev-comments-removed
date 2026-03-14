@@ -16,7 +16,9 @@ macro_rules! version {
 
 macro_rules! validate_version {
     ($version:ident) => {
-        let _ = $crate::format_description::parse::Version::<$version>::IS_VALID;
+        const {
+            assert!($version >= 1 && $version <= 2);
+        }
     };
 }
 
@@ -26,12 +28,6 @@ mod lexer;
 mod strftime;
 
 
-struct Version<const N: usize>;
-impl<const N: usize> Version<N> {
-    
-    
-    const IS_VALID: () = assert!(N >= 1 && N <= 2);
-}
 
 
 
@@ -39,8 +35,7 @@ impl<const N: usize> Version<N> {
 
 
 
-
-
+#[inline]
 pub fn parse(
     s: &str,
 ) -> Result<Vec<format_description::BorrowedFormatItem<'_>>, error::InvalidFormatDescription> {
@@ -52,6 +47,7 @@ pub fn parse(
 
 
 
+#[inline]
 pub fn parse_borrowed<const VERSION: usize>(
     s: &str,
 ) -> Result<Vec<format_description::BorrowedFormatItem<'_>>, error::InvalidFormatDescription> {
@@ -74,6 +70,7 @@ pub fn parse_borrowed<const VERSION: usize>(
 
 
 
+#[inline]
 pub fn parse_owned<const VERSION: usize>(
     s: &str,
 ) -> Result<format_description::OwnedFormatItem, error::InvalidFormatDescription> {
@@ -86,6 +83,7 @@ pub fn parse_owned<const VERSION: usize>(
 }
 
 
+#[inline]
 fn attach_location<'item>(
     iter: impl Iterator<Item = &'item u8>,
 ) -> impl Iterator<Item = (&'item u8, Location)> {
@@ -107,11 +105,13 @@ struct Location {
 
 impl Location {
     
+    #[inline]
     const fn to(self, end: Self) -> Span {
         Span { start: self, end }
     }
 
     
+    #[inline]
     const fn to_self(self) -> Span {
         Span {
             start: self,
@@ -123,6 +123,7 @@ impl Location {
     
     
     #[must_use = "this does not modify the original value"]
+    #[inline]
     const fn offset(&self, offset: u32) -> Self {
         Self {
             byte: self.byte + offset,
@@ -130,6 +131,7 @@ impl Location {
     }
 
     
+    #[inline]
     const fn error(self, message: &'static str) -> ErrorInner {
         ErrorInner {
             _message: message,
@@ -151,6 +153,7 @@ struct Span {
 impl Span {
     
     #[must_use = "this does not modify the original value"]
+    #[inline]
     const fn shrink_to_start(&self) -> Self {
         Self {
             start: self.start,
@@ -169,6 +172,7 @@ impl Span {
 
     
     #[must_use = "this does not modify the original value"]
+    #[inline]
     const fn shrink_to_before(&self, pos: u32) -> Self {
         Self {
             start: self.start,
@@ -180,6 +184,7 @@ impl Span {
 
     
     #[must_use = "this does not modify the original value"]
+    #[inline]
     const fn shrink_to_after(&self, pos: u32) -> Self {
         Self {
             start: Location {
@@ -190,6 +195,7 @@ impl Span {
     }
 
     
+    #[inline]
     const fn error(self, message: &'static str) -> ErrorInner {
         ErrorInner {
             _message: message,
@@ -210,6 +216,7 @@ struct Spanned<T> {
 impl<T> core::ops::Deref for Spanned<T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.value
     }
@@ -222,6 +229,7 @@ trait SpannedValue: Sized {
 }
 
 impl<T> SpannedValue for T {
+    #[inline]
     fn spanned(self, span: Span) -> Spanned<Self> {
         Spanned { value: self, span }
     }
@@ -244,6 +252,7 @@ struct Error {
 }
 
 impl From<Error> for error::InvalidFormatDescription {
+    #[inline]
     fn from(error: Error) -> Self {
         error.public
     }
@@ -257,6 +266,7 @@ impl From<Error> for error::InvalidFormatDescription {
 struct Unused<T>(core::marker::PhantomData<T>);
 
 
+#[inline]
 fn unused<T>(_: T) -> Unused<T> {
     Unused(core::marker::PhantomData)
 }

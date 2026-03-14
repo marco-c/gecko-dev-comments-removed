@@ -2,7 +2,7 @@
 
 mod adt_hack;
 
-use core::num::NonZeroU8;
+use core::num::NonZero;
 
 #[doc(hidden, no_inline)]
 pub use self::adt_hack::DoNotRelyOnWhatThisIs;
@@ -32,6 +32,7 @@ pub use self::adt_hack::EncodedConfig;
 pub struct Iso8601<const CONFIG: EncodedConfig = { Config::DEFAULT.encode() }>;
 
 impl<const CONFIG: EncodedConfig> core::fmt::Debug for Iso8601<CONFIG> {
+    #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Iso8601")
             .field("config", &Config::decode(CONFIG))
@@ -125,20 +126,20 @@ pub enum TimePrecision {
     
     
     Hour {
-        #[allow(missing_docs)]
-        decimal_digits: Option<NonZeroU8>,
+        #[expect(missing_docs)]
+        decimal_digits: Option<NonZero<u8>>,
     },
     
     
     Minute {
-        #[allow(missing_docs)]
-        decimal_digits: Option<NonZeroU8>,
+        #[expect(missing_docs)]
+        decimal_digits: Option<NonZero<u8>>,
     },
     
     
     Second {
-        #[allow(missing_docs)]
-        decimal_digits: Option<NonZeroU8>,
+        #[expect(missing_docs)]
+        decimal_digits: Option<NonZero<u8>>,
     },
 }
 
@@ -154,7 +155,7 @@ pub enum OffsetPrecision {
 
 
 
-#[allow(missing_copy_implementations)]
+#[expect(missing_copy_implementations, reason = "forwards compatibility")]
 #[doc(alias = "EncodedConfig")] 
 #[derive(Debug)]
 pub struct Config {
@@ -192,7 +193,7 @@ impl Config {
         year_is_six_digits: false,
         date_kind: DateKind::Calendar,
         time_precision: TimePrecision::Second {
-            decimal_digits: NonZeroU8::new(9),
+            decimal_digits: NonZero::new(9),
         },
         offset_precision: OffsetPrecision::Minute,
     };
@@ -211,6 +212,7 @@ impl Config {
     };
 
     
+    #[inline]
     pub const fn set_formatted_components(self, formatted_components: FormattedComponents) -> Self {
         Self {
             formatted_components,
@@ -219,6 +221,7 @@ impl Config {
     }
 
     
+    #[inline]
     pub const fn set_use_separators(self, use_separators: bool) -> Self {
         Self {
             use_separators,
@@ -227,6 +230,7 @@ impl Config {
     }
 
     
+    #[inline]
     pub const fn set_year_is_six_digits(self, year_is_six_digits: bool) -> Self {
         Self {
             year_is_six_digits,
@@ -235,11 +239,13 @@ impl Config {
     }
 
     
+    #[inline]
     pub const fn set_date_kind(self, date_kind: DateKind) -> Self {
         Self { date_kind, ..self }
     }
 
     
+    #[inline]
     pub const fn set_time_precision(self, time_precision: TimePrecision) -> Self {
         Self {
             time_precision,
@@ -248,6 +254,7 @@ impl Config {
     }
 
     
+    #[inline]
     pub const fn set_offset_precision(self, offset_precision: OffsetPrecision) -> Self {
         Self {
             offset_precision,

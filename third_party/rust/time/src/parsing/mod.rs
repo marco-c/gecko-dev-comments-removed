@@ -16,25 +16,36 @@ pub(crate) struct ParsedItem<'a, T>(pub(crate) &'a [u8], pub(crate) T);
 
 impl<'a, T> ParsedItem<'a, T> {
     
+    #[inline]
     pub(crate) fn map<U>(self, f: impl FnOnce(T) -> U) -> ParsedItem<'a, U> {
         ParsedItem(self.0, f(self.1))
     }
 
     
+    #[inline]
     pub(crate) fn flat_map<U>(self, f: impl FnOnce(T) -> Option<U>) -> Option<ParsedItem<'a, U>> {
         Some(ParsedItem(self.0, f(self.1)?))
     }
 
     
     #[must_use = "this returns the remaining input"]
+    #[inline]
     pub(crate) fn consume_value(self, f: impl FnOnce(T) -> Option<()>) -> Option<&'a [u8]> {
         f(self.1)?;
         Some(self.0)
     }
 
     
+    #[must_use = "this returns the remaining input"]
+    #[inline]
+    pub(crate) fn discard_value(self) -> &'a [u8] {
+        self.0
+    }
+
     
     
+    
+    #[inline]
     pub(crate) fn filter(self, f: impl FnOnce(&T) -> bool) -> Option<Self> {
         f(&self.1).then_some(self)
     }
@@ -43,6 +54,7 @@ impl<'a, T> ParsedItem<'a, T> {
 impl<'a> ParsedItem<'a, ()> {
     
     #[must_use = "this returns the remaining input"]
+    #[inline]
     pub(crate) const fn into_inner(self) -> &'a [u8] {
         self.0
     }
@@ -51,6 +63,7 @@ impl<'a> ParsedItem<'a, ()> {
 impl<'a> ParsedItem<'a, Option<()>> {
     
     #[must_use = "this returns the remaining input"]
+    #[inline]
     pub(crate) const fn into_inner(self) -> &'a [u8] {
         self.0
     }

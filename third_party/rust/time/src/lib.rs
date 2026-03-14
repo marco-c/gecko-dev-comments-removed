@@ -66,8 +66,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(html_playground_url = "https://play.rust-lang.org")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_notable_trait))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_notable_trait))]
 #![no_std]
 #![doc(html_favicon_url = "https://avatars0.githubusercontent.com/u/55999857")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/55999857")]
@@ -102,8 +115,10 @@ pub mod parsing;
 mod primitive_date_time;
 #[cfg(feature = "quickcheck")]
 mod quickcheck;
-#[cfg(feature = "rand")]
-mod rand;
+#[cfg(feature = "rand08")]
+mod rand08;
+#[cfg(feature = "rand09")]
+mod rand09;
 #[cfg(feature = "serde")]
 pub mod serde;
 mod sys;
@@ -122,7 +137,7 @@ pub use crate::duration::Duration;
 pub use crate::error::Error;
 #[doc(hidden)]
 #[cfg(feature = "std")]
-#[allow(deprecated)]
+#[expect(deprecated)]
 pub use crate::instant::Instant;
 pub use crate::month::Month;
 pub use crate::offset_date_time::OffsetDateTime;
@@ -134,20 +149,3 @@ pub use crate::weekday::Weekday;
 
 
 pub type Result<T> = core::result::Result<T, Error>;
-
-
-#[inline(never)]
-#[cold]
-#[track_caller]
-const fn expect_failed(message: &str) -> ! {
-    panic!("{}", message)
-}
-
-
-
-
-
-#[allow(unused_qualifications)] 
-const fn size_of_val<T>(_: &T) -> usize {
-    core::mem::size_of::<T>()
-}

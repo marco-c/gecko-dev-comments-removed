@@ -3,6 +3,15 @@
 use crate::format_description::modifier;
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Period {
+    #[allow(clippy::missing_docs_in_private_items)]
+    Am,
+    #[allow(clippy::missing_docs_in_private_items)]
+    Pm,
+}
+
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Component {

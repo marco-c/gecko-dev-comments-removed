@@ -5,6 +5,7 @@
 use crate::parsing::ParsedItem;
 
 
+#[inline]
 pub(crate) const fn wsp(input: &[u8]) -> Option<ParsedItem<'_, ()>> {
     match input {
         [b' ' | b'\t', rest @ ..] => Some(ParsedItem(rest, ())),

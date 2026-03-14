@@ -8,23 +8,33 @@
 
 
 
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde_core::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::OffsetDateTime;
+use crate::error::ComponentRange;
 
 
-pub fn serialize<S: Serializer>(
-    datetime: &OffsetDateTime,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
+#[inline]
+pub fn serialize<S>(datetime: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
     datetime.unix_timestamp_nanos().serialize(serializer)
 }
 
 
-pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<OffsetDateTime, D::Error> {
+#[inline]
+pub fn deserialize<'a, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>
+where
+    D: Deserializer<'a>,
+{
     OffsetDateTime::from_unix_timestamp_nanos(<_>::deserialize(deserializer)?)
-        .map_err(|err| de::Error::invalid_value(de::Unexpected::Signed(err.value), &err))
+        .map_err(ComponentRange::into_de_error)
 }
+
+
+
+
 
 
 
@@ -36,26 +46,28 @@ pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<OffsetDat
 
 
 pub mod option {
-    #[allow(clippy::wildcard_imports)]
     use super::*;
 
     
-    pub fn serialize<S: Serializer>(
-        option: &Option<OffsetDateTime>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
+    #[inline]
+    pub fn serialize<S>(option: &Option<OffsetDateTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         option
             .map(OffsetDateTime::unix_timestamp_nanos)
             .serialize(serializer)
     }
 
     
-    pub fn deserialize<'a, D: Deserializer<'a>>(
-        deserializer: D,
-    ) -> Result<Option<OffsetDateTime>, D::Error> {
+    #[inline]
+    pub fn deserialize<'a, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
+    where
+        D: Deserializer<'a>,
+    {
         Option::deserialize(deserializer)?
             .map(OffsetDateTime::from_unix_timestamp_nanos)
             .transpose()
-            .map_err(|err| de::Error::invalid_value(de::Unexpected::Signed(err.value), &err))
+            .map_err(ComponentRange::into_de_error)
     }
 }

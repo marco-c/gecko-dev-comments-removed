@@ -2,7 +2,9 @@
 
 #[cfg(feature = "formatting")]
 use alloc::string::String;
+use core::cmp::Ordering;
 use core::fmt;
+use core::hash::{Hash, Hasher};
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 use core::time::Duration as StdDuration;
 #[cfg(feature = "formatting")]
@@ -17,17 +19,73 @@ use crate::internal_macros::{const_try, const_try_opt};
 #[cfg(feature = "parsing")]
 use crate::parsing::Parsable;
 use crate::{
-    error, util, Date, Duration, Month, OffsetDateTime, Time, UtcDateTime, UtcOffset, Weekday,
+    Date, Duration, Month, OffsetDateTime, Time, UtcDateTime, UtcOffset, Weekday, error, util,
 };
 
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Eq)]
+#[cfg_attr(not(docsrs), repr(C))]
 pub struct PrimitiveDateTime {
+    
+
+    
+    #[cfg(target_endian = "little")]
+    time: Time,
+    #[cfg(target_endian = "little")]
     date: Date,
+
+    
+    #[cfg(target_endian = "big")]
+    date: Date,
+    #[cfg(target_endian = "big")]
     time: Time,
 }
 
+impl Hash for PrimitiveDateTime {
+    #[inline]
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        self.as_i128().hash(state);
+    }
+}
+
+impl PartialEq for PrimitiveDateTime {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.as_i128().eq(&other.as_i128())
+    }
+}
+
+impl PartialOrd for PrimitiveDateTime {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PrimitiveDateTime {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_i128().cmp(&other.as_i128())
+    }
+}
+
 impl PrimitiveDateTime {
+    
+    
+    
+    
+    
+    
+    #[inline]
+    const fn as_i128(self) -> i128 {
+        let time = self.time.as_u64() as i128;
+        let date = self.date.as_i32() as i128;
+        (date << 64) | time
+    }
+
     
     
     
@@ -102,6 +160,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn new(date: Date, time: Time) -> Self {
         Self { date, time }
     }
@@ -112,6 +171,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn date(self) -> Date {
         self.date
     }
@@ -122,6 +182,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn time(self) -> Time {
         self.time
     }
@@ -134,6 +195,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn year(self) -> i32 {
         self.date().year()
     }
@@ -146,6 +208,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn month(self) -> Month {
         self.date().month()
     }
@@ -159,6 +222,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn day(self) -> u8 {
         self.date().day()
     }
@@ -172,6 +236,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn ordinal(self) -> u16 {
         self.date().ordinal()
     }
@@ -188,6 +253,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn iso_week(self) -> u8 {
         self.date().iso_week()
     }
@@ -203,6 +269,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn sunday_based_week(self) -> u8 {
         self.date().sunday_based_week()
     }
@@ -218,6 +285,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn monday_based_week(self) -> u8 {
         self.date().monday_based_week()
     }
@@ -232,6 +300,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn to_calendar_date(self) -> (i32, Month, u8) {
         self.date().to_calendar_date()
     }
@@ -242,6 +311,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn to_ordinal_date(self) -> (i32, u16) {
         self.date().to_ordinal_date()
     }
@@ -272,6 +342,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn to_iso_week_date(self) -> (i32, u8, Weekday) {
         self.date().to_iso_week_date()
     }
@@ -294,6 +365,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn weekday(self) -> Weekday {
         self.date().weekday()
     }
@@ -307,9 +379,7 @@ impl PrimitiveDateTime {
     
     
     
-    
-    
-    
+    #[inline]
     pub const fn to_julian_day(self) -> i32 {
         self.date().to_julian_day()
     }
@@ -321,6 +391,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms(self) -> (u8, u8, u8) {
         self.time().as_hms()
     }
@@ -335,6 +406,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms_milli(self) -> (u8, u8, u8, u16) {
         self.time().as_hms_milli()
     }
@@ -349,6 +421,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms_micro(self) -> (u8, u8, u8, u32) {
         self.time().as_hms_micro()
     }
@@ -363,6 +436,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn as_hms_nano(self) -> (u8, u8, u8, u32) {
         self.time().as_hms_nano()
     }
@@ -376,6 +450,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn hour(self) -> u8 {
         self.time().hour()
     }
@@ -389,6 +464,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn minute(self) -> u8 {
         self.time().minute()
     }
@@ -402,6 +478,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn second(self) -> u8 {
         self.time().second()
     }
@@ -415,6 +492,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn millisecond(self) -> u16 {
         self.time().millisecond()
     }
@@ -431,6 +509,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn microsecond(self) -> u32 {
         self.time().microsecond()
     }
@@ -447,6 +526,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn nanosecond(self) -> u32 {
         self.time().nanosecond()
     }
@@ -469,6 +549,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn assume_offset(self, offset: UtcOffset) -> OffsetDateTime {
         OffsetDateTime::new_in_offset(self.date, self.time, offset)
     }
@@ -486,6 +567,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn assume_utc(self) -> OffsetDateTime {
         self.assume_offset(UtcOffset::UTC)
     }
@@ -500,6 +582,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn as_utc(self) -> UtcDateTime {
         UtcDateTime::from_primitive(self)
     }
@@ -520,6 +603,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn checked_add(self, duration: Duration) -> Option<Self> {
         let (date_adjustment, time) = self.time.adjusting_add(duration);
         let date = const_try_opt!(self.date.checked_add(duration));
@@ -550,6 +634,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn checked_sub(self, duration: Duration) -> Option<Self> {
         let (date_adjustment, time) = self.time.adjusting_sub(duration);
         let date = const_try_opt!(self.date.checked_sub(duration));
@@ -584,6 +669,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn saturating_add(self, duration: Duration) -> Self {
         if let Some(datetime) = self.checked_add(duration) {
             datetime
@@ -614,6 +700,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub const fn saturating_sub(self, duration: Duration) -> Self {
         if let Some(datetime) = self.checked_sub(duration) {
             datetime
@@ -637,6 +724,7 @@ impl PrimitiveDateTime {
     
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_time(self, time: Time) -> Self {
         Self {
             date: self.date,
@@ -654,6 +742,7 @@ impl PrimitiveDateTime {
     
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_date(self, date: Date) -> Self {
         Self {
             date,
@@ -673,6 +762,7 @@ impl PrimitiveDateTime {
     
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_year(self, year: i32) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: const_try!(self.date.replace_year(year)),
@@ -692,6 +782,7 @@ impl PrimitiveDateTime {
     
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_month(self, month: Month) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: const_try!(self.date.replace_month(month)),
@@ -711,6 +802,7 @@ impl PrimitiveDateTime {
     
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_day(self, day: u8) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: const_try!(self.date.replace_day(day)),
@@ -727,6 +819,7 @@ impl PrimitiveDateTime {
     
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_ordinal(self, ordinal: u16) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: const_try!(self.date.replace_ordinal(ordinal)),
@@ -743,8 +836,24 @@ impl PrimitiveDateTime {
     
     
     
+    #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
+    pub const fn truncate_to_day(self) -> Self {
+        self.replace_time(Time::MIDNIGHT)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_hour(self, hour: u8) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: self.date,
@@ -761,8 +870,24 @@ impl PrimitiveDateTime {
     
     
     
+    #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
+    pub const fn truncate_to_hour(self) -> Self {
+        self.replace_time(self.time.truncate_to_hour())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_minute(self, minute: u8) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: self.date,
@@ -779,8 +904,24 @@ impl PrimitiveDateTime {
     
     
     
+    #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
+    pub const fn truncate_to_minute(self) -> Self {
+        self.replace_time(self.time.truncate_to_minute())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_second(self, second: u8) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: self.date,
@@ -797,8 +938,24 @@ impl PrimitiveDateTime {
     
     
     
+    #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
+    pub const fn truncate_to_second(self) -> Self {
+        self.replace_time(self.time.truncate_to_second())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_millisecond(
         self,
         millisecond: u16,
@@ -818,8 +975,24 @@ impl PrimitiveDateTime {
     
     
     
+    #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
+    pub const fn truncate_to_millisecond(self) -> Self {
+        self.replace_time(self.time.truncate_to_millisecond())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_microsecond(
         self,
         microsecond: u32,
@@ -839,8 +1012,24 @@ impl PrimitiveDateTime {
     
     
     
+    #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
+    pub const fn truncate_to_microsecond(self) -> Self {
+        self.replace_time(self.time.truncate_to_microsecond())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[must_use = "This method does not mutate the original `PrimitiveDateTime`."]
+    #[inline]
     pub const fn replace_nanosecond(self, nanosecond: u32) -> Result<Self, error::ComponentRange> {
         Ok(Self {
             date: self.date,
@@ -853,12 +1042,13 @@ impl PrimitiveDateTime {
 impl PrimitiveDateTime {
     
     
+    #[inline]
     pub fn format_into(
         self,
         output: &mut (impl io::Write + ?Sized),
         format: &(impl Formattable + ?Sized),
     ) -> Result<usize, error::Format> {
-        format.format_into(output, Some(self.date), Some(self.time), None)
+        format.format_into(output, &self, &mut Default::default())
     }
 
     
@@ -874,8 +1064,9 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub fn format(self, format: &(impl Formattable + ?Sized)) -> Result<String, error::Format> {
-        format.format(Some(self.date), Some(self.time), None)
+        format.format(&self, &mut Default::default())
     }
 }
 
@@ -894,6 +1085,7 @@ impl PrimitiveDateTime {
     
     
     
+    #[inline]
     pub fn parse(
         input: &str,
         description: &(impl Parsable + ?Sized),
@@ -905,11 +1097,13 @@ impl PrimitiveDateTime {
 impl SmartDisplay for PrimitiveDateTime {
     type Metadata = ();
 
-    fn metadata(&self, _: FormatterOptions) -> Metadata<Self> {
+    #[inline]
+    fn metadata(&self, _: FormatterOptions) -> Metadata<'_, Self> {
         let width = smart_display::padded_width_of!(self.date, " ", self.time);
         Metadata::new(width, self, ())
     }
 
+    #[inline]
     fn fmt_with_metadata(
         &self,
         f: &mut fmt::Formatter<'_>,
@@ -923,12 +1117,14 @@ impl SmartDisplay for PrimitiveDateTime {
 }
 
 impl fmt::Display for PrimitiveDateTime {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         SmartDisplay::fmt(self, f)
     }
 }
 
 impl fmt::Debug for PrimitiveDateTime {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
@@ -940,6 +1136,8 @@ impl Add<Duration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add(self, duration: Duration) -> Self::Output {
         self.checked_add(duration)
             .expect("resulting value is out of range")
@@ -952,6 +1150,8 @@ impl Add<StdDuration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add(self, duration: StdDuration) -> Self::Output {
         let (is_next_day, time) = self.time.adjusting_add_std(duration);
 
@@ -972,6 +1172,8 @@ impl AddAssign<Duration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add_assign(&mut self, duration: Duration) {
         *self = *self + duration;
     }
@@ -981,6 +1183,8 @@ impl AddAssign<StdDuration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn add_assign(&mut self, duration: StdDuration) {
         *self = *self + duration;
     }
@@ -992,6 +1196,8 @@ impl Sub<Duration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub(self, duration: Duration) -> Self::Output {
         self.checked_sub(duration)
             .expect("resulting value is out of range")
@@ -1004,6 +1210,8 @@ impl Sub<StdDuration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub(self, duration: StdDuration) -> Self::Output {
         let (is_previous_day, time) = self.time.adjusting_sub_std(duration);
 
@@ -1024,6 +1232,8 @@ impl SubAssign<Duration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub_assign(&mut self, duration: Duration) {
         *self = *self - duration;
     }
@@ -1033,6 +1243,8 @@ impl SubAssign<StdDuration> for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub_assign(&mut self, duration: StdDuration) {
         *self = *self - duration;
     }
@@ -1044,6 +1256,8 @@ impl Sub for PrimitiveDateTime {
     
     
     
+    #[inline]
+    #[track_caller]
     fn sub(self, rhs: Self) -> Self::Output {
         (self.date - rhs.date) + (self.time - rhs.time)
     }

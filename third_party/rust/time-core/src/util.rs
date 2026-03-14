@@ -7,34 +7,62 @@ use crate::hint;
 
 
 
+pub mod range_validated {
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[track_caller]
+    pub const fn is_leap_year(year: i32) -> bool {
+        #[cfg(feature = "large-dates")]
+        {
+            super::is_leap_year(year)
+        }
+        #[cfg(not(feature = "large-dates"))]
+        {
+            debug_assert!(year >= -9999);
+            debug_assert!(year <= 9999);
+            year.unsigned_abs().wrapping_mul(0x20003D7) & 0x6007C0F <= 0x7C00
+        }
+    }
 
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[track_caller]
+    pub const fn days_in_year(year: i32) -> u16 {
+        #[cfg(feature = "large-dates")]
+        {
+            super::days_in_year(year)
+        }
+        #[cfg(not(feature = "large-dates"))]
+        {
+            if is_leap_year(year) { 366 } else { 365 }
+        }
+    }
 
-
-
-
-
-pub const fn is_leap_year(year: i32) -> bool {
-    let d = if year % 100 == 0 { 15 } else { 3 };
-    year & d == 0
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub const fn days_in_year(year: i32) -> u16 {
-    if is_leap_year(year) {
-        366
-    } else {
-        365
+    
+    
+    
+    
+    #[inline]
+    #[track_caller]
+    pub const fn days_in_month(month: u8, year: i32) -> u8 {
+        #[cfg(feature = "large-dates")]
+        {
+            super::days_in_month(month, year)
+        }
+        #[cfg(not(feature = "large-dates"))]
+        {
+            super::days_in_month_leap(month, is_leap_year(year))
+        }
     }
 }
 
@@ -47,6 +75,45 @@ pub const fn days_in_year(year: i32) -> u16 {
 
 
 
+
+
+
+#[inline]
+pub const fn is_leap_year(year: i32) -> bool {
+    (year as i64)
+        .unsigned_abs()
+        .wrapping_mul(0x4000_0000_28F5_C28F)
+        & 0xC000_000F_8000_000F
+        <= 0xF_8000_0000
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub const fn days_in_year(year: i32) -> u16 {
+    if is_leap_year(year) { 366 } else { 365 }
+}
+
+
+
+
+
+
+
+
+
+
+#[inline]
 pub const fn weeks_in_year(year: i32) -> u8 {
     match year % 400 {
         -396 | -391 | -385 | -380 | -374 | -368 | -363 | -357 | -352 | -346 | -340 | -335
@@ -72,16 +139,24 @@ pub const fn weeks_in_year(year: i32) -> u8 {
 
 
 
+#[inline]
+#[track_caller]
 pub const fn days_in_month(month: u8, year: i32) -> u8 {
+    days_in_month_leap(month, is_leap_year(year))
+}
+
+
+
+
+
+#[inline]
+#[track_caller]
+pub const fn days_in_month_leap(month: u8, is_leap_year: bool) -> u8 {
     debug_assert!(month >= 1);
     debug_assert!(month <= 12);
 
     if hint::unlikely(month == 2) {
-        if is_leap_year(year) {
-            29
-        } else {
-            28
-        }
+        if is_leap_year { 29 } else { 28 }
     } else {
         30 | month ^ (month >> 3)
     }

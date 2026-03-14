@@ -13,7 +13,7 @@
 
 
 pub mod prelude {
-    pub use crate::{CastSigned as _, CastUnsigned as _, Extend as _, Truncate as _};
+    pub use crate::{Extend as _, Truncate as _};
 }
 
 mod sealed {
@@ -37,70 +37,6 @@ mod sealed {
     pub trait TruncateTargetSealed<T> {
         fn truncate(self) -> T;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait CastSigned: sealed::Integer {
-    
-    type Signed;
-
-    
-    fn cast_signed(self) -> Self::Signed;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait CastUnsigned: sealed::Integer {
-    
-    type Unsigned;
-
-    
-    fn cast_unsigned(self) -> Self::Unsigned;
 }
 
 
@@ -182,50 +118,6 @@ impl<T: sealed::Integer> Truncate for T {
     }
 }
 
-macro_rules! impl_cast_signed {
-    ($($($from:ty),+ => $to:ty;)*) => {$($(
-        const _: () = assert!(
-            core::mem::size_of::<$from>() == core::mem::size_of::<$to>(),
-            concat!(
-                "cannot cast ",
-                stringify!($from),
-                " to ",
-                stringify!($to),
-                " because they are different sizes"
-            )
-        );
-
-        impl CastSigned for $from {
-            type Signed = $to;
-            fn cast_signed(self) -> Self::Signed {
-                self as _
-            }
-        }
-    )+)*};
-}
-
-macro_rules! impl_cast_unsigned {
-    ($($($from:ty),+ => $to:ty;)*) => {$($(
-        const _: () = assert!(
-            core::mem::size_of::<$from>() == core::mem::size_of::<$to>(),
-            concat!(
-                "cannot cast ",
-                stringify!($from),
-                " to ",
-                stringify!($to),
-                " because they are different sizes"
-            )
-        );
-
-        impl CastUnsigned for $from {
-            type Unsigned = $to;
-            fn cast_unsigned(self) -> Self::Unsigned {
-                self as _
-            }
-        }
-    )+)*};
-}
-
 macro_rules! impl_extend {
     ($($from:ty => $($to:ty),+;)*) => {$($(
         const _: () = assert!(
@@ -276,24 +168,6 @@ macro_rules! impl_truncate {
 
         impl TruncateTarget<$to> for $from {}
     )+)*};
-}
-
-impl_cast_signed! {
-    u8, i8 => i8;
-    u16, i16 => i16;
-    u32, i32 => i32;
-    u64, i64 => i64;
-    u128, i128 => i128;
-    usize, isize => isize;
-}
-
-impl_cast_unsigned! {
-    u8, i8 => u8;
-    u16, i16 => u16;
-    u32, i32 => u32;
-    u64, i64 => u64;
-    u128, i128 => u128;
-    usize, isize => usize;
 }
 
 impl_extend! {

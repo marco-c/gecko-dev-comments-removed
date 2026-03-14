@@ -8,18 +8,18 @@
 #[cfg(feature = "parsing")]
 use core::marker::PhantomData;
 
-#[cfg(feature = "formatting")]
-use serde::ser::Error as _;
 #[cfg(feature = "parsing")]
-use serde::Deserializer;
+use serde_core::Deserializer;
 #[cfg(feature = "formatting")]
-use serde::{Serialize, Serializer};
+use serde_core::ser::Error as _;
+#[cfg(feature = "formatting")]
+use serde_core::{Serialize, Serializer};
 
 #[cfg(feature = "parsing")]
 use super::Visitor;
-use crate::format_description::well_known::iso8601::{Config, EncodedConfig};
-use crate::format_description::well_known::Iso8601;
 use crate::OffsetDateTime;
+use crate::format_description::well_known::Iso8601;
+use crate::format_description::well_known::iso8601::{Config, EncodedConfig};
 
 
 pub(crate) const SERDE_CONFIG: EncodedConfig =
@@ -27,10 +27,11 @@ pub(crate) const SERDE_CONFIG: EncodedConfig =
 
 
 #[cfg(feature = "formatting")]
-pub fn serialize<S: Serializer>(
-    datetime: &OffsetDateTime,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
+#[inline]
+pub fn serialize<S>(datetime: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
     datetime
         .format(&Iso8601::<SERDE_CONFIG>)
         .map_err(S::Error::custom)?
@@ -39,9 +40,17 @@ pub fn serialize<S: Serializer>(
 
 
 #[cfg(feature = "parsing")]
-pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<OffsetDateTime, D::Error> {
+#[inline]
+pub fn deserialize<'a, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>
+where
+    D: Deserializer<'a>,
+{
     deserializer.deserialize_str(Visitor::<Iso8601<SERDE_CONFIG>>(PhantomData))
 }
+
+
+
+
 
 
 
@@ -55,10 +64,11 @@ pub mod option {
 
     
     #[cfg(feature = "formatting")]
-    pub fn serialize<S: Serializer>(
-        option: &Option<OffsetDateTime>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
+    #[inline]
+    pub fn serialize<S>(option: &Option<OffsetDateTime>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         option
             .map(|odt| odt.format(&Iso8601::<SERDE_CONFIG>))
             .transpose()
@@ -68,9 +78,11 @@ pub mod option {
 
     
     #[cfg(feature = "parsing")]
-    pub fn deserialize<'a, D: Deserializer<'a>>(
-        deserializer: D,
-    ) -> Result<Option<OffsetDateTime>, D::Error> {
+    #[inline]
+    pub fn deserialize<'a, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
+    where
+        D: Deserializer<'a>,
+    {
         deserializer.deserialize_option(Visitor::<Option<Iso8601<SERDE_CONFIG>>>(PhantomData))
     }
 }

@@ -1,6 +1,9 @@
 
 
-#![allow(dead_code)] 
+#![expect(
+    dead_code,
+    reason = "may be used in the future and has minimal overhead"
+)]
 
 
 #[inline(always)]
