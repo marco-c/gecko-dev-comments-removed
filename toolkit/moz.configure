@@ -3486,6 +3486,7 @@ def crashreporter_default(target, developer_options, artifacts):
         
         
         return target.os != "Android" or not developer_options or artifacts
+    return False
 
 
 option(
