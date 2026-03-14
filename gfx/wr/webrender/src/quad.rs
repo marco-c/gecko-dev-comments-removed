@@ -18,7 +18,7 @@ use crate::gpu_types::{PrimitiveInstanceData, QuadHeader, QuadInstance, QuadPrim
 use crate::intern::DataStore;
 use crate::internal_types::TextureSource;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind, PatternShaderInput};
-use crate::prim_store::{PrimitiveInstanceIndex, PrimitiveScratchBuffer};
+use crate::prim_store::{NinePatchDescriptor, PrimitiveInstanceIndex, PrimitiveScratchBuffer};
 use crate::render_task::{RenderTask, RenderTaskAddress, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskGraphBuilder, RenderTaskId, SubTaskRange};
@@ -252,14 +252,14 @@ pub fn prepare_repeatable_quad(
         return;
     }
 
-    let repeated_rect = LayoutRect::from_origin_and_size(
+    let pattern_rect = LayoutRect::from_origin_and_size(
         local_rect.min,
-        stretch_size + tile_spacing,
+        stretch_size,
     );
 
     let scales = map_prim_to_raster.scale_factors();
-    let pattern_transform = ScaleOffset::from_scale(scales.into()).then_scale(device_pixel_scale.0);
-    let surface_rect: DeviceRect = pattern_transform.map_rect(&repeated_rect);
+    let mut indirect_transform = ScaleOffset::from_scale(scales.into()).then_scale(device_pixel_scale.0);
+    let mut surface_rect: DeviceRect = indirect_transform.map_rect(&pattern_rect);
 
     
     
@@ -270,7 +270,8 @@ pub fn prepare_repeatable_quad(
     
     let num_repetitions = local_rect.area() / stretch_size.area();
     let repeat_using_a_shader = src_task_id.is_some()
-        || (num_repetitions > 16.0 && surface_rect.area() < 1024.0 * 1024.0);
+        || (num_repetitions > 16.0 && surface_rect.width() < 1024.0 && surface_rect.height() < 1024.0)
+        || (num_repetitions > 64.0 && surface_rect.area() < 1024.0 * 1024.0);
 
     if repeat_using_a_shader {
         let (src_task_id, opaque) = match src_task_id {
@@ -279,13 +280,20 @@ pub fn prepare_repeatable_quad(
                 
                 
 
+                adjust_indirect_pattern_resolution(
+                    &pattern_rect,
+                    2048.0,
+                    &mut surface_rect,
+                    &mut indirect_transform,
+                );
+
                 let Some(task_id) = prepare_indirect_pattern(
                     prim_spatial_node_index,
                     pic_context.raster_spatial_node_index,
-                    local_rect,
-                    local_rect,
+                    &pattern_rect,
+                    &pattern_rect,
                     &surface_rect,
-                    Some(&pattern_transform),
+                    Some(&indirect_transform),
                     DevicePixelScale::identity(),
                     GpuTransformId::IDENTITY,
                     &pattern,
@@ -393,6 +401,143 @@ pub fn prepare_repeatable_quad(
             scratch,
         );
     }
+}
+
+pub fn prepare_border_image_nine_patch(
+    nine_patch: &NinePatchDescriptor,
+    pattern_builder: &dyn PatternBuilder,
+    local_rect: &LayoutRect,
+    stretch_size: LayoutSize,
+    aligned_aa_edges: EdgeMask,
+    transfomed_aa_edges: EdgeMask,
+    prim_instance_index: PrimitiveInstanceIndex,
+    prim_spatial_node_index: SpatialNodeIndex,
+    clip_chain: &ClipChainInstance,
+    device_pixel_scale: DevicePixelScale,
+
+    frame_context: &FrameBuildingContext,
+    pic_context: &PictureContext,
+    targets: &[CommandBufferIndex],
+    interned_clips: &DataStore<ClipIntern>,
+
+    frame_state: &mut FrameBuildingState,
+    scratch: &mut PrimitiveScratchBuffer,
+) {
+    let pattern_ctx = PatternBuilderContext {
+        scene_properties: frame_context.scene_properties,
+        spatial_tree: frame_context.spatial_tree,
+        fb_config: frame_context.fb_config,
+    };
+
+    let pattern = pattern_builder.build(
+        None,
+        LayoutVector2D::zero(),
+        &pattern_ctx,
+        &mut PatternBuilderState {
+            frame_gpu_data: frame_state.frame_gpu_data,
+            transforms: frame_state.transforms,
+        },
+    );
+
+    
+    
+    let map_prim_to_raster = pattern_ctx.spatial_tree.get_relative_transform(
+        prim_spatial_node_index,
+        pic_context.raster_spatial_node_index,
+    );
+
+    let prim_is_scale_offset = map_prim_to_raster.is_2d_scale_translation();
+
+    let strategy = get_prim_render_strategy(
+        prim_spatial_node_index,
+        clip_chain,
+        frame_state.clip_store,
+        interned_clips,
+        prim_is_scale_offset,
+        pattern_ctx.spatial_tree,
+    );
+
+    
+    
+    let scales = map_prim_to_raster.scale_factors();
+    let base_indirect_transform = ScaleOffset::from_scale(scales.into()).then_scale(device_pixel_scale.0);
+
+    nine_patch.for_each_segment(local_rect, &mut|dst_rect, src_rect, side, _repeat_h, _repeat_v| {
+        
+        let min_x = local_rect.min.x + stretch_size.width * src_rect.uv0.x;
+        let min_y = local_rect.min.y + stretch_size.height * src_rect.uv0.y;
+        let max_x = local_rect.min.x + stretch_size.width * src_rect.uv1.x;
+        let max_y = local_rect.min.y + stretch_size.height * src_rect.uv1.y;
+        let pattern_rect = LayoutRect {
+            min: point2(min_x, min_y),
+            max: point2(max_x, max_y),
+        };
+
+        
+
+        
+        
+        
+        
+        
+        
+        
+
+        let mut indirect_transform = base_indirect_transform;
+        let mut surface_rect = indirect_transform.map_rect(&pattern_rect);
+
+        adjust_indirect_pattern_resolution(
+            &pattern_rect,
+            2048.0,
+            &mut surface_rect,
+            &mut indirect_transform,
+        );
+
+        let Some(task_id) = prepare_indirect_pattern(
+            prim_spatial_node_index,
+            pic_context.raster_spatial_node_index,
+            &pattern_rect,
+            &pattern_rect,
+            &surface_rect,
+            Some(&indirect_transform),
+            DevicePixelScale::identity(),
+            GpuTransformId::IDENTITY,
+            &pattern,
+            QuadFlags::empty(),
+            EdgeMask::empty(),
+            &None,
+            None,
+            &pattern_ctx,
+            interned_clips,
+            frame_state,
+        ) else {
+            return;
+        };
+
+        let img_pattern = Pattern::texture(task_id, pattern.is_opaque);
+
+        prepare_quad_impl(
+            strategy,
+            &img_pattern,
+            &dst_rect,
+            aligned_aa_edges & side,
+            transfomed_aa_edges & side,
+            prim_instance_index,
+            &None,
+            prim_spatial_node_index,
+            clip_chain,
+            device_pixel_scale,
+
+            &map_prim_to_raster,
+            &pattern_ctx,
+            pic_context,
+            targets,
+            interned_clips,
+
+            frame_state,
+            scratch,
+        )
+    });
 }
 
 fn prepare_quad_impl(
@@ -1229,6 +1374,47 @@ fn get_prim_render_strategy(
     QuadRenderStrategy::Tiled {
         x_tiles,
         y_tiles,
+    }
+}
+
+
+
+
+fn adjust_indirect_pattern_resolution(
+    local_rect: &LayoutRect,
+    max_device_size: f32,
+    device_rect: &mut DeviceRect,
+    indirect_transform: &mut ScaleOffset,
+) {
+    
+    
+    let valid = local_rect.width() > 0.0
+        && local_rect.height() > 0.0
+        && indirect_transform.scale.x != 0.0
+        && indirect_transform.scale.y != 0.0;
+
+    if !valid {
+        return;
+    }
+
+    
+    while device_rect.width() > max_device_size {
+        indirect_transform.scale.x *= 0.5;
+        *device_rect = indirect_transform.map_rect(local_rect);
+    }
+    while device_rect.height() > max_device_size {
+        indirect_transform.scale.y *= 0.5;
+        *device_rect = indirect_transform.map_rect(local_rect);
+    }
+
+    
+    while device_rect.width() <= 0.5 {
+        indirect_transform.scale.x *= 2.0;
+        *device_rect = indirect_transform.map_rect(local_rect);
+    }
+    while device_rect.height() <= 0.5 {
+        indirect_transform.scale.y *= 2.0;
+        *device_rect = indirect_transform.map_rect(local_rect);
     }
 }
 
