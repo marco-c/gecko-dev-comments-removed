@@ -11,7 +11,7 @@ pytestmark = pytest.mark.asyncio
 CONTEXT_CREATED_EVENT = "browsingContext.contextCreated"
 
 
-async def test_not_unsubscribed(bidi_session, configuration):
+async def test_not_unsubscribed(bidi_session):
     await bidi_session.session.subscribe(events=[CONTEXT_CREATED_EVENT])
     await bidi_session.session.unsubscribe(events=[CONTEXT_CREATED_EVENT])
 
@@ -26,7 +26,7 @@ async def test_not_unsubscribed(bidi_session, configuration):
     await bidi_session.browsing_context.create(type_hint="tab")
 
     with pytest.raises(TimeoutException):
-        await wait_for_bidi_events(bidi_session, configuration, events, 1, timeout=0.5)
+        await wait_for_bidi_events(bidi_session, events, 1, timeout=0.5)
 
     remove_listener()
 
@@ -144,7 +144,7 @@ async def test_event_emitted_before_create_returns(
     remove_listener()
 
 
-async def test_navigate_creates_iframes(bidi_session, configuration, subscribe_events, top_context, test_page_multiple_frames):
+async def test_navigate_creates_iframes(bidi_session, subscribe_events, top_context, test_page_multiple_frames):
     
     
     await subscribe_events([CONTEXT_CREATED_EVENT])
@@ -160,7 +160,7 @@ async def test_navigate_creates_iframes(bidi_session, configuration, subscribe_e
         context=top_context["context"], url=test_page_multiple_frames, wait="complete"
     )
 
-    await wait_for_bidi_events(bidi_session, configuration, events, 2)
+    await wait_for_bidi_events(bidi_session, events, 2)
 
     
     contexts = await bidi_session.browsing_context.get_tree(root=top_context["context"])
@@ -193,7 +193,7 @@ async def test_navigate_creates_iframes(bidi_session, configuration, subscribe_e
     remove_listener()
 
 
-async def test_navigate_creates_nested_iframes(bidi_session, configuration, subscribe_events, top_context, test_page_nested_frames):
+async def test_navigate_creates_nested_iframes(bidi_session, subscribe_events, top_context, test_page_nested_frames):
     
     
     await subscribe_events([CONTEXT_CREATED_EVENT])
@@ -209,7 +209,7 @@ async def test_navigate_creates_nested_iframes(bidi_session, configuration, subs
         context=top_context["context"], url=test_page_nested_frames, wait="complete"
     )
 
-    await wait_for_bidi_events(bidi_session, configuration, events, 2)
+    await wait_for_bidi_events(bidi_session, events, 2)
 
     
     contexts = await bidi_session.browsing_context.get_tree(root=top_context["context"])
@@ -245,7 +245,7 @@ async def test_navigate_creates_nested_iframes(bidi_session, configuration, subs
 
 
 async def test_subscribe_to_one_context(
-    bidi_session, configuration, subscribe_events, top_context, test_page_same_origin_frame
+    bidi_session, subscribe_events, top_context, test_page_same_origin_frame
 ):
     
     await subscribe_events(
@@ -264,14 +264,14 @@ async def test_subscribe_to_one_context(
 
     
     with pytest.raises(TimeoutException):
-        await wait_for_bidi_events(bidi_session, configuration, events, 1, timeout=0.5)
+        await wait_for_bidi_events(bidi_session, events, 1, timeout=0.5)
 
     await bidi_session.browsing_context.navigate(
         context=top_context["context"], url=test_page_same_origin_frame, wait="complete"
     )
 
     
-    await wait_for_bidi_events(bidi_session, configuration, events, 1)
+    await wait_for_bidi_events(bidi_session, events, 1)
 
     remove_listener()
 
