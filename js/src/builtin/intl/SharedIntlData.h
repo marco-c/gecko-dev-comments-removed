@@ -346,7 +346,7 @@ class SharedIntlData {
 
 
 
-#if DEBUG || MOZ_SYSTEM_ICU
+#if DEBUG
   LocaleSet upperCaseFirstLocales;
 
   bool upperCaseFirstInitialized = false;
@@ -366,7 +366,7 @@ class SharedIntlData {
                         bool* isUpperFirst);
 
  private:
-#if DEBUG || MOZ_SYSTEM_ICU
+#if DEBUG
   LocaleSet ignorePunctuationLocales;
 
   bool ignorePunctuationInitialized = false;

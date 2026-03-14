@@ -568,7 +568,7 @@ class AvailableLocalesEnumeration final {
    public:
     
     using iterator_category = std::input_iterator_tag;
-    using value_type = const char*;
+    using value_type = mozilla::Span<const char>;
     using difference_type = ptrdiff_t;
     using pointer = value_type*;
     using reference = value_type&;
@@ -597,7 +597,9 @@ class AvailableLocalesEnumeration final {
 
     bool operator!=(const Iterator& aOther) const { return !(*this == aOther); }
 
-    value_type operator*() const { return GetAvailable(mLocalesPos); }
+    value_type operator*() const {
+      return mozilla::MakeStringSpan(GetAvailable(mLocalesPos));
+    }
   };
 
   
@@ -611,6 +613,90 @@ class AvailableLocalesEnumeration final {
 
 
   Iterator end() const { return Iterator(mLocalesCount); }
+};
+
+
+
+
+template <class T, uintptr_t(Len)(T*),
+          const char*(Item)(T*, uintptr_t, uintptr_t*), T*(New)(),
+          void(Free)(T*)>
+class ICU4XEnumeration final {
+  T* mDelegate = nullptr;
+  uintptr_t mLen = 0;
+
+ public:
+  ICU4XEnumeration() {
+    mDelegate = New();
+    mLen = Len(mDelegate);
+  }
+  ~ICU4XEnumeration() {
+    if (mDelegate) {
+      Free(mDelegate);
+      mDelegate = nullptr;
+    }
+  }
+  ICU4XEnumeration(const ICU4XEnumeration&) = delete;
+  ICU4XEnumeration& operator=(const ICU4XEnumeration&) = delete;
+  ICU4XEnumeration(ICU4XEnumeration&& aOther)
+      : mDelegate(aOther.mDelegate), mLen(aOther.mLen) {
+    aOther.mDelegate = nullptr;
+  }
+  ICU4XEnumeration& operator=(ICU4XEnumeration&& aOther) = delete;
+
+  class Iterator {
+   public:
+    
+    using iterator_category = std::input_iterator_tag;
+    using value_type = mozilla::Span<const char>;
+    using difference_type = ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+
+   private:
+    
+    uintptr_t mPos = 0;
+    T* mDelegate = nullptr;
+
+   public:
+    explicit Iterator(uintptr_t aPos, T* aDelegate)
+        : mPos(aPos), mDelegate(aDelegate) {}
+
+    Iterator& operator++() {
+      mPos++;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator result = *this;
+      ++(*this);
+      return result;
+    }
+
+    bool operator==(const Iterator& aOther) const {
+      return mPos == aOther.mPos && mDelegate == aOther.mDelegate;
+    }
+
+    bool operator!=(const Iterator& aOther) const { return !(*this == aOther); }
+
+    value_type operator*() const {
+      uintptr_t len;
+      const char* ptr = Item(mDelegate, mPos, &len);
+      return mozilla::Span<const char>{ptr, len};
+    }
+  };
+
+  
+
+  
+
+
+  Iterator begin() const { return Iterator(0, mDelegate); }
+
+  
+
+
+  Iterator end() const { return Iterator(mLen, mDelegate); }
 };
 
 

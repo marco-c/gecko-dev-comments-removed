@@ -549,20 +549,19 @@ TEST(IntlDateTimeFormat, GetOriginalSkeleton)
 
 TEST(IntlDateTimeFormat, GetAvailableLocales)
 {
-  using namespace std::literals;
-
   int32_t english = 0;
   int32_t german = 0;
   int32_t chinese = 0;
 
   
   
-  for (const char* locale : DateTimeFormat::GetAvailableLocales()) {
-    if (locale == "en"sv) {
+  for (mozilla::Span<const char> locale :
+       DateTimeFormat::GetAvailableLocales()) {
+    if (locale == mozilla::MakeStringSpan("en")) {
       english++;
-    } else if (locale == "de"sv) {
+    } else if (locale == mozilla::MakeStringSpan("de")) {
       german++;
-    } else if (locale == "zh"sv) {
+    } else if (locale == mozilla::MakeStringSpan("zh")) {
       chinese++;
     }
   }

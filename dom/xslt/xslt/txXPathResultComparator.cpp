@@ -8,6 +8,7 @@
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/LocaleService.h"
 #include "nsComponentManagerUtils.h"
+#include "nsRFPService.h"
 #include "txCore.h"
 #include "txExpr.h"
 
@@ -24,24 +25,37 @@ txResultStringComparator::txResultStringComparator(bool aAscending,
   if (aUpperFirst) mSorting |= kUpperFirst;
 }
 
-nsresult txResultStringComparator::init(const nsString& aLanguage) {
-  auto result =
-      aLanguage.IsEmpty()
-          ? mozilla::intl::LocaleService::TryCreateComponent<Collator>()
-          : mozilla::intl::LocaleService::TryCreateComponentWithLocale<
-                Collator>(NS_ConvertUTF16toUTF8(aLanguage).get());
+nsresult txResultStringComparator::init(const nsACString& aLanguage,
+                                        bool aResistFingerPrinting) {
+  
+  
+  
+  
+  
+  
+  
+
+  mozilla::intl::CollatorOptions options{};
+  options.sensitivity = mozilla::intl::CollatorSensitivity::Base;
+
+  auto result = mozilla::intl::Collator::TryCreate(aLanguage, options);
+  if (result.isErr()) {
+    
+    
+    
+    
+    nsAutoCStringN<32> appLocale;
+    if (aResistFingerPrinting) {
+      appLocale.Assign(nsRFPService::GetSpoofedJSLocale());
+    } else {
+      mozilla::intl::LocaleService::GetInstance()->GetAppLocaleAsBCP47(
+          appLocale);
+    }
+    result = mozilla::intl::Collator::TryCreate(appLocale, options);
+  }
 
   NS_ENSURE_TRUE(result.isOk(), NS_ERROR_FAILURE);
-  auto collator = result.unwrap();
-
-  
-  
-  Collator::Options options{};
-  options.sensitivity = Collator::Sensitivity::Base;
-  auto optResult = collator->SetOptions(options);
-  NS_ENSURE_TRUE(optResult.isOk(), NS_ERROR_FAILURE);
-
-  mCollator = UniquePtr<const Collator>(collator.release());
+  mCollator = result.unwrap();
   return NS_OK;
 }
 
@@ -57,7 +71,7 @@ int txResultStringComparator::compareValues(txObject* aVal1, txObject* aVal2) {
   nsString& dval1 = *((StringValue*)aVal1)->mString;
   nsString& dval2 = *((StringValue*)aVal2)->mString;
 
-  int32_t result = mCollator->CompareStrings(dval1, dval2);
+  int32_t result = mCollator->CompareUTF16(dval1, dval2);
 
   return (mSorting & kAscending) ? result : -result;
 }
