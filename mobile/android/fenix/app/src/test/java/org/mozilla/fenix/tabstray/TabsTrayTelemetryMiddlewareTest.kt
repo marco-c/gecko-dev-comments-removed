@@ -20,6 +20,11 @@ import org.mozilla.fenix.GleanMetrics.TabSearch
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.nimbus.FakeNimbusEventStore
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class) // for gleanTestRule
@@ -185,8 +190,8 @@ class TabsTrayTelemetryMiddlewareTest {
         TestCase.assertNull(TabSearch.resultClicked.testGetValue())
 
         val tabs = listOf(
-            createTab(url = "mozilla.com"),
-            createTab(url = "developer.mozilla.org"),
+            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com")),
+            TabsTrayItem.Tab(tabData = createTab(url = "developer.mozilla.org")),
         )
         store.dispatch(TabSearchAction.SearchResultsUpdated(results = tabs))
 

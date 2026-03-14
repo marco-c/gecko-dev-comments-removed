@@ -47,19 +47,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.ContentState
-import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Banner
-import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAction
-import org.mozilla.fenix.tabstray.TabsTrayState
-import org.mozilla.fenix.tabstray.TabsTrayState.Mode
-import org.mozilla.fenix.tabstray.TabsTrayStore
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.Page
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.ui.tabstray.TabsTray
 import org.mozilla.fenix.tabstray.ui.theme.TabManagerThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -536,19 +536,9 @@ private fun TabsTrayBannerAutoClosePreview() {
 private fun TabsTrayBannerMultiselectPreview() {
     TabsTrayBannerPreviewRoot(
         selectMode = Mode.Select(
-            setOf(
-                TabSessionState(
-                    id = "1",
-                    content = ContentState(
-                        url = "www.mozilla.com",
-                    ),
-                ),
-                TabSessionState(
-                    id = "2",
-                    content = ContentState(
-                        url = "www.mozilla.com",
-                    ),
-                ),
+            selectedTabs = setOf(
+                TabsTrayItem.Tab(tabData = createTab("www.mozilla.com")),
+                TabsTrayItem.Tab(tabData = createTab("www.mozilla.com")),
             ),
         ),
     )

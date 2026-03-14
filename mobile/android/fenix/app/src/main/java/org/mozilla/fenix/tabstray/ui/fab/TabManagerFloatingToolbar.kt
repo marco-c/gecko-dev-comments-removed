@@ -49,12 +49,13 @@ import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
-import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAction
-import org.mozilla.fenix.tabstray.TabsTrayState
-import org.mozilla.fenix.tabstray.TabsTrayState.Mode
-import org.mozilla.fenix.tabstray.TabsTrayStore
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.Page
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import mozilla.components.ui.icons.R as iconsR
@@ -429,7 +430,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
                     tabSearchEnabled = false,
-                    normalTabs = listOf(createTab(url = "url")),
+                    normalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "url"))),
                 ),
                 expanded = false,
             ),
@@ -437,7 +438,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
                     tabSearchEnabled = false,
-                    normalTabs = listOf(createTab(url = "url")),
+                    normalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "url"))),
                 ),
                 expanded = true,
             ),
@@ -445,7 +446,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
                     tabSearchEnabled = true,
-                    normalTabs = listOf(createTab(url = "url")),
+                    normalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "url"))),
                 ),
                 expanded = false,
             ),
@@ -453,7 +454,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
                     tabSearchEnabled = true,
-                    normalTabs = listOf(createTab(url = "url")),
+                    normalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "url"))),
                 ),
                 expanded = true,
             ),
@@ -469,7 +470,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.PrivateTabs,
                     tabSearchEnabled = true,
-                    privateTabs = listOf(createTab(url = "url", private = true)),
+                    privateTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "url"))),
                 ),
                 expanded = false,
             ),
@@ -477,7 +478,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.PrivateTabs,
                     tabSearchEnabled = true,
-                    privateTabs = listOf(createTab(url = "url", private = true)),
+                    privateTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "url"))),
                 ),
                 expanded = true,
             ),
