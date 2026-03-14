@@ -39,7 +39,7 @@ ComPtr<TypeToCreate> CreateFromActivationFactory(const wchar_t* aNamespace) {
   return newObject;
 }
 
-RefPtr<IAppCapability> GetWifiControlAppCapability() {
+RefPtr<IAppCapability> GetLocationAppCapability() {
   ComPtr<IAppCapabilityStatics> appCapabilityStatics =
       CreateFromActivationFactory<IAppCapabilityStatics>(kAppCapabilityGuid);
   NS_ENSURE_TRUE(appCapabilityStatics, nullptr);
@@ -52,31 +52,34 @@ RefPtr<IAppCapability> GetWifiControlAppCapability() {
   return appCapability;
 }
 
-Maybe<AppCapabilityAccessStatus> GetWifiControlAccess(
-    IAppCapability* aWifiControlAppCapability) {
-  NS_ENSURE_TRUE(aWifiControlAppCapability, Nothing());
+Maybe<AppCapabilityAccessStatus> GetLocationAccess(
+    IAppCapability* aLocationAppCapability) {
+  NS_ENSURE_TRUE(aLocationAppCapability, Nothing());
   AppCapabilityAccessStatus status;
-  HRESULT hr = aWifiControlAppCapability->CheckAccess(&status);
+  HRESULT hr = aLocationAppCapability->CheckAccess(&status);
   NS_ENSURE_TRUE(SUCCEEDED(hr), Nothing());
   return Some(status);
 }
 
-Maybe<AppCapabilityAccessStatus> GetWifiControlAccess() {
-  RefPtr wifiControlAppCapability = GetWifiControlAppCapability();
+Maybe<AppCapabilityAccessStatus> GetLocationAccess() {
+  RefPtr locationAppCapability = GetLocationAppCapability();
   
-  return GetWifiControlAccess(wifiControlAppCapability.get());
+  return GetLocationAccess(locationAppCapability.get());
 }
 
 
 
 bool SystemWillPromptForPermissionHint(
-    Maybe<AppCapabilityAccessStatus> aWifiAccess) {
-  if (aWifiAccess !=
+    Maybe<AppCapabilityAccessStatus> aLocationAccess) {
+  if (aLocationAccess !=
       mozilla::Some(AppCapabilityAccessStatus::
                         AppCapabilityAccessStatus_UserPromptRequired)) {
     return false;
   }
 
+  
+  
+  
   
   
   
@@ -87,11 +90,11 @@ bool SystemWillPromptForPermissionHint(
 
 
 
-bool LocationIsPermittedHint(Maybe<AppCapabilityAccessStatus> aWifiAccess) {
+bool LocationIsPermittedHint(Maybe<AppCapabilityAccessStatus> aLocationAccess) {
   
   
-  return aWifiAccess.isNothing() ||
-         *aWifiAccess ==
+  return aLocationAccess.isNothing() ||
+         *aLocationAccess ==
              AppCapabilityAccessStatus::AppCapabilityAccessStatus_Allowed;
 }
 
@@ -120,7 +123,7 @@ class WindowsGeolocationPermissionRequest final
       }
     });
 
-    mAppCapability = GetWifiControlAppCapability();
+    mAppCapability = GetLocationAppCapability();
     if (!mAppCapability) {
       return;
     }
@@ -175,14 +178,14 @@ class WindowsGeolocationPermissionRequest final
   }
 
  protected:
-  void Stop(Maybe<AppCapabilityAccessStatus> aWifiAccess) {
+  void Stop(Maybe<AppCapabilityAccessStatus> aLocationAccess) {
     MOZ_ASSERT(NS_IsMainThread());
     if (!mIsRunning) {
       return;
     }
     mIsRunning = false;
 
-    if (LocationIsPermittedHint(aWifiAccess)) {
+    if (LocationIsPermittedHint(aLocationAccess)) {
       mResolver(GeolocationPermissionStatus::Granted);
     } else {
       mResolver(GeolocationPermissionStatus::Canceled);
@@ -205,7 +208,7 @@ class WindowsGeolocationPermissionRequest final
     if (!mIsRunning) {
       return;
     }
-    Stop(GetWifiControlAccess(mAppCapability));
+    Stop(GetLocationAccess(mAppCapability));
   }
 
   bool IsStopped() { return !mIsRunning; }
@@ -222,9 +225,9 @@ class WindowsGeolocationPermissionRequest final
   }
 
   void StopIfLocationIsPermitted() {
-    auto wifiAccess = GetWifiControlAccess(mAppCapability);
-    if (LocationIsPermittedHint(wifiAccess)) {
-      Stop(wifiAccess);
+    auto locationAccess = GetLocationAccess(mAppCapability);
+    if (LocationIsPermittedHint(locationAccess)) {
+      Stop(locationAccess);
     }
   }
 
@@ -332,11 +335,11 @@ NS_IMPL_ISUPPORTS(LocationPermissionWifiScanListener, nsIWifiListener)
 
 
 SystemGeolocationPermissionBehavior GetGeolocationPermissionBehavior() {
-  auto wifiAccess = GetWifiControlAccess();
-  if (SystemWillPromptForPermissionHint(wifiAccess)) {
+  auto locationAccess = GetLocationAccess();
+  if (SystemWillPromptForPermissionHint(locationAccess)) {
     return SystemGeolocationPermissionBehavior::SystemWillPromptUser;
   }
-  if (!LocationIsPermittedHint(wifiAccess)) {
+  if (!LocationIsPermittedHint(locationAccess)) {
     return SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
   }
   return SystemGeolocationPermissionBehavior::NoPrompt;
@@ -352,7 +355,7 @@ RequestLocationPermissionFromUser(BrowsingContext* aBrowsingContext,
   if (permissionRequest->IsStopped()) {
     return nullptr;
   }
-  if (SystemWillPromptForPermissionHint(GetWifiControlAccess())) {
+  if (SystemWillPromptForPermissionHint(GetLocationAccess())) {
     
     
     
