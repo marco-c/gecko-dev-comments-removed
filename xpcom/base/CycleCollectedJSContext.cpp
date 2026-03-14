@@ -799,8 +799,12 @@ void RunJSMicroTask(JSContext* aCx,
     }
   }
 
-  JS::Rooted<JSObject*> maybePromise(
-      aCx, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
+  JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
+
+  JS::RootedField<JSObject*, 0> maybePromise(
+      roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
+
+  
   auto state = maybePromise
                    ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
                    : JS::PromiseUserInputEventHandlingState::DontCare;
@@ -809,16 +813,15 @@ void RunJSMicroTask(JSContext* aCx,
       JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
   AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
-  JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(aCx);
-
-  JS::RootedField<JSObject*, 0> callbackGlobal(
+  
+  JS::RootedField<JSObject*, 1> callbackGlobal(
       roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
   if (!callbackGlobal) {
     return;
   }
-  JS::RootedField<JSObject*, 1> hostDefinedData(roots);
-  JS::RootedField<JSObject*, 2> allocStack(roots);
 
+  JS::RootedField<JSObject*, 2> hostDefinedData(roots);
+  
   
   if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
           &hostDefinedData)) {
@@ -826,11 +829,18 @@ void RunJSMicroTask(JSContext* aCx,
   }
 
   
+  JS::RootedField<JSObject*, 3> allocStack(roots);
   (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
+  
+  
+  
+  
   nsIGlobalObject* incumbentGlobal = nullptr;
 
+  
   WebTaskSchedulingState* schedulingState = nullptr;
+
   if (hostDefinedData) {
     MOZ_RELEASE_ASSERT(JS::GetClass(hostDefinedData.get()) ==
                        &sHostDefinedDataClass);
