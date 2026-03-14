@@ -59,7 +59,7 @@
 
     initializePopover() {
       if (this.supportsPopover() && !this.hasAttribute("popover")) {
-        this.setAttribute("popover", "manual");
+        this.setAttribute("popover", "auto");
       }
     }
 
@@ -114,6 +114,13 @@
           triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_UNKNOWN ||
           triggeringEvent.code == "ArrowRight" ||
           triggeringEvent.code == "ArrowLeft");
+
+      if (this.supportsPopover()) {
+        const autohideDisabled = this.hasServices()
+          ? Services.prefs.getBoolPref("ui.popup.disable_autohide", false)
+          : false;
+        this.setAttribute("popover", autohideDisabled ? "manual" : "auto");
+      }
 
       
       
@@ -366,8 +373,8 @@
       
       this.focusHasChanged = false;
       
-      window.addEventListener("resize", this);
       window.addEventListener("scroll", this, { capture: true });
+      window.addEventListener("resize", this);
       window.addEventListener("blur", this);
       if (this.parentIsXULPanel()) {
         this.parentElement.addEventListener("popuphidden", this);
@@ -400,15 +407,11 @@
         : e.target.closest && e.target.closest("panel-list") == this;
 
       switch (e.type) {
-        case "scroll":
         case "resize":
-          
-          
-          
-          if (inPanelList || this.supportsPopover()) {
-            break;
+        case "scroll":
+          if (!inPanelList) {
+            this.hide();
           }
-          this.hide();
           break;
         case "blur":
         case "popuphidden":
@@ -598,7 +601,6 @@
 
     async onShow() {
       this.sendEvent("showing");
-      this.addHideListeners();
 
       if (this.lastAnchorNode?.hasSubmenu) {
         await this.setSubmenuAlign();
@@ -619,6 +621,11 @@
           console.error("Failed to show popover:", ex);
         }
       }
+
+      
+      
+      
+      this.addHideListeners();
 
       
       
