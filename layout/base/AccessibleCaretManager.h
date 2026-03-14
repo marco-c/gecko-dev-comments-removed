@@ -18,7 +18,6 @@
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 #include "nsIFrame.h"
-#include "nsIHapticFeedback.h"
 #include "nsISelectionListener.h"
 
 class nsFrameSelection;
@@ -195,7 +194,7 @@ class AccessibleCaretManager {
 
   
   
-  void ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType aEffect);
+  void ProvideHapticFeedback(mozilla::HapticFeedbackType aType);
 
   
   

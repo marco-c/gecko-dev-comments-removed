@@ -864,6 +864,9 @@ class BrowserParent final : public PBrowserParent,
   
   static void UpdateFocusFromBrowsingContext();
 
+  mozilla::ipc::IPCResult RecvPerformHapticFeedback(
+      mozilla::HapticFeedbackType aType);
+
  private:
   TabId mTabId;
 
