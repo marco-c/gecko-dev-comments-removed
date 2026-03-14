@@ -171,7 +171,9 @@ async function closePanel(win = window) {
 
 
 
-async function withProxyServer(testFn, handler) {
+
+
+function withProxyServer(handler) {
   const server = new HttpServer();
   let { promise, resolve } = Promise.withResolvers();
 
@@ -217,7 +219,7 @@ async function withProxyServer(testFn, handler) {
   server.identity.add("http", "example.com", "443");
 
   server.start(-1);
-  await testFn({
+  return {
     server: new Server({
       hostname: "localhost",
       port: server.identity.primaryPort,
@@ -233,8 +235,10 @@ async function withProxyServer(testFn, handler) {
     }),
     type: "http",
     gotConnection: promise,
-  });
-  return server;
+    async [Symbol.asyncDispose]() {
+      await new Promise(r => server.stop(r));
+    },
+  };
 }
 
 
