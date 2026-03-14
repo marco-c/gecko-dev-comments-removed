@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef ProfilerLabels_h
 #define ProfilerLabels_h
 
@@ -204,36 +202,6 @@ struct JSContext;
 
 namespace mozilla {
 
-#ifndef MOZ_GECKO_PROFILER
-
-class MOZ_RAII AutoProfilerLabel {
- public:
-  
-  AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    JS::ProfilingCategoryPair aCategoryPair,
-                    uint32_t aFlags = 0) {}
-
-  ~AutoProfilerLabel() {}
-};
-
-class MOZ_RAII AutoProfilerLabelHot {
- public:
-  
-  AutoProfilerLabelHot(const char* aLabel, const char* aDynamicString,
-                       JS::ProfilingCategoryPair aCategoryPair,
-                       uint32_t aFlags = 0) {}
-
-  
-  AutoProfilerLabelHot(JSContext* aJSContext, const char* aLabel,
-                       const char* aDynamicString,
-                       JS::ProfilingCategoryPair aCategoryPair,
-                       uint32_t aFlags) {}
-
-  ~AutoProfilerLabelHot() {}
-};
-
-#else  
-
 
 
 
@@ -294,10 +262,10 @@ class MOZ_RAII AutoProfilerLabelHot {
       mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
                                       aCategoryPair, aFlags);
 
-#  ifdef MOZ_EXECUTION_TRACING
+#ifdef MOZ_EXECUTION_TRACING
       
       mCx = nullptr;
-#  endif
+#endif
     }
   }
 
@@ -312,14 +280,14 @@ class MOZ_RAII AutoProfilerLabelHot {
     if (MOZ_UNLIKELY(mProfilingStack)) {
       mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
                                       aCategoryPair, aFlags);
-#  ifdef MOZ_EXECUTION_TRACING
+#ifdef MOZ_EXECUTION_TRACING
       if (MOZ_UNLIKELY(JS_TracerIsTracing(aJSContext))) {
         mCx = aJSContext;
         TraceLabel(aLabel, aDynamicString);
       } else {
         mCx = nullptr;
       }
-#  endif
+#endif
     }
   }
 
@@ -327,38 +295,35 @@ class MOZ_RAII AutoProfilerLabelHot {
     
     if (MOZ_UNLIKELY(mProfilingStack)) {
       mProfilingStack->pop();
-#  ifdef MOZ_EXECUTION_TRACING
+#ifdef MOZ_EXECUTION_TRACING
       if (MOZ_UNLIKELY(mCx)) {
         
         
         
         JS_TracerLeaveLabelLatin1(mCx, "");
       }
-#  endif
+#endif
     }
   }
 
  private:
-#  ifdef MOZ_EXECUTION_TRACING
+#ifdef MOZ_EXECUTION_TRACING
   MOZ_NEVER_INLINE void TraceLabel(const char* aLabel,
                                    const char* aDynamicString) {
     char buffer[1024];
     SprintfLiteral(buffer, "(DOM) %s.%s", aLabel, aDynamicString);
     JS_TracerEnterLabelLatin1(mCx, buffer);
   }
-#  endif
+#endif
 
   
   
   ProfilingStack* mProfilingStack;
 
-#  ifdef MOZ_EXECUTION_TRACING
+#ifdef MOZ_EXECUTION_TRACING
   JSContext* mCx;
-#  endif
+#endif
 };
-
-#endif  
-
 }  
 
 #endif  

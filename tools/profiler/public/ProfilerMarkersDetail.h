@@ -13,19 +13,15 @@
 
 #include "mozilla/ProfilerMarkersPrerequisites.h"
 
-#ifdef MOZ_GECKO_PROFILER
 
 
 
 
 
 
-
-#  include "mozilla/ProfileBufferEntrySerializationGeckoExtensions.h"
+#include "mozilla/ProfileBufferEntrySerializationGeckoExtensions.h"
 
 
 mozilla::ProfileChunkedBuffer& profiler_get_core_buffer();
-
-#endif  
 
 #endif  

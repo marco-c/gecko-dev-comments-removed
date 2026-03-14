@@ -4,7 +4,6 @@
 
 
 
-#[cfg(feature = "enabled")]
 use crate::gecko_bindings::structs::ThreadProfilingFeatures;
 
 
@@ -17,7 +16,6 @@ use crate::gecko_bindings::structs::ThreadProfilingFeatures;
 
 
 
-#[cfg(feature = "enabled")]
 #[inline]
 pub fn is_active() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -27,11 +25,6 @@ pub fn is_active() -> bool {
 }
 
 
-#[cfg(not(feature = "enabled"))]
-#[inline]
-pub fn is_active() -> bool {
-    false
-}
 
 
 
@@ -41,9 +34,6 @@ pub fn is_active() -> bool {
 
 
 
-
-
-#[cfg(feature = "enabled")]
 #[inline]
 pub fn is_active_and_unpaused() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -54,11 +44,6 @@ pub fn is_active_and_unpaused() -> bool {
 }
 
 
-#[cfg(not(feature = "enabled"))]
-#[inline]
-pub fn is_active_and_unpaused() -> bool {
-    false
-}
 
 
 
@@ -68,9 +53,6 @@ pub fn is_active_and_unpaused() -> bool {
 
 
 
-
-
-#[cfg(feature = "enabled")]
 #[inline]
 pub fn current_thread_is_being_profiled_for_markers() -> bool {
     current_thread_is_being_profiled(ThreadProfilingFeatures::Markers)
@@ -79,14 +61,6 @@ pub fn current_thread_is_being_profiled_for_markers() -> bool {
 }
 
 
-#[cfg(not(feature = "enabled"))]
-#[inline]
-pub fn current_thread_is_being_profiled_for_markers() -> bool {
-    false
-}
-
-
-#[cfg(feature = "enabled")]
 #[inline]
 fn get_active_and_features() -> u32 {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -107,7 +81,6 @@ fn get_active_and_features() -> u32 {
 
 
 
-#[cfg(feature = "enabled")]
 #[inline]
 fn is_etw_collecting_markers() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -118,7 +91,6 @@ fn is_etw_collecting_markers() -> bool {
 
 
 
-#[cfg(feature = "enabled")]
 #[inline]
 fn is_perfetto_tracing() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -129,7 +101,6 @@ fn is_perfetto_tracing() -> bool {
 
 
 
-#[cfg(feature = "enabled")]
 #[inline]
 fn current_thread_is_being_profiled(thread_profiling_features: ThreadProfilingFeatures) -> bool {
     if !is_active_and_unpaused() {

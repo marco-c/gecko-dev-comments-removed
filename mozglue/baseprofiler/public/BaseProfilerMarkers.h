@@ -41,7 +41,6 @@
 
 namespace mozilla::baseprofiler {
 
-#ifdef MOZ_GECKO_PROFILER
 
 MFBT_API bool profiler_capture_backtrace_into(
     ProfileChunkedBuffer& aChunkedBuffer, StackCaptureOptions aCaptureOptions);
@@ -73,7 +72,6 @@ inline ProfileBufferBlockIndex AddMarkerToBuffer(
   return AddMarkerToBuffer(aBuffer, aName, aCategory, std::move(aOptions),
                            markers::NoPayload{});
 }
-#endif  
 
 
 
@@ -88,9 +86,6 @@ ProfileBufferBlockIndex AddMarker(
     const ProfilerString8View& aName, const MarkerCategory& aCategory,
     MarkerOptions&& aOptions, MarkerType aMarkerType,
     const PayloadArguments&... aPayloadArguments) {
-#ifndef MOZ_GECKO_PROFILER
-  return {};
-#else
   
   
   
@@ -102,7 +97,6 @@ ProfileBufferBlockIndex AddMarker(
   return ::mozilla::baseprofiler::AddMarkerToBuffer(
       coreBuffer, aName, aCategory, std::move(aOptions), aMarkerType,
       aPayloadArguments...);
-#endif
 }
 
 
@@ -115,7 +109,6 @@ inline ProfileBufferBlockIndex AddMarker(const ProfilerString8View& aName,
 }  
 
 
-
 #define BASE_PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)  \
   do {                                                               \
     AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_UNTYPED);               \
@@ -123,7 +116,6 @@ inline ProfileBufferBlockIndex AddMarker(const ProfilerString8View& aName,
         markerName, ::mozilla::baseprofiler::category::categoryName, \
         ##__VA_ARGS__);                                              \
   } while (false)
-
 
 
 #define BASE_PROFILER_MARKER(markerName, categoryName, options, MarkerType,   \
@@ -255,7 +247,6 @@ struct StackMarker : public BaseMarkerType<StackMarker> {
 }  
 
 
-
 #define BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options, text)    \
   do {                                                                        \
     AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_TEXT);                           \
@@ -303,7 +294,6 @@ class MOZ_RAII AutoProfilerTextMarker {
   std::string mText;
 };
 
-#ifdef MOZ_GECKO_PROFILER
 extern template MFBT_API ProfileBufferBlockIndex
 AddMarker(const ProfilerString8View&, const MarkerCategory&, MarkerOptions&&,
           markers::TextMarker, const std::string&);
@@ -315,10 +305,8 @@ AddMarkerToBuffer(ProfileChunkedBuffer&, const ProfilerString8View&,
 extern template MFBT_API ProfileBufferBlockIndex AddMarkerToBuffer(
     ProfileChunkedBuffer&, const ProfilerString8View&, const MarkerCategory&,
     MarkerOptions&&, markers::TextMarker, const std::string&);
-#endif  
 
 }  
-
 
 
 #define AUTO_BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options,   \
