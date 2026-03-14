@@ -17,6 +17,7 @@
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/RootedDictionary.h"
+#include "mozilla/dom/WindowContext.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
@@ -52,6 +53,12 @@ PostMessageEvent::~PostMessageEvent() = default;
 
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP PostMessageEvent::Run() {
+  if (mCallerWindowID) {
+    RefPtr<WindowContext> wc = WindowContext::GetById(mCallerWindowID);
+    if (!wc || !wc->IsCurrent()) {
+      mSource = nullptr;
+    }
+  }
   
   
   
