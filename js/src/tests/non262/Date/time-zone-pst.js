@@ -1,5 +1,10 @@
 
 
+
+
+
+
+
 assertEq(/^(PST|PDT)$/.test(getTimeZone()), true,
          "The default time zone is set to PST8PDT for all jstests (when run in the shell)");
 

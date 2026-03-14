@@ -1,6 +1,8 @@
 
 
 
+
+
 assertEq(/\p{CWCF}/iu.test("a"), true);
 assertEq(/\p{CWCF}/iu.test("A"), true);
 assertEq(/\p{CWCF}/iv.test("a"), true);
