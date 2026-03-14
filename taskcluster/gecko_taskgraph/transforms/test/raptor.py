@@ -368,7 +368,7 @@ def add_extra_options(config, tests):
 
         if (
             ("android-hw-p6" in test_platform or "android-hw-s24" in test_platform)
-            and "speedometer-" not in test["test-name"]
+            and "speedometer2-" not in test["test-name"]
             
         ) or (
             "android-hw-a55" in test_platform
