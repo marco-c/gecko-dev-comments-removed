@@ -1528,6 +1528,12 @@ pub mod style_structs {
             }
 
             
+            #[cfg(feature = "gecko")]
+            pub fn specifies_timeline_scope(&self) -> bool {
+                !self.mTimelineScope.is_none()
+            }
+
+            
             
             #[cfg(feature = "gecko")]
             pub fn specifies_view_timelines(&self) -> bool {
