@@ -35,7 +35,8 @@ Preferences.addAll([
   { id: "browser.smartwindow.enabled", type: "bool" },
   { id: "browser.smartwindow.endpoint", type: "string" },
   { id: "browser.smartwindow.firstrun.modelChoice", type: "string" },
-  { id: "browser.smartwindow.memories", type: "bool" },
+  { id: "browser.smartwindow.memories.generateFromConversation", type: "bool" },
+  { id: "browser.smartwindow.memories.generateFromHistory", type: "bool" },
   { id: "browser.smartwindow.model", type: "string" },
   { id: "browser.smartwindow.preferences.endpoint", type: "string" },
   { id: "browser.smartwindow.tos.consentTime", type: "int" },
@@ -707,10 +708,15 @@ Preferences.addSetting({
   },
 });
 
-Preferences.addSetting({ id: "learnFromActivityWrapper" });
+Preferences.addSetting({ id: "learnFromChatActivityWrapper" });
+Preferences.addSetting({ id: "learnFromBrowsingActivityWrapper" });
 Preferences.addSetting({
-  id: "learnFromActivity",
-  pref: "browser.smartwindow.memories",
+  id: "learnFromChatActivity",
+  pref: "browser.smartwindow.memories.generateFromConversation",
+});
+Preferences.addSetting({
+  id: "learnFromBrowsingActivity",
+  pref: "browser.smartwindow.memories.generateFromHistory",
 });
 
 Preferences.addSetting({
@@ -794,13 +800,21 @@ Preferences.addSetting(
     setup() {
       Services.obs.addObserver(this.emitChange, "memory-store-changed");
       Services.prefs.addObserver(
-        "browser.smartwindow.memories",
+        "browser.smartwindow.memories.generateFromConversation",
+        this.emitChange
+      );
+      Services.prefs.addObserver(
+        "browser.smartwindow.memories.generateFromHistory",
         this.emitChange
       );
       return () => {
         Services.obs.removeObserver(this.emitChange, "memory-store-changed");
         Services.prefs.removeObserver(
-          "browser.smartwindow.memories",
+          "browser.smartwindow.memories.generateFromConversation",
+          this.emitChange
+        );
+        Services.prefs.removeObserver(
+          "browser.smartwindow.memories.generateFromHistory",
           this.emitChange
         );
       };
@@ -812,10 +826,15 @@ Preferences.addSetting(
 
     async getControlConfig() {
       const memories = await this.getMemories();
-      const isLearningEnabled = Services.prefs.getBoolPref(
-        "browser.smartwindow.memories",
-        false
-      );
+      const isLearningEnabled =
+        Services.prefs.getBoolPref(
+          "browser.smartwindow.memories.generateFromConversation",
+          false
+        ) ||
+        Services.prefs.getBoolPref(
+          "browser.smartwindow.memories.generateFromHistory",
+          false
+        );
 
       if (!memories.length) {
         return {
@@ -1149,7 +1168,7 @@ SettingGroupManager.registerGroups({
   assistantModelGroup: {
     l10nId: "smart-window-model-section",
     headingLevel: 2,
-    supportPage: "smart-window-model",
+    supportPage: "smart-window-models",
     items: [
       {
         id: "modelSelection",
@@ -1202,7 +1221,8 @@ SettingGroupManager.registerGroups({
                     l10nId: "smart-window-model-custom-more-link",
                     slot: "support-link",
                     controlAttrs: {
-                      href: "",
+                      is: "moz-support-link",
+                      "support-page": "smart-window-byom",
                     },
                   },
                 ],
@@ -1224,7 +1244,6 @@ SettingGroupManager.registerGroups({
   memoriesGroup: {
     l10nId: "ai-window-memories-section",
     headingLevel: 2,
-    // TODO: Finalize SUMO support page slug (GENAI-3016)
     supportPage: "smart-window-memories",
     items: [
       {
@@ -1232,12 +1251,23 @@ SettingGroupManager.registerGroups({
         control: "moz-box-group",
         items: [
           {
-            id: "learnFromActivityWrapper",
+            id: "learnFromChatActivityWrapper",
             control: "moz-box-item",
             items: [
               {
-                id: "learnFromActivity",
-                l10nId: "ai-window-learn-from-activity",
+                id: "learnFromChatActivity",
+                l10nId: "ai-window-learn-from-chat-activity",
+                control: "moz-checkbox",
+              },
+            ],
+          },
+          {
+            id: "learnFromBrowsingActivityWrapper",
+            control: "moz-box-item",
+            items: [
+              {
+                id: "learnFromBrowsingActivity",
+                l10nId: "ai-window-learn-from-browsing-activity",
                 control: "moz-checkbox",
               },
             ],
