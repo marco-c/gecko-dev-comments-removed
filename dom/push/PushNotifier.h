@@ -15,9 +15,6 @@
 
 namespace mozilla::dom {
 
-class ContentChild;
-class ContentParent;
-
 
 
 
@@ -34,20 +31,6 @@ class MOZ_STACK_CLASS PushDispatcher {
 
   
   nsresult NotifyObserversAndWorkers();
-
-  
-  
-  
-  virtual bool SendToParent(ContentChild* aParentActor) = 0;
-
-  
-  
-  
-  virtual bool SendToChild(ContentParent* aContentActor) = 0;
-
-  
-  
-  virtual nsresult HandleNoChildProcesses();
 
   nsIPrincipal* GetPrincipal() { return mPrincipal; }
 
@@ -136,8 +119,6 @@ class PushMessageDispatcher final : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 
  private:
   const nsString mMessageId;
@@ -153,8 +134,6 @@ class PushSubscriptionChangeDispatcher final : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 
  private:
   nsCOMPtr<nsIPushSubscription> mOldSubscription;
@@ -168,8 +147,6 @@ class PushSubscriptionModifiedDispatcher : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 };
 
 class PushErrorDispatcher final : public PushDispatcher {
@@ -180,12 +157,8 @@ class PushErrorDispatcher final : public PushDispatcher {
 
   nsresult NotifyObservers() override;
   nsresult NotifyWorkers() override;
-  bool SendToParent(ContentChild* aParentActor) override;
-  bool SendToChild(ContentParent* aContentActor) override;
 
  private:
-  nsresult HandleNoChildProcesses() override;
-
   const nsString mMessage;
   uint32_t mFlags;
 };
