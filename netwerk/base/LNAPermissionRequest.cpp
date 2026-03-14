@@ -15,6 +15,9 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIIOService.h"
 #include "nsIOService.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/FeaturePolicy.h"
+#include "xpcpublic.h"
 
 namespace mozilla::net {
 
@@ -42,29 +45,19 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
 
   aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(mPrincipal));
 
-  RefPtr<mozilla::dom::BrowsingContext> bc;
-  aLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
-  if (bc && bc->Top()) {
-    if (bc->Top()->Canonical()) {
+  aLoadInfo->GetBrowsingContext(getter_AddRefs(mBrowsingContext));
+  if (mBrowsingContext && mBrowsingContext->Top()) {
+    if (mBrowsingContext->Top()->Canonical()) {
       RefPtr<mozilla::dom::WindowGlobalParent> topWindowGlobal =
-          bc->Top()->Canonical()->GetCurrentWindowGlobal();
+          mBrowsingContext->Top()->Canonical()->GetCurrentWindowGlobal();
       if (topWindowGlobal) {
         mTopLevelPrincipal = topWindowGlobal->DocumentPrincipal();
       }
     }
   }
 
-  if (!mTopLevelPrincipal) {
+  if (!mTopLevelPrincipal && xpc::IsInAutomation()) {
     
-    mTopLevelPrincipal = mPrincipal;
-  }
-
-  if (!mPrincipal->Equals(mTopLevelPrincipal)) {
-    
-    
-    
-    
-    mIsRequestDelegatedToUnsafeThirdParty = true;
     
     mTopLevelPrincipal = mPrincipal;
   }
@@ -77,13 +70,11 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
 NS_IMETHODIMP
 LNAPermissionRequest::GetElement(mozilla::dom::Element** aElement) {
   NS_ENSURE_ARG_POINTER(aElement);
-  RefPtr<mozilla::dom::BrowsingContext> bc;
-  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
-  if (!bc) {
+  if (!mBrowsingContext) {
     return NS_ERROR_FAILURE;
   }
 
-  return bc->GetTopFrameElement(aElement);
+  return mBrowsingContext->GetTopFrameElement(aElement);
 }
 
 
@@ -109,8 +100,16 @@ LNAPermissionRequest::NotifyShown() {
   mPromptWasShown = true;
 
   
+  
+  
+  if (!mPrincipal || !mTopLevelPrincipal) {
+    return NS_OK;
+  }
+
+  
+  bool isCrossOrigin = !mPrincipal->Equals(mTopLevelPrincipal);
   if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {
-    if (mIsRequestDelegatedToUnsafeThirdParty) {
+    if (isCrossOrigin) {
       mozilla::glean::networking::local_network_access_prompts_shown
           .Get("localhost_cross_site"_ns)
           .Add(1);
@@ -120,7 +119,7 @@ LNAPermissionRequest::NotifyShown() {
           .Add(1);
     }
   } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
-    if (mIsRequestDelegatedToUnsafeThirdParty) {
+    if (isCrossOrigin) {
       mozilla::glean::networking::local_network_access_prompts_shown
           .Get("local_network_cross_site"_ns)
           .Add(1);
@@ -136,10 +135,49 @@ LNAPermissionRequest::NotifyShown() {
 
 nsresult LNAPermissionRequest::RequestPermission() {
   MOZ_ASSERT(NS_IsMainThread());
+
   
-  
-  if (!CheckPermissionDelegate()) {
+  if (!mLoadInfo) {
+    NS_WARNING("LNA permission request without load info");
     return Cancel();
+  }
+
+  
+  RefPtr<dom::CanonicalBrowsingContext> bc;
+  if (mBrowsingContext) {
+    bc = mBrowsingContext->Canonical();
+  }
+
+  if (!bc) {
+    
+    
+    if (!xpc::IsInAutomation()) {
+      NS_WARNING("local network access without browsing context");
+      return Cancel();
+    }
+  } else {
+    Maybe<dom::FeaturePolicyInfo> fpInfo = bc->GetContainerFeaturePolicy();
+    
+    
+    
+    
+    
+    
+    
+    
+    if (fpInfo.isSome()) {
+      nsAutoString featureName;
+      if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {
+        featureName = u"loopback-network"_ns;
+      } else {
+        featureName = u"local-network"_ns;
+      }
+
+      if (fpInfo->mInheritedDeniedFeatureNames.Contains(featureName)) {
+        NS_WARNING("Feature policy denying the request");
+        return Cancel();
+      }
+    }
   }
 
   
@@ -160,6 +198,12 @@ nsresult LNAPermissionRequest::RequestPermission() {
   }
 
   if (pr == PromptResult::Denied) {
+    return Cancel();
+  }
+
+  
+  if (!mTopLevelPrincipal) {
+    NS_WARNING("Cannot show permission prompt without top-level principal");
     return Cancel();
   }
 
