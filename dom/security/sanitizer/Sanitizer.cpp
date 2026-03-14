@@ -538,31 +538,42 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   
 
   
-  
-  
-  if (mElements && mReplaceWithChildrenElements) {
-    for (const CanonicalElement& name : mElements->Keys()) {
-      if (mReplaceWithChildrenElements->Contains(name)) {
-        aRv.ThrowTypeError(
-            nsFmtCString("Element {} can't be in both 'elements' "
-                         "and 'replaceWithChildrenElements'.",
-                         name));
-        return;
-      }
+  if (mReplaceWithChildrenElements) {
+    
+    
+    CanonicalElement htmlElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml);
+    if (mReplaceWithChildrenElements->Contains(htmlElement)) {
+      aRv.ThrowTypeError(nsFmtCString(
+          "Element {} is not allowed in 'replaceWithChildrenElements'",
+          htmlElement));
+      return;
     }
-  }
 
-  
-  
-  
-  if (mRemoveElements && mReplaceWithChildrenElements) {
-    for (const CanonicalElement& name : *mRemoveElements) {
-      if (mReplaceWithChildrenElements->Contains(name)) {
-        aRv.ThrowTypeError(
-            nsFmtCString("Element {} can't be in both 'removeElements' and "
-                         "'replaceWithChildrenElements'.",
-                         name));
-        return;
+    
+    if (mElements) {
+      
+      
+      for (const CanonicalElement& name : mElements->Keys()) {
+        if (mReplaceWithChildrenElements->Contains(name)) {
+          aRv.ThrowTypeError(
+              nsFmtCString("Element {} can't be in both 'elements' "
+                           "and 'replaceWithChildrenElements'.",
+                           name));
+          return;
+        }
+      }
+    } else {
+      
+      
+      
+      for (const CanonicalElement& name : *mRemoveElements) {
+        if (mReplaceWithChildrenElements->Contains(name)) {
+          aRv.ThrowTypeError(
+              nsFmtCString("Element {} can't be in both 'removeElements' and "
+                           "'replaceWithChildrenElements'.",
+                           name));
+          return;
+        }
       }
     }
   }
@@ -1620,14 +1631,12 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       
       
       if (mReplaceWithChildrenElements &&
-          mReplaceWithChildrenElements->Contains(*elementName) &&
-          
-          
-          !!child->GetParent()) {
+          mReplaceWithChildrenElements->Contains(*elementName)) {
         
         
         
         nsCOMPtr<nsIContent> parent = child->GetParent();
+        MOZ_DIAGNOSTIC_ASSERT(parent);
         nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
         nsCOMPtr<nsIContent> newChild = firstChild;
         for (; newChild; newChild = child->GetFirstChild()) {
