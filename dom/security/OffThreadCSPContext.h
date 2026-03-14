@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_workers_WorkerCSPContext_h_
-#define mozilla_dom_workers_WorkerCSPContext_h_
+#ifndef mozilla_dom_OffThreadCSPContext_h_
+#define mozilla_dom_OffThreadCSPContext_h_
 
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
@@ -16,11 +16,12 @@ class nsIContentSecurityPolicy;
 namespace mozilla::dom {
 
 
-class WorkerCSPContext final {
+class OffThreadCSPContext final {
  public:
-  explicit WorkerCSPContext(mozilla::ipc::CSPInfo&& aInfo) : mCSPInfo(aInfo) {}
+  explicit OffThreadCSPContext(mozilla::ipc::CSPInfo&& aInfo)
+      : mCSPInfo(aInfo) {}
 
-  static Result<UniquePtr<WorkerCSPContext>, nsresult> CreateFromCSP(
+  static Result<UniquePtr<OffThreadCSPContext>, nsresult> CreateFromCSP(
       nsIContentSecurityPolicy* aCSP);
 
   const mozilla::ipc::CSPInfo& CSPInfo() const { return mCSPInfo; }
@@ -32,7 +33,6 @@ class WorkerCSPContext final {
  private:
   void EnsureIPCPoliciesRead();
 
-  
   
   
   
