@@ -125,8 +125,6 @@ void PlatformTextSelectionChangeEvent(Accessible* aTarget,
 
 void PlatformRoleChangedEvent(Accessible* aTarget, const a11y::role& aRole,
                               uint8_t aRoleMapEntryIndex);
-
-void PlatformFocusedAccLocationChanged(Accessible* aFocusedAcc);
 #endif
 
 

@@ -292,16 +292,6 @@ class DocAccessibleParent : public RemoteAccessible,
   
   nsTHashSet<uint64_t> mOnScreenAccessibles;
 
-#ifdef MOZ_WIDGET_COCOA
-  
-  
-  
-  
-  
-  
-  LayoutDeviceIntRect mFocusedAccBounds;
-#endif
-
   static DocAccessibleParent* GetFrom(dom::BrowsingContext* aBrowsingContext);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;

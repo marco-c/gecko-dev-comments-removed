@@ -62,19 +62,6 @@ NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
 
 
 NSScreen* GetNSScreenForAcc(mozAccessible* aAcc);
-
-
-
-
-
-
-
-
-
-
-
-NSRect GetCocoaScreenRectForAcc(mozAccessible* aAcc, LayoutDeviceIntRect& aRect,
-                                bool aShouldUseCocoaCoords);
 }  
 }  
 }  
