@@ -16,6 +16,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "ARefBase.h"
 #include "nsIRequest.h"
+#include "mozilla/net/happy_eyeballs_glue.h"
 
 
 
@@ -116,6 +117,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   
   already_AddRefed<nsHttpConnectionInfo> CloneAndAdoptHTTPSSVCRecord(
       nsISVCBRecord* aRecord) const;
+  already_AddRefed<nsHttpConnectionInfo> CloneAndAdoptPortAndAlpn(
+      uint16_t aPort,
+      happy_eyeballs::ConnectionAttemptHttpVersions aProtocol) const;
   void CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
                           nsProxyInfo* aProxyInfo = nullptr);
 
