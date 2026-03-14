@@ -29,7 +29,13 @@ add_task(async function test_copy_profile() {
   Assert.ok(SelectableProfileService.isEnabled, "Service should be enabled");
 
   let profiles = await SelectableProfileService.getAllProfiles();
-  Assert.equal(profiles.length, 1, "Only one selectable profile exist");
+  Assert.equal(profiles.length, 1, "Only one selectable profile exists");
+
+  
+  Services.prefs.setCharPref(
+    "browser.profiles.shortcutFileName",
+    "test-shortcut-name"
+  );
 
   const backupServiceInstance = new BackupService();
 
@@ -46,6 +52,19 @@ add_task(async function test_copy_profile() {
   );
   Assert.ok(!encState, "No encryption state after copyProfile called");
 
+  
+  
+  
+  let copiedEncStateFile = PathUtils.join(
+    copiedProfile.path,
+    BackupService.PROFILE_FOLDER_NAME,
+    BackupService.ARCHIVE_ENCRYPTION_STATE_FILE
+  );
+  Assert.ok(
+    !(await IOUtils.exists(copiedEncStateFile)),
+    "Copied profile should not have encryption state when source had no encryption"
+  );
+
   profiles = await SelectableProfileService.getAllProfiles();
   Assert.equal(profiles.length, 2, "Two selectable profiles exist");
 
@@ -59,6 +78,14 @@ add_task(async function test_copy_profile() {
     copiedProfile.theme.themeId,
     SelectableProfileService.currentProfile.theme.themeId,
     "Copied profile has the same theme"
+  );
+
+  let prefsPath = PathUtils.join(copiedProfile.path, "prefs.js");
+  let prefsFile = await IOUtils.readUTF8(prefsPath, { encoding: "utf-8" });
+  Assert.equal(
+    -1,
+    prefsFile.search("browser.profiles.shortcutFileName"),
+    "Copied profile should not have desktop shortcut pref"
   );
 });
 
@@ -78,7 +105,7 @@ add_task(async function test_copy_profile_with_encryption() {
   const backupServiceInstance = new BackupService();
   await backupServiceInstance.enableEncryption(
     "testCopyProfile",
-    SelectableProfileService.currentProfile.path.path
+    SelectableProfileService.currentProfile.path
   );
 
   let encState = await backupServiceInstance.loadEncryptionState(
@@ -93,6 +120,18 @@ add_task(async function test_copy_profile_with_encryption() {
     SelectableProfileService.currentProfile.path
   );
   Assert.ok(encState, "Encryption state exists after copyProfile called");
+
+  
+  
+  let copiedEncStateFile = PathUtils.join(
+    copiedProfile.path,
+    BackupService.PROFILE_FOLDER_NAME,
+    BackupService.ARCHIVE_ENCRYPTION_STATE_FILE
+  );
+  Assert.ok(
+    !(await IOUtils.exists(copiedEncStateFile)),
+    "Copied profile should not have encryption state even when source had encryption"
+  );
 
   profiles = await SelectableProfileService.getAllProfiles();
   Assert.equal(profiles.length, 3, "Three selectable profiles exist");
