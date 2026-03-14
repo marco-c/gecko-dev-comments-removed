@@ -4,13 +4,13 @@
 
 use anyhow::{bail, Result};
 use crash_helper_common::{
-    messages::{self, ChildProcessRendezVousReply, Header, Message},
+    messages::{self, Header, Message},
     AncillaryData, GeckoChildId, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue,
     Pid,
 };
 use std::{collections::HashMap, ffi::OsString, process, rc::Rc};
 
-use crate::crash_generation::{CrashGenerator, PlatformData};
+use crate::crash_generation::CrashGenerator;
 
 #[derive(PartialEq)]
 pub enum IPCServerState {
@@ -58,11 +58,6 @@ struct IPCConnection {
     
     
     process: Option<ProcessId>,
-    #[allow(dead_code)]
-    
-    
-    
-    platform_data: Option<PlatformData>,
 }
 
 pub(crate) struct IPCServer {
@@ -90,9 +85,6 @@ impl IPCServer {
                 connector,
                 endpoint: IPCEndpoint::Parent,
                 process: Some(ProcessId::for_parent(client_pid)),
-                
-                
-                platform_data: None,
             },
         );
 
@@ -111,7 +103,6 @@ impl IPCServer {
                             connector,
                             endpoint: IPCEndpoint::External,
                             process: None,
-                            platform_data: None,
                         },
                     );
                 }
@@ -210,7 +201,6 @@ impl IPCServer {
                             connector,
                             endpoint: IPCEndpoint::Child,
                             process: Some(ProcessId::for_child(reply.child_pid, reply.id)),
-                            platform_data: get_platform_data(reply)?,
                         },
                     );
                 }
@@ -265,27 +255,5 @@ impl IPCServer {
         }
 
         None
-    }
-}
-
-fn get_platform_data(
-    #[allow(unused)] child_rendezvous: ChildProcessRendezVousReply,
-) -> Result<Option<PlatformData>> {
-    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-    {
-        Ok(None)
-    }
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    {
-        
-        
-        
-        let mut vector: Vec<AncillaryData> = child_rendezvous.ancillary_data.into();
-        let ancillary_data = vector.pop().unwrap();
-        if let crash_helper_common::MachPortRight::Send(task_right) = ancillary_data {
-            Ok(Some(task_right))
-        } else {
-            bail!("Wrong right has been provided");
-        }
     }
 }
