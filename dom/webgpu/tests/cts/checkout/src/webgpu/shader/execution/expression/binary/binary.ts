@@ -25,3 +25,6 @@ export function abstractFloatBinary(op: string): ShaderBuilder {
 export function abstractIntBinary(op: string): ShaderBuilder {
   return abstractIntShaderBuilder(values => `(${values.map(v => `(${v})`).join(op)})`);
 }
+
+
+export const kAbstractFloatMatrixBinaryOpBatchSize = 1;
