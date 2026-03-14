@@ -7,6 +7,7 @@
 #include "mozilla/dom/NumericInputTypes.h"
 
 #include "ICUUtils.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/TextControlState.h"
 #include "mozilla/dom/HTMLInputElement.h"
 
@@ -94,7 +95,20 @@ bool NumberInputType::IsValueMissing() const {
     return false;
   }
 
-  return IsValueEmpty();
+  
+  
+  if (PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  return mInputElement->GetValueAsDecimal().isNaN();
 }
 
 bool NumberInputType::HasBadInput() const {
