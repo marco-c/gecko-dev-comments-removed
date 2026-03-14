@@ -277,7 +277,7 @@ async function openAboutTranslations({
   });
 
   
-  await loadNewPage(tab.linkedBrowser, "about:translations");
+  await loadNewPage(tab.linkedBrowser, "about:translations#src=detect");
 
   
   
@@ -288,7 +288,11 @@ async function openAboutTranslations({
 
 
   const resolveDownloads = async count => {
+    await remoteClients.translationsWasm.waitForPendingDownloads(1);
     await remoteClients.translationsWasm.resolvePendingDownloads(1);
+    await remoteClients.translationModels.waitForPendingDownloads(
+      downloadedFilesPerLanguagePair() * count
+    );
     await remoteClients.translationModels.resolvePendingDownloads(
       downloadedFilesPerLanguagePair() * count
     );
@@ -317,6 +321,7 @@ async function openAboutTranslations({
   };
 
   const aboutTranslationsTestUtils = new AboutTranslationsTestUtils(
+    tab.linkedBrowser,
     runInPage,
     resolveDownloads,
     rejectDownloads,
@@ -4335,6 +4340,9 @@ class AboutTranslationsTestUtils {
   };
 
   
+  #browser;
+
+  
 
 
 
@@ -4374,12 +4382,16 @@ class AboutTranslationsTestUtils {
 
 
 
+
+
   constructor(
+    browser,
     runInPage,
     resolveDownloads,
     rejectDownloads,
     autoDownloadFromRemoteSettings
   ) {
+    this.#browser = browser;
     this.#runInPage = runInPage;
     this.#resolveDownloads = resolveDownloads;
     this.#rejectDownloads = rejectDownloads;
@@ -4445,21 +4457,8 @@ class AboutTranslationsTestUtils {
     url.hash = hashString ? hashString : "src=detect";
 
     logAction(url);
-
-    await this.#runInPage(
-      async (_, { url }) => {
-        const { window, document: oldDocument } = content;
-
-        window.location.assign(url);
-        window.location.reload();
-
-        await ContentTaskUtils.waitForCondition(
-          () => window.document !== oldDocument,
-          "Waiting for the old document to be destroyed."
-        );
-      },
-      { url }
-    );
+    await loadNewPage(this.#browser, BLANK_PAGE);
+    await loadNewPage(this.#browser, url.href);
 
     await this.waitForReady();
   }
@@ -4497,7 +4496,7 @@ class AboutTranslationsTestUtils {
       );
     }
     try {
-      this.#resolveDownloads(count);
+      await this.#resolveDownloads(count);
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
@@ -4515,7 +4514,7 @@ class AboutTranslationsTestUtils {
       );
     }
     try {
-      this.#rejectDownloads(requestCount);
+      await this.#rejectDownloads(requestCount);
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
@@ -4759,6 +4758,7 @@ class AboutTranslationsTestUtils {
 
 
 
+
   async assertEvents({ expected = [], unexpected = [] } = {}, callback) {
     
     await doubleRaf(document);
@@ -4781,15 +4781,27 @@ class AboutTranslationsTestUtils {
           });
       }
 
+      
+      await this.#runInPage(() => {});
+
       await callback();
 
       for (const [eventName, expectedDetail] of expected) {
         const actualDetail = await expectedEventWaiters[eventName];
-        is(
-          JSON.stringify(actualDetail ?? {}),
-          JSON.stringify(expectedDetail ?? {}),
-          `Expected detail for "${eventName}" to match.`
-        );
+        const actualDetailString = JSON.stringify(actualDetail ?? {});
+
+        if (typeof expectedDetail === "function") {
+          ok(
+            expectedDetail(actualDetail ?? {}),
+            `Expected detail for "${eventName}" predicate to pass. Got ${actualDetailString}.`
+          );
+        } else {
+          is(
+            actualDetailString,
+            JSON.stringify(expectedDetail ?? {}),
+            `Expected detail for "${eventName}" to match.`
+          );
+        }
       }
 
       await TestUtils.waitForTick();
