@@ -16,6 +16,7 @@
 #include "HttpTrafficAnalyzer.h"
 #include "EventTokenBucket.h"
 
+#include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -809,9 +810,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
   
-  Mutex mLastActiveTabLoadOptimizationLock{
+  DataMutex<TimeStamp> mLastActiveTabLoadOptimizationHit{
       "nsHttpConnectionMgr::LastActiveTabLoadOptimization"};
-  TimeStamp mLastActiveTabLoadOptimizationHit;
 
   Mutex mHttpExclusionLock MOZ_UNANNOTATED{"nsHttpHandler::HttpExclusion"};
 

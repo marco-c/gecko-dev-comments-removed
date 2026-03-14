@@ -839,12 +839,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE};
 
   uint64_t mStartPos{UINT64_MAX};
-  uint64_t mTransferSize{0};
+  Atomic<uint64_t, ReleaseAcquire> mTransferSize{0};
   uint64_t mRequestSize{0};
-  uint64_t mDecodedBodySize{0};
+  Atomic<uint64_t, ReleaseAcquire> mDecodedBodySize{0};
   
   bool mSupportsHTTP3{false};
-  uint64_t mEncodedBodySize{0};
+  Atomic<uint64_t, ReleaseAcquire> mEncodedBodySize{0};
   uint64_t mRequestContextID{0};
   
   
@@ -861,10 +861,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   Atomic<bool, ReleaseAcquire> mCanceled{false};
   Atomic<uint32_t, ReleaseAcquire> mFirstPartyClassificationFlags{0};
   Atomic<uint32_t, ReleaseAcquire> mThirdPartyClassificationFlags{0};
-
-  
-  
-  Mutex mOnDataFinishedMutex{"HttpChannelChild::OnDataFinishedMutex"};
 
   UniquePtr<ProfileChunkedBuffer> mSource;
 
