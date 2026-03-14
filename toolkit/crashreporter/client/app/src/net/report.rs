@@ -52,7 +52,17 @@ impl CrashReport<'_> {
 
         let extra_json_data;
         if request.is_none() {
-            extra_json_data = serde_json::to_string(self.extra)?;
+            let mut extra = self.extra.clone();
+            
+            
+            
+            
+            
+            
+            if extra["ProcessType"].as_str() == Some("main") {
+                extra.as_object_mut().unwrap().remove("ProcessType");
+            }
+            extra_json_data = serde_json::to_string(&extra)?;
 
             let mut parts = vec![
                 http::MimePart {
