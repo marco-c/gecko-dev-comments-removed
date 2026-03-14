@@ -505,7 +505,7 @@ typedef enum {
 
 #define HB_BUFFER_CLUSTER_LEVEL_IS_CHARACTERS(level) \
 	((bool) ((1u << (unsigned) (level)) & \
-		 ((1u << HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARCATERS) | \
+		 ((1u << HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS) | \
 		  (1u << HB_BUFFER_CLUSTER_LEVEL_CHARACTERS))))
 
 HB_EXTERN void
@@ -657,6 +657,11 @@ hb_buffer_has_positions (hb_buffer_t  *buffer);
 
 HB_EXTERN void
 hb_buffer_normalize_glyphs (hb_buffer_t *buffer);
+
+
+
+
+
 
 
 
@@ -864,6 +869,9 @@ HB_EXTERN void
 hb_buffer_set_message_func (hb_buffer_t *buffer,
 			    hb_buffer_message_func_t func,
 			    void *user_data, hb_destroy_func_t destroy);
+
+HB_EXTERN void
+hb_buffer_changed (hb_buffer_t *buffer);
 
 
 HB_END_DECLS

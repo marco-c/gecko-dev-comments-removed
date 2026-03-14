@@ -89,6 +89,9 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 
 
+
+
+
 typedef enum { 
   HB_SUBSET_FLAGS_DEFAULT =		     0x00000000u,
   HB_SUBSET_FLAGS_NO_HINTING =		     0x00000001u,
@@ -107,6 +110,7 @@ typedef enum {
   HB_SUBSET_FLAGS_IFTB_REQUIREMENTS       =  0x00001000u,
   HB_SUBSET_FLAGS_RETAIN_NUM_GLYPHS  =  0x00002000u,
 #endif
+  HB_SUBSET_FLAGS_DOWNGRADE_CFF2          =  0x00004000u,
 } hb_subset_flags_t;
 
 
