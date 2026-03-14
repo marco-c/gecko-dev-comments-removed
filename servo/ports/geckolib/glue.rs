@@ -86,7 +86,6 @@ use style::invalidation::stylesheets::RuleChangeKind;
 use style::logical_geometry::{LogicalAxis, PhysicalAxis, PhysicalSide, WritingMode};
 use style::media_queries::MediaList;
 use style::parser::{Parse, ParserContext};
-use style::properties::declaration_block::PropertyTypedValue;
 #[cfg(feature = "gecko_debug")]
 use style::properties::LonghandIdSet;
 use style::properties::{
@@ -5297,19 +5296,19 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
     let property_id = get_property_id_from_property!(property, false);
 
     *result = read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
-        let property_typed_value = decls.property_value_to_typed(&property_id);
+        let typed_value = decls.property_value_to_typed(&property_id);
 
-        match property_typed_value {
-            PropertyTypedValue::None => PropertyTypedValueResult::None,
+        match typed_value {
+            Err(()) => PropertyTypedValueResult::None,
 
-            PropertyTypedValue::Unsupported => {
+            Ok(None) => {
                 let global_style_data = &*GLOBAL_STYLE_DATA;
                 PropertyTypedValueResult::Unsupported(
                     Arc::new(global_style_data.shared_lock.wrap(decls.clone())).into(),
                 )
             },
 
-            PropertyTypedValue::Typed(typed_value) => PropertyTypedValueResult::Typed(typed_value),
+            Ok(Some(typed_value)) => PropertyTypedValueResult::Typed(typed_value),
         }
     });
 
@@ -8496,17 +8495,13 @@ pub unsafe extern "C" fn Servo_GetComputedTypedValue(
         None => return false,
     };
 
-    let property_typed_value = match non_custom_property_id.longhand_or_shorthand() {
-        Ok(longhand) => style
-            .computed_typed_value(longhand)
-            .map_or(PropertyTypedValue::Unsupported, PropertyTypedValue::Typed),
-        Err(_) => PropertyTypedValue::Unsupported,
+    let typed_value: Option<TypedValue> = match non_custom_property_id.longhand_or_shorthand() {
+        Ok(longhand) => style.computed_typed_value(longhand),
+        Err(_) => None,
     };
 
-    *result = match property_typed_value {
-        PropertyTypedValue::None => PropertyTypedValueResult::None,
-
-        PropertyTypedValue::Unsupported => {
+    *result = match typed_value {
+        None => {
             let global_style_data = &*GLOBAL_STYLE_DATA;
 
             let mut block = PropertyDeclarationBlock::new();
@@ -8533,7 +8528,7 @@ pub unsafe extern "C" fn Servo_GetComputedTypedValue(
             )
         },
 
-        PropertyTypedValue::Typed(typed_value) => PropertyTypedValueResult::Typed(typed_value),
+        Some(typed_value) => PropertyTypedValueResult::Typed(typed_value),
     };
 
     true
