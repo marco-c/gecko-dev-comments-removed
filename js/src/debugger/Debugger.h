@@ -713,9 +713,17 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-
-  [[nodiscard]] static bool addAllocationsTracking(
+  [[nodiscard]] static bool checkCanAddAllocationsTracking(
       JSContext* cx, Handle<GlobalObject*> debuggee);
+
+  
+
+
+
+
+
+  static void addAllocationsTracking(JSContext* cx,
+                                     Handle<GlobalObject*> debuggee);
 
   
 
