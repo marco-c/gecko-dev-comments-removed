@@ -69,7 +69,15 @@ add_task(async function test_SplitterKeyboardA11Y() {
   Services.focus.setFocus(gBrowser.selectedBrowser, Services.focus.FLAG_BYKEY);
 
   await expectFocusAfterKey(splitter, "KEY_Tab");
+
+  
+  
+  
+  
+  let tabSwitchDone = BrowserTestUtils.waitForEvent(gBrowser, "TabSwitchDone");
   await expectFocusAfterKey(tab2.linkedBrowser, "KEY_Tab");
+  await tabSwitchDone;
+
   await expectFocusAfterKey(splitter, "KEY_Tab", { shiftKey: true });
   Assert.equal(document.activeElement, splitter, "Splitter has focus");
 
