@@ -36,6 +36,7 @@ using gfx::IntSize;
 
 using layers::FrameMetrics;
 using layers::ScrollableLayerGuid;
+using NonZeroScrollRangeOnly = ScrollContainerFrame::NonZeroScrollRangeOnly;
 
 typedef ScrollableLayerGuid::ViewID ViewID;
 
@@ -824,7 +825,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
   
   MOZ_ASSERT(nsLayoutUtils::AsyncPanZoomEnabled(aScrollContainerFrame));
   if (!aBuilder->HaveScrollableDisplayPort() &&
-      aScrollContainerFrame->WantAsyncScroll()) {
+      aScrollContainerFrame->WantAsyncScroll(NonZeroScrollRangeOnly::Yes)) {
     bool haveDisplayPort = HasNonMinimalNonZeroDisplayPort(content);
     
     if (!haveDisplayPort) {
@@ -838,6 +839,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
           ("Setting DP on first-encountered scrollId=%" PRIu64 "\n", viewId));
 
       CalculateAndSetDisplayPortMargins(aScrollContainerFrame, aRepaintMode);
+      SetZeroMarginDisplayPortOnAsyncScrollableAncestors(aScrollContainerFrame);
 #ifdef DEBUG
       haveDisplayPort = HasNonMinimalDisplayPort(content);
       MOZ_ASSERT(haveDisplayPort,
@@ -1397,25 +1399,26 @@ bool DisplayPortUtils::ShouldAsyncScrollWithAnchor(
   
   
   
-  bool wasPresent = true;
-  auto& entry = aBuilder->AsyncScrollsWithAnchorHashmap().LookupOrInsertWith(
-      aFrame, [&]() {
-        wasPresent = false;
-        return true;
-      });
-  if (!wasPresent) {
-    bool reportToDoc = false;
-    entry = ShouldAsyncScrollWithAnchorNotCached(aFrame, aAnchor, aBuilder,
-                                                 aAxes, &reportToDoc);
-    if (!entry && reportToDoc) {
-      auto* pc = aFrame->PresContext();
-      pc->Document()->ReportHasScrollLinkedEffect(
-          pc->RefreshDriver()->MostRecentRefresh(),
-          dom::Document::ReportToConsole::No);
-    }
+  
+  if (auto entry = aBuilder->AsyncScrollsWithAnchorHashmap().Lookup(aFrame)) {
+    return *entry;
+  }
+  bool reportToDoc = false;
+  bool shouldAsyncScrollWithAnchor = ShouldAsyncScrollWithAnchorNotCached(
+      aFrame, aAnchor, aBuilder, aAxes, &reportToDoc);
+  {
+    bool& entry =
+        aBuilder->AsyncScrollsWithAnchorHashmap().LookupOrInsert(aFrame);
+    entry = shouldAsyncScrollWithAnchor;
+  }
+  if (reportToDoc) {
+    auto* pc = aFrame->PresContext();
+    pc->Document()->ReportHasScrollLinkedEffect(
+        pc->RefreshDriver()->MostRecentRefresh(),
+        dom::Document::ReportToConsole::No);
   }
 
-  return entry;
+  return shouldAsyncScrollWithAnchor;
 }
 
 }  

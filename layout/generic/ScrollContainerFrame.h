@@ -671,7 +671,16 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  bool WantAsyncScroll() const;
+
+
+
+
+
+
+
+  enum class NonZeroScrollRangeOnly : bool { No, Yes };
+  bool WantAsyncScroll(NonZeroScrollRangeOnly aNonZeroScrollRangeOnly =
+                           NonZeroScrollRangeOnly::No) const;
 
   
 
