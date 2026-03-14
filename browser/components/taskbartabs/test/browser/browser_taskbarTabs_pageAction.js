@@ -231,7 +231,7 @@ add_task(async function revertToMostRecent() {
   ]);
 
   await BrowserTestUtils.closeWindow(firstWin);
-  secondWin.focus();
+  await SimpleTest.promiseFocus(secondWin);
 
   
   await taskbarTabsPageAction(taskbarTabWindow, secondWin);
