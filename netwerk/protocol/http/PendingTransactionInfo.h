@@ -28,22 +28,19 @@ class PendingTransactionInfo final : public ARefBase {
   
   
   
-  [[nodiscard]] nsWeakPtr ForgetDnsAndConnectSocketAndActiveConn();
+  [[nodiscard]] nsWeakPtr ForgetConnectionAttemptAndActiveConn();
 
   
-  void RememberDnsAndConnectSocket(DnsAndConnectSocket* sock);
+  void RememberConnectionAttempt(ConnectionAttempt* sock);
   
   
   bool TryClaimingActiveConn(HttpConnectionBase* conn);
-  
-  
-  void AddDnsAndConnectSocket(DnsAndConnectSocket* sock);
 
   nsHttpTransaction* Transaction() const { return mTransaction; }
 
  private:
   RefPtr<nsHttpTransaction> mTransaction;
-  nsWeakPtr mDnsAndSock;
+  nsWeakPtr mConnectionAttempt;
   nsWeakPtr mActiveConn;
 
   ~PendingTransactionInfo();

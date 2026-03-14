@@ -8,8 +8,7 @@
 
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"
-#include "DnsAndConnectSocket.h"
-#include "DashboardTypes.h"
+#include "ConnectionAttemptPool.h"
 #include "mozilla/WeakPtr.h"
 
 namespace mozilla {
@@ -93,12 +92,11 @@ class ConnectionEntry : public SupportsWeakPtr {
   void MoveConnection(HttpConnectionBase* proxyConn, ConnectionEntry* otherEnt);
 
   size_t DnsAndConnectSocketsLength() const {
-    return mDnsAndConnectSockets.Length();
+    return mConnectionAttemptPool->Length();
   }
 
-  void InsertIntoDnsAndConnectSockets(DnsAndConnectSocket* sock);
-  void RemoveDnsAndConnectSocket(DnsAndConnectSocket* dnsAndSock, bool abandon);
-  void CloseAllDnsAndConnectSockets();
+  void RemoveConnectionAttempt(ConnectionAttempt* sock, bool abandon);
+  void CloseAllConnectionAttempts();
 
   HttpRetParams GetConnectionData();
   Http3ConnectionStatsParams GetHttp3ConnectionStatsData();
@@ -107,13 +105,6 @@ class ConnectionEntry : public SupportsWeakPtr {
   const RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   bool AvailableForDispatchNow();
-
-  
-  
-  uint32_t UnconnectedDnsAndConnectSockets() const;
-
-  
-  bool RemoveDnsAndConnectSocket(DnsAndConnectSocket*);
 
   bool MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
                                   bool aIsHttp3 = false);
@@ -129,7 +120,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   
 
-  nsTArray<nsCString> mCoalescingKeys;
+  nsTArray<HashNumber> mCoalescingKeys;
 
   
   
@@ -221,7 +212,7 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   const nsTArray<RefPtr<nsIWebTransportHash>>& GetServerCertHashes();
 
-  const nsCString& OriginFrameHashKey();
+  const HashNumber& OriginFrameHashKey();
 
  private:
   void InsertIntoIdleConnections_internal(nsHttpConnection* conn);
@@ -240,8 +231,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   nsTArray<RefPtr<HttpConnectionBase>> mExtendedCONNECTConns;
 
-  nsTArray<RefPtr<DnsAndConnectSocket>>
-      mDnsAndConnectSockets;  
+  RefPtr<ConnectionAttemptPool> mConnectionAttemptPool;
 
   
   nsTArray<RefPtr<nsIWebTransportHash>> mServerCertHashes;
@@ -249,7 +239,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();
 
-  nsCString mOriginFrameHashKey;
+  Maybe<HashNumber> mOriginFrameHashKey;
 
   bool mRetriedDifferentIPFamilyForHttp3 = false;
 };
