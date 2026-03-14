@@ -1,3 +1,7 @@
+const { TabGroupTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TabGroupTestUtils.sys.mjs"
+);
+
 const LOCALE_LTR = "ltr";
 const LOCALE_RTL = "rtl";
 
@@ -174,4 +178,15 @@ function triggerClickOn(target, options) {
   }
   EventUtils.synthesizeMouseAtCenter(target, options);
   return promise;
+}
+
+
+
+
+
+
+
+
+async function removeTabGroup(group) {
+  return TabGroupTestUtils.removeTabGroup(group);
 }
