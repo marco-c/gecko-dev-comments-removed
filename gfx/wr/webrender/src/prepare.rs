@@ -241,22 +241,19 @@ fn prepare_prim_for_render(
     let prim_instance = &mut prim_instances[prim_instance_index];
 
     if !is_passthrough {
-        
-        
         let disable_quad_path = match &prim_instance.kind {
-            PrimitiveInstanceKind::Rectangle { .. } => false,
-            PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
-                let prim_data = &data_stores.linear_grad[*data_handle];
-                !prim_data.brush_segments.is_empty()
-                    || !frame_context.fb_config.precise_linear_gradients
+            PrimitiveInstanceKind::Rectangle { .. }
+            | PrimitiveInstanceKind::RadialGradient { .. }
+            | PrimitiveInstanceKind::ConicGradient { .. }
+            => false,
+            PrimitiveInstanceKind::Image { data_handle, .. } => {
+                !crate::prim_store::image::can_use_quad_shaders(
+                    &data_stores.image[*data_handle].kind,
+                    frame_state.resource_cache,
+                )
             }
-            PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
-                let prim_data = &data_stores.radial_grad[*data_handle];
-                !prim_data.brush_segments.is_empty()
-            }
-            PrimitiveInstanceKind::ConicGradient { data_handle, .. } => {
-                let prim_data = &data_stores.conic_grad[*data_handle];
-                !prim_data.brush_segments.is_empty()
+            PrimitiveInstanceKind::LinearGradient { .. } => {
+                !frame_context.fb_config.precise_linear_gradients
             }
             _ => true,
         };
@@ -268,6 +265,7 @@ fn prepare_prim_for_render(
         
         let should_update_clip_task = match &mut prim_instance.kind {
             PrimitiveInstanceKind::Rectangle { use_legacy_path, .. }
+            | PrimitiveInstanceKind::Image { use_legacy_path, .. }
             | PrimitiveInstanceKind::RadialGradient { use_legacy_path, .. }
             | PrimitiveInstanceKind::ConicGradient { use_legacy_path, .. }
             | PrimitiveInstanceKind::LinearGradient { use_legacy_path, .. }
@@ -671,13 +669,32 @@ fn prepare_interned_prim_for_render(
                 }
             );
         }
-        PrimitiveInstanceKind::Image { data_handle, image_instance_index, .. } => {
+        PrimitiveInstanceKind::Image { data_handle, image_instance_index, use_legacy_path, .. } => {
             profile_scope!("Image");
 
             let prim_data = &mut data_stores.image[*data_handle];
             let common_data = &mut prim_data.common;
             let image_data = &mut prim_data.kind;
             let image_instance = &mut store.images[*image_instance_index];
+
+            if !*use_legacy_path {
+                crate::prim_store::image::prepare_image_quads(
+                    common_data,
+                    image_data,
+                    &prim_instance.vis.clip_chain,
+                    prim_instance_index,
+                    prim_spatial_node_index,
+                    device_pixel_scale,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    &data_stores.clip,
+                    frame_state,
+                    scratch,
+                );
+
+                return;
+            }
 
             
             
@@ -704,6 +721,28 @@ fn prepare_interned_prim_for_render(
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
             if !*use_legacy_path {
+                if let Some(nine_patch) = &prim_data.border_nine_patch {
+                    quad::prepare_border_image_nine_patch(
+                        &*nine_patch,
+                        prim_data,
+                        &prim_data.common.prim_rect,
+                        prim_data.stretch_size,
+                        prim_data.common.aligned_aa_edges,
+                        prim_data.common.transformed_aa_edges,
+                        prim_instance_index,
+                        prim_spatial_node_index,
+                        &prim_instance.vis.clip_chain,
+                        device_pixel_scale,
+                        frame_context,
+                        pic_context,
+                        targets,
+                        &data_stores.clip,
+                        frame_state,
+                        scratch,
+                    );
+                    return;
+                }
+
                 
                 let mut should_cache = !frame_context.fb_config.is_software
                     && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 10_000_000;
@@ -848,6 +887,28 @@ fn prepare_interned_prim_for_render(
             let prim_data = &mut data_stores.radial_grad[*data_handle];
 
             if !*use_legacy_path {
+                if let Some(nine_patch) = &prim_data.border_nine_patch {
+                    quad::prepare_border_image_nine_patch(
+                        &*nine_patch,
+                        prim_data,
+                        &prim_data.common.prim_rect,
+                        prim_data.stretch_size,
+                        prim_data.common.aligned_aa_edges,
+                        prim_data.common.transformed_aa_edges,
+                        prim_instance_index,
+                        prim_spatial_node_index,
+                        &prim_instance.vis.clip_chain,
+                        device_pixel_scale,
+                        frame_context,
+                        pic_context,
+                        targets,
+                        &data_stores.clip,
+                        frame_state,
+                        scratch,
+                    );
+                    return;
+                }
+
                 quad::prepare_repeatable_quad(
                     prim_data,
                     &prim_data.common.prim_rect,
@@ -903,6 +964,28 @@ fn prepare_interned_prim_for_render(
             let prim_data = &mut data_stores.conic_grad[*data_handle];
 
             if !*use_legacy_path {
+                if let Some(nine_patch) = &prim_data.border_nine_patch {
+                    quad::prepare_border_image_nine_patch(
+                        &*nine_patch,
+                        prim_data,
+                        &prim_data.common.prim_rect,
+                        prim_data.stretch_size,
+                        prim_data.common.aligned_aa_edges,
+                        prim_data.common.transformed_aa_edges,
+                        prim_instance_index,
+                        prim_spatial_node_index,
+                        &prim_instance.vis.clip_chain,
+                        device_pixel_scale,
+                        frame_context,
+                        pic_context,
+                        targets,
+                        &data_stores.clip,
+                        frame_state,
+                        scratch,
+                    );
+                    return;
+                }
+
                 
                 
                 
