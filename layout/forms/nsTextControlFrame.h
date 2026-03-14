@@ -13,9 +13,15 @@
 #include "nsIContent.h"
 #include "nsIStatefulFrame.h"
 
+class nsISelectionController;
+class EditorInitializerEntryTracker;
 namespace mozilla {
+class AutoTextControlHandlingState;
 class ScrollContainerFrame;
+class TextEditor;
+class TextControlState;
 enum class PseudoStyleType : uint8_t;
+enum class SelectionDirection : uint8_t;
 namespace dom {
 class Element;
 }  
@@ -101,6 +107,15 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
 
   
 
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EnsureEditorInitialized();
+
+  
+
+  
+
   mozilla::UniquePtr<mozilla::PresState> SaveState() override;
   NS_IMETHOD RestoreState(mozilla::PresState* aState) override;
 
@@ -108,13 +123,22 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
 
   
 
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult AttributeChanged(
+      int32_t aNameSpaceID, nsAtom* aAttribute, AttrModType aModType) override;
   void ElementStateChanged(mozilla::dom::ElementState aStates) override;
 
   nsresult PeekOffset(mozilla::PeekOffsetStruct* aPos) override;
 
   NS_DECL_QUERYFRAME
 
+  
+  
+  enum class ScrollAncestors { No, Yes };
+  void ScrollSelectionIntoViewAsync(ScrollAncestors = ScrollAncestors::No);
+
  protected:
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnFocus();
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void HandleReadonlyOrDisabledChange();
 
   
@@ -170,6 +194,54 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
 #undef DEFINE_TEXTCTRL_CONST_FORWARDER
 
  protected:
+  class EditorInitializer;
+  friend class EditorInitializer;
+
+  
+  friend class mozilla::AutoTextControlHandlingState;
+  friend class mozilla::TextControlState;
+
+  
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(TextControlInitializer, EditorInitializer,
+                                      nsTextControlFrame::RevokeInitializer)
+
+  static void RevokeInitializer(EditorInitializer* aInitializer) {
+    aInitializer->Revoke();
+  };
+
+  class EditorInitializer : public mozilla::Runnable {
+   public:
+    explicit EditorInitializer(nsTextControlFrame* aFrame)
+        : mozilla::Runnable("nsTextControlFrame::EditorInitializer"),
+          mFrame(aFrame) {}
+
+    NS_IMETHOD Run() override;
+
+    
+    void Revoke() { mFrame = nullptr; }
+
+   private:
+    nsTextControlFrame* mFrame;
+  };
+
+  nsresult OffsetToDOMPoint(uint32_t aOffset, nsINode** aResult,
+                            uint32_t* aPosition);
+
+  
+
+
+
+
+  bool AttributeExists(nsAtom* aAtt) const {
+    return mContent && mContent->AsElement()->HasAttr(aAtt);
+  }
+
+  
+
+
+
+  void PreDestroy();
+
   
   
   
@@ -179,6 +251,13 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) override;
 
+ private:
+  void FinishedInitializer() { RemoveProperty(TextControlInitializer()); }
+
+ protected:
+  bool ShouldInitializeEagerly() const;
+  void InitializeEagerlyIfNeeded();
+
   
   
   nscoord mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
@@ -186,6 +265,11 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
   
   
   bool mIsProcessing = false;
+
+#ifdef DEBUG
+  bool mInEditorInitialization = false;
+  friend class EditorInitializerEntryTracker;
+#endif
 };
 
 #endif

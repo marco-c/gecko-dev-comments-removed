@@ -144,6 +144,9 @@ namespace mozilla::dom {
               NS_ORIGINAL_INDETERMINATE_VALUE | NS_PRE_HANDLE_BLUR_EVENT | \
               NS_IN_SUBMIT_CLICK))
 
+
+
+static int32_t gSelectTextFieldOnFocus;
 UploadLastDir* HTMLInputElement::gUploadLastDir;
 
 static constexpr nsAttrValue::EnumTableEntry kInputTypeTable[] = {
@@ -1482,9 +1485,6 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       needValidityUpdate = true;
     } else if (aName == nsGkAtoms::maxlength) {
       UpdateTooLongValidityState();
-      if (auto* editor = GetExtantTextEditor()) {
-        editor->SetMaxTextLength(UsedMaxLength());
-      }
       needValidityUpdate = true;
     } else if (aName == nsGkAtoms::minlength) {
       UpdateTooShortValidityState();
@@ -3273,6 +3273,16 @@ void HTMLInputElement::Select() {
   SelectAll();
 }
 
+void HTMLInputElement::SelectAll() {
+  if (TextControlState* state = GetEditorState()) {
+    
+    
+    state->SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(),
+                             IgnoreErrors(),
+                             TextControlState::ScrollAfterSelection::No);
+  }
+}
+
 bool HTMLInputElement::NeedToInitializeEditorForEvent(
     EventChainPreVisitor& aVisitor) const {
   
@@ -3286,7 +3296,19 @@ bool HTMLInputElement::NeedToInitializeEditorForEvent(
     return false;
   }
 
-  return TextControlElement::NeedToInitializeEditorForEvent(aVisitor);
+  switch (aVisitor.mEvent->mMessage) {
+    case eVoidEvent:
+    case eMouseMove:
+    case eMouseEnterIntoWidget:
+    case eMouseExitFromWidget:
+    case eMouseOver:
+    case eMouseOut:
+    case eScrollPortUnderflow:
+    case eScrollPortOverflow:
+      return false;
+    default:
+      return true;
+  }
 }
 
 bool HTMLInputElement::IsDisabledForEvents(WidgetEvent* aEvent) {
@@ -3330,7 +3352,6 @@ static SpinnerDirection SpinnerDirectionForEvent(const WidgetEvent& aEvent,
   return SpinnerDirection::None;
 }
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   
   aVisitor.mCanHandle = false;
@@ -3340,10 +3361,8 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
   
   if (NeedToInitializeEditorForEvent(aVisitor)) {
-    if (auto* state = GetTextControlState()) {
-      
-      
-      state->EnsureEditorInitialized();
+    if (nsTextControlFrame* tcf = do_QueryFrame(GetPrimaryFrame())) {
+      tcf->EnsureEditorInitialized();
     }
   }
 
@@ -3711,6 +3730,22 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
                             ValueSetterOption::SetValueChanged});
 }
 
+static bool SelectTextFieldOnFocus() {
+  if (!gSelectTextFieldOnFocus) {
+    int32_t selectTextfieldsOnKeyFocus = -1;
+    nsresult rv =
+        LookAndFeel::GetInt(LookAndFeel::IntID::SelectTextfieldsOnKeyFocus,
+                            &selectTextfieldsOnKeyFocus);
+    if (NS_FAILED(rv)) {
+      gSelectTextFieldOnFocus = -1;
+    } else {
+      gSelectTextFieldOnFocus = selectTextfieldsOnKeyFocus != 0 ? 1 : -1;
+    }
+  }
+
+  return gSelectTextFieldOnFocus == 1;
+}
+
 bool HTMLInputElement::ShouldPreventDOMActivateDispatch(
     EventTarget* aOriginalTarget) {
   
@@ -3901,8 +3936,33 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
       switch (aVisitor.mEvent->mMessage) {
         case eFocus: {
-          if (IsSingleLineTextControl(false)) {
-            TextControlElement::OnFocus(*aVisitor.mEvent);
+          
+          
+          
+          
+          
+          
+          
+          nsFocusManager* fm = nsFocusManager::GetFocusManager();
+          if (fm && IsSingleLineTextControl(false) &&
+              !aVisitor.mEvent->AsFocusEvent()->mFromRaise &&
+              SelectTextFieldOnFocus()) {
+            if (Document* document = GetComposedDoc()) {
+              uint32_t lastFocusMethod =
+                  fm->GetLastFocusMethod(document->GetWindow());
+              const bool shouldSelectAllOnFocus = [&] {
+                if (lastFocusMethod & nsIFocusManager::FLAG_BYMOVEFOCUS) {
+                  return true;
+                }
+                if (lastFocusMethod & nsIFocusManager::FLAG_BYJS) {
+                  return false;
+                }
+                return bool(lastFocusMethod & nsIFocusManager::FLAG_BYKEY);
+              }();
+              if (shouldSelectAllOnFocus) {
+                SelectAll();
+              }
+            }
           }
           break;
         }
