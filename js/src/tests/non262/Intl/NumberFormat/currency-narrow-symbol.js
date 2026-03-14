@@ -1,5 +1,3 @@
-
-
 const {
     Integer, Decimal, Fraction, Currency, Literal,
 } = NumberFormatParts;

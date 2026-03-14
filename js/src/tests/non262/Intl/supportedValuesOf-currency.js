@@ -1,5 +1,3 @@
-
-
 const currencies = Intl.supportedValuesOf("currency");
 
 assertEq(new Set(currencies).size, currencies.length, "No duplicates are present");

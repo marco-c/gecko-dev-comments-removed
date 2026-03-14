@@ -1,7 +1,5 @@
 
 
-
-
 var locale = "en";
 var options = {maximumFractionDigits: 0};
 

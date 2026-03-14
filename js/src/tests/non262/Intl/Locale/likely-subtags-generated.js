@@ -3,7 +3,6 @@
 
 
 
-
 var maxLikelySubtags = {
     "aa": "aa-Latn-ET",
     "aaa": "aaa-Latn-NG",

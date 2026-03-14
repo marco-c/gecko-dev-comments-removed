@@ -7,7 +7,6 @@
 
 
 
-
 var format = new Intl.NumberFormat("it-IT", {minimumFractionDigits: 1});
 
 assertEq(format.format(1123123123123123123123.1), "1.123.123.123.123.123.100.000,0");

@@ -1,5 +1,3 @@
-
-
 const {
   Hour, Minute, Literal, TimeZoneName,
 } = DateTimeFormatParts;

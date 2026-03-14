@@ -9,8 +9,6 @@
 
 
 
-
-
 {
     let dtf = new Intl.DateTimeFormat("zh", {month: "narrow", day: "2-digit", timeZone: "UTC"});
     assertEq(dtf.formatRange(0, 0), dtf.format(0));

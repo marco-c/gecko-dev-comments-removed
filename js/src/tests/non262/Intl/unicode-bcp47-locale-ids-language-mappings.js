@@ -1,7 +1,5 @@
 
 
-
-
 assertEq(Intl.getCanonicalLocales("iw")[0], "he");
 
 

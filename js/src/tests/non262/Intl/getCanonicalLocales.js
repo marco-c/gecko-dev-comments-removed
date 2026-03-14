@@ -4,7 +4,6 @@
 
 
 
-
 let gCL = Intl.getCanonicalLocales;
 
 assertEq(Intl.getCanonicalLocales.length, 1);

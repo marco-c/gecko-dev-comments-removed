@@ -1,5 +1,3 @@
-
-
 const numSystems = Intl.supportedValuesOf("numberingSystem");
 
 assertEq(new Set(numSystems).size, numSystems.length, "No duplicates are present");

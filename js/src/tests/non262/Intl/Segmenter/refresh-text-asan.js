@@ -1,7 +1,5 @@
 
 
-
-
 let string = "A. ";
 
 let segmenter = new Intl.Segmenter(undefined, {granularity: "sentence"});

@@ -1,6 +1,4 @@
 
-
-
 {
   let nf = new Intl.NumberFormat("en", {
     minimumFractionDigits: 2,

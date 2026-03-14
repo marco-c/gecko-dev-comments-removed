@@ -1,8 +1,6 @@
 
 
 
-
-
 let dtf = new Intl.DateTimeFormat("en", {timeZone: "UTC"});
 
 

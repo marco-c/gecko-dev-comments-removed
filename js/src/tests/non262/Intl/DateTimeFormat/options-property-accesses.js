@@ -1,5 +1,3 @@
-
-
 var log;
 var proxy = new Proxy({
     year: "numeric",

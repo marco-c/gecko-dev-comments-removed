@@ -13,8 +13,6 @@
 
 
 
-
-
 assertEq(Intl.getCanonicalLocales("ru-SU")[0], "ru-RU");
 assertEq(Intl.getCanonicalLocales("en-SU")[0], "en-RU");
 assertEq(Intl.getCanonicalLocales("und-SU")[0], "und-RU");

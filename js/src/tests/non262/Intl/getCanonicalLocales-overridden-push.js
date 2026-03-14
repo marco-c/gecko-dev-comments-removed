@@ -4,7 +4,6 @@
 
 
 
-
 Array.prototype.push = () => { throw 42; };
 
 

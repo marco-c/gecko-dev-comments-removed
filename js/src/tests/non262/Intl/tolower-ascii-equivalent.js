@@ -9,8 +9,6 @@
 
 
 
-
-
 assertEq("i-hak", "i-ha\u212A".toLowerCase());
 
 

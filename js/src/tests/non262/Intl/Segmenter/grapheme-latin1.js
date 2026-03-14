@@ -1,7 +1,5 @@
 
 
-
-
 let segmenter = new Intl.Segmenter("en", {granularity: "grapheme"});
 
 for (let i = 0; i <= 0xff; ++i) {

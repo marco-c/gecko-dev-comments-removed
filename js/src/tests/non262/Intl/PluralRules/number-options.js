@@ -1,7 +1,5 @@
 
 
-
-
 for (let minimumIntegerDigits of [undefined, 1, 21]) {
   for (let minimumFractionDigits of [undefined, 0, 20]) {
     for (let maximumFractionDigits of [undefined, 0, 20]) {

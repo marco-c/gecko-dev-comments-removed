@@ -1,5 +1,3 @@
-
-
 function IsIntlService(c) {
     return typeof c === "function" &&
            c.hasOwnProperty("prototype") &&

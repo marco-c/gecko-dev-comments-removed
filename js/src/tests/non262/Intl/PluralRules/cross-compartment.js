@@ -1,5 +1,3 @@
-
-
 var otherGlobal = newGlobal();
 
 var pluralRules = new Intl.PluralRules();

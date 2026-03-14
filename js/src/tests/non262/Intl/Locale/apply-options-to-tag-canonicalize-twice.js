@@ -2,8 +2,6 @@
 
 
 
-
-
 assertEq(new Intl.Locale("und-Armn-SU", {language:"ru"}).toString(),
          "ru-Armn-AM");
 

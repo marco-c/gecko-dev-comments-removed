@@ -1,5 +1,3 @@
-
-
 var otherGlobal = newGlobal();
 
 var numberFormat = new Intl.NumberFormat();

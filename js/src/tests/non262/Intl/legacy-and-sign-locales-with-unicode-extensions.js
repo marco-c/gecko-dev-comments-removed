@@ -1,5 +1,3 @@
-
-
 const languageTags = {
   
   "art-lojban": "jbo",

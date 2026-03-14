@@ -10,8 +10,6 @@
 
 
 
-
-
 assertEq(Intl.getCanonicalLocales("sgn-DE")[0], "gsg");
 assertEq(Intl.getCanonicalLocales("sgn-DD")[0], "gsg");
 

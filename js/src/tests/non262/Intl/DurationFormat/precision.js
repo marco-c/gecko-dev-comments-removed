@@ -1,5 +1,3 @@
-
-
 var df = new Intl.DurationFormat("en", {
   seconds: "numeric",
   fractionalDigits: 9,

@@ -1,5 +1,3 @@
-
-
 const {
     Year, Month, Day, DayPeriod, Hour, Minute, Literal
 } = DateTimeFormatParts;

@@ -1,8 +1,6 @@
 
 
 
-
-
 assertEq(Intl.getCanonicalLocales("en-scouse-fonipa")[0], "en-fonipa-scouse");
 
 

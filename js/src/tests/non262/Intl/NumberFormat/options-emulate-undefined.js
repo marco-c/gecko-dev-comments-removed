@@ -4,7 +4,6 @@
 
 
 
-
 if (typeof createIsHTMLDDA === "function") {
   let nf = new Intl.NumberFormat('en-US', createIsHTMLDDA());
 }

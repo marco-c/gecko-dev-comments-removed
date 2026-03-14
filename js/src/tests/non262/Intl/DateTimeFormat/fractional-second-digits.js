@@ -1,5 +1,3 @@
-
-
 const {
     Second, FractionalSecond, Literal
 } = DateTimeFormatParts

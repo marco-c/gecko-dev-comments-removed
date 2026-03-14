@@ -2,7 +2,6 @@
 
 
 
-
 var BUGNUMBER = 1484943;
 var summary = "Don't crash doing format/formatToParts on -NaN";
 

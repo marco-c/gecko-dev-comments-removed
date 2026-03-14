@@ -1,7 +1,5 @@
 
 
-
-
 assertThrowsInstanceOf(() => Intl.getCanonicalLocales("en-u-c0"), RangeError);
 assertThrowsInstanceOf(() => Intl.getCanonicalLocales("en-u-00"), RangeError);
 

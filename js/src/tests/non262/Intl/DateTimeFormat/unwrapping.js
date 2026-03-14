@@ -1,7 +1,5 @@
 
 
-
-
 const dateTimeFormatFunctions = [];
 dateTimeFormatFunctions.push({
     function: Intl.DateTimeFormat.prototype.resolvedOptions,

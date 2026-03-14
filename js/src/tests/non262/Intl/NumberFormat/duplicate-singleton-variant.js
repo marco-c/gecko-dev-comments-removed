@@ -5,8 +5,6 @@
 
 
 
-
-
 function checkInvalidLocale(locale)
 {
   try

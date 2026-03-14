@@ -1,7 +1,5 @@
 
 
-
-
 assertThrowsInstanceOf(() => {
   new Intl.Locale("invalid_tag", null);
 }, TypeError);

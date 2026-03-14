@@ -1,7 +1,5 @@
 
 
-
-
 const sanctionedSimpleUnitIdentifiers = [
     "acre",
     "bit",

@@ -1,7 +1,5 @@
 
 
-
-
 Object.defineProperty(Array, Symbol.species, {
     value: function() {
         return new Proxy(["?"], {

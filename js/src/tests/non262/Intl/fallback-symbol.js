@@ -1,5 +1,3 @@
-
-
 function IntlFallbackSymbol(constructor) {
     return Object.getOwnPropertySymbols(constructor.call(Object.create(constructor.prototype)))[0];
 }

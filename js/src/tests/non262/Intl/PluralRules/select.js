@@ -1,7 +1,5 @@
 
 
-
-
 var pr;
 
 pr = new Intl.PluralRules("en-us");

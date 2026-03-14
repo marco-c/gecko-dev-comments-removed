@@ -4,7 +4,6 @@
 
 
 
-
 var rtf;
 
 rtf = new Intl.RelativeTimeFormat("en-us");

@@ -2,8 +2,6 @@
 
 
 
-
-
 var desc = Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, Symbol.toStringTag);
 
 assertEq(desc !== undefined, true);

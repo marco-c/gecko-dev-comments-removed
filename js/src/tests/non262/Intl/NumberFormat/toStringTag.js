@@ -2,8 +2,6 @@
 
 
 
-
-
 var desc = Object.getOwnPropertyDescriptor(Intl.NumberFormat.prototype, Symbol.toStringTag);
 
 assertEq(desc !== undefined, true);

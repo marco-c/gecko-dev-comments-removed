@@ -1,5 +1,3 @@
-
-
 const msPerHour = 60 * 60 * 1000;
 const tzOffset = 8 * msPerHour;
 

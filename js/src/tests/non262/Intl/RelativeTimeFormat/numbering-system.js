@@ -4,8 +4,6 @@
 
 
 
-
-
 for (var requestedLocale of [undefined, "en", "de", "fr"]) {
   var rtf = new Intl.RelativeTimeFormat(requestedLocale);
   var {locale, numberingSystem} = rtf.resolvedOptions();

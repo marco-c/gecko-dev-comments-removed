@@ -1,6 +1,4 @@
 
-
-
 assertEq(Intl.getCanonicalLocales("fr-u-rg-frg")[0], "fr-u-rg-frges");
 assertEq(Intl.getCanonicalLocales("fr-u-sd-frg")[0], "fr-u-sd-frges");
 

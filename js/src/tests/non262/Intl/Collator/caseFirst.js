@@ -3,8 +3,6 @@
 
 
 
-
-
 const defaultLocales = Intl.Collator.supportedLocalesOf(["en", "de", "es", "sv", "ar", "zh", "ja"]);
 
 

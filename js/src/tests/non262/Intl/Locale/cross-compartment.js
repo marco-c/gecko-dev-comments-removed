@@ -1,5 +1,3 @@
-
-
 var g = newGlobal();
 
 var tag = "de-Latn-AT-1996-u-ca-gregory-nu-latn-co-phonebk-kf-false-kn-hc-h23";

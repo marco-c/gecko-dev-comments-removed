@@ -1,5 +1,3 @@
-
-
 const collations = Intl.supportedValuesOf("collation");
 
 assertEq(new Set(collations).size, collations.length, "No duplicates are present");

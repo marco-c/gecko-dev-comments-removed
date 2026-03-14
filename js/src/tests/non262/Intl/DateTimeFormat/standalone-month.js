@@ -1,5 +1,3 @@
-
-
 for (let weekday of ["long", "short", "narrow"]) {
     let dtf = new Intl.DateTimeFormat("en", {weekday});
     let options = dtf.resolvedOptions();

@@ -1,5 +1,3 @@
-
-
 let nf = new Intl.NumberFormat("en", {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,

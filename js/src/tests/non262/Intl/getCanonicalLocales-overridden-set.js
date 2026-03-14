@@ -4,7 +4,6 @@
 
 
 
-
 Object.defineProperty(Array.prototype, 0, { set() { throw 42; } });
 
 

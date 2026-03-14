@@ -1,5 +1,3 @@
-
-
 var g = newGlobal();
 
 var locale = "en";

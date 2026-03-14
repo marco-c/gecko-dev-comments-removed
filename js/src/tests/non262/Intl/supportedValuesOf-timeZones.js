@@ -1,5 +1,3 @@
-
-
 const timeZones = Intl.supportedValuesOf("timeZone");
 
 assertEq(new Set(timeZones).size, timeZones.length, "No duplicates are present");

@@ -1,5 +1,3 @@
-
-
 var testDataMaximal = {
     
     "und-AQ": "en-Latn-AQ",

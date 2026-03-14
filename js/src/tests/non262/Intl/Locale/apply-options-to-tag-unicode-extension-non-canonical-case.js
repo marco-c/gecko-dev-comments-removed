@@ -1,6 +1,4 @@
 
-
-
 let loc1 = new Intl.Locale("en-U-nu-latn", {numberingSystem: "thai"});
 assertEq(loc1.toString(), "en-u-nu-thai");
 

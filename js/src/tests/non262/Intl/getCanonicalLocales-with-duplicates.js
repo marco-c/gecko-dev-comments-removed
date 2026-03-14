@@ -4,7 +4,6 @@
 
 
 
-
 assertEqArray(Intl.getCanonicalLocales(['ab-cd', 'ff', 'de-rt', 'ab-Cd']),
               ['ab-CD', 'ff', 'de-RT']);
 

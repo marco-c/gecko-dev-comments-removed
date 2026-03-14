@@ -5,7 +5,6 @@
 
 
 
-
 var format;
 var date = Date.UTC(2012, 11, 12, 3, 0, 0);
 var longFormatOptions = {timeZone: "UTC",

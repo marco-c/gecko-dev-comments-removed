@@ -1,5 +1,3 @@
-
-
 const Start = NumberRangeFormatParts("startRange");
 const End = NumberRangeFormatParts("endRange");
 const Shared = NumberRangeFormatParts("shared");

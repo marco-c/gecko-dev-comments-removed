@@ -1,5 +1,3 @@
-
-
 const defaultLocale = "en";
 const defaultNumberingSystem = new Intl.DateTimeFormat(defaultLocale).resolvedOptions().numberingSystem;
 

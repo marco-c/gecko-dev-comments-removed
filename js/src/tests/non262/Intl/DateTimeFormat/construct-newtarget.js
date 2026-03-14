@@ -4,8 +4,6 @@
 
 
 
-
-
 class MyDateTimeFormat extends Intl.DateTimeFormat {}
 
 var obj = new MyDateTimeFormat();

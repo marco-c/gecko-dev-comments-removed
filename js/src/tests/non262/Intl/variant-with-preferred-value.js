@@ -4,8 +4,6 @@
 
 
 
-
-
 const languageTags = {
     
     "hy-arevela": "hy",

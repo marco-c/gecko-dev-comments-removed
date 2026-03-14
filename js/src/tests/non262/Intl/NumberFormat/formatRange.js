@@ -1,6 +1,4 @@
 
-
-
 const en_Number_MAX_VALUE = "179,769,313,486,231,570" + ",000".repeat(97);
 const de_Number_MAX_VALUE = en_Number_MAX_VALUE.replaceAll(",", ".");
 const fr_Number_MAX_VALUE = en_Number_MAX_VALUE.replaceAll(",", " ");

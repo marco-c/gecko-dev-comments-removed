@@ -1,6 +1,4 @@
 
-
-
 class MyPluralRules extends Intl.PluralRules {}
 
 var obj = new MyPluralRules();

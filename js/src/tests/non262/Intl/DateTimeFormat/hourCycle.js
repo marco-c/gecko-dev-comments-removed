@@ -1,5 +1,3 @@
-
-
 const hourCycleToH12Map = {
   "h11": true,
   "h12": true,

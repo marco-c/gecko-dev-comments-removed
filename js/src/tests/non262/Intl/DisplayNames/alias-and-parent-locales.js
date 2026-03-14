@@ -2,8 +2,6 @@
 
 
 
-
-
 {
   const zh_Hant = new Intl.DisplayNames("zh-Hant", {type: "region"});
   const zh_Hans = new Intl.DisplayNames("zh-Hans", {type: "region"});

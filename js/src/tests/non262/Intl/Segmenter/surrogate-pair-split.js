@@ -2,8 +2,6 @@
 
 
 
-
-
 {
   let segmenter = new Intl.Segmenter(undefined, {granularity: "grapheme"});
 

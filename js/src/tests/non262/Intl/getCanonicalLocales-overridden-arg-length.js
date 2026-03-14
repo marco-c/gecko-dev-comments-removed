@@ -4,7 +4,6 @@
 
 
 
-
 var count = 0;
 var locs = { get length() { if (count++ > 0) throw 42; return 0; } };
 var locales = Intl.getCanonicalLocales(locs); 

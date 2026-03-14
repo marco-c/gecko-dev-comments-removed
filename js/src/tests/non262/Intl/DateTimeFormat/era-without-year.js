@@ -2,8 +2,6 @@
 
 
 
-
-
 const options = [
   {
     era: "narrow",

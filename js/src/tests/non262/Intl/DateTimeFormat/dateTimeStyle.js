@@ -4,7 +4,6 @@
 
 
 
-
 var dtf = new Intl.DateTimeFormat("en-US", {dateStyle: 'long'});
 assertEq(dtf.resolvedOptions().dateStyle, 'long');
 assertEq(dtf.resolvedOptions().hasOwnProperty('year'), false);

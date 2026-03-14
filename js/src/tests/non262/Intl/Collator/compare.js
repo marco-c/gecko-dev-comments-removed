@@ -4,7 +4,6 @@
 
 
 
-
 var input = [
     "Argentina",
     "Oerlikon",

@@ -1,6 +1,4 @@
 
-
-
 function testEthiopicAmeteAlem() {
     var locale = "am-ET-u-nu-latn";
     var opts = {timeZone: "Africa/Addis_Ababa"};

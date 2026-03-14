@@ -1,7 +1,5 @@
 
 
-
-
 const numberFormatFunctions = [];
 numberFormatFunctions.push({
     function: Intl.NumberFormat.prototype.resolvedOptions,

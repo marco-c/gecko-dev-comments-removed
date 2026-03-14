@@ -1,5 +1,3 @@
-
-
 const calendars = Intl.supportedValuesOf("calendar");
 
 assertEq(new Set(calendars).size, calendars.length, "No duplicates are present");

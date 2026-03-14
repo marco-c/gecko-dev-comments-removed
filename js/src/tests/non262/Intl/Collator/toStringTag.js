@@ -2,8 +2,6 @@
 
 
 
-
-
 var desc = Object.getOwnPropertyDescriptor(Intl.Collator.prototype, Symbol.toStringTag);
 
 assertEq(desc !== undefined, true);

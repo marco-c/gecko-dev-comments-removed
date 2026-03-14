@@ -1,5 +1,3 @@
-
-
 var otherGlobal = newGlobal();
 
 var relativeTimeFormat = new Intl.RelativeTimeFormat();

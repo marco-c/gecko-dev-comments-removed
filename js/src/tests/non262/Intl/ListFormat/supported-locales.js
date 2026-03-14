@@ -1,6 +1,4 @@
 
-
-
 assertEq(Intl.ListFormat.supportedLocalesOf("art-lobjan").length, 0);
 
 

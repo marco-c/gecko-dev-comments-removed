@@ -1,7 +1,5 @@
 
 
-
-
 const {Element, Literal} = ListFormatParts;
 const styles = ["long", "short", "narrow"];
 

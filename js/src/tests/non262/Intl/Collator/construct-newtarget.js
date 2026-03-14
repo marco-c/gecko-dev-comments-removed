@@ -4,8 +4,6 @@
 
 
 
-
-
 class MyCollator extends Intl.Collator {}
 
 var obj = new MyCollator();

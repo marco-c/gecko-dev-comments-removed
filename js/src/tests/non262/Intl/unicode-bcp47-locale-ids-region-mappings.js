@@ -1,7 +1,5 @@
 
 
-
-
 assertEq(Intl.getCanonicalLocales("de-DD")[0], "de-DE");
 
 

@@ -1,5 +1,3 @@
-
-
 var otherGlobal = newGlobal();
 
 var collator = new Intl.Collator();

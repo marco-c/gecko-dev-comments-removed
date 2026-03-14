@@ -1,5 +1,3 @@
-
-
 const {
     Nan, Inf, Integer, MinusSign, PlusSign, Decimal, Fraction, Group, Literal,
     Compact,

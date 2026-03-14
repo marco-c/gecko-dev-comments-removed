@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 1093421;
 var summary =
   "new Intl.NumberFormat(..., { style: 'currency', currency: '...', " +

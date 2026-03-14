@@ -1,5 +1,3 @@
-
-
 var g = newGlobal({});
 
 var segmenter = new Intl.Segmenter();

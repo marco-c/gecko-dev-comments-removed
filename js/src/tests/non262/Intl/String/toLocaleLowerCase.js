@@ -1,6 +1,4 @@
 
-
-
 for (let locale of ["tr", "TR", "tr-TR", "tr-u-co-search", "tr-x-turkish"]) {
     assertEq("\u0130".toLocaleLowerCase(locale), "i");
     assertEq("\u0130".toLocaleLowerCase([locale]), "i");

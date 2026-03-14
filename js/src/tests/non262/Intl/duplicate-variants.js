@@ -3,8 +3,6 @@
 
 
 
-
-
 assertEqArray(Intl.getCanonicalLocales("de-1996"), ["de-1996"]);
 assertThrowsInstanceOf(() => Intl.getCanonicalLocales("de-1996-1996"), RangeError);
 

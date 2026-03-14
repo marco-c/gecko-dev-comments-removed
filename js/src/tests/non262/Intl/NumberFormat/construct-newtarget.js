@@ -4,8 +4,6 @@
 
 
 
-
-
 class MyNumberFormat extends Intl.NumberFormat {}
 
 var obj = new MyNumberFormat();

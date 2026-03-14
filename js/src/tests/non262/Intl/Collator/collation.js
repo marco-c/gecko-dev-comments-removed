@@ -1,6 +1,4 @@
 
-
-
 {
   let c1 = new Intl.Collator("de", {usage: "sort"});
   let c2 = new Intl.Collator("de", {usage: "sort", collation: "phonebk"});

@@ -4,7 +4,6 @@
 
 
 
-
 var testData = [
     {minimumSignificantDigits: 1, maximumSignificantDigits: 1, expected: "0"},
     {minimumSignificantDigits: 1, maximumSignificantDigits: 2, expected: "0"},

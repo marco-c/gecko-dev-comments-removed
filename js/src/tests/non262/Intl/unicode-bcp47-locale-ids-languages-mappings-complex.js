@@ -2,8 +2,6 @@
 
 
 
-
-
 assertEq(Intl.getCanonicalLocales("sh")[0], "sr-Latn");
 assertEq(Intl.getCanonicalLocales("sh-RS")[0], "sr-Latn-RS");
 assertEq(Intl.getCanonicalLocales("sh-Cyrl")[0], "sr-Cyrl");

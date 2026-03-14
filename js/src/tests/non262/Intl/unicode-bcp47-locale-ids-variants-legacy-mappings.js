@@ -2,8 +2,6 @@
 
 
 
-
-
 assertEq(Intl.getCanonicalLocales("sv-AALAND")[0], "sv-AX");
 assertEq(Intl.getCanonicalLocales("no-BOKMAL")[0], "nb");
 assertEq(Intl.getCanonicalLocales("no-NYNORSK")[0], "nn");

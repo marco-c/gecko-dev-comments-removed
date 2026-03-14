@@ -1,5 +1,3 @@
-
-
 if (typeof getDefaultLocale === "undefined") {
     var getDefaultLocale = SpecialPowers.Cu.getJSTestingFunctions().getDefaultLocale;
 }

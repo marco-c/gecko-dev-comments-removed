@@ -1,8 +1,6 @@
 
 
 
-
-
 const eras = [
   "long", "short", "narrow",
 ];
