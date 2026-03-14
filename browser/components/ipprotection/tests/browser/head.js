@@ -150,11 +150,14 @@ async function setPanelState(state = defaultState, win = window) {
 
 
 
-async function closePanel(win = window) {
+
+async function closePanel(win = window, resetState = true) {
   
   let panel = IPProtection.getPanel(win);
 
-  panel.setState(defaultState);
+  if (resetState) {
+    panel.setState(defaultState);
+  }
   
   let panelHiddenPromise = waitForPanelEvent(win.document, "popuphidden");
   panel.close();
