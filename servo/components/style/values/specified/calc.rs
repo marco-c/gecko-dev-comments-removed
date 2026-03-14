@@ -131,8 +131,8 @@ impl ToTyped for Leaf {
         
         match *self {
             Self::Length(ref l) => l.to_typed(),
-            Self::Number(n) => Some(TypedValue::Numeric(reify_number(n))),
-            Self::Percentage(p) => Some(TypedValue::Numeric(reify_percentage(p))),
+            Self::Number(n) => reify_number(n,  false),
+            Self::Percentage(p) => reify_percentage(p,  false),
             _ => None,
         }
     }

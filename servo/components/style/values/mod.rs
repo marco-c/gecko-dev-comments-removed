@@ -18,8 +18,10 @@ use precomputed_hash::PrecomputedHash;
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Debug, Write};
 use style_traits::{
-    CssString, CssWriter, NumericValue, ParseError, StyleParseErrorKind, ToCss, UnitValue,
+    CssString, CssWriter, MathSum, NumericValue, ParseError, StyleParseErrorKind, ToCss,
+    TypedValue, UnitValue,
 };
+use thin_vec::ThinVec;
 use to_shmem::impl_trivial_to_shmem;
 
 #[cfg(feature = "gecko")]
@@ -104,11 +106,20 @@ where
 }
 
 
-pub fn reify_number(v: f32) -> NumericValue {
-    NumericValue::Unit(UnitValue {
+pub fn reify_number(v: f32, was_calc: bool) -> Option<TypedValue> {
+    let numeric_value = NumericValue::Unit(UnitValue {
         value: v,
         unit: CssString::from("number"),
-    })
+    });
+
+    
+    if was_calc {
+        Some(TypedValue::Numeric(NumericValue::Sum(MathSum {
+            values: ThinVec::from([numeric_value]),
+        })))
+    } else {
+        Some(TypedValue::Numeric(numeric_value))
+    }
 }
 
 
@@ -460,11 +471,20 @@ where
 }
 
 
-pub fn reify_percentage(value: CSSFloat) -> NumericValue {
-    NumericValue::Unit(UnitValue {
+pub fn reify_percentage(value: CSSFloat, was_calc: bool) -> Option<TypedValue> {
+    let numeric_value = NumericValue::Unit(UnitValue {
         value: value * 100.,
         unit: CssString::from("percent"),
-    })
+    });
+
+    
+    if was_calc {
+        Some(TypedValue::Numeric(NumericValue::Sum(MathSum {
+            values: ThinVec::from([numeric_value]),
+        })))
+    } else {
+        Some(TypedValue::Numeric(numeric_value))
+    }
 }
 
 
