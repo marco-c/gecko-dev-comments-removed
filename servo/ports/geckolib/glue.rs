@@ -5411,6 +5411,22 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyIsImportant(
 
 
 
+#[repr(C)]
+pub struct UnsupportedValue(pub Strong<LockedDeclarationBlock>);
+
+impl From<Arc<Locked<PropertyDeclarationBlock>>> for UnsupportedValue {
+    fn from(block: Arc<Locked<PropertyDeclarationBlock>>) -> Self {
+        UnsupportedValue(block.into())
+    }
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -5427,7 +5443,7 @@ pub enum PropertyTypedValueResult {
     
     
     
-    Unsupported(Strong<LockedDeclarationBlock>),
+    Unsupported(UnsupportedValue),
 
     
     Typed(TypedValue),
