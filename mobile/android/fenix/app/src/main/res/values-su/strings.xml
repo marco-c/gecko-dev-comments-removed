@@ -66,13 +66,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Hapus tapak di ieu piranti</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s mupus réréméh, jujutan, jeung data loka anjeun nalika anjeun nutup sakabéh jandéla nyamuni. %2$s</string>
-  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -1065,7 +1058,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Édit</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Tiron</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Tiron</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Bagikeun</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -2414,6 +2407,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Tambahkeun kana tab nyamuni</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
