@@ -901,12 +901,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   
   ProxyEntry* e = mAccessibles.GetEntry(aParentID);
   if (!e) {
-#ifndef FUZZING_SNAPSHOT
-    
-    
-    
-    MOZ_DIAGNOSTIC_CRASH("Binding to nonexistent proxy!");
-#endif
+    MOZ_ASSERT_UNREACHABLE("Binding to nonexistent proxy!");
     return IPC_FAIL(this, "binding to nonexistant proxy!");
   }
 
@@ -918,9 +913,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   
   if (!outerDoc->IsOuterDoc() || outerDoc->ChildCount() > 1 ||
       (outerDoc->ChildCount() == 1 && !outerDoc->RemoteChildAt(0)->IsDoc())) {
-#ifndef FUZZING_SNAPSHOT
-    MOZ_DIAGNOSTIC_CRASH("Binding to parent that isn't a valid OuterDoc!");
-#endif
+    MOZ_ASSERT_UNREACHABLE("Binding to parent that isn't a valid OuterDoc!");
     return IPC_FAIL(this, "Binding to parent that isn't a valid OuterDoc!");
   }
 
