@@ -5580,7 +5580,7 @@ void AsyncPanZoomController::FlushActiveCheckerboardReport() {
   UpdateCheckerboardEvent(lock, 0);
 }
 
-void AsyncPanZoomController::NotifyLayersUpdated(
+void AsyncPanZoomController::NotifyMainThreadTransaction(
     const ScrollMetadata& aScrollMetadata,
     LayersUpdateFlags aLayersUpdateFlags) {
   AssertOnUpdaterThread();
@@ -5592,7 +5592,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
   if ((aScrollMetadata == mLastContentPaintMetadata) && !isDefault) {
     
-    APZC_LOGV("%p NotifyLayersUpdated short-circuit\n", this);
+    APZC_LOGV("%p NotifyMainThreadTransaction short-circuit\n", this);
     return;
   }
 
@@ -5625,7 +5625,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
   mScrollMetadata.SetScrollParentId(aScrollMetadata.GetScrollParentId());
   APZC_LOGV_FM(aLayerMetrics,
-               "%p got a NotifyLayersUpdated with mIsFirstPaint=%d, "
+               "%p got a NotifyMainThreadTransaction with mIsFirstPaint=%d, "
                "mThisLayerTreeUpdated=%d",
                this, aLayersUpdateFlags.mIsFirstPaint,
                aLayersUpdateFlags.mThisLayerTreeUpdated);

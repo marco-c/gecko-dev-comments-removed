@@ -141,7 +141,7 @@ TEST_F(APZCBasicTester, ComplexTransform) {
 
   
   apzc->SetFrameMetrics(metrics);
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = true, .mThisLayerTreeUpdated = true});
   apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
@@ -150,7 +150,7 @@ TEST_F(APZCBasicTester, ComplexTransform) {
   EXPECT_EQ(ParentLayerPoint(60, 60), pointOut);
 
   childApzc->SetFrameMetrics(childMetrics);
-  childApzc->NotifyLayersUpdated(
+  childApzc->NotifyMainThreadTransaction(
       childMetadata,
       LayersUpdateFlags{.mIsFirstPaint = true, .mThisLayerTreeUpdated = true});
   childApzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
@@ -244,7 +244,7 @@ TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   metadata.SetScrollUpdates(scrollUpdates);
   metadata.GetMetrics().SetScrollGeneration(
       scrollUpdates.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -272,7 +272,7 @@ TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   metadata.GetMetrics().SetVisualScrollUpdateType(FrameMetrics::eMainThread);
   scrollUpdates.Clear();
   metadata.SetScrollUpdates(scrollUpdates);
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
   for (int i = 0; i < 20; ++i) {
@@ -312,7 +312,7 @@ TEST_F(APZCBasicTester, RelativeScrollOffset) {
   mainThreadMetadata.SetScrollUpdates(scrollUpdates);
   mainThreadMetrics.SetScrollGeneration(
       scrollUpdates.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       mainThreadMetadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -346,6 +346,9 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
   
   
   
+  
+  
+  
 
   ScrollMetadata metadata2 = metadata;
   nsTArray<ScrollPositionUpdate> scrollUpdates2;
@@ -355,7 +358,7 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
   metadata2.SetScrollUpdates(scrollUpdates2);
   metadata2.GetMetrics().SetScrollGeneration(
       scrollUpdates2.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata2,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -388,9 +391,9 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
     metadata3.SetScrollUpdates(scrollUpdates3);
     metadata3.GetMetrics().SetScrollGeneration(
         scrollUpdates3.LastElement().GetGeneration());
-    apzc->NotifyLayersUpdated(metadata3,
-                              LayersUpdateFlags{.mIsFirstPaint = false,
-                                                .mThisLayerTreeUpdated = true});
+    apzc->NotifyMainThreadTransaction(
+        metadata3, LayersUpdateFlags{.mIsFirstPaint = false,
+                                     .mThisLayerTreeUpdated = true});
   }
 
   for (uint32_t j = 0; j < 7; j++) {
@@ -434,7 +437,7 @@ TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdate) {
   metrics.SetLayoutViewport(CSSRect(15, 15, 10, 10));
 
   
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -476,7 +479,7 @@ TEST_F(APZCBasicTester, NotifyLayersUpdate_WithMultipleScrollUpdates) {
   metrics.SetLayoutViewport(CSSRect(20, 20, 10, 10));
 
   
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -510,9 +513,9 @@ class APZCSmoothScrollTester : public APZCBasicTester {
         CSSPoint::ToAppUnits(CSSPoint(0, 1000))));
     metadata.SetScrollUpdates(scrollUpdates);
     metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
-    apzc->NotifyLayersUpdated(metadata,
-                              LayersUpdateFlags{.mIsFirstPaint = false,
-                                                .mThisLayerTreeUpdated = true});
+    apzc->NotifyMainThreadTransaction(
+        metadata, LayersUpdateFlags{.mIsFirstPaint = false,
+                                    .mThisLayerTreeUpdated = true});
 
     
     apzc->AssertInSmoothScroll();
@@ -529,7 +532,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
         CSSPoint::ToAppUnits(CSSPoint(0, 100))));
     metadata.SetScrollUpdates(scrollUpdates);
     metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
-    apzc->NotifyLayersUpdated(
+    apzc->NotifyMainThreadTransaction(
         metadata, LayersUpdateFlags{.mIsFirstPaint = false,
                                     .mThisLayerTreeUpdated = false});
 
@@ -591,9 +594,9 @@ class APZCSmoothScrollTester : public APZCBasicTester {
         CSSPoint::ToAppUnits(CSSPoint(0, 300))));
     metadata.SetScrollUpdates(scrollUpdates);
     metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
-    apzc->NotifyLayersUpdated(metadata,
-                              LayersUpdateFlags{.mIsFirstPaint = false,
-                                                .mThisLayerTreeUpdated = true});
+    apzc->NotifyMainThreadTransaction(
+        metadata, LayersUpdateFlags{.mIsFirstPaint = false,
+                                    .mThisLayerTreeUpdated = true});
 
     
     
@@ -655,9 +658,9 @@ class APZCSmoothScrollTester : public APZCBasicTester {
         CSSPoint::ToAppUnits(CSSPoint(0, 1200))));
     metadata.SetScrollUpdates(scrollUpdates);
     metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
-    apzc->NotifyLayersUpdated(metadata,
-                              LayersUpdateFlags{.mIsFirstPaint = false,
-                                                .mThisLayerTreeUpdated = true});
+    apzc->NotifyMainThreadTransaction(
+        metadata, LayersUpdateFlags{.mIsFirstPaint = false,
+                                    .mThisLayerTreeUpdated = true});
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y + 1000);
     apzc->AssertInWheelScroll();
@@ -906,7 +909,7 @@ TEST_F(APZCBasicTester, ZoomAndScrollableRectChangeAfterZoomChange) {
   
   ScrollMetadata metadata2 = metadata;
   metadata2.GetMetrics().SetScrollableRect(CSSRect(0, 0, 100, 1000.2));
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata2,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -960,7 +963,7 @@ TEST_F(APZCBasicTester, ZoomToRectAndCompositionBoundsChange) {
   
   ScrollMetadata metadata2 = metadata;
   metadata2.GetMetrics().SetCompositionBounds(ParentLayerRect(0, 0, 90, 100));
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata2,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -1074,7 +1077,7 @@ TEST_F(APZCFrameTimeTester, ImmediatelyInterruptedSmoothScroll_Bug1984589) {
       nullptr, ViewportType::Layout));
   metadata.SetScrollUpdates(scrollUpdates);
   metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 

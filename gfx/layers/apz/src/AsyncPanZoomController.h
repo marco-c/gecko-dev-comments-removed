@@ -296,8 +296,8 @@ class AsyncPanZoomController {
 
 
 
-  void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata,
-                           LayersUpdateFlags aLayersUpdateFlags);
+  void NotifyMainThreadTransaction(const ScrollMetadata& aScrollMetadata,
+                                   LayersUpdateFlags aLayersUpdateFlags);
 
   
 
