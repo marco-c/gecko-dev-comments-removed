@@ -290,6 +290,25 @@ impl PseudoElement {
 
         true
     }
+
+    
+    pub fn is_highlight(&self) -> bool {
+        false
+    }
+
+    
+    #[inline]
+    pub fn is_target_text(&self) -> bool {
+        false
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn is_lazy_painted_highlight_pseudo(&self) -> bool {
+        self.is_selection() || self.is_highlight() || self.is_target_text()
+    }
 }
 
 
