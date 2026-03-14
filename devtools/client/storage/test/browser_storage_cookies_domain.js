@@ -8,16 +8,16 @@
 
 
 add_task(async function () {
-  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies.html");
+  await openTabAndSetupStorage(MAIN_URL + "storage-cookies.html");
 
   await checkState([
     [
-      ["cookies", "http://test1.example.org"],
+      ["cookies", MAIN_ORIGIN],
       [
         getCookieId("test1", ".test1.example.org", "/browser"),
-        getCookieId("test2", "test1.example.org", "/browser"),
+        getCookieId("test2", MAIN_HOST, "/browser"),
         getCookieId("test3", ".test1.example.org", "/browser"),
-        getCookieId("test4", "test1.example.org", "/browser"),
+        getCookieId("test4", MAIN_HOST, "/browser"),
         getCookieId("test5", ".test1.example.org", "/browser"),
       ],
     ],

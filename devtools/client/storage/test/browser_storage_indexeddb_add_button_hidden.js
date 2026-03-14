@@ -7,11 +7,11 @@
 
 add_task(async function () {
   await openTabAndSetupStorage(
-    MAIN_DOMAIN_SECURED + "storage-empty-objectstores.html"
+    MAIN_URL_SECURED + "storage-empty-objectstores.html"
   );
 
   info("Select an indexedDB item");
-  const idbItem = ["indexedDB", "https://test1.example.org", "idb1 (default)"];
+  const idbItem = ["indexedDB", MAIN_ORIGIN_SECURED, "idb1 (default)"];
   await selectTreeItem(idbItem);
   checkAddButtonState({ expectHidden: true });
 
@@ -19,7 +19,7 @@ add_task(async function () {
   
   
   info("Select a cookie item");
-  const cookieItem = ["cookies", "https://test1.example.org"];
+  const cookieItem = ["cookies", MAIN_ORIGIN_SECURED];
   await selectTreeItem(cookieItem);
   checkAddButtonState({ expectHidden: false });
 });
