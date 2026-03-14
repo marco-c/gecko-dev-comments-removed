@@ -512,6 +512,7 @@ class Longhand(Property):
             return False
         
         return self.predefined_type in {
+            "BorderSideWidth",
             "BorderSpacing",
             "BoxShadow",
             "Filter",
