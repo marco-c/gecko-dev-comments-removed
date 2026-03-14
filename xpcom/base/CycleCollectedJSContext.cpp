@@ -855,6 +855,25 @@ static bool ExtractTaskData(JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
 }
 
 
+static bool CanRunJSCallback(nsIGlobalObject* aGlobalObject,
+                             JSObject* aCallbackGlobal,
+                             nsIGlobalObject* aIncumbentGlobal) {
+  if (aGlobalObject->IsScriptForbidden(aCallbackGlobal, false)) {
+    return false;
+  }
+
+  if (!aGlobalObject->HasJSGlobal()) {
+    return false;
+  }
+
+  if (aIncumbentGlobal && !aIncumbentGlobal->HasJSGlobal()) {
+    return false;
+  }
+
+  return true;
+}
+
+
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
   
@@ -908,24 +927,16 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       return;
     }
 
-    const char* reason = "promise callback";
-
     
-    if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
-      return;
-    }
-
-    if (!globalObject->HasJSGlobal()) {
-      return;
-    }
-
-    if (incumbentGlobal && !incumbentGlobal->HasJSGlobal()) {
+    if (!CanRunJSCallback(globalObject, callbackGlobal, incumbentGlobal)) {
       return;
     }
 
     
     
     ignoreMicroTasks.release();
+
+    const char* reason = "promise callback";
 
     
     AutoAllowLegacyScriptExecution exemption;
