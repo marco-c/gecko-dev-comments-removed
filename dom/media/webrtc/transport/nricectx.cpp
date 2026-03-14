@@ -57,7 +57,6 @@
 #include "runnable_utils.h"
 
 
-extern "C" {
 
 #include "nr_api.h"
 #include "registry.h"
@@ -75,7 +74,6 @@ extern "C" {
 #include "ice_ctx.h"
 #include "ice_candidate.h"
 
-}
 
 
 #include "mozilla/Base64.h"

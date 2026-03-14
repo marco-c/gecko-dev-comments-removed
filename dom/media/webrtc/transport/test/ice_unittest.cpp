@@ -22,7 +22,6 @@
 #include "sigslot.h"
 #include "ssl.h"
 
-extern "C" {
 
 #include "r_types.h"
 #include "async_wait.h"
@@ -31,7 +30,6 @@ extern "C" {
 #include "util.h"
 #include "r_time.h"
 
-}
 
 #include "gtest_ringbuffer_dumper.h"
 #include "ice_ctx.h"

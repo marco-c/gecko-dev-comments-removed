@@ -8,12 +8,10 @@
 
 #include <cstddef>
 
-extern "C" {
 
 #include "r_errors.h"
 #include "async_wait.h"
 
-}
 
 #include <vector>
 

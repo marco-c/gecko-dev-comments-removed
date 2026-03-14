@@ -34,10 +34,6 @@
 
 #ifndef _ice_ctx_h
 #define _ice_ctx_h
-#ifdef __cplusplus
-using namespace std;
-extern "C" {
-#endif
 
 
 #include "transport_addr.h"
@@ -193,8 +189,5 @@ int nr_ice_ctx_hide_candidate(nr_ice_ctx *ctx, nr_ice_candidate *cand);
 
 extern int LOG_ICE;
 
-#ifdef __cplusplus
-}
-#endif 
 #endif
 

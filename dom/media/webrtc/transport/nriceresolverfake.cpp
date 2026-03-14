@@ -43,7 +43,6 @@
 #include "mozilla/Assertions.h"
 #include "prio.h"
 
-extern "C" {
 
 #include "async_wait.h"
 #include "async_timer.h"
@@ -51,7 +50,6 @@ extern "C" {
 #include "r_macros.h"
 #include "transport_addr.h"
 
-}
 
 #include "nr_socket_prsock.h"
 #include "nriceresolverfake.h"

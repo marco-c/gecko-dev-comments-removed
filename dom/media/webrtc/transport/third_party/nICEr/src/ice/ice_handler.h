@@ -34,10 +34,6 @@
 
 #ifndef _ice_h
 #define _ice_h
-#ifdef __cplusplus
-using namespace std;
-extern "C" {
-#endif
 
 typedef struct nr_ice_handler_vtbl_ {
   
@@ -83,8 +79,5 @@ typedef struct nr_ice_handler_ {
   nr_ice_handler_vtbl *vtbl;
 } nr_ice_handler;
 
-#ifdef __cplusplus
-}
-#endif 
 #endif
 

@@ -80,7 +80,6 @@
 
 
 
-extern "C" {
 
 #include "stun_msg.h"  
 #include "async_wait.h"
@@ -89,7 +88,6 @@ extern "C" {
 #include "stun.h"
 #include "transport_addr.h"
 
-}
 
 #include "test_nr_socket.h"
 

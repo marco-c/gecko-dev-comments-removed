@@ -45,15 +45,11 @@
 #include <list>
 
 #include "mozilla/net/WebrtcTCPSocketCallback.h"
-#include "nsTArray.h"
-
-extern "C" {
 #include "nr_api.h"
 #include "nr_socket.h"
-#include "transport_addr.h"
-}
-
 #include "nr_socket_prsock.h"
+#include "nsTArray.h"
+#include "transport_addr.h"
 
 namespace mozilla {
 using namespace net;

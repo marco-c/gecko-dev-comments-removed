@@ -52,7 +52,6 @@
 #define USE_TURN
 
 
-extern "C" {
 
 #include "nr_api.h"
 #include "transport_addr.h"
@@ -63,7 +62,6 @@ extern "C" {
 #include "stun_client_ctx.h"
 #include "turn_client_ctx.h"
 
-}
 
 #include "nricectx.h"
 

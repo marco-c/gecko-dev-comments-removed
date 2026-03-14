@@ -1,20 +1,23 @@
 
 
 
+#include "stun_socket_filter.h"
+
 #include <iomanip>
 #include <set>
 
-extern "C" {
+
+
+
 #include "nr_api.h"
-#include "stun.h"
-#include "transport_addr.h"
-}
+
 
 #include "logging.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/net/DNS.h"
 #include "nr_socket_prsock.h"
-#include "stun_socket_filter.h"
+#include "stun.h"
+#include "transport_addr.h"
 
 namespace {
 

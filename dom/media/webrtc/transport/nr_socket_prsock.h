@@ -65,10 +65,8 @@
 #include "prio.h"
 
 
-extern "C" {
 #include "async_wait.h"
 #include "transport_addr.h"
-}
 
 
 typedef struct nr_socket_vtbl_ nr_socket_vtbl;

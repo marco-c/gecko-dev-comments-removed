@@ -5,10 +5,8 @@
 #include "logging.h"
 
 
-extern "C" {
 #include "local_addr.h"
 #include "nr_api.h"
-}
 
 
 #include "nricestunaddr.h"

@@ -47,11 +47,9 @@
 #include "nsNetCID.h"
 
 
-extern "C" {
 #include "ice_util.h"
 #include "nr_api.h"
 #include "transport_addr.h"
-}
 
 
 #include "logging.h"

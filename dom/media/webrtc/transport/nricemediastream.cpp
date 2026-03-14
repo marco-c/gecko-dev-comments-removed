@@ -48,7 +48,6 @@
 #include "nsThreadUtils.h"
 
 
-extern "C" {
 
 #include "nr_api.h"
 #include "transport_addr.h"
@@ -57,7 +56,6 @@ extern "C" {
 #include "ice_candidate.h"
 #include "ice_handler.h"
 
-}
 
 
 #include "nricectx.h"

@@ -86,7 +86,6 @@
 #  undef UNIMPLEMENTED
 #endif
 
-extern "C" {
 
 #include "nr_api.h"
 #include "async_wait.h"
@@ -99,7 +98,6 @@ extern "C" {
 #include "nr_socket_buffered_stun.h"
 #include "addrs.h"
 
-}
 
 #include <string>
 

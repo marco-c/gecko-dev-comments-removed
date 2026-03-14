@@ -61,14 +61,12 @@
 #include "nsServiceManagerUtils.h"
 #include "runnable_utils.h"
 
-extern "C" {
 
 #include "async_wait.h"
 #include "async_timer.h"
 #include "r_errors.h"
 #include "r_log.h"
 
-}
 
 namespace mozilla {
 

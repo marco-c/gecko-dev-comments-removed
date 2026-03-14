@@ -45,14 +45,12 @@
 #include "nspr.h"
 #include "prnetdb.h"
 
-extern "C" {
 
 #include "nr_api.h"
 #include "async_timer.h"
 #include "nr_resolver.h"
 #include "transport_addr.h"
 
-}
 
 #include "mozilla/net/DNS.h"  
 #include "nr_socket_prsock.h"
