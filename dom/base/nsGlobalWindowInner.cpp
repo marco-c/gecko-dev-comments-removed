@@ -2179,32 +2179,48 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 }
 
 
+enum class EmptyFrameLibrary {
+  None,
+  CKEditor,
+  GWT,
+  ZE,
+};
 
 
 
 
 
 
-MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
+
+
+
+
+
+
+
+
+MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
+  
+  
+  
+  
+  MOZ_ASSERT(!aEmbedder.HasAttr(nsGkAtoms::srcdoc));
   const nsAttrValue* classes = aEmbedder.GetClasses();
   if (!classes) {
     return false;
   }
-  
-  
-  bool gwt = false;
-  bool ckeditor = classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters);
-  if (!ckeditor) {
-    gwt = classes->Contains(nsGkAtoms::gwt_RichTextArea, eCaseMatters);
+  EmptyFrameLibrary lib = EmptyFrameLibrary::None;
+  if (StaticPrefs::dom_about_blank_ckeditor_hack_enabled() &&
+      classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters)) {
+    lib = EmptyFrameLibrary::CKEditor;
+  } else if (StaticPrefs::dom_about_blank_gwt_hack_enabled() &&
+             classes->Contains(nsGkAtoms::gwt_RichTextArea, eCaseMatters)) {
+    lib = EmptyFrameLibrary::GWT;
+  } else if (StaticPrefs::dom_about_blank_ze_hack_enabled() &&
+             classes->Contains(nsGkAtoms::ze_area, eCaseMatters)) {
+    lib = EmptyFrameLibrary::ZE;
   }
-  if (!(ckeditor || gwt)) {
-    return false;
-  }
-  MOZ_ASSERT(ckeditor != gwt);
-  if (ckeditor && !StaticPrefs::dom_about_blank_ckeditor_hack_enabled()) {
-    return false;
-  }
-  if (gwt && !StaticPrefs::dom_about_blank_gwt_hack_enabled()) {
+  if (lib == EmptyFrameLibrary::None) {
     return false;
   }
   if (!aEmbedder.IsHTMLElement(nsGkAtoms::iframe)) {
@@ -2212,17 +2228,37 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
   }
   const auto* src = aEmbedder.GetParsedAttr(nsGkAtoms::src);
   
-  if (ckeditor && (!src || !src->IsEmptyString())) {
-    return false;
+  switch (lib) {
+    case EmptyFrameLibrary::CKEditor:
+      if (!src || !src->IsEmptyString()) {
+        return false;
+      }
+      break;
+    default:
+      if (src) {
+        return false;
+      }
+      break;
   }
-  if (gwt && src) {
-    return false;
+  const char* blocklistPref = "";
+  switch (lib) {
+    case EmptyFrameLibrary::CKEditor:
+      blocklistPref = "dom.about-blank-ckeditor-hack.disabled-domains";
+      break;
+    case EmptyFrameLibrary::GWT:
+      blocklistPref = "dom.about-blank-gwt-hack.disabled-domains";
+      break;
+    case EmptyFrameLibrary::ZE:
+      blocklistPref = "dom.about-blank-ze-hack.disabled-domains";
+      break;
+    case EmptyFrameLibrary::None:
+      MOZ_ASSERT_UNREACHABLE();
+      return false;
   }
+
   
   
-  if (aEmbedder.NodePrincipal()->IsURIInPrefList(
-          ckeditor ? "dom.about-blank-ckeditor-hack.disabled-domains"
-                   : "dom.about-blank-gwt-hack.disabled-domains")) {
+  if (aEmbedder.NodePrincipal()->IsURIInPrefList(blocklistPref)) {
     return false;
   }
   
@@ -2235,7 +2271,7 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
   if (!jsapi.Init(global)) {
     return false;
   }
-  if (gwt) {
+  if (lib == EmptyFrameLibrary::GWT) {
     JS::Rooted<JSObject*> globalObj(jsapi.cx(), global->GetGlobalJSObject());
     JS::Rooted<JS::Value> val(jsapi.cx());
     if (!JS_GetProperty(jsapi.cx(), globalObj, "__gwt_stylesLoaded", &val)) {
@@ -2256,28 +2292,44 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4OrGwtEmptyFrame(Element& aEmbedder) {
     JS_ClearPendingException(jsapi.cx());
     return false;
   }
-  MOZ_ASSERT(ckeditor);
-  const auto* version = [&]() -> const CkEditorVersion* {
-    if (property.mCKEDITOR.WasPassed()) {
-      return &property.mCKEDITOR.Value();
-    }
-    if (property.mJEDITOR.WasPassed()) {
-      return &property.mJEDITOR.Value();
-    }
-    return nullptr;
-  }();
-  if (!version) {
-    return false;
+  switch (lib) {
+    case EmptyFrameLibrary::GWT:
+    case EmptyFrameLibrary::None:
+      MOZ_ASSERT_UNREACHABLE();
+      return false;
+    case EmptyFrameLibrary::ZE:
+      if (StaticPrefs::dom_about_blank_ze_hack_require_zcomponents() &&
+          !property.mZComponents.WasPassed()) {
+        return false;
+      }
+      
+      aEmbedder.OwnerDoc()->WarnOnceAbout(Document::eOldZECompatHack);
+      return true;
+    case EmptyFrameLibrary::CKEditor:
+      const auto* version = [&]() -> const CkEditorVersion* {
+        if (property.mCKEDITOR.WasPassed()) {
+          return &property.mCKEDITOR.Value();
+        }
+        if (property.mJEDITOR.WasPassed()) {
+          return &property.mJEDITOR.Value();
+        }
+        return nullptr;
+      }();
+      if (!version) {
+        return false;
+      }
+      
+      
+      if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
+            version->mVersion.EqualsLiteral(u"%VERSION%"))) {
+        return false;
+      }
+      aEmbedder.OwnerDoc()->WarnOnceAbout(
+          DeprecatedOperations::eCKEditor4CompatHack);
+      return true;
   }
-  
-  
-  if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
-        version->mVersion.EqualsLiteral(u"%VERSION%"))) {
-    return false;
-  }
-  aEmbedder.OwnerDoc()->WarnOnceAbout(
-      DeprecatedOperations::eCKEditor4CompatHack);
-  return true;
+  MOZ_ASSERT_UNREACHABLE("Every switch case should have returned.");
+  return false;
 }
 
 MOZ_CAN_RUN_SCRIPT static bool NeedsAsyncLoadEventForInitialDocument(
@@ -2285,7 +2337,7 @@ MOZ_CAN_RUN_SCRIPT static bool NeedsAsyncLoadEventForInitialDocument(
   if (auto* doc = aInner.GetExtantDoc(); !doc || !doc->IsInitialDocument()) {
     return false;
   }
-  return IsCkEditor4OrGwtEmptyFrame(aEmbedder);
+  return IsDeferredLoadEmptyFrame(aEmbedder);
 }
 
 void nsGlobalWindowInner::FireFrameLoadEvent() {
