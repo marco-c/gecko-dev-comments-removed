@@ -172,7 +172,13 @@ class StartupCache : public nsIMemoryReporter {
 
   
   
-  void MaybeInitShutdownWrite();
+  
+  
+  void MaybeKickOffInitialWrite();
+
+  
+  
+  void MaybeKickOffShutdownWrite();
 
   
   
@@ -209,6 +215,18 @@ class StartupCache : public nsIMemoryReporter {
 
   friend class StartupCacheInfo;
 
+  enum class WriteType : uint8_t {
+    
+    
+    
+    
+    
+    InitialWrite,
+    
+    
+    RegularWrite,
+  };
+
   Result<Ok, nsresult> LoadArchive() MOZ_REQUIRES(mTableLock);
   nsresult Init();
 
@@ -220,14 +238,15 @@ class StartupCache : public nsIMemoryReporter {
   Result<Ok, nsresult> OpenCache();
 
   
-  Result<Ok, nsresult> WriteToDisk() MOZ_REQUIRES(mTableLock);
+  Result<Ok, nsresult> WriteToDisk(WriteType aWriteType)
+      MOZ_REQUIRES(mTableLock);
 
   void WaitOnPrefetch();
   void StartPrefetchMemory() MOZ_REQUIRES(mTableLock);
 
   static nsresult InitSingleton();
   static void WriteTimeout(nsITimer* aTimer, void* aClosure);
-  void MaybeWriteOffMainThread();
+  void MaybeWriteOffMainThread(WriteType aWriteType);
   void ThreadedPrefetch(uint8_t* aStart, size_t aSize);
 
   Monitor mPrefetchComplete{"StartupCachePrefetch"};
@@ -252,7 +271,7 @@ class StartupCache : public nsIMemoryReporter {
   nsCOMPtr<nsITimer> mTimer;
 
   bool mDirty MOZ_GUARDED_BY(mTableLock);
-  bool mWrittenOnce MOZ_GUARDED_BY(mTableLock);
+  bool mRegularWriteDone MOZ_GUARDED_BY(mTableLock);
   bool mCurTableReferenced MOZ_GUARDED_BY(mTableLock);
 
   uint32_t mRequestedCount;
@@ -262,6 +281,7 @@ class StartupCache : public nsIMemoryReporter {
   static bool gShutdownInitiated;
   static bool gIgnoreDiskCache;
   static bool gFoundDiskCacheOnInit;
+  static bool gWantInitialWrite;
 
   UniquePtr<Compression::LZ4FrameDecompressionContext> mDecompressionContext;
 #ifdef DEBUG

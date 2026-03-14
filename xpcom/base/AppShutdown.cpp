@@ -227,7 +227,7 @@ void AppShutdown::Init(AppShutdownMode aMode, int aExitCode,
   
   
   if (auto* cache = scache::StartupCache::GetSingletonNoInit()) {
-    cache->MaybeInitShutdownWrite();
+    cache->MaybeKickOffShutdownWrite();
   }
 }
 
