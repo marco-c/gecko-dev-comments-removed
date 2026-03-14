@@ -122,6 +122,7 @@ enum PromiseCombinatorElementFunctionSlots {
   
   
   
+  
   PromiseCombinatorElementFunctionSlot_Data
 };
 
@@ -4335,12 +4336,26 @@ static JSFunction* NewPromiseCombinatorElementFunction(
 
 
 
+
+
+
+
+
+
+
+
+
+template <typename DataHolderT>
 static bool PromiseCombinatorElementFunctionAlreadyCalled(
-    const CallArgs& args, MutableHandle<PromiseCombinatorDataHolder*> data,
-    uint32_t* index) {
+    const CallArgs& args, MutableHandle<DataHolderT*> data, uint32_t* index) {
+  
   
   JSFunction* fn = &args.callee().as<JSFunction>();
 
+  
+  
+  
+  
   
   
   
@@ -4370,8 +4385,11 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     return true;
   }
 
-  data.set(&dataVal.toObject().as<PromiseCombinatorDataHolder>());
+  data.set(&dataVal.toObject().as<DataHolderT>());
 
+  
+  
+  
   
   
   
@@ -4379,6 +4397,8 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
                       UndefinedValue());
 
+  
+  
   
   
   
@@ -4498,7 +4518,8 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   
   Rooted<PromiseCombinatorDataHolder*> data(cx);
   uint32_t index;
-  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
@@ -4749,7 +4770,8 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   
   Rooted<PromiseCombinatorDataHolder*> data(cx);
   uint32_t index;
-  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
@@ -4965,7 +4987,8 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
   
   Rooted<PromiseCombinatorDataHolder*> data(cx);
   uint32_t index;
-  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
@@ -5314,20 +5337,13 @@ static bool PromiseAllKeyedResolveElementFunction(JSContext* cx, unsigned argc,
         
         
         
-        JSFunction* resolveFunc = NewNativeFunction(
-            cx, PromiseAllKeyedResolveElementFunction, 1, nullptr,
-            gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+        
+        JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
+            cx, PromiseAllKeyedResolveElementFunction, dataHolder, index,
+            UndefinedHandleValue);
         if (!resolveFunc) {
           return false;
         }
-
-        resolveFunc->setExtendedSlot(
-            PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
-            Int32Value(index));
-
-        
-        resolveFunc->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                                     ObjectValue(*dataHolder));
 
         resolveFunVal.setObject(*resolveFunc);
 
@@ -5372,20 +5388,14 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
         
         
         
-        JSFunction* resolveFunc = NewNativeFunction(
-            cx, PromiseAllSettledKeyedResolveElementFunction, 1, nullptr,
-            gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+        
+        JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
+            cx, PromiseAllSettledKeyedResolveElementFunction, dataHolder, index,
+            UndefinedHandleValue);
         if (!resolveFunc) {
           return false;
         }
 
-        resolveFunc->setExtendedSlot(
-            PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
-            Int32Value(index));
-
-        
-        resolveFunc->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                                     ObjectValue(*dataHolder));
         resolveFunVal.setObject(*resolveFunc);
 
         
@@ -5393,18 +5403,12 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
         
         
         
-        JSFunction* rejectFunc = NewNativeFunction(
-            cx, PromiseAllSettledKeyedRejectElementFunction, 1, nullptr,
-            gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+        JSFunction* rejectFunc = NewPromiseCombinatorElementFunction(
+            cx, PromiseAllSettledKeyedRejectElementFunction, dataHolder, index,
+            resolveFunVal);
         if (!rejectFunc) {
           return false;
         }
-
-        rejectFunc->setExtendedSlot(
-            PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
-            Int32Value(index));
-        rejectFunc->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                                    ObjectValue(*dataHolder));
 
         rejectFunVal.setObject(*rejectFunc);
         return true;
@@ -5438,32 +5442,16 @@ static bool PromiseKeyedElementFunction(JSContext* cx, unsigned argc, Value* vp,
                                         ProcessValueFn&& processValue) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JS::Handle<JS::Value> xVal = args.get(0);
-  JSFunction* fn = &args.callee().as<JSFunction>();
-
-  constexpr size_t indexOrResolveFuncSlot =
-      PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc;
-  MOZ_RELEASE_ASSERT(fn->getExtendedSlot(indexOrResolveFuncSlot).isInt32());
-
-  const Value& dataVal =
-      fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
 
   
   
-  if (dataVal.isUndefined()) {
+  JS::Rooted<PromiseCombinatorKeyedDataHolder*> data(cx);
+  uint32_t index;
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorKeyedDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
-
-  JS::Rooted<PromiseCombinatorKeyedDataHolder*> data(
-      cx, &dataVal.toObject().as<PromiseCombinatorKeyedDataHolder>());
-
-  
-  fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                      UndefinedValue());
-
-  int32_t idx = fn->getExtendedSlot(indexOrResolveFuncSlot).toInt32();
-  MOZ_ASSERT(idx >= 0);
-  uint32_t index = uint32_t(idx);
 
   
   
