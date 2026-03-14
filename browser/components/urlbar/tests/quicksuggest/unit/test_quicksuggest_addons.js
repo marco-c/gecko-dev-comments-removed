@@ -453,7 +453,7 @@ add_task(async function merinoIsTopPick() {
 });
 
 
-add_task(async function notRelevant() {
+add_task(async function dismiss() {
   
   UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
@@ -461,7 +461,7 @@ add_task(async function notRelevant() {
     result: makeExpectedResult({
       suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
     }),
-    command: "not_relevant",
+    command: "dismiss",
     feature: QuickSuggest.getFeature("AddonSuggestions"),
     queriesForDismissals: [
       {

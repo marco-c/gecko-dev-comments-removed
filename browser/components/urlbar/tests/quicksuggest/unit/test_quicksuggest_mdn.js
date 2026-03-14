@@ -192,12 +192,12 @@ add_task(async function mixedCaseQuery() {
 });
 
 
-add_task(async function notRelevant() {
+add_task(async function dismiss() {
   await doDismissOneTest({
     result: QuickSuggestTestUtils.mdnResult(
       REMOTE_SETTINGS_DATA[0].attachment[0]
     ),
-    command: "not_relevant",
+    command: "dismiss",
     feature: QuickSuggest.getFeature("MDNSuggestions"),
     queriesForDismissals: [
       {

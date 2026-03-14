@@ -582,10 +582,10 @@ add_task(async function showSearchSuggestionsFirstDisabledSuggestedIndex() {
 });
 
 
-add_task(async function notRelevant() {
+add_task(async function dismiss() {
   await doDismissOneTest({
     result: QuickSuggestTestUtils.yelpResult(TOKYO_RESULT),
-    command: "not_relevant",
+    command: "dismiss",
     feature: QuickSuggest.getFeature("YelpSuggestions"),
     queriesForDismissals: [
       

@@ -235,8 +235,8 @@ add_task(async function resultMenu_notInterested() {
 });
 
 
-add_task(async function resultMenu_notRelevant() {
-  await doDismissTest("not_relevant", false);
+add_task(async function resultMenu_dismiss() {
+  await doDismissTest("dismiss", false);
 });
 
 

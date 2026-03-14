@@ -319,9 +319,9 @@ async function doShowLessFrequently({
 }
 
 
-add_task(async function resultMenu_not_relevant() {
+add_task(async function resultMenu_dismiss() {
   await doDismiss({
-    menu: "not_relevant",
+    menu: "dismiss",
     assert: result => {
       Assert.ok(
         QuickSuggest.isResultDismissed(result),

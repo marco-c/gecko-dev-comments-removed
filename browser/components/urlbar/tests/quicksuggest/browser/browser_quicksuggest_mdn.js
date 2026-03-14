@@ -130,8 +130,8 @@ add_task(async function resultMenu_notInterested() {
 });
 
 
-add_task(async function resultMenu_notRelevant() {
-  let result = await doDismissTest("not_relevant");
+add_task(async function resultMenu_dismiss() {
+  let result = await doDismissTest("dismiss");
 
   Assert.equal(UrlbarPrefs.get("suggest.mdn"), true);
   Assert.ok(
