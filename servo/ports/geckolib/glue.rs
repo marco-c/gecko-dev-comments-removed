@@ -5416,6 +5416,8 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyIsImportant(
 
 
 #[repr(C)]
+/// cbindgen:derive-tagged-enum-copy-constructor=false
+/// cbindgen:derive-tagged-enum-copy-assignment=false
 pub enum PropertyTypedValueResult {
     
     None,
