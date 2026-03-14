@@ -73,7 +73,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   void InsertIntoExtendedCONNECTConns(HttpConnectionBase* conn);
   void RemoveExtendedCONNECTConns(HttpConnectionBase* conn);
 
-  HttpConnectionBase* GetH2orH3ActiveConn();
+  HttpConnectionBase* GetH2orH3ActiveConn(bool aNoHttp2, bool aNoHttp3);
   
   
   already_AddRefed<nsHttpConnection> GetH2TunnelActiveConn();
@@ -153,7 +153,6 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   bool mDoNotDestroy : 1;
 
-  bool IsHttp3() const { return mConnInfo->IsHttp3(); }
   bool IsHttp3ProxyConnection() const {
     return mConnInfo->IsHttp3ProxyConnection();
   }
@@ -200,6 +199,8 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   
   uint32_t TotalActiveConnections() const;
+
+  bool HasActiveH3Connection() const;
 
   bool RemoveTransFromPendingQ(nsHttpTransaction* aTrans);
 
