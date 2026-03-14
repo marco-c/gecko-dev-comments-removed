@@ -79,7 +79,9 @@ def get_fenix_process_category(process, binary):
         return "main"
     elif "zygote" in process:
         return "zygote"
-    return process
+    
+    
+    return process.replace("_disable_art_image_", "")
 
 
 def get_category_for_process(process, binary):
