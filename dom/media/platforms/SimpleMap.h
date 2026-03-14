@@ -47,19 +47,16 @@ class SimpleMap {
 
   
   bool Contains(const K& aKey) {
-    struct Comparator {
-      bool Equals(const ElementType& aElement, const K& aKey) const {
-        return aElement.first == aKey;
-      }
-    };
     Policy guard(mLock);
-    return mMap.Contains(aKey, Comparator());
+    return FindIndex(aKey).isSome();
   }
+
   
   void Insert(const K& aKey, const V& aValue) {
     Policy guard(mLock);
     mMap.AppendElement(std::make_pair(aKey, aValue));
   }
+
   
   
   
@@ -70,38 +67,38 @@ class SimpleMap {
     }
     return false;
   }
+
   
   Maybe<V> Take(const K& aKey) {
     Policy guard(mLock);
-    for (uint32_t i = 0; i < mMap.Length(); i++) {
-      ElementType& element = mMap[i];
-      if (element.first == aKey) {
-        Maybe<V> value = Some(element.second);
-        mMap.RemoveElementAt(i);
-        return value;
-      }
+    if (Maybe<size_t> index = FindIndex(aKey)) {
+      Maybe<V> value = Some(std::move(mMap[*index].second));
+      mMap.RemoveElementAt(*index);
+      return value;
     }
     return Nothing();
   }
+
+  
+  
   
   template <typename F>
   bool Take(const K& aKey, F&& aCallback) {
     Policy guard(mLock);
-    for (uint32_t i = 0; i < mMap.Length(); i++) {
-      ElementType& element = mMap[i];
-      if (element.first == aKey) {
-        aCallback(element.second);
-        mMap.RemoveElementAt(i);
-        return true;
-      }
+    if (Maybe<size_t> index = FindIndex(aKey)) {
+      aCallback(mMap[*index].second);
+      mMap.RemoveElementAt(*index);
+      return true;
     }
     return false;
   }
+
   
   void Clear() {
     Policy guard(mLock);
     mMap.Clear();
   }
+
   
   
   template <typename F>
@@ -112,6 +109,7 @@ class SimpleMap {
     }
     mMap.Clear();
   }
+
   
   template <typename F>
   void ForEach(F&& aCallback) {
@@ -121,7 +119,24 @@ class SimpleMap {
     }
   }
 
+  
+  size_t Count() {
+    Policy guard(mLock);
+    return mMap.Length();
+  }
+
  private:
+  
+  
+  Maybe<size_t> FindIndex(const K& aKey) const {
+    for (size_t i = 0; i < mMap.Length(); ++i) {
+      if (mMap[i].first == aKey) {
+        return Some(i);
+      }
+    }
+    return Nothing();
+  }
+
   typename Policy::PolicyLock mLock;
   MapType mMap;
 };
