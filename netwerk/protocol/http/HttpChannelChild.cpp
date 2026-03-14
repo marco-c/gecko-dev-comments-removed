@@ -631,7 +631,7 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest) {
 
 void HttpChannelChild::ProcessOnTransportAndData(
     const nsresult& aChannelStatus, const nsresult& aTransportStatus,
-    const uint64_t& aOffset, const uint32_t& aCount, const nsACString& aData,
+    const uint64_t& aOffset, const nsACString& aData,
     const TimeStamp& aOnDataAvailableStartTime) {
   LOG(("HttpChannelChild::ProcessOnTransportAndData [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread());
@@ -640,18 +640,17 @@ void HttpChannelChild::ProcessOnTransportAndData(
         return self->GetODATarget();
       },
       [self = UnsafePtr<HttpChannelChild>(this), aChannelStatus,
-       aTransportStatus, aOffset, aCount, aData = nsCString(aData),
+       aTransportStatus, aOffset, aData = nsCString(aData),
        aOnDataAvailableStartTime]() {
         self->mOnDataAvailableStartTime = aOnDataAvailableStartTime;
         self->OnTransportAndData(aChannelStatus, aTransportStatus, aOffset,
-                                 aCount, aData);
+                                 aData);
       }));
 }
 
 void HttpChannelChild::OnTransportAndData(const nsresult& aChannelStatus,
                                           const nsresult& aTransportStatus,
                                           const uint64_t& aOffset,
-                                          const uint32_t& aCount,
                                           const nsACString& aData) {
   LOG(("HttpChannelChild::OnTransportAndData [this=%p]\n", this));
 
@@ -677,7 +676,7 @@ void HttpChannelChild::OnTransportAndData(const nsresult& aChannelStatus,
     progressMax = -1;
   }
 
-  const int64_t progress = aOffset + aCount;
+  const int64_t progress = aOffset + aData.Length();
 
   
   
@@ -710,21 +709,20 @@ void HttpChannelChild::OnTransportAndData(const nsresult& aChannelStatus,
   
   
   nsCOMPtr<nsIInputStream> stringStream;
-  nsresult rv =
-      NS_NewByteInputStream(getter_AddRefs(stringStream),
-                            Span(aData).To(aCount), NS_ASSIGNMENT_DEPEND);
+  nsresult rv = NS_NewByteInputStream(getter_AddRefs(stringStream), Span(aData),
+                                      NS_ASSIGNMENT_DEPEND);
   if (NS_FAILED(rv)) {
     CancelWithReason(rv, "HttpChannelChild NS_NewByteInputStream failed"_ns);
     return;
   }
 
-  DoOnDataAvailable(this, stringStream, aOffset, aCount);
+  DoOnDataAvailable(this, stringStream, aOffset, aData.Length());
   stringStream->Close();
 
   
   
   if (NeedToReportBytesRead()) {
-    mUnreportBytesRead += aCount;
+    mUnreportBytesRead += aData.Length();
     if (mUnreportBytesRead >= gHttpHandler->SendWindowSize() >> 2) {
       if (NS_IsMainThread()) {
         (void)SendBytesRead(mUnreportBytesRead);
