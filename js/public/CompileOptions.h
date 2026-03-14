@@ -821,14 +821,7 @@ class JS_PUBLIC_API InstantiateOptions {
   
   
   
-  void assertDefault() const {
-    MOZ_ASSERT(skipFilenameValidation == false);
-    MOZ_ASSERT(hideScriptFromDebugger == false);
-    MOZ_ASSERT(deferDebugMetadata == false);
-    MOZ_ASSERT(eagerDelazificationStrategy_ ==
-               DelazificationOption::OnDemandOnly);
-    MOZ_ASSERT(eagerBaselineStrategy_ == EagerBaselineOption::None);
-  }
+  void assertDefault() const;
 
   
   
