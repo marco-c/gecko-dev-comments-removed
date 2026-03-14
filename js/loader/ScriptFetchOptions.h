@@ -64,7 +64,12 @@ class ScriptFetchOptions {
 
   
   
-  inline bool IsCompatible(ScriptFetchOptions* other) {
+  
+  
+  
+  
+  
+  inline bool IsCompatibleExcludingNonce(ScriptFetchOptions* other) {
     if (this == other) {
       return true;
     }
@@ -79,8 +84,6 @@ class ScriptFetchOptions {
       return false;
     }
 
-    
-    
     
     return mCORSMode == other->mCORSMode &&
            mFetchPriority == other->mFetchPriority;

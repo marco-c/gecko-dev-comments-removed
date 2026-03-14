@@ -162,28 +162,34 @@ const ModuleLoadRequest* ScriptLoadRequest::AsModuleRequest() const {
   return static_cast<const ModuleLoadRequest*>(this);
 }
 
-void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
+void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript,
+                                        ScriptFetchOptions* aFetchOptions) {
   MOZ_ASSERT(IsCheckingCache());
 
-  SetCacheEntry(aLoadedScript);
+  SetCacheEntry(aLoadedScript, aFetchOptions);
 }
 
 void ScriptLoadRequest::CacheEntryRevived(LoadedScript* aLoadedScript) {
   MOZ_ASSERT(IsFetching());
 
-  SetCacheEntry(aLoadedScript);
+  SetCacheEntry(aLoadedScript, mLoadedScript->GetFetchOptions());
 
   
   
   mState = State::Fetching;
 }
 
-void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript) {
+void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
+                                      ScriptFetchOptions* aFetchOptions) {
   switch (mKind) {
     case ScriptKind::eClassic:
       MOZ_ASSERT(aLoadedScript->IsClassicScript());
 
-      mLoadedScript = aLoadedScript;
+      if (aLoadedScript->GetFetchOptions()->mNonce != aFetchOptions->mNonce) {
+        mLoadedScript = LoadedScript::FromCache(*aLoadedScript, aFetchOptions);
+      } else {
+        mLoadedScript = aLoadedScript;
+      }
 
       
       mState = State::Ready;
@@ -191,7 +197,11 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript) {
     case ScriptKind::eImportMap:
       MOZ_ASSERT(aLoadedScript->IsImportMapScript());
 
-      mLoadedScript = aLoadedScript;
+      if (aLoadedScript->GetFetchOptions()->mNonce != aFetchOptions->mNonce) {
+        mLoadedScript = LoadedScript::FromCache(*aLoadedScript, aFetchOptions);
+      } else {
+        mLoadedScript = aLoadedScript;
+      }
 
       mState = State::Ready;
       break;
@@ -200,7 +210,7 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript) {
       
       MOZ_ASSERT(aLoadedScript->IsModuleScript());
 
-      mLoadedScript = ModuleScript::FromCache(*aLoadedScript);
+      mLoadedScript = ModuleScript::FromCache(*aLoadedScript, aFetchOptions);
 
       
       

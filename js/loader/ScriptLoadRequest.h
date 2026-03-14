@@ -170,7 +170,11 @@ class ScriptLoadRequest : public nsISupports,
 
   
   
-  void CacheEntryFound(LoadedScript* aLoadedScript);
+  
+  
+  
+  void CacheEntryFound(LoadedScript* aLoadedScript,
+                       ScriptFetchOptions* aFetchOptions);
 
   void CacheEntryRevived(LoadedScript* aLoadedScript);
 
@@ -181,7 +185,8 @@ class ScriptLoadRequest : public nsISupports,
                          ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
  private:
-  void SetCacheEntry(LoadedScript* aLoadedScript);
+  void SetCacheEntry(LoadedScript* aLoadedScript,
+                     ScriptFetchOptions* aFetchOptions);
 
  public:
   bool PassedConditionForDiskCache() const {
