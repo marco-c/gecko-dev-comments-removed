@@ -2815,12 +2815,10 @@ bool CompilationStencil::instantiateStencils(JSContext* cx,
     return false;
   }
 
-  
-  
-  
-  
-  if (input.options.eagerBaselineStrategy() != JS::EagerBaselineOption::None &&
-      !input.isDelazifying()) {
+  if (input.options.eagerBaselineStrategy() != JS::EagerBaselineOption::None) {
+    MOZ_ASSERT(!input.isDelazifying(),
+               "No current support for eager baseline during delazifications.");
+
     bool doAggressive = input.options.eagerBaselineStrategy() ==
                         JS::EagerBaselineOption::Aggressive;
     if (!MaybeDoEagerBaselineCompilations(cx, stencil, gcOutput,
