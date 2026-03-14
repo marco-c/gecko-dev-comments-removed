@@ -18,15 +18,6 @@ DIRS += [
 ]
 
 
-
-
-if CONFIG["MOZ_APPSERVICES_IN_TREE"]:
-    DIRS += [
-        "app-services/megazords/full",
-        "app-services/megazords/fenix-dylib",
-    ]
-
-
 if not CONFIG["RELEASE_OR_BETA"] or CONFIG["MOZ_DEBUG"]:
     DIRS += ["automation"]
 
