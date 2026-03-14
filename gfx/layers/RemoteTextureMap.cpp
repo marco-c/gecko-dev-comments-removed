@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "CompositableHost.h"
+#include "ImageDataSerializer.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
@@ -221,10 +222,10 @@ void RemoteTextureOwnerClient::PushDummyTexture(
 
 void RemoteTextureOwnerClient::GetLatestBufferSnapshot(
     const RemoteTextureOwnerId aOwnerId, const mozilla::ipc::Shmem& aDestShmem,
-    const gfx::IntSize& aSize) {
+    const gfx::IntSize& aDestSize, size_t aDestStride) {
   MOZ_ASSERT(IsRegistered(aOwnerId));
-  RemoteTextureMap::Get()->GetLatestBufferSnapshot(aOwnerId, mForPid,
-                                                   aDestShmem, aSize);
+  RemoteTextureMap::Get()->GetLatestBufferSnapshot(
+      aOwnerId, mForPid, aDestShmem, aDestSize, aDestStride);
 }
 
 UniquePtr<TextureData> RemoteTextureOwnerClient::GetRecycledTextureData(
@@ -487,7 +488,8 @@ bool RemoteTextureMap::RemoveTexture(const RemoteTextureId aTextureId,
 
 void RemoteTextureMap::GetLatestBufferSnapshot(
     const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
-    const mozilla::ipc::Shmem& aDestShmem, const gfx::IntSize& aSize) {
+    const mozilla::ipc::Shmem& aDestShmem, const gfx::IntSize& aDestSize,
+    size_t aDestStride) {
   
   CompositableTextureHostRef textureHostRef;
   RefPtr<TextureHost> releasingTexture;  
@@ -511,7 +513,7 @@ void RemoteTextureMap::GetLatestBufferSnapshot(
                              : owner->mUsingTextureDataHolders.back().get();
     TextureHost* textureHost = holder->mTextureHost;
 
-    if (textureHost->GetSize() != aSize) {
+    if (textureHost->GetSize() != aDestSize) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return;
     }
@@ -540,16 +542,33 @@ void RemoteTextureMap::GetLatestBufferSnapshot(
   }
 
   if (sharedTexture) {
-    sharedTexture->GetSnapshot(aDestShmem, aSize);
-  } else if (auto* bufferTextureHost = textureHostRef->AsBufferTextureHost()) {
-    uint32_t stride = ImageDataSerializer::ComputeRGBStride(
-        bufferTextureHost->GetFormat(), aSize.width);
-    uint32_t bufferSize = stride * aSize.height;
-    uint8_t* dst = aDestShmem.get<uint8_t>();
-    uint8_t* src = bufferTextureHost->GetBuffer();
+    const auto src_size = sharedTexture->GetSize();
+    
+    
+    
+    MOZ_RELEASE_ASSERT(src_size == aDestSize);
 
-    MOZ_ASSERT(bufferSize <= aDestShmem.Size<uint8_t>());
-    memcpy(dst, src, bufferSize);
+    sharedTexture->GetSnapshot(aDestShmem, aDestStride);
+  } else if (auto* bufferTextureHost = textureHostRef->AsBufferTextureHost()) {
+    const auto src_size = bufferTextureHost->GetSize();
+    
+    
+
+    uint8_t* src = bufferTextureHost->GetBuffer();
+    uint8_t* dst = aDestShmem.get<uint8_t>();
+
+    const size_t src_stride = ImageDataSerializer::GetRGBStride(
+        bufferTextureHost->GetBufferDescriptor());
+    
+    MOZ_RELEASE_ASSERT(src_stride != 0);
+    
+    const size_t min_stride = std::min(src_stride, aDestStride);
+
+    for (int y = 0; y < src_size.height; y++) {
+      memcpy(dst, src, min_stride);
+      src += src_stride;
+      dst += aDestStride;
+    }
   }
 
   {
