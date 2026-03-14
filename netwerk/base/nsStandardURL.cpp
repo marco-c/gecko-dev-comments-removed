@@ -3410,8 +3410,20 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
   }
   mSupportsFileURL = supportsFileURL;
 
+  if (!IsValid()) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   
   if (old_param.mLen >= 0) {  
+    
+    
+    CheckedInt<uint32_t> end = CheckedInt<uint32_t>(uint32_t(old_param.mPos)) +
+                               uint32_t(old_param.mLen);
+    if (!end.isValid() || end.value() > mSpec.Length()) {
+      return NS_ERROR_MALFORMED_URI;
+    }
+
     
     
     
@@ -3420,10 +3432,6 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
     mDirectory.Merge(mSpec, ';', old_param);
     mBasename.Merge(mSpec, ';', old_param);
     mExtension.Merge(mSpec, ';', old_param);
-  }
-
-  if (!IsValid()) {
-    return NS_ERROR_MALFORMED_URI;
   }
 
   rv = CheckIfHostIsAscii();
