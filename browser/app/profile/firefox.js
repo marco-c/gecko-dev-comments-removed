@@ -2426,10 +2426,10 @@ pref("toolkit.telemetry.bhrPing.enabled", true);
 pref("media.gmp-provider.enabled", true);
 
 
-pref("network.cookie.cookieBehavior", 5 );
+pref("network.cookie.cookieBehavior", 5);
 
 
-pref("network.cookie.cookieBehavior.pbmode", 5 );
+pref("network.cookie.cookieBehavior.pbmode", 5);
 
 
 pref("privacy.trackingprotection.harmfuladdon.enabled", true);
