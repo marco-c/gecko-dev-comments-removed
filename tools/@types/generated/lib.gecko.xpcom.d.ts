@@ -3076,6 +3076,13 @@ interface nsIScriptError extends nsIConsoleMessage {
 
 
 
+interface mozITestInterfaceJS extends nsISupports {
+  testThrowNsresult(): void;
+  testThrowNsresultFromNative(): void;
+}
+
+
+
 
 
 interface nsIDOMGeoPosition extends nsISupports {
@@ -3803,7 +3810,7 @@ interface nsIContentSecurityPolicy extends nsISerializable, Enums<typeof nsICont
 }
 
 type nsICSPEventListener = Callable<{
-  onCSPViolationEvent(aJSON: string, aReportGroupName: string): void;
+  onCSPViolationEvent(aJSON: string): void;
 }>
 
 
@@ -5279,6 +5286,37 @@ interface nsISVGPaintContext extends nsISupports {
 
 
 
+}  
+
+declare enum nsILayoutDebuggingTools_DumpFrameFlags {
+  DUMP_FRAME_FLAGS_CSS_PIXELS = 1,
+  DUMP_FRAME_FLAGS_DETERMINISTIC = 2,
+}
+
+declare global {
+
+namespace nsILayoutDebuggingTools {
+  type DumpFrameFlags = nsILayoutDebuggingTools_DumpFrameFlags;
+}
+
+interface nsILayoutDebuggingTools extends nsISupports, Enums<typeof nsILayoutDebuggingTools_DumpFrameFlags> {
+  init(win: mozIDOMWindow): void;
+  forceRefresh(): void;
+  setReflowCounts(enabled: boolean): void;
+  setPagedMode(enabled: boolean): void;
+  dumpContent(anonymousSubtrees: boolean): void;
+  dumpFrames(flags: u8): void;
+  dumpTextRuns(): void;
+  dumpCounterManager(): void;
+  dumpRetainedDisplayList(): void;
+  dumpStyleSheets(): void;
+  dumpMatchedRules(): void;
+  dumpComputedStyles(): void;
+  dumpReflowStats(): void;
+}
+
+
+
 interface nsIPreloadedStyleSheet extends nsISupports {
 }
 
@@ -5449,7 +5487,6 @@ interface nsILoginManager extends nsISupports {
   setLoginSavingEnabled(aHost: string, isEnabled: boolean): void;
   findLogins(aOrigin: string, aActionOrigin: string, aHttpRealm: string): nsILoginInfo[];
   countLogins(aOrigin: string, aActionOrigin: string, aHttpRealm: string): u32;
-  countLoginsAsync(aOrigin: string, aActionOrigin: string, aHttpRealm: string): Promise<any>;
   searchLoginsAsync(matchData: any): Promise<any>;
   searchLogins(matchData: nsIPropertyBag): nsILoginInfo[];
   getSyncID(): Promise<any>;
@@ -9240,7 +9277,6 @@ declare enum nsIDataStorageManager_DataStorage {
   AlternateServices = 0,
   ClientAuthRememberList = 1,
   SiteSecurityServiceState = 2,
-  SiteIntegrityServiceState = 3,
 }
 
 declare global {
@@ -9447,11 +9483,6 @@ interface nsISecurityUITelemetry extends nsISupports {
   readonly WARNING_CONFIRM_ADDON_INSTALL_CLICK_THROUGH?: 4;
   readonly WARNING_CONFIRM_POST_TO_INSECURE_FROM_SECURE?: 9;
   readonly WARNING_CONFIRM_POST_TO_INSECURE_FROM_SECURE_CLICK_THROUGH?: 10;
-}
-
-
-
-interface nsISiteIntegrityService extends nsISupports {
 }
 
 
@@ -10375,6 +10406,35 @@ interface mozISandboxSettings extends nsISupports {
   readonly effectiveContentSandboxLevel: i32;
   readonly contentWin32kLockdownState: i32;
   readonly contentWin32kLockdownStateString: string;
+}
+
+
+
+interface mozISandboxTest extends nsISupports {
+  startTests(aProcessesList: string[]): void;
+  finishTests(): void;
+}
+
+
+
+interface mozISandboxReport extends nsISupports {
+  readonly msecAgo: u64;
+  readonly pid: i32;
+  readonly tid: i32;
+  readonly procType: string;
+  readonly syscall: u32;
+  readonly numArgs: u32;
+  getArg(aIndex: u32): string;
+}
+
+interface mozISandboxReportArray extends nsISupports {
+  readonly begin: u64;
+  readonly end: u64;
+  getElement(aIndex: u64): mozISandboxReport;
+}
+
+interface mozISandboxReporter extends nsISupports {
+  snapshot(): mozISandboxReportArray;
 }
 
 
@@ -13601,6 +13661,12 @@ interface nsIAvailableMemoryWatcherBase extends nsISupports {
 
 
 
+interface nsIAvailableMemoryWatcherTestingLinux extends nsISupports {
+  setPSIPathForTesting(aPSIPath: string): void;
+}
+
+
+
 type nsIConsoleListener = Callable<{
   observe(aMessage: nsIConsoleMessage): void;
 }>
@@ -15593,6 +15659,7 @@ interface nsIXPCComponents_Interfaces {
   nsITextInputProcessorCallback: nsJSIID<nsITextInputProcessorCallback>;
   nsIScriptErrorNote: nsJSIID<nsIScriptErrorNote>;
   nsIScriptError: nsJSIID<nsIScriptError>;
+  mozITestInterfaceJS: nsJSIID<mozITestInterfaceJS>;
   nsIDOMGeoPosition: nsJSIID<nsIDOMGeoPosition>;
   nsIDOMGeoPositionCallback: nsJSIID<nsIDOMGeoPositionCallback>;
   nsIDOMGeoPositionCoords: nsJSIID<nsIDOMGeoPositionCoords>;
@@ -15788,6 +15855,7 @@ interface nsIXPCComponents_Interfaces {
   nsIKeyValueVoidCallback: nsJSIID<nsIKeyValueVoidCallback>;
   nsILayoutHistoryState: nsJSIID<nsILayoutHistoryState>;
   nsISVGPaintContext: nsJSIID<nsISVGPaintContext>;
+  nsILayoutDebuggingTools: nsJSIID<nsILayoutDebuggingTools, typeof nsILayoutDebuggingTools_DumpFrameFlags>;
   nsIPreloadedStyleSheet: nsJSIID<nsIPreloadedStyleSheet>;
   nsIStyleSheetService: nsJSIID<nsIStyleSheetService>;
   nsITreeSelection: nsJSIID<nsITreeSelection>;
@@ -16118,7 +16186,6 @@ interface nsIXPCComponents_Interfaces {
   nsIPublicKeyPinningService: nsJSIID<nsIPublicKeyPinningService>;
   nsISecretDecoderRing: nsJSIID<nsISecretDecoderRing>;
   nsISecurityUITelemetry: nsJSIID<nsISecurityUITelemetry>;
-  nsISiteIntegrityService: nsJSIID<nsISiteIntegrityService>;
   nsISiteSecurityService: nsJSIID<nsISiteSecurityService, typeof nsISiteSecurityService_ResetStateBy>;
   nsITLSSocketControl: nsJSIID<nsITLSSocketControl>;
   nsITokenPasswordDialogs: nsJSIID<nsITokenPasswordDialogs>;
@@ -16171,6 +16238,10 @@ interface nsIXPCComponents_Interfaces {
   nsIApplicationReputationQuery: nsJSIID<nsIApplicationReputationQuery>;
   nsIApplicationReputationCallback: nsJSIID<nsIApplicationReputationCallback>;
   mozISandboxSettings: nsJSIID<mozISandboxSettings>;
+  mozISandboxTest: nsJSIID<mozISandboxTest>;
+  mozISandboxReport: nsJSIID<mozISandboxReport>;
+  mozISandboxReportArray: nsJSIID<mozISandboxReportArray>;
+  mozISandboxReporter: nsJSIID<mozISandboxReporter>;
   nsIFormFillFocusListener: nsJSIID<nsIFormFillFocusListener>;
   nsIFormFillController: nsJSIID<nsIFormFillController>;
   nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
@@ -16405,6 +16476,7 @@ interface nsIXPCComponents_Interfaces {
   nsIWindowWatcher: nsJSIID<nsIWindowWatcher>;
   nsITabUnloader: nsJSIID<nsITabUnloader>;
   nsIAvailableMemoryWatcherBase: nsJSIID<nsIAvailableMemoryWatcherBase>;
+  nsIAvailableMemoryWatcherTestingLinux: nsJSIID<nsIAvailableMemoryWatcherTestingLinux>;
   nsIConsoleListener: nsJSIID<nsIConsoleListener>;
   nsIConsoleMessage: nsJSIID<nsIConsoleMessage>;
   nsIConsoleService: nsJSIID<nsIConsoleService, typeof nsIConsoleService_OutputMode>;
