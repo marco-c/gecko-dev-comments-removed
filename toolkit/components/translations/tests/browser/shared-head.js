@@ -292,10 +292,6 @@ async function openAboutTranslations({
       "moz-message-bar#about-translations-unsupported-info-message",
     policyDisabledInfoMessage:
       "moz-message-bar#about-translations-policy-disabled-info-message",
-    featureBlockedInfoMessage:
-      "moz-message-bar#about-translations-feature-blocked-info-message",
-    unblockFeatureButton:
-      "moz-button#about-translations-feature-blocked-unblock-button",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
     languageLoadErrorButton:
@@ -4981,23 +4977,6 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickUnblockFeatureButton() {
-    logAction();
-    try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.unblockFeatureButton
-        );
-        button.click();
-      });
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-  }
-
-  
-
-
 
 
 
@@ -6283,7 +6262,6 @@ class AboutTranslationsTestUtils {
 
 
 
-
   async assertIsVisible({
     pageHeader = false,
     mainUserInterface = false,
@@ -6298,7 +6276,6 @@ class AboutTranslationsTestUtils {
     translationErrorMessage = false,
     unsupportedInfoMessage = false,
     policyDisabledInfoMessage = false,
-    featureBlockedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
     
@@ -6361,9 +6338,6 @@ class AboutTranslationsTestUtils {
           ),
           policyDisabledInfoMessage: isElementVisible(
             selectors.policyDisabledInfoMessage
-          ),
-          featureBlockedInfoMessage: isElementVisible(
-            selectors.featureBlockedInfoMessage
           ),
           languageLoadErrorMessage: isElementVisible(
             selectors.languageLoadErrorMessage
@@ -6433,11 +6407,6 @@ class AboutTranslationsTestUtils {
         policyDisabledInfoMessage,
         visibilityMap.policyDisabledInfoMessage,
         "policy-disabled info message"
-      );
-      assertVisibility(
-        featureBlockedInfoMessage,
-        visibilityMap.featureBlockedInfoMessage,
-        "feature-blocked info message"
       );
       assertVisibility(
         languageLoadErrorMessage,
