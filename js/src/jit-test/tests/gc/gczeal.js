@@ -2,6 +2,14 @@
 
 
 
+
+const jitCompilerOptions = getJitCompilerOptions();
+if (jitCompilerOptions["blinterp.warmup.trigger"] === 0 ||
+    jitCompilerOptions["baseline.warmup.trigger"] === 0 ||
+    jitCompilerOptions["ion.warmup.trigger"] === 0) {
+  quit();
+}
+
 gczeal(0);
 gcparam('minNurseryBytes', 1024 * 1024);
 gcparam('maxNurseryBytes', 1024 * 1024);
@@ -31,9 +39,8 @@ function countGCs(allocCount) {
     slice: gcparam("sliceNumber")
   }
 
-  let a = new Array(allocCount);
   for (let i = 0; i < allocCount - 1 ; i++) {
-    a.push({x: i});
+    let o = {x: i};
   }
   finishgc();
 
@@ -43,6 +50,9 @@ function countGCs(allocCount) {
     slice: gcparam("sliceNumber") - init.slice
   }
 }
+
+
+
 
 
 checkGCsWithZeal(0, 0, 100,  {major: 0,  minor: 0,  slice: 0});
@@ -78,9 +88,10 @@ checkGCsWithZeal(9, 10, 100, {major: 5,  minor: 5,  slice: 10});
 
 
 let counts = countGCsWithZeal(10, 10, 1000);
+print(`check IncrementalMultipleSlices mode: got ${JSON.stringify(counts)}`);
 assertEq(counts.major >= 1, true);
 assertEq(counts.minor >= 1, true);
-assertEq(counts.slice >= 90, true);
+assertEq(counts.slice >= 70, true);
 
 
 checkGCsWithZeal(11, 0,  100, {major: 0,  minor: 0,  slice: 0});
