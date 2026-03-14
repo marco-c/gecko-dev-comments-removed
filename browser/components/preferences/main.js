@@ -3419,8 +3419,7 @@ SettingGroupManager.registerGroups({
   ipprotection: {
     l10nId: "ip-protection-description",
     headingLevel: 2,
-    
-    supportPage: "ip-protection",
+    supportPage: "built-in-vpn",
     items: [
       {
         id: "ipProtectionNotOptedInSection",
