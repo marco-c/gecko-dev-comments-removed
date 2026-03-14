@@ -14,7 +14,6 @@ add_setup(() => {
 
 
 add_task(async function test_takeMeasurements() {
-  setupProfile();
   let sandbox = sinon.createSandbox();
   sandbox.stub(FakeBackupResource1.prototype, "measure").resolves();
   sandbox

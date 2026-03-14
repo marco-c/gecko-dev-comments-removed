@@ -10,10 +10,6 @@ const { SearchUtils } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
 );
 
-add_setup(async () => {
-  setupProfile();
-});
-
 
 
 

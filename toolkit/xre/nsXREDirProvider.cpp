@@ -1339,7 +1339,27 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
     return NS_OK;
   }
 
-  return AppendProfilePathUnix(aFile, aIsDotted);
+  
+  
+  
+  if (gAppData->profile) {
+    nsAutoCString profile;
+    profile = gAppData->profile;
+    MOZ_TRY(aFile->AppendRelativeNativePath(profile));
+  } else {
+    nsAutoCString vendor;
+    nsAutoCString appName;
+    vendor = gAppData->vendor;
+    appName = gAppData->name;
+    ToLowerCase(vendor);
+    ToLowerCase(appName);
+
+    MOZ_TRY(aFile->AppendRelativeNativePath(aIsDotted ? ("."_ns + vendor)
+                                                      : vendor));
+    MOZ_TRY(aFile->AppendRelativeNativePath(appName));
+  }
+
+  return NS_OK;
 }
 
 
@@ -1368,19 +1388,7 @@ bool nsXREDirProvider::LegacyHomeExists(nsIFile** aFile) {
   rv = AppendFromAppData(localDir, true);
   NS_ENSURE_SUCCESS(rv, false);
 
-  
-  nsCOMPtr<nsIFile> profilesIni;
-  rv = localDir->Clone(getter_AddRefs(profilesIni));
-  NS_ENSURE_SUCCESS(rv, false);
-
-  
-
-
-
-  rv = profilesIni->AppendNative("profiles.ini"_ns);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  rv = profilesIni->Exists(&exists);
+  rv = localDir->Exists(&exists);
   NS_ENSURE_SUCCESS(rv, false);
 
   
@@ -1393,10 +1401,6 @@ bool nsXREDirProvider::LegacyHomeExists(nsIFile** aFile) {
     mozUserDir = nsLiteralCString(MOZ_USER_DIR);
 
     rv = userDir->AppendRelativeNativePath(mozUserDir);
-    NS_ENSURE_SUCCESS(rv, false);
-
-    
-    rv = userDir->AppendNative("profiles.ini"_ns);
     NS_ENSURE_SUCCESS(rv, false);
 
     rv = userDir->Exists(&exists);
@@ -1543,73 +1547,6 @@ nsresult nsXREDirProvider::GetLegacyOrXDGHomePath(const char* aHomeDir,
 }
 #endif  
 
-#if defined(XP_UNIX) && !defined(XP_MACOS) && !defined(ANDROID)
-nsresult nsXREDirProvider::AppendProfilePathUnix(nsIFile* aFile,
-                                                 bool aPrependDot) {
-  if (!gAppData) {
-    return NS_OK;
-  }
-
-  nsAutoCString profile;
-  nsAutoCString appName;
-  nsAutoCString vendor;
-
-  if (gAppData->profile) {
-    profile = gAppData->profile;
-  } else {
-    appName = gAppData->name;
-    vendor = gAppData->vendor;
-  }
-
-  nsresult rv = NS_OK;
-  nsAutoCString folder;
-
-  
-  if (aPrependDot) {
-    folder.Assign('.');
-  }
-
-  if (!profile.IsEmpty()) {
-    
-    const char* profileStart = profile.get();
-    while (*profileStart == '/' || *profileStart == '\\') {
-      profileStart++;
-    }
-
-    
-    
-    if (*profileStart == '.' && aPrependDot) {
-      profileStart++;
-    }
-
-    folder.Append(profileStart);
-    ToLowerCase(folder);
-
-    rv = AppendProfileString(aFile, folder.BeginReading());
-  } else {
-    if (!vendor.IsEmpty()) {
-      folder.Append(vendor);
-      ToLowerCase(folder);
-
-      rv = aFile->AppendNative(folder);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      folder.Truncate();
-    }
-
-    
-    if (!appName.IsEmpty()) {
-      folder.Append(appName);
-      ToLowerCase(folder);
-
-      rv = aFile->AppendNative(folder);
-    }
-  }
-
-  return rv;
-}
-#endif
-
 nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
   NS_ASSERTION(aFile, "Null pointer!");
 
@@ -1620,7 +1557,9 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
     return NS_OK;
   }
 
-#if defined(XP_MACOSX) || defined(XP_WIN) || defined(ANDROID)
+  
+  
+
   nsAutoCString profile;
   nsAutoCString appName;
   nsAutoCString vendor;
@@ -1630,7 +1569,6 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
     appName = gAppData->name;
     vendor = gAppData->vendor;
   }
-#endif
 
   nsresult rv = NS_OK;
 
@@ -1665,15 +1603,49 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
   rv = aFile->AppendNative(nsDependentCString("mozilla"));
   NS_ENSURE_SUCCESS(rv, rv);
 #elif defined(XP_UNIX)
+  nsAutoCString folder;
   
   
-  bool prependDot = !aLocal
+  if (!aLocal
 #  if defined(MOZ_WIDGET_GTK)
-                    && (IsForceLegacyHome() || LegacyHomeExists(nullptr))
+      && (IsForceLegacyHome() || LegacyHomeExists(nullptr))
 #  endif
-      ;
+  ) {
+    folder.Assign('.');
+  }
 
-  rv = AppendProfilePathUnix(aFile, prependDot);
+  if (!profile.IsEmpty()) {
+    
+    const char* profileStart = profile.get();
+    while (*profileStart == '/' || *profileStart == '\\') profileStart++;
+
+    
+    
+    if (*profileStart == '.' && !aLocal) profileStart++;
+
+    folder.Append(profileStart);
+    ToLowerCase(folder);
+
+    rv = AppendProfileString(aFile, folder.BeginReading());
+  } else {
+    if (!vendor.IsEmpty()) {
+      folder.Append(vendor);
+      ToLowerCase(folder);
+
+      rv = aFile->AppendNative(folder);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      folder.Truncate();
+    }
+
+    
+    if (!appName.IsEmpty()) {
+      folder.Append(appName);
+      ToLowerCase(folder);
+
+      rv = aFile->AppendNative(folder);
+    }
+  }
   NS_ENSURE_SUCCESS(rv, rv);
 
 #else

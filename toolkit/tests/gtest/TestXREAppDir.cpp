@@ -145,18 +145,6 @@ class BaseXREAppDir : public ::testing::Test {
     mOriginalAppData = gAppData;
     gAppData = &mFakeAppData;
     EXPECT_STREQ(gAppData->profile, "fooprofile");
-#if defined(XP_UNIX) && !defined(XP_MACOSX)
-    
-    
-    
-    
-    nsCString profileDir;
-    MkHomeSubdir(".fooprofile", profileDir);
-    nsCString profilesIni = profileDir + "/profiles.ini"_ns;
-    FILE* fp = fopen(profilesIni.get(), "w");
-    ASSERT_NE(fp, nullptr);
-    fclose(fp);
-#endif
   }
 
   void SwitchFakeAppDataOff() {
@@ -313,14 +301,6 @@ class ExistentLegacyXREAppDir_Generic : public BaseXREAppDir {
     BaseXREAppDir::SetUp();
     MkHomeSubdir(".mozilla", mMozDir);
     MkHomeSubdir(".mozilla/firefox", mMozDir);
-#if defined(XP_UNIX) && !defined(XP_MACOSX)
-    
-    nsCString profilesIni =
-        mMockedHomeDir + "/.mozilla/firefox/profiles.ini"_ns;
-    FILE* fp = fopen(profilesIni.get(), "w");
-    ASSERT_NE(fp, nullptr);
-    fclose(fp);
-#endif
   }
   nsCString mMozDir;
 };
