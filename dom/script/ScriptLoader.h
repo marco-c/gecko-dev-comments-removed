@@ -176,6 +176,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   bool ShouldBypassCache() const;
 
+#ifdef NIGHTLY_BUILD
+  
+  
+  bool WAICTHandlesScripts() const;
+#endif
+
   template <typename T>
   bool HasLoaded(const T& aKey) {
     
