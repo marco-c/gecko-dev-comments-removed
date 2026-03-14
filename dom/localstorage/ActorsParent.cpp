@@ -6598,6 +6598,12 @@ mozilla::ipc::IPCResult LSRequestBase::RecvCancel() {
 mozilla::ipc::IPCResult LSRequestBase::RecvFinish() {
   AssertIsOnOwningThread();
 
+  
+  
+  if (NS_WARN_IF(mState != State::WaitingForFinish)) {
+    return IPC_FAIL(this, "Finish received in unexpected state");
+  }
+
   Finish();
 
   return IPC_OK();
