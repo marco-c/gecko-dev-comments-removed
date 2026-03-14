@@ -557,7 +557,7 @@ enum class PromiseUserInputEventHandlingState {
 
 
 extern JS_PUBLIC_API PromiseUserInputEventHandlingState
-GetPromiseUserInputEventHandlingState(JS::HandleObject promise);
+GetPromiseUserInputEventHandlingState(JSObject* promise);
 
 
 
