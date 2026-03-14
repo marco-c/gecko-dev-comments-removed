@@ -37,37 +37,38 @@ promise_test(async () => {
   };
   await ensureLanguageModel(options);
   const session = await LanguageModel.create(options);
-  const tokenLength = await session.measureInputUsage(options.initialPrompts);
+  const tokenLength = await session.measureContextUsage(options.initialPrompts);
   assert_greater_than(tokenLength, 0);
-  assert_greater_than_equal(tokenLength, session.inputUsage);
+  assert_greater_than_equal(tokenLength, session.contextUsage);
   assert_regexp_match(
       await session.prompt([{role: 'user', content: 'What is the word of the day?'}]),
       /regurgitation/i);
-}, 'Test that initialPrompt counts towards session inputUsage');
+}, 'Test that initialPrompt counts towards session contextUsage');
 
 promise_test(async () => {
   await ensureLanguageModel();
   const session = await createLanguageModel();
   const promise = new Promise(resolve => {
-    session.addEventListener("quotaoverflow", resolve);
+    session.addEventListener('contextoverflow', resolve);
   });
   
   const kLongPrompt = kTestPrompt.repeat(10);
-  const usage = await session.measureInputUsage(kLongPrompt);
-  assert_greater_than(session.inputQuota, usage);
+  const usage = await session.measureContextUsage(kLongPrompt);
+  assert_greater_than(session.contextWindow, usage);
   await session.prompt(kLongPrompt);
   
-  assert_greater_than(session.inputUsage, 0);
-  const repeatCount = session.inputQuota / session.inputUsage;
+  assert_greater_than(session.contextUsage, 0);
+  const repeatCount = session.contextWindow / session.contextUsage;
   const promptString = kLongPrompt.repeat(repeatCount);
   
   await Promise.all([promise, session.prompt(promptString)]);
-}, 'The `quotaoverflow` event is fired when overall usage exceeds the quota');
+}, 'The `contextoverflow` event is fired when overall usage exceeds the context window');
 
 promise_test(async t => {
   await ensureLanguageModel();
   const session = await createLanguageModel();
-  const promptString = kTestPrompt.repeat(session.inputQuota);
-  const requested = await session.measureInputUsage(promptString);
-  await promise_rejects_quotaexceedederror(t, session.prompt(promptString), requested, session.inputQuota);
-}, 'Test that prompt input exceeding the total quota rejects');
+  const promptString = kTestPrompt.repeat(session.contextWindow);
+  const requested = await session.measureContextUsage(promptString);
+  await promise_rejects_quotaexceedederror(
+      t, session.prompt(promptString), requested, session.contextWindow);
+}, 'Test that prompt input exceeding the total context window rejects');
