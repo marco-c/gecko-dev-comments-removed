@@ -571,11 +571,11 @@ struct IntervalComparator {
 
 }  
 
-TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
+TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
   if (mTimers.IsEmpty()) {
-    return TimeStamp{};
+    return {{}, {}};
   }
 
   
@@ -585,6 +585,11 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
 
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
+
   
   
   
@@ -593,10 +598,6 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
   
-  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
-  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
   TimeStamp cutoffTime =
       bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
                                                   minTimerDelay, maxTimerDelay);
@@ -619,10 +620,9 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
     
     
     bundleWakeup = curTimerDue;
-    cutoffTime = std::min(
-        curTimerDue + ComputeAcceptableFiringDelay(
-                          curEntry.mDelay, minTimerDelay, maxTimerDelay),
-        cutoffTime);
+    const TimeDuration timerDelay = ComputeAcceptableFiringDelay(
+        curEntry.mDelay, minTimerDelay, maxTimerDelay);
+    cutoffTime = std::min(curTimerDue + timerDelay, cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
@@ -630,7 +630,7 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
              ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
 
-  return bundleWakeup;
+  return {bundleWakeup, cutoffTime - bundleWakeup};
 }
 
 TimeDuration TimerThread::ComputeAcceptableFiringDelay(
@@ -731,7 +731,8 @@ class TelemetryQueue {
   size_t mQueuedTimersFiredCount = 0;
 };
 
-void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
+void TimerThread::Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
+    MOZ_REQUIRES(mMonitor) {
   mWaiting = true;
   mNotified = false;
   {
@@ -759,7 +760,7 @@ TimerThread::Run() {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
 
-    TimeDuration waitFor;
+    TimeDuration waitFor, waitTolerance;
     if (!mSleeping) {
       
       
@@ -785,8 +786,9 @@ TimerThread::Run() {
       }
 
       
-      const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
+      const auto [wakeupTime, wakeupTolerance] = ComputeWakeupTimeFromTimers();
       mIntendedWakeupTime = wakeupTime;
+      waitTolerance = wakeupTolerance;
 
       
       
@@ -819,9 +821,14 @@ TimerThread::Run() {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
       waitFor = TimeDuration::FromMilliseconds(milliseconds);
+
+      
+      static constexpr double sWaitToleranceWhenSleeping_ms = 32.0;
+      waitTolerance =
+          TimeDuration::FromMilliseconds(sWaitToleranceWhenSleeping_ms);
     }
 
-    Wait(waitFor);
+    Wait(waitFor, waitTolerance);
 
 #if TIMER_THREAD_STATISTICS
     CollectWakeupStatistics();
