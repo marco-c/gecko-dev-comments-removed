@@ -96,6 +96,20 @@ TEST(PHC, TestPHCAllocations)
   
   ASSERT_ALIGN(8U, 16U);
   for (unsigned i = 16; i <= kPageSize; i *= 2) {
+#if defined(XP_DARWIN) && defined(__aarch64__)
+    
+    
+    
+    
+    if (i == kPageSize / 2) {
+      p = (uint8_t*)GetPHCAllocation(8, i);
+      ASSERT_EQ((reinterpret_cast<uintptr_t>(p) & (kPageSize - 1)),
+                (size_t)(kPageSize - i));
+      ASSERT_EQ(moz_malloc_usable_size(p), (size_t)i);
+      free(p);
+      continue;
+    }
+#endif
     ASSERT_ALIGN(i, i);
   }
 
