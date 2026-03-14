@@ -17,6 +17,7 @@
 #include "jit/CacheIRWriter.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/Ion.h"  
+#include "jit/StubFolding.h"
 
 #include "vm/BytecodeLocation-inl.h"
 
@@ -617,12 +618,12 @@ bool TrialInliner::canInline(JSContext* cx, JSScript* script,
     bool result = true;
     if (analysis.isInliningDisabled()) {
       JitSpew(JitSpew_WarpTrialInlining, "SKIP: uninlineable flag");
-      script->disableIon();
+      script->setUninlineable();
       result = false;
     }
     if (analysis.isIonDisabled()) {
       JitSpew(JitSpew_WarpTrialInlining, "SKIP: can't ion-compile");
-      script->setUninlineable();
+      script->disableIon();
       result = false;
     }
     script->jitScript()->setRanBytecodeAnalysis();
