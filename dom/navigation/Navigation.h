@@ -142,8 +142,13 @@ class Navigation final : public DOMEventTargetHelper {
   void UpdateForReactivation(SessionHistoryInfo* aReactivatedEntry);
 
   
+  MOZ_CAN_RUN_SCRIPT
   void UpdateEntriesForSameDocumentNavigation(
       SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType);
+
+  MOZ_CAN_RUN_SCRIPT
+  void RunNavigateEventHandlerSteps(NavigateEvent* aNavigateEvent,
+                                    NavigationTracker* aNavigationTracker);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
