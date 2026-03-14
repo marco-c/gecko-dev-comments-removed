@@ -8327,14 +8327,15 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
 
   mDocumentViewer->SetNavigationTiming(mTiming);
 
-  if (NS_FAILED(mDocumentViewer->Init(widget, bounds, aWindowActor))) {
+  nsresult rv = mDocumentViewer->Init(widget, bounds, aWindowActor);
+  if (NS_FAILED(rv)) {
     nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
     viewer->Close(nullptr);
     viewer->Destroy();
     mDocumentViewer = nullptr;
     SetCurrentURIInternal(nullptr);
     NS_WARNING("DocumentViewer Initialization failed");
-    return NS_ERROR_FAILURE;
+    return rv;
   }
 
   
@@ -9521,18 +9522,21 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
                          (hasTextDirectives &&
                           aState.mCurrentURIHasRef != aState.mNewURIHasRef));
 
+    
+    
+    
+    if (doHashchange) {
+      
+      
+      win->DispatchAsyncHashchange(currentURI, newURI);
+    }
+
     if (aState.mHistoryNavBetweenSameDoc || doHashchange) {
       win->DispatchSyncPopState();
     }
 
     if (needsScrollPosUpdate && win->HasActiveDocument()) {
       SetCurScrollPosEx(bx, by);
-    }
-
-    if (doHashchange) {
-      
-      
-      win->DispatchAsyncHashchange(currentURI, newURI);
     }
   }
 
