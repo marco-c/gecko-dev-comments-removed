@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsUserIdleServiceX.h"
 #include "nsObjCExceptions.h"
@@ -39,7 +39,7 @@ bool nsUserIdleServiceX::PollIdleTime(uint32_t* aIdleTime) {
                    [idleObj isKindOfClass:[NSNumber class]],
                "What we got for the idle object is not what we expect!");
 
-  uint64_t time;
+  uint64_t time = 0;
   if ([idleObj isKindOfClass:[NSData class]])
     [idleObj getBytes:&time length:sizeof(time)];
   else
@@ -47,10 +47,11 @@ bool nsUserIdleServiceX::PollIdleTime(uint32_t* aIdleTime) {
 
   IOObjectRelease(entry);
 
-  
+  // convert to ms from ns
   time /= 1000000;
-  if (time > UINT32_MAX)  
-    return false;
+  if (time > UINT32_MAX) {
+    time = UINT32_MAX;
+  }
 
   *aIdleTime = static_cast<uint32_t>(time);
 
