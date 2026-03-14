@@ -2803,14 +2803,19 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
     return false;
   }
 
-  nsCOMPtr<nsIPrincipal> resultPrincipal;
-  nsresult rv = sSecurityManager->GetChannelResultPrincipal(
-      aChannel, getter_AddRefs(resultPrincipal));
-  if (NS_SUCCEEDED(rv) && IsPDFJS(resultPrincipal)) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
-            ("Inside ShouldResistFingerprinting(nsIChannel*)"
-             " PDF.js document exempted"));
-    return false;
+  auto contentType = loadInfo->GetExternalContentPolicyType();
+
+  if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
+      contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    nsCOMPtr<nsIPrincipal> resultPrincipal;
+    nsresult rv = sSecurityManager->GetChannelResultPrincipal(
+        aChannel, getter_AddRefs(resultPrincipal));
+    if (NS_SUCCEEDED(rv) && IsPDFJS(resultPrincipal)) {
+      MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+              ("Inside ShouldResistFingerprinting(nsIChannel*)"
+               " PDF.js document exempted"));
+      return false;
+    }
   }
 
   if (ETPSaysShouldNotResistFingerprinting(aChannel, loadInfo)) {
@@ -2830,7 +2835,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
   
   
   
-  auto contentType = loadInfo->GetExternalContentPolicyType();
   
   if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
       contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
