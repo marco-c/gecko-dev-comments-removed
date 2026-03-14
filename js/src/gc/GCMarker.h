@@ -513,6 +513,8 @@ class GCMarker {
   void setMarkColor(gc::MarkColor newColor);
   friend class js::gc::AutoSetMarkColor;
 
+  void swapMarkStacks();
+
   template <typename Tracer>
   void setMarkingStateAndTracer(MarkingState prev, MarkingState next);
 
@@ -705,6 +707,12 @@ inline bool IsConcurrentMarkingTracer(JSTracer* trc) {
 
 namespace gc {
 
+enum class AllowGrayMarkingBeforeEndOfBlackMarking : bool {
+  No = false,
+  Yes = true
+};
+
+
 
 
 
@@ -716,9 +724,13 @@ class MOZ_RAII AutoSetMarkColor {
   MarkColor initialColor_;
 
  public:
-  AutoSetMarkColor(GCMarker& marker, MarkColor newColor)
+  AutoSetMarkColor(GCMarker& marker, MarkColor newColor,
+                   AllowGrayMarkingBeforeEndOfBlackMarking allowGrayMarking =
+                       AllowGrayMarkingBeforeEndOfBlackMarking::No)
       : marker_(marker), initialColor_(marker.markColor()) {
-    marker_.setMarkColor(newColor);
+    MOZ_ASSERT_IF(newColor == MarkColor::Gray && !bool(allowGrayMarking),
+                  !marker.hasBlackEntries());
+    marker.setMarkColor(newColor);
   }
 
   AutoSetMarkColor(GCMarker& marker, CellColor newColor)
