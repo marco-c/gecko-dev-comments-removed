@@ -415,6 +415,12 @@ public final class GeckoRuntime implements Parcelable {
   }
 
   private int[] startCrashHelper() {
+    
+    
+    if (!BuildConfig.MOZ_CRASHREPORTER) {
+      return new int[] {-1, -1};
+    }
+
     final Context context = GeckoAppShell.getApplicationContext();
     final CrashHelper.Pipes pipes = CrashHelper.createCrashHelperPipes(context);
 
@@ -575,6 +581,9 @@ public final class GeckoRuntime implements Parcelable {
     if (mScreenChangeListener != null) {
       mScreenChangeListener.enable();
     }
+
+    
+    GeckoAppShell.maybeInitScreen();
 
     ProfilerController.addMarker(
         "GeckoView Initialization START", ProfilerController.getProfilerTime());
