@@ -147,7 +147,6 @@ class JSTerm extends Component {
     this.hudId = this.webConsoleUI.hudId;
 
     this._onEditorChanges = this._onEditorChanges.bind(this);
-    this._onEditorBlur = this._onEditorBlur.bind(this);
     this._onEditorBeforeChange = this._onEditorBeforeChange.bind(this);
     this._onEditorKeyHandled = this._onEditorKeyHandled.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
@@ -346,7 +345,7 @@ class JSTerm extends Component {
               return false;
             }
 
-            const isSomethingSelected = this.editor.isTextSelected();
+            const isSomethingSelected = this.editor.somethingSelected();
             const hasSuggestion = this.hasAutocompletionSuggestion();
 
             if (hasSuggestion && !isSomethingSelected) {
@@ -711,7 +710,7 @@ class JSTerm extends Component {
     
     
     const executeString = this.props.editorMode
-      ? this.editor.getSelectedText() || value
+      ? this.getSelectedText() || value
       : value;
 
     if (!executeString) {
@@ -816,6 +815,10 @@ class JSTerm extends Component {
     return this.editor.getTextBeforeCursor().length;
   }
 
+  getSelectedText() {
+    return this.editor.getSelection();
+  }
+
   
 
 
@@ -893,7 +896,7 @@ class JSTerm extends Component {
 
 
   _onEditorBlur(cm) {
-    if (this.editor.isTextSelected()) {
+    if (cm.somethingSelected()) {
       
       
       const [{ head }] = cm.listSelections();
