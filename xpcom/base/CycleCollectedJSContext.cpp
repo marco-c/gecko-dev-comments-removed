@@ -725,6 +725,9 @@ SuppressedMicroTaskList::~SuppressedMicroTaskList() {
   MOZ_ASSERT(mSuppressedMicroTaskRunnables.get().empty());
 };
 
+static void MOZ_CAN_RUN_SCRIPT RunJSMicroTask(
+    JSContext* aCx, JS::MutableHandle<MustConsumeMicroTask> aMicroTask);
+
 
 
 static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
@@ -740,6 +743,12 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
     return;
   }
 
+  RunJSMicroTask(aCx, aMicroTask);
+}
+
+
+void RunJSMicroTask(JSContext* aCx,
+                    JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
   
   
   
