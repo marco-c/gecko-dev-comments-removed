@@ -20809,10 +20809,44 @@ static already_AddRefed<Document> CreateHTMLDocument(GlobalObject& aGlobal,
     return nullptr;
   }
 
+  nsCOMPtr<nsIPrincipal> principal = aGlobal.GetSubjectPrincipal();
+  if (BasePrincipal::Cast(principal)->Is<ExpandedPrincipal>()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    nsCOMPtr<nsIGlobalObject> global =
+        do_QueryInterface(aGlobal.GetAsSupports());
+    MOZ_ASSERT(global);
+    principal = global ? global->PrincipalOrNull() : nullptr;
+    
+    
+    
+    if (!principal || nsContentUtils::IsExpandedPrincipal(principal)) {
+      
+      aError.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+    
+    
+    
+    
+    MOZ_ASSERT(aGlobal.GetSubjectPrincipal()->Subsumes(principal));
+  }
+
   nsCOMPtr<Document> doc;
-  aError =
-      NS_NewHTMLDocument(getter_AddRefs(doc), aGlobal.GetSubjectPrincipal(),
-                         aGlobal.GetSubjectPrincipal(), LoadedAsData::AsData);
+  aError = NS_NewHTMLDocument(getter_AddRefs(doc), principal, principal,
+                              LoadedAsData::AsData);
   if (aError.Failed()) {
     return nullptr;
   }
