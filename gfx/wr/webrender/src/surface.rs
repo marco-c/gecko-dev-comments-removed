@@ -699,7 +699,7 @@ impl SurfaceBuilder {
                                     }
                                 }
                             }
-                            CommandBufferBuilderKind::Simple { render_task_id: ref mut parent_task_id, .. } => {
+                            CommandBufferBuilderKind::Simple { render_task_id: ref mut parent_task_id, root_task_id: ref parent_root_task_id, .. } => {
                                 let parent_task = rg_builder.get_task_mut(*parent_task_id);
 
                                 
@@ -742,6 +742,19 @@ impl SurfaceBuilder {
                                     new_task_id,
                                     *parent_task_id,
                                 );
+
+                                
+                                
+                                
+                                
+                                
+                                
+                                if let Some(root_task_id) = *parent_root_task_id {
+                                    rg_builder.add_dependency(
+                                        root_task_id,
+                                        new_task_id,
+                                    );
+                                }
 
                                 
                                 *parent_task_id = new_task_id;
