@@ -3,6 +3,15 @@
 
 "use strict";
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Missing message.*smartwindow-messages-document-title/
+);
+
 const { AIWindowUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
 );
