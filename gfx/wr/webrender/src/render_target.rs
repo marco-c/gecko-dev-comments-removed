@@ -8,7 +8,7 @@ use api::{ColorF, LineOrientation, BorderStyle};
 use crate::batch::{AlphaBatchBuilder, AlphaBatchContainer, BatchTextures};
 use crate::batch::{ClipBatcher, BatchBuilder, INVALID_SEGMENT_INDEX, ClipMaskInstanceList};
 use crate::render_task::{SubTask, RectangleClipSubTask, ImageClipSubTask};
-use crate::command_buffer::CommandBufferList;
+use crate::command_buffer::{CommandBufferList, QuadFlags};
 use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::segment::EdgeMask;
 use crate::spatial_tree::SpatialTree;
@@ -365,6 +365,14 @@ impl RenderTarget {
 
         match task.kind {
             RenderTaskKind::Prim(ref info) => {
+                
+                
+                if !info.transform_id.is_2d_axis_aligned() {
+                    self.clears.push((target_rect, ColorF::TRANSPARENT));
+                }
+                
+                
+                
                 let render_task_address = task_id.into();
                 quad::add_to_batch(
                     info.pattern,
@@ -372,7 +380,7 @@ impl RenderTarget {
                     render_task_address,
                     info.transform_id,
                     info.prim_address_f,
-                    info.quad_flags,
+                    info.quad_flags | QuadFlags::IS_OPAQUE,
                     info.edge_flags,
                     INVALID_SEGMENT_INDEX as u8,
                     info.texture_input,
