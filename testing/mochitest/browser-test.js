@@ -130,11 +130,15 @@ var DOMWindowTracker = {
     }
     return info;
   },
-  getLeakedWindows() {
+  getLeakedWindows(excludeCurrentTest = false) {
     let leaked = [];
     let innerOuterAddrs = new Set();
     for (let [key, info] of this.liveWindows) {
-      if (!this.initialWindows.has(key) && info.test) {
+      if (
+        !this.initialWindows.has(key) &&
+        info.test &&
+        (!excludeCurrentTest || info.test !== this.currentTest)
+      ) {
         leaked.push(info);
         if (info.type === "inner" && info.outer) {
           innerOuterAddrs.add(info.outer);
@@ -605,6 +609,44 @@ Tester.prototype = {
         }
 
         win.close();
+      }
+    }
+  },
+
+  _shutdownCleanup(aCallback) {
+    let start = ChromeUtils.now();
+    Cu.schedulePreciseShrinkingGC(() => {
+      let numCycles = 3;
+      for (let i = 0; i < numCycles; i++) {
+        Cu.forceGC();
+        Cu.forceCC();
+      }
+      ChromeUtils.addProfilerMarker("ShutdownLeaks:cleanup", {
+        category: "Test",
+        startTime: start,
+      });
+      aCallback();
+    });
+  },
+
+  async _checkForLeakedWindows(excludeCurrentTest = false) {
+    
+    
+    
+    await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+
+    let leaked = DOMWindowTracker.getLeakedWindows(excludeCurrentTest);
+    if (leaked.length) {
+      try {
+        let { ShutdownLeakPathFinder } = ChromeUtils.importESModule(
+          "chrome://mochikit/content/ShutdownLeakPathFinder.sys.mjs"
+        );
+        await new ShutdownLeakPathFinder().findAndPrintPaths(
+          leaked,
+          this.structuredLogger
+        );
+      } catch (ex) {
+        dump("ShutdownLeakPathFinder failed: " + ex + "\n");
       }
     }
   },
@@ -1277,24 +1319,6 @@ Tester.prototype = {
         
         
 
-        let shutdownCleanup = aCallback => {
-          let start = ChromeUtils.now();
-          Cu.schedulePreciseShrinkingGC(() => {
-            
-            
-            let numCycles = 3;
-            for (let i = 0; i < numCycles; i++) {
-              Cu.forceGC();
-              Cu.forceCC();
-            }
-            ChromeUtils.addProfilerMarker("ShutdownLeaks:cleanup", {
-              category: "Test",
-              startTime: start,
-            });
-            aCallback();
-          });
-        };
-
         let { AsyncShutdown } = ChromeUtils.importESModule(
           "resource://gre/modules/AsyncShutdown.sys.mjs"
         );
@@ -1323,30 +1347,10 @@ Tester.prototype = {
 
           Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
-          shutdownCleanup(() => {
+          this._shutdownCleanup(() => {
             setTimeout(() => {
-              shutdownCleanup(async () => {
-                
-                
-                
-                await new Promise(resolve =>
-                  Services.tm.dispatchToMainThread(resolve)
-                );
-
-                let leaked = DOMWindowTracker.getLeakedWindows();
-                if (leaked.length) {
-                  try {
-                    let { ShutdownLeakPathFinder } = ChromeUtils.importESModule(
-                      "chrome://mochikit/content/ShutdownLeakPathFinder.sys.mjs"
-                    );
-                    await new ShutdownLeakPathFinder().findAndPrintPaths(
-                      leaked,
-                      this.structuredLogger
-                    );
-                  } catch (ex) {
-                    dump("ShutdownLeakPathFinder failed: " + ex + "\n");
-                  }
-                }
+              this._shutdownCleanup(async () => {
+                await this._checkForLeakedWindows();
                 this.finish();
               });
             }, 1000);
@@ -1730,7 +1734,10 @@ Tester.prototype = {
                 "PASS",
                 "Test timed out"
               );
-              self.finish();
+              self._shutdownCleanup(async () => {
+                await self._checkForLeakedWindows(true);
+                self.finish();
+              });
             }
           },
           gTimeoutSeconds * 1000,
