@@ -737,8 +737,9 @@ impl Parse for FamilyName {
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
+#[typed_value(derive_fields)]
 pub enum FontSizeAdjustFactor {
     
     Number(NonNegativeNumber),

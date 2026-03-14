@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::animated::ToAnimatedZero;
 use crate::{One, Zero};
@@ -11,8 +12,9 @@ use byteorder::{BigEndian, ReadBytesExt};
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use std::io::Cursor;
-use style_traits::{CssWriter, ParseError};
-use style_traits::{StyleParseErrorKind, ToCss};
+use style_traits::{
+    CssString, CssWriter, ParseError, StyleParseErrorKind, ToCss, ToTyped, TypedValue,
+};
 
 
 
@@ -257,7 +259,6 @@ impl<Angle: Zero> FontStyle<Angle> {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
-    ToTyped,
 )]
 pub enum GenericFontSizeAdjust<Factor> {
     #[animation(error)]
@@ -290,6 +291,16 @@ impl<Factor: ToCss> ToCss for GenericFontSizeAdjust<Factor> {
 
         dest.write_str(prefix)?;
         value.to_css(dest)
+    }
+}
+
+impl<Factor: ToTyped> ToTyped for GenericFontSizeAdjust<Factor> {
+    fn to_typed(&self) -> Option<TypedValue> {
+        match self {
+            Self::None => Some(TypedValue::Keyword(CssString::from("none"))),
+            Self::ExHeight(v) => v.to_typed(),
+            _ => None,
+        }
     }
 }
 
