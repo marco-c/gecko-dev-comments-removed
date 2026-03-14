@@ -36,6 +36,22 @@ class Service : public mozIStorageService,
 
   nsresult initialize();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  int localeCompareStrings(const nsAString& aStr1, const nsAString& aStr2,
+                           mozilla::intl::Collator::Sensitivity aSensitivity);
+
   static already_AddRefed<Service> getSingleton();
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -94,6 +110,13 @@ class Service : public mozIStorageService,
   Service();
   virtual ~Service();
 
+  
+
+
+
+
+  Mutex mMutex MOZ_UNANNOTATED;
+
   struct AutoVFSRegistration {
     int Init(UniquePtr<sqlite3_vfs> aVFS);
     ~AutoVFSRegistration();
@@ -128,11 +151,31 @@ class Service : public mozIStorageService,
 
   void minimizeMemory();
 
+  
+
+
+
+
+
+
+  mozilla::intl::Collator* getCollator();
+
+  
+
+
+
+
+
+
+  mozilla::UniquePtr<mozilla::intl::Collator> mCollator = nullptr;
+
   nsCOMPtr<nsIFile> mProfileStorageFile;
 
   nsCOMPtr<nsIMemoryReporter> mStorageSQLiteReporter;
 
   static Service* gService;
+
+  mozilla::intl::Collator::Sensitivity mLastSensitivity;
 };
 
 }  

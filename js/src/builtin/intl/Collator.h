@@ -36,8 +36,7 @@ class CollatorObject : public NativeObject {
   static constexpr uint32_t SLOT_COUNT = 5;
 
   
-  
-  static constexpr size_t EstimatedMemoryUse = 80;
+  static constexpr size_t EstimatedMemoryUse = 1128;
 
   bool isLocaleResolved() const { return getFixedSlot(LOCALE_SLOT).isString(); }
 

@@ -171,3 +171,26 @@ TEST(Intl_Locale_LocaleService, InsertSeparatorBeforeAccesskeys)
 {
   ASSERT_TRUE(LocaleService::GetInstance()->InsertSeparatorBeforeAccesskeys());
 }
+
+TEST(Intl_Locale_LocaleService, TryCreateComponent)
+{
+  {
+    
+    auto result = LocaleService::GetInstance()->TryCreateComponent<Collator>();
+    ASSERT_TRUE(result.isOk());
+  }
+  {
+    
+    auto result =
+        LocaleService::GetInstance()->TryCreateComponentWithLocale<Collator>(
+            "en");
+    ASSERT_TRUE(result.isOk());
+  }
+  {
+    
+    auto result =
+        LocaleService::GetInstance()->TryCreateComponentWithLocale<Collator>(
+            "$invalidName");
+    ASSERT_TRUE(result.isOk());
+  }
+}
