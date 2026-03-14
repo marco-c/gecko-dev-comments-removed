@@ -42,7 +42,6 @@ function trr_test_setup() {
   
   Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
 
-  Services.prefs.setBoolPref("network.trr.wait-for-portal", false);
   
   Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
   
@@ -70,7 +69,6 @@ function trr_clear_prefs() {
   Services.prefs.clearUserPref("network.trr.mode");
   Services.prefs.clearUserPref("network.trr.uri");
   Services.prefs.clearUserPref("network.trr.credentials");
-  Services.prefs.clearUserPref("network.trr.wait-for-portal");
   Services.prefs.clearUserPref("network.trr.allow-rfc1918");
   Services.prefs.clearUserPref("network.trr.useGET");
   Services.prefs.clearUserPref("network.trr.confirmationNS");
