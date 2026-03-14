@@ -260,6 +260,9 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
 
 NS_IMETHODIMP
 ConnectionEstablisher::GetInterface(const nsIID& iid, void** result) {
+  if (mSecurityCallbacks) {
+    return mSecurityCallbacks->GetInterface(iid, result);
+  }
   return NS_ERROR_NO_INTERFACE;
 }
 
@@ -444,22 +447,6 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
   
   
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   if (!mAllow1918) {
     tmpFlags |= nsISocketTransport::DISABLE_RFC1918;
   }
@@ -477,11 +464,9 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
   rv = socketTransport->SetEventSink(this, nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
+  rv = socketTransport->SetSecurityCallbacks(this);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  
   if (nsHttpHandler::EchConfigEnabled() &&
       !mConnInfo->GetEchConfig().IsEmpty()) {
     LOG(("Setting ECH"));
