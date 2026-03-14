@@ -23,6 +23,10 @@ namespace mozilla {
 class VideoCaptureFactory;
 }
 
+namespace webrtc {
+class DesktopCaptureImpl;
+}
+
 namespace mozilla::camera {
 
 class CamerasParent;
@@ -118,6 +122,10 @@ class AggregateCapturer final
   
   const int mCaptureId;
   
+  const webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
+  
+  webrtc::DesktopCaptureImpl* const mDesktopCapturer = nullptr;
+  
   const TrackingId mTrackingId;
   
   
@@ -130,6 +138,8 @@ class AggregateCapturer final
   AggregateCapturer(nsISerialEventTarget* aVideoCaptureThread,
                     CaptureEngine aCapEng, VideoEngine* aEngine,
                     const nsCString& aUniqueId, int aCaptureId,
+                    webrtc::VideoCaptureModule* aCapturer,
+                    webrtc::DesktopCaptureImpl* aDesktopCapturer,
                     nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
 
   Maybe<webrtc::VideoCaptureCapability> CombinedCapability(
