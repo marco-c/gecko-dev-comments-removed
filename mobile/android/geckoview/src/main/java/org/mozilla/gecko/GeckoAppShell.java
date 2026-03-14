@@ -1612,6 +1612,22 @@ public class GeckoAppShell {
   
   private static volatile int sDisplayId = Display.DEFAULT_DISPLAY;
 
+  
+  public static void maybeInitScreen() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+      return;
+    }
+
+    ThreadUtils.postToBackgroundThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            
+            sScreenCompat.getDisplay(sDisplayId);
+          }
+        });
+  }
+
    static Rect getScreenSizeIgnoreOverride() {
     return sScreenCompat.getScreenSize(sDisplayId);
   }
@@ -1639,7 +1655,16 @@ public class GeckoAppShell {
 
 
   public static void setDisplayId(final int displayId) {
+    final boolean isDisplayIdChanged = sDisplayId != displayId;
     sDisplayId = displayId;
+
+    if (isDisplayIdChanged) {
+      if (GeckoScreenOrientation.getInstance().update()) {
+        
+        return;
+      }
+      ScreenManagerHelper.refreshScreenInfo();
+    }
   }
 
   @WrapForJNI(calledFrom = "any")
