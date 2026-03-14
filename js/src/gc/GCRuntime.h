@@ -961,7 +961,7 @@ class GCRuntime {
   void sweepWeakRefs();
   IncrementalProgress endSweepingSweepGroup(JS::GCContext* gcx,
                                             JS::SliceBudget& budget);
-  IncrementalProgress performSweepActions(JS::SliceBudget& sliceBudget);
+  IncrementalProgress sweepPhase(JS::SliceBudget& sliceBudget);
   void startSweepingAtomsTable();
   IncrementalProgress sweepAtomsTable(JS::GCContext* gcx,
                                       JS::SliceBudget& budget);
