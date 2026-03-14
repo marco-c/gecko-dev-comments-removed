@@ -1066,7 +1066,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     if (!mTextControlStateDestroyed && mPrepareEditorLater) {
       MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
       MOZ_ASSERT(Is(TextControlAction::SetValue));
-      mTextControlState.PrepareEditor(&mSettingValue);
+      mTextControlState.PrepareEditor();
     }
   }
 
@@ -1238,7 +1238,6 @@ TextControlState::TextControlState(TextControlElement* aOwningElement)
     : mTextCtrlElement(aOwningElement),
       mEverInited(false),
       mEditorInitialized(false),
-      mValueTransferInProgress(false),
       mSelectionCached(true)
 
 
@@ -1377,41 +1376,22 @@ nsISelectionController* TextControlState::GetSelectionController() const {
 }
 
 
-class PrepareEditorEvent : public Runnable {
+class PrepareEditorEvent final : public Runnable {
  public:
-  PrepareEditorEvent(TextControlState& aState, nsIContent* aOwnerContent,
-                     const nsAString& aCurrentValue)
-      : Runnable("PrepareEditorEvent"),
-        mState(&aState),
-        mOwnerContent(aOwnerContent),
-        mCurrentValue(aCurrentValue) {
-    aState.mValueTransferInProgress = true;
-  }
+  explicit PrepareEditorEvent(TextControlState& aState)
+      : Runnable("PrepareEditorEvent"), mState(&aState) {}
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     if (NS_WARN_IF(!mState)) {
       return NS_ERROR_NULL_POINTER;
     }
 
-    
-    const nsAString* value = nullptr;
-    if (!mCurrentValue.IsEmpty()) {
-      value = &mCurrentValue;
-    }
-
-    nsAutoScriptBlocker scriptBlocker;
-
-    mState->PrepareEditor(value);
-
-    mState->mValueTransferInProgress = false;
-
+    mState->PrepareEditor();
     return NS_OK;
   }
 
  private:
   WeakPtr<TextControlState> mState;
-  nsCOMPtr<nsIContent> mOwnerContent;  
-  nsAutoString mCurrentValue;
 };
 
 nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
@@ -1424,13 +1404,6 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
   auto* editorRoot = GetRootNode();
   if (NS_WARN_IF(!editorRoot)) {
     return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  nsAutoString currentValue;
-  if (mTextEditor) {
-    GetValue(currentValue,  false);
   }
 
   
@@ -1457,23 +1430,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
 
   
   if (mTextEditor) {
-    if (NS_WARN_IF(!mTextCtrlElement)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    
-    if (mTextEditor->IsRightToLeft()) {
-      editorRoot->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, u"rtl"_ns, false);
-    } else if (mTextEditor->IsLeftToRight()) {
-      editorRoot->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, u"ltr"_ns, false);
-    } else {
-      
-    }
-
-    nsContentUtils::AddScriptRunner(
-        new PrepareEditorEvent(*this, mTextCtrlElement, currentValue));
+    nsContentUtils::AddScriptRunner(new PrepareEditorEvent(*this));
   }
 
   return NS_OK;
@@ -1496,7 +1453,7 @@ struct MOZ_STACK_CLASS PreDestroyer {
   RefPtr<TextEditor> mTextEditor;
 };
 
-nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
+nsresult TextControlState::PrepareEditor() {
   if (mEditorInitialized) {
     
     return NS_OK;
@@ -1560,11 +1517,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   
   
   nsAutoString defaultValue;
-  if (aValue) {
-    defaultValue = *aValue;
-  } else {
-    GetValue(defaultValue,  true);
-  }
+  GetValue(defaultValue,  true);
 
   if (!mEditorInitialized) {
     
@@ -2162,14 +2115,15 @@ void TextControlState::DeinitSelection() {
 
   
   
-  nsAutoString value;
-  GetValue(value,  false);
+  
+  
+  
+  
+  
+  if (mEditorInitialized) {
+    GetValue(mValue,  true);
+  }
 
-  
-  
-  
-  
-  
   if (!IsSelectionCached()) {
     
     uint32_t start = 0, end = 0;
@@ -2178,10 +2132,11 @@ void TextControlState::DeinitSelection() {
     SelectionDirection direction = GetSelectionDirection(IgnoreErrors());
 
     SelectionProperties& props = GetSelectionProperties();
-    props.SetMaxLength(value.Length());
+    props.SetMaxLength(mValue.Length());
     props.SetStart(start);
     props.SetEnd(end);
     props.SetDirection(direction);
+    props.SetIsDirty();
     mSelectionCached = true;
   }
 
@@ -2243,20 +2198,6 @@ void TextControlState::DeinitSelection() {
     }
 
     mTextListener = nullptr;
-  }
-
-  
-  
-  if (!mValueTransferInProgress) {
-    DebugOnly<bool> ok = SetValue(value, ValueSetterOption::ByInternalAPI);
-    
-    NS_WARNING_ASSERTION(ok, "SetValue() couldn't allocate memory");
-    
-    
-    if (IsSelectionCached()) {
-      SelectionProperties& props = GetSelectionProperties();
-      props.SetIsDirty();
-    }
   }
 }
 
@@ -2610,144 +2551,141 @@ bool TextControlState::SetValueWithoutTextEditor(
     mValue.SetIsVoid(false);
   }
 
+  if (mValue.Equals(aHandlingSetValue.GetSettingValue())) {
+    
+    
+    
+    
+    
+    if (IsSelectionCached()) {
+      GetSelectionProperties().SetIsDirty();
+    }
+    return true;
+  }
+  bool handleSettingValue = true;
   
   
-  if (!mValue.Equals(aHandlingSetValue.GetSettingValue())) {
-    bool handleSettingValue = true;
+  
+  nsString inputEventData(aHandlingSetValue.GetSettingValue());
+  if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+          ValueSetterOption::BySetUserInputAPI) &&
+      !aHandlingSetValue.HasBeforeInputEventDispatched()) {
     
     
     
-    nsString inputEventData(aHandlingSetValue.GetSettingValue());
-    if (aHandlingSetValue.ValueSetterOptionsRef().contains(
-            ValueSetterOption::BySetUserInputAPI) &&
-        !aHandlingSetValue.HasBeforeInputEventDispatched()) {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
-      MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
-      aHandlingSetValue.WillDispatchBeforeInputEvent();
-      nsEventStatus status = nsEventStatus_eIgnore;
-      DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
-          MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
-          eEditorBeforeInput, EditorInputType::eInsertReplacementText, nullptr,
-          InputEventOptions(
-              inputEventData,
-              StaticPrefs::dom_input_event_allow_to_cancel_set_user_input()
-                  ? InputEventOptions::NeverCancelable::No
-                  : InputEventOptions::NeverCancelable::Yes),
-          &status);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "Failed to dispatch beforeinput event");
-      if (status == nsEventStatus_eConsumeNoDefault) {
-        return true;  
+    
+    
+    
+    MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
+    MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
+    aHandlingSetValue.WillDispatchBeforeInputEvent();
+    nsEventStatus status = nsEventStatus_eIgnore;
+    DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
+        MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
+        eEditorBeforeInput, EditorInputType::eInsertReplacementText, nullptr,
+        InputEventOptions(
+            inputEventData,
+            StaticPrefs::dom_input_event_allow_to_cancel_set_user_input()
+                ? InputEventOptions::NeverCancelable::No
+                : InputEventOptions::NeverCancelable::Yes),
+        &status);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "Failed to dispatch beforeinput event");
+    if (status == nsEventStatus_eConsumeNoDefault) {
+      return true;  
+    }
+    
+    
+    if (aHandlingSetValue.IsTextControlStateDestroyed()) {
+      return true;
+    }
+    
+    
+    
+    
+    
+    if (mEditorInitialized) {
+      AutoInputEventSuppresser suppressInputEvent(mTextEditor);
+      if (!SetValueWithTextEditor(aHandlingSetValue)) {
+        return false;
       }
       
       
       if (aHandlingSetValue.IsTextControlStateDestroyed()) {
         return true;
       }
-      
-      
-      
-      
-      
-      if (mEditorInitialized) {
-        AutoInputEventSuppresser suppressInputEvent(mTextEditor);
-        if (!SetValueWithTextEditor(aHandlingSetValue)) {
-          return false;
-        }
-        
-        
-        if (aHandlingSetValue.IsTextControlStateDestroyed()) {
-          return true;
-        }
-        handleSettingValue = false;
-      }
+      handleSettingValue = false;
+    }
+  }
+
+  if (handleSettingValue) {
+    if (!mValue.Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
+      return false;
     }
 
-    if (handleSettingValue) {
-      if (!mValue.Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
-        return false;
-      }
-
-      
-      if (IsSelectionCached()) {
-        MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(
-            aHandlingSetValue.ValueSetterOptionsRef()));
-
-        SelectionProperties& props = GetSelectionProperties();
-        
-        
-        
-        props.SetMaxLength(aHandlingSetValue.ValueSetterOptionsRef().contains(
-                               ValueSetterOption::BySetRangeTextAPI)
-                               ? UINT32_MAX
-                               : aHandlingSetValue.GetSettingValue().Length());
-        if (aHandlingSetValue.ValueSetterOptionsRef().contains(
-                ValueSetterOption::MoveCursorToEndIfValueChanged)) {
-          props.SetStart(aHandlingSetValue.GetSettingValue().Length());
-          props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
-          props.SetDirection(SelectionDirection::Forward);
-        } else if (aHandlingSetValue.ValueSetterOptionsRef().contains(
-                       ValueSetterOption::
-                           MoveCursorToBeginSetSelectionDirectionForward)) {
-          props.SetStart(0);
-          props.SetEnd(0);
-          props.SetDirection(SelectionDirection::Forward);
-        }
-      }
-
-      
-      
-      
-      
-      const bool deinittingSelection =
-          mHandlingState &&
-          mHandlingState->IsHandling(TextControlAction::DeinitSelection);
-      mTextCtrlElement->UpdateValueDisplay(!deinittingSelection);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    if (aHandlingSetValue.ValueSetterOptionsRef().contains(
-            ValueSetterOption::BySetUserInputAPI)) {
-      MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
-
-      
-      
-      aHandlingSetValue.GetTextControlElement()->OnValueChanged(
-          ValueChangeKind::UserInteraction,
-          aHandlingSetValue.GetSettingValue());
-
-      ClearLastInteractiveValue();
-
-      MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
-      DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
-          MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()),
-          eEditorInput, EditorInputType::eInsertReplacementText, nullptr,
-          InputEventOptions(inputEventData,
-                            InputEventOptions::NeverCancelable::No));
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "Failed to dispatch input event");
-    }
-  } else {
-    
-    
-    
     
     if (IsSelectionCached()) {
+      MOZ_ASSERT(AreFlagsNotDemandingContradictingMovements(
+          aHandlingSetValue.ValueSetterOptionsRef()));
+
       SelectionProperties& props = GetSelectionProperties();
-      props.SetIsDirty();
+      
+      
+      
+      props.SetMaxLength(aHandlingSetValue.ValueSetterOptionsRef().contains(
+                             ValueSetterOption::BySetRangeTextAPI)
+                             ? UINT32_MAX
+                             : aHandlingSetValue.GetSettingValue().Length());
+      if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+              ValueSetterOption::MoveCursorToEndIfValueChanged)) {
+        props.SetStart(aHandlingSetValue.GetSettingValue().Length());
+        props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
+        props.SetDirection(SelectionDirection::Forward);
+      } else if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+                     ValueSetterOption::
+                         MoveCursorToBeginSetSelectionDirectionForward)) {
+        props.SetStart(0);
+        props.SetEnd(0);
+        props.SetDirection(SelectionDirection::Forward);
+      }
     }
+
+    
+    
+    
+    
+    const bool deinittingSelection =
+        mHandlingState &&
+        mHandlingState->IsHandling(TextControlAction::DeinitSelection);
+    mTextCtrlElement->UpdateValueDisplay(!deinittingSelection);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (aHandlingSetValue.ValueSetterOptionsRef().contains(
+          ValueSetterOption::BySetUserInputAPI)) {
+    MOZ_ASSERT(aHandlingSetValue.GetTextControlElement());
+
+    
+    
+    aHandlingSetValue.GetTextControlElement()->OnValueChanged(
+        ValueChangeKind::UserInteraction, aHandlingSetValue.GetSettingValue());
+
+    ClearLastInteractiveValue();
+
+    MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
+    DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
+        MOZ_KnownLive(aHandlingSetValue.GetTextControlElement()), eEditorInput,
+        EditorInputType::eInsertReplacementText, nullptr,
+        InputEventOptions(inputEventData,
+                          InputEventOptions::NeverCancelable::No));
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "Failed to dispatch input event");
   }
 
   return true;
