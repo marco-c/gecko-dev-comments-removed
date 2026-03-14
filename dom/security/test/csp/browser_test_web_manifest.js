@@ -201,7 +201,7 @@ add_task(async function () {
 });
 
 async function testObtainingManifest(aBrowser, aTest) {
-  const waitForObserver = waitForNetObserver(aBrowser, aTest);
+  const waitForObserver = waitForCSPViolation(aBrowser, aTest);
   
   
   try {
@@ -221,19 +221,15 @@ async function testObtainingManifest(aBrowser, aTest) {
 }
 
 
-function waitForNetObserver(aBrowser, aTest) {
+function waitForCSPViolation(aBrowser, aTest) {
   
   if (!aTest.expected.includes("block")) {
     return Promise.resolve();
   }
 
-  return ContentTask.spawn(aBrowser, [], () => {
-    return new Promise(resolve => {
-      function observe(subject, topic) {
-        Services.obs.removeObserver(observe, "csp-on-violate-policy");
-        resolve();
-      }
-      Services.obs.addObserver(observe, "csp-on-violate-policy");
-    });
-  }).then(() => aTest.run("csp-on-violate-policy"));
+  return BrowserTestUtils.waitForContentEvent(
+    aBrowser,
+    "securitypolicyviolation",
+    true
+  ).then(() => aTest.run("csp-on-violate-policy"));
 }
