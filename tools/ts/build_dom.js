@@ -19,10 +19,13 @@ const BINDINGS = require.resolve("../../dom/bindings/Bindings.conf");
 
 
 
+
 const GENERATED_WEDIDL_FILES = [
   "CSSPageDescriptors.webidl",
   "CSSPositionTryDescriptors.webidl",
   "CSSStyleProperties.webidl",
+  "CSSFontFaceDescriptors.webidl",
+  "CSSCounterStyleRule.webidl",
 ];
 
 
