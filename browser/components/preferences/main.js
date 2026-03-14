@@ -5355,8 +5355,7 @@ var gMainPane = {
         
         document.getElementById("autoDesktop").removeAttribute("selected");
         document.getElementById("manualDesktop").removeAttribute("selected");
-        
-        this.readUpdateAutoPref();
+
         setEventListener("updateRadioGroup", "command", event => {
           if (event.target.id == "backgroundUpdate") {
             this.writeBackgroundUpdatePref();
@@ -5364,11 +5363,18 @@ var gMainPane = {
             this.writeUpdateAutoPref();
           }
         });
-        if (this.isBackgroundUpdateUIAvailable()) {
-          document.getElementById("backgroundUpdate").hidden = false;
+
+        
+        this.readUpdateAutoPref().then(async () => {
           
-          this.readBackgroundUpdatePref();
-        }
+          
+          if (this.isBackgroundUpdateUIAvailable()) {
+            document.getElementById("backgroundUpdate").hidden = false;
+
+            
+            await this.readBackgroundUpdatePref();
+          }
+        });
       }
 
       if (AppConstants.platform == "win") {
