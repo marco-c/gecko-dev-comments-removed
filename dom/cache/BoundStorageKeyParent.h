@@ -25,25 +25,17 @@ class BoundStorageKeyParent final : public PBoundStorageKeyParent {
 
  public:
   explicit BoundStorageKeyParent(
-      mozilla::ipc::PBackgroundParent* aBackgroundParent)
-      : mBackgroundParent(aBackgroundParent) {
-    MOZ_COUNT_CTOR(BoundStorageKeyParent);
-  }
+      mozilla::ipc::PBackgroundParent* aBackgroundParent);
 
   NS_INLINE_DECL_REFCOUNTING(BoundStorageKeyParent, override)
 
  private:
-  virtual ~BoundStorageKeyParent() { MOZ_COUNT_DTOR(BoundStorageKeyParent); }
+  ~BoundStorageKeyParent() override;
 
   already_AddRefed<PCacheStorageParent> AllocPCacheStorageParent(
       const Namespace& aNamespace, const PrincipalInfo& aPrincipalInfo);
 
-  
-  
-  
-  
-  
-  mozilla::ipc::PBackgroundParent* MOZ_NON_OWNING_REF mBackgroundParent;
+  RefPtr<mozilla::ipc::PBackgroundParent> mBackgroundParent;
 };
 
 }  
