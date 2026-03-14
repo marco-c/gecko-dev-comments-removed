@@ -1263,6 +1263,13 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'fill', 'stroke' ] ] }
     ]
   },
+  'path-length': {
+    
+    types: [ 'positiveNumber' ],
+    setup: t => {
+      return createElement(t, 'path');
+    }
+  },
   'perspective': {
     
     types: [ 'length' ]
