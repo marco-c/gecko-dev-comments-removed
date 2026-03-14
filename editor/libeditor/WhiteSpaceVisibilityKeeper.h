@@ -242,18 +242,20 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
   template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
              const EditorDOMPointType& aPointToInsert,
-             InsertTextTo aInsertTextTo) {
+             InsertTextTo aInsertTextTo, const Element& aEditingHost) {
     return WhiteSpaceVisibilityKeeper::
         InsertTextOrInsertOrUpdateCompositionString(
             aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
-            aInsertTextTo, InsertTextFor::NormalText);
+            aInsertTextTo, InsertTextFor::NormalText, aEditingHost);
   }
 
   
+
 
 
 
@@ -270,11 +272,13 @@ class WhiteSpaceVisibilityKeeper final {
   InsertOrUpdateCompositionString(HTMLEditor& aHTMLEditor,
                                   const nsAString& aCompositionString,
                                   const EditorDOMRange& aCompositionStringRange,
-                                  InsertTextFor aPurpose) {
+                                  InsertTextFor aPurpose,
+                                  const Element& aEditingHost) {
     MOZ_ASSERT(EditorBase::InsertingTextForComposition(aPurpose));
     return InsertTextOrInsertOrUpdateCompositionString(
         aHTMLEditor, aCompositionString, aCompositionStringRange,
-        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable, aPurpose);
+        HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable, aPurpose,
+        aEditingHost);
   }
 
   
@@ -391,11 +395,12 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertTextOrInsertOrUpdateCompositionString(
       HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
       const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-      InsertTextFor aPurpose);
+      InsertTextFor aPurpose, const Element& aEditingHost);
 };
 
 }  

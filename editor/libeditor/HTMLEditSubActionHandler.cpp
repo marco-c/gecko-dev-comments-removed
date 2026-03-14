@@ -1200,19 +1200,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
               compositionEndPoint.IsSet()
                   ? EditorDOMRange(pointToInsert, compositionEndPoint)
                   : EditorDOMRange(pointToInsert),
-              aPurpose);
+              aPurpose, *editingHost);
       if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
         NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
         return replaceTextResult.propagateErr();
       }
       InsertTextResult unwrappedReplaceTextResult = replaceTextResult.unwrap();
-      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          unwrappedReplaceTextResult.EndOfInsertedTextRef(), *editingHost);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-        return Err(rv);
-      }
       endOfInsertedText = unwrappedReplaceTextResult.EndOfInsertedTextRef();
       if (InsertingTextForCommittingComposition(aPurpose)) {
         
@@ -1325,6 +1318,38 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     
     
     if (!isWhiteSpaceCollapsible || IsPlaintextMailComposer()) {
+      if (!aInsertionString.IsEmpty()) [[likely]] {
+        
+        
+        
+        const WSScanResult nextThing = HTMLEditUtils::
+            ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+                currentPoint, PaddingForEmptyBlock::Unnecessary, *editingHost);
+        if (nextThing.MaybeIgnoredLineBreak().isSome()) {
+          const EditorLineBreak& lineBreak =
+              nextThing.MaybeIgnoredLineBreak().ref();
+          const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
+              lineBreak.ContentRef().IsInclusiveDescendantOf(
+                  currentPoint.GetContainer())
+                  ? currentPoint.GetContainerOrContainerParentElement()
+                  : editingHost.get();
+          {
+            AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
+                                                &currentPoint);
+            Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+                DeleteLineBreakWithTransaction(
+                    lineBreak, nsIEditor::eStrip,
+                    *ancestorLimiterToDeleteEmptyInlines);
+            if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+              NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+              return deleteLineBreakResultOrError.propagateErr();
+            }
+          }
+          if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+          }
+        }
+      }
       if (*lineBreakType == LineBreakType::Linefeed) {
         
         
@@ -1440,14 +1465,15 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
             if (!lineText.Contains(u'\t')) {
               return WhiteSpaceVisibilityKeeper::InsertText(
                   *this, lineText, currentPoint,
-                  GetInsertTextTo(inclusiveNextLinefeedOffset,
-                                  lineStartOffset));
+                  GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
+                  *editingHost);
             }
             nsAutoString formattedLineText(lineText);
             formattedLineText.ReplaceSubstring(u"\t"_ns, u"    "_ns);
             return WhiteSpaceVisibilityKeeper::InsertText(
                 *this, formattedLineText, currentPoint,
-                GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset));
+                GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
+                *editingHost);
           }();
           if (MOZ_UNLIKELY(insertTextResult.isErr())) {
             NS_WARNING("WhiteSpaceVisibilityKeeper::InsertText() failed");
