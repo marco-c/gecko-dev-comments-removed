@@ -47,6 +47,10 @@ const proxyNativeShellService = {
 
 sinon.stub(ShellService, "shellService").value(proxyNativeShellService);
 sinon.stub(ShellService, "writeShortcutIcon").resolves();
+sinon.stub(ShellService, "createLinuxDesktopEntry").resolves();
+sinon
+  .stub(ShellService, "deleteLinuxDesktopEntry")
+  .callsFake(exposeDeleteResult);
 
 registerCleanupFunction(() => {
   sinon.restore();
@@ -126,6 +130,11 @@ async function testUnpinMetricCustom(
   gShortcutDeleteResult = aDeleteResult;
 
   
+  
+  
+  gRegistry.patchTaskbarTab(taskbarTab, {
+    shortcutRelativePath: "whatever",
+  });
 
   await TaskbarTabsPin.unpinTaskbarTab(taskbarTab, gRegistry);
   snapshot = Glean.webApp.unpin.testGetValue();
