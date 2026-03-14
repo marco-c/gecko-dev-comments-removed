@@ -24,19 +24,20 @@ function* do_run_test() {
   let now = Number(Date.now());
 
   
+  
   pm.addFromPrincipal(
     principal,
     "test/expiration-perm-exp",
     1,
     pm.EXPIRE_TIME,
-    now
+    now - 10
   );
   pm.addFromPrincipal(
     principal,
     "test/expiration-session-exp",
     1,
     pm.EXPIRE_SESSION,
-    now
+    now - 10
   );
 
   
