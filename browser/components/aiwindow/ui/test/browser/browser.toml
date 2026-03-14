@@ -11,6 +11,8 @@ support-files = [
   "test_chat_search_button.mjs",
   "test_assistant_message_footer_page.html",
   "test_applied_memories_page.html",
+  "test_chat_assistant_error.html",
+  "test_chat_assistant_error.mjs",
   "test_memories_icon_button_page.html",
   "test_memories_icon_button.mjs",
   "test_smartwindow_panel_list_page.html",
@@ -79,6 +81,8 @@ support-files = [
 
 ["browser_sidebar_aiwindow.js"]
 
+["browser_smartwindow_assistant_ui_errors.js"]
+
 ["browser_smartwindow_content.js"]
 
 ["browser_smartwindow_footer.js"]
@@ -102,3 +106,5 @@ support-files = [
 ["browser_smartwindow_tab_switching.js"]
 
 ["browser_smartwindow_telemetry.js"]
+
+["browser_smartwindow_smartbar_tab_state.js"]
