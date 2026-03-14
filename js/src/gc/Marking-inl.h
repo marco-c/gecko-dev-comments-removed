@@ -207,13 +207,6 @@ inline void PreWriteBarrierDuringFlattening(JSString* str) {
 
 
 
-template <typename Table, typename Range, typename Lookup>
-void CheckCCWTableEntryAfterMovingGC(const Table& table, const Range& r,
-                                     const Lookup& lookup) {
-  auto ptr = table.lookup(lookup);
-  MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &r.front());
-}
-
 template <typename Table, typename Iter, typename Lookup>
 void CheckTableEntryAfterMovingGC(const Table& table, const Iter& iter,
                                   const Lookup& lookup) {

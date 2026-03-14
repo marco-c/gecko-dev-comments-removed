@@ -426,18 +426,15 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
 
     
     
-    
-    mozilla::Maybe<Compartment::ObjectWrapperEnum> e;
-    if (MOZ_LIKELY(!nukeAll)) {
-      e.emplace(c, target->compartment());
-    } else {
-      e.emplace(c);
+    auto iter = !nukeAll ? c->objectWrapperMappingsTo(target->compartment())
+                         : c->objectWrapperMappings();
+    if (nukeAll) {
       c.get()->nukedOutgoingWrappers = true;
     }
-    for (; !e->empty(); e->popFront()) {
-      JSObject* key = e->front().key();
+    for (; !iter.done(); iter.next()) {
+      JSObject* key = iter.get().key();
 
-      AutoWrapperRooter wobj(cx, WrapperValue(*e));
+      AutoWrapperRooter wobj(cx, WrapperValue(iter));
 
       
       
@@ -464,7 +461,7 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
       }
 
       
-      e->removeFront();
+      iter.remove();
       NukeRemovedCrossCompartmentWrapper(cx, wobj);
     }
   }
@@ -645,17 +642,17 @@ JS_PUBLIC_API bool js::RecomputeWrappers(
     }
 
     
-    for (Compartment::ObjectWrapperEnum e(c, targetFilter); !e.empty();
-         e.popFront()) {
+    for (auto iter = c->objectWrapperMappings(targetFilter); !iter.done();
+         iter.next()) {
       
       
-      JSObject* wrapper = *e.front().value().unsafeGet();
+      JSObject* wrapper = *iter.get().value().unsafeGet();
       if (Wrapper::wrappedObject(wrapper)->is<FinalizationRecordObject>()) {
         continue;
       }
 
       
-      if (!toRecompute.append(WrapperValue(e))) {
+      if (!toRecompute.append(WrapperValue(iter))) {
         return false;
       }
     }
