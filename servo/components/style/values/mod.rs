@@ -104,6 +104,14 @@ where
 }
 
 
+pub fn reify_number(v: f32) -> NumericValue {
+    NumericValue::Unit(UnitValue {
+        value: v,
+        unit: CssString::from("number"),
+    })
+}
+
+
 pub fn serialize_specified_dimension<W>(
     v: f32,
     unit: &str,

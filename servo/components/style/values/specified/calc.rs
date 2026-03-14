@@ -21,7 +21,7 @@ use crate::values::specified::length::{AbsoluteLength, FontRelativeLength, NoCal
 use crate::values::specified::length::{ContainerRelativeLength, ViewportPercentageLength};
 use crate::values::specified::{self, Angle, Resolution, Time};
 use crate::values::{
-    reify_percentage, serialize_number, serialize_percentage, CSSFloat, DashedIdent,
+    reify_number, reify_percentage, serialize_number, serialize_percentage, CSSFloat, DashedIdent,
 };
 use cssparser::{match_ignore_ascii_case, CowRcStr, Parser, Token};
 use debug_unreachable::debug_unreachable;
@@ -131,6 +131,7 @@ impl ToTyped for Leaf {
         
         match *self {
             Self::Length(ref l) => l.to_typed(),
+            Self::Number(n) => Some(TypedValue::Numeric(reify_number(n))),
             Self::Percentage(p) => Some(TypedValue::Numeric(reify_percentage(p))),
             _ => None,
         }

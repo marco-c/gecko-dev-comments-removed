@@ -54,6 +54,7 @@ impl ToTyped for Percentage {
     fn to_typed(&self) -> Option<TypedValue> {
         let numeric_value = reify_percentage(self.value);
 
+        
         if self.calc_clamping_mode.is_some() {
             Some(TypedValue::Numeric(NumericValue::Sum(MathSum {
                 values: ThinVec::from([numeric_value]),
