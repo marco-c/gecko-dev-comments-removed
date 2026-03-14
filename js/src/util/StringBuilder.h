@@ -96,10 +96,17 @@ class StringBuilderAllocPolicy {
 
   
   template <size_t EltSize>
-  static size_t computeGrowth(size_t aOldElts, size_t aIncr) {
-    return detail::GrowEltsAggressively<EltSize>(aOldElts, aIncr);
+  static size_t computeGrowth(size_t oldElts, size_t incr) {
+    
+    
+    
+    if (oldElts + incr >= size_t(JSString::MAX_LENGTH)) {
+      return 0;
+    }
+    return detail::GrowEltsAggressively<EltSize>(oldElts, incr);
   }
 };
+
 
 
 
