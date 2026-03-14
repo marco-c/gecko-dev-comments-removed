@@ -3629,17 +3629,6 @@
 
 
 
-    hideSplitViewPanels(tabs) {
-      for (const tab of tabs) {
-        this.tabpanels.removePanelFromSplitView(tab.linkedPanel);
-      }
-    }
-
-    
-
-
-
-
 
     setIsSplitViewActive(isActive, tabs) {
       for (const tab of tabs) {

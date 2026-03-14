@@ -536,26 +536,34 @@
 
 
 
+    removeTabsFromSplitview(tabs) {
+      for (const tab of tabs) {
+        let panel = tab.linkedPanel;
+        const panelEl = document.getElementById(panel);
+        panelEl?.classList.remove("split-view-panel");
+        panelEl?.removeAttribute("column");
+        const browser = panelEl?.querySelector("browser");
+        const browserContainer = panelEl?.querySelector(".browserContainer");
 
-
-    removePanelFromSplitView(panel, updateArray = true) {
-      const panelEl = document.getElementById(panel);
-      panelEl?.classList.remove("split-view-panel");
-      panelEl?.removeAttribute("column");
-      const browser = panelEl?.querySelector("browser");
-      const browserContainer = panelEl?.querySelector(".browserContainer");
-      for (const eventType of MozTabpanels.#SPLIT_VIEW_PANEL_EVENTS) {
-        browserContainer?.removeEventListener(eventType, this);
-      }
-      browser?.removeEventListener("focus", this);
-      if (updateArray) {
+        for (const eventType of MozTabpanels.#SPLIT_VIEW_PANEL_EVENTS) {
+          browserContainer?.removeEventListener(eventType, this);
+        }
+        browser?.removeEventListener("focus", this);
         const index = this.#splitViewPanels.indexOf(panel);
+
         if (index !== -1) {
           this.#splitViewPanels.splice(index, 1);
         }
       }
+
       this.setSplitViewActive(!!this.#splitViewPanels.length);
     }
+
+    
+
+
+
+
 
     setSplitViewActive(updatedValue) {
       let isActive = gBrowser.selectedTab.splitview && updatedValue;

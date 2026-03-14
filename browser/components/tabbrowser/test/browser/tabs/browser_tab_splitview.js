@@ -61,7 +61,7 @@ add_task(async function test_splitViewCreateAndAddTabs() {
   let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let tab4 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-
+  const tabpanels = document.getElementById("tabbrowser-tabpanels");
   
   let splitview = gBrowser.addTabSplitView([tab1, tab2]);
   let splitview2 = gBrowser.addTabSplitView([tab3, tab4]);
@@ -126,7 +126,7 @@ add_task(async function test_splitViewCreateAndAddTabs() {
   );
 
   
-  splitview.unsplitTabs();
+  gBrowser.unsplitTabs(splitview);
   await BrowserTestUtils.waitForMutationCondition(
     tabbrowserTabs,
     { childList: true },
@@ -153,6 +153,16 @@ add_task(async function test_splitViewCreateAndAddTabs() {
     !tab3Panel.classList.contains("split-view-panel-active") &&
       !tab4Panel.classList.contains("split-view-panel-active"),
     "Split view active classes have been removed from the tab panels"
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { attributes: true },
+    () => !tabpanels.hasAttribute("splitview")
+  );
+  Assert.ok(
+    !tabpanels.hasAttribute("splitview"),
+    "Tab panel does not have blue outline"
   );
 
   
