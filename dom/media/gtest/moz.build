@@ -37,6 +37,7 @@ UNIFIED_SOURCES += [
     "TestAudioTrackGraph.cpp",
     "TestBitWriter.cpp",
     "TestBlankVideoDataCreator.cpp",
+    "TestBufferMediaResource.cpp",
     "TestBufferReader.cpp",
     "TestCubebInputStream.cpp",
     "TestDataMutex.cpp",
@@ -99,6 +100,7 @@ if CONFIG["MOZ_WEBRTC"] and CONFIG["OS_TARGET"] != "Android":
         "TestAudioDeviceEnumerator.cpp",
         "TestPacer.cpp",
         "TestVideoFrameConverter.cpp",
+        "TestWebrtcGmpCodec.cpp",
     ]
 
 TEST_HARNESS_FILES.gtest += [
