@@ -341,8 +341,6 @@ struct TimerMarker {
     }
     if (aCanceled) {
       aWriter.BoolProperty("canceled", true);
-      
-      aWriter.StringProperty("prefix", "❌");
     }
 
     
@@ -370,9 +368,11 @@ struct TimerMarker {
     schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
     schema.AddKeyLabelFormat("ttype", "Timer Type", MS::Format::String);
     schema.AddKeyLabelFormat("canceled", "Canceled", MS::Format::String);
-    schema.AddKeyFormat("prefix", MS::Format::String, MS::PayloadFlags::Hidden);
-    schema.SetChartLabel("{marker.data.prefix} {marker.data.delay}");
-    schema.SetTableLabel("{marker.data.prefix} {marker.data.delay}");
+    
+    schema.SetChartLabel(
+        "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}");
+    schema.SetTableLabel(
+        "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}");
     return schema;
   }
 };
