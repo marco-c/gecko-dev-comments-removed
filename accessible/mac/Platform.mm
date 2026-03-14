@@ -6,6 +6,7 @@
 
 
 #import <Cocoa/Cocoa.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 #import "MOXTextMarkerDelegate.h"
 
@@ -215,6 +216,7 @@ enum class Client : uint64_t {
   Unknown,
   VoiceOver,
   SwitchControl,
+  UAZoom,
   FullKeyboardAccess,
   VoiceControl,
   SpeakSelection,
@@ -222,6 +224,7 @@ enum class Client : uint64_t {
   SpeakTypingFeedback,
   HoverText
 };
+
 
 
 
@@ -242,6 +245,8 @@ std::pair<EnumSet<Client>, Client> GetClients() {
                  respondsToSelector:@selector(isSwitchControlEnabled)] &&
              [[NSWorkspace sharedWorkspace] isSwitchControlEnabled]) {
     AddClient(Client::SwitchControl);
+  } else if (UAZoomEnabled()) {
+    AddClient(Client::UAZoom);
   } else {
     Boolean foundSpecificClient = false;
 
@@ -313,6 +318,8 @@ constexpr const char* GetStringForClient(Client aClient) {
       return "VoiceOver";
     case Client::SwitchControl:
       return "SwitchControl";
+    case Client::UAZoom:
+      return "UAZoom";
     case Client::FullKeyboardAccess:
       return "FullKeyboardAccess";
     case Client::VoiceControl:
@@ -347,6 +354,10 @@ uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
     return CacheDomain::All;
   }
   if (clients.contains(Client::VoiceControl)) {
+    
+    return CacheDomain::All;
+  }
+  if (clients.contains(Client::UAZoom)) {
     
     return CacheDomain::All;
   }
