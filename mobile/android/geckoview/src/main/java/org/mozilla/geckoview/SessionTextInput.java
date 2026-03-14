@@ -200,12 +200,6 @@ public final class SessionTextInput {
       final View view = session.getTextInput().getView();
       final InputMethodManager imm = getInputMethodManager(view);
       if (imm != null) {
-        if (view.hasFocus() && !imm.isActive(view)) {
-          
-          
-          view.clearFocus();
-          view.requestFocus();
-        }
         imm.showSoftInput(view, 0);
       }
     }
