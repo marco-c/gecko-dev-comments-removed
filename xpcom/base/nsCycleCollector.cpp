@@ -1714,7 +1714,7 @@ class nsCycleCollectorLogSinkToFile final : public nsICycleCollectorLogSink {
     if (NS_SUCCEEDED(aLog->mFile->MoveTo( nullptr,
                                          logFileFinalDestinationName))) {
       
-      aLog->mFile = logFileFinalDestination;
+      aLog->mFile = std::move(logFileFinalDestination);
     }
 
     
