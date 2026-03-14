@@ -260,15 +260,60 @@ let DEFAULT_SERVICE_STATUS = {
     pass: makePass(),
     usage: makeUsage(),
   },
+  usageInfo: makeUsage(),
 };
 
 
 let STUBS = {
   isEnrolledAndEntitled: undefined,
+  hasUpgraded: undefined,
   enroll: undefined,
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
+  fetchProxyUsage: undefined,
+  isLinkedToGuardian: undefined,
 };
+
+
+async function waitForServiceInitialized() {
+  if (IPProtectionService.state !== IPProtectionStates.UNINITIALIZED) {
+    return;
+  }
+  await BrowserTestUtils.waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    false,
+    () => IPProtectionService.state !== IPProtectionStates.UNINITIALIZED
+  );
+}
+
+
+async function waitForServiceState(state) {
+  if (IPProtectionService.state === state) {
+    return;
+  }
+
+  await BrowserTestUtils.waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    false,
+    () => IPProtectionService.state === state
+  );
+}
+
+
+async function waitForProxyState(state) {
+  if (IPPProxyManager.state === state) {
+    return;
+  }
+
+  await BrowserTestUtils.waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    false,
+    () => IPPProxyManager.state === state
+  );
+}
 
 
 let setupSandbox = sinon.createSandbox();
@@ -283,9 +328,15 @@ add_setup(async function setupVPN() {
     set: [["browser.ipProtection.enabled", true]],
   });
 
+  await waitForServiceInitialized();
+
   registerCleanupFunction(async () => {
     cleanupService();
+
     Services.prefs.clearUserPref("browser.ipProtection.enabled");
+
+    await waitForServiceState(IPProtectionStates.UNINITIALIZED);
+
     setupSandbox.restore();
     CustomizableUI.reset();
     Services.prefs.clearUserPref(IPProtectionWidget.ADDED_PREF);
@@ -308,15 +359,25 @@ function setupStubs(stubs = STUBS) {
     IPPEnrollAndEntitleManager,
     "isEnrolledAndEntitled"
   );
-  stubs.enroll = setupSandbox.stub(IPProtectionService.guardian, "enroll");
-  stubs.fetchUserInfo = setupSandbox.stub(
-    IPProtectionService.guardian,
-    "fetchUserInfo"
+  stubs.hasUpgraded = setupSandbox.stub(
+    IPPEnrollAndEntitleManager,
+    "hasUpgraded"
   );
-  stubs.fetchProxyPass = setupSandbox.stub(
-    IPProtectionService.guardian,
-    "fetchProxyPass"
-  );
+
+  const guardianStub = {
+    enroll: setupSandbox.stub(),
+    fetchUserInfo: setupSandbox.stub(),
+    fetchProxyPass: setupSandbox.stub(),
+    fetchProxyUsage: setupSandbox.stub(),
+    isLinkedToGuardian: setupSandbox.stub().resolves(false),
+  };
+  stubs.enroll = guardianStub.enroll;
+  stubs.fetchUserInfo = guardianStub.fetchUserInfo;
+  stubs.fetchProxyPass = guardianStub.fetchProxyPass;
+  stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
+  stubs.isLinkedToGuardian = guardianStub.isLinkedToGuardian;
+
+  setupSandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
 }
 
 
@@ -324,9 +385,11 @@ function setupService(
   {
     isSignedIn,
     isEnrolledAndEntitled,
+    hasUpgraded,
     canEnroll,
     entitlement,
     proxyPass,
+    usageInfo,
   } = DEFAULT_SERVICE_STATUS,
   stubs = STUBS
 ) {
@@ -336,6 +399,10 @@ function setupService(
 
   if (typeof isEnrolledAndEntitled != "undefined") {
     stubs.isEnrolledAndEntitled.get(() => isEnrolledAndEntitled);
+  }
+
+  if (typeof hasUpgraded != "undefined") {
+    stubs.hasUpgraded.get(() => hasUpgraded);
   }
 
   if (typeof canEnroll != "undefined") {
@@ -352,6 +419,10 @@ function setupService(
 
   if (typeof proxyPass != "undefined") {
     stubs.fetchProxyPass.resolves(proxyPass);
+  }
+
+  if (typeof usageInfo != "undefined") {
+    stubs.fetchProxyUsage.resolves(usageInfo);
   }
 }
 
