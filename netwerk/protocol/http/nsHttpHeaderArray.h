@@ -175,7 +175,9 @@ class nsHttpHeaderArray {
                                    nsACString& aResult);
 
   
-  CopyableTArray<nsEntry> mHeaders;
+  
+  
+  CopyableAutoTArray<nsEntry, 16> mHeaders;
 
   friend struct IPC::ParamTraits<nsHttpHeaderArray>;
   friend class nsHttpRequestHead;
