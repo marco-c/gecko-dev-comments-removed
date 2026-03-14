@@ -260,6 +260,14 @@ extern JS_PUBLIC_API void SetModulePreload(JSObject* module, bool isPreload);
 
 
 
+extern JS_PUBLIC_API void ResetPreloadedModule(JSObject* module);
+
+
+
+
+
+
+
 
 extern JS_PUBLIC_API bool ModuleLink(JSContext* cx,
                                      Handle<JSObject*> moduleRecord);

@@ -707,6 +707,9 @@ class ModuleScript final : public LoadedScript {
   bool ForPreload() const { return mForPreload; }
   bool HadImportMap() const { return mHadImportMap; }
 
+  
+  
+  void ResetPreload();
   void Shutdown();
 
   void UnlinkModuleRecord();
