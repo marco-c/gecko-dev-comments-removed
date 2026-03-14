@@ -12,10 +12,6 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Missing message.*smartwindow-messages-document-title/
 );
 
-const { AIWindowUI } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
-);
-
 
 add_task(async function test_window_switcher_button_visibility() {
   await SpecialPowers.pushPrefEnv({
@@ -468,6 +464,65 @@ add_task(async function test_onAccountLogout_switches_windows() {
   );
 
   await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function test_ai_control_block_hides_switcher() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.ai.control.smartWindow", "default"],
+    ],
+  });
+
+  let win = await openAIWindow();
+  let button = win.document.getElementById("ai-window-toggle");
+
+  Assert.ok(!button?.hidden, "Switcher button should be visible");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ai.control.smartWindow", "blocked"]],
+  });
+
+  await TestUtils.waitForCondition(
+    () => button?.hidden,
+    "Switcher button should be hidden when AI control is blocked"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function test_ai_control_default_block_hides_switcher() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.ai.control.smartWindow", "default"],
+      ["browser.ai.control.default", "available"],
+    ],
+  });
+
+  let win = await openAIWindow();
+  let button = win.document.getElementById("ai-window-toggle");
+
+  Assert.ok(!button?.hidden, "Switcher button should be visible");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ai.control.default", "blocked"]],
+  });
+
+  await TestUtils.waitForCondition(
+    () => button?.hidden,
+    "Switcher button should be hidden when global AI control default is blocked"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
 });
 

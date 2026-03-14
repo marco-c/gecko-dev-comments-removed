@@ -1085,3 +1085,20 @@ async function waitForCheckboxState(checkbox, expectedValue) {
     `Waiting for checkbox checked to be ${expectedValue}`
   );
 }
+
+
+
+
+
+
+
+
+async function withPrefsPane(pane, testFn) {
+  await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  try {
+    await testFn(doc);
+  } finally {
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+}
