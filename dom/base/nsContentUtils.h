@@ -723,22 +723,6 @@ class nsContentUtils {
 
 
 
-
-  template <TreeKind aKind>
-  static mozilla::Maybe<int32_t> ComparePointsWithIndices(
-      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
-      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
   template <TreeKind aKind, typename PT1, typename RT1, typename PT2,
             typename RT2>
   static mozilla::Maybe<int32_t> ComparePoints(
@@ -3726,6 +3710,15 @@ class nsContentUtils {
   static mozilla::Maybe<int32_t> CompareChildNodeAndChildOffset(
       const nsINode& aParent, const nsIContent& aChild1, uint32_t aOffset2,
       NodeIndexCache* aIndexCache = nullptr);
+
+  
+
+
+
+  template <TreeKind aKind>
+  static mozilla::Maybe<int32_t> ComparePointsWithIndices(
+      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
+      uint32_t aOffset2, NodeIndexCache* aIndexCache = nullptr);
 
   
 
