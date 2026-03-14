@@ -899,7 +899,23 @@
             customElements.setElementCreationCallback(
               tag,
               function customElementCreationCallback() {
-                ChromeUtils.importESModule(script, { global: "current" });
+                try {
+                  ChromeUtils.importESModule(script, { global: "current" });
+                } catch (e) {
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  console.error("Failed to import custom element module", e);
+                  customElements.define(tag, class extends MozHTMLElement {});
+                }
               }
             );
           }
