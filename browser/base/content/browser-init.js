@@ -157,6 +157,10 @@ var gBrowserInit = {
       if (extraOptions.hasKey("taskbartab")) {
         let taskbarTabId = extraOptions.getPropertyAsAString("taskbartab");
         window.document.documentElement.setAttribute(
+          "windowclass",
+          "org.mozilla.firefox.webapp-" + taskbarTabId
+        );
+        window.document.documentElement.setAttribute(
           "taskbartab",
           taskbarTabId
         );
@@ -423,10 +427,6 @@ var gBrowserInit = {
   },
 
   _delayedStartup() {
-    let { TelemetryTimestamps } = ChromeUtils.importESModule(
-      "resource://gre/modules/TelemetryTimestamps.sys.mjs"
-    );
-    TelemetryTimestamps.add("delayedStartupStarted");
     Glean.browserTimings.startupTimeline.delayedStartupStarted.set(
       Services.telemetry.msSinceProcessStart()
     );
@@ -735,7 +735,6 @@ var gBrowserInit = {
     this.delayedStartupFinished = true;
     _resolveDelayedStartup();
     Services.obs.notifyObservers(window, "browser-delayed-startup-finished");
-    TelemetryTimestamps.add("delayedStartupFinished");
     Glean.browserTimings.startupTimeline.delayedStartupFinished.set(
       Services.telemetry.msSinceProcessStart()
     );
