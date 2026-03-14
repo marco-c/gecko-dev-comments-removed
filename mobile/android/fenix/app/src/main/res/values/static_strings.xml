@@ -131,6 +131,7 @@
     <string name="preferences_debug_settings_enable_persistent_onboarding" translatable="false">Show onboarding on each app cold open</string>
 
     <!-- Search Optimization Secret Settings -->
+    <string name="preferences_debug_settings_search_optimization" translatable="false">Search Optimization Feature</string>
     <string name="preferences_debug_settings_enable_search_optimization" translatable="false">Enable Search Optimization Feature</string>
     <string name="preferences_debug_settings_enable_search_optimization_stock" translatable="false">Show Search Optimization Stock cards</string>
     <string name="preferences_debug_settings_search_optimization_stock_summary" translatable="false">This needs the Search Optimization Feature enabled</string>
@@ -140,6 +141,9 @@
 
     <!-- Label for toggling the Tab Search feature -->
     <string name="preferences_tab_search_feature" translatable="false">Enable Tab Search</string>
+
+    <!-- Label for toggling the Tab Groups feature -->
+    <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
 
     <!-- Label for toggling the Tab Manager opening animation -->
     <string name="preferences_tab_manager_opening_animation" translatable="false">Enable Tab Manager opening animation</string>
