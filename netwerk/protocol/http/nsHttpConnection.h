@@ -94,6 +94,11 @@ class nsHttpConnection final : public HttpConnectionBase,
   }
 
   
+  
+  
+  bool CanReuseLikely();
+
+  
   uint32_t TimeToLive();
 
   bool NeedSpdyTunnel() {
