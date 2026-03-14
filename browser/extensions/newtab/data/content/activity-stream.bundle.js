@@ -4738,7 +4738,9 @@ const AdBanner = ({
 
 
 
+const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
+const CardGrid_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
@@ -5024,7 +5026,16 @@ class _CardGrid extends (external_React_default()).PureComponent {
 
     
     const isEmpty = data.recommendations.length === 0;
-    return external_React_default().createElement("div", null, this.props.title && external_React_default().createElement("div", {
+    const prefs = this.props.Prefs.values;
+    const novaEnabled = prefs[PREF_NOVA_ENABLED];
+    const sectionsEnabled = prefs[CardGrid_PREF_SECTIONS_ENABLED];
+    const showNovaHeader = novaEnabled && !sectionsEnabled;
+    return external_React_default().createElement("div", {
+      className: "ds-card-grid-container"
+    }, showNovaHeader && external_React_default().createElement("h2", {
+      className: "ds-header",
+      "data-l10n-id": "newtab-section-header-stories"
+    }), !showNovaHeader && this.props.title && external_React_default().createElement("div", {
       className: "ds-header"
     }, external_React_default().createElement("div", {
       className: "title"
@@ -5153,7 +5164,7 @@ ErrorBoundary.defaultProps = {
 
 
 
-const PREF_NOVA_ENABLED = "nova.enabled";
+const CollapsibleSection_PREF_NOVA_ENABLED = "nova.enabled";
 class _CollapsibleSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -5239,7 +5250,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     const selectedTopics = this.props.Prefs.values["discoverystream.topicSelection.selectedTopics"];
     const topicsHaveBeenPreviouslySet = hasBeenUpdatedPreviously || selectedTopics;
     
-    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
+    const novaEnabled = this.props.Prefs.values[CollapsibleSection_PREF_NOVA_ENABLED];
     return external_React_default().createElement("section", {
       className: `
           ${novaEnabled ? "" : "collapsible-section"}
@@ -5248,7 +5259,7 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
       
       ,
       "data-section-id": id
-    }, !sectionsEnabled && external_React_default().createElement("div", {
+    }, !sectionsEnabled && !novaEnabled && external_React_default().createElement("div", {
       className: "section-top-bar"
     }, external_React_default().createElement("h2", {
       className: `section-title-container ${hasSubtitleClassName}`,
