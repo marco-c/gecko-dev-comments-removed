@@ -245,8 +245,8 @@ import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataCo
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
-import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.telemetry.ACTION_SECURITY_INDICATOR_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -383,6 +383,8 @@ abstract class BaseBrowserFragment :
     private var downloadDialog: AlertDialog? = null
 
     private var lastSavedGeneratedPassword: String? = null
+
+    protected open val isSandboxCustomTab: Boolean = false
 
     // Registers a photo picker activity launcher in single-select mode.
     private val singleMediaPicker =
@@ -1629,6 +1631,7 @@ abstract class BaseBrowserFragment :
         readerModeController = readerModeController,
         settings = activity.settings(),
         customTabSession = customTabSessionId?.let { activity.components.core.store.state.findCustomTab(it) },
+        isSandboxCustomTab = isSandboxCustomTab,
     )
 
     private fun showUndoSnackbar(message: String) {
