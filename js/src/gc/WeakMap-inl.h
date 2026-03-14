@@ -179,6 +179,13 @@ WeakMap<K, V, AP>::~WeakMap() {
                   !IsInsideNursery(gc::ToMarkable(value)));
   }
 #endif
+
+  
+  
+  if (isInList()) {
+    MOZ_ASSERT(isSystem());
+    zone()->gcSystemWeakMaps().remove(this);
+  }
 }
 
 

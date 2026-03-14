@@ -20,6 +20,7 @@
 #include "jstypes.h"
 
 #include "ds/Bitmap.h"
+#include "ds/SlimLinkedList.h"
 #include "gc/ArenaList.h"
 #include "gc/Barrier.h"
 #include "gc/BufferAllocator.h"
@@ -462,9 +463,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  js::MainThreadOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>>
+  js::MainThreadOrGCTaskData<js::SlimLinkedList<js::WeakMapBase>>
       gcSystemWeakMaps_;
-  js::MainThreadOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>>
+  js::MainThreadOrGCTaskData<js::SlimLinkedList<js::WeakMapBase>>
       gcUserWeakMaps_;
 
   
@@ -781,10 +782,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return res;
   }
 
-  mozilla::LinkedList<js::WeakMapBase>& gcSystemWeakMaps() {
+  js::SlimLinkedList<js::WeakMapBase>& gcSystemWeakMaps() {
     return gcSystemWeakMaps_.ref();
   }
-  mozilla::LinkedList<js::WeakMapBase>& gcUserWeakMaps() {
+  js::SlimLinkedList<js::WeakMapBase>& gcUserWeakMaps() {
     return gcUserWeakMaps_.ref();
   }
 
