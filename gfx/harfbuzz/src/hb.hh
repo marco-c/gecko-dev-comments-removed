@@ -526,7 +526,7 @@ static_assert ((sizeof (hb_var_int_t) == 4), "");
 
 
 
-#define HB_PI 3.14159265358979f
+#define HB_PI 3.14159265358979323846f
 #define HB_2_PI (2.f * HB_PI)
 
 

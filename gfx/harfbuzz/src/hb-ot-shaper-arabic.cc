@@ -77,8 +77,8 @@ enum hb_arabic_joining_type_t {
   JOINING_GROUP_DALATH_RISH	= 5,
   NUM_STATE_MACHINE_COLS	= 6,
 
-  JOINING_TYPE_T = 7,
-  JOINING_TYPE_X = 8  
+  JOINING_TYPE_T = 6,
+  JOINING_TYPE_X = 7  
 };
 
 #include "hb-ot-shaper-arabic-table.hh"
