@@ -513,6 +513,8 @@ class Longhand(Property):
         
         return self.predefined_type in {
             "BorderSpacing",
+            "BoxShadow",
+            "Filter",
             "FontSize",
             "Inset",
             "Length",
@@ -522,11 +524,13 @@ class Longhand(Property):
             "LineHeight",
             "LineWidth",
             "MaxSize",
+            "Margin",
             "NonNegativeLength",
             "NonNegativeLengthOrAuto",
             "NonNegativeLengthOrNumber",
             "NonNegativeLengthOrNumberRect",
             "NonNegativeLengthPercentage",
+            "NonNegativeLengthPercentageOrAuto",
             "NonNegativeLengthPercentageOrNormal",
             "Position",
             "PositionOrAuto",
