@@ -354,7 +354,8 @@ nsresult nsHttpTransaction::Init(
 
   bool forceUseHTTPSRR = StaticPrefs::network_dns_force_use_https_rr();
   if ((StaticPrefs::network_dns_use_https_rr_as_altsvc() &&
-       !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR)) ||
+       !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR) &&
+       !(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) ||
       forceUseHTTPSRR) {
     nsCOMPtr<nsIEventTarget> target;
     (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
@@ -419,8 +420,10 @@ void nsHttpTransaction::OnPendingQueueInserted(
   }
 
   
+  
   if ((mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection()) &&
-      !mOrigConnInfo && !mConnInfo->GetWebTransport()) {
+      !mOrigConnInfo && !mConnInfo->GetWebTransport() &&
+      !(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
     
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,

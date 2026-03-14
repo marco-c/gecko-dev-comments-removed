@@ -64,9 +64,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   DeserializeHttpConnectionInfoCloneArgs(
       const HttpConnectionInfoCloneArgs& aInfoArgs);
 
-  static void BuildOriginFrameHashKey(nsACString& newKey,
-                                      nsHttpConnectionInfo* ci,
-                                      const nsACString& host, int32_t port);
+  static HashNumber BuildOriginFrameHashKey(nsHttpConnectionInfo* ci,
+                                            const nsACString& host,
+                                            int32_t port);
 
  private:
   virtual ~nsHttpConnectionInfo() {
@@ -90,6 +90,7 @@ class nsHttpConnectionInfo final : public ARefBase {
     AnonymousAllowClientCert,
     FallbackConnection,
     WebTransport,
+    HappyEyeballs,
     End,
   };
   constexpr inline auto UnderlyingIndex(HashKeyIndex aIndex) const {
@@ -215,6 +216,17 @@ class nsHttpConnectionInfo final : public ARefBase {
     return GetHashCharAt(HashKeyIndex::FallbackConnection) == 'F';
   }
 
+  void SetHappyEyeballsEnabled(bool aEnabled) {
+    SetHashCharAt(aEnabled ? 'H' : '.', HashKeyIndex::HappyEyeballs);
+    if (aEnabled && !mHappyEyeballsEnabled) {
+      mHappyEyeballsEnabled = aEnabled;
+      RebuildHashKey();
+    }
+  }
+  bool GetHappyEyeballsEnabled() const {
+    return GetHashCharAt(HashKeyIndex::HappyEyeballs) == 'H';
+  }
+
   void SetTlsFlags(uint32_t aTlsFlags);
   uint32_t GetTlsFlags() const { return mTlsFlags; }
 
@@ -336,6 +348,8 @@ class nsHttpConnectionInfo final : public ARefBase {
 
   uint64_t mWebTransportId = 0;  
                                  
+
+  bool mHappyEyeballsEnabled = false;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)

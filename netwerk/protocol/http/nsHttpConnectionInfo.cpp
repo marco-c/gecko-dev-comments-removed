@@ -165,6 +165,7 @@ void nsHttpConnectionInfo::BuildHashKey() {
   
   
   
+  
 
   const auto keyTemplate =
       std::string(UnderlyingIndex(HashKeyIndex::End), '.') +
@@ -230,18 +231,21 @@ void nsHttpConnectionInfo::BuildHashKey() {
     mHashKey.Append(']');
   }
 
-  if (!mRoutedHost.IsEmpty()) {
-    mHashKey.AppendLiteral(" <ROUTE-via ");
-    mHashKey.Append(mRoutedHost);
-    mHashKey.Append(':');
-    mHashKey.AppendInt(mRoutedPort);
-    mHashKey.Append('>');
-  }
+  
+  if (!mHappyEyeballsEnabled) {
+    if (!mRoutedHost.IsEmpty()) {
+      mHashKey.AppendLiteral(" <ROUTE-via ");
+      mHashKey.Append(mRoutedHost);
+      mHashKey.Append(':');
+      mHashKey.AppendInt(mRoutedPort);
+      mHashKey.Append('>');
+    }
 
-  if (!mNPNToken.IsEmpty()) {
-    mHashKey.AppendLiteral(" {NPN-TOKEN ");
-    mHashKey.Append(mNPNToken);
-    mHashKey.AppendLiteral("}");
+    if (!mNPNToken.IsEmpty()) {
+      mHashKey.AppendLiteral(" {NPN-TOKEN ");
+      mHashKey.Append(mNPNToken);
+      mHashKey.AppendLiteral("}");
+    }
   }
 
   if (GetTRRMode() != nsIRequest::TRR_DEFAULT_MODE) {
@@ -294,6 +298,7 @@ void nsHttpConnectionInfo::RebuildHashKey() {
   bool isBeConservative = GetBeConservative();
   bool isAnonymousAllowClientCert = GetAnonymousAllowClientCert();
   bool isFallback = GetFallbackConnection();
+  bool isHappyEyeballs = GetHappyEyeballsEnabled();
 
   BuildHashKey();
 
@@ -306,6 +311,7 @@ void nsHttpConnectionInfo::RebuildHashKey() {
   SetAnonymousAllowClientCert(isAnonymousAllowClientCert);
   SetFallbackConnection(isFallback);
   SetTlsFlags(mTlsFlags);
+  SetHappyEyeballsEnabled(isHappyEyeballs);
 }
 
 void nsHttpConnectionInfo::SetOriginServer(const nsACString& host,
@@ -350,6 +356,8 @@ already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   clone->SetHasIPHintAddress(HasIPHintAddress());
   clone->SetEchConfig(GetEchConfig());
   clone->SetWebTransportId(GetWebTransportId());
+  clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
+
   MOZ_ASSERT(clone->Equals(this));
 
   return clone.forget();
@@ -378,9 +386,10 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
 
   RefPtr<nsHttpConnectionInfo> clone;
   if (name.IsEmpty()) {
-    clone = new nsHttpConnectionInfo(
-        mOrigin, mOriginPort, alpn ? std::get<0>(*alpn) : EmptyCString(),
-        mUsername, mProxyInfo, mOriginAttributes, mEndToEndSSL, isHttp3);
+    clone = new nsHttpConnectionInfo(mOrigin, mOriginPort,
+                                     alpn ? std::get<0>(*alpn) : EmptyCString(),
+                                     mUsername, mProxyInfo, mOriginAttributes,
+                                     mEndToEndSSL, isHttp3, mWebTransport);
   } else {
     MOZ_ASSERT(mEndToEndSSL);
     clone = new nsHttpConnectionInfo(
@@ -402,6 +411,7 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
+  clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
 
   bool hasIPHint = false;
   (void)aRecord->GetHasIPHintAddress(&hasIPHint);
@@ -443,6 +453,7 @@ void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
   aArgs.echConfig() = aInfo->GetEchConfig();
   aArgs.webTransport() = aInfo->GetWebTransport();
   aArgs.webTransportId() = aInfo->GetWebTransportId();
+  aArgs.happyEyeballsEnabled() = aInfo->GetHappyEyeballsEnabled();
 
   if (!aInfo->ProxyInfo()) {
     return;
@@ -491,6 +502,7 @@ nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
   cinfo->SetIPv6Disabled(aInfoArgs.isIPv6Disabled());
   cinfo->SetHasIPHintAddress(aInfoArgs.hasIPHintAddress());
   cinfo->SetEchConfig(aInfoArgs.echConfig());
+  cinfo->SetHappyEyeballsEnabled(aInfoArgs.happyEyeballsEnabled());
 
   return cinfo.forget();
 }
@@ -519,6 +531,7 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
   clone->SetIPv6Disabled(GetIPv6Disabled());
   clone->SetHasIPHintAddress(HasIPHintAddress());
   clone->SetEchConfig(GetEchConfig());
+  clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
 
   clone.forget(outCI);
 }
@@ -616,11 +629,9 @@ bool nsHttpConnectionInfo::HostIsLocalIPLiteral() const {
 }
 
 
-void nsHttpConnectionInfo::BuildOriginFrameHashKey(nsACString& newKey,
-                                                   nsHttpConnectionInfo* ci,
-                                                   const nsACString& host,
-                                                   int32_t port) {
-  newKey.Assign(host);
+HashNumber nsHttpConnectionInfo::BuildOriginFrameHashKey(
+    nsHttpConnectionInfo* ci, const nsACString& host, int32_t port) {
+  nsAutoCString newKey(host);
   if (ci->GetAnonymous()) {
     newKey.AppendLiteral("~A:");
   } else {
@@ -637,6 +648,7 @@ void nsHttpConnectionInfo::BuildOriginFrameHashKey(nsACString& newKey,
   ci->GetOriginAttributes().CreateSuffix(suffix);
   newKey.Append(suffix);
   newKey.AppendLiteral("]viaORIGIN.FRAME");
+  return HashString(newKey);
 }
 
 }  
