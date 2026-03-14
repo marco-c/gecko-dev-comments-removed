@@ -1958,6 +1958,14 @@ impl ComputedValues {
             }
         }
     }
+
+    
+    pub fn each_cached_lazy_pseudo<F>(&self, mut _f: F)
+    where
+        F: FnMut(&Self),
+    {
+        
+    }
 }
 
 #[cfg(feature = "servo")]
