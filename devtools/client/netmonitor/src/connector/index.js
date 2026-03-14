@@ -38,6 +38,9 @@ const DEVTOOLS_ENABLE_PERSISTENT_LOG_PREF = "devtools.netmonitor.persistlog";
 
 
 class Connector {
+  #destroyed;
+  #harMetadataCollector;
+
   constructor() {
     
     this.connect = this.connect.bind(this);
@@ -106,8 +109,8 @@ class Connector {
       owner: this.owner,
     });
 
-    this._harMetadataCollector = new HarMetadataCollector(this.commands);
-    await this._harMetadataCollector.connect();
+    this.#harMetadataCollector = new HarMetadataCollector(this.commands);
+    await this.#harMetadataCollector.connect();
 
     await this.commands.resourceCommand.watchResources([TYPES.DOCUMENT_EVENT], {
       onAvailable: this.onResourceAvailable,
@@ -128,11 +131,11 @@ class Connector {
 
   disconnect() {
     
-    if (this._destroyed) {
+    if (this.#destroyed) {
       return;
     }
 
-    this._destroyed = true;
+    this.#destroyed = true;
 
     this.commands.resourceCommand.unwatchResources([TYPES.DOCUMENT_EVENT], {
       onAvailable: this.onResourceAvailable,
@@ -151,7 +154,7 @@ class Connector {
 
     this.dataProvider.destroy();
     this.dataProvider = null;
-    this._harMetadataCollector.destroy();
+    this.#harMetadataCollector.destroy();
   }
 
   
@@ -166,7 +169,7 @@ class Connector {
     
     this.dataProvider.clear();
 
-    this._harMetadataCollector.clear();
+    this.#harMetadataCollector.clear();
 
     if (isExplicitClear) {
       
@@ -487,7 +490,7 @@ class Connector {
 
 
   getHarData() {
-    return this._harMetadataCollector.getHarData();
+    return this.#harMetadataCollector.getHarData();
   }
 
   
