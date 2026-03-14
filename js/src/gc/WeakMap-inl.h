@@ -198,7 +198,7 @@ template <class K, class V, class AP>
 bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
                                   Enum& iter, bool populateWeakKeysTable) {
 #ifdef DEBUG
-  MOZ_ASSERT(IsMarked(mapColor));
+  MOZ_ASSERT(isMarked());
   if (marker->isParallelMarking()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
@@ -351,7 +351,7 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
   
   
 
-  MOZ_ASSERT(IsMarked(mapColor()));
+  MOZ_ASSERT(isMarked());
 
   bool markedAny = false;
 
