@@ -6,7 +6,7 @@
 
 
 #[cfg(feature = "gecko")]
-use crate::media_queries::Device;
+use crate::device::Device;
 use crate::properties::{ComputedValues, LonghandId, NonCustomPropertyId};
 use crate::ArcSlice;
 use app_units::Au;

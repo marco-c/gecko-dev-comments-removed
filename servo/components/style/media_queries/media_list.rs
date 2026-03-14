@@ -6,8 +6,10 @@
 
 
 
-use super::{Device, MediaQuery, Qualifier};
+use super::{MediaQuery, Qualifier};
 use crate::context::QuirksMode;
+use crate::derives::*;
+use crate::device::Device;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::ParserContext;
 use crate::stylesheets::CustomMediaEvaluator;

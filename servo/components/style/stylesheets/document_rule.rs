@@ -6,13 +6,14 @@
 
 
 
-use crate::media_queries::Device;
+use crate::derives::*;
+use crate::device::Device;
 use crate::parser::{Parse, ParserContext};
 use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::CssRules;
 use crate::values::CssUrl;
-use cssparser::{BasicParseErrorKind, Parser, SourceLocation};
+use cssparser::{match_ignore_ascii_case, BasicParseErrorKind, Parser, SourceLocation};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
