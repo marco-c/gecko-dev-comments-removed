@@ -27,6 +27,9 @@ const {
 
 
 class FirefoxDataProvider {
+  #lastRequestDataClearId;
+  #requestDataEnabled;
+
   
 
 
@@ -43,12 +46,12 @@ class FirefoxDataProvider {
     
     
     
-    this._requestDataEnabled = true;
+    this.#requestDataEnabled = true;
 
     
     
     
-    this._lastRequestDataClearId = 0;
+    this.#lastRequestDataClearId = 0;
 
     this.owner = owner;
 
@@ -95,8 +98,8 @@ class FirefoxDataProvider {
     this.pendingRequests.clear();
     this.lazyRequestData.clear();
     this.stackTraceRequestInfoByActorID.clear();
-    this._requestDataEnabled = false;
-    this._lastRequestDataClearId++;
+    this.#requestDataEnabled = false;
+    this.#lastRequestDataClearId++;
   }
 
   destroy() {
@@ -357,7 +360,7 @@ class FirefoxDataProvider {
 
 
 
-  async _getStackTraceFromWatcher(actor) {
+  async #getStackTraceFromWatcher(actor) {
     
     
     
@@ -413,8 +416,8 @@ class FirefoxDataProvider {
   async onNetworkResourceAvailable(resource) {
     const { actor, stacktraceResourceId, cause } = resource;
 
-    if (!this._requestDataEnabled) {
-      this._requestDataEnabled = true;
+    if (!this.#requestDataEnabled) {
+      this.#requestDataEnabled = true;
     }
 
     
@@ -544,7 +547,7 @@ class FirefoxDataProvider {
   requestData(actor, method) {
     
     
-    if (!this._requestDataEnabled) {
+    if (!this.#requestDataEnabled) {
       return Promise.resolve();
     }
     
@@ -556,7 +559,7 @@ class FirefoxDataProvider {
       return promise;
     }
     
-    promise = this._requestData(actor, method).then(async payload => {
+    promise = this.#requestData(actor, method).then(async payload => {
       
       
       this.lazyRequestData.delete(key);
@@ -595,9 +598,9 @@ class FirefoxDataProvider {
 
 
 
-  async _requestData(actor, method) {
+  async #requestData(actor, method) {
     
-    const lastRequestDataClearId = this._lastRequestDataClearId;
+    const lastRequestDataClearId = this.#lastRequestDataClearId;
 
     
     const clientMethodName = `get${method
@@ -629,7 +632,7 @@ class FirefoxDataProvider {
       )
     ) {
       const requestInfo = this.stackTraceRequestInfoByActorID.get(actorID);
-      const { stacktrace } = await this._getStackTraceFromWatcher(requestInfo);
+      const { stacktrace } = await this.#getStackTraceFromWatcher(requestInfo);
       this.stackTraceRequestInfoByActorID.delete(actorID);
       response = { from: actor, stacktrace };
     } else {
@@ -642,7 +645,7 @@ class FirefoxDataProvider {
         };
         response = await this.commands.client.request(packet);
       } catch (e) {
-        if (this._lastRequestDataClearId !== lastRequestDataClearId) {
+        if (this.#lastRequestDataClearId !== lastRequestDataClearId) {
           
           
           
