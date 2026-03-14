@@ -52,8 +52,6 @@ import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.crashhelper.CrashHelper;
-import org.mozilla.gecko.process.GeckoProcessManager;
-import org.mozilla.gecko.process.GeckoProcessType;
 import org.mozilla.gecko.process.MemoryController;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.DebugConfig;
@@ -249,7 +247,6 @@ public final class GeckoRuntime implements Parcelable {
   }
 
   private static GeckoRuntime sRuntime;
-  private static boolean sHasWarmedUpChildProcesses = false;
   private GeckoRuntimeSettings mSettings;
   private Delegate mDelegate;
   private ServiceWorkerDelegate mServiceWorkerDelegate;
@@ -454,7 +451,7 @@ public final class GeckoRuntime implements Parcelable {
     if (DEBUG) {
       Log.d(LOGTAG, "init");
     }
-    int flags = 0;
+    int flags = GeckoThread.FLAG_PRELOAD_CHILD;
 
     if (settings.getPauseForDebuggerEnabled()) {
       flags |= GeckoThread.FLAG_DEBUGGING;
@@ -462,6 +459,14 @@ public final class GeckoRuntime implements Parcelable {
 
     if (!settings.getLowMemoryDetection()) {
       flags |= GeckoThread.FLAG_DISABLE_LOW_MEMORY_DETECTION;
+    }
+
+    if (settings.getIsolatedProcessEnabled()) {
+      flags |= GeckoThread.FLAG_CONTENT_ISOLATED;
+    }
+
+    if (settings.getAppZygoteProcessEnabled()) {
+      flags |= GeckoThread.FLAG_CONTENT_ISOLATED_HAS_ZYGOTE;
     }
 
     final Class<?> crashHandler = settings.getCrashHandler();
@@ -518,10 +523,6 @@ public final class GeckoRuntime implements Parcelable {
       } catch (final FileNotFoundException e) {
       }
     }
-
-    final GeckoProcessManager pm = GeckoProcessManager.getInstance();
-    pm.setIsolatedProcessEnabled(settings.getIsolatedProcessEnabled());
-    pm.setAppZygoteEnabled(settings.getAppZygoteProcessEnabled());
 
     final int[] fds = startCrashHelper();
 
@@ -619,32 +620,6 @@ public final class GeckoRuntime implements Parcelable {
   public static @NonNull GeckoRuntime create(final @NonNull Context context) {
     ThreadUtils.assertOnUiThread();
     return create(context, new GeckoRuntimeSettings());
-  }
-
-  
-
-
-
-  @UiThread
-  public void warmUp() {
-    ThreadUtils.assertOnUiThread();
-    if (sHasWarmedUpChildProcesses) {
-      return;
-    }
-
-    
-    GeckoProcessManager.getInstance()
-        .preload(
-            
-            GeckoProcessType.GPU,
-            
-            
-            
-            
-            GeckoProcessType.CONTENT,
-            GeckoProcessType.CONTENT);
-
-    sHasWarmedUpChildProcesses = true;
   }
 
   
