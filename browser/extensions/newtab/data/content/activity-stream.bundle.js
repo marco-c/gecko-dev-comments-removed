@@ -1019,9 +1019,24 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       inferredInterests,
       coarsePrivateInferredInterests
     } = this.props.state.InferredPersonalization;
+    const hasModelOverride = Boolean(this.props.otherPrefs?.["discoverystream.sections.personalization.inferred.model.override"]);
     return external_React_default().createElement("div", {
       className: "personalization-data"
-    }, "Inferred Interests:", external_React_default().createElement("pre", null, JSON.stringify(inferredInterests, null, 2)), this.renderInferredPersonalizationOverrides(), "Coarse Inferred Interests With Differential Privacy:", external_React_default().createElement("pre", null, JSON.stringify(coarsePrivateInferredInterests, null, 2)));
+    }, this.renderInferredPersonalizationOverrides(), hasModelOverride ? external_React_default().createElement("div", {
+      className: "inferred-vectors-row"
+    }, external_React_default().createElement("div", {
+      className: "inferred-vector-column"
+    }, external_React_default().createElement("div", {
+      className: "inferred-vector-title"
+    }, "Raw Interest Values"), external_React_default().createElement("div", {
+      className: "inferred-vector-panel"
+    }, external_React_default().createElement("pre", null, JSON.stringify(inferredInterests, null, 2)))), external_React_default().createElement("div", {
+      className: "inferred-vector-column"
+    }, external_React_default().createElement("div", {
+      className: "inferred-vector-title"
+    }, "Differentially Private Interest Vector", " "), external_React_default().createElement("div", {
+      className: "inferred-vector-panel"
+    }, external_React_default().createElement("pre", null, JSON.stringify(coarsePrivateInferredInterests, null, 2))))) : null);
   }
   renderInferredPersonalizationOverrides() {
     const {
@@ -1034,15 +1049,31 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const overrides = this.getOverrideValues(features);
     const overridesEnabled = Object.keys(overrides).length;
     const hasAnyNonZeroOverride = Object.values(overrides).some(value => Number.isFinite(value) && value > 0);
-    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", null, "Inferred Personalization Overrides"), external_React_default().createElement("table", {
+    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+      className: "inferred-overrides-header"
+    }, external_React_default().createElement("h3", {
+      className: "inferred-overrides-title"
+    }, "Inferred Personalization"), external_React_default().createElement("div", {
+      className: "inferred-overrides-actions"
+    }, external_React_default().createElement("button", {
+      className: "button",
+      onClick: this.refreshInferredPersonalizationAndDebug
+    }, "Recompute Interest Vector"), external_React_default().createElement("button", {
+      className: "button",
+      onClick: this.refreshCache
+    }, "Refresh Story Cache"))), external_React_default().createElement("div", {
+      className: "inferred-overrides-last-refreshed"
+    }, external_React_default().createElement("span", {
+      className: "inferred-overrides-last-refreshed-label"
+    }, "Last refreshed"), external_React_default().createElement("span", null, relativeTime(lastUpdated) || "(no data)")), external_React_default().createElement("table", {
       className: "minimal-table inferred-personalization-overrides"
     }, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, {
       className: "inferred-overrides-toggle-row"
     }, external_React_default().createElement("td", {
       className: "min"
     }, "Overrides"), external_React_default().createElement("td", {
-      colSpan: "2"
-    }, external_React_default().createElement("div", {
+      className: "min inferred-score-col"
+    }), external_React_default().createElement("td", null, external_React_default().createElement("div", {
       className: "toggle-wrapper"
     }, external_React_default().createElement("moz-toggle", {
       id: "inferred-personalization-overrides",
@@ -1052,20 +1083,16 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     })))), external_React_default().createElement(Row, {
       className: "inferred-overrides-refresh-row"
     }, external_React_default().createElement("td", {
-      className: "min"
-    }, "Last refreshed"), external_React_default().createElement("td", {
-      colSpan: "2"
-    }, external_React_default().createElement("div", {
-      className: "inferred-overrides-refresh"
-    }, external_React_default().createElement("span", null, relativeTime(lastUpdated) || "(no data)"), external_React_default().createElement("moz-button", {
-      type: "default",
-      disabled: overridesEnabled ? null : true,
-      onClick: this.refreshInferredPersonalizationAndDebug
-    }, "Refresh"), external_React_default().createElement("moz-button", {
-      type: "default",
+      colSpan: "3"
+    }, external_React_default().createElement("button", {
+      className: "button",
       disabled: hasAnyNonZeroOverride ? null : true,
       onClick: this.handleResetAllOverrides
-    }, "Reset overrides")))), features.map(feature => {
+    }, "Reset overrides"))), external_React_default().createElement(Row, {
+      className: "inferred-overrides-table-header"
+    }, external_React_default().createElement("td", null), external_React_default().createElement("td", {
+      className: "min inferred-score-col"
+    }, "Score"), external_React_default().createElement("td", null)), features.map(feature => {
       const maxValue = Math.max(0, (feature.numValues || 1) - 1);
       const currentCoarseValue = feature.currentValue;
       const pendingValue = this.state.pendingOverrides[feature.name];
@@ -1083,7 +1110,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       }, external_React_default().createElement("td", {
         className: "min"
       }, feature.name), external_React_default().createElement("td", {
-        className: "min"
+        className: "min inferred-score-col"
       }, Number.isFinite(currentCoarseValue) ? currentCoarseValue : "-"), external_React_default().createElement("td", null, external_React_default().createElement("div", {
         className: "inferred-override-controls"
       }, external_React_default().createElement("input", {
@@ -1340,7 +1367,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "large-data-container"
     }, this.renderImpressionsData()), external_React_default().createElement("h3", null, "Blocked Data"), external_React_default().createElement("div", {
       className: "large-data-container"
-    }, this.renderBlocksData()), external_React_default().createElement("h3", null, "Weather Data"), this.renderWeatherData(), external_React_default().createElement("h3", null, "Personalization Data"), this.renderPersonalizationData());
+    }, this.renderBlocksData()), external_React_default().createElement("h3", null, "Weather Data"), this.renderWeatherData(), this.renderPersonalizationData());
   }
 }
 class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent {
