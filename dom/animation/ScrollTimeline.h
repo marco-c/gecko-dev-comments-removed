@@ -210,6 +210,8 @@ class ScrollTimeline : public AnimationTimeline,
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                  StyleScrollAxis aAxis);
 
+  void TimelineDataDidChange();
+
   
   struct ComputedTimelineData {
     nscoord mPosition = 0;

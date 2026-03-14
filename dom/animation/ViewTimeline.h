@@ -105,6 +105,16 @@ class ViewTimeline final : public ScrollTimeline {
     nscoord mInsetStart = 0;
     nscoord mInsetEnd = 0;
     
+
+    
+    bool IsChanged(const CurrentTimeData& aOther) const {
+      return mScrollData.mMaxScrollOffset !=
+                 aOther.mScrollData.mMaxScrollOffset ||
+             mScrollPortSize != aOther.mScrollPortSize ||
+             mSubjectPosition != aOther.mSubjectPosition ||
+             mSubjectSize != aOther.mSubjectSize ||
+             mInsetStart != aOther.mInsetStart || mInsetEnd != aOther.mInsetEnd;
+    }
   };
   Maybe<CurrentTimeData> mCachedCurrentTime;
 };
