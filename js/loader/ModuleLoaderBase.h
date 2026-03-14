@@ -454,6 +454,8 @@ class ModuleLoaderBase : public nsISupports {
 
   void MovePreloadedSetToResolvedSet(ModuleLoadRequest* aRootRequest);
 
+  void ClearPreloadedModuleGraph(ModuleLoadRequest* aRootRequest);
+
   
   bool IsModuleFetched(const ModuleMapKey& key) const;
 
@@ -552,6 +554,7 @@ class ModuleLoaderBase : public nsISupports {
       Handle<Value> aHostDefined = UndefinedHandleValue);
 
   void ResetPreloadFlag(nsIURI* aURI);
+  void ResetPreloadedModule(nsIURI* aURI);
 
  protected:
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
