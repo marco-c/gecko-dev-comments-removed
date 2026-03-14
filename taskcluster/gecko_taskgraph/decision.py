@@ -78,6 +78,7 @@ PER_PROJECT_PARAMETERS = {
         "release_type": "nightly",
     },
     "mozilla-beta": {
+        "optimize_strategies": "gecko_taskgraph.optimize:project.beta",
         "target_tasks_method": "mozilla_beta_tasks",
         "release_type": "beta",
     },
@@ -238,8 +239,11 @@ def taskgraph_decision(options, parameters=None):
     write_artifact("label-to-taskid.json", tgg.label_to_taskid)
 
     
-    if len(push_schedules) > 0:
-        write_artifact("bugbug-push-schedules.json", push_schedules.popitem()[1])
+    if push_schedules.cache_info().currsize > 0:
+        write_artifact(
+            "bugbug-push-schedules.json",
+            push_schedules(tgg.parameters["project"], tgg.parameters["head_rev"]),
+        )
 
     
     mozharness_dir = Path(GECKO, "testing", "mozharness")

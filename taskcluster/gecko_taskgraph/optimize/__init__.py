@@ -120,6 +120,17 @@ class project:
     }
     """Strategy overrides that apply to autoland."""
 
+    beta = {
+        
+        
+        
+        "test": All(
+            "skip-unless-push-interval-5",
+            "skip-constrained",
+        ),
+    }
+    """Strategy overrides that apply to beta."""
+
 
 class experimental:
     """Experimental strategies either under development or used as benchmarks.
