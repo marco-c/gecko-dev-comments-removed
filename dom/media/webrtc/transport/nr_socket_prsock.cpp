@@ -528,7 +528,7 @@ abort:
 int nr_transport_addr_get_addrstring_and_port(const nr_transport_addr* addr,
                                               nsACString* host, int32_t* port) {
   int r, _status;
-  char addr_string[64];
+  char addr_string[256];
 
   
   
