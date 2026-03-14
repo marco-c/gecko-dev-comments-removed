@@ -6840,6 +6840,9 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
       GetChannel() ? GetChannel()->LoadInfo() : nullptr;
   bool on3pcbException = loadInfo && loadInfo->GetIsOn3PCBExceptionList();
 
+  bool hasBothPartitionedAndUnpartitioned =
+      cookiePartitionedPrincipal != nullptr;
+
   for (auto& principal : principals) {
     nsAutoCString baseDomain;
     nsresult rv = CookieCommons::GetBaseDomain(principal, baseDomain);
@@ -6905,6 +6908,15 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
 
       
       if (cookie->ExpiryInMSec() <= currentTimeInMSec) {
+        continue;
+      }
+
+      
+      
+      if (!StaticPrefs::network_cookie_CHIPS_affectsTCP() &&
+          hasBothPartitionedAndUnpartitioned &&
+          !principal->OriginAttributesRef().mPartitionKey.IsEmpty() &&
+          !cookie->RawIsPartitioned()) {
         continue;
       }
 

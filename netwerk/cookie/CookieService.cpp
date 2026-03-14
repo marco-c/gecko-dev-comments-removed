@@ -893,6 +893,23 @@ void CookieService::GetCookiesForURI(
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel ? aChannel->LoadInfo() : nullptr;
   const bool on3pcdException = loadInfo && loadInfo->GetIsOn3PCBExceptionList();
 
+  
+  
+  
+  bool hasBothPartitionedAndUnpartitioned = false;
+  if (aOriginAttrsList.Length() > 1) {
+    bool hasUnpartitioned = false;
+    bool hasPartitioned = false;
+    for (const auto& a : aOriginAttrsList) {
+      if (a.mPartitionKey.IsEmpty()) {
+        hasUnpartitioned = true;
+      } else {
+        hasPartitioned = true;
+      }
+    }
+    hasBothPartitionedAndUnpartitioned = hasUnpartitioned && hasPartitioned;
+  }
+
   for (const auto& attrs : aOriginAttrsList) {
     CookieStorage* storage = PickStorage(attrs);
 
@@ -1014,6 +1031,14 @@ void CookieService::GetCookiesForURI(
 
       
       if (cookie->ExpiryInMSec() <= currentTimeInMSec) {
+        continue;
+      }
+
+      
+      
+      if (!StaticPrefs::network_cookie_CHIPS_affectsTCP() &&
+          hasBothPartitionedAndUnpartitioned &&
+          !attrs.mPartitionKey.IsEmpty() && !cookie->RawIsPartitioned()) {
         continue;
       }
 

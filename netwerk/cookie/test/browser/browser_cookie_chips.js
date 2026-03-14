@@ -16,11 +16,8 @@ add_setup(() => {
     "network.cookieJarSettings.unblocked_for_testing",
     true
   );
-  Services.prefs.setBoolPref(
-    "network.cookie.cookieBehavior.optInPartitioning",
-    true
-  );
   Services.prefs.setBoolPref("network.cookie.CHIPS.enabled", true);
+  Services.prefs.setBoolPref("network.cookie.CHIPS.affectsTCP", false);
   Services.prefs.setBoolPref("dom.storage_access.enabled", true);
   Services.prefs.setBoolPref("dom.storage_access.prompt.testing", true);
   Services.cookies.removeAll();
@@ -31,9 +28,6 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("network.cookie.cookieBehavior");
   Services.prefs.clearUserPref(
     "network.cookieJarSettings.unblocked_for_testing"
-  );
-  Services.prefs.clearUserPref(
-    "network.cookie.cookieBehavior.optInPartitioning"
   );
   Services.prefs.clearUserPref("network.cookie.CHIPS.enabled");
   Services.prefs.clearUserPref("dom.storage_access.enabled");
@@ -593,6 +587,150 @@ add_task(
     }
   }
 );
+
+
+
+
+add_task(async function test_chips_filter_nonchips_from_partitioned_jar() {
+  Services.prefs.setIntPref(
+    "network.cookie.cookieBehavior",
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+  );
+
+  
+  
+  
+  const tab = BrowserTestUtils.addTab(gBrowser, URL_DOCUMENT_FIRSTPARTY);
+  const browser = gBrowser.getBrowserForTab(tab);
+  await BrowserTestUtils.browserLoaded(browser);
+
+  await SpecialPowers.spawn(
+    browser,
+    [URL_DOCUMENT_THIRDPARTY, THIRD_PARTY_DOMAIN],
+    async (iframeUrl, thirdPartyDomain) => {
+      let ifr = content.document.createElement("iframe");
+      ifr.src = iframeUrl;
+      content.document.body.appendChild(ifr);
+      await ContentTaskUtils.waitForEvent(ifr, "load");
+
+      await SpecialPowers.spawn(
+        await ifr.browsingContext,
+        [thirdPartyDomain],
+        async thirdPartyDomain => {
+          
+          await content.fetch(
+            thirdPartyDomain +
+              "/browser/netwerk/cookie/test/browser/chips.sjs?setnonchips"
+          );
+          
+          content.document.cookie =
+            "chips=yes; Partitioned; Secure; SameSite=None";
+        }
+      );
+    }
+  );
+
+  
+  let partitionedCookies = Services.cookies.getCookiesWithOriginAttributes(
+    partitionedOAs,
+    THIRD_PARTY
+  );
+  Assert.equal(partitionedCookies.length, 2, "Two cookies in partitioned jar");
+
+  
+  await BrowserTestUtils.withNewTab(URL_DOCUMENT_THIRDPARTY, async browser => {
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document.cookie = "firstparty=yes; Secure; SameSite=None";
+    });
+  });
+
+  let unpartitionedCookies = Services.cookies.getCookiesWithOriginAttributes(
+    unpartitionedOAs,
+    THIRD_PARTY
+  );
+  Assert.equal(
+    unpartitionedCookies.length,
+    1,
+    "One cookie in unpartitioned jar"
+  );
+
+  
+  
+  const tab2 = BrowserTestUtils.addTab(gBrowser, URL_DOCUMENT_FIRSTPARTY);
+  const browser2 = gBrowser.getBrowserForTab(tab2);
+  await BrowserTestUtils.browserLoaded(browser2);
+
+  await SpecialPowers.spawn(
+    browser2,
+    [URL_DOCUMENT_THIRDPARTY, THIRD_PARTY_DOMAIN],
+    async (iframeUrl, thirdPartyDomain) => {
+      let ifr = content.document.createElement("iframe");
+      ifr.src = iframeUrl;
+      content.document.body.appendChild(ifr);
+      await ContentTaskUtils.waitForEvent(ifr, "load");
+
+      await SpecialPowers.spawn(
+        await ifr.browsingContext,
+        [thirdPartyDomain],
+        async thirdPartyDomain => {
+          SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+          await SpecialPowers.addPermission(
+            "storageAccessAPI",
+            true,
+            content.location.href
+          );
+          await SpecialPowers.wrap(content.document).requestStorageAccess();
+
+          ok(
+            await content.document.hasStorageAccess(),
+            "example.org should have storageAccess"
+          );
+
+          
+          
+          let cookies = content.document.cookie;
+          ok(
+            cookies.includes("chips=yes"),
+            "CHIPS cookie from partitioned jar is visible"
+          );
+          ok(
+            cookies.includes("firstparty=yes"),
+            "First-party cookie from unpartitioned jar is visible"
+          );
+          ok(
+            !cookies.includes("nonchips=foreign"),
+            "Non-CHIPS cookie from partitioned jar is filtered out"
+          );
+
+          
+          let response = await content.fetch(
+            thirdPartyDomain +
+              "/browser/netwerk/cookie/test/browser/chips.sjs?get"
+          );
+          let httpCookies = await response.text();
+          ok(
+            httpCookies.includes("chips=yes"),
+            "CHIPS cookie sent in HTTP request"
+          );
+          ok(
+            httpCookies.includes("firstparty=yes"),
+            "First-party cookie sent in HTTP request"
+          );
+          ok(
+            !httpCookies.includes("nonchips=foreign"),
+            "Non-CHIPS cookie NOT sent in HTTP request"
+          );
+        }
+      );
+    }
+  );
+
+  
+  BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab2);
+  Services.cookies.removeAll();
+  Services.perms.removeAll();
+});
 
 
 
