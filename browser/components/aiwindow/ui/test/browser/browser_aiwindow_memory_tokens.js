@@ -27,7 +27,6 @@ add_task(async function test_handleTokens_updates_chatMessage() {
         search: [],
         existing_memory: [],
       },
-      memoriesApplied: [],
       webSearchQueries: [],
     };
 
@@ -43,25 +42,32 @@ add_task(async function test_handleTokens_updates_chatMessage() {
     aiWindowElement.handleTokens(testTokens, mockMessage);
 
     
+    
     Assert.equal(
-      mockMessage.memoriesApplied.length,
+      mockMessage._pendingMemoryIds.length,
       3,
-      "Should have 3 memory tokens in memoriesApplied"
+      "Should have 3 memory IDs in _pendingMemoryIds"
     );
     Assert.equal(
-      mockMessage.memoriesApplied[0],
+      mockMessage._pendingMemoryIds[0],
       "user asked about cats",
-      "First memory token should match"
+      "First memory ID should match"
     );
     Assert.equal(
-      mockMessage.memoriesApplied[1],
+      mockMessage._pendingMemoryIds[1],
       "user prefers tabby cats",
-      "Second memory token should match"
+      "Second memory ID should match"
     );
     Assert.equal(
-      mockMessage.memoriesApplied[2],
+      mockMessage._pendingMemoryIds[2],
       "user has a pet cat named Fluffy",
-      "Third memory token should match"
+      "Third memory ID should match"
+    );
+
+    Assert.equal(
+      mockMessage.memoriesApplied,
+      undefined,
+      "memoriesApplied should not be set during streaming"
     );
 
     
@@ -83,8 +89,8 @@ add_task(async function test_handleTokens_updates_chatMessage() {
 
     
     Assert.ok(
-      !mockMessage.memoriesApplied.includes("cat behavior"),
-      "Search tokens should not be in memoriesApplied"
+      !mockMessage._pendingMemoryIds.includes("cat behavior"),
+      "Search tokens should not be in _pendingMemoryIds"
     );
 
     
