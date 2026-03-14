@@ -232,8 +232,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSCounterStyleRule", insecureContext: true },
   
-  { name: "CSSFontFaceDescriptors", insecureContext: true },
-  
   { name: "CSSFontFaceRule", insecureContext: true },
   
   { name: "CSSFontFeatureValuesRule", insecureContext: true },
