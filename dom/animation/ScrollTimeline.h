@@ -196,7 +196,7 @@ class ScrollTimeline : public AnimationTimeline,
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
-  void UpdateCachedCurrentTime();
+  virtual void UpdateCachedCurrentTime();
 
  protected:
   virtual ~ScrollTimeline();
@@ -204,13 +204,13 @@ class ScrollTimeline : public AnimationTimeline,
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                  StyleScrollAxis aAxis);
 
-  struct ScrollOffsets {
+  
+  struct ComputedTimelineData {
+    nscoord mPosition = 0;
     nscoord mStart = 0;
     nscoord mEnd = 0;
   };
-  virtual Maybe<ScrollOffsets> ComputeOffsets(
-      const ScrollContainerFrame* aScrollFrame,
-      layers::ScrollDirection aOrientation) const;
+  virtual Maybe<ComputedTimelineData> ComputeTimelineData() const;
 
   
   
@@ -238,9 +238,11 @@ class ScrollTimeline : public AnimationTimeline,
     
     
     
-    nscoord mPosition;
-    ScrollOffsets mOffsets;
+    nscoord mPosition = 0;
+    nscoord mMaxScrollOffset = 0;
   };
+
+ private:
   Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 
