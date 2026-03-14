@@ -2177,9 +2177,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
 
   
   
-  browserElement->SetAttr(kNameSpaceID_None, nsGkAtoms::remote,
-                          mContentParentKeepAlive ? u"true"_ns : u"false"_ns,
-                           true);
+  browserElement->SetBoolAttr(nsGkAtoms::remote, !!mContentParentKeepAlive);
 
   
   
