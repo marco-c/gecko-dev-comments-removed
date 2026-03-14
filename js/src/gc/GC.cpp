@@ -4166,9 +4166,12 @@ std::tuple<JS::SliceBudget, JS::SliceBudget> GCRuntime::budgetConcurrentMarking(
   
 
   const size_t MarkOnMainThreadAfterSlices = 5;
-  if (requestedBudget.isTimeBudget() &&
+  const double MainThreadMarkTimePerSlice = 0.5;
+  if (sliceReason == JS::GCReason::BG_TASK_FINISHED &&
+      requestedBudget.isTimeBudget() &&
       markSliceCount > MarkOnMainThreadAfterSlices) {
-    double millis = 1.0 * (markSliceCount - MarkOnMainThreadAfterSlices);
+    double millis = MainThreadMarkTimePerSlice *
+                    (markSliceCount - MarkOnMainThreadAfterSlices);
     TimeDuration remaining = requestedBudget.deadline() - TimeStamp::Now();
     millis = std::min(millis, remaining.ToMilliseconds());
     if (millis > 0.0) {
@@ -4192,6 +4195,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
 
   bool destroyingRuntime = (reason == JS::GCReason::DESTROY_RUNTIME);
 
+  sliceReason = reason;
   initialState = incrementalState;
   isIncremental = !budget.isUnlimited();
   useBackgroundThreads = ShouldUseBackgroundThreads(isIncremental, reason);

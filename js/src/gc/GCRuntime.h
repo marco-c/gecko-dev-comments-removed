@@ -1241,6 +1241,9 @@ class GCRuntime {
   MainThreadData<JS::GCReason> initialReason;
 
   
+  MainThreadData<JS::GCReason> sliceReason;
+
+  
 
 
 
