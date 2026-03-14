@@ -1,6 +1,7 @@
 
 
 
+
 let REPEAT_COUNT = 300;
 let someCondition = Math.random() > 0.5;
 function generateJS() {
