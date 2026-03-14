@@ -180,7 +180,20 @@ class MOZ_STACK_CLASS AutoImageBridgeParentAsyncMessageSender final {
   ~AutoImageBridgeParentAsyncMessageSender() {
     mImageBridge->SendPendingAsyncMessages();
     if (mToDestroy) {
+      
+      
+      nsTHashSet<PTextureParent*> seenTextureParents;
       for (const auto& op : *mToDestroy) {
+        
+        
+        if (op.type() == OpDestroy::TPTexture) {
+          PTextureParent* textureParent = op.get_PTexture().AsParent();
+          if (!seenTextureParents.EnsureInserted(textureParent)) {
+            
+            continue;
+          }
+        }
+
         mImageBridge->DestroyActor(op);
       }
     }
