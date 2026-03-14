@@ -6363,6 +6363,7 @@ var gMainPane = {
   },
 
   _minUpdatePrefDisableTime: 1000,
+
   
 
 
@@ -6379,7 +6380,7 @@ var gMainPane = {
       radiogroup.value = enabled;
       radiogroup.disabled = false;
 
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -6397,10 +6398,29 @@ var gMainPane = {
       let _disableTimeOverPromise = new Promise(r =>
         setTimeout(r, this._minUpdatePrefDisableTime)
       );
+
       radiogroup.disabled = true;
+      if (this.isBackgroundUpdateUIAvailable()) {
+        let backgroundUpdate = document.getElementById("backgroundUpdate");
+        backgroundUpdate.disabled = true;
+      }
+
       try {
         await UpdateUtils.setAppUpdateAutoEnabled(updateAutoValue);
+
+        
+        
+        
+        if (updateAutoValue) {
+          await this.readBackgroundUpdatePref();
+        } else {
+          await this.maybeDisableBackgroundUpdateControls();
+        }
+
+        
+        
         await _disableTimeOverPromise;
+
         radiogroup.disabled = false;
       } catch (error) {
         console.error(error);
@@ -6410,8 +6430,6 @@ var gMainPane = {
         ]);
         return;
       }
-
-      this.maybeDisableBackgroundUpdateControls();
 
       
       
@@ -6435,13 +6453,22 @@ var gMainPane = {
     );
   },
 
-  maybeDisableBackgroundUpdateControls() {
+  async maybeDisableBackgroundUpdateControls() {
     if (this.isBackgroundUpdateUIAvailable()) {
       let radiogroup = document.getElementById("updateRadioGroup");
       let updateAutoEnabled = radiogroup.value == "true";
 
       
-      document.getElementById("backgroundUpdate").disabled = !updateAutoEnabled;
+      let backgroundUpdate = document.getElementById("backgroundUpdate");
+      backgroundUpdate.disabled = !updateAutoEnabled;
+      if (!updateAutoEnabled) {
+        backgroundUpdate.checked = false;
+      } else {
+        let enabled = await UpdateUtils.readUpdateConfigSetting(
+          "app.update.background.enabled"
+        );
+        backgroundUpdate.checked = enabled;
+      }
     }
   },
 
@@ -6470,7 +6497,7 @@ var gMainPane = {
 
       let enabled = await UpdateUtils.readUpdateConfigSetting(prefName);
       backgroundCheckbox.checked = enabled;
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -6492,7 +6519,7 @@ var gMainPane = {
         return;
       }
 
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -6612,7 +6639,7 @@ var gMainPane = {
         throw new Error("Invalid preference value for app.update.auto");
       }
       document.getElementById("updateRadioGroup").value = aData;
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     } else if (aTopic == BACKGROUND_UPDATE_CHANGED_TOPIC) {
       if (!AppConstants.MOZ_UPDATE_AGENT) {
         return;
@@ -6622,7 +6649,8 @@ var gMainPane = {
           "Invalid preference value for app.update.background.enabled"
         );
       }
-      document.getElementById("backgroundUpdate").checked = aData == "true";
+
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
