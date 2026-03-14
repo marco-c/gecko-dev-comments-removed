@@ -37,10 +37,20 @@ add_task(async function test_bundled_resource_mapping() {
 });
 
 add_task(async function test_AboutNewTabResourceMapping() {
+  assertNewTabResourceMapping();
+
+  const BUILTIN_ADDON_VERSION =
+    AddonManager.getBuiltinAddonVersion(BUILTIN_ADDON_ID);
+
   Assert.equal(
     AboutNewTabResourceMapping.addonVersion,
-    null,
-    "Expected AboutNewTabResourceMapping addonVersion to be null"
+    BUILTIN_ADDON_VERSION,
+    `Expected AboutNewTabResourceMapping addonVersion to be ${BUILTIN_ADDON_VERSION}`
+  );
+
+  Assert.ok(
+    !AboutNewTabResourceMapping.addonIsXPI,
+    `Expected AboutNewTabResourceMapping addonIsXPI to be false`
   );
 
   const resProto = Cc[
@@ -70,7 +80,7 @@ add_task(async function test_AboutNewTabResourceMapping() {
     {
       id: null,
       rootURI: expectedRootURISpec,
-      version: null,
+      version: BUILTIN_ADDON_VERSION,
     },
     "AboutNewTabResourceMapping.getPreferredMapping ignores active builtin addon"
   );
@@ -78,9 +88,18 @@ add_task(async function test_AboutNewTabResourceMapping() {
     !Glean.newtab.addonXpiUsed.testGetValue(),
     "Probe says we're not using an XPI"
   );
+
+  
+  
+  
+  
+  assertASRouterTargetingNewtabAddonVersion(BUILTIN_ADDON_VERSION);
 });
 
 add_task(async function test_parentprocess_fetch() {
+  const BUILTIN_ADDON_VERSION =
+    AddonManager.getBuiltinAddonVersion(BUILTIN_ADDON_ID);
+
   let addon = await AddonManager.getAddonByID(BUILTIN_ADDON_ID);
   ok(addon, "Found builtin addon");
   Assert.equal(addon.isActive, true, "Expect add-on initially active");
@@ -112,5 +131,16 @@ add_task(async function test_parentprocess_fetch() {
     cssChromeReq.status,
     200,
     "chrome://newtab fetch should be successfull"
+  );
+
+  Assert.equal(
+    AboutNewTabResourceMapping.addonVersion,
+    BUILTIN_ADDON_VERSION,
+    `Expected AboutNewTabResourceMapping addonVersion to be ${BUILTIN_ADDON_VERSION}`
+  );
+
+  Assert.ok(
+    !AboutNewTabResourceMapping.addonIsXPI,
+    `Expected AboutNewTabResourceMapping addonIsXPI to be false`
   );
 });

@@ -42,6 +42,11 @@ add_task(async function test_download_and_staged_install_trainhop_addon() {
   
   assertTrainhopAddonNimbusExposure({ expectedExposure: false });
 
+  
+  
+  
+  assertASRouterTargetingNewtabAddonVersion(BUILTIN_ADDON_VERSION);
+
   await cancelPendingInstall(pendingInstall);
   await nimbusFeatureCleanup();
   assertTrainhopAddonVersionPref("");
@@ -285,6 +290,9 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
 
   assertTrainhopAddonNimbusExposure({ expectedExposure: true });
   assertTrainhopAddonVersionPref(updateAddonVersion);
+  
+  
+  assertASRouterTargetingNewtabAddonVersion(updateAddonVersion);
 
   info("Simulate newtabTrainhopAddon nimbus feature unenrolled");
   await nimbusFeatureCleanup();
@@ -313,6 +321,11 @@ add_task(async function test_trainhop_addon_after_browser_restart() {
     locationName: BUILTIN_LOCATION_NAME,
     version: BUILTIN_ADDON_VERSION,
   });
+
+  
+  
+  
+  assertASRouterTargetingNewtabAddonVersion(BUILTIN_ADDON_VERSION);
 });
 
 add_task(async function test_builtin_version_upgrades() {
@@ -337,6 +350,7 @@ add_task(async function test_builtin_version_upgrades() {
   });
   
   assertNewTabResourceMapping();
+  assertASRouterTargetingNewtabAddonVersion(BUILTIN_ADDON_VERSION);
 
   info(
     "Simulated browser restart while train-hop add-on is pending installation"
@@ -356,6 +370,7 @@ add_task(async function test_builtin_version_upgrades() {
     "Got newtab WebExtensionPolicy instance for the train-hop add-on version"
   );
   assertNewTabResourceMapping(trainhopAddonPolicy.extension.rootURI.spec);
+  assertASRouterTargetingNewtabAddonVersion(updateAddonVersion);
 
   info(
     "Simulated browser restart with a builtin add-on version higher than the train-hop add-on version"
@@ -376,6 +391,9 @@ add_task(async function test_builtin_version_upgrades() {
     locationName: BUILTIN_LOCATION_NAME,
     version: fakeUpdatedBuiltinVersion,
   });
+  
+  
+  assertASRouterTargetingNewtabAddonVersion(fakeUpdatedBuiltinVersion);
   Assert.deepEqual(
     await AddonManager.getAllInstalls(),
     [],
