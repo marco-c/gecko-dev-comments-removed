@@ -24,8 +24,9 @@ use crate::gpu_types::ZBufferId;
 use crate::internal_types::{FastHashMap, FrameId, Filter};
 use crate::invalidation::{InvalidationReason, DirtyRegion, PrimitiveCompareResult};
 use crate::invalidation::cached_surface::{CachedSurface, TileUpdateDirtyContext, TileUpdateDirtyState, PrimitiveDependencyInfo};
+use crate::invalidation::vert_buffer::{CornersCache, VertRange};
 use crate::invalidation::compare::{PrimitiveDependency, ImageDependency};
-use crate::invalidation::compare::{SpatialNodeComparer, PrimitiveComparisonKey};
+use crate::invalidation::compare::PrimitiveComparisonKey;
 use crate::invalidation::compare::{OpacityBindingInfo, ColorBindingInfo};
 use crate::picture::{SurfaceTextureDescriptor, PictureCompositeMode, SurfaceIndex, clamp};
 use crate::picture::{get_relative_scale_offset, PicturePrimitive};
@@ -244,6 +245,8 @@ pub struct Tile {
     pub z_id: ZBufferId,
     
     pub cached_surface: CachedSurface,
+    
+    pub local_raster_rect: RasterRect,
 }
 
 impl Tile {
@@ -263,6 +266,7 @@ impl Tile {
             is_opaque: false,
             z_id: ZBufferId::invalid(),
             cached_surface: CachedSurface::new(),
+            local_raster_rect: RasterRect::zero(),
         }
     }
 
@@ -318,6 +322,8 @@ impl Tile {
             ),
         );
 
+        self.local_raster_rect = ctx.local_to_raster.map_rect(&self.cached_surface.local_rect);
+
         self.world_tile_rect = ctx.pic_to_world_mapper
             .map(&self.cached_surface.local_rect)
             .expect("bug: map local tile rect");
@@ -338,6 +344,8 @@ impl Tile {
     fn add_prim_dependency(
         &mut self,
         info: &PrimitiveDependencyInfo,
+        corners_cache: &CornersCache,
+        prim_clamp_to_tile: bool,
     ) {
         
         
@@ -345,7 +353,14 @@ impl Tile {
             return;
         }
 
-        self.cached_surface.add_prim_dependency(info, self.cached_surface.local_rect);
+        let local_rect = self.cached_surface.local_rect;
+        self.cached_surface.add_prim_dependency(
+            info,
+            corners_cache,
+            prim_clamp_to_tile,
+            &self.local_raster_rect,
+            local_rect,
+        );
     }
 
     
@@ -358,12 +373,6 @@ impl Tile {
     ) {
         
         ensure_red_zone::<PrimitiveDependency>(&mut self.cached_surface.current_descriptor.dep_data);
-
-        
-        
-        
-        
-        state.spatial_node_comparer.retain_for_frame(self.cached_surface.current_descriptor.last_updated_frame_id);
 
         
         
@@ -728,8 +737,6 @@ pub struct TileCacheInstance {
     
     old_opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
-    spatial_node_comparer: SpatialNodeComparer,
-    
     
     color_bindings: FastHashMap<PropertyBindingId, ColorBindingInfo>,
     
@@ -815,6 +822,8 @@ pub struct TileCacheInstance {
     
     
     pub yuv_images_remaining: usize,
+    
+    corners_cache: CornersCache,
 }
 
 impl TileCacheInstance {
@@ -837,7 +846,6 @@ impl TileCacheInstance {
             sub_slices,
             opacity_bindings: FastHashMap::default(),
             old_opacity_bindings: FastHashMap::default(),
-            spatial_node_comparer: SpatialNodeComparer::new(),
             color_bindings: FastHashMap::default(),
             old_color_bindings: FastHashMap::default(),
             dirty_region: DirtyRegion::new(params.visibility_node_index, params.spatial_node_index),
@@ -879,6 +887,7 @@ impl TileCacheInstance {
             overlay_region: PictureRect::zero(),
             yuv_images_count: params.yuv_image_surface_count,
             yuv_images_remaining: 0,
+            corners_cache: CornersCache::new(),
         }
     }
 
@@ -1118,7 +1127,7 @@ impl TileCacheInstance {
                                 
                                 let map = ClipSpaceConversion::new(
                                     frame_context.root_spatial_node_index,
-                                    clip_node.item.spatial_node_index,
+                                    clip_instance.spatial_node_index,
                                     frame_context.root_spatial_node_index,
                                     frame_context.spatial_tree,
                                 );
@@ -1165,10 +1174,6 @@ impl TileCacheInstance {
         
         
         self.frame_id.advance();
-
-        
-        
-        self.spatial_node_comparer.next_frame(self.spatial_node_index);
 
         
         
@@ -1434,7 +1439,10 @@ impl TileCacheInstance {
             global_screen_world_rect: frame_context.global_screen_world_rect,
             tile_size: self.tile_size,
             frame_id: self.frame_id,
+            local_to_raster: self.local_to_raster,
         };
+
+        self.corners_cache.pre_update();
 
         
         for sub_slice in &mut self.sub_slices {
@@ -1885,7 +1893,7 @@ impl TileCacheInstance {
                 
                 let map = ClipSpaceConversion::new(
                     frame_context.root_spatial_node_index,
-                    clip_node.item.spatial_node_index,
+                    clip_instance.spatial_node_index,
                     frame_context.root_spatial_node_index,
                     frame_context.spatial_tree,
                 );
@@ -2219,9 +2227,11 @@ impl TileCacheInstance {
         }
 
         
-        let mut prim_info = PrimitiveDependencyInfo::new(
-            prim_instance.uid(),
-            pic_coverage_rect,
+        let mut prim_info = PrimitiveDependencyInfo::new(prim_instance.uid(), pic_coverage_rect);
+        
+        let prim_clamp_to_tile = matches!(
+            prim_instance.kind,
+            PrimitiveInstanceKind::Rectangle { .. }
         );
 
         let mut sub_slice_index = self.sub_slices.len() - 1;
@@ -2249,25 +2259,11 @@ impl TileCacheInstance {
         }
 
         
-        if prim_spatial_node_index != self.spatial_node_index {
-            prim_info.spatial_nodes.push(prim_spatial_node_index);
-        }
+        
 
         
         let clip_instances = &clip_store
             .clip_node_instances[prim_clip_chain.clips_range.to_range()];
-        for clip_instance in clip_instances {
-            let clip = &data_stores.clip[clip_instance.handle];
-
-            prim_info.clips.push(clip_instance.handle.uid());
-
-            
-            
-            if clip.item.spatial_node_index != self.spatial_node_index
-                && !prim_info.spatial_nodes.contains(&clip.item.spatial_node_index) {
-                prim_info.spatial_nodes.push(clip.item.spatial_node_index);
-            }
-        }
 
         
         
@@ -2743,15 +2739,80 @@ impl TileCacheInstance {
         }
 
         
-        for spatial_node_index in &prim_info.spatial_nodes {
-            self.spatial_node_comparer.register_used_transform(
-                *spatial_node_index,
-                self.frame_id,
-                frame_context.spatial_tree,
-            );
+        
+        
+        let coverage_rect = local_prim_rect
+            .intersection(&prim_clip_chain.local_clip_rect)
+            .unwrap_or_default();
+
+        
+        
+        
+        self.corners_cache.clear_scratch();
+        prim_info.prim_scratch = self.corners_cache.compute_to_scratch(
+            local_prim_rect,
+            prim_spatial_node_index,
+            self.spatial_node_index,
+            self.local_to_raster,
+            frame_context.spatial_tree,
+        );
+        prim_info.cov_scratch = self.corners_cache.compute_to_scratch(
+            coverage_rect,
+            prim_spatial_node_index,
+            self.spatial_node_index,
+            self.local_to_raster,
+            frame_context.spatial_tree,
+        );
+
+        
+        
+        for clip_instance in clip_instances {
+            let clip = &data_stores.clip[clip_instance.handle];
+            let clip_local_rect = match clip.item.kind {
+                ClipItemKind::Rectangle { rect, .. } => Some(rect),
+                ClipItemKind::RoundedRectangle { rect, .. } => Some(rect),
+                ClipItemKind::Image { rect, .. } => Some(rect),
+                ClipItemKind::BoxShadow { .. } => None,
+            };
+            let clip_scratch = match clip_local_rect {
+                Some(rect) => self.corners_cache.compute_to_scratch(
+                    rect,
+                    clip_instance.spatial_node_index,
+                    self.spatial_node_index,
+                    self.local_to_raster,
+                    frame_context.spatial_tree,
+                ),
+                None => VertRange::INVALID,
+            };
+            prim_info.clips.push((clip_instance.handle.uid(), clip_scratch));
         }
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
         
         for y in p0.y .. p1.y {
             for x in p0.x .. p1.x {
@@ -2759,7 +2820,11 @@ impl TileCacheInstance {
                 let key = TileOffset::new(x, y);
                 let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
 
-                tile.add_prim_dependency(&prim_info);
+                tile.add_prim_dependency(
+                    &prim_info,
+                    &self.corners_cache,
+                    prim_clamp_to_tile,
+                );
             }
         }
 
@@ -2920,7 +2985,6 @@ impl TileCacheInstance {
             resource_cache,
             composite_state,
             compare_cache: &mut self.compare_cache,
-            spatial_node_comparer: &mut self.spatial_node_comparer,
         };
 
         
@@ -3187,6 +3251,9 @@ struct TilePreUpdateContext {
 
     
     frame_id: FrameId,
+
+    
+    local_to_raster: ScaleOffset,
 }
 
 
