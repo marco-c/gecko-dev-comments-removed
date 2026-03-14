@@ -96,8 +96,6 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   uint32_t TimeToLive();
 
-  bool IsAlive();
-
   bool NeedSpdyTunnel() {
     return mConnInfo->UsingHttpsProxy() && !mHasTLSTransportLayer &&
            mConnInfo->UsingConnect();
@@ -223,6 +221,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   [[nodiscard]] nsresult OnSocketReadable();
 
   PRIntervalTime IdleTime();
+  bool IsAlive();
 
   
   void StartSpdy(nsITLSSocketControl* ssl, SpdyVersion spdyVersion);
