@@ -29,9 +29,6 @@ class Decoder;
 
 namespace dom {
 
-#ifdef NIGHTLY_BUILD
-class ResourceHasher;
-#endif
 class ScriptLoader;
 class SRICheckDataVerifier;
 
@@ -85,9 +82,6 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
  private:
   virtual ~ScriptLoadHandler();
 
-  nsresult DoOnStreamComplete(nsIChannel* aChannel, nsresult aStatus,
-                              uint32_t aDataLength, const uint8_t* aData);
-
   
 
 
@@ -139,11 +133,6 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
 
   
   bool mPreloadStartNotified = false;
-
-#ifdef NIGHTLY_BUILD
-  
-  RefPtr<mozilla::dom::ResourceHasher> mResourceHasher;
-#endif
 };
 
 }  
