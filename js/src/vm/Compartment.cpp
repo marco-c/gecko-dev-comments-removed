@@ -53,7 +53,7 @@ void Compartment::checkObjectWrappersAfterMovingGC() {
     auto key = e.front().key();
     CheckGCThingAfterMovingGC(key.get());  
     CheckGCThingAfterMovingGC(e.front().value().unbarrieredGet(), zone());
-    CheckTableEntryAfterMovingGC(crossCompartmentObjectWrappers, e, key);
+    CheckCCWTableEntryAfterMovingGC(crossCompartmentObjectWrappers, e, key);
   }
 }
 
