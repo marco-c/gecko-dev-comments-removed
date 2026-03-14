@@ -4276,6 +4276,13 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
     return;
   }
 
+  
+  
+  if (spec.EqualsLiteral(
+          "resource:///modules/sessionstore/SessionStoreFunctions.sys.mjs")) {
+    return;
+  }
+
   if (xpc::IsInAutomation()) {
 #ifdef DEBUG
     if (NS_IsMainThread()) {
