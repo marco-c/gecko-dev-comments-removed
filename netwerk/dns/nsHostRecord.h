@@ -345,10 +345,6 @@ class AddrHostRecord final : public nsHostRecord {
 
   
   
-  uint32_t mUnusableCount = 0;
-
-  
-  
   
   nsTArray<nsCString> mUnusableItems;
 };
