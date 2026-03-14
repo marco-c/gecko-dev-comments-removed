@@ -167,13 +167,6 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
   
   static inline nsresult AppendProfileString(nsIFile* aFile, const char* aPath);
 
-#if defined(XP_UNIX) && !defined(XP_MACOS) && !defined(ANDROID)
-  
-  
-  
-  static nsresult AppendProfilePathUnix(nsIFile* aFile, bool aPrependDot);
-#endif
-
   static nsresult SetUserDataProfileDirectory(nsCOMPtr<nsIFile>& aFile,
                                               bool aLocal);
 
