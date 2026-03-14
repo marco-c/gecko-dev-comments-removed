@@ -231,6 +231,11 @@ const embedHelperLib = (() => {
         
         
         const sanitizer = new Sanitizer({
+          attributes: [],
+          elements: [
+            { name: "a", attributes: ["href", "target", "title"] },
+            "br",
+          ],
           replaceWithChildrenElements: [
             "abbr",
             "address",
@@ -267,7 +272,7 @@ const embedHelperLib = (() => {
             "header",
             "hgroup",
             "hr",
-            "html",
+            
             "i",
             "ins",
             "kbd",
