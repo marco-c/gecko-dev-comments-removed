@@ -1363,6 +1363,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 86) {
+        rv = MigrateV86Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
       
       
@@ -2296,6 +2301,31 @@ nsresult Database::MigrateV85Up() {
       "SET recalc_frecency = 1 "
       "WHERE frecency > 1"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+nsresult Database::MigrateV86Up() {
+  nsCOMPtr<mozIStorageStatement> stmt;
+
+  
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT block_until_ms FROM moz_origins"_ns, getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_origins "
+        "ADD COLUMN block_until_ms INTEGER"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  rv = mMainConn->CreateStatement(
+      "SELECT block_pages_until_ms FROM moz_origins"_ns, getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_origins "
+        "ADD COLUMN block_pages_until_ms INTEGER"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
   return NS_OK;
 }
 
