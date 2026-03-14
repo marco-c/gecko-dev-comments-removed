@@ -5,6 +5,7 @@
 
 """Utility functions to handle test chunking."""
 
+import functools
 import logging
 import os
 import re
@@ -13,7 +14,6 @@ from abc import ABCMeta, abstractmethod
 
 from manifestparser import TestManifest
 from manifestparser.filters import chunk_by_runtime, tags
-from mozbuild.util import memoize
 from mozinfo.platforminfo import PlatformInfo
 from moztest.resolve import TEST_SUITES, TestManifestLoader, TestResolver
 from requests.exceptions import RetryError
@@ -146,13 +146,13 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
     return info
 
 
-@memoize
+@functools.cache
 def _load_manifest_runtimes_data():
     index_route = "gecko.v2.mozilla-central.latest.source.test-info-manifest-timings"
     return get_artifact_from_index(index_route, "public/manifests-runtimes.json")
 
 
-@memoize
+@functools.cache
 def get_runtimes(platform, suite_name):
     if not suite_name or not platform:
         raise TypeError("suite_name and platform cannot be empty.")
@@ -273,63 +273,56 @@ def chunk_manifests(suite, platform, chunks, manifests):
         A list of length `chunks` where each item contains a list of manifests
         that run in that chunk.
     """
-    if "web-platform-tests" not in suite:
-        all_runtimes = get_runtimes(platform, suite)
-
-        
-        
-        runtimes = {}
-        for manifest in manifests:
-            total_runtime = 0
-            found = False
-
-            
-            if manifest in all_runtimes:
-                total_runtime += all_runtimes[manifest]
-                found = True
-
-            
-            if manifest.endswith(".toml"):
-                manifest_prefix = manifest + ":"
-                for runtime_key, runtime_value in all_runtimes.items():
-                    if runtime_key.startswith(manifest_prefix):
-                        total_runtime += runtime_value
-                        found = True
-
-            if found:
-                runtimes[manifest] = total_runtime
-
-        
-        manifests_without_data = [m for m in manifests if m not in runtimes]
-        if manifests_without_data and len(runtimes) > 0:
-            missing_list = ", ".join(manifests_without_data[:5])
-            if len(manifests_without_data) > 5:
-                missing_list += f" ... and {len(manifests_without_data) - 5} more"
-            logger.warning(
-                f"chunk_manifests({suite}, {platform}): Missing runtime data for {len(manifests_without_data)}/{len(manifests)} manifests: {missing_list}"
-            )
-
-        
-        
-        
-        
-        
-        zero_runtime_manifests = sorted(m for m in manifests if runtimes.get(m, 0) == 0)
-        nonzero_manifests = [m for m in manifests if runtimes.get(m, 0) != 0]
-
-        cbr = chunk_by_runtime(None, chunks, runtimes)
-        chunked = [c for _, c in cbr.get_chunked_manifests(nonzero_manifests)]
-
-        for i, m in enumerate(zero_runtime_manifests):
-            chunked[i % chunks].append(m)
-
-        return chunked
+    all_runtimes = get_runtimes(platform, suite)
 
     
     
-    sorted_manifests = sorted(manifests)
-    chunked_manifests = [sorted_manifests[c::chunks] for c in range(chunks)]
-    return chunked_manifests
+    runtimes = {}
+    for manifest in manifests:
+        total_runtime = 0
+        found = False
+
+        
+        if manifest in all_runtimes:
+            total_runtime += all_runtimes[manifest]
+            found = True
+
+        
+        if manifest.endswith(".toml"):
+            manifest_prefix = manifest + ":"
+            for runtime_key, runtime_value in all_runtimes.items():
+                if runtime_key.startswith(manifest_prefix):
+                    total_runtime += runtime_value
+                    found = True
+
+        if found:
+            runtimes[manifest] = total_runtime
+
+    
+    manifests_without_data = [m for m in manifests if m not in runtimes]
+    if manifests_without_data and len(runtimes) > 0:
+        missing_list = ", ".join(manifests_without_data[:5])
+        if len(manifests_without_data) > 5:
+            missing_list += f" ... and {len(manifests_without_data) - 5} more"
+        logger.warning(
+            f"chunk_manifests({suite}, {platform}): Missing runtime data for {len(manifests_without_data)}/{len(manifests)} manifests: {missing_list}"
+        )
+
+    
+    
+    
+    
+    
+    zero_runtime_manifests = sorted(m for m in manifests if runtimes.get(m, 0) == 0)
+    nonzero_manifests = [m for m in manifests if runtimes.get(m, 0) != 0]
+
+    cbr = chunk_by_runtime(None, chunks, runtimes)
+    chunked = [c for _, c in cbr.get_chunked_manifests(nonzero_manifests)]
+
+    for i, m in enumerate(zero_runtime_manifests):
+        chunked[i % chunks].append(m)
+
+    return chunked
 
 
 class BaseManifestLoader(metaclass=ABCMeta):
@@ -361,7 +354,7 @@ class BaseManifestLoader(metaclass=ABCMeta):
 class DefaultLoader(BaseManifestLoader):
     """Load manifests using metadata from the TestResolver."""
 
-    @memoize
+    @functools.cache
     def get_tests(self, suite):
         suite_definition = TEST_SUITES[suite]
         return list(
@@ -373,7 +366,7 @@ class DefaultLoader(BaseManifestLoader):
             )
         )
 
-    @memoize
+    @functools.cache
     def get_manifests(self, suite, frozen_mozinfo):
         mozinfo = dict(frozen_mozinfo)
 
@@ -466,7 +459,7 @@ class BugbugLoader(DefaultLoader):
         super().__init__(*args, **kwargs)
         self.timedout = False
 
-    @memoize
+    @functools.cache
     def get_manifests(self, suite, mozinfo):
         manifests = super().get_manifests(suite, mozinfo)
 

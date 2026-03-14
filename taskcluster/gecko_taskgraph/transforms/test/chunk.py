@@ -5,14 +5,12 @@
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
-from taskgraph.util.attributes import keymatch
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.treeherder import join_symbol, split_symbol
 
 from gecko_taskgraph.util.attributes import is_try
 from gecko_taskgraph.util.chunking import (
     WPT_SUBSUITES,
-    DefaultLoader,
     chunk_manifests,
     get_manifest_loader,
     get_runtimes,
@@ -24,13 +22,6 @@ from gecko_taskgraph.util.perfile import perfile_number_of_chunks
 DYNAMIC_CHUNK_DURATION = 20 * 60  
 """The approximate time each test chunk should take to run."""
 
-
-DYNAMIC_CHUNK_MULTIPLIER = {
-    
-    
-    "^(?!android).*-xpcshell.*": 0.2,
-}
-"""A multiplication factor to tweak the total duration per platform / suite."""
 
 transforms = TransformSequence()
 
@@ -79,7 +70,7 @@ def set_test_manifests(config, tasks):
             
             
             if task["chunks"] == "dynamic":
-                task["chunks"] = 1
+                task["chunks"] = task.get("default-chunks", 1)
             yield task
             continue
 
@@ -139,8 +130,6 @@ def set_test_manifests(config, tasks):
                         ):
                             yield task
                     else:
-                        if not isinstance(loader, DefaultLoader):
-                            task["chunks"] = "dynamic"
                         yield task
                     found_wpt = True
                     break
@@ -183,13 +172,6 @@ def set_test_manifests(config, tasks):
             
             continue
 
-        
-        
-        
-        
-        if not isinstance(loader, DefaultLoader):
-            task["chunks"] = "dynamic"
-
         yield task
 
 
@@ -203,17 +185,21 @@ def resolve_dynamic_chunks(config, tasks):
             continue
 
         if not task.get("test-manifests"):
-            raise Exception(
-                "{} must define 'test-manifests' to use dynamic chunking!".format(
-                    task["test-name"]
-                )
-            )
+            task["chunks"] = task.get("default-chunks", 1)
+            yield task
+            continue
 
+        all_runtimes = get_runtimes(task["test-platform"], task["test-name"])
         runtimes = {
             m: r
-            for m, r in get_runtimes(task["test-platform"], task["suite"]).items()
+            for m, r in all_runtimes.items()
             if m in task["test-manifests"]["active"]
         }
+
+        if not all_runtimes:
+            task["chunks"] = task.get("default-chunks", 1)
+            yield task
+            continue
 
         
         
@@ -226,17 +212,6 @@ def resolve_dynamic_chunks(config, tasks):
         
         missing = [m for m in task["test-manifests"]["active"] if m not in runtimes]
         total += avg * len(missing)
-
-        
-        key = "{}-{}".format(task["test-platform"], task["test-name"])
-        matches = keymatch(DYNAMIC_CHUNK_MULTIPLIER, key)
-        if len(matches) > 1:
-            raise Exception(
-                f"Multiple matching values for {key} found while "
-                "determining dynamic chunk multiplier!"
-            )
-        elif matches:
-            total = total * matches[0]
 
         chunks = int(round(total / DYNAMIC_CHUNK_DURATION))
 
@@ -268,7 +243,7 @@ def split_chunks(config, tasks):
 
             manifests = task["test-manifests"]
             chunked_manifests = chunk_manifests(
-                task["suite"],
+                task["test-name"],
                 task["test-platform"],
                 task["chunks"],
                 manifests["active"],
