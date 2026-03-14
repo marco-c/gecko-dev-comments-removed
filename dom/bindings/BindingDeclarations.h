@@ -59,11 +59,13 @@ struct DictionaryBase {
   
   
   struct FastDictionaryInitializer {};
+};
 
-  bool mIsAnyMemberPresent = false;
-
- public:
+struct MaybeEmptyDictionaryBase : DictionaryBase {
   bool IsAnyMemberPresent() const { return mIsAnyMemberPresent; }
+
+ protected:
+  bool mIsAnyMemberPresent = false;
 };
 
 template <class T>
