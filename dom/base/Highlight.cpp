@@ -9,7 +9,6 @@
 #include "AbstractRange.h"
 #include "Document.h"
 #include "HighlightRegistry.h"
-#include "PresShell.h"
 #include "Selection.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
@@ -17,7 +16,9 @@
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/dom/HighlightBinding.h"
 #include "nsFrameSelection.h"
+#include "nsLayoutUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
 
 namespace mozilla::dom {
 
@@ -78,31 +79,9 @@ void Highlight::RemoveFromHighlightRegistry(
   }
 }
 
-already_AddRefed<Selection> Highlight::CreateHighlightSelection(
-    nsAtom* aHighlightName, nsFrameSelection* aFrameSelection) {
-  MOZ_ASSERT(aFrameSelection);
-  MOZ_ASSERT(aFrameSelection->GetPresShell());
-  RefPtr<Selection> selection =
-      MakeRefPtr<Selection>(SelectionType::eHighlight, aFrameSelection);
-  selection->SetHighlightSelectionData({aHighlightName, this});
-  AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__);
-  for (const RefPtr<AbstractRange>& range : mRanges) {
-    if (range->GetComposedDocOfContainers() ==
-        aFrameSelection->GetPresShell()->GetDocument()) {
-      
-      
-      selection->AddHighlightRangeAndSelectFramesAndNotifyListeners(
-          MOZ_KnownLive(*range));
-    }
-  }
-  return selection.forget();
-}
-
 void Highlight::Repaint() {
   for (const RefPtr<HighlightRegistry>& registry :
        mHighlightRegistries.Keys()) {
-    
-    
     registry->RepaintHighlightSelection(*this);
   }
 }
@@ -195,6 +174,80 @@ bool Highlight::Delete(AbstractRange& aRange, ErrorResult& aRv) {
     return true;
   }
   return false;
+}
+
+
+struct PointHitCallback : public RectCallback {
+  const nscoord mX, mY;
+  bool mHit = false;
+  PointHitCallback(nscoord aX, nscoord aY) : mX(aX), mY(aY) {}
+  void AddRect(const nsRect& aRect) override {
+    if (!mHit) {
+      mHit = aRect.Contains(mX, mY);
+    }
+  }
+};
+
+
+nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
+    float aX, float aY,
+    const Sequence<OwningNonNull<mozilla::dom::ShadowRoot>>& aShadowRoots,
+    ShadowRoot* aPointShadowRoot) const {
+  AutoTArray<RefPtr<AbstractRange>, 4> rangesAtPoint;
+
+  
+  const nscoord xAppUnits = nsPresContext::CSSPixelsToAppUnits(aX);
+  const nscoord yAppUnits = nsPresContext::CSSPixelsToAppUnits(aY);
+
+  
+  for (const auto& range : mRanges) {
+    
+    if (range->IsStaticRange() && !range->AsStaticRange()->IsValid()) {
+      continue;
+    }
+    if (!range->IsPositioned()) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nsINode* closestCommonAncestor =
+        range->GetClosestCommonInclusiveAncestor();
+    if (!closestCommonAncestor) {
+      continue;
+    }
+    if (aPointShadowRoot) {
+      if (closestCommonAncestor->GetContainingShadow() != aPointShadowRoot) {
+        continue;
+      }
+    } else if (closestCommonAncestor->IsInShadowTree() &&
+               !aShadowRoots.Contains(
+                   closestCommonAncestor->GetContainingShadow())) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    PointHitCallback hitTest(xAppUnits, yAppUnits);
+    range->CollectClientRects(hitTest,  true);
+    if (hitTest.mHit) {
+      rangesAtPoint.AppendElement(range);
+    }
+  }
+  return rangesAtPoint;
 }
 
 JSObject* Highlight::WrapObject(JSContext* aCx,

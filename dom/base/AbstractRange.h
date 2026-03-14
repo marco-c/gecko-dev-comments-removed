@@ -144,6 +144,13 @@ class AbstractRange : public nsISupports,
 
 
 
+  void CollectClientRects(mozilla::RectCallback& aCallback,
+                          bool aClampToEdge = true) const;
+
+  
+
+
+
   static void CollectClientRectsAndText(
       mozilla::RectCallback* aCollector,
       mozilla::dom::Sequence<nsString>* aTextList, AbstractRange* aRange,
