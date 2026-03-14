@@ -62,43 +62,47 @@ async function putServerInRemoteSettings(
 
 
 
-function setupStubs(
-  sandbox,
-  options = {
-    signedIn: true,
-    isLinkedToGuardian: true,
-    validProxyPass: true,
-    entitlement: createTestEntitlement(),
-  }
-) {
+
+const defaultStubOptions = {
+  signedIn: true,
+  isLinkedToGuardian: true,
+  validProxyPass: true,
+  entitlement: createTestEntitlement(),
+  proxyUsage: new ProxyUsage(
+    "5368709120",
+    "4294967296",
+    "3026-02-01T00:00:00.000Z"
+  ),
+};
+Object.freeze(defaultStubOptions);
+
+function setupStubs(sandbox, aOptions = { ...defaultStubOptions }) {
+  const options = { ...defaultStubOptions, ...aOptions };
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
-  sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
-    .resolves(options.isLinkedToGuardian);
-  sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
-    status: 200,
-    error: null,
-    entitlement: options.entitlement,
-  });
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({
-    status: 200,
-    error: null,
-    ok: true,
-  });
-  sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
-    status: 200,
-    error: undefined,
-    pass: new ProxyPass(
-      options.validProxyPass
-        ? createProxyPassToken()
-        : createExpiredProxyPassToken()
-    ),
-    usage: new ProxyUsage(
-      "5368709120",
-      "4294967296",
-      "2026-02-01T00:00:00.000Z"
-    ),
-  });
+
+  const guardianStub = {
+    isLinkedToGuardian: sandbox.stub().resolves(options.isLinkedToGuardian),
+    fetchUserInfo: sandbox.stub().resolves({
+      status: 200,
+      error: null,
+      entitlement: options.entitlement,
+    }),
+    enroll: sandbox.stub().resolves({ status: 200, error: null, ok: true }),
+    fetchProxyPass: sandbox.stub().resolves({
+      status: 200,
+      error: undefined,
+      pass: new ProxyPass(
+        options.validProxyPass
+          ? createProxyPassToken()
+          : createExpiredProxyPassToken()
+      ),
+      usage: options.proxyUsage,
+    }),
+    fetchProxyUsage: sandbox.stub().resolves(options.proxyUsage),
+  };
+
+  sandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
+  return guardianStub;
 }
 
 
@@ -145,13 +149,8 @@ function createExpiredProxyPassToken() {
 
 function createTestEntitlement(overrides = {}) {
   return new Entitlement({
-    autostart: false,
-    created_at: "2023-01-01T12:00:00.000Z",
-    limited_bandwidth: false,
-    location_controls: false,
     subscribed: false,
     uid: 42,
-    website_inclusion: false,
     maxBytes: "0",
     ...overrides,
   });
