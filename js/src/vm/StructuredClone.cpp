@@ -491,6 +491,10 @@ struct JSStructuredCloneReader {
 
   [[nodiscard]] bool readObjectField(HandleObject obj, HandleValue key);
 
+  [[nodiscard]] bool startReadUnchecked(MutableHandleValue vp,
+                                        ShouldAtomizeStrings atomizeStrings,
+                                        bool* usedBackRef);
+
   [[nodiscard]] bool startRead(
       MutableHandleValue vp,
       ShouldAtomizeStrings atomizeStrings = DontAtomizeStrings);
@@ -524,6 +528,10 @@ struct JSStructuredCloneReader {
   
   Rooted<GCVector<std::pair<HeapPtr<JSObject*>, bool>, 8>> objState;
 
+  
+  
+  
+  
   
   
   
@@ -3120,8 +3128,9 @@ static bool PrimitiveToObject(JSContext* cx, MutableHandleValue vp) {
   return true;
 }
 
-bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
-                                        ShouldAtomizeStrings atomizeStrings) {
+bool JSStructuredCloneReader::startReadUnchecked(
+    MutableHandleValue vp, ShouldAtomizeStrings atomizeStrings,
+    bool* usedBackRef) {
   uint32_t tag, data;
 
   AutoCheckRecursionLimit recursion(in.context());
@@ -3276,6 +3285,7 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
         return false;
       }
       vp.set(allObjs[data]);
+      *usedBackRef = true;
       return true;
     }
 
@@ -3429,6 +3439,49 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
     return false;
   }
 
+  return true;
+}
+
+
+
+bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
+                                        ShouldAtomizeStrings atomizeStrings) {
+  mozilla::DebugOnly<uint32_t> allObjIndex = allObjs.length();
+  bool usedBackRef = false;
+  if (!startReadUnchecked(vp, atomizeStrings, &usedBackRef)) {
+    return false;
+  }
+
+  if (vp.isObject()) {
+    
+    
+    
+    
+    if (usedBackRef) {
+      
+      
+      
+      MOZ_ASSERT(allObjs.length() == allObjIndex,
+                 "backrefs should not mutate allObjs");
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(vp.get() == allObjs[allObjIndex],
+                 "startRead() returned an object that is not stored at the "
+                 "earliest allObjs offset");
+    }
+  } else {
+    MOZ_ASSERT(allObjs.length() == allObjIndex,
+               "startRead() added an allObjs object for a non-object read");
+  }
   return true;
 }
 
