@@ -26,8 +26,6 @@ namespace mozilla::dom {
 class AbstractRange;
 class Document;
 class Highlight;
-struct HighlightHitResult;
-struct HighlightsFromPointOptions;
 
 
 
@@ -140,18 +138,6 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
   MOZ_CAN_RUN_SCRIPT bool Delete(const nsAString& aKey, ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-  void HighlightsFromPoint(float aX, float aY,
-                           const HighlightsFromPointOptions& aOptions,
-                           nsTArray<HighlightHitResult>& aResult);
 
   
 
