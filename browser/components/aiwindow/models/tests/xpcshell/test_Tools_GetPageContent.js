@@ -2,6 +2,8 @@
 
 
 
+do_get_profile();
+
 const { GetPageContent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );

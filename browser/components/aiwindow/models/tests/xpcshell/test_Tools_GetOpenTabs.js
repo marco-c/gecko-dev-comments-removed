@@ -2,6 +2,8 @@
 
 
 
+do_get_profile();
+
 const { getOpenTabs } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
