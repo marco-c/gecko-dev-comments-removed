@@ -31,7 +31,7 @@ add_task(async function testGetAllPermissionDetailsForBrowser() {
     "cookie",
     SitePermissions.ALLOW_COOKIES_FOR_SESSION
   );
-  SitePermissions.setForPrincipal(principal, "popup", SitePermissions.BLOCK);
+  SitePermissions.setForPrincipal(principal, "popup", SitePermissions.ALLOW);
   SitePermissions.setForPrincipal(
     principal,
     "geo",
@@ -86,13 +86,55 @@ add_task(async function testGetAllPermissionDetailsForBrowser() {
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
 
+  
+  
+  
+  
   let popup = permissions.find(({ id }) => id === "popup");
   Assert.deepEqual(popup, {
     id: "popup",
-    label: "Pop-ups and third-party redirects",
-    state: SitePermissions.BLOCK,
+    label: "Third-party redirects",
+    state: SitePermissions.ALLOW,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });
+
+  
+  Services.prefs.setBoolPref("dom.disable_open_during_load", true);
+  permissions = SitePermissions.getAllPermissionDetailsForBrowser(browser);
+  popup = permissions.find(({ id }) => id === "popup");
+
+  Assert.deepEqual(popup, {
+    id: "popup",
+    label: "Pop-ups and third-party redirects",
+    state: SitePermissions.ALLOW,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  Services.prefs.setBoolPref(
+    "dom.security.framebusting_intervention.enabled",
+    false
+  );
+  permissions = SitePermissions.getAllPermissionDetailsForBrowser(browser);
+  popup = permissions.find(({ id }) => id === "popup");
+
+  Assert.deepEqual(popup, {
+    id: "popup",
+    label: "Open pop-up windows",
+    state: SitePermissions.ALLOW,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  Services.prefs.setBoolPref("dom.disable_open_during_load", false);
+  permissions = SitePermissions.getAllPermissionDetailsForBrowser(browser);
+  popup = permissions.find(({ id }) => id === "popup");
+
+  Assert.equal(popup, undefined);
+
+  Services.prefs.clearUserPref(
+    "dom.security.framebusting_intervention.enabled"
+  );
 
   let geo = permissions.find(({ id }) => id === "geo");
   Assert.deepEqual(geo, {
