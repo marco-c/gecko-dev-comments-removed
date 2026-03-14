@@ -167,7 +167,6 @@ pub enum Color {
     
     ColorFunction(Box<ColorFunction<Self>>),
     
-    #[cfg(feature = "gecko")]
     System(SystemColor),
     
     ColorMix(Box<ColorMix>),
@@ -441,6 +440,79 @@ impl SystemColor {
 
 
 
+
+
+
+
+
+
+#[allow(missing_docs)]
+#[cfg(feature = "servo")]
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
+#[repr(u8)]
+pub enum SystemColor {
+    Accentcolor,
+    Accentcolortext,
+    Activetext,
+    Linktext,
+    Visitedtext,
+    Buttonborder,
+    Buttonface,
+    Buttontext,
+    Canvas,
+    Canvastext,
+    Field,
+    Fieldtext,
+    Graytext,
+    Highlight,
+    Highlighttext,
+    Mark,
+    Marktext,
+    Selecteditem,
+    Selecteditemtext,
+
+    
+    Activeborder,
+    Inactiveborder,
+    Threeddarkshadow,
+    Threedhighlight,
+    Threedlightshadow,
+    Threedshadow,
+    Windowframe,
+    Buttonhighlight,
+    Buttonshadow,
+    Threedface,
+    Activecaption,
+    Appworkspace,
+    Background,
+    Inactivecaption,
+    Infobackground,
+    Menu,
+    Scrollbar,
+    Window,
+    Captiontext,
+    Infotext,
+    Menutext,
+    Windowtext,
+    Inactivecaptiontext,
+}
+
+#[cfg(feature = "servo")]
+impl SystemColor {
+    #[inline]
+    fn compute(&self, cx: &Context) -> ComputedColor {
+        if cx.for_non_inherited_property {
+            cx.rule_cache_conditions
+                .borrow_mut()
+                .set_color_scheme_dependency(cx.builder.color_scheme);
+        }
+
+        ComputedColor::Absolute(cx.device().system_color(*self, cx.builder.color_scheme))
+    }
+}
+
+
+
 #[derive(Copy, Clone)]
 enum PreserveAuthored {
     No,
@@ -485,13 +557,16 @@ impl Color {
                 Ok(color)
             },
             Err(e) => {
-                #[cfg(feature = "gecko")]
                 {
+                    #[cfg(feature = "gecko")]
                     if let Ok(system) = input.try_parse(|i| SystemColor::parse(context, i)) {
                         return Ok(Color::System(system));
                     }
+                    #[cfg(feature = "servo")]
+                    if let Ok(system) = input.try_parse(SystemColor::parse) {
+                        return Ok(Color::System(system));
+                    }
                 }
-
                 if let Ok(mix) = input.try_parse(|i| ColorMix::parse(context, i, preserve_authored))
                 {
                     return Ok(Color::ColorMix(Box::new(mix)));
@@ -595,7 +670,6 @@ impl ToCss for Color {
                 c.to_css(dest)?;
                 dest.write_char(')')
             },
-            #[cfg(feature = "gecko")]
             Color::System(system) => system.to_css(dest),
             #[cfg(feature = "gecko")]
             Color::InheritFromBodyQuirk => dest.write_str("-moz-inherit-from-body-quirk"),
@@ -610,7 +684,6 @@ impl Color {
             #[cfg(feature = "gecko")]
             Self::InheritFromBodyQuirk => false,
             Self::CurrentColor => true,
-            #[cfg(feature = "gecko")]
             Self::System(..) => true,
             Self::Absolute(ref absolute) => allow_transparent && absolute.color.is_transparent(),
             Self::ColorFunction(ref color_function) => {
@@ -841,7 +914,6 @@ impl Color {
             Color::ContrastColor(ref c) => {
                 ComputedColor::ContrastColor(Box::new(c.to_computed_color(context)?))
             },
-            #[cfg(feature = "gecko")]
             Color::System(system) => system.compute(context?),
             #[cfg(feature = "gecko")]
             Color::InheritFromBodyQuirk => {
