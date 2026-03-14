@@ -381,7 +381,17 @@ module.exports = function (config) {
         },
       },
     },
-    files: [PATHS.testEntryFile],
+    files: [
+      
+      "../../../toolkit/content/vendor/react/react.js",
+      "../../../toolkit/content/vendor/react/react-dom.js",
+      "../../../toolkit/content/vendor/react/react-dom-server.js",
+      "test/vendor/react-dom-test-utils.js",
+      "../../../toolkit/content/vendor/react/prop-types.js",
+      "../../../toolkit/content/vendor/react/react-redux.js",
+      "../../../toolkit/content/vendor/react/redux.js",
+      PATHS.testEntryFile,
+    ],
     preprocessors,
     webpack: {
       mode: "none",
@@ -427,14 +437,43 @@ module.exports = function (config) {
         new webpack.DefinePlugin({
           "process.env.NODE_ENV": JSON.stringify("development"),
         }),
+
+        
+        new webpack.NormalModuleReplacementPlugin(
+          /^react-redux$/,
+          path.resolve(
+            __dirname,
+            "../../../toolkit/content/vendor/react/react-redux.js"
+          )
+        ),
       ],
-      externals: {
+      externals: [
+        
+        {
+          react: "React",
+          "react-dom": "ReactDOM",
+          "react-dom/client": "ReactDOM",
+          "react-dom/server": "ReactDOMServer",
+          "react-dom/server.browser": "ReactDOMServer",
+          "react-dom/test-utils": "ReactTestUtils",
+          "prop-types": "PropTypes",
+          "react-redux": "ReactRedux",
+          redux: "Redux",
+          
+          
+          "react/addons": true,
+          "react/lib/ReactContext": true,
+          "react/lib/ExecutionEnvironment": true,
+        },
         
         
-        "react/addons": true,
-        "react/lib/ReactContext": true,
-        "react/lib/ExecutionEnvironment": true,
-      },
+        function ({ request }, callback) {
+          if (/^use-sync-external-store/.test(request)) {
+            return callback(null, "var {}");
+          }
+          callback();
+        },
+      ],
       module: {
         rules: [
           {
