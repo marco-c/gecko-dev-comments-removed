@@ -250,6 +250,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   }
 
   bool RunAndConsumeJSMicroTask(JSContext* aCx) {
+    MOZ_ASSERT(!JS_IsExceptionPending(aCx));
     JS::Rooted<JS::JSMicroTask*> task(
         aCx, JS::ToMaybeWrappedJSMicroTask(mMicroTask));
     MOZ_ASSERT(task);
@@ -280,7 +281,9 @@ class MOZ_STACK_CLASS WontConsumeMicroTask : public MayConsumeMicroTask {
 
  private:
   explicit WontConsumeMicroTask(JS::GenericMicroTask aMicroTask)
-      : MayConsumeMicroTask(aMicroTask) {}
+      : MayConsumeMicroTask(aMicroTask) {
+    MOZ_RELEASE_ASSERT(!aMicroTask.isNullOrUndefined());
+  }
 };
 
 class SuppressedMicroTaskList final : public MicroTaskRunnable {
@@ -454,7 +457,10 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
 
   
   
-  void EnterMicroTask() { ++mMicroTaskLevel; }
+  
+  
+  
+  bool EnterMicroTask() { return (mMicroTaskLevel++ == 0); }
 
   MOZ_CAN_RUN_SCRIPT
   void LeaveMicroTask() {
@@ -470,6 +476,8 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   void EnterSyncOperation() { ++mSyncOperations; }
   void LeaveSyncOperation() { --mSyncOperations; }
   bool IsInSyncOperation() const { return mSyncOperations > 0; }
+
+  bool CheckRecursionDepth(uint32_t aCurrentDepth, bool aForce = false);
 
   MOZ_CAN_RUN_SCRIPT
   bool PerformMicroTaskCheckPoint(bool aForce = false);

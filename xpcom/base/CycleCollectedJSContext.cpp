@@ -727,13 +727,15 @@ SuppressedMicroTaskList::~SuppressedMicroTaskList() {
 
 static void MOZ_CAN_RUN_SCRIPT
 RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
-               JS::MutableHandle<MustConsumeMicroTask> aMicroTask);
+               JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+               bool aHasSuppressedMicroTasks);
 
 
 
 static void MOZ_CAN_RUN_SCRIPT
 RunMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
-             JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
+             JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+             bool aHasSuppressedMicroTasks) {
   LogMustConsumeMicroTask::Run log(&aMicroTask.get());
 
   if (RefPtr<MicroTaskRunnable> runnable =
@@ -745,7 +747,7 @@ RunMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     return;
   }
 
-  RunJSMicroTask(aCx, aCCJS, aMicroTask);
+  RunJSMicroTask(aCx, aCCJS, aMicroTask, aHasSuppressedMicroTasks);
 }
 
 
@@ -760,8 +762,7 @@ class MOZ_STACK_CLASS StatefulMicroTask {
   explicit StatefulMicroTask(CycleCollectedJSContext* aCCJS) : mCCJS(aCCJS) {
     MOZ_ASSERT(aCCJS);
     MOZ_ASSERT(aCCJS == CycleCollectedJSContext::Get());
-
-    mCCJS->EnterMicroTask();
+    mWillPerform = mCCJS->EnterMicroTask();
   }
 
   MOZ_CAN_RUN_SCRIPT ~StatefulMicroTask() {
@@ -770,16 +771,18 @@ class MOZ_STACK_CLASS StatefulMicroTask {
     mCCJS->LeaveMicroTask();
   }
 
+  bool WillPerformMicroTaskCheckPoint() { return mWillPerform; }
+
  private:
   CycleCollectedJSContext* mCCJS;
+  bool mWillPerform = false;
 };
 
 void ExtractIncumbentAndSchedulingState(
     JS::Handle<MayConsumeMicroTask> aMicroTask,
-    JS::Handle<JSObject*> aHostDefinedData, nsIGlobalObject** aIncumbentGlobal,
-    WebTaskSchedulingState** aSchedulingState) {
-  MOZ_ASSERT(aIncumbentGlobal && aSchedulingState);
-  MOZ_ASSERT(!*aIncumbentGlobal && !*aSchedulingState);
+    JS::Handle<JSObject*> aHostDefinedData, nsIGlobalObject*& aIncumbentGlobal,
+    WebTaskSchedulingState*& aSchedulingState) {
+  MOZ_ASSERT(!aIncumbentGlobal && !aSchedulingState);
 
   if (aHostDefinedData) {
     MOZ_RELEASE_ASSERT(JS::GetClass(aHostDefinedData.get()) ==
@@ -788,12 +791,12 @@ void ExtractIncumbentAndSchedulingState(
         JS::GetReservedSlot(aHostDefinedData, INCUMBENT_SETTING_SLOT);
     
     MOZ_ASSERT(incumbentGlobalVal.isObject());
-    *aIncumbentGlobal = xpc::NativeGlobal(&incumbentGlobalVal.toObject());
+    aIncumbentGlobal = xpc::NativeGlobal(&incumbentGlobalVal.toObject());
 
     JS::Value state =
         JS::GetReservedSlot(aHostDefinedData, SCHEDULING_STATE_SLOT);
     if (!state.isUndefined()) {
-      *aSchedulingState =
+      aSchedulingState =
           static_cast<WebTaskSchedulingState*>(state.toPrivate());
     }
   } else {
@@ -809,7 +812,7 @@ void ExtractIncumbentAndSchedulingState(
         aMicroTask.get().MaybeGetHostDefinedGlobalFromJSMicroTask();
     MOZ_ASSERT_IF(incumbentGlobalJS, !js::IsWrapper(incumbentGlobalJS));
     if (incumbentGlobalJS) {
-      *aIncumbentGlobal = xpc::NativeGlobal(incumbentGlobalJS);
+      aIncumbentGlobal = xpc::NativeGlobal(incumbentGlobalJS);
     }
   }
 }
@@ -888,8 +891,43 @@ bool ShouldPropagateUserInputEventHandlingState(
 }
 
 
+
+
+
+
+bool CanAttemptToDrainMoreMicroTasks(CycleCollectedJSContext* aCCJS,
+                                     StatefulMicroTask& aSMT) {
+  if (!aSMT.WillPerformMicroTaskCheckPoint()) {
+    return true;
+  }
+
+  
+  
+  return !aCCJS->CheckRecursionDepth(aCCJS->RecursionDepth());
+}
+
+nsIGlobalObject* GetCheckedGlobalObject(JS::Handle<JSObject*> aCallbackGlobal,
+                                        bool aIsMainThread,
+                                        nsIGlobalObject* aIncumbentGlobal) {
+  IgnoredErrorResult errorResult;
+  nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
+      aCallbackGlobal, aIsMainThread, false,
+      errorResult);
+  if (!globalObject) {
+    return nullptr;
+  }
+
+  if (!CanRunJSCallback(globalObject, aCallbackGlobal, aIncumbentGlobal)) {
+    return nullptr;
+  }
+
+  return globalObject;
+}
+
+
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
-                    JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
+                    JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+                    bool aHasSuppressedMicroTasks) {
   
   
   
@@ -899,7 +937,9 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   auto ignoreMicroTasks = mozilla::MakeScopeExit(
       [&aMicroTask]() { aMicroTask.get().IgnoreJSMicroTask(); });
 
-  JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(aCx);
+  JS::RootedTuple<JSObject*, JSObject*, JSObject*, WontConsumeMicroTask,
+                  JSObject*, JSObject*, JSObject*>
+      roots(aCx);
 
   JS::RootedField<JSObject*, 0> callbackGlobal(roots);
   JS::RootedField<JSObject*, 1> hostDefinedData(roots);
@@ -919,7 +959,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   
   WebTaskSchedulingState* schedulingState = nullptr;
   ExtractIncumbentAndSchedulingState(aMicroTask, hostDefinedData,
-                                     &incumbentGlobal, &schedulingState);
+                                     incumbentGlobal, schedulingState);
 
   const bool isMainThread = NS_IsMainThread();
 
@@ -929,15 +969,9 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   {
     IgnoredErrorResult errorResult;
-    nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
-        callbackGlobal, isMainThread, false,
-        errorResult);
+    nsIGlobalObject* globalObject =
+        GetCheckedGlobalObject(callbackGlobal, isMainThread, incumbentGlobal);
     if (!globalObject) {
-      return;
-    }
-
-    
-    if (!CanRunJSCallback(globalObject, callbackGlobal, incumbentGlobal)) {
       return;
     }
 
@@ -982,13 +1016,114 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     
     
     
-    (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+    bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
 
     
     
     if (incumbentGlobal) {
       incumbentGlobal->SetWebTaskSchedulingState(nullptr);
     }
+
+    
+    
+    
+    if (!StaticPrefs::javascript_options_batch_microtask_execution()) {
+      return;
+    }
+
+    
+    
+    if (!ret) {
+      return;
+    }
+
+    if (!JS::HasAnyMicroTasks(aCx)) {
+      return;
+    }
+
+    if (!CanAttemptToDrainMoreMicroTasks(aCCJS, smt)) {
+      return;
+    }
+
+    do {
+      JS::RootedField<WontConsumeMicroTask, 3> peekTask(roots,
+                                                        PeekNextMicroTask(aCx));
+
+      
+      if (!peekTask.get().IsJSMicroTask()) {
+        break;
+      }
+
+      JS::RootedField<JSObject*, 4> peekedCallbackGlobal(roots);
+      JS::RootedField<JSObject*, 5> peekedHostDefined(roots);
+      JS::RootedField<JSObject*, 6> peekedAllocStack(roots);
+
+      if (!ExtractTaskData(peekTask, &peekedCallbackGlobal, &peekedHostDefined,
+                           &peekedAllocStack)) {
+        break;
+      }
+
+      
+      
+      if (peekedCallbackGlobal != callbackGlobal ||
+          peekedAllocStack != allocStack) {
+        break;
+      }
+
+      nsIGlobalObject* peekedIncumbentGlobal = nullptr;
+      WebTaskSchedulingState* peekedSchedulingState = nullptr;
+      ExtractIncumbentAndSchedulingState(peekTask, peekedHostDefined,
+                                         peekedIncumbentGlobal,
+                                         peekedSchedulingState);
+
+      
+      if (peekedIncumbentGlobal != incumbentGlobal) {
+        break;
+      }
+
+      
+      
+      nsIGlobalObject* peekedGlobal = GetCheckedGlobalObject(
+          peekedCallbackGlobal, isMainThread, peekedIncumbentGlobal);
+      if (!peekedGlobal || peekedGlobal != globalObject) {
+        break;
+      }
+
+      
+      aMicroTask.set(DequeueNextMicroTask(aCx));
+
+      
+      
+      if (!JS::HasAnyMicroTasks(aCx) && !aHasSuppressedMicroTasks) {
+        JS::JobQueueIsEmpty(aCx);
+      }
+
+      if (incumbentGlobal) {
+        
+        
+        
+        incumbentGlobal->SetWebTaskSchedulingState(peekedSchedulingState);
+      }
+
+      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+
+      
+      
+      ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+
+      
+      
+      if (incumbentGlobal) {
+        incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+      }
+
+      if (!ret) {
+        break;
+      }
+
+      MOZ_ASSERT(!JS_IsExceptionPending(aCx));
+    } while (JS::HasAnyMicroTasks(aCx));
   }
 }
 
@@ -1027,6 +1162,19 @@ static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> task) {
   return runnable->Suppressed();
 }
 
+bool CycleCollectedJSContext::CheckRecursionDepth(uint32_t aCurrentDepth,
+                                                  bool aForce) {
+  if (mMicroTaskRecursionDepth && *mMicroTaskRecursionDepth >= aCurrentDepth &&
+      !aForce) {
+    
+    return false;
+  }
+
+  return !(mTargetedMicroTaskRecursionDepth != 0 &&
+           mTargetedMicroTaskRecursionDepth + mDebuggerRecursionDepth !=
+               aCurrentDepth);
+}
+
 bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
   MOZ_LOG_FMT(gLog, LogLevel::Verbose, "Called PerformMicroTaskCheckpoint");
 
@@ -1045,15 +1193,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
   }
 
   uint32_t currentDepth = RecursionDepth();
-  if (mMicroTaskRecursionDepth && *mMicroTaskRecursionDepth >= currentDepth &&
-      !aForce) {
-    
-    return false;
-  }
-
-  if (mTargetedMicroTaskRecursionDepth != 0 &&
-      mTargetedMicroTaskRecursionDepth + mDebuggerRecursionDepth !=
-          currentDepth) {
+  if (!CheckRecursionDepth(currentDepth, aForce)) {
     return false;
   }
 
@@ -1119,7 +1259,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
       }
       didProcess = true;
 
-      RunMicroTask(cx, this, &job);
+      RunMicroTask(cx, this, &job, !!mSuppressedMicroTaskList);
     }
   }
 
@@ -1159,7 +1299,7 @@ void CycleCollectedJSContext::PerformDebuggerMicroTaskCheckpoint() {
 
     
 
-    RunMicroTask(cx, this, &job);
+    RunMicroTask(cx, this, &job, false);
   }
 
   AfterProcessMicrotasks();
