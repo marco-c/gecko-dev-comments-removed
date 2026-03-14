@@ -96,17 +96,6 @@ enum class RangeBoundaryFor {
   Collapsed,
 };
 
-inline std::ostream& operator<<(std::ostream& aStream, RangeBoundaryFor aFor) {
-  constexpr static const char* sNames[] = {
-      "Start",
-      "End",
-      "Collapsed",
-  };
-  return aStream << sNames[static_cast<size_t>(aFor)];
-}
-
-inline auto format_as(RangeBoundaryFor aFor) { return ToString(aFor); }
-
 
 
 
@@ -401,8 +390,7 @@ class RangeBoundaryBase {
       }
     }
     
-    NS_ASSERTION(!mParent->HasChildNodes(),
-                 fmt::format("Called with invalid offset?", *this).c_str());
+    MOZ_ASSERT(!mParent->HasChildNodes());
     return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
   }
 
