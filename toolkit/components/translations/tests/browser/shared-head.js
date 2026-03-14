@@ -254,16 +254,10 @@ async function openAboutTranslations({
     detectLanguageOption:
       "moz-option#about-translations-detect-language-label-option",
     swapLanguagesButton: "moz-button#about-translations-swap-languages-button",
-    sourceSection: "div#about-translations-source-section",
     sourceSectionTextArea: "textarea#about-translations-source-textarea",
-    targetSection: "div#about-translations-target-section",
     targetSectionTextArea: "textarea#about-translations-target-textarea",
     clearButton: "moz-button#about-translations-clear-button",
     copyButton: "moz-button#about-translations-copy-button",
-    translationErrorMessage:
-      "moz-message-bar#about-translations-translation-error-message",
-    translationErrorButton:
-      "moz-button#about-translations-translation-error-button",
     unsupportedInfoMessage:
       "moz-message-bar#about-translations-unsupported-info-message",
     languageLoadErrorMessage:
@@ -283,7 +277,7 @@ async function openAboutTranslations({
   });
 
   
-  await loadNewPage(tab.linkedBrowser, "about:translations#src=detect");
+  await loadNewPage(tab.linkedBrowser, "about:translations");
 
   
   
@@ -294,11 +288,7 @@ async function openAboutTranslations({
 
 
   const resolveDownloads = async count => {
-    await remoteClients.translationsWasm.waitForPendingDownloads(1);
     await remoteClients.translationsWasm.resolvePendingDownloads(1);
-    await remoteClients.translationModels.waitForPendingDownloads(
-      downloadedFilesPerLanguagePair() * count
-    );
     await remoteClients.translationModels.resolvePendingDownloads(
       downloadedFilesPerLanguagePair() * count
     );
@@ -327,7 +317,6 @@ async function openAboutTranslations({
   };
 
   const aboutTranslationsTestUtils = new AboutTranslationsTestUtils(
-    tab.linkedBrowser,
     runInPage,
     resolveDownloads,
     rejectDownloads,
@@ -3246,7 +3235,9 @@ function createAttachmentMock(
   function waitForPendingDownloads(expectedCount) {
     return waitForCondition(
       () => pendingDownloads.length >= expectedCount,
-      `Waiting for ${expectedCount} pending downloads for "${client.collectionName}"`
+      `Waiting for ${expectedCount} pending downloads for "${client.collectionName}"`,
+      100,
+      10
     );
   }
 
@@ -4206,6 +4197,8 @@ async function destroyTranslationsEngine() {
 }
 
 class AboutTranslationsTestUtils {
+  static AnyEventDetail = Symbol("AboutTranslationsTestUtils.AnyEventDetail");
+
   
 
 
@@ -4344,9 +4337,6 @@ class AboutTranslationsTestUtils {
   };
 
   
-  #browser;
-
-  
 
 
 
@@ -4386,16 +4376,12 @@ class AboutTranslationsTestUtils {
 
 
 
-
-
   constructor(
-    browser,
     runInPage,
     resolveDownloads,
     rejectDownloads,
     autoDownloadFromRemoteSettings
   ) {
-    this.#browser = browser;
     this.#runInPage = runInPage;
     this.#resolveDownloads = resolveDownloads;
     this.#rejectDownloads = rejectDownloads;
@@ -4461,8 +4447,21 @@ class AboutTranslationsTestUtils {
     url.hash = hashString ? hashString : "src=detect";
 
     logAction(url);
-    await loadNewPage(this.#browser, BLANK_PAGE);
-    await loadNewPage(this.#browser, url.href);
+
+    await this.#runInPage(
+      async (_, { url }) => {
+        const { window, document: oldDocument } = content;
+
+        window.location.assign(url);
+        window.location.reload();
+
+        await ContentTaskUtils.waitForCondition(
+          () => window.document !== oldDocument,
+          "Waiting for the old document to be destroyed."
+        );
+      },
+      { url }
+    );
 
     await this.waitForReady();
   }
@@ -4500,7 +4499,7 @@ class AboutTranslationsTestUtils {
       );
     }
     try {
-      await this.#resolveDownloads(count);
+      this.#resolveDownloads(count);
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
@@ -4518,7 +4517,7 @@ class AboutTranslationsTestUtils {
       );
     }
     try {
-      await this.#rejectDownloads(requestCount);
+      this.#rejectDownloads(requestCount);
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
@@ -4711,23 +4710,6 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickTranslationErrorButton() {
-    logAction();
-    try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.translationErrorButton
-        );
-        button.click();
-      });
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-  }
-
-  
-
-
 
 
 
@@ -4772,38 +4754,6 @@ class AboutTranslationsTestUtils {
 
 
 
-  async waitForTranslationErrorMessage({ visible = true } = {}) {
-    try {
-      await this.#runInPage(
-        (selectors, { visible }) => {
-          const { document } = content;
-          const message = document.querySelector(
-            selectors.translationErrorMessage
-          );
-          if (!message) {
-            throw new Error("Could not find the translation error message.");
-          }
-          return ContentTaskUtils.waitForMutationCondition(
-            message,
-            { attributes: true, attributeFilter: ["hidden"] },
-            () => message.hidden === !visible
-          );
-        },
-        { visible }
-      );
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-  }
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -4833,27 +4783,18 @@ class AboutTranslationsTestUtils {
           });
       }
 
-      
-      await this.#runInPage(() => {});
-
       await callback();
 
       for (const [eventName, expectedDetail] of expected) {
         const actualDetail = await expectedEventWaiters[eventName];
-        const actualDetailString = JSON.stringify(actualDetail ?? {});
-
-        if (typeof expectedDetail === "function") {
-          ok(
-            expectedDetail(actualDetail ?? {}),
-            `Expected detail for "${eventName}" predicate to pass. Got ${actualDetailString}.`
-          );
-        } else {
-          is(
-            actualDetailString,
-            JSON.stringify(expectedDetail ?? {}),
-            `Expected detail for "${eventName}" to match.`
-          );
+        if (expectedDetail === AboutTranslationsTestUtils.AnyEventDetail) {
+          continue;
         }
+        is(
+          JSON.stringify(actualDetail ?? {}),
+          JSON.stringify(expectedDetail ?? {}),
+          `Expected detail for "${eventName}" to match.`
+        );
       }
 
       await TestUtils.waitForTick();
@@ -5008,163 +4949,6 @@ class AboutTranslationsTestUtils {
         `Expected target textarea "dir" attribute to be "${scriptDirection}", but got "${actualScriptDirection}".`
       );
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async assertTranslationErrorMessage({
-    visible,
-    retryButtonEnabled,
-    targetTextAreaVisible,
-    hasErrorClass,
-  } = {}) {
-    await doubleRaf(document);
-
-    let pageResult = {};
-    try {
-      pageResult = await this.#runInPage(selectors => {
-        const { document, window } = content;
-        const isElementVisible = selector => {
-          const element = document.querySelector(selector);
-          if (element?.offsetParent === null) {
-            return false;
-          }
-
-          const computedStyle = window.getComputedStyle(element);
-          if (!computedStyle) {
-            return false;
-          }
-
-          const { display, visibility } = computedStyle;
-          return !(display === "none" || visibility === "hidden");
-        };
-
-        const message = document.querySelector(
-          selectors.translationErrorMessage
-        );
-        const retryButton = document.querySelector(
-          selectors.translationErrorButton
-        );
-        const targetSection = document.querySelector(selectors.targetSection);
-
-        return {
-          messageExists: Boolean(message),
-          retryButtonExists: Boolean(retryButton),
-          targetSectionExists: Boolean(targetSection),
-          messageVisible: isElementVisible(selectors.translationErrorMessage),
-          targetTextAreaVisible: isElementVisible(
-            selectors.targetSectionTextArea
-          ),
-          retryButtonDisabled: retryButton?.hasAttribute("disabled") ?? true,
-          hasErrorClass:
-            targetSection?.classList.contains("has-translation-error") ?? false,
-        };
-      });
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-
-    const {
-      messageExists,
-      retryButtonExists,
-      targetSectionExists,
-      messageVisible,
-      retryButtonDisabled,
-      targetTextAreaVisible: actualTargetTextAreaVisible,
-      hasErrorClass: actualHasErrorClass,
-    } = pageResult;
-
-    ok(messageExists, "Expected translation error message to be present.");
-    ok(retryButtonExists, "Expected translation error button to be present.");
-    ok(targetSectionExists, "Expected target section to be present.");
-
-    if (visible !== undefined) {
-      visible
-        ? ok(
-            messageVisible,
-            "Expected translation error message to be visible."
-          )
-        : ok(
-            !messageVisible,
-            "Expected translation error message to be hidden."
-          );
-    }
-
-    if (retryButtonEnabled !== undefined) {
-      retryButtonEnabled
-        ? ok(
-            !retryButtonDisabled,
-            "Expected translation error button to be enabled."
-          )
-        : ok(
-            retryButtonDisabled,
-            "Expected translation error button to be disabled."
-          );
-    }
-
-    if (targetTextAreaVisible !== undefined) {
-      targetTextAreaVisible
-        ? ok(
-            actualTargetTextAreaVisible,
-            "Expected target textarea to be visible."
-          )
-        : ok(
-            !actualTargetTextAreaVisible,
-            "Expected target textarea to be hidden."
-          );
-    }
-
-    if (hasErrorClass !== undefined) {
-      hasErrorClass
-        ? ok(actualHasErrorClass, "Expected target section error styling.")
-        : ok(
-            !actualHasErrorClass,
-            "Expected target section error styling to be removed."
-          );
-    }
-  }
-
-  
-
-
-
-
-  async getSectionHeights() {
-    await doubleRaf(document);
-
-    let pageResult = {
-      sourceSectionHeight: NaN,
-      targetSectionHeight: NaN,
-    };
-
-    try {
-      pageResult = await this.#runInPage(selectors => {
-        const { document } = content;
-        const sourceSection = document.querySelector(selectors.sourceSection);
-        const targetSection = document.querySelector(selectors.targetSection);
-
-        return {
-          sourceSectionHeight: Math.round(
-            sourceSection.getBoundingClientRect().height
-          ),
-          targetSectionHeight: Math.round(
-            targetSection.getBoundingClientRect().height
-          ),
-        };
-      });
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-
-    return pageResult;
   }
 
   
@@ -5815,7 +5599,6 @@ class AboutTranslationsTestUtils {
 
 
 
-
   async assertIsVisible({
     pageHeader = false,
     mainUserInterface = false,
@@ -5826,7 +5609,6 @@ class AboutTranslationsTestUtils {
     swapLanguagesButton = false,
     sourceSectionTextArea = false,
     targetSectionTextArea = false,
-    translationErrorMessage = false,
     unsupportedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
@@ -5879,9 +5661,6 @@ class AboutTranslationsTestUtils {
           targetSectionTextArea: isElementVisible(
             selectors.targetSectionTextArea
           ),
-          translationErrorMessage: isElementVisible(
-            selectors.translationErrorMessage
-          ),
           unsupportedInfoMessage: isElementVisible(
             selectors.unsupportedInfoMessage
           ),
@@ -5933,11 +5712,6 @@ class AboutTranslationsTestUtils {
         targetSectionTextArea,
         visibilityMap.targetSectionTextArea,
         "target textarea"
-      );
-      assertVisibility(
-        translationErrorMessage,
-        visibilityMap.translationErrorMessage,
-        "translation error message"
       );
       assertVisibility(
         unsupportedInfoMessage,
