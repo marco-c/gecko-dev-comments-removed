@@ -747,6 +747,32 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
 }
 
 
+
+
+
+
+
+
+class MOZ_STACK_CLASS StatefulMicroTask {
+ public:
+  explicit StatefulMicroTask(CycleCollectedJSContext* aCCJS) : mCCJS(aCCJS) {
+    MOZ_ASSERT(aCCJS);
+    MOZ_ASSERT(aCCJS == CycleCollectedJSContext::Get());
+
+    mCCJS->EnterMicroTask();
+  }
+
+  MOZ_CAN_RUN_SCRIPT ~StatefulMicroTask() {
+    MOZ_ASSERT(mCCJS == CycleCollectedJSContext::Get());
+
+    mCCJS->LeaveMicroTask();
+  }
+
+ private:
+  CycleCollectedJSContext* mCCJS;
+};
+
+
 void RunJSMicroTask(JSContext* aCx,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
   
@@ -843,33 +869,87 @@ void RunJSMicroTask(JSContext* aCx,
     incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
   }
 
-  
-  
-  
-  
-  
-  
-  IgnoredErrorResult rv;
-  CallSetup setup(callbackGlobal, incumbentGlobal, allocStack, rv,
-                  "promise callback" ,
-                  dom::CallbackObject::eReportExceptions);
-  if (!setup.GetContext()) {
-    return;
-  }
+  {
+    IgnoredErrorResult rv;
 
-  
-  
-  ignoreMicroTasks.release();
+    Maybe<AutoEntryScript> autoEntryScript;
+    Maybe<AutoIncumbentScript> autoIncumbentScript;
 
-  
-  
-  
-  (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+    Maybe<JS::Rooted<JSObject*>> rootedCallable;
+    Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
 
-  
-  
-  if (incumbentGlobal) {
-    incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+    
+    
+    
+    
+    Maybe<JSAutoRealm> ar;
+
+    
+    
+    IgnoredErrorResult errorResult;
+    const bool isMainThread = NS_IsMainThread();
+
+    CycleCollectedJSContext* ccjs =
+        CycleCollectedJSContext::Get();  
+    MOZ_ASSERT(ccjs);
+    StatefulMicroTask smt(ccjs);
+
+    nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
+        callbackGlobal, isMainThread, false,
+        errorResult);
+    if (!globalObject) {
+      return;
+    }
+
+    const char* reason = "promise callback";
+
+    
+    if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
+      return;
+    }
+
+    if (!globalObject->HasJSGlobal()) {
+      return;
+    }
+
+    
+    AutoAllowLegacyScriptExecution exemption;
+    autoEntryScript.emplace(globalObject, reason, isMainThread);
+
+    if (incumbentGlobal) {
+      if (!incumbentGlobal->HasJSGlobal()) {
+        return;
+      }
+
+      autoIncumbentScript.emplace(incumbentGlobal);
+    }
+
+    MOZ_ASSERT(aCx == autoEntryScript->cx());
+
+    if (allocStack) {
+      asyncStackSetter.emplace(aCx, allocStack, reason);
+    }
+
+    ar.emplace(aCx, callbackGlobal);
+
+    
+    
+    ignoreMicroTasks.release();
+
+    
+    
+    
+    (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+
+    
+    
+    if (incumbentGlobal) {
+      incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+    }
+
+    ar.reset();
+    autoIncumbentScript.reset();
+    autoEntryScript.reset();
   }
 }
 
