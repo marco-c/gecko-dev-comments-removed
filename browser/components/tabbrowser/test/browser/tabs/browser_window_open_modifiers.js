@@ -213,12 +213,12 @@ async function runWindowOpenTests(browser, tests) {
       BrowserTestUtils.synthesizeMouseAtCenter(id, { ...event }, browser);
     } else {
       
-      await ContentTask.spawn(browser, id, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         content.document.querySelector("#focus-result").value = "";
         content.document.querySelector("#focus-check").focus();
       });
       BrowserTestUtils.synthesizeKey("VK_SPACE", {}, browser);
-      await ContentTask.spawn(browser, {}, async () => {
+      await SpecialPowers.spawn(browser, [], async () => {
         await ContentTaskUtils.waitForCondition(
           () => content.document.querySelector("#focus-result").value === "ok"
         );
@@ -226,7 +226,7 @@ async function runWindowOpenTests(browser, tests) {
 
       
       
-      await ContentTask.spawn(browser, id, elementId => {
+      await SpecialPowers.spawn(browser, [id], elementId => {
         content.document.querySelector(elementId).focus();
       });
       BrowserTestUtils.synthesizeKey(type, { ...event }, browser);

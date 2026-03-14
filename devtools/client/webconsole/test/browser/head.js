@@ -103,9 +103,9 @@ async function openNewTabWithIframesAndConsole(tabUrl, iframes) {
   
   
   await addTab(tabUrl);
-  await ContentTask.spawn(
+  await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
-    iframes,
+    [iframes],
     async function (urls) {
       const iframesLoadPromises = urls.map((url, i) => {
         const iframe = content.document.createElement("iframe");

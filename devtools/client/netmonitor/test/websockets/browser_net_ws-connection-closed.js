@@ -20,7 +20,7 @@ add_task(async function () {
 
   
   const onNetworkEvents = waitForNetworkEvents(monitor, 1);
-  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.openConnection(1);
   });
   await onNetworkEvents;
@@ -39,7 +39,7 @@ add_task(async function () {
   );
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     await content.wrappedJSObject.closeConnection();
   });
   await wait;

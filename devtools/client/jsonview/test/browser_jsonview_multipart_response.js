@@ -24,7 +24,7 @@ add_task(async function test_json_in_multipart_response() {
   await wait(2000);
 
   info("Check that tab doesn't get the resource://devtools origin");
-  await ContentTask.spawn(tab.linkedBrowser, [], async function () {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     
     Assert.notEqual(
       content.origin,

@@ -2007,12 +2007,18 @@ add_task(async function test_select_input_text() {
 
 
 
+
+
 });
 
 add_task(async function test_select_input_text_password() {
   todo(false, "spell checker tests are failing, bug 1246296");
 
   
+
+
+
+
 
 
 

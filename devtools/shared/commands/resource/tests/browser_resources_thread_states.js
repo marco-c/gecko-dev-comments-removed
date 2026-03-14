@@ -59,7 +59,7 @@ async function checkBreakpointBeforeWatchResources() {
 
   info("Run the 'debugger' statement");
   
-  ContentTask.spawn(tab.linkedBrowser, null, () => {
+  SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.window.wrappedJSObject.runDebuggerStatement();
   });
 
@@ -135,7 +135,7 @@ async function checkBreakpointAfterWatchResources() {
 
   info("Run the 'debugger' statement");
   
-  ContentTask.spawn(tab.linkedBrowser, null, () => {
+  SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.window.wrappedJSObject.runDebuggerStatement();
   });
 
@@ -219,7 +219,7 @@ async function checkRealBreakpoint() {
 
   info("Run the test function where we set a breakpoint");
   
-  ContentTask.spawn(tab.linkedBrowser, null, () => {
+  SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.window.wrappedJSObject.testFunction();
   });
 
@@ -365,7 +365,7 @@ async function checkSetBeforeWatch() {
 
   info("Run the test function where we set a breakpoint");
   
-  ContentTask.spawn(tab.linkedBrowser, null, () => {
+  SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.window.wrappedJSObject.testFunction();
   });
 
@@ -527,7 +527,7 @@ async function testMultiprocessThreadState() {
 
   info("Run the 'debugger' statement");
   
-  const onResumed = ContentTask.spawn(tab.linkedBrowser, null, () => {
+  const onResumed = SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.window.wrappedJSObject.runDebuggerStatement();
   });
 

@@ -29,7 +29,7 @@ add_task(async function () {
       
       BrowserTestUtils.startLoadingURIString(browser, kTestURI);
       await loaded;
-      await ContentTask.spawn(browser, [buttonId], async buttonId => {
+      await SpecialPowers.spawn(browser, [buttonId], async buttonId => {
         ok(
           content.document.location.href.startsWith("https://"),
           "Should be https"

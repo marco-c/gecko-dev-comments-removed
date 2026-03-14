@@ -52,8 +52,8 @@ async function cutCurrentSelection(elementQueryString, property, browser) {
   
   await SpecialPowers.spawn(
     browser,
-    [[elementQueryString, property]],
-    async function ([contentElementQueryString, contentProperty]) {
+    [elementQueryString, property],
+    async function (contentElementQueryString, contentProperty) {
       let element = content.document.querySelector(contentElementQueryString);
       is(
         element[contentProperty],

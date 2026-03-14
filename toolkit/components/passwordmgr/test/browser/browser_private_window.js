@@ -784,7 +784,7 @@ add_task(async function test_normal_http_basic_auth() {
       
       let fieldValues = await SpecialPowers.spawn(
         browser,
-        [[]],
+        [],
         async function () {
           let username = content.document.getElementById("user").textContent;
           let password = content.document.getElementById("pass").textContent;

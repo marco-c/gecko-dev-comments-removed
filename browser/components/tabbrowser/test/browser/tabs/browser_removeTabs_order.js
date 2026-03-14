@@ -15,7 +15,7 @@ add_task(async function () {
 
   
   
-  await ContentTask.spawn(tab2.linkedBrowser, null, async function () {
+  await SpecialPowers.spawn(tab2.linkedBrowser, [], async function () {
     content.window.addEventListener("beforeunload", function () {}, true);
   });
 

@@ -28,7 +28,7 @@ async function openAboutBlankTabWithExtensionOrigin(extension) {
   const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
     wantLoad: "about:blank",
   });
-  await ContentTask.spawn(tab.linkedBrowser, null, () => {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     
     content.wrappedJSObject.location.assign("about:blank");
   });

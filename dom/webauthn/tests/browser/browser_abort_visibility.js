@@ -38,7 +38,7 @@ async function waitForStatus(tab, expected) {
   
   await SpecialPowers.spawn(
     tab.linkedBrowser,
-    [[expected]],
+    [expected],
     async function (expected) {
       return ContentTaskUtils.waitForCondition(() => {
         info(

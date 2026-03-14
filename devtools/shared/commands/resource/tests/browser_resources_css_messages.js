@@ -207,7 +207,7 @@ function setupOnAvailableFunction(
 
 
 function triggerCSSWarning(tab) {
-  return ContentTask.spawn(tab.linkedBrowser, null, function frameScript() {
+  return SpecialPowers.spawn(tab.linkedBrowser, [], function frameScript() {
     content.document.body.style.width = "red";
     content.document.body.style.height = "blue";
   });

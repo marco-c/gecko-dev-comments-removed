@@ -40,18 +40,34 @@ add_task(async function () {
   const TEST_URL_4 = HTTPS_SEARCH_SJS + "test/something/test4";
 
   let wait = waitForNetworkEvents(monitor, 4);
-  await ContentTask.spawn(tab.linkedBrowser, TEST_URL_1, async function (url) {
-    content.wrappedJSObject.performRequests(1, url);
-  });
-  await ContentTask.spawn(tab.linkedBrowser, TEST_URL_2, async function (url) {
-    content.wrappedJSObject.performRequests(1, url);
-  });
-  await ContentTask.spawn(tab.linkedBrowser, TEST_URL_3, async function (url) {
-    content.wrappedJSObject.performRequests(1, url);
-  });
-  await ContentTask.spawn(tab.linkedBrowser, TEST_URL_4, async function (url) {
-    content.wrappedJSObject.performRequests(1, url);
-  });
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [TEST_URL_1],
+    async function (url) {
+      content.wrappedJSObject.performRequests(1, url);
+    }
+  );
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [TEST_URL_2],
+    async function (url) {
+      content.wrappedJSObject.performRequests(1, url);
+    }
+  );
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [TEST_URL_3],
+    async function (url) {
+      content.wrappedJSObject.performRequests(1, url);
+    }
+  );
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [TEST_URL_4],
+    async function (url) {
+      content.wrappedJSObject.performRequests(1, url);
+    }
+  );
   await wait;
 
   
@@ -90,9 +106,13 @@ add_task(async function () {
 
   
   wait = waitForNetworkEvents(monitor, 1);
-  await ContentTask.spawn(tab.linkedBrowser, TEST_URL_1, async function (url) {
-    content.wrappedJSObject.performRequests(1, url);
-  });
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [TEST_URL_1],
+    async function (url) {
+      content.wrappedJSObject.performRequests(1, url);
+    }
+  );
   await wait;
 
   await waitForDOMIfNeeded(document, ".request-list-item", 5);

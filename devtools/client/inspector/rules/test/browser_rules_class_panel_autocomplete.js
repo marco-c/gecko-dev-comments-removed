@@ -83,7 +83,7 @@ add_task(async function () {
   
   
   const onNewMutation = inspector.inspectorFront.walker.once("new-mutations");
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function () {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     content.document.body.classList.add("auto-body-added-by-script");
   });
   await onNewMutation;

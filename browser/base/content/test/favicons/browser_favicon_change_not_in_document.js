@@ -6,15 +6,19 @@ const TEST_URL = TEST_ROOT + "file_favicon_change_not_in_document.html";
 
 
 function runInDoc(browser, task) {
-  return ContentTask.spawn(browser, `(${task.toString()})();`, scriptStr => {
-    let script = content.document.createElement("script");
-    script.textContent = scriptStr;
-    content.document.body.appendChild(script);
+  return SpecialPowers.spawn(
+    browser,
+    [`(${task.toString()})();`],
+    scriptStr => {
+      let script = content.document.createElement("script");
+      script.textContent = scriptStr;
+      content.document.body.appendChild(script);
 
-    
-    
-    return new Promise(resolve => content.setTimeout(resolve, 0));
-  });
+      
+      
+      return new Promise(resolve => content.setTimeout(resolve, 0));
+    }
+  );
 }
 
 

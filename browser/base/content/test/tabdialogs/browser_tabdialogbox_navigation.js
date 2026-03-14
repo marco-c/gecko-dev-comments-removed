@@ -61,7 +61,7 @@ add_task(async function test_tabdialogbox_close_on_content_nav() {
       await dialog._dialogReady;
 
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         
         content.location = "http://example.com/1";
       });
@@ -89,7 +89,7 @@ add_task(async function test_tabdialogbox_close_on_content_nav() {
       ]);
 
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         
         content.location = "http://example.com/test";
       });
@@ -101,7 +101,7 @@ add_task(async function test_tabdialogbox_close_on_content_nav() {
       );
 
       
-      await ContentTask.spawn(browser, {}, () => {
+      await SpecialPowers.spawn(browser, [], () => {
         
         content.location = "http://example.org/test2";
       });
