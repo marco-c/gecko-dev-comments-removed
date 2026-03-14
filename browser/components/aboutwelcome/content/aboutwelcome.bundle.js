@@ -2576,9 +2576,13 @@ const ContentTiles = props => {
     let lastTilesEl = null;
     let lastTabAt = 0;
     let restoring = false;
+    let tabFromTiles = false;
     function onKeyDown(e) {
       if (e.key === "Tab") {
         lastTabAt = performance.now();
+        if (tilesEl.contains(document.activeElement)) {
+          tabFromTiles = true;
+        }
       }
     }
     function onFocusIn(event) {
@@ -2589,12 +2593,22 @@ const ContentTiles = props => {
       
       if (tilesEl.contains(target)) {
         lastTilesEl = target;
+        
+        tabFromTiles = false;
         return;
       }
 
       
       const tabRecently = performance.now() - lastTabAt < TAB_GRACE_WINDOW_MS;
       if (tabRecently || !lastTilesEl || !document.contains(lastTilesEl) || restoring) {
+        tabFromTiles = false;
+        return;
+      }
+
+      
+      const actionButtons = dialog.querySelector(".action-buttons");
+      if (actionButtons?.contains(target) && tabFromTiles) {
+        tabFromTiles = false;
         return;
       }
 
