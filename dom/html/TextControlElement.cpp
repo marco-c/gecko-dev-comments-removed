@@ -163,6 +163,80 @@ void TextControlElement::UpdatePlaceholder(const nsAttrValue* aOldValue,
                         IgnoreErrors());
 }
 
+static RefPtr<Element> CreateButton(FormControlType aType, Document& aDoc) {
+  switch (aType) {
+    case FormControlType::InputPassword:
+      if (StaticPrefs::layout_forms_reveal_password_button_enabled() ||
+          aDoc.ChromeRulesEnabled()) {
+        RefPtr button = MakeAnonElement(aDoc, PseudoStyleType::MozReveal,
+                                        nsGkAtoms::button);
+        button->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
+                        false);
+        return button;
+      }
+      break;
+    case FormControlType::InputSearch: {
+      
+      
+      
+      if (StaticPrefs::layout_forms_input_type_search_enabled() ||
+          aDoc.ChromeRulesEnabled()) {
+        
+        RefPtr button = MakeAnonElement(
+            aDoc, PseudoStyleType::MozSearchClearButton, nsGkAtoms::button);
+        button->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
+                        false);
+        button->SetAttr(kNameSpaceID_None, nsGkAtoms::title, u""_ns, false);
+        return button;
+      }
+      break;
+    }
+#ifndef ANDROID
+    case FormControlType::InputNumber: {
+      
+      RefPtr button = MakeAnonElement(aDoc, PseudoStyleType::MozNumberSpinBox);
+      
+      for (auto pseudo : {PseudoStyleType::MozNumberSpinUp,
+                          PseudoStyleType::MozNumberSpinDown}) {
+        RefPtr spinner = MakeAnonElement(aDoc, pseudo);
+        button->AppendChildTo(spinner, false, IgnoreErrors());
+      }
+      return button;
+    }
+#endif
+    default:
+      break;
+  }
+  return nullptr;
+}
+
+void TextControlElement::UpdateTextEditorShadowTree() {
+  Element* root = GetTextEditorRoot();
+  if (!root) {
+    
+    return;
+  }
+  auto* text = Text::FromNodeOrNull(root->GetFirstChild());
+  if (!text) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "There should be editable text");
+    return;
+  }
+  if (IsPasswordTextControl()) {
+    text->MarkAsMaybeMasked();
+  } else {
+    text->UnsetFlags(NS_MAYBE_MASKED);
+  }
+  if (RefPtr<Element> existing = GetTextEditorButton()) {
+    existing->Remove();
+  }
+  auto& doc = *OwnerDoc();
+  if (RefPtr<Element> button = CreateButton(mType, doc)) {
+    MOZ_ASSERT(IsButtonPseudoElement(button->GetPseudoElementType()));
+    ShadowRoot* shadowRoot = GetShadowRoot();
+    shadowRoot->AppendChildTo(button, true, IgnoreErrors());
+  }
+}
+
 void TextControlElement::SetupShadowTree(ShadowRoot& aShadow, bool aNotify) {
   MOZ_ASSERT(IsSingleLineTextControlOrTextArea());
   auto& doc = *OwnerDoc();
@@ -186,54 +260,7 @@ void TextControlElement::SetupShadowTree(ShadowRoot& aShadow, bool aNotify) {
   }
   aShadow.AppendChildTo(root, aNotify, IgnoreErrors());
 
-  auto button = [&]() -> RefPtr<Element> {
-    switch (mType) {
-      case FormControlType::InputPassword:
-        if (StaticPrefs::layout_forms_reveal_password_button_enabled() ||
-            doc.ChromeRulesEnabled()) {
-          RefPtr button = MakeAnonElement(doc, PseudoStyleType::MozReveal,
-                                          nsGkAtoms::button);
-          button->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
-                          false);
-          return button;
-        }
-        break;
-      case FormControlType::InputSearch: {
-        
-        
-        
-        if (StaticPrefs::layout_forms_input_type_search_enabled() ||
-            doc.ChromeRulesEnabled()) {
-          
-          RefPtr button = MakeAnonElement(
-              doc, PseudoStyleType::MozSearchClearButton, nsGkAtoms::button);
-          button->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
-                          false);
-          button->SetAttr(kNameSpaceID_None, nsGkAtoms::title, u""_ns, false);
-          return button;
-        }
-        break;
-      }
-#ifndef ANDROID
-      case FormControlType::InputNumber: {
-        
-        RefPtr button = MakeAnonElement(doc, PseudoStyleType::MozNumberSpinBox);
-        
-        for (auto pseudo : {PseudoStyleType::MozNumberSpinUp,
-                            PseudoStyleType::MozNumberSpinDown}) {
-          RefPtr spinner = MakeAnonElement(doc, pseudo);
-          button->AppendChildTo(spinner, false, IgnoreErrors());
-        }
-        return button;
-      }
-#endif
-      default:
-        break;
-    }
-    return nullptr;
-  }();
-
-  if (button) {
+  if (RefPtr<Element> button = CreateButton(mType, doc)) {
     MOZ_ASSERT(IsButtonPseudoElement(button->GetPseudoElementType()));
     aShadow.AppendChildTo(button, aNotify, IgnoreErrors());
   }
