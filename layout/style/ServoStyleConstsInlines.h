@@ -1161,6 +1161,22 @@ inline StyleViewTimelineInset::StyleGenericViewTimelineInset()
     : start(LengthPercentageOrAuto::Auto()),
       end(LengthPercentageOrAuto::Auto()) {}
 
+
+template <>
+inline StyleAnimationRangeStart
+StyleGenericAnimationRangeValue<LengthPercentage>::DefaultStart() {
+  return {StyleTimelineRangeName::Normal,
+          LengthPercentage::FromPercentage(0.0f)};
+}
+
+
+template <>
+inline StyleAnimationRangeEnd
+StyleGenericAnimationRangeValue<LengthPercentage>::DefaultEnd() {
+  return {StyleTimelineRangeName::Normal,
+          LengthPercentage::FromPercentage(1.0f)};
+}
+
 inline StyleDisplayOutside StyleDisplay::Outside() const {
   return StyleDisplayOutside((_0 & OUTSIDE_MASK) >> OUTSIDE_SHIFT);
 }
