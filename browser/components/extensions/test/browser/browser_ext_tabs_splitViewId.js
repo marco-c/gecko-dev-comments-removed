@@ -2,6 +2,12 @@
 
 "use strict";
 
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Unexpected undefined tabState for onMoveToNewWindow/
+);
+
 function getRealTabByExtensionTabId(tabId) {
   const {
     Management: {
