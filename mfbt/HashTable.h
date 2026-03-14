@@ -163,8 +163,6 @@ class MOZ_STANDALONE_DEBUG HashMap {
   using Impl = detail::HashTable<TableEntry, MapHashPolicy, AllocPolicy>;
   Impl mImpl;
 
-  friend class Impl::Enum;
-
  public:
   using Lookup = typename HashPolicy::Lookup;
   using Entry = TableEntry;
@@ -421,12 +419,6 @@ class MOZ_STANDALONE_DEBUG HashMap {
   ModIterator modIter() { return mImpl.modIter(); }
 
   
-  
-  using Range = typename Impl::Range;
-  using Enum = typename Impl::Enum;
-  Range all() const { return mImpl.all(); }
-
-  
 
   
   const AllocPolicy& allocPolicy() const { return mImpl.allocPolicy(); }
@@ -491,8 +483,6 @@ class HashSet {
 
   using Impl = detail::HashTable<const T, SetHashPolicy, AllocPolicy>;
   Impl mImpl;
-
-  friend class Impl::Enum;
 
  public:
   using Lookup = typename HashPolicy::Lookup;
@@ -745,12 +735,6 @@ class HashSet {
   
   using ModIterator = typename Impl::ModIterator;
   ModIterator modIter() { return mImpl.modIter(); }
-
-  
-  
-  using Range = typename Impl::Range;
-  using Enum = typename Impl::Enum;
-  Range all() const { return mImpl.all(); }
 
   
 
@@ -1567,56 +1551,6 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   };
 
   
-  class Range {
-    friend class HashTable;
-
-    Iterator mIter;
-
-   protected:
-    explicit Range(const HashTable& table) : mIter(table) {}
-
-   public:
-    bool empty() const { return mIter.done(); }
-
-    T& front() const { return mIter.get(); }
-
-    void popFront() { return mIter.next(); }
-  };
-
-  
-  class Enum {
-    ModIterator mIter;
-
-    
-    Enum(const Enum&) = delete;
-    void operator=(const Enum&) = delete;
-
-   public:
-    template <class Map>
-    explicit Enum(Map& map) : mIter(map.mImpl) {}
-
-    MOZ_IMPLICIT Enum(Enum&& other) : mIter(std::move(other.mIter)) {}
-
-    bool empty() const { return mIter.done(); }
-
-    T& front() const { return mIter.get(); }
-
-    void popFront() { return mIter.next(); }
-
-    
-    
-    void removeFront() { mIter.remove(); }
-
-    NonConstT& mutableFront() { return mIter.getMutable(); }
-
-    void rekeyFront(const Lookup& aLookup, const Key& aKey) {
-      mIter.rekey(aLookup, aKey);
-    }
-
-    void rekeyFront(const Key& aKey) { mIter.rekey(aKey); }
-  };
-
-  
   HashTable(HashTable&& aRhs) : AllocPolicy(std::move(aRhs)) { moveFrom(aRhs); }
   HashTable& operator=(HashTable&& aRhs) {
     MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
@@ -2185,8 +2119,6 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   Iterator iter() const { return Iterator(*this); }
 
   ModIterator modIter() { return ModIterator(*this); }
-
-  Range all() const { return Range(*this); }
 
   bool empty() const { return mEntryCount == 0; }
 
