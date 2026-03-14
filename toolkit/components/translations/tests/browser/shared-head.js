@@ -253,12 +253,6 @@ async function openAboutTranslations({
     targetLanguageSelector: "moz-select#about-translations-target-select",
     detectLanguageOption:
       "moz-option#about-translations-detect-language-label-option",
-    detectedLanguageUnsupportedHeading:
-      "#about-translations-detected-language-unsupported-heading",
-    detectedLanguageUnsupportedLearnMoreLink:
-      "a#about-translations-detected-language-unsupported-learn-more-link",
-    detectedLanguageUnsupportedMessage:
-      "moz-message-bar#about-translations-detected-language-unsupported-message",
     swapLanguagesButton: "moz-button#about-translations-swap-languages-button",
     sourceSection: "div#about-translations-source-section",
     sourceSectionTextArea: "textarea#about-translations-source-textarea",
@@ -274,8 +268,6 @@ async function openAboutTranslations({
       "moz-message-bar#about-translations-unsupported-info-message",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
-    languageLoadErrorButton:
-      "button#about-translations-language-load-error-button",
   };
 
   
@@ -4380,46 +4372,6 @@ class AboutTranslationsTestUtils {
 
 
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
-
-    
-
-
-
-
-    static LanguageLoadErrorMessageShown =
-      "AboutTranslationsTest:LanguageLoadErrorMessageShown";
-
-    
-
-
-
-
-    static LanguageLoadErrorMessageHidden =
-      "AboutTranslationsTest:LanguageLoadErrorMessageHidden";
-
-    
-
-
-
-
-    static LanguageLoadRetryStarted =
-      "AboutTranslationsTest:LanguageLoadRetryStarted";
-
-    
-
-
-
-
-    static LanguageLoadRetrySucceeded =
-      "AboutTranslationsTest:LanguageLoadRetrySucceeded";
-
-    
-
-
-
-
-    static LanguageLoadRetryFailed =
-      "AboutTranslationsTest:LanguageLoadRetryFailed";
   };
 
   
@@ -4828,23 +4780,6 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickLanguageLoadErrorButton() {
-    logAction();
-    try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.languageLoadErrorButton
-        );
-        button.click();
-      });
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-  }
-
-  
-
-
 
 
 
@@ -4899,39 +4834,6 @@ class AboutTranslationsTestUtils {
           );
           if (!message) {
             throw new Error("Could not find the translation error message.");
-          }
-          return ContentTaskUtils.waitForMutationCondition(
-            message,
-            { attributes: true, attributeFilter: ["hidden"] },
-            () => message.hidden === !visible
-          );
-        },
-        { visible }
-      );
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-  }
-
-  
-
-
-
-
-
-
-  async waitForDetectedLanguageUnsupportedMessage({ visible = true } = {}) {
-    try {
-      await this.#runInPage(
-        (selectors, { visible }) => {
-          const { document } = content;
-          const message = document.querySelector(
-            selectors.detectedLanguageUnsupportedMessage
-          );
-          if (!message) {
-            throw new Error(
-              "Could not find the detected-language unsupported message."
-            );
           }
           return ContentTaskUtils.waitForMutationCondition(
             message,
@@ -5391,138 +5293,6 @@ class AboutTranslationsTestUtils {
         detectLanguageAttribute,
         detectedLanguage,
         `Expected detect-language option "language" attribute to be "${detectedLanguage}", but got "${detectLanguageAttribute}".`
-      );
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async assertDetectedLanguageUnsupportedMessage({
-    visible,
-    sourceTextAreaVisible,
-    targetTextAreaVisible,
-    learnMoreSupportPage,
-  } = {}) {
-    await doubleRaf(document);
-
-    let pageResult = {};
-    try {
-      pageResult = await this.#runInPage(selectors => {
-        const { document, window } = content;
-        const isElementVisible = selector => {
-          const element = document.querySelector(selector);
-          if (element?.offsetParent === null) {
-            return false;
-          }
-
-          const computedStyle = window.getComputedStyle(element);
-          if (!computedStyle) {
-            return false;
-          }
-
-          const { display, visibility } = computedStyle;
-          return !(display === "none" || visibility === "hidden");
-        };
-
-        const message = document.querySelector(
-          selectors.detectedLanguageUnsupportedMessage
-        );
-        const heading = document.querySelector(
-          selectors.detectedLanguageUnsupportedHeading
-        );
-        const link = document.querySelector(
-          selectors.detectedLanguageUnsupportedLearnMoreLink
-        );
-
-        return {
-          messageExists: Boolean(message),
-          headingExists: Boolean(heading),
-          linkExists: Boolean(link),
-          messageVisible: isElementVisible(
-            selectors.detectedLanguageUnsupportedMessage
-          ),
-          sourceTextAreaVisible: isElementVisible(
-            selectors.sourceSectionTextArea
-          ),
-          targetTextAreaVisible: isElementVisible(
-            selectors.targetSectionTextArea
-          ),
-          learnMoreSupportPage: link?.getAttribute("support-page") ?? "",
-        };
-      });
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-
-    const {
-      messageExists,
-      headingExists,
-      linkExists,
-      messageVisible,
-      sourceTextAreaVisible: actualSourceTextAreaVisible,
-      targetTextAreaVisible: actualTargetTextAreaVisible,
-      learnMoreSupportPage: actualLearnMoreSupportPage,
-    } = pageResult;
-
-    ok(
-      messageExists,
-      "Expected detected-language unsupported message to be present."
-    );
-    ok(headingExists, "Expected unsupported message heading to be present.");
-    ok(
-      linkExists,
-      "Expected unsupported message learn-more link to be present."
-    );
-
-    if (visible !== undefined) {
-      visible
-        ? ok(
-            messageVisible,
-            "Expected detected-language unsupported message to be visible."
-          )
-        : ok(
-            !messageVisible,
-            "Expected detected-language unsupported message to be hidden."
-          );
-    }
-
-    if (sourceTextAreaVisible !== undefined) {
-      sourceTextAreaVisible
-        ? ok(
-            actualSourceTextAreaVisible,
-            "Expected source textarea to be visible."
-          )
-        : ok(
-            !actualSourceTextAreaVisible,
-            "Expected source textarea to be hidden."
-          );
-    }
-
-    if (targetTextAreaVisible !== undefined) {
-      targetTextAreaVisible
-        ? ok(
-            actualTargetTextAreaVisible,
-            "Expected target textarea to be visible."
-          )
-        : ok(
-            !actualTargetTextAreaVisible,
-            "Expected target textarea to be hidden."
-          );
-    }
-
-    if (learnMoreSupportPage !== undefined) {
-      is(
-        actualLearnMoreSupportPage,
-        learnMoreSupportPage,
-        `Expected unsupported message learn-more support-page to be "${learnMoreSupportPage}", but got "${actualLearnMoreSupportPage}".`
       );
     }
   }
@@ -6098,7 +5868,6 @@ class AboutTranslationsTestUtils {
 
 
 
-
   async assertIsVisible({
     pageHeader = false,
     mainUserInterface = false,
@@ -6109,7 +5878,6 @@ class AboutTranslationsTestUtils {
     swapLanguagesButton = false,
     sourceSectionTextArea = false,
     targetSectionTextArea = false,
-    detectedLanguageUnsupportedMessage = false,
     translationErrorMessage = false,
     unsupportedInfoMessage = false,
     languageLoadErrorMessage = false,
@@ -6162,9 +5930,6 @@ class AboutTranslationsTestUtils {
           ),
           targetSectionTextArea: isElementVisible(
             selectors.targetSectionTextArea
-          ),
-          detectedLanguageUnsupportedMessage: isElementVisible(
-            selectors.detectedLanguageUnsupportedMessage
           ),
           translationErrorMessage: isElementVisible(
             selectors.translationErrorMessage
@@ -6220,11 +5985,6 @@ class AboutTranslationsTestUtils {
         targetSectionTextArea,
         visibilityMap.targetSectionTextArea,
         "target textarea"
-      );
-      assertVisibility(
-        detectedLanguageUnsupportedMessage,
-        visibilityMap.detectedLanguageUnsupportedMessage,
-        "detected-language unsupported message"
       );
       assertVisibility(
         translationErrorMessage,
