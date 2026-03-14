@@ -206,18 +206,18 @@ function test_newtab(testInfo, browserURL = "about:newtab") {
     SpecialPowers.spawn(browser, [], addContentHelpers);
 
     
-    try {
-      
-      await BrowserTestUtils.waitForCondition(
-        () =>
-          SpecialPowers.spawn(
-            browser,
-            [],
-            () => content.document.getElementById("root")?.children.length
-          ),
-        "Should render activity stream content"
-      );
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        SpecialPowers.spawn(
+          browser,
+          [],
+          () => content.document.getElementById("root").children.length
+        ),
+      "Should render activity stream content"
+    );
 
+    
+    try {
       let contentArg = await before({ pushPrefs: scopedPushPrefs, tab });
       let contentResult = await SpecialPowers.spawn(
         browser,

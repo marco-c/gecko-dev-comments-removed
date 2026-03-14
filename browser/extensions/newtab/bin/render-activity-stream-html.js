@@ -16,6 +16,7 @@ const DEFAULT_OPTIONS = {
   addonPath: "..",
   
   baseUrl: "resource://newtab/",
+  baseVendorUrl: "chrome://global/content/",
 };
 
 
@@ -27,10 +28,19 @@ const DEFAULT_OPTIONS = {
 
 
 
+
+
 function templateHTML(options) {
+  const debugString = options.debug ? "-dev" : "";
+  
   const scripts = [
     "chrome://browser/content/contentTheme.js",
-    `${options.baseUrl}data/content/vendor.bundle.js`,
+    `${options.baseVendorUrl}vendor/react${debugString}.js`,
+    `${options.baseVendorUrl}vendor/react-dom${debugString}.js`,
+    `${options.baseVendorUrl}vendor/prop-types.js`,
+    `${options.baseVendorUrl}vendor/redux.js`,
+    `${options.baseVendorUrl}vendor/react-redux.js`,
+    `${options.baseVendorUrl}vendor/react-transition-group.js`,
     `${options.baseUrl}data/content/activity-stream.bundle.js`,
     `${options.baseUrl}data/content/newtab-render.js`,
   ];
@@ -157,11 +167,10 @@ function writeFiles(destPath, filesMap, options) {
 
 const STATIC_FILES = new Map([
   ["activity-stream.html", ({ options }) => templateHTML(options)],
-  
-  
-  
-  
-  ["activity-stream-debug.html", ({ options }) => templateHTML(options)],
+  [
+    "activity-stream-debug.html",
+    ({ options }) => templateHTML(Object.assign({}, options, { debug: true })),
+  ],
   [
     "activity-stream-noscripts.html",
     ({ options }) =>
@@ -213,11 +222,16 @@ async function main() {
           shortFlag: "b",
           default: DEFAULT_OPTIONS.baseUrl,
         },
+        baseVendorUrl: {
+          type: "string",
+          shortFlag: "v",
+          default: DEFAULT_OPTIONS.baseVendorUrl,
+        },
       },
     }
   );
 
-  const options = cli.flags || {};
+  const options = Object.assign({ debug: false }, cli.flags || {});
   const addonPath = path.resolve(__dirname, options.addonPath);
   const prerenderedPath = path.join(addonPath, "prerendered");
   console.log(`Writing prerendered files to ${prerenderedPath}:`);
