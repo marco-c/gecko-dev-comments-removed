@@ -325,7 +325,18 @@ class MOZ_STACK_CLASS AutoWebRenderBridgeParentAsyncMessageSender final {
     if (mActorsToDestroy) {
       
       
+      
+      nsTHashSet<PTextureParent*> seenTextureParents;
       for (const auto& op : *mActorsToDestroy) {
+        
+        
+        if (op.type() == OpDestroy::TPTexture) {
+          PTextureParent* textureParent = op.get_PTexture().AsParent();
+          if (!seenTextureParents.EnsureInserted(textureParent)) {
+            
+            continue;
+          }
+        }
         mWebRenderBridgeParent->DestroyActor(op);
       }
     }
