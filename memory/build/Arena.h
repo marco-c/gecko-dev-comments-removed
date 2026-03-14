@@ -557,7 +557,9 @@ struct arena_t {
   
   
   
-  ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats)
+  ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats,
+                         const mozilla::Maybe<std::function<bool()>>&
+                             aKeepGoing = mozilla::Nothing())
       MOZ_EXCLUDES(mLock);
 
   
