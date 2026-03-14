@@ -512,6 +512,11 @@ void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   Mul(ARMRegister(srcDest, 64), ARMRegister(srcDest, 64), ARMRegister(rhs, 64));
 }
 
+void MacroAssembler::mul64(const Register64& rhs, const Register64& srcDest) {
+  Mul(ARMRegister(srcDest.reg, 64), ARMRegister(srcDest.reg, 64),
+      ARMRegister(rhs.reg, 64));
+}
+
 void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
@@ -2494,6 +2499,39 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
   loadValue(src, ValueOperand(dest));
   fallibleUnboxPtr(ValueOperand(dest), dest, type, fail);
 }
+
+
+
+
+void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
+                                        Register rhsLo, Register rhsHi,
+                                        Register output, bool isAdd) {
+  
+  MOZ_RELEASE_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+                     output != rhsHi);
+  
+  
+  
+  if (isAdd) {
+    Adds(vixl::xzr, ARMRegister(lhsLo, 64), ARMRegister(rhsLo, 64));
+    Adc(ARMRegister(output, 64), ARMRegister(lhsHi, 64),
+        ARMRegister(rhsHi, 64));
+  } else {
+    Subs(vixl::xzr, ARMRegister(lhsLo, 64), ARMRegister(rhsLo, 64));
+    Sbc(ARMRegister(output, 64), ARMRegister(lhsHi, 64),
+        ARMRegister(rhsHi, 64));
+  }
+}
+
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register output, bool isSigned) {
+  if (isSigned) {
+    Smulh(ARMRegister(output, 64), ARMRegister(lhs, 64), ARMRegister(rhs, 64));
+  } else {
+    Umulh(ARMRegister(output, 64), ARMRegister(lhs, 64), ARMRegister(rhs, 64));
+  }
+}
+
 
 
 

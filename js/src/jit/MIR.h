@@ -423,15 +423,18 @@ class AliasSet {
     WasmArrayDataArea = 1 << 25,
 
     
-    GlobalGenerationCounter = 1 << 26,
+    WasmInstanceScratchWords = 1 << 26,
 
     
-    SharedArrayRawBufferLength = 1 << 27,
+    GlobalGenerationCounter = 1 << 27,
+
+    
+    SharedArrayRawBufferLength = 1 << 28,
 
     Last = SharedArrayRawBufferLength,
 
     Any = Last | (Last - 1),
-    NumCategories = 28,
+    NumCategories = 29,
 
     
     Store_ = 1 << 31

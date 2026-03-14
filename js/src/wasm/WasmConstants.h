@@ -884,6 +884,12 @@ enum class MiscOp {
 
   MemoryDiscard = 0x12,
 
+  
+  I64Add128 = 19,    
+  I64Sub128 = 20,    
+  I64MulWideS = 21,  
+  I64MulWideU = 22,  
+
   Limit
 };
 

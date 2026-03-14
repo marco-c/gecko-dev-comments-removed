@@ -143,7 +143,15 @@ class alignas(16) Instance {
   }
 
   
-  static constexpr size_t N_BASELINE_SCRATCH_WORDS = 4;
+  static constexpr size_t N_BASELINE_SCRATCH_WORDS = 8;
+
+  
+  static constexpr size_t sizeofBaselineScratchWords() {
+    return sizeof(baselineScratchWords_);
+  }
+  static constexpr size_t offsetofBaselineScratchWords() {
+    return offsetof(Instance, baselineScratchWords_);
+  }
 
  private:
   
@@ -644,6 +652,8 @@ class alignas(16) Instance {
                               void* secondStringArg);
   static int32_t stringCompare(Instance* instance, void* firstStringArg,
                                void* secondStringArg);
+  static void addSubI128(Instance* instance, uint32_t isAdd);
+  static void mulI64Wide(Instance* instance, uint32_t isSigned);
 };
 
 bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,

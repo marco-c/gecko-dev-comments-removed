@@ -300,6 +300,10 @@ void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   imulq(rhs, srcDest);
 }
 
+void MacroAssembler::mul64(const Register64& rhs, const Register64& srcDest) {
+  imulq(rhs.reg, srcDest.reg);
+}
+
 void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
   mul64(Imm64(rhs.value), Register64(srcDest));
 }
@@ -1102,6 +1106,87 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
   if (JitOptions.spectreIndexMasking) {
     cmovCCq(Assembler::AboveOrEqual, scratch, index);
   }
+}
+
+
+
+
+void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
+                                        Register rhsLo, Register rhsHi,
+                                        Register output, bool isAdd) {
+  
+  MOZ_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+             output != rhsHi);
+  
+  
+  movq(lhsLo, output);
+  if (isAdd) {
+    addq(rhsLo, output);
+  } else {
+    subq(rhsLo, output);
+  }
+  
+  movq(lhsHi, output);
+  if (isAdd) {
+    adcq(rhsHi, output);
+  } else {
+    sbbq(rhsHi, output);
+  }
+}
+
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register temp0, Register temp1,
+                                        Register output, bool isSigned) {
+  
+  const Register regs[5] = {lhs, rhs, temp0, temp1, output};
+  for (uint32_t i = 0; i < 5; i++) {
+    for (uint32_t j = 0; j < i; j++) {
+      MOZ_RELEASE_ASSERT(regs[i] != regs[j]);
+    }
+  }
+  
+  
+  MOZ_RELEASE_ASSERT(lhs == rax);
+  MOZ_RELEASE_ASSERT(rhs == rdx);
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  movq(rax, temp0);
+  movq(rdx, temp1);
+  if (isSigned) {
+    imulq(rdx);
+  } else {
+    umulq(rdx);
+  }
+  xchgq(rdx, temp1);
+  movq(temp0, rax);
+  movq(temp1, output);
 }
 
 

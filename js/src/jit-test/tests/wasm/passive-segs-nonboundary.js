@@ -327,9 +327,14 @@ function checkMiscPrefixed(opcode, expect_failure) {
 
 
 
-checkMiscPrefixed([MemoryCopyCode, 0x00, 0x00], false); 
-checkMiscPrefixed([MemoryFillCode, 0x00], false); 
-checkMiscPrefixed([0x13], true);        
+
+checkMiscPrefixed([MemoryCopyCode, 0x00, 0x00], false);
+
+
+checkMiscPrefixed([MemoryFillCode, 0x00], false);
+
+
+checkMiscPrefixed([0x17], true);
 
 
 
