@@ -146,11 +146,15 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     
     
     
-    uint32_t replaceableLength = textNode->TextLength() - mOffset;
+    const uint32_t replaceableLengthInFirstText =
+        std::min(mReplaceLength, static_cast<uint32_t>(std::max<int64_t>(
+                                     textNode->TextDataLength() - mOffset, 0)));
     IgnoredErrorResult error;
-    editorBase->DoReplaceText(*textNode, mOffset, mReplaceLength,
+    
+    
+    editorBase->DoReplaceText(*textNode, mOffset, replaceableLengthInFirstText,
                               mStringToInsert, error);
-    if (error.Failed()) {
+    if (error.Failed()) [[unlikely]] {
       NS_WARNING("EditorBase::DoReplaceText() failed");
       return error.StealNSResult();
     }
@@ -159,35 +163,34 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     
     
     
-    editorBase->RangeUpdaterRef().SelAdjDeleteText(*textNode, mOffset,
-                                                   replaceableLength);
+    editorBase->RangeUpdaterRef().SelAdjDeleteText(
+        *textNode, mOffset, replaceableLengthInFirstText);
     
     
     editorBase->RangeUpdaterRef().SelAdjInsertText(*textNode, mOffset,
                                                    mStringToInsert.Length());
 
-    if (replaceableLength < mReplaceLength) {
+    if (replaceableLengthInFirstText < mReplaceLength) {
       
       
       
       
-      uint32_t remainLength = mReplaceLength - replaceableLength;
+      uint32_t remainingLength = mReplaceLength - replaceableLengthInFirstText;
       IgnoredErrorResult ignoredError;
-      for (nsIContent* nextSibling = textNode->GetNextSibling();
-           nextSibling && nextSibling->IsText() && remainLength;
-           nextSibling = nextSibling->GetNextSibling()) {
-        OwningNonNull<Text> followingTextNode =
-            *static_cast<Text*>(nextSibling);
-        uint32_t textLength = followingTextNode->TextLength();
-        editorBase->DoDeleteText(followingTextNode, 0, remainLength,
-                                 ignoredError);
+      for (RefPtr<Text> text = Text::FromNodeOrNull(textNode->GetNextSibling());
+           text && remainingLength;
+           text = Text::FromNodeOrNull(text->GetNextSibling())) {
+        const uint32_t deletableLengthInText =
+            std::min(text->TextDataLength(), remainingLength);
+        
+        
+        editorBase->DoDeleteText(*text, 0, deletableLengthInText, ignoredError);
         NS_WARNING_ASSERTION(!ignoredError.Failed(),
                              "EditorBase::DoDeleteText() failed, but ignored");
         ignoredError.SuppressException();
-        
-        editorBase->RangeUpdaterRef().SelAdjDeleteText(followingTextNode, 0,
-                                                       remainLength);
-        remainLength -= textLength;
+        editorBase->RangeUpdaterRef().SelAdjDeleteText(*text, 0,
+                                                       deletableLengthInText);
+        remainingLength -= deletableLengthInText;
       }
     }
   }
