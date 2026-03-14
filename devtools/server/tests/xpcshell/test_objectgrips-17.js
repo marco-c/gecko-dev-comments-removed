@@ -27,22 +27,22 @@ async function testPrincipal(options, globalPrincipal, debuggeeHasXrays) {
   const sameOrigin = debuggeePrincipal.origin === globalPrincipal.origin;
   const subsumes = debuggeePrincipal.subsumes(globalPrincipal);
   for (const globalHasXrays of [true, false]) {
-    const isOpaque =
-      subsumes &&
-      globalPrincipal !== systemPrincipal &&
-      ((sameOrigin && debuggeeHasXrays) || globalHasXrays);
+    const eitherHasXrays = debuggeeHasXrays || globalHasXrays;
     for (const globalIsInvisible of [true, false]) {
       let global = Cu.Sandbox(globalPrincipal, {
         wantXrays: globalHasXrays,
         invisibleToDebugger: globalIsInvisible,
       });
+      let isOpaque =
+        subsumes &&
+        globalPrincipal !== systemPrincipal &&
+        (eitherHasXrays || debuggeePrincipal === systemPrincipal);
+      await test(options, { global, subsumes, isOpaque, globalIsInvisible });
+
       
-      
-      
-      
-      if (!globalHasXrays) {
-        global = Cu.waiveXrays(global);
-      }
+      global = Cu.waiveXrays(global);
+      isOpaque =
+        sameOrigin && globalPrincipal !== systemPrincipal && eitherHasXrays;
       await test(options, { global, subsumes, isOpaque, globalIsInvisible });
     }
   }
