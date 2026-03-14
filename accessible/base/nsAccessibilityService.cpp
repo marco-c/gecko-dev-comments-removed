@@ -1632,7 +1632,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 #  include "mozilla/Monitor.h"
 #  include "mozilla/Maybe.h"
 
-MOZ_RUNINIT static Maybe<Monitor> sAndroidMonitor;
+static Maybe<Monitor> sAndroidMonitor;
 
 mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
   if (!sAndroidMonitor.isSome()) {
@@ -1718,11 +1718,11 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   if (XRE_IsParentProcess() &&
       StaticPrefs::accessibility_enable_all_cache_domains_AtStartup()) {
     gCacheDomains = CacheDomain::All;
+  } else {
+    
+    
+    gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
   }
-
-  
-  
-  gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
 
   static const char16_t kInitIndicator[] = {'1', 0};
   observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown",
