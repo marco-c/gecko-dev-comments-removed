@@ -802,8 +802,8 @@ nsresult nsAtomicFileOutputStream::DoOpen() {
     
     
     mOpenParams.localFile = tempResult;
-    mTempFile = tempResult;
-    mTargetFile = file;
+    mTempFile = std::move(tempResult);
+    mTargetFile = std::move(file);
     rv = nsFileOutputStream::DoOpen();
   }
   return rv;

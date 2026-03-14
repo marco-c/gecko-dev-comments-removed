@@ -300,7 +300,7 @@ LoadInfo::LoadInfo(
     
     
     
-    if (mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
+    if (externalType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
       RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
           do_QueryObject(aLoadingContext);
       RefPtr<nsFrameLoader> fl =
@@ -1365,7 +1365,7 @@ LoadInfo::SetScriptableOriginAttributes(
     return NS_ERROR_INVALID_ARG;
   }
 
-  mOriginAttributes = attrs;
+  mOriginAttributes = std::move(attrs);
   return NS_OK;
 }
 

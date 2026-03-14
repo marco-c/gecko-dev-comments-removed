@@ -681,7 +681,7 @@ nsBaseChannel::AsyncOpen(nsIStreamListener* aListener) {
   
   
   
-  mListener = listener;
+  mListener = std::move(listener);
 
   
   
