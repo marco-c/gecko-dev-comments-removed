@@ -3313,7 +3313,8 @@ static inline Point3D Normalized(const Point3D& vec) {
 template <typename LightType, typename LightingType>
 FilterNodeLightingSoftware<LightType, LightingType>::FilterNodeLightingSoftware(
     const char* aTypeName)
-    : mSurfaceScale(0)
+    : mSurfaceScale(0),
+      mKernelUnitLength(1.0f, 1.0f)
 #if defined(MOZILLA_INTERNAL_API) && defined(NS_BUILD_REFCNT_LOGGING)
       ,
       mTypeName(aTypeName)
@@ -3366,6 +3367,23 @@ void FilterNodeLightingSoftware<LightType, LightingType>::SetAttribute(
   switch (aIndex) {
     case ATT_LIGHTING_KERNEL_UNIT_LENGTH:
       mKernelUnitLength = aKernelUnitLength;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mKernelUnitLength.width <= 0.0f ||
+          !std::isfinite(mKernelUnitLength.width)) {
+        mKernelUnitLength.width = 1.0f;
+      }
+      if (mKernelUnitLength.height <= 0.0f ||
+          !std::isfinite(mKernelUnitLength.height)) {
+        mKernelUnitLength.height = mKernelUnitLength.width;
+      }
       break;
     default:
       MOZ_CRASH("GFX: FilterNodeLightingSoftware::SetAttribute size");
@@ -3523,21 +3541,32 @@ FilterNodeLightingSoftware<LightType, LightingType>::Render(
 }
 
 template <typename LightType, typename LightingType>
+MarginDouble FilterNodeLightingSoftware<
+    LightType, LightingType>::GetInflateSourceMargin() const {
+  double kulX = ceil(double(mKernelUnitLength.width));
+  double kulY = ceil(double(mKernelUnitLength.height));
+  return MarginDouble(kulY, kulX, kulY, kulX);
+}
+
+template <typename LightType, typename LightingType>
+IntRect FilterNodeLightingSoftware<LightType, LightingType>::InflatedSourceRect(
+    const IntRect& aDestRect) {
+  RectDouble srcRect(aDestRect);
+  srcRect.Inflate(GetInflateSourceMargin());
+  return RectIsInt32Safe(srcRect) ? TruncatedToInt(srcRect) : aDestRect;
+}
+
+template <typename LightType, typename LightingType>
 void FilterNodeLightingSoftware<
     LightType, LightingType>::RequestFromInputsForRect(const IntRect& aRect) {
-  IntRect srcRect = aRect;
-  srcRect.Inflate(ceil(mKernelUnitLength.width),
-                  ceil(mKernelUnitLength.height));
-  RequestInputRect(IN_LIGHTING_IN, srcRect);
+  RequestInputRect(IN_LIGHTING_IN, InflatedSourceRect(aRect));
 }
 
 template <typename LightType, typename LightingType>
 IntRect FilterNodeLightingSoftware<LightType, LightingType>::MapRectToSource(
     const IntRect& aRect, const IntRect& aMax, FilterNode* aSourceNode) {
-  IntRect srcRect = aRect;
-  srcRect.Inflate(ceil(mKernelUnitLength.width),
-                  ceil(mKernelUnitLength.height));
-  return MapInputRectToSource(IN_LIGHTING_IN, srcRect, aMax, aSourceNode);
+  return MapInputRectToSource(IN_LIGHTING_IN, InflatedSourceRect(aRect), aMax,
+                              aSourceNode);
 }
 
 template <typename LightType, typename LightingType>
@@ -3551,14 +3580,17 @@ FilterNodeLightingSoftware<LightType, LightingType>::DoRender(
   MOZ_ASSERT(aKernelUnitLengthY > 0,
              "aKernelUnitLengthY can be a negative or zero value");
 
-  IntRect srcRect = aRect;
-  IntSize size = aRect.Size();
-  srcRect.Inflate(ceil(float(aKernelUnitLengthX)),
-                  ceil(float(aKernelUnitLengthY)));
+  RectDouble srcRectD(aRect);
+  srcRectD.Inflate(GetInflateSourceMargin());
+  
+  
+  srcRectD.Inflate(1);
+  if (!RectIsInt32Safe(srcRectD)) {
+    return nullptr;
+  }
+  IntRect srcRect = TruncatedToInt(srcRectD);
 
-  
-  
-  srcRect.Inflate(1);
+  IntSize size = aRect.Size();
 
   IntRect srcRectInRenderRect = srcRect.Intersect(mRenderRect);
 
