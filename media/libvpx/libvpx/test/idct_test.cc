@@ -163,7 +163,7 @@ INSTANTIATE_TEST_SUITE_P(NEON, IDCTTest,
                          ::testing::Values(vp8_short_idct4x4llm_neon));
 #endif  
 
-#if HAVE_MMX
+#if HAVE_MMX && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(MMX, IDCTTest,
                          ::testing::Values(vp8_short_idct4x4llm_mmx));
 #endif  

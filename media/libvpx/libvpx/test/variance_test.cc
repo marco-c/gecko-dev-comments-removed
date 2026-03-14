@@ -1180,7 +1180,7 @@ INSTANTIATE_TEST_SUITE_P(
                                 12)));
 #endif  
 
-#if HAVE_SSE2
+#if HAVE_SSE2 && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(SSE2, SumOfSquaresTest,
                          ::testing::Values(vpx_get_mb_ss_sse2));
 
@@ -1478,7 +1478,7 @@ INSTANTIATE_TEST_SUITE_P(
 #endif  
 #endif  
 
-#if HAVE_SSSE3
+#if HAVE_SSSE3 && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(
     SSSE3, VpxSubpelVarianceTest,
     ::testing::Values(
@@ -1616,8 +1616,31 @@ INSTANTIATE_TEST_SUITE_P(
                       VarianceParams(3, 4, &vpx_variance8x16_neon_dotprod),
                       VarianceParams(3, 3, &vpx_variance8x8_neon_dotprod),
                       VarianceParams(3, 2, &vpx_variance8x4_neon_dotprod),
-                      VarianceParams(2, 3, &vpx_variance4x8_neon_dotprod),
-                      VarianceParams(2, 2, &vpx_variance4x4_neon_dotprod)));
+                      VarianceParams(2, 3, &vpx_variance4x8_neon_dotprod)));
+
+INSTANTIATE_TEST_SUITE_P(
+    NEON_DOTPROD, VpxSubpelVarianceTest,
+    ::testing::Values(
+        SubpelVarianceParams(6, 6, &vpx_sub_pixel_variance64x64_neon_dotprod,
+                             0),
+        SubpelVarianceParams(6, 5, &vpx_sub_pixel_variance64x32_neon_dotprod,
+                             0),
+        SubpelVarianceParams(5, 6, &vpx_sub_pixel_variance32x64_neon_dotprod,
+                             0),
+        SubpelVarianceParams(5, 5, &vpx_sub_pixel_variance32x32_neon_dotprod,
+                             0),
+        SubpelVarianceParams(5, 4, &vpx_sub_pixel_variance32x16_neon_dotprod,
+                             0),
+        SubpelVarianceParams(4, 5, &vpx_sub_pixel_variance16x32_neon_dotprod,
+                             0),
+        SubpelVarianceParams(4, 4, &vpx_sub_pixel_variance16x16_neon_dotprod,
+                             0),
+        SubpelVarianceParams(4, 3, &vpx_sub_pixel_variance16x8_neon_dotprod, 0),
+        SubpelVarianceParams(3, 4, &vpx_sub_pixel_variance8x16_neon_dotprod, 0),
+        SubpelVarianceParams(3, 3, &vpx_sub_pixel_variance8x8_neon_dotprod, 0),
+        SubpelVarianceParams(3, 2, &vpx_sub_pixel_variance8x4_neon_dotprod, 0),
+        SubpelVarianceParams(2, 3, &vpx_sub_pixel_variance4x8_neon_dotprod,
+                             0)));
 
 INSTANTIATE_TEST_SUITE_P(
     NEON_DOTPROD, VpxGetVarianceTest,

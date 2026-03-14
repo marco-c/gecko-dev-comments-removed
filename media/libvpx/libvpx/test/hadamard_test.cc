@@ -293,7 +293,7 @@ INSTANTIATE_TEST_SUITE_P(
                       HadamardFuncWithSize(&vpx_hadamard_32x32_avx2, 32)));
 #endif  
 
-#if HAVE_SSSE3 && VPX_ARCH_X86_64
+#if HAVE_SSSE3 && VPX_ARCH_X86_64 && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(
     SSSE3, HadamardLowbdTest,
     ::testing::Values(HadamardFuncWithSize(&vpx_hadamard_8x8_ssse3, 8)));

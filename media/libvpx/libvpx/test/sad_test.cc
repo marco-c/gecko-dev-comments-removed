@@ -1435,7 +1435,7 @@ INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, SADSkipx4Test,
 
 
 
-#if HAVE_SSE2
+#if HAVE_SSE2 && HAVE_X86_ASM
 const SadMxNParam sse2_tests[] = {
   SadMxNParam(64, 64, &vpx_sad64x64_sse2),
   SadMxNParam(64, 32, &vpx_sad64x32_sse2),
