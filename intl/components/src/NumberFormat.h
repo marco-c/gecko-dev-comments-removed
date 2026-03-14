@@ -28,15 +28,35 @@ struct PluralRulesOptions;
 
 
 
-
-
-
-
-
-
-
-
 struct MOZ_STACK_CLASS NumberFormatOptions {
+  
+
+
+
+
+
+  enum class Style {
+    
+
+
+    Decimal,
+
+    
+
+
+    Percent,
+
+    
+
+
+    Currency,
+
+    
+
+
+    Unit,
+  } mStyle = Style::Decimal;
+
   
 
 
@@ -84,14 +104,6 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
 
   enum class UnitDisplay { Short, Narrow, Long };
   Maybe<std::pair<std::string_view, UnitDisplay>> mUnit;
-
-  
-
-
-
-
-
-  bool mPercent = false;
 
   
 
