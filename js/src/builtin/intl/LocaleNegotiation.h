@@ -64,15 +64,8 @@ ArrayObject* LocalesListToArray(JSContext* cx, JS::Handle<LocalesList> locales);
 
 
 
-
-
-
-
-
-
 bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
                          JS::Handle<JSLinearString*> locale,
-                         JS::Handle<JSLinearString*> defaultLocale,
                          JS::MutableHandle<JSLinearString*> result);
 
 class LookupMatcherResult final {
