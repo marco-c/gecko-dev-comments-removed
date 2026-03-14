@@ -591,7 +591,7 @@ bool nsSplitterFrameInner::CollectChildInfos() {
 
         
         
-        if (element->GetXULBoolAttr(nsGkAtoms::fixed) ||
+        if (element->GetBoolAttr(nsGkAtoms::fixed) ||
             element->GetBoolAttr(nsGkAtoms::hidden)) {
           return false;
         }

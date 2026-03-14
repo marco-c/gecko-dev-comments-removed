@@ -1916,8 +1916,7 @@ bool nsXULPopupManager::BeginShowingPopup(const PendingPopup& aPendingPopup,
   
   
   if (popupType == PopupType::Panel &&
-      !popup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::noautofocus,
-                          nsGkAtoms::_true, eCaseMatters)) {
+      !popup->GetBoolAttr(nsGkAtoms::noautofocus)) {
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       Document* doc = popup->GetUncomposedDoc();
 
@@ -1984,8 +1983,7 @@ void nsXULPopupManager::FirePopupHidingEvent(Element* aPopup,
 
   
   if (aPopupType == PopupType::Panel &&
-      (!aPopup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::noautofocus,
-                            nsGkAtoms::_true, eCaseMatters))) {
+      !aPopup->GetBoolAttr(nsGkAtoms::noautofocus)) {
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       Document* doc = aPopup->GetUncomposedDoc();
 
