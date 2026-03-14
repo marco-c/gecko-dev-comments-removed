@@ -251,7 +251,6 @@ nsresult nsJXLDecoder::ProcessFrame(Vector<uint8_t>& aPixelBuffer) {
     if (!frameInfo.frame_duration_valid) {
       return NS_ERROR_FAILURE;
     }
-    
     animParams.emplace(FullFrame().ToUnknownRect(),
                        FrameTimeout::FromRawMilliseconds(frameInfo.duration_ms),
                        mFrameIndex, BlendMethod::SOURCE, DisposalMethod::KEEP);

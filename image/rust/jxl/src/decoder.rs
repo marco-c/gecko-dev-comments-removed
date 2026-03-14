@@ -2,9 +2,10 @@
 
 
 
+use crate::cms::QcmsCms;
 use jxl::api::{
-    JxlBitstreamInput, JxlColorType, JxlDataFormat, JxlDecoderInner, JxlDecoderOptions,
-    JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
+    JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlColorType, JxlDataFormat,
+    JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
 };
 use jxl::headers::extra_channels::ExtraChannel;
 
@@ -41,7 +42,16 @@ impl JxlApiDecoder {
     pub fn new(metadata_only: bool, premultiply: bool) -> Self {
         let mut options = JxlDecoderOptions::default();
         options.premultiply_output = premultiply;
-        let inner = JxlDecoderInner::new(options);
+        options.cms = Some(Box::new(QcmsCms) as Box<dyn jxl::api::JxlCms>);
+
+        let mut inner = JxlDecoderInner::new(options);
+
+        
+        let srgb_output =
+            JxlColorProfile::Simple(JxlColorEncoding::srgb( false));
+        inner
+            .set_output_color_profile(srgb_output)
+            .expect("Simple sRGB profile should always be valid");
 
         Self {
             inner,
@@ -76,6 +86,8 @@ impl JxlApiDecoder {
         })
     }
 
+    
+    
     pub fn process_data(
         &mut self,
         data: &mut impl JxlBitstreamInput,
