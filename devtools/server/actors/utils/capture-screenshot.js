@@ -5,21 +5,13 @@
 "use strict";
 
 const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
+const { clampDimensionsIfNeeded } = ChromeUtils.importESModule(
+  "resource:///modules/ScreenshotsUtils.sys.mjs"
+);
 
 const CONTAINER_FLASHING_DURATION = 500;
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
-
-
-
-
-
-
-
-
-
-const MAX_IMAGE_WIDTH = 10000;
-const MAX_IMAGE_HEIGHT = 10000;
 
 
 
@@ -91,10 +83,11 @@ async function captureScreenshot(args, browsingContext) {
   let _showScreenshotTruncationWarning = false;
 
   
-  if (width && (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT)) {
-    _showScreenshotTruncationWarning = true;
-    width = Math.min(width, MAX_IMAGE_WIDTH);
-    height = Math.min(height, MAX_IMAGE_HEIGHT);
+  if (width && height) {
+    const result = clampDimensionsIfNeeded(width, height);
+    width = result.width;
+    height = result.height;
+    _showScreenshotTruncationWarning = result.cropped;
   }
 
   let rect = null;
