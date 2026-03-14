@@ -3644,6 +3644,15 @@ export class UrlbarInput extends HTMLElement {
       );
     }
 
+    // Record when the user uses the search bar so SearchWidgetTracker can
+    // remove the search bar when it hasn't been used in a long time.
+    if (this.#sapName == "searchbar") {
+      Services.prefs.setStringPref(
+        "browser.search.widget.lastUsed",
+        new Date().toISOString()
+      );
+    }
+
     // Sending a trigger to ASRouter when a search happens
     lazy.ASRouter.sendTriggerMessage({
       browser,
@@ -5393,8 +5402,12 @@ export class UrlbarInput extends HTMLElement {
   }
 
   _on_beforeinput(event) {
-    if (event.data && this._keyDownEnterDeferred) {
+    if (
       // Ignore char key input while processing enter key.
+      (event.data && this._keyDownEnterDeferred) ||
+      // Ignore space key while the result menu will be activated by space.
+      (event.data == " " && this.view.shouldSpaceActivateSelectedElement())
+    ) {
       event.preventDefault();
     }
   }
