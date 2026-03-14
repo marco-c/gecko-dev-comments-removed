@@ -3402,7 +3402,23 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult> PrepareToInsertLineBreak(
       LineBreakType aLineBreakType, const EditorDOMPoint& aPointToInsert);
 
+  enum class PreservePreformattedLineBreak : bool { No, Yes };
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3419,7 +3435,8 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoFollowingUnnecessaryLineBreak(
       const EditorDOMPoint& aNextOrAfterModifiedPoint,
-      const Element& aEditingHost);
+      PreservePreformattedLineBreak aPreservePreformattedLineBreak,
+      PaddingForEmptyBlock aPaddingForEmptyBlock, const Element& aEditingHost);
 
   
 

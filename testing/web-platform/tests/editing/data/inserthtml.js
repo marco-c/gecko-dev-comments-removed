@@ -477,7 +477,7 @@ var browserTests = [
     {"stylewithcss":[false,true,"",false,false,""],"inserthtml":[false,false,"",false,false,""]}],
 ["<p>[foo]</p>",
     [["inserthtml","<!--abc-->"]],
-    "<p><!--abc-->{}</p>",
+    "<p><!--abc--><br></p>",
     [true],
     {"inserthtml":[false,false,"",false,false,""]}],
 ["<p>{}<br></p>",
@@ -487,7 +487,7 @@ var browserTests = [
     {"inserthtml":[false,false,"",false,false,""]}],
 ["<p>{}<br></p>",
     [["inserthtml","<!--abc-->"]],
-    "<p><!--abc-->{}</p>",
+    "<p><!--abc--><br></p>",
     [true],
     {"inserthtml":[false,false,"",false,false,""]}],
 ["<p><!--foo-->{}<span><br></span><!--bar--></p>",
@@ -521,7 +521,8 @@ var browserTests = [
     {"inserthtml":[false,false,"",false,false,""]}],
 ["<p><br>{}</p>",
     [["inserthtml","<!--abc-->"]],
-    "<p><!--abc--></p>",
+    ["<p><br><!--abc--></p>",
+     "<p><!--abc--><br></p>"],
     [true],
     {"inserthtml":[false,false,"",false,false,""]}],
 ["<p><!--foo--><span><br></span>{}<!--bar--></p>",
@@ -541,12 +542,19 @@ var browserTests = [
 
 ["<p><span><!--foo--><br><!--bar--></span>{}</p>",
     [["inserthtml","abc"]],
-    "<p><span><!--foo--><br><!--bar--></span>abc</p>",
+    "<p><span><!--foo-->abc<!--bar--></span></p>",
     [true],
     {"inserthtml":[false,false,"",false,false,""]}],
+
+
+
+
+
+
 ["<p><span><!--foo--><br><!--bar--></span>{}</p>",
     [["inserthtml","<!--abc-->"]],
-    "<p><span><!--foo--><br><!--bar--></span><!--abc--></p>",
+    ["<p><span><!--foo--><br><!--bar--></span><!--abc--></p>",
+     "<p><span><!--foo--><!--abc--><br><!--bar--></span></p>"],
     [true],
     {"inserthtml":[false,false,"",false,false,""]}],
 
@@ -600,6 +608,70 @@ var browserTests = [
     [["inserthtml","<i>Z</i>"]],
     ["<p><b><span contenteditable=\"false\">abc</span></b><i>Z</i><i>def</i></p>",
      "<p><b><span contenteditable=\"false\">abc</span></b><i>Zdef</i></p>"],
+    [true],
+    {}],
+
+
+
+
+
+["<div style=white-space:pre>abc[]\n</div>",
+    [["inserthtml","X"]],
+    "<div style=\"white-space:pre\">abcX\n</div>",
+    [true],
+    {}],
+["<div style=white-space:pre>abc[]\n</div>",
+    [["inserthtml","X"],["inserthtml","Y"]],
+    "<div style=\"white-space:pre\">abcXY\n</div>",
+    [true,true],
+    {}],
+["<div style=white-space:pre-line>abc[]\n</div>",
+    [["inserthtml","X"]],
+    "<div style=\"white-space:pre-line\">abcX\n</div>",
+    [true],
+    {}],
+["<div style=white-space:pre-line>abc[]\n</div>",
+    [["inserthtml","X"],["inserthtml","Y"]],
+    "<div style=\"white-space:pre-line\">abcXY\n</div>",
+    [true,true],
+    {}],
+["<div style=white-space:pre>abc []\n</div>",
+    [["inserthtml","X"]],
+    "<div style=\"white-space:pre\">abc X\n</div>",
+    [true],
+    {}],
+["<div style=white-space:pre>abc []\n</div>",
+    [["inserthtml","X"],["inserthtml","Y"]],
+    "<div style=\"white-space:pre\">abc XY\n</div>",
+    [true,true],
+    {}],
+
+
+
+
+
+
+
+["<div style=white-space:pre-line>abc []\n</div>",
+    [["inserthtml","X"]],
+    ["<div style=\"white-space:pre-line\">abcX\n</div>",
+     "<div style=\"white-space:pre-line\">abcX \n</div>"],
+    [true],
+    {}],
+["<div style=white-space:pre-line>abc []\n</div>",
+    [["inserthtml","X"],["inserthtml","Y"]],
+    ["<div style=\"white-space:pre-line\">abcXY\n</div>",
+     "<div style=\"white-space:pre-line\">abcXY \n</div>"],
+    [true,true],
+    {}],
+["<div style=white-space:pre>[]\n</div>",
+    [["inserthtml","X"]],
+    "<div style=\"white-space:pre\">X</div>",
+    [true],
+    {}],
+["<div style=white-space:pre-line>[]\n</div>",
+    [["inserthtml","X"]],
+    "<div style=\"white-space:pre-line\">X</div>",
     [true],
     {}],
 ]

@@ -1137,7 +1137,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       
       insertEmptyTextResult.IgnoreCaretPointSuggestion();
       nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          insertEmptyTextResult.EndOfInsertedTextRef(), *editingHost);
+          insertEmptyTextResult.EndOfInsertedTextRef(),
+          
+          
+          
+          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Unnecessary,
+          *editingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -1328,25 +1333,34 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         if (nextThing.MaybeIgnoredLineBreak().isSome()) {
           const EditorLineBreak& lineBreak =
               nextThing.MaybeIgnoredLineBreak().ref();
-          const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
-              lineBreak.ContentRef().IsInclusiveDescendantOf(
-                  currentPoint.GetContainer())
-                  ? currentPoint.GetContainerOrContainerParentElement()
-                  : editingHost.get();
-          {
-            AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
-                                                &currentPoint);
-            Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
-                DeleteLineBreakWithTransaction(
-                    lineBreak, nsIEditor::eStrip,
-                    *ancestorLimiterToDeleteEmptyInlines);
-            if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
-              NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
-              return deleteLineBreakResultOrError.propagateErr();
+          
+          
+          
+          
+          
+          if (lineBreak.IsHTMLBRElement() ||
+              lineBreak.IsPaddingForEmptyBlock()) {
+            const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
+                lineBreak.ContentRef().IsInclusiveDescendantOf(
+                    currentPoint.GetContainer())
+                    ? currentPoint.GetContainerOrContainerParentElement()
+                    : editingHost.get();
+            {
+              AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
+                                                  &currentPoint);
+              Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+                  DeleteLineBreakWithTransaction(
+                      lineBreak, nsIEditor::eStrip,
+                      *ancestorLimiterToDeleteEmptyInlines);
+              if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+                NS_WARNING(
+                    "HTMLEditor::DeleteLineBreakWithTransaction() failed");
+                return deleteLineBreakResultOrError.propagateErr();
+              }
             }
-          }
-          if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
-            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+            if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
+              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+            }
           }
         }
       }
@@ -1561,8 +1575,13 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         currentPoint = insertPaddingLineBreakResult.unwrap().UnwrapCaretPoint();
       }
     } else {
-      nsresult rv =
-          EnsureNoFollowingUnnecessaryLineBreak(currentPoint, *editingHost);
+      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+          currentPoint,
+          
+          
+          
+          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Unnecessary,
+          *editingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -2692,8 +2711,9 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   {
     AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(),
                                            &newCaretPosition);
-    nsresult rv =
-        EnsureNoFollowingUnnecessaryLineBreak(newCaretPosition, aEditingHost);
+    nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+        newCaretPosition, PreservePreformattedLineBreak::No,
+        PaddingForEmptyBlock::Significant, aEditingHost);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);

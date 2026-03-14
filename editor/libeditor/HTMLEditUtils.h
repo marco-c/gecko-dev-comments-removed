@@ -818,6 +818,45 @@ class HTMLEditUtils final {
 
 
 
+  [[nodiscard]] static bool IsBRElementFollowingCurrentBlockBoundary(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
+      Element** aPrecedingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowingCurrentBlockBoundary(
+               *brElement, aAncestorLimiter, aPrecedingBlockBoundaryElement);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowingCurrentBlockBoundary(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aPrecedingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   [[nodiscard]] static bool IsBRElementFollowedByOtherBlockBoundary(
       const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
       Element** aFollowingBlockBoundaryElement = nullptr) {
@@ -1070,6 +1109,28 @@ class HTMLEditUtils final {
           SkipWhiteSpaceStyleCheck::No,
       const Element* aAncestorLimiter = nullptr,
       Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool
+  IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aPrecedingBlockBoundaryElement = nullptr);
 
   
 

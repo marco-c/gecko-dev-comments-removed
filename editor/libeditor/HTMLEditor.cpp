@@ -1961,8 +1961,13 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     if (MOZ_LIKELY(aElement->IsInComposedDoc())) {
       const auto afterElement = EditorDOMPoint::After(*aElement);
       if (MOZ_LIKELY(afterElement.IsInContentNode())) {
-        nsresult rv =
-            EnsureNoFollowingUnnecessaryLineBreak(afterElement, *editingHost);
+        nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+            afterElement,
+            
+            
+            
+            PreservePreformattedLineBreak::Yes,
+            PaddingForEmptyBlock::Significant, *editingHost);
         if (NS_FAILED(rv)) {
           NS_WARNING(
               "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -4321,7 +4326,8 @@ Result<CreateLineBreakResult, nsresult> HTMLEditor::InsertLineBreak(
 
 nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     const EditorDOMPoint& aNextOrAfterModifiedPoint,
-    const Element& aEditingHost) {
+    PreservePreformattedLineBreak aPreservePreformattedLineBreak,
+    PaddingForEmptyBlock aPaddingForEmptyBlock, const Element& aEditingHost) {
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsInContentNode());
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsSetAndValid());
 
@@ -4350,8 +4356,7 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
 
   const WSScanResult nextThing =
       HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-          aNextOrAfterModifiedPoint, PaddingForEmptyBlock::Significant,
-          aEditingHost);
+          aNextOrAfterModifiedPoint, aPaddingForEmptyBlock, aEditingHost);
   const Maybe<EditorLineBreak>& unnecessaryLineBreak =
       nextThing.MaybeIgnoredLineBreak();
   if (unnecessaryLineBreak.isNothing() ||
@@ -4387,6 +4392,16 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     return rv;
   }
   MOZ_ASSERT(isNewLinePreformatted);
+  if (aPreservePreformattedLineBreak == PreservePreformattedLineBreak::Yes) {
+    
+    
+    
+    
+    if (aPaddingForEmptyBlock == PaddingForEmptyBlock::Significant ||
+        !unnecessaryLineBreak->IsPaddingForEmptyBlock()) {
+      return NS_OK;
+    }
+  }
   const auto IsVisibleChar = [&](char16_t aChar) {
     switch (aChar) {
       case HTMLEditUtils::kNewLine:
