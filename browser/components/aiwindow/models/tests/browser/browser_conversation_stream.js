@@ -25,8 +25,8 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
 
 add_setup(function () {
   
-  AIWindow.toggleAIWindow(window);
-  registerCleanupFunction(() => AIWindow.toggleAIWindow(window));
+  AIWindow.toggleAIWindow(window, true);
+  registerCleanupFunction(() => AIWindow.toggleAIWindow(window, false));
 });
 
 add_task(async function test_chat_streams_end_to_end() {
