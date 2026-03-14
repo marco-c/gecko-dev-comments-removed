@@ -10960,15 +10960,23 @@ var TabContextMenu = {
     this.contextTab.splitview?.reverseTabs("menu");
   },
 
+  
+
+
   addNewBadge(menuItem) {
     menuItem.setAttribute(
       "badge",
       gBrowser.tabLocalization.formatValueSync("tab-context-badge-new")
     );
+    menuItem.classList.add("badge-new");
   },
+
+  
+
 
   removeNewBadge(menuItem) {
     menuItem.removeAttribute("badge");
+    menuItem.classList.remove("badge-new");
   },
 
   deleteTabNotes() {
