@@ -1384,6 +1384,7 @@ pub mod style_structs {
                         self.${longhand.ident}.clone()
                     }
 
+                    
                     #[allow(non_snake_case)]
                     #[inline]
                     pub fn ${longhand.ident}_equals(&self, other: &Self) -> bool {
