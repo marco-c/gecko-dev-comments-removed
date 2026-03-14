@@ -6,67 +6,42 @@ ChromeUtils.defineLazyGetter(this, "gFluentStrings", function () {
   return new Localization(["branding/brand.ftl", "browser/browser.ftl"], true);
 });
 
-function openLibrary(callback, aLeftPaneRoot, win = window) {
-  let library = win.openDialog(
-    "chrome://browser/content/places/places.xhtml",
-    "",
-    "chrome,toolbar=yes,dialog=no,resizable",
-    aLeftPaneRoot
-  );
-  waitForFocus(function () {
-    checkLibraryPaneVisibility(library, aLeftPaneRoot);
-    callback(library);
-  }, library);
 
+
+
+
+
+
+
+
+
+
+
+async function promiseLibrary(aLeftPaneRoot, win = window) {
+  let library = Services.wm.getMostRecentWindow("Places:Organizer");
+  if (!library || library.closed) {
+    library = win.openDialog(
+      "chrome://browser/content/places/places.xhtml",
+      "",
+      "chrome,toolbar=yes,dialog=no,resizable",
+      aLeftPaneRoot
+    );
+  } else if (aLeftPaneRoot) {
+    library.PlacesOrganizer.selectLeftPaneContainerByHierarchy(aLeftPaneRoot);
+  }
+  await SimpleTest.promiseFocus(library);
+  checkLibraryPaneVisibility(library, aLeftPaneRoot);
   return library;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-function promiseLibrary(aLeftPaneRoot, win = window) {
-  return new Promise(resolve => {
-    let library = Services.wm.getMostRecentWindow("Places:Organizer");
-    if (library && !library.closed) {
-      if (aLeftPaneRoot) {
-        library.PlacesOrganizer.selectLeftPaneContainerByHierarchy(
-          aLeftPaneRoot
-        );
-      }
-      checkLibraryPaneVisibility(library, aLeftPaneRoot);
-      resolve(library);
-    } else {
-      openLibrary(resolve, aLeftPaneRoot, win);
-    }
-  });
-}
-
-function promiseLibraryClosed(organizer) {
-  return new Promise(resolve => {
-    if (organizer.closed) {
-      resolve();
-      return;
-    }
-    
-    organizer.addEventListener(
-      "unload",
-      function () {
-        executeSoon(resolve);
-      },
-      { once: true }
-    );
-
-    
-    organizer.close();
-  });
+async function promiseLibraryClosed(organizer) {
+  if (organizer.closed) {
+    return;
+  }
+  
+  let promiseClosed = BrowserTestUtils.domWindowClosed(organizer);
+  organizer.close();
+  await promiseClosed;
 }
 
 function checkLibraryPaneVisibility(library, selectedPane) {
