@@ -197,12 +197,14 @@ def backfill_modifier(task, input):
         task.task["payload"]["env"]["MOZHARNESS_TEST_PATHS"] = json.dumps(
             test_manifests
         )
-        
-        task.task["metadata"]["name"] = task.label
+        original_label = input.get("original_label", task.label)
+        task.task["metadata"]["name"] = original_label
         th_info = task.task["extra"]["treeherder"]
         
+        
+        symbol = input.get("symbol", th_info["symbol"])
         th_info["symbol"] = add_backfill_suffix(
-            SYMBOL_REGEX, th_info["symbol"], f"-{revision[0:11]}-bk"
+            SYMBOL_REGEX, symbol, f"-{revision[0:11]}-bk"
         )
         if th_info.get("groupSymbol"):
             
@@ -318,9 +320,11 @@ def add_task_with_original_manifests(
         )
         return
 
+    original_label = label
     if label not in full_task_graph.tasks:
         label = new_label(label, full_task_graph.tasks)
         input["label"] = label
+    input["original_label"] = original_label
 
     to_run = [label]
 
