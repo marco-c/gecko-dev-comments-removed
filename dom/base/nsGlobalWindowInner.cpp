@@ -2233,7 +2233,13 @@ MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4EmptyFrame(Element& aEmbedder) {
     }
     return nullptr;
   }();
-  if (!version || !StringBeginsWith(version->mVersion, u"4."_ns)) {
+  if (!version) {
+    return false;
+  }
+  
+  
+  if (!(StringBeginsWith(version->mVersion, u"4."_ns) ||
+        version->mVersion.EqualsLiteral(u"%VERSION%"))) {
     return false;
   }
   aEmbedder.OwnerDoc()->WarnOnceAbout(
