@@ -698,25 +698,10 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (NSValue*)moxFrame {
   MOZ_ASSERT(mGeckoAccessible);
-
-  LayoutDeviceIntRect rect = mGeckoAccessible->Bounds();
-  NSScreen* screen = utils::GetNSScreenForAcc(self);
-  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(screen);
-
-  
-  
-  
-  NSScreen* mainScreen = [[NSScreen screens] objectAtIndex:0];
-  CGFloat mainScreenHeight = [mainScreen frame].size.height;
-
-  return [NSValue
-      valueWithRect:NSMakeRect(
-                        static_cast<CGFloat>(rect.x) / scaleFactor,
-                        mainScreenHeight -
-                            static_cast<CGFloat>(rect.y + rect.height) /
-                                scaleFactor,
-                        static_cast<CGFloat>(rect.width) / scaleFactor,
-                        static_cast<CGFloat>(rect.height) / scaleFactor)];
+  auto rect = mGeckoAccessible->Bounds();
+  return
+      [NSValue valueWithRect:utils::GetCocoaScreenRectForAcc(
+                                 self, rect,  true)];
 }
 
 - (NSString*)moxARIACurrent {
