@@ -81,6 +81,7 @@ async def test_cached(
 @pytest.mark.asyncio
 async def test_cached_redirect(
     bidi_session,
+    configuration,
     url,
     fetch,
     setup_network_test,
@@ -101,7 +102,7 @@ async def test_cached_redirect(
     await fetch(cached_url)
 
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
 
     
     
@@ -131,7 +132,7 @@ async def test_cached_redirect(
     )
 
     await fetch(cached_url)
-    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
 
     
     expected_response = {
@@ -227,6 +228,7 @@ async def test_cached_revalidate(
 @pytest.mark.asyncio
 async def test_page_with_cached_link_stylesheet(
     bidi_session,
+    configuration,
     url,
     inline,
     setup_network_test,
@@ -254,7 +256,7 @@ async def test_page_with_cached_link_stylesheet(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
     assert_response_event(
         events[0],
         expected_event={
@@ -276,7 +278,7 @@ async def test_page_with_cached_link_stylesheet(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
     assert_response_event(
         events[2],
         expected_event={
@@ -296,6 +298,7 @@ async def test_page_with_cached_link_stylesheet(
 @pytest.mark.asyncio
 async def test_page_with_cached_import_stylesheet(
     bidi_session,
+    configuration,
     url,
     inline,
     setup_network_test,
@@ -330,7 +333,7 @@ async def test_page_with_cached_import_stylesheet(
 
     
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
     assert_response_event(
         events[0],
         expected_event={
@@ -352,7 +355,7 @@ async def test_page_with_cached_import_stylesheet(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
     assert_response_event(
         events[2],
         expected_event={
@@ -375,6 +378,7 @@ async def test_page_with_cached_import_stylesheet(
 @pytest.mark.asyncio
 async def test_page_with_cached_duplicated_stylesheets(
     bidi_session,
+    configuration,
     url,
     inline,
     setup_network_test,
@@ -418,7 +422,7 @@ async def test_page_with_cached_duplicated_stylesheets(
 
     
     
-    await wait_for_bidi_events(bidi_session, events, 3, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 3, timeout=2)
     assert_response_event(
         events[0],
         expected_event={
@@ -455,7 +459,7 @@ async def test_page_with_cached_duplicated_stylesheets(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 6, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 6, timeout=2)
 
     
     cached_events = events[3:]
@@ -491,6 +495,7 @@ async def test_page_with_cached_duplicated_stylesheets(
 @pytest.mark.asyncio
 async def test_page_with_cached_script_javascript(
     bidi_session,
+    configuration,
     url,
     inline,
     setup_network_test,
@@ -518,7 +523,7 @@ async def test_page_with_cached_script_javascript(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
     assert_response_event(
         events[0],
         expected_event={
@@ -540,7 +545,7 @@ async def test_page_with_cached_script_javascript(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
     assert_response_event(
         events[2],
         expected_event={
@@ -575,7 +580,7 @@ async def test_page_with_cached_script_javascript(
     
     
     
-    await wait_for_bidi_events(bidi_session, events, 6, timeout=2, equal_check=False)
+    await wait_for_bidi_events(bidi_session, configuration, events, 6, timeout=2, equal_check=False)
 
     
     cached_events = events[4:]
@@ -614,6 +619,7 @@ async def test_page_with_cached_script_javascript(
 @pytest.mark.asyncio
 async def test_page_with_cached_javascript_module(
     bidi_session,
+    configuration,
     url,
     inline,
     setup_network_test,
@@ -648,7 +654,7 @@ async def test_page_with_cached_javascript_module(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
     assert_response_event(
         events[0],
         expected_event={
@@ -670,7 +676,7 @@ async def test_page_with_cached_javascript_module(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
     assert_response_event(
         events[2],
         expected_event={
@@ -703,7 +709,7 @@ async def test_page_with_cached_javascript_module(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 6, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 6, timeout=2)
 
     
     cached_events = events[4:]
@@ -726,6 +732,7 @@ async def test_page_with_cached_javascript_module(
 @pytest.mark.asyncio
 async def test_page_with_cached_image(
     bidi_session,
+    configuration,
     url,
     inline,
     setup_network_test,
@@ -755,7 +762,7 @@ async def test_page_with_cached_image(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
     assert_response_event(
         events[0],
         expected_event={
@@ -777,7 +784,7 @@ async def test_page_with_cached_image(
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
     assert_response_event(
         events[2],
         expected_event={
