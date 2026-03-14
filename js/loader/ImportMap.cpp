@@ -388,6 +388,12 @@ static bool GetOwnProperty(JSContext* aCx, Handle<JSObject*> aObj,
 }
 
 
+bool ImportMap::IsMultipleImportMapsSupported() {
+  return NS_IsMainThread() &&
+         mozilla::StaticPrefs::dom_multiple_import_maps_enabled();
+}
+
+
 
 UniquePtr<ImportMap> ImportMap::ParseString(
     JSContext* aCx, SourceText<char16_t>& aInput, nsIURI* aBaseURL,

@@ -77,6 +77,14 @@ class ImportMap {
 
 
 
+  static bool IsMultipleImportMapsSupported();
+
+  
+
+
+
+
+
 
   static mozilla::UniquePtr<ImportMap> ParseString(
       JSContext* aCx, SourceText<char16_t>& aInput, nsIURI* aBaseURL,
