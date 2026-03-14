@@ -200,6 +200,26 @@ void RemoteAccessible::ApplyCache(CacheUpdateType aUpdateType,
     for (auto id : *maybeViewportCache) {
       AsDoc()->mOnScreenAccessibles.Insert(id);
     }
+#ifdef MOZ_WIDGET_COCOA
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RemoteAccessible* focusedAcc = AsDoc()->GetFocusedAcc();
+    if (focusedAcc) {
+      LayoutDeviceIntRect bounds = focusedAcc->Bounds();
+      if (bounds != AsDoc()->mFocusedAccBounds) {
+        AsDoc()->mFocusedAccBounds = bounds;
+        PlatformFocusedAccLocationChanged(focusedAcc);
+      }
+    }
+#endif
   }
 
   if (aUpdateType == CacheUpdateType::Initial) {
