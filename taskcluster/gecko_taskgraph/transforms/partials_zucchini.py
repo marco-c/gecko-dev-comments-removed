@@ -115,8 +115,6 @@ def make_task_description(config, tasks):
         )
 
         task["treeherder"] = inherit_treeherder_from_dep(task, dep_task)
-        
-        task["treeherder"]["tier"] = 3
         task["treeherder"]["symbol"] = f"pz({locale or 'N'})"
 
         yield task
