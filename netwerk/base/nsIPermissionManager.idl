@@ -286,6 +286,36 @@ interface nsIPermissionManager : nsISupports
 
 
   void removePermissionsWithAttributes(in AString patternAsJSON, in Array<ACString> typeInclusions, in Array<ACString> typeExceptions);
+
+  
+
+
+
+
+
+  void updateLastInteractionForPrincipal(in nsIPrincipal principal);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise removeOrphanedInteractionRecords();
+
+  
+
+
+
+  [implicit_jscontext]
+  Promise testFlushPendingWrites();
 };
 
 %{ C++

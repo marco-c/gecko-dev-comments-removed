@@ -18946,6 +18946,8 @@ void Document::MaybeStoreUserInteractionAsPermission() {
     
     (void)BounceTrackingProtection::RecordUserActivation(GetWindowContext());
 
+    (void)PermissionManager::RecordSiteInteraction(GetWindowContext());
+
     
     
     

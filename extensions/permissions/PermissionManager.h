@@ -45,6 +45,7 @@ class OriginAttributesPattern;
 
 namespace dom {
 class ContentChild;
+class WindowContext;
 }  
 
 
@@ -53,8 +54,6 @@ class PermissionManager final : public nsIPermissionManager,
                                 public nsIObserver,
                                 public nsSupportsWeakReference,
                                 public nsIAsyncShutdownBlocker {
-  friend class dom::ContentChild;
-
  public:
   class PermissionEntry {
    public:
@@ -145,15 +144,21 @@ class PermissionManager final : public nsIPermissionManager,
     }
 
     inline int32_t GetPermissionIndex(uint32_t aType) const {
-      for (uint32_t i = 0; i < mPermissions.Length(); ++i)
-        if (mPermissions[i].mType == aType) return i;
+      for (uint32_t i = 0; i < mPermissions.Length(); ++i) {
+        if (mPermissions[i].mType == aType) {
+          return i;
+        }
+      }
 
       return -1;
     }
 
     inline PermissionEntry GetPermission(uint32_t aType) const {
-      for (uint32_t i = 0; i < mPermissions.Length(); ++i)
-        if (mPermissions[i].mType == aType) return mPermissions[i];
+      for (uint32_t i = 0; i < mPermissions.Length(); ++i) {
+        if (mPermissions[i].mType == aType) {
+          return mPermissions[i];
+        }
+      }
 
       
       return PermissionEntry(-1, aType, nsIPermissionManager::UNKNOWN_ACTION,
@@ -173,7 +178,10 @@ class PermissionManager final : public nsIPermissionManager,
   PermissionManager();
   static already_AddRefed<nsIPermissionManager> GetXPCOMSingleton();
   static already_AddRefed<PermissionManager> GetInstance();
-  nsresult Init();
+
+  
+  
+  static nsresult RecordSiteInteraction(dom::WindowContext* aWindowContext);
 
   
   enum OperationType {
@@ -197,7 +205,7 @@ class PermissionManager final : public nsIPermissionManager,
   nsresult RemovePermissionsWithAttributes(
       OriginAttributesPattern& aPattern,
       const nsTArray<nsCString>& aTypeInclusions = {},
-      const nsTArray<nsCString>& aTypeExceptions = {});
+      const nsTArray<nsCString>& aTypeExceptions = {}) MOZ_REQUIRES(mMonitor);
 
   
 
@@ -368,8 +376,18 @@ class PermissionManager final : public nsIPermissionManager,
   static void MaybeStripOriginAttributes(bool aForceStrip,
                                          OriginAttributes& aOriginAttributes);
 
+  nsresult Add(nsIPrincipal* aPrincipal, const nsACString& aType,
+               uint32_t aPermission, int64_t aID, uint32_t aExpireType,
+               int64_t aExpireTime, int64_t aModificationTime,
+               NotifyOperationType aNotifyOperation,
+               DBOperationType aDBOperation,
+               const nsACString* aOriginString = nullptr,
+               const bool aAllowPersistInPrivateBrowsing = false);
+
  private:
   ~PermissionManager();
+  nsresult Init();
+
   static StaticMutex sCreationMutex;
   
   static StaticRefPtr<PermissionManager> sInstanceHolder
@@ -389,10 +407,12 @@ class PermissionManager final : public nsIPermissionManager,
 
   nsresult GetStripPermsForPrincipal(nsIPrincipal* aPrincipal,
                                      bool aSiteScopePermissions,
-                                     nsTArray<PermissionEntry>& aResult);
+                                     nsTArray<PermissionEntry>& aResult)
+      MOZ_REQUIRES(mMonitor);
 
   
-  int32_t GetTypeIndex(const nsACString& aType, bool aAdd);
+  int32_t GetTypeIndex(const nsACString& aType, bool aAdd = false)
+      MOZ_REQUIRES(mMonitor);
 
   
   
@@ -404,7 +424,8 @@ class PermissionManager final : public nsIPermissionManager,
   
   nsresult GetAllForPrincipalHelper(nsIPrincipal* aPrincipal,
                                     bool aSiteScopePermissions,
-                                    nsTArray<RefPtr<nsIPermission>>& aResult);
+                                    nsTArray<RefPtr<nsIPermission>>& aResult)
+      MOZ_REQUIRES(mMonitor);
 
   
   
@@ -418,7 +439,12 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   PermissionHashKey* GetPermissionHashKey(nsIPrincipal* aPrincipal,
-                                          uint32_t aType, bool aExactHostMatch);
+                                          uint32_t aType, bool aExactHostMatch)
+      MOZ_REQUIRES(mMonitor);
+
+  nsresult RemoveFromPrincipalInternal(nsIPrincipal* aPrincipal,
+                                       const nsACString& aType)
+      MOZ_REQUIRES(mMonitor);
 
   
   
@@ -427,7 +453,13 @@ class PermissionManager final : public nsIPermissionManager,
   
   PermissionHashKey* GetPermissionHashKey(
       nsIURI* aURI, const OriginAttributes* aOriginAttributes, uint32_t aType,
-      bool aExactHostMatch);
+      bool aExactHostMatch) MOZ_REQUIRES(mMonitor);
+
+  
+  
+  bool PermissionAvailableInternal(nsIPrincipal* aPrincipal,
+                                   const nsACString& aType)
+      MOZ_REQUIRES(mMonitor);
 
   
   
@@ -436,59 +468,62 @@ class PermissionManager final : public nsIPermissionManager,
       nsIPrincipal* aPrincipal, int32_t aTypeIndex, const nsACString& aType,
       uint32_t* aPermission, uint32_t aDefaultPermission,
       bool aDefaultPermissionIsValid, bool aExactHostMatch,
-      bool aIncludingSession);
+      bool aIncludingSession) MOZ_REQUIRES(mMonitor);
 
   
   nsresult CommonTestPermission(nsIPrincipal* aPrincipal, int32_t aTypeIndex,
                                 const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession);
+                                bool aExactHostMatch, bool aIncludingSession)
+      MOZ_REQUIRES(mMonitor);
 
   
   nsresult CommonTestPermission(nsIURI* aURI, int32_t aTypeIndex,
                                 const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession);
+                                bool aExactHostMatch, bool aIncludingSession)
+      MOZ_REQUIRES(mMonitor);
 
-  nsresult CommonTestPermission(nsIURI* aURI,
-                                const OriginAttributes* aOriginAttributes,
-                                int32_t aTypeIndex, const nsACString& aType,
-                                uint32_t* aPermission,
-                                uint32_t aDefaultPermission,
-                                bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession);
+  nsresult CommonTestPermission(
+      nsIURI* aURI, const OriginAttributes* aOriginAttributes,
+      int32_t aTypeIndex, const nsACString& aType, uint32_t* aPermission,
+      uint32_t aDefaultPermission, bool aDefaultPermissionIsValid,
+      bool aExactHostMatch, bool aIncludingSession) MOZ_REQUIRES(mMonitor);
 
   
   nsresult CommonTestPermissionInternal(
       nsIPrincipal* aPrincipal, nsIURI* aURI,
       const OriginAttributes* aOriginAttributes, int32_t aTypeIndex,
       const nsACString& aType, uint32_t* aPermission, bool aExactHostMatch,
-      bool aIncludingSession);
+      bool aIncludingSession) MOZ_REQUIRES(mMonitor);
 
   nsresult OpenDatabase(nsIFile* permissionsFile);
 
-  void InitDB(bool aRemoveFile);
-  nsresult TryInitDB(bool aRemoveFile, nsIInputStream* aDefaultsInputStream);
+  void InitDB(bool aRemoveFile) MOZ_REQUIRES(mMonitor);
+  nsresult TryInitDB(bool aRemoveFile, nsIInputStream* aDefaultsInputStream,
+                     const MonitorAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mMonitor);
 
   void AddIdleDailyMaintenanceJob();
   void RemoveIdleDailyMaintenanceJob();
-  void PerformIdleDailyMaintenance();
+  void PerformIdleDailyMaintenance() MOZ_REQUIRES(mMonitor);
 
-  nsresult ImportLatestDefaults();
+  nsresult ImportLatestDefaults() MOZ_REQUIRES(mMonitor);
   already_AddRefed<nsIInputStream> GetDefaultsInputStream();
-  void ConsumeDefaultsInputStream(nsIInputStream* aDefaultsInputStream,
-                                  const MonitorAutoLock& aProofOfLock);
+  void ConsumeDefaultsInputStream(nsIInputStream* aInputStream,
+                                  const MonitorAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mMonitor);
 
   nsresult CreateTable();
-  void NotifyObserversWithPermission(nsIPrincipal* aPrincipal,
-                                     const nsACString& aType,
-                                     uint32_t aPermission, uint32_t aExpireType,
-                                     int64_t aExpireTime,
-                                     int64_t aModificationTime,
-                                     const char16_t* aData);
-  void NotifyObservers(nsIPermission* aPermission, const char16_t* aData);
+  void NotifyObserversWithPermission(
+      nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aPermission,
+      uint32_t aExpireType, int64_t aExpireTime, int64_t aModificationTime,
+      const nsString& aData) MOZ_REQUIRES(mMonitor);
+
+  void NotifyObservers(const nsCOMPtr<nsIPermission>& aPermission,
+                       const nsString& aData) MOZ_REQUIRES(mMonitor);
 
   
   enum CloseDBNextOp {
@@ -496,24 +531,25 @@ class PermissionManager final : public nsIPermissionManager,
     eRebuldOnSuccess,
     eShutdown,
   };
-  void CloseDB(CloseDBNextOp aNextOp);
+  void CloseDB(CloseDBNextOp aNextOp) MOZ_REQUIRES(mMonitor);
 
-  nsresult RemoveAllInternal(bool aNotifyObservers);
-  nsresult RemoveAllFromMemory();
+  nsresult RemoveAllInternal(bool aNotifyObservers) MOZ_REQUIRES(mMonitor);
+  nsresult RemoveAllFromMemory() MOZ_REQUIRES(mMonitor);
 
   void UpdateDB(OperationType aOp, int64_t aID, const nsACString& aOrigin,
                 const nsACString& aType, uint32_t aPermission,
                 uint32_t aExpireType, int64_t aExpireTime,
-                int64_t aModificationTime);
+                int64_t aModificationTime) MOZ_REQUIRES(mMonitor);
 
   
 
 
-  nsresult RemoveAllModifiedSince(int64_t aModificationTime);
+  nsresult RemoveAllModifiedSince(int64_t aModificationTime)
+      MOZ_REQUIRES(mMonitor);
 
   
   
-  nsresult RemoveAllForPrivateBrowsing();
+  nsresult RemoveAllForPrivateBrowsing() MOZ_REQUIRES(mMonitor);
 
   
   
@@ -521,47 +557,49 @@ class PermissionManager final : public nsIPermissionManager,
       const std::function<bool(const PermissionEntry& aPermEntry,
                                const nsCOMPtr<nsIPrincipal>& aPrincipal)>&
           aCondition,
-      bool aComputePrincipalForCondition = true);
+      bool aComputePrincipalForCondition = true) MOZ_REQUIRES(mMonitor);
 
   
   
   nsresult RemovePermissionEntries(
-      const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition);
+      const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition)
+      MOZ_REQUIRES(mMonitor);
 
   
   
   nsresult GetPermissionEntries(
       const std::function<bool(const PermissionEntry& aPermEntry)>& aCondition,
-      nsTArray<RefPtr<nsIPermission>>& aResult);
+      nsTArray<RefPtr<nsIPermission>>& aResult) MOZ_REQUIRES(mMonitor);
 
   
   
   
-  void EnsureReadCompleted();
+  void EnsureReadCompleted() MOZ_REQUIRES(mMonitor);
 
   nsresult AddInternal(nsIPrincipal* aPrincipal, const nsACString& aType,
                        uint32_t aPermission, int64_t aID, uint32_t aExpireType,
                        int64_t aExpireTime, int64_t aModificationTime,
                        NotifyOperationType aNotifyOperation,
                        DBOperationType aDBOperation,
-                       const bool aIgnoreSessionPermissions = false,
                        const nsACString* aOriginString = nullptr,
-                       const bool aAllowPersistInPrivateBrowsing = false);
+                       const bool aAllowPersistInPrivateBrowsing = false)
+      MOZ_REQUIRES(mMonitor);
 
   void MaybeAddReadEntryFromMigration(const nsACString& aOrigin,
                                       const nsCString& aType,
                                       uint32_t aPermission,
                                       uint32_t aExpireType, int64_t aExpireTime,
-                                      int64_t aModificationTime, int64_t aId);
+                                      int64_t aModificationTime, int64_t aId)
+      MOZ_REQUIRES(mMonitor);
 
   nsCOMPtr<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
   void FinishAsyncShutdown();
 
   nsRefPtrHashtable<nsCStringHashKey, GenericNonExclusivePromise::Private>
-      mPermissionKeyPromiseMap;
+      mPermissionKeyPromiseMap MOZ_GUARDED_BY(mMonitor);
 
-  nsCOMPtr<nsIFile> mPermissionsFile;
+  nsCOMPtr<nsIFile> mPermissionsFile MOZ_GUARDED_BY(mMonitor);
 
   
   
@@ -597,7 +635,8 @@ class PermissionManager final : public nsIPermissionManager,
           mPermission(0),
           mExpireType(0),
           mExpireTime(0),
-          mModificationTime(0) {}
+          mModificationTime(0),
+          mFromMigration(false) {}
 
     nsCString mOrigin;
     nsCString mType;
@@ -614,7 +653,7 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   
-  nsTArray<ReadEntry> mReadEntries;
+  nsTArray<ReadEntry> mReadEntries MOZ_GUARDED_BY(mMonitor);
 
   
   struct MigrationEntry {
@@ -638,7 +677,7 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   
-  nsTArray<MigrationEntry> mMigrationEntries;
+  nsTArray<MigrationEntry> mMigrationEntries MOZ_GUARDED_BY(mMonitor);
 
   
   struct DefaultEntry {
@@ -649,37 +688,39 @@ class PermissionManager final : public nsIPermissionManager,
 
   
   
-  nsTArray<DefaultEntry> mDefaultEntriesForImport;
+  nsTArray<DefaultEntry> mDefaultEntriesForImport MOZ_GUARDED_BY(mMonitor);
   
   
   void AddDefaultEntryForImport(const nsACString& aOrigin,
                                 const nsCString& aType, uint32_t aPermission,
-                                const MonitorAutoLock& aProofOfLock);
+                                const MonitorAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mMonitor);
   
   
   
   
   
-  nsresult ImportDefaultEntry(const DefaultEntry& aDefaultEntry);
+  nsresult ImportDefaultEntry(const DefaultEntry& aDefaultEntry)
+      MOZ_REQUIRES(mMonitor);
 
-  nsresult Read(const MonitorAutoLock& aProofOfLock);
-  void CompleteRead();
+  nsresult Read(const MonitorAutoLock& aProofOfLock) MOZ_REQUIRES(mMonitor);
+  void CompleteRead() MOZ_REQUIRES(mMonitor);
 
-  void CompleteMigrations();
+  void CompleteMigrations() MOZ_REQUIRES(mMonitor);
 
-  bool mMemoryOnlyDB;
+  Atomic<bool> mMemoryOnlyDB;
 
-  nsTHashtable<PermissionHashKey> mPermissionTable;
+  nsTHashtable<PermissionHashKey> mPermissionTable MOZ_GUARDED_BY(mMonitor);
   
-  int64_t mLargestID;
+  Atomic<int64_t> mLargestID;
 
-  nsCOMPtr<nsIPrefBranch> mDefaultPrefBranch;
+  nsCOMPtr<nsIPrefBranch> mDefaultPrefBranch MOZ_GUARDED_BY(mMonitor);
 
   
   
-  Vector<nsCString, 512> mTypeArray;
+  Vector<nsCString, 512> mTypeArray MOZ_GUARDED_BY(mMonitor);
 
-  nsCOMPtr<nsIThread> mThread;
+  nsCOMPtr<nsIThread> mThread MOZ_GUARDED_BY(mMonitor);
 
   struct ThreadBoundData {
     nsCOMPtr<mozIStorageConnection> mDBConn;
@@ -687,11 +728,17 @@ class PermissionManager final : public nsIPermissionManager,
     nsCOMPtr<mozIStorageStatement> mStmtInsert;
     nsCOMPtr<mozIStorageStatement> mStmtDelete;
     nsCOMPtr<mozIStorageStatement> mStmtUpdate;
+    nsCOMPtr<mozIStorageStatement> mStmtInsertInteraction;
   };
   ThreadBound<ThreadBoundData> mThreadBoundData;
 
-  friend class DeleteFromMozHostListener;
-  friend class CloseDatabaseListener;
+  void UpdateLastInteractionInternal(const nsACString& aOrigin)
+      MOZ_REQUIRES(mMonitor);
+  void ExpireUnusedPermissions();
+  bool ShouldExpirePermission(const PermissionEntry& aEntry,
+                              const nsTArray<nsCString>& aExpirableTypes) const
+      MOZ_REQUIRES(mMonitor);
+  RefPtr<GenericPromise> CleanupOrphanedInteractionRecords();
 };
 
 

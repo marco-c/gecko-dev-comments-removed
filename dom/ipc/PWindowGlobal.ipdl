@@ -233,6 +233,9 @@ parent:
   
   async RecordUserActivationForBTP();
 
+  
+  async RecordUserInteractionForPermissions();
+
   async PDigitalCredential();
   async PWebAuthnTransaction();
   async PWebIdentity();
