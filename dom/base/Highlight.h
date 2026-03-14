@@ -27,6 +27,7 @@ class AbstractRange;
 class Document;
 class HighlightRegistry;
 class Selection;
+class ShadowRoot;
 
 
 
@@ -165,6 +166,26 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
   MOZ_CAN_RUN_SCRIPT bool Delete(AbstractRange& aRange, ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsTArray<RefPtr<AbstractRange>> RangesAtPoint(
+      float aX, float aY,
+      const Sequence<OwningNonNull<mozilla::dom::ShadowRoot>>& aShadowRoots,
+      mozilla::dom::ShadowRoot* aPointShadowRoot = nullptr) const;
 
  private:
   void Repaint();
