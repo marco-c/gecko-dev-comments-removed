@@ -80,7 +80,9 @@ class ScriptFetchOptions {
     }
 
     
-    return mCORSMode == other->mCORSMode && mNonce == other->mNonce &&
+    
+    
+    return mCORSMode == other->mCORSMode &&
            mFetchPriority == other->mFetchPriority;
   }
 
