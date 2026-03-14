@@ -203,6 +203,8 @@ add_task(async function test_load_bad_dates() {
     timesUsed: 1,
     usernameField: "email",
   };
+  
+  
   let rawStoreData = {
     dismissedBreachAlertsByLoginGUID: {},
     logins: [],
