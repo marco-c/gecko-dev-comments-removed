@@ -263,7 +263,8 @@ pub fn prepare_repeatable_quad(
 
     
     
-    let src_task_id = pattern.as_render_task();
+    
+    let src_task_id: Option<RenderTaskId> = None;
 
     
     
@@ -273,8 +274,8 @@ pub fn prepare_repeatable_quad(
         || (num_repetitions > 64.0 && surface_rect.area() < 1024.0 * 1024.0);
 
     if repeat_using_a_shader {
-        let src_task_id = match src_task_id {
-            Some(task) => task,
+        let (src_task_id, opaque) = match src_task_id {
+            Some(_) => unimplemented!(),
             None => {
                 
                 
@@ -307,7 +308,7 @@ pub fn prepare_repeatable_quad(
                     return;
                 };
 
-                task_id
+                (task_id, pattern.is_opaque)
             }
         };
 
@@ -315,7 +316,7 @@ pub fn prepare_repeatable_quad(
             stretch_size,
             spacing: tile_spacing,
             src_task_id,
-            src_is_opaque: pattern.is_opaque,
+            src_is_opaque: opaque,
         };
 
         let repeat_pattern = repetitions.build(
@@ -2064,20 +2065,6 @@ pub fn add_to_batch<F>(
         All = 5,
     }
 
-    let texture = match src_task_id {
-        RenderTaskId::INVALID => TextureSource::Invalid,
-        _ =>  match render_tasks.resolve_texture(src_task_id) {
-            Some(texture) => texture,
-            None => {
-                
-                
-                
-                return;
-            },
-        }
-    };
-
-
     
     let mut writer = gpu_buffer_builder.i32.write_blocks(QuadHeader::NUM_BLOCKS);
     writer.push(&QuadHeader {
@@ -2086,6 +2073,17 @@ pub fn add_to_batch<F>(
         pattern_input,
     });
     let prim_address_i = writer.finish();
+
+    let texture = match src_task_id {
+        RenderTaskId::INVALID => TextureSource::Invalid,
+        _ => {
+            let texture = render_tasks
+                .resolve_texture(src_task_id)
+                .expect("bug: valid task id must be resolvable");
+
+            texture
+        }
+    };
 
     let textures = BatchTextures::prim_textured(
         texture,
