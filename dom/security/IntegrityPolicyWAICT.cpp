@@ -245,8 +245,7 @@ IntegrityPolicyWAICT::ManifestValidationStatus
 IntegrityPolicyWAICT::ValidateManifest(const nsACString& aManifestJSON,
                                        WAICTManifest& aOutManifest,
                                        IntegrityPolicyWAICT* aPolicy) {
-  
-  if (!aOutManifest.Init(NS_ConvertUTF8toUTF16(aManifestJSON))) {
+  if (aManifestJSON.IsEmpty() || !aOutManifest.Init(aManifestJSON)) {
     if (aPolicy) {
       aPolicy->ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                              "WAICTManifestJSONParseError", {});
