@@ -632,7 +632,18 @@ public final class GeckoRuntime implements Parcelable {
       return;
     }
 
-    GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
+    
+    GeckoProcessManager.getInstance()
+        .preload(
+            
+            GeckoProcessType.GPU,
+            
+            
+            
+            
+            GeckoProcessType.CONTENT,
+            GeckoProcessType.CONTENT);
+
     sHasWarmedUpChildProcesses = true;
   }
 
