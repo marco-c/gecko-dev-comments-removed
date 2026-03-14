@@ -446,7 +446,12 @@ void HTMLLinkElement::
     TryDNSPrefetchOrPreconnectOrPrefetchOrPreloadOrPrerender() {
   MOZ_ASSERT(IsInComposedDoc());
   if (!HasAttr(nsGkAtoms::href)) {
-    return;
+    
+    nsAutoString as;
+    GetAttr(nsGkAtoms::as, as);
+    if (!as.LowerCaseEqualsASCII("image") || !HasAttr(nsGkAtoms::imagesrcset)) {
+      return;
+    }
   }
 
   nsAutoString rel;
@@ -481,45 +486,51 @@ void HTMLLinkElement::
   }
 
   if (linkTypes & ePRELOAD) {
-    if (nsCOMPtr<nsIURI> uri = GetURI()) {
-      nsContentPolicyType policyType;
+    nsCOMPtr<nsIURI> uri = GetURI();
 
-      nsAttrValue asAttr;
-      nsAutoString mimeType;
-      nsAutoString media;
-      GetContentPolicyMimeTypeMedia(asAttr, policyType, mimeType, media);
+    nsContentPolicyType policyType;
+    nsAttrValue asAttr;
+    nsAutoString mimeType;
+    nsAutoString media;
+    GetContentPolicyMimeTypeMedia(asAttr, policyType, mimeType, media);
 
-      if (policyType == nsIContentPolicy::TYPE_INVALID ||
-          !net::CheckPreloadAttrs(asAttr, mimeType, media, OwnerDoc())) {
-        
-        net::WarnIgnoredPreload(*OwnerDoc(), *uri);
-        return;
-      }
-
-      
-      
-      
-      int16_t asValue = asAttr.GetEnumValue();
-      if (asValue != net::DESTINATION_FETCH &&
-          asValue != net::DESTINATION_FONT &&
-          asValue != net::DESTINATION_IMAGE &&
-          asValue != net::DESTINATION_SCRIPT &&
-          asValue != net::DESTINATION_STYLE &&
-          asValue != net::DESTINATION_TRACK) {
-        
-        
-        
-        
-        
-        RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
-            this, u"load"_ns, CanBubble::eNo, ChromeOnlyDispatch::eNo);
-        asyncDispatcher->PostDOMEvent();
-        return;
-      }
-
-      StartPreload(policyType);
+    
+    if (!uri && (policyType != nsIContentPolicy::TYPE_IMAGE ||
+                 !HasAttr(nsGkAtoms::imagesrcset))) {
       return;
     }
+
+    if (policyType == nsIContentPolicy::TYPE_INVALID ||
+        !net::CheckPreloadAttrs(asAttr, mimeType, media, OwnerDoc())) {
+      
+      nsAutoString srcset;
+      GetAttr(nsGkAtoms::imagesrcset, srcset);
+      net::WarnIgnoredPreload(*OwnerDoc(), uri, srcset);
+      return;
+    }
+
+    
+    
+    
+    int16_t asValue = asAttr.GetEnumValue();
+    if (asValue != net::DESTINATION_FETCH && asValue != net::DESTINATION_FONT &&
+        asValue != net::DESTINATION_IMAGE &&
+        asValue != net::DESTINATION_SCRIPT &&
+        asValue != net::DESTINATION_STYLE &&
+        asValue != net::DESTINATION_TRACK) {
+      
+      
+      
+      
+      
+      RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+          this, u"load"_ns, CanBubble::eNo, ChromeOnlyDispatch::eNo);
+      asyncDispatcher->PostDOMEvent();
+      return;
+    }
+
+    StartPreload(policyType);
+    return;
   }
 
   if (linkTypes & eMODULE_PRELOAD) {
@@ -606,7 +617,11 @@ void HTMLLinkElement::UpdatePreload(nsAtom* aName, const nsAttrValue* aValue,
   MOZ_ASSERT(IsInComposedDoc());
 
   if (!HasAttr(nsGkAtoms::href)) {
-    return;
+    nsAutoString as;
+    GetAttr(nsGkAtoms::as, as);
+    if (!as.LowerCaseEqualsASCII("image") || !HasAttr(nsGkAtoms::imagesrcset)) {
+      return;
+    }
   }
 
   nsAutoString rel;
@@ -625,9 +640,6 @@ void HTMLLinkElement::UpdatePreload(nsAtom* aName, const nsAttrValue* aValue,
   }
 
   nsCOMPtr<nsIURI> uri = GetURI();
-  if (!uri) {
-    return;
-  }
 
   nsAttrValue asAttr;
   nsContentPolicyType asPolicyType;
@@ -635,12 +647,19 @@ void HTMLLinkElement::UpdatePreload(nsAtom* aName, const nsAttrValue* aValue,
   nsAutoString media;
   GetContentPolicyMimeTypeMedia(asAttr, asPolicyType, mimeType, media);
 
+  if (!uri && (asPolicyType != nsIContentPolicy::TYPE_IMAGE ||
+               !HasAttr(nsGkAtoms::imagesrcset))) {
+    return;
+  }
+
   if (asPolicyType == nsIContentPolicy::TYPE_INVALID ||
       !net::CheckPreloadAttrs(asAttr, mimeType, media, OwnerDoc())) {
     
     
     CancelPrefetchOrPreload();
-    net::WarnIgnoredPreload(*OwnerDoc(), *uri);
+    nsAutoString srcset;
+    GetAttr(nsGkAtoms::imagesrcset, srcset);
+    net::WarnIgnoredPreload(*OwnerDoc(), uri, srcset);
     return;
   }
 

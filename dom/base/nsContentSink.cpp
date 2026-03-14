@@ -453,8 +453,10 @@ void nsContentSink::PreloadHref(
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), aHref, encoding, mDocument->GetDocBaseURI());
   if (!uri) {
-    
-    return;
+    if (!aAs.LowerCaseEqualsASCII("image") || aSrcset.IsEmpty()) {
+      
+      return;
+    }
   }
 
   nsAttrValue asAttr;
@@ -468,7 +470,7 @@ void nsContentSink::PreloadHref(
   if (policyType == nsIContentPolicy::TYPE_INVALID ||
       !mozilla::net::CheckPreloadAttrs(asAttr, mimeType, aMedia, mDocument)) {
     
-    mozilla::net::WarnIgnoredPreload(*mDocument, *uri);
+    mozilla::net::WarnIgnoredPreload(*mDocument, uri, aSrcset);
     return;
   }
 
