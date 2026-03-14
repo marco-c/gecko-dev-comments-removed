@@ -35,6 +35,7 @@ static bool EqualsIgnoreCase(const char* xs, const char* ys) {
 
 class ToUTF8Locale {
   const char* previousLocale_ = nullptr;
+  const char* defaultLocale_ = nullptr;
   bool supported_ = false;
 
  public:
@@ -43,8 +44,15 @@ class ToUTF8Locale {
     previousLocale_ = std::setlocale(LC_ALL, nullptr);
 
     
-    const char* defaultLocale = std::setlocale(LC_ALL, "");
-    if (!defaultLocale) {
+    
+    
+    
+    
+    defaultLocale_ = std::setlocale(LC_ALL, "");
+    if (defaultLocale_) {
+      defaultLocale_ = strdup(defaultLocale_);
+    }
+    if (!defaultLocale_) {
       
       return;
     }
@@ -56,7 +64,7 @@ class ToUTF8Locale {
       return;
     }
 
-    const char* defaultCodepage = std::strchr(defaultLocale, '.');
+    const char* defaultCodepage = std::strchr(defaultLocale_, '.');
     const char* newCodepage = std::strchr(newLocale, '.');
 
     
@@ -85,6 +93,10 @@ class ToUTF8Locale {
     
     if (previousLocale_) {
       std::setlocale(LC_ALL, previousLocale_);
+    }
+    if (defaultLocale_) {
+      free((void*)defaultLocale_);
+      defaultLocale_ = nullptr;
     }
   }
 };
