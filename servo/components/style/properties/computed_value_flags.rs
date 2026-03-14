@@ -178,7 +178,9 @@ impl ComputedValueFlags {
     
     #[inline]
     fn cascade_input_flags() -> Self {
-        Self::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES | Self::CONSIDERED_NONTRIVIAL_SCOPED_STYLE
+        Self::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES
+            | Self::CONSIDERED_NONTRIVIAL_SCOPED_STYLE
+            | Self::DEPENDS_ON_CONTAINER_STYLE_QUERY
     }
 
     

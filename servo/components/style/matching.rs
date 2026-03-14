@@ -49,6 +49,8 @@ pub enum StyleChange {
     Changed {
         
         reset_only: bool,
+        
+        _custom_properties_changed: bool,
     },
 }
 
@@ -815,7 +817,10 @@ trait PrivateMatchMethods: TElement {
 
         match difference.change {
             StyleChange::Unchanged => return ChildRestyleRequirement::CanSkipCascade,
-            StyleChange::Changed { reset_only } => {
+            StyleChange::Changed {
+                reset_only,
+                _custom_properties_changed,
+            } => {
                 
                 
                 if !reset_only {
