@@ -488,7 +488,7 @@ void ResponsiveImageDescriptors::AddDescriptor(const nsAString& aDescriptor) {
             nsContentUtils::ParseHTMLFloatingPointNumber(valueStr)) {
       if (*possibleDensity >= 0.0 && mWidth.isNothing() &&
           mDensity.isNothing() && mFutureCompatHeight.isNothing()) {
-        mDensity = possibleDensity;
+        mDensity = std::move(possibleDensity);
       } else {
         
         

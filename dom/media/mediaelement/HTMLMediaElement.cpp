@@ -1948,7 +1948,7 @@ class HTMLMediaElement::ChannelLoader final {
     
     
     
-    mChannel = channel;
+    mChannel = std::move(channel);
 
     
     

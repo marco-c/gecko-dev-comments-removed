@@ -818,14 +818,14 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(nsIRequest* request) {
       nsresult rv = CalculateAndAppendFileExt(
           data->mFile, channel, data->mOriginalLocation, uriWithExt);
       if (NS_SUCCEEDED(rv)) {
-        data->mFile = uriWithExt;
+        data->mFile = std::move(uriWithExt);
       }
 
       
       nsCOMPtr<nsIURI> uniqueFilenameURI;
       rv = CalculateUniqueFilename(data->mFile, uniqueFilenameURI);
       if (NS_SUCCEEDED(rv)) {
-        data->mFile = uniqueFilenameURI;
+        data->mFile = std::move(uniqueFilenameURI);
       }
 
       
@@ -2575,7 +2575,7 @@ nsresult nsWebBrowserPersist::SaveSubframeContent(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  aData->mFile = frameURI;
+  aData->mFile = std::move(frameURI);
   aData->mSubFrameExt.Truncate();  
 
   return NS_OK;

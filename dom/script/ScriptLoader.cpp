@@ -4643,7 +4643,7 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
             ->GetScriptElementForCurrentParserInsertedScript();
     FireScriptAvailable(aResult, aRequest);
     ContinueParserAsync(aRequest);
-    mCurrentParserInsertedScript = oldParserInsertedScript;
+    mCurrentParserInsertedScript = std::move(oldParserInsertedScript);
   } else if (!wasHandled) {
     
     

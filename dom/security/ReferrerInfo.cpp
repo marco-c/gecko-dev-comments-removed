@@ -1400,13 +1400,13 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    referrer = userSpoofReferrer;
+    referrer = std::move(userSpoofReferrer);
   }
 
   
   
   nsCOMPtr<nsIURI> exposableURI = nsIOService::CreateExposableURI(referrer);
-  referrer = exposableURI;
+  referrer = std::move(exposableURI);
 
   
   
