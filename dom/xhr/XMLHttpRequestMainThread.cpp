@@ -3808,13 +3808,23 @@ void XMLHttpRequestMainThread::HandleProgressTimerCallback() {
                             mUploadTotal);
     }
   } else {
-    FireReadystatechangeEvent();
-    DispatchProgressEvent(this, Events::progress, mLoadTransferred, mLoadTotal);
+    
+    
+    
+    
+    if (mState != XMLHttpRequest_Binding::UNSENT) {
+      FireReadystatechangeEvent();
+      DispatchProgressEvent(this, Events::progress, mLoadTransferred,
+                            mLoadTotal);
+    }
   }
 
   mProgressSinceLastProgressEvent = false;
 
-  StartProgressEventTimer();
+  
+  if (mState != XMLHttpRequest_Binding::UNSENT) {
+    StartProgressEventTimer();
+  }
 }
 
 void XMLHttpRequestMainThread::StopProgressEventTimer() {
