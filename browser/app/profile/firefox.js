@@ -378,6 +378,12 @@ pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.adaptiveHistory.enabled", false);
 
 
+pref("browser.urlbar.autoFill.adaptiveHistory.backspaceBlockDurationMs", 172800000);
+
+
+pref("browser.urlbar.autoFill.adaptiveHistory.dismissalBlockDurationMs", 604800000);
+
+
 
 pref("browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0);
 
