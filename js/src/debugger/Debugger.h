@@ -970,7 +970,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   static void terminateDebuggerFrame(
       JS::GCContext* gcx, Debugger* dbg, DebuggerFrame* dbgFrame,
       AbstractFramePtr frame, FrameMap::Enum* maybeFramesEnum = nullptr,
-      GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
+      GeneratorWeakMap::ModIterator* maybeGeneratorFramesIter = nullptr);
 
   static bool updateExecutionObservabilityOfFrames(
       JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
