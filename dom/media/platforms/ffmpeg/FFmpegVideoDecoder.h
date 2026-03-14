@@ -348,7 +348,9 @@ class FFmpegVideoDecoder<LIBAV_VER>
     
     
     
-    if (!mInputInfo.Find(GetFrameInputKey(aFrame), aEntry)) {
+    if (Maybe<InputInfo> v = mInputInfo.Take(GetFrameInputKey(aFrame))) {
+      aEntry = v.extract();
+    } else {
       NS_WARNING("Unable to retrieve input info from map");
       
       

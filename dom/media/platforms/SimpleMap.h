@@ -58,17 +58,6 @@ class SimpleMap {
   }
 
   
-  
-  
-  bool Find(const K& aKey, V& aValue) {
-    if (Maybe<V> v = Take(aKey)) {
-      aValue = v.extract();
-      return true;
-    }
-    return false;
-  }
-
-  
   Maybe<V> Take(const K& aKey) {
     Policy guard(mLock);
     if (Maybe<size_t> index = FindIndex(aKey)) {
@@ -108,15 +97,6 @@ class SimpleMap {
       aCallback(element.first, element.second);
     }
     mMap.Clear();
-  }
-
-  
-  template <typename F>
-  void ForEach(F&& aCallback) {
-    Policy guard(mLock);
-    for (const auto& element : mMap) {
-      aCallback(element.first, element.second);
-    }
   }
 
   
