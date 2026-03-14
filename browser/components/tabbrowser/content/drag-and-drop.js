@@ -460,17 +460,23 @@
 
         if (shouldTranslate) {
           let translationPromises = [];
+          let translationDuration = parseInt(
+            window
+              .getComputedStyle(movingTabs[0])
+              .getPropertyValue("--tab-dragover-transform-duration")
+              .trim()
+          );
+          
+          let timeoutPromise = new Promise(r =>
+            setTimeout(r, translationDuration + 50)
+          );
           for (let item of movingTabs) {
             item = elementToMove(item);
             let translationPromise = new Promise(resolve => {
               item.toggleAttribute("tabdrop-samewindow", true);
               item.style.transform = `translate(${newTranslateX}px, ${newTranslateY}px)`;
-              let postTransitionCleanup = () => {
-                item.removeAttribute("tabdrop-samewindow");
-                resolve();
-              };
               if (gReduceMotion) {
-                postTransitionCleanup();
+                resolve();
               } else {
                 let onTransitionEnd = transitionendEvent => {
                   if (
@@ -481,12 +487,16 @@
                   }
                   item.removeEventListener("transitionend", onTransitionEnd);
 
-                  postTransitionCleanup();
+                  resolve();
                 };
                 item.addEventListener("transitionend", onTransitionEnd);
               }
             });
-            translationPromises.push(translationPromise);
+            let promiseRace = Promise.race([
+              translationPromise,
+              timeoutPromise,
+            ]).then(() => item.removeAttribute("tabdrop-samewindow"));
+            translationPromises.push(promiseRace);
           }
           Promise.all(translationPromises).then(() => {
             this.finishAnimateTabMove();
@@ -676,6 +686,10 @@
       if (draggedTab) {
         delete draggedTab._dragData;
       }
+
+      
+      
+      this.finishAnimateTabMove();
     }
 
     handle_dragend(event) {
