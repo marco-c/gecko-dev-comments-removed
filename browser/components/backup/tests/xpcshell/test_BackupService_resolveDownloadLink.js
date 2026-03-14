@@ -3,6 +3,10 @@
 
 "use strict";
 
+add_setup(async () => {
+  setupProfile();
+});
+
 
 
 

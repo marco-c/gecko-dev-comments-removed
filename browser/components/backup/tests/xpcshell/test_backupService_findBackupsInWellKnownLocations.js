@@ -3,6 +3,10 @@
 
 "use strict";
 
+add_setup(async () => {
+  setupProfile();
+});
+
 add_task(
   async function test_findBackupsInWellKnownLocations_and_multipleFiles() {
     

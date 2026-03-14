@@ -42,6 +42,7 @@ add_setup(() => {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("security.allow_parent_unrestricted_js_loads");
   });
+  setupProfile();
 });
 
 
@@ -295,5 +296,38 @@ add_task(async function test_no_license() {
   Assert.ok(
     !markup.includes("https://mozilla.org/MPL"),
     "The license headers were stripped."
+  );
+});
+
+
+
+
+
+add_task(async function test_support_link_utm_parameters() {
+  let { backupDOM } = await testRenderTemplate(false );
+
+  let supportLinkElement = backupDOM.getElementById("support-link");
+  Assert.ok(supportLinkElement, "support link should be found");
+  Assert.ok(
+    supportLinkElement.href,
+    "support link should have a non-empty href"
+  );
+
+  let supportLinkUrl = new URL(supportLinkElement.href);
+  let { searchParams } = supportLinkUrl;
+  Assert.equal(
+    searchParams.get("utm_medium"),
+    "firefox-desktop",
+    "utm_medium should be firefox-desktop"
+  );
+  Assert.equal(
+    searchParams.get("utm_source"),
+    "html-backup",
+    "utm_source should be html-backup"
+  );
+  Assert.equal(
+    searchParams.get("utm_campaign"),
+    "fx-backup-restore",
+    "utm_campaign should be fx-backup-restore"
   );
 });
