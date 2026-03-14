@@ -2756,9 +2756,8 @@ uint64_t WasmMemoryObject::grow(Handle<WasmMemoryObject*> memory,
   
   
   if (memory->hasObservers()) {
-    for (InstanceSet::Range r = memory->observers().all(); !r.empty();
-         r.popFront()) {
-      r.front()->instance().onMovingGrowMemory(memory);
+    for (auto iter = memory->observers().iter(); !iter.done(); iter.next()) {
+      iter.get()->instance().onMovingGrowMemory(memory);
     }
   }
 

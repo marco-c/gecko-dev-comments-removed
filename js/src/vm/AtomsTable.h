@@ -164,7 +164,7 @@ class AtomsTable {
 
  public:
   
-  using SweepIterator = AtomSet::Enum;
+  using SweepIterator = AtomSet::ModIterator;
 
   AtomsTable();
   ~AtomsTable();
