@@ -3701,6 +3701,12 @@ class Document : public nsINode,
   already_AddRefed<nsDOMCaretPosition> CaretPositionFromPoint(
       float aX, float aY, const CaretPositionFromPointOptions& aOptions);
 
+  
+
+
+
+  already_AddRefed<nsRange> CaretRangeFromPoint(int32_t aX, int32_t aY);
+
   Element* GetScrollingElement();
   
   
