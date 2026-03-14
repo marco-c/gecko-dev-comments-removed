@@ -6,7 +6,11 @@
 #include "CustomMatchers.h"
 
 void NoDuplicateRefCntMemberChecker::registerMatchers(MatchFinder *AstMatcher) {
-  AstMatcher->addMatcher(cxxRecordDecl().bind("decl"), this);
+  AstMatcher->addMatcher(
+      cxxRecordDecl(hasDefinition(), hasAnyBase(hasType(cxxRecordDecl(
+                                         has(fieldDecl(hasName("mRefCnt")))))))
+          .bind("decl"),
+      this);
 }
 
 void NoDuplicateRefCntMemberChecker::check(
@@ -14,10 +18,6 @@ void NoDuplicateRefCntMemberChecker::check(
   const CXXRecordDecl *D = Result.Nodes.getNodeAs<CXXRecordDecl>("decl");
   const FieldDecl *RefCntMember = getClassRefCntMember(D);
   const FieldDecl *FoundRefCntBase = nullptr;
-
-  if (!D->hasDefinition())
-    return;
-  D = D->getDefinition();
 
   
   

@@ -99,12 +99,45 @@ AST_MATCHER(DeclaratorDecl, isNotSpiderMonkey) {
 
 
 AST_MATCHER(VarDecl, hasConstantInitializer) {
-  if(Node.hasInit())
-    return Node.getInit()->isConstantInitializer(
-                  Finder->getASTContext(),
-                  Node.getType()->isReferenceType());
-  else
+  if (Node.hasInit()) {
+    if (const auto *CE = dyn_cast<CXXConstructExpr>(Node.getInit())) {
+      if (const auto *CD = CE->getConstructor();
+          CD && CD->isDefined() && CD->isDefaultConstructor()) {
+        const CXXRecordDecl *CR = CD->getParent();
+        if (CR->hasTrivialDefaultConstructor())
+          return true;
+        if (CR->hasConstexprDefaultConstructor())
+          return true;
+
+        
+        if (CR->defaultedDefaultConstructorIsConstexpr()) {
+          
+          
+          if (const auto *CS = dyn_cast<CompoundStmt>(CD->getBody()); CS && CS->body_empty()) {
+            bool AllCustomInitializerCorrect = true;
+            for (const CXXCtorInitializer *CI : CD->inits()) {
+              bool ForRef = CI->isAnyMemberInitializer()
+                          ? CI->getAnyMember()->getType()->isReferenceType()
+                          : false;
+              if (!CI->getInit()->isConstantInitializer(Finder->getASTContext(), ForRef)) {
+                AllCustomInitializerCorrect = false;
+                break;
+              }
+            }
+            if (AllCustomInitializerCorrect)
+              return true;
+          }
+        }
+      }
+    }
+
+    bool ForRef = Node.getType()->isReferenceType();
+    return Node.getInit()->isConstantInitializer(Finder->getASTContext(), ForRef);
+  } else if (Node.hasConstantInitialization()) {
+    return true;
+  } else {
     return Node.getType().isTrivialType(Finder->getASTContext());
+  }
 }
 
 
@@ -125,6 +158,16 @@ AST_MATCHER(CXXMethodDecl, noDanglingOnTemporaries) {
 
 AST_MATCHER(FunctionDecl, hasNoAddRefReleaseOnReturnAttr) {
   return hasCustomAttribute<moz_no_addref_release_on_return>(&Node);
+}
+
+AST_MATCHER(Decl, isInterestingForImplicitConversion) {
+  return isInterestingDeclForImplicitConversion(&Node);
+}
+
+AST_MATCHER(VarDecl, isReferenced) { return Node.isReferenced(); }
+
+AST_MATCHER(VarDecl, isParameter) {
+  return isa<ImplicitParamDecl>(Node) || isa<ParmVarDecl>(Node);
 }
 
 
@@ -298,6 +341,18 @@ AST_MATCHER(CXXRecordDecl, hasNeedsNoVTableTypeAttr) {
   return hasCustomAttribute<moz_needs_no_vtable_type>(&Node);
 }
 
+AST_MATCHER(CXXRecordDecl, hasTrivialDestructor) {
+  return Node.hasTrivialDestructor();
+}
+
+AST_MATCHER(CXXRecordDecl, hasTrivialDefaultConstructor) {
+  return Node.hasTrivialDefaultConstructor();
+}
+
+AST_MATCHER(CXXRecordDecl, hasConstexprDefaultConstructor) {
+  return Node.hasConstexprDefaultConstructor();
+}
+
 
 AST_MATCHER(QualType, isNonMemMovable) {
   return NonMemMovable.hasEffectiveAnnotation(Node);
@@ -363,8 +418,11 @@ AST_MATCHER_P2(Expr, ignoreTrivialsConditional, internal::Matcher<Expr>,
 
 
 
-AST_MATCHER(CXXConstructorDecl, isMarkedImplicit) {
+AST_MATCHER(FunctionDecl, isMarkedImplicit) {
   return hasCustomAttribute<moz_implicit>(&Node);
+}
+AST_MATCHER(FunctionDecl, isMarkedMustOverride) {
+  return hasCustomAttribute<moz_must_override>(&Node);
 }
 
 AST_MATCHER(CXXRecordDecl, isConcreteClass) { return !Node.isAbstract(); }
@@ -384,14 +442,6 @@ AST_MATCHER(CXXConstructorDecl, isExplicitMoveConstructor) {
 
 AST_MATCHER(CXXConstructorDecl, isCompilerProvidedCopyConstructor) {
   return !Node.isUserProvided() && Node.isCopyConstructor();
-}
-
-AST_MATCHER(CallExpr, isAssertAssignmentTestFunc) {
-  static const std::string AssertName = "MOZ_AssertAssignmentTest";
-  const FunctionDecl *Method = Node.getDirectCallee();
-
-  return Method && Method->getDeclName().isIdentifier() &&
-         Method->getName() == AssertName;
 }
 
 AST_MATCHER(CallExpr, isSnprintfLikeFunc) {
