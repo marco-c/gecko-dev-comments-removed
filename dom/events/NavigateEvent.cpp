@@ -165,6 +165,11 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
 
   
   if (aOptions.mPrecommitHandler.WasPassed()) {
+    if (RefPtr<Document> doc = GetAssociatedDocument()) {
+      doc->SetUseCounter(
+          eUseCounter_custom_NavigateEventInterceptWithPrecommitHandler);
+    }
+
     
     if (!Cancelable()) {
       aRv.ThrowInvalidStateError("Event is not cancelable");
