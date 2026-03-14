@@ -127,6 +127,7 @@ enum class SpatialKeyKind : uint32_t {
   ImagePipeline,
   APZ,
   ViewTransition,
+  SCOrigin,
 };
 
 
