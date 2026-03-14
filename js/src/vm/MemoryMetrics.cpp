@@ -550,10 +550,9 @@ static bool FindNotableStrings(ZoneStats& zStats) {
   
   MOZ_ASSERT(zStats.notableStrings.empty());
 
-  for (ZoneStats::StringsHashMap::Range r = zStats.allStrings->all();
-       !r.empty(); r.popFront()) {
-    JSString* str = r.front().key();
-    StringInfo& info = r.front().value();
+  for (auto iter = zStats.allStrings->iter(); !iter.done(); iter.next()) {
+    JSString* str = iter.get().key();
+    StringInfo& info = iter.get().value();
 
     if (!info.isNotable()) {
       continue;
@@ -579,10 +578,9 @@ static bool FindNotableClasses(RealmStats& realmStats) {
   
   MOZ_ASSERT(realmStats.notableClasses.empty());
 
-  for (RealmStats::ClassesHashMap::Range r = realmStats.allClasses->all();
-       !r.empty(); r.popFront()) {
-    const char* className = r.front().key();
-    ClassInfo& info = r.front().value();
+  for (auto iter = realmStats.allClasses->iter(); !iter.done(); iter.next()) {
+    const char* className = iter.get().key();
+    ClassInfo& info = iter.get().value();
 
     
     
@@ -610,11 +608,10 @@ static bool FindNotableScriptSources(JS::RuntimeSizes& runtime) {
   
   MOZ_ASSERT(runtime.notableScriptSources.empty());
 
-  for (RuntimeSizes::ScriptSourcesHashMap::Range r =
-           runtime.allScriptSources->all();
-       !r.empty(); r.popFront()) {
-    const char* filename = r.front().key();
-    ScriptSourceInfo& info = r.front().value();
+  for (auto iter = runtime.allScriptSources->iter(); !iter.done();
+       iter.next()) {
+    const char* filename = iter.get().key();
+    ScriptSourceInfo& info = iter.get().value();
 
     if (!info.isNotable()) {
       continue;
