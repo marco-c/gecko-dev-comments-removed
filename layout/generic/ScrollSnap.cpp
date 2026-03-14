@@ -596,65 +596,67 @@ static std::pair<Maybe<nscoord>, Maybe<nscoord>> GetCandidateInLastTargets(
   Maybe<nscoord> x, y;
   aSnapInfo.ForEachValidTargetFor(
       aCurrentPosition, [&](const auto& aTarget) -> bool {
-        
-        if (!aLastSnapTargetIds->Contains(aTarget.mTargetId)) {
-          return true;
-        }
         if (aTarget.mSnapPoint.mX && aSnapInfo.mScrollSnapStrictnessX !=
                                          StyleScrollSnapStrictness::None) {
-          if (targetIdForFocusedContent == aTarget.mTargetId) {
-            
-            
-            
-            if ((y && !aTarget.mSnapArea.Intersects(
-                          nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
-                                 aSnapInfo.mSnapportSize)))) {
-              y.reset();
+          if (aLastSnapTargetIds->mIdsOnX.Contains(aTarget.mTargetId)) {
+            if (targetIdForFocusedContent == aTarget.mTargetId) {
+              
+              
+              
+              if ((y && !aTarget.mSnapArea.Intersects(
+                            nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
+                                   aSnapInfo.mSnapportSize)))) {
+                y.reset();
+              }
+
+              focusedTarget = &aTarget;
+              
+              x = aTarget.mSnapPoint.mX;
             }
 
-            focusedTarget = &aTarget;
-            
-            x = aTarget.mSnapPoint.mX;
-          }
-
-          if (!x) {
-            
-            
-            
-            
-            
-            
-            if (!y || (y && aTarget.mSnapArea.Intersects(
-                                nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
-                                       aSnapInfo.mSnapportSize)))) {
-              x = aTarget.mSnapPoint.mX;
+            if (!x) {
+              
+              
+              
+              
+              
+              
+              if (!y || (y && aTarget.mSnapArea.Intersects(
+                                  nsRect(nsPoint(*aTarget.mSnapPoint.mX, *y),
+                                         aSnapInfo.mSnapportSize)))) {
+                x = aTarget.mSnapPoint.mX;
+              }
             }
           }
         }
         if (aTarget.mSnapPoint.mY && aSnapInfo.mScrollSnapStrictnessY !=
                                          StyleScrollSnapStrictness::None) {
-          if (targetIdForFocusedContent == aTarget.mTargetId) {
-            NS_ASSERTION(!focusedTarget || focusedTarget == &aTarget,
-                         "If the focused target has been found on X axis, the "
-                         "target should be same");
-            
-            
-            
-            if (!focusedTarget && (x && !aTarget.mSnapArea.Intersects(nsRect(
-                                            nsPoint(*x, *aTarget.mSnapPoint.mY),
-                                            aSnapInfo.mSnapportSize)))) {
-              x.reset();
+          if (aLastSnapTargetIds->mIdsOnY.Contains(aTarget.mTargetId)) {
+            if (targetIdForFocusedContent == aTarget.mTargetId) {
+              NS_ASSERTION(
+                  !focusedTarget || focusedTarget == &aTarget,
+                  "If the focused target has been found on X axis, the "
+                  "target should be same");
+              
+              
+              
+              if (!focusedTarget &&
+                  (x && !aTarget.mSnapArea.Intersects(
+                            nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
+                                   aSnapInfo.mSnapportSize)))) {
+                x.reset();
+              }
+
+              focusedTarget = &aTarget;
+              y = aTarget.mSnapPoint.mY;
             }
 
-            focusedTarget = &aTarget;
-            y = aTarget.mSnapPoint.mY;
-          }
-
-          if (!y) {
-            if (!x || (x && aTarget.mSnapArea.Intersects(
-                                nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
-                                       aSnapInfo.mSnapportSize)))) {
-              y = aTarget.mSnapPoint.mY;
+            if (!y) {
+              if (!x || (x && aTarget.mSnapArea.Intersects(
+                                  nsRect(nsPoint(*x, *aTarget.mSnapPoint.mY),
+                                         aSnapInfo.mSnapportSize)))) {
+                y = aTarget.mSnapPoint.mY;
+              }
             }
           }
         }
