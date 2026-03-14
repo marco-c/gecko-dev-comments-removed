@@ -397,14 +397,14 @@ class DebuggerWeakMap : private WeakMap<Referent*, Wrapper*, ZoneAllocPolicy> {
 
  public:
   void traceCrossCompartmentEdges(JSTracer* tracer) {
-    for (Enum e(*this); !e.empty(); e.popFront()) {
+    for (auto iter = modIter(); !iter.done(); iter.next()) {
       
       
-      e.front().value()->trace(tracer);
+      iter.get().value()->trace(tracer);
 
       
       
-      Base::traceKey(tracer, e);
+      Base::traceKey(tracer, iter);
     }
   }
 
