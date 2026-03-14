@@ -420,10 +420,7 @@
     if ( populate_map_and_metrics )
     {
       
-      FT_ULong  size = map->rows * (FT_ULong)map->pitch;
-
-
-      error = ft_glyphslot_alloc_bitmap( slot, size );
+      error = ft_glyphslot_alloc_bitmap( slot );
       if ( error )
         goto DestroyExit;
     }

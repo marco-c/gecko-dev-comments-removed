@@ -4382,15 +4382,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
   FT_EXPORT( FT_Error )
   FT_Face_Properties( FT_Face        face,
                       FT_UInt        num_properties,
@@ -5178,7 +5169,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  14
-#define FREETYPE_PATCH  1
+#define FREETYPE_PATCH  2
 
 
   

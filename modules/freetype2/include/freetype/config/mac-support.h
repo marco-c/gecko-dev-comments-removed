@@ -24,6 +24,7 @@
 
 
 
+#ifdef FT_MACINTOSH
 #if defined( __APPLE__ ) || ( defined( __MWERKS__ ) && defined( macintosh ) )
   
   
@@ -36,6 +37,7 @@
     ( MAC_OS_X_VERSION_MIN_REQUIRED <= MAC_OS_X_VERSION_10_4 )
 #undef FT_MACINTOSH
 #endif
+#endif  
 
 #elif defined( __SC__ ) || defined( __MRC__ )
   

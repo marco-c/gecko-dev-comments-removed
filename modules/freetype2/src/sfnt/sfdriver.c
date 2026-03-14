@@ -1143,11 +1143,6 @@
 
 
     
-
-
-
-
-
     error = tt_face_find_bdf_prop( face, "CHARSET_REGISTRY", &registry );
     if ( !error )
     {

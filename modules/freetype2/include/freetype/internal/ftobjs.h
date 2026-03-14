@@ -371,11 +371,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
   typedef struct  FT_Face_InternalRec_
   {
     FT_Matrix  transform_matrix;
@@ -390,11 +385,6 @@ FT_BEGIN_HEADER
 
     FT_Char              no_stem_darkening;
     FT_Int32             random_seed;
-
-#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-    FT_LcdFiveTapFilter      lcd_weights;      
-    FT_Bitmap_LcdFilterFunc  lcd_filter_func;  
-#endif
 
     FT_Int  refcount;
 
@@ -724,9 +714,9 @@ FT_BEGIN_HEADER
                               const FT_Vector*  origin );
 
   
+  
   FT_BASE( FT_Error )
-  ft_glyphslot_alloc_bitmap( FT_GlyphSlot  slot,
-                             FT_ULong      size );
+  ft_glyphslot_alloc_bitmap( FT_GlyphSlot  slot );
 
 
   
@@ -903,10 +893,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
   typedef struct  FT_LibraryRec_
   {
     FT_Memory          memory;           
@@ -926,7 +912,6 @@ FT_BEGIN_HEADER
 
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
     FT_LcdFiveTapFilter      lcd_weights;      
-    FT_Bitmap_LcdFilterFunc  lcd_filter_func;  
 #else
     FT_Vector                lcd_geometry[3];  
 #endif
@@ -993,17 +978,6 @@ FT_BEGIN_HEADER
   FT_Done_Memory( FT_Memory  memory );
 
 #endif 
-
-
-  
-  
-  
-  
-  
-
-#ifndef FT_NO_DEFAULT_RASTER
-  FT_EXPORT_VAR( FT_Raster_Funcs )  ft_default_raster;
-#endif
 
 
   

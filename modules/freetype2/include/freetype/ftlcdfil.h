@@ -150,12 +150,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
   typedef enum  FT_LcdFilter_
   {
     FT_LCD_FILTER_NONE    = 0,

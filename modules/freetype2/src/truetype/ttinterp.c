@@ -272,7 +272,7 @@
 
 
 
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( void )
   TT_Load_Context( TT_ExecContext  exec,
                    TT_Face         face,
                    TT_Size         size )
@@ -297,8 +297,6 @@
     exec->metrics    = *size->metrics;
 
     exec->twilight   = size->twilight;
-
-    return FT_Err_Ok;
   }
 
 
@@ -5457,11 +5455,11 @@
     
 
     
-    if ( exc->GS.single_width_cutin > 0          &&
-         org_dist < exc->GS.single_width_value +
-                      exc->GS.single_width_cutin &&
-         org_dist > exc->GS.single_width_value -
-                      exc->GS.single_width_cutin )
+    if ( exc->GS.single_width_cutin > 0                    &&
+         org_dist < ADD_LONG( exc->GS.single_width_value,
+                              exc->GS.single_width_cutin ) &&
+         org_dist > SUB_LONG( exc->GS.single_width_value,
+                              exc->GS.single_width_cutin ) )
     {
       if ( org_dist >= 0 )
         org_dist = exc->GS.single_width_value;

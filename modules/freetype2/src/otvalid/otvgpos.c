@@ -33,11 +33,11 @@
 
   static void
   otv_Anchor_validate( FT_Bytes       table,
-                       OTV_Validator  valid );
+                       OTV_Validator  otvalid );
 
   static void
   otv_MarkArray_validate( FT_Bytes       table,
-                          OTV_Validator  valid );
+                          OTV_Validator  otvalid );
 
 
   

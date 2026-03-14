@@ -49,6 +49,7 @@ FT_BEGIN_HEADER
 
 
 
+
   
 
 
@@ -153,6 +154,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
   FT_EXPORT( FT_Error )
   FT_Get_BDF_Charset_ID( FT_Face       face,
                          const char*  *acharset_encoding,
@@ -160,6 +163,9 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
 
 
 

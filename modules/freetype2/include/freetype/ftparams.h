@@ -140,9 +140,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
 #define FT_PARAM_TAG_LCD_FILTER_WEIGHTS \
           FT_MAKE_TAG( 'l', 'c', 'd', 'f' )
 

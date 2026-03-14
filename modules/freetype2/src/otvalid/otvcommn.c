@@ -488,7 +488,7 @@
 
     OTV_TRACE(( " (FeatureCount = %u)\n", FeatureCount ));
 
-    OTV_LIMIT_CHECK( FeatureCount * 2 );
+    OTV_LIMIT_CHECK( FeatureCount * 6 );
 
     otvalid->lookup_count = otv_LookupList_get_count( lookups );
 
@@ -874,7 +874,7 @@
     OTV_LIMIT_CHECK( ClassSetCount * 2 );
 
     otvalid->nesting_level++;
-    func          = otvalid->func[otvalid->nesting_level];
+    func            = otvalid->func[otvalid->nesting_level];
     otvalid->extra1 = otvalid->lookup_count;
 
     for ( ; ClassSetCount > 0; ClassSetCount-- )
@@ -966,7 +966,7 @@
     OTV_LIMIT_CHECK( ChainClassSetCount * 2 );
 
     otvalid->nesting_level++;
-    func          = otvalid->func[otvalid->nesting_level];
+    func            = otvalid->func[otvalid->nesting_level];
     otvalid->extra1 = otvalid->lookup_count;
 
     for ( ; ChainClassSetCount > 0; ChainClassSetCount-- )

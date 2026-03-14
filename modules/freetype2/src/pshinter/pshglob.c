@@ -393,19 +393,7 @@
     
     
     
-    
-    
-    
-    
-    
-    
-    
-
-    
-    if ( scale >= 0x20C49BAL )
-      blues->no_overshoots = FT_BOOL( scale < blues->blue_scale * 8 / 125 );
-    else
-      blues->no_overshoots = FT_BOOL( scale * 125 < blues->blue_scale * 8 );
+    blues->no_overshoots = FT_BOOL( scale < blues->blue_scale );
 
     
     
@@ -420,8 +408,8 @@
       FT_Int  threshold = blues->blue_shift;
 
 
-      while ( threshold > 0 && FT_MulFix( threshold, scale ) > 32 )
-        threshold--;
+      if ( threshold > 0 && FT_MulFix( threshold, scale ) > 32 )
+        threshold = 32 * 0x10000L / scale;
 
       blues->blue_threshold = threshold;
     }
@@ -708,7 +696,6 @@
 
       
       {
-        FT_Fixed  max_scale;
         FT_Short  max_height = 1;
 
 
@@ -726,10 +713,11 @@
                                           max_height );
 
         
-        max_scale = FT_DivFix( 1000, max_height );
-        globals->blues.blue_scale = priv->blue_scale < max_scale
-                                      ? priv->blue_scale
-                                      : max_scale;
+        
+        if ( FT_MulFix( max_height, priv->blue_scale ) < 1000 )
+          globals->blues.blue_scale = priv->blue_scale * 8 / 125;
+        else
+          globals->blues.blue_scale = 64 * 0x10000L / max_height;
       }
 
       globals->blues.blue_shift = priv->blue_shift;
