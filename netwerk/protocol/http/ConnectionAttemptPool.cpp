@@ -162,7 +162,7 @@ void ConnectionAttemptPool::TimeoutTick() {
     if (delta > maxConnectTime_ms) {
       LOG(("Force timeout of ConnectionAttempt to %p after %.2fms.\n",
            sock.get(), delta));
-      sock->CloseTransports(NS_ERROR_NET_TIMEOUT);
+      sock->OnTimeout();
     }
 
     
