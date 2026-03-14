@@ -6084,36 +6084,6 @@ class AboutTranslationsTestUtils {
 
 
 
-  getHistoryLength() {
-    try {
-      return this.#browser.browsingContext?.sessionHistory?.count ?? NaN;
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-
-    return NaN;
-  }
-
-  
-
-
-
-
-
-  assertHistoryLength({ expectedLength }) {
-    const actualLength = this.getHistoryLength();
-    is(
-      actualLength,
-      expectedLength,
-      "Expected history length to match the expected length."
-    );
-  }
-
-  
-
-
-
-
 
 
 
