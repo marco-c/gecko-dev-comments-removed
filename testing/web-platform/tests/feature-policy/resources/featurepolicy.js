@@ -25,7 +25,6 @@ function assert_feature_policy_supported() {
 
 
 
-
 function test_feature_availability(
     feature_description, test, src, expect_feature_available, feature_name,
     allow_attribute) {
