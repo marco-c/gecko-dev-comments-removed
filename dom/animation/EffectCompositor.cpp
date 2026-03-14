@@ -345,13 +345,15 @@ static void ComposeSortedEffects(
         dom::EndpointBehavior::Exclusive) {
   const bool isTransition =
       aCascadeLevel == EffectCompositor::CascadeLevel::Transitions;
+  
+  
+  
+  
+  
+  
   InvertibleAnimatedPropertyIDSet propertiesToSkip;
-  
-  
-  
-  
-  
-  
+  AnimatedPropertyIDSet animatedProperties;
+
   
   
   
@@ -359,11 +361,22 @@ static void ComposeSortedEffects(
   
   
   if (aEffectSet) {
+    animatedProperties.AddProperties(
+        aEffectSet->PropertiesForAnimationsLevel());
     
     
     
-    propertiesToSkip.Setup(&aEffectSet->PropertiesForAnimationsLevel(),
-                           !isTransition);
+    
+    
+    if (aEndpointBehavior == dom::EndpointBehavior::Inclusive &&
+        aCascadeLevel == EffectCompositor::CascadeLevel::Animations) {
+      animatedProperties.AddProperties(
+          aSortedEffects.LastElement()->GetPropertySet());
+    }
+    
+    
+    
+    propertiesToSkip.Setup(&animatedProperties, !isTransition);
   }
 
   for (KeyframeEffect* effect : aSortedEffects) {
