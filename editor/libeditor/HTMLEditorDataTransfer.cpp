@@ -3479,6 +3479,21 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   
   
   if (containerSpanElement) {
+    
+    
+    
+    
+    
+    if (const RefPtr<HTMLBRElement> brElement = HTMLBRElement::FromNodeOrNull(
+            containerSpanElement->GetLastChild())) {
+      if (brElement->IsPaddingForEmptyLastLine()) {
+        nsresult rv = DeleteNodeWithTransaction(*brElement);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+          return rv;
+        }
+      }
+    }
     EditorRawDOMPoint afterNewSpanElement(
         EditorRawDOMPoint::After(*containerSpanElement));
     NS_WARNING_ASSERTION(

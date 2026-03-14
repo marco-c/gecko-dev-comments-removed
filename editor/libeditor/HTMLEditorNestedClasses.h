@@ -85,7 +85,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
 
 
   Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToApplyTheStyle(
-      const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) const;
+      const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
+      const Element& aEditingHost) const;
 
   
 
@@ -741,7 +742,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
   [[nodiscard]] EditorDOMPoint GetBetterPointToSplitParagraph(
       const Element& aBlockElementToSplit,
-      const EditorDOMPoint& aCandidatePointToSplit);
+      const EditorDOMPoint& aCandidatePointToSplit,
+      const Element& aEditingHost);
 
   enum class IgnoreBlockBoundaries : bool { No, Yes };
 

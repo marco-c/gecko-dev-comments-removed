@@ -279,7 +279,8 @@ HTMLEditor::AutoInsertParagraphHandler::Run() {
     if (NS_WARN_IF(!editableBlockElement)) {
       return Err(NS_ERROR_UNEXPECTED);
     }
-    if (NS_WARN_IF(!HTMLEditUtils::IsSplittableNode(*editableBlockElement))) {
+    if (!HTMLEditUtils::IsSplittableNode(*editableBlockElement)) {
+      
       
       Result<EditActionResult, nsresult> insertBRElementResultOrError =
           HandleInsertBRElement(pointToInsert, blockElementToPutCaret);
@@ -409,9 +410,10 @@ HTMLEditor::AutoInsertParagraphHandler::Run() {
        editableBlockElement->IsAnyOfHTMLElements(nsGkAtoms::p,
                                                  nsGkAtoms::div))) {
     const EditorDOMPoint pointToSplit = GetBetterPointToSplitParagraph(
-        *editableBlockElement, insertedPaddingBRElement
-                                   ? EditorDOMPoint(insertedPaddingBRElement)
-                                   : pointToInsert);
+        *editableBlockElement,
+        insertedPaddingBRElement ? EditorDOMPoint(insertedPaddingBRElement)
+                                 : pointToInsert,
+        mEditingHost);
     if (ShouldCreateNewParagraph(*editableBlockElement, pointToSplit)) {
       MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
       
@@ -1105,8 +1107,8 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInHeadingElement(
     Element& aHeadingElement, const EditorDOMPoint& aPointToSplit) {
   
   
-  const EditorDOMPoint pointToSplit =
-      GetBetterPointToSplitParagraph(aHeadingElement, aPointToSplit);
+  const EditorDOMPoint pointToSplit = GetBetterPointToSplitParagraph(
+      aHeadingElement, aPointToSplit, mEditingHost);
   MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
 
   
@@ -1276,7 +1278,7 @@ bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
 EditorDOMPoint
 HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
     const Element& aBlockElementToSplit,
-    const EditorDOMPoint& aCandidatePointToSplit) {
+    const EditorDOMPoint& aCandidatePointToSplit, const Element& aEditingHost) {
   EditorDOMPoint pointToSplit = [&]() MOZ_NEVER_INLINE_DEBUG {
     
     
@@ -1317,17 +1319,12 @@ HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
         return candidatePointToSplit.To<EditorDOMPoint>();
       }
     }
-    WSScanResult nextVisibleThing =
-        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            {}, aCandidatePointToSplit, &aBlockElementToSplit);
-    if (nextVisibleThing.ReachedBRElementFollowedByBlockBoundary()) {
-      nextVisibleThing =
-          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              {},
-              nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
-              &aBlockElementToSplit);
-    }
+    const WSScanResult nextVisibleThing =
+        HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+            aCandidatePointToSplit, PaddingForEmptyBlock::Unnecessary,
+            aEditingHost, &aBlockElementToSplit);
     if (nextVisibleThing.GetContent() &&
+        !nextVisibleThing.ReachedOutsideEditingHost() &&
         
         nextVisibleThing.GetContent() !=
             aCandidatePointToSplit.GetContainer() &&
@@ -1384,7 +1381,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
   }
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          {}, aPointToSplit, &aBlockElementToSplit);
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
+          aPointToSplit, &aBlockElementToSplit);
   if (!prevVisibleThing.ReachedLineBreak()) {
     return aPointToSplit;
   }
@@ -1477,30 +1475,29 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
         const WSScanResult nextVisibleThing =
             WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
                 {}, aPointToSplit, &aBlockElementToSplit);
-        if (nextVisibleThing.ReachedBRElement() ||
-            nextVisibleThing.ReachedPreformattedLineBreak()) {
+        if (nextVisibleThing.ReachedLineBreak()) {
+          EditorLineBreak lineBreak =
+              nextVisibleThing.CreateEditorLineBreak<EditorLineBreak>();
           
           
-          if ((nextVisibleThing.ReachedBRElement() &&
-               nextVisibleThing.BRElementPtr()->GetParentNode() ==
-                   closestContainerElement) ||
-              (nextVisibleThing.ReachedPreformattedLineBreak() &&
-               nextVisibleThing.TextPtr()->GetParentNode() ==
-                   closestContainerElement)) {
+          
+          if (lineBreak.IsHTMLBRElement() &&
+              lineBreak.BRElementRef().GetParentNode() ==
+                  closestContainerElement &&
+              
+              
+              
+              !lineBreak.BRElementRef().IsPaddingForEmptyLastLine() &&
+              !lineBreak.BRElementRef().IsPaddingForEmptyEditor()) {
             return EditorDOMPoint();
           }
-          const WSScanResult nextVisibleThingAfterLineBreak =
-              WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  {},
-                  nextVisibleThing
-                      .PointAfterReachedContent<EditorRawDOMPoint>(),
-                  &aBlockElementToSplit);
           
           
           
-          if (!nextVisibleThingAfterLineBreak.ReachedCurrentBlockBoundary()) {
+          if (!lineBreak.IsFollowedByCurrentBlockBoundary()) {
             return EditorDOMPoint();
           }
+          unnecessaryLineBreak.emplace(std::move(lineBreak));
         }
         
         
@@ -1514,15 +1511,6 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
         for (; candidatePoint.GetContainer() != closestContainerElement;
              candidatePoint = candidatePoint.AfterContainer()) {
           MOZ_ASSERT(candidatePoint.GetContainer() != &aBlockElementToSplit);
-        }
-        
-        
-        
-        if (nextVisibleThing.ReachedBRElement()) {
-          unnecessaryLineBreak.emplace(*nextVisibleThing.BRElementPtr());
-        } else if (nextVisibleThing.ReachedPreformattedLineBreak()) {
-          unnecessaryLineBreak.emplace(
-              nextVisibleThing.CreateEditorLineBreak<EditorLineBreak>());
         }
         return candidatePoint;
       }();
@@ -1929,8 +1917,8 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
         std::move(pointToPutCaret));
   }
 
-  const EditorDOMPoint pointToSplit =
-      GetBetterPointToSplitParagraph(aListItemElement, aPointToSplit);
+  const EditorDOMPoint pointToSplit = GetBetterPointToSplitParagraph(
+      aListItemElement, aPointToSplit, mEditingHost);
   MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
 
   
