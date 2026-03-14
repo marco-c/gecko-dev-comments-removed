@@ -32,6 +32,7 @@ use style_traits::values::specified::AllowedNumericType;
 use style_traits::{
     CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, ToTyped, TypedValue,
 };
+use thin_vec::ThinVec;
 
 
 #[derive(Clone, Copy, Debug, Parse)]
@@ -127,13 +128,13 @@ impl ToCss for Leaf {
 }
 
 impl ToTyped for Leaf {
-    fn to_typed(&self) -> Option<TypedValue> {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         
         match *self {
-            Self::Length(ref l) => l.to_typed(),
-            Self::Number(n) => reify_number(n,  false),
-            Self::Percentage(p) => reify_percentage(p,  false),
-            _ => None,
+            Self::Length(ref l) => l.to_typed(dest),
+            Self::Number(n) => reify_number(n,  false, dest),
+            Self::Percentage(p) => reify_percentage(p,  false, dest),
+            _ => Err(()),
         }
     }
 }

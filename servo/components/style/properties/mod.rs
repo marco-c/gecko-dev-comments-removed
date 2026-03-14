@@ -46,6 +46,7 @@ use style_traits::{
     CssString, CssWriter, KeywordsCollectFn, ParseError, ParsingMode, SpecifiedValueInfo, ToCss,
     ToTyped, TypedValue,
 };
+use thin_vec::ThinVec;
 
 bitflags! {
     /// A set of flags for properties.
@@ -159,8 +160,8 @@ pub struct WideKeywordDeclaration {
 
 
 impl ToTyped for WideKeywordDeclaration {
-    fn to_typed(&self) -> Option<TypedValue> {
-        self.keyword.to_typed()
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        self.keyword.to_typed(dest)
     }
 }
 

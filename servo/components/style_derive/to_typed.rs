@@ -68,9 +68,10 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
                 
                 
                 quote! {
-                    fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                    fn to_typed(&self, dest: &mut thin_vec::ThinVec<style_traits::TypedValue>) -> Result<(), ()> {
                       let s = style_traits::ToCss::to_css_cssstring(self);
-                      Some(style_traits::TypedValue::Keyword(style_traits::KeywordValue(s)))
+                      dest.push(style_traits::TypedValue::Keyword(style_traits::KeywordValue(s)));
+                      Ok(())
                     }
                 }
             } else {
@@ -84,7 +85,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
                 });
 
                 quote! {
-                    fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                    fn to_typed(&self, dest: &mut thin_vec::ThinVec<style_traits::TypedValue>) -> Result<(), ()> {
                         match *self {
                             #match_body
                         }
@@ -102,7 +103,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
                 });
 
                 quote! {
-                    fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                    fn to_typed(&self, dest: &mut thin_vec::ThinVec<style_traits::TypedValue>) -> Result<(), ()> {
                         match *self {
                             #match_body
                         }
@@ -169,14 +170,14 @@ fn derive_variant_arm(
     
     
     if css_variant_attrs.skip {
-        return quote!(None);
+        return quote! {Err(())};
     }
 
     
     
     
     if variant_attrs.skip || variant_attrs.todo {
-        return quote!(None);
+        return quote! {Err(())};
     }
 
     
@@ -191,9 +192,10 @@ fn derive_variant_arm(
 
         
         quote! {
-            Some(style_traits::TypedValue::Keyword(
+            dest.push(style_traits::TypedValue::Keyword(
                 style_traits::KeywordValue(style_traits::CssString::from(#keyword))
-            ))
+            ));
+            Ok(())
         }
     } else if derive_fields {
         derive_variant_fields_expr(bindings, where_clause)
@@ -202,7 +204,7 @@ fn derive_variant_arm(
         
         
         quote! {
-            None
+            Err(())
         }
     }
 }
@@ -238,7 +240,7 @@ fn derive_variant_fields_expr(
     
     let (first, css_field_attrs) = match iter.next() {
         Some(pair) => pair,
-        None => return quote! { None },
+        None => return quote! { Err(()) },
     };
 
     
@@ -248,13 +250,13 @@ fn derive_variant_fields_expr(
         let ty = &first.ast().ty;
         cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToTyped));
 
-        return quote! { style_traits::ToTyped::to_typed(#first) };
+        return quote! { style_traits::ToTyped::to_typed(#first, dest) };
     }
 
     
     
     quote! {
-        None
+        Err(())
     }
 }
 

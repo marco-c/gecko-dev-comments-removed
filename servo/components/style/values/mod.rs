@@ -106,7 +106,7 @@ where
 }
 
 
-pub fn reify_number(v: f32, was_calc: bool) -> Option<TypedValue> {
+pub fn reify_number(v: f32, was_calc: bool, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
     let numeric_value = NumericValue::Unit(UnitValue {
         value: v,
         unit: CssString::from("number"),
@@ -114,12 +114,14 @@ pub fn reify_number(v: f32, was_calc: bool) -> Option<TypedValue> {
 
     
     if was_calc {
-        Some(TypedValue::Numeric(NumericValue::Sum(MathSum {
+        dest.push(TypedValue::Numeric(NumericValue::Sum(MathSum {
             values: ThinVec::from([numeric_value]),
-        })))
+        })));
     } else {
-        Some(TypedValue::Numeric(numeric_value))
+        dest.push(TypedValue::Numeric(numeric_value));
     }
+
+    Ok(())
 }
 
 
@@ -471,7 +473,11 @@ where
 }
 
 
-pub fn reify_percentage(value: CSSFloat, was_calc: bool) -> Option<TypedValue> {
+pub fn reify_percentage(
+    value: CSSFloat,
+    was_calc: bool,
+    dest: &mut ThinVec<TypedValue>,
+) -> Result<(), ()> {
     let numeric_value = NumericValue::Unit(UnitValue {
         value: value * 100.,
         unit: CssString::from("percent"),
@@ -479,12 +485,14 @@ pub fn reify_percentage(value: CSSFloat, was_calc: bool) -> Option<TypedValue> {
 
     
     if was_calc {
-        Some(TypedValue::Numeric(NumericValue::Sum(MathSum {
+        dest.push(TypedValue::Numeric(NumericValue::Sum(MathSum {
             values: ThinVec::from([numeric_value]),
-        })))
+        })));
     } else {
-        Some(TypedValue::Numeric(numeric_value))
+        dest.push(TypedValue::Numeric(numeric_value));
     }
+
+    Ok(())
 }
 
 

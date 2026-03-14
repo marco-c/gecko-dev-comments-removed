@@ -595,7 +595,10 @@ impl PropertyDeclarationBlock {
     
     
     
-    pub fn property_value_to_typed(&self, property: &PropertyId) -> Result<Option<TypedValue>, ()> {
+    pub fn property_value_to_typed_value(
+        &self,
+        property: &PropertyId,
+    ) -> Result<Option<TypedValue>, ()> {
         match property.as_shorthand() {
             Ok(shorthand) => {
                 if shorthand
@@ -608,7 +611,7 @@ impl PropertyDeclarationBlock {
                 }
             },
             Err(longhand_or_custom) => match self.get(longhand_or_custom) {
-                Some((value, _importance)) => Ok(value.to_typed()),
+                Some((value, _importance)) => Ok(value.to_typed_value()),
                 None => Err(()),
             },
         }

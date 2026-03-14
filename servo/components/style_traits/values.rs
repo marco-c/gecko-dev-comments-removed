@@ -711,6 +711,10 @@ pub enum TypedValue {
 
 
 
+
+
+
+
 pub trait ToTyped {
     
     
@@ -718,8 +722,22 @@ pub trait ToTyped {
     
     
     
-    fn to_typed(&self) -> Option<TypedValue> {
-        None
+    
+    
+    fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        Err(())
+    }
+
+    
+    
+    
+    
+    
+    
+    fn to_typed_value(&self) -> Option<TypedValue> {
+        let mut dest = ThinVec::new();
+        self.to_typed(&mut dest).ok()?;
+        dest.into_iter().next()
     }
 }
 
@@ -727,8 +745,8 @@ impl<'a, T> ToTyped for &'a T
 where
     T: ToTyped + ?Sized,
 {
-    fn to_typed(&self) -> Option<TypedValue> {
-        (*self).to_typed()
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        (*self).to_typed(dest)
     }
 }
 
@@ -736,30 +754,32 @@ impl<T> ToTyped for Box<T>
 where
     T: ?Sized + ToTyped,
 {
-    fn to_typed(&self) -> Option<TypedValue> {
-        (**self).to_typed()
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        (**self).to_typed(dest)
     }
 }
 
 impl ToTyped for Au {
-    fn to_typed(&self) -> Option<TypedValue> {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         let value = self.to_f32_px();
         let unit = CssString::from("px");
-        Some(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+        dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
             value,
             unit,
-        })))
+        })));
+        Ok(())
     }
 }
 
 macro_rules! impl_to_typed_for_predefined_type {
     ($name: ty) => {
         impl<'a> ToTyped for $name {
-            fn to_typed(&self) -> Option<TypedValue> {
-                Some(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+                dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
                     value: *self as f32,
                     unit: CssString::from("number"),
-                })))
+                })));
+                Ok(())
             }
         }
     };
