@@ -1951,16 +1951,19 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
   enum class PreserveWhiteSpaceStyle { No, Yes };
   friend std::ostream& operator<<(
       std::ostream& aStream,
       const PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle);
-  enum class RemoveIfCommentNode { No, Yes };
+  enum class RemoveIfInvisibleNode { No, Yes };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveNodeOrChildrenWithTransaction(
       nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert,
       PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
-      RemoveIfCommentNode aRemoveIfCommentNode);
+      RemoveIfInvisibleNode aRemoveIfInvisibleNode);
 
   
 
@@ -1991,11 +1994,14 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveChildrenWithTransaction(Element& aElement,
                               const EditorDOMPoint& aPointToInsert,
                               PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
-                              RemoveIfCommentNode aRemoveIfCommentNode);
+                              RemoveIfInvisibleNode aRemoveIfInvisibleNode);
 
   
 
