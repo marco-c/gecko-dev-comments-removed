@@ -1094,6 +1094,17 @@ class Document : public nsINode,
     mInitialAboutBlankLoadCompleting = false;
   }
 
+  
+  
+  bool ShouldForceInitialSyncLoad() {
+    
+    
+    
+    
+    
+    return InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad();
+  }
+
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
 
   TimeStamp GetLoadingOrRestoredFromBFCacheTimeStamp() const {

@@ -739,14 +739,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
     nsCOMPtr<nsIDocumentLoader> kungFuDeathGrip(this);
 
     nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
-    
-    
-    
-    
-    
-    const bool forceInitialSyncLoad = doc &&
-                                      doc->InitialAboutBlankLoadCompleting() &&
-                                      !doc->IsExpectingEndLoad();
+    const bool forceInitialSyncLoad = doc && doc->ShouldForceInitialSyncLoad();
     MOZ_ASSERT_IF(forceInitialSyncLoad, !mIsFlushingLayout);
 
     

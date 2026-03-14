@@ -11482,6 +11482,8 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
 
   OnStopRequest(aboutBlankChannel, NS_OK);
 
+  
+  
   doc->EndLoad();
   
   
