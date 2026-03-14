@@ -57,6 +57,9 @@ class RealTimeRequestSimulator final {
   
   FullHashResponseMap mSimulatedCache;
 
+  
+  FullHashResponseMap mNegativeCache;
+
   static StaticRefPtr<RealTimeRequestSimulator> sInstance;
 };
 
