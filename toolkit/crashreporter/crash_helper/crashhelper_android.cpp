@@ -13,17 +13,6 @@
 
 #define CRASH_HELPER_LOGTAG "GeckoCrashHelper"
 
-extern "C" JNIEXPORT jboolean JNICALL
-Java_org_mozilla_gecko_crashhelper_CrashHelper_set_1breakpad_1opts(
-    JNIEnv* jenv, jclass, jint breakpad_fd) {
-  
-  
-  
-  const int val = 1;
-  int res = setsockopt(breakpad_fd, SOL_SOCKET, SO_PASSCRED, &val, sizeof(val));
-  return res >= 0;
-}
-
 extern "C" JNIEXPORT void JNICALL
 Java_org_mozilla_gecko_crashhelper_CrashHelper_crash_1generator(
     JNIEnv* jenv, jclass, jint pid, jint breakpad_fd, jstring minidump_path,

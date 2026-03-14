@@ -122,9 +122,6 @@ public final class CrashHelper extends Service {
         throws IOException {
       mBreakpadClient = ParcelFileDescriptor.dup(breakpadClientFd);
       mBreakpadServer = ParcelFileDescriptor.dup(breakpadServerFd);
-      if (!CrashHelper.set_breakpad_opts(mBreakpadServer.getFd())) {
-        throw new IOException("Could not set the proper options on the Breakpad socket");
-      }
       mClient = ParcelFileDescriptor.dup(clientFd);
       mServer = ParcelFileDescriptor.dup(serverFd);
     }
@@ -135,14 +132,8 @@ public final class CrashHelper extends Service {
   
   
   
-  
   public static Pipes createCrashHelperPipes(final Context context) {
     try {
-      
-      
-      
-      GeckoLoader.doLoadLibrary(null, "crashhelper");
-
       final FileDescriptor breakpad_client_fd = new FileDescriptor();
       final FileDescriptor breakpad_server_fd = new FileDescriptor();
       Os.socketpair(
@@ -151,6 +142,8 @@ public final class CrashHelper extends Service {
           0,
           breakpad_client_fd,
           breakpad_server_fd);
+      Os.setsockoptInt(breakpad_server_fd, OsConstants.SOL_SOCKET, OsConstants.SO_PASSCRED, 1);
+
       final FileDescriptor client_fd = new FileDescriptor();
       final FileDescriptor server_fd = new FileDescriptor();
       Os.socketpair(OsConstants.AF_UNIX, OsConstants.SOCK_SEQPACKET, 0, client_fd, server_fd);
@@ -178,6 +171,4 @@ public final class CrashHelper extends Service {
 
   protected static native void crash_generator(
       int clientPid, int breakpadFd, String minidumpPath, int serverFd);
-
-  protected static native boolean set_breakpad_opts(int breakpadFd);
 }
