@@ -22,6 +22,7 @@ impl Alignment {
 
     pub const fn new(n: u32) -> Option<Self> {
         if n.is_power_of_two() {
+            
             Some(Self(NonZeroU32::new(n).unwrap()))
         } else {
             None
@@ -70,6 +71,7 @@ impl ops::Mul for Alignment {
     type Output = Alignment;
 
     fn mul(self, rhs: Alignment) -> Self::Output {
+        
         Self(NonZeroU32::new(self.0.get() * rhs.0.get()).unwrap())
     }
 }

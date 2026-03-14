@@ -276,7 +276,7 @@ impl TimestampNormalizer {
             
             
             
-            if buffer_size.get() > device.adapter.limits().max_storage_buffer_binding_size as u64 {
+            if buffer_size.get() > device.adapter.limits().max_storage_buffer_binding_size {
                 return Err(DeviceError::OutOfMemory);
             }
 

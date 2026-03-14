@@ -527,6 +527,10 @@ pub enum SurfaceError {
     Lost,
     #[error("Surface is outdated, needs to be re-created")]
     Outdated,
+    #[error("Timed out waiting for a surface texture")]
+    Timeout,
+    #[error("The window is occluded (e.g. minimized or behind another window). Try again once the window is no longer occluded.")]
+    Occluded,
     #[error(transparent)]
     Device(#[from] DeviceError),
     #[error("Other reason: {0}")]
@@ -734,11 +738,15 @@ pub trait Surface: WasmNotSendSync {
     
     
     
+    
+    
+    
+    
     unsafe fn acquire_texture(
         &self,
         timeout: Option<core::time::Duration>,
         fence: &<Self::A as Api>::Fence,
-    ) -> Result<Option<AcquiredSurfaceTexture<Self::A>>, SurfaceError>;
+    ) -> Result<AcquiredSurfaceTexture<Self::A>, SurfaceError>;
 
     
     

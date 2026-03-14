@@ -160,9 +160,9 @@ pub struct Limits {
     
     pub max_binding_array_sampler_elements_per_shader_stage: u32,
     
-    pub max_uniform_buffer_binding_size: u32,
+    pub max_uniform_buffer_binding_size: u64,
     
-    pub max_storage_buffer_binding_size: u32,
+    pub max_storage_buffer_binding_size: u64,
     
     
     pub max_vertex_buffers: u32,

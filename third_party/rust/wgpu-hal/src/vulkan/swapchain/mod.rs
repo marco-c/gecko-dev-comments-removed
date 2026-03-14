@@ -58,7 +58,7 @@ pub(super) trait Swapchain: Send + Sync + 'static {
         &mut self,
         timeout: Option<Duration>,
         fence: &super::Fence,
-    ) -> Result<Option<crate::AcquiredSurfaceTexture<crate::api::Vulkan>>, crate::SurfaceError>;
+    ) -> Result<crate::AcquiredSurfaceTexture<crate::api::Vulkan>, crate::SurfaceError>;
 
     
     

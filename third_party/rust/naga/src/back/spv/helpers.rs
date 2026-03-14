@@ -189,6 +189,7 @@ impl StrUnstable for str {
                 .iter()
                 .rposition(|b| b.is_utf8_char_boundary_polyfill());
 
+            
             lower_bound + new_index.unwrap()
         }
     }

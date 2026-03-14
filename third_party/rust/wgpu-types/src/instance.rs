@@ -23,7 +23,7 @@ impl<T: raw_window_handle::HasDisplayHandle + core::fmt::Debug + Send + Sync + '
 
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct InstanceDescriptor {
     
     
@@ -58,19 +58,45 @@ pub struct InstanceDescriptor {
     
     
     
-    
-    
-    
     pub display: Option<alloc::boxed::Box<dyn WgpuHasDisplayHandle>>,
 }
 
 impl InstanceDescriptor {
     
+    #[must_use]
+    pub fn new_without_display_handle() -> Self {
+        Self {
+            backends: Default::default(),
+            flags: Default::default(),
+            memory_budget_thresholds: Default::default(),
+            backend_options: Default::default(),
+            display: None,
+        }
+    }
+
+    
+    #[must_use]
+    pub fn new_with_display_handle(display: alloc::boxed::Box<dyn WgpuHasDisplayHandle>) -> Self {
+        Self::new_without_display_handle().with_display_handle(display)
+    }
+
+    
     
     
     #[must_use]
-    pub fn from_env_or_default() -> Self {
-        Self::default().with_env()
+    pub fn new_without_display_handle_from_env() -> Self {
+        Self::new_without_display_handle().with_env()
+    }
+
+    
+    
+    
+    #[must_use]
+    pub fn new_with_display_handle_from_env(
+        display: alloc::boxed::Box<dyn WgpuHasDisplayHandle>,
+    ) -> Self {
+        
+        Self::new_with_display_handle(display).with_env()
     }
 
     
@@ -86,7 +112,7 @@ impl InstanceDescriptor {
             flags,
             memory_budget_thresholds: MemoryBudgetThresholds::default(),
             backend_options,
-            display: None,
+            display: self.display,
         }
     }
 

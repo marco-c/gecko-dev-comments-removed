@@ -265,7 +265,15 @@ pub enum SurfaceStatus {
     
     Suboptimal,
     
+    
+    
     Timeout,
+    
+    
+    
+    Occluded,
+    
+    
     
     Outdated,
     

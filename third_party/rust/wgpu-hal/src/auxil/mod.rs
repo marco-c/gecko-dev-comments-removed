@@ -154,7 +154,45 @@ pub(crate) fn apply_hal_limits(mut limits: wgt::Limits) -> wgt::Limits {
     
     
     
-    limits.max_storage_buffer_binding_size &= !(wgt::STORAGE_BINDING_SIZE_ALIGNMENT - 1);
+    
+    
+    
+    
+    
+    
+    
+    
+    const BINDING_TYPE_AND_STAGE_COUNT: u32 = 10;
+    let max_bindings = limits.max_bindings_per_bind_group / BINDING_TYPE_AND_STAGE_COUNT;
+    let mut did_clamp = false;
+    let mut clamp = |limit: &mut u32| {
+        if *limit > max_bindings {
+            *limit = max_bindings;
+            did_clamp = true;
+        }
+    };
+    clamp(&mut limits.max_dynamic_uniform_buffers_per_pipeline_layout);
+    clamp(&mut limits.max_dynamic_storage_buffers_per_pipeline_layout);
+    clamp(&mut limits.max_sampled_textures_per_shader_stage);
+    clamp(&mut limits.max_samplers_per_shader_stage);
+    clamp(&mut limits.max_storage_buffers_per_shader_stage);
+    clamp(&mut limits.max_storage_textures_per_shader_stage);
+    clamp(&mut limits.max_uniform_buffers_per_shader_stage);
+    if did_clamp
+        && limits.max_bindings_per_bind_group < wgt::Limits::defaults().max_bindings_per_bind_group
+    {
+        
+        
+        
+        log::warn!(
+            "Unexpected adjustment of per-stage resource limits to fit within max_bindings_per_bind_group."
+        );
+    }
+
+    
+    
+    
+    limits.max_storage_buffer_binding_size &= u64::from(!(wgt::STORAGE_BINDING_SIZE_ALIGNMENT - 1));
     limits.max_vertex_buffer_array_stride &= !(wgt::VERTEX_ALIGNMENT as u32 - 1);
 
     limits

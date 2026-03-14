@@ -2641,15 +2641,31 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
 
         let inner = crate::TypeInner::Image {
             class: if is_depth == 1 {
+                if is_sampled == 2 {
+                    return Err(Error::InvalidImageDepthStorage);
+                }
+
                 crate::ImageClass::Depth { multi: is_msaa }
-            } else if format != 0 {
+            }
+            
+            
+            
+            else if is_sampled == 2 && format == 0 {
+                return Err(Error::InvalidStorageImageWithoutFormat);
+            }
+            
+            
+            
+            
+            else if format != 0 && (is_sampled == 0 || is_sampled == 2) {
                 crate::ImageClass::Storage {
                     format: map_image_format(format)?,
                     access: crate::StorageAccess::default(),
                 }
-            } else if is_sampled == 2 {
-                return Err(Error::InvalidImageWriteType);
-            } else {
+            }
+            
+            
+            else {
                 crate::ImageClass::Sampled {
                     kind,
                     multi: is_msaa,

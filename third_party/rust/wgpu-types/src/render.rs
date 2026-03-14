@@ -810,7 +810,12 @@ pub struct DepthStencilState {
     pub format: crate::TextureFormat,
     
     
+    
+    
+    
     pub depth_write_enabled: Option<bool>,
+    
+    
     
     
     

@@ -47,7 +47,6 @@ use ash::{khr, vk};
 
 
 pub const MAX_BUFFER_SIZE: wgt::BufferAddress = 1u64 << 30u64;
-const MAX_BUFFER_SIZE_U32: u32 = MAX_BUFFER_SIZE as u32;
 
 
 const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
@@ -90,10 +89,10 @@ fn restrict_limits(limits: wgt::Limits) -> wgt::Limits {
             .min(MAX_BINDINGS_PER_RESOURCE_TYPE),
         max_uniform_buffer_binding_size: limits
             .max_uniform_buffer_binding_size
-            .min(MAX_BUFFER_SIZE_U32),
+            .min(MAX_BUFFER_SIZE),
         max_storage_buffer_binding_size: limits
             .max_storage_buffer_binding_size
-            .min(MAX_BUFFER_SIZE_U32),
+            .min(MAX_BUFFER_SIZE),
         max_non_sampler_bindings: 500_000,
         ..limits
     }
@@ -857,7 +856,7 @@ pub unsafe extern "C" fn wgpu_server_texture_create_view(
 
 #[no_mangle]
 pub extern "C" fn wgpu_server_texture_view_drop(global: &Global, id: id::TextureViewId) {
-    global.texture_view_drop(id).unwrap();
+    global.texture_view_drop(id);
 }
 
 #[allow(unused_variables)]
@@ -2436,7 +2435,8 @@ fn process_buffer_map(
         mode,
         offset,
         size,
-    } = msg else {
+    } = msg
+    else {
         unreachable!();
     };
     let mode = match mode {
@@ -2448,7 +2448,8 @@ fn process_buffer_map(
                 "either GPUMapMode.READ or GPUMapMode.WRITE"
             );
 
-            error_buf.init(ErrMsg {
+            error_buf.init(
+                ErrMsg {
                     message: message.into(),
                     r#type: ErrorType::Validation,
                 },
@@ -2812,7 +2813,7 @@ unsafe fn process_message(
             wgpu_server_remove_shared_texture(global.owner, id);
             global.texture_drop(id);
         }
-        Message::DropTextureView(id) => global.texture_view_drop(id).unwrap(),
+        Message::DropTextureView(id) => global.texture_view_drop(id),
         Message::DropExternalTexture(id) => global.external_texture_drop(id),
         Message::DropExternalTextureSource(id) => {
             wgpu_parent_drop_external_texture_source(global.owner, id)
