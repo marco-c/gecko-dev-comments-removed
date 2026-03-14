@@ -112,6 +112,8 @@ def test_commit(repo):
         patterns = [
             rf"^diff --git a/{re.escape(filename)} b/{re.escape(filename)}$",
             rf"^Modified regular file {re.escape(filename)}:$",
+            
+            rf"^diff -r \S+(?: -r \S+)? {re.escape(filename)}$",
         ]
 
         matches = [
@@ -129,10 +131,15 @@ def test_commit(repo):
 
     marker = find_diff_marker(patch, "bar")
 
-    assert marker in [
-        "diff --git a/bar b/bar",
-        "Modified regular file bar:",
-    ]
+    
+    assert any(
+        marker.startswith(prefix)
+        for prefix in [
+            "diff --git a/bar b/bar",
+            "Modified regular file bar:",
+            "diff -r ",
+        ]
+    )
 
 
 if __name__ == "__main__":
