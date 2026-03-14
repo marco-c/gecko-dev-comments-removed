@@ -862,6 +862,13 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
       continue;
     }
 
+    
+    
+    if (transceiver->IsStopped()) {
+      JSEP_SET_ERROR("Transceiver for level " << i << " has been stopped.");
+      return dom::PCError::OperationError;
+    }
+
     bool hasOwnTransport = mSdpHelper.OwnsTransport(
         msection, bundledMids,
         (type == kJsepSdpOffer) ? sdp::kOffer : sdp::kAnswer);
