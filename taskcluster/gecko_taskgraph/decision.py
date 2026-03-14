@@ -114,6 +114,11 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "mozilla_central_tasks",
     },
     
+    "firefox": {
+        
+        
+        "target_tasks_method": "firefox_pull_request_tasks",
+    },
     "staging-firefox": {
         "target_tasks_method": "default",
     },
