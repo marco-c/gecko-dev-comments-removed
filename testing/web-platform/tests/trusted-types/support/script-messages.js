@@ -71,11 +71,6 @@ function script_messages_for(fn) {
     
     
     
-    
-    
-    
-    
-    
     requestAnimationFrame(_ => requestAnimationFrame(_ => {
       let script = create_html_script_with_trusted_source_text(`window.log_message("DONE")`);
       script.setAttribute("nonce", "script-messages");
