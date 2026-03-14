@@ -18,6 +18,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
 });
 
+const { BANDWIDTH } = ChromeUtils.importESModule(
+  "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+);
+
 const FEATURE_PREF = "browser.ipProtection.enabled";
 const SITE_EXCEPTIONS_FEATURE_PREF =
   "browser.ipProtection.features.siteExceptions";
@@ -29,10 +33,12 @@ const AUTOSTART_PRIVATE_PREF = "browser.ipProtection.autoStartPrivateEnabled";
 const ONBOARDING_MESSAGE_MASK_PREF =
   "browser.ipProtection.onboardingMessageMask";
 const ENTITLEMENT_CACHE_PREF = "browser.ipProtection.entitlementCache";
+const USAGE_CACHE_PREF = "browser.ipProtection.usageCache";
 const IPP_ADDED_PREF = "browser.ipProtection.added";
 const IPP_STATE_CACHE_PREF = "browser.ipProtection.stateCache";
 const IPP_PANEL_HAS_OPENED_PREF = "browser.ipProtection.everOpenedPanel";
 const IPP_CACHE_DISABLED_PREF = "browser.ipProtection.cacheDisabled";
+const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
 
 add_setup(async function ippSetup() {
   await SpecialPowers.pushPrefEnv({
@@ -55,6 +61,7 @@ async function setupVpnPrefs({
   autostart = false,
   autostartprivate = false,
   entitlementCache = "",
+  usageCache = "",
 }) {
   let prefs = [
     [FEATURE_PREF, feature],
@@ -64,6 +71,7 @@ async function setupVpnPrefs({
     [AUTOSTART_PREF, autostart],
     [AUTOSTART_PRIVATE_PREF, autostartprivate],
     [ENTITLEMENT_CACHE_PREF, entitlementCache],
+    [USAGE_CACHE_PREF, usageCache],
   ];
 
   return SpecialPowers.pushPrefEnv({
@@ -241,6 +249,136 @@ add_task(async function test_exclusions_add_button() {
       
       Services.perms.removeByType(PERM_NAME);
       Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+    }
+  );
+});
+
+
+
+add_task(async function test_exclusions_telemetry() {
+  const PERM_NAME = "ipp-vpn";
+  await setupVpnPrefs({
+    feature: "beta",
+    siteExceptions: true,
+    entitlementCache: '{"some":"data"}',
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async function (browser) {
+      let settingGroup = testSettingsGroupVisible(browser);
+      let siteExceptionsGroup = settingGroup?.querySelector(
+        "#ipProtectionExceptions"
+      );
+      let exceptionAllListButton = siteExceptionsGroup?.querySelector(
+        "#ipProtectionExceptionAllListButton"
+      );
+
+      
+      Services.perms.removeByType(PERM_NAME);
+      Services.fog.testResetFOG();
+      await Services.fog.testFlushAllChildren();
+
+      
+      const site1 = "https://existing.example.com";
+      let principal1 =
+        Services.scriptSecurityManager.createContentPrincipalFromOrigin(site1);
+      Services.perms.addFromPrincipal(
+        principal1,
+        PERM_NAME,
+        Services.perms.DENY_ACTION
+      );
+
+      
+      Services.fog.testResetFOG();
+      await Services.fog.testFlushAllChildren();
+
+      
+      let promiseSubDialogLoaded = promiseLoadSubDialog(
+        "chrome://browser/content/preferences/dialogs/permissions.xhtml"
+      );
+
+      exceptionAllListButton.click();
+
+      const win = await promiseSubDialogLoaded;
+
+      let permissionsBox = win.document.getElementById("permissionsBox");
+
+      
+      await BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => permissionsBox.children.length === 1
+      );
+
+      
+      let siteListUpdatedPromise = BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => {
+          return permissionsBox.children.length === 3;
+        }
+      );
+
+      let urlField = win.document.getElementById("url");
+      let addButton = win.document.getElementById("btnAdd");
+
+      const site2 = "https://example.com";
+      urlField.focus();
+      EventUtils.sendString(site2, win);
+      addButton.click();
+
+      const site3 = "https://another.example.com";
+      urlField.focus();
+      EventUtils.sendString(site3, win);
+      addButton.click();
+
+      await siteListUpdatedPromise;
+
+      
+      siteListUpdatedPromise = BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => {
+          return permissionsBox.children.length === 2;
+        }
+      );
+
+      let removeButton = win.document.getElementById("removePermission");
+      let existingItem = Array.from(permissionsBox.children).find(
+        item => item.getAttribute("origin") === site1
+      );
+      Assert.ok(existingItem, "Should find the existing entry");
+
+      existingItem.click();
+      removeButton.click();
+
+      await siteListUpdatedPromise;
+
+      
+      let saveButton = win.document.querySelector("dialog").getButton("accept");
+      saveButton.click();
+
+      
+      let exclusions = Services.perms.getAllByTypes([PERM_NAME]);
+      Assert.equal(
+        exclusions.length,
+        2,
+        "Should have 2 new exclusions saved and remaining, ignoring the removed existing exclusion"
+      );
+
+      await Services.fog.testFlushAllChildren();
+
+      Assert.equal(
+        Glean.ipprotection.exclusionAdded.testGetValue(),
+        2,
+        "exclusion_added counter should be 2, ignoring the removed existing exclusion"
+      );
+
+      
+      Services.perms.removeByType(PERM_NAME);
+      Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+      Services.fog.testResetFOG();
     }
   );
 });
@@ -614,4 +752,107 @@ add_task(async function test_vpn_sections_shown_when_opted_in() {
       );
     }
   );
+});
+
+
+add_task(
+  async function test_bandwidth_usage_decimal_precision_in_preferences() {
+    
+    const remainingBytes = maxBytes * BANDWIDTH.SECOND_THRESHOLD;
+    const usageCache = JSON.stringify({
+      max: String(maxBytes),
+      remaining: String(remainingBytes),
+      reset: "2026-03-01T00:00:00Z",
+    });
+
+    await setupVpnPrefs({
+      feature: true,
+      bandwidth: true,
+      entitlementCache: '{"some":"data"}',
+      usageCache,
+    });
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: "about:preferences#privacy" },
+      async function (browser) {
+        let settingGroup = testSettingsGroupVisible(browser);
+
+        let bandwidthEl = settingGroup.querySelector(
+          "bandwidth-usage#ipProtectionBandwidth"
+        );
+        Assert.ok(bandwidthEl, "bandwidth-usage element should be present");
+        is_element_visible(
+          bandwidthEl,
+          "bandwidth-usage element should be visible"
+        );
+
+        await bandwidthEl.updateComplete;
+
+        Assert.equal(
+          bandwidthEl.bandwidthPercent,
+          75,
+          "bandwidthPercent should be 75 at the second threshold"
+        );
+        Assert.equal(
+          bandwidthEl.remainingRounded,
+          remainingBytes / BANDWIDTH.BYTES_IN_GB,
+          "remainingRounded should preserve the decimal GB value"
+        );
+      }
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+add_task(async function test_bandwidth_usage_sub_gb_precision_in_preferences() {
+  const remainingBytes = Math.floor(0.9 * BANDWIDTH.BYTES_IN_GB);
+  const usageCache = JSON.stringify({
+    max: String(maxBytes),
+    remaining: String(remainingBytes),
+    reset: "2026-03-01T00:00:00Z",
+  });
+
+  await setupVpnPrefs({
+    feature: true,
+    bandwidth: true,
+    entitlementCache: '{\"some\":\"data\"}',
+    usageCache,
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async function (browser) {
+      let settingGroup = testSettingsGroupVisible(browser);
+
+      let bandwidthEl = settingGroup.querySelector(
+        "bandwidth-usage#ipProtectionBandwidth"
+      );
+
+      Assert.ok(bandwidthEl, "bandwidth-usage element should be present");
+      is_element_visible(
+        bandwidthEl,
+        "bandwidth-usage element should be visible"
+      );
+
+      await bandwidthEl.updateComplete;
+
+      Assert.equal(
+        bandwidthEl.bandwidthPercent,
+        90,
+        "bandwidthPercent should be 90 when remaining is less than 1 GB"
+      );
+      Assert.equal(
+        bandwidthEl.remainingRounded,
+        Math.floor(remainingBytes / BANDWIDTH.BYTES_IN_MB),
+        "remainingRounded should be in MB when remaining is less than 1 GB"
+      );
+      Assert.equal(
+        bandwidthEl.description.getAttribute("data-l10n-id"),
+        "ip-protection-bandwidth-left-mb",
+        "Should use the MB l10n string when remaining is less than 1 GB"
+      );
+    }
+  );
+  await SpecialPowers.popPrefEnv();
 });
