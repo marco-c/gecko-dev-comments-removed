@@ -10394,16 +10394,20 @@ Document* Document::Open(const Optional<nsAString>& ,
   
   
   
-  if (shell && IsCurrentActiveDocument() &&
-      shell->GetIsAttemptingToNavigate()) {
-    shell->Stop(nsIWebNavigation::STOP_NETWORK);
+  if (shell && IsCurrentActiveDocument()) {
+    if (shell->GetIsAttemptingToNavigate()) {
+      shell->Stop(nsIWebNavigation::STOP_NETWORK);
 
-    
-    
-    
-    
-    
-    EnsureOnloadBlocker();
+      
+      
+      
+      
+      
+      EnsureOnloadBlocker();
+    } else {
+      
+      shell->InformNavigationAPIAboutAbortingNavigation();
+    }
   }
 
   
