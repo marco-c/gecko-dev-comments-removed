@@ -2807,13 +2807,7 @@ class FullPageTranslationsTestUtils {
     const menuItem = menuPopup.querySelector(`[value="${langTag}"]`);
     await FullPageTranslationsTestUtils.waitForPanelPopupEvent(
       "popuphidden",
-      () => {
-        click(menuItem);
-        // Synthesizing a click on the menuitem isn't closing the popup
-        // as a click normally would, so this tab keypress is added to
-        // ensure the popup closes.
-        EventUtils.synthesizeKey("KEY_Tab", {}, win);
-      },
+      () => menuPopup.activateItem(menuItem),
       null /* postEventAssertion */,
       win
     );
@@ -4127,13 +4121,7 @@ class SelectTranslationsTestUtils {
       const menuItem = menuPopup.querySelector(`[value="${langTag}"]`);
       await SelectTranslationsTestUtils.waitForPanelPopupEvent(
         "popuphidden",
-        () => {
-          click(menuItem);
-          // Synthesizing a click on the menuitem isn't closing the popup
-          
-          
-          EventUtils.synthesizeKey("KEY_Tab");
-        }
+        () => menuPopup.activateItem(menuItem)
       );
 
       await SelectTranslationsTestUtils.handleDownloads(options);
@@ -4143,37 +4131,37 @@ class SelectTranslationsTestUtils {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Opens the Select Translations panel via the context menu based on specified options.
+   *
+   * @param {Function} runInPage - A content-exposed function to run within the context of the page.
+   * @param {object} options - Options for selecting paragraphs and opening the context menu.
+   *
+   * The following options will only work when testing SELECT_TEST_PAGE_URL.
+   *
+   * @param {string}  options.expectedFromLanguage - The expected from-language tag.
+   * @param {string}  options.expectedToLanguage - The expected to-language tag.
+   * @param {boolean} options.selectFrenchSection - Selects the section of French text.
+   * @param {boolean} options.selectEnglishSection - Selects the section of English text.
+   * @param {boolean} options.selectSpanishSection - Selects the section of Spanish text.
+   * @param {boolean} options.selectFrenchSentence - Selects a French sentence.
+   * @param {boolean} options.selectEnglishSentence - Selects an English sentence.
+   * @param {boolean} options.selectSpanishSentence - Selects a Spanish sentence.
+   * @param {boolean} options.openAtFrenchSection - Opens the context menu at the section of French text.
+   * @param {boolean} options.openAtEnglishSection - Opens the context menu at the section of English text.
+   * @param {boolean} options.openAtSpanishSection - Opens the context menu at the section of Spanish text.
+   * @param {boolean} options.openAtFrenchSentence - Opens the context menu at a French sentence.
+   * @param {boolean} options.openAtEnglishSentence - Opens the context menu at an English sentence.
+   * @param {boolean} options.openAtSpanishSentence - Opens the context menu at a Spanish sentence.
+   * @param {boolean} options.openAtFrenchHyperlink - Opens the context menu at a hyperlinked French text.
+   * @param {boolean} options.openAtEnglishHyperlink - Opens the context menu at a hyperlinked English text.
+   * @param {boolean} options.openAtSpanishHyperlink - Opens the context menu at a hyperlinked Spanish text.
+   * @param {boolean} options.openAtURLHyperlink - Opens the context menu at a hyperlinked URL text.
+   * @param {Function} [options.onOpenPanel] - An optional callback function to execute after the panel opens.
+   * @param {string|null} [message] - An optional message to log to info.
+   * @throws Throws an error if the context menu could not be opened with the provided options.
+   * @returns {Promise<void>}
+   */
   static async openPanel(runInPage, options, message) {
     logAction();
 
@@ -4234,23 +4222,23 @@ class SelectTranslationsTestUtils {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * XUL popups will fire the popupshown and popuphidden events. These will fire for
+   * any type of popup in the browser. This function waits for one of those events, and
+   * checks that the viewId of the popup is PanelUI-profiler
+   *
+   * @param {"popupshown" | "popuphidden"} eventName
+   * @param {Function} callback
+   * @param {Function} postEventAssertion
+   *   An optional assertion to be made immediately after the event occurs.
+   * @returns {Promise<void>}
+   */
   static async waitForPanelPopupEvent(
     eventName,
     callback,
     postEventAssertion = null
   ) {
-    
+    // De-lazify the panel elements.
     SelectTranslationsPanel.elements;
     await SharedTranslationsTestUtils._waitForPopupEvent(
       "select-translations-panel",

@@ -41,9 +41,6 @@ class NativeMenuSupport final {
   static bool ShouldUseNativeAnchoredMenus();
 
   
-  static bool ShouldUseNativeAnchoredMenulists();
-
-  
   static bool ShouldUseNativeContextMenus();
 };
 
