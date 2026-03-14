@@ -204,6 +204,9 @@ class Key {
   
   
   void TrimBuffer() {
+    if (mBuffer.IsEmpty()) {
+      return;
+    }
     const char* end = mBuffer.EndReading() - 1;
     while (!*end) {
       --end;
