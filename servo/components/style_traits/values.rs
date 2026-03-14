@@ -605,6 +605,16 @@ pub mod specified {
 
 
 
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct KeywordValue(pub CssString);
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct UnitValue {
@@ -663,7 +673,7 @@ pub enum TypedValue {
     
     
     
-    Keyword(CssString),
+    Keyword(KeywordValue),
 
     
     

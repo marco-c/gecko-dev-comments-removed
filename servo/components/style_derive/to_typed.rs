@@ -70,7 +70,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
                 quote! {
                     fn to_typed(&self) -> Option<style_traits::TypedValue> {
                       let s = style_traits::ToCss::to_css_cssstring(self);
-                      Some(style_traits::TypedValue::Keyword(s))
+                      Some(style_traits::TypedValue::Keyword(style_traits::KeywordValue(s)))
                     }
                 }
             } else {
@@ -149,6 +149,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
 
 
 
+
 fn derive_variant_arm(
     variant: &synstructure::VariantInfo,
     derive_fields: bool,
@@ -171,11 +172,6 @@ fn derive_variant_arm(
         return quote!(None);
     }
 
-    assert!(
-        css_variant_attrs.keyword.is_none(),
-        "Unhandled keyword attribute"
-    );
-
     
     
     
@@ -188,12 +184,15 @@ fn derive_variant_arm(
     if bindings.is_empty() {
         
         
-        let keyword = cg::to_css_identifier(&identifier.to_string());
+        
+        let keyword = css_variant_attrs
+            .keyword
+            .unwrap_or_else(|| cg::to_css_identifier(&identifier.to_string()));
 
         
         quote! {
             Some(style_traits::TypedValue::Keyword(
-                style_traits::CssString::from(#keyword)
+                style_traits::KeywordValue(style_traits::CssString::from(#keyword))
             ))
         }
     } else if derive_fields {
