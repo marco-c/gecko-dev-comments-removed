@@ -547,6 +547,9 @@ add_task(
     const sb = sinon.createSandbox();
     try {
       
+      
+      
+      
       const fakeEngine = {
         loadPrompt() {
           return "fake prompt";
@@ -580,6 +583,19 @@ add_task(
       {
         "type": "domain",
         "value": "example.com"
+      }
+    ]
+  },
+  {
+    "reasoning": "User visited many travel sites.",
+    "category": "Travel",
+    "intent": "Research / Learn",
+    "memory_summary": "This memory summary is intentionally way too long and exceeds the one hundred character maximum limit set",
+    "score": 3,
+    "evidence": [
+      {
+        "type": "domain",
+        "value": "travel.example.com"
       }
     ]
   }
