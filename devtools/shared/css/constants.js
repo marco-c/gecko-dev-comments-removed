@@ -36,3 +36,11 @@ exports.PSEUDO_CLASSES = [
   ":visited",
   ":target",
 ];
+
+
+
+
+
+exports.ELEMENT_SPECIFIC_PSEUDO_CLASSES = {
+  ":open": new Set(["details", "dialog", "input", "select"]),
+};
