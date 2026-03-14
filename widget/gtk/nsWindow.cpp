@@ -1937,27 +1937,6 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         return false;
       }
-      if (popup->WaylandPopupIsFirst() &&
-          popup->WaylandPopupFitsToplevelWindow() &&
-          !StaticPrefs::widget_wayland_force_move_to_rect_AtStartup()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return false;
-      }
       if (!popup->WaylandPopupIsFirst() &&
           !popup->mWaylandPopupPrev->WaylandPopupIsFirst() &&
           !popup->mWaylandPopupPrev->mPopupUseMoveToRect) {
@@ -1980,11 +1959,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       return true;
     }();
 
-    
-    
-    if (!popup->mPopupUseMoveToRect) {
-      popup->mPopupUseMoveToRect = useMoveToRect;
-    }
+    popup->mPopupUseMoveToRect = useMoveToRect;
 
     LOG("  popup [%p] matches layout [%d] anchored [%d] first popup [%d] use "
         "move-to-rect %d\n",
