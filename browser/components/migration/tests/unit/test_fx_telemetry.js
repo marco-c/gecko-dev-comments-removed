@@ -107,7 +107,7 @@ async function promiseMigrator(name, srcDir, targetDir) {
   
   
   let migrator = new FirefoxProfileMigrator();
-  let migrators = migrator._getResourcesInternal(srcDir, targetDir);
+  let migrators = migrator.getResourcesInternal(srcDir, targetDir);
   for (let m of migrators) {
     if (m.name == name) {
       return new Promise(resolve => m.migrate(resolve));
