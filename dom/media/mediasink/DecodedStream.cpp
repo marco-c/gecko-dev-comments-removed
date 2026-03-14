@@ -869,12 +869,12 @@ already_AddRefed<AudioData> DecodedStream::CreateSilenceDataIfGapExists(
       TimeUnitToFrames(*mStartTime, aNextAudio->mRate);
   CheckedInt64 frameOffset =
       TimeUnitToFrames(aNextAudio->mTime, aNextAudio->mRate);
-  if (audioWrittenOffset.value() >= frameOffset.value()) {
+  CheckedInt64 missingFrames = frameOffset - audioWrittenOffset;
+  if (!missingFrames.isValid() || missingFrames.value() <= 0) {
     return nullptr;
   }
   
   
-  CheckedInt64 missingFrames = frameOffset - audioWrittenOffset;
   AlignedAudioBuffer silenceBuffer(missingFrames.value() *
                                    aNextAudio->mChannels);
   if (!silenceBuffer) {
