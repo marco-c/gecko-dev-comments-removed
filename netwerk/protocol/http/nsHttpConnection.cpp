@@ -871,16 +871,7 @@ bool nsHttpConnection::CanReuse() {
     canReuse = IsKeepAlive();
   }
 
-  
-  
-  
-  
-  
-  
-  static const PRIntervalTime kRecentThreshold = PR_SecondsToInterval(2);
-  auto idleTime = IdleTime();
-  canReuse = canReuse && (idleTime < std::min(mIdleTimeout, kRecentThreshold) ||
-                          (idleTime < mIdleTimeout && IsAlive()));
+  canReuse = canReuse && (IdleTime() < mIdleTimeout) && IsAlive();
 
   
   
