@@ -375,7 +375,6 @@ class TrustPanel {
   }
 
   async #updateMainView() {
-    let secureConnection = this.#isSecurePage();
     let assets = this.#trackingProtectionEnabled
       ? ETP_ENABLED_ASSETS
       : ETP_DISABLED_ASSETS;
@@ -418,9 +417,7 @@ class TrustPanel {
     );
     document.l10n.setAttributes(
       document.getElementById("trustpanel-connection-label"),
-      secureConnection
-        ? "trustpanel-connection-label-secure"
-        : "trustpanel-connection-label-insecure"
+      this.#connectionLabel()
     );
 
     this.#updateAttribute(
@@ -1014,6 +1011,16 @@ class TrustPanel {
     return connection;
   }
 
+  #connectionLabel() {
+    if (this.#isAboutNetErrorPage) {
+      return "identity-connection-failure";
+    }
+    if (this.#isSecurePage()) {
+      return "trustpanel-connection-label-secure";
+    }
+    return "trustpanel-connection-label-insecure";
+  }
+
   #mixedContentState() {
     let mixedcontent = [];
     if (this.#isMixedPassiveContentLoaded) {
@@ -1028,9 +1035,9 @@ class TrustPanel {
   }
 
   #ciphersState() {
-    
-    
-    
+    // We have no specific flags for weak ciphers (yet). If a connection is
+    // broken and we can't detect any mixed content loaded then it's a weak
+    // cipher.
     if (
       this.#isBrokenConnection &&
       !this.#isMixedActiveContentLoaded &&
@@ -1042,7 +1049,7 @@ class TrustPanel {
   }
 
   #httpsOnlyState() {
-    
+    // If HTTPS-Only Mode is enabled, check the permission status
     const privateBrowsingWindow = PrivateBrowsingUtils.isWindowPrivate(window);
     const isHttpsOnlyModeActive = this.#isHttpsOnlyModeActive(
       privateBrowsingWindow
@@ -1060,12 +1067,12 @@ class TrustPanel {
       isHttpsOnlyModeActive ||
       isSchemelessHttpsFirstModeActive
     ) {
-      
-      
+      // Note: value and permission association is laid out
+      //       in _getHttpsOnlyPermission
       let value = this.#getHttpsOnlyPermission();
 
-      
-      
+      // We do not want to display the exception ui for schemeless
+      // HTTPS-First, but we still want the "Upgraded to HTTPS" label.
       document.getElementById(
         "trustpanel-popup-security-httpsonlymode"
       ).hidden = isSchemelessHttpsFirstModeActive;
