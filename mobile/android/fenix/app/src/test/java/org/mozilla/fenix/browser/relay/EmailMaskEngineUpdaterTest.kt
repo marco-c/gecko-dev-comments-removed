@@ -4,6 +4,9 @@
 
 package org.mozilla.fenix.browser.relay
 
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.Engine
@@ -13,11 +16,8 @@ import mozilla.components.service.fxrelay.eligibility.RelayEligibilityAction
 import mozilla.components.service.fxrelay.eligibility.RelayEligibilityStore
 import mozilla.components.service.fxrelay.eligibility.RelayPlanTier
 import mozilla.components.service.fxrelay.eligibility.RelayState
-import mozilla.components.support.test.mock
-import mozilla.components.support.test.whenever
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.verify
 
 class EmailMaskEngineUpdaterTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -26,9 +26,9 @@ class EmailMaskEngineUpdaterTest {
 
     @Before
     fun setup() {
-        engineSettings = mock()
-        engine = mock {
-            whenever(settings).thenReturn(engineSettings)
+        engineSettings = mockk(relaxed = true)
+        engine = mockk {
+            every { settings } returns engineSettings
         }
     }
 
@@ -41,7 +41,7 @@ class EmailMaskEngineUpdaterTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(engineSettings).firefoxRelay = Engine.FirefoxRelayMode.DISABLED
+        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.DISABLED }
     }
 
     @Test
@@ -55,7 +55,7 @@ class EmailMaskEngineUpdaterTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(engineSettings).firefoxRelay = Engine.FirefoxRelayMode.ENABLED
+        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.ENABLED }
     }
 
     @Test
@@ -67,19 +67,19 @@ class EmailMaskEngineUpdaterTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(engineSettings).firefoxRelay = Engine.FirefoxRelayMode.DISABLED
+        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.DISABLED }
 
         store.dispatch(
             RelayEligibilityAction.RelayStatusResult(
                 fetchSucceeded = true,
                 relayPlanTier = RelayPlanTier.FREE,
-                remaining = 5,
+                totalMasksUsed = 5,
                 lastCheckedMs = 123L,
             ),
         )
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(engineSettings).firefoxRelay = Engine.FirefoxRelayMode.ENABLED
+        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.ENABLED }
     }
 }

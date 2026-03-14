@@ -2,6 +2,12 @@ package org.mozilla.fenix.startupCrashStore
 
 import android.text.format.DateUtils
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -9,17 +15,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.CrashReporter
-import mozilla.components.support.test.any
-import mozilla.components.support.test.argumentCaptor
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.startupCrash.NoTapped
 import org.mozilla.fenix.startupCrash.ReopenTapped
 import org.mozilla.fenix.startupCrash.ReportTapped
@@ -37,13 +36,11 @@ class StartupCrashMiddlewareTest {
 
     private lateinit var settings: Settings
     private lateinit var crashReporter: CrashReporter
-    private lateinit var canaryRepo: StartupCrashCanary
 
     @Before
     fun setup() {
-        settings = mock()
-        crashReporter = mock()
-        canaryRepo = mock()
+        settings = mockk(relaxed = true)
+        crashReporter = mockk()
     }
 
     @Test
@@ -58,20 +55,19 @@ class StartupCrashMiddlewareTest {
             remoteType = null,
         )
 
-        `when`(crashReporter.unsentCrashReportsSince(anyLong())).thenReturn(listOf(crash))
-        `when`(crashReporter.submitReport(any(), any())).thenReturn(CompletableDeferred(Unit))
+        coEvery { crashReporter.unsentCrashReportsSince(any()) } returns listOf(crash)
+        every { crashReporter.submitReport(any(), any()) } returns CompletableDeferred(Unit)
 
         val store = makeStore(scope = this).first
 
         store.dispatch(ReportTapped)
         advanceUntilIdle()
 
-        val crashCaptor = argumentCaptor<Crash>()
-        verify(crashReporter).unsentCrashReportsSince(anyLong())
-        verify(crashReporter).submitReport(crashCaptor.capture(), any())
-        assertEquals(crash, crashCaptor.value)
+        val crashCaptor = slot<Crash>()
+        coVerify { crashReporter.unsentCrashReportsSince(any()) }
+        verify { crashReporter.submitReport(capture(crashCaptor), any()) }
+        assertEquals(crash, crashCaptor.captured)
 
-        verify(canaryRepo).clearCanary()
         assertEquals(UiState.Finished, store.state.uiState)
     }
 
@@ -84,8 +80,7 @@ class StartupCrashMiddlewareTest {
         store.dispatch(NoTapped)
         advanceUntilIdle()
 
-        verify(canaryRepo).clearCanary()
-        verify(settings).crashReportDeferredUntil = currentTime + FIVE_DAYS_IN_MILLIS
+        verify { settings.crashReportDeferredUntil = currentTime + FIVE_DAYS_IN_MILLIS }
         assertEquals(UiState.Finished, store.state.uiState)
     }
 
@@ -113,7 +108,6 @@ class StartupCrashMiddlewareTest {
             settings = settings,
             crashReporter = crashReporter,
             restartHandler = { called = true },
-            startupCrashCanaryCache = canaryRepo,
             currentTimeInMillis = currentTime,
             scope = scope,
         )
