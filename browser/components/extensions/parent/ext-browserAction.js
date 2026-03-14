@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionTelemetry: "resource://gre/modules/ExtensionTelemetry.sys.mjs",
   OriginControls: "resource://gre/modules/ExtensionPermissions.sys.mjs",
   ViewPopup: "resource:///modules/ExtensionPopups.sys.mjs",
+  isGloballyBlockingOpenPopup: "resource:///modules/ExtensionPopups.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
@@ -99,6 +100,9 @@ class BrowserAction extends BrowserActionBase {
       
       
       
+      return true;
+    }
+    if (isGloballyBlockingOpenPopup(window)) {
       return true;
     }
     return window.document.getElementById(this.buttonDelegate.buttonViewId)
