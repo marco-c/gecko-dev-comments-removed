@@ -2900,7 +2900,15 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
     bool unused2;
     if (!OriginAttributes::ParsePartitionKey(partitionKey, scheme, domain,
                                              unused, unused2)) {
-      MOZ_ASSERT(false);
+      
+      
+      
+      
+      MOZ_ASSERT(partitionKey.Length() == 44 &&
+                     StringEndsWith(partitionKey, u".mozilla"_ns) &&
+                     partitionKey[8] == u'-' && partitionKey[13] == u'-' &&
+                     partitionKey[18] == u'-' && partitionKey[23] == u'-',
+                 "Failed to parse partitionKey from cookieJarSettings");
       return Nothing();
     }
 
