@@ -10507,12 +10507,24 @@ bool FunctionCompiler::emitBodyExprs() {
             CHECK(emitTableSize());
 
           case uint32_t(MiscOp::I64Add128):
+            if (!codeMeta().wideArithmeticEnabled()) {
+              return iter().unrecognizedOpcode(&op);
+            }
             CHECK(emitI64AddSub128(true));
           case uint32_t(MiscOp::I64Sub128):
+            if (!codeMeta().wideArithmeticEnabled()) {
+              return iter().unrecognizedOpcode(&op);
+            }
             CHECK(emitI64AddSub128(false));
           case uint32_t(MiscOp::I64MulWideS):
+            if (!codeMeta().wideArithmeticEnabled()) {
+              return iter().unrecognizedOpcode(&op);
+            }
             CHECK(emitI64MulWide(true));
           case uint32_t(MiscOp::I64MulWideU):
+            if (!codeMeta().wideArithmeticEnabled()) {
+              return iter().unrecognizedOpcode(&op);
+            }
             CHECK(emitI64MulWide(false));
 
           default:
