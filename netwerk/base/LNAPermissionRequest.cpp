@@ -15,9 +15,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIIOService.h"
 #include "nsIOService.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/FeaturePolicy.h"
-#include "xpcpublic.h"
 
 namespace mozilla::net {
 
@@ -36,28 +33,37 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
                                            const nsACString& aType)
     : dom::ContentPermissionRequestBase(
           aLoadInfo->GetLoadingPrincipal(), nullptr,
-          (aType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)
-               ? "network.loopback-network"_ns
-               : "network.localnetwork"_ns),
+          (aType.Equals(LOCAL_HOST_PERMISSION_KEY) ? "network.localhost"_ns
+                                                   : "network.localnetwork"_ns),
           aType),
       mPermissionPromptCallback(std::move(aCallback)) {
   MOZ_ASSERT(aLoadInfo);
 
   aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(mPrincipal));
 
-  aLoadInfo->GetBrowsingContext(getter_AddRefs(mBrowsingContext));
-  if (mBrowsingContext && mBrowsingContext->Top()) {
-    if (mBrowsingContext->Top()->Canonical()) {
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  aLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (bc && bc->Top()) {
+    if (bc->Top()->Canonical()) {
       RefPtr<mozilla::dom::WindowGlobalParent> topWindowGlobal =
-          mBrowsingContext->Top()->Canonical()->GetCurrentWindowGlobal();
+          bc->Top()->Canonical()->GetCurrentWindowGlobal();
       if (topWindowGlobal) {
         mTopLevelPrincipal = topWindowGlobal->DocumentPrincipal();
       }
     }
   }
 
-  if (!mTopLevelPrincipal && xpc::IsInAutomation()) {
+  if (!mTopLevelPrincipal) {
     
+    mTopLevelPrincipal = mPrincipal;
+  }
+
+  if (!mPrincipal->Equals(mTopLevelPrincipal)) {
+    
+    
+    
+    
+    mIsRequestDelegatedToUnsafeThirdParty = true;
     
     mTopLevelPrincipal = mPrincipal;
   }
@@ -70,11 +76,13 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
 NS_IMETHODIMP
 LNAPermissionRequest::GetElement(mozilla::dom::Element** aElement) {
   NS_ENSURE_ARG_POINTER(aElement);
-  if (!mBrowsingContext) {
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (!bc) {
     return NS_ERROR_FAILURE;
   }
 
-  return mBrowsingContext->GetTopFrameElement(aElement);
+  return bc->GetTopFrameElement(aElement);
 }
 
 
@@ -100,16 +108,8 @@ LNAPermissionRequest::NotifyShown() {
   mPromptWasShown = true;
 
   
-  
-  
-  if (!mPrincipal || !mTopLevelPrincipal) {
-    return NS_OK;
-  }
-
-  
-  bool isCrossOrigin = !mPrincipal->Equals(mTopLevelPrincipal);
-  if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {
-    if (isCrossOrigin) {
+  if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
       mozilla::glean::networking::local_network_access_prompts_shown
           .Get("localhost_cross_site"_ns)
           .Add(1);
@@ -119,7 +119,7 @@ LNAPermissionRequest::NotifyShown() {
           .Add(1);
     }
   } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
-    if (isCrossOrigin) {
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
       mozilla::glean::networking::local_network_access_prompts_shown
           .Get("local_network_cross_site"_ns)
           .Add(1);
@@ -135,49 +135,10 @@ LNAPermissionRequest::NotifyShown() {
 
 nsresult LNAPermissionRequest::RequestPermission() {
   MOZ_ASSERT(NS_IsMainThread());
-
   
-  if (!mLoadInfo) {
-    NS_WARNING("LNA permission request without load info");
+  
+  if (!CheckPermissionDelegate()) {
     return Cancel();
-  }
-
-  
-  RefPtr<dom::CanonicalBrowsingContext> bc;
-  if (mBrowsingContext) {
-    bc = mBrowsingContext->Canonical();
-  }
-
-  if (!bc) {
-    
-    
-    if (!xpc::IsInAutomation()) {
-      NS_WARNING("local network access without browsing context");
-      return Cancel();
-    }
-  } else {
-    Maybe<dom::FeaturePolicyInfo> fpInfo = bc->GetContainerFeaturePolicy();
-    
-    
-    
-    
-    
-    
-    
-    
-    if (fpInfo.isSome()) {
-      nsAutoString featureName;
-      if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {
-        featureName = u"loopback-network"_ns;
-      } else {
-        featureName = u"local-network"_ns;
-      }
-
-      if (fpInfo->mInheritedDeniedFeatureNames.Contains(featureName)) {
-        NS_WARNING("Feature policy denying the request");
-        return Cancel();
-      }
-    }
   }
 
   
@@ -198,12 +159,6 @@ nsresult LNAPermissionRequest::RequestPermission() {
   }
 
   if (pr == PromptResult::Denied) {
-    return Cancel();
-  }
-
-  
-  if (!mTopLevelPrincipal) {
-    NS_WARNING("Cannot show permission prompt without top-level principal");
     return Cancel();
   }
 

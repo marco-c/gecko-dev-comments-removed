@@ -7318,7 +7318,7 @@ public class GeckoSession {
             || type.startsWith("3rdPartyStorage^")
             || type.startsWith("3rdPartyFrameStorage^")) {
           return PERMISSION_STORAGE_ACCESS;
-        } else if ("loopback-network".equals(type)) {
+        } else if ("localhost".equals(type)) {
           return PERMISSION_LOCAL_DEVICE_ACCESS;
         } else if ("local-network".equals(type)) {
           return PERMISSION_LOCAL_NETWORK_ACCESS;
@@ -7349,7 +7349,7 @@ public class GeckoSession {
           case PERMISSION_STORAGE_ACCESS:
             return "storage-access";
           case PERMISSION_LOCAL_DEVICE_ACCESS:
-            return "loopback-network";
+            return "localhost";
           case PERMISSION_LOCAL_NETWORK_ACCESS:
             return "local-network";
           default:

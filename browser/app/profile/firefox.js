@@ -962,7 +962,7 @@ pref("permissions.manager.defaultsUrl", "resource://app/defaults/permissions");
 pref("permissions.default.camera", 0);
 pref("permissions.default.microphone", 0);
 pref("permissions.default.geo", 0);
-pref("permissions.default.loopback-network", 0);
+pref("permissions.default.localhost", 0);
 pref("permissions.default.local-network", 0);
 pref("permissions.default.xr", 0);
 pref("permissions.default.desktop-notification", 0);
@@ -1368,9 +1368,6 @@ pref("network.manage-offline-status", true);
 
 
 pref("network.lna.prompt.timeout", 300000); 
-
-
-pref("network.lna.temporary_permission_expire_time_ms", 86400000); 
 
 
 pref("network.protocol-handler.external.mailto", true); 

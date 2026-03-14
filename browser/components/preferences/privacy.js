@@ -2032,8 +2032,8 @@ Preferences.addSetting({
   },
 });
 Preferences.addSetting({
-  id: "loopbackNetworkSettingsButton",
-  onUserClick: () => gPrivacyPane.showLoopbackNetworkExceptions(),
+  id: "localHostSettingsButton",
+  onUserClick: () => gPrivacyPane.showLocalHostExceptions(),
   deps: ["enabledLNA"],
   visible: deps => {
     return deps.enabledLNA.value;
@@ -4583,8 +4583,8 @@ var gPrivacyPane = {
 
 
 
-  showLoopbackNetworkExceptions() {
-    let params = { permissionType: "loopback-network" };
+  showLocalHostExceptions() {
+    let params = { permissionType: "localhost" };
 
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/sitePermissions.xhtml",
