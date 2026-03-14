@@ -117,6 +117,11 @@ JS_PUBLIC_API GenericMicroTask DequeueNextDebuggerMicroTask(JSContext* cx);
 JS_PUBLIC_API GenericMicroTask DequeueNextRegularMicroTask(JSContext* cx);
 
 
+
+
+JS_PUBLIC_API GenericMicroTask PeekNextMicroTask(JSContext* cx);
+
+
 JS_PUBLIC_API bool HasAnyMicroTasks(JSContext* cx);
 
 
