@@ -50,6 +50,28 @@ async function openAIWindow() {
 
 
 
+async function openAIWindowWithSidebar() {
+  const win = await openAIWindow();
+  BrowserTestUtils.startLoadingURIString(
+    win.gBrowser.selectedBrowser,
+    "about:blank"
+  );
+  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
+  AIWindowUI.toggleSidebar(win);
+  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+  await BrowserTestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Sidebar ai-window should be loaded"
+  );
+  return { win, sidebarBrowser };
+}
+
+
+
+
+
+
+
 function skipSignIn() {
   const stub = sinon
     .stub(AIWindowAccountAuth, "ensureAIWindowAccess")
