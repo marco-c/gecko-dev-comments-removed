@@ -3550,9 +3550,9 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   
   
   
-  RefPtr<nsHttpConnectionInfo> anonInvertedCI(specificCI->Clone());
-  anonInvertedCI->SetAnonymous(!specificCI->GetAnonymous());
-  ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedCI->HashKey());
+  nsAutoCString anonInvertedKey;
+  specificCI->AnonymousInvertedHashKey(anonInvertedKey);
+  ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedKey);
   if (invertedEnt) {
     HttpConnectionBase* h2orh3conn =
         GetH2orH3ActiveConn(invertedEnt, aNoHttp2, aNoHttp3);
