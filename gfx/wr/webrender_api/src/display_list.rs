@@ -1033,8 +1033,6 @@ pub struct DisplayListBuilder {
     serialized_content_buffer: Option<String>,
     state: BuildState,
 
-    
-    rf_mapper: ReferenceFrameMapper,
 }
 
 #[repr(C)]
@@ -1071,8 +1069,6 @@ impl DisplayListBuilder {
             cache_size: 0,
             serialized_content_buffer: None,
             state: BuildState::Idle,
-
-            rf_mapper: ReferenceFrameMapper::new(),
         }
     }
 
@@ -1088,8 +1084,6 @@ impl DisplayListBuilder {
         self.save_state = None;
         self.cache_size = 0;
         self.serialized_content_buffer = None;
-
-        self.rf_mapper = ReferenceFrameMapper::new();
     }
 
     
@@ -1427,15 +1421,12 @@ impl DisplayListBuilder {
         color: ColorF,
         glyph_options: Option<GlyphOptions>,
     ) {
-        let ref_frame_offset = self.rf_mapper.current_offset();
-
         let item = di::DisplayItem::Text(di::TextDisplayItem {
             common: *common,
             bounds,
             color,
             font_key,
             glyph_options,
-            ref_frame_offset,
         });
 
         for split_glyphs in glyphs.chunks(MAX_TEXT_RUN_LENGTH) {
@@ -1621,9 +1612,6 @@ impl DisplayListBuilder {
     ) -> di::SpatialId {
         let id = self.generate_spatial_index();
 
-        let current_offset = self.rf_mapper.current_offset();
-        let origin = origin + current_offset;
-
         let descriptor = di::SpatialTreeItem::ReferenceFrame(di::ReferenceFrameDescriptor {
             parent_spatial_id,
             origin,
@@ -1638,8 +1626,6 @@ impl DisplayListBuilder {
             },
         });
         self.push_spatial_tree_item(&descriptor);
-
-        self.rf_mapper.push_scope();
 
         let item = di::DisplayItem::PushReferenceFrame(di::ReferenceFrameDisplayListItem {
         });
@@ -1658,9 +1644,6 @@ impl DisplayListBuilder {
         key: di::SpatialTreeItemKey,
     ) -> di::SpatialId {
         let id = self.generate_spatial_index();
-
-        let current_offset = self.rf_mapper.current_offset();
-        let origin = origin + current_offset;
 
         let descriptor = di::SpatialTreeItem::ReferenceFrame(di::ReferenceFrameDescriptor {
             parent_spatial_id,
@@ -1683,8 +1666,6 @@ impl DisplayListBuilder {
         });
         self.push_spatial_tree_item(&descriptor);
 
-        self.rf_mapper.push_scope();
-
         let item = di::DisplayItem::PushReferenceFrame(di::ReferenceFrameDisplayListItem {
         });
         self.push_item(&item);
@@ -1693,7 +1674,6 @@ impl DisplayListBuilder {
     }
 
     pub fn pop_reference_frame(&mut self) {
-        self.rf_mapper.pop_scope();
         self.push_item(&di::DisplayItem::PopReferenceFrame);
     }
 
@@ -1710,14 +1690,12 @@ impl DisplayListBuilder {
         flags: di::StackingContextFlags,
         snapshot: Option<di::SnapshotInfo>
     ) {
-        let ref_frame_offset = self.rf_mapper.current_offset();
         self.push_filters(filters, filter_datas);
 
         let item = di::DisplayItem::PushStackingContext(di::PushStackingContextDisplayItem {
             spatial_id,
             snapshot,
             prim_flags,
-            ref_frame_offset,
             stacking_context: di::StackingContext {
                 transform_style,
                 mix_blend_mode,
@@ -1846,11 +1824,10 @@ impl DisplayListBuilder {
         key: di::SpatialTreeItemKey,
     ) -> di::SpatialId {
         let scroll_frame_id = self.generate_spatial_index();
-        let current_offset = self.rf_mapper.current_offset();
 
         let descriptor = di::SpatialTreeItem::ScrollFrame(di::ScrollFrameDescriptor {
             content_rect,
-            frame_rect: frame_rect.translate(current_offset),
+            frame_rect,
             parent_space,
             scroll_frame_id,
             external_id,
@@ -1889,13 +1866,6 @@ impl DisplayListBuilder {
     ) -> di::ClipId {
         let id = self.generate_clip_index();
 
-        let current_offset = self.rf_mapper.current_offset();
-
-        let image_mask = di::ImageMask {
-            rect: image_mask.rect.translate(current_offset),
-            ..image_mask
-        };
-
         let item = di::DisplayItem::ImageMaskClip(di::ImageMaskClipDisplayItem {
             id,
             spatial_id,
@@ -1922,9 +1892,6 @@ impl DisplayListBuilder {
     ) -> di::ClipId {
         let id = self.generate_clip_index();
 
-        let current_offset = self.rf_mapper.current_offset();
-        let clip_rect = clip_rect.translate(current_offset);
-
         let item = di::DisplayItem::RectClip(di::RectClipDisplayItem {
             id,
             spatial_id,
@@ -1941,13 +1908,6 @@ impl DisplayListBuilder {
         clip: di::ComplexClipRegion,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
-
-        let current_offset = self.rf_mapper.current_offset();
-
-        let clip = di::ComplexClipRegion {
-            rect: clip.rect.translate(current_offset),
-            ..clip
-        };
 
         let item = di::DisplayItem::RoundedRectClip(di::RoundedRectClipDisplayItem {
             id,
@@ -1973,12 +1933,11 @@ impl DisplayListBuilder {
         transform: Option<PropertyBinding<LayoutTransform>>
     ) -> di::SpatialId {
         let id = self.generate_spatial_index();
-        let current_offset = self.rf_mapper.current_offset();
 
         let descriptor = di::SpatialTreeItem::StickyFrame(di::StickyFrameDescriptor {
             parent_spatial_id,
             id,
-            bounds: frame_rect.translate(current_offset),
+            bounds: frame_rect,
             margins,
             vertical_offset_bounds,
             horizontal_offset_bounds,
@@ -1999,10 +1958,6 @@ impl DisplayListBuilder {
         pipeline_id: PipelineId,
         ignore_missing_pipeline: bool
     ) {
-        let current_offset = self.rf_mapper.current_offset();
-        let bounds = bounds.translate(current_offset);
-        let clip_rect = clip_rect.translate(current_offset);
-
         let item = di::DisplayItem::Iframe(di::IframeDisplayItem {
             bounds,
             clip_rect,
@@ -2160,76 +2115,3 @@ fn iter_spatial_tree<F>(spatial_tree: &[u8], mut f: F) where F: FnMut(&di::Spati
     }
 }
 
-
-#[derive(Clone)]
-struct ReferenceFrameState {
-    
-    offsets: Vec<LayoutVector2D>,
-}
-
-
-
-#[derive(Clone)]
-pub struct ReferenceFrameMapper {
-    
-    frames: Vec<ReferenceFrameState>,
-}
-
-impl ReferenceFrameMapper {
-    pub fn new() -> Self {
-        ReferenceFrameMapper {
-            frames: vec![
-                ReferenceFrameState {
-                    offsets: vec![
-                        LayoutVector2D::zero(),
-                    ],
-                }
-            ],
-        }
-    }
-
-    
-    
-    pub fn push_scope(&mut self) {
-        self.frames.push(ReferenceFrameState {
-            offsets: vec![
-                LayoutVector2D::zero(),
-            ],
-        });
-    }
-
-    
-    pub fn pop_scope(&mut self) {
-        self.frames.pop().unwrap();
-    }
-
-    
-    
-    pub fn push_offset(&mut self, offset: LayoutVector2D) {
-        let frame = self.frames.last_mut().unwrap();
-        let current_offset = *frame.offsets.last().unwrap();
-        frame.offsets.push(current_offset + offset);
-    }
-
-    
-    pub fn pop_offset(&mut self) {
-        let frame = self.frames.last_mut().unwrap();
-        frame.offsets.pop().unwrap();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn current_offset(&self) -> LayoutVector2D {
-        *self.frames.last().unwrap().offsets.last().unwrap()
-    }
-}
