@@ -48,6 +48,7 @@
 #include "nsIXULAppInfo.h"
 #include "nsICookieService.h"
 #include "nsIObserverService.h"
+#include "nsISiteIntegrityService.h"
 #include "nsISiteSecurityService.h"
 #include "nsIStreamConverterService.h"
 #include "nsCRT.h"
@@ -371,6 +372,7 @@ nsresult nsHttpHandler::Init() {
   if (!IsNeckoChild()) {
     if (XRE_IsParentProcess()) {
       mDictionaryCache = DictionaryCache::GetInstance();
+      
 
       std::bitset<3> usageOfHTTPSRRPrefs;
       usageOfHTTPSRRPrefs[0] = StaticPrefs::network_dns_upgrade_with_https_rr();
@@ -678,7 +680,7 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
   
   if (aSecure) {
     
-    if (StaticPrefs::network_http_dictionaries_enable()) {
+    if (StaticPrefs::network_http_dictionaries_enable() && mDictionaryCache) {
       
       
       guard.release();
@@ -859,6 +861,16 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   LOG(("nsHttpHandler::IsAceptableEncoding %s https=%d %d\n", enc, isSecure,
        rv));
   return rv;
+}
+
+nsISiteIntegrityService* nsHttpHandler::GetSiteIntegrityService() {
+  if (!mSiteIntegrityService) {
+    nsCOMPtr<nsISiteIntegrityService> service;
+    service = mozilla::components::SiteIntegrity::Service();
+    mSiteIntegrityService = new nsMainThreadPtrHolder<nsISiteIntegrityService>(
+        "nsHttpHandler::mSiteIntegrityService", service);
+  }
+  return mSiteIntegrityService;
 }
 
 nsISiteSecurityService* nsHttpHandler::GetSSService() {

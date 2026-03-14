@@ -48,6 +48,7 @@ class nsICancelable;
 class nsICookieService;
 class nsIIOService;
 class nsIRequestContextService;
+class nsISiteIntegrityService;
 class nsISiteSecurityService;
 class nsIStreamConverterService;
 
@@ -353,6 +354,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   [[nodiscard]] nsresult GetIOService(nsIIOService** result);
   nsICookieService* GetCookieService();  
+  nsISiteIntegrityService* GetSiteIntegrityService();
   nsISiteSecurityService* GetSSService();
 
   
@@ -561,6 +563,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   nsMainThreadPtrHandle<nsIIOService> mIOService;
   nsMainThreadPtrHandle<nsICookieService> mCookieService;
+  nsMainThreadPtrHandle<nsISiteIntegrityService> mSiteIntegrityService;
   nsMainThreadPtrHandle<nsISiteSecurityService> mSSService;
 
   
