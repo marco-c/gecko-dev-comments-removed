@@ -98,6 +98,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
    boolean mInBatchMode; 
    boolean mNeedSync; 
+  private boolean mHasCompositionOnBeginningBatchMode = false; 
   
   private boolean mNeedUpdateComposition; 
   private boolean mSuppressKeyUp; 
@@ -539,6 +540,43 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       mType = type;
     }
 
+    @Override
+    public String toString() {
+      final StringBuilder sb = new StringBuilder("Action(mType=");
+      sb.append(getConstantName(Action.class, "TYPE_", mType));
+      switch (mType) {
+        case TYPE_SET_SPAN:
+          sb.append(", mSpanObject=")
+              .append(mSpanObject)
+              .append(", mStart=")
+              .append(mStart)
+              .append(", mEnd=")
+              .append(mEnd)
+              .append(", mSpanFlags=")
+              .append(mSpanFlags);
+          break;
+        case TYPE_REMOVE_SPAN:
+          sb.append(", mSpanObject=")
+              .append(mSpanObject)
+              .append(", mSpanFlags=")
+              .append(mSpanFlags);
+          break;
+        case TYPE_REPLACE_TEXT:
+          sb.append(", mStart=")
+              .append(mStart)
+              .append(", mEnd=")
+              .append(mEnd)
+              .append(", mSequence=\"")
+              .append(mSequence)
+              .append("\"");
+          break;
+        default:
+          break;
+      }
+      sb.append(")");
+      return sb.toString();
+    }
+
     static Action newReplaceText(final CharSequence text, final int start, final int end) {
       if (start < 0 || start > end) {
         Log.e(LOGTAG, "invalid replace text offsets: " + start + " to " + end);
@@ -583,8 +621,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       assertOnIcThread();
     }
     if (LOGGING) {
-      final StringBuilder sb = new StringBuilder("offer: Action(");
-      sb.append(getConstantName(Action.class, "TYPE_", action.mType)).append(")");
+      final StringBuilder sb = new StringBuilder("offer: action=");
+      sb.append(action.toString());
       MozLog.d(MOZLOGTAG, sb.toString());
     }
 
@@ -639,9 +677,10 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
       case Action.TYPE_SET_SPAN:
         {
+          final boolean isAddingComposition = (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
           final boolean needUpdate =
               (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0
-                  && ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0
+                  && (isAddingComposition
                       || action.mSpanObject == Selection.SELECTION_START
                       || action.mSpanObject == Selection.SELECTION_END);
 
@@ -649,9 +688,18 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
           mNeedUpdateComposition |= needUpdate;
           if (needUpdate) {
-            icMaybeSendComposition(
-                mText.getShadowText(),
-                SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+            if (mInBatchMode && isAddingComposition) {
+              
+              if (LOGGING) {
+                MozLog.d(
+                    MOZLOGTAG,
+                    "Defer composition update due to batch mode: action=" + action.toString());
+              }
+            } else {
+              icMaybeSendComposition(
+                  mText.getShadowText(),
+                  SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+            }
           }
 
           mFocusedChild.onImeSynchronize();
@@ -659,15 +707,24 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         }
       case Action.TYPE_REMOVE_SPAN:
         {
+          final boolean isRemovingComposition = (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
           final boolean needUpdate =
-              (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0
-                  && (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
+              (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 && isRemovingComposition;
 
           mNeedUpdateComposition |= needUpdate;
           if (needUpdate) {
-            icMaybeSendComposition(
-                mText.getShadowText(),
-                SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+            if (mInBatchMode && isRemovingComposition) {
+              
+              if (LOGGING) {
+                MozLog.d(
+                    MOZLOGTAG,
+                    "Defer composition update due to batch mode: action=" + action.toString());
+              }
+            } else {
+              icMaybeSendComposition(
+                  mText.getShadowText(),
+                  SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+            }
           }
 
           mFocusedChild.onImeSynchronize();
@@ -932,17 +989,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
     if (notifyGecko) {
       
-      final Spanned currentText = mText.getCurrentText();
-      if (Selection.getSelectionStart(currentText) != selStart
-          || Selection.getSelectionEnd(currentText) != selEnd) {
-        
-        
-        
-        
-        
-        
-        mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
-      }
+      mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
     }
 
     if (DEBUG) {
@@ -1321,6 +1368,31 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       return;
     }
 
+    if (mInBatchMode != inBatchMode) {
+      mInBatchMode = inBatchMode;
+
+      final boolean hasComposition = isComposing(mText.getShadowText());
+
+      if (inBatchMode) {
+        mHasCompositionOnBeginningBatchMode = hasComposition;
+      } else {
+        
+        
+        if (mNeedUpdateComposition && mFocusedChild != null) {
+          try {
+            if (mHasCompositionOnBeginningBatchMode || hasComposition) {
+              icMaybeSendComposition(
+                  mText.getShadowText(),
+                  SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+            }
+            mFocusedChild.onImeSynchronize();
+          } catch (final RemoteException e) {
+            Log.e(LOGTAG, "Remote call failed", e);
+          }
+        }
+      }
+    }
+
     mInBatchMode = inBatchMode;
 
     if (!inBatchMode && mFocusedChild != null) {
@@ -1466,8 +1538,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       return;
     }
     if (LOGGING) {
-      final StringBuilder sb = new StringBuilder("reply: Action(");
-      sb.append(getConstantName(Action.class, "TYPE_", action.mType)).append(")");
+      final StringBuilder sb = new StringBuilder("reply: action=");
+      sb.append(action.toString());
       MozLog.d(MOZLOGTAG, sb.toString());
     }
     switch (action.mType) {
@@ -1962,7 +2034,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         outAttrs.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
       } else {
         
-        outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
+        outAttrs.inputType |=
+            InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE | InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT;
       }
     }
 
