@@ -53,6 +53,8 @@ class ViewTimeline final : public ScrollTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
+  void UpdateCachedCurrentTime() override;
+
  private:
   ~ViewTimeline() = default;
   ViewTimeline(Document* aDocument, const Scroller& aScroller,
@@ -64,12 +66,7 @@ class ViewTimeline final : public ScrollTimeline {
         mSubjectPseudoType(aSubjectPseudoType),
         mInset(aInset) {}
 
-  Maybe<ScrollOffsets> ComputeOffsets(
-      const ScrollContainerFrame* aScrollContainerFrame,
-      layers::ScrollDirection aOrientation) const override;
-
-  ScrollOffsets ComputeInsets(const ScrollContainerFrame* aScrollContainerFrame,
-                              layers::ScrollDirection aOrientation) const;
+  Maybe<ComputedTimelineData> ComputeTimelineData() const override;
 
   
   
@@ -86,6 +83,21 @@ class ViewTimeline final : public ScrollTimeline {
   
   
   StyleViewTimelineInset mInset;
+
+  struct CurrentTimeData {
+    
+    ScrollTimeline::CurrentTimeData mScrollData;
+    
+    nscoord mScrollPortSize = 0;
+    
+    nscoord mSubjectPosition = 0;
+    nscoord mSubjectSize = 0;
+    
+    nscoord mInsetStart = 0;
+    nscoord mInsetEnd = 0;
+    
+  };
+  Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 
 }  

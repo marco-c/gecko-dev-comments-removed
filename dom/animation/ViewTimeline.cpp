@@ -66,82 +66,10 @@ void ViewTimeline::ReplacePropertiesWith(
   }
 }
 
-Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
+static std::pair<nscoord, nscoord> ComputeInsets(
     const ScrollContainerFrame* aScrollContainerFrame,
-    layers::ScrollDirection aOrientation) const {
-  MOZ_ASSERT(mSubject);
-  MOZ_ASSERT(aScrollContainerFrame);
-
-  
-  
-  
-  
-  
-  const Element* subjectElement =
-      mSubject->GetPseudoElement(PseudoStyleRequest(mSubjectPseudoType));
-  const nsIFrame* subject =
-      subjectElement ? subjectElement->GetPrimaryFrame() : nullptr;
-  if (!subject) {
-    
-    
-    
-    return Nothing();
-  }
-
-  
-  
-  
-  const nsIFrame* scrolledFrame = aScrollContainerFrame->GetScrolledFrame();
-  MOZ_ASSERT(scrolledFrame);
-  const nsRect subjectRect(subject->GetOffsetTo(scrolledFrame),
-                           subject->GetSize());
-
-  
-  
-  
-  const nsRect scrollPort = aScrollContainerFrame->GetScrollPortRect();
-
-  
-  nscoord subjectPosition = subjectRect.y;
-  nscoord subjectSize = subjectRect.height;
-  nscoord scrollPortSize = scrollPort.height;
-  if (aOrientation == layers::ScrollDirection::eHorizontal) {
-    
-    
-    
-    
-    subjectPosition = scrolledFrame->GetWritingMode().IsPhysicalRTL()
-                          ? scrolledFrame->GetSize().width - subjectRect.XMost()
-                          : subjectRect.x;
-    subjectSize = subjectRect.width;
-    scrollPortSize = scrollPort.width;
-  }
-
-  
-  
-  
-  
-  
-  
-  const auto sideInsets = ComputeInsets(aScrollContainerFrame, aOrientation);
-
-  
-  
-  
-
-  
-  
-  nscoord startOffset = subjectPosition - scrollPortSize + sideInsets.mEnd;
-  
-  
-  
-  nscoord endOffset = subjectPosition + subjectSize - sideInsets.mStart;
-  return Some(ScrollOffsets{startOffset, endOffset});
-}
-
-ScrollTimeline::ScrollOffsets ViewTimeline::ComputeInsets(
-    const ScrollContainerFrame* aScrollContainerFrame,
-    layers::ScrollDirection aOrientation) const {
+    const layers::ScrollDirection aOrientation, const StyleScrollAxis aAxis,
+    const StyleViewTimelineInset& aInset) {
   
   
   
@@ -149,9 +77,9 @@ ScrollTimeline::ScrollOffsets ViewTimeline::ComputeInsets(
       aScrollContainerFrame->GetScrolledFrame()->GetWritingMode();
   const auto& scrollPadding =
       LogicalMargin(wm, aScrollContainerFrame->GetScrollPadding());
-  const bool isBlockAxis = mAxis == StyleScrollAxis::Block ||
-                           (mAxis == StyleScrollAxis::X && wm.IsVertical()) ||
-                           (mAxis == StyleScrollAxis::Y && !wm.IsVertical());
+  const bool isBlockAxis = aAxis == StyleScrollAxis::Block ||
+                           (aAxis == StyleScrollAxis::X && wm.IsVertical()) ||
+                           (aAxis == StyleScrollAxis::Y && !wm.IsVertical());
 
   
   
@@ -162,14 +90,133 @@ ScrollTimeline::ScrollOffsets ViewTimeline::ComputeInsets(
                                                            : scrollPort.height;
 
   nscoord startInset =
-      mInset.start.IsAuto()
+      aInset.start.IsAuto()
           ? (isBlockAxis ? scrollPadding.BStart(wm) : scrollPadding.IStart(wm))
-          : mInset.start.AsLengthPercentage().Resolve(percentageBasis);
+          : aInset.start.AsLengthPercentage().Resolve(percentageBasis);
   nscoord endInset =
-      mInset.end.IsAuto()
+      aInset.end.IsAuto()
           ? (isBlockAxis ? scrollPadding.BEnd(wm) : scrollPadding.IEnd(wm))
-          : mInset.end.AsLengthPercentage().Resolve(percentageBasis);
+          : aInset.end.AsLengthPercentage().Resolve(percentageBasis);
   return {startInset, endInset};
+}
+
+void ViewTimeline::UpdateCachedCurrentTime() {
+  mCachedCurrentTime.reset();
+
+  
+  if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
+    return;
+  }
+
+  
+  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
+  if (!scrollContainerFrame) {
+    return;
+  }
+
+  
+  
+  const auto orientation = Axis();
+  if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
+          orientation)) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mSubject, "We should have a subject to create this view timeline");
+  const Element* subjectElement =
+      mSubject->GetPseudoElement(PseudoStyleRequest(mSubjectPseudoType));
+  const nsIFrame* subject =
+      subjectElement ? subjectElement->GetPrimaryFrame() : nullptr;
+  if (!subject) {
+    
+    
+    
+    return;
+  }
+
+  
+  const nsPoint& scrollPosition = scrollContainerFrame->GetScrollPosition();
+  const nsRect& scrollRange = scrollContainerFrame->GetScrollRange();
+
+  
+  
+  
+  const nsIFrame* scrolledFrame = scrollContainerFrame->GetScrolledFrame();
+  MOZ_ASSERT(scrolledFrame);
+  const nsRect subjectRect(subject->GetOffsetTo(scrolledFrame),
+                           subject->GetSize());
+
+  
+  
+  
+  const nsRect scrollPort = scrollContainerFrame->GetScrollPortRect();
+
+  
+  
+  
+  
+  
+  
+  const auto sideInsets =
+      ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
+
+  
+  switch (orientation) {
+    case layers::ScrollDirection::eVertical:
+      mCachedCurrentTime.emplace(CurrentTimeData{
+          ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
+          scrollPort.height, subjectRect.y, subjectRect.height,
+          sideInsets.first, sideInsets.second});
+      break;
+    case layers::ScrollDirection::eHorizontal:
+      mCachedCurrentTime.emplace(CurrentTimeData{
+          ScrollTimeline::CurrentTimeData{scrollPosition.x, scrollRange.width},
+          scrollPort.width,
+          
+          
+          
+          
+          
+          scrolledFrame->GetWritingMode().IsPhysicalRTL()
+              ? scrolledFrame->GetSize().width - subjectRect.XMost()
+              : subjectRect.x,
+          subjectRect.width, sideInsets.first, sideInsets.second});
+      break;
+  }
+}
+
+Maybe<ScrollTimeline::ComputedTimelineData> ViewTimeline::ComputeTimelineData()
+    const {
+  if (!mCachedCurrentTime) {
+    return Nothing();
+  }
+
+  const CurrentTimeData& data = mCachedCurrentTime.ref();
+
+  
+  
+  
+
+  
+  
+  const nscoord startOffset =
+      data.mSubjectPosition - data.mScrollPortSize + data.mInsetEnd;
+  
+  
+  
+  const nscoord endOffset =
+      data.mSubjectPosition + data.mSubjectSize - data.mInsetStart;
+
+  return Some(ComputedTimelineData{
+      data.mScrollData.mPosition,
+      startOffset,
+      endOffset,
+  });
 }
 
 }  
