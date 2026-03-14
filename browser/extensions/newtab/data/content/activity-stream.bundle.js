@@ -155,10 +155,8 @@ for (const type of [
   "DISCOVERY_STREAM_TOPICS_LOADING",
   "DISCOVERY_STREAM_USER_EVENT",
   "DOWNLOAD_CHANGED",
-  "FAKE_FOCUS_SEARCH",
   "FILL_SEARCH_TERM",
   "FOLLOW_SECTION",
-  "HANDOFF_SEARCH_TO_AWESOMEBAR",
   "HIDE_PERSONALIZE",
   "HIDE_TOAST_MESSAGE",
   "INFERRED_PERSONALIZATION_MODEL_UPDATE",
@@ -4305,6 +4303,7 @@ function AdBannerContextMenu({
 
 
 const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
+const DEFAULT_PROMO_URL = "https://addons.mozilla.org/firefox/collections/4757633/b4d5649fb087446aa05add5f0258c3/";
 
 
 
@@ -4313,6 +4312,9 @@ const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
 
 const PromoCard = () => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const trainhopConfigPromoCardUrl = prefs.trainhopConfig?.promoCard?.url;
+  const promoUrl = typeof trainhopConfigPromoCardUrl === "string" && trainhopConfigPromoCardUrl ? trainhopConfigPromoCardUrl : DEFAULT_PROMO_URL;
   const onCtaClick = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.PROMO_CARD_CLICK
@@ -4353,17 +4355,17 @@ const PromoCard = () => {
     alt: ""
   })), external_React_default().createElement("span", {
     className: "promo-card-title",
-    "data-l10n-id": "newtab-promo-card-title"
+    "data-l10n-id": "newtab-promo-card-title-addons"
   }), external_React_default().createElement("span", {
     className: "promo-card-body",
-    "data-l10n-id": "newtab-promo-card-body"
+    "data-l10n-id": "newtab-promo-card-body-addons"
   }), external_React_default().createElement("span", {
     className: "promo-card-cta-wrapper"
   }, external_React_default().createElement("a", {
-    href: "https://support.mozilla.org/kb/sponsor-privacy",
-    "data-l10n-id": "newtab-promo-card-cta",
+    href: promoUrl,
     target: "_blank",
     rel: "noreferrer",
+    "data-l10n-id": "newtab-promo-card-cta-addons",
     onClick: onCtaClick
   }))));
 };
@@ -4424,7 +4426,8 @@ const AdBanner = ({
       height: undefined
     };
   };
-  const promoCardEnabled = spoc.format === "billboard" && prefs[PREF_PROMOCARD_ENABLED] && prefs[PREF_PROMOCARD_VISIBLE];
+  const nimbusPromoCardTrainhopEnabled = prefs.trainhopConfig?.promoCard?.enabled;
+  const promoCardEnabled = spoc.format === "billboard" && (nimbusPromoCardTrainhopEnabled || prefs[PREF_PROMOCARD_ENABLED]) && prefs[PREF_PROMOCARD_VISIBLE];
   const sectionsEnabled = prefs[AdBanner_PREF_SECTIONS_ENABLED];
   const ohttpEnabled = prefs[AdBanner_PREF_OHTTP_UNIFIED_ADS];
   const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
@@ -7203,10 +7206,8 @@ function Search(prevState = INITIAL_STATE.Search, action) {
   switch (action.type) {
     case actionTypes.DISABLE_SEARCH:
       return Object.assign({ ...prevState, disable: true });
-    case actionTypes.FAKE_FOCUS_SEARCH:
-      return Object.assign({ ...prevState, fakeFocus: true });
     case actionTypes.SHOW_SEARCH:
-      return Object.assign({ ...prevState, disable: false, fakeFocus: false });
+      return Object.assign({ ...prevState, disable: false });
     default:
       return prevState;
   }
@@ -15431,179 +15432,16 @@ function ExternalComponentWrapper({
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class _Search extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.onSearchHandoffClick = this.onSearchHandoffClick.bind(this);
-    this.onSearchHandoffPaste = this.onSearchHandoffPaste.bind(this);
-    this.onSearchHandoffDrop = this.onSearchHandoffDrop.bind(this);
-    this.onInputMountHandoff = this.onInputMountHandoff.bind(this);
-    this.onSearchHandoffButtonMount = this.onSearchHandoffButtonMount.bind(this);
-  }
-  handleEvent(event) {
-    
-    if (event.detail.type === "Search") {
-      this.props.dispatch(actionCreators.UserEvent({
-        event: "SEARCH"
-      }));
-    }
-  }
-  doSearchHandoff(text) {
-    this.props.dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.HANDOFF_SEARCH_TO_AWESOMEBAR,
-      data: {
-        text
-      }
-    }));
-    this.props.dispatch({
-      type: actionTypes.FAKE_FOCUS_SEARCH
-    });
-    this.props.dispatch(actionCreators.UserEvent({
-      event: "SEARCH_HANDOFF"
-    }));
-    if (text) {
-      this.props.dispatch({
-        type: actionTypes.DISABLE_SEARCH
-      });
-    }
-  }
-  onSearchHandoffClick(event) {
-    
-    
-    
-    
-    event.preventDefault();
-    this.doSearchHandoff();
-  }
-  onSearchHandoffPaste(event) {
-    event.preventDefault();
-    this.doSearchHandoff(event.clipboardData.getData("Text"));
-  }
-  onSearchHandoffDrop(event) {
-    event.preventDefault();
-    let text = event.dataTransfer.getData("text");
-    if (text) {
-      this.doSearchHandoff(text);
-    }
-  }
-  componentDidMount() {
-    const {
-      caretBlinkCount,
-      caretBlinkTime,
-      "search.useHandoffComponent": useHandoffComponent,
-      "externalComponents.enabled": useExternalComponents
-    } = this.props.Prefs.values;
-    if (useExternalComponents) {
-      
-      
-      return;
-    }
-    if (useHandoffComponent) {
-      const {
-        handoffUI
-      } = this;
-      if (handoffUI) {
-        
-        handoffUI.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
-
-        
-        handoffUI.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
-      }
-    } else {
-      const caret = this.fakeCaret;
-      if (caret) {
-        
-        caret.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
-
-        
-        caret.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
-      }
-    }
-  }
-  onInputMountHandoff(input) {
-    if (input) {
-      
-      
-      this._handoffSearchController = new ContentSearchHandoffUIController();
-    }
-  }
-  onSearchHandoffButtonMount(button) {
-    
-    this._searchHandoffButton = button;
-  }
-
-  
-
-
-
-
+class Search_Search extends (external_React_default()).PureComponent {
   render() {
-    const useHandoffComponent = this.props.Prefs.values["search.useHandoffComponent"];
-    const useExternalComponents = this.props.Prefs.values["externalComponents.enabled"];
-    if (useHandoffComponent) {
-      if (useExternalComponents) {
-        return external_React_default().createElement("div", {
-          className: "search-wrapper"
-        }, this.props.showLogo && external_React_default().createElement(Logo, null), external_React_default().createElement(ExternalComponentWrapper, {
-          type: "SEARCH",
-          className: "search-inner-wrapper"
-        }));
-      }
-      return external_React_default().createElement("div", {
-        className: "search-wrapper"
-      }, this.props.showLogo && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
-        className: "search-inner-wrapper"
-      }, external_React_default().createElement("content-search-handoff-ui", {
-        ref: el => {
-          this.handoffUI = el;
-        }
-      })));
-    }
-    const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return external_React_default().createElement("div", {
-      className: wrapperClassName
-    }, this.props.showLogo && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
+      className: "search-wrapper"
+    }, this.props.showLogo && external_React_default().createElement(Logo, null), external_React_default().createElement(ExternalComponentWrapper, {
+      type: "SEARCH",
       className: "search-inner-wrapper"
-    }, external_React_default().createElement("button", {
-      className: "search-handoff-button",
-      ref: this.onSearchHandoffButtonMount,
-      onClick: this.onSearchHandoffClick,
-      tabIndex: "-1"
-    }, external_React_default().createElement("div", {
-      className: "fake-textbox"
-    }), external_React_default().createElement("input", {
-      type: "search",
-      className: "fake-editable",
-      tabIndex: "-1",
-      "aria-hidden": "true",
-      onDrop: this.onSearchHandoffDrop,
-      onPaste: this.onSearchHandoffPaste,
-      ref: this.onInputMountHandoff
-    }), external_React_default().createElement("div", {
-      className: "fake-caret",
-      ref: el => {
-        this.fakeCaret = el;
-      }
-    }))));
+    }));
   }
 }
-const Search_Search = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  Prefs: state.Prefs
-}))(_Search);
 ;
 
 
@@ -17054,18 +16892,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     __webpack_require__.g.addEventListener("keydown", this.handleOnKeyDown);
     const prefs = this.props.Prefs.values;
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    if (!prefs["externalComponents.enabled"]) {
-      if (prefs["search.useHandoffComponent"]) {
-        
-        
-        import("chrome://browser/content/contentSearchHandoffUI.mjs");
-      } else {
-        const scriptURL = "chrome://browser/content/contentSearchHandoffUI.js";
-        const scriptEl = document.createElement("script");
-        scriptEl.src = scriptURL;
-        document.head.appendChild(scriptEl);
-      }
-    }
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.onVisible();
     } else {
