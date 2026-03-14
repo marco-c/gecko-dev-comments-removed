@@ -59,9 +59,6 @@
 #define strcasestr stristr
 
 
-size_t strlcat(char *dst, const char *src, size_t siz);
-
-
 int getopt(int argc, char *argv[], char *opstring);
 extern char *optarg;
 extern int optind;
