@@ -803,26 +803,14 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
 
-  JS::RootedField<JSObject*, 0> maybePromise(
-      roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
-
   
-  auto state = maybePromise
-                   ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
-                   : JS::PromiseUserInputEventHandlingState::DontCare;
-  bool propagate =
-      state ==
-      JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
-  AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
-
-  
-  JS::RootedField<JSObject*, 1> callbackGlobal(
+  JS::RootedField<JSObject*, 0> callbackGlobal(
       roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
   if (!callbackGlobal) {
     return;
   }
 
-  JS::RootedField<JSObject*, 2> hostDefinedData(roots);
+  JS::RootedField<JSObject*, 1> hostDefinedData(roots);
   
   
   if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
@@ -831,7 +819,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   }
 
   
-  JS::RootedField<JSObject*, 3> allocStack(roots);
+  JS::RootedField<JSObject*, 2> allocStack(roots);
   (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
   
@@ -874,13 +862,6 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     }
   }
 
-  if (incumbentGlobal) {
-    
-    
-    
-    incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
-  }
-
   {
     const bool isMainThread = NS_IsMainThread();
 
@@ -919,18 +900,37 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
         autoIncumbentScript.emplace(incumbentGlobal);
       }
 
+      
+      
+      ignoreMicroTasks.release();
+
       MOZ_ASSERT(aCx == aes.cx());
+
+      JSAutoRealm ar(aCx, callbackGlobal);
 
       Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
       if (allocStack) {
         asyncStackSetter.emplace(aCx, allocStack, reason);
       }
 
-      JSAutoRealm ar(aCx, callbackGlobal);
+      JS::RootedField<JSObject*, 3> maybePromise(
+          roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
 
       
-      
-      ignoreMicroTasks.release();
+      auto state = maybePromise
+                       ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
+                       : JS::PromiseUserInputEventHandlingState::DontCare;
+      bool propagate =
+          state ==
+          JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
+      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+
+      if (incumbentGlobal) {
+        
+        
+        
+        incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+      }
 
       
       
