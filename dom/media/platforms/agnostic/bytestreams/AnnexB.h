@@ -59,7 +59,8 @@ class AnnexB {
 
   
   static already_AddRefed<mozilla::MediaByteBuffer>
-  ConvertAVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
+  ConvertAVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData,
+                               size_t* aLength = nullptr);
   
   static already_AddRefed<mozilla::MediaByteBuffer>
   ConvertHVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);

@@ -177,7 +177,8 @@ Result<Ok, nsresult> AnnexB::ConvertHVCCSampleToAnnexB(
 }
 
 already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertAVCCExtraDataToAnnexB(
-    const mozilla::MediaByteBuffer* aExtraData) {
+    const mozilla::MediaByteBuffer* aExtraData,
+    size_t* aSPSLength ) {
   
   
   
@@ -201,6 +202,9 @@ already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertAVCCExtraDataToAnnexB(
     
     (void)reader.ReadU8().map(
         [&](uint8_t x) { return ConvertSPSOrPPS(reader, x & 31, annexB); });
+    if (aSPSLength) {
+      *aSPSLength = annexB->Length();
+    }
     (void)reader.ReadU8().map(
         [&](uint8_t x) { return ConvertSPSOrPPS(reader, x, annexB); });
     
