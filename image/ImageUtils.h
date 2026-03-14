@@ -33,7 +33,7 @@ class SourceBuffer;
 
 
 
-enum class DecoderType {
+enum class DecoderType : uint8_t {
   PNG,
   GIF,
   JPEG,
