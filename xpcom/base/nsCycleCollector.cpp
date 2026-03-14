@@ -833,9 +833,12 @@ struct CCGraph {
 
   void Init() {
     MOZ_ASSERT(IsEmpty(), "Failed to call CCGraph::Clear");
-    if (!mPtrInfoMap.reserve(kInitialMapLength)) {
-      MOZ_CRASH("OOM");
-    }
+
+    
+    
+    
+    DebugOnly<bool> ok = mPtrInfoMap.reserve(kInitialMapLength);
+    MOZ_ASSERT(ok, "initial reserve should succeed");
   }
 
   void Clear() {
@@ -1711,7 +1714,7 @@ class nsCycleCollectorLogSinkToFile final : public nsICycleCollectorLogSink {
     if (NS_SUCCEEDED(aLog->mFile->MoveTo( nullptr,
                                          logFileFinalDestinationName))) {
       
-      aLog->mFile = logFileFinalDestination;
+      aLog->mFile = std::move(logFileFinalDestination);
     }
 
     
