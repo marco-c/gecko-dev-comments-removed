@@ -827,6 +827,16 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   static DiskCacheStrategy GetDiskCacheStrategy();
 
+  uint16_t GetLoadedFromNeckoAsText() const { return mLoadedFromNeckoAsText; }
+  uint16_t GetLoadedFromNeckoAsSerializedStencil() const {
+    return mLoadedFromNeckoAsSerializedStencil;
+  }
+  uint16_t GetMemoryCacheUsed() const { return mMemoryCacheUsed; }
+  uint16_t GetMemoryCacheRevived() const { return mMemoryCacheRevived; }
+  uint16_t GetMemoryCacheEvictedDirty() const {
+    return mMemoryCacheEvictedDirty;
+  }
+
  private:
   
   
@@ -923,6 +933,49 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   uint32_t mNumberOfProcessors = 0;
   uint32_t mTotalFullParseSize = 0;
   int32_t mPhysicalSizeOfMemory = -1;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint16_t mLoadedFromNeckoAsText = 0;
+  uint16_t mLoadedFromNeckoAsSerializedStencil = 0;
+  uint16_t mMemoryCacheUsed = 0;
+  uint16_t mMemoryCacheRevived = 0;
+  uint16_t mMemoryCacheEvictedDirty = 0;
+
   bool mEnabled = true;
   bool mDeferEnabled = false;
   bool mSpeculativeOMTParsingEnabled = false;
