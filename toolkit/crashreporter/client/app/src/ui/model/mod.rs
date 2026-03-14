@@ -300,32 +300,91 @@ pub struct Margin {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 macro_rules! ui {
-    ( $el:ident
-        $([ $id:literal ])?
-        $( $method:ident $methodargs:tt )*
-        $({ $($contents:tt)* })?
-    ) => {
-        {
-            #[allow(unused_imports)]
-            use $crate::ui::model::*;
-            let mut el: ElementBuilder<$el> = Default::default();
-            $( el.id($id); )?
-            $( el.$method $methodargs ; )*
-            $( ui! { @children (el) $($contents)* } )?
-            el.into()
-        }
-    };
-    ( @children ($parent:expr) ) => {};
-    ( @children ($parent:expr)
+    
+    
+    ( @elements $continuation:tt $els:tt
+      $(#[$attr:meta])*
       $el:ident
         $([ $id:literal ])?
         $( $method:ident $methodargs:tt )*
         $({ $($contents:tt)* })?
       $(, $($rest:tt)* )?
     ) => {
-        $parent.add_child(ui!( $el $([$id])? $( $method $methodargs )* $({ $($contents)* })? ));
-        $(ui!( @children ($parent) $($rest)* ))?
+        ui!(@elements $continuation $els
+            $(#[$attr])* $el $([$id])? $($method $methodargs)* |el| {$(ui!(@elements (@children (el)) [] $($contents)*))?}
+        $(, $($rest)*)?)
+    };
+    
+    ( @elements $continuation:tt [$($els:tt)*]
+      $(#[$attr:meta])*
+      $el:ident
+        $([ $id:literal ])?
+        $( $method:ident $methodargs:tt )*
+        |$builder:ident| $body:expr
+      $(, $($rest:tt)* )?
+    ) => {
+        ui!(@elements $continuation [$($els)* {
+            attr $(#[$attr])*;
+            el $el;
+            id $($id)?;
+            methods $( $method $methodargs )*;
+            builder $builder;
+            body $body
+        }] $($($rest)*)?)
+    };
+    
+    ( @elements ($($continuation:tt)*) $els:tt ) => {
+        ui!($($continuation)* $els)
+    };
+    
+    ( @create {
+        el $el:ident;
+        id $($id:literal)?;
+        methods $( $method:ident $methodargs:tt )*;
+        builder $builder:ident;
+        body $body:expr
+    } ) => {
+        {
+            #[allow(unused_imports)]
+            use $crate::ui::model::*;
+            let mut $builder: ElementBuilder<$el> = Default::default();
+            $( $builder.id($id); )?
+            $( $builder.$method $methodargs ; )*
+            $body;
+            $builder.into()
+        }
+    };
+    
+    ( @children ($parent:expr) [$({ attr $(#[$attr:meta])*; $($rest:tt)* })*] ) => {
+        {$(
+            $(#[$attr])*
+            $parent.add_child(ui!(@create { $($rest)* }));
+        )*}
+    };
+    
+    ( @toplevel [{attr $(#[$attr:meta])*; $($rest:tt)*}] ) => {
+        $(#[$attr])*
+        ui!(@create {$($rest)*})
+    };
+    
+    ( @toplevel $other:tt ) => {
+        compile_error!("Exactly one top-level element must be specified");
+    };
+    
+    ( $($s:tt)* ) => {
+        ui!(@elements (@toplevel) [] $($s)*)
     };
 }
 
