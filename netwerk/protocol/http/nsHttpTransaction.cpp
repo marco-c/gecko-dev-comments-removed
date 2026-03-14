@@ -569,6 +569,20 @@ void nsHttpTransaction::OnActivated() {
     }
   }
 
+  
+  
+  
+  
+  if (mConnection) {
+    MutexAutoLock lock(mLock);
+    mConnection->GetSelfAddr(&mSelfAddr);
+    mConnection->GetPeerAddr(&mPeerAddr);
+    mResolvedByTRR = mConnection->ResolvedByTRR();
+    mEffectiveTRRMode = mConnection->EffectiveTRRMode();
+    mTRRSkipReason = mConnection->TRRSkipReason();
+    mEchConfigUsed = mConnection->GetEchConfigUsed();
+  }
+
   mActivated = true;
   gHttpHandler->ConnMgr()->AddActiveTransaction(this);
   FinalizeConnInfo();
@@ -602,26 +616,18 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
         " progress=%" PRId64 "]\n",
         this, static_cast<uint32_t>(status), progress));
 
-  if (status == NS_NET_STATUS_CONNECTED_TO ||
-      status == NS_NET_STATUS_WAITING_FOR) {
-    if (mConnection) {
-      MutexAutoLock lock(mLock);
-      mConnection->GetSelfAddr(&mSelfAddr);
-      mConnection->GetPeerAddr(&mPeerAddr);
-      mResolvedByTRR = mConnection->ResolvedByTRR();
-      mEffectiveTRRMode = mConnection->EffectiveTRRMode();
-      mTRRSkipReason = mConnection->TRRSkipReason();
-      mEchConfigUsed = mConnection->GetEchConfigUsed();
-    }
-  }
-
   
   
   
   
   
   if (GetRequestStart().IsNull()) {
-    if (status == NS_NET_STATUS_RESOLVING_HOST) {
+    if (mConnInfo && mConnInfo->GetHappyEyeballsEnabled()) {
+      
+      if (status == NS_NET_STATUS_SENDING_TO) {
+        SetRequestStart(TimeStamp::Now(), true);
+      }
+    } else if (status == NS_NET_STATUS_RESOLVING_HOST) {
       SetDomainLookupStart(TimeStamp::Now(), true);
     } else if (status == NS_NET_STATUS_RESOLVED_HOST) {
       SetDomainLookupEnd(TimeStamp::Now());
