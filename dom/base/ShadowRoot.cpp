@@ -786,19 +786,6 @@ void ShadowRoot::MaybeReassignMainSummary(SummaryChangeReason aReason) {
   }
 }
 
-bool ShadowRoot::IsContentShadowRoot() const {
-  if (IsUAWidget()) {
-    return false;  
-  }
-  Element* const host = GetHost();
-  if (!host) {
-    return true;
-  }
-  
-  
-  return host->CanAttachShadowDOM();
-}
-
 Element* ShadowRoot::GetActiveElement() {
   return GetRetargetedFocusedElement();
 }

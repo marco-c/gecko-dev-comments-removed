@@ -11,142 +11,73 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
 #include "nsIAnonymousContentCreator.h"
-#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla::dom {
 
-#define NS_INSTANTIATE_CHILD_ITERATOR_METHOD(aResult, aMethod, ...)        \
-  template aResult ChildIteratorBase<TreeKind::DOM>::aMethod(__VA_ARGS__); \
-  template aResult ChildIteratorBase<TreeKind::FlatForSelection>::aMethod( \
-      __VA_ARGS__);                                                        \
-  template aResult ChildIteratorBase<TreeKind::Flat>::aMethod(__VA_ARGS__);
-
-#define NS_INSTANTIATE_CHILD_ITERATOR_CONST_METHOD(aResult, aMethod, ...)  \
-  template aResult ChildIteratorBase<TreeKind::DOM>::aMethod(__VA_ARGS__)  \
-      const;                                                               \
-  template aResult ChildIteratorBase<TreeKind::FlatForSelection>::aMethod( \
-      __VA_ARGS__) const;                                                  \
-  template aResult ChildIteratorBase<TreeKind::Flat>::aMethod(__VA_ARGS__) \
-      const;
-
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(, ChildIteratorBase, const nsINode*, bool);
-
-template <TreeKind aKind>
-ChildIteratorBase<aKind>::ChildIteratorBase(const nsINode* aParentNode,
-                                            bool aStartAtBeginning)
-    : mParentNode(aParentNode),
-      mOriginalParentNode(aParentNode),
-      mIsFirst(aStartAtBeginning) {
-  if constexpr (aKind == TreeKind::DOM) {
+FlattenedChildIterator::FlattenedChildIterator(const nsIContent* aParent,
+                                               bool aStartAtBeginning)
+    : mParent(aParent), mOriginalParent(aParent), mIsFirst(aStartAtBeginning) {
+  if (!mParent->IsElement()) {
+    
+    
     return;
   }
 
-  if (!mParentNode->IsElement()) {
-    return;
-  }
-
-  if (const ShadowRoot* const shadowRoot =
-          mParentNode->AsElement()->GetShadowRoot<aKind>()) {
-    mParentNode = shadowRoot;
+  if (ShadowRoot* shadow = mParent->AsElement()->GetShadowRoot()) {
+    mParent = shadow;
     mShadowDOMInvolved = true;
     return;
   }
 
-  if (const auto* const slot =
-          mParentNode->GetAsHTMLSlotElementIfFilled<aKind>()) {
-    MOZ_ASSERT(!slot->AssignedNodes().IsEmpty());
-    mParentNodeAsSlot = slot;
-    if (!aStartAtBeginning) {
-      mIndexInInserted = slot->AssignedNodes().Length();
+  if (const auto* slot = HTMLSlotElement::FromNode(mParent)) {
+    if (!slot->AssignedNodes().IsEmpty()) {
+      mParentAsSlot = slot;
+      if (!aStartAtBeginning) {
+        mIndexInInserted = slot->AssignedNodes().Length();
+      }
+      mShadowDOMInvolved = true;
     }
-    mShadowDOMInvolved = true;
   }
 }
 
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(uint32_t, GetLength, const nsINode*);
-
-
-template <TreeKind aKind>
-uint32_t ChildIteratorBase<aKind>::GetLength(const nsINode* aParent) {
-  if (!aParent->IsContainerNode()) {
-    return aParent->Length();
-  }
-  MOZ_ASSERT(!aParent->IsCharacterData());
-  if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
+uint32_t FlattenedChildIterator::GetLength(const nsINode* aParent) {
+  if (const auto* element = Element::FromNode(aParent)) {
+    if (const auto* slot = HTMLSlotElement::FromNode(element)) {
       if (uint32_t len = slot->AssignedNodes().Length()) {
         return len;
       }
-    }
-    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
+    } else if (auto* shadowRoot = element->GetShadowRoot()) {
       return shadowRoot->GetChildCount();
     }
   }
   return aParent->GetChildCount();
 }
 
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(Maybe<uint32_t>, GetIndexOf,
-                                     const nsINode*, const nsINode*);
-
-
-template <TreeKind aKind>
-Maybe<uint32_t> ChildIteratorBase<aKind>::GetIndexOf(
+Maybe<uint32_t> FlattenedChildIterator::GetIndexOf(
     const nsINode* aParent, const nsINode* aPossibleChild) {
-  if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
+  if (const auto* element = Element::FromNode(aParent)) {
+    if (const auto* slot = HTMLSlotElement::FromNode(element)) {
       const Span assigned = slot->AssignedNodes();
-      MOZ_ASSERT(!assigned.IsEmpty());
-      const auto index = assigned.IndexOf(aPossibleChild);
-      if (index == decltype(assigned)::npos) {
-        return Nothing();
+      if (!assigned.IsEmpty()) {
+        auto index = assigned.IndexOf(aPossibleChild);
+        if (index == assigned.npos) {
+          return Nothing();
+        }
+        return Some(index);
       }
-      return Some(index);
-    }
-    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
+    } else if (auto* shadowRoot = element->GetShadowRoot()) {
       return shadowRoot->ComputeIndexOf(aPossibleChild);
     }
   }
   return aParent->ComputeIndexOf(aPossibleChild);
 }
 
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetChildAt, const nsINode*,
-                                     uint32_t);
-
-
-template <TreeKind aKind>
-nsIContent* ChildIteratorBase<aKind>::GetChildAt(const nsINode* aParent,
-                                                 uint32_t aIndex) {
-  if (!aParent->IsContainerNode()) {
-    return nullptr;
-  }
-  MOZ_ASSERT(!aParent->IsCharacterData());
-  if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
-      const Span assigned = slot->AssignedNodes();
-      MOZ_ASSERT(!assigned.IsEmpty());
-      if (assigned.Length() <= aIndex) {
-        return nullptr;
-      }
-      nsIContent* const child = nsIContent::FromNode(assigned[aIndex]);
-      MOZ_ASSERT(child);
-      return child;
-    }
-    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
-      return shadowRoot->GetChildAt_Deprecated(aIndex);
-    }
-  }
-  return aParent->GetChildAt_Deprecated(aIndex);
-}
-
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetNextChild);
-
-template <TreeKind aKind>
-nsIContent* ChildIteratorBase<aKind>::GetNextChild() {
+nsIContent* FlattenedChildIterator::GetNextChild() {
   
-  if (mParentNodeAsSlot) {
-    const Span assignedNodes = mParentNodeAsSlot->AssignedNodes();
+  if (mParentAsSlot) {
+    const Span assignedNodes = mParentAsSlot->AssignedNodes();
     if (mIsFirst) {
       mIsFirst = false;
       MOZ_ASSERT(mIndexInInserted == 0);
@@ -163,7 +94,7 @@ nsIContent* ChildIteratorBase<aKind>::GetNextChild() {
   }
 
   if (mIsFirst) {  
-    mChild = mParentNode->GetFirstChild();
+    mChild = mParent->GetFirstChild();
     mIsFirst = false;
   } else if (mChild) {  
     mChild = mChild->GetNextSibling();
@@ -172,11 +103,8 @@ nsIContent* ChildIteratorBase<aKind>::GetNextChild() {
   return mChild;
 }
 
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(bool, Seek, const nsIContent*);
-
-template <TreeKind aKind>
-bool ChildIteratorBase<aKind>::Seek(const nsIContent* aChildToFind) {
-  if (!mParentNodeAsSlot && aChildToFind->GetParentNode() == mParentNode &&
+bool FlattenedChildIterator::Seek(const nsIContent* aChildToFind) {
+  if (!mParentAsSlot && aChildToFind->GetParent() == mParent &&
       !aChildToFind->IsRootOfNativeAnonymousSubtree()) {
     
     
@@ -203,15 +131,12 @@ bool ChildIteratorBase<aKind>::Seek(const nsIContent* aChildToFind) {
   return false;
 }
 
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetPreviousChild);
-
-template <TreeKind aKind>
-nsIContent* ChildIteratorBase<aKind>::GetPreviousChild() {
+nsIContent* FlattenedChildIterator::GetPreviousChild() {
   if (mIsFirst) {  
     return nullptr;
   }
-  if (mParentNodeAsSlot) {
-    const Span assignedNodes = mParentNodeAsSlot->AssignedNodes();
+  if (mParentAsSlot) {
+    const Span assignedNodes = mParentAsSlot->AssignedNodes();
     MOZ_ASSERT(mIndexInInserted <= assignedNodes.Length());
     if (mIndexInInserted == 0) {
       mIsFirst = true;
@@ -223,7 +148,7 @@ nsIContent* ChildIteratorBase<aKind>::GetPreviousChild() {
   if (mChild) {  
     mChild = mChild->GetPreviousSibling();
   } else {  
-    mChild = mParentNode->GetLastChild();
+    mChild = mParent->GetLastChild();
   }
   if (!mChild) {
     mIsFirst = true;
@@ -231,63 +156,6 @@ nsIContent* ChildIteratorBase<aKind>::GetPreviousChild() {
 
   return mChild;
 }
-
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetLastChild);
-
-template <TreeKind aKind>
-nsIContent* ChildIteratorBase<aKind>::GetLastChild() {
-  mIsFirst = false;
-  mChild = nullptr;
-  if (mParentNodeAsSlot) {
-    mIndexInInserted = mParentNodeAsSlot->AssignedNodes().Length();
-  }
-  return GetPreviousChild();
-}
-
-NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsINode*, GetParentNodeOf,
-                                     const nsIContent&);
-
-
-template <TreeKind aKind>
-nsINode* ChildIteratorBase<aKind>::GetParentNodeOf(const nsIContent& aChild) {
-  if constexpr (aKind == TreeKind::DOM) {
-    return aChild.GetParentNode();
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  else if constexpr (aKind == TreeKind::FlatForSelection ||
-                     aKind == TreeKind::Flat) {
-    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlot<aKind>();
-    nsINode* const parentNode = aChild.GetParentNode();
-    
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(!parentNode ||
-                     (!assignedSlot && parentNode->GetShadowRoot<aKind>()))) {
-      return nullptr;
-    }
-    return aChild.GetParentNode<aKind>();
-  } else {
-    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value!");
-  }
-}
-
-#undef NS_INSTANTIATE_CHILD_ITERATOR_METHOD
-#undef NS_INSTANTIATE_CHILD_ITERATOR_CONST_METHOD
 
 nsIContent* AllChildrenIterator::Get() const {
   switch (mPhase) {
@@ -455,11 +323,6 @@ nsIContent* AllChildrenIterator::GetPreviousChild() {
 
   mPhase = Phase::AtBegin;
   return nullptr;
-}
-
-
-nsINode* StyleChildrenIterator::GetParentNodeOf(const nsIContent& aChild) {
-  return aChild.GetFlattenedTreeParentNodeForStyle();
 }
 
 }  

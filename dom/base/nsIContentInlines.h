@@ -7,7 +7,6 @@
 #ifndef nsIContentInlines_h
 #define nsIContentInlines_h
 
-#include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLSlotElement.h"
@@ -97,39 +96,19 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
     MOZ_ASSERT(aType == nsINode::eForSelection);
     
     
-    
-    
-    
-    
     return parent;
   }
 
   if (parentAsContent->IsInShadowTree()) {
-    
-    
-    
     if (auto* slot = mozilla::dom::HTMLSlotElement::FromNode(parentAsContent)) {
-      if constexpr (aType == nsINode::eForSelection) {
-        const mozilla::dom::ShadowRoot* const shadowRoot =
-            slot->GetContainingShadow();
-        if (shadowRoot && !shadowRoot->IsContentShadowRoot()) {
-          
-          
-          
-          slot = nullptr;
-        }
-      }
-      if (slot) {
-        return slot->AssignedNodes().IsEmpty() ? slot : nullptr;
-      }
+      
+      
+      return slot->AssignedNodes().IsEmpty() ? parent : nullptr;
     }
 
-    if (auto* const shadowRoot =
+    if (auto* shadowRoot =
             mozilla::dom::ShadowRoot::FromNode(parentAsContent)) {
-      if (aType != nsINode::eForSelection ||
-          shadowRoot->IsContentShadowRoot()) {
-        return shadowRoot->GetHost();
-      }
+      return shadowRoot->GetHost();
     }
   }
 
@@ -159,75 +138,8 @@ inline nsINode* nsINode::GetFlattenedTreeParentNodeForStyle() const {
   return ::GetFlattenedTreeParentNode<nsINode::eForStyle>(this);
 }
 
-inline nsIContent* nsINode::GetFlattenedTreeParentForStyle() const {
-  return nsIContent::FromNodeOrNull(GetFlattenedTreeParentNodeForStyle());
-}
-
 inline nsINode* nsINode::GetFlattenedTreeParentNodeForSelection() const {
   return ::GetFlattenedTreeParentNode<nsINode::eForSelection>(this);
-}
-
-inline nsIContent* nsINode::GetFlattenedTreeFirstChild() const {
-  return mozilla::dom::FlattenedChildIterator::GetFirstChild(this);
-}
-
-inline nsIContent* nsINode::GetFlattenedTreeFirstChildForSelection() const {
-  return mozilla::dom::FlattenedChildIteratorForSelection::GetFirstChild(this);
-}
-
-inline nsIContent* nsINode::GetFlattenedTreeLastChild() const {
-  return mozilla::dom::FlattenedChildIterator::GetLastChild(this);
-}
-
-inline nsIContent* nsINode::GetFlattenedTreeLastChildForSelection() const {
-  return mozilla::dom::FlattenedChildIteratorForSelection::GetLastChild(this);
-}
-
-inline uint32_t nsINode::GetFlatTreeChildCount() const {
-  if (!IsContainerNode()) {
-    return 0;
-  }
-  MOZ_ASSERT(!IsCharacterData());
-  return mozilla::dom::FlattenedChildIterator::GetLength(this);
-}
-
-inline uint32_t nsINode::GetFlatTreeForSelectionChildCount() const {
-  if (!IsContainerNode()) {
-    return 0;
-  }
-  MOZ_ASSERT(!IsCharacterData());
-  return mozilla::dom::FlattenedChildIteratorForSelection::GetLength(this);
-}
-
-inline mozilla::Maybe<uint32_t> nsINode::ComputeFlatTreeIndexOf(
-    const nsINode* aPossibleChild) const {
-  return mozilla::dom::FlattenedChildIterator::GetIndexOf(this, aPossibleChild);
-}
-
-inline mozilla::Maybe<uint32_t> nsINode::ComputeFlatTreeForSelectionIndexOf(
-    const nsINode* aPossibleChild) const {
-  return mozilla::dom::FlattenedChildIteratorForSelection::GetIndexOf(
-      this, aPossibleChild);
-}
-
-inline nsIContent* nsINode::GetChildAtInFlatTree(uint32_t aIndex) const {
-  return mozilla::dom::FlattenedChildIterator::GetChildAt(this, aIndex);
-}
-
-inline nsIContent* nsINode::GetChildAtInFlatTreeForSelection(
-    uint32_t aIndex) const {
-  return mozilla::dom::FlattenedChildIteratorForSelection::GetChildAt(this,
-                                                                      aIndex);
-}
-
-inline mozilla::dom::ShadowRoot* nsINode::GetContainingShadowForSelection()
-    const {
-  if (!IsInShadowTree()) {
-    return nullptr;
-  }
-  mozilla::dom::ShadowRoot* const shadowRoot =
-      AsContent()->GetContainingShadow();
-  return shadowRoot && shadowRoot->IsContentShadowRoot() ? shadowRoot : nullptr;
 }
 
 inline bool nsINode::NodeOrAncestorHasDirAuto() const {

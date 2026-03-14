@@ -7265,12 +7265,10 @@ nsresult EditorBase::TopLevelEditSubActionData::AddRangeToChangedRange(
     return rv;
   }
 
-  
-  
   Maybe<int32_t> relation =
       mChangedRange->StartRef().IsSet()
-          ? nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-                mChangedRange->StartRef(), aStart.ToRawRangeBoundary())
+          ? nsContentUtils::ComparePoints(mChangedRange->StartRef(),
+                                          aStart.ToRawRangeBoundary())
           : Some(1);
   if (NS_WARN_IF(!relation)) {
     return NS_ERROR_FAILURE;
@@ -7287,8 +7285,8 @@ nsresult EditorBase::TopLevelEditSubActionData::AddRangeToChangedRange(
   }
 
   relation = mChangedRange->EndRef().IsSet()
-                 ? nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-                       mChangedRange->EndRef(), aEnd.ToRawRangeBoundary())
+                 ? nsContentUtils::ComparePoints(mChangedRange->EndRef(),
+                                                 aEnd.ToRawRangeBoundary())
                  : Some(1);
   if (NS_WARN_IF(!relation)) {
     return NS_ERROR_FAILURE;

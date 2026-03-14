@@ -298,12 +298,6 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
     SetFlags(NODE_HAS_BEEN_IN_UA_WIDGET);
   }
 
-  
-
-
-
-  [[nodiscard]] bool IsContentShadowRoot() const;
-
   bool IsAvailableToElementInternals() const {
     return HasFlag(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);
   }

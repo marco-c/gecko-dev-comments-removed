@@ -18,10 +18,6 @@ class ErrorResult;
 
 namespace dom {
 
-
-
-
-
 class CrossShadowBoundaryRange final : public StaticRange,
                                        public nsStubMutationObserver {
  public:
@@ -66,8 +62,7 @@ class CrossShadowBoundaryRange final : public StaticRange,
 
  private:
   explicit CrossShadowBoundaryRange(nsINode* aNode, nsRange* aOwner)
-      : StaticRange(aNode, StaticRange::MutationObserved::Yes,
-                    TreeKind::FlatForSelection),
+      : StaticRange(aNode, StaticRange::MutationObserved::Yes, TreeKind::Flat),
         mOwner(aOwner) {}
   virtual ~CrossShadowBoundaryRange() = default;
 

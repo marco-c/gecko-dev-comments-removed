@@ -846,10 +846,8 @@ RawRangeBoundary TextComposition::FirstIMESelectionStartRef() const {
       }
       
       
-      
-      
-      if (*nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-              range->StartRef(), firstRange->StartRef()) == -1) {
+      if (*nsContentUtils::ComparePoints(range->StartRef(),
+                                         firstRange->StartRef()) == -1) {
         firstRange = range;
       }
     }
@@ -909,10 +907,8 @@ RawRangeBoundary TextComposition::LastIMESelectionEndRef() const {
       }
       
       
-      
-      
-      if (*nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-              lastRange->EndRef(), range->EndRef()) == -1) {
+      if (*nsContentUtils::ComparePoints(lastRange->EndRef(),
+                                         range->EndRef()) == -1) {
         lastRange = range;
       }
     }

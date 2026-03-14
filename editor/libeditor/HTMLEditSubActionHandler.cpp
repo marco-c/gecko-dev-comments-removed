@@ -7484,12 +7484,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
   
   
 
-  
-  
-  Maybe<int32_t> comp =
-      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-          startPoint.ToRawRangeBoundary(),
-          newRange.EndRef().ToRawRangeBoundary());
+  Maybe<int32_t> comp = nsContentUtils::ComparePoints(
+      startPoint.ToRawRangeBoundary(), newRange.EndRef().ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
     return Err(NS_ERROR_FAILURE);
@@ -7499,8 +7495,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
     return EditorRawDOMRange();  
   }
 
-  comp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
-      newRange.StartRef().ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
+  comp = nsContentUtils::ComparePoints(newRange.StartRef().ToRawRangeBoundary(),
+                                       endPoint.ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
     return Err(NS_ERROR_FAILURE);
