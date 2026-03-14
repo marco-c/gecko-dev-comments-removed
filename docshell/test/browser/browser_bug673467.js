@@ -5,52 +5,36 @@
 
 
 
-var doc =
-  "data:text/html,<html><body onload='load()'>" +
-  "<script>" +
-  "  var iframe = document.createElement('iframe');" +
-  "  iframe.id = 'iframe';" +
-  "  document.documentElement.appendChild(iframe);" +
-  "  function load() {" +
-  "    iframe.src = 'data:text/html,Hello!';" +
-  "  }" +
-  "</script>" +
-  "</body></html>";
+const HELLO_HTML = "data:text/html,Hello!";
+
+var doc = `data:text/html,<html><body onload='load()'>
+  <script>
+    var iframe = document.createElement('iframe');
+    iframe.id = 'iframe';
+    document.documentElement.appendChild(iframe);
+    function load() {
+      iframe.src = '${HELLO_HTML}';
+    }
+  </script>
+</body></html>`;
 
 function test() {
   waitForExplicitFinish();
 
   let taskFinished;
 
-  let tab = BrowserTestUtils.addTab(gBrowser, doc, {}, tab => {
-    taskFinished = ContentTask.spawn(tab.linkedBrowser, null, () => {
-      return new Promise(resolve => {
-        addEventListener(
-          "load",
-          function () {
-            
-            let iframe = content.document.getElementById("iframe");
-            iframe.addEventListener(
-              "load",
-              function listener() {
-                
-                if (!iframe.src) {
-                  return;
-                }
-
-                iframe.removeEventListener("load", listener, true);
-                let shistory = content.docShell.QueryInterface(
-                  Ci.nsIWebNavigation
-                ).sessionHistory;
-
-                Assert.equal(shistory.count, 1, "shistory count should be 1.");
-                resolve();
-              },
-              true
-            );
-          },
-          true
-        );
+  let tab = BrowserTestUtils.addTab(gBrowser, doc, {}, tabEl => {
+    let browser = tabEl.linkedBrowser;
+    taskFinished = BrowserTestUtils.browserLoaded(
+      browser,
+      true,
+      HELLO_HTML
+    ).then(async () => {
+      await SpecialPowers.spawn(browser, [], function () {
+        let shistory = content.docShell.QueryInterface(
+          Ci.nsIWebNavigation
+        ).sessionHistory;
+        Assert.equal(shistory.count, 1, "shistory count should be 1.");
       });
     });
   });

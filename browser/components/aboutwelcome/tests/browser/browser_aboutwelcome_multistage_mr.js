@@ -192,6 +192,7 @@ add_task(async function test_aboutwelcome_gratitude() {
   await clickVisibleButton(browser, ".action-buttons button.primary");
 
   
+  await BrowserTestUtils.browserLoaded(browser, false, "about:home");
   await test_screen_content(
     browser,
     "home",
@@ -881,6 +882,8 @@ add_task(async function test_aboutwelcome_gratitude() {
 
   
   await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  await BrowserTestUtils.browserLoaded(browser, false, "about:home");
   await test_screen_content(
     browser,
     "home",
