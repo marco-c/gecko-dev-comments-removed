@@ -14,11 +14,8 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CustomElementRegistryBinding.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInternals.h"
-#include "mozilla/dom/ElementInternalsBinding.h"
-#include "mozilla/dom/HTMLFormElement.h"
 #include "nsAtomHashKeys.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashSet.h"
@@ -31,6 +28,7 @@ namespace dom {
 
 struct CustomElementData;
 struct ElementDefinitionOptions;
+struct LifecycleCallbackArgs;
 class CallbackFunction;
 class CustomElementCallback;
 class CustomElementReaction;
@@ -48,30 +46,6 @@ enum class ElementCallbackType {
   eFormDisabled,
   eFormStateRestore,
   eGetCustomInterface
-};
-
-struct LifecycleCallbackArgs {
-  
-  RefPtr<nsAtom> mName;
-  nsString mOldValue;
-  nsString mNewValue;
-  nsString mNamespaceURI;
-
-  
-  RefPtr<Document> mOldDocument;
-  RefPtr<Document> mNewDocument;
-
-  
-  RefPtr<HTMLFormElement> mForm;
-
-  
-  bool mDisabled;
-
-  
-  Nullable<OwningFileOrUSVStringOrFormData> mState;
-  RestoreReason mReason;
-
-  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 };
 
 
@@ -374,7 +348,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(CustomElementRegistry)
 
  public:
-  explicit CustomElementRegistry(nsPIDOMWindowInner* aWindow);
+  explicit CustomElementRegistry(nsPIDOMWindowInner* aWindow,
+                                 bool aIsScoped = false);
 
  private:
   class RunCustomElementCreationCallback : public mozilla::Runnable {
@@ -404,12 +379,23 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
+  static already_AddRefed<CustomElementRegistry> Constructor(
+      const GlobalObject& aGlobal);
+
+  
+
+
+
   CustomElementDefinition* LookupCustomElementDefinition(nsAtom* aNameAtom,
                                                          int32_t aNameSpaceID,
                                                          nsAtom* aTypeAtom);
 
   CustomElementDefinition* LookupCustomElementDefinition(
       JSContext* aCx, JSObject* aConstructor) const;
+
+  
+
+
 
   static void EnqueueLifecycleCallback(ElementCallbackType aType,
                                        Element* aCustomElement,
@@ -483,6 +469,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
     elements->Insert(elem);
   }
 
+  bool IsScoped() const { return mIsScoped; }
+
   void TraceDefinitions(JSTracer* aTrc);
 
  private:
@@ -538,6 +526,10 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   
   bool mIsCustomDefinitionRunning;
 
+  
+  
+  bool mIsScoped;
+
  private:
   int32_t InferNamespace(JSContext* aCx, JS::Handle<JSObject*> constructor);
 
@@ -553,8 +545,14 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
               CustomElementConstructor& aFunctionConstructor,
               const ElementDefinitionOptions& aOptions, ErrorResult& aRv);
 
+  
+
+
   void Get(const nsAString& name,
            OwningCustomElementConstructorOrUndefined& aRetVal);
+
+  
+
 
   void GetName(JSContext* aCx, CustomElementConstructor& aConstructor,
                nsAString& aResult);

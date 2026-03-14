@@ -22,6 +22,7 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLElementBinding.h"
+#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
@@ -512,8 +513,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CustomElementRegistry)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
-    : mWindow(aWindow), mIsCustomDefinitionRunning(false) {
+CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow,
+                                             bool aIsScoped)
+    : mWindow(aWindow),
+      mIsCustomDefinitionRunning(false),
+      mIsScoped(aIsScoped) {
   MOZ_ASSERT(aWindow);
 
   mozilla::HoldJSObjects(this);
@@ -521,6 +525,15 @@ CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
 
 CustomElementRegistry::~CustomElementRegistry() {
   mozilla::DropJSObjects(this);
+}
+
+
+already_AddRefed<CustomElementRegistry> CustomElementRegistry::Constructor(
+    const GlobalObject& aGlobal) {
+  nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(aGlobal.GetAsSupports());
+  
+  
+  return MakeAndAddRef<CustomElementRegistry>(win, true);
 }
 
 NS_IMETHODIMP
@@ -561,10 +574,14 @@ CustomElementRegistry::RunCustomElementCreationCallback::Run() {
   return NS_OK;
 }
 
+
+
+
 CustomElementDefinition* CustomElementRegistry::LookupCustomElementDefinition(
     nsAtom* aNameAtom, int32_t aNameSpaceID, nsAtom* aTypeAtom) {
   CustomElementDefinition* data = mCustomDefinitions.GetWeak(aTypeAtom);
 
+  
   if (!data) {
     RefPtr<CustomElementCreationCallback> callback;
     mElementCreationCallbacks.Get(aTypeAtom, getter_AddRefs(callback));
@@ -578,11 +595,16 @@ CustomElementDefinition* CustomElementRegistry::LookupCustomElementDefinition(
     }
   }
 
+  
+  
+  
+  
   if (data && data->mLocalName == aNameAtom &&
       data->mNamespaceID == aNameSpaceID) {
     return data;
   }
 
+  
   return nullptr;
 }
 
@@ -660,6 +682,7 @@ void CustomElementRegistry::UnregisterUnresolvedElement(Element* aElement,
 void CustomElementRegistry::EnqueueLifecycleCallback(
     ElementCallbackType aType, Element* aCustomElement,
     const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition) {
+  
   CustomElementDefinition* definition = aDefinition;
   if (!definition) {
     definition = aCustomElement->GetCustomElementDefinition();
@@ -674,8 +697,13 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
     }
   }
 
+  
+  
+  
+  
   auto callback =
       CustomElementCallback::Create(aType, aCustomElement, aArgs, definition);
+  
   if (!callback) {
     return;
   }
@@ -685,14 +713,22 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
     return;
   }
 
+  
   if (aType == ElementCallbackType::eAttributeChanged) {
+    
+    
+    
     if (!definition->mObservedAttributes.Contains(aArgs.mName)) {
       return;
     }
   }
 
+  
+  
   CustomElementReactionsStack* reactionsStack =
       docGroup->CustomElementReactionsStack();
+
+  
   reactionsStack->EnqueueCallbackReaction(aCustomElement, std::move(callback));
 }
 
@@ -754,6 +790,7 @@ nsTArray<nsCOMPtr<Element>> CandidateFinder::OrderedCandidates() {
 
 }  
 
+
 void CustomElementRegistry::UpgradeCandidates(
     nsAtom* aKey, CustomElementDefinition* aDefinition, ErrorResult& aRv) {
   DocGroup* docGroup = mWindow->GetDocGroup();
@@ -762,6 +799,13 @@ void CustomElementRegistry::UpgradeCandidates(
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
   mozilla::UniquePtr<nsTHashSet<RefPtr<nsIWeakReference>>> candidates;
   if (mCandidatesMap.Remove(aKey, &candidates)) {
     MOZ_ASSERT(candidates);
@@ -769,6 +813,8 @@ void CustomElementRegistry::UpgradeCandidates(
         docGroup->CustomElementReactionsStack();
 
     CandidateFinder finder(*candidates, mWindow->GetExtantDoc());
+    
+    
     for (auto& elem : finder.OrderedCandidates()) {
       reactionsStack->EnqueueUpgradeReaction(elem, aDefinition);
     }
@@ -957,9 +1003,13 @@ void CustomElementRegistry::Define(
 
 
 
+
+
   RefPtr<nsAtom> localNameAtom = nameAtom;
   if (aOptions.mExtends.WasPassed()) {
     doc->SetUseCounter(eUseCounter_custom_CustomizedBuiltin);
+
+    
 
     RefPtr<nsAtom> extendsAtom(NS_Atomize(aOptions.mExtends.Value()));
     if (nsContentUtils::IsCustomElementName(extendsAtom, kNameSpaceID_XHTML)) {
@@ -1157,12 +1207,17 @@ void CustomElementRegistry::Define(
   
 
 
+
+
+
+
+
+
+
+
   UpgradeCandidates(nameAtom, def, aRv);
 
   
-
-
-
 
 
 
@@ -1221,15 +1276,24 @@ void CustomElementRegistry::SetElementCreationCallback(
   }
 }
 
+
 void CustomElementRegistry::Upgrade(nsINode& aRoot) {
+  
+  
   for (nsINode* node : ShadowIncludingTreeIterator(aRoot)) {
+    
     Element* element = Element::FromNode(node);
     if (!element) {
       continue;
     }
 
+    
+    
+    
+    
     CustomElementData* ceData = element->GetCustomElementData();
     if (ceData) {
+      
       NodeInfo* nodeInfo = element->NodeInfo();
       nsAtom* typeAtom = ceData->GetCustomElementType();
       CustomElementDefinition* definition =
@@ -1243,12 +1307,16 @@ void CustomElementRegistry::Upgrade(nsINode& aRoot) {
   }
 }
 
+
 void CustomElementRegistry::Get(
     const nsAString& aName,
     OwningCustomElementConstructorOrUndefined& aRetVal) {
   RefPtr<nsAtom> nameAtom(NS_Atomize(aName));
   CustomElementDefinition* data = mCustomDefinitions.GetWeak(nameAtom);
 
+  
+  
+  
   if (!data) {
     aRetVal.SetUndefined();
     return;
@@ -1257,18 +1325,23 @@ void CustomElementRegistry::Get(
   aRetVal.SetAsCustomElementConstructor() = data->mConstructor;
 }
 
+
 void CustomElementRegistry::GetName(JSContext* aCx,
                                     CustomElementConstructor& aConstructor,
                                     nsAString& aResult) {
   CustomElementDefinition* aDefinition =
       LookupCustomElementDefinition(aCx, aConstructor.CallableOrNull());
 
+  
+  
+  
   if (aDefinition) {
     aDefinition->mType->ToString(aResult);
   } else {
     aResult.SetIsVoid(true);
   }
 }
+
 
 already_AddRefed<Promise> CustomElementRegistry::WhenDefined(
     const nsAString& aName, ErrorResult& aRv) {
@@ -1288,6 +1361,8 @@ already_AddRefed<Promise> CustomElementRegistry::WhenDefined(
     return promise.forget();
   };
 
+  
+  
   RefPtr<nsAtom> nameAtom(NS_Atomize(aName));
   Document* doc = mWindow->GetExtantDoc();
   uint32_t nameSpaceID =
@@ -1299,6 +1374,8 @@ already_AddRefed<Promise> CustomElementRegistry::WhenDefined(
     return nullptr;
   }
 
+  
+  
   if (CustomElementDefinition* definition =
           mCustomDefinitions.GetWeak(nameAtom)) {
     return createPromise([&](const RefPtr<Promise>& promise) {
@@ -1306,6 +1383,9 @@ already_AddRefed<Promise> CustomElementRegistry::WhenDefined(
     });
   }
 
+  
+  
+  
   return mWhenDefinedPromiseMap.WithEntryHandle(
       nameAtom, [&](auto&& entry) -> already_AddRefed<Promise> {
         if (!entry) {
@@ -1319,10 +1399,13 @@ already_AddRefed<Promise> CustomElementRegistry::WhenDefined(
 
 namespace {
 
+
 MOZ_CAN_RUN_SCRIPT
 static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
                       CustomElementConstructor* aConstructor,
                       ErrorResult& aRv) {
+  
+  
   if (aDefinition->mDisableShadow && aElement->GetShadowRoot()) {
     aRv.ThrowNotSupportedError(nsPrintfCString(
         "Custom element upgrade to '%s' is disabled because a shadow root "
@@ -1331,10 +1414,13 @@ static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
     return;
   }
 
+  
   CustomElementData* data = aElement->GetCustomElementData();
   MOZ_ASSERT(data, "CustomElementData should exist");
   data->mState = CustomElementData::State::ePrecustomized;
 
+  
+  
   JS::Rooted<JS::Value> constructResult(RootingCx());
   
   
@@ -1344,6 +1430,8 @@ static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
     return;
   }
 
+  
+  
   Element* element;
   
   
@@ -1365,6 +1453,7 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   MOZ_ASSERT(data, "CustomElementData should exist");
 
   
+  
   if (data->mState != CustomElementData::State::eUndefined) {
     return;
   }
@@ -1375,6 +1464,8 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   
   data->mState = CustomElementData::State::eFailed;
 
+  
+  
   
   if (!aDefinition->mObservedAttributes.IsEmpty()) {
     uint32_t count = aElement->GetAttrCount();
@@ -1406,6 +1497,7 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   }
 
   
+  
   if (aElement->IsInComposedDoc()) {
     nsContentUtils::EnqueueLifecycleCallback(ElementCallbackType::eConnected,
                                              aElement, {}, aDefinition);
@@ -1414,6 +1506,11 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   
   AutoConstructionStackEntry acs(aDefinition->mConstructionStack, aElement);
 
+  
+  
+  
+  
+  
   
   DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
             aRv);
@@ -1433,6 +1530,8 @@ void CustomElementRegistry::Upgrade(Element* aElement,
 
   
   if (data->IsFormAssociated()) {
+    
+    
     ElementInternals* internals = data->GetElementInternals();
     MOZ_ASSERT(internals);
     MOZ_ASSERT(aElement->IsHTMLElement());
