@@ -672,7 +672,7 @@ IncrementalProgress GCRuntime::markWeakReferences(
     }
   }
 
-  markIncomingSymbolEdgesFromUncollectedZones();
+  markIncomingGraySymbolEdgesFromUncollectedZones();
 
   bool markedAny = true;
   while (markedAny) {
@@ -698,7 +698,12 @@ IncrementalProgress GCRuntime::markWeakReferences(
   return Finished;
 }
 
-void GCRuntime::markIncomingSymbolEdgesFromUncollectedZones() {
+void GCRuntime::markIncomingGraySymbolEdgesFromUncollectedZones() {
+  
+  
+  
+  
+  
   
   
   
@@ -710,7 +715,7 @@ void GCRuntime::markIncomingSymbolEdgesFromUncollectedZones() {
   
   
 
-  if (!atomsZone()->isGCMarking()) {
+  if (marker().markColor() != MarkColor::Gray || !atomsZone()->isGCMarking()) {
     return;
   }
 
