@@ -128,10 +128,7 @@ void CharacterData::GetData(nsAString& aData) const {
   } else {
     
     
-
-    const char* data = mBuffer.Get1b();
-
-    if (data) {
+    if (const char* data = mBuffer.Get1b()) {
       CopyASCIItoUTF16(Substring(data, data + mBuffer.GetLength()), aData);
     } else {
       aData.Truncate();

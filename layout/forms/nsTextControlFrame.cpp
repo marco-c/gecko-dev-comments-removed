@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "ErrorList.h"
 #include "PseudoStyleType.h"
 #include "gfxContext.h"
 #include "mozilla/EventStateManager.h"
@@ -18,7 +19,6 @@
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEditor.h"
-#include "mozilla/Try.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -39,12 +39,9 @@
 #include "nsILayoutHistoryState.h"
 #include "nsINode.h"
 #include "nsLayoutUtils.h"
-#include "nsNameSpaceManager.h"
 #include "nsPIDOMWindow.h"  
 #include "nsPresContext.h"
-#include "nsQueryObject.h"
 #include "nsRange.h"  
-#include "nsTextNode.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -70,44 +67,6 @@ a11y::AccType nsTextControlFrame::AccessibleType() {
 }
 #endif
 
-#ifdef DEBUG
-class EditorInitializerEntryTracker {
- public:
-  explicit EditorInitializerEntryTracker(nsTextControlFrame& frame)
-      : mFrame(frame), mFirstEntry(false) {
-    if (!mFrame.mInEditorInitialization) {
-      mFrame.mInEditorInitialization = true;
-      mFirstEntry = true;
-    }
-  }
-  ~EditorInitializerEntryTracker() {
-    if (mFirstEntry) {
-      mFrame.mInEditorInitialization = false;
-    }
-  }
-  bool EnteredMoreThanOnce() const { return !mFirstEntry; }
-
- private:
-  nsTextControlFrame& mFrame;
-  bool mFirstEntry;
-};
-#endif
-
-class nsTextControlFrame::nsAnonDivObserver final
-    : public nsStubMutationObserver {
- public:
-  explicit nsAnonDivObserver(nsTextControlFrame& aFrame) : mFrame(aFrame) {}
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-
- private:
-  ~nsAnonDivObserver() = default;
-  nsTextControlFrame& mFrame;
-};
-
 nsTextControlFrame::nsTextControlFrame(ComputedStyle* aStyle,
                                        nsPresContext* aPresContext,
                                        nsIFrame::ClassID aClassID)
@@ -125,19 +84,9 @@ ScrollContainerFrame* nsTextControlFrame::GetScrollTargetFrame() const {
 
 void nsTextControlFrame::Destroy(DestroyContext& aContext) {
   RemoveProperty(TextControlInitializer());
-
-  
-  
-  RefPtr textControlElement = ControlElement();
-  if (mMutationObserver) {
-    textControlElement->UnbindFromFrame(this);
-    if (auto* root = GetRootNode()) {
-      root->RemoveMutationObserver(mMutationObserver);
-    } else {
-      MOZ_ASSERT_UNREACHABLE("Added mutation observer, but can't remove it?");
-    }
+  if (auto* ts = ControlElement()->GetTextControlState()) {
+    ts->DeinitSelection();
   }
-  mMutationObserver = nullptr;
   nsContainerFrame::Destroy(aContext);
 }
 
@@ -223,107 +172,9 @@ LogicalSize nsTextControlFrame::CalcIntrinsicSize(gfxContext* aRenderingContext,
   return intrinsicSize;
 }
 
-nsresult nsTextControlFrame::EnsureEditorInitialized() {
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (mEditorHasBeenInitialized) {
-    return NS_OK;
-  }
-
-  Document* doc = mContent->GetComposedDoc();
-  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-
-  AutoWeakFrame weakFrame(this);
-
-  
-  
-  
-  doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-  NS_ENSURE_TRUE(weakFrame.IsAlive(), NS_ERROR_FAILURE);
-
-  
-  
-  {
-    RefPtr<TextControlElement> textControlElement = ControlElement();
-
-    
-    
-    AutoHideSelectionChanges hideSelectionChanges(
-        textControlElement->GetIndependentFrameSelection());
-
-    nsAutoScriptBlocker scriptBlocker;
-
-    
-    
-    mozilla::dom::AutoNoJSAPI nojsapi;
-
-#ifdef DEBUG
-    
-    
-    const EditorInitializerEntryTracker tracker(*this);
-    NS_ASSERTION(!tracker.EnteredMoreThanOnce(),
-                 "EnsureEditorInitialized has been called while a previous "
-                 "call was in progress");
-#endif
-
-    
-    nsresult rv = textControlElement->CreateEditor();
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_STATE(weakFrame.IsAlive());
-
-    
-    
-    mEditorHasBeenInitialized = true;
-
-    if (weakFrame.IsAlive()) {
-      uint32_t position = 0;
-
-      
-      
-      if (textControlElement->ValueChanged()) {
-        nsAutoString val;
-        textControlElement->GetTextEditorValue(val);
-        position = val.Length();
-      }
-
-      SetSelectionEndPoints(position, position, SelectionDirection::None);
-    }
-  }
-  NS_ENSURE_STATE(weakFrame.IsAlive());
-  return NS_OK;
-}
-
 void nsTextControlFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                               nsIFrame* aPrevInFlow) {
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
-
-  RefPtr<TextControlElement> textControlElement = ControlElement();
-  auto* root = textControlElement->GetTextEditorRoot();
-  if (NS_WARN_IF(!root)) {
-    return;
-  }
-  
-  
-  
-  
-  
-  nsresult rv = textControlElement->BindToFrame(this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  mMutationObserver = new nsAnonDivObserver(*this);
-  root->AddMutationObserver(mMutationObserver);
   InitializeEagerlyIfNeeded();
 }
 
@@ -336,10 +187,8 @@ bool nsTextControlFrame::ShouldInitializeEagerly() const {
   }
 
   
-  if (auto* htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
-    if (htmlElement->Spellcheck()) {
-      return true;
-    }
+  if (textControlElement->Spellcheck()) {
+    return true;
   }
 
   return false;
@@ -589,40 +438,6 @@ void nsTextControlFrame::OnFocus() {
   }
 }
 
-already_AddRefed<TextEditor> nsTextControlFrame::GetTextEditor() {
-  if (NS_WARN_IF(NS_FAILED(EnsureEditorInitialized()))) {
-    return nullptr;
-  }
-  RefPtr el = ControlElement();
-  return do_AddRef(el->GetTextEditor());
-}
-
-nsresult nsTextControlFrame::SetSelectionInternal(
-    nsINode* aStartNode, uint32_t aStartOffset, nsINode* aEndNode,
-    uint32_t aEndOffset, SelectionDirection aDirection) {
-  
-  nsISelectionController* selCon = GetSelectionController();
-  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
-
-  RefPtr<Selection> selection =
-      selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
-  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
-
-  nsDirection direction;
-  if (aDirection == SelectionDirection::None) {
-    
-    direction = selection->GetDirection();
-  } else {
-    direction =
-        aDirection == SelectionDirection::Backward ? eDirPrevious : eDirNext;
-  }
-
-  MOZ_TRY(selection->SetStartAndEndInLimiter(*aStartNode, aStartOffset,
-                                             *aEndNode, aEndOffset, direction,
-                                             nsISelectionListener::JS_REASON));
-  return NS_OK;
-}
-
 void nsTextControlFrame::ScrollSelectionIntoViewAsync(
     ScrollAncestors aScrollAncestors) {
   nsCOMPtr<nsISelectionController> selCon = GetSelectionController();
@@ -639,76 +454,18 @@ void nsTextControlFrame::ScrollSelectionIntoViewAsync(
       ScrollAxis(), ScrollAxis(), flags);
 }
 
-nsresult nsTextControlFrame::SelectAll() {
-  nsresult rv = EnsureEditorInitialized();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  RefPtr<nsINode> rootNode = GetRootNode();
-  NS_ENSURE_TRUE(rootNode, NS_ERROR_FAILURE);
-
-  RefPtr<Text> text = Text::FromNodeOrNull(rootNode->GetFirstChild());
-  MOZ_ASSERT(text);
-
-  uint32_t length = text->Length();
-
-  rv = SetSelectionInternal(text, 0, text, length, SelectionDirection::None);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  ScrollSelectionIntoViewAsync();
-  return NS_OK;
-}
-
-nsresult nsTextControlFrame::SetSelectionEndPoints(
-    uint32_t aSelStart, uint32_t aSelEnd, SelectionDirection aDirection) {
-  NS_ASSERTION(aSelStart <= aSelEnd, "Invalid selection offsets!");
-
-  if (aSelStart > aSelEnd) {
+nsresult nsTextControlFrame::EnsureEditorInitialized() {
+  AutoWeakFrame wf(this);
+  RefPtr el = ControlElement();
+  auto* state = el->GetTextControlState();
+  if (!state) {
     return NS_ERROR_FAILURE;
   }
-
-  nsCOMPtr<nsINode> startNode, endNode;
-  uint32_t startOffset, endOffset;
-
-  
-
-  nsresult rv =
-      OffsetToDOMPoint(aSelStart, getter_AddRefs(startNode), &startOffset);
-
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aSelStart == aSelEnd) {
-    
-    endNode = startNode;
-    endOffset = startOffset;
-  } else {
-    
-    
-
-    rv = OffsetToDOMPoint(aSelEnd, getter_AddRefs(endNode), &endOffset);
-
-    NS_ENSURE_SUCCESS(rv, rv);
+  state->EnsureEditorInitialized();
+  if (NS_WARN_IF(!wf.IsAlive())) {
+    return NS_ERROR_FAILURE;
   }
-
-  return SetSelectionInternal(startNode, startOffset, endNode, endOffset,
-                              aDirection);
-}
-
-NS_IMETHODIMP
-nsTextControlFrame::SetSelectionRange(uint32_t aSelStart, uint32_t aSelEnd,
-                                      SelectionDirection aDirection) {
-  nsresult rv = EnsureEditorInitialized();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aSelStart > aSelEnd) {
-    
-    
-
-    aSelStart = aSelEnd;
-  }
-
-  return SetSelectionEndPoints(aSelStart, aSelEnd, aDirection);
+  return NS_OK;
 }
 
 nsresult nsTextControlFrame::OffsetToDOMPoint(uint32_t aOffset,
@@ -758,8 +515,9 @@ nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               AttrModType aModType) {
   if (aAttribute == nsGkAtoms::maxlength) {
-    if (RefPtr<TextEditor> textEditor = GetTextEditor()) {
-      textEditor->SetMaxTextLength(ControlElement()->UsedMaxLength());
+    auto* ce = ControlElement();
+    if (RefPtr textEditor = ce->GetExtantTextEditor()) {
+      textEditor->SetMaxTextLength(ce->UsedMaxLength());
       return NS_OK;
     }
   }
@@ -817,7 +575,6 @@ static nsIFrame* FindRootNodeFrame(const nsFrameList& aChildList,
   }
   return nullptr;
 }
-
 void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
                                              nsFrameList&& aChildList) {
   nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
@@ -832,7 +589,9 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
           FindRootNodeFrame(PrincipalChildList(), GetRootNode())) {
     frame->AddStateBits(NS_FRAME_REFLOW_ROOT);
 
-    ControlElement()->InitializeKeyboardEventListeners();
+    if (auto* ts = ControlElement()->GetTextControlState()) {
+      ts->InitializeSelection(PresShell());
+    }
 
     bool hasProperty;
     nsPoint contentScrollPos = TakeProperty(ContentScrollPos(), &hasProperty);
@@ -849,14 +608,6 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
   } else {
     MOZ_ASSERT(!GetRootNode() || PrincipalChildList().IsEmpty());
   }
-}
-
-NS_IMETHODIMP
-nsTextControlFrame::GetOwnedSelectionController(
-    nsISelectionController** aSelCon) {
-  NS_ENSURE_ARG_POINTER(aSelCon);
-  NS_IF_ADDREF(*aSelCon = GetSelectionController());
-  return NS_OK;
 }
 
 UniquePtr<PresState> nsTextControlFrame::SaveState() {
@@ -932,28 +683,6 @@ nsTextControlFrame::EditorInitializer::Run() {
 
   mFrame->FinishedInitializer();
   return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(nsTextControlFrame::nsAnonDivObserver, nsIMutationObserver)
-
-void nsTextControlFrame::nsAnonDivObserver::CharacterDataChanged(
-    nsIContent* aContent, const CharacterDataChangeInfo&) {
-  mFrame.ClearCachedValue();
-}
-
-void nsTextControlFrame::nsAnonDivObserver::ContentAppended(
-    nsIContent* aFirstNewContent, const ContentAppendInfo&) {
-  mFrame.ClearCachedValue();
-}
-
-void nsTextControlFrame::nsAnonDivObserver::ContentInserted(
-    nsIContent* aChild, const ContentInsertInfo&) {
-  mFrame.ClearCachedValue();
-}
-
-void nsTextControlFrame::nsAnonDivObserver::ContentWillBeRemoved(
-    nsIContent* aChild, const ContentRemoveInfo&) {
-  mFrame.ClearCachedValue();
 }
 
 Maybe<nscoord> nsTextControlFrame::GetNaturalBaselineBOffset(

@@ -1206,8 +1206,6 @@ void HTMLInputElement::FreeData() {
     free(mInputData.mValue);
     mInputData.mValue = nullptr;
   } else if (mInputData.mState) {
-    
-    UnbindFromFrame(nullptr);
     mInputData.mState->Destroy();
     mInputData.mState = nullptr;
   }
@@ -2636,30 +2634,6 @@ nsFrameSelection* HTMLInputElement::GetIndependentFrameSelection() const {
   return nullptr;
 }
 
-nsresult HTMLInputElement::BindToFrame(nsTextControlFrame* aFrame) {
-  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
-  TextControlState* state = GetEditorState();
-  if (state) {
-    return state->BindToFrame(aFrame);
-  }
-  return NS_ERROR_FAILURE;
-}
-
-void HTMLInputElement::UnbindFromFrame(nsTextControlFrame* aFrame) {
-  TextControlState* state = GetEditorState();
-  if (state && aFrame) {
-    state->UnbindFromFrame(aFrame);
-  }
-}
-
-nsresult HTMLInputElement::CreateEditor() {
-  TextControlState* state = GetEditorState();
-  if (state) {
-    return state->PrepareEditor();
-  }
-  return NS_ERROR_FAILURE;
-}
-
 void HTMLInputElement::GetDisplayFileName(nsAString& aValue) const {
   MOZ_ASSERT(mFileData);
 
@@ -3278,10 +3252,9 @@ void HTMLInputElement::Select() {
     return;
   }
 
-  TextControlState* state = GetEditorState();
-  MOZ_ASSERT(state, "Single line text controls are expected to have a state");
-
   if (FocusState() != FocusTristate::eUnfocusable) {
+    TextControlState* state = GetEditorState();
+    MOZ_ASSERT(state, "Single line text controls are expected to have a state");
     RefPtr<nsFrameSelection> fs = state->GetIndependentFrameSelection();
     if (fs && fs->MouseDownRecorded()) {
       
@@ -3294,27 +3267,19 @@ void HTMLInputElement::Select() {
 
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       fm->SetFocus(this, nsIFocusManager::FLAG_NOSCROLL);
-
-      
-      
-      state = GetEditorState();
-      if (!state) {
-        return;
-      }
     }
   }
 
-  
-  
-  state->SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(), IgnoreErrors(),
-                           TextControlState::ScrollAfterSelection::No);
+  SelectAll();
 }
 
 void HTMLInputElement::SelectAll() {
-  
-  if (nsTextControlFrame* tf =
-          do_QueryFrame(GetPrimaryFrame(FlushType::Frames))) {
-    tf->SelectAll();
+  if (TextControlState* state = GetEditorState()) {
+    
+    
+    state->SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(),
+                             IgnoreErrors(),
+                             TextControlState::ScrollAfterSelection::No);
   }
 }
 
@@ -4804,7 +4769,7 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   TextControlState::SelectionProperties sp;
 
   if (IsSingleLineTextControl(false) && mInputData.mState) {
-    mInputData.mState->SyncUpSelectionPropertiesBeforeDestruction();
+    mInputData.mState->DeinitSelection();
     sp = mInputData.mState->GetSelectionProperties();
   }
 
@@ -7246,13 +7211,6 @@ bool HTMLInputElement::ValueChanged() const { return mValueChanged; }
 void HTMLInputElement::GetTextEditorValue(nsAString& aValue) const {
   if (TextControlState* state = GetEditorState()) {
     state->GetValue(aValue,  true);
-  }
-}
-
-void HTMLInputElement::InitializeKeyboardEventListeners() {
-  TextControlState* state = GetEditorState();
-  if (state) {
-    state->InitializeKeyboardEventListeners();
   }
 }
 

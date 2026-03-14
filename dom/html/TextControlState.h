@@ -177,18 +177,6 @@ struct PasswordMaskData final {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class RestoreSelectionState;
 
 class TextControlState final : public SupportsWeakPtr {
@@ -223,11 +211,8 @@ class TextControlState final : public SupportsWeakPtr {
   TextEditor* GetExtantTextEditor() const;
   nsISelectionController* GetSelectionController() const;
   nsFrameSelection* GetIndependentFrameSelection() const;
-  nsresult BindToFrame(nsTextControlFrame* aFrame);
-  MOZ_CAN_RUN_SCRIPT void UnbindFromFrame(nsTextControlFrame* aFrame);
-  [[nodiscard]] nsTextControlFrame* GetBoundFrame() const {
-    return mBoundFrame;
-  }
+  nsresult InitializeSelection(PresShell*);
+  MOZ_CAN_RUN_SCRIPT void DeinitSelection();
   MOZ_CAN_RUN_SCRIPT nsresult PrepareEditor(const nsAString* aValue = nullptr);
   void InitializeKeyboardEventListeners();
 
@@ -374,6 +359,7 @@ class TextControlState final : public SupportsWeakPtr {
       SetEnd(GetEnd());
     }
     bool HasMaxLength() { return mMaxLength.isSome(); }
+    const Maybe<uint32_t>& GetMaxLength() { return mMaxLength; }
 
     
     
@@ -406,10 +392,6 @@ class TextControlState final : public SupportsWeakPtr {
   SelectionProperties& GetSelectionProperties() { return mSelectionProperties; }
   MOZ_CAN_RUN_SCRIPT void SetSelectionProperties(SelectionProperties& aProps);
   bool HasNeverInitializedBefore() const { return !mEverInited; }
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT void SyncUpSelectionPropertiesBeforeDestruction();
 
   
   void GetSelectionRange(uint32_t* aSelectionStart, uint32_t* aSelectionEnd,
@@ -477,6 +459,8 @@ class TextControlState final : public SupportsWeakPtr {
       const Maybe<uint32_t>& aSelectionStart = Nothing(),
       const Maybe<uint32_t>& aSelectionEnd = Nothing());
 
+  MOZ_CAN_RUN_SCRIPT void EnsureEditorInitialized();
+
  private:
   explicit TextControlState(TextControlElement* aOwningElement);
   MOZ_CAN_RUN_SCRIPT ~TextControlState();
@@ -498,7 +482,6 @@ class TextControlState final : public SupportsWeakPtr {
   bool EditorHasComposition();
 
   
-
 
 
 
@@ -532,9 +515,7 @@ class TextControlState final : public SupportsWeakPtr {
   
   TextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
   RefPtr<TextInputSelectionController> mSelCon;
-  RefPtr<RestoreSelectionState> mRestoringSelection;
   RefPtr<TextEditor> mTextEditor;
-  nsTextControlFrame* mBoundFrame = nullptr;
   RefPtr<TextInputListener> mTextListener;
   UniquePtr<PasswordMaskData> mPasswordMaskData;
 

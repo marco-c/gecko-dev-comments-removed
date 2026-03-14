@@ -144,27 +144,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   
 
 
-
-
-  virtual nsresult BindToFrame(nsTextControlFrame* aFrame) = 0;
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual void UnbindFromFrame(
-      nsTextControlFrame* aFrame) = 0;
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult CreateEditor() = 0;
-
-  
-
-
   void SetPreviewValue(const nsAString& aValue);
 
   
@@ -181,11 +160,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   virtual void GetAutofillState(nsAString& aState) = 0;
-
-  
-
-
-  virtual void InitializeKeyboardEventListeners() = 0;
 
   enum class ValueChangeKind {
     Internal,

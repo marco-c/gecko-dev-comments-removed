@@ -101,13 +101,6 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<mozilla::TextEditor>
-  GetTextEditor();
-
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD SetSelectionRange(uint32_t aSelectionStart,
-                                                  uint32_t aSelectionEnd,
-                                                  mozilla::SelectionDirection);
-  NS_IMETHOD GetOwnedSelectionController(nsISelectionController** aSelCon);
   nsFrameSelection* GetOwnedFrameSelection() {
     return ControlElement()->GetIndependentFrameSelection();
   }
@@ -200,8 +193,6 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
 
 #undef DEFINE_TEXTCTRL_CONST_FORWARDER
 
-  MOZ_CAN_RUN_SCRIPT nsresult SelectAll();
-
  protected:
   class EditorInitializer;
   friend class EditorInitializer;
@@ -261,52 +252,11 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
             nsIFrame* aPrevInFlow) override;
 
  private:
-  
-  MOZ_CAN_RUN_SCRIPT nsresult SetSelectionInternal(nsINode* aStartNode,
-                                                   uint32_t aStartOffset,
-                                                   nsINode* aEndNode,
-                                                   uint32_t aEndOffset,
-                                                   mozilla::SelectionDirection);
-  MOZ_CAN_RUN_SCRIPT nsresult SetSelectionEndPoints(
-      uint32_t aSelStart, uint32_t aSelEnd, mozilla::SelectionDirection);
-
   void FinishedInitializer() { RemoveProperty(TextControlInitializer()); }
 
-  const nsAString& CachedValue() const { return mCachedValue; }
-
-  void ClearCachedValue() { mCachedValue.SetIsVoid(true); }
-
-  void CacheValue(const nsAString& aValue) { mCachedValue.Assign(aValue); }
-
-  [[nodiscard]] bool CacheValue(const nsAString& aValue,
-                                const mozilla::fallible_t& aFallible) {
-    if (!mCachedValue.Assign(aValue, aFallible)) {
-      ClearCachedValue();
-      return false;
-    }
-    return true;
-  }
-
  protected:
-  class nsAnonDivObserver;
-
-  nsresult CreateRootNode();
-  void CreatePlaceholderIfNeeded();
-  void UpdatePlaceholderText(nsString&, bool aNotify);
-  void CreatePreviewIfNeeded();
-
   bool ShouldInitializeEagerly() const;
   void InitializeEagerlyIfNeeded();
-
-  RefPtr<nsAnonDivObserver> mMutationObserver;
-  
-  
-  
-  
-  
-  
-  
-  nsString mCachedValue{VoidString()};
 
   
   
@@ -314,7 +264,6 @@ class nsTextControlFrame : public nsContainerFrame, public nsIStatefulFrame {
 
   
   
-  bool mEditorHasBeenInitialized = false;
   bool mIsProcessing = false;
 
 #ifdef DEBUG

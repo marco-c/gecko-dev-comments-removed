@@ -30,15 +30,10 @@ class TextInputListener final : public nsIDOMEventListener,
  public:
   explicit TextInputListener(TextControlElement* aTextControlElement);
 
-  void SetFrame(nsIFrame* aTextControlFrame) { mFrame = aTextControlFrame; }
   void SettingValue(bool aValue) { mSettingValue = aValue; }
   void SetValueChanged(bool aSetValueChanged) {
     mSetValueChanged = aSetValueChanged;
   }
-
-  
-
-
 
   void HandleValueChanged(TextEditor&);
 
@@ -70,7 +65,6 @@ class TextInputListener final : public nsIDOMEventListener,
   nsresult UpdateTextInputCommands(const nsAString& aCommandsToUpdate);
 
  protected:
-  nsIFrame* mFrame;
   TextControlElement* const mTxtCtrlElement;
   WeakPtr<TextControlState> const mTextControlState;
 
