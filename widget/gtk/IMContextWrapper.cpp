@@ -3031,7 +3031,7 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
   }
 
   nsWindow* rootWindow =
-      static_cast<nsWindow*>(mLastFocusedWindow->GetTopLevelWidget());
+      nsWindow::FromWidget(mLastFocusedWindow->GetTopLevelWidget());
 
   
   LayoutDeviceIntPoint root = rootWindow->WidgetToScreenOffset();

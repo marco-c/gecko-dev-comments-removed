@@ -404,7 +404,8 @@ void NativeMenuGtk::ShowMenuAtPosition(nsIFrame* aClickedFrame,
     return;
   }
 
-  auto* geckoWin = static_cast<nsWindow*>(widget.get());
+  auto* geckoWin = nsWindow::FromWidget(widget);
+
   
   auto pos = (aPosition * aClickedFrame->PresContext()->CSSToDevPixelScale()) -
              geckoWin->WidgetToScreenOffset();

@@ -86,11 +86,10 @@ TaskbarProgress::SetPrimaryWindow(mozIDOMWindowProxy* aWindow) {
 
   
   
-  if (!widget->GetNativeData(NS_NATIVE_WINDOW)) {
+  mPrimaryWindow = nsWindow::FromWidget(widget);
+  if (!mPrimaryWindow) {
     return NS_OK;
   }
-
-  mPrimaryWindow = static_cast<nsWindow*>(widget.get());
 
   
   
