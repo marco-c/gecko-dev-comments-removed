@@ -676,7 +676,7 @@ pref("browser.urlbar.merino.ohttpConfigURL", "https://ohttp-gateway-merino.servi
 pref("browser.urlbar.merino.ohttpRelayURL", "https://ohttp-merino.mozilla.fastly-edge.com");
 
 
-pref("browser.urlbar.merino.timeoutMs", 200);
+pref("browser.urlbar.merino.timeoutMs", 500);
 
 
 pref("browser.urlbar.merino.providers", "");
