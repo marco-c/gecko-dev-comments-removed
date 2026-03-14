@@ -36,18 +36,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "isCssPropertyKnown",
-  "resource://devtools/server/actors/css-properties.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "parseDeclarations",
-  "resource://devtools/shared/css/parsing-utils.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "nodeConstants",
   "resource://devtools/shared/dom-node-constants.js"
 );
@@ -195,6 +183,8 @@ class FlexItemActor extends Actor {
       "flex-basis": "",
       "flex-grow": "",
       "flex-shrink": "",
+      
+      flex: "",
       [`min-${dimension}`]: "",
       [`max-${dimension}`]: "",
       [dimension]: "",
@@ -203,26 +193,18 @@ class FlexItemActor extends Actor {
     const isElementNode = this.element.nodeType === this.element.ELEMENT_NODE;
 
     if (isElementNode) {
+      const cssRules = getMatchingCSSRules(this.element);
       for (const name in properties) {
         const values = [];
-        const cssRules = getMatchingCSSRules(this.element);
 
         for (const rule of cssRules) {
           
-          
-          
-          const declarations = parseDeclarations(
-            isCssPropertyKnown,
-            rule.style.cssText
-          );
-
-          for (const declaration of declarations) {
-            if (declaration.name === name && declaration.value !== "auto") {
-              values.push({
-                value: declaration.value,
-                priority: declaration.priority,
-              });
-            }
+          const value = rule.style.getPropertyValue(name);
+          if (value !== "" && value !== "auto") {
+            values.push({
+              value,
+              priority: rule.style.getPropertyPriority(name),
+            });
           }
         }
 
@@ -265,6 +247,22 @@ class FlexItemActor extends Actor {
       : { flexGrow: null, flexShrink: null };
     const computedStyle = { flexGrow, flexShrink };
 
+    
+    if (
+      properties["flex-grow"] === "" &&
+      properties["flex-shrink"] === "" &&
+      properties["flex-basis"] === "" &&
+      properties.flex !== ""
+    ) {
+      const parts = this.#parseFlexShorthand(properties.flex);
+      if (parts.length === 3) {
+        properties["flex-grow"] = parts[0];
+        properties["flex-shrink"] = parts[1];
+        properties["flex-basis"] = parts[2];
+      }
+    }
+    delete properties.flex;
+
     const form = {
       actor: this.actorID,
       
@@ -283,6 +281,49 @@ class FlexItemActor extends Actor {
     }
 
     return form;
+  }
+
+  
+
+
+
+
+
+  #parseFlexShorthand(flexShorthandValue) {
+    const lexer = new InspectorCSSParser(flexShorthandValue);
+    
+
+
+
+    function consume(current) {
+      if (!current) {
+        return "";
+      }
+      
+      if (current.tokenType === "Function") {
+        const contents = [];
+        let next;
+        while (
+          (next = lexer.nextToken()) &&
+          next.tokenType !== "CloseParenthesis"
+        ) {
+          contents.push(consume(next));
+        }
+        return `${current.value}(${contents.join("")})`;
+      }
+
+      return current.text;
+    }
+
+    const result = [];
+    let token;
+    while ((token = lexer.nextToken())) {
+      const value = consume(token).trim();
+      if (value) {
+        result.push(value);
+      }
+    }
+    return result;
   }
 }
 
