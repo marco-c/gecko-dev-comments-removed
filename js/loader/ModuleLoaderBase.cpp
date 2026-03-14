@@ -36,10 +36,10 @@
 using mozilla::AutoSlowOperation;
 using mozilla::CycleCollectedJSContext;
 using mozilla::Err;
+using mozilla::MakeUnique;
 using mozilla::MicroTaskRunnable;
 using mozilla::Preferences;
 using mozilla::UniquePtr;
-using mozilla::WrapNotNull;
 using mozilla::dom::AutoJSAPI;
 using mozilla::dom::ReferrerPolicy;
 
@@ -210,8 +210,19 @@ bool ModuleLoaderBase::HostLoadImportedModule(
     }
 
     MOZ_ASSERT(result.isOk());
-    nsCOMPtr<nsIURI> uri = result.unwrap();
+    auto record = result.unwrap();
+    nsCOMPtr<nsIURI> uri = record->Result();
     MOZ_ASSERT(uri, "Failed to resolve module specifier");
+
+    if (ImportMap::IsMultipleImportMapsSupported()) {
+      
+      
+      
+      
+      
+      
+      loader->AddToResolvedModuleSet(std::move(record), script, aHostDefined);
+    }
 
     ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
     if (!loader->IsModuleTypeAllowed(moduleType)) {
@@ -398,7 +409,16 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
       return nullptr;
     }
 
-    nsCOMPtr<nsIURI> uri = result.unwrap();
+    MOZ_ASSERT(result.isOk());
+    auto record = result.unwrap();
+
+    nsCOMPtr<nsIURI> uri = record->Result();
+    if (ImportMap::IsMultipleImportMapsSupported()) {
+      
+      
+      loader->AddToResolvedModuleSet(std::move(record));
+    }
+
     nsAutoCString url;
     MOZ_ALWAYS_SUCCEEDS(uri->GetAsciiSpec(url));
 
@@ -1099,6 +1119,44 @@ ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
   
   return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
                                            aSpecifier);
+}
+
+ResolvedModuleSet* ModuleLoaderBase::GetResolvedModuleSet() {
+  MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
+  if (!mResolvedModuleSet) {
+    mResolvedModuleSet = MakeUnique<ResolvedModuleSet>();
+  }
+
+  return mResolvedModuleSet.get();
+}
+
+static void AddToResolvedSet(ResolvedModuleSet* aSet,
+                             UniquePtr<SpecifierResolutionRecord> aRecord) {
+  MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
+  auto ptr = aSet->lookupForAdd(aRecord);
+  if (ptr) {
+    return;
+  }
+
+  MOZ_ALWAYS_TRUE(aSet->add(ptr, std::move(aRecord)));
+}
+
+void ModuleLoaderBase::AddToGlobalResolvedSet(
+    UniquePtr<SpecifierResolutionRecord> aRecord) {
+  AddToResolvedSet(GetResolvedModuleSet(), std::move(aRecord));
+}
+
+void ModuleLoaderBase::AddToResolvedModuleSet(
+    UniquePtr<SpecifierResolutionRecord> aRecord, LoadedScript* aScript,
+    Handle<Value> aHostDefined) {
+  
+  if (!mLoader->IsImportMapSupported()) {
+    return;
+  }
+
+  
+  nsCOMPtr<nsIURI> _ = aRecord->TakeResult();
+  AddToGlobalResolvedSet(std::move(aRecord));
 }
 
 void ModuleLoaderBase::StartFetchingModuleDependencies(

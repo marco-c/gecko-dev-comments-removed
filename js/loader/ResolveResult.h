@@ -8,8 +8,9 @@
 #define js_loader_ResolveResult_h
 
 #include "mozilla/ResultVariant.h"
-#include "mozilla/NotNull.h"
+#include "mozilla/UniquePtr.h"
 #include "nsIURI.h"
+#include "ResolvedModuleSet.h"
 
 namespace JS::loader {
 
@@ -49,7 +50,8 @@ struct ResolveErrorInfo {
 
 
 using ResolveResult =
-    mozilla::Result<mozilla::NotNull<nsCOMPtr<nsIURI>>, ResolveError>;
+    mozilla::Result<mozilla::UniquePtr<SpecifierResolutionRecord>,
+                    ResolveError>;
 
 }  
 

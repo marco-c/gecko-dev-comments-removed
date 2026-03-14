@@ -26,6 +26,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "ResolvedModuleSet.h"
 #include "ResolveResult.h"
 
 class nsIConsoleReportCollector;
@@ -116,6 +117,10 @@ class ScriptLoaderInterface : public nsISupports {
   }
 
   virtual void MaybeUpdateDiskCache() {}
+
+  
+  
+  virtual bool IsImportMapSupported() const { return false; }
 };
 
 class ModuleMapKey : public PLDHashEntryHdr {
@@ -280,6 +285,8 @@ class ModuleLoaderBase : public nsISupports {
 
   mozilla::UniquePtr<ImportMap> mImportMap;
 
+  mozilla::UniquePtr<ResolvedModuleSet> mResolvedModuleSet;
+
   virtual ~ModuleLoaderBase();
 
 #ifdef DEBUG
@@ -441,6 +448,8 @@ class ModuleLoaderBase : public nsISupports {
                        nsIConsoleReportCollector* aReporter,
                        mozilla::dom::SRIMetadata* aMetadataOut);
 
+  ResolvedModuleSet* GetResolvedModuleSet();
+
   
   bool IsModuleFetched(const ModuleMapKey& key) const;
 
@@ -521,6 +530,17 @@ class ModuleLoaderBase : public nsISupports {
   bool ModuleMapContainsURL(const ModuleMapKey& key) const;
   bool IsModuleFetching(const ModuleMapKey& key) const;
   void WaitForModuleFetch(ModuleLoadRequest* aRequest);
+
+  void AddToGlobalResolvedSet(
+      mozilla::UniquePtr<SpecifierResolutionRecord> aRecord);
+
+  
+  
+  
+  void AddToResolvedModuleSet(
+      mozilla::UniquePtr<SpecifierResolutionRecord> aRecord,
+      LoadedScript* aScript = nullptr,
+      Handle<Value> aHostDefined = UndefinedHandleValue);
 
  protected:
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);

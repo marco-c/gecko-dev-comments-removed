@@ -10,6 +10,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/JSON.h"                  
 #include "js/PropertyDescriptor.h"    
+#include "mozilla/StaticPrefs_dom.h"
 #include "LoadedScript.h"
 #include "ModuleLoaderBase.h"  
 #include "nsContentUtils.h"
@@ -42,9 +43,12 @@ void ReportWarningHelper::Report(const char* aMessageName,
   mLoader->ReportWarningToConsole(mRequest, aMessageName, aParams);
 }
 
+using ResolveURLLikeResult =
+    mozilla::Result<mozilla::NotNull<nsCOMPtr<nsIURI>>, ResolveError>;
 
-static ResolveResult ResolveURLLikeModuleSpecifier(const nsAString& aSpecifier,
-                                                   nsIURI* aBaseURL) {
+
+static ResolveURLLikeResult ResolveURLLikeModuleSpecifier(
+    const nsAString& aSpecifier, nsIURI* aBaseURL) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv;
 
@@ -719,6 +723,16 @@ static mozilla::Result<nsCOMPtr<nsIURI>, ResolveError> ResolveImportsMatch(
   return nsCOMPtr<nsIURI>(nullptr);
 }
 
+static UniquePtr<SpecifierResolutionRecord> CreateResolutionRecord(
+    ScriptLoaderInterface* aLoader, nsCString& aSerializedBaseURL,
+    nsString& aNormalizedSpecifier, nsIURI* aAsURL, nsIURI* aResult) {
+  bool isURLLike = !!aAsURL;
+  bool isSpecial = aAsURL ? IsSpecialScheme(aAsURL) : false;
+
+  return mozilla::MakeUnique<SpecifierResolutionRecord>(
+      aSerializedBaseURL, aNormalizedSpecifier, aResult, isURLLike, isSpecial);
+}
+
 
 
 ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
@@ -802,10 +816,17 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
 
   
   if (result) {
-    
     LOG(("ResolveModuleSpecifier returns result: %s",
          result->GetSpecOrDefault().get()));
-    return WrapNotNull(result);
+    
+    
+    
+    
+    
+
+    
+    return CreateResolutionRecord(aLoader, serializedBaseURL,
+                                  normalizedSpecifier, asURL, result);
   }
 
   LOG(("ResolveModuleSpecifier failed to resolve specifier: %s",
