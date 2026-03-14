@@ -13,39 +13,23 @@
 
 namespace mozilla::dom {
 
-
-enum class ChildIterFor {
-  
-  DOM,
-  
-  
-  
-  
-  
-  
-  FlatForSelection,
-  
-  
-  Flat,
-};
-
-template <ChildIterFor>
+template <TreeKind>
 class ChildIteratorBase;
 
-using ChildIterator = ChildIteratorBase<ChildIterFor::DOM>;
+using ChildIterator = ChildIteratorBase<TreeKind::DOM>;
 using FlattenedChildIteratorForSelection =
-    ChildIteratorBase<ChildIterFor::FlatForSelection>;
-using FlattenedChildIterator = ChildIteratorBase<ChildIterFor::Flat>;
+    ChildIteratorBase<TreeKind::FlatForSelection>;
+using FlattenedChildIterator = ChildIteratorBase<TreeKind::Flat>;
 
 
 
 
 
-template <ChildIterFor aFor>
+template <TreeKind aKind>
 class ChildIteratorBase {
-  constexpr static bool IgnoresNonContentShadow() {
-    return aFor != ChildIterFor::Flat;
-  }
+  static_assert(aKind != TreeKind::ShadowIncludingDOM,
+                "It's unclear what should do when the parent is a shadow host "
+                "in this TreeKind so that we don't support it");
 
  public:
   explicit ChildIteratorBase(const nsINode* aParentNode,
