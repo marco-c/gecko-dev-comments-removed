@@ -130,6 +130,15 @@
         }
         this.finishMoveTogetherSelectedTabs(draggedTab);
         this._updateTabStylesOnDrag(draggedTab, dropEffect);
+        
+        
+        
+        if (
+          draggedTab._dragData.expandGroupOnDrop &&
+          !draggedTab.group.collapsed
+        ) {
+          draggedTab.group.collapsed = true;
+        }
 
         if (dropEffect == "move") {
           this.#setMovingTabMode(true);
@@ -1258,10 +1267,6 @@
           this._moveTogetherSelectedTabs(tab);
         } else if (isTabGroupLabel(tab)) {
           this._setIsDraggingTabGroup(tab.group, true);
-
-          if (collapseTabGroupDuringDrag) {
-            tab.group.collapsed = true;
-          }
         }
       }
 
@@ -2338,6 +2343,9 @@
         
         
         let shouldCreateGroupOnDrop =
+          Services.prefs.getBoolPref(
+            "browser.tabs.dragDrop.createGroup.enabled"
+          ) &&
           !movingTabsSet.has(dropElement) &&
           (isTab(dropElement) || isSplitViewWrapper(dropElement)) &&
           !dropElement?.group &&
