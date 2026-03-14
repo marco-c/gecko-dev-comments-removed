@@ -7248,9 +7248,18 @@ bool nsTextFrame::PaintTextWithSelectionColors(
     }
 
     
+    
+    
+    
+    
+    const bool isUnselected = selectionTypes.Length() == 1 &&
+                              selectionTypes[0] == SelectionType::eNone;
     params.textColor = foreground;
-    params.textStrokeColor = aParams.textPaintStyle->GetWebkitTextStrokeColor();
-    params.textStrokeWidth = aParams.textPaintStyle->GetWebkitTextStrokeWidth();
+    params.textStrokeColor =
+        isUnselected ? aParams.textPaintStyle->GetWebkitTextStrokeColor() : 0;
+    params.textStrokeWidth =
+        isUnselected ? aParams.textPaintStyle->GetWebkitTextStrokeWidth()
+                     : 0.0f;
     params.drawSoftHyphen = hyphenWidth > 0;
     DrawText(range, textBaselinePt, params);
     advance += hyphenWidth;
