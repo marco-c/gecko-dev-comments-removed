@@ -180,8 +180,14 @@ class JsepSession {
    public:
     Result() = default;
     MOZ_IMPLICIT Result(dom::PCError aError) : mError(Some(aError)) {}
-    
+    Result(dom::PCError aError, const std::string& aErrorDetail,
+           Maybe<size_t> aSdpLineNumber = Nothing())
+        : mError(Some(aError)),
+          mErrorDetail(Some(aErrorDetail)),
+          mSdpLineNumber(aSdpLineNumber) {}
     Maybe<dom::PCError> mError;
+    Maybe<std::string> mErrorDetail;
+    Maybe<size_t> mSdpLineNumber;
   };
 
   

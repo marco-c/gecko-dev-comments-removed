@@ -808,8 +808,13 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
 
   UniquePtr<Sdp> parsed;
   nsresult rv = ParseSdp(sdp, &parsed);
-  
-  NS_ENSURE_SUCCESS(rv, dom::PCError::OperationError);
+  if (NS_FAILED(rv)) {
+    Maybe<size_t> lineNumber;
+    if (!mLastSdpParsingErrors.empty()) {
+      lineNumber = Some(mLastSdpParsingErrors[0].first);
+    }
+    return Result(dom::PCError::OperationError, "sdp-syntax-error", lineNumber);
+  }
 
   
   rv = ValidateLocalDescription(*parsed, type);
@@ -1011,8 +1016,13 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
   
   UniquePtr<Sdp> parsed;
   nsresult rv = ParseSdp(sdp, &parsed);
-  
-  NS_ENSURE_SUCCESS(rv, dom::PCError::OperationError);
+  if (NS_FAILED(rv)) {
+    Maybe<size_t> lineNumber;
+    if (!mLastSdpParsingErrors.empty()) {
+      lineNumber = Some(mLastSdpParsingErrors[0].first);
+    }
+    return Result(dom::PCError::OperationError, "sdp-syntax-error", lineNumber);
+  }
 
   rv = ValidateRemoteDescription(*parsed);
   NS_ENSURE_SUCCESS(rv, dom::PCError::InvalidAccessError);
