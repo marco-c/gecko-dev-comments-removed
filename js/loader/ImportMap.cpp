@@ -725,8 +725,6 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
                                                 ScriptLoaderInterface* aLoader,
                                                 LoadedScript* aScript,
                                                 const nsAString& aSpecifier) {
-  LOG(("ImportMap::ResolveModuleSpecifier specifier: %s",
-       NS_ConvertUTF16toUTF8(aSpecifier).get()));
   nsCOMPtr<nsIURI> baseURL;
   if (aScript && !aScript->IsEventScript()) {
     baseURL = aScript->BaseURL();
@@ -735,7 +733,11 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
   }
 
   
-  
+  nsCString serializedBaseURL = baseURL->GetSpecOrDefault();
+
+  LOG(("ResolveModuleSpecifier baseURL:%s, specifier: %s",
+       serializedBaseURL.get(), NS_ConvertUTF16toUTF8(aSpecifier).get()));
+
   
   
   auto parseResult = ResolveURLLikeModuleSpecifier(aSpecifier, baseURL);
@@ -744,70 +746,70 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
     asURL = parseResult.unwrap();
   }
 
+  
+  
+  nsAutoString normalizedSpecifier =
+      asURL ? NS_ConvertUTF8toUTF16(asURL->GetSpecOrDefault())
+            : nsAutoString{aSpecifier};
+
+  
+  nsCOMPtr<nsIURI> result;
+
   if (aImportMap) {
-    
-    nsCString baseURLString = baseURL->GetSpecOrDefault();
-
-    
-    
-    nsAutoString normalizedSpecifier =
-        asURL ? NS_ConvertUTF8toUTF16(asURL->GetSpecOrDefault())
-              : nsAutoString{aSpecifier};
-
     
     for (auto&& [scopePrefix, scopeImports] : *aImportMap->mScopes) {
       
       
       
-      if (scopePrefix.Equals(baseURLString) ||
+      if (scopePrefix.Equals(serializedBaseURL) ||
           (StringEndsWith(scopePrefix, "/"_ns) &&
-           StringBeginsWith(baseURLString, scopePrefix))) {
+           StringBeginsWith(serializedBaseURL, scopePrefix))) {
         
         
-        auto result =
+        auto resolveResult =
             ResolveImportsMatch(normalizedSpecifier, asURL, scopeImports.get());
-        if (result.isErr()) {
-          return result.propagateErr();
+        if (resolveResult.isErr()) {
+          return resolveResult.propagateErr();
         }
 
-        nsCOMPtr<nsIURI> scopeImportsMatch = result.unwrap();
+        nsCOMPtr<nsIURI> scopeImportsMatch = resolveResult.unwrap();
         
         
         if (scopeImportsMatch) {
-          LOG((
-              "ImportMap::ResolveModuleSpecifier returns scopeImportsMatch: %s",
-              scopeImportsMatch->GetSpecOrDefault().get()));
-          return WrapNotNull(scopeImportsMatch);
+          result = scopeImportsMatch;
+          break;
         }
       }
     }
 
     
     
-    auto result = ResolveImportsMatch(normalizedSpecifier, asURL,
-                                      aImportMap->mImports.get());
-    if (result.isErr()) {
-      return result.propagateErr();
-    }
-    nsCOMPtr<nsIURI> topLevelImportsMatch = result.unwrap();
+    if (!result) {
+      auto resolveResult = ResolveImportsMatch(normalizedSpecifier, asURL,
+                                               aImportMap->mImports.get());
+      if (resolveResult.isErr()) {
+        return resolveResult.propagateErr();
+      }
 
-    
-    
-    if (topLevelImportsMatch) {
-      LOG(("ImportMap::ResolveModuleSpecifier returns topLevelImportsMatch: %s",
-           topLevelImportsMatch->GetSpecOrDefault().get()));
-      return WrapNotNull(topLevelImportsMatch);
+      result = resolveResult.unwrap();
     }
   }
 
   
-  
-  
-  if (asURL) {
-    LOG(("ImportMap::ResolveModuleSpecifier returns asURL: %s",
-         asURL->GetSpecOrDefault().get()));
-    return WrapNotNull(asURL);
+  if (!result) {
+    result = asURL;
   }
+
+  
+  if (result) {
+    
+    LOG(("ResolveModuleSpecifier returns result: %s",
+         result->GetSpecOrDefault().get()));
+    return WrapNotNull(result);
+  }
+
+  LOG(("ResolveModuleSpecifier failed to resolve specifier: %s",
+       NS_ConvertUTF16toUTF8(aSpecifier).get()));
 
   
   
