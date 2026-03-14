@@ -228,20 +228,26 @@ void RealTimeRequestSimulator::SimulateRealTimeRequest(const nsACString& aURL,
     }
 
     
-    if (cachedResponse->negativeCacheExpirySec < now) {
-      mSimulatedCache.Remove(prefix);
+    auto fullHashEntry = cachedResponse->fullHashes.Lookup(fullHashString);
+    if (!fullHashEntry) {
       hashesToSend.AppendElement(fullHash);
       continue;
     }
 
     
-    if (cachedResponse->fullHashes.Contains(fullHashString)) {
-      NotifyResult(false, 0, 0, aIsPrivate);
-      return;
+    if (fullHashEntry.Data() < now) {
+      fullHashEntry.Remove();
+      if (cachedResponse->fullHashes.IsEmpty()) {
+        mSimulatedCache.Remove(prefix);
+      }
+      hashesToSend.AppendElement(fullHash);
+      continue;
     }
 
     
-    hashesToSend.AppendElement(fullHash);
+    
+    NotifyResult(false, 0, 0, aIsPrivate);
+    return;
   }
 
   if (hashesToSend.IsEmpty()) {
@@ -284,7 +290,6 @@ void RealTimeRequestSimulator::SimulateRealTimeRequest(const nsACString& aURL,
     
     CachedFullHashResponse* response =
         mSimulatedCache.GetOrInsertNew(fullHash.ToUint32());
-    response->negativeCacheExpirySec = expiry;
     response->fullHashes.InsertOrUpdate(fullHashString, expiry);
   }
 
