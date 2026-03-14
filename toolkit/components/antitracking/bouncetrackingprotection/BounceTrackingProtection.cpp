@@ -302,7 +302,7 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
               *aBounceTrackingState);
 
   
-  const Maybe<BounceTrackingRecord>& record =
+  BounceTrackingRecord* record =
       aBounceTrackingState->GetBounceTrackingRecord();
   if (!record) {
     MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -368,7 +368,7 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
     
     PRTime now = PR_Now();
     MOZ_ASSERT(!globalState->HasBounceTracker(host));
-    nsresult rv = globalState->RecordBounceTracker(host, now);
+    nsresult rv = globalState->RecordBounceTracker(host, now, false, record);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
@@ -524,8 +524,9 @@ BounceTrackingProtection::TestGetBounceTrackerCandidateHosts(
 
   for (auto iter = globalState->BounceTrackersMapRef().ConstIter();
        !iter.Done(); iter.Next()) {
-    RefPtr<nsIBounceTrackingMapEntry> candidate = new BounceTrackingMapEntry(
-        globalState->OriginAttributesRef(), iter.Key(), iter.Data());
+    RefPtr<nsIBounceTrackingMapEntry> candidate =
+        new BounceTrackingMapEntry(globalState->OriginAttributesRef(),
+                                   iter.Key(), iter.Data().mBounceTime);
     aCandidates.AppendElement(candidate);
   }
 
@@ -1112,7 +1113,8 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
   for (auto hostIter = aStateGlobal->BounceTrackersMapRef().ConstIter();
        !hostIter.Done(); hostIter.Next()) {
     const nsACString& host = hostIter.Key();
-    const PRTime& bounceTime = hostIter.Data();
+    const auto& candidate = hostIter.Data();
+    const PRTime bounceTime = candidate.mBounceTime;
 
     
     
@@ -1186,7 +1188,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     RefPtr<ClearDataMozPromise> clearDataPromise;
     rv = PurgeStateForHostAndOriginAttributes(
         host, bounceTime, aStateGlobal->OriginAttributesRef(),
-        getter_AddRefs(clearDataPromise));
+        candidate.mRecord, getter_AddRefs(clearDataPromise));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
@@ -1203,14 +1205,14 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
 nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
     const nsACString& aHost, PRTime bounceTime,
     const OriginAttributes& aOriginAttributes,
-    ClearDataMozPromise** aClearPromise) {
+    BounceTrackingRecord* aChainRecord, ClearDataMozPromise** aClearPromise) {
   MOZ_ASSERT(!aHost.IsEmpty());
   MOZ_ASSERT(aClearPromise);
 
   RefPtr<ClearDataMozPromise::Private> clearPromise =
       new ClearDataMozPromise::Private(__func__);
-  RefPtr<ClearDataCallback> cb =
-      new ClearDataCallback(clearPromise, aOriginAttributes, aHost, bounceTime);
+  RefPtr<ClearDataCallback> cb = new ClearDataCallback(
+      clearPromise, aOriginAttributes, aHost, bounceTime, aChainRecord);
 
   if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
       nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {

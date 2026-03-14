@@ -9,6 +9,8 @@
 
 #include "BounceTrackingMapEntry.h"
 #include "BounceTrackingProtectionStorage.h"
+#include "BounceTrackingRecord.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
@@ -17,6 +19,11 @@
 #include "fmt/format.h"
 
 namespace mozilla {
+
+struct BounceTrackerCandidate {
+  PRTime mBounceTime;
+  RefPtr<BounceTrackingRecord> mRecord;
+};
 
 
 
@@ -61,9 +68,9 @@ class BounceTrackingStateGlobal final {
 
   
   
-  [[nodiscard]] nsresult RecordBounceTracker(const nsACString& aSiteHost,
-                                             PRTime aTime,
-                                             bool aSkipStorage = false);
+  [[nodiscard]] nsresult RecordBounceTracker(
+      const nsACString& aSiteHost, PRTime aTime, bool aSkipStorage = false,
+      BounceTrackingRecord* aRecord = nullptr);
 
   
   
@@ -90,7 +97,8 @@ class BounceTrackingStateGlobal final {
     return mUserActivation;
   }
 
-  const nsTHashMap<nsCStringHashKey, PRTime>& BounceTrackersMapRef() {
+  const nsTHashMap<nsCStringHashKey, BounceTrackerCandidate>&
+  BounceTrackersMapRef() {
     return mBounceTrackers;
   }
 
@@ -123,7 +131,7 @@ class BounceTrackingStateGlobal final {
   
   
   
-  nsTHashMap<nsCStringHashKey, PRTime> mBounceTrackers;
+  nsTHashMap<nsCStringHashKey, BounceTrackerCandidate> mBounceTrackers;
 
   
   
@@ -163,7 +171,7 @@ struct fmt::formatter<mozilla::BounceTrackingStateGlobal>
       if (!first) {
         out = fmt::format_to(out, ", ");
       }
-      out = fmt::format_to(out, "{}: {}", iter.Key(), iter.Data());
+      out = fmt::format_to(out, "{}: {}", iter.Key(), iter.Data().mBounceTime);
       first = false;
     }
     return fmt::format_to(out, "}} }}");
