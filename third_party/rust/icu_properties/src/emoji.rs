@@ -27,6 +27,15 @@ impl EmojiSetData {
         EmojiSetDataBorrowed::new::<P>()
     }
 
+    #[cfg(feature = "serde")]
+    #[doc = icu_provider::gen_buffer_unstable_docs!(BUFFER, Self::new)]
+    pub fn try_new_with_buffer_provider<P: EmojiSet>(
+        provider: &(impl BufferProvider + ?Sized),
+    ) -> Result<EmojiSetData, DataError> {
+        use icu_provider::buf::AsDeserializingBufferProvider;
+        Self::try_new_unstable::<P>(&provider.as_deserializing())
+    }
+
     
     
     
@@ -120,6 +129,12 @@ impl EmojiSetDataBorrowed<'_> {
 
     
     #[inline]
+    pub fn contains_utf8(self, s: &[u8]) -> bool {
+        self.set.contains_utf8(s)
+    }
+
+    
+    #[inline]
     pub fn contains(self, ch: char) -> bool {
         self.set.contains(ch)
     }
@@ -162,7 +177,7 @@ impl EmojiSetDataBorrowed<'static> {
 
 
 
-pub trait EmojiSet: crate::private::Sealed {
+pub trait EmojiSet: crate::private::Sealed + Sized {
     #[doc(hidden)]
     type DataMarker: DataMarker<DataStruct = PropertyUnicodeSet<'static>>;
     #[doc(hidden)]
@@ -172,4 +187,20 @@ pub trait EmojiSet: crate::private::Sealed {
     const NAME: &'static [u8];
     
     const SHORT_NAME: &'static [u8];
+
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    fn for_char(ch: char) -> bool {
+        EmojiSetData::new::<Self>().contains(ch)
+    }
+
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    fn for_str(s: &str) -> bool {
+        EmojiSetData::new::<Self>().contains_str(s)
+    }
 }
