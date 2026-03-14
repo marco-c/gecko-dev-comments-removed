@@ -14,6 +14,7 @@
 #include "MediaInfo.h"
 #include "MediaResult.h"
 #include "PerformanceRecorder.h"
+#include "PlatformDecoderModule.h"
 #include "VideoUtils.h"
 #include "YCbCrUtils.h"
 #include "libyuv.h"
@@ -32,7 +33,11 @@
 #  include "mozilla/gfx/gfxVars.h"
 #endif
 
+#define LOG(level, msg, ...) \
+  MOZ_LOG_FMT(sPDMLog, level, "%s: " msg, __func__, ##__VA_ARGS__)
 namespace mozilla {
+
+extern LazyLogModule sPDMLog;
 
 using namespace mozilla::gfx;
 using layers::BufferRecycleBin;
@@ -432,6 +437,22 @@ already_AddRefed<VideoData> VideoData::CreateAndCopyData(
     NS_ERROR(r.Message().get());
     return nullptr;
   }
+  if (!ValidatePlane(aAlphaPlane)) {
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Warning, "Invalid alpha plane");
+    return nullptr;
+  }
+  
+  
+  if (aBuffer.mPlanes[0].mWidth != aAlphaPlane.mWidth ||
+      aBuffer.mPlanes[0].mHeight != aAlphaPlane.mHeight) {
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Warning, "luma and alpha sizes differ");
+    return nullptr;
+  }
+  
+  if (aBuffer.mPlanes[0].mStride != aAlphaPlane.mStride) {
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Warning, "luma and alpha strides differ");
+    return nullptr;
+  }
 
   RefPtr<VideoData> v(new VideoData(aOffset, aTime, aDuration, aKeyframe,
                                     aTimecode, aInfo.mDisplay, 0));
@@ -753,3 +774,4 @@ CryptoScheme StringToCryptoScheme(const nsAString& aString) {
 }
 
 }  
+#undef LOG
