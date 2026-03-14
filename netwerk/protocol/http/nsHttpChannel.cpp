@@ -3208,7 +3208,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
       RefPtr<HttpChannelParent> httpParent;
       CookieServiceParent::CookieProcessingGuard cookieProcessingGuard;
 
-      if (!LoadOnStartRequestCalled()) {
+      
+      if (!LoadOnStartRequestCalled() && !mStaleRevalidation) {
         
         
         
