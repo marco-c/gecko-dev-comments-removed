@@ -211,14 +211,16 @@ class CssCompatibilityTooltipHelper {
 
 
 
-
-
-
   getTemplate(data, tooltip) {
     const { doc } = tooltip;
-    const { specUrl, url, unsupportedBrowsers } = data;
+    let { specUrl, url, unsupportedBrowsers } = data;
 
     this.#currentTooltip = tooltip;
+    
+    
+    if (Array.isArray(specUrl)) {
+      specUrl = specUrl[0];
+    }
     this.#currentUrl = url
       ? `${url}?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default`
       : specUrl;
