@@ -940,7 +940,11 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
   
   nsCOMPtr<nsIRedirectChannelRegistrar> redirectReg =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(redirectReg);
+  if (!redirectReg) {
+    
+    ContinueRedirect2Verify(NS_ERROR_ABORT);
+    return IPC_OK();
+  }
 
   nsCOMPtr<nsIParentChannel> redirectParentChannel;
   rv = redirectReg->GetParentChannel(mRedirectChannelId,
@@ -1788,7 +1792,10 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(registrar);
+  if (!registrar) {
+    
+    return NS_ERROR_ABORT;
+  }
 
   mRedirectChannelId = nsContentUtils::GenerateLoadIdentifier();
   rv = registrar->RegisterChannel(newChannel, mRedirectChannelId);
@@ -2125,7 +2132,12 @@ HttpChannelParent::OnRedirectResult(nsresult status) {
   if (mRedirectChannelId) {
     nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
         RedirectChannelRegistrar::GetOrCreate();
-    MOZ_ASSERT(registrar);
+    if (!registrar) {
+      
+      mRedirectChannelId = 0;
+      CompleteRedirect(NS_ERROR_ABORT);
+      return NS_OK;
+    }
 
     rv = registrar->GetParentChannel(mRedirectChannelId,
                                      getter_AddRefs(redirectChannel));
