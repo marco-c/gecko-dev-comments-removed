@@ -7,6 +7,8 @@
 #ifndef mozilla_VideoEngine_h
 #define mozilla_VideoEngine_h
 
+#include <functional>
+#include <map>
 #include <memory>
 
 #include "MediaEventSource.h"
@@ -21,10 +23,6 @@ namespace mozilla::camera {
 
 MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING(CaptureDeviceType,
                                     (Camera, Screen, Window, Browser));
-
-
-
-
 
 
 
@@ -48,8 +46,14 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
 #endif
   int32_t GenerateId();
   
-  VideoCaptureFactory::CreateVideoCaptureResult CreateVideoCapture(
-      int32_t aCaptureId, const char* aDeviceUniqueIdUTF8);
+
+  int32_t CreateVideoCapture(const char* aDeviceUniqueIdUTF8,
+                             uint64_t aWindowID);
+
+  int ReleaseVideoCapture(const int32_t aId);
+
+  
+  static void Delete(VideoEngine* aEngine) {}
 
   
 
@@ -69,6 +73,33 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
 
   void ClearVideoCaptureDeviceInfo();
 
+  class CaptureEntry {
+   public:
+    CaptureEntry(int32_t aCapnum,
+                 webrtc::scoped_refptr<webrtc::VideoCaptureModule> aCapture,
+                 webrtc::DesktopCaptureImpl* aDesktopImpl);
+    int32_t Capnum() const;
+    webrtc::scoped_refptr<webrtc::VideoCaptureModule> VideoCapture();
+    mozilla::MediaEventSource<void>* CaptureEndedEvent();
+
+   private:
+    int32_t mCapnum;
+    webrtc::scoped_refptr<webrtc::VideoCaptureModule> mVideoCaptureModule;
+    webrtc::DesktopCaptureImpl* mDesktopImpl = nullptr;
+    friend class VideoEngine;
+  };
+
+  struct CaptureHandle {
+    int32_t mCaptureEntryNum{};
+    uint64_t mWindowID{};
+  };
+
+  
+  bool WithEntry(const int32_t entryCapnum,
+                 const std::function<void(CaptureEntry& entry)>&& fn);
+
+  bool IsWindowCapturing(uint64_t aWindowID, const nsCString& aUniqueIdUTF8);
+
   void OnDeviceChange() override;
 
   MediaEventSource<void>& DeviceChangeEvent() { return mDeviceChangeEvent; }
@@ -76,9 +107,12 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
  private:
   VideoEngine(const CaptureDeviceType& aCaptureDeviceType,
               RefPtr<VideoCaptureFactory> aVideoCaptureFactory);
+  int32_t mId;
   const CaptureDeviceType mCaptureDevType;
   const RefPtr<VideoCaptureFactory> mVideoCaptureFactory;
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> mDeviceInfo;
+  std::map<int32_t, CaptureEntry> mSharedCapturers;
+  std::map<int32_t, CaptureHandle> mIdToCapturerMap;
   MediaEventProducer<void> mDeviceChangeEvent;
   
   webrtc::Timestamp mExpiryTime = webrtc::Timestamp::Micros(0);

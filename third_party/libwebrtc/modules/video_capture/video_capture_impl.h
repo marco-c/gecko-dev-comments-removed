@@ -63,10 +63,12 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
   
   void RegisterCaptureDataCallback(
       VideoSinkInterface<VideoFrame>* dataCallback) override;
-  void RegisterCaptureDataCallback(
+  virtual void RegisterCaptureDataCallback(
       RawVideoSinkInterface* dataCallback) override;
-  void DeRegisterCaptureDataCallback() override;
+  void DeRegisterCaptureDataCallback(
+      webrtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
 
+  int32_t StopCaptureIfAllClientsClose() override;
   int32_t SetCaptureRotation(VideoRotation rotation) override;
   bool SetApplyRotation(bool enable) override;
   bool GetApplyRotation() override;
@@ -118,7 +120,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
   
   int64_t _lastFrameRateCallbackTimeNanos RTC_GUARDED_BY(capture_checker_);
 
-  VideoSinkInterface<VideoFrame>* _dataCallBack RTC_GUARDED_BY(api_lock_);
+  std::set<VideoSinkInterface<VideoFrame>*> _dataCallBacks RTC_GUARDED_BY(api_lock_);
   RawVideoSinkInterface* _rawDataCallBack RTC_GUARDED_BY(api_lock_);
 
   int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);

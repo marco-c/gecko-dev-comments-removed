@@ -23,10 +23,6 @@ namespace mozilla {
 class VideoCaptureFactory;
 }
 
-namespace webrtc {
-class DesktopCaptureImpl;
-}
-
 namespace mozilla::camera {
 
 class CamerasParent;
@@ -72,11 +68,12 @@ class AggregateCapturer final
   RemoveStreamResult RemoveStream(int aStreamId);
   RemoveStreamResult RemoveStreamsFor(CamerasParent* aParent);
   Maybe<int> CaptureIdFor(int aStreamId);
-  int32_t StartStream(int aStreamId,
-                      const webrtc::VideoCaptureCapability& aCapability,
-                      const NormalizedConstraints& aConstraints,
-                      const dom::VideoResizeModeEnum& aResizeMode);
-  int32_t StopStream(int aStreamId);
+  void SetConfigurationFor(int aStreamId,
+                           const webrtc::VideoCaptureCapability& aCapability,
+                           const NormalizedConstraints& aConstraints,
+                           const dom::VideoResizeModeEnum& aResizeMode,
+                           bool aStarted);
+  Maybe<webrtc::VideoCaptureCapability> CombinedCapability();
 
   void OnCaptureEnded();
   void OnFrame(const webrtc::VideoFrame& aVideoFrame) override;
@@ -104,7 +101,7 @@ class AggregateCapturer final
     
     
     
-    bool mActive{false};
+    bool mStarted{false};
     
     media::TimeUnit mLastFrameTime{media::TimeUnit::FromNegativeInfinity()};
   };
@@ -122,10 +119,6 @@ class AggregateCapturer final
   
   const int mCaptureId;
   
-  const webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
-  
-  webrtc::DesktopCaptureImpl* const mDesktopCapturer = nullptr;
-  
   const TrackingId mTrackingId;
   
   
@@ -138,14 +131,7 @@ class AggregateCapturer final
   AggregateCapturer(nsISerialEventTarget* aVideoCaptureThread,
                     CaptureEngine aCapEng, VideoEngine* aEngine,
                     const nsCString& aUniqueId, int aCaptureId,
-                    webrtc::VideoCaptureModule* aCapturer,
-                    webrtc::DesktopCaptureImpl* aDesktopCapturer,
                     nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
-
-  Maybe<webrtc::VideoCaptureCapability> CombinedCapability(
-      const decltype(mStreams)::AutoLock& aStreamsGuard);
-
-  int32_t UpdateDevice(const Maybe<webrtc::VideoCaptureCapability>& aState);
 
   MediaEventListener mCaptureEndedListener;
 };
