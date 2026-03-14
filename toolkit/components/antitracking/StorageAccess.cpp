@@ -825,7 +825,7 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
   
   
   if (!targetBC) {
-    rv = loadInfo->GetWorkerAssociatedBrowsingContext(getter_AddRefs(targetBC));
+    rv = loadInfo->GetAssociatedBrowsingContext(getter_AddRefs(targetBC));
   }
 
   

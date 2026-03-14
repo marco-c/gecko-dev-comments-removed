@@ -973,8 +973,14 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [infallible] attribute unsigned long long workerAssociatedBrowsingContextID;
-  [infallible] readonly attribute BrowsingContext workerAssociatedBrowsingContext;
+
+
+
+
+
+
+  [infallible] attribute unsigned long long associatedBrowsingContextID;
+  [infallible] readonly attribute BrowsingContext associatedBrowsingContext;
 
   
 

@@ -198,6 +198,14 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
     mReferrerPolicy = aReferrerPolicy;
   }
 
+  void SetAssociatedBrowsingContextID(uint64_t aAssociatedBrowsingContextID) {
+    mAssociatedBrowsingContextID = aAssociatedBrowsingContextID;
+  }
+
+  uint64_t AssociatedBrowsingContextID() const {
+    return mAssociatedBrowsingContextID;
+  }
+
   ReferrerPolicy GetEnvironmentReferrerPolicy() const {
     return mEnvironmentReferrerPolicy;
   }
@@ -478,6 +486,11 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   
   nsCString mReferrer;
   ReferrerPolicy mReferrerPolicy;
+
+  
+  
+  
+  uint64_t mAssociatedBrowsingContextID{0};
 
   
   
