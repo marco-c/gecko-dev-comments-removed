@@ -4,43 +4,12 @@
 
 
 
-use super::rule::{Inherits, InitialValue, PropertyRuleName};
-use super::syntax::Descriptor;
+use super::rule::{Descriptors, PropertyRuleName};
+use crate::derives::*;
 use crate::selector_map::PrecomputedHashMap;
 use crate::stylesheets::UrlExtraData;
 use crate::Atom;
 use cssparser::SourceLocation;
-
-
-#[derive(Debug, Clone, MallocSizeOf)]
-pub struct PropertyRegistrationData {
-    
-    pub syntax: Descriptor,
-    
-    pub inherits: Inherits,
-    
-    #[ignore_malloc_size_of = "Arc"]
-    pub initial_value: Option<InitialValue>,
-}
-
-static UNREGISTERED: PropertyRegistrationData = PropertyRegistrationData {
-    syntax: Descriptor::universal(),
-    inherits: Inherits::True,
-    initial_value: None,
-};
-
-impl PropertyRegistrationData {
-    
-    pub fn unregistered() -> &'static Self {
-        &UNREGISTERED
-    }
-
-    
-    #[inline]
-    pub fn inherits(&self) -> bool {
-        self.inherits == Inherits::True
-    }
-}
 
 
 
@@ -49,21 +18,13 @@ pub struct PropertyRegistration {
     
     pub name: PropertyRuleName,
     
-    pub data: PropertyRegistrationData,
+    pub descriptors: Descriptors,
     
     
     
     pub url_data: UrlExtraData,
     
     pub source_location: SourceLocation,
-}
-
-impl PropertyRegistration {
-    
-    #[inline]
-    pub fn inherits(&self) -> bool {
-        self.data.inherits == Inherits::True
-    }
 }
 
 

@@ -2938,10 +2938,13 @@ impl DescriptorId {
 }
 
 
-#[derive(Clone, Debug, Default, ToShmem, PartialEq)]
+#[derive(Clone, Debug, Default, ToShmem, PartialEq, MallocSizeOf)]
 pub struct Descriptors {
     % for descriptor in descriptors:
     
+    % if descriptor.ignore_malloc_size_of:
+    #[ignore_malloc_size_of = "${descriptor.ignore_malloc_size_of}"]
+    % endif
     pub ${descriptor.ident}: Option<${descriptor.type}>,
     % endfor
 }
@@ -3038,4 +3041,10 @@ ${generate_descriptors(data.font_face_descriptors)}
 pub mod counter_style {
     use crate::counter_style::*;
 ${generate_descriptors(data.counter_style_descriptors)}
+}
+
+
+pub mod property {
+    use crate::properties_and_values::rule::*;
+${generate_descriptors(data.property_descriptors)}
 }

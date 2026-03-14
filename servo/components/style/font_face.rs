@@ -30,7 +30,7 @@ pub use crate::values::specified::font::{
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum Source {
     
     Url(UrlSource),
@@ -40,7 +40,7 @@ pub enum Source {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 #[css(comma)]
 pub struct SourceList(#[css(iterable)] pub Vec<Source>);
 
@@ -72,7 +72,7 @@ impl Parse for SourceList {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Parse, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 #[allow(missing_docs)]
@@ -92,7 +92,7 @@ pub enum FontFaceSourceFormatKeyword {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct FontFaceSourceTechFlags(u16);
@@ -239,7 +239,7 @@ pub enum FontFaceSourceListComponent {
     TechFlags(FontFaceSourceTechFlags),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 #[allow(missing_docs)]
@@ -253,7 +253,7 @@ pub enum FontFaceSourceFormat {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub struct UrlSource {
     
     pub url: SpecifiedUrl,
@@ -333,7 +333,7 @@ macro_rules! impl_range {
 
 
 
-#[derive(Clone, Debug, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct FontWeightRange(pub AbsoluteFontWeight, pub AbsoluteFontWeight);
 impl_range!(FontWeightRange, AbsoluteFontWeight);
 
@@ -365,7 +365,7 @@ impl FontWeightRange {
 
 
 
-#[derive(Clone, Debug, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct FontStretchRange(pub SpecifiedFontStretch, pub SpecifiedFontStretch);
 impl_range!(FontStretchRange, SpecifiedFontStretch);
 
@@ -394,7 +394,7 @@ impl FontStretchRange {
 
 
 
-#[derive(Clone, Debug, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 #[allow(missing_docs)]
 pub enum FontStyle {
     Italic,

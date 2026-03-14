@@ -487,7 +487,7 @@ impl CounterStyleRule {
 }
 
 
-#[derive(Clone, Debug, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToShmem, PartialEq)]
 pub enum System {
     
     Cyclic,
@@ -599,7 +599,7 @@ impl Symbol {
 }
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 pub struct Negative(pub Symbol, pub Option<Symbol>);
 
 impl Parse for Negative {
@@ -615,7 +615,7 @@ impl Parse for Negative {
 }
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 pub struct CounterRange {
     
     pub start: CounterBound,
@@ -626,12 +626,12 @@ pub struct CounterRange {
 
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 #[css(comma)]
 pub struct CounterRanges(#[css(iterable, if_empty = "auto")] pub crate::OwnedSlice<CounterRange>);
 
 
-#[derive(Clone, Copy, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 pub enum CounterBound {
     
     Integer(Integer),
@@ -678,7 +678,7 @@ fn parse_bound<'i, 't>(
 }
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 pub struct Pad(pub Integer, pub Symbol);
 
 impl Parse for Pad {
@@ -694,7 +694,7 @@ impl Parse for Pad {
 }
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 pub struct Fallback(pub CustomIdent);
 
 impl Parse for Fallback {
@@ -734,7 +734,7 @@ impl Parse for Symbols {
 }
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 #[css(comma)]
 pub struct AdditiveSymbols(#[css(iterable)] pub crate::OwnedSlice<AdditiveTuple>);
 
@@ -756,7 +756,7 @@ impl Parse for AdditiveSymbols {
 }
 
 
-#[derive(Clone, Debug, ToCss, ToShmem, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToShmem, PartialEq)]
 pub struct AdditiveTuple {
     
     pub weight: Integer,
@@ -781,7 +781,7 @@ impl Parse for AdditiveTuple {
 }
 
 
-#[derive(Clone, Debug, ToCss, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, PartialEq, ToShmem)]
 pub enum SpeakAs {
     
     Auto,
