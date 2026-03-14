@@ -5,6 +5,8 @@
 
 
 #include "gtest/gtest.h"
+#include "mozilla/glean/LibprefMetrics.h"
+#include "mozilla/glean/fog_ffi_generated.h"
 #include "Preferences.h"
 
 using namespace mozilla;
@@ -12,8 +14,8 @@ using namespace mozilla;
 
 
 
-void TestParseError(PrefValueKind aKind, const char* aText,
-                    nsCString& aErrorMsg);
+nsresult TestParseError(PrefValueKind aKind, const char* aText,
+                        nsCString& aErrorMsg);
 
 TEST(PrefsParser, Errors)
 {
@@ -586,4 +588,32 @@ pref("int.ok", 0);
   );
 
   
+}
+
+TEST(PrefsParser, PrefsFileThatFailedToParse)
+{
+  nsCString empty;
+  ASSERT_EQ(NS_OK, mozilla::glean::impl::fog_test_reset(&empty, &empty));
+
+  
+  nsCString unusedErrorMsg;
+  TestParseError(PrefValueKind::User, "user_pref(\"some.pref\", true);",
+                 unusedErrorMsg);
+  ASSERT_TRUE(mozilla::glean::preferences::prefs_file_that_failed_to_parse
+                  .TestGetValue()
+                  .unwrap()
+                  .isNothing());
+
+  
+  const char* invalidText = "bad syntax";
+  TestParseError(PrefValueKind::User, invalidText, unusedErrorMsg);
+  auto value = mozilla::glean::preferences::prefs_file_that_failed_to_parse
+                   .TestGetValue()
+                   .unwrap();
+#ifdef NIGHTLY_BUILD
+  ASSERT_TRUE(value.isSome());
+  ASSERT_STREQ(invalidText, value.value().get());
+#else
+  ASSERT_TRUE(value.isNothing());
+#endif
 }
