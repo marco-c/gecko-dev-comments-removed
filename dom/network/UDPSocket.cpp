@@ -414,7 +414,7 @@ nsresult UDPSocket::InitLocal(const nsAString& aLocalAddress,
     return rv;
   }
 
-  mSocket = std::move(sock);
+  mSocket = sock;
 
   
   nsCOMPtr<nsINetAddr> localAddr;

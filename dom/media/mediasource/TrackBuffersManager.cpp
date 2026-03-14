@@ -1641,7 +1641,7 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
 
     {
       MutexAutoLock mut(mMutex);
-      mInfo = std::move(info);
+      mInfo = info;
     }
   }
   

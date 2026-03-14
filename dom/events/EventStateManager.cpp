@@ -2900,7 +2900,7 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
   }
 
   
-  mCurrentTargetContent = std::move(targetBeforeEvent);
+  mCurrentTargetContent = targetBeforeEvent;
 
   
   
@@ -5844,7 +5844,7 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
   }
 
   
-  mCurrentTargetContent = std::move(targetBeforeEvent);
+  mCurrentTargetContent = targetBeforeEvent;
 }
 
 OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
@@ -6019,7 +6019,7 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
   }
 
   
-  mCurrentTargetContent = std::move(targetBeforeEvent);
+  mCurrentTargetContent = targetBeforeEvent;
 
   
   FlushLayout(aPresContext);

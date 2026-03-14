@@ -994,7 +994,7 @@ nsresult FetchDriver::HttpFetch(
 
   
 
-  mChannel = std::move(chan);
+  mChannel = chan;
   return NS_OK;
 }
 

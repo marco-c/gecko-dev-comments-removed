@@ -418,7 +418,7 @@ static nsresult GetUnixXDGUserDirectory(SystemDirectories aSystemDirectory,
 
     
     if (!exists) {
-      file = std::move(home);
+      file = home;
     }
   } else {
     

@@ -1825,7 +1825,7 @@ nsresult HTMLFormElement::AddElementToTableInternal(
         nsCOMPtr<nsISupports> listSupports = do_QueryObject(list);
 
         
-        entry.Data() = std::move(listSupports);
+        entry.Data() = listSupports;
       } else {
         
         MOZ_ASSERT(nsCOMPtr<RadioNodeList>(do_QueryInterface(entry.Data())));
