@@ -1833,7 +1833,8 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
   
   
 
-  if (!ImportMap::IsMultipleImportMapsSupported()) {
+  bool multiImportMapsEnabled = ImportMap::IsMultipleImportMapsSupported();
+  if (!multiImportMapsEnabled) {
     MOZ_ASSERT(!mImportMap);
     mImportMap = std::move(aImportMap);
   } else {
@@ -1850,37 +1851,45 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
   
   
   
-  
-  for (const auto& entry : mFetchingModules) {
-    LoadingRequest* loadingRequest = entry.GetData();
-    MOZ_DIAGNOSTIC_ASSERT(loadingRequest->mRequest->mLoadContext->IsPreload());
+  mFetchingModules.RemoveIf([](auto& iter) {
+    LoadingRequest* loadingRequest = iter.Data();
+    bool isPreload = loadingRequest->mRequest->mLoadContext->IsPreload();
+    if (!isPreload) {
+      return false;
+    }
+
     loadingRequest->mRequest->Cancel();
     for (const auto& request : loadingRequest->mWaiting) {
       MOZ_DIAGNOSTIC_ASSERT(request->mLoadContext->IsPreload());
       request->Cancel();
     }
-  }
-  mFetchingModules.Clear();
+    return true;
+  });
 
   
   
-  for (const auto& entry : mFetchedModules) {
-    ModuleScript* script = entry.GetData();
-    if (script) {
-      MOZ_DIAGNOSTIC_ASSERT(
-          script->ForPreload(),
-          "Non-preload module loads should block import maps");
-      MOZ_DIAGNOSTIC_ASSERT(!script->HadImportMap(),
-                            "Only one import map can be registered");
+  
+  if (!multiImportMapsEnabled) {
+    
+    
+    for (const auto& entry : mFetchedModules) {
+      ModuleScript* script = entry.GetData();
+      if (script) {
+        MOZ_DIAGNOSTIC_ASSERT(
+            script->ForPreload(),
+            "Non-preload module loads should block import maps");
+        MOZ_DIAGNOSTIC_ASSERT(!script->HadImportMap(),
+                              "Only one import map can be registered");
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-      if (JSObject* module = script->ModuleRecord()) {
-        MOZ_DIAGNOSTIC_ASSERT(!ModuleIsLinked(module));
-      }
+        if (JSObject* module = script->ModuleRecord()) {
+          MOZ_DIAGNOSTIC_ASSERT(!ModuleIsLinked(module));
+        }
 #endif
-      script->Shutdown();
+        script->Shutdown();
+      }
     }
+    mFetchedModules.Clear();
   }
-  mFetchedModules.Clear();
 }
 
 void ModuleLoaderBase::CopyModulesTo(ModuleLoaderBase* aDest) {
