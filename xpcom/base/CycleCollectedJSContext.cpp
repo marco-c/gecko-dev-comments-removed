@@ -845,7 +845,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   
   JS::RootedField<JSObject*, 0> callbackGlobal(
-      roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
+      roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
   if (!callbackGlobal) {
     return;
   }
@@ -967,10 +967,9 @@ MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx) {
   return MustConsumeMicroTask(JS::DequeueNextDebuggerMicroTask(aCx));
 }
 
-static bool IsSuppressed(JSContext* aCx,
-                         JS::Handle<MustConsumeMicroTask> task) {
+static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> task) {
   if (task.get().IsJSMicroTask()) {
-    JSObject* jsGlobal = task.get().GetExecutionGlobalFromJSMicroTask(aCx);
+    JSObject* jsGlobal = task.get().GetExecutionGlobalFromJSMicroTask();
     if (!jsGlobal) {
       return false;
     }
@@ -1048,7 +1047,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
     
     
     if ((IsInSyncOperation() || mSuppressedMicroTaskList) &&
-        IsSuppressed(cx, job)) {
+        IsSuppressed(job)) {
       
       
       
