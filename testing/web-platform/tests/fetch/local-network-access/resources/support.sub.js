@@ -258,3 +258,9 @@ const WebsocketTestResult = {
   
   FAILURE: 'close: code 1006',
 };
+
+const WebTransportTestResult = {
+  SUCCESS: 'open',
+
+  FAILURE: 'error',
+};
