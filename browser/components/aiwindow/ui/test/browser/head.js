@@ -80,7 +80,6 @@ async function typeInSmartbar(browser, text) {
 
 
 
-
 async function promiseSmartbarSuggestionsOpen(browser, openFn) {
   if (!openFn) {
     throw new Error(
@@ -97,19 +96,15 @@ async function promiseSmartbarSuggestionsOpen(browser, openFn) {
     if (smartbar.view.isOpen) {
       return;
     }
-    await new Promise(resolve => {
-      smartbar.controller.addListener({
-        onViewOpen() {
-          smartbar.controller.removeListener(this);
-          resolve();
-        },
-      });
-    });
+    await ContentTaskUtils.waitForMutationCondition(
+      smartbar,
+      { attributes: true },
+      () => smartbar.hasAttribute("open")
+    );
   });
   await openFn();
   await opened;
 }
-
 
 
 
@@ -126,15 +121,11 @@ async function promiseSmartbarSuggestionsClose(browser) {
     if (!smartbar.view.isOpen) {
       return;
     }
-
-    await new Promise(resolve => {
-      smartbar.controller.addListener({
-        onViewClose() {
-          smartbar.controller.removeListener(this);
-          resolve();
-        },
-      });
-    });
+    await ContentTaskUtils.waitForMutationCondition(
+      smartbar,
+      { attributes: true },
+      () => !smartbar.hasAttribute("open")
+    );
   });
 }
 
