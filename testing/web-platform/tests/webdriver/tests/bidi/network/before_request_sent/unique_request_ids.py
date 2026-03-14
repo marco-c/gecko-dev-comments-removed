@@ -7,11 +7,12 @@ from tests.bidi.network import (
 )
 from webdriver.bidi import error
 
+pytestmark = pytest.mark.asyncio
 
 
 
 
-@pytest.mark.asyncio
+
 async def test_unique_request_ids(
     bidi_session,
     configuration,

@@ -1,10 +1,12 @@
 import pytest
 
+pytestmark = pytest.mark.asyncio
 
 
 
 
-@pytest.mark.asyncio
+
+
 async def test_subscribe_to_module(bidi_session, subscribe_events, new_tab,
       wait_for_event, wait_for_future_safe, inline):
     
@@ -41,7 +43,6 @@ async def test_subscribe_to_module(bidi_session, subscribe_events, new_tab,
     remove_listener_load()
 
 
-@pytest.mark.asyncio
 async def test_subscribe_to_one_event_and_then_to_module(
       bidi_session, subscribe_events, wait_for_event, wait_for_future_safe,
       inline, new_tab
@@ -92,7 +93,6 @@ async def test_subscribe_to_one_event_and_then_to_module(
     remove_listener_load()
 
 
-@pytest.mark.asyncio
 async def test_subscribe_to_module_and_then_to_one_event_again(
       bidi_session, subscribe_events, wait_for_event, wait_for_future_safe,
       new_tab, inline
