@@ -224,6 +224,17 @@ function* testSteps() {
 
   let metadataBuffers = [];
 
+  
+  
+  info("Setting pref");
+
+  Services.prefs.setBoolPref(
+    "dom.quotaManager.temporaryStorage.clearNonPersistedZeroUsageOrigins",
+    false
+  );
+
+  todo(!testGenerator, "Set the pref using add_task");
+
   clear(continueToNextStepSync);
   yield undefined;
 
