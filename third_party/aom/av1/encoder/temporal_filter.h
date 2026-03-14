@@ -30,7 +30,7 @@ struct ThreadData;
 #define BW 32
 
 
-#define TF_BLOCK_SIZE BLOCK_32X32
+#define TF_BLOCK_SIZE BLOCK_64X64
 
 
 #define TF_WINDOW_LENGTH 5

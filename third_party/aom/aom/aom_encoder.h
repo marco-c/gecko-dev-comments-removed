@@ -381,6 +381,9 @@ typedef long aom_enc_frame_flags_t;
 #define AOM_EFLAG_CALCULATE_PSNR (1 << 1)
 
 
+#define AOM_EFLAG_FREEZE_INTERNAL_STATE (1 << 2)
+
+
 
 
 
@@ -894,6 +897,9 @@ typedef struct aom_codec_enc_cfg {
 
 
 
+
+
+
   unsigned int use_fixed_qp_offsets;
 
   
@@ -907,6 +913,7 @@ typedef struct aom_codec_enc_cfg {
 
   cfg_options_t encoder_cfg;
 } aom_codec_enc_cfg_t; 
+
 
 
 

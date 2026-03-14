@@ -169,6 +169,8 @@ typedef struct RefCntBuffer {
   int8_t mode_deltas[MAX_MODE_LF_DELTAS];
 
   FRAME_CONTEXT frame_context;
+
+  int filter_level[2];
 } RefCntBuffer;
 
 typedef struct BufferPool {
@@ -622,6 +624,11 @@ struct CommonQuantParams {
   
 
 
+  int sharpness;
+
+  
+
+
 
   int y_dc_delta_q;
 
@@ -695,6 +702,7 @@ struct CommonQuantParams {
   
 
   
+
 
 
 

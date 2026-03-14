@@ -34,6 +34,7 @@
 #include "av1/common/timing.h"
 
 #include "av1/encoder/aq_cyclicrefresh.h"
+#include "av1/encoder/av1_ext_ratectrl.h"
 #include "av1/encoder/av1_quantize.h"
 #include "av1/encoder/block.h"
 #include "av1/encoder/context_tree.h"
@@ -793,6 +794,7 @@ typedef struct {
   
   
   
+  
   int use_fixed_qp_offsets;
   
   int qm_minlevel;
@@ -1488,6 +1490,7 @@ typedef struct ThreadData {
   CONV_BUF_TYPE *tmp_conv_dst;
   uint64_t abs_sum_level;
   uint8_t *tmp_pred_bufs[2];
+  uint8_t *upsample_pred;
   uint8_t *wiener_tmp_pred_buf;
   int intrabc_used;
   int deltaq_used;
@@ -2379,12 +2382,21 @@ typedef struct WeberStats {
   double max_scale;
 } WeberStats;
 
+
+
+
+typedef struct {
+  int show_frame_count;
+} FRAME_INDEX_SET;
+
 typedef struct {
   struct loopfilter lf;
   CdefInfo cdef_info;
   YV12_BUFFER_CONFIG copy_buffer;
   RATE_CONTROL rc;
   MV_STATS mv_stats;
+  unsigned int frame_number;
+  FRAME_INDEX_SET frame_index_set;
 } CODING_CONTEXT;
 
 typedef struct {
@@ -2399,13 +2411,6 @@ typedef struct {
   int subsampling_x;
   int subsampling_y;
 } FRAME_INFO;
-
-
-
-
-typedef struct {
-  int show_frame_count;
-} FRAME_INDEX_SET;
 
 
 
@@ -2888,6 +2893,13 @@ typedef struct AV1_PRIMARY {
 
 
   AV1EncRowMultiThreadSync intra_row_mt_sync;
+
+  
+
+
+
+
+  int b_freeze_internal_state;
 } AV1_PRIMARY;
 
 
@@ -3697,6 +3709,16 @@ typedef struct AV1_COMP {
 
 
   aom_roi_map_t roi;
+
+  
+
+
+  AOM_EXT_RATECTRL ext_ratectrl;
+
+  
+
+
+  AomTplGopStats extrc_tpl_gop_stats;
 } AV1_COMP;
 
 
@@ -3767,9 +3789,9 @@ typedef struct EncodeFrameParams {
 
 void av1_initialize_enc(unsigned int usage, enum aom_rc_mode end_usage);
 
-struct AV1_COMP *av1_create_compressor(AV1_PRIMARY *ppi,
+struct AV1_COMP *av1_create_compressor(struct AV1_PRIMARY *ppi,
                                        const AV1EncoderConfig *oxcf,
-                                       BufferPool *const pool,
+                                       struct BufferPool *const pool,
                                        COMPRESSOR_STAGE stage,
                                        int lap_lag_in_frames);
 
@@ -4107,7 +4129,8 @@ static inline int is_stat_consumption_stage_twopass(const AV1_COMP *const cpi) {
 static inline int is_stat_consumption_stage(const AV1_COMP *const cpi) {
   return (is_stat_consumption_stage_twopass(cpi) ||
           (cpi->oxcf.pass == AOM_RC_ONE_PASS &&
-           (cpi->compressor_stage == ENCODE_STAGE) && cpi->ppi->lap_enabled));
+           (cpi->compressor_stage == ENCODE_STAGE) && cpi->ppi->lap_enabled &&
+           cpi->oxcf.mode != REALTIME));
 }
 
 
@@ -4128,10 +4151,16 @@ static inline bool av1_need_dv_costs(const AV1_COMP *const cpi) {
 static inline int has_no_stats_stage(const AV1_COMP *const cpi) {
   assert(
       IMPLIES(!cpi->ppi->lap_enabled, cpi->compressor_stage == ENCODE_STAGE));
-  return (cpi->oxcf.pass == AOM_RC_ONE_PASS && !cpi->ppi->lap_enabled);
+  return (cpi->oxcf.pass == AOM_RC_ONE_PASS &&
+          (!cpi->ppi->lap_enabled || cpi->oxcf.mode == REALTIME));
 }
 
 
+
+static inline int is_one_pass_rt_lag_params(const AV1_COMP *cpi) {
+  return cpi->oxcf.pass == AOM_RC_ONE_PASS &&
+         cpi->oxcf.gf_cfg.lag_in_frames > 0 && cpi->oxcf.mode == REALTIME;
+}
 
 static inline int is_one_pass_rt_params(const AV1_COMP *cpi) {
   return has_no_stats_stage(cpi) && cpi->oxcf.gf_cfg.lag_in_frames == 0 &&

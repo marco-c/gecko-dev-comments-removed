@@ -40,7 +40,9 @@ struct EncodeFrameParams;
 
 
 
-void av1_gop_setup_structure(struct AV1_COMP *cpi);
+
+
+void av1_gop_setup_structure(struct AV1_COMP *cpi, const int is_final_pass);
 
 
 

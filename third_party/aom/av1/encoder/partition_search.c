@@ -10,6 +10,7 @@
 
 
 #include <float.h>
+#include <inttypes.h>
 
 #include "config/aom_config.h"
 
@@ -41,7 +42,9 @@
 #include "av1/encoder/tune_vmaf.h"
 #endif
 
-#define COLLECT_MOTION_SEARCH_FEATURE_SB 0
+#ifndef COLLECT_MOTION_SEARCH_FEATURE_SB
+#define COLLECT_MOTION_SEARCH_FEATURE_SB CONFIG_PARTITION_SEARCH_ORDER
+#endif
 
 #if CONFIG_PARTITION_SEARCH_ORDER
 void av1_reset_part_sf(PARTITION_SPEED_FEATURES *part_sf) {
@@ -96,6 +99,7 @@ void av1_reset_sf_for_ext_part(AV1_COMP *const cpi) {
 #endif  
 
 #if !CONFIG_REALTIME_ONLY
+#if COLLECT_MOTION_SEARCH_FEATURE_SB
 
 
 
@@ -204,6 +208,7 @@ static void collect_tpl_stats_sb(const AV1_COMP *const cpi,
     }
   }
 }
+#endif  
 #endif  
 
 static void update_txfm_count(MACROBLOCK *x, MACROBLOCKD *xd,
@@ -412,7 +417,6 @@ static void encode_superblock(const AV1_COMP *const cpi, TileDataEnc *tile_data,
   const int mi_col = xd->mi_col;
   if (!is_inter) {
     xd->cfl.store_y = store_cfl_required(cm, xd);
-    mbmi->skip_txfm = 1;
     for (int plane = 0; plane < num_planes; ++plane) {
       av1_encode_intra_block_plane(cpi, x, bsize, plane, dry_run,
                                    cpi->optimize_seg_arr[mbmi->segment_id]);
@@ -2107,6 +2111,7 @@ static void encode_b_nonrd(const AV1_COMP *const cpi, TileDataEnc *tile_data,
             (subsampling_x + subsampling_y)));
   }
 
+  if (!is_inter_block(xd->mi[0])) xd->mi[0]->skip_txfm = 0;
   encode_superblock(cpi, tile_data, td, tp, dry_run, bsize, rate);
   if (!dry_run) {
     update_cb_offsets(x, bsize, subsampling_x, subsampling_y);
@@ -4560,6 +4565,7 @@ static void split_partition_search(
     av1_restore_context(x, x_ctx, mi_row, mi_col, bsize, av1_num_planes(cm));
 }
 
+#if COLLECT_MOTION_SEARCH_FEATURE_SB
 
 
 
@@ -4623,6 +4629,7 @@ static void write_partition_tree(AV1_COMP *const cpi,
 
   fclose(pfile);
 }
+#endif  
 
 #if CONFIG_PARTITION_SEARCH_ORDER
 static void verify_write_partition_tree(const AV1_COMP *const cpi,
@@ -4911,18 +4918,77 @@ static void build_pc_tree_from_part_decision(
       node->partitioning = partitioning;
       bsize = node->block_size;
     }
-    if (partitioning == PARTITION_SPLIT) {
-      const BLOCK_SIZE subsize = get_partition_subsize(bsize, PARTITION_SPLIT);
-      for (int i = 0; i < 4; ++i) {
-        if (node != NULL) {  
-          node->split[i] = av1_alloc_pc_tree_node(subsize);
-          if (!node->split[i])
-            aom_internal_error(error_info, AOM_CODEC_MEM_ERROR,
-                               "Failed to allocate PC_TREE");
-          node->split[i]->index = i;
-          tree_node_queue[last_idx] = node->split[i];
-          ++last_idx;
-        }
+    if (partitioning != PARTITION_NONE) {
+      const BLOCK_SIZE subsize = get_partition_subsize(bsize, partitioning);
+      
+      const BLOCK_SIZE subsize2 = get_partition_subsize(bsize, PARTITION_SPLIT);
+
+      switch (partitioning) {
+        case PARTITION_SPLIT:
+        case PARTITION_HORZ_4:
+        case PARTITION_VERT_4:
+          for (int i = 0; i < 4; ++i) {
+            if (node != NULL) {  
+              node->split[i] = av1_alloc_pc_tree_node(subsize);
+              if (!node->split[i])
+                aom_internal_error(error_info, AOM_CODEC_MEM_ERROR,
+                                   "Failed to allocate PC_TREE");
+              node->split[i]->index = i;
+              tree_node_queue[last_idx] = node->split[i];
+              ++last_idx;
+            }
+          }
+          break;
+        case PARTITION_HORZ:
+        case PARTITION_VERT:
+          for (int i = 0; i < 2; ++i) {
+            if (node != NULL) {  
+              node->split[i] = av1_alloc_pc_tree_node(subsize);
+              if (!node->split[i])
+                aom_internal_error(error_info, AOM_CODEC_MEM_ERROR,
+                                   "Failed to allocate PC_TREE");
+              node->split[i]->index = i;
+              tree_node_queue[last_idx] = node->split[i];
+              ++last_idx;
+            }
+          }
+          break;
+        case PARTITION_HORZ_A:
+        case PARTITION_VERT_A:
+          if (node != NULL) {  
+            node->split[0] = av1_alloc_pc_tree_node(subsize2);
+            node->split[1] = av1_alloc_pc_tree_node(subsize2);
+            node->split[2] = av1_alloc_pc_tree_node(subsize);
+            for (int i = 0; i < 3; ++i) {
+              if (!node->split[i])
+                aom_internal_error(error_info, AOM_CODEC_MEM_ERROR,
+                                   "Failed to allocate PC_TREE");
+              node->split[i]->index = i;
+              tree_node_queue[last_idx] = node->split[i];
+              ++last_idx;
+            }
+          }
+          break;
+        case PARTITION_HORZ_B:
+        case PARTITION_VERT_B:
+          if (node != NULL) {  
+            node->split[0] = av1_alloc_pc_tree_node(subsize);
+            node->split[1] = av1_alloc_pc_tree_node(subsize2);
+            node->split[2] = av1_alloc_pc_tree_node(subsize2);
+            for (int i = 0; i < 3; ++i) {
+              if (!node->split[i])
+                aom_internal_error(error_info, AOM_CODEC_MEM_ERROR,
+                                   "Failed to allocate PC_TREE");
+              node->split[i]->index = i;
+              tree_node_queue[last_idx] = node->split[i];
+              ++last_idx;
+            }
+          }
+          break;
+        case PARTITION_NONE:
+        default:
+          
+          assert(0);
       }
     }
     --num_nodes;
@@ -5554,16 +5620,6 @@ bool av1_rd_pick_partition(AV1_COMP *const cpi, ThreadData *td,
     part_search_state.partition_rect_allowed[VERT] &= !blk_params.has_cols;
   }
 
-#ifndef NDEBUG
-  
-  
-  
-  
-  
-  memset(x->txfm_search_info.blk_skip, 0x77,
-         sizeof(x->txfm_search_info.blk_skip));
-#endif  
-
   assert(mi_size_wide[bsize] == mi_size_high[bsize]);
 
   
@@ -5594,12 +5650,13 @@ bool av1_rd_pick_partition(AV1_COMP *const cpi, ThreadData *td,
   
   
   
-  if (COLLECT_MOTION_SEARCH_FEATURE_SB && !frame_is_intra_only(cm) &&
-      bsize == cm->seq_params->sb_size) {
+#if COLLECT_MOTION_SEARCH_FEATURE_SB
+  if (!frame_is_intra_only(cm) && bsize == cm->seq_params->sb_size) {
     av1_collect_motion_search_features_sb(cpi, td, tile_data, mi_row, mi_col,
                                           bsize, NULL);
     collect_tpl_stats_sb(cpi, bsize, mi_row, mi_col, NULL);
   }
+#endif  
 
   
   av1_rd_cost_update(x->rdmult, &best_rdc);
@@ -5861,12 +5918,11 @@ BEGIN_PARTITION_SEARCH:
       const int emit_output = multi_pass_mode != SB_DRY_PASS;
       const RUN_TYPE run_type = emit_output ? OUTPUT_ENABLED : DRY_RUN_NORMAL;
 
+#if COLLECT_MOTION_SEARCH_FEATURE_SB
       
-      if (COLLECT_MOTION_SEARCH_FEATURE_SB) {
-        write_partition_tree(cpi, pc_tree, bsize, mi_row, mi_col);
-        ++cpi->sb_counter;
-      }
-
+      write_partition_tree(cpi, pc_tree, bsize, mi_row, mi_col);
+      ++cpi->sb_counter;
+#endif  
       set_cb_offsets(x->cb_offset, 0, 0);
       encode_sb(cpi, td, tile_data, tp, mi_row, mi_col, run_type, bsize,
                 pc_tree, NULL);

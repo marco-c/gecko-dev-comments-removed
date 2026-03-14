@@ -29,11 +29,13 @@ struct TPL_INFO;
 
 #include "config/aom_config.h"
 
+#include "aom/aom_tpl.h"
 #include "aom_scale/yv12config.h"
 #include "aom_util/aom_pthread.h"
 
 #include "av1/common/mv.h"
 #include "av1/common/scale.h"
+#include "av1/encoder/av1_ext_ratectrl.h"
 #include "av1/encoder/block.h"
 #include "av1/encoder/lookahead.h"
 #include "av1/encoder/ratectrl.h"
@@ -238,6 +240,16 @@ typedef struct TplParams {
   
 
 
+  YV12_BUFFER_CONFIG prev_gop_arf_src;
+
+  
+
+
+  int64_t prev_gop_arf_disp_order;
+
+  
+
+
 
   AV1TplRowMultiThreadSync tpl_mt_sync;
 
@@ -403,6 +415,10 @@ typedef struct RD_COMMAND {
 
 void av1_read_rd_command(const char *filepath, RD_COMMAND *rd_command);
 #endif  
+
+static inline bool av1_use_tpl_for_extrc(AOM_EXT_RATECTRL const *ext_rc) {
+  return ext_rc->ready && ext_rc->funcs.send_tpl_gop_stats != NULL;
+}
 
 
 
@@ -685,6 +701,12 @@ int_mv av1_compute_mv_difference(const TplDepFrame *tpl_frame, int row, int col,
 
 double av1_tpl_compute_frame_mv_entropy(const TplDepFrame *tpl_frame,
                                         uint8_t right_shift);
+
+
+
+
+
+void av1_free_tpl_gop_stats(AomTplGopStats *extrc_tpl_gop_stats);
 
 #if CONFIG_RATECTRL_LOG
 typedef struct {

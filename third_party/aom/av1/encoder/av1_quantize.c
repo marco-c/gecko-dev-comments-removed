@@ -902,7 +902,13 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
         
         
         
-        chroma_dc_delta_q = -clamp((quant_params->base_qindex / 2) - 14, 0, 16);
+        
+        
+        
+        
+        int offset = (tuning == AOM_TUNE_SSIMULACRA2) ? 20 : 16;
+        chroma_dc_delta_q =
+            -clamp((quant_params->base_qindex / 2) - 14, 0, offset);
         chroma_ac_delta_q = chroma_dc_delta_q;
       } else if (cm->seq_params->subsampling_x == 1 &&
                  cm->seq_params->subsampling_y == 0) {

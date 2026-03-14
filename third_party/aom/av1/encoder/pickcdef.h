@@ -253,8 +253,9 @@ void av1_cdef_search(struct AV1_COMP *cpi);
 
 
 
+
 void av1_pick_cdef_from_qp(AV1_COMMON *const cm, int skip_cdef,
-                           int is_screen_content);
+                           int is_screen_content, bool avoid_uv_cdef);
 
 #ifdef __cplusplus
 }  

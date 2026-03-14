@@ -169,6 +169,8 @@ void av1_single_motion_search(const AV1_COMP *const cpi, MACROBLOCK *x,
   else
     start_mv = get_fullmv_from_mv(&ref_mv);
 
+  const FULLPEL_MV fullpel_ref_mv = start_mv;
+
   
   cand_mv_t cand[MAX_TPL_BLK_IN_SB * MAX_TPL_BLK_IN_SB + 1];
   av1_zero(cand);
@@ -183,35 +185,59 @@ void av1_single_motion_search(const AV1_COMP *const cpi, MACROBLOCK *x,
 
   const int cand_cnt = AOMMIN(2, cnt);
   
-  if (cpi->sf.mv_sf.skip_fullpel_search_using_startmv &&
+  if (cpi->sf.mv_sf.skip_fullpel_search_using_startmv_refmv &&
       mbmi->motion_mode == SIMPLE_TRANSLATION) {
-    const int stack_size = args->start_mv_cnt;
     for (int cand_idx = 0; cand_idx < cand_cnt; cand_idx++) {
       int_mv *fmv_cand = &cand[cand_idx].fmv;
       int skip_cand_mv = 0;
 
       
-      for (int stack_idx = 0; stack_idx < stack_size; stack_idx++) {
-        const uint8_t this_ref_mv_idx = args->ref_mv_idx_stack[stack_idx];
-        const FULLPEL_MV *fmv_stack = &args->start_mv_stack[stack_idx];
+      for (int stack_idx = 0; stack_idx < args->start_mv_cnt; stack_idx++) {
+        uint8_t this_ref_mv_idx = args->ref_mv_idx_stack[stack_idx];
         const int this_newmv_valid =
             args->single_newmv_valid[this_ref_mv_idx][ref];
-        const int row_diff = abs(fmv_stack->row - fmv_cand->as_fullmv.row);
-        const int col_diff = abs(fmv_stack->col - fmv_cand->as_fullmv.col);
 
-        if (!this_newmv_valid) continue;
+        if (!this_newmv_valid && this_ref_mv_idx != mbmi->ref_mv_idx) continue;
 
-        if (cpi->sf.mv_sf.skip_fullpel_search_using_startmv >= 2) {
+        const FULLPEL_MV *fmv_stack = &args->start_mv_stack[stack_idx];
+        const int start_mv_row_diff =
+            abs(fmv_stack->row - fmv_cand->as_fullmv.row);
+        const int start_mv_col_diff =
+            abs(fmv_stack->col - fmv_cand->as_fullmv.col);
+
+        if (mbmi->mode == NEAR_NEWMV || mbmi->mode == NEW_NEARMV) {
+          assert(has_second_ref(mbmi));
+          this_ref_mv_idx += 1;
+        }
+        const MV this_ref_mv =
+            av1_get_ref_mv_from_stack(ref_idx, mbmi->ref_frame, this_ref_mv_idx,
+                                      &x->mbmi_ext)
+                .as_mv;
+
+        assert(IMPLIES(args->ref_mv_idx_stack[stack_idx] == mbmi->ref_mv_idx,
+                       this_ref_mv.row == ref_mv.row));
+        assert(IMPLIES(args->ref_mv_idx_stack[stack_idx] == mbmi->ref_mv_idx,
+                       this_ref_mv.col == ref_mv.col));
+
+        const FULLPEL_MV this_fullpel_ref_mv = get_fullmv_from_mv(&this_ref_mv);
+        const int ref_mv_row_diff =
+            abs(this_fullpel_ref_mv.row - fullpel_ref_mv.row);
+        const int ref_mv_col_diff =
+            abs(this_fullpel_ref_mv.col - fullpel_ref_mv.col);
+
+        if (cpi->sf.mv_sf.skip_fullpel_search_using_startmv_refmv >= 2) {
           
           
-          if (row_diff <= 1 && col_diff <= 1) {
+          if (start_mv_row_diff <= 1 && start_mv_col_diff <= 1 &&
+              ref_mv_row_diff <= 1 && ref_mv_col_diff <= 1) {
             skip_cand_mv = 1;
             break;
           }
-        } else if (cpi->sf.mv_sf.skip_fullpel_search_using_startmv >= 1) {
+        } else if (cpi->sf.mv_sf.skip_fullpel_search_using_startmv_refmv >= 1) {
           
           
-          if (row_diff + col_diff <= 1) {
+          if ((start_mv_row_diff + start_mv_col_diff <= 1) &&
+              (ref_mv_row_diff + ref_mv_col_diff <= 1)) {
             skip_cand_mv = 1;
             break;
           }
@@ -219,18 +245,14 @@ void av1_single_motion_search(const AV1_COMP *const cpi, MACROBLOCK *x,
       }
       if (skip_cand_mv) {
         
-        assert(mbmi->ref_mv_idx != 0);
-        
         cand[cand_idx].fmv.as_int = INVALID_MV;
       } else {
         
         
-        if (mbmi->ref_mv_idx != MAX_REF_MV_SEARCH - 1) {
-          assert(args->start_mv_cnt < (MAX_REF_MV_SEARCH - 1) * 2);
-          args->start_mv_stack[args->start_mv_cnt] = fmv_cand->as_fullmv;
-          args->ref_mv_idx_stack[args->start_mv_cnt] = mbmi->ref_mv_idx;
-          args->start_mv_cnt++;
-        }
+        assert(args->start_mv_cnt < MAX_REF_MV_SEARCH * 2);
+        args->start_mv_stack[args->start_mv_cnt] = fmv_cand->as_fullmv;
+        args->ref_mv_idx_stack[args->start_mv_cnt] = mbmi->ref_mv_idx;
+        args->start_mv_cnt++;
       }
     }
   }

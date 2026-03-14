@@ -11,6 +11,7 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 
 #include "config/aom_dsp_rtcd.h"
@@ -22,7 +23,6 @@
 #include "av1/encoder/encoder.h"
 #include "av1/encoder/ethread.h"
 #include "av1/encoder/pickcdef.h"
-#include "av1/encoder/mcomp.h"
 
 
 
@@ -230,7 +230,7 @@ static inline void init_src_params(int *src_stride, int *width, int *height,
   *width = block_size_wide[bsize];
   *height = block_size_high[bsize];
   *width_log2 = MI_SIZE_LOG2 + mi_size_wide_log2[bsize];
-  *height_log2 = MI_SIZE_LOG2 + mi_size_wide_log2[bsize];
+  *height_log2 = MI_SIZE_LOG2 + mi_size_high_log2[bsize];
 }
 #if CONFIG_AV1_HIGHBITDEPTH
 
@@ -418,15 +418,14 @@ static inline uint64_t get_filt_error(
         (block_size_wide[plane_bsize] * block_size_high[plane_bsize]) >>
         (bw_log2 + bh_log2);
     if (cdef_count == tot_blk_count) {
-      
-      const FULLPEL_MV this_mv = { row, col };
-      const int buf_offset = get_offset_from_fullmv(&this_mv, ref_stride);
+      const ptrdiff_t buf_offset = (ptrdiff_t)row * ref_stride + col;
+      const ptrdiff_t dst_offset = (ptrdiff_t)row * pd->dst.stride + col;
       if (pri_strength == 0 && sec_strength == 0) {
         
         
         curr_sse =
             aom_sse(&ref_buffer[buf_offset], ref_stride,
-                    get_buf_from_fullmv(&pd->dst, &this_mv), pd->dst.stride,
+                    &pd->dst.buf[dst_offset], pd->dst.stride,
                     block_size_wide[plane_bsize], block_size_high[plane_bsize]);
       } else {
         DECLARE_ALIGNED(32, uint8_t, tmp_dst8[1 << (MAX_SB_SIZE_LOG2 * 2)]);
@@ -451,17 +450,18 @@ static inline uint64_t get_filt_error(
         for (int bi = 0; bi < cdef_count; bi = bi + num_error_calc_filt_units) {
           const uint8_t by = dlist[bi].by;
           const uint8_t bx = dlist[bi].bx;
-          const int16_t by_pos = (by << bh_log2);
-          const int16_t bx_pos = (bx << bw_log2);
-          
-          const FULLPEL_MV this_mv = { row + by_pos, col + bx_pos };
-          const int buf_offset = get_offset_from_fullmv(&this_mv, ref_stride);
+          const int by_pos = by << bh_log2;
+          const int bx_pos = bx << bw_log2;
+          const ptrdiff_t buf_offset =
+              (ptrdiff_t)(row + by_pos) * ref_stride + (col + bx_pos);
+          const ptrdiff_t dst_offset =
+              (ptrdiff_t)(row + by_pos) * pd->dst.stride + (col + bx_pos);
           num_error_calc_filt_units = get_error_calc_width_in_filt_units(
               dlist, cdef_count, bi, pd->subsampling_x, pd->subsampling_y);
-          curr_sse += aom_sse(
-              &ref_buffer[buf_offset], ref_stride,
-              get_buf_from_fullmv(&pd->dst, &this_mv), pd->dst.stride,
-              num_error_calc_filt_units * (1 << bw_log2), (1 << bh_log2));
+          curr_sse +=
+              aom_sse(&ref_buffer[buf_offset], ref_stride,
+                      &pd->dst.buf[dst_offset], pd->dst.stride,
+                      num_error_calc_filt_units * (1 << bw_log2), 1 << bh_log2);
         }
       } else {
         DECLARE_ALIGNED(32, uint8_t, tmp_dst8[1 << (MAX_SB_SIZE_LOG2 * 2)]);
@@ -475,14 +475,12 @@ static inline uint64_t get_filt_error(
         for (int bi = 0; bi < cdef_count; bi = bi + num_error_calc_filt_units) {
           const uint8_t by = dlist[bi].by;
           const uint8_t bx = dlist[bi].bx;
-          const int16_t by_pos = (by << bh_log2);
-          const int16_t bx_pos = (bx << bw_log2);
-          
-          const FULLPEL_MV this_mv = { row + by_pos, col + bx_pos };
-          const FULLPEL_MV tmp_buf_pos = { by_pos, bx_pos };
-          const int buf_offset = get_offset_from_fullmv(&this_mv, ref_stride);
-          const int tmp_buf_offset =
-              get_offset_from_fullmv(&tmp_buf_pos, (1 << MAX_SB_SIZE_LOG2));
+          const int by_pos = by << bh_log2;
+          const int bx_pos = bx << bw_log2;
+          const ptrdiff_t buf_offset =
+              (ptrdiff_t)(row + by_pos) * ref_stride + (col + bx_pos);
+          const ptrdiff_t tmp_buf_offset =
+              by_pos * (1 << MAX_SB_SIZE_LOG2) + bx_pos;
           num_error_calc_filt_units = get_error_calc_width_in_filt_units(
               dlist, cdef_count, bi, pd->subsampling_x, pd->subsampling_y);
           curr_sse += aom_sse(
@@ -732,7 +730,7 @@ static inline void cdef_params_init(const YV12_BUFFER_CONFIG *frame,
 }
 
 void av1_pick_cdef_from_qp(AV1_COMMON *const cm, int skip_cdef,
-                           int is_screen_content) {
+                           int is_screen_content, bool avoid_uv_cdef) {
   const int bd = cm->seq_params->bit_depth;
   const int q =
       av1_ac_quant_QTX(cm->quant_params.base_qindex, 0, bd) >> (bd - 8);
@@ -796,7 +794,8 @@ void av1_pick_cdef_from_qp(AV1_COMMON *const cm, int skip_cdef,
   cdef_info->cdef_strengths[0] =
       predicted_y_f1 * CDEF_SEC_STRENGTHS + predicted_y_f2;
   cdef_info->cdef_uv_strengths[0] =
-      predicted_uv_f1 * CDEF_SEC_STRENGTHS + predicted_uv_f2;
+      avoid_uv_cdef ? 0
+                    : predicted_uv_f1 * CDEF_SEC_STRENGTHS + predicted_uv_f2;
 
   
   
@@ -824,15 +823,16 @@ void av1_pick_cdef_from_qp(AV1_COMMON *const cm, int skip_cdef,
 void av1_cdef_search(AV1_COMP *cpi) {
   AV1_COMMON *cm = &cpi->common;
   CDEF_CONTROL cdef_control = cpi->oxcf.tool_cfg.cdef_control;
+  const bool apply_adaptive_cdef =
+      cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
+      (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ);
 
   assert(cdef_control != CDEF_NONE);
   
   
   if ((cdef_control == CDEF_REFERENCE &&
        cpi->ppi->rtc_ref.non_reference_frame) ||
-      (cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
-       (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ) &&
-       cpi->oxcf.rc_cfg.cq_level <= 32)) {
+      (apply_adaptive_cdef && cpi->oxcf.rc_cfg.cq_level <= 32)) {
     CdefInfo *const cdef_info = &cm->cdef_info;
     cdef_info->nb_cdef_strengths = 1;
     cdef_info->cdef_bits = 0;
@@ -844,7 +844,8 @@ void av1_cdef_search(AV1_COMP *cpi) {
   
   const int rtc_ext_rc = cpi->rc.rtc_external_ratectrl;
   if (rtc_ext_rc) {
-    av1_pick_cdef_from_qp(cm, 0, 0);
+    av1_pick_cdef_from_qp(cm, 0, 0,
+                          false);
     return;
   }
   CDEF_PICK_METHOD pick_method = cpi->sf.lpf_sf.cdef_pick_method;
@@ -854,8 +855,14 @@ void av1_cdef_search(AV1_COMP *cpi) {
             AOMMAX(cpi->sf.rt_sf.screen_content_cdef_filter_qindex_thresh,
                    cpi->rc.best_quality + 5) &&
         cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN;
-    av1_pick_cdef_from_qp(cm, cpi->sf.rt_sf.skip_cdef_sb,
-                          use_screen_content_model);
+
+    
+    
+    
+    const bool avoid_uv_cdef = apply_adaptive_cdef;
+
+    av1_pick_cdef_from_qp(cm, cpi->sf.rt_sf.skip_cdef_sb != 0,
+                          use_screen_content_model, avoid_uv_cdef);
     return;
   }
   const CommonModeInfoParams *const mi_params = &cm->mi_params;
@@ -898,7 +905,25 @@ void av1_cdef_search(AV1_COMP *cpi) {
   const int max_signaling_bits =
       joint_strengths == 1 ? 0 : get_msb(joint_strengths - 1) + 1;
   int rdmult = cpi->td.mb.rdmult;
-  for (int i = 0; i <= 3; i++) {
+
+  
+  
+  const bool should_reduce_cdef_strengths =
+      apply_adaptive_cdef && cpi->oxcf.rc_cfg.cq_level <= 220;
+  
+  
+  
+  const bool should_zero_cdef_strengths =
+      should_reduce_cdef_strengths && cpi->sf.lpf_sf.zero_low_cdef_strengths;
+  
+  
+  
+  
+  
+  const int min_signaling_bits =
+      (should_zero_cdef_strengths && max_signaling_bits > 0) ? 1 : 0;
+
+  for (int i = min_signaling_bits; i <= 3; i++) {
     if (i > max_signaling_bits) break;
     int best_lev0[CDEF_MAX_STRENGTHS] = { 0 };
     int best_lev1[CDEF_MAX_STRENGTHS] = { 0 };
@@ -948,13 +973,15 @@ void av1_cdef_search(AV1_COMP *cpi) {
   if (fast) {
     for (int j = 0; j < cdef_info->nb_cdef_strengths; j++) {
       const int luma_strength = cdef_info->cdef_strengths[j];
-      const int chroma_strength = cdef_info->cdef_uv_strengths[j];
       int pri_strength, sec_strength;
 
       STORE_CDEF_FILTER_STRENGTH(cdef_info->cdef_strengths[j], pick_method,
                                  luma_strength);
-      STORE_CDEF_FILTER_STRENGTH(cdef_info->cdef_uv_strengths[j], pick_method,
-                                 chroma_strength);
+      if (num_planes > 1) {
+        const int chroma_strength = cdef_info->cdef_uv_strengths[j];
+        STORE_CDEF_FILTER_STRENGTH(cdef_info->cdef_uv_strengths[j], pick_method,
+                                   chroma_strength);
+      }
     }
   }
 
@@ -971,28 +998,54 @@ void av1_cdef_search(AV1_COMP *cpi) {
   
   
   
-  
-  if (cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
-      (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ) &&
-      cpi->oxcf.rc_cfg.cq_level <= 220) {
+  if (should_reduce_cdef_strengths) {
     for (int j = 0; j < cdef_info->nb_cdef_strengths; j++) {
       const int luma_strength = cdef_info->cdef_strengths[j];
-      const int chroma_strength = cdef_info->cdef_uv_strengths[j];
-
       const int new_pri_luma_strength =
           (luma_strength / CDEF_SEC_STRENGTHS) >> 1;
       const int new_sec_luma_strength =
           (luma_strength % CDEF_SEC_STRENGTHS) >> 1;
-      const int new_pri_chroma_strength =
-          (chroma_strength / CDEF_SEC_STRENGTHS) >> 1;
-      const int new_sec_chroma_strength =
-          (chroma_strength % CDEF_SEC_STRENGTHS) >> 1;
 
       cdef_info->cdef_strengths[j] =
           new_pri_luma_strength * CDEF_SEC_STRENGTHS + new_sec_luma_strength;
-      cdef_info->cdef_uv_strengths[j] =
-          new_pri_chroma_strength * CDEF_SEC_STRENGTHS +
-          new_sec_chroma_strength;
+
+      int new_pri_chroma_strength;
+      int new_sec_chroma_strength;
+
+      if (num_planes > 1) {
+        const int chroma_strength = cdef_info->cdef_uv_strengths[j];
+        new_pri_chroma_strength = (chroma_strength / CDEF_SEC_STRENGTHS) >> 1;
+        new_sec_chroma_strength = (chroma_strength % CDEF_SEC_STRENGTHS) >> 1;
+
+        cdef_info->cdef_uv_strengths[j] =
+            new_pri_chroma_strength * CDEF_SEC_STRENGTHS +
+            new_sec_chroma_strength;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (should_zero_cdef_strengths) {
+        const bool is_low_luma_strength =
+            new_pri_luma_strength <= 4 && new_sec_luma_strength <= 1;
+
+        if (is_low_luma_strength) {
+          cdef_info->cdef_strengths[j] = 0;
+        }
+        if (num_planes > 1) {
+          const bool is_low_chroma_strength =
+              new_pri_chroma_strength <= 4 && new_sec_chroma_strength <= 1;
+
+          if (is_low_luma_strength || is_low_chroma_strength) {
+            
+            cdef_info->cdef_uv_strengths[j] = 0;
+          }
+        }
+      }
     }
   }
 

@@ -128,12 +128,12 @@ typedef struct HandleInterModeArgs {
   
 
 
-  FULLPEL_MV start_mv_stack[(MAX_REF_MV_SEARCH - 1) * 2];
+  FULLPEL_MV start_mv_stack[MAX_REF_MV_SEARCH * 2];
 
   
 
 
-  uint8_t ref_mv_idx_stack[(MAX_REF_MV_SEARCH - 1) * 2];
+  uint8_t ref_mv_idx_stack[MAX_REF_MV_SEARCH * 2];
 
   
 

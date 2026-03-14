@@ -71,6 +71,10 @@ typedef struct FIRSTPASS_STATS {
   
 
 
+  double lt_coded_error;
+  
+
+
   double pcnt_inter;
   
 
@@ -394,6 +398,9 @@ typedef struct GF_GROUP {
   
   bool is_sframe_due;
   
+  
+  int use_ext_ref_frame_map[MAX_STATIC_GF_GROUP_LENGTH];
+  
 } GF_GROUP;
 
 
@@ -482,6 +489,9 @@ typedef struct {
   int64_t coded_error;
   
   int64_t sr_coded_error;
+  
+  int64_t lt_coded_error;
+
   
   int mv_count;
   

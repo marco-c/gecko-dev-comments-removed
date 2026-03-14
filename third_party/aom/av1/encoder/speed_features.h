@@ -256,6 +256,11 @@ enum {
 
 typedef struct {
   TX_TYPE_PRUNE_MODE prune_2d_txfm_mode;
+
+  
+  
+  
+  
   int fast_intra_tx_type_search;
 
   
@@ -864,6 +869,8 @@ typedef struct MV_SPEED_FEATURES {
   
   
   
+  
+  
   int use_bsize_dependent_search_method;
 
   
@@ -960,7 +967,10 @@ typedef struct MV_SPEED_FEATURES {
   
   
   
-  int skip_fullpel_search_using_startmv;
+  
+  
+  
+  int skip_fullpel_search_using_startmv_refmv;
 
   
   
@@ -1150,6 +1160,8 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   
+  
+  
   int prune_inter_modes_based_on_tpl;
 
   
@@ -1222,6 +1234,11 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   int bias_warp_mode_rd_scale_pct;
+
+  
+  
+  
+  float bias_obmc_mode_rd_scale_pct;
 } INTER_MODE_SPEED_FEATURES;
 
 typedef struct INTERP_FILTER_SPEED_FEATURES {
@@ -1566,6 +1583,12 @@ typedef struct LOOP_FILTER_SPEED_FEATURES {
   
   
   
+  
+  bool zero_low_cdef_strengths;
+
+  
+  
+  
   int dual_sgr_penalty_level;
 
   
@@ -1577,6 +1600,13 @@ typedef struct LOOP_FILTER_SPEED_FEATURES {
   
   int switchable_lr_with_bias_level;
 
+  
+  
+  
+  
+  
+  
+  
   
   int enable_sgr_ep_pruning;
 
@@ -1728,7 +1758,7 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   int rc_adjust_keyframe;
 
   
-  int rc_compute_spatial_var_sc;
+  int rc_compute_spatial_var_sc_kf;
 
   
   

@@ -442,6 +442,11 @@ typedef struct {
   int use_default_intra_tx_type;
 
   
+
+
+  int use_derived_intra_tx_type_set;
+
+  
   int default_inter_tx_type_prob_thresh;
 
   
@@ -952,6 +957,11 @@ typedef struct macroblock {
 
 
   uint8_t *tmp_pred_bufs[2];
+
+  
+
+
+  uint8_t *upsample_pred;
   
 
   

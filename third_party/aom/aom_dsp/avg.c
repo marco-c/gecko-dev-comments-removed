@@ -119,18 +119,20 @@ void aom_hadamard_4x4_c(const int16_t *src_diff, ptrdiff_t src_stride,
   int16_t buffer2[16];
   int16_t *tmp_buf = &buffer[0];
   for (idx = 0; idx < 4; ++idx) {
-    hadamard_col4(src_diff, src_stride, tmp_buf);  
-                                                   
+    
+    
+    hadamard_col4(src_diff, src_stride, tmp_buf);
     tmp_buf += 4;
     ++src_diff;
   }
 
   tmp_buf = &buffer[0];
   for (idx = 0; idx < 4; ++idx) {
-    hadamard_col4(tmp_buf, 4, buffer2 + 4 * idx);  
     
     
     
+    
+    hadamard_col4(tmp_buf, 4, buffer2 + 4 * idx);
     ++tmp_buf;
   }
 

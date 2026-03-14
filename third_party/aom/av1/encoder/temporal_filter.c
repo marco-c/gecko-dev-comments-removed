@@ -47,8 +47,93 @@
 
 
 
+#define NUM_16X16 16
+
+
 static void tf_determine_block_partition(const MV block_mv, const int block_mse,
+                                         const MV *midblock_mvs,
+                                         const int *midblock_mses,
                                          MV *subblock_mvs, int *subblock_mses);
+
+
+static void subblock_motion_search(
+    AV1_COMP *cpi, MACROBLOCK *mb, const YV12_BUFFER_CONFIG *frame_to_filter,
+    const YV12_BUFFER_CONFIG *ref_frame, BLOCK_SIZE tf_block_size, int mb_row,
+    int mb_col, BLOCK_SIZE subblock_size, int idx, int subblock_ofst_i,
+    int subblock_ofst_j, FULLPEL_MOTION_SEARCH_PARAMS *full_ms_params,
+    SUBPEL_MOTION_SEARCH_PARAMS *ms_params, const MV *ref_mv,
+    FULLPEL_MV start_mv, const search_site_config *search_site_cfg,
+    SEARCH_METHODS search_method, MV_COST_TYPE mv_cost_type, int step_param,
+    SUBPEL_SEARCH_TYPE subpel_ms_type, MV *subblock_mvs, int *subblock_mses,
+    FULLPEL_MV_STATS *best_mv_stats, int q) {
+  MACROBLOCKD *const mbd = &mb->e_mbd;
+
+  const int mb_height = block_size_high[tf_block_size];
+  const int mb_width = block_size_wide[tf_block_size];
+  const int mi_h = mi_size_high_log2[tf_block_size];
+  const int mi_w = mi_size_wide_log2[tf_block_size];
+
+  const int y_stride = frame_to_filter->y_stride;
+  assert(y_stride == ref_frame->y_stride);
+  const int y_offset = mb_row * mb_height * y_stride + mb_col * mb_width;
+
+  const int subblock_height = block_size_high[subblock_size];
+  const int subblock_width = block_size_wide[subblock_size];
+  const int subblock_pels = subblock_height * subblock_width;
+
+  int_mv best_mv;  
+  unsigned int sse, error;
+  int distortion;
+  int cost_list[5];
+
+  av1_set_mv_row_limits(&cpi->common.mi_params, &mb->mv_limits,
+                        (mb_row << mi_h) + (subblock_ofst_i >> MI_SIZE_LOG2),
+                        (subblock_height >> MI_SIZE_LOG2),
+                        cpi->oxcf.border_in_pixels);
+  av1_set_mv_col_limits(&cpi->common.mi_params, &mb->mv_limits,
+                        (mb_col << mi_w) + (subblock_ofst_j >> MI_SIZE_LOG2),
+                        (subblock_width >> MI_SIZE_LOG2),
+                        cpi->oxcf.border_in_pixels);
+  const int boffset = subblock_ofst_i * y_stride + subblock_ofst_j;
+  mb->plane[0].src.buf = frame_to_filter->y_buffer + y_offset + boffset;
+  mbd->plane[0].pre[0].buf = ref_frame->y_buffer + y_offset + boffset;
+  av1_make_default_fullpel_ms_params(full_ms_params, cpi, mb, subblock_size,
+                                     ref_mv, start_mv, search_site_cfg,
+                                     search_method,
+                                     0);
+  full_ms_params->run_mesh_search = 1;
+  full_ms_params->mv_cost_params.mv_cost_type = mv_cost_type;
+
+  
+  
+  if (cpi->sf.mv_sf.prune_mesh_search == PRUNE_MESH_SEARCH_LVL_1) {
+    
+    full_ms_params->prune_mesh_search = (q <= 20) ? 0 : 1;
+    full_ms_params->mesh_search_mv_diff_threshold = 2;
+  }
+
+  av1_full_pixel_search(start_mv, full_ms_params, step_param,
+                        cond_cost_list(cpi, cost_list), &best_mv.as_fullmv,
+                        best_mv_stats, NULL);
+
+  av1_make_default_subpel_ms_params(ms_params, cpi, mb, subblock_size, ref_mv,
+                                    cost_list);
+  ms_params->forced_stop = EIGHTH_PEL;
+  ms_params->var_params.subpel_search_type = subpel_ms_type;
+  
+  
+  ms_params->mv_cost_params.mv_cost_type = MV_COST_NONE;
+  best_mv_stats->err_cost = 0;
+
+  MV subpel_start_mv = get_mv_from_fullmv(&best_mv.as_fullmv);
+  assert(av1_is_subpelmv_in_range(&ms_params->mv_limits, subpel_start_mv));
+  error = cpi->mv_search_params.find_fractional_mv_step(
+      &mb->e_mbd, &cpi->common, ms_params, subpel_start_mv, best_mv_stats,
+      &best_mv.as_mv, &distortion, &sse, NULL);
+
+  subblock_mses[idx] = DIVIDE_AND_ROUND(error, subblock_pels);
+  subblock_mvs[idx] = best_mv.as_mv;
+}
 
 
 
@@ -87,6 +172,13 @@ static inline void get_log_var_4x4sub_blk(
 static int get_q(const AV1_COMP *cpi) {
   const GF_GROUP *gf_group = &cpi->ppi->gf_group;
   const FRAME_TYPE frame_type = gf_group->frame_type[cpi->gf_frame_index];
+
+  if (cpi->oxcf.rc_cfg.mode == AOM_Q) {
+    int cq_level = cpi->oxcf.rc_cfg.cq_level;
+    return (int)av1_convert_qindex_to_q(cq_level,
+                                        cpi->common.seq_params->bit_depth);
+  }
+
   const int q =
       (int)av1_convert_qindex_to_q(cpi->ppi->p_rc.avg_frame_qindex[frame_type],
                                    cpi->common.seq_params->bit_depth);
@@ -229,6 +321,10 @@ static void tf_motion_search(AV1_COMP *cpi, MACROBLOCK *mb,
   FULLPEL_MV_STATS best_mv_stats;
   int block_mse = INT_MAX;
   MV block_mv = kZeroMv;
+  
+  int midblock_mses[4] = { INT_MAX, INT_MAX, INT_MAX, INT_MAX };
+  MV midblock_mvs[4] = { kZeroMv, kZeroMv, kZeroMv, kZeroMv };
+
   const int q = get_q(cpi);
 
   av1_make_default_fullpel_ms_params(&full_ms_params, cpi, mb, block_size,
@@ -282,54 +378,49 @@ static void tf_motion_search(AV1_COMP *cpi, MACROBLOCK *mb,
     *is_dc_diff_large = 50 * error < sse;
     if (src_var <= 2 * (int64_t)distortion) *is_low_cntras = 1;
 
+    
     if (allow_me_for_sub_blks) {
       
-      const BLOCK_SIZE subblock_size = av1_ss_size_lookup[block_size][1][1];
-      const int subblock_height = block_size_high[subblock_size];
-      const int subblock_width = block_size_wide[subblock_size];
-      const int subblock_pels = subblock_height * subblock_width;
-      start_mv = get_fullmv_from_mv(ref_mv);
+      
+      const BLOCK_SIZE midblock_size = av1_ss_size_lookup[block_size][1][1];
+      const int midblock_height = block_size_high[midblock_size];
+      const int midblock_width = block_size_wide[midblock_size];
+      int midblock_idx = 0;
+      for (int i = 0; i < mb_height; i += midblock_height) {
+        for (int j = 0; j < mb_width; j += midblock_width) {
+          start_mv = get_fullmv_from_mv(ref_mv);
 
-      int subblock_idx = 0;
-      for (int i = 0; i < mb_height; i += subblock_height) {
-        for (int j = 0; j < mb_width; j += subblock_width) {
-          const int offset = i * y_stride + j;
-          mb->plane[0].src.buf = frame_to_filter->y_buffer + y_offset + offset;
-          mbd->plane[0].pre[0].buf = ref_frame->y_buffer + y_offset + offset;
-          av1_make_default_fullpel_ms_params(
-              &full_ms_params, cpi, mb, subblock_size, &baseline_mv, start_mv,
-              search_site_cfg, search_method,
-              0);
-          full_ms_params.run_mesh_search = 1;
-          full_ms_params.mv_cost_params.mv_cost_type = mv_cost_type;
+          subblock_motion_search(
+              cpi, mb, frame_to_filter, ref_frame, block_size, mb_row, mb_col,
+              midblock_size, midblock_idx, i, j, &full_ms_params, &ms_params,
+              &baseline_mv, start_mv, search_site_cfg, search_method,
+              mv_cost_type, step_param, subpel_search_type, midblock_mvs,
+              midblock_mses, &best_mv_stats, q);
 
-          if (cpi->sf.mv_sf.prune_mesh_search == PRUNE_MESH_SEARCH_LVL_1) {
-            
-            full_ms_params.prune_mesh_search = (q <= 20) ? 0 : 1;
-            full_ms_params.mesh_search_mv_diff_threshold = 2;
+          
+          {
+            const BLOCK_SIZE subblock_size =
+                av1_ss_size_lookup[midblock_size][1][1];
+            const int subblock_height = block_size_high[subblock_size];
+            const int subblock_width = block_size_wide[subblock_size];
+
+            start_mv = get_fullmv_from_mv(&midblock_mvs[midblock_idx]);
+
+            int bidx = midblock_idx * 4;
+            for (int bi = 0; bi < midblock_height; bi += subblock_height) {
+              for (int bj = 0; bj < midblock_width; bj += subblock_width) {
+                subblock_motion_search(
+                    cpi, mb, frame_to_filter, ref_frame, block_size, mb_row,
+                    mb_col, subblock_size, bidx, (i + bi), (j + bj),
+                    &full_ms_params, &ms_params, &baseline_mv, start_mv,
+                    search_site_cfg, search_method, mv_cost_type, step_param,
+                    subpel_search_type, subblock_mvs, subblock_mses,
+                    &best_mv_stats, q);
+                ++bidx;
+              }
+            }
           }
-          av1_full_pixel_search(start_mv, &full_ms_params, step_param,
-                                cond_cost_list(cpi, cost_list),
-                                &best_mv.as_fullmv, &best_mv_stats, NULL);
-
-          av1_make_default_subpel_ms_params(&ms_params, cpi, mb, subblock_size,
-                                            &baseline_mv, cost_list);
-          ms_params.forced_stop = EIGHTH_PEL;
-          ms_params.var_params.subpel_search_type = subpel_search_type;
-          
-          
-          ms_params.mv_cost_params.mv_cost_type = MV_COST_NONE;
-          best_mv_stats.err_cost = 0;
-
-          subpel_start_mv = get_mv_from_fullmv(&best_mv.as_fullmv);
-          assert(
-              av1_is_subpelmv_in_range(&ms_params.mv_limits, subpel_start_mv));
-          error = cpi->mv_search_params.find_fractional_mv_step(
-              &mb->e_mbd, &cpi->common, &ms_params, subpel_start_mv,
-              &best_mv_stats, &best_mv.as_mv, &distortion, &sse, NULL);
-          subblock_mses[subblock_idx] = DIVIDE_AND_ROUND(error, subblock_pels);
-          subblock_mvs[subblock_idx] = best_mv.as_mv;
-          ++subblock_idx;
+          ++midblock_idx;
         }
       }
     }
@@ -341,11 +432,11 @@ static void tf_motion_search(AV1_COMP *cpi, MACROBLOCK *mb,
 
   
   if (allow_me_for_sub_blks) {
-    tf_determine_block_partition(block_mv, block_mse, subblock_mvs,
-                                 subblock_mses);
+    tf_determine_block_partition(block_mv, block_mse, midblock_mvs,
+                                 midblock_mses, subblock_mvs, subblock_mses);
   } else {
     
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < NUM_16X16; ++i) {
       subblock_mvs[i] = block_mv;
       subblock_mses[i] = block_mse;
     }
@@ -372,24 +463,56 @@ static void tf_motion_search(AV1_COMP *cpi, MACROBLOCK *mb,
 
 
 
+
+
 static void tf_determine_block_partition(const MV block_mv, const int block_mse,
+                                         const MV *midblock_mvs,
+                                         const int *midblock_mses,
                                          MV *subblock_mvs, int *subblock_mses) {
   int min_subblock_mse = INT_MAX;
   int max_subblock_mse = INT_MIN;
   int64_t sum_subblock_mse = 0;
-  for (int i = 0; i < 4; ++i) {
+  int i;
+
+  
+  for (int idx = 0; idx < 4; ++idx) {
+    min_subblock_mse = INT_MAX;
+    max_subblock_mse = INT_MIN;
+    sum_subblock_mse = 0;
+
+    const int sub_idx = idx * 4;
+    for (i = sub_idx; i < sub_idx + 4; ++i) {
+      sum_subblock_mse += subblock_mses[i];
+      min_subblock_mse = AOMMIN(min_subblock_mse, subblock_mses[i]);
+      max_subblock_mse = AOMMAX(max_subblock_mse, subblock_mses[i]);
+    }
+
+    if (((midblock_mses[idx] * 15 <= sum_subblock_mse * 4) &&
+         max_subblock_mse - min_subblock_mse < 48) ||
+        ((midblock_mses[idx] * 14 <= sum_subblock_mse * 4) &&
+         max_subblock_mse - min_subblock_mse < 24)) {  
+      for (i = sub_idx; i < sub_idx + 4; ++i) {
+        subblock_mvs[i] = midblock_mvs[idx];
+        subblock_mses[i] = midblock_mses[idx];
+      }
+    }
+  }
+
+  min_subblock_mse = INT_MAX;
+  max_subblock_mse = INT_MIN;
+  sum_subblock_mse = 0;
+  for (i = 0; i < NUM_16X16; ++i) {
     sum_subblock_mse += subblock_mses[i];
     min_subblock_mse = AOMMIN(min_subblock_mse, subblock_mses[i]);
     max_subblock_mse = AOMMAX(max_subblock_mse, subblock_mses[i]);
   }
 
-  
-  
-  if (((block_mse * 15 < sum_subblock_mse * 4) &&
-       max_subblock_mse - min_subblock_mse < 48) ||
-      ((block_mse * 14 < sum_subblock_mse * 4) &&
-       max_subblock_mse - min_subblock_mse < 24)) {  
-    for (int i = 0; i < 4; ++i) {
+  if (((block_mse * 15 <= sum_subblock_mse) &&
+       (max_subblock_mse - min_subblock_mse) * 16 < sum_subblock_mse * 3) ||
+      ((block_mse * 14 <= sum_subblock_mse) &&
+       (max_subblock_mse - min_subblock_mse) * 8 <
+           sum_subblock_mse)) {  
+    for (i = 0; i < NUM_16X16; ++i) {
       subblock_mvs[i] = block_mv;
       subblock_mses[i] = block_mse;
     }
@@ -459,35 +582,45 @@ static void tf_build_predictor(const YV12_BUFFER_CONFIG *ref_frame,
     const int plane_w = mb_width >> subsampling_x;   
     const int plane_y = mb_y >> subsampling_y;       
     const int plane_x = mb_x >> subsampling_x;       
-    const int h = plane_h >> 1;                      
-    const int w = plane_w >> 1;                      
-    const int is_y_plane = (plane == 0);             
+
+    const int h32 = plane_h >> 1;  
+    const int w32 = plane_w >> 1;  
+    const int h16 = plane_h >> 2;  
+    const int w16 = plane_w >> 2;  
+
+    const int is_y_plane = (plane == 0);  
 
     const struct buf_2d ref_buf = { NULL, ref_frame->buffers[plane],
                                     ref_frame->widths[is_y_plane ? 0 : 1],
                                     ref_frame->heights[is_y_plane ? 0 : 1],
                                     ref_frame->strides[is_y_plane ? 0 : 1] };
 
+    const int sub_y[4] = { 0, 0, h32, h32 };
+    const int sub_x[4] = { 0, w32, 0, w32 };
     
-    int subblock_idx = 0;
-    for (int i = 0; i < plane_h; i += h) {
-      for (int j = 0; j < plane_w; j += w) {
-        
-        const MV mv = subblock_mvs[subblock_idx++];
-        assert(mv.row >= INT16_MIN && mv.row <= INT16_MAX &&
-               mv.col >= INT16_MIN && mv.col <= INT16_MAX);
+    for (int idx = 0; idx < 4; ++idx) {
+      int subblock_idx = idx * 4;
+      for (int i = 0; i < h32; i += h16) {
+        for (int j = 0; j < w32; j += w16) {
+          
+          const MV mv = subblock_mvs[subblock_idx++];
+          assert(mv.row >= INT16_MIN && mv.row <= INT16_MAX &&
+                 mv.col >= INT16_MIN && mv.col <= INT16_MAX);
 
-        const int y = plane_y + i;
-        const int x = plane_x + j;
+          const int y = plane_y + sub_y[idx] + i;
+          const int x = plane_x + sub_x[idx] + j;
 
-        
-        InterPredParams inter_pred_params;
-        av1_init_inter_params(&inter_pred_params, w, h, y, x, subsampling_x,
-                              subsampling_y, bit_depth, is_high_bitdepth,
-                              is_intrabc, scale, &ref_buf, interp_filters);
-        inter_pred_params.conv_params = get_conv_params(0, plane, bit_depth);
-        av1_enc_build_one_inter_predictor(&pred[plane_offset + i * plane_w + j],
-                                          plane_w, &mv, &inter_pred_params);
+          
+          InterPredParams inter_pred_params;
+          av1_init_inter_params(&inter_pred_params, w16, h16, y, x,
+                                subsampling_x, subsampling_y, bit_depth,
+                                is_high_bitdepth, is_intrabc, scale, &ref_buf,
+                                interp_filters);
+          inter_pred_params.conv_params = get_conv_params(0, plane, bit_depth);
+          av1_enc_build_one_inter_predictor(
+              &pred[plane_offset + (sub_y[idx] + i) * plane_w + sub_x[idx] + j],
+              plane_w, &mv, &inter_pred_params);
+        }
       }
     }
     plane_offset += plane_h * plane_w;
@@ -704,8 +837,10 @@ void av1_apply_temporal_filter_c(
     const double n_decay = 0.5 + log(2 * noise_levels[plane] + 5.0);
     decay_factor[plane] = 1 / (n_decay * q_decay * s_decay);
   }
-  double d_factor[4] = { 0 };
-  for (int subblock_idx = 0; subblock_idx < 4; subblock_idx++) {
+
+  
+  double d_factor[NUM_16X16] = { 0 };
+  for (int subblock_idx = 0; subblock_idx < NUM_16X16; subblock_idx++) {
     
     const MV mv = subblock_mvs[subblock_idx];
     const double distance = sqrt(pow(mv.row, 2) + pow(mv.col, 2));
@@ -789,7 +924,13 @@ void av1_apply_temporal_filter_c(
 
         
         const double window_error = sum_square_diff * inv_num_ref_pixels;
-        const int subblock_idx = (i >= h / 2) * 2 + (j >= w / 2);
+
+        
+        const int y32 = i / (h / 2);
+        const int x32 = j / (w / 2);
+        const int y16 = (i % (h / 2)) / (h / 4);
+        const int x16 = (j % (w / 2)) / (w / 4);
+        const int subblock_idx = (y32 * 2 + x32) * 4 + (y16 * 2 + x16);
         const double block_error = (double)subblock_mses[subblock_idx];
         const double combined_error =
             weight_factor * window_error + block_error * inv_factor;
@@ -924,6 +1065,17 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
   const FRAME_TYPE frame_type = gf_group->frame_type[cpi->gf_frame_index];
 
   
+  
+  
+  int is_yuv422_format = 0;
+  for (int plane = 1; plane < num_planes; ++plane) {
+    if (mbd->plane[plane].subsampling_x != mbd->plane[plane].subsampling_y) {
+      is_yuv422_format = 1;
+      break;
+    }
+  }
+
+  
   FRAME_DIFF *diff = &td->tf_data.diff;
   av1_set_mv_row_limits(&cpi->common.mi_params, &mb->mv_limits,
                         (mb_row << mi_h), (mb_height >> MI_SIZE_LOG2),
@@ -960,8 +1112,16 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
       if (frames[frame] == NULL) continue;
 
       
-      MV subblock_mvs[4] = { kZeroMv, kZeroMv, kZeroMv, kZeroMv };
-      int subblock_mses[4] = { INT_MAX, INT_MAX, INT_MAX, INT_MAX };
+      
+      
+      MV subblock_mvs[NUM_16X16] = { kZeroMv, kZeroMv, kZeroMv, kZeroMv,
+                                     kZeroMv, kZeroMv, kZeroMv, kZeroMv,
+                                     kZeroMv, kZeroMv, kZeroMv, kZeroMv,
+                                     kZeroMv, kZeroMv, kZeroMv, kZeroMv };
+      int subblock_mses[NUM_16X16] = { INT_MAX, INT_MAX, INT_MAX, INT_MAX,
+                                       INT_MAX, INT_MAX, INT_MAX, INT_MAX,
+                                       INT_MAX, INT_MAX, INT_MAX, INT_MAX,
+                                       INT_MAX, INT_MAX, INT_MAX, INT_MAX };
       int is_dc_diff_large = 0;
       int is_low_cntras = 0;
 
@@ -999,7 +1159,8 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
         
         if (is_frame_high_bitdepth(frame_to_filter)) {  
 #if CONFIG_AV1_HIGHBITDEPTH
-          if (TF_BLOCK_SIZE == BLOCK_32X32 && TF_WINDOW_LENGTH == 5) {
+          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_32X32 &&
+              TF_WINDOW_LENGTH == 5) {
             av1_highbd_apply_temporal_filter(
                 frame_to_filter, mbd, block_size, mb_row, mb_col, num_planes,
                 noise_levels, subblock_mvs, subblock_mses, q_factor,
@@ -1015,7 +1176,8 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
 #endif  
         } else {
           
-          if (TF_BLOCK_SIZE == BLOCK_32X32 && TF_WINDOW_LENGTH == 5) {
+          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_32X32 &&
+              TF_WINDOW_LENGTH == 5) {
             av1_apply_temporal_filter(
                 frame_to_filter, mbd, block_size, mb_row, mb_col, num_planes,
                 noise_levels, subblock_mvs, subblock_mses, q_factor,

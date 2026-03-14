@@ -18,6 +18,7 @@
 
 #include "aom/aom.h"
 #include "aom/aom_encoder.h"
+#include "aom/aom_ext_ratectrl.h"
 #include "aom/aom_external_partition.h"
 
 
@@ -1599,6 +1600,7 @@ enum aome_enc_control_id {
 
 
 
+
   AV1E_SET_SCREEN_CONTENT_DETECTION_MODE = 171,
 
   
@@ -1616,6 +1618,18 @@ enum aome_enc_control_id {
 
 
   AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS = 172,
+
+  
+
+
+
+  AV1E_SET_EXTERNAL_RATE_CONTROL = 173,
+
+  
+
+
+
+  AV1E_GET_GOP_INFO,
 
   
   
@@ -1733,7 +1747,6 @@ typedef enum {
 
 
 
-
 typedef enum {
   AOM_TUNE_PSNR = 0,
   AOM_TUNE_SSIM = 1,
@@ -1755,6 +1768,16 @@ typedef enum {
 
 #define AOM_HAVE_TUNE_SSIMULACRA2 1
   
+
+
+
+
+
+
+
+
+
+
 
   AOM_TUNE_SSIMULACRA2 = 11,
 } aom_tune_metric;
@@ -1852,6 +1875,20 @@ typedef enum {
   AOM_LAYER_DROP,           
   AOM_FULL_SUPERFRAME_DROP, 
 } AOM_SVC_FRAME_DROP_MODE;
+
+
+
+
+
+typedef struct aom_gop_info {
+  int gop_size; 
+  
+  int coding_index[250];
+  
+  int display_index[250];
+  
+  int layer_depth[250];
+} aom_gop_info_t;
 
 
 
@@ -2359,6 +2396,12 @@ AOM_CTRL_USE_TYPE(AV1E_SET_SCREEN_CONTENT_DETECTION_MODE,
 
 AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, unsigned int)
 #define AOM_CTRL_AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS
+
+AOM_CTRL_USE_TYPE(AV1E_SET_EXTERNAL_RATE_CONTROL, aom_rc_funcs_t *)
+#define AOM_CTRL_AV1E_SET_EXTERNAL_RATE_CONTROL
+
+AOM_CTRL_USE_TYPE(AV1E_GET_GOP_INFO, aom_gop_info_t *)
+#define AOM_CTRL_AV1E_GET_GOP_INFO
 
 
 

@@ -466,6 +466,15 @@ enum aom_dec_control_id {
 
 
   AV1D_GET_MI_INFO,
+
+  
+
+
+
+
+
+
+  AOMD_SET_FRAME_SIZE_LIMIT,
 };
 
 
@@ -598,6 +607,9 @@ AOM_CTRL_USE_TYPE(AOMD_GET_ORDER_HINT, unsigned int *)
 
 
 #define AOM_CTRL_AV1D_GET_MI_INFO
+
+AOM_CTRL_USE_TYPE(AOMD_SET_FRAME_SIZE_LIMIT, unsigned int)
+#define AOM_CTRL_AOMD_SET_FRAME_SIZE_LIMIT
 
 
 #ifdef __cplusplus

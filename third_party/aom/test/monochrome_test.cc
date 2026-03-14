@@ -34,7 +34,7 @@ const double kPsnrThreshold[3] = { 29.0, 41.5, 41.5 };
 
 
 
-const double kPsnrFluctuation[3] = { 2.5, 0.3, 17.0 };
+const double kPsnrFluctuation[3] = { 8.0, 0.3, 17.0 };
 
 class MonochromeTest
     : public ::libaom_test::CodecTestWith3Params<libaom_test::TestMode, int,

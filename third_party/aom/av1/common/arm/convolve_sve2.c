@@ -23,8 +23,19 @@
 #include "aom_dsp/arm/mem_neon.h"
 #include "aom_dsp/arm/transpose_neon.h"
 #include "aom_ports/mem.h"
-#include "av1/common/arm/highbd_convolve_sve2.h"
+#include "av1/common/arm/convolve_sve2.h"
 #include "av1/common/arm/convolve_neon_i8mm.h"
+
+
+DECLARE_ALIGNED(16, const uint16_t, kSVEDotProdMergeBlockTbl[24]) = {
+  
+  1, 2, 3, 0, 5, 6, 7, 4,
+  
+  2, 3, 0, 1, 6, 7, 4, 5,
+  
+  3, 0, 1, 2, 7, 4, 5, 6,
+};
+
 
 static inline int32x4_t highbd_convolve12_4_2d_v(int16x8_t s0[2],
                                                  int16x8_t s1[2],
@@ -52,7 +63,7 @@ static inline void convolve_2d_sr_vert_12tap_sve2(
   const int bd = 8;
   const int16x8_t sub_const = vdupq_n_s16(1 << (bd - 1));
 
-  uint16x8x3_t merge_block_tbl = vld1q_u16_x3(kDotProdMergeBlockTbl);
+  uint16x8x3_t merge_block_tbl = vld1q_u16_x3(kSVEDotProdMergeBlockTbl);
   
   
   uint16x8_t correction0 =

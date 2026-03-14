@@ -16,29 +16,12 @@
 
 #include "aom_dsp/arm/aom_neon_sve2_bridge.h"
 
-
-DECLARE_ALIGNED(16, static const uint16_t, kDotProdMergeBlockTbl[24]) = {
-  
-  1, 2, 3, 0, 5, 6, 7, 4,
-  
-  2, 3, 0, 1, 6, 7, 4, 5,
-  
-  3, 0, 1, 2, 7, 4, 5, 6,
-};
-
-
 static inline void aom_tbl2x4_s16(int16x8_t t0[4], int16x8_t t1[4],
                                   uint16x8_t tbl, int16x8_t res[4]) {
   res[0] = aom_tbl2_s16(t0[0], t1[0], tbl);
   res[1] = aom_tbl2_s16(t0[1], t1[1], tbl);
   res[2] = aom_tbl2_s16(t0[2], t1[2], tbl);
   res[3] = aom_tbl2_s16(t0[3], t1[3], tbl);
-}
-
-static inline void aom_tbl2x2_s16(int16x8_t t0[2], int16x8_t t1[2],
-                                  uint16x8_t tbl, int16x8_t res[2]) {
-  res[0] = aom_tbl2_s16(t0[0], t1[0], tbl);
-  res[1] = aom_tbl2_s16(t0[1], t1[1], tbl);
 }
 
 #endif  
