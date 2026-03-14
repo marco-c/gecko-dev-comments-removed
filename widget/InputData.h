@@ -13,6 +13,7 @@
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WheelHandlingHelper.h"  
 #include "mozilla/gfx/MatrixFwd.h"
@@ -91,6 +92,13 @@ class InputData {
   
   layers::LayersId mLayersId;
 
+  
+
+
+
+
+  Maybe<uint64_t> mCallbackId;
+
   Modifiers modifiers;
 
   INPUTDATA_AS_CHILD_TYPE(MultiTouchInput, MULTITOUCH_INPUT)
@@ -106,6 +114,8 @@ class InputData {
 
  protected:
   InputData(InputType aInputType, TimeStamp aTimeStamp, Modifiers aModifiers);
+  InputData(InputType aInputType, TimeStamp aTimeStamp,
+            const Maybe<uint64_t>& aCallback, Modifiers aModifiers);
 };
 
 
@@ -295,7 +305,7 @@ class MouseInput : public InputData {
   MouseInput(MouseType aType, ButtonType aButtonType, uint16_t aInputSource,
              int16_t aButtons, const ScreenPoint& aPoint, TimeStamp aTimeStamp,
              Modifiers aModifiers);
-  explicit MouseInput(const WidgetMouseEventBase& aMouseEvent);
+  explicit MouseInput(const WidgetMouseEvent& aMouseEvent);
 
   bool IsLeftButton() const;
 
@@ -308,6 +318,7 @@ class MouseInput : public InputData {
   
   MouseType mType;
   ButtonType mButtonType;
+  uint32_t mClickCount = 0;
   uint16_t mInputSource;
   int16_t mButtons;
   ScreenPoint mOrigin;
