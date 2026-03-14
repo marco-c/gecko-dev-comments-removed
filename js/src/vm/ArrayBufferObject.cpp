@@ -2630,36 +2630,15 @@ template <class ArrayBufferType>
   size_t sourceByteLength = source->byteLength();
   size_t newMaxByteLength = source->maxByteLength();
 
-  if (newByteLength > sourceByteLength) {
-    
-    AutoSetNewObjectMetadata metadata(cx);
-    auto [buffer, toFill] = createBufferAndData<FillContents::Zero>(
-        cx, newByteLength, newMaxByteLength, metadata, nullptr);
-    if (!buffer) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    std::copy_n(source->dataPointer(), sourceByteLength, toFill);
-
-    return buffer;
-  }
-
-  
   AutoSetNewObjectMetadata metadata(cx);
-  auto [buffer, toFill] = createBufferAndData<FillContents::Uninitialized>(
+  auto [buffer, toFill] = createBufferAndData<FillContents::Zero>(
       cx, newByteLength, newMaxByteLength, metadata, nullptr);
   if (!buffer) {
     return nullptr;
   }
 
-  std::uninitialized_copy_n(source->dataPointer(), newByteLength, toFill);
+  size_t nbytes = std::min(newByteLength, sourceByteLength);
+  std::copy_n(source->dataPointer(), nbytes, toFill);
 
   return buffer;
 }
