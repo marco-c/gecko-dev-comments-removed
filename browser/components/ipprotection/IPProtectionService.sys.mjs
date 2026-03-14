@@ -15,8 +15,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs",
   IPPNimbusHelper:
     "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs",
-  IPPOptOutHelper:
-    "moz-src:///browser/components/ipprotection/IPPOptOutHelper.sys.mjs",
   IPPSignInWatcher:
     "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
   IPPStartupCache:
@@ -34,8 +32,6 @@ const ENABLED_PREF = "browser.ipProtection.enabled";
  *  The user is not eligible (via nimbus) or still not signed in. No UI is available.
  * @property {string} UNAUTHENTICATED
  *  The user is signed out but eligible (via nimbus). The panel should show the login view.
- * @property {string} OPTED_OUT
- *  The user has opted out from using VPN. The toolbar icon and panel should not be visible.
  * @property {string} READY
  *  Ready to be activated.
  *
@@ -46,7 +42,6 @@ export const IPProtectionStates = Object.freeze({
   UNINITIALIZED: "uninitialized",
   UNAVAILABLE: "unavailable",
   UNAUTHENTICATED: "unauthenticated",
-  OPTED_OUT: "optedout",
   READY: "ready",
 });
 
@@ -60,7 +55,7 @@ export const IPProtectionStates = Object.freeze({
 class IPProtectionServiceSingleton extends EventTarget {
   #state = IPProtectionStates.UNINITIALIZED;
 
-  guardian = null;
+  #guardian = null;
 
   #helpers = null;
 
@@ -74,11 +69,15 @@ class IPProtectionServiceSingleton extends EventTarget {
     return this.#state;
   }
 
+  get guardian() {
+    if (!this.#guardian) {
+      this.#guardian = new lazy.GuardianClient();
+    }
+    return this.#guardian;
+  }
+
   constructor() {
     super();
-
-    this.guardian = new lazy.GuardianClient();
-
     this.updateState = this.#updateState.bind(this);
     this.setState = this.#setState.bind(this);
 
@@ -112,6 +111,7 @@ class IPProtectionServiceSingleton extends EventTarget {
     if (this.#state === IPProtectionStates.UNINITIALIZED) {
       return;
     }
+    this.#guardian = null;
 
     this.#helpers.forEach(helper => helper.uninit());
 
@@ -141,10 +141,6 @@ class IPProtectionServiceSingleton extends EventTarget {
     // The IPP feature is disabled.
     if (!this.featureEnabled) {
       return IPProtectionStates.UNINITIALIZED;
-    }
-
-    if (lazy.IPPOptOutHelper.optedOut) {
-      return IPProtectionStates.OPTED_OUT;
     }
 
     // Maybe we have to use the cached state, because we are not initialized yet.
