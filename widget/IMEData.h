@@ -7,6 +7,8 @@
 #define mozilla_widget_IMEData_h_
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/EnumSet.h"
+#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/NativeKeyBindingsType.h"
 
@@ -218,62 +220,34 @@ namespace widget {
 
 
 
-struct IMENotificationRequests final {
-  typedef uint8_t Notifications;
-
-  enum : Notifications {
-    NOTIFY_NOTHING = 0,
-    NOTIFY_TEXT_CHANGE = 1 << 1,
-    NOTIFY_POSITION_CHANGE = 1 << 2,
-    
-    
-    
-    
-    
-    NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR = 1 << 3,
-    
-    
-    NOTIFY_DURING_DEACTIVE = 1 << 7,
-
-    NOTIFY_ALL = NOTIFY_TEXT_CHANGE | NOTIFY_POSITION_CHANGE |
-                 NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR,
-  };
-
-  IMENotificationRequests() : mWantUpdates(NOTIFY_NOTHING) {}
-
-  explicit IMENotificationRequests(Notifications aWantUpdates)
-      : mWantUpdates(aWantUpdates) {}
-
-  IMENotificationRequests operator|(
-      const IMENotificationRequests& aOther) const {
-    return IMENotificationRequests(aOther.mWantUpdates | mWantUpdates);
-  }
-  IMENotificationRequests& operator|=(const IMENotificationRequests& aOther) {
-    mWantUpdates |= aOther.mWantUpdates;
-    return *this;
-  }
-  bool operator==(const IMENotificationRequests& aOther) const {
-    return mWantUpdates == aOther.mWantUpdates;
-  }
-
-  bool WantTextChange() const { return !!(mWantUpdates & NOTIFY_TEXT_CHANGE); }
-
-  bool WantPositionChanged() const {
-    return !!(mWantUpdates & NOTIFY_POSITION_CHANGE);
-  }
-
-  bool WantChanges() const { return WantTextChange(); }
-
-  bool WantMouseButtonEventOnChar() const {
-    return !!(mWantUpdates & NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR);
-  }
-
-  bool WantDuringDeactive() const {
-    return !!(mWantUpdates & NOTIFY_DURING_DEACTIVE);
-  }
-
-  Notifications mWantUpdates;
+enum class IMENotificationRequest : uint8_t {
+  TextChange,
+  PositionChange,
+  
+  
+  
+  
+  
+  MouseEventOnChar,
+  
+  
+  NotifyDuringInactive,
 };
+
+}  
+
+template <>
+struct MaxEnumValue<widget::IMENotificationRequest> {
+  static constexpr uint8_t value = static_cast<uint8_t>(
+      widget::IMENotificationRequest::NotifyDuringInactive);
+};
+
+namespace widget {
+
+using IMENotificationRequests = EnumSet<IMENotificationRequest>;
+inline constexpr const IMENotificationRequests AllIMENotificationRequests = {
+    IMENotificationRequest::TextChange, IMENotificationRequest::PositionChange,
+    IMENotificationRequest::MouseEventOnChar};
 
 
 
@@ -640,7 +614,7 @@ struct InputContextAction final {
 
 
 
-typedef int8_t IMEMessageType;
+using IMEMessageType = int8_t;
 enum IMEMessage : IMEMessageType {
   
   

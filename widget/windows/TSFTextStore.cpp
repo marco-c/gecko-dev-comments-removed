@@ -3189,7 +3189,7 @@ IMENotificationRequests TSFTextStore::GetIMENotificationRequests() const {
   if (NS_WARN_IF(!mDocumentMgr)) {
     
     
-    return IMENotificationRequests();
+    return {};
   }
 
   
@@ -3207,11 +3207,10 @@ IMENotificationRequests TSFTextStore::GetIMENotificationRequests() const {
   
   
   
-  return IMENotificationRequests(
-      IMENotificationRequests::NOTIFY_TEXT_CHANGE |
-      IMENotificationRequests::NOTIFY_POSITION_CHANGE |
-      IMENotificationRequests::NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR |
-      IMENotificationRequests::NOTIFY_DURING_DEACTIVE);
+  return {IMENotificationRequest::TextChange,
+          IMENotificationRequest::PositionChange,
+          IMENotificationRequest::MouseEventOnChar,
+          IMENotificationRequest::NotifyDuringInactive};
 }
 
 nsresult TSFTextStore::OnTextChangeInternal(

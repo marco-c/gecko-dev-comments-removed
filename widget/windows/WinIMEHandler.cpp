@@ -360,7 +360,7 @@ IMENotificationRequests IMEHandler::GetIMENotificationRequests() {
     
     
     
-    return IMMHandler::GetIMENotificationRequests() |
+    return IMMHandler::GetIMENotificationRequests() +
            TSFUtils::GetIMENotificationRequests();
   }
 

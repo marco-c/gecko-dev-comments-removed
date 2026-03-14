@@ -3192,7 +3192,7 @@ bool TextInputHandler::DoCommandBySelector(const char* aSelector) {
 
 
 bool IMEInputHandler::sStaticMembersInitialized = false;
-bool IMEInputHandler::sCachedIsForRTLLangage = false;
+bool IMEInputHandler::sCachedIsForRTLLanguage = false;
 CFStringRef IMEInputHandler::sLatestIMEOpenedModeInputSourceID = nullptr;
 IMEInputHandler* IMEInputHandler::sFocusedIMEHandler = nullptr;
 
@@ -3305,9 +3305,9 @@ void IMEInputHandler::OnCurrentTextInputSourceChange(
 
 
 
-  if (sCachedIsForRTLLangage != tis.IsForRTLLanguage()) {
+  if (sCachedIsForRTLLanguage != tis.IsForRTLLanguage()) {
     WidgetUtils::SendBidiKeyboardInfoToContent();
-    sCachedIsForRTLLangage = tis.IsForRTLLanguage();
+    sCachedIsForRTLLanguage = tis.IsForRTLLanguage();
   }
 }
 
@@ -3442,7 +3442,7 @@ IMEInputHandler::GetIMENotificationRequests() {
   
   
   
-  return IMENotificationRequests(IMENotificationRequests::NOTIFY_TEXT_CHANGE);
+  return {IMENotificationRequest::TextChange};
 }
 
 NS_IMETHODIMP_(void)
@@ -4092,7 +4092,7 @@ void IMEInputHandler::InsertTextAsCommittingComposition(
       MOZ_LOG(
           gIMELog, LogLevel::Info,
           ("%p   IMEInputHandler::InsertTextAsCommittingComposition, "
-           "destroyed by commiting composition for setting replacement range",
+           "destroyed by committing composition for setting replacement range",
            this));
       return;
     }
@@ -4218,7 +4218,7 @@ void IMEInputHandler::SetMarkedText(NSAttributedString* aAttrString,
       MOZ_LOG(
           gIMELog, LogLevel::Info,
           ("%p   IMEInputHandler::SetMarkedText, "
-           "destroyed by commiting composition for setting replacement range",
+           "destroyed by committing composition for setting replacement range",
            this));
       return;
     }

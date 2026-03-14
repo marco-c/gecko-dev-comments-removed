@@ -603,13 +603,10 @@ TextEventDispatcher* IMContextWrapper::GetTextEventDispatcher() {
 
 NS_IMETHODIMP_(IMENotificationRequests)
 IMContextWrapper::GetIMENotificationRequests() {
-  IMENotificationRequests::Notifications notifications =
-      IMENotificationRequests::NOTIFY_NOTHING;
   
-  if (IsEnabled()) {
-    notifications |= IMENotificationRequests::NOTIFY_POSITION_CHANGE;
-  }
-  return IMENotificationRequests(notifications);
+  return IsEnabled()
+             ? IMENotificationRequests{IMENotificationRequest::PositionChange}
+             : IMENotificationRequests{};
 }
 
 void IMContextWrapper::OnDestroyWindow(nsWindow* aWindow) {
