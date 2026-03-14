@@ -1868,6 +1868,15 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     return nullptr;
   }
 
+  if (StaticPrefs::dom_multiple_import_maps_enabled()) {
+    
+    
+    
+    if (request->IsModuleRequest()) {
+      mModuleLoader->MovePreloadedSetToResolvedSet(request->AsModuleRequest());
+    }
+  }
+
   
   ReportPreloadErrorsToConsole(request);
 
