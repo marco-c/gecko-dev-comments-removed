@@ -29,16 +29,17 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
 #if defined(XP_UNIX) && defined(DEBUG) && !defined(MOZ_ASAN)
   
   
-  mozilla::gtest::DisableCrashReporter();
-
-  
-  
   SAVE_GDB_SLEEP_LOCAL();
 
   int pid = fork();
   ASSERT_NE(pid, -1);
 
   if (pid == 0) {
+    
+    
+    
+    mozilla::gtest::DisableCrashReporter();
+
     
     FILE* stderr_dup = fdopen(dup(fileno(stderr)), "w");
     
@@ -48,8 +49,6 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
     fprintf(stderr_dup, "TestCrashyOperation %s: didn't crash?!\n", label);
     ASSERT_TRUE(false);  
   }
-
-  mozilla::gtest::EnableCrashReporter();
 
   
   int status;
