@@ -1689,9 +1689,9 @@ void ModuleLoaderBase::CopyModulesTo(ModuleLoaderBase* aDest) {
 
   for (const auto& entry : mFetchedModules) {
     RefPtr<ModuleScript> moduleScript = entry.GetData();
-    if (!moduleScript) {
-      continue;
-    }
+
+    
+    
     aDest->mFetchedModules.InsertOrUpdate(entry, moduleScript);
   }
 }
@@ -1702,9 +1702,6 @@ void ModuleLoaderBase::MoveModulesTo(ModuleLoaderBase* aDest) {
 
   for (const auto& entry : mFetchedModules) {
     RefPtr<ModuleScript> moduleScript = entry.GetData();
-    if (!moduleScript) {
-      continue;
-    }
 
 #ifdef DEBUG
     if (auto existingEntry = aDest->mFetchedModules.Lookup(entry)) {
