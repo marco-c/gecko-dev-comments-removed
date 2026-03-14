@@ -708,11 +708,17 @@ class HTMLEditUtils final {
            EditorUtils::IsNewLinePreformatted(aText);
   }
 
+  enum class TreatInvisibleLineBreakAs : bool { Invisible, Visible };
+
   
 
 
 
-  [[nodiscard]] static bool IsVisibleTextNode(const Text& aText);
+
+
+
+  [[nodiscard]] static bool IsVisibleTextNode(
+      const Text& aText, TreatInvisibleLineBreakAs aTreatInvisibleLineBreakAs);
 
   
 
@@ -726,29 +732,482 @@ class HTMLEditUtils final {
 
 
 
-  static bool IsVisibleBRElement(const nsIContent& aContent) {
-    if (const dom::HTMLBRElement* brElement =
-            dom::HTMLBRElement::FromNode(&aContent)) {
-      return IsVisibleBRElement(*brElement);
-    }
-    return false;
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByBlockBoundary(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowedByBlockBoundary(*brElement, aAncestorLimiter,
+                                              aFollowingBlockBoundaryElement);
   }
-  static bool IsVisibleBRElement(const dom::HTMLBRElement& aBRElement) {
-    
-    
-    return !HTMLEditUtils::GetElementOfImmediateBlockBoundary(
-        aBRElement, WalkTreeDirection::Forward);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByBlockBoundary(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByCurrentBlockBoundary(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowedByCurrentBlockBoundary(
+               *brElement, aAncestorLimiter, aFollowingBlockBoundaryElement);
   }
-  static bool IsInvisibleBRElement(const nsIContent& aContent) {
-    if (const dom::HTMLBRElement* brElement =
-            dom::HTMLBRElement::FromNode(&aContent)) {
-      return IsInvisibleBRElement(*brElement);
-    }
-    return false;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByCurrentBlockBoundary(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByOtherBlockBoundary(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowedByOtherBlockBoundary(
+               *brElement, aAncestorLimiter, aFollowingBlockBoundaryElement);
   }
-  static bool IsInvisibleBRElement(const dom::HTMLBRElement& aBRElement) {
-    return !HTMLEditUtils::IsVisibleBRElement(aBRElement);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByOtherBlockBoundary(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByLineBoundary(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowedByLineBoundary(*brElement, aAncestorLimiter,
+                                             aFollowingBlockBoundaryElement);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowedByLineBoundary(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowingLineBoundary(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr,
+      Element** aPrecedingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowingLineBoundary(*brElement, aAncestorLimiter,
+                                            aPrecedingBlockBoundaryElement);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowingLineBoundary(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aPrecedingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowingLineBreak(
+      const nsIContent& aContent, const Element* aAncestorLimiter = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement &&
+           IsBRElementFollowingLineBreak(*brElement, aAncestorLimiter);
+  }
+
+  
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsBRElementFollowingLineBreak(
+      const dom::HTMLBRElement& aBRElement,
+      const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsUnnecessaryBRElement(
+      const nsIContent& aContent, PaddingForEmptyBlock aPaddingForEmptyBlock,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement && IsUnnecessaryBRElement(
+                            *brElement, aPaddingForEmptyBlock, aAncestorLimiter,
+                            aFollowingBlockBoundaryElement);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsUnnecessaryBRElement(
+      const dom::HTMLBRElement& aBRElement,
+      PaddingForEmptyBlock aPaddingForEmptyBlock,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+  [[nodiscard]] static bool IsSignificantBRElement(
+      const nsIContent& aContent, PaddingForEmptyBlock aPaddingForEmptyBlock,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    const auto* const brElement = dom::HTMLBRElement::FromNode(aContent);
+    return brElement && !IsUnnecessaryBRElement(
+                            *brElement, aPaddingForEmptyBlock, aAncestorLimiter,
+                            aFollowingBlockBoundaryElement);
+  }
+
+  
+
+
+
+  [[nodiscard]] static bool IsSignificantBRElement(
+      const dom::HTMLBRElement& aBRElement,
+      PaddingForEmptyBlock aPaddingForEmptyBlock,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr) {
+    return !IsUnnecessaryBRElement(aBRElement, aPaddingForEmptyBlock,
+                                   aAncestorLimiter,
+                                   aFollowingBlockBoundaryElement);
+  }
+
+  enum class SkipWhiteSpaceStyleCheck : bool { No, Yes };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsPreformattedLineBreakFollowedByBlockBoundary(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool
+  IsPreformattedLineBreakFollowedByCurrentBlockBoundary(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsPreformattedLineBreakFollowedByOtherBlockBoundary(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsPreformattedLineBreakFollowedByLineBoundary(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsPreformattedLineBreakFollowingLineBoundary(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aPrecedingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsPreformattedLineBreakFollowingLineBreak(
+      const EditorDOMPointType& aPoint,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsUnnecessaryPreformattedLineBreak(
+      const EditorDOMPointType& aPoint,
+      PaddingForEmptyBlock aPaddingForEmptyBlock,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static bool IsSignificantPreformattedLineBreak(
+      const EditorDOMPointType& aPoint,
+      PaddingForEmptyBlock aPaddingForEmptyBlock,
+      SkipWhiteSpaceStyleCheck aSkipWhiteSpaceStyleCheck =
+          SkipWhiteSpaceStyleCheck::No,
+      const Element* aAncestorLimiter = nullptr,
+      Element** aFollowingBlockBoundaryElement = nullptr);
+
+  
+
+
+
+  template <typename EditorLineBreakType, typename EditorDOMPointType>
+  [[nodiscard]] static Maybe<EditorLineBreakType>
+  GetPrecedingUnnecessaryLineBreak(const EditorDOMPointType& aPoint,
+                                   const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] static WSScanResult
+  ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+      const EditorDOMPointType& aPoint,
+      PaddingForEmptyBlock aPaddingForEmptyBlock, const Element& aEditingHost,
+      const Element* aAncestorLimiter = nullptr);
 
   enum class IgnoreInvisibleLineBreak { No, Yes };
 
@@ -792,71 +1251,6 @@ class HTMLEditUtils final {
 
   [[nodiscard]] static bool IsInclusiveAncestorCSSDisplayNone(
       const nsIContent& aContent, const nsIContent* aAncestorLimiter = nullptr);
-
-  
-
-
-
-
-
-
-
-
-  template <typename EditorDOMPointType>
-  [[nodiscard]] static bool IsVisiblePreformattedNewLine(
-      const EditorDOMPointType& aPoint,
-      Element** aFollowingBlockElement = nullptr) {
-    if (aFollowingBlockElement) {
-      *aFollowingBlockElement = nullptr;
-    }
-    if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
-        !aPoint.IsCharPreformattedNewLine()) {
-      return false;
-    }
-    
-    
-    if (!aPoint.IsAtLastContent()) {
-      if (EditorUtils::IsWhiteSpacePreformatted(
-              *aPoint.template ContainerAs<Text>())) {
-        return true;
-      }
-      const dom::CharacterDataBuffer& characterDataBuffer =
-          aPoint.template ContainerAs<Text>()->DataBuffer();
-      const uint32_t nextVisibleCharOffset =
-          characterDataBuffer.FindNonWhitespaceChar(
-              EditorUtils::IsNewLinePreformatted(
-                  *aPoint.template ContainerAs<Text>())
-                  ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
-                                      WhitespaceOption::NewLineIsSignificant}
-                  : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
-              aPoint.Offset() + 1);
-      if (nextVisibleCharOffset != dom::CharacterDataBuffer::kNotFound) {
-        return true;  
-      }
-    }
-    
-    
-    Element* followingBlockElement =
-        HTMLEditUtils::GetElementOfImmediateBlockBoundary(
-            *aPoint.template ContainerAs<Text>(), WalkTreeDirection::Forward);
-    if (aFollowingBlockElement) {
-      *aFollowingBlockElement = followingBlockElement;
-    }
-    return !followingBlockElement;
-  }
-  template <typename EditorDOMPointType>
-  static bool IsInvisiblePreformattedNewLine(
-      const EditorDOMPointType& aPoint,
-      Element** aFollowingBlockElement = nullptr) {
-    if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
-        !aPoint.IsCharPreformattedNewLine()) {
-      if (aFollowingBlockElement) {
-        *aFollowingBlockElement = nullptr;
-      }
-      return false;
-    }
-    return !IsVisiblePreformattedNewLine(aPoint, aFollowingBlockElement);
-  }
 
   
 
@@ -970,7 +1364,8 @@ class HTMLEditUtils final {
         return false;  
       }
       if (child->IsText() &&
-          HTMLEditUtils::IsVisibleTextNode(*child->AsText())) {
+          HTMLEditUtils::IsVisibleTextNode(
+              *child->AsText(), TreatInvisibleLineBreakAs::Invisible)) {
         return false;  
       }
     }
@@ -1009,8 +1404,15 @@ class HTMLEditUtils final {
       if (MOZ_UNLIKELY(child->IsElement())) {
         return false;
       }
-      if (MOZ_LIKELY(child->IsText())) {
-        if (MOZ_UNLIKELY(HTMLEditUtils::IsVisibleTextNode(*child->AsText()))) {
+      if (child->IsText()) [[likely]] {
+        
+        
+        
+        
+        
+        if (HTMLEditUtils::IsVisibleTextNode(
+                *child->AsText(), TreatInvisibleLineBreakAs::Invisible))
+            [[unlikely]] {
           return false;
         }
       }
@@ -2085,29 +2487,6 @@ class HTMLEditUtils final {
     return Nothing();
   }
 
-  enum class ScanLineBreak {
-    AtEndOfBlock,
-    BeforeBlock,
-  };
-  
-
-
-
-
-  template <typename EditorLineBreakType>
-  static Maybe<EditorLineBreakType> GetUnnecessaryLineBreak(
-      const Element& aBlockElement, ScanLineBreak aScanLineBreak);
-
-  
-
-
-
-
-
-  template <typename EditorLineBreakType, typename EditorDOMPointType>
-  [[nodiscard]] static Maybe<EditorLineBreakType>
-  GetFollowingUnnecessaryLineBreak(const EditorDOMPointType& aPoint);
-
   
 
 
@@ -2136,12 +2515,16 @@ class HTMLEditUtils final {
     TreatNBSPsCollapsible,
   };
   using WalkTextOptions = EnumSet<WalkTextOption>;
+  template <typename PT, typename CT>
   static Maybe<uint32_t> GetPreviousNonCollapsibleCharOffset(
-      const EditorDOMPointInText& aPoint,
+      const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
+    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
+                  std::is_same<PT, Text*>::value);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     return GetPreviousNonCollapsibleCharOffset(
-        *aPoint.ContainerAs<Text>(), aPoint.Offset(), aWalkTextOptions);
+        *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
+        aWalkTextOptions);
   }
   static Maybe<uint32_t> GetPreviousNonCollapsibleCharOffset(
       const Text& aTextNode, uint32_t aOffset,
@@ -2392,7 +2775,7 @@ class HTMLEditUtils final {
     
     
     
-    if (!HTMLEditUtils::IsInvisibleBRElement(aContent)) {
+    if (!HTMLEditUtils::IsBRElementFollowedByBlockBoundary(aContent)) {
       EditorDOMPointType ret(EditorDOMPointType::After(aContent));
       NS_WARNING_ASSERTION(ret.IsSet(), "Failed to set after aContent");
       return ret;
@@ -2595,7 +2978,8 @@ class HTMLEditUtils final {
     [[nodiscard]] bool NodeShouldBeIgnored(const nsIContent& aContent) const {
       if (mIgnoreInvisibleText && aContent.IsText() &&
           HTMLEditUtils::IsSimplyEditableNode(aContent) &&
-          !HTMLEditUtils::IsVisibleTextNode(*aContent.AsText())) {
+          !HTMLEditUtils::IsVisibleTextNode(
+              *aContent.AsText(), TreatInvisibleLineBreakAs::Visible)) {
         return true;
       }
       if (mIgnoreComment && aContent.IsComment()) {
@@ -2867,17 +3251,6 @@ class HTMLEditUtils final {
 
 
 
-
-
-  static Element* GetElementOfImmediateBlockBoundary(
-      const nsIContent& aContent, const WalkTreeDirection aDirection);
-
-  
-
-
-
-
-
   [[nodiscard]] static bool ParentElementIsGridOrFlexContainer(
       const nsIContent& aMaybeFlexOrGridItemContent);
 };
@@ -2991,4 +3364,4 @@ class MOZ_STACK_CLASS SelectedTableCellScanner final {
 
 }  
 
-#endif  
+#endif

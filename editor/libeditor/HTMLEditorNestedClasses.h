@@ -1550,9 +1550,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler::
 
 
 
-  [[nodiscard]] nsresult ComputeRangeToDelete(const HTMLEditor& aHTMLEditor,
-                                              const EditorDOMPoint& aCaretPoint,
-                                              nsRange& aRangeToDelete) const;
+  [[nodiscard]] nsresult ComputeRangeToDelete(
+      const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
+      nsRange& aRangeToDelete, const Element& aEditingHost) const;
 
   
 

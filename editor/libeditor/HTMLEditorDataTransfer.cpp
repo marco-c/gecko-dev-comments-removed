@@ -585,12 +585,13 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
   
   
   EditorDOMPoint pointToPutCaret = adjustedEditablePoint.To<EditorDOMPoint>();
+  
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
           
           
           {WSRunScanner::Option::OnlyEditableNodes}, pointToPutCaret);
-  if (prevVisibleThing.ReachedInvisibleBRElement()) {
+  if (prevVisibleThing.ReachedBRElementFollowedByBlockBoundary()) {
     const WSScanResult prevVisibleThingOfBRElement =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
             {WSRunScanner::Option::OnlyEditableNodes},
@@ -939,7 +940,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
             .NextPointOrAfterContainer<EditorDOMPoint>();
     if (MOZ_LIKELY(afterLastInsertedContent.IsInContentNode())) {
       nsresult rv = mHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-          afterLastInsertedContent);
+          afterLastInsertedContent, mEditingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");

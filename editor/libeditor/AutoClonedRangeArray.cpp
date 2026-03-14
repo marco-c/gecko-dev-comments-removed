@@ -441,7 +441,11 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
                 LeafNodeOption::TreatChildBlockAsLeafNode},
                aBlockInlineCheck, &aAncestorLimiter);
        previousEditableContent && previousEditableContent->GetParentNode() &&
-       !HTMLEditUtils::IsVisibleBRElement(*previousEditableContent) &&
+       (!previousEditableContent->IsHTMLElement(nsGkAtoms::br) ||
+        
+        
+        HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+            static_cast<HTMLBRElement&>(*previousEditableContent))) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent,
                                       aBlockInlineCheck);
        previousEditableContent =
@@ -564,8 +568,10 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
       
       
       Element* maybeNonEditableBlockElement = nullptr;
-      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
-              atNextPreformattedNewLine, &maybeNonEditableBlockElement) &&
+      if (HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+              atNextPreformattedNewLine,
+              HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes, nullptr,
+              &maybeNonEditableBlockElement) &&
           maybeNonEditableBlockElement) {
         
         
@@ -630,8 +636,10 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
       
       
       Element* maybeNonEditableBlockElement = nullptr;
-      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
-              atFirstPreformattedNewLine, &maybeNonEditableBlockElement) &&
+      if (HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+              atFirstPreformattedNewLine,
+              HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes, nullptr,
+              &maybeNonEditableBlockElement) &&
           maybeNonEditableBlockElement) {
         
         
@@ -656,8 +664,11 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
     if (NS_WARN_IF(!point.IsSet())) {
       break;
     }
-    if (HTMLEditUtils::IsVisibleBRElement(*nextEditableContent)) {
-      break;
+    if (HTMLBRElement* const nextBRElement =
+            HTMLBRElement::FromNode(*nextEditableContent)) {
+      if (!HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*nextBRElement)) {
+        break;
+      }
     }
   }
 
@@ -1025,7 +1036,8 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
            Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
         if (const Text* text = aOutArrayOfContents[index]->GetAsText()) {
           
-          if (!HTMLEditUtils::IsVisibleTextNode(*text)) {
+          if (!HTMLEditUtils::IsVisibleTextNode(
+                  *text, HTMLEditUtils::TreatInvisibleLineBreakAs::Visible)) {
             aOutArrayOfContents.RemoveElementAt(index);
           }
         }

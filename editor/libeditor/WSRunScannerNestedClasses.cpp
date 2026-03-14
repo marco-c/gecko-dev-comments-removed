@@ -104,7 +104,9 @@ WSRunScanner::TextFragmentData::TextFragmentData(
     const EditorDOMPointType& aPoint,
     const Element* aAncestorLimiter )
     : mAncestorLimiter(aAncestorLimiter), mOptions(aOptions) {
-  if (NS_WARN_IF(!aPoint.IsInContentNodeAndValidInComposedDoc()) ||
+  const bool onlyEditableNodes = mOptions.contains(Option::OnlyEditableNodes);
+  if (NS_WARN_IF(!aPoint.IsInContentNodeAndValid()) ||
+      NS_WARN_IF(onlyEditableNodes && !aPoint.IsInComposedDoc()) ||
       NS_WARN_IF(!aPoint.GetContainerOrContainerParentElement())) {
     
     return;
@@ -120,9 +122,8 @@ WSRunScanner::TextFragmentData::TextFragmentData(
       editableBlockElementOrInlineEditingHostOrNonEditableRootElement =
           HTMLEditUtils::GetInclusiveAncestorElement(
               *mScanStartPoint.ContainerAs<nsIContent>(),
-              mOptions.contains(Option::OnlyEditableNodes)
-                  ? kScanEditableRootAncestorTypes
-                  : kScanAnyRootAncestorTypes,
+              onlyEditableNodes ? kScanEditableRootAncestorTypes
+                                : kScanAnyRootAncestorTypes,
               ReferredHTMLDefaultStyle()
                   ? BlockInlineCheck::UseHTMLDefaultStyle
                   : BlockInlineCheck::UseComputedDisplayOutsideStyle,
@@ -632,7 +633,8 @@ WSRunScanner::TextFragmentData::VisibleWhiteSpacesDataRef() const {
           
           HTMLEditUtils::IsVisibleElementEvenIfLeafNode(
               *GetEndReasonContent())) &&
-        !EndsByBRElement() && !EndsByInvisiblePreformattedLineBreak();
+        !EndsByBRElement() &&
+        !EndsByPreformattedLineBreakFollowedByBlockBoundary();
 
     if (!mayHaveInvisibleLeadingSpace && !mayHaveInvisibleTrailingWhiteSpace) {
       VisibleWhiteSpacesData visibleWhiteSpaces;

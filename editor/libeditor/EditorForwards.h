@@ -44,6 +44,7 @@ enum class CollectChildrenOption;
 enum class EditAction;                         
 enum class EditorCommandParamType : uint16_t;  
 enum class EditSubAction : int32_t;            
+enum class PaddingForEmptyBlock;               
 enum class ParagraphSeparator;                 
 enum class SpecifiedStyle : uint8_t;           
 enum class StopTracking : bool;                
