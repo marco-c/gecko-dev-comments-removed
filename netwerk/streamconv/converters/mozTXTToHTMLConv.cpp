@@ -43,6 +43,14 @@ static inline bool IsSpace(const char16_t aChar) {
 
 
 
+static inline bool IsBidiFormattingChar(const char16_t aChar) {
+  return aChar == 0x061C || aChar == 0x200E || aChar == 0x200F ||
+         (aChar >= 0x202A && aChar <= 0x202E) ||
+         (aChar >= 0x2066 && aChar <= 0x2069);
+}
+
+
+
 void mozTXTToHTMLConv::EscapeChar(const char16_t ch,
                                   nsAString& aStringToAppendTo,
                                   bool inAttribute) {
@@ -249,7 +257,12 @@ bool mozTXTToHTMLConv::FindURLEnd(const char16_t* aInString,
     case RFC2396E: {
       nsDependentSubstring temp(aInString, aInStringLength);
 
-      int32_t i = temp.FindCharInSet(u"<>\"", pos + 1);
+      
+      int32_t i = temp.FindCharInSet(
+          u"<>\""
+          u"\u061C\u200E\u200F\u202A\u202B\u202C\u202D\u202E\u2066\u2067"
+          u"\u2068\u2069",
+          pos + 1);
       if (i != kNotFound &&
           temp[uint32_t(i--)] ==
               (check == RFC1738 || temp[start - 1] == '<' ? '>' : '"')) {
@@ -274,7 +287,7 @@ bool mozTXTToHTMLConv::FindURLEnd(const char16_t* aInString,
             
             (aInString[i] == '[' && i > 2 &&
              (aInString[i - 1] != '/' || aInString[i - 2] != '/')) ||
-            IsSpace(aInString[i])) {
+            IsSpace(aInString[i]) || IsBidiFormattingChar(aInString[i])) {
           break;
         }
         
