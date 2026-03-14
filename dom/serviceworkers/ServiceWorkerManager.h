@@ -36,6 +36,7 @@
 #include "nsTArray.h"
 
 class nsIConsoleReportCollector;
+class nsIServiceWorkerUnregisterCallback;
 
 namespace mozilla {
 
@@ -444,7 +445,8 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   
   
   void ForceUnregister(RegistrationDataPerPrincipal* aRegistrationData,
-                       ServiceWorkerRegistrationInfo* aRegistration);
+                       ServiceWorkerRegistrationInfo* aRegistration,
+                       nsIServiceWorkerUnregisterCallback* aCallback = nullptr);
 
   
   
