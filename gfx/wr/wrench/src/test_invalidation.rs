@@ -115,6 +115,7 @@ impl<'a> TestHarness<'a> {
         self.test_basic();
         self.test_composite_nop();
         self.test_scroll_subpic();
+        self.test_clip_promotion();
 
         
         let manifest_path = PathBuf::from("invalidation/invalidation.list");
@@ -249,6 +250,15 @@ impl<'a> TestHarness<'a> {
             results.pc_debug.slice(0).tile(0, 0).is_valid(),
             "Ensure the cache tile was not invalidated after scrolling",
         );
+    }
+
+    
+    
+    fn test_clip_promotion(&mut self) {
+        let results = self.render_yaml("clip_promotion");
+
+        let slices = results.pc_debug.slices.len();
+        assert!(slices > 1, "Expected multiple slices");
     }
 
     

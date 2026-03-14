@@ -2371,7 +2371,22 @@ impl<'a> SceneBuilder<'a> {
         
         if let Some(clip_chain_id) = clip_chain_id {
             if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners) {
-                blit_reason |= BlitReason::CLIP;
+                
+                
+                
+                
+                
+                
+                
+                if !self.sc_stack.is_empty() ||
+                   !self.clip_tree_builder.clip_chain_complex_clips_are_promotable(
+                       clip_chain_id,
+                       &self.interners,
+                       &self.spatial_tree,
+                   )
+                {
+                    blit_reason |= BlitReason::CLIP;
+                }
             }
         }
 
