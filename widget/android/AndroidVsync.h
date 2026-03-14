@@ -7,15 +7,16 @@
 #ifndef mozilla_widget_AndroidVsync_h
 #define mozilla_widget_AndroidVsync_h
 
+#include <android/choreographer.h>
+#include <memory>
+
 #include "mozilla/DataMutex.h"
-#include "mozilla/java/AndroidVsyncNatives.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace widget {
-
-class AndroidVsyncSupport;
 
 
 
@@ -28,8 +29,6 @@ class AndroidVsync final : public SupportsThreadSafeWeakPtr<AndroidVsync> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(AndroidVsync)
 
   static RefPtr<AndroidVsync> GetInstance();
-
-  ~AndroidVsync();
 
   class Observer {
    public:
@@ -51,24 +50,45 @@ class AndroidVsync final : public SupportsThreadSafeWeakPtr<AndroidVsync> {
   void OnMaybeUpdateRefreshRate();
 
  private:
-  friend class AndroidVsyncSupport;
-
-  AndroidVsync();
+  AndroidVsync() = default;
 
   
-  void NotifyVsync(int64_t aFrameTimeNanos);
+  
+  
+  
+  
+  using CallbackToken = std::unique_ptr<ThreadSafeWeakPtr<AndroidVsync>>;
+
+  
+  
+  void MaybePostFrameCallback();
+  static void PostFrameCallback(AChoreographer* aChoreographer,
+                                CallbackToken aToken);
+  
+  static void FrameCallback(long aFrameTimeNanos, void* aData);
+  
+  static void FrameCallback64(int64_t aFrameTimeNanos, void* aData);
 
   struct Impl {
-    void UpdateObservingVsync();
+    
+    
+    Maybe<std::pair<AChoreographer*, CallbackToken>> ShouldPostFrameCallback();
 
     nsTArray<Observer*> mInputObservers;
     nsTArray<Observer*> mRenderObservers;
-    RefPtr<AndroidVsyncSupport> mSupport;
-    java::AndroidVsync::GlobalRef mSupportJava;
-    bool mObservingVsync = false;
+    
+    
+    AChoreographer* mChoreographer = nullptr;
+    
+    
+    
+    
+    
+    
+    CallbackToken mToken;
   };
 
-  DataMutex<Impl> mImpl;
+  DataMutex<Impl> mImpl{"AndroidVsync.mImpl"};
 
   static StaticDataMutex<ThreadSafeWeakPtr<AndroidVsync>> sInstance;
 };
