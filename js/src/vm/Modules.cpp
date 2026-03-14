@@ -799,33 +799,23 @@ bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
   return true;
 }
 
-static bool ModuleResolveExportImpl(JSContext* cx, Handle<ModuleObject*> module,
-                                    Handle<JSAtom*> exportName,
-                                    MutableHandle<ResolveSet> resolveSet,
-                                    MutableHandle<Value> result,
-                                    ModuleErrorInfo* errorInfoOut = nullptr) {
+
+
+static bool ModuleResolveExportWithResolveSet(
+    JSContext* cx, Handle<ModuleObject*> module, Handle<JSAtom*> exportName,
+    MutableHandle<ResolveSet> resolveSet, MutableHandle<Value> result,
+    ModuleErrorInfo* errorInfoOut = nullptr) {
   if (module->hasSyntheticModuleFields()) {
     return SyntheticModuleResolveExport(cx, module, exportName, result,
                                         errorInfoOut);
   }
 
+  
+  
+  MOZ_ASSERT(module->status() != ModuleStatus::New);
   return CyclicModuleResolveExport(cx, module, exportName, resolveSet, result,
                                    errorInfoOut);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -834,12 +824,10 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 MutableHandle<Value> result,
                                 ModuleErrorInfo* errorInfoOut = nullptr) {
   
-  MOZ_ASSERT(module->status() != ModuleStatus::New);
-
   
   Rooted<ResolveSet> resolveSet(cx);
-  return ModuleResolveExportImpl(cx, module, exportName, &resolveSet, result,
-                                 errorInfoOut);
+  return ModuleResolveExportWithResolveSet(cx, module, exportName, &resolveSet,
+                                           result, errorInfoOut);
 }
 
 static bool CreateResolvedBindingObject(JSContext* cx,
@@ -855,6 +843,21 @@ static bool CreateResolvedBindingObject(JSContext* cx,
   result.setObject(*obj);
   return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static bool CyclicModuleResolveExport(JSContext* cx,
                                       Handle<ModuleObject*> module,
@@ -931,8 +934,8 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         
         name = e.importName();
 
-        return ModuleResolveExportImpl(cx, importedModule, name, resolveSet,
-                                       result, errorInfoOut);
+        return ModuleResolveExportWithResolveSet(
+            cx, importedModule, name, resolveSet, result, errorInfoOut);
       }
     }
   }
