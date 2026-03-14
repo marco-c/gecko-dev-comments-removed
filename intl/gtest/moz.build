@@ -4,6 +4,6 @@
 
 
 
-UNIFIED_SOURCES += ["TestEncoding.cpp"]
+UNIFIED_SOURCES += ["TestAppCollator.cpp", "TestEncoding.cpp"]
 
 FINAL_LIBRARY = "xul-gtest"

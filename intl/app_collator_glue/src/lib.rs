@@ -9,6 +9,7 @@ use core::sync::atomic::AtomicBool;
 use icu_collator::options::CaseLevel;
 use icu_collator::options::CollatorOptions;
 use icu_collator::options::Strength;
+use icu_collator::preferences::CollationNumericOrdering;
 use icu_collator::CollatorBorrowed;
 use icu_collator::CollatorPreferences;
 use icu_locale_core::locale;
@@ -40,6 +41,12 @@ static mut ACCENT: Option<CollatorBorrowed> = None;
 static mut VARIANT: Option<CollatorBorrowed> = None;
 
 
+static mut BASE_NUMERIC: Option<CollatorBorrowed> = None;
+
+
+static mut VARIANT_NUMERIC: Option<CollatorBorrowed> = None;
+
+
 
 
 
@@ -67,7 +74,7 @@ pub unsafe extern "C" fn mozilla_app_collator_glue_initialize(locale: *const nsA
             "Double initialization of the app collator"
         );
     }
-    let prefs: CollatorPreferences = if let Ok(locale) = Locale::try_from_utf8(&*locale) {
+    let mut prefs: CollatorPreferences = if let Ok(locale) = Locale::try_from_utf8(&*locale) {
         locale.into()
     } else {
         debug_assert!(
@@ -88,6 +95,11 @@ pub unsafe extern "C" fn mozilla_app_collator_glue_initialize(locale: *const nsA
     
     VARIANT = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
 
+    prefs.numeric_ordering = Some(CollationNumericOrdering::True);
+    
+    VARIANT_NUMERIC = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
+    prefs.numeric_ordering = None;
+
     options.strength = Some(Strength::Secondary);
     
     ACCENT = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
@@ -95,6 +107,11 @@ pub unsafe extern "C" fn mozilla_app_collator_glue_initialize(locale: *const nsA
     options.strength = Some(Strength::Primary);
     
     BASE = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
+
+    prefs.numeric_ordering = Some(CollationNumericOrdering::True);
+    
+    BASE_NUMERIC = Some(CollatorBorrowed::try_new(prefs, options).unwrap());
+    prefs.numeric_ordering = None;
 
     options.case_level = Some(CaseLevel::On);
     
@@ -272,6 +289,45 @@ unsafe extern "C" fn callback_compare_utf16(
 
 
 #[allow(static_mut_refs)]
+pub fn compare(left: &str, right: &str) -> core::cmp::Ordering {
+    
+    unsafe {
+        
+        #[cfg(debug_assertions)]
+        {
+            debug_assert!(
+                INITIALIZED.load(core::sync::atomic::Ordering::Relaxed),
+                "App collator used before initialization"
+            );
+        }
+        VARIANT_NUMERIC
+            .as_ref()
+            .unwrap_unchecked()
+            .compare(left, right)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[allow(static_mut_refs)]
 #[no_mangle]
 pub unsafe extern "C" fn mozilla_app_collator_compare_utf8(
     left: *const u8,
@@ -287,11 +343,13 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_utf8(
             "App collator used before initialization"
         );
     }
-    VARIANT.as_ref().unwrap_unchecked().compare_utf8(
+    VARIANT_NUMERIC.as_ref().unwrap_unchecked().compare_utf8(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
 }
+
+
 
 
 
@@ -327,11 +385,12 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_utf16(
             "App collator used before initialization"
         );
     }
-    VARIANT.as_ref().unwrap_unchecked().compare_utf16(
+    VARIANT_NUMERIC.as_ref().unwrap_unchecked().compare_utf16(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
 }
+
 
 
 
@@ -365,11 +424,12 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_base_utf8(
             "App collator used before initialization"
         );
     }
-    BASE.as_ref().unwrap_unchecked().compare_utf8(
+    BASE_NUMERIC.as_ref().unwrap_unchecked().compare_utf8(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
 }
+
 
 
 
@@ -403,7 +463,7 @@ pub unsafe extern "C" fn mozilla_app_collator_compare_base_utf16(
             "App collator used before initialization"
         );
     }
-    BASE.as_ref().unwrap_unchecked().compare_utf16(
+    BASE_NUMERIC.as_ref().unwrap_unchecked().compare_utf16(
         core::slice::from_raw_parts(left, left_len),
         core::slice::from_raw_parts(right, right_len),
     ) as i32
