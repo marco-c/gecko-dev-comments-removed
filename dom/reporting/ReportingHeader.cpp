@@ -291,6 +291,10 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
 
   size_t itemsParsed = 0;
 
+  if (!IsSecureURI(aURI)) {
+    return 0;
+  }
+
   for (const auto& key : keys) {
     
     nsCOMPtr<nsISFVItemOrInnerList> iil;
