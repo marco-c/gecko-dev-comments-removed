@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_BrowsingContextWebProgress_h
 #define mozilla_dom_BrowsingContextWebProgress_h
 
+#include "nsIScopedPrefs.h"
 #include "nsIWebProgress.h"
 #include "nsIWebProgressListener.h"
 #include "nsTObserverArray.h"
@@ -63,6 +64,7 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   void SetLoadType(uint32_t aLoadType) { mLoadType = aLoadType; }
 
   already_AddRefed<BounceTrackingState> GetBounceTrackingState();
+  already_AddRefed<nsIScopedPrefs> ScopedPrefs();
 
   
   
@@ -102,6 +104,10 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   bool mIsLoadingDocument = false;
 
   RefPtr<mozilla::BounceTrackingState> mBounceTrackingState;
+
+  
+  
+  nsCOMPtr<nsIScopedPrefs> mScopedPrefs;
 };
 
 }  
