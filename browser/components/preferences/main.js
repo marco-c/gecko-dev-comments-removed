@@ -5365,16 +5365,19 @@ var gMainPane = {
         });
 
         
-        this.readUpdateAutoPref().then(async () => {
-          
-          
-          if (this.isBackgroundUpdateUIAvailable()) {
-            document.getElementById("backgroundUpdate").hidden = false;
-
+        this.readUpdateAutoPref()
+          .then(async () => {
+            
             
             await this.readBackgroundUpdatePref();
-          }
-        });
+          })
+          .catch(async error => {
+            console.error("Error reading Updater preferences: " + error);
+          });
+
+        if (this.isBackgroundUpdateUIAvailable()) {
+          document.getElementById("backgroundUpdate").hidden = false;
+        }
       }
 
       if (AppConstants.platform == "win") {
