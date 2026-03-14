@@ -67,6 +67,8 @@ class RequestListHeaderContent extends Component {
     };
   }
 
+  #resizeTimerId;
+
   constructor(props) {
     super(props);
     this.requestListHeader = createRef();
@@ -242,8 +244,8 @@ class RequestListHeaderContent extends Component {
     if (waterfallHeader) {
       
       
-      window.cancelIdleCallback(this._resizeTimerId);
-      this._resizeTimerId = window.requestIdleCallback(() => {
+      window.cancelIdleCallback(this.#resizeTimerId);
+      this.#resizeTimerId = window.requestIdleCallback(() => {
         if (document.visibilityState == "visible") {
           this.props.resizeWaterfall(
             waterfallHeader.getBoundingClientRect().width
