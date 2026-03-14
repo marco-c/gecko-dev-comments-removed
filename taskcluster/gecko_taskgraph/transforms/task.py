@@ -801,6 +801,7 @@ def build_docker_worker_payload(config, task, task_def):
         
         Required("chain-of-trust"): bool,
         Optional("taskcluster-proxy"): bool,
+        Optional("hide-cmd-window"): bool,
         
         Optional("retry-exit-status"): [int],
         
@@ -917,6 +918,9 @@ def build_generic_worker_payload(config, task, task_def):
         task_def["scopes"].append(
             "generic-worker:run-as-administrator:{}".format(task["worker-type"]),
         )
+
+    if worker.get("hide-cmd-window"):
+        features["hideCmdWindow"] = True
 
     if features:
         task_def["payload"]["features"] = features
