@@ -10,11 +10,6 @@
 include!(concat!(env!("OUT_DIR"), "/crash_annotations.rs"));
 
 
-pub fn send_in_ping(annotation: &str) -> bool {
-    PING_ANNOTATIONS.contains(annotation)
-}
-
-
 pub fn send_in_report(annotation: &str) -> bool {
     ALL_REPORT_ANNOTATIONS.contains(annotation)
 }
