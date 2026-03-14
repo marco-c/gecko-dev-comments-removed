@@ -140,6 +140,7 @@ pub const MAX_FONT_WEIGHT: f32 = 1000.;
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
+#[typed_value(derive_fields)]
 pub enum FontWeight {
     
     Absolute(AbsoluteFontWeight),
@@ -201,7 +202,10 @@ impl ToComputedValue for FontWeight {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+)]
+#[typed_value(derive_fields)]
 pub enum AbsoluteFontWeight {
     
     
