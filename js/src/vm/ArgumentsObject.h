@@ -7,8 +7,6 @@
 #ifndef vm_ArgumentsObject_h
 #define vm_ArgumentsObject_h
 
-#include "mozilla/MemoryReporting.h"
-
 #include "gc/Barrier.h"
 #include "gc/GCArray.h"
 #include "util/BitArray.h"
@@ -438,20 +436,8 @@ class ArgumentsObject : public NativeObject {
 
 
 
-  size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const {
-    if (!data()) {  
-      return 0;
-    }
-    size_t dataSize = gc::GetAllocSize(zone(), data());
-    size_t rareDataSize =
-        !maybeRareData() ? 0 : gc::GetAllocSize(zone(), maybeRareData());
-    return dataSize + rareDataSize;
-  }
-  size_t sizeOfData() const {
-    return ArgumentsData::bytesRequired(data()->numArgs()) +
-           (maybeRareData() ? RareArgumentsData::bytesRequired(initialLength())
-                            : 0);
-  }
+  size_t sizeOfMisc() const;
+  size_t sizeOfData() const;
   static void trace(JSTracer* trc, JSObject* obj);
   static size_t objectMoved(JSObject* dst, JSObject* src);
 

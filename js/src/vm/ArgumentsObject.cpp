@@ -1099,6 +1099,22 @@ size_t ArgumentsObject::objectMoved(JSObject* dst, JSObject* src) {
   return nbytesTotal;
 }
 
+size_t ArgumentsObject::sizeOfMisc() const {
+  if (!data()) {  
+    return 0;
+  }
+  size_t dataSize = gc::GetAllocSize(zone(), data());
+  size_t rareDataSize =
+      !maybeRareData() ? 0 : gc::GetAllocSize(zone(), maybeRareData());
+  return dataSize + rareDataSize;
+}
+
+size_t ArgumentsObject::sizeOfData() const {
+  return ArgumentsData::bytesRequired(data()->numArgs()) +
+         (maybeRareData() ? RareArgumentsData::bytesRequired(initialLength())
+                          : 0);
+}
+
 
 
 
