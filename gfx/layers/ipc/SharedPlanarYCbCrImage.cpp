@@ -170,7 +170,8 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   
   
   mBufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
-      aYSize, mData.mYStride, aCbCrSize, mData.mCbCrStride);
+      mData.mPictureRect, aYSize, mData.mYStride, aCbCrSize, mData.mCbCrStride,
+      mData.mColorDepth, mData.mChromaSubsampling);
   mSize = mData.mPictureRect.Size();
   mOrigin = mData.mPictureRect.TopLeft();
 
