@@ -34,8 +34,21 @@ pub const STYLE_THREAD_STACK_SIZE_KB: usize = 256;
 
 
 
+
+
 #[cfg(feature = "servo")]
-pub const STYLE_THREAD_STACK_SIZE_KB: usize = 512;
+pub const STYLE_THREAD_STACK_SIZE_KB: usize = const {
+    let default_stack_size = 512;
+    if let Some(user_def_size) = option_env!("SERVO_STYLE_THREAD_STACK_SIZE_KB") {
+        if let Ok(user_def_size) = usize::from_str_radix(user_def_size, 10) {
+            user_def_size
+        } else {
+            panic!("SERVO_STYLE_THREAD_STACK_SIZE_KB must be a valid integer")
+        }
+    } else {
+        default_stack_size
+    }
+};
 
 
 
