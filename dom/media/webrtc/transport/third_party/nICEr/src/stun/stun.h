@@ -51,6 +51,7 @@
 #endif
 #include <netinet/in.h>
 #ifndef LINUX
+#include <net/if.h>
 #include <netinet/in_var.h>
 #endif
 #include <arpa/inet.h>
