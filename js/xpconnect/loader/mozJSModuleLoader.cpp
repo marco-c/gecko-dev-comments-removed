@@ -886,6 +886,9 @@ nsresult mozJSModuleLoader::GetScriptForLocation(
   
   
   ScriptPreloader::GetSingleton().NoteStencil(nativePath, cachePath, stencil);
+  if (ScriptPreloader::GetSingleton().Active()) {
+    storeIntoStartupCache = false;
+  }
 
   
   
