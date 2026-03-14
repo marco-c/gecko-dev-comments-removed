@@ -16,11 +16,12 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
-import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.requirePreference
+import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 
 /**
  * A [androidx.preference.PreferenceFragmentCompat] that displays settings related to downloads.
@@ -78,7 +79,7 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat() {
         }
         val fileStorageCategory =
             findPreference<PreferenceCategory>(getString(R.string.pref_key_downloads_storage_category))
-        fileStorageCategory?.isVisible = FeatureFlags.downloadsDefaultLocation
+        fileStorageCategory?.isVisible = FxNimbus.features.downloadsCustomLocation.value().enabled
     }
 
     override fun onResume() {
@@ -86,7 +87,7 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat() {
         showToolbar(getString(R.string.preferences_downloads))
         updateDownloadsLocationSummary()
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 
