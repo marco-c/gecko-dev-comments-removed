@@ -26,6 +26,15 @@ const {
 
 
 class HarBuilder {
+  #connector;
+  #id;
+  #includeResponseBodies;
+  #items;
+  #pageId;
+  #pageMap;
+  #supportsMultiplePages;
+  #url;
+
   
 
 
@@ -43,15 +52,15 @@ class HarBuilder {
 
 
   constructor(options) {
-    this._connector = options.connector;
-    this._id = options.id;
-    this._includeResponseBodies = options.includeResponseBodies;
-    this._items = options.items;
+    this.#connector = options.connector;
+    this.#id = options.id;
+    this.#includeResponseBodies = options.includeResponseBodies;
+    this.#items = options.items;
     
-    this._pageId = options.supportsMultiplePages ? 0 : options.id;
-    this._pageMap = [];
-    this._supportsMultiplePages = options.supportsMultiplePages;
-    this._url = this._connector.currentTarget.url;
+    this.#pageId = options.supportsMultiplePages ? 0 : options.id;
+    this.#pageMap = [];
+    this.#supportsMultiplePages = options.supportsMultiplePages;
+    this.#url = this.#connector.currentTarget.url;
   }
 
   
@@ -74,7 +83,7 @@ class HarBuilder {
     this.buildPages(harLog.log);
 
     
-    for (const request of this._items) {
+    for (const request of this.#items) {
       const entry = await this.buildEntry(harLog.log, request);
       if (entry) {
         harLog.log.entries.push(entry);
@@ -90,21 +99,21 @@ class HarBuilder {
 
   
   buildPages(log) {
-    if (this._supportsMultiplePages) {
+    if (this.#supportsMultiplePages) {
       this.buildPagesFromTargetTitles(log);
-    } else if (this._items.length) {
-      const firstRequest = this._items[0];
-      const page = this.buildPage(this._url, firstRequest);
+    } else if (this.#items.length) {
+      const firstRequest = this.#items[0];
+      const page = this.buildPage(this.#url, firstRequest);
       log.pages.push(page);
-      this._pageMap[this._id] = page;
+      this.#pageMap[this.#id] = page;
     }
   }
 
   buildPagesFromTargetTitles(log) {
     
-    const { initialURL, navigationRequests } = this._connector.getHarData();
+    const { initialURL, navigationRequests } = this.#connector.getHarData();
     const firstNavigationRequest = navigationRequests[0];
-    const firstRequest = this._items[0];
+    const firstRequest = this.#items[0];
 
     if (
       !firstNavigationRequest ||
@@ -125,7 +134,7 @@ class HarBuilder {
   buildPage(url, networkEvent) {
     const page = {};
 
-    page.id = "page_" + this._pageId;
+    page.id = "page_" + this.#pageId;
     page.pageTimings = this.buildPageTimings(page, networkEvent);
     page.startedDateTime = dateToHarString(new Date(networkEvent.startedMs));
 
@@ -135,7 +144,7 @@ class HarBuilder {
 
     
     
-    this._pageId++;
+    this.#pageId++;
 
     return page;
   }
@@ -160,8 +169,8 @@ class HarBuilder {
 
     let { eventTimings, id } = networkEvent;
     try {
-      if (!eventTimings && this._connector.requestData) {
-        eventTimings = await this._connector.requestData(id, "eventTimings");
+      if (!eventTimings && this.#connector.requestData) {
+        eventTimings = await this.#connector.requestData(id, "eventTimings");
       }
 
       entry.request = await this.buildRequest(networkEvent);
@@ -217,11 +226,11 @@ class HarBuilder {
 
     
     
-    if (this._connector.getTimingMarker) {
-      timings.onContentLoad = this._connector.getTimingMarker(
+    if (this.#connector.getTimingMarker) {
+      timings.onContentLoad = this.#connector.getTimingMarker(
         "firstDocumentDOMContentLoadedTimestamp"
       );
-      timings.onLoad = this._connector.getTimingMarker(
+      timings.onLoad = this.#connector.getTimingMarker(
         "firstDocumentLoadTimestamp"
       );
     }
@@ -234,13 +243,13 @@ class HarBuilder {
     
     
     let { id, requestHeaders } = networkEvent;
-    if (!requestHeaders && this._connector.requestData) {
-      requestHeaders = await this._connector.requestData(id, "requestHeaders");
+    if (!requestHeaders && this.#connector.requestData) {
+      requestHeaders = await this.#connector.requestData(id, "requestHeaders");
     }
 
     let { requestCookies } = networkEvent;
-    if (!requestCookies && this._connector.requestData) {
-      requestCookies = await this._connector.requestData(id, "requestCookies");
+    if (!requestCookies && this.#connector.requestData) {
+      requestCookies = await this.#connector.requestData(id, "requestCookies");
     }
 
     const request = {
@@ -329,8 +338,8 @@ class HarBuilder {
     let { id, requestHeaders, requestPostData } = networkEvent;
     let requestHeadersFromUploadStream;
 
-    if (!requestPostData && this._connector.requestData) {
-      requestPostData = await this._connector.requestData(
+    if (!requestPostData && this.#connector.requestData) {
+      requestPostData = await this.#connector.requestData(
         id,
         "requestPostData"
       );
@@ -341,8 +350,8 @@ class HarBuilder {
       return undefined;
     }
 
-    if (!requestHeaders && this._connector.requestData) {
-      requestHeaders = await this._connector.requestData(id, "requestHeaders");
+    if (!requestHeaders && this.#connector.requestData) {
+      requestHeaders = await this.#connector.requestData(id, "requestHeaders");
     }
 
     const postData = {
@@ -369,7 +378,7 @@ class HarBuilder {
         requestHeaders,
         requestHeadersFromUploadStream,
         requestPostData,
-        this._connector.getLongString
+        this.#connector.getLongString
       );
 
       formDataSections.forEach(section => {
@@ -389,15 +398,15 @@ class HarBuilder {
     
 
     let { id, responseCookies, responseHeaders } = networkEvent;
-    if (!responseHeaders && this._connector.requestData) {
-      responseHeaders = await this._connector.requestData(
+    if (!responseHeaders && this.#connector.requestData) {
+      responseHeaders = await this.#connector.requestData(
         id,
         "responseHeaders"
       );
     }
 
-    if (!responseCookies && this._connector.requestData) {
-      responseCookies = await this._connector.requestData(
+    if (!responseCookies && this.#connector.requestData) {
+      responseCookies = await this.#connector.requestData(
         id,
         "responseCookies"
       );
@@ -446,8 +455,8 @@ class HarBuilder {
     
     
     let { responseContent } = networkEvent;
-    if (!responseContent && this._connector.requestData) {
-      responseContent = await this._connector.requestData(
+    if (!responseContent && this.#connector.requestData) {
+      responseContent = await this.#connector.requestData(
         networkEvent.id,
         "responseContent"
       );
@@ -457,7 +466,7 @@ class HarBuilder {
       content.encoding = responseContent.content.encoding;
     }
 
-    const includeBodies = this._includeResponseBodies;
+    const includeBodies = this.#includeResponseBodies;
     const contentDiscarded = responseContent
       ? responseContent.contentDiscarded
       : false;
@@ -487,8 +496,8 @@ class HarBuilder {
       return cache;
     }
 
-    if (networkEvent.responseCacheAvailable && this._connector.requestData) {
-      const responseCache = await this._connector.requestData(
+    if (networkEvent.responseCacheAvailable && this.#connector.requestData) {
+      const responseCache = await this.#connector.requestData(
         networkEvent.id,
         "responseCache"
       );
@@ -535,7 +544,7 @@ class HarBuilder {
 
   
   fetchData(string) {
-    const promise = this._connector.getLongString(string).then(value => {
+    const promise = this.#connector.getLongString(string).then(value => {
       return value;
     });
 
