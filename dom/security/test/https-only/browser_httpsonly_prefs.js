@@ -15,6 +15,8 @@ async function runPrefTest(
   });
 
   await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
+    
+    
     await ContentTask.spawn(
       browser,
       { aExecuteFromPBM, aDesc, aAssertURLStartsWith },

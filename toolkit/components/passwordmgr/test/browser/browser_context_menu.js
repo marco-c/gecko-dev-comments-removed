@@ -536,6 +536,8 @@ async function assertContextMenuFill(
     formId,
     unchangedSelector,
   };
+  
+  
   let continuePromise = ContentTask.spawn(browser, data, async function (data) {
     let {
       username,

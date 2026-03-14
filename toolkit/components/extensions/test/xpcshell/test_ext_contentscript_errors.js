@@ -120,6 +120,8 @@ add_task(async function test_cached_contentscript_on_document_start() {
   let contentPage = await ExtensionTestUtils.loadContentPage(TEST_URL_1);
 
   
+  
+  
   let errorsPromise = ContentTask.spawn(contentPage.browser, {}, async () => {
     return new Promise(resolve => {
       function listener(error0) {

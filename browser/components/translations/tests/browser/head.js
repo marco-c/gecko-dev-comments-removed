@@ -72,6 +72,8 @@ async function addTab(url, message, win = window) {
 
 
     runInPage(callback, data = {}) {
+      
+      
       return ContentTask.spawn(
         tab.linkedBrowser,
         { contentData: data, callbackSource: callback.toString() }, 

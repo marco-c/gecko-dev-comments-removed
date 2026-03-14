@@ -190,6 +190,8 @@ body > div > div {width: 1000px;height: 1000px;}\
       );
       BrowserTestUtils.startLoadingURIString(gBrowser, test.dataUri);
       await loadedPromise;
+      
+      
       await ContentTask.spawn(gBrowser.selectedBrowser, {}, async () => {
         
         await new Promise(resolve =>
@@ -214,6 +216,8 @@ body > div > div {width: 1000px;height: 1000px;}\
       gBrowser.selectedBrowser
     );
 
+    
+    
     
     
     await ContentTask.spawn(

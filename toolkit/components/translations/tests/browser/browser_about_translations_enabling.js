@@ -39,6 +39,8 @@ const FEATURE_BLOCKED_UI = {
 
 
 async function assertMainUserInterfaceEnabledState(enabled) {
+  
+  
   const controlStates = await ContentTask.spawn(
     gBrowser.selectedBrowser,
     {},

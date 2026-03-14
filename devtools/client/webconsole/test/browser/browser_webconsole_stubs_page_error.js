@@ -103,6 +103,8 @@ async function generatePageErrorStubs() {
 
     
     
+    
+    
     await ContentTask.spawn(gBrowser.selectedBrowser, code, function (subCode) {
       const script = content.document.createElement("script");
       script.append(content.document.createTextNode(subCode));

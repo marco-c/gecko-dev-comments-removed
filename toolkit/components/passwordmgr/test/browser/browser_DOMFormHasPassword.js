@@ -102,6 +102,8 @@ function task(contentIds) {
 
 add_task(async function test_disconnectedInputs() {
   const tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
+  
+  
   await ContentTask.spawn(tab.linkedBrowser, null, async () => {
     const unexpectedEvent = evt => {
       Assert.ok(
@@ -134,6 +136,8 @@ add_task(async function test_disconnectedInputs() {
 add_task(async function () {
   let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
 
+  
+  
   let promise = ContentTask.spawn(tab.linkedBrowser, ids, task);
   BrowserTestUtils.startLoadingURIString(
     tab.linkedBrowser,

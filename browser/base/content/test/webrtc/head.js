@@ -345,6 +345,8 @@ function promiseMessage(
   browser = gBrowser.selectedBrowser
 ) {
   let startTime = ChromeUtils.now();
+  
+  
   let promise = ContentTask.spawn(
     browser,
     [aMessage, aCount],

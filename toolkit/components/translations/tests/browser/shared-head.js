@@ -347,6 +347,8 @@ async function openAboutTranslations({
   };
 
   const runInPage = (callback, data = {}) => {
+    
+    
     return ContentTask.spawn(
       tab.linkedBrowser,
       { selectors, contentData: data, callbackSource: callback.toString() }, 
@@ -3056,6 +3058,8 @@ async function loadTestPage({
 
 
     runInPage(callback, data = {}) {
+      
+      
       return ContentTask.spawn(
         tab.linkedBrowser,
         { contentData: data, callbackSource: callback.toString() }, 

@@ -645,6 +645,8 @@ async function testOpenPDFPreview({
         info("waiting for downloadsLoaded");
         await downloadsLoaded;
 
+        
+        
         await ContentTask.spawn(
           browser,
           [expected.downloadCount],

@@ -1712,6 +1712,8 @@ function synthesizeAndWaitNativeMouseMove(
       resolve();
     });
   });
+  
+  
   let eventReceivedPromise = ContentTask.spawn(
     browser,
     [aOffsetX, aOffsetY],
@@ -1882,6 +1884,8 @@ function synthesizeAndWaitKey(
       resolve();
     });
   });
+  
+  
   
   let keyReceivedPromise = ContentTask.spawn(browser, keyCode, keyCode => {
     return new Promise(resolve => {

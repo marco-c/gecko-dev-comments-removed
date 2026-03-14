@@ -1437,6 +1437,8 @@ async function togglePauseOnExceptions(
 
 function invokeInTab(fnc, ...args) {
   info(`Invoking in tab: ${fnc}(${args.map(uneval).join(",")})`);
+  
+  
   return ContentTask.spawn(gBrowser.selectedBrowser, { fnc, args }, options =>
     content.wrappedJSObject[options.fnc](...options.args)
   );
