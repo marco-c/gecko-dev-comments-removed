@@ -9,7 +9,8 @@
 
 
 
-if CONFIG["MOZ_GECKO_PROFILER"]:
+
+if not CONFIG["JS_STANDALONE"]:
     DEFINES["IMPL_MFBT"] = True
     EXPORTS += [
         "public/BaseProfilingStack.h",

@@ -16,8 +16,6 @@
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/ProfilerThreadState.h"
 
-#ifdef MOZ_GECKO_PROFILER
-
 namespace geckoprofiler::markers {
 
 
@@ -25,7 +23,5 @@ namespace geckoprofiler::markers {
 using NoPayload = ::mozilla::baseprofiler::markers::NoPayload;
 
 }  
-
-#endif  
 
 #endif  

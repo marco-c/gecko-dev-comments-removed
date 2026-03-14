@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef ProfilerState_h
 #define ProfilerState_h
 
@@ -222,32 +220,10 @@ using ProfilingStateSet = mozilla::EnumSet<ProfilingState>;
 
 using ProfilingStateChangeCallback = std::function<void(ProfilingState)>;
 
-#ifndef MOZ_GECKO_PROFILER
+#include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 
-[[nodiscard]] inline bool profiler_is_active() { return false; }
-[[nodiscard]] inline bool profiler_is_active_and_unpaused() { return false; }
-[[nodiscard]] inline bool profiler_is_collecting_markers() { return false; }
-[[nodiscard]] inline bool profiler_is_etw_collecting_markers() { return false; }
-[[nodiscard]] inline bool profiler_is_perfetto_tracing() { return false; }
-[[nodiscard]] inline bool profiler_feature_active(uint32_t aFeature) {
-  return false;
-}
-[[nodiscard]] inline bool profiler_is_locked_on_current_thread() {
-  return false;
-}
-inline void profiler_add_state_change_callback(
-    ProfilingStateSet aProfilingStateSet,
-    ProfilingStateChangeCallback&& aCallback, uintptr_t aUniqueIdentifier = 0) {
-}
-inline void profiler_remove_state_change_callback(uintptr_t aUniqueIdentifier) {
-}
-
-#else  
-
-#  include "mozilla/Atomics.h"
-#  include "mozilla/Maybe.h"
-
-#  include <stdint.h>
+#include <stdint.h>
 
 namespace mozilla::profiler::detail {
 
@@ -368,13 +344,14 @@ class RacyFeatures {
   static constexpr uint32_t PerfettoTracingEnabled = 1u << 27;
 
 
-#  define NO_OVERLAP(n_, str_, Name_, desc_)                \
-    static_assert(ProfilerFeature::Name_ != SamplingPaused, \
-                  "bad feature value");
+#define NO_OVERLAP(n_, str_, Name_, desc_)                \
+  static_assert(ProfilerFeature::Name_ != SamplingPaused, \
+                "bad feature "                            \
+                "value");
 
   PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
-#  undef NO_OVERLAP
+#undef NO_OVERLAP
 
   
   
@@ -481,7 +458,5 @@ void profiler_add_state_change_callback(
 
 
 void profiler_remove_state_change_callback(uintptr_t aUniqueIdentifier);
-
-#endif  
 
 #endif  

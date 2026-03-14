@@ -24,8 +24,6 @@
 
 #else
 
-#  include "mozilla/BaseProfiler.h"
-
 
 
 

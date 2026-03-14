@@ -350,7 +350,6 @@ void ReadModuleInformation(HangStack& stack) {
   
   stack.modules().Clear();
 
-#ifdef MOZ_GECKO_PROFILER
   
   AutoTArray<HangEntry*, 100> frames;
   for (auto& frame : stack.stack()) {
@@ -403,7 +402,6 @@ void ReadModuleInformation(HangStack& stack) {
       stack.modules().AppendElement(module);
     }
   }
-#endif
 }
 
 Result<Ok, nsresult> ReadData(PRFileDesc* aFile, void* aPtr, size_t aLength) {

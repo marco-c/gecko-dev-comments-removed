@@ -85,16 +85,9 @@
              false);
 }
 
-#ifndef MOZ_GECKO_PROFILER
-
-#  define AUTO_PROFILER_THREAD_WAKE
-
-#else  
 
 
-
-#  define AUTO_PROFILER_THREAD_WAKE \
-    mozilla::AutoProfilerThreadWake PROFILER_RAII
+#define AUTO_PROFILER_THREAD_WAKE mozilla::AutoProfilerThreadWake PROFILER_RAII
 
 namespace mozilla {
 
@@ -122,7 +115,5 @@ class MOZ_RAII AutoProfilerThreadWake {
 };
 
 }  
-
-#endif  
 
 #endif  

@@ -7,33 +7,19 @@
 
 
 
-
-
 #ifndef BaseProfilerLabels_h
 #define BaseProfilerLabels_h
 
-#ifndef MOZ_GECKO_PROFILER
+#include "BaseProfilingStack.h"
 
-#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)
-#  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr)
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_STRING(label, categoryPair, str)
-#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx)
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, \
-                                                categoryPair, ctx, flags)
+#include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/BaseProfilerRAIIMacro.h"
+#include "mozilla/BaseProfilerState.h"
+#include "mozilla/ThreadLocal.h"
 
-#else  
-
-#  include "BaseProfilingStack.h"
-
-#  include "mozilla/Attributes.h"
-#  include "mozilla/Maybe.h"
-#  include "mozilla/BaseProfilerRAIIMacro.h"
-#  include "mozilla/BaseProfilerState.h"
-#  include "mozilla/ThreadLocal.h"
-
-#  include <stdint.h>
-#  include <string>
+#include <stdint.h>
+#include <string>
 
 namespace mozilla::baseprofiler {
 
@@ -47,29 +33,22 @@ namespace mozilla::baseprofiler {
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)       \
-    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII( \
-        label, nullptr,                                       \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
+#define AUTO_BASE_PROFILER_LABEL(label, categoryPair)       \
+  ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII( \
+      label, nullptr,                                       \
+      ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
 
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)         \
-    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(          \
-        "", nullptr,                                                   \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,  \
-        uint32_t(::mozilla::baseprofiler::ProfilingStackFrame::Flags:: \
-                     LABEL_DETERMINED_BY_CATEGORY_PAIR))
-
-
-
-
-
-
-
+#define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)         \
+  ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(          \
+      "", nullptr,                                                   \
+      ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,  \
+      uint32_t(::mozilla::baseprofiler::ProfilingStackFrame::Flags:: \
+                   LABEL_DETERMINED_BY_CATEGORY_PAIR))
 
 
 
@@ -84,10 +63,17 @@ namespace mozilla::baseprofiler {
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr) \
-    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(              \
-        label, cStr,                                                       \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
+
+
+
+
+
+
+
+#define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr) \
+  ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(              \
+      label, cStr,                                                       \
+      ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
 
@@ -96,34 +82,34 @@ namespace mozilla::baseprofiler {
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_STRING(label, categoryPair, str) \
-    Maybe<std::string> autoStr;                                             \
-    Maybe<::mozilla::baseprofiler::AutoProfilerLabel> raiiObjectString;     \
-    if (::mozilla::baseprofiler::profiler_is_active()) {                    \
-      autoStr.emplace(str);                                                 \
-      raiiObjectString.emplace(                                             \
-          label, autoStr->c_str(),                                          \
-          ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair);    \
-    }
+#define AUTO_BASE_PROFILER_LABEL_DYNAMIC_STRING(label, categoryPair, str) \
+  Maybe<std::string> autoStr;                                             \
+  Maybe<::mozilla::baseprofiler::AutoProfilerLabel> raiiObjectString;     \
+  if (::mozilla::baseprofiler::profiler_is_active()) {                    \
+    autoStr.emplace(str);                                                 \
+    raiiObjectString.emplace(                                             \
+        label, autoStr->c_str(),                                          \
+        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair);    \
+  }
 
 
 
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx) \
-    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(     \
-        ctx, label, nullptr,                                      \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
+#define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx) \
+  ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(     \
+      ctx, label, nullptr,                                      \
+      ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString,     \
-                                                categoryPair, ctx, flags) \
-    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(             \
-        ctx, label, dynamicString,                                        \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, flags)
+#define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString,     \
+                                              categoryPair, ctx, flags) \
+  ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(             \
+      ctx, label, dynamicString,                                        \
+      ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, flags)
 
 
 
@@ -172,7 +158,5 @@ class MOZ_RAII AutoProfilerLabel {
 };
 
 }  
-
-#endif  
 
 #endif  
