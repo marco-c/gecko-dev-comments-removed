@@ -90,6 +90,8 @@ struct nr_ice_candidate_ {
     } relayed;
   } u;
 
+  int error_code; 
+
   NR_async_cb done_cb;
   void *cb_arg;
 

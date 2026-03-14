@@ -44,6 +44,7 @@
 #ifndef nricemediastream_h_
 #define nricemediastream_h_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -210,6 +211,11 @@ class NrIceMediaStream {
       SignalCandidate;  
   sigslot::signal2<const std::string&, NrIceMediaStream::GatheringState>
       SignalGatheringStateChange;
+
+  
+  sigslot::signal6<NrIceMediaStream*, const std::string&, uint16_t,
+                   const std::string&, uint16_t, const std::string&>
+      SignalCandidateError;
 
   sigslot::signal1<NrIceMediaStream*> SignalReady;   
   sigslot::signal1<NrIceMediaStream*> SignalFailed;  

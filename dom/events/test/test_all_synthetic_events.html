@@ -265,6 +265,12 @@ const kEventConstructors = {
                                                          return e;
                                                        },
                                              },
+  NavigateEvent:                             { create: null
+                                               // Cannot create NavigateEvent without NavigationDestination which can't be created
+                                             },
+  NavigationCurrentEntryChangeEvent:         { create: null
+                                               // Cannot create NavigationCurrentEntryChangeEvent without window.navigation
+                                             },
   OfflineAudioCompletionEvent:               { create: "AudioContext" in self
                                                         ? function (aName, aProps) {
                                                             var ac = new AudioContext();
@@ -310,6 +316,10 @@ const kEventConstructors = {
                                              },
   RTCDTMFToneChangeEvent:                       { create (aName, aProps) {
                                                          return new RTCDTMFToneChangeEvent(aName, aProps);
+                                                       },
+                                             },
+  RTCPeerConnectionIceErrorEvent:            { create (aName, aProps) {
+                                                         return new RTCPeerConnectionIceErrorEvent(aName, Object.assign({errorCode: 701}, aProps));
                                                        },
                                              },
   RTCPeerConnectionIceEvent:                 { create (aName, aProps) {
@@ -484,7 +494,8 @@ function test() {
 SimpleTest.waitForExplicitFinish();
 SpecialPowers.pushPrefEnv(
   {"set": [["dom.w3c_touch_events.legacy_apis.enabled", true],
-           ["dom.events.textevent.enabled", true]]},
+           ["dom.events.textevent.enabled", true],
+           ["dom.navigation.webidl.enabled", true]]},
   function() {
     test();
     SimpleTest.finish();

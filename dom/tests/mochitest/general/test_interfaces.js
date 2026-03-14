@@ -1220,6 +1220,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCPeerConnection", insecureContext: true },
   
+  { name: "RTCPeerConnectionIceErrorEvent", insecureContext: true },
+  
   { name: "RTCPeerConnectionIceEvent", insecureContext: true },
   
   { name: "RTCRtpReceiver", insecureContext: true },
