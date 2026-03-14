@@ -5133,15 +5133,15 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
 }
 
 nsSize ScrollContainerFrame::GetPageScrollAmount() const {
-  nsSize effectiveScrollPortSize;
+  nsSize effectiveScrollPortSize = GetVisualOptimalViewingRect().Size();
 
-  if (GetVisualViewportSize() != mScrollPort.Size()) {
-    
-    
-    
-    
-    effectiveScrollPortSize = GetVisualViewportSize();
-  } else {
+  
+  
+  
+  
+  
+  
+  if (effectiveScrollPortSize == mScrollPort.Size()) {
     
     
     effectiveScrollPortSize = GetScrollPortSizeExcludingHeadersAndFooters(
