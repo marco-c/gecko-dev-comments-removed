@@ -1216,6 +1216,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "RTCEncodedVideoFrame", insecureContext: true },
   
+  { name: "RTCError", insecureContext: true },
+  
+  { name: "RTCErrorEvent", insecureContext: true },
+  
   { name: "RTCIceCandidate", insecureContext: true },
   
   { name: "RTCIceTransport", insecureContext: true },
