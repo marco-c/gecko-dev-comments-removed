@@ -1082,25 +1082,15 @@ nsSocketTransportService::CreateUnixDomainAbstractAddressTransport(
 
 NS_IMETHODIMP
 nsSocketTransportService::OnDispatchedEvent() {
-#ifndef XP_WIN
-  
-  
   
   
   
   if (OnSocketThread()) {
-    
-    
-    
-    
     SOCKET_LOG(("OnDispatchedEvent Same Thread Skip Signal\n"));
     return NS_OK;
   }
-#else
+#ifdef XP_WIN
   if (gIOService->IsNetTearingDown()) {
-    
-    
-    
     StartPollWatchdog();
   }
 #endif
@@ -1899,7 +1889,7 @@ void nsSocketTransportService::StartPollWatchdog() {
 void nsSocketTransportService::DoPollRepair() {
   MutexAutoLock lock(mLock);
   if (mPolling && mPollableEvent) {
-    mPollableEvent->Signal();
+    mPollableEvent->Signal( true);
   } else if (mPollRepairTimer) {
     mPollRepairTimer->Cancel();
   }

@@ -275,36 +275,22 @@ PollableEvent::~PollableEvent() {
 
 
 
-
-
-
-bool PollableEvent::Signal() {
+bool PollableEvent::Signal(bool aForce) {
   SOCKET_LOG(("PollableEvent::Signal\n"));
 
   if (!mWriteFD) {
     SOCKET_LOG(("PollableEvent::Signal Failed on no FD\n"));
     return false;
   }
-#ifndef XP_WIN
-  
-  
-  
-  
-  
+
   if (OnSocketThread()) {
     SOCKET_LOG(("PollableEvent::Signal OnSocketThread nop\n"));
     return true;
   }
-#endif
 
-#ifndef XP_WIN
-  
-  
-  
-  if (mSignaled) {
+  if (mSignaled && !aForce) {
     return true;
   }
-#endif
 
   if (!mSignaled) {
     mSignaled = true;

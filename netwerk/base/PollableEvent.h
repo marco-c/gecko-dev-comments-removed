@@ -22,7 +22,7 @@ class PollableEvent {
   ~PollableEvent();
 
   
-  bool Signal();
+  bool Signal(bool aForce = false);
   
   bool Clear();
   bool Valid() { return mWriteFD && mReadFD; }
