@@ -149,23 +149,18 @@ void WheelTransaction::BeginTransaction(nsIFrame* aScrollTargetFrame,
   ScrollbarsForWheel::OwnWheelTransaction(false);
   sScrollTargetFrame = aScrollTargetFrame;
 
+  WTXN_LOG("WheelTransaction start for frame=0x%p handled-by-apz=%s",
+           aEventTargetFrame, aEvent->mFlags.mHandledByAPZ ? "true" : "false");
   
-  if (StaticPrefs::dom_event_wheel_event_groups_enabled()) {
-    WTXN_LOG("WheelTransaction start for frame=0x%p handled-by-apz=%s",
-             aEventTargetFrame,
-             aEvent->mFlags.mHandledByAPZ ? "true" : "false");
-    
-    
-    
-    
-    
-    
-    sEventTargetFrame = aEventTargetFrame;
-    
-    
-    
-    sHandledByApz = aEvent->mFlags.mHandledByAPZ;
-  }
+  
+  
+  
+  
+  sEventTargetFrame = aEventTargetFrame;
+  
+  
+  
+  sHandledByApz = aEvent->mFlags.mHandledByAPZ;
 
   sScrollSeriesCounter = 0;
   if (!UpdateTransaction(aEvent)) {

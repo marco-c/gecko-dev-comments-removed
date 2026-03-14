@@ -12666,7 +12666,6 @@ void PresShell::EventHandler::EventTargetData::UpdateWheelEventTarget(
 
   
   
-  
   nsIFrame* groupFrame = WheelTransaction::GetEventTargetFrame();
   if (!groupFrame) {
     return;

@@ -2434,14 +2434,13 @@ void APZCTreeManager::MaybeOverrideLayersIdForWheelEvent(InputData& aEvent) {
     txn = mInputQueue->GetCurrentPanGestureBlock();
   }
 
-  APZCTM_LOG("Maybe override txn (0x%p) wheel transactions enabled=%d", txn,
-             StaticPrefs::dom_event_wheel_event_groups_enabled());
+  APZCTM_LOG("Maybe override txn (0x%p)", txn);
 
   
   
   
   
-  if (!txn || !StaticPrefs::dom_event_wheel_event_groups_enabled()) {
+  if (!txn) {
     return;
   }
 

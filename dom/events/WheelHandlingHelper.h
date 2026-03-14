@@ -191,9 +191,6 @@ class WheelTransaction {
 
 
 
-
-
-
   static AutoWeakFrame sEventTargetFrame;
   
 
