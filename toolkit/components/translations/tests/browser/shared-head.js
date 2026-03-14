@@ -4562,6 +4562,20 @@ class AboutTranslationsTestUtils {
 
 
 
+
+
+  static getWordCount(language, text) {
+    const segmenter = new Intl.Segmenter(language, { granularity: "word" });
+    return Array.from(segmenter.segment(text)).filter(
+      segment => segment.isWordLike
+    ).length;
+  }
+
+  
+
+
+
+
   async waitForReady() {
     try {
       await this.#runInPage(async () => {
@@ -4724,6 +4738,49 @@ class AboutTranslationsTestUtils {
         },
         { ms }
       );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+
+
+
+  async setTranslationRequestTelemetryThrottleDelay(ms) {
+    logAction(ms);
+    try {
+      await this.#runInPage(
+        (_, { ms }) => {
+          const { window } = content;
+          Cu.waiveXrays(window).TRANSLATION_REQUEST_TELEMETRY_THROTTLE_DELAY =
+            ms;
+        },
+        { ms }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+
+
+  async clearTranslationRequestTelemetryThrottle() {
+    logAction();
+    try {
+      await this.#runInPage(() => {
+        const { window } = content;
+        const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
+        if (!aboutTranslations) {
+          throw new Error("aboutTranslations instance is unavailable.");
+        }
+        aboutTranslations.testClearTranslationRequestTelemetryThrottle();
+      });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
