@@ -380,6 +380,19 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
   }
 }
 
+static void AddMemoryCacheRefCountTelemetry(
+    JS::loader::LoadedScript* aLoadedScript) {
+  using namespace mozilla::glean::dom;
+
+  
+  if (!mozilla::Telemetry::CanRecordExtended()) {
+    return;
+  }
+
+  uint16_t count = aLoadedScript->ClampedRefCountForTelemetry();
+  script_memory_cache_ref_count.AccumulateSingleSample(count);
+}
+
 
 
 
@@ -1268,6 +1281,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     cacheResult.mCompleteValue->SetIsEverHitFromMemoryCache();
     mCache->OnEntryEverHit();
   }
+  AddMemoryCacheRefCountTelemetry(cacheResult.mCompleteValue);
 
   aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(
