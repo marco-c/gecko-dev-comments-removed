@@ -965,7 +965,10 @@ bool MarkPagesUnusedSoft(void* region, size_t length) {
   int status;
   do {
 #  if defined(XP_DARWIN)
-    status = madvise(region, length, MADV_FREE_REUSABLE);
+    
+    
+    
+    status = madvise(region, length, MADV_FREE);
 #  elif defined(XP_SOLARIS)
     status = posix_madvise(region, length, POSIX_MADV_DONTNEED);
 #  else
@@ -995,11 +998,6 @@ bool MarkPagesUnusedHard(void* region, size_t length) {
 void MarkPagesInUseSoft(void* region, size_t length) {
   MOZ_ASSERT(DecommitEnabled());
   CheckDecommit(region, length);
-
-#if defined(XP_DARWIN)
-  while (madvise(region, length, MADV_FREE_REUSE) == -1 && errno == EAGAIN) {
-  }
-#endif
 
   MOZ_MAKE_MEM_UNDEFINED(region, length);
 }
