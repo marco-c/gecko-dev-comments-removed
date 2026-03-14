@@ -835,7 +835,18 @@ nsresult mozJSModuleLoader::GetScriptForLocation(
 
     if (aUseMemMap) {
       AutoMemMap map;
-      MOZ_TRY(map.init(aModuleFile));
+      auto result = map.init(aModuleFile);
+      if (result.isErr()) {
+        rv = result.propagateErr();
+        if (rv == NS_ERROR_FILE_NOT_FOUND) {
+          
+          
+          
+          
+          mozilla::net::CheckForBrokenChromeURL(nullptr, aInfo.URI());
+        }
+        return rv;
+      }
 
       
       
