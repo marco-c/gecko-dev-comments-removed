@@ -223,6 +223,7 @@ Preferences.addAll([
 
   
   { id: "dom.disable_open_during_load", type: "bool" },
+  { id: "dom.security.framebusting_intervention.enabled", type: "bool" },
 
   
   { id: "signon.rememberSignons", type: "bool" },
@@ -1997,12 +1998,46 @@ Preferences.addSetting({
   pref: "dom.disable_open_during_load",
 });
 Preferences.addSetting({
-  id: "popupPolicyButton",
-  deps: ["popupPolicy"],
-  onUserClick: () => gPrivacyPane.showPopupExceptions(),
-  disabled: ({ popupPolicy }) => {
-    return !popupPolicy.value || popupPolicy.locked;
+  id: "redirectPolicy",
+  pref: "dom.security.framebusting_intervention.enabled",
+});
+
+
+
+
+
+
+Preferences.addSetting({
+  id: "popupAndRedirectPolicy",
+  deps: ["popupPolicy", "redirectPolicy"],
+  get: (_val, deps) => {
+    if (deps.popupPolicy.locked && !deps.redirectPolicy.locked) {
+      return deps.redirectPolicy.value;
+    }
+    if (!deps.popupPolicy.locked && deps.redirectPolicy.locked) {
+      return deps.popupPolicy.value;
+    }
+    return deps.popupPolicy.value && deps.redirectPolicy.value;
   },
+  set: (val, deps) => {
+    if (!deps.popupPolicy.locked) {
+      deps.popupPolicy.value = val;
+    }
+    if (!deps.redirectPolicy.locked) {
+      deps.redirectPolicy.value = val;
+    }
+  },
+  disabled: ({ popupPolicy, redirectPolicy }) =>
+    popupPolicy.locked && redirectPolicy.locked,
+});
+Preferences.addSetting({
+  id: "popupAndRedirectPolicyButton",
+  deps: ["popupPolicy", "redirectPolicy"],
+  onUserClick: () => gPrivacyPane.showPopupExceptions(),
+  disabled: ({ popupPolicy, redirectPolicy }) =>
+    !popupPolicy.value ||
+    !redirectPolicy.value ||
+    (popupPolicy.locked && redirectPolicy.locked),
 });
 Preferences.addSetting({
   id: "warnAddonInstall",
