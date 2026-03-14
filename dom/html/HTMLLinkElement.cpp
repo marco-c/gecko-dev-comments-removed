@@ -539,7 +539,8 @@ void HTMLLinkElement::
       return;
     }
 
-    if (!StaticPrefs::network_modulepreload()) {
+    if (!StaticPrefs::network_modulepreload() &&
+        !StaticPrefs::dom_multiple_import_maps_enabled()) {
       
       
       moduleLoader->DisallowImportMaps();
@@ -579,7 +580,9 @@ void HTMLLinkElement::
 
     
     
-    moduleLoader->DisallowImportMaps();
+    if (!StaticPrefs::dom_multiple_import_maps_enabled()) {
+      moduleLoader->DisallowImportMaps();
+    }
 
     StartPreload(nsIContentPolicy::TYPE_SCRIPT);
     return;

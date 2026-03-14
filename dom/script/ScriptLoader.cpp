@@ -1413,7 +1413,8 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
 
     
     
-    if (request->IsModuleRequest()) {
+    if (request->IsModuleRequest() &&
+        !StaticPrefs::dom_multiple_import_maps_enabled()) {
       LOG(("ScriptLoadRequest (%p): Disallow further import maps.",
            request.get()));
       mModuleLoader->DisallowImportMaps();
@@ -1706,10 +1707,14 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
   request->SetBaseURL(mDocument->GetDocBaseURI());
 
+  const bool multiImportMapsEnabled =
+      StaticPrefs::dom_multiple_import_maps_enabled();
   if (request->IsModuleRequest()) {
-    
-    
-    mModuleLoader->DisallowImportMaps();
+    if (!multiImportMapsEnabled) {
+      
+      
+      mModuleLoader->DisallowImportMaps();
+    }
 
     ModuleLoadRequest* modReq = request->AsModuleRequest();
     if (aElement->GetParserCreated() != NOT_FROM_PARSER) {
@@ -1732,13 +1737,16 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   }
 
   if (request->IsImportMapRequest()) {
-    
-    
-    
-    MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
+    if (!multiImportMapsEnabled) {
+      
+      
+      
+      MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
 
-    
-    mModuleLoader->DisallowImportMaps();
+      
+      
+      mModuleLoader->DisallowImportMaps();
+    }
 
     
     
