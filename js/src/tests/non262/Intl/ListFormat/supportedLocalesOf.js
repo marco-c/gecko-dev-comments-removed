@@ -124,29 +124,14 @@ const allLocales = [
 const unsupported = [
   "ach",  
   "an",   
-  "ast",  
-  "brx",  
   "cak",  
-  "ckb",  
-  "eu",   
-  "fur",  
-  "gd",   
   "gn",   
   "hye",  
-  "ia",   
-  "kab",  
   "ltg",  
   "meh",  
-  "oc",   
-  "rm",   
-  "sat",  
-  "sc",   
-  "scn",  
   "sco",  
   "skr",  
   "son",  
-  "szl",  
-  "tg",   
   "tl",   
   "trs",  
 ];
@@ -158,7 +143,7 @@ assertEq(
 );
 
 
-const supported = Intl.Collator.supportedLocalesOf(allLocales);
+const supported = Intl.ListFormat.supportedLocalesOf(allLocales);
 
 
 
