@@ -3135,17 +3135,6 @@ static nsresult SelectProfile(nsToolkitProfileService* aProfileSvc,
 
   
   
-  if (gDoProfileReset && !gDoMigration && *aProfile) {
-    nsCString storeID;
-    (*aProfile)->GetStoreID(storeID);
-    if (!storeID.IsVoid()) {
-      NS_WARNING("Selectable profiles cannot be reset without migration.");
-      return NS_ERROR_ABORT;
-    }
-  }
-
-  
-  
   
   if (!*aRootDir) {
     NS_WARNING("Failed to select or create profile.");
@@ -5607,38 +5596,18 @@ nsresult XREMain::XRE_mainRun() {
             do_CreateInstance(NS_PROFILEMIGRATOR_CONTRACTID));
         if (pm) {
           nsAutoCString aKey;
-          nsAutoCString aProfilePath;
+          nsAutoCString aName;
           if (gDoProfileReset) {
             
             
-            nsCOMPtr<nsIFile> rootDir = gResetOldProfile->GetRootDir();
-            nsAutoString path;
-            rootDir->GetPath(path);
-            CopyUTF16toUTF8(path, aProfilePath);
-
-            nsCString storeID;
-            gResetOldProfile->GetStoreID(storeID);
-            if (!storeID.IsVoid()) {
-              aKey = "firefox-selectable-profile";
-              
-              
-              
-              nsAutoCString envStoreID("SELECTABLE_PROFILE_RESET_STORE_ID=");
-              envStoreID.Append(storeID);
-              SaveToEnv(envStoreID.get());
-
-              nsAutoCString envProfilePath("SELECTABLE_PROFILE_RESET_PATH=");
-              envProfilePath.Append(aProfilePath);
-              SaveToEnv(envProfilePath.get());
-            } else {
-              aKey = MOZ_APP_NAME;
-            }
+            aKey = MOZ_APP_NAME;
+            gResetOldProfile->GetName(aName);
           }
 #ifdef XP_MACOSX
           
           InitializeMacApp();
 #endif
-          pm->Migrate(&mDirProvider, aKey, aProfilePath);
+          pm->Migrate(&mDirProvider, aKey, aName);
         }
       }
 
