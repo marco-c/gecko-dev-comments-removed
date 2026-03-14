@@ -2432,10 +2432,16 @@ ScrollDirections AsyncPanZoomController::GetAllowedHandoffDirections(
   ScrollDirections result;
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
-  if (mX.OverscrollBehaviorAllowsHandoff()) {
+  
+  
+  
+  
+  const bool isScrollable = mX.CanScroll() || mY.CanScroll();
+  const bool isRoot = IsRootContent();
+  if ((!isScrollable && !isRoot) || mX.OverscrollBehaviorAllowsHandoff()) {
     result += ScrollDirection::eHorizontal;
   }
-  if (mY.OverscrollBehaviorAllowsHandoff()) {
+  if ((!isScrollable && !isRoot) || mY.OverscrollBehaviorAllowsHandoff()) {
     
     
     bool blockPullToRefreshForOverflowHidden =
