@@ -38,6 +38,38 @@ function run_test() {
     
     passingVectors.forEach(function(vector) {
         var plaintext = copyBuffer(vector.plaintext);
+        plaintext[0] = 255 - plaintext[0];
+        var promise = importVectorKey(vector, ["encrypt", "decrypt"])
+        .then(function(vector) {
+            promise_test(function(test) {
+                var operation = subtle.encrypt({
+                    ...vector.algorithm,
+                    get name() {
+                        plaintext[0] = vector.plaintext[0];
+                        return vector.algorithm.name;
+                    }
+                }, vector.key, plaintext)
+                .then(function(result) {
+                    assert_true(equalBuffers(result, vector.result), "Should return expected result");
+                }, function(err) {
+                    assert_unreached("encrypt error for test " + vector.name + ": " + err.message);
+                });
+                return operation;
+            }, vector.name + " with altered plaintext during call");
+        }, function(err) {
+            
+            
+            promise_test(function(test) {
+                assert_unreached("importKey failed for " + vector.name);
+            }, "importKey step: " + vector.name + " with altered plaintext during call");
+        });
+
+        all_promises.push(promise);
+    });
+
+    
+    passingVectors.forEach(function(vector) {
+        var plaintext = copyBuffer(vector.plaintext);
         var promise = importVectorKey(vector, ["encrypt", "decrypt"])
         .then(function(vector) {
             promise_test(function(test) {
@@ -49,13 +81,13 @@ function run_test() {
                 });
                 plaintext[0] = 255 - plaintext[0];
                 return operation;
-            }, vector.name + " with altered plaintext");
+            }, vector.name + " with altered plaintext after call");
         }, function(err) {
             
             
             promise_test(function(test) {
                 assert_unreached("importKey failed for " + vector.name);
-            }, "importKey step: " + vector.name + " with altered plaintext");
+            }, "importKey step: " + vector.name + " with altered plaintext after call");
         });
 
         all_promises.push(promise);
@@ -87,6 +119,38 @@ function run_test() {
     
     passingVectors.forEach(function(vector) {
         var ciphertext = copyBuffer(vector.result);
+        ciphertext[0] = 255 - ciphertext[0];
+        var promise = importVectorKey(vector, ["encrypt", "decrypt"])
+        .then(function(vector) {
+            promise_test(function(test) {
+                var operation = subtle.decrypt({
+                    ...vector.algorithm,
+                    get name() {
+                        ciphertext[0] = vector.result[0];
+                        return vector.algorithm.name;
+                    }
+                }, vector.key, ciphertext)
+                .then(function(result) {
+                    assert_true(equalBuffers(result, vector.plaintext), "Should return expected result");
+                }, function(err) {
+                    assert_unreached("decrypt error for test " + vector.name + ": " + err.message);
+                });
+                return operation;
+            }, vector.name + " decryption with altered ciphertext during call");
+        }, function(err) {
+            
+            
+            promise_test(function(test) {
+                assert_unreached("importKey failed for " + vector.name);
+            }, "importKey step for decryption: " + vector.name + " with altered ciphertext during call");
+        });
+
+        all_promises.push(promise);
+    });
+
+    
+    passingVectors.forEach(function(vector) {
+        var ciphertext = copyBuffer(vector.result);
         var promise = importVectorKey(vector, ["encrypt", "decrypt"])
         .then(function(vector) {
             promise_test(function(test) {
@@ -98,13 +162,13 @@ function run_test() {
                 });
                 ciphertext[0] = 255 - ciphertext[0];
                 return operation;
-            }, vector.name + " decryption with altered ciphertext");
+            }, vector.name + " decryption with altered ciphertext after call");
         }, function(err) {
             
             
             promise_test(function(test) {
                 assert_unreached("importKey failed for " + vector.name);
-            }, "importKey step for decryption: " + vector.name + " with altered ciphertext");
+            }, "importKey step for decryption: " + vector.name + " with altered ciphertext after call");
         });
 
         all_promises.push(promise);

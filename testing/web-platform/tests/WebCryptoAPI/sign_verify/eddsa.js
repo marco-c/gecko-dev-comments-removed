@@ -30,6 +30,27 @@ function run_test(algorithmName) {
           try {
               key = await subtle.importKey("spki", vector.publicKeyBuffer, algorithm, false, ["verify"]);
               var signature = copyBuffer(vector.signature);
+              signature[0] = 255 - signature[0];
+              isVerified = await subtle.verify({
+                  get name() {
+                      signature[0] = vector.signature[0];
+                      return vector.algorithmName;
+                  }
+              }, key, signature, vector.data);
+          } catch (err) {
+              assert_false(key === undefined, "importKey failed for " + vector.name + ". Message: ''" + err.message + "''");
+              assert_unreached("Verification should not throw error " + vector.name + ": " + err.message + "'");
+          };
+          assert_true(isVerified, "Signature verified");
+      }, vector.name + " verification with altered signature during call");
+
+      
+      promise_test(async() => {
+          let isVerified = false;
+          let key;
+          try {
+              key = await subtle.importKey("spki", vector.publicKeyBuffer, algorithm, false, ["verify"]);
+              var signature = copyBuffer(vector.signature);
               [isVerified] = await Promise.all([
                   subtle.verify(algorithm, key, signature, vector.data),
                   signature[0] = 255 - signature[0]
@@ -40,6 +61,27 @@ function run_test(algorithmName) {
           };
           assert_true(isVerified, "Signature verified");
       }, vector.name + " verification with altered signature after call");
+
+      
+      promise_test(async() => {
+          let isVerified = false;
+          let key;
+          try {
+              key = await subtle.importKey("spki", vector.publicKeyBuffer, algorithm, false, ["verify"]);
+              var data = copyBuffer(vector.data);
+              data[0] = 255 - data[0];
+              isVerified = await subtle.verify({
+                  get name() {
+                      data[0] = vector.data[0];
+                      return vector.algorithmName;
+                  }
+              }, key, vector.signature, data);
+          } catch (err) {
+              assert_false(key === undefined, "importKey failed for " + vector.name + ". Message: ''" + err.message + "''");
+              assert_unreached("Verification should not throw error " + vector.name + ": " + err.message + "'");
+          };
+          assert_true(isVerified, "Signature verified");
+      }, vector.name + " with altered data during call");
 
       
       promise_test(async() => {

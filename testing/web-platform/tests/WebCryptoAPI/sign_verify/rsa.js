@@ -43,6 +43,37 @@ function run_test() {
         .then(function(vectors) {
             promise_test(function(test) {
                 var signature = copyBuffer(vector.signature);
+                signature[0] = 255 - signature[0];
+                var operation = subtle.verify({
+                    ...vector.algorithm,
+                    get name() {
+                        signature[0] = vector.signature[0];
+                        return vector.algorithm.name;
+                    }
+                }, vector.publicKey, signature, vector.plaintext)
+                .then(function(is_verified) {
+                    assert_true(is_verified, "Signature verified");
+                }, function(err) {
+                    assert_unreached("Verification should not throw error " + vector.name + ": " + err.message + "'");
+                });
+
+                return operation;
+            }, vector.name + " verification with altered signature during call");
+        }, function(err) {
+            promise_test(function(test) {
+                assert_unreached("importVectorKeys failed for " + vector.name + ". Message: ''" + err.message + "''");
+            }, "importVectorKeys step: " + vector.name + " verification with altered signature during call");
+        });
+
+        all_promises.push(promise);
+    });
+
+    
+    testVectors.forEach(function(vector) {
+        var promise = importVectorKeys(vector, ["verify"], ["sign"])
+        .then(function(vectors) {
+            promise_test(function(test) {
+                var signature = copyBuffer(vector.signature);
                 var operation = subtle.verify(vector.algorithm, vector.publicKey, signature, vector.plaintext)
                 .then(function(is_verified) {
                     assert_true(is_verified, "Signature verified");
@@ -57,6 +88,37 @@ function run_test() {
             promise_test(function(test) {
                 assert_unreached("importVectorKeys failed for " + vector.name + ". Message: ''" + err.message + "''");
             }, "importVectorKeys step: " + vector.name + " verification with altered signature after call");
+        });
+
+        all_promises.push(promise);
+    });
+
+    
+    testVectors.forEach(function(vector) {
+        var promise = importVectorKeys(vector, ["verify"], ["sign"])
+        .then(function(vectors) {
+            promise_test(function(test) {
+                var plaintext = copyBuffer(vector.plaintext);
+                plaintext[0] = 255 - plaintext[0];
+                var operation = subtle.verify({
+                    ...vector.algorithm,
+                    get name() {
+                        plaintext[0] = vector.plaintext[0];
+                        return vector.algorithm.name;
+                    }
+                }, vector.publicKey, vector.signature, plaintext)
+                .then(function(is_verified) {
+                    assert_true(is_verified, "Signature verified");
+                }, function(err) {
+                    assert_unreached("Verification should not throw error " + vector.name + ": " + err.message + "'");
+                });
+
+                return operation;
+            }, vector.name + " with altered plaintext during call");
+        }, function(err) {
+            promise_test(function(test) {
+                assert_unreached("importVectorKeys failed for " + vector.name + ". Message: ''" + err.message + "''");
+            }, "importVectorKeys step: " + vector.name + " with altered plaintext during call");
         });
 
         all_promises.push(promise);
