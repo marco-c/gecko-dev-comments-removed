@@ -61,7 +61,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   
   
   bool AcceptsTransaction(nsHttpTransaction* trans);
-  bool Claim() override;
+  bool Claim(nsHttpTransaction* newTransaction = nullptr) override;
 
   DnsAndConnectSocket* ToDnsAndConnectSocket() override { return this; }
 
