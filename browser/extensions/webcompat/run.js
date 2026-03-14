@@ -10,8 +10,8 @@
 
 var interventions, shims;
 
-const AVAILABLE_INTERVENTIONS =
-#include data/interventions.json
+
+const AVAILABLE_INTERVENTIONS = {};
 
 try {
   interventions = new Interventions(AVAILABLE_INTERVENTIONS, CUSTOM_FUNCTIONS);
