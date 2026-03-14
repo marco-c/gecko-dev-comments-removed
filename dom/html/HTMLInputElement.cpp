@@ -1826,7 +1826,9 @@ Decimal HTMLInputElement::StringToDecimal(const nsAString& aValue) {
 Decimal HTMLInputElement::GetValueAsDecimal() const {
   nsAutoString stringValue;
   GetNonFileValueInternal(stringValue);
-  Decimal result = mInputType->ConvertStringToNumber(stringValue).mResult;
+  Decimal result =
+      mInputType->ConvertStringToNumber(stringValue, InputType::Localized::Yes)
+          .mResult;
   return result.isFinite() ? result : Decimal::nan();
 }
 
@@ -1927,7 +1929,10 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
                                       JS::MutableHandle<JSObject*> aObject,
                                       ErrorResult& aRv) {
   aObject.set(nullptr);
-  if (!IsDateTimeInputType(mType)) {
+  
+  
+  if (!IsDateTimeInputType(mType) ||
+      mType == FormControlType::InputDatetimeLocal) {
     return;
   }
 
@@ -1983,17 +1988,6 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
 
       break;
     }
-    case FormControlType::InputDatetimeLocal: {
-      uint32_t year, month, day, timeInMs;
-      nsAutoString value;
-      GetNonFileValueInternal(value);
-      if (!ParseDateTimeLocal(value, &year, &month, &day, &timeInMs)) {
-        return;
-      }
-
-      time.emplace(JS::TimeClip(JS::MakeDate(year, month - 1, day, timeInMs)));
-      break;
-    }
     default:
       break;
   }
@@ -2013,7 +2007,10 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
 void HTMLInputElement::SetValueAsDate(JSContext* aCx,
                                       JS::Handle<JSObject*> aObj,
                                       ErrorResult& aRv) {
-  if (!IsDateTimeInputType(mType)) {
+  
+  
+  if (!IsDateTimeInputType(mType) ||
+      mType == FormControlType::InputDatetimeLocal) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -2100,7 +2097,9 @@ Decimal HTMLInputElement::GetMinimum() const {
   nsAutoString minStr;
   GetAttr(nsGkAtoms::min, minStr);
 
-  Decimal min = mInputType->ConvertStringToNumber(minStr).mResult;
+  Decimal min =
+      mInputType->ConvertStringToNumber(minStr, InputType::Localized::No)
+          .mResult;
   return min.isFinite() ? min : defaultMinimum;
 }
 
@@ -2120,7 +2119,9 @@ Decimal HTMLInputElement::GetMaximum() const {
   nsAutoString maxStr;
   GetAttr(nsGkAtoms::max, maxStr);
 
-  Decimal max = mInputType->ConvertStringToNumber(maxStr).mResult;
+  Decimal max =
+      mInputType->ConvertStringToNumber(maxStr, InputType::Localized::No)
+          .mResult;
   return max.isFinite() ? max : defaultMaximum;
 }
 
@@ -2133,7 +2134,9 @@ Decimal HTMLInputElement::GetStepBase() const {
   
   nsAutoString minStr;
   if (GetAttr(nsGkAtoms::min, minStr)) {
-    Decimal min = mInputType->ConvertStringToNumber(minStr).mResult;
+    Decimal min =
+        mInputType->ConvertStringToNumber(minStr, InputType::Localized::No)
+            .mResult;
     if (min.isFinite()) {
       return min;
     }
@@ -2142,7 +2145,9 @@ Decimal HTMLInputElement::GetStepBase() const {
   
   nsAutoString valueStr;
   if (GetAttr(nsGkAtoms::value, valueStr)) {
-    Decimal value = mInputType->ConvertStringToNumber(valueStr).mResult;
+    Decimal value =
+        mInputType->ConvertStringToNumber(valueStr, InputType::Localized::Yes)
+            .mResult;
     if (value.isFinite()) {
       return value;
     }
@@ -5059,10 +5064,10 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
           aValue);
     } break;
     case FormControlType::InputNumber: {
-      auto result =
-          aKind == SanitizationKind::ForValueSetter
-              ? InputType::StringToNumberResult{StringToDecimal(aValue)}
-              : mInputType->ConvertStringToNumber(aValue);
+      auto result = mInputType->ConvertStringToNumber(
+          aValue, aKind == SanitizationKind::ForValueSetter
+                      ? InputType::Localized::No
+                      : InputType::Localized::Yes);
       if (!result.mResult.isFinite()) {
         aValue.Truncate();
         return;
@@ -5111,7 +5116,9 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
       
       bool needSanitization = false;
 
-      Decimal value = mInputType->ConvertStringToNumber(aValue).mResult;
+      Decimal value =
+          mInputType->ConvertStringToNumber(aValue, InputType::Localized::Yes)
+              .mResult;
       if (!value.isFinite()) {
         needSanitization = true;
         
