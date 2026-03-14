@@ -15566,13 +15566,16 @@ function Logo() {
 
 
 
+
+
 function ExternalComponentWrapper({
   type,
   className,
   
   
   
-  importModule = url => import(url)
+  importModule = url => import(url),
+  ...props
 }) {
   const containerRef = external_React_default().useRef(null);
   const customElementRef = external_React_default().useRef(null);
@@ -15611,6 +15614,11 @@ function ExternalComponentWrapper({
               element.style.setProperty(variable, style);
             }
           }
+          if (props) {
+            for (let [propName, propValue] of Object.entries(props)) {
+              element[propName] = propValue;
+            }
+          }
           customElementRef.current = element;
           containerRef.current.appendChild(element);
         }
@@ -15630,6 +15638,11 @@ function ExternalComponentWrapper({
       }
       l10nLinksRef.current = [];
     };
+    
+    
+    
+    
+    
   }, [type, components, importModule]);
   if (error) {
     return null;
@@ -16951,6 +16964,7 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
@@ -17691,7 +17705,13 @@ class BaseContent extends (external_React_default()).PureComponent {
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"]
     }, props.Search)))), !prefs.showSearch && !noSectionsEnabled && external_React_default().createElement(Logo, null), external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
-    }, this.shouldShowOMCHighlight("ActivationWindowMessage") && external_React_default().createElement(MessageWrapper, {
+    }, this.shouldShowOMCHighlight("ASRouterNewTabMessage") && external_React_default().createElement(MessageWrapper, {
+      dispatch: this.props.dispatch
+    }, external_React_default().createElement(ExternalComponentWrapper, {
+      type: "ASROUTER_NEWTAB_MESSAGE",
+      messageData: this.props.Messages.messageData,
+      className: "asrouter-newtab-message-wrapper"
+    })), this.shouldShowOMCHighlight("ActivationWindowMessage") && external_React_default().createElement(MessageWrapper, {
       dispatch: this.props.dispatch
     }, external_React_default().createElement(ActivationWindowMessage, {
       dispatch: this.props.dispatch,

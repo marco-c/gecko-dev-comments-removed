@@ -130,3 +130,38 @@ class TelemetrySpy {
 const clickCTA = async doc => {
   doc.querySelector(CTASelector).click();
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function withTestMessage(sandbox, message, taskFn) {
+  let handleMessageRequestStub = sandbox.stub(ASRouter, "handleMessageRequest");
+  handleMessageRequestStub.resolves([message]);
+
+  let messagesEnabledInAutomationStub = sandbox.stub(
+    ASRouter,
+    "messagesEnabledInAutomation"
+  );
+  messagesEnabledInAutomationStub.value([message.id]);
+
+  let getMessageByIdStub = sandbox.stub(ASRouter, "getMessageById");
+  getMessageByIdStub.withArgs(message.id).returns(message);
+
+  await taskFn(handleMessageRequestStub);
+
+  handleMessageRequestStub.restore();
+  messagesEnabledInAutomationStub.restore();
+  getMessageByIdStub.restore();
+}
