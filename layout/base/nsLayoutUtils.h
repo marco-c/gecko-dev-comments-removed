@@ -2374,6 +2374,14 @@ class nsLayoutUtils {
   }
 
   
+  
+  
+  static mozilla::Maybe<mozilla::gfx::IntSize> ComputeResizedSize(
+      const mozilla::gfx::IntSize& aSrcSize,
+      const mozilla::Maybe<int32_t>& aResizeWidth,
+      const mozilla::Maybe<int32_t>& aResizeHeight);
+
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static mozilla::SurfaceFromElementResult SurfaceFromElement(
       nsIImageLoadingContent* aElement,
