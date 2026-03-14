@@ -200,7 +200,7 @@ const nsACString& nsStandardURL::nsSegmentEncoder::EncodeSegment(
 
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
 static StaticMutex gAllURLsMutex MOZ_UNANNOTATED;
-MOZ_RUNINIT static LinkedList<nsStandardURL> gAllURLs;
+constinit static LinkedList<nsStandardURL> gAllURLs;
 #endif
 
 nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
@@ -3422,13 +3422,13 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
     mExtension.Merge(mSpec, ';', old_param);
   }
 
+  if (!IsValid()) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   rv = CheckIfHostIsAscii();
   if (NS_FAILED(rv)) {
     return rv;
-  }
-
-  if (!IsValid()) {
-    return NS_ERROR_MALFORMED_URI;
   }
 
   clearOnExit.release();
@@ -3666,11 +3666,6 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
 
   mSupportsFileURL = params.supportsFileURL();
 
-  nsresult rv = CheckIfHostIsAscii();
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
   
   NS_ENSURE_TRUE(mScheme.mPos == 0, false);
   NS_ENSURE_TRUE(mScheme.mLen > 0, false);
@@ -3690,6 +3685,11 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
       false);
 
   if (!IsValid()) {
+    return false;
+  }
+
+  nsresult rv = CheckIfHostIsAscii();
+  if (NS_FAILED(rv)) {
     return false;
   }
 

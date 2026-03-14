@@ -596,6 +596,11 @@ inline nsDependentCSubstring nsStandardURL::Host() {
   if (mHost.mLen > 0) {
     pos = mHost.mPos;
     len = mHost.mLen;
+    MOZ_RELEASE_ASSERT(pos < mSpec.Length());
+    
+    
+    
+    MOZ_RELEASE_ASSERT(len <= mSpec.Length() - pos);
     if (mSpec.CharAt(pos) == '[' && mSpec.CharAt(pos + len - 1) == ']') {
       pos++;
       len -= 2;
