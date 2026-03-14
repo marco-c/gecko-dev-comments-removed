@@ -38,6 +38,17 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class AutocompleteTest : BaseSessionTest() {
+	@org.junit.Before
+    fun setup() {
+        
+        
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "extensions.formautofill.skipProgrammaticCheckForTests" to true,
+            ),
+        )
+    }
+
     val acceptDelay: Long = 100
 
     
