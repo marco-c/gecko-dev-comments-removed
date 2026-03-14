@@ -1118,8 +1118,6 @@ class MochitestDesktop:
                 self.urlOpts.append("dumpDMDAfterTest=true")
             if options.debugger or options.jsdebugger:
                 self.urlOpts.append("interactiveDebugger=true")
-            if options.jscov_dir_prefix:
-                self.urlOpts.append(f"jscovDirPrefix={options.jscov_dir_prefix}")
             if options.cleanupCrashes:
                 self.urlOpts.append("cleanupCrashes=true")
             if "MOZ_XORIGIN_MOCHITEST" in env and env["MOZ_XORIGIN_MOCHITEST"] == "1":
@@ -1928,8 +1926,6 @@ toolbar#nav-bar {
             if (v is None) or isinstance(v, (str, numbers.Number))
         )
         d["testRoot"] = self.testRoot
-        if options.jscov_dir_prefix:
-            d["jscovDirPrefix"] = options.jscov_dir_prefix
         if not options.keep_open:
             d["closeWhenDone"] = "1"
 
@@ -3793,15 +3789,12 @@ toolbar#nav-bar {
                 timeout *= 2
 
             
-            
-            detectShutdownLeaks = False
-            if options.jscov_dir_prefix is None:
-                detectShutdownLeaks = (
-                    mozinfo.info["debug"]
-                    and options.flavor == "browser"
-                    and options.subsuite != "thunderbird"
-                    and not options.crashAsPass
-                )
+            detectShutdownLeaks = (
+                mozinfo.info["debug"]
+                and options.flavor == "browser"
+                and options.subsuite != "thunderbird"
+                and not options.crashAsPass
+            )
 
             self.start_script_kwargs["flavor"] = self.normflavor(options.flavor)
             marionette_args = {
@@ -3913,13 +3906,6 @@ toolbar#nav-bar {
         
         if options.flavor == "chrome" and mozinfo.isWin:
             leakThresholds["default"] += 1296
-
-        
-        
-        if options.jscov_dir_prefix:
-            for processType in leakThresholds:
-                ignoreMissingLeaks.append(processType)
-                leakThresholds[processType] = sys.maxsize
 
         utilityPath = options.utilityPath or options.xrePath
         if status == 0:
