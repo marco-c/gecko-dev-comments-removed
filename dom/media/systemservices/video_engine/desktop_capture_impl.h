@@ -16,7 +16,6 @@
 
 
 #include <memory>
-#include <set>
 #include <string>
 
 #include "MediaEventSource.h"
@@ -64,9 +63,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
       webrtc::VideoSinkInterface<VideoFrame>* aCallback) override;
   void RegisterCaptureDataCallback(
       RawVideoSinkInterface* dataCallback) override {}
-  void DeRegisterCaptureDataCallback(
-      webrtc::VideoSinkInterface<VideoFrame>* aCallback) override;
-  int32_t StopCaptureIfAllClientsClose() override;
+  void DeRegisterCaptureDataCallback() override;
 
   int32_t SetCaptureRotation(VideoRotation aRotation) override;
   bool SetApplyRotation(bool aEnable) override;
@@ -132,8 +129,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   webrtc::Timestamp mNextFrameMinimumTime RTC_GUARDED_BY(mCaptureThreadChecker);
   
   
-  mozilla::DataMutex<std::set<webrtc::VideoSinkInterface<VideoFrame>*>>
-      mCallbacks;
+  mozilla::DataMutex<webrtc::VideoSinkInterface<VideoFrame>*> mCallback;
   
   mozilla::MediaEventProducer<void> mCaptureEndedEvent;
 
