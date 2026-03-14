@@ -11,6 +11,7 @@
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 #include "nsClassHashtable.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -197,6 +198,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   already_AddRefed<ConnectionEntry> FindConnectionEntry(
       const nsHttpConnectionInfo* ci);
+
+  void MaybeRemoveEntryFromPendingSet(ConnectionEntry* ent);
 
  public:
   void RegisterOriginCoalescingKey(HttpConnectionBase*, const nsACString& host,
@@ -390,6 +393,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   nsRefPtrHashtable<nsCStringHashKey, ConnectionEntry> mCT;
+
+  
+  
+  nsTHashSet<ConnectionEntry*> mPendingQEntries;
 
   
   void TimeoutTick();
