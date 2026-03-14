@@ -216,7 +216,7 @@ static const XP_CHAR dumpFileExtension[] = XP_TEXT(".dmp");
 
 static const XP_CHAR extraFileExtension[] = XP_TEXT(".extra");
 static const XP_CHAR memoryReportExtension[] = XP_TEXT(".memory.json.gz");
-MOZ_RUNINIT static std::optional<xpstring> defaultMemoryReportPath = {};
+constinit static std::optional<xpstring> defaultMemoryReportPath;
 
 static const char kCrashMainID[] = "crash.main.3\n";
 
@@ -227,13 +227,13 @@ static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
 static mozilla::Atomic<bool> gEncounteredChildException(false);
 constinit static nsCString gServerURL;
 
-MOZ_RUNINIT static xpstring pendingDirectory;
-MOZ_RUNINIT static xpstring crashReporterPath;
-MOZ_RUNINIT static xpstring crashHelperPath;
-MOZ_RUNINIT static xpstring memoryReportPath;
+static MOZ_GLIBCXX_CONSTINIT xpstring pendingDirectory;
+static MOZ_GLIBCXX_CONSTINIT xpstring crashReporterPath;
+static MOZ_GLIBCXX_CONSTINIT xpstring crashHelperPath;
+static MOZ_GLIBCXX_CONSTINIT xpstring memoryReportPath;
 
 
-MOZ_RUNINIT static xpstring eventsDirectory;
+static MOZ_GLIBCXX_CONSTINIT xpstring eventsDirectory;
 
 
 static bool doReport = true;
@@ -278,7 +278,7 @@ static bool sIncludeContextHeap = false;
 static std::terminate_handler oldTerminateHandler = nullptr;
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
-MOZ_RUNINIT static nsCString childCrashNotifyPipe;
+MOZ_GLIBCXX_CONSTINIT static nsCString childCrashNotifyPipe;
 
 #elif defined(XP_LINUX)
 static int clientSocketFd = -1;
@@ -372,21 +372,16 @@ static void SetJitExceptionHandler() {
 #  endif
 #endif  
 
-MOZ_RUNINIT static struct ReservedResources {
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+constinit static struct ReservedResources {
   
   
   static const SIZE_T kReserveSize = 0x5000000;  
   void* mVirtualMemory;
-#endif
 
-  ReservedResources()
-#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
-      : mVirtualMemory(nullptr)
-#endif
-  {
-  }
+  constexpr ReservedResources() : mVirtualMemory(nullptr) {}
 } gReservedResources;
+#endif
 
 static void ReserveResources() {
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
@@ -2550,13 +2545,14 @@ static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
   const time_t crashTime = time(nullptr);
   nsAutoCString crashTimeStr;
   crashTimeStr.AppendInt(static_cast<uint64_t>(crashTime));
-  aAnnotations[Annotation::CrashTime] = crashTimeStr;
+  aAnnotations[Annotation::CrashTime] = std::move(crashTimeStr);
 
   if (inactiveStateStart) {
     nsAutoCString inactiveDuration;
     inactiveDuration.AppendInt(
         static_cast<uint64_t>(crashTime - inactiveStateStart));
-    aAnnotations[Annotation::LastInteractionDuration] = inactiveDuration;
+    aAnnotations[Annotation::LastInteractionDuration] =
+        std::move(inactiveDuration);
   }
 
   
@@ -2565,7 +2561,7 @@ static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
       (TimeStamp::NowLoRes() - TimeStamp::ProcessCreation()).ToSeconds();
   nsAutoCString uptimeStr;
   uptimeStr.AppendFloat(uptimeTS);
-  aAnnotations[Annotation::UptimeTS] = uptimeStr;
+  aAnnotations[Annotation::UptimeTS] = std::move(uptimeStr);
 }
 
 nsresult SetGarbageCollecting(bool collecting) {
@@ -3512,7 +3508,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
   AddSharedAnnotations(aAnnotations);
 
   if (error.Length() > 0) {
-    aAnnotations[Annotation::DumperError] = error;
+    aAnnotations[Annotation::DumperError] = std::move(error);
   }
 
   return true;
