@@ -704,7 +704,6 @@ typedef void (*hb_paint_pop_group_func_t) (hb_paint_funcs_t *funcs,
 
 
 
-
 typedef hb_bool_t (*hb_paint_custom_palette_color_func_t) (hb_paint_funcs_t *funcs,
                                                            void *paint_data,
                                                            unsigned int color_index,
