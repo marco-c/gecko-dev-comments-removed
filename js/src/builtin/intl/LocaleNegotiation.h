@@ -68,42 +68,6 @@ bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
                          JS::Handle<JSLinearString*> locale,
                          JS::MutableHandle<JSLinearString*> result);
 
-class LookupMatcherResult final {
-  JSLinearString* locale_ = nullptr;
-  JSLinearString* extension_ = nullptr;
-
- public:
-  LookupMatcherResult() = default;
-  LookupMatcherResult(JSLinearString* locale, JSLinearString* extension)
-      : locale_(locale), extension_(extension) {}
-
-  auto* locale() const { return locale_; }
-  auto* extension() const { return extension_; }
-
-  
-  auto localeDoNotUse() const { return &locale_; }
-  auto extensionDoNotUse() const { return &extension_; }
-
-  
-  void trace(JSTracer* trc);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
-                   JS::Handle<ArrayObject*> locales,
-                   JS::MutableHandle<LookupMatcherResult> result);
-
 
 
 
@@ -249,24 +213,6 @@ JSLinearString* ComputeDefaultLocale(JSContext* cx);
 }  
 
 namespace js {
-
-template <typename Wrapper>
-class WrappedPtrOperations<intl::LookupMatcherResult, Wrapper> {
-  const auto& container() const {
-    return static_cast<const Wrapper*>(this)->get();
-  }
-
- public:
-  JS::Handle<JSLinearString*> locale() const {
-    return JS::Handle<JSLinearString*>::fromMarkedLocation(
-        container().localeDoNotUse());
-  }
-
-  JS::Handle<JSLinearString*> extension() const {
-    return JS::Handle<JSLinearString*>::fromMarkedLocation(
-        container().extensionDoNotUse());
-  }
-};
 
 template <typename Wrapper>
 class WrappedPtrOperations<intl::LocaleOptions, Wrapper> {

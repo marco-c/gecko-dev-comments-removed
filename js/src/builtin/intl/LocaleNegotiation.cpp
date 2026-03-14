@@ -443,18 +443,68 @@ static auto FindUnicodeExtensionSequence(const JSLinearString* locale) {
   return FindUnicodeExtensionSequence(locale->twoByteRange(nogc));
 }
 
-void js::intl::LookupMatcherResult::trace(JSTracer* trc) {
+class LookupMatcherResult final {
+  JSLinearString* locale_ = nullptr;
+  JSLinearString* extension_ = nullptr;
+
+ public:
+  LookupMatcherResult() = default;
+  LookupMatcherResult(JSLinearString* locale, JSLinearString* extension)
+      : locale_(locale), extension_(extension) {}
+
+  auto* locale() const { return locale_; }
+  auto* extension() const { return extension_; }
+
+  
+  auto localeDoNotUse() const { return &locale_; }
+  auto extensionDoNotUse() const { return &extension_; }
+
+  
+  void trace(JSTracer* trc);
+};
+
+void LookupMatcherResult::trace(JSTracer* trc) {
   TraceNullableRoot(trc, &locale_, "LookupMatcherResult::locale");
   TraceNullableRoot(trc, &extension_, "LookupMatcherResult::extension");
 }
 
+namespace js {
+template <typename Wrapper>
+class WrappedPtrOperations<LookupMatcherResult, Wrapper> {
+  const auto& container() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
+
+ public:
+  JS::Handle<JSLinearString*> locale() const {
+    return JS::Handle<JSLinearString*>::fromMarkedLocation(
+        container().localeDoNotUse());
+  }
+
+  JS::Handle<JSLinearString*> extension() const {
+    return JS::Handle<JSLinearString*>::fromMarkedLocation(
+        container().extensionDoNotUse());
+  }
+};
+}  
 
 
 
-bool js::intl::LookupMatcher(JSContext* cx,
-                             AvailableLocaleKind availableLocales,
-                             Handle<ArrayObject*> locales,
-                             MutableHandle<LookupMatcherResult> result) {
+
+
+
+
+
+
+
+
+
+
+
+
+static bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
+                          Handle<ArrayObject*> locales,
+                          MutableHandle<LookupMatcherResult> result) {
   MOZ_RELEASE_ASSERT(IsPackedArray(locales));
 
   Rooted<JSLinearString*> defaultLocale(
