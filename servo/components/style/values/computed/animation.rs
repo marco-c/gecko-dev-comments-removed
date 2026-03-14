@@ -88,18 +88,6 @@ pub type ViewTimelineInset = generics::GenericViewTimelineInset<LengthPercentage
 
 
 pub type AnimationRangeStart = generics::GenericAnimationRangeStart<LengthPercentage>;
-impl AnimationRangeStart {
-    
-    pub fn normal() -> Self {
-        Self(generics::GenericAnimationRangeValue::normal(LengthPercentage::zero_percent()))
-    }
-}
 
 
 pub type AnimationRangeEnd = generics::GenericAnimationRangeEnd<LengthPercentage>;
-impl AnimationRangeEnd {
-    
-    pub fn normal() -> Self {
-        Self(generics::GenericAnimationRangeValue::normal(LengthPercentage::hundred_percent()))
-    }
-}
