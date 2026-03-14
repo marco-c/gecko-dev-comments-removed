@@ -138,7 +138,7 @@ void NavigationPrecommitController::Redirect(
     
     if (Navigation* target =
             Navigation::FromEventTargetOrNull(mEvent->GetTarget())) {
-      target->SetSerializedStateIntoOngoingAPIMethodTracker(serializedState);
+      target->SetSerializedStateIntoOngoingNavigationTracker(serializedState);
     }
   }
 

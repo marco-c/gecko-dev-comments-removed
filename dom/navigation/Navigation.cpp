@@ -8,9 +8,7 @@
 
 #include "NavigationPrecommitController.h"
 #include "fmt/format.h"
-#include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -42,7 +40,6 @@
 #include "nsIStructuredCloneContainer.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
-#include "nsTHashtable.h"
 
 mozilla::LazyLogModule gNavigationAPILog("NavigationAPI");
 
@@ -77,7 +74,7 @@ static void InitNavigationResult(NavigationResult& aResult,
   }
 }
 
-NavigationAPIMethodTracker::NavigationAPIMethodTracker(
+NavigationTracker::NavigationTracker(
     Navigation* aNavigationObject, const Maybe<nsID> aKey,
     const JS::Value& aInfo, nsIStructuredCloneContainer* aSerializedState,
     NavigationHistoryEntry* aCommittedToEntry, Promise* aCommittedPromise,
@@ -93,15 +90,13 @@ NavigationAPIMethodTracker::NavigationAPIMethodTracker(
   mozilla::HoldJSObjects(this);
 }
 
-NavigationAPIMethodTracker::~NavigationAPIMethodTracker() {
-  mozilla::DropJSObjects(this);
-}
+NavigationTracker::~NavigationTracker() { mozilla::DropJSObjects(this); }
 
 
-void NavigationAPIMethodTracker::CleanUp() { Navigation::CleanUp(this); }
+void NavigationTracker::CleanUp() { Navigation::CleanUp(this); }
 
 
-void NavigationAPIMethodTracker::NotifyAboutCommittedToEntry(
+void NavigationTracker::NotifyAboutCommittedToEntry(
     NavigationHistoryEntry* aNHE) {
   MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
   
@@ -117,7 +112,7 @@ void NavigationAPIMethodTracker::NotifyAboutCommittedToEntry(
 }
 
 
-void NavigationAPIMethodTracker::ResolveFinishedPromise() {
+void NavigationTracker::ResolveFinishedPromise() {
   MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
   
   MOZ_DIAGNOSTIC_ASSERT(mCommittedToEntry);
@@ -128,7 +123,7 @@ void NavigationAPIMethodTracker::ResolveFinishedPromise() {
 }
 
 
-void NavigationAPIMethodTracker::RejectFinishedPromise(
+void NavigationTracker::RejectFinishedPromise(
     JS::Handle<JS::Value> aException) {
   MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
   MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
@@ -141,8 +136,8 @@ void NavigationAPIMethodTracker::RejectFinishedPromise(
 }
 
 
-void NavigationAPIMethodTracker::CreateResult(JSContext* aCx,
-                                              NavigationResult& aResult) {
+void NavigationTracker::CreateResult(JSContext* aCx,
+                                     NavigationResult& aResult) {
   
   
   
@@ -159,28 +154,29 @@ void NavigationAPIMethodTracker::CreateResult(JSContext* aCx,
   InitNavigationResult(aResult, mCommittedPromise, mFinishedPromise);
 }
 
-bool NavigationAPIMethodTracker::IsHandled() const {
-  return this != mNavigationObject->mOngoingAPIMethodTracker && mKey &&
-         !mNavigationObject->mUpcomingTraverseAPIMethodTrackers.Contains(*mKey);
+bool NavigationTracker::IsHandled() const {
+  return this != mNavigationObject->mOngoingNavigationTracker && mKey &&
+         !mNavigationObject->mUpcomingTraverseNavigationTrackers.Contains(
+             *mKey);
 }
 
-NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationAPIMethodTracker,
+NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationTracker,
                                          (mNavigationObject, mSerializedState,
                                           mCommittedToEntry, mCommittedPromise,
                                           mFinishedPromise),
                                          (mInfo))
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationAPIMethodTracker)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationTracker)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationAPIMethodTracker)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationAPIMethodTracker)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationTracker)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationTracker)
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(Navigation, DOMEventTargetHelper, mEntries,
                                    mOngoingNavigateEvent, mTransition,
-                                   mActivation, mOngoingAPIMethodTracker,
-                                   mUpcomingTraverseAPIMethodTrackers);
+                                   mActivation, mOngoingNavigationTracker,
+                                   mUpcomingTraverseNavigationTrackers);
 NS_IMPL_ADDREF_INHERITED(Navigation, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Navigation, DOMEventTargetHelper)
 
@@ -400,9 +396,9 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   }
 
   
-  if (mOngoingAPIMethodTracker) {
+  if (mOngoingNavigationTracker) {
     RefPtr<NavigationHistoryEntry> currentEntry = GetCurrentEntry();
-    mOngoingAPIMethodTracker->NotifyAboutCommittedToEntry(currentEntry);
+    mOngoingNavigationTracker->NotifyAboutCommittedToEntry(currentEntry);
   }
 
   for (auto& entry : disposedEntries) {
@@ -596,9 +592,9 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   
   
   JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
-  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      SetUpNavigateReloadAPIMethodTracker(info, serializedState);
-  MOZ_ASSERT(apiMethodTracker);
+  RefPtr<NavigationTracker> navigationTracker =
+      SetUpNavigateReloadNavigationTracker(info, serializedState);
+  MOZ_ASSERT(navigationTracker);
 
   
   
@@ -610,11 +606,11 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   bc->Navigate(urlRecord, document, *document->NodePrincipal(),
                 IgnoreErrors(),
                aOptions.mHistory,  false,
-               serializedState, apiMethodTracker);
+               serializedState, navigationTracker);
 
   
   
-  apiMethodTracker->CreateResult(aCx, aResult);
+  navigationTracker->CreateResult(aCx, aResult);
 }
 
 
@@ -667,7 +663,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
   
   
   if (auto maybeTracker =
-          mUpcomingTraverseAPIMethodTrackers.MaybeGet(aKey).valueOr(nullptr)) {
+          mUpcomingTraverseNavigationTrackers.MaybeGet(aKey).valueOr(nullptr)) {
     maybeTracker->CreateResult(aCx, aResult);
     return;
   }
@@ -677,7 +673,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   
   
-  RefPtr apiMethodTracker = AddUpcomingTraverseAPIMethodTracker(aKey, info);
+  RefPtr navigationTracker = AddUpcomingTraverseNavigationTracker(aKey, info);
 
   
   RefPtr<BrowsingContext> navigable = document->GetBrowsingContext();
@@ -689,11 +685,11 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   
   
-  apiMethodTracker->CreateResult(aCx, aResult);
+  navigationTracker->CreateResult(aCx, aResult);
 
   
   auto* childSHistory = traversable->GetChildSessionHistory();
-  auto performNavigationTraversalSteps = [apiMethodTracker](nsresult aResult) {
+  auto performNavigationTraversalSteps = [navigationTracker](nsresult aResult) {
     
     
     if (NS_SUCCEEDED(aResult)) {
@@ -701,13 +697,13 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
     }
 
     
-    if (apiMethodTracker->IsHandled()) {
+    if (navigationTracker->IsHandled()) {
       return;
     }
 
     AutoJSAPI jsapi;
     if (NS_WARN_IF(!jsapi.Init(
-            apiMethodTracker->mNavigationObject->GetParentObject()))) {
+            navigationTracker->mNavigationObject->GetParentObject()))) {
       return;
     }
 
@@ -745,7 +741,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
     JS::Rooted<JS::Value> rootedExceptionValue(jsapi.cx());
     MOZ_ALWAYS_TRUE(
         ToJSValue(jsapi.cx(), std::move(rv), &rootedExceptionValue));
-    apiMethodTracker->RejectFinishedPromise(rootedExceptionValue);
+    navigationTracker->RejectFinishedPromise(rootedExceptionValue);
   };
 
   
@@ -806,20 +802,20 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
   
   
-  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      SetUpNavigateReloadAPIMethodTracker(info, serializedState);
-  MOZ_ASSERT(apiMethodTracker);
+  RefPtr<NavigationTracker> navigationTracker =
+      SetUpNavigateReloadNavigationTracker(info, serializedState);
+  MOZ_ASSERT(navigationTracker);
   
   
   RefPtr docShell = nsDocShell::Cast(document->GetDocShell());
   MOZ_ASSERT(docShell);
   docShell->ReloadNavigable(Some(WrapNotNullUnchecked(aCx)),
                             nsIWebNavigation::LOAD_FLAGS_NONE, serializedState,
-                            UserNavigationInvolvement::None, apiMethodTracker);
+                            UserNavigationInvolvement::None, navigationTracker);
 
   
   
-  apiMethodTracker->CreateResult(aCx, aResult);
+  navigationTracker->CreateResult(aCx, aResult);
 }
 
 
@@ -993,7 +989,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
     Element* aSourceElement, FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
-    NavigationAPIMethodTracker* aApiMethodTrackerForNavigateOrReload) {
+    NavigationTracker* aNavigationTrackerForNavigateOrReload) {
   
   
   RefPtr document = GetAssociatedDocument();
@@ -1004,10 +1000,10 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
   
   
-  if (HasEntriesAndEventsDisabled() && aApiMethodTrackerForNavigateOrReload) {
+  if (HasEntriesAndEventsDisabled() && aNavigationTrackerForNavigateOrReload) {
     
-    aApiMethodTrackerForNavigateOrReload->MarkAsNotPending();
-    aApiMethodTrackerForNavigateOrReload = nullptr;
+    aNavigationTrackerForNavigateOrReload->MarkAsNotPending();
+    aNavigationTrackerForNavigateOrReload = nullptr;
   }
 
   
@@ -1032,7 +1028,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
       aFormDataEntryList, aClassicHistoryAPIState,
        VoidString(),
-      aApiMethodTrackerForNavigateOrReload);
+      aNavigationTrackerForNavigateOrReload);
 }
 
 
@@ -1217,17 +1213,17 @@ static void ResumeApplyTheHistoryStep(
 struct NavigationWaitForAllScope final : public nsISupports,
                                          public SupportsWeakPtr {
   NavigationWaitForAllScope(Navigation* aNavigation,
-                            NavigationAPIMethodTracker* aApiMethodTracker,
+                            NavigationTracker* aNavigationTracker,
                             NavigateEvent* aEvent,
                             NavigationDestination* aDestination)
       : mNavigation(aNavigation),
-        mAPIMethodTracker(aApiMethodTracker),
+        mNavigationTracker(aNavigationTracker),
         mEvent(aEvent),
         mDestination(aDestination) {}
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
   RefPtr<Navigation> mNavigation;
-  RefPtr<NavigationAPIMethodTracker> mAPIMethodTracker;
+  RefPtr<NavigationTracker> mNavigationTracker;
   RefPtr<NavigateEvent> mEvent;
   RefPtr<NavigationDestination> mDestination;
 
@@ -1393,7 +1389,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
       AutoTArray<RefPtr<Promise>, 16> promiseList;
 
       if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-        promiseList.AppendElement(mAPIMethodTracker->CommittedPromise());
+        promiseList.AppendElement(mNavigationTracker->CommittedPromise());
       }
 
       
@@ -1441,7 +1437,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
                   scope->CommitNavigateEventSuccessSteps();
                 }
               };
-      if (mAPIMethodTracker &&
+      if (mNavigationTracker &&
           !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
         
         
@@ -1451,7 +1447,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
         }
 
         LOG_FMTD("Waiting for committed");
-        mAPIMethodTracker->CommittedPromise()
+        mNavigationTracker->CommittedPromise()
             ->AddCallbacksWithCycleCollectedArgs(
                 [successSteps, cancelSteps](
                     JSContext*, JS::Handle<JS::Value>, ErrorResult&,
@@ -1475,13 +1471,13 @@ struct NavigationWaitForAllScope final : public nsISupports,
         Promise::WaitForAll(globalObject, promiseList, successSteps,
                             cancelSteps, this);
       }
-    } else if (mAPIMethodTracker && mNavigation->mOngoingAPIMethodTracker) {
+    } else if (mNavigationTracker && mNavigation->mOngoingNavigationTracker) {
       
       
-      MOZ_DIAGNOSTIC_ASSERT(mAPIMethodTracker ==
-                            mNavigation->mOngoingAPIMethodTracker);
+      MOZ_DIAGNOSTIC_ASSERT(mNavigationTracker ==
+                            mNavigation->mOngoingNavigationTracker);
       
-      mAPIMethodTracker->CleanUp();
+      mNavigationTracker->CleanUp();
       mNavigation->mOngoingNavigateEvent = nullptr;
     } else {
       
@@ -1520,8 +1516,8 @@ struct NavigationWaitForAllScope final : public nsISupports,
 
     
     
-    if (mAPIMethodTracker) {
-      mAPIMethodTracker->ResolveFinishedPromise();
+    if (mNavigationTracker) {
+      mNavigationTracker->ResolveFinishedPromise();
     }
 
     
@@ -1539,7 +1535,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
 };
 
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(NavigationWaitForAllScope, mNavigation,
-                                  mAPIMethodTracker, mEvent, mDestination)
+                                  mNavigationTracker, mEvent, mDestination)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationWaitForAllScope)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
@@ -1547,14 +1543,14 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
 
-already_AddRefed<NavigationAPIMethodTracker> CreateInternalTracker(
+already_AddRefed<NavigationTracker> CreateInternalTracker(
     Navigation* aNavigation) {
   RefPtr committedPromise =
       Promise::CreateInfallible(aNavigation->GetOwnerGlobal());
   (void)committedPromise->SetAnyPromiseIsHandled();
   RefPtr finishedPromise = Promise::CreateResolvedWithUndefined(
       aNavigation->GetOwnerGlobal(), IgnoreErrors());
-  return MakeAndAddRef<NavigationAPIMethodTracker>(
+  return MakeAndAddRef<NavigationTracker>(
       aNavigation, Nothing(), JS::UndefinedHandleValue,
        nullptr,
        nullptr, committedPromise, finishedPromise);
@@ -1568,16 +1564,16 @@ bool Navigation::InnerFireNavigateEvent(
     FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename,
-    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+    NavigationTracker* aNavigationTracker) {
   nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
-  RefPtr apiMethodTracker = aNavigationAPIMethodTracker;
+  RefPtr navigationTracker = aNavigationTracker;
 
   
   if (HasEntriesAndEventsDisabled()) {
     
-    MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
-    MOZ_DIAGNOSTIC_ASSERT(mUpcomingTraverseAPIMethodTrackers.IsEmpty());
-    MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
+    MOZ_DIAGNOSTIC_ASSERT(!mOngoingNavigationTracker);
+    MOZ_DIAGNOSTIC_ASSERT(mUpcomingTraverseNavigationTrackers.IsEmpty());
+    MOZ_DIAGNOSTIC_ASSERT(!aNavigationTracker);
 
     
     return true;
@@ -1586,34 +1582,34 @@ bool Navigation::InnerFireNavigateEvent(
   RootedDictionary<NavigateEventInit> init(RootingCx());
 
   
-  MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
+  MOZ_DIAGNOSTIC_ASSERT(!mOngoingNavigationTracker);
 
   
   Maybe<nsID> destinationKey;
   if (auto* destinationEntry = aDestination->GetEntry()) {
     
-    MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
+    MOZ_DIAGNOSTIC_ASSERT(!aNavigationTracker);
     
     destinationKey.emplace(destinationEntry->Key());
     
     MOZ_DIAGNOSTIC_ASSERT(!destinationKey->Equals(nsID{}));
     
     if (auto entry =
-            mUpcomingTraverseAPIMethodTrackers.Extract(*destinationKey)) {
+            mUpcomingTraverseNavigationTrackers.Extract(*destinationKey)) {
       
-      apiMethodTracker = std::move(*entry);
+      navigationTracker = std::move(*entry);
     }
   }
   
-  if (apiMethodTracker) {
-    apiMethodTracker->MarkAsNotPending();
+  if (navigationTracker) {
+    navigationTracker->MarkAsNotPending();
   } else if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    apiMethodTracker = CreateInternalTracker(this);
+    navigationTracker = CreateInternalTracker(this);
   }
 
   
   
-  mOngoingAPIMethodTracker = apiMethodTracker;
+  mOngoingNavigationTracker = navigationTracker;
 
   
   Maybe<BrowsingContext&> navigable =
@@ -1653,8 +1649,8 @@ bool Navigation::InnerFireNavigateEvent(
   init.mDownloadRequest = aDownloadRequestFilename;
 
   
-  if (apiMethodTracker) {
-    init.mInfo = apiMethodTracker->mInfo;
+  if (navigationTracker) {
+    init.mInfo = navigationTracker->mInfo;
   }
 
   
@@ -1746,7 +1742,7 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
   }
 
-  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker,
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, navigationTracker,
                                                        event, aDestination);
   
   if (event->NavigationPrecommitHandlerList().IsEmpty()) {
@@ -1807,33 +1803,31 @@ NavigationHistoryEntry* Navigation::FindNavigationHistoryEntry(
 }
 
 
- void Navigation::CleanUp(
-    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+ void Navigation::CleanUp(NavigationTracker* aNavigationTracker) {
   
-  RefPtr<Navigation> navigation =
-      aNavigationAPIMethodTracker->mNavigationObject;
+  RefPtr<Navigation> navigation = aNavigationTracker->mNavigationObject;
 
   auto needsTraverse =
       MakeScopeExit([navigation]() { navigation->UpdateNeedsTraverse(); });
 
   
-  if (navigation->mOngoingAPIMethodTracker == aNavigationAPIMethodTracker) {
-    navigation->mOngoingAPIMethodTracker = nullptr;
+  if (navigation->mOngoingNavigationTracker == aNavigationTracker) {
+    navigation->mOngoingNavigationTracker = nullptr;
 
     return;
   }
 
   
-  Maybe<nsID> key = aNavigationAPIMethodTracker->mKey;
+  Maybe<nsID> key = aNavigationTracker->mKey;
 
   
   MOZ_DIAGNOSTIC_ASSERT(key);
 
   
   MOZ_DIAGNOSTIC_ASSERT(
-      navigation->mUpcomingTraverseAPIMethodTrackers.Contains(*key));
+      navigation->mUpcomingTraverseNavigationTrackers.Contains(*key));
 
-  navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
+  navigation->mUpcomingTraverseNavigationTrackers.Remove(*key);
 }
 
 void Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
@@ -1915,8 +1909,8 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
 
   
   
-  if (mOngoingAPIMethodTracker) {
-    mOngoingAPIMethodTracker->RejectFinishedPromise(aReason);
+  if (mOngoingNavigationTracker) {
+    mOngoingNavigationTracker->RejectFinishedPromise(aReason);
   }
 
   
@@ -1940,15 +1934,16 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
 
 void Navigation::InformAboutChildNavigableDestruction(JSContext* aCx) {
   
-  auto traversalAPIMethodTrackers = mUpcomingTraverseAPIMethodTrackers.Clone();
+  auto traversalNavigationTrackers =
+      mUpcomingTraverseNavigationTrackers.Clone();
 
   
-  for (auto& apiMethodTracker : traversalAPIMethodTrackers.Values()) {
+  for (const auto& navigationTracker : traversalNavigationTrackers.Values()) {
     ErrorResult rv;
     rv.ThrowAbortError("Navigable removed");
     JS::Rooted<JS::Value> rootedExceptionValue(aCx);
     MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &rootedExceptionValue));
-    apiMethodTracker->RejectFinishedPromise(rootedExceptionValue);
+    navigationTracker->RejectFinishedPromise(rootedExceptionValue);
   }
 }
 
@@ -1990,8 +1985,8 @@ void Navigation::UpdateNeedsTraverse() {
   }
 
   
-  bool needsTraverse =
-      mOngoingAPIMethodTracker || !mUpcomingTraverseAPIMethodTrackers.IsEmpty();
+  bool needsTraverse = mOngoingNavigationTracker ||
+                       !mUpcomingTraverseNavigationTrackers.IsEmpty();
 
   
   if (EventListenerManager* eventListenerManager =
@@ -2023,8 +2018,7 @@ void Navigation::LogHistory() const {
 }
 
 
-RefPtr<NavigationAPIMethodTracker>
-Navigation::SetUpNavigateReloadAPIMethodTracker(
+RefPtr<NavigationTracker> Navigation::SetUpNavigateReloadNavigationTracker(
     JS::Handle<JS::Value> aInfo,
     nsIStructuredCloneContainer* aSerializedState) {
   
@@ -2038,19 +2032,18 @@ Navigation::SetUpNavigateReloadAPIMethodTracker(
   MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
 
   
-  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      MakeAndAddRef<NavigationAPIMethodTracker>(
+  RefPtr<NavigationTracker> navigationTracker =
+      MakeAndAddRef<NavigationTracker>(
           this,  Nothing{}, aInfo, aSerializedState,
            nullptr, committedPromise, finishedPromise,
            !HasEntriesAndEventsDisabled());
 
-  return apiMethodTracker;
+  return navigationTracker;
 }
 
 
-RefPtr<NavigationAPIMethodTracker>
-Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
-                                                JS::Handle<JS::Value> aInfo) {
+RefPtr<NavigationTracker> Navigation::AddUpcomingTraverseNavigationTracker(
+    const nsID& aKey, JS::Handle<JS::Value> aInfo) {
   
   
   
@@ -2062,22 +2055,22 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
   MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
 
   
-  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      MakeAndAddRef<NavigationAPIMethodTracker>(
-          this, Some(aKey), aInfo,
-           nullptr,
-           nullptr, committedPromise, finishedPromise,
-           false);
+  RefPtr<NavigationTracker> navigationTracker =
+      MakeAndAddRef<NavigationTracker>(this, Some(aKey), aInfo,
+                                        nullptr,
+                                        nullptr,
+                                       committedPromise, finishedPromise,
+                                        false);
 
   
   
-  RefPtr methodTracker =
-      mUpcomingTraverseAPIMethodTrackers.InsertOrUpdate(aKey, apiMethodTracker);
+  RefPtr upcomingTracker = mUpcomingTraverseNavigationTrackers.InsertOrUpdate(
+      aKey, navigationTracker);
 
   UpdateNeedsTraverse();
 
   
-  return methodTracker;
+  return upcomingTracker;
 }
 
 
@@ -2144,11 +2137,11 @@ void Navigation::CreateNavigationActivationFrom(
 }
 
 
-void Navigation::SetSerializedStateIntoOngoingAPIMethodTracker(
+void Navigation::SetSerializedStateIntoOngoingNavigationTracker(
     nsIStructuredCloneContainer* aSerializedState) {
-  MOZ_DIAGNOSTIC_ASSERT(mOngoingAPIMethodTracker);
+  MOZ_DIAGNOSTIC_ASSERT(mOngoingNavigationTracker);
   
-  mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  mOngoingNavigationTracker->SetSerializedState(aSerializedState);
 }
 
 }  

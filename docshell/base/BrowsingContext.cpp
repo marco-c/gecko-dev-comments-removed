@@ -2461,12 +2461,13 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
 
 
 
-void BrowsingContext::Navigate(
-    nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
-    ErrorResult& aRv, NavigationHistoryBehavior aHistoryHandling,
-    bool aNeedsCompletelyLoadedDocument,
-    nsIStructuredCloneContainer* aNavigationAPIState,
-    dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+void BrowsingContext::Navigate(nsIURI* aURI, Document* aSourceDocument,
+                               nsIPrincipal& aSubjectPrincipal,
+                               ErrorResult& aRv,
+                               NavigationHistoryBehavior aHistoryHandling,
+                               bool aNeedsCompletelyLoadedDocument,
+                               nsIStructuredCloneContainer* aNavigationAPIState,
+                               dom::NavigationTracker* aNavigationTracker) {
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Navigate to {} as {}", *aURI,
               aHistoryHandling);
   CallerType callerType = aSubjectPrincipal.IsSystemPrincipal()
@@ -2519,7 +2520,7 @@ void BrowsingContext::Navigate(
   loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
   loadState->SetFirstParty(true);
   loadState->SetNavigationAPIState(aNavigationAPIState);
-  loadState->SetNavigationAPIMethodTracker(aNavigationAPIMethodTracker);
+  loadState->SetNavigationTracker(aNavigationTracker);
 
   rv = LoadURI(loadState);
   if (NS_WARN_IF(NS_FAILED(rv))) {

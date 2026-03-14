@@ -4028,7 +4028,7 @@ nsresult nsDocShell::ReloadNavigable(
     mozilla::Maybe<NotNull<JSContext*>> aCx, uint32_t aReloadFlags,
     nsIStructuredCloneContainer* aNavigationAPIState,
     UserNavigationInvolvement aUserInvolvement,
-    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+    NavigationTracker* aNavigationTracker) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
@@ -4079,8 +4079,7 @@ nsresult nsDocShell::ReloadNavigable(
              false, Some(aUserInvolvement),
              nullptr,  nullptr,
             destinationNavigationAPIState,
-             nullptr,
-            aNavigationAPIMethodTracker)) {
+             nullptr, aNavigationTracker)) {
       return NS_OK;
     }
   }
@@ -9067,14 +9066,14 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       if (jsapi.Init(window)) {
         RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
         
-        RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
+        RefPtr navigationTracker = aLoadState->GetNavigationTracker();
         bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
             jsapi.cx(), aLoadState->GetNavigationType(), newURI,
              true,
             Some(aLoadState->UserNavigationInvolvement()), sourceElement,
              nullptr,
              destinationNavigationAPIState,
-             nullptr, apiMethodTracker);
+             nullptr, navigationTracker);
 
         
         if (!shouldContinue) {
@@ -9917,13 +9916,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
           nsCOMPtr<nsIURI> destinationURL = aLoadState->URI();
           
-          RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
+          RefPtr navigationTracker = aLoadState->GetNavigationTracker();
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
               jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
                false,
               Some(aLoadState->UserNavigationInvolvement()), sourceElement,
               formData, navigationAPIStateForFiring,
-               nullptr, apiMethodTracker);
+               nullptr, navigationTracker);
 
           
           if (!shouldContinue) {
