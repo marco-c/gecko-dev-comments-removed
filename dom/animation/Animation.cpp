@@ -789,7 +789,7 @@ void Animation::Reverse(ErrorResult& aRv) {
   
   
   if (aRv.Failed()) {
-    mPendingPlaybackRate = originalPendingPlaybackRate;
+    mPendingPlaybackRate = std::move(originalPendingPlaybackRate);
   }
 
   

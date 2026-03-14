@@ -160,7 +160,7 @@ void RemoteLazyInputStreamStorage::GetStream(const nsID& aID, uint64_t aStart,
       return;
     }
 
-    data->mInputStream = replacementStream;
+    data->mInputStream = std::move(replacementStream);
   }
 
   
