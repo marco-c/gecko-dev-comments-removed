@@ -33,7 +33,6 @@ static constexpr const char *kServiceName = "service.name";
 
 
 
-
 static constexpr const char *kServiceVersion = "service.version";
 
 }  

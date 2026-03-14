@@ -75,10 +75,7 @@ public:
     return sdk::common::ExportResult::kSuccess;
   }
 
-  virtual bool ForceFlush(std::chrono::microseconds ) noexcept override
-  {
-    return true;
-  }
+  bool ForceFlush(std::chrono::microseconds ) noexcept override { return true; }
 
   
 
