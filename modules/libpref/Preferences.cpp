@@ -24,6 +24,7 @@
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/LibprefMetrics.h"
+#include "mozilla/glean/GleanPings.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/HelperMacros.h"
@@ -2085,7 +2086,6 @@ class Parser {
                               HandlePref, HandleError);
   }
 
- private:
   static void HandlePref(const char* aPrefName, PrefType aType,
                          PrefValueKind aKind, PrefValue aValue, bool aIsSticky,
                          bool aIsLocked) {
@@ -2122,6 +2122,24 @@ class Parser {
   }
 };
 
+static nsresult parsePrefFileData(PrefValueKind aKind, const char* aPath,
+                                  const nsCString& aData,
+                                  PrefsParserPrefFn aPrefFn,
+                                  PrefsParserErrorFn aErrorFn) {
+  if (!prefs_parser_parse(aPath, aKind, aData.get(), aData.Length(), aPrefFn,
+                          aErrorFn)) {
+#ifdef NIGHTLY_BUILD
+    
+    
+    
+    glean::preferences::prefs_file_that_failed_to_parse.Set(aData);
+    glean_pings::PrefsFileInvalid.Submit();
+#endif
+    return NS_ERROR_FILE_CORRUPTED;
+  }
+  return NS_OK;
+}
+
 
 
 static void TestParseErrorHandlePref(const char* aPrefName, PrefType aType,
@@ -2139,15 +2157,16 @@ static void TestParseErrorHandleError(const char* aFullMsg,
 }
 
 
-void TestParseError(PrefValueKind aKind, const char* aText,
-                    nsCString& aErrorMsg) {
-  prefs_parser_parse("test", aKind, aText, strlen(aText),
-                     TestParseErrorHandlePref, TestParseErrorHandleError);
+nsresult TestParseError(PrefValueKind aKind, const char* aText,
+                        nsCString& aErrorMsg) {
+  nsCString text(aText);
+  gTestParseErrorMsgs.Truncate();
+  nsresult rv = parsePrefFileData(aKind, "test", text, TestParseErrorHandlePref,
+                                  TestParseErrorHandleError);
 
   
-  
   aErrorMsg.Assign(gTestParseErrorMsgs);
-  gTestParseErrorMsgs.Truncate();
+  return rv;
 }
 
 
@@ -4770,19 +4789,11 @@ static nsresult openPrefFile(nsIFile* aFile, PrefValueKind aKind) {
 
   nsCString data = MOZ_TRY(URLPreloader::ReadFile(aFile));
 
-  nsAutoString filenameUtf16;
-  aFile->GetLeafName(filenameUtf16);
-  NS_ConvertUTF16toUTF8 filename(filenameUtf16);
-
   nsAutoString path;
   aFile->GetPath(path);
 
-  Parser parser;
-  if (!parser.Parse(aKind, NS_ConvertUTF16toUTF8(path).get(), data)) {
-    return NS_ERROR_FILE_CORRUPTED;
-  }
-
-  return NS_OK;
+  return parsePrefFileData(aKind, NS_ConvertUTF16toUTF8(path).get(), data,
+                           Parser::HandlePref, Parser::HandleError);
 }
 
 static nsresult parsePrefData(const nsCString& aData, PrefValueKind aKind) {
