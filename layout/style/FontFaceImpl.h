@@ -17,7 +17,6 @@
 class gfxFontFaceBufferSource;
 
 namespace mozilla {
-struct CSSFontFaceDescriptors;
 class PostTraversalTask;
 struct StyleLockedFontFaceRule;
 namespace dom {
@@ -225,7 +224,7 @@ class FontFaceImpl final {
   
   
   
-  bool SetDescriptor(nsCSSFontDesc aFontDesc, const nsACString& aValue,
+  bool SetDescriptor(FontFaceDescriptorId aFontDesc, const nsACString& aValue,
                      ErrorResult& aRv);
 
   
@@ -239,7 +238,7 @@ class FontFaceImpl final {
 
   void SetStatus(FontFaceLoadStatus aStatus);
 
-  void GetDesc(nsCSSFontDesc aDescID, nsACString& aResult) const;
+  void GetDesc(FontFaceDescriptorId aDescID, nsACString& aResult) const;
 
   
 

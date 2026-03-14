@@ -56,29 +56,22 @@ Hash<NonCustomCSSPropertyId>(const NonCustomCSSPropertyId& aValue)
   return uint32_t(aValue);
 }
 
-} 
 
 
 
-enum nsCSSFontDesc {
-  eCSSFontDesc_UNKNOWN = -1,
-#define CSS_FONT_DESC(name_, method_) eCSSFontDesc_##method_,
-#include "nsCSSFontDescList.inc"
-#undef CSS_FONT_DESC
-  eCSSFontDesc_COUNT
+enum class FontFaceDescriptorId : uint8_t {
+$font_face_descriptors
 };
 
+constexpr size_t kFontFaceDescriptorCount = $font_face_descriptor_count;
 
 
-enum nsCSSCounterDesc {
-  eCSSCounterDesc_UNKNOWN = -1,
-#define CSS_COUNTER_DESC(name_, method_) eCSSCounterDesc_##method_,
-#include "nsCSSCounterDescList.inc"
-#undef CSS_COUNTER_DESC
-  eCSSCounterDesc_COUNT
+
+enum class CounterStyleDescriptorId : uint8_t {
+$counter_style_descriptors
 };
 
-namespace mozilla {
+constexpr size_t kCounterStyleDescriptorCount = $counter_style_descriptor_count;
 
 
 
