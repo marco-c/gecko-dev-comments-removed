@@ -14,6 +14,8 @@ from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_key
 from taskgraph.util.treeherder import join_symbol, split_symbol
 from voluptuous import Any, Extra, Optional
 
+from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
+
 transforms = TransformSequence()
 
 
@@ -419,4 +421,18 @@ def set_perftest_attributes(config, jobs):
     for job in jobs:
         attributes = job.setdefault("attributes", {})
         attributes["perftest_name"] = job["name"]
+        yield job
+
+
+
+transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_1804)
+
+
+@transforms.add
+def hide_cmd_exe_window_on_windows(config, jobs):
+    for job in jobs:
+        platform = job.get("platform", "")
+        if platform.startswith("windows"):
+            worker = job.setdefault("worker", {})
+            worker["hide-cmd-window"] = True
         yield job
