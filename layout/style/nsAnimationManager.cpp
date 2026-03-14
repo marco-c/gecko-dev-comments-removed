@@ -222,32 +222,25 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
   
   
   
-  
-  
-  for (Element* curr =
-           aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
-       curr; curr = curr->GetParentElement()) {
+  for (Element* e = aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
+       e; e = e->GetParentElement()) {
     
     
     
     
     
-    for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
-      
-      
-      const auto [element, pseudo] = AnimationUtils::GetElementPseudoPair(e);
-      if (auto* collection =
-              TimelineCollection<ScrollTimeline>::Get(element, pseudo)) {
-        if (RefPtr<ScrollTimeline> timeline = collection->Lookup(aName)) {
-          return timeline.forget();
-        }
+    const auto [element, pseudo] = AnimationUtils::GetElementPseudoPair(e);
+    if (auto* collection =
+            TimelineCollection<ScrollTimeline>::Get(element, pseudo)) {
+      if (RefPtr<ScrollTimeline> timeline = collection->Lookup(aName)) {
+        return timeline.forget();
       }
+    }
 
-      if (auto* collection =
-              TimelineCollection<ViewTimeline>::Get(element, pseudo)) {
-        if (RefPtr<ViewTimeline> timeline = collection->Lookup(aName)) {
-          return timeline.forget();
-        }
+    if (auto* collection =
+            TimelineCollection<ViewTimeline>::Get(element, pseudo)) {
+      if (RefPtr<ViewTimeline> timeline = collection->Lookup(aName)) {
+        return timeline.forget();
       }
     }
   }
