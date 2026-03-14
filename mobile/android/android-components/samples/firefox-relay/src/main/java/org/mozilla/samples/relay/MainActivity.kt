@@ -34,6 +34,7 @@ import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.service.fxa.toAuthType
 import mozilla.components.service.fxrelay.eligibility.Eligible
+import mozilla.components.service.fxrelay.eligibility.FxaAccountManagerDelegateDefault
 import mozilla.components.service.fxrelay.eligibility.Ineligible
 import mozilla.components.service.fxrelay.eligibility.RelayEligibilityStore
 import mozilla.components.service.fxrelay.eligibility.RelayFeature
@@ -71,7 +72,7 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
     private val relayEligibilityStore by lazy { RelayEligibilityStore() }
     private val relayFeature by lazy {
         RelayFeature(
-            accountManager = accountManager,
+            accountManager = FxaAccountManagerDelegateDefault(accountManager),
             store = relayEligibilityStore,
         )
     }
@@ -197,7 +198,7 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
                 val msg = when (val e = state.eligibilityState) {
                     is Ineligible.FirefoxAccountNotLoggedIn -> "Relay: not logged in"
                     is Ineligible.NoRelay -> "Relay: not eligible / no Relay"
-                    is Eligible.Free -> "Relay: eligible (free), remaining=${e.remaining}"
+                    is Eligible.Free -> "Relay: eligible (free), remaining=${e.totalMasksUsed}"
                     is Eligible.Premium -> "Relay: eligible (premium)"
                 }
                 findViewById<TextView>(R.id.txtView).text = msg
