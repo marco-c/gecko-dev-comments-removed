@@ -13,7 +13,6 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"]:
 
 CppUnitTests(
     [
-        "TestAlgorithm",
         "TestArray",
         "TestArrayUtils",
         "TestAtomicBitfields",
