@@ -354,8 +354,7 @@ nsresult nsHttpTransaction::Init(
 
   bool forceUseHTTPSRR = StaticPrefs::network_dns_force_use_https_rr();
   if ((StaticPrefs::network_dns_use_https_rr_as_altsvc() &&
-       !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR) &&
-       !(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) ||
+       !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR)) ||
       forceUseHTTPSRR) {
     nsCOMPtr<nsIEventTarget> target;
     (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
@@ -420,10 +419,8 @@ void nsHttpTransaction::OnPendingQueueInserted(
   }
 
   
-  
   if ((mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection()) &&
-      !mOrigConnInfo && !mConnInfo->GetWebTransport() &&
-      !(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
+      !mOrigConnInfo && !mConnInfo->GetWebTransport()) {
     
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -3537,7 +3534,7 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
 
 static void CreateBackupConnection(
     nsHttpConnectionInfo* aBackupConnInfo, nsIInterfaceRequestor* aCallbacks,
-    uint32_t aCaps, std::function<void(nsresult)>&& aResultCallback) {
+    uint32_t aCaps, std::function<void(bool)>&& aResultCallback) {
   aBackupConnInfo->SetFallbackConnection(true);
   RefPtr<SpeculativeTransaction> trans = new FallbackTransaction(
       aBackupConnInfo, aCallbacks, aCaps | NS_HTTP_DISALLOW_HTTP3,
@@ -3566,8 +3563,8 @@ void nsHttpTransaction::OnHttp3BackupTimer() {
   }
 
   RefPtr<nsHttpTransaction> self = this;
-  auto callback = [self](nsresult aResult) {
-    if (NS_SUCCEEDED(aResult)) {
+  auto callback = [self](bool aSucceded) {
+    if (aSucceded) {
       self->OnBackupConnectionReady(false);
     }
   };
@@ -3622,8 +3619,8 @@ void nsHttpTransaction::OnFastFallbackTimer() {
   MOZ_ASSERT(!mBackupConnInfo->IsHttp3());
 
   RefPtr<nsHttpTransaction> self = this;
-  auto callback = [self](nsresult aResult) {
-    if (NS_FAILED(aResult)) {
+  auto callback = [self](bool aSucceded) {
+    if (!aSucceded) {
       return;
     }
 

@@ -6,7 +6,7 @@
 #ifndef DnsAndConnectSocket_h_
 #define DnsAndConnectSocket_h_
 
-#include "ConnectionAttempt.h"
+#include "mozilla/TimeStamp.h"
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
@@ -17,6 +17,7 @@
 #include "nsIDNSService.h"
 #include "nsINamed.h"
 #include "nsITransport.h"
+#include "nsWeakReference.h"
 
 namespace mozilla {
 namespace net {
@@ -28,18 +29,18 @@ namespace net {
 class PendingTransactionInfo;
 class ConnectionEntry;
 
-class DnsAndConnectSocket final : public ConnectionAttempt,
-                                  public nsIOutputStreamCallback,
+class DnsAndConnectSocket final : public nsIOutputStreamCallback,
                                   public nsITransportEventSink,
                                   public nsIInterfaceRequestor,
                                   public nsITimerCallback,
                                   public nsINamed,
+                                  public nsSupportsWeakReference,
                                   public nsIDNSListener {
   ~DnsAndConnectSocket();
 
  public:
   NS_INLINE_DECL_STATIC_IID(NS_DNSANDCONNECTSOCKET_IID)
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAMCALLBACK
   NS_DECL_NSITRANSPORTEVENTSINK
   NS_DECL_NSIINTERFACEREQUESTOR
@@ -50,20 +51,26 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   DnsAndConnectSocket(nsHttpConnectionInfo* ci, nsAHttpTransaction* trans,
                       uint32_t caps, bool speculative, bool urgentStart);
 
-  nsresult Init(ConnectionEntry* ent) override;
-  void Abandon() override;
-  double Duration(TimeStamp epoch) override;
-  void CloseTransports(nsresult error) override;
+  [[nodiscard]] nsresult Init(ConnectionEntry* ent);
+  void Abandon();
+  double Duration(TimeStamp epoch);
+  void CloseTransports(nsresult error);
 
-  void PrintDiagnostics(nsCString& log) override;
+  bool IsSpeculative() { return mSpeculative; }
+
+  bool Allow1918() { return mAllow1918; }
+  void SetAllow1918(bool val) { mAllow1918 = val; }
+
+  bool HasConnected() { return mHasConnected; }
+
+  void PrintDiagnostics(nsCString& log);
 
   
   
   
   bool AcceptsTransaction(nsHttpTransaction* trans);
-  bool Claim() override;
-
-  DnsAndConnectSocket* ToDnsAndConnectSocket() override { return this; }
+  bool Claim();
+  void Unclaim();
 
  private:
   
@@ -209,12 +216,40 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   nsresult SetupDnsFlags(ConnectionEntry* ent);
   nsresult SetupEvent(SetupEvents event);
 
+  RefPtr<nsAHttpTransaction> mTransaction;
   bool mDispatchedMTransaction = false;
 
   PrimaryTransportSetup mPrimaryTransport;
+  uint32_t mCaps;
+
+  
+  
+  
+  
+  
+  
+  
+  bool mSpeculative;
+
+  
+  
+  bool mUrgentStart;
+
+  bool mAllow1918 = true;
+
+  
+  
+  bool mHasConnected = false;
 
   bool mBackupConnStatsSet = false;
 
+  
+  
+  
+  
+  bool mFreeToUse = true;
+
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
   nsCOMPtr<nsITimer> mSynTimer;
   BackupTransportSetup mBackupTransport;
 
