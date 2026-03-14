@@ -20,6 +20,7 @@ pytestmark = pytest.mark.asyncio
         ("cookie", "some nonsense value="),
         
         ("x-request-id", "some nonsense value"),
+        ("x-diacritics", "ä"),
         ("x-unicode-value", "你好世界"),
         
         ("host", 'some nonsense value'),
