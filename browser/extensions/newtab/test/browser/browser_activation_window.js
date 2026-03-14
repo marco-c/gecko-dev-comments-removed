@@ -148,83 +148,523 @@ add_setup(async () => {
 
 
 
-
-
-
-if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0) {
-  todo(
-    false,
-    "The activation window mechanism is only supported in 149 onwards."
+add_task(async function test_createdInstant_getter() {
+  let profileAccessor = await ProfileAge();
+  let createdInstant = Temporal.Instant.fromEpochMilliseconds(
+    await profileAccessor.created
   );
-}
+  Assert.ok(
+    AboutNewTab.activityStream.createdInstant,
+    "Should have been constructed with a createdInstant"
+  );
+  Assert.ok(
+    AboutNewTab.activityStream.createdInstant.equals(createdInstant),
+    "ActivityStream.createdInstant should equal the profile creation instant."
+  );
+});
 
 
 
 
 
-add_task(
-  {
-    
+add_task(async function test_activation_window_entry() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
 
+  const prefsFeed = await getPrefsFeed();
 
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: true,
+    disableTopStories: true,
+    variant: "a",
+  });
 
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_createdInstant_getter() {
-    let profileAccessor = await ProfileAge();
-    let createdInstant = Temporal.Instant.fromEpochMilliseconds(
-      await profileAccessor.created
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(() => {
+      return !content.document.querySelector(".top-sites-list");
+    }, "Top sites should be hidden during activation window");
+
+    const topStoriesSection = content.document.querySelector(
+      "[data-section-id='topstories']"
     );
     Assert.ok(
-      AboutNewTab.activityStream.createdInstant,
-      "Should have been constructed with a createdInstant"
+      !topStoriesSection,
+      "Top stories should be hidden during activation window"
     );
-    Assert.ok(
-      AboutNewTab.activityStream.createdInstant.equals(createdInstant),
-      "ActivityStream.createdInstant should equal the profile creation instant."
-    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  if (prefsFeed.inActivationWindowState) {
+    prefsFeed.exitActivationWindowState();
   }
-);
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
 
 
 
 
 
-add_task(
-  {
-    
+
+add_task(async function test_user_enabling_persists_topsites() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: true,
+    disableTopStories: false,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  Services.prefs.setBoolPref(TOP_SITES_PREF, true);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".top-sites-list"),
+      "Top sites should appear after user enables them"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  const topSitesEnabled = Services.prefs.getBoolPref(TOP_SITES_PREF);
+  Assert.equal(
+    topSitesEnabled,
+    true,
+    "User's choice to enable top sites should persist"
+  );
+
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(TOP_SITES_TEMP_PREF),
+    "Temp pref should be cleared after exit"
+  );
+
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
 
 
 
 
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_activation_window_entry() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
 
-    const prefsFeed = await getPrefsFeed();
 
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
+add_task(async function test_user_enabling_persists_topstories() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
 
-    await ExperimentAPI.ready();
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: false,
+    disableTopStories: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  Services.prefs.setBoolPref(TOP_STORIES_PREF, true);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("[data-section-id='topstories']"),
+      "Top stories should appear after user enables them"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  const topStoriesEnabled = Services.prefs.getBoolPref(TOP_STORIES_PREF);
+  Assert.equal(
+    topStoriesEnabled,
+    true,
+    "User's choice to enable top stories should persist"
+  );
+
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(TOP_STORIES_TEMP_PREF),
+    "Temp pref should be cleared after exit"
+  );
+
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+add_task(async function test_user_disabling_persists_topsites() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: false,
+    disableTopStories: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  
+  Services.prefs.setBoolPref(TOP_SITES_PREF, true);
+  
+  Services.prefs.setBoolPref(TOP_SITES_PREF, false);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => !content.document.querySelector(".top-sites-list"),
+      "Top sites should be hidden after user disables them"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  const topSitesEnabled = Services.prefs.getBoolPref(TOP_SITES_PREF);
+  Assert.equal(
+    topSitesEnabled,
+    false,
+    "User's choice to disable top sites should persist"
+  );
+
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+add_task(async function test_user_disabling_persists_topstories() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: false,
+    disableTopStories: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  
+  Services.prefs.setBoolPref(TOP_STORIES_PREF, true);
+  
+  Services.prefs.setBoolPref(TOP_STORIES_PREF, false);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    const topStoriesSection = content.document.querySelector(
+      "[data-section-id='topstories']"
+    );
+    Assert.ok(
+      !topStoriesSection,
+      "Top stories should be hidden during activation window"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  const topStoriesEnabled = Services.prefs.getBoolPref(TOP_STORIES_PREF);
+  Assert.equal(
+    topStoriesEnabled,
+    false,
+    "User's choice to disable top stories should persist"
+  );
+
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+
+add_task(async function test_restart_reapplies_defaults() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: true,
+    disableTopStories: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => !content.document.querySelector(".top-sites-list"),
+      "Top sites should be hidden initially"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true,
+     false
+  );
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => !content.document.querySelector(".top-sites-list"),
+      "Top sites should still be hidden after restart"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  if (prefsFeed.inActivationWindowState) {
+    prefsFeed.exitActivationWindowState();
+  }
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+add_task(async function test_defaults_restored_after_exit() {
+  const sandbox = sinon.createSandbox();
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+    enabled: true,
+    maxProfileAgeInHours: 48,
+    disableTopSites: true,
+    disableTopStories: true,
+    variant: "a",
+  });
+
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  await navigateToNewTabAndRunActivationWindowCheck(
+    tab,
+    prefsFeed,
+    TEST_NOW,
+     true
+  );
+
+  profileCreatedInstant = TEST_PROFILE_50H_AGO;
+  prefsFeed.checkForActivationWindow(TEST_NOW);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".top-sites-list"),
+      "Top sites should reappear after exiting activation window"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  const variantPref = Services.prefs.getStringPref(VARIANT_PREF, "");
+  Assert.equal(variantPref, "", "Variant pref should be cleared after exit");
+
+  await doExperimentCleanup();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+add_task(async function test_activation_window_variants() {
+  let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+  const prefsFeed = await getPrefsFeed();
+
+  Services.prefs.clearUserPref(TOP_SITES_PREF);
+  Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+  await ExperimentAPI.ready();
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(AboutNewTab.activityStream, "createdInstant")
+    .get(() => profileCreatedInstant);
+
+  for (const variantToTest of ["a", "b"]) {
     const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
       enabled: true,
       maxProfileAgeInHours: 48,
       disableTopSites: true,
       disableTopStories: true,
-      variant: "a",
+      variant: variantToTest,
     });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
 
     const tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
@@ -238,596 +678,34 @@ add_task(
        true
     );
 
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(() => {
-        return !content.document.querySelector(".top-sites-list");
-      }, "Top sites should be hidden during activation window");
-
-      const topStoriesSection = content.document.querySelector(
-        "[data-section-id='topstories']"
-      );
-      Assert.ok(
-        !topStoriesSection,
-        "Top stories should be hidden during activation window"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    if (prefsFeed.inActivationWindowState) {
-      prefsFeed.exitActivationWindowState();
-    }
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_user_enabling_persists_topsites() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-      enabled: true,
-      maxProfileAgeInHours: 48,
-      disableTopSites: true,
-      disableTopStories: false,
-      variant: "a",
-    });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    const tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:blank"
-    );
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true
-    );
-
-    Services.prefs.setBoolPref(TOP_SITES_PREF, true);
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector(".top-sites-list"),
-        "Top sites should appear after user enables them"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    profileCreatedInstant = TEST_PROFILE_50H_AGO;
-    prefsFeed.checkForActivationWindow(TEST_NOW);
-
-    const topSitesEnabled = Services.prefs.getBoolPref(TOP_SITES_PREF);
-    Assert.equal(
-      topSitesEnabled,
-      true,
-      "User's choice to enable top sites should persist"
-    );
-
-    Assert.ok(
-      !Services.prefs.prefHasUserValue(TOP_SITES_TEMP_PREF),
-      "Temp pref should be cleared after exit"
-    );
-
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_user_enabling_persists_topstories() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-      enabled: true,
-      maxProfileAgeInHours: 48,
-      disableTopSites: false,
-      disableTopStories: true,
-      variant: "a",
-    });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    const tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:blank"
-    );
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true
-    );
-
-    Services.prefs.setBoolPref(TOP_STORIES_PREF, true);
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector("[data-section-id='topstories']"),
-        "Top stories should appear after user enables them"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    profileCreatedInstant = TEST_PROFILE_50H_AGO;
-    prefsFeed.checkForActivationWindow(TEST_NOW);
-
-    const topStoriesEnabled = Services.prefs.getBoolPref(TOP_STORIES_PREF);
-    Assert.equal(
-      topStoriesEnabled,
-      true,
-      "User's choice to enable top stories should persist"
-    );
-
-    Assert.ok(
-      !Services.prefs.prefHasUserValue(TOP_STORIES_TEMP_PREF),
-      "Temp pref should be cleared after exit"
-    );
-
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_user_disabling_persists_topsites() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-      enabled: true,
-      maxProfileAgeInHours: 48,
-      disableTopSites: false,
-      disableTopStories: true,
-      variant: "a",
-    });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    const tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:blank"
-    );
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true
-    );
-
-    
-    Services.prefs.setBoolPref(TOP_SITES_PREF, true);
-    
-    Services.prefs.setBoolPref(TOP_SITES_PREF, false);
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => !content.document.querySelector(".top-sites-list"),
-        "Top sites should be hidden after user disables them"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    profileCreatedInstant = TEST_PROFILE_50H_AGO;
-    prefsFeed.checkForActivationWindow(TEST_NOW);
-
-    const topSitesEnabled = Services.prefs.getBoolPref(TOP_SITES_PREF);
-    Assert.equal(
-      topSitesEnabled,
-      false,
-      "User's choice to disable top sites should persist"
-    );
-
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_user_disabling_persists_topstories() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-      enabled: true,
-      maxProfileAgeInHours: 48,
-      disableTopSites: false,
-      disableTopStories: true,
-      variant: "a",
-    });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    const tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:blank"
-    );
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true
-    );
-
-    
-    Services.prefs.setBoolPref(TOP_STORIES_PREF, true);
-    
-    Services.prefs.setBoolPref(TOP_STORIES_PREF, false);
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      const topStoriesSection = content.document.querySelector(
-        "[data-section-id='topstories']"
-      );
-      Assert.ok(
-        !topStoriesSection,
-        "Top stories should be hidden during activation window"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    profileCreatedInstant = TEST_PROFILE_50H_AGO;
-    prefsFeed.checkForActivationWindow(TEST_NOW);
-
-    const topStoriesEnabled = Services.prefs.getBoolPref(TOP_STORIES_PREF);
-    Assert.equal(
-      topStoriesEnabled,
-      false,
-      "User's choice to disable top stories should persist"
-    );
-
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_restart_reapplies_defaults() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-      enabled: true,
-      maxProfileAgeInHours: 48,
-      disableTopSites: true,
-      disableTopStories: true,
-      variant: "a",
-    });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:blank"
-    );
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true
-    );
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => !content.document.querySelector(".top-sites-list"),
-        "Top sites should be hidden initially"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true,
-       false
-    );
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => !content.document.querySelector(".top-sites-list"),
-        "Top sites should still be hidden after restart"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    if (prefsFeed.inActivationWindowState) {
-      prefsFeed.exitActivationWindowState();
-    }
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_defaults_restored_after_exit() {
-    const sandbox = sinon.createSandbox();
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-      enabled: true,
-      maxProfileAgeInHours: 48,
-      disableTopSites: true,
-      disableTopStories: true,
-      variant: "a",
-    });
-
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    const tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "about:blank"
-    );
-
-    await navigateToNewTabAndRunActivationWindowCheck(
-      tab,
-      prefsFeed,
-      TEST_NOW,
-       true
-    );
-
-    profileCreatedInstant = TEST_PROFILE_50H_AGO;
-    prefsFeed.checkForActivationWindow(TEST_NOW);
-
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-      await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector(".top-sites-list"),
-        "Top sites should reappear after exiting activation window"
-      );
-    });
-
-    BrowserTestUtils.removeTab(tab);
-
-    const variantPref = Services.prefs.getStringPref(VARIANT_PREF, "");
-    Assert.equal(variantPref, "", "Variant pref should be cleared after exit");
-
-    await doExperimentCleanup();
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-
-
-
-
-add_task(
-  {
-    
-
-
-
-
-    skip_if: () => {
-      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
-    },
-  },
-  async function test_activation_window_variants() {
-    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
-
-    const prefsFeed = await getPrefsFeed();
-
-    Services.prefs.clearUserPref(TOP_SITES_PREF);
-    Services.prefs.clearUserPref(TOP_STORIES_PREF);
-
-    await ExperimentAPI.ready();
-    const sandbox = sinon.createSandbox();
-    sandbox
-      .stub(AboutNewTab.activityStream, "createdInstant")
-      .get(() => profileCreatedInstant);
-
-    for (const variantToTest of ["a", "b"]) {
-      const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
-        enabled: true,
-        maxProfileAgeInHours: 48,
-        disableTopSites: true,
-        disableTopStories: true,
-        variant: variantToTest,
-      });
-
-      const tab = await BrowserTestUtils.openNewForegroundTab(
-        gBrowser,
-        "about:blank"
-      );
-
-      await navigateToNewTabAndRunActivationWindowCheck(
-        tab,
-        prefsFeed,
-        TEST_NOW,
-         true
-      );
-
-      await SpecialPowers.spawn(
-        tab.linkedBrowser,
-        [variantToTest],
-        async variantName => {
-          await ContentTaskUtils.waitForCondition(() => {
-            return !content.document.querySelector(".top-sites-list");
-          }, "Top sites should be hidden during activation window");
-
-          const customizeButton = content.document.querySelector(
-            "button.personalize-button"
-          );
-          Assert.ok(
-            customizeButton.classList.contains(
-              `activation-window-variant-${variantName}`
-            ),
-            `Found the activation-window-variant-${variantName} class on the customize button`
-          );
-        }
-      );
-
-      BrowserTestUtils.removeTab(tab);
-
-      if (prefsFeed.inActivationWindowState) {
-        prefsFeed.exitActivationWindowState();
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [variantToTest],
+      async variantName => {
+        await ContentTaskUtils.waitForCondition(() => {
+          return !content.document.querySelector(".top-sites-list");
+        }, "Top sites should be hidden during activation window");
+
+        const customizeButton = content.document.querySelector(
+          "button.personalize-button"
+        );
+        Assert.ok(
+          customizeButton.classList.contains(
+            `activation-window-variant-${variantName}`
+          ),
+          `Found the activation-window-variant-${variantName} class on the customize button`
+        );
       }
-      await doExperimentCleanup();
-    }
+    );
 
-    sandbox.restore();
-    await SpecialPowers.popPrefEnv();
+    BrowserTestUtils.removeTab(tab);
+
+    if (prefsFeed.inActivationWindowState) {
+      prefsFeed.exitActivationWindowState();
+    }
+    await doExperimentCleanup();
   }
-);
+
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
