@@ -3377,6 +3377,12 @@ pref("first-startup.category-tasks-enabled", true);
   pref("browser.menu.share_url.allow", false);
 #endif
 
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+pref("browser.shareqrcode.enabled", true);
+#else
+pref("browser.shareqrcode.enabled", false);
+#endif
+
 
 
 
