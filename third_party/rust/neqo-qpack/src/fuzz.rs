@@ -27,8 +27,8 @@ mod write_corpus {
 
 mod fuzzing {
     use crate::{
-        reader::{ReadByte, Reader},
         Decoder, Error, Res,
+        reader::{ReadByte, Reader},
     };
 
     

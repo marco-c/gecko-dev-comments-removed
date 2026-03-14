@@ -87,7 +87,9 @@ fn setup_clang() {
     };
     let libclang_dir = mozbuild_root.join("clang").join("lib");
     if libclang_dir.is_dir() {
-        env::set_var("LIBCLANG_PATH", libclang_dir.to_str().unwrap());
+        unsafe {
+            env::set_var("LIBCLANG_PATH", libclang_dir.to_str().unwrap());
+        }
         println!("rustc-env:LIBCLANG_PATH={}", libclang_dir.to_str().unwrap());
     } else {
         println!("warning: LIBCLANG_PATH isn't set; maybe run ./mach bootstrap with gecko");
@@ -161,6 +163,7 @@ fn static_link() {
         } else {
             "nspr4"
         },
+        "gcm",
         "nss_static",
         "nssb",
         "nssdev",
@@ -188,34 +191,24 @@ fn static_link() {
         static_libs.push("sqlite");
     }
     
-    
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-    
     if target_arch == "arm" || target_arch == "aarch64" {
         static_libs.push("armv8_c_lib");
     }
-    if target_arch == "x86_64" || target_arch == "x86" {
-        static_libs.push("gcm-aes-x86_c_lib");
-        static_libs.push("sha-x86_c_lib");
-    }
     if target_arch == "arm" {
-        static_libs.push("gcm-aes-arm32-neon_c_lib");
+        static_libs.push("ghash-aes-arm32-neon_c_lib");
     }
     if target_arch == "aarch64" {
-        static_libs.push("gcm-aes-aarch64_c_lib");
+        static_libs.push("ghash-aes-aarch64_c_lib");
+    }
+    if target_arch == "x86_64" || target_arch == "x86" {
+        static_libs.push("ghash-aes-x86_c_lib");
+        static_libs.push("sha-x86_c_lib");
     }
     if target_arch == "x86_64" {
         static_libs.push("hw-acc-crypto-avx");
         static_libs.push("hw-acc-crypto-avx2");
-    }
-    
-    if (target_os == "android" || target_os == "linux") && target_arch == "x86_64" {
         static_libs.push("intel-gcm-wrap_c_lib");
-        
-        if (target_os == "android" || target_os == "linux") && target_arch == "x86_64" {
-            static_libs.push("intel-gcm-s_lib");
-        }
     }
     for lib in static_libs {
         println!("cargo:rustc-link-lib=static={lib}");
@@ -387,8 +380,8 @@ fn setup_standalone(nss: &str) -> Vec<String> {
 #[cfg(feature = "gecko")]
 fn setup_for_gecko() -> Vec<String> {
     use mozbuild::{
-        config::{BINDGEN_SYSTEM_FLAGS, NSPR_CFLAGS, NSS_CFLAGS},
         TOPOBJDIR,
+        config::{BINDGEN_SYSTEM_FLAGS, NSPR_CFLAGS, NSS_CFLAGS},
     };
 
     let fold_libs = mozbuild::config::MOZ_FOLD_LIBS;

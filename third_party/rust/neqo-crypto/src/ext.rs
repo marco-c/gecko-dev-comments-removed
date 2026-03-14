@@ -98,7 +98,7 @@ impl ExtensionTracker {
     where
         F: FnOnce(&mut dyn ExtensionHandler) -> T,
     {
-        let rc = arg.cast::<BoxedExtensionHandler>().as_mut().unwrap();
+        let rc = unsafe { arg.cast::<BoxedExtensionHandler>().as_mut().unwrap() };
         f(&mut *rc.borrow_mut())
     }
 
@@ -120,14 +120,17 @@ impl ExtensionTracker {
             },
             |msg| (msg, false),
         );
-        let d = std::slice::from_raw_parts_mut(data, max_len as usize);
-        Self::wrap_handler_call(arg, |handler| match handler.write(msg, ch_outer, d) {
-            ExtensionWriterResult::Write(sz) => {
-                *len = c_uint::try_from(sz).expect("integer overflow from extension writer");
-                1
-            }
-            ExtensionWriterResult::Skip => 0,
-        })
+        let d = unsafe { std::slice::from_raw_parts_mut(data, max_len as usize) };
+        
+        unsafe {
+            Self::wrap_handler_call(arg, |handler| match handler.write(msg, ch_outer, d) {
+                ExtensionWriterResult::Write(sz) => {
+                    *len = c_uint::try_from(sz).expect("integer overflow from extension writer");
+                    1
+                }
+                ExtensionWriterResult::Skip => 0,
+            })
+        }
     }
 
     unsafe extern "C" fn extension_handler(
@@ -138,23 +141,26 @@ impl ExtensionTracker {
         alert: *mut SSLAlertDescription,
         arg: *mut c_void,
     ) -> SECStatus {
-        let d = null_safe_slice(data, len);
-        Self::wrap_handler_call(arg, |handler| {
-            
-            #[allow(
-                clippy::allow_attributes,
-                clippy::cast_possible_truncation,
-                clippy::cast_sign_loss,
-                reason = "Cast is safe here because the message type is always part of the enum."
-            )]
-            match handler.handle(message as HandshakeMessage, d) {
-                ExtensionHandlerResult::Ok => SECSuccess,
-                ExtensionHandlerResult::Alert(a) => {
-                    *alert = a;
-                    SECFailure
+        let d = unsafe { null_safe_slice(data, len) };
+        
+        unsafe {
+            Self::wrap_handler_call(arg, |handler| {
+                
+                #[allow(
+                    clippy::allow_attributes,
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "Cast is safe here because the message type is always part of the enum."
+                )]
+                match handler.handle(message as HandshakeMessage, d) {
+                    ExtensionHandlerResult::Ok => SECSuccess,
+                    ExtensionHandlerResult::Alert(a) => {
+                        *alert = a;
+                        SECFailure
+                    }
                 }
-            }
-        })
+            })
+        }
     }
 
     
@@ -173,30 +179,32 @@ impl ExtensionTracker {
         extension: Extension,
         handler: Rc<RefCell<dyn ExtensionHandler>>,
     ) -> Res<Self> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut tracker = Self {
-            extension,
-            handler: Box::pin(Box::new(handler)),
-        };
-        SSL_InstallExtensionHooks(
-            fd,
-            extension,
-            Some(Self::extension_writer),
-            as_c_void(&mut tracker.handler),
-            Some(Self::extension_handler),
-            as_c_void(&mut tracker.handler),
-        )?;
-        Ok(tracker)
+        unsafe {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let mut tracker = Self {
+                extension,
+                handler: Box::pin(Box::new(handler)),
+            };
+            SSL_InstallExtensionHooks(
+                fd,
+                extension,
+                Some(Self::extension_writer),
+                as_c_void(&mut tracker.handler),
+                Some(Self::extension_handler),
+                as_c_void(&mut tracker.handler),
+            )?;
+            Ok(tracker)
+        }
     }
 }
 

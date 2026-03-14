@@ -1427,7 +1427,10 @@ impl HttpServer for Http3ConnectProxyServer {
                         buf.resize(len, 0);
                         
                         
-                        socket.session.send_datagram(buf.as_slice(), None).unwrap();
+                        socket
+                            .session
+                            .send_datagram(buf.as_slice(), None, Instant::now())
+                            .unwrap();
                         progressed = true;
                     }
                     Poll::Ready(Err(e)) => {

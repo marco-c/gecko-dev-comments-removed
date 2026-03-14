@@ -17,35 +17,36 @@ use std::{
     time::Duration,
 };
 
-use neqo_common::{event::Provider as _, qdebug, Datagram};
+use neqo_common::{Datagram, event::Provider as _, qdebug};
 use neqo_crypto::{
-    constants::TLS_CHACHA20_POLY1305_SHA256, generate_ech_keys, AuthenticationStatus,
+    AuthenticationStatus, constants::TLS_CHACHA20_POLY1305_SHA256, generate_ech_keys,
 };
 #[cfg(not(feature = "disable-encryption"))]
 use test_fixture::datagram;
 use test_fixture::{
+    DEFAULT_ADDR,
     assertions::{assert_coalesced_0rtt, assert_handshake, assert_initial, assert_version},
-    damage_ech_config, fixture_init, now, split_datagram, strip_padding, DEFAULT_ADDR,
+    damage_ech_config, fixture_init, now, split_datagram, strip_padding,
 };
 
 use super::{
     super::{Connection, Output, State},
-    assert_error, connect, connect_force_idle, connect_with_rtt, default_client, default_server,
-    get_tokens, handshake, maybe_authenticate, resumed_server, send_something, zero_len_cid_client,
-    CountingConnectionIdGenerator, AT_LEAST_PTO, DEFAULT_RTT, DEFAULT_STREAM_DATA,
+    AT_LEAST_PTO, CountingConnectionIdGenerator, DEFAULT_RTT, DEFAULT_STREAM_DATA, assert_error,
+    connect, connect_force_idle, connect_with_rtt, default_client, default_server, get_tokens,
+    handshake, maybe_authenticate, resumed_server, send_something, zero_len_cid_client,
 };
 use crate::{
+    CloseReason, ConnectionParameters, EmptyConnectionIdGenerator, Error, Pmtud, StreamType,
+    Version,
     connection::{
-        tests::{exchange_ticket, new_client, new_server},
         AddressValidation,
+        tests::{exchange_ticket, new_client, new_server},
     },
     events::ConnectionEvent,
     server::ValidateAddress,
     stats::FrameStats,
     tparams::{TransportParameter, TransportParameterId::*},
     tracking::DEFAULT_LOCAL_ACK_DELAY,
-    CloseReason, ConnectionParameters, EmptyConnectionIdGenerator, Error, Pmtud, StreamType,
-    Version,
 };
 
 const ECH_CONFIG_ID: u8 = 7;
@@ -508,8 +509,9 @@ fn coalesce_05rtt() {
 #[test]
 fn reorder_handshake() {
     const RTT: Duration = Duration::from_millis(100);
-    let mut client = default_client();
-    let mut server = default_server();
+    
+    let mut client = new_client(ConnectionParameters::default().randomize_first_pn(false));
+    let mut server = new_server(ConnectionParameters::default().randomize_first_pn(false));
     let mut now = now();
 
     let c1 = client.process_output(now).dgram();
@@ -535,20 +537,29 @@ fn reorder_handshake() {
     now += AT_LEAST_PTO;
     let c2 = client.process_output(now).dgram();
     now += RTT / 2;
+    
+    
     let s_initial_2 = server.process(c2, now).dgram().unwrap();
+    assert_initial(&s_initial_2, false);
+    let s_initial_3 = server.process_output(now).dgram().unwrap();
+    assert_initial(&s_initial_3, false);
+    let s_initial_4 = server.process_output(now).dgram().unwrap();
+    assert_initial(&s_initial_4, false);
     let s_handshake_2 = server.process_output(now).dgram().unwrap();
+    assert_handshake(&s_handshake_2);
 
     
     now += RTT / 2;
     client.process_input(s_handshake_2, now);
     assert_eq!(client.stats().saved_datagrams, 2);
-    
-    
-    assert!((0..=1).contains(&client.stats().packets_rx));
+    assert_eq!(client.stats().packets_rx, 0);
 
-    client.process_input(s_initial_2, now);
     
-    assert!((3..=5).contains(&client.stats().packets_rx));
+    client.process_input(s_initial_2, now);
+    client.process_input(s_initial_3, now);
+    client.process_input(s_initial_4, now);
+    
+    assert_eq!(client.stats().packets_rx, 5);
     maybe_authenticate(&mut client);
     let c3 = client.process_output(now).dgram();
     assert!(c3.is_some());
@@ -770,7 +781,7 @@ fn corrupted_initial() {
         .iter()
         .enumerate()
         .rev()
-        .find(|(_, &v)| v != 0)
+        .find(|&(_, &v)| v != 0)
         .unwrap();
     corrupted[idx] ^= 0x76;
     let dgram = Datagram::new(d.source(), d.destination(), d.tos(), corrupted);
@@ -1655,4 +1666,95 @@ fn certificate_compression() {
 
     assert!(!ORIGINAL.lock().unwrap().is_empty());
     assert_eq!(*ORIGINAL.lock().unwrap(), *DECODED.lock().unwrap());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[test]
+fn initial_crypto_retransmit_during_handshake_pto() {
+    let mut now = now();
+
+    
+    
+    let mut client = new_client(ConnectionParameters::default().pacing(false));
+    let mut server = new_server(ConnectionParameters::default().pacing(false));
+
+    
+    let c_init_1 = client.process_output(now).dgram().unwrap();
+    let c_init_2 = client.process_output(now).dgram().unwrap();
+    assert_initial(&c_init_1, false);
+    assert_initial(&c_init_2, false);
+
+    
+    
+    let crypto_before = client.stats().frame_tx.crypto;
+    assert_eq!(crypto_before, 3);
+
+    
+    now += DEFAULT_RTT / 2;
+    server.process_input(c_init_1, now);
+
+    
+    
+    let s_ack = server.process_output(now).dgram();
+    assert!(s_ack.is_some(), "Server should ACK the partial Initial");
+
+    
+    now += DEFAULT_RTT / 2;
+    client.process_input(s_ack.unwrap(), now);
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    for pto_count in 1..=5 {
+        now += client.process_output(now).callback();
+
+        let crypto_before_pto = client.stats().frame_tx.crypto;
+
+        
+        let mut packets_sent = 0;
+        while client.process_output(now).dgram().is_some() {
+            packets_sent += 1;
+        }
+
+        let crypto_after_pto = client.stats().frame_tx.crypto;
+
+        
+        assert!(
+            packets_sent > 0,
+            "PTO {pto_count}: Client should send packets on PTO"
+        );
+
+        
+        assert!(
+            crypto_after_pto > crypto_before_pto,
+            "PTO {pto_count}: Client must retransmit CRYPTO frames, not just ACKs/PINGs. \
+             CRYPTO frames before: {crypto_before_pto}, after: {crypto_after_pto}, \
+             packets sent: {packets_sent}"
+        );
+    }
 }

@@ -6,14 +6,14 @@
 
 use std::time::{Duration, Instant};
 
-use neqo_common::{qtrace, qwarn, Encoder};
+use neqo_common::{Encoder, qtrace, qwarn};
 use test_fixture::now;
 
 use super::{
     super::{Connection, ConnectionParameters, IdleTimeout, Output, State},
-    connect, connect_force_idle, connect_rtt_idle, connect_with_rtt, default_client,
-    default_server, maybe_authenticate, new_client, new_server, send_and_receive, send_something,
-    AT_LEAST_PTO, DEFAULT_STREAM_DATA,
+    AT_LEAST_PTO, DEFAULT_STREAM_DATA, connect, connect_force_idle, connect_rtt_idle,
+    connect_with_rtt, default_client, default_server, maybe_authenticate, new_client, new_server,
+    send_and_receive, send_something,
 };
 use crate::{
     packet, recovery,
@@ -329,10 +329,8 @@ fn idle_caching() {
 
     
     
-    let crypto_before_c = client.stats().frame_rx.crypto;
     let ack_before = client.stats().frame_rx.ack;
     client.process_input(dgram.unwrap(), middle);
-    assert_eq!(client.stats().frame_rx.crypto, crypto_before_c);
     assert_eq!(client.stats().frame_rx.ack, ack_before + 1);
 
     let end = start + default_timeout() + (AT_LEAST_PTO / 2);
@@ -472,7 +470,6 @@ fn keep_alive_lost() {
 
     assert!(client.process(out, now).dgram().is_none());
 
-    
     
     
     now += AT_LEAST_PTO;
@@ -681,7 +678,7 @@ fn keep_alive_with_ack_eliciting_packet_lost() {
     
     
     
-    const IDLE_TIMEOUT: Duration = Duration::from_millis(6000);
+    const IDLE_TIMEOUT: Duration = Duration::from_secs(6);
 
     
     

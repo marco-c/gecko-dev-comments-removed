@@ -4,8 +4,6 @@
 
 
 
-#![expect(clippy::unwrap_used, reason = "This is example code.")]
-
 use std::{
     cell::RefCell,
     fmt::{self, Display},
@@ -15,16 +13,16 @@ use std::{
     time::Instant,
 };
 
-use neqo_common::{header::HeadersExt as _, hex, qdebug, qerror, qinfo, Datagram, Header};
-use neqo_crypto::{generate_ech_keys, random, AntiReplay};
+use neqo_common::{Datagram, Header, header::HeadersExt as _, hex, qdebug, qerror, qinfo};
+use neqo_crypto::{AntiReplay, generate_ech_keys, random};
 use neqo_http3::{
     Http3OrWebTransportStream, Http3Parameters, Http3Server, Http3ServerEvent, StreamId,
 };
-use neqo_transport::{server::ValidateAddress, ConnectionIdGenerator, OutputBatch};
+use neqo_transport::{ConnectionIdGenerator, OutputBatch, server::ValidateAddress};
 use rustc_hash::FxHashMap as HashMap;
 
-use super::{qns_read_response, Args};
-use crate::send_data::SendData;
+use super::{Args, qns_read_response};
+use crate::send_data::{SendData, SendResult};
 
 pub struct HttpServer {
     server: Http3Server,
@@ -36,6 +34,51 @@ pub struct HttpServer {
 }
 
 impl HttpServer {
+    
+    
+    fn send_response(
+        &mut self,
+        stream: &Http3OrWebTransportStream,
+        mut response: SendData,
+        now: Instant,
+    ) {
+        if stream
+            .send_headers(&[
+                Header::new(":status", "200"),
+                Header::new("content-length", response.len().to_string()),
+            ])
+            .is_err()
+        {
+            qerror!("Stream {stream} closed by peer, not sending response");
+            _ = stream.stream_reset_send(neqo_http3::Error::HttpNone.code());
+            return;
+        }
+        if let Some(remaining) = Self::send_response_body(stream, &mut response, now) {
+            self.remaining_data.insert(stream.stream_id(), remaining);
+        }
+    }
+
+    
+    
+    fn send_response_body(
+        stream: &Http3OrWebTransportStream,
+        response: &mut SendData,
+        now: Instant,
+    ) -> Option<SendData> {
+        match response.send(|chunk| stream.send_data(chunk, now)) {
+            SendResult::StreamClosed => {
+                qerror!("Stream {stream} closed");
+                _ = stream.stream_reset_send(neqo_http3::Error::HttpNone.code());
+                None
+            }
+            SendResult::Done => {
+                _ = stream.stream_close_send(now); 
+                None
+            }
+            SendResult::MoreData => Some(std::mem::take(response)),
+        }
+    }
+
     pub fn new(
         args: &Args,
         anti_replay: AntiReplay,
@@ -117,22 +160,26 @@ impl super::HttpServer for HttpServer {
                     }
 
                     let Some(path) = headers.find_header(":path") else {
-                        stream
-                            .cancel_fetch(neqo_http3::Error::HttpRequestIncomplete.code())
-                            .unwrap();
+                        _ = stream.cancel_fetch(neqo_http3::Error::HttpRequestIncomplete.code()); 
                         continue;
                     };
 
-                    let mut response = if self.is_qns_test {
+                    let response = if self.is_qns_test {
                         let path_str = path.value_utf8().unwrap_or("/");
                         match qns_read_response(path_str) {
                             Ok(data) => SendData::from(data),
                             Err(e) => {
                                 qerror!("Failed to read {path_str}: {e}");
-                                stream
+                                
+                                if stream
                                     .send_headers(&[Header::new(":status", "404")])
-                                    .unwrap();
-                                stream.stream_close_send(now).unwrap();
+                                    .is_ok()
+                                {
+                                    _ = stream.stream_close_send(now);
+                                } else {
+                                    _ = stream
+                                        .stream_reset_send(neqo_http3::Error::HttpNone.code());
+                                }
                                 continue;
                             }
                         }
@@ -145,29 +192,14 @@ impl super::HttpServer for HttpServer {
                         SendData::from(path.value())
                     };
 
-                    stream
-                        .send_headers(&[
-                            Header::new(":status", "200"),
-                            Header::new("content-length", response.len().to_string()),
-                        ])
-                        .unwrap();
-                    let done = response.send(|chunk| stream.send_data(chunk, now).unwrap());
-                    if done {
-                        stream.stream_close_send(now).unwrap();
-                    } else {
-                        self.remaining_data.insert(stream.stream_id(), response);
-                    }
+                    self.send_response(&stream, response, now);
                 }
                 Http3ServerEvent::DataWritable { stream } => {
-                    if self.posts.get_mut(&stream).is_none() {
-                        if let Some(remaining) = self.remaining_data.get_mut(&stream.stream_id()) {
-                            let done =
-                                remaining.send(|chunk| stream.send_data(chunk, now).unwrap());
-                            if done {
-                                self.remaining_data.remove(&stream.stream_id());
-                                stream.stream_close_send(now).unwrap();
-                            }
-                        }
+                    if self.posts.get_mut(&stream).is_none()
+                        && let Some(mut remaining) = self.remaining_data.remove(&stream.stream_id())
+                        && let Some(data) = Self::send_response_body(&stream, &mut remaining, now)
+                    {
+                        self.remaining_data.insert(stream.stream_id(), data);
                     }
                 }
 
@@ -175,26 +207,12 @@ impl super::HttpServer for HttpServer {
                     if let Some((received, _)) = self.posts.get_mut(&stream) {
                         *received += data.len();
                     }
-                    if fin {
-                        if let Some((received, response_size)) = self.posts.remove(&stream) {
-                            let mut response = response_size.map_or_else(
-                                || SendData::from(received.to_string().into_bytes()),
-                                SendData::zeroes,
-                            );
-
-                            stream
-                                .send_headers(&[
-                                    Header::new(":status", "200"),
-                                    Header::new("content-length", response.len().to_string()),
-                                ])
-                                .unwrap();
-                            let done = response.send(|chunk| stream.send_data(chunk, now).unwrap());
-                            if done {
-                                stream.stream_close_send(now).unwrap();
-                            } else {
-                                self.remaining_data.insert(stream.stream_id(), response);
-                            }
-                        }
+                    if fin && let Some((received, response_size)) = self.posts.remove(&stream) {
+                        let response = response_size.map_or_else(
+                            || SendData::from(received.to_string().into_bytes()),
+                            SendData::zeroes,
+                        );
+                        self.send_response(&stream, response, now);
                     }
                 }
                 _ => {}

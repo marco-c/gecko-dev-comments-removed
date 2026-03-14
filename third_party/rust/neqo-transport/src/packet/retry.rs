@@ -7,9 +7,9 @@
 use std::cell::RefCell;
 
 use neqo_common::qerror;
-use neqo_crypto::{hkdf, Aead, AeadTrait as _, TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3};
+use neqo_crypto::{Aead, AeadTrait as _, TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3, hkdf};
 
-use crate::{version::Version, Error, Res};
+use crate::{Error, Res, version::Version};
 
 
 fn make_aead(version: Version) -> Aead {

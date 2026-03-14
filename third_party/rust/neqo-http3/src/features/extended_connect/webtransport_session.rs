@@ -11,16 +11,16 @@ use std::{
     time::Instant,
 };
 
-use neqo_common::{qtrace, Bytes, Encoder, Role};
+use neqo_common::{Bytes, Encoder, Role, qtrace};
 use neqo_transport::{Connection, StreamId};
 
 use crate::{
+    Error, Http3StreamInfo, Http3StreamType, RecvStream, Res, SendStream,
     features::extended_connect::{
-        session::{DgramContextIdError, Protocol, State},
         CloseReason, ExtendedConnectEvents, ExtendedConnectType,
+        session::{DgramContextIdError, Protocol, State},
     },
     frames::{FrameReader, StreamReaderRecvStreamWrapper, WebTransportFrame},
-    Error, Http3StreamInfo, Http3StreamType, RecvStream, Res,
 };
 
 #[derive(Debug)]
@@ -208,5 +208,32 @@ impl Protocol for Session {
     fn dgram_context_id(&self, datagram: Bytes) -> Result<Bytes, DgramContextIdError> {
         
         Ok(datagram)
+    }
+
+    fn datagram_capsule_support(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        false
+    }
+
+    fn write_datagram_capsule(
+        &self,
+        _control_stream_send: &mut Box<dyn SendStream>,
+        _conn: &mut Connection,
+        _buf: &[u8],
+        _now: Instant,
+    ) -> Res<()> {
+        debug_assert!(
+            false,
+            "[{self}] WebTransport does not support datagram capsules."
+        );
+        Ok(())
     }
 }

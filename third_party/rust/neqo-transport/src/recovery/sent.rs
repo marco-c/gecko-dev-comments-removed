@@ -281,7 +281,7 @@ impl Packets {
     }
 
     
-    pub fn drain_all(&mut self) -> impl Iterator<Item = Packet> {
+    pub fn drain_all(&mut self) -> impl Iterator<Item = Packet> + use<> {
         std::mem::take(&mut self.packets).into_values()
     }
 

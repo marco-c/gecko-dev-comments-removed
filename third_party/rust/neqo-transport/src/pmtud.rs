@@ -9,14 +9,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{qdebug, qinfo, Buffer};
+use neqo_common::{Buffer, qdebug, qinfo};
 use static_assertions::const_assert;
 
 use crate::{
+    Stats,
     frame::{FrameEncoder as _, FrameType},
     packet,
     recovery::{self, sent},
-    Stats,
 };
 
 
@@ -51,6 +51,10 @@ pub struct Pmtud {
     header_size: usize,
     mtu: usize,
     iface_mtu: usize,
+    
+    
+    
+    peer_max_udp_payload: Option<usize>,
     probe_index: usize,
     probe_count: usize,
     probe_state: Probe,
@@ -84,11 +88,23 @@ impl Pmtud {
             header_size: Self::header_size(remote_ip),
             mtu: search_table[probe_index],
             iface_mtu: iface_mtu.unwrap_or(usize::MAX),
+            peer_max_udp_payload: None,
             probe_index,
             probe_count: 0,
             probe_state: Probe::NotNeeded,
             raise_timer: None,
         }
+    }
+
+    
+    pub const fn set_peer_max_udp_payload(&mut self, peer_max_udp_payload: usize) {
+        self.peer_max_udp_payload = Some(peer_max_udp_payload);
+    }
+
+    
+    #[must_use]
+    pub const fn peer_max_udp_payload(&self) -> Option<usize> {
+        self.peer_max_udp_payload
     }
 
     
@@ -240,10 +256,12 @@ impl Pmtud {
             return;
         }
 
-        if self.search_table[self.probe_index + 1] > self.iface_mtu {
+        let mtu_limit = self.peer_max_udp_payload.map_or(self.iface_mtu, |p| {
+            self.iface_mtu.min(p.saturating_add(self.header_size))
+        });
+        if self.search_table[self.probe_index + 1] > mtu_limit {
             qdebug!(
-                "PMTUD reached interface MTU limit {}, stopping upwards search at {}",
-                self.iface_mtu,
+                "PMTUD reached MTU limit {mtu_limit}, stopping upwards search at {}",
                 self.mtu
             );
             self.stop(self.probe_index, now, stats);
@@ -275,15 +293,15 @@ mod tests {
         time::Instant,
     };
 
-    use neqo_common::{qdebug, qinfo, Encoder};
+    use neqo_common::{Encoder, qdebug, qinfo};
     use test_fixture::{fixture_init, now};
 
     use crate::{
+        Pmtud, Stats,
         crypto::CryptoDxState,
         packet,
-        pmtud::{Probe, PMTU_RAISE_TIMER, SEARCH_TABLE_LEN},
-        recovery::{self, sent, SendProfile},
-        Pmtud, Stats,
+        pmtud::{PMTU_RAISE_TIMER, Probe, SEARCH_TABLE_LEN},
+        recovery::{self, SendProfile, sent},
     };
 
     
@@ -522,6 +540,71 @@ mod tests {
 
         
         assert_eq!(initial_lost, stats.pmtud_lost);
+    }
+
+    
+    
+    fn find_pmtu_with_peer_max(
+        addr: IpAddr,
+        mtu: usize,
+        iface_mtu: Option<usize>,
+        peer_max_udp_payload: usize,
+    ) -> Pmtud {
+        fixture_init();
+        let now = now();
+        let mut pmtud = Pmtud::new(addr, iface_mtu);
+        pmtud.set_peer_max_udp_payload(peer_max_udp_payload);
+        let mut stats = Stats::default();
+        let mut prot = CryptoDxState::test_default();
+
+        pmtud.start(now, &mut stats);
+
+        while pmtud.needs_probe() {
+            pmtud_step(&mut pmtud, &mut stats, &mut prot, addr, mtu, now);
+        }
+
+        
+        
+        
+        
+        let peer_limit = peer_max_udp_payload + Pmtud::header_size(addr);
+        let effective = mtu.min(iface_mtu.unwrap_or(usize::MAX)).min(peer_limit);
+        assert_mtu(&pmtud, effective);
+
+        pmtud
+    }
+
+    #[test]
+    fn pmtud_respects_peer_max_udp_payload_size() {
+        let pmtud = find_pmtu_with_peer_max(V4, 9000, None, 1452);
+        assert_eq!(pmtud.mtu, 1472);
+    }
+
+    #[test]
+    fn pmtud_peer_max_smaller_than_iface_mtu() {
+        let pmtud = find_pmtu_with_peer_max(V4, 9000, Some(9000), 1452);
+        assert_eq!(pmtud.mtu, 1472);
+    }
+
+    #[test]
+    fn pmtud_iface_mtu_smaller_than_peer_max() {
+        let pmtud = find_pmtu_with_peer_max(V4, 9000, Some(1400), 9000);
+        assert_eq!(pmtud.mtu, 1380);
+    }
+
+    #[test]
+    fn pmtud_peer_max_v6() {
+        let pmtud = find_pmtu_with_peer_max(V6, 9000, None, 1452);
+        assert_eq!(pmtud.mtu, 1500);
+    }
+
+    #[test]
+    fn peer_max_udp_payload_accessor() {
+        let mut pmtud = Pmtud::new(V4, None);
+        assert_eq!(pmtud.peer_max_udp_payload(), None);
+
+        pmtud.set_peer_max_udp_payload(1452);
+        assert_eq!(pmtud.peer_max_udp_payload(), Some(1452));
     }
 
     

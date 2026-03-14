@@ -6,7 +6,7 @@
 
 use strum::FromRepr;
 
-use crate::err::{mozpkix, sec, ssl, PRErrorCode};
+use crate::err::{PRErrorCode, mozpkix, sec, ssl};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, FromRepr)]

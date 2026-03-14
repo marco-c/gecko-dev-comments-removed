@@ -13,7 +13,7 @@ use std::{
 
 use neqo_common::{qdebug, qtrace};
 
-use crate::cc::{classic_cc::WindowAdjustment, CongestionEvent};
+use crate::cc::{CongestionEvent, classic_cc::WindowAdjustment};
 
 
 

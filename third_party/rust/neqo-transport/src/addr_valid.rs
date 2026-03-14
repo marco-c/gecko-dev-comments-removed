@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::{qinfo, qtrace, Buffer, Decoder, Encoder, Role};
+use neqo_common::{Buffer, Decoder, Encoder, Role, qinfo, qtrace};
 use neqo_crypto::{
     constants::{TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3},
     selfencrypt::SelfEncrypt,
@@ -20,11 +20,11 @@ use smallvec::SmallVec;
 use static_assertions::const_assert;
 
 use crate::{
+    Res,
     cid::ConnectionId,
     frame::{FrameEncoder as _, FrameType},
     packet, recovery,
     stats::FrameStats,
-    Res,
 };
 
 
@@ -193,7 +193,7 @@ impl AddressValidation {
                     return None;
                 }
             }
-            _ => return None,
+            None => return None,
         }
         Some(ConnectionId::from(dec.decode_remainder()))
     }
@@ -238,43 +238,46 @@ impl AddressValidation {
         
         
         #[expect(clippy::option_if_let_else, reason = "Alternative is less readable.")]
-        if let Some(cid) = self.decrypt_token(enc, peer_address, retry, now) {
-            if retry {
-                
-                if cid.len() >= 8 {
-                    qinfo!("AddressValidation: valid Retry token for {cid}");
-                    AddressValidationResult::ValidRetry(cid)
+        match self.decrypt_token(enc, peer_address, retry, now) {
+            Some(cid) => {
+                if retry {
+                    
+                    if cid.len() >= 8 {
+                        qinfo!("AddressValidation: valid Retry token for {cid}");
+                        AddressValidationResult::ValidRetry(cid)
+                    } else {
+                        panic!("AddressValidation: Retry token with small CID {cid}");
+                    }
+                } else if cid.is_empty() {
+                    
+                    if self.validation == ValidateAddress::Always {
+                        qinfo!("AddressValidation: valid NEW_TOKEN token; validating again");
+                        AddressValidationResult::Validate
+                    } else {
+                        qinfo!("AddressValidation: valid NEW_TOKEN token; accepting");
+                        AddressValidationResult::Pass
+                    }
                 } else {
-                    panic!("AddressValidation: Retry token with small CID {cid}");
+                    panic!("AddressValidation: NEW_TOKEN token with CID {cid}");
                 }
-            } else if cid.is_empty() {
-                
-                if self.validation == ValidateAddress::Always {
-                    qinfo!("AddressValidation: valid NEW_TOKEN token; validating again");
-                    AddressValidationResult::Validate
-                } else {
-                    qinfo!("AddressValidation: valid NEW_TOKEN token; accepting");
-                    AddressValidationResult::Pass
-                }
-            } else {
-                panic!("AddressValidation: NEW_TOKEN token with CID {cid}");
             }
-        } else {
-            
-            
-            if retry {
-                
-                qinfo!("AddressValidation: invalid Retry token; rejecting");
-                AddressValidationResult::Invalid
-            } else if self.validation == ValidateAddress::Never {
-                
-                qinfo!("AddressValidation: invalid NEW_TOKEN token; accepting");
-                AddressValidationResult::Pass
-            } else {
+            None => {
                 
                 
-                qinfo!("AddressValidation: invalid NEW_TOKEN token; validating again");
-                AddressValidationResult::Validate
+                if retry {
+                    
+                    qinfo!("AddressValidation: invalid Retry token; rejecting");
+                    AddressValidationResult::Invalid
+                } else if self.validation == ValidateAddress::Never {
+                    
+                    qinfo!("AddressValidation: invalid NEW_TOKEN token; accepting");
+                    AddressValidationResult::Pass
+                } else {
+                    
+                    
+                    qinfo!("AddressValidation: invalid NEW_TOKEN token; validating again");
+                    AddressValidationResult::Validate
+                }
             }
         }
     }
@@ -313,11 +316,7 @@ impl NewTokenState {
     
     
     pub fn take_token(&mut self) -> Option<&[u8]> {
-        if let Self::Client {
-            ref mut pending,
-            ref mut old,
-        } = self
-        {
+        if let Self::Client { pending, old } = self {
             pending.pop().map(|t| {
                 if old.len() >= MAX_SAVED_TOKENS {
                     old.remove(0);
@@ -333,11 +332,7 @@ impl NewTokenState {
     
     
     pub fn save_token(&mut self, token: Vec<u8>) {
-        if let Self::Client {
-            ref mut pending,
-            old,
-        } = self
-        {
+        if let Self::Client { pending, old } = self {
             for t in old.iter().rev().chain(pending.iter().rev()) {
                 if t == &token {
                     qinfo!("NewTokenState discarding duplicate NEW_TOKEN");
@@ -362,7 +357,7 @@ impl NewTokenState {
         tokens: &mut recovery::Tokens,
         stats: &mut FrameStats,
     ) {
-        if let Self::Server(ref mut sender) = self {
+        if let Self::Server(sender) = self {
             sender.write_frames(builder, tokens, stats);
         }
     }
@@ -370,7 +365,7 @@ impl NewTokenState {
     
     
     pub fn send_new_token(&mut self, token: Vec<u8>) {
-        if let Self::Server(ref mut sender) = self {
+        if let Self::Server(sender) = self {
             sender.send_new_token(token);
         } else {
             unreachable!();
@@ -380,7 +375,7 @@ impl NewTokenState {
     
     
     pub fn lost(&mut self, seqno: usize) {
-        if let Self::Server(ref mut sender) = self {
+        if let Self::Server(sender) = self {
             sender.lost(seqno);
         } else {
             unreachable!();
@@ -390,7 +385,7 @@ impl NewTokenState {
     
     
     pub fn acked(&mut self, seqno: usize) {
-        if let Self::Server(ref mut sender) = self {
+        if let Self::Server(sender) = self {
             sender.acked(seqno);
         } else {
             unreachable!();

@@ -13,10 +13,12 @@ use std::{
     time::Instant,
 };
 
-use neqo_common::{qdebug, qtrace, Bytes, Encoder, Header, MessageType, Role};
+use neqo_common::{Bytes, Encoder, Header, MessageType, Role, qdebug, qtrace};
 use neqo_transport::{AppError, Connection, DatagramTracking, StreamId};
 
 use crate::{
+    CloseType, Error, Http3StreamType, HttpRecvStream, Priority, ReceiveOutput, RecvStream, Res,
+    SendStream, Stream,
     features::extended_connect::{
         ExtendedConnectEvents, ExtendedConnectType, HeaderListener, Headers,
     },
@@ -24,8 +26,6 @@ use crate::{
     priority::PriorityHandler,
     recv_message::{RecvMessage, RecvMessageInfo},
     send_message::SendMessage,
-    CloseType, Error, Http3StreamType, HttpRecvStream, Priority, ReceiveOutput, RecvStream, Res,
-    SendStream, Stream,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -378,24 +378,39 @@ impl Session {
     
     
     
+    
+    
     pub(crate) fn send_datagram<I: Into<DatagramTracking>>(
-        &self,
+        &mut self,
         conn: &mut Connection,
         buf: &[u8],
         id: I,
+        now: Instant,
     ) -> Res<()> {
         qtrace!("[{self}] send_datagram state={:?}", self.state);
-        if self.state == State::Active {
-            let mut dgram_data = Encoder::default();
-            dgram_data.encode_varint(self.id.as_u64() / 4);
-            self.protocol.write_datagram_prefix(&mut dgram_data);
-            dgram_data.encode(buf);
-            conn.send_datagram(dgram_data.into(), id)?;
-        } else {
+        if self.state != State::Active {
             qdebug!("[{self}]: cannot send datagram in {:?} state.", self.state);
             debug_assert!(false);
             return Err(Error::Unavailable);
         }
+
+        if conn.remote_datagram_size() == 0 && self.protocol.datagram_capsule_support() {
+            qtrace!("[{self}] remote_datagram_size is 0, trying HTTP DATAGRAM Capsule");
+            return self.protocol.write_datagram_capsule(
+                &mut self.control_stream_send,
+                conn,
+                buf,
+                now,
+            );
+        }
+
+        let mut dgram_data = Encoder::default();
+        dgram_data.encode_varint(self.id.as_u64() / 4);
+        self.protocol.write_datagram_prefix(&mut dgram_data);
+        dgram_data.encode(buf);
+
+        conn.send_datagram(dgram_data.into(), id)?;
+        qtrace!("[{self}] sent datagram via QUIC datagram");
         Ok(())
     }
 
@@ -565,6 +580,19 @@ pub(crate) trait Protocol: Debug + Display {
     fn write_datagram_prefix(&self, encoder: &mut Encoder);
 
     fn dgram_context_id(&self, datagram: Bytes) -> Result<Bytes, DgramContextIdError>;
+
+    
+    
+    fn datagram_capsule_support(&self) -> bool;
+
+    
+    fn write_datagram_capsule(
+        &self,
+        _control_stream_send: &mut Box<dyn SendStream>,
+        _conn: &mut Connection,
+        _buf: &[u8],
+        _now: Instant,
+    ) -> Res<()>;
 }
 
 #[derive(Debug, Error)]

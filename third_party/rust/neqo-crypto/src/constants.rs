@@ -7,7 +7,7 @@
 use enum_map::Enum;
 use strum::FromRepr;
 
-use crate::{ssl, Error};
+use crate::{Error, ssl};
 
 
 

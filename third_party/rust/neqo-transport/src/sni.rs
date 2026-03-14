@@ -6,7 +6,7 @@
 
 use std::ops::Range;
 
-use neqo_common::{qtrace, Decoder};
+use neqo_common::{Decoder, qtrace};
 
 
 #[must_use]
