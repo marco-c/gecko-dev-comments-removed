@@ -870,90 +870,87 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   
   WebTaskSchedulingState* schedulingState = nullptr;
-
   ExtractIncumbentAndSchedulingState(aMicroTask, hostDefinedData,
                                      &incumbentGlobal, &schedulingState);
 
+  const bool isMainThread = NS_IsMainThread();
+
+  StatefulMicroTask smt(aCCJS);
+
   {
-    const bool isMainThread = NS_IsMainThread();
+    IgnoredErrorResult errorResult;
+    nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
+        callbackGlobal, isMainThread, false,
+        errorResult);
+    if (!globalObject) {
+      return;
+    }
 
-    StatefulMicroTask smt(aCCJS);
+    const char* reason = "promise callback";
 
-    {
-      IgnoredErrorResult errorResult;
-      nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
-          callbackGlobal, isMainThread, false,
-          errorResult);
-      if (!globalObject) {
-        return;
-      }
+    
+    if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
+      return;
+    }
 
-      const char* reason = "promise callback";
+    if (!globalObject->HasJSGlobal()) {
+      return;
+    }
 
-      
-      if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
-        return;
-      }
+    if (incumbentGlobal && !incumbentGlobal->HasJSGlobal()) {
+      return;
+    }
 
-      if (!globalObject->HasJSGlobal()) {
-        return;
-      }
+    
+    AutoAllowLegacyScriptExecution exemption;
+    AutoEntryScript aes(globalObject, reason, isMainThread);
 
-      
-      AutoAllowLegacyScriptExecution exemption;
-      AutoEntryScript aes(globalObject, reason, isMainThread);
+    Maybe<AutoIncumbentScript> autoIncumbentScript;
+    if (incumbentGlobal) {
+      autoIncumbentScript.emplace(incumbentGlobal);
+    }
 
-      Maybe<AutoIncumbentScript> autoIncumbentScript;
-      if (incumbentGlobal) {
-        if (!incumbentGlobal->HasJSGlobal()) {
-          return;
-        }
+    
+    
+    ignoreMicroTasks.release();
 
-        autoIncumbentScript.emplace(incumbentGlobal);
-      }
+    MOZ_ASSERT(aCx == aes.cx());
 
-      
-      
-      ignoreMicroTasks.release();
+    JSAutoRealm ar(aCx, callbackGlobal);
 
-      MOZ_ASSERT(aCx == aes.cx());
+    Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
+    if (allocStack) {
+      asyncStackSetter.emplace(aCx, allocStack, reason);
+    }
 
-      JSAutoRealm ar(aCx, callbackGlobal);
+    JS::RootedField<JSObject*, 3> maybePromise(
+        roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
 
-      Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
-      if (allocStack) {
-        asyncStackSetter.emplace(aCx, allocStack, reason);
-      }
+    
+    auto state = maybePromise
+                     ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
+                     : JS::PromiseUserInputEventHandlingState::DontCare;
+    bool propagate =
+        state ==
+        JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
+    AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
-      JS::RootedField<JSObject*, 3> maybePromise(
-          roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
-
-      
-      auto state = maybePromise
-                       ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
-                       : JS::PromiseUserInputEventHandlingState::DontCare;
-      bool propagate =
-          state ==
-          JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
-      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
-
-      if (incumbentGlobal) {
-        
-        
-        
-        incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
-      }
-
+    if (incumbentGlobal) {
       
       
       
-      (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+      incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+    }
 
-      
-      
-      if (incumbentGlobal) {
-        incumbentGlobal->SetWebTaskSchedulingState(nullptr);
-      }
+    
+    
+    
+    (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+
+    
+    
+    if (incumbentGlobal) {
+      incumbentGlobal->SetWebTaskSchedulingState(nullptr);
     }
   }
 }
