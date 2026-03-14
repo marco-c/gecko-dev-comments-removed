@@ -9995,3 +9995,16 @@ void nsWindow::UnexportHandle() {
     }
   }
 }
+
+uint32_t nsWindow::GetMaxTouchPoints() const {
+#ifdef MOZ_WAYLAND
+  
+  
+  
+  
+  static constexpr bool sMaxTouchPoints = 5;
+  return WaylandDisplayGet()->GetTouch() ? sMaxTouchPoints : 0;
+#else
+  return 0;
+#endif
+}
