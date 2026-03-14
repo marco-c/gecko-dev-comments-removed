@@ -6419,7 +6419,6 @@ var gMainPane = {
         
         if (updateAutoValue) {
           await this.readBackgroundUpdatePref();
-        } else {
         }
 
         
