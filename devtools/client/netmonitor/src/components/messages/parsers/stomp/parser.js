@@ -74,20 +74,28 @@ const COLON = 58;
 
 
 class Parser {
+  #bodyBytesRemaining;
+  #decoder;
+  #encoder;
+  #headerKey;
+  #onByte;
+  #results;
+  #token;
+
   constructor(onFrame, onIncomingPing) {
     this.onFrame = onFrame;
     this.onIncomingPing = onIncomingPing;
-    this._encoder = new TextEncoder();
-    this._decoder = new TextDecoder();
-    this._token = [];
-    this._initState();
+    this.#encoder = new TextEncoder();
+    this.#decoder = new TextDecoder();
+    this.#token = [];
+    this.#initState();
   }
   parseChunk(segment, appendMissingNULLonIncoming = false) {
     let chunk;
     if (segment instanceof ArrayBuffer) {
       chunk = new Uint8Array(segment);
     } else {
-      chunk = this._encoder.encode(segment);
+      chunk = this.#encoder.encode(segment);
     }
     
     
@@ -102,12 +110,12 @@ class Parser {
     
     for (let i = 0; i < chunk.length; i++) {
       const byte = chunk[i];
-      this._onByte(byte);
+      this.#onByte(byte);
     }
   }
   
   
-  _collectFrame(byte) {
+  #collectFrame(byte) {
     if (byte === NULL) {
       
       return;
@@ -121,109 +129,109 @@ class Parser {
       this.onIncomingPing();
       return;
     }
-    this._onByte = this._collectCommand;
-    this._reinjectByte(byte);
+    this.#onByte = this.#collectCommand;
+    this.#reinjectByte(byte);
   }
-  _collectCommand(byte) {
+  #collectCommand(byte) {
     if (byte === CR) {
       
       return;
     }
     if (byte === LF) {
-      this._results.command = this._consumeTokenAsUTF8();
-      this._onByte = this._collectHeaders;
+      this.#results.command = this.#consumeTokenAsUTF8();
+      this.#onByte = this.#collectHeaders;
       return;
     }
-    this._consumeByte(byte);
+    this.#consumeByte(byte);
   }
-  _collectHeaders(byte) {
+  #collectHeaders(byte) {
     if (byte === CR) {
       
       return;
     }
     if (byte === LF) {
-      this._setupCollectBody();
+      this.#setupCollectBody();
       return;
     }
-    this._onByte = this._collectHeaderKey;
-    this._reinjectByte(byte);
+    this.#onByte = this.#collectHeaderKey;
+    this.#reinjectByte(byte);
   }
-  _reinjectByte(byte) {
-    this._onByte(byte);
+  #reinjectByte(byte) {
+    this.#onByte(byte);
   }
-  _collectHeaderKey(byte) {
+  #collectHeaderKey(byte) {
     if (byte === COLON) {
-      this._headerKey = this._consumeTokenAsUTF8();
-      this._onByte = this._collectHeaderValue;
+      this.#headerKey = this.#consumeTokenAsUTF8();
+      this.#onByte = this.#collectHeaderValue;
       return;
     }
-    this._consumeByte(byte);
+    this.#consumeByte(byte);
   }
-  _collectHeaderValue(byte) {
+  #collectHeaderValue(byte) {
     if (byte === CR) {
       
       return;
     }
     if (byte === LF) {
-      this._results.headers.push([this._headerKey, this._consumeTokenAsUTF8()]);
-      this._headerKey = undefined;
-      this._onByte = this._collectHeaders;
+      this.#results.headers.push([this.#headerKey, this.#consumeTokenAsUTF8()]);
+      this.#headerKey = undefined;
+      this.#onByte = this.#collectHeaders;
       return;
     }
-    this._consumeByte(byte);
+    this.#consumeByte(byte);
   }
-  _setupCollectBody() {
-    const contentLengthHeader = this._results.headers.filter(header => {
+  #setupCollectBody() {
+    const contentLengthHeader = this.#results.headers.filter(header => {
       return header[0] === "content-length";
     })[0];
     if (contentLengthHeader) {
-      this._bodyBytesRemaining = parseInt(contentLengthHeader[1], 10);
-      this._onByte = this._collectBodyFixedSize;
+      this.#bodyBytesRemaining = parseInt(contentLengthHeader[1], 10);
+      this.#onByte = this.#collectBodyFixedSize;
     } else {
-      this._onByte = this._collectBodyNullTerminated;
+      this.#onByte = this.#collectBodyNullTerminated;
     }
   }
-  _collectBodyNullTerminated(byte) {
+  #collectBodyNullTerminated(byte) {
     if (byte === NULL) {
-      this._retrievedBody();
+      this.#retrievedBody();
       return;
     }
-    this._consumeByte(byte);
+    this.#consumeByte(byte);
   }
-  _collectBodyFixedSize(byte) {
+  #collectBodyFixedSize(byte) {
     
-    if (this._bodyBytesRemaining-- === 0) {
-      this._retrievedBody();
+    if (this.#bodyBytesRemaining-- === 0) {
+      this.#retrievedBody();
       return;
     }
-    this._consumeByte(byte);
+    this.#consumeByte(byte);
   }
-  _retrievedBody() {
-    this._results.binaryBody = this._consumeTokenAsRaw();
-    this.onFrame(this._results);
-    this._initState();
+  #retrievedBody() {
+    this.#results.binaryBody = this.#consumeTokenAsRaw();
+    this.onFrame(this.#results);
+    this.#initState();
   }
   
-  _consumeByte(byte) {
-    this._token.push(byte);
+  #consumeByte(byte) {
+    this.#token.push(byte);
   }
-  _consumeTokenAsUTF8() {
-    return this._decoder.decode(this._consumeTokenAsRaw());
+  #consumeTokenAsUTF8() {
+    return this.#decoder.decode(this.#consumeTokenAsRaw());
   }
-  _consumeTokenAsRaw() {
-    const rawResult = new Uint8Array(this._token);
-    this._token = [];
+  #consumeTokenAsRaw() {
+    const rawResult = new Uint8Array(this.#token);
+    this.#token = [];
     return rawResult;
   }
-  _initState() {
-    this._results = {
+  #initState() {
+    this.#results = {
       command: undefined,
       headers: [],
       binaryBody: undefined,
     };
-    this._token = [];
-    this._headerKey = undefined;
-    this._onByte = this._collectFrame;
+    this.#token = [];
+    this.#headerKey = undefined;
+    this.#onByte = this.#collectFrame;
   }
 }
 
