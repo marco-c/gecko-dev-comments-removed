@@ -2,9 +2,33 @@
 
 
 
+
+
 const { TabNotes } = ChromeUtils.importESModule(
   "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs"
 );
+
+
+
+
+
+async function addTab(url) {
+  const tab = BrowserTestUtils.addTab(gBrowser, url);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url);
+  return tab;
+}
+
+
+
+
+
+function createNote(tab) {
+  let tabNoteCreated = BrowserTestUtils.waitForEvent(tab, "TabNote:Created");
+  return Promise.all([
+    tabNoteCreated,
+    TabNotes.set(tab, `Test note text: ${tab.canonicalUrl}`),
+  ]);
+}
 
 
 
@@ -105,4 +129,38 @@ function tabNoteIndicatorDisappears(tab) {
     { attributeFilter: ["tab-note"] },
     () => !tab.hasTabNote
   );
+}
+
+
+
+
+
+
+async function tabNoteDetermined(tab) {
+  
+  let event = BrowserTestUtils.waitForEvent(tab, "TabNote:Determined");
+  return (await event).detail.hasTabNote;
+}
+
+
+
+
+
+
+
+
+
+async function tabNoteDeterminedFullPageLoad(tab) {
+  let count = 0;
+  
+  let event = BrowserTestUtils.waitForEvent(
+    tab,
+    "TabNote:Determined",
+    false,
+    () => {
+      count += 1;
+      return count == 2;
+    }
+  );
+  return (await event).detail.hasTabNote;
 }
