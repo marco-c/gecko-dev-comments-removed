@@ -218,50 +218,74 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
-  
-  
-  
-  
-
-  
-  int32_t nodeStart;
-  uint32_t nodeEnd;
-  const nsINode* parent = nullptr;
-
   MOZ_ASSERT_IF(aKind == TreeKind::FlatForSelection,
                 StaticPrefs::dom_shadowdom_selection_across_boundary_enabled());
+  constexpr TreeKind boundaryKind = aKind == TreeKind::FlatForSelection
+                                        ? TreeKind::FlatForSelection
+                                        : TreeKind::DOM;
+
   
-  if (!aNode->IsShadowRoot()) {
-    parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
+  
+  
+  
+  
+  
+
+  
+  ConstRawRangeBoundary nodeStart(boundaryKind);
+  ConstRawRangeBoundary nodeEnd(boundaryKind);
+
+  
+  nsINode* const parentNodeInSameSelection = [&]() -> nsINode* {
+    if (aNode->IsShadowRoot()) {
+      return nullptr;
+    }
+    return ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
         *aNode, aKind == TreeKind::FlatForSelection
                     ? AllowRangeCrossShadowBoundary::Yes
                     : AllowRangeCrossShadowBoundary::No);
-  }
+  }();
 
-  if (!parent) {
+  if (!parentNodeInSameSelection) {
     
     
     
-    parent = aNode;
-    nodeStart = 0;
-    nodeEnd = aNode->GetChildCount();
-  } else if (const auto* slotAsParent = HTMLSlotElement::FromNode(parent);
+    nodeStart = ConstRawRangeBoundary::StartOfParent(
+        *aNode, RangeBoundarySetBy::Ref, boundaryKind);
+    nodeEnd = ConstRawRangeBoundary::EndOfParent(
+        *aNode, RangeBoundarySetBy::Ref, boundaryKind);
+  } else if (const auto* slotAsParent =
+                 parentNodeInSameSelection
+                     ->GetAsHTMLSlotElementIfFilledForSelection();
              slotAsParent && aKind == TreeKind::FlatForSelection) {
     
     
     auto index = slotAsParent->AssignedNodes().IndexOf(aNode);
-    nodeStart = index;
-    nodeEnd = nodeStart + 1;
+    nodeStart =
+        ConstRawRangeBoundary(slotAsParent, index, RangeBoundarySetBy::Offset,
+                              TreeKind::FlatForSelection);
+    nodeEnd = ConstRawRangeBoundary(slotAsParent, index + 1,
+                                    RangeBoundarySetBy::Offset,
+                                    TreeKind::FlatForSelection);
   } else {
-    nodeStart = parent->ComputeIndexOf_Deprecated(aNode);
-    NS_WARNING_ASSERTION(
-        nodeStart >= 0,
-        "aNode has the parent node but it does not have aNode!");
-    nodeEnd = nodeStart + 1u;
-    MOZ_ASSERT(nodeStart < 0 || static_cast<uint32_t>(nodeStart) < nodeEnd,
-               "nodeStart should be less than nodeEnd");
+    nodeStart =
+        ConstRawRangeBoundary::FromChild(*aNode->AsContent(), boundaryKind);
+    nodeEnd = ConstRawRangeBoundary::After(*aNode->AsContent(), boundaryKind);
+    if (boundaryKind == TreeKind::FlatForSelection && !nodeStart.IsSet() &&
+        !nodeEnd.IsSet()) {
+      if (ShadowRoot* const shadowRoot =
+              parentNodeInSameSelection->GetShadowRootForSelection()) {
+        
+        
+        if (aNode == parentNodeInSameSelection->GetFirstChild()) {
+          nodeStart = nodeEnd = ConstRawRangeBoundary::StartOfParent(
+              *shadowRoot, RangeBoundarySetBy::Ref, TreeKind::FlatForSelection);
+        } else {
+          nodeStart = nodeEnd = ConstRawRangeBoundary::EndOfParent(
+              *shadowRoot, RangeBoundarySetBy::Ref, TreeKind::FlatForSelection);
+        }
+      }
+    }
   }
 
   
@@ -277,25 +301,34 @@ nsresult RangeUtils::CompareNodeToRangeBoundaries(
   
   
 
+  const ConstRawRangeBoundary startBoundary =
+      aStartBoundary.GetTreeKind() == boundaryKind
+          ? aStartBoundary.AsConstRaw()
+          : (boundaryKind == TreeKind::DOM
+                 ? aStartBoundary.AsConstRaw().AsRangeBoundaryInDOMTree()
+                 : aStartBoundary.AsConstRaw().AsRangeBoundaryInFlatTree(
+                       aStartBoundary == aEndBoundary
+                           ? RangeBoundaryFor::Collapsed
+                           : RangeBoundaryFor::Start));
   
   Maybe<int32_t> order =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets<aKind>(
-          aStartBoundary.GetContainer(),
-          *aStartBoundary.Offset(
-              RangeBoundaryBase<SPT,
-                                SRT>::OffsetFilter::kValidOrInvalidOffsets),
-          parent, nodeStart);
+      nsContentUtils::ComparePoints<aKind>(startBoundary, nodeStart);
   if (NS_WARN_IF(!order)) {
     return NS_ERROR_DOM_WRONG_DOCUMENT_ERR;
   }
   *aNodeIsBeforeRange = *order > 0;
-  
-  order = nsContentUtils::ComparePointsWithIndices<aKind>(
-      aEndBoundary.GetContainer(),
-      *aEndBoundary.Offset(
-          RangeBoundaryBase<EPT, ERT>::OffsetFilter::kValidOrInvalidOffsets),
-      parent, nodeEnd);
 
+  const ConstRawRangeBoundary endBoundary =
+      aEndBoundary.GetTreeKind() == boundaryKind
+          ? aEndBoundary.AsConstRaw()
+          : (boundaryKind == TreeKind::DOM
+                 ? aEndBoundary.AsConstRaw().AsRangeBoundaryInDOMTree()
+                 : aEndBoundary.AsConstRaw().AsRangeBoundaryInFlatTree(
+                       aStartBoundary == aEndBoundary
+                           ? RangeBoundaryFor::Collapsed
+                           : RangeBoundaryFor::End));
+  
+  order = nsContentUtils::ComparePoints<aKind>(endBoundary, nodeEnd);
   if (NS_WARN_IF(!order)) {
     return NS_ERROR_DOM_WRONG_DOCUMENT_ERR;
   }

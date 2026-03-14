@@ -405,7 +405,7 @@ class RangeBoundaryBase {
     }
     
     
-    if (nsIContent* const child = GetChildAtOffset()) {
+    if (RawRefType* const child = GetChildAtOffset()) {
       return FromChild(*child, TreeKind::DOM);
     }
     
@@ -444,8 +444,12 @@ class RangeBoundaryBase {
 
   
   template <typename PT, typename RT,
-            typename = std::enable_if_t<!std::is_const_v<RawParentType> ||
-                                        std::is_const_v<PT>>>
+            typename = std::enable_if_t<
+                
+                std::is_const_v<RawParentType> ||
+                
+                
+                !std::is_const_v<PT>>>
   RangeBoundaryBase(const RangeBoundaryBase<PT, RT>& aOther,
                     RangeBoundarySetBy aSetBy)
       : mParent(aOther.mParent),
