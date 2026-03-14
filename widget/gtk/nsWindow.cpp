@@ -9995,3 +9995,17 @@ void nsWindow::UnexportHandle() {
     }
   }
 }
+
+uint32_t nsWindow::GetMaxTouchPoints() const {
+#ifdef MOZ_WAYLAND
+  
+  
+  
+  
+  if (GdkIsWaylandDisplay()) {
+    static constexpr bool sMaxTouchPoints = 5;
+    return WaylandDisplayGet()->GetTouch() ? sMaxTouchPoints : 0;
+  }
+#endif
+  return 0;
+}
