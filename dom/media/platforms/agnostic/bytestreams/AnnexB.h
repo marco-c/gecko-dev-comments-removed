@@ -40,6 +40,9 @@ class AnnexB {
       mozilla::MediaRawData* aSample, bool aAddSPS = true);
 
   
+  static RefPtr<MediaByteBuffer> ExtractExtraData(
+      const Span<const uint8_t>& aSpan);
+  
   static RefPtr<MediaByteBuffer> ExtractExtraDataForAVCC(
       const Span<const uint8_t>& aSpan);
   
