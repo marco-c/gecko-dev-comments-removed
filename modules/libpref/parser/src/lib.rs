@@ -352,7 +352,8 @@ impl<'t> Parser<'t> {
         Parser {
             path: path,
             kind: kind,
-            buf: buf,
+            
+            buf: buf.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(buf),
             i: 0,
             line_num: 1,
             pref_fn: pref_fn,

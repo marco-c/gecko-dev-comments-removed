@@ -588,6 +588,18 @@ pref("int.ok", 0);
   );
 
   
+  USER("\xEF\xBB\xBF" R"(
+user_pref("int.ok", 1);
+    )",
+    ""
+  );
+
+  
+  USER("\xEF\xBB\xBF",
+    ""
+  );
+
+  
 }
 
 TEST(PrefsParser, PrefsFileThatFailedToParse)
