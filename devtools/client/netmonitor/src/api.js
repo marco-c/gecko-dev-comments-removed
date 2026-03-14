@@ -33,6 +33,8 @@ const {
 
 
 class NetMonitorAPI extends EventEmitter {
+  #requestFinishedListeners;
+
   constructor() {
     super();
 
@@ -40,7 +42,7 @@ class NetMonitorAPI extends EventEmitter {
     this.connector = new Connector();
 
     
-    this._requestFinishedListeners = new Set();
+    this.#requestFinishedListeners = new Set();
 
     
     this.onPayloadReady = this.onPayloadReady.bind(this);
@@ -111,7 +113,7 @@ class NetMonitorAPI extends EventEmitter {
 
 
   async onPayloadReady(resource) {
-    if (!this._requestFinishedListeners.size) {
+    if (!this.#requestFinishedListeners.size) {
       return;
     }
 
@@ -141,7 +143,7 @@ class NetMonitorAPI extends EventEmitter {
     const harEntry = har.log.entries[0];
     delete harEntry.pageref;
 
-    this._requestFinishedListeners.forEach(listener =>
+    this.#requestFinishedListeners.forEach(listener =>
       listener({
         harEntry,
         requestId: resource.actor,
@@ -165,15 +167,15 @@ class NetMonitorAPI extends EventEmitter {
 
 
   addRequestFinishedListener(listener) {
-    this._requestFinishedListeners.add(listener);
+    this.#requestFinishedListeners.add(listener);
   }
 
   removeRequestFinishedListener(listener) {
-    this._requestFinishedListeners.delete(listener);
+    this.#requestFinishedListeners.delete(listener);
   }
 
   hasRequestFinishedListeners() {
-    return this._requestFinishedListeners.size > 0;
+    return this.#requestFinishedListeners.size > 0;
   }
 
   
