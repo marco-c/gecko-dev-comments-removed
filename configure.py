@@ -3,6 +3,7 @@
 
 
 import itertools
+import json
 import logging
 import os
 import pprint
@@ -20,13 +21,10 @@ sys.path.insert(0, os.path.join(base_dir, "testing", "mozbase", "mozshellutil"))
 sys.path.insert(0, os.path.join(base_dir, "third_party", "python", "six"))
 sys.path.insert(0, os.path.join(base_dir, "third_party", "python", "looseversion"))
 import mozpack.path as mozpath
-from mach.requirements import MachEnvRequirements
 from mach.site import (
     CommandSiteManager,
-    ExternalPythonSite,
     MachSiteManager,
     MozSiteMetadata,
-    SitePackagesSource,
 )
 from mozbuild.backend.configenvironment import PartialConfigEnvironment
 from mozbuild.configure import TRACE, ConfigureSandbox
@@ -258,6 +256,16 @@ def config_status(config, execute=True):
     partial_config = PartialConfigEnvironment(config["TOPOBJDIR"])
     partial_config.write_vars(sanitized_config)
 
+    mach_env = {
+        "topobjdir": sanitized_config["topobjdir"],
+        "topsrcdir": sanitized_config["topsrcdir"],
+        "defines": dict(sanitized_config["defines"]),
+        "substs": dict(sanitized_config["substs"]),
+    }
+    
+    with FileAvoidWrite("config.status.json") as fh:
+        fh.write(json.dumps(mach_env, indent=2, sort_keys=True))
+
     
     
     
@@ -304,20 +312,18 @@ def _activate_build_virtualenv():
 
     topsrcdir = os.path.realpath(os.path.dirname(__file__))
 
-    mach_site = MachSiteManager(
-        topsrcdir,
-        None,
-        MachEnvRequirements(),
-        ExternalPythonSite(sys.executable),
-        SitePackagesSource.NONE,
-    )
-    mach_site.activate()
-
+    from mach.util import get_state_dir as _get_state_dir
     from mach.util import get_virtualenv_base_dir
+
+    def get_state_dir():
+        return _get_state_dir(specific_to_topsrcdir=True, topsrcdir=topsrcdir)
+
+    mach_site = MachSiteManager.from_environment(topsrcdir, get_state_dir)
+    mach_site.activate()
 
     build_site = CommandSiteManager.from_environment(
         topsrcdir,
-        None,
+        get_state_dir,
         "build",
         get_virtualenv_base_dir(topsrcdir),
     )
