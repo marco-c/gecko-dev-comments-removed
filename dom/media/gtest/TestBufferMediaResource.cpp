@@ -75,7 +75,11 @@ TEST(BufferMediaResource, ReadFromCache_NegativeCount_ShouldFail)
   RefPtr<MediaResource> res = new BufferMediaResource(buf, sizeof(buf));
 
   char out[4] = {0};
-  nsresult rv = res->ReadFromCache(out, 0, static_cast<uint32_t>(-1));
+  
+  
+  
+  volatile uint32_t count = static_cast<uint32_t>(-1);
+  nsresult rv = res->ReadFromCache(out, 0, count);
 
   EXPECT_NE(rv, NS_OK);
 }
