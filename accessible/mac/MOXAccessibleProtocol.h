@@ -208,6 +208,9 @@
 - (id _Nullable)moxMaxValue;
 
 
+- (NSString* _Nullable)moxARIABrailleRoleDescription;
+
+
 
 
 
