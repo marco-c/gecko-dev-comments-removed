@@ -338,6 +338,31 @@ async function openAboutTranslations({
 
   if (!disabled) {
     await aboutTranslationsTestUtils.waitForReady();
+    await aboutTranslationsTestUtils.setThrottleDelay(25);
+
+    const isTranslationEngineSupported =
+      TranslationsParent.getIsTranslationsEngineSupported();
+
+    if (isTranslationEngineSupported) {
+      
+      
+      await aboutTranslationsTestUtils.setDebounceDelay(0);
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+              { sourceText: "" },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.setSourceTextAreaValue("");
+        }
+      );
+    }
+
+    await aboutTranslationsTestUtils.setDebounceDelay(100);
 
     if (requireManualCopyButtonReset !== undefined) {
       await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(
@@ -4250,6 +4275,12 @@ class AboutTranslationsTestUtils {
     
 
 
+    static SourceTextInputDebounced =
+      "AboutTranslationsTest:SourceTextInputDebounced";
+
+    
+
+
 
 
     static URLUpdatedFromUI = "AboutTranslationsTest:URLUpdatedFromUI";
@@ -4465,6 +4496,27 @@ class AboutTranslationsTestUtils {
     await loadNewPage(this.#browser, url.href);
 
     await this.waitForReady();
+  }
+
+  
+
+
+
+
+
+  async setThrottleDelay(ms) {
+    logAction(ms);
+    try {
+      await this.#runInPage(
+        (_, { ms }) => {
+          const { window } = content;
+          Cu.waiveXrays(window).THROTTLE_DELAY = ms;
+        },
+        { ms }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
   }
 
   
