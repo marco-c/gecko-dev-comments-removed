@@ -215,12 +215,8 @@ async function loadNewPage(browser, url) {
 
 
 
-
-
-
 async function openAboutTranslations({
-  featureEnabled = true,
-  lockEnabledState = false,
+  disabled,
   languagePairs = LANGUAGE_PAIRS,
   prefs,
   autoDownloadFromRemoteSettings = false,
@@ -238,9 +234,7 @@ async function openAboutTranslations({
   await SpecialPowers.pushPrefEnv({
     set: [
       
-      ["browser.translations.enable", featureEnabled],
-      ["browser.ai.control.default", "available"],
-      ["browser.ai.control.translations", "default"],
+      ["browser.translations.enable", !disabled],
       ["browser.translations.logLevel", "All"],
       ["browser.translations.mostRecentTargetLanguages", ""],
       ["dom.events.testing.asyncClipboard", true],
@@ -248,18 +242,6 @@ async function openAboutTranslations({
       ...(prefs ?? []),
     ],
   });
-  const lockedFeaturePrefs = [];
-
-  if (!featureEnabled) {
-    await TranslationsParent.AIFeature.disable();
-  }
-
-  if (lockEnabledState) {
-    for (const pref of ["browser.ai.control.translations"]) {
-      Services.prefs.lockPref(pref);
-      lockedFeaturePrefs.push(pref);
-    }
-  }
 
   
 
@@ -290,8 +272,6 @@ async function openAboutTranslations({
       "moz-button#about-translations-translation-error-button",
     unsupportedInfoMessage:
       "moz-message-bar#about-translations-unsupported-info-message",
-    policyDisabledInfoMessage:
-      "moz-message-bar#about-translations-policy-disabled-info-message",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
     languageLoadErrorButton:
@@ -363,9 +343,9 @@ async function openAboutTranslations({
   );
 
   let originalCopyButtonResetDelay;
-  await aboutTranslationsTestUtils.waitForReady();
 
-  if (featureEnabled) {
+  if (!disabled) {
+    await aboutTranslationsTestUtils.waitForReady();
     await aboutTranslationsTestUtils.setThrottleDelay(25);
 
     const isTranslationEngineSupported =
@@ -419,11 +399,6 @@ async function openAboutTranslations({
 
       await removeMocks();
       await EngineProcess.destroyTranslationsEngine();
-      for (const pref of lockedFeaturePrefs) {
-        if (Services.prefs.prefIsLocked(pref)) {
-          Services.prefs.unlockPref(pref);
-        }
-      }
 
       await SpecialPowers.popPrefEnv();
       TestTranslationsTelemetry.cleanup();
@@ -4411,38 +4386,6 @@ class AboutTranslationsTestUtils {
 
 
 
-    static UnsupportedInfoMessageShown =
-      "AboutTranslationsTest:UnsupportedInfoMessageShown";
-
-    
-
-
-
-
-    static UnsupportedInfoMessageHidden =
-      "AboutTranslationsTest:UnsupportedInfoMessageHidden";
-
-    
-
-
-
-
-    static PolicyDisabledInfoMessageShown =
-      "AboutTranslationsTest:PolicyDisabledInfoMessageShown";
-
-    
-
-
-
-
-    static PolicyDisabledInfoMessageHidden =
-      "AboutTranslationsTest:PolicyDisabledInfoMessageHidden";
-
-    
-
-
-
-
     static LanguageLoadErrorMessageShown =
       "AboutTranslationsTest:LanguageLoadErrorMessageShown";
 
@@ -6261,7 +6204,6 @@ class AboutTranslationsTestUtils {
 
 
 
-
   async assertIsVisible({
     pageHeader = false,
     mainUserInterface = false,
@@ -6275,7 +6217,6 @@ class AboutTranslationsTestUtils {
     detectedLanguageUnsupportedMessage = false,
     translationErrorMessage = false,
     unsupportedInfoMessage = false,
-    policyDisabledInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
     
@@ -6335,9 +6276,6 @@ class AboutTranslationsTestUtils {
           ),
           unsupportedInfoMessage: isElementVisible(
             selectors.unsupportedInfoMessage
-          ),
-          policyDisabledInfoMessage: isElementVisible(
-            selectors.policyDisabledInfoMessage
           ),
           languageLoadErrorMessage: isElementVisible(
             selectors.languageLoadErrorMessage
@@ -6402,11 +6340,6 @@ class AboutTranslationsTestUtils {
         unsupportedInfoMessage,
         visibilityMap.unsupportedInfoMessage,
         "unsupported info message"
-      );
-      assertVisibility(
-        policyDisabledInfoMessage,
-        visibilityMap.policyDisabledInfoMessage,
-        "policy-disabled info message"
       );
       assertVisibility(
         languageLoadErrorMessage,
