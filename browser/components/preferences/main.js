@@ -4062,6 +4062,7 @@ SettingGroupManager.registerGroups({
       {
         id: "dohBox",
         control: "moz-box-group",
+        controlAttrs: { searchkeywords: "doh trr" },
         items: [
           {
             id: "dohModeBoxItem",
@@ -4818,6 +4819,17 @@ SettingGroupManager.registerGroups({
             l10nId: "sync-remove-account",
           },
         ],
+      },
+    ],
+  },
+  backup: {
+    l10nId: "settings-data-backup-header2",
+    headingLevel: 2,
+    supportPage: "firefox-backup",
+    items: [
+      {
+        id: "backupSettings",
+        control: "backup-settings",
       },
     ],
   },
