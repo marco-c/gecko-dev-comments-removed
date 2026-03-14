@@ -28,12 +28,16 @@ function expectImportsToSucceed(mm, base = MODULE_BASE) {
   }
 }
 
-function expectImportsToFail(mm, base = MODULE_BASE) {
+async function expectImportsToFail(mm, base = MODULE_BASE) {
   for (let m of mm) {
     let resource = base + m;
     let succeeded = false;
     try {
-      ChromeUtils.importESModule(resource);
+      
+      
+      
+      
+      await fetch(resource);
       succeeded = true;
     } catch (e) {}
 
@@ -43,7 +47,7 @@ function expectImportsToFail(mm, base = MODULE_BASE) {
   }
 }
 
-function run_test() {
+add_task(async function test_imports() {
   expectImportsToSucceed(shared_modules);
   expectImportsToSucceed(shared_test_modules, TEST_BASE);
   expectImportsToSucceed(["LogManager.sys.mjs"], "resource://gre/modules/");
@@ -51,6 +55,9 @@ function run_test() {
   if (AppConstants.platform != "android") {
     expectImportsToSucceed(non_android_modules);
   } else {
-    expectImportsToFail(non_android_modules);
+    await expectImportsToFail(non_android_modules);
+
+    
+    await fetch(MODULE_BASE + shared_modules[0]);
   }
-}
+});
