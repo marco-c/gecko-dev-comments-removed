@@ -2145,6 +2145,21 @@ LNAPermission nsHttpChannel::UpdateLocalNetworkAccessPermissions(
   }
 
   
+  if (StaticPrefs::network_lna_block_insecure_contexts()) {
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+        mLoadInfo->TriggeringPrincipal();
+    if (triggeringPrincipal &&
+        !triggeringPrincipal->GetIsOriginPotentiallyTrustworthy()) {
+      LOG(
+          ("nsHttpChannel::UpdateLocalNetworkAccessPermissions [this=%p] "
+           "blocking LNA request from insecure context\n",
+           this));
+      userPerms = LNAPermission::Denied;
+      return userPerms;
+    }
+  }
+
+  
   
   
   if (StaticPrefs::network_lna_blocking()) {
@@ -9076,6 +9091,7 @@ nsresult nsHttpChannel::ProcessLNAActions() {
     
     return NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
   }
+
   
   
   
