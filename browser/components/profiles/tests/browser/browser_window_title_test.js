@@ -14,9 +14,24 @@ add_task(async function test_windowTitle() {
 
   const profileName = SelectableProfileService.currentProfile.name;
 
+  
+  Assert.ok(
+    !document.title.includes(profileName),
+    "The profile name is not in the window title"
+  );
+
+  let newProfile = await SelectableProfileService.createNewProfile(false);
+
   Assert.ok(
     document.title.includes(profileName),
     "The profile name is in the window title"
+  );
+
+  await SelectableProfileService.deleteProfile(newProfile);
+
+  Assert.ok(
+    !document.title.includes(profileName),
+    "The profile name is not in the window title"
   );
 
   await SelectableProfileService.uninit();
