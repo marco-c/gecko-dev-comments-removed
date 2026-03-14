@@ -5,18 +5,10 @@
 #ifndef CDM_CONTENT_DECRYPTION_MODULE_H_
 #define CDM_CONTENT_DECRYPTION_MODULE_H_
 
+#include <cstdint>
 #include <type_traits>
 
 #include "content_decryption_module_export.h"
-
-#if defined(_MSC_VER)
-typedef unsigned char uint8_t;
-typedef unsigned int uint32_t;
-typedef int int32_t;
-typedef __int64 int64_t;
-#else
-#include <stdint.h>
-#endif
 
 #include "mozilla/DefineEnum.h"
 
@@ -369,6 +361,23 @@ CHECK_TYPE(KeyStatus, 4, 4);
 
 
 
+
+
+enum class KeyStatus_2 : uint32_t {
+  kUsable = 0,
+  kInternalError = 1,
+  kExpired = 2,
+  kOutputRestricted = 3,
+  kOutputDownscaled = 4,
+  kStatusPending = 5,
+  kReleased = 6,
+  kUsableInFuture = 7
+};
+CHECK_TYPE(KeyStatus_2, 4, 4);
+
+
+
+
 struct KeyInformation {
   const uint8_t* key_id;
   uint32_t key_id_size;
@@ -376,6 +385,17 @@ struct KeyInformation {
   uint32_t system_code;
 };
 CHECK_TYPE(KeyInformation, 16, 24);
+
+
+
+
+struct KeyInformation_2 {
+  const uint8_t* key_id;
+  uint32_t key_id_size;
+  KeyStatus_2 status;
+  uint32_t system_code;
+};
+CHECK_TYPE(KeyInformation_2, 16, 24);
 
 
 
@@ -411,8 +431,7 @@ CHECK_TYPE(InitDataType, 4, 4);
 
 enum SessionType : uint32_t {
   kTemporary = 0,
-  kPersistentLicense = 1,
-  kPersistentUsageRecord = 2
+  kPersistentLicense = 1
 };
 CHECK_TYPE(SessionType, 4, 4);
 
@@ -648,10 +667,18 @@ class CDM_CLASS_API FileIOClient {
 
 
 
+
 enum MetricName : uint32_t {
   kSdkVersion,
   kCertificateSerialNumber,
   kDecoderBypassBlockCount,
+  kDecoderCheck1SuccessCount,
+  kDecoderCheck1WarningCount,
+  kDecoderCheck1ErrorCount,
+  kKeySystemDataTime1,
+  kKeySystemDataTime2,
+  kKeySystemDataTime3,
+  kKeySystemDataBool1,
 };
 CHECK_TYPE(MetricName, 4, 4);
 
@@ -1625,7 +1652,7 @@ class CDM_CLASS_API Host_12 {
   
   
   virtual void OnResolveKeyStatusPromise(uint32_t promise_id,
-                                         KeyStatus key_status) = 0;
+                                         KeyStatus_2 key_status) = 0;
 
   
   
@@ -1670,7 +1697,7 @@ class CDM_CLASS_API Host_12 {
   virtual void OnSessionKeysChange(const char* session_id,
                                    uint32_t session_id_size,
                                    bool has_additional_usable_key,
-                                   const KeyInformation* keys_info,
+                                   const KeyInformation_2* keys_info,
                                    uint32_t keys_info_count) = 0;
 
   
