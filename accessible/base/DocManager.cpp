@@ -438,6 +438,17 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
     return nullptr;
   }
 
+  if (IPCAccessibilityActive()) {
+    nsIContent* ownerContent = aDocument->GetEmbedderElement();
+    if (ownerContent && ownerContent->IsXULElement()) {
+      
+      
+      
+      
+      return nullptr;
+    }
+  }
+
   nsIDocShell* docShell = aDocument->GetDocShell();
   if (!docShell || docShell->IsInvisible()) {
     return nullptr;
