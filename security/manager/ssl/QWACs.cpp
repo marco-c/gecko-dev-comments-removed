@@ -154,6 +154,7 @@ bool CertHasPolicyFrom(Input cert, const nsTArray<Input>& policies) {
   
   
   
+  
   bool foundPolicy = false;
   mozilla::pkix::Result rv =
       NestedOf(certificatePolicies, SEQUENCE, SEQUENCE, EmptyAllowed::No,
@@ -169,6 +170,17 @@ bool CertHasPolicyFrom(Input cert, const nsTArray<Input>& policies) {
                      foundPolicy = true;
                    }
                  }
+
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 policyInformationContents.SkipToEnd();
+
                  return Success;
                });
   if (rv != Success) {
