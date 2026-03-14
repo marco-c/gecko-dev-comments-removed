@@ -13,6 +13,8 @@
 
 
 
+
+
 #undef GP_PLAT_x86_android
 #undef GP_PLAT_amd64_android
 #undef GP_PLAT_arm_android
@@ -26,17 +28,20 @@
 #undef GP_PLAT_x86_windows
 #undef GP_PLAT_amd64_windows
 #undef GP_PLAT_arm64_windows
+#undef GP_PLAT_unknown
 
 #undef GP_ARCH_x86
 #undef GP_ARCH_amd64
 #undef GP_ARCH_arm
 #undef GP_ARCH_arm64
 #undef GP_ARCH_mips64
+#undef GP_ARCH_unknown
 
 #undef GP_OS_android
 #undef GP_OS_linux
 #undef GP_OS_darwin
 #undef GP_OS_windows
+#undef GP_OS_unknown
 
 
 
@@ -124,7 +129,9 @@
 #  define GP_OS_windows 1
 
 #else
-#  error "Unsupported platform"
+#  define GP_PLAT_unknown 1
+#  define GP_ARCH_unknown 1
+#  define GP_OS_unknown 1
 #endif
 
 #endif 
