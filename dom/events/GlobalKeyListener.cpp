@@ -418,6 +418,11 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
 
 bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
                                       KeyEventHandler* aHandler) {
+  
+  
+  if (aKeyEvent->IsHandledInRemoteProcess()) {
+    return false;
+  }
   ReservedKey reserved = aHandler->GetIsReserved();
   
   

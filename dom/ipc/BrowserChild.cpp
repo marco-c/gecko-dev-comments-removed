@@ -2553,6 +2553,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
   
   
   localEvent.mFlags.mNoRemoteProcessDispatch = false;
+  
+  
+  
+  localEvent.PreventNativeKeyBindings();
   SendReplyKeyEvent(localEvent, aUUID);
 
   return IPC_OK();

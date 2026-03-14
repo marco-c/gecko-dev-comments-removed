@@ -124,8 +124,7 @@ typedef uint16_t Modifiers;
 
 #define NS_DEFINE_KEYNAME(aCPPName, aDOMKeyName) KEY_NAME_INDEX_##aCPPName,
 
-typedef uint16_t KeyNameIndexType;
-enum KeyNameIndex : KeyNameIndexType {
+enum KeyNameIndex : uint16_t {
 #include "mozilla/KeyNameList.inc"
   
   
@@ -139,8 +138,7 @@ const nsCString ToString(KeyNameIndex aKeyNameIndex);
 #define NS_DEFINE_PHYSICAL_KEY_CODE_NAME(aCPPName, aDOMCodeName) \
   CODE_NAME_INDEX_##aCPPName,
 
-typedef uint8_t CodeNameIndexType;
-enum CodeNameIndex : CodeNameIndexType {
+enum CodeNameIndex : uint8_t {
 #include "mozilla/PhysicalKeyCodeNameList.inc"
   
   

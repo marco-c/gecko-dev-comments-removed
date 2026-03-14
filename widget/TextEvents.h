@@ -589,8 +589,21 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
   
 
 
+
+
+  [[nodiscard]] bool HasEditCommands() const {
+    return !mEditCommandsForSingleLineEditor.IsEmpty() ||
+           !mEditCommandsForMultiLineEditor.IsEmpty() ||
+           !mEditCommandsForRichTextEditor.IsEmpty();
+  }
+
+  
+
+
   const nsTArray<CommandInt>& EditCommandsConstRef(
       NativeKeyBindingsType aType) const {
+    MOZ_ASSERT(!IsHandledInRemoteProcess(),
+               "Editor commands is not available on reply event");
     return const_cast<WidgetKeyboardEvent*>(this)->EditCommandsRef(aType);
   }
 

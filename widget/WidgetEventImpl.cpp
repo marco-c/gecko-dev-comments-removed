@@ -1281,6 +1281,12 @@ bool WidgetKeyboardEvent::ExecuteEditCommands(NativeKeyBindingsType aType,
     return false;
   }
 
+  
+  
+  if (NS_WARN_IF(IsHandledInRemoteProcess())) {
+    return false;
+  }
+
   if (!IsEditCommandsInitializedRef(aType)) {
     Maybe<WritingMode> writingMode;
     if (RefPtr<widget::TextEventDispatcher> textEventDispatcher =
