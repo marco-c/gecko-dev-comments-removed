@@ -581,7 +581,12 @@ void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
 
   
   
-  CloseAllConnectionAttempts();
+  
+  
+  
+  if (!mConnInfo->GetFallbackConnection()) {
+    CloseAllConnectionAttempts();
+  }
 }
 
 bool ConnectionEntry::FindConnToClaim(
