@@ -27,7 +27,8 @@ class nsIPrincipal;
 
 namespace mozilla {
 class RectCallback;
-namespace dom {
+}
+namespace mozilla::dom {
 struct ClientRectsAndTexts;
 class DocGroup;
 class DocumentFragment;
@@ -49,15 +50,12 @@ enum class RangeBehaviour : uint8_t {
 
 };
 }  
-}  
 
 class nsRange final : public mozilla::dom::AbstractRange,
                       public nsStubMutationObserver {
   using ErrorResult = mozilla::ErrorResult;
   using AbstractRange = mozilla::dom::AbstractRange;
   using DocGroup = mozilla::dom::DocGroup;
-  using DOMRect = mozilla::dom::DOMRect;
-  using DOMRectList = mozilla::dom::DOMRectList;
   using RangeBoundary = mozilla::RangeBoundary;
   using RangeBoundarySetBy = mozilla::RangeBoundarySetBy;
   using RawRangeBoundary = mozilla::RawRangeBoundary;
@@ -304,16 +302,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
                                       ErrorResult& aErr);
 
   void SurroundContents(nsINode& aNode, ErrorResult& aErr);
-  already_AddRefed<DOMRect> GetBoundingClientRect(bool aClampToEdge = true,
-                                                  bool aFlushLayout = true);
-  already_AddRefed<DOMRectList> GetClientRects(bool aClampToEdge = true,
-                                               bool aFlushLayout = true);
-  
-  already_AddRefed<DOMRectList> GetAllowCrossShadowBoundaryClientRects(
-      bool aClampToEdge = true, bool aFlushLayout = true);
-
-  void GetClientRectsAndTexts(mozilla::dom::ClientRectsAndTexts& aResult,
-                              ErrorResult& aErr);
 
   
   void SelectNode(nsINode& aNode, ErrorResult& aErr);
@@ -465,21 +453,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   bool IsPartOfOneSelectionOnly() const { return mSelections.Length() == 1; };
 
-  already_AddRefed<DOMRectList> GetClientRectsInner(
-      AllowRangeCrossShadowBoundary = AllowRangeCrossShadowBoundary::No,
-      bool aClampToEdge = true, bool aFlushLayout = true);
-
  public:
-  
-
-
-
-  static void CollectClientRectsAndText(
-      mozilla::RectCallback* aCollector,
-      mozilla::dom::Sequence<nsString>* aTextList, nsRange* aRange,
-      nsINode* aStartContainer, uint32_t aStartOffset, nsINode* aEndContainer,
-      uint32_t aEndOffset, bool aClampToEdge, bool aFlushLayout);
-
   
 
 
