@@ -814,6 +814,46 @@ void ExtractIncumbentAndSchedulingState(
   }
 }
 
+void MaybeGetFlowMarker(
+    JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+    mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>&
+        terminatingMarker) {
+  if (profiler_is_active_and_unpaused() &&
+      profiler_feature_active(ProfilerFeature::Flows)) {
+    uint64_t flowId = 0;
+    
+    
+    if (aMicroTask.get().GetFlowIdFromJSMicroTask(&flowId)) {
+      terminatingMarker.emplace("RunMicroTask",
+                                mozilla::baseprofiler::category::OTHER,
+                                Flow::ProcessScoped(flowId));
+    }
+  }
+}
+
+
+
+
+static bool ExtractTaskData(JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+                            JS::MutableHandle<JSObject*> callbackGlobal,
+                            JS::MutableHandle<JSObject*> hostDefinedData,
+                            JS::MutableHandle<JSObject*> allocStack) {
+  callbackGlobal.set(aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
+  if (!callbackGlobal) {
+    return false;
+  }
+
+  
+  
+  if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
+          hostDefinedData)) {
+    return false;
+  }
+
+  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(allocStack);
+  return true;
+}
+
 
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
@@ -829,38 +869,18 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   
   
   mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
-  if (profiler_is_active_and_unpaused() &&
-      profiler_feature_active(ProfilerFeature::Flows)) {
-    uint64_t flowId = 0;
-    
-    
-    if (aMicroTask.get().GetFlowIdFromJSMicroTask(&flowId)) {
-      terminatingMarker.emplace("RunMicroTask",
-                                mozilla::baseprofiler::category::OTHER,
-                                Flow::ProcessScoped(flowId));
-    }
-  }
+  MaybeGetFlowMarker(aMicroTask, terminatingMarker);
 
   JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
 
-  
-  JS::RootedField<JSObject*, 0> callbackGlobal(
-      roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
-  if (!callbackGlobal) {
-    return;
-  }
-
+  JS::RootedField<JSObject*, 0> callbackGlobal(roots);
   JS::RootedField<JSObject*, 1> hostDefinedData(roots);
-  
-  
-  if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
-          &hostDefinedData)) {
+  JS::RootedField<JSObject*, 2> allocStack(roots);
+
+  if (!ExtractTaskData(aMicroTask, &callbackGlobal, &hostDefinedData,
+                       &allocStack)) {
     return;
   }
-
-  
-  JS::RootedField<JSObject*, 2> allocStack(roots);
-  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
   
   
@@ -875,6 +895,8 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   const bool isMainThread = NS_IsMainThread();
 
+  
+  
   StatefulMicroTask smt(aCCJS);
 
   {
@@ -902,6 +924,10 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     }
 
     
+    
+    ignoreMicroTasks.release();
+
+    
     AutoAllowLegacyScriptExecution exemption;
     AutoEntryScript aes(globalObject, reason, isMainThread);
 
@@ -909,10 +935,6 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     if (incumbentGlobal) {
       autoIncumbentScript.emplace(incumbentGlobal);
     }
-
-    
-    
-    ignoreMicroTasks.release();
 
     MOZ_ASSERT(aCx == aes.cx());
 
