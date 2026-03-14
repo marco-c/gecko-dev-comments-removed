@@ -32,6 +32,7 @@
 #include "nsDocShell.h"
 #include "nsError.h"
 #include "nsIChromeRegistry.h"
+#include "nsIEnterprisePolicies.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIProtocolHandler.h"
@@ -116,6 +117,47 @@ struct CommaSeparatedPref {
 
 CommaSeparatedPref sSeparatedMozillaDomains{
     "browser.tabs.remote.separatedMozillaDomains"_ns};
+
+bool AllowJITForSiteOrigin(const nsACString& aSiteOriginNoSuffix,
+                           WindowGlobalParent* aParentWindow) {
+  nsresult rv;
+
+  nsCOMPtr<nsIEnterprisePolicies> policyService =
+      do_GetService("@mozilla.org/enterprisepolicies;1");
+  if (!policyService) {
+    return true;
+  }
+
+  nsAutoCString topSiteOriginNoSuffix(aSiteOriginNoSuffix);
+
+  
+  if (aParentWindow) {
+    rv = aParentWindow->TopWindowContext()
+             ->DocumentPrincipal()
+             ->GetSiteOriginNoSuffix(topSiteOriginNoSuffix);
+    if (NS_FAILED(rv)) {
+      topSiteOriginNoSuffix = aSiteOriginNoSuffix;
+    }
+  }
+
+  nsCOMPtr<nsIURI> topSite;
+  rv = NS_NewURI(getter_AddRefs(topSite), topSiteOriginNoSuffix);
+  NS_ENSURE_SUCCESS(rv, true);
+
+  bool isJitAllowed = true;
+  if (NS_FAILED(
+          policyService->IsAllowedForURI("jit"_ns, topSite, &isJitAllowed))) {
+    return true;
+  }
+
+  if (!isJitAllowed) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
+            ("JIT is disabled for site %s by enterprise policy",
+             topSiteOriginNoSuffix.get()));
+  }
+
+  return isJitAllowed;
+}
 
 
 
@@ -382,12 +424,22 @@ static nsAutoCString OriginString(nsIPrincipal* aPrincipal) {
 
 
 
-static nsAutoCString OriginSuffixForRemoteType(nsIPrincipal* aPrincipal) {
+static nsAutoCString OriginSuffixForRemoteType(nsIPrincipal* aPrincipal,
+                                               bool aDisableJit) {
   nsAutoCString originSuffix;
   OriginAttributes attrs = aPrincipal->OriginAttributesRef();
   attrs.StripAttributes(OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
                         OriginAttributes::STRIP_PARITION_KEY);
   attrs.CreateSuffix(originSuffix);
+
+  if (aDisableJit) {
+    if (originSuffix.IsEmpty()) {
+      originSuffix = "^"_ns + DISABLE_JIT_REMOTE_TYPE_SUFFIX;
+    } else {
+      originSuffix += "&"_ns + DISABLE_JIT_REMOTE_TYPE_SUFFIX;
+    }
+  }
+
   return originSuffix;
 }
 
@@ -895,7 +947,9 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     }
   }
 
-  nsAutoCString originSuffix = OriginSuffixForRemoteType(resultOrPrecursor);
+  bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, aParentWindow);
+  nsAutoCString originSuffix =
+      OriginSuffixForRemoteType(resultOrPrecursor, !isJitAllowed);
 
   WebProcessType webProcessType = WebProcessType::Web;
   if (ShouldIsolateSite(resultOrPrecursor, aTopBC->UseRemoteSubframes())) {
@@ -1051,7 +1105,11 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   if (ShouldIsolateSite(resultOrPrecursor, aUseRemoteSubframes)) {
     nsAutoCString siteOriginNoSuffix;
     MOZ_TRY(resultOrPrecursor->GetSiteOriginNoSuffix(siteOriginNoSuffix));
-    nsAutoCString originSuffix = OriginSuffixForRemoteType(resultOrPrecursor);
+
+    bool isJitAllowed = AllowJITForSiteOrigin(siteOriginNoSuffix, nullptr);
+
+    nsAutoCString originSuffix =
+        OriginSuffixForRemoteType(resultOrPrecursor, !isJitAllowed);
 
     nsCString prefix = aWorkerKind == WorkerKindService
                            ? SERVICEWORKER_REMOTE_TYPE
