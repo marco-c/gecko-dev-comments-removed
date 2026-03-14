@@ -1359,6 +1359,9 @@ pref("network.manage-offline-status", true);
 pref("network.lna.prompt.timeout", 300000); 
 
 
+pref("network.lna.temporary_permission_expire_time_ms", 86400000); 
+
+
 pref("network.protocol-handler.external.mailto", true); 
 
 
