@@ -497,18 +497,6 @@ function addGCPointer(typeName)
     pendingGCTypes.push([typeName, '<pointer-annotation>', '(annotation)', 1, 0]);
 }
 
-
-
-var singleFieldTypes = {};
-
-
-
-
-for (const [typeName, reason, _] of pendingGCTypes) {
-  singleFieldTypes[typeName] = reason;
-}
-
-
 for (const pending of pendingGCTypes) {
     markGCType(...pending);
 }
@@ -549,7 +537,7 @@ function getGCPointerFieldType(type) {
 
 
 
-function populateSinglePointerFieldTable(table, csu, decl) {
+function checkSingleGCPointer(csu, decl) {
     if (!(csu in gcPointers)) return;
 
     let singleGCPointerField;
@@ -566,19 +554,16 @@ function populateSinglePointerFieldTable(table, csu, decl) {
     }
 
     if (singleGCPointerField) {
-        table[csu] = singleGCPointerField;
+        typeInfo.SingleGCField[csu] = singleGCPointerField;
     }
 }
-
-
-
 
 for (var csuIndex = minStream; csuIndex <= maxStream; csuIndex++) {
     var csuData = xdb.read_key(csuIndex);
     var data = xdb.read_entry(csuData);
     var decl = JSON.parse(data.readString())[0];
     const csu = csuData.readString();
-    populateSinglePointerFieldTable(singleFieldTypes, csu, decl);
+    checkSingleGCPointer(csu, decl);
     xdb.free_string(csuData);
     xdb.free_string(data);
 }
@@ -586,45 +571,11 @@ for (var csuIndex = minStream; csuIndex <= maxStream; csuIndex++) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var reversed = {};
-var discards = []; 
-for (const [type, pointerFieldType] of Object.entries(singleFieldTypes)) {
-    const containers = (reversed[pointerFieldType] ||= []);
-    containers.push(type);
-    if (!pointerFieldType.endsWith("annotation>") && !(pointerFieldType in singleFieldTypes)) {
-        discards.push(type);
+for (const typeName of Object.values(typeInfo.SingleGCField)) {
+    if (!(typeName in typeInfo.SingleGCField)) {
+        typeInfo.SingleGCField[typeName] = (typeName in gcTypes) ? "<GC type>" : "<GC pointer>";
     }
 }
-
-while (discards.length > 0) {
-    const dead = discards.pop();
-    delete singleFieldTypes[dead];
-    if (dead in reversed) {
-        discards.push(...reversed[dead]);
-        delete reversed[dead]; 
-    }
-}
-
-typeInfo.SingleGCField = singleFieldTypes;
 
 
 

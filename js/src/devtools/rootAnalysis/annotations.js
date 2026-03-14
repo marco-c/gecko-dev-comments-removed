@@ -442,6 +442,13 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
+function getTypeNameAttributes(typeName, typeInfo) {
+    let attrs = 0;
+    if (typeName in typeInfo.GCSuppressors)
+        attrs = attrs | ATTR_GC_SUPPRESSED;
+    return attrs;
+}
+
 
 
 
@@ -508,7 +515,7 @@ function assignEdgeIsMaybeConstructor(edge) {
 
 
 
-function matchConstructorEdge(ffg, edge)
+function matchConstructorEdge(typeInfo, edge)
 {
     if (edge.Kind == "Assign") {
         const fld = assignEdgeIsMaybeConstructor(edge);
@@ -517,7 +524,7 @@ function matchConstructorEdge(ffg, edge)
             if (!constructed) {
                 return;
             }
-            const attrs = ffg.getAttrsForTypeName(fld.Field.FieldCSU.Type.Name);
+            const attrs = getTypeNameAttributes(fld.Field.FieldCSU.Type.Name, typeInfo);
             return { attrs, constructed };
         }
 
@@ -561,7 +568,7 @@ function matchConstructorEdge(ffg, edge)
     if (m[1] != type_stem)
         return;
 
-    const attrs = ffg.getAttrsForTypeName(typeName);
+    const attrs = getTypeNameAttributes(typeName, typeInfo);
     const constructed = edge.PEdgeCallInstance.Exp;
     return { attrs, constructed };
 }
@@ -576,7 +583,7 @@ function matchConstructorEdge(ffg, edge)
 
 
 
-function virtualCanRunJS(typeInfo, csu, field)
+function virtualCanRunJS(csu, field)
 {
     const tags = typeInfo.OtherFieldTags;
     const iface = tags[csu]

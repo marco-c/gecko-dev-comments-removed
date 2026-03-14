@@ -40,7 +40,6 @@ var options = parse_options([
 ]);
 
 var origOut = os.file.redirect(options.callgraphOut_filename);
-var typeInfo = loadTypeInfo(options.typeInfo_filename);
 
 var memoized = new Map();
 
@@ -94,29 +93,29 @@ function printOnce(line)
 
 
 
-function getAllAttributes(ffg)
+function getAllAttributes(body)
 {
     var all_annotations = {};
-    ffg.forEachDecl(decl => {
-        if (decl.Variable.Kind == 'Func') {
-            const name = decl.Variable.Name[0];
-            const annotations = all_annotations[name] = [];
+    for (var v of (body.DefineVariable || [])) {
+        if (v.Variable.Kind != 'Func')
+            continue;
+        var name = v.Variable.Name[0];
+        var annotations = all_annotations[name] = [];
 
-            for (var ann of (decl.Type.Annotation || [])) {
-                annotations.push(ann.Name);
-            }
+        for (var ann of (v.Type.Annotation || [])) {
+            annotations.push(ann.Name);
         }
-    });
+    }
 
     return all_annotations;
 }
 
 
-function getAnnotations(ffg) {
+function getAnnotations(functionName, body) {
     var tags = new Set();
-    var attributes = getAllAttributes(ffg);
-    if (ffg.name in attributes) {
-        for (var [ annName, annValue ] of attributes[ffg.name]) {
+    var attributes = getAllAttributes(body);
+    if (functionName in attributes) {
+        for (var [ annName, annValue ] of attributes[functionName]) {
             if (annName == 'annotate')
                 tags.add(annValue);
         }
@@ -126,12 +125,13 @@ function getAnnotations(ffg) {
 
 
 
-function processBody(ffg, body) {
+function processBody(functionName, body, functionBodies)
+{
     if (!('PEdge' in body))
         return;
 
-    for (var tag of getAnnotations(ffg).values()) {
-        const id = functionId(ffg.name);
+    for (var tag of getAnnotations(functionName, body).values()) {
+        const id = functionId(functionName);
         print(`T ${id} ${tag}`);
         if (tag == "Calls JSNatives")
             printOnce(`D ${id} ${functionId("(js-code)")}`);
@@ -157,7 +157,7 @@ function processBody(ffg, body) {
         
         const scopeAttrs = body.attrs[edge.Index[0]] | 0;
 
-        for (const { callee, attrs } of getCallees(ffg, body, edge, scopeAttrs)) {
+        for (const { callee, attrs } of getCallees(typeInfo, body, edge, scopeAttrs, functionBodies)) {
             
             
             
@@ -170,7 +170,7 @@ function processBody(ffg, body) {
             
             
             let prologue = attrs ? `/${attrs} ` : "";
-            prologue += functionId(ffg.name) + " ";
+            prologue += functionId(functionName) + " ";
             if (callee.kind == 'direct') {
                 const prev_attrs = seen.has(callee.name) ? seen.get(callee.name) : ATTRS_UNVISITED;
                 if (prev_attrs & ~attrs) {
@@ -225,6 +225,8 @@ assert(ID.nogcfunc == functionId("(nogc-function)"));
 
 assert(ID.gc == functionId("(GC)"));
 
+var typeInfo = loadTypeInfo(options.typeInfo_filename);
+
 loadTypes("src_comp.xdb");
 
 
@@ -253,7 +255,7 @@ for (const [fieldkey, methods] of virtualDefinitions) {
 for (const [csu, methods] of virtualDeclarations) {
     for (const {field, dtor} of methods) {
         const caller = getId(fieldKey(csu, field));
-        if (virtualCanRunJS(typeInfo, csu, field.Name[0]))
+        if (virtualCanRunJS(csu, field.Name[0]))
             printOnce(`D ${caller} ${functionId("(js-code)")}`);
         if (dtor)
             printOnce(`D ${caller} ${functionId(dtor)}`);
@@ -289,11 +291,13 @@ function assertFunctionExists(name) {
     assert(data.contents != 0, `synthetic function '${name}' not found!`);
 }
 
-function process(ffg) {
-    ffg.forEachBody(body => { body.attrs = []; });
+function process(functionName, functionBodies)
+{
+    for (var body of functionBodies)
+        body.attrs = [];
 
-    for (const body of ffg.bodies) {
-        for (var [pbody, id, attrs] of allRAIIGuardedCallPoints(ffg, body)) {
+    for (var body of functionBodies) {
+        for (var [pbody, id, attrs] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body)) {
             pbody.attrs[id] = attrs;
         }
     }
@@ -301,31 +305,33 @@ function process(ffg) {
     if (options.function) {
         debugger;
     }
-    ffg.forEachBody(body => processBody(ffg, body));
-
-    
-    
-    
-    if (ffg.name.includes("js::RunScript"))
-        print(`D ${functionId("(js-code)")} ${functionId(ffg.name)}`);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var markerPos = ffg.name.indexOf(internalMarker);
-    if (markerPos > 0) {
-        var inChargeXTor = ffg.name.replace(internalMarker, "");
-        printOnce("D " + functionId(inChargeXTor) + " " + functionId(ffg.name));
+    for (var body of functionBodies) {
+        processBody(functionName, body, functionBodies);
     }
 
-    const [ mangled, unmangled ] = splitFunction(ffg.name);
+    
+    
+    
+    if (functionName.includes("js::RunScript"))
+        print(`D ${functionId("(js-code)")} ${functionId(functionName)}`);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    var markerPos = functionName.indexOf(internalMarker);
+    if (markerPos > 0) {
+        var inChargeXTor = functionName.replace(internalMarker, "");
+        printOnce("D " + functionId(inChargeXTor) + " " + functionId(functionName));
+    }
+
+    const [ mangled, unmangled ] = splitFunction(functionName);
 
     
     
@@ -360,7 +366,7 @@ function process(ffg) {
     
     
     
-    if (ffg.name.indexOf("C4") != -1) {
+    if (functionName.indexOf("C4") != -1) {
         
         
         
@@ -382,7 +388,7 @@ function process(ffg) {
 
             let variant_mangled = mangled.replace(synthetic, variant);
             let variant_full = `${variant_mangled}$${unmangled} [[${desc}]]`;
-            printOnce("D " + functionId(variant_full) + " " + functionId(ffg.name));
+            printOnce("D " + functionId(variant_full) + " " + functionId(functionName));
         }
     }
 
@@ -400,18 +406,18 @@ function process(ffg) {
     
     
     
-    if (ffg.name.indexOf("D4Ev") != -1 && ffg.name.indexOf("::~") != -1) {
-        const not_in_charge_dtor = ffg.name.replace("(int32)", "()");
+    if (functionName.indexOf("D4Ev") != -1 && functionName.indexOf("::~") != -1) {
+        const not_in_charge_dtor = functionName.replace("(int32)", "()");
         const D0 = not_in_charge_dtor.replace("D4Ev", "D0Ev") + " [[deleting_dtor]]";
         const D1 = not_in_charge_dtor.replace("D4Ev", "D1Ev") + " [[complete_dtor]]";
         const D2 = not_in_charge_dtor.replace("D4Ev", "D2Ev") + " [[base_dtor]]";
         printOnce("D " + functionId(D0) + " " + functionId(D1));
         printOnce("D " + functionId(D1) + " " + functionId(D2));
-        printOnce("D " + functionId(D2) + " " + functionId(ffg.name));
+        printOnce("D " + functionId(D2) + " " + functionId(functionName));
     }
 
     if (isJSNative(mangled))
-        printOnce(`D ${functionId("(js-code)")} ${functionId(ffg.name)}`);
+        printOnce(`D ${functionId("(js-code)")} ${functionId(functionName)}`);
 }
 
 var start = batchStart(options.batch, options.numBatches, minStream, maxStream);
@@ -420,8 +426,7 @@ var end = batchLast(options.batch, options.numBatches, minStream, maxStream);
 for (var nameIndex = start; nameIndex <= end; nameIndex++) {
     var name = xdb.read_key(nameIndex);
     var data = xdb.read_entry(name);
-    const ffg = new FunctionFlowGraph({ name: name.readString(), bodies: JSON.parse(data.readString()), typeInfo });
-    process(ffg);
+    process(name.readString(), JSON.parse(data.readString()));
     xdb.free_string(name);
     xdb.free_string(data);
 }
