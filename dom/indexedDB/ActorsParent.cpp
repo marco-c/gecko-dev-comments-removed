@@ -18899,6 +18899,14 @@ mozilla::ipc::IPCResult NormalTransactionOp::RecvContinue(
     const PreprocessResponse& aResponse) {
   AssertIsOnOwningThread();
 
+  
+  
+  
+  
+  if (NS_WARN_IF(!IsWaitingForContinue())) {
+    return IPC_FAIL(this, "Continue received when not waiting for continue");
+  }
+
   switch (aResponse.type()) {
     case PreprocessResponse::Tnsresult:
       SetFailureCode(aResponse.get_nsresult());
