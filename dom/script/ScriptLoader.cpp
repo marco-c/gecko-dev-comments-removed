@@ -1777,7 +1777,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     
     
-    mModuleLoader->RegisterImportMap(std::move(importMap));
+    mModuleLoader->RegisterImportMap(std::move(importMap), request);
     return false;
   }
 

@@ -1624,25 +1624,23 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
   return ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
 }
 
-void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
+void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
+                                         ScriptLoadRequest* aRequest) {
+  LOG(("RegisterImportMap"));
+
   
   MOZ_ASSERT(aImportMap);
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!mImportMap);
 
-  
-  mImportMap = std::move(aImportMap);
+  if (!ImportMap::IsMultipleImportMapsSupported()) {
+    MOZ_ASSERT(!mImportMap);
+    mImportMap = std::move(aImportMap);
+  } else {
+    ReportWarningHelper warning{mLoader, aRequest};
+  }
 
   
   
