@@ -459,15 +459,18 @@
         
         
         
-        const currentWidth =
-          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width;
+        const currentWidth = Math.floor(
+          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width
+        );
+        const storedWidth = Number(controlledPanel.getAttribute("width"));
+        if (storedWidth != currentWidth) {
+          controlledPanel.setAttribute("width", currentWidth);
+          controlledPanel.style.width = currentWidth + "px";
+        }
 
         splitter.setAttribute("aria-valuemin", String(minWidth));
         splitter.setAttribute("aria-valuemax", String(maxWidth));
-        splitter.setAttribute(
-          "aria-valuenow",
-          String(Math.floor(currentWidth))
-        );
+        splitter.setAttribute("aria-valuenow", String(currentWidth));
       } else {
         splitter.removeAttribute("aria-controls");
         splitter.removeAttribute("aria-valuenow");
@@ -570,10 +573,52 @@
       this.toggleAttribute("splitview", isActive);
       this.splitViewSplitter.hidden = !isActive;
       const selectedPanel = this.selectedPanel;
+
+      
+
+
+
+
+
+
+
+
+      const isBetween = (node, a, b = null) => {
+        const isAfterA = Boolean(
+          node.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING
+        );
+        if (!b) {
+          return isAfterA;
+        }
+        const isBeforeB = Boolean(
+          node.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
+        );
+        return isAfterA && isBeforeB;
+      };
+
       if (isActive) {
         
+        
         const firstPanel = document.getElementById(this.splitViewPanels[0]);
-        firstPanel?.after(this.#splitViewSplitter);
+        const secondPanel = document.getElementById(this.splitViewPanels[1]);
+        if (firstPanel && secondPanel) {
+          
+          if (
+            !(
+              firstPanel.compareDocumentPosition(secondPanel) &
+              Node.DOCUMENT_POSITION_FOLLOWING
+            )
+          ) {
+            firstPanel.parentElement.moveBefore(firstPanel, secondPanel);
+          }
+        }
+        
+        if (
+          firstPanel &&
+          !isBetween(this.#splitViewSplitter, firstPanel, secondPanel)
+        ) {
+          firstPanel.after(this.#splitViewSplitter);
+        }
       }
       
       

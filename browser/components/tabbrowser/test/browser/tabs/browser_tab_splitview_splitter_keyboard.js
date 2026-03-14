@@ -6,17 +6,6 @@ add_setup(() =>
   })
 );
 
-async function expectFocusAfterKey(expectedActiveElement, keyName, keyOptions) {
-  let focused = BrowserTestUtils.waitForEvent(expectedActiveElement, "focus");
-  EventUtils.synthesizeKey(keyName, keyOptions);
-  await focused;
-  Assert.equal(
-    document.activeElement,
-    expectedActiveElement,
-    `After ${keyName}, the expected element has focus`
-  );
-}
-
 
 
 
