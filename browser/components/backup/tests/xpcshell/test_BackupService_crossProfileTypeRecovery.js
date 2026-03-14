@@ -58,9 +58,13 @@ async function createBackupAndRecover(
     .stub(lazy.SelectableProfileService, "groupToolkitProfile")
     .get(() => fakeToolkitProfile);
 
+  let currentProfileValue = backupIsLegacy
+    ? null
+    : { name: "test-selectable-profile" };
+
   sandbox
     .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => (backupIsLegacy ? null : { name: "test-selectable-profile" }));
+    .get(() => currentProfileValue);
 
   
   Services.prefs.setBoolPref("browser.profiles.created", !backupIsLegacy);
@@ -109,11 +113,12 @@ async function createBackupAndRecover(
 
   let { archivePath } = await bs.createBackup({ profilePath: fakeProfilePath });
 
-  
-  Services.prefs.setBoolPref("browser.profiles.created", !recoveryIsLegacy);
-  sandbox
-    .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => !recoveryIsLegacy);
+  let currentSelectableProfile = {
+    name: "current-profile",
+    avatar: "current-avatar",
+    theme: { themeBg: "#ffffff" },
+    hasCustomAvatar: false,
+  };
 
   
   let maybeSetupDataStoreStub = sandbox
@@ -122,9 +127,7 @@ async function createBackupAndRecover(
       
       fakeToolkitProfile.storeID = "new-store-id-after-conversion";
       Services.prefs.setBoolPref("browser.profiles.created", true);
-      sandbox
-        .stub(lazy.SelectableProfileService, "currentProfile")
-        .get(() => true);
+      currentProfileValue = currentSelectableProfile;
 
       if (options.conversionShouldFail) {
         throw new Error("Conversion failed");
@@ -167,20 +170,17 @@ async function createBackupAndRecover(
     "launchInstance"
   );
 
-  let currentSelectableProfile = {
-    name: "current-profile",
-    avatar: "current-avatar",
-    theme: { themeBg: "#ffffff" },
-    hasCustomAvatar: false,
-  };
-
   
   
   let staysLegacy =
     backupIsLegacy && recoveryIsLegacy && options.replaceCurrentProfile;
-  sandbox
-    .stub(lazy.SelectableProfileService, "currentProfile")
-    .get(() => (staysLegacy ? null : currentSelectableProfile));
+  currentProfileValue = staysLegacy ? null : currentSelectableProfile;
+
+  
+  
+  
+  Services.prefs.setBoolPref("browser.profiles.enabled", !staysLegacy);
+  Services.prefs.setBoolPref("browser.profiles.created", !recoveryIsLegacy);
 
   await bs.getBackupFileInfo(archivePath);
   const restoreID = bs.state.restoreID;
