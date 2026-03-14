@@ -96,7 +96,10 @@ const filterList = [
 ];
 
 
-const SPECIAL_VALUES = new Set(["none", "unset", "initial", "inherit"]);
+const SPECIAL_VALUES = new Set([
+  "none",
+  ...InspectorUtils.getCSSWideKeywords(),
+]);
 
 
 
