@@ -154,3 +154,14 @@ assertEq(buffer.maxByteLength <= Number.MAX_SAFE_INTEGER, true);
 
 
 new WebAssembly.Memory({ initial: 10 }).buffer.maxByteLength;
+
+
+mem = new WebAssembly.Memory({initial: 1, maximum: 4});
+pinArrayBufferOrViewLength(mem.buffer, true);
+assertThrowsInstanceOf(() => mem.toResizableBuffer(), RangeError);
+pinArrayBufferOrViewLength(mem.buffer, false);
+
+rab = mem.toResizableBuffer();
+pinArrayBufferOrViewLength(rab, true);
+assertThrowsInstanceOf(() => mem.toFixedLengthBuffer(), RangeError);
+pinArrayBufferOrViewLength(rab, false);
