@@ -30,8 +30,6 @@ import java.util.StringTokenizer;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.GeckoLoader;
-import org.mozilla.gecko.process.GeckoProcessManager;
-import org.mozilla.gecko.process.GeckoProcessType;
 import org.mozilla.gecko.process.MemoryController;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -141,15 +139,11 @@ public class GeckoThread extends Thread {
 
   
   public static final int FLAG_DEBUGGING = 1 << 0; 
-  public static final int FLAG_PRELOAD_CHILD = 1 << 1; 
   public static final int FLAG_ENABLE_NATIVE_CRASHREPORTER =
       1 << 2; 
   public static final int FLAG_DISABLE_LOW_MEMORY_DETECTION =
       1 << 3; 
   public static final int FLAG_CHILD = 1 << 4; 
-  public static final int FLAG_CONTENT_ISOLATED = 1 << 5; 
-  public static final int FLAG_CONTENT_ISOLATED_HAS_ZYGOTE =
-      1 << 6; 
 
    static final String EXTRA_ARGS = "args";
 
@@ -497,19 +491,6 @@ public class GeckoThread extends Thread {
         mInitInfo.xpcshell);
 
     initGeckoEnvironment();
-
-    if ((mInitInfo.flags & FLAG_PRELOAD_CHILD) != 0) {
-      
-      GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
-    }
-
-    if ((mInitInfo.flags & FLAG_CONTENT_ISOLATED) != 0) {
-      GeckoProcessManager.getInstance().setIsolatedProcessEnabled(true);
-    }
-
-    if ((mInitInfo.flags & FLAG_CONTENT_ISOLATED_HAS_ZYGOTE) != 0) {
-      GeckoProcessManager.getInstance().setAppZygoteEnabled(true);
-    }
 
     if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
       try {
