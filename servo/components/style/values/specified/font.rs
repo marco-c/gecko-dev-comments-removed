@@ -1169,14 +1169,6 @@ impl FontVariantAlternates {
     }
 }
 
-impl FontVariantAlternates {
-    #[inline]
-    
-    pub fn get_initial_specified_value() -> Self {
-        Default::default()
-    }
-}
-
 impl Parse for FontVariantAlternates {
     
     
