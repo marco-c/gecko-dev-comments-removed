@@ -1698,6 +1698,11 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
     mImportMap = std::move(aImportMap);
   } else {
     ReportWarningHelper warning{mLoader, aRequest};
+
+    
+    
+    ImportMap::Merge(this, std::move(aImportMap), warning);
+    MOZ_ASSERT(mImportMap);
   }
 
   

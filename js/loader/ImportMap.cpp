@@ -38,9 +38,12 @@ LazyLogModule ImportMap::gImportMapLog("ImportMap");
 #define LOG_ENABLED() \
   MOZ_LOG_TEST(ImportMap::gImportMapLog, mozilla::LogLevel::Debug)
 
+template <typename... Args>
 void ReportWarningHelper::Report(const char* aMessageName,
-                                 const nsTArray<nsString>& aParams) const {
-  mLoader->ReportWarningToConsole(mRequest, aMessageName, aParams);
+                                 Args&&... aArgs) const {
+  AutoTArray<nsString, sizeof...(aArgs)> array;
+  (array.AppendElement(aArgs), ...);
+  mLoader->ReportWarningToConsole(mRequest, aMessageName, array);
 }
 
 using ResolveURLLikeResult =
@@ -166,9 +169,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
     if (parseResult.isErr()) {
       
       
-      AutoTArray<nsString, 1> params;
-      params.AppendElement(value);
-      aWarning.Report("ImportMapInvalidAddress", params);
+      aWarning.Report("ImportMapInvalidAddress", value);
 
       
       normalized->insert_or_assign(normalizedSpecifierKey, nullptr);
@@ -187,10 +188,8 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
       
       
       
-      AutoTArray<nsString, 2> params;
-      params.AppendElement(specifierKey);
-      params.AppendElement(NS_ConvertUTF8toUTF16(address));
-      aWarning.Report("ImportMapAddressNotEndsWithSlash", params);
+      aWarning.Report("ImportMapAddressNotEndsWithSlash", specifierKey,
+                      NS_ConvertUTF8toUTF16(address));
 
       
       normalized->insert_or_assign(normalizedSpecifierKey, nullptr);
@@ -281,9 +280,7 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
     if (NS_FAILED(rv)) {
       
       
-      AutoTArray<nsString, 1> params;
-      params.AppendElement(scopePrefix);
-      aWarning.Report("ImportMapScopePrefixNotParseable", params);
+      aWarning.Report("ImportMapScopePrefixNotParseable", scopePrefix);
 
       
       continue;
@@ -340,9 +337,7 @@ static UniquePtr<IntegrityMap> NormalizeIntegrity(
     if (parseResult.isErr()) {
       
       
-      AutoTArray<nsString, 1> params;
-      params.AppendElement(key);
-      aWarning.Report("ImportMapInvalidAddress", params);
+      aWarning.Report("ImportMapInvalidAddress", key);
 
       
       continue;
@@ -568,22 +563,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
       continue;
     }
 
-    AutoTArray<nsString, 1> params;
-    params.AppendElement(val);
-    aWarning.Report("ImportMapInvalidTopLevelKey", params);
-  }
-
-  
-  
-  
-  if (!sortedAndNormalizedImports) {
-    sortedAndNormalizedImports = MakeUnique<SpecifierMap>();
-  }
-  if (!sortedAndNormalizedScopes) {
-    sortedAndNormalizedScopes = MakeUnique<ScopeMap>();
-  }
-  if (!normalizedIntegrity) {
-    normalizedIntegrity = MakeUnique<IntegrityMap>();
+    aWarning.Report("ImportMapInvalidTopLevelKey", val);
   }
 
   
@@ -605,13 +585,203 @@ static bool IsSpecialScheme(nsIURI* aURI) {
 }
 
 
+static UniquePtr<SpecifierMap> MergeSpecifierMaps(
+    SpecifierMap* newMap, SpecifierMap* oldMap,
+    const ReportWarningHelper& aWarning) {
+  
+  UniquePtr<SpecifierMap> mergedMap = MakeUnique<SpecifierMap>();
+  for (auto&& [k, v] : *oldMap) {
+    mergedMap->emplace(k, v);
+  }
+
+  
+  for (auto&& [specifier, url] : *newMap) {
+    
+    auto iter = oldMap->find(specifier);
+    if (iter != oldMap->end()) {
+      
+      
+      
+      aWarning.Report("ImportMapSpecifierMapEntryIgnored", specifier);
+
+      
+      continue;
+    }
+
+    if (LOG_ENABLED()) {
+      nsAutoCString urlSpec;
+      if (url) {
+        url->GetSpec(urlSpec);
+      }
+      LOG(("ImportMap::MergeSpecifierMaps, added entry {%s, %s}",
+           NS_ConvertUTF16toUTF8(specifier).get(), urlSpec.get()));
+    }
+
+    
+    mergedMap->insert_or_assign(specifier, url);
+  }
+
+  
+  return mergedMap;
+}
+
+
+void ImportMap::Merge(ModuleLoaderBase* aModuleLoader,
+                      mozilla::UniquePtr<ImportMap> aNewMap,
+                      const ReportWarningHelper& aWarning) {
+  
+  
+  
+  
+  UniquePtr<ScopeMap> newScopes =
+      aNewMap->mScopes ? std::move(aNewMap->mScopes) : MakeUnique<ScopeMap>();
+  MOZ_ASSERT(newScopes);
+
+  
+  if (!aModuleLoader->GetImportMap()) {
+    aModuleLoader->mImportMap = ImportMap::CreateEmpty();
+  }
+  ImportMap* oldMap = aModuleLoader->GetImportMap();
+  MOZ_ASSERT(oldMap);
+
+  
+  UniquePtr<SpecifierMap> newImports = aNewMap->mImports
+                                           ? std::move(aNewMap->mImports)
+                                           : MakeUnique<SpecifierMap>();
+  MOZ_ASSERT(newImports);
+
+  
+  for (auto&& [scopePrefix, scopeImports] : *newScopes) {
+    
+    
+    for (auto resolvedIter = aModuleLoader->GetResolvedModuleSet()->iter();
+         !resolvedIter.done(); resolvedIter.next()) {
+      const auto& record = resolvedIter.get();
+
+      
+      
+      
+      if (scopePrefix.Equals(record->SerializedBaseURL()) ||
+          (StringEndsWith(scopePrefix, "/"_ns) &&
+           StringBeginsWith(record->SerializedBaseURL(), scopePrefix))) {
+        
+        for (auto iter = scopeImports->begin(); iter != scopeImports->end();) {
+          const auto& specifierKey = iter->first;
+          
+          
+          
+          
+          
+          if (specifierKey.Equals(record->NormalizedSpecifier()) ||
+              (StringEndsWith(specifierKey, u"/"_ns) &&
+               StringBeginsWith(record->NormalizedSpecifier(), specifierKey) &&
+               (record->IsAsURLNull() || record->IsSpecialScheme()))) {
+            LOG(
+                ("ImportMap::Merge, scopes map: prefix:{%s}, specifier:{%s} "
+                 "matches the resolved module specifier {%s} and will be "
+                 "ignored",
+                 scopePrefix.get(), NS_ConvertUTF16toUTF8(specifierKey).get(),
+                 NS_ConvertUTF16toUTF8(record->NormalizedSpecifier()).get()));
+
+            
+            aWarning.Report("ImportMapScopeEntryIgnored",
+                            NS_ConvertUTF8toUTF16(scopePrefix), specifierKey,
+                            record->NormalizedSpecifier());
+
+            
+            iter = scopeImports->erase(iter);
+          } else {
+            ++iter;
+          }
+        }
+      }
+    }
+
+    
+    
+    
+    
+    auto scopeIter = oldMap->mScopes->find(scopePrefix);
+    if ((scopeIter != oldMap->mScopes->end())) {
+      UniquePtr<SpecifierMap> result = MergeSpecifierMaps(
+          scopeImports.get(), scopeIter->second.get(), aWarning);
+      MOZ_ASSERT(result);
+
+      oldMap->mScopes->insert_or_assign(scopePrefix, std::move(result));
+    } else {
+      
+      oldMap->mScopes->insert(
+          std::make_pair(scopePrefix, std::move(scopeImports)));
+    }
+  }
+
+  
+  for (auto&& [url, integrity] : *aNewMap->mIntegrity) {
+    
+    auto it = oldMap->mIntegrity->find(url);
+    if (it != oldMap->mIntegrity->end()) {
+      LOG(
+          ("ImportMap::Merge, integrity map: entry {%s} exists and will be "
+           "ignored",
+           url.get()));
+      
+      aWarning.Report("ImportMapIntegrityEntryIgnored",
+                      NS_ConvertUTF8toUTF16(url));
+
+      
+      continue;
+    }
+
+    
+    oldMap->mIntegrity->insert(std::make_pair(url, integrity));
+  }
+
+  
+  for (auto resolvedIter = aModuleLoader->GetResolvedModuleSet()->iter();
+       !resolvedIter.done(); resolvedIter.next()) {
+    const auto& record = resolvedIter.get();
+
+    
+    for (auto iter = newImports->begin(); iter != newImports->end();) {
+      const auto& specifier = iter->first;
+
+      
+      
+      
+      
+      if (StringBeginsWith(record->NormalizedSpecifier(), specifier)) {
+        LOG(
+            ("ImportMap::Merge, imports map: specifier {%s} matches the "
+             "resolved module specifier {%s} and will be ignored",
+             NS_ConvertUTF16toUTF8(specifier).get(),
+             NS_ConvertUTF16toUTF8(record->NormalizedSpecifier()).get()));
+        
+        aWarning.Report("ImportMapImportsEntryIgnored", specifier,
+                        record->NormalizedSpecifier());
+
+        
+        iter = newImports->erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+  }
+
+  
+  
+  UniquePtr<SpecifierMap> result =
+      MergeSpecifierMaps(newImports.get(), oldMap->mImports.get(), aWarning);
+  MOZ_ASSERT(result);
+
+  oldMap->mImports = std::move(result);
+}
+
+
 static mozilla::Result<nsCOMPtr<nsIURI>, ResolveError> ResolveImportsMatch(
     nsString& aNormalizedSpecifier, nsIURI* aAsURL,
     const SpecifierMap* aSpecifierMap) {
   
   for (auto&& [specifierKey, resolutionResult] : *aSpecifierMap) {
-    nsCString asURL = aAsURL ? aAsURL->GetSpecOrDefault() : EmptyCString();
-
     
     if (specifierKey.Equals(aNormalizedSpecifier)) {
       

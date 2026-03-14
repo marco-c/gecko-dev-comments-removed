@@ -24,6 +24,7 @@ class nsIURI;
 
 namespace JS::loader {
 class LoadedScript;
+class ModuleLoaderBase;
 class ScriptLoaderInterface;
 class ScriptLoadRequest;
 
@@ -36,8 +37,8 @@ class ReportWarningHelper {
                       ScriptLoadRequest* aRequest)
       : mLoader(aLoader), mRequest(aRequest) {}
 
-  void Report(const char* aMessageName,
-              const nsTArray<nsString>& aParams = nsTArray<nsString>()) const;
+  template <typename... Args>
+  void Report(const char* aMessageName, Args&&... aArgs) const;
 
  private:
   RefPtr<ScriptLoaderInterface> mLoader;
@@ -67,9 +68,15 @@ class ImportMap {
   ImportMap(mozilla::UniquePtr<SpecifierMap> aImports,
             mozilla::UniquePtr<ScopeMap> aScopes,
             mozilla::UniquePtr<IntegrityMap> aIntegrity)
-      : mImports(std::move(aImports)),
-        mScopes(std::move(aScopes)),
-        mIntegrity(std::move(aIntegrity)) {}
+      : mImports(aImports ? std::move(aImports)
+                          : mozilla::MakeUnique<SpecifierMap>()),
+        mScopes(aScopes ? std::move(aScopes) : mozilla::MakeUnique<ScopeMap>()),
+        mIntegrity(aIntegrity ? std::move(aIntegrity)
+                              : mozilla::MakeUnique<IntegrityMap>()) {}
+
+  static mozilla::UniquePtr<ImportMap> CreateEmpty() {
+    return mozilla::MakeUnique<ImportMap>(nullptr, nullptr, nullptr);
+  }
 
   
 
@@ -104,6 +111,15 @@ class ImportMap {
 
   static mozilla::Maybe<nsString> LookupIntegrity(ImportMap* aImportMap,
                                                   nsIURI* aURL);
+
+  
+
+
+
+
+  static void Merge(ModuleLoaderBase* aModuleLoader,
+                    mozilla::UniquePtr<ImportMap> aNewMap,
+                    const ReportWarningHelper& aWarning);
 
   
   static mozilla::LazyLogModule gImportMapLog;
