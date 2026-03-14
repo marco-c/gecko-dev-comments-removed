@@ -46,9 +46,13 @@ struct DictionaryBase {
  protected:
   bool ParseJSON(JSContext* aCx, const nsAString& aJSON,
                  JS::MutableHandle<JS::Value> aVal);
+  bool ParseJSON(JSContext* aCx, const nsACString& aJSON,
+                 JS::MutableHandle<JS::Value> aVal);
 
   bool StringifyToJSON(JSContext* aCx, JS::Handle<JSObject*> aObj,
                        nsAString& aJSON) const;
+  bool StringifyToJSON(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                       nsACString& aJSON) const;
 
   
   
@@ -57,12 +61,6 @@ struct DictionaryBase {
   struct FastDictionaryInitializer {};
 
   bool mIsAnyMemberPresent = false;
-
- private:
-  
-  
-  static bool AppendJSONToString(const char16_t* aJSONData,
-                                 uint32_t aDataLength, void* aString);
 
  public:
   bool IsAnyMemberPresent() const { return mIsAnyMemberPresent; }
