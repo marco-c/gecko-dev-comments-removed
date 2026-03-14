@@ -362,7 +362,7 @@ class IPPAddonActivator {
     
     
     browser.ippActivator
-      .showMessage(breakage.message, tab.id)
+      .showMessage({ l10nId: breakage.l10nId }, tab.id)
       .then(async dismissed => {
         if (!dismissed) {
           return;
