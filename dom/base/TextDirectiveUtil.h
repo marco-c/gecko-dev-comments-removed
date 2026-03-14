@@ -170,6 +170,7 @@ class TextDirectiveUtil final {
   static RangeBoundary FindNextNonWhitespacePosition(
       const RangeBoundary& aPoint);
 
+  enum class BreakOnPunctuation : bool { No, Yes };
   
 
 
@@ -182,8 +183,10 @@ class TextDirectiveUtil final {
 
 
 
+
   template <TextScanDirection direction>
-  static RangeBoundary FindWordBoundary(const RangeBoundary& aRangeBoundary);
+  static RangeBoundary FindWordBoundary(const RangeBoundary& aRangeBoundary,
+                                        BreakOnPunctuation aBreakOnPunctuation);
 
   
 
@@ -433,7 +436,8 @@ template <TextScanDirection direction>
 
 template <TextScanDirection direction>
  RangeBoundary TextDirectiveUtil::FindWordBoundary(
-    const RangeBoundary& aRangeBoundary) {
+    const RangeBoundary& aRangeBoundary,
+    BreakOnPunctuation aBreakOnPunctuation) {
   MOZ_ASSERT(aRangeBoundary.IsSetAndValid());
   nsINode* node = aRangeBoundary.GetContainer();
   uint32_t offset = *aRangeBoundary.Offset(
@@ -482,15 +486,34 @@ template <TextScanDirection direction>
         --offset;
       }
     }
-    const uint32_t pos =
+    uint32_t pos =
         direction == TextScanDirection::Left ? offset : bufferLength + offset;
-    const auto [wordStart, wordEnd] =
-        intl::WordBreaker::FindWord(textBuffer, pos);
-    offset = direction == TextScanDirection::Left ? wordStart
-                                                  : wordEnd - bufferLength;
-    node = textNode;
-    if (offset && offset < textNode->Length()) {
-      break;
+    while (true) {
+      const auto [wordStart, wordEnd] =
+          intl::WordBreaker::FindWord(textBuffer, pos);
+      offset = direction == TextScanDirection::Left ? wordStart
+                                                    : wordEnd - bufferLength;
+      node = textNode;
+      if (offset == 0 || offset >= textNode->Length()) {
+        
+        break;
+      }
+      if (aBreakOnPunctuation == BreakOnPunctuation::Yes ||
+          !WordIsJustWhitespaceOrPunctuation(textBuffer, wordStart, wordEnd)) {
+        return {node, offset};
+      }
+      
+      if constexpr (direction == TextScanDirection::Left) {
+        if (wordStart == 0) {
+          break;
+        }
+        pos = wordStart - 1;
+      } else {
+        if (wordEnd == textBuffer.Length()) {
+          break;
+        }
+        pos = wordEnd;
+      }
     }
   }
   return {node, offset};
