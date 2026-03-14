@@ -129,8 +129,19 @@ bool HTMLImageElement::Complete() {
     return true;
   }
 
-  if (!mCurrentRequest || mPendingRequest || mPendingImageLoadTask) {
+  if (mPendingRequest || mPendingImageLoadTask) {
     return false;
+  }
+
+  if (!mCurrentRequest) {
+    
+    
+    
+    
+    
+    
+    
+    return !mLazyLoading;
   }
 
   uint32_t status;
