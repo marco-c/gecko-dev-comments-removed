@@ -466,10 +466,15 @@ add_task(async function test_dismiss() {
 
 
 add_task(async function test_remove_warning_after_sign_out() {
-  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+
   IPProtectionService.updateState();
 
-  let content = await openPanel({
+  let content = await openPanel();
+  await setPanelState({
     bandwidthWarning: true,
     bandwidthUsage: mockBandwidthUsage,
   });
