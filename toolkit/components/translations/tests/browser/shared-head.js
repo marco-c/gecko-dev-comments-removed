@@ -274,6 +274,8 @@ async function openAboutTranslations({
       "moz-message-bar#about-translations-unsupported-info-message",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
+    languageLoadErrorButton:
+      "button#about-translations-language-load-error-button",
   };
 
   
@@ -4378,6 +4380,46 @@ class AboutTranslationsTestUtils {
 
 
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
+
+    
+
+
+
+
+    static LanguageLoadErrorMessageShown =
+      "AboutTranslationsTest:LanguageLoadErrorMessageShown";
+
+    
+
+
+
+
+    static LanguageLoadErrorMessageHidden =
+      "AboutTranslationsTest:LanguageLoadErrorMessageHidden";
+
+    
+
+
+
+
+    static LanguageLoadRetryStarted =
+      "AboutTranslationsTest:LanguageLoadRetryStarted";
+
+    
+
+
+
+
+    static LanguageLoadRetrySucceeded =
+      "AboutTranslationsTest:LanguageLoadRetrySucceeded";
+
+    
+
+
+
+
+    static LanguageLoadRetryFailed =
+      "AboutTranslationsTest:LanguageLoadRetryFailed";
   };
 
   
@@ -4775,6 +4817,23 @@ class AboutTranslationsTestUtils {
       await this.#runInPage(selectors => {
         const button = content.document.querySelector(
           selectors.translationErrorButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+  async clickLanguageLoadErrorButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.languageLoadErrorButton
         );
         button.click();
       });
