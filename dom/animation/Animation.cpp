@@ -347,6 +347,25 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   
 }
 
+void Animation::SetTimelineRange(AnimationRange&& aRange) {
+  SetTimelineRangeNoUpdate(std::move(aRange));
+  PostUpdate();
+}
+
+void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
+  if (mTimelineRange == aRange) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  mTimelineRange = std::move(aRange);
+}
+
 
 void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
   

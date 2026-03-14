@@ -138,7 +138,8 @@ static void UpdateOldAnimationPropertiesWithNew(
     nsTArray<Keyframe>&& aNewKeyframes, bool aNewIsStylePaused,
     CSSAnimationProperties aOverriddenProperties,
     ServoCSSAnimationBuilder& aBuilder, dom::AnimationTimeline* aTimeline,
-    dom::CompositeOperation aNewComposite) {
+    dom::CompositeOperation aNewComposite,
+    dom::Animation::AnimationRange&& aTimelineRange) {
   bool animationChanged = false;
 
   
@@ -184,6 +185,11 @@ static void UpdateOldAnimationPropertiesWithNew(
   
   if (aOld.GetTimeline() != aTimeline) {
     aOld.SetTimeline(aTimeline);
+    animationChanged = true;
+  }
+
+  if (aOld.GetTimelineRange() != aTimelineRange) {
+    aOld.SetTimelineRange(std::move(aTimelineRange));
     animationChanged = true;
   }
 
@@ -313,6 +319,10 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   RefPtr<dom::AnimationTimeline> timeline =
       GetTimeline(aStyle.GetTimeline(animIdx), aPresContext, aTarget);
 
+  auto range =
+      dom::Animation::AnimationRange{aStyle.GetAnimationRangeStart(animIdx),
+                                     aStyle.GetAnimationRangeEnd(animIdx)};
+
   
   
   RefPtr<CSSAnimation> oldAnim =
@@ -330,7 +340,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition);
+        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition,
+        std::move(range));
     return oldAnim.forget();
   }
 
@@ -349,6 +360,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
 
   animation->SetTimelineNoUpdate(timeline);
   animation->SetEffectNoUpdate(effect);
+  animation->SetTimelineRangeNoUpdate(std::move(range));
 
   if (isStylePaused) {
     animation->PauseFromStyle();
