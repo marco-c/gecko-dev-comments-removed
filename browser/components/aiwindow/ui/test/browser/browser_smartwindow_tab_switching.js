@@ -283,7 +283,7 @@ add_task(
       );
 
       
-      AIWindowUI.openSidebar(win, conversationB);
+      await AIWindowUI.openSidebar(win, conversationB);
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
         "Sidebar should be open for tab B"
@@ -516,10 +516,12 @@ add_task(
     let tabA, tabB, win;
     try {
       const conversationA = createMockConversation("conv-a");
+      const conversationB = createMockConversation("conv-b");
+      conversationB.messages = [];
 
       const findStub = sb.stub(ChatStore, "findConversationById");
       findStub.withArgs("conv-a").resolves(conversationA);
-      findStub.withArgs("conv-b-empty").resolves(null);
+      findStub.withArgs("conv-b-empty").resolves(conversationB);
 
       win = await openAIWindow();
       const browserA = win.gBrowser.selectedBrowser;
@@ -533,6 +535,7 @@ add_task(
           detail: {
             mode: "fullpage",
             conversationId: "conv-a",
+            conversation: conversationA,
             tab: tabA,
           },
         })
@@ -551,6 +554,16 @@ add_task(
       Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should open for tab A");
 
       
+      
+      
+      
+      await new Promise(resolve => {
+        win.addEventListener("ai-window:opened-conversation", resolve, {
+          once: true,
+        });
+      });
+
+      
       tabB = await BrowserTestUtils.openNewForegroundTab(
         win.gBrowser,
         "https://example.org/"
@@ -561,6 +574,7 @@ add_task(
           detail: {
             mode: "fullpage",
             conversationId: "conv-b-empty",
+            conversation: conversationB,
             tab: tabB,
           },
         })
@@ -569,7 +583,7 @@ add_task(
       
       await TestUtils.waitForTick();
 
-      AIWindowUI.openSidebar(win);
+      await AIWindowUI.openSidebar(win);
 
       const sidebarBrowser = win.document.getElementById(AIWindowUI.BROWSER_ID);
       await TestUtils.waitForCondition(
@@ -590,11 +604,16 @@ add_task(
 
       
       await BrowserTestUtils.switchTab(win.gBrowser, tabB);
-      await TestUtils.waitForCondition(
-        () => aiWindowEl.showStarters,
-        "Starters should be displayed for empty conversation"
+      await new Promise(res => win.setTimeout(res, 2000));
+
+      
+      
+      
+      
+      Assert.ok(
+        aiWindowEl.showStarters,
+        "Starters should be showing: " + aiWindowEl.showStarters
       );
-      Assert.ok(aiWindowEl.showStarters, "Starters should be showing");
 
       
       await BrowserTestUtils.switchTab(win.gBrowser, tabA);
