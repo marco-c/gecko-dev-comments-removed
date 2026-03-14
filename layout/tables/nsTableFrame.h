@@ -150,6 +150,16 @@ class nsTableFrame : public nsContainerFrame {
   
   friend class nsTableWrapperFrame;
 
+  using RowGroupArray = AutoTArray<nsTableRowGroupFrame*, 8>;
+  
+  using ColGroupArray = AutoTArray<nsTableColGroupFrame*, 2>;
+  struct Groups {
+    RowGroupArray mRowGroups;
+    ColGroupArray mColGroups;
+    nsTableRowGroupFrame* mHead = nullptr;
+    nsTableRowGroupFrame* mFoot = nullptr;
+  };
+
   
 
 
@@ -224,16 +234,11 @@ class nsTableFrame : public nsContainerFrame {
                                       mozilla::LayoutFrameType aChildType);
   bool IsAutoBSize(mozilla::WritingMode aWM);
 
-  
-
-
-  bool IsRowGroup(mozilla::StyleDisplay aDisplayType) const;
-
-  const nsFrameList& GetChildList(ChildListID aListID) const override;
-  void GetChildLists(nsTArray<ChildList>* aLists) const override;
-
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
+
+  
+  int32_t GetRealColEnd() const;
 
   
 
@@ -315,10 +320,8 @@ class nsTableFrame : public nsContainerFrame {
 
   void ReflowTable(ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
                    const LogicalMargin& aBorderPadding,
-                   mozilla::TableReflowMode aReflowMode,
+                   mozilla::TableReflowMode aReflowMode, Groups& aGroups,
                    nsIFrame*& aLastChildReflowed, nsReflowStatus& aStatus);
-
-  nsFrameList& GetColGroups();
 
   ComputedStyle* GetParentComputedStyle(
       nsIFrame** aProviderFrame) const override;
@@ -484,13 +487,12 @@ class nsTableFrame : public nsContainerFrame {
   
 
 
-  void InsertRowGroups(const nsFrameList::Slice& aRowGroups);
-
+  void InsertRowGroups(const nsFrameList::Slice& aNewFrames);
   void InsertColGroups(int32_t aStartColIndex,
-                       const nsFrameList::Slice& aColgroups);
+                       const nsFrameList::Slice& aNewFrames);
 
-  void RemoveCol(nsTableColGroupFrame* aColGroupFrame, int32_t aColIndex,
-                 bool aRemoveFromCache, bool aRemoveFromCellMap);
+  void RemoveCol(int32_t aColIndex, bool aRemoveFromCache,
+                 bool aRemoveFromCellMap);
 
   bool ColumnHasCellSpacingBefore(int32_t aColIndex) const;
 
@@ -552,7 +554,8 @@ class nsTableFrame : public nsContainerFrame {
                                  nsTableRowGroupFrame* aFrame);
 
   void ReflowChildren(mozilla::TableReflowInput& aReflowInput,
-                      nsReflowStatus& aStatus, nsIFrame*& aLastChildReflowed,
+                      nsReflowStatus& aStatus, Groups& aGroups,
+                      nsIFrame*& aLastChildReflowed,
                       mozilla::OverflowAreas& aOverflowAreas);
 
   
@@ -572,9 +575,10 @@ class nsTableFrame : public nsContainerFrame {
 
 
 
-  void AdjustForCollapsingRowsCols(ReflowOutput& aDesiredSize,
-                                   const WritingMode aWM,
-                                   const LogicalMargin& aBorderPadding);
+  void AdjustForCollapsingRowsCols(
+      ReflowOutput& aDesiredSize, const WritingMode aWM,
+      const nsTArray<nsTableRowGroupFrame*>& aRowGroups,
+      const LogicalMargin& aBorderPadding);
 
   
 
@@ -627,10 +631,6 @@ class nsTableFrame : public nsContainerFrame {
   void PlaceRepeatedFooter(mozilla::TableReflowInput& aReflowInput,
                            nsTableRowGroupFrame* aTfoot, nscoord aFooterBSize);
 
- public:
-  using RowGroupArray = AutoTArray<nsTableRowGroupFrame*, 8>;
-
- protected:
   
   
   
@@ -643,11 +643,8 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-  
-  
-  
-  RowGroupArray OrderedRowGroups(nsTableRowGroupFrame** aHead = nullptr,
-                                 nsTableRowGroupFrame** aFoot = nullptr) const;
+  Groups OrderedGroups() const;
+  RowGroupArray OrderedRowGroups() const { return OrderedGroups().mRowGroups; }
 
   
   
@@ -658,10 +655,6 @@ class nsTableFrame : public nsContainerFrame {
   
   
   bool RowHasSpanningCells(int32_t aRowIndex, int32_t aNumEffCols);
-
- protected:
-  bool HaveReflowedColGroups() const;
-  void SetHaveReflowedColGroups(bool aValue);
 
  public:
   bool IsBorderCollapse() const;
@@ -782,9 +775,14 @@ class nsTableFrame : public nsContainerFrame {
 
   bool IsDestroying() const { return mBits.mIsDestroying; }
 
+  nsTableColGroupFrame* GetSyntheticColGroup() const {
+    return mSyntheticColGroup;
+  }
+
  public:
 #ifdef DEBUG
   void Dump(bool aDumpRows, bool aDumpCols, bool aDumpCellMap);
+  void VerifyColFrames();
 #endif
 
  protected:
@@ -797,10 +795,9 @@ class nsTableFrame : public nsContainerFrame {
 #endif
   
   AutoTArray<nsTableColFrame*, 8> mColFrames;
+  nsTableColGroupFrame* mSyntheticColGroup = nullptr;
 
   struct TableBits {
-    uint32_t mHaveReflowedColGroups : 1;  
-                                          
     uint32_t mHasPctCol : 1;        
     uint32_t mCellSpansPctCol : 1;  
                                     
@@ -824,22 +821,7 @@ class nsTableFrame : public nsContainerFrame {
                                                 
   
   mozilla::UniquePtr<nsITableLayoutStrategy> mTableLayoutStrategy;
-  nsFrameList mColGroups;  
 };
-
-inline bool nsTableFrame::IsRowGroup(mozilla::StyleDisplay aDisplayType) const {
-  return mozilla::StyleDisplay::TableHeaderGroup == aDisplayType ||
-         mozilla::StyleDisplay::TableFooterGroup == aDisplayType ||
-         mozilla::StyleDisplay::TableRowGroup == aDisplayType;
-}
-
-inline void nsTableFrame::SetHaveReflowedColGroups(bool aValue) {
-  mBits.mHaveReflowedColGroups = aValue;
-}
-
-inline bool nsTableFrame::HaveReflowedColGroups() const {
-  return (bool)mBits.mHaveReflowedColGroups;
-}
 
 inline bool nsTableFrame::HasPctCol() const { return (bool)mBits.mHasPctCol; }
 
@@ -870,10 +852,6 @@ inline void nsTableFrame::SetNeedToCollapse(bool aValue) {
 
 inline bool nsTableFrame::NeedToCollapse() const {
   return (bool)static_cast<nsTableFrame*>(FirstInFlow())->mBits.mNeedToCollapse;
-}
-
-inline nsFrameList& nsTableFrame::GetColGroups() {
-  return static_cast<nsTableFrame*>(FirstInFlow())->mColGroups;
 }
 
 inline nsTArray<nsTableColFrame*>& nsTableFrame::GetColCache() {

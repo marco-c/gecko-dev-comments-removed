@@ -1596,25 +1596,6 @@ nsIFrame* nsContainerFrame::GetFirstNonAnonBoxInSubtree(nsIFrame* aFrame) {
         PseudoStyle::IsNonElement(aFrame->Style()->GetPseudoType())) {
       break;
     }
-
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(aFrame->IsTableFrame())) {
-      nsIFrame* colgroupDescendant = GetFirstNonAnonBoxInSubtree(
-          aFrame->GetChildList(FrameChildListID::ColGroup).FirstChild());
-      if (colgroupDescendant) {
-        return colgroupDescendant;
-      }
-    }
-
-    
     aFrame = aFrame->PrincipalChildList().FirstChild();
   }
   return aFrame;

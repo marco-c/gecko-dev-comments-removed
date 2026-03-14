@@ -23,6 +23,7 @@ class PresShell;
 class nsTableColGroupFrame final : public nsContainerFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsTableColGroupFrame)
+  NS_DECL_QUERYFRAME
 
   
 
@@ -50,6 +51,9 @@ class nsTableColGroupFrame final : public nsContainerFrame {
                "Col group should always be in a first-in-flow table frame");
     return static_cast<nsTableFrame*>(parent);
   }
+
+  
+  nsTableColGroupFrame* GetSyntheticColGroup() const;
 
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
@@ -172,7 +176,11 @@ class nsTableColGroupFrame final : public nsContainerFrame {
 
 
 
-  static void ResetColIndices(nsIFrame* aFirstColGroup, int32_t aFirstColIndex,
+
+
+  static void ResetColIndices(nsIFrame* aFirstFrame,
+                              nsTableColGroupFrame* aSyntheticColGroup,
+                              int32_t aFirstColIndex,
                               nsIFrame* aStartColFrame = nullptr);
 
   void InvalidateFrame(uint32_t aDisplayItemKey = 0,

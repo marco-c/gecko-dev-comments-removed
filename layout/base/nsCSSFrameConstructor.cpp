@@ -6677,7 +6677,7 @@ static bool AllChildListsAreEffectivelyEmpty(nsIFrame* aFrame) {
     
     
     
-    if (listID == FrameChildListID::ColGroup) {
+    if (listID == FrameChildListID::Principal && aFrame->IsTableFrame()) {
       if (nsIFrame* f = list.OnlyChild(); f && IsSyntheticColGroup(f)) {
         continue;
       }
@@ -6710,21 +6710,6 @@ static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
     if (!wrapper->PrincipalChildList().OnlyChild()) {
       return false;
     }
-    
-    
-    if (aFrame->IsTableColGroupFrame()) {
-      return aParent->PrincipalChildList().IsEmpty() &&
-             IsOnlyNonWhitespaceFrameInList(
-                 aParent->GetChildList(FrameChildListID::ColGroup), aFrame);
-    }
-    const auto& colGroupList =
-        aParent->GetChildList(FrameChildListID::ColGroup);
-    if (!colGroupList.IsEmpty()) {
-      nsIFrame* f = colGroupList.OnlyChild();
-      if (!f || !IsSyntheticColGroup(f)) {
-        return false;
-      }
-    }
   }
   if (aFrame->IsTableCaption()) {
     MOZ_ASSERT(aParent->IsTableWrapperFrame());
@@ -6736,7 +6721,6 @@ static bool IsOnlyMeaningfulChildOfWrapperPseudo(nsIFrame* aFrame,
            
            AllChildListsAreEffectivelyEmpty(table);
   }
-  MOZ_ASSERT(!aFrame->IsTableColGroupFrame());
   return IsOnlyNonWhitespaceFrameInList(aParent->PrincipalChildList(), aFrame);
 }
 

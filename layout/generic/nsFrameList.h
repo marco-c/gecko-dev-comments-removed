@@ -34,7 +34,6 @@ class FrameChildList;
 enum class FrameChildListID {
   
   Principal,
-  ColGroup,
   Absolute,
   PushedAbsolute,
   Overflow,
