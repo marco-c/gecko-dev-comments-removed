@@ -139,7 +139,7 @@ async def test_request_timing_info(
 
 
 @pytest.mark.asyncio
-async def test_with_wrong_credentials(setup_blocked_request, bidi_session):
+async def test_with_wrong_credentials(setup_blocked_request, bidi_session, configuration):
     
     username = "test_with_wrong_credentials"
     password = "test_with_wrong_credentials_password"
@@ -162,17 +162,17 @@ async def test_with_wrong_credentials(setup_blocked_request, bidi_session):
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 1, timeout=1)
+    await wait_for_bidi_events(bidi_session, configuration, events, 1, timeout=1)
 
     await bidi_session.network.continue_with_auth(
         request=request, action="provideCredentials", credentials=wrong_credentials
     )
 
     
-    await wait_for_bidi_events(bidi_session, events, 2, timeout=1)
+    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=1)
 
     
     with pytest.raises(TimeoutException):
-        await wait_for_bidi_events(bidi_session, events, 3, timeout=1)
+        await wait_for_bidi_events(bidi_session, configuration, events, 3, timeout=1)
 
     remove_listener()
