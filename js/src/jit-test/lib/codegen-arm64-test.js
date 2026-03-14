@@ -12,8 +12,7 @@ str     x23, \\[x29, #16\\])?
 
 
 var arm64_suffix = `
-ldr     x30, \\[sp, #8\\]
-ldr     x29, \\[sp\\]
+ldp     x29, x30, \\[sp\\], #16
 `;
 
 
