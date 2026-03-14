@@ -120,10 +120,18 @@ class SoftNavigationTestHelper {
 
 
 
-  async clickAndExpectSoftNavigation(clickTarget, url, modifyDOM) {
+
+
+
+
+
+  async clickAndExpectSoftNavigation(clickTarget, url, modifyDOM, navigate) {
+    if (!navigate) {
+      navigate = targetUrl => history.pushState({}, '', targetUrl);
+    }
     let targetId;
     clickTarget.addEventListener('click', async () => {
-      history.pushState({}, '', url);
+      navigate(url);
       targetId = await modifyDOM();
     }, {once: true});
 
@@ -148,5 +156,7 @@ class SoftNavigationTestHelper {
         icpPromise, 'ICP not detected.',  3000);
     assert_equals(icps.length, 1, 'Expected exactly one ICP entry.');
     assert_equals(icps[0].id, targetId, `Expected ICP candidate to be "${targetId}"`);
+
+    return {softNav: softNavs[0], icp: icps[0]};
   }
 }
