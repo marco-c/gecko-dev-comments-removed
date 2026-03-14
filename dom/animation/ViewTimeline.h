@@ -53,13 +53,6 @@ class ViewTimeline final : public ScrollTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
-  const Element* TimelineTargetElement() const override { return mSubject; }
-
-  void UpdateCachedCurrentTime() override;
-
-  std::pair<double, double> IntervalForAttachmentRange(
-      const AnimationRange& aStyleRange) const override;
-
  private:
   ~ViewTimeline() = default;
   ViewTimeline(Document* aDocument, const Scroller& aScroller,
@@ -71,11 +64,12 @@ class ViewTimeline final : public ScrollTimeline {
         mSubjectPseudoType(aSubjectPseudoType),
         mInset(aInset) {}
 
-  Maybe<ComputedTimelineData> ComputeTimelineData() const override;
+  Maybe<ScrollOffsets> ComputeOffsets(
+      const ScrollContainerFrame* aScrollContainerFrame,
+      layers::ScrollDirection aOrientation) const override;
 
-  static std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
-      const StyleTimelineRangeName aName,
-      const ScrollTimeline::ComputedTimelineData& aData);
+  ScrollOffsets ComputeInsets(const ScrollContainerFrame* aScrollContainerFrame,
+                              layers::ScrollDirection aOrientation) const;
 
   
   
@@ -92,31 +86,6 @@ class ViewTimeline final : public ScrollTimeline {
   
   
   StyleViewTimelineInset mInset;
-
-  struct CurrentTimeData {
-    
-    ScrollTimeline::CurrentTimeData mScrollData;
-    
-    nscoord mScrollPortSize = 0;
-    
-    nscoord mSubjectPosition = 0;
-    nscoord mSubjectSize = 0;
-    
-    nscoord mInsetStart = 0;
-    nscoord mInsetEnd = 0;
-    
-
-    
-    bool IsChanged(const CurrentTimeData& aOther) const {
-      return mScrollData.mMaxScrollOffset !=
-                 aOther.mScrollData.mMaxScrollOffset ||
-             mScrollPortSize != aOther.mScrollPortSize ||
-             mSubjectPosition != aOther.mSubjectPosition ||
-             mSubjectSize != aOther.mSubjectSize ||
-             mInsetStart != aOther.mInsetStart || mInsetEnd != aOther.mInsetEnd;
-    }
-  };
-  Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 
 }  

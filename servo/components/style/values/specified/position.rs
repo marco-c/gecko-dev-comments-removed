@@ -479,11 +479,6 @@ impl ScopedName {
     pub fn none() -> Self {
         Self::with_default_level(ScopedNameKeyword::none())
     }
-
-    
-    pub fn is_none(&self) -> bool {
-        self.value == ScopedNameKeyword::none()
-    }
 }
 
 

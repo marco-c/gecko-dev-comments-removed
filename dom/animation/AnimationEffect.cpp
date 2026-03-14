@@ -347,29 +347,17 @@ void AnimationEffect::UpdateTiming(const OptionalEffectTiming& aTiming,
   SetSpecifiedTiming(std::move(timing));
 }
 
-
-
-
-
 void AnimationEffect::UpdateNormalizedTiming() {
   mNormalizedTiming.reset();
 
-  if (!mAnimation) {
+  if (!mAnimation || !mAnimation->UsingScrollTimeline()) {
     return;
   }
 
-  const auto* timeline = mAnimation->GetTimeline();
   
   
-  if (!timeline || timeline->IsMonotonicallyIncreasing()) {
-    return;
-  }
-
-  const Nullable<TimeDuration>& timelineDuration =
-      timeline->TimelineDuration(mAnimation->GetTimelineRange());
-  MOZ_ASSERT(!timelineDuration.IsNull(),
-             "We always have a timeline duration even for 0 duration");
-  mNormalizedTiming.emplace(mTiming.Normalize(timelineDuration.Value()));
+  mNormalizedTiming.emplace(
+      mTiming.Normalize(mAnimation->GetTimeline()->TimelineDuration().Value()));
 }
 
 Nullable<TimeDuration> AnimationEffect::GetLocalTime() const {

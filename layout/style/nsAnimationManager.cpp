@@ -10,7 +10,6 @@
 
 #include <algorithm>  
 
-#include "TimelineManager.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectCompositor.h"
@@ -19,7 +18,6 @@
 #include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/MutationObservers.h"
@@ -140,8 +138,7 @@ static void UpdateOldAnimationPropertiesWithNew(
     nsTArray<Keyframe>&& aNewKeyframes, bool aNewIsStylePaused,
     CSSAnimationProperties aOverriddenProperties,
     ServoCSSAnimationBuilder& aBuilder, dom::AnimationTimeline* aTimeline,
-    dom::CompositeOperation aNewComposite,
-    dom::AnimationRange&& aTimelineRange) {
+    dom::CompositeOperation aNewComposite) {
   bool animationChanged = false;
 
   
@@ -190,11 +187,6 @@ static void UpdateOldAnimationPropertiesWithNew(
     animationChanged = true;
   }
 
-  if (aOld.GetTimelineRange() != aTimelineRange) {
-    aOld.SetTimelineRange(std::move(aTimelineRange));
-    animationChanged = true;
-  }
-
   
   
   if (aOld.PlayState() != AnimationPlayState::Idle &&
@@ -220,41 +212,37 @@ static void UpdateOldAnimationPropertiesWithNew(
 static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
     nsAtom* aName) {
-  auto* presContext = aDocument->GetPresContext();
-  const auto* timelineManager =
-      presContext ? presContext->TimelineManager() : nullptr;
   
   
   
   
-  for (Element* e = aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
-       e; e = e->GetParentElement()) {
+  
+  
+  for (Element* curr =
+           aTarget.mElement->GetPseudoElement(aTarget.mPseudoRequest);
+       curr; curr = curr->GetParentElement()) {
     
     
     
     
     
-    const auto [element, pseudo] = AnimationUtils::GetElementPseudoPair(e);
-    if (auto* collection =
-            TimelineCollection<ScrollTimeline>::Get(element, pseudo)) {
-      if (RefPtr<ScrollTimeline> timeline = collection->Lookup(aName)) {
-        return timeline.forget();
+    for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
+      
+      
+      const auto [element, pseudo] = AnimationUtils::GetElementPseudoPair(e);
+      if (auto* collection =
+              TimelineCollection<ScrollTimeline>::Get(element, pseudo)) {
+        if (RefPtr<ScrollTimeline> timeline = collection->Lookup(aName)) {
+          return timeline.forget();
+        }
       }
-    }
 
-    if (auto* collection =
-            TimelineCollection<ViewTimeline>::Get(element, pseudo)) {
-      if (RefPtr<ViewTimeline> timeline = collection->Lookup(aName)) {
-        return timeline.forget();
+      if (auto* collection =
+              TimelineCollection<ViewTimeline>::Get(element, pseudo)) {
+        if (RefPtr<ViewTimeline> timeline = collection->Lookup(aName)) {
+          return timeline.forget();
+        }
       }
-    }
-
-    if (!timelineManager) {
-      continue;
-    }
-
-    if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
-      return already_AddRefed{scopedTimeline->take()};
     }
   }
 
@@ -325,9 +313,6 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   RefPtr<dom::AnimationTimeline> timeline =
       GetTimeline(aStyle.GetTimeline(animIdx), aPresContext, aTarget);
 
-  auto range = dom::AnimationRange{aStyle.GetAnimationRangeStart(animIdx),
-                                   aStyle.GetAnimationRangeEnd(animIdx)};
-
   
   
   RefPtr<CSSAnimation> oldAnim =
@@ -345,8 +330,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition,
-        std::move(range));
+        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition);
     return oldAnim.forget();
   }
 
@@ -365,7 +349,6 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
 
   animation->SetTimelineNoUpdate(timeline);
   animation->SetEffectNoUpdate(effect);
-  animation->SetTimelineRangeNoUpdate(std::move(range));
 
   if (isStylePaused) {
     animation->PauseFromStyle();

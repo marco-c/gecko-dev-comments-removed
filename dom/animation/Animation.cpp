@@ -347,29 +347,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   
 }
 
-void Animation::SetTimelineRange(AnimationRange&& aRange) {
-  SetTimelineRangeNoUpdate(std::move(aRange));
-  PostUpdate();
-}
-
-void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
-  if (mTimelineRange == aRange) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  mTimelineRange = std::move(aRange);
-
-  if (mEffect) {
-    mEffect->UpdateNormalizedTiming();
-  }
-}
-
 
 void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
   
@@ -1847,14 +1824,6 @@ Animation::AtProgressTimelineBoundary(
                      effectiveTimelineTime, aTimelineDuration.Value()))
              ? ProgressTimelinePosition::Boundary
              : ProgressTimelinePosition::NotBoundary;
-}
-
-void Animation::UpdateNormalizedTimingForTimelineDataChange() {
-  if (!mEffect) {
-    return;
-  }
-
-  mEffect->UpdateNormalizedTiming();
 }
 
 StickyTimeDuration Animation::EffectEnd() const {

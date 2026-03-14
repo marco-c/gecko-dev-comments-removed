@@ -578,13 +578,6 @@ void Gecko_UpdateAnimations(const Element* aElement,
 
   
   
-  if (aTasks & UpdateAnimationsTasks::TimelineScopes) {
-    presContext->TimelineManager()->UpdateTimelineScopes(element,
-                                                         aComputedData);
-  }
-
-  
-  
   if (aTasks & UpdateAnimationsTasks::ScrollTimelines) {
     presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
