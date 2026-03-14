@@ -45,6 +45,7 @@ loader.lazyRequireGetter(
 
 const PREF_SIDEBAR_ENABLED = "devtools.webconsole.sidebarToggle";
 const PREF_BROWSERTOOLBOX_SCOPE = "devtools.browsertoolbox.scope";
+const PREF_CMNEXT_ENABLED = "devtools.webconsole.codemirrorNext";
 
 
 
@@ -620,15 +621,26 @@ class WebConsoleUI extends EventEmitter {
   _initOutputSyntaxHighlighting() {
     
     
-    const syntaxHighlightNode = node => {
+    const syntaxHighlightNode = (doc, node, text) => {
       const editor = this.jsterm && this.jsterm.editor;
       if (node && editor) {
-        node.classList.add("cm-s-mozilla");
-        editor.CodeMirror.runMode(
-          node.textContent,
-          "application/javascript",
-          node
-        );
+        if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          node.classList.add("cm-highlighted");
+          const htmlString = editor.highlightText(doc, text);
+          const sanitizer = new win.Sanitizer({
+            elements: ["span"],
+            attributes: ["class"],
+          });
+          node.setHTML(htmlString, { sanitizer });
+        } else {
+          
+          node.classList.add("cm-s-mozilla");
+          editor.CodeMirror.runMode(
+            node.textContent,
+            "application/javascript",
+            node
+          );
+        }
       }
     };
 
@@ -641,14 +653,14 @@ class WebConsoleUI extends EventEmitter {
         connectedCallback() {
           if (!this.connected) {
             this.connected = true;
-            syntaxHighlightNode(this);
+            syntaxHighlightNode(win.document, this, this.textContent);
 
             
             
             
             this.observer = new win.MutationObserver((mutations, observer) => {
               observer.disconnect();
-              syntaxHighlightNode(this);
+              syntaxHighlightNode(win.document, this, this.textContent);
               observer.observe(this, { childList: true });
             });
 
