@@ -16,17 +16,40 @@
 
 
 
+
+
 enum class IsFastShutdown {
   No,
   Yes,
 };
 
-#include "mozilla/Attributes.h"
-#include "mozilla/BaseProfiler.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/PowerOfTwo.h"
-#include "mozilla/Vector.h"
+#ifndef MOZ_GECKO_PROFILER
+
+
+
+
+
+
+#  define AUTO_PROFILER_INIT ::profiler_init_main_thread_id()
+#  define AUTO_PROFILER_INIT2
+
+
+
+static inline void profiler_init(void* stackTop) {}
+
+static inline void profiler_shutdown(
+    IsFastShutdown aIsFastShutdown = IsFastShutdown::No) {}
+
+static inline void profiler_lookup_async_signal_dump_directory() {}
+
+#else  
+
+#  include "mozilla/Attributes.h"
+#  include "mozilla/BaseProfiler.h"
+#  include "mozilla/Maybe.h"
+#  include "mozilla/MozPromise.h"
+#  include "mozilla/PowerOfTwo.h"
+#  include "mozilla/Vector.h"
 
 
 
@@ -41,10 +64,10 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_SIGHANDLE_ENTRIES =
     mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
 
-#define PROFILER_DEFAULT_INTERVAL BASE_PROFILER_DEFAULT_INTERVAL
-#define PROFILER_MAX_INTERVAL BASE_PROFILER_MAX_INTERVAL
+#  define PROFILER_DEFAULT_INTERVAL BASE_PROFILER_DEFAULT_INTERVAL
+#  define PROFILER_MAX_INTERVAL BASE_PROFILER_MAX_INTERVAL
 
-#define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
+#  define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
 
 
 
@@ -54,9 +77,9 @@ void profiler_init(void* stackTop);
 void profiler_init_threadmanager();
 
 
-#define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
+#  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
 
-#define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
+#  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
 
 
 
@@ -178,5 +201,7 @@ class MOZ_RAII AutoProfilerInit2 {
 };
 
 }  
+
+#endif  
 
 #endif  

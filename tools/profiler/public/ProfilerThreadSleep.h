@@ -10,8 +10,23 @@
 #ifndef ProfilerThreadSleep_h
 #define ProfilerThreadSleep_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/BaseProfilerRAIIMacro.h"
+#ifndef MOZ_GECKO_PROFILER
+
+
+
+
+
+
+#  define AUTO_PROFILER_THREAD_SLEEP
+
+static inline void profiler_thread_sleep() {}
+
+static inline void profiler_thread_wake() {}
+
+#else  
+
+#  include "mozilla/Attributes.h"
+#  include "mozilla/BaseProfilerRAIIMacro.h"
 
 
 
@@ -23,8 +38,8 @@ void profiler_thread_wake();
 
 
 
-#define AUTO_PROFILER_THREAD_SLEEP \
-  mozilla::AutoProfilerThreadSleep PROFILER_RAII
+#  define AUTO_PROFILER_THREAD_SLEEP \
+    mozilla::AutoProfilerThreadSleep PROFILER_RAII
 
 namespace mozilla {
 
@@ -37,5 +52,7 @@ class MOZ_RAII AutoProfilerThreadSleep {
 };
 
 }  
+
+#endif  
 
 #endif  

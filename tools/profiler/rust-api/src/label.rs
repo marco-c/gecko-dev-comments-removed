@@ -7,6 +7,7 @@
 
 
 
+#[cfg(feature = "enabled")]
 use crate::gecko_bindings::{
     bindings, profiling_categories::ProfilingCategoryPair, structs::mozilla,
 };
@@ -14,8 +15,10 @@ use crate::gecko_bindings::{
 
 
 
+#[cfg(feature = "enabled")]
 pub struct AutoProfilerLabel<'a>(&'a mut mozilla::AutoProfilerLabel);
 
+#[cfg(feature = "enabled")]
 impl<'a> AutoProfilerLabel<'a> {
     
     
@@ -34,6 +37,7 @@ impl<'a> AutoProfilerLabel<'a> {
     }
 }
 
+#[cfg(feature = "enabled")]
 impl<'a> Drop for AutoProfilerLabel<'a> {
     #[inline]
     fn drop(&mut self) {
@@ -56,6 +60,7 @@ impl<'a> Drop for AutoProfilerLabel<'a> {
 
 
 
+#[cfg(feature = "enabled")]
 #[macro_export]
 macro_rules! gecko_profiler_label {
     ($category:ident) => {
@@ -82,6 +87,14 @@ macro_rules! gecko_profiler_label {
             None
         };
     };
+}
+
+
+#[cfg(not(feature = "enabled"))]
+#[macro_export]
+macro_rules! gecko_profiler_label {
+    ($category:ident) => {};
+    ($category:ident, $subcategory:ident) => {};
 }
 
 #[cfg(test)]

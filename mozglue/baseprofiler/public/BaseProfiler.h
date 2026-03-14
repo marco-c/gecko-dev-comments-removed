@@ -19,24 +19,83 @@
 
 
 
+
+
+
+
+
 #include "mozilla/BaseProfilerCounts.h"
 #include "mozilla/BaseProfilerLabels.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/BaseProfilerState.h"
 
-#include "BaseProfilingStack.h"
+#ifndef MOZ_GECKO_PROFILER
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/BaseProfilerRAIIMacro.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/PowerOfTwo.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
+#  include "mozilla/UniquePtr.h"
 
-#include <functional>
-#include <stdint.h>
-#include <string>
+
+
+
+
+
+#  define AUTO_BASE_PROFILER_INIT \
+    ::mozilla::baseprofiler::profiler_init_main_thread_id()
+
+#  define BASE_PROFILER_REGISTER_THREAD(name)
+#  define BASE_PROFILER_UNREGISTER_THREAD()
+#  define AUTO_BASE_PROFILER_REGISTER_THREAD(name)
+
+#  define AUTO_BASE_PROFILER_THREAD_SLEEP
+#  define AUTO_BASE_PROFILER_THREAD_WAKE
+
+
+
+namespace mozilla {
+
+namespace baseprofiler {
+
+
+struct ProfilerBacktrace {};
+using UniqueProfilerBacktrace = UniquePtr<ProfilerBacktrace>;
+
+
+
+
+static inline UniqueProfilerBacktrace profiler_get_backtrace() {
+  return nullptr;
+}
+
+static inline bool profiler_capture_backtrace_into(
+    ProfileChunkedBuffer& aChunkedBuffer, StackCaptureOptions aCaptureOptions) {
+  return false;
+}
+
+static inline UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
+  return nullptr;
+}
+
+static inline void profiler_init(void* stackTop) {}
+
+static inline void profiler_shutdown() {}
+
+}  
+}  
+
+#else  
+
+#  include "BaseProfilingStack.h"
+
+#  include "mozilla/Assertions.h"
+#  include "mozilla/Attributes.h"
+#  include "mozilla/BaseProfilerRAIIMacro.h"
+#  include "mozilla/Maybe.h"
+#  include "mozilla/PowerOfTwo.h"
+#  include "mozilla/TimeStamp.h"
+#  include "mozilla/UniquePtr.h"
+
+#  include <functional>
+#  include <stdint.h>
+#  include <string>
 
 namespace mozilla {
 
@@ -56,27 +115,27 @@ class SpliceableJSONWriter;
 
 
 static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_ENTRIES =
-#if !defined(GP_PLAT_arm_android)
+#  if !defined(GP_PLAT_arm_android)
     MakePowerOfTwo32<16 * 1024 * 1024>();  
-#else
+#  else
     MakePowerOfTwo32<4 * 1024 * 1024>();  // 4M entries = 32MiB
-#endif
+#  endif
 
 
 
 
 
 static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
-#if !defined(GP_PLAT_arm_android)
+#  if !defined(GP_PLAT_arm_android)
     mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
-#else
+#  else
     mozilla::MakePowerOfTwo32<16 * 1024 * 1024>();  // 16M entries = 128MiB
-#endif
+#  endif
 
 
 
-#define BASE_PROFILER_DEFAULT_INTERVAL 1 /* millisecond */
-#define BASE_PROFILER_MAX_INTERVAL 5000  /* milliseconds */
+#  define BASE_PROFILER_DEFAULT_INTERVAL 1 /* millisecond */
+#  define BASE_PROFILER_MAX_INTERVAL 5000  /* milliseconds */
 
 
 
@@ -84,8 +143,8 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 
 MFBT_API void profiler_init(void* stackTop);
 
-#define AUTO_BASE_PROFILER_INIT \
-  ::mozilla::baseprofiler::AutoProfilerInit PROFILER_RAII
+#  define AUTO_BASE_PROFILER_INIT \
+    ::mozilla::baseprofiler::AutoProfilerInit PROFILER_RAII
 
 
 
@@ -133,13 +192,13 @@ MFBT_API void profiler_ensure_started(
 
 
 
-#define BASE_PROFILER_REGISTER_THREAD(name)                             \
-  do {                                                                  \
-    char stackTop;                                                      \
-    ::mozilla::baseprofiler::profiler_register_thread(name, &stackTop); \
-  } while (0)
-#define BASE_PROFILER_UNREGISTER_THREAD() \
-  ::mozilla::baseprofiler::profiler_unregister_thread()
+#  define BASE_PROFILER_REGISTER_THREAD(name)                             \
+    do {                                                                  \
+      char stackTop;                                                      \
+      ::mozilla::baseprofiler::profiler_register_thread(name, &stackTop); \
+    } while (0)
+#  define BASE_PROFILER_UNREGISTER_THREAD() \
+    ::mozilla::baseprofiler::profiler_unregister_thread()
 MFBT_API ProfilingStack* profiler_register_thread(const char* name,
                                                   void* guessStackTop);
 MFBT_API void profiler_unregister_thread();
@@ -179,8 +238,8 @@ MFBT_API void profiler_add_sampled_counter(BaseProfilerCount* aCounter);
 MFBT_API void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
 
-#define AUTO_BASE_PROFILER_REGISTER_THREAD(name) \
-  ::mozilla::baseprofiler::AutoProfilerRegisterThread PROFILER_RAII(name)
+#  define AUTO_BASE_PROFILER_REGISTER_THREAD(name) \
+    ::mozilla::baseprofiler::AutoProfilerRegisterThread PROFILER_RAII(name)
 
 
 
@@ -203,10 +262,10 @@ MFBT_API void profiler_thread_sleep();
 MFBT_API void profiler_thread_wake();
 
 
-#define AUTO_BASE_PROFILER_THREAD_SLEEP \
-  ::mozilla::baseprofiler::AutoProfilerThreadSleep PROFILER_RAII
-#define AUTO_BASE_PROFILER_THREAD_WAKE \
-  ::mozilla::baseprofiler::AutoProfilerThreadWake PROFILER_RAII
+#  define AUTO_BASE_PROFILER_THREAD_SLEEP \
+    ::mozilla::baseprofiler::AutoProfilerThreadSleep PROFILER_RAII
+#  define AUTO_BASE_PROFILER_THREAD_WAKE \
+    ::mozilla::baseprofiler::AutoProfilerThreadWake PROFILER_RAII
 
 
 
@@ -440,5 +499,7 @@ MFBT_API void GetProfilerEnvVarsForChildProcess(
 
 }  
 }  
+
+#endif  
 
 #endif  

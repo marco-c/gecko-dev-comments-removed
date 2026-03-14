@@ -95,7 +95,7 @@ class BackgroundHangManager : public nsIObserver {
 
   void InitMonitorThread() {
     mHangMonitorProfilerThreadId = profiler_current_thread_id();
-#if defined(XP_WIN) && defined(_M_X64)
+#if defined(MOZ_GECKO_PROFILER) && defined(XP_WIN) && defined(_M_X64)
     
     
     
@@ -230,8 +230,10 @@ class BackgroundHangThread final
   bool mWaiting;
   
   BackgroundHangMonitor::ThreadType mThreadType;
+#ifdef MOZ_GECKO_PROFILER
   
   ThreadStackHelper mStackHelper;
+#endif
   
   HangStack mHangStack;
   
@@ -443,6 +445,8 @@ void BackgroundHangThread::ReportHang(TimeDuration aHangTime,
     hd->Submit();
   }
 
+  
+#ifdef MOZ_GECKO_PROFILER
   if (profiler_thread_is_being_profiled_for_markers(
           mStackHelper.GetThreadId())) {
     struct HangMarker {
@@ -465,6 +469,7 @@ void BackgroundHangThread::ReportHang(TimeDuration aHangTime,
                          MarkerTiming::Interval(startTime, endTime)},
                         HangMarker{});
   }
+#endif
 }
 
 void BackgroundHangThread::ReportPermaHang() {
@@ -507,8 +512,10 @@ NS_IMETHODIMP BackgroundHangThread::Notify(nsITimer* aTimer) {
   }
 
   if (MOZ_LIKELY(!mHanging && hangTime >= mTimeout)) {
+#ifdef MOZ_GECKO_PROFILER
     
     mStackHelper.GetStack(mHangStack, mRunnableName, true);
+#endif
 
     
     
@@ -593,7 +600,7 @@ void BackgroundHangMonitor::Startup() {
     return;
   }
 
-#  if defined(XP_WIN)
+#  if defined(MOZ_GECKO_PROFILER) && defined(XP_WIN)
 #    if defined(_M_AMD64) || defined(_M_ARM64)
   mozilla::WindowsStackWalkInitialization();
 #    endif  

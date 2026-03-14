@@ -47,8 +47,15 @@ class nsIDocShell;
 namespace geckoprofiler::markers::detail {
 
 
+#ifdef MOZ_GECKO_PROFILER
 mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
     nsIDocShell* aDocshell);
+#else
+inline mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
+    nsIDocShell* aDocshell) {
+  return mozilla::Nothing();
+}
+#endif  
 
 }  
 
@@ -84,6 +91,7 @@ namespace geckoprofiler::category {
 using namespace ::mozilla::baseprofiler::category;
 }
 
+#ifdef MOZ_GECKO_PROFILER
 
 bool profiler_capture_backtrace_into(
     mozilla::ProfileChunkedBuffer& aChunkedBuffer,
@@ -118,6 +126,7 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
   return AddMarkerToBuffer(aBuffer, aName, aCategory, std::move(aOptions),
                            mozilla::baseprofiler::markers::NoPayload{});
 }
+#endif
 
 
 [[nodiscard]] inline bool profiler_thread_is_being_gecko_profiled_for_markers(
@@ -157,18 +166,21 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory, mozilla::MarkerOptions&& aOptions,
     MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
-#ifndef RUST_BINDGEN
+#ifndef MOZ_GECKO_PROFILER
+  return {};
+#else
+#  ifndef RUST_BINDGEN
   
   ETW::EmitETWMarker(aName, aCategory, aOptions, aMarkerType,
                      aPayloadArguments...);
-#endif
+#  endif
 
-#ifdef MOZ_PERFETTO
+#  ifdef MOZ_PERFETTO
   if (profiler_is_perfetto_tracing()) {
     EmitPerfettoTrackEvent(aName, aCategory, aOptions, aMarkerType,
                            aPayloadArguments...);
   }
-#endif
+#  endif
 
   if (!profiler_thread_is_being_gecko_profiled_for_markers(
           aOptions.ThreadId().ThreadId())) {
@@ -178,6 +190,7 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
   return ::AddMarkerToBuffer(profiler_get_core_buffer(), aName, aCategory,
                              std::move(aOptions), aMarkerType,
                              aPayloadArguments...);
+#endif
 }
 
 
@@ -208,12 +221,14 @@ inline mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
   } while (false)
 
 
+
 #define PROFILER_MARKER_UNTYPED(markerName, categoryName, ...)               \
   do {                                                                       \
     AUTO_PROFILER_STATS(PROFILER_MARKER_UNTYPED);                            \
     profiler_add_marker(markerName, ::geckoprofiler::category::categoryName, \
                         ##__VA_ARGS__);                                      \
   } while (false)
+
 
 
 #define PROFILER_MARKER(markerName, categoryName, options, MarkerType, ...)  \
@@ -229,6 +244,7 @@ namespace geckoprofiler::markers {
 using TextMarker = ::mozilla::baseprofiler::markers::TextMarker;
 using Tracing = mozilla::baseprofiler::markers::Tracing;
 }  
+
 
 
 #define PROFILER_MARKER_TEXT(markerName, categoryName, options, text)        \
@@ -396,6 +412,7 @@ class MOZ_RAII AutoProfilerUntypedMarker {
 };
 
 
+
 #define AUTO_PROFILER_MARKER_UNTYPED(markerName, categoryName, options) \
   AutoProfilerUntypedMarker PROFILER_RAII(                              \
       markerName, ::mozilla::baseprofiler::category::categoryName, options)
@@ -449,6 +466,7 @@ class MOZ_RAII AutoProfilerTextMarker {
   mozilla::MarkerOptions mOptions;
   nsCString mText;
 };
+
 
 
 #define AUTO_PROFILER_MARKER_FMT(markerName, categoryName, options, format, \
@@ -519,6 +537,7 @@ class AutoProfilerFmtMarker {
 };
 
 
+
 #define AUTO_PROFILER_MARKER_TEXT(markerName, categoryName, options, text)  \
   AutoProfilerTextMarker PROFILER_RAII(                                     \
       markerName, ::mozilla::baseprofiler::category::categoryName, options, \
@@ -586,6 +605,8 @@ class MOZ_RAII AutoProfilerTracing {
       geckoprofiler::markers::detail::                                    \
           profiler_get_inner_window_id_from_docshell(docShell))
 
+#ifdef MOZ_GECKO_PROFILER
+
 extern template mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     mozilla::ProfileChunkedBuffer&, const mozilla::ProfilerString8View&,
     const mozilla::MarkerCategory&, mozilla::MarkerOptions&&,
@@ -615,6 +636,13 @@ extern template mozilla::ProfileBufferBlockIndex profiler_add_marker_impl(
 
 void profiler_register_marker_schema(const nsCString& aSchemaName,
                                      const nsString& aSchemaJSON);
+
+#else
+
+inline void profiler_register_marker_schema(const nsCString& aSchemaName,
+                                            const nsString& aSchemaJSON) {}
+
+#endif  
 
 namespace mozilla {
 namespace detail {

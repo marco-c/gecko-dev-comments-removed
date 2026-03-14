@@ -33,6 +33,8 @@ namespace JS {
 enum class ProfilingCategoryPair : uint32_t;
 }  
 
+
+
 extern "C" {
 
 void gecko_profiler_register_thread(const char* aName);

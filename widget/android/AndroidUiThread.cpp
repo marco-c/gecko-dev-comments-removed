@@ -173,6 +173,7 @@ class CreateOnUiThread : public Runnable {
 
  private:
   static void RegisterThreadWithProfiler() {
+#if defined(MOZ_GECKO_PROFILER)
     
     
     
@@ -181,6 +182,7 @@ class CreateOnUiThread : public Runnable {
     const char* stackTop = static_cast<const char*>(sThread->StackBase()) +
                            sThread->StackSize() - 1;
     profiler_register_thread("AndroidUI", const_cast<char*>(stackTop));
+#endif  
   }
 };
 
