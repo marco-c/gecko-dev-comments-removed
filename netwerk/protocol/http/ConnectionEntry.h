@@ -153,7 +153,15 @@ class ConnectionEntry : public SupportsWeakPtr {
   
   bool mUsedForConnection : 1;
 
-  bool mDoNotDestroy : 1;
+  
+  
+  
+  bool IsEmpty() const {
+    return IdleConnectionsLength() == 0 && ActiveConnsLength() == 0 &&
+           DnsAndConnectSocketsLength() == 0 && PendingQueueIsEmpty() &&
+           UrgentStartQueueIsEmpty() && mPendingConns.IsEmpty() &&
+           mExtendedCONNECTConns.IsEmpty();
+  }
 
   bool IsHttp3ProxyConnection() const {
     return mConnInfo->IsHttp3ProxyConnection();
