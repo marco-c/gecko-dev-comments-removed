@@ -975,8 +975,9 @@ static bool CyclicModuleResolveExport(JSContext* cx,
 
     
     
-    if (!CyclicModuleResolveExport(cx, importedModule, exportName, resolveSet,
-                                   &resolution, errorInfoOut)) {
+    if (!ModuleResolveExportWithResolveSet(cx, importedModule, exportName,
+                                           resolveSet, &resolution,
+                                           errorInfoOut)) {
       return false;
     }
 
