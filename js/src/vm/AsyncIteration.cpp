@@ -496,6 +496,9 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
+
+
+
 [[nodiscard]] static bool AsyncGeneratorCompleteStepNormal(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value,
     bool done) {
@@ -542,6 +545,9 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   RootedValue resultValue(cx, ObjectValue(*resultObj));
   return ResolvePromiseInternal(cx, resultPromise, resultValue);
 }
+
+
+
 
 
 
@@ -1220,6 +1226,8 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
 [[nodiscard]] static bool AsyncGeneratorResume(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
     CompletionKind completionKind, HandleValue argument) {
@@ -1255,6 +1263,14 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     Handle<PropertyName*> funName = completionKind == CompletionKind::Normal
                                         ? cx->names().AsyncGeneratorNext
                                     : completionKind == CompletionKind::Throw
@@ -1271,14 +1287,55 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     if (generator->isAfterAwait()) {
-      return AsyncGeneratorAwait(cx, generator, thisOrRval);
+      if (!AsyncGeneratorAwait(cx, generator, thisOrRval)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!GetAndClearException(cx, &resumeArgument)) {
+          return false;
+        }
+        completionKind = CompletionKind::Throw;
+        continue;
+      }
+      return true;
     }
 
     if (generator->isAfterYield()) {
       bool resumeAgain = false;
       if (!AsyncGeneratorYield(cx, generator, thisOrRval, &resumeAgain,
                                &completionKind, &resumeArgument)) {
-        return false;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (generator->isQueueEmpty()) {
+          return false;
+        }
+        if (!GetAndClearException(cx, &resumeArgument)) {
+          return false;
+        }
+        completionKind = CompletionKind::Throw;
+        continue;
       }
       if (resumeAgain) {
         MOZ_ASSERT(completionKind != CompletionKind::Return);
