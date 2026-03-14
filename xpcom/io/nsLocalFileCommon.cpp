@@ -363,6 +363,18 @@ nsLocalFile::GetRelativeDescriptor(nsIFile* aFromFile, nsACString& aResult) {
     return rv;
   }
 
+#ifdef XP_WIN
+  
+  
+  static constexpr nsLiteralString kPrefix = u"\\\\?\\"_ns;
+  if (StringBeginsWith(thisPath, kPrefix)) {
+    thisPath.Cut(0, kPrefix.Length());
+  }
+  if (StringBeginsWith(fromPath, kPrefix)) {
+    fromPath.Cut(0, kPrefix.Length());
+  }
+#endif
+
   
   char16_t* thisPathPtr = thisPath.BeginWriting();
   char16_t* fromPathPtr = fromPath.BeginWriting();
