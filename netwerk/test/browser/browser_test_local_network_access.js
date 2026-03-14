@@ -760,6 +760,744 @@ add_task(async function test_lna_prompt_telemetry_deny() {
 
 
 
+
+
+
+
+
+
+add_task(async function test_lna_temporary_permission_expiry_loopback_allow() {
+  info("Test loopback-network: Allow within expiry (no re-prompt)");
+  await restorePermissions();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+      ["network.lna.temporary_permission_expire_time_ms", 2000], 
+    ],
+  });
+
+  const testURL = `${baseURL}page_with_non_trackers.html`;
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+  info("Step 1: Make first request and grant permission");
+  const rand1 = Math.random();
+  let promise = observeAndCheck(
+    "fetch",
+    rand1,
+    Cr.NS_OK,
+    "First request should succeed after permission granted"
+  );
+  SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+    content
+      .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+      .catch(() => {});
+  });
+
+  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+  let popup = PopupNotifications.getNotification(
+    "loopback-network",
+    tab.linkedBrowser
+  );
+  ok(popup, "First prompt should appear");
+
+  clickDoorhangerButton(
+    PROMPT_ALLOW_BUTTON,
+    tab.linkedBrowser,
+    "loopback-network"
+  );
+  await promise;
+
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  info("Step 2: Make second request within expiry (should NOT prompt)");
+  const rand2 = Math.random();
+  promise = observeAndCheck(
+    "fetch",
+    rand2,
+    Cr.NS_OK,
+    "Second request within expiry should succeed without prompt"
+  );
+  await SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+    await content.fetch(`http://localhost:21555/?type=fetch&rand=${rand}`);
+  });
+  await promise;
+
+  
+  popup = PopupNotifications.getNotification(
+    "loopback-network",
+    tab.linkedBrowser
+  );
+  ok(!popup, "No prompt should appear within expiry window");
+
+  gBrowser.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_lna_temporary_permission_expiry_loopback_allow_after_expiry() {
+    info(
+      "Test loopback-network: Allow, then retry after expiry (should prompt)"
+    );
+    await restorePermissions();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+        ["network.lna.temporary_permission_expire_time_ms", 2000], 
+      ],
+    });
+
+    const testURL = `${baseURL}page_with_non_trackers.html`;
+    const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+    info("Step 1: Make first request and grant permission");
+    const rand1 = Math.random();
+    let promise = observeAndCheck(
+      "fetch",
+      rand1,
+      Cr.NS_OK,
+      "First request should succeed after permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "loopback-network"
+    );
+    await promise;
+
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    info("Step 2: Wait for permission to expire (2.5 seconds)");
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    info("Step 3: Make request after expiry (should prompt again)");
+    const rand2 = Math.random();
+    promise = observeAndCheck(
+      "fetch",
+      rand2,
+      Cr.NS_OK,
+      "Request after expiry should succeed after new permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popup = PopupNotifications.getNotification(
+      "loopback-network",
+      tab.linkedBrowser
+    );
+    ok(popup, "Prompt should appear again after expiry");
+
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "loopback-network"
+    );
+    await promise;
+
+    gBrowser.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_lna_temporary_permission_expiry_loopback_deny() {
+  info("Test loopback-network: Deny within expiry (no re-prompt)");
+  await restorePermissions();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+      ["network.lna.temporary_permission_expire_time_ms", 2000], 
+    ],
+  });
+
+  const testURL = `${baseURL}page_with_non_trackers.html`;
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+  info("Step 1: Make first request and deny permission");
+  const rand1 = Math.random();
+  let promise = observeAndCheck(
+    "fetch",
+    rand1,
+    Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+    "First request should be denied"
+  );
+  SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+    content
+      .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+      .catch(() => {});
+  });
+
+  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+  let popup = PopupNotifications.getNotification(
+    "loopback-network",
+    tab.linkedBrowser
+  );
+  ok(popup, "First prompt should appear");
+
+  clickDoorhangerButton(
+    PROMPT_NOT_NOW_BUTTON,
+    tab.linkedBrowser,
+    "loopback-network"
+  );
+  await promise;
+
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  info("Step 2: Make second request within expiry (should NOT prompt)");
+  const rand2 = Math.random();
+  promise = observeAndCheck(
+    "fetch",
+    rand2,
+    Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+    "Second request within expiry should be denied without prompt"
+  );
+  await SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+    await content
+      .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+      .catch(() => {});
+  });
+  await promise;
+
+  
+  popup = PopupNotifications.getNotification(
+    "loopback-network",
+    tab.linkedBrowser
+  );
+  ok(!popup, "No prompt should appear within expiry window");
+
+  gBrowser.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_lna_temporary_permission_expiry_loopback_deny_after_expiry() {
+    info(
+      "Test loopback-network: Deny, then retry after expiry (should prompt)"
+    );
+    await restorePermissions();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+        ["network.lna.temporary_permission_expire_time_ms", 2000], 
+      ],
+    });
+
+    const testURL = `${baseURL}page_with_non_trackers.html`;
+    const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+    info("Step 1: Make first request and deny permission");
+    const rand1 = Math.random();
+    let promise = observeAndCheck(
+      "fetch",
+      rand1,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      "First request should be denied"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    clickDoorhangerButton(
+      PROMPT_NOT_NOW_BUTTON,
+      tab.linkedBrowser,
+      "loopback-network"
+    );
+    await promise;
+
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    info("Step 2: Wait for permission to expire (2.5 seconds)");
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    info("Step 3: Make request after expiry (should prompt again)");
+    const rand2 = Math.random();
+    promise = observeAndCheck(
+      "fetch",
+      rand2,
+      Cr.NS_OK,
+      "Request after expiry should succeed after new permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popup = PopupNotifications.getNotification(
+      "loopback-network",
+      tab.linkedBrowser
+    );
+    ok(popup, "Prompt should appear again after expiry");
+
+    
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "loopback-network"
+    );
+    await promise;
+
+    gBrowser.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_lna_temporary_permission_expiry_local_network_allow() {
+    info("Test local-network: Allow within expiry (no re-prompt)");
+    await restorePermissions();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["network.lna.address_space.private.override", "127.0.0.1:21555"],
+        ["network.lna.temporary_permission_expire_time_ms", 2000], 
+      ],
+    });
+
+    const testURL = `${baseURL}page_with_non_trackers.html`;
+    const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+    info("Step 1: Make first request and grant permission");
+    const rand1 = Math.random();
+    let promise = observeAndCheck(
+      "fetch",
+      rand1,
+      Cr.NS_OK,
+      "First request should succeed after permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popup = PopupNotifications.getNotification(
+      "local-network",
+      tab.linkedBrowser
+    );
+    ok(popup, "First prompt should appear");
+
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "local-network"
+    );
+    await promise;
+
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    info("Step 2: Make second request within expiry (should NOT prompt)");
+    const rand2 = Math.random();
+    promise = observeAndCheck(
+      "fetch",
+      rand2,
+      Cr.NS_OK,
+      "Second request within expiry should succeed without prompt"
+    );
+    await SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+      await content.fetch(`http://localhost:21555/?type=fetch&rand=${rand}`);
+    });
+    await promise;
+
+    
+    popup = PopupNotifications.getNotification(
+      "local-network",
+      tab.linkedBrowser
+    );
+    ok(!popup, "No prompt should appear within expiry window");
+
+    gBrowser.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_lna_temporary_permission_expiry_local_network_allow_after_expiry() {
+    info("Test local-network: Allow, then retry after expiry (should prompt)");
+    await restorePermissions();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["network.lna.address_space.private.override", "127.0.0.1:21555"],
+        ["network.lna.temporary_permission_expire_time_ms", 2000], 
+      ],
+    });
+
+    const testURL = `${baseURL}page_with_non_trackers.html`;
+    const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+    info("Step 1: Make first request and grant permission");
+    const rand1 = Math.random();
+    let promise = observeAndCheck(
+      "fetch",
+      rand1,
+      Cr.NS_OK,
+      "First request should succeed after permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "local-network"
+    );
+    await promise;
+
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    info("Step 2: Wait for permission to expire (2.5 seconds)");
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    info("Step 3: Make request after expiry (should prompt again)");
+    const rand2 = Math.random();
+    promise = observeAndCheck(
+      "fetch",
+      rand2,
+      Cr.NS_OK,
+      "Request after expiry should succeed after new permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popup = PopupNotifications.getNotification(
+      "local-network",
+      tab.linkedBrowser
+    );
+    ok(popup, "Prompt should appear again after expiry");
+
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "local-network"
+    );
+    await promise;
+
+    gBrowser.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_lna_temporary_permission_expiry_local_network_deny() {
+    info("Test local-network: Deny within expiry (no re-prompt)");
+    await restorePermissions();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["network.lna.address_space.private.override", "127.0.0.1:21555"],
+        ["network.lna.temporary_permission_expire_time_ms", 2000], 
+      ],
+    });
+
+    const testURL = `${baseURL}page_with_non_trackers.html`;
+    const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+    info("Step 1: Make first request and deny permission");
+    const rand1 = Math.random();
+    let promise = observeAndCheck(
+      "fetch",
+      rand1,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      "First request should be denied"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popup = PopupNotifications.getNotification(
+      "local-network",
+      tab.linkedBrowser
+    );
+    ok(popup, "First prompt should appear");
+
+    clickDoorhangerButton(
+      PROMPT_NOT_NOW_BUTTON,
+      tab.linkedBrowser,
+      "local-network"
+    );
+    await promise;
+
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    info("Step 2: Make second request within expiry (should NOT prompt)");
+    const rand2 = Math.random();
+    promise = observeAndCheck(
+      "fetch",
+      rand2,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      "Second request within expiry should be denied without prompt"
+    );
+    await SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+      await content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+    await promise;
+
+    
+    popup = PopupNotifications.getNotification(
+      "local-network",
+      tab.linkedBrowser
+    );
+    ok(!popup, "No prompt should appear within expiry window");
+
+    gBrowser.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  async function test_lna_temporary_permission_expiry_local_network_deny_after_expiry() {
+    info("Test local-network: Deny, then retry after expiry (should prompt)");
+    await restorePermissions();
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["network.lna.address_space.private.override", "127.0.0.1:21555"],
+        ["network.lna.temporary_permission_expire_time_ms", 2000], 
+      ],
+    });
+
+    const testURL = `${baseURL}page_with_non_trackers.html`;
+    const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+
+    info("Step 1: Make first request and deny permission");
+    const rand1 = Math.random();
+    let promise = observeAndCheck(
+      "fetch",
+      rand1,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      "First request should be denied"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand1], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    clickDoorhangerButton(
+      PROMPT_NOT_NOW_BUTTON,
+      tab.linkedBrowser,
+      "local-network"
+    );
+    await promise;
+
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    info("Step 2: Wait for permission to expire (2.5 seconds)");
+    
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    info("Step 3: Make request after expiry (should prompt again)");
+    const rand2 = Math.random();
+    promise = observeAndCheck(
+      "fetch",
+      rand2,
+      Cr.NS_OK,
+      "Request after expiry should succeed after new permission granted"
+    );
+    SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+      content
+        .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+        .catch(() => {});
+    });
+
+    
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+    let popup = PopupNotifications.getNotification(
+      "local-network",
+      tab.linkedBrowser
+    );
+    ok(popup, "Prompt should appear again after expiry");
+
+    
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      tab.linkedBrowser,
+      "local-network"
+    );
+    await promise;
+
+    gBrowser.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
 add_task(async function test_feature_policy_same_origin_iframe() {
   info("Test: Same-origin iframe inherits Feature Policy from parent");
   await restorePermissions();
@@ -1070,13 +1808,13 @@ add_task(async function test_feature_policy_same_origin_inherits_permission() {
 
 add_task(
   async function test_feature_policy_cross_origin_with_allow_uses_permission() {
+    await restorePermissions();
     info(
       "Test: Cross-origin iframe with allow attribute can use parent permission"
     );
     await SpecialPowers.pushPrefEnv({
       set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
     });
-    await restorePermissions();
 
     const rand1 = Math.random();
     const rand2 = Math.random();
@@ -1158,10 +1896,10 @@ add_task(
     info(
       "Test: Cross-origin iframe without allow is blocked even if parent has permission"
     );
+    await restorePermissions();
     await SpecialPowers.pushPrefEnv({
       set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
     });
-    await restorePermissions();
 
     const rand1 = Math.random();
     const rand2 = Math.random();
@@ -1243,10 +1981,10 @@ add_task(async function test_feature_policy_nested_iframes() {
   info(
     "Test: Nested iframes respect Feature Policy (cross-origin inside same-origin)"
   );
+  await restorePermissions();
   await SpecialPowers.pushPrefEnv({
     set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
   });
-  await restorePermissions();
 
   const rand = Math.random();
   const testURL = `${baseURL}lna_feature_policy_parent.html?iframe=nested&rand=${rand}`;
