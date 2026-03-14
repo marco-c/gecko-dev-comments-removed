@@ -30,13 +30,12 @@ namespace js {
 
 template <typename F>
 void ForAllWeakMapsInZone(Zone* zone, F&& func) {
-  for (WeakMapBase* map : zone->gcSystemWeakMaps()) {
-    MOZ_ASSERT(map->isSystem());
-    func(map);
-  }
-  for (WeakMapBase* map : zone->gcUserWeakMaps()) {
-    MOZ_ASSERT(!map->isSystem());
-    func(map);
+  for (auto* list : {&zone->gcSystemWeakMaps(), &zone->gcUserWeakMaps(),
+                     &zone->gcMarkedUserWeakMaps()}) {
+    for (WeakMapBase* map : *list) {
+      MOZ_ASSERT(map->isSystem() == (list == &zone->gcSystemWeakMaps()));
+      func(map);
+    }
   }
 }
 
@@ -295,7 +294,21 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
   if (trc->isMarkingTracer()) {
     MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
     GCMarker* marker = GCMarker::fromTracer(trc);
-    if (markMap(marker->markColor())) {
+    mozilla::Maybe<gc::CellColor> markResult = markMap(marker->markColor());
+    if (markResult.isSome()) {
+      
+      
+      mozilla::Maybe<AutoLockGC> lock;
+      if (marker->isParallelMarking()) {
+        lock.emplace(marker->runtime());
+      }
+
+      
+      if (markResult.value() == gc::CellColor::White && !isSystem()) {
+        zone()->gcUserWeakMaps().remove(this);
+        zone()->gcMarkedUserWeakMaps().pushFront(this);
+      }
+
       (void)markEntries(marker);
     }
     return;
@@ -338,20 +351,20 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
   
   
 
-  
-  
-  mozilla::Maybe<AutoLockGC> lock;
-  if (marker->isParallelMarking()) {
-    lock.emplace(marker->runtime());
-  }
-
   MOZ_ASSERT(IsMarked(mapColor()));
+
   bool markedAny = false;
 
   
   
   bool populateWeakKeysTable =
       marker->incrementalWeakMapMarkingEnabled || marker->isWeakMarking();
+
+#ifdef DEBUG
+  if (populateWeakKeysTable && marker->isParallelMarking()) {
+    marker->runtime()->gc.assertCurrentThreadHasLockedGC();
+  }
+#endif
 
   
   
