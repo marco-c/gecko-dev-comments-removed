@@ -32,6 +32,8 @@
 namespace js {
 namespace wasm {
 
+struct StackMap;
+
 
 
 class OutOfLineCode;
@@ -959,6 +961,10 @@ struct BaseCompiler final {
 
   
   
+  [[nodiscard]] bool createAbortingOutOfLineTrapStackMap(StackMap** result);
+
+  
+  
   
 
   inline void initControl(Control& item, ResultType params);
@@ -1362,7 +1368,10 @@ struct BaseCompiler final {
   inline TrapSiteDesc trapSiteDesc() const;
 
   
-  inline void trap(Trap t) const;
+  inline void trap(Trap t);
+
+  
+  inline void trap(Trap t, const TrapSiteDesc& trapSite, StackMap* stackMap);
 
   
   
