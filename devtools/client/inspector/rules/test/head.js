@@ -893,11 +893,18 @@ async function checkDeclarationCompatibility(
 
 
 
-async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
+
+
+async function checkDeclarationIsInactive(
+  view,
+  ruleIndex,
+  declaration,
+  expectedMsgId
+) {
   const declarations = await getPropertiesForRuleIndex(view, ruleIndex);
   const [[name, value]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
-  const { used, warning, icon } = declarations.get(dec);
+  const { used, warning, icon, data } = declarations.get(dec);
 
   ok(!used, `"${dec}" is inactive`);
   ok(warning, `"${dec}" has a warning`);
@@ -906,6 +913,7 @@ async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
     "Icon has expected icon"
   );
   is(icon.hidden, false, "Icon is visible");
+  is(data.msgId, expectedMsgId, `"${dec}" has expected inactive CSS msgId`);
 
   await checkInteractiveTooltip(
     view,
@@ -1110,6 +1118,7 @@ async function runCSSCompatibilityTests(view, inspector, tests) {
 
 
 
+
 async function runInactiveCSSTests(view, inspector, tests) {
   for (const test of tests) {
     if (test.selector) {
@@ -1139,7 +1148,8 @@ async function runInactiveCSSTests(view, inspector, tests) {
         await checkDeclarationIsInactive(
           view,
           inactiveDeclaration.ruleIndex,
-          inactiveDeclaration.declaration
+          inactiveDeclaration.declaration,
+          inactiveDeclaration.msgId
         );
       }
     }
