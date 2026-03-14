@@ -81,7 +81,11 @@ class WebDriverBaseProtocolPart(BaseProtocolPart):
         return method(script, args=args)
 
     def set_timeout(self, timeout):
-        self.webdriver.timeouts.script = timeout
+        
+        
+        
+        
+        self.webdriver.timeouts.script = int(timeout)
 
     def create_window(self, type=None, **kwargs):
         
