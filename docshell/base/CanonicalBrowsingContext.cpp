@@ -40,6 +40,7 @@
 #endif
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_fission.h"
@@ -145,6 +146,10 @@ CanonicalBrowsingContext::CanonicalBrowsingContext(WindowContext* aParentWindow,
   
   
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+
+  if (IsTop()) {
+    mScopedPrefs = new ScopedPrefs();
+  }
 
   
   MOZ_ALWAYS_SUCCEEDS(
@@ -255,6 +260,7 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   mWebProgress->ContextReplaced(aNewContext);
   aNewContext->mWebProgress = std::move(mWebProgress);
+  aNewContext->mScopedPrefs = mScopedPrefs;
 
   
   
@@ -3701,6 +3707,10 @@ CanonicalBrowsingContext::GetBounceTrackingState() {
     return nullptr;
   }
   return mWebProgress->GetBounceTrackingState();
+}
+
+already_AddRefed<nsIScopedPrefs> CanonicalBrowsingContext::GetScopedPrefs() {
+  return do_AddRef(Top()->mScopedPrefs);
 }
 
 bool CanonicalBrowsingContext::CanOpenModalPicker() {

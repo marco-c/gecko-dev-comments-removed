@@ -7,6 +7,7 @@
 #include "UrlClassifierFeatureTrackingProtection.h"
 
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "ChannelClassifierService.h"
 #include "nsIChannel.h"
@@ -84,19 +85,26 @@ UrlClassifierFeatureTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
       ("UrlClassifierFeatureTrackingProtection::MaybeCreate - channel %p",
        aChannel));
 
+#ifdef ANDROID  
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(aChannel, loadContext);
   if (!loadContext) {
     
     
-    if (!StaticPrefs::privacy_trackingprotection_enabled() &&
-        !(NS_UsePrivateBrowsing(aChannel) &&
-          StaticPrefs::privacy_trackingprotection_pbmode_enabled())) {
+    if (!ScopedPrefs::BoolPrefScoped(
+            ScopedPrefs::PRIVACY_TRACKINGPROTECTION_ENABLED, aChannel)) {
       return nullptr;
     }
   } else if (!loadContext->UseTrackingProtection()) {
     return nullptr;
   }
+#else   
+  
+  if (!ScopedPrefs::BoolPrefScoped(
+          ScopedPrefs::PRIVACY_TRACKINGPROTECTION_ENABLED, aChannel)) {
+    return nullptr;
+  }
+#endif  
 
   RefPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   bool isThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
