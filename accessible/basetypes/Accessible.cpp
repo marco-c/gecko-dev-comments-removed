@@ -938,43 +938,13 @@ role Accessible::ARIATransformRole(role aRole) const {
              : accRole == roles::GROUPING ? AncestorSearchOption::Continue
                                           : AncestorSearchOption::NotFound;
     });
-    if (!listbox) {
-      
-      return NativeRole();
-    }
-
-    if (listbox->Role() == roles::COMBOBOX_LIST) {
+    if (listbox && listbox->Role() == roles::COMBOBOX_LIST) {
       return roles::COMBOBOX_OPTION;
     }
   } else if (aRole == roles::MENUITEM) {
     
     if (ARIAAttrValueIs(nsGkAtoms::aria_haspopup, nsGkAtoms::_true)) {
       return roles::PARENT_MENUITEM;
-    }
-
-    
-    const Accessible* menu = FindAncestorIf([](const Accessible& aAcc) {
-      const role accRole = aAcc.Role();
-      return (accRole == roles::MENUBAR || accRole == roles::MENUPOPUP)
-                 ? AncestorSearchOption::Found
-             : accRole == roles::GROUPING ? AncestorSearchOption::Continue
-                                          : AncestorSearchOption::NotFound;
-    });
-    if (!menu) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::RADIO_MENU_ITEM ||
-             aRole == roles::CHECK_MENU_ITEM) {
-    
-    const Accessible* menu = FindAncestorIf([](const Accessible& aAcc) {
-      const role accRole = aAcc.Role();
-      return (accRole == roles::MENUBAR || accRole == roles::MENUPOPUP)
-                 ? AncestorSearchOption::Found
-             : accRole == roles::GROUPING ? AncestorSearchOption::Continue
-                                          : AncestorSearchOption::NotFound;
-    });
-    if (!menu) {
-      return NativeRole();
     }
   } else if (aRole == roles::CELL) {
     
@@ -983,63 +953,6 @@ role Accessible::ARIATransformRole(role aRole) const {
     const Accessible* table = nsAccUtils::TableFor(this);
     if (table && table->IsARIARole(nsGkAtoms::grid)) {
       return roles::GRID_CELL;
-    }
-  } else if (aRole == roles::ROW) {
-    
-    const Accessible* table = nsAccUtils::TableFor(this);
-    if (!table) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::ROWGROUP) {
-    
-    const Accessible* table = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.IsTable() ? AncestorSearchOption::Found
-                            : AncestorSearchOption::NotFound;
-    });
-    if (!table) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::GRID_CELL || aRole == roles::ROWHEADER ||
-             aRole == roles::COLUMNHEADER) {
-    
-    const Accessible* row = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.IsTableRow() ? AncestorSearchOption::Found
-                               : AncestorSearchOption::NotFound;
-    });
-    if (!row) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::LISTITEM) {
-    
-    const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-    if (!roleMapEntry || (roleMapEntry->roleAtom != nsGkAtoms::docBiblioentry &&
-                          roleMapEntry->roleAtom != nsGkAtoms::docEndnote)) {
-      
-      const Accessible* list = FindAncestorIf([](const Accessible& aAcc) {
-        return aAcc.IsList() ? AncestorSearchOption::Found
-                             : AncestorSearchOption::Continue;
-      });
-      if (!list) {
-        return NativeRole();
-      }
-    }
-  } else if (aRole == roles::PAGETAB) {
-    
-    const Accessible* tablist = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.Role() == roles::PAGETABLIST ? AncestorSearchOption::Found
-                                               : AncestorSearchOption::NotFound;
-    });
-    if (!tablist) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::OUTLINEITEM) {
-    
-    const Accessible* tree = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.Role() == roles::OUTLINE ? AncestorSearchOption::Found
-                                           : AncestorSearchOption::Continue;
-    });
-    if (!tree) {
-      return NativeRole();
     }
   }
 
