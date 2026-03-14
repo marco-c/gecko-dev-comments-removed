@@ -21,6 +21,8 @@ class Animation;
 class Document;
 class ScrollTimeline;
 
+struct AnimationRange;
+
 class AnimationTimeline : public nsISupports, public nsWrapperCache {
  public:
   AnimationTimeline(nsIGlobalObject* aWindow, RTPCallerType);
@@ -119,7 +121,9 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   
   
   
-  virtual Nullable<TimeDuration> TimelineDuration() const { return nullptr; }
+  virtual Nullable<TimeDuration> TimelineDuration(const AnimationRange&) const {
+    return nullptr;
+  }
 
  protected:
   nsCOMPtr<nsIGlobalObject> mWindow;

@@ -356,8 +356,17 @@ void AnimationEffect::UpdateNormalizedTiming() {
 
   
   
+  
+  
+  
+  
+  
+  
+  
   mNormalizedTiming.emplace(
-      mTiming.Normalize(mAnimation->GetTimeline()->TimelineDuration().Value()));
+      mTiming.Normalize(mAnimation->GetTimeline()
+                            ->TimelineDuration(mAnimation->GetTimelineRange())
+                            .Value()));
 }
 
 Nullable<TimeDuration> AnimationEffect::GetLocalTime() const {
