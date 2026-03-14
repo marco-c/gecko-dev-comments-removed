@@ -103,10 +103,6 @@ class InspectorUtils {
                                       ErrorResult& aRv);
 
   
-  static void GetCSSWideKeywords(GlobalObject& aGlobal,
-                                 nsTArray<nsString>& aResult);
-
-  
   static void RgbToColorName(GlobalObject& aGlobal, uint8_t aR, uint8_t aG,
                              uint8_t aB, nsACString& aResult);
 
