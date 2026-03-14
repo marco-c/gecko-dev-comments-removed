@@ -212,6 +212,8 @@
 #include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
@@ -2401,6 +2403,86 @@ nsIPrincipal* nsContentUtils::GetAttrTriggeringPrincipal(
   }
 
   return contentPrin;
+}
+
+
+bool nsContentUtils::CanNavigate(mozilla::dom::BrowsingContext* aSource,
+                                 mozilla::dom::BrowsingContext* aTarget,
+                                 nsIPrincipal* aDocumentPrincipal,
+                                 bool aConsiderOpener) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      aSource->Group() == aTarget->Group(),
+      "Source and target BrowsingContexts must be in the same group");
+  if (aSource->Group() != aTarget->Group()) {
+    return false;
+  }
+
+  auto isFileScheme = [](nsIPrincipal* aPrincipal) -> bool {
+    
+    
+    
+    
+    
+    nsAutoCString origin, scheme;
+    return NS_SUCCEEDED(aPrincipal->GetOriginNoSuffix(origin)) &&
+           NS_SUCCEEDED(net_ExtractURLScheme(origin, scheme)) &&
+           scheme == "file"_ns;
+  };
+
+  
+  if (aTarget == aSource || aTarget == aSource->Top()) {
+    return true;
+  }
+
+  
+  
+  
+  dom::WindowContext* initialWc = aTarget->GetCurrentWindowContext();
+  if (!initialWc) {
+    initialWc = aTarget->GetParentWindowContext();
+  }
+
+  
+  bool isFileDocument = isFileScheme(aDocumentPrincipal);
+  for (dom::WindowContext* wc = initialWc; wc;
+       wc = wc->GetParentWindowContext()) {
+    nsIPrincipal* documentPrincipal = nullptr;
+    if (XRE_IsParentProcess()) {
+      dom::WindowGlobalParent* wgp = wc->Canonical();
+      if (!wgp) {
+        continue;
+      }
+      documentPrincipal = wgp->DocumentPrincipal();
+    } else {
+      dom::WindowGlobalChild* wgc = wc->GetWindowGlobalChild();
+      if (!wgc) {
+        continue;  
+      }
+      documentPrincipal = wgc->DocumentPrincipal();
+    }
+
+    if (aDocumentPrincipal->Equals(documentPrincipal)) {
+      return true;
+    }
+
+    
+    
+    
+    
+    if (isFileDocument && isFileScheme(documentPrincipal)) {
+      return true;
+    }
+  }
+
+  
+  
+  if (aConsiderOpener && !aTarget->GetParent()) {
+    if (RefPtr<dom::BrowsingContext> opener = aTarget->GetOpener()) {
+      return CanNavigate(aSource, opener, aDocumentPrincipal, false);
+    }
+  }
+
+  return false;
 }
 
 

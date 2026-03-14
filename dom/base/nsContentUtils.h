@@ -203,6 +203,7 @@ struct SynthesizeTouchEventData;
 struct SynthesizeTouchEventOptions;
 class TrustedHTMLOrString;
 class VoidFunction;
+class WindowContext;
 class WorkerPrivate;
 enum class ElementCallbackType;
 enum class ReferrerPolicy : uint8_t;
@@ -960,6 +961,13 @@ class nsContentUtils {
   static nsIPrincipal* GetAttrTriggeringPrincipal(
       nsIContent* aContent, const nsAString& aAttrValue,
       nsIPrincipal* aSubjectPrincipal);
+
+  
+
+  static bool CanNavigate(mozilla::dom::BrowsingContext* aSource,
+                          mozilla::dom::BrowsingContext* aTarget,
+                          nsIPrincipal* aDocumentPrincipal,
+                          bool aConsiderOpener);
 
   
 
@@ -3222,10 +3230,15 @@ class nsContentUtils {
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult NewXULOrHTMLElement(
       Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
       mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
       mozilla::dom::CustomElementDefinition* aDefinition);
+
+  
+
 
   static mozilla::dom::CustomElementRegistry* GetCustomElementRegistry(
       Document*);
