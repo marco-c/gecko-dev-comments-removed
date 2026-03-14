@@ -331,6 +331,24 @@ static bool EnumerationIntoList(JSContext* cx, auto values,
 
 
 
+static bool ICU4XEnumerationIntoList(JSContext* cx, auto& values,
+                                     MutableHandle<StringList> list) {
+  for (mozilla::Span<const char> value : values) {
+    auto* string = NewStringCopy<CanGC>(cx, value);
+    if (!string) {
+      return false;
+    }
+    if (!list.append(string)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
 
 static constexpr auto UnsupportedCalendars() {
   return std::array{
@@ -369,36 +387,13 @@ static ArrayObject* AvailableCalendars(JSContext* cx) {
 
 
 
-
-static constexpr auto UnsupportedCollations() {
-  return std::array{
-      "search",
-      "standard",
-  };
-}
-
-
-
-
 static ArrayObject* AvailableCollations(JSContext* cx) {
   Rooted<StringList> list(cx, StringList(cx));
 
-  {
-    
-    
-    
-    
-    auto keywords = mozilla::intl::Collator::GetBcp47KeywordValues();
-    if (keywords.isErr()) {
-      ReportInternalError(cx, keywords.unwrapErr());
-      return nullptr;
-    }
+  auto keywords = mozilla::intl::Collator::GetBcp47KeywordValues();
 
-    static constexpr auto unsupported = UnsupportedCollations();
-
-    if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
-      return nullptr;
-    }
+  if (!ICU4XEnumerationIntoList(cx, keywords, &list)) {
+    return nullptr;
   }
 
   return CreateArrayFromList(cx, &list);

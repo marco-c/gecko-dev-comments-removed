@@ -329,7 +329,7 @@ impl<'data> CodePointInversionList<'data> {
     
     
     
-    pub fn all() -> Self {
+    pub const fn all() -> Self {
         Self {
             inv_list: ALL_VEC,
             size: (char::MAX as u32) + 1,
