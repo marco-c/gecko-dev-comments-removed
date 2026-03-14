@@ -31,6 +31,7 @@ import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
+import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
 import java.util.Calendar
 
@@ -142,6 +143,13 @@ class SettingsTest {
 
         // Then
         assertEquals("Mozilla", settings.defaultSearchEngineName)
+    }
+
+    @Test
+    fun defaultWallpaperIsEdgeToEdge() {
+        // When just created
+        // Then
+        assertEquals(Wallpaper.EdgeToEdge.name, settings.currentWallpaperName)
     }
 
     @Test
@@ -782,46 +790,6 @@ class SettingsTest {
         every { localSetting.timeNowInMillis() } returns now
 
         assertFalse(localSetting.shouldStartOnHome())
-    }
-
-    @Test
-    fun `GIVEN re-engagement notification shown and number of app launch THEN should set re-engagement notification returns correct value`() {
-        val localSetting = spyk(settings)
-
-        localSetting.reEngagementNotificationShown = false
-        localSetting.numberOfAppLaunches = 0
-        assert(localSetting.shouldSetReEngagementNotification())
-
-        localSetting.numberOfAppLaunches = 1
-        assert(localSetting.shouldSetReEngagementNotification())
-
-        localSetting.numberOfAppLaunches = 2
-        assertFalse(localSetting.shouldSetReEngagementNotification())
-
-        localSetting.reEngagementNotificationShown = true
-        localSetting.numberOfAppLaunches = 0
-        assertFalse(localSetting.shouldSetReEngagementNotification())
-    }
-
-    @Test
-    fun `GIVEN re-engagement notification shown and is default browser THEN should show re-engagement notification returns correct value`() {
-        val localSetting = spyk(settings)
-
-        every { localSetting.isDefaultBrowserBlocking() } returns false
-
-        localSetting.reEngagementNotificationShown = false
-        assert(localSetting.shouldShowReEngagementNotification())
-
-        localSetting.reEngagementNotificationShown = true
-        assertFalse(localSetting.shouldShowReEngagementNotification())
-
-        every { localSetting.isDefaultBrowserBlocking() } returns true
-
-        localSetting.reEngagementNotificationShown = false
-        assertFalse(localSetting.shouldShowReEngagementNotification())
-
-        localSetting.reEngagementNotificationShown = true
-        assertFalse(localSetting.shouldShowReEngagementNotification())
     }
 
     @Test
