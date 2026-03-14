@@ -12,6 +12,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/dom/AnimatableBinding.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -113,6 +114,10 @@ void DocumentOrShadowRoot::RemoveSheetFromStylesIfApplicable(
 void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
                                                    uint32_t aIndex,
                                                    ErrorResult& aRv) {
+  if (aIndex > mAdoptedStyleSheets.Length()) [[unlikely]] {
+    MOZ_ASSERT_UNREACHABLE("Out of sync proxy");
+    return;
+  }
   Document& doc = *AsNode().OwnerDoc();
   
   
@@ -165,7 +170,10 @@ void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
 void DocumentOrShadowRoot::OnDeleteAdoptedStyleSheets(StyleSheet& aSheet,
                                                       uint32_t aIndex,
                                                       ErrorResult&) {
-  MOZ_ASSERT(mAdoptedStyleSheets.ElementAt(aIndex) == &aSheet);
+  if (mAdoptedStyleSheets.ElementAt(aIndex) != &aSheet) [[unlikely]] {
+    MOZ_ASSERT_UNREACHABLE("Out of sync proxy");
+    return;
+  }
   mAdoptedStyleSheets.RemoveElementAt(aIndex);
   auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
   if (existingIndex != mAdoptedStyleSheets.NoIndex && existingIndex >= aIndex) {
@@ -747,6 +755,48 @@ void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
   });
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAdoptedStyleSheets);
   tmp->mIdentifierMap.Clear();
+}
+
+void DocumentOrShadowRoot::SetCustomElementRegistry(
+    CustomElementRegistry& aRegistry) {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(mKind == Kind::ShadowRoot,
+             "SetCustomElementRegistry should only be called on ShadowRoots");
+  ShadowRoot& root = static_cast<ShadowRoot&>(AsNode());
+  root.SetCustomElementRegistry(&aRegistry);
+}
+
+
+
+CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() {
+  
+  
+  if (mKind == Kind::Document) {
+    Document* doc = AsNode().AsDocument();
+    nsPIDOMWindowInner* window = doc->GetInnerWindow();
+    if (!window) {
+      return nullptr;
+    }
+    return window->CustomElements();
+  }
+
+  
+  MOZ_ASSERT(AsNode().IsShadowRoot());
+
+  
+  ShadowRoot* root = ShadowRoot::FromNode(AsNode());
+  MOZ_ASSERT(root);
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    return root->GetCustomElementRegistry();
+  }
+
+  
+  
+  nsPIDOMWindowInner* window = root->OwnerDoc()->GetInnerWindow();
+  if (!window) {
+    return nullptr;
+  }
+  return window->CustomElements();
 }
 
 }  

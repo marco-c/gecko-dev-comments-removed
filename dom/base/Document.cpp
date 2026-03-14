@@ -155,6 +155,7 @@
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DOMImplementation.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/DOMStringList.h"
@@ -11935,6 +11936,18 @@ void Document::TerminateParserAndDisableScripts() {
   if (WindowContext* wc = GetWindowContext()) {
     (void)wc->SetAllowJavascript(false);
   }
+}
+
+
+CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry() {
+  
+  
+  CustomElementRegistry* registry = GetCustomElementRegistry();
+  if (registry && !registry->IsScoped()) {
+    return registry;
+  }
+  
+  return nullptr;
 }
 
 already_AddRefed<Element> Document::CreateElem(const nsAString& aName,

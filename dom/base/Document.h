@@ -2369,6 +2369,10 @@ class Document : public nsINode,
                                        const nsAString* aIs = nullptr);
 
   
+  mozilla::dom::CustomElementRegistry*
+  GetEffectiveGlobalCustomElementRegistry();
+
+  
 
 
 

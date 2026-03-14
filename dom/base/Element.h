@@ -205,13 +205,30 @@ enum : uint32_t {
   ELEMENT_IN_CONTENT_IDENTIFIER_FOR_LCP = ELEMENT_FLAG_BIT(7),
 
   
-  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 8
+  
+  ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT = ELEMENT_FLAG_BIT(8),
+  ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK =
+      ELEMENT_FLAG_BIT(8) | ELEMENT_FLAG_BIT(9),
+
+  
+  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 10
 };
 
 #undef ELEMENT_FLAG_BIT
 
 
 ASSERT_NODE_FLAGS_SPACE(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET);
+
+
+
+
+
+
+enum class CustomElementRegistryState : uint8_t {
+  Global = 0,
+  Null = 1,
+  Scoped = 2,
+};
 
 namespace mozilla {
 enum class PseudoStyleType : uint8_t;
@@ -296,6 +313,7 @@ class Element : public FragmentOrElement {
 
   ~Element() {
     NS_ASSERTION(!HasServoData(), "expected ServoData to be cleared earlier");
+    UnlinkCustomElementRegistry(this);
   }
 
 #endif  
@@ -1605,6 +1623,7 @@ class Element : public FragmentOrElement {
   
   enum class ShadowRootDeclarative : bool { No, Yes };
 
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit&,
                                             ErrorResult&);
@@ -1614,6 +1633,7 @@ class Element : public FragmentOrElement {
   enum class ShadowRootClonable : bool { No, Yes };
   enum class ShadowRootSerializable : bool { No, Yes };
 
+  
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
       const ShadowRootInit&, bool aNotify = true);
 
@@ -1646,6 +1666,32 @@ class Element : public FragmentOrElement {
 
   Element* ResolveReferenceTarget() const;
   Element* RetargetReferenceTargetForBindings(Element* aElement) const;
+
+  CustomElementRegistryState GetCustomElementRegistryState() const {
+    return static_cast<CustomElementRegistryState>(
+        (GetFlags() & ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK) /
+        ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT);
+  }
+
+  void SetCustomElementRegistryState(CustomElementRegistryState aState) {
+    UnsetFlags(ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK);
+    SetFlags(static_cast<uint32_t>(aState) *
+             ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT);
+  }
+
+  
+  
+  bool HasCustomElementRegistry() const {
+    return GetCustomElementRegistryState() !=
+           CustomElementRegistryState::Global;
+  }
+
+  
+  CustomElementRegistry* GetCustomElementRegistry();
+  void SetCustomElementRegistry(CustomElementRegistry* aCustomElementRegistry);
+  static void TraverseCustomElementRegistry(
+      Element* aElement, nsCycleCollectionTraversalCallback& aCb);
+  static void UnlinkCustomElementRegistry(Element* aElement);
 
   const Maybe<float> GetLastRememberedBSize() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();

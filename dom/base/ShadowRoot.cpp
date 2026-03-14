@@ -18,6 +18,7 @@
 #include "mozilla/ServoStyleRuleMap.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/Element.h"
@@ -55,6 +56,7 @@ NS_INTERFACE_MAP_END_INHERITING(DocumentFragment)
 
 NS_IMPL_ADDREF_INHERITED(ShadowRoot, DocumentFragment)
 NS_IMPL_RELEASE_INHERITED(ShadowRoot, DocumentFragment)
+
 
 ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
                        Element::DelegatesFocus aDelegatesFocus,
@@ -112,6 +114,11 @@ ShadowRoot::~ShadowRoot() {
     OwnerDoc()->RemoveComposedDocShadowRoot(*this);
   }
   MOZ_DIAGNOSTIC_ASSERT(!OwnerDoc()->IsComposedDocShadowRoot(*this));
+
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+      GetCustomElementRegistryState() == CustomElementRegistryState::Scoped) {
+    CustomElementRegistry::RemoveScopedRegistry(*this);
+  }
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(ShadowRootAuthorStylesMallocSizeOf)
@@ -901,6 +908,7 @@ void ShadowRoot::SetHTML(const nsAString& aHTML, const SetHTMLOptions& aOptions,
   nsContentUtils::SetHTML(this, host, aHTML, aOptions, aError);
 }
 
+
 void ShadowRoot::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
                                const SetHTMLUnsafeOptions& aOptions,
                                nsIPrincipal* aSubjectPrincipal,
@@ -1003,4 +1011,53 @@ void ShadowRoot::NotifyReferenceTargetChangedObservers() {
     return;
   }
   host->NotifyReferenceTargetChanged();
+}
+
+void ShadowRoot::SetCustomElementRegistry(CustomElementRegistry* aRegistry) {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(!HasCustomElementRegistry(),
+             "We shouldn't set a custom element registry without clearing "
+             "first");
+  MOZ_ASSERT(aRegistry,
+             "We shouldn't be setting a null custom element "
+             "registry via this method");
+  if (aRegistry->IsScoped()) {
+    SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
+    CustomElementRegistry::SetScopedRegistry(*this, *aRegistry);
+  } else {
+    MOZ_ASSERT(aRegistry == OwnerDoc()->GetCustomElementRegistry(),
+               "Tried to set a global registry different to docs");
+    SetCustomElementRegistryState(CustomElementRegistryState::Global);
+  }
+}
+
+
+void ShadowRoot::SetKeepCustomElementRegistryNull() {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(!HasCustomElementRegistry(),
+             "We shouldn't set a custom element registry without clearing "
+             "first");
+  SetCustomElementRegistryState(CustomElementRegistryState::Null);
+}
+
+
+CustomElementRegistry* ShadowRoot::GetCustomElementRegistry() {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  switch (GetCustomElementRegistryState()) {
+    case CustomElementRegistryState::Global:
+      if (Document* doc = OwnerDoc()) {
+        return doc->GetEffectiveGlobalCustomElementRegistry();
+      }
+      return nullptr;
+    case CustomElementRegistryState::Null:
+      return nullptr;
+    case CustomElementRegistryState::Scoped: {
+      RefPtr<CustomElementRegistry> registry =
+          CustomElementRegistry::GetScopedRegistry(*this);
+      MOZ_ASSERT(registry);
+      return registry;
+    }
+  }
+  MOZ_ASSERT_UNREACHABLE("Invalid CustomElementRegistryState");
+  return nullptr;
 }

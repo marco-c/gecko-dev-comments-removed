@@ -31,6 +31,7 @@ namespace dom {
 
 class Animation;
 class Element;
+class CustomElementRegistry;
 class Document;
 class DocumentOrShadowRoot;
 class HTMLInputElement;
@@ -232,6 +233,10 @@ class DocumentOrShadowRoot {
       aCallback(*sheet);
     }
   }
+
+  
+  CustomElementRegistry* GetCustomElementRegistry();
+  void SetCustomElementRegistry(CustomElementRegistry&);
 
  protected:
   

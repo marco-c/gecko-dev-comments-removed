@@ -24,6 +24,8 @@ class nsAtom;
 class nsIContent;
 class nsIPrincipal;
 
+enum class CustomElementRegistryState : uint8_t;
+
 namespace mozilla {
 
 struct StyleAuthorStyles;
@@ -42,6 +44,7 @@ class Rule;
 namespace dom {
 
 class CSSImportRule;
+class CustomElementRegistry;
 class Element;
 class HTMLInputElement;
 class OwningTrustedHTMLOrNullIsEmptyString;
@@ -78,7 +81,13 @@ enum : uint32_t {
   SHADOW_ROOT_IS_DETAILS_SHADOW_TREE = SHADOW_ROOT_FLAG_BIT(7),
 
   
-  SHADOW_ROOT_FLAGS_BITS_USED = 8
+  
+  SHADOWROOT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT = SHADOW_ROOT_FLAG_BIT(8),
+  SHADOWROOT_CUSTOM_ELEMENT_REGISTRY_MASK =
+      SHADOW_ROOT_FLAG_BIT(8) | SHADOW_ROOT_FLAG_BIT(9),
+
+  
+  SHADOW_ROOT_FLAGS_BITS_USED = 10
 };
 
 #undef SHADOW_ROOT_FLAG_BIT
@@ -100,6 +109,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ShadowRoot, DocumentFragment)
   NS_DECL_ISUPPORTS_INHERITED
 
+  
   ShadowRoot(Element* aElement, ShadowRootMode aMode,
              Element::DelegatesFocus aDelegatesFocus,
              SlotAssignmentMode aSlotAssignment, IsClonable aClonable,
@@ -295,6 +305,28 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   void SetAvailableToElementInternals() {
     SetFlags(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);
   }
+
+  CustomElementRegistryState GetCustomElementRegistryState() const {
+    return static_cast<CustomElementRegistryState>(
+        (GetFlags() & SHADOWROOT_CUSTOM_ELEMENT_REGISTRY_MASK) /
+        SHADOWROOT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT);
+  }
+  void SetCustomElementRegistryState(CustomElementRegistryState aState) {
+    UnsetFlags(SHADOWROOT_CUSTOM_ELEMENT_REGISTRY_MASK);
+    SetFlags(static_cast<uint32_t>(aState) *
+             SHADOWROOT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT);
+  }
+
+  bool HasCustomElementRegistry() const {
+    return GetCustomElementRegistryState() !=
+           CustomElementRegistryState::Global;
+  }
+
+  void SetCustomElementRegistry(CustomElementRegistry* aRegistry);
+  
+  void SetKeepCustomElementRegistryNull();
+  
+  CustomElementRegistry* GetCustomElementRegistry();
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
