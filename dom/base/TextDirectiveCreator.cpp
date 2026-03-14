@@ -142,7 +142,8 @@ TextDirectiveCreator::ExtendRangeToWordBoundaries(AbstractRange* aRange) {
   endPoint =
       TextDirectiveUtil::FindWordBoundary<TextScanDirection::Right>(endPoint);
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  auto cmp = nsContentUtils::ComparePoints(startPoint, endPoint);
+  auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+      startPoint, endPoint);
   MOZ_DIAGNOSTIC_ASSERT(
       cmp && *cmp != 1,
       "The new end point must not be before the start point.");
@@ -457,8 +458,8 @@ TextDirectiveCreator::FindAllMatchingRanges(const nsString& aSearchQuery,
       break;
     }
     searchStart = searchResult->StartRef();
-    if (auto cmp = nsContentUtils::ComparePoints(searchStart, aSearchEnd,
-                                                 &mNodeIndexCache);
+    if (auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+            searchStart, aSearchEnd, &mNodeIndexCache);
         !cmp || *cmp != -1) {
       
       
@@ -474,8 +475,8 @@ TextDirectiveCreator::FindAllMatchingRanges(const nsString& aSearchQuery,
         TextDirectiveUtil::MoveToNextBoundaryPoint(searchStart);
     MOZ_DIAGNOSTIC_ASSERT(newSearchStart != searchStart);
     searchStart = newSearchStart;
-    if (auto cmp = nsContentUtils::ComparePoints(searchStart, aSearchEnd,
-                                                 &mNodeIndexCache);
+    if (auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+            searchStart, aSearchEnd, &mNodeIndexCache);
         !cmp || *cmp != -1) {
       break;
     }
