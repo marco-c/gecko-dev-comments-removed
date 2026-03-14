@@ -1,0 +1,12 @@
+
+
+
+
+
+'use strict';
+
+promise_test(async () => {
+  const availability = await Classifier.availability();
+  
+  assert_in_array(availability, kValidAvailabilities);
+}, 'Classifier.availability() returns a valid availability state');
