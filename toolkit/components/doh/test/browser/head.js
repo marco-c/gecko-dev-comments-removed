@@ -6,7 +6,6 @@ ChromeUtils.defineESModuleGetters(this, {
   DoHController: "moz-src:///toolkit/components/doh/DoHController.sys.mjs",
   DoHTestUtils: "resource://testing-common/DoHTestUtils.sys.mjs",
   Heuristics: "moz-src:///toolkit/components/doh/DoHHeuristics.sys.mjs",
-  Preferences: "resource://gre/modules/Preferences.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   RegionTestUtils: "resource://testing-common/RegionTestUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
@@ -74,30 +73,30 @@ async function setup() {
   Services.telemetry.clearScalars();
 
   
-  Preferences.set(CFR_PREF, JSON.stringify(CFR_JSON));
+  Services.prefs.setStringPref(CFR_PREF, JSON.stringify(CFR_JSON));
 
   
-  Preferences.set(prefs.TESTING_PREF, true);
+  Services.prefs.setBoolPref(prefs.TESTING_PREF, true);
 
   
-  Preferences.set(prefs.CONFIRMATION_NS_PREF, "skip");
-
-  
-  
-  Preferences.set(prefs.TRR_SELECT_ENABLED_PREF, true);
-  Preferences.set(prefs.PROVIDER_STEERING_PREF, true);
+  Services.prefs.setStringPref(prefs.CONFIRMATION_NS_PREF, "skip");
 
   
   
-  Preferences.set(prefs.TRR_SELECT_COMMIT_PREF, true);
+  Services.prefs.setBoolPref(prefs.TRR_SELECT_ENABLED_PREF, true);
+  Services.prefs.setBoolPref(prefs.PROVIDER_STEERING_PREF, true);
 
   
-  Preferences.set(prefs.CLEAR_ON_SHUTDOWN_PREF, true);
+  
+  Services.prefs.setBoolPref(prefs.TRR_SELECT_COMMIT_PREF, true);
+
+  
+  Services.prefs.setBoolPref(prefs.CLEAR_ON_SHUTDOWN_PREF, true);
 
   
   
-  Preferences.set(prefs.NETWORK_DEBOUNCE_TIMEOUT_PREF, -1);
-  Preferences.set(prefs.HEURISTICS_THROTTLE_TIMEOUT_PREF, -1);
+  Services.prefs.setIntPref(prefs.NETWORK_DEBOUNCE_TIMEOUT_PREF, -1);
+  Services.prefs.setIntPref(prefs.HEURISTICS_THROTTLE_TIMEOUT_PREF, -1);
 
   
 
@@ -142,10 +141,12 @@ async function setup() {
     }
     
     
-    Preferences.set(CFR_PREF, "[]");
+    Services.prefs.setStringPref(CFR_PREF, "[]");
     await DoHController._uninit();
     Services.telemetry.clearEvents();
-    Preferences.reset(Object.values(prefs));
+    for (let pref of Object.values(prefs)) {
+      Services.prefs.clearUserPref(pref);
+    }
     await DoHTestUtils.resetRemoteSettingsConfig(false);
     await DoHController.init();
   });
@@ -159,7 +160,7 @@ async function setupRegion() {
   RegionTestUtils.setNetworkRegion(kTestRegion);
   await Region._fetchRegion();
   is(Region.home, kTestRegion, "Should have correct region");
-  Preferences.reset("doh-rollout.home-region");
+  Services.prefs.clearUserPref("doh-rollout.home-region");
   await DoHConfigController.loadRegion();
 }
 
@@ -336,10 +337,14 @@ async function waitForStateTelemetry(expectedStates) {
 }
 
 async function restartDoHController() {
-  let oldMode = Preferences.get(prefs.ROLLOUT_TRR_MODE_PREF);
+  let oldMode = Services.prefs.prefHasUserValue(prefs.ROLLOUT_TRR_MODE_PREF)
+    ? Services.prefs.getIntPref(prefs.ROLLOUT_TRR_MODE_PREF)
+    : undefined;
   await DoHController._uninit();
-  let newMode = Preferences.get(prefs.ROLLOUT_TRR_MODE_PREF);
-  let expectClear = Preferences.get(prefs.CLEAR_ON_SHUTDOWN_PREF);
+  let newMode = Services.prefs.prefHasUserValue(prefs.ROLLOUT_TRR_MODE_PREF)
+    ? Services.prefs.getIntPref(prefs.ROLLOUT_TRR_MODE_PREF)
+    : undefined;
+  let expectClear = Services.prefs.getBoolPref(prefs.CLEAR_ON_SHUTDOWN_PREF);
   is(
     newMode,
     expectClear ? undefined : oldMode,
@@ -390,9 +395,15 @@ function simulateNetworkChange() {
 
 async function ensureTRRMode(mode) {
   await TestUtils.waitForCondition(() => {
-    return Preferences.get(prefs.ROLLOUT_TRR_MODE_PREF) === mode;
+    let val = Services.prefs.prefHasUserValue(prefs.ROLLOUT_TRR_MODE_PREF)
+      ? Services.prefs.getIntPref(prefs.ROLLOUT_TRR_MODE_PREF)
+      : undefined;
+    return val === mode;
   });
-  is(Preferences.get(prefs.ROLLOUT_TRR_MODE_PREF), mode, `TRR mode is ${mode}`);
+  let actualMode = Services.prefs.prefHasUserValue(prefs.ROLLOUT_TRR_MODE_PREF)
+    ? Services.prefs.getIntPref(prefs.ROLLOUT_TRR_MODE_PREF)
+    : undefined;
+  is(actualMode, mode, `TRR mode is ${mode}`);
 }
 
 async function ensureNoTRRModeChange(mode) {
@@ -400,16 +411,20 @@ async function ensureNoTRRModeChange(mode) {
     
     
     await TestUtils.waitForCondition(() => {
-      return Preferences.get(prefs.ROLLOUT_TRR_MODE_PREF) !== mode;
+      let val = Services.prefs.prefHasUserValue(prefs.ROLLOUT_TRR_MODE_PREF)
+        ? Services.prefs.getIntPref(prefs.ROLLOUT_TRR_MODE_PREF)
+        : undefined;
+      return val !== mode;
     });
     
     ok(false, "TRR mode changed when it shouldn't have!");
   } catch (e) {
     
-    is(
-      Preferences.get(prefs.ROLLOUT_TRR_MODE_PREF),
-      mode,
-      "No change in TRR mode"
-    );
+    let actualMode = Services.prefs.prefHasUserValue(
+      prefs.ROLLOUT_TRR_MODE_PREF
+    )
+      ? Services.prefs.getIntPref(prefs.ROLLOUT_TRR_MODE_PREF)
+      : undefined;
+    is(actualMode, mode, "No change in TRR mode");
   }
 }
