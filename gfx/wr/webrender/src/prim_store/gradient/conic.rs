@@ -109,7 +109,7 @@ impl PatternBuilder for ConicGradientTemplate {
         &self,
         _sub_rect: Option<DeviceRect>,
         offset: LayoutVector2D,
-        ctx: &PatternBuilderContext,
+        _ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
         
@@ -119,7 +119,7 @@ impl PatternBuilder for ConicGradientTemplate {
         
         
         
-        let center = self.center + ctx.prim_origin.to_vector() + offset;
+        let center = self.center + self.common.prim_rect.min.to_vector() + offset;
 
         conic_gradient_pattern(
             center,
@@ -153,7 +153,7 @@ impl From<ConicGradientKey> for ConicGradientTemplate {
         let mut brush_segments = Vec::new();
 
         if let Some(ref nine_patch) = item.nine_patch {
-            brush_segments = nine_patch.create_brush_segments(common.prim_size);
+            brush_segments = nine_patch.create_brush_segments(common.prim_rect.size());
         }
 
         let (stops, min_alpha) = stops_and_min_alpha(&item.stops);
@@ -164,8 +164,8 @@ impl From<ConicGradientKey> for ConicGradientTemplate {
         let stops_opacity = PrimitiveOpacity::from_alpha(min_alpha);
 
         let mut stretch_size: LayoutSize = item.stretch_size.into();
-        stretch_size.width = stretch_size.width.min(common.prim_size.width);
-        stretch_size.height = stretch_size.height.min(common.prim_size.height);
+        stretch_size.width = stretch_size.width.min(common.prim_rect.width());
+        stretch_size.height = stretch_size.height.min(common.prim_rect.height());
 
         fn approx_eq(a: f32, b: f32) -> bool { (a - b).abs() < 0.01 }
 
