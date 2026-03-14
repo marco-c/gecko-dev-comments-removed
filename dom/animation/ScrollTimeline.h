@@ -174,6 +174,9 @@ class ScrollTimeline : public AnimationTimeline,
     return mSource.mElement;
   }
 
+  bool SourceMatches(const Element* aElement,
+                     const PseudoStyleRequest& aPseudoRequest) const;
+
   
   layers::ScrollDirection Axis() const;
 
