@@ -9,6 +9,7 @@
 
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/PMessagePortParent.h"
+#include "mozilla/dom/SharedMessageBody.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
 
 namespace mozilla::dom {
@@ -56,6 +57,9 @@ class MessagePortParent final
   const nsID mUUID;
   bool mEntangled;
   bool mCanSendData;
+  
+  
+  nsTArray<NotNull<RefPtr<SharedMessageBody>>> mPendingMessages;
 };
 
 }  

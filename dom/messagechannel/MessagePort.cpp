@@ -150,8 +150,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(MessagePort,
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mPostMessageRunnable->mPort);
   }
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mMessagesForTheOtherPort);
-
   tmp->CloseForced();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -358,13 +356,17 @@ void MessagePort::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   RemoveDocFromBFCache();
 
   
+  
+  
   if (mState == eStateEntangling) {
-    mMessagesForTheOtherPort.AppendElement(data);
+    MOZ_ASSERT(mActor);
+    AutoTArray<NotNull<RefPtr<SharedMessageBody>>, 1> messages;
+    messages.AppendElement(data);
+    mActor->SendPostMessages(messages);
     return;
   }
 
   MOZ_ASSERT(mActor);
-  MOZ_ASSERT(mMessagesForTheOtherPort.IsEmpty());
 
   AutoTArray<NotNull<RefPtr<SharedMessageBody>>, 1> messages;
   messages.AppendElement(data);
@@ -552,14 +554,6 @@ void MessagePort::Entangled(
   mState = eStateEntangled;
 
   
-  if (!mMessagesForTheOtherPort.IsEmpty()) {
-    mActor->SendPostMessages(mMessagesForTheOtherPort);
-    
-    
-    mMessagesForTheOtherPort.Clear();
-  }
-
-  
   
   if (oldState == eStateEntanglingForClose) {
     CloseForced();
@@ -598,7 +592,6 @@ void MessagePort::MessagesReceived(
              
              
              mState == eStateDisentangledForClose);
-  MOZ_ASSERT(mMessagesForTheOtherPort.IsEmpty());
 
   RemoveDocFromBFCache();
 
@@ -666,7 +659,6 @@ void MessagePort::CloneAndDisentangle(UniqueMessagePortId& aIdentifier) {
   
   if (mState == eStateUnshippedEntangled) {
     MOZ_ASSERT(mUnshippedEntangledPort);
-    MOZ_ASSERT(mMessagesForTheOtherPort.IsEmpty());
 
     RefPtr<MessagePort> port = std::move(mUnshippedEntangledPort);
 

@@ -152,7 +152,6 @@ class MessagePort final : public DOMEventTargetHelper {
     
     
     
-    
     eStateEntangled,
 
     
@@ -214,7 +213,6 @@ class MessagePort final : public DOMEventTargetHelper {
   RefPtr<RefMessageBodyService> mRefMessageBodyService;
 
   nsTArray<NotNull<RefPtr<SharedMessageBody>>> mMessages;
-  nsTArray<NotNull<RefPtr<SharedMessageBody>>> mMessagesForTheOtherPort;
 
   UniquePtr<MessagePortIdentifier> mIdentifier;
 

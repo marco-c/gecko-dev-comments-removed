@@ -49,7 +49,13 @@ mozilla::ipc::IPCResult MessagePortParent::RecvPostMessages(
   if (!mEntangled) {
     
     
-    return IPC_FAIL(this, "RecvPostMessages not entangled");
+    
+    
+    if (!mPendingMessages.AppendElements(std::move(aMessages),
+                                         mozilla::fallible)) {
+      return IPC_FAIL(this, "RecvPostMessages OOM");
+    }
+    return IPC_OK();
   }
 
   if (aMessages.IsEmpty()) {
@@ -130,6 +136,14 @@ bool MessagePortParent::Entangled(
     nsTArray<NotNull<RefPtr<SharedMessageBody>>>&& aMessages) {
   MOZ_ASSERT(!mEntangled);
   mEntangled = true;
+
+  
+  
+  if (!mPendingMessages.IsEmpty() && mService) {
+    mService->PostMessages(this, std::move(mPendingMessages));
+    mPendingMessages.Clear();
+  }
+
   return SendEntangled(aMessages);
 }
 
