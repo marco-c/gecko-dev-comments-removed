@@ -836,6 +836,9 @@ impl Parse for ViewTransitionClass {
 pub enum TimelineRangeName {
     
     #[css(skip)]
+    Normal,
+    
+    #[css(skip)]
     None,
     
     Cover,
@@ -860,6 +863,12 @@ pub enum TimelineRangeName {
 impl TimelineRangeName {
     
     #[inline]
+    pub fn is_normal(&self) -> bool {
+        matches!(*self, Self::Normal)
+    }
+
+    
+    #[inline]
     pub fn is_none(&self) -> bool {
         matches!(*self, Self::None)
     }
@@ -871,13 +880,13 @@ pub type AnimationRangeValue = generics::GenericAnimationRangeValue<LengthPercen
 fn parse_animation_range<'i, 't>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
-    default_percentage: LengthPercentage,
+    default: LengthPercentage,
 ) -> Result<AnimationRangeValue, ParseError<'i>> {
     if input
         .try_parse(|i| i.expect_ident_matching("normal"))
         .is_ok()
     {
-        return Ok(AnimationRangeValue::default());
+        return Ok(AnimationRangeValue::normal(default));
     }
 
     if let Ok(lp) = input.try_parse(|i| LengthPercentage::parse(context, i)) {
@@ -887,8 +896,8 @@ fn parse_animation_range<'i, 't>(
     let name = TimelineRangeName::parse(input)?;
     let lp = input
         .try_parse(|i| LengthPercentage::parse(context, i))
-        .unwrap_or(default_percentage);
-    Ok(AnimationRangeValue::timeline_range(name, lp))
+        .unwrap_or(default);
+    Ok(AnimationRangeValue::new(name, lp))
 }
 
 
