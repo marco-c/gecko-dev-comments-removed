@@ -409,6 +409,20 @@ add_task(async function privateWindow() {
   await BrowserTestUtils.closeWindow(privateWin);
 });
 
+
+
+add_task(async function sapUrlbarHandoff() {
+  
+  gURLBar._isHandoffSession = true;
+  await doTest({
+    keywords: ["example"],
+    searchStrings: ["example"],
+    expectedEvents: [
+      { extra: { keyword: "example", terminal: true, sap: "handoff" } },
+    ],
+  });
+});
+
 async function doTest({
   keywords,
   searchStrings,
@@ -556,6 +570,8 @@ function assertEvents(actual, expected) {
     
     
     e.extra.result ??= "history";
+    
+    e.extra.sap ??= "urlbar_newtab";
     return {
       category: "urlbar",
       name: "keyword_exposure",
