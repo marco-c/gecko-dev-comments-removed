@@ -48,18 +48,14 @@ ChildIteratorBase<aKind>::ChildIteratorBase(const nsINode* aParentNode,
   }
 
   if (const ShadowRoot* const shadowRoot =
-          ShouldIgnoreNonContentShadow<aKind>()
-              ? mParentNode->AsElement()->GetShadowRootForSelection()
-              : mParentNode->AsElement()->GetShadowRoot()) {
+          mParentNode->AsElement()->GetShadowRoot<aKind>()) {
     mParentNode = shadowRoot;
     mShadowDOMInvolved = true;
     return;
   }
 
   if (const auto* const slot =
-          ShouldIgnoreNonContentShadow<aKind>()
-              ? mParentNode->GetAsHTMLSlotElementIfFilledForSelection()
-              : mParentNode->GetAsHTMLSlotElementIfFilled()) {
+          mParentNode->GetAsHTMLSlotElementIfFilled<aKind>()) {
     MOZ_ASSERT(!slot->AssignedNodes().IsEmpty());
     mParentNodeAsSlot = slot;
     if (!aStartAtBeginning) {
@@ -79,18 +75,12 @@ uint32_t ChildIteratorBase<aKind>::GetLength(const nsINode* aParent) {
   }
   MOZ_ASSERT(!aParent->IsCharacterData());
   if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
-                : aParent->GetAsHTMLSlotElementIfFilled()) {
+    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
       if (uint32_t len = slot->AssignedNodes().Length()) {
         return len;
       }
     }
-    if (const ShadowRoot* const shadowRoot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetShadowRootForSelection()
-                : aParent->GetShadowRoot()) {
+    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
       return shadowRoot->GetChildCount();
     }
   }
@@ -105,10 +95,7 @@ template <TreeKind aKind>
 Maybe<uint32_t> ChildIteratorBase<aKind>::GetIndexOf(
     const nsINode* aParent, const nsINode* aPossibleChild) {
   if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
-                : aParent->GetAsHTMLSlotElementIfFilled()) {
+    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
       const Span assigned = slot->AssignedNodes();
       MOZ_ASSERT(!assigned.IsEmpty());
       const auto index = assigned.IndexOf(aPossibleChild);
@@ -117,10 +104,7 @@ Maybe<uint32_t> ChildIteratorBase<aKind>::GetIndexOf(
       }
       return Some(index);
     }
-    if (const ShadowRoot* const shadowRoot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetShadowRootForSelection()
-                : aParent->GetShadowRoot()) {
+    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
       return shadowRoot->ComputeIndexOf(aPossibleChild);
     }
   }
@@ -139,10 +123,7 @@ nsIContent* ChildIteratorBase<aKind>::GetChildAt(const nsINode* aParent,
   }
   MOZ_ASSERT(!aParent->IsCharacterData());
   if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
-                : aParent->GetAsHTMLSlotElementIfFilled()) {
+    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
       const Span assigned = slot->AssignedNodes();
       MOZ_ASSERT(!assigned.IsEmpty());
       if (assigned.Length() <= aIndex) {
@@ -152,10 +133,7 @@ nsIContent* ChildIteratorBase<aKind>::GetChildAt(const nsINode* aParent,
       MOZ_ASSERT(child);
       return child;
     }
-    if (const ShadowRoot* const shadowRoot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetShadowRootForSelection()
-                : aParent->GetShadowRoot()) {
+    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
       return shadowRoot->GetChildAt_Deprecated(aIndex);
     }
   }
@@ -276,29 +254,10 @@ nsINode* ChildIteratorBase<aKind>::GetParentNodeOf(const nsIContent& aChild) {
   
   
   
-  else if constexpr (aKind == TreeKind::FlatForSelection) {
-    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlotForSelection();
+  else if constexpr (aKind == TreeKind::FlatForSelection ||
+                     aKind == TreeKind::Flat) {
+    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlot<aKind>();
     nsINode* const parentNode = aChild.GetParentNode();
-    
-    
-    
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(
-            !parentNode ||
-            (!assignedSlot && parentNode->GetShadowRootForSelection()))) {
-      return nullptr;
-    }
-    return aChild.GetFlattenedTreeParentNodeForSelection();
-  } else if constexpr (aKind == TreeKind::Flat) {
-    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlot();
-    nsINode* const parentNode = aChild.GetParentNode();
-    
-    
-    
     
     
     
@@ -306,10 +265,10 @@ nsINode* ChildIteratorBase<aKind>::GetParentNodeOf(const nsIContent& aChild) {
     
     
     if (MOZ_UNLIKELY(!parentNode ||
-                     (!assignedSlot && parentNode->GetShadowRoot()))) {
+                     (!assignedSlot && parentNode->GetShadowRoot<aKind>()))) {
       return nullptr;
     }
-    return aChild.GetFlattenedTreeParentNode();
+    return aChild.GetParentNode<aKind>();
   } else {
     MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value!");
   }
