@@ -347,6 +347,9 @@ class LoadedScript : public nsIMemoryReporter {
   void SetTookLongInPreviousRuns() { mTookLongInPreviousRuns = true; }
   bool TookLongInPreviousRuns() const { return mTookLongInPreviousRuns; }
 
+  void SetIsEverHitFromMemoryCache() { mIsEverHitFromMemoryCache = true; }
+  bool IsEverHitFromMemoryCache() const { return mIsEverHitFromMemoryCache; }
+
   
 
 
@@ -450,6 +453,9 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   uint64_t mTookLongInPreviousRuns : 1;
+
+  
+  uint64_t mIsEverHitFromMemoryCache : 1;
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;

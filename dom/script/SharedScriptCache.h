@@ -14,11 +14,13 @@
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
 #include "mozilla/CORSMode.h"                
+#include "mozilla/HashTable.h"               
 #include "mozilla/MemoryReporting.h"         
 #include "mozilla/Mutex.h"                   
 #include "mozilla/RefPtr.h"                  
 #include "mozilla/SharedSubResourceCache.h"  
 #include "mozilla/ThreadSafety.h"            
+#include "mozilla/UniquePtr.h"               
 #include "mozilla/WeakPtr.h"                 
 #include "mozilla/dom/CacheExpirationTime.h"  
 #include "nsIMemoryReporter.h"  
@@ -228,6 +230,14 @@ class SharedScriptCache final
 
   NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData) override {
+    if (strcmp(aTopic, "ipc:content-shutdown") == 0) {
+      OnContentShutdown(aSubject);
+      return NS_OK;
+    }
+    if (strcmp(aTopic, "profile-before-change") == 0) {
+      OnProfileBeforeChange();
+      return NS_OK;
+    }
     return Base::DoObserve(aSubject, aTopic, aData);
   }
 
@@ -238,6 +248,13 @@ class SharedScriptCache final
   void SaveToDiskCache();
 
   void InvalidateInProcess();
+
+  void OnEntryInserted();
+  void OnEntryEverHit();
+
+  void UpdateEverHitTelemetry();
+  static void RecvUpdateEverHitTelemetry(const uint64_t& aChildId,
+                                         const uint32_t& aRate);
 
   
   
@@ -264,6 +281,11 @@ class SharedScriptCache final
   bool ShouldIgnoreMemoryPressure() override;
 
  private:
+  bool EnsureEverHitMap();
+  void OnContentShutdown(nsISupports* aSubject);
+  void OnProfileBeforeChange();
+  void AccumulateEverHitTelemetry(uint32_t aRate);
+
   class EncodeItem {
    public:
     EncodeItem(JS::Stencil* aStencil, JS::TranscodeBuffer&& aSRI,
@@ -281,6 +303,44 @@ class SharedScriptCache final
     
     RefPtr<JS::loader::LoadedScript> mLoadedScript;
   };
+
+  
+  
+  
+  
+  
+  
+  bool mPreparedEverHitMap = false;
+
+  
+  
+  static constexpr uint32_t NOT_YET_REPORTED = 101;
+
+  
+  
+  
+  uint32_t mLastEverHitRatio = NOT_YET_REPORTED;
+
+  
+  
+  
+  size_t mEntryEverHit = 0;
+
+  
+  size_t mEntryInserted = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using EverHitMapType = HashMap<uint64_t, uint32_t>;
+  UniquePtr<EverHitMapType> mEverHitMap;
 
   Mutex mEncodeMutex{"SharedScriptCache::mEncodeMutex"};
   Vector<EncodeItem> mEncodeItems MOZ_GUARDED_BY(mEncodeMutex);
