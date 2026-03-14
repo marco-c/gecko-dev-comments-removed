@@ -962,7 +962,7 @@ AppleVTEncoder::ProcessReconfigure(
   AssertOnTaskQueue();
   MOZ_ASSERT(mSession);
 
-  bool ok = false;
+  bool ok = true;
   for (const auto& confChange : aConfigurationChanges->mChanges) {
     
     
