@@ -2,7 +2,7 @@
 
 
 
-import json
+from mozfile import json
 
 
 def lookup_token(tokens, value):

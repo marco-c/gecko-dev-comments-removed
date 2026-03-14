@@ -2,12 +2,12 @@
 
 
 
-import json
 from pathlib import Path
 
 from marionette_driver import Wait
 from marionette_driver.by import By
 from marionette_harness import MarionetteTestCase
+from mozfile import json
 
 
 class TestDefaultLauncherVisible(MarionetteTestCase):

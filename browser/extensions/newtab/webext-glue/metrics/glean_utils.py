@@ -3,9 +3,10 @@
 
 
 import enum
-import json
 import sys
 from os import path
+
+from mozfile import json
 
 ROOT_PATH = path.abspath(
     path.join(
