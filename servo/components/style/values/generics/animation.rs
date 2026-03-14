@@ -246,6 +246,12 @@ impl<LengthPercent> AnimationRangeValue<LengthPercent> {
     pub fn new(name: TimelineRangeName, lp: LengthPercent) -> Self {
         Self { name, lp }
     }
+
+    
+    #[inline]
+    pub fn is_normal(&self) -> bool {
+        self.name.is_normal()
+    }
 }
 
 
