@@ -171,13 +171,9 @@ static bool intl_getCalendarInfo(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  Rooted<LocalesList> requestedLocales(cx, cx);
-  if (!CanonicalizeLocaleList(cx, args.get(0), &requestedLocales)) {
-    return false;
-  }
-
-  Rooted<ArrayObject*> reqLocales(cx, LocalesListToArray(cx, requestedLocales));
-  if (!reqLocales) {
+  Rooted<ArrayObject*> requestedLocales(
+      cx, CanonicalizeLocaleList(cx, args.get(0)));
+  if (!requestedLocales) {
     return false;
   }
 
@@ -193,7 +189,7 @@ static bool intl_getCalendarInfo(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   Rooted<ResolvedLocale> resolved(cx);
-  if (!ResolveLocale(cx, AvailableLocaleKind::DateTimeFormat, reqLocales,
+  if (!ResolveLocale(cx, AvailableLocaleKind::DateTimeFormat, requestedLocales,
                      localeOptions, relevantExtensionKeys, localeData,
                      &resolved)) {
     return false;
@@ -517,13 +513,7 @@ static bool intl_getCanonicalLocales(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  Rooted<LocalesList> locales(cx, cx);
-  if (!CanonicalizeLocaleList(cx, args.get(0), &locales)) {
-    return false;
-  }
-
-  
-  auto* array = LocalesListToArray(cx, locales);
+  auto* array = CanonicalizeLocaleList(cx, args.get(0));
   if (!array) {
     return false;
   }

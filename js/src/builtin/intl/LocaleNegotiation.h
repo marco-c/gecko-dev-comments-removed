@@ -54,7 +54,13 @@ using LocalesList = JS::StackGCVector<JSLinearString*>;
 bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
                             JS::MutableHandle<LocalesList> result);
 
-ArrayObject* LocalesListToArray(JSContext* cx, JS::Handle<LocalesList> locales);
+
+
+
+
+
+ArrayObject* CanonicalizeLocaleList(JSContext* cx,
+                                    JS::Handle<JS::Value> locales);
 
 
 

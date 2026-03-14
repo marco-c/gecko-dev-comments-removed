@@ -1041,7 +1041,7 @@ static JSLinearString* TransformCase(JSContext* cx, Handle<JSString*> string,
   }
 
   
-  Rooted<JSLinearString*> requestedLocale(cx);
+  JSLinearString* requestedLocale;
   if (!requestedLocales.empty()) {
     requestedLocale = requestedLocales[0];
   } else {
