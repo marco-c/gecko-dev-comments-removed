@@ -1403,27 +1403,17 @@ function CollapseToggle(props) {
     devtoolsCollapsed
   } = props;
   const label = `${devtoolsCollapsed ? "Expand" : "Collapse"} devtools`;
-  (0,external_React_namespaceObject.useEffect)(() => {
-    
-    if (devtoolsCollapsed) {
-      globalThis.document.body.classList.remove("no-scroll");
-    } else {
-      globalThis.document.body.classList.add("no-scroll");
-    }
-
-    
-    return () => {
-      globalThis.document.body.classList.remove("no-scroll");
-    };
-  }, [devtoolsCollapsed]);
-  return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("a", {
-    href: devtoolsCollapsed ? "#devtools" : "#",
+  return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("button", {
     title: label,
     "aria-label": label,
-    className: `discoverystream-admin-toggle ${devtoolsCollapsed ? "expanded" : "collapsed"}`
-  }, external_React_default().createElement("span", {
-    className: "icon icon-devtools"
-  })), !devtoolsCollapsed ? external_React_default().createElement(DiscoveryStreamAdminInner, _extends({}, props, {
+    className: `discoverystream-admin-toggle ${devtoolsCollapsed ? "expanded" : "collapsed"}`,
+    onClick: () => {
+      globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
+    }
+  }, external_React_default().createElement("div", null, external_React_default().createElement("img", {
+    role: "presentation",
+    src: "chrome://global/skin/icons/developer.svg"
+  }))), !devtoolsCollapsed ? external_React_default().createElement(DiscoveryStreamAdminInner, _extends({}, props, {
     collapsed: devtoolsCollapsed
   })) : null);
 }
