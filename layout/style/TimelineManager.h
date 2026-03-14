@@ -35,9 +35,11 @@ class TimelineManager {
   }
 
   void Disconnect() {
+    mScrollTimelineNameMap.Clear();
     while (auto* head = mScrollTimelineCollections.getFirst()) {
       head->Destroy();
     }
+    mViewTimelineNameMap.Clear();
     while (auto* head = mViewTimelineCollections.getFirst()) {
       head->Destroy();
     }
@@ -58,6 +60,18 @@ class TimelineManager {
                             const ComputedStyle* aComputedStyle);
 
  private:
+  template <typename TimelineType>
+  using Timelines = nsTArray<TimelineType*>;
+  
+  
+  
+  template <typename TimelineType>
+  using TimelineNameMap =
+      nsTHashMap<RefPtr<const nsAtom>, Timelines<TimelineType>>;
+  template <typename TimelineType>
+  using TimelineTargetsIter =
+      TimelineManager::Timelines<TimelineType>::const_iterator;
+
   struct TimelineScopeEntry {
     RefPtr<const dom::Element> mElement;
     nsTArray<RefPtr<nsAtom>> mNames;
@@ -71,14 +85,49 @@ class TimelineManager {
   void DoUpdateTimelines(nsPresContext* aPresContext, dom::Element* aElement,
                          const PseudoStyleRequest& aPseudoRequest,
                          const nsStyleAutoArray<StyleType>& aStyleTimelines,
-                         size_t aTimelineCount);
+                         size_t aTimelineCount,
+                         TimelineNameMap<TimelineType>& aTimelineNameMap);
 
   template <typename T>
   void AddTimelineCollection(TimelineCollection<T>* aCollection);
 
+  
+  
+  template <typename TimelineType>
+  static TimelineTargetsIter<TimelineType> FindInTimelineTargets(
+      Timelines<TimelineType>& aTimelineTargets, const dom::Element* aElement,
+      const PseudoStyleRequest& aPseudoRequest);
+
+  
+  template <typename TimelineType>
+  static void RemoveTimelineTargetByName(
+      const nsAtom* aName, const dom::Element* aElement,
+      const PseudoStyleRequest& aPseudoRequest,
+      TimelineNameMap<TimelineType>& aTimelineNameMap);
+
+  
+  template <typename TimelineType>
+  static void TryDestroyTimeline(
+      dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+      TimelineNameMap<TimelineType>& aTimelineNameMap);
+
+#ifdef DEBUG
+  
+  
+  template <typename TimelineType>
+  static void EnsureNoTimelineTarget(
+      const TimelineTargetsIter<TimelineType>& aStart,
+      const TimelineTargetsIter<TimelineType>& aEnd,
+      const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest);
+#endif
+
   LinkedList<TimelineCollection<dom::ScrollTimeline>>
       mScrollTimelineCollections;
+  
+  TimelineNameMap<dom::ScrollTimeline> mScrollTimelineNameMap;
   LinkedList<TimelineCollection<dom::ViewTimeline>> mViewTimelineCollections;
+  
+  TimelineNameMap<dom::ViewTimeline> mViewTimelineNameMap;
   TimelineScopes mTimelineScopes;
   nsPresContext* mPresContext;
 };
