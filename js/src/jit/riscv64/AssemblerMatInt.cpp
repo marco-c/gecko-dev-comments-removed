@@ -21,41 +21,41 @@
 #include "vm/Realm.h"
 namespace js {
 namespace jit {
-void Assembler::RecursiveLi(Register rd, int64_t val) {
-  if (val > 0 && RecursiveLiImplCount(val) > 2) {
-    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)val);
-    uint64_t ShiftedVal = (uint64_t)val << LeadingZeros;
+void Assembler::RecursiveLi(Register rd, int64_t imm) {
+  if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
+    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)imm);
+    uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
     int countFillZero = RecursiveLiImplCount(ShiftedVal) + 1;
-    if (countFillZero < RecursiveLiImplCount(val)) {
+    if (countFillZero < RecursiveLiImplCount(imm)) {
       RecursiveLiImpl(rd, ShiftedVal);
       srli(rd, rd, LeadingZeros);
       return;
     }
   }
-  RecursiveLiImpl(rd, val);
+  RecursiveLiImpl(rd, imm);
 }
 
-int Assembler::RecursiveLiCount(int64_t val) {
-  if (val > 0 && RecursiveLiImplCount(val) > 2) {
-    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)val);
-    uint64_t ShiftedVal = (uint64_t)val << LeadingZeros;
+int Assembler::RecursiveLiCount(int64_t imm) {
+  if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
+    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)imm);
+    uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
     
     
     
     int countFillZero = RecursiveLiImplCount(ShiftedVal) + 1;
-    if (countFillZero < RecursiveLiImplCount(val)) {
+    if (countFillZero < RecursiveLiImplCount(imm)) {
       return countFillZero;
     }
   }
-  return RecursiveLiImplCount(val);
+  return RecursiveLiImplCount(imm);
 }
 
 inline int64_t signExtend(uint64_t V, int N) {
   return int64_t(V << (64 - N)) >> (64 - N);
 }
 
-void Assembler::RecursiveLiImpl(Register rd, int64_t Val) {
-  if (is_int32(Val)) {
+void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
+  if (is_int32(imm)) {
     
     
     
@@ -63,8 +63,8 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t Val) {
     
     
     
-    int64_t Hi20 = ((Val + 0x800) >> 12) & 0xFFFFF;
-    int64_t Lo12 = Val << 52 >> 52;
+    int64_t Hi20 = ((imm + 0x800) >> 12) & 0xFFFFF;
+    int64_t Lo12 = imm << 52 >> 52;
 
     if (Hi20) {
       lui(rd, (int32_t)Hi20);
@@ -104,8 +104,8 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t Val) {
   
   
 
-  int64_t Lo12 = Val << 52 >> 52;
-  int64_t Hi52 = ((uint64_t)Val + 0x800ull) >> 12;
+  int64_t Lo12 = imm << 52 >> 52;
+  int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
   int ShiftAmount = 12 + mozilla::CountTrailingZeroes64((uint64_t)Hi52);
   Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
 
@@ -131,9 +131,9 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t Val) {
   }
 }
 
-int Assembler::RecursiveLiImplCount(int64_t Val) {
+int Assembler::RecursiveLiImplCount(int64_t imm) {
   int count = 0;
-  if (is_int32(Val)) {
+  if (is_int32(imm)) {
     
     
     
@@ -141,8 +141,8 @@ int Assembler::RecursiveLiImplCount(int64_t Val) {
     
     
     
-    int64_t Hi20 = ((Val + 0x800) >> 12) & 0xFFFFF;
-    int64_t Lo12 = Val << 52 >> 52;
+    int64_t Hi20 = ((imm + 0x800) >> 12) & 0xFFFFF;
+    int64_t Lo12 = imm << 52 >> 52;
 
     if (Hi20) {
       
@@ -181,8 +181,8 @@ int Assembler::RecursiveLiImplCount(int64_t Val) {
   
   
 
-  int64_t Lo12 = Val << 52 >> 52;
-  int64_t Hi52 = ((uint64_t)Val + 0x800ull) >> 12;
+  int64_t Lo12 = imm << 52 >> 52;
+  int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
   int ShiftAmount = 12 + mozilla::CountTrailingZeroes64((uint64_t)Hi52);
   Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
 
