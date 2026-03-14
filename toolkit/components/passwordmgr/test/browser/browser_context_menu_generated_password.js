@@ -313,10 +313,15 @@ add_task(async function fill_generated_password_with_matching_logins() {
       await openPasswordContextMenu(browser, passwordInputSelector);
 
       
-      let passwordChangedPromise = BrowserTestUtils.waitForContentEvent(
+      let passwordChangedPromise = ContentTask.spawn(
         browser,
-        "input",
-        true
+        null,
+        async function () {
+          let passwordInput = content.document.getElementById(
+            "form-basic-password"
+          );
+          await ContentTaskUtils.waitForEvent(passwordInput, "input");
+        }
       );
 
       let popupMenu = document.getElementById("fill-login-popup");

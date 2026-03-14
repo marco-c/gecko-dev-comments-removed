@@ -70,10 +70,11 @@ async function clearHistoryAndBookmarks() {
 
 
 async function waitForPreloaded(browser) {
-  if (
-    browser.webProgress.isLoadingDocument ||
-    browser.currentURI?.spec === "about:blank"
-  ) {
+  let [readyState, location] = await ContentTask.spawn(browser, null, () => [
+    content.document.readyState,
+    content.document.location.href,
+  ]);
+  if (readyState !== "complete" || location === "about:blank") {
     await BrowserTestUtils.browserLoaded(browser);
   }
 }
