@@ -98,6 +98,28 @@ function renderMultistage(ready) {
 
   if (CONFIG?.disableEscClose) {
     disableEscClose();
+
+    
+    const preventEscape = event => {
+      if (
+        event.key === "Escape" &&
+        (dialog?.contains(event.target) || box.contains(event.target))
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    browser.ownerGlobal.addEventListener("keydown", preventEscape, {
+      capture: true,
+      mozSystemGroup: true,
+    });
+
+    addEventListener("pagehide", () => {
+      browser.ownerGlobal.removeEventListener("keydown", preventEscape, {
+        capture: true,
+        mozSystemGroup: true,
+      });
+    });
   }
 
   
