@@ -500,6 +500,11 @@ class JujutsuRepository(Repository):
             
             self._snapshot()
 
+            
+            self._run(
+                "bookmark", "move", "--from", "heads(@- & bookmarks())", "--to", "@"
+            )
+
             def cleanup():
                 self._run("operation", "restore", opid)
 
