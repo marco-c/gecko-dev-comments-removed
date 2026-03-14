@@ -33,7 +33,8 @@ namespace dom::WebAudioUtils {
 
 const size_t MaxChannelCount = 32;
 
-const uint32_t MinSampleRate = 3000;
+
+const uint32_t MinSampleRate = 8000;
 const uint32_t MaxSampleRate = 768000;
 
 inline bool FuzzyEqual(float v1, float v2) { return fabsf(v1 - v2) < 1e-7f; }
