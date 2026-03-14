@@ -250,7 +250,7 @@ add_task(async function test_lna_prompt_behavior() {
     "127.0.0.1:4443"
   );
   for (const test of testCases) {
-    await runPromptedLnaTest(test, "public", "localhost");
+    await runPromptedLnaTest(test, "public", "loopback-network");
   }
 
   
@@ -309,7 +309,7 @@ add_task(async function test_lna_cancellation_during_prompt() {
   clickDoorhangerButton(
     PROMPT_ALLOW_BUTTON,
     gBrowser.selectedBrowser,
-    "localhost"
+    "loopback-network"
   );
 
   
@@ -326,7 +326,9 @@ add_task(async function test_lna_cancellation_during_prompt() {
 });
 
 add_task(async function test_lna_top_level_navigation_bypass() {
-  info("Testing that top-level navigation to localhost bypasses LNA checks");
+  info(
+    "Testing that top-level navigation to loopback-network bypasses LNA checks"
+  );
 
   
   await SpecialPowers.pushPrefEnv({
@@ -383,7 +385,7 @@ add_task(async function test_lna_top_level_navigation_bypass() {
     
     
     let popup = PopupNotifications.getNotification(
-      "localhost",
+      "loopback-network",
       tab.linkedBrowser
     );
     ok(
@@ -438,7 +440,7 @@ add_task(async function test_lna_top_level_navigation_disabled() {
 
     
     let popup = PopupNotifications.getNotification(
-      "localhost",
+      "loopback-network",
       tab.linkedBrowser
     );
     ok(popup, "LNA permission prompt should appear when bypass is disabled");
@@ -447,7 +449,7 @@ add_task(async function test_lna_top_level_navigation_disabled() {
     clickDoorhangerButton(
       PROMPT_ALLOW_BUTTON,
       gBrowser.selectedBrowser,
-      "localhost"
+      "loopback-network"
     );
 
     
@@ -509,8 +511,8 @@ add_task(async function test_lna_websocket_preference() {
     await SpecialPowers.pushPrefEnv({
       set: [
         ["network.lna.websocket.enabled", true], 
-        ["network.localhost.prompt.testing", true],
-        ["network.localhost.prompt.testing.allow", false],
+        ["network.loopback-network.prompt.testing", true],
+        ["network.loopback-network.prompt.testing.allow", false],
       ],
     });
 
@@ -575,7 +577,7 @@ add_task(async function test_lna_prompt_timeout() {
 
     
     let popup = PopupNotifications.getNotification(
-      "localhost",
+      "loopback-network",
       tab.linkedBrowser
     );
     ok(popup, "LNA permission prompt should be visible");
@@ -601,5 +603,149 @@ add_task(async function test_lna_prompt_timeout() {
     ok(false, `LNA prompt timeout test failed: ${error.message}`);
   }
 
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function test_lna_prompt_telemetry() {
+  await restorePermissions();
+
+  
+  Services.fog.testResetFOG();
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
+  });
+
+  const rand1 = Math.random();
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    `${baseURL}page_with_non_trackers.html?test=fetch&rand=${rand1}`
+  );
+
+  
+  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+
+  
+  let metricValue =
+    await Glean.networking.localNetworkAccessPromptsShown.localhost.testGetValue();
+  is(
+    metricValue,
+    1,
+    "Should record telemetry when loopback-network prompt is shown"
+  );
+
+  
+  clickDoorhangerButton(
+    PROMPT_ALLOW_BUTTON,
+    gBrowser.selectedBrowser,
+    "loopback-network"
+  );
+
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  
+  const rand2 = Math.random();
+  const promise = observeAndCheck(
+    "fetch",
+    rand2,
+    Cr.NS_OK,
+    "Second request should succeed without prompt"
+  );
+  await SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+    await content.fetch(`http://localhost:21555/?type=fetch&rand=${rand}`);
+  });
+  await promise;
+
+  
+  metricValue =
+    await Glean.networking.localNetworkAccessPromptsShown.localhost.testGetValue();
+  is(
+    metricValue,
+    1,
+    "Telemetry should not increment for requests with cached permission"
+  );
+
+  gBrowser.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function test_lna_prompt_telemetry_deny() {
+  await restorePermissions();
+
+  
+  Services.fog.testResetFOG();
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.lna.address_space.public.override", "127.0.0.1:4443"]],
+  });
+
+  const rand1 = Math.random();
+  const promise1 = observeAndCheck(
+    "fetch",
+    rand1,
+    Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+    "First request should be denied"
+  );
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    `${baseURL}page_with_non_trackers.html?test=fetch&rand=${rand1}`
+  );
+
+  
+  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+
+  
+  let metricValue =
+    await Glean.networking.localNetworkAccessPromptsShown.localhost.testGetValue();
+  is(
+    metricValue,
+    1,
+    "Should record telemetry when loopback-network prompt is shown"
+  );
+
+  
+  clickDoorhangerButton(
+    PROMPT_NOT_NOW_BUTTON,
+    gBrowser.selectedBrowser,
+    "loopback-network"
+  );
+
+  await promise1;
+
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  
+  
+  const rand2 = Math.random();
+  const promise2 = observeAndCheck(
+    "fetch",
+    rand2,
+    Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+    "Second request should be auto-denied with temporary permission"
+  );
+  await SpecialPowers.spawn(tab.linkedBrowser, [rand2], async rand => {
+    await content
+      .fetch(`http://localhost:21555/?type=fetch&rand=${rand}`)
+      .catch(() => {});
+  });
+
+  await promise2;
+
+  
+  metricValue =
+    await Glean.networking.localNetworkAccessPromptsShown.localhost.testGetValue();
+  is(
+    metricValue,
+    1,
+    "Telemetry should not increment for requests with temporary deny permission"
+  );
+
+  gBrowser.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });

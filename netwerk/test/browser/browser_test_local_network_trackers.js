@@ -54,9 +54,9 @@ add_setup(async function () {
       ["network.lna.blocking", true],
       ["network.lna.websocket.enabled", true],
       
-      ["network.localhost.prompt.testing", true],
+      ["network.loopback-network.prompt.testing", true],
       ["network.localnetwork.prompt.testing", true],
-      ["network.localhost.prompt.testing.allow", true],
+      ["network.loopback-network.prompt.testing.allow", true],
       ["network.localnetwork.prompt.testing.allow", true],
     ],
   });
@@ -233,7 +233,7 @@ add_task(async function test_tracker_initiated_lna_fetch() {
   
   PermissionTestUtils.add(
     baseURL + "page_with_trackers.html",
-    "localhost",
+    "loopback-network",
     Services.perms.ALLOW_ACTION,
     Services.perms.EXPIRE_NEVER
   );
@@ -255,11 +255,14 @@ add_task(async function test_tracker_initiated_lna_fetch() {
     gBrowser.removeTab(tab);
   }
 
-  PermissionTestUtils.remove(baseURL + "page_with_trackers.html", "localhost");
+  PermissionTestUtils.remove(
+    baseURL + "page_with_trackers.html",
+    "loopback-network"
+  );
 
   
   const ORIGIN_1 = "https://example.com";
-  const TEST_PERMISSION_1 = "localhost";
+  const TEST_PERMISSION_1 = "loopback-network";
   await remoteSettingsSync({
     created: [
       {

@@ -2075,9 +2075,9 @@ LNAPermission nsHttpChannel::UpdateLocalNetworkAccessPermissions(
   
   
 
-  MOZ_ASSERT(aPermissionType == LOCAL_HOST_PERMISSION_KEY ||
+  MOZ_ASSERT(aPermissionType == LOOPBACK_NETWORK_PERMISSION_KEY ||
              aPermissionType == LOCAL_NETWORK_PERMISSION_KEY);
-  LNAPermission userPerms = aPermissionType == LOCAL_HOST_PERMISSION_KEY
+  LNAPermission userPerms = aPermissionType == LOOPBACK_NETWORK_PERMISSION_KEY
                                 ? mLNAPermission.mLocalHostPermission
                                 : mLNAPermission.mLocalNetworkPermission;
 
@@ -7335,7 +7335,7 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     const nsACString& permissionKey =
         (mTransaction && mTransaction->GetTargetIPAddressSpace() ==
                              nsILoadInfo::IPAddressSpace::Local)
-            ? LOCAL_HOST_PERMISSION_KEY
+            ? LOOPBACK_NETWORK_PERMISSION_KEY
             : LOCAL_NETWORK_PERMISSION_KEY;
     OnPermissionPromptResult(false, permissionKey);
     return NS_OK;
@@ -9005,7 +9005,7 @@ nsresult nsHttpChannel::ProcessLNAActions() {
   Suspend();
   auto permissionKey = mTransaction->GetTargetIPAddressSpace() ==
                                nsILoadInfo::IPAddressSpace::Local
-                           ? LOCAL_HOST_PERMISSION_KEY
+                           ? LOOPBACK_NETWORK_PERMISSION_KEY
                            : LOCAL_NETWORK_PERMISSION_KEY;
   LNAPermission permissionUpdateResult =
       UpdateLocalNetworkAccessPermissions(permissionKey);
@@ -9419,7 +9419,7 @@ nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
          this));
     
     
-    if (aType == LOCAL_HOST_PERMISSION_KEY) {
+    if (aType == LOOPBACK_NETWORK_PERMISSION_KEY) {
       mLNAPermission.mLocalHostPermission = LNAPermission::Granted;
     }
 
@@ -9457,7 +9457,7 @@ nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
 
   Resume();
 
-  if (aType == LOCAL_HOST_PERMISSION_KEY) {
+  if (aType == LOOPBACK_NETWORK_PERMISSION_KEY) {
     mLNAPermission.mLocalHostPermission = LNAPermission::Denied;
   }
 

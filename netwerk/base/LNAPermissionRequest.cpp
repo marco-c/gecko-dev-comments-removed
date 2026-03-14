@@ -13,6 +13,8 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "nsIIOService.h"
+#include "nsIOService.h"
 
 namespace mozilla::net {
 
@@ -31,8 +33,9 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
                                            const nsACString& aType)
     : dom::ContentPermissionRequestBase(
           aLoadInfo->GetLoadingPrincipal(), nullptr,
-          (aType.Equals(LOCAL_HOST_PERMISSION_KEY) ? "network.localhost"_ns
-                                                   : "network.localnetwork"_ns),
+          (aType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)
+               ? "network.loopback-network"_ns
+               : "network.localnetwork"_ns),
           aType),
       mPermissionPromptCallback(std::move(aCallback)) {
   MOZ_ASSERT(aLoadInfo);
@@ -87,7 +90,7 @@ LNAPermissionRequest::GetElement(mozilla::dom::Element** aElement) {
 NS_IMETHODIMP
 LNAPermissionRequest::Cancel() {
   
-  mPermissionPromptCallback(false, mType);
+  mPermissionPromptCallback(false, mType, mPromptWasShown);
   return NS_OK;
 }
 
@@ -95,7 +98,39 @@ LNAPermissionRequest::Cancel() {
 NS_IMETHODIMP
 LNAPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
   
-  mPermissionPromptCallback(true, mType);
+  mPermissionPromptCallback(true, mType, mPromptWasShown);
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP
+LNAPermissionRequest::NotifyShown() {
+  
+  mPromptWasShown = true;
+
+  
+  if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("localhost_cross_site"_ns)
+          .Add(1);
+    } else {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("localhost"_ns)
+          .Add(1);
+    }
+  } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("local_network_cross_site"_ns)
+          .Add(1);
+    } else {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("local_network"_ns)
+          .Add(1);
+    }
+  }
+
   return NS_OK;
 }
 
@@ -107,6 +142,18 @@ nsresult LNAPermissionRequest::RequestPermission() {
     return Cancel();
   }
 
+  
+  if (mPrincipal && gIOService) {
+    nsAutoCString origin;
+    nsresult rv = mPrincipal->GetAsciiHost(origin);
+    if (NS_SUCCEEDED(rv) && !origin.IsEmpty()) {
+      if (gIOService->ShouldSkipDomainForLNA(origin)) {
+        
+        return Allow(JS::UndefinedHandleValue);
+      }
+    }
+  }
+
   PromptResult pr = CheckPromptPrefs();
   if (pr == PromptResult::Granted) {
     return Allow(JS::UndefinedHandleValue);
@@ -114,17 +161,6 @@ nsresult LNAPermissionRequest::RequestPermission() {
 
   if (pr == PromptResult::Denied) {
     return Cancel();
-  }
-
-  
-  if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
-    mozilla::glean::networking::local_network_access_prompts_shown
-        .Get("localhost"_ns)
-        .Add(1);
-  } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
-    mozilla::glean::networking::local_network_access_prompts_shown
-        .Get("local_network"_ns)
-        .Add(1);
   }
 
   if (NS_SUCCEEDED(
