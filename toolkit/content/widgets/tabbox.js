@@ -459,18 +459,15 @@
         
         
         
-        const currentWidth = Math.floor(
-          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width
-        );
-        const storedWidth = Number(controlledPanel.getAttribute("width"));
-        if (storedWidth != currentWidth) {
-          controlledPanel.setAttribute("width", currentWidth);
-          controlledPanel.style.width = currentWidth + "px";
-        }
+        const currentWidth =
+          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width;
 
         splitter.setAttribute("aria-valuemin", String(minWidth));
         splitter.setAttribute("aria-valuemax", String(maxWidth));
-        splitter.setAttribute("aria-valuenow", String(currentWidth));
+        splitter.setAttribute(
+          "aria-valuenow",
+          String(Math.floor(currentWidth))
+        );
       } else {
         splitter.removeAttribute("aria-controls");
         splitter.removeAttribute("aria-valuenow");
