@@ -1866,7 +1866,8 @@ void DocAccessible::DoInitialUpdate() {
   
   
   
-  if (!IsRoot()) {
+  
+  if (!IPCDoc() && !IsRoot()) {
     RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(LocalParent());
     ParentDocument()->FireDelayedEvent(reorderEvent);
   }

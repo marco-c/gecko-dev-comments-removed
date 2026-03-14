@@ -617,6 +617,18 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvMutationEvents(
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvRequestAckMutationEvents() {
   if (!mShutdown) {
+    if (!mIsInitialTreeDone) {
+      
+      
+      mIsInitialTreeDone = true;
+      
+      
+      
+      if (RemoteAccessible* parent = RemoteParent()) {
+        parent->Document()->FireEvent(parent,
+                                      nsIAccessibleEvent::EVENT_REORDER);
+      }
+    }
     (void)SendAckMutationEvents();
   }
   return IPC_OK();
@@ -958,8 +970,9 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   
   
   
-  
-  FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
+  if (aChildDoc->mIsInitialTreeDone) {
+    FireEvent(outerDoc, nsIAccessibleEvent::EVENT_REORDER);
+  }
 
   return IPC_OK();
 }
