@@ -9,6 +9,7 @@
 
 use super::{FeatureFlags, FeatureType, QueryFeatureExpression, QueryStyleRange};
 use crate::computed_value_flags::ComputedValueFlags;
+use crate::context::QuirksMode;
 use crate::custom_properties;
 use crate::derives::*;
 use crate::dom::AttributeTracker;
@@ -18,15 +19,17 @@ use crate::properties_and_values::value::{
     AllowComputationallyDependent, ComputedValue as ComputedRegisteredValue,
     SpecifiedValue as SpecifiedRegisteredValue,
 };
-use crate::stylesheets::CustomMediaEvaluator;
+use crate::stylesheets::{CssRuleType, CustomMediaEvaluator, Origin, UrlExtraData};
 use crate::stylist::Stylist;
 use crate::values::{computed, AtomString, DashedIdent};
 use crate::{error_reporting::ContextualParseError, parser::Parse, parser::ParserContext};
-use cssparser::{match_ignore_ascii_case, parse_important, Parser, SourcePosition, Token};
+use cssparser::{
+    match_ignore_ascii_case, parse_important, Parser, ParserInput, SourcePosition, Token,
+};
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss};
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
@@ -399,7 +402,7 @@ impl StyleFeaturePlain {
         ctx: &computed::Context,
         current_value: Option<&ComputedRegisteredValue>,
     ) -> bool {
-        let substituted = match crate::custom_properties::substitute(
+        let substituted = match custom_properties::substitute(
             &value,
             ctx.inherited_custom_properties(),
             stylist,
@@ -618,7 +621,7 @@ pub enum QueryCondition {
     
     MozPref(MozPrefFeature),
     
-    GeneralEnclosed(String),
+    GeneralEnclosed(String, UrlExtraData),
 }
 
 impl ToCss for QueryCondition {
@@ -665,7 +668,7 @@ impl ToCss for QueryCondition {
                 }
                 Ok(())
             },
-            QueryCondition::GeneralEnclosed(ref s) => dest.write_str(&s),
+            QueryCondition::GeneralEnclosed(ref s, _) => dest.write_str(&s),
         }
     }
 }
@@ -790,14 +793,16 @@ impl QueryCondition {
         custom: &mut CustomMediaEvaluator,
     ) -> KleeneValue {
         match *self {
-            QueryCondition::Custom(ref f) => custom.matches(f, context),
-            QueryCondition::Feature(ref f) => f.matches(context),
-            QueryCondition::GeneralEnclosed(_) => KleeneValue::Unknown,
-            QueryCondition::InParens(ref c) => c.matches(context, custom),
-            QueryCondition::Not(ref c) => !c.matches(context, custom),
-            QueryCondition::Style(ref c) => c.matches(context),
-            QueryCondition::MozPref(ref c) => c.matches(context),
-            QueryCondition::Operation(ref conditions, op) => {
+            Self::Custom(ref f) => custom.matches(f, context),
+            Self::Feature(ref f) => f.matches(context),
+            Self::GeneralEnclosed(ref str, ref url_data) => {
+                self.matches_general(&str, url_data, context, custom)
+            },
+            Self::InParens(ref c) => c.matches(context, custom),
+            Self::Not(ref c) => !c.matches(context, custom),
+            Self::Style(ref c) => c.matches(context),
+            Self::MozPref(ref c) => c.matches(context),
+            Self::Operation(ref conditions, op) => {
                 debug_assert!(!conditions.is_empty(), "We never create an empty op");
                 match op {
                     Operator::And => {
@@ -809,6 +814,82 @@ impl QueryCondition {
                 }
             },
         }
+    }
+
+    
+    
+    fn matches_general(
+        &self,
+        css_text: &str,
+        url_data: &UrlExtraData,
+        context: &computed::Context,
+        custom: &mut CustomMediaEvaluator,
+    ) -> KleeneValue {
+        
+        if !context.in_container_query {
+            return KleeneValue::Unknown;
+        }
+
+        let stylist = context
+            .builder
+            .stylist
+            .expect("container query should provide a Stylist");
+
+        
+        let mut input = ParserInput::new(css_text);
+        let value = match custom_properties::SpecifiedValue::parse(
+            &mut Parser::new(&mut input),
+            None, 
+            url_data,
+        ) {
+            Ok(val) => val,
+            Err(_) => return KleeneValue::Unknown,
+        };
+
+        
+        if !value.has_references() {
+            return KleeneValue::Unknown;
+        }
+
+        
+        let substituted = match custom_properties::substitute(
+            &value,
+            context.inherited_custom_properties(),
+            stylist,
+            context,
+            
+            &mut AttributeTracker::new_dummy(),
+        ) {
+            Ok(sub) => sub,
+            Err(_) => return KleeneValue::Unknown,
+        };
+
+        
+        let parser_context = ParserContext::new(
+            Origin::Author,
+            url_data,
+            Some(CssRuleType::Container),
+            ParsingMode::DEFAULT,
+            QuirksMode::NoQuirks,
+             Default::default(),
+             None,
+             None,
+        );
+        let mut input = ParserInput::new(&substituted);
+        let result = match Self::parse(
+            &parser_context,
+            &mut Parser::new(&mut input),
+            FeatureType::Container,
+        ) {
+            Ok(Self::GeneralEnclosed(..)) => {
+                
+                KleeneValue::Unknown
+            },
+            Ok(query) => query.matches(context, custom),
+            Err(_) => KleeneValue::Unknown,
+        };
+
+        result
     }
 }
 
@@ -857,7 +938,10 @@ impl OperationParser for QueryCondition {
             ref t => return Err(start_location.new_unexpected_token_error(t.clone())),
         }
         input.parse_nested_block(consume_any_value)?;
-        Ok(Self::GeneralEnclosed(input.slice_from(start).to_owned()))
+        Ok(Self::GeneralEnclosed(
+            input.slice_from(start).to_owned(),
+            context.url_data.clone(),
+        ))
     }
 
     fn new_not(inner: Box<Self>) -> Self {
