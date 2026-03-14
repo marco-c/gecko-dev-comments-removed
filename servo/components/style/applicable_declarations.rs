@@ -83,17 +83,6 @@ impl Ord for CascadePriority {
     }
 }
 
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RevertKind {
-    
-    Origin,
-    
-    Layer,
-    
-    Rule,
-}
-
 impl CascadePriority {
     
     pub fn new(cascade_level: CascadeLevel, layer_order: LayerOrder) -> Self {
@@ -119,13 +108,12 @@ impl CascadePriority {
     
     
     
-    pub fn allows_when_reverted(&self, other: &Self, kind: RevertKind) -> bool {
-        match kind {
-            RevertKind::Origin => other.cascade_level.origin() < self.cascade_level.origin(),
-            RevertKind::Layer => other.unimportant() < self.unimportant(),
-            
-            
-            RevertKind::Rule => true,
+    
+    pub fn allows_when_reverted(&self, other: &Self, origin_revert: bool) -> bool {
+        if origin_revert {
+            other.cascade_level.origin() < self.cascade_level.origin()
+        } else {
+            other.unimportant() < self.unimportant()
         }
     }
 
