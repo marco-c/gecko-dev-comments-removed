@@ -4323,6 +4323,7 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     const EditorDOMPoint& aNextOrAfterModifiedPoint,
     const Element& aEditingHost) {
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsInContentNode());
+  MOZ_ASSERT(aNextOrAfterModifiedPoint.IsSetAndValid());
 
   
   

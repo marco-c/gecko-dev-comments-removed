@@ -630,13 +630,13 @@ class MOZ_STACK_CLASS WSRunScanner final {
     
     StopAtComment,
     
-    IgnoreEmptyInlineContainers,
+    StopAtAnyEmptyInlineContainers,
     
     
     
     
     
-    IgnoreInvisibleInlines,
+    StopAtVisibleEmptyInlineContainers,
   };
   using Options = EnumSet<Option>;
 
@@ -675,13 +675,13 @@ class MOZ_STACK_CLASS WSRunScanner final {
     if (aOptions.contains(Option::StopAtComment)) {
       types += LeafNodeOption::TreatCommentAsLeafNode;
     }
-    if (aOptions.contains(Option::IgnoreInvisibleInlines)) {
+    if (aOptions.contains(Option::StopAtVisibleEmptyInlineContainers)) {
+      MOZ_ASSERT(!aOptions.contains(Option::StopAtAnyEmptyInlineContainers));
       types +=
           LeafNodeOptions{LeafNodeOption::IgnoreInvisibleEmptyInlineContainers,
                           LeafNodeOption::IgnoreInvisibleInlineVoidElements,
                           LeafNodeOption::IgnoreInvisibleText};
-    }
-    if (aOptions.contains(Option::IgnoreEmptyInlineContainers)) {
+    } else if (!aOptions.contains(Option::StopAtAnyEmptyInlineContainers)) {
       types += LeafNodeOptions{LeafNodeOption::IgnoreAnyEmptyInlineContainers,
                                LeafNodeOption::IgnoreEmptyText};
     }

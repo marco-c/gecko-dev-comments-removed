@@ -311,7 +311,18 @@ AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
         WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
-            {WSRunScanner::Option::OnlyEditableNodes}, range);
+            {
+             
+             WSRunScanner::Option::OnlyEditableNodes,
+             
+             
+             
+             
+             
+             
+             WSRunScanner::Option::StopAtAnyEmptyInlineContainers,
+             WSRunScanner::Option::StopAtComment},
+            range);
     if (result.isErr()) {
       NS_WARNING(
           "WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent() "

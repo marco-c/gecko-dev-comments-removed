@@ -894,8 +894,7 @@ bool HTMLEditUtils::IsVisibleTextNode(
   
   const WSScanResult followingThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers},
-          EditorRawDOMPoint::After(aText));
+          {}, EditorRawDOMPoint::After(aText));
   if (followingThing.ReachedBlockBoundary()) {
     
     
@@ -903,8 +902,7 @@ bool HTMLEditUtils::IsVisibleTextNode(
   }
   const WSScanResult precedingThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers},
-          EditorRawDOMPoint(&aText));
+          {}, EditorRawDOMPoint(&aText));
   if (precedingThing.ReachedBlockBoundary()) {
     
     
@@ -965,7 +963,7 @@ bool HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           EditorRawDOMPoint::After(aBRElement), aAncestorLimiter);
   if (!followingThing.ReachedBlockBoundary()) {
     return false;
@@ -1000,7 +998,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           aPoint.template NextPoint<EditorRawDOMPoint>(), aAncestorLimiter);
   if (!followingThing.ReachedBlockBoundary()) {
     return false;
@@ -1023,7 +1021,7 @@ bool HTMLEditUtils::IsBRElementFollowedByCurrentBlockBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           EditorRawDOMPoint::After(aBRElement), aAncestorLimiter);
   if (!followingThing.ReachedCurrentBlockBoundary()) {
     return false;
@@ -1046,7 +1044,7 @@ bool HTMLEditUtils::IsBRElementFollowedByOtherBlockBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           EditorRawDOMPoint::After(aBRElement), aAncestorLimiter);
   if (!followingThing.ReachedOtherBlockElement()) {
     return false;
@@ -1081,7 +1079,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowedByCurrentBlockBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           aPoint.template NextPoint<EditorRawDOMPoint>(), aAncestorLimiter);
   if (!followingThing.ReachedCurrentBlockBoundary()) {
     return false;
@@ -1116,7 +1114,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowedByOtherBlockBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           aPoint.template NextPoint<EditorRawDOMPoint>(), aAncestorLimiter);
   if (!followingThing.ReachedOtherBlockElement()) {
     return false;
@@ -1139,7 +1137,7 @@ bool HTMLEditUtils::IsBRElementFollowedByLineBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           EditorRawDOMPoint::After(aBRElement), aAncestorLimiter);
   if (!followingThing.ReachedLineBoundary()) {
     return false;
@@ -1160,8 +1158,7 @@ bool HTMLEditUtils::IsBRElementFollowingLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers},
-          EditorRawDOMPoint(&aBRElement), aAncestorLimiter);
+          {}, EditorRawDOMPoint(&aBRElement), aAncestorLimiter);
   return precedingThing.ReachedLineBreak();
 }
 
@@ -1189,7 +1186,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowedByLineBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           aPoint.template NextPoint<EditorRawDOMPoint>(), aAncestorLimiter);
   if (!followingThing.ReachedLineBoundary()) {
     return false;
@@ -1211,8 +1208,7 @@ bool HTMLEditUtils::IsBRElementFollowingLineBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers},
-          EditorRawDOMPoint(&aBRElement), aAncestorLimiter);
+          {}, EditorRawDOMPoint(&aBRElement), aAncestorLimiter);
   if (!precedingThing.ReachedLineBoundary()) {
     return false;
   }
@@ -1245,8 +1241,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowingLineBoundary(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers}, aPoint,
-          aAncestorLimiter);
+          {}, aPoint, aAncestorLimiter);
   if (!precedingThing.ReachedLineBoundary()) {
     return false;
   }
@@ -1278,8 +1273,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowingLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers}, aPoint,
-          aAncestorLimiter);
+          {}, aPoint, aAncestorLimiter);
   return precedingThing.ReachedLineBreak();
 }
 
@@ -1347,8 +1341,7 @@ bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers}, aPoint,
-          aAncestorLimiter);
+          {}, aPoint, aAncestorLimiter);
   if (precedingThing.ReachedCurrentBlockBoundary() &&
       followingBlockBoundaryElement == precedingThing.ElementPtr()) {
     
@@ -1384,7 +1377,7 @@ bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           aPoint.template NextPoint<EditorRawDOMPoint>(), aAncestorLimiter);
   if (!followingThing.ReachedBlockBoundary()) {
     return true;
@@ -1403,8 +1396,7 @@ bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers}, aPoint,
-          aAncestorLimiter);
+          {}, aPoint, aAncestorLimiter);
   if (followingThing.ReachedCurrentBlockBoundary() &&
       precedingThing.ReachedCurrentBlockBoundary()) {
     
@@ -1424,8 +1416,7 @@ HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
 
   WSScanResult nextThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers}, aPoint,
-          aAncestorLimiter);
+          {}, aPoint, aAncestorLimiter);
   if (!nextThing.ReachedLineBreak()) {
     return nextThing;
   }
@@ -1435,7 +1426,7 @@ HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreInvisibleInlines},
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers},
           nextThing.PointAfterReachedContent<EditorRawDOMPoint>(),
           aAncestorLimiter);
   
@@ -1451,8 +1442,7 @@ HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
           
           
           
-          {WSRunScanner::Option::IgnoreEmptyInlineContainers},
-          nextThing.PointAtReachedContent<EditorRawDOMPoint>(),
+          {}, nextThing.PointAtReachedContent<EditorRawDOMPoint>(),
           aAncestorLimiter);
   
   
@@ -1483,7 +1473,7 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetPrecedingUnnecessaryLineBreak(
 
   const WSScanResult previousThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          {WSRunScanner::Option::IgnoreInvisibleInlines}, aPoint,
+          {WSRunScanner::Option::StopAtVisibleEmptyInlineContainers}, aPoint,
           aAncestorLimiter);
   if (!previousThing.ReachedLineBreak()) {
     return Nothing{};
@@ -1702,6 +1692,15 @@ HTMLEditUtils::LeafNodeType HTMLEditUtils::GetLeafNodeType(
   if (const Element* const element = Element::FromNode(&aContent)) {
     
     if (HTMLEditUtils::IsReplacedElement(*element)) {
+      return LeafNodeType::Leaf;
+    }
+    
+    
+    
+    
+    
+    
+    if (element->GetShadowRootForSelection()) {
       return LeafNodeType::Leaf;
     }
     
