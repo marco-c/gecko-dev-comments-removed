@@ -2552,7 +2552,7 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 
   nsresult rv = NS_OK;
   nsCOMPtr<nsIFile> fileToUse = aNewFileLocation;
-  mFinalFileDestination = fileToUse;
+  mFinalFileDestination = std::move(fileToUse);
 
   
   
@@ -2613,7 +2613,7 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
           return NS_OK;
         }
 
-        mTempFile = movedFile;
+        mTempFile = std::move(movedFile);
       }
     }
   }
@@ -2674,7 +2674,7 @@ NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
 
   nsresult rv = fileToUse->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
   if (NS_SUCCEEDED(rv)) {
-    mFinalFileDestination = fileToUse;
+    mFinalFileDestination = std::move(fileToUse);
     
     
     rv = CreateTransfer();

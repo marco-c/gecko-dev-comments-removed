@@ -171,7 +171,7 @@ nsresult TextServicesDocument::InitWithEditor(nsIEditor* aEditor) {
   }
 
   if (!mSelCon) {
-    mSelCon = selCon;
+    mSelCon = std::move(selCon);
   }
 
   

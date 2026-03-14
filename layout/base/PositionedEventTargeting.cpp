@@ -490,7 +490,7 @@ static void SubtractFromExposedRegion(nsRegion* aExposedRegion,
   
   
   if (tmp.GetNumRects() <= 15 || tmp.Area() <= aExposedRegion->Area() / 2) {
-    *aExposedRegion = tmp;
+    *aExposedRegion = std::move(tmp);
   }
 }
 
