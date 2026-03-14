@@ -192,13 +192,25 @@ static bool ValidatePlane(const VideoData::YCbCrBuffer::Plane& aPlane) {
 static MediaResult ValidateBufferAndPicture(
     const VideoData::YCbCrBuffer& aBuffer, const IntRect& aPicture) {
   
+  if (aBuffer.mChromaSubsampling == ChromaSubsampling::FULL) {
+    MOZ_ASSERT(aBuffer.mPlanes[1].mWidth == aBuffer.mPlanes[0].mWidth);
+  } else {
+    MOZ_ASSERT(aBuffer.mPlanes[1].mWidth ==
+               (aBuffer.mPlanes[0].mWidth + 1) / 2);
+  }
+  if (aBuffer.mChromaSubsampling == ChromaSubsampling::HALF_WIDTH_AND_HEIGHT) {
+    MOZ_ASSERT(aBuffer.mPlanes[1].mHeight ==
+               (aBuffer.mPlanes[0].mHeight + 1) / 2);
+  } else {
+    MOZ_ASSERT(aBuffer.mPlanes[1].mHeight == aBuffer.mPlanes[0].mHeight);
+  }
+  
   
   if (aBuffer.mPlanes[1].mWidth != aBuffer.mPlanes[2].mWidth ||
       aBuffer.mPlanes[1].mHeight != aBuffer.mPlanes[2].mHeight) {
     return MediaResult(NS_ERROR_INVALID_ARG,
                        "Chroma planes with different sizes");
   }
-
   
   if (aPicture.width <= 0 || aPicture.height <= 0) {
     return MediaResult(NS_ERROR_INVALID_ARG, "Empty picture rect");
@@ -208,7 +220,12 @@ static MediaResult ValidateBufferAndPicture(
       !ValidatePlane(aBuffer.mPlanes[2])) {
     return MediaResult(NS_ERROR_INVALID_ARG, "Invalid plane size");
   }
-
+  
+  
+  if (aBuffer.mPlanes[1].mStride != aBuffer.mPlanes[2].mStride) {
+    return MediaResult(NS_ERROR_INVALID_ARG,
+                       "Chroma planes with different strides");
+  }
   
   
   CheckedUint32 xLimit = aPicture.x + CheckedUint32(aPicture.width);
@@ -296,6 +313,7 @@ PlanarYCbCrData ConstructPlanarYCbCrData(const VideoInfo& aInfo,
   data.mYSkip = AssertedCast<int32_t>(Y.mSkip);
   data.mCbChannel = Cb.mData;
   data.mCrChannel = Cr.mData;
+  MOZ_ASSERT(Cb.mStride == Cr.mStride);
   data.mCbCrStride = AssertedCast<int32_t>(Cb.mStride);
   data.mCbSkip = AssertedCast<int32_t>(Cb.mSkip);
   data.mCrSkip = AssertedCast<int32_t>(Cr.mSkip);
