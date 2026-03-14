@@ -254,39 +254,36 @@ inline bool nsHttpHeaderArray::IsIgnoreMultipleHeader(
     return NS_OK;
   }
 
-  
-  
-  nsCString newValue = entry->value;
-  if (!newValue.IsEmpty() || header == nsHttp::X_Frame_Options) {
-    
+  auto AppendSeparator = [&header](nsCString& s) {
     if (header == nsHttp::Set_Cookie || header == nsHttp::WWW_Authenticate ||
         header == nsHttp::Proxy_Authenticate) {
-      
-      
-      
-      newValue.Append('\n');
+      s.Append('\n');
     } else {
-      
-      newValue.AppendLiteral(", ");
+      s.AppendLiteral(", ");
     }
-  }
+  };
 
-  newValue.Append(value);
   if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
     MOZ_ASSERT(variety == eVarietyResponse);
     entry->variety = eVarietyResponseNetOriginal;
     
     
     nsCString headerNameOriginal = entry->headerNameOriginal;
-    nsresult rv = SetHeader_internal(header, headerNameOriginal, newValue,
-                                     eVarietyResponse);
-    if (NS_FAILED(rv)) {
-      return rv;
+    nsCString newValue = entry->value;
+    if (!newValue.IsEmpty() || header == nsHttp::X_Frame_Options) {
+      AppendSeparator(newValue);
     }
-  } else {
-    entry->value = newValue;
-    entry->variety = variety;
+    newValue.Append(value);
+    return SetHeader_internal(header, headerNameOriginal, newValue,
+                              eVarietyResponse);
   }
+
+  
+  if (!entry->value.IsEmpty() || header == nsHttp::X_Frame_Options) {
+    AppendSeparator(entry->value);
+  }
+  entry->value.Append(value);
+  entry->variety = variety;
   return NS_OK;
 }
 
