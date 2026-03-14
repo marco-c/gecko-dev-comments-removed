@@ -732,7 +732,7 @@ nsresult nsHttpConnectionMgr::RemoveIdleConnection(nsHttpConnection* conn) {
 }
 
 HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnectionByHashKey(
-    ConnectionEntry* ent, const nsCString& key, bool justKidding, bool aNoHttp2,
+    ConnectionEntry* ent, HashNumber key, bool justKidding, bool aNoHttp2,
     bool aNoHttp3) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(!aNoHttp2 || !aNoHttp3);
@@ -782,16 +782,15 @@ HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnectionByHashKey(
     }
     if (couldJoin) {
       LOG(
-          ("FindCoalescableConnectionByHashKey() found match conn=%p key=%s "
-           "newCI=%s matchedCI=%s join ok\n",
-           potentialMatch.get(), key.get(), ci->HashKey().get(),
+          ("FindCoalescableConnectionByHashKey() found match conn=%p "
+           "key=%" PRIu32 " newCI=%s matchedCI=%s join ok\n",
+           potentialMatch.get(), key, ci->HashKey().get(),
            potentialMatch->ConnectionInfo()->HashKey().get()));
       return potentialMatch.get();
     }
-    LOG(
-        ("FindCoalescableConnectionByHashKey() found match conn=%p key=%s "
-         "newCI=%s matchedCI=%s join failed\n",
-         potentialMatch.get(), key.get(), ci->HashKey().get(),
+    LOG(("FindCoalescableConnectionByHashKey() found match conn=%p key=%" PRIu32
+         " newCI=%s matchedCI=%s join failed\n",
+         potentialMatch.get(), key, ci->HashKey().get(),
          potentialMatch->ConnectionInfo()->HashKey().get()));
 
     ++j;  
@@ -820,8 +819,8 @@ HttpConnectionBase* nsHttpConnectionMgr::FindCoalescableConnection(
   HttpConnectionBase* conn = FindCoalescableConnectionByHashKey(
       ent, ent->OriginFrameHashKey(), justKidding, aNoHttp2, aNoHttp3);
   if (conn) {
-    LOG(("FindCoalescableConnection(%s) match conn %p on frame key %s\n",
-         ci->HashKey().get(), conn, ent->OriginFrameHashKey().get()));
+    LOG(("FindCoalescableConnection(%s) match conn %p on frame key %" PRIu32,
+         ci->HashKey().get(), conn, ent->OriginFrameHashKey()));
     return conn;
   }
 
@@ -932,10 +931,11 @@ void nsHttpConnectionMgr::UpdateCoalescingForNewConn(
 
   uint32_t keyLen = ent->mCoalescingKeys.Length();
   for (uint32_t i = 0; i < keyLen; ++i) {
-    LOG((
-        "UpdateCoalescingForNewConn() registering newConn %p %s under key %s\n",
-        newConn, newConn->ConnectionInfo()->HashKey().get(),
-        ent->mCoalescingKeys[i].get()));
+    LOG(
+        ("UpdateCoalescingForNewConn() registering newConn %p %s under key "
+         "%" PRIu32 "\n",
+         newConn, newConn->ConnectionInfo()->HashKey().get(),
+         ent->mCoalescingKeys[i]));
 
     mCoalescingHash
         .LookupOrInsertWith(
@@ -1255,16 +1255,15 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(nsHttpConnectionInfo* ci) {
 bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
                                                   uint32_t caps) {
   nsHttpConnectionInfo* ci = ent->mConnInfo;
-  uint32_t totalCount = ent->TotalActiveConnections();
-
-  if (ci->IsHttp3() || ci->IsHttp3ProxyConnection()) {
-    if (ci->GetWebTransport()) {
-      
-      return false;
-    }
-    return totalCount > 0;
+  if (ci->GetWebTransport()) {
+    
+    return false;
+  }
+  if (ent->HasActiveH3Connection()) {
+    return true;
   }
 
+  uint32_t totalCount = ent->TotalActiveConnections();
   uint32_t maxPersistConns = MaxPersistConnections(ent);
 
   LOG(
@@ -2141,14 +2140,9 @@ HttpConnectionBase* nsHttpConnectionMgr::GetH2orH3ActiveConn(
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent);
 
-  bool isHttp3 = ent->IsHttp3() || ent->IsHttp3ProxyConnection();
-  
-  
-  if ((!aNoHttp3 && isHttp3) || (!aNoHttp2 && !isHttp3)) {
-    HttpConnectionBase* conn = ent->GetH2orH3ActiveConn();
-    if (conn) {
-      return conn;
-    }
+  HttpConnectionBase* conn = ent->GetH2orH3ActiveConn(aNoHttp2, aNoHttp3);
+  if (conn) {
+    return conn;
   }
 
   nsHttpConnectionInfo* ci = ent->mConnInfo;
@@ -3718,15 +3712,15 @@ void nsHttpConnectionMgr::RegisterOriginCoalescingKey(HttpConnectionBase* conn,
     return;
   }
 
-  nsAutoCString newKey;
-  nsHttpConnectionInfo::BuildOriginFrameHashKey(newKey, ci, host, port);
+  HashNumber newKey =
+      nsHttpConnectionInfo::BuildOriginFrameHashKey(ci, host, port);
   mCoalescingHash.GetOrInsertNew(newKey, 1)->AppendElement(
       do_GetWeakReference(static_cast<nsISupportsWeakReference*>(conn)));
 
   LOG(
       ("nsHttpConnectionMgr::RegisterOriginCoalescingKey "
-       "Established New Coalescing Key %s to %p %s\n",
-       newKey.get(), conn, ci->HashKey().get()));
+       "Established New Coalescing Key %" PRIu32 " to %p %s\n",
+       newKey, conn, ci->HashKey().get()));
 }
 
 bool nsHttpConnectionMgr::GetConnectionData(nsTArray<HttpRetParams>* aArg) {
