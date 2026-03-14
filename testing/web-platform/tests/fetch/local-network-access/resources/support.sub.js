@@ -1,7 +1,4 @@
 
-
-
-
 const SERVER_PORTS = {
   "http": {
     "loopback": {{ports[http][0]}},
@@ -253,3 +250,11 @@ async function navigateTest(t, {source, target, expected}) {
 
   assert_equals(result, expected);
 }
+
+const WebsocketTestResult = {
+  SUCCESS: 'open',
+
+  
+  
+  FAILURE: 'close: code 1006',
+};
