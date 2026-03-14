@@ -76,6 +76,7 @@ pub unsafe extern "C" fn jxl_decoder_process_data(
     let mut data_slice = if unsafe { (*data).is_null() } {
         &[]
     } else {
+        
         unsafe { slice::from_raw_parts(*data, *data_len) }
     };
 
