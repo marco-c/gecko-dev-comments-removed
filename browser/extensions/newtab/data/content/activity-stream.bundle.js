@@ -4953,6 +4953,8 @@ ErrorBoundary.defaultProps = {
 
 
 
+
+const PREF_NOVA_ENABLED = "nova.enabled";
 class _CollapsibleSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -5037,8 +5039,13 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     const hasBeenUpdatedPreviously = this.props.Prefs.values["discoverystream.topicSelection.hasBeenUpdatedPreviously"];
     const selectedTopics = this.props.Prefs.values["discoverystream.topicSelection.selectedTopics"];
     const topicsHaveBeenPreviouslySet = hasBeenUpdatedPreviously || selectedTopics;
+    
+    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
     return external_React_default().createElement("section", {
-      className: `collapsible-section ${this.props.className}${active ? " active" : ""}`
+      className: `
+          ${novaEnabled ? "" : "collapsible-section"}
+          ${this.props.className}
+          ${active ? " active" : ""}`
       
       ,
       "data-section-id": id
@@ -16737,6 +16744,7 @@ const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
 const Base_PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
 
+const Base_PREF_NOVA_ENABLED = "nova.enabled";
 
 
 function Base_debounce(func, wait) {
@@ -17314,6 +17322,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       customizeMenuVisible
     } = App;
     const prefs = props.Prefs.values;
+
+    
+    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
@@ -17383,6 +17394,61 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     
     const shouldShowDownloadHighlight = this.state.showDownloadHighlightOverride ?? this.shouldShowOMCHighlight("DownloadMobilePromoHighlight");
+
+    
+    
+    
+    
+    
+    if (novaEnabled) {
+      
+      
+      
+      const logoShouldBeCentered = false;
+      return external_React_default().createElement("div", null, external_React_default().createElement("div", {
+        className: "container nova-enabled"
+      }, external_React_default().createElement("div", {
+        className: "sidebar-inline-start"
+      }, !logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null))), external_React_default().createElement("div", {
+        className: "content"
+      }, logoShouldBeCentered && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Logo, null)), prefs.showSearch && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Search_Search, Base_extends({
+        showLogo: false
+      }, props.Search))), isDiscoveryStream && external_React_default().createElement(ErrorBoundary, {
+        className: "borderless-error"
+      }, external_React_default().createElement(DiscoveryStreamBase, {
+        locale: props.App.locale,
+        firstVisibleTimestamp: this.state.firstVisibleTimestamp,
+        placeholder: this.isSpocsOnDemandExpired
+      }))), external_React_default().createElement("div", {
+        className: "sidebar-inline-end"
+      }, weatherEnabled && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null)))), external_React_default().createElement("menu", {
+        className: "personalizeButtonWrapper"
+      }, external_React_default().createElement(CustomizeMenu, {
+        onClose: this.closeCustomizationMenu,
+        onOpen: this.openCustomizationMenu,
+        openPreferences: this.openPreferences,
+        setPref: this.setPref,
+        enabledSections: enabledSections,
+        enabledWidgets: enabledWidgets,
+        wallpapersEnabled: wallpapersEnabled,
+        activeWallpaper: activeWallpaper,
+        pocketRegion: pocketRegion,
+        mayHaveTopicSections: mayHavePersonalizedTopicSections,
+        mayHaveInferredPersonalization: mayHaveInferredPersonalization,
+        mayHaveWeather: mayHaveWeather,
+        mayHaveWidgets: mayHaveWidgets,
+        mayHaveTimerWidget: mayHaveTimerWidget,
+        mayHaveListsWidget: mayHaveListsWidget,
+        mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
+        weatherDisplay: prefs["weather.display"],
+        showing: customizeMenuVisible,
+        toggleSectionsMgmtPanel: this.toggleSectionsMgmtPanel,
+        showSectionsMgmtPanel: this.state.showSectionsMgmtPanel,
+        showWidgetMgmtPanel: this.state.showWidgetMgmtPanel
+      })));
+    }
+
+    
     return external_React_default().createElement("div", {
       className: featureClassName
     }, external_React_default().createElement("div", {
