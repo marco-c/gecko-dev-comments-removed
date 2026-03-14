@@ -3100,7 +3100,7 @@ void HTMLInputElement::RadioSetChecked(bool aNotify, bool aUpdateOtherElement) {
     
     
     VisitGroup([](HTMLInputElement* aRadio) {
-      aRadio->SetCheckedInternal(false, true);
+      aRadio->SetCheckedInternal(false, true, false);
       return true;
     });
   }
@@ -3207,7 +3207,8 @@ void HTMLInputElement::UpdateIndeterminateState(bool aNotify) {
   SetStates(ElementState::INDETERMINATE, indeterminate, aNotify);
 }
 
-void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
+void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify,
+                                          bool aUpdateRadioGroup) {
   
   mChecked = aChecked;
 
@@ -3223,7 +3224,7 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
 
   
   
-  if (mType == FormControlType::InputRadio) {
+  if (mType == FormControlType::InputRadio && aUpdateRadioGroup) {
     UpdateRadioGroupState();
   }
 }

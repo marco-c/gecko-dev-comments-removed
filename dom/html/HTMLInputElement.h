@@ -1025,7 +1025,10 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  void SetCheckedInternal(bool aValue, bool aNotify);
+
+
+  void SetCheckedInternal(bool aChecked, bool aNotify,
+                          bool aUpdateRadioGroup = true);
 
   void RadioSetChecked(bool aNotify, bool aUpdateOtherElement);
   void SetCheckedChanged(bool aCheckedChanged);
