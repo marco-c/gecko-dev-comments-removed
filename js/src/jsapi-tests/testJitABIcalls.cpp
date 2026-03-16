@@ -485,7 +485,7 @@ IntTypeOf_t<Type> ConvertToInt(Type v) {
 
 
 template <typename... Args, typename Int, Int... Val>
-NO_ARGS_CHECKS bool CheckArgsEqual(JSAPIRuntimeTest* instance, int lineno,
+NO_ARGS_CHECKS bool CheckArgsEqual(jsapitest::RuntimeTest* instance, int lineno,
                                    std::integer_sequence<Int, Val...>,
                                    Args... args) {
   return (instance->checkEqual(ConvertToInt<Args>(args), IntTypeOf_t<Args>(Val),
@@ -529,7 +529,7 @@ struct DefineCheckArgs;
 
 template <typename Res, typename... Args>
 struct DefineCheckArgs<Res (*)(Args...)> {
-  void set_instance(JSAPIRuntimeTest* instance, bool* reportTo) {
+  void set_instance(jsapitest::RuntimeTest* instance, bool* reportTo) {
     MOZ_ASSERT((!instance_) != (!instance));
     instance_ = instance;
     MOZ_ASSERT((!reportTo_) != (!reportTo));
@@ -663,12 +663,12 @@ struct DefineCheckArgs<Res (*)(Args...)> {
   
   
   
-  static JSAPIRuntimeTest* instance_;
+  static jsapitest::RuntimeTest* instance_;
   static bool* reportTo_;
 };
 
 template <typename Res, typename... Args>
-JSAPIRuntimeTest* DefineCheckArgs<Res (*)(Args...)>::instance_ = nullptr;
+jsapitest::RuntimeTest* DefineCheckArgs<Res (*)(Args...)>::instance_ = nullptr;
 
 template <typename Res, typename... Args>
 bool* DefineCheckArgs<Res (*)(Args...)>::reportTo_ = nullptr;
@@ -682,7 +682,8 @@ bool* DefineCheckArgs<Res (*)(Args...)>::reportTo_ = nullptr;
 
 
 template <typename Sig>
-class JitABICall final : public JSAPIRuntimeTest, public DefineCheckArgs<Sig> {
+class JitABICall final : public jsapitest::RuntimeTest,
+                         public DefineCheckArgs<Sig> {
  public:
   explicit JitABICall(const char* name) : name_(name) { reuseGlobal = true; }
   virtual const char* name() override { return name_; }

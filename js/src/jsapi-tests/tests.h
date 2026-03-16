@@ -21,49 +21,56 @@
 #include "js/Vector.h"
 #include "vm/JSContext.h"
 
+namespace jsapitest {
 
-class JSAPITestString {
+
+class String {
   js::Vector<char, 0, js::SystemAllocPolicy> chars;
 
  public:
-  JSAPITestString() {}
-  explicit JSAPITestString(const char* s) { *this += s; }
-  JSAPITestString(const JSAPITestString& s) { *this += s; }
+  String() {}
+  explicit String(const char* s) { *this += s; }
+  String(const String& s) { *this += s; }
 
   const char* begin() const { return chars.begin(); }
   const char* end() const { return chars.end(); }
   size_t length() const { return chars.length(); }
   void clear() { chars.clearAndFree(); }
 
-  JSAPITestString& operator+=(const char* s);
-  JSAPITestString& operator+=(const JSAPITestString& s);
+  String& operator+=(const char* s);
+  String& operator+=(const String& s);
 };
 
-JSAPITestString operator+(const JSAPITestString& a, const char* b);
-JSAPITestString operator+(const JSAPITestString& a, const JSAPITestString& b);
+}  
 
-class JSAPITest {
+jsapitest::String operator+(const jsapitest::String& a, const char* b);
+jsapitest::String operator+(const jsapitest::String& a,
+                            const jsapitest::String& b);
+
+namespace jsapitest {
+
+class TestBase {
  public:
   bool knownFail;
-  JSAPITestString msgs;
+  String msgs;
 
-  JSAPITest() : knownFail(false) {}
+  TestBase() : knownFail(false) {}
 
-  virtual ~JSAPITest() {}
+  virtual ~TestBase() {}
 
   virtual const char* name() = 0;
 
-  virtual void maybeAppendException(JSAPITestString& message) {}
+  virtual void maybeAppendException(String& message) {}
 
-  bool fail(const JSAPITestString& msg = JSAPITestString(),
-            const char* filename = "-", int lineno = 0);
+  bool fail(const String& msg = String(), const char* filename = "-",
+            int lineno = 0);
 
-  JSAPITestString messages() const { return msgs; }
+  String messages() const { return msgs; }
 };
 
-class JSAPIRuntimeTest : public JSAPITest {
+class RuntimeTest : public TestBase {
  public:
-  JSAPIRuntimeTest* next = nullptr;
+  RuntimeTest* next = nullptr;
 
   JSContext* cx;
   JS::PersistentRootedObject global;
@@ -74,9 +81,9 @@ class JSAPIRuntimeTest : public JSAPITest {
   
   bool reuseGlobal;
 
-  JSAPIRuntimeTest();
+  RuntimeTest();
 
-  virtual ~JSAPIRuntimeTest();
+  virtual ~RuntimeTest();
 
   
   bool init(JSContext* maybeReusedContext);
@@ -117,19 +124,19 @@ class JSAPIRuntimeTest : public JSAPITest {
   bool evaluate(const char* utf8, const char* filename, int lineno,
                 JS::MutableHandleValue vp);
 
-  JSAPITestString jsvalToSource(JS::HandleValue v);
+  String jsvalToSource(JS::HandleValue v);
 
-  JSAPITestString toSource(char c);
-  JSAPITestString toSource(long v);
-  JSAPITestString toSource(unsigned long v);
-  JSAPITestString toSource(long long v);
-  JSAPITestString toSource(unsigned long long v);
-  JSAPITestString toSource(double d);
-  JSAPITestString toSource(unsigned int v);
-  JSAPITestString toSource(int v);
-  JSAPITestString toSource(bool v);
-  JSAPITestString toSource(JS::RegExpFlags flags);
-  JSAPITestString toSource(JSAtom* v);
+  String toSource(char c);
+  String toSource(long v);
+  String toSource(unsigned long v);
+  String toSource(long long v);
+  String toSource(unsigned long long v);
+  String toSource(double d);
+  String toSource(unsigned int v);
+  String toSource(int v);
+  String toSource(bool v);
+  String toSource(JS::RegExpFlags flags);
+  String toSource(JSAtom* v);
 
   
   
@@ -149,7 +156,7 @@ class JSAPIRuntimeTest : public JSAPITest {
       return true;
     }
 
-    fail(JSAPITestString("CHECK_EQUAL failed: expected (") + expectedExpr +
+    fail(String("CHECK_EQUAL failed: expected (") + expectedExpr +
              ") = " + toSource(expected) + ", got (" + actualExpr +
              ") = " + toSource(actual),
          filename, lineno);
@@ -171,8 +178,8 @@ class JSAPIRuntimeTest : public JSAPITest {
       return true;
     }
 
-    fail(JSAPITestString("CHECK_NULL failed: expected nullptr, got (") +
-             actualExpr + ") = " + toSource(actual),
+    fail(String("CHECK_NULL failed: expected nullptr, got (") + actualExpr +
+             ") = " + toSource(actual),
          filename, lineno);
     return false;
   }
@@ -196,15 +203,15 @@ class JSAPIRuntimeTest : public JSAPITest {
     }                                                              \
   } while (false)
 
-#define CHECK(expr)                                                  \
-  do {                                                               \
-    if (!(expr)) {                                                   \
-      return fail(JSAPITestString("CHECK failed: " #expr), __FILE__, \
-                  __LINE__);                                         \
-    }                                                                \
+#define CHECK(expr)                                                    \
+  do {                                                                 \
+    if (!(expr)) {                                                     \
+      return fail(jsapitest::String("CHECK failed: " #expr), __FILE__, \
+                  __LINE__);                                           \
+    }                                                                  \
   } while (false)
 
-  void maybeAppendException(JSAPITestString& message) override;
+  void maybeAppendException(String& message) override;
 
   static const JSClass* basicGlobalClass();
 
@@ -222,13 +229,13 @@ class JSAPIRuntimeTest : public JSAPITest {
   virtual JSObject* createGlobal(JSPrincipals* principals = nullptr);
 };
 
-class JSAPIFrontendTest : public JSAPITest {
+class FrontendTest : public TestBase {
  public:
-  JSAPIFrontendTest* next = nullptr;
+  FrontendTest* next = nullptr;
 
-  JSAPIFrontendTest();
+  FrontendTest();
 
-  virtual ~JSAPIFrontendTest() {}
+  virtual ~FrontendTest() {}
 
   virtual bool init() { return true; }
   virtual void uninit() {}
@@ -236,8 +243,10 @@ class JSAPIFrontendTest : public JSAPITest {
   virtual bool run() = 0;
 };
 
+}  
+
 #define BEGIN_TEST_WITH_ATTRIBUTES_AND_EXTRA(testname, attrs, extra) \
-  class cls_##testname : public JSAPIRuntimeTest {                   \
+  class cls_##testname : public jsapitest::RuntimeTest {             \
    public:                                                           \
     virtual const char* name() override { return #testname; }        \
     extra virtual bool run(JS::HandleObject global) override attrs
@@ -248,7 +257,7 @@ class JSAPIFrontendTest : public JSAPITest {
 #define BEGIN_TEST(testname) BEGIN_TEST_WITH_ATTRIBUTES(testname, )
 
 #define BEGIN_FRONTEND_TEST_WITH_ATTRIBUTES_AND_EXTRA(testname, attrs, extra) \
-  class cls_##testname : public JSAPIFrontendTest {                           \
+  class cls_##testname : public jsapitest::FrontendTest {                     \
    public:                                                                    \
     virtual const char* name() override { return #testname; }                 \
     extra virtual bool run() override attrs
@@ -261,8 +270,7 @@ class JSAPIFrontendTest : public JSAPITest {
 
 #define BEGIN_REUSABLE_TEST(testname)   \
   BEGIN_TEST_WITH_ATTRIBUTES_AND_EXTRA( \
-      testname, ,                       \
-      cls_##testname() : JSAPIRuntimeTest() { reuseGlobal = true; })
+      testname, , cls_##testname() : RuntimeTest() { reuseGlobal = true; })
 
 #define END_TEST(testname) \
   }                        \

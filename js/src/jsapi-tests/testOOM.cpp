@@ -103,7 +103,7 @@ BEGIN_TEST(testHelperThreadOOM) {
 }
 
 bool init() override {
-  JSAPIRuntimeTest::uninit();       
+  RuntimeTest::uninit();            
   js::DestroyHelperThreadsState();  
   return true;
 }
