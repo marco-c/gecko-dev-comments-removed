@@ -8,6 +8,8 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
@@ -176,7 +178,7 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
     
     
     
-    if (rhs > 0 && mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
+    if (rhs > 0 && std::has_single_bit(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(rhs);
       auto* lir =
           new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);

@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/MathAlgorithms.h"
-
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineJIT.h"
@@ -25,8 +23,6 @@
 
 #include "jit/MacroAssembler-inl.h"
 #include "vm/JSScript-inl.h"
-
-using mozilla::IsPowerOfTwo;
 
 using namespace js;
 using namespace js::jit;

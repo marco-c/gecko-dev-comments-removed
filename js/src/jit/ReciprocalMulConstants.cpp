@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"
 
+#include <bit>
 #include <limits>
 
 using namespace js::jit;
@@ -36,7 +37,7 @@ static auto ComputeDivisionConstants(UintT d, int maxLog) {
 
   
   MOZ_ASSERT(UintT_Twice(d) < (UintT_Twice(1) << maxLog) &&
-             !mozilla::IsPowerOfTwo(d));
+             !std::has_single_bit(d));
 
   
   
