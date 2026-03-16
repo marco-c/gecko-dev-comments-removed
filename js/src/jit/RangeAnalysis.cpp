@@ -3591,7 +3591,7 @@ static bool DoesMaskMatchRange(int32_t mask, const Range& range) {
     
     
     
-    int bits = 1 + FloorLog2(range.upper());
+    int bits = 1 + FloorLog2(uint32_t(range.upper()));
     uint32_t maskNeeded = (bits == 32) ? 0xffffffff : (uint32_t(1) << bits) - 1;
     if ((mask & maskNeeded) == maskNeeded) {
       return true;
