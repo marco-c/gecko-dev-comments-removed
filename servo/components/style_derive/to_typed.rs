@@ -56,6 +56,12 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
@@ -234,6 +240,10 @@ fn derive_variant_arm(
 
 
 
+
+
+
+
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
@@ -260,7 +270,15 @@ fn derive_variant_fields_expr(
     
     
     
-    if !css_field_attrs.iterable && iter.peek().is_none() {
+    if iter.peek().is_some() {
+        return quote! { Err(()) };
+    }
+
+    
+    if !css_field_attrs.iterable {
+        
+        
+        
         let ty = &first.ast().ty;
         cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToTyped));
 
@@ -268,10 +286,109 @@ fn derive_variant_fields_expr(
     }
 
     
+    derive_single_field_expr(first, css_field_attrs, where_clause)
+}
+
+
+
+
+
+
+
+
+
+
+
+fn derive_single_field_expr(
+    field: &BindingInfo,
+    css_field_attrs: CssFieldAttrs,
+    where_clause: &mut Option<WhereClause>,
+) -> TokenStream {
+    assert!(css_field_attrs.iterable);
+
     
-    quote! {
-        Err(())
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for item_ty in field_generic_arguments(field) {
+        cg::add_predicate(where_clause, parse_quote!(#item_ty: style_traits::ToTyped));
     }
+
+    if let Some(if_empty) = css_field_attrs.if_empty {
+        quote! {{
+            let mut iter = #field.iter().peekable();
+            if iter.peek().is_none() {
+                dest.push(style_traits::TypedValue::Keyword(
+                    style_traits::KeywordValue(style_traits::CssString::from(#if_empty)),
+                ));
+            } else {
+                for item in iter {
+                    style_traits::ToTyped::to_typed(&item, dest)?;
+                }
+            }
+            Ok(())
+        }}
+    } else {
+        quote! {{
+            for item in #field.iter() {
+                style_traits::ToTyped::to_typed(&item, dest)?;
+            }
+            Ok(())
+        }}
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub(crate) fn field_generic_arguments(field: &BindingInfo) -> Vec<syn::Type> {
+    use syn::{GenericArgument, PathArguments, Type};
+
+    let ty = &field.ast().ty;
+
+    let Type::Path(type_path) = ty else {
+        return vec![];
+    };
+    let Some(seg) = type_path.path.segments.last() else {
+        return vec![];
+    };
+    let PathArguments::AngleBracketed(args) = &seg.arguments else {
+        return vec![];
+    };
+
+    let mut result = Vec::new();
+    for arg in &args.args {
+        let GenericArgument::Type(arg_ty) = arg else {
+            continue;
+        };
+
+        
+        match arg_ty {
+            Type::Array(arr) => result.push((*arr.elem).clone()),
+            _ => result.push(arg_ty.clone()),
+        }
+    }
+    result
 }
 
 #[derive(Default, FromDeriveInput)]
