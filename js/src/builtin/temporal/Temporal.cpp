@@ -590,7 +590,7 @@ static double FractionToDoubleSlow(const T& numerator, const T& denominator) {
     
 
     
-    uint32_t extraBitsCount = 32 - std::countl_zero(ignoredBits);
+    uint32_t extraBitsCount = std::bit_width(ignoredBits);
     MOZ_ASSERT(extraBitsCount > 0);
 
     
