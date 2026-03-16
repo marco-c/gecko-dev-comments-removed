@@ -8,8 +8,8 @@
 #define vm_Float16_h
 
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/MathAlgorithms.h"
 
+#include <bit>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -158,8 +158,8 @@ inline double half2float_impl(unsigned int value) {
     
     
     if (abs < 0x400) {
-      
-      uint32 shift = mozilla::CountLeadingZeroes32(uint32_t(abs)) - 21;
+      constexpr auto minLeadingZeroes = std::countl_zero(0x400u);
+      uint32 shift = std::countl_zero(uint32_t(abs)) - minLeadingZeroes;
       abs <<= shift;
       hi -= shift * 0x100000;
     }
@@ -186,8 +186,8 @@ inline float half2float_impl(unsigned int value) {
     
     
     if (abs < 0x400) {
-      
-      uint32 shift = mozilla::CountLeadingZeroes32(uint32_t(abs)) - 21;
+      constexpr auto minLeadingZeroes = std::countl_zero(0x400u);
+      uint32 shift = std::countl_zero(uint32_t(abs)) - minLeadingZeroes;
       abs <<= shift;
       fbits -= shift * 0x800000;
     }

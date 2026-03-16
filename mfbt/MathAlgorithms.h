@@ -59,51 +59,6 @@ inline long double Abs<long double>(const long double aLongDouble) {
   return std::fabs(aLongDouble);
 }
 
-}  
-
-namespace mozilla {
-
-namespace detail {
-
-
-
-#if defined(__clang__) || defined(__GNUC__)
-
-#  if defined(__clang__)
-#    if !__has_builtin(__builtin_ctz) || !__has_builtin(__builtin_clz)
-#      error "A clang providing __builtin_c[lt]z is required to build"
-#    endif
-#  else
-
-#  endif
-
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
-  return static_cast<uint_fast8_t>(__builtin_clz(aValue));
-}
-
-#else
-#  error "Implement these!"
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
-#endif
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountLeadingZeroes32(aValue);
-}
-
 namespace detail {
 
 template <typename T, size_t Size = sizeof(T)>
@@ -113,8 +68,7 @@ template <typename T>
 class CeilingLog2<T, 4> {
  public:
   static constexpr uint_fast8_t compute(const T aValue) {
-    
-    return aValue <= 1 ? 0u : 32u - CountLeadingZeroes32(aValue - 1);
+    return aValue == 0 ? 0u : 32u - uint_fast8_t(std::countl_zero(aValue - 1));
   }
 };
 
@@ -158,7 +112,7 @@ constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
   MOZ_ASSERT(aValue != 0);
   
   if constexpr (sizeof(T) <= 4) {
-    return 31u - CountLeadingZeroes32(aValue);
+    return 31u - uint_fast8_t(std::countl_zero(static_cast<uint32_t>(aValue)));
   }
   
   if constexpr (sizeof(T) == 8) {
