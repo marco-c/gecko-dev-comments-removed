@@ -90,8 +90,6 @@ fn generate_bindings() {
         
         
         .opaque_type("std::string")
-        .opaque_type("std::basic_string")
-        .opaque_type("std::pair")
         .opaque_type("std::unique_ptr")
         .opaque_type("mozilla::Maybe")
         .opaque_type("mozilla::MallocAllocPolicy")
