@@ -115,8 +115,19 @@ bool ModuleLoader::ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 bool ModuleLoader::loadRootModule(JSContext* cx, HandleString path) {
+  Rooted<JSAtom*> specifier(cx, AtomizeString(cx, path));
+  if (!specifier) {
+    return false;
+  }
+  RootedObject moduleRequest(
+      cx, ModuleRequestObject::create(cx, specifier, JS::ModuleType::JavaScript,
+                                      ImportPhase::Evaluation));
+  if (!moduleRequest) {
+    return false;
+  }
+
   RootedValue rval(cx);
-  if (!loadAndExecute(cx, path, nullptr, &rval)) {
+  if (!loadAndExecute(cx, path, moduleRequest, &rval)) {
     return false;
   }
 
@@ -486,9 +497,15 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
     return nullptr;
   }
 
-  JS::ModuleType moduleType = JS::ModuleType::JavaScript;
-  if (moduleRequestArg) {
-    moduleType = moduleRequestArg->as<ModuleRequestObject>().moduleType();
+  JS::ModuleType moduleType =
+      moduleRequestArg->as<ModuleRequestObject>().moduleType();
+  if (moduleType == JS::ModuleType::Unknown ||
+      moduleType == JS::ModuleType::CSS) {
+    
+    
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_MODULE_TYPE);
+    return nullptr;
   }
 
   RootedObject module(cx);
@@ -503,6 +520,33 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
   UniqueChars filename = JS_EncodeStringToUTF8(cx, path);
   if (!filename) {
     return nullptr;
+  }
+
+  if (moduleType == JS::ModuleType::Bytes) {
+    RootedString resolvedPath(cx, ResolvePath(cx, path, RootRelative));
+    if (!resolvedPath) {
+      return nullptr;
+    }
+
+    RootedObject bytesArray(cx, FileAsTypedArray(cx, resolvedPath));
+    if (!bytesArray) {
+      return nullptr;
+    }
+
+    
+    
+    
+    module =
+        JS::CreateDefaultExportSyntheticModule(cx, ObjectValue(*bytesArray));
+    if (!module) {
+      return nullptr;
+    }
+
+    if (!addModuleToRegistry(cx, moduleType, path, module)) {
+      return nullptr;
+    }
+
+    return module;
   }
 
   JS::CompileOptions options(cx);
@@ -523,37 +567,24 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
     return nullptr;
   }
 
-  switch (moduleType) {
-    case JS::ModuleType::Unknown:
-    case JS::ModuleType::Bytes:
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_MODULE_TYPE);
+  if (moduleType == JS::ModuleType::JavaScript) {
+    module = JS::CompileModule(cx, options, srcBuf);
+    if (!module) {
       return nullptr;
-    case JS::ModuleType::JavaScript: {
-      module = JS::CompileModule(cx, options, srcBuf);
-      if (!module) {
-        return nullptr;
-      }
+    }
 
-      RootedObject info(cx, js::CreateScriptPrivate(cx, path));
-      if (!info) {
-        return nullptr;
-      }
-
-      JS::SetModulePrivate(module, ObjectValue(*info));
-    } break;
-    case JS::ModuleType::JSON:
-      module = JS::CompileJsonModule(cx, options, srcBuf);
-      if (!module) {
-        return nullptr;
-      }
-      break;
-    case JS::ModuleType::CSS:
-      
-      
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_MODULE_TYPE);
+    RootedObject info(cx, js::CreateScriptPrivate(cx, path));
+    if (!info) {
       return nullptr;
+    }
+
+    JS::SetModulePrivate(module, ObjectValue(*info));
+  } else {
+    MOZ_ASSERT(moduleType == JS::ModuleType::JSON);
+    module = JS::CompileJsonModule(cx, options, srcBuf);
+    if (!module) {
+      return nullptr;
+    }
   }
 
   if (!addModuleToRegistry(cx, moduleType, path, module)) {
