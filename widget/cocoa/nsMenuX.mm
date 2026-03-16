@@ -260,7 +260,7 @@ void nsMenuX::OnMenuClosed(dom::Element* aPopupElement) {
   }
 }
 
-void nsMenuX::AddMenuChild(MenuChild&& aChild) {
+void nsMenuX::AddMenuChild(const MenuChild& aChild) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   WillInsertChild(aChild);
@@ -286,7 +286,7 @@ void nsMenuX::AddMenuChild(MenuChild&& aChild) {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-void nsMenuX::InsertMenuChild(MenuChild&& aChild) {
+void nsMenuX::InsertMenuChild(const MenuChild& aChild) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   WillInsertChild(aChild);
@@ -807,7 +807,7 @@ void nsMenuX::RebuildMenu() {
   for (nsIContent* child = menuPopup->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     if (Maybe<MenuChild> menuChild = CreateMenuChild(child)) {
-      AddMenuChild(std::move(*menuChild));
+      AddMenuChild(*menuChild);
     }
   }  
 
@@ -853,7 +853,7 @@ void nsMenuX::RefreshMenuChildren(const MenuChild& aChildInserted) {
       RemoveMenuChild(*menuChild);
     }
     if (Maybe<MenuChild> menuChild = CreateMenuChild(child)) {
-      InsertMenuChild(std::move(*menuChild));
+      InsertMenuChild(*menuChild);
     }
   }
 
@@ -1224,7 +1224,7 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument,
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   if (popupContent && aContainer == popupContent) {
     if (Maybe<MenuChild> child = CreateMenuChild(aChild)) {
-      InsertMenuChild(std::move(*child));
+      InsertMenuChild(*child);
       
       
       
