@@ -7,6 +7,7 @@
 
 #include "js/CallAndConstruct.h"    
 #include "js/ColumnNumber.h"        
+#include "js/Conversions.h"         
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
