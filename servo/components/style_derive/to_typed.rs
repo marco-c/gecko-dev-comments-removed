@@ -62,6 +62,12 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
@@ -218,7 +224,7 @@ fn derive_variant_arm(
             Ok(())
         }
     } else if derive_fields {
-        derive_variant_fields_expr(bindings, where_clause)
+        derive_variant_fields_expr(bindings, where_clause, css_variant_attrs.comma)
     } else {
         
         
@@ -247,6 +253,7 @@ fn derive_variant_arm(
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
+    comma: bool,
 ) -> TokenStream {
     
     
@@ -286,8 +293,12 @@ fn derive_variant_fields_expr(
     }
 
     
-    derive_single_field_expr(first, css_field_attrs, where_clause)
+    derive_single_field_expr(first, css_field_attrs, where_clause, comma)
 }
+
+
+
+
 
 
 
@@ -303,6 +314,7 @@ fn derive_single_field_expr(
     field: &BindingInfo,
     css_field_attrs: CssFieldAttrs,
     where_clause: &mut Option<WhereClause>,
+    comma: bool,
 ) -> TokenStream {
     assert!(css_field_attrs.iterable);
 
@@ -320,8 +332,8 @@ fn derive_single_field_expr(
         cg::add_predicate(where_clause, parse_quote!(#item_ty: style_traits::ToTyped));
     }
 
-    if let Some(if_empty) = css_field_attrs.if_empty {
-        quote! {{
+    let expr = if let Some(if_empty) = css_field_attrs.if_empty {
+        quote! {
             let mut iter = #field.iter().peekable();
             if iter.peek().is_none() {
                 dest.push(style_traits::TypedValue::Keyword(
@@ -333,15 +345,22 @@ fn derive_single_field_expr(
                 }
             }
             Ok(())
-        }}
+        }
     } else {
-        quote! {{
+        quote! {
             for item in #field.iter() {
                 style_traits::ToTyped::to_typed(&item, dest)?;
             }
             Ok(())
-        }}
-    }
+        }
+    };
+
+    quote! {{
+        if !#comma && #field.len() > 1 {
+            return Err(());
+        }
+        #expr
+    }}
 }
 
 
