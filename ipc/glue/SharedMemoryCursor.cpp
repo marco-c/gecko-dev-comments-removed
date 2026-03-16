@@ -4,8 +4,6 @@
 
 
 
-#include <bit>
-
 #include "mozilla/MathAlgorithms.h"
 #include "nsDebug.h"
 #include "SharedMemoryCursor.h"
@@ -37,7 +35,7 @@ MutableHandle Cursor::TakeHandle() {
 }
 
 void Cursor::SetChunkSize(size_t aChunkSize) {
-  MOZ_ASSERT(std::has_single_bit(aChunkSize),
+  MOZ_ASSERT(IsPowerOfTwo(aChunkSize),
              "Cannot specify non power-of-two maximum chunk size");
   MOZ_ASSERT(aChunkSize >= SystemAllocationGranularity(),
              "Cannot specify a chunk size which is smaller than the system "

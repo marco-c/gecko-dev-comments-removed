@@ -20,7 +20,6 @@
 
 #include "mozilla/glean/XpcomMetrics.h"
 
-#include <bit>
 #include <math.h>
 
 using namespace mozilla;
@@ -641,8 +640,7 @@ TimeDuration TimerThread::ComputeAcceptableFiringDelay(
   
   
   constexpr int64_t timerDurationDivider = 8;
-  static_assert(
-      std::has_single_bit(static_cast<uint64_t>(timerDurationDivider)));
+  static_assert(IsPowerOfTwo(static_cast<uint64_t>(timerDurationDivider)));
   const TimeDuration tmp = timerDuration / timerDurationDivider;
   return std::clamp(tmp, minDelay, maxDelay);
 }

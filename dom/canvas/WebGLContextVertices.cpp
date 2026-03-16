@@ -3,8 +3,6 @@
 
 
 
-#include <bit>
-
 #include "GLContext.h"
 #include "WebGLBuffer.h"
 #include "WebGLContext.h"
@@ -237,7 +235,7 @@ CheckVertexAttribPointer(const bool isWebgl2,
       desc.byteStrideOrZero ? desc.byteStrideOrZero : calc.byteSize;
 
   
-  MOZ_ASSERT(std::has_single_bit(bytesPerType));
+  MOZ_ASSERT(IsPowerOfTwo(bytesPerType));
   const auto typeAlignmentMask = bytesPerType - 1;
 
   if (calc.byteStride & typeAlignmentMask ||

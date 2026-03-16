@@ -10,7 +10,6 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
-#include <bit>
 
 #include "builtin/Math.h"
 #include "jit/CompileInfo.h"
@@ -36,6 +35,7 @@ using namespace js::jit;
 using JS::GenericNaN;
 using JS::ToInt32;
 using mozilla::Abs;
+using mozilla::CountLeadingZeroes32;
 using mozilla::ExponentComponent;
 using mozilla::FloorLog2;
 using mozilla::IsNegativeZero;
@@ -886,6 +886,7 @@ Range* Range::or_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
   
   
   
+  
   if (lhs->lower() == lhs->upper()) {
     if (lhs->lower() == 0) {
       return new (alloc) Range(*rhs);
@@ -919,18 +920,17 @@ Range* Range::or_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     
     
     
-    upper = int32_t(UINT32_MAX >>
-                    std::min(std::countl_zero(uint32_t(lhs->upper())),
-                             std::countl_zero(uint32_t(rhs->upper()))));
+    upper = int32_t(UINT32_MAX >> std::min(CountLeadingZeroes32(lhs->upper()),
+                                           CountLeadingZeroes32(rhs->upper())));
   } else {
     
     if (lhs->upper() < 0) {
-      unsigned leadingOnes = std::countl_one(uint32_t(lhs->lower()));
+      unsigned leadingOnes = CountLeadingZeroes32(~lhs->lower());
       lower = std::max(lower, ~int32_t(UINT32_MAX >> leadingOnes));
       upper = -1;
     }
     if (rhs->upper() < 0) {
-      unsigned leadingOnes = std::countl_one(uint32_t(rhs->lower()));
+      unsigned leadingOnes = CountLeadingZeroes32(~rhs->lower());
       lower = std::max(lower, ~int32_t(UINT32_MAX >> leadingOnes));
       upper = -1;
     }
@@ -984,8 +984,8 @@ Range* Range::xor_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     
     
     
-    unsigned lhsLeadingZeros = std::countl_zero(uint32_t(lhsUpper));
-    unsigned rhsLeadingZeros = std::countl_zero(uint32_t(rhsUpper));
+    unsigned lhsLeadingZeros = CountLeadingZeroes32(lhsUpper);
+    unsigned rhsLeadingZeros = CountLeadingZeroes32(rhsUpper);
     upper = std::min(rhsUpper | int32_t(UINT32_MAX >> lhsLeadingZeros),
                      lhsUpper | int32_t(UINT32_MAX >> rhsLeadingZeros));
   }
@@ -3591,7 +3591,7 @@ static bool DoesMaskMatchRange(int32_t mask, const Range& range) {
     
     
     
-    int bits = 1 + FloorLog2(uint32_t(range.upper()));
+    int bits = 1 + FloorLog2(range.upper());
     uint32_t maskNeeded = (bits == 32) ? 0xffffffff : (uint32_t(1) << bits) - 1;
     if ((mask & maskNeeded) == maskNeeded) {
       return true;

@@ -4,9 +4,7 @@
 
 
 #include "jit/ShuffleAnalysis.h"
-
-#include <bit>
-
+#include "mozilla/MathAlgorithms.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "wasm/WasmFeatures.h"
@@ -382,7 +380,7 @@ static Maybe<SimdPermuteOp> TryZeroExtend(SimdConstant* control) {
   for (; i <= 4 && lanes[i] == int8_t(i); i++) {
   }
   
-  if (!std::has_single_bit(i) || lanes[i] < 16) {
+  if (!mozilla::IsPowerOfTwo(i) || lanes[i] < 16) {
     return Nothing();
   }
   MOZ_ASSERT(i > 0 && i <= 4);
@@ -392,7 +390,7 @@ static Maybe<SimdPermuteOp> TryZeroExtend(SimdConstant* control) {
   }
   
   
-  if (!std::has_single_bit(i)) {
+  if (!mozilla::IsPowerOfTwo(i)) {
     return Nothing();
   }
   MOZ_ASSERT(i > fromLen && i <= 8);

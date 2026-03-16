@@ -29,7 +29,6 @@
 
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
 #include <limits>
 
 namespace mozilla {
@@ -38,18 +37,30 @@ namespace mozilla {
 
 
 template <typename T>
-constexpr T FriendlyRoundUpPow2(T aInput) {
-  static_assert(!std::numeric_limits<T>::is_signed,
-                "FriendlyRoundUpPow2 does not accept signed types");
-
+T FriendlyRoundUpPow2(T aInput) {
   
   
   constexpr T max = T(1) << (sizeof(T) * CHAR_BIT - 1);
   if (aInput >= max) {
     return max;
   }
-  return std::bit_ceil(aInput);
+  return T(1) << CeilingLog2(aInput);
 }
+
+namespace detail {
+
+inline uint_fast8_t CountLeadingZeroes(uint32_t aValue) {
+  MOZ_ASSERT(aValue != 0);
+  return detail::CountLeadingZeroes32(aValue);
+}
+inline uint_fast8_t CountLeadingZeroes(uint64_t aValue) {
+  MOZ_ASSERT(aValue != 0);
+  return detail::CountLeadingZeroes64(aValue);
+}
+
+template <typename T>
+inline uint_fast8_t CountLeadingZeroes(T aValue) = delete;
+}  
 
 
 
@@ -60,15 +71,13 @@ constexpr T FriendlyRoundUpPow2(T aInput) {
 
 
 template <typename T>
-constexpr T RoundUpPow2Mask(T aInput) {
-  static_assert(!std::numeric_limits<T>::is_signed,
-                "RoundUpPow2Mask does not accept signed types");
-
+T RoundUpPow2Mask(T aInput) {
+  
   
   if (aInput == 0) {
     return 0;
   }
-  return T(-1) >> std::countl_zero(aInput);
+  return T(-1) >> detail::CountLeadingZeroes(aInput);
 }
 
 template <typename T>
@@ -102,8 +111,8 @@ class PowerOfTwoMask {
 
  public:
   
-  explicit constexpr PowerOfTwoMask(T aInput)
-      : mMask(RoundUpPow2Mask(aInput)) {}
+  
+  explicit PowerOfTwoMask(T aInput) : mMask(RoundUpPow2Mask(aInput)) {}
 
   
   
@@ -123,7 +132,7 @@ class PowerOfTwoMask {
   template <typename U>
   explicit constexpr PowerOfTwoMask(U aInput)
       : mMask(RoundUpPow2Mask(static_cast<T>(aInput))) {
-    static_assert(!std::numeric_limits<U>::is_signed,
+    static_assert(!std::numeric_limits<T>::is_signed,
                   "PowerOfTwoMask does not accept signed types");
     static_assert(sizeof(U) <= sizeof(T),
                   "PowerOfTwoMask does not accept bigger types");
@@ -183,7 +192,7 @@ class PowerOfTwoMask {
 
 template <typename T, T Mask>
 constexpr PowerOfTwoMask<T> MakePowerOfTwoMask() {
-  static_assert(Mask == T(-1) || std::has_single_bit(Mask + 1),
+  static_assert(Mask == T(-1) || IsPowerOfTwo(Mask + 1),
                 "MakePowerOfTwoMask<T, Mask>: Mask must be 2^N-1");
   using Trusted = typename PowerOfTwoMask<T>::Trusted;
   return PowerOfTwoMask<T>(Trusted{Mask});
@@ -199,15 +208,15 @@ class PowerOfTwo {
   
   
   
-  explicit constexpr PowerOfTwo(T aInput)
-      : mValue(FriendlyRoundUpPow2(aInput)) {}
+  
+  explicit PowerOfTwo(T aInput) : mValue(FriendlyRoundUpPow2(aInput)) {}
 
   
   
   template <typename U>
-  explicit constexpr PowerOfTwo(U aInput)
+  explicit PowerOfTwo(U aInput)
       : mValue(FriendlyRoundUpPow2(static_cast<T>(aInput))) {
-    static_assert(!std::numeric_limits<U>::is_signed,
+    static_assert(!std::numeric_limits<T>::is_signed,
                   "PowerOfTwo does not accept signed types");
     static_assert(sizeof(U) <= sizeof(T),
                   "PowerOfTwo does not accept bigger types");
@@ -275,7 +284,7 @@ class PowerOfTwo {
 
 template <typename T, T Value>
 constexpr PowerOfTwo<T> MakePowerOfTwo() {
-  static_assert(std::has_single_bit(Value),
+  static_assert(IsPowerOfTwo(Value),
                 "MakePowerOfTwo<T, Value>: Value must be 2^N");
   using Trusted = typename PowerOfTwo<T>::Trusted;
   return PowerOfTwo<T>(Trusted{Value});

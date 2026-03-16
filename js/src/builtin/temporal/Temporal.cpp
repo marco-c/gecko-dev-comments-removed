@@ -15,7 +15,6 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
-#include <bit>
 #include <cmath>
 #include <cstdlib>
 #include <iterator>
@@ -590,7 +589,7 @@ static double FractionToDoubleSlow(const T& numerator, const T& denominator) {
     
 
     
-    uint32_t extraBitsCount = std::bit_width(ignoredBits);
+    uint32_t extraBitsCount = 32 - mozilla::CountLeadingZeroes32(ignoredBits);
     MOZ_ASSERT(extraBitsCount > 0);
 
     
@@ -644,7 +643,7 @@ static double FractionToDoubleSlow(const T& numerator, const T& denominator) {
 
   
   
-  uint32_t significandZeros = std::countl_zero(significand);
+  uint32_t significandZeros = mozilla::CountLeadingZeroes64(significand);
   if (significandZeros < SignificandLeadingZeros) {
     uint32_t shift = SignificandLeadingZeros - significandZeros;
     significand >>= shift;

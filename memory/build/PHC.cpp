@@ -99,7 +99,6 @@
 #include <time.h>
 
 #include <algorithm>
-#include <bit>
 
 #ifdef XP_WIN
 #  include <process.h>
@@ -361,7 +360,7 @@ static const size_t kPhcPageSize =
 
 static const size_t kPhcAlign = 1024 * 1024;
 
-static_assert(std::has_single_bit(kPhcAlign));
+static_assert(IsPowerOfTwo(kPhcAlign));
 static_assert((kPhcAlign % kPhcPageSize) == 0);
 
 
@@ -404,7 +403,7 @@ static const Time kMaxTime = ~(Time(0));
 
 
 constexpr Delay Rnd64ToDelay(Delay aAvgDelay, uint64_t aRnd) {
-  MOZ_ASSERT(std::has_single_bit(aAvgDelay), "must be a power of two");
+  MOZ_ASSERT(IsPowerOfTwo(aAvgDelay), "must be a power of two");
 
   return (aRnd & (uint64_t(aAvgDelay) * 2 - 1)) + 1;
 }
@@ -1544,7 +1543,7 @@ void PHC::LogNoAlloc(size_t aReqSize, size_t aAlignment, Delay newAllocDelay)
 
 void* PHC::MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
                           size_t aAlignment, bool aZero) {
-  MOZ_ASSERT(std::has_single_bit(aAlignment));
+  MOZ_ASSERT(IsPowerOfTwo(aAlignment));
   if (!ShouldMakeNewAllocations()) {
     
     
@@ -1946,7 +1945,7 @@ inline void MozJemallocPHC::free(void* aPtr) { PageFree(Nothing(), aPtr); }
 MOZ_ALWAYS_INLINE static void* PageMemalign(const Maybe<arena_id_t>& aArenaId,
                                             size_t aAlignment,
                                             size_t aReqSize) {
-  MOZ_RELEASE_ASSERT(std::has_single_bit(aAlignment));
+  MOZ_RELEASE_ASSERT(IsPowerOfTwo(aAlignment));
 
   
   

@@ -9,8 +9,6 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
-
 #include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
@@ -532,7 +530,7 @@ void LIRGeneratorX64::lowerDivI64(MDiv* div) {
 
     
     
-    if (std::has_single_bit(mozilla::Abs(rhs))) {
+    if (mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
       LAllocation lhs = useRegisterAtStart(div->lhs());
 
@@ -563,7 +561,7 @@ void LIRGeneratorX64::lowerModI64(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     int64_t rhs = mod->rhs()->toConstant()->toInt64();
 
-    if (std::has_single_bit(mozilla::Abs(rhs))) {
+    if (mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
 
       auto* lir =
@@ -588,7 +586,7 @@ void LIRGeneratorX64::lowerUDivI64(MDiv* div) {
     
     uint64_t rhs = div->rhs()->toConstant()->toInt64();
 
-    if (std::has_single_bit(rhs)) {
+    if (mozilla::IsPowerOfTwo(rhs)) {
       int32_t shift = mozilla::FloorLog2(rhs);
 
       auto* lir = new (alloc()) LDivPowTwoI64(useRegisterAtStart(div->lhs()),
@@ -613,7 +611,7 @@ void LIRGeneratorX64::lowerUModI64(MMod* mod) {
     
     uint64_t rhs = mod->rhs()->toConstant()->toInt64();
 
-    if (std::has_single_bit(rhs)) {
+    if (mozilla::IsPowerOfTwo(rhs)) {
       int32_t shift = mozilla::FloorLog2(rhs);
 
       auto* lir =

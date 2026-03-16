@@ -1,16 +1,14 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/arm/CodeGenerator-arm.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
-
-#include <bit>
 
 #include "builtin/Number.h"
 #include "jit/CodeGenerator.h"
@@ -20,7 +18,7 @@
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
 #include "js/Conversions.h"
-#include "js/ScalarType.h"  // js::Scalar::Type
+#include "js/ScalarType.h"  
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
 #include "vm/Shape.h"
@@ -38,7 +36,7 @@ using mozilla::DebugOnly;
 using mozilla::FloorLog2;
 using mozilla::NegativeInfinity;
 
-// shared
+
 CodeGeneratorARM::CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph,
                                    MacroAssembler* masm,
                                    const wasm::CodeMetadata* wasmCodeMeta)
@@ -60,10 +58,10 @@ bool CodeGeneratorARM::generateOutOfLineCode() {
   }
 
   if (deoptLabel_.used()) {
-    // All non-table-based bailouts will go here.
+    
     masm.bind(&deoptLabel_);
 
-    // Push the frame size, so the handler can recover the IonScript.
+    
     masm.push(Imm32(frameSize()));
 
     TrampolinePtr handler = gen->jitRuntime()->getGenericBailoutHandler();
@@ -86,8 +84,8 @@ void CodeGeneratorARM::bailoutIf(Assembler::Condition condition,
   auto* ool = new (alloc()) LambdaOutOfLineCode(
       [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
-  // All bailout code is associated with the bytecodeSite of the block we are
-  // bailing out from.
+  
+  
   addOutOfLineCode(ool,
                    new (alloc()) BytecodeSite(tree, tree->script()->code()));
 
@@ -104,8 +102,8 @@ void CodeGeneratorARM::bailoutFrom(Label* label, LSnapshot* snapshot) {
   auto* ool = new (alloc()) LambdaOutOfLineCode(
       [=, this](OutOfLineCode& ool) { emitBailoutOOL(snapshot); });
 
-  // All bailout code is associated with the bytecodeSite of the block we are
-  // bailing out from.
+  
+  
   addOutOfLineCode(ool,
                    new (alloc()) BytecodeSite(tree, tree->script()->code()));
 
@@ -261,9 +259,9 @@ void CodeGenerator::visitMulI(LMulI* ins) {
                 !mul->canBeNegativeZero() && !mul->canOverflow());
 
   if (rhs->isConstant()) {
-    // Bailout when this condition is met.
+    
     Assembler::Condition c = Assembler::Overflow;
-    // Bailout on -0.0
+    
     int32_t constant = ToInt32(rhs);
     if (mul->canBeNegativeZero() && constant <= 0) {
       Assembler::Condition bailoutCond =
@@ -271,40 +269,40 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       masm.as_cmp(ToRegister(lhs), Imm8(0));
       bailoutIf(bailoutCond, ins->snapshot());
     }
-    // TODO: move these to ma_mul.
+    
     switch (constant) {
       case -1:
         masm.as_rsb(ToRegister(dest), ToRegister(lhs), Imm8(0), SetCC);
         break;
       case 0:
         masm.ma_mov(Imm32(0), ToRegister(dest));
-        return;  // Escape overflow check;
+        return;  
       case 1:
-        // Nop
+        
         masm.ma_mov(ToRegister(lhs), ToRegister(dest));
-        return;  // Escape overflow check;
+        return;  
       case 2:
         masm.ma_add(ToRegister(lhs), ToRegister(lhs), ToRegister(dest), SetCC);
-        // Overflow is handled later.
+        
         break;
       default: {
         bool handled = false;
         if (constant > 0) {
-          // Try shift and add sequences for a positive constant.
+          
           if (!mul->canOverflow()) {
-            // If it cannot overflow, we can do lots of optimizations.
+            
             Register src = ToRegister(lhs);
-            uint32_t shift = FloorLog2(uint32_t(constant));
+            uint32_t shift = FloorLog2(constant);
             uint32_t rest = constant - (1 << shift);
-            // See if the constant has one bit set, meaning it can be
-            // encoded as a bitshift.
+            
+            
             if ((1 << shift) == constant) {
               masm.ma_lsl(Imm32(shift), src, ToRegister(dest));
               handled = true;
             } else {
-              // If the constant cannot be encoded as (1 << C1), see
-              // if it can be encoded as (1 << C1) | (1 << C2), which
-              // can be computed using an add and a shift.
+              
+              
+              
               uint32_t shift_rest = FloorLog2(rest);
               if ((1u << shift_rest) == rest) {
                 masm.as_add(ToRegister(dest), src,
@@ -317,16 +315,16 @@ void CodeGenerator::visitMulI(LMulI* ins) {
               }
             }
           } else if (ToRegister(lhs) != ToRegister(dest)) {
-            // To stay on the safe side, only optimize things that are a
-            // power of 2.
+            
+            
 
-            uint32_t shift = FloorLog2(uint32_t(constant));
+            uint32_t shift = FloorLog2(constant);
             if ((1 << shift) == constant) {
-              // dest = lhs * pow(2,shift)
+              
               masm.ma_lsl(Imm32(shift), ToRegister(lhs), ToRegister(dest));
-              // At runtime, check (lhs == dest >> shift), if this
-              // does not hold, some bits were lost due to overflow,
-              // and the computation should be resumed as a double.
+              
+              
+              
               masm.as_cmp(ToRegister(lhs), asr(ToRegister(dest), shift));
               c = Assembler::NotEqual;
               handled = true;
@@ -346,7 +344,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         }
       }
     }
-    // Bailout on overflow.
+    
     if (mul->canOverflow()) {
       bailoutIf(c, ins->snapshot());
     }
@@ -361,7 +359,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       masm.ma_mul(ToRegister(lhs), ToRegister(rhs), ToRegister(dest));
     }
 
-    // Bailout on overflow.
+    
     if (mul->canOverflow()) {
       bailoutIf(c, ins->snapshot());
     }
@@ -371,7 +369,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       masm.as_cmp(ToRegister(dest), Imm8(0));
       masm.ma_b(&done, Assembler::NotEqual);
 
-      // Result is -0 if lhs or rhs is negative.
+      
       masm.ma_cmn(ToRegister(lhs), ToRegister(rhs));
       bailoutIf(Assembler::Signed, ins->snapshot());
 
@@ -404,9 +402,9 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
         return;
     }
 
-    // Use shift if constant is a power of 2.
-    if (constant > 0 && std::has_single_bit(uintptr_t(constant))) {
-      uint32_t shift = mozilla::FloorLog2(uintptr_t(constant));
+    
+    if (constant > 0 && mozilla::IsPowerOfTwo(uintptr_t(constant))) {
+      uint32_t shift = mozilla::FloorLog2(constant);
       masm.ma_lsl(Imm32(shift), ToRegister(lhs), ToRegister(dest));
       return;
     }
@@ -435,15 +433,15 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
         masm.move64(Imm64(0), ToRegister64(lhs));
         return;
       case 1:
-        // nop
+        
         return;
       case 2:
         masm.add64(ToRegister64(lhs), ToRegister64(lhs));
         return;
       default:
         if (constant > 0) {
-          // Use shift if constant is power of 2.
-          int32_t shift = mozilla::FloorLog2(uint64_t(constant));
+          
+          int32_t shift = mozilla::FloorLog2(constant);
           if (int64_t(1) << shift == constant) {
             masm.lshift64(Imm32(shift), ToRegister64(lhs));
             return;
@@ -464,12 +462,12 @@ void CodeGeneratorARM::divICommon(MDiv* mir, Register lhs, Register rhs,
   ScratchRegisterScope scratch(masm);
 
   if (mir->canBeNegativeOverflow()) {
-    // Handle INT32_MIN / -1;
-    // The integer division will give INT32_MIN, but we want -(double)INT32_MIN.
+    
+    
 
-    // Sets EQ if lhs == INT32_MIN.
+    
     masm.ma_cmp(lhs, Imm32(INT32_MIN), scratch);
-    // If EQ (LHS == INT32_MIN), sets EQ if rhs == -1.
+    
     masm.ma_cmp(rhs, Imm32(-1), scratch, Assembler::Equal);
     if (mir->canTruncateOverflow()) {
       if (mir->trapOnError()) {
@@ -478,7 +476,7 @@ void CodeGeneratorARM::divICommon(MDiv* mir, Register lhs, Register rhs,
         masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
         masm.bind(&ok);
       } else {
-        // (-INT32_MIN)|0 = INT32_MIN
+        
         Label skip;
         masm.ma_b(&skip, Assembler::NotEqual);
         masm.ma_mov(Imm32(INT32_MIN), output);
@@ -491,7 +489,7 @@ void CodeGeneratorARM::divICommon(MDiv* mir, Register lhs, Register rhs,
     }
   }
 
-  // Handle divide by zero.
+  
   if (mir->canBeDivideByZero()) {
     masm.as_cmp(rhs, Imm8(0));
     if (mir->canTruncateInfinities()) {
@@ -501,7 +499,7 @@ void CodeGeneratorARM::divICommon(MDiv* mir, Register lhs, Register rhs,
         masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
         masm.bind(&nonZero);
       } else {
-        // Infinity|0 == 0
+        
         Label skip;
         masm.ma_b(&skip, Assembler::NotEqual);
         masm.ma_mov(Imm32(0), output);
@@ -514,7 +512,7 @@ void CodeGeneratorARM::divICommon(MDiv* mir, Register lhs, Register rhs,
     }
   }
 
-  // Handle negative 0.
+  
   if (!mir->canTruncateNegativeZero() && mir->canBeNegativeZero()) {
     Label nonzero;
     masm.as_cmp(lhs, Imm8(0));
@@ -586,7 +584,7 @@ void CodeGenerator::visitSoftDivI(LSoftDivI* ins) {
         ABIType::Int64, CheckUnsafeCallWithABI::DontCheckOther);
   }
 
-  // idivmod returns the quotient in r0, and the remainder in r1.
+  
   if (!mir->canTruncateRemainder()) {
     MOZ_ASSERT(mir->fallible());
     masm.as_cmp(r1, Imm8(0));
@@ -608,10 +606,10 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   }
 
   if (!mir->isTruncated()) {
-    // If the remainder is != 0, bailout since this must be a double.
+    
     {
-      // The bailout code also needs the scratch register.
-      // Here it is only used as a dummy target to set CC flags.
+      
+      
       ScratchRegisterScope scratch(masm);
       masm.as_mov(scratch, lsl(lhs, 32 - shift), SetCC);
     }
@@ -619,14 +617,14 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   }
 
   if (!mir->canBeNegativeDividend()) {
-    // Numerator is unsigned, so needs no adjusting. Do the shift.
+    
     masm.as_mov(output, asr(lhs, shift));
     return;
   }
 
-  // Adjust the value so that shifting produces a correctly rounded result
-  // when the numerator is negative. See 10-1 "Signed Division by a Known
-  // Power of 2" in Henry S. Warren, Jr.'s Hacker's Delight.
+  
+  
+  
   ScratchRegisterScope scratch(masm);
 
   if (shift > 1) {
@@ -636,15 +634,15 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
     masm.as_add(scratch, lhs, lsr(lhs, 32 - shift));
   }
 
-  // Do the shift.
+  
   masm.as_mov(output, asr(scratch, shift));
 }
 
 void CodeGeneratorARM::modICommon(MMod* mir, Register lhs, Register rhs,
                                   Register output, LSnapshot* snapshot,
                                   Label& done) {
-  // X % 0 is bad because it will give garbage (or abort), when it should give
-  // NaN.
+  
+  
 
   if (mir->canBeDivideByZero()) {
     masm.as_cmp(rhs, Imm8(0));
@@ -654,7 +652,7 @@ void CodeGeneratorARM::modICommon(MMod* mir, Register lhs, Register rhs,
       if (mir->trapOnError()) {
         masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
       } else {
-        // NaN|0 == 0
+        
         masm.ma_mov(Imm32(0), output);
         masm.ma_b(&done);
       }
@@ -672,19 +670,19 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register output = ToRegister(ins->output());
   MMod* mir = ins->mir();
 
-  // Contrary to other architectures (notably x86) INT_MIN % -1 doesn't need to
-  // be handled separately. |ma_smod| computes the remainder using the |SDIV|
-  // and the |MLS| instructions. On overflow, |SDIV| truncates the result to
-  // 32-bit and returns INT_MIN, see ARM Architecture Reference Manual, SDIV
-  // instruction.
-  //
-  //   mls(INT_MIN, sdiv(INT_MIN, -1), -1)
-  // = INT_MIN - (sdiv(INT_MIN, -1) * -1)
-  // = INT_MIN - (INT_MIN * -1)
-  // = INT_MIN - INT_MIN
-  // = 0
-  //
-  // And a zero remainder with a negative dividend is already handled below.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   Label done;
   modICommon(mir, lhs, rhs, output, ins->snapshot(), done);
@@ -694,13 +692,13 @@ void CodeGenerator::visitModI(LModI* ins) {
     masm.ma_smod(lhs, rhs, output, scratch);
   }
 
-  // If X%Y == 0 and X < 0, then we *actually* wanted to return -0.0.
+  
   if (mir->canBeNegativeDividend()) {
     if (mir->isTruncated()) {
-      // -0.0|0 == 0
+      
     } else {
       MOZ_ASSERT(mir->fallible());
-      // See if X < 0
+      
       masm.as_cmp(output, Imm8(0));
       masm.ma_b(&done, Assembler::NotEqual);
       masm.as_cmp(lhs, Imm8(0));
@@ -712,7 +710,7 @@ void CodeGenerator::visitModI(LModI* ins) {
 }
 
 void CodeGenerator::visitSoftModI(LSoftModI* ins) {
-  // Extract the registers from this instruction.
+  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
@@ -720,29 +718,29 @@ void CodeGenerator::visitSoftModI(LSoftModI* ins) {
   MMod* mir = ins->mir();
   Label done;
 
-  // Save the lhs in case we end up with a 0 that should be a -0.0 because lhs <
-  // 0.
+  
+  
   MOZ_ASSERT(callTemp != lhs);
   MOZ_ASSERT(callTemp != rhs);
   masm.ma_mov(lhs, callTemp);
 
-  // Prevent INT_MIN % -1.
-  //
-  // |aeabi_idivmod| is allowed to return any arbitrary value when called with
-  // |(INT_MIN, -1)|, see "Run-time ABI for the ARM architecture manual". Most
-  // implementations perform a non-trapping signed integer division and
-  // return the expected result, i.e. INT_MIN. But since we can't rely on this
-  // behavior, handle this case separately here.
+  
+  
+  
+  
+  
+  
+  
   if (mir->canBeNegativeDividend()) {
     {
       ScratchRegisterScope scratch(masm);
-      // Sets EQ if lhs == INT_MIN
+      
       masm.ma_cmp(lhs, Imm32(INT_MIN), scratch);
-      // If EQ (LHS == INT_MIN), sets EQ if rhs == -1
+      
       masm.ma_cmp(rhs, Imm32(-1), scratch, Assembler::Equal);
     }
     if (mir->isTruncated()) {
-      // (INT_MIN % -1)|0 == 0
+      
       Label skip;
       masm.ma_b(&skip, Assembler::NotEqual);
       masm.ma_mov(Imm32(0), output);
@@ -779,13 +777,13 @@ void CodeGenerator::visitSoftModI(LSoftModI* ins) {
   MOZ_ASSERT(r1 != output);
   masm.move32(r1, output);
 
-  // If X%Y == 0 and X < 0, then we *actually* wanted to return -0.0
+  
   if (mir->canBeNegativeDividend()) {
     if (mir->isTruncated()) {
-      // -0.0|0 == 0
+      
     } else {
       MOZ_ASSERT(mir->fallible());
-      // See if X < 0
+      
       masm.as_cmp(output, Imm8(0));
       masm.ma_b(&done, Assembler::NotEqual);
       masm.as_cmp(callTemp, Imm8(0));
@@ -801,8 +799,8 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   Register out = ToRegister(ins->output());
   MMod* mir = ins->mir();
   Label fin;
-  // bug 739870, jbramley has a different sequence that may help with speed
-  // here.
+  
+  
 
   masm.ma_mov(in, out, SetCC);
   masm.ma_b(&fin, Assembler::Zero);
@@ -817,7 +815,7 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
       MOZ_ASSERT(mir->fallible());
       bailoutIf(Assembler::Zero, ins->snapshot());
     } else {
-      // -0|0 == 0
+      
     }
   }
   masm.bind(&fin);
@@ -840,21 +838,21 @@ void CodeGenerator::visitModMaskI(LModMaskI* ins) {
       MOZ_ASSERT(mir->fallible());
       bailoutIf(Assembler::Zero, ins->snapshot());
     } else {
-      // -0|0 == 0
+      
     }
   }
 }
 
 void CodeGeneratorARM::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
                                         Register divisor, Register output) {
-  // Callers handle division by zero and integer overflow.
+  
 
   if (ARMFlags::HasIDIV()) {
-    masm.ma_sdiv(dividend, divisor, /* result= */ output);
+    masm.ma_sdiv(dividend, divisor,  output);
     return;
   }
 
-  // idivmod returns the quotient in r0, and the remainder in r1.
+  
   MOZ_ASSERT(ToRegister(ins->temp0()) == r0);
   MOZ_ASSERT(ToRegister(ins->temp1()) == r1);
 
@@ -876,15 +874,15 @@ void CodeGeneratorARM::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,
 
 void CodeGeneratorARM::emitBigIntPtrMod(LBigIntPtrMod* ins, Register dividend,
                                         Register divisor, Register output) {
-  // Callers handle division by zero and integer overflow.
+  
 
   if (ARMFlags::HasIDIV()) {
     ScratchRegisterScope scratch(masm);
-    masm.ma_smod(dividend, divisor, /* result= */ output, scratch);
+    masm.ma_smod(dividend, divisor,  output, scratch);
     return;
   }
 
-  // idivmod returns the quotient in r0, and the remainder in r1.
+  
   MOZ_ASSERT(ToRegister(ins->temp0()) == r0);
   MOZ_ASSERT(ToRegister(ins->temp1()) == r1);
 
@@ -907,8 +905,8 @@ void CodeGeneratorARM::emitBigIntPtrMod(LBigIntPtrMod* ins, Register dividend,
 void CodeGenerator::visitBitNotI(LBitNotI* ins) {
   const LAllocation* input = ins->input();
   const LDefinition* dest = ins->output();
-  // This will not actually be true on arm. We can not an imm8m in order to
-  // get a wider range of numbers
+  
+  
   MOZ_ASSERT(!input->isConstant());
 
   masm.ma_mvn(ToRegister(input), ToRegister(dest));
@@ -921,7 +919,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
 
   ScratchRegisterScope scratch(masm);
 
-  // All of these bitops should be either imm32's, or integer registers.
+  
   switch (ins->bitop()) {
     case JSOp::BitOr:
       if (rhs->isConstant()) {
@@ -978,7 +976,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         if (shift) {
           masm.ma_lsr(Imm32(shift), lhs, dest);
         } else {
-          // x >>> 0 can overflow.
+          
           masm.ma_mov(lhs, dest);
           if (ins->mir()->toUrsh()->fallible()) {
             masm.as_cmp(dest, Imm8(0));
@@ -990,9 +988,9 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         MOZ_CRASH("Unexpected shift op");
     }
   } else {
-    // The shift amounts should be AND'ed into the 0-31 range since arm
-    // shifts by the lower byte of the register (it will attempt to shift by
-    // 250 if you ask it to).
+    
+    
+    
     ScratchRegisterScope scratch(masm);
     masm.as_and(scratch, ToRegister(rhs), Imm8(0x1F));
 
@@ -1006,7 +1004,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
       case JSOp::Ursh:
         masm.ma_lsr(scratch, lhs, dest);
         if (ins->mir()->toUrsh()->fallible()) {
-          // x >>> 0 can overflow.
+          
           masm.as_cmp(dest, Imm8(0));
           bailoutIf(Assembler::LessThan, ins->snapshot());
         }
@@ -1050,9 +1048,9 @@ void CodeGenerator::visitShiftIntPtr(LShiftIntPtr* ins) {
         MOZ_CRASH("Unexpected shift op");
     }
   } else {
-    // The shift amounts should be AND'ed into the 0-31 range since arm
-    // shifts by the lower byte of the register (it will attempt to shift by
-    // 250 if you ask it to).
+    
+    
+    
     masm.as_and(dest, ToRegister(rhs), Imm8(0x1F));
 
     switch (ins->bitop()) {
@@ -1100,14 +1098,14 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
 
   Label done;
 
-  // Masm.pow(-Infinity, 0.5) == Infinity.
+  
   masm.loadConstantDouble(NegativeInfinity<double>(), scratch);
   masm.compareDouble(input, scratch);
   masm.ma_vneg(scratch, output, Assembler::Equal);
   masm.ma_b(&done, Assembler::Equal);
 
-  // Math.pow(-0, 0.5) == 0 == Math.pow(0, 0.5).
-  // Adding 0 converts any -0 to 0.
+  
+  
   masm.loadConstantDouble(0.0, scratch);
   masm.ma_vadd(scratch, input, output);
   masm.ma_vsqrt(output, output);
@@ -1158,8 +1156,8 @@ void CodeGeneratorARM::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool) {
     Label* caseheader = caseblock->label();
     uint32_t caseoffset = caseheader->offset();
 
-    // The entries of the jump table need to be absolute addresses and thus
-    // must be patched after codegen is finished.
+    
+    
     CodeLabel cl = ool->codeLabel(i);
     cl.target()->bind(caseoffset);
     masm.addCodeLabel(cl);
@@ -1168,53 +1166,53 @@ void CodeGeneratorARM::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool) {
 
 void CodeGeneratorARM::emitTableSwitchDispatch(MTableSwitch* mir,
                                                Register index, Register base) {
-  // The code generated by this is utter hax.
-  // The end result looks something like:
-  // SUBS index, input, #base
-  // RSBSPL index, index, #max
-  // LDRPL pc, pc, index lsl 2
-  // B default
+  
+  
+  
+  
+  
+  
 
-  // If the range of targets in N through M, we first subtract off the lowest
-  // case (N), which both shifts the arguments into the range 0 to (M - N)
-  // with and sets the MInus flag if the argument was out of range on the low
-  // end.
+  
+  
+  
+  
 
-  // Then we a reverse subtract with the size of the jump table, which will
-  // reverse the order of range (It is size through 0, rather than 0 through
-  // size). The main purpose of this is that we set the same flag as the lower
-  // bound check for the upper bound check. Lastly, we do this conditionally
-  // on the previous check succeeding.
+  
+  
+  
+  
+  
 
-  // Then we conditionally load the pc offset by the (reversed) index (times
-  // the address size) into the pc, which branches to the correct case. NOTE:
-  // when we go to read the pc, the value that we get back is the pc of the
-  // current instruction *PLUS 8*. This means that ldr foo, [pc, +0] reads
-  // $pc+8. In other words, there is an empty word after the branch into the
-  // switch table before the table actually starts. Since the only other
-  // unhandled case is the default case (both out of range high and out of
-  // range low) I then insert a branch to default case into the extra slot,
-  // which ensures we don't attempt to execute the address table.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Label* defaultcase = skipTrivialBlocks(mir->getDefault())->lir()->label();
 
   ScratchRegisterScope scratch(masm);
 
   int32_t cases = mir->numCases();
-  // Lower value with low value.
+  
   masm.ma_sub(index, Imm32(mir->low()), index, scratch, SetCC);
   masm.ma_rsb(index, Imm32(cases - 1), index, scratch, SetCC,
               Assembler::NotSigned);
-  // Inhibit pools within the following sequence because we are indexing into
-  // a pc relative table. The region will have one instruction for ma_ldr, one
-  // for ma_b, and each table case takes one word.
+  
+  
+  
   AutoForbidPoolsAndNops afp(&masm, 1 + 1 + cases);
   masm.ma_ldr(DTRAddr(pc, DtrRegImmShift(index, LSL, 2)), pc, Offset,
               Assembler::NotSigned);
   masm.ma_b(defaultcase);
 
-  // To fill in the CodeLabels for the case entries, we need to first generate
-  // the case entries (we don't yet know their offsets in the instruction
-  // stream).
+  
+  
+  
   OutOfLineTableSwitch* ool = new (alloc()) OutOfLineTableSwitch(alloc(), mir);
   for (int32_t i = 0; i < cases; i++) {
     CodeLabel cl;
@@ -1297,9 +1295,9 @@ void CodeGenerator::visitBox(LBox* box) {
 
   MOZ_ASSERT(!box->payload()->isConstant());
 
-  // On arm, the input operand and the output payload have the same virtual
-  // register. All that needs to be written is the type tag for the type
-  // definition.
+  
+  
+  
   masm.ma_mov(Imm32(MIRTypeToTag(box->type())), ToRegister(type));
 }
 
@@ -1311,8 +1309,8 @@ void CodeGenerator::visitBoxFloatingPoint(LBoxFloatingPoint* box) {
 }
 
 void CodeGenerator::visitUnbox(LUnbox* unbox) {
-  // Note that for unbox, the type and payload indexes are switched on the
-  // inputs.
+  
+  
   MUnbox* mir = unbox->mir();
   Register type = ToRegister(unbox->type());
   Register payload = ToRegister(unbox->payload());
@@ -1336,9 +1334,9 @@ void CodeGenerator::visitUnbox(LUnbox* unbox) {
 #endif
   }
 
-  // Note: If spectreValueMasking is disabled, then this instruction will
-  // default to a no-op as long as the lowering allocate the same register for
-  // the output and the payload.
+  
+  
+  
   masm.unboxNonDouble(ValueOperand(type, payload), output,
                       ValueTypeFromMIRType(mir->type()));
 }
@@ -1350,10 +1348,10 @@ void CodeGenerator::visitTestDAndBranch(LTestDAndBranch* test) {
 
   MBasicBlock* ifTrue = test->ifTrue();
   MBasicBlock* ifFalse = test->ifFalse();
-  // If the compare set the 0 bit, then the result is definitely false.
+  
   jumpToBlock(ifFalse, Assembler::Zero);
-  // It is also false if one of the operands is NAN, which is shown as
-  // Overflow.
+  
+  
   jumpToBlock(ifFalse, Assembler::Overflow);
   jumpToBlock(ifTrue);
 }
@@ -1365,10 +1363,10 @@ void CodeGenerator::visitTestFAndBranch(LTestFAndBranch* test) {
 
   MBasicBlock* ifTrue = test->ifTrue();
   MBasicBlock* ifFalse = test->ifFalse();
-  // If the compare set the 0 bit, then the result is definitely false.
+  
   jumpToBlock(ifFalse, Assembler::Zero);
-  // It is also false if one of the operands is NAN, which is shown as
-  // Overflow.
+  
+  
   jumpToBlock(ifFalse, Assembler::Overflow);
   jumpToBlock(ifTrue);
 }
@@ -1426,21 +1424,21 @@ void CodeGenerator::visitWasmUint32ToFloat32(LWasmUint32ToFloat32* lir) {
 }
 
 void CodeGenerator::visitNotD(LNotD* ins) {
-  // Since this operation is not, we want to set a bit if the double is
-  // falsey, which means 0.0, -0.0 or NaN. When comparing with 0, an input of
-  // 0 will set the Z bit (30) and NaN will set the V bit (28) of the APSR.
+  
+  
+  
   FloatRegister opd = ToFloatRegister(ins->input());
   Register dest = ToRegister(ins->output());
 
-  // Do the compare.
+  
   masm.ma_vcmpz(opd);
-  // TODO There are three variations here to compare performance-wise.
+  
   bool nocond = true;
   if (nocond) {
-    // Load the value into the dest register.
+    
     masm.as_vmrs(dest);
     masm.ma_lsr(Imm32(28), dest, dest);
-    // 28 + 2 = 30
+    
     masm.ma_alu(dest, lsr(dest, 2), dest, OpOrr);
     masm.as_and(dest, dest, Imm8(1));
   } else {
@@ -1452,21 +1450,21 @@ void CodeGenerator::visitNotD(LNotD* ins) {
 }
 
 void CodeGenerator::visitNotF(LNotF* ins) {
-  // Since this operation is not, we want to set a bit if the double is
-  // falsey, which means 0.0, -0.0 or NaN. When comparing with 0, an input of
-  // 0 will set the Z bit (30) and NaN will set the V bit (28) of the APSR.
+  
+  
+  
   FloatRegister opd = ToFloatRegister(ins->input());
   Register dest = ToRegister(ins->output());
 
-  // Do the compare.
+  
   masm.ma_vcmpz_f32(opd);
-  // TODO There are three variations here to compare performance-wise.
+  
   bool nocond = true;
   if (nocond) {
-    // Load the value into the dest register.
+    
     masm.as_vmrs(dest);
     masm.ma_lsr(Imm32(28), dest, dest);
-    // 28 + 2 = 30
+    
     masm.ma_alu(dest, lsr(dest, 2), dest, OpOrr);
     masm.as_and(dest, dest, Imm8(1));
   } else {
@@ -1478,22 +1476,22 @@ void CodeGenerator::visitNotF(LNotF* ins) {
 }
 
 void CodeGeneratorARM::generateInvalidateEpilogue() {
-  // Ensure that there is enough space in the buffer for the OsiPoint patching
-  // to occur. Otherwise, we could overwrite the invalidation epilogue.
+  
+  
   for (size_t i = 0; i < sizeof(void*); i += Assembler::NopSize()) {
     masm.nop();
   }
 
   masm.bind(&invalidate_);
 
-  // Push the return address of the point that we bailed out at onto the stack.
+  
   masm.Push(lr);
 
-  // Push the Ion script onto the stack (when we determine what that pointer
-  // is).
+  
+  
   invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
-  // Jump to the invalidator which will replace the current frame.
+  
   TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
   masm.jump(thunk);
 }
@@ -1699,8 +1697,8 @@ void CodeGenerator::visitWasmSelect(LWasmSelect* ins) {
   }
 }
 
-// We expect to handle only the case where compare is {U,}Int32 and select is
-// {U,}Int32, and the "true" input is reused for the output.
+
+
 void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   bool cmpIs32bit = ins->compareType() == MCompare::Compare_Int32 ||
                     ins->compareType() == MCompare::Compare_UInt32;
@@ -1860,7 +1858,7 @@ void CodeGeneratorARM::emitWasmStore(T* lir) {
     Register ptr = ToRegister(lir->temp0());
     masm.wasmStoreI64(mir->access(), value, memoryBase, ptr, ptr);
   } else {
-    // Maybe add the offset.
+    
     Register ptr;
     if (mir->access().offset32()) {
       ptr = ToRegister(lir->temp0());
@@ -2024,14 +2022,14 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
 
   masm.ma_udiv(lhs, rhs, output);
 
-  // Check for large unsigned result - represent as double.
+  
   if (!ins->mir()->isTruncated()) {
     MOZ_ASSERT(ins->mir()->fallible());
     masm.as_cmp(output, Imm8(0));
     bailoutIf(Assembler::LessThan, ins->snapshot());
   }
 
-  // Check for non-zero remainder if not truncating to int.
+  
   if (!ins->mir()->canTruncateRemainder()) {
     MOZ_ASSERT(ins->mir()->fallible());
     {
@@ -2060,7 +2058,7 @@ void CodeGenerator::visitUMod(LUMod* ins) {
     masm.ma_umod(lhs, rhs, output, scratch);
   }
 
-  // Check for large unsigned result - represent as double.
+  
   if (!ins->mir()->isTruncated()) {
     MOZ_ASSERT(ins->mir()->fallible());
     masm.as_cmp(output, Imm8(0));
@@ -2090,13 +2088,13 @@ void CodeGeneratorARM::generateUDivModZeroCheck(Register rhs, Register output,
       } else {
         Label skip;
         masm.ma_b(&skip, Assembler::NotEqual);
-        // Infinity|0 == 0
+        
         masm.ma_mov(Imm32(0), output);
         masm.ma_b(done);
         masm.bind(&skip);
       }
     } else {
-      // Bailout for divide by zero
+      
       MOZ_ASSERT(mir->fallible());
       bailoutIf(Assembler::Equal, snapshot);
     }
@@ -2146,14 +2144,14 @@ void CodeGenerator::visitSoftUDivOrMod(LSoftUDivOrMod* ins) {
     masm.move32(r1, output);
   }
 
-  // uidivmod returns the quotient in r0, and the remainder in r1.
+  
   if (div && !div->canTruncateRemainder()) {
     MOZ_ASSERT(div->fallible());
     masm.as_cmp(r1, Imm8(0));
     bailoutIf(Assembler::NonZero, ins->snapshot());
   }
 
-  // Bailout for big unsigned results
+  
   if ((div && !div->isTruncated()) || (mod && !mod->isTruncated())) {
     DebugOnly<bool> isFallible =
         (div && div->fallible()) || (mod && mod->fallible());
@@ -2286,10 +2284,10 @@ void CodeGenerator::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir) {
   masm.Pop(input);
   masm.Pop(InstanceReg);
 
-  // TruncateDoubleTo{UI,I}nt64 returns 0x8000000000000000 to indicate
-  // exceptional results, so check for that and produce the appropriate
-  // traps. The Saturating form always returns a normal value and never
-  // needs traps.
+  
+  
+  
+  
   if (!lir->mir()->isSaturating()) {
     ScratchRegisterScope scratch(masm);
     masm.ma_cmp(output.high, Imm32(0x80000000), scratch);
@@ -2304,8 +2302,8 @@ void CodeGenerator::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir) {
 
 void CodeGeneratorARM::visitOutOfLineWasmTruncateCheck(
     OutOfLineWasmTruncateCheck* ool) {
-  // On ARM, saturating truncation codegen handles saturating itself rather than
-  // relying on out-of-line fixup code.
+  
+  
   if (ool->isSaturating()) {
     return;
   }
@@ -2395,8 +2393,8 @@ void CodeGenerator::visitWasmExtendU32Index(LWasmExtendU32Index*) {
 }
 
 void CodeGenerator::visitWasmWrapU32Index(LWasmWrapU32Index* lir) {
-  // Generates no code on this platform because we just return the low part of
-  // the input register pair.
+  
+  
   MOZ_ASSERT(ToRegister(lir->input()) == ToRegister(lir->output()));
 }
 
@@ -2414,11 +2412,11 @@ void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
 
   Label done;
 
-  // Handle divide by zero.
+  
   if (lir->canBeDivideByZero()) {
     Label nonZero;
-    // We can use InstanceReg as temp register because we preserved it
-    // before.
+    
+    
     masm.branchTest64(Assembler::NonZero, rhs, rhs, InstanceReg, &nonZero);
     masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->trapSiteDesc());
     masm.bind(&nonZero);
@@ -2426,7 +2424,7 @@ void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
 
   auto* mir = lir->mir();
 
-  // Handle an integer overflow exception from INT64_MIN / -1.
+  
   if (lir->canBeNegativeOverflow()) {
     Label notmin;
     masm.branch64(Assembler::NotEqual, lhs, Imm64(INT64_MIN), &notmin);
@@ -2470,11 +2468,11 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
 
   MOZ_ASSERT(ToOutRegister64(lir) == ReturnReg64);
 
-  // Prevent divide by zero.
+  
   if (lir->canBeDivideByZero()) {
     Label nonZero;
-    // We can use InstanceReg as temp register because we preserved it
-    // before.
+    
+    
     masm.branchTest64(Assembler::NonZero, rhs, rhs, InstanceReg, &nonZero);
     masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->trapSiteDesc());
     masm.bind(&nonZero);

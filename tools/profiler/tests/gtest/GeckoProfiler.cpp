@@ -1624,14 +1624,14 @@ TEST(GeckoProfiler, FeaturesAndParams)
 
     
     
-    profiler_start(PowerOfTwo32(999999u), 3, features, filters,
+    profiler_start(PowerOfTwo32(999999), 3, features, filters,
                    std::size(filters), 123, Some(25.0));
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::IPCMessages));
 
-    ActiveParamsCheck(int(PowerOfTwo32(999999u).Value()), 3, features, filters,
+    ActiveParamsCheck(int(PowerOfTwo32(999999).Value()), 3, features, filters,
                       std::size(filters), 123, Some(25.0));
 
     profiler_stop();
@@ -1645,14 +1645,14 @@ TEST(GeckoProfiler, FeaturesAndParams)
         ProfilerFeature::MainThreadIO | ProfilerFeature::IPCMessages;
     const char* filters[] = {"GeckoMain", "Foo", "Bar"};
 
-    profiler_start(PowerOfTwo32(999999u), 3, features, filters,
+    profiler_start(PowerOfTwo32(999999), 3, features, filters,
                    std::size(filters), 0, Nothing());
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::IPCMessages));
 
-    ActiveParamsCheck(int(PowerOfTwo32(999999u).Value()), 3, features, filters,
+    ActiveParamsCheck(int(PowerOfTwo32(999999).Value()), 3, features, filters,
                       std::size(filters), 0, Nothing());
 
     profiler_stop();
@@ -1668,14 +1668,14 @@ TEST(GeckoProfiler, FeaturesAndParams)
     
     availableFeatures &= ~ProfilerFeature::Tracing;
 
-    profiler_start(PowerOfTwo32(88888u), 10, availableFeatures, filters,
+    profiler_start(PowerOfTwo32(88888), 10, availableFeatures, filters,
                    std::size(filters), 0, Some(15.0));
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::MainThreadIO));
     ASSERT_TRUE(profiler_feature_active(ProfilerFeature::IPCMessages));
 
-    ActiveParamsCheck(PowerOfTwo32(88888u).Value(), 10, availableFeatures,
+    ActiveParamsCheck(PowerOfTwo32(88888).Value(), 10, availableFeatures,
                       filters, std::size(filters), 0, Some(15.0));
 
     
@@ -1688,8 +1688,8 @@ TEST(GeckoProfiler, FeaturesAndParams)
 
     
     
-    profiler_start(PowerOfTwo32(0u), 0, features, filters, std::size(filters),
-                   0, Some(0.0));
+    profiler_start(PowerOfTwo32(0), 0, features, filters, std::size(filters), 0,
+                   Some(0.0));
 
     ASSERT_TRUE(profiler_is_active());
     ASSERT_TRUE(!profiler_feature_active(ProfilerFeature::MainThreadIO));
