@@ -268,6 +268,15 @@ class nsHTTPSOnlyUtils {
 
 
   static bool UnknownPublicSuffixException(nsIURI* aURI);
+
+  
+
+
+
+
+
+
+  static bool IsExemptedExtensionRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo);
 };
 
 
