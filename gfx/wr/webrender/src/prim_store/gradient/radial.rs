@@ -418,7 +418,6 @@ pub fn optimize_radial_gradient(
     aa_mask: &mut EdgeMask,
     clip_rect: &LayoutRect,
     radius: LayoutSize,
-    start_offset: f32,
     end_offset: f32,
     extend_mode: ExtendMode,
     stops: &[GradientStopKey],
@@ -437,47 +436,15 @@ pub fn optimize_radial_gradient(
         return;
     }
 
+    
+    let min = prim_rect.min + center.to_vector() - radius.to_vector() * end_offset;
+    let max = prim_rect.min + center.to_vector() + radius.to_vector() * end_offset;
+
+    
     let gradient_rect = LayoutRect::from_origin_and_size(
         prim_rect.min,
         *stretch_size,
     );
-
-    let is_tiled = prim_rect.width() > stretch_size.width + tile_spacing.width
-        || prim_rect.height() > stretch_size.height + tile_spacing.height;
-
-    let first_stop = stops.first().unwrap();
-    let last_stop = stops.last().unwrap();
-
-    if !is_tiled {
-        let center = gradient_rect.min + center.to_vector();
-        let start_radius = f64::from(start_offset) * f64::from(radius.width);
-
-        if start_radius.is_finite() && start_radius >= 0.0 {
-            let mut max_distance_sq = 0.0f64;
-            for corner in [
-                gradient_rect.min,
-                gradient_rect.top_right(),
-                gradient_rect.bottom_left(),
-                gradient_rect.bottom_right(),
-            ] {
-                let dx = f64::from(corner.x - center.x);
-                let dy = f64::from(corner.y - center.y);
-                max_distance_sq = max_distance_sq.max(dx * dx + dy * dy);
-            }
-
-            if max_distance_sq <= start_radius * start_radius {
-                solid_parts(prim_rect, first_stop.color, *aa_mask);
-                *prim_rect = LayoutRect::zero();
-                *stretch_size = LayoutSize::zero();
-                *tile_spacing = LayoutSize::zero();
-                return;
-            }
-        }
-    }
-
-    
-    let min = prim_rect.min + center.to_vector() - radius.to_vector() * end_offset;
-    let max = prim_rect.min + center.to_vector() + radius.to_vector() * end_offset;
 
     
     
@@ -486,7 +453,10 @@ pub fn optimize_radial_gradient(
     let mut r = (gradient_rect.max.x - max.x).max(0.0).floor();
     let mut b = (gradient_rect.max.y - max.y).max(0.0).floor();
 
-    let bg_color = last_stop.color;
+    let is_tiled = prim_rect.width() > stretch_size.width + tile_spacing.width
+        || prim_rect.height() > stretch_size.height + tile_spacing.height;
+
+    let bg_color = stops.last().unwrap().color;
 
     if bg_color.a != 0 && is_tiled {
         

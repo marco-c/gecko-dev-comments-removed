@@ -674,9 +674,9 @@ nsCSSGradientRenderer nsCSSGradientRenderer::Create(
 
   
   
-  CSSPoint lineStart(0, 0), lineEnd(0, 0), center(0, 0);
-  CSSCoord radiusX = 0, radiusY = 0;  
-  float angle = 0.0;                  
+  CSSPoint lineStart, lineEnd, center;  
+  CSSCoord radiusX = 0, radiusY = 0;    
+  float angle = 0.0;                    
   if (aGradient.IsLinear()) {
     std::tie(lineStart, lineEnd) =
         ComputeLinearGradientLine(aPresContext, aGradient, srcSize);
@@ -687,6 +687,13 @@ nsCSSGradientRenderer nsCSSGradientRenderer::Create(
     MOZ_ASSERT(aGradient.IsConic());
     std::tie(center, angle) =
         ComputeConicGradientProperties(aGradient, srcSize);
+  }
+  
+  if (!lineStart.IsFinite() || !lineEnd.IsFinite()) {
+    lineStart = lineEnd = CSSPoint(0, 0);
+  }
+  if (!center.IsFinite()) {
+    center = CSSPoint(0, 0);
   }
   CSSCoord lineLength =
       NS_hypot(lineEnd.x - lineStart.x, lineEnd.y - lineStart.y);
