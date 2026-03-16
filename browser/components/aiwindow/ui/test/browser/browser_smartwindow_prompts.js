@@ -188,8 +188,6 @@ add_task(async function test_prompt_click_triggers_chat() {
   
 
   
-
-  
   
 
   
@@ -235,8 +233,6 @@ add_task(async function test_prompt_click_respects_memories_setting() {
   
 
   
-  
-
   
 
   

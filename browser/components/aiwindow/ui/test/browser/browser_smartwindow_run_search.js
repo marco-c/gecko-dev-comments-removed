@@ -63,7 +63,6 @@ add_task(async function test_run_search_fullpage_opens_sidebar() {
       async () => {
         const win = await openAIWindow();
         const browser = win.gBrowser.selectedBrowser;
-        await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
         await dispatchSmartbarCommit(
           browser,
@@ -144,8 +143,6 @@ add_task(
         },
         async () => {
           const win = await openAIWindow();
-          const browser = win.gBrowser.selectedBrowser;
-          await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
           
           const tab = await BrowserTestUtils.openNewForegroundTab(
