@@ -35,6 +35,11 @@ class TestBase {
 
   virtual const char* name() = 0;
 
+  
+  
+  virtual bool init() { return true; }
+  virtual void uninit() {}
+
   virtual void maybeAppendException(std::string& message) {}
 
   bool fail(const std::string& msg = std::string(), const char* filename = "-",
@@ -61,7 +66,7 @@ class RuntimeTest : public TestBase {
   virtual ~RuntimeTest();
 
   
-  bool init(JSContext* maybeReusedContext);
+  bool initContext(JSContext* maybeReusedContext);
 
   
   
@@ -69,11 +74,7 @@ class RuntimeTest : public TestBase {
 
   static void MaybeFreeContext(JSContext* maybeCx);
 
-  
-  
-  
-  virtual bool init() { return true; }
-  virtual void uninit();
+  void uninit() override;
 
   virtual bool run(JS::HandleObject global) = 0;
 
@@ -210,9 +211,6 @@ class FrontendTest : public TestBase {
   FrontendTest();
 
   virtual ~FrontendTest() {}
-
-  virtual bool init() { return true; }
-  virtual void uninit() {}
 
   virtual bool run() = 0;
 };
