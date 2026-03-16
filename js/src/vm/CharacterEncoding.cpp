@@ -16,6 +16,7 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
+#include <bit>
 #ifndef XP_LINUX
 
 
@@ -310,12 +311,7 @@ static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
   } while (0)
 
       
-      
-      
-      
-      
-      
-      uint32_t n = mozilla::CountLeadingZeroes32(~int8_t(src[i]) | 0x1) - 24;
+      uint32_t n = std::countl_one(src[i]);
 
       
       if (n < 2 || n > 4) {

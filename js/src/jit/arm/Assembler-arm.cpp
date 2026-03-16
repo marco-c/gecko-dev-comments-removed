@@ -7,10 +7,10 @@
 #include "jit/arm/Assembler-arm.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 
+#include <bit>
 #include <type_traits>
 
 #include "gc/Marking.h"
@@ -25,7 +25,6 @@
 using namespace js;
 using namespace js::jit;
 
-using mozilla::CountLeadingZeroes32;
 using mozilla::DebugOnly;
 
 using LabelDoc = DisassemblerSpew::LabelDoc;
@@ -838,7 +837,7 @@ Imm8::TwoImm8mData Imm8::EncodeTwoImms(uint32_t imm) {
   
   
   uint32_t imm1, imm2;
-  int left = CountLeadingZeroes32(imm) & 0x1E;
+  int left = std::countl_zero(imm) & 0x1E;
   uint32_t no_n1 = imm & ~(0xff << (24 - left));
 
   
@@ -848,7 +847,7 @@ Imm8::TwoImm8mData Imm8::EncodeTwoImms(uint32_t imm) {
     return TwoImm8mData();
   }
 
-  int mid = CountLeadingZeroes32(no_n1) & 0x1E;
+  int mid = std::countl_zero(no_n1) & 0x1E;
   uint32_t no_n2 =
       no_n1 & ~((0xff << ((24 - mid) & 0x1f)) | 0xff >> ((8 + mid) & 0x1f));
 
@@ -880,7 +879,7 @@ Imm8::TwoImm8mData Imm8::EncodeTwoImms(uint32_t imm) {
     return TwoImm8mData();
   }
 
-  int right = 32 - (CountLeadingZeroes32(no_n2) & 30);
+  int right = 32 - (std::countl_zero(no_n2) & 30);
   
   
   if (right > 8) {
@@ -896,7 +895,7 @@ Imm8::TwoImm8mData Imm8::EncodeTwoImms(uint32_t imm) {
     
     
     no_n1 = imm & ~((0xff >> (8 - right)) | (0xff << (24 + right)));
-    mid = CountLeadingZeroes32(no_n1) & 30;
+    mid = std::countl_zero(no_n1) & 30;
     no_n2 = no_n1 & ~((0xff << ((24 - mid) & 31)) | 0xff >> ((8 + mid) & 31));
     if (no_n2 != 0) {
       return TwoImm8mData();
