@@ -79,6 +79,19 @@ const GRID_COL_PROPERTY_NAMES = [
 ];
 
 
+const COLOR_SPACES = [
+  "a98-rgb",
+  "display-p3",
+  "prophoto-rgb",
+  "rec2020",
+  "srgb",
+  "srgb-linear",
+  "xyz",
+  "xyz-d50",
+  "xyz-d65",
+];
+
+
 
 
 
@@ -1655,6 +1668,12 @@ class InplaceEditor extends EventEmitter {
             if (currentFunction) {
               currentFunction.tokens.push(token);
             }
+          } else if (currentFunction && currentFunction.tokens.length) {
+            
+            
+            
+            
+            currentFunction.tokens.at(-1).complete = true;
           }
           if (
             token.tokenType === "Function" ||
@@ -1711,7 +1730,7 @@ class InplaceEditor extends EventEmitter {
           postLabelValues = [];
         } else if (functionValues) {
           list = functionValues.list;
-          postLabelValues = functionValues.postLabelValues;
+          postLabelValues = functionValues.postLabelValues || [];
         } else {
           list = this.#getCSSValuesForPropertyName(this.property.name);
           
@@ -1879,36 +1898,127 @@ class InplaceEditor extends EventEmitter {
 
 
 
+
+
   #getAutocompleteDataForFunction(functionStackEntry) {
     const functionName = functionStackEntry?.fnToken?.value;
     if (!functionName) {
       return null;
     }
 
-    let list = [];
-    let postLabelValues = [];
-
     if (functionName === "var") {
-      
-      
-      
-      if (functionStackEntry.tokens.length > 1) {
-        
-        return null;
-      }
-      list = this.#getCSSVariableNames();
-      postLabelValues = list.map(varName => this.#getCSSVariableValue(varName));
-    } else if (functionName.includes("gradient")) {
-      
-      
-      list = this.#getCSSValuesForPropertyName("color");
+      return this.#getAutocompleteDataForVarFunction(functionStackEntry);
+    }
+
+    if (functionName.includes("gradient")) {
+      return this.#getAutocompleteDataForGradientFunction();
+    }
+
+    if (functionName === "color") {
+      return this.#getAutocompleteDataForColorFunction(functionStackEntry);
     }
 
     
+
+    return { list: [] };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #getAutocompleteDataForVarFunction(functionStackEntry) {
+    
+    
+    
+    if (functionStackEntry.tokens.length > 1) {
+      
+      return null;
+    }
+    const list = this.#getCSSVariableNames();
+    const postLabelValues = list.map(varName =>
+      this.#getCSSVariableValue(varName)
+    );
+    return { list, postLabelValues };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  #getAutocompleteDataForGradientFunction() {
+    
+    
+    const list = this.#getCSSValuesForPropertyName("color");
+    return { list };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  #getAutocompleteDataForColorFunction(functionStackEntry) {
+    let list;
+    const tokensCount = functionStackEntry.tokens.length;
+    const isLastTokenComplete = !!functionStackEntry.tokens.at(-1)?.complete;
+
+    
     
     
 
-    return { list, postLabelValues };
+    
+    
+    
+    if (!tokensCount || (tokensCount === 1 && !isLastTokenComplete)) {
+      list = COLOR_SPACES.concat("from").sort();
+    } else {
+      const [firstToken] = functionStackEntry.tokens;
+      if (firstToken.tokenType === "Ident" && firstToken.text === "from") {
+        if (tokensCount === 1 || (tokensCount === 2 && !isLastTokenComplete)) {
+          
+          
+          
+          list = this.#getCSSValuesForPropertyName("color");
+        } else if (
+          tokensCount === 2 ||
+          (tokensCount === 3 && !isLastTokenComplete)
+        ) {
+          
+          
+          list = Array.from(COLOR_SPACES);
+        } else {
+          
+          
+          list = [];
+        }
+      } else {
+        
+        
+        list = [];
+      }
+    }
+
+    return { list };
   }
 
   
