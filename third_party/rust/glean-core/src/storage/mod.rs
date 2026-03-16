@@ -10,7 +10,6 @@ use std::collections::HashMap;
 
 use serde_json::{json, Value as JsonValue};
 
-use crate::coverage::record_coverage;
 use crate::database::Database;
 use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
 use crate::metrics::Metric;
@@ -185,31 +184,6 @@ impl StorageManager {
         storage.iter_store_from(metric_lifetime, store_name, None, &mut snapshotter);
 
         snapshot
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn snapshot_metric_for_test(
-        &self,
-        storage: &Database,
-        store_name: &str,
-        metric_id: &str,
-        metric_lifetime: Lifetime,
-    ) -> Option<Metric> {
-        record_coverage(metric_id);
-        self.snapshot_metric(storage, store_name, metric_id, metric_lifetime)
     }
 
     
