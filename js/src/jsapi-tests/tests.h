@@ -28,12 +28,12 @@ enum class TestKind { Runtime, Frontend };
 
 class TestBase {
  public:
+  TestBase* next = nullptr;
   const TestKind kind;
   bool knownFail = false;
   std::string msgs;
 
-  TestBase(TestKind kind) : kind(kind) {}
-
+  TestBase(TestKind kind);
   virtual ~TestBase() {}
 
   bool isRuntimeTest() const { return kind == TestKind::Runtime; }
@@ -56,8 +56,6 @@ class TestBase {
 
 class RuntimeTest : public TestBase {
  public:
-  RuntimeTest* next = nullptr;
-
   JSContext* cx = nullptr;
   JS::PersistentRootedObject global;
 
@@ -65,13 +63,12 @@ class RuntimeTest : public TestBase {
   
   
   
-  bool reuseGlobal;
+  bool reuseGlobal = false;
 
   
   static RuntimeTest* From(TestBase* test);
 
   RuntimeTest();
-
   virtual ~RuntimeTest();
 
   
@@ -213,10 +210,7 @@ class RuntimeTest : public TestBase {
 
 class FrontendTest : public TestBase {
  public:
-  FrontendTest* next = nullptr;
-
   FrontendTest();
-
   virtual ~FrontendTest() {}
 };
 
