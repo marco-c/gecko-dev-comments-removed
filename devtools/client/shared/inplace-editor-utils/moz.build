@@ -1,0 +1,13 @@
+
+
+
+
+
+
+DevToolsModules(
+    "autocomplete-color-function.mjs",
+    "constants.mjs",
+)
+
+with Files("**"):
+    BUG_COMPONENT = ("DevTools", "Shared Components")

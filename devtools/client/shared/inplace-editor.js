@@ -36,6 +36,12 @@ loader.lazyRequireGetter(
   true
 );
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  getAutocompleteDataForColorFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-color-function.mjs",
+});
+
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const CONTENT_TYPES = {
   PLAIN_TEXT: 0,
@@ -76,19 +82,6 @@ const GRID_COL_PROPERTY_NAMES = [
   "grid-column",
   "grid-column-start",
   "grid-column-end",
-];
-
-
-const COLOR_SPACES = [
-  "a98-rgb",
-  "display-p3",
-  "prophoto-rgb",
-  "rec2020",
-  "srgb",
-  "srgb-linear",
-  "xyz",
-  "xyz-d50",
-  "xyz-d65",
 ];
 
 
@@ -1915,7 +1908,11 @@ class InplaceEditor extends EventEmitter {
     }
 
     if (functionName === "color") {
-      return this.#getAutocompleteDataForColorFunction(functionStackEntry);
+      return lazy.getAutocompleteDataForColorFunction({
+        functionTokens: functionStackEntry.tokens,
+        getCSSValuesForPropertyName:
+          this.#getCSSValuesForPropertyName.bind(this),
+      });
     }
 
     
@@ -1963,61 +1960,6 @@ class InplaceEditor extends EventEmitter {
     
     
     const list = this.#getCSSValuesForPropertyName("color");
-    return { list };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  #getAutocompleteDataForColorFunction(functionStackEntry) {
-    let list;
-    const tokensCount = functionStackEntry.tokens.length;
-    const isLastTokenComplete = !!functionStackEntry.tokens.at(-1)?.complete;
-
-    
-    
-    
-
-    
-    
-    
-    if (!tokensCount || (tokensCount === 1 && !isLastTokenComplete)) {
-      list = COLOR_SPACES.concat("from").sort();
-    } else {
-      const [firstToken] = functionStackEntry.tokens;
-      if (firstToken.tokenType === "Ident" && firstToken.text === "from") {
-        if (tokensCount === 1 || (tokensCount === 2 && !isLastTokenComplete)) {
-          
-          
-          
-          list = this.#getCSSValuesForPropertyName("color");
-        } else if (
-          tokensCount === 2 ||
-          (tokensCount === 3 && !isLastTokenComplete)
-        ) {
-          
-          
-          list = Array.from(COLOR_SPACES);
-        } else {
-          
-          
-          list = [];
-        }
-      } else {
-        
-        
-        list = [];
-      }
-    }
-
     return { list };
   }
 
