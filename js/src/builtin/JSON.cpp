@@ -493,10 +493,7 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
 
   
   bool wroteMember = false;
-  RootedTuple<jsid, Value, Value> roots(cx);
-  RootedField<jsid> id(roots);
-  RootedField<Value, 1> outputValue(roots);
-  RootedField<Value, 2> objValue(roots);
+  RootedId id(cx);
   for (size_t i = 0, len = propertyList.length(); i < len; i++) {
     if (!CheckForInterrupt(cx)) {
       return false;
@@ -510,6 +507,7 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
 
 
     id = propertyList[i];
+    RootedValue outputValue(cx);
 #ifdef DEBUG
     if (scx->maybeSafely) {
       PropertyResult prop;
@@ -521,7 +519,7 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
                  prop.propertyInfo().isDataDescriptor());
     }
 #endif  
-    objValue = ObjectValue(*obj);
+    RootedValue objValue(cx, ObjectValue(*obj));
     if (!GetProperty(cx, obj, objValue, id, &outputValue)) {
       return false;
     }
@@ -1511,7 +1509,6 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
 
       
       RootedValue item(cx);
-      RootedId id(cx);
       for (; k < len; k++) {
         if (!CheckForInterrupt(cx)) {
           return false;
@@ -1523,6 +1520,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
         }
 
         
+        RootedId id(cx);
         if (item.isNumber() || item.isString()) {
           if (!PrimitiveValueToId<CanGC>(cx, item, &id)) {
             return false;
@@ -1711,17 +1709,14 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
     return false;
   }
 
-  RootedTuple<Value, JSObject*, ParseRecordObject*, JSObject*, JSString*, Value,
-              Value>
-      roots(cx);
   
-  RootedField<Value, 0> val(roots);
+  RootedValue val(cx);
   if (!GetProperty(cx, holder, holder, name, &val)) {
     return false;
   }
 
-  RootedField<JSObject*, 1> context(roots);
-  RootedField<ParseRecordObject*, 2> entries(roots);
+  RootedObject context(cx);
+  Rooted<ParseRecordObject*> entries(cx);
   
   if (parseRecord) {
     bool sameVal = false;
@@ -1754,7 +1749,7 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
 
   
   if (val.isObject()) {
-    RootedField<JSObject*, 3> obj(roots, &val.toObject());
+    RootedObject obj(cx, &val.toObject());
 
     bool isArray;
     if (!IsArray(cx, obj, &isArray)) {
@@ -1769,12 +1764,8 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
       }
 
       
-      RootedTuple<jsid, Value, ParseRecordObject*, Value, PropertyDescriptor>
-          arrayRoots(cx);
-      RootedField<jsid> id(arrayRoots);
-      RootedField<Value, 1> newElement(arrayRoots);
-      RootedField<Value, 3> value(arrayRoots);
-      RootedField<PropertyDescriptor> desc(arrayRoots);
+      RootedId id(cx);
+      RootedValue newElement(cx);
       for (uint32_t i = 0; i < length; i++) {
         if (!CheckForInterrupt(cx)) {
           return false;
@@ -1785,7 +1776,7 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
         }
 
         
-        RootedField<ParseRecordObject*> elementRecord(arrayRoots);
+        Rooted<ParseRecordObject*> elementRecord(cx);
         if (entries) {
           Rooted<Value> value(cx);
           if (!JS_GetPropertyById(cx, entries, id, &value)) {
@@ -1826,12 +1817,8 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
       }
 
       
-      RootedTuple<jsid, Value, ParseRecordObject*, Value, PropertyDescriptor>
-          objRoots(cx);
-      RootedField<jsid> id(objRoots);
-      RootedField<Value, 1> newElement(objRoots);
-      RootedField<Value, 3> value(objRoots);
-      RootedField<PropertyDescriptor> desc(objRoots);
+      RootedId id(cx);
+      RootedValue newElement(cx);
       for (size_t i = 0, len = keys.length(); i < len; i++) {
         if (!CheckForInterrupt(cx)) {
           return false;
@@ -1839,8 +1826,9 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
 
         
         id = keys[i];
-        RootedField<ParseRecordObject*> entryRecord(objRoots);
+        Rooted<ParseRecordObject*> entryRecord(cx);
         if (entries) {
+          Rooted<Value> value(cx);
           if (!JS_GetPropertyById(cx, entries, id, &value)) {
             return false;
           }
@@ -1861,10 +1849,11 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
           }
         } else {
           
-          desc = PropertyDescriptor::Data(newElement,
-                                          {JS::PropertyAttribute::Configurable,
-                                           JS::PropertyAttribute::Enumerable,
-                                           JS::PropertyAttribute::Writable});
+          Rooted<PropertyDescriptor> desc(
+              cx, PropertyDescriptor::Data(newElement,
+                                           {JS::PropertyAttribute::Configurable,
+                                            JS::PropertyAttribute::Enumerable,
+                                            JS::PropertyAttribute::Writable}));
           if (!DefineProperty(cx, obj, id, desc, ignored)) {
             return false;
           }
@@ -1874,13 +1863,13 @@ static bool InternalizeJSONProperty(JSContext* cx, HandleObject holder,
   }
 
   
-  RootedField<JSString*, 4> key(roots, IdToString(cx, name));
+  RootedString key(cx, IdToString(cx, name));
   if (!key) {
     return false;
   }
 
-  RootedField<Value, 5> keyVal(roots, StringValue(key));
-  RootedField<Value, 6> contextVal(roots, ObjectValue(*context));
+  RootedValue keyVal(cx, StringValue(key));
+  RootedValue contextVal(cx, ObjectValue(*context));
   return js::Call(cx, reviver, holder, keyVal, val, contextVal, vp);
 }
 

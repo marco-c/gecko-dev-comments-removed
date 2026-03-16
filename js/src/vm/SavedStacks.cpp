@@ -1067,26 +1067,25 @@ JS_PUBLIC_API bool BuildStackString(JSContext* cx, JSPrincipals* principals,
   
   {
     bool skippedAsync;
-    RootedTuple<js::SavedFrame*, js::SavedFrame*, js::SavedFrame*> roots(cx);
-    RootedField<js::SavedFrame*, 0> frame(
-        roots, UnwrapSavedFrame(cx, principals, stack,
-                                SavedFrameSelfHosted::Exclude, skippedAsync));
+    Rooted<js::SavedFrame*> frame(
+        cx, UnwrapSavedFrame(cx, principals, stack,
+                             SavedFrameSelfHosted::Exclude, skippedAsync));
     if (!frame) {
       stringp.set(cx->runtime()->emptyString);
       return true;
     }
 
-    RootedField<js::SavedFrame*, 1> parent(roots);
-    RootedField<js::SavedFrame*, 2> nextFrame(roots);
+    Rooted<js::SavedFrame*> parent(cx);
     do {
       MOZ_ASSERT(SavedFrameSubsumedByPrincipals(cx, principals, frame));
       MOZ_ASSERT(!frame->isSelfHosted(cx));
 
       parent = frame->getParent();
       bool skippedNextAsync;
-      nextFrame = js::GetFirstSubsumedFrame(cx, principals, parent,
-                                            SavedFrameSelfHosted::Exclude,
-                                            skippedNextAsync);
+      Rooted<js::SavedFrame*> nextFrame(
+          cx, js::GetFirstSubsumedFrame(cx, principals, parent,
+                                        SavedFrameSelfHosted::Exclude,
+                                        skippedNextAsync));
 
       switch (format) {
         case js::StackFormat::SpiderMonkey:
@@ -1141,12 +1140,9 @@ JS_PUBLIC_API JSObject* ConvertSavedFrameToPlainObject(
     SavedFrameSelfHosted selfHosted) {
   MOZ_ASSERT(savedFrameArg);
 
-  RootedTuple<JSObject*, JSObject*, JSObject*, Value, JSObject*> roots(cx);
-  RootedField<JSObject*, 0> savedFrame(roots, savedFrameArg);
-  RootedField<JSObject*, 1> baseConverted(roots);
-  RootedField<JSObject*, 2> lastConverted(roots);
-  RootedField<Value, 3> v(roots);
-  RootedField<JSObject*, 4> nextConverted(roots);
+  RootedObject savedFrame(cx, savedFrameArg);
+  RootedObject baseConverted(cx), lastConverted(cx);
+  RootedValue v(cx);
 
   baseConverted = lastConverted = JS_NewObject(cx, nullptr);
   if (!baseConverted) {
@@ -1171,7 +1167,7 @@ JS_PUBLIC_API JSObject* ConvertSavedFrameToPlainObject(
         return nullptr;
       }
       if (v.isObject()) {
-        nextConverted = JS_NewObject(cx, nullptr);
+        RootedObject nextConverted(cx, JS_NewObject(cx, nullptr));
         if (!nextConverted ||
             !JS_DefineProperty(cx, lastConverted, prop, nextConverted,
                                JSPROP_ENUMERATE)) {
@@ -1473,17 +1469,10 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
   
   Vector<AbstractFramePtr, 4, TempAllocPolicy> unreachedEvalTargets(cx);
 
-  RootedTuple<JSFunction*, LocationValue, JSAtom*, JSAtom*, SavedFrame*> roots(
-      cx);
-  RootedField<JSFunction*> startAt(roots,
-                                   startAtObj && startAtObj->is<JSFunction>()
-                                       ? &startAtObj->as<JSFunction>()
-                                       : nullptr);
+  Rooted<JSFunction*> startAt(cx, startAtObj && startAtObj->is<JSFunction>()
+                                      ? &startAtObj->as<JSFunction>()
+                                      : nullptr);
   bool seenStartAt = !startAt;
-  RootedField<LocationValue, 1> location(roots);
-  RootedField<JSAtom*, 2> displayAtom(roots);
-  RootedField<JSAtom*, 3> causeAtom(roots);
-  RootedField<SavedFrame*> asyncParent(roots);
 
   while (!iter.done()) {
     Activation& activation = *iter.activation();
@@ -1548,6 +1537,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
 
     
     
+    Rooted<LocationValue> location(cx);
     {
       AutoRealmUnchecked ar(cx, iter.realm());
       if (!cx->realm()->savedStacks().getLocation(cx, iter, &location)) {
@@ -1555,7 +1545,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
       }
     }
 
-    displayAtom = iter.maybeFunctionDisplayAtom();
+    Rooted<JSAtom*> displayAtom(cx, iter.maybeFunctionDisplayAtom());
 
     auto principals = iter.realm()->principals();
     MOZ_ASSERT_IF(framePtr && !iter.isWasm(), iter.pc());
@@ -1621,7 +1611,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
       
       
       const char* cause = activation.asyncCause();
-      causeAtom = AtomizeUTF8Chars(cx, cause, strlen(cause));
+      Rooted<JSAtom*> causeAtom(cx, AtomizeUTF8Chars(cx, cause, strlen(cause)));
       if (!causeAtom) {
         return false;
       }
@@ -1636,7 +1626,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
 
       
       
-      asyncParent = activation.asyncStack();
+      Rooted<SavedFrame*> asyncParent(cx, activation.asyncStack());
       if (!adoptAsyncStack(cx, &asyncParent, causeAtom, maxFrames)) {
         return false;
       }
@@ -2092,20 +2082,18 @@ JS_PUBLIC_API bool ConstructSavedFrameStackSlow(
     MutableHandleObject outSavedFrameStack) {
   Rooted<js::GCLookupVector> stackChain(cx, js::GCLookupVector(cx));
   Rooted<JS::ubi::StackFrame> ubiFrame(cx, frame);
-  RootedTuple<JSAtom*, JSAtom*> atomRoots(cx);
-  RootedField<JSAtom*, 0> source(atomRoots);
-  RootedField<JSAtom*, 1> functionDisplayName(atomRoots);
 
   while (ubiFrame.get()) {
     
 
+    Rooted<JSAtom*> source(cx);
     AtomizingMatcher atomizer(cx, ubiFrame.get().sourceLength());
     source = ubiFrame.get().source().match(atomizer);
     if (!source) {
       return false;
     }
 
-    functionDisplayName = nullptr;
+    Rooted<JSAtom*> functionDisplayName(cx);
     auto nameLength = ubiFrame.get().functionDisplayNameLength();
     if (nameLength > 0) {
       AtomizingMatcher atomizer(cx, nameLength);
