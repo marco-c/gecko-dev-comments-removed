@@ -81,10 +81,6 @@ constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clz(aValue));
 }
 
-constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
-  return static_cast<uint_fast8_t>(__builtin_ctz(aValue));
-}
-
 constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clzll(aValue));
 }
@@ -92,7 +88,6 @@ constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
 #else
 #  error "Implement these!"
 constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
-constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) = delete;
 constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
 #endif
 
@@ -112,22 +107,6 @@ constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
 constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountLeadingZeroes32(aValue);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
-  MOZ_ASSERT(aValue != 0);
-  return detail::CountTrailingZeroes32(aValue);
 }
 
 
@@ -279,7 +258,7 @@ constexpr uint_fast8_t CountTrailingZeroes(T aValue) {
   static_assert(std::is_integral_v<T>);
   
   if constexpr (sizeof(T) <= 4) {
-    return CountTrailingZeroes32(aValue);
+    return uint_fast8_t(std::countr_zero(static_cast<uint32_t>(aValue)));
   }
   
   if constexpr (sizeof(T) == 8) {
