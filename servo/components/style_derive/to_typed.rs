@@ -42,6 +42,20 @@ use synstructure::{BindingInfo, Structure};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn derive(mut input: DeriveInput) -> TokenStream {
     
     
