@@ -10,7 +10,6 @@
 #define _SECMODTI_H_ 1
 #include "prmon.h"
 #include "prtypes.h"
-#include "nssilckt.h"
 #include "secmodt.h"
 #include "pkcs11t.h"
 
@@ -51,7 +50,7 @@ struct PK11SlotInfoStr {
     CK_FLAGS flags; 
     
     CK_SESSION_HANDLE session;
-    PZLock *sessionLock; 
+    PRLock *sessionLock; 
     
     CK_SLOT_ID slotID;
     
@@ -59,7 +58,7 @@ struct PK11SlotInfoStr {
     
 
     PRInt32 refCount; 
-    PZLock *freeListLock;
+    PRLock *freeListLock;
     PK11SymKey *freeSymKeysWithSessionHead;
     PK11SymKey *freeSymKeysHead;
     int keyCount;
@@ -107,7 +106,7 @@ struct PK11SlotInfoStr {
     unsigned int lastState;
     
     NSSToken *nssToken;
-    PZLock *nssTokenLock;
+    PRLock *nssTokenLock;
     
     CK_TOKEN_INFO tokenInfo;
     
@@ -154,7 +153,7 @@ struct PK11ContextStr {
     CK_OBJECT_HANDLE objectID;            
     PK11SlotInfo *slot;                   
     CK_SESSION_HANDLE session;            
-    PZLock *sessionLock;                  
+    PRLock *sessionLock;                  
 
     PRBool ownSession;                    
     void *pwArg;                          

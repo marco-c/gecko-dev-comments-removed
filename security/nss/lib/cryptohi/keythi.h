@@ -6,6 +6,7 @@
 
 #include "eccutil.h"
 #include "kyber.h"
+#include "ml_dsat.h"
 #include "plarena.h"
 #include "pkcs11t.h"
 #include "secmodt.h"
@@ -38,6 +39,7 @@ typedef enum {
     kyberKey = 9,
     edKey = 10,
     ecMontKey = 11,
+    mldsaKey = 12
 } KeyType;
 
 
@@ -191,6 +193,15 @@ typedef struct SECKEYKyberPublicKeyStr SECKEYKyberPublicKey;
 
 
 
+struct SECKEYMLDSAPublicKeyStr {
+    SECOidTag paramSet;
+    SECItem publicValue;
+};
+typedef struct SECKEYMLDSAPublicKeyStr SECKEYMLDSAPublicKey;
+
+
+
+
 struct SECKEYPublicKeyStr {
     PLArenaPool *arena;
     KeyType keyType;
@@ -204,6 +215,7 @@ struct SECKEYPublicKeyStr {
         SECKEYFortezzaPublicKey fortezza;
         SECKEYECPublicKey ec;
         SECKEYKyberPublicKey kyber;
+        SECKEYMLDSAPublicKey mldsa;
     } u;
 };
 typedef struct SECKEYPublicKeyStr SECKEYPublicKey;
@@ -239,6 +251,21 @@ struct SECKEYPrivateKeyStr {
     PRUint32 staticflags;      
 };
 typedef struct SECKEYPrivateKeyStr SECKEYPrivateKey;
+
+
+
+
+
+#define SECKEYPRIVATEKEY_IS_TEMP_FLAG 0x01
+#define SECKEYPRIVATEKEY_IS_OWNED_FLAG 0x02
+#define SECKEYPRIVATEKEY_IS_TEMP(key) \
+    ((PRBool)((key)->pkcs11IsTemp & SECKEYPRIVATEKEY_IS_TEMP_FLAG) == SECKEYPRIVATEKEY_IS_TEMP_FLAG)
+#define SECKEYPRIVATEKEY_IS_OWNED(key) \
+    ((PRBool)((key)->pkcs11IsTemp & SECKEYPRIVATEKEY_IS_OWNED_FLAG) == SECKEYPRIVATEKEY_IS_OWNED_FLAG)
+#define SECKEYPRIVATEKEY_SET_TEMP(key, isTemp) (key)->pkcs11IsTemp = ((key)->pkcs11IsTemp & ~SECKEYPRIVATEKEY_IS_TEMP_FLAG) | \
+                                                                     ((isTemp) ? SECKEYPRIVATEKEY_IS_TEMP_FLAG : 0)
+#define SECKEYPRIVATEKEY_SET_OWNED(key, isOwned) (key)->pkcs11IsTemp = ((key)->pkcs11IsTemp & ~SECKEYPRIVATEKEY_IS_OWNED_FLAG) | \
+                                                                       ((isOwned) ? SECKEYPRIVATEKEY_IS_OWNED_FLAG : 0)
 
 typedef struct {
     PRCList links;

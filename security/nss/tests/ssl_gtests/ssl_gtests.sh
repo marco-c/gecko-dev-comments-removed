@@ -23,10 +23,7 @@ ssl_gtest_certs() {
   mkdir -p "${SSLGTESTDIR}"
   cd "${SSLGTESTDIR}"
 
-  PROFILEDIR=`pwd`
-  if [ "${OS_ARCH}" = "WINNT" -a "$OS_NAME" = "CYGWIN_NT" ]; then
-    PROFILEDIR=`cygpath -m "${PROFILEDIR}"`
-  fi
+  PROFILEDIR=`native_path`
 
   ${BINDIR}/certutil -N -d "${PROFILEDIR}" --empty-password 2>&1
   html_msg $? 0 "create ssl_gtest database"
@@ -56,7 +53,9 @@ ssl_gtest_certs() {
   make_cert rsa_pss_chain rsapss_chain sign
   make_cert rsa_ca_rsa_pss_chain rsa_ca_rsapss_chain sign
   make_cert ecdh_rsa ecdh_rsa kex
-  make_cert dsa dsa sign
+  if [ -z "${NSS_DISABLE_DSA}" ]; then
+      make_cert dsa dsa sign
+  fi
   make_cert delegator_ecdsa256 delegator_p256 sign
   make_cert delegator_rsae2048 delegator_rsae2048 sign
   make_cert delegator_rsa_pss2048 delegator_rsa_pss2048 sign

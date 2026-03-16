@@ -16,6 +16,7 @@
 #include "pkcs11t.h"
 #include "pk11func.h"
 #include "keyhi.h"
+#include "keyi.h"
 #include "secitem.h"
 #include "secerr.h"
 #include "sslerr.h"
@@ -552,8 +553,7 @@ PK11_SignatureLen(SECKEYPrivateKey *key)
     SECItem attributeItem = { siBuffer, NULL, 0 };
     SECStatus rv;
     int length;
-    SECOidTag paramOid;
-    CK_ULONG paramSet;
+    SECOidTag paramSet;
 
     switch (key->keyType) {
         case rsaKey:
@@ -593,17 +593,12 @@ PK11_SignatureLen(SECKEYPrivateKey *key)
             }
             return pk11_backupGetSignLength(key);
         case mldsaKey:
-            paramSet = PK11_ReadULongAttribute(key->pkcs11Slot, key->pkcs11ID,
-                                               CKA_PARAMETER_SET);
-            if (paramSet == CK_UNAVAILABLE_INFORMATION) {
-                break;
-            }
-            paramOid = SECKEY_GetMLDSAOidTagByPkcs11ParamSet(paramSet);
-            if (paramOid == SEC_OID_UNKNOWN) {
+            paramSet = seckey_GetParameterSet(key);
+            if (paramSet == SEC_OID_UNKNOWN) {
                 break;
             }
 
-            return SECKEY_MLDSAOidParamsToLen(paramOid, SECKEYSignatureType);
+            return SECKEY_MLDSAOidParamsToLen(paramSet, SECKEYSignatureType);
         default:
             break;
     }
@@ -1364,7 +1359,7 @@ PK11_UnwrapPrivKey(PK11SlotInfo *slot, PK11SymKey *wrappingKey,
         return NULL;
     }
     SECITEM_FreeItem(param_free, PR_TRUE);
-    return PK11_MakePrivKey(slot, nullKey, PR_FALSE, privKeyID, wincx);
+    return pk11_MakePrivKey(slot, nullKey, PR_FALSE, privKeyID, wincx);
 
 loser:
     PK11_FreeSymKey(newKey);

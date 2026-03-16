@@ -12,7 +12,6 @@
 
 
 #include "nspr.h"
-#include "nssilock.h"
 
 
 

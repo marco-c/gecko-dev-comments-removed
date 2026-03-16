@@ -651,6 +651,9 @@ TEST_P(TlsExtensionTest12, SignatureAlgorithmConfiguration) {
   }
 }
 
+#ifndef NSS_DISABLE_DSA
+
+
 
 TEST_P(TlsExtensionTest12, SignatureAlgorithmDisableDSA) {
   const std::vector<SSLSignatureScheme> schemes = {
@@ -700,6 +703,7 @@ TEST_P(TlsExtensionTest12, SignatureAlgorithmDisableDSA) {
   EXPECT_TRUE(ext2.Read(2, 2, &v));
   EXPECT_EQ(ssl_sig_rsa_pss_rsae_sha256, v);
 }
+#endif
 
 
 
@@ -953,8 +957,8 @@ TEST_F(TlsExtensionTest13Stream, ResumeIncorrectBinderLength) {
       client_, [](TlsPreSharedKeyReplacer* r) {
         r->binders_[0].Write(r->binders_[0].len(), 0xff, 1);
       });
-  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
-  client_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
+  ConnectExpectAlert(server_, kTlsAlertDecodeError);
+  client_->CheckErrorCode(SSL_ERROR_DECODE_ERROR_ALERT);
   server_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO);
 }
 
@@ -1310,6 +1314,9 @@ TEST_P(TlsDisallowedUnadvertisedExtensionTest13,
 
 TEST_P(TlsConnectStream, IncludePadding) {
   EnsureTlsSetup();
+  
+  client_->ConfigNamedGroups(kNonPQDHEGroups);
+
   SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_FALSE);  
 
   
@@ -1368,7 +1375,7 @@ TEST_F(TlsConnectStreamTls13, ClientHelloExtensionPermutationWithPSK) {
                             PR_TRUE) == SECSuccess);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
 }
 
 

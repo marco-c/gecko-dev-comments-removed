@@ -93,35 +93,40 @@ static SECStatus
 sftkdb_passwordToKey(SFTKDBHandle *keydb, SECItem *salt,
                      const char *pw, SECItem *key)
 {
-    SHA1Context *cx = NULL;
+    HASH_HashType hType;
+    const SECHashObject *hashObj;
+    void *ctx = NULL;
     SECStatus rv = SECFailure;
+
+    hType = salt->len == SHA384_LENGTH ? HASH_AlgSHA384 : HASH_AlgSHA1;
+    hashObj = HASH_GetRawHashObject(hType);
 
     if (!pw) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
 
-    key->data = PORT_Alloc(SHA1_LENGTH);
+    key->data = PORT_Alloc(hashObj->length);
     if (key->data == NULL) {
         goto loser;
     }
-    key->len = SHA1_LENGTH;
+    key->len = hashObj->length;
 
-    cx = SHA1_NewContext();
-    if (cx == NULL) {
+    ctx = hashObj->create();
+    if (ctx == NULL) {
         goto loser;
     }
-    SHA1_Begin(cx);
+    hashObj->begin(ctx);
     if (salt && salt->data) {
-        SHA1_Update(cx, salt->data, salt->len);
+        hashObj->update(ctx, salt->data, salt->len);
     }
-    SHA1_Update(cx, (unsigned char *)pw, PORT_Strlen(pw));
-    SHA1_End(cx, key->data, &key->len, key->len);
+    hashObj->update(ctx, (unsigned char *)pw, PORT_Strlen(pw));
+    hashObj->end(ctx, key->data, &key->len, key->len);
     rv = SECSuccess;
 
 loser:
-    if (cx) {
-        SHA1_DestroyContext(cx, PR_TRUE);
+    if (ctx) {
+        hashObj->destroy(ctx, PR_TRUE);
     }
     if (rv != SECSuccess) {
         if (key->data != NULL) {
@@ -654,7 +659,7 @@ sftkdb_switchKeys(SFTKDBHandle *keydb, SECItem *passKey, int iterationCount)
     }
 
     
-    SKIP_AFTER_FORK(PZ_Lock(keydb->passwordLock));
+    SKIP_AFTER_FORK(PR_Lock(keydb->passwordLock));
     data = keydb->passwordKey.data;
     len = keydb->passwordKey.len;
     keydb->passwordKey.data = passKey->data;
@@ -662,7 +667,7 @@ sftkdb_switchKeys(SFTKDBHandle *keydb, SECItem *passKey, int iterationCount)
     keydb->defaultIterationCount = iterationCount;
     passKey->data = data;
     passKey->len = len;
-    SKIP_AFTER_FORK(PZ_Unlock(keydb->passwordLock));
+    SKIP_AFTER_FORK(PR_Unlock(keydb->passwordLock));
 }
 
 
@@ -708,11 +713,11 @@ sftkdb_GetUpdatePasswordKey(SFTKDBHandle *handle)
         return NULL;
     }
 
-    PZ_Lock(handle->passwordLock);
+    PR_Lock(handle->passwordLock);
     if (handle->updatePasswordKey) {
         key = SECITEM_DupItem(handle->updatePasswordKey);
     }
-    PZ_Unlock(handle->passwordLock);
+    PR_Unlock(handle->passwordLock);
 
     return key;
 }
@@ -735,12 +740,12 @@ sftkdb_FreeUpdatePasswordKey(SFTKDBHandle *handle)
         return;
     }
 
-    PZ_Lock(handle->passwordLock);
+    PR_Lock(handle->passwordLock);
     if (handle->updatePasswordKey) {
         key = handle->updatePasswordKey;
         handle->updatePasswordKey = NULL;
     }
-    PZ_Unlock(handle->passwordLock);
+    PR_Unlock(handle->passwordLock);
 
     if (key) {
         SECITEM_ZfreeItem(key, PR_TRUE);
@@ -1007,7 +1012,7 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
 
 
 
-        PZ_Lock(keydb->passwordLock);
+        PR_Lock(keydb->passwordLock);
         if (sftkdb_NeedUpdateDBPassword(keydb)) {
             
 
@@ -1015,7 +1020,7 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
 
 
             keydb->updatePasswordKey = SECITEM_DupItem(key);
-            PZ_Unlock(keydb->passwordLock);
+            PR_Unlock(keydb->passwordLock);
             if (keydb->updatePasswordKey == NULL) {
                 
                 rv = SECFailure;
@@ -1080,7 +1085,7 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
 
             }
         } else {
-            PZ_Unlock(keydb->passwordLock);
+            PR_Unlock(keydb->passwordLock);
         }
         
         sftkdb_switchKeys(keydb, key, iterationCount);
@@ -1112,9 +1117,9 @@ SECStatus
 sftkdb_PWCached(SFTKDBHandle *keydb)
 {
     SECStatus rv;
-    PZ_Lock(keydb->passwordLock);
+    PR_Lock(keydb->passwordLock);
     rv = keydb->passwordKey.data ? SECSuccess : SECFailure;
-    PZ_Unlock(keydb->passwordLock);
+    PR_Unlock(keydb->passwordLock);
     return rv;
 }
 
@@ -1362,6 +1367,7 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
     unsigned char saltData[SDB_MAX_META_DATA_LEN];
     unsigned char valueData[SDB_MAX_META_DATA_LEN];
     int iterationCount = getPBEIterationCount();
+    int preferred_salt_length;
     CK_RV crv;
     SDB *db;
 
@@ -1393,7 +1399,18 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
             goto loser;
         }
     } else {
-        salt.len = SHA1_LENGTH;
+        salt.len = 0;
+    }
+
+    preferred_salt_length = SHA384_LENGTH;
+
+    
+    if (!newPin || *newPin == 0) {
+        preferred_salt_length = SHA1_LENGTH;
+    }
+
+    if (salt.len != preferred_salt_length) {
+        salt.len = preferred_salt_length;
         RNG_GenerateGlobalRandomBytes(salt.data, salt.len);
     }
 

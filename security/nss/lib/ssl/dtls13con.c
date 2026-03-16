@@ -820,16 +820,17 @@ dtls13_MaybeSendKeyUpdate(sslSocket *ss, tls13KeyUpdateRequest request, PRBool b
     ssl_GetXmitBufLock(ss);
     rv = dtls13_EnqueueKeyUpdateMessage(ss, request);
     if (rv != SECSuccess) {
+        ssl_ReleaseXmitBufLock(ss);
         return rv; 
     }
 
     
     
     rv = ssl3_FlushHandshake(ss, 0);
+    ssl_ReleaseXmitBufLock(ss);
     if (rv != SECSuccess) {
         return SECFailure; 
     }
-    ssl_ReleaseXmitBufLock(ss);
 
     
     PORT_Assert(ss->ssl3.hs.isKeyUpdateInProgress == PR_FALSE);

@@ -2350,13 +2350,25 @@ main(int argc, char **argv)
         addr.inet.port = PR_htons(portno);
     } else {
         PRBool gotLoopbackIP = PR_FALSE;
-        if ((!strcmp(host, "localhost") || !strcmp(host, "localhost.localdomain"))
-            
-            && allowIPv4 && allowIPv6) {
-            
-            status = PR_GetPrefLoopbackAddrInfo(&addr, portno);
-            if (status != PR_FAILURE) {
-                gotLoopbackIP = PR_TRUE;
+        if (!strcmp(host, "localhost") || !strcmp(host, "localhost.localdomain")) {
+            if (allowIPv4 && allowIPv6) {
+                
+
+                status = PR_GetPrefLoopbackAddrInfo(&addr, portno);
+                if (status != PR_FAILURE) {
+                    gotLoopbackIP = PR_TRUE;
+                }
+            }
+            if (!gotLoopbackIP && (allowIPv4 || allowIPv6)) {
+                
+
+
+                status = PR_StringToNetAddr(allowIPv6 ? "::1" : "127.0.0.1",
+                                            &addr);
+                if (status == PR_SUCCESS) {
+                    addr.inet.port = PR_htons(portno);
+                    gotLoopbackIP = PR_TRUE;
+                }
             }
         }
 
