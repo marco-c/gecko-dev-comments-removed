@@ -3133,15 +3133,6 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
   
   esm->SetContentState(target, ElementState::URLTARGET);
 
-  
-  if (ScrollContainerFrame* rootScroll = GetRootScrollContainerFrame()) {
-    if (rootScroll->DidHistoryRestore()) {
-      
-      aScroll = false;
-      rootScroll->ClearDidHistoryRestore();
-    }
-  }
-
   if (target) {
     
     ErrorResult rv;
