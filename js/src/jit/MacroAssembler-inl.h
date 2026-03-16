@@ -10,7 +10,6 @@
 #include "jit/MacroAssembler.h"
 
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <bit>
 
@@ -1107,7 +1106,7 @@ void MacroAssembler::assertStackAlignment(uint32_t alignment,
                                           int32_t offset ) {
 #ifdef DEBUG
   Label ok, bad;
-  MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
+  MOZ_ASSERT(std::has_single_bit(alignment));
 
   
   offset %= alignment;

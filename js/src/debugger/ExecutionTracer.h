@@ -10,11 +10,11 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/BaseProfilerUtils.h"  
 #include "mozilla/EndianUtils.h"        
-#include "mozilla/MathAlgorithms.h"     
 #include "mozilla/Maybe.h"  
 #include "mozilla/Span.h"
 #include "mozilla/TimeStamp.h"
 
+#include <bit>       
 #include <limits>    
 #include <stddef.h>  
 #include <stdint.h>  
@@ -60,7 +60,7 @@ using TracingScratchBuffer = mozilla::Vector<char, 512>;
 
 template <size_t BUFFER_SIZE>
 class TracingBuffer {
-  static_assert(mozilla::IsPowerOfTwo(BUFFER_SIZE));
+  static_assert(std::has_single_bit(BUFFER_SIZE));
 
   
   

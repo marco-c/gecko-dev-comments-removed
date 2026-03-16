@@ -18,6 +18,8 @@
 
 #include "wasm/WasmModuleTypes.h"
 
+#include <bit>
+
 #include "vm/JSAtomUtils.h"  
 #include "vm/MallocProvider.h"
 #include "wasm/WasmUtility.h"
@@ -34,7 +36,7 @@ using mozilla::MallocSizeOf;
 
 
 static CheckedInt32 RoundUpToAlignment(CheckedInt32 address, uint32_t align) {
-  MOZ_ASSERT(mozilla::IsPowerOfTwo(align));
+  MOZ_ASSERT(std::has_single_bit(align));
 
   
   
