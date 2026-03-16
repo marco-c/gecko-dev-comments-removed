@@ -3359,7 +3359,7 @@ static bool malloc_init_hard() {
   
   const size_t page_size = GetKernelPageSize();
   
-  MOZ_ASSERT(IsPowerOfTwo(page_size));
+  MOZ_ASSERT(std::has_single_bit(page_size));
 #ifdef MALLOC_STATIC_PAGESIZE
   if (gRealPageSize % page_size) {
     _malloc_message(
