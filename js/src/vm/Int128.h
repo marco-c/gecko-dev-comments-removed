@@ -9,8 +9,8 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/EndianUtils.h"
-#include "mozilla/MathAlgorithms.h"
 
+#include <bit>
 #include <climits>
 #include <limits>
 #include <stdint.h>
@@ -296,7 +296,7 @@ class alignas(16) Uint128 final {
     }
 
     
-    int64_t s = mozilla::CountLeadingZeroes64(v);
+    int64_t s = std::countl_zero(v);
 
     
     v = v << s;
@@ -387,7 +387,7 @@ class alignas(16) Uint128 final {
     
 
     
-    auto n = mozilla::CountLeadingZeroes64(v.high);
+    auto n = std::countl_zero(v.high);
 
     
     auto v1 = (v << n).high;

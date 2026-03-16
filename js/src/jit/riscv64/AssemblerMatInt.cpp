@@ -11,7 +11,6 @@
 
 
 
-#include "mozilla/MathAlgorithms.h"
 
 #include <bit>
 
@@ -21,7 +20,7 @@ namespace js {
 namespace jit {
 void Assembler::RecursiveLi(Register rd, int64_t imm) {
   if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
-    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)imm);
+    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
     uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
     int countFillZero = RecursiveLiImplCount(ShiftedVal) + 1;
     if (countFillZero < RecursiveLiImplCount(imm)) {
@@ -35,7 +34,7 @@ void Assembler::RecursiveLi(Register rd, int64_t imm) {
 
 int Assembler::RecursiveLiCount(int64_t imm) {
   if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
-    unsigned LeadingZeros = mozilla::CountLeadingZeroes64((uint64_t)imm);
+    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
     uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
     
     
