@@ -34,9 +34,9 @@ nssSlot_Destroy(
     if (slot) {
         if (PR_ATOMIC_DECREMENT(&slot->base.refCount) == 0) {
             PK11_FreeSlot(slot->pk11slot);
-            PR_DestroyLock(slot->base.lock);
-            PR_DestroyCondVar(slot->isPresentCondition);
-            PR_DestroyLock(slot->isPresentLock);
+            PZ_DestroyLock(slot->base.lock);
+            PZ_DestroyCondVar(slot->isPresentCondition);
+            PZ_DestroyLock(slot->isPresentLock);
             return nssArena_Destroy(slot->base.arena);
         }
     }
@@ -47,7 +47,7 @@ void
 nssSlot_EnterMonitor(NSSSlot *slot)
 {
     if (slot->lock) {
-        PR_Lock(slot->lock);
+        PZ_Lock(slot->lock);
     }
 }
 
@@ -55,7 +55,7 @@ void
 nssSlot_ExitMonitor(NSSSlot *slot)
 {
     if (slot->lock) {
-        PR_Unlock(slot->lock);
+        PZ_Unlock(slot->lock);
     }
 }
 
@@ -85,9 +85,9 @@ NSS_IMPLEMENT void
 nssSlot_ResetDelay(
     NSSSlot *slot)
 {
-    PR_Lock(slot->isPresentLock);
+    PZ_Lock(slot->isPresentLock);
     slot->lastTokenPingState = nssSlotLastPingState_Reset;
-    PR_Unlock(slot->isPresentLock);
+    PZ_Unlock(slot->isPresentLock);
 }
 
 static PRBool
@@ -132,13 +132,13 @@ nssSlot_IsTokenPresent(
     }
 
     
-    PR_Lock(slot->isPresentLock);
+    PZ_Lock(slot->isPresentLock);
     if (token_status_checked(slot)) {
         CK_FLAGS ckFlags = slot->ckFlags;
-        PR_Unlock(slot->isPresentLock);
+        PZ_Unlock(slot->isPresentLock);
         return ((ckFlags & CKF_TOKEN_PRESENT) != 0);
     }
-    PR_Unlock(slot->isPresentLock);
+    PZ_Unlock(slot->isPresentLock);
 
     
 
@@ -148,7 +148,7 @@ nssSlot_IsTokenPresent(
     }
 
     
-    PR_Lock(slot->isPresentLock);
+    PZ_Lock(slot->isPresentLock);
     while (slot->isPresentThread) {
         PR_WaitCondVar(slot->isPresentCondition, PR_INTERVAL_NO_TIMEOUT);
     }
@@ -156,7 +156,7 @@ nssSlot_IsTokenPresent(
 
     if (token_status_checked(slot)) {
         CK_FLAGS ckFlags = slot->ckFlags;
-        PR_Unlock(slot->isPresentLock);
+        PZ_Unlock(slot->isPresentLock);
         return ((ckFlags & CKF_TOKEN_PRESENT) != 0);
     }
     
@@ -164,7 +164,7 @@ nssSlot_IsTokenPresent(
     slot->lastTokenPingState = nssSlotLastPingState_Update;
     slot->isPresentThread = PR_GetCurrentThread();
 
-    PR_Unlock(slot->isPresentLock);
+    PZ_Unlock(slot->isPresentLock);
 
     nssToken = PK11Slot_GetNSSToken(slot->pk11slot);
     if (!nssToken) {
@@ -265,7 +265,7 @@ done:
 
 
 
-    PR_Lock(slot->isPresentLock);
+    PZ_Lock(slot->isPresentLock);
     
 
     if (slot->lastTokenPingState == nssSlotLastPingState_Update) {
@@ -274,7 +274,7 @@ done:
     }
     slot->isPresentThread = NULL;
     PR_NotifyAllCondVar(slot->isPresentCondition);
-    PR_Unlock(slot->isPresentLock);
+    PZ_Unlock(slot->isPresentLock);
     return isPresent;
 }
 
@@ -303,7 +303,7 @@ nssSession_EnterMonitor(
     nssSession *s)
 {
     if (s->lock)
-        PR_Lock(s->lock);
+        PZ_Lock(s->lock);
     return PR_SUCCESS;
 }
 
@@ -311,7 +311,7 @@ NSS_IMPLEMENT PRStatus
 nssSession_ExitMonitor(
     nssSession *s)
 {
-    return (s->lock) ? PR_Unlock(s->lock) : PR_SUCCESS;
+    return (s->lock) ? PZ_Unlock(s->lock) : PR_SUCCESS;
 }
 
 NSS_EXTERN PRBool

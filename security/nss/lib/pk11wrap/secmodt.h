@@ -5,7 +5,7 @@
 #define _SECMODT_H_ 1
 
 #include "nssrwlkt.h"
-#include "prlock.h"
+#include "nssilckt.h"
 #include "secoid.h"
 #include "secasn1.h"
 #include "pkcs11t.h"
@@ -53,7 +53,7 @@ struct SECMODModuleStr {
     void *library;             
 
     void *functionList;        
-    PRLock *refLock;           
+    PZLock *refLock;           
     int refCount;              
     PK11SlotInfo **slots;      
     int slotCount;             
@@ -103,7 +103,7 @@ struct SECMODModuleListStr {
 struct PK11SlotListStr {
     PK11SlotListElement *head;
     PK11SlotListElement *tail;
-    PRLock *lock;
+    PZLock *lock;
 };
 
 struct PK11SlotListElementStr {

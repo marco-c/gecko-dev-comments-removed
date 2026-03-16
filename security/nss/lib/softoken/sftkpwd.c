@@ -659,7 +659,7 @@ sftkdb_switchKeys(SFTKDBHandle *keydb, SECItem *passKey, int iterationCount)
     }
 
     
-    SKIP_AFTER_FORK(PR_Lock(keydb->passwordLock));
+    SKIP_AFTER_FORK(PZ_Lock(keydb->passwordLock));
     data = keydb->passwordKey.data;
     len = keydb->passwordKey.len;
     keydb->passwordKey.data = passKey->data;
@@ -667,7 +667,7 @@ sftkdb_switchKeys(SFTKDBHandle *keydb, SECItem *passKey, int iterationCount)
     keydb->defaultIterationCount = iterationCount;
     passKey->data = data;
     passKey->len = len;
-    SKIP_AFTER_FORK(PR_Unlock(keydb->passwordLock));
+    SKIP_AFTER_FORK(PZ_Unlock(keydb->passwordLock));
 }
 
 
@@ -713,11 +713,11 @@ sftkdb_GetUpdatePasswordKey(SFTKDBHandle *handle)
         return NULL;
     }
 
-    PR_Lock(handle->passwordLock);
+    PZ_Lock(handle->passwordLock);
     if (handle->updatePasswordKey) {
         key = SECITEM_DupItem(handle->updatePasswordKey);
     }
-    PR_Unlock(handle->passwordLock);
+    PZ_Unlock(handle->passwordLock);
 
     return key;
 }
@@ -740,12 +740,12 @@ sftkdb_FreeUpdatePasswordKey(SFTKDBHandle *handle)
         return;
     }
 
-    PR_Lock(handle->passwordLock);
+    PZ_Lock(handle->passwordLock);
     if (handle->updatePasswordKey) {
         key = handle->updatePasswordKey;
         handle->updatePasswordKey = NULL;
     }
-    PR_Unlock(handle->passwordLock);
+    PZ_Unlock(handle->passwordLock);
 
     if (key) {
         SECITEM_ZfreeItem(key, PR_TRUE);
@@ -1012,7 +1012,7 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
 
 
 
-        PR_Lock(keydb->passwordLock);
+        PZ_Lock(keydb->passwordLock);
         if (sftkdb_NeedUpdateDBPassword(keydb)) {
             
 
@@ -1020,7 +1020,7 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
 
 
             keydb->updatePasswordKey = SECITEM_DupItem(key);
-            PR_Unlock(keydb->passwordLock);
+            PZ_Unlock(keydb->passwordLock);
             if (keydb->updatePasswordKey == NULL) {
                 
                 rv = SECFailure;
@@ -1085,7 +1085,7 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
 
             }
         } else {
-            PR_Unlock(keydb->passwordLock);
+            PZ_Unlock(keydb->passwordLock);
         }
         
         sftkdb_switchKeys(keydb, key, iterationCount);
@@ -1117,9 +1117,9 @@ SECStatus
 sftkdb_PWCached(SFTKDBHandle *keydb)
 {
     SECStatus rv;
-    PR_Lock(keydb->passwordLock);
+    PZ_Lock(keydb->passwordLock);
     rv = keydb->passwordKey.data ? SECSuccess : SECFailure;
-    PR_Unlock(keydb->passwordLock);
+    PZ_Unlock(keydb->passwordLock);
     return rv;
 }
 

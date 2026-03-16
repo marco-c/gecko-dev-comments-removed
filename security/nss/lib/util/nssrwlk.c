@@ -11,7 +11,7 @@ PR_BEGIN_EXTERN_C
 
 
 struct nssRWLockStr {
-    PRLock *rw_lock;
+    PZLock *rw_lock;
     char *rw_name;               
     PRUint32 rw_rank;            
     PRInt32 rw_writer_locks;     
@@ -19,8 +19,8 @@ struct nssRWLockStr {
                                  
     PRUint32 rw_waiting_readers; 
     PRUint32 rw_waiting_writers; 
-    PRCondVar *rw_reader_waitq;  
-    PRCondVar *rw_writer_waitq;  
+    PZCondVar *rw_reader_waitq;  
+    PZCondVar *rw_writer_waitq;  
     PRThread *rw_owner;          
                                  
 };
@@ -78,15 +78,15 @@ NSSRWLock_New(PRUint32 lock_rank, const char *lock_name)
     if (rwlock == NULL)
         return NULL;
 
-    rwlock->rw_lock = PR_NewLock();
+    rwlock->rw_lock = PZ_NewLock(nssILockRWLock);
     if (rwlock->rw_lock == NULL) {
         goto loser;
     }
-    rwlock->rw_reader_waitq = PR_NewCondVar(rwlock->rw_lock);
+    rwlock->rw_reader_waitq = PZ_NewCondVar(rwlock->rw_lock);
     if (rwlock->rw_reader_waitq == NULL) {
         goto loser;
     }
-    rwlock->rw_writer_waitq = PR_NewCondVar(rwlock->rw_lock);
+    rwlock->rw_writer_waitq = PZ_NewCondVar(rwlock->rw_lock);
     if (rwlock->rw_writer_waitq == NULL) {
         goto loser;
     }
@@ -128,11 +128,11 @@ NSSRWLock_Destroy(NSSRWLock *rwlock)
     if (rwlock->rw_name)
         PR_Free(rwlock->rw_name);
     if (rwlock->rw_reader_waitq)
-        PR_DestroyCondVar(rwlock->rw_reader_waitq);
+        PZ_DestroyCondVar(rwlock->rw_reader_waitq);
     if (rwlock->rw_writer_waitq)
-        PR_DestroyCondVar(rwlock->rw_writer_waitq);
+        PZ_DestroyCondVar(rwlock->rw_writer_waitq);
     if (rwlock->rw_lock)
-        PR_DestroyLock(rwlock->rw_lock);
+        PZ_DestroyLock(rwlock->rw_lock);
     PR_DELETE(rwlock);
 }
 
@@ -144,7 +144,7 @@ NSSRWLock_LockRead(NSSRWLock *rwlock)
 {
     PRThread *me = PR_GetCurrentThread();
 
-    PR_Lock(rwlock->rw_lock);
+    PZ_Lock(rwlock->rw_lock);
 #ifdef NSS_RWLOCK_RANK_ORDER_DEBUG
 
     
@@ -164,12 +164,12 @@ NSSRWLock_LockRead(NSSRWLock *rwlock)
     { 
 
         rwlock->rw_waiting_readers++;
-        PR_WaitCondVar(rwlock->rw_reader_waitq, PR_INTERVAL_NO_TIMEOUT);
+        PZ_WaitCondVar(rwlock->rw_reader_waitq, PR_INTERVAL_NO_TIMEOUT);
         rwlock->rw_waiting_readers--;
     }
     rwlock->rw_reader_locks++; 
 
-    PR_Unlock(rwlock->rw_lock);
+    PZ_Unlock(rwlock->rw_lock);
 
 #ifdef NSS_RWLOCK_RANK_ORDER_DEBUG
     nssRWLock_SetThreadRank(me, rwlock); 
@@ -181,7 +181,7 @@ NSSRWLock_LockRead(NSSRWLock *rwlock)
 void
 NSSRWLock_UnlockRead(NSSRWLock *rwlock)
 {
-    PR_Lock(rwlock->rw_lock);
+    PZ_Lock(rwlock->rw_lock);
 
     PR_ASSERT(rwlock->rw_reader_locks > 0); 
 
@@ -190,10 +190,10 @@ NSSRWLock_UnlockRead(NSSRWLock *rwlock)
         (rwlock->rw_owner == NULL) &&       
         (rwlock->rw_waiting_writers > 0)) { 
 
-        PR_NotifyCondVar(rwlock->rw_writer_waitq); 
+        PZ_NotifyCondVar(rwlock->rw_writer_waitq); 
     }
 
-    PR_Unlock(rwlock->rw_lock);
+    PZ_Unlock(rwlock->rw_lock);
 
 #ifdef NSS_RWLOCK_RANK_ORDER_DEBUG
     
@@ -212,7 +212,7 @@ NSSRWLock_LockWrite(NSSRWLock *rwlock)
 {
     PRThread *me = PR_GetCurrentThread();
 
-    PR_Lock(rwlock->rw_lock);
+    PZ_Lock(rwlock->rw_lock);
 #ifdef NSS_RWLOCK_RANK_ORDER_DEBUG
     
 
@@ -234,7 +234,7 @@ NSSRWLock_LockWrite(NSSRWLock *rwlock)
     { 
 
         rwlock->rw_waiting_writers++;
-        PR_WaitCondVar(rwlock->rw_writer_waitq, PR_INTERVAL_NO_TIMEOUT);
+        PZ_WaitCondVar(rwlock->rw_writer_waitq, PR_INTERVAL_NO_TIMEOUT);
         rwlock->rw_waiting_writers--;
         PR_ASSERT(rwlock->rw_reader_locks >= 0);
     }
@@ -246,7 +246,7 @@ NSSRWLock_LockWrite(NSSRWLock *rwlock)
     rwlock->rw_owner = me;
     rwlock->rw_writer_locks++; 
 
-    PR_Unlock(rwlock->rw_lock);
+    PZ_Unlock(rwlock->rw_lock);
 
 #ifdef NSS_RWLOCK_RANK_ORDER_DEBUG
     
@@ -263,7 +263,7 @@ NSSRWLock_UnlockWrite(NSSRWLock *rwlock)
 {
     PRThread *me = PR_GetCurrentThread();
 
-    PR_Lock(rwlock->rw_lock);
+    PZ_Lock(rwlock->rw_lock);
     PR_ASSERT(rwlock->rw_owner == me);      
     PR_ASSERT(rwlock->rw_writer_locks > 0); 
 
@@ -276,12 +276,12 @@ NSSRWLock_UnlockWrite(NSSRWLock *rwlock)
         
         if (rwlock->rw_waiting_writers > 0) {
             if (rwlock->rw_reader_locks == 0)
-                PR_NotifyCondVar(rwlock->rw_writer_waitq);
+                PZ_NotifyCondVar(rwlock->rw_writer_waitq);
         } else if (rwlock->rw_waiting_readers > 0) {
-            PR_NotifyAllCondVar(rwlock->rw_reader_waitq);
+            PZ_NotifyAllCondVar(rwlock->rw_reader_waitq);
         }
     }
-    PR_Unlock(rwlock->rw_lock);
+    PZ_Unlock(rwlock->rw_lock);
 
 #ifdef NSS_RWLOCK_RANK_ORDER_DEBUG
     
@@ -306,11 +306,11 @@ NSSRWLock_HaveWriteLock(NSSRWLock *rwlock)
 
 
 #if UNNECESSARY
-    PR_Lock(rwlock->rw_lock);
+    PZ_Lock(rwlock->rw_lock);
 #endif
     ownWriteLock = (PRBool)(me == rwlock->rw_owner);
 #if UNNECESSARY
-    PR_Unlock(rwlock->rw_lock);
+    PZ_Unlock(rwlock->rw_lock);
 #endif
     return ownWriteLock;
 }

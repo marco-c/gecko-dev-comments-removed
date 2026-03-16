@@ -72,8 +72,8 @@ struct nssPKIObjectStr {
     PRInt32 refCount;
     
     union {
-        PRLock *lock;
-        PRMonitor *mlock;
+        PZLock *lock;
+        PZMonitor *mlock;
     } sync;
     nssPKILockType lockType;
     

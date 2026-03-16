@@ -6,7 +6,8 @@
 
 
 
-#include "nss.h" 
+#include "nss.h"      
+#include "nssilock.h" 
 #include "pk11pub.h"
 #include "prmon.h"
 #include "prtime.h"
@@ -21,7 +22,7 @@ struct SSLAntiReplayContextStr {
     
     PRInt32 refCount;
     
-    PRMonitor *lock;
+    PZMonitor *lock;
     
     sslBloomFilter filters[2];
     
@@ -45,7 +46,7 @@ tls13_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
     }
 
     if (ctx->lock) {
-        PR_DestroyMonitor(ctx->lock);
+        PZ_DestroyMonitor(ctx->lock);
         ctx->lock = NULL;
     }
     PK11_FreeSymKey(ctx->key);
@@ -127,7 +128,7 @@ SSLExp_CreateAntiReplayContext(PRTime now, PRTime window, unsigned int k,
     }
 
     ctx->refCount = 1;
-    ctx->lock = PR_NewMonitor();
+    ctx->lock = PZ_NewMonitor(nssILockSSL);
     if (!ctx->lock) {
         goto loser; 
     }
@@ -266,7 +267,7 @@ tls13_IsReplay(const sslSocket *ss, const sslSessionID *sid)
         return PR_TRUE;
     }
 
-    PR_EnterMonitor(ctx->lock);
+    PZ_EnterMonitor(ctx->lock);
     tls13_AntiReplayUpdate(ctx, ssl_Time(ss));
 
     index = ctx->current;
@@ -279,6 +280,6 @@ tls13_IsReplay(const sslSocket *ss, const sslSessionID *sid)
                      SSL_GETPID(), ss->fd, replay ? "replay" : "ok"));
     }
 
-    PR_ExitMonitor(ctx->lock);
+    PZ_ExitMonitor(ctx->lock);
     return replay;
 }

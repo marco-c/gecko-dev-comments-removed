@@ -23,6 +23,7 @@
 #include "ssl3prot.h"
 #include "hasht.h"
 #include "cryptohi.h"
+#include "nssilock.h"
 #include "pkcs11t.h"
 #if defined(XP_UNIX)
 #include "unistd.h"
@@ -1128,22 +1129,22 @@ struct sslSocketStr {
     PRIntervalTime wTimeout; 
     PRIntervalTime cTimeout; 
 
-    PRLock *recvLock; 
-    PRLock *sendLock; 
+    PZLock *recvLock; 
+    PZLock *sendLock; 
 
-    PRMonitor *recvBufLock; 
-    PRMonitor *xmitBufLock; 
-
-    
-
-
-
-    PRMonitor *firstHandshakeLock;
+    PZMonitor *recvBufLock; 
+    PZMonitor *xmitBufLock; 
 
     
 
 
-    PRMonitor *ssl3HandshakeLock;
+
+    PZMonitor *firstHandshakeLock;
+
+    
+
+
+    PZMonitor *ssl3HandshakeLock;
 
     
 
@@ -1225,7 +1226,7 @@ extern char ssl_debug;
 extern char ssl_trace;
 extern FILE *ssl_trace_iob;
 extern FILE *ssl_keylog_iob;
-extern PRLock *ssl_keylog_lock;
+extern PZLock *ssl_keylog_lock;
 static const PRUint32 ssl_ticket_lifetime = 2 * 24 * 60 * 60; 
 
 extern const char *const ssl3_cipherName[];
@@ -1392,16 +1393,16 @@ void ssl_ClearPRCList(PRCList *list, void (*f)(void *));
 
 #define SSL_LOCK_READER(ss) \
     if (ss->recvLock)       \
-    PR_Lock(ss->recvLock)
+    PZ_Lock(ss->recvLock)
 #define SSL_UNLOCK_READER(ss) \
     if (ss->recvLock)         \
-    PR_Unlock(ss->recvLock)
+    PZ_Unlock(ss->recvLock)
 #define SSL_LOCK_WRITER(ss) \
     if (ss->sendLock)       \
-    PR_Lock(ss->sendLock)
+    PZ_Lock(ss->sendLock)
 #define SSL_UNLOCK_WRITER(ss) \
     if (ss->sendLock)         \
-    PR_Unlock(ss->sendLock)
+    PZ_Unlock(ss->sendLock)
 
 PRBool ssl_HaveRecvBufLock(sslSocket *ss);
 PRBool ssl_HaveXmitBufLock(sslSocket *ss);

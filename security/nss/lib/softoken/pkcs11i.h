@@ -7,7 +7,7 @@
 #ifndef _PKCS11I_H_
 #define _PKCS11I_H_ 1
 
-#include "prlock.h"
+#include "nssilock.h"
 #include "seccomon.h"
 #include "secoidt.h"
 #include "lowkeyti.h"
@@ -154,16 +154,6 @@ typedef enum {
 
 
 
-typedef enum {
-    SFTK_SOURCE_DEFAULT = 0,
-    SFTK_SOURCE_KEA,
-    SFTK_SOURCE_HKDF_EXPAND,
-    SFTK_SOURCE_HKDF_EXTRACT
-} SFTKSource;
-
-
-
-
 struct SFTKAttributeStr {
     SFTKAttribute *next;
     SFTKAttribute *prev;
@@ -186,7 +176,7 @@ struct SFTKObjectListStr {
 
 struct SFTKObjectFreeListStr {
     SFTKObject *head;
-    PRLock *lock;
+    PZLock *lock;
     int count;
 };
 
@@ -199,14 +189,12 @@ struct SFTKObjectStr {
     CK_OBJECT_CLASS objclass;
     CK_OBJECT_HANDLE handle;
     int refCount;
-    PRUint32 type; 
-    PRLock *refLock;
+    PZLock *refLock;
     SFTKSlot *slot;
     void *objectInfo;
     SFTKFree infoFree;
     CK_FLAGS validation_value;
     SFTKAttribute validation_attribute;
-    SFTKSource source;
 };
 
 struct SFTKTokenObjectStr {
@@ -217,7 +205,7 @@ struct SFTKTokenObjectStr {
 struct SFTKSessionObjectStr {
     SFTKObject obj;
     SFTKObjectList sessionList;
-    PRLock *attributeLock;
+    PZLock *attributeLock;
     SFTKSession *session;
     PRBool wasDerived;
     int nextAttr;
@@ -315,7 +303,7 @@ struct SFTKSessionStr {
     SFTKSession *next;
     SFTKSession *prev;
     CK_SESSION_HANDLE handle;
-    PRLock *objectLock;
+    PZLock *objectLock;
     int objectIDCount;
     CK_SESSION_INFO info;
     CK_NOTIFY notify;
@@ -357,11 +345,11 @@ struct SFTKSessionStr {
 
 struct SFTKSlotStr {
     CK_SLOT_ID slotID;             
-    PRLock *slotLock;              
-    PRLock **sessionLock;          
+    PZLock *slotLock;              
+    PZLock **sessionLock;          
     unsigned int numSessionLocks;  
     unsigned long sessionLockMask; 
-    PRLock *objectLock;            
+    PZLock *objectLock;            
     PRLock *pwCheckLock;           
     PRBool present;                
     PRBool hasTokens;              
@@ -379,7 +367,8 @@ struct SFTKSlotStr {
     int sessionIDConflict;         
                                    
     int sessionCount;              
-    int rwSessionCount;            
+    PRInt32 rwSessionCount;        
+                                   
     int sessionObjectHandleCount;  
     CK_ULONG index;                
     PLHashTable *tokObjHashTable;  
@@ -515,11 +504,6 @@ struct SFTKItemTemplateStr {
 
 #define sftk_SlotFromSession(sp) ((sp)->slot)
 #define sftk_isToken(id) (((id)&SFTK_TOKEN_MASK) == SFTK_TOKEN_MAGIC)
-
-
-#define SFTK_SESSION_OBJECT_TYPE 0xFFFFFFFFU
-#define SFTK_TOKEN_OBJECT_TYPE 0x00000000U
-
 #define sftk_isFIPS(id) \
     (((id) == FIPS_SLOT_ID) || ((id) >= SFTK_MIN_FIPS_USER_SLOT_ID))
 
@@ -806,7 +790,7 @@ extern CK_RV SFTK_ClearTokenKeyHashTable(SFTKSlot *slot);
 
 extern CK_RV sftk_searchObjectList(SFTKSearchResults *search,
                                    SFTKObject **head, unsigned int size,
-                                   PRLock *lock, CK_ATTRIBUTE_PTR inTemplate,
+                                   PZLock *lock, CK_ATTRIBUTE_PTR inTemplate,
                                    int count, PRBool isLoggedIn);
 extern SFTKObjectListElement *sftk_FreeObjectListElement(
     SFTKObjectListElement *objectList);
@@ -916,7 +900,7 @@ PRBool sftk_poisonHandle(SFTKSlot *slot, SECItem *dbkey,
                          CK_OBJECT_HANDLE handle);
 SFTKObject *sftk_NewTokenObject(SFTKSlot *slot, SECItem *dbKey,
                                 CK_OBJECT_HANDLE handle);
-CK_RV sftk_convertSessionToToken(SFTKObject *so);
+SFTKTokenObject *sftk_convertSessionToToken(SFTKObject *so);
 
 
 extern CK_RV jpake_Round1(HASH_HashType hashType,
