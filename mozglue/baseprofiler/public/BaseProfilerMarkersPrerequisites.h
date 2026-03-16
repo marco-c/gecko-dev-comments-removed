@@ -950,6 +950,24 @@ class MarkerSchema {
     return *this;
   }
 
+  MarkerSchema& SetColorField(std::string aKey) {
+    mColorField = std::move(aKey);
+    return *this;
+  }
+
+  struct EnumEntry {
+    int32_t mValue;
+    const char* mLabel;
+    const char* mColor;  
+  };
+
+  MarkerSchema& AddEnumMapping(std::string aField,
+                               std::initializer_list<EnumEntry> aValues) {
+    mEnumMappings.emplace_back(std::move(aField),
+                               std::vector<EnumEntry>(aValues));
+    return *this;
+  }
+
   
   
   
@@ -1015,6 +1033,8 @@ class MarkerSchema {
   std::string mTooltipLabel;
   std::string mTableLabel;
   bool mIsStackBased = false;
+  std::string mColorField;
+  std::vector<std::pair<std::string, std::vector<EnumEntry>>> mEnumMappings;
   
  private:
   struct DynamicData {
@@ -1096,6 +1116,7 @@ struct BaseMarkerType {
   static constexpr const char* ChartLabel = nullptr;
   static constexpr const char* TableLabel = nullptr;
   static constexpr const char* TooltipLabel = nullptr;
+  static constexpr const char* ColorField = nullptr;
 
   
   
@@ -1126,6 +1147,9 @@ struct BaseMarkerType {
     }
     if (T::IsStackBased) {
       schema.SetIsStackBased();
+    }
+    if (T::ColorField) {
+      schema.SetColorField(T::ColorField);
     }
     for (const MS::PayloadField field : T::PayloadFields) {
       if (field.Label) {
