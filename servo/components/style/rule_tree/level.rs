@@ -10,7 +10,8 @@ use crate::derives::*;
 use crate::properties::Importance;
 use crate::shared_lock::{SharedRwLockReadGuard, StylesheetGuards};
 use crate::stylesheets::Origin;
-use crate::values::animated::ToAnimatedValue;
+
+use std::cmp::{Ord, Ordering, PartialOrd};
 
 
 
@@ -21,6 +22,48 @@ use crate::values::animated::ToAnimatedValue;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    ToAnimatedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub struct CascadeLevel(u8);
+bitflags! {
+    impl CascadeLevel: u8 {
+        /// The three bits that represent the CascadeOrigin.
+        const ORIGIN_BITS = 0b00000111;
+        /// Whether the declarations are `!important` or not.
+        const IMPORTANT = 1 << 3;
+        /// The three bits for cascade order absolute value. If you change this, please change
+        /// CASCADE_ORDER_SHIFT accordingly.
+        const CASCADE_ORDER_BITS = 0b01110000;
+        /// The bit for the sign.
+        const CASCADE_ORDER_SIGN = 1 << 7;
+    }
+}
+
+malloc_size_of::malloc_size_of_is_0!(CascadeLevel);
 
 
 
@@ -36,41 +79,29 @@ use crate::values::animated::ToAnimatedValue;
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
+    FromPrimitive,
     Hash,
     MallocSizeOf,
     Ord,
     PartialEq,
     PartialOrd,
-    SpecifiedValueInfo,
+    Serialize,
     ToAnimatedValue,
-    ToComputedValue,
     ToResolvedValue,
     ToShmem,
-    Serialize,
-    Deserialize,
 )]
-#[repr(C, u8)]
-pub enum CascadeLevel {
+#[repr(u8)]
+pub enum CascadeOrigin {
     
-    UANormal,
+    UA = 0,
     
-    UserNormal,
+    User,
     
     PresHints,
     
-    AuthorNormal {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        shadow_cascade_order: ShadowCascadeOrder,
-    },
+    Author,
     
     PositionFallback,
     
@@ -78,98 +109,138 @@ pub enum CascadeLevel {
     
     Animations,
     
-    AuthorImportant {
-        
-        
-        shadow_cascade_order: ShadowCascadeOrder,
-    },
-    
-    UserImportant,
-    
-    UAImportant,
-    
     Transitions,
+}
+
+impl CascadeOrigin {
+    
+    #[inline]
+    pub fn origin(self) -> Origin {
+        match self {
+            Self::UA => Origin::UserAgent,
+            Self::User => Origin::User,
+            _ => Origin::Author,
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_author_origin(self) -> bool {
+        self > Self::User
+    }
+
+    
+    #[inline]
+    pub fn guard<'a>(&self, guards: &'a StylesheetGuards<'a>) -> &'a SharedRwLockReadGuard<'a> {
+        match *self {
+            Self::UA | Self::User => guards.ua_or_user,
+            _ => guards.author,
+        }
+    }
+}
+
+impl Ord for CascadeLevel {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_important = self.is_important();
+        if self_important != other.is_important() {
+            return if self_important {
+                if other.origin() == CascadeOrigin::Transitions {
+                    
+                    return Ordering::Less;
+                }
+                Ordering::Greater
+            } else {
+                if self.origin() == CascadeOrigin::Transitions {
+                    return Ordering::Greater;
+                }
+                Ordering::Less
+            };
+        }
+        let origin_cmp = self
+            .origin()
+            .cmp(&other.origin())
+            .then_with(|| self.shadow_order().cmp(&other.shadow_order()));
+        if self_important {
+            origin_cmp.reverse()
+        } else {
+            origin_cmp
+        }
+    }
+}
+
+impl PartialOrd for CascadeLevel {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl CascadeLevel {
     
-    pub fn important(&self) -> Self {
-        match *self {
-            Self::UANormal => Self::UAImportant,
-            Self::UserNormal => Self::UserImportant,
-            Self::AuthorNormal {
-                shadow_cascade_order,
-            } => Self::AuthorImportant {
-                shadow_cascade_order: -shadow_cascade_order,
-            },
-            Self::PresHints
-            | Self::PositionFallback
-            | Self::SMILOverride
-            | Self::Animations
-            | Self::AuthorImportant { .. }
-            | Self::UserImportant
-            | Self::UAImportant
-            | Self::Transitions => *self,
-        }
+    pub const CASCADE_ORDER_SHIFT: usize = 4;
+    
+    pub const SAME_TREE_AUTHOR_NORMAL: Self = Self(CascadeOrigin::Author as u8);
+
+    
+    pub fn new(origin: CascadeOrigin) -> Self {
+        let bits = origin as u8;
+        debug_assert_eq!(bits & Self::ORIGIN_BITS.bits(), bits);
+        Self(bits)
     }
 
     
-    pub fn unimportant(&self) -> Self {
-        match *self {
-            Self::UAImportant => Self::UANormal,
-            Self::UserImportant => Self::UserNormal,
-            Self::AuthorImportant {
-                shadow_cascade_order,
-            } => Self::AuthorNormal {
-                shadow_cascade_order: -shadow_cascade_order,
-            },
-            Self::PresHints
-            | Self::PositionFallback
-            | Self::SMILOverride
-            | Self::Animations
-            | Self::AuthorNormal { .. }
-            | Self::UserNormal
-            | Self::UANormal
-            | Self::Transitions => *self,
-        }
+    #[inline]
+    pub fn origin(self) -> CascadeOrigin {
+        use num_traits::FromPrimitive;
+        let origin = (self & Self::ORIGIN_BITS).bits();
+        CascadeOrigin::from_u8(origin).unwrap()
     }
 
     
+    pub fn important(self) -> Self {
+        debug_assert!(
+            matches!(
+                self.origin(),
+                CascadeOrigin::UA | CascadeOrigin::User | CascadeOrigin::Author
+            ),
+            "{self:?}"
+        );
+        let mut result = self;
+        result.insert(Self::IMPORTANT);
+        result
+    }
+
+    
+    pub fn unimportant(self) -> Self {
+        let mut result = self;
+        result.remove(Self::IMPORTANT);
+        result
+    }
+
+    
+    #[inline]
     pub fn guard<'a>(&self, guards: &'a StylesheetGuards<'a>) -> &'a SharedRwLockReadGuard<'a> {
-        match *self {
-            Self::UANormal | Self::UserNormal | Self::UserImportant | Self::UAImportant => {
-                guards.ua_or_user
-            },
-            _ => guards.author,
-        }
+        self.origin().guard(guards)
     }
 
     
     
     #[inline]
     pub fn same_tree_author_important() -> Self {
-        Self::AuthorImportant {
-            shadow_cascade_order: ShadowCascadeOrder::for_same_tree(),
-        }
+        Self::new(CascadeOrigin::Author).important()
     }
 
     
     
     #[inline]
     pub fn same_tree_author_normal() -> Self {
-        Self::AuthorNormal {
-            shadow_cascade_order: ShadowCascadeOrder::for_same_tree(),
-        }
+        Self::new(CascadeOrigin::Author)
     }
 
     
     
     #[inline]
     pub fn is_important(&self) -> bool {
-        match *self {
-            Self::AuthorImportant { .. } | Self::UserImportant | Self::UAImportant => true,
-            _ => false,
-        }
+        self.intersects(Self::IMPORTANT)
     }
 
     
@@ -185,36 +256,36 @@ impl CascadeLevel {
 
     
     #[inline]
-    pub fn origin(&self) -> Origin {
-        match *self {
-            Self::UAImportant | Self::UANormal => Origin::UserAgent,
-            Self::UserImportant | Self::UserNormal => Origin::User,
-            Self::PresHints
-            | Self::PositionFallback { .. }
-            | Self::AuthorNormal { .. }
-            | Self::AuthorImportant { .. }
-            | Self::SMILOverride
-            | Self::Animations
-            | Self::Transitions => Origin::Author,
-        }
-    }
-
-    
-    #[inline]
     pub fn is_animation(&self) -> bool {
-        match *self {
-            Self::SMILOverride | Self::Animations | Self::Transitions => true,
+        match self.origin() {
+            CascadeOrigin::SMILOverride
+            | CascadeOrigin::Animations
+            | CascadeOrigin::Transitions => true,
             _ => false,
         }
     }
 
     
     #[inline]
-    pub fn is_tree(&self) -> bool {
-        matches!(
-            *self,
-            Self::AuthorImportant { .. } | Self::AuthorNormal { .. }
-        )
+    pub fn is_tree(self) -> bool {
+        self.origin() == CascadeOrigin::Author
+    }
+
+    #[inline]
+    fn shadow_order(self) -> ShadowCascadeOrder {
+        let neg = self.intersects(Self::CASCADE_ORDER_SIGN);
+        let abs = (self & Self::CASCADE_ORDER_BITS).bits() >> Self::CASCADE_ORDER_SHIFT;
+        ShadowCascadeOrder(if neg { -(abs as i8) } else { abs as i8 })
+    }
+
+    
+    #[inline]
+    pub fn author_normal(shadow_cascade_order: ShadowCascadeOrder) -> Self {
+        let abs = (shadow_cascade_order.0.abs() as u8) << Self::CASCADE_ORDER_SHIFT;
+        let mut result = Self::new(CascadeOrigin::Author);
+        result |= Self::from_bits_truncate(abs);
+        result.set(Self::CASCADE_ORDER_SIGN, shadow_cascade_order.0 < 0);
+        result
     }
 }
 
@@ -224,29 +295,11 @@ impl CascadeLevel {
 
 
 
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    MallocSizeOf,
-    Ord,
-    PartialEq,
-    PartialOrd,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
 pub struct ShadowCascadeOrder(i8);
 
 impl ShadowCascadeOrder {
-    
-    
     
     const MAX: i8 = 0b111;
     const MIN: i8 = -Self::MAX;
@@ -297,19 +350,5 @@ impl std::ops::Neg for ShadowCascadeOrder {
     #[inline]
     fn neg(self) -> Self {
         Self(self.0.neg())
-    }
-}
-
-impl ToAnimatedValue for ShadowCascadeOrder {
-    type AnimatedValue = ShadowCascadeOrder;
-
-    #[inline]
-    fn to_animated_value(self, _: &crate::values::animated::Context) -> Self::AnimatedValue {
-        self
-    }
-
-    #[inline]
-    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        animated
     }
 }

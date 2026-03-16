@@ -121,7 +121,7 @@ impl CascadePriority {
     
     pub fn allows_when_reverted(&self, other: &Self, kind: RevertKind) -> bool {
         match kind {
-            RevertKind::Origin => other.cascade_level.origin() < self.cascade_level.origin(),
+            RevertKind::Origin => other.cascade_level.origin().origin() < self.cascade_level.origin().origin(),
             RevertKind::Layer => other.unimportant() < self.unimportant(),
             
             
