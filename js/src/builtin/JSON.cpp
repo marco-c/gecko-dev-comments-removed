@@ -1511,6 +1511,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
 
       
       RootedValue item(cx);
+      RootedId id(cx);
       for (; k < len; k++) {
         if (!CheckForInterrupt(cx)) {
           return false;
@@ -1522,7 +1523,6 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
         }
 
         
-        RootedId id(cx);
         if (item.isNumber() || item.isString()) {
           if (!PrimitiveValueToId<CanGC>(cx, item, &id)) {
             return false;
