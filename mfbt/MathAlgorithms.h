@@ -165,16 +165,6 @@ MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateRight(const T aValue,
 
 
 
-
-
-template <typename T>
-constexpr bool IsPowerOfTwo(T x) {
-  static_assert(std::is_unsigned_v<T>, "IsPowerOfTwo requires unsigned values");
-  return x && (x & (x - 1)) == 0;
-}
-
-
-
 template <typename T>
 MOZ_ALWAYS_INLINE T GCD(T aA, T aB) {
   static_assert(std::is_integral_v<T>);
