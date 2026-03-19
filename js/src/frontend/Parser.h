@@ -850,7 +850,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   class MOZ_STACK_CLASS PossibleError {
    private:
-    enum class ErrorKind { Expression, Destructuring, DestructuringWarning };
+    enum class ErrorKind { Expression, Destructuring };
 
     enum class ErrorState { None, Pending };
 
@@ -865,7 +865,6 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     GeneralParser<ParseHandler, Unit>& parser_;
     Error exprError_;
     Error destructuringError_;
-    Error destructuringWarning_;
 
     
     Error& error(ErrorKind kind);
@@ -898,12 +897,6 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     
     void setPendingDestructuringErrorAt(const TokenPos& pos,
                                         unsigned errorNumber);
-
-    
-    
-    
-    void setPendingDestructuringWarningAt(const TokenPos& pos,
-                                          unsigned errorNumber);
 
     
     
