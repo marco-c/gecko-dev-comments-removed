@@ -9216,10 +9216,12 @@ GeneralParser<ParseHandler, Unit>::synthesizeAccessorBody(
     
     
     
-    notePositionalFormalParameter(funNode,
-                                  TaggedParserAtomIndex::WellKnown::value(),
-                                   0, false,
-                                   nullptr);
+    if (!notePositionalFormalParameter(
+            funNode, TaggedParserAtomIndex::WellKnown::value(),
+             0, false,
+             nullptr)) {
+      return errorResult();
+    }
 
     Node initializerExpr = MOZ_TRY(handler_.newName(
         TaggedParserAtomIndex::WellKnown::value(), propNamePos));
