@@ -387,6 +387,7 @@ class SlimLinkedList {
       if (i == 100) {
         return;  
       }
+      i++;
     }
     MOZ_CRASH("Element not found");
 #endif
