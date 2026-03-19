@@ -2362,14 +2362,14 @@ void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
                      output != rhsHi);
   
   if (isAdd) {
-    as_add_d(output, lhsLo, rhsLo);  
-    as_sltu(output, output, lhsLo);  
-    as_add_d(output, output, lhsHi); 
-    as_add_d(output, output, rhsHi); 
+    as_add_d(output, lhsLo, rhsLo);   
+    as_sltu(output, output, lhsLo);   
+    as_add_d(output, output, lhsHi);  
+    as_add_d(output, output, rhsHi);  
   } else {
-    as_sltu(output, lhsLo, rhsLo);   
-    as_sub_d(output, lhsHi, output); 
-    as_sub_d(output, output, rhsHi); 
+    as_sltu(output, lhsLo, rhsLo);    
+    as_sub_d(output, lhsHi, output);  
+    as_sub_d(output, output, rhsHi);  
   }
 }
 
