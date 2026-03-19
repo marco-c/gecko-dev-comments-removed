@@ -442,6 +442,10 @@ void MacroAssembler::subFloat32(FloatRegister src, FloatRegister dest) {
   as_fsub_s(dest, dest, src);
 }
 
+void MacroAssembler::mul64(const Register64& rhs, const Register64& srcDest) {
+  mul64(rhs, srcDest, Register::Invalid());
+}
+
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
   UseScratchRegisterScope temps(asMasm());
   Register scratch = temps.Acquire();
@@ -2345,6 +2349,37 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
                                       JSValueType type, Label* fail) {
   loadValue(src, ValueOperand(dest));
   fallibleUnboxPtr(ValueOperand(dest), dest, type, fail);
+}
+
+
+
+
+void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
+                                        Register rhsLo, Register rhsHi,
+                                        Register output, bool isAdd) {
+  
+  MOZ_RELEASE_ASSERT(output != lhsLo && output != lhsHi && output != rhsLo &&
+                     output != rhsHi);
+  
+  if (isAdd) {
+    as_add_d(output, lhsLo, rhsLo);  
+    as_sltu(output, output, lhsLo);  
+    as_add_d(output, output, lhsHi); 
+    as_add_d(output, output, rhsHi); 
+  } else {
+    as_sltu(output, lhsLo, rhsLo);   
+    as_sub_d(output, lhsHi, output); 
+    as_sub_d(output, output, rhsHi); 
+  }
+}
+
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register output, bool isSigned) {
+  if (isSigned) {
+    as_mulh_d(output, lhs, rhs);
+  } else {
+    as_mulh_du(output, lhs, rhs);
+  }
 }
 
 

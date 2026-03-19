@@ -1177,7 +1177,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void mulPtr(ImmWord rhs, Register srcDest) PER_ARCH;
 
   inline void mul64(const Register64& rhs, const Register64& srcDest)
-      DEFINED_ON(x64, arm64, riscv64);
+      DEFINED_ON(x64, arm64, riscv64, loong64);
   inline void mul64(const Operand& src, const Register64& dest) DEFINED_ON(x64);
   inline void mul64(const Operand& src, const Register64& dest,
                     const Register temp) DEFINED_ON(x64);
@@ -2246,7 +2246,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   inline void wasmAddSubI128HI64(Register lhsLo, Register lhsHi, Register rhsLo,
                                  Register rhsHi, Register output, bool isAdd)
-      DEFINED_ON(x64, arm64, riscv64);
+      DEFINED_ON(x64, arm64, riscv64, loong64);
 
   
   
@@ -2258,7 +2258,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   inline void wasmMulI64WideHI64(Register lhs, Register rhs, Register output,
-                                 bool isSigned) DEFINED_ON(arm64, riscv64);
+                                 bool isSigned)
+      DEFINED_ON(arm64, riscv64, loong64);
 
   
   
