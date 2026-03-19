@@ -96,7 +96,7 @@ class ServoExecutorMixin:
 
     def build_servo_command(self, test, extra_args=None):
         args = [
-            "--hard-fail", "-u", "Servo/wptrunner",
+            "--hard-fail",
             
             
             "--ignore-certificate-errors",
