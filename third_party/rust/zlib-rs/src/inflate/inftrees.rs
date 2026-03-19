@@ -10,33 +10,13 @@ pub(crate) enum CodeType {
 
 const MAX_BITS: usize = 15;
 
-fn min_max<const N: usize>(count: [u16; N]) -> (usize, usize) {
-    let mut max = MAX_BITS;
-    while max >= 1 {
-        if count[max] != 0 {
-            break;
-        }
-        max -= 1;
-    }
-
-    let mut min = 1;
-    while min < max {
-        if count[min] != 0 {
-            break;
-        }
-        min += 1;
-    }
-
-    (min, max)
-}
-
 
 const LBASE: [u16; 31] = [
     3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131,
     163, 195, 227, 258, 0, 0,
 ];
 
-const LEXT: [u16; 31] = [
+const LEXT: [u8; 31] = [
     16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20,
     21, 21, 21, 21, 16, 77, 202,
 ];
@@ -46,7 +26,7 @@ const DBASE: [u16; 32] = [
     2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0,
 ];
 
-const DEXT: [u16; 32] = [
+const DEXT: [u8; 32] = [
     16, 16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26,
     27, 27, 28, 28, 29, 29, 64, 64,
 ];
@@ -55,14 +35,13 @@ const DEXT: [u16; 32] = [
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum InflateTable {
     EnoughIsNotEnough = 1,
-    Success(usize) = 0,
+    Success { root: usize, used: usize } = 0,
     InvalidCode = -1,
 }
 
 pub(crate) fn inflate_table(
     codetype: CodeType,
     lens: &[u16],
-    codes: usize,
     table: &mut [Code],
     bits: usize,
     work: &mut [u16],
@@ -70,15 +49,14 @@ pub(crate) fn inflate_table(
     
     let mut count = [0u16; MAX_BITS + 1];
 
-    for len in lens[0..codes].iter().copied() {
-        count[len as usize] += 1;
+    let (mut min, mut max) = (MAX_BITS, 0);
+    for &len in lens {
+        if len > 0 {
+            count[len as usize] += 1;
+            max = Ord::max(max, usize::from(len));
+            min = Ord::min(min, usize::from(len));
+        }
     }
-
-    let mut root = bits;
-
-    let (min, max) = min_max(count);
-    root = Ord::min(root, max);
-    root = Ord::max(root, min);
 
     if max == 0 {
         
@@ -91,20 +69,19 @@ pub(crate) fn inflate_table(
         table[0] = code;
         table[1] = code;
 
-        return InflateTable::Success(1);
+        return InflateTable::Success { root: 1, used: 2 };
     }
 
     
-    let mut left = 1i32;
-    let mut len = 1;
-    while len <= MAX_BITS {
-        left <<= 1;
-        left -= count[len] as i32;
-        if left < 0 {
-            
-            return InflateTable::InvalidCode;
-        }
-        len += 1;
+    let root = bits.clamp(min, max);
+
+    
+    let mut left = 1u32;
+    for &sym in &count[1..] {
+        left = match (left << 1).checked_sub(u32::from(sym)) {
+            None => return InflateTable::InvalidCode, 
+            Some(v) => v,
+        };
     }
 
     if left > 0 && (matches!(codetype, CodeType::Codes) || max != 1) {
@@ -121,7 +98,7 @@ pub(crate) fn inflate_table(
     }
 
     
-    for (sym, len) in lens[0..codes].iter().copied().enumerate() {
+    for (sym, len) in lens.iter().copied().enumerate() {
         if len != 0 {
             let offset = offs[len as usize];
             offs[len as usize] += 1;
@@ -135,7 +112,7 @@ pub(crate) fn inflate_table(
         CodeType::Dists => (&DBASE[..], &DEXT[..], 0),
     };
 
-    let used = 1 << root;
+    let mut used = 1 << root;
 
     
     if matches!(codetype, CodeType::Lens) && used > ENOUGH_LENS {
@@ -154,7 +131,6 @@ pub(crate) fn inflate_table(
     let mut curr = root;
     let mut drop_ = 0;
     let mut low = usize::MAX; 
-    let mut used = 1 << root;
     let mask = used - 1; 
 
     
@@ -163,7 +139,7 @@ pub(crate) fn inflate_table(
         let here = if work[sym] >= match_ {
             Code {
                 bits: (len - drop_) as u8,
-                op: extra[(work[sym] - match_) as usize] as u8,
+                op: extra[(work[sym] - match_) as usize],
                 val: base[(work[sym] - match_) as usize],
             }
         } else if work[sym] + 1 < match_ {
@@ -182,11 +158,16 @@ pub(crate) fn inflate_table(
 
         
         let incr = 1 << (len - drop_);
-        let min = 1 << curr; 
+        let mut fill = 1 << curr;
+        let min = fill;
 
-        let base = &mut table[next + (huff >> drop_)..];
-        for fill in (0..min).step_by(incr) {
-            base[fill] = here;
+        loop {
+            fill -= incr;
+            table[next + (huff >> drop_) + fill] = here;
+
+            if fill == 0 {
+                break;
+            }
         }
 
         
@@ -260,7 +241,7 @@ pub(crate) fn inflate_table(
     }
 
     
-    InflateTable::Success(root)
+    InflateTable::Success { root, used }
 }
 
 #[cfg(test)]
@@ -280,12 +261,12 @@ mod test {
 
         let mut next = table;
         let bits = 15;
-        let ret = inflate_table(CodeType::Dists, &lens, 16, &mut next, bits, &mut work);
+        let ret = inflate_table(CodeType::Dists, &lens[..16], &mut next, bits, &mut work);
         assert_eq!(ret, InflateTable::EnoughIsNotEnough);
 
         let mut next = table;
         let bits = 1;
-        let ret = inflate_table(CodeType::Dists, &lens, 16, &mut next, bits, &mut work);
+        let ret = inflate_table(CodeType::Dists, &lens[..16], &mut next, bits, &mut work);
         assert_eq!(ret, InflateTable::EnoughIsNotEnough);
     }
 
@@ -313,7 +294,7 @@ mod test {
 
         let mut next = [Code::default(); 512];
         let bits = 9;
-        inflate_table(CodeType::Lens, &lens, 288, &mut next, bits, work);
+        inflate_table(CodeType::Lens, &lens[..288], &mut next, bits, work);
 
         core::array::from_fn(|i| {
             let mut code = next[i];
@@ -343,7 +324,7 @@ mod test {
 
         let mut next = [Code::default(); 32];
         let bits = 5;
-        inflate_table(CodeType::Dists, &lens, 32, &mut next, bits, work);
+        inflate_table(CodeType::Dists, &lens[..32], &mut next, bits, work);
 
         next
     }

@@ -1,17 +1,22 @@
+#![allow(unpredictable_function_pointer_comparisons)]
+
 #[cfg(unix)]
 use core::ffi::c_int;
 use core::{
     alloc::Layout,
     ffi::{c_uint, c_void},
     marker::PhantomData,
+    mem,
     ptr::NonNull,
 };
 
-#[cfg(feature = "rust-allocator")]
-use alloc::alloc::GlobalAlloc;
-
 #[allow(non_camel_case_types)]
 type size_t = usize;
+
+const ALIGN: u8 = 64;
+
+const _: () = assert!(ALIGN.count_ones() == 1);
+const _: () = assert!(ALIGN as usize % mem::size_of::<*mut c_void>() == 0);
 
 
 
@@ -25,7 +30,14 @@ unsafe extern "C" fn zalloc_c(opaque: *mut c_void, items: c_uint, size: c_uint) 
     }
 
     let mut ptr = core::ptr::null_mut();
-    match posix_memalign(&mut ptr, 64, items as size_t * size as size_t) {
+    let size = items as size_t * size as size_t;
+    if size == 0 {
+        return ptr;
+    }
+    
+    
+    
+    match unsafe { posix_memalign(&mut ptr, ALIGN.into(), size) } {
         0 => ptr,
         _ => core::ptr::null_mut(),
     }
@@ -38,11 +50,19 @@ unsafe extern "C" fn zalloc_c(opaque: *mut c_void, items: c_uint, size: c_uint) 
 unsafe extern "C" fn zalloc_c(opaque: *mut c_void, items: c_uint, size: c_uint) -> *mut c_void {
     let _ = opaque;
 
+    let size = items as size_t * size as size_t;
+    if size == 0 {
+        return core::ptr::null_mut();
+    }
+
     extern "C" {
         fn malloc(size: size_t) -> *mut c_void;
     }
 
-    malloc(items as size_t * size as size_t)
+    
+    
+    
+    unsafe { malloc(size) }
 }
 
 
@@ -59,7 +79,15 @@ unsafe extern "C" fn zalloc_c_calloc(
         fn calloc(nitems: size_t, size: size_t) -> *mut c_void;
     }
 
-    calloc(items as size_t, size as size_t)
+    if items as size_t * size as size_t == 0 {
+        return core::ptr::null_mut();
+    }
+
+    
+    
+    
+    
+    unsafe { calloc(items as size_t, size as size_t) }
 }
 
 
@@ -72,6 +100,8 @@ unsafe extern "C" fn zfree_c(opaque: *mut c_void, ptr: *mut c_void) {
         fn free(p: *mut c_void);
     }
 
+    
+    
     unsafe { free(ptr) }
 }
 
@@ -80,13 +110,41 @@ unsafe extern "C" fn zfree_c(opaque: *mut c_void, ptr: *mut c_void) {
 
 #[cfg(feature = "rust-allocator")]
 unsafe extern "C" fn zalloc_rust(_opaque: *mut c_void, count: c_uint, size: c_uint) -> *mut c_void {
-    let align = 64;
     let size = count as usize * size as usize;
+    if size == 0 {
+        return core::ptr::null_mut();
+    }
 
     
-    let layout = Layout::from_size_align(size, align).unwrap();
+    let layout = Layout::from_size_align(size, ALIGN.into()).unwrap();
 
-    let ptr = std::alloc::System.alloc(layout);
+    
+    
+    let ptr = unsafe { std::alloc::alloc(layout) };
+
+    ptr as *mut c_void
+}
+
+
+
+
+#[cfg(feature = "rust-allocator")]
+unsafe extern "C" fn zalloc_rust_calloc(
+    _opaque: *mut c_void,
+    count: c_uint,
+    size: c_uint,
+) -> *mut c_void {
+    let size = count as usize * size as usize;
+    if size == 0 {
+        return core::ptr::null_mut();
+    }
+
+    
+    let layout = Layout::from_size_align(size, ALIGN.into()).unwrap();
+
+    
+    
+    let ptr = unsafe { std::alloc::alloc_zeroed(layout) };
 
     ptr as *mut c_void
 }
@@ -107,13 +165,24 @@ unsafe extern "C" fn zfree_rust(opaque: *mut c_void, ptr: *mut c_void) {
         return;
     }
 
-    let size = *(opaque as *mut usize);
-    let align = 64;
+    
+    let size = unsafe { *(opaque as *mut usize) };
 
-    let layout = Layout::from_size_align(size, align);
+    
+    
+    
+    
+    if size == 0 {
+        return;
+    }
+
+    let layout = Layout::from_size_align(size, ALIGN.into());
     let layout = layout.unwrap();
 
-    std::alloc::System.dealloc(ptr.cast(), layout);
+    
+    
+    
+    unsafe { std::alloc::dealloc(ptr.cast(), layout) };
 }
 
 #[cfg(test)]
@@ -135,38 +204,40 @@ pub struct Allocator<'a> {
     pub _marker: PhantomData<&'a ()>,
 }
 
-impl Allocator<'static> {
-    #[cfg(feature = "rust-allocator")]
-    pub const RUST: Self = Self {
-        zalloc: zalloc_rust,
-        zfree: zfree_rust,
-        opaque: core::ptr::null_mut(),
-        _marker: PhantomData,
-    };
+unsafe impl Sync for Allocator<'static> {}
 
-    #[cfg(feature = "c-allocator")]
-    pub const C: Self = Self {
-        zalloc: zalloc_c,
-        zfree: zfree_c,
-        opaque: core::ptr::null_mut(),
-        _marker: PhantomData,
-    };
+#[cfg(feature = "rust-allocator")]
+pub static RUST: Allocator<'static> = Allocator {
+    zalloc: zalloc_rust,
+    zfree: zfree_rust,
+    opaque: core::ptr::null_mut(),
+    _marker: PhantomData,
+};
 
-    #[cfg(test)]
-    const FAIL: Self = Self {
-        zalloc: zalloc_fail,
-        zfree: zfree_fail,
-        opaque: core::ptr::null_mut(),
-        _marker: PhantomData,
-    };
-}
+#[cfg(feature = "c-allocator")]
+pub static C: Allocator<'static> = Allocator {
+    zalloc: zalloc_c,
+    zfree: zfree_c,
+    opaque: core::ptr::null_mut(),
+    _marker: PhantomData,
+};
+
+#[cfg(test)]
+static FAIL: Allocator<'static> = Allocator {
+    zalloc: zalloc_fail,
+    zfree: zfree_fail,
+    opaque: core::ptr::null_mut(),
+    _marker: PhantomData,
+};
 
 impl Allocator<'_> {
-    pub fn allocate_layout(&self, layout: Layout) -> *mut c_void {
+    fn allocate_layout(&self, layout: Layout) -> *mut c_void {
+        assert!(layout.align() <= ALIGN.into());
+
         
         #[cfg(feature = "rust-allocator")]
-        if self.zalloc == Allocator::RUST.zalloc {
-            let ptr = unsafe { (Allocator::RUST.zalloc)(self.opaque, layout.size() as _, 1) };
+        if self.zalloc == RUST.zalloc {
+            let ptr = unsafe { (RUST.zalloc)(self.opaque, layout.size() as _, 1) };
 
             debug_assert_eq!(ptr as usize % layout.align(), 0);
 
@@ -246,6 +317,41 @@ impl Allocator<'_> {
         ptr
     }
 
+    fn allocate_layout_zeroed(&self, layout: Layout) -> *mut c_void {
+        assert!(layout.align() <= ALIGN.into());
+
+        #[cfg(feature = "rust-allocator")]
+        if self.zalloc == RUST.zalloc {
+            let ptr = unsafe { zalloc_rust_calloc(self.opaque, layout.size() as _, 1) };
+
+            debug_assert_eq!(ptr as usize % layout.align(), 0);
+
+            return ptr;
+        }
+
+        #[cfg(feature = "c-allocator")]
+        if self.zalloc == C.zalloc {
+            let alloc = Allocator {
+                zalloc: zalloc_c_calloc,
+                zfree: zfree_c,
+                opaque: core::ptr::null_mut(),
+                _marker: PhantomData,
+            };
+
+            return alloc.allocate_layout(layout);
+        }
+
+        
+        let ptr = self.allocate_layout(layout);
+
+        if !ptr.is_null() {
+            
+            unsafe { core::ptr::write_bytes(ptr, 0u8, layout.size()) };
+        }
+
+        ptr
+    }
+
     pub fn allocate_raw<T>(&self) -> Option<NonNull<T>> {
         NonNull::new(self.allocate_layout(Layout::new::<T>()).cast())
     }
@@ -254,38 +360,13 @@ impl Allocator<'_> {
         NonNull::new(self.allocate_layout(Layout::array::<T>(len).ok()?).cast())
     }
 
-    pub fn allocate_zeroed(&self, len: usize) -> Option<NonNull<u8>> {
-        #[cfg(feature = "rust-allocator")]
-        if self.zalloc == Allocator::RUST.zalloc {
-            
-            let layout = Layout::from_size_align(len, 64).unwrap();
+    pub fn allocate_zeroed_raw<T>(&self) -> Option<NonNull<T>> {
+        NonNull::new(self.allocate_layout_zeroed(Layout::new::<T>()).cast())
+    }
 
-            return NonNull::new(unsafe { std::alloc::System.alloc_zeroed(layout) });
-        }
-
-        #[cfg(feature = "c-allocator")]
-        if self.zalloc == Allocator::C.zalloc {
-            let alloc = Allocator {
-                zalloc: zalloc_c_calloc,
-                zfree: zfree_c,
-                opaque: core::ptr::null_mut(),
-                _marker: PhantomData,
-            };
-
-            let ptr = alloc.allocate_layout(Layout::array::<u8>(len).ok().unwrap());
-
-            return NonNull::new(ptr.cast());
-        }
-
-        
-        let ptr = self.allocate_layout(Layout::array::<u8>(len).ok().unwrap());
-
-        let ptr = NonNull::new(ptr)?;
-
-        
-        unsafe { core::ptr::write_bytes(ptr.as_ptr(), 0, len) };
-
-        Some(ptr.cast())
+    pub fn allocate_zeroed_buffer(&self, len: usize) -> Option<NonNull<u8>> {
+        let layout = Layout::array::<u8>(len).ok()?;
+        NonNull::new(self.allocate_layout_zeroed(layout).cast())
     }
 
     
@@ -301,17 +382,25 @@ impl Allocator<'_> {
         if !ptr.is_null() {
             
             #[cfg(feature = "rust-allocator")]
-            if self.zfree == Allocator::RUST.zfree {
-                assert_ne!(len, 0, "invalid size for {:?}", ptr);
+            if self.zfree == RUST.zfree {
+                assert_ne!(len, 0, "invalid size for {ptr:?}");
                 let mut size = core::mem::size_of::<T>() * len;
-                return (Allocator::RUST.zfree)(&mut size as *mut usize as *mut c_void, ptr.cast());
+                
+                
+                return unsafe { (RUST.zfree)(&mut size as *mut usize as *mut c_void, ptr.cast()) };
             }
 
             
-            let original_ptr = (ptr as *mut u8).sub(core::mem::size_of::<*const c_void>());
-            let free_ptr = core::ptr::read_unaligned(original_ptr as *mut *mut c_void);
+            
+            
+            
+            
+            unsafe {
+                let original_ptr = (ptr as *mut u8).sub(core::mem::size_of::<*const c_void>());
+                let free_ptr = core::ptr::read_unaligned(original_ptr as *mut *mut c_void);
 
-            (self.zfree)(self.opaque, free_ptr)
+                (self.zfree)(self.opaque, free_ptr)
+            }
         }
     }
 }
@@ -319,6 +408,7 @@ impl Allocator<'_> {
 #[cfg(test)]
 mod tests {
     use core::sync::atomic::{AtomicPtr, Ordering};
+    use std::ptr;
     use std::sync::Mutex;
 
     use super::*;
@@ -410,8 +500,28 @@ mod tests {
     }
 
     fn test_allocate_zeroed_help(allocator: Allocator) {
+        #[repr(C, align(64))]
+        struct Align64(u8);
+
+        let ptr = allocator.allocate_raw::<Align64>();
+        assert!(ptr.is_some());
+        unsafe { allocator.deallocate(ptr.unwrap().as_ptr(), 1) };
+    }
+
+    #[test]
+    fn test_allocate_zeroed() {
+        #[cfg(feature = "rust-allocator")]
+        test_allocate_zeroed_help(RUST);
+
+        #[cfg(feature = "c-allocator")]
+        test_allocate_zeroed_help(C);
+
+        assert!(FAIL.allocate_raw::<u128>().is_none());
+    }
+
+    fn test_allocate_zeroed_buffer_help(allocator: Allocator) {
         let len = 42;
-        let Some(buf) = allocator.allocate_zeroed(len) else {
+        let Some(buf) = allocator.allocate_zeroed_buffer(len) else {
             return;
         };
 
@@ -423,26 +533,45 @@ mod tests {
     }
 
     #[test]
-    fn test_allocate_zeroed() {
+    fn test_allocate_buffer_zeroed() {
         #[cfg(feature = "rust-allocator")]
-        test_allocate_zeroed_help(Allocator::RUST);
+        test_allocate_zeroed_buffer_help(RUST);
 
         #[cfg(feature = "c-allocator")]
-        test_allocate_zeroed_help(Allocator::C);
+        test_allocate_zeroed_buffer_help(C);
 
-        test_allocate_zeroed_help(Allocator::FAIL);
+        test_allocate_zeroed_buffer_help(FAIL);
     }
 
     #[test]
     fn test_deallocate_null() {
         unsafe {
             #[cfg(feature = "rust-allocator")]
-            (Allocator::RUST.zfree)(core::ptr::null_mut(), core::ptr::null_mut());
+            (RUST.zfree)(core::ptr::null_mut(), core::ptr::null_mut());
 
             #[cfg(feature = "c-allocator")]
-            (Allocator::C.zfree)(core::ptr::null_mut(), core::ptr::null_mut());
+            (C.zfree)(core::ptr::null_mut(), core::ptr::null_mut());
 
-            (Allocator::FAIL.zfree)(core::ptr::null_mut(), core::ptr::null_mut());
+            (FAIL.zfree)(core::ptr::null_mut(), core::ptr::null_mut());
+        }
+    }
+
+    #[test]
+    fn test_allocate_zero_size() {
+        
+        unsafe {
+            assert!(zalloc_c(ptr::null_mut(), 1, 0).is_null());
+            assert!(zalloc_c(ptr::null_mut(), 0, 1).is_null());
+            assert!(zalloc_c_calloc(ptr::null_mut(), 1, 0).is_null());
+            assert!(zalloc_c_calloc(ptr::null_mut(), 0, 1).is_null());
+            #[cfg(feature = "rust-allocator")]
+            assert!(zalloc_rust(ptr::null_mut(), 1, 0).is_null());
+            #[cfg(feature = "rust-allocator")]
+            assert!(zalloc_rust(ptr::null_mut(), 0, 1).is_null());
+            #[cfg(feature = "rust-allocator")]
+            assert!(zalloc_rust_calloc(ptr::null_mut(), 1, 0).is_null());
+            #[cfg(feature = "rust-allocator")]
+            assert!(zalloc_rust_calloc(ptr::null_mut(), 0, 1).is_null());
         }
     }
 }

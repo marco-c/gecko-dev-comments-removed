@@ -18,6 +18,39 @@ pub type voidp = *mut c_void;
 pub type voidpc = *const c_void;
 pub type voidpf = *mut c_void;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct z_stream {
@@ -80,12 +113,12 @@ impl z_stream {
 
     #[cfg(feature = "rust-allocator")]
     pub fn configure_default_rust_allocator(&mut self) {
-        self.configure_allocator(Allocator::RUST)
+        self.configure_allocator(crate::allocate::RUST)
     }
 
     #[cfg(feature = "c-allocator")]
     pub fn configure_default_c_allocator(&mut self) {
-        self.configure_allocator(Allocator::C)
+        self.configure_allocator(crate::allocate::C)
     }
 }
 
@@ -219,8 +252,8 @@ impl gz_header {
     };
 
     pub(crate) fn flags(&self) -> u8 {
-        (if self.text > 0 { 1 } else { 0 })
-            + (if self.hcrc > 0 { 2 } else { 0 })
+        (if self.text != 0 { 1 } else { 0 })
+            + (if self.hcrc != 0 { 2 } else { 0 })
             + (if self.extra.is_null() { 0 } else { 4 })
             + (if self.name.is_null() { 0 } else { 8 })
             + (if self.comment.is_null() { 0 } else { 16 })

@@ -9,8 +9,14 @@ pub fn compare256_slice(src0: &[u8], src1: &[u8]) -> usize {
 }
 
 fn compare256(src0: &[u8; 256], src1: &[u8; 256]) -> usize {
+    #[cfg(feature = "avx512")]
     #[cfg(target_arch = "x86_64")]
-    if crate::cpu_features::is_enabled_avx2() {
+    if cfg!(target_feature = "avx512vl") && cfg!(target_feature = "avx512bw") {
+        return unsafe { avx512::compare256(src0, src1) };
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    if crate::cpu_features::is_enabled_avx2_and_bmi2() {
         return unsafe { avx2::compare256(src0, src1) };
     }
 
@@ -53,11 +59,7 @@ mod rust {
     pub fn compare256_rle(byte: u8, src: &[u8]) -> usize {
         assert!(src.len() >= 256, "too short {}", src.len());
 
-        let mut sv = byte as u64;
-        sv |= sv << 8;
-        sv |= sv << 16;
-        sv |= sv << 32;
-
+        let sv = u64::from_ne_bytes([byte; 8]);
         let mut len = 0;
 
         
@@ -111,7 +113,8 @@ mod rust {
 #[cfg(target_arch = "aarch64")]
 mod neon {
     use core::arch::aarch64::{
-        uint8x16_t, veorq_u8, vgetq_lane_u64, vld1q_u8, vreinterpretq_u64_u8,
+        uint8x16x4_t, vceqq_u8, vget_lane_u64, vld4q_u8, vreinterpret_u64_u8, vreinterpretq_u16_u8,
+        vshrn_n_u16, vsriq_n_u8,
     };
 
     
@@ -119,33 +122,69 @@ mod neon {
     
     #[target_feature(enable = "neon")]
     pub unsafe fn compare256(src0: &[u8; 256], src1: &[u8; 256]) -> usize {
-        let src0: &[[u8; 16]; 16] = unsafe { core::mem::transmute(src0) };
-        let src1: &[[u8; 16]; 16] = unsafe { core::mem::transmute(src1) };
+        type Chunk = uint8x16x4_t;
+        let src0 = src0.chunks_exact(core::mem::size_of::<Chunk>());
+        let src1 = src1.chunks_exact(core::mem::size_of::<Chunk>());
 
         let mut len = 0;
 
-        for (a, b) in src0.iter().zip(src1) {
+        for (a, b) in src0.zip(src1) {
             unsafe {
-                let a: uint8x16_t = vld1q_u8(a.as_ptr());
-                let b: uint8x16_t = vld1q_u8(b.as_ptr());
+                
+                
+                
+                let a: Chunk = vld4q_u8(a.as_ptr());
+                let b: Chunk = vld4q_u8(b.as_ptr());
 
-                let cmp = veorq_u8(a, b);
+                
+                
+                let cmp0 = vceqq_u8(a.0, b.0);
+                let cmp1 = vceqq_u8(a.1, b.1);
+                let cmp2 = vceqq_u8(a.2, b.2);
+                let cmp3 = vceqq_u8(a.3, b.3);
 
-                let lane = vgetq_lane_u64(vreinterpretq_u64_u8(cmp), 0);
-                if lane != 0 {
-                    let match_byte = lane.trailing_zeros() / 8;
+                
+
+                
+                
+                let first_two_bits = vsriq_n_u8::<1>(cmp1, cmp0);
+
+                
+                
+                let last_two_bits = vsriq_n_u8::<1>(cmp3, cmp2);
+
+                
+                
+                
+                
+                
+                let first_four_bits = vsriq_n_u8::<2>(last_two_bits, first_two_bits);
+
+                
+                let bitmask_vector = vsriq_n_u8::<4>(first_four_bits, first_four_bits);
+
+                
+                
+                
+                
+                let result_vector = vshrn_n_u16::<4>(vreinterpretq_u16_u8(bitmask_vector));
+
+                
+                
+                let bitmask = vget_lane_u64::<0>(vreinterpret_u64_u8(result_vector));
+
+                
+                
+                
+                
+                let bitmask = bitmask.to_le();
+                if bitmask != u64::MAX {
+                    
+                    let match_byte = bitmask.trailing_ones();
                     return len + match_byte as usize;
                 }
 
-                len += 8;
-
-                let lane = vgetq_lane_u64(vreinterpretq_u64_u8(cmp), 1);
-                if lane != 0 {
-                    let match_byte = lane.trailing_zeros() / 8;
-                    return len + match_byte as usize;
-                }
-
-                len += 8;
+                len += core::mem::size_of::<Chunk>();
             }
         }
 
@@ -180,22 +219,28 @@ mod avx2 {
     
     
     #[target_feature(enable = "avx2")]
+    #[target_feature(enable = "bmi2")]
+    #[target_feature(enable = "bmi1")]
     pub unsafe fn compare256(src0: &[u8; 256], src1: &[u8; 256]) -> usize {
-        let src0: &[[u8; 32]; 8] = unsafe { core::mem::transmute(src0) };
-        let src1: &[[u8; 32]; 8] = unsafe { core::mem::transmute(src1) };
+        let src0 = src0.chunks_exact(32);
+        let src1 = src1.chunks_exact(32);
 
         let mut len = 0;
 
         unsafe {
-            for (chunk0, chunk1) in src0.iter().zip(src1) {
+            for (chunk0, chunk1) in src0.zip(src1) {
                 let ymm_src0 = _mm256_loadu_si256(chunk0.as_ptr() as *const __m256i);
                 let ymm_src1 = _mm256_loadu_si256(chunk1.as_ptr() as *const __m256i);
 
-                let ymm_cmp = _mm256_cmpeq_epi8(ymm_src0, ymm_src1); 
+                
+                let ymm_cmp = _mm256_cmpeq_epi8(ymm_src0, ymm_src1);
+
+                
+                
                 let mask = _mm256_movemask_epi8(ymm_cmp) as u32;
 
                 if mask != 0xFFFFFFFF {
-                    let match_byte = (!mask).trailing_zeros(); 
+                    let match_byte = mask.trailing_ones();
                     return len + match_byte as usize;
                 }
 
@@ -208,7 +253,94 @@ mod avx2 {
 
     #[test]
     fn test_compare256() {
-        if crate::cpu_features::is_enabled_avx2() {
+        if crate::cpu_features::is_enabled_avx2_and_bmi2() {
+            let str1 = [b'a'; super::MAX_COMPARE_SIZE];
+            let mut str2 = [b'a'; super::MAX_COMPARE_SIZE];
+
+            for i in 0..str1.len() {
+                str2[i] = 0;
+
+                let match_len = unsafe { compare256(&str1, &str2) };
+                assert_eq!(match_len, i);
+
+                str2[i] = b'a';
+            }
+        }
+    }
+}
+
+#[cfg(feature = "avx512")]
+#[cfg(target_arch = "x86_64")]
+mod avx512 {
+    use core::arch::x86_64::{
+        _mm512_cmpeq_epu8_mask, _mm512_loadu_si512, _mm_cmpeq_epu8_mask, _mm_loadu_si128,
+    };
+
+    
+    
+    
+    #[target_feature(enable = "avx512vl")]
+    #[target_feature(enable = "avx512bw")]
+    pub unsafe fn compare256(src0: &[u8; 256], src1: &[u8; 256]) -> usize {
+        
+        
+        
+        
+
+        unsafe {
+            
+            let xmm_src0_0 = _mm_loadu_si128(src0.as_ptr().cast());
+            let xmm_src1_0 = _mm_loadu_si128(src1.as_ptr().cast());
+            let mask_0 = u32::from(_mm_cmpeq_epu8_mask(xmm_src0_0, xmm_src1_0)); 
+            if mask_0 != 0x0000FFFF {
+                
+                let match_byte = mask_0.trailing_ones();
+                return match_byte as usize;
+            }
+
+            
+            let zmm_src0_1 = _mm512_loadu_si512(src0[16..].as_ptr().cast());
+            let zmm_src1_1 = _mm512_loadu_si512(src1[16..].as_ptr().cast());
+            let mask_1 = _mm512_cmpeq_epu8_mask(zmm_src0_1, zmm_src1_1);
+            if mask_1 != 0xFFFFFFFFFFFFFFFF {
+                let match_byte = mask_1.trailing_ones();
+                return 16 + match_byte as usize;
+            }
+
+            
+            let zmm_src0_2 = _mm512_loadu_si512(src0[80..].as_ptr().cast());
+            let zmm_src1_2 = _mm512_loadu_si512(src1[80..].as_ptr().cast());
+            let mask_2 = _mm512_cmpeq_epu8_mask(zmm_src0_2, zmm_src1_2);
+            if mask_2 != 0xFFFFFFFFFFFFFFFF {
+                let match_byte = mask_2.trailing_ones();
+                return 80 + match_byte as usize;
+            }
+
+            
+            let zmm_src0_3 = _mm512_loadu_si512(src0[144..].as_ptr().cast());
+            let zmm_src1_3 = _mm512_loadu_si512(src1[144..].as_ptr().cast());
+            let mask_3 = _mm512_cmpeq_epu8_mask(zmm_src0_3, zmm_src1_3);
+            if mask_3 != 0xFFFFFFFFFFFFFFFF {
+                let match_byte = mask_3.trailing_ones();
+                return 144 + match_byte as usize;
+            }
+
+            
+            let zmm_src0_4 = _mm512_loadu_si512(src0[192..].as_ptr().cast());
+            let zmm_src1_4 = _mm512_loadu_si512(src1[192..].as_ptr().cast());
+            let mask_4 = _mm512_cmpeq_epu8_mask(zmm_src0_4, zmm_src1_4);
+            if mask_4 != 0xFFFFFFFFFFFFFFFF {
+                let match_byte = mask_4.trailing_ones();
+                return 192 + match_byte as usize;
+            }
+        }
+
+        256
+    }
+
+    #[test]
+    fn test_compare256() {
+        if true {
             let str1 = [b'a'; super::MAX_COMPARE_SIZE];
             let mut str2 = [b'a'; super::MAX_COMPARE_SIZE];
 
@@ -230,12 +362,12 @@ mod wasm32 {
 
     #[target_feature(enable = "simd128")]
     pub fn compare256(src0: &[u8; 256], src1: &[u8; 256]) -> usize {
-        let src0: &[[u8; 16]; 16] = unsafe { core::mem::transmute(src0) };
-        let src1: &[[u8; 16]; 16] = unsafe { core::mem::transmute(src1) };
+        let src0 = src0.chunks_exact(16);
+        let src1 = src1.chunks_exact(16);
 
         let mut len = 0;
 
-        for (chunk0, chunk1) in src0.iter().zip(src1) {
+        for (chunk0, chunk1) in src0.zip(src1) {
             
             let v128_src0 = unsafe { v128_load(chunk0.as_ptr() as *const v128) };
             let v128_src1 = unsafe { v128_load(chunk1.as_ptr() as *const v128) };
@@ -244,7 +376,7 @@ mod wasm32 {
             let mask = u8x16_bitmask(v128_cmp);
 
             if mask != 0xFFFF {
-                let match_byte = (!mask).trailing_zeros(); 
+                let match_byte = mask.trailing_ones();
                 return len + match_byte as usize;
             }
 
