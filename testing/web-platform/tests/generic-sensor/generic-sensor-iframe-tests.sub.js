@@ -29,7 +29,7 @@ function run_generic_sensor_iframe_tests(sensorData, readingData) {
 
   const {sensorName, permissionName, testDriverName} = sensorData;
   const sensorType = self[sensorName];
-  const featurePolicies = get_feature_policies_for_sensor(sensorName);
+  const featurePolicies = get_permissions_policies_for_sensor(sensorName);
 
   
   
