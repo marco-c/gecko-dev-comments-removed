@@ -222,6 +222,7 @@ var h11required_conn = null;
 var h11required_header = "yes";
 var didRst = false;
 var rstConnection = null;
+var didUnknownRst = false;
 var illegalheader_conn = null;
 
 
@@ -432,6 +433,20 @@ function handleRequest(req, res) {
     if (req.httpVersionMajor != 2) {
       res.setHeader("Connection", "close");
     }
+    res.writeHead(200);
+    res.end("It's all good.");
+    return;
+  } else if (u.pathname === "/unknown_rst_once") {
+    
+    
+    if (!didUnknownRst && req.httpVersionMajor === 2) {
+      didUnknownRst = true;
+      req.stream.reset(0xfe);
+      return;
+    }
+    
+    didUnknownRst = false;
+    res.setHeader("Content-Type", "text/html");
     res.writeHead(200);
     res.end("It's all good.");
     return;
