@@ -4673,26 +4673,17 @@ nsresult nsContentUtils::ParseQualifiedNameRelaxed(
   const char16_t* begin = aQualifiedName.BeginReading();
   const char16_t* end = aQualifiedName.EndReading();
   const char16_t* firstColon = nullptr;
-  const char16_t* secondColon = nullptr;
 
-  
-  
   for (const char16_t* ptr = begin; ptr < end; ptr++) {
     if (*ptr == ':') {
-      if (!firstColon) {
-        firstColon = ptr;
-      } else if (!secondColon) {
-        secondColon = ptr;
-        break;  
-      }
+      firstColon = ptr;
+      break;
     }
   }
 
   if (firstColon) {
-    
     nsDependentSubstring prefix(begin, firstColon);
 
-    
     if (prefix.IsEmpty()) {
       return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
     }
@@ -4702,9 +4693,7 @@ nsresult nsContentUtils::ParseQualifiedNameRelaxed(
     }
 
     
-    
-    const char16_t* localNameEnd = secondColon ? secondColon : end;
-    nsDependentSubstring localName(firstColon + 1, localNameEnd);
+    nsDependentSubstring localName(firstColon + 1, end);
 
     
     if (localName.IsEmpty()) {
@@ -4726,7 +4715,7 @@ nsresult nsContentUtils::ParseQualifiedNameRelaxed(
       *aColon = firstColon;
     }
     if (aLocalNameEnd) {
-      *aLocalNameEnd = localNameEnd;
+      *aLocalNameEnd = end;
     }
   } else {
     
@@ -4781,8 +4770,6 @@ nsresult nsContentUtils::GetNodeInfoFromQName(
   const nsString& qName = PromiseFlatString(aQualifiedName);
   const char16_t* colon;
   const char16_t* localNameEnd;
-  
-  
   nsresult rv = nsContentUtils::ParseQualifiedNameRelaxed(
       qName, aNodeType, &colon, &localNameEnd);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -4792,7 +4779,6 @@ nsresult nsContentUtils::GetNodeInfoFromQName(
   if (colon) {
     RefPtr<nsAtom> prefix = NS_AtomizeMainThread(Substring(qName.get(), colon));
 
-    
     rv = aNodeInfoManager->GetNodeInfo(Substring(colon + 1, localNameEnd),
                                        prefix, nsID, aNodeType, aNodeInfo);
   } else {
