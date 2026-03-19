@@ -2469,7 +2469,18 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
   localEvent.mUniqueId = aEvent.mUniqueId;
 
   if (!SkipRepeatedKeyEvent(aEvent) && !isPrecedingKeyDownEventConsumed) {
+    const bool isOtherKeyDownBeingDispatched =
+        mCurrentBeingDispatchedKeyDownCode.isSome();
+    if (aEvent.mMessage == eKeyDown && !isOtherKeyDownBeingDispatched) {
+      mCurrentBeingDispatchedKeyDownCode.emplace(aEvent.mCodeNameIndex);
+    }
     nsEventStatus status = DispatchWidgetEventViaAPZ(localEvent);
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT_IF(isOtherKeyDownBeingDispatched,
+                             localEvent.mFlags.mIsSuppressedOrDelayed);
 
     
     
@@ -2482,6 +2493,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
       if (status == nsEventStatus_eConsumeNoDefault) {
         MOZ_ASSERT_IF(!aEvent.mFlags.mIsSynthesizedForTests,
                       aEvent.mCodeNameIndex != CODE_NAME_INDEX_USE_STRING);
+        MOZ_ASSERT(!localEvent.mFlags.mIsSuppressedOrDelayed);
+        MOZ_ASSERT(!isOtherKeyDownBeingDispatched);
+
         
         
         
@@ -2489,7 +2503,18 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
         
         
         
-        mPreviousConsumedKeyDownCode = Some(aEvent.mCodeNameIndex);
+        if (MOZ_LIKELY(mCurrentBeingDispatchedKeyDownCode)) {
+          MOZ_ASSERT(mCurrentBeingDispatchedKeyDownCode.value() ==
+                     aEvent.mCodeNameIndex);
+          
+          
+          
+          
+          
+          
+          
+          mPreviousConsumedKeyDownCode = Some(aEvent.mCodeNameIndex);
+        }
       }
       
       
@@ -2497,6 +2522,15 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
       else if (mPreviousConsumedKeyDownCode.isSome() &&
                aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
         mPreviousConsumedKeyDownCode.reset();
+      }
+
+      
+      
+      if (!isOtherKeyDownBeingDispatched &&
+          mCurrentBeingDispatchedKeyDownCode) {
+        MOZ_ASSERT(mCurrentBeingDispatchedKeyDownCode.value() ==
+                   aEvent.mCodeNameIndex);
+        mCurrentBeingDispatchedKeyDownCode.reset();
       }
     }
     
@@ -2511,6 +2545,21 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
              mPreviousConsumedKeyDownCode.isSome() &&
              aEvent.mCodeNameIndex == mPreviousConsumedKeyDownCode.value()) {
       mPreviousConsumedKeyDownCode.reset();
+    }
+    
+    
+    
+    
+    
+    
+    
+    else if (aEvent.mMessage == eKeyPress &&
+             mCurrentBeingDispatchedKeyDownCode &&
+             mCurrentBeingDispatchedKeyDownCode.value() ==
+                 aEvent.mCodeNameIndex) {
+      MOZ_DIAGNOSTIC_ASSERT(isOtherKeyDownBeingDispatched);
+      MOZ_DIAGNOSTIC_ASSERT(localEvent.mFlags.mIsSuppressedOrDelayed);
+      mCurrentBeingDispatchedKeyDownCode.reset();
     }
 
     if (localEvent.mFlags.mIsSuppressedOrDelayed) {

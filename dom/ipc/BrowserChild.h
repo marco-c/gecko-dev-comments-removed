@@ -847,7 +847,14 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   RefPtr<BrowsingContext> mBrowsingContext;
   RefPtr<nsIDragSession> mDragSession;
 
+  
+  
+  
+  
+  Maybe<CodeNameIndex> mCurrentBeingDispatchedKeyDownCode;
+  
   Maybe<CodeNameIndex> mPreviousConsumedKeyDownCode;
+
   uint32_t mChromeFlags;
   uint32_t mMaxTouchPoints;
   
