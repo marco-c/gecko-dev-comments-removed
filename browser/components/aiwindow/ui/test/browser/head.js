@@ -84,6 +84,26 @@ function promiseNavigateAndLoad(browser, url) {
   return loaded;
 }
 
+async function getPromptButtons(browser) {
+  const aiWindow = await TestUtils.waitForCondition(
+    () => browser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
+  const promptsEl = await TestUtils.waitForCondition(
+    () => aiWindow.shadowRoot.querySelector("smartwindow-prompts"),
+    "Wait for smartwindow-prompts element"
+  );
+  return promptsEl.shadowRoot.querySelectorAll(".sw-prompt-button");
+}
+
+async function getConversationId(browser) {
+  const aiWindow = await TestUtils.waitForCondition(
+    () => browser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
+  return aiWindow.conversationId.toString();
+}
+
 
 
 
@@ -271,7 +291,13 @@ function startMockOpenAI({
     };
 
     const sendSSE = obj => {
-      response.write(`data: ${JSON.stringify(obj)}\n\n`);
+      
+      response.write(
+        Array.from(
+          new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`),
+          b => String.fromCharCode(b)
+        ).join("")
+      );
     };
 
     if (wantsStream && toolCall && askedForTools && !hasToolResult) {
