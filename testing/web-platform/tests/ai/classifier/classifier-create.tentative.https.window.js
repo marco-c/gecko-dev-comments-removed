@@ -5,13 +5,12 @@
 
 'use strict';
 
-promise_test(async (t) => {
+promise_test(async t => {
   const availability = await Classifier.availability();
   if (availability === 'unavailable') {
-    
     await promise_rejects_dom(
       t,
-      'NotAllowedError',
+      'NotSupportedError',
       Classifier.create()
     );
   } else {
