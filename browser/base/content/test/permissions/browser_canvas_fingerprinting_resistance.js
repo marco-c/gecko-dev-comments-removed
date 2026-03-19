@@ -149,6 +149,12 @@ async function doTestNoInput(grantPermission) {
   Services.perms.removeFromPrincipal(kPrincipal, kPermission);
 }
 
+add_setup(() => {
+  return SpecialPowers.pushPrefEnv({
+    set: [["privacy.baselineFingerprintingProtection", false]],
+  });
+});
+
 
 
 add_task(doTestNoInput.bind(null, false));

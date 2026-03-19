@@ -75,6 +75,7 @@ add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["privacy.baselineFingerprintingProtection", false],
       [
         "privacy.fingerprintingProtection.overrides",
         "+EfficientCanvasRandomization,-CanvasRandomization",
