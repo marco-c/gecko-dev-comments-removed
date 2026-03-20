@@ -555,16 +555,15 @@ void RemoteTextureMap::GetLatestBufferSnapshot(
     uint8_t* src = bufferTextureHost->GetBuffer();
     uint8_t* dst = aDestShmem.get<uint8_t>();
 
-    const size_t src_stride = ImageDataSerializer::GetRGBStride(
+    const Maybe<int32_t> src_stride = ImageDataSerializer::GetRGBStride(
         bufferTextureHost->GetBufferDescriptor());
+    MOZ_RELEASE_ASSERT(src_stride.isSome());
     
-    MOZ_RELEASE_ASSERT(src_stride != 0);
-    
-    const size_t min_stride = std::min(src_stride, aDestStride);
+    const size_t min_stride = std::min(size_t(src_stride.value()), aDestStride);
 
     for (int y = 0; y < src_size.height; y++) {
       memcpy(dst, src, min_stride);
-      src += src_stride;
+      src += src_stride.value();
       dst += aDestStride;
     }
   }
