@@ -2,7 +2,6 @@
 
 
 
-
 #include "PrintTargetSkPDF.h"
 
 #include "imgIEncoder.h"
@@ -207,6 +206,7 @@ static SkPDF::Metadata GetDefaultMetadata() {
 
 nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
                                          const nsAString& aPrintToFileName,
+                                         uint64_t aBrowsingContextId,
                                          int32_t aStartPage, int32_t aEndPage) {
   
   

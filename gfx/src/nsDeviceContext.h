@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NS_DEVICECONTEXT_H_
 #define NS_DEVICECONTEXT_H_
 
@@ -200,7 +199,8 @@ class nsDeviceContext final {
 
 
   nsresult BeginDocument(const nsAString& aTitle,
-                         const nsAString& aPrintToFileName, int32_t aStartPage,
+                         const nsAString& aPrintToFileName,
+                         uint64_t aBrowsingContextId, int32_t aStartPage,
                          int32_t aEndPage);
 
   
@@ -304,6 +304,7 @@ class nsDeviceContext final {
   RefPtr<PrintTarget> mPrintTarget;
   bool mIsCurrentlyPrintingDoc;
   bool mIsInitialized = false;
+  uint64_t mBrowsingContextId = 0;
 };
 
 #endif 

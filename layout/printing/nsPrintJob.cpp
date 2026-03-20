@@ -882,14 +882,19 @@ nsresult nsPrintJob::SetupToPrintContent() {
     endPage = std::min(mNumPrintablePages, std::max(endPage, ranges[i + 1]));
   }
 
+  uint64_t browsingContextId = 0;
+  if (auto* bc = mPrintObject->mDocument->GetBrowsingContext()) {
+    browsingContextId = bc->Id();
+  }
+
   nsresult rv = NS_OK;
   
   
   
   
   if (mIsDoingPrinting) {
-    rv = printData->mPrintDC->BeginDocument(docTitleStr, fileNameStr, startPage,
-                                            endPage);
+    rv = printData->mPrintDC->BeginDocument(
+        docTitleStr, fileNameStr, browsingContextId, startPage, endPage);
   }
 
   if (mIsCreatingPrintPreview) {
