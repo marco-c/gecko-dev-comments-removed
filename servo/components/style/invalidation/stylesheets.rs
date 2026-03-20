@@ -642,7 +642,7 @@ impl StylesheetInvalidationSet {
                 return self.invalidate_fully();
             },
             Document(..) | Import(..) | Media(..) | Supports(..) | Container(..)
-            | LayerBlock(..) | StartingStyle(..) | AppearanceBase(..) => {
+            | LayerBlock(..) | StartingStyle(..) => {
                 
             },
             FontFace(..) => {

@@ -59,10 +59,6 @@ PRIORITARY_PROPERTIES = set(
         "zoom",
         
         "line-height",
-        
-        
-        "-moz-default-appearance",
-        "appearance",
     ]
 )
 
