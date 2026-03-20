@@ -347,7 +347,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
     public @NonNull Builder fissionEnabled(final boolean enabled) {
       getSettings().mFissionEnabled.set(enabled);
       return this;
@@ -382,8 +381,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-    public @NonNull Builder disableShip(final boolean value) {
-      getSettings().mDisableShip.set(value);
+
+    public @Deprecated @DeprecationSchedule(id = "disable-ship-removal", version = 153) @NonNull
+    Builder disableShip(final boolean value) {
       return this;
     }
 
@@ -828,8 +828,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<>("privacy.baselineFingerprintingProtection");
    final PrefWithoutDefault<String> mBaselineFingerprintingProtectionOverrides =
       new PrefWithoutDefault<>("privacy.baselineFingerprintingProtection.overrides");
-   PrefWithoutDefault<Boolean> mDisableShip =
-      new PrefWithoutDefault<Boolean>("fission.disableSessionHistoryInParent");
    final Pref<Boolean> mFetchPriorityEnabled =
       new Pref<Boolean>("network.fetchpriority.enabled", false);
    final Pref<Boolean> mParallelMarkingEnabled =
@@ -2404,8 +2402,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-  public @Nullable Boolean getDisableShip() {
-    return mDisableShip.get();
+  public @Deprecated @DeprecationSchedule(id = "disable-ship-removal", version = 153) @Nullable
+  Boolean getDisableShip() {
+    return false;
   }
 
   

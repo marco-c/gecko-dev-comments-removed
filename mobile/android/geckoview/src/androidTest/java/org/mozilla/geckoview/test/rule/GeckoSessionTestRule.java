@@ -2820,11 +2820,6 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
-  public boolean isSessionHistoryInParentRunning() {
-    return (Boolean) webExtensionApiCall("IsSessionHistoryInParentRunning", null);
-  }
-
-  
   public boolean isFissionRunning() {
     return (Boolean) webExtensionApiCall("IsFissionRunning", null);
   }

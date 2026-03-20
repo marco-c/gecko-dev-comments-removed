@@ -190,19 +190,6 @@ var ModuleManager = {
     }
   },
 
-  
-  async prepareToChangeRemoteness() {
-    
-    
-    
-    
-    const { history } = await this.getActor("GeckoViewContent").collectState();
-
-    
-    
-    this.sessionState = { history };
-  },
-
   willChangeBrowserRemoteness() {
     debug`WillChangeBrowserRemoteness`;
 
@@ -243,19 +230,6 @@ var ModuleManager = {
       module.enabled = true;
     });
     this.disabledModules = null;
-  },
-
-  afterBrowserRemotenessChange(aSwitchId) {
-    const { sessionState } = this;
-    this.sessionState = null;
-
-    sessionState.switchId = aSwitchId;
-
-    this.getActor("GeckoViewContent").restoreState(sessionState);
-    this.browser.focus();
-
-    
-    return true;
   },
 
   _updateSettings(aSettings) {
@@ -727,12 +701,6 @@ function startup() {
       },
     },
     {
-      name: "SessionStateAggregator",
-      onInit: {
-        frameScript: "chrome://geckoview/content/SessionStateAggregator.js",
-      },
-    },
-    {
       name: "GeckoViewAutofill",
       onInit: {
         actors: {
@@ -884,13 +852,6 @@ function startup() {
       },
     },
   ]);
-
-  if (!Services.appinfo.sessionHistoryInParent) {
-    browser.prepareToChangeRemoteness = () =>
-      ModuleManager.prepareToChangeRemoteness();
-    browser.afterChangeRemoteness = switchId =>
-      ModuleManager.afterBrowserRemotenessChange(switchId);
-  }
 
   browser.addEventListener("WillChangeBrowserRemoteness", () =>
     ModuleManager.willChangeBrowserRemoteness()
