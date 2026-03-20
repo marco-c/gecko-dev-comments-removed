@@ -5,23 +5,24 @@
 Support for running mach python-test tasks (via run-task)
 """
 
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
+from typing import Literal, Optional, Union
+
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 
-python_test_schema = LegacySchema({
-    Required("using"): "python-test",
+
+class PythonTestSchema(Schema, kw_only=True):
+    using: Literal["python-test"]
     
-    Required("subsuite"): str,
+    subsuite: str
     
-    Optional("workdir"): str,
+    workdir: Optional[str] = None
     
-    Optional("use-caches"): Any(bool, [str]),
+    use_caches: Optional[Union[bool, list[str]]] = None
     
     
-    Optional("prepend-env"): {str: str},
-})
+    prepend_env: Optional[dict[str, str]] = None
 
 
 defaults = {
@@ -30,10 +31,10 @@ defaults = {
 
 
 @run_job_using(
-    "docker-worker", "python-test", schema=python_test_schema, defaults=defaults
+    "docker-worker", "python-test", schema=PythonTestSchema, defaults=defaults
 )
 @run_job_using(
-    "generic-worker", "python-test", schema=python_test_schema, defaults=defaults
+    "generic-worker", "python-test", schema=PythonTestSchema, defaults=defaults
 )
 def configure_python_test(config, job, taskdesc):
     run = job["run"]
