@@ -69,6 +69,8 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   bool IsEnabled() const;
 
+  bool IsEditable() { return mInputContext.mIMEState.IsEditable(); }
+
   
   void OnFocusWindow(nsWindow* aWindow);
   

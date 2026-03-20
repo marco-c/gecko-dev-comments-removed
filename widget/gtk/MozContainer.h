@@ -23,6 +23,13 @@
 
 
 
+
+
+
+
+
+
+
 #define MOZ_CONTAINER_TYPE (moz_container_get_type())
 #define MOZ_CONTAINER(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST((obj), MOZ_CONTAINER_TYPE, MozContainer))
@@ -43,15 +50,17 @@ typedef struct _MozContainer MozContainer;
 typedef struct _MozContainerClass MozContainerClass;
 
 struct _MozContainer {
-  GtkWidget widget;
+  GtkContainer container;
   gboolean destroyed;
+  
+  GtkWidget* entry_widget = nullptr;
 #ifdef MOZ_WAYLAND
   MozContainerWayland* wl;
 #endif
 };
 
 struct _MozContainerClass {
-  GtkWidgetClass parent_class;
+  GtkContainerClass parent_class;
 };
 
 namespace mozilla::widget {
@@ -66,5 +75,10 @@ void moz_container_class_init(MozContainerClass* klass);
 
 class nsWindow;
 nsWindow* moz_container_get_nsWindow(MozContainer* container);
+
+GtkWidget* moz_container_get_entry(MozContainer* container);
+GtkWidget* moz_container_entry_set(MozContainer* container, GtkWidget* widget);
+void moz_container_entry_position(MozContainer* container, int x, int y,
+                                  int height);
 
 #endif 
