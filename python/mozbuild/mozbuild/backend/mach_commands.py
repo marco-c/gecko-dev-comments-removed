@@ -252,7 +252,9 @@ def rust_analyzer_config(command_context):
         if sys.platform == "win32":
             cargo_check_command = [sys.executable, "../../mach"]
         else:
-            cargo_check_command = ["../../mach"]
+            
+            
+            cargo_check_command = [os.path.join(command_context.topsrcdir, "mach")]
     elif sys.platform == "win32":
         cargo_check_command = [sys.executable, "mach"]
     else:
