@@ -3097,6 +3097,7 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
 
     
     
+    
     if (mDownstreamRstReason == REFUSED_STREAM_ERROR) {
       streamCleanupCode = NS_ERROR_NET_RESET;  
       mInputFrameDataStream->ReuseConnectionOnRestartOK(true);
@@ -3106,21 +3107,10 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
       mInputFrameDataStream->DisableSpdy();
       
       mInputFrameDataStream->MakeNonSticky();
-    } else if (mDownstreamRstReason == CANCEL_ERROR) {
-      
-      
+    } else {
       streamCleanupCode = mInputFrameDataStream->RecvdData()
                               ? NS_ERROR_NET_PARTIAL_TRANSFER
                               : NS_ERROR_NET_INTERRUPT;
-    } else {
-      
-      
-      if (mInputFrameDataStream->RecvdData()) {
-        streamCleanupCode = NS_ERROR_NET_PARTIAL_TRANSFER;
-      } else {
-        streamCleanupCode = NS_ERROR_NET_RESET;
-        mInputFrameDataStream->ReuseConnectionOnRestartOK(true);
-      }
     }
 
     if (mDownstreamRstReason == COMPRESSION_ERROR) {
