@@ -2198,7 +2198,8 @@ var XULBrowserWindow = {
     if (
       (location == "about:blank" &&
         BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
-      location == ""
+      location == "" ||
+      window.browsingContext.isDocumentPiP
     ) {
       
       
