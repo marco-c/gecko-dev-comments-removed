@@ -55,6 +55,10 @@ const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
 
+const { SpecialMessageActions } = ChromeUtils.importESModule(
+  "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
+);
+
 
 function waitForPanelEvent(document, eventName) {
   return BrowserTestUtils.waitForEvent(document, eventName, false, event => {
@@ -268,6 +272,7 @@ let DEFAULT_SERVICE_STATUS = {
     usage: makeUsage(),
   },
   usageInfo: makeUsage(),
+  signInFlow: true,
 };
 
 
@@ -279,6 +284,7 @@ let STUBS = {
   fetchProxyPass: undefined,
   fetchProxyUsage: undefined,
   isLinkedToGuardian: undefined,
+  fxaSignInFlow: undefined,
 };
 
 
@@ -383,6 +389,10 @@ function setupStubs(stubs = STUBS) {
   stubs.fetchProxyPass = guardianStub.fetchProxyPass;
   stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
   stubs.isLinkedToGuardian = guardianStub.isLinkedToGuardian;
+  stubs.fxaSignInFlow = setupSandbox.stub(
+    SpecialMessageActions,
+    "fxaSignInFlow"
+  );
 
   setupSandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
 }
@@ -397,6 +407,7 @@ function setupService(
     entitlement,
     proxyPass,
     usageInfo,
+    signInFlow,
   } = DEFAULT_SERVICE_STATUS,
   stubs = STUBS
 ) {
@@ -430,6 +441,10 @@ function setupService(
 
   if (typeof usageInfo != "undefined") {
     stubs.fetchProxyUsage.resolves(usageInfo);
+  }
+
+  if (typeof signInFlow != "undefined") {
+    stubs.fxaSignInFlow.resolves(signInFlow);
   }
 }
 
