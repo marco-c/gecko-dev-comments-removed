@@ -28,7 +28,7 @@ add_task(async function test() {
     set: [["browser.urlbar.suggest.quickactions", false]],
   });
 
-  await makeProfileResettable();
+  makeProfileResettable();
 
   
   await initUpdate(params);

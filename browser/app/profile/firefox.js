@@ -3538,6 +3538,8 @@ pref("browser.profiles.profile-name.updated", false);
 
 pref("browser.profiles.sync.allow-danger-merge", false);
 
+pref("browser.profiles.forceEnableRefresh", false);
+
 pref("startup.homepage_override_url_nimbus", "");
 
 pref("startup.homepage_override_nimbus_maxVersion", "");
