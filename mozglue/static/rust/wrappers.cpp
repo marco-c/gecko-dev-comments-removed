@@ -6,7 +6,6 @@
 
 
 
-
 #include "js-confdefs.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Types.h"

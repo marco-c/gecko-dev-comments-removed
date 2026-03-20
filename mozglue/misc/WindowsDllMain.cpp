@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <libloaderapi.h>
 
 BOOL WINAPI DllMain(HINSTANCE aInstDll, DWORD aReason, LPVOID) {

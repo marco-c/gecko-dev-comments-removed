@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BaseProfileJSONWriter.h"
 
 namespace mozilla::baseprofiler {

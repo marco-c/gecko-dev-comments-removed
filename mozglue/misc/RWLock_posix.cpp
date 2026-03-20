@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef XP_WIN
 #  error This file should only be compiled on non-Windows platforms.
 #endif

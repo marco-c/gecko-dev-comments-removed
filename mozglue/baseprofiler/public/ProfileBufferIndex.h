@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfileBufferIndex_h
 #define ProfileBufferIndex_h
 

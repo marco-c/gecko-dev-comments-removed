@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DynamicallyLinkedFunctionPtr_h
 #define mozilla_DynamicallyLinkedFunctionPtr_h
 

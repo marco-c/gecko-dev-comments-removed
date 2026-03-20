@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "fmt/format.h"
 #include "fmt/xchar.h"

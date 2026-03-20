@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SIMD.h"
 
 #include <cstring>

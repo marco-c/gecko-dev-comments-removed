@@ -1,0 +1,8 @@
+
+
+
+
+#include "mozilla/SharedLibraries.h"
+
+SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() { return {}; }
+void SharedLibraryInfo::Initialize() {  }

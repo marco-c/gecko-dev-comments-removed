@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BaseProfilerUtils_h
 #define BaseProfilerUtils_h
 

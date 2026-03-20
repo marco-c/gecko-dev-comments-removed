@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef VTuneProfiler_h
 #define VTuneProfiler_h
 

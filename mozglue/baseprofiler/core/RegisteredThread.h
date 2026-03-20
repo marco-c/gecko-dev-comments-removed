@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef RegisteredThread_h
 #define RegisteredThread_h
 

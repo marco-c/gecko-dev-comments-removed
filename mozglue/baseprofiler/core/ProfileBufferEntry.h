@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfileBufferEntry_h
 #define ProfileBufferEntry_h
 

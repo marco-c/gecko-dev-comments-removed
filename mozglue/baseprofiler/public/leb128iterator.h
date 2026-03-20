@@ -33,8 +33,6 @@
 
 
 
-
-
 #ifndef leb128iterator_h
 #define leb128iterator_h
 

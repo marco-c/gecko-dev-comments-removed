@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BaseProfilingStack_h
 #define BaseProfilingStack_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsUnwindInfo_h
 #define mozilla_WindowsUnwindInfo_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SharedLibraries.h"
 
 #define PATH_MAX_TOSTRING(x) #x

@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/BaseProfilerMarkers.h"
 
 #include "mozilla/BaseProfilerUtils.h"

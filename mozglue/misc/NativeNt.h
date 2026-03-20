@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_NativeNt_h
 #define mozilla_NativeNt_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BaseProfilerRAIIMacro_h
 #define BaseProfilerRAIIMacro_h
 

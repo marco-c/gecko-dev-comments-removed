@@ -2,8 +2,6 @@
 
 
 
-
-
 namespace mozilla {
 namespace baseprofiler {
 

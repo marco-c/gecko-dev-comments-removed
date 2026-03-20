@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BaseAndGeckoProfilerDetail_h
 #define BaseAndGeckoProfilerDetail_h
 

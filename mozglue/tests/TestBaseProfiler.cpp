@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/BaseProfileJSONWriter.h"

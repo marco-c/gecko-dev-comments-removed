@@ -2,11 +2,15 @@
 
 
 
-
 #include "mozilla/SSE.h"
 #include <stdio.h>
 
-int main() {
+#if defined(XP_WIN)
+int wmain()
+#else
+int main()
+#endif  
+{
   printf("CPUID detection present: %s\n",
 #ifdef MOZILLA_SSE_HAVE_CPUID_DETECTION
          "yes"

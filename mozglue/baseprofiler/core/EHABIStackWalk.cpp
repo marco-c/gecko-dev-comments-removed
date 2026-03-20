@@ -20,8 +20,6 @@
 
 
 
-
-
 #include "EHABIStackWalk.h"
 
 #include "platform.h"

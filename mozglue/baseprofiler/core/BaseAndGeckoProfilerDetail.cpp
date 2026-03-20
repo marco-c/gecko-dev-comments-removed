@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
 
 #include <limits>

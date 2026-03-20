@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef mozilla_SIMD_h
 #define mozilla_SIMD_h
 
 #include "mozilla/Types.h"
+#include <cstdint>
 
 namespace mozilla {
 

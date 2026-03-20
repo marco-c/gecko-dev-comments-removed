@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BaseProfilerMarkersPrerequisites_h
 #define BaseProfilerMarkersPrerequisites_h
 

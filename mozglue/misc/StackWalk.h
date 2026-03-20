@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_StackWalk_h
 #define mozilla_StackWalk_h
 

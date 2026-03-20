@@ -4,7 +4,6 @@
 
 
 
-
 #include "SSE.h"
 
 #include "mozilla/Attributes.h"

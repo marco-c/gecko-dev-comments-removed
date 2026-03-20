@@ -2,7 +2,6 @@
 
 
 
-
 #include "LoggingCore.h"
 
 #include <algorithm>

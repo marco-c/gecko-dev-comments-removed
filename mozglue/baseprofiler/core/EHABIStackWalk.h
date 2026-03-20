@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_EHABIStackWalk_h_
 #define mozilla_EHABIStackWalk_h_
 

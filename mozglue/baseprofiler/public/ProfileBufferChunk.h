@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfileBufferChunk_h
 #define ProfileBufferChunk_h
 

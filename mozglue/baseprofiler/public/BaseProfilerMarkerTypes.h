@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BaseProfilerMarkerTypes_h
 #define BaseProfilerMarkerTypes_h
 

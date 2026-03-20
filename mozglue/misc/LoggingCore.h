@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef _mozilla_LoggingCore_h
 #define _mozilla_LoggingCore_h
 

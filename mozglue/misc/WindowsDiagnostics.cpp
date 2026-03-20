@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsDiagnostics.h"
 
 #include "mozilla/Assertions.h"

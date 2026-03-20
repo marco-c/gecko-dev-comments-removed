@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProportionValue_h
 #define ProportionValue_h
 

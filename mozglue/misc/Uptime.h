@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Uptime_h
 #define mozilla_Uptime_h
 

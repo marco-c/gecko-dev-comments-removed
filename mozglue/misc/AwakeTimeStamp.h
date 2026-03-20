@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AwakeTimeStamp_h
 #define mozilla_AwakeTimeStamp_h
 

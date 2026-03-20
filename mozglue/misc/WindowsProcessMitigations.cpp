@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsProcessMitigations.h"
 
 #include <processthreadsapi.h>

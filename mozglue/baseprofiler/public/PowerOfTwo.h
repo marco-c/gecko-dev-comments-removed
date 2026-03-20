@@ -22,8 +22,6 @@
 
 
 
-
-
 #ifndef PowerOfTwo_h
 #define PowerOfTwo_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsEnumProcessModules_h
 #define mozilla_WindowsEnumProcessModules_h
 

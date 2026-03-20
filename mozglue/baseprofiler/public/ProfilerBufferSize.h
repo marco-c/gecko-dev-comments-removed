@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerBufferSize_h
 #define ProfilerBufferSize_h
 

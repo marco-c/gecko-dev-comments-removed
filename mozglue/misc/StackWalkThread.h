@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_StackWalkThread_h
 #define mozilla_StackWalkThread_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsProcessMitigations_h
 #define mozilla_WindowsProcessMitigations_h
 

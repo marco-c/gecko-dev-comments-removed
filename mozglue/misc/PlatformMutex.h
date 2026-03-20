@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PlatformMutex_h
 #define mozilla_PlatformMutex_h
 

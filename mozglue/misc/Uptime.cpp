@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Uptime.h"
 
 #include "mozilla/Now.h"

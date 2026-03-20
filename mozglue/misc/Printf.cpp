@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "double-conversion/double-to-string.h"
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/Printf.h"

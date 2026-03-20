@@ -2,13 +2,13 @@
 
 
 
-
-
 #ifndef IPC_PROCESSTYPE_H_
 #define IPC_PROCESSTYPE_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
+
+#include <cstdint>
 
 
 enum GeckoProcessType {

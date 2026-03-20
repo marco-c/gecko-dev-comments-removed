@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Compression.h"
 #include "mozilla/CheckedInt.h"
 

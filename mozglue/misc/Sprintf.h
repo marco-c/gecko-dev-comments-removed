@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Sprintf_h_
 #define mozilla_Sprintf_h_
 

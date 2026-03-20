@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MutexPlatformData_posix_h
 #define MutexPlatformData_posix_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glue/Debug.h"
 #include "mozilla/Sprintf.h"
 

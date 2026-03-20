@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BaseProfilingCategory_h
 #define BaseProfilingCategory_h
 

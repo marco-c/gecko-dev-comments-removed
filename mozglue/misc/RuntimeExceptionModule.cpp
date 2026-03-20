@@ -2,11 +2,7 @@
 
 
 
-
-
 #include "RuntimeExceptionModule.h"
-
-#include <cstdint>
 
 #include "mozilla/ProcessType.h"
 

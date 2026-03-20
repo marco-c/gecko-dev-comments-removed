@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Uptime.h"
 #include <string.h>

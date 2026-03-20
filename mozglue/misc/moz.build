@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 FINAL_LIBRARY = "mozglue"
 
@@ -111,7 +109,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "Mutex_windows.cpp",
         "RWLock_windows.cpp",
     ]
-
+# WASI hasn't supported cond vars and mutexes yet so noop implementation is used.
 elif CONFIG["OS_ARCH"] == "WASI":
     SOURCES += [
         "ConditionVariable_noop.cpp",
@@ -134,7 +132,7 @@ SOURCES += [
 ]
 
 if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
-    
+    # Suppress warnings from third-party V8 Decimal code.
     SOURCES["decimal/Decimal.cpp"].flags += ["-Wno-implicit-fallthrough"]
 
 for var in ("MOZ_APP_BASENAME", "MOZ_APP_VENDOR"):

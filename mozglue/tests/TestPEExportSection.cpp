@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/NativeNt.h"
 #include "nsWindowsDllInterceptor.h"

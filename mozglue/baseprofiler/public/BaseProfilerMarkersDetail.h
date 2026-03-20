@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BaseProfilerMarkersDetail_h
 #define BaseProfilerMarkersDetail_h
 

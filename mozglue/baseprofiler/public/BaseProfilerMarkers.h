@@ -26,8 +26,6 @@
 
 
 
-
-
 #ifndef BaseProfilerMarkers_h
 #define BaseProfilerMarkers_h
 

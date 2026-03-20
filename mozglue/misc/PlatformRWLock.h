@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PlatformRWLock_h
 #define mozilla_PlatformRWLock_h
 

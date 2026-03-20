@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProgressLogger_h
 #define ProgressLogger_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include <windows.h>
 
 #include "mozilla/SharedLibraries.h"

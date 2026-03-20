@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <errno.h>
 
 #include "mozilla/PlatformMutex.h"

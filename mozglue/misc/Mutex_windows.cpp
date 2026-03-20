@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/PlatformMutex.h"
 
 #include <windows.h>

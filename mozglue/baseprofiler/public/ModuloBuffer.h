@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ModuloBuffer_h
 #define ModuloBuffer_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfiledThreadData_h
 #define ProfiledThreadData_h
 

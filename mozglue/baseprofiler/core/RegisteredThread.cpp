@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RegisteredThread.h"
 
 #include "mozilla/BaseProfiler.h"

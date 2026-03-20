@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef mozilla_FailureLatch_h
 #define mozilla_FailureLatch_h
 

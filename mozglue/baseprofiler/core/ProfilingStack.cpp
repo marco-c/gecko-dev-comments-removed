@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BaseProfilingStack.h"
 
 #include <algorithm>

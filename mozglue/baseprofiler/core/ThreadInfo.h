@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ThreadInfo_h
 #define ThreadInfo_h
 

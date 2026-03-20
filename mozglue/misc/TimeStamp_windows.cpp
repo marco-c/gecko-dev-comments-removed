@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/TimeStamp.h"
 #include <intrin.h>

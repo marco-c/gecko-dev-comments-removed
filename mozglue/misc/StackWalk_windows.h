@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StackWalk_windows_h
 #define mozilla_StackWalk_windows_h
 

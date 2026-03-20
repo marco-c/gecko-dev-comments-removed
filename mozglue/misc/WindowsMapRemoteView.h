@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsMapRemoteView_h
 #define mozilla_WindowsMapRemoteView_h
 

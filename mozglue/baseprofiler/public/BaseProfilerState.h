@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef BaseProfilerState_h
 #define BaseProfilerState_h
 

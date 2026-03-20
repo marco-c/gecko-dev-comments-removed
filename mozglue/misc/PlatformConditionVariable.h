@@ -2,12 +2,8 @@
 
 
 
-
-
 #ifndef mozilla_ConditionVariable_h
 #define mozilla_ConditionVariable_h
-
-#include <stdint.h>
 
 #include "mozilla/PlatformMutex.h"
 #include "mozilla/TimeStamp.h"

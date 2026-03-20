@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/PlatformConditionVariable.h"
 #include "mozilla/PlatformMutex.h"
 #include "MutexPlatformData_noop.h"

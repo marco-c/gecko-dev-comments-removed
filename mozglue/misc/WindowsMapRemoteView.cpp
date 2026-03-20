@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsMapRemoteView.h"
 
 #include "mozilla/Assertions.h"

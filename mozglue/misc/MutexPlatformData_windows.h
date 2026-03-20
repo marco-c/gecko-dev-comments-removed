@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MutexPlatformData_windows_h
 #define MutexPlatformData_windows_h
 

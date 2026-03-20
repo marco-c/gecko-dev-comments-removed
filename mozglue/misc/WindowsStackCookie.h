@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsStackCookie_h
 #define mozilla_WindowsStackCookie_h
 

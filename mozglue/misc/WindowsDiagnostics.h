@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsDiagnostics_h
 #define mozilla_WindowsDiagnostics_h
 

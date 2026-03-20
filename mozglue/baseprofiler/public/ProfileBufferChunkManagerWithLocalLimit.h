@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfileBufferChunkManagerWithLocalLimit_h
 #define ProfileBufferChunkManagerWithLocalLimit_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PLATFORM_MACROS_H
 #define PLATFORM_MACROS_H
 

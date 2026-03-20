@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "mozilla/StackWalk.h"
 
 #include "mozilla/Assertions.h"

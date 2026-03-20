@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZ_DECIMAL_UTILS_H
 #define MOZ_DECIMAL_UTILS_H
 

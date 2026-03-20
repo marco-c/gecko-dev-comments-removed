@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProcessType.h"
 
 #include <cstring>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BaseProfilingCategory.h"
 
 #include "mozilla/Assertions.h"

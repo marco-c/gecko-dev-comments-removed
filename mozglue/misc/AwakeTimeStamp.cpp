@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AwakeTimeStamp.h"
 
 #ifdef XP_WIN

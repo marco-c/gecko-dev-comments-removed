@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Compression_h_
 #define mozilla_Compression_h_
 

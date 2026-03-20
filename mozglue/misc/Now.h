@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Now_h
 #define mozilla_Now_h
 

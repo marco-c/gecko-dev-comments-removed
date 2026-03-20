@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Printf_h
 #define mozilla_Printf_h
 

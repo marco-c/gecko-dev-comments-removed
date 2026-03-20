@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WindowsDpiAwareness_h_
 #define WindowsDpiAwareness_h_
 

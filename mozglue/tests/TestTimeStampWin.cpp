@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/TimeStamp.h"
 

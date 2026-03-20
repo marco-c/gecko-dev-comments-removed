@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef BaseProfilerDetail_h
 #define BaseProfilerDetail_h
 

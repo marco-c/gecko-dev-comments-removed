@@ -4,12 +4,13 @@
 
 
 
-
 #ifndef mozilla_SSE_h_
 #define mozilla_SSE_h_
 
 
 #include "mozilla/Types.h"
+
+#include <cstdint>
 
 
 

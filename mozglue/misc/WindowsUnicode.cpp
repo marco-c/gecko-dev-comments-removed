@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowsUnicode.h"
 
 #include <windows.h>

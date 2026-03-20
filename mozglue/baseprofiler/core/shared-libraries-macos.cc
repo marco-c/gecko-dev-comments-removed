@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/SharedLibraries.h"
 
 #include "platform.h"

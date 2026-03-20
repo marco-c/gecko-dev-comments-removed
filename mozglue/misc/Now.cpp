@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Now.h"
 
 #ifdef XP_WIN
