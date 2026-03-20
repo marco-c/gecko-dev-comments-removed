@@ -3410,7 +3410,7 @@ pref("browser.places.interactions.enabled", true);
 
 pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\",\"complete\":false}");
 
-pref("browser.firefox-view.view-count", 0);
+pref("browser.firefox-view.button-clicks", "{\"count\":0,\"lastCountTime\":\"\"}");
 
 pref("browser.firefox-view.max-history-rows", 0);
 

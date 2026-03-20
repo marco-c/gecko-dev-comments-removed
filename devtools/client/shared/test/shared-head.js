@@ -45,7 +45,7 @@ async function resetPreferencesModifiedDuringTest() {
 
   
   for (const pref of [
-    "browser.firefox-view.view-count",
+    "browser.firefox-view.button-clicks",
     "extensions.ui.lastCategory",
     "sidebar.old-sidebar.has-used",
   ]) {
