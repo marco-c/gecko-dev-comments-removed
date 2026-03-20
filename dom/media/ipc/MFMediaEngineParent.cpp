@@ -707,12 +707,28 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
 
   
   
+  
+  if (size.IsEmpty()) {
+    LOG("EnsureDcompSurfaceHandle: size is empty, deferring");
+    return;
+  }
+
+  
+  
   RECT rect = {0, 0, (LONG)size.width, (LONG)size.height};
-  RETURN_VOID_IF_FAILED(mediaEngineEx->UpdateVideoStream(
-      nullptr , &rect, nullptr ));
+  HRESULT rv = mediaEngineEx->UpdateVideoStream(nullptr , &rect,
+                                                nullptr );
+  if (MOZ_UNLIKELY(FAILED(rv))) {
+    LOG("UpdateVideoStream failed, hr=%lx", rv);
+    (void)SendNotifyError(
+        MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                    nsPrintfCString("UpdateVideoStream (hr=%lx)", rv),
+                    Some(static_cast<int32_t>(rv))));
+    return;
+  }
 
   HANDLE surfaceHandle = INVALID_HANDLE_VALUE;
-  HRESULT rv = mediaEngineEx->GetVideoSwapchainHandle(&surfaceHandle);
+  rv = mediaEngineEx->GetVideoSwapchainHandle(&surfaceHandle);
   if (FAILED(rv)) {
     if (IsHardwareResetHRESULT(rv)) {
       LOG("GetVideoSwapchainHandle failed with hardware reset hr=%lx", rv);
@@ -732,7 +748,9 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
         size.width, size.height);
     mMediaSource->SetDCompSurfaceHandle(surfaceHandle, size);
   } else {
-    NS_WARNING("SurfaceHandle is not ready yet");
+    
+    
+    LOG("SurfaceHandle not ready yet, will retry later");
   }
 }
 
