@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WindowDefs_h_
 #define WindowDefs_h_
 

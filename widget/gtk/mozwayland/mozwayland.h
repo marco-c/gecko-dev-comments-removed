@@ -6,9 +6,6 @@
 
 
 
-
-
-
 #ifndef MozWayland_h_
 #define MozWayland_h_
 

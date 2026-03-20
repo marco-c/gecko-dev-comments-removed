@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPrintSettingsX_h_
 #define nsPrintSettingsX_h_
 

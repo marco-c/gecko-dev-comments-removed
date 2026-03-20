@@ -8,9 +8,6 @@
 
 
 
-
-
-
 #ifndef WIDGET_X11_KEYSYM2UCS_H_
 #define WIDGET_X11_KEYSYM2UCS_H_
 

@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef _mozilla_widget_GfxInfo_h_
 #define _mozilla_widget_GfxInfo_h_
 

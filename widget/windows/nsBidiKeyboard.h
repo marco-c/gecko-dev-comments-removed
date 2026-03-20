@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _nsBidiKeyboard
 #define _nsBidiKeyboard
 #include "nsIBidiKeyboard.h"

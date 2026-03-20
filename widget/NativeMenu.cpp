@@ -2,7 +2,6 @@
 
 
 
-
 #include "NativeMenu.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLImageElement.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsBaseColorPicker.h"
 
 #include "mozilla/dom/BrowsingContext.h"

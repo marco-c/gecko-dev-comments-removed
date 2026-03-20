@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPrinterListBase.h"
 #include "PrintBackgroundTask.h"
 #include "mozilla/ErrorResult.h"

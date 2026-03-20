@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsAppShell.h"
 
 #include "base/basictypes.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDeviceContextSpecProxy_h
 #define nsDeviceContextSpecProxy_h
 

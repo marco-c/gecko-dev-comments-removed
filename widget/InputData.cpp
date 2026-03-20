@@ -2,7 +2,6 @@
 
 
 
-
 #include "InputData.h"
 
 #include "mozilla/dom/MouseEventBinding.h"

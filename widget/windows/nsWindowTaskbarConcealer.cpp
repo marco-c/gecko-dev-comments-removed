@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsWindowTaskbarConcealer.h"
 
 #include "nsIWinTaskbar.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_InitData_h_
 #define mozilla_widget_InitData_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NS_CLIPBOARD_H
 #define NS_CLIPBOARD_H
 

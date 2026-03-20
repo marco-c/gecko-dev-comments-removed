@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <dlfcn.h>
 #include <gtk/gtk.h>
 #include "GtkWidgets.h"
@@ -472,8 +470,7 @@ static GtkStyleContext* GetWidgetStyleInternal(Type aType) {
       style = CreateSubStyleWithClass(Type::Scrollbar, GTK_STYLE_CLASS_TROUGH);
       break;
     case Type::ScrollbarThumb:
-      style =
-          CreateSubStyleWithClass(Type::ScrollbarThumb, GTK_STYLE_CLASS_SLIDER);
+      style = CreateSubStyleWithClass(Type::Scrollbar, GTK_STYLE_CLASS_SLIDER);
       break;
     case Type::ScrolledWindow:
       style =
@@ -555,10 +552,6 @@ style_path_print(GtkStyleContext *context)
 void Refresh() { ResetWidgetCache(); }
 
 static void DrawWindowDecoration(cairo_t* cr, const DrawingParams& aParams) {
-  if (GdkIsWaylandDisplay()) {
-    
-    return;
-  }
   GtkStyleContext* decorationStyle =
       GetStyle(Type::WindowDecoration, aParams.image_scale, aParams.state);
 
@@ -571,8 +564,6 @@ static void DrawWindowDecoration(cairo_t* cr, const DrawingParams& aParams) {
 
 
 void Draw(cairo_t* cr, const DrawingParams* aParams) {
-  
-  cairo_new_path(cr);
   switch (aParams->widget) {
     case Type::WindowDecoration:
       return DrawWindowDecoration(cr, *aParams);

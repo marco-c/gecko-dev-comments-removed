@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ClipboardWriteRequestParent.h"
 
 #include "mozilla/dom/ContentParent.h"

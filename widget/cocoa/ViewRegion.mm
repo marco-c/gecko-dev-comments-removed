@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ViewRegion.h"
 #import <Cocoa/Cocoa.h>
 

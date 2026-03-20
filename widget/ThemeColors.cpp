@@ -2,7 +2,6 @@
 
 
 
-
 #include "ThemeColors.h"
 
 #include "mozilla/RelativeLuminanceUtils.h"

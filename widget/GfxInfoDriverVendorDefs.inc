@@ -9,7 +9,6 @@
 
 
 
-
 GFXINFO_DRIVER_VENDOR(All, "")
 
 GFXINFO_DRIVER_VENDOR(MesaAll, "mesa/all")

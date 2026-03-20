@@ -2,7 +2,6 @@
 
 
 
-
 #include "AndroidContentController.h"
 
 #include "AndroidBridge.h"

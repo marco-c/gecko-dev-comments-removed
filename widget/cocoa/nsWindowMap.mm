@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsWindowMap.h"
 #include "nsObjCExceptions.h"
 #include "nsChildView.h"

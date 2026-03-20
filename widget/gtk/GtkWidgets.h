@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_GtkWidgets_h
 #define mozilla_widget_GtkWidgets_h
 

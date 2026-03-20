@@ -3,7 +3,6 @@
 
 
 
-
 #include "WindowSurfaceX11Image.h"
 
 #include "mozilla/gfx/2D.h"

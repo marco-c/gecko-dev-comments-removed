@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NSWINDOW_H_
 #define NSWINDOW_H_
 
@@ -85,8 +84,7 @@ class nsWindow final : public nsIWidget {
 
   void Invalidate(const LayoutDeviceIntRect& aRect) override;
 
-  void WillPaintWindow();
-  bool PaintWindow(LayoutDeviceIntRegion aRegion);
+  void PaintWindow();
 
   bool HasModalDescendents() { return false; }
 

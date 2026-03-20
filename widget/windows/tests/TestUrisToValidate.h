@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TestUrisToValidate_h
 #define mozilla_TestUrisToValidate_h
 

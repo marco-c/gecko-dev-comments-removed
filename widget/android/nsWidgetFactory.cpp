@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/WidgetUtils.h"
 
 #include "nsAppShell.h"

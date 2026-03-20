@@ -2,7 +2,6 @@
 
 
 
-
 #include "ScrollbarDrawingWin.h"
 
 #include "mozilla/gfx/Helpers.h"

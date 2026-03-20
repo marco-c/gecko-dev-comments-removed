@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCocoaWindow.h"
 
 #include "nsArrayUtils.h"

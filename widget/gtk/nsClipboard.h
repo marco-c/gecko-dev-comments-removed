@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsClipboard_h_
 #define _nsClipboard_h_
 

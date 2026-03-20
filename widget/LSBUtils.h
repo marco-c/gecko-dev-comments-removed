@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef MOZILLA_WIDGET_LSB_UTILS_H
 #define MOZILLA_WIDGET_LSB_UTILS_H
 

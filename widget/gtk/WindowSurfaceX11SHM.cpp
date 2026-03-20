@@ -3,7 +3,6 @@
 
 
 
-
 #include "WindowSurfaceX11SHM.h"
 
 namespace mozilla::widget {

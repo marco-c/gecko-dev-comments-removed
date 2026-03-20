@@ -3,7 +3,6 @@
 
 
 
-
 #include "WindowSurfaceX11.h"
 #include "gfxPlatform.h"
 

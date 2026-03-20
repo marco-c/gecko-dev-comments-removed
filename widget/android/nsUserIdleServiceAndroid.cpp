@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsUserIdleServiceAndroid.h"
 
 bool nsUserIdleServiceAndroid::PollIdleTime(uint32_t* aIdleTime) {

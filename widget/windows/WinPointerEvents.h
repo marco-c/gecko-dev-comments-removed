@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WinPointerEvents_h_
 #define WinPointerEvents_h_
 

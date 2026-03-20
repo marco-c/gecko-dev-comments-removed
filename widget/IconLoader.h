@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_IconLoader_h_
 #define mozilla_widget_IconLoader_h_
 

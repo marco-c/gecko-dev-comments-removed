@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDeviceContextSpecProxy.h"
 
 #include "gfxASurface.h"

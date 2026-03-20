@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AsyncGtkClipboardRequest_h
 #define mozilla_AsyncGtkClipboardRequest_h
 

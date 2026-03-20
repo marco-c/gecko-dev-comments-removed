@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Logging.h"
 #include "nsString.h"
 #include "prtime.h"

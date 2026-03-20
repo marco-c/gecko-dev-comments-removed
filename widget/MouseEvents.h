@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_MouseEvents_h_
 #define mozilla_MouseEvents_h_
 

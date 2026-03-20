@@ -14,8 +14,6 @@
 
 
 
-
-
 #define KEY_MAP_WIN(aCPPKeyName, aNativeKey)
 #define KEY_MAP_WIN_JPN(aCPPKeyName, aNativeKey)
 #define KEY_MAP_WIN_KOR(aCPPKeyName, aNativeKey)

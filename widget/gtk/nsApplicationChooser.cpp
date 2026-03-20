@@ -2,7 +2,6 @@
 
 
 
-
 #include <gtk/gtk.h>
 
 #include "nsApplicationChooser.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HeadlessSound.h"
 
 namespace mozilla {

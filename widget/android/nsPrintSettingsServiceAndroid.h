@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsPrintSettingsServiceAndroid_h
 #define nsPrintSettingsServiceAndroid_h
 

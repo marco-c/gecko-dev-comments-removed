@@ -6,7 +6,6 @@
 
 
 
-
 #include "nscore.h"
 #include "nsWinGesture.h"
 #include "mozilla/Logging.h"

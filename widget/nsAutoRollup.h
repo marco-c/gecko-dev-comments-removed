@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsAutoRollup_h_
 #define nsAutoRollup_h_
 

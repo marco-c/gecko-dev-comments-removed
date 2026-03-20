@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_cocoa_ScreenHelperCocoa_h
 #define mozilla_widget_cocoa_ScreenHelperCocoa_h
 

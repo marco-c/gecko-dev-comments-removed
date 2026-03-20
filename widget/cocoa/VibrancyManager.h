@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef VibrancyManager_h
 #define VibrancyManager_h
 

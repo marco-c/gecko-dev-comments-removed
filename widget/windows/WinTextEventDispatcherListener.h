@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WinTextEventDispatcherListener_h_
 #define WinTextEventDispatcherListener_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AndroidVsync.h"
 
 #include "AndroidBridge.h"

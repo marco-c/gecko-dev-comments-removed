@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef widget_windows_InProcessWinCompositorWidget_h
 #define widget_windows_InProcessWinCompositorWidget_h
 

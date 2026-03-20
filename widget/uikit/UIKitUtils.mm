@@ -2,7 +2,6 @@
 
 
 
-
 #include "UIKitUtils.h"
 
 namespace mozilla::widget {

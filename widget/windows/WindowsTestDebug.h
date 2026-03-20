@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_WindowsTestDebug_h_
 #define mozilla_widget_WindowsTestDebug_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsDeviceContextSpecX.h"
 
 #import <Cocoa/Cocoa.h>

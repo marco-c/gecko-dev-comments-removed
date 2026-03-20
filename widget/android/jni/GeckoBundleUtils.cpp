@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/jni/GeckoBundleUtils.h"
 
 #include "JavaBuiltins.h"

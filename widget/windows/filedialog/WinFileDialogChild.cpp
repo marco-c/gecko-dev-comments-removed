@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/widget/filedialog/WinFileDialogChild.h"
 
 #include <combaseapi.h>

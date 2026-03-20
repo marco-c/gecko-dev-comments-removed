@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include <gtk/gtk.h>
 
 #include "nsUserIdleServiceGTK.h"

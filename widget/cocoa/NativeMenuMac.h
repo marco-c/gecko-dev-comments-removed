@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NativeMenuMac_h
 #define NativeMenuMac_h
 

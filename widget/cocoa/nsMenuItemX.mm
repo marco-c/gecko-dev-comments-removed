@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsMenuItemX.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "nsMenuBarX.h"

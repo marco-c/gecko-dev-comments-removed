@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsUserIdleServiceUIKit.h"
 
 bool nsUserIdleServiceUIKit::PollIdleTime(uint32_t* aIdleTime) { return false; }

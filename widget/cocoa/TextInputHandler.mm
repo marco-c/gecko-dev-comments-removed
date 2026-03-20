@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextInputHandler.h"
 #include <Foundation/Foundation.h>
 #include <Foundation/NSObjCRuntime.h>

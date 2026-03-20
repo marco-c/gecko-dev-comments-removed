@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ContentEvents_h_
 #define mozilla_ContentEvents_h_
 

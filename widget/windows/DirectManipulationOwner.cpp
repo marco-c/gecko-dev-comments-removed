@@ -2,7 +2,6 @@
 
 
 
-
 #include "DirectManipulationOwner.h"
 #include "nsWindow.h"
 #include "WinModifierKeyState.h"

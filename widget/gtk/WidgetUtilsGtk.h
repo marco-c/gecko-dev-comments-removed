@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WidgetUtilsGtk_h_
 #define WidgetUtilsGtk_h_
 

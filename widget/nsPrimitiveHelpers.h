@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsPrimitiveHelpers_h_
 #define nsPrimitiveHelpers_h_
 

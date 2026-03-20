@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef _nsLookAndFeel
 #define _nsLookAndFeel
 

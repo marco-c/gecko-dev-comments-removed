@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #import <Cocoa/Cocoa.h>
 
 #include "nsMacFinderProgress.h"

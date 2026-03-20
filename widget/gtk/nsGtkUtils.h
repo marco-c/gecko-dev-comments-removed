@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsGtkUtils_h_
 #define nsGtkUtils_h_
 

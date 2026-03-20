@@ -2,7 +2,6 @@
 
 
 
-
 #include "ScrollbarDrawingAndroid.h"
 
 #include "nsIFrame.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "MozLogSupport.h"
 #include "mozilla/Logging.h"
 

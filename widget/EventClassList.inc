@@ -14,7 +14,6 @@
 
 
 
-
 NS_ROOT_EVENT_CLASS(Widget, Event)
 NS_EVENT_CLASS(Widget, GUIEvent)
 NS_EVENT_CLASS(Widget, InputEvent)

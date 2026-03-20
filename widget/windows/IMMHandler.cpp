@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Logging.h"
 
 #include "IMMHandler.h"

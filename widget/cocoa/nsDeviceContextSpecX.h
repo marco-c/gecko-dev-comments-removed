@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsDeviceContextSpecX_h_
 #define nsDeviceContextSpecX_h_
 

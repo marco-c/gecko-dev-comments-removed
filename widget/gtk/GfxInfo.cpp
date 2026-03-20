@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "GfxInfo.h"
 
 #include <cctype>

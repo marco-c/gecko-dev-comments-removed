@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "prlink.h"
 
 #include "nsBidiKeyboard.h"

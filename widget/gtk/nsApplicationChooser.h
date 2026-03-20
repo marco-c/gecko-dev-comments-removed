@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsApplicationChooser_h_
 #define nsApplicationChooser_h_
 

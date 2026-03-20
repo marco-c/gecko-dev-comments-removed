@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsUXThemeConstants_h
 #define nsUXThemeConstants_h
 

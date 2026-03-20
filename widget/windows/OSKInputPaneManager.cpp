@@ -2,8 +2,6 @@
 
 
 
-
-
 #define NTDDI_VERSION NTDDI_WIN10_RS1
 
 #include "OSKInputPaneManager.h"

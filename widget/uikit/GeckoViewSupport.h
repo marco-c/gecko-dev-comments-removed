@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_GeckoViewSupport_h
 #define mozilla_widget_GeckoViewSupport_h
 

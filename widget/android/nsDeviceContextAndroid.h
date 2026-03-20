@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsDeviceContextAndroid_h_
 #define nsDeviceContextAndroid_h_
 

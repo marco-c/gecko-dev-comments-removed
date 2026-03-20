@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPrintSettingsService.h"
 
 #include "mozilla/embedding/PPrintingTypes.h"

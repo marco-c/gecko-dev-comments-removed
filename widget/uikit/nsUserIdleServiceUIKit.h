@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsUserIdleServiceUIKit_h_
 #define nsUserIdleServiceUIKit_h_
 

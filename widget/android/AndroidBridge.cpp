@@ -2,7 +2,6 @@
 
 
 
-
 #include <android/log.h>
 #include <dlfcn.h>
 #include <math.h>

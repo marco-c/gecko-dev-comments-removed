@@ -3,9 +3,7 @@
 
 
 
-
 #include "nscore.h"
-#include "plstr.h"
 #include <stdio.h>
 #include "nsString.h"
 #include <windows.h>

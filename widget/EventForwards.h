@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EventForwards_h_
 #define mozilla_EventForwards_h_
 

@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const clipboard = SpecialPowers.Services.clipboard;

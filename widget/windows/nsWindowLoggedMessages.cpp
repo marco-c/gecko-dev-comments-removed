@@ -2,7 +2,6 @@
 
 
 
-
 #include <windef.h>
 #include <winuser.h>
 #include "mozilla/ClearOnShutdown.h"

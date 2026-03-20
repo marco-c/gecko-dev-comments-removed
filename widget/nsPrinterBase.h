@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPrinterBase_h_
 #define nsPrinterBase_h_
 

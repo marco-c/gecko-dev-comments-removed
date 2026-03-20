@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsColorPicker.h"
 
 #include <algorithm>

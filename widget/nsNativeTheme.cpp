@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNativeTheme.h"
 #include "nsIWidget.h"
 #include "mozilla/dom/Document.h"

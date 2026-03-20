@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef MOZ_WAYLAND
 
 #  include "WaylandVsyncSource.h"

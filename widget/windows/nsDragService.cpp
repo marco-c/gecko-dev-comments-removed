@@ -2,7 +2,6 @@
 
 
 
-
 #include <ole2.h>
 #include <oleidl.h>
 #include <shlobj.h>

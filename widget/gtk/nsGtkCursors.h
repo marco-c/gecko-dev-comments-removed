@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsGtkCursors_h_
 #define nsGtkCursors_h_
 

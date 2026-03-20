@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NS_CLIPBOARD_PROXY_H
 #define NS_CLIPBOARD_PROXY_H
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_GeckoVRManager_h_
 #define mozilla_GeckoVRManager_h_
 

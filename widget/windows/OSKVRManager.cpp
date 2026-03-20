@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OSKVRManager.h"
 
 #include "FxRWindowManager.h"

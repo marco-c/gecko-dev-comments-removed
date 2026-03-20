@@ -2,7 +2,6 @@
 
 
 
-
 #include <stdint.h>
 
 #include "Image.h"

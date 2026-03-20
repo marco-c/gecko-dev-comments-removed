@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TSFStaticSink_h
 #define TSFStaticSink_h
 

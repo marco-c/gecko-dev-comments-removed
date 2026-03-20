@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WaylandVsyncSource_h_
 #define WaylandVsyncSource_h_
 

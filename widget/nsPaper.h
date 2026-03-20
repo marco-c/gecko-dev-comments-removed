@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPaper_h_
 #define nsPaper_h_
 

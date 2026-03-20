@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/widget/NativeMenuSupport.h"
 
 #include "mozilla/StaticPrefs_widget.h"

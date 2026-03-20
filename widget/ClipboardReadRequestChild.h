@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ClipboardReadRequestChild_h
 #define mozilla_ClipboardReadRequestChild_h
 

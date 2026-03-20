@@ -2,11 +2,9 @@
 
 
 
-
 #include "nsPrintSettingsGTK.h"
 #include "nsIFile.h"
 #include "nsNetUtil.h"
-#include <stdlib.h>
 
 
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_UIKitUtils_h_
 #define mozilla_widget_UIKitUtils_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBaseAppShell_h_
 #define nsBaseAppShell_h_
 

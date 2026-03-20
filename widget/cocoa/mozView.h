@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozView_h_
 #define mozView_h_
 

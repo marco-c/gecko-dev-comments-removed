@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IOSBridge_h
 #define IOSBridge_h
 

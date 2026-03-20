@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_FontRange_h_
 #define mozilla_FontRange_h_
 

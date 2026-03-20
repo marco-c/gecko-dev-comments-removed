@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef widget_gtk_nsWidgetFactory_h
 #define widget_gtk_nsWidgetFactory_h
 

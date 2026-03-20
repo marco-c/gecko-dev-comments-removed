@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsUserIdleServiceAndroid_h_
 #define nsUserIdleServiceAndroid_h_
 

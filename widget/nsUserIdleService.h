@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsUserIdleService_h_
 #define nsUserIdleService_h_
 

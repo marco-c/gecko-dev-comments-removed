@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef Base64UtilsSupport_h_
 #define Base64UtilsSupport_h_
 

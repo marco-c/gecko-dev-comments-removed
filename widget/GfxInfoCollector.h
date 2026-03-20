@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef _mozilla_widget_GfxInfoCollector_h_
 #define _mozilla_widget_GfxInfoCollector_h_
 

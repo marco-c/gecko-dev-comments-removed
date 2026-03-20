@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ContentData_h
 #define mozilla_ContentData_h
 

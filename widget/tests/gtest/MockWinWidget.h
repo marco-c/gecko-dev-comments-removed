@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GTEST_MockWinWidget_H
 #define GTEST_MockWinWidget_H
 

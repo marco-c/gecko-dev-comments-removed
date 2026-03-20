@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsClipboardHelper.h"
 
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HEADLESSWIDGET_H
 #define HEADLESSWIDGET_H
 

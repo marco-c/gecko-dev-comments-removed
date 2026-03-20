@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/widget/nsAutoRollup.h"
 
 namespace mozilla {

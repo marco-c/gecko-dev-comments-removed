@@ -2,7 +2,6 @@
 
 
 
-
 #include "GtkCompositorWidget.h"
 
 #include "mozilla/gfx/gfxVars.h"

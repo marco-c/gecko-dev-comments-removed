@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TSFTextStore_h
 #define TSFTextStore_h
 

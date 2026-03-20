@@ -3,7 +3,6 @@
 
 
 
-
 #include "MPRISServiceHandler.h"
 
 #include <stdint.h>

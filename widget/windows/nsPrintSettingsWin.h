@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsPrintSettingsWin_h_
 #define nsPrintSettingsWin_h_
 

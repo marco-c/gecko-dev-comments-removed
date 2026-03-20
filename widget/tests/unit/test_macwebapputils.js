@@ -4,7 +4,6 @@
 
 
 
-
 function test_find_app() {
   var mwaUtils = Cc["@mozilla.org/widget/mac-web-app-utils;1"].createInstance(
     Ci.nsIMacWebAppUtils

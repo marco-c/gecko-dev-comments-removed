@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsStyleConsts.h"
 #include "nsXULAppAPI.h"
 #include "nsLookAndFeel.h"

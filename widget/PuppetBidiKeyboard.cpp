@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "PuppetBidiKeyboard.h"
 #include "nsIWidget.h"
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "OSXNotificationCenter.h"
 #import <AppKit/AppKit.h>
 #include "imgIRequest.h"

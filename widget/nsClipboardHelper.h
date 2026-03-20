@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsClipboardHelper_h_
 #define nsClipboardHelper_h_
 

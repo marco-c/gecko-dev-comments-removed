@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsCUPSShim_h_
 #define nsCUPSShim_h_
 

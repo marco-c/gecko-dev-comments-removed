@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsSandboxViolationSink.h"
 
 #import <Foundation/NSObjCRuntime.h>

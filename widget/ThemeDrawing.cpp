@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThemeDrawing.h"
 
 namespace mozilla::widget {

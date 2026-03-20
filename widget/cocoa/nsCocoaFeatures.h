@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsCocoaFeatures_h_
 #define nsCocoaFeatures_h_
 

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef widget_windows_nsWidgetFactory_h
 #define widget_windows_nsWidgetFactory_h
 

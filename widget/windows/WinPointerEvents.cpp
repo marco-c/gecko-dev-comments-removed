@@ -6,7 +6,6 @@
 
 
 
-
 #include "nscore.h"
 #include "nsWindowDefs.h"
 #include "WinPointerEvents.h"

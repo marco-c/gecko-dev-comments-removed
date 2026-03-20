@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsMacSharingService_h_
 #define nsMacSharingService_h_
 

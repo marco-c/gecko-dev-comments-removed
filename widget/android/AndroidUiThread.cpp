@@ -2,7 +2,6 @@
 
 
 
-
 #include "base/message_loop.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/EventQueue.h"

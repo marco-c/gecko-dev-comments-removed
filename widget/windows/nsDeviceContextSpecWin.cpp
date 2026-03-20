@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsDeviceContextSpecWin.h"
 
 #include "mozilla/gfx/PrintPromise.h"

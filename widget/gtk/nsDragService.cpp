@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDragService.h"
 #include "nsArrayUtils.h"
 #include "nsIObserverService.h"

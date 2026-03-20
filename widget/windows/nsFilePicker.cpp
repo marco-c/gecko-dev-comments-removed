@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsFilePicker.h"
 
 #include <cderr.h>
@@ -56,7 +55,7 @@ using namespace mozilla::widget;
 template <typename Res>
 using FDPromise = filedialog::Promise<Res>;
 
-MOZ_RUNINIT UniquePtr<char16_t[], nsFilePicker::FreeDeleter>
+constinit UniquePtr<char16_t[], nsFilePicker::FreeDeleter>
     nsFilePicker::sLastUsedUnicodeDirectory;
 
 #define MAX_EXTENSION_LENGTH 10

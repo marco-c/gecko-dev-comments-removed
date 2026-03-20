@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBaseColorPicker_h_
 #define nsBaseColorPicker_h_
 

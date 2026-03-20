@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef widget_android_CompositorWidgetParent_h
 #define widget_android_CompositorWidgetParent_h
 

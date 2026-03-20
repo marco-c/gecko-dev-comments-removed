@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsUserIdleServiceGTK_h_
 #define nsUserIdleServiceGTK_h_
 

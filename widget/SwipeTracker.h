@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SwipeTracker_h
 #define SwipeTracker_h
 

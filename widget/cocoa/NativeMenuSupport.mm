@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/widget/NativeMenuSupport.h"
 
 #include "MainThreadUtils.h"

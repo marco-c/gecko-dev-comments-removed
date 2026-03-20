@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsClipboard.h"
 
 #include <shlobj.h>

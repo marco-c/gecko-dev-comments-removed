@@ -2,7 +2,6 @@
 
 
 
-
 #include "CompositorWidgetChild.h"
 #include "gfxPlatform.h"
 

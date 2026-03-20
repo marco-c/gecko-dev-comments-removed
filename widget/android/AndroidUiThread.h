@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AndroidUiThread_h_
 #define AndroidUiThread_h_
 

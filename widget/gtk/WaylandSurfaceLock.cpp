@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "WaylandSurfaceLock.h"
 #ifdef MOZ_WAYLAND
 #  include "WaylandSurface.h"

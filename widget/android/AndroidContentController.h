@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AndroidContentController_h_
 #define AndroidContentController_h_
 

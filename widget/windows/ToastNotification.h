@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ToastNotification_h_
 #define ToastNotification_h_
 
@@ -34,6 +33,7 @@ class WindowsAlertNotification final : public AlertNotification,
  protected:
   virtual ~WindowsAlertNotification() = default;
   nsIWindowsAlertNotification::ImagePlacement mImagePlacement = eInline;
+  nsString mImagePathUnchecked;
 };
 
 class ToastNotification final : public nsIWindowsAlertsService,

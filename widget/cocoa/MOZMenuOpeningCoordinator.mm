@@ -7,7 +7,6 @@
 
 
 
-
 #include "MOZMenuOpeningCoordinator.h"
 
 #include "mozilla/ClearOnShutdown.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_android_tests
 #define mozilla_widget_android_tests
 

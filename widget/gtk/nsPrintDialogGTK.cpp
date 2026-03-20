@@ -2,7 +2,6 @@
 
 
 
-
 #include <gtk/gtk.h>
 #include <gtk/gtkunixprint.h>
 #include <stdlib.h>

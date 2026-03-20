@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsWindow_h_
 #define _nsWindow_h_
 

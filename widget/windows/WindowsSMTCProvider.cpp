@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef __MINGW32__
 
 #  include "WindowsSMTCProvider.h"

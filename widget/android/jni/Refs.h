@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_jni_Refs_h_
 #define mozilla_jni_Refs_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Logging.h"
 
 #include "TaskbarProgress.h"

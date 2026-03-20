@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenManager.h"
 
 #include "mozilla/ClearOnShutdown.h"

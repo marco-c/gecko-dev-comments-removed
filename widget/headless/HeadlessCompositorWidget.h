@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef widget_headless_HeadlessCompositorWidget_h
 #define widget_headless_HeadlessCompositorWidget_h
 

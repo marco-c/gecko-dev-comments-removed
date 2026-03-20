@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "AsyncGtkClipboardRequest.h"
 #include "nsClipboardX11.h"
 #include "mozilla/TimeStamp.h"

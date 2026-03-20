@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPrinterCUPS.h"
 
 #include "mozilla/gfx/2D.h"
@@ -13,7 +12,6 @@
 #include "nsPaper.h"
 #include "nsPrinterBase.h"
 #include "nsPrintSettingsImpl.h"
-#include "plstr.h"
 
 using namespace mozilla;
 using MarginDouble = mozilla::gfx::MarginDouble;

@@ -2,7 +2,6 @@
 
 
 
-
 #include "AndroidAlerts.h"
 #include "mozilla/dom/notification/NotificationHandler.h"
 #include "mozilla/java/GeckoRuntimeWrappers.h"

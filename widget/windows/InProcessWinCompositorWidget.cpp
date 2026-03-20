@@ -2,7 +2,6 @@
 
 
 
-
 #include "InProcessWinCompositorWidget.h"
 
 #include "mozilla/gfx/Point.h"

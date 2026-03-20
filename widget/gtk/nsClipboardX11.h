@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsClipboardX11_h_
 #define _nsClipboardX11_h_
 

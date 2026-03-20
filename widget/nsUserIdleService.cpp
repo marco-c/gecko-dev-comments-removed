@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsError.h"
 #include "nsIAsyncShutdown.h"
 #include "nsUserIdleService.h"

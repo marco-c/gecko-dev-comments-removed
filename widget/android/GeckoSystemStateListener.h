@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GeckoSystemStateListener_h
 #define GeckoSystemStateListener_h
 

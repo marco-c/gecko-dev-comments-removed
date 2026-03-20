@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_jni_Accessors_h_
 #define mozilla_jni_Accessors_h_
 

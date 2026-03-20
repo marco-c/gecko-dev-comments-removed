@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef mozilla_widget_ThemeGeometryType
 #define mozilla_widget_ThemeGeometryType
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef TextInputHandler_h_
 #define TextInputHandler_h_
 

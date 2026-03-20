@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_jni_Conversions_h_
 #define mozilla_jni_Conversions_h_
 

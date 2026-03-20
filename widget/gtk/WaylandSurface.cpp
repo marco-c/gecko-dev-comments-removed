@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "WaylandSurface.h"
 #include "WaylandBuffer.h"
 #include <wayland-egl.h>

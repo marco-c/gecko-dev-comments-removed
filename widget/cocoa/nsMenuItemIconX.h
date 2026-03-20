@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef nsMenuItemIconX_h_
 #define nsMenuItemIconX_h_
 

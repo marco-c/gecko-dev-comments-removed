@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_jni_Utils_h_
 #define mozilla_jni_Utils_h_
 

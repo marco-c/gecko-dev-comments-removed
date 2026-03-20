@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef widget_WindowOcclusionState_h
 #define widget_WindowOcclusionState_h
 

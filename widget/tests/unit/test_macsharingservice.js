@@ -4,7 +4,6 @@
 
 
 
-
 function test_getSharingProviders() {
   let sharingService = Cc["@mozilla.org/widget/macsharingservice;1"].getService(
     Ci.nsIMacSharingService

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPrintSettingsServiceX_h
 #define nsPrintSettingsServiceX_h
 

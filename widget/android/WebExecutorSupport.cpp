@@ -2,7 +2,6 @@
 
 
 
-
 #include <algorithm>
 
 #include "GeckoViewStreamListener.h"

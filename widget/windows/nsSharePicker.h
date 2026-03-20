@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsSharePicker_h_
 #define nsSharePicker_h_
 

@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef WIDGET_NSWIDGETSCID_H_
 #define WIDGET_NSWIDGETSCID_H_
 

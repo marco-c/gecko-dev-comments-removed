@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_jni_GeckoResultUtils_h
 #define mozilla_jni_GeckoResultUtils_h
 

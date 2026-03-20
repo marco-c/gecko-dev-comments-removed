@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/widget/filedialog/WinFileDialogCommands.h"
 
 #include <type_traits>

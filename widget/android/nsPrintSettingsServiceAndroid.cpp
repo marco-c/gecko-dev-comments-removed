@@ -1,7 +1,6 @@
 
 
 
-
 #include "nsPrintSettingsServiceAndroid.h"
 
 #include "nsPrintSettingsImpl.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef widget_windows_RemoteBackbuffer_h
 #define widget_windows_RemoteBackbuffer_h
 

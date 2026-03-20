@@ -1,0 +1,16 @@
+
+
+
+
+
+#ifndef WIDGET_WINDOWS_RUST_SRC_ALERTSSERVICERUST_H_
+#define WIDGET_WINDOWS_RUST_SRC_ALERTSSERVICERUST_H_
+
+#include "ErrorList.h"
+#include "nsID.h"
+
+extern "C" {
+nsresult new_windows_alerts_service(REFNSIID iid, void** result);
+};
+
+#endif  

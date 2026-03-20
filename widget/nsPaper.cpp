@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPaper.h"
 #include "nsPaperMargin.h"
 #include "nsPrinterBase.h"

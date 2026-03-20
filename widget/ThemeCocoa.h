@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_widget_ThemeCocoa_h
 #define mozilla_widget_ThemeCocoa_h
 

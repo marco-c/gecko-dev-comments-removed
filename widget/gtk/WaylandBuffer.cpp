@@ -3,7 +3,6 @@
 
 
 
-
 #include "WaylandBuffer.h"
 #include "WaylandSurface.h"
 #include "WaylandSurfaceLock.h"

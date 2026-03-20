@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_ContentCache_h
 #define mozilla_ContentCache_h
 

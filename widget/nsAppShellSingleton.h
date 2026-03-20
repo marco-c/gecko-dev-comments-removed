@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAppShellSingleton_h_
 #define nsAppShellSingleton_h_
 

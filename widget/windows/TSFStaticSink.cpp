@@ -2,7 +2,6 @@
 
 
 
-
 #include "TSFStaticSink.h"
 
 #include "TSFTextStore.h"

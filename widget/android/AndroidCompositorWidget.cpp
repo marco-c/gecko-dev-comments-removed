@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AndroidCompositorWidget.h"
 
 #include "mozilla/gfx/Logging.h"

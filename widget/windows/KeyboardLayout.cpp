@@ -2,7 +2,6 @@
 
 
 
-
 #include "KeyboardLayout.h"
 
 #include "mozilla/AutoRestore.h"

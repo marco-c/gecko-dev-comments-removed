@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef OSKTabTipManager_h
 #define OSKTabTipManager_h
 

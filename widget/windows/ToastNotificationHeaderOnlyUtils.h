@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ToastNotificationHeaderOnlyUtils_h
 #define mozilla_ToastNotificationHeaderOnlyUtils_h
 

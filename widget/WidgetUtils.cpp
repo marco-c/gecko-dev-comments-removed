@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/Components.h"

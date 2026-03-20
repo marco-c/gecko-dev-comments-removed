@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPaperMargin_h_
 #define nsPaperMargin_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WinUtils.h"
 
 #include <knownfolders.h>

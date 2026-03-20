@@ -2,7 +2,6 @@
 
 
 
-
 #include "ScrollbarDrawingGTK.h"
 
 #include "mozilla/gfx/Helpers.h"

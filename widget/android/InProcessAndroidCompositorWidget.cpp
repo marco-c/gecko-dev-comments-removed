@@ -2,7 +2,6 @@
 
 
 
-
 #include "HeadlessCompositorWidget.h"
 #include "HeadlessWidget.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"

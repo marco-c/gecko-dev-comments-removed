@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef WinTaskbar_h_
 #define WinTaskbar_h_
 

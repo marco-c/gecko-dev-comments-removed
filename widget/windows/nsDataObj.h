@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NSDATAOBJ_H_
 #define NSDATAOBJ_H_
 

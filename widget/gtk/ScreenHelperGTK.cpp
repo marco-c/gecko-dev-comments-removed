@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenHelperGTK.h"
 
 #ifdef MOZ_X11

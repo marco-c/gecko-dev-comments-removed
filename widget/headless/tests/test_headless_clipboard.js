@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 function getString(clipboard) {

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_WidgetUtils_h
 #define mozilla_WidgetUtils_h
 

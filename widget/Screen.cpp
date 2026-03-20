@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Screen.h"
 
 #include "mozilla/dom/DOMTypes.h"

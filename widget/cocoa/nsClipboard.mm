@@ -2,7 +2,6 @@
 
 
 
-
 #include <algorithm>
 
 #include "mozilla/gfx/2D.h"

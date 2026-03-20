@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AsyncGtkClipboardRequest.h"
 
 namespace mozilla {

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_NativeKeyBindingsType_h
 #define mozilla_NativeKeyBindingsType_h
 

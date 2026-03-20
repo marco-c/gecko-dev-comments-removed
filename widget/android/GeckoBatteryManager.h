@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GeckoBatteryManager_h
 #define GeckoBatteryManager_h
 

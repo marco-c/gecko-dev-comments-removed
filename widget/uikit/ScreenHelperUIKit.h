@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_uikit_ScreenHelperUIKit_h
 #define mozilla_widget_uikit_ScreenHelperUIKit_h
 

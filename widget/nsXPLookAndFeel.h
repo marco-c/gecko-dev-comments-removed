@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsXPLookAndFeel
 #define _nsXPLookAndFeel
 

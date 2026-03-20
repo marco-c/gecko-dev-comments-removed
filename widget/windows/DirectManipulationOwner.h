@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DirectManipulationOwner_h_
 #define DirectManipulationOwner_h_
 

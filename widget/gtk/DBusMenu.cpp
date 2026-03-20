@@ -2,7 +2,6 @@
 
 
 
-
 #include "DBusMenu.h"
 #include "prlink.h"
 #include "nsThreadUtils.h"

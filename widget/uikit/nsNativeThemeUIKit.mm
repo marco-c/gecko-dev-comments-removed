@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNativeThemeUIKit.h"
 
 using namespace mozilla;

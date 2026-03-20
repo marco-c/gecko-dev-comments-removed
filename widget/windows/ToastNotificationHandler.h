@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ToastNotificationHandler_h_
 #define ToastNotificationHandler_h_
 
@@ -39,10 +38,12 @@ class ToastNotificationHandler final : public nsISupports {
       bool aRequireInteraction,
       const nsTArray<RefPtr<nsIAlertAction>>& aActions, bool aIsSystemPrincipal,
       const nsAString& aOpaqueRelaunchData, bool aInPrivateBrowsing,
-      bool aIsSilent, ImagePlacement aImagePlacement = ImagePlacement::eInline)
+      bool aIsSilent, ImagePlacement aImagePlacement = ImagePlacement::eInline,
+      const nsAString& aImagePathUnchecked = u""_ns)
       : mBackend(backend),
         mAumid(aAumid),
-        mHasImage(false),
+        mImageUri(aImagePathUnchecked),
+        mHasImage(!aImagePathUnchecked.IsEmpty()),
         mAlertNotification(aAlertNotification),
         mAlertListener(aAlertListener),
         mName(aName),

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_WindowButtonType_h
 #define mozilla_WindowButtonType_h
 

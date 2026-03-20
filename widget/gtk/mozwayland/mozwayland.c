@@ -2,10 +2,6 @@
 
 
 
-
-
-
-#include <stdlib.h>
 #include "mozilla/Types.h"
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>

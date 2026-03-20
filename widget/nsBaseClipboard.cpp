@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsBaseClipboard.h"
 
 #include "ContentAnalysis.h"

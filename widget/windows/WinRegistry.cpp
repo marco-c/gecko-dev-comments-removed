@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WinRegistry.h"
 #include "nsThreadUtils.h"
 

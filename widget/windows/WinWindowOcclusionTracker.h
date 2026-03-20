@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef widget_windows_WinWindowOcclusionTracker_h
 #define widget_windows_WinWindowOcclusionTracker_h
 

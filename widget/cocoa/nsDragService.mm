@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Logging.h"
 
 #include "gfxContext.h"

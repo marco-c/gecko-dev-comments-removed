@@ -2,7 +2,6 @@
 
 
 
-
 #ifdef XP_MACOSX
 
 #  include "gtest/gtest.h"

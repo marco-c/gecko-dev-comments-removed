@@ -16,7 +16,6 @@
 
 
 
-
 #include "mozilla/dom/ContentParent.h"
 
 #include "nsWindowGfx.h"

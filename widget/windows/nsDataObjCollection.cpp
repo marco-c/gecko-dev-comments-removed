@@ -2,7 +2,6 @@
 
 
 
-
 #include <shlobj.h>
 
 #include "nsDataObjCollection.h"

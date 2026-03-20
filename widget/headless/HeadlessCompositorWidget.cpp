@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "HeadlessCompositorWidget.h"
 #include "VsyncDispatcher.h"

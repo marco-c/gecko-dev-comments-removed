@@ -2,12 +2,12 @@
 
 
 
-
 #ifndef widget_android_InProcessAndroidCompositorWidget_h
 #define widget_android_InProcessAndroidCompositorWidget_h
 
 #include "AndroidCompositorWidget.h"
 #include "CompositorWidget.h"
+#include "mozilla/VsyncDispatcher.h"
 
 class nsWindow;
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WIDGET_WINDOWS_NSWINDOW_H_
 #define WIDGET_WINDOWS_NSWINDOW_H_
 

@@ -23,7 +23,6 @@
 
 
 
-
 NS_DEFINE_COMMAND(BeginLine, cmd_beginLine)
 NS_DEFINE_COMMAND(CharNext, cmd_charNext)
 NS_DEFINE_COMMAND(CharPrevious, cmd_charPrevious)

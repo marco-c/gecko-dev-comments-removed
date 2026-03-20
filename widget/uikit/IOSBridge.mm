@@ -2,7 +2,6 @@
 
 
 
-
 #include "IOSBridge.h"
 
 #import "mozilla/widget/GeckoViewSupport.h"

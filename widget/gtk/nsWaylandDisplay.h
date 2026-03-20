@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef MOZ_WAYLAND_DISPLAY_H_
 #define MOZ_WAYLAND_DISPLAY_H_
 

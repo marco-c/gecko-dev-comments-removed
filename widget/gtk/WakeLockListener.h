@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef WakeLockListener_h_
 #define WakeLockListener_h_
 

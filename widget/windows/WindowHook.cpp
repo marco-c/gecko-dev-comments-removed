@@ -3,7 +3,6 @@
 
 
 
-
 #include "WindowHook.h"
 #include "nsWindow.h"
 #include "nsWindowDefs.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef widget_cocoa_CompositorWidgetParent_h
 #define widget_cocoa_CompositorWidgetParent_h
 

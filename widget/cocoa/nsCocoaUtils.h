@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsCocoaUtils_h_
 #define nsCocoaUtils_h_
 

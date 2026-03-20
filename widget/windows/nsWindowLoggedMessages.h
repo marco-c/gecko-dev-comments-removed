@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WindowLoggedMessages_h_
 #define WindowLoggedMessages_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VibrancyManager.h"
 #include "ViewRegion.h"
 #include "nsRegion.h"

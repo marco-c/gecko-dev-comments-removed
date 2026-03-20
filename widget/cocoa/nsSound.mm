@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsSound.h"
 #include "nsContentUtils.h"
 #include "nsObjCExceptions.h"

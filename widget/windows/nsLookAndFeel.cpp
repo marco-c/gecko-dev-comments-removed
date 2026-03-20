@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsLookAndFeel.h"
 #include <stdint.h>
 #include <windows.h>

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef OSXNotificationCenter_h
 #define OSXNotificationCenter_h
 

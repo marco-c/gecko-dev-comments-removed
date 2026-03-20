@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MozLogSupport_h_
 #define MozLogSupport_h_
 

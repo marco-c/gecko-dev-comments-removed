@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_WinMouseScrollHandler_h_
 #define mozilla_widget_WinMouseScrollHandler_h_
 

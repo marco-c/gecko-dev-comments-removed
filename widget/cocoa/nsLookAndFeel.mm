@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/widget/ThemeChangeKind.h"
 #include "nsLookAndFeel.h"
 #include "nsCocoaFeatures.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GUniquePtr_h_
 #define GUniquePtr_h_
 

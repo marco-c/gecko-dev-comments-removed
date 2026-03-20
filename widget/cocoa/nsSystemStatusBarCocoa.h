@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSystemStatusBarCocoa_h_
 #define nsSystemStatusBarCocoa_h_
 

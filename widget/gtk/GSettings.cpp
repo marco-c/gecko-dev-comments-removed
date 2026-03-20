@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GSettings.h"
 #include "nsString.h"
 #include "GRefPtr.h"

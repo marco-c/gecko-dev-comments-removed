@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsTransferable_h_
 #define nsTransferable_h_
 

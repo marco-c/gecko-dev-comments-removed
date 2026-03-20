@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AndroidBridge_h_
 #define AndroidBridge_h_
 

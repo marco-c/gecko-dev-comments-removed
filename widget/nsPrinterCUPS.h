@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPrinterCUPS_h_
 #define nsPrinterCUPS_h_
 

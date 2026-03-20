@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsGUIEventIPC_h_
 #define nsGUIEventIPC_h_
 

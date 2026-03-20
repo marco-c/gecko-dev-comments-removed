@@ -52,8 +52,6 @@
 
 
 
-
-
 #include "gfx2DGlue.h"
 #include "gfxEnv.h"
 #include "gfxPlatform.h"

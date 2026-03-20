@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef CHECKINVARIANTWRAPPER_H_
 #define CHECKINVARIANTWRAPPER_H_
 

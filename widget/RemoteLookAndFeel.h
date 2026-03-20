@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_widget_RemoteLookAndFeel_h_
 #define mozilla_widget_RemoteLookAndFeel_h_
 

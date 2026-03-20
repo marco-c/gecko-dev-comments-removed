@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CocoaCompositorWidget.h"
 
 #include "mozilla/gfx/Logging.h"

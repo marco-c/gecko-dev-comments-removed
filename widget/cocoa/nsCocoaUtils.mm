@@ -2,7 +2,6 @@
 
 
 
-
 #import <AVFoundation/AVFoundation.h>
 
 #include <cmath>

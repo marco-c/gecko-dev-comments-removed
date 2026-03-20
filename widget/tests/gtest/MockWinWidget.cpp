@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "MockWinWidget.h"
 
 #include "mozilla/gfx/Logging.h"

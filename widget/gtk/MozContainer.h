@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef MOZ_CONTAINER_H_
 #define MOZ_CONTAINER_H_
 

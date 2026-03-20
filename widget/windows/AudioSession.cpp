@@ -3,7 +3,6 @@
 
 
 
-
 #include <atomic>
 #include <audiopolicy.h>
 #include <windows.h>

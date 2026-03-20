@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollbarDrawingCocoa.h"
 
 #include "mozilla/RelativeLuminanceUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_textcompositionsynthesizer_h_
 #define mozilla_textcompositionsynthesizer_h_
 

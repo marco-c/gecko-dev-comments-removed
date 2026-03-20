@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_AsyncDBus_h
 #define mozilla_widget_AsyncDBus_h
 

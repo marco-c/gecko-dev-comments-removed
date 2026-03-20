@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsGdkKeyUtils_h_
 #define _nsGdkKeyUtils_h_
 

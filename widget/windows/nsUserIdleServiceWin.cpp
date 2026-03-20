@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsUserIdleServiceWin.h"
 #include <windows.h>
 

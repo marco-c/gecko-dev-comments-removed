@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nscore.h"  
 #include "nsGTKToolkit.h"
 

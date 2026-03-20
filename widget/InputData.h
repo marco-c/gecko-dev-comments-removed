@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef InputData_h_
 #define InputData_h_
 

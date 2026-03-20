@@ -6,7 +6,6 @@
 
 
 
-
 #include "nsWindowDbg.h"
 #include "nsToolkit.h"
 #include "WinPointerEvents.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_jni_Types_h_
 #define mozilla_jni_Types_h_
 

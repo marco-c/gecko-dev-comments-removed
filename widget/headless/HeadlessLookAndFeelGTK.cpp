@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HeadlessLookAndFeel.h"
 #include "nsStyleConsts.h"
 

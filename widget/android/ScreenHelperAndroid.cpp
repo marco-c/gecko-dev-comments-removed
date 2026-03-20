@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenHelperAndroid.h"
 #include "AndroidRect.h"
 #include "nsThreadUtils.h"

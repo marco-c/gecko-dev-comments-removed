@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollbarDrawing.h"
 
 #include "mozilla/RelativeLuminanceUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "MockDragServiceController.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"

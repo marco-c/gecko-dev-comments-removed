@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _mozilla_WindowHook_h_
 #define _mozilla_WindowHook_h_
 

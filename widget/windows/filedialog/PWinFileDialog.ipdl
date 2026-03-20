@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include WinFileDialogCommandsDefn;
 using mozilla::WindowsHandle from "mozilla/ipc/IPCTypes.h";
@@ -26,11 +24,11 @@ union FolderResult {
 protocol PWinFileDialog {
 
 child:
-  
-  
-  
-  
-  
+  // Exactly one Show function should be called per instance. Further calls will
+  // result in IPC failure.
+  //
+  // Each will return `Ok(Nothing)` if the operation was canceled by the user,
+  // or `Err(...)` if the operation actually failed.
 
   async ShowFileDialog(WindowsHandle parentHwnd, FileDialogType type, Command[] commands)
     returns (FileResult result);
@@ -38,6 +36,6 @@ child:
     returns (FolderResult result);
 };
 
-}  
-}  
-}  
+}  // namespace filedialog
+}  // namespace widget
+}  // namespace mozilla

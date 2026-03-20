@@ -1,11 +1,10 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
 
-
+/* NOTE: this interface is only implemented in debug builds */
 
 [scriptable, uuid(ca7b0bc7-c67c-4b79-8270-ed7ba002af08)]
 interface nsIGfxInfoDebug : nsISupports

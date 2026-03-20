@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef TextInputHandler_h_
 #define TextInputHandler_h_
 
@@ -1262,7 +1260,7 @@ class IMEInputHandler : public TextInputHandlerBase {
   
   static IMEInputHandler* sFocusedIMEHandler;
 
-  static bool sCachedIsForRTLLangage;
+  static bool sCachedIsForRTLLanguage;
 };
 
 

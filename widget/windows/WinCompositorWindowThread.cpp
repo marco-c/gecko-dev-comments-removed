@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "base/platform_thread.h"
 #include "WinCompositorWindowThread.h"
 #include "mozilla/gfx/Logging.h"

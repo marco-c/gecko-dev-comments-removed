@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowsTestDebug.h"
 #include "nsCOMPtr.h"
 #include "nsIFile.h"

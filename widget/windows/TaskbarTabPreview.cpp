@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "TaskbarTabPreview.h"
 #include "nsWindowGfx.h"
 #include "WinUtils.h"

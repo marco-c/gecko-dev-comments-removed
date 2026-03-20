@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHTMLFormatConverter_h_
 #define nsHTMLFormatConverter_h_
 

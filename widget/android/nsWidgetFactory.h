@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef widget_android_nsWidgetFactory_h
 #define widget_android_nsWidgetFactory_h
 

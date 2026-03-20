@@ -2,8 +2,6 @@
 
 
 
-
-
 #if defined(ENABLE_TESTS)
 
 #  include "mozilla/widget/WebExecutorSupport.h"

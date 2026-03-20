@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsPrintSettingsServiceGTK_h
 #define nsPrintSettingsServiceGTK_h
 

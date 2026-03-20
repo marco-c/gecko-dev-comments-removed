@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_IMEData_h_
 #define mozilla_widget_IMEData_h_
 

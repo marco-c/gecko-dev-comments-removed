@@ -2,7 +2,6 @@
 
 
 
-
 #include "GfxInfo.h"
 #include "nsServiceManagerUtils.h"
 

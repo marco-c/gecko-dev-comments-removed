@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_TouchEvents_h_
 #define mozilla_TouchEvents_h_
 

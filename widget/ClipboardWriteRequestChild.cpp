@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ClipboardWriteRequestChild.h"
 
 #if defined(ACCESSIBILITY) && defined(XP_WIN)

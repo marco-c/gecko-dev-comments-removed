@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef MACFINDERPROGRESS_H_
 #define MACFINDERPROGRESS_H_
 

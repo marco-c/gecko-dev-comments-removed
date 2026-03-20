@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsDeviceContextSpecGTK_h_
 #define nsDeviceContextSpecGTK_h_
 

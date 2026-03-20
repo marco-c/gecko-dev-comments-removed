@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsColorPickerProxy_h
 #define nsColorPickerProxy_h
 

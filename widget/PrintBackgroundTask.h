@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_PrintBackgroundTask_h_
 #define mozilla_PrintBackgroundTask_h_
 

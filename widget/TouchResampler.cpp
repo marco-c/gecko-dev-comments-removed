@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TouchResampler.h"
 
 

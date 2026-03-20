@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsSharePicker.h"
 
 #include "nsString.h"

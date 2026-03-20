@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef widget_gtk_CompositorWidgetChild_h
 #define widget_gtk_CompositorWidgetChild_h
 

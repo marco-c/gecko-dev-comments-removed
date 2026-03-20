@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_InputDeviceUtils_h_
 #define mozilla_widget_InputDeviceUtils_h_
 

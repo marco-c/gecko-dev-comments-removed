@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef WIDGET_WINDOWS_RESOURCE_H_
 #define WIDGET_WINDOWS_RESOURCE_H_
 

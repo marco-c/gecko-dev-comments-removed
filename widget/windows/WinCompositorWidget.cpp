@@ -2,7 +2,6 @@
 
 
 
-
 #include "WinCompositorWidget.h"
 
 #include "mozilla/StaticPrefs_layers.h"

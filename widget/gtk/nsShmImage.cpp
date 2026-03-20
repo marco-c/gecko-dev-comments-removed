@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsShmImage.h"
 
 #ifdef MOZ_HAVE_SHMIMAGE

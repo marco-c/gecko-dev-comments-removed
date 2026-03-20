@@ -2,7 +2,6 @@
 
 
 
-
 #include <windows.h>
 #include <winreg.h>
 #include <wrl.h>

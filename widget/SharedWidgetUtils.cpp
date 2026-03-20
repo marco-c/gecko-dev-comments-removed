@@ -3,7 +3,6 @@
 
 
 
-
 #include "WidgetUtils.h"
 
 #include "mozilla/TextEvents.h"

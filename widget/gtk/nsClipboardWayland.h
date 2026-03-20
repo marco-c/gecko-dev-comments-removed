@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsClipboardWayland_h_
 #define _nsClipboardWayland_h_
 

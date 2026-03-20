@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPaperMargin.h"
 
 NS_IMPL_ISUPPORTS(nsPaperMargin, nsIPaperMargin)

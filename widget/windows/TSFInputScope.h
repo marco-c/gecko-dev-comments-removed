@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TSFInputScope_h
 #define TSFInputScope_h
 

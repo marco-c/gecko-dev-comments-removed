@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsColorPickerProxy.h"
 
 #include "mozilla/dom/BrowserChild.h"

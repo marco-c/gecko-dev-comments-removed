@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ColorScheme_h
 #define mozilla_ColorScheme_h
 

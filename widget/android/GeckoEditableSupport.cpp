@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoEditableSupport.h"
 
 #include "AndroidBridgeUtilities.h"

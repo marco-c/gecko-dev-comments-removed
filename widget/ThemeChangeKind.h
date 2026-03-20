@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_ThemeChangeKind
 #define mozilla_widget_ThemeChangeKind
 

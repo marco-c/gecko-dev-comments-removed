@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsClipboardWayland.h"
 
 #include "AsyncGtkClipboardRequest.h"

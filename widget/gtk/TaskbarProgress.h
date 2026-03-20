@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef TaskbarProgress_h_
 #define TaskbarProgress_h_
 

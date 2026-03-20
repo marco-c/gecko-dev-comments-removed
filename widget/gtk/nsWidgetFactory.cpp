@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsWidgetFactory.h"
 
 #include "mozilla/Components.h"

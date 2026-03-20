@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include <queue>
 
 #include "WakeLockListener.h"

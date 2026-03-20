@@ -6,7 +6,6 @@
 
 
 
-
 #include "MOZIconHelper.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"

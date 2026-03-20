@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _nsIRollupListener_h_
 #define _nsIRollupListener_h_
 

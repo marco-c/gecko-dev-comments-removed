@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _mozilla_widget_nsShmImage_h_
 #define _mozilla_widget_nsShmImage_h_
 

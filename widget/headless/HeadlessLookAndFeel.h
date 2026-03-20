@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_HeadlessLookAndFeel_h
 #define mozilla_widget_HeadlessLookAndFeel_h
 

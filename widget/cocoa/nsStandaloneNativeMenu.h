@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsStandaloneNativeMenu_h_
 #define nsStandaloneNativeMenu_h_
 

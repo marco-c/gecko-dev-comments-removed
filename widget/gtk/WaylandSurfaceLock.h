@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef MOZ_WAYLAND_SURFACE_LOCK_H_
 #define MOZ_WAYLAND_SURFACE_LOCK_H_
 

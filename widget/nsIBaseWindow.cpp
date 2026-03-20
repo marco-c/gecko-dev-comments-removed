@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIBaseWindow.h"
 #include "nsDeviceContext.h"
 #include "mozilla/LookAndFeel.h"

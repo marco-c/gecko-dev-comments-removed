@@ -2,7 +2,6 @@
 
 
 
-
 #include "GfxDriverInfo.h"
 
 #include "nsIGfxInfo.h"

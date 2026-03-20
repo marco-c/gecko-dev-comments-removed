@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsMenuGroupOwnerX_h_
 #define nsMenuGroupOwnerX_h_
 

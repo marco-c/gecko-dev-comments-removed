@@ -9,7 +9,6 @@
 
 
 
-
 GFXINFO_OS(Windows, "All")
 GFXINFO_OS(Windows7, "WINNT 6.1")
 GFXINFO_OS(Windows8, "WINNT 6.2")

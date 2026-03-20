@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBaseDragService_h_
 #define nsBaseDragService_h_
 

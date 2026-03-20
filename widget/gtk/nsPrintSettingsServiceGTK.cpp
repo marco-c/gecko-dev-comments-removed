@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPrintSettingsServiceGTK.h"
 
 #include "mozilla/embedding/PPrintingTypes.h"

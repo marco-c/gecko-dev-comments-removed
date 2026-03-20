@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef JumpListBuilder_h_
 #define JumpListBuilder_h_
 

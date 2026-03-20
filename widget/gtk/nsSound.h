@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsSound_h_
 #define _nsSound_h_
 

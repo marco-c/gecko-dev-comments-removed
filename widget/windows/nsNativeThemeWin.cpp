@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNativeThemeWin.h"
 
 using namespace mozilla;

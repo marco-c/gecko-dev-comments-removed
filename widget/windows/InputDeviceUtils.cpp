@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InputDeviceUtils.h"
 
 #define INITGUID

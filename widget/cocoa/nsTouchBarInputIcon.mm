@@ -6,7 +6,6 @@
 
 
 
-
 #include "nsTouchBarInputIcon.h"
 
 #include "MOZIconHelper.h"
@@ -127,8 +126,7 @@ nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage) {
   NSImage* image = [MOZIconHelper
       iconImageFromImageContainer:aImage
                          withSize:NSMakeSize(kIconHeight, kIconHeight)
-                      presContext:nullptr
-                    computedStyle:nullptr
+                       svgContext:nullptr
                       scaleFactor:kHiDPIScalingFactor];
   [mButton setImage:image];
   [mShareScrubber setButtonImage:image];

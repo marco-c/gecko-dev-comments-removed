@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsBaseFilePicker_h_
 #define nsBaseFilePicker_h_
 

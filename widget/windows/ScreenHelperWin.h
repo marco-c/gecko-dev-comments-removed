@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_windows_ScreenHelperWin_h
 #define mozilla_widget_windows_ScreenHelperWin_h
 

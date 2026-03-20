@@ -2,7 +2,6 @@
 
 
 
-
 #include "HeadlessKeyBindings.h"
 #import <Cocoa/Cocoa.h>
 #include "nsCocoaUtils.h"

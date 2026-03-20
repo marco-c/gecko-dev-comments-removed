@@ -3,7 +3,6 @@
 
 
 
-
 #include "WindowSurfaceWaylandMultiBuffer.h"
 
 #include <errno.h>

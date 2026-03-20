@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WinHeaderOnlyUtils.h"
 
 #include <algorithm>

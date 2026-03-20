@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "GfxInfoBase.h"
 
 #include <mutex>  

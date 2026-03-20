@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef WIDGET_WINDOWS_GFXINFO_H_
 #define WIDGET_WINDOWS_GFXINFO_H_
 

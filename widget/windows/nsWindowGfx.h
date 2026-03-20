@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WindowGfx_h_
 #define WindowGfx_h_
 

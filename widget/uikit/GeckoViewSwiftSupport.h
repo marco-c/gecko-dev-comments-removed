@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef GeckoView_GeckoViewSwiftSupport_h
 #define GeckoView_GeckoViewSwiftSupport_h
 

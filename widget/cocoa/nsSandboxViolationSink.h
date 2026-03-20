@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSandboxViolationSink_h_
 #define nsSandboxViolationSink_h_
 

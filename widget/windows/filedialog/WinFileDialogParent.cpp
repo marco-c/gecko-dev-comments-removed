@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/widget/filedialog/WinFileDialogParent.h"
 
 #include "mozilla/Logging.h"

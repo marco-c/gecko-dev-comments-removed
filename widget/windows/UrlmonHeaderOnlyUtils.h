@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UrlmonHeaderOnlyUtils_h
 #define mozilla_UrlmonHeaderOnlyUtils_h
 

@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef WIDGET_GTK_GFXINFO_UTILS_h_
 #define WIDGET_GTK_GFXINFO_UTILS_h_
 

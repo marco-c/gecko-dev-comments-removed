@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Logging.h"
 #include "nsCocoaUtils.h"
 #include "nsIFile.h"

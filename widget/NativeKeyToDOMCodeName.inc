@@ -14,8 +14,6 @@
 
 
 
-
-
 #define CODE_MAP_WIN(aCPPCodeName, aNativeKey)
 
 #define CODE_MAP_MAC(aCPPCodeName, aNativeKey)

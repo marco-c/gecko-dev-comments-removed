@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SwipeTracker.h"
 
 #include "InputData.h"

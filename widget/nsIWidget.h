@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIWidget_h_
 #define nsIWidget_h_
 

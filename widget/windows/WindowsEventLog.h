@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsEventLog_h
 #define mozilla_WindowsEventLog_h
 

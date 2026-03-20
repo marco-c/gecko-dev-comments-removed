@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsDebug.h"
 #include "nsString.h"
 #include "nsCUPSShim.h"

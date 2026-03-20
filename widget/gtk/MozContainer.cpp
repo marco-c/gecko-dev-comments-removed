@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "MozContainer.h"
 
 #include <glib.h>

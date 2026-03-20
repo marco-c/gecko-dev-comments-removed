@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _mozilla_widget_GfxDriverInfo_h_
 #define _mozilla_widget_GfxDriverInfo_h_
 

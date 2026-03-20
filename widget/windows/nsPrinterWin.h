@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsPrinterWin_h_
 #define nsPrinterWin_h_
 

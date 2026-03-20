@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MockDragServiceController_h_
 #define MockDragServiceController_h_
 

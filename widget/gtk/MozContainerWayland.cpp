@@ -45,9 +45,6 @@
 
 
 
-
-
-
 #include "MozContainer.h"
 
 #include <dlfcn.h>

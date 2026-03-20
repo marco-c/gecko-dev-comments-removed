@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "GfxInfoCollector.h"
 #include "jsapi.h"
 #include "js/PropertyAndElement.h"  

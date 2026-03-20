@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <algorithm>
 #include <atomic>
 #include <android/bitmap.h>

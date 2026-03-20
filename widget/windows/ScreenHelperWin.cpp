@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenHelperWin.h"
 
 #include "mozilla/Logging.h"

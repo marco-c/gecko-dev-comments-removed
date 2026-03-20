@@ -17,7 +17,6 @@
 
 
 
-
 #include "nsPrimitiveHelpers.h"
 
 #include "mozilla/UniquePtr.h"

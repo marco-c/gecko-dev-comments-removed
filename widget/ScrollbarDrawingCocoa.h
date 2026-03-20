@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_widget_ScrollbarDrawingCocoa_h
 #define mozilla_widget_ScrollbarDrawingCocoa_h
 

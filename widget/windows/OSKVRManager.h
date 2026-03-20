@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef OSKVRManager_h
 #define OSKVRManager_h
 

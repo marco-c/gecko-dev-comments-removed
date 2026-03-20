@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef GTKTOOLKIT_H
 #define GTKTOOLKIT_H
 

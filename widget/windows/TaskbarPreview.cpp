@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "TaskbarPreview.h"
 #include <nsITaskbarPreviewController.h>
 #include <windows.h>

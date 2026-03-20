@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Types.h"
 
 #include <gdk/gdk.h>

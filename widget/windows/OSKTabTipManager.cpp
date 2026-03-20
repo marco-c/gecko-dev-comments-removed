@@ -2,7 +2,6 @@
 
 
 
-
 #include "OSKTabTipManager.h"
 
 #include "mozilla/Preferences.h"

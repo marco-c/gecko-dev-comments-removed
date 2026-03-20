@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPrintSettingsServiceWin.h"
 
 #include "nsCOMPtr.h"

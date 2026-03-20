@@ -9,9 +9,6 @@
 
 
 
-
-
-
 #ifndef mozilla_widget_PuppetWidget_h_
 #define mozilla_widget_PuppetWidget_h_
 

@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
 
@@ -14,16 +13,16 @@ interface nsISound : nsISupports
   void play(in nsIURL aURL);
   void beep();
 
-  
-
-
-
+  /**
+    * Not strictly necessary, but avoids delay before first sound.
+    * The various methods on nsISound call Init() if they need to.
+    */
   void init();
 
-  
-
-
-
+  /**
+   * In some situations, playEventSound will be called.  Then, each
+   * implementations will play a system sound for the event if it's necessary.
+   */
   const unsigned long EVENT_NEW_MAIL_RECEIVED           = 0;
   const unsigned long EVENT_ALERT_DIALOG_OPEN           = 1;
   const unsigned long EVENT_CONFIRM_DIALOG_OPEN         = 2;

@@ -3,7 +3,6 @@
 
 
 
-
 #include "WindowSurfaceProvider.h"
 
 #include "gfxPlatformGtk.h"

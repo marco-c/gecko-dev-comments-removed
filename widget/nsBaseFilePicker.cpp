@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsCOMPtr.h"
 #include "nsPIDOMWindow.h"
 #include "nsIInterfaceRequestorUtils.h"

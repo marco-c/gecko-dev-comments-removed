@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef widget_windows_WinCompositorWindowThread_h
 #define widget_windows_WinCompositorWindowThread_h
 

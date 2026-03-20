@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_widget_PuppetBidiKeyboard_h_
 #define mozilla_widget_PuppetBidiKeyboard_h_
 

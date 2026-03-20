@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "gfxPlatform.h"
 #include "nsRefreshDriver.h"
 #include "mozilla/dom/BrowserChild.h"

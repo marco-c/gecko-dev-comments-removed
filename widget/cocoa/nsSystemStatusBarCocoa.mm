@@ -2,7 +2,6 @@
 
 
 
-
 #import <Cocoa/Cocoa.h>
 
 #include "nsComponentManagerUtils.h"

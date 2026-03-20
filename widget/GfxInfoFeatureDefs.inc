@@ -9,7 +9,6 @@
 
 
 
-
 GFXINFO_FEATURE(ALL, "ALL", "all")
 
 GFXINFO_FEATURE(OPTIONAL, "OPTIONAL", "optional")

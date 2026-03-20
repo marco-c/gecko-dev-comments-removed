@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenHelperCocoa.h"
 
 #import <Cocoa/Cocoa.h>

@@ -2,7 +2,6 @@
 
 
 
-
 #include "ContentAnalysis.h"
 #include "mozilla/ClipboardContentAnalysisParent.h"
 #include "mozilla/ClipboardReadRequestParent.h"

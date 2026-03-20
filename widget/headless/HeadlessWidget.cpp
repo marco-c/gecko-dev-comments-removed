@@ -1,7 +1,6 @@
 
 
 
-
 #include "InputData.h"
 #include "HeadlessWidget.h"
 #include "ErrorList.h"

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef nsTouchBarInputIcon_h_
 #define nsTouchBarInputIcon_h_
 

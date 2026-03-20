@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_widget_AndroidAlerts_h_
 #define mozilla_widget_AndroidAlerts_h_
 

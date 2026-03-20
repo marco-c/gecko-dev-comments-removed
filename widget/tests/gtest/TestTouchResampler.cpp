@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <initializer_list>
 #include "InputData.h"
 #include "Units.h"

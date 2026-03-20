@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_BasicEvents_h_
 #define mozilla_BasicEvents_h_
 

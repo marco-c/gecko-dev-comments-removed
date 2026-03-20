@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_TextRage_h_
 #define mozilla_TextRage_h_
 

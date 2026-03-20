@@ -2,13 +2,13 @@
 
 
 
-
-
 #include "GeckoProcessManager.h"
 
 #include "nsINetworkLinkService.h"
 #include "nsISupportsImpl.h"
 #include "mozilla/Services.h"
+
+#include "mozilla/java/GeckoAppShellWrappers.h"
 
 namespace mozilla {
 

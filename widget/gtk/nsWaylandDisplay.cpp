@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWaylandDisplay.h"
 #include "DMABufFormats.h"
 

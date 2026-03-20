@@ -2,7 +2,6 @@
 
 
 
-
 #include "ThemeCocoa.h"
 #include "gfxPlatform.h"
 #include "mozilla/LookAndFeel.h"

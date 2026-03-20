@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WindowDbg_h_
 #define WindowDbg_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsMenuGroupOwnerX.h"
 #include "nsMenuBarX.h"
 #include "nsMenuX.h"

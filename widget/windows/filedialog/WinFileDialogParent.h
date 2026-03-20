@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef widget_windows_filedialog_WinFileDialogParent_h_
 #define widget_windows_filedialog_WinFileDialogParent_h_
 

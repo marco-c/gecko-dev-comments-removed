@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/Logging.h"
 
 #include "nsGtkKeyUtils.h"

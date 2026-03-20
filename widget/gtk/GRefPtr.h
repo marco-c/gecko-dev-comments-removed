@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GRefPtr_h_
 #define GRefPtr_h_
 

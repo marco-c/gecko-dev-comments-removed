@@ -2,7 +2,6 @@
 
 
 
-
 #include "CompositorWidgetChild.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include <gtk/gtk.h>
 
 #ifdef MOZ_X11

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ViewRegion_h
 #define ViewRegion_h
 

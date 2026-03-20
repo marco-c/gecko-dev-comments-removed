@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsWindow.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WinHeaderOnlyUtils_h
 #define mozilla_WinHeaderOnlyUtils_h
 
@@ -14,7 +12,6 @@
 #include <objbase.h>
 #include <shlwapi.h>
 #undef ParseURL
-#include <stdlib.h>
 #include <tuple>
 
 #include "mozilla/Assertions.h"

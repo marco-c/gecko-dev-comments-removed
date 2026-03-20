@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HeadlessScreenHelper.h"
 
 #include "prenv.h"

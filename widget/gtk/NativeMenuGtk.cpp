@@ -2,7 +2,6 @@
 
 
 
-
 #include "NativeMenuGtk.h"
 #include "AsyncDBus.h"
 #include "gdk/gdkkeysyms-compat.h"

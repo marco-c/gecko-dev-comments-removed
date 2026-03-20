@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef widget_windows_WinEventObserver_h
 #define widget_windows_WinEventObserver_h
 

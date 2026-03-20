@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_TextEvents_h_
 #define mozilla_TextEvents_h_
 

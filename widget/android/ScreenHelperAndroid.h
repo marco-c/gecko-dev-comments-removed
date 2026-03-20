@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ScreenHelperAndroid_h_
 #define ScreenHelperAndroid_h_
 

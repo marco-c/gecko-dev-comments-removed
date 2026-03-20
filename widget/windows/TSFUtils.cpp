@@ -2,7 +2,6 @@
 
 
 
-
 #define INPUTSCOPE_INIT_GUID
 #define TEXTATTRS_INIT_GUID
 #include "TSFUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "GfxInfo.h"
 #include "AndroidBuild.h"
 #include "GLContext.h"

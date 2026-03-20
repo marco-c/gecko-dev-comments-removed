@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZMenuOpeningCoordinator_h
 #define MOZMenuOpeningCoordinator_h
 
