@@ -15,11 +15,6 @@ let gDummyHandlers = [];
 let gOriginalPreferredMailHandler;
 let gOriginalPreferredPDFHandler;
 
-
-
-
-let appHandlerInitialized;
-
 registerCleanupFunction(function () {
   function removeDummyHandlers(handlers) {
     
@@ -83,7 +78,7 @@ function scrubMailtoHandlers(handlerInfo) {
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
+    set: [["browser.settings-redesign.enabled", false]],
   });
 
   
@@ -91,12 +86,14 @@ add_setup(async function () {
     Ci.nsIWebHandlerApp
   );
   handler1.name = "Handler 1";
+  
   handler1.uriTemplate = "https://example.com/first/%s";
 
   let handler2 = Cc["@mozilla.org/uriloader/web-handler-app;1"].createInstance(
     Ci.nsIWebHandlerApp
   );
   handler2.name = "Handler 2";
+  
   handler2.uriTemplate = "http://example.org/second/%s";
   gDummyHandlers.push(handler1, handler2);
 
@@ -136,10 +133,7 @@ add_setup(async function () {
   pdfHandlerInfo.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
   gHandlerService.store(pdfHandlerInfo);
 
-  appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
-
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-
   info("Preferences page opened on the general pane.");
 
   await gBrowser.selectedBrowser.contentWindow.promiseLoadHandlersList;
@@ -149,25 +143,30 @@ add_setup(async function () {
 add_task(async function dialogShowsCorrectContent() {
   let win = gBrowser.selectedBrowser.contentWindow;
 
-  let container = win.document.getElementById("applicationsHandlersView");
-  await appHandlerInitialized;
+  let container = win.document.getElementById("handlersView");
 
   
-  let pdfItem = container.querySelector("moz-box-item[type='application/pdf']");
+  let pdfItem = container.querySelector("richlistitem[type='application/pdf']");
   Assert.ok(pdfItem, "pdfItem is present in handlersView.");
   pdfItem.scrollIntoView({ block: "center" });
+  pdfItem.closest("richlistbox").selectItem(pdfItem);
 
   
   let list = pdfItem.querySelector(".actionsMenu");
+  let popup = list.menupopup;
+  let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
   EventUtils.synthesizeMouseAtCenter(list, {}, win);
+  await popupShown;
 
   
   const promiseDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"
   );
-  list.value = list.querySelector(".manage-app-item").value;
-  list.dispatchEvent(new CustomEvent("change"));
-
+  EventUtils.synthesizeMouseAtCenter(
+    popup.querySelector(".manage-app-item"),
+    {},
+    win
+  );
   let dialogWin = await promiseDialogLoaded;
 
   
