@@ -20,23 +20,21 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
-async function openTaskbarTabWindow(aTab = null) {
+
+
+async function openTaskbarTabWindow(aTab = null, aOptions = null) {
   const url = Services.io.newURI("https://example.com");
-  const userContextId = 0;
+  const userContextId = aOptions?.userContextId ?? 0;
 
   const registry = new TaskbarTabsRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
   const windowManager = new TaskbarTabsWindowManager();
 
-  const windowPromise = BrowserTestUtils.waitForNewWindow();
-
   if (aTab) {
-    windowManager.replaceTabWithWindow(taskbarTab, aTab);
-  } else {
-    windowManager.openWindow(taskbarTab);
+    return await windowManager.replaceTabWithWindow(taskbarTab, aTab);
   }
 
-  return await windowPromise;
+  return await windowManager.openWindow(taskbarTab);
 }
 
 
