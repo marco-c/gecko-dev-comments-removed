@@ -2298,12 +2298,12 @@ MOZ_CAN_RUN_SCRIPT static bool IsDeferredLoadEmptyFrame(Element& aEmbedder) {
       MOZ_ASSERT_UNREACHABLE();
       return false;
     case EmptyFrameLibrary::ZE:
-      if (StaticPrefs::dom_about_blank_ze_hack_require_zcomponents() &&
-          !property.mZComponents.WasPassed()) {
+      if (!property.mZE_Init.WasPassed()) {
         return false;
       }
       
-      aEmbedder.OwnerDoc()->WarnOnceAbout(Document::eOldZECompatHack);
+      aEmbedder.OwnerDoc()->WarnOnceAbout(
+          DeprecatedOperations::eOldZECompatHack);
       return true;
     case EmptyFrameLibrary::CKEditor:
       const auto* version = [&]() -> const CkEditorVersion* {
