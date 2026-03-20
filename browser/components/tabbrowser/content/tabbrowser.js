@@ -3988,6 +3988,10 @@
         selectTab && container.ownerGlobal.gBrowser.selectedTab;
       let newTabs = [];
 
+      if (typeof elementIndex == "number") {
+        tabIndex = this.#elementIndexToTabIndex(elementIndex);
+      }
+
       
       
       
@@ -3997,9 +4001,8 @@
       for (let tab of container.tabs) {
         tab.removedByAdoption = true;
         let adoptedTab = this.adoptTab(tab, {
-          selectTab: tab === oldSelectedTab,
           tabIndex,
-          elementIndex,
+          selectTab: tab === oldSelectedTab,
         });
         adoptedTab.addedByAdoption = true;
         newTabs.push(adoptedTab);
