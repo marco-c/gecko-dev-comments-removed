@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "prio.h"
 #include "PLDHashTable.h"
 #include "mozilla/IOInterposer.h"
