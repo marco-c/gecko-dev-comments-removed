@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef js_StableStringChars_h
 #define js_StableStringChars_h
 

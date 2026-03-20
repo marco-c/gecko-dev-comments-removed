@@ -1,3 +1,4 @@
+
 function f(a) {
     var x = {
         g: function () {

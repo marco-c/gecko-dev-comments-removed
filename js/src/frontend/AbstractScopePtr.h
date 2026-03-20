@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef frontend_AbstractScopePtr_h
 #define frontend_AbstractScopePtr_h
 

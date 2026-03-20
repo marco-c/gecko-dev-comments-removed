@@ -1,13 +1,14 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsISupports.idl"
-/*
- * This defines the interface for a test object.
- *
- */
+
+
+
+
 
 [scriptable, uuid(42fbd9f6-b12d-47ef-b7a1-02d73c11fe53)]
 interface nsIXPCTestObjectReadOnly : nsISupports {

@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef js_ErrorInterceptor_h
 #define js_ErrorInterceptor_h
 

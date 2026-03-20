@@ -1,3 +1,5 @@
+
+
 function f(x) {
     delete ((x)++);
     arguments[0] !== undefined;

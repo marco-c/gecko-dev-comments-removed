@@ -1,3 +1,5 @@
+
+
 function testUKeyUObject(a, key1, key2, key3) {
     a.a = function () { return this.d; }
     a.b = function () { return this.e; }

@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef frontend_FunctionSyntaxKind_h
 #define frontend_FunctionSyntaxKind_h
 

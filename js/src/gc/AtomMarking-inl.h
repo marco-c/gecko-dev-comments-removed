@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef gc_AtomMarking_inl_h
 #define gc_AtomMarking_inl_h
 

@@ -1,3 +1,4 @@
+
 document = {
     ready: function (x) {
         this.exec = x;

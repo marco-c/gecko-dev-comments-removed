@@ -1,3 +1,5 @@
+
+
 function A() {
     this.x = 12;
     this.y = function () { return this.x; };

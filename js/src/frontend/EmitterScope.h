@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef frontend_EmitterScope_h
 #define frontend_EmitterScope_h
 

@@ -1,5 +1,6 @@
 
 
+
 var g = newGlobal({newCompartment: true});
 g.eval("var n = 0; function foo() { n = 1; }");
 var dbg = Debugger(g);

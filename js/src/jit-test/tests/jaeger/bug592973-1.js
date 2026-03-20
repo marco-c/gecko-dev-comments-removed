@@ -1,3 +1,4 @@
+
 function f(x) {
     if (x) {
         let y;

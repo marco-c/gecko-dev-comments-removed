@@ -1,3 +1,5 @@
+
+
 function testBadSetElems(obj, key) {
     obj[key] = 5;
     obj[-1] = 5;

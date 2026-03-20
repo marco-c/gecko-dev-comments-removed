@@ -1,3 +1,5 @@
+
+
 function testFloat32Array(L) {
     var f = new Float32Array(8);
     assertEq(f[0], 0);

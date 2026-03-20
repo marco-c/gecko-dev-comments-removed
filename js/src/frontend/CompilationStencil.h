@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef frontend_CompilationStencil_h
 #define frontend_CompilationStencil_h
 

@@ -1,3 +1,5 @@
+
+
 function testSetTypedInt8Array(k) {
     var ar = new Int8Array(8);
     ar[k+5] = { };

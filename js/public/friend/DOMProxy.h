@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef js_friend_DOMProxy_h
 #define js_friend_DOMProxy_h
 

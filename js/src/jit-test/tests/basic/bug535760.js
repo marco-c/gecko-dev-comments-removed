@@ -1,3 +1,4 @@
+
 function foundit(items, n) {
     for (var i = 0; i < 10; i++)
         arguments[2](items, this);

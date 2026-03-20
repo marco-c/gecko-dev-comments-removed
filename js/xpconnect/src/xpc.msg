@@ -1,12 +1,13 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-/* Error Message definitions. */
 
 
-/* xpconnect specific codes (from nsIXPConnect.h) */
+
+
+
+
+
+
+
+
 
 XPC_MSG_DEF(NS_ERROR_XPC_NOT_ENOUGH_ARGS                , "Not enough arguments")
 XPC_MSG_DEF(NS_ERROR_XPC_NEED_OUT_OBJECT                , "'Out' argument must be an object")
@@ -62,7 +63,7 @@ XPC_MSG_DEF(NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN         , "Cannot modify propert
 XPC_MSG_DEF(NS_ERROR_XPC_BAD_CONVERT_JS_ZERO_ISNOT_NULL , "Could not convert JavaScript argument - 0 was passed, expected object. Did you mean null?")
 
 
-/* common global codes (from nsError.h) */
+
 
 XPC_MSG_DEF(NS_OK                                  , "Success")
 XPC_MSG_DEF(NS_ERROR_NOT_INITIALIZED               , "Component not initialized")
@@ -85,7 +86,7 @@ XPC_MSG_DEF(NS_ERROR_FACTORY_NOT_LOADED            , "Factory not loaded")
 XPC_MSG_DEF(NS_ERROR_FACTORY_NO_SIGNATURE_SUPPORT  , "Factory does not support signatures")
 XPC_MSG_DEF(NS_ERROR_FACTORY_EXISTS                , "Factory already exists")
 
-/* added from nsError.h on Feb 28 2001... */
+
 
 XPC_MSG_DEF(NS_BASE_STREAM_CLOSED                   , "Stream closed")
 XPC_MSG_DEF(NS_BASE_STREAM_OSERROR                  , "Error from the operating system")
@@ -114,14 +115,14 @@ XPC_MSG_DEF(NS_ERROR_FILE_READ_ONLY                 , "File error: Read only")
 XPC_MSG_DEF(NS_ERROR_FILE_DIR_NOT_EMPTY             , "File error: Dir not empty")
 XPC_MSG_DEF(NS_ERROR_FILE_ACCESS_DENIED             , "File error: Access denied")
 
-/* added from nsError.h on Sept 6 2001... */
+
 
 XPC_MSG_DEF(NS_ERROR_CANNOT_CONVERT_DATA            , "Data conversion error")
 XPC_MSG_DEF(NS_ERROR_OBJECT_IS_IMMUTABLE            , "Can not modify immutable data container")
 XPC_MSG_DEF(NS_ERROR_LOSS_OF_SIGNIFICANT_DATA       , "Data conversion failed because significant data would be lost")
 XPC_MSG_DEF(NS_SUCCESS_LOSS_OF_INSIGNIFICANT_DATA   , "Data conversion succeeded but data was rounded to fit")
 
-/* network related codes (from nsNetError.h) */
+
 
 XPC_MSG_DEF(NS_BINDING_FAILED                       , "The async request failed for some unknown reason")
 XPC_MSG_DEF(NS_BINDING_ABORTED                      , "The async request failed because it was aborted by some user action")
@@ -141,7 +142,7 @@ XPC_MSG_DEF(NS_ERROR_CONNECTION_REFUSED             , "The connection was refuse
 XPC_MSG_DEF(NS_ERROR_BASIC_HTTP_AUTH_DISABLED       , "User attempted basic HTTP authentication when it is disabled")
 XPC_MSG_DEF(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED    , "The access to local network is denied")
 
-/* Error codes return from the proxy */
+
 XPC_MSG_DEF(NS_ERROR_PROXY_CONNECTION_REFUSED           , "The connection to the proxy server was refused")
 XPC_MSG_DEF(NS_ERROR_PROXY_AUTHENTICATION_FAILED        , "The proxy requires authentication")
 XPC_MSG_DEF(NS_ERROR_PROXY_BAD_GATEWAY                  , "The request failed on the proxy")
@@ -192,18 +193,18 @@ XPC_MSG_DEF(NS_ERROR_NOT_SAME_THREAD                , "Can't access a wrapped JS
 XPC_MSG_DEF(NS_ERROR_DOM_BAD_URI                    , "Access to restricted URI denied")
 XPC_MSG_DEF(NS_ERROR_WEBSOCKET_CONNECTION_REFUSED   , "Opening the Websocket failed")
 
-/* storage related codes (from mozStorage.h) */
+
 XPC_MSG_DEF(NS_ERROR_STORAGE_BUSY                   , "SQLite database connection is busy")
 XPC_MSG_DEF(NS_ERROR_STORAGE_IOERR                  , "SQLite encountered an IO error")
 XPC_MSG_DEF(NS_ERROR_STORAGE_CONSTRAINT             , "SQLite database operation failed because a constraint was violated")
 
-/* plugin related codes (from nsPluginError.h) */
+
 XPC_MSG_DEF(NS_ERROR_PLUGIN_TIME_RANGE_NOT_SUPPORTED, "Clearing site data by time range not supported by plugin")
 
-/* character converter related codes */
+
 XPC_MSG_DEF(NS_ERROR_ILLEGAL_INPUT                  , "The input characters have illegal sequences")
 
-/* Codes related to signd jars */
+
 XPC_MSG_DEF(NS_ERROR_SIGNED_JAR_NOT_SIGNED          , "The JAR is not signed.")
 XPC_MSG_DEF(NS_ERROR_SIGNED_JAR_MODIFIED_ENTRY      , "An entry in the JAR has been modified after the JAR was signed.")
 XPC_MSG_DEF(NS_ERROR_SIGNED_JAR_UNSIGNED_ENTRY      , "An entry in the JAR has not been signed.")
@@ -215,16 +216,16 @@ XPC_MSG_DEF(NS_ERROR_SIGNED_JAR_MANIFEST_INVALID    , "The JAR's manifest or sig
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NO_CONTENT_INFO     , "The PKCS#7 signature is malformed or invalid.")
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NOT_SIGNED          , "The PKCS#7 information is not signed.")
 
-/* Codes related to pdf signature verification */
+
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_ERROR_PROCESSING    , "The PKCS#7 parsing has failed.")
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED   , "The PKCS#7 certificate verification was cancelled.")
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_BAD_SIGNATURE       , "Invalid signature.")
 XPC_MSG_DEF(NS_ERROR_CMS_VERIFY_NOCERT              , "No certificate was found.")
 
-/* Codes related to signed manifests */
+
 XPC_MSG_DEF(NS_ERROR_SIGNED_APP_MANIFEST_INVALID   , "The signed app manifest or signature file is invalid.")
 
-/* Codes for printing-related errors. */
+
 XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_NO_PRINTER_AVAILABLE , "No printers available.")
 XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_NAME_NOT_FOUND       , "The selected printer could not be found.")
 XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_COULD_NOT_OPEN_FILE  , "Failed to open output file for print to file.")
@@ -233,21 +234,21 @@ XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_ENDDOC               , "Printing failed while c
 XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_STARTPAGE            , "Printing failed while starting a new page.")
 XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_DOC_IS_BUSY          , "Cannot print this document yet, it is still being loaded.")
 
-/* Codes related to content */
+
 XPC_MSG_DEF(NS_ERROR_CONTENT_CRASHED                  , "The process that hosted this content has crashed.")
 XPC_MSG_DEF(NS_ERROR_FRAME_CRASHED                    , "The process that hosted this frame has crashed.")
 XPC_MSG_DEF(NS_ERROR_BUILDID_MISMATCH                 , "The process that hosted this content did not have the same buildID as the parent.")
 XPC_MSG_DEF(NS_ERROR_CONTENT_BLOCKED                  , "The load for this content was blocked.")
 
-/* Codes for the JS-implemented Push DOM API. These can be removed as part of bug 1252660. */
+
 XPC_MSG_DEF(NS_ERROR_DOM_PUSH_INVALID_KEY_ERR         , "Invalid raw ECDSA P-256 public key.")
 XPC_MSG_DEF(NS_ERROR_DOM_PUSH_MISMATCHED_KEY_ERR      , "A subscription with a different application server key already exists.")
 
-/* Codes defined in WebIDL https://heycam.github.io/webidl/#idl-DOMException-error-names */
+
 XPC_MSG_DEF(NS_ERROR_DOM_NOT_FOUND_ERR                , "The object can not be found here.")
 XPC_MSG_DEF(NS_ERROR_DOM_NOT_ALLOWED_ERR              , "The request is not allowed.")
 
-/* Codes related to the URIClassifier service */
+
 XPC_MSG_DEF(NS_ERROR_MALWARE_URI                      , "The URI is malware")
 XPC_MSG_DEF(NS_ERROR_PHISHING_URI                     , "The URI is phishing")
 XPC_MSG_DEF(NS_ERROR_TRACKING_URI                     , "The URI is tracking")
@@ -260,10 +261,10 @@ XPC_MSG_DEF(NS_ERROR_SOCIALTRACKING_URI               , "The URI is social track
 XPC_MSG_DEF(NS_ERROR_EMAILTRACKING_URI                , "The URI is email tracking")
 XPC_MSG_DEF(NS_ERROR_HARMFULADDON_URI                 , "The URI is not available for add-ons")
 
-/* Profile manager error codes */
+
 XPC_MSG_DEF(NS_ERROR_DATABASE_CHANGED                 , "Flushing the profiles to disk would have overwritten changes made elsewhere.")
 
-/* Codes related to URILoader */
+
 XPC_MSG_DEF(NS_ERROR_PARSED_DATA_CACHED               , "The data from a channel has already been parsed and cached so it doesn't need to be reparsed from the original source.")
 XPC_MSG_DEF(NS_BINDING_CANCELLED_OLD_LOAD             , "The async request has been cancelled by another async request")
 
@@ -272,5 +273,5 @@ XPC_MSG_DEF(NS_ERROR_WDBA_HASH_CHECK                  , "The existing UserChoice
 XPC_MSG_DEF(NS_ERROR_WDBA_REJECTED                    , "UserChoice was set, but checking the default did not return our ProgID.")
 XPC_MSG_DEF(NS_ERROR_WDBA_BUILD                       , "The existing UserChoice Hash was verified, but we're on an older, unsupported Windows build, so do not attempt to update the UserChoice hash.")
 
-/* Codes related to QuotaManager */
+
 XPC_MSG_DEF(NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED, "Client initialization attempted before origin has been initialized.")

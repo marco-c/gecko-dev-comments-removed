@@ -1,3 +1,4 @@
+
 function f([a, b, c, d]) {
   a = b;
   return function () { return a + b + c + d; };

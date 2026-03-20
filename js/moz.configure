@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 
 @depends(build_project)
@@ -9,13 +11,13 @@ def js_standalone(build_project):
         return True
 
 
-# Debug (see Bug 939505)
-# ==============================================================
+
+
 set_define("JS_DEBUG", True, when=moz_debug)
 
 
-# Branding
-# ==============================================================
+
+
 option(
     "--with-app-name",
     env="MOZ_APP_NAME",
@@ -61,8 +63,8 @@ set_define("JS_PUNBOX64", depends(target)(lambda t: t.bitness == 64 or None))
 set_define("JS_NUNBOX32", depends(target)(lambda t: t.bitness == 32 or None))
 
 
-# SpiderMonkey as a shared library, and how its symbols are exported
-# ==================================================================
+
+
 option(
     "--disable-shared-js",
     when=js_standalone,
@@ -113,8 +115,8 @@ def static_js(value):
 
 set_define("MOZ_STATIC_JS", static_js)
 
-# Enable decorators
-# ===================================================
+
+
 option(
     "--enable-decorators",
     default=False,
@@ -131,8 +133,8 @@ def enable_decorators(value):
 set_config("ENABLE_DECORATORS", enable_decorators)
 set_define("ENABLE_DECORATORS", enable_decorators)
 
-# Enable explicit resource management
-# ===================================================
+
+
 option(
     "--disable-explicit-resource-management",
     default=True,
@@ -150,8 +152,8 @@ set_config("ENABLE_EXPLICIT_RESOURCE_MANAGEMENT", enable_explicit_resource_manag
 set_define("ENABLE_EXPLICIT_RESOURCE_MANAGEMENT", enable_explicit_resource_management)
 
 
-# Enable source phase imports
-# ===================================================
+
+
 option(
     "--enable-source-phase-imports",
     default=False,
@@ -170,8 +172,8 @@ set_define("ENABLE_SOURCE_PHASE_IMPORTS", enable_source_phase_imports)
 
 
 
-# Portable Baseline Intepreter
-# =======================================================
+
+
 option(
     "--enable-portable-baseline-interp",
     default=False,
@@ -186,7 +188,7 @@ set_config(
     depends_if("--enable-portable-baseline-interp")(lambda _: True),
 )
 
-# Option to always force PBL tier.
+
 option(
     "--enable-portable-baseline-interp-force",
     default=False,
@@ -202,7 +204,7 @@ set_config(
     depends_if("--enable-portable-baseline-interp-force")(lambda _: True),
 )
 
-# Enable ahead-of-time-known preloaded IC bodies.
+
 option(
     "--enable-aot-ics",
     default=False,
@@ -218,7 +220,7 @@ set_config(
     depends_if("--enable-aot-ics")(lambda _: True),
 )
 
-# Force-on the option for AOT ICs.
+
 option(
     "--enable-aot-ics-force",
     default=False,
@@ -234,7 +236,7 @@ set_config(
     depends_if("--enable-aot-ics-force")(lambda _: True),
 )
 
-# Enforce AOT ICs (testing only): abort if a new IC (not in AOT corpus) is encountered.
+
 option(
     "--enable-aot-ics-enforce",
     default=False,
@@ -251,8 +253,8 @@ set_config(
 )
 
 
-# JIT support
-# =======================================================
+
+
 @depends(target, "--enable-portable-baseline-interp")
 def jit_default(target, enable_portable_baseline_interp):
     if enable_portable_baseline_interp:
@@ -281,8 +283,8 @@ def report_deprecated(value):
         die("--disable-ion is deprecated, use --disable-jit instead")
 
 
-# JIT code simulator for cross compiles
-# =======================================================
+
+
 option(
     "--enable-simulator",
     choices=("arm", "arm64", "mips64", "loong64", "riscv64"),
@@ -364,8 +366,8 @@ set_define("JS_CODEGEN_X64", jit_codegen.x64)
 set_define("JS_CODEGEN_WASM32", jit_codegen.wasm32)
 
 
-# Profiling
-# =======================================================
+
+
 option(
     "--enable-instruments",
     env="MOZ_INSTRUMENTS",
@@ -501,8 +503,8 @@ option(
 set_define("JS_GC_ZEAL", depends_if("--enable-gczeal")(lambda _: True))
 
 
-# Enable breakpoint for artificial OOMs
-# =======================================================
+
+
 option(
     "--enable-oom-breakpoint", help="Enable a breakpoint function for artificial OOMs"
 )
@@ -510,12 +512,12 @@ option(
 set_define("JS_OOM_BREAKPOINT", depends_if("--enable-oom-breakpoint")(lambda _: True))
 
 
-# Enable perf jitdump integration for nightly.
-# The following must be true for jitdump to be enabled:
-#   (a) --disable-jitdump was not provided.
-#   (b) target is Linux or Mac
-#   (c) milestone is a nightly build
-# =======================================================
+
+
+
+
+
+
 option(
     "--enable-jitdump",
     default=milestone.is_nightly,
@@ -544,7 +546,7 @@ option(
 set_define("JS_JITSPEW", depends_if("--enable-jitspew")(lambda _: True))
 set_config("JS_JITSPEW", depends_if("--enable-jitspew")(lambda _: True))
 
-# Also enable the structured spewer
+
 set_define("JS_STRUCTURED_SPEW", depends_if("--enable-jitspew")(lambda _: True))
 set_config("JS_STRUCTURED_SPEW", depends_if("--enable-jitspew")(lambda _: True))
 
@@ -599,10 +601,10 @@ def jit_disasm_arm64(jit_enabled, spew, simulator, target, debug):
 set_config("JS_DISASM_ARM64", jit_disasm_arm64)
 set_define("JS_DISASM_ARM64", jit_disasm_arm64)
 
-# When enabled, masm will generate assumeUnreachable calls that act as
-# assertions in the generated code. This option is worth disabling when you
-# have to track mutated values through the generated code, to avoid constantly
-# dumping registers on and off the stack.
+
+
+
+
 option(
     "--enable-masm-verbose",
     default=depends(when=moz_debug)(lambda: True),
@@ -611,8 +613,8 @@ option(
 set_define("JS_MASM_VERBOSE", depends_if("--enable-masm-verbose")(lambda _: True))
 set_config("JS_MASM_VERBOSE", depends_if("--enable-masm-verbose")(lambda _: True))
 
-# Architecture feature flags
-# =======================================================
+
+
 
 
 @depends(target)
@@ -620,14 +622,14 @@ def has_apple_fast_wx(target):
     return target.kernel == "Darwin" and target.cpu == "aarch64"
 
 
-# On Apple Silicon macOS we use MAP_JIT with pthread_jit_write_protect_np to
-# implement JIT code write protection, while on iOS we use MAP_JIT with
-# be_memory_inline_jit_restrict_*.
+
+
+
 set_define("JS_USE_APPLE_FAST_WX", True, when=has_apple_fast_wx)
 
 
-# CTypes
-# =======================================================
+
+
 @depends(js_standalone)
 def ctypes_default(js_standalone):
     return not js_standalone
@@ -651,8 +653,8 @@ def ctypes_and_compile_environment(ctypes, compile_environment):
 
 include("ffi.configure", when=ctypes_and_compile_environment)
 
-# SIMD acceleration for encoding_rs
-# ==============================================================
+
+
 
 option(
     "--enable-rust-simd", env="MOZ_RUST_SIMD", help="Enable explicit SIMD in Rust code"
@@ -661,8 +663,8 @@ option(
 
 @depends("--enable-rust-simd", target)
 def rust_simd(value, target):
-    # As of 2019-09-17, the simd-accel feature of encoding_rs has not
-    # been properly set up outside aarch64, armv7, x86 and x86_64.
+    
+    
     if target.cpu in ("aarch64", "arm", "x86", "x86_64") and value:
         return True
 
@@ -670,8 +672,8 @@ def rust_simd(value, target):
 set_config("MOZ_RUST_SIMD", rust_simd)
 set_define("MOZ_RUST_SIMD", rust_simd)
 
-# Telemetry to measure compile time and generated-code runtime
-# ============================================================
+
+
 
 option(
     "--enable-spidermonkey-telemetry",
@@ -684,8 +686,8 @@ set_define(
     depends_if("--enable-spidermonkey-telemetry")(lambda x: True),
 )
 
-# Support for debugging code generated by wasm backends
-# =====================================================
+
+
 
 option(
     "--enable-wasm-codegen-debug",
@@ -700,8 +702,8 @@ set_define(
     "WASM_CODEGEN_DEBUG", depends_if("--enable-wasm-codegen-debug")(lambda x: True)
 )
 
-# WebAssembly feature flags
-# ==================================================
+
+
 
 option(
     "--wasm-no-experimental",
@@ -710,8 +712,8 @@ option(
 )
 
 
-# Support for JS PI spec.
-# ===========================
+
+
 
 
 @depends(
@@ -793,10 +795,10 @@ def wasm_jspi(value, jit_enabled, simulator, no_experimental, target):
 set_config("ENABLE_WASM_JSPI", wasm_jspi)
 set_define("ENABLE_WASM_JSPI", wasm_jspi)
 
-# Support for WebAssembly shared memory and atomics.
-#
-# This affects the JS shell only.
-# =====================================================
+
+
+
+
 
 option(
     "--disable-shared-memory", help="Disable JS/WebAssembly shared memory and atomics"
@@ -812,8 +814,8 @@ def enable_shared_memory(value):
 set_config("ENABLE_SHARED_MEMORY", enable_shared_memory)
 set_define("ENABLE_SHARED_MEMORY", enable_shared_memory)
 
-# Support for WebAssembly SIMD
-# =====================================================
+
+
 
 
 @depends("--enable-jit", "--enable-simulator", target)
@@ -861,11 +863,11 @@ def wasm_simd(value, jit_enabled, simulator, target, no_experimental):
 set_config("ENABLE_WASM_SIMD", wasm_simd)
 set_define("ENABLE_WASM_SIMD", wasm_simd)
 
-# Whether to check for field changes in WebAssembly serialization
-#
-# See the comment for 'WASM_VERIFY_SERIALIZATION_FOR_SIZE' in WasmSerialize.cpp
-# for more background.
-# =====================================================================
+
+
+
+
+
 
 
 @depends(
@@ -895,11 +897,11 @@ set_define(
     "ENABLE_WASM_VERIFY_SERIALIZATION_FOR_SIZE", wasm_verify_serialization_for_size
 )
 
-# Support for Intel AVX instruction.
-#
-# AVX is exclusively used in WebAssembly SIMD instructions at the moment:
-# set direct dependency on "--enable-wasm-simd".
-# =====================================================
+
+
+
+
+
 
 
 @depends("--enable-wasm-simd", "--enable-simulator", target)
@@ -947,8 +949,8 @@ def wasm_avx(value, wasm_simd_enabled, simulator, target, no_experimental):
 set_config("ENABLE_WASM_AVX", wasm_avx)
 set_define("ENABLE_WASM_AVX", wasm_avx)
 
-# Support for WebAssembly relaxed SIMD
-# =====================================================
+
+
 
 
 @depends("--enable-wasm-simd")
@@ -978,8 +980,8 @@ def wasm_relaxed_simd(value, wasm_simd):
 set_config("ENABLE_WASM_RELAXED_SIMD", wasm_relaxed_simd)
 set_define("ENABLE_WASM_RELAXED_SIMD", wasm_relaxed_simd)
 
-# Support for WebAssembly intgemm private intrinsics
-# =====================================================
+
+
 
 
 @depends(target)
@@ -1007,8 +1009,8 @@ set_config("ENABLE_WASM_MOZ_INTGEMM", wasm_moz_intgemm)
 set_define("ENABLE_WASM_MOZ_INTGEMM", wasm_moz_intgemm)
 
 
-# Support for WebAssembly memory control.
-# ===========================
+
+
 
 
 @depends(milestone.is_nightly)
@@ -1036,8 +1038,8 @@ set_config("ENABLE_WASM_MEMORY_CONTROL", wasm_memory_control)
 set_define("ENABLE_WASM_MEMORY_CONTROL", wasm_memory_control)
 
 
-# Support for WebAssembly Branch-hinting.
-# ===========================
+
+
 
 
 option(
@@ -1056,8 +1058,8 @@ set_define(
 )
 
 
-# Support for WebAssembly Custom Page Sizes
-# =====================================================
+
+
 
 
 @depends(milestone.is_nightly, "--enable-simulator", target)
@@ -1100,8 +1102,8 @@ def wasm_custom_page_sizes(value, simulator, target, no_experimental):
 set_config("ENABLE_WASM_CUSTOM_PAGE_SIZES", wasm_custom_page_sizes)
 set_define("ENABLE_WASM_CUSTOM_PAGE_SIZES", wasm_custom_page_sizes)
 
-# Experimental support for GC concurrent marking
-# ==============================================
+
+
 
 
 option(
@@ -1126,8 +1128,8 @@ set_config("JS_GC_CONCURRENT_MARKING", gc_concurrent_marking)
 set_define("JS_GC_CONCURRENT_MARKING", gc_concurrent_marking)
 
 
-# Support for WebAssembly compact imports.
-# ===========================
+
+
 
 
 @depends(milestone.is_nightly)
@@ -1155,8 +1157,8 @@ set_config("ENABLE_WASM_COMPACT_IMPORTS", wasm_compact_imports)
 set_define("ENABLE_WASM_COMPACT_IMPORTS", wasm_compact_imports)
 
 
-# Support for readline
-# =====================================================
+
+
 
 
 @depends("--enable-js-shell", target_is_windows, compile_environment, target)
@@ -1188,8 +1190,8 @@ set_config("JS_BUNDLED_EDITLINE", bundled_editline)
 set_define("EDITLINE", True, when=editline)
 
 
-# JIT observers
-# =============
+
+
 
 option(
     "--with-jitreport-granularity",
@@ -1206,8 +1208,8 @@ set_define(
 )
 
 
-# ECMAScript Internationalization API Support (uses ICU)
-# ======================================================
+
+
 system_lib_option(
     "--with-system-icu",
     help="Use system ICU",
@@ -1230,8 +1232,8 @@ def in_tree_icu(system_icu):
     return not system_icu
 
 
-# Set MOZ_ICU_CFLAGS to an explicit empty value when --with-system-icu is *not* used,
-# for use for bindgen through the mozbuild crate.
+
+
 set_config("MOZ_ICU_CFLAGS", [], when=in_tree_icu)
 
 set_config("MOZ_SYSTEM_ICU", True, when=system_icu)
@@ -1283,16 +1285,16 @@ def icu_version(build_env):
 
 set_config("MOZ_ICU_VERSION", icu_version)
 
-# Source files that use ICU should have control over which parts of the ICU
-# namespace they want to use.
+
+
 set_define("U_USING_ICU_NAMESPACE", "0", when="--with-intl-api")
 
-# We build ICU as a static library.
+
 set_define("U_STATIC_IMPLEMENTATION", True, when=depends(system_icu)(lambda x: not x))
 
 
-# Initial support for WebAssembly JS-API Type Reflections
-# =======================================================
+
+
 
 
 @depends(milestone.is_nightly)
@@ -1315,8 +1317,8 @@ set_define(
     depends_if("--enable-wasm-type-reflections")(lambda x: True),
 )
 
-# Support for resizable ArrayBuffer in Wasm
-# =========================================
+
+
 
 
 option(
@@ -1334,8 +1336,8 @@ set_define(
     depends_if("--enable-wasm-resizable-arraybuffer")(lambda x: True),
 )
 
-# Wasi configuration
-# ===================================================
+
+
 
 
 @depends(target.os)
@@ -1364,11 +1366,11 @@ set_config(
     ),
 )
 
-# Some platforms have HeapReg, some don't
-# =====================================================
 
-# The ARM simulator runs on x86 and might be excluded by the first test,
-# so we special-case it.
+
+
+
+
 
 
 @depends("--enable-simulator", target)
@@ -1382,8 +1384,8 @@ def wasm_has_heapreg(simulator, target):
 
 set_define("WASM_HAS_HEAPREG", wasm_has_heapreg)
 
-# Check for tm_zone, tm_gmtoff in struct tm
-# ===================================================
+
+
 with only_when(compile_environment):
     set_define(
         "HAVE_TM_ZONE_TM_GMTOFF",
@@ -1395,8 +1397,8 @@ with only_when(compile_environment):
     )
 
 
-# Optimization flags
-# ==============================================================
+
+
 @depends(
     target,
     c_compiler,
@@ -1423,8 +1425,8 @@ set_config("MOZ_JS_OPTIMIZE_FLAGS", moz_js_optimize_flags, when=~js_build)
 set_config("MOZ_OPTIMIZE_FLAGS", moz_js_optimize_flags, when=js_build)
 
 
-# link executables against mozglue
-# ==============================================================
+
+
 @depends(
     target_is_android | target_is_windows | target_is_darwin,
     js_standalone & ~depends(when="--enable-jemalloc")(True),
@@ -1437,8 +1439,8 @@ set_define("MOZ_GLUE_IN_PROGRAM", True, when=moz_glue_in_program)
 set_config("MOZ_GLUE_IN_PROGRAM", True, when=moz_glue_in_program)
 
 
-# JavaScript shell
-# ==============================================================
+
+
 @depends(milestone.symbolversion, js_standalone)
 def js_library_name(symbolversion, js_standalone):
     if js_standalone:
@@ -1475,9 +1477,9 @@ def js_config_moz_js_libs(js_library_name, compiler, libdir):
 
 set_config("JS_CONFIG_MOZ_JS_LIBS", js_config_moz_js_libs)
 
-#
-# Checks for library functions
-# ==============================================================
+
+
+
 with only_when(compile_environment & depends(target.os)(lambda os: os != "WINNT")):
     set_define("HAVE_GETPAGESIZE", check_symbol("getpagesize"))
     set_define("HAVE_GMTIME_R", check_symbol("gmtime_r"))
@@ -1501,7 +1503,7 @@ with only_when(compile_environment & depends(target.os)(lambda os: os != "WINNT"
 
     @depends(check_symbol("__cxa_demangle", language="C++"), moz_debug, dmd)
     def demangle_symbols(cxa_demangle, moz_debug, dmd):
-        # Demangle only for debug or DMD builds
+        
         if cxa_demangle and (moz_debug or dmd):
             return True
 

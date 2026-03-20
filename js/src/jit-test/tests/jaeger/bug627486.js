@@ -1,4 +1,5 @@
 
+
 g = undefined;
 function L() { }
 
