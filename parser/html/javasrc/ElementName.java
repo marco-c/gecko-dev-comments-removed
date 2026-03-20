@@ -1424,7 +1424,7 @@ TreeBuilder.OTHER);
 public static final ElementName SELECT = new ElementName("select", "select",
 
 
-TreeBuilder.SELECT | SPECIAL | SCOPING);
+TreeBuilder.SELECT | SPECIAL);
 public static final ElementName SLOT = new ElementName("slot", "slot",
 
 
