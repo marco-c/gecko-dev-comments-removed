@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_a11y_DocAccessibleWrap_h_
 #define mozilla_a11y_DocAccessibleWrap_h_
 

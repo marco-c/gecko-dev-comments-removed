@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import "Accessible2.idl";
 import "Accessible2_2.idl";
@@ -28,6 +26,6 @@ import "AccessibleTextSelectionContainer.idl";
 import "AccessibleValue.idl";
 import "IA2CommonTypes.idl";
 
-
-
+// We are explicitly using #include instead of import so that the imported
+// IDL is treated as part of this IDL file.
 #include "IA2TypeLibrary.idl"

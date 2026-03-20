@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsEventShell_H_
 #define _nsEventShell_H_
 

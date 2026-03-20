@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_a11y_EnumVariant_h_
 #define mozilla_a11y_EnumVariant_h_
 

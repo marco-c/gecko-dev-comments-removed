@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "uiaRawElmProvider.h"
 
 #include <comdef.h>

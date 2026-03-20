@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef TraversalRule_H_
 #define TraversalRule_H_
 

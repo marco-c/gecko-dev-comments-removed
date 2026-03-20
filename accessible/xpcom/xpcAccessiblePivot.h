@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _xpcAccessiblePivot_H_
 #define _xpcAccessiblePivot_H_
 

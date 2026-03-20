@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef ACCESSIBLE_VALUE_H
 #define ACCESSIBLE_VALUE_H
 

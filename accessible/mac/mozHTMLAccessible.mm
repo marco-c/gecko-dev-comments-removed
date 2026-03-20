@@ -4,7 +4,6 @@
 
 
 
-
 #import "mozHTMLAccessible.h"
 
 #import "LocalAccessible-inl.h"

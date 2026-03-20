@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIAccessibleRelation.h"
 #include "nsIAccessibleRole.h"
 #include "mozilla/a11y/RelationType.h"

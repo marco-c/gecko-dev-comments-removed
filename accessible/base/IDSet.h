@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef MOZILLA_A11Y_IDSet_h_
 #define MOZILLA_A11Y_IDSet_h_
 

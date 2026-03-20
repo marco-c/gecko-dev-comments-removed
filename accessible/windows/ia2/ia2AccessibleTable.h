@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef ACCESSIBLE_TABLE_H
 #define ACCESSIBLE_TABLE_H
 

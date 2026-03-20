@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsComponentManagerUtils.h"
 #include "nsIAccessible.h"
 #include "nsIMutableArray.h"

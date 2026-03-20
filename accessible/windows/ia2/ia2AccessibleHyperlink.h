@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef ACCESSIBLE_HYPERLINK_H
 #define ACCESSIBLE_HYPERLINK_H
 

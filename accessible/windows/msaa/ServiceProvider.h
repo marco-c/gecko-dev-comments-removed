@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_a11y_ServiceProvider_h_
 #define mozilla_a11y_ServiceProvider_h_
 

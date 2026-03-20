@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/dom/BrowserParent.h"

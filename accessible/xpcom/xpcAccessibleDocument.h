@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_a11y_xpcAccessibleDocument_h_
 #define mozilla_a11y_xpcAccessibleDocument_h_
 

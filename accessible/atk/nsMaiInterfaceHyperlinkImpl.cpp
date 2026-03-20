@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InterfaceInitFuncs.h"
 
 #include "nsMaiHyperlink.h"

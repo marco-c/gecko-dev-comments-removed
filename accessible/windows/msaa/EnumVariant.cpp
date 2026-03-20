@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EnumVariant.h"
 
 using namespace mozilla;

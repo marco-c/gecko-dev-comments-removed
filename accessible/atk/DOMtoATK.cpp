@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DOMtoATK.h"
 #include "nsUTF8Utils.h"
 

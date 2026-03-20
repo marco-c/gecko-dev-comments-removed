@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InterfaceInitFuncs.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "nsAccessibilityService.h"

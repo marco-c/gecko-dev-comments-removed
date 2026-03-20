@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_a11y_SessionAccessibility_h_
 #define mozilla_a11y_SessionAccessibility_h_
 

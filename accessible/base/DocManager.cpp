@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DocManager.h"
 
 #include "ApplicationAccessible.h"

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsTextEquivUtils.h"
 
 #include "LocalAccessible-inl.h"

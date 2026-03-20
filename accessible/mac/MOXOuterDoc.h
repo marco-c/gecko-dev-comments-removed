@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 #ifndef ACCESSIBLE_MAC_MOXOUTERDOC_H_
 #define ACCESSIBLE_MAC_MOXOUTERDOC_H_
 

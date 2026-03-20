@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "ia2AccessibleTable.h"
 
 #include "Accessible2.h"

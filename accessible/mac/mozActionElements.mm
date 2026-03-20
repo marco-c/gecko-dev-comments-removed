@@ -4,7 +4,6 @@
 
 
 
-
 #import "mozActionElements.h"
 
 #import "MacUtils.h"

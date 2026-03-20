@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS += [
     "IUnknownImpl.h",
@@ -35,7 +33,7 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    
+    # This file cannot be built in unified mode because it includes ISimpleDOMNode_i.c.
     "ServiceProvider.cpp",
 ]
 
@@ -58,11 +56,11 @@ LOCAL_INCLUDES += [
     "/layout/style",
 ]
 
-
-
-
-
-
+# The Windows MIDL code generator creates things like:
+#
+#   #endif !_MIDL_USE_GUIDDEF_
+#
+# which clang-cl complains about.  MSVC doesn't, so turn this warning off.
 if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += ["-Wno-extra-tokens"]
 

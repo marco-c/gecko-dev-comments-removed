@@ -4,7 +4,6 @@
 
 
 
-
 #include "DocAccessibleWrap.h"
 #include "nsObjCExceptions.h"
 #include "nsCocoaUtils.h"

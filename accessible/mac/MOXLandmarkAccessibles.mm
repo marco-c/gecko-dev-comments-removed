@@ -2,8 +2,6 @@
 
 
 
-
-
 #import "MOXLandmarkAccessibles.h"
 
 @implementation MOXLandmarkAccessible

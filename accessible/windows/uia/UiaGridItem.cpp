@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ia2AccessibleTableCell.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
