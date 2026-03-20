@@ -7708,6 +7708,10 @@ nsHttpChannel::GetSecurityInfo(nsITransportSecurityInfo** securityInfo) {
 
 NS_IMETHODIMP
 nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
+  
+  
+  RefPtr<nsHttpChannel> self(this);
+
   AUTO_PROFILER_FLOW_MARKER("nsHttpChannel::AsyncOpen", NETWORK,
                             Flow::FromPointer(this));
   nsCOMPtr<nsIStreamListener> listener = aListener;
