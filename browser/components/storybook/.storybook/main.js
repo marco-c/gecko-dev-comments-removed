@@ -37,8 +37,6 @@ module.exports = {
     
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
     
-    `${projectRoot}/toolkit/components/satchel/autocomplete-row-item/**/*.stories.@(mjs|md)`,
-    
     `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
     
     `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
