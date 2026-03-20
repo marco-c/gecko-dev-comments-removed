@@ -47,6 +47,8 @@ HTML_PARSER_ATOMS = [
     
     Atom("stddeviation", "stddeviation"),
     
+    Atom("shadowrootcustomelementregistry", "shadowrootcustomelementregistry"),
+    
     Atom("shadowrootdelegatesfocus", "shadowrootdelegatesfocus"),
     
     Atom("basefrequency", "basefrequency"),
