@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_HalScreenConfiguration_h
 #define mozilla_HalScreenConfiguration_h
 

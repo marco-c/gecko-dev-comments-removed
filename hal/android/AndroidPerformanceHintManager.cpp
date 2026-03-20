@@ -2,15 +2,12 @@
 
 
 
-
-
 #include "Hal.h"
 #include "HalLog.h"
 #include "HalTypes.h"
 
 #include "AndroidBuild.h"
 
-#include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
 

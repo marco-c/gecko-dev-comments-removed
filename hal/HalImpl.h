@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_HalImpl_h
 #define mozilla_HalImpl_h
 

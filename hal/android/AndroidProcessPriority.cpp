@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Hal.h"
 
 #include "mozilla/java/GeckoProcessManagerWrappers.h"

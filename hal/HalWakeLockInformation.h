@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_HalWakeLockInformation_h
 #define mozilla_HalWakeLockInformation_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_HalLog_h
 #define mozilla_HalLog_h
 

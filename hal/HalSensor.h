@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef HAL_SENSOR_H_
 #define HAL_SENSOR_H_
 

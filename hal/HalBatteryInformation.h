@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_HalBatteryInformation_h
 #define mozilla_HalBatteryInformation_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Hal.h"
 #include "HalLog.h"
 #include "mozilla/dom/ContentChild.h"

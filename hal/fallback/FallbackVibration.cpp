@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Hal.h"
 
 using mozilla::hal::WindowIdentifier;

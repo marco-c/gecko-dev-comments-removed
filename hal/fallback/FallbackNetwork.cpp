@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "Hal.h"
 #include "mozilla/dom/network/Constants.h"
 

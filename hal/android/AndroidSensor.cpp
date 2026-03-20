@@ -2,7 +2,6 @@
 
 
 
-
 #include "Hal.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 

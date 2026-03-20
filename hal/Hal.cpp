@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Hal.h"
 
 #include "HalImpl.h"

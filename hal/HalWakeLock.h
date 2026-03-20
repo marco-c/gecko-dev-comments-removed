@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HAL_WAKELOCK_H_
 #define HAL_WAKELOCK_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_hal_HalSandbox_h
 #define mozilla_hal_HalSandbox_h
 

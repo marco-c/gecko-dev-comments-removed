@@ -2,7 +2,6 @@
 
 
 
-
 #include "Hal.h"
 #include "HalImpl.h"
 #include "mozilla/Preferences.h"

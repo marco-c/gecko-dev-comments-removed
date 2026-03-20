@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Hal.h"
 #include "base/process_util.h"
 #include "mozilla/FOGIPC.h"

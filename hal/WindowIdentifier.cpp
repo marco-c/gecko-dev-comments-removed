@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowIdentifier.h"
 
 #include "mozilla/dom/ContentChild.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_HalNetworkInformation_h
 #define mozilla_HalNetworkInformation_h
 
