@@ -745,10 +745,11 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
   
   
+  Rooted<AsyncGeneratorRequest*> next(cx);
+  RootedValue value(cx);
   while (!generator->isQueueEmpty()) {
     
-    Rooted<AsyncGeneratorRequest*> next(
-        cx, AsyncGeneratorObject::peekRequest(generator));
+    next = AsyncGeneratorObject::peekRequest(generator);
     if (!next) {
       return false;
     }
@@ -758,7 +759,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     
     if (completionKind == CompletionKind::Return) {
-      RootedValue value(cx, next->completionValue());
+      value = next->completionValue();
 
       
       
@@ -767,7 +768,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     
     if (completionKind == CompletionKind::Throw) {
-      RootedValue value(cx, next->completionValue());
+      value = next->completionValue();
 
       
       
