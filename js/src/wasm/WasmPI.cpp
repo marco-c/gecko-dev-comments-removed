@@ -18,15 +18,12 @@
 
 #include "wasm/WasmPI.h"
 
-#include "jsfriendapi.h"
 #include "builtin/Promise.h"
 #include "debugger/DebugAPI.h"
 #include "debugger/Debugger.h"
 #include "jit/MIRGenerator.h"
 #include "js/CallAndConstruct.h"
 #include "js/Printf.h"
-#include "js/Wrapper.h"
-#include "vm/Compartment.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
@@ -1337,28 +1334,10 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
   SuspenderObject::ReturnType returnType =
       suspenderObject->suspendingReturnType();
   MOZ_ASSERT(returnType != SuspenderObject::ReturnType::Unknown);
-  bool hasPromise = false;
-  bool promiseRejected = false;
-  RootedValue promiseReasonOrValue(cx);
-
-  if (returnType == SuspenderObject::ReturnType::Promise) {
-    JSObject* promiseObj = &resultRef.toJSObject();
-    if (IsWrapper(promiseObj)) {
-      promiseObj = UncheckedUnwrap(promiseObj);
-      if (JS_IsDeadWrapper(promiseObj)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_DEAD_OBJECT);
-        return nullptr;
-      }
-    }
-    PromiseObject* promise = &promiseObj->as<PromiseObject>();
-    hasPromise = true;
-    promiseRejected = promise->state() == JS::PromiseState::Rejected;
-    promiseReasonOrValue = promise->valueOrReason();
-    if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
-      return nullptr;
-    }
-  }
+  Rooted<PromiseObject*> promise(
+      cx, returnType == SuspenderObject::ReturnType::Promise
+              ? &resultRef.toJSObject().as<PromiseObject>()
+              : nullptr);
 
 #  ifdef DEBUG
   auto resetReturnType = mozilla::MakeScopeExit([&suspenderObject]() {
@@ -1367,19 +1346,19 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
   });
 #  endif
 
-  if (hasPromise ? promiseRejected
-                 : returnType == SuspenderObject::ReturnType::Exception) {
+  if (promise ? promise->state() == JS::PromiseState::Rejected
+              : returnType == SuspenderObject::ReturnType::Exception) {
     
     
     RootedValue reason(
-        cx, hasPromise ? promiseReasonOrValue : resultRef.get().toJSValue());
+        cx, promise ? promise->reason() : resultRef.get().toJSValue());
     cx->setPendingException(reason, ShouldCaptureStack::Maybe);
     return nullptr;
   }
 
   
-  MOZ_ASSERT(hasPromise && !promiseRejected);
-  RootedValue jsValue(cx, promiseReasonOrValue);
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Fulfilled);
+  RootedValue jsValue(cx, promise->value());
 
   
   Rooted<WasmStructObject*> results(
@@ -1448,12 +1427,14 @@ void* AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
   Rooted<SuspenderObject*> suspenderObject(cx, suspender);
   RootedFunction fn(cx, continueOnSuspendable);
 
+  
   RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
-  RootedObject promiseObject(
-      cx, PromiseResolve(cx, promiseConstructor, resultValue));
-  if (!promiseObject) {
+  RootedObject promiseObj(cx,
+                          PromiseResolve(cx, promiseConstructor, resultValue));
+  if (!promiseObj) {
     return AnyRef::invalid().forCompiledCode();
   }
+  Rooted<PromiseObject*> promiseObject(cx, &promiseObj->as<PromiseObject>());
 
   suspenderObject->setSuspendingReturnType(
       SuspenderObject::ReturnType::Promise);
