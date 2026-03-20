@@ -12,8 +12,12 @@ export var LayoutUtils = {
     let rect = aElement.getBoundingClientRect();
     let win = aElement.ownerGlobal;
 
-    const { x, y, width, height } = this._rectToClientRect(win, rect);
-    return win.windowUtils.toScreenRectInCSSUnits(x, y, width, height);
+    return win.windowUtils.toScreenRectInCSSUnits(
+      rect.left,
+      rect.top,
+      rect.width,
+      rect.height
+    );
   },
 
   
@@ -21,8 +25,12 @@ export var LayoutUtils = {
 
 
   rectToScreenRect(win, rect) {
-    const { x, y, width, height } = this._rectToClientRect(win, rect);
-    return win.ownerGlobal.windowUtils.toScreenRect(x, y, width, height);
+    return win.ownerGlobal.windowUtils.toScreenRect(
+      rect.left,
+      rect.top,
+      rect.width,
+      rect.height
+    );
   },
 
   
@@ -30,50 +38,11 @@ export var LayoutUtils = {
 
 
   rectToTopLevelWidgetRect(win, rect) {
-    const { x, y, width, height } = this._rectToClientRect(win, rect);
     return win.ownerGlobal.windowUtils.toTopLevelWidgetRect(
-      x,
-      y,
-      width,
-      height
+      rect.left,
+      rect.top,
+      rect.width,
+      rect.height
     );
-  },
-
-  _rectToClientRect(win, rect) {
-    
-    
-    
-    
-    let winDpr = win.devicePixelRatio;
-    let x = rect.left * winDpr;
-    let y = rect.top * winDpr;
-
-    let parentFrame = win.browsingContext?.embedderElement;
-    while (parentFrame) {
-      win = parentFrame.ownerGlobal;
-      let cstyle = win.getComputedStyle(parentFrame);
-
-      let framerect = parentFrame.getBoundingClientRect();
-      let xDelta =
-        framerect.left +
-        parseFloat(cstyle.borderLeftWidth) +
-        parseFloat(cstyle.paddingLeft);
-      let yDelta =
-        framerect.top +
-        parseFloat(cstyle.borderTopWidth) +
-        parseFloat(cstyle.paddingTop);
-
-      x += xDelta * win.devicePixelRatio;
-      y += yDelta * win.devicePixelRatio;
-
-      parentFrame = win.browsingContext?.embedderElement;
-    }
-
-    return {
-      x: x / winDpr,
-      y: y / winDpr,
-      width: rect.width,
-      height: rect.height,
-    };
   },
 };

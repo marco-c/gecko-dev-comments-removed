@@ -222,7 +222,7 @@ already_AddRefed<nsIRunnable> NativeInputRunnable::Create(
 
 }  
 
-MOZ_RUNINIT LinkedList<OldWindowSize> OldWindowSize::sList;
+constinit LinkedList<OldWindowSize> OldWindowSize::sList;
 
 NS_INTERFACE_MAP_BEGIN(nsDOMWindowUtils)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMWindowUtils)
@@ -1710,26 +1710,38 @@ Result<mozilla::LayoutDeviceRect, nsresult> nsDOMWindowUtils::ConvertTo(
     return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  
-  
-  
-  
-  
-  
   CSSRect rect(aX, aY, aWidth, aHeight);
-  rect = ViewportUtils::DocumentRelativeLayoutToVisual(rect, presShell);
 
+  nsRect appUnitsRect = CSSPixel::ToAppUnits(rect);
   nsPresContext* presContext = presShell->GetPresContext();
   MOZ_ASSERT(presContext);
+  nsPresContext* rootPresContext = presContext->GetRootPresContext();
+  MOZ_ASSERT(rootPresContext);
+
+  
+  
+  
+  
+  if (presContext != rootPresContext) {
+    nsIFrame* rootFrame = presShell->GetRootFrame();
+    nsIFrame* topRootFrame = rootPresContext->PresShell()->GetRootFrame();
+    if (rootFrame && topRootFrame) {
+      nsLayoutUtils::TransformRect(rootFrame, topRootFrame, appUnitsRect);
+    }
+  }
+
+  LayoutDeviceRect devPixelsRect = LayoutDeviceRect::FromAppUnits(
+      appUnitsRect, presContext->AppUnitsPerDevPixel());
+
+  
+  devPixelsRect =
+      ViewportUtils::DocumentRelativeLayoutToVisual(devPixelsRect, presShell);
 
   
   
   
   
   
-  nsRect appUnitsRect = CSSPixel::ToAppUnits(rect);
-  LayoutDeviceRect devPixelsRect = LayoutDeviceRect::FromAppUnits(
-      appUnitsRect, presContext->AppUnitsPerDevPixel());
   devPixelsRect =
       widget->WidgetToTopLevelWidgetTransform().TransformBounds(devPixelsRect);
 
