@@ -2531,7 +2531,8 @@ nsresult nsHttpChannel::CallOnStartRequest() {
                mConnectionInfo->OriginPort() !=
                    mConnectionInfo->DefaultPort()) {
       mResponseHead->SetContentType(nsLiteralCString(TEXT_PLAIN));
-    } else {
+    } else if (!mLoadInfo->GetSkipContentSniffing() ||
+               opaqueResponse == OpaqueResponse::Sniff) {
       
       mListener = new nsUnknownDecoder(mListener);
       unknownDecoderStarted = true;

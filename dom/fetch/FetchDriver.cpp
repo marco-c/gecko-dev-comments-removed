@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/FetchDriver.h"
 
 #include "Fetch.h"
@@ -660,6 +658,14 @@ nsresult FetchDriver::HttpFetch(
     }
   }
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  if (mRequest->Mode() != RequestMode::No_cors) {
+    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
+    loadInfo->SetSkipContentSniffing(true);
+  }
 
   if (mCSPEventListener) {
     nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();

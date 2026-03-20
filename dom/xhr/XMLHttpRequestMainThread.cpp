@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XMLHttpRequestMainThread.h"
 
 #include <algorithm>
@@ -3121,6 +3119,16 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
     mFlagSend = true;  
     aRv = MaybeSilentSendFailure(mErrorLoadDetail);
     return;
+  }
+
+  
+  
+  
+  
+  
+  if (mResponseType != XMLHttpRequestResponseType::Document) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    loadInfo->SetSkipContentSniffing(true);
   }
 
   
