@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef js_shadow_Shape_h
 #define js_shadow_Shape_h
 

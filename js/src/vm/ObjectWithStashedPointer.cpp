@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/ObjectWithStashedPointer.h"
 #include "jsapi.h"         
 #include "vm/JSContext.h"  

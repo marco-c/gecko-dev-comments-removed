@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_debugframe_h
 #define wasm_debugframe_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_WarpBuilderShared_h
 #define jit_WarpBuilderShared_h
 

@@ -6,14 +6,10 @@
 
 
 
-
-
 #ifndef gc_RelocationOverlay_h
 #define gc_RelocationOverlay_h
 
 #include "mozilla/Assertions.h"
-
-#include <stdint.h>
 
 #include "gc/Cell.h"
 

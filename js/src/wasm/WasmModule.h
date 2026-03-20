@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_module_h
 #define wasm_module_h
 

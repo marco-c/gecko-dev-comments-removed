@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_CheckIsObjectKind_h
 #define vm_CheckIsObjectKind_h
 

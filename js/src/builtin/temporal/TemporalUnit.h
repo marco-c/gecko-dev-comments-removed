@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_temporal_TemporalUnit_h
 #define builtin_temporal_TemporalUnit_h
 
@@ -13,6 +11,7 @@
 
 namespace js::temporal {
 enum class TemporalUnit {
+  Unset,
   Auto,
   Year,
   Month,
@@ -43,6 +42,7 @@ constexpr int64_t ToNanoseconds(TemporalUnit unit) {
     case TemporalUnit::Nanosecond:
       return 1;
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -67,6 +67,7 @@ constexpr int64_t ToMicroseconds(TemporalUnit unit) {
     case TemporalUnit::Microsecond:
       return 1;
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -90,6 +91,7 @@ constexpr int64_t ToMilliseconds(TemporalUnit unit) {
     case TemporalUnit::Millisecond:
       return 1;
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -112,6 +114,7 @@ constexpr int64_t ToSeconds(TemporalUnit unit) {
     case TemporalUnit::Second:
       return 1;
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -141,6 +144,7 @@ constexpr int64_t UnitsPerDay(TemporalUnit unit) {
     case TemporalUnit::Nanosecond:
       return 86'400'000'000'000;
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -152,6 +156,8 @@ constexpr int64_t UnitsPerDay(TemporalUnit unit) {
 
 constexpr const char* TemporalUnitToString(TemporalUnit unit) {
   switch (unit) {
+    case TemporalUnit::Unset:
+      return "unset";
     case TemporalUnit::Auto:
       return "auto";
     case TemporalUnit::Year:

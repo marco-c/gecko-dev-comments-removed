@@ -9,7 +9,6 @@
 
 
 
-
 function assertThrowsValue(f, val, msg) {
   try {
     f();

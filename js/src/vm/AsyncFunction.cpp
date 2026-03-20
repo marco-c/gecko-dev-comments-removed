@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/AsyncFunction.h"
 
 #include "mozilla/Maybe.h"

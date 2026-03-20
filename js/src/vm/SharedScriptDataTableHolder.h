@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SharedScriptDataTableHolder_h
 #define vm_SharedScriptDataTableHolder_h
 

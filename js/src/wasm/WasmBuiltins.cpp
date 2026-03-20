@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmBuiltins.h"
 
 #include "mozilla/Atomics.h"

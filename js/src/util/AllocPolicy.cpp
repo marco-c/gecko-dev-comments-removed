@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/AllocPolicy.h"
 
 #include "frontend/FrontendContext.h"  

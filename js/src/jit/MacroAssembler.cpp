@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/MacroAssembler-inl.h"
 
 #include "mozilla/FloatingPoint.h"

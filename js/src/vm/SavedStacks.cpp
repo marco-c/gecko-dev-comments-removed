@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/SavedStacks.h"
 
 #include "mozilla/Attributes.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_GCVariant_h
 #define js_GCVariant_h
 

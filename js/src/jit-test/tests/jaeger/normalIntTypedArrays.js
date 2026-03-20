@@ -1,5 +1,3 @@
-
-
 function testInt32Array(L) {
     var f = new Int32Array(8);
     assertEq(f[0], 0);

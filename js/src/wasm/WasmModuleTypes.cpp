@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmModuleTypes.h"
 
 #include <bit>

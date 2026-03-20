@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ObjectFlags_inl_h
 #define vm_ObjectFlags_inl_h
 

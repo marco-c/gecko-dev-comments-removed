@@ -16,7 +16,6 @@
 
 
 
-
 var BUGNUMBER = 68498;
 var summary = 'Testing calling obj.eval(str)';
 var statprefix = '; currently at expect[';

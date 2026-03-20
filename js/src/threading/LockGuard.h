@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef threading_LockGuard_h
 #define threading_LockGuard_h
 

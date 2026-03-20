@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/UbiNode.h"
 
 #include "mozilla/Assertions.h"

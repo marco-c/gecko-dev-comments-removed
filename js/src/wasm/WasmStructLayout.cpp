@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "wasm/WasmStructLayout.h"
 
 #include "mozilla/DebugOnly.h"

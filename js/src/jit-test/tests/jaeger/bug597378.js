@@ -1,4 +1,3 @@
-
 function f(a, b) {
     var o = a;
     var q = b;

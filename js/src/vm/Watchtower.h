@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Watchtower_h
 #define vm_Watchtower_h
 
@@ -38,7 +36,8 @@ class Watchtower {
   static bool watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
                                    HandleId id);
   static bool watchPropertyRemoveSlow(JSContext* cx, Handle<NativeObject*> obj,
-                                      HandleId id, PropertyInfo propInfo);
+                                      HandleId id, PropertyInfo propInfo,
+                                      bool* wasTrackedObjectFuseProp);
   static bool watchPropertyFlagsChangeSlow(JSContext* cx,
                                            Handle<NativeObject*> obj,
                                            HandleId id, PropertyInfo propInfo,
@@ -116,11 +115,14 @@ class Watchtower {
     return watchPropertyAddSlow(cx, obj, id);
   }
   static bool watchPropertyRemove(JSContext* cx, Handle<NativeObject*> obj,
-                                  HandleId id, PropertyInfo propInfo) {
+                                  HandleId id, PropertyInfo propInfo,
+                                  bool* wasTrackedObjectFuseProp) {
+    MOZ_ASSERT(!*wasTrackedObjectFuseProp);
     if (MOZ_LIKELY(!watchesPropertyRemove(obj))) {
       return true;
     }
-    return watchPropertyRemoveSlow(cx, obj, id, propInfo);
+    return watchPropertyRemoveSlow(cx, obj, id, propInfo,
+                                   wasTrackedObjectFuseProp);
   }
   static bool watchPropertyFlagsChange(JSContext* cx, Handle<NativeObject*> obj,
                                        HandleId id, PropertyInfo propInfo,

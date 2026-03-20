@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ArrayObject_inl_h
 #define vm_ArrayObject_inl_h
 

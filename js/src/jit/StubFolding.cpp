@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/StubFolding.h"
 
 #include "mozilla/Maybe.h"

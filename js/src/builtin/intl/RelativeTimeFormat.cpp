@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "builtin/intl/RelativeTimeFormat.h"
 
 #include "mozilla/Assertions.h"

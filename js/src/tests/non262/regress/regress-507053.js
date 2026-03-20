@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 507053;
 var summary = 'TM: invalid results with setting a closure variable in a loop'
 var actual = '';

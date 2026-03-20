@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_intl_Segmenter_h
 #define builtin_intl_Segmenter_h
 

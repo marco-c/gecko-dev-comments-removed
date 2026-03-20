@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_WasmBinaryTypes_h
 #define wasm_WasmBinaryTypes_h
 

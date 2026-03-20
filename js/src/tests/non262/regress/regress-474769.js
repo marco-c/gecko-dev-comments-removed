@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 474769;
 var summary = 'TM: nested type-unstable for loops';
 var actual = '';

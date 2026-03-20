@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_PromiseObject_h
 #define vm_PromiseObject_h
 

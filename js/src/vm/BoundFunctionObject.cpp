@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/BoundFunctionObject.h"
 
 #include <string_view>

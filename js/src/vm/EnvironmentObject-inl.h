@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_EnvironmentObject_inl_h
 #define vm_EnvironmentObject_inl_h
 

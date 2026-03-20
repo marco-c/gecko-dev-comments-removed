@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "builtin/intl/Segmenter.h"
 
 #include "mozilla/Assertions.h"

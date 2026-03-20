@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_ParallelMarking_h
 #define gc_ParallelMarking_h
 

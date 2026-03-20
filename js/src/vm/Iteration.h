@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Iteration_h
 #define vm_Iteration_h
 

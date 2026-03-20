@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_CallAndConstruct_h
 #define js_CallAndConstruct_h
 

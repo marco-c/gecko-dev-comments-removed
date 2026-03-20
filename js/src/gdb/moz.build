@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 GeckoProgram("gdb-tests", linkage=None)
 
@@ -10,8 +8,8 @@ include("../js-cxxflags.mozbuild")
 include("../js-standalone.mozbuild")
 
 SOURCES += [
-    
-    
+    # This file must not be unified with any of the test files, or the use()
+    # and breakpoint() functions might get optimized out.
     "gdb-tests.cpp"
 ]
 
@@ -36,16 +34,16 @@ UNIFIED_SOURCES += [
 SOURCES += ["tests/test-prettyprinters.cpp"]
 
 if CONFIG["CC_TYPE"] != "clang-cl":
-    
-    
-    
+    # Test expects to see pre-typedef names of base classes, but the compiler will
+    # normally omit those from the debuginfo. The current clang-cl does not support
+    # this option.
     SOURCES["tests/test-prettyprinters.cpp"].flags += [
         "-fno-eliminate-unused-debug-types",
     ]
 
 if CONFIG["CC_TYPE"] == "clang":
-    
-    
+    # Clang may complain that -fno-eliminate-unused-debug-types is unused when used
+    # in conjunction with other flags such as -gline-tables-only.
     SOURCES["tests/test-prettyprinters.cpp"].flags += [
         "-Qunused-arguments",
     ]

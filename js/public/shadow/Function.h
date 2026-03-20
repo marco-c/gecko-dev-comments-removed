@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_shadow_Function_h
 #define js_shadow_Function_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_ParseNodeVisitor_h
 #define frontend_ParseNodeVisitor_h
 

@@ -1,5 +1,3 @@
-
-
 function J(i) {
     
     if (i % 3)

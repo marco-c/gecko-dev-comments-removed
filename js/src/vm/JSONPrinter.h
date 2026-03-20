@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSONPrinter_h
 #define vm_JSONPrinter_h
 

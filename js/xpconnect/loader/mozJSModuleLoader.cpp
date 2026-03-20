@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptLoadRequest.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"

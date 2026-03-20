@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_builtins_h
 #define wasm_builtins_h
 

@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_instance_h
 #define wasm_instance_h
 

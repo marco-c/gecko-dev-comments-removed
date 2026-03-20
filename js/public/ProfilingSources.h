@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_ProfilingSources_h
 #define js_ProfilingSources_h
 

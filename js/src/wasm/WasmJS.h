@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_js_h
 #define wasm_js_h
 

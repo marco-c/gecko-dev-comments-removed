@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/Range.h"
 
 #include "xpcprivate.h"

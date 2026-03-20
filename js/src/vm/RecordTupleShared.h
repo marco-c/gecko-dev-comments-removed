@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_RecordTupleShared_h
 #define vm_RecordTupleShared_h
 

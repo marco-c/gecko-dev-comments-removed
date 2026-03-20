@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/UbiNodeCensus.h"
 
 #include "mozilla/ScopeExit.h"

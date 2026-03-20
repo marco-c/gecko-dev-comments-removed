@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/StencilObject.h"
 
 #include "mozilla/Assertions.h"     

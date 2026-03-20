@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_AsyncIteration_h
 #define vm_AsyncIteration_h
 

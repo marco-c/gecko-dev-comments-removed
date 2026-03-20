@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/SelfHosting.h"
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT

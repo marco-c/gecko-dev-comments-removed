@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_OffthreadSnapshot_h
 #define jit_OffthreadSnapshot_h
 

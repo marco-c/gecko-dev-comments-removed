@@ -4,7 +4,6 @@
 
 
 
-
 if (this.SharedArrayBuffer && this.Atomics) {
 
 

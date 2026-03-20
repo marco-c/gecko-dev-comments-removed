@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "util/DoubleToString.h"
 
 #include "mozilla/EndianUtils.h"

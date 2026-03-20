@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/ArgumentsObject-inl.h"
 
 #include "mozilla/Maybe.h"

@@ -16,8 +16,6 @@
 
 
 
-
-
 #include "nscore.h"
 #include "nsString.h"
 #include "mozilla/StringBuffer.h"

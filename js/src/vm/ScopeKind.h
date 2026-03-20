@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ScopeKind_h
 #define vm_ScopeKind_h
 

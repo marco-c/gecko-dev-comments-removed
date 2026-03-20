@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_TemplateObject_inl_h
 #define jit_TemplateObject_inl_h
 

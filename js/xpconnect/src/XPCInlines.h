@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef xpcinlines_h_
 #define xpcinlines_h_
 

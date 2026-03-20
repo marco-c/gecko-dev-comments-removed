@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/SharedArrayObject.h"
 
 #include "mozilla/Atomics.h"

@@ -11,7 +11,6 @@
 
 
 
-
 var BUGNUMBER = 89443;
 var summary = 'Testing this script will compile without stack overflow';
 

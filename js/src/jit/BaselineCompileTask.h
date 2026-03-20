@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_BaselineCompileTask_h
 #define jit_BaselineCompileTask_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "vm/Time.h"
 
 #ifdef SOLARIS

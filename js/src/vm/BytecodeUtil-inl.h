@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BytecodeUtil_inl_h
 #define vm_BytecodeUtil_inl_h
 

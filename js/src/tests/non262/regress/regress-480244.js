@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 480244;
 var summary = 'Do not assert: isInt32(*p)';
 var actual = '';

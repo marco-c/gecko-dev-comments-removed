@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ConstantCompareOperand_h
 #define vm_ConstantCompareOperand_h
 
@@ -26,7 +24,7 @@ namespace js {
 
 struct ConstantCompareOperand {
  public:
-  enum class EncodedType : uint16_t {
+  enum class EncodedType : uint8_t {
     Int32 = JSVAL_TYPE_INT32,
     Boolean = JSVAL_TYPE_BOOLEAN,
     Null = JSVAL_TYPE_NULL,
@@ -60,8 +58,7 @@ struct ConstantCompareOperand {
   }
   explicit ConstantCompareOperand(EncodedType type) : value_(encodeType(type)) {
     MOZ_ASSERT(type == EncodedType::Undefined || type == EncodedType::Null);
-    MOZ_ASSERT_IF(type == EncodedType::Undefined, this->isUndefined());
-    MOZ_ASSERT_IF(type == EncodedType::Null, this->isNull());
+    MOZ_ASSERT(type == this->type());
   }
 
   static ConstantCompareOperand fromRawValue(uint16_t value) {
@@ -76,20 +73,7 @@ struct ConstantCompareOperand {
     return static_cast<EncodedType>((value_ & MASK_TYPE) >> SHIFT_TYPE);
   }
 
-  bool isNumber() const { return type() == EncodedType::Int32; }
-  bool isBoolean() const { return type() == EncodedType::Boolean; }
-  bool isNullOrUndefined() const {
-    return type() == EncodedType::Undefined || type() == EncodedType::Null;
-  }
-  bool isUndefined() const { return type() == EncodedType::Undefined; }
-  bool isNull() const { return type() == EncodedType::Null; }
-
   int32_t toInt32() const {
-    MOZ_ASSERT(type() == EncodedType::Int32);
-    return static_cast<int8_t>(value_ & MASK_VALUE);
-  }
-
-  double toNumber() const {
     MOZ_ASSERT(type() == EncodedType::Int32);
     return static_cast<int8_t>(value_ & MASK_VALUE);
   }

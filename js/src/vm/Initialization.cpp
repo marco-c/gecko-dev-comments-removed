@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "js/Initialization.h"
 
 #include "mozilla/Assertions.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_LIR_h
 #define jit_LIR_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_ProfilingFrameIterator_h
 #define js_ProfilingFrameIterator_h
 

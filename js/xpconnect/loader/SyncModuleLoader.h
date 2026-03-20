@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_loader_SyncModuleLoader_h
 #define mozilla_loader_SyncModuleLoader_h
 

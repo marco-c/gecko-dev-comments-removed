@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/temporal/PlainMonthDay.h"
 
 #include "mozilla/Assertions.h"
@@ -79,12 +77,12 @@ static PlainMonthDayObject* CreateTemporalMonthDay(
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->setFixedSlot(PlainMonthDayObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(PlainMonthDayObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
 
   
-  object->setFixedSlot(PlainMonthDayObject::CALENDAR_SLOT,
-                       calendar.toSlotValue());
+  object->initFixedSlot(PlainMonthDayObject::CALENDAR_SLOT,
+                        calendar.toSlotValue());
 
   
   return object;
@@ -108,12 +106,12 @@ PlainMonthDayObject* js::temporal::CreateTemporalMonthDay(
 
   
   auto packedDate = PackedDate::pack(monthDay);
-  object->setFixedSlot(PlainMonthDayObject::PACKED_DATE_SLOT,
-                       PrivateUint32Value(packedDate.value));
+  object->initFixedSlot(PlainMonthDayObject::PACKED_DATE_SLOT,
+                        PrivateUint32Value(packedDate.value));
 
   
-  object->setFixedSlot(PlainMonthDayObject::CALENDAR_SLOT,
-                       monthDay.calendar().toSlotValue());
+  object->initFixedSlot(PlainMonthDayObject::CALENDAR_SLOT,
+                        monthDay.calendar().toSlotValue());
 
   
   return object;

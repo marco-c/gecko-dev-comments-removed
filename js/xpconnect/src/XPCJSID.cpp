@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "js/Object.h"              

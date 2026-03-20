@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SystemGlobal_h_
 #define SystemGlobal_h_
 

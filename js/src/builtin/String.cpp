@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/String.h"
 
 #include "mozilla/Attributes.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/MemoryMetrics.h"
 
 #include <algorithm>

@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef vm_InternalThreadPool_h
 #define vm_InternalThreadPool_h
 

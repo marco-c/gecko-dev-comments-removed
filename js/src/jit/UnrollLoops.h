@@ -2,12 +2,8 @@
 
 
 
-
-
 #ifndef jit_UnrollLoops_h
 #define jit_UnrollLoops_h
-
-#include <stdint.h>
 
 namespace js {
 namespace jit {

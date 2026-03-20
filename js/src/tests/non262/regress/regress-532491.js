@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 466128;
 var summary = 'Do not assert: staticLevel == script->staticLevel, at ../jsobj.cpp';
 var actual = '';

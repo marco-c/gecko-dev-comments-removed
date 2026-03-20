@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/IonCacheIRCompiler.h"
 #include "mozilla/Maybe.h"
 

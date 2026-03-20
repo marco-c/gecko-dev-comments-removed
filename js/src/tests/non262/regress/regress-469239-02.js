@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 469239;
 var summary = 'TM: Do not assert: ATOM_IS_STRING(atom)';
 var actual = '';

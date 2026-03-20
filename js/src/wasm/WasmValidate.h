@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_validate_h
 #define wasm_validate_h
 

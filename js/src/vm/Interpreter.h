@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Interpreter_h
 #define vm_Interpreter_h
 

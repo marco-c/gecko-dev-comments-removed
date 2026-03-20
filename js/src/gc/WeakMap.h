@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_WeakMap_h
 #define gc_WeakMap_h
 

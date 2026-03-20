@@ -6,7 +6,6 @@
 
 
 
-
 var hasSharedMemory = !!(this.SharedArrayBuffer &&
                          this.getSharedObject &&
                          this.setSharedObject);

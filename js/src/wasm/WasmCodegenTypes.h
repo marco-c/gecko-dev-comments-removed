@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_codegen_types_h
 #define wasm_codegen_types_h
 

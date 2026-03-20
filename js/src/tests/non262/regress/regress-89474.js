@@ -12,7 +12,6 @@
 
 
 
-
 var BUGNUMBER = 89474;
 var summary = "Testing the JS shell doesn't crash on it.item()";
 var cnTest = 'it.item()';

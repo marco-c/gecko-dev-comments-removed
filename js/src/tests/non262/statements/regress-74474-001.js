@@ -12,7 +12,6 @@
 
 
 
-
 var UBound = 0;
 var BUGNUMBER = 74474;
 var summary = 'Testing switch statements with duplicate labels';

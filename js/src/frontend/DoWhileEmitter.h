@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_DoWhileEmitter_h
 #define frontend_DoWhileEmitter_h
 

@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmLog.h"
 
 #include <stdio.h>

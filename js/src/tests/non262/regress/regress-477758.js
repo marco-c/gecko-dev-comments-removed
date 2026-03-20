@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 477758;
 var summary = 'TM: RegExp source';
 var actual = '';

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSAtomUtils_h
 #define vm_JSAtomUtils_h
 

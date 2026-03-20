@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef vm_AtomsTable_h
 #define vm_AtomsTable_h
 

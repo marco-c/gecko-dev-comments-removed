@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/CodeCoverage.h"
 
 #include "mozilla/Atomics.h"

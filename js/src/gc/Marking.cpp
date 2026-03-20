@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gc/Marking-inl.h"
 
 #include "mozilla/DebugOnly.h"

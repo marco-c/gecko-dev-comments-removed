@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_realm_h
 #define wasm_realm_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcselfhostedshmem_h_
 #define xpcselfhostedshmem_h_
 

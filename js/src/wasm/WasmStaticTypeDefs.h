@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_static_type_defs
 #define wasm_static_type_defs
 

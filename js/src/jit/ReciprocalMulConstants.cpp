@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/ReciprocalMulConstants.h"
 
 #include "mozilla/Assertions.h"

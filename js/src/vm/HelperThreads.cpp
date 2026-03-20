@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/HelperThreads.h"
 
 #include "mozilla/ReverseIterator.h"  

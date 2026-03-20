@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_NumberObject_inl_h
 #define vm_NumberObject_inl_h
 

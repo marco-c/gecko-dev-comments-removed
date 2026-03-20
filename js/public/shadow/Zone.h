@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_shadow_Zone_h
 #define js_shadow_Zone_h
 

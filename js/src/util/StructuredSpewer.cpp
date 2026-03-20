@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef JS_STRUCTURED_SPEW
 
 #  include "util/StructuredSpewer.h"

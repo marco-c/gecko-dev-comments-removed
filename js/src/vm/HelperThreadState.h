@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef vm_HelperThreadState_h
 #define vm_HelperThreadState_h
 

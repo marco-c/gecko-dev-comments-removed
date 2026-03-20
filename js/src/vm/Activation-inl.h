@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Activation_inl_h
 #define vm_Activation_inl_h
 

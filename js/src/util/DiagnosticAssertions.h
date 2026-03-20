@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_DiagnosticAssertions_h
 #define util_DiagnosticAssertions_h
 

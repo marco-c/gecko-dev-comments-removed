@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/intl/LocaleNegotiation.h"
 
 #include "mozilla/Assertions.h"

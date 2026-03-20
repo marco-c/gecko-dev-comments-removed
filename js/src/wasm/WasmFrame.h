@@ -259,8 +259,6 @@
 
 
 
-
-
 #ifndef wasm_frame_h
 #define wasm_frame_h
 

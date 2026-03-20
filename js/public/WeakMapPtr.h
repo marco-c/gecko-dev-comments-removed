@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_WeakMapPtr_h
 #define js_WeakMapPtr_h
 

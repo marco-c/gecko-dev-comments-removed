@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/StaticStrings.h"
 
 #include "mozilla/HashFunctions.h"  

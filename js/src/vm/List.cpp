@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/List-inl.h"
 
 using namespace js;

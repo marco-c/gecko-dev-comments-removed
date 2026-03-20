@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Activation-inl.h"
 
 #include "mozilla/Assertions.h"  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Scope.h"
 
 #include <new>

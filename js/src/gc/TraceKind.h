@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_TraceKind_h
 #define gc_TraceKind_h
 

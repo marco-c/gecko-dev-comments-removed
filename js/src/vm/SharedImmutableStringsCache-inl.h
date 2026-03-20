@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SharedImmutableStringsCache_inl_h
 #define vm_SharedImmutableStringsCache_inl_h
 

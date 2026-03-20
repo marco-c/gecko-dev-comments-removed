@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/temporal/Calendar.h"
 
 #include "mozilla/Assertions.h"

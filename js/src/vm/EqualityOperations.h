@@ -13,8 +13,6 @@
 
 
 
-
-
 #ifndef vm_EqualityOperations_h
 #define vm_EqualityOperations_h
 

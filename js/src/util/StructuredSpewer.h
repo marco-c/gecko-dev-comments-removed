@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_StructuredSpewer_h
 #define jit_StructuredSpewer_h
 

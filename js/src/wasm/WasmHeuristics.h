@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_WasmHeuristics_h
 #define wasm_WasmHeuristics_h
 

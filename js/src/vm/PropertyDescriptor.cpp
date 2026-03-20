@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/PropertyDescriptor.h"
 
 #include "mozilla/Maybe.h"  

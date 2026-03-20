@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_stubs_h
 #define wasm_stubs_h
 

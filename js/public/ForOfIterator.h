@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef js_ForOfIterator_h
 #define js_ForOfIterator_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef threading_ExclusiveData_h
 #define threading_ExclusiveData_h
 

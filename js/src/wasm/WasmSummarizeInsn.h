@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_WasmSummarizeInsn_h
 #define wasm_WasmSummarizeInsn_h
 

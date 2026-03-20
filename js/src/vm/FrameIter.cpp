@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/FrameIter-inl.h"
 
 #include "mozilla/Assertions.h"  

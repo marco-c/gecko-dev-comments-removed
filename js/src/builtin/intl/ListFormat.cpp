@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/intl/ListFormat.h"
 
 #include "mozilla/Assertions.h"

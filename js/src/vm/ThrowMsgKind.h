@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ThrowMsgKind_h
 #define vm_ThrowMsgKind_h
 

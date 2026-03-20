@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 #include "XPCWrapper.h"
 #include "js/CharacterEncoding.h"

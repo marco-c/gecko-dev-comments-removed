@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 482783;
 var summary = 'TM: Do not crash @ js_ConcatStrings';
 var actual = '';

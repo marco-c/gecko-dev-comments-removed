@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 478314;
 var summary = 'Do not assert: "need a way to EOT now, since this is trace end": 0';
 var actual = '';

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/PropertyAndElement.h"
 
 #include "mozilla/Assertions.h"  

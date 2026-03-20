@@ -74,8 +74,6 @@
 
 
 
-
-
 #include "vm/BigIntType.h"
 
 #include "mozilla/Casting.h"

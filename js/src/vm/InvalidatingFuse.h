@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_InvalidatingFuse_h
 #define vm_InvalidatingFuse_h
 

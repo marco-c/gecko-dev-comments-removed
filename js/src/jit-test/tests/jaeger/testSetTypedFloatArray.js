@@ -1,5 +1,3 @@
-
-
 function testSetTypedFloat32Array(k) {
     var ar = new Float32Array(8);
     ar[k+5] = { };

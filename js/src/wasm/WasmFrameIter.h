@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_frame_iter_h
 #define wasm_frame_iter_h
 

@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmJS.h"
 
 #include "mozilla/Maybe.h"

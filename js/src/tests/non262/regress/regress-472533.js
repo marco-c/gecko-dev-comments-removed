@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 472533;
 var summary = 'Do not crash with loop, replace, regexp';
 var actual = '';

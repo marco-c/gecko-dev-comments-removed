@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_SwitchEmitter_h
 #define frontend_SwitchEmitter_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef vm_ObjectOperations_inl_h
 #define vm_ObjectOperations_inl_h
 

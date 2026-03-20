@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ArrayBufferViewObject_h
 #define vm_ArrayBufferViewObject_h
 

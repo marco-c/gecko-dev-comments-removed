@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmGC.h"
 #include "wasm/WasmInstance.h"
 #include "jit/MacroAssembler-inl.h"

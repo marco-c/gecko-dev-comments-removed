@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_compile_h
 #define wasm_compile_h
 

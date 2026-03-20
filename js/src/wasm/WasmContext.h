@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_context_h
 #define wasm_context_h
 

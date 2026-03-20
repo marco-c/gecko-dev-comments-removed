@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_PortableMath_h
 #define util_PortableMath_h
 

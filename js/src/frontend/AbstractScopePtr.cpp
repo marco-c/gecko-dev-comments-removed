@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/AbstractScopePtr.h"
 
 #include "mozilla/Assertions.h"

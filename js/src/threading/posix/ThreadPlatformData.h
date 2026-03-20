@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef threading_posix_PlatformData_h
 #define threading_posix_PlatformData_h
 

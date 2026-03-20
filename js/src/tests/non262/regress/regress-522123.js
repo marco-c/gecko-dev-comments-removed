@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 522123;
 var summary = 'Indirect eval confuses scope chain';
 var actual = '';

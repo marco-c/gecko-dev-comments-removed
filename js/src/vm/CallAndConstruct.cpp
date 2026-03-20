@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/CallAndConstruct.h"
 
 #include "mozilla/Assertions.h"  

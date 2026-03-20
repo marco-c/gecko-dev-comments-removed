@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_binary_h
 #define wasm_binary_h
 

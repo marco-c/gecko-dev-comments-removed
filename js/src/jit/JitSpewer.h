@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_JitSpewer_h
 #define jit_JitSpewer_h
 

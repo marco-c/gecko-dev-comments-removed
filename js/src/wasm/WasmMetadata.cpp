@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "wasm/WasmMetadata.h"
 
 #include "mozilla/BinarySearch.h"

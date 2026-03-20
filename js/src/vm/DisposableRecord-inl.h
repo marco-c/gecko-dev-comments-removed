@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_DisposableRecord_inl_h
 #define vm_DisposableRecord_inl_h
 

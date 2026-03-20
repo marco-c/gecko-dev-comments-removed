@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_exception_h
 #define wasm_exception_h
 

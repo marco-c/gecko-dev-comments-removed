@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 #include "js/CallAndConstruct.h"  
 #include "js/Object.h"            

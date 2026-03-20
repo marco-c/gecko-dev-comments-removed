@@ -3,8 +3,6 @@
 
 
 
-
-
 var summary = 'Do not assert: v.isString()';
 var BUGNUMBER = 477053;
 var actual = '';

@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef _js_vm_Logging_h_
 #define _js_vm_Logging_h_
 

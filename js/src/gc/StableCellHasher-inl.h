@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_StableCellHasher_inl_h
 #define gc_StableCellHasher_inl_h
 

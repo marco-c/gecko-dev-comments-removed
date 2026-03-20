@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GuardFuse_h
 #define vm_GuardFuse_h
 

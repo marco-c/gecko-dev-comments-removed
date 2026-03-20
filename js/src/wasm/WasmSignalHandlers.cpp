@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmSignalHandlers.h"
 
 #include "mozilla/Casting.h"

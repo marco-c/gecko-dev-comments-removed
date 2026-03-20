@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcjsweakreference_h_
 #define xpcjsweakreference_h_
 

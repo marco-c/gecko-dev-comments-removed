@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/JSObject-inl.h"
 
 #include "mozilla/MemoryReporting.h"

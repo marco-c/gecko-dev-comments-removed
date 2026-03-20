@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/EqualityOperations.h"  
 
 #include "mozilla/Assertions.h"  

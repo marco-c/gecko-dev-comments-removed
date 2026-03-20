@@ -2,12 +2,11 @@
 
 
 
-
-
 #include "frontend/CallOrNewEmitter.h"
 
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/NameOpEmitter.h"
+#include "vm/ConstantCompareOperand.h"
 #include "vm/Opcodes.h"
 
 using namespace js;

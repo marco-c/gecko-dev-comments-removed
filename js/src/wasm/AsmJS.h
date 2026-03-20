@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_AsmJS_h
 #define wasm_AsmJS_h
 

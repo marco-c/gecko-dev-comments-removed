@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "threading/Mutex.h"
 
 using namespace js;

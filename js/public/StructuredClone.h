@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_StructuredClone_h
 #define js_StructuredClone_h
 

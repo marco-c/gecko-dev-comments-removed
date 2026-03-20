@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_PropOpEmitter_h
 #define frontend_PropOpEmitter_h
 

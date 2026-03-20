@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/AllocationLogging.h"
 
 #include "mozilla/Assertions.h"  

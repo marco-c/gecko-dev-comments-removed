@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_anyref_h
 #define wasm_anyref_h
 

@@ -4,7 +4,6 @@
 
 
 
-
 var DEBUG = false;
 
 function dprint(s) {
@@ -50,14 +49,14 @@ var mem = new Int32Array(getSharedObject());
 function dprint(s) {
     if (mem[2]) print(s);
 }
-assertEq(mem[0], 42);		
-assertEq(mem[1], 37);		
+assertEq(mem[0], 42);		// what was written in the main thread
+assertEq(mem[1], 37);		//   is read in the worker
 mem[1] = 1337;
 dprint("Sleeping for 2 seconds");
 sleep(2);
 dprint("Waking the main thread now");
 setSharedObject(null);
-assertEq(Atomics.notify(mem, 0, 1), 1); 
+assertEq(Atomics.notify(mem, 0, 1), 1); // Can fail spuriously but very unlikely
 `);
 
 var then = Date.now();
@@ -74,8 +73,8 @@ setSharedObject(mem.buffer);
 
 evalInWorker(`
 var mem = new Int32Array(getSharedObject());
-sleep(2);				
-assertEq(Atomics.notify(mem, 0), 1);	
+sleep(2);				// Probably long enough to avoid a spurious error next
+assertEq(Atomics.notify(mem, 0), 1);	// Last argument to notify should default to +Infinity
 `);
 
 var then = Date.now();

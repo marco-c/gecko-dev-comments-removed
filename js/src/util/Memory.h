@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_Memory_h
 #define util_Memory_h
 
@@ -11,7 +9,6 @@
 #include "mozilla/Attributes.h"
 
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 #include <type_traits>
 

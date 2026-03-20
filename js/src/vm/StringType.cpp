@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/StringType-inl.h"
 
 #include "mozilla/DebugOnly.h"

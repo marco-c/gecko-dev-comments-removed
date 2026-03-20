@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_Tenuring_h
 #define gc_Tenuring_h
 

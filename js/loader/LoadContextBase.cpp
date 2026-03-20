@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/loader/SyncModuleLoader.h"
 #include "mozilla/dom/WorkerLoadContext.h"
@@ -27,6 +25,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadContextBase)
 NS_IMPL_CYCLE_COLLECTION(LoadContextBase, mRequest)
 
 LoadContextBase::LoadContextBase(ContextKind kind) : mKind(kind) {}
+
+LoadContextBase::~LoadContextBase() = default;
 
 void LoadContextBase::SetRequest(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(!mRequest);

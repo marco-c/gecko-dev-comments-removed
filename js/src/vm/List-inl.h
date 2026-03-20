@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_List_inl_h
 #define vm_List_inl_h
 

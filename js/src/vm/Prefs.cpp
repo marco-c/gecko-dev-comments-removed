@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Prefs.h"
 
 #include "js/Initialization.h"

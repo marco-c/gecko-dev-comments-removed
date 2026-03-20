@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_TelemetryTimers_h
 #define js_TelemetryTimers_h
 

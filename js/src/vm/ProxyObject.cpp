@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/ProxyObject.h"
 
 #include "gc/GCProbes.h"

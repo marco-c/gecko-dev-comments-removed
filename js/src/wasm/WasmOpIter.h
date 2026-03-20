@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_op_iter_h
 #define wasm_op_iter_h
 

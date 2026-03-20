@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_expr_type_h
 #define wasm_expr_type_h
 

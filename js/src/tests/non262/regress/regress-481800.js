@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 481800;
 var summary = 'TM: Do not assert: (!lhs->isQuad() && !rhs->isQuad()) || (lhs->isQuad() && rhs->isQuad())';
 var actual = '';

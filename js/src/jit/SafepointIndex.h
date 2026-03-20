@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_SafepointIndex_h
 #define jit_SafepointIndex_h
 

@@ -4,7 +4,6 @@
 
 
 
-
 var BUGNUMBER = 474771;
 var summary = 'gczeal, prototype mangling, for..in';
 var actual = '';

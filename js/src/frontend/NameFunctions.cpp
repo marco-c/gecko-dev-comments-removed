@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/NameFunctions.h"
 
 #include "mozilla/ScopeExit.h"

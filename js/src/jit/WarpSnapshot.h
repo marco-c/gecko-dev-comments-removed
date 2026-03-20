@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_WarpSnapshot_h
 #define jit_WarpSnapshot_h
 

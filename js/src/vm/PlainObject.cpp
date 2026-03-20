@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/PlainObject-inl.h"
 
 #include "mozilla/Assertions.h"  

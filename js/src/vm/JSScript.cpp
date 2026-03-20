@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/JSScript-inl.h"
 
 #include "mozilla/ArrayUtils.h"

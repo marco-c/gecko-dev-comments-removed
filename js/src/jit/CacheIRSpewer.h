@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_CacheIRSpewer_h
 #define jit_CacheIRSpewer_h
 

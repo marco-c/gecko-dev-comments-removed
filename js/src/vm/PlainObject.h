@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_PlainObject_h
 #define vm_PlainObject_h
 

@@ -10,8 +10,6 @@
 
 
 
-
-
 #include "vm/PortableBaselineInterpret.h"
 
 #include "mozilla/Maybe.h"

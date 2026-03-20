@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/friend/DumpFunctions.h"
 
 #include "mozilla/Maybe.h"  

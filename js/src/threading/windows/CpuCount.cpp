@@ -2,7 +2,6 @@
 
 
 
-
 #include "threading/CpuCount.h"
 
 #include "util/WindowsWrapper.h"

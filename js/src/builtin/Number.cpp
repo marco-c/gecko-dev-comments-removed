@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "builtin/Number.h"
 
 #include "mozilla/Casting.h"

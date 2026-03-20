@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "vm/Iteration.h"
 
 #include "mozilla/ArrayUtils.h"

@@ -7,8 +7,6 @@
 
 
 
-
-
 (function() {
   const undefined = void 0;
 

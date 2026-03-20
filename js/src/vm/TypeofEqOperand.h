@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_TypeofEqOperand_h
 #define vm_TypeofEqOperand_h
 

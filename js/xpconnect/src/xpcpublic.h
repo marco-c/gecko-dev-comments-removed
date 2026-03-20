@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcpublic_h
 #define xpcpublic_h
 

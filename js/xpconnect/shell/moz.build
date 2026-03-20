@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 GeckoProgram("xpcshell", linkage="dependent")
 
@@ -28,14 +26,14 @@ LOCAL_INCLUDES += [
 ]
 
 if CONFIG["CC_TYPE"] == "clang-cl":
-    
-    
+    # Always enter a Windows program through wmain, whether or not we're
+    # a console application.
     WIN32_EXE_LDFLAGS += ["-ENTRY:wmainCRTStartup"]
 
-
+# DELAYLOAD_DLLS in this block ensure that the DLL blocklist initializes
 if CONFIG["OS_ARCH"] == "WINNT":
     if CONFIG["MOZ_SANDBOX"]:
-        
+        # For sandbox includes and the include dependencies those have
         LOCAL_INCLUDES += [
             "/security/sandbox/chromium",
             "/security/sandbox/chromium-shim",
@@ -66,8 +64,8 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "xul.dll",
     ]
 
-    
-    
+    # Don't build xpcshell.exe with CETCOMPAT, because we need to be able to
+    # only enable it for processes that are not using JIT in xul.dll.
     LINK_FLAGS["CETCOMPAT"] = []
 
 if CONFIG["OS_TARGET"] == "Darwin":

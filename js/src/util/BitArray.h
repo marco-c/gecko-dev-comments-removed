@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef util_BitArray_h
 #define util_BitArray_h
 

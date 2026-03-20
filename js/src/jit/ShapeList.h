@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_ShapeList_h
 #define jit_ShapeList_h
 

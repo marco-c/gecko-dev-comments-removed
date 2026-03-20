@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef gc_MaybeRooted_h
 #define gc_MaybeRooted_h
 

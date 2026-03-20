@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_AsyncFunction_h
 #define vm_AsyncFunction_h
 

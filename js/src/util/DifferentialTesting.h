@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef util_DifferentialTesting_h
 #define util_DifferentialTesting_h
 

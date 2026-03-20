@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/JSContext-inl.h"
 
 #include "mozilla/CheckedInt.h"

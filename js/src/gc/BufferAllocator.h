@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef gc_BufferAllocator_h
 #define gc_BufferAllocator_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "js/friend/WindowProxy.h"
 
 #include "mozilla/Assertions.h"  

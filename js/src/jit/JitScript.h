@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_JitScript_h
 #define jit_JitScript_h
 

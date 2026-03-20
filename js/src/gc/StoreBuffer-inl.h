@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_StoreBuffer_inl_h
 #define gc_StoreBuffer_inl_h
 

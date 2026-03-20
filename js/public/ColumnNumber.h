@@ -23,7 +23,6 @@
 
 
 
-
 #ifndef js_ColumnNumber_h
 #define js_ColumnNumber_h
 

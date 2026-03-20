@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_Cell_h
 #define gc_Cell_h
 

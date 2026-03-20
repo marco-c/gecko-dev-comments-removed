@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_temporal_TemporalNow_h
 #define builtin_temporal_TemporalNow_h
 

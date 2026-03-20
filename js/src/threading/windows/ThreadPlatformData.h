@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef threading_windows_PlatformData_h
 #define threading_windows_PlatformData_h
 

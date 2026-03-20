@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/JitActivation.h"
 
 #include "mozilla/Assertions.h"  

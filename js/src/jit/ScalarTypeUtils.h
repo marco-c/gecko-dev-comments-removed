@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_ScalarTypeUtils_h
 #define jit_ScalarTypeUtils_h
 
@@ -22,11 +20,9 @@ namespace jit {
 
 [[nodiscard]] inline bool ArrayOffsetFitsInInt32(int32_t index,
                                                  Scalar::Type type,
-                                                 int32_t offsetAdjustment,
                                                  int32_t* offset) {
   mozilla::CheckedInt<int32_t> val = index;
   val *= Scalar::byteSize(type);
-  val += offsetAdjustment;
   if (!val.isValid() || val.value() < 0) {
     return false;
   }

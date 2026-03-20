@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 465567;
 var summary = 'TM: Weirdness with var, let, multiple assignments';
 var actual = '';

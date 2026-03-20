@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "debugger/Environment-inl.h"
 
 #include "mozilla/Assertions.h"  

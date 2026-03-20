@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_WindowsWrapper_h
 #define util_WindowsWrapper_h
 

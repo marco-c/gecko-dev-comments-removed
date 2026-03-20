@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_Barrier_h
 #define gc_Barrier_h
 

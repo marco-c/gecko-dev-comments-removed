@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_TracingAPI_h
 #define js_TracingAPI_h
 

@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef gc_TraceMethods_inl_h
 #define gc_TraceMethods_inl_h
 

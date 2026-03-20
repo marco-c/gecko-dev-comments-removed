@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_code_h
 #define wasm_code_h
 

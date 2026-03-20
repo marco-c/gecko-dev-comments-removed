@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_log_h
 #define wasm_log_h
 

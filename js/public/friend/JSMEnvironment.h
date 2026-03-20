@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef js_friend_JSMEnvironment_h
 #define js_friend_JSMEnvironment_h
 

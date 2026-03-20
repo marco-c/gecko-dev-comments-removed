@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmBCFrame.h"
 
 #include "mozilla/Likely.h"

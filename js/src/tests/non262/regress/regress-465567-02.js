@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 465567;
 var summary = 'TM: Do not assert: JSVAL_TAG(v) == JSVAL_OBJECT';
 var actual = '';

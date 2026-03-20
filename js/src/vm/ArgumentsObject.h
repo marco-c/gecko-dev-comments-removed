@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ArgumentsObject_h
 #define vm_ArgumentsObject_h
 

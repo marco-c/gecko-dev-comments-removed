@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "util/Text.h"
 
 #include "mozilla/Assertions.h"

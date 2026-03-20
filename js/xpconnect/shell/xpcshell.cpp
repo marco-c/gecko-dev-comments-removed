@@ -4,8 +4,6 @@
 
 
 
-
-
 #include <stdio.h>
 
 #include "mozilla/Bootstrap.h"

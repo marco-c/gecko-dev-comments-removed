@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_NameCollections_h
 #define frontend_NameCollections_h
 

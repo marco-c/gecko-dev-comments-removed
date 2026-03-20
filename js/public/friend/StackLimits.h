@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_friend_StackLimits_h
 #define js_friend_StackLimits_h
 

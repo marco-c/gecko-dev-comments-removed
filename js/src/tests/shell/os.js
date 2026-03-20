@@ -4,7 +4,6 @@
 
 
 
-
 var pid = os.getpid();
 assertEq(pid > 0, true);
 

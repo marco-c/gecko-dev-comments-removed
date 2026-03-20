@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/ForOfIterator.h"
 
 #include "js/Exception.h"

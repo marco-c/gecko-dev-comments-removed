@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmTable.h"
 
 #include "mozilla/CheckedInt.h"

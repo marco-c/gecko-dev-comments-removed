@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Stack-inl.h"
 
 #include "mozilla/Maybe.h"  

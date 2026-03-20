@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/AsyncEmitter.h"
 
 #include "mozilla/Assertions.h"  

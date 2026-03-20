@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_Instance_inl_h
 #define wasm_Instance_inl_h
 

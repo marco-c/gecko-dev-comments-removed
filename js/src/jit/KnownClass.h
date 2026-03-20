@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_KnownClass_h
 #define jit_KnownClass_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "threading/Thread.h"
 #include "mozilla/Assertions.h"
 

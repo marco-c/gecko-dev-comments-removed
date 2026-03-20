@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jsapi-tests/tests.h"
 
 #include "mozilla/ScopeExit.h"

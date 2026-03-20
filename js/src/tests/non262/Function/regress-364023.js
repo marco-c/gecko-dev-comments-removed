@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 364023;
 var summary = 'Do not crash in JS::GetPrivate';
 var actual = 'No Crash';

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_InlineScriptTree_h
 #define jit_InlineScriptTree_h
 

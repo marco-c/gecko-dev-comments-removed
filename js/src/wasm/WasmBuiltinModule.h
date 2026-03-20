@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_builtin_module_h
 #define wasm_builtin_module_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/RegExpObject.h"
 
 #include "mozilla/MemoryReporting.h"

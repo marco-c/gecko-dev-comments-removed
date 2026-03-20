@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_UsingHint_h
 #define vm_UsingHint_h
 

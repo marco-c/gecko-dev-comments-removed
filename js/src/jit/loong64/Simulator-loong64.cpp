@@ -25,8 +25,6 @@
 
 
 
-
-
 #include "jit/loong64/Simulator-loong64.h"
 
 #include <cinttypes>

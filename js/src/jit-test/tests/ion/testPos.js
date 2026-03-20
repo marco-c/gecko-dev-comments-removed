@@ -1,4 +1,3 @@
-
 function f_int(x) {
     return +x;
 }

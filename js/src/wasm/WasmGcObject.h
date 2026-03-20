@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_WasmGcObject_h
 #define wasm_WasmGcObject_h
 

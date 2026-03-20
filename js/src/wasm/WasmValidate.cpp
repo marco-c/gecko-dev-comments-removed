@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmValidate.h"
 
 #include "mozilla/CheckedInt.h"

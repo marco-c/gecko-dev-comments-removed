@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_instance_data_h
 #define wasm_instance_data_h
 

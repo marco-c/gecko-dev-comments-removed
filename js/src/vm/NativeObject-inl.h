@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_NativeObject_inl_h
 #define vm_NativeObject_inl_h
 

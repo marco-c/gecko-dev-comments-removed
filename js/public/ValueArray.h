@@ -4,15 +4,11 @@
 
 
 
-
-
 #ifndef js_ValueArray_h
 #define js_ValueArray_h
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-
-#include <stdint.h>  
 
 #include "js/CallArgs.h"    
 #include "js/GCVector.h"    

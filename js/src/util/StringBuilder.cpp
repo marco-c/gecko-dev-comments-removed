@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "util/StringBuilder.h"
 
 #include "mozilla/Latin1.h"

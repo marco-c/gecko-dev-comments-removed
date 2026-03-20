@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 507295;
 var summary = 'TM: assert with using result of assignment to closure var'
 var actual = '';

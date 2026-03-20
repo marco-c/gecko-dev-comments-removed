@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ProxyObject_h
 #define vm_ProxyObject_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_Stencil_h
 #define frontend_Stencil_h
 

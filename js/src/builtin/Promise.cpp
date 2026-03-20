@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/Promise.h"
 
 #include "mozilla/Atomics.h"

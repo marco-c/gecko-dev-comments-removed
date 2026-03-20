@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 470187;
 var summary = 'Do not assert: entry->kpc == (jsbytecode*) atoms[index]';
 var actual = '';

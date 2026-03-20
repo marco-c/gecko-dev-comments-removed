@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vtune_vtunewrapper_h
 #define vtune_vtunewrapper_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_ForOfLoopControl_h
 #define frontend_ForOfLoopControl_h
 

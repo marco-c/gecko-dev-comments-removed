@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_loong64_CodeGenerator_loong64_h
 #define jit_loong64_CodeGenerator_loong64_h
 

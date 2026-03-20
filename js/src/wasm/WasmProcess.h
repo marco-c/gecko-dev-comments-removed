@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_process_h
 #define wasm_process_h
 

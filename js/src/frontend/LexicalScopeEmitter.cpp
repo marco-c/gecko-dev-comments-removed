@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/LexicalScopeEmitter.h"
 
 using namespace js;

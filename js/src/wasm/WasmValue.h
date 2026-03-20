@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_val_h
 #define wasm_val_h
 

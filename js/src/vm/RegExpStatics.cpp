@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/RegExpStatics.h"
 
 #include "gc/Zone.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/DOMEventDispatch.h"
 #include "js/Printf.h"
 #include "vm/JSContext.h"

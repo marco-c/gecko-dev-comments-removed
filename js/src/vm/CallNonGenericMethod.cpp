@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/CallNonGenericMethod.h"
 
 #include "proxy/Proxy.h"

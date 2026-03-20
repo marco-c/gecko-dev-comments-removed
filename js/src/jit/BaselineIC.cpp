@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/BaselineIC.h"
 
 #include "mozilla/DebugOnly.h"
@@ -22,6 +20,7 @@
 #include "jit/PerfSpewer.h"
 #include "jit/SharedICHelpers.h"
 #include "jit/SharedICRegisters.h"
+#include "jit/StubFolding.h"
 #include "jit/VMFunctions.h"
 #include "js/Conversions.h"
 #include "js/friend/ErrorMessages.h"  

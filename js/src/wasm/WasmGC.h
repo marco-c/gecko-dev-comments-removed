@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_gc_h
 #define wasm_gc_h
 

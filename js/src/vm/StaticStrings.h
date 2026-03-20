@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_StaticStrings_h
 #define vm_StaticStrings_h
 

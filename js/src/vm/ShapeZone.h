@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ShapeZone_h
 #define vm_ShapeZone_h
 

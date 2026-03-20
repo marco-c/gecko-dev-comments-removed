@@ -4,7 +4,6 @@
 
 
 
-
 var BUGNUMBER = 479430;
 var summary = 'Missing operation callback checks';
 var actual = '';

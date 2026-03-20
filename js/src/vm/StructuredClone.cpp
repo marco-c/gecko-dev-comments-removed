@@ -24,8 +24,6 @@
 
 
 
-
-
 #include "js/StructuredClone.h"
 
 #include "mozilla/Casting.h"

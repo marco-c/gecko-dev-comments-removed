@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_DataViewObject_h
 #define vm_DataViewObject_h
 

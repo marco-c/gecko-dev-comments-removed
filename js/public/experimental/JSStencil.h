@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_experimental_JSStencil_h
 #define js_experimental_JSStencil_h
 

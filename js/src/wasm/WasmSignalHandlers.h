@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_signal_handlers_h
 #define wasm_signal_handlers_h
 

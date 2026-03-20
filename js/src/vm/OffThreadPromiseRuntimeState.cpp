@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/OffThreadPromiseRuntimeState.h"
 
 #include "mozilla/Assertions.h"  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef threading_ThreadId_h
 #define threading_ThreadId_h
 

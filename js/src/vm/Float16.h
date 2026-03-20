@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Float16_h
 #define vm_Float16_h
 

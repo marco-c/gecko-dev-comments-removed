@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/friend/UsageStatistics.h"
 
 #include "vm/JSContext.h"  

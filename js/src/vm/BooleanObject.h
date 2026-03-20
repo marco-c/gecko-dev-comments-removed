@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BooleanObject_h
 #define vm_BooleanObject_h
 

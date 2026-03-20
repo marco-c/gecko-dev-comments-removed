@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_WaitCallbacks_h
 #define js_WaitCallbacks_h
 

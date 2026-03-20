@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_IsGivenTypeObject_inl_h
 #define vm_IsGivenTypeObject_inl_h
 

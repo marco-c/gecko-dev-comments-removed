@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_TaggedParserAtomIndexHasher_h
 #define frontend_TaggedParserAtomIndexHasher_h
 

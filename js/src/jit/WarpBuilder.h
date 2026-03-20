@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_WarpBuilder_h
 #define jit_WarpBuilder_h
 

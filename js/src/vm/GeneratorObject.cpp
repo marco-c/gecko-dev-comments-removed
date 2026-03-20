@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/GeneratorObject.h"
 
 #include "frontend/ParserAtom.h"

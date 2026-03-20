@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 469547;
 var summary = 'Do not crash with: for (let [,] of [[], [], null]) {}';
 var actual = '';

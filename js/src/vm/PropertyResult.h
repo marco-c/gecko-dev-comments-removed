@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_PropertyResult_h
 #define vm_PropertyResult_h
 

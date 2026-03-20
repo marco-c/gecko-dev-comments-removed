@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_shareable_h
 #define wasm_shareable_h
 

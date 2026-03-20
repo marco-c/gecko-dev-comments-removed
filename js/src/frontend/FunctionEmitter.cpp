@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/FunctionEmitter.h"
 
 #include "mozilla/Assertions.h"  

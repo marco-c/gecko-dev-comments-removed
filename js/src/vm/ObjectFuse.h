@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ObjectFuse_h
 #define vm_ObjectFuse_h
 

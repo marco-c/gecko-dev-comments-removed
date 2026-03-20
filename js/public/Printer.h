@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_Printer_h
 #define js_Printer_h
 

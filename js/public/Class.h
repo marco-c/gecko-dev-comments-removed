@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_Class_h
 #define js_Class_h
 

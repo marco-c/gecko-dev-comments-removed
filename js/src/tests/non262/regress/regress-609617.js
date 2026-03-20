@@ -6,7 +6,6 @@
 
 
 
-
 var actual;
 var expect = "pass";
 

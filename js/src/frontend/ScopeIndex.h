@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_ScopeIndex_h
 #define frontend_ScopeIndex_h
 

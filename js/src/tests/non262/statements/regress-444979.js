@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 444979;
 var summary = 'switch -0 is same as switch 0';
 var actual = '';

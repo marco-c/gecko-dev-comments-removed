@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_WasmModule_h
 #define js_WasmModule_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/SharedContext.h"
 
 #include "frontend/CompilationStencil.h"

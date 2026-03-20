@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_WrapperObject_h
 #define vm_WrapperObject_h
 

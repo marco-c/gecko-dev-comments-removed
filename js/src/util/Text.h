@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_Text_h
 #define util_Text_h
 

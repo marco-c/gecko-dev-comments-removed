@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef vm_RegExpShared_h
 #define vm_RegExpShared_h
 

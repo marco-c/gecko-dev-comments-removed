@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_experimental_CodeCoverage_h
 #define js_experimental_CodeCoverage_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_temporal_Duration_h
 #define builtin_temporal_Duration_h
 

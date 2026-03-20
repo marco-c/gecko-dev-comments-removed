@@ -1,5 +1,3 @@
-
-
 function testInt8Array(L) {
     var f = new Int8Array(8);
     assertEq(f[0], 0);

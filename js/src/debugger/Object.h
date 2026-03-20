@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef debugger_Object_h
 #define debugger_Object_h
 

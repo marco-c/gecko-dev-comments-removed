@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 #include "jsfriendapi.h"
 #include "js/Object.h"  

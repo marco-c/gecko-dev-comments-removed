@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_FrameIter_h
 #define vm_FrameIter_h
 

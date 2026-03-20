@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Stack_inl_h
 #define vm_Stack_inl_h
 

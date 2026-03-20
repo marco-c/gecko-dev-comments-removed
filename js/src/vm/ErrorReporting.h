@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ErrorReporting_h
 #define vm_ErrorReporting_h
 

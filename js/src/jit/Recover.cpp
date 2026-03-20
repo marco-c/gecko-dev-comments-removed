@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/Recover.h"
 
 #include "mozilla/Casting.h"

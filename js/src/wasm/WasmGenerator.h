@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_generator_h
 #define wasm_generator_h
 

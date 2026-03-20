@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/TaggedProto.h"
 
 #include "gc/Barrier.h"

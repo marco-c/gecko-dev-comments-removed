@@ -1,5 +1,4 @@
 
-
 function f(a, b, c) {
     if (!a.__SSi) {
         throw Components.returnCode = Cr.NS_ERROR_INVALID_ARG;

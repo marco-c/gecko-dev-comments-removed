@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/scache/StartupCache.h"
 
 #include "jsapi.h"

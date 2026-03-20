@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Compression.h"
 
 #include "mozilla/DebugOnly.h"

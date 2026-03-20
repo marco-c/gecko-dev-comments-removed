@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/ProfilingStack.h"
 
 #include "mozilla/IntegerRange.h"

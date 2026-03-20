@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/JSON.h"
 
 #include "mozilla/CheckedInt.h"

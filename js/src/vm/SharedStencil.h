@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SharedStencil_h
 #define vm_SharedStencil_h
 

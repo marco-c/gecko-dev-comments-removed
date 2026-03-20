@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmFeatures.h"
 
 #include "jit/AtomicOperations.h"

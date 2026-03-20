@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_FinalizationObservers_h
 #define gc_FinalizationObservers_h
 

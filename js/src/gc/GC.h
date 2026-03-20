@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef gc_GC_h
 #define gc_GC_h
 

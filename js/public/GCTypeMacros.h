@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef GCTypeMacros_h
 #define GCTypeMacros_h
 

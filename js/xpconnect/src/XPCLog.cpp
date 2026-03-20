@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "XPCLog.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"

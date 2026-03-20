@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/MemoryReporting.h"
 #include "xpcprivate.h"
 #include "XPCMaps.h"

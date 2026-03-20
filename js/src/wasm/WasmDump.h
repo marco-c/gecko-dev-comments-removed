@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_dump_h
 #define wasm_dump_h
 

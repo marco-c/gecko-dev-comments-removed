@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_DateObject_h_
 #define vm_DateObject_h_
 

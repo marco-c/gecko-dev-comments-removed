@@ -2,8 +2,6 @@
 
 
 
-
-
 #define ANNOTATE(property) __attribute__((annotate(property)))
 
 namespace js {

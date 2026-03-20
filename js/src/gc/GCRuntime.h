@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_GCRuntime_h
 #define gc_GCRuntime_h
 

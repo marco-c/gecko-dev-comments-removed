@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSFunction_inl_h
 #define vm_JSFunction_inl_h
 

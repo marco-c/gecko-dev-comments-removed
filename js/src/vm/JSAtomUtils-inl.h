@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSAtomUtils_inl_h
 #define vm_JSAtomUtils_inl_h
 

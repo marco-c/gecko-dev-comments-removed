@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_type_decls_h
 #define wasm_type_decls_h
 

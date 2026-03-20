@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozJSSubScriptLoader.h"
 #include "js/experimental/JSStencil.h"
 #include "mozJSModuleLoader.h"

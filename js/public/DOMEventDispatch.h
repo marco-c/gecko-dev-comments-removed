@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_DOMEventDispatch_h
 #define js_DOMEventDispatch_h
 

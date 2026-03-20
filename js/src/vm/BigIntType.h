@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BigIntType_h
 #define vm_BigIntType_h
 

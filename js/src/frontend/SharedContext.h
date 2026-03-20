@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_SharedContext_h
 #define frontend_SharedContext_h
 

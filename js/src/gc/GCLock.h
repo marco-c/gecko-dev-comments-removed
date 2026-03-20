@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef gc_GCLock_h
 #define gc_GCLock_h
 

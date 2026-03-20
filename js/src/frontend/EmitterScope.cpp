@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/EmitterScope.h"
 
 #include "frontend/AbstractScopePtr.h"

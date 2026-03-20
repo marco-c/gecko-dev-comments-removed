@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmBuiltinModule.h"
 
 #include "util/Text.h"

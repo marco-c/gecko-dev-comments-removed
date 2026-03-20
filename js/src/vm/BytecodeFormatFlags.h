@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BytecodeFormatFlags_h
 #define vm_BytecodeFormatFlags_h
 

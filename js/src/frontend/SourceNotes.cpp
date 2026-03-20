@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "frontend/SourceNotes.h"
 
 const js::SrcNote::Spec js::SrcNote::specs_[] = {

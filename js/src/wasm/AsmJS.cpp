@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/AsmJS.h"
 
 #include "mozilla/Attributes.h"

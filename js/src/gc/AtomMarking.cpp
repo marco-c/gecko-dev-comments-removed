@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gc/AtomMarking-inl.h"
 
 #include <type_traits>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/InternalThreadPool.h"
 
 #include "mozilla/TimeStamp.h"

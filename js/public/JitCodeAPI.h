@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_JitCodeAPI_h
 #define js_JitCodeAPI_h
 

@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef js_PropertyDescriptor_h
 #define js_PropertyDescriptor_h
 

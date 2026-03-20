@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BuiltinObjectKind_h
 #define vm_BuiltinObjectKind_h
 

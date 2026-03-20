@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SharedMem_h
 #define vm_SharedMem_h
 

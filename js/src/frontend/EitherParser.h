@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef frontend_EitherParser_h
 #define frontend_EitherParser_h
 

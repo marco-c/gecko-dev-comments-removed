@@ -24,7 +24,6 @@
 
 
 
-
 var i2 = 3011;
 var n = new Array (i2);
 var err_num = 0;

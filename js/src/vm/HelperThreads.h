@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef vm_HelperThreads_h
 #define vm_HelperThreads_h
 

@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_memory_h
 #define wasm_memory_h
 

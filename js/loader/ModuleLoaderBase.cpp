@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoProfiler.h"
 #include "LoadedScript.h"
 #include "ModuleLoadRequest.h"

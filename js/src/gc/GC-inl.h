@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gc_GC_inl_h
 #define gc_GC_inl_h
 

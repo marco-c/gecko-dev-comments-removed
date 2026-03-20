@@ -16,8 +16,6 @@
 
 
 
-
-
 #ifndef wasm_wasm_baseline_stk_h
 #define wasm_wasm_baseline_stk_h
 

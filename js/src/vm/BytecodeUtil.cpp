@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/BytecodeUtil-inl.h"
 
 #define __STDC_FORMAT_MACROS

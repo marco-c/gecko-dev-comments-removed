@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_HelperThreadTask_h
 #define vm_HelperThreadTask_h
 

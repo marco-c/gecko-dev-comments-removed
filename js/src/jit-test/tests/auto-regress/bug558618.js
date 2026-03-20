@@ -1,7 +1,6 @@
 
 
 
-
 function f() {
     this.search = function(a, b, c) {
         arguments[3] = { }

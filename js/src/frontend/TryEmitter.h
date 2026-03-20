@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef frontend_TryEmitter_h
 #define frontend_TryEmitter_h
 

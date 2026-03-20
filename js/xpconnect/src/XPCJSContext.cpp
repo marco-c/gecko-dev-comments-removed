@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/UniquePtr.h"
 
 #include "xpcprivate.h"

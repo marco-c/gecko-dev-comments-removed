@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_CallNonGenericMethod_h
 #define js_CallNonGenericMethod_h
 

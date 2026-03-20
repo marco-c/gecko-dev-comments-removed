@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_intl_IntlMathematicalValue_h
 #define builtin_intl_IntlMathematicalValue_h
 

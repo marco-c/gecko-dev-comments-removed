@@ -1,55 +1,54 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * SpiderMonkey error messages.
+ *
+ * These are largely for internal use, but they're exposed publicly as a
+ * "friend" interface for embedders that want to replicate SpiderMonkey's exact
+ * error message behavior in particular circumstances.  All names, arities,
+ * types, and messages are subject to change or removal.  However, the
+ * longer-lived the error message, the less likely it is to change.
+ */
 
+/*
+ * This is the JavaScript error message file.
+ *
+ * The format for each JS error message is:
+ *
+ * MSG_DEF(<SYMBOLIC_NAME>, <ARGUMENT_COUNT>, <EXCEPTION_NAME>,
+ *         <FORMAT_STRING>)
+ *
+ * where ;
+ * <SYMBOLIC_NAME> is a legal C identifer that will be used in the
+ * JS engine source.
+ *
+ * <ARGUMENT_COUNT> is an integer literal specifying the total number of
+ * replaceable arguments in the following format string.
+ *
+ * <EXCEPTION_NAME> is an enum JSExnType value, defined in js/ErrorReport.h.
+ *
+ * <FORMAT_STRING> is a string literal, optionally containing sequences
+ * {X} where X  is an integer representing the argument number that will
+ * be replaced with a string value when the error is reported.
+ *
+ * e.g.
+ *
+ * MSG_DEF(JSMSG_NOT_A_SUBSPECIES, 2, JSEXN_TYPEERROR,
+ *         "{0} is not a member of the {1} family")
+ *
+ * can be used:
+ *
+ * JS_ReportErrorNumberASCII(JSMSG_NOT_A_SUBSPECIES, "Rhino", "Monkey");
+ *
+ * to report:
+ *
+ * "TypeError: Rhino is not a member of the Monkey family"
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// clang-format off
 MSG_DEF(JSMSG_NOT_AN_ERROR,            0, JSEXN_ERR, "<Error #0 is reserved>")
 MSG_DEF(JSMSG_NOT_DEFINED,             1, JSEXN_REFERENCEERR, "{0} is not defined")
 MSG_DEF(JSMSG_MORE_ARGS_NEEDED,        4, JSEXN_TYPEERR, "{0}: At least {1} argument{2} required, but only {3} passed")
@@ -139,14 +138,14 @@ MSG_DEF(JSMSG_CONSTRUCTOR_DISABLED,    1, JSEXN_TYPEERR, "{0} is disabled")
 MSG_DEF(JSMSG_DISPOSE_NOT_CALLABLE,     0, JSEXN_TYPEERR, "'Symbol.dispose' property is not callable")
 MSG_DEF(JSMSG_DISPOSABLE_NOT_OBJ,      0, JSEXN_TYPEERR, "Value to be disposed is not an object")
 
-
+// JSON
 MSG_DEF(JSMSG_JSON_BAD_PARSE,          3, JSEXN_SYNTAXERR, "JSON.parse: {0} at line {1} column {2} of the JSON data")
 MSG_DEF(JSMSG_JSON_CYCLIC_VALUE,       0, JSEXN_TYPEERR, "cyclic object value")
 MSG_DEF(JSMSG_JSON_RAW_EMPTY,       0, JSEXN_SYNTAXERR, "JSON.rawJSON: argument cannot be empty when converted to string")
 MSG_DEF(JSMSG_JSON_RAW_ARRAY_OR_OBJECT,       0, JSEXN_SYNTAXERR, "JSON.rawJSON: outermost value must not be an array or object")
 MSG_DEF(JSMSG_JSON_RAW_WHITESPACE,       0, JSEXN_SYNTAXERR, "JSON.rawJSON: first or last character cannot be any of tab, line feed, carriage return, or space")
 
-
+// Runtime errors
 MSG_DEF(JSMSG_ASSIGN_TO_CALL,          0, JSEXN_REFERENCEERR, "cannot assign to function call")
 MSG_DEF(JSMSG_ASSIGN_TO_PRIVATE_METHOD, 0, JSEXN_TYPEERR, "cannot assign to private method")
 MSG_DEF(JSMSG_BAD_INSTANCEOF_RHS,      1, JSEXN_TYPEERR, "invalid 'instanceof' operand {0}")
@@ -159,11 +158,11 @@ MSG_DEF(JSMSG_UNINITIALIZED_LEXICAL,   1, JSEXN_REFERENCEERR, "can't access lexi
 MSG_DEF(JSMSG_BAD_CONST_ASSIGN,        1, JSEXN_TYPEERR, "invalid assignment to const '{0}'")
 MSG_DEF(JSMSG_CANT_DECLARE_GLOBAL_BINDING, 2, JSEXN_TYPEERR, "cannot declare global binding '{0}': {1}")
 
-
+// Date
 MSG_DEF(JSMSG_INVALID_DATE,            0, JSEXN_RANGEERR, "invalid date")
 MSG_DEF(JSMSG_BAD_TOISOSTRING_PROP,    0, JSEXN_TYPEERR, "toISOString property is not callable")
 
-
+// String
 MSG_DEF(JSMSG_BAD_URI,                 0, JSEXN_URIERR, "malformed URI sequence")
 MSG_DEF(JSMSG_INVALID_NORMALIZE_FORM,  0, JSEXN_RANGEERR, "form must be one of 'NFC', 'NFD', 'NFKC', or 'NFKD'")
 MSG_DEF(JSMSG_NEGATIVE_REPETITION_COUNT, 0, JSEXN_RANGEERR, "repeat count must be non-negative")
@@ -172,35 +171,35 @@ MSG_DEF(JSMSG_RESULTING_STRING_TOO_LARGE, 0, JSEXN_RANGEERR, "repeat count must 
 MSG_DEF(JSMSG_FLAGS_UNDEFINED_OR_NULL, 0, JSEXN_TYPEERR, "'flags' property must neither be undefined nor null")
 MSG_DEF(JSMSG_REQUIRES_GLOBAL_REGEXP,  1, JSEXN_TYPEERR, "{0} must be called with a global RegExp")
 
-
+// Number
 MSG_DEF(JSMSG_BAD_RADIX,               0, JSEXN_RANGEERR, "radix must be an integer at least 2 and no greater than 36")
 MSG_DEF(JSMSG_PRECISION_RANGE,         1, JSEXN_RANGEERR, "precision {0} out of range")
 
-
+// Function
 MSG_DEF(JSMSG_BAD_APPLY_ARGS,          1, JSEXN_TYPEERR, "second argument to Function.prototype.{0} must be an array")
 MSG_DEF(JSMSG_DEPRECATED_USAGE,        1, JSEXN_REFERENCEERR, "deprecated {0} usage")
 MSG_DEF(JSMSG_NO_REST_NAME,            0, JSEXN_SYNTAXERR, "no parameter name after ...")
 MSG_DEF(JSMSG_PARAMETER_AFTER_REST,    0, JSEXN_SYNTAXERR, "parameter after rest parameter")
 MSG_DEF(JSMSG_TOO_MANY_ARGUMENTS,      0, JSEXN_RANGEERR, "too many arguments provided for a function call")
 
-
+// CSP
 MSG_DEF(JSMSG_CSP_BLOCKED_EVAL,        0, JSEXN_EVALERR, "call to eval() blocked by CSP")
 MSG_DEF(JSMSG_CSP_BLOCKED_FUNCTION,    0, JSEXN_EVALERR, "call to Function() blocked by CSP")
 MSG_DEF(JSMSG_CSP_BLOCKED_WASM,        1, JSEXN_WASMCOMPILEERROR, "call to {0}() blocked by CSP")
 
-
+// Wrappers
 MSG_DEF(JSMSG_ACCESSOR_DEF_DENIED,     1, JSEXN_ERR, "Permission denied to define accessor property {0}")
 MSG_DEF(JSMSG_DEAD_OBJECT,             0, JSEXN_TYPEERR, "can't access dead object")
 MSG_DEF(JSMSG_OBJECT_ACCESS_DENIED,    0, JSEXN_ERR, "Permission denied to access object")
 MSG_DEF(JSMSG_PROPERTY_ACCESS_DENIED,  1, JSEXN_ERR, "Permission denied to access property {0}")
 
-
+// JSAPI-only (Not thrown as JS exceptions)
 MSG_DEF(JSMSG_CANT_CLONE_OBJECT,       0, JSEXN_TYPEERR, "can't clone object")
 MSG_DEF(JSMSG_CANT_OPEN,               2, JSEXN_ERR, "can't open {0}: {1}")
 MSG_DEF(JSMSG_SUPPORT_NOT_ENABLED,     1, JSEXN_ERR, "support for {0} is not enabled")
 MSG_DEF(JSMSG_USER_DEFINED_ERROR,      0, JSEXN_ERR, "JS_ReportError was called")
 
-
+// Internal errors
 MSG_DEF(JSMSG_ALLOC_OVERFLOW,          0, JSEXN_INTERNALERR, "allocation size overflow")
 MSG_DEF(JSMSG_BAD_BYTECODE,            1, JSEXN_INTERNALERR, "unimplemented JavaScript bytecode {0}")
 MSG_DEF(JSMSG_BUFFER_TOO_SMALL,        0, JSEXN_INTERNALERR, "buffer too small")
@@ -213,7 +212,7 @@ MSG_DEF(JSMSG_UNCAUGHT_EXCEPTION,      1, JSEXN_INTERNALERR, "uncaught exception
 MSG_DEF(JSMSG_UNKNOWN_FORMAT,          1, JSEXN_INTERNALERR, "unknown bytecode format {0}")
 MSG_DEF(JSMSG_UNSAFE_FILENAME,         1, JSEXN_INTERNALERR, "unsafe filename: {0}")
 
-
+// Frontend
 MSG_DEF(JSMSG_ACCESSOR_WRONG_ARGS,     3, JSEXN_SYNTAXERR, "{0} functions must have {1} argument{2}")
 MSG_DEF(JSMSG_ARRAY_INIT_TOO_BIG,      0, JSEXN_INTERNALERR, "array initializer too large")
 MSG_DEF(JSMSG_AS_AFTER_IMPORT_STAR,    0, JSEXN_SYNTAXERR, "missing keyword 'as' after import *")
@@ -409,26 +408,26 @@ MSG_DEF(JSMSG_CLASS_EXPECTED,          0, JSEXN_SYNTAXERR, "expected class")
 MSG_DEF(JSMSG_NO_IN_WITH_USING,        0, JSEXN_SYNTAXERR, "'using' is not allowed in a for-in loop")
 MSG_DEF(JSMSG_USING_OUTSIDE_BLOCK_OR_MODULE, 0, JSEXN_SYNTAXERR, "'using' is only allowed in block statements or inside a module")
 
-
+// UTF-8 source text encoding errors
 MSG_DEF(JSMSG_BAD_LEADING_UTF8_UNIT,   1, JSEXN_SYNTAXERR, "{0} byte doesn't begin a valid UTF-8 code point")
 MSG_DEF(JSMSG_NOT_ENOUGH_CODE_UNITS,   5, JSEXN_SYNTAXERR, "{0} byte in UTF-8 must be followed by {1} byte{2}, but {3} byte{4} present")
 MSG_DEF(JSMSG_BAD_TRAILING_UTF8_UNIT,  1, JSEXN_SYNTAXERR, "bad trailing UTF-8 byte {0} doesn't match the pattern 0b10xxxxxx")
 MSG_DEF(JSMSG_FORBIDDEN_UTF8_CODE_POINT,2,JSEXN_SYNTAXERR, "{0} isn't a valid code point because {1}")
 MSG_DEF(JSMSG_BAD_CODE_UNITS,          1, JSEXN_NOTE, "the code units comprising this invalid code point were: {0}")
 
-
+// System encoding errors
 MSG_DEF(JSMSG_CANT_CONVERT_TO_NARROW,  0, JSEXN_ERR, "can't convert to narrow string")
 MSG_DEF(JSMSG_CANT_CONVERT_TO_WIDE,    0, JSEXN_ERR, "can't convert to wide string")
 MSG_DEF(JSMSG_CANT_CONVERT_WIDE_TO_UTF8, 0, JSEXN_ERR, "can't convert wide string to UTF-8")
 MSG_DEF(JSMSG_CANT_CONVERT_UTF8_TO_WIDE, 0, JSEXN_ERR, "can't convert UTF-8 to wide string")
 
-
+// asm.js
 MSG_DEF(JSMSG_USE_ASM_TYPE_FAIL,       1, JSEXN_TYPEERR, "asm.js type error: {0}")
 MSG_DEF(JSMSG_USE_ASM_LINK_FAIL,       1, JSEXN_TYPEERR, "asm.js link error: {0}")
 MSG_DEF(JSMSG_USE_ASM_TYPE_OK,         1, JSEXN_WARN,    "Successfully compiled asm.js code (total compilation time {0}ms)")
 MSG_DEF(JSMSG_USE_ASM_TYPE_OK_NO_TIME, 0, JSEXN_WARN,    "Successfully compiled asm.js code ()")
 
-
+// wasm
 MSG_DEF(JSMSG_WASM_VERBOSE,            1, JSEXN_WARN,    "WebAssembly verbose: {0}")
 MSG_DEF(JSMSG_WASM_COMPILE_WARNING,    1, JSEXN_WARN,    "WebAssembly module validated with warning: {0}")
 MSG_DEF(JSMSG_WASM_HUGE_MEMORY_FAILED, 0, JSEXN_WARN,    "WebAssembly.Memory failed to reserve a large virtual memory region. This may be due to low configured virtual memory limits on this system.")
@@ -510,15 +509,15 @@ MSG_DEF(JSMSG_WASM_ARRAYBUFFER_PAGE_MULTIPLE, 0, JSEXN_RANGEERR, "can only grow 
 MSG_DEF(JSMSG_WASM_ARRAYBUFFER_CANNOT_SHRINK, 0, JSEXN_RANGEERR, "cannot shrink WebAssembly memory")
 MSG_DEF(JSMSG_WASM_MEMORY_NOT_RESIZABLE,      0, JSEXN_TYPEERR,  "WebAssembly memory non-resizable, maximum length is not provided")
 
-
+// Wasm/asm.js deprecation warnings
 MSG_DEF(JSMSG_WASM_LEGACY_EXCEPTIONS_DEPRECATED, 0, JSEXN_WARN, "The WebAssembly exception handling 'try' instruction is deprecated and should no longer be used. Please recompile to use the 'try_table' instruction instead.")
 MSG_DEF(JSMSG_USE_ASM_DEPRECATED,                0, JSEXN_WARN, "asm.js is deprecated and should no longer be used. Please recompile using WebAssembly to get the best performance.")
 
-
+// JSPI
 MSG_DEF(JSMSG_JSPI_INVALID_STATE,      0, IF_WASM_JSPI(JSEXN_WASMSUSPENDERROR, JSEXN_WASMRUNTIMEERROR), "Invalid state")
 MSG_DEF(JSMSG_JSPI_ARG_TYPE,           0, JSEXN_TYPEERR, "Unsupported JSPI function argument type")
 
-
+// Proxy
 MSG_DEF(JSMSG_BAD_GETPROTOTYPEOF_TRAP_RETURN,0,JSEXN_TYPEERR,"proxy getPrototypeOf handler returned a non-object, non-null value")
 MSG_DEF(JSMSG_INCONSISTENT_GETPROTOTYPEOF_TRAP,0,JSEXN_TYPEERR,"proxy getPrototypeOf handler didn't return the target object's prototype")
 MSG_DEF(JSMSG_PROXY_SETPROTOTYPEOF_RETURNED_FALSE, 0, JSEXN_TYPEERR, "proxy setPrototypeOf handler returned false")
@@ -553,7 +552,7 @@ MSG_DEF(JSMSG_PROXY_GETOWN_OBJORUNDEF, 1, JSEXN_TYPEERR, "proxy [[GetOwnProperty
 MSG_DEF(JSMSG_PROXY_REVOKED,           0, JSEXN_TYPEERR, "illegal operation attempted on a revoked proxy")
 MSG_DEF(JSMSG_BAD_TRAP,                1, JSEXN_TYPEERR, "proxy handler's {0} trap wasn't undefined, null, or callable")
 
-
+// Structured cloning
 MSG_DEF(JSMSG_SC_BAD_CLONE_VERSION,    0, JSEXN_ERR, "unsupported structured clone version")
 MSG_DEF(JSMSG_SC_BAD_SERIALIZED_DATA,  1, JSEXN_INTERNALERR, "bad serialized structured data ({0})")
 MSG_DEF(JSMSG_SC_DUP_TRANSFERABLE,     0, JSEXN_TYPEERR, "duplicate transferable for structured clone")
@@ -567,7 +566,7 @@ MSG_DEF(JSMSG_SC_SAB_REFCNT_OFLO,      0, JSEXN_TYPEERR, "SharedArrayBuffer has 
 MSG_DEF(JSMSG_SC_SHMEM_TRANSFERABLE,   0, JSEXN_TYPEERR, "Shared memory objects must not be in the transfer list")
 MSG_DEF(JSMSG_SC_SHMEM_POLICY,         0, JSEXN_TYPEERR, "Policy object must forbid cloning shared memory objects cross-process")
 
-
+// Debugger
 MSG_DEF(JSMSG_ASSIGN_FUNCTION_OR_NULL, 1, JSEXN_TYPEERR, "value assigned to {0} must be a function or null")
 MSG_DEF(JSMSG_DEBUG_BAD_LINE,          0, JSEXN_TYPEERR, "invalid line number")
 MSG_DEF(JSMSG_DEBUG_BAD_OFFSET,        0, JSEXN_TYPEERR, "invalid script offset")
@@ -614,14 +613,14 @@ MSG_DEF(JSMSG_DEBUG_EXCLUSIVE_FRAME_COVERAGE, 0, JSEXN_ERR, "onEnterFrame and co
 MSG_DEF(JSMSG_DEBUG_EXCLUSIVE_EXECUTION_TRACE_COVERAGE, 0, JSEXN_ERR, "execution trace and collectCoverageInfo cannot be active at the same time")
 MSG_DEF(JSMSG_NATIVE_TRACING_BUFFER_MALFORMED, 0, JSEXN_ERR, "bad data encountered while reading the native tracing buffer")
 
-
+// Testing functions
 MSG_DEF(JSMSG_TESTING_SCRIPTS_ONLY, 0, JSEXN_TYPEERR, "only works on scripts")
 MSG_DEF(JSMSG_INVALID_ARGS,         1, JSEXN_ERR, "{0}: invalid arguments")
 
-
+// Tracelogger
 MSG_DEF(JSMSG_TRACELOGGER_ENABLE_FAIL, 1, JSEXN_ERR, "enabling tracelogger failed: {0}")
 
-
+// Intl
 MSG_DEF(JSMSG_DATE_NOT_FINITE,         2, JSEXN_RANGEERR, "date value is not finite in {0}.{1}()")
 MSG_DEF(JSMSG_DUPLICATE_VARIANT_SUBTAG, 0, JSEXN_RANGEERR, "duplicate variant subtag")
 MSG_DEF(JSMSG_INTERNAL_INTL_ERROR,     0, JSEXN_ERR, "internal error while computing Intl data")
@@ -650,7 +649,7 @@ MSG_DEF(JSMSG_INTL_DURATION_INVALID_DISPLAY_OPTION_DEFAULT_DISPLAY, 1, JSEXN_RAN
 MSG_DEF(JSMSG_INVALID_FORMAT_OPTIONS,  1, JSEXN_TYPEERR, "can't format {0} using the requested options")
 MSG_DEF(JSMSG_ISLAMIC_FALLBACK,        0, JSEXN_WARN, "\"islamic\" does not specify the calendar variant. \"islamic-tbla\" was used. Please specify one of \"islamic-umalqura\", \"islamic-tbla\", or \"islamic-civil\" explicitly.")
 
-
+// RegExp
 MSG_DEF(JSMSG_BAD_CLASS_RANGE,         0, JSEXN_SYNTAXERR, "invalid range in character class")
 MSG_DEF(JSMSG_ESCAPE_AT_END_OF_REGEXP, 0, JSEXN_SYNTAXERR, "\\ at end of pattern")
 MSG_DEF(JSMSG_EXEC_NOT_OBJORNULL,      0, JSEXN_TYPEERR, "RegExp exec method should return object or null")
@@ -689,13 +688,13 @@ MSG_DEF(JSMSG_REGEXP_STATIC_EMPTY, 1, JSEXN_TYPEERR, "RegExp static property '{0
 MSG_DEF(JSMSG_REGEXP_CROSS_REALM, 0, JSEXN_TYPEERR, "RegExp operation not permitted on object from different realm")
 MSG_DEF(JSMSG_REGEXP_LEGACY_FEATURES_DISABLED, 0, JSEXN_TYPEERR, "RegExp legacy features are disabled")
 
-
+// Typed object
 MSG_DEF(JSMSG_TYPEDOBJECT_SETTING_IMMUTABLE, 0, JSEXN_ERR, "setting immutable field")
 
-
+// Array
 MSG_DEF(JSMSG_TOO_LONG_ARRAY,         0, JSEXN_TYPEERR, "Too long array")
 
-
+// Typed array
 MSG_DEF(JSMSG_BAD_INDEX,               0, JSEXN_RANGEERR, "invalid or out-of-range index")
 MSG_DEF(JSMSG_DEFINE_BAD_INDEX,        0, JSEXN_TYPEERR, "can't define element for invalid or out-of-range index")
 MSG_DEF(JSMSG_NON_ARRAY_BUFFER_RETURNED, 0, JSEXN_TYPEERR, "expected ArrayBuffer, but species constructor returned non-ArrayBuffer")
@@ -730,26 +729,26 @@ MSG_DEF(JSMSG_ARRAYBUFFER_LENGTH_LARGER_THAN_MAXIMUM, 0, JSEXN_RANGEERR, "byte l
 MSG_DEF(JSMSG_ARRAYBUFFER_NON_RESIZABLE, 0, JSEXN_TYPEERR, "can't resize non-resizable ArrayBuffer")
 MSG_DEF(JSMSG_ARRAYBUFFER_COPY_RANGE, 0, JSEXN_RANGEERR, "ArrayBuffer range incorrect for copying")
 
-
+// Shared array buffer
 MSG_DEF(JSMSG_SHARED_ARRAY_BAD_LENGTH,  0, JSEXN_RANGEERR, "length argument out of range")
 MSG_DEF(JSMSG_NON_SHARED_ARRAY_BUFFER_RETURNED, 0, JSEXN_TYPEERR, "expected SharedArrayBuffer, but species constructor returned non-SharedArrayBuffer")
 MSG_DEF(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED, 0, JSEXN_TYPEERR, "expected different SharedArrayBuffer, but species constructor returned same SharedArrayBuffer")
 MSG_DEF(JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED, 2, JSEXN_TYPEERR, "expected SharedArrayBuffer with at least {0} bytes, but species constructor returns SharedArrayBuffer with {1} bytes")
 MSG_DEF(JSMSG_SHARED_ARRAY_LENGTH_SMALLER_THAN_CURRENT, 0, JSEXN_RANGEERR, "byte length is smaller than current byte length")
 
-
+// Reflect
 MSG_DEF(JSMSG_BAD_PARSE_NODE,          0, JSEXN_INTERNALERR, "bad parse node")
 
-
+// Symbol
 MSG_DEF(JSMSG_SYMBOL_TO_STRING,        0, JSEXN_TYPEERR, "can't convert symbol to string")
 MSG_DEF(JSMSG_SYMBOL_TO_NUMBER,        0, JSEXN_TYPEERR, "can't convert symbol to number")
 
-
+// Atomics and futexes
 MSG_DEF(JSMSG_ATOMICS_BAD_ARRAY,         0, JSEXN_TYPEERR, "invalid array type for the operation")
 MSG_DEF(JSMSG_ATOMICS_WAIT_NOT_ALLOWED,  0, JSEXN_TYPEERR, "waiting is not allowed on this thread")
 MSG_DEF(JSMSG_ATOMICS_PAUSE_BAD_COUNT,   0, JSEXN_TYPEERR, "Atomics.pause called with non-integral Number")
 
-
+// XPConnect wrappers and DOM bindings
 MSG_DEF(JSMSG_CANT_SET_INTERPOSED,       1, JSEXN_TYPEERR, "unable to set interposed data property '{0}'")
 MSG_DEF(JSMSG_CANT_DEFINE_WINDOW_ELEMENT, 0, JSEXN_TYPEERR, "can't define elements on a Window object")
 MSG_DEF(JSMSG_CANT_DELETE_WINDOW_ELEMENT, 0, JSEXN_TYPEERR, "can't delete elements from a Window object")
@@ -761,11 +760,11 @@ MSG_DEF(JSMSG_NO_NAMED_SETTER,           2, JSEXN_TYPEERR, "{0} doesn't have a n
 MSG_DEF(JSMSG_NO_INDEXED_SETTER,         2, JSEXN_TYPEERR, "{0} doesn't have an indexed property setter for '{1}'")
 MSG_DEF(JSMSG_NOT_DATA_DESCRIPTOR,       2, JSEXN_TYPEERR, "can't define a getter/setter for element '{1}' of {0} object")
 
-
+// Super
 MSG_DEF(JSMSG_CANT_DELETE_SUPER, 0, JSEXN_REFERENCEERR, "invalid delete involving 'super'")
 MSG_DEF(JSMSG_REINIT_THIS,       0, JSEXN_REFERENCEERR, "super() called twice in derived class constructor")
 
-
+// Modules
 MSG_DEF(JSMSG_MODULE_NO_EXPORT,             2, JSEXN_SYNTAXERR, "The requested module '{0}' doesn't provide an export named: '{1}'")
 MSG_DEF(JSMSG_MODULE_CIRCULAR_IMPORT,       2, JSEXN_SYNTAXERR, "The requested module '{0}' contains circular import: '{1}'")
 MSG_DEF(JSMSG_MODULE_AMBIGUOUS,             4, JSEXN_SYNTAXERR, "The requested module '{0}' contains ambiguous star export: '{1}' from '{2}' and '{3}'")
@@ -775,7 +774,7 @@ MSG_DEF(JSMSG_DYNAMIC_IMPORT_FAILED,        1, JSEXN_TYPEERR, "error loading dyn
 MSG_DEF(JSMSG_DYNAMIC_IMPORT_NOT_SUPPORTED, 0, JSEXN_TYPEERR, "Dynamic import not supported in this context")
 MSG_DEF(JSMSG_BAD_MODULE_TYPE,              0, JSEXN_TYPEERR, "invalid module type")
 
-
+// Import maps
 MSG_DEF(JSMSG_IMPORT_MAPS_PARSE_FAILED, 1, JSEXN_SYNTAXERR, "Failed to parse import map: Invalid JSON format. {0}")
 MSG_DEF(JSMSG_IMPORT_MAPS_NOT_A_MAP, 0, JSEXN_TYPEERR, "the top-level value needs to be a JSON object")
 MSG_DEF(JSMSG_IMPORT_MAPS_IMPORTS_NOT_A_MAP, 0, JSEXN_TYPEERR, "the imports top-level key needs to be a JSON object")
@@ -783,11 +782,11 @@ MSG_DEF(JSMSG_IMPORT_MAPS_SCOPES_NOT_A_MAP, 0, JSEXN_TYPEERR, "the scopes top-le
 MSG_DEF(JSMSG_IMPORT_MAPS_SCOPE_VALUE_NOT_A_MAP, 1, JSEXN_TYPEERR, "the value of the scope with prefix '{0}' needs to be a JSON object")
 MSG_DEF(JSMSG_IMPORT_MAPS_INTEGRITY_NOT_A_MAP, 0, JSEXN_TYPEERR, "the integrity top-level key needs to be a JSON object")
 
-
+// Import Attributes
 MSG_DEF(JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE, 1, JSEXN_SYNTAXERR, "Unsupported import attribute: {0}")
 MSG_DEF(JSMSG_IMPORT_ATTRIBUTES_DYNAMIC_IMPORT_UNSUPPORTED_ATTRIBUTE, 1, JSEXN_TYPEERR, "Unsupported import attribute: {0}")
 
-
+// Promise
 MSG_DEF(JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF,       0, JSEXN_TYPEERR, "A promise cannot be resolved with itself.")
 MSG_DEF(JSMSG_PROMISE_CAPABILITY_HAS_SOMETHING_ALREADY, 0, JSEXN_TYPEERR, "GetCapabilitiesExecutor function already invoked with non-undefined values.")
 MSG_DEF(JSMSG_PROMISE_RESOLVE_FUNCTION_NOT_CALLABLE,    0, JSEXN_TYPEERR, "A Promise subclass passed a non-callable value as the resolve function.")
@@ -795,20 +794,20 @@ MSG_DEF(JSMSG_PROMISE_REJECT_FUNCTION_NOT_CALLABLE,     0, JSEXN_TYPEERR, "A Pro
 MSG_DEF(JSMSG_PROMISE_ERROR_IN_WRAPPED_REJECTION_REASON,0, JSEXN_INTERNALERR, "Promise rejection value is a non-unwrappable cross-compartment wrapper.")
 MSG_DEF(JSMSG_PROMISE_ANY_REJECTION, 0, JSEXN_AGGREGATEERR, "No Promise in Promise.any was resolved")
 
-
+// Iterator
 MSG_DEF(JSMSG_RETURN_NOT_CALLABLE,     0, JSEXN_TYPEERR, "property 'return' of iterator is not callable")
 MSG_DEF(JSMSG_ITERATOR_NO_THROW,       0, JSEXN_TYPEERR, "iterator does not have a 'throw' method")
 
-
+// Async Function
 MSG_DEF(JSMSG_UNHANDLABLE_PROMISE_REJECTION_WARNING, 0, JSEXN_WARN, "unhandlable error after resolving async function's promise")
 
-
+// Async Iteration
 MSG_DEF(JSMSG_FOR_AWAIT_NOT_OF,        0, JSEXN_SYNTAXERR, "'for await' loop should be used with 'of'")
 MSG_DEF(JSMSG_NOT_AN_ASYNC_GENERATOR,  0, JSEXN_TYPEERR, "Not an async generator")
 MSG_DEF(JSMSG_GET_ASYNC_ITER_RETURNED_PRIMITIVE, 0, JSEXN_TYPEERR, "[Symbol.asyncIterator]() returned a non-object value")
 MSG_DEF(JSMSG_SUSPENDED_QUEUE_NOT_EMPTY, 0, JSEXN_INTERNALERR, "Async generator is in invalid state due to debugger interaction")
 
-
+// (wasm) Response-related
 MSG_DEF(JSMSG_WASM_ERROR_CONSUMING_RESPONSE,             0, JSEXN_TYPEERR,  "WebAssembly: There was an error consuming the Response")
 MSG_DEF(JSMSG_WASM_BAD_RESPONSE_VALUE,                   0, JSEXN_TYPEERR,  "WebAssembly: Expected Response or Promise resolving to Response")
 MSG_DEF(JSMSG_WASM_BAD_RESPONSE_MIME_TYPE,               2, JSEXN_TYPEERR,  "WebAssembly: Response has unsupported MIME type '{0}' expected '{1}'")
@@ -816,7 +815,7 @@ MSG_DEF(JSMSG_WASM_BAD_RESPONSE_CORS_SAME_ORIGIN,        0, JSEXN_TYPEERR,  "Web
 MSG_DEF(JSMSG_WASM_BAD_RESPONSE_STATUS,                  0, JSEXN_TYPEERR,  "WebAssembly: Response does not have ok status")
 MSG_DEF(JSMSG_WASM_RESPONSE_ALREADY_CONSUMED,            0, JSEXN_TYPEERR,  "WebAssembly: Response already consumed")
 
-
+// BigInt
 MSG_DEF(JSMSG_BIGINT_TO_NUMBER, 0, JSEXN_TYPEERR, "can't convert BigInt to number")
 MSG_DEF(JSMSG_NONINTEGER_NUMBER_TO_BIGINT, 1, JSEXN_RANGEERR, "{0} can't be converted to BigInt because it isn't an integer")
 MSG_DEF(JSMSG_BIGINT_TOO_LARGE, 0, JSEXN_RANGEERR, "BigInt is too large to allocate")
@@ -825,18 +824,18 @@ MSG_DEF(JSMSG_BIGINT_NEGATIVE_EXPONENT, 0, JSEXN_RANGEERR, "BigInt negative expo
 MSG_DEF(JSMSG_BIGINT_INVALID_SYNTAX, 0, JSEXN_SYNTAXERR, "invalid BigInt syntax")
 MSG_DEF(JSMSG_BIGINT_NOT_SERIALIZABLE, 0, JSEXN_TYPEERR, "BigInt value can't be serialized in JSON")
 
-
+// FinalizationRegistry
 MSG_DEF(JSMSG_NOT_A_FINALIZATION_REGISTRY,               1, JSEXN_TYPEERR, "{0} is not a FinalizationRegistry")
 MSG_DEF(JSMSG_BAD_FINALIZATION_REGISTRY_TARGET,          0, JSEXN_TYPEERR, "The target registered with a finalization registry must be either an object or a symbol")
 MSG_DEF(JSMSG_BAD_HELD_VALUE,                            0, JSEXN_TYPEERR, "The heldValue parameter passed to FinalizationRegistry.register must not be the same as the target parameter")
 MSG_DEF(JSMSG_BAD_UNREGISTER_TOKEN,                      1, JSEXN_TYPEERR, "Invalid unregister token passed to {0}")
 MSG_DEF(JSMSG_BAD_FINALIZATION_REGISTRY_OBJECT,          0, JSEXN_TYPEERR, "cannot register the given object with a FinalizationRegistry")
 
-
+// WeakRef
 MSG_DEF(JSMSG_NOT_A_WEAK_REF,                            1, JSEXN_TYPEERR, "{0} is not a WeakRef")
 MSG_DEF(JSMSG_BAD_WEAKREF_TARGET,                        0, JSEXN_TYPEERR, "cannot use the given object as the target of a WeakRef")
 
-
+// Iterator Helpers
 MSG_DEF(JSMSG_NEGATIVE_LIMIT,                            0, JSEXN_RANGEERR, "Iterator limits cannot be negative")
 MSG_DEF(JSMSG_INVALID_CHUNKSIZE,                         0, JSEXN_RANGEERR, "Iterator chunkSize must be an integer between 1 and 2**32-1 inclusive")
 MSG_DEF(JSMSG_INVALID_WINDOWSIZE,                        0, JSEXN_RANGEERR, "Iterator windowSize must be an integer between 1 and 2**32-1 inclusive")
@@ -845,13 +844,13 @@ MSG_DEF(JSMSG_ITERATOR_ZIP_INVALID_OPTION_TYPE,          2, JSEXN_TYPEERR, "inva
 MSG_DEF(JSMSG_ITERATOR_ZIP_INVALID_OPTION_VALUE,         2, JSEXN_TYPEERR, "invalid value for \"{0}\" option: {1}")
 MSG_DEF(JSMSG_ITERATOR_ZIP_STRICT_OPEN_ITERATOR,         0, JSEXN_TYPEERR, "too few iterator results for \"strict\" mode")
 
-
+// Set
 MSG_DEF(JSMSG_SET_NEGATIVE_SIZE,                         0, JSEXN_RANGEERR, "Set size must be non-negative")
 
-
+// Decorators
 MSG_DEF(JSMSG_DECORATOR_INVALID_RETURN_TYPE, 0, JSEXN_TYPEERR, "Invalid value returned from decorator")
 
-
+// Temporal
 MSG_DEF(JSMSG_TEMPORAL_INVALID_UNIT_RANGE,          0, JSEXN_RANGEERR, "smallestUnit must not be larger than largestUnit")
 MSG_DEF(JSMSG_TEMPORAL_INVALID_UNIT_OPTION,         2, JSEXN_RANGEERR, "{0} is not a valid {1} option in this context")
 MSG_DEF(JSMSG_TEMPORAL_INVALID_NUMBER,              1, JSEXN_RANGEERR, "{0} must be larger than zero")
@@ -938,15 +937,15 @@ MSG_DEF(JSMSG_TEMPORAL_PARSER_INCONSISTENT_DATE_SEPARATOR, 1, JSEXN_RANGEERR, "c
 MSG_DEF(JSMSG_TEMPORAL_PARSER_INCONSISTENT_TIME_SEPARATOR, 1, JSEXN_RANGEERR, "can't parse {0}: time separator ':' must be consistent")
 MSG_DEF(JSMSG_TEMPORAL_PARSER_EMPTY_STRING, 1, JSEXN_RANGEERR, "can't parse empty string as {0}")
 
+// Explicit Resource Management
 
-
-
+// TODO: Improve the messaging for suppressed errors (Bug 1906150)
 MSG_DEF(JSMSG_ERROR_WAS_SUPPRESSED, 0, IF_EXPLICIT_RESOURCE_MANAGEMENT(JSEXN_SUPPRESSEDERR, JSEXN_INTERNALERR), "An error is suppressed because another error happened while disposing an object")
 
-
+// DisposableStack
 MSG_DEF(JSMSG_DISPOSABLE_STACK_DISPOSED, 0, JSEXN_REFERENCEERR, "DisposableStack has already been disposed")
 
-
+// Iterator.range
 MSG_DEF(JSMSG_ITERATOR_RANGE_INVALID_START, 0, JSEXN_TYPEERR, "The 'start' argument must be a number or BigInt")
 MSG_DEF(JSMSG_ITERATOR_RANGE_INVALID_START_RANGEERR, 0, JSEXN_RANGEERR, "The 'start' argument cannot be NaN")
 MSG_DEF(JSMSG_ITERATOR_RANGE_INVALID_END_RANGEERR, 0, JSEXN_RANGEERR, "The 'end' argument cannot be NaN")
@@ -959,8 +958,8 @@ MSG_DEF(JSMSG_ITERATOR_RANGE_STEP_ZERO, 0, JSEXN_RANGEERR, "The 'step' argument 
 MSG_DEF(JSMSG_ITERATOR_RANGE_INVALID_STEP, 0, JSEXN_TYPEERR, "The 'step' or options argument must be a valid number, BigInt, or an Object with valid properties")
 MSG_DEF(JSMSG_ITERATOR_RANGE_STEP_NOT_BIGINT, 0, JSEXN_TYPEERR, "The 'step' argument must be a BigInt when iterating over BigInt ranges")
 
-
+// Math.sumPrecise
 MSG_DEF(JSMSG_SUMPRECISE_TOO_MANY_VALUES, 0, JSEXN_RANGEERR, "too many values passed to Math.sumPrecise")
 MSG_DEF(JSMSG_SUMPRECISE_EXPECTED_NUMBER, 0, JSEXN_TYPEERR, "values passed to Math.sumPrecise must be numbers")
 
-
+//clang-format on

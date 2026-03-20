@@ -5,7 +5,6 @@
 
 
 
-
 function sanitizeGlobal(g) {
   let lfFuncs = {
     

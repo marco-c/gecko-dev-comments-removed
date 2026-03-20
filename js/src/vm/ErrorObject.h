@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ErrorObject_h_
 #define vm_ErrorObject_h_
 

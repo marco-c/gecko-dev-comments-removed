@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Xdr_h
 #define vm_Xdr_h
 

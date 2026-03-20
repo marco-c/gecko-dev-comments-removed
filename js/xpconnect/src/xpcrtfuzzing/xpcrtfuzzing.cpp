@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "xpcrtfuzzing/xpcrtfuzzing.h"
 
 #include "mozilla/Assertions.h"  
@@ -28,7 +26,7 @@
 using mozilla::dom::AutoJSAPI;
 
 static AutoJSAPI* gJsapi = nullptr;
-MOZ_RUNINIT static std::string gFuzzModuleName;
+MOZ_GLIBCXX_CONSTINIT static std::string gFuzzModuleName;
 
 static void CrashOnPendingException() {
   if (gJsapi->HasException()) {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_SharedICRegisters_h
 #define jit_SharedICRegisters_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/JSONPrinter.h"
 
 #include "mozilla/Assertions.h"

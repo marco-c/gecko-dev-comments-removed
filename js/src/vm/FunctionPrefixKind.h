@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_FunctionPrefixKind_h
 #define vm_FunctionPrefixKind_h
 

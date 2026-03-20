@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_RootingAPI_h
 #define js_RootingAPI_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ExecutionTracerIntegration.h"
 
 #include "mozilla/dom/Attr.h"

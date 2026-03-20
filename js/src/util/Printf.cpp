@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "js/Printf.h"
 
 #include "mozilla/Printf.h"

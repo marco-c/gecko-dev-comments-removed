@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ExecutionTracerIntegration_h_
 #define ExecutionTracerIntegration_h_
 

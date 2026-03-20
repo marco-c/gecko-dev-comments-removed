@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef xpclog_h_
 #define xpclog_h_
 

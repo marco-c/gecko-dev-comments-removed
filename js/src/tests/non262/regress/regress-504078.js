@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 504078;
 var summary = 'Iterations over global object';
 var actual = '';

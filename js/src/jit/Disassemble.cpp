@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/Disassemble.h"
 
 #include <stddef.h>  
@@ -70,9 +68,21 @@ void Disassemble(uint8_t* code, size_t length, InstrCallback callback) {
   uint8_t* end = code + length;
 
   while (instr < end) {
-    decoder.Decode(reinterpret_cast<vixl::Instruction*>(instr));
+    auto* ins = reinterpret_cast<vixl::Instruction*>(instr);
 
-    instr += sizeof(vixl::Instr);
+    decoder.Decode(ins);
+
+    
+    const auto* skipped = ins->skipPool();
+    if (ins == skipped) {
+      
+      instr += sizeof(vixl::Instr);
+    } else {
+      
+      
+      callback("*** constant pool ***");
+      instr = const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(skipped));
+    }
   }
 }
 

@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef gc_Marking_h
 #define gc_Marking_h
 

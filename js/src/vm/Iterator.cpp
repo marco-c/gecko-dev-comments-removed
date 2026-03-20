@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Iterator.h"
 
 #include "js/Conversions.h"

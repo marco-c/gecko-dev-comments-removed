@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef fuzz_tests_tests_h
 #define fuzz_tests_tests_h
 

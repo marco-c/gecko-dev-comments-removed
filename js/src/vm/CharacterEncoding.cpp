@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/CharacterEncoding.h"
 
 #include "mozilla/CheckedInt.h"

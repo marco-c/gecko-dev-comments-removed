@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 loadRelativeToScript('callgraph.js');

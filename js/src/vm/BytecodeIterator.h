@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BytecodeIterator_h
 #define vm_BytecodeIterator_h
 

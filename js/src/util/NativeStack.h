@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_NativeStack_h
 #define util_NativeStack_h
 

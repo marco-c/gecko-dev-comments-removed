@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_CompletionKind_h
 #define vm_CompletionKind_h
 

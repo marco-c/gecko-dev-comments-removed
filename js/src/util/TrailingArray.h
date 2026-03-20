@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_TrailingArray_h
 #define util_TrailingArray_h
 

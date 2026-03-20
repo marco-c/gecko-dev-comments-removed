@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/GeckoProfiler-inl.h"
 
 #include "mozilla/DebugOnly.h"

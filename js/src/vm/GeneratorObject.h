@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GeneratorObject_h
 #define vm_GeneratorObject_h
 

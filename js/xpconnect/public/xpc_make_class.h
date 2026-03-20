@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpc_make_class_h
 #define xpc_make_class_h
 

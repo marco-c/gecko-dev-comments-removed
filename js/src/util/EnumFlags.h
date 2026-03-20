@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_EnumFlags_h
 #define util_EnumFlags_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_WasmMetadata_h
 #define wasm_WasmMetadata_h
 

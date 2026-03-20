@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_String_h
 #define js_String_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GeneratorResumeKind_h
 #define vm_GeneratorResumeKind_h
 

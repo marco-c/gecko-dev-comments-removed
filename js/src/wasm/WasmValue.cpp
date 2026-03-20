@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmValue.h"
 
 #include "builtin/Math.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "wasm/WasmSerialize.h"
 
 #include "mozilla/EnumeratedRange.h"

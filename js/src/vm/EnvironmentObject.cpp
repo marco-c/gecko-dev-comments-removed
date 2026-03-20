@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/EnvironmentObject-inl.h"
 
 #include "mozilla/Maybe.h"

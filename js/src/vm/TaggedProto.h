@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_TaggedProto_h
 #define vm_TaggedProto_h
 

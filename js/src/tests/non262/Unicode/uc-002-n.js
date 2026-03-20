@@ -2,7 +2,6 @@
 
 
 
-
 var BUGNUMBER = 23607;
 DESCRIPTION = "Non-character escapes in identifiers negative test.";
 

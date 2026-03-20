@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Value.h"
 
 #include "mozilla/Assertions.h"

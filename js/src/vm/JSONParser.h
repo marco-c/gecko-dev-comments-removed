@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSONParser_h
 #define vm_JSONParser_h
 

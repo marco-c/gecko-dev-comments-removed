@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef util_StringBuilder_h
 #define util_StringBuilder_h
 

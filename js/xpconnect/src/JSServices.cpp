@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 #include "StaticComponents.h"
 #include "mozilla/ErrorResult.h"

@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "vm/JSFunction-inl.h"
 
 #include "mozilla/Maybe.h"

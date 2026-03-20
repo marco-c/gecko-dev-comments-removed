@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "irregexp/imported/regexp-macro-assembler-arch.h"
 #include "irregexp/imported/regexp-stack.h"
 #include "irregexp/imported/special-case.h"
@@ -218,7 +216,7 @@ void SMRegExpMacroAssembler::CheckNotCharacterAfterMinusAnd(
 
 
 
-void SMRegExpMacroAssembler::CheckGreedyLoop(Label* on_equal) {
+void SMRegExpMacroAssembler::CheckFixedLengthLoop(Label* on_equal) {
   js::jit::Label fallthrough;
   masm_.load32SignExtendToPtr(Address(backtrack_stack_pointer_, 0), temp0_);
   masm_.branchPtr(Assembler::NotEqual, temp0_, current_position_, &fallthrough);

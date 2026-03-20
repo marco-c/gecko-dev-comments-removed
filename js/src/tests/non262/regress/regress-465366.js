@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 465366;
 var summary = 'TM: JIT: error with multiplicative loop';
 var actual = '';

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/ToSource.h"
 
 #include "mozilla/Assertions.h"     

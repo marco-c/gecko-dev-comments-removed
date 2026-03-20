@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef util_UnicodeNonBMP_h
 #define util_UnicodeNonBMP_h
 

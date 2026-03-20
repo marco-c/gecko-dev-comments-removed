@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 98901;
 var summary = 'Stack overflow concatenating variables';
 var actual = 'No Crash';

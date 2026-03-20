@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSObject_inl_h
 #define vm_JSObject_inl_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/WellKnownAtom.h"
 
 js::WellKnownAtomInfo js::wellKnownAtomInfos[] = {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_UniquePtr_h
 #define js_UniquePtr_h
 

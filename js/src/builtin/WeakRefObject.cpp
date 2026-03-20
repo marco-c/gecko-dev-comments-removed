@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/WeakRefObject.h"
 
 #include "jsapi.h"

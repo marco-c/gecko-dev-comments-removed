@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Shape_inl_h
 #define vm_Shape_inl_h
 

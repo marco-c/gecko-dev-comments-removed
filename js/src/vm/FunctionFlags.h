@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_FunctionFlags_h
 #define vm_FunctionFlags_h
 

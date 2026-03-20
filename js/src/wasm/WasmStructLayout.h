@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_WasmStructLayout_h
 #define wasm_WasmStructLayout_h
 

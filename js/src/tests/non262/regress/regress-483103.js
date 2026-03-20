@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 483103;
 var summary = 'TM: Do not assert: p->isQuad()';
 var actual = '';

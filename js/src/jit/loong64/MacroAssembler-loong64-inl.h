@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_loong64_MacroAssembler_loong64_inl_h
 #define jit_loong64_MacroAssembler_loong64_inl_h
 

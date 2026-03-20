@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_TypedArrayObject_h
 #define vm_TypedArrayObject_h
 

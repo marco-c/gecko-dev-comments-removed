@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ds_Bitmap_h
 #define ds_Bitmap_h
 

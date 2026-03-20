@@ -2,14 +2,13 @@
 
 
 
-
-
 #include "frontend/DefaultEmitter.h"
 
 #include "mozilla/Assertions.h"  
 
-#include "frontend/BytecodeEmitter.h"  
-#include "vm/Opcodes.h"                
+#include "frontend/BytecodeEmitter.h"   
+#include "vm/ConstantCompareOperand.h"  
+#include "vm/Opcodes.h"                 
 
 using namespace js;
 using namespace js::frontend;

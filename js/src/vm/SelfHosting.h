@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SelfHosting_h_
 #define vm_SelfHosting_h_
 

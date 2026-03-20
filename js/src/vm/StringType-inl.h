@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_StringType_inl_h
 #define vm_StringType_inl_h
 

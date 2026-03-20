@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_ErrorObject_inl_h
 #define vm_ErrorObject_inl_h
 

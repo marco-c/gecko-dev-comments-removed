@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_PropMap_inl_h
 #define vm_PropMap_inl_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Compartment_inl_h
 #define vm_Compartment_inl_h
 

@@ -25,8 +25,6 @@
 
 
 
-
-
 #ifndef jit_loong64_Simulator_loong64_h
 #define jit_loong64_Simulator_loong64_h
 

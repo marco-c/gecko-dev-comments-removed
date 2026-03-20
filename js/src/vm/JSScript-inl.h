@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JSScript_inl_h
 #define vm_JSScript_inl_h
 

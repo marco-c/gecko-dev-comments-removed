@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/ErrorReporting.h"
 
 #include "mozilla/PodOperations.h"

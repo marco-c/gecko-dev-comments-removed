@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Exception.h"
 
 #include "js/Context.h"  

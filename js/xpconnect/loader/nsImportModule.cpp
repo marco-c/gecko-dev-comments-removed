@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsImportModule.h"
 
 #include "mozilla/dom/ScriptSettings.h"

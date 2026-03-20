@@ -28,8 +28,6 @@
 
 
 
-
-
 #ifndef ctypes_typedefs_h
 #define ctypes_typedefs_h
 

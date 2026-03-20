@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "xpcprivate.h"
 #include "XPCMaps.h"
 #include "nsWrapperCacheInlines.h"

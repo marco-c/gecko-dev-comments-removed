@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Int128.h"
 
 #include "mozilla/Assertions.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/ConcurrentDelazification.h"
 
 #include "mozilla/Assertions.h"       

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SavedStacksInl_h
 #define vm_SavedStacksInl_h
 

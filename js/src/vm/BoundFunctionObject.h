@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BoundFunctionObject_h
 #define vm_BoundFunctionObject_h
 

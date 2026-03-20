@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "wasm/WasmIonCompile.h"
 
 #include "mozilla/DebugOnly.h"

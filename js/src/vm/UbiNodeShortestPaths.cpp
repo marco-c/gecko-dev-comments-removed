@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/UbiNodeShortestPaths.h"
 
 #include <stdio.h>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/experimental/SourceHook.h"
 
 #include "mozilla/UniquePtr.h"  

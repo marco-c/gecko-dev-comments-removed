@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_PropertyInfo_h
 #define vm_PropertyInfo_h
 

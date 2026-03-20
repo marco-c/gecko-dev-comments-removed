@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_intl_FormatBuffer_h
 #define builtin_intl_FormatBuffer_h
 
@@ -12,7 +10,6 @@
 #include "mozilla/TextUtils.h"
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include "js/AllocPolicy.h"
 #include "js/TypeDecls.h"

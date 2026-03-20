@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Compartment-inl.h"
 
 #include "mozilla/MemoryReporting.h"

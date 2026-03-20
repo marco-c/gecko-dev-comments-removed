@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef wasm_utility_h
 #define wasm_utility_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_BranchHinting_h
 #define jit_BranchHinting_h
 

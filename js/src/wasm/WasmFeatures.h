@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_wasm_WasmFeatures_h
 #define js_wasm_WasmFeatures_h
 

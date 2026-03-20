@@ -17,8 +17,6 @@
 
 
 
-
-
 #ifndef wasm_wasm_baseline_regdefs_h
 #define wasm_wasm_baseline_regdefs_h
 

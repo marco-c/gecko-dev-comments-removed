@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_TraceKind_h
 #define js_TraceKind_h
 

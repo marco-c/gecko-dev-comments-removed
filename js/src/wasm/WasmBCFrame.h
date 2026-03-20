@@ -17,8 +17,6 @@
 
 
 
-
-
 #ifndef wasm_wasm_baseline_frame_h
 #define wasm_wasm_baseline_frame_h
 

@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "vm/ErrorObject-inl.h"
 
 #include "mozilla/Assertions.h"

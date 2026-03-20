@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 466787;
 var summary = 'TM: new Number() should stay a number during recording';
 var actual = '';

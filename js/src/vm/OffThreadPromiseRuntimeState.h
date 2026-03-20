@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_OffThreadPromiseRuntimeState_h
 #define vm_OffThreadPromiseRuntimeState_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_JitActivation_h
 #define vm_JitActivation_h
 

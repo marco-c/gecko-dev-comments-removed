@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Assertions.h"
 
 #include "js/LocaleSensitive.h"

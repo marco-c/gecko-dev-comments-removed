@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GeneratorAndAsyncKind_h
 #define vm_GeneratorAndAsyncKind_h
 

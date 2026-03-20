@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef threading_ProtectedData_h
 #define threading_ProtectedData_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef builtin_temporal_PlainDate_h
 #define builtin_temporal_PlainDate_h
 

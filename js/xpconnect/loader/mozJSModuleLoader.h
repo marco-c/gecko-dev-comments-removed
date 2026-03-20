@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozJSModuleLoader_h
 #define mozJSModuleLoader_h
 

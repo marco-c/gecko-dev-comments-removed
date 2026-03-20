@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/Bailouts.h"
 
 #include "mozilla/ArrayUtils.h"

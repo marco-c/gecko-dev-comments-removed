@@ -17,8 +17,6 @@
 
 
 
-
-
 #ifndef wasm_wasm_baseline_reg_mgmt_inl_h
 #define wasm_wasm_baseline_reg_mgmt_inl_h
 

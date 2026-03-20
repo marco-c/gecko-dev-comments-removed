@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/temporal/CalendarFields.h"
 
 #include "mozilla/Assertions.h"
@@ -201,7 +199,7 @@ static mozilla::EnumSet<CalendarField> CalendarExtraFields(
 
   
   
-  if (fields.contains(CalendarField::Year) && CalendarEraRelevant(calendar)) {
+  if (fields.contains(CalendarField::Year) && CalendarSupportsEra(calendar)) {
     return {CalendarField::Era, CalendarField::EraYear};
   }
   return {};
@@ -211,25 +209,21 @@ static mozilla::EnumSet<CalendarField> CalendarExtraFields(
 
 
 template <typename CharT>
-static mozilla::Maybe<MonthCodeField> ToMonthCode(
+static mozilla::Maybe<MonthCodeField> ParseMonthCode(
     mozilla::Range<const CharT> chars) {
   
 
   
-  
-  
-  MOZ_ASSERT(chars.length() >= 3 && chars.length() <= 4);
+  if (chars.length() < 3 || chars.length() > 4) {
+    return mozilla::Nothing();
+  }
 
-  
-  
   
   bool isLeapMonth = chars.length() == 4;
   if (chars[0] != 'M' || (isLeapMonth && chars[3] != 'L')) {
     return mozilla::Nothing();
   }
 
-  
-  
   
   if (!mozilla::IsAsciiDigit(chars[1]) || !mozilla::IsAsciiDigit(chars[2])) {
     return mozilla::Nothing();
@@ -251,20 +245,20 @@ static mozilla::Maybe<MonthCodeField> ToMonthCode(
 
 
 
-static auto ToMonthCode(const JSLinearString* linear) {
+static auto ParseMonthCode(const JSLinearString* linear) {
   JS::AutoCheckCannotGC nogc;
 
   if (linear->hasLatin1Chars()) {
-    return ToMonthCode(linear->latin1Range(nogc));
+    return ParseMonthCode(linear->latin1Range(nogc));
   }
-  return ToMonthCode(linear->twoByteRange(nogc));
+  return ParseMonthCode(linear->twoByteRange(nogc));
 }
 
 
 
 
-static bool ToMonthCode(JSContext* cx, Handle<Value> value,
-                        MonthCodeField* result) {
+static bool ParseMonthCode(JSContext* cx, Handle<Value> value,
+                           MonthCodeField* result) {
   auto reportInvalidMonthCode = [&](JSLinearString* monthCode) {
     if (auto code = QuoteString(cx, monthCode)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -293,12 +287,7 @@ static bool ToMonthCode(JSContext* cx, Handle<Value> value,
   }
 
   
-  if (monthCodeStr->length() < 3 || monthCodeStr->length() > 4) {
-    return reportInvalidMonthCode(monthCodeStr);
-  }
-
-  
-  auto parsed = ToMonthCode(monthCodeStr);
+  auto parsed = ParseMonthCode(monthCodeStr);
   if (!parsed) {
     return reportInvalidMonthCode(monthCodeStr);
   }
@@ -417,7 +406,7 @@ static bool PrepareCalendarFields(
         }
         case CalendarField::MonthCode: {
           MonthCodeField monthCode;
-          if (!ToMonthCode(cx, value, &monthCode)) {
+          if (!ParseMonthCode(cx, value, &monthCode)) {
             return false;
           }
           result.setMonthCode(monthCode);
@@ -547,29 +536,8 @@ bool js::temporal::PreparePartialCalendarFields(
 
 
 
-static auto CalendarFieldKeysToIgnore(CalendarId calendar,
-                                      mozilla::EnumSet<CalendarField> keys) {
-  
-  if (calendar == CalendarId::ISO8601) {
-    
-    auto ignoredKeys = keys;
-
-    
-    if (keys.contains(CalendarField::Month)) {
-      ignoredKeys += CalendarField::MonthCode;
-    }
-
-    
-    else if (keys.contains(CalendarField::MonthCode)) {
-      ignoredKeys += CalendarField::Month;
-    }
-
-    
-    return ignoredKeys;
-  }
-
-  
-
+static auto NonISOFieldKeysToIgnore(CalendarId calendar,
+                                    mozilla::EnumSet<CalendarField> keys) {
   static constexpr auto eraOrEraYear = mozilla::EnumSet{
       CalendarField::Era,
       CalendarField::EraYear,
@@ -603,18 +571,45 @@ static auto CalendarFieldKeysToIgnore(CalendarId calendar,
 
   
   
-  if (CalendarEraRelevant(calendar) && !(keys & eraOrAnyYear).isEmpty()) {
+  if (CalendarSupportsEra(calendar) && !(keys & eraOrAnyYear).isEmpty()) {
     result += eraOrAnyYear;
   }
 
   
   
-  if (!CalendarEraStartsAtYearBoundary(calendar) &&
-      !(keys & dayOrAnyMonth).isEmpty()) {
+  if (CalendarHasMidYearEras(calendar) && !(keys & dayOrAnyMonth).isEmpty()) {
     result += eraOrEraYear;
   }
 
   return result;
+}
+
+
+
+
+static auto CalendarFieldKeysToIgnore(CalendarId calendar,
+                                      mozilla::EnumSet<CalendarField> keys) {
+  
+  if (calendar == CalendarId::ISO8601) {
+    
+    auto ignoredKeys = keys;
+
+    
+    if (keys.contains(CalendarField::Month)) {
+      ignoredKeys += CalendarField::MonthCode;
+    }
+
+    
+    else if (keys.contains(CalendarField::MonthCode)) {
+      ignoredKeys += CalendarField::Month;
+    }
+
+    
+    return ignoredKeys;
+  }
+
+  
+  return NonISOFieldKeysToIgnore(calendar, keys);
 }
 
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_StencilObject_h
 #define vm_StencilObject_h
 

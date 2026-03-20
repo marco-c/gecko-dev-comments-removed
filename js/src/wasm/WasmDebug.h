@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_debug_h
 #define wasm_debug_h
 

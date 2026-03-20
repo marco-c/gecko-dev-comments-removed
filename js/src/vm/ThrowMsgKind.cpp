@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/ThrowMsgKind.h"
 
 #include "mozilla/Assertions.h"  

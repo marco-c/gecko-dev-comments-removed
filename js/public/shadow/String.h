@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef js_shadow_String_h
 #define js_shadow_String_h
 

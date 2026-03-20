@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "builtin/Math.h"
 
 #include "mozilla/CheckedInt.h"

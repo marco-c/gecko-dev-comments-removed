@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GeckoProfiler_h
 #define vm_GeckoProfiler_h
 

@@ -1,4 +1,3 @@
-
 function f(a) {
     var k = a;
     T: for (;;) {

@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef js_GCAPI_h
 #define js_GCAPI_h
 

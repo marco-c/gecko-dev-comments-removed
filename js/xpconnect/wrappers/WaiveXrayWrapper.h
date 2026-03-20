@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CrossOriginWrapper_h_
 #define CrossOriginWrapper_h_
 

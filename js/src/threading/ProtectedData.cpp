@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "threading/ProtectedData.h"
 
 #include "threading/Mutex.h"

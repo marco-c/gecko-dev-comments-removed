@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/ScopeExit.h"
 
 #include "jsapi.h"

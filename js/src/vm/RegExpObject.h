@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef vm_RegExpObject_h
 #define vm_RegExpObject_h
 

@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef js_experimental_TypedData_h
 #define js_experimental_TypedData_h
 

@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef wasm_serialize_h
 #define wasm_serialize_h
 

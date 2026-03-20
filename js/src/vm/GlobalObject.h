@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_GlobalObject_h
 #define vm_GlobalObject_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/Watchtower.h"
 
 #include "js/CallAndConstruct.h"

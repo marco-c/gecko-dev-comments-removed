@@ -15,7 +15,6 @@
 
 
 
-
 var BUGNUMBER = 68498;
 var summary = 'Creating a Deletable local variable using eval';
 var statprefix = '; currently at expect[';

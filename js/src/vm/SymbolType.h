@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_SymbolType_h
 #define vm_SymbolType_h
 

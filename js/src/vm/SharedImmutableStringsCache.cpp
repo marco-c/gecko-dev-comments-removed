@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "vm/SharedImmutableStringsCache-inl.h"
 
 #include "util/Text.h"

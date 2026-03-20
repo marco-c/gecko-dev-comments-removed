@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_BindingKind_h
 #define vm_BindingKind_h
 

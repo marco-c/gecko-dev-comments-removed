@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "gc/Tenuring.h"
 
 #include <bit>

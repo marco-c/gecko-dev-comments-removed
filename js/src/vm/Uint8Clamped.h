@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef vm_Uint8Clamped_h
 #define vm_Uint8Clamped_h
 
