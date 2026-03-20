@@ -1246,6 +1246,11 @@ this.tabs = class extends ExtensionAPIPersistent {
               if (otherTabInSplit === tabsToMove[0]) {
                 
                 wantReversedSplit = splitviewTabs[0] === otherTabInSplit;
+              } else if (tabsToMove.includes(otherTabInSplit)) {
+                
+                
+                gBrowser.unsplitTabs(splitview);
+                splitview = splitviewTabs = null;
               } else {
                 
                 
