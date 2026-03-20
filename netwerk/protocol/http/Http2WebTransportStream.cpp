@@ -183,13 +183,19 @@ Http2WebTransportStream::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
   }
 
   while (mCurrentOut && mReceiveStreamPipeOut && (mRecvState != RECV_DONE)) {
+    uint32_t available = mCurrentOut->GetData().Length() - mWriteOffset;
     char* writeBuffer = reinterpret_cast<char*>(const_cast<uint8_t*>(
                             mCurrentOut->GetData().Elements())) +
                         mWriteOffset;
-    uint32_t toWrite = mCurrentOut->GetData().Length() - mWriteOffset;
+    uint32_t toWrite = available;
     if (mReliableSize) {
-      if (mTotalReceived + toWrite > *mReliableSize) {
-        toWrite = *mReliableSize - mTotalReceived;
+      if (*mReliableSize <= mTotalReceived) {
+        mRecvState = RECV_DONE;
+        break;
+      }
+      uint64_t remaining = *mReliableSize - mTotalReceived;
+      if (remaining < toWrite) {
+        toWrite = static_cast<uint32_t>(remaining);
       }
     }
 
@@ -362,17 +368,24 @@ void Http2WebTransportStream::OnReset(uint64_t aSize) {
     return;
   }
 
+  LOG(("Http2WebTransportStream::OnReset %p aSize=%" PRIu64
+       " mTotalReceived=%" PRIu64,
+       this, aSize, mTotalReceived));
+
+  if (aSize < mTotalReceived) {
+    
+    
+    
+    RefPtr<Http2WebTransportSessionImpl> session = mWebTransportSession;
+    Close(NS_ERROR_ILLEGAL_VALUE);
+    session->Close(NS_ERROR_ILLEGAL_VALUE);
+    return;
+  }
+
   mReliableSize.emplace(aSize);
 
-  LOG(("Http2WebTransportStream::OnReset %p mReliableSize=%" PRIu64
-       " mTotalReceived=%" PRIu64,
-       this, *mReliableSize, mTotalReceived));
-  if (*mReliableSize < mTotalReceived) {
-    
-    
-    
-    
-    mWebTransportSession->OnError(0);
+  if (mTotalReceived == aSize) {
+    mRecvState = RECV_DONE;
   }
 }
 
