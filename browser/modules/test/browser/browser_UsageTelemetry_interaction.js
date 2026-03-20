@@ -1,6 +1,6 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
+
+
+
 
 "use strict";
 
@@ -34,11 +34,11 @@ function resetGleanEvents() {
   GleanPings.prototypeNoCodeEvents.setEnabled(true);
 }
 
-// Checks that the correct number of clicks are registered against the correct
-// keys in the scalars. Also runs keyed scalar checks against non-area types
-// passed in through expectedOther.
+
+
+
 function assertInteractionScalars(expectedAreas, expectedOther = {}) {
-  // Every time this checks Scalars, it clears them. So clear FOG too.
+  
   resetGleanEvents();
   let processScalars =
     Services.telemetry.getSnapshotForKeyedScalars("main", true)?.parent ?? {};
@@ -92,7 +92,7 @@ add_task(async function toolbarButtons() {
   await BrowserTestUtils.withNewTab("https://example.com", async () => {
     let customButton = await new Promise(resolve => {
       CustomizableUI.createWidget({
-        // In CSS identifiers cannot start with a number but CustomizableUI accepts that.
+        
         id: "12foo",
         label: "12foo",
         onCreated: resolve,
@@ -102,7 +102,7 @@ add_task(async function toolbarButtons() {
 
     Services.telemetry.getSnapshotForKeyedScalars("main", true);
     resetGleanEvents();
-    // We want to record events into this ping, so it has to be enabled.
+    
     GleanPings.prototypeNoCodeEvents.setEnabled(true);
 
     let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
@@ -116,10 +116,10 @@ add_task(async function toolbarButtons() {
       });
     }
 
-    // We intentionally turn off a11y_checks for these click events, because the
-    // test is checking the telemetry functionality and the following 3 clicks
-    // are targeting disabled controls to test the changes in scalars (for more
-    // refer to the bug 1864576 comment 2 and bug 1854999 comment 4):
+    
+    
+    
+    
     AccessibilityUtils.setEnv({
       mustBeEnabled: false,
     });
@@ -128,7 +128,7 @@ add_task(async function toolbarButtons() {
     click("back-button");
     AccessibilityUtils.resetEnv();
 
-    // Make sure the all tabs panel is in the document.
+    
     gTabsPanel.initElements();
     let view = elem("allTabsMenu-allTabsView");
     let shown = BrowserTestUtils.waitForEvent(view, "ViewShown");
@@ -157,23 +157,23 @@ add_task(async function toolbarButtons() {
 
     window.setToolbarVisibility(
       bookmarksToolbar,
-      true /* isVisible */,
-      false /* persist */,
-      false /* animated */
+      true ,
+      false ,
+      false 
     );
     registerCleanupFunction(() => {
       window.setToolbarVisibility(
         bookmarksToolbar,
-        false /* isVisible */,
-        false /* persist */,
-        false /* animated */
+        false ,
+        false ,
+        false 
       );
     });
     await bookmarksToolbarReady;
 
-    // The Bookmarks Toolbar does some optimizations to try not to jank the
-    // browser when populating itself, and does so asynchronously. We wait
-    // until a bookmark item is available in the DOM before continuing.
+    
+    
+    
     let placesToolbarItems = document.getElementById("PlacesToolbarItems");
     await BrowserTestUtils.waitForMutationCondition(
       placesToolbarItems,
@@ -262,13 +262,13 @@ add_task(async function contextMenu() {
       },
     });
 
-    // Check that tab-related items in the toolbar menu also register telemetry:
+    
     context = elem("toolbar-context-menu");
     shown = BrowserTestUtils.waitForEvent(context, "popupshown");
     let scrollbox = elem("tabbrowser-arrowscrollbox");
     EventUtils.synthesizeMouse(
       scrollbox,
-      // offset within the scrollbox - somewhere near the end:
+      
       scrollbox.getBoundingClientRect().width - 20,
       5,
       { type: "contextmenu", button: 2 },
@@ -297,22 +297,154 @@ add_task(async function contextMenu() {
         "toolbar-context-selectAllTabs": 1,
       },
     });
-    // tidy up:
+    
     gBrowser.clearMultiSelectedTabs();
   });
 });
 
+add_task(async function contextMenu_copyLink() {
+  
+  if (AppConstants.platform == "win") {
+    return;
+  }
+  await BrowserTestUtils.withNewTab("https://example.com", async () => {
+    Services.telemetry.getSnapshotForKeyedScalars("main", true);
+    resetGleanEvents();
+
+    let tab = gBrowser.selectedTab;
+    let context = elem("tabContextMenu");
+    let shown = BrowserTestUtils.waitForEvent(context, "popupshown");
+    EventUtils.synthesizeMouseAtCenter(
+      tab,
+      { type: "contextmenu", button: 2 },
+      window
+    );
+    await shown;
+
+    let hidden = BrowserTestUtils.waitForEvent(context, "popuphidden");
+
+    
+    
+    if (AppConstants.platform == "macosx") {
+      await BrowserTestUtils.waitForMutationCondition(
+        context,
+        { childList: true },
+        () => context.querySelector(".share-tab-url-item")
+      );
+      let shareMenu = context.querySelector(".share-tab-url-item");
+      let submenuShown = BrowserTestUtils.waitForPopupEvent(
+        shareMenu.menupopup,
+        "shown"
+      );
+      shareMenu.openMenu(true);
+      await submenuShown;
+      shareMenu.menupopup.activateItem(
+        shareMenu.menupopup.querySelector(".share-copy-link")
+      );
+    } else {
+      context.activateItem(context.querySelector(".share-tab-url-item"));
+    }
+
+    await hidden;
+
+    let events = Glean.browserUsage.interaction
+      .testGetValue()
+      .map(e => [e.extra.source, e.extra.widget_id]);
+    Assert.deepEqual(
+      [
+        ["tabs-context", "context-copy-url"],
+        ["tabs-context-entrypoint", "context-copy-url"],
+      ],
+      events
+    );
+    assertInteractionScalars({
+      tabs_context: { "context-copy-url": 1 },
+    });
+  });
+});
+
+add_task(async function contextMenu_copyMultipleLinks() {
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.org"
+  );
+
+  let clicked = BrowserTestUtils.waitForEvent(tab1, "click");
+  let multiSelectKey =
+    AppConstants.platform == "macosx" ? { metaKey: true } : { ctrlKey: true };
+  EventUtils.synthesizeMouseAtCenter(tab1, multiSelectKey, window);
+  await clicked;
+
+  Services.telemetry.getSnapshotForKeyedScalars("main", true);
+  resetGleanEvents();
+
+  let context = elem("tabContextMenu");
+  let shown = BrowserTestUtils.waitForEvent(context, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(
+    tab2,
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await shown;
+
+  let hidden = BrowserTestUtils.waitForEvent(context, "popuphidden");
+
+  
+  
+  if (AppConstants.platform == "macosx") {
+    await BrowserTestUtils.waitForMutationCondition(
+      context,
+      { childList: true },
+      () => context.querySelector(".share-tab-url-item")
+    );
+    let shareMenu = context.querySelector(".share-tab-url-item");
+    let submenuShown = BrowserTestUtils.waitForPopupEvent(
+      shareMenu.menupopup,
+      "shown"
+    );
+    shareMenu.openMenu(true);
+    await submenuShown;
+    shareMenu.menupopup.activateItem(
+      shareMenu.menupopup.querySelector(".share-copy-link")
+    );
+  } else {
+    context.activateItem(context.querySelector(".share-tab-url-item"));
+  }
+  await hidden;
+
+  let events = Glean.browserUsage.interaction
+    .testGetValue()
+    .map(e => [e.extra.source, e.extra.widget_id]);
+  Assert.deepEqual(
+    [
+      ["tabs-context", "context-copy-multiple-urls"],
+      ["tabs-context-entrypoint", "context-copy-multiple-urls"],
+    ],
+    events
+  );
+  assertInteractionScalars({
+    tabs_context: { "context-copy-multiple-urls": 1 },
+  });
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
+
 add_task(async function contextMenu_entrypoints() {
-  /**
-   * A utility function for this test task that opens the tab context
-   * menu for a particular trigger node, chooses the "Reload Tab" item,
-   * and then waits for the context menu to close.
-   *
-   * @param {Element} triggerNode
-   *   The node that the tab context menu should be triggered with.
-   * @returns {Promise<undefined>}
-   *   Resolves after the context menu has fired the popuphidden event.
-   */
+  
+
+
+
+
+
+
+
+
+
   let openAndCloseTabContextMenu = async triggerNode => {
     let contextMenu = document.getElementById("tabContextMenu");
     let popupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
@@ -453,7 +585,7 @@ add_task(async function devtools() {
     let tab = await tabOpen;
     BrowserTestUtils.removeTab(tab);
 
-    // Note that item ID's have '_' converted to '-'.
+    
     let events = Glean.browserUsage.interaction
       .testGetValue()
       .map(e => [e.extra.source, e.extra.widget_id]);
@@ -552,7 +684,7 @@ add_task(async function webextension() {
     await extension.startup();
     await extension.awaitMessage("ready");
 
-    // As the first add-on interacted with this should show up as `addon0`.
+    
 
     click("random_addon_example_com-browser-action");
     let events = Glean.browserUsage.interaction.testGetValue();
@@ -566,7 +698,7 @@ add_task(async function webextension() {
       },
     });
 
-    // Wait for the element to show up.
+    
     await TestUtils.waitForCondition(() =>
       elem("pageAction-urlbar-random_addon_example_com")
     );
@@ -639,7 +771,7 @@ add_task(async function webextension() {
     await extension2.startup();
     await extension2.awaitMessage("ready");
 
-    // A second extension should be `addon1`.
+    
 
     click("random_addon2_example_com-browser-action");
     events = Glean.browserUsage.interaction.testGetValue();
@@ -653,7 +785,7 @@ add_task(async function webextension() {
       },
     });
 
-    // Wait for the element to show up.
+    
     await TestUtils.waitForCondition(() =>
       elem("pageAction-urlbar-random_addon2_example_com")
     );
@@ -683,7 +815,7 @@ add_task(async function webextension() {
       },
     });
 
-    // The first should have retained its ID.
+    
     click("random_addon_example_com-browser-action");
     events = Glean.browserUsage.interaction.testGetValue();
     Assert.deepEqual(
@@ -723,11 +855,11 @@ add_task(async function webextension() {
 
     await extension.unload();
 
-    // Clear the last opened ID so if this test runs again the sidebar won't
-    // automatically open when the extension is installed.
+    
+    
     window.SidebarController.lastOpenedId = null;
 
-    // The second should retain its ID.
+    
     click("random_addon2_example_com-browser-action");
     click("random_addon2_example_com-browser-action");
     events = Glean.browserUsage.interaction.testGetValue();
@@ -771,8 +903,8 @@ add_task(async function webextension() {
 
     await extension2.unload();
 
-    // Now test that browser action items in the add-ons panel also get
-    // telemetry recorded for them.
+    
+    
     const extension3 = ExtensionTestUtils.loadExtension({
       manifest: {
         version: "1",
@@ -818,7 +950,7 @@ add_task(async function webextension() {
 });
 
 add_task(async function mainMenu() {
-  // macOS does not use the menu bar.
+  
   if (AppConstants.platform == "macosx") {
     return;
   }
@@ -852,7 +984,7 @@ add_task(async function mainMenu() {
     );
     assertInteractionScalars({
       menu_bar: {
-        // Note that the _ is replaced with - for telemetry identifiers.
+        
         "menu-selectAll": 1,
       },
     });
@@ -928,11 +1060,11 @@ add_task(async function preferences() {
   });
 });
 
-/**
- * Context click on a history or bookmark link and open it in a new window.
- *
- * @param {Element} link - The link to open.
- */
+
+
+
+
+
 async function openLinkUsingContextMenu(link) {
   const placesContext = document.getElementById("placesContext");
   const promisePopup = BrowserTestUtils.waitForEvent(
