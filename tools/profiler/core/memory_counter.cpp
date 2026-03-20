@@ -15,9 +15,8 @@ class MemoryCounter : public BaseProfilerCount {
   MemoryCounter()
       : BaseProfilerCount("malloc", "Memory", "Amount of allocated memory") {};
 
-  virtual ~MemoryCounter() {
-    
-  }
+  
+  virtual ~MemoryCounter() = default;
 
   CountSample Sample() override {
     CountSample sample = {

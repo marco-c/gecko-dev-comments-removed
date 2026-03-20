@@ -2,7 +2,6 @@
 
 
 
-
 #include "gfxFontEntry.h"
 
 #include "mozilla/FontPropertyTypes.h"
@@ -447,6 +446,8 @@ class gfxFontEntry::FontTableBlobData {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
+  FontTableBlobData(const FontTableBlobData&) = delete;
+
  private:
   
   const nsTArray<uint8_t> mTableData;
@@ -456,9 +457,6 @@ class gfxFontEntry::FontTableBlobData {
   
   gfxFontEntry* mFontEntry;
   uint32_t mHashKey;
-
-  
-  FontTableBlobData(const FontTableBlobData&);
 };
 
 hb_blob_t* gfxFontEntry::FontTableHashEntry::ShareTableAndGetBlob(

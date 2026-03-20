@@ -35,7 +35,7 @@ struct mozilla::a11y::SelData final {
 
  private:
   
-  ~SelData() {}
+  ~SelData() = default;
 };
 
 SelectionManager::SelectionManager()

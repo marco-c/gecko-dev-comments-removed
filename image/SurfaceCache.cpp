@@ -117,7 +117,7 @@ class CostEntry {
 
 
 class CachedSurface {
-  ~CachedSurface() {}
+  ~CachedSurface() = default;
 
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(CachedSurface)
@@ -251,7 +251,7 @@ static int64_t AreaOfIntSize(const IntSize& aSize) {
 
 
 class ImageSurfaceCache {
-  ~ImageSurfaceCache() {}
+  ~ImageSurfaceCache() = default;
 
  public:
   explicit ImageSurfaceCache(const ImageKey aImageKey)
@@ -1555,7 +1555,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     }
 
    private:
-    virtual ~MemoryPressureObserver() {}
+    virtual ~MemoryPressureObserver() = default;
   };
 
   nsTArray<CostEntry> mCosts;

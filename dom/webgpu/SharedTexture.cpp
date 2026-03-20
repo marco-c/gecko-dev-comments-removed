@@ -2,7 +2,6 @@
 
 
 
-
 #include "SharedTexture.h"
 
 #include "mozilla/webgpu/WebGPUParent.h"
@@ -48,7 +47,7 @@ SharedTexture::SharedTexture(const uint32_t aWidth, const uint32_t aHeight,
                              const ffi::WGPUTextureUsages aUsage)
     : mWidth(aWidth), mHeight(aHeight), mFormat(aFormat), mUsage(aUsage) {}
 
-SharedTexture::~SharedTexture() {}
+SharedTexture::~SharedTexture() = default;
 
 void SharedTexture::SetSubmissionIndex(uint64_t aSubmissionIndex) {
   MOZ_ASSERT(aSubmissionIndex != 0);
@@ -70,6 +69,6 @@ SharedTextureReadBackPresent::SharedTextureReadBackPresent(
     const ffi::WGPUTextureUsages aUsage)
     : SharedTexture(aWidth, aHeight, aFormat, aUsage) {}
 
-SharedTextureReadBackPresent::~SharedTextureReadBackPresent() {}
+SharedTextureReadBackPresent::~SharedTextureReadBackPresent() = default;
 
 }  

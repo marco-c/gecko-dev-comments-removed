@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LocalStorageManager.h"
 #include "StorageUtils.h"
 #include "mozIStorageBindingParams.h"
@@ -147,8 +145,9 @@ class GetOriginParticular final : public mozIStorageFunction {
   explicit GetOriginParticular(EParticular aParticular)
       : mParticular(aParticular) {}
 
- private:
   GetOriginParticular() = delete;
+
+ private:
   ~GetOriginParticular() = default;
 
   EParticular mParticular;

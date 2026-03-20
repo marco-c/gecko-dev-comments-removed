@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerRegistrationParent.h"
 
 #include <utility>
@@ -138,7 +136,7 @@ IPCResult ServiceWorkerRegistrationParent::RecvGetNotifications(
   return IPC_OK();
 }
 
-ServiceWorkerRegistrationParent::ServiceWorkerRegistrationParent() {}
+ServiceWorkerRegistrationParent::ServiceWorkerRegistrationParent() = default;
 
 ServiceWorkerRegistrationParent::~ServiceWorkerRegistrationParent() {
   MOZ_DIAGNOSTIC_ASSERT(!mProxy);

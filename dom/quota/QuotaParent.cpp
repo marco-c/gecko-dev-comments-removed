@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "QuotaParent.h"
 
 #include <mozilla/Assertions.h>
@@ -140,14 +138,11 @@ already_AddRefed<PQuotaParent> AllocPQuotaParent() {
   return actor.forget();
 }
 
-Quota::Quota()
 #ifdef DEBUG
-    : mActorDestroyed(false)
-#endif
-{
-}
-
 Quota::~Quota() { MOZ_ASSERT(mActorDestroyed); }
+#else
+Quota::~Quota() = default;
+#endif
 
 bool Quota::TrustParams() const {
 #ifdef DEBUG

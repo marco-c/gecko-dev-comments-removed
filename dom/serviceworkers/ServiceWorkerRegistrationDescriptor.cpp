@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 
 #include "ServiceWorkerInfo.h"
@@ -97,9 +95,9 @@ ServiceWorkerRegistrationDescriptor::operator=(
   return *this;
 }
 
-ServiceWorkerRegistrationDescriptor::~ServiceWorkerRegistrationDescriptor() {
-  
-}
+
+ServiceWorkerRegistrationDescriptor::~ServiceWorkerRegistrationDescriptor() =
+    default;
 
 bool ServiceWorkerRegistrationDescriptor::operator==(
     const ServiceWorkerRegistrationDescriptor& aRight) const {

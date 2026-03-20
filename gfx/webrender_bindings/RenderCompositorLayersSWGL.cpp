@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "RenderCompositorLayersSWGL.h"
 
 #include "GLContext.h"
@@ -367,7 +365,7 @@ class RenderSourceLMC : public profiler_screenshots::RenderSource {
   const auto& RenderTarget() { return mRT; }
 
  protected:
-  virtual ~RenderSourceLMC() {}
+  virtual ~RenderSourceLMC() = default;
 
   RefPtr<CompositingRenderTarget> mRT;
 };
@@ -405,7 +403,7 @@ class DownscaleTargetLMC : public profiler_screenshots::DownscaleTarget {
   }
 
  protected:
-  virtual ~DownscaleTargetLMC() {}
+  virtual ~DownscaleTargetLMC() = default;
 
   RefPtr<RenderSourceLMC> mRenderSource;
   Compositor* mCompositor;
@@ -429,7 +427,7 @@ class AsyncReadbackBufferLMC
   }
 
  protected:
-  virtual ~AsyncReadbackBufferLMC() {}
+  virtual ~AsyncReadbackBufferLMC() = default;
 
   RefPtr<mozilla::layers::AsyncReadbackBuffer> mARB;
   Compositor* mCompositor;

@@ -101,12 +101,11 @@ namespace profiler_screenshots {
 ScreenshotGrabberImpl::ScreenshotGrabberImpl(const IntSize& aBufferSize)
     : mBufferSize(aBufferSize) {}
 
-ScreenshotGrabberImpl::~ScreenshotGrabberImpl() {
-  
-  
-  
-  
-}
+
+
+
+
+ScreenshotGrabberImpl::~ScreenshotGrabberImpl() = default;
 
 
 

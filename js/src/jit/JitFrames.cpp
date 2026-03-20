@@ -1583,9 +1583,8 @@ RInstructionResults& RInstructionResults::operator=(RInstructionResults&& rhs) {
   return *this;
 }
 
-RInstructionResults::~RInstructionResults() {
-  
-}
+
+RInstructionResults::~RInstructionResults() = default;
 
 bool RInstructionResults::init(JSContext* cx, uint32_t numResults) {
   if (numResults) {

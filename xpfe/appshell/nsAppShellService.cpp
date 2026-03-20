@@ -65,7 +65,7 @@ nsAppShellService::nsAppShellService()
   }
 }
 
-nsAppShellService::~nsAppShellService() {}
+nsAppShellService::~nsAppShellService() = default;
 
 
 
@@ -286,7 +286,7 @@ class BrowserDestroyer final : public Runnable {
   }
 
  protected:
-  virtual ~BrowserDestroyer() {}
+  virtual ~BrowserDestroyer() = default;
 
  private:
   nsCOMPtr<nsIWebBrowser> mBrowser;

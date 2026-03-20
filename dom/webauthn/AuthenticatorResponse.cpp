@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/AuthenticatorResponse.h"
 
 #include "mozilla/Base64.h"
@@ -29,9 +27,8 @@ AuthenticatorResponse::AuthenticatorResponse(nsPIDOMWindowInner* aParent)
   
 }
 
-AuthenticatorResponse::~AuthenticatorResponse() {
-  
-}
+
+AuthenticatorResponse::~AuthenticatorResponse() = default;
 
 nsISupports* AuthenticatorResponse::GetParentObject() const { return mParent; }
 

@@ -333,7 +333,7 @@ class Thread {
 static NS_tchar gPatchDirPath[MAXPATHLEN];
 static NS_tchar gInstallDirPath[MAXPATHLEN];
 static NS_tchar gWorkingDirPath[MAXPATHLEN];
-MOZ_RUNINIT static ArchiveReader gArchiveReader;
+constinit static ArchiveReader gArchiveReader;
 static bool gSucceeded = false;
 static bool sStagedUpdate = false;
 static bool sReplaceRequest = false;
@@ -365,7 +365,7 @@ static const int kCallbackIndex = 8;
 
 
 
-MOZ_RUNINIT static MARChannelStringTable gMARStrings;
+constinit static MARChannelStringTable gMARStrings;
 
 
 
@@ -1594,7 +1594,7 @@ class PatchFileDecoder {
     return ptr;
   }
 
-  virtual ~PatchFileDecoder() {}
+  virtual ~PatchFileDecoder() = default;
 
   virtual unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) = 0;
 
@@ -1616,7 +1616,7 @@ class PatchFileDecoder {
 #if defined(MOZ_BSPATCH)
 class BSPatchFileDecoder : public PatchFileDecoder {
  public:
-  ~BSPatchFileDecoder() override {}
+  ~BSPatchFileDecoder() override = default;
 
   unsigned int ComputeCrc32(const uint8_t* aBuf, size_t aBufSize) override;
 

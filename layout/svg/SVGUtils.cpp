@@ -491,10 +491,9 @@ class MixModeBlender {
     mSourceCtx->SetPattern(pattern);
     mSourceCtx->Paint();
   }
-
- private:
   MixModeBlender() = delete;
 
+ private:
   IntRect ComputeClipExtsInDeviceSpace(const gfxMatrix& aTransform) {
     
     

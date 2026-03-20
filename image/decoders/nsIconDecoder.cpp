@@ -23,7 +23,7 @@ nsIconDecoder::nsIconDecoder(RasterImage* aImage)
   
 }
 
-nsIconDecoder::~nsIconDecoder() {}
+nsIconDecoder::~nsIconDecoder() = default;
 
 LexerResult nsIconDecoder::DoDecode(SourceBufferIterator& aIterator,
                                     IResumable* aOnResume) {

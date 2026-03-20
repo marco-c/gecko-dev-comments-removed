@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NavigationPrecommitController.h"
 
 #include "Navigation.h"
@@ -29,7 +27,7 @@ NavigationPrecommitController::NavigationPrecommitController(
   MOZ_DIAGNOSTIC_ASSERT(mEvent);
 }
 
-NavigationPrecommitController::~NavigationPrecommitController() {}
+NavigationPrecommitController::~NavigationPrecommitController() = default;
 
 JSObject* NavigationPrecommitController::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {

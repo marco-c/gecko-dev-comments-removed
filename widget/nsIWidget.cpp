@@ -130,11 +130,10 @@ WidgetShutdownObserver::WidgetShutdownObserver(nsIWidget* aWidget)
   Register();
 }
 
-WidgetShutdownObserver::~WidgetShutdownObserver() {
-  
-  
-  
-}
+
+
+
+WidgetShutdownObserver::~WidgetShutdownObserver() = default;
 
 NS_IMETHODIMP
 WidgetShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
@@ -216,11 +215,10 @@ LocalesChangedObserver::LocalesChangedObserver(nsIWidget* aWidget)
   Register();
 }
 
-LocalesChangedObserver::~LocalesChangedObserver() {
-  
-  
-  
-}
+
+
+
+LocalesChangedObserver::~LocalesChangedObserver() = default;
 
 NS_IMETHODIMP
 LocalesChangedObserver::Observe(nsISupports* aSubject, const char* aTopic,
