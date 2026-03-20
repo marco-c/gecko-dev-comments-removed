@@ -80,8 +80,8 @@ HRESULT MFContentProtectionManager::BeginEnableContent(
     
     auto result = NS_NewTimerWithFuncCallback(
         &MFContentProtectionManager::WaitingForKeyTimerCallback, this, 500,
-        nsITimer::TYPE_ONE_SHOT,
-        "MFContentProtectionManager::WaitingForKey"_ns, mManagerThread);
+        nsITimer::TYPE_ONE_SHOT, "MFContentProtectionManager::WaitingForKey"_ns,
+        mManagerThread);
     if (result.isOk()) {
       mWaitingForKeyTimer = result.unwrap();
     }
