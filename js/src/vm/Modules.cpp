@@ -1914,32 +1914,19 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
   
   
-  if (module->hadEvaluationError()) {
-    Rooted<PromiseObject*> capability(cx);
-    if (!module->hasTopLevelCapability()) {
-      capability = ModuleObject::createTopLevelCapability(cx, module);
-      if (!capability) {
-        return false;
-      }
-
-      Rooted<Value> error(cx, module->evaluationError());
-      if (!ModuleObject::topLevelCapabilityReject(cx, module, error)) {
-        return false;
-      }
-    }
-
-    capability = module->topLevelCapability();
-    MOZ_ASSERT(JS::GetPromiseState(capability) == JS::PromiseState::Rejected);
-    MOZ_ASSERT(JS::GetPromiseResult(capability) == module->evaluationError());
-    result.set(ObjectValue(*capability));
-    return true;
-  }
-
-  
-  
   if (module->status() == ModuleStatus::EvaluatingAsync ||
       module->status() == ModuleStatus::Evaluated) {
-    module = module->getCycleRoot();
+    
+    if (module->hasCycleRoot()) {
+      
+      module = module->getCycleRoot();
+    } else {
+      
+      
+      
+      MOZ_ASSERT((module->status() == ModuleStatus::Evaluated) &&
+                 module->hadEvaluationError());
+    }
   }
 
   
