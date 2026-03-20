@@ -5,6 +5,7 @@
 #include "ARIAMap.h"
 #include "CachedTableAccessible.h"
 #include "DocAccessibleParent.h"
+#include "mozilla/a11y/PdfStructTreeBuilder.h"
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/Components.h"  
 #include "mozilla/dom/BrowserBridgeParent.h"
@@ -1403,6 +1404,13 @@ DocAccessibleParent::CollectReports(nsIHandleReportCallback* aHandleReport,
 }
 
 NS_IMPL_ISUPPORTS(DocAccessibleParent, nsIMemoryReporter);
+
+mozilla::ipc::IPCResult DocAccessibleParent::RecvPrinting() {
+  if (dom::CanonicalBrowsingContext* bc = GetBrowsingContext()) {
+    PdfStructTreeBuilder::Init(bc);
+  }
+  return IPC_OK();
+}
 
 }  
 }  

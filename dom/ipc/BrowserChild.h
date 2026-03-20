@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BrowserChild_h
 #define mozilla_dom_BrowserChild_h
 
@@ -764,6 +762,10 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvReleaseAllPointerCapture();
 
   mozilla::ipc::IPCResult RecvReleasePointerLock();
+
+#ifdef ACCESSIBILITY
+  mozilla::ipc::IPCResult RecvRequestDocAccessibleForPrint();
+#endif
 
  private:
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,

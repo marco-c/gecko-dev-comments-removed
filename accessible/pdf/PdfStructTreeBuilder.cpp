@@ -150,9 +150,8 @@ void PdfStructTreeBuilder::InitInternal(
     
     bp->VisitAllDescendants([this](dom::BrowserParent* descBp) {
       if (!descBp->GetTopLevelDocAccessible()) {
-        
-        
-        
+        (void)descBp->SendRequestDocAccessibleForPrint();
+        ++mPendingOopIframes;
       }
     });
   }
