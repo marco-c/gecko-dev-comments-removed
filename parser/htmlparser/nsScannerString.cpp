@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <stdlib.h>
 #include "nsScannerString.h"
 #include "mozilla/CheckedInt.h"

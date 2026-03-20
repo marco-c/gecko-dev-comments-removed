@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsScanner.h"
 
 #include "mozilla/Encoding.h"

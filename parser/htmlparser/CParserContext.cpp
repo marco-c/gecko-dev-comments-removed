@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsAtom.h"
 #include "CParserContext.h"
 #include "prenv.h"

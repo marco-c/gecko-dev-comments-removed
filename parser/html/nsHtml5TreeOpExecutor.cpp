@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/dom/BrowsingContext.h"
