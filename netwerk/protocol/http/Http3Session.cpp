@@ -1145,11 +1145,20 @@ nsresult Http3Session::ProcessOutput(nsIUDPSocket* socket) {
           LOG(("Http3Session::ProcessOutput sending packet rv=%d osError=%d",
                static_cast<int32_t>(rv), NS_FAILED(rv) ? PR_GetOSError() : 0));
           if (NS_FAILED(rv) && (rv != NS_BASE_STREAM_WOULD_BLOCK)) {
-            self->mSocketError = rv;
-            
-            
-            
-            return rv;
+            if (rv == NS_ERROR_OUT_OF_MEMORY) {
+              
+              
+              
+              LOG(
+                  ("Http3Session::ProcessOutput ENOBUFS (transient), dropping "
+                   "datagram [this=%p]",
+                   self));
+            } else {
+              self->mSocketError = rv;
+              
+              
+              return rv;
+            }
           }
           self->mTotalBytesWritten += aLength;
           self->mLastWriteTime = PR_IntervalNow();
