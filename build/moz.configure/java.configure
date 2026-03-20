@@ -1,12 +1,10 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-
-
-
-
-
-
-
+# Java detection
+# ========================================================
 option(
     "--with-java-bin-path",
     nargs=1,
@@ -23,7 +21,7 @@ option(
 @imports(_from="__builtin__", _import="Exception")
 def java_search_paths(path, host, toolchains_base_dir, want_bootstrap):
     if path:
-        
+        # Look for javac and jar in the specified path.
         return path
 
     try:
@@ -52,14 +50,14 @@ def java_search_paths(path, host, toolchains_base_dir, want_bootstrap):
         os_arch = host.cpu
 
         try:
-            
+            # FIXME: should use the bootstrap.configure mechanism instead
             return [str(ensure_java(os_name, os_arch))]
         except Exception as e:
             die(str(e))
 
 
-
-
+# Finds the given java tool, failing with a custom error message if we can't
+# find it.
 
 
 @template
@@ -83,8 +81,8 @@ def check_java_tool(tool):
 check_java_tool("java")
 
 
-
-
+# Java Code Coverage
+# ========================================================
 option(
     "--enable-java-coverage",
     env="MOZ_JAVA_CODE_COVERAGE",

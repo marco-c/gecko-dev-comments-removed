@@ -2,7 +2,6 @@
 
 
 
-
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
@@ -1875,9 +1874,11 @@ public:
     
     SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
     if (SpellingLoc != Loc) {
+      
+      
+      
       visitIdentifier(Kind, SyntaxKind, QualName, SpellingLoc, Symbol,
-                      MaybeType, TokenContext, Flags, PeekRange, NestingRange,
-                      ArgRanges);
+                      MaybeType, TokenContext, Flags);
     }
 
     SourceLocation ExpansionLoc = SM.getExpansionLoc(Loc);

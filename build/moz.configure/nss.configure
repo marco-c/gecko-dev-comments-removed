@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @imports(_from="__builtin__", _import="open")
@@ -53,7 +51,7 @@ def nss_config(nss_pkg, build_env):
 set_config("NSS_CFLAGS", nss_config.cflags)
 set_config("NSS_LIBS", nss_config.libs)
 
-
+# Used specifically by Thunderbird
 project_flag(
     env="NSS_EXTRA_SYMBOLS_FILE",
     nargs=1,

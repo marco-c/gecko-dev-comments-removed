@@ -1,13 +1,11 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
-
+# This cannot be named "build" because of bug 922191.
 SPHINX_TREES["buildsystem"] = "docs"
 
 with Files("docs/**"):
@@ -40,13 +38,13 @@ if CONFIG["ENABLE_TESTS"] or CONFIG["MOZ_DMD"]:
 if CONFIG["MOZ_DMD"]:
     FINAL_TARGET_FILES += ["/memory/replace/dmd/dmd.py"]
 
-
-
+# Put a useful .gdbinit and .gdbinit.py in $objdir/build, to be picked up
+# automatically by GDB via either libxul.so-gdb.py or js-gdb.py.
 OBJDIR_PP_FILES.build += [".gdbinit.py.in"]
 OBJDIR_FILES.build += [".gdbinit.loader"]
 OBJDIR_FILES.build += [".gdbinit"]
 
-
+# Install the clang-cl runtime library for ASAN next to the binaries we produce.
 if CONFIG["MOZ_ASAN"] and CONFIG["CC_TYPE"] == "clang-cl":
     FINAL_TARGET_FILES += ["%" + CONFIG["MOZ_CLANG_RT_ASAN_LIB_PATH"]]
     FINAL_TARGET_FILES += [
@@ -56,7 +54,7 @@ if CONFIG["MOZ_ASAN"] and CONFIG["CC_TYPE"] == "clang-cl":
 if CONFIG["MOZ_ASAN"] or CONFIG["MOZ_UBSAN"] or CONFIG["MOZ_TSAN"]:
     DIRS += ["sanitizers"]
 
-
+# Install the clang runtime library for ASAN next to the binaries we produce.
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" and CONFIG["MOZ_ASAN"]:
     FINAL_TARGET_FILES += ["%" + CONFIG["MOZ_CLANG_RT_ASAN_LIB_PATH"]]
 
@@ -120,17 +118,17 @@ if CONFIG["MOZ_APP_BASENAME"]:
     )
 
 
-
-
-
-
+# Put a .lldbinit in the bin directory and the objdir, to be picked up
+# automatically by LLDB when we debug executables using either of those two
+# directories as the current working directory.  The .lldbinit file will
+# load $(topsrcdir)/.lldbinit, which is where the actual debugging commands are.
 DEFINES["topsrcdir"] = TOPSRCDIR
 DEFINES["topobjdir"] = TOPOBJDIR
 FINAL_TARGET_PP_FILES += [".lldbinit.in"]
 OBJDIR_FILES += ["!/dist/bin/.lldbinit"]
 
-
-
+# Put the .ycm_extra_conf.py file at the root of the objdir. It is used by
+# the vim plugin YouCompleteMe.
 OBJDIR_FILES += ["/.ycm_extra_conf.py"]
 
 if CONFIG["MOZ_VALGRIND"]:

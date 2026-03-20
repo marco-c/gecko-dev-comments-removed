@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @depends(toolchains_base_dir, "--help")
@@ -35,7 +33,7 @@ option(
 
 @dependable
 def min_android_version():
-    
+    # Sync with android_sdk_version.min_sdk_version
     return "26"
 
 
@@ -51,7 +49,7 @@ option(
 @imports(_from="__builtin__", _import="ValueError")
 def android_version(value, min_version):
     if not value:
-        
+        # Someone has passed --without-android-version.
         die("--with-android-version cannot be disabled.")
 
     try:
@@ -105,7 +103,7 @@ set_config("ANDROID_NDK", ndk)
 @imports(_from="mozboot.android", _import="GetNdkVersionError")
 def ndk_version(ndk):
     if not ndk:
-        
+        # Building 'js/src' for non-Android.
         return
 
     try:

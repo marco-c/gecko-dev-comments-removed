@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef StringOperations_h
 #define StringOperations_h
 

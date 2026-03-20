@@ -1,15 +1,13 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
+# Check for headers defining standard int types.
 check_header("stdint.h")
 have_inttypes = check_header("inttypes.h")
 
 
-
+# Assume we have ansi C header files available.
 set_define("STDC_HEADERS", True)
 
 set_config("HAVE_INTTYPES_H", have_inttypes)
@@ -28,7 +26,7 @@ check_headers(
     "fts.h",
 )
 
-
+# These are all the places some variant of statfs can be hiding.
 check_headers(
     "sys/statvfs.h",
     "sys/statfs.h",
@@ -36,9 +34,9 @@ check_headers(
     "sys/mount.h",
 )
 
-
-
-
+# Quota support
+# Check for both the header and quotactl() because Android headers can have the
+# header but not quotactl().
 set_define(
     "HAVE_SYS_QUOTA_H",
     try_compile(
@@ -49,7 +47,7 @@ set_define(
 )
 check_header("linux/quota.h", includes=["sys/socket.h"], when=building_linux)
 
-
+# SCTP support - needs various network include headers
 check_headers(
     "linux/if_addr.h",
     "linux/rtnetlink.h",
@@ -65,9 +63,9 @@ check_headers(
     "byteswap.h",
 )
 
-
-
-
+# memfd_create(2) -- Note that older versions of the Linux man-pages
+# project incorrectly cite <sys/memfd.h>, which doesn't exist; this
+# was fixed in the man-pages-5.00 release.
 set_define(
     "HAVE_MEMFD_CREATE",
     try_compile(

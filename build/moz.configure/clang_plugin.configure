@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @depends(host_library_name_info, build_environment, when="--enable-clang-plugin")
@@ -65,7 +63,7 @@ def clang_plugin_flags(
     llvm_ldflags = check_cmd_output(llvm_config, "--ldflags").replace("\n", " ").split()
 
     if host.kernel == "WINNT":
-        
+        # Replace any backslashes from paths with forward slash.
         llvm_cxxflags = [arg.replace("\\", "/") for arg in llvm_cxxflags]
         llvm_ldflags = [arg.replace("\\", "/") for arg in llvm_ldflags]
 
@@ -84,7 +82,7 @@ def clang_plugin_flags(
         clang_plugin_flags.extend(
             ["-Xclang", "-add-plugin", "-Xclang", "mozsearch-index"]
         )
-        
+        # Parameters are: srcdir, outdir (path where output JSON is stored), objdir.
         parameters = [
             build_environment.topsrcdir,
             os.path.join(build_environment.topobjdir, "mozsearch_index"),

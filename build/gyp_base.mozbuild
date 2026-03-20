@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 gyp_vars = {}
 
@@ -36,4 +34,4 @@ arches = {
 }
 
 gyp_vars["host_arch"] = arches.get(CONFIG["HOST_CPU_ARCH"], CONFIG["HOST_CPU_ARCH"])
-gyp_vars["target_arch"] = arches.get(CONFIG["CPU_ARCH"], CONFIG["CPU_ARCH"])
+gyp_vars["target_arch"] = arches.get(CONFIG["TARGET_CPU"], CONFIG["TARGET_CPU"])

@@ -1,12 +1,10 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-
-
-
-
-
-
-
+# Updater
+# ==============================================================
 @depends(build_project, target)
 def updater_default(build_project, target):
     if build_project == "tools/update-programs":
@@ -23,8 +21,8 @@ option(
 set_config("MOZ_UPDATER", True, when="--enable-updater")
 set_define("MOZ_UPDATER", True, when="--enable-updater")
 
-
-
+# Updates that do not verify signatures
+# ==============================================================
 
 option(
     "--enable-unverified-updates",
@@ -57,8 +55,8 @@ set_config(
     depends_if("--enable-unverified-updates")(lambda _: True),
 )
 
-
-
+# Mac elevated updates without production signing
+# ==============================================================
 
 option(
     "--enable-mac-elevated-updates-with-generic-certs",
@@ -104,8 +102,8 @@ def smprivilegedexec_requirements(enabled):
 
 set_config("MOZ_SMPRIVILEGEDEXECUTABLES_REQUIREMENTS", smprivilegedexec_requirements)
 
-
-
+# MAR channel ID configuration
+# ==============================================================
 
 option(env="MAR_CHANNEL_ID", nargs=1, help="MAR channel identifier")
 
@@ -123,9 +121,9 @@ set_config(
     depends_if("ACCEPTED_MAR_CHANNEL_IDS")(lambda channels: ",".join(channels)),
 )
 
-
-
-
+# Use NSS for MAR signatures even on platforms where system libraries are
+# supported (currently Windows and macOS).
+# ==============================================================
 
 can_toggle_nss_mar = target_is_windows | target_is_osx
 
@@ -146,8 +144,8 @@ def enable_nss_mar(enabled, can_toggle_nss_mar):
 
 set_config("MOZ_USE_NSS_FOR_MAR", True, when=enable_nss_mar)
 
-
-
+# Maintenance service (Windows only)
+# ==============================================================
 
 
 @depends("--enable-updater")
@@ -179,10 +177,10 @@ def check_maintenance_service(mainteance_service, updater):
     return mainteance_service
 
 
-
-
-
-
+# Update agent (currently Windows and macOS only)
+# This is an independent task that runs on a schedule to
+# check for, download, and install updates.
+# ==============================================================
 
 
 @depends("--enable-backgroundtasks", "--enable-updater", build_project)
@@ -219,9 +217,9 @@ def check_update_agent(update_agent, backgroundtasks, updater):
     return update_agent
 
 
-
-
-
+# Enable or disable the default browser agent, which monitors the user's default
+# browser setting on Windows.
+# ==============================================================================
 
 
 @depends(target, build_project)
@@ -245,10 +243,10 @@ def default_agent_flag(enabled):
 set_config("MOZ_DEFAULT_BROWSER_AGENT", default_agent_flag)
 
 
-
-
-
-
+# Enable or disable the notification server, which allows Windows native
+# notifications to persist when the application is not running and relaunch as
+# necessary.
+# ==============================================================================
 @depends(target, build_project)
 def notification_server_default(target, build_project):
     return target.os == "WINNT" and build_project in (
@@ -265,8 +263,8 @@ option(
 
 set_config("MOZ_NOTIFICATION_SERVER", True, when="--enable-notification-server")
 
-
-
+# Supported patch formats for the updater
+# =======================================
 
 with only_when("--enable-updater"):
     include("zucchini.configure")

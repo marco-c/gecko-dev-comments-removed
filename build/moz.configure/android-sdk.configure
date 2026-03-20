@@ -1,10 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
+# Ensure Android SDK and build-tools versions depending on mobile target.
 
 
 @depends(host, toolchains_base_dir, "--help")
@@ -38,8 +36,8 @@ def android_os_info():
     os_tag = get_os_tag_for_android(os_name)
     os_arch = machine()
     if os_arch.lower() == "amd64":
-        
-        
+        # On Windows, x86_64 is reported as AMD64, but we use x86_64
+        # everywhere else, so let's normalize it.
         os_arch = "x86_64"
 
     if os_name == "windows" and os_arch.startswith("arm"):
@@ -219,7 +217,7 @@ def android_platforms(sdk_root, sdk_version, android_os_info, want_bootstrap):
     )
 
 
-
+# Emulator
 @depends(android_sdk_root, android_os_info, want_bootstrap, avd_manifest)
 @checking("for Android emulator")
 @imports(_from="os.path", _import="exists")

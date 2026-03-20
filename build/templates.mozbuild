@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @template
@@ -10,7 +8,7 @@ def Binary():
     """Generic template for target binaries. Meant to be used by other
     templates."""
 
-    
+    # Add -llog by default, since we use it all over the place.
     if CONFIG["OS_TARGET"] == "Android":
         OS_LIBS += ["log"]
 
@@ -78,7 +76,7 @@ def AllowCompilerWarnings():
 
 @template
 def DisableCompilerWarnings():
-    
+    # Keep the -Wno-* flags to disable warnings that may be enabled through other means.
     def filter(flags):
         return [f for f in flags or [] if f.startswith("-Wno-")]
 
@@ -94,12 +92,12 @@ def DisableWarningsForRust():
     compile C/C++ sources which we can't control easily). Meant to be used by
     other templates.
     """
-    
+    # Some Rust build scripts compile C/C++ sources, don't error on warnings for them.
     AllowCompilerWarnings()
 
-    
-    
-    
+    # And furthermore, don't even show warnings for them, so they don't regress
+    # the Compiler Warnings build metric
+    # <https://developer.mozilla.org/en-US/docs/Mozilla/Performance/Automated_Performance_Testing_and_Sheriffing/Build_Metrics#compiler_warnings>.
     DisableCompilerWarnings()
 
 
@@ -197,7 +195,7 @@ def HostRustLibrary(name, features=None):
     HostLibrary(name)
 
     IS_RUST_LIBRARY = True
-    
+    # Some Rust build scripts compile C/C++ sources, don't error on warnings for them.
     AllowCompilerWarnings()
 
     if features:

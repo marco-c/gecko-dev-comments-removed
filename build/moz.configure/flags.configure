@@ -1,23 +1,21 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
-
-
-
-
-
+# The following flags are explicitly passed to C++ compiler invocations from rust
+# even when only passing base flags. If you add more similarly important flags,
+# please consider whether they should be handled the same way.
+# See config/makefiles/rust.mk.
+# We support C++14, but we don't want to enable the sized deallocation
+# facilities in C++14 yet.
 check_and_add_flag("-fno-sized-deallocation", compiler=cxx_compiler)
-
-
+# Likewise for C++17 and aligned allocation.  It's not immediately obvious
+# from the clang and GCC documentation, but they both support this.
 check_and_add_flag("-fno-aligned-new", compiler=cxx_compiler)
 
 
-
-
+# Detect static linkage of libstdc++
+# ==============================================================
 @depends(
     cxx_compiler,
     extra_toolchain_flags,
@@ -36,12 +34,12 @@ def link_libstdcxx_statically(
     llvm_objdump,
 ):
     with create_temporary_file(suffix=".out") as bin_path:
-        
-        
-        
+        # This test is quite conservative: it assumes dynamic linkage if the
+        # compilation step fails or if the binary format is not supported. But
+        # it still detects basic issues.
 
-        
-        
+        # FIXME: At some point we should make these dependencies explicit.
+        # See #1903233.
         env_flags = []
         if "CXXFLAGS" in os.environ:
             env_flags.extend(shell_split(os.environ["CXXFLAGS"]))
@@ -68,7 +66,7 @@ def link_libstdcxx_statically(
         ):
             objdump_command = [llvm_objdump, "--private-headers", bin_path]
             result, stdout, stderr = get_cmd_output(*objdump_command)
-            
+            # This is very conservative :-).
             return (
                 result == 0
                 and not stderr
@@ -86,7 +84,7 @@ check_and_add_flag(
     when=target_has_linux_kernel & depends(target.cpu)(lambda cpu: cpu == "Alpha"),
 )
 
-
+# Identical Code Folding
 option(
     "--enable-icf",
     help="{Enable|Disable} Identical Code Folding",
@@ -104,8 +102,8 @@ with only_when(building_with_gnu_compatible_cc):
 
 add_flag("-D_HAS_EXCEPTIONS=0", when=target_is_windows)
 
-
-
+# We only use -faddrsig with clang on android, and all version of clang we
+# support have it.
 add_addrsig_flag = depends(c_compiler, when=target_is_android)(
     lambda c: c.type == "clang"
 )
@@ -183,7 +181,7 @@ def pass_manager(enabled, compiler, host, target, pgo, enable_fuzzing, ubsan):
     if compiler.type not in ("clang", "clang-cl"):
         return None
 
-    
+    # As of clang 13, the default pass manager is the new one.
     if compiler.version >= "13.0.0":
         if enabled:
             return namespace(flags=None, enabled=True)
@@ -202,33 +200,33 @@ def pass_manager(enabled, compiler, host, target, pgo, enable_fuzzing, ubsan):
         return None
 
     if host.os == "OSX":
-        
-        
+        # Some native Mac builds hang with the new pass manager. Given the
+        # inability to test in CI, don't take the risk of further breakage.
         if enabled.origin != "default":
             die(
                 "--enable-new-pass-manager causes problems on mac hosts with clang < 13"
             )
         return None
     if target.os == "OSX" and not pgo:
-        
-        
-        
-        
+        # Also disable when cross-compiling to Mac, because plain-ish opt
+        # builds hang. Variants like asan and ccov work fine, but it would be
+        # too tedious to test them all here. PGO is the only thing that matters
+        # enough to make an exception for.
         if enabled.origin != "default":
             die(
                 "--enable-new-pass-manager causes problems on mac builds with clang < 13"
             )
         return None
     if enable_fuzzing and compiler.version < "10.0.0":
-        
+        # Clang 9 does not seem to play well with libFuzzer
         if enabled.origin != "default":
             die(
                 "--enable-new-pass-manager causes problems on fuzzing builds with clang < 10"
             )
         return None
     if ubsan and compiler.version == "10.0.0":
-        
-        
+        # Clang 10.0.0 hangs with some ubsan-inserted code constructs.
+        # This was fixed in 10.0.1 (https://llvm.org/pr45835)
         if enabled.origin != "default":
             die(
                 "--enable-new-pass-manager causes problems with ubsan builds with clang 10.0.0"
@@ -244,8 +242,8 @@ def pass_manager(enabled, compiler, host, target, pgo, enable_fuzzing, ubsan):
 
 set_config("MOZ_PASS_MANAGER_FLAGS", pass_manager.flags)
 
-
-
+# Debugging options
+##
 
 
 @depends(moz_debug, asan, target, "--enable-jemalloc")
@@ -276,15 +274,15 @@ def check_debug_flags(check, flags):
         die(f"These compiler flags are invalid: {quote(*flags)}")
 
 
-
-
-
-
-
-
-
-
-
+# Try to make builds more reproducible and allow sharing built artifacts across
+# source and object directories by using -ffile-prefix-map and friends.  To
+# "unwind" the prefix maps, use:
+#
+# (gdb) set substitute-path /topsrcdir/ $topsrcdir/
+#
+# (lldb) settings set target.source-map /topobjdir/ $topobjdir/
+#
+# See, for example, https://lldb.llvm.org/use/map.html.
 @depends(
     path_remapping,
     path_remappings,
@@ -305,8 +303,8 @@ def file_prefix_map_flags(path_remapping, path_remappings, compiler):
 
     flags = []
     for old, new in path_remappings:
-        
-        
+        # We would prefer to use just -ffile-prefix-map, but clang-cl doesn't
+        # seem to recognize it.
         for flag in ("-fdebug-prefix-map", "-fmacro-prefix-map"):
             flag = f"{flag}={old}={new}"
             if compiler.type in ("gcc", "clang"):
@@ -350,7 +348,7 @@ check_and_add_asm_flag(
 check_and_add_flag("-fPIC", when=building_with_gnu_compatible_cc & ~target_is_windows)
 set_define("PIC", True, when=target_is_netbsd)
 
-
+# DSO flags manipulations
 have_linker_support_ignore_unresolved = try_link(
     flags=["-Wl,--ignore-unresolved-symbol,environ"],
     check_msg="for --ignore-unresolved-symbol option to the linker",
@@ -381,15 +379,15 @@ def add_gnu_specific_dso_flags(
         ldopts.append("-shared")
 
     if use_gnu_ld:
-        
-        
-        
+        # Some tools like ASan use a runtime library that is only
+        # linked against executables, so we must allow undefined
+        # symbols for shared objects in some cases.
         if not use_sanitizer_runtime:
             if target.os != "WINNT":
-                
+                # Don't allow undefined symbols in libraries
                 ldopts.append("-Wl,-z,defs")
 
-            
+            # BSDs need `environ' exposed for posix_spawn (bug 753046)
             if target.os in ("DragonFly", "FreeBSD", "NetBSD", "OpenBSD"):
                 if have_linker_support_ignore_unresolved:
                     ldopts.append("-Wl,--ignore-unresolved-symbol,environ")
@@ -451,16 +449,16 @@ def check_Bsymbolic(enable_asan, building_with_gnu_compatible_cc):
     return enable_asan and building_with_gnu_compatible_cc
 
 
-
-
-
-
-
-
+# ASan assumes no symbols are being interposed, and when that happens,
+# it's not happy with it. Inconveniently, since Firefox is exporting
+# libffi symbols and Gtk+3 pulls system libffi via libwayland-client,
+# system libffi interposes libffi symbols that ASan assumes are in
+# libxul, so it barfs about buffer overflows.
+# Using -Wl,-Bsymbolic ensures no exported symbol can be interposed.
 check_and_add_linker_flag("-Wl,-Bsymbolic", when=check_Bsymbolic)
 
 
-
+# Check what kind of list files are supported by the linker
 @depends(c_compiler, link, linker_ldflags, extra_toolchain_flags)
 @checking("what kind of list files are supported by the linker")
 @imports("os")
@@ -476,8 +474,8 @@ def expand_libs_list_style(c_compiler, link, linker_flags, extra_flags):
 
         if (
             try_invoke_compiler(
-                
-                
+                # No configure_cache because it would not create the
+                # expected output file.
                 None,
                 [c_compiler.compiler] + cflags,
                 c_compiler.language,
@@ -497,10 +495,10 @@ def expand_libs_list_style(c_compiler, link, linker_flags, extra_flags):
         else:
             base_linker_cmd = [c_compiler.compiler] + cflags + ldflags + ["-o", outname]
 
-        
-        
-        
-        
+        # -filelist is for the OS X linker.  We need to try -filelist
+        # first because clang understands @file, but may pass an
+        # oversized argument list to the linker depending on the
+        # contents of @file.
         options = [
             ("linkerlist", f"-Wl,@{listname}"),
             ("filelist", f"-Wl,@{listname}"),
@@ -516,8 +514,8 @@ def expand_libs_list_style(c_compiler, link, linker_flags, extra_flags):
 set_config("EXPAND_LIBS_LIST_STYLE", expand_libs_list_style)
 
 
-
-
+# MOZ_PROGRAM_LDFLAGS
+# ---------------------------------
 @depends(building_with_gnu_compatible_cc, target)
 def moz_program_ldflags(building_with_gnu_compatible_cc, target):
     if building_with_gnu_compatible_cc and target.kernel not in ("Darwin", "WASI"):
@@ -531,8 +529,8 @@ set_config("MOZ_PROGRAM_LDFLAGS", moz_program_ldflags)
 def moz_debug_ldflags(host):
     flags = ["-DEBUG"]
     if host.kernel != "WINNT":
-        
-        
+        # %_PDB% is a special signal to emit only the PDB basename. This
+        # avoids problems in Windows tools that don't like forward-slashes.
         flags.append("-PDBALTPATH:%_PDB%")
     return flags
 
@@ -540,8 +538,8 @@ def moz_debug_ldflags(host):
 set_config("MOZ_DEBUG_LDFLAGS", moz_debug_ldflags)
 
 
-
-
+# Objective-C/ Objective-C++ flags.
+# ---------------------------------
 @depends(compilation_flags, toolkit)
 def add_cmflags(compilation_flags, toolkit):
     cmflags = ["-x", "objective-c", "-fobjc-exceptions"]
@@ -559,8 +557,8 @@ set_config("OS_COMPILE_CMFLAGS", compilation_flags.cmflags)
 set_config("OS_COMPILE_CMMFLAGS", compilation_flags.cmmflags)
 
 
-
-
+# Final flags settings
+# ---------------------------------
 @depends(host_c_compiler)
 def host_optimize_flags(compiler):
     if compiler.type == "clang-cl":
@@ -695,8 +693,8 @@ def os_asflags(
     return flags
 
 
-
-
+# VS2012+ defaults to -arch:SSE2. We want to target nothing more recent, so set
+# that explicitly here unless another target arch has already been set.
 @template
 def add_sse2_flag_if_needed(flags):
     @depends(
@@ -719,7 +717,7 @@ def add_thread_model_single(compilation_flags):
     compilation_flags.cxxflags.extend(["-mthread-model", "single"])
 
 
-
+# Please keep these last in this file.
 set_config("HOST_CPPFLAGS", host_cppflags)
 set_config("HOST_CFLAGS", host_cflags)
 set_config("HOST_CXXFLAGS", host_cxxflags)

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @depends("WINDOWSSDKDIR", winsysroot, target.abi, host.abi)
@@ -133,19 +131,19 @@ def valid_ucrt_sdk_dir(
         sdklist = get_sdk_dirs(d, "ucrt")
         for sdk in sdklist:
             version = os.path.basename(sdk.include)
-            
-            
-            
-            
-            
+            # We're supposed to always find a version in the directory, because
+            # the 8.1 SDK, which doesn't have a version in the directory, doesn't
+            # contain the Universal CRT SDK. When the main SDK is 8.1, there
+            # is, however, supposed to be a reduced install of the SDK 10
+            # with the UCRT.
             if version != "include":
                 sdks[d] = Version(version), sdk
                 break
 
         if d == windows_sdk_dir_env and d not in sdks:
-            
-            
-            
+            # When WINDOWSSDKDIR is set in the environment and we can't find the
+            # Universal CRT SDK, chances are this is a start-shell-msvc*.bat
+            # setup, where INCLUDE and LIB already contain the UCRT paths.
             ucrt_includes = [
                 p
                 for p in os.environ.get("INCLUDE", "").split(";")
@@ -157,8 +155,8 @@ def valid_ucrt_sdk_dir(
                 if os.path.basename(os.path.dirname(p)).lower() == "ucrt"
             ]
             if ucrt_includes and ucrt_libs:
-                
-                
+                # Pick the first of each, since they are the ones that the
+                # compiler would look first. Assume they contain the SDK files.
                 include = os.path.dirname(ucrt_includes[0])
                 lib = os.path.dirname(os.path.dirname(ucrt_libs[0]))
                 path = os.path.dirname(os.path.dirname(include))
@@ -243,7 +241,7 @@ def include_path(vc_path, windows_sdk_dir, ucrt_sdk_dir):
             os.path.join(ucrt_sdk_dir.include, "ucrt"),
         )
     )
-    
+    # Set in the environment for old-configure
     includes = ";".join(includes)
     os.environ["INCLUDE"] = includes
     return includes
@@ -251,7 +249,7 @@ def include_path(vc_path, windows_sdk_dir, ucrt_sdk_dir):
 
 set_config("INCLUDE", include_path)
 
-
+# cppwinrt requires this on clang because of no coroutine support, which is okay
 set_define("_SILENCE_CLANG_COROUTINE_MESSAGE", "")
 
 
@@ -276,7 +274,7 @@ def lib_path_for(host_or_target):
             "aarch64": "arm64",
         }.get(target.cpu)
 
-        
+        # MSVC2017 switched to use the same target naming as the sdk.
         atlmfc_dir = os.path.join(vc_path, "atlmfc", "lib", sdk_target)
         if not os.path.isdir(atlmfc_dir):
             die(
@@ -304,9 +302,9 @@ def lib_path_for(host_or_target):
                 onerror=lambda: None,
             ).strip()
             if runtime_dir and os.path.exists(runtime_dir):
-                
-                
-                
+                # Put the clang runtime directory first, in case there is
+                # a different version in some of the other directories (notably,
+                # some versions of MSVC come with clang runtimes)
                 libs.insert(0, runtime_dir)
         return libs
 
@@ -316,7 +314,7 @@ def lib_path_for(host_or_target):
 @depends_if(lib_path_for(target), when=target_is_windows)
 @imports("os")
 def lib_path(libs):
-    
+    # Set in the environment for old-configure
     libs = ";".join(libs)
     os.environ["LIB"] = libs
     return libs
@@ -337,12 +335,12 @@ def host_linker_libpaths(libs):
 @depends_if(lib_path_for_host, when=host_is_windows)
 @imports(_from="mozshellutil", _import="quote")
 def host_linker_libpaths_bat(libs):
-    
-    
-    
-    
-    
-    
+    # .bat files need a different style of quoting. Batch quoting is actually
+    # not defined, and up to applications to handle, so it's not really clear
+    # what should be escaped and what not, but most paths should work just
+    # fine without escaping. And we don't care about double-quotes possibly
+    # having to be escaped because they're not allowed in file names on
+    # Windows.
     return ['"-LIBPATH:%s"' % l for l in libs]
 
 
@@ -362,7 +360,7 @@ def sdk_bin_path(valid_windows_sdk_dir, valid_ucrt_sdk_dir, host):
         "aarch64": "arm64",
     }.get(host.cpu)
 
-    
+    # From version 10.0.15063.0 onwards the bin path contains the version number.
     versioned_bin = (
         "bin"
         if valid_ucrt_sdk_dir.version < "10.0.15063.0"
@@ -418,8 +416,8 @@ def win32_redist_dir(redist, automation, c_compiler, vc_path, target):
     ):
         if not vc_path:
             configure_error("Cannot ship redistributable MSVCRT without MSVC")
-        
-        
+        # It would be too simple if the Redist dir had the same version number as
+        # the MSVC one.
         base_redist_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(vc_path))), "Redist", "MSVC"
         )
@@ -447,9 +445,9 @@ set_config("WIN32_REDIST_DIR", win32_redist_dir)
 
 @template
 def check_w32API_version():
-    
+    # minimum version of toolkit libs used by mozilla
     W32API_VERSION = Version("3.14")
-    
+    # Check w32api version
     try_compile(
         includes=["w32api.h"],
         check_msg=f"for w32api version >= {W32API_VERSION}",
@@ -483,13 +481,13 @@ set_define(cpu_arch_macro_definition, True)
 check_w32API_version()
 
 
-
+# -Zc:sizedDealloc- disables C++14 global sized deallocation (see bug 1160146)
 add_flag(
     "-Zc:sizedDealloc-", compiler=cxx_compiler, when=~building_with_gnu_compatible_cc
 )
 
 
-set_define("_USE_MATH_DEFINES", True)  
+set_define("_USE_MATH_DEFINES", True)  # Otherwise Windows' math.h doesn't #define M_PI.
 
 WINVER = dependable("0A00")
 set_define("WINVER", depends(WINVER)(lambda WINVER: f"0x{WINVER}"))
@@ -506,11 +504,11 @@ with only_when(depends(c_compiler)(lambda c: c.type == "clang-cl")):
     set_config("MSVC_CXX_RUNTIME_DLL", "msvcp140.dll")
     set_config("MSVC_CXX_RUNTIME_ATOMIC_WAIT_DLL", "msvcp140_atomic_wait.dll")
 
-    
+    # Disable warnings about using MSVC-specific secure CRT functions.
     set_define("_CRT_SECURE_NO_WARNINGS", True)
     set_define("_CRT_NONSTDC_NO_WARNINGS", True)
 
-    
+    # Work around issues with newer STL and older runtimes, see bug 1994496.
     set_define("_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR", True)
 
     set_define("HAVE_SEH_EXCEPTIONS", True)
@@ -531,15 +529,15 @@ with only_when(depends(c_compiler)(lambda c: c.type == "clang-cl")):
     add_flag("-Gy")
     add_flag("-Zc:inline")
 
-    
-    
-    
+    # VS2013+ supports -Gw for better linker optimizations.
+    # http://blogs.msdn.com/b/vcblog/archive/2013/09/11/introducing-gw-compiler-switch.aspx
+    # Disabled on ASan because it causes false-positive ODR violations.
     add_flag("-Gw", when=~asan)
 
-    
+    # String tail merging doesn't play nice with ASan's ODR checker.
     add_linker_flag("-opt:nolldtailmerge", when=asan)
 
-    
+    # Silence VS2017 15.5+ TR1 deprecation warnings hit by older gtest versions
     add_flag("-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING", compiler=cxx_compiler)
 
     with only_when(depends(target.cpu)(lambda cpu: cpu == "x86")):
@@ -549,19 +547,19 @@ with only_when(depends(c_compiler)(lambda c: c.type == "clang-cl")):
 
 set_define("WIN32_LEAN_AND_MEAN", True)
 
-
+# See http://support.microsoft.com/kb/143208 to use STL
 set_define("NOMINMAX", True)
 
 
 with only_when(target_is_windows & depends(c_compiler)(lambda c: c.type != "clang-cl")):
-    
-    
+    # strsafe.h on mingw uses macros for function deprecation that pollutes namespace
+    # causing problems with local implementations with the same name.
     set_define("STRSAFE_NO_DEPRECATE", True)
 
     set_config("WIN32_CONSOLE_EXE_LDFLAGS", ["-mconsole"])
     set_config("WIN32_GUI_EXE_LDFLAGS", ["-mwindows"])
 
-    
+    # Silence problematic clang warnings
     add_flag("-Wno-incompatible-ms-struct", compiler=cxx_compiler)
     add_linker_flag("-Wl,--no-insert-timestamp")
 

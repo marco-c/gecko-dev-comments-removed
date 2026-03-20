@@ -1,10 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
+# dummy library name to avoid skipping building the sources here.
 Library("clang-plugin-tests")
 
 SOURCES += [
@@ -71,8 +69,8 @@ if CONFIG["ENABLE_CLANG_PLUGIN_ALPHA"]:
 DisableStlWrapping()
 NoVisibilityFlags()
 
-
-
+# Build without any warning flags, and with clang verify flag for a
+# syntax-only build (no codegen), without a limit on the number of errors.
 COMPILE_FLAGS["OS_CXXFLAGS"] = [
     f for f in COMPILE_FLAGS["OS_CXXFLAGS"] if not f.startswith("-W")
 ] + [
@@ -82,7 +80,7 @@ COMPILE_FLAGS["OS_CXXFLAGS"] = [
     "-verify",
     "-ferror-limit=0",
     "-Wno-invalid-noreturn",
-    
+    # For SpiderMonkey headers in TestJSHandleRootedTypedef.cpp
     "-Wno-attributes",
     "-Wno-invalid-offsetof",
 ]
@@ -97,6 +95,6 @@ COMPILE_FLAGS["OS_CFLAGS"] = [
     "-Wno-invalid-noreturn",
 ]
 
-
-
+# Don't reflect WARNINGS_CFLAGS into CFLAGS, as the warnings flags should be
+# as specified in OS_CFLAGS above.
 DisableCompilerWarnings()

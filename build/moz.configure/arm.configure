@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @depends(target.os)
@@ -22,11 +20,11 @@ def arm_option_defaults(os):
     )
 
 
-
-
-
-
-
+# Note: '{...|}' in the help of all options with a non-constant default to
+# make the lint happy. The first arm is always going to be used, because a
+# default is always returned. The lint is fooled by this file being
+# conditional. If it weren't conditional, the lint wouldn't ask for '{|}' to
+# be there.
 option(
     "--with-arch",
     nargs=1,
@@ -151,7 +149,7 @@ check_and_add_flag(
 )
 
 
-
+# The set of flags that clang understands
 @depends(
     arch_option,
     thumb_option,
@@ -163,10 +161,10 @@ def all_clang_arm_flags(arch, thumb, fpu, float_abi, soft_float):
     return arch + thumb + fpu + float_abi + soft_float
 
 
-
-
-
-
+# All the flags the compiler understands. When the compiler is clang, this
+# still includes unsupported flags, but we live it to configure to fail
+# during a compiler check. These checks aren't available for clang as used
+# by bindgen, so we keep the separate set of flags for clang for bindgen.
 @depends(all_clang_arm_flags, thumb_interwork_option)
 def all_arm_flags(flags, interwork):
     return flags + interwork
@@ -176,8 +174,8 @@ def all_arm_flags(flags, interwork):
 @checking("ARM version support in compiler", lambda x: x.arm_arch)
 @imports(_from="textwrap", _import="dedent")
 def arm_target(configure_cache, compiler, all_arm_flags):
-    
-    
+    # We're going to preprocess the following source to figure out some details
+    # about the arm target options we have enabled.
     source = dedent(
         """\
         %ARM_ARCH __ARM_ARCH
@@ -218,9 +216,9 @@ def arm_target(configure_cache, compiler, all_arm_flags):
         ["-E"] + all_arm_flags,
         wrapper=compiler.wrapper,
     )
-    
-    
-    data = {"fpu": None}  
+    # Metadata emitted by preprocessors such as GCC with LANG=ja_JP.utf-8 may
+    # have non-ASCII characters. Treat the output as bytearray.
+    data = {"fpu": None}  # fpu may not get a value from the preprocessor.
     for line in result.splitlines():
         if line.startswith("%"):
             k, _, v = line.partition(" ")
@@ -263,8 +261,8 @@ set_config("HAVE_ARM_NEON", have_arm_neon)
 set_define("HAVE_ARM_NEON", have_arm_neon)
 
 
-
-
+# We don't need to build NEON support if we're targetting a non-NEON device.
+# This matches media/webrtc/trunk/webrtc/build/common.gypi.
 @depends(arm_target.arm_arch, when=have_arm_neon)
 def build_arm_neon(arm_arch):
     return arm_arch >= 7
@@ -280,20 +278,20 @@ set_config("MOZ_FPU", arm_target.fpu)
 
 @depends(arm_target)
 def neon_flags(arm_target):
-    
-    
-    
-    
-    
-    
-    
-    
+    # Building with -mfpu=neon requires either the "softfp" or the
+    # "hardfp" ABI. Depending on the compiler's default target, and the
+    # CFLAGS, the default ABI might be neither, in which case it is the
+    # "softfloat" ABI.
+    # The "softfloat" ABI is binary-compatible with the "softfp" ABI, so
+    # we can safely mix code built with both ABIs. So, if we detect
+    # that compiling uses the "softfloat" ABI, force the use of the
+    # "softfp" ABI instead.
     flags = ["-mfpu=neon"]
     if arm_target.float_abi == "soft":
         flags.append("-mfloat-abi=softfp")
     if arm_target.arm_arch < 7:
-        
-        
+        # clang needs to be forced to at least armv7 for -mfpu=neon to do
+        # something.
         flags.append("-march=armv7-a")
     return tuple(flags)
 

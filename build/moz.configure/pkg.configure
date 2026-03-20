@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 @depends(toolchain_prefix, when=compile_environment)
@@ -38,16 +36,16 @@ def is_pkgconf(pkg_config):
 
 @depends(is_pkgconf, pkg_config_version, target_sysroot.bootstrapped, when=pkg_config)
 def pkg_config_base_flags(is_pkgconf, pkg_config_version, target_sysroot_bootstrapped):
-    
-    
-    
+    # pkgconf 1.7.4 changed the default on Windows to use --static, but
+    # that doesn't work for us.
+    # Note: the --shared flag is not available before pkgconf 1.7
     flags = []
     if is_pkgconf and pkg_config_version >= "1.7.4":
         flags.append("--shared")
-    
-    
-    
-    
+    # When pkg-config is in /usr things work fine by default, but when
+    # it is not, it defines prefix to be something else than /usr, which
+    # won't match what the .pc files actually say, and won't work in
+    # sysroots.
     if target_sysroot_bootstrapped and (
         (is_pkgconf and pkg_config_version >= "1.2.0")
         or (not is_pkgconf and pkg_config_version >= "0.29.0")
@@ -93,18 +91,18 @@ set_config("PKG_CONFIG_SYSROOT_DIR", pkg_config_vars.PKG_CONFIG_SYSROOT_DIR)
 set_config("PKG_CONFIG_LIBDIR", pkg_config_vars.PKG_CONFIG_LIBDIR)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+# Locates the given module using pkg-config.
+# - `var` determines the name of variables to set when the package is found.
+#   <var>_CFLAGS and <var>_LIBS are set with corresponding values.
+# - `package_desc` package name and version requirement string, list of
+#   strings describing packages to locate, or depends function that will
+#   resolve to such a string or list of strings.
+# - `when` a depends function that will determine whether to perform
+#   any checks (default is to always perform checks).
+# - `allow_missing` If set, failure to fulfill the package description
+#   will not result in an error or logged message, and any error message
+#   will be returned to the caller.
+#   Returns `True` when the package description is fulfilled.
 @template
 def pkg_check_modules(
     var,
@@ -156,8 +154,8 @@ def pkg_check_modules(
     @imports("sys")
     @imports(_from="mozbuild.configure.util", _import="LineIO")
     def package(pkg_config, env, package_desc, allow_missing):
-        
-        
+        # package_desc may start as a depends function, so we can't use
+        # @checking here.
         log.info("checking for %s... " % package_desc)
         retcode, stdout, stderr = get_cmd_output(
             pkg_config,
@@ -204,7 +202,7 @@ def pkg_check_modules(
         def pkg_libs(pkg_config, env, package_desc, base_flags):
             args = list(base_flags) + ["--libs", package_desc]
             libs = check_cmd_output(pkg_config, *args, env=env)
-            
+            # Remove evil flags like -Wl,--export-dynamic
             return tuple(libs.replace("-Wl,--export-dynamic", "").split())
 
         @depends(pkg_cflags, pkg_libs, when=package)

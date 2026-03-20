@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 option(
     env="MOZ_FETCHES_DIR",
@@ -22,7 +20,7 @@ def moz_fetches_dir(value):
 def bootstrap_default(vcs_checkout_type, is_nightly, automation):
     if automation:
         return False
-    
+    # We only enable if building off a VCS checkout of central.
     if is_nightly and vcs_checkout_type:
         return True
 
@@ -106,8 +104,8 @@ def bootstrap_toolchain_tasks(host):
             result["command"] = command
         return result
 
-    
-    
+    # We only want to use toolchains annotated with "local-toolchain". We also limit the
+    # amount of data to what we use, so that trace logs can be more useful.
     tasks = {
         k: task_data(t)
         for k, t in tasks.items()
@@ -161,8 +159,8 @@ def bootstrap_path(path, **kwargs):
             return
         path_parts = path.split("/")
         path_prefix = ""
-        
-        
+        # Small hack until clang-tidy stops being a separate toolchain in a
+        # weird location.
         if path_parts[0] == "clang-tools":
             path_prefix = path_parts.pop(0)
 
@@ -187,9 +185,9 @@ def bootstrap_path(path, **kwargs):
             log.debug("Resolved %s to %s", label, task_index[0])
             task_index = task_index[0].split(".")[-1]
             artifact = task["artifact"]
-            
-            
-            
+            # `mach artifact toolchain` doesn't support authentication for
+            # private artifacts. Some toolchains may provide a command that can be
+            # used for local production of the artifact.
             command = None
             if not artifact.startswith("public/"):
                 command = task.get("command")
@@ -201,16 +199,16 @@ def bootstrap_path(path, **kwargs):
                 with open(index_file) as fh:
                     index = fh.read().strip()
             except Exception:
-                
-                
+                # On automation, if there's an artifact in MOZ_FETCHES_DIR, we assume it's
+                # up-to-date.
                 index = task_index if moz_fetches_dir else None
             if index == task_index and exists:
                 log.debug("%s is up-to-date", label)
                 return True
-            
-            
-            
-            
+            # Manually import with import_module so that we can gracefully disable bootstrap
+            # when e.g. building from a js standalone tarball, that doesn't contain the
+            # taskgraph code. In those cases, `mach artifact toolchain --from-build` would
+            # also fail.
             task_id = None
             if not command:
                 try:
@@ -222,8 +220,8 @@ def bootstrap_path(path, **kwargs):
                     return False
                 task_id = find_task_from_index(task["index"])
             if task_id:
-                
-                
+                # If we found the task in the index, use the `mach artifact toolchain`
+                # fast path.
                 command = [
                     "artifact",
                     "toolchain",
@@ -234,7 +232,7 @@ def bootstrap_path(path, **kwargs):
                     command.append("--no-unpack")
 
             elif command:
-                
+                # For private local toolchains, run the associated command.
                 command = (
                     [
                         "python",
@@ -249,15 +247,15 @@ def bootstrap_path(path, **kwargs):
                     + command["arguments"]
                     + [path_parts[0]]
                 )
-                
-                
+                # Clean up anything that was bootstrapped previously before going
+                # forward. In other cases, that's taken care of by mach artifact toolchain.
                 rmtree(
                     os.path.join(toolchains_base_dir, path_prefix, path_parts[0]),
                     ignore_errors=True,
                 )
             else:
-                
-                
+                # Otherwise, use the slower path, which will print a better error than
+                # we would be able to.
                 command = ["artifact", "toolchain", "--from-build", label]
 
             log.info(
@@ -287,13 +285,13 @@ def bootstrap_path(path, **kwargs):
         if want_bootstrap(path_parts[0]):
             exists = os.path.exists(path)
             try:
-                
-                
+                # With --enable-bootstrap=no-update, we don't `try_bootstrap`, except
+                # when the toolchain can't be found.
                 if (
                     "no-update" not in enable_bootstrap or not exists
                 ) and not try_bootstrap(exists):
-                    
-                    
+                    # If there aren't toolchain artifacts to use for this build,
+                    # don't return a path.
                     return None
             except Exception as e:
                 log.error("%s", e)
@@ -301,9 +299,9 @@ def bootstrap_path(path, **kwargs):
                     "If you can't fix the above, retry with --enable-bootstrap=no-update."
                 )
         if enable_bootstrap or enable_bootstrap.origin == "default":
-            
-            
-            
+            # We re-test whether the path exists because it may have been created by
+            # try_bootstrap. Automation will not have gone through the bootstrap
+            # process, but we want to return the path if it exists.
             if os.path.exists(path):
                 return path
 

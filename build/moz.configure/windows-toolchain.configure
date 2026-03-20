@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 @imports("glob")
 def get_sdk_dirs(sdk, subdir):
     def get_dirs_containing(sdk, stem, subdir):
@@ -59,8 +57,8 @@ option(
 
 option(env="WINDOWSSDKDIR", nargs=1, help="Directory containing the Windows SDK")
 
-
-
+# Calling this a sysroot is a little weird, but it's the terminology clang went
+# with with its -winsysroot flag.
 option(
     env="WINSYSROOT",
     nargs=1,
@@ -71,7 +69,7 @@ option(
 @depends("WINSYSROOT", "VC_PATH", "WINDOWSSDKDIR")
 def bootstrap_winsysroot(winsysroot, vc_path, windows_sdk_dir):
     if not winsysroot:
-        
+        # Don't bootstrap if all paths are provided.
         return not vc_path or not windows_sdk_dir
     if vc_path:
         die("WINSYSROOT and VC_PATH cannot be set together.")
@@ -144,13 +142,13 @@ def vc_compiler_paths_for_version(host, env, vc_path, winsysroot):
         versions = os.listdir(base_vc_path)
         path = os.path.join(base_vc_path, str(max(Version(v) for v in versions)))
     elif host.kernel != "WINNT":
-        
+        # Don't try to do anything when VC_PATH is not set on cross-compiles.
         return
     else:
         all_versions = sorted(get_vc_paths(host, env.topsrcdir), key=itemgetter(0))
         if not all_versions:
             return
-        
+        # Choose the newest version.
         path = all_versions[-1][1]
 
     host_dir = {
@@ -162,7 +160,7 @@ def vc_compiler_paths_for_version(host, env, vc_path, winsysroot):
         path = os.path.join(path, "bin", host_dir)
         return {
             "x64": [os.path.join(path, "x64")],
-            
+            # The cross toolchains require DLLs from the native x64 toolchain.
             "x86": [os.path.join(path, "x86"), os.path.join(path, "x64")],
             "arm64": [os.path.join(path, "arm64"), os.path.join(path, "x64")],
         }
@@ -189,12 +187,12 @@ def vc_toolchain_search_path(vc_compiler_path, original_path):
     result = list(original_path)
 
     if vc_compiler_path:
-        
-        
+        # The second item, if there is one, is necessary to have in $PATH for
+        # Windows to load the required DLLs from there.
         if len(vc_compiler_path) > 1:
             environ["PATH"] = os.pathsep.join(result + vc_compiler_path[1:])
 
-        
+        # The first item is where the programs are going to be
         result.append(vc_compiler_path[0])
 
     return result
@@ -207,15 +205,15 @@ def vc_compiler_version(vc_compiler_path):
             os.path.dirname(os.path.dirname(os.path.dirname(vc_compiler_path[0])))
         )
     )
-    
+    # MSVC path with version 14.x is actually version 19.x
     if version.major == 14:
         return Version(f"19.{version.minor}")
 
 
 @depends_if(vc_compiler_version)
 def msvs_version(vc_compiler_version):
-    
-    
+    # clang-cl emulates the same version scheme as cl. And MSVS_VERSION needs to
+    # be set for GYP on Windows.
     if vc_compiler_version >= Version("19.30"):
         return "2022"
     configure_error("Only Visual Studio 2022 or newer are supported")
@@ -241,7 +239,7 @@ with only_when(target_is_windows):
 def vc_path(target_windows_abi, host_windows_abi, vc_toolchain_search_path):
     if target_windows_abi != "msvc" and host_windows_abi != "msvc":
         return
-    
+    # In clang-cl builds, we need the headers and libraries from an MSVC installation.
     vc_program = find_program("cl.exe", paths=vc_toolchain_search_path)
     if not vc_program:
         die("Cannot find a Visual C++ install for e.g. ATL headers.")

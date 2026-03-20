@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Types.h"
 
 extern "C" MOZ_EXPORT const char* __ubsan_default_options() {
