@@ -167,9 +167,10 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   
   
   
-  mBufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
+  Maybe<uint32_t> bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
       mData.mPictureRect, aYSize, mData.mYStride, aCbCrSize, mData.mCbCrStride,
       mData.mColorDepth, mData.mChromaSubsampling);
+  mBufferSize = bufferSize.valueOr(0);
   mSize = mData.mPictureRect.Size();
   mOrigin = mData.mPictureRect.TopLeft();
 
@@ -177,7 +178,7 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
 
   
   
-  return mBufferSize > 0 ? NS_OK : NS_ERROR_INVALID_ARG;
+  return bufferSize.isSome() ? NS_OK : NS_ERROR_INVALID_ARG;
 }
 
 void SharedPlanarYCbCrImage::SetIsDRM(bool aIsDRM) {
