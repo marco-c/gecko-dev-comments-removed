@@ -105,6 +105,9 @@ nsSyncStreamListener::Close() {
 
 NS_IMETHODIMP
 nsSyncStreamListener::Available(uint64_t* result) {
+  
+  RefPtr<nsSyncStreamListener> self(this);
+
   if (NS_FAILED(mStatus)) return mStatus;
 
   mStatus = mPipeIn->Available(result);
