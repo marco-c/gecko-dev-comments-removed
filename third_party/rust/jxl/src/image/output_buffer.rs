@@ -58,19 +58,48 @@ impl<'a> JxlOutputBuffer<'a> {
         num_rows: usize,
         bytes_per_row: usize,
     ) -> Self {
-        assert!(buf.len() >= bytes_per_row * num_rows);
-        
-        
-        unsafe { Self::new_from_ptr(buf.as_mut_ptr(), num_rows, bytes_per_row, bytes_per_row) }
+        Self::new_uninit_with_stride(buf, num_rows, bytes_per_row, bytes_per_row)
     }
 
     pub fn new(buf: &'a mut [u8], num_rows: usize, bytes_per_row: usize) -> Self {
-        Self::new_uninit(
+        Self::new_with_stride(buf, num_rows, bytes_per_row, bytes_per_row)
+    }
+
+    
+    
+    pub fn new_uninit_with_stride(
+        buf: &'a mut [MaybeUninit<u8>],
+        num_rows: usize,
+        bytes_per_row: usize,
+        byte_stride: usize,
+    ) -> Self {
+        assert_ne!(num_rows, 0);
+        assert!(
+            buf.len()
+                >= byte_stride
+                    .checked_mul(num_rows - 1)
+                    .unwrap()
+                    .checked_add(bytes_per_row)
+                    .unwrap()
+        );
+        
+        
+        unsafe { Self::new_from_ptr(buf.as_mut_ptr(), num_rows, bytes_per_row, byte_stride) }
+    }
+
+    pub fn new_with_stride(
+        buf: &'a mut [u8],
+        num_rows: usize,
+        bytes_per_row: usize,
+        byte_stride: usize,
+    ) -> Self {
+        Self::new_uninit_with_stride(
             
             
             unsafe { std::slice::from_raw_parts_mut(buf.as_mut_ptr().cast(), buf.len()) },
             num_rows,
             bytes_per_row,
+            byte_stride,
         )
     }
 

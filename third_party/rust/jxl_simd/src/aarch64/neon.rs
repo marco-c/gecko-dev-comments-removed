@@ -14,7 +14,7 @@ use std::{
 
 use crate::U32SimdVec;
 
-use super::super::{F32SimdVec, I32SimdVec, SimdDescriptor, SimdMask};
+use super::super::{F32SimdVec, I32SimdVec, SimdDescriptor, SimdMask, U8SimdVec, U16SimdVec};
 
 
 #[derive(Clone, Copy, Debug)]
@@ -40,6 +40,10 @@ impl SimdDescriptor for NeonDescriptor {
     type I32Vec = I32VecNeon;
 
     type U32Vec = U32VecNeon;
+
+    type U16Vec = U16VecNeon;
+
+    type U8Vec = U8VecNeon;
 
     type Mask = MaskNeon;
     type Bf16Table8 = Bf16Table8Neon;
@@ -140,7 +144,7 @@ unsafe impl F32SimdVec for F32VecNeon {
         
         
         unsafe {
-            let dest_ptr = dest.as_mut_ptr() as *mut f32;
+            let dest_ptr = dest.as_mut_ptr().cast::<f32>();
             vst2q_f32(dest_ptr, float32x4x2_t(a.0, b.0));
         }
     }
@@ -150,7 +154,7 @@ unsafe impl F32SimdVec for F32VecNeon {
         assert!(dest.len() >= 3 * Self::LEN);
         
         unsafe {
-            let dest_ptr = dest.as_mut_ptr() as *mut f32;
+            let dest_ptr = dest.as_mut_ptr().cast::<f32>();
             vst3q_f32(dest_ptr, float32x4x3_t(a.0, b.0, c.0));
         }
     }
@@ -167,7 +171,7 @@ unsafe impl F32SimdVec for F32VecNeon {
         
         
         unsafe {
-            let dest_ptr = dest.as_mut_ptr() as *mut f32;
+            let dest_ptr = dest.as_mut_ptr().cast::<f32>();
             vst4q_f32(dest_ptr, float32x4x4_t(a.0, b.0, c.0, d.0));
         }
     }
@@ -422,9 +426,9 @@ unsafe impl F32SimdVec for F32VecNeon {
             let u16s = vqmovun_s32(i32s);
             let u8s = vqmovn_u16(vcombine_u16(u16s, u16s));
             // Store lower 4 bytes
-            // SAFETY: we checked dest has enough space
+            // SAFETY: we checked dest has enough space. vst1_lane_u32 supports unaligned stores.
             unsafe {
-                vst1_lane_u32::<0>(dest.as_mut_ptr() as *mut u32, vreinterpret_u32_u8(u8s));
+                vst1_lane_u32::<0>(dest.as_mut_ptr().cast(), vreinterpret_u32_u8(u8s));
             }
         }
 
@@ -436,7 +440,7 @@ unsafe impl F32SimdVec for F32VecNeon {
             let i32s = vcvtq_s32_f32(rounded);
             let u16s = vqmovun_s32(i32s);
             // Store 4 u16s (8 bytes)
-            // SAFETY: we checked dest has enough space
+            // SAFETY: we checked dest has enough space. vst1_u16 supports unaligned stores.
             unsafe {
                 vst1_u16(dest.as_mut_ptr(), u16s);
             }
@@ -447,7 +451,8 @@ unsafe impl F32SimdVec for F32VecNeon {
             // Use inline asm because Rust stdarch incorrectly requires fp16 target feature
             // for vcvt_f16_f32 (fixed in https://github.com/rust-lang/stdarch/pull/1978)
             let f16_bits: uint16x4_t;
-            // SAFETY: NEON is available (guaranteed by descriptor), dest has enough space
+            // SAFETY: NEON is available (guaranteed by descriptor), dest has enough space,
+            // vst1_u16 supports unaligned stores.
             unsafe {
                 std::arch::asm!(
                     "fcvtn {out:v}.4h, {inp:v}.4s",
@@ -466,6 +471,7 @@ unsafe impl F32SimdVec for F32VecNeon {
         
         
         let result: float32x4_t;
+        
         
         unsafe {
             let f16_bits = vld1_u16(mem.as_ptr());
@@ -696,10 +702,25 @@ impl I32SimdVec for I32VecNeon {
         assert!(dest.len() >= Self::LEN);
         
         
+        
         unsafe {
             
             let narrowed = vmovn_s32(self.0);
             vst1_u16(dest.as_mut_ptr(), vreinterpret_u16_s16(narrowed));
+        }
+    }
+
+    #[inline(always)]
+    fn store_u8(self, dest: &mut [u8]) {
+        assert!(dest.len() >= Self::LEN);
+        
+        
+        unsafe {
+            
+            let narrowed_i16 = vmovn_s32(self.0);
+            let combined_i16 = vcombine_s16(narrowed_i16, narrowed_i16);
+            let narrowed_i8 = vmovn_s16(combined_i16);
+            vst1_lane_u32::<0>(dest.as_mut_ptr().cast(), vreinterpret_u32_s8(narrowed_i8));
         }
     }
 }
@@ -834,6 +855,150 @@ impl U32SimdVec for U32VecNeon {
     fn shr<const AMOUNT_U: u32, const AMOUNT_I: i32>(self) -> Self {
         
         unsafe { Self(vshrq_n_u32::<AMOUNT_I>(self.0), self.1) }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(transparent)]
+pub struct U8VecNeon(uint8x16_t, NeonDescriptor);
+
+
+
+unsafe impl U8SimdVec for U8VecNeon {
+    type Descriptor = NeonDescriptor;
+    const LEN: usize = 16;
+
+    #[inline(always)]
+    fn load(d: Self::Descriptor, mem: &[u8]) -> Self {
+        assert!(mem.len() >= Self::LEN);
+        
+        
+        Self(unsafe { vld1q_u8(mem.as_ptr()) }, d)
+    }
+
+    #[inline(always)]
+    fn splat(d: Self::Descriptor, v: u8) -> Self {
+        
+        Self(unsafe { vdupq_n_u8(v) }, d)
+    }
+
+    #[inline(always)]
+    fn store(&self, mem: &mut [u8]) {
+        assert!(mem.len() >= Self::LEN);
+        
+        
+        unsafe { vst1q_u8(mem.as_mut_ptr(), self.0) }
+    }
+
+    #[inline(always)]
+    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<u8>]) {
+        assert!(dest.len() >= 2 * Self::LEN);
+        
+        
+        unsafe {
+            let dest_ptr = dest.as_mut_ptr().cast::<u8>();
+            vst2q_u8(dest_ptr, uint8x16x2_t(a.0, b.0));
+        }
+    }
+
+    #[inline(always)]
+    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<u8>]) {
+        assert!(dest.len() >= 3 * Self::LEN);
+        
+        
+        unsafe {
+            let dest_ptr = dest.as_mut_ptr().cast::<u8>();
+            vst3q_u8(dest_ptr, uint8x16x3_t(a.0, b.0, c.0));
+        }
+    }
+
+    #[inline(always)]
+    fn store_interleaved_4_uninit(
+        a: Self,
+        b: Self,
+        c: Self,
+        d: Self,
+        dest: &mut [MaybeUninit<u8>],
+    ) {
+        assert!(dest.len() >= 4 * Self::LEN);
+        
+        
+        unsafe {
+            let dest_ptr = dest.as_mut_ptr().cast::<u8>();
+            vst4q_u8(dest_ptr, uint8x16x4_t(a.0, b.0, c.0, d.0));
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(transparent)]
+pub struct U16VecNeon(uint16x8_t, NeonDescriptor);
+
+
+
+unsafe impl U16SimdVec for U16VecNeon {
+    type Descriptor = NeonDescriptor;
+    const LEN: usize = 8;
+
+    #[inline(always)]
+    fn load(d: Self::Descriptor, mem: &[u16]) -> Self {
+        assert!(mem.len() >= Self::LEN);
+        
+        
+        Self(unsafe { vld1q_u16(mem.as_ptr().cast()) }, d)
+    }
+
+    #[inline(always)]
+    fn splat(d: Self::Descriptor, v: u16) -> Self {
+        
+        Self(unsafe { vdupq_n_u16(v) }, d)
+    }
+
+    #[inline(always)]
+    fn store(&self, mem: &mut [u16]) {
+        assert!(mem.len() >= Self::LEN);
+        
+        
+        unsafe { vst1q_u16(mem.as_mut_ptr().cast(), self.0) }
+    }
+
+    #[inline(always)]
+    fn store_interleaved_2_uninit(a: Self, b: Self, dest: &mut [MaybeUninit<u16>]) {
+        assert!(dest.len() >= 2 * Self::LEN);
+        
+        
+        unsafe {
+            let dest_ptr = dest.as_mut_ptr().cast::<u16>();
+            vst2q_u16(dest_ptr, uint16x8x2_t(a.0, b.0));
+        }
+    }
+
+    #[inline(always)]
+    fn store_interleaved_3_uninit(a: Self, b: Self, c: Self, dest: &mut [MaybeUninit<u16>]) {
+        assert!(dest.len() >= 3 * Self::LEN);
+        
+        
+        unsafe {
+            let dest_ptr = dest.as_mut_ptr().cast::<u16>();
+            vst3q_u16(dest_ptr, uint16x8x3_t(a.0, b.0, c.0));
+        }
+    }
+
+    #[inline(always)]
+    fn store_interleaved_4_uninit(
+        a: Self,
+        b: Self,
+        c: Self,
+        d: Self,
+        dest: &mut [MaybeUninit<u16>],
+    ) {
+        assert!(dest.len() >= 4 * Self::LEN);
+        
+        
+        unsafe {
+            let dest_ptr = dest.as_mut_ptr().cast::<u16>();
+            vst4q_u16(dest_ptr, uint16x8x4_t(a.0, b.0, c.0, d.0));
+        }
     }
 }
 

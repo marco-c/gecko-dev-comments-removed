@@ -17,8 +17,8 @@ pub mod buffer_splitter;
 mod builder;
 mod channels;
 mod internal;
-mod low_memory_pipeline;
-mod save;
+pub mod low_memory_pipeline;
+pub mod save;
 mod simd_utils;
 #[cfg(test)]
 mod simple_pipeline;
@@ -42,6 +42,11 @@ pub(crate) use low_memory_pipeline::LowMemoryRenderPipeline;
 #[cfg(test)]
 pub(crate) use simple_pipeline::SimpleRenderPipeline;
 
+pub enum StageSpecialCase {
+    F32ToU8 { channel: usize, bit_depth: u8 },
+    ModularToF32 { channel: usize, bit_depth: u8 },
+}
+
 
 pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display {
     type Type: ImageDataType;
@@ -60,6 +65,10 @@ pub trait RenderPipelineInPlaceStage: Any + std::fmt::Display {
     }
 
     fn uses_channel(&self, c: usize) -> bool;
+
+    fn is_special_case(&self) -> Option<StageSpecialCase> {
+        None
+    }
 }
 
 
@@ -97,6 +106,10 @@ pub trait RenderPipelineInOutStage: Any + std::fmt::Display {
     }
 
     fn uses_channel(&self, c: usize) -> bool;
+
+    fn is_special_case(&self) -> Option<StageSpecialCase> {
+        None
+    }
 }
 
 
@@ -113,12 +126,11 @@ pub(crate) trait RenderPipeline: Sized {
 
     
     
-    
     fn set_buffer_for_group<T: ImageDataType>(
         &mut self,
         channel: usize,
         group_id: usize,
-        num_passes: usize,
+        complete: bool,
         buf: Image<T>,
         buffer_splitter: &mut BufferSplitter,
     ) -> Result<()>;
@@ -131,6 +143,9 @@ pub(crate) trait RenderPipeline: Sized {
     
     fn render_outside_frame(&mut self, buffer_splitter: &mut BufferSplitter) -> Result<()>;
 
+    
+    fn mark_group_to_rerender(&mut self, g: usize);
+
     fn box_inout_stage<S: RenderPipelineInOutStage>(
         stage: S,
     ) -> Box<dyn RunInOutStage<Self::Buffer>>;
@@ -138,4 +153,6 @@ pub(crate) trait RenderPipeline: Sized {
     fn box_inplace_stage<S: RenderPipelineInPlaceStage>(
         stage: S,
     ) -> Box<dyn RunInPlaceStage<Self::Buffer>>;
+
+    fn used_channel_mask(&self) -> &[bool];
 }

@@ -14,8 +14,9 @@ use sections::SectionState;
 use crate::api::FrameCallback;
 use crate::{
     api::{
-        JxlBasicInfo, JxlBitstreamInput, JxlColorProfile, JxlDecoderOptions, JxlOutputBuffer,
-        JxlPixelFormat,
+        JxlBasicInfo, JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlDataFormat,
+        JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, VisibleFrameInfo,
+        VisibleFrameSeekTarget,
         inner::{box_parser::BoxParser, process::SmallBuffer},
     },
     error::{Error, Result},
@@ -33,6 +34,13 @@ struct SectionBuffer {
     section: Section,
 }
 
+#[derive(Clone, Copy)]
+struct FrameStartInfo {
+    file_offset: usize,
+    remaining_in_box: u64,
+    visible_count_before: usize,
+}
+
 pub(super) struct CodestreamParser {
     
     pub(super) file_header: Option<FileHeader>,
@@ -44,6 +52,9 @@ pub(super) struct CodestreamParser {
     pub(super) embedded_color_profile: Option<JxlColorProfile>,
     pub(super) output_color_profile: Option<JxlColorProfile>,
     pub(super) pixel_format: Option<JxlPixelFormat>,
+    xyb_encoded: bool,
+    is_gray: bool,
+    pub(super) output_color_profile_set_by_user: bool,
 
     
     
@@ -62,6 +73,9 @@ pub(super) struct CodestreamParser {
     
     preview_done: bool,
     
+    
+    visible_frames_to_skip: usize,
+    
     saved_file_header: Option<crate::headers::FileHeader>,
 
     section_state: SectionState,
@@ -78,6 +92,27 @@ pub(super) struct CodestreamParser {
     pub(super) has_more_frames: bool,
 
     header_needed_bytes: Option<u64>,
+
+    
+    
+    pub(super) scanned_frames: Vec<VisibleFrameInfo>,
+    
+    visible_frame_index: usize,
+    
+    
+    frame_starts: Vec<FrameStartInfo>,
+    
+    
+    reference_slot_decode_start: [Option<usize>; DecoderState::MAX_STORED_FRAMES],
+    
+    
+    lf_slot_decode_start: [Option<usize>; DecoderState::NUM_LF_FRAMES],
+    
+    
+    current_frame_file_offset: usize,
+    
+    
+    current_frame_remaining_in_box: u64,
 
     #[cfg(test)]
     pub frame_callback: Option<Box<FrameCallback>>,
@@ -96,6 +131,9 @@ impl CodestreamParser {
             embedded_color_profile: None,
             output_color_profile: None,
             pixel_format: None,
+            xyb_encoded: false,
+            is_gray: false,
+            output_color_profile_set_by_user: false,
             frame_header: None,
             toc_parser: None,
             frame: None,
@@ -106,6 +144,7 @@ impl CodestreamParser {
             skip_sections: false,
             process_without_output: false,
             preview_done: false,
+            visible_frames_to_skip: 0,
             saved_file_header: None,
             section_state: SectionState::new(0, 0),
             lf_global_section: None,
@@ -115,6 +154,13 @@ impl CodestreamParser {
             candidate_hf_sections: HashSet::new(),
             has_more_frames: true,
             header_needed_bytes: None,
+            scanned_frames: Vec::new(),
+            visible_frame_index: 0,
+            frame_starts: Vec::new(),
+            reference_slot_decode_start: [None; DecoderState::MAX_STORED_FRAMES],
+            lf_slot_decode_start: [None; DecoderState::NUM_LF_FRAMES],
+            current_frame_file_offset: 0,
+            current_frame_remaining_in_box: u64::MAX,
             #[cfg(test)]
             frame_callback: None,
             #[cfg(test)]
@@ -127,6 +173,125 @@ impl CodestreamParser {
             frame.header().is_visible()
         } else {
             false
+        }
+    }
+
+    
+    
+    fn record_frame_info(&mut self) {
+        let frame = match self.frame.as_ref() {
+            Some(f) => f,
+            None => return,
+        };
+        let header = frame.header();
+
+        let current_frame_index = self.frame_starts.len();
+        let is_visible = header.is_visible();
+        self.frame_starts.push(FrameStartInfo {
+            file_offset: self.current_frame_file_offset,
+            remaining_in_box: self.current_frame_remaining_in_box,
+            visible_count_before: self.visible_frame_index,
+        });
+
+        let mut decode_start_frame_index = current_frame_index;
+
+        
+        
+        
+        let mut used_reference_slots = [false; DecoderState::MAX_STORED_FRAMES];
+        if header.needs_blending() {
+            for blending_info in header
+                .ec_blending_info
+                .iter()
+                .chain(std::iter::once(&header.blending_info))
+            {
+                let source = blending_info.source as usize;
+                assert!(
+                    source < DecoderState::MAX_STORED_FRAMES,
+                    "invalid blending source slot {source}, max {}",
+                    DecoderState::MAX_STORED_FRAMES - 1
+                );
+                used_reference_slots[source] = true;
+            }
+        }
+        if header.has_patches() {
+            used_reference_slots.fill(true);
+        }
+
+        for (slot, used) in used_reference_slots.iter().enumerate() {
+            if *used && let Some(dep_start) = self.reference_slot_decode_start[slot] {
+                decode_start_frame_index = decode_start_frame_index.min(dep_start);
+            }
+        }
+
+        if header.has_lf_frame() {
+            let lf_slot = header.lf_level as usize;
+            assert!(
+                lf_slot < DecoderState::NUM_LF_FRAMES,
+                "invalid lf slot {lf_slot}, max {}",
+                DecoderState::NUM_LF_FRAMES - 1
+            );
+            if let Some(dep_start) = self.lf_slot_decode_start[lf_slot] {
+                decode_start_frame_index = decode_start_frame_index.min(dep_start);
+            }
+        }
+
+        if is_visible {
+            let duration_ticks = header.duration;
+            let duration_ms = if let Some(ref anim) = self.animation {
+                if anim.tps_numerator > 0 {
+                    (duration_ticks as f64) * 1000.0 * (anim.tps_denominator as f64)
+                        / (anim.tps_numerator as f64)
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            };
+
+            let decode_start = self.frame_starts[decode_start_frame_index];
+            let seek_target = VisibleFrameSeekTarget {
+                decode_start_file_offset: decode_start.file_offset,
+                remaining_in_box: decode_start.remaining_in_box,
+                visible_frames_to_skip: self
+                    .visible_frame_index
+                    .saturating_sub(decode_start.visible_count_before),
+            };
+            let is_keyframe = seek_target.visible_frames_to_skip == 0;
+
+            self.scanned_frames.push(VisibleFrameInfo {
+                index: self.visible_frame_index,
+                duration_ms,
+                duration_ticks,
+                file_offset: self.current_frame_file_offset,
+                is_last: header.is_last,
+                is_keyframe,
+                seek_target,
+                name: header.name.clone(),
+            });
+
+            self.visible_frame_index += 1;
+        }
+
+        
+        if header.can_be_referenced {
+            let slot = header.save_as_reference as usize;
+            assert!(
+                slot < DecoderState::MAX_STORED_FRAMES,
+                "invalid save_as_reference slot {slot}, max {}",
+                DecoderState::MAX_STORED_FRAMES - 1
+            );
+            self.reference_slot_decode_start[slot] = Some(decode_start_frame_index);
+        }
+
+        if header.lf_level != 0 {
+            let slot = (header.lf_level - 1) as usize;
+            assert!(
+                slot < DecoderState::NUM_LF_FRAMES,
+                "invalid lf save slot {slot}, max {}",
+                DecoderState::NUM_LF_FRAMES - 1
+            );
+            self.lf_slot_decode_start[slot] = Some(decode_start_frame_index);
         }
     }
 
@@ -151,12 +316,42 @@ impl CodestreamParser {
         pixel_format
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) fn start_new_frame(&mut self, visible_frames_to_skip: usize) {
+        self.frame_header = None;
+        self.toc_parser = None;
+        self.frame = None;
+        self.non_section_buf = SmallBuffer::new(4096);
+        self.non_section_bit_offset = 0;
+        self.sections.clear();
+        self.ready_section_data = 0;
+        self.skip_sections = false;
+        self.process_without_output = false;
+        self.visible_frames_to_skip = visible_frames_to_skip;
+        self.section_state = SectionState::new(0, 0);
+        self.lf_global_section = None;
+        self.lf_sections.clear();
+        self.hf_global_section = None;
+        self.hf_sections.clear();
+        self.candidate_hf_sections.clear();
+        self.has_more_frames = true;
+        self.header_needed_bytes = None;
+    }
+
     pub(super) fn process(
         &mut self,
         box_parser: &mut BoxParser,
         input: &mut dyn JxlBitstreamInput,
         decode_options: &JxlDecoderOptions,
         mut output_buffers: Option<&mut [JxlOutputBuffer]>,
+        do_flush: bool,
     ) -> Result<()> {
         if let Some(output_buffers) = &output_buffers {
             let px = self.pixel_format.as_ref().unwrap();
@@ -179,7 +374,11 @@ impl CodestreamParser {
                     .frame
                     .as_ref()
                     .is_some_and(|f| f.header().can_be_referenced);
-                if !self.process_without_output && output_buffers.is_none() && !can_be_referenced {
+                if decode_options.scan_frames_only
+                    || (!self.process_without_output
+                        && output_buffers.is_none()
+                        && !can_be_referenced)
+                {
                     self.skip_sections = true;
                 }
 
@@ -229,7 +428,9 @@ impl CodestreamParser {
                         let num = if !box_parser.box_buffer.is_empty() {
                             box_parser.box_buffer.take(buffers)
                         } else {
-                            input.read(buffers)?
+                            let num = input.read(buffers)?;
+                            box_parser.mark_file_consumed(num);
+                            num
                         };
                         self.ready_section_data += num;
                         box_parser.consume_codestream(num as u64);
@@ -238,7 +439,7 @@ impl CodestreamParser {
                             break;
                         }
                     }
-                    match self.process_sections(decode_options, &mut output_buffers) {
+                    match self.process_sections(decode_options, &mut output_buffers, do_flush) {
                         Ok(None) => Ok(()),
                         Ok(Some(missing)) => Err(Error::OutOfBounds(missing)),
                         Err(Error::OutOfBounds(_)) => Err(Error::SectionTooShort),
@@ -256,7 +457,9 @@ impl CodestreamParser {
                         let skipped = if !box_parser.box_buffer.is_empty() {
                             box_parser.box_buffer.consume(to_skip)
                         } else {
-                            input.skip(to_skip)?
+                            let skipped = input.skip(to_skip)?;
+                            box_parser.mark_file_consumed(skipped);
+                            skipped
                         };
                         box_parser.consume_codestream(skipped as u64);
                         self.ready_section_data += skipped;
@@ -295,25 +498,59 @@ impl CodestreamParser {
             } else {
                 
                 assert!(self.frame.is_none());
-                assert!(self.has_more_frames);
+                if !self.has_more_frames {
+                    
+                    
+                    assert!(do_flush);
+                    return Ok(());
+                }
+
+                
+                
+                
+                
+                let mut capture_frame_start =
+                    self.decoder_state.is_some() && self.frame_header.is_none();
 
                 
                 
                 loop {
                     let available_codestream = match box_parser.get_more_codestream(input) {
                         Err(Error::OutOfBounds(_)) => 0,
-                        Ok(c) => c as usize,
+                        Ok(c) => c,
                         Err(e) => return Err(e),
                     };
+
+                    if capture_frame_start {
+                        
+                        
+                        
+                        self.current_frame_file_offset = (box_parser.total_file_consumed as usize)
+                            .saturating_sub(self.non_section_buf.len())
+                            .saturating_sub(box_parser.box_buffer.len());
+
+                        
+                        
+                        self.current_frame_remaining_in_box = if available_codestream > u64::MAX / 2
+                        {
+                            u64::MAX
+                        } else {
+                            available_codestream.saturating_add(self.non_section_buf.len() as u64)
+                        };
+                        capture_frame_start = false;
+                    }
+
                     let c = self.non_section_buf.refill(
                         |buf| {
                             if !box_parser.box_buffer.is_empty() {
                                 Ok(box_parser.box_buffer.take(buf))
                             } else {
-                                input.read(buf)
+                                let read = input.read(buf)?;
+                                box_parser.mark_file_consumed(read);
+                                Ok(read)
                             }
                         },
-                        Some(available_codestream),
+                        Some(available_codestream as usize),
                     )? as u64;
                     box_parser.consume_codestream(c);
 
@@ -379,7 +616,20 @@ impl CodestreamParser {
                         }
                     }
 
+                    
+                    if !is_preview_frame {
+                        self.record_frame_info();
+                    }
+
                     if self.has_visible_frame() {
+                        if self.visible_frames_to_skip > 0 {
+                            
+                            
+                            
+                            self.visible_frames_to_skip -= 1;
+                            self.process_without_output = true;
+                            continue;
+                        }
                         
                         return Ok(());
                     } else {
@@ -389,5 +639,50 @@ impl CodestreamParser {
                 }
             }
         }
+    }
+
+    pub(super) fn update_default_output_color_profile(&mut self) {
+        
+        if self.output_color_profile_set_by_user {
+            return;
+        }
+
+        let embedded_color_profile = self.embedded_color_profile.as_ref().unwrap();
+        let pixel_format = self.pixel_format.as_ref().unwrap();
+
+        
+        
+        
+        
+        
+        let output_color_profile = if self.xyb_encoded {
+            
+            let base_encoding = if embedded_color_profile.can_output_to() {
+                match &embedded_color_profile {
+                    JxlColorProfile::Simple(enc) => enc.clone(),
+                    JxlColorProfile::Icc(_) => {
+                        unreachable!("can_output_to returns false for ICC")
+                    }
+                }
+            } else {
+                let data_format = pixel_format
+                    .color_data_format
+                    .unwrap_or(JxlDataFormat::U8 { bit_depth: 8 });
+                let is_float = matches!(
+                    data_format,
+                    JxlDataFormat::F32 { .. } | JxlDataFormat::F16 { .. }
+                );
+                if is_float {
+                    JxlColorEncoding::linear_srgb(self.is_gray)
+                } else {
+                    JxlColorEncoding::srgb(self.is_gray)
+                }
+            };
+
+            JxlColorProfile::Simple(base_encoding)
+        } else {
+            embedded_color_profile.clone()
+        };
+        self.output_color_profile = Some(output_color_profile);
     }
 }

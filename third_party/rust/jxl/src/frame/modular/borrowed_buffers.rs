@@ -18,7 +18,6 @@ pub fn with_buffers<T>(
     buffers: &[ModularBufferInfo],
     indices: &[usize],
     grid: usize,
-    skip_empty: bool,
     f: impl FnOnce(Vec<&mut ModularChannel>) -> Result<T>,
 ) -> Result<T> {
     let mut bufs = vec![];
@@ -39,7 +38,9 @@ pub fn with_buffers<T>(
         
         
         
-        if skip_empty && (b.size.0 == 0 || b.size.1 == 0) {
+        
+        
+        if b.size.0 == 0 && b.size.1 == 0 {
             continue;
         }
 

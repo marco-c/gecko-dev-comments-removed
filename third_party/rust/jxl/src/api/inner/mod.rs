@@ -6,11 +6,12 @@
 #[cfg(test)]
 use crate::api::FrameCallback;
 use crate::{
-    api::JxlFrameHeader,
+    api::{JxlFrameHeader, VisibleFrameInfo, VisibleFrameSeekTarget},
     error::{Error, Result},
 };
 
 use super::{JxlBasicInfo, JxlColorProfile, JxlDecoderOptions, JxlPixelFormat};
+use crate::container::frame_index::FrameIndexBox;
 use box_parser::BoxParser;
 use codestream_parser::CodestreamParser;
 
@@ -67,6 +68,7 @@ impl JxlDecoderInner {
             return Err(Error::ICCOutputNoCMS);
         }
         self.codestream_parser.output_color_profile = Some(profile);
+        self.codestream_parser.output_color_profile_set_by_user = true;
         Ok(())
     }
 
@@ -75,7 +77,10 @@ impl JxlDecoderInner {
     }
 
     pub fn set_pixel_format(&mut self, pixel_format: JxlPixelFormat) {
+        
+        
         self.codestream_parser.pixel_format = Some(pixel_format);
+        self.codestream_parser.update_default_output_color_profile();
     }
 
     pub fn frame_header(&self) -> Option<JxlFrameHeader> {
@@ -129,6 +134,34 @@ impl JxlDecoderInner {
 
     pub fn has_more_frames(&self) -> bool {
         self.codestream_parser.has_more_frames
+    }
+
+    
+    pub fn frame_index(&self) -> Option<&FrameIndexBox> {
+        self.box_parser.frame_index.as_ref()
+    }
+
+    
+    pub fn scanned_frames(&self) -> &[VisibleFrameInfo] {
+        &self.codestream_parser.scanned_frames
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn start_new_frame(&mut self, seek_target: VisibleFrameSeekTarget) {
+        self.box_parser
+            .reset_for_codestream_seek(seek_target.remaining_in_box);
+        self.codestream_parser
+            .start_new_frame(seek_target.visible_frames_to_skip);
     }
 
     #[cfg(test)]

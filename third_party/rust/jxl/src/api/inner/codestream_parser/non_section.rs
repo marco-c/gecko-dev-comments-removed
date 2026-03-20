@@ -117,6 +117,7 @@ impl CodestreamParser {
 
         if self.decoder_state.is_none() && self.embedded_color_profile.is_none() {
             let file_header = self.file_header.as_ref().unwrap();
+
             
             let mut br = BitReader::new(&self.non_section_buf);
             br.skip_bits(self.non_section_bit_offset as usize)?;
@@ -147,50 +148,17 @@ impl CodestreamParser {
                     &file_header.image_metadata.color_encoding,
                 )?)
             };
-            
-            
-            
-            let output_color_profile = if file_header.image_metadata.xyb_encoded {
-                let is_gray =
-                    file_header.image_metadata.color_encoding.color_space == ColorSpace::Gray;
-
-                
-                let base_encoding = if embedded_color_profile.can_output_to() {
-                    match &embedded_color_profile {
-                        JxlColorProfile::Simple(enc) => enc.clone(),
-                        JxlColorProfile::Icc(_) => {
-                            unreachable!("can_output_to returns false for ICC")
-                        }
-                    }
-                } else {
-                    JxlColorEncoding::linear_srgb(is_gray)
-                };
-
-                JxlColorProfile::Simple(base_encoding)
-            } else {
-                embedded_color_profile.clone()
-            };
             self.embedded_color_profile = Some(embedded_color_profile.clone());
-            
-            if self.output_color_profile.is_none() {
-                self.output_color_profile = Some(output_color_profile);
-            } else {
-                
-                
-                let user_profile = self.output_color_profile.as_ref().unwrap();
-                if !file_header.image_metadata.xyb_encoded
-                    && decode_options.cms.is_none()
-                    && *user_profile != embedded_color_profile
-                {
-                    return Err(Error::NonXybOutputNoCMS);
-                }
-            }
+
+            let xyb_encoded = file_header.image_metadata.xyb_encoded;
+            let is_gray = file_header.image_metadata.color_encoding.color_space == ColorSpace::Gray;
+            self.xyb_encoded = xyb_encoded;
+            self.is_gray = is_gray;
+
             
             if self.pixel_format.is_none() {
                 self.pixel_format = Some(JxlPixelFormat {
-                    color_type: if file_header.image_metadata.color_encoding.color_space
-                        == ColorSpace::Gray
-                    {
+                    color_type: if is_gray {
                         JxlColorType::Grayscale
                     } else {
                         JxlColorType::Rgb
@@ -205,6 +173,19 @@ impl CodestreamParser {
                         file_header.image_metadata.extra_channel_info.len()
                     ],
                 });
+            }
+
+            if let Some(user_profile) = &self.output_color_profile {
+                
+                
+                if !xyb_encoded
+                    && decode_options.cms.is_none()
+                    && *user_profile != embedded_color_profile
+                {
+                    return Err(Error::NonXybOutputNoCMS);
+                }
+            } else {
+                self.update_default_output_color_profile();
             }
 
             let mut br = BitReader::new(&self.non_section_buf);
@@ -298,7 +279,7 @@ impl CodestreamParser {
         
         self.saved_file_header = self.decoder_state.as_ref().map(|ds| ds.file_header.clone());
 
-        let frame = Frame::from_header_and_toc(
+        let mut frame = Frame::from_header_and_toc(
             self.frame_header.take().unwrap(),
             toc,
             self.decoder_state.take().unwrap(),
@@ -359,6 +340,17 @@ impl CodestreamParser {
 
         self.section_state =
             SectionState::new(frame.header().num_lf_groups(), frame.header().num_groups());
+
+        frame.prepare_render_pipeline(
+            self.pixel_format.as_ref().unwrap(),
+            decode_options.cms.as_deref(),
+            self.embedded_color_profile
+                .as_ref()
+                .expect("embedded_color_profile should be set before pipeline preparation"),
+            self.output_color_profile
+                .as_ref()
+                .expect("output_color_profile should be set before pipeline preparation"),
+        )?;
 
         self.frame = Some(frame);
 

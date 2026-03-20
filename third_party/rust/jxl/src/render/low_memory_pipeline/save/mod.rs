@@ -18,7 +18,7 @@ mod identity;
 impl SaveStage {
     
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn save_lowmem(
+    pub(crate) fn save_lowmem(
         &self,
         data: &[&RowBuffer],
         buffers: &mut [Option<JxlOutputBuffer>],

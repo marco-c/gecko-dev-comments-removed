@@ -20,6 +20,7 @@ pub fn decode_modular_subbitstream(
     header: Option<GroupHeader>,
     global_tree: &Option<Tree>,
     br: &mut BitReader,
+    partial_decoded_buffers: Option<&mut usize>,
 ) -> Result<()> {
     
     let is_empty = buffers
@@ -80,7 +81,21 @@ pub fn decode_modular_subbitstream(
     let mut reader = SymbolReader::new(&tree.histograms, br, Some(image_width))?;
 
     for i in 0..buffers.len() {
-        decode_modular_channel(&mut buffers, i, stream_id, &header, tree, &mut reader, br)?;
+        
+        
+        let (w, h) = buffers[i].data.size();
+        if w == 0 || h == 0 {
+            continue;
+        }
+        if let Err(e) =
+            decode_modular_channel(&mut buffers, i, stream_id, &header, tree, &mut reader, br)
+        {
+            if let Some(p) = partial_decoded_buffers {
+                buffers[i].data.fill(0);
+                *p = i;
+            }
+            return Err(e);
+        }
     }
 
     reader.check_final_state(&tree.histograms, br)?;
