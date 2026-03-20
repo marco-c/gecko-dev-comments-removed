@@ -40,6 +40,7 @@ class CompositorWidget;
 }
 
 namespace wr {
+class WebRenderAPI;
 class WebRenderPipelineInfo;
 struct Epoch;
 struct MemoryReport;
@@ -425,6 +426,9 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     APZInputBridgeParent* mApzInputBridgeParent;
     RefPtr<CompositorBridgeParent> mParent;
     RefPtr<WebRenderBridgeParent> mWrBridge;
+    
+    
+    RefPtr<wr::WebRenderAPI> mWebRenderAPI;
     
     
     
