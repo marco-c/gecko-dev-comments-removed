@@ -83,20 +83,22 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
   
   
+  
+  bool EnsureInitialized();
+
+  
+  
   void FinishInitialization(RefPtr<wr::WebRenderAPI>&& aApi,
                             RefPtr<AsyncImagePipelineManager>&& aImageMgr);
   void FinishInitializationError(nsCString&& aError);
 
   wr::PipelineId PipelineId() { return mPipelineId; }
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() {
-    return do_AddRef(mLateInit->mApi);
-  }
-  AsyncImagePipelineManager* AsyncImageManager() {
-    return mLateInit->mAsyncImageManager;
-  }
-  CompositorVsyncScheduler* CompositorScheduler() {
-    return mLateInit->mCompositorScheduler.get();
-  }
+  
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI();
+  
+  AsyncImagePipelineManager* AsyncImageManager();
+  
+  CompositorVsyncScheduler* CompositorScheduler();
   CompositorBridgeParentBase* GetCompositorBridge() {
     return mCompositorBridge;
   }
@@ -238,7 +240,6 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
       nsTArray<ImageCompositeNotificationInfo>* aNotifications);
 
   wr::Epoch GetCurrentEpoch() const { return mWrEpoch; }
-  wr::IdNamespace GetIdNamespace() { return mLateInit->mIdNamespace; }
 
   bool MatchesNamespace(const wr::ImageKey& aImageKey) const {
     return aImageKey.mNamespace == mLateInit->mIdNamespace;
