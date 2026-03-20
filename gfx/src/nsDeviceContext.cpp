@@ -23,6 +23,10 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/ScreenManager.h"  
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::gfx;
 using mozilla::widget::ScreenManager;
@@ -270,6 +274,17 @@ RefPtr<PrintEndDocumentPromise> nsDeviceContext::EndDocument() {
                             "nsDeviceContext::EndDocument"_ns);
 
   mIsCurrentlyPrintingDoc = false;
+#ifdef ACCESSIBILITY
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::a11y::PdfStructTreeBuilder::Done(mBrowsingContextId);
+#endif
 
   if (mPrintTarget) {
     auto result = mPrintTarget->EndPrinting();
@@ -296,6 +311,10 @@ nsresult nsDeviceContext::AbortDocument() {
 
   nsresult rv = mPrintTarget->AbortPrinting();
   mIsCurrentlyPrintingDoc = false;
+#ifdef ACCESSIBILITY
+  
+  mozilla::a11y::PdfStructTreeBuilder::Done(mBrowsingContextId);
+#endif
 
   if (mDeviceContextSpec) {
     (void)mDeviceContextSpec->EndDocument();
