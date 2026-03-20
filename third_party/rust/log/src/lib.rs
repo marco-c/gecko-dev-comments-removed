@@ -341,10 +341,14 @@
 
 
 
+
+
+
+
 #![doc(
-    html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-    html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/log/0.4.26"
+    html_logo_url = "https://prev.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
+    html_favicon_url = "https://prev.rust-lang.org/favicon.ico",
+    html_root_url = "https://docs.rs/log/0.4.29"
 )]
 #![warn(missing_docs)]
 #![deny(missing_debug_implementations, unconditional_recursion)]
@@ -431,21 +435,6 @@ impl AtomicUsize {
     fn store(&self, val: usize, _order: Ordering) {
         self.v.set(val)
     }
-
-    #[cfg(target_has_atomic = "ptr")]
-    fn compare_exchange(
-        &self,
-        current: usize,
-        new: usize,
-        _success: Ordering,
-        _failure: Ordering,
-    ) -> Result<usize, usize> {
-        let prev = self.v.get();
-        if current == prev {
-            self.v.set(new);
-        }
-        Ok(prev)
-    }
 }
 
 
@@ -526,14 +515,13 @@ impl PartialOrd<LevelFilter> for Level {
 impl FromStr for Level {
     type Err = ParseLevelError;
     fn from_str(level: &str) -> Result<Level, Self::Err> {
-        LOG_LEVEL_NAMES
-            .iter()
-            .position(|&name| name.eq_ignore_ascii_case(level))
-            .into_iter()
-            .filter(|&idx| idx != 0)
-            .map(|idx| Level::from_usize(idx).unwrap())
-            .next()
-            .ok_or(ParseLevelError(()))
+        
+        for idx in 1..LOG_LEVEL_NAMES.len() {
+            if LOG_LEVEL_NAMES[idx].eq_ignore_ascii_case(level) {
+                return Ok(Level::from_usize(idx).unwrap());
+            }
+        }
+        Err(ParseLevelError(()))
     }
 }
 
@@ -591,6 +579,48 @@ impl Level {
     pub fn iter() -> impl Iterator<Item = Self> {
         (1..6).map(|i| Self::from_usize(i).unwrap())
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn increment_severity(&self) -> Self {
+        let current = *self as usize;
+        Self::from_usize(current + 1).unwrap_or(*self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn decrement_severity(&self) -> Self {
+        let current = *self as usize;
+        Self::from_usize(current.saturating_sub(1)).unwrap_or(*self)
+    }
 }
 
 
@@ -635,11 +665,13 @@ impl PartialOrd<Level> for LevelFilter {
 impl FromStr for LevelFilter {
     type Err = ParseLevelError;
     fn from_str(level: &str) -> Result<LevelFilter, Self::Err> {
-        LOG_LEVEL_NAMES
-            .iter()
-            .position(|&name| name.eq_ignore_ascii_case(level))
-            .map(|p| LevelFilter::from_usize(p).unwrap())
-            .ok_or(ParseLevelError(()))
+        
+        for idx in 0..LOG_LEVEL_NAMES.len() {
+            if LOG_LEVEL_NAMES[idx].eq_ignore_ascii_case(level) {
+                return Ok(LevelFilter::from_usize(idx).unwrap());
+            }
+        }
+        Err(ParseLevelError(()))
     }
 }
 
@@ -699,6 +731,49 @@ impl LevelFilter {
     
     pub fn iter() -> impl Iterator<Item = Self> {
         (0..6).map(|i| Self::from_usize(i).unwrap())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn increment_severity(&self) -> Self {
+        let current = *self as usize;
+        Self::from_usize(current + 1).unwrap_or(*self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn decrement_severity(&self) -> Self {
+        let current = *self as usize;
+        Self::from_usize(current.saturating_sub(1)).unwrap_or(*self)
     }
 }
 
@@ -868,7 +943,7 @@ impl<'a> Record<'a> {
     
     #[cfg(feature = "kv")]
     #[inline]
-    pub fn to_builder(&self) -> RecordBuilder {
+    pub fn to_builder(&self) -> RecordBuilder<'_> {
         RecordBuilder {
             record: Record {
                 metadata: Metadata {
@@ -1035,7 +1110,7 @@ impl<'a> RecordBuilder<'a> {
     }
 }
 
-impl<'a> Default for RecordBuilder<'a> {
+impl Default for RecordBuilder<'_> {
     fn default() -> Self {
         Self::new()
     }
@@ -1164,7 +1239,7 @@ impl<'a> MetadataBuilder<'a> {
     }
 }
 
-impl<'a> Default for MetadataBuilder<'a> {
+impl Default for MetadataBuilder<'_> {
     fn default() -> Self {
         Self::new()
     }
@@ -1661,6 +1736,55 @@ mod tests {
         for (input, expected) in tests {
             assert_eq!(*expected, input.as_str());
         }
+    }
+
+    #[test]
+    fn test_level_up() {
+        let info = Level::Info;
+        let up = info.increment_severity();
+        assert_eq!(up, Level::Debug);
+
+        let trace = Level::Trace;
+        let up = trace.increment_severity();
+        
+        assert_eq!(up, trace);
+    }
+
+    #[test]
+    fn test_level_filter_up() {
+        let info = LevelFilter::Info;
+        let up = info.increment_severity();
+        assert_eq!(up, LevelFilter::Debug);
+
+        let trace = LevelFilter::Trace;
+        let up = trace.increment_severity();
+        
+        assert_eq!(up, trace);
+    }
+
+    #[test]
+    fn test_level_down() {
+        let info = Level::Info;
+        let down = info.decrement_severity();
+        assert_eq!(down, Level::Warn);
+
+        let error = Level::Error;
+        let down = error.decrement_severity();
+        
+        assert_eq!(down, error);
+    }
+
+    #[test]
+    fn test_level_filter_down() {
+        let info = LevelFilter::Info;
+        let down = info.decrement_severity();
+        assert_eq!(down, LevelFilter::Warn);
+
+        let error = LevelFilter::Error;
+        let down = error.decrement_severity();
+        assert_eq!(down, LevelFilter::Off);
+        
+        assert_eq!(down.decrement_severity(), down);
     }
 
     #[test]

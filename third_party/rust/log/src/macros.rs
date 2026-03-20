@@ -27,26 +27,116 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
+#[clippy::format_args]
 macro_rules! log {
     
-    (target: $target:expr, $lvl:expr, $($key:tt $(:$capture:tt)? $(= $value:expr)?),+; $($arg:tt)+) => ({
+    (logger: $logger:expr, target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
+        $crate::__log!(
+            logger: $crate::__log_logger!($logger),
+            target: $target,
+            $lvl,
+            $($arg)+
+        )
+    });
+
+    
+    (logger: $logger:expr, $lvl:expr, $($arg:tt)+) => ({
+        $crate::__log!(
+            logger: $crate::__log_logger!($logger),
+            target: $crate::__private_api::module_path!(),
+            $lvl,
+            $($arg)+
+        )
+    });
+
+    
+    (target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
+        $crate::__log!(
+            logger: $crate::__log_logger!(__log_global_logger),
+            target: $target,
+            $lvl,
+            $($arg)+
+        )
+    });
+
+    
+    ($lvl:expr, $($arg:tt)+) => ({
+        $crate::__log!(
+            logger: $crate::__log_logger!(__log_global_logger),
+            target: $crate::__private_api::module_path!(),
+            $lvl,
+            $($arg)+
+        )
+    });
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log {
+    
+    (logger: $logger:expr, target: $target:expr, $lvl:expr, $($key:tt $(:$capture:tt)? $(= $value:expr)?),+; $($arg:tt)+) => ({
         let lvl = $lvl;
         if lvl <= $crate::STATIC_MAX_LEVEL && lvl <= $crate::max_level() {
-            $crate::__private_api::log::<&_>(
+            $crate::__private_api::log(
+                $logger,
                 $crate::__private_api::format_args!($($arg)+),
                 lvl,
                 &($target, $crate::__private_api::module_path!(), $crate::__private_api::loc()),
-                &[$(($crate::__log_key!($key), $crate::__log_value!($key $(:$capture)* = $($value)*))),+]
+                &[$(($crate::__log_key!($key), $crate::__log_value!($key $(:$capture)* = $($value)*))),+] as &[_],
             );
         }
     });
 
     
-    (target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
+    (logger: $logger:expr, target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
         let lvl = $lvl;
         if lvl <= $crate::STATIC_MAX_LEVEL && lvl <= $crate::max_level() {
             $crate::__private_api::log(
+                $logger,
                 $crate::__private_api::format_args!($($arg)+),
                 lvl,
                 &($target, $crate::__private_api::module_path!(), $crate::__private_api::loc()),
@@ -54,9 +144,6 @@ macro_rules! log {
             );
         }
     });
-
-    
-    ($lvl:expr, $($arg:tt)+) => ($crate::log!(target: $crate::__private_api::module_path!(), $lvl, $($arg)+));
 }
 
 
@@ -74,10 +161,25 @@ macro_rules! log {
 
 
 #[macro_export]
+#[clippy::format_args]
 macro_rules! error {
     
     
-    (target: $target:expr, $($arg:tt)+) => ($crate::log!(target: $target, $crate::Level::Error, $($arg)+));
+    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), target: $target, $crate::Level::Error, $($arg)+)
+    });
+
+    
+    
+    (logger: $logger:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), $crate::Level::Error, $($arg)+)
+    });
+
+    
+    
+    (target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(target: $target, $crate::Level::Error, $($arg)+)
+    });
 
     
     ($($arg:tt)+) => ($crate::log!($crate::Level::Error, $($arg)+))
@@ -98,10 +200,25 @@ macro_rules! error {
 
 
 #[macro_export]
+#[clippy::format_args]
 macro_rules! warn {
     
     
-    (target: $target:expr, $($arg:tt)+) => ($crate::log!(target: $target, $crate::Level::Warn, $($arg)+));
+    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), target: $target, $crate::Level::Warn, $($arg)+)
+    });
+
+    
+    
+    (logger: $logger:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), $crate::Level::Warn, $($arg)+)
+    });
+
+    
+    
+    (target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(target: $target, $crate::Level::Warn, $($arg)+)
+    });
 
     
     ($($arg:tt)+) => ($crate::log!($crate::Level::Warn, $($arg)+))
@@ -123,11 +240,33 @@ macro_rules! warn {
 
 
 
+
+
+
+
+
+
+
 #[macro_export]
+#[clippy::format_args]
 macro_rules! info {
     
     
-    (target: $target:expr, $($arg:tt)+) => ($crate::log!(target: $target, $crate::Level::Info, $($arg)+));
+    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), target: $target, $crate::Level::Info, $($arg)+)
+    });
+
+    
+    
+    (logger: $logger:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), $crate::Level::Info, $($arg)+)
+    });
+
+    
+    
+    (target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(target: $target, $crate::Level::Info, $($arg)+)
+    });
 
     
     ($($arg:tt)+) => ($crate::log!($crate::Level::Info, $($arg)+))
@@ -149,10 +288,25 @@ macro_rules! info {
 
 
 #[macro_export]
+#[clippy::format_args]
 macro_rules! debug {
     
     
-    (target: $target:expr, $($arg:tt)+) => ($crate::log!(target: $target, $crate::Level::Debug, $($arg)+));
+    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), target: $target, $crate::Level::Debug, $($arg)+)
+    });
+
+    
+    
+    (logger: $logger:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), $crate::Level::Debug, $($arg)+)
+    });
+
+    
+    
+    (target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(target: $target, $crate::Level::Debug, $($arg)+)
+    });
 
     
     ($($arg:tt)+) => ($crate::log!($crate::Level::Debug, $($arg)+))
@@ -175,11 +329,28 @@ macro_rules! debug {
 
 
 
+
+
 #[macro_export]
+#[clippy::format_args]
 macro_rules! trace {
     
     
-    (target: $target:expr, $($arg:tt)+) => ($crate::log!(target: $target, $crate::Level::Trace, $($arg)+));
+    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), target: $target, $crate::Level::Trace, $($arg)+)
+    });
+
+    
+    
+    (logger: $logger:expr, $($arg:tt)+) => ({
+        $crate::log!(logger: $crate::__log_logger!($logger), $crate::Level::Trace, $($arg)+)
+    });
+
+    
+    
+    (target: $target:expr, $($arg:tt)+) => ({
+        $crate::log!(target: $target, $crate::Level::Trace, $($arg)+)
+    });
 
     
     ($($arg:tt)+) => ($crate::log!($crate::Level::Trace, $($arg)+))
@@ -211,17 +382,58 @@ macro_rules! trace {
 
 
 
+
+
+
+
+
 #[macro_export]
 macro_rules! log_enabled {
-    (target: $target:expr, $lvl:expr) => {{
+    
+    (logger: $logger:expr, target: $target:expr, $lvl:expr) => ({
+        $crate::__log_enabled!(logger: $crate::__log_logger!($logger), target: $target, $lvl)
+    });
+
+    
+    (logger: $logger:expr, $lvl:expr) => ({
+        $crate::__log_enabled!(logger: $crate::__log_logger!($logger), target: $crate::__private_api::module_path!(), $lvl)
+    });
+
+    
+    (target: $target:expr, $lvl:expr) => ({
+        $crate::__log_enabled!(logger: $crate::__log_logger!(__log_global_logger), target: $target, $lvl)
+    });
+
+    
+    ($lvl:expr) => ({
+        $crate::__log_enabled!(logger: $crate::__log_logger!(__log_global_logger), target: $crate::__private_api::module_path!(), $lvl)
+    });
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log_enabled {
+    
+    (logger: $logger:expr, target: $target:expr, $lvl:expr) => {{
         let lvl = $lvl;
         lvl <= $crate::STATIC_MAX_LEVEL
             && lvl <= $crate::max_level()
-            && $crate::__private_api::enabled(lvl, $target)
+            && $crate::__private_api::enabled($logger, lvl, $target)
     }};
-    ($lvl:expr) => {
-        $crate::log_enabled!(target: $crate::__private_api::module_path!(), $lvl)
-    };
+}
+
+
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log_logger {
+    (__log_global_logger) => {{
+        $crate::__private_api::GlobalLogger
+    }};
+
+    ($logger:expr) => {{
+        &($logger)
+    }};
 }
 
 
