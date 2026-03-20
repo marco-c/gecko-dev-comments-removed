@@ -677,6 +677,10 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPUDPSocketConstructor(
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
+  if (!StaticPrefs::dom_udpsocket_enabled()) {
+    return IPC_FAIL(this, "udp socket not enabled");
+  }
+
   if (aOptionalPrincipal.isSome()) {
     
     
