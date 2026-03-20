@@ -7,17 +7,9 @@
 
 
 add_task(async function test_smart_window_leaks() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.firstrun.hasCompleted", false]],
-  });
-
   AIWindow.toggleAIWindow(window, true);
   await BrowserTestUtils.withNewTab({ url: AIWINDOW_URL, gBrowser }, () => {
     Assert.ok(true, "It's a test");
   });
   AIWindow.toggleAIWindow(window, false);
-
-  await SpecialPowers.popPrefEnv();
 });
