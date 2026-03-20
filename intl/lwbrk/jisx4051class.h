@@ -5,7 +5,6 @@
 
 
 
-
 static const uint32_t gLBClass00[32] = {
     0x55555555,  
     0x55555555,  

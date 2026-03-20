@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_intl_l10n_FileSource_h
 #define mozilla_intl_l10n_FileSource_h
 

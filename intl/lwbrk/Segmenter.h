@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef intl_components_Segmenter_h_
 #define intl_components_Segmenter_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/intl/EncodingToLang.h"
 #include "nsGkAtoms.h"
 #include "nsLanguageAtomService.h"

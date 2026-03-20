@@ -3,7 +3,6 @@
 
 
 
-
 #include "OSPreferences.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/LocaleService.h"
@@ -11,16 +10,14 @@
 
 #include <windows.h>
 
-#ifndef __MINGW32__  
-#  include <roapi.h>
-#  include <wrl.h>
-#  include <Windows.System.UserProfile.h>
+#include <roapi.h>
+#include <wrl.h>
+#include <windows.system.userprofile.h>
 
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation::Collections;
 using namespace ABI::Windows::System::UserProfile;
-#endif
 
 using namespace mozilla::intl;
 
@@ -29,7 +26,6 @@ OSPreferences::OSPreferences() {}
 bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
   MOZ_ASSERT(aLocaleList.IsEmpty());
 
-#ifndef __MINGW32__
   
   
   
@@ -70,7 +66,6 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
       }
     }
   }
-#endif
 
   
   

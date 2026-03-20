@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsConverterInputStream_h
 #define nsConverterInputStream_h
 

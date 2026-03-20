@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Localization.h"
 #include "nsIObserverService.h"
 #include "xpcpublic.h"

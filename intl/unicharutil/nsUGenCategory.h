@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsUGenCategory_h
 #define nsUGenCategory_h
 

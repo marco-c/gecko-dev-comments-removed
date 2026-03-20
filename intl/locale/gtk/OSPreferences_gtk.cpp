@@ -3,7 +3,6 @@
 
 
 
-
 #include <locale.h>
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/intl/Locale.h"

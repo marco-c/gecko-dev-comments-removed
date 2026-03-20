@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsTextToSubURI_h_
 #define nsTextToSubURI_h_
 

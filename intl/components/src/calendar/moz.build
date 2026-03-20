@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 FINAL_LIBRARY = "intlcomponents"
 
@@ -28,7 +26,7 @@ UNIFIED_SOURCES += [
     "ISODate.cpp",
 ]
 
-
+# ICU requires RTTI
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     CXXFLAGS += ["-frtti"]
 elif CONFIG["OS_TARGET"] == "WINNT":

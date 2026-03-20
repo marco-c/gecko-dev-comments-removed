@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsStringBundleService_h_
 #define nsStringBundleService_h_
 

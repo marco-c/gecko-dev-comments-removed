@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_intl_Quotes_h_
 #define mozilla_intl_Quotes_h_
 

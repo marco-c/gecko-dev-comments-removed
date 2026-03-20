@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef mozilla_intl_WordBreaker_h_
 #define mozilla_intl_WordBreaker_h_
 

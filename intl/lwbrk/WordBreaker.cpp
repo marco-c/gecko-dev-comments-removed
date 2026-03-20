@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/intl/WordBreaker.h"
 
 #include "icu4x/WordSegmenter.hpp"

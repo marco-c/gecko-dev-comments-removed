@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_intl_EncodingToLang_h
 #define mozilla_intl_EncodingToLang_h
 

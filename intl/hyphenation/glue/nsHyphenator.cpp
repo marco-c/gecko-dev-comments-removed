@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsHyphenator.h"
 
 #include "mozilla/dom/ContentChild.h"

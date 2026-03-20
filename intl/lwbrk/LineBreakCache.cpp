@@ -2,7 +2,6 @@
 
 
 
-
 #include "LineBreakCache.h"
 
 #include "nsIObserverService.h"

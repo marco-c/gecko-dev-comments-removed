@@ -2,7 +2,6 @@
 
 
 
-
 #include "Quotes.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"

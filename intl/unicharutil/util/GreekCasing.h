@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GreekCasing_h_
 #define GreekCasing_h_
 

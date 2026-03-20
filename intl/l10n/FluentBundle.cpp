@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FluentBundle.h"
 #include "nsContentUtils.h"
 #include "mozilla/dom/ToJSValue.h"

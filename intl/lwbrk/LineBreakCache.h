@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_intl_LineBreakCache_h_
 #define mozilla_intl_LineBreakCache_h_
 

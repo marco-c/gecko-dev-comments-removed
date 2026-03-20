@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsComplexBreaker_h_
 #define nsComplexBreaker_h_
 

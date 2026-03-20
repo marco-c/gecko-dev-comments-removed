@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsUnicodeProperties.h"
 #include "nsUnicodePropertyData.cpp"
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/intl/Locale.h"

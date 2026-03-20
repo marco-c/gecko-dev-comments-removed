@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsBidiUtils.h"
 
 #define ARABIC_TO_HINDI_DIGIT_INCREMENT \

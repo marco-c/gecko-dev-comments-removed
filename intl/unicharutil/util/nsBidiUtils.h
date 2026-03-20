@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBidiUtils_h_
 #define nsBidiUtils_h_
 

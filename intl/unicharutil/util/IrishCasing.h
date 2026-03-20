@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef IrishCasing_h_
 #define IrishCasing_h_
 

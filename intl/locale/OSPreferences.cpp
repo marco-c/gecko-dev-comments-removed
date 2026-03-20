@@ -8,7 +8,6 @@
 
 
 
-
 #include "OSPreferences.h"
 
 #include "mozilla/ClearOnShutdown.h"

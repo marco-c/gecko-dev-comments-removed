@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NS_UNICODEPROPERTIES_H
 #define NS_UNICODEPROPERTIES_H
 

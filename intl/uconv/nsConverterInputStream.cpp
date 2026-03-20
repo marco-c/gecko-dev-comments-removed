@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsConverterInputStream.h"
 #include "nsIInputStream.h"
 #include "nsReadLine.h"

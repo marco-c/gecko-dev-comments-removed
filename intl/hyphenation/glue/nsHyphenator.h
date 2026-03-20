@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHyphenator_h_
 #define nsHyphenator_h_
 

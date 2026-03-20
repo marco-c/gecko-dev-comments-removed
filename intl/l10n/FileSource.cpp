@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSource.h"
 #include "mozilla/dom/Promise.h"
 
