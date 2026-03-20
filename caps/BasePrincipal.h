@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BasePrincipal_h
 #define mozilla_BasePrincipal_h
 

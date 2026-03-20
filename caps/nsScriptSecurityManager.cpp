@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsScriptSecurityManager.h"
 
 #include "mozilla/SourceLocation.h"
@@ -1073,7 +1071,8 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
           }
         }
       } else if (targetScheme.EqualsLiteral("moz-page-thumb") ||
-                 targetScheme.EqualsLiteral("page-icon")) {
+                 targetScheme.EqualsLiteral("page-icon") ||
+                 targetScheme.EqualsLiteral("moz-newtab-wallpaper")) {
         if (XRE_IsParentProcess()) {
           return NS_OK;
         }

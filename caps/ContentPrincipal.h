@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ContentPrincipal_h
 #define mozilla_ContentPrincipal_h
 

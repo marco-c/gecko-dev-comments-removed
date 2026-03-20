@@ -4,7 +4,6 @@
 
 
 
-
 #include "nscore.h"
 #include "SystemPrincipal.h"
 #include "mozilla/ClearOnShutdown.h"

@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef mozilla_NullPrincipal_h
 #define mozilla_NullPrincipal_h
 

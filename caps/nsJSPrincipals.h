@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsJSPrincipals_h_
 #define nsJSPrincipals_h_
 

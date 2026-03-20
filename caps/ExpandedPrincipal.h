@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ExpandedPrincipal_h
 #define ExpandedPrincipal_h
 

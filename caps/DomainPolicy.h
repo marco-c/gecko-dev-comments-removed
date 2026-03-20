@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DomainPolicy_h_
 #define DomainPolicy_h_
 

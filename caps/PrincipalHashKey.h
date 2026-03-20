@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PrincipalHashKey_h
 #define mozilla_PrincipalHashKey_h
 

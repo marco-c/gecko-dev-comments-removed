@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_OriginAttributes_h
 #define mozilla_OriginAttributes_h
 

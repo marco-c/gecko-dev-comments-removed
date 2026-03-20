@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DomainPolicy.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/ipc/URIUtils.h"

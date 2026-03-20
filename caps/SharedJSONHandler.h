@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SharedJSONHandler_h
 #define mozilla_SharedJSONHandler_h
 

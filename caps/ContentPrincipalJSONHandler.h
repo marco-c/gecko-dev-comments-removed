@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ContentPrincipalJSONHandler_h
 #define mozilla_ContentPrincipalJSONHandler_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SubsumedPrincipalJSONHandler_h
 #define mozilla_SubsumedPrincipalJSONHandler_h
 

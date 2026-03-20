@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_SystemPrincipal_h
 #define mozilla_SystemPrincipal_h
 

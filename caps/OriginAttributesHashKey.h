@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_OriginAttributesHashKey_h
 #define mozilla_OriginAttributesHashKey_h
 

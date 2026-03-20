@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BasePrincipal.h"
 
 #include "nsDocShell.h"

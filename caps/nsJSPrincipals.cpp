@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIPrincipal.h"
 #include "xpcpublic.h"
 #include "nsString.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsScriptSecurityManager_h_
 #define nsScriptSecurityManager_h_
 

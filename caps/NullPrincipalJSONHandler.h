@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_NullPrincipalJSONHandler_h
 #define mozilla_NullPrincipalJSONHandler_h
 

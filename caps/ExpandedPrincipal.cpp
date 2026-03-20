@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ExpandedPrincipal.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"

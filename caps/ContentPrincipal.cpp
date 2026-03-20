@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentPrincipal.h"
 
 #include "mozIThirdPartyUtil.h"
