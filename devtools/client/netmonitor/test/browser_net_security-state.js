@@ -14,7 +14,7 @@ add_task(async function () {
 
   const EXPECTED_SECURITY_STATES = {
     "test1.example.com": "security-state-insecure",
-    "example.com": "security-state-secure",
+    "example.com": "security-state-secure-custom-root",
     "nocert.example.com": "security-state-broken",
     localhost: "security-state-secure",
     notlocalhost: "security-state-insecure",
