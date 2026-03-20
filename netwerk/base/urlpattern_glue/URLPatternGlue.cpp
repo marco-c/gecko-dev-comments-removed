@@ -123,9 +123,10 @@ Maybe<UrlPatternComponentResult> ComponentMatches(
 
     nsTArray<nsCString> groupNames;
     urlpattern_component_get_group_name_list(aComponentPtr, &groupNames);
-    for (size_t i = 0; i < matches.Length(); i++) {
-      
-      
+    
+    
+    
+    for (size_t i = 0; i < groupNames.Length() && i < matches.Length(); i++) {
       res.mGroups.InsertOrUpdate(groupNames[i], std::move(matches[i]));
     }
   }
