@@ -1306,9 +1306,6 @@ void nsHttpTransaction::MaybeReportFailedSVCDomain(
     return;
   }
 
-  glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
-      ErrorCodeToFailedReason(aReason));
-
   nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
   if (dns) {
     const nsCString& failedHost = aFailedConnInfo->GetRoutedHost().IsEmpty()
@@ -1574,9 +1571,6 @@ void nsHttpTransaction::Close(nsresult reason) {
     }
   }
 
-  glean::http::transaction_restart_reason.AccumulateSingleSample(
-      mRestartReason);
-
   if (!mResponseIsComplete && NS_SUCCEEDED(reason) && isHttp2or3) {
     
     
@@ -1674,11 +1668,6 @@ void nsHttpTransaction::Close(nsresult reason) {
 
     
     
-    if (mOrigConnInfo) {
-      glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
-          HTTPSSVC_CONNECTION_OK);
-    }
-
     if (mConnection) {
       RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
       if (conn) {
@@ -2454,12 +2443,6 @@ nsresult nsHttpTransaction::HandleContentStart() {
     mSupportsHTTP3 = nsHttpHandler::IsHttp3SupportedByServer(mResponseHead);
 
     CollectTelemetryForUploads();
-
-    
-    if (mSupportsHTTP3) {
-      glean::http::transaction_wait_time_http2_sup_http3.AccumulateRawDuration(
-          mPendingDurationTime);
-    }
 
     
     
@@ -3384,9 +3367,6 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
     nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
     bool allRecordsExcluded = false;
     (void)record->GetAllRecordsExcluded(&allRecordsExcluded);
-    glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
-        allRecordsExcluded ? HTTPSSVC_CONNECTION_ALL_RECORDS_EXCLUDED
-                           : HTTPSSVC_CONNECTION_NO_USABLE_RECORD);
     if (allRecordsExcluded &&
         StaticPrefs::network_dns_httpssvc_reset_exclustion_list() && dns) {
       (void)dns->ResetExcludedSVCDomainName(mConnInfo->GetOrigin());

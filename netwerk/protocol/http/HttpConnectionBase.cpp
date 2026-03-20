@@ -89,28 +89,7 @@ void HttpConnectionBase::ChangeConnectionState(ConnectionState aState) {
 }
 
 void HttpConnectionBase::RecordConnectionCloseTelemetry(nsresult aReason) {
-  
-
-
-
-
-
-
-
-
-
-
-
-  auto key = nsPrintfCString("%d_%d_%d_%d_%d", static_cast<uint32_t>(Version()),
-                             mConnInfo->EndToEndSSL(),
-                             mConnInfo->GetIsTrrServiceChannel(),
-                             static_cast<uint32_t>(mExperienceState),
-                             static_cast<uint32_t>(mConnectionState));
   SetCloseReason(ToCloseReason(aReason));
-  LOG(("RecordConnectionCloseTelemetry key=%s reason=%d\n", key.get(),
-       static_cast<uint32_t>(mCloseReason)));
-  glean::http::connection_close_reason.Get(key).AccumulateSingleSample(
-      static_cast<uint32_t>(mCloseReason));
 }
 
 void HttpConnectionBase::RecordConnectionAddressType() {
