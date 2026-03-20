@@ -143,19 +143,6 @@ class nsDocShell final : public nsDocLoader,
     INTERNAL_LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE = 0x2000,
   };
 
-  
-  class RestorePresentationEvent : public mozilla::Runnable {
-   public:
-    NS_DECL_NSIRUNNABLE
-    explicit RestorePresentationEvent(nsDocShell* aDs)
-        : mozilla::Runnable("nsDocShell::RestorePresentationEvent"),
-          mDocShell(aDs) {}
-    void Revoke() { mDocShell = nullptr; }
-
-   private:
-    RefPtr<nsDocShell> mDocShell;
-  };
-
   class InterfaceRequestorProxy : public nsIInterfaceRequestor {
    public:
     explicit InterfaceRequestorProxy(nsIInterfaceRequestor* aRequestor);
@@ -302,11 +289,6 @@ class nsDocShell final : public nsDocLoader,
   GetOriginAttributes(mozilla::OriginAttributes& aAttrs) override;
 
   
-  
-  
-  nsresult RestoreFromHistory();
-
-  
 
 
 
@@ -365,15 +347,6 @@ class nsDocShell final : public nsDocLoader,
   const mozilla::OriginAttributes& GetOriginAttributes() {
     return mBrowsingContext->OriginAttributesRef();
   }
-
-  
-  
-  bool HasHistoryEntry(nsISHEntry* aEntry) const {
-    return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
-  }
-
-  
-  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
 
   bool GetCreatedDynamically() const {
     return mBrowsingContext && mBrowsingContext->CreatedDynamically();
@@ -527,8 +500,6 @@ class nsDocShell final : public nsDocLoader,
 
   static bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
 
-  bool IsOSHE(nsISHEntry* aEntry) const { return mOSHE == aEntry; }
-
   mozilla::dom::ChildSHistory* GetSessionHistory() {
     return mBrowsingContext->GetChildSessionHistory();
   }
@@ -621,49 +592,12 @@ class nsDocShell final : public nsDocLoader,
   
   
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsresult AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
-                               nsIPrincipal* aTriggeringPrincipal,
-                               nsIPrincipal* aPrincipalToInherit,
-                               nsIPrincipal* aPartitionedPrincipalToInherit,
-                               nsIPolicyContainer* aPolicyContainer,
-                               bool aCloneChildren, nsISHEntry** aNewEntry);
-
   void UpdateActiveEntry(
       bool aReplace, const mozilla::Maybe<nsPoint>& aPreviousScrollPos,
       nsIURI* aURI, nsIURI* aOriginalURI, nsIReferrerInfo* aReferrerInfo,
       nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
       const nsAString& aTitle, bool aScrollRestorationIsManual,
       nsIStructuredCloneContainer* aData, bool aURIWasModified);
-
-  nsresult AddChildSHEntry(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
-                           int32_t aChildOffset, uint32_t aLoadType,
-                           bool aCloneChildren);
-
-  nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
-                                   bool aCloneChildren);
-
-  
-  
-  
-  
-  already_AddRefed<nsISHEntry> SetHistoryEntry(nsCOMPtr<nsISHEntry>* aPtr,
-                                               nsISHEntry* aEntry);
-
-  
-  
-  void SetHistoryEntryAndUpdateBC(const mozilla::Maybe<nsISHEntry*>& aLSHE,
-                                  const mozilla::Maybe<nsISHEntry*>& aOSHE);
 
   
   
@@ -878,8 +812,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void SetDocCurrentStateObj(nsISHEntry* aShEntry,
-                             mozilla::dom::SessionHistoryInfo* aInfo);
+  void SetDocCurrentStateObj(mozilla::dom::SessionHistoryInfo* aInfo);
 
   
   
@@ -916,32 +849,7 @@ class nsDocShell final : public nsDocLoader,
   
   
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool CanSavePresentation(uint32_t aLoadType, nsIRequest* aNewRequest,
-                           mozilla::dom::Document* aNewDocument,
-                           bool aReportBFCacheComboTelemetry);
-
   static void ReportBFCacheComboTelemetry(uint32_t aCombo);
-
-  
-  
-  
-  nsresult CaptureState();
-
-  
-  
-  
-  nsresult RestorePresentation(nsISHEntry* aSHEntry, bool* aRestoring);
-
-  
-  nsresult BeginRestoreChildren();
 
   
   void DoGetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aWidth,
@@ -1018,8 +926,6 @@ class nsDocShell final : public nsDocLoader,
 
   nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
 
-  void ReattachEditorToWindow(nsISHEntry* aSHEntry);
-  void ClearFrameHistory(nsISHEntry* aEntry);
   
   static bool ShouldUpdateGlobalHistory(uint32_t aLoadType);
   void UpdateGlobalHistoryTitle(nsIURI* aURI);
@@ -1136,10 +1042,9 @@ class nsDocShell final : public nsDocLoader,
 
   void SetTitleOnHistoryEntry(bool aUpdateEntryInSessionHistory);
 
-  void SetScrollRestorationIsManualOnHistoryEntry(nsISHEntry* aSHEntry,
-                                                  bool aIsManual);
+  void SetScrollRestorationIsManualOnHistoryEntry(bool aIsManual);
 
-  void SetCacheKeyOnHistoryEntry(nsISHEntry* aSHEntry, uint32_t aCacheKey);
+  void SetCacheKeyOnHistoryEntry(uint32_t aCacheKey);
 
   
   
@@ -1311,35 +1216,15 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsCOMPtr<nsISHEntry> mOSHE;
-
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsISHEntry> mLSHE;
-
-  
-  
-  
   
   mozilla::Maybe<OngoingNavigation> mOngoingNavigation;
 
-  
   mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;
   bool mActiveEntryIsLoadingFromSessionHistory = false;
   
   
   
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> mLoadingEntry;
-
-  
-  
-  
-  nsRevocableEventPtr<RestorePresentationEvent> mRestorePresentationEvent;
 
   
   mozilla::UniquePtr<nsDocShellEditorData> mEditorData;

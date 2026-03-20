@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Navigation.h"
 
 #include "NavigationPrecommitController.h"
@@ -235,8 +233,7 @@ void Navigation::EventListenerRemoved(nsAtom* aType) {
 
 
 bool Navigation::IsAPIEnabled(JSContext* , JSObject* ) {
-  return SessionHistoryInParent() &&
-         StaticPrefs::dom_navigation_webidl_enabled_DoNotUseDirectly();
+  return StaticPrefs::dom_navigation_webidl_enabled_DoNotUseDirectly();
 }
 
 void Navigation::Entries(

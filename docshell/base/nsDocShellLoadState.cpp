@@ -1078,8 +1078,7 @@ void nsDocShellLoadState::AssertProcessCouldTriggerLoadIfSystem() {
   
   
   
-  if (mozilla::SessionHistoryInParent() &&
-      TriggeringPrincipal()->IsSystemPrincipal() &&
+  if (TriggeringPrincipal()->IsSystemPrincipal() &&
       mozilla::dom::IsWebRemoteType(GetEffectiveTriggeringRemoteType())) {
     bool localFile = false;
     if (NS_SUCCEEDED(NS_URIChainHasFlags(

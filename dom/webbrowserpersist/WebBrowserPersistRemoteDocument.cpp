@@ -3,7 +3,6 @@
 
 
 
-
 #include "WebBrowserPersistRemoteDocument.h"
 
 #include "WebBrowserPersistDocumentParent.h"
@@ -193,14 +192,6 @@ WebBrowserPersistRemoteDocument::WriteContent(
              subActor, map, requestedContentType, aEncoderFlags, aWrapColumn)
              ? NS_OK
              : NS_ERROR_FAILURE;
-}
-
-
-
-
-already_AddRefed<nsISHEntry> WebBrowserPersistRemoteDocument::GetHistory() {
-  MOZ_CRASH("We should not call GetHistory on WebBrowserPersistRemoteDocument");
-  return nullptr;
 }
 
 }  

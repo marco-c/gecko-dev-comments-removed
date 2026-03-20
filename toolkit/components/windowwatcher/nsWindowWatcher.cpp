@@ -2133,7 +2133,7 @@ already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
 
   
   
-  if (aIsWindowOpen && mozilla::SessionHistoryInParent()) {
+  if (aIsWindowOpen) {
     loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
   }
 

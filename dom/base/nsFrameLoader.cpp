@@ -1761,14 +1761,6 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   aThisOwner->SetFrameLoader(aOther);
   aOtherOwner->SetFrameLoader(kungFuDeathGrip);
 
-  
-  if (ourHistory) {
-    ourHistory->EvictLocalDocumentViewers();
-  }
-  if (otherHistory) {
-    otherHistory->EvictLocalDocumentViewers();
-  }
-
   NS_ASSERTION(ourFrame == ourContent->GetPrimaryFrame() &&
                    otherFrame == otherContent->GetPrimaryFrame(),
                "changed primary frame");
@@ -1879,30 +1871,24 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
       RefPtr<ChildSHistory> childSHistory =
           browsingContext->Top()->GetChildSessionHistory();
       if (childSHistory) {
-        if (mozilla::SessionHistoryInParent()) {
-          uint32_t addedEntries = 0;
-          browsingContext->PreOrderWalk([&addedEntries](BrowsingContext* aBC) {
-            const uint32_t len = aBC->GetHistoryEntryCount();
-            
-            
-            
-            addedEntries += len > 0 ? len - 1 : 0;
-          });
+        uint32_t addedEntries = 0;
+        browsingContext->PreOrderWalk([&addedEntries](BrowsingContext* aBC) {
+          const uint32_t len = aBC->GetHistoryEntryCount();
+          
+          
+          
+          addedEntries += len > 0 ? len - 1 : 0;
+        });
 
-          nsID changeID = {};
-          if (addedEntries > 0) {
-            ChildSHistory* shistory =
-                browsingContext->Top()->GetChildSessionHistory();
-            if (shistory) {
-              changeID = shistory->AddPendingHistoryChange(0, -addedEntries);
-            }
+        nsID changeID = {};
+        if (addedEntries > 0) {
+          ChildSHistory* shistory =
+              browsingContext->Top()->GetChildSessionHistory();
+          if (shistory) {
+            changeID = shistory->AddPendingHistoryChange(0, -addedEntries);
           }
-          browsingContext->RemoveFromSessionHistory(changeID);
-        } else {
-          AutoTArray<nsID, 16> ids({browsingContext->GetHistoryID()});
-          childSHistory->LegacySHistory()->RemoveEntries(
-              ids, childSHistory->Index());
         }
+        browsingContext->RemoveFromSessionHistory(changeID);
       }
     }
   }

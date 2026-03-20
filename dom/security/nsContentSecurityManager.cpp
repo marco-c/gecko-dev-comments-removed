@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsContentSecurityManager.h"
 
 #include "js/RegExp.h"
@@ -1344,12 +1342,6 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(),
                         "Unexpected off-the-main-thread call to "
                         "CheckAllowLoadByTriggeringRemoteType");
-
-  
-  
-  if (!mozilla::SessionHistoryInParent()) {
-    return NS_OK;
-  }
 
   nsAutoCString triggeringRemoteType;
   nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);

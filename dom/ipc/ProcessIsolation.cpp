@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ProcessIsolation.h"
 
 #include "mozilla/AppShutdown.h"
@@ -696,12 +694,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     
     
     
-    
-    
-    if (mozilla::SessionHistoryInParent() ||
-        aTopBC->Group()->Toplevels().Length() > 1) {
-      options.mReplaceBrowsingContext = true;
-    }
+    options.mReplaceBrowsingContext = true;
   }
 
   
