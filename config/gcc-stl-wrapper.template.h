@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_${HEADER}_h
 #define mozilla_${HEADER}_h
 

@@ -20,8 +20,6 @@
 
 
 
-
-
 auto CREATE_NEW;
 auto CREATE_ALWAYS;
 auto OPEN_EXISTING;

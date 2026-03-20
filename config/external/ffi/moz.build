@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 FINAL_LIBRARY = "js"
 
@@ -43,15 +41,15 @@ else:
     if CONFIG["INTEL_ARCHITECTURE"]:
         DEFINES["HAVE_AS_X86_PCREL"] = True
 
-    
-    
+    # Don't bother setting EH_FRAME_FLAGS on Windows.
+    # Quoted defines confuse msvcc.sh, and the value isn't used there.
     if CONFIG["OS_TARGET"] != "WINNT":
         if CONFIG["FFI_TARGET"] == "ARM":
             DEFINES["EH_FRAME_FLAGS"] = '"aw"'
         else:
             DEFINES["EH_FRAME_FLAGS"] = '"a"'
 
-    
+    # Common source files.
     SOURCES += [
         "/js/src/ctypes/libffi/src/closures.c",
         "/js/src/ctypes/libffi/src/java_raw_api.c",
@@ -60,13 +58,13 @@ else:
         "/js/src/ctypes/libffi/src/types.c",
     ]
 
-    
+    # Per-platform sources and flags.
     ffi_srcs = ()
     ffi_h_defines = []
     if CONFIG["FFI_TARGET"] == "X86_WIN64":
         if CONFIG["CC_TYPE"] == "clang-cl":
             ffi_srcs = ("ffiw64.c",)
-            
+            # libffi asm needs to be preprocessed for MSVC's assembler
             GeneratedFile(
                 "win64_intel.asm",
                 inputs=[
@@ -87,7 +85,7 @@ else:
 
     elif CONFIG["FFI_TARGET"] == "X86_WIN32" and CONFIG["CC_TYPE"] == "clang-cl":
         ffi_srcs = ("ffi.c",)
-        
+        # libffi asm needs to be preprocessed for MSVC's assembler
         GeneratedFile(
             "sysv_intel.asm",
             inputs=[
@@ -104,7 +102,7 @@ else:
     elif CONFIG["FFI_TARGET"] == "ARM_WIN64":
         ffi_srcs = ("ffi.c",)
 
-        
+        # libffi asm needs to be preprocessed for MSVC's assembler
         GeneratedFile(
             "win64_armasm.asm",
             inputs=[
@@ -126,7 +124,7 @@ else:
     ):
         DEFINES["SYMBOL_UNDERSCORE"] = True
 
-    if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["CPU_ARCH"] in ("arm", "aarch64"):
+    if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["TARGET_CPU"] in ("arm", "aarch64"):
         DEFINES["FFI_EXEC_TRAMPOLINE_TABLE"] = True
         ffi_h_defines.append("FFI_EXEC_TRAMPOLINE_TABLE")
 

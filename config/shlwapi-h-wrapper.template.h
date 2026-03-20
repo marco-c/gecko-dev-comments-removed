@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_shlwapi_h
 #define mozilla_shlwapi_h
 

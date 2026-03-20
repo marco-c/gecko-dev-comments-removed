@@ -17,8 +17,6 @@
 
 
 
-
-
 LPTSTR GetCommandLine();
 
 BOOL FreeEnvironmentStrings(LPTCH);

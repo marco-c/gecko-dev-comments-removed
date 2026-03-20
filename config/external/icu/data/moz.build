@@ -1,11 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
-
+# Build a library containing the ICU data for use in the JS shell, so that
+# JSAPI consumers don't have to deal with setting ICU's data path.
 Library("icudata")
 
 LOCAL_INCLUDES += ["."]
@@ -33,8 +31,8 @@ SOURCES += [
 
 if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["CC_TYPE"] == "clang-cl":
     USE_INTEGRATED_CLANGCL_AS = True
-    
-    
+    # Work around https://github.com/llvm/llvm-project/issues/92229
+    # We don't need debug flags on the command line for this file anyways.
     ASM_FLAGS["DEBUG"] = []
 
 if CONFIG["TARGET_ENDIANNESS"] == "big":

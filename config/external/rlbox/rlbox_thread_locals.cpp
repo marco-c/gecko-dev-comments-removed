@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/rlbox/rlbox_config.h"
 
 #define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox Build System", "General")
@@ -11,8 +9,8 @@ with Files("mozunit/**"):
     BUG_COMPONENT = ("Testing", "Python Test")
 
 DIST_INSTALL = False
-
-
+# For sanity's sake, we compile nsinstall without the wrapped system
+# headers, so that we can use it to set up the wrapped system headers.
 NoVisibilityFlags()
 
 CONFIGURE_SUBST_FILES += [
@@ -45,15 +43,15 @@ if CONFIG["WRAP_STL_INCLUDES"]:
         stl_compiler = "gcc"
 
     if stl_compiler:
-        
-        
-        
-        
+        # Note that the 'stl_wrappers' folder is known to the build system as
+        # containing generated files; if this is changed here then the code in
+        # GeneratedFile.__init__ in python/mozbuild/mozbuild/frontend/data.py
+        # might need to be updated accordingly as well.
         template_file = "%s-stl-wrapper.template.h" % stl_compiler
         output_dir = "/dist/stl_wrappers"
-        
-        
-        
+        # We have to use a sentinel file as the first file because the
+        # file_generate action will create it for us, but we want to create all
+        # the files in gen_wrappers()
         outputs = tuple(
             ["stl.sentinel"] + ["%s/%s" % (output_dir, h) for h in stl_headers]
         )
@@ -65,10 +63,10 @@ if CONFIG["WRAP_STL_INCLUDES"]:
             flags=[TOPOBJDIR + output_dir, stl_compiler] + stl_headers
         )
 
-    
-    
-    
-    
+    # Wrap <windows.h> to make it easier to use correctly
+    # NOTE: If we aren't wrapping STL includes, we're building part of the browser
+    # which won't need this wrapper, such as L10N. Just don't try to generate the
+    # wrapper in that case.
     if CONFIG["OS_TARGET"] == "WINNT":
         GeneratedFile(
             "/dist/stl_wrappers/windows.h",

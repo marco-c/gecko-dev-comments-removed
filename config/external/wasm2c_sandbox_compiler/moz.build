@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Security: RLBox")
@@ -19,7 +17,7 @@ GeneratedFile(
     inputs=["/third_party/wasm2c/src/config.h.in"],
 )
 
-
+# Wabt sources
 HOST_SOURCES += [
     "/third_party/wasm2c/src/apply-names.cc",
     "/third_party/wasm2c/src/binary-reader-ir.cc",
@@ -64,7 +62,7 @@ HOST_SOURCES += [
     "/third_party/wasm2c/src/wat-writer.cc",
 ]
 
-
+# wasm2c sources
 HOST_SOURCES += [
     "/third_party/wasm2c/src/c-writer.cc",
     "/third_party/wasm2c/src/prebuilt/wasm2c_atomicops_source_declarations.cc",

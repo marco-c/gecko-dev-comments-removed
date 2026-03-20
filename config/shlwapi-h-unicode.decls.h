@@ -19,6 +19,4 @@
 
 
 
-
-
 HRESULT GetAcceptLanguages(LPTSTR, DWORD*);
