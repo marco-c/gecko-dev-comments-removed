@@ -8,6 +8,7 @@
 #include "nsHtml5TreeBuilder.h"
 #include "nsHtml5TreeOpExecutor.h"
 #include "nsIContent.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
 
@@ -26,6 +27,7 @@ nsHtml5StringParser::nsHtml5StringParser()
 
 nsHtml5StringParser::~nsHtml5StringParser() { ClearCaches(); }
 
+
 nsresult nsHtml5StringParser::ParseFragment(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
     nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
@@ -36,6 +38,9 @@ nsresult nsHtml5StringParser::ParseFragment(
   nsIURI* uri = doc->GetDocumentURI();
   NS_ENSURE_TRUE(uri, NS_ERROR_NOT_AVAILABLE);
 
+  
+  
+  
   mTreeBuilder->setFragmentContext(aContextLocalName, aContextNamespace,
                                    aTargetNode, aQuirks);
 
@@ -52,6 +57,11 @@ nsresult nsHtml5StringParser::ParseFragment(
 
   mTreeBuilder->SetPreventScriptExecution(aPreventScriptExecution);
 
+  
+  
+  
+  
+  
   return Tokenize(aSourceBuffer, doc, true, aAllowDeclarativeShadowRoots);
 }
 
@@ -113,6 +123,8 @@ nsresult nsHtml5StringParser::Tokenize(const nsAString& aSourceBuffer,
   mTreeBuilder->setScriptingEnabled(aScriptingEnabledForNoscriptParsing);
   mTreeBuilder->setIsSrcdocDocument(aDocument->IsSrcdocDocument());
   mTreeBuilder->setAllowDeclarativeShadowRoots(aDeclarativeShadowRootsAllowed);
+  mTreeBuilder->setNoInSelectMode(
+      StaticPrefs::dom_lift_select_parser_restrictions_enabled());
   mBuilder->Start();
   mTokenizer->start();
   if (!aSourceBuffer.IsEmpty()) {
