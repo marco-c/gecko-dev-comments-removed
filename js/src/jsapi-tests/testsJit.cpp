@@ -18,6 +18,7 @@ void PrepareJit(js::jit::MacroAssembler& masm) {
   masm.Mov(PseudoStackPointer64, sp);
   masm.SetStackPointer64(PseudoStackPointer64);
 #endif
+
   AllocatableRegisterSet regs(RegisterSet::All());
   LiveRegisterSet save(regs.asLiveSet());
 #if defined(JS_CODEGEN_ARM)
@@ -36,18 +37,20 @@ void PrepareJit(js::jit::MacroAssembler& masm) {
 
 bool ExecuteJit(JSContext* cx, js::jit::MacroAssembler& masm) {
   using namespace js::jit;
+
   AllocatableRegisterSet regs(RegisterSet::All());
-  LiveRegisterSet save(regs.asLiveSet());
+  LiveRegisterSet restore(regs.asLiveSet());
 #if defined(JS_CODEGEN_ARM)
-  save.add(js::jit::d15);
+  restore.add(js::jit::d15);
 #endif
 #if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || \
     defined(JS_CODEGEN_RISCV64)
-  save.add(js::jit::ra);
+  restore.add(js::jit::ra);
 #elif defined(JS_USE_LINK_REGISTER)
-  save.add(js::jit::lr);
+  restore.add(js::jit::lr);
 #endif
-  masm.PopRegsInMask(save);
+  masm.PopRegsInMask(restore);
+
 #if defined(JS_CODEGEN_ARM64)
   
   masm.abiret();
@@ -74,6 +77,32 @@ bool ExecuteJit(JSContext* cx, js::jit::MacroAssembler& masm) {
 
   JS::AutoSuppressGCAnalysis suppress;
   EnterTest test = code->as<EnterTest>();
+
+#if defined(JS_CODEGEN_ARM64) && !defined(JS_SIMULATOR_ARM64)
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(PseudoStackPointer64.code() == 28);
+    uintptr_t savedX28;
+    __asm__ __volatile__("str x28, %0" : : "m"(savedX28) : "cc", "memory");
+    CALL_GENERATED_0(test);
+    __asm__ __volatile__("ldr x28, %0" : : "m"(savedX28) : "cc", "memory");
+  }
+#else
   CALL_GENERATED_0(test);
+#endif
+
   return true;
 }
