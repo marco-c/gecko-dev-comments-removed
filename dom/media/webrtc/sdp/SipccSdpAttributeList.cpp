@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "sdp/SipccSdpAttributeList.h"
 
 #include <ostream>
@@ -19,7 +17,7 @@ namespace mozilla {
 using InternalResults = SdpParser::InternalResults;
 
 
-MOZ_RUNINIT const std::string SipccSdpAttributeList::kEmptyString = "";
+MOZ_GLIBCXX_CONSTINIT const std::string SipccSdpAttributeList::kEmptyString;
 
 SipccSdpAttributeList::SipccSdpAttributeList(
     const SipccSdpAttributeList* sessionLevel)
