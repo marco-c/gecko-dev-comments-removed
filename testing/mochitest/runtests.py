@@ -3555,8 +3555,7 @@ toolbar#nav-bar {
             
             
             
-            "sessionHistoryInParent": not options.disable_fission
-            or not self.extraPrefs.get("fission.disableSessionHistoryInParent"),
+            "sessionHistoryInParent": not options.disable_fission,
             "socketprocess_e10s": self.extraPrefs.get("network.process.enabled", False),
             "socketprocess_networking": self.extraPrefs.get(
                 "network.http.network_access_on_socket_process.enabled", False
