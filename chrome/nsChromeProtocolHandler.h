@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsChromeProtocolHandler_h_
 #define nsChromeProtocolHandler_h_
 

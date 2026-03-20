@@ -2,8 +2,6 @@
 
 
 
-
-
 var manifests = [do_get_file("data/test_data_protocol_registration.manifest")];
 registerManifests(manifests);
 

@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsChromeProtocolHandler.h"
 #include "nsChromeRegistry.h"
 #include "nsCOMPtr.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ContentParent.h"
 #include "RegistryMessageUtils.h"
 #include "nsResProtocolHandler.h"

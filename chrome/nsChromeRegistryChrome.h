@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsChromeRegistryChrome_h
 #define nsChromeRegistryChrome_h
 

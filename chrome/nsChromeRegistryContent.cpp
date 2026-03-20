@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RegistryMessageUtils.h"
 #include "nsChromeRegistryContent.h"
 #include "nsISubstitutingProtocolHandler.h"

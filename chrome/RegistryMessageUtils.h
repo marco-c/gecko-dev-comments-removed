@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_RegistryMessageUtils_h
 #define mozilla_RegistryMessageUtils_h
 
