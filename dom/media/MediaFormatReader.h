@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(MediaFormatReader_h_)
 #  define MediaFormatReader_h_
 
@@ -253,6 +251,14 @@ class MediaFormatReader final
   MediaEventProducer<VideoInfo, AudioInfo>& OnTrackInfoUpdatedEvent() {
     return mTrackInfoUpdatedEvent;
   }
+
+#ifdef MOZ_WMF_CDM
+  
+  
+  void NotifyWaitingForKeyForMFCDM() {
+    NotifyWaitingForKey(TrackInfo::TrackType::kVideoTrack);
+  }
+#endif
 
   template <typename T>
   friend struct DDLoggedTypeTraits;  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ReaderProxy_h_
 #define ReaderProxy_h_
 
@@ -81,6 +79,16 @@ class ReaderProxy {
   }
 
   RefPtr<SetCDMPromise> SetCDMProxy(CDMProxy* aProxy);
+
+#ifdef MOZ_WMF_CDM
+  void NotifyWaitingForKey() {
+    RefPtr<MediaFormatReader> reader = mReader;
+    (void)mReader->OwnerThread()->Dispatch(NS_NewRunnableFunction(
+        "ReaderProxy::NotifyWaitingForKey", [reader]() {
+          reader->NotifyWaitingForKeyForMFCDM();
+        }));
+  }
+#endif
 
   void SetVideoBlankDecode(bool aIsBlankDecode);
 

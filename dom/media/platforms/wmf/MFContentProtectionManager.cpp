@@ -74,13 +74,28 @@ HRESULT MFContentProtectionManager::BeginEnableContent(
   RETURN_IF_FAILED(
       mCDMProxy->SetContentEnabler(unknownObject.Get(), asyncResult.Get()));
 
-  
+  if (mNotifyWaitingForKeyCb) {
+    
+    
+    
+    auto result = NS_NewTimerWithFuncCallback(
+        &MFContentProtectionManager::WaitingForKeyTimerCallback, this, 500,
+        nsITimer::TYPE_ONE_SHOT,
+        "MFContentProtectionManager::WaitingForKey"_ns, mManagerThread);
+    if (result.isOk()) {
+      mWaitingForKeyTimer = result.unwrap();
+    }
+  }
   LOG("Finished BeginEnableContent");
   return S_OK;
 }
 
 HRESULT MFContentProtectionManager::EndEnableContent(
     IMFAsyncResult* aAsyncResult) {
+  if (mWaitingForKeyTimer) {
+    mWaitingForKeyTimer->Cancel();
+    mWaitingForKeyTimer = nullptr;
+  }
   HRESULT hr = aAsyncResult->GetStatus();
   if (FAILED(hr)) {
     
@@ -159,7 +174,33 @@ HRESULT MFContentProtectionManager::SetPMPServer(
   return S_OK;
 }
 
-void MFContentProtectionManager::Shutdown() { mCDMProxy = nullptr; }
+void MFContentProtectionManager::SetNotifyWaitingForKeyCallback(
+    std::function<void()>&& aCallback, nsISerialEventTarget* aManagerThread) {
+  mNotifyWaitingForKeyCb = std::move(aCallback);
+  mManagerThread = aManagerThread;
+}
+
+void MFContentProtectionManager::NotifyWaitingForKey() {
+  LOG("NotifyWaitingForKey");
+  if (mNotifyWaitingForKeyCb) {
+    mNotifyWaitingForKeyCb();
+  }
+}
+
+
+void MFContentProtectionManager::WaitingForKeyTimerCallback(nsITimer* aTimer,
+                                                            void* aClosure) {
+  auto* self = static_cast<MFContentProtectionManager*>(aClosure);
+  self->NotifyWaitingForKey();
+}
+
+void MFContentProtectionManager::Shutdown() {
+  if (mWaitingForKeyTimer) {
+    mWaitingForKeyTimer->Cancel();
+    mWaitingForKeyTimer = nullptr;
+  }
+  mCDMProxy = nullptr;
+}
 
 #undef LOG
 
