@@ -24,6 +24,11 @@ static CRC32_BYTE_TABLE: [[u32; 256]; 1] = build_crc32_table::<256, 1, 1>();
 static CRC32_WORD_TABLE: [[u32; 256]; W] = build_crc32_table::<256, W, 1>();
 
 
+pub(crate) fn get_crc_table() -> &'static [u32; 256] {
+    &CRC32_BYTE_TABLE[0]
+}
+
+
 
 struct Crc32BraidTable<const N: usize>;
 
@@ -103,10 +108,7 @@ pub fn crc32_braid<const N: usize>(start: u32, data: &[u8]) -> u32 {
 
         crcs.fill(0);
         for j in 0..W {
-            for k in 0..N {
-                crcs[k] ^= Crc32BraidTable::<N>::TABLE[j][buffer[k] & 0xff];
-                buffer[k] >>= 8;
-            }
+            braid_core(&mut crcs, &mut buffer, j);
         }
     }
 
@@ -114,6 +116,24 @@ pub fn crc32_braid<const N: usize>(start: u32, data: &[u8]) -> u32 {
     let crc = crc32_words_inner(&words[blocks * N..], crc, &crcs);
     let crc = crc32_naive_inner(suffix, crc);
     !crc
+}
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(all(target_arch = "x86_64", target_feature = "avx2"), inline(never))]
+#[cfg_attr(not(target_arch = "x86_64"), inline(always))]
+fn braid_core<const N: usize>(crcs: &mut [u32; N], buffer: &mut [usize; N], j: usize) {
+    for k in 0..N {
+        crcs[k] ^= Crc32BraidTable::<N>::TABLE[j][buffer[k] & 0xff];
+        buffer[k] >>= 8;
+    }
 }
 
 #[cfg(test)]

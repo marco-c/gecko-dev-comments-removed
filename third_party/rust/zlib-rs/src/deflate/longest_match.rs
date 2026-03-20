@@ -19,7 +19,7 @@ fn longest_match_help<const SLOW: bool>(
     let mut match_start = state.match_start;
 
     let strstart = state.strstart;
-    let wmask = state.w_mask;
+    let wmask = state.w_mask();
     let window = state.window.filled();
     let scan = &window[strstart..];
     let mut limit: Pos;
@@ -194,11 +194,14 @@ fn longest_match_help<const SLOW: bool>(
         unsafe {
             if best_len < core::mem::size_of::<u64>() {
                 let scan_val = u64::from_ne_bytes(
-                    core::slice::from_raw_parts(scan_start, 8).try_into().unwrap());
+                    core::slice::from_raw_parts(scan_start, 8)
+                        .try_into()
+                        .unwrap(),
+                );
                 loop {
                     let bs = mbase_start.wrapping_add(cur_match as usize);
-                    let match_val = u64::from_ne_bytes(
-                        core::slice::from_raw_parts(bs, 8).try_into().unwrap());
+                    let match_val =
+                        u64::from_ne_bytes(core::slice::from_raw_parts(bs, 8).try_into().unwrap());
                     let cmp = scan_val ^ match_val;
                     if cmp == 0 {
                         
@@ -233,7 +236,10 @@ fn longest_match_help<const SLOW: bool>(
                 
                 
                 let src1 = unsafe {
-                    core::slice::from_raw_parts(mbase_start.wrapping_add(cur_match as usize + 2), 256)
+                    core::slice::from_raw_parts(
+                        mbase_start.wrapping_add(cur_match as usize + 2),
+                        256,
+                    )
                 };
 
                 crate::deflate::compare256::compare256_slice(&scan[2..], src1) + 2
@@ -249,7 +255,8 @@ fn longest_match_help<const SLOW: bool>(
             match_start = cur_match - match_offset;
 
             
-            if len > lookahead {
+            
+            if len >= lookahead {
                 return (lookahead, match_start);
             }
             best_len = len;
