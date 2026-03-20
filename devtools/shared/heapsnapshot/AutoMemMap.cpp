@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/devtools/AutoMemMap.h"
 
 #include "nsDebug.h"

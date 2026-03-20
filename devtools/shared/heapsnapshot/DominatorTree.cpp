@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/devtools/DominatorTree.h"
 #include "mozilla/dom/DominatorTreeBinding.h"
 #include "mozilla/ErrorResult.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_devtools_FileDescriptorOutputStream_h
 #define mozilla_devtools_FileDescriptorOutputStream_h
 

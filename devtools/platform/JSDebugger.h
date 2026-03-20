@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef JSDebugger_h
 #define JSDebugger_h
 
