@@ -223,7 +223,7 @@ add_task(async function test_refresh() {
   );
 
   
-  makeProfileResettable();
+  await makeProfileResettable();
 
   await doAlertDialogTest({
     input: "refresh",
