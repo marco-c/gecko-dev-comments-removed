@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "PlatformMacros.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "Sandbox.h"  
 #include "SandboxBrokerClient.h"
 #include "SandboxFilterUtil.h"
