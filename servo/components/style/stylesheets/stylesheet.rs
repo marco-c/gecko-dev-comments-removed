@@ -359,7 +359,8 @@ impl SanitizationKind {
             
             
             CssRule::Scope(..) |
-            CssRule::StartingStyle(..) => false,
+            CssRule::StartingStyle(..) |
+            CssRule::AppearanceBase(..) => false,
 
             CssRule::FontFace(..) |
             CssRule::Namespace(..) |

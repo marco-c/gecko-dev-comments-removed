@@ -1833,7 +1833,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayer(const PaintBGParams& aParams,
     
     
     
-    if (!aParams.frame->StyleDisplay()->HasAppearance()) {
+    if (!aParams.frame->StyleDisplay()->HasNativeAppearance()) {
       return ImgDrawResult::SUCCESS;
     }
 
@@ -1917,7 +1917,7 @@ ImgDrawResult nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(
     
     
     
-    if (!aParams.frame->StyleDisplay()->HasAppearance()) {
+    if (!aParams.frame->StyleDisplay()->HasNativeAppearance()) {
       return ImgDrawResult::SUCCESS;
     }
 
