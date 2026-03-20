@@ -47,22 +47,17 @@ bitflags! {
         const IS_FLEX_OR_GRID_ITEM = 1 << 7;
         /// Whether we're backed by a real element.
         const IS_ELEMENT_BACKED = 1 << 8;
-        /// Whether we're a tree-abiding pseudo as per
-        /// https://drafts.csswg.org/css-pseudo-4/#treelike
-        const IS_TREE_ABIDING = 1 << 9;
         /// Whether we support user-action state pseudo-classes after the pseudo-element.
-        const SUPPORTS_USER_ACTION_STATE = 1 << 10;
+        const SUPPORTS_USER_ACTION_STATE = 1 << 9;
         /// Whether we are an inheriting anon-box.
-        const IS_INHERITING_ANON_BOX = 1 << 11;
+        const IS_INHERITING_ANON_BOX = 1 << 10;
         /// Whether we are a non-inheriting anon box.
-        const IS_NON_INHERITING_ANON_BOX = 1 << 12;
+        const IS_NON_INHERITING_ANON_BOX = 1 << 11;
         /// Combo of the above to cover all anon boxes.
         const IS_ANON_BOX = Self::IS_INHERITING_ANON_BOX.bits() |
                             Self::IS_NON_INHERITING_ANON_BOX.bits();
         /// Whether we're a wrapping anon box.
-        const IS_WRAPPER_ANON_BOX = 1 << 13;
-        /// Whether we parse as an element-backed pseudo-element.
-        const PARSES_AS_ELEMENT_BACKED = 1 << 14;
+        const IS_WRAPPER_ANON_BOX = 1 << 12;
     }
 }
 
@@ -223,8 +218,15 @@ impl PseudoElementTrait for PseudoElement {
     
     #[inline]
     fn valid_after_slotted(&self) -> bool {
-        self.flags()
-            .intersects(PseudoStyleTypeFlags::IS_TREE_ABIDING)
+        matches!(
+            *self,
+            Self::Before
+                | Self::After
+                | Self::Marker
+                | Self::Placeholder
+                | Self::FileSelectorButton
+                | Self::DetailsContent
+        )
     }
 
     
@@ -253,9 +255,13 @@ impl PseudoElementTrait for PseudoElement {
         self.is_named_view_transition()
     }
 
-    fn parses_as_element_backed(&self) -> bool {
-        self.flags()
-            .intersects(PseudoStyleTypeFlags::PARSES_AS_ELEMENT_BACKED)
+    
+    
+    #[inline]
+    fn is_element_backed(&self) -> bool {
+        
+        
+        self.is_named_view_transition() || *self == PseudoElement::DetailsContent
     }
 
     
@@ -266,14 +272,6 @@ impl PseudoElementTrait for PseudoElement {
 }
 
 impl PseudoElement {
-    
-    
-    #[inline]
-    pub fn is_element_backed(&self) -> bool {
-        self.flags()
-            .intersects(PseudoStyleTypeFlags::IS_ELEMENT_BACKED)
-    }
-
     
     
     
