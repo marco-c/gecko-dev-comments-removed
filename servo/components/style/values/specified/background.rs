@@ -4,15 +4,16 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
 use crate::values::specified::length::{
     NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto,
 };
-use cssparser::Parser;
+use cssparser::{match_ignore_ascii_case, Parser};
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, ToCss};
+use style_traits::{CssWriter, ParseError, ToCss, ToTyped};
 
 
 pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthPercentage>;
@@ -110,6 +111,8 @@ impl ToCss for BackgroundRepeat {
         }
     }
 }
+
+impl ToTyped for BackgroundRepeat {}
 
 impl Parse for BackgroundRepeat {
     fn parse<'i, 't>(

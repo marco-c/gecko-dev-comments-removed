@@ -5,6 +5,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::ParserContext;
 
 
@@ -16,6 +17,7 @@ use crate::parser::ParserContext;
     SpecifiedValueInfo,
     ToCss,
     ToShmem,
+    ToTyped,
     Serialize,
     Deserialize,
 )]

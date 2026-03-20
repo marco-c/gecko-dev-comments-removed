@@ -4,16 +4,19 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::time::Time as ComputedTime;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified::calc::CalcNode;
 use crate::values::CSSFloat;
 use crate::Zero;
-use cssparser::{Parser, Token};
+use cssparser::{match_ignore_ascii_case, Parser, Token};
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss};
+use style_traits::{
+    CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, ToTyped,
+};
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
@@ -179,5 +182,7 @@ impl ToCss for Time {
         )
     }
 }
+
+impl ToTyped for Time {}
 
 impl SpecifiedValueInfo for Time {}
