@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MessagePump.h"
 
 #include "nsIThread.h"

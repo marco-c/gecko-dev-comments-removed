@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "base/lock_impl.h"
 
 namespace base {

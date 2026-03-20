@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProcessUtils.h"
 
 #include "mozilla/Preferences.h"

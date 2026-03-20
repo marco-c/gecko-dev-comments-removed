@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/SerializedStructuredCloneBuffer.h"
 #include "js/StructuredClone.h"
 

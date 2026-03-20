@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "base/pickle.h"
 
 #include "mozilla/CheckedInt.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "base/condition_variable.h"
 
 #include <errno.h>

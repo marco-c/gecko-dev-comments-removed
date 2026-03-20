@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_ipc_glue_UtilityProcessSandboxing_h_
 #define _include_ipc_glue_UtilityProcessSandboxing_h_
 

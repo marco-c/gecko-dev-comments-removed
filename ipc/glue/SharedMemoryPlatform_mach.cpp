@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedMemoryPlatform.h"
 
 #include <utility>

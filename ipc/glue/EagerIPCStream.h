@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ipc_EagerIPCStream_h
 #define mozilla_ipc_EagerIPCStream_h
 

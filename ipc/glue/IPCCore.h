@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IPC_GLUE_IPCCORE_H_
 #define IPC_GLUE_IPCCORE_H_
 

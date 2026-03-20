@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/NodeChannel.h"
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"

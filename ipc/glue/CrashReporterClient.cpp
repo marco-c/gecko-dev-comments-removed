@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CrashReporterClient.h"
 #include "nsISupportsImpl.h"
 

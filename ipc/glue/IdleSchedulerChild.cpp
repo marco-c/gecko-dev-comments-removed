@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "mozilla/ipc/IdleSchedulerParent.h"
 #include "mozilla/ipc/PBackgroundChild.h"

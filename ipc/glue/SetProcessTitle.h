@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ipc_SetProcessTitle_h
 #define mozilla_ipc_SetProcessTitle_h
 

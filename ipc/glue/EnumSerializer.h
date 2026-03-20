@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IPC_GLUE_ENUMSERIALIZER_H_
 #define IPC_GLUE_ENUMSERIALIZER_H_
 

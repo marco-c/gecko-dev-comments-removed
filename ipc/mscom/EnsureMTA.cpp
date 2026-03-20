@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/mscom/EnsureMTA.h"
 
 #include "mozilla/Assertions.h"

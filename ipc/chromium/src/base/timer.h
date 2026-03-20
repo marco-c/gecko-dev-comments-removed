@@ -38,8 +38,6 @@
 
 
 
-
-
 #ifndef BASE_TIMER_H_
 #define BASE_TIMER_H_
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/GeckoTrace.h"
 #include "mozilla/ipc/UtilityProcessManager.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/mscom/ProcessRuntime.h"
 
 #include "mozilla/Assertions.h"

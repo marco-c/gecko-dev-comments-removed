@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_mscom_EnsureMTA_h
 #define mozilla_mscom_EnsureMTA_h
 

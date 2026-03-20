@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef BASE_EINTR_WRAPPER_H_
 #define BASE_EINTR_WRAPPER_H_
 

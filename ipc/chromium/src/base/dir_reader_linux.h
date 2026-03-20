@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_DIR_READER_LINUX_H_
 #define BASE_DIR_READER_LINUX_H_
 #pragma once

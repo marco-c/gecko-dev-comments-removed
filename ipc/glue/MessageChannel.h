@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef ipc_glue_MessageChannel_h
 #define ipc_glue_MessageChannel_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CHROME_COMMON_IPC_CHANNEL_WIN_H_
 #define CHROME_COMMON_IPC_CHANNEL_WIN_H_
 

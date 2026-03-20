@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_ipc_glue_UtilityProcessManager_h_
 #define _include_ipc_glue_UtilityProcessManager_h_
 #include "mozilla/MozPromise.h"

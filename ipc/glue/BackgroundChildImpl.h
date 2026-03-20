@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ipc_backgroundchildimpl_h_
 #define mozilla_ipc_backgroundchildimpl_h_
 

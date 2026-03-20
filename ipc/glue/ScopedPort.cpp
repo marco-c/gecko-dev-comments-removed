@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/ScopedPort.h"
 #include "mozilla/ipc/NodeController.h"
 #include "chrome/common/ipc_message_utils.h"

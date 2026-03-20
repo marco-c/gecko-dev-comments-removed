@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/mscom/COMWrappers.h"
 
 #include <objbase.h>

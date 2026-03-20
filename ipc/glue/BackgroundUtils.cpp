@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BackgroundUtils.h"
 
 #include "MainThreadUtils.h"

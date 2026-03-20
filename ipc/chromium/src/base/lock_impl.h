@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_LOCK_IMPL_H_
 #define BASE_LOCK_IMPL_H_
 

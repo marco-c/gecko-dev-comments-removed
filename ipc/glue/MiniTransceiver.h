@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef MINITRANSCEIVER_H_
 #define MINITRANSCEIVER_H_
 

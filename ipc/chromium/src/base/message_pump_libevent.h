@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_MESSAGE_PUMP_LIBEVENT_H_
 #define BASE_MESSAGE_PUMP_LIBEVENT_H_
 

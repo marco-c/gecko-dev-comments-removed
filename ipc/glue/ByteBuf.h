@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_ipc_ByteBuf_h
 #define mozilla_ipc_ByteBuf_h
 

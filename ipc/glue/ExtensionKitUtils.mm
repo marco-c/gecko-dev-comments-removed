@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ExtensionKitUtils.h"
 #include "LaunchError.h"
 

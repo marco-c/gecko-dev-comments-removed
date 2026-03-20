@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CrashReporterHost.h"
 #include "CrashReporter/CrashReporterInitArgs.h"
 #include "mozilla/dom/Promise.h"

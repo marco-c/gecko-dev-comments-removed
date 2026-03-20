@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_BASICTYPES_H_
 #define BASE_BASICTYPES_H_
 

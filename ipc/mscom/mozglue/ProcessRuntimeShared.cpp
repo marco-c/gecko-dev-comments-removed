@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/mscom/ProcessRuntimeShared.h"
 
 #include "mozilla/glue/WinUtils.h"

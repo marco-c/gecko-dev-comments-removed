@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MessagePump.h"
 
 using namespace mozilla::ipc;

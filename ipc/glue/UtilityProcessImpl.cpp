@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "UtilityProcessImpl.h"
 
 #include "mozilla/GeckoArgs.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UtilityMediaServiceParent.h"
 
 #include "GeckoProfiler.h"

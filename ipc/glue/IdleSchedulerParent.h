@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ipc_IdleSchedulerParent_h_
 #define mozilla_ipc_IdleSchedulerParent_h_
 

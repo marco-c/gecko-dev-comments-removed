@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/ProcessChild.h"
 
 #include "Endpoint.h"

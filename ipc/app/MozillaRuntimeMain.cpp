@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsXULAppAPI.h"
 #include "XREChildData.h"
 #include "mozilla/Bootstrap.h"

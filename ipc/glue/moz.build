@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
 EXPORTS += [
@@ -213,8 +211,8 @@ SOURCES += [
 ]
 
 if CONFIG["OS_ARCH"] == "Darwin":
-    
-    
+    # GeckoChildProcessHost.cpp cannot be built unified due to OSX header
+    # clashes with TextRange.
     SOURCES += [
         "GeckoChildProcessHost.cpp",
     ]
@@ -289,7 +287,7 @@ include("/ipc/chromium/chromium-config.mozbuild")
 FINAL_LIBRARY = "xul"
 
 if CONFIG["TARGET_OS"] == "OSX":
-    OS_LIBS += ["bsm"]  
+    OS_LIBS += ["bsm"]  # for audit_token_to_pid
 elif CONFIG["TARGET_OS"] == "iOS":
     OS_LIBS += ["-framework BrowserEngineKit"]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
@@ -325,5 +323,5 @@ TEST_DIRS += [
     "test/browser",
 ]
 
-
+# Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")

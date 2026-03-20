@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_STRING_UTIL_WIN_H_
 #define BASE_STRING_UTIL_WIN_H_
 

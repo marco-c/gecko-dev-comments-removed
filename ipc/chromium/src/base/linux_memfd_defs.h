@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_LINUX_MEMFD_DEFS_H
 #define BASE_LINUX_MEMFD_DEFS_H
 

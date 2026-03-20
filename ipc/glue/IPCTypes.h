@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IPC_GLUE_IPCTYPES_H_
 #define IPC_GLUE_IPCTYPES_H_
 

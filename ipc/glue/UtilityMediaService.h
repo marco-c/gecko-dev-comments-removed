@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_ipc_glue_UtilityMediaService_h_
 #define _include_ipc_glue_UtilityMediaService_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BackgroundChild.h"
 #include "BackgroundParent.h"
 
@@ -745,7 +743,7 @@ bool ParentImpl::sShutdownHasStarted = false;
 
 
 
-MOZ_RUNINIT ChildImpl::ThreadInfoWrapper
+MOZ_GLOBINIT ChildImpl::ThreadInfoWrapper
     ChildImpl::sParentAndContentProcessThreadInfo;
 
 bool ChildImpl::sShutdownHasStarted = false;

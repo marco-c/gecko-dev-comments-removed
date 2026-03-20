@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_THREAD_LOCAL_STORAGE_H_
 #define BASE_THREAD_LOCAL_STORAGE_H_
 

@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "SharedMemoryPlatform.h"
 
 #include <windows.h>

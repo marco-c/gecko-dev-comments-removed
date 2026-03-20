@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_mscom_Utils_h
 #define mozilla_mscom_Utils_h
 

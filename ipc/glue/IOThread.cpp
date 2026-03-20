@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/IOThread.h"
 #include "mozilla/ipc/NodeController.h"
 #include "mozilla/Preferences.h"

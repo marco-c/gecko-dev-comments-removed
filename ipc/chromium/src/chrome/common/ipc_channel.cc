@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ipc_channel.h"
 
 #include "base/message_loop.h"

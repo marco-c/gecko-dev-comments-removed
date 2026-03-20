@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "UtilityProcessChild.h"
 
 #include "mozilla/AppShutdown.h"

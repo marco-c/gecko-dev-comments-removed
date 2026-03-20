@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_REVOCABLE_STORE_H_
 #define BASE_REVOCABLE_STORE_H_
 

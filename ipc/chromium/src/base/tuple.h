@@ -26,8 +26,6 @@
 
 
 
-
-
 #ifndef BASE_TUPLE_H_
 #define BASE_TUPLE_H_
 

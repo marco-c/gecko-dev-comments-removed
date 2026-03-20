@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ipc_FileDescriptor_h
 #define mozilla_ipc_FileDescriptor_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DataPipe.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

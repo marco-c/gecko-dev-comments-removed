@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef BASE_PROCESS_TITLE_LINUX_H_
 #define BASE_PROCESS_TITLE_LINUX_H_
 

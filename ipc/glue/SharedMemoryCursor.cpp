@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <bit>
 
 #include "mozilla/MathAlgorithms.h"

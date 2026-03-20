@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RandomAccessStreamUtils.h"
 
 #include "mozilla/NotNull.h"

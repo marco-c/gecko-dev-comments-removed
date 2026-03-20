@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "base/string16.h"
 
 #if defined(XP_WIN)

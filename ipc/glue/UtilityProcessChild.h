@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_ipc_glue_UtilityProcessChild_h_
 #define _include_ipc_glue_UtilityProcessChild_h_
 #include "mozilla/ipc/PUtilityProcessChild.h"

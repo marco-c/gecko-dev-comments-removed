@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ipc/SetProcessTitle.h"
 
 #include "nsString.h"

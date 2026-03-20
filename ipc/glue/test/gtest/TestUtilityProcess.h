@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_gtest_ipc_TestUtilityProcess_h
 #define mozilla_gtest_ipc_TestUtilityProcess_h
 

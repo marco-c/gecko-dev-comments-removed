@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 libevent_path_prefix = "src/third_party"
 include(libevent_path_prefix + "/libeventcommon.mozbuild")
@@ -96,8 +94,8 @@ if CONFIG["TARGET_KERNEL"] == "Darwin":
         "src/chrome/common/mach_message_source_mac.cc",
     ]
     SOURCES += [
-        
-        
+        # This file cannot be built in unified mode because of the redefinition
+        # of NoOp.
         "src/base/platform_thread_mac.mm",
     ]
 

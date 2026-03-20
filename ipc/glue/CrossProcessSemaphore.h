@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CrossProcessSemaphore_h
 #define mozilla_CrossProcessSemaphore_h
 

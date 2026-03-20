@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ipdltest_IPDLUnitTestChild_h
 #define mozilla_ipdltest_IPDLUnitTestChild_h
 

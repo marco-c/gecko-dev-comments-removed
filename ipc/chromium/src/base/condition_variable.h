@@ -62,8 +62,6 @@
 
 
 
-
-
 #ifndef BASE_CONDITION_VARIABLE_H_
 #define BASE_CONDITION_VARIABLE_H_
 

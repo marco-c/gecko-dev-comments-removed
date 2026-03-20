@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UtilityProcessHost.h"
 
 #include "mozilla/dom/ContentParent.h"

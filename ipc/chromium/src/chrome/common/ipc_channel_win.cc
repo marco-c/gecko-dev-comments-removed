@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "chrome/common/ipc_channel_win.h"
 
 #include <windows.h>

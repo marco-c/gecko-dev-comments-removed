@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "URIUtils.h"
 
 #include "mozilla/Assertions.h"

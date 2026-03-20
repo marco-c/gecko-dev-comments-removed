@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/ipc/MessageLink.h"
 #include "mojo/core/ports/event.h"
 #include "mojo/core/ports/node.h"

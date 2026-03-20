@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ipc/NodeController.h"
 #include "MainThreadUtils.h"
 #include "base/process_util.h"

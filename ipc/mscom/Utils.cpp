@@ -2,8 +2,6 @@
 
 
 
-
-
 #if defined(MOZILLA_INTERNAL_API)
 #  include "MainThreadUtils.h"
 #  include "mozilla/dom/ContentChild.h"

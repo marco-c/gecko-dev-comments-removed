@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_PROCESS_H_
 #define BASE_PROCESS_H_
 

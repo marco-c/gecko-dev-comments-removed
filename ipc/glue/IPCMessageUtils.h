@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IPC_GLUE_IPCMESSAGEUTILS_H_
 #define IPC_GLUE_IPCMESSAGEUTILS_H_
 

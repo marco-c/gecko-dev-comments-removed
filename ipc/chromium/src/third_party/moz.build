@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 libevent_path_prefix = '.'
 include(libevent_path_prefix + '/libeventcommon.mozbuild')
@@ -13,10 +11,10 @@ if CONFIG["TARGET_KERNEL"] == "WINNT":
 if CONFIG['MOZ_SYSTEM_LIBEVENT']:
     error('should not reach here if we are using a native libevent')
 
-
+# for gethostbyname_r
 OS_LIBS += CONFIG["C_R_LIBS"]
 
-
+# for socket
 OS_LIBS += CONFIG["SOCKET_LIBS"]
 
 UNIFIED_SOURCES += [
@@ -30,7 +28,7 @@ UNIFIED_SOURCES += [
     'libevent/event_tagging.c',
     'libevent/evmap.c',
     'libevent/evthread.c',
-    
+    # 'libevent/evthread_pthread.c', # Unused file.
     'libevent/evutil.c',
     'libevent/evutil_rand.c',
     'libevent/evutil_time.c',
@@ -44,8 +42,8 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    'libevent/bufferevent_pair.c',       
-    
+    'libevent/bufferevent_pair.c',       # conflicting types errors
+    # 'libevent/evrpc.c', # Unused file. # conflicting TAILQ_ENTRY definition
 ]
 
 if CONFIG["TARGET_KERNEL"] in ("Darwin", "DragonFly", "FreeBSD", "NetBSD", "OpenBSD"):
@@ -68,7 +66,7 @@ if CONFIG["TARGET_KERNEL"] == "SunOS":
         'libevent/evport.c',
     ]
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 Library('libevent')

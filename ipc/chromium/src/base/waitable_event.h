@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_WAITABLE_EVENT_H_
 #define BASE_WAITABLE_EVENT_H_
 

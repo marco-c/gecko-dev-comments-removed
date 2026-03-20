@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/ipc/MessageChannel.h"
 
 #include <math.h>

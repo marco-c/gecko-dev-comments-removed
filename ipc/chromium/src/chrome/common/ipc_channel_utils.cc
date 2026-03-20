@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "chrome/common/ipc_channel_utils.h"
 
 #include "mozilla/ProfilerMarkers.h"

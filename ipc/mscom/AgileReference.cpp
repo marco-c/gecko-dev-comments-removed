@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/mscom/AgileReference.h"
 
 #include "mozilla/Assertions.h"

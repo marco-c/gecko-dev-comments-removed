@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProfilerMarkers.h"
 
 #include "MainThreadUtils.h"

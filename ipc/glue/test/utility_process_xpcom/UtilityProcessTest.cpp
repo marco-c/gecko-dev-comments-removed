@@ -2,8 +2,6 @@
 
 
 
-
-
 #if defined(ENABLE_TESTS)
 #  include "mozilla/ipc/UtilityProcessManager.h"
 #  include "mozilla/ipc/UtilityProcessTest.h"

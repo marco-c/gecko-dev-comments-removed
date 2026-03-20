@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BASE_SCOPED_HANDLE_H_
 #define BASE_SCOPED_HANDLE_H_
 
