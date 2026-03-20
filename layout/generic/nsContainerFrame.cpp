@@ -2287,7 +2287,7 @@ nsRect nsContainerFrame::ComputeSimpleTightBounds(
     DrawTarget* aDrawTarget) const {
   if (StyleOutline()->ShouldPaintOutline() || StyleBorder()->HasBorder() ||
       !StyleBackground()->IsTransparent(this) ||
-      StyleDisplay()->HasNativeAppearance()) {
+      StyleDisplay()->HasAppearance()) {
     
     
     return InkOverflowRect();

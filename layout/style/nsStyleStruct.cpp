@@ -2439,10 +2439,6 @@ static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
 static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
                                          StyleAppearance aDefaultAppearance) {
   switch (aAppearance) {
-    case StyleAppearance::Base:
-      
-      return aDefaultAppearance == StyleAppearance::Checkbox ||
-             aDefaultAppearance == StyleAppearance::Radio;
     case StyleAppearance::None:
       
       
