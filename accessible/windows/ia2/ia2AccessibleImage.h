@@ -2,6 +2,9 @@
 
 
 
+
+
+
 #ifndef ACCESSIBLE_IMAGE_H
 #define ACCESSIBLE_IMAGE_H
 

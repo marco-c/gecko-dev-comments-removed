@@ -1,11 +1,13 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 GeckoSharedLibrary("AccessibleMarshal")
 
-# Missing here, is the notion that changes to the idl files included by
-# ISimpleDOM.idl (e.g. ISimpleDOMNode.idl) should rebuild the outputs.
+
+
 GeneratedFile(
     "ISimpleDOM.h",
     "ISimpleDOM_p.c",
@@ -31,8 +33,8 @@ EXPORTS += [
 ]
 
 DEFINES["REGISTER_PROXY_DLL"] = True
-# The following line is required to preserve compatibility with older versions
-# of AccessibleMarshal.dll.
+
+
 DEFINES["PROXY_CLSID"] = "IID_ISimpleDOMNode"
 
 DEFFILE = "AccessibleMarshal.def"
@@ -45,7 +47,7 @@ OS_LIBS += [
 
 RCINCLUDE = "AccessibleMarshal.rc"
 
-# Suppress warnings from the MIDL generated code.
+
 if CONFIG["CC_TYPE"] == "clang-cl":
     CFLAGS += [
         "-Wno-extern-initializer",

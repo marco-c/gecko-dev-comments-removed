@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 EXPORTS += [
     "ia2Accessible.h",
@@ -29,8 +31,8 @@ UNIFIED_SOURCES += [
     "ia2AccessibleValue.cpp",
 ]
 
-# These files cannot be built in unified mode because they both include
-# AccessibleTable2_i.c.
+
+
 SOURCES += [
     "ia2AccessibleTable.cpp",
     "ia2AccessibleTableCell.cpp",
@@ -49,11 +51,11 @@ LOCAL_INCLUDES += [
 
 FINAL_LIBRARY = "xul"
 
-# The Windows MIDL code generator creates things like:
-#
-#   #endif !_MIDL_USE_GUIDDEF_
-#
-# which clang-cl complains about.  MSVC doesn't, so turn this warning off.
+
+
+
+
+
 if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += ["-Wno-extra-tokens"]
 

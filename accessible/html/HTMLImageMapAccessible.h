@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_a11y_HTMLImageMapAccessible_h_
 #define mozilla_a11y_HTMLImageMapAccessible_h_
 

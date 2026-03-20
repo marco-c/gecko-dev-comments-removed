@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "Platform.h"
 
 #include "mozilla/ClearOnShutdown.h"
@@ -87,7 +89,7 @@ void a11y::PlatformInit() {
   }
 
   gAtkTableCellGetTypeFunc =
-      (GType (*)())PR_FindFunctionSymbol(sATKLib, "atk_table_cell_get_type");
+      (GType(*)())PR_FindFunctionSymbol(sATKLib, "atk_table_cell_get_type");
 
   const char* (*atkGetVersion)() =
       (const char* (*)())PR_FindFunctionSymbol(sATKLib, "atk_get_version");

@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 include protocol PBrowser;
 
@@ -88,10 +90,10 @@ protocol PDocAccessible
 parent:
   async Shutdown();
 
-  /*
-   * Notify the parent process the document in the child process is firing an
-   * event.
-   */
+  
+
+
+
   async Event(uint64_t aID, uint32_t type);
   async StateChangeEvent(uint64_t aID, uint64_t aState, bool aEnabled);
   async CaretMoveEvent(uint64_t aID,
@@ -113,43 +115,43 @@ parent:
                           uint16_t aPriority);
   async TextSelectionChangeEvent(uint64_t aID, TextRangeData[] aSelection);
 
-  /*
-   * Tell the parent document to bind the existing document as a new child
-   * document.
-   */
+  
+
+
+
   async BindChildDoc(PDocAccessible aChildDoc, uint64_t aID);
 
-  /*
-   * Cache The World
-   */
+  
+
+
   async Cache(CacheUpdateType aUpdateType, CacheData[] aData);
 
-  /*
-   * Lists of accessibles that either gained or lost a selected state.
-   */
+  
+
+
   async SelectedAccessiblesChanged(uint64_t[] aSelectedIDs, uint64_t[] aUnselectedIDs);
 
-  /*
-   * Tell the parent process that the given Accessibles are about to be moved
-   * via subsequent hide and show events.
-   */
+  
+
+
+
   async AccessiblesWillMove(uint64_t[] aIDs);
 
 child:
   async __delete__();
 
-  /*
-   * Called as a result of focus shifting from chrome to content
-   * elements through keyboard navigation.
-   */
+  
+
+
+
   async RestoreFocus();
 
-  // LocalAccessible
+  
   async ScrollTo(uint64_t aID, uint32_t aScrollType);
   async ScrollToPoint(uint64_t aID, uint32_t aScrollType, int32_t aX,
                       int32_t aY);
 
-  // AccessibleText
+  
 
   async SetTextSelection(uint64_t aStartID, int32_t aStartOffset,
                      uint64_t aEndID, int32_t aEndOffset,
@@ -181,9 +183,9 @@ child:
 
   async TakeFocus(uint64_t aID);
 
-  /*
-   * Verify the cache. Used for testing purposes.
-   */
+  
+
+
   async VerifyCache(uint64_t aID, uint64_t aCacheDomain, nullable AccAttributes aFields);
 
   async AckMutationEvents();

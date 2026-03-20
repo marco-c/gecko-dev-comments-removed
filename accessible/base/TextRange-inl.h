@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_a11y_TextRange_inl_h_
 #define mozilla_a11y_TextRange_inl_h_
 

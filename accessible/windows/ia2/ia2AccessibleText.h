@@ -2,6 +2,9 @@
 
 
 
+
+
+
 #ifndef ACCESSIBLE_TEXT_H
 #define ACCESSIBLE_TEXT_H
 
