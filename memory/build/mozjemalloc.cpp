@@ -1412,6 +1412,7 @@ ArenaPurgeResult arena_t::Purge(
 
       
       
+      
       if (!continue_purge_chunk && !continue_purge_arena) {
         purge_info.mArena.mIsPurgePending = false;
       }
@@ -1426,6 +1427,10 @@ ArenaPurgeResult arena_t::Purge(
       
       return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
     }
+    
+    
+    
+    
 
 #ifdef MALLOC_DECOMMIT
     pages_decommit(purge_info.DirtyPtr(), purge_info.DirtyLenBytes());
