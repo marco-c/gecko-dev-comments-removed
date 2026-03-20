@@ -7,33 +7,32 @@ provided by the `locales-file`.
 """
 
 from pprint import pprint
+from typing import Optional
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Extra, Optional, Required
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.l10n import parse_locales_file
 
 transforms = TransformSequence()
 
-split_by_locale_schema = LegacySchema({
+
+class SplitByLocaleSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     
     
-    Required("locales-file"): str,
+    locales_file: str
     
     
-    Optional("locale-file-platform"): str,
+    locale_file_platform: Optional[str] = None
     
     
     
     
-    Optional("properties-with-locale"): [str],
-    Extra: object,
-})
+    properties_with_locale: Optional[list[str]] = None
 
 
-transforms.add_validate(split_by_locale_schema)
+transforms.add_validate(SplitByLocaleSchema)
 
 
 @transforms.add
