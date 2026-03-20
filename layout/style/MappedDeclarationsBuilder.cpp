@@ -29,10 +29,19 @@ void MappedDeclarationsBuilder::SetBackgroundImage(const nsAttrValue& aValue) {
   if (aValue.Type() != nsAttrValue::eURL) {
     return;
   }
-  nsAutoString str;
-  aValue.ToString(str);
+  
+  
+  
+  
+  
   nsAutoCString utf8;
-  CopyUTF16toUTF8(str, utf8);
+  if (nsIURI* uri = aValue.GetURLValue()) {
+    uri->GetSpec(utf8);
+  } else {
+    nsAutoString str;
+    aValue.ToString(str);
+    CopyUTF16toUTF8(str, utf8);
+  }
   Servo_DeclarationBlock_SetBackgroundImage(
       &EnsureDecls(), &utf8, mDocument.DefaultStyleAttrURLData());
 }
