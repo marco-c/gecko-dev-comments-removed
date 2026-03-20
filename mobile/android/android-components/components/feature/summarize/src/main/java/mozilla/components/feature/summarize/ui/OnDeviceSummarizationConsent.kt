@@ -21,8 +21,8 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.feature.summarize.LocalProductName
+import mozilla.components.feature.summarize.OnDeviceSummarizationShakeConsentAction
 import mozilla.components.feature.summarize.R
-import mozilla.components.feature.summarize.SummarizationAction.OnDeviceSummarizationShakeConsentAction
 
 /**
  * Composable to be rendered to request user consent to allow on-device summarization.
@@ -35,7 +35,7 @@ internal fun OnDeviceSummarizationConsent(
     OnDeviceSummarizationConsentContent(
         modifier = modifier,
         onClickLearnMore = {
-            dispatchAction(OnDeviceSummarizationShakeConsentAction.AllowClicked)
+            dispatchAction(OnDeviceSummarizationShakeConsentAction.LearnMoreClicked)
         },
         onClickAllow = {
             dispatchAction(OnDeviceSummarizationShakeConsentAction.AllowClicked)
