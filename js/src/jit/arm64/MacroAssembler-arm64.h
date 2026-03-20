@@ -1408,10 +1408,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   
-  void getGCThingValueChunk(Register src, Register dest) {
-    And(ARMRegister(src, 64), ARMRegister(dest, 64),
-        Operand(JS::detail::ValueGCThingPayloadChunkMask));
-  }
   void getGCThingValueChunk(const Address& src, Register dest) {
     loadPtr(src, dest);
     And(ARMRegister(dest, 64), ARMRegister(dest, 64),
