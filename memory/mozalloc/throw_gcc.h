@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_throw_gcc_h
 #define mozilla_throw_gcc_h
 

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/mozalloc_abort.h"
 
 #ifdef ANDROID

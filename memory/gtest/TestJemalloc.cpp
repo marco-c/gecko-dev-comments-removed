@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Literals.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/UniquePtr.h"

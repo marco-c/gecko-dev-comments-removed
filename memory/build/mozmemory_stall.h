@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozjemalloc_stall_h
 #define mozjemalloc_stall_h
 

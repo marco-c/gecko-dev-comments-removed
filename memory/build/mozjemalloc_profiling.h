@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZJEMALLOC_PROFILING_H
 #define MOZJEMALLOC_PROFILING_H
 

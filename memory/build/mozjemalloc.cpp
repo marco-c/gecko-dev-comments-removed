@@ -103,8 +103,6 @@
 
 
 
-
-
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"

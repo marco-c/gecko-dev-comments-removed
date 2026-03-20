@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include <exception>
 #include "mozalloc_abort.h"
 #include "mozilla/Attributes.h"

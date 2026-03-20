@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozjemalloc.h"
 
 #include <mozilla/Assertions.h>

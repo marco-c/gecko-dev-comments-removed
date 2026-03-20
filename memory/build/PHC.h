@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef PHC_h
 #define PHC_h
 
@@ -92,7 +90,8 @@ class AddrInfo {
   bool mPhcWasLocked = false;
 
   
-  AddrInfo() : mKind(Kind::Unknown), mBaseAddr(nullptr), mUsableSize(0) {}
+  constexpr AddrInfo()
+      : mKind(Kind::Unknown), mBaseAddr(nullptr), mUsableSize(0) {}
 };
 
 

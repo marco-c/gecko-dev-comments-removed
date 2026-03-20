@@ -61,8 +61,6 @@
 
 
 
-
-
 #ifndef RB_H_
 #define RB_H_
 
@@ -119,7 +117,7 @@ class RedBlackTreeNode {
 template <typename T, typename Trait>
 class RedBlackTree {
  public:
-  void Init() { mRoot = nullptr; }
+  constexpr RedBlackTree() : mRoot(nullptr) {}
 
   T* First(T* aStart = nullptr) { return First(TreeNode(aStart)).Get(); }
 

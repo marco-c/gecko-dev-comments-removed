@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FdPrintf_h_
 #define FdPrintf_h_
 

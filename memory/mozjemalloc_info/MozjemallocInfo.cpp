@@ -2,10 +2,7 @@
 
 
 
-
-
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "mozmemory.h"
 

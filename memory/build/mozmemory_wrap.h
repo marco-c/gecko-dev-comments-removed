@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozmemory_wrap_h
 #define mozmemory_wrap_h
 

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/mozalloc_abort.h"
 #include "mozilla/mozalloc_oom.h"
 

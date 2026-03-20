@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 GeckoSimplePrograms(
     [
@@ -11,7 +9,7 @@ GeckoSimplePrograms(
     linkage=None,
 )
 
-
+# See the comment at the top of SmokeDMD.cpp:RunTests().
 if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += ["-Od", "-clang:-fno-lto"]
 else:

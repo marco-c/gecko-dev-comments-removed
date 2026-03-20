@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <cstdarg>
 
 #ifdef _WIN32

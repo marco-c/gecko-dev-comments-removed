@@ -2,11 +2,8 @@
 
 
 
-
-
 #include "mozmemory.h"
 #include "mozjemalloc.h"
-#include <stdlib.h>
 
 #ifndef HAVE_MEMALIGN
 MOZ_MEMORY_API void* memalign(size_t aAlignment, size_t aSize) {

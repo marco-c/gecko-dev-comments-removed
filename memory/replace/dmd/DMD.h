@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DMD_h_
 #define DMD_h_
 

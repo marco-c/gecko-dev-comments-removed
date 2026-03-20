@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozmemory_wrap.h"
 
 #include <stdlib.h>
