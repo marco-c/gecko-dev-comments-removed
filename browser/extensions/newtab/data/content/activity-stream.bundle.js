@@ -8543,7 +8543,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       ...addButtonLabell10n
     }), link.searchTopSite && external_React_default().createElement("div", {
       className: "top-site-icon search-topsite"
-    }), title || external_React_default().createElement("br", null)), external_React_default().createElement("span", {
+    }), title), external_React_default().createElement("span", {
       className: "sponsored-label",
       "data-l10n-id": "newtab-topsite-sponsored"
     }))), isAddButton && this.shouldShowOMCHighlight("ShortcutHighlight") && external_React_default().createElement(MessageWrapper, {
