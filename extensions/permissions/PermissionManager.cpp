@@ -2443,6 +2443,11 @@ nsresult PermissionManager::RemovePermissionEntries(
   for (const PermissionHashKey& entry : mPermissionTable) {
     for (const auto& permEntry : entry.GetPermissions()) {
       
+      if (permEntry.mID == cIDPermissionIsDefault) {
+        continue;
+      }
+
+      
       
       
       if (!aComputePrincipalForCondition && !aCondition(permEntry, nullptr)) {
@@ -3071,12 +3076,9 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
 
 nsresult PermissionManager::RemoveAllModifiedSince(int64_t aModificationTime) {
   ENSURE_NOT_CHILD_PROCESS;
-  
-  
   return RemovePermissionEntries(
       [aModificationTime](const PermissionEntry& aPermEntry) {
-        return aModificationTime <= aPermEntry.mModificationTime &&
-               aPermEntry.mID != cIDPermissionIsDefault;
+        return aModificationTime <= aPermEntry.mModificationTime;
       });
 }
 
@@ -3084,8 +3086,7 @@ nsresult PermissionManager::RemoveAllForPrivateBrowsing() {
   ENSURE_NOT_CHILD_PROCESS;
   return RemovePermissionEntries([](const PermissionEntry& aPermEntry,
                                     const nsCOMPtr<nsIPrincipal>& aPrincipal) {
-    return aPrincipal->GetIsInPrivateBrowsing() &&
-           aPermEntry.mID != cIDPermissionIsDefault;
+    return aPrincipal->GetIsInPrivateBrowsing();
   });
 }
 
@@ -3132,6 +3133,10 @@ nsresult PermissionManager::RemovePermissionsWithAttributes(
     }
 
     for (const auto& permEntry : entry.GetPermissions()) {
+      
+      if (permEntry.mID == cIDPermissionIsDefault) {
+        continue;
+      }
       if (aTypeExceptions.Contains(mTypeArray[permEntry.mType])) {
         continue;
       }
