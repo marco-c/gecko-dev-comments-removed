@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSHEntryShared_h_
 #define nsSHEntryShared_h_
 

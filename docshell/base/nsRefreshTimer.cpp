@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsRefreshTimer.h"
 
 #include "nsIURI.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIScrollObserver_h_
 #define nsIScrollObserver_h_
 

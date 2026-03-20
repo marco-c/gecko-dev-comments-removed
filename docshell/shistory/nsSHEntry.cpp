@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsSHEntry.h"
 
 #include <algorithm>

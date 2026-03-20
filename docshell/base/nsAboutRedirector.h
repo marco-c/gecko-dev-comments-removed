@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAboutRedirector_h_
 #define nsAboutRedirector_h_
 

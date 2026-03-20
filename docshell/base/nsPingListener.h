@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPingListener_h_
 #define nsPingListener_h_
 

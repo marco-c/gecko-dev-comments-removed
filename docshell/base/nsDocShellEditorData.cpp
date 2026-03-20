@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDocShellEditorData.h"
 
 #include "mozilla/dom/Document.h"

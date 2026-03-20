@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ChildProcessChannelListener.h"
 
 #include "mozilla/ipc/Endpoint.h"

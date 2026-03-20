@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPingListener.h"
 
 #include "mozilla/Encoding.h"

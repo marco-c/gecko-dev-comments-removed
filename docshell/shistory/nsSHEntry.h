@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSHEntry_h
 #define nsSHEntry_h
 

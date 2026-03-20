@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BaseHistory.h"
 #include "nsThreadUtils.h"
 #include "mozilla/dom/ContentParent.h"

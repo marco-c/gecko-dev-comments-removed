@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDocShellLoadState_h_
 #define nsDocShellLoadState_h_
 

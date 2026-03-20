@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BrowsingContextGroup.h"
 
 #include "mozilla/ClearOnShutdown.h"

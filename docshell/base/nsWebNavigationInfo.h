@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWebNavigationInfo_h_
 #define nsWebNavigationInfo_h_
 

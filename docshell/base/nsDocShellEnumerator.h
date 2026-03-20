@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDocShellEnumerator_h_
 #define nsDocShellEnumerator_h_
 

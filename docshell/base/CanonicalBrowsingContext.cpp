@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 
 #include <algorithm>

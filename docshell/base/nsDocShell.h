@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDocShell_h_
 #define nsDocShell_h_
 

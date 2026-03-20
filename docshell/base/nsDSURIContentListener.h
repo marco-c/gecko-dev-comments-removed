@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDSURIContentListener_h_
 #define nsDSURIContentListener_h_
 

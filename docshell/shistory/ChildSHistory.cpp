@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ChildSHistory.h"
 #include "mozilla/dom/ChildSHistoryBinding.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsDocShellEditorData_h_
 #define nsDocShellEditorData_h_
 

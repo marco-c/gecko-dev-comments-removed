@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWebNavigationInfo.h"
 
 #include "nsServiceManagerUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsSHistory.h"
 
 #include <algorithm>

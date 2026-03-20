@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsRefreshTimer_h_
 #define nsRefreshTimer_h_
 

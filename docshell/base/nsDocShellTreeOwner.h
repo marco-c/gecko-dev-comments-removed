@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDocShellTreeOwner_h_
 #define nsDocShellTreeOwner_h_
 
