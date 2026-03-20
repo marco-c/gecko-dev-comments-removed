@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsMIMEInfoUnix.h"
 #include "nsGNOMERegistry.h"
 #include "nsIGIOService.h"

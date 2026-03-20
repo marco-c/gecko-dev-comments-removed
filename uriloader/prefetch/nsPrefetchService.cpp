@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPrefetchService.h"
 
 #include "mozilla/AsyncEventDispatcher.h"

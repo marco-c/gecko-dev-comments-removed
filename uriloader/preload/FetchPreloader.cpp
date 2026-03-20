@@ -4,7 +4,6 @@
 
 
 
-
 #include "FetchPreloader.h"
 
 #include "mozilla/Assertions.h"

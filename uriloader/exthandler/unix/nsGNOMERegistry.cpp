@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsGNOMERegistry.h"
 #include "nsString.h"
 #include "nsMIMEInfoUnix.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsOSHelperAppService.h"
 
 nsOSHelperAppService::nsOSHelperAppService() : nsExternalHelperAppService() {}

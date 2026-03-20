@@ -3,12 +3,9 @@
 
 
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "mozilla/net/NeckoCommon.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "nsComponentManagerUtils.h"
 #include "nsOSHelperAppService.h"
 #include "nsObjCExceptions.h"
 #include "nsISupports.h"
@@ -17,9 +14,7 @@
 #include "nsIFile.h"
 #include "nsILocalFileMac.h"
 #include "nsMimeTypes.h"
-#include "nsCRT.h"
 #include "nsMIMEInfoMac.h"
-#include "nsEmbedCID.h"
 #include "nsCocoaUtils.h"
 
 #import <Cocoa/Cocoa.h>
@@ -38,24 +33,19 @@ nsresult GetDefaultBundleURL(const nsACString& aScheme, CFURLRef* aBundleURL) {
   if (schemeCFString) {
     CFStringRef lookupCFString =
         ::CFStringCreateWithFormat(NULL, NULL, CFSTR("%@:"), schemeCFString);
-
     if (lookupCFString) {
       CFURLRef lookupCFURL =
           ::CFURLCreateWithString(NULL, lookupCFString, NULL);
-
       if (lookupCFURL) {
         *aBundleURL =
             ::LSCopyDefaultApplicationURLForURL(lookupCFURL, kLSRolesAll, NULL);
         if (*aBundleURL) {
           rv = NS_OK;
         }
-
         ::CFRelease(lookupCFURL);
       }
-
       ::CFRelease(lookupCFString);
     }
-
     ::CFRelease(schemeCFString);
   }
 
@@ -82,7 +72,6 @@ using mozilla::LogLevel;
 
 + (NSURLFileTypeMappings*)sharedMappings;
 - (NSString*)MIMETypeForExtension:(NSString*)aString;
-- (NSString*)preferredExtensionForMIMEType:(NSString*)aString;
 - (NSArray*)extensionsForMIMEType:(NSString*)aString;
 @end
 
@@ -179,7 +168,6 @@ NS_IMETHODIMP nsOSHelperAppService::IsCurrentAppOSDefaultForProtocol(
   CFURLRef handlerBundleURL;
   rv = GetDefaultBundleURL(aScheme, &handlerBundleURL);
   if (NS_SUCCEEDED(rv) && handlerBundleURL) {
-    
     
     rv = NS_ERROR_NOT_AVAILABLE;
     CFBundleRef appBundle = ::CFBundleGetMainBundle();
@@ -326,7 +314,6 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
           ("Mac: HelperAppService lookup for type '%s' ext '%s'\n",
            flatType.get(), flatExt.get()));
 
-  
   RefPtr<nsMIMEInfoMac> mimeInfoMac = new nsMIMEInfoMac(aMIMEType);
 
   nsAutoreleasePool localPool;
@@ -345,14 +332,10 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   if (!aMIMEType.IsEmpty()) {
     typeIsOctetStream =
         aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM);
-    CFURLRef appURL = NULL;
-    
-    
-    
-    
     cfMIMEType = ::CFStringCreateWithCString(NULL, flatType.get(),
                                              kCFStringEncodingUTF8);
     if (cfMIMEType) {
+      CFURLRef appURL = NULL;
       err = ::LSCopyApplicationForMIMEType(cfMIMEType, kLSRolesAll, &appURL);
       if ((err == noErr) && appURL && ::CFURLGetFSRef(appURL, &typeAppFSRef)) {
         haveAppForType = true;
@@ -365,10 +348,6 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
     }
   }
   if (!aFileExt.IsEmpty()) {
-    
-    
-    
-    
     CFStringRef cfExt =
         ::CFStringCreateWithCString(NULL, flatExt.get(), kCFStringEncodingUTF8);
     if (cfExt) {

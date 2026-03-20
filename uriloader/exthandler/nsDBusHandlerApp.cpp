@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <dbus/dbus.h>
 #include "mozilla/Components.h"
 #include "mozilla/DBusHelpers.h"

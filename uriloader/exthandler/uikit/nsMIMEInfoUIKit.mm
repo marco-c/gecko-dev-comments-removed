@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMIMEInfoUIKit.h"
 
 NS_IMETHODIMP

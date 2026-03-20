@@ -10,7 +10,6 @@
 
 
 
-
 const FILE_EXTENSION = ".nfo";
 
 

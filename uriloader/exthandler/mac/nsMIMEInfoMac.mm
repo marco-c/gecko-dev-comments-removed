@@ -3,7 +3,6 @@
 
 
 
-
 #import <ApplicationServices/ApplicationServices.h>
 
 #include "nsComponentManagerUtils.h"

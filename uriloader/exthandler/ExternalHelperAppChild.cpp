@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ExternalHelperAppChild.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "nsIInputStream.h"

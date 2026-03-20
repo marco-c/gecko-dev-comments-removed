@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsDBusHandlerAppImpl_h_
 #define _nsDBusHandlerAppImpl_h_
 

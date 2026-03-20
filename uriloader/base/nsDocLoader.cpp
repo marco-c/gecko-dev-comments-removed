@@ -2,7 +2,6 @@
 
 
 
-
 #include "nspr.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"

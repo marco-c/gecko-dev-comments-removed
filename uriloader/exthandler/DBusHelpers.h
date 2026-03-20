@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DBusHelpers_h
 #define mozilla_DBusHelpers_h
 

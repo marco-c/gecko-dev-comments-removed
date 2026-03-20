@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsOSHelperAppServiceChild_h_
 #define nsOSHelperAppServiceChild_h_
 

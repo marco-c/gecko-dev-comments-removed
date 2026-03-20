@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsExternalProtocolHandler_h_
 #define nsExternalProtocolHandler_h_
 

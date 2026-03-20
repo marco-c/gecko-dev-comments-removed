@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsLocalHandlerAppImpl_h_
 #define _nsLocalHandlerAppImpl_h_
 

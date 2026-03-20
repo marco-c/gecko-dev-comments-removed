@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLocalHandlerApp.h"
 #include "nsIURI.h"
 #include "nsIProcess.h"

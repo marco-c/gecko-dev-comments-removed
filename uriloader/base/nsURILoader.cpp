@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsURILoader.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentSecurityUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #import <CoreFoundation/CoreFoundation.h>
 
 #include "nsLocalHandlerAppUIKit.h"

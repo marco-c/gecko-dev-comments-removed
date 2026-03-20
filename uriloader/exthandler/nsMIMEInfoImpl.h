@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _nsmimeinfoimpl_h_
 #define _nsmimeinfoimpl_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsExternalHelperAppService_h_
 #define nsExternalHelperAppService_h_
 

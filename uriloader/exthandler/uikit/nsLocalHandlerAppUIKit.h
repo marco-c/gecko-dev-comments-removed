@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nslocalhandlerappuikit_h_
 #define nslocalhandlerappuikit_h_
 

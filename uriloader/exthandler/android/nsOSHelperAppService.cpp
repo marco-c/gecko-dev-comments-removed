@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsOSHelperAppService.h"
 
 #include "mozilla/java/GeckoAppShellWrappers.h"

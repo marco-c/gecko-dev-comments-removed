@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsOSHelperAppService_h_
 #define nsOSHelperAppService_h_
 

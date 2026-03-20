@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsContentHandlerAppImpl_h_
 #define _nsContentHandlerAppImpl_h_
 

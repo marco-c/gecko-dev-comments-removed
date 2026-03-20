@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "nsComponentManagerUtils.h"
 #include "nsOSHelperAppService.h"
 #include "nsISupports.h"

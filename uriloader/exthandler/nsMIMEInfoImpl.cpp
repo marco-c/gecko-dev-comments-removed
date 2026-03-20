@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMIMEInfoImpl.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"

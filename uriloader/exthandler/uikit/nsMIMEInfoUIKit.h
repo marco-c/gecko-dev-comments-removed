@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMIMEInfoUIKit_h_
 #define nsMIMEInfoUIKit_h_
 

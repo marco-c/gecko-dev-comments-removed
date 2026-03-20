@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsMIMEInfoUnix_h_
 #define nsMIMEInfoUnix_h_
 

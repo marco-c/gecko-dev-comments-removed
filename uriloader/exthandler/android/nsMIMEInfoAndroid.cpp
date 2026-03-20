@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsMIMEInfoAndroid.h"
 
 #include "mozilla/java/GeckoAppShellWrappers.h"

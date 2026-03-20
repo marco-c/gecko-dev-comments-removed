@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsMIMEInfoAndroid_h
 #define nsMIMEInfoAndroid_h
 
