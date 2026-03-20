@@ -11,14 +11,14 @@
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
 
-#include <cstdint>
-#include <type_traits>
+#include <cstdint>      
+#include <type_traits>  
 
 #ifdef __wasi__
 #  include "mozilla/WasiAtomic.h"
 #else
-#  include <atomic>
-#endif  
+#  include <atomic>  
+#endif               
 
 namespace mozilla {
 

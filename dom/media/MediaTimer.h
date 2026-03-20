@@ -2,11 +2,10 @@
 
 
 
-
-
 #if !defined(MediaTimer_h_)
 #  define MediaTimer_h_
 
+#  include <cinttypes>
 #  include <queue>
 
 #  include "mozilla/AbstractThread.h"
