@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_image_StreamingLexer_h
 #define mozilla_image_StreamingLexer_h
 

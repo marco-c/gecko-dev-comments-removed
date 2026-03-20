@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef mozilla_image_AnimationSurfaceProvider_h
 #define mozilla_image_AnimationSurfaceProvider_h
 

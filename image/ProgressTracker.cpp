@@ -3,7 +3,6 @@
 
 
 
-
 #include "ImageLogging.h"
 #include "ProgressTracker.h"
 

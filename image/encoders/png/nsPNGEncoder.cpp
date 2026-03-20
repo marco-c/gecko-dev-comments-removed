@@ -2,7 +2,6 @@
 
 
 
-
 #include "ImageLogging.h"
 #include "nsCRT.h"
 #include "nsPNGEncoder.h"

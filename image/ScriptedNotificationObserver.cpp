@@ -3,7 +3,6 @@
 
 
 
-
 #include "ScriptedNotificationObserver.h"
 #include "imgIScriptedNotificationObserver.h"
 #include "nsCycleCollectionParticipant.h"

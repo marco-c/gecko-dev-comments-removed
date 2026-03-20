@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_SurfaceFlags_h
 #define mozilla_image_SurfaceFlags_h
 

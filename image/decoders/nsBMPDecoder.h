@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_image_decoders_nsBMPDecoder_h
 #define mozilla_image_decoders_nsBMPDecoder_h
 

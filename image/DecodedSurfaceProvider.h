@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef mozilla_image_DecodedSurfaceProvider_h
 #define mozilla_image_DecodedSurfaceProvider_h
 

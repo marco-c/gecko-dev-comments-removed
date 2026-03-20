@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_encoders_webp_nsWebPEncoder_h
 #define mozilla_image_encoders_webp_nsWebPEncoder_h
 

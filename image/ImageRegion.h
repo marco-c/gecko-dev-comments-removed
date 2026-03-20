@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_ImageRegion_h
 #define mozilla_image_ImageRegion_h
 

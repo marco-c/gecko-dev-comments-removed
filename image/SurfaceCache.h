@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef mozilla_image_SurfaceCache_h
 #define mozilla_image_SurfaceCache_h
 

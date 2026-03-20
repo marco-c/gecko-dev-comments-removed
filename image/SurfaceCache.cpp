@@ -6,7 +6,6 @@
 
 
 
-
 #include "SurfaceCache.h"
 
 #include <algorithm>

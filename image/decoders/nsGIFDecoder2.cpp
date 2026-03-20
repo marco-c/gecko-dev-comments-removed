@@ -37,7 +37,6 @@
 
 
 
-
 #include "nsGIFDecoder2.h"
 
 #include <stddef.h>

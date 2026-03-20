@@ -2,7 +2,6 @@
 
 
 
-
 #include "FrameAnimator.h"
 
 #include <utility>

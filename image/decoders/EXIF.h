@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_EXIF_h
 #define mozilla_image_decoders_EXIF_h
 

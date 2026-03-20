@@ -3,7 +3,6 @@
 
 
 
-
 #include "Downscaler.h"
 
 #include <algorithm>

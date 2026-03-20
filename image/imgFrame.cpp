@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "imgFrame.h"
 #include "ImageRegion.h"
 #include "SurfaceCache.h"

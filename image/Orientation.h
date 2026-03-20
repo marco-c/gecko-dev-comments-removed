@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_Orientation_h
 #define mozilla_image_Orientation_h
 

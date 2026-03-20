@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_imgLoader_h
 #define mozilla_image_imgLoader_h
 

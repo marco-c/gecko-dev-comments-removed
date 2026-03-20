@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "mozilla/ScopeExit.h"
 #include "nsIChildChannel.h"
 #include "nsIThreadRetargetableStreamListener.h"

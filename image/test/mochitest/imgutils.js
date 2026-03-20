@@ -4,7 +4,6 @@
 
 
 
-
 function clearAllImageCaches() {
   var tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"].getService(
     SpecialPowers.Ci.imgITools

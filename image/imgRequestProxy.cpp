@@ -3,7 +3,6 @@
 
 
 
-
 #include "imgRequestProxy.h"
 
 #include <utility>
@@ -114,8 +113,7 @@ imgRequestProxy::imgRequestProxy()
       mListenerIsStrongRef(false),
       mDecodeRequested(false),
       mPendingNotify(false),
-      mValidating(false),
-      mHadListener(false) {
+      mValidating(false) {
   
   LOG_FUNC(gImgLog, "imgRequestProxy::imgRequestProxy");
 }
@@ -161,7 +159,6 @@ nsresult imgRequestProxy::Init(imgRequest* aOwner, nsILoadGroup* aLoadGroup,
   
   
   if (mListener) {
-    mHadListener = true;
     mListenerIsStrongRef = true;
     NS_ADDREF(mListener);
   }

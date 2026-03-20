@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef mozilla_image_IDecodingTask_h
 #define mozilla_image_IDecodingTask_h
 

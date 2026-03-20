@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/SyncRunnable.h"

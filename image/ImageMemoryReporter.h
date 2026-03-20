@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_image_ImageMemoryReporter_h
 #define mozilla_image_ImageMemoryReporter_h
 

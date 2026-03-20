@@ -2,7 +2,6 @@
 
 
 
-
 #include "ClippedImage.h"
 
 #include <algorithm>

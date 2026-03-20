@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef mozilla_image_Downscaler_h
 #define mozilla_image_Downscaler_h
 

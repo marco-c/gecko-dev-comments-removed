@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef mozilla_image_ShutdownTracker_h
 #define mozilla_image_ShutdownTracker_h
 

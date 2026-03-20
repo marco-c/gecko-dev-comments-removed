@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_remote_RemoteImageProtocolHandler_h
 #define mozilla_image_remote_RemoteImageProtocolHandler_h
 

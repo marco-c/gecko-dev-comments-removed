@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "nsIconURI.h"
 
 #include "mozilla/ipc/URIUtils.h"

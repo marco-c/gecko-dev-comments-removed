@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageMemoryReporter.h"
 #include "Image.h"
 #include "base/process_util.h"

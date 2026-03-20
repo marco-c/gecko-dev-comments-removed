@@ -2,7 +2,6 @@
 
 
 
-
 #include "SourceBuffer.h"
 
 #include <algorithm>

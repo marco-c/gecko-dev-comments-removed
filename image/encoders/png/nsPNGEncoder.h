@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_encoders_png_nsPNGEncoder_h
 #define mozilla_image_encoders_png_nsPNGEncoder_h
 

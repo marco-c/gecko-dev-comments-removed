@@ -2,7 +2,6 @@
 
 
 
-
 #include "DynamicImage.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"

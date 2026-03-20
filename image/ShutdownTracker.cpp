@@ -2,7 +2,6 @@
 
 
 
-
 #include "ShutdownTracker.h"
 
 #include "mozilla/Services.h"

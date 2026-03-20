@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsContentUtils.h"
 #include "nsIconChannel.h"
 #include "mozilla/BasePrincipal.h"

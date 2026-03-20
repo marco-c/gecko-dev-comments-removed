@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_nsICODecoder_h
 #define mozilla_image_decoders_nsICODecoder_h
 

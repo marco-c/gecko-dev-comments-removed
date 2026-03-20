@@ -2,7 +2,6 @@
 
 
 
-
 #include "SVGDocumentWrapper.h"
 
 #include "mozilla/Components.h"

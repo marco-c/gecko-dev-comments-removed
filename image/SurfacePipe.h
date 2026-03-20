@@ -17,8 +17,6 @@
 
 
 
-
-
 #ifndef mozilla_image_SurfacePipe_h
 #define mozilla_image_SurfacePipe_h
 

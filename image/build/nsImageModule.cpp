@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsImageModule.h"
 
 #include "mozilla/ModuleUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_ClippedImage_h
 #define mozilla_image_ClippedImage_h
 

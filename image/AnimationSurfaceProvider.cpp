@@ -2,7 +2,6 @@
 
 
 
-
 #include "AnimationSurfaceProvider.h"
 
 #include "mozilla/StaticPrefs_image.h"

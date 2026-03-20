@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_encoders_icon_win_nsIconChannel_h
 #define mozilla_image_encoders_icon_win_nsIconChannel_h
 

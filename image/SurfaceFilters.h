@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_image_SurfaceFilters_h
 #define mozilla_image_SurfaceFilters_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_icon_android_nsIconChannel_h
 #define mozilla_image_decoders_icon_android_nsIconChannel_h
 

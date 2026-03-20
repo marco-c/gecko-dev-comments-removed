@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsCRT.h"
 #include "nsWebPEncoder.h"
 #include "nsStreamUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/image/ImageUtils.h"
 #include "DecodePool.h"
 #include "Decoder.h"

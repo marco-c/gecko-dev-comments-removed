@@ -2,7 +2,6 @@
 
 
 
-
 #include "OrientedImage.h"
 
 #include <algorithm>

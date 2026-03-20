@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_AnimationParams_h
 #define mozilla_image_AnimationParams_h
 

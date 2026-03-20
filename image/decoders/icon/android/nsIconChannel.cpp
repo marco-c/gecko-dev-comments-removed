@@ -2,8 +2,6 @@
 
 
 
-
-#include <stdlib.h>
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/NullPrincipal.h"

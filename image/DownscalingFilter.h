@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef mozilla_image_DownscalingFilter_h
 #define mozilla_image_DownscalingFilter_h
 

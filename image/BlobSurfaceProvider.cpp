@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BlobSurfaceProvider.h"
 #include "AutoRestoreSVGState.h"
 #include "ImageRegion.h"

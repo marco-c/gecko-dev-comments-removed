@@ -13,7 +13,6 @@
 
 
 
-
 #ifndef mozilla_image_RasterImage_h
 #define mozilla_image_RasterImage_h
 

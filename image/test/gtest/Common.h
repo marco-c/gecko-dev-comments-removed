@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_test_gtest_Common_h
 #define mozilla_image_test_gtest_Common_h
 

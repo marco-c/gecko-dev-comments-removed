@@ -4,7 +4,6 @@
 
 
 
-
 #include "RasterImage.h"
 
 #include <stdint.h>

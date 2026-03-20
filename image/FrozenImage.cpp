@@ -2,7 +2,6 @@
 
 
 
-
 #include "FrozenImage.h"
 
 namespace mozilla {

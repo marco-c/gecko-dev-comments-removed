@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef mozilla_image_DecodePool_h
 #define mozilla_image_DecodePool_h
 

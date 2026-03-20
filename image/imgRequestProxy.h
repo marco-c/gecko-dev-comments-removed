@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_imgRequestProxy_h
 #define mozilla_image_imgRequestProxy_h
 
@@ -245,7 +244,6 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   
   bool mPendingNotify : 1;
   bool mValidating : 1;
-  bool mHadListener : 1;
 };
 
 inline nsISupports* ToSupports(imgRequestProxy* p) {

@@ -2,7 +2,6 @@
 
 
 
-
 #include <utility>
 
 #include "AnimationFrameBuffer.h"

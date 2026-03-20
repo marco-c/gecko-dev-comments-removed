@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_image_SurfacePipeFactory_h
 #define mozilla_image_SurfacePipeFactory_h
 

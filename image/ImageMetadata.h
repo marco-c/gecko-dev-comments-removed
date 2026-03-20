@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_ImageMetadata_h
 #define mozilla_image_ImageMetadata_h
 

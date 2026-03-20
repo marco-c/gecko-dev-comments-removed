@@ -1,6 +1,5 @@
 
 
-
 var currentTest;
 var gIsRefImageLoaded = false;
 const gShouldOutputDebugInfo = false;

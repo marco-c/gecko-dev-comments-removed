@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_nsJPEGDecoder_h
 #define mozilla_image_decoders_nsJPEGDecoder_h
 

@@ -3,7 +3,6 @@
 
 
 
-
 #include "ImageOps.h"
 
 #include "ClippedImage.h"

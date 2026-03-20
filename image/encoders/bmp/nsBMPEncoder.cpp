@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsCRT.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/UniquePtrExtensions.h"

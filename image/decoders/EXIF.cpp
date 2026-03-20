@@ -2,7 +2,6 @@
 
 
 
-
 #include "EXIF.h"
 
 #include "mozilla/EndianUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsJPEGEncoder.h"
 #include "prprf.h"
 #include "nsString.h"

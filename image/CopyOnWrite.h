@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef mozilla_image_CopyOnWrite_h
 #define mozilla_image_CopyOnWrite_h
 

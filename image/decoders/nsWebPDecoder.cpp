@@ -3,7 +3,6 @@
 
 
 
-
 #include "ImageLogging.h"  
 #include "gfxPlatform.h"
 #include "mozilla/TelemetryHistogramEnums.h"

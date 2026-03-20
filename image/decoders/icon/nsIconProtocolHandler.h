@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_icon_nsIconProtocolHandler_h
 #define mozilla_image_decoders_icon_nsIconProtocolHandler_h
 

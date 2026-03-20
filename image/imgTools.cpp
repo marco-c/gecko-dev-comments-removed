@@ -3,7 +3,6 @@
 
 
 
-
 #include "imgTools.h"
 
 #include "DecodePool.h"

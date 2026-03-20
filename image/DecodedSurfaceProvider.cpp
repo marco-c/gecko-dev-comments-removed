@@ -2,7 +2,6 @@
 
 
 
-
 #include "DecodedSurfaceProvider.h"
 
 #include "mozilla/StaticPrefs_image.h"

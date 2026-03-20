@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_FrameAnimator_h
 #define mozilla_image_FrameAnimator_h
 

@@ -3,7 +3,6 @@
 
 
 
-
 #include "ImageFactory.h"
 
 #include <algorithm>

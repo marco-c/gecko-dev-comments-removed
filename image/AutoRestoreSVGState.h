@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_AutoRestoreSVGState_h
 #define mozilla_image_AutoRestoreSVGState_h
 

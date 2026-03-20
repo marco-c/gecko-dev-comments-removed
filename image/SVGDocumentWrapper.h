@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_image_SVGDocumentWrapper_h
 #define mozilla_image_SVGDocumentWrapper_h
 

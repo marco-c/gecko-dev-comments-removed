@@ -3,7 +3,6 @@
 
 
 
-
 #include "FetchDecodedImage.h"
 
 #include "imgINotificationObserver.h"

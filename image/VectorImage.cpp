@@ -2,7 +2,6 @@
 
 
 
-
 #include "VectorImage.h"
 
 #include "AutoRestoreSVGState.h"

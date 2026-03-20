@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_GIF2_H
 #define mozilla_image_decoders_GIF2_H
 
