@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_ErrorHandler_h
 #define mozilla_ErrorHandler_h
 

@@ -6,6 +6,8 @@
 
 
 
+
+
 registerCleanupFunction(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();

@@ -2,6 +2,7 @@
 
 
 
+
 const appStartup = Services.startup;
 
 const { ResetProfile } = ChromeUtils.importESModule(

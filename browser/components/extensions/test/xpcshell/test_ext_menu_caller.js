@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function test_create_menu_ext_error() {

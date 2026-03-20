@@ -5,6 +5,8 @@
 
 
 
+
+
 const NOT_SECURE_LABEL = Services.prefs.getBoolPref(
   "security.insecure_connection_text.enabled"
 )

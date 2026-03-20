@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const { AboutNewTab } = ChromeUtils.importESModule(

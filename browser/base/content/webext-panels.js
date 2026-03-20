@@ -6,6 +6,7 @@
 
 
 
+
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
 });

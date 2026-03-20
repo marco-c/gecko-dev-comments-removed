@@ -2,6 +2,7 @@
 
 
 
+
 #include "Windows11TaskbarPinning.h"
 
 #include "nsILimitedAccessFeature.h"

@@ -5,6 +5,8 @@
 
 
 
+
+
 const PREF_RESTORE_DEFAULT_BOOKMARKS =
   "browser.bookmarks.restore_default_bookmarks";
 

@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function testExecuteScript_at_about_blank() {

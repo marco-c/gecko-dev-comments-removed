@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 const kPermissionType = "translate";

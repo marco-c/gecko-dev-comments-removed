@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function move_discarded_to_window() {

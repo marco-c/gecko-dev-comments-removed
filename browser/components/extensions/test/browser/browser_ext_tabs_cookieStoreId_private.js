@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function perma_private_browsing_mode() {

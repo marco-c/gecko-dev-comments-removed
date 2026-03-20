@@ -7,6 +7,8 @@
 
 
 
+
+
 add_task(async function test_first_download_panel() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.download.autohideButton", false]],

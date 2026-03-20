@@ -2,6 +2,9 @@
 
 
 
+
+
+
 #ifndef _nsGNOMEShellSearchProvider_h_
 #define _nsGNOMEShellSearchProvider_h_
 

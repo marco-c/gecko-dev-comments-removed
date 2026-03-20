@@ -2,6 +2,7 @@
 
 
 
+
 #define UNICODE
 
 #include "nsWindowsShellService.h"

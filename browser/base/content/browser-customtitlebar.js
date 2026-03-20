@@ -2,6 +2,7 @@
 
 
 
+
 var CustomTitlebar = {
   init() {
     this._readPref();

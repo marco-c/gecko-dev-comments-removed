@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const SITE_SPECIFIC_PREF = "browser.zoom.siteSpecific";

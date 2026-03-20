@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 const lazy = {};
 
@@ -18,7 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 let contextMenus = new WeakMap();
 
 export class ContextMenuChild extends JSWindowActorChild {
-  // PUBLIC
+  
   constructor() {
     super();
 
@@ -200,8 +202,8 @@ export class ContextMenuChild extends JSWindowActorChild {
           node.form.enctype != "application/x-www-form-urlencoded" ||
           formData.values().some(v => typeof v != "string")
         ) {
-          // This should never happen since these conditions are checked in
-          // `isTargetASearchEngineField`.
+          
+          
           return Promise.reject("Cannot create search engine from this form.");
         }
 
@@ -222,8 +224,8 @@ export class ContextMenuChild extends JSWindowActorChild {
         let ctxDraw = canvas.getContext("2d");
         ctxDraw.drawImage(video, 0, 0);
 
-        // Note: if changing the content type, don't forget to update
-        // consumers that also hardcode this content type.
+        
+        
         return Promise.resolve(canvas.toDataURL("image/jpeg", ""));
       }
 
@@ -232,8 +234,8 @@ export class ContextMenuChild extends JSWindowActorChild {
           message.data.targetIdentifier
         );
 
-        // Paranoia: check disableSetDesktopBackground again, in case the
-        // image changed since the context menu was initiated.
+        
+        
         let disable = this._disableSetDesktopBackground(target);
 
         if (!disable) {
@@ -296,20 +298,20 @@ export class ContextMenuChild extends JSWindowActorChild {
     return undefined;
   }
 
-  /**
-   * Returns the event target of the context menu, using a locally stored
-   * reference if possible. If not, and aMessage.objects is defined,
-   * aMessage.objects[aKey] is returned. Otherwise null.
-   *
-   * @param  {object} aMessage Message with a objects property
-   * @param  {string} aKey     Key for the target on aMessage.objects
-   * @return {object}          Context menu target
-   */
+  
+
+
+
+
+
+
+
+
   getTarget(aMessage, aKey = "target") {
     return this.target || (aMessage.objects && aMessage.objects[aKey]);
   }
 
-  // PRIVATE
+  
   _isXULTextLinkLabel(aNode) {
     const XUL_NS =
       "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -321,12 +323,12 @@ export class ContextMenuChild extends JSWindowActorChild {
     );
   }
 
-  // Generate fully qualified URL for clicked-on link.
+  
   _getLinkURL() {
     let href = this.context.link.href;
 
     if (href) {
-      // Handle SVG links:
+      
       if (typeof href == "object" && href.animVal) {
         return new URL(href.animVal, this.context.link.baseURI).href;
       }
@@ -339,8 +341,8 @@ export class ContextMenuChild extends JSWindowActorChild {
       this.context.link.getAttributeNS("http://www.w3.org/1999/xlink", "href");
 
     if (!href || !href.match(/\S/)) {
-      // Without this we try to save as the current doc,
-      // for example, HTML case also throws if empty
+      
+      
       throw new Error("Empty href");
     }
 
@@ -351,13 +353,13 @@ export class ContextMenuChild extends JSWindowActorChild {
     try {
       return Services.io.newURI(this.context.linkURL);
     } catch (ex) {
-      // e.g. empty URL string
+      
     }
 
     return null;
   }
 
-  // Get text of link.
+  
   _getLinkText() {
     let text = this._gatherTextUnder(this.context.link);
 
@@ -376,16 +378,16 @@ export class ContextMenuChild extends JSWindowActorChild {
 
   _getLinkProtocol() {
     if (this.context.linkURI) {
-      return this.context.linkURI.scheme; // can be |undefined|
+      return this.context.linkURI.scheme; 
     }
 
     return null;
   }
 
-  // Returns true if clicked-on link targets a resource that can be saved.
+  
   _isLinkSaveable() {
-    // We don't do the Right Thing for news/snews yet, so turn them off
-    // until we do.
+    
+    
     return (
       this.context.linkProtocol &&
       !(
@@ -398,9 +400,9 @@ export class ContextMenuChild extends JSWindowActorChild {
     );
   }
 
-  // Gather all descendent text under given document node.
-  // NOTE: Keep this in sync with gatherTextUnder in
-  // browser/base/content/utilityOverlay.js
+  
+  
+  
   _gatherTextUnder(root) {
     const encoder = Cu.createDocumentEncoder("text/plain");
     encoder.init(root.ownerDocument, "text/plain", 0);
@@ -408,7 +410,7 @@ export class ContextMenuChild extends JSWindowActorChild {
     return encoder.encodeToString().trim();
   }
 
-  // Returns a "url"-type computed style attribute value, with the url() stripped.
+  
   _getComputedURL(aElem, aProp) {
     let urls = aElem.ownerGlobal.getComputedStyle(aElem).getCSSImageURLs(aProp);
 
@@ -448,12 +450,12 @@ export class ContextMenuChild extends JSWindowActorChild {
   }
 
   _isSpellCheckEnabled(aNode) {
-    // We can always force-enable spellchecking on textboxes
+    
     if (this._isTargetATextBox(aNode)) {
       return true;
     }
 
-    // We can never spell check something which is not content editable
+    
     let editable = aNode.isContentEditable;
 
     if (!editable && aNode.ownerDocument) {
@@ -464,13 +466,13 @@ export class ContextMenuChild extends JSWindowActorChild {
       return false;
     }
 
-    // Otherwise make sure that nothing in the parent chain disables spellchecking
+    
     return aNode.spellcheck;
   }
 
   _disableSetDesktopBackground(aTarget) {
-    // Disable the Set as Desktop Background menu item if we're still trying
-    // to load the image or the load failed.
+    
+    
     if (!(aTarget instanceof Ci.nsIImageLoadingContent)) {
       return true;
     }
@@ -498,8 +500,8 @@ export class ContextMenuChild extends JSWindowActorChild {
     let defaultPrevented = aEvent.defaultPrevented;
 
     if (
-      // If the event is not from a chrome-privileged document, and if
-      // `dom.event.contextmenu.enabled` is false, force defaultPrevented=false.
+      
+      
       !aEvent.composedTarget.nodePrincipal.isSystemPrincipal &&
       !Services.prefs.getBoolPref("dom.event.contextmenu.enabled")
     ) {
@@ -512,16 +514,16 @@ export class ContextMenuChild extends JSWindowActorChild {
 
     let doc = aEvent.composedTarget.ownerDocument;
     if (!doc && Cu.isInAutomation) {
-      // doc has been observed to be null for many years, causing intermittent
-      // test failures all over the place (bug 1478596). The rate of failures
-      // is too low to debug locally, but frequent enough to be a nuisance.
-      // TODO bug 1478596: use these diagnostic logs to resolve the bug.
+      
+      
+      
+      
       dump(
         `doc is unexpectedly null (bug 1478596), composedTarget=${aEvent.composedTarget}\n`
       );
-      // A potential fix is to fall back to aEvent.target.ownerDocument, per
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=1478596#c1
-      // Let's print potentially viable alternatives to see what we should use.
+      
+      
+      
       for (let k of ["target", "originalTarget", "explicitOriginalTarget"]) {
         dump(
           ` Alternative: ${k}=${aEvent[k]} and its doc=${aEvent[k]?.ownerDocument}\n`
@@ -540,7 +542,7 @@ export class ContextMenuChild extends JSWindowActorChild {
 
     let disableSetDesktopBackground = null;
 
-    // Media related cache info parent needs for saving
+    
     let contentType = null;
     let contentDisposition = null;
     if (
@@ -556,8 +558,8 @@ export class ContextMenuChild extends JSWindowActorChild {
         let imageCache = Cc["@mozilla.org/image/tools;1"]
           .getService(Ci.imgITools)
           .getImgCacheForDocument(doc);
-        // The image cache's notion of where this image is located is
-        // the currentURI of the image loading content.
+        
+        
         let props = imageCache.findEntryProperties(
           aEvent.composedTarget.currentURI,
           doc
@@ -593,8 +595,8 @@ export class ContextMenuChild extends JSWindowActorChild {
     referrerInfo.initWithElement(aEvent.composedTarget);
     referrerInfo = lazy.E10SUtils.serializeReferrerInfo(referrerInfo);
 
-    // In the case "onLink" we may have to send link referrerInfo to use in
-    // _openLinkInParameters
+    
+    
     let linkReferrerInfo = null;
     if (context.onLink) {
       linkReferrerInfo = Cc["@mozilla.org/referrer-info;1"].createInstance(
@@ -621,9 +623,9 @@ export class ContextMenuChild extends JSWindowActorChild {
       );
     }
 
-    // Set the event target first as the copy image command needs it to
-    // determine what was context-clicked on. Then, update the state of the
-    // commands on the context menu.
+    
+    
+    
     this.docShell.docViewer
       .QueryInterface(Ci.nsIDocumentViewerEdit)
       .setCommandNode(aEvent.composedTarget);
@@ -654,8 +656,8 @@ export class ContextMenuChild extends JSWindowActorChild {
         lazy.E10SUtils.serializeReferrerInfo(linkReferrerInfo);
     }
 
-    // Notify observers (currently only webextensions) of the context menu being
-    // prepared, allowing them to set webExtContextData for us.
+    
+    
     let prepareContextMenu = {
       principal: doc.nodePrincipal,
       setWebExtContextData(webExtContextData) {
@@ -664,10 +666,10 @@ export class ContextMenuChild extends JSWindowActorChild {
     };
     Services.obs.notifyObservers(prepareContextMenu, "on-prepare-contextmenu");
 
-    // In the event that the content is running in the parent process, we don't
-    // actually want the contextmenu events to reach the parent - we'll dispatch
-    // a new contextmenu event after the async message has reached the parent
-    // instead.
+    
+    
+    
+    
     aEvent.stopPropagation();
 
     data.spellInfo = null;
@@ -682,27 +684,27 @@ export class ContextMenuChild extends JSWindowActorChild {
     this.sendAsyncMessage("contextmenu", data);
   }
 
-  /**
-   * Some things are not serializable, so we either have to only send
-   * their needed data or regenerate them in nsContextMenu.js
-   * - target and target.ownerDocument
-   * - link
-   * - linkURI
-   */
+  
+
+
+
+
+
+
   _cleanContext() {
     const context = this.context;
     const cleanTarget = Object.create(null);
 
     cleanTarget.ownerDocument = {
-      // used for nsContextMenu.initLeaveDOMFullScreenItems and
-      // nsContextMenu.initMediaPlayerItems
+      
+      
       fullscreen: context.target.ownerDocument.fullscreen,
 
-      // used for nsContextMenu.initMiscItems
+      
       contentType: context.target.ownerDocument.contentType,
     };
 
-    // used for nsContextMenu.initMediaPlayerItems
+    
     Object.assign(cleanTarget, {
       ended: context.target.ended,
       muted: context.target.muted,
@@ -750,8 +752,8 @@ export class ContextMenuChild extends JSWindowActorChild {
 
     let node = aEvent.composedTarget;
 
-    // Set the node to containing <video>/<audio>/<embed>/<object> if the node
-    // is in the videocontrols UA Widget.
+    
+    
     if (node.containingShadowRoot?.isUAWidget()) {
       const host = node.containingShadowRoot.host;
       if (
@@ -770,7 +772,7 @@ export class ContextMenuChild extends JSWindowActorChild {
 
     if (
       node.nodeType == node.DOCUMENT_NODE ||
-      // Don't display for XUL element unless <label class="text-link">
+      
       (node.namespaceURI == XUL_NS && !this._isXULTextLinkLabel(node))
     ) {
       context.shouldDisplay = false;
@@ -789,13 +791,13 @@ export class ContextMenuChild extends JSWindowActorChild {
       isAboutDevtoolsToolbox &&
       (editFlags & lazy.SpellCheckHelper.TEXTINPUT) === 0
     ) {
-      // Don't display for about:devtools-toolbox page unless the source was text input.
+      
       context.shouldDisplay = false;
       return;
     }
 
-    // Initialize context to be sent to nsContextMenu
-    // Keep this consistent with the similar code in nsContextMenu's setContext
+    
+    
     context.bgImageURL = "";
     context.imageDescURL = "";
     context.imageInfo = null;
@@ -842,11 +844,11 @@ export class ContextMenuChild extends JSWindowActorChild {
 
     const textDirectiveRanges =
       this.document.fragmentDirective?.getTextDirectiveRanges?.() || [];
-    // .hasTextFragments indicates whether the page will show highlights.
+    
     context.hasTextFragments = !!textDirectiveRanges.length;
 
-    // Remember the node and its owner document that was clicked
-    // This may be modifed before sending to nsContextMenu
+    
+    
     context.target = node;
     context.targetIdentifier = lazy.ContentDOMReference.get(node);
 
@@ -854,7 +856,7 @@ export class ContextMenuChild extends JSWindowActorChild {
       context.target.ownerDocument.policyContainer
     );
 
-    // Check if we are in the PDF Viewer.
+    
     context.inPDFViewer =
       context.target.ownerDocument.nodePrincipal.originNoSuffix ==
       "resource://pdf.js";
@@ -862,7 +864,7 @@ export class ContextMenuChild extends JSWindowActorChild {
       context.pdfStates = context.target.ownerDocument.pdfStates;
     }
 
-    // Check if we are in a synthetic document (stand alone image, video, etc.).
+    
     context.inSyntheticDoc = context.target.ownerDocument.mozSyntheticDocument;
 
     context.shouldInitInlineSpellCheckerUINoChildren = false;
@@ -872,14 +874,14 @@ export class ContextMenuChild extends JSWindowActorChild {
     this._setContextForNodesWithChildren(editFlags);
 
     this.lastMenuTarget = {
-      // Remember the node for extensions.
+      
       targetRef: Cu.getWeakReference(node),
-      // The timestamp is used to verify that the target wasn't changed since the observed menu event.
+      
       timeStamp: context.timeStamp,
     };
 
     if (isAboutDevtoolsToolbox) {
-      // Setup the menu items on text input in about:devtools-toolbox.
+      
       context.inAboutDevtoolsToolbox = true;
       context.canSpellCheck = false;
       context.inTabBrowser = false;
@@ -889,31 +891,31 @@ export class ContextMenuChild extends JSWindowActorChild {
     }
   }
 
-  /**
-   * Sets up the parts of the context menu for when when nodes have no children.
-   *
-   * @param {Integer} editFlags The edit flags for the node. See SpellCheckHelper
-   *                            for the details.
-   */
+  
+
+
+
+
+
   _setContextForNodesNoChildren(editFlags) {
     const context = this.context;
 
     if (context.target.nodeType == context.target.TEXT_NODE) {
-      // For text nodes, look at the parent node to determine the spellcheck attribute.
+      
       context.canSpellCheck =
         context.target.parentNode && this._isSpellCheckEnabled(context.target);
       return;
     }
 
-    // We only deal with TEXT_NODE and ELEMENT_NODE in this function, so return
-    // early if we don't have one.
+    
+    
     if (context.target.nodeType != context.target.ELEMENT_NODE) {
       return;
     }
 
-    // See if the user clicked on an image. This check mirrors
-    // nsDocumentViewer::GetInImage. Make sure to update both if this is
-    // changed.
+    
+    
+    
     if (
       context.target instanceof Ci.nsIImageLoadingContent &&
       (context.target.currentRequestFinalURI || context.target.currentURI)
@@ -953,8 +955,8 @@ export class ContextMenuChild extends JSWindowActorChild {
         context.onCompletedImage = true;
       }
 
-      // The URL of the image before redirects is the currentURI.  This is
-      // intended to be used for "Copy Image Link".
+      
+      
       context.originalMediaURL = (() => {
         let currentURI = context.target.currentURI?.spec;
         if (currentURI && this._isMediaURLReusable(currentURI)) {
@@ -963,13 +965,13 @@ export class ContextMenuChild extends JSWindowActorChild {
         return "";
       })();
 
-      // The actual URL the image was loaded from (after redirects) is the
-      // currentRequestFinalURI.  We should use that as the URL for purposes of
-      // deciding on the filename, if it is present. It might not be present
-      // if images are blocked.
-      //
-      // It is important to check both the final and the current URI, as they
-      // could be different blob URIs, see bug 1625786.
+      
+      
+      
+      
+      
+      
+      
       context.mediaURL = (() => {
         let finalURI = context.target.currentRequestFinalURI?.spec;
         if (finalURI && this._isMediaURLReusable(finalURI)) {
@@ -1009,9 +1011,9 @@ export class ContextMenuChild extends JSWindowActorChild {
         context.onPiPVideo = true;
       }
 
-      // Firefox always creates a HTMLVideoElement when loading an ogg file
-      // directly. If the media is actually audio, be smarter and provide a
-      // context menu with audio operations.
+      
+      
+      
       if (
         context.target.readyState >= context.target.HAVE_METADATA &&
         (context.target.videoWidth == 0 || context.target.videoHeight == 0)
@@ -1053,8 +1055,8 @@ export class ContextMenuChild extends JSWindowActorChild {
       context.onSpellcheckable =
         (editFlags & lazy.SpellCheckHelper.SPELLCHECKABLE) !== 0;
 
-      // This is guaranteed to be an input or textarea because of the condition above,
-      // so the no-children flag is always correct. We deal with contenteditable elsewhere.
+      
+      
       if (context.onSpellcheckable) {
         context.shouldInitInlineSpellCheckerUINoChildren = true;
       }
@@ -1083,28 +1085,28 @@ export class ContextMenuChild extends JSWindowActorChild {
     context.canSpellCheck = this._isSpellCheckEnabled(context.target);
   }
 
-  /**
-   * Sets up the parts of the context menu for when when nodes have children.
-   *
-   * @param {Integer} editFlags The edit flags for the node. See SpellCheckHelper
-   *                            for the details.
-   */
+  
+
+
+
+
+
   _setContextForNodesWithChildren(editFlags) {
     const context = this.context;
 
-    // Second, bubble out, looking for items of interest that can have childen.
-    // Always pick the innermost link, background image, etc.
+    
+    
     let elem = context.target;
 
     while (elem) {
       if (elem.nodeType == elem.ELEMENT_NODE) {
-        // Link?
+        
         const XLINK_NS = "http://www.w3.org/1999/xlink";
 
         if (
           !context.onLink &&
-          // Be consistent with what hrefAndLinkNodeForClickEvent
-          // does in browser.js
+          
+          
           (this._isXULTextLinkLabel(elem) ||
             (this.contentWindow.HTMLAnchorElement.isInstance(elem) &&
               elem.href) ||
@@ -1115,10 +1117,10 @@ export class ContextMenuChild extends JSWindowActorChild {
             this.contentWindow.HTMLLinkElement.isInstance(elem) ||
             elem.getAttributeNS(XLINK_NS, "type") == "simple")
         ) {
-          // Target is a link or a descendant of a link.
+          
           context.onLink = true;
 
-          // Remember corresponding element.
+          
           context.link = elem;
           context.linkURL = this._getLinkURL();
           context.linkURI = this._getLinkURI();
@@ -1136,7 +1138,7 @@ export class ContextMenuChild extends JSWindowActorChild {
 
           try {
             if (elem.download) {
-              // Ignore download attribute on cross-origin links
+              
               context.target.ownerDocument.nodePrincipal.checkMayLoad(
                 context.linkURI,
                 true
@@ -1146,9 +1148,9 @@ export class ContextMenuChild extends JSWindowActorChild {
           } catch (ex) {}
         }
 
-        // Background image?  Don't bother if we've already found a
-        // background image further down the hierarchy.  Otherwise,
-        // we look for the computed background-image style.
+        
+        
+        
         if (!context.hasBGImage && !context.hasMultipleBGImages) {
           let bgImgUrl = null;
 
@@ -1169,7 +1171,7 @@ export class ContextMenuChild extends JSWindowActorChild {
       elem = elem.flattenedTreeParentNode;
     }
 
-    // See if the user clicked in a frame.
+    
     const docDefaultView = context.target.ownerGlobal;
 
     if (docDefaultView != docDefaultView.top) {
@@ -1180,11 +1182,11 @@ export class ContextMenuChild extends JSWindowActorChild {
       }
     }
 
-    // if the document is editable, show context menu like in text inputs
+    
     if (!context.onEditable) {
       if (editFlags & lazy.SpellCheckHelper.CONTENTEDITABLE) {
-        // If this.onEditable is false but editFlags is CONTENTEDITABLE, then
-        // the document itself must be editable.
+        
+        
         context.onTextInput = true;
         context.onImage = false;
         context.onLoadedImage = false;

@@ -2,6 +2,7 @@
 
 
 
+
 document.addEventListener(
   "MozBeforeInitialXULLayout",
   () => {

@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const REFERENCE_DATE = Date.now();

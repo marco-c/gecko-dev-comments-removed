@@ -1,6 +1,8 @@
 
 
 
+
+
 registerCleanupFunction(async function () {
   await task_resetState();
   await PlacesUtils.history.clear();

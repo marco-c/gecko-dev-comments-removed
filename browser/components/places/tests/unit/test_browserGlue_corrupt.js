@@ -7,6 +7,8 @@
 
 
 
+
+
 function run_test() {
   
   create_bookmarks_html("bookmarks.glue.html");

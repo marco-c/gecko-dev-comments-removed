@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 function testHiDpiImage(button, images1x, images2x, prop) {

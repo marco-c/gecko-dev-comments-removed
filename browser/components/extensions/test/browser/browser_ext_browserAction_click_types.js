@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 async function test_clickData({ manifest_version, persistent }) {

@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_BrowserDefines_h
 #define mozilla_BrowserDefines_h
 

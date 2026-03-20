@@ -2,6 +2,7 @@
 
 
 
+
 ChromeUtils.defineESModuleGetters(this, {
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",

@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function webNavigation_getFrameId_of_existing_main_frame() {

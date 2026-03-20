@@ -2,6 +2,7 @@
 
 
 
+
 var PointerlockFsWarning = {
   _element: null,
   _origin: null,

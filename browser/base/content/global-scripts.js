@@ -12,6 +12,7 @@
 
 
 
+
 {
   Services.scriptloader.loadSubScript("chrome://browser/content/browser.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/places/browserPlacesViews.js", this);

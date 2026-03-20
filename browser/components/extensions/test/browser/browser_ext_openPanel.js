@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function test_openPopup_requires_user_interaction() {

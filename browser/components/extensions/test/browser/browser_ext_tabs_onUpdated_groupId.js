@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function onUpdated_when_grouping_and_ungrouping() {

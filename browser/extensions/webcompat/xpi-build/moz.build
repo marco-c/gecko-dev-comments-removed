@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files("**"):
     BUG_COMPONENT = ("Web Compatibility", "Tooling & Investigations")
@@ -10,9 +12,9 @@ XPI_PKGNAME = "webcompat@mozilla.org"
 
 DIST_SUBDIR = ""
 
-# NOTE: Please keep the files listed in here in sync with the ones listed in
-# ../jar.mn, as this ensures that the XPI generated at build time
-# shares the same structure as the built-in instance. (bug 1955994)
+
+
+
 
 FINAL_TARGET_FILES += [
     "../manifest.json",

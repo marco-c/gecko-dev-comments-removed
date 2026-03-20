@@ -6,6 +6,7 @@
 
 
 
+
 const proxyService = Ci.nsIProtocolProxyService;
 
 const PROXY_TYPES_MAP_REVERSE = new Map([

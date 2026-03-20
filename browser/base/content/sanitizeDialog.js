@@ -4,6 +4,7 @@
 
 
 
+
 var { Sanitizer } = ChromeUtils.importESModule(
   "resource:///modules/Sanitizer.sys.mjs"
 );

@@ -1,3 +1,6 @@
+
+
+
 const TEST_FILE = fileURL("dummy_page.html");
 const TEST_HTTP = httpURL("tab_that_closes.html");
 

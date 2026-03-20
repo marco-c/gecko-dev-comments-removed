@@ -2,6 +2,8 @@
 
 
 
+
+
 const PREF_MSTONE = "browser.startup.homepage_override.mstone";
 const PREF_OVERRIDE_URL = "startup.homepage_override_url";
 

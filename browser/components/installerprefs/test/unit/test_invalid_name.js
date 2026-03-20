@@ -6,6 +6,7 @@
 
 
 
+
 add_task(function () {
   const PREFS_LIST = [
     "the.wrong.branch",

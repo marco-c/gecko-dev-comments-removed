@@ -2,6 +2,7 @@
 
 
 
+
 #include "nsXULAppAPI.h"
 #include "mozilla/XREAppData.h"
 #include "XREChildData.h"

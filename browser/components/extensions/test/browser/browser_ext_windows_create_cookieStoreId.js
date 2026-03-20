@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function no_cookies_permission() {

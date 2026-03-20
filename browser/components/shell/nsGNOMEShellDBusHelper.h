@@ -2,6 +2,9 @@
 
 
 
+
+
+
 #ifndef _nsGNOMEShellDBusHelper_h_
 #define _nsGNOMEShellDBusHelper_h_
 
