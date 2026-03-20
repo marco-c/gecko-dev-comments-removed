@@ -170,7 +170,8 @@ fp-certerror-hide-advanced-button = Hide advanced
 ## Variables:
 ##   $hostname (String) - Hostname of the website to which the user was trying to connect.
 
-fp-certerror-override-exception-button = Proceed to { $hostname } (Risky)
+fp-certerror-override-exception-button-2 = Proceed to { $hostname } (Risky)
+    .accesskey = P
 fp-certerror-intro = { -brand-short-name } spotted a potentially serious security issue with <strong>{ $hostname }</strong>. Someone pretending to be the site could try to steal things like credit card info, passwords, or emails.
 fp-certerror-expired-into = { -brand-short-name } spotted a security issue with <strong>{ $hostname }</strong>. Either the site isn’t set up right or your device’s clock is set to the wrong date/time.
 fp-certerror-transparency-intro = Someone pretending to be <strong>{ $hostname }</strong> could try to steal things like credit card info, passwords, or emails.
@@ -178,7 +179,8 @@ fp-certerror-transparency-intro = Someone pretending to be <strong>{ $hostname }
 ##
 
 fp-certerror-view-certificate-link = View the site’s certificate
-fp-certerror-return-to-previous-page-recommended-button = Go back (Recommended)
+fp-certerror-return-to-previous-page-recommended-button-2 = Go back (Recommended)
+    .accesskey = G
 
 # This string appears after the following string: "What makes the site look dangerous?" (fp-certerror-why-site-dangerous)
 # Variables:
@@ -257,3 +259,8 @@ fp-certerror-pkix-not-yet-valid-why-dangerous-body = { -brand-short-name } doesn
 # Variables:
 #   $date (Date) - Device's clock date.
 fp-certerror-pkix-not-yet-valid-what-can-you-do-body = Your device’s clock is set to { DATETIME($date, timeStyle: "short") } { DATETIME($date, month: "numeric", day: "numeric", year: "numeric") }. If this is correct, the security issue is probably with the site itself. If it’s wrong, you can change it in your device’s system settings.
+
+# This string appears after the following string: "What makes the site look dangerous?" (fp-certerror-why-site-dangerous)
+# Variables:
+#   $hostname (String) - Hostname of the website to which the user was trying to connect.
+fp-certerror-invalid-cert-why-dangerous = The owner of { $hostname } hasn’t set it up properly and a secure connection can’t be created.
