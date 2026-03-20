@@ -6,6 +6,7 @@
 
 use crate::counter_style::{parse_counter_style_body, parse_counter_style_name_definition};
 use crate::custom_properties::parse_name as parse_custom_property_name;
+use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 use crate::font_face::parse_font_face_block;
 use crate::media_queries::MediaList;
@@ -26,18 +27,19 @@ use crate::stylesheets::layer_rule::{LayerBlockRule, LayerName, LayerStatementRu
 use crate::stylesheets::scope_rule::{ScopeBounds, ScopeRule};
 use crate::stylesheets::supports_rule::SupportsCondition;
 use crate::stylesheets::{
-    AllowImportRules, CorsMode, CssRule, CssRuleType, CssRuleTypes, CssRules, CustomMediaCondition,
-    CustomMediaRule, DocumentRule, FontFeatureValuesRule, FontPaletteValuesRule, KeyframesRule,
-    MarginRule, MarginRuleType, MediaRule, NamespaceRule, NestedDeclarationsRule, PageRule,
-    PageSelectors, PositionTryRule, RulesMutateError, StartingStyleRule, StyleRule,
-    StylesheetLoader, SupportsRule,
+    AllowImportRules, AppearanceBaseRule, CorsMode, CssRule, CssRuleType, CssRuleTypes, CssRules,
+    CustomMediaCondition, CustomMediaRule, DocumentRule, FontFeatureValuesRule,
+    FontPaletteValuesRule, KeyframesRule, MarginRule, MarginRuleType, MediaRule, NamespaceRule,
+    NestedDeclarationsRule, PageRule, PageSelectors, PositionTryRule, RulesMutateError,
+    StartingStyleRule, StyleRule, StylesheetLoader, SupportsRule,
 };
 use crate::values::computed::font::FamilyName;
 use crate::values::{CssUrl, CustomIdent, DashedIdent, KeyframesName};
 use crate::{Atom, Namespace, Prefix};
 use cssparser::{
-    AtRuleParser, BasicParseError, BasicParseErrorKind, CowRcStr, DeclarationParser, Parser,
-    ParserState, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourcePosition,
+    match_ignore_ascii_case, AtRuleParser, BasicParseError, BasicParseErrorKind, CowRcStr,
+    DeclarationParser, Parser, ParserState, QualifiedRuleParser, RuleBodyItemParser,
+    RuleBodyParser, SourcePosition,
 };
 use selectors::parser::{ParseRelative, SelectorList};
 use servo_arc::Arc;
@@ -285,6 +287,8 @@ pub enum AtRulePrelude {
     
     StartingStyle,
     
+    AppearanceBase,
+    
     PositionTry(DashedIdent),
     
     CustomMedia(DashedIdent, CustomMediaCondition),
@@ -311,6 +315,7 @@ impl AtRulePrelude {
             Self::Layer(..) => "layer",
             Self::Scope(..) => "scope",
             Self::StartingStyle => "starting-style",
+            Self::AppearanceBase => "appearance-base",
             Self::PositionTry(..) => "position-try",
         }
     }
@@ -527,7 +532,8 @@ impl<'a, 'i> NestedRuleParser<'a, 'i> {
             | AtRulePrelude::Layer(..)
             | AtRulePrelude::CustomMedia(..)
             | AtRulePrelude::Scope(..)
-            | AtRulePrelude::StartingStyle => true,
+            | AtRulePrelude::StartingStyle
+            | AtRulePrelude::AppearanceBase => true,
 
             AtRulePrelude::Namespace(..)
             | AtRulePrelude::FontFace
@@ -771,6 +777,11 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
             "starting-style" if static_prefs::pref!("layout.css.starting-style-at-rules.enabled") => {
                 AtRulePrelude::StartingStyle
             },
+            "appearance-base" if self.context.chrome_rules_enabled() => {
+                // We allow parsing this in chrome sheets mostly just so that
+                // browser_parsable_css.js checks UA sheets properly.
+                AtRulePrelude::AppearanceBase
+            },
             "position-try" if static_prefs::pref!("layout.css.anchor-positioning.enabled") => {
                 let name = DashedIdent::parse(&self.context, input)?;
                 AtRulePrelude::PositionTry(name)
@@ -946,6 +957,12 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
                 rules: self.parse_nested_rules(input, CssRuleType::StartingStyle),
                 source_location,
             })),
+            AtRulePrelude::AppearanceBase => {
+                CssRule::AppearanceBase(Arc::new(AppearanceBaseRule {
+                    rules: self.parse_nested_rules(input, CssRuleType::AppearanceBase),
+                    source_location,
+                }))
+            },
             AtRulePrelude::PositionTry(name) => {
                 let declarations = self.nest_for_rule(CssRuleType::PositionTry, |p| {
                     parse_property_declaration_list(&p.context, input, &[])
