@@ -370,15 +370,8 @@ function init_all() {
   gMainPane.preInit();
 
   let categories = document.getElementById("categories");
-  categories.addEventListener("select", event => gotoPref(event.target.value));
-
-  document.documentElement.addEventListener("keydown", function (event) {
-    if (event.keyCode == KeyEvent.DOM_VK_TAB) {
-      categories.setAttribute("keyboard-navigation", "true");
-    }
-  });
-  categories.addEventListener("mousedown", function () {
-    this.removeAttribute("keyboard-navigation");
+  categories.addEventListener("change-view", event => {
+    gotoPref(event.target.view);
   });
 
   maybeDisplayPoliciesNotice();
@@ -464,12 +457,16 @@ async function gotoPref(
     }
 
     item =  (
-      categories.querySelector(".category[value=" + CSS.escape(category) + "]")
+      categories.querySelector(
+        'moz-page-nav-button[view="' + CSS.escape(category) + '"]'
+      )
     );
     if (!item || item.hidden) {
       unknownCategory = true;
       category = kDefaultCategoryInternalName;
-      item = categories.querySelector(".category[value=" + category + "]");
+      item = categories.querySelector(
+        'moz-page-nav-button[view="' + category + '"]'
+      );
     }
   }
 
@@ -497,13 +494,7 @@ async function gotoPref(
   
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
-  if (item) {
-    
-    categories.selectedItem = item;
-  } else {
-    
-    categories.clearSelection();
-  }
+  categories.currentView = item ? item.getAttribute("view") : category;
   window.history.replaceState(category, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
@@ -544,14 +535,6 @@ async function gotoPref(
   if (!categoryModule.handleSubcategory?.(subcategory)) {
     spotlight(subcategory, category);
   }
-
-  
-  
-  
-  
-  
-  
-  categoryModule.handlePrefControlledSection?.();
 
   
   let gleanId =  (
@@ -751,25 +734,11 @@ function appendSearchKeywords(aId, keywords) {
   element.setAttribute("searchkeywords", keywords.join(" "));
 }
 
-async function ensureScrollPadding() {
-  let stickyContainer = document.querySelector(".sticky-container");
-  let height = await window.browsingContext.topChromeWindow
-    .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(console.error); 
-
-  
-  
-  
-  
-  height += 8;
-  stickyContainer
-    .closest(".main-content")
-    .style.setProperty("scroll-padding-top", height + "px");
-}
-
 function maybeDisplayPoliciesNotice() {
   if (Services.policies.status == Services.policies.ACTIVE) {
     document.getElementById("policies-container").removeAttribute("hidden");
+    document
+      .getElementById("policies-container-content")
+      .removeAttribute("hidden");
   }
-  ensureScrollPadding();
 }
