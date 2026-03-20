@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_parser_PrototypeDocumentParser_h
 #define mozilla_parser_PrototypeDocumentParser_h
 

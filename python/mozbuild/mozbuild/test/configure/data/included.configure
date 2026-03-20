@@ -1,9 +1,11 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-# For more complex and repetitive things, we can create templates
+
+
+
+
+
+
 @template
 def check_compiler_flag(flag):
     @depends(is_gcc)
@@ -18,7 +20,7 @@ def check_compiler_flag(flag):
 check_compiler_flag("-Werror=foobar")
 
 
-# Normal functions can be used in @depends functions.
+
 def fortytwo():
     return 42
 
@@ -46,7 +48,7 @@ def check(value):
 set_config("TEMPLATE_VALUE_2", check)
 
 
-# Normal functions can use @imports too to import modules.
+
 @imports("sys")
 def platform():
     return sys.platform

@@ -1,5 +1,6 @@
-# Any copyright is dedicated to the Public Domain.
-# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+
 
 LOCALIZED_GENERATED_FILES += ["foo.xyz"]
 
@@ -10,5 +11,5 @@ foo.inputs = [
     "non-localized-input",
 ]
 
-# Also check that using it in LOCALIZED_FILES does the right thing.
+
 LOCALIZED_FILES += ["!foo.xyz"]

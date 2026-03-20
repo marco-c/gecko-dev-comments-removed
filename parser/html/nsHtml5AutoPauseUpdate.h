@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef nsHtml5AutoPauseUpdate_h
 #define nsHtml5AutoPauseUpdate_h
 

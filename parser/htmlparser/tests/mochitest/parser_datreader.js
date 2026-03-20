@@ -12,6 +12,7 @@
 
 
 
+
 function log() {}
 
 function startsWith(s, s2) {

@@ -3,6 +3,7 @@
 
 
 
+
 import yaml
 
 from mozbuild.repackaging.desktop_file import generate_browser_desktop_entry

@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "PrototypeDocumentParser.h"
 
 #include "nsXULPrototypeCache.h"

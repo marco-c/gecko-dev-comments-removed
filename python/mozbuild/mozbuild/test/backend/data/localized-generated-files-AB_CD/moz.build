@@ -1,5 +1,6 @@
-# Any copyright is dedicated to the Public Domain.
-# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+
 
 LOCALIZED_GENERATED_FILES += ["foo{AB_CD}.xyz"]
 
@@ -15,7 +16,7 @@ LOCALIZED_GENERATED_FILES += ["bar{AB_rCD}.xyz"]
 bar = LOCALIZED_GENERATED_FILES["bar{AB_rCD}.xyz"]
 bar.script = "generate-foo.py"
 bar.inputs = [
-    # Absolute source path.
+    
     "/inner/locales/en-US/localized-input",
     "non-localized-input",
 ]
@@ -25,7 +26,7 @@ LOCALIZED_GENERATED_FILES += ["zot{AB_rCD}.xyz"]
 bar = LOCALIZED_GENERATED_FILES["zot{AB_rCD}.xyz"]
 bar.script = "generate-foo.py"
 bar.inputs = [
-    # Relative source path.
+    
     "locales/en-US/localized-input",
     "non-localized-input",
 ]
