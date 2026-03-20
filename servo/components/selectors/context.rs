@@ -72,6 +72,20 @@ impl VisitedHandlingMode {
 
 
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
+pub enum IncludeStartingStyle {
+    
+    
+    #[default]
+    No,
+    
+    
+    
+    Yes,
+}
+
+
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum NeedsSelectorFlags {
     No,

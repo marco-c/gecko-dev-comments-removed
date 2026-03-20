@@ -32,11 +32,6 @@ fn grid_enabled() -> bool {
 }
 
 #[inline]
-fn appearance_base_enabled(_context: &ParserContext) -> bool {
-    static_prefs::pref!("layout.css.appearance-base.enabled")
-}
-
-#[inline]
 fn appearance_base_select_enabled(_context: &ParserContext) -> bool {
     static_prefs::pref!("dom.select.customizable_select.enabled")
 }
@@ -1692,9 +1687,6 @@ pub enum Appearance {
     Textfield,
     
     MenulistButton,
-    
-    #[parse(condition = "appearance_base_enabled")]
-    Base,
     
     
     #[parse(condition = "appearance_base_select_enabled")]
