@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLMediaElement.h"
 
 #include <algorithm>
@@ -8077,6 +8075,7 @@ void HTMLMediaElement::NotifyAboutPlaying() {
   
   
   QueueEvent(u"playing"_ns);
+  StartMediaControlKeyListenerIfNeeded();
 }
 
 already_AddRefed<PlayPromise> HTMLMediaElement::CreatePlayPromise(
