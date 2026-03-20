@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozInlineSpellWordUtil.h"
 
 #include <algorithm>

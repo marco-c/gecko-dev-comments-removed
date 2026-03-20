@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozHunspellRLBoxHost_h
 #define mozHunspellRLBoxHost_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PermissionManager_h
 #define mozilla_PermissionManager_h
 

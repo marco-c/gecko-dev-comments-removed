@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozHunspellAllocator_h_
 #define mozHunspellAllocator_h_
 

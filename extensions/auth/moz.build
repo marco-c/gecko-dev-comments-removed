@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 UNIFIED_SOURCES += [
     "nsAuthGSSAPI.cpp",
@@ -10,8 +8,8 @@ UNIFIED_SOURCES += [
 
 SOURCES += [
     "nsAuthSASL.cpp",
-    "nsHttpNegotiateAuth.cpp",  
-    "nsIAuthModule.cpp",  
+    "nsHttpNegotiateAuth.cpp",  # contains constants whose names conflict with constants in other files
+    "nsIAuthModule.cpp",  # includes windows.h recursively which conflicts with TimeStamp.h
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -25,7 +23,7 @@ else:
     ]
 
 LOCAL_INCLUDES += [
-    "/netwerk/dns",  
+    "/netwerk/dns",  # For nsDNSService2.h
     "/security/manager/ssl",
 ]
 

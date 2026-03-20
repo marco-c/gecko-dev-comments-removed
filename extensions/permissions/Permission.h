@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_Permission_h
 #define mozilla_Permission_h
 

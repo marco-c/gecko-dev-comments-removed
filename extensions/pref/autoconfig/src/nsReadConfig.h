@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsReadConfig_h
 #define nsReadConfig_h
 

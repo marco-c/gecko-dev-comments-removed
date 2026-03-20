@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozPersonalDictionary_h_
 #define mozPersonalDictionary_h_
 

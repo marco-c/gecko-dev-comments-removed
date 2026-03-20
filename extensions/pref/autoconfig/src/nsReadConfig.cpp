@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsReadConfig.h"
 #include "nsJSConfigTriggers.h"
 

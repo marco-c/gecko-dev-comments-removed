@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_mozInlineSpellChecker_h
 #define mozilla_mozInlineSpellChecker_h
 

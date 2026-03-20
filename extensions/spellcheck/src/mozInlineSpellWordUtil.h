@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozInlineSpellWordUtil_h
 #define mozInlineSpellWordUtil_h
 

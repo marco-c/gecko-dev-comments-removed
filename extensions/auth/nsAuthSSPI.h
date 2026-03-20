@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAuthSSPI_h_
 #define nsAuthSSPI_h_
 

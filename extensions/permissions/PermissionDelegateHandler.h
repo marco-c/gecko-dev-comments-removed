@@ -21,8 +21,6 @@
 
 
 
-
-
 #ifndef mozilla_PermissionDelegateHandler_h
 #define mozilla_PermissionDelegateHandler_h
 

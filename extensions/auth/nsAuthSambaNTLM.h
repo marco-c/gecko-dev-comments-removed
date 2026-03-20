@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAuthSambaNTLM_h_
 #define nsAuthSambaNTLM_h_
 

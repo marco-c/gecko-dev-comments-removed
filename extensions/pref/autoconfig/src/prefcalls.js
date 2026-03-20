@@ -5,7 +5,6 @@
 
 
 
-
 const LDAPSyncQueryContractID = "@mozilla.org/ldapsyncquery;1";
 
 var gIsUTF8;

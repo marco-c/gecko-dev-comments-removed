@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsConfigTriggers_h
 #define nsConfigTriggers_h
 

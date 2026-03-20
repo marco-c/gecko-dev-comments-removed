@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Permission.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIEffectiveTLDService.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNativeCharsetUtils.h"
 #include "nsIPrefService.h"
 #include "nsServiceManagerUtils.h"

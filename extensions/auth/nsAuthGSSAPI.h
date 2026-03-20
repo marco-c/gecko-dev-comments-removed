@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAuthGSSAPI_h_
 #define nsAuthGSSAPI_h_
 

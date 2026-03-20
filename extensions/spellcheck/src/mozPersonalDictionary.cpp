@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozPersonalDictionary.h"
 
 #include <utility>

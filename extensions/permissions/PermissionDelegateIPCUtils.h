@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_permissiondelegateipcutils_h
 #define mozilla_permissiondelegateipcutils_h
 

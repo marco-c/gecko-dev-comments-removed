@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpNegotiateAuth_h_
 #define nsHttpNegotiateAuth_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozSpellChecker.h"
 #include "nsIStringEnumerator.h"
 #include "nsICategoryManager.h"

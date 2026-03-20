@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Assertions.h"
 #include "RLBoxHunspell.h"
 #include "mozHunspellRLBoxGlue.h"

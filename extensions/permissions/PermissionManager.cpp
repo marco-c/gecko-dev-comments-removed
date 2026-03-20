@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ErrorList.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AppShutdown.h"

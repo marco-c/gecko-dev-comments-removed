@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsAutoConfig.h"
 #include "nsJSConfigTriggers.h"
 

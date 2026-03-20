@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsJSConfigTriggers.h"
 
 #include "jsapi.h"

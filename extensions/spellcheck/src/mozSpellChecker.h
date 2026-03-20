@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozSpellChecker_h_
 #define mozSpellChecker_h_
 

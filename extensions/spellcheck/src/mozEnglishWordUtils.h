@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozEnglishWordUtils_h_
 #define mozEnglishWordUtils_h_
 

@@ -67,8 +67,6 @@
 
 
 
-
-
 #include "hunspell_csutil.hxx"
 #include "mozilla/Encoding.h"
 #include "mozilla/Span.h"

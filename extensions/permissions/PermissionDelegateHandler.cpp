@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/PermissionDelegateHandler.h"
 
 #include "nsPIDOMWindow.h"

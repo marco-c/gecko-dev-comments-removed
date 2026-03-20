@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <limits>
 
 #include "mozHunspellRLBoxHost.h"
