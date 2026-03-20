@@ -100,7 +100,7 @@ class UnboundedMPSCQueue {
       return false;
     }
 
-    *aOutput = next->data;
+    *aOutput = std::move(next->data);
 
     
     
