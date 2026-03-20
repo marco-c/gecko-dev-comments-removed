@@ -592,6 +592,12 @@ async function testOpenPDFPreview({
           );
         });
         itemTarget = listbox.itemChildren[0];
+        
+        
+        
+        
+        
+        await itemTarget._shell.download.refresh();
         contextMenu = uiWindow.document.querySelector("#downloadsContextMenu");
 
         break;
@@ -645,9 +651,7 @@ async function testOpenPDFPreview({
         info("waiting for downloadsLoaded");
         await downloadsLoaded;
 
-        
-        
-        await ContentTask.spawn(
+        await SpecialPowers.spawn(
           browser,
           [expected.downloadCount],
           async function awaitListItems(expectedCount) {
