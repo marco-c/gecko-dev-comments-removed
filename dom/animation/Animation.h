@@ -17,6 +17,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PostRestyleMode.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/TimeStamp.h"             
 #include "mozilla/dom/AnimationBinding.h"  

@@ -11,7 +11,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/ServoBindings.h"
 #include "nsAtom.h"
 #include "nsCSSProps.h"
 #include "nsString.h"
@@ -36,7 +35,7 @@ struct CSSPropertyId {
   
   
   static CSSPropertyId FromCustomName(RefPtr<nsAtom> aCustomName) {
-    return CSSPropertyId(aCustomName);
+    return CSSPropertyId(std::move(aCustomName));
   }
 
   static CSSPropertyId FromCustomProperty(const nsACString& aCustomProperty) {

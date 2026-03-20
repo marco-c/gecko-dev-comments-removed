@@ -5,8 +5,7 @@
 
 
 #include "HeadlessLookAndFeel.h"
-#include "mozilla/FontPropertyTypes.h"
-#include "nsIContent.h"
+#include "nsStyleConsts.h"
 
 namespace mozilla::widget {
 

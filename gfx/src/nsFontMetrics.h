@@ -2,20 +2,16 @@
 
 
 
-
 #ifndef NSFONTMETRICS_H_
 #define NSFONTMETRICS_H_
 
 #include <stdint.h>          
 #include <sys/types.h>       
 #include "mozilla/RefPtr.h"  
-#include "nsCOMPtr.h"        
 #include "nsCoord.h"         
-#include "nsError.h"         
 #include "nsFont.h"          
 #include "nsISupports.h"     
-#include "nsStyleConsts.h"
-#include "nscore.h"  
+#include "nscore.h"          
 
 class gfxContext;
 class gfxFontGroup;
@@ -26,6 +22,7 @@ class nsAtom;
 struct nsBoundingMetrics;
 
 namespace mozilla {
+enum class StyleTextOrientation : uint8_t;
 namespace gfx {
 class DrawTarget;
 }  
