@@ -14,14 +14,10 @@ add_task(async function () {
   await testSourcesOnNavigation();
   await testDebuggerPauseStateOnNavigation();
 
-  
-  
-  if (Services.appinfo.sessionHistoryInParent) {
-    info("Run test with bfcacheInParent ENABLED");
-    await pushPref("fission.bfcacheInParent", true);
-    await testSourcesOnNavigation();
-    await testDebuggerPauseStateOnNavigation();
-  }
+  info("Run test with bfcacheInParent ENABLED");
+  await pushPref("fission.bfcacheInParent", true);
+  await testSourcesOnNavigation();
+  await testDebuggerPauseStateOnNavigation();
 });
 
 async function testSourcesOnNavigation() {

@@ -168,10 +168,7 @@ add_task(async function test_extension_page_sameprocess_navigation() {
     );
   });
 
-  if (
-    Services.appinfo.sessionHistoryInParent &&
-    WebExtensionPolicy.isExtensionProcess
-  ) {
+  if (WebExtensionPolicy.isExtensionProcess) {
     
     
     
@@ -296,7 +293,7 @@ add_task(async function test_extension_page_context_navigated_to_web_page() {
     
     
     equal(active, undefined, "extension page context should not exist anymore");
-  } else if (Services.appinfo.sessionHistoryInParent) {
+  } else {
     
     
     
@@ -305,10 +302,6 @@ add_task(async function test_extension_page_context_navigated_to_web_page() {
       false,
       "extension page context is expected to be inactive while moved into the BFCache"
     );
-  } else {
-    
-    
-    equal(active, undefined, "extension page context should not exist anymore");
   }
 
   if (active === false) {

@@ -1099,18 +1099,6 @@ add_task(
       },
     ];
 
-    if (!Services.appinfo.sessionHistoryInParent) {
-      
-      
-      
-      
-      
-      
-      rules[0].condition.requestMethods = ["get"];
-      rules[0].condition.urlFilter = "do_post|";
-      info(`WARNING: SHIP is disabled. POST will be misinterpreted as GET`);
-    }
-
     const extension = await loadExtensionWithDNRRules(rules);
 
     const contentPage = await ExtensionTestUtils.loadContentPage(

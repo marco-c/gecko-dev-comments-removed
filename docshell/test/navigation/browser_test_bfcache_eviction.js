@@ -16,62 +16,31 @@ add_task(async function () {
     { gBrowser, url: testPage },
     async function (browser) {
       let testDone = {};
-      if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
-        
-        testDone.promise = SpecialPowers.spawn(browser, [], async function () {
-          return new Promise(resolve => {
-            let webNavigation = content.docShell.QueryInterface(
-              Ci.nsIWebNavigation
-            );
-            let { legacySHistory } = webNavigation.sessionHistory;
-            
-            let historyListener = {
-              OnDocumentViewerEvicted() {
-                ok(
-                  true,
-                  "History listener got called after a content viewer was evicted"
-                );
-                legacySHistory.removeSHistoryListener(historyListener);
-                
-                resolve();
-              },
-              QueryInterface: ChromeUtils.generateQI([
-                "nsISHistoryListener",
-                "nsISupportsWeakReference",
-              ]),
-            };
-            legacySHistory.addSHistoryListener(historyListener);
-            
-            content._testListener = historyListener;
-          });
-        });
-      } else {
-        
-        testDone.promise = new Promise(resolve => {
-          testDone.resolve = resolve;
-        });
-        let shistory = browser.browsingContext.sessionHistory;
-        
-        let historyListener = {
-          OnDocumentViewerEvicted() {
-            ok(
-              true,
-              "History listener got called after a content viewer was evicted"
-            );
-            shistory.removeSHistoryListener(historyListener);
-            delete window._testListener;
-            
-            testDone.resolve();
-          },
-          QueryInterface: ChromeUtils.generateQI([
-            "nsISHistoryListener",
-            "nsISupportsWeakReference",
-          ]),
-        };
-        shistory.addSHistoryListener(historyListener);
-        
-        window._testListener = historyListener;
-      }
+      
+      testDone.promise = new Promise(resolve => {
+        testDone.resolve = resolve;
+      });
+      let shistory = browser.browsingContext.sessionHistory;
+      
+      let historyListener = {
+        OnDocumentViewerEvicted() {
+          ok(
+            true,
+            "History listener got called after a content viewer was evicted"
+          );
+          shistory.removeSHistoryListener(historyListener);
+          delete window._testListener;
+          
+          testDone.resolve();
+        },
+        QueryInterface: ChromeUtils.generateQI([
+          "nsISHistoryListener",
+          "nsISupportsWeakReference",
+        ]),
+      };
+      shistory.addSHistoryListener(historyListener);
+      
+      window._testListener = historyListener;
 
       
       testPage = `data:text/html,<html id='html1'><body id='body1'>I am a second tab!</body></html>`;

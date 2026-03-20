@@ -49,12 +49,8 @@ class ParentProcessStorage {
 
     
     
-    loader.lazyGetter(
-      this,
-      "isBfcacheInParentEnabled",
-      () =>
-        Services.appinfo.sessionHistoryInParent &&
-        Services.prefs.getBoolPref("fission.bfcacheInParent", false)
+    loader.lazyGetter(this, "isBfcacheInParentEnabled", () =>
+      Services.prefs.getBoolPref("fission.bfcacheInParent", false)
     );
   }
 
