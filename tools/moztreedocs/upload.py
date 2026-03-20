@@ -2,6 +2,7 @@
 
 
 
+import functools
 import io
 import mimetypes
 import os
@@ -12,10 +13,9 @@ from pprint import pprint
 import boto3
 import botocore
 import requests
-from mozbuild.util import memoize
 
 
-@memoize
+@functools.cache
 def create_aws_session():
     """
     This function creates an aws session that is
@@ -53,7 +53,7 @@ def create_aws_session():
     return s3, bucket
 
 
-@memoize
+@functools.cache
 def get_s3_keys(s3, bucket):
     kwargs = {"Bucket": bucket}
     all_keys = []
@@ -138,7 +138,7 @@ def s3_upload(files, key_prefix=None):
 
     def upload(f, path, bucket, key, extra_args):
         
-        sys.stdout.write("uploading %s to %s\n" % (path, key))
+        sys.stdout.write(f"uploading {path} to {key}\n")
         sys.stdout.flush()
         s3.upload_fileobj(f, bucket, key, ExtraArgs=extra_args)
 
@@ -155,7 +155,7 @@ def s3_upload(files, key_prefix=None):
                 extra_args["ContentEncoding"] = content_encoding
 
             if key_prefix:
-                key = "%s/%s" % (key_prefix, path)
+                key = f"{key_prefix}/{path}"
             else:
                 key = path
 
