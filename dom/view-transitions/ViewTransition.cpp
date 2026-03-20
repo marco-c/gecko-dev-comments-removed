@@ -4,6 +4,7 @@
 
 #include "ViewTransition.h"
 
+#include "AnchorPositioningUtils.h"
 #include "Units.h"
 #include "WindowRenderer.h"
 #include "mozilla/AnimationEventDispatcher.h"
@@ -1857,6 +1858,15 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   }
 
   
+  
+  nsIContent* content = aFrame->GetContent();
+  if (MOZ_UNLIKELY(!content) ||
+      AnchorPositioningUtils::GetShadowRootForTreeScope(*content,
+                                                        computed.scope)) {
+    return nullptr;
+  }
+
+  
   if (computed.value.IsIdent()) {
     return RefPtr<nsAtom>{computed.value.AsIdent().AsAtom()}.forget();
   }
@@ -1876,8 +1886,7 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   
   
   
-  nsIContent* content = aFrame->GetContent();
-  if (MOZ_UNLIKELY(!content || !content->IsElement())) {
+  if (MOZ_UNLIKELY(!content->IsElement())) {
     return nullptr;
   }
 

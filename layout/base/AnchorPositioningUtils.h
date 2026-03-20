@@ -422,6 +422,10 @@ struct AnchorPositioningUtils {
 
   static nsRect ReassembleAnchorRect(const nsIFrame* aAnchor,
                                      const nsIFrame* aContainingBlock);
+
+  
+  static dom::ShadowRoot* GetShadowRootForTreeScope(
+      const nsIContent& aContent, const StyleCascadeLevel& aTreeScope);
 };
 
 }  
