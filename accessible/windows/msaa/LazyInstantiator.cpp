@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LazyInstantiator.h"
 
 #include "MainThreadUtils.h"
@@ -12,7 +10,6 @@
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/mscom/ProcessRuntime.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "MsaaRootAccessible.h"
 #include "nsAccessibilityService.h"

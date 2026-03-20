@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_a11y_AccTypes_h
 #define mozilla_a11y_AccTypes_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Logging.h"
 
 #include "LocalAccessible-inl.h"

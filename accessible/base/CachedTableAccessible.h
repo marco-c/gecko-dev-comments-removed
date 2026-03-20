@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CACHED_TABLE_ACCESSIBLE_H
 #define CACHED_TABLE_ACCESSIBLE_H
 

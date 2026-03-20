@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Compatibility.h"
 
 #include "mozilla/a11y/Platform.h"

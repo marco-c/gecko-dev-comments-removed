@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ApplicationAccessible.h"
 #include "mozilla/Likely.h"
 #include "nsAccessibilityService.h"

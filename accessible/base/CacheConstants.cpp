@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CacheConstants.h"
 #include "nsAccessibilityService.h"
 
@@ -60,10 +58,10 @@ bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains) {
             accService->SetCacheDomains(cacheDomains);
           }
         }));
-    return true;
+#else
+    accService->SetCacheDomains(cacheDomains);
 #endif
 
-    accService->SetCacheDomains(cacheDomains);
     return true;
   }
   return false;

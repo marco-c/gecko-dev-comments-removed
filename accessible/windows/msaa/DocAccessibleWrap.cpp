@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DocAccessibleWrap.h"
 
 #include "Compatibility.h"

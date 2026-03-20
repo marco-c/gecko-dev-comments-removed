@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_a11y_HTMLSelectAccessible_h_
 #define mozilla_a11y_HTMLSelectAccessible_h_
 

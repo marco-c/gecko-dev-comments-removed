@@ -2,7 +2,6 @@
 
 
 
-
 #include "Pivot.h"
 
 #include "AccIterator.h"

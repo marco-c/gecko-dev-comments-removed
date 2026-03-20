@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/a11y/SelectionManager.h"
 
 #include "DocAccessible-inl.h"

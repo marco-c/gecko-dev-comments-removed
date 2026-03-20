@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Platform.h"
 #include "DocAccessibleWrap.h"
 #include "SessionAccessibility.h"

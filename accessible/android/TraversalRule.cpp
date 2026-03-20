@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TraversalRule.h"
 
 #include "mozilla/a11y/Accessible.h"

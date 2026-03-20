@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "chrome/common/ipc_channel.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/a11y/CacheConstants.h"

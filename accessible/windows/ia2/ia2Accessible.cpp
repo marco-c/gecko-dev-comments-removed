@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AccessibleWrap.h"
 
 #include "Accessible2_i.c"
@@ -451,6 +449,17 @@ ia2Accessible::get_attributes(BSTR* aAttributes) {
     
     
     nsAccUtils::SetAccGroupAttrs(attributes, acc);
+  } else if (acc->IsEditableRoot()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<nsAtom> textModel = NS_Atomize("text-model");
+    attributes->SetAttributeStringCopy(textModel, u"a1"_ns);
   }
   return ConvertToIA2Attributes(attributes, aAttributes);
 }

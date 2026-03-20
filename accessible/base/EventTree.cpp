@@ -2,7 +2,6 @@
 
 
 
-
 #include "EventTree.h"
 
 #include "EmbeddedObjCollector.h"
@@ -10,8 +9,6 @@
 #ifdef A11Y_LOG
 #  include "Logging.h"
 #endif
-
-#include "mozilla/UniquePtr.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

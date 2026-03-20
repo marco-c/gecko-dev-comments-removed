@@ -4,7 +4,6 @@
 
 
 
-
 #import "GeckoTextMarker.h"
 
 #import "MacUtils.h"

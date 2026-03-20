@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef ACCESSIBLE_ACTION_H
 #define ACCESSIBLE_ACTION_H
 

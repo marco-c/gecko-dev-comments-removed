@@ -4,7 +4,6 @@
 
 
 
-
 #import "MacUtils.h"
 #include "mozAccessible.h"
 

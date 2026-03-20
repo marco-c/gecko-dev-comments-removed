@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _mozilla_a11y_style_h_
 #define _mozilla_a11y_style_h_
 

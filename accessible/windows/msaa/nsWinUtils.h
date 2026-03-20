@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsWinUtils_h_
 #define nsWinUtils_h_
 

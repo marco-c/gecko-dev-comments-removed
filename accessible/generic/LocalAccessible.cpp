@@ -2,7 +2,6 @@
 
 
 
-
 #include "AccEvent.h"
 #include "LocalAccessible-inl.h"
 
@@ -3333,6 +3332,19 @@ bool LocalAccessible::IsActiveDescendant(LocalAccessible** aWidget) const {
 
 void LocalAccessible::Announce(const nsAString& aAnnouncement,
                                uint16_t aPriority) {
+  
+  
+  if (!mDoc) {
+    return;
+  }
+  dom::Document* docNode = mDoc->DocumentNode();
+  if (!docNode) {
+    return;
+  }
+  dom::BrowsingContext* bc = docNode->GetBrowsingContext();
+  if (!bc || !bc->IsActive()) {
+    return;
+  }
   RefPtr<AccAnnouncementEvent> event =
       new AccAnnouncementEvent(this, aAnnouncement, aPriority);
   nsEventShell::FireEvent(event);

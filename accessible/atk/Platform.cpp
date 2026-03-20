@@ -2,14 +2,11 @@
 
 
 
-
-
 #include "Platform.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/widget/GSettings.h"
 #include "nsIAccessibleEvent.h"
 #include "nsMai.h"
@@ -90,7 +87,7 @@ void a11y::PlatformInit() {
   }
 
   gAtkTableCellGetTypeFunc =
-      (GType(*)())PR_FindFunctionSymbol(sATKLib, "atk_table_cell_get_type");
+      (GType (*)())PR_FindFunctionSymbol(sATKLib, "atk_table_cell_get_type");
 
   const char* (*atkGetVersion)() =
       (const char* (*)())PR_FindFunctionSymbol(sATKLib, "atk_get_version");

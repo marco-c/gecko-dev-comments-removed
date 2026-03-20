@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsTextEquivUtils_H_
 #define _nsTextEquivUtils_H_
 

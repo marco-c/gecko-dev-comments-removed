@@ -2,7 +2,6 @@
 
 
 
-
 #include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "mozilla/a11y/DocManager.h"

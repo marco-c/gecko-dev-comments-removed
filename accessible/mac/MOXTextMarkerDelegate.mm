@@ -4,7 +4,6 @@
 
 
 
-
 #import <Cocoa/Cocoa.h>
 #include "DocAccessible.h"
 

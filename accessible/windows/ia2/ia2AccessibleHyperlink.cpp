@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "ia2AccessibleHyperlink.h"
 
 #include "AccessibleHyperlink.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UiaRoot.h"
 
 #include "MsaaRootAccessible.h"

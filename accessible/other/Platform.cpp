@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Platform.h"
 
 using namespace mozilla;

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef mozilla_a11y_AccessibleWrap_h_
 #define mozilla_a11y_AccessibleWrap_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ISimpleDOM.h"
 
 HRESULT STDMETHODCALLTYPE ISimpleDOMNode_get_localInterface_Proxy(

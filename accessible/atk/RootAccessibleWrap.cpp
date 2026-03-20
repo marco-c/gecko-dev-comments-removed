@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RootAccessibleWrap.h"
 
 #include "atk/atkobject.h"

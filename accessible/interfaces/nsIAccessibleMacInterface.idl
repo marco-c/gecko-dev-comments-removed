@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
 
@@ -13,9 +12,9 @@
 
 native NativeObjectId(id);
 
-
-
-
+/**
+ * A generic NSISupports wrapper for native NSObjects.
+ */
 [scriptable, builtinclass, uuid(4582bb77-de03-4ed1-a9b4-d482d97c0129)]
 interface nsIAccessibleMacNSObjectWrapper : nsISupports
 {
@@ -25,60 +24,60 @@ interface nsIAccessibleMacNSObjectWrapper : nsISupports
 [scriptable, builtinclass, uuid(9d27cf21-66fc-47dc-8a07-98edb18707b1)]
 interface nsIAccessibleMacInterface : nsISupports
 {
-  
-
-
-
+  /**
+   * List of available attribute names for the object.
+   * Emulates `AXUIElementCopyAttributeNames`.
+   */
   readonly attribute Array<AString> attributeNames;
 
-  
-
-
-
+  /**
+   * List of available parameterized attribute names for the object.
+   * Emulates `AXUIElementCopyParameterizedAttributeNames`.
+   */
   readonly attribute Array<AString> parameterizedAttributeNames;
 
-  
-
-
-
+  /**
+   * List of available action names for tthe object.
+   * Emulates `AXUIElementCopyActionNames`.
+   */
   readonly attribute Array<AString> actionNames;
 
-  
-
-
-
+  /**
+   * Returns the value of an attribute.
+   * Emulates `AXUIElementCopyAttributeValue`.
+   */
   [implicit_jscontext]
   jsval getAttributeValue(in AString attributeName);
 
-  
-
-
-
+  /**
+   * Returns the value of an attribute given a name and a parameter.
+   * Emulates `AXUIElementCopyParameterizedAttributeValue`.
+   **/
   [implicit_jscontext]
   jsval getParameterizedAttributeValue(in AString attributeName, in jsval parameter);
 
-  
-
-
-
+  /**
+   * Gets a description of the specified action.
+   * Emulates `AXUIElementCopyActionDescription`.
+   */
   AString getActionDescription(in AString actionName);
 
-  
-
-
-
+  /**
+   * Requests that the accessibility object perform the specified action.
+   * Emulates `AXUIElementPerformAction`.
+   */
   void performAction(in AString actionName);
 
-  
-
-
-
+  /**
+   * Returns true if the given attribute is settable on the object.
+   * Emulates `AXUIElementIsAttributeSettable`.
+   **/
   boolean isAttributeSettable(in AString attributeName);
 
-  
-
-
-
+  /**
+   * Sets the given attribute with the given value on the object.
+   * Emulates `AXUIElementSetAttributeValue`.
+   **/
   [implicit_jscontext]
   void setAttributeValue(in AString attributeName, in jsval attributeValue);
 };

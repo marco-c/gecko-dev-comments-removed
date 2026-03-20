@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NS_MAI_H_
 #define NS_MAI_H_
 

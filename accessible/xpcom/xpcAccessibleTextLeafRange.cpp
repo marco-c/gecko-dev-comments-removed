@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "xpcAccessibleTextLeafRange.h"
 
 #include "nsIAccessible.h"
