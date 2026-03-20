@@ -18,12 +18,6 @@ async function waitForSearchBarFocus() {
   });
 }
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.widget.new", false]],
-  });
-});
-
 
 add_task(async function check_shortcut_when_in_closed_overflow_panel_closed() {
   CustomizableUI.addWidgetToArea(

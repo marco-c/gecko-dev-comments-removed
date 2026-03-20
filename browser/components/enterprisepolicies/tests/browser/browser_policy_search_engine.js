@@ -5,14 +5,13 @@
 ChromeUtils.defineESModuleGetters(this, {
   CustomizableUITestUtils:
     "resource://testing-common/CustomizableUITestUtils.sys.mjs",
+  SearchbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
 let gCUITestUtils = new CustomizableUITestUtils(window);
+SearchbarTestUtils.init(this);
 
 add_task(async function test_setup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.widget.new", false]],
-  });
   await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => {
     gCUITestUtils.removeSearchBar();
@@ -22,51 +21,25 @@ add_task(async function test_setup() {
 
 
 async function test_opensearch(shouldWork) {
-  let searchBar = document.getElementById("searchbar");
-
   let rootDir = getRootDirectory(gTestPath);
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     rootDir + "opensearch.html"
   );
-  let searchPopup = document.getElementById("PopupSearchAutoComplete");
-  let promiseSearchPopupShown = BrowserTestUtils.waitForEvent(
-    searchPopup,
-    "popupshown"
-  );
-  
-  
-  
-  
-  let promiseSearchPopupBuilt = BrowserTestUtils.waitForEvent(
-    searchPopup.oneOffButtons,
-    "rebuild"
-  );
-  let searchBarButton = searchBar.querySelector(".searchbar-search-button");
 
-  searchBarButton.click();
-  await Promise.all([promiseSearchPopupShown, promiseSearchPopupBuilt]);
-  let oneOffsContainer = searchPopup.searchOneOffsContainer;
-  let engineElement = oneOffsContainer.querySelector(
-    ".searchbar-engine-one-off-add-engine"
-  );
+  let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
+  let engineElement = popup.querySelector("menuitem[label=newEngine]");
+
   if (shouldWork) {
     ok(engineElement, "There should be search engines available to add");
-    ok(
-      searchBar.getAttribute("addengines"),
-      "Search bar should have addengines attribute"
-    );
   } else {
     is(
       engineElement,
       null,
       "There should be no search engines available to add"
     );
-    ok(
-      !searchBar.getAttribute("addengines"),
-      "Search bar should not have addengines attribute"
-    );
   }
+  popup.hidePopup();
   await BrowserTestUtils.removeTab(tab);
 }
 
