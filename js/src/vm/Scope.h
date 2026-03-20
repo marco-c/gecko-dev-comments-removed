@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_Scope_h
 #define vm_Scope_h
 
@@ -333,7 +335,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
   const GCPtr<SharedShape*> environmentShape_;
 
   
-  GCPtr<Scope*> enclosingScope_;
+  const GCPtr<Scope*> enclosingScope_;
 
   Scope(ScopeKind kind, Scope* enclosing, SharedShape* environmentShape)
       : TenuredCellWithNonGCPointer(nullptr),

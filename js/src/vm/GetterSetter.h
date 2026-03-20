@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_GetterSetter_h
 #define vm_GetterSetter_h
 
@@ -59,7 +61,7 @@ class GetterSetter : public gc::CellWithGCPointer<JSObject> {
   
   JSObject* getter() const { return headerPtr(); }
 
-  GCPtr<JSObject*> setter_;
+  const GCPtr<JSObject*> setter_;
 
 #ifndef JS_64BIT
   
