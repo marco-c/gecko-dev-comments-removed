@@ -167,14 +167,7 @@ class ProfileCreator(FirefoxProfileCreator):
 
     @staticmethod
     def default_prefs():
-        
-        
-        
-        
-        
-        
-        
-        return {"fission.disableSessionHistoryInParent": False}
+        return {}
 
     def _get_required_prefs(self):
         return {
