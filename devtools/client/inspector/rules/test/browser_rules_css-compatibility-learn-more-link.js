@@ -11,7 +11,7 @@ const TEST_URI = `
 <style>
   body {
     user-select: none;
-    background-repeat-x: repeat;
+    stroke-color: red;
   }
 </style>
 <body>
@@ -30,12 +30,12 @@ const TEST_DATA_INITIAL = [
           expectedLearnMoreUrl:
             "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default",
         },
-        "background-repeat-x": {
-          value: "repeat",
+        "stroke-color": {
+          value: "red",
           expected: COMPATIBILITY_TOOLTIP_MESSAGE.experimental,
           
           expectedLearnMoreUrl:
-            "https://drafts.csswg.org/css-backgrounds-4/#background-repeat-longhands",
+            "https://drafts.csswg.org/fill-stroke-3/#stroke-color",
         },
         
       },
