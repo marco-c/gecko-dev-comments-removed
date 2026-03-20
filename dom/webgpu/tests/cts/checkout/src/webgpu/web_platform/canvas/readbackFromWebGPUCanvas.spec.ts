@@ -521,12 +521,6 @@ g.test('transferToImageBitmap_unconfigured_nonzero_size')
 
     
     const expected = new Uint8ClampedArray(kWidth * kHeight * 4);
-    for (let i = 0; i < expected.byteLength; i += 4) {
-      expected[i + 0] = 0;
-      expected[i + 1] = 0;
-      expected[i + 2] = 0;
-      expected[i + 3] = 255;
-    }
 
     readbackContext.drawImage(ib, 0, 0);
     readPixelsFrom2DCanvasAndCompare(t, readbackContext, expected);
