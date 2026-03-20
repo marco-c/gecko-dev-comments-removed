@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsTString_h
 #define nsTString_h
 

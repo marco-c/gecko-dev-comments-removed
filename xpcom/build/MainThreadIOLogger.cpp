@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MainThreadIOLogger.h"
 
 #include "GeckoProfiler.h"

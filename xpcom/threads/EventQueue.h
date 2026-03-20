@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_EventQueue_h
 #define mozilla_EventQueue_h
 

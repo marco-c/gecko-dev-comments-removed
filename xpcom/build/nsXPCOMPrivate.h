@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsXPCOMPrivate_h_
 #define nsXPCOMPrivate_h_
 

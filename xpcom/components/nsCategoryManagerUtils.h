@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCategoryManagerUtils_h_
 #define nsCategoryManagerUtils_h_
 

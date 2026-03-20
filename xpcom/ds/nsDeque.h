@@ -20,8 +20,6 @@
 
 
 
-
-
 #ifndef NSDEQUE
 #define NSDEQUE
 #include <cstddef>

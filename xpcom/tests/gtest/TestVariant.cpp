@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <math.h>
 #include "nsVariant.h"
 #include "gtest/gtest.h"

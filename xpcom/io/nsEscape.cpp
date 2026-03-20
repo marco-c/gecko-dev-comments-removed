@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsEscape.h"
 
 #include "mozilla/CheckedInt.h"

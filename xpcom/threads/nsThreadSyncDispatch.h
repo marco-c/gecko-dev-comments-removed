@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsThreadSyncDispatch_h_
 #define nsThreadSyncDispatch_h_
 

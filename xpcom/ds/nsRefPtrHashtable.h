@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsRefPtrHashtable_h_
 #define nsRefPtrHashtable_h_
 

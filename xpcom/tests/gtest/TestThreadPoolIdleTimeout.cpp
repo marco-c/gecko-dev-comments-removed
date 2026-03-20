@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/CondVar.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ThreadSafety.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCom_h_
 #define nsCom_h_
 #include "nscore.h"

@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsConsoleMessage.h"
 #include "jsapi.h"
 

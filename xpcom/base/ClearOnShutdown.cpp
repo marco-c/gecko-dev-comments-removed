@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ClearOnShutdown.h"
 
 namespace mozilla {

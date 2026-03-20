@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTObserverArray_h_
 #define nsTObserverArray_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsUUIDGenerator.h"
 
 NS_IMPL_ISUPPORTS(nsUUIDGenerator, nsIUUIDGenerator)

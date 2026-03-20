@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThreadUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/gtest/MozAssertions.h"

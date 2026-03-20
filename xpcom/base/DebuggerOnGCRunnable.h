@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DebuggerOnGCRunnable_h
 #define mozilla_DebuggerOnGCRunnable_h
 

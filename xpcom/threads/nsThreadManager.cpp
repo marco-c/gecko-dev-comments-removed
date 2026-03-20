@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThreadManager.h"
 #include "nsThread.h"
 #include "nsThreadPool.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTLiteralString_h
 #define nsTLiteralString_h
 

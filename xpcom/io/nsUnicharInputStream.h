@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsUnicharInputStream_h_
 #define nsUnicharInputStream_h_
 

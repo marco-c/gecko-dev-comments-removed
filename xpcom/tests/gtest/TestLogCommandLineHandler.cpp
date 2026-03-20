@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LogCommandLineHandler.h"
 
 #include "nsString.h"

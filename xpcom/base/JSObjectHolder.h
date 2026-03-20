@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_JSObjectHolder_h
 #define mozilla_JSObjectHolder_h
 

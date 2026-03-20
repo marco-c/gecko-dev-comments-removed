@@ -51,8 +51,6 @@
 
 
 
-
-
 #include "mozilla/CycleCollectedJSRuntime.h"
 
 #include <algorithm>

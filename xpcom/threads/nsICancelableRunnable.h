@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsICancelableRunnable_h_
 #define nsICancelableRunnable_h_
 

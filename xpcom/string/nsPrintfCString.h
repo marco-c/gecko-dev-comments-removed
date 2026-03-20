@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPrintfCString_h_
 #define nsPrintfCString_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "xptinfo.h"
 #include "nsISupports.h"
 #include "mozilla/dom/DOMJSClass.h"

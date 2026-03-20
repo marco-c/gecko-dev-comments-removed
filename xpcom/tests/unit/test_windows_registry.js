@@ -2,9 +2,6 @@
 
 
 
-
-
-
 const { MockRegistry } = ChromeUtils.importESModule(
   "resource://testing-common/MockRegistry.sys.mjs"
 );

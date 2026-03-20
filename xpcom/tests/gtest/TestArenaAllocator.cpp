@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaAllocatorExtensions.h"
 #include "nsIMemoryReporter.h"  

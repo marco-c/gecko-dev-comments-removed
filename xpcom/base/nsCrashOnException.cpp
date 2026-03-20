@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCrashOnException.h"
 #include "nsCOMPtr.h"
 #include "nsICrashReporter.h"

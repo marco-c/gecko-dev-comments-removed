@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "mozilla/SharedThreadPool.h"

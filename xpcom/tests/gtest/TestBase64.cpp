@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Attributes.h"
 #include "mozilla/Base64.h"
 #include "nsComponentManagerUtils.h"

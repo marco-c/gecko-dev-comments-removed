@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef nsTHashtable_h_
 #define nsTHashtable_h_
 

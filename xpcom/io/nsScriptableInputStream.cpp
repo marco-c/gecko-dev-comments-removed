@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsScriptableInputStream.h"
 #include "nsString.h"
 

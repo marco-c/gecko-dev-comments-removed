@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsEnvironment.h"
 #include "prenv.h"
 #include "nsBaseHashtable.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <windows.h>
 #include <threadpoolapiset.h>
 

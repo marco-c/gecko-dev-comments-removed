@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFmtCString_h_
 #define nsFmtCString_h_
 

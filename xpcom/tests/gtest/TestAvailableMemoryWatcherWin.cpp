@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <algorithm>
 #include <windows.h>
 #include <memoryapi.h>

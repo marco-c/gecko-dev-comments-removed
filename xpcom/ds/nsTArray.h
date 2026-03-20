@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTArray_h_
 #define nsTArray_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
 #include "mozilla/SimpleEnumerator.h"

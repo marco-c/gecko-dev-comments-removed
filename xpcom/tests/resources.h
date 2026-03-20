@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef resources_h_
 #define resources_h_
 

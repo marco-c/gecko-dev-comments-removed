@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsScriptableBase64Encoder_h_
 #define nsScriptableBase64Encoder_h_
 

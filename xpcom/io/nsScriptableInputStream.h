@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsscriptableinputstream_h_
 #define _nsscriptableinputstream_h_
 

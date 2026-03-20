@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PoisonIOInterposer_h
 #define mozilla_PoisonIOInterposer_h
 

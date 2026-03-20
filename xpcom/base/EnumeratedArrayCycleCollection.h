@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef EnumeratedArrayCycleCollection_h_
 #define EnumeratedArrayCycleCollection_h_
 

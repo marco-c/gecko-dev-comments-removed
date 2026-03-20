@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_DeadlockDetector_h
 #define mozilla_DeadlockDetector_h
 

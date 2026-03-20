@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef nsASCIIMask_h_
 #define nsASCIIMask_h_
 
 #include <array>
+#include <cstdint>
 
 #include "mozilla/Attributes.h"
 

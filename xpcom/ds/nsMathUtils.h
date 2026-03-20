@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathUtils_h_
 #define nsMathUtils_h_
 

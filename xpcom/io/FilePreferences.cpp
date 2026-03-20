@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FilePreferences.h"
 
 #include "mozilla/Atomics.h"

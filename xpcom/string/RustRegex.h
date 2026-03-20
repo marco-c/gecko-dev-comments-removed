@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_RustRegex_h
 #define mozilla_RustRegex_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsGZFileWriter.h"
 #include "nsIFile.h"
 #include "nsString.h"

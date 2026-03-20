@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsExpirationState_h_
 #define nsExpirationState_h_
 

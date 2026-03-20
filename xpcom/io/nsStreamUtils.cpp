@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Mutex.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/InputStreamLengthWrapper.h"

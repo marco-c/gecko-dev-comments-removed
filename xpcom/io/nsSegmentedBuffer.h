@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSegmentedBuffer_h_
 #define nsSegmentedBuffer_h_
 

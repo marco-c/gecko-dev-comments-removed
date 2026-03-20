@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTStringRepr.h"
 
 #include "double-conversion/string-to-double.h"

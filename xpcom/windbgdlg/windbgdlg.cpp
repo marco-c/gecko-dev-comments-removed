@@ -3,8 +3,6 @@
 
 
 
-
-
 #include <windows.h>
 #include <stdlib.h>
 #ifdef _MSC_VER

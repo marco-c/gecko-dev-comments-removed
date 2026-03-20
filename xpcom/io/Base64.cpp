@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Base64.h"
 
 #include "mozilla/UniquePtrExtensions.h"

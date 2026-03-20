@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsWhitespaceTokenizer_h
 #define _nsWhitespaceTokenizer_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTObserverArray.h"
 #include "gtest/gtest.h"
 #include "mozilla/UniquePtr.h"

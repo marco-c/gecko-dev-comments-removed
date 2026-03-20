@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAlgorithm_h_
 #define nsAlgorithm_h_
 

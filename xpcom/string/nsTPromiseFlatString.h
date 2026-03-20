@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTPromiseFlatString_h
 #define nsTPromiseFlatString_h
 

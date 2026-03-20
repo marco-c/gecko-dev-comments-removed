@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsGZFileWriter_h
 #define nsGZFileWriter_h
 

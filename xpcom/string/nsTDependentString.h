@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTDependentString_h
 #define nsTDependentString_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SnappyCompressOutputStream.h"
 
 #include <algorithm>

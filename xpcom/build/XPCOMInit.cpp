@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThreadEventTarget.h"
 #include "XPCOMModule.h"
 

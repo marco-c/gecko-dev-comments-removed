@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSecurityConsoleMessage_h_
 #define nsSecurityConsoleMessage_h_
 #include "nsISecurityConsoleMessage.h"

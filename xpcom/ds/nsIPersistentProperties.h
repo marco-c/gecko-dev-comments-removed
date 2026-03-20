@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _gen_nsIPersistentProperties_h_
 #define _gen_nsIPersistentProperties_h_
 

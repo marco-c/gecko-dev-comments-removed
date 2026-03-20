@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsSimpleEnumerator.h"
 
 #include "mozilla/dom/IteratorResultBinding.h"

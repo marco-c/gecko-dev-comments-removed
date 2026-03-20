@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InputStreamLengthHelper.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsIAsyncInputStream.h"

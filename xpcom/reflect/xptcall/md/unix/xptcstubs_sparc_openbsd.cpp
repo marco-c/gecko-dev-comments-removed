@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #if defined(sparc) || defined(__sparc__)

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MemoryTelemetry.h"
 #include "nsMemoryReporterManager.h"
 

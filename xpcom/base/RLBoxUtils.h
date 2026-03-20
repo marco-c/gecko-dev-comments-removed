@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SECURITY_RLBOX_UTILS_H_
 #define SECURITY_RLBOX_UTILS_H_
 

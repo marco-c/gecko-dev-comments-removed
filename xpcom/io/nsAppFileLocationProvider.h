@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAppFileLocationProvider_h
 #define nsAppFileLocationProvider_h
 

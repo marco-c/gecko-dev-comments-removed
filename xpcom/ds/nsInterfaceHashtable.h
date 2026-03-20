@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsInterfaceHashtable_h_
 #define nsInterfaceHashtable_h_
 

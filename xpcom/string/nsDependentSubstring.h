@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDependentSubstring_h_
 #define nsDependentSubstring_h_
 

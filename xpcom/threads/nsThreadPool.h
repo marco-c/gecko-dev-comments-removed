@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsThreadPool_h_
 #define nsThreadPool_h_
 

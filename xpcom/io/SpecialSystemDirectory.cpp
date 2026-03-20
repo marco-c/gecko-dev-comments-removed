@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SpecialSystemDirectory.h"
 #include "mozilla/Try.h"
 #include "nsComponentManagerUtils.h"

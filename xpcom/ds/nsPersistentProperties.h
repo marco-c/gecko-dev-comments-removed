@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPersistentProperties_h_
 #define nsPersistentProperties_h_
 

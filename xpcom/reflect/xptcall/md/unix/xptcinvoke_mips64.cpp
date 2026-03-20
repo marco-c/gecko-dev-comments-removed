@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #if (_MIPS_SIM != _ABIN32) && (_MIPS_SIM != _ABI64)

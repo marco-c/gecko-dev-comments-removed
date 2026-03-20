@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThreadUtils.h"
 #include "mozilla/RecursiveMutex.h"
 #include "gtest/gtest.h"

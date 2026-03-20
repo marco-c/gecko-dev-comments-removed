@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "prthread.h"
 
 #include "nsCOMPtr.h"

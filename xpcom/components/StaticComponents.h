@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef StaticComponents_h
 #define StaticComponents_h
 

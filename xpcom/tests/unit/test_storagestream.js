@@ -4,8 +4,6 @@
 
 
 
-
-
 function run_test() {
   test1();
   test2();

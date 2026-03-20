@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LogModulePrefWatcher_h
 #define LogModulePrefWatcher_h
 
@@ -32,7 +30,7 @@ class LogModulePrefWatcher : public nsIObserver {
 
  private:
   LogModulePrefWatcher();
-  virtual ~LogModulePrefWatcher() {}
+  virtual ~LogModulePrefWatcher() = default;
 };
 }  
 

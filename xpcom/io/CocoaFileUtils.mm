@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CocoaFileUtils.h"
 #include "nsCocoaUtils.h"
 #include <Cocoa/Cocoa.h>

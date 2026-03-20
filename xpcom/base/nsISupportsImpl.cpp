@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsISupportsImpl.h"
 
 #include "mozilla/Assertions.h"

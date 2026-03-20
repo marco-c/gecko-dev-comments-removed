@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/AppShutdown.h"
 #include "mozilla/IdlePeriodState.h"
 #include "mozilla/StaticPrefs_idle_period.h"

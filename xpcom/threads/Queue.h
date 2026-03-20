@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Queue_h
 #define mozilla_Queue_h
 

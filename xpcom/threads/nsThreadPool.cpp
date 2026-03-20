@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThreadPool.h"
 
 #include "nsCOMArray.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_PerfectHash_h
 #define mozilla_PerfectHash_h
 

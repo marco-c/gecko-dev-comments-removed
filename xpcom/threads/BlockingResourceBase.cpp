@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BlockingResourceBase.h"
 
 #ifdef DEBUG

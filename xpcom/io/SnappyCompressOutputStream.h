@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SnappyCompressOutputStream_h_
 #define mozilla_SnappyCompressOutputStream_h_
 

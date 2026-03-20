@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ClearOnShutdown_h
 #define mozilla_ClearOnShutdown_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StopGapEventTarget_h
 #define mozilla_StopGapEventTarget_h
 

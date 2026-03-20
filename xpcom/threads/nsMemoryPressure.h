@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMemoryPressure_h_
 #define nsMemoryPressure_h_
 

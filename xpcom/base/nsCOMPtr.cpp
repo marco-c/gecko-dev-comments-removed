@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCOMPtr.h"
 
 nsresult nsQueryInterfaceISupports::operator()(const nsIID& aIID,

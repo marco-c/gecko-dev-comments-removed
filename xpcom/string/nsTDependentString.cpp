@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTDependentString.h"
 
 template <typename T>

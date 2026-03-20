@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcom_threads_SpinEventLoopUntil_h_
 #define xpcom_threads_SpinEventLoopUntil_h_
 

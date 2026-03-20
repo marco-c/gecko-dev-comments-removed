@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_perfprobe_h
 #define mozilla_perfprobe_h
 

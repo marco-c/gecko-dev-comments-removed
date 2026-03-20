@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsArrayEnumerator_h_
 #define nsArrayEnumerator_h_
 

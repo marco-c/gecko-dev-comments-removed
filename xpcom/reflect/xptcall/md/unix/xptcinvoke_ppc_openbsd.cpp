@@ -12,7 +12,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 

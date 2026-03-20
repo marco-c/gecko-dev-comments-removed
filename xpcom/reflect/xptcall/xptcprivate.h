@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef xptcprivate_h_
 #define xptcprivate_h_
 

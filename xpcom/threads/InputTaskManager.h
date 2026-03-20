@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_InputTaskManager_h
 #define mozilla_InputTaskManager_h
 

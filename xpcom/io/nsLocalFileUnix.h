@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef _nsLocalFileUNIX_H_
 #define _nsLocalFileUNIX_H_
 

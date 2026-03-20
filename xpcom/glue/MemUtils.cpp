@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/MemUtils.h"
 
 #if defined(XP_WIN)

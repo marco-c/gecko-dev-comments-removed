@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThreadUtils.h"
 
 #include "chrome/common/ipc_message.h"  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDebugImpl_h
 #define nsDebugImpl_h
 

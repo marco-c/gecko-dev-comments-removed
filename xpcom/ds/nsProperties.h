@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsProperties_h_
 #define nsProperties_h_
 

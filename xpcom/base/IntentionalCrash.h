@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_IntentionalCrash_h
 #define mozilla_IntentionalCrash_h
 

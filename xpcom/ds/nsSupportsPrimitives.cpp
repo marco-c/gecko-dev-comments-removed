@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsSupportsPrimitives.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"

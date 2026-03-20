@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LateWriteChecks_h
 #define mozilla_LateWriteChecks_h
 

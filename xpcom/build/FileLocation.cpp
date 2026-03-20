@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileLocation.h"
 #include "nsZipArchive.h"
 #include "nsURLHelper.h"

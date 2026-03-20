@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsINIParserImpl_h_
 #define nsINIParserImpl_h_
 

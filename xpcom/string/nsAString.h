@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsAString_h_
 #define nsAString_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MainThreadIdlePeriod.h"
 
 #include "mozilla/Preferences.h"

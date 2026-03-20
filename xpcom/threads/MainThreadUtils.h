@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MainThreadUtils_h_
 #define MainThreadUtils_h_
 

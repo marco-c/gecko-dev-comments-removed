@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "AvailableMemoryWatcher.h"
 #include "AvailableMemoryWatcherUtils.h"
 #include "mozilla/FileUtils.h"

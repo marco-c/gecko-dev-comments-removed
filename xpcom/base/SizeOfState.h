@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SizeOfState_h
 #define SizeOfState_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_OwningNonNull_h
 #define mozilla_OwningNonNull_h
 

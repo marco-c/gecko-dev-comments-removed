@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SharedThreadPool.h"
 
 #include "mozilla/AppShutdown.h"

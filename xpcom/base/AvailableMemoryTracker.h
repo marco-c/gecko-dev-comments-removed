@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AvailableMemoryTracker_h
 #define mozilla_AvailableMemoryTracker_h
 

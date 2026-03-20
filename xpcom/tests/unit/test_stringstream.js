@@ -2,7 +2,6 @@
 
 
 
-
 function run_test() {
   var s = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
     Ci.nsIStringInputStream

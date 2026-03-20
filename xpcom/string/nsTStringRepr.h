@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTStringRepr_h
 #define nsTStringRepr_h
 

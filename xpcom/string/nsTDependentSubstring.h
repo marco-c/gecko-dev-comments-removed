@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsTDependentSubstring_h
 #define nsTDependentSubstring_h
 

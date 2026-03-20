@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIIdleRunnable_h_
 #define nsIIdleRunnable_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAtom_h
 #define nsAtom_h
 

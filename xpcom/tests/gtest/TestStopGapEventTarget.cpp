@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/StopGapEventTarget.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gtest/MozAssertions.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SnappyUncompressInputStream.h"
 
 #include <algorithm>
@@ -21,7 +19,7 @@ static size_t CompressedBufferLength() {
   static size_t kCompressedBufferLength =
       detail::SnappyFrameUtils::MaxCompressedBufferLength(snappy::kBlockSize);
 
-  MOZ_ASSERT(kCompressedBufferLength > 0);
+  MOZ_ASSERT(kCompressedBufferLength > detail::SnappyFrameUtils::kHeaderLength);
   return kCompressedBufferLength;
 }
 
@@ -287,7 +285,9 @@ nsresult SnappyUncompressInputStream::ParseNextChunk(uint32_t* aBytesReadOut) {
   
   
   uint32_t readLength = mNextChunkDataLength;
-  MOZ_ASSERT(readLength <= CompressedBufferLength());
+  if (readLength > CompressedBufferLength() - kHeaderLength) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
 
   
   

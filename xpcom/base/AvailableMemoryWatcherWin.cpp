@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AvailableMemoryWatcher.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Services.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"

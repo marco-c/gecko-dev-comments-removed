@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StopGapEventTarget.h"
 #include "nsITargetShutdownTask.h"
 

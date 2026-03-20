@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPCOM_DS_NSTHASHSET_H_
 #define XPCOM_DS_NSTHASHSET_H_
 

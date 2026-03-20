@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #if !defined(__aarch64__)

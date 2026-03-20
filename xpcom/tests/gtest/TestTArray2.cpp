@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/TimeStamp.h"
 
 #include <stdlib.h>

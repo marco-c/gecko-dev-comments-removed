@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/AvailableMemoryTracker.h"
 
 #if defined(XP_WIN)

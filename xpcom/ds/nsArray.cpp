@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsArray.h"
 #include "nsArrayEnumerator.h"
 #include "nsThreadUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef utfstrings_h_
 #define utfstrings_h_
 

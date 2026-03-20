@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FixedBufferOutputStream.h"
 
 #include "mozilla/RefPtr.h"

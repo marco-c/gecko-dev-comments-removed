@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsEnvironment_h_
 #define nsEnvironment_h_
 

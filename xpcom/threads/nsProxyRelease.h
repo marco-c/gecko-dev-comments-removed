@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsProxyRelease_h_
 #define nsProxyRelease_h_
 

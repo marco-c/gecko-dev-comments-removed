@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SchedulerGroup_h
 #define mozilla_SchedulerGroup_h
 

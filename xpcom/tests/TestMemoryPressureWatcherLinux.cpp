@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "mozilla/AvailableMemoryWatcherUtils.h"
 
 #include <fstream>

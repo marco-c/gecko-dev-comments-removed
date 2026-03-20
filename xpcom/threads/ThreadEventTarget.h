@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ThreadEventTarget_h
 #define mozilla_ThreadEventTarget_h
 

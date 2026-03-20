@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsISupportsUtils.h"
 #include "nsIWeakReference.h"
 #include "nsWeakReference.h"

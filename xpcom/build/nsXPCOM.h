@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsXPCOM_h_
 #define nsXPCOM_h_
 

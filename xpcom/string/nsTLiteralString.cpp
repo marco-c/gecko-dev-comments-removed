@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTLiteralString.h"
 
 template class nsTLiteralString<char>;

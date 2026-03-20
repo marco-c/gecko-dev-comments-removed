@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsNativeCharsetUtils_h_
 #define nsNativeCharsetUtils_h_
 

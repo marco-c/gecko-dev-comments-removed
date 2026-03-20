@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMemoryPressure.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"

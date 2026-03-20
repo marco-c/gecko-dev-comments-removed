@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMemoryReporterManager_h_
 #define nsMemoryReporterManager_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsError_h_
 #define nsError_h_
 

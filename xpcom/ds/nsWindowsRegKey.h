@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWindowsRegKey_h_
 #define nsWindowsRegKey_h_
 

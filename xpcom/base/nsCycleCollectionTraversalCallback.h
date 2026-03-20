@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCycleCollectionTraversalCallback_h_
 #define nsCycleCollectionTraversalCallback_h_
 

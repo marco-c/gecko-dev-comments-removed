@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsTextFormatter.h"
 #include "nsString.h"
 #include "gtest/gtest.h"

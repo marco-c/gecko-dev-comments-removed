@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MacStringHelpers_h
 #define mozilla_MacStringHelpers_h
 

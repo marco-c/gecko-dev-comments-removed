@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPCOM_DS_NSHASHTABLESFWD_H_
 #define XPCOM_DS_NSHASHTABLESFWD_H_
 

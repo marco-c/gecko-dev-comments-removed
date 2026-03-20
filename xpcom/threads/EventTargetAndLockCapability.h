@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_EventTargetAndLockCapability_h
 #define mozilla_EventTargetAndLockCapability_h
 

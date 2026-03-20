@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Base64_h_
 #define mozilla_Base64_h_
 

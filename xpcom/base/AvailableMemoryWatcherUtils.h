@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AvailableMemoryWatcherUtils_h
 #define mozilla_AvailableMemoryWatcherUtils_h
 

@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef nsTextFormatter_h_
 #define nsTextFormatter_h_
 

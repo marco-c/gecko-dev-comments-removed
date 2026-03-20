@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SharedThreadPool_h_
 #define SharedThreadPool_h_
 

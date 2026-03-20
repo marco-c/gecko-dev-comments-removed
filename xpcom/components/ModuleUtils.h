@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_GenericModule_h
 #define mozilla_GenericModule_h
 

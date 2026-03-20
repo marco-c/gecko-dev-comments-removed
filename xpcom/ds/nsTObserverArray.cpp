@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTObserverArray.h"
 
 void nsTObserverArray_base::AdjustIterators(index_type aModPos,

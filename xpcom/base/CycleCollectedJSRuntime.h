@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CycleCollectedJSRuntime_h
 #define mozilla_CycleCollectedJSRuntime_h
 

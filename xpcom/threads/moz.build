@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 XPIDL_SOURCES += [
     "nsIDirectTaskDispatcher.idl",
@@ -130,7 +128,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
     EXPORTS.mozilla += ["WinHandleWatcher.h"]
     UNIFIED_SOURCES += ["WinHandleWatcher.cpp"]
 
-
+# Should match the conditions in toolkit/components/backgroundhangmonitor/moz.build
 if (
     CONFIG["NIGHTLY_BUILD"]
     and not CONFIG["MOZ_DEBUG"]

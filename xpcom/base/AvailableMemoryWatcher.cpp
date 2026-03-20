@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AvailableMemoryWatcher.h"
 
 #include "mozilla/ClearOnShutdown.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/JSONWriter.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/nsMemoryInfoDumper.h"

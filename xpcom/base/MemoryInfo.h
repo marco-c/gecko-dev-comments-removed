@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MemoryInfo_h
 #define mozilla_MemoryInfo_h
 

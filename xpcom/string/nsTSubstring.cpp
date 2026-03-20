@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "double-conversion/double-conversion.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"

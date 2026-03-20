@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DelayedRunnable.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"

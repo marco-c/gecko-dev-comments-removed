@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsThread_h_
 #define nsThread_h_
 

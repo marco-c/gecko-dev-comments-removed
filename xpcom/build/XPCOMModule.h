@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPCOMModule_h
 #define XPCOMModule_h
 

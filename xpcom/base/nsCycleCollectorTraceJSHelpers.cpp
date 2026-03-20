@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
 #include "nsWrapperCacheInlines.h"

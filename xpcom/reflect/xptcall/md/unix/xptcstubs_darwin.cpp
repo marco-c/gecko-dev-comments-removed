@@ -2,7 +2,6 @@
 
 
 
-
 #if defined(__i386__)
 #include "xptcstubs_gcc_x86_unix.cpp"
 #elif defined(__x86_64__)

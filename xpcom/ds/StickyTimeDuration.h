@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StickyTimeDuration_h
 #define mozilla_StickyTimeDuration_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SchedulerGroup.h"
 #include "nsThreadUtils.h"
 

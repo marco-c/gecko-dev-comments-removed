@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Observer_h
 #define mozilla_Observer_h
 

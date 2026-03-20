@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/IncrementalTokenizer.h"

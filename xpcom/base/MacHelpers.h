@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MacHelpers_h
 #define mozilla_MacHelpers_h
 

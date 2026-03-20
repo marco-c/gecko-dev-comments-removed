@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef InputStreamLengthWrapper_h
 #define InputStreamLengthWrapper_h
 

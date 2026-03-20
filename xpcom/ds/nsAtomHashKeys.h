@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsAtomHashKeys_h
 #define nsAtomHashKeys_h
 

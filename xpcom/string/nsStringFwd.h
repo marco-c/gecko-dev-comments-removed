@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsStringFwd_h
 #define nsStringFwd_h
 

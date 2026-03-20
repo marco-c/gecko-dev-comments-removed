@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <stdlib.h>
 #include "nscore.h"
 #include "nsISupports.h"

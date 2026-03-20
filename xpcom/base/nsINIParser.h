@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsINIParser_h_
 #define nsINIParser_h_
 

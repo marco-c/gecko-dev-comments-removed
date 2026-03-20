@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCycleCollector_h_
 #define nsCycleCollector_h_
 

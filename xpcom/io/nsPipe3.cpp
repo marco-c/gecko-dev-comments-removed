@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <algorithm>
 #include "mozilla/Attributes.h"
 #include "mozilla/IntegerPrintfMacros.h"

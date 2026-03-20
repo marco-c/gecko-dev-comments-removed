@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsCharSeparatedTokenizer_h
 #define _nsCharSeparatedTokenizer_h
 

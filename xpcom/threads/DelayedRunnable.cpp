@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DelayedRunnable.h"
 
 #include "mozilla/ProfilerRunnable.h"

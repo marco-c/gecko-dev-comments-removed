@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCOMArray.h"
 
 #include "mozilla/OperatorNewExtensions.h"

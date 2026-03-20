@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Bootstrap.h"
 
 #include "nsXPCOMPrivate.h"

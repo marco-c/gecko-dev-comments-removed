@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_VsyncTaskManager_h
 #define mozilla_VsyncTaskManager_h
 

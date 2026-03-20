@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIWeakReferenceUtils_h_
 #define nsIWeakReferenceUtils_h_
 

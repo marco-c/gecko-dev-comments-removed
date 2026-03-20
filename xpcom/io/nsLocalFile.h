@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NS_LOCAL_FILE_H_
 #define NS_LOCAL_FILE_H_
 

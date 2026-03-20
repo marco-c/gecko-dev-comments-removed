@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"

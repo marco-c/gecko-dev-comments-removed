@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/CPUUsageWatcher.h"
 #include "mozilla/Try.h"
 

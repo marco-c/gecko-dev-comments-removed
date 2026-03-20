@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef xptinfo_h
 #define xptinfo_h
 

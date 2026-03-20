@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMemoryReporterManager.h"
 
 #include "nsAtomTable.h"

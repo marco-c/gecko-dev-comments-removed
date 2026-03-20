@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/FileUtils.h"
 
 #include "nscore.h"

@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 nsresult ATTRIBUTE_USED

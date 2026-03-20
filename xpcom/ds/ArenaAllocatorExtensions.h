@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ArenaAllocatorExtensions_h
 #define mozilla_ArenaAllocatorExtensions_h
 

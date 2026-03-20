@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCycleCollectionNoteRootCallback_h_
 #define nsCycleCollectionNoteRootCallback_h_
 

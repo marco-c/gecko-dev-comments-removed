@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsQueryObject_h
 #define nsQueryObject_h
 

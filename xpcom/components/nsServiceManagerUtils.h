@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsServiceManagerUtils_h_
 #define nsServiceManagerUtils_h_
 

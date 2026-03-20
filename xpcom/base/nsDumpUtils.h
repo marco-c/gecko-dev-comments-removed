@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_nsDumpUtils_h
 #define mozilla_nsDumpUtils_h
 

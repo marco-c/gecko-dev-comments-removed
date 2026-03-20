@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "StaticComponents.h"
 
@@ -27,18 +25,18 @@
 #include "nsTArray.h"
 #include "xptdata.h"
 #include "xptinfo.h"
-#include "js/PropertyAndElement.h"  
+#include "js/PropertyAndElement.h"  // JS_GetProperty
 
-
+// Cleanup pollution from zipstruct.h
 #undef UNSUPPORTED
 
+// Public includes
+//# @includes@
 
+// Relative includes
+//# @relative_includes@
 
-
-
-
-
-
+//# @decls@
 
 namespace mozilla {
 
@@ -49,7 +47,7 @@ namespace xpcom {
 static constexpr uint32_t kNoContractID = 0xffffffff;
 
 namespace {
-
+// Template helpers for constructor function sanity checks.
 template <typename T>
 struct RemoveAlreadyAddRefed {
   using Type = T;
@@ -59,7 +57,7 @@ template <typename T>
 struct RemoveAlreadyAddRefed<already_AddRefed<T>> {
   using Type = T;
 };
-}  
+}  // anonymous namespace
 
 
 uint8_t gInvalidContracts[kContractCount / 8 + 1];
@@ -69,29 +67,29 @@ static StaticRefPtr<nsISupports> gServiceInstances[kStaticModuleCount];
 uint8_t gInitCalled[kModuleInitCount / 8 + 1];
 
 static const char gStrings[] =
-
+//# @strings@
   "";
 
 const StaticCategory gStaticCategories[kStaticCategoryCount] = {
-
+//# @categories@
 };
 const StaticCategoryEntry gStaticCategoryEntries[] = {
-
+//# @category_entries@
 };
 
 const nsXPTInterface gInterfaces[] = {
-
+//# @interfaces@
 };
 
 const StringOffset gComponentESModules[] = {
-
+//# @component_esmodules@
 };
 
-
-
-
-
-
+/**
+ * Returns a nsCString corresponding to the given entry in the `gStrings` string
+ * table. The resulting nsCString points directly to static storage, and does
+ * not incur any memory allocation overhead.
+ */
 static inline nsCString GetString(const StringOffset& aOffset) {
   const char* str = &gStrings[aOffset.mOffset];
   nsCString result;
@@ -136,13 +134,13 @@ static nsresult ConstructESModuleComponent(const nsACString& aURI,
                                              (void**)aResult);
 }
 
+//# @module_cid_table@
 
+//# @module_contract_id_table@
 
+//# @js_services_table@
 
-
-
-
-
+//# @protocol_handlers_table@
 
 static inline bool CalledInit(size_t aIdx) {
   return GetBit(gInitCalled, aIdx);
@@ -155,7 +153,7 @@ static nsresult CallInitFunc(size_t aIdx) {
 
   nsresult rv = NS_OK;
   switch (aIdx) {
-
+//# @init_funcs@
   }
 
   SetBit(gInitCalled, aIdx);
@@ -165,15 +163,15 @@ static nsresult CallInitFunc(size_t aIdx) {
 }
 
 static void CallUnloadFuncs() {
-
+//# @unload_funcs@
 }
 
 nsresult CreateInstanceImpl(ModuleID aID, const nsIID& aIID, void** aResult) {
-  
-  
-  
+  // The full set of constructors for all static modules.
+  // This switch statement will be compiled to a relative address jump table
+  // with no runtime relocations and a single indirect jump.
   switch (aID) {
-
+//# @constructors@
   }
 
   MOZ_ASSERT_UNREACHABLE("Constructor didn't return");
@@ -202,7 +200,7 @@ NS_IMETHODIMP StaticModuleFactory::CreateInstance(const nsIID& aIID,
   return CreateInstanceImpl(mID, aIID, aResult);
 }
 
-}  
+}  // anonymous namespace
 
 
 already_AddRefed<nsIFactory> StaticModule::GetFactory() const {
@@ -261,7 +259,7 @@ bool StaticCategoryEntry::Active() const {
   if (MOZ_UNLIKELY(BackgroundTasks::IsBackgroundTaskMode())) {
     return mBackgroundTasksSelector != Module::BackgroundTasksSelector::NO_TASKS;
   }
-#endif 
+#endif /* MOZ_BACKGROUNDTASKS */
   return true;
 }
 
@@ -285,7 +283,7 @@ JSServiceEntry::InterfaceList JSServiceEntry::Interfaces() const {
 }
 
 
-
+/* static */
 const JSServiceEntry* JSServiceEntry::Lookup(const nsACString& aName) {
   return LookupJSService(aName);
 }
@@ -294,17 +292,17 @@ nsCString StaticProtocolHandler::Scheme() const {
   return GetString(mScheme);
 }
 
-
+/* static */
 const StaticProtocolHandler* StaticProtocolHandler::Lookup(const nsACString& aScheme) {
   return LookupProtocolHandler(aScheme);
 }
 
- const StaticModule* StaticComponents::LookupByCID(
+/* static */ const StaticModule* StaticComponents::LookupByCID(
     const nsID& aCID) {
   return ModuleByCID(aCID);
 }
 
- const StaticModule* StaticComponents::LookupByContractID(
+/* static */ const StaticModule* StaticComponents::LookupByContractID(
     const nsACString& aContractID) {
   if (const ContractEntry* entry = LookupContractID(aContractID)) {
     if (!entry->Invalid()) {
@@ -314,7 +312,7 @@ const StaticProtocolHandler* StaticProtocolHandler::Lookup(const nsACString& aSc
   return nullptr;
 }
 
- bool StaticComponents::InvalidateContractID(
+/* static */ bool StaticComponents::InvalidateContractID(
     const nsACString& aContractID, bool aInvalid) {
   if (const ContractEntry* entry = LookupContractID(aContractID)) {
     entry->SetInvalid(aInvalid);
@@ -323,7 +321,7 @@ const StaticProtocolHandler* StaticProtocolHandler::Lookup(const nsACString& aSc
   return false;
 }
 
- already_AddRefed<nsIUTF8StringEnumerator>
+/* static */ already_AddRefed<nsIUTF8StringEnumerator>
 StaticComponents::GetComponentESModules() {
   auto esModules = MakeUnique<nsTArray<nsCString>>(std::size(gComponentESModules));
 
@@ -337,15 +335,15 @@ StaticComponents::GetComponentESModules() {
   return result.forget();
 }
 
- Span<const JSServiceEntry> StaticComponents::GetJSServices() {
+/* static */ Span<const JSServiceEntry> StaticComponents::GetJSServices() {
   return { gJSServices, std::size(gJSServices) };
 }
 
- void StaticComponents::Shutdown() {
+/* static */ void StaticComponents::Shutdown() {
   CallUnloadFuncs();
 }
 
- const nsID& Components::GetCID(ModuleID aID) {
+/* static */ const nsID& Components::GetCID(ModuleID aID) {
   return gStaticModules[size_t(aID)].CID();
 }
 
@@ -366,5 +364,5 @@ nsresult CreateInstanceHelper::operator()(const nsIID& aIID,
   return SetResult(rv);
 }
 
-}  
-}  
+}  // namespace xpcom
+}  // namespace mozilla

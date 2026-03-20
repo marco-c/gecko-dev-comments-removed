@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifdef __APPLE__
 #define SYM(x) _ ## x
@@ -16,10 +15,10 @@
             .type  _NS_InvokeByIndex,@function
 #endif
 
-
-
-
-
+/*
+ * _NS_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
+ *                   uint32_t paramCount, nsXPTCVariant* params)
+ */
 
 SYM(_NS_InvokeByIndex):
             .cfi_startproc

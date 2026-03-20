@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStreamUtils_h_
 #define nsStreamUtils_h_
 

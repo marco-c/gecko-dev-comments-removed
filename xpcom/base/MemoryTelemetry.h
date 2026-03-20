@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MemoryTelemetry_h
 #define mozilla_MemoryTelemetry_h
 

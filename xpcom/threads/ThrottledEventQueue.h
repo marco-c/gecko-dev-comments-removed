@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ThrottledEventQueue_h
 #define mozilla_ThrottledEventQueue_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcom_build_IOInterposerPrivate_h
 #define xpcom_build_IOInterposerPrivate_h
 

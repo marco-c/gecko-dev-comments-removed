@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsVariant.h"
 #include "prprf.h"
 #include "prdtoa.h"

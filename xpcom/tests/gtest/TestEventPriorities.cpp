@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCOMPtr.h"
 #include "nsIRunnable.h"
 #include "nsXPCOM.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef JSONSTRINGWRITEFUNCS_H
 #define JSONSTRINGWRITEFUNCS_H
 

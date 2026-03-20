@@ -2,7 +2,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 extern "C" nsresult ATTRIBUTE_USED PrepareAndDispatch(nsXPTCStubBase* self,

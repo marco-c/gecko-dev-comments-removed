@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/UniquePtr.h"
 
 #include "jsapi.h"

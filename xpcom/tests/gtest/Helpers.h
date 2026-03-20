@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef Helpers_h
 #define Helpers_h
 

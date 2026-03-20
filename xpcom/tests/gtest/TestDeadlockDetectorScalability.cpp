@@ -3,8 +3,6 @@
 
 
 
-
-
 #undef MOZ_DMD
 
 #include "nsIMemoryReporter.h"

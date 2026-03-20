@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_IOUtils_
 #define mozilla_dom_IOUtils_
 

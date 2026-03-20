@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsString_h_
 #define nsString_h_
 

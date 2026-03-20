@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsTSubstringTuple_h
 #define nsTSubstringTuple_h
 

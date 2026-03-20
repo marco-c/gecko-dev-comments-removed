@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTArray.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"

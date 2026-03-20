@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StreamBufferSourceImpl_h
 #define mozilla_StreamBufferSourceImpl_h
 

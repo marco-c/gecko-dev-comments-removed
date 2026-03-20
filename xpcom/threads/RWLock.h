@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_RWLock_h
 #define mozilla_RWLock_h
 

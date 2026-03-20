@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LogCommandLineHandler_h
 #define LogCommandLineHandler_h
 

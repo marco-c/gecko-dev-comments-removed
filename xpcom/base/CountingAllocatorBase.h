@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CountingAllocatorBase_h
 #define CountingAllocatorBase_h
 

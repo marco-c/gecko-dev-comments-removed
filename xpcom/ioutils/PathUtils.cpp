@@ -3,7 +3,6 @@
 
 
 
-
 #include "PathUtils.h"
 
 #include "mozilla/ClearOnShutdown.h"

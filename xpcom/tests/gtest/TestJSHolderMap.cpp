@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Maybe.h"

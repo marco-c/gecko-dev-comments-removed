@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef TimerThread_h_
 #define TimerThread_h_
 

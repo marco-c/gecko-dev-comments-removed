@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/HoldDropJSObjects.h"
 
 #include "mozilla/Assertions.h"

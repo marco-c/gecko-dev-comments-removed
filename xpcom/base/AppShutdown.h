@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AppShutdown_h
 #define AppShutdown_h
 

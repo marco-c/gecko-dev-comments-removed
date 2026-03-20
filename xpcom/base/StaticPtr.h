@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StaticPtr_h
 #define mozilla_StaticPtr_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsBinaryStream_h_
 #define nsBinaryStream_h_
 

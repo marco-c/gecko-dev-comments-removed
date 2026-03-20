@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMacUtilsImpl_h_
 #define nsMacUtilsImpl_h_
 

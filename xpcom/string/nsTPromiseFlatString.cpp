@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTPromiseFlatString.h"
 
 template <typename T>

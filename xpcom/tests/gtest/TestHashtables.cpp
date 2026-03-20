@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTHashtable.h"
 #include "nsBaseHashtable.h"
 #include "nsTHashMap.h"

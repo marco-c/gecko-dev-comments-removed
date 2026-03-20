@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/EventQueue.h"
 #include "mozilla/FlowMarkers.h"
 

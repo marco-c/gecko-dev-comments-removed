@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPCOM_IO_FILEPREFERENCES_H_
 #define XPCOM_IO_FILEPREFERENCES_H_
 

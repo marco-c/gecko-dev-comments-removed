@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTimerImpl_h_
 #define nsTimerImpl_h_
 

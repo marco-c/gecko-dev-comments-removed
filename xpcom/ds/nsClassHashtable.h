@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsClassHashtable_h_
 #define nsClassHashtable_h_
 

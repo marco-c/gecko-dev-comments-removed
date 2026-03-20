@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StreamBufferSinkImpl_h
 #define mozilla_StreamBufferSinkImpl_h
 

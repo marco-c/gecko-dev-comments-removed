@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _mozilla_GkRustUtils_h
 #define _mozilla_GkRustUtils_h
 

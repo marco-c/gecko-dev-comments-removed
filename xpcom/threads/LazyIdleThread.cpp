@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LazyIdleThread.h"
 
 #include "nsIObserverService.h"

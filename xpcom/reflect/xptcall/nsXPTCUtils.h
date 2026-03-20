@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsXPTCUtils_h_
 #define nsXPTCUtils_h_
 

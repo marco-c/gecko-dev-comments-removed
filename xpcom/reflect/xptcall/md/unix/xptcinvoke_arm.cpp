@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #include "mozilla/Compiler.h"

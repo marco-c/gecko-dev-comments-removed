@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XREShellData_h
 #define XREShellData_h
 

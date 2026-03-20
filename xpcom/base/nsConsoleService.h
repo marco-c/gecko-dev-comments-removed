@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef _nsconsoleservice_h_
 #define _nsconsoleservice_h_
 

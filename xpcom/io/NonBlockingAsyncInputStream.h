@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NonBlockingAsyncInputStream_h
 #define NonBlockingAsyncInputStream_h
 

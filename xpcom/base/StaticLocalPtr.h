@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StaticLocalPtr_h
 #define mozilla_StaticLocalPtr_h
 

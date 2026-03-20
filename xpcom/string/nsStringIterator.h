@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStringIterator_h_
 #define nsStringIterator_h_
 

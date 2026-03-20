@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef INCREMENTAL_TOKENIZER_H_
 #define INCREMENTAL_TOKENIZER_H_
 

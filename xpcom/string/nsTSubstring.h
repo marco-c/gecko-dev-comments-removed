@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsTSubstring_h
 #define nsTSubstring_h
 

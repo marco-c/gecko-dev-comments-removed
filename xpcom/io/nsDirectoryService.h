@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDirectoryService_h_
 #define nsDirectoryService_h_
 

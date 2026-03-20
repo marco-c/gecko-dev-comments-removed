@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_logging_h
 #define mozilla_logging_h
 

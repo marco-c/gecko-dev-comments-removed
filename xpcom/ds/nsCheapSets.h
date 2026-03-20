@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsCheapSets_h_
 #define _nsCheapSets_h_
 

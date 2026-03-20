@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #ifdef __GNUC__

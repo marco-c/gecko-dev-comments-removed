@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsAnonymousTemporaryFile.h"
 #include "nsXULAppAPI.h"
 #include "nsCOMPtr.h"

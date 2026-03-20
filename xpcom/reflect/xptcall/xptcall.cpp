@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 using namespace mozilla;

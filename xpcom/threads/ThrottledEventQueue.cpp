@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThrottledEventQueue.h"
 
 #include "mozilla/ClearOnShutdown.h"

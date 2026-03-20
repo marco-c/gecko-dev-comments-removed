@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCycleCollectionContainerParticipant_h_
 #define nsCycleCollectionContainerParticipant_h_
 

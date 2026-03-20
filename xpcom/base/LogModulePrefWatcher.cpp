@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LogModulePrefWatcher.h"
 
 #include "mozilla/Logging.h"

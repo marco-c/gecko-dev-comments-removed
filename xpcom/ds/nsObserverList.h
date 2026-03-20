@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsObserverList_h_
 #define nsObserverList_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/TaskQueue.h"
 
 #include "mozilla/ProfilerRunnable.h"

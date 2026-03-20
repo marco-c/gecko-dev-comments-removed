@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DebuggerOnGCRunnable.h"
 
 #include <utility>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsHashPropertyBag.h"
 
 #include <utility>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIClassInfoImpl.h"
 #include "nsString.h"
 

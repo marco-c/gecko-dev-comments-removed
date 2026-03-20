@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPromiseFlatString_h_
 #define nsPromiseFlatString_h_
 

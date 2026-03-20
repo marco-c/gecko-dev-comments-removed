@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DeferredFinalize.h"
 
 #include "mozilla/Assertions.h"

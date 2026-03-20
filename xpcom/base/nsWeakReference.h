@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWeakReference_h_
 #define nsWeakReference_h_
 

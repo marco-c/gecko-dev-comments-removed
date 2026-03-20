@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AtomArray_h
 #define mozilla_AtomArray_h
 

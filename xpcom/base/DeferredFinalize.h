@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DeferredFinalize_h
 #define mozilla_DeferredFinalize_h
 

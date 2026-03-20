@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MemoryPressureLevelMac_h
 #define mozilla_MemoryPressureLevelMac_h
 

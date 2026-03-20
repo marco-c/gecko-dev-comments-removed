@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsTraceRefcnt_h
 #define nsTraceRefcnt_h
 

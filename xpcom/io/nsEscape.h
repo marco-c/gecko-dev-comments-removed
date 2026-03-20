@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef ESCAPE_H_
 #define ESCAPE_H_
 

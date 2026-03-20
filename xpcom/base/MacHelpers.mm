@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsString.h"
 #include "MacHelpers.h"
 #include "MacStringHelpers.h"

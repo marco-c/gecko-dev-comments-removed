@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/RWLock.h"
 
 namespace mozilla {

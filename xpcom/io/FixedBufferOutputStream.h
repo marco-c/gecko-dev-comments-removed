@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_FixedBufferOutputStream_h
 #define mozilla_FixedBufferOutputStream_h
 

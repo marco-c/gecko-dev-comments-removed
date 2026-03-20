@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SnappyFrameUtils.h"
 
 #include "crc32c.h"

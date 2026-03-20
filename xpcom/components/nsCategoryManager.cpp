@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCategoryManager.h"
 #include "nsCategoryManagerUtils.h"
 

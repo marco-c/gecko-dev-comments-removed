@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PHCManager_h
 #define mozilla_PHCManager_h
 

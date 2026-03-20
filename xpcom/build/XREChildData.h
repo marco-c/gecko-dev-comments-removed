@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XREChildData_h
 #define XREChildData_h
 

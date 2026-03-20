@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThread.h"
 
 #include "base/message_loop.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCRTGlue.h"
 #include "nsXPCOM.h"
 #include "nsDebug.h"
@@ -11,7 +9,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "mozilla/Sprintf.h"
 

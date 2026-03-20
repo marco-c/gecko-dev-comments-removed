@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsAtom.h"
 #include "nsString.h"
 #include "UTFStrings.h"

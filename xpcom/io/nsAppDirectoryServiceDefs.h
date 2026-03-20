@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAppDirectoryServiceDefs_h_
 #define nsAppDirectoryServiceDefs_h_
 

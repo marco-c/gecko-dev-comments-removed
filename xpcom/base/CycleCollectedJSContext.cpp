@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/CycleCollectedJSContext.h"
 
 #include <algorithm>

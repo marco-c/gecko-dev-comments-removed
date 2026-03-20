@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPCOM_BASE_NSIDUTILS_H_
 #define XPCOM_BASE_NSIDUTILS_H_
 

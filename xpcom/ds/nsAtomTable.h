@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAtomTable_h_
 #define nsAtomTable_h_
 

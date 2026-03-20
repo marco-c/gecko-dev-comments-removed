@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SimpleEnumerator_h
 #define mozilla_SimpleEnumerator_h
 

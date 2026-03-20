@@ -2,7 +2,6 @@
 
 
 
-
 const util = Cc["@mozilla.org/io-util;1"].getService(Ci.nsIIOUtil);
 
 function run_test() {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsEscape.h"
 #include "gtest/gtest.h"
 #include "nsNetUtil.h"

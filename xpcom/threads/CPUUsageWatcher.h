@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CPUUsageWatcher_h
 #define mozilla_CPUUsageWatcher_h
 

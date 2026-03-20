@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThreadEventTarget.h"
 #include "mozilla/ThreadEventQueue.h"
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsUnicharInputStream.h"
 #include "nsIInputStream.h"
 #include "nsString.h"

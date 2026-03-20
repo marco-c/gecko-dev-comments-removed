@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsXPCOMCIDInternal_h_
 #define nsXPCOMCIDInternal_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/XREAppData.h"
 #include "nsCRTGlue.h"
 

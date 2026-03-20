@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsLiteralString_h_
 #define nsLiteralString_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nscore_h_
 #define nscore_h_
 

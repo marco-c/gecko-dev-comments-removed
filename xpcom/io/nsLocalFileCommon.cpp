@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLocalFile.h"  
 
 #include "mozilla/Try.h"

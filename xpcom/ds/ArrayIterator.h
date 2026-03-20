@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ArrayIterator_h
 #define mozilla_ArrayIterator_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsIPSIProvider_h_
 #define nsIPSIProvider_h_
 

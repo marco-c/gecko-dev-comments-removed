@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/CondVar.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"

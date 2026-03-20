@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CycleCollectedJSContext_h
 #define mozilla_CycleCollectedJSContext_h
 

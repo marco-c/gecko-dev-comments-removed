@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIFactory.h"
 #include "nsXULAppAPI.h"
 #include "nsIThread.h"

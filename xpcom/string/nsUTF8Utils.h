@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsUTF8Utils_h_
 #define nsUTF8Utils_h_
 

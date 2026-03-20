@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIThreadManager.h"
 #include "nsCOMPtr.h"
 #include "nsIThread.h"

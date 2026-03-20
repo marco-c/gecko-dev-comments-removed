@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Queue.h"
 #include "gtest/gtest.h"
 #include <array>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MemUtils_h
 #define mozilla_MemUtils_h
 

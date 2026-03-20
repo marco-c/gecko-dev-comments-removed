@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCRTGlue_h_
 #define nsCRTGlue_h_
 

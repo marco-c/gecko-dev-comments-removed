@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/RecursiveMutex.h"
 
 #ifdef XP_WIN

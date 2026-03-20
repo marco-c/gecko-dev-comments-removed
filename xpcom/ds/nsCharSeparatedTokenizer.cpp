@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCharSeparatedTokenizer.h"
 
 template class nsTSubstringSplitter<char>;

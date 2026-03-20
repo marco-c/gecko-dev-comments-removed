@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTArray.h"
 #include "nsXPCOM.h"
 #include "nsCycleCollectionNoteChild.h"

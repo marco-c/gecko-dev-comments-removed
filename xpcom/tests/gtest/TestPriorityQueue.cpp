@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTPriorityQueue.h"
 #include "gtest/gtest.h"
 

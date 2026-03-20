@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ArrayAlgorithm_h_
 #define ArrayAlgorithm_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 

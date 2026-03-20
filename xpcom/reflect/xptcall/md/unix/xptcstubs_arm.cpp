@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #if !defined(__arm__) && !(defined(LINUX) || defined(ANDROID) || defined(XP_DARWIN))

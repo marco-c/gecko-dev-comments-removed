@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPCOM_DS_NSTHASHMAP_H_
 #define XPCOM_DS_NSTHASHMAP_H_
 

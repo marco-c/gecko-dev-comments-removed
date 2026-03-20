@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsPointerHashKeys_h
 #define nsPointerHashKeys_h
 

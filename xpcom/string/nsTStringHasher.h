@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTStringHasher_h_
 #define nsTStringHasher_h_
 

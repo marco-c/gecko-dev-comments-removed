@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_IdlePeriodState_h
 #define mozilla_IdlePeriodState_h
 

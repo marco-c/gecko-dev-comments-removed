@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Omnijar_h
 #define mozilla_Omnijar_h
 

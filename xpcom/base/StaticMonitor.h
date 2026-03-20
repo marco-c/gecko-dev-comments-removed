@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StaticMonitor_h
 #define mozilla_StaticMonitor_h
 

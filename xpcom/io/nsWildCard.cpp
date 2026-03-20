@@ -14,8 +14,6 @@
 
 
 
-
-
 #include "nsWildCard.h"
 #include "nsXPCOM.h"
 #include "nsCRTGlue.h"

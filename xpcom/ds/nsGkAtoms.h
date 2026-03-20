@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsGkAtoms_h_
 #define nsGkAtoms_h_
 

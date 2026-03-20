@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef XP_WIN
 
 #  include "nsAString.h"

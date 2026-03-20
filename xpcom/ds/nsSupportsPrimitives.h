@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSupportsPrimitives_h_
 #define nsSupportsPrimitives_h_
 

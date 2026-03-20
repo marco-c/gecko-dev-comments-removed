@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_nsMemoryInfoDumper_h
 #define mozilla_nsMemoryInfoDumper_h
 

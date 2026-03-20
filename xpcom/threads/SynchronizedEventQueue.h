@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SynchronizedEventQueue_h
 #define mozilla_SynchronizedEventQueue_h
 

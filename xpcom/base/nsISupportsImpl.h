@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef nsISupportsImpl_h_
 #define nsISupportsImpl_h_
 

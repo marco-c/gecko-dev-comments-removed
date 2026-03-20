@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CFTypeRefPtr_h
 #define CFTypeRefPtr_h
 

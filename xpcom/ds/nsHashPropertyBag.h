@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHashPropertyBag_h_
 #define nsHashPropertyBag_h_
 

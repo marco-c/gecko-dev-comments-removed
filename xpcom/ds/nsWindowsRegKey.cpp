@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <windows.h>
 #include "nsCOMPtr.h"
 #include "nsWindowsRegKey.h"

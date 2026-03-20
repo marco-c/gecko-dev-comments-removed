@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Dafsa_h
 #define mozilla_Dafsa_h
 

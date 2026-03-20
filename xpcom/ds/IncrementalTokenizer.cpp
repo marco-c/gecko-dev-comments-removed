@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/IncrementalTokenizer.h"
 
 #include "mozilla/AutoRestore.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Omnijar.h"
 
 #include "nsDirectoryService.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_FileUtilsWin_h
 #define mozilla_FileUtilsWin_h
 

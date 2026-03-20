@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ErrorNames_h
 #define mozilla_ErrorNames_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCOMArray_h_
 #define nsCOMArray_h_
 

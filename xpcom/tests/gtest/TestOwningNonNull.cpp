@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLinebreakConverter.h"
 
 #include "nsCRT.h"

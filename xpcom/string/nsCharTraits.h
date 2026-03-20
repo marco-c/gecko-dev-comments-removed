@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCharTraits_h_
 #define nsCharTraits_h_
 

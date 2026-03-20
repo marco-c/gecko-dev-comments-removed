@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Printf.h"
 
 #include "ManifestParser.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef xpcom_base_MemoryReportingProcess_h
 #define xpcom_base_MemoryReportingProcess_h
 

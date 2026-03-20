@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ShutdownPhase.h"
 #ifdef XP_WIN
 #  include <windows.h>

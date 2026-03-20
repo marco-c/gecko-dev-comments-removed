@@ -2,8 +2,6 @@
 
 
 
-
-
 var LocalFile = CC("@mozilla.org/file/local;1", "nsIFile", "initWithPath");
 
 function run_test() {

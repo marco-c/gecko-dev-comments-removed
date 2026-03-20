@@ -140,8 +140,6 @@
 
 
 
-
-
 #if !defined(__MINGW32__)
 #  ifdef WIN32
 #    include <crtdbg.h>

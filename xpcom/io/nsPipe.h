@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPipe_h_
 #define nsPipe_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SynchronizedEventQueue.h"
 #include "nsIThreadInternal.h"
 

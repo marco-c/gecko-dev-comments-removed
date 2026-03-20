@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsObserverList.h"
 
 #include "mozilla/Try.h"

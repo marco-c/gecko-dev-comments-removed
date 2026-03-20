@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsXULAppAPI_h_
 #define _nsXULAppAPI_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/ThrottledEventQueue.h"

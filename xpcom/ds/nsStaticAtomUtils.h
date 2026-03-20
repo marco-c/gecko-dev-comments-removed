@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStaticAtomUtils_h
 #define nsStaticAtomUtils_h
 

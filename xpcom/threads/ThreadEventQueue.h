@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ThreadEventQueue_h
 #define mozilla_ThreadEventQueue_h
 

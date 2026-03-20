@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSimpleEnumerator_h
 #define nsSimpleEnumerator_h
 

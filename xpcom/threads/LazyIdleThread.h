@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_lazyidlethread_h_
 #define mozilla_lazyidlethread_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 var Pipe = CC("@mozilla.org/pipe;1", "nsIPipe", "init");
 
 function run_test() {

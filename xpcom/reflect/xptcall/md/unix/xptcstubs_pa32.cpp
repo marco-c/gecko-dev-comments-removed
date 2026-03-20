@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "xptcprivate.h"
 
 extern "C" nsresult ATTRIBUTE_USED

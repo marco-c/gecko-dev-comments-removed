@@ -8,7 +8,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #include <stdint.h>

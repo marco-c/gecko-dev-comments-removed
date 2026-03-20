@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PoisonIOInterposer.h"
 
 #include <io.h>
@@ -112,7 +110,7 @@ typedef NTSTATUS(NTAPI* NtQueryFullAttributesFileFn)(
 
 
 using HandleToFilenameCache = mozilla::SmallArrayLRUCache<HANDLE, nsString, 32>;
-MOZ_RUNINIT static mozilla::UniquePtr<HandleToFilenameCache>
+constinit static mozilla::UniquePtr<HandleToFilenameCache>
     sHandleToFilenameCache;
 
 

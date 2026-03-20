@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsObserverService_h_
 #define nsObserverService_h_
 

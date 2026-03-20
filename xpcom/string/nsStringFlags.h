@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStringFlags_h
 #define nsStringFlags_h
 

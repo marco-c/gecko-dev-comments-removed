@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef nsWindowsHelpers_h
 #define nsWindowsHelpers_h
 

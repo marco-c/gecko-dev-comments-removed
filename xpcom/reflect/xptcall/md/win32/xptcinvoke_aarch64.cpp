@@ -4,7 +4,6 @@
 
 
 
-
 #include "xptcprivate.h"
 
 #if !defined(_MSC_VER) && !defined(_M_ARM64)

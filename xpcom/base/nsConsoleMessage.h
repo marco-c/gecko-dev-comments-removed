@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsconsolemessage_h_
 #define _nsconsolemessage_h_
 
