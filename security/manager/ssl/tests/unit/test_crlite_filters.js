@@ -58,12 +58,20 @@ function getHash(aStr) {
 }
 
 
+function getSourceFilenameForFilter(filter) {
+  return filter.type == "filter"
+    ? "20200101-0-filter"
+    : "20200101-1-filter.delta";
+}
 
-function getFilenameForFilter(filter) {
+
+
+
+function getAttachmentFilenameForFilter(filter) {
   if (filter.type == "filter") {
     return "20200101-0-filter";
   }
-  return "20200101-1-filter.delta";
+  return `20200101-${filter.id}-filter.delta`;
 }
 
 
@@ -86,8 +94,9 @@ async function syncAndDownload(filters, clear = true, channel = undefined) {
       : channel;
 
   for (let filter of filters) {
-    const filename = getFilenameForFilter(filter);
-    const file = do_get_file(`test_crlite_filters/${filename}`);
+    const sourceFilename = getSourceFilenameForFilter(filter);
+    const attachmentFilename = getAttachmentFilenameForFilter(filter);
+    const file = do_get_file(`test_crlite_filters/${sourceFilename}`);
     const fileBytes = readFile(file);
 
     const incremental = filter.type == "diff";
@@ -99,8 +108,8 @@ async function syncAndDownload(filters, clear = true, channel = undefined) {
       attachment: {
         hash: getHash(fileBytes),
         size: fileBytes.length,
-        filename,
-        location: `security-state-workspace/cert-revocations/test_crlite_filters/${filename}`,
+        filename: attachmentFilename,
+        location: `security-state-workspace/cert-revocations/test_crlite_filters/${sourceFilename}`,
         mimetype: "application/octet-stream",
       },
       incremental,
@@ -115,7 +124,7 @@ async function syncAndDownload(filters, clear = true, channel = undefined) {
   }
   
   let promise = TestUtils.topicObserved(
-    "remote-security-settings:crlite-filters-downloaded"
+    "remote-security-settings:crlite-filters-updated"
   );
   
   Services.obs.notifyObservers(null, "remote-settings:changes-poll-end");
@@ -123,14 +132,23 @@ async function syncAndDownload(filters, clear = true, channel = undefined) {
   return results[1]; 
 }
 
-function expectDownloads(result, expected) {
-  let [status, filters] = result.split(";");
-  equal(status, "finished", "CRLite filter download should have run");
-  let filtersSplit = filters.split(",");
+function expectInstalled(result, expected) {
+  let [status, installed] = result.split(";");
+  equal(status, "finished", "CRLite filter installation should have run");
   deepEqual(
-    filtersSplit,
+    installed.split(","),
     expected.length ? expected : [""],
-    "Should have downloaded the expected CRLite filters"
+    "Should have installed the expected CRLite filters"
+  );
+}
+
+function expectDownloaded(result, expected) {
+  let [status, , downloaded] = result.split(";");
+  equal(status, "finished", "CRLite filter installation should have run");
+  deepEqual(
+    downloaded.split(","),
+    expected.length ? expected : [""],
+    "Should have fetched the expected CRLite filters from the network"
   );
 }
 
@@ -166,6 +184,14 @@ async function cleanup() {
   Services.prefs.clearUserPref(CRLITE_TIMESTAMPS_FOR_COVERAGE_PREF);
   Services.prefs.clearUserPref(OCSP_ENABLED_PREF);
   Services.prefs.clearUserPref(OCSP_REQUIRED_PREF);
+  
+  let securityStateDir = PathUtils.join(PathUtils.profileDir, "security_state");
+  for (let path of await IOUtils.getChildren(securityStateDir)) {
+    let ext = PathUtils.filename(path).split(".").at(-1);
+    if (["coverage", "delta", "enrollment", "filter", "stash"].includes(ext)) {
+      await IOUtils.remove(path);
+    }
+  }
   await syncAndDownload([], true);
 }
 
@@ -246,70 +272,14 @@ add_task(async function test_crlite_only_incremental_filters() {
   await cleanup();
 });
 
-add_task(async function test_crlite_incremental_filters_with_wrong_parent() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
-
-  let result = await syncAndDownload([
-    { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
-    {
-      timestamp: "2019-01-01T06:00:00Z",
-      type: "diff",
-      id: "0001",
-      parent: "0000",
-    },
-    {
-      timestamp: "2019-01-01T12:00:00Z",
-      type: "diff",
-      id: "0003",
-      parent: "0002",
-    },
-    {
-      timestamp: "2019-01-01T18:00:00Z",
-      type: "diff",
-      id: "0004",
-      parent: "0003",
-    },
-  ]);
-  expectDownloads(result, [
-    "2019-01-01T00:00:00Z-filter",
-    "2019-01-01T06:00:00Z-diff",
-  ]);
-
-  await cleanup();
-});
-
-add_task(async function test_crlite_incremental_filter_too_early() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
-
-  let result = await syncAndDownload([
-    { timestamp: "2019-01-02T00:00:00Z", type: "filter", id: "0000" },
-    {
-      timestamp: "2019-01-01T00:00:00Z",
-      type: "diff",
-      id: "0001",
-      parent: "0000",
-    },
-  ]);
-  equal(
-    result,
-    "finished;2019-01-02T00:00:00Z-filter",
-    "CRLite filter download should have run"
-  );
-
-  await cleanup();
-});
-
 add_task(async function test_crlite_filters_basic() {
   set_crlite_mode(CRLiteModeEnforcePrefValue);
 
   let result = await syncAndDownload([
     { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
   ]);
-  equal(
-    result,
-    "finished;2019-01-01T00:00:00Z-filter",
-    "CRLite filter download should have run"
-  );
+  expectInstalled(result, ["2019-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, ["2019-01-01T00:00:00Z-filter"]);
 
   await cleanup();
 });
@@ -320,11 +290,8 @@ add_task(async function test_crlite_filters_not_cached() {
     { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
   ];
   let result = await syncAndDownload(filters);
-  equal(
-    result,
-    "finished;2019-01-01T00:00:00Z-filter",
-    "CRLite filter download should have run"
-  );
+  expectInstalled(result, ["2019-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, ["2019-01-01T00:00:00Z-filter"]);
 
   let records = await CRLiteFiltersClient.client.db.list();
 
@@ -364,84 +331,17 @@ add_task(async function test_crlite_filters_full_and_incremental() {
       parent: "0001",
     },
   ]);
-  expectDownloads(result, [
+  expectInstalled(result, [
     "2019-01-01T00:00:00Z-filter",
     "2019-01-01T06:00:00Z-diff",
     "2019-01-01T12:00:00Z-diff",
     "2019-01-01T18:00:00Z-diff",
   ]);
-
-  await cleanup();
-});
-
-add_task(async function test_crlite_filters_multiple_days() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
-
-  let result = await syncAndDownload([
-    
-    {
-      timestamp: "2019-01-02T06:00:00Z",
-      type: "diff",
-      id: "0011",
-      parent: "0010",
-    },
-    {
-      timestamp: "2019-01-03T12:00:00Z",
-      type: "diff",
-      id: "0022",
-      parent: "0021",
-    },
-    {
-      timestamp: "2019-01-02T12:00:00Z",
-      type: "diff",
-      id: "0012",
-      parent: "0011",
-    },
-    {
-      timestamp: "2019-01-03T18:00:00Z",
-      type: "diff",
-      id: "0023",
-      parent: "0022",
-    },
-    {
-      timestamp: "2019-01-02T18:00:00Z",
-      type: "diff",
-      id: "0013",
-      parent: "0012",
-    },
-    { timestamp: "2019-01-02T00:00:00Z", type: "filter", id: "0010" },
-    { timestamp: "2019-01-03T00:00:00Z", type: "filter", id: "0020" },
-    {
-      timestamp: "2019-01-01T06:00:00Z",
-      type: "diff",
-      id: "0001",
-      parent: "0000",
-    },
-    {
-      timestamp: "2019-01-01T18:00:00Z",
-      type: "diff",
-      id: "0003",
-      parent: "0002",
-    },
-    {
-      timestamp: "2019-01-01T12:00:00Z",
-      type: "diff",
-      id: "0002",
-      parent: "0001",
-    },
-    { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
-    {
-      timestamp: "2019-01-03T06:00:00Z",
-      type: "diff",
-      id: "0021",
-      parent: "0020",
-    },
-  ]);
-  expectDownloads(result, [
-    "2019-01-03T00:00:00Z-filter",
-    "2019-01-03T06:00:00Z-diff",
-    "2019-01-03T12:00:00Z-diff",
-    "2019-01-03T18:00:00Z-diff",
+  expectDownloaded(result, [
+    "2019-01-01T00:00:00Z-filter",
+    "2019-01-01T06:00:00Z-diff",
+    "2019-01-01T12:00:00Z-diff",
+    "2019-01-01T18:00:00Z-diff",
   ]);
 
   await cleanup();
@@ -459,11 +359,8 @@ add_task(async function test_crlite_filters_and_check_revocation() {
       id: "0000",
     },
   ]);
-  equal(
-    result,
-    `finished;2020-01-01T00:00:00Z-filter`,
-    "CRLite filter download should have run"
-  );
+  expectInstalled(result, ["2020-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, ["2020-01-01T00:00:00Z-filter"]);
 
   let validCert = constructCertFromFile(
     "test_crlite_filters/valid.example.com.pem"
@@ -602,11 +499,8 @@ add_task(async function test_crlite_filters_with_delta() {
       id: "0000",
     },
   ]);
-  equal(
-    result,
-    `finished;2020-01-01T00:00:00Z-filter`,
-    "CRLite filter download should have run"
-  );
+  expectInstalled(result, ["2020-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, ["2020-01-01T00:00:00Z-filter"]);
 
   let revokedInDeltaCert = constructCertFromFile(
     "test_crlite_filters/revoked-in-delta.example.com.pem"
@@ -636,11 +530,8 @@ add_task(async function test_crlite_filters_with_delta() {
     ],
     false
   );
-  equal(
-    result,
-    "finished;2020-01-01T12:00:00Z-diff",
-    "Should have downloaded the expected CRLite filters"
-  );
+  expectInstalled(result, ["2020-01-01T12:00:00Z-diff"]);
+  expectDownloaded(result, ["2020-01-01T12:00:00Z-diff"]);
 
   await checkCertErrorGenericAtTime(
     certdb,
@@ -668,11 +559,8 @@ add_task(async function test_crlite_timestamps_for_coverage() {
       id: "0000",
     },
   ]);
-  equal(
-    result,
-    `finished;2020-01-01T00:00:00Z-filter`,
-    "CRLite filter download should have run"
-  );
+  expectInstalled(result, ["2020-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, ["2020-01-01T00:00:00Z-filter"]);
 
   let validCert = constructCertFromFile(
     "test_crlite_filters/valid.example.com.pem"
@@ -737,7 +625,13 @@ add_task(async function test_crlite_filters_avoid_reprocessing_filters() {
       parent: "0002",
     },
   ]);
-  expectDownloads(result, [
+  expectInstalled(result, [
+    "2019-01-01T00:00:00Z-filter",
+    "2019-01-01T06:00:00Z-diff",
+    "2019-01-01T12:00:00Z-diff",
+    "2019-01-01T18:00:00Z-diff",
+  ]);
+  expectDownloaded(result, [
     "2019-01-01T00:00:00Z-filter",
     "2019-01-01T06:00:00Z-diff",
     "2019-01-01T12:00:00Z-diff",
@@ -746,7 +640,8 @@ add_task(async function test_crlite_filters_avoid_reprocessing_filters() {
   
   
   result = await syncAndDownload([], false);
-  equal(result, "finished;");
+  expectInstalled(result, []);
+  expectDownloaded(result, []);
 
   
   result = await syncAndDownload(
@@ -760,7 +655,8 @@ add_task(async function test_crlite_filters_avoid_reprocessing_filters() {
     ],
     false
   );
-  equal(result, "finished;2019-01-02T00:00:00Z-diff");
+  expectInstalled(result, ["2019-01-02T00:00:00Z-diff"]);
+  expectDownloaded(result, ["2019-01-02T00:00:00Z-diff"]);
 
   await cleanup();
 });
@@ -788,7 +684,11 @@ add_task(
       true,
       "specified"
     );
-    expectDownloads(result, [
+    expectInstalled(result, [
+      "2019-01-01T00:00:00Z-filter",
+      "2019-01-01T06:00:00Z-diff",
+    ]);
+    expectDownloaded(result, [
       "2019-01-01T00:00:00Z-filter",
       "2019-01-01T06:00:00Z-diff",
     ]);
@@ -812,30 +712,153 @@ add_task(
       false,
       "priority"
     );
-    expectDownloads(result, []);
+    expectInstalled(result, []);
+    expectDownloaded(result, []);
 
     
     
     
+    
+    let priorityResultPromise = TestUtils.topicObserved(
+      "remote-security-settings:crlite-filters-updated"
+    );
     set_crlite_channel("priority");
-    result = await syncAndDownload([], false);
-    expectDownloads(result, [
-      "2020-01-01T00:00:00Z-filter",
-      "2020-01-01T06:00:00Z-diff",
-    ]);
+    [, result] = await priorityResultPromise;
+    expectInstalled(result, ["2020-01-01T06:00:00Z-diff"]);
+    expectDownloaded(result, ["2020-01-01T06:00:00Z-diff"]);
 
     
     
+    
+    
+    let specifiedResultPromise = TestUtils.topicObserved(
+      "remote-security-settings:crlite-filters-updated"
+    );
     set_crlite_channel("specified");
-    result = await syncAndDownload([], false);
-    expectDownloads(result, [
-      "2019-01-01T00:00:00Z-filter",
-      "2019-01-01T06:00:00Z-diff",
-    ]);
+    [, result] = await specifiedResultPromise;
+    expectInstalled(result, []);
+    expectDownloaded(result, []);
 
     await cleanup();
   }
 );
+
+add_task(async function test_crlite_full_filter_on_disk_not_loaded() {
+  set_crlite_mode(CRLiteModeEnforcePrefValue);
+
+  
+  
+  let filterFile = do_get_file("test_crlite_filters/20200101-0-filter");
+  let securityStateDir = PathUtils.join(PathUtils.profileDir, "security_state");
+  await IOUtils.makeDirectory(securityStateDir, { ignoreExisting: true });
+  await IOUtils.copy(
+    filterFile.path,
+    PathUtils.join(securityStateDir, "crlite.filter")
+  );
+
+  
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
+  ]);
+  expectInstalled(result, ["2019-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, []);
+
+  await cleanup();
+});
+
+add_task(async function test_crlite_delta_on_disk_not_loaded() {
+  set_crlite_mode(CRLiteModeEnforcePrefValue);
+
+  
+  let result = await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
+  ]);
+  expectInstalled(result, ["2019-01-01T00:00:00Z-filter"]);
+  expectDownloaded(result, ["2019-01-01T00:00:00Z-filter"]);
+
+  
+  
+  
+  let deltaFile = do_get_file("test_crlite_filters/20200101-1-filter.delta");
+  let securityStateDir = PathUtils.join(PathUtils.profileDir, "security_state");
+  
+  await IOUtils.copy(
+    deltaFile.path,
+    PathUtils.join(securityStateDir, "20200101-0001-filter.delta")
+  );
+
+  result = await syncAndDownload(
+    [
+      {
+        timestamp: "2019-01-01T06:00:00Z",
+        type: "diff",
+        id: "0001",
+        parent: "0000",
+      },
+    ],
+    false
+  );
+  expectInstalled(result, ["2019-01-01T06:00:00Z-diff"]);
+  expectDownloaded(result, []);
+
+  await cleanup();
+});
+
+add_task(async function test_get_crlite_filter_hashes() {
+  set_crlite_mode(CRLiteModeEnforcePrefValue);
+
+  const certList = Cc["@mozilla.org/security/certstorage;1"].getService(
+    Ci.nsICertStorage
+  );
+
+  async function getCRLiteFilterHashes() {
+    return new Promise(resolve => {
+      certList.getCRLiteFilterHashes((rv, result) => {
+        Assert.equal(rv, Cr.NS_OK, "getCRLiteFilterHashes should succeed");
+        resolve(result ? result.toString() : "");
+      });
+    });
+  }
+
+  const fullFilterHash = getHash(
+    readFile(do_get_file("test_crlite_filters/20200101-0-filter"))
+  );
+  const deltaHash = getHash(
+    readFile(do_get_file("test_crlite_filters/20200101-1-filter.delta"))
+  );
+
+  
+  
+  await syncAndDownload([
+    { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
+  ]);
+  Assert.equal(
+    await getCRLiteFilterHashes(),
+    fullFilterHash,
+    "should return only the full filter hash"
+  );
+
+  
+  
+  await syncAndDownload(
+    [
+      {
+        timestamp: "2019-01-01T06:00:00Z",
+        type: "diff",
+        id: "0001",
+        parent: "0000",
+      },
+    ],
+    false
+  );
+  Assert.equal(
+    await getCRLiteFilterHashes(),
+    `${fullFilterHash},${deltaHash}`,
+    "should return full filter hash followed by delta hash"
+  );
+
+  await cleanup();
+});
 
 let server;
 
