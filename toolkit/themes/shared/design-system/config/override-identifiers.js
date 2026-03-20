@@ -1,0 +1,13 @@
+
+
+
+
+module.exports = {
+  
+  OVERRIDE_IDENTIFIERS: [
+    {
+      name: "nova",
+      pref: "browser.design-tokens.nova",
+    },
+  ],
+};

@@ -2126,6 +2126,9 @@ pref("browser.aboutwelcome.enabled", true);
 pref("browser.aboutwelcome.screens", "");
 
 
+pref("browser.design-tokens.nova", false);
+
+
 pref("messaging-system.profile.singleProfileMessaging.disable", true);
 
 
