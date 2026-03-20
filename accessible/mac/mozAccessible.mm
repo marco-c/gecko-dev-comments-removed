@@ -569,11 +569,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
 
   if (@available(macOS 11.0, *)) {
-    
-    
-    if (descFlag == eDescriptionFromARIA &&
-        mGeckoAccessible->Role() != roles::GROUPING &&
-        mGeckoAccessible->Role() != roles::RADIO_GROUP) {
+    if (descFlag == eDescriptionFromARIA) {
       return nil;
     }
   }
