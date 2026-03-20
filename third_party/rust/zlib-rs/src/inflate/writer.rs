@@ -14,14 +14,40 @@ impl<'a> Writer<'a> {
     
     #[inline]
     pub fn new(buf: &'a mut [u8]) -> Writer<'a> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe { Self::new_uninit(buf.as_mut_ptr(), buf.len()) }
     }
 
     
+    
+    
+    
+    
     #[inline]
     pub unsafe fn new_uninit(ptr: *mut u8, len: usize) -> Writer<'a> {
+        
+        
+        
         let buf = unsafe { WeakSliceMut::from_raw_parts_mut(ptr as *mut MaybeUninit<u8>, len) };
         Writer { buf, filled: 0 }
+    }
+
+    #[inline]
+    pub unsafe fn new_uninit_raw(ptr: *mut u8, len: usize, capacity: usize) -> Writer<'a> {
+        let buf =
+            unsafe { WeakSliceMut::from_raw_parts_mut(ptr as *mut MaybeUninit<u8>, capacity) };
+        Writer { buf, filled: len }
     }
 
     
@@ -88,9 +114,7 @@ impl<'a> Writer<'a> {
     ) {
         match FEATURES {
             #[cfg(target_arch = "x86_64")]
-            CpuFeatures::AVX2 => {
-                self.extend_from_window_help::<core::arch::x86_64::__m256i>(window, range)
-            }
+            CpuFeatures::AVX2 => self.extend_from_window_help::<32>(window, range),
             _ => self.extend_from_window_runtime_dispatch(window, range),
         }
     }
@@ -108,37 +132,37 @@ impl<'a> Writer<'a> {
         
 
         #[cfg(target_arch = "x86_64")]
-        if crate::cpu_features::is_enabled_avx2() {
-            return self.extend_from_window_help::<core::arch::x86_64::__m256i>(window, range);
+        if crate::cpu_features::is_enabled_avx2_and_bmi2() {
+            return self.extend_from_window_help::<32>(window, range);
         }
 
         #[cfg(target_arch = "x86_64")]
         if crate::cpu_features::is_enabled_sse() {
-            return self.extend_from_window_help::<core::arch::x86_64::__m128i>(window, range);
+            return self.extend_from_window_help::<16>(window, range);
         }
 
         #[cfg(target_arch = "aarch64")]
         if crate::cpu_features::is_enabled_neon() {
-            return self.extend_from_window_help::<core::arch::aarch64::uint8x16_t>(window, range);
+            return self.extend_from_window_help::<16>(window, range);
         }
 
         #[cfg(target_arch = "wasm32")]
         if crate::cpu_features::is_enabled_simd128() {
-            return self.extend_from_window_help::<core::arch::wasm32::v128>(window, range);
+            return self.extend_from_window_help::<16>(window, range);
         }
 
-        self.extend_from_window_help::<u64>(window, range)
+        self.extend_from_window_help::<8>(window, range)
     }
 
     #[inline(always)]
-    fn extend_from_window_help<C: Chunk>(
+    fn extend_from_window_help<const N: usize>(
         &mut self,
         window: &super::window::Window,
         range: Range<usize>,
     ) {
         let len = range.end - range.start;
 
-        if self.remaining() >= len + core::mem::size_of::<C>() {
+        if self.remaining() >= len + N {
             
             
             
@@ -146,7 +170,7 @@ impl<'a> Writer<'a> {
             
             unsafe {
                 let src = window.as_ptr();
-                Self::copy_chunk_unchecked::<C>(
+                Self::copy_chunk_unchecked::<N>(
                     src.wrapping_add(range.start).cast(),
                     self.next_out(),
                     len,
@@ -156,6 +180,24 @@ impl<'a> Writer<'a> {
             let buf = &window.as_slice()[range];
             self.buf.as_mut_slice()[self.filled..][..buf.len()]
                 .copy_from_slice(slice_to_uninit(buf));
+        }
+
+        self.filled += len;
+    }
+
+    
+    
+    
+    #[inline(always)]
+    pub fn extend_from_window_back(&mut self, window: &super::window::Window, range: Range<usize>) {
+        let len = range.end - range.start;
+
+        unsafe {
+            core::ptr::copy(
+                window.as_ptr().add(range.start),
+                self.buf.as_mut_ptr().add(self.filled).cast(),
+                len,
+            );
         }
 
         self.filled += len;
@@ -174,9 +216,7 @@ impl<'a> Writer<'a> {
     ) {
         match FEATURES {
             #[cfg(target_arch = "x86_64")]
-            CpuFeatures::AVX2 => {
-                self.copy_match_help::<core::arch::x86_64::__m256i>(offset_from_end, length)
-            }
+            CpuFeatures::AVX2 => self.copy_match_help::<32>(offset_from_end, length),
             _ => self.copy_match_runtime_dispatch(offset_from_end, length),
         }
     }
@@ -190,33 +230,32 @@ impl<'a> Writer<'a> {
         
 
         #[cfg(target_arch = "x86_64")]
-        if crate::cpu_features::is_enabled_avx2() {
-            return self.copy_match_help::<core::arch::x86_64::__m256i>(offset_from_end, length);
+        if crate::cpu_features::is_enabled_avx2_and_bmi2() {
+            return self.copy_match_help::<32>(offset_from_end, length);
         }
 
         #[cfg(target_arch = "x86_64")]
         if crate::cpu_features::is_enabled_sse() {
-            return self.copy_match_help::<core::arch::x86_64::__m128i>(offset_from_end, length);
+            return self.copy_match_help::<16>(offset_from_end, length);
         }
 
         #[cfg(target_arch = "aarch64")]
         if crate::cpu_features::is_enabled_neon() {
-            return self
-                .copy_match_help::<core::arch::aarch64::uint8x16_t>(offset_from_end, length);
+            return self.copy_match_help::<16>(offset_from_end, length);
         }
 
         #[cfg(target_arch = "wasm32")]
         if crate::cpu_features::is_enabled_simd128() {
-            return self.copy_match_help::<core::arch::wasm32::v128>(offset_from_end, length);
+            return self.copy_match_help::<16>(offset_from_end, length);
         }
 
-        self.copy_match_help::<u64>(offset_from_end, length)
+        self.copy_match_help::<8>(offset_from_end, length)
     }
 
     #[inline(always)]
-    fn copy_match_help<C: Chunk>(&mut self, offset_from_end: usize, length: usize) {
+    fn copy_match_help<const N: usize>(&mut self, offset_from_end: usize, length: usize) {
         let capacity = self.buf.len();
-        let len = Ord::min(self.filled + length + core::mem::size_of::<C>(), capacity);
+        let len = Ord::min(self.filled + length + N, capacity);
         let buf = &mut self.buf.as_mut_slice()[..len];
 
         let current = self.filled;
@@ -244,12 +283,42 @@ impl<'a> Writer<'a> {
                 }
             }
         } else {
-            Self::copy_chunked_within::<C>(buf, capacity, current, offset_from_end, length)
+            Self::copy_chunked_within::<N>(buf, capacity, current, offset_from_end, length);
+        }
+    }
+
+    
+    
+    #[inline(always)]
+    pub fn copy_match_back(&mut self, offset_from_end: usize, length: usize) {
+        let capacity = self.buf.len();
+        let len = Ord::min(self.filled + length, capacity);
+        let buf = &mut self.buf.as_mut_slice()[..len];
+
+        let current = self.filled;
+        self.filled += length;
+
+        
+        
+        
+        
+
+        match offset_from_end {
+            1 => {
+                
+                let element = buf[current - 1];
+                buf[current..][..length].fill(element);
+            }
+            _ => {
+                for i in 0..length {
+                    buf[current + i] = buf[current - offset_from_end + i];
+                }
+            }
         }
     }
 
     #[inline(always)]
-    fn copy_chunked_within<C: Chunk>(
+    fn copy_chunked_within<const N: usize>(
         buf: &mut [MaybeUninit<u8>],
         capacity: usize,
         current: usize,
@@ -258,10 +327,10 @@ impl<'a> Writer<'a> {
     ) {
         let start = current.checked_sub(offset_from_end).expect("in bounds");
 
-        if current + length + core::mem::size_of::<C>() < capacity {
+        if current + length + N < capacity {
             let ptr = buf.as_mut_ptr();
             
-            unsafe { Self::copy_chunk_unchecked::<C>(ptr.add(start), ptr.add(current), length) }
+            unsafe { Self::copy_chunk_unchecked::<N>(ptr.add(start), ptr.add(current), length) }
         } else {
             
             buf.copy_within(start..start + length, current);
@@ -273,32 +342,70 @@ impl<'a> Writer<'a> {
     
     
     #[inline(always)]
-    unsafe fn copy_chunk_unchecked<C: Chunk>(
+    unsafe fn copy_chunk_unchecked<const N: usize>(
         mut src: *const MaybeUninit<u8>,
         mut dst: *mut MaybeUninit<u8>,
         length: usize,
     ) {
-        let end = src.add(length);
+        if length == 0 {
+            return;
+        }
 
-        let chunk = C::load_chunk(src);
-        C::store_chunk(dst, chunk);
+        
+        
+        
+        
+        let end = unsafe { src.add(length) };
 
-        src = src.add(core::mem::size_of::<C>());
-        dst = dst.add(core::mem::size_of::<C>());
+        
+        let chunk = unsafe { load_chunk::<N>(src) };
+        unsafe { store_chunk::<N>(dst, chunk) };
+
+        
+        
+        
+        src = unsafe { src.add(N) };
+        dst = unsafe { dst.add(N) };
 
         while src < end {
-            let chunk = C::load_chunk(src);
-            C::store_chunk(dst, chunk);
+            
+            
+            
+            
+            let chunk = unsafe { load_chunk::<N>(src) };
+            unsafe { store_chunk::<N>(dst, chunk) };
 
-            src = src.add(core::mem::size_of::<C>());
-            dst = dst.add(core::mem::size_of::<C>());
+            
+            
+            
+            src = unsafe { src.add(N) };
+            dst = unsafe { dst.add(N) };
         }
     }
+}
+
+
+
+
+#[inline(always)]
+unsafe fn load_chunk<const N: usize>(from: *const MaybeUninit<u8>) -> [MaybeUninit<u8>; N] {
+    
+    unsafe { core::ptr::read_unaligned(from.cast::<[MaybeUninit<u8>; N]>()) }
+}
+
+
+
+
+#[inline(always)]
+unsafe fn store_chunk<const N: usize>(out: *mut MaybeUninit<u8>, chunk: [MaybeUninit<u8>; N]) {
+    
+    unsafe { core::ptr::write_unaligned(out.cast(), chunk) }
 }
 
 impl fmt::Debug for Writer<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Writer")
+            .field("ptr", &self.buf.as_ptr())
             .field("filled", &self.filled)
             .field("capacity", &self.capacity())
             .finish()
@@ -307,109 +414,6 @@ impl fmt::Debug for Writer<'_> {
 
 fn slice_to_uninit(slice: &[u8]) -> &[MaybeUninit<u8>] {
     unsafe { &*(slice as *const [u8] as *const [MaybeUninit<u8>]) }
-}
-
-trait Chunk {
-    
-    
-    
-    
-    
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self;
-
-    
-    
-    
-    
-    
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self);
-}
-
-impl Chunk for u64 {
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self {
-        u64::to_le(core::ptr::read_unaligned(from.cast()))
-    }
-
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self) {
-        core::ptr::copy_nonoverlapping(
-            chunk.to_le_bytes().as_ptr().cast(),
-            out,
-            core::mem::size_of::<Self>(),
-        )
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-impl Chunk for core::arch::x86_64::__m128i {
-    #[inline(always)]
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self {
-        core::arch::x86_64::_mm_loadu_si128(from.cast())
-    }
-
-    #[inline(always)]
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self) {
-        core::arch::x86_64::_mm_storeu_si128(out as *mut Self, chunk);
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-impl Chunk for core::arch::x86_64::__m256i {
-    #[inline(always)]
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self {
-        core::arch::x86_64::_mm256_loadu_si256(from.cast())
-    }
-
-    #[inline(always)]
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self) {
-        core::arch::x86_64::_mm256_storeu_si256(out as *mut Self, chunk);
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-impl Chunk for core::arch::x86_64::__m512i {
-    #[inline(always)]
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self {
-        
-        
-        
-        
-        core::ptr::read_unaligned(from.cast())
-    }
-
-    #[inline(always)]
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self) {
-        
-        
-        
-        
-        core::ptr::write_unaligned(out.cast(), chunk)
-    }
-}
-
-#[cfg(target_arch = "aarch64")]
-impl Chunk for core::arch::aarch64::uint8x16_t {
-    #[inline(always)]
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self {
-        core::arch::aarch64::vld1q_u8(from.cast())
-    }
-
-    #[inline(always)]
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self) {
-        core::arch::aarch64::vst1q_u8(out.cast(), chunk)
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-impl Chunk for core::arch::wasm32::v128 {
-    #[inline(always)]
-    unsafe fn load_chunk(from: *const MaybeUninit<u8>) -> Self {
-        core::arch::wasm32::v128_load(from.cast())
-    }
-
-    #[inline(always)]
-    unsafe fn store_chunk(out: *mut MaybeUninit<u8>, chunk: Self) {
-        core::arch::wasm32::v128_store(out as *mut Self, chunk)
-    }
 }
 
 #[cfg(test)]
@@ -442,9 +446,7 @@ mod test {
         assert_eq!(
             buf[M..][..length],
             naive[M..][..length],
-            "{} {}",
-            offset_from_end,
-            length
+            "{offset_from_end} {length}"
         );
     }
 
@@ -452,15 +454,6 @@ mod test {
     fn copy_chunk_unchecked() {
         let offset_from_end = 17;
         let length = 17;
-
-        #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::{__m128i, __m256i, __m512i};
-
-        #[cfg(target_arch = "aarch64")]
-        use core::arch::aarch64::uint8x16_t;
-
-        #[cfg(target_arch = "wasm32")]
-        use core::arch::wasm32::v128;
 
         macro_rules! helper {
             ($func:expr) => {
@@ -476,30 +469,30 @@ mod test {
 
         #[cfg(target_arch = "x86_64")]
         if crate::cpu_features::is_enabled_avx512() {
-            helper!(Writer::copy_match_help::<__m512i>);
+            helper!(Writer::copy_match_help::<64>);
         }
 
         #[cfg(target_arch = "x86_64")]
-        if crate::cpu_features::is_enabled_avx2() {
-            helper!(Writer::copy_match_help::<__m256i>);
+        if crate::cpu_features::is_enabled_avx2_and_bmi2() {
+            helper!(Writer::copy_match_help::<32>);
         }
 
         #[cfg(target_arch = "x86_64")]
         if crate::cpu_features::is_enabled_sse() {
-            helper!(Writer::copy_match_help::<__m128i>);
+            helper!(Writer::copy_match_help::<16>);
         }
 
         #[cfg(target_arch = "aarch64")]
         if crate::cpu_features::is_enabled_neon() {
-            helper!(Writer::copy_match_help::<uint8x16_t>);
+            helper!(Writer::copy_match_help::<16>);
         }
 
         #[cfg(target_arch = "wasm32")]
         if crate::cpu_features::is_enabled_simd128() {
-            helper!(Writer::copy_match_help::<v128>);
+            helper!(Writer::copy_match_help::<16>);
         }
 
-        helper!(Writer::copy_match_help::<u64>);
+        helper!(Writer::copy_match_help::<8>);
     }
 
     #[test]
