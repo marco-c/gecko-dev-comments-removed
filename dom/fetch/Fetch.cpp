@@ -1663,22 +1663,7 @@ already_AddRefed<ReadableStream> FetchBody<Derived>::GetBody(JSContext* aCx,
   }
 
   nsCOMPtr<nsIInputStream> inputStream;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!BodyUsed()) {
-    DerivedClass()->CloneBody(getter_AddRefs(inputStream));
-  } else {
-    
-    
-    DerivedClass()->GetBody(getter_AddRefs(inputStream));
-  }
+  DerivedClass()->GetBody(getter_AddRefs(inputStream));
 
   if (!inputStream) {
     return nullptr;
@@ -1896,29 +1881,6 @@ void EmptyBody::GetBody(nsIInputStream** aStream, int64_t* aBodyLength) {
 
   nsCOMPtr<nsIInputStream> bodyStream = mBodyStream;
   bodyStream.forget(aStream);
-}
-
-void EmptyBody::CloneBody(nsIInputStream** aStream, int64_t* aBodyLength) {
-  MOZ_ASSERT(aStream);
-
-  if (aBodyLength) {
-    *aBodyLength = 0;
-  }
-
-  nsCOMPtr<nsIInputStream> replacementBody;
-
-  nsresult rv = NS_CloneInputStream(mBodyStream, aStream,
-                                    getter_AddRefs(replacementBody));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    *aStream = nullptr;
-    if (aBodyLength) {
-      *aBodyLength = -1;
-    }
-    return;
-  }
-  if (replacementBody) {
-    mBodyStream.swap(replacementBody);
-  }
 }
 
 }  
