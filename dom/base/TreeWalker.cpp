@@ -25,7 +25,7 @@ TreeWalker::TreeWalker(nsINode* aRoot, uint32_t aWhatToShow,
                        NodeFilter* aFilter)
     : nsTraversal(aRoot, aWhatToShow, aFilter), mCurrentNode(aRoot) {}
 
-TreeWalker::~TreeWalker() = default;
+TreeWalker::~TreeWalker() {  }
 
 
 

@@ -232,7 +232,7 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset)
   mH.mDataOffset = aDataOffset;
 }
 
-nsBMPDecoder::~nsBMPDecoder() = default;
+nsBMPDecoder::~nsBMPDecoder() {}
 
 
 int32_t nsBMPDecoder::GetCompressedImageSize() const {

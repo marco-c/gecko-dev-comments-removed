@@ -130,11 +130,6 @@ class nsMainThreadPtrHolder<
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsMainThreadPtrHolder<Holder>)
 
-  
-  
-  Holder& operator=(const nsMainThreadPtrHolder& aOther) = delete;
-  nsMainThreadPtrHolder(const nsMainThreadPtrHolder& aOther) = delete;
-
  private:
   
   Holder mHolder;
@@ -142,6 +137,11 @@ class nsMainThreadPtrHolder<
 #ifndef RELEASE_OR_BETA
   const char* mName = nullptr;
 #endif
+
+  
+  
+  Holder& operator=(const nsMainThreadPtrHolder& aOther) = delete;
+  nsMainThreadPtrHolder(const nsMainThreadPtrHolder& aOther) = delete;
 };
 
 namespace mozilla {

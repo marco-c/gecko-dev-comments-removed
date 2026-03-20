@@ -95,9 +95,9 @@ ServiceWorkerRegistrationDescriptor::operator=(
   return *this;
 }
 
-
-ServiceWorkerRegistrationDescriptor::~ServiceWorkerRegistrationDescriptor() =
-    default;
+ServiceWorkerRegistrationDescriptor::~ServiceWorkerRegistrationDescriptor() {
+  
+}
 
 bool ServiceWorkerRegistrationDescriptor::operator==(
     const ServiceWorkerRegistrationDescriptor& aRight) const {

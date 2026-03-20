@@ -54,7 +54,7 @@ XULTreeAccessible::XULTreeAccessible(nsIContent* aContent, DocAccessible* aDoc,
   }
 }
 
-XULTreeAccessible::~XULTreeAccessible() = default;
+XULTreeAccessible::~XULTreeAccessible() {}
 
 
 
@@ -574,7 +574,7 @@ XULTreeItemAccessibleBase::XULTreeItemAccessibleBase(
   mStateFlags |= eSharedNode;
 }
 
-XULTreeItemAccessibleBase::~XULTreeItemAccessibleBase() = default;
+XULTreeItemAccessibleBase::~XULTreeItemAccessibleBase() {}
 
 
 
@@ -906,7 +906,7 @@ XULTreeItemAccessible::XULTreeItemAccessible(
   GetCellName(mColumn, mCachedName);
 }
 
-XULTreeItemAccessible::~XULTreeItemAccessible() = default;
+XULTreeItemAccessible::~XULTreeItemAccessible() {}
 
 
 

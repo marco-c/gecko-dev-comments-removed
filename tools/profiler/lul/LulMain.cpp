@@ -203,8 +203,9 @@ LExpr* RuleSet::ExprForRegno(DW_REG_NUMBER aRegno) {
   }
 }
 
-
-RuleSet::RuleSet() = default;
+RuleSet::RuleSet() {
+  
+}
 
 
 

@@ -1294,7 +1294,9 @@ nsHTMLFramesetBorderFrame::nsHTMLFramesetBorderFrame(
   mNextNeighbor = 0;
 }
 
-nsHTMLFramesetBorderFrame::~nsHTMLFramesetBorderFrame() = default;
+nsHTMLFramesetBorderFrame::~nsHTMLFramesetBorderFrame() {
+  
+}
 
 NS_QUERYFRAME_HEAD(nsHTMLFramesetBorderFrame)
   NS_QUERYFRAME_ENTRY(nsHTMLFramesetBorderFrame)
@@ -1486,7 +1488,9 @@ NS_QUERYFRAME_TAIL_INHERITING(nsLeafFrame)
 
 NS_IMPL_FRAMEARENA_HELPERS(nsHTMLFramesetBlankFrame)
 
-nsHTMLFramesetBlankFrame::~nsHTMLFramesetBlankFrame() = default;
+nsHTMLFramesetBlankFrame::~nsHTMLFramesetBlankFrame() {
+  
+}
 
 void nsHTMLFramesetBlankFrame::Reflow(nsPresContext* aPresContext,
                                       ReflowOutput& aDesiredSize,

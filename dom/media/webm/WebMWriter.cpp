@@ -12,8 +12,9 @@ namespace mozilla {
 
 WebMWriter::WebMWriter() : mEbmlComposer(new EbmlComposer()) {}
 
-
-WebMWriter::~WebMWriter() = default;
+WebMWriter::~WebMWriter() {
+  
+}
 
 nsresult WebMWriter::WriteEncodedTrack(
     const nsTArray<RefPtr<EncodedFrame>>& aData, uint32_t aFlags) {

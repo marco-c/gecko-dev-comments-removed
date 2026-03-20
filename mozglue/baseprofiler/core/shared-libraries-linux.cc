@@ -153,7 +153,7 @@ class MemoryRange {
 
 class MemoryMappedFile {
  public:
-  MemoryMappedFile() = default;
+  MemoryMappedFile() {}
 
   
   
@@ -259,7 +259,7 @@ const size_t kMDGUIDSize = sizeof(MDGUID);
 class FileID {
  public:
   explicit FileID(const char* path) : path_(path) {}
-  ~FileID() = default;
+  ~FileID() {}
 
   
   

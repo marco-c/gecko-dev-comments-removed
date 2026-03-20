@@ -191,9 +191,10 @@ NrIceMediaStream::NrIceMediaStream(NrIceCtx* ctx, const std::string& id,
       old_stream_(nullptr),
       id_(id) {}
 
-
-
-NrIceMediaStream::~NrIceMediaStream() = default;
+NrIceMediaStream::~NrIceMediaStream() {
+  
+  
+}
 
 nsresult NrIceMediaStream::ConnectToPeer(
     const std::string& ufrag, const std::string& pwd,
