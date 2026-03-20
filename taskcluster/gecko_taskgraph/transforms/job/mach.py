@@ -5,29 +5,30 @@
 Support for running mach tasks (via run-task)
 """
 
-from taskgraph.util.schema import LegacySchema, taskref_or_string
-from voluptuous import Any, Optional, Required
+from typing import Literal, Optional, Union
+
+from taskgraph.util.schema import Schema, taskref_or_string_msgspec
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 
-mach_schema = LegacySchema({
-    Required("using"): "mach",
+
+class MachSchema(Schema, kw_only=True):
+    using: Literal["mach"]
     
-    Required("mach"): taskref_or_string,
-    
-    
-    Optional("sparse-profile"): Any(str, None),
+    mach: taskref_or_string_msgspec
     
     
-    Required("comm-checkout"): bool,
+    sparse_profile: Optional[str] = None
     
     
-    Optional("prepend-env"): {str: str},
+    comm_checkout: bool
     
-    Optional("workdir"): str,
     
-    Optional("use-caches"): Any(bool, [str]),
-})
+    prepend_env: Optional[dict[str, str]] = None
+    
+    workdir: Optional[str] = None
+    
+    use_caches: Optional[Union[bool, list[str]]] = None
 
 
 defaults = {
@@ -35,8 +36,8 @@ defaults = {
 }
 
 
-@run_job_using("docker-worker", "mach", schema=mach_schema, defaults=defaults)
-@run_job_using("generic-worker", "mach", schema=mach_schema, defaults=defaults)
+@run_job_using("docker-worker", "mach", schema=MachSchema, defaults=defaults)
+@run_job_using("generic-worker", "mach", schema=MachSchema, defaults=defaults)
 def configure_mach(config, job, taskdesc):
     run = job["run"]
     worker = job["worker"]
