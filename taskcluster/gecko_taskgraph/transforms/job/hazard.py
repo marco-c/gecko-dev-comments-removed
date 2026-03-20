@@ -5,8 +5,9 @@
 Support for running hazard jobs via dedicated scripts
 """
 
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
+from typing import Literal, Optional, Union
+
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 from gecko_taskgraph.transforms.job.common import (
@@ -15,24 +16,24 @@ from gecko_taskgraph.transforms.job.common import (
     setup_secrets,
 )
 
-haz_run_schema = LegacySchema({
-    Required("using"): "hazard",
+
+class HazRunSchema(Schema, kw_only=True):
+    using: Literal["hazard"]
     
-    Required("command"): str,
+    command: str
     
-    Optional("mozconfig"): str,
-    
-    
-    
+    mozconfig: Optional[str] = None
     
     
-    Optional("secrets"): Any(bool, [str]),
     
-    Optional("workdir"): str,
-})
+    
+    
+    secrets: Optional[Union[bool, list[str]]] = None
+    
+    workdir: Optional[str] = None
 
 
-@run_job_using("docker-worker", "hazard", schema=haz_run_schema)
+@run_job_using("docker-worker", "hazard", schema=HazRunSchema)
 def docker_worker_hazard(config, job, taskdesc):
     run = job["run"]
 
