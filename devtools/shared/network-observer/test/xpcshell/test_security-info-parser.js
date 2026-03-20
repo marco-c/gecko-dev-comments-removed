@@ -23,6 +23,7 @@ const MockSecurityInfo = {
   
   protocolVersion: 3,
   serverCert: MockCertificate,
+  isBuiltCertChainRootBuiltInRoot: true,
 };
 
 add_task(async function run_test() {
