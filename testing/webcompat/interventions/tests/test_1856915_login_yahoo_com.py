@@ -13,17 +13,25 @@ async def is_password_reveal_toggle_fully_visible(client, in_headless_mode):
         pytest.xfail("Skipping as cannot do reCAPTCHA in headless mode.")
         return False
     await client.navigate(URL)
-    client.await_css(USERNAME_CSS).send_keys("webcompat")
-    client.await_css(SIGNIN_CSS).click()
-    client.await_css(RECAPTCHA_CSS, is_displayed=True)
-    print("\a")  
-    try:
-        toggle = client.await_css(TOGGLE_CSS, timeout=60)
-    except NoSuchElementException:
-        pytest.xfail(
-            "Timed out waiting for reCAPTCHA to be completed. Please try again."
-        )
-        return False
+    client.await_css(USERNAME_CSS, is_displayed=True, timeout=20).send_keys("webcompat")
+    client.await_css(SIGNIN_CSS, is_displayed=True).click()
+    recaptcha, toggle = client.await_first_element_of(
+        [
+            client.css(RECAPTCHA_CSS),
+            client.css(TOGGLE_CSS),
+        ],
+        is_displayed=True,
+    )
+    if recaptcha:
+        client.await_css(RECAPTCHA_CSS, is_displayed=True)
+        print("\a")  
+        try:
+            toggle = client.await_css(TOGGLE_CSS, timeout=60)
+        except NoSuchElementException:
+            pytest.xfail(
+                "Timed out waiting for reCAPTCHA to be completed. Please try again."
+            )
+            return False
     return client.execute_script(
         """
         const toggle = arguments[0].getBoundingClientRect();
