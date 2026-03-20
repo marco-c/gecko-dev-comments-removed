@@ -98,6 +98,12 @@ class ExternalEngineStateMachine final
                                  self->NotifyResizingInternal(aWidth, aHeight);
                                }));
   }
+  void NotifyHardwareReset() {
+    
+    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+        "ExternalEngineStateMachine::NotifyHardwareReset",
+        [self = RefPtr{this}] { self->RecoverFromHardwareReset(); }));
+  }
 
   const char* GetStateStr() const;
 
@@ -294,7 +300,13 @@ class ExternalEngineStateMachine final
 
   void UpdateSecondaryVideoContainer() override;
 
+  
+  
+  
+  
+  
   void RecoverFromCDMProcessCrashIfNeeded();
+  void RecoverFromHardwareReset();
 
   void ReportTelemetry(const MediaResult& aError);
 
