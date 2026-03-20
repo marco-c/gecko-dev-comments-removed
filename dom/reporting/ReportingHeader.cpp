@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ReportingHeader.h"
 
 #include <limits>
@@ -237,9 +235,7 @@ EndpointsList ReportingHeader::ProcessReportingEndpointsListFromResponse(
     return {};
   }
 
-  
-  
-  if (NS_WARN_IF(!IsSecureURI(uri))) {
+  if (!IsSecureURI(uri)) {
     return {};
   }
 
