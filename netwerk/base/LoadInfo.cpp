@@ -1420,10 +1420,9 @@ already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(
     
     
     nsAutoCString scheme;
-    nsAutoCString separator("://");
     nsAutoCString hostPort;
     nsAutoCString path;
-    nsAutoCString uriString("");
+    nsAutoCString uriString;
     if (aPrincipal->SchemeIs("view-source")) {
       
       
@@ -1453,7 +1452,10 @@ already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(
       aPrincipal->GetHostPort(hostPort);
       aPrincipal->GetFilePath(path);
     }
-    uriString += scheme + separator + hostPort + path;
+    uriString.Append(scheme);
+    uriString.AppendLiteral("://");
+    uriString.Append(hostPort);
+    uriString.Append(path);
 
     nsCOMPtr<nsIURI> truncatedURI;
     nsresult rv = NS_NewURI(getter_AddRefs(truncatedURI), uriString);
@@ -1498,7 +1500,7 @@ already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(
       nsCOMPtr<nsIPrincipal> truncatedPrincipal =
           CreateTruncatedPrincipal(allowedPrincipal);
 
-      truncatedAllowList.AppendElement(truncatedPrincipal);
+      truncatedAllowList.AppendElement(std::move(truncatedPrincipal));
     }
 
     return ExpandedPrincipal::Create(truncatedAllowList,
