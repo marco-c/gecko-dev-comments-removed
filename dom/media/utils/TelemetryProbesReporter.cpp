@@ -12,6 +12,7 @@
 #include "mozilla/EMEUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/glean/DomMediaEmeMetrics.h"
 #include "mozilla/glean/DomMediaMetrics.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
@@ -321,7 +322,12 @@ void TelemetryProbesReporter::OnFirstFrameLoaded(
     }
     LOG("%s", logMessage.get());
   }
-  glean::media_playback::first_frame_loaded.Record(Some(extraData));
+  
+  
+  
+  if (Telemetry::CanRecordPrereleaseData()) {
+    glean::media_playback::first_frame_loaded.Record(Some(extraData));
+  }
   mOwner->DispatchAsyncTestingEvent(u"mozfirstframeloadedprobe"_ns);
 }
 
