@@ -32,8 +32,20 @@ importScripts("resource://gre/modules/workers/require.js");
 
   
   
+  
+  
+  
+  
+  
+  
   importScripts(
-    "resource://newtab/data/content/vendor.bundle.js",
+    "chrome://global/content/vendor/react.js",
+    "chrome://global/content/vendor/react-dom.js",
+    "chrome://global/content/vendor/react-dom-server.js",
+    "chrome://global/content/vendor/redux.js",
+    "chrome://global/content/vendor/react-transition-group.js",
+    "chrome://global/content/vendor/prop-types.js",
+    "chrome://global/content/vendor/react-redux.js",
     "resource://newtab/data/content/activity-stream.bundle.js"
   );
 

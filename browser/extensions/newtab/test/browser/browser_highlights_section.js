@@ -59,14 +59,12 @@ test_highlights(
 
 test_highlights(
   1, 
-  async function check_highlights_context_menu() {
+  function check_highlights_context_menu() {
     const menuButton = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu-button"
     );
     
     menuButton.click();
-    
-    await new Promise(r => content.requestAnimationFrame(r));
     const found = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu"
     );
@@ -82,8 +80,6 @@ test_highlights(
     );
     
     menuButton.click();
-    
-    await new Promise(r => content.requestAnimationFrame(r));
     const contextMenu = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu"
     );
