@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsAppShellService_h
 #define _nsAppShellService_h
 

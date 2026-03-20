@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAppShellWindowEnumerator_h
 #define nsAppShellWindowEnumerator_h
 

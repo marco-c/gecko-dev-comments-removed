@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_AppWindow_h_
 #define mozilla_AppWindow_h_
 

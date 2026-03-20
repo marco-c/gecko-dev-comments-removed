@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_LiveResizeListener_h
 #define mozilla_LiveResizeListener_h
 

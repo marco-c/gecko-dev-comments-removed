@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsChromeTreeOwner.h"
 #include "AppWindow.h"
 

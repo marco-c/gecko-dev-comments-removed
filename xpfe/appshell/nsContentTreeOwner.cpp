@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsContentTreeOwner.h"
 #include "AppWindow.h"
 

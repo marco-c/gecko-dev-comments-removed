@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIAppShellService.h"
 #include "nsNetUtil.h"
 #include "nsIObserverService.h"
