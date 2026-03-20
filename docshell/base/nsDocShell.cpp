@@ -363,7 +363,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mURIResultedInDocument(false),
       mIsBeingDestroyed(false),
       mIsExecutingOnLoadHandler(false),
-      mSavingOldViewer(false),
       mInvisible(false),
       mHasLoadedNonBlankURI(false),
       mHasStartedLoadingOtherThanInitialBlankURI(false),
@@ -1204,13 +1203,13 @@ nsDocShell::PrepareForNewContentModel() {
 }
 
 NS_IMETHODIMP
-nsDocShell::FirePageHideNotification(bool aIsUnload) {
-  FirePageHideNotificationInternal(aIsUnload, false);
+nsDocShell::FirePageHideNotification() {
+  FirePageHideNotificationInternal(false);
   return NS_OK;
 }
 
 void nsDocShell::FirePageHideNotificationInternal(
-    bool aIsUnload, bool aSkipCheckingDynEntries) {
+    bool aSkipCheckingDynEntries) {
   {
     nsAutoMicroTask mt;
     SetOngoingNavigation(Nothing());
@@ -1226,7 +1225,7 @@ void nsDocShell::FirePageHideNotificationInternal(
       mTiming->NotifyUnloadEventStart();
     }
 
-    viewer->PageHide(aIsUnload);
+    viewer->PageHide(true);
 
     if (mTiming) {
       mTiming->NotifyUnloadEventEnd();
@@ -1244,12 +1243,12 @@ void nsDocShell::FirePageHideNotificationInternal(
       RefPtr<nsDocShell> child = static_cast<nsDocShell*>(kids[i].get());
       if (child) {
         
-        child->FirePageHideNotificationInternal(aIsUnload, true);
+        child->FirePageHideNotificationInternal(true);
       }
     }
 
     
-    if (aIsUnload && !aSkipCheckingDynEntries) {
+    if (!aSkipCheckingDynEntries) {
       RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
       if (rootSH) {
         MOZ_LOG(
@@ -4344,7 +4343,7 @@ nsDocShell::Destroy() {
   mLoadingURI = nullptr;
 
   
-  (void)FirePageHideNotification(true);
+  (void)FirePageHideNotification();
 
   
   
@@ -6535,8 +6534,6 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
       }
     }
 
-    mSavingOldViewer = false;
-
     
     
     mLoadingURI = nullptr;
@@ -6551,7 +6548,7 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
     
     
     
-    (void)FirePageHideNotification(!mSavingOldViewer);
+    (void)FirePageHideNotification();
     
     if (mIsBeingDestroyed) {
       return NS_ERROR_DOCSHELL_DYING;
@@ -6888,14 +6885,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   
   
 
-  if (mSavingOldViewer) {
-    
-    
-    
-    
-    mSavingOldViewer = false;
-  }
-
   NS_ASSERTION(!mLoadingURI, "Re-entering unload?");
 
   nsCOMPtr<nsIChannel> aOpenedChannel = do_QueryInterface(aRequest);
@@ -6907,7 +6896,7 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   
   nsCOMPtr<nsIURI> previousURI = mCurrentURI;
 
-  FirePageHideNotification(!mSavingOldViewer);
+  FirePageHideNotification();
   if (mIsBeingDestroyed) {
     
     viewer->Stop();
@@ -7081,7 +7070,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   }
 
   mSavedRefreshURIList = nullptr;
-  mSavingOldViewer = false;
   mEODForCurrentDocument = false;
 
   
@@ -7177,13 +7165,6 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
       
       
       oldViewer = mDocumentViewer;
-
-      
-      
-
-      if (mSavingOldViewer) {
-        mSavingOldViewer = false;
-      }
     } else {
       
       parent->GetDocViewer(getter_AddRefs(oldViewer));
@@ -8794,12 +8775,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  
-  
-  
-  bool savePresentation = false;
-
   Document* document = GetDocument();
   uint32_t flags = 0;
   if (document && !document->CanSavePresentation(nullptr, flags, true)) {
@@ -8844,8 +8819,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   }
 
   mLoadType = aLoadState->LoadType();
-
-  mSavingOldViewer = savePresentation;
 
   if (aLoadState->LoadIsFromSessionHistory() &&
       (mLoadType & LOAD_CMD_HISTORY)) {

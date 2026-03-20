@@ -920,7 +920,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideNotificationInternal(
-      bool aIsUnload, bool aSkipCheckingDynEntries);
+      bool aSkipCheckingDynEntries);
 
   void ThawFreezeNonRecursive(bool aThaw);
   
@@ -1323,12 +1323,6 @@ class nsDocShell final : public nsDocLoader,
   bool mIsBeingDestroyed : 1;
 
   bool mIsExecutingOnLoadHandler : 1;
-
-  
-  
-  
-  
-  bool mSavingOldViewer : 1;
 
   bool mInvisible : 1;
 
