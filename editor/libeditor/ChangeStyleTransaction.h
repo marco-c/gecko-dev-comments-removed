@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ChangeStyleTransaction_h
 #define ChangeStyleTransaction_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "ChangeAttributeTransaction.h"
 
 #include "EditorDOMAPIWrapper.h"

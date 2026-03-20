@@ -2,7 +2,6 @@
 
 
 
-
 #include "JoinNodesTransaction.h"
 
 #include "EditorDOMPoint.h"   

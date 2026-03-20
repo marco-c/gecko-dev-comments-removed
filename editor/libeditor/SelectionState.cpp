@@ -2,7 +2,6 @@
 
 
 
-
 #include "SelectionState.h"
 
 #include "AutoClonedRangeArray.h"  

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_TransactionManager_h
 #define mozilla_TransactionManager_h
 

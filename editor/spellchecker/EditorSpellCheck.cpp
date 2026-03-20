@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EditorSpellCheck.h"
 
 #include "EditorBase.h"            

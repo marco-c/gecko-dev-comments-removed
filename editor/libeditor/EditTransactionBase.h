@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditTransactionBase_h
 #define mozilla_EditTransactionBase_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef FilteredContentIterator_h
 #define FilteredContentIterator_h
 

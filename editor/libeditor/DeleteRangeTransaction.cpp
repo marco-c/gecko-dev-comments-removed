@@ -2,7 +2,6 @@
 
 
 
-
 #include "DeleteRangeTransaction.h"
 
 #include "DeleteContentTransactionBase.h"

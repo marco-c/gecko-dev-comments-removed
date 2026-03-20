@@ -2,7 +2,6 @@
 
 
 
-
 #include "EditTransactionBase.h"
 
 #include "mozilla/Logging.h"

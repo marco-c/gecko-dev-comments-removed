@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DeleteMultipleRangesTransactionBase_h
 #define DeleteMultipleRangesTransactionBase_h
 

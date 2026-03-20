@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsComposeTxtSrvFilter.h"
 #include "nsError.h"              
 #include "nsIContent.h"           

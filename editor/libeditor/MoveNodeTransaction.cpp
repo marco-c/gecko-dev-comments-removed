@@ -2,7 +2,6 @@
 
 
 
-
 #include "MoveNodeTransaction.h"
 
 #include "EditorBase.h"           

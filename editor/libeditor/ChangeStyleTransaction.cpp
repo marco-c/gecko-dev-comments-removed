@@ -2,7 +2,6 @@
 
 
 
-
 #include "ChangeStyleTransaction.h"
 
 #include "EditorDOMAPIWrapper.h"

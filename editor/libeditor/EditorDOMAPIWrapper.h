@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef EditorDOMAPIWrapper_h
 #define EditorDOMAPIWrapper_h
 

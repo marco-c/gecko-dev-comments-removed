@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HTMLEditHelpers_h
 #define HTMLEditHelpers_h
 

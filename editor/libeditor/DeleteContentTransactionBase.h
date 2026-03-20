@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DeleteContentTransactionBase_h
 #define DeleteContentTransactionBase_h
 

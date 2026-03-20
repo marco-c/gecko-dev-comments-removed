@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditorSpellCheck_h
 #define mozilla_EditorSpellCheck_h
 

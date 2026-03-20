@@ -2,7 +2,6 @@
 
 
 
-
 #include "TransactionStack.h"
 
 #include "nsCycleCollectionParticipant.h"

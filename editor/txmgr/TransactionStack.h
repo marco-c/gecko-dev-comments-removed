@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_TransactionStack_h
 #define mozilla_TransactionStack_h
 

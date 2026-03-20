@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/EditorCommands.h"
 
 #include "mozilla/Assertions.h"  

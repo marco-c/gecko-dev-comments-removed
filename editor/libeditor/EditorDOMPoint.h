@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditorDOMPoint_h
 #define mozilla_EditorDOMPoint_h
 

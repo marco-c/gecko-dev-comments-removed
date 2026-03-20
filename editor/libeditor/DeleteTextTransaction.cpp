@@ -2,7 +2,6 @@
 
 
 
-
 #include "DeleteTextTransaction.h"
 
 #include "EditorBase.h"

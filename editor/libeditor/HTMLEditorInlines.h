@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HTMLEditorInlines_h
 #define HTMLEditorInlines_h
 

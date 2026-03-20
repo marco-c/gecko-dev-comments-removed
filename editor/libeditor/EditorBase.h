@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditorBase_h
 #define mozilla_EditorBase_h
 

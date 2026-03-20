@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditorCommands_h
 #define mozilla_EditorCommands_h
 

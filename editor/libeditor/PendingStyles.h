@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_PendingStyles_h
 #define mozilla_PendingStyles_h
 

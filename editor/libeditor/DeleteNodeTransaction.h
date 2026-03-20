@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DeleteNodeTransaction_h
 #define DeleteNodeTransaction_h
 

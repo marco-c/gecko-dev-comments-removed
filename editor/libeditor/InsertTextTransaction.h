@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef InsertTextTransaction_h
 #define InsertTextTransaction_h
 

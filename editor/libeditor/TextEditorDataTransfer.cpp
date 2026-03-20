@@ -2,7 +2,6 @@
 
 
 
-
 #include "TextEditor.h"
 
 #include "EditorUtils.h"

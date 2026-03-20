@@ -2,7 +2,6 @@
 
 
 
-
 #include "DeleteMultipleRangesTransaction.h"
 
 #include "DeleteContentTransactionBase.h"

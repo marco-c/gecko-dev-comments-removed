@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DeleteRangeTransaction_h
 #define DeleteRangeTransaction_h
 

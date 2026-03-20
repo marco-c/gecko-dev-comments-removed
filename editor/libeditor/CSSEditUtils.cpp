@@ -2,7 +2,6 @@
 
 
 
-
 #include "CSSEditUtils.h"
 
 #include "ChangeStyleTransaction.h"

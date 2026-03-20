@@ -2,7 +2,6 @@
 
 
 
-
 #include "AutoSelectionRestorer.h"
 
 namespace mozilla {

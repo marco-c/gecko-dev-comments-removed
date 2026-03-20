@@ -2,7 +2,6 @@
 
 
 
-
 #include "CompositionTransaction.h"
 
 #include "mozilla/EditorBase.h"  

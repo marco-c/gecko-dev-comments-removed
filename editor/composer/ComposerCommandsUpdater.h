@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_ComposerCommandsUpdater_h
 #define mozilla_ComposerCommandsUpdater_h
 

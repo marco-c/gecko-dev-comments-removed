@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AutoClonedRangeArray_h
 #define AutoClonedRangeArray_h
 

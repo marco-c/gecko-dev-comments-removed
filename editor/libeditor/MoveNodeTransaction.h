@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MoveNodeTransaction_h
 #define MoveNodeTransaction_h
 

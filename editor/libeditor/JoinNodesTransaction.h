@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef JoinNodesTransaction_h
 #define JoinNodesTransaction_h
 

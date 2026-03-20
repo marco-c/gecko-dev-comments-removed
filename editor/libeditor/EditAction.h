@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditAction_h
 #define mozilla_EditAction_h
 

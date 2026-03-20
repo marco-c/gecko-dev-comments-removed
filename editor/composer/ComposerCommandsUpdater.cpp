@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/ComposerCommandsUpdater.h"
 
 #include "mozilla/mozalloc.h"            

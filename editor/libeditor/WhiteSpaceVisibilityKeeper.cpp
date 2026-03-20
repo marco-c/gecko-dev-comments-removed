@@ -2,7 +2,6 @@
 
 
 
-
 #include "WhiteSpaceVisibilityKeeper.h"
 
 #include "EditorDOMPoint.h"

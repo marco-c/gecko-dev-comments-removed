@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditorController_h
 #define mozilla_EditorController_h
 

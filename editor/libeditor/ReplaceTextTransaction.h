@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ReplaceTextTransaction_h
 #define ReplaceTextTransaction_h
 

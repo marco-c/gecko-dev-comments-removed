@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_EditorHelperForwards_h
 #define mozilla_EditorHelperForwards_h
 

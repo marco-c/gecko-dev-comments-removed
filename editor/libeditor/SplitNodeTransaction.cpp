@@ -2,7 +2,6 @@
 
 
 
-
 #include "SplitNodeTransaction.h"
 
 #include "EditorDOMPoint.h"   

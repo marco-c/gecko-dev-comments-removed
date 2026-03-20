@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HTMLEditor.h"
 
 #include <string.h>

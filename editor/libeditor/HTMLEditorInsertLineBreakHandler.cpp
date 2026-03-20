@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EditorBase.h"
 #include "HTMLEditor.h"
 #include "HTMLEditorInlines.h"

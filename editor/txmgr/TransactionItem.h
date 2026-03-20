@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TransactionItem_h
 #define TransactionItem_h
 

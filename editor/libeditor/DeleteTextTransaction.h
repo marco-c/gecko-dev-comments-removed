@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DeleteTextTransaction_h
 #define DeleteTextTransaction_h
 

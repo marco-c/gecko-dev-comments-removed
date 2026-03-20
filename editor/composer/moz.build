@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 MOCHITEST_MANIFESTS += ["test/mochitest.toml"]
 
@@ -27,12 +25,12 @@ EXPORTS.mozilla += [
     "ComposerCommandsUpdater.h",
 ]
 
-
+# Needed because we include HTMLEditor.h which indirectly includes Document.h
 LOCAL_INCLUDES += [
     "/dom/base",
-    "/dom/html",  
-    "/editor/spellchecker",  
-    "/layout/style",  
+    "/dom/html",  # For nsHTMLDocument
+    "/editor/spellchecker",  # nsComposeTxtSrvFilter.h
+    "/layout/style",  # For things nsHTMLDocument includes.
 ]
 
 FINAL_LIBRARY = "xul"

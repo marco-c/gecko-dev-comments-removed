@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_TextServicesDocument_h
 #define mozilla_TextServicesDocument_h
 

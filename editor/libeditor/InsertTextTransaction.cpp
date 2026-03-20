@@ -2,7 +2,6 @@
 
 
 
-
 #include "InsertTextTransaction.h"
 
 #include "ErrorList.h"

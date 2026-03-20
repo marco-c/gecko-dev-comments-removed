@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WSRunScanner_h
 #define WSRunScanner_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef InsertNodeTransaction_h
 #define InsertNodeTransaction_h
 

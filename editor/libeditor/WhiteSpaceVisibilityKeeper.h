@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WhiteSpaceVisibilityKeeper_h
 #define WhiteSpaceVisibilityKeeper_h
 

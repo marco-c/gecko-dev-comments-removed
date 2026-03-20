@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HTMLEditorNestedClasses_h
 #define HTMLEditorNestedClasses_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ManualNAC_h
 #define mozilla_ManualNAC_h
 

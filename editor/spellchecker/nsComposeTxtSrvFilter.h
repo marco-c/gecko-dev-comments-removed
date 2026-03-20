@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsComposeTxtSrvFilter_h_
 #define nsComposeTxtSrvFilter_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "TransactionItem.h"
 
 #include "mozilla/mozalloc.h"

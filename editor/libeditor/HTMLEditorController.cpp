@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/HTMLEditorController.h"
 
 #include "mozilla/EditorCommands.h"    

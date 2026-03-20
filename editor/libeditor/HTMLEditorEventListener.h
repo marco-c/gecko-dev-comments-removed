@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HTMLEditorEventListener_h
 #define HTMLEditorEventListener_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef CompositionTransaction_h
 #define CompositionTransaction_h
 

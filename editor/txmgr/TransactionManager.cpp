@@ -2,7 +2,6 @@
 
 
 
-
 #include "TransactionManager.h"
 
 #include "mozilla/Assertions.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef EditAggregateTransaction_h
 #define EditAggregateTransaction_h
 

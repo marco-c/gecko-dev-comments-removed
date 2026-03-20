@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_HTMLEditor_h
 #define mozilla_HTMLEditor_h
 

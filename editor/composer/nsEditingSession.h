@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsEditingSession_h_
 #define nsEditingSession_h_
 

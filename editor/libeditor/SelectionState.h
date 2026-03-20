@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SelectionState_h
 #define mozilla_SelectionState_h
 

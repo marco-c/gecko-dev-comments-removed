@@ -2,7 +2,6 @@
 
 
 
-
 #include "HTMLEditorEventListener.h"
 
 #include "HTMLEditUtils.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PlaceholderTransaction_h
 #define PlaceholderTransaction_h
 

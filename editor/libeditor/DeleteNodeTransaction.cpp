@@ -2,7 +2,6 @@
 
 
 
-
 #include "DeleteNodeTransaction.h"
 
 #include "EditorBase.h"

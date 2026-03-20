@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ChangeAttributeTransaction_h
 #define ChangeAttributeTransaction_h
 

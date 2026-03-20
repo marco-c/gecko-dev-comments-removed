@@ -2,7 +2,6 @@
 
 
 
-
 #include "ReplaceTextTransaction.h"
 
 #include "HTMLEditUtils.h"
