@@ -79,8 +79,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 
   void NotifyError(MF_MEDIA_ENGINE_ERR aError, HRESULT aResult = 0);
 
-  static bool IsHardwareResetHRESULT(HRESULT aResult);
-
   void DestroyEngineIfExists(const Maybe<MediaResult>& aError = Nothing());
 
   void EnsureDcompSurfaceHandle();
@@ -118,7 +116,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   Microsoft::WRL::ComPtr<MFMediaSource> mMediaSource;
 #ifdef MOZ_WMF_CDM
   Microsoft::WRL::ComPtr<MFContentProtectionManager> mContentProtectionManager;
-  Maybe<uint64_t> mProxyId;
 #endif
 
   MediaEventListener mMediaEngineEventListener;
@@ -132,13 +129,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   DWORD mDisplayHeight = 0;
 
   float mPlaybackRate = 1.0;
-
-  
-  
-  
-  
-  
-  bool mHardwareResetInProgress = false;
 
   
   

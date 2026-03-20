@@ -105,10 +105,6 @@ inline constexpr HRESULT DRM_E_TEE_INVALID_HWDRM_STATE =
     static_cast<HRESULT>(0x8004CD12);
 
 
-inline constexpr HRESULT DRM_OEM_E_ASD_ACTIVE_DISPLAY_FAIL =
-    static_cast<HRESULT>(0x8004CD00);
-
-
 
 
 

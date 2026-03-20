@@ -98,20 +98,6 @@ class ExternalEngineStateMachine final
                                  self->NotifyResizingInternal(aWidth, aHeight);
                                }));
   }
-  void NotifyHardwareReset() {
-    
-    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
-        "ExternalEngineStateMachine::NotifyHardwareReset",
-        [self = RefPtr{this}] { self->RecoverFromHardwareReset(); }));
-  }
-#ifdef MOZ_WMF_CDM
-  void NotifyWaitingForKey() {
-    
-    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
-        "ExternalEngineStateMachine::NotifyWaitingForKey",
-        [self = RefPtr{this}] { self->NotifyWaitingForKeyInternal(); }));
-  }
-#endif
 
   const char* GetStateStr() const;
 
@@ -308,16 +294,7 @@ class ExternalEngineStateMachine final
 
   void UpdateSecondaryVideoContainer() override;
 
-  
-  
-  
-  
-  
   void RecoverFromCDMProcessCrashIfNeeded();
-  void RecoverFromHardwareReset();
-#ifdef MOZ_WMF_CDM
-  void NotifyWaitingForKeyInternal();
-#endif
 
   void ReportTelemetry(const MediaResult& aError);
 

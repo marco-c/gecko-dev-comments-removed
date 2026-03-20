@@ -92,11 +92,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   void ShutdownCDM();
 
-  
-  
-  
-  void OnHardwareContextReset();
-
   void Destroy();
 
  private:
@@ -131,12 +126,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   MFCDMSession* GetSession(const nsString& aSessionId);
 
-  
-  
-  HRESULT RecreateCDM();
-  
-  HRESULT SetupPMPHostApp() MOZ_REQUIRES(mCDMAccessLock);
-
   mozilla::Mutex& Mutex() MOZ_RETURN_CAPABILITY(mCDMAccessLock.Lock()) {
     return mCDMAccessLock.Lock();
   }
@@ -145,8 +134,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   const RefPtr<RemoteMediaManagerParent> mManager;
   const RefPtr<nsISerialEventTarget> mManagerThread;
-
-  Maybe<MFCDMInitParamsIPDL> mInitParams;
 
   MOZ_RUNINIT static inline nsTHashMap<nsUint64HashKey, MFCDMParent*>
       sRegisteredCDMs;

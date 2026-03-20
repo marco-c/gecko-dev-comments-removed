@@ -5,7 +5,6 @@
 #include "MFMediaEngineParent.h"
 
 #include <audiosessiontypes.h>
-#include <dxgi.h>
 #include <intsafe.h>
 #include <mfapi.h>
 
@@ -37,21 +36,6 @@ namespace mozilla {
   MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug,                                \
           ("MFMediaEngineParent=%p, Id=%" PRId64 ", " msg, this, this->Id(), \
            ##__VA_ARGS__))
-
-
-
-
-#define CDM_SETUP_IPC_RETURN_IF_FAILED(rv, description)             \
-  do {                                                              \
-    if (MOZ_UNLIKELY(FAILED(rv))) {                                 \
-      LOG(description " failed, hr=%lx", rv);                       \
-      (void)SendNotifyError(                                        \
-          MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,                 \
-                      nsPrintfCString(description " (hr=%lx)", rv), \
-                      Some(static_cast<int32_t>(rv))));             \
-      return IPC_OK();                                              \
-    }                                                               \
-  } while (false)
 
 using MediaEngineMap = nsTHashMap<nsUint64HashKey, MFMediaEngineParent*>;
 static StaticAutoPtr<MediaEngineMap> sMediaEngines;
@@ -121,7 +105,6 @@ void MFMediaEngineParent::DestroyEngineIfExists(
     mContentProtectionManager->Shutdown();
     mContentProtectionManager = nullptr;
   }
-  mProxyId.reset();
 #endif
   if (mMediaEngine) {
     LOG_IF_FAILED(mMediaEngine->Shutdown());
@@ -131,7 +114,6 @@ void MFMediaEngineParent::DestroyEngineIfExists(
   mRequestSampleListener.DisconnectIfExists();
   if (mDXGIDeviceManager) {
     mDXGIDeviceManager = nullptr;
-    wmf::MFUnlockDXGIDeviceManager();
   }
   if (aError) {
     (void)SendNotifyError(*aError);
@@ -288,21 +270,21 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
 
 void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
                                       HRESULT aResult) {
-  AssertOnManagerThread();
   if (aError == MF_MEDIA_ENGINE_ERR_NOERROR) {
     return;
   }
 #ifdef MOZ_WMF_CDM
   
-  if (IsHardwareResetHRESULT(aResult)) {
-    LOG("Notifying hardware reset error, hr=%lx", aResult);
-    ENGINE_MARKER("MFMediaEngineParent,HardwareContextReset");
-    mHardwareResetInProgress = true;
-    if (MFCDMParent* cdmParent =
-            mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr) {
-      cdmParent->OnHardwareContextReset();
+  if (aResult == DRM_E_TEE_INVALID_HWDRM_STATE) {
+    LOG("Notify error 'DRM_E_TEE_INVALID_HWDRM_STATE', hr=%lx", aResult);
+    ENGINE_MARKER(
+        "MFMediaEngineParent,Received 'DRM_E_TEE_INVALID_HWDRM_STATE'");
+    auto* proxy = mContentProtectionManager
+                      ? mContentProtectionManager->GetCDMProxy()
+                      : nullptr;
+    if (proxy) {
+      proxy->OnHardwareContextReset();
     }
-    (void)SendNotifyHardwareReset();
     return;
   }
 #endif
@@ -311,20 +293,7 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
       "MFMediaEngineParent::NotifyError",
       nsPrintfCString("%s, hr=%lx", MFMediaEngineErrorToStr(aError), aResult));
   switch (aError) {
-    case MF_MEDIA_ENGINE_ERR_ABORTED: {
-      
-      
-      if (!mMediaEngine || mHardwareResetInProgress) {
-        LOG("Ignoring engine abort during %s",
-            !mMediaEngine ? "shutdown" : "hardware reset");
-        return;
-      }
-      MediaResult error(NS_ERROR_DOM_MEDIA_DECODE_ERR,
-                        nsPrintfCString("Engine abort (hr=%lx)", aResult),
-                        Some(static_cast<int32_t>(aResult)));
-      (void)SendNotifyError(error);
-      return;
-    }
+    case MF_MEDIA_ENGINE_ERR_ABORTED:
     case MF_MEDIA_ENGINE_ERR_NETWORK:
       
       return;
@@ -341,30 +310,6 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
       return;
     }
     case MF_MEDIA_ENGINE_ERR_SRC_NOT_SUPPORTED: {
-#ifdef MOZ_WMF_CDM
-      if (mProxyId) {
-        
-        
-        
-        
-        
-        
-        bool isSrcError =
-            (aResult == S_OK || aResult == MF_E_INVALIDMEDIATYPE ||
-             aResult == MF_E_UNSUPPORTED_BYTESTREAM_TYPE ||
-             aResult == MF_E_UNSUPPORTED_FORMAT ||
-             aResult == MF_E_TOPO_CODEC_NOT_FOUND);
-        MediaResult error(
-            isSrcError ? NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR
-                       : NS_ERROR_DOM_MEDIA_DECODE_ERR,
-            nsPrintfCString(
-                "%s (hr=%lx)",
-                isSrcError ? "Source not supported" : "Decode error", aResult),
-            Some(static_cast<int32_t>(aResult)));
-        (void)SendNotifyError(error);
-        return;
-      }
-#endif
       MediaResult error(
           NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
           nsPrintfCString("Source not supported (hr=%lx)", aResult),
@@ -383,20 +328,6 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
       MOZ_ASSERT_UNREACHABLE("Unsupported error");
       return;
   }
-}
-
-
-bool MFMediaEngineParent::IsHardwareResetHRESULT(HRESULT aResult) {
-#ifdef MOZ_WMF_CDM
-  if (aResult == DRM_E_TEE_INVALID_HWDRM_STATE ||      
-      aResult == DRM_OEM_E_ASD_ACTIVE_DISPLAY_FAIL) {  
-    return true;
-  }
-#endif
-  
-  return aResult == DXGI_ERROR_DEVICE_REMOVED ||  
-         aResult == DXGI_ERROR_DEVICE_HUNG ||     
-         aResult == DXGI_ERROR_DEVICE_RESET;      
 }
 
 MFMediaEngineStreamWrapper* MFMediaEngineParent::GetMediaEngineStream(
@@ -585,42 +516,26 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   }
 #ifdef MOZ_WMF_CDM
   LOG("SetCDMProxy, Id=%" PRIu64, aProxyId);
-  mProxyId = Some(aProxyId);
   MFCDMParent* cdmParent = MFCDMParent::GetCDMById(aProxyId);
   MOZ_DIAGNOSTIC_ASSERT(cdmParent);
-  HRESULT rv =
-      MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager);
-  CDM_SETUP_IPC_RETURN_IF_FAILED(rv,
-                                 "Failed to create content protection manager");
+  RETURN_PARAM_IF_FAILED(
+      MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager),
+      IPC_OK());
 
   ComPtr<IMFMediaEngineProtectedContent> protectedMediaEngine;
-  rv = mMediaEngine.As(&protectedMediaEngine);
-  CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to get protected media engine");
-
-  rv = protectedMediaEngine->SetContentProtectionManager(
-      mContentProtectionManager.Get());
-  CDM_SETUP_IPC_RETURN_IF_FAILED(rv,
-                                 "Failed to set content protection manager");
+  RETURN_PARAM_IF_FAILED(mMediaEngine.As(&protectedMediaEngine), IPC_OK());
+  RETURN_PARAM_IF_FAILED(protectedMediaEngine->SetContentProtectionManager(
+                             mContentProtectionManager.Get()),
+                         IPC_OK());
 
   RefPtr<MFCDMProxy> proxy = cdmParent->GetMFCDMProxy();
   if (!proxy) {
     LOG("Failed to get MFCDMProxy!");
-    (void)SendNotifyError(
-        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Failed to get CDM proxy"));
     return IPC_OK();
   }
 
-  rv = mContentProtectionManager->SetCDMProxy(proxy);
-  CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to set CDM proxy");
-
-  mContentProtectionManager->SetNotifyWaitingForKeyCallback(
-      [self = RefPtr{this}]() {
-        if (self->CanSend() && self->mMediaEngine) {
-          (void)self->SendNotifyWaitingForKey();
-        }
-      },
-      mManagerThread);
-
+  RETURN_PARAM_IF_FAILED(mContentProtectionManager->SetCDMProxy(proxy),
+                         IPC_OK());
   
   
   if (mMediaSource) {
@@ -741,50 +656,18 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
 
   
   
-  
-  if (size.IsEmpty()) {
-    LOG("EnsureDcompSurfaceHandle: size is empty, deferring");
-    return;
-  }
-
-  
-  
   RECT rect = {0, 0, (LONG)size.width, (LONG)size.height};
-  HRESULT rv = mediaEngineEx->UpdateVideoStream(nullptr , &rect,
-                                                nullptr );
-  if (MOZ_UNLIKELY(FAILED(rv))) {
-    LOG("UpdateVideoStream failed, hr=%lx", rv);
-    (void)SendNotifyError(
-        MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
-                    nsPrintfCString("UpdateVideoStream (hr=%lx)", rv),
-                    Some(static_cast<int32_t>(rv))));
-    return;
-  }
+  RETURN_VOID_IF_FAILED(mediaEngineEx->UpdateVideoStream(
+      nullptr , &rect, nullptr ));
 
   HANDLE surfaceHandle = INVALID_HANDLE_VALUE;
-  rv = mediaEngineEx->GetVideoSwapchainHandle(&surfaceHandle);
-  if (FAILED(rv)) {
-    if (IsHardwareResetHRESULT(rv)) {
-      LOG("GetVideoSwapchainHandle failed with hardware reset hr=%lx", rv);
-      (void)SendNotifyHardwareReset();
-    } else {
-      LOG("GetVideoSwapchainHandle failed, hr=%lx", rv);
-      MediaResult error(
-          NS_ERROR_DOM_MEDIA_DECODE_ERR,
-          nsPrintfCString("GetVideoSwapchainHandle failed (hr=%lx)", rv),
-          Some(static_cast<int32_t>(rv)));
-      (void)SendNotifyError(error);
-    }
-    return;
-  }
+  RETURN_VOID_IF_FAILED(mediaEngineEx->GetVideoSwapchainHandle(&surfaceHandle));
   if (surfaceHandle && surfaceHandle != INVALID_HANDLE_VALUE) {
     LOG("EnsureDcompSurfaceHandle, handle=%p, size=[%dx%d]", surfaceHandle,
         size.width, size.height);
     mMediaSource->SetDCompSurfaceHandle(surfaceHandle, size);
   } else {
-    
-    
-    LOG("SurfaceHandle not ready yet, will retry later");
+    NS_WARNING("SurfaceHandle is not ready yet");
   }
 }
 
