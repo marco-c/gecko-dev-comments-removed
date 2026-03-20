@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Fuzzing_h
 #define mozilla_Fuzzing_h
 

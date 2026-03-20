@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WasiAtomic_h
 #define mozilla_WasiAtomic_h
 

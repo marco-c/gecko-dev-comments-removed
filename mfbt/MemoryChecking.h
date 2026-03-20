@@ -18,8 +18,6 @@
 
 
 
-
-
 #ifndef mozilla_MemoryChecking_h
 #define mozilla_MemoryChecking_h
 

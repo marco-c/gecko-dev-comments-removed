@@ -2,8 +2,6 @@
 
 
 
-
-
 #define MOZ_PRETEND_NO_JSRUST 1
 
 #include "mozilla/Maybe.h"
@@ -12,7 +10,6 @@
 #include "mozilla/Utf8.h"
 
 #include <stddef.h>
-#include <stdint.h>
 
 MFBT_API bool mozilla::detail::IsValidUtf8(const void* aCodeUnits,
                                            size_t aCount) {

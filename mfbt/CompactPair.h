@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_CompactPair_h
 #define mozilla_CompactPair_h
 

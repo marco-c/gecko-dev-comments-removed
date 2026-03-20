@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Alignment_h
 #define mozilla_Alignment_h
 

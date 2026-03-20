@@ -10,8 +10,6 @@
 
 
 
-
-
 #if defined(_M_IX86)
 constexpr auto kIX86 = _M_IX86;
 #endif

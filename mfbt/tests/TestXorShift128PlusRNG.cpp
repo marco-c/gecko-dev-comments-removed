@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <math.h>
 
 #include "mozilla/Assertions.h"

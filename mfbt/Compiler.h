@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Compiler_h
 #define mozilla_Compiler_h
 

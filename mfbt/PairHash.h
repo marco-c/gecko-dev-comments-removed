@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_PairHash_h
 #define mozilla_PairHash_h
 

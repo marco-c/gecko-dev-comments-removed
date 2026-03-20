@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_RandomNum_h_
 #define mozilla_RandomNum_h_
 

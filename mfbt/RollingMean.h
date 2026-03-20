@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_RollingMean_h_
 #define mozilla_RollingMean_h_
 

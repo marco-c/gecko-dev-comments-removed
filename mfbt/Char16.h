@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Char16_h
 #define mozilla_Char16_h
 

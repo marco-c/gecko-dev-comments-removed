@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DbgMacro_h
 #define mozilla_DbgMacro_h
 

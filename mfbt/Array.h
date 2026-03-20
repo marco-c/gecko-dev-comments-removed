@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Array_h
 #define mozilla_Array_h
 

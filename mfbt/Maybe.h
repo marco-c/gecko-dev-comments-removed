@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Maybe_h
 #define mozilla_Maybe_h
 

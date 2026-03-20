@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BufferList_h
 #define mozilla_BufferList_h
 

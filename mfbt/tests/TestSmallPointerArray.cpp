@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SmallPointerArray.h"
 #include <stdint.h>
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsVersion_h
 #define mozilla_WindowsVersion_h
 

@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_Poison_h
 #define mozilla_Poison_h
 

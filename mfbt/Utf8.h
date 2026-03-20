@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_Utf8_h
 #define mozilla_Utf8_h
 

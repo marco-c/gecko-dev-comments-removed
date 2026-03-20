@@ -2,8 +2,6 @@
 
 
 
-
-
 #define MOZ_PRETEND_NO_JSRUST 1
 
 #include "mozilla/Utf8.h"

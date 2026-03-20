@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BitSet_h
 #define mozilla_BitSet_h
 

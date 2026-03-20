@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/TextUtils.h"
 
 using mozilla::AsciiAlphanumericToNumber;

@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_ArrayUtils_h
 #define mozilla_ArrayUtils_h
 

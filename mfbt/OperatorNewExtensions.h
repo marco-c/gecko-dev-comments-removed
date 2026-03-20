@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_OperatorNewExtensions_h
 #define mozilla_OperatorNewExtensions_h
 

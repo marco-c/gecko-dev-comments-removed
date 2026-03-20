@@ -9,8 +9,6 @@
 
 
 
-
-
 #ifndef mozilla_BloomFilter_h
 #define mozilla_BloomFilter_h
 

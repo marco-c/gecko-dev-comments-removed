@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_TextUtils_h
 #define mozilla_TextUtils_h
 

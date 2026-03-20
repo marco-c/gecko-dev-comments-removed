@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_NotNull_h
 #define mozilla_NotNull_h
 

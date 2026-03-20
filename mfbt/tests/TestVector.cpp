@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <utility>
 
 #include "mozilla/IntegerRange.h"

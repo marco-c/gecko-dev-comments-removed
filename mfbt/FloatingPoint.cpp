@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/FloatingPoint.h"
 
 #include <cfloat>  

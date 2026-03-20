@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Sprintf.h"

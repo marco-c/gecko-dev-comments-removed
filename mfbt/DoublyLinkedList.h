@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_DoublyLinkedList_h
 #define mozilla_DoublyLinkedList_h
 

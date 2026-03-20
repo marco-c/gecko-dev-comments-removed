@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Array.h"
 #include <cstdint>
 

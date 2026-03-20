@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_MathAlgorithms_h
 #define mozilla_MathAlgorithms_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/MathAlgorithms.h"
 
 void TestGCD() {

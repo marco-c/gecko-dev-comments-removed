@@ -12,8 +12,6 @@
 
 
 
-
-
 #ifndef mozilla_BoundedMPSCQueue_h
 #define mozilla_BoundedMPSCQueue_h
 

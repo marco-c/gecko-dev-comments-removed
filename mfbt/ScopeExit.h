@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ScopeExit_h
 #define mozilla_ScopeExit_h
 

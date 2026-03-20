@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_RangedPtr_h
 #define mozilla_RangedPtr_h
 

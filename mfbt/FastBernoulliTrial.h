@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_FastBernoulliTrial_h
 #define mozilla_FastBernoulliTrial_h
 

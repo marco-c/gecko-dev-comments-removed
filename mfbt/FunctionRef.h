@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_FunctionRef_h
 #define mozilla_FunctionRef_h
 

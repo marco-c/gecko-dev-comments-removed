@@ -9,8 +9,6 @@
 
 
 
-
-
 #ifndef mozilla_FStream_h
 #define mozilla_FStream_h
 

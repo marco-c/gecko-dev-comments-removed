@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_EnumeratedArray_h
 #define mozilla_EnumeratedArray_h
 

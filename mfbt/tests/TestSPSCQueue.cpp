@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/PodOperations.h"
 #include <vector>

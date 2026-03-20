@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_SHA1_h
 #define mozilla_SHA1_h
 

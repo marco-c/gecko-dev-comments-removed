@@ -66,8 +66,6 @@
 
 
 
-
-
 #ifndef mozilla_WeakPtr_h
 #define mozilla_WeakPtr_h
 

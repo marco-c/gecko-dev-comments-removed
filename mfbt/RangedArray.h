@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef mozilla_RangedArray_h
 #define mozilla_RangedArray_h
 

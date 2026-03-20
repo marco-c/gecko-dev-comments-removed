@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef StringBuffer_h_
 #define StringBuffer_h_
 

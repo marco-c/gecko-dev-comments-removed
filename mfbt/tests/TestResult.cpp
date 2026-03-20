@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <stdint.h>
 #include <string.h>
 #include "mozilla/Casting.h"

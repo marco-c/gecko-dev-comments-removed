@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ReentrancyGuard_h
 #define mozilla_ReentrancyGuard_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_CheckedInt_h
 #define mozilla_CheckedInt_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Range.h"
 
 using mozilla::Range;

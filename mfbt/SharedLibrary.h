@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_SharedLibrary_h
 #define mozilla_SharedLibrary_h
 

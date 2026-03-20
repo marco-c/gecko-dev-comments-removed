@@ -15,8 +15,6 @@
 
 
 
-
-
 #ifndef mozilla_EnumeratedRange_h
 #define mozilla_EnumeratedRange_h
 

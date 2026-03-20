@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_MaybeOneOf_h
 #define mozilla_MaybeOneOf_h
 

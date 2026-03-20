@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/MathAlgorithms.h"
 
 using mozilla::CeilingLog2;

@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_SplayTree_h
 #define mozilla_SplayTree_h
 

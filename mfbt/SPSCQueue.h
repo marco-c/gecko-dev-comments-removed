@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_LockFreeQueue_h
 #define mozilla_LockFreeQueue_h
 

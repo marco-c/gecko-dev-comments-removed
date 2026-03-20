@@ -4,16 +4,12 @@
 
 
 
-
-
 #ifndef mozilla_UniquePtr_h
 #define mozilla_UniquePtr_h
 
 #include <memory>
-#include <type_traits>
 #include <utility>
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 
 namespace mozilla {

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/BufferList.h"
 #include "mozilla/CheckedArithmetic.h"
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Result_h
 #define mozilla_Result_h
 

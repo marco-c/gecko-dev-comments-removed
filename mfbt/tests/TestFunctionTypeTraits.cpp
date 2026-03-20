@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/FunctionTypeTraits.h"
 
 #include <functional>

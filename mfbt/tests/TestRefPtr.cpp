@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/RefCounted.h"
 

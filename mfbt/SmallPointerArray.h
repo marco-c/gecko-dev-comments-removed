@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_SmallPointerArray_h
 #define mozilla_SmallPointerArray_h
 

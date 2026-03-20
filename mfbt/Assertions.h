@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Assertions_h
 #define mozilla_Assertions_h
 

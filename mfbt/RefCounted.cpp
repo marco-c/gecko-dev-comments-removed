@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/RefCounted.h"
 
 namespace mozilla::detail {

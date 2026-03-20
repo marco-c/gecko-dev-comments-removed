@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_ReverseIterator_h
 #define mozilla_ReverseIterator_h
 

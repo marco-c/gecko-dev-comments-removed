@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_IntegerRange_h
 #define mozilla_IntegerRange_h
 

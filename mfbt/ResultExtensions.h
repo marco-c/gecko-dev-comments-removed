@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef mozilla_ResultExtensions_h
 #define mozilla_ResultExtensions_h
 

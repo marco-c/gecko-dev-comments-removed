@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_CheckedArithmetic_h
 #define mozilla_CheckedArithmetic_h
 

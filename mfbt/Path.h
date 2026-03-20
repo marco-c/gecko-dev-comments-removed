@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Path_h
 #define mozilla_Path_h
 

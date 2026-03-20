@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Opaque_h
 #define mozilla_Opaque_h
 

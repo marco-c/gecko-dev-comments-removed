@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Try_h
 #define mozilla_Try_h
 

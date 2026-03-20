@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_HelperMacros_h
 #define mozilla_HelperMacros_h
 

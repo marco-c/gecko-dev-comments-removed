@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_RefCounted_h
 #define mozilla_RefCounted_h
 

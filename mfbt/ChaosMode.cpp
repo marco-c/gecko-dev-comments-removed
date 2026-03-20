@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ChaosMode.h"
 
 namespace mozilla {

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "MFBT")
@@ -179,7 +177,7 @@ if CONFIG["MOZ_BUILD_APP"] not in (
     "memory",
     "tools/update-programs",
 ):
-    
+    # Building MFBT tests adds a large overhead when building.
     TEST_DIRS += ["tests"]
 
 DEFINES["IMPL_MFBT"] = True
@@ -188,12 +186,12 @@ DisableStlWrapping()
 
 OS_LIBS += CONFIG["LIBATOMIC_LIBS"]
 
-
+# For RefCounted.cpp
 DEFINES["MOZ_SUPPORT_LEAKCHECKING"] = True
 
-
-
-
+# This is kind of gross because this is not a subdirectory,
+# but pure_virtual requires mfbt to build and some projects
+# don't use mfbt.
 DIRS += ["../build/pure_virtual"]
 
 if CONFIG["MOZ_BUILD_APP"] != "memory":

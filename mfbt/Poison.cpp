@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/Poison.h"
 
 #include "mozilla/Assertions.h"

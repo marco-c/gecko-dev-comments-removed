@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BitSet.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/Vector.h"

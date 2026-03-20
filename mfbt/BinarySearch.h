@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BinarySearch_h
 #define mozilla_BinarySearch_h
 

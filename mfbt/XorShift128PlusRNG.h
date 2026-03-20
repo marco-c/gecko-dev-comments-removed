@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_XorShift128Plus_h
 #define mozilla_XorShift128Plus_h
 

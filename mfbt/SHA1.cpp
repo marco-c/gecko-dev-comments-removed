@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Assertions.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/SHA1.h"

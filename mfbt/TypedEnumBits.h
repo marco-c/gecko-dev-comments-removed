@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_TypedEnumBits_h
 #define mozilla_TypedEnumBits_h
 

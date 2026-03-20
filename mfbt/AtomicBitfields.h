@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AtomicBitfields_h
 #define mozilla_AtomicBitfields_h
 

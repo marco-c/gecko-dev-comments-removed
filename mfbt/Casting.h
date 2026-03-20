@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Casting_h
 #define mozilla_Casting_h
 

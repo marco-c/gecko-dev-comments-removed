@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef mfbt_MaybeStorageBase_h
 #define mfbt_MaybeStorageBase_h
 

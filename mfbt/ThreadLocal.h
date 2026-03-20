@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ThreadLocal_h
 #define mozilla_ThreadLocal_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <type_traits>
 
 #include "mozilla/UniquePtr.h"

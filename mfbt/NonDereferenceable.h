@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_NonDereferenceable_h
 #define mozilla_NonDereferenceable_h
 

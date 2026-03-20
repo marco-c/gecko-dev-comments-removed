@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <mozilla/Saturate.h>
 
 #include <mozilla/Assertions.h>

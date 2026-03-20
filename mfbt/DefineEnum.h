@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_DefineEnum_h
 #define mozilla_DefineEnum_h
 

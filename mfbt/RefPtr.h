@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_RefPtr_h
 #define mozilla_RefPtr_h
 

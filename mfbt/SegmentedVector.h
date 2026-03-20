@@ -15,8 +15,6 @@
 
 
 
-
-
 #ifndef mozilla_SegmentedVector_h
 #define mozilla_SegmentedVector_h
 

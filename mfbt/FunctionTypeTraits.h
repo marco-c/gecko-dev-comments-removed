@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_FunctionTypeTraits_h
 #define mozilla_FunctionTypeTraits_h
 

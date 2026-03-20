@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_MacroArgs_h
 #define mozilla_MacroArgs_h
 

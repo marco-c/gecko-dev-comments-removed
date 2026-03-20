@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_UniquePtrExtensions_h
 #define mozilla_UniquePtrExtensions_h
 

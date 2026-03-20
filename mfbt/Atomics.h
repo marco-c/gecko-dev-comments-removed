@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef mozilla_Atomics_h
 #define mozilla_Atomics_h
 

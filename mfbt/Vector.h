@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Vector_h
 #define mozilla_Vector_h
 

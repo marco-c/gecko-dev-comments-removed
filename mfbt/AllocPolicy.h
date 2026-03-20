@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_AllocPolicy_h
 #define mozilla_AllocPolicy_h
 

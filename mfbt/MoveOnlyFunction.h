@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MoveOnlyFunction_h
 #define mozilla_MoveOnlyFunction_h
 

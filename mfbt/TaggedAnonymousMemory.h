@@ -26,8 +26,6 @@
 
 
 
-
-
 #ifndef mozilla_TaggedAnonymousMemory_h
 #define mozilla_TaggedAnonymousMemory_h
 

@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_MacroForEach_h
 #define mozilla_MacroForEach_h
 

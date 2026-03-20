@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_Tainting_h
 #define mozilla_Tainting_h
 

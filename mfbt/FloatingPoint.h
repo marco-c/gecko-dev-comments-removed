@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_FloatingPoint_h
 #define mozilla_FloatingPoint_h
 

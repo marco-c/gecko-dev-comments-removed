@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_NeverDestroyed_h
 #define mozilla_NeverDestroyed_h
 

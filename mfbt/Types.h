@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_Types_h
 #define mozilla_Types_h
 

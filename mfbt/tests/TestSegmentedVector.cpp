@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/SegmentedVector.h"
 
 #include "mozilla/Alignment.h"

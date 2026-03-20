@@ -87,8 +87,6 @@
 
 
 
-
-
 #ifndef mozilla_JSONWriter_h
 #define mozilla_JSONWriter_h
 

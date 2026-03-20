@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/MacroArgs.h"
 
 static_assert(MOZ_ARG_COUNT() == 0, "");

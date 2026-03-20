@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/Assertions.h"
 #include "mozilla/LinkedList.h"
 

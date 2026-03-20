@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UniquePtrExtensions.h"
 
 #include "mozilla/Assertions.h"
