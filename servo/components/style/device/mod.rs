@@ -4,6 +4,7 @@
 
 
 
+use crate::color::AbsoluteColor;
 use crate::custom_properties::CssEnvironment;
 #[cfg(feature = "servo")]
 use crate::derives::*;
@@ -88,6 +89,12 @@ pub struct Device {
     
     
     environment: CssEnvironment,
+    
+    
+    
+    
+    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
+    body_text_color: AtomicU32,
 
     
     extra: ExtraDeviceData,
@@ -279,5 +286,18 @@ impl Device {
     
     pub fn used_font_metrics(&self) -> bool {
         self.used_font_metrics.load(Ordering::Relaxed)
+    }
+
+    
+    pub fn body_text_color(&self) -> AbsoluteColor {
+        AbsoluteColor::from_nscolor(self.body_text_color.load(Ordering::Relaxed))
+    }
+
+    
+    
+    
+    pub fn set_body_text_color(&self, color: AbsoluteColor) {
+        self.body_text_color
+            .store(color.to_nscolor(), Ordering::Relaxed)
     }
 }

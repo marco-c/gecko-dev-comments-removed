@@ -97,6 +97,7 @@ impl Device {
             used_dynamic_viewport_size: AtomicBool::new(false),
             environment: CssEnvironment,
             default_values,
+            body_text_color: AtomicU32::new(AbsoluteColor::BLACK.to_nscolor()),
             extra: ExtraDeviceData {
                 media_type,
                 viewport_size,
@@ -129,13 +130,6 @@ impl Device {
     
     pub fn quirks_mode(&self) -> QuirksMode {
         self.extra.quirks_mode
-    }
-
-    
-    
-    
-    pub fn set_body_text_color(&self, _color: AbsoluteColor) {
-        
     }
 
     
