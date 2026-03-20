@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <soundtouch/SoundTouch.h>
 
 extern "C" namespace soundtouch

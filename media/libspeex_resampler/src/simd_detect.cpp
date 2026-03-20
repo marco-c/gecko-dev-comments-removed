@@ -2,7 +2,6 @@
 
 
 
-
 #include "simd_detect.h"
 
 #include "mozilla/SSE.h"

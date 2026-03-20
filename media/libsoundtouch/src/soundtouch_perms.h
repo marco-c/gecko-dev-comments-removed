@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef MOZILLA_SOUNDTOUCH_PERMS_H
 #define MOZILLA_SOUNDTOUCH_PERMS_H
 

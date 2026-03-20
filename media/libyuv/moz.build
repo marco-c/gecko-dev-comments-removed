@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Graphics")
@@ -12,7 +10,7 @@ include('/build/gyp.mozbuild')
 gyp_vars['moz_have_arm_sve2'] = 1 if CONFIG['SVE2_FLAGS'] else 0
 gyp_vars['moz_have_arm_i8mm_and_dot_prod'] = 1 if CONFIG['NEON_I8MM_FLAGS'] and CONFIG['DOTPROD_FLAGS'] else 0
 
-
+# Set gyp vars that libyuv needs when building under various analysis tools.
 gyp_vars_copy = gyp_vars.copy()
 if CONFIG['MOZ_VALGRIND']:
     gyp_vars_copy.update(build_for_tool="memcheck")
@@ -28,7 +26,7 @@ libyuv_non_unified_sources = [
     'libyuv/source/mjpeg_decoder.cc',
     'libyuv/source/rotate_argb.cc',
     'libyuv/source/row_common.cc',
-    'libyuv/source/row_lasx.cc',  
+    'libyuv/source/row_lasx.cc',  # duplicate definitions with row_lsx.cc
     'libyuv/source/row_lsx.cc',
     'libyuv/source/scale.cc',
     'libyuv/source/scale_common.cc',
@@ -41,5 +39,5 @@ GYP_DIRS['libyuv'].variables = gyp_vars_copy
 GYP_DIRS['libyuv'].sandbox_vars['FINAL_LIBRARY'] = 'xul'
 GYP_DIRS['libyuv'].non_unified_sources += libyuv_non_unified_sources
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 GYP_DIRS['libyuv'].sandbox_vars['COMPILE_FLAGS'] = {'WARNINGS_AS_ERRORS': []}

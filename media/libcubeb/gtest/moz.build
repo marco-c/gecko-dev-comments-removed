@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 SOURCES += [
     '../test/test_audio.cpp',
@@ -22,11 +20,11 @@ SOURCES += [
     '../test/test_utils.cpp'
 ]
 
-
+# Loopback stream is only implemented in the WASAPI backend. It fails in debug.
 if CONFIG['OS_ARCH'] == 'WINNT' and not CONFIG['MOZ_DEBUG']:
     SOURCES += [  '../test/test_loopback.cpp' ]
 
-
+# https://bugzilla.mozilla.org/show_bug.cgi?id=1864888
 if CONFIG['OS_ARCH'] != 'Linux':
     SOURCES += [ '../test/test_device_changed_callback.cpp' ]
 
@@ -42,9 +40,9 @@ USE_LIBS += [
 
 if CONFIG['OS_ARCH'] == 'WINNT':
     DEFINES['UNICODE'] = True
-    
-    
-    
+    # On windows, the WASAPI backend needs the resampler we have in
+    # /media/libspeex_resampler, so we can't get away with just linking cubeb's
+    # .o
     USE_LIBS += [
         'cubeb',
         'speex',
@@ -53,12 +51,12 @@ if CONFIG['OS_ARCH'] == 'WINNT':
         'ole32'
     ]
 else:
-    
-    
+    # Otherwise, we can just grab all the compiled .o and compile against that,
+    # linking the appriopriate libraries.
     USE_LIBS += [
         'cubeb',
     ]
-    
+    # Don't link xul for it introduces dependencies on Android.
     if CONFIG['OS_TARGET'] == 'Android':
         USE_LIBS += [
             'speex',

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DEFINES['CUBEB_GECKO_BUILD'] = True
 
@@ -110,5 +108,5 @@ if CONFIG['MOZ_ALSA']:
 CFLAGS += CONFIG['MOZ_JACK_CFLAGS']
 CFLAGS += CONFIG['MOZ_PULSEAUDIO_CFLAGS']
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()

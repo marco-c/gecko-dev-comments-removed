@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS += [
     "RLBoxSoundTouch.h",
@@ -26,21 +24,21 @@ LOCAL_INCLUDES += [
 ]
 
 SOURCES += ["RLBoxSoundTouch.cpp"]
-
-
-
+# Some xpcom things are #included indirectly (but not actually used), and
+# it's simpler to set MOZILLA_INTERNAL_API to make it compile than to
+# disentangle the whole thing.
 SOURCES["RLBoxSoundTouch.cpp"].flags += ["-DMOZILLA_INTERNAL_API"]
 
 if CONFIG["MOZ_WASM_SANDBOXING_SOUNDTOUCH"]:
     include("/security/rlbox/rlbox.mozbuild")
 
-    
-    
-    
-    
-    
-    
-    
+    # Disabling Segue as other rlboxed libraries (the non-GPL rlboxed libraries)
+    # use Segue under the assumption that they have exclusive use of the segment
+    # register. This assumption speeds up the rlboxed libraries significantly.
+    # However, it does mean that the below rlboxed library can either avoid
+    # Segue or use Segue with non-exclusive segment use. We opt for disabling
+    # Segue since Segue with non-exclusive segment use can introduce some extra
+    # costs when invoking functions in the library.
     RLBoxLibrary("rlboxsoundtouch", use_segue=False)
 
     DEFINES["WASM_RT_GROW_FAILED_CRASH"] = True
@@ -56,9 +54,9 @@ if CONFIG["MOZ_WASM_SANDBOXING_SOUNDTOUCH"]:
     if CONFIG["MOZ_SAMPLE_TYPE_FLOAT32"]:
         WASM_DEFINES["MOZ_SAMPLE_TYPE_FLOAT32"] = 1
 
-        
-        
-        
+        # Clang older than version 14 does not have the necessary
+        # WASMSIMD intrinsics, so we disable SoundTouch WASMSIMD.
+        # See Bug 1851301
         if int(CONFIG["WASM_CC_VERSION"].split(".")[0]) > 13:
             WASM_SOURCES += ['sse_optimized.cpp']
 
@@ -80,11 +78,11 @@ else:
             SOURCES['mmx_optimized.cpp'].flags += CONFIG['MMX_FLAGS']
 
     if CONFIG['OS_ARCH'] != 'WINNT':
-        
-        
+        # GCC/Clang require permissions to be explicitly set for the soundtouch
+        # header.
         CXXFLAGS += ['-include', SRCDIR + '/soundtouch_perms.h']
     else:
-        
+        # Windows need alloca renamed to _alloca
         DEFINES['alloca'] = '_alloca'
 
     soundtouch_sources = UNIFIED_SOURCES
@@ -107,13 +105,13 @@ soundtouch_sources += [
 
 for k, v in (
     ('BUILDING_SOUNDTOUCH', 1),
-    
+    # Use abort() instead of exception in SoundTouch.
     ('ST_NO_EXCEPTION_HANDLING', 1)
 ):
     soundtouch_defines[k] = v
 
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'lgpllibs'

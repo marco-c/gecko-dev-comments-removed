@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Graphics: ImageLib")
@@ -13,10 +11,10 @@ EXPORTS += [
     'pnglibconf.h'
 ]
 
-
-
-
-
+# libpng errors out if pngpriv.h is included more than once in order to prevent
+# application that integrate libpng from including that file, unfortunately
+# that also errors out when using unified sources so we have to disable it
+# here. Similarly for all of the arch-specific sources below.
 SOURCES += [
     'png.c',
     'pngerror.c',
@@ -31,9 +29,9 @@ SOURCES += [
     'pngwrite.c',
 ]
 
-
-
-
+# These source files all define duplicate interlacing symbols (starting at
+# png_pass_start) so they can't be compiled together. When the libpng is
+# refactored to avoid this we can merge these back into UNIFIED_SOURCES.
 SOURCES += [
     'pngpread.c',
     'pngrutil.c',
@@ -97,7 +95,7 @@ Library('mozpng')
 
 FINAL_LIBRARY = 'xul'
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):

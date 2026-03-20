@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CUBEB_TRACING_H
 #define CUBEB_TRACING_H
 

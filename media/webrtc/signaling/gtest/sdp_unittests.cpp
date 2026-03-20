@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <string>
 
 #define GTEST_HAS_RTTI 0

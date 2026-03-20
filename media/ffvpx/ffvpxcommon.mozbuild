@@ -1,10 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
+# Add assembler flags and includes
 if CONFIG['TARGET_CPU'] != 'aarch64':
     ASFLAGS += CONFIG['FFVPX_ASFLAGS']
     ASFLAGS += ['-I%s/media/ffvpx/' % TOPSRCDIR]
@@ -16,7 +14,7 @@ if CONFIG['FFVPX_ASFLAGS']:
         USE_NASM = True
 
     if CONFIG['OS_ARCH'] == 'WINNT':
-       
+       # Fix inline symbols and math defines for windows.
         DEFINES['_USE_MATH_DEFINES'] = True
         DEFINES['inline'] = "__inline"
 
@@ -24,10 +22,10 @@ LOCAL_INCLUDES += ['/media/ffvpx']
 
 USE_LIBS += [ 'gkcodecs' ]
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
-
+# Suppress warnings in third-party code.
 CFLAGS += [
     '-Wno-parentheses',
     '-Wno-pointer-sign',
@@ -35,7 +33,7 @@ CFLAGS += [
     '-Wno-switch',
     '-Wno-type-limits',
     '-Wno-unused-function',
-    
+    # XXX This does not seem to have any effect on some versions of GCC.
     '-Wno-deprecated-declarations',
 ]
 if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
@@ -48,7 +46,7 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
     if CONFIG['CC_TYPE'] == 'clang-cl':
         CFLAGS += [
             '-Wno-inconsistent-dllimport',
-            '-Wno-macro-redefined', 
+            '-Wno-macro-redefined', # 'WIN32_LEAN_AND_MEAN' macro redefined
         ]
 else:
     CFLAGS += [
@@ -56,7 +54,7 @@ else:
         '-Wno-maybe-uninitialized',
     ]
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
-    
+    # Force visibility of cpu and av_log symbols.
     CFLAGS += ['-include', 'libavutil_visibility.h']
 if CONFIG['CC_TYPE'] == 'clang-cl':
     LOCAL_INCLUDES += ['/media/ffvpx/compat/atomics/win32']
@@ -71,11 +69,11 @@ if CONFIG['CC_TYPE'] == 'clang':
   ]
 
 if CONFIG['MOZ_DEBUG']:
-    
+    # Enable all assertions in debug builds.
     DEFINES['ASSERT_LEVEL'] = 2
 elif not CONFIG['RELEASE_OR_BETA']:
-    
+    # Enable fast assertions in opt builds of Nightly and Aurora.
     DEFINES['ASSERT_LEVEL'] = 1
 
-
+# Add libFuzzer configuration directives
 include('/tools/fuzzing/libfuzzer-config.mozbuild')

@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef AVCODEC_LCEVCDEC_H
 #define AVCODEC_LCEVCDEC_H
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef RLBOXSOUNDTOUCHTYPES_H_
 #define RLBOXSOUNDTOUCHTYPES_H_
 

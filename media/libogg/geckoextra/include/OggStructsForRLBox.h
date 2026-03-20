@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef OggStructsForRLBox_h__
 #define OggStructsForRLBox_h__
 

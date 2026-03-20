@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CUBEB_ASSERT
 #define CUBEB_ASSERT
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef simd_detect_h
 #define simd_detect_h
 

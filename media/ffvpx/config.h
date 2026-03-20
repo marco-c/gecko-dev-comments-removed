@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZ_FFVPX_CONFIG_H
 #define MOZ_FFVPX_CONFIG_H
 

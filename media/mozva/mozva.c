@@ -2,16 +2,12 @@
 
 
 
-
-
-
 #pragma GCC visibility push(default)
 #include <va/va.h>
 #pragma GCC visibility pop
 
 #include <dlfcn.h>
 #include <pthread.h>
-#include <stdlib.h>
 
 #define GET_FUNC(func, lib) (func##Fn = dlsym(lib, #func))
 

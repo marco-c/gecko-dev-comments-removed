@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Library('FuzzingDav1d')
 
@@ -13,13 +11,13 @@ LOCAL_INCLUDES += [
     '/third_party/dav1d/tests/libfuzzer/',
 ]
 
-
-
-if CONFIG['CPU_ARCH'] == 'x86_64':
+# We currently only support building on Linux for fuzzing here, as guarded
+# in media/libaom/moz.build. More support can be added later if necessary.
+if CONFIG['TARGET_CPU'] == 'x86_64':
     LOCAL_INCLUDES += [
         '/media/libdav1d/asm/x86_64/',
     ]
-elif CONFIG['CPU_ARCH'] == 'x86':
+elif CONFIG['TARGET_CPU'] == 'x86':
     LOCAL_INCLUDES += [
         '/media/libdav1d/asm/x86_32/',
     ]

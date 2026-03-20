@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files('**'):
     BUG_COMPONENT = ('Core', 'Graphics: ImageLib')
@@ -16,8 +14,8 @@ EXPORTS.webp += [
     'src/webp/types.h',
 ]
 
-
-
+# Note this does not enable threaded decoding, callers into libwebp still have
+# to ask for it. This is necessary for locks even without threaded decoding.
 DEFINES['WEBP_USE_THREAD'] = 1;
 
 DIRS += [
@@ -32,5 +30,5 @@ DIRS += [
 
 FINAL_LIBRARY = 'xul'
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
