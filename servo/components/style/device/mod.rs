@@ -48,30 +48,22 @@ pub struct Device {
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     root_style: RwLock<Arc<ComputedValues>>,
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     root_font_size: AtomicU32,
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     root_line_height: AtomicU32,
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     root_font_metrics_ex: AtomicU32,
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     root_font_metrics_cap: AtomicU32,
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     root_font_metrics_ch: AtomicU32,
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     root_font_metrics_ic: AtomicU32,
     
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     used_root_font_size: AtomicBool,
     
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     used_root_line_height: AtomicBool,
     
     
@@ -93,7 +85,6 @@ pub struct Device {
     
     
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     body_text_color: AtomicU32,
 
     
