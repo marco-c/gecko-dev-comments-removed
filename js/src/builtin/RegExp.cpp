@@ -783,7 +783,8 @@ bool js::regexp_construct(JSContext* cx, unsigned argc, Value* vp) {
         shared = nullptr;
       }
 
-      if (!flags.unicode() && flagsArg.unicode()) {
+      if ((!flags.unicode() && flagsArg.unicode()) ||
+          (!flags.unicodeSets() && flagsArg.unicodeSets())) {
         
 
         
