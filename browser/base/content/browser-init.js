@@ -266,12 +266,7 @@ var gBrowserInit = {
       FullPageTranslationsPanel
     );
     gBrowser.tabContainer.addEventListener("TabSelect", () => {
-      
-      
-      
-      if (!TranslationsParent.AIFeature.isEnabled) {
-        FullPageTranslationsPanel.buttonElements.button.hidden = true;
-      }
+      FullPageTranslationsPanel.onLocationChange(gBrowser.selectedBrowser);
     });
     gBrowser.addTabsProgressListener(FullPageTranslationsPanel);
 

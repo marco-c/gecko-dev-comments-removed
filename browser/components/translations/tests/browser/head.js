@@ -50,6 +50,8 @@ function median(numbers) {
 
 
 
+
+
 async function addTab(url, message, win = window) {
   logAction(url);
   info(message);

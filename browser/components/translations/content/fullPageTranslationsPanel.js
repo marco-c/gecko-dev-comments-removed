@@ -1424,8 +1424,7 @@ var FullPageTranslationsPanel = new (class {
       return;
     }
 
-    if (browser.currentURI.spec.startsWith("about:reader")) {
-      
+    if (TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)) {
       this.buttonElements.button.hidden = true;
     } else if (!TranslationsParent.AIFeature.isEnabled) {
       
