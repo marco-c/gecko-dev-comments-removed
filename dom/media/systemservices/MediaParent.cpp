@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaParent.h"
 
 #include <mozilla/StaticMutex.h>
@@ -24,6 +22,9 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/MediaDrmRemoteCDMParent.h"
+#endif
 
 mozilla::LazyLogModule gMediaParentLog("MediaParent");
 #define LOG(args) MOZ_LOG(gMediaParentLog, mozilla::LogLevel::Debug, args)
@@ -80,7 +81,8 @@ class OriginKeyStore {
       return NS_OK;
     }
 
-    void Clear(int64_t aSinceWhen) {
+    void Clear(int64_t aSinceWhen,
+               nsTArray<nsCString>* aRemovedKeys = nullptr) {
       
       OriginKey since(nsCString(), aSinceWhen / PR_USEC_PER_SEC);
       for (auto iter = mKeys.Iter(); !iter.Done(); iter.Next()) {
@@ -91,6 +93,9 @@ class OriginKeyStore {
              __FUNCTION__, originKey->mSecondsStamp, since.mSecondsStamp));
 
         if (originKey->mSecondsStamp >= since.mSecondsStamp) {
+          if (aRemovedKeys) {
+            aRemovedKeys->AppendElement(originKey->mKey);
+          }
           iter.Remove();
         }
       }
@@ -337,8 +342,9 @@ class OriginKeyStore {
       return rv;
     }
 
-    void Clear(int64_t aSinceWhen) {
-      OriginKeysTable::Clear(aSinceWhen);
+    void Clear(int64_t aSinceWhen,
+               nsTArray<nsCString>* aRemovedKeys = nullptr) {
+      OriginKeysTable::Clear(aSinceWhen, aRemovedKeys);
       Delete();
       Save();
     }
@@ -483,12 +489,32 @@ mozilla::ipc::IPCResult Parent<Super>::RecvSanitizeOriginKeys(
       NewRunnableFrom(
           [this, that, profileDir, aSinceWhen, aOnlyPrivateBrowsing]() {
             MOZ_ASSERT(!NS_IsMainThread());
+#ifdef MOZ_WIDGET_ANDROID
+            
+            
+            
+            
+            nsTArray<nsCString> removedKeys;
+            {
+              StaticMutexAutoLock lock(sOriginKeyStoreStsMutex);
+              mOriginKeyStore->mPrivateBrowsingOriginKeys.Clear(aSinceWhen,
+                                                                &removedKeys);
+              if (!aOnlyPrivateBrowsing) {
+                mOriginKeyStore->mOriginKeys.SetProfileDir(profileDir);
+                mOriginKeyStore->mOriginKeys.Clear(aSinceWhen, &removedKeys);
+              }
+            }
+            if (!removedKeys.IsEmpty()) {
+              MediaDrmRemoteCDMParent::UnprovisionMediaDrmOrigins(removedKeys);
+            }
+#else
             StaticMutexAutoLock lock(sOriginKeyStoreStsMutex);
             mOriginKeyStore->mPrivateBrowsingOriginKeys.Clear(aSinceWhen);
             if (!aOnlyPrivateBrowsing) {
               mOriginKeyStore->mOriginKeys.SetProfileDir(profileDir);
               mOriginKeyStore->mOriginKeys.Clear(aSinceWhen);
             }
+#endif
             return NS_OK;
           }),
       NS_DISPATCH_NORMAL);

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MediaDrmRemoteCDMParent_h_
 #define MediaDrmRemoteCDMParent_h_
 
@@ -100,6 +98,9 @@ class MediaDrmRemoteCDMParent final : public RemoteCDMParent {
       SetServerCertificateResolver&& aResolver) override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  static void UnprovisionMediaDrmOrigins(
+      const nsTArray<nsCString>& aOriginKeys);
 
  private:
   virtual ~MediaDrmRemoteCDMParent();
