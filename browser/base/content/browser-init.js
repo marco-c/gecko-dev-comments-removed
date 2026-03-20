@@ -19,6 +19,7 @@ var gBrowserInit = {
   _tabToAdopt: undefined,
   _firstContentWindowPaintDeferred: Promise.withResolvers(),
   idleTasksFinished: Promise.withResolvers(),
+  _reducedProtectionPrefObserver: null,
 
   
 
@@ -560,6 +561,8 @@ var gBrowserInit = {
 
     ctrlTab.readPref();
     Services.prefs.addObserver(ctrlTab.prefName, ctrlTab);
+
+    ReducedProtectionNotification.observePref();
 
     
     
