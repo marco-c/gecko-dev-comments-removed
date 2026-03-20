@@ -57,12 +57,27 @@ add_task(async function test_fixedOverflow() {
   Assert.ok(searchbar.inOverflowPanel, "Was moved to overflow panel");
   await openOverflowPanel();
 
+  for (let i = 0; i < 10; i++) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    if (searchbar.focused) {
+      break;
+    }
+  }
+  Assert.ok(searchbar.focused, "Searchbar is focused eventually");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  Assert.equal(
+    document.activeElement,
+    searchbar.querySelector(".searchmode-switcher"),
+    "Previous focusable element is the searchmode switcher"
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.ok(searchbar.focused, "Searchbar is focused again");
+
   
   searchbar.lastQueryContextPromise = Promise.resolve();
 
   
   let searchTerm = "https://example.com/";
-  searchbar.focus();
   EventUtils.sendString(searchTerm);
 
   let lastQueryContext = await searchbar.lastQueryContextPromise;
@@ -176,4 +191,27 @@ add_task(async function test_overflowing() {
   });
   Assert.ok(searchbar.view.isOpen, "Results panel is open");
   searchbar.handleRevert();
+});
+
+
+
+
+add_task(async function test_tabNavigation() {
+  gURLBar.focus();
+  
+  for (let i = 0; i < 10; i++) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    if (searchbar.focused) {
+      break;
+    }
+  }
+  Assert.ok(searchbar.focused, "Searchbar is focused eventually");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  Assert.equal(
+    document.activeElement,
+    searchbar.querySelector(".searchmode-switcher"),
+    "Previous focusable element is the searchmode switcher"
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.ok(searchbar.focused, "Searchbar is focused again");
 });
