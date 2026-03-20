@@ -5,22 +5,22 @@
 #ifndef mozilla_StaticAnalysisFunctions_h
 #define mozilla_StaticAnalysisFunctions_h
 
+#ifndef __cplusplus
+#  ifndef bool
+#    include <stdbool.h>
+#  endif
+#  define MOZ_CONSTEXPR
+#else  
+#  include "mozilla/Attributes.h"
+#  define MOZ_CONSTEXPR constexpr
+#endif
+
 
 
 
 
 
 #ifdef MOZ_CLANG_PLUGIN
-
-#  ifndef __cplusplus
-#    ifndef bool
-#      include <stdbool.h>
-#    endif
-#    define MOZ_CONSTEXPR
-#  else  
-#    include "mozilla/Attributes.h"
-#    define MOZ_CONSTEXPR constexpr
-#  endif
 
 #  ifdef __cplusplus
 

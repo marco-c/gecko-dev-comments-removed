@@ -6,7 +6,7 @@
 #define mozilla_Try_h
 
 #include "mozilla/Likely.h"
-#include "mozilla/Result.h"  
+#include "mozilla/Result.h"
 
 
 
