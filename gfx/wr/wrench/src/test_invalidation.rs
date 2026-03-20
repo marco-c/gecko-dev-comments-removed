@@ -12,6 +12,7 @@ use crate::wrench::{Wrench, WrenchThing};
 use crate::yaml_frame_reader::YamlFrameReader;
 use webrender::{PictureCacheDebugInfo, TileDebugInfo};
 use webrender::api::units::*;
+use webrender::api::BorderRadius;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum InvalidationOp {
@@ -116,6 +117,7 @@ impl<'a> TestHarness<'a> {
         self.test_composite_nop();
         self.test_scroll_subpic();
         self.test_clip_promotion();
+        self.test_rounded_rect_intersection();
 
         
         let manifest_path = PathBuf::from("invalidation/invalidation.list");
@@ -259,6 +261,38 @@ impl<'a> TestHarness<'a> {
 
         let slices = results.pc_debug.slices.len();
         assert!(slices > 1, "Expected multiple slices");
+    }
+
+    
+    
+    fn test_rounded_rect_intersection(
+        &mut self,
+    ) {
+        let results = self.render_yaml("rounded_rect_intersect");
+
+        let slice = results.pc_debug.slice(0);
+
+        
+        
+        
+        
+        let clip = slice.compositor_clip.as_ref().expect(
+            "Expected a compositor clip on the tile cache slice after combining two rounded rects"
+        );
+
+        let expected_rect = DeviceRect::from_origin_and_size(
+            DevicePoint::new(0.0, 0.0),
+            DeviceSize::new(400.0, 350.0),
+        );
+        assert_eq!(clip.rect, expected_rect, "Combined clip rect");
+
+        let expected_radius = BorderRadius {
+            top_left: LayoutSize::new(20.0, 20.0),
+            top_right: LayoutSize::new(20.0, 20.0),
+            bottom_left: LayoutSize::new(15.0, 15.0),
+            bottom_right: LayoutSize::new(15.0, 15.0),
+        };
+        assert_eq!(clip.radius, expected_radius, "Combined clip radii");
     }
 
     

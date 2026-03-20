@@ -4,7 +4,7 @@
 
 use api::{BorderRadius, ClipId, ClipMode, ColorF, DebugFlags, PrimitiveFlags, QualitySettings, RasterSpace};
 use api::units::*;
-use crate::clip::{ClipItemKeyKind, ClipNodeId, ClipTreeBuilder};
+use crate::clip::{ClipItemKeyKind, ClipNodeId, ClipTreeBuilder, intersect_rounded_rects};
 use crate::frame_builder::FrameBuilderConfig;
 use crate::internal_types::FastHashMap;
 use crate::picture::{PrimitiveList, PictureCompositeMode, PicturePrimitive, Picture3DContext, PictureFlags};
@@ -542,11 +542,13 @@ fn create_tile_cache(
     
     
     
-    
-    
     let mut shared_clip_node_id = shared_clip_node_id.unwrap_or(ClipNodeId::NONE);
     let mut current_node_id = shared_clip_node_id;
     let mut rounded_rect_count = 0;
+
+    
+    
+    let mut accumulated_rounded_rect: Option<(LayoutRect, BorderRadius)> = None;
 
     
     while current_node_id != ClipNodeId::NONE {
@@ -568,8 +570,13 @@ fn create_tile_cache(
                 ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) => {
                     
                     
-                    if BorderRadius::from(radius).can_use_fast_path_in(&rect.into()) {
+                    let br = BorderRadius::from(radius);
+                    if br.can_use_fast_path_in(&rect.into()) {
                         rounded_rect_count += 1;
+
+                        if accumulated_rounded_rect.is_none() {
+                            accumulated_rounded_rect = Some((rect.into(), br));
+                        }
 
                         true
                     } else {
@@ -593,8 +600,35 @@ fn create_tile_cache(
                 
                 
                 
-                shared_clip_node_id = current_node_id;
-                rounded_rect_count = 1;
+                
+                
+                let can_combine = match (accumulated_rounded_rect, clip_node_data.key.kind) {
+                    (
+                        Some((acc_rect, acc_radius)),
+                        ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip),
+                    ) => {
+                        intersect_rounded_rects(
+                            acc_rect, acc_radius,
+                            rect.into(), BorderRadius::from(radius),
+                        )
+                    }
+                    _ => None,
+                };
+
+                if let Some((combined_rect, combined_radius)) = can_combine {
+                    
+                    
+                    
+                    rounded_rect_count = 1;
+                    accumulated_rounded_rect = Some((combined_rect, combined_radius));
+                } else {
+                    
+                    shared_clip_node_id = current_node_id;
+                    rounded_rect_count = 1;
+                    if let ClipItemKeyKind::RoundedRectangle(rect, radius, ClipMode::Clip) = clip_node_data.key.kind {
+                        accumulated_rounded_rect = Some((rect.into(), BorderRadius::from(radius)));
+                    }
+                }
             }
         } else {
             
@@ -602,6 +636,7 @@ fn create_tile_cache(
             
             shared_clip_node_id = node.parent;
             rounded_rect_count = 0;
+            accumulated_rounded_rect = None;
         }
 
         current_node_id = node.parent;
@@ -688,17 +723,28 @@ impl Default for PictureCacheDebugInfo {
 }
 
 
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct CompositorClipDebugInfo {
+    pub rect: DeviceRect,
+    pub radius: BorderRadius,
+}
+
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SliceDebugInfo {
     pub tiles: FastHashMap<TileOffset, TileDebugInfo>,
+    pub compositor_clip: Option<CompositorClipDebugInfo>,
 }
 
 impl SliceDebugInfo {
     pub fn new() -> Self {
         SliceDebugInfo {
             tiles: FastHashMap::default(),
+            compositor_clip: None,
         }
     }
 
