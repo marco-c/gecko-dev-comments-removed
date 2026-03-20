@@ -1050,20 +1050,31 @@ class nsTextFrame : public nsIFrame {
 
   gfxFloat ComputeDescentLimitForSelectionUnderline(
       nsPresContext* aPresContext, const gfxFont::Metrics& aFontMetrics);
+
+  struct SelectionColors {
+    nscolor mForeground = NS_RGBA(0, 0, 0, 0);
+    nscolor mBackground = NS_RGBA(0, 0, 0, 0);
+    
+    bool mHasBackground = false;
+    
+    
+    
+    bool mOverridesForeground = false;
+    
+    bool mHasPaintImpact = false;
+    bool HasAnyColorImpact() const {
+      return mHasBackground || mOverridesForeground;
+    }
+    bool HasAnyPaintImpact() const { return mHasPaintImpact; }
+  };
+
   
 
 
 
-
-
-
-
-  static bool GetSelectionTextColors(SelectionType aSelectionType,
-                                     nsAtom* aHighlightName,
-                                     nsTextPaintStyle& aTextPaintStyle,
-                                     const TextRangeStyle& aRangeStyle,
-                                     nscolor* aForeground,
-                                     nscolor* aBackground);
+  static SelectionColors GetSelectionTextColors(
+      SelectionType aSelectionType, nsAtom* aHighlightName,
+      nsTextPaintStyle& aTextPaintStyle, const TextRangeStyle& aRangeStyle);
   
 
 

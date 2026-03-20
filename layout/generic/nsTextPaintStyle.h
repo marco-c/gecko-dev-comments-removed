@@ -62,7 +62,12 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
 
   bool GetSelectionColors(nscolor* aForeColor, nscolor* aBackColor);
   void GetHighlightColors(nscolor* aForeColor, nscolor* aBackColor);
-  void GetTargetTextColors(nscolor* aForeColor, nscolor* aBackColor);
+  
+  
+  bool GetTargetTextColor(nscolor* aForeColor);
+  
+  
+  bool GetTargetTextBackgroundColor(nscolor* aBackColor);
   mozilla::Span<const StyleSimpleShadow> GetTargetTextShadow();
   
   
@@ -120,6 +125,7 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   bool mInitSelectionColorsAndShadow;
   bool mResolveColors;
   bool mInitTargetTextPseudoStyle;
+  mozilla::Maybe<bool> mTargetTextUseLightScheme;
 
   
 
@@ -157,6 +163,7 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   void InitCommonColors();
   bool InitSelectionColorsAndShadow();
   void InitTargetTextPseudoStyle();
+  bool TargetTextUseLightScheme();
 
   nsSelectionStyle* SelectionStyle(SelectionStyleIndex aIndex);
   nsSelectionStyle InitSelectionStyle(SelectionStyleIndex aIndex);
