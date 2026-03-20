@@ -444,8 +444,13 @@ MP4Metadata::ResultAndTrackInfo MP4Metadata::GetTrackInfo(
     if (rv == MP4PARSE_STATUS_OK) {
       
       
-      e->mDuration = TimeUnit(fragmentInfo.fragment_duration,
-                              AssertedCast<int64_t>(fragmentInfo.time_scale));
+      if (fragmentInfo.fragment_duration > TimeUnit::MaxTicks()) {
+        e->mDuration = TimeUnit::FromInfinity();
+      } else {
+        e->mDuration =
+            TimeUnit(AssertedCast<int64_t>(fragmentInfo.fragment_duration),
+                     AssertedCast<int64_t>(fragmentInfo.time_scale));
+      }
     }
   }
 
