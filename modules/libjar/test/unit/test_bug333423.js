@@ -4,8 +4,6 @@
 
 
 
-
-
 function run_test() {
   
   var file = do_get_file("data/test_bug333423.zip");

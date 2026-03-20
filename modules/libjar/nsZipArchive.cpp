@@ -6,7 +6,6 @@
 
 
 
-
 #define READTYPE int32_t
 #include "zlib.h"
 #include "nsISupportsUtils.h"

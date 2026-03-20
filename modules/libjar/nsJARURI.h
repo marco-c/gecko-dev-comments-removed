@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsJARURI_h_
 #define nsJARURI_h_
 

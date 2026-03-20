@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BrowsingContext.h"
 #include "nsJAR.h"
 #include "nsJARChannel.h"

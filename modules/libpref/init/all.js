@@ -18,7 +18,6 @@
 
 
 
-
 pref("security.tls.insecure_fallback_hosts", "");
 
 pref("security.default_personal_cert",   "Ask Every Time");

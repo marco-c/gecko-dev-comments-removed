@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsJARProtocolHandler_h_
 #define nsJARProtocolHandler_h_
 

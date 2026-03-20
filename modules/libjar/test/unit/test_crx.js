@@ -2,8 +2,6 @@
 
 
 
-
-
 function wrapInputStream(input) {
   let nsIScriptableInputStream = Ci.nsIScriptableInputStream;
   let factory = Cc["@mozilla.org/scriptableinputstream;1"];

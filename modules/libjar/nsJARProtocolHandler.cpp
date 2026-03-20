@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ClearOnShutdown.h"
 #include "nsJARProtocolHandler.h"
 #include "nsComponentManagerUtils.h"

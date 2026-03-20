@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "StaticPrefsBase.h"
 #include "Preferences.h"
 #include "MainThreadUtils.h"  

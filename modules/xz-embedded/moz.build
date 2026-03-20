@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files('**'):
     BUG_COMPONENT = ("Toolkit", "Application Update")
@@ -21,9 +19,9 @@ UNIFIED_SOURCES += [
 
 AllowCompilerWarnings()
 
-
+# Accept arm, armv7, etc.
 DEFINES['XZ_DEC_ARM'] = 1
-
+# Accept x86, x86_64, i386, i686, etc.
 DEFINES['XZ_DEC_X86'] = 1
 
 DEFINES['XZ_USE_CRC64'] = 1

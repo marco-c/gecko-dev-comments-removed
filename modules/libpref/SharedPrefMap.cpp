@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedPrefMap.h"
 
 #include "mozilla/dom/ipc/MemMapSnapshot.h"

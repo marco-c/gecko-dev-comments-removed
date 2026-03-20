@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StaticPrefsBase_h
 #define mozilla_StaticPrefsBase_h
 

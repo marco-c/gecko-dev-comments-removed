@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Preferences: Backend")
@@ -109,7 +107,7 @@ if CONFIG["MOZ_THUNDERBIRD"]:
     ]
 pref_groups = tuple(sorted(pref_groups))
 
-
+# Note: generate_static_pref_list.py relies on StaticPrefListAll.h being first.
 gen_h = ["init/StaticPrefListAll.h"]
 gen_h += ["StaticPrefsAll.h"]
 gen_h += ["init/StaticPrefList_{}.h".format(pg) for pg in pref_groups]

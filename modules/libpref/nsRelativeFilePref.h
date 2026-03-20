@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_nsRelativeFilePref_h
 #define mozilla_nsRelativeFilePref_h
 

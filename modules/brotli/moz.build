@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files('**'):
     BUG_COMPONENT = ('Core', 'General')
@@ -51,15 +49,15 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    
+    # These files conflict with enc/hash.h and also with each other
     'enc/compress_fragment.c',
     'enc/compress_fragment_two_pass.c',
 
-    
+    # Conflict with enc/brotli_bit_stream.c
     'enc/entropy_encode.c'
 ]
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 CFLAGS += ['-DBROTLI_BUILD_PORTABLE']

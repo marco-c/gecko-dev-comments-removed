@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsJAR_h_
 #define nsJAR_h_
 

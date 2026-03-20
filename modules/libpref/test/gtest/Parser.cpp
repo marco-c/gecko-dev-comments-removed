@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "mozilla/glean/LibprefMetrics.h"
 #include "mozilla/glean/fog_ffi_generated.h"

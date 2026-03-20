@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsZipArchive_h_
 #define nsZipArchive_h_
 

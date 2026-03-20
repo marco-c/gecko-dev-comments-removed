@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <woff2/decode.h>
 #include <cassert>
 #include "RLBoxWOFF2Sandbox.h"

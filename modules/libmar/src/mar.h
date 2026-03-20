@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MAR_H_
 #define MAR_H_
 

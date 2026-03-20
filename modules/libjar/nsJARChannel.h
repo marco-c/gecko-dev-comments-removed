@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsJARChannel_h_
 #define nsJARChannel_h_
 

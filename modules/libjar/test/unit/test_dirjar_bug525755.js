@@ -3,8 +3,6 @@
 
 
 
-
-
 function run_test() {
   
   var file = do_get_file("/");
