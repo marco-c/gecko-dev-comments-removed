@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImportScanner.h"
 
 #include "mozilla/ServoBindings.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoElementSnapshotTable_h
 #define mozilla_ServoElementSnapshotTable_h
 

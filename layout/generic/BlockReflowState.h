@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef BlockReflowState_h
 #define BlockReflowState_h
 

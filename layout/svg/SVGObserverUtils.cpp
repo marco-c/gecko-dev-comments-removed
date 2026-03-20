@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGObserverUtils.h"
 
 

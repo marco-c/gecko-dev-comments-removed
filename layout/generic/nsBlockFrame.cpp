@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsBlockFrame.h"
 
 #include <inttypes.h>

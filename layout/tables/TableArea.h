@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_TableArea_h_
 #define mozilla_TableArea_h_
 

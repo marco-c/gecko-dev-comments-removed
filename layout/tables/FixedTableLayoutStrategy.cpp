@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "FixedTableLayoutStrategy.h"
 
 #include <algorithm>

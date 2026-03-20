@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSKeyframeRule.h"
 
 #include "mozilla/DeclarationBlock.h"

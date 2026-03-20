@@ -9,8 +9,6 @@
 
 
 
-
-
 #ifndef nsScrollbarButtonFrame_h_
 #define nsScrollbarButtonFrame_h_
 

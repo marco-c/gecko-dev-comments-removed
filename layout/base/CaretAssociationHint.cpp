@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CaretAssociationHint.h"
 
 #include "mozilla/RangeBoundary.h"            

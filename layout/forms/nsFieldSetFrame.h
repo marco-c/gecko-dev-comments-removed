@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFieldSetFrame_h_
 #define nsFieldSetFrame_h_
 

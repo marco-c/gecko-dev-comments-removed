@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnchorPositioningUtils.h"
 
 #include "DisplayPortUtils.h"

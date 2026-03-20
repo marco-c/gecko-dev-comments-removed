@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_InspectorFontFace_h
 #define mozilla_InspectorFontFace_h
 

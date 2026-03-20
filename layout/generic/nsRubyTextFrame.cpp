@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsRubyTextFrame.h"
 
 #include "mozilla/ComputedStyle.h"

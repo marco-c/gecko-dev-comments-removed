@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DISPLAYITEMCLIPCHAIN_H_
 #define DISPLAYITEMCLIPCHAIN_H_
 

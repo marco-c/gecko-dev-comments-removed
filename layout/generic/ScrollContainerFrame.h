@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ScrollContainerFrame_h_
 #define mozilla_ScrollContainerFrame_h_
 

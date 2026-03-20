@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PositionedEventTargeting.h"
 
 #include <algorithm>

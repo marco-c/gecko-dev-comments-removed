@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCSSRenderingGradients_h_
 #define nsCSSRenderingGradients_h_
 

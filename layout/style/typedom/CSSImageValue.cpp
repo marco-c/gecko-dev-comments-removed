@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSImageValue.h"
 
 #include "mozilla/dom/CSSImageValueBinding.h"

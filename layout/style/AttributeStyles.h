@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_AttributeStyles_h_
 #define mozilla_AttributeStyles_h_
 

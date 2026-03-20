@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_GeckoBindings_h
 #define mozilla_GeckoBindings_h
 

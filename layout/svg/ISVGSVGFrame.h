@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LAYOUT_SVG_ISVGSVGFRAME_H_
 #define LAYOUT_SVG_ISVGSVGFRAME_H_
 

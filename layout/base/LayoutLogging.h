@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LayoutLogging_h
 #define LayoutLogging_h
 

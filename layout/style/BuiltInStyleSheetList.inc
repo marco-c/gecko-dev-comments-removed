@@ -18,8 +18,6 @@
 
 
 
-
-
 STYLE_SHEET(ContentEditable, "resource://gre/res/contenteditable.css", UA)
 STYLE_SHEET(CounterStyles, "resource://gre-resources/counterstyles.css", UA)
 STYLE_SHEET(Forms, "resource://gre-resources/forms.css", UA)

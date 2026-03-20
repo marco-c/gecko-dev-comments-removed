@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsICSSDeclaration.h"
 
 #include "mozilla/css/Rule.h"

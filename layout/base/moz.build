@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("nsBidi*"):
     BUG_COMPONENT = ("Core", "Layout: Text and Fonts")
@@ -129,7 +127,7 @@ UNIFIED_SOURCES += [
     "ZoomConstraintsClient.cpp",
 ]
 
-
+# nsRefreshDriver.cpp needs to be built separately because of name clashes in the OS X headers
 SOURCES += [
     "nsRefreshDriver.cpp",
 ]

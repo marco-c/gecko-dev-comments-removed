@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "BasicTableLayoutStrategy.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsXULPopupManager.h"
 
 #include "PopupQueue.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AccessibleCaretEventHub_h
 #define mozilla_AccessibleCaretEventHub_h
 

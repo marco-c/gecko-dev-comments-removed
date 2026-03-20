@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AspectRatio_h
 #define mozilla_AspectRatio_h
 

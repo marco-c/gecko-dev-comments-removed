@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GEOMETRYUTILS_H_
 #define MOZILLA_GEOMETRYUTILS_H_
 

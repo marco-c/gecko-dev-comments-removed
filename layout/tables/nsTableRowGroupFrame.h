@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsTableRowGroupFrame_h_
 #define nsTableRowGroupFrame_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ScrollVelocityQueue_h_
 #define ScrollVelocityQueue_h_
 

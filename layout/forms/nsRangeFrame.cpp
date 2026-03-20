@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsRangeFrame.h"
 
 #include "ListMutationObserver.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DisplayPortUtils.h"
 
 #include <ostream>

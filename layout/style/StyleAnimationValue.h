@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_StyleAnimationValue_h_
 #define mozilla_StyleAnimationValue_h_
 

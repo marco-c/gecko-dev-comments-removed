@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSContainerRule.h"
 
 #include "mozilla/ServoBindings.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GlobalStyleSheetCache.h"
 
 #include "MainThreadUtils.h"

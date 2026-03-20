@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsVideoFrame_h_
 #define nsVideoFrame_h_
 

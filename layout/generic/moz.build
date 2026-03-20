@@ -1,15 +1,13 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("nsBlock*"):
-    
+    # Parts of these files are really Layout: Floats
     BUG_COMPONENT = ("Core", "Layout: Block and Inline")
 
 with Files("Block*"):
-    
+    # Parts of these files are really Layout: Floats
     BUG_COMPONENT = ("Core", "Layout: Block and Inline")
 
 with Files("nsColumn*"):
@@ -19,7 +17,7 @@ with Files("Column*"):
     BUG_COMPONENT = ("Core", "Layout: Columns")
 
 with Files("nsLine*"):
-    
+    # Parts of these files are really Layout: Floats
     BUG_COMPONENT = ("Core", "Layout: Block and Inline")
 
 with Files("nsInlineFrame.*"):
@@ -235,9 +233,9 @@ UNIFIED_SOURCES += [
     "WBRFrame.cpp",
 ]
 
-
-
-
+# on win32 if we add these files to UNIFIED_SOURCES then the compiler generates
+# larger stack frames for some recursive functions that cause us to hit stack
+# overflows (see bug 1827428)
 if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["TARGET_CPU"] == "x86":
     SOURCES += [
         "nsContainerFrame.cpp",
@@ -252,8 +250,8 @@ else:
     ]
 
 SOURCES += [
-    
-    
+    # If this file gets compiled with ScrollPositionUpdate.cpp, the specialized
+    # `operator<<` for ScrollGeneration<> won't be visible
     "ScrollGeneration.cpp",
 ]
 

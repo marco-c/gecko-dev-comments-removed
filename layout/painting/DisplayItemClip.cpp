@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DisplayItemClip.h"
 
 #include "gfxContext.h"

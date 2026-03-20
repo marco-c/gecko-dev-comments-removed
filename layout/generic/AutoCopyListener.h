@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AutoCopyListener_h
 #define mozilla_AutoCopyListener_h
 

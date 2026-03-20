@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_RestyleManager_h
 #define mozilla_RestyleManager_h
 

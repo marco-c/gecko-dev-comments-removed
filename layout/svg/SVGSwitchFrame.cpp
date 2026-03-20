@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGGFrame.h"
 #include "gfxRect.h"
 #include "mozilla/PresShell.h"

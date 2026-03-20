@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmrowFrame_h_
 #define nsMathMLmrowFrame_h_
 

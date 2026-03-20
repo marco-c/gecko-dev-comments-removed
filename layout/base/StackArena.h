@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef StackArena_h
 #define StackArena_h
 

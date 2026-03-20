@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_MappedDeclarationsBuilder_h
 #define mozilla_MappedDeclarationsBuilder_h
 

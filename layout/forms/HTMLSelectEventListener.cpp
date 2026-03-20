@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "HTMLSelectEventListener.h"
 
 #include "mozilla/Casting.h"

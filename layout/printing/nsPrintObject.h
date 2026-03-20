@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsPrintObject_h_
 #define nsPrintObject_h_
 

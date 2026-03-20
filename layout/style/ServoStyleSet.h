@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoStyleSet_h
 #define mozilla_ServoStyleSet_h
 

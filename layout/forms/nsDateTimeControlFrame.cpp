@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsDateTimeControlFrame.h"
 
 #include "mozilla/PresShell.h"

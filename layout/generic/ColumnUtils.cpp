@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/ColumnUtils.h"
 
 #include <algorithm>

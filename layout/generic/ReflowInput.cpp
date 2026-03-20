@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/ReflowInput.h"
 
 #include <algorithm>

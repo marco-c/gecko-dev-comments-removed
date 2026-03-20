@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/css/StreamLoader.h"
 
 #include "mozilla/Encoding.h"

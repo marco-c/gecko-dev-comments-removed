@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIPercentBSizeObserver_h_
 #define nsIPercentBSizeObserver_h_
 

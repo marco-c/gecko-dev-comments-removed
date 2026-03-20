@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLContainerFrame.h"
 
 #include "gfxContext.h"

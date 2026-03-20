@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLAtoms_h_
 #define nsMathMLAtoms_h_
 

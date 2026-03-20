@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSFontFaceRule.h"
 
 #include "mozilla/ServoBindings.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSCounterStyleRule.h"
 
 #include "mozAutoDocUpdate.h"

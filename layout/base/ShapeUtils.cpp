@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ShapeUtils.h"
 
 #include <cstdlib>

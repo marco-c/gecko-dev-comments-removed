@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmtableFrame_h_
 #define nsMathMLmtableFrame_h_
 

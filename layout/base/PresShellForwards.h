@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PresShellForwards_h
 #define mozilla_PresShellForwards_h
 

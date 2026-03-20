@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HitTestInfo.h"
 
 #include "mozilla/StaticPtr.h"

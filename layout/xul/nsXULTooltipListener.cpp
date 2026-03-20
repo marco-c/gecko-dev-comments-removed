@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsXULTooltipListener.h"
 
 #include "XULButtonElement.h"

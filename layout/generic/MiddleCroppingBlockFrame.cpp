@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MiddleCroppingBlockFrame.h"
 
 #include "gfxContext.h"

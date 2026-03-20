@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoElementSnapshot_h
 #define mozilla_ServoElementSnapshot_h
 

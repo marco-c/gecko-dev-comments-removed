@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsTableWrapperFrame.h"
 
 #include <algorithm>

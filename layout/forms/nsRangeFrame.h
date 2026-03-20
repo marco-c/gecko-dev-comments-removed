@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsRangeFrame_h_
 #define nsRangeFrame_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPrintObject.h"
 
 #include "mozilla/PresShell.h"

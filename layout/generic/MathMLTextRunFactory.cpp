@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MathMLTextRunFactory.h"
 
 #include "mozilla/BinarySearch.h"

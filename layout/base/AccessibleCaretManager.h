@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AccessibleCaretManager_h
 #define AccessibleCaretManager_h
 

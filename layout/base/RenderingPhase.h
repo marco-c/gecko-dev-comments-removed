@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_RENDERINGPHASE_H_
 #define MOZILLA_RENDERINGPHASE_H_
 

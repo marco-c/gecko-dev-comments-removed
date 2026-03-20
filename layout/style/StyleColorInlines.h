@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_StyleColorInlines_h_
 #define mozilla_StyleColorInlines_h_
 

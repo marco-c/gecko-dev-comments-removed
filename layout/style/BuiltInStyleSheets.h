@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_BuiltInStyleSheets_h
 #define mozilla_BuiltInStyleSheets_h
 

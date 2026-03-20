@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MiddleCroppingBlockFrame_h
 #define mozilla_MiddleCroppingBlockFrame_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsStyleConsts_h_
 #define nsStyleConsts_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSRotate.h"
 
 #include "mozilla/AlreadyAddRefed.h"

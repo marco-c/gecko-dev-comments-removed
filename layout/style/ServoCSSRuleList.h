@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoCSSRuleList_h
 #define mozilla_ServoCSSRuleList_h
 

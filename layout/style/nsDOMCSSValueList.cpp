@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsDOMCSSValueList.h"
 
 #include <utility>

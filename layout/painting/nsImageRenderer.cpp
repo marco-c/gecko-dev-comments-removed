@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsImageRenderer.h"
 
 #include "mozilla/webrender/WebRenderAPI.h"

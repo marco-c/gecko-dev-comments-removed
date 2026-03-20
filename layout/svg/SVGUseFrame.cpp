@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGUseFrame.h"
 
 #include "mozilla/PresShell.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsIFrame.h"
 
 #include <stdarg.h>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSHSL_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSHSL_H_
 

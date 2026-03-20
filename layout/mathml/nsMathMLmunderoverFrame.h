@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmunderoverFrame_h_
 #define nsMathMLmunderoverFrame_h_
 

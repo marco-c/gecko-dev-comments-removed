@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsHTMLParts_h_
 #define nsHTMLParts_h_
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsPageFrame_h_
 #define nsPageFrame_h_
 

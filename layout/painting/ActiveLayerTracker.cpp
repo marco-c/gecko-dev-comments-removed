@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ActiveLayerTracker.h"
 
 #include "gfx2DGlue.h"

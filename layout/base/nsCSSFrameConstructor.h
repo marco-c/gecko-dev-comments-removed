@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsCSSFrameConstructor_h_
 #define nsCSSFrameConstructor_h_
 

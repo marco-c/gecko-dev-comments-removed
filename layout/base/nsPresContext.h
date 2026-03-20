@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsPresContext_h_
 #define nsPresContext_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSRGB_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSRGB_H_
 

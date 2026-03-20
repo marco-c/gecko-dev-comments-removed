@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/StyleSheet.h"
 
 #include "mozAutoDocUpdate.h"
@@ -349,6 +347,7 @@ StyleSheetInfo::StyleSheetInfo(CORSMode aCORSMode,
 StyleSheetInfo::StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet)
     : mCORSMode(aCopy.mCORSMode),
       mIntegrity(aCopy.mIntegrity),
+      mOriginClean(aCopy.mOriginClean),
       
       
       mSourceMapURL(aCopy.mSourceMapURL),

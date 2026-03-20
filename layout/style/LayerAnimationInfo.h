@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LayerAnimationInfo_h
 #define mozilla_LayerAnimationInfo_h
 

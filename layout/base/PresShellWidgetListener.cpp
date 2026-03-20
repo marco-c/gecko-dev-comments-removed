@@ -2,7 +2,6 @@
 
 
 
-
 #include "PresShellWidgetListener.h"
 
 #include "WindowRenderer.h"

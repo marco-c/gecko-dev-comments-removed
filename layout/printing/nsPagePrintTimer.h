@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsPagePrintTimer_h_
 #define nsPagePrintTimer_h_
 

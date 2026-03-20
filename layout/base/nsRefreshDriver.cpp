@@ -15,8 +15,6 @@
 
 
 
-
-
 #include "nsRefreshDriver.h"
 
 #include "mozilla/DataMutex.h"

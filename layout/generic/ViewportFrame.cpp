@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/ViewportFrame.h"
 
 #include "MobileViewportManager.h"

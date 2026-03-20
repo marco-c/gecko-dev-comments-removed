@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsICSSLoaderObserver_h_
 #define nsICSSLoaderObserver_h_
 

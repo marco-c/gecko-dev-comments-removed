@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCheckboxRadioFrame_h_
 #define nsCheckboxRadioFrame_h_
 

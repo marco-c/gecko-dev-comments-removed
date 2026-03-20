@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsHTMLCanvasFrame_h_
 #define nsHTMLCanvasFrame_h_
 

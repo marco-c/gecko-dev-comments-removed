@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeImageListener.h"
 
 #include "XULTreeElement.h"

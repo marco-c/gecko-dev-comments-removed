@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTextRunTransformations.h"
 
 #include <utility>

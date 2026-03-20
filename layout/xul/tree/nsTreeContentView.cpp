@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeContentView.h"
 
 #include "ChildIterator.h"

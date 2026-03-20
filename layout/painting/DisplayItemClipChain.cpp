@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DisplayItemClipChain.h"
 
 #include "nsDisplayList.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsIntervalSet.h"
 
 #include <algorithm>

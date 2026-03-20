@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMathInvert.h"
 
 #include "mozilla/AlreadyAddRefed.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsHTMLCanvasFrame.h"
 
 #include "ActiveLayerTracker.h"

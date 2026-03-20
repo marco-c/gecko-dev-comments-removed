@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollVelocityQueue.h"
 
 #include "mozilla/StaticPrefs_apz.h"

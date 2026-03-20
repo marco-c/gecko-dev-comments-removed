@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsFontFaceLoader_h_
 #define nsFontFaceLoader_h_
 

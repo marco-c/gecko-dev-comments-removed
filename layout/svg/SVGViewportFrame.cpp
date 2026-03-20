@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGViewportFrame.h"
 
 

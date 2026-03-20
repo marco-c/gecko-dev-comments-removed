@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsPrintJob_h
 #define nsPrintJob_h
 

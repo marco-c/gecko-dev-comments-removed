@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsChangeHint_h_
 #define nsChangeHint_h_
 

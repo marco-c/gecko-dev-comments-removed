@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsLeafFrame.h"
 
 #include "mozilla/PresShell.h"

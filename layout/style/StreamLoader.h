@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_css_StreamLoader_h
 #define mozilla_css_StreamLoader_h
 

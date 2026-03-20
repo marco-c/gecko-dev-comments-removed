@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmspaceFrame.h"
 
 #include <algorithm>

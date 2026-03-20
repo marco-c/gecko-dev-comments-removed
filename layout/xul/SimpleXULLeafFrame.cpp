@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "SimpleXULLeafFrame.h"
 
 #include "mozilla/PresShell.h"

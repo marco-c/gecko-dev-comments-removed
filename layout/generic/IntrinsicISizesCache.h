@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_IntrinsicISizesCache_h
 #define mozilla_IntrinsicISizesCache_h
 

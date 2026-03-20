@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmrowFrame.h"
 
 #include "mozilla/PresShell.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_LayoutStructs_h
 #define mozilla_LayoutStructs_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLFrame.h"
 
 #include "PseudoStyleType.h"

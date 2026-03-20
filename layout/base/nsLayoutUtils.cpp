@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLayoutUtils.h"
 
 #include <algorithm>

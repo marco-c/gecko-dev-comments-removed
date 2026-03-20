@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "FilterInstance.h"
 
 #include <memory>

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ReflowInput_h
 #define mozilla_ReflowInput_h
 
@@ -476,7 +474,8 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
-    bool mIsInColumnMeasuringReflow : 1;
+    
+    bool mIsInFragmentainerMeasuringReflow : 1;
 
     
     

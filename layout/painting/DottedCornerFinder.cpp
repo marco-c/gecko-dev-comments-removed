@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DottedCornerFinder.h"
 
 #include <utility>

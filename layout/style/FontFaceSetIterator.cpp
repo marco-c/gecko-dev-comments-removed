@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/FontFaceSetIterator.h"
 
 #include "js/Array.h"  

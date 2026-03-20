@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_RustCell_h
 #define mozilla_RustCell_h
 

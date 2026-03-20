@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemotePrintJobChild.h"
 
 #include "mozilla/SpinEventLoopUntil.h"

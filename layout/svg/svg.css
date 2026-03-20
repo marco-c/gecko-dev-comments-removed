@@ -1,11 +1,10 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-@namespace url(http:
-@namespace xml url(http:
+@namespace url(http://www.w3.org/2000/svg);
+@namespace xml url(http://www.w3.org/XML/1998/namespace);
 
 style,
 script {
@@ -53,14 +52,14 @@ foreignObject {
 
 *|*::-moz-svg-foreign-content {
   display: block !important;
-  
+  /* We need to be an absolute and fixed container */
   transform: translate(0) !important;
   text-indent: 0;
 }
 
-
-
-
+/* Set |transform-origin:0 0;| for all SVG elements except outer-<svg>,
+   noting that 'svg' as a child of 'foreignObject' counts as outer-<svg>.
+*/
 *:not(svg),
 *:not(foreignObject) > svg {
   transform-origin: 0 0;
@@ -82,8 +81,8 @@ foreignObject {
   opacity: inherit;
 }
 
-
-
+/* Make SVG shapes unselectable to avoid triggering AccessibleCaret on tap.
+   <mesh> will be supported in bug 1238882. */
 circle,
 ellipse,
 line,
@@ -96,6 +95,6 @@ rect {
 }
 
 a:any-link {
-  
+  /* We don't want SVG link to be underlined */
   text-decoration: none;
 }

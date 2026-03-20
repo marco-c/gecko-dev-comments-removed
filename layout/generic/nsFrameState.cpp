@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsFrameState.h"
 
 #include "mozilla/ISVGDisplayableFrame.h"

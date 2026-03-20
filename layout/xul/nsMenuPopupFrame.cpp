@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMenuPopupFrame.h"
 
 #include <algorithm>

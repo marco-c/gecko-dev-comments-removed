@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsStyleChangeList.h"
 
 #include "mozilla/dom/ElementInlines.h"

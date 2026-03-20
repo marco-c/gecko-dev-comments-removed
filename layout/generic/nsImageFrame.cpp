@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsImageFrame.h"
 
 #include <algorithm>

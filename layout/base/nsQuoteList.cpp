@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsQuoteList.h"
 
 #include "mozilla/ContainStyleScopeManager.h"

@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsFrameSelection.h"
 
 #include <algorithm>

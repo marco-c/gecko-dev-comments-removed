@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "inLayoutUtils.h"
 
 #include "mozilla/EventStateManager.h"

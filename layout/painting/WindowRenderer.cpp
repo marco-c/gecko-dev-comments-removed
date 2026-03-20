@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowRenderer.h"
 
 #include "gfxPlatform.h"

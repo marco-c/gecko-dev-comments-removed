@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TimelineCollection_h
 #define mozilla_TimelineCollection_h
 

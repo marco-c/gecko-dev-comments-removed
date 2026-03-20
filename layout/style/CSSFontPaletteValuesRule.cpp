@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSFontPaletteValuesRule.h"
 
 #include "mozilla/ServoBindings.h"

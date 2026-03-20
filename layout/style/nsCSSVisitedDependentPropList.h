@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCSSVisitedDependentPropList_h_
 #define nsCSSVisitedDependentPropList_h_
 

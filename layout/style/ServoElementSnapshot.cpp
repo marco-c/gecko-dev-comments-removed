@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ServoElementSnapshot.h"
 
 #include "mozilla/GeckoBindings.h"

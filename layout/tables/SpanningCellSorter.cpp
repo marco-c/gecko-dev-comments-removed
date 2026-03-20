@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "SpanningCellSorter.h"
 
 #include "nsTArray.h"

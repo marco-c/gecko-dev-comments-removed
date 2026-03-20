@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTreeSelection_h_
 #define nsTreeSelection_h_
 

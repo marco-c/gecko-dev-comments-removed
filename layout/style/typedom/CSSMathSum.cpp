@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMathSum.h"
 
 #include "mozilla/AlreadyAddRefed.h"

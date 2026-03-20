@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PreferenceSheet.h"
 
 #include "MainThreadUtils.h"

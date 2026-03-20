@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SurfaceFromElementResult_h
 #define mozilla_SurfaceFromElementResult_h
 

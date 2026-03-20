@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "TouchManager.h"
 
 #include "PositionedEventTargeting.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoTraversalStatistics_h
 #define mozilla_ServoTraversalStatistics_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/StyleAnimationValue.h"
 
 #include "PseudoStyleType.h"

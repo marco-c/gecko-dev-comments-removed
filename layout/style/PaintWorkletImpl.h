@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef PaintWorkletImpl_h
 #define PaintWorkletImpl_h
 

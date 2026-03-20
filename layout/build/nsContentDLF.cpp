@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "nsContentDLF.h"
 
 #include "DecoderTraits.h"

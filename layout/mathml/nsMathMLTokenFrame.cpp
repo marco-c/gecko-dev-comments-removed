@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLTokenFrame.h"
 
 #include <algorithm>

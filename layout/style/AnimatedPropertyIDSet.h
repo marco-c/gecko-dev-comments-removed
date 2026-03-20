@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AnimatedPropertyIDSet_h
 #define mozilla_AnimatedPropertyIDSet_h
 

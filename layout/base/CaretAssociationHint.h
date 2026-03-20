@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CaretAssociationHint_h
 #define mozilla_CaretAssociationHint_h
 

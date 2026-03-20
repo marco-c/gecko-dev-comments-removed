@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsFirstLetterFrame.h"
 
 #include "mozilla/ComputedStyle.h"

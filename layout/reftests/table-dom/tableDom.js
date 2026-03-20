@@ -2,7 +2,6 @@
 
 
 
-
 var count = 1;
 function genName(prefix) {
   return "X" + count++ + "\n";

@@ -30,8 +30,6 @@
 
 
 
-
-
 #ifndef nsPlaceholderFrame_h_
 #define nsPlaceholderFrame_h_
 

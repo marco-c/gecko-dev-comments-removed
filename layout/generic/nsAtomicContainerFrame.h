@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef nsAtomicContainerFrame_h_
 #define nsAtomicContainerFrame_h_
 

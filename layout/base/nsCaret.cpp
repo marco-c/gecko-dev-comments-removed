@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsCaret.h"
 
 #include <algorithm>

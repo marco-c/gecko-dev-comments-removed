@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSNestedDeclarations.h"
 
 #include "mozilla/DeclarationBlock.h"

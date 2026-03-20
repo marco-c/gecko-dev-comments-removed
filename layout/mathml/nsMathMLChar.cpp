@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLChar.h"
 
 #include <algorithm>

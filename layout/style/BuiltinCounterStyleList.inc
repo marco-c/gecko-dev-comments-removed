@@ -14,8 +14,6 @@
 
 
 
-
-
 BUILTIN_COUNTER_STYLE(None, none)
 BUILTIN_COUNTER_STYLE(Decimal, decimal)
 

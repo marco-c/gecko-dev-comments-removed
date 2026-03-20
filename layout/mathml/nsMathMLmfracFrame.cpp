@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmfracFrame.h"
 
 #include <algorithm>
@@ -213,7 +211,9 @@ void nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
   
   nscoord leftSpace = 0;
   nscoord rightSpace = 0;
-  if (outermostEmbellished) {
+  if (!StaticPrefs::
+          mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled() &&
+      outermostEmbellished) {
     const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
     nsEmbellishData coreData;
     GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);

@@ -1,7 +1,6 @@
 
 
 
-
 #include "nsTableRowGroupFrame.h"
 
 #include <algorithm>

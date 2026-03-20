@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MotionPathUtils_h
 #define mozilla_MotionPathUtils_h
 

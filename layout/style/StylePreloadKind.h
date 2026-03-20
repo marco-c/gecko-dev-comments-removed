@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_css_StylePreloadKind_h
 #define mozilla_css_StylePreloadKind_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WordMovementType_h_
 #define WordMovementType_h_
 

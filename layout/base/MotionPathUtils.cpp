@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/MotionPathUtils.h"
 
 #include <math.h>

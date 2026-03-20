@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLayoutStatics.h"
 
 #include "ActiveLayerTracker.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMarginRule.h"
 
 #include "mozilla/DeclarationBlock.h"

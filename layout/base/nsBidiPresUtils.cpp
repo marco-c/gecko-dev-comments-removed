@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsBidiPresUtils.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLOperators.h"
 
 #include "mozilla/StaticPrefs_mathml.h"

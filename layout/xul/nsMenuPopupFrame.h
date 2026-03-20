@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsMenuPopupFrame_h_
 #define nsMenuPopupFrame_h_
 

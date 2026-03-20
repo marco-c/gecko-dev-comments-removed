@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsStyleChangeList_h_
 #define nsStyleChangeList_h_
 

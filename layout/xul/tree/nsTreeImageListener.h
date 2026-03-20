@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTreeImageListener_h_
 #define nsTreeImageListener_h_
 

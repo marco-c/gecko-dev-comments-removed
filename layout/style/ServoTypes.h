@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoTypes_h
 #define mozilla_ServoTypes_h
 

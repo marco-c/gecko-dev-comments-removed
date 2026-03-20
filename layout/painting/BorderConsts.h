@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BorderConsts_h_
 #define mozilla_BorderConsts_h_
 

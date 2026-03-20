@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGImageFrame.h"
 
 

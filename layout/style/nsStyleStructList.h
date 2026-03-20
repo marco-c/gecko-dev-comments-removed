@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStyleStructList_h_
 #define nsStyleStructList_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFirstLetterFrame_h_
 #define nsFirstLetterFrame_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/StaticPresData.h"
 
 #include "gfxFontFeatures.h"

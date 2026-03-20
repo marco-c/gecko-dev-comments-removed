@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ContainStyleScopeManager_h_
 #define ContainStyleScopeManager_h_
 

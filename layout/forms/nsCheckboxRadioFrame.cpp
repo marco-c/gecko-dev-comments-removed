@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCheckboxRadioFrame.h"
 
 #include "LayoutConstants.h"

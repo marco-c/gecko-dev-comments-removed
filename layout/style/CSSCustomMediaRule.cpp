@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSCustomMediaRule.h"
 
 #include "mozilla/DeclarationBlock.h"

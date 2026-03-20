@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsRubyBaseContainerFrame_h_
 #define nsRubyBaseContainerFrame_h_
 

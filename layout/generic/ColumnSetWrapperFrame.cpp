@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ColumnSetWrapperFrame.h"
 
 #include "mozilla/ColumnUtils.h"

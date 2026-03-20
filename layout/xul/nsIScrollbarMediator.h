@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIScrollbarMediator_h_
 #define nsIScrollbarMediator_h_
 

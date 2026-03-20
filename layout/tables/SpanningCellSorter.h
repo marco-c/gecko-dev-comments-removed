@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SpanningCellSorter_h
 #define SpanningCellSorter_h
 

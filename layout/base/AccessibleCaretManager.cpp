@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AccessibleCaretManager.h"
 
 #include <utility>

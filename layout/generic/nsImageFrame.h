@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsImageFrame_h_
 #define nsImageFrame_h_
 

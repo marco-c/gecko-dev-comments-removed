@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsRefreshObservers.h"
 
 #include "mozilla/Likely.h"

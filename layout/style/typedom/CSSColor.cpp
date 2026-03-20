@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSColor.h"
 
 #include "mozilla/AlreadyAddRefed.h"

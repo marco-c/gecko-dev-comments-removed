@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsBlockDebugFlags_h_
 #define nsBlockDebugFlags_h_
 

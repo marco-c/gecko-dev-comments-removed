@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LAYOUT_SVG_SVGMARKERFRAME_H_
 #define LAYOUT_SVG_SVGMARKERFRAME_H_
 

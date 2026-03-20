@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGIntegrationUtils.h"
 
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSKeyframesRule.h"
 
 #include <limits>

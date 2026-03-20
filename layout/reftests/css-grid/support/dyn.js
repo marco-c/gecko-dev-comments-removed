@@ -2,8 +2,6 @@
 
 
 
-
-
 function loadURL(url,callback) {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {

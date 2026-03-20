@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LayerAnimationInfo.h"
 
 #include "nsCSSPropertyIDSet.h"  

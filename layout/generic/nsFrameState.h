@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsFrameState_h_
 #define nsFrameState_h_
 

@@ -3,7 +3,6 @@
 
 
 
-
 var HOST_NODE_HEIGHT = "20";
 var HOST_NODE_WIDTH =  "30";
 

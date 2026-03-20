@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsScrollbarFrame_h_
 #define nsScrollbarFrame_h_
 

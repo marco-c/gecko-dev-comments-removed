@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef mozilla_MediaEmulationData_h
 #define mozilla_MediaEmulationData_h
 

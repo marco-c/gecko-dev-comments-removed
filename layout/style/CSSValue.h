@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CSSValue_h_
 #define mozilla_dom_CSSValue_h_
 

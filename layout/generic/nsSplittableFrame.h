@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsSplittableFrame_h_
 #define nsSplittableFrame_h_
 

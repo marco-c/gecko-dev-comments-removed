@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmmultiscriptsFrame_h_
 #define nsMathMLmmultiscriptsFrame_h_
 

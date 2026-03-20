@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPageSequenceFrame.h"
 
 #include <algorithm>
@@ -80,6 +78,12 @@ inline void SanityCheckPagesPerSheetInfo() {
     prevInfoPPS = info.mNumPages;
   }
 #endif
+}
+
+static void MarkPrincipalChildrenDirty(nsIFrame* aFrame) {
+  for (nsIFrame* childFrame : aFrame->PrincipalChildList()) {
+    childFrame->MarkSubtreeDirty();
+  }
 }
 
 const nsPagesPerSheetInfo& nsPagesPerSheetInfo::LookupInfo(int32_t aPPS) {
@@ -301,6 +305,69 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
       CenterPages();
     }
     return;
+  }
+
+  const bool shouldDoMeasuringReflow = [&]() {
+    if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
+      return false;
+    }
+    if (GetPrevInFlow()) {
+      
+      return false;
+    }
+    
+    
+    return nsLayoutUtils::HasAbsolutelyPositionedDescendants(this);
+  }();
+
+  if (shouldDoMeasuringReflow) {
+    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+      
+      MarkPrincipalChildrenDirty(this);
+    }
+
+    for (nsIFrame* kidFrame : mFrames) {
+      auto* sheet = static_cast<PrintedSheetFrame*>(kidFrame);
+      sheet->SetSharedPageData(&mPageData);
+
+      
+      
+      sheet->ClaimPageFrameFromPrevInFlow();
+
+      const nsSize sheetSize = sheet->ComputeSheetSize(aPresContext);
+
+      const auto kidWM = kidFrame->GetWritingMode();
+      LogicalSize availSize(kidWM, sheetSize);
+
+      
+      
+      
+      availSize.BSize(kidWM) = NS_UNCONSTRAINEDSIZE;
+
+      ReflowInput kidReflowInput(aPresContext, aReflowInput, kidFrame,
+                                 availSize);
+
+      
+      
+      
+      kidReflowInput.mBreakType = ReflowInput::BreakType::Page;
+      kidReflowInput.mFlags.mIsInFragmentainerMeasuringReflow = true;
+
+      ReflowOutput kidReflowOutput(kidReflowInput);
+      nsReflowStatus status;
+
+      
+      const WritingMode wm = kidFrame->GetWritingMode();
+      ReflowChild(kidFrame, aPresContext, kidReflowOutput, kidReflowInput, wm,
+                  LogicalPoint(wm), sheetSize, ReflowChildFlags::Default,
+                  status);
+      FinishReflowChild(kidFrame, aPresContext, kidReflowOutput,
+                        &kidReflowInput, wm, LogicalPoint(wm), sheetSize,
+                        ReflowChildFlags::Default);
+    }
+
+    
+    MarkPrincipalChildrenDirty(this);
   }
 
   nsIntMargin unwriteableTwips =

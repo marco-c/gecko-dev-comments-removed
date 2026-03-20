@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsIFrame_h_
 #define nsIFrame_h_
 

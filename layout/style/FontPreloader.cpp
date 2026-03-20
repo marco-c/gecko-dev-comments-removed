@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FontPreloader.h"
 
 #include "gfxPlatform.h"

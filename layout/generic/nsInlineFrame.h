@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsInlineFrame_h_
 #define nsInlineFrame_h_
 

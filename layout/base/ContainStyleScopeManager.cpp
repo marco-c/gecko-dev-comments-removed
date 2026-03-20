@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContainStyleScopeManager.h"
 
 #include "CounterStyleManager.h"

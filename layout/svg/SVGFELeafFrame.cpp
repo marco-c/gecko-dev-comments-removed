@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"

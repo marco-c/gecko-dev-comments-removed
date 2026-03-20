@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsStyleSheetService_h_
 #define nsStyleSheetService_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsContainerFrameInlines_h_
 #define nsContainerFrameInlines_h_
 

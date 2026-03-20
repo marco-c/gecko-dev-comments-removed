@@ -49,8 +49,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoBindingTypes_h
 #define mozilla_ServoBindingTypes_h
 

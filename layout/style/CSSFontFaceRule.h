@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSFontFaceRule_h
 #define mozilla_CSSFontFaceRule_h
 

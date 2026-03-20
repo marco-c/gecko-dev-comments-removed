@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/AnimationCollection.h"
 
 #include <type_traits>

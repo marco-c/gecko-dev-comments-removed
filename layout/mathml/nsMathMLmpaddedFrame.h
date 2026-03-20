@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmpaddedFrame_h_
 #define nsMathMLmpaddedFrame_h_
 

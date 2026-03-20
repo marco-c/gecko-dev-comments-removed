@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmencloseFrame_h_
 #define nsMathMLmencloseFrame_h_
 

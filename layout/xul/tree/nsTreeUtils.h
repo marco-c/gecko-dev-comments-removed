@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTreeUtils_h_
 #define nsTreeUtils_h_
 

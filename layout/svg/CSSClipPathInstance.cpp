@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "CSSClipPathInstance.h"
 
 #include "gfx2DGlue.h"

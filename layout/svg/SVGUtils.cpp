@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "SVGUtils.h"
 
 #include <algorithm>

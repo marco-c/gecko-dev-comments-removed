@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSStyleRule.h"
 
 #include "PseudoStyleType.h"

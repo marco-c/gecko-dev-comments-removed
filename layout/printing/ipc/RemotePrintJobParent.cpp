@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemotePrintJobParent.h"
 
 #include <fstream>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTableFrame.h"
 
 #include <algorithm>

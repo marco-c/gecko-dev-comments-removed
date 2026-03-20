@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AutoProfilerStyleMarker_h
 #define mozilla_AutoProfilerStyleMarker_h
 

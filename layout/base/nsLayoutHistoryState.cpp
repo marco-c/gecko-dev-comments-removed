@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/PresState.h"
 #include "mozilla/UniquePtr.h"
 #include "nsILayoutHistoryState.h"

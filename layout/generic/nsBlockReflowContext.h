@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsBlockReflowContext_h_
 #define nsBlockReflowContext_h_
 

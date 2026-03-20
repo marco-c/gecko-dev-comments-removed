@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TimelineCollection.h"
 
 #include <type_traits>

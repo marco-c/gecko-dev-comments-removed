@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsCompatibility_h_
 #define nsCompatibility_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSColorValue.h"
 
 #include "mozilla/ErrorResult.h"

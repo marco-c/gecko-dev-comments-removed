@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTreeContentView_h_
 #define nsTreeContentView_h_
 

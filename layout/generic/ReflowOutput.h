@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ReflowOutput_h
 #define mozilla_ReflowOutput_h
 

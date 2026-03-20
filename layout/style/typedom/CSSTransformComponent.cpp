@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSTransformComponent.h"
 
 #include "mozilla/AlreadyAddRefed.h"

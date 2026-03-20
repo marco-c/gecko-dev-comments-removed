@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_JustificationUtils_h_
 #define mozilla_JustificationUtils_h_
 

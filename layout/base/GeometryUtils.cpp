@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeometryUtils.h"
 
 #include "mozilla/PresShell.h"

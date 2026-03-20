@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSRuleList.h"
 
 #include "mozilla/dom/CSSRuleListBinding.h"

@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsITableCellLayout_h_
 #define nsITableCellLayout_h_
 

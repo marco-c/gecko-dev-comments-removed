@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StyleSheetInlines_h
 #define mozilla_StyleSheetInlines_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DisplayPortUtils_h_
 #define mozilla_DisplayPortUtils_h_
 

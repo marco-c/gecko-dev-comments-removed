@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGGeometryFrame.h"
 
 

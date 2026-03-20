@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsFrameTraversal.h"
 
 #include "mozilla/Assertions.h"

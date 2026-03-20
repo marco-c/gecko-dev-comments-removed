@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_ViewportFrame_h
 #define mozilla_ViewportFrame_h
 

@@ -4,10 +4,9 @@
 
 
 
-
-
 #include "nsImageMap.h"
 
+#include "mozilla/PresShell.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"  
@@ -762,6 +761,13 @@ void nsImageMap::DrawFocus(nsIFrame* aFrame, DrawTarget& aDrawTarget,
 void nsImageMap::MaybeUpdateAreas(nsIContent* aContent) {
   if (aContent == mMap || mConsiderWholeSubtree) {
     UpdateAreas();
+
+    
+    
+    
+    if (PresShell* const presShell = aContent->OwnerDoc()->GetPresShell()) {
+      presShell->SynthesizeMouseMove(false);
+    }
   }
 }
 

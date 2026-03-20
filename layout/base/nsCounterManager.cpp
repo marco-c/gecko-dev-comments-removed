@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsCounterManager.h"
 
 #include "mozilla/AutoRestore.h"

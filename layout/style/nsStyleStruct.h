@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsStyleStruct_h_
 #define nsStyleStruct_h_
 

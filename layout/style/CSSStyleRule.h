@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSStyleRule_h
 #define mozilla_CSSStyleRule_h
 

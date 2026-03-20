@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsSplitterFrame.h"
 
 #include "LayoutConstants.h"

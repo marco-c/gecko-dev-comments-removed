@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsLeafFrame_h_
 #define nsLeafFrame_h_
 

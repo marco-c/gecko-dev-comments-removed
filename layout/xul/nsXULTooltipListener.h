@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsXULTooltipListener_h_
 #define nsXULTooltipListener_h_
 

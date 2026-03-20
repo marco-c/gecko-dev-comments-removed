@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef StickyScrollContainer_h
 #define StickyScrollContainer_h
 

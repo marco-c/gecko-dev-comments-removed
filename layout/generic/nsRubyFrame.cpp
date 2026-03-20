@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsRubyFrame.h"
 
 #include "RubyUtils.h"

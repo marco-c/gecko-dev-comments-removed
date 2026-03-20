@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CounterStyleManager.h"
 
 #include <type_traits>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCSSRenderingBorders.h"
 
 #include <algorithm>

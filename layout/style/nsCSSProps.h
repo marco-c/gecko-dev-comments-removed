@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsCSSProps_h_
 #define nsCSSProps_h_
 

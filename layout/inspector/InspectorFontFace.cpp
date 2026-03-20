@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InspectorFontFace.h"
 
 #include "brotli/decode.h"

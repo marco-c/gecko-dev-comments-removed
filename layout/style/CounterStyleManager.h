@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_CounterStyleManager_h_
 #define mozilla_CounterStyleManager_h_
 

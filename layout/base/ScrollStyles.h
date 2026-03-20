@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ScrollStyles_h
 #define mozilla_ScrollStyles_h
 

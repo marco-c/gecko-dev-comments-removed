@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMathMax.h"
 
 #include "mozilla/AlreadyAddRefed.h"

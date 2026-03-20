@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSTranslate.h"
 
 #include "mozilla/AlreadyAddRefed.h"

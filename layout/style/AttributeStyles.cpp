@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/AttributeStyles.h"
 
 #include "mozilla/DeclarationBlock.h"

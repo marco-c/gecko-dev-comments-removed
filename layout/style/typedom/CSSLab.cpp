@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSLab.h"
 
 #include "mozilla/AlreadyAddRefed.h"

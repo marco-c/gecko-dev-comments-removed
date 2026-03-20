@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ColorPreferences_h
 #define mozilla_ColorPreferences_h
 

@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsXULPopupManager_h_
 #define nsXULPopupManager_h_
 

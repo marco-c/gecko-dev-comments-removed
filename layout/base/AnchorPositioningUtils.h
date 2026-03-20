@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AnchorPositioningUtils_h_
 #define AnchorPositioningUtils_h_
 

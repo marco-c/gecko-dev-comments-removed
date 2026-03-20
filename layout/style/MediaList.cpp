@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/dom/MediaList.h"
 
 #include "mozAutoDocUpdate.h"

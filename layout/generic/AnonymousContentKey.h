@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_AnonymousContentKey_h
 #define mozilla_AnonymousContentKey_h
 

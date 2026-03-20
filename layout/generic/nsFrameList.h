@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFrameList_h_
 #define nsFrameList_h_
 

@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "RetainedDisplayListBuilder.h"
 
 #include "mozilla/Attributes.h"

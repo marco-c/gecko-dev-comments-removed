@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/StylePropertyMap.h"
 
 #include "CSSUnsupportedValue.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollAnchorContainer.h"
 
 #include <cstddef>

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsLineLayout.h"
 
 #include <algorithm>

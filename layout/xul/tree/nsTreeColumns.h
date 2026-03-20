@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTreeColumns_h_
 #define nsTreeColumns_h_
 

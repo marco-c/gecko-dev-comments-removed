@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellWidgetListener.h"

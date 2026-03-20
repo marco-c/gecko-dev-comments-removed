@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTextFrameUtils.h"
 
 #include <algorithm>

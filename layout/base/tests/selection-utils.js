@@ -1,5 +1,3 @@
-
-
 function clearSelection(w) {
   var sel = (w ? w : window).getSelection();
   sel.removeAllRanges();

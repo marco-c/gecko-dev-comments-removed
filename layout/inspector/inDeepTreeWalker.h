@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _inDeepTreeWalker_h_
 #define _inDeepTreeWalker_h_
 

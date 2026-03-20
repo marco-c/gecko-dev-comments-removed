@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ImportScanner_h
 #define mozilla_ImportScanner_h
 

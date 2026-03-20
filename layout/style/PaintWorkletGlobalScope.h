@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PaintWorkletGlobalScope_h
 #define mozilla_dom_PaintWorkletGlobalScope_h
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsROCSSPrimitiveValue.h"
 
 #include "mozilla/ErrorResult.h"

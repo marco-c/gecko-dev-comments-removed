@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSNestedDeclarations_h
 #define mozilla_CSSNestedDeclarations_h
 

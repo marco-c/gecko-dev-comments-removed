@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layout_ScrollAnchorContainer_h_
 #define mozilla_layout_ScrollAnchorContainer_h_
 

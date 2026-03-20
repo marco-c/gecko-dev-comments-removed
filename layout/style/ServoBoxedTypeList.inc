@@ -21,8 +21,6 @@
 
 
 
-
-
 SERVO_BOXED_TYPE(StyleSet, PerDocumentStyleData)
 SERVO_BOXED_TYPE(AnimationValueMap, AnimationValueMap)
 SERVO_BOXED_TYPE(AuthorStyles, AuthorStyles)

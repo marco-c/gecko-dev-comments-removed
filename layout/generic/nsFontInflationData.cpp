@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "nsFontInflationData.h"
 
 #include "FrameProperties.h"

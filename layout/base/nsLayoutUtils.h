@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsLayoutUtils_h_
 #define nsLayoutUtils_h_
 

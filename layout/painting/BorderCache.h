@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BorderCache_h_
 #define mozilla_BorderCache_h_
 

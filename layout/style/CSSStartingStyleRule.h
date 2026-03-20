@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CSSStaringStyleRule_h_
 #define CSSStaringStyleRule_h_
 

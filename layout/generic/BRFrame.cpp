@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "gfxContext.h"
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/PresShell.h"

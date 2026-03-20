@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PseudoStyleRequest_h
 #define mozilla_PseudoStyleRequest_h
 

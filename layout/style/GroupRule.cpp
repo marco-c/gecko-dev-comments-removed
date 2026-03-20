@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/css/GroupRule.h"
 
 #include "mozilla/dom/CSSRuleList.h"

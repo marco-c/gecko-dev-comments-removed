@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSNumericArray.h"
 
 #include "mozilla/Assertions.h"

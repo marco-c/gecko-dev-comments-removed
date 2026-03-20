@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/ServoCSSRuleList.h"
 
 #include "mozilla/ServoBindings.h"

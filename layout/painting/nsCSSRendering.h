@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsCSSRendering_h_
 #define nsCSSRendering_h_
 

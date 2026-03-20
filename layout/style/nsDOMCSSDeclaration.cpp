@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsDOMCSSDeclaration.h"
 
 #include "mozAutoDocUpdate.h"

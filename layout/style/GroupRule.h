@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_css_GroupRule_h_
 #define mozilla_css_GroupRule_h_
 

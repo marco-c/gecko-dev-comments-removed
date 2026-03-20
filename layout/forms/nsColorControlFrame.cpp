@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsColorControlFrame.h"
 
 #include "mozilla/PresShell.h"

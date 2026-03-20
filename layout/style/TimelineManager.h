@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_TimelineManager_h
 #define mozilla_TimelineManager_h
 

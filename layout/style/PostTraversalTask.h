@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PostTraversalTask_h
 #define mozilla_PostTraversalTask_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmspaceFrame_h_
 #define nsMathMLmspaceFrame_h_
 

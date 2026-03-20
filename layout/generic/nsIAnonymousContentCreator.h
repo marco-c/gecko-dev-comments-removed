@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsIAnonymousContentCreator_h_
 #define nsIAnonymousContentCreator_h_
 

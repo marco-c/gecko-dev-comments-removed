@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSNumericValue.h"
 
 #include "mozilla/AlreadyAddRefed.h"

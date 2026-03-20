@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoUtils_h
 #define mozilla_ServoUtils_h
 

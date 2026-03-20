@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmencloseFrame.h"
 
 #include <algorithm>

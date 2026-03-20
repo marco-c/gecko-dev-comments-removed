@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/GeckoBindings.h"
 
 #include "AnchorPositioningUtils.h"

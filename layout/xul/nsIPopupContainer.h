@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIPopupContainer_h_
 #define nsIPopupContainer_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsLayoutDebuggingTools_h
 #define nsLayoutDebuggingTools_h
 

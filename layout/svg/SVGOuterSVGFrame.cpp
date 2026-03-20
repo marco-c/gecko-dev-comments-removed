@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGOuterSVGFrame.h"
 
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsCSSRendering.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_MiddleCroppingLabelFrame_h
 #define mozilla_MiddleCroppingLabelFrame_h
 

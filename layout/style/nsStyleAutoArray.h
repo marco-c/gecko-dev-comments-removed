@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStyleAutoArray_h_
 #define nsStyleAutoArray_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ScrollStyles.h"
 
 #include "nsStyleStruct.h"  

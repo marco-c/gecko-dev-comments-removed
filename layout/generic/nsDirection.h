@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDirection_h_
 #define nsDirection_h_
 

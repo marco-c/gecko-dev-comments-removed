@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_MediaFeatureChange_h_
 #define mozilla_MediaFeatureChange_h_
 

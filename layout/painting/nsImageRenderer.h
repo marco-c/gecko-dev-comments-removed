@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsImageRenderer_h_
 #define nsImageRenderer_h_
 

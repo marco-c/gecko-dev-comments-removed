@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PseudoStyleType_h
 #define mozilla_PseudoStyleType_h
 

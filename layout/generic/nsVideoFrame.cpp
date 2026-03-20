@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsVideoFrame.h"
 
 #include "ImageContainer.h"

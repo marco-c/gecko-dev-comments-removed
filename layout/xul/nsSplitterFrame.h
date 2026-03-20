@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsSplitterFrame_h_
 #define nsSplitterFrame_h_
 

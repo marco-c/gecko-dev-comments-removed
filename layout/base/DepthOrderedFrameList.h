@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DepthOrderedFrameList_h
 #define mozilla_DepthOrderedFrameList_h
 

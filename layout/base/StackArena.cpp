@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StackArena.h"
 
 #include "mozilla/gfx/NumericTools.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSRGB.h"
 
 #include "mozilla/AlreadyAddRefed.h"

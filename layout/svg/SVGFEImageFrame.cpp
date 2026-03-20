@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/dom/SVGFEImageElement.h"

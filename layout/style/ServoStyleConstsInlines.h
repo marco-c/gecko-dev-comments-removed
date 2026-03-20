@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoStyleConstsInlines_h
 #define mozilla_ServoStyleConstsInlines_h
 

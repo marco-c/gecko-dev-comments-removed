@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "ServoCSSParser.h"
 
 #include "mozilla/CSSPropertyId.h"

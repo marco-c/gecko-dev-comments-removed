@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ShapeUtils_h
 #define mozilla_ShapeUtils_h
 

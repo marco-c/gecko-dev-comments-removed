@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTreeStyleCache_h_
 #define nsTreeStyleCache_h_
 

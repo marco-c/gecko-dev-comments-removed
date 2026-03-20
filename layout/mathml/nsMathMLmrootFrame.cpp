@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmrootFrame.h"
 
 #include <algorithm>

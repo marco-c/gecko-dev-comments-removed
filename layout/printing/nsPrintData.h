@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPrintData_h_
 #define nsPrintData_h_
 

@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGPaintServerFrame.h"
 
 namespace mozilla {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSLayerBlockRule.h"
 
 #include "mozilla/ServoBindings.h"

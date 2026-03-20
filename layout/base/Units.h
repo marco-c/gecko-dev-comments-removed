@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZ_UNITS_H_
 #define MOZ_UNITS_H_
 

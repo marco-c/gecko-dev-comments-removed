@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLContainerFrame_h_
 #define nsMathMLContainerFrame_h_
 
@@ -344,7 +342,8 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   
-  void PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
+  void PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline,
+                              bool aAddOperatorSpacing = true);
 
   
   

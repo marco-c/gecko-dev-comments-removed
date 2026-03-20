@@ -11,8 +11,6 @@
 
 
 
-
-
 SERVO_LOCKED_ARC_TYPE(CssRules)
 SERVO_LOCKED_ARC_TYPE(DeclarationBlock)
 SERVO_LOCKED_ARC_TYPE(StyleRule)

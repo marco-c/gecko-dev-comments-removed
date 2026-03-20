@@ -3,8 +3,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_InspectorUtils_h
 #define mozilla_dom_InspectorUtils_h
 

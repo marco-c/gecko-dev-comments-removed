@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSPropertyRule.h"
 
 #include "mozilla/ServoBindings.h"

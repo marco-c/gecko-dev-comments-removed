@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AccessibleCaretLog_h
 #define AccessibleCaretLog_h
 

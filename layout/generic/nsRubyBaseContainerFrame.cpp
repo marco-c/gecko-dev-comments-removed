@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsRubyBaseContainerFrame.h"
 
 #include "RubyUtils.h"

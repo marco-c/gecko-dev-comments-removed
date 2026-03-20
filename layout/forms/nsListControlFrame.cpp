@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsListControlFrame.h"
 
 #include <algorithm>

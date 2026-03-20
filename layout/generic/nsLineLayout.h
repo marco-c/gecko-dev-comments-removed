@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsLineLayout_h_
 #define nsLineLayout_h_
 

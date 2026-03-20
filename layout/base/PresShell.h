@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_PresShell_h
 #define mozilla_PresShell_h
 

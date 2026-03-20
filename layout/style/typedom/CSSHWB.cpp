@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSHWB.h"
 
 #include "mozilla/AlreadyAddRefed.h"

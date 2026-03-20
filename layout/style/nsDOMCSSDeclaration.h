@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsDOMCSSDeclaration_h_
 #define nsDOMCSSDeclaration_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsAnimationManager.h"
 
 #include <math.h>

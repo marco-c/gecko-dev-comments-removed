@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoBindings_h
 #define mozilla_ServoBindings_h
 

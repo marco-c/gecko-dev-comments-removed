@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CSSScopeRule_h_
 #define CSSScopeRule_h_
 

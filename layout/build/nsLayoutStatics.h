@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsLayoutStatics_h_
 #define nsLayoutStatics_h_
 

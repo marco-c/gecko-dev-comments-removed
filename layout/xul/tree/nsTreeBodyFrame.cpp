@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeBodyFrame.h"
 
 #include <algorithm>

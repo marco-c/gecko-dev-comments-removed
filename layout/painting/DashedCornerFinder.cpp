@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DashedCornerFinder.h"
 
 #include <utility>

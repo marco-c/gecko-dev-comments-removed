@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGLengthList.h"
 #include "gfxMatrix.h"
 #include "mozilla/PresShell.h"

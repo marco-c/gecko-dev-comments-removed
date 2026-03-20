@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsComputedDOMStyle.h"
 
 #include <algorithm>

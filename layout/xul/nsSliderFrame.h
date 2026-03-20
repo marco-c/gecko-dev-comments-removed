@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsSliderFrame_h_
 #define nsSliderFrame_h_
 

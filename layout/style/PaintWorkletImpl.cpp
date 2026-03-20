@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PaintWorkletImpl.h"
 
 #include "PaintWorkletGlobalScope.h"

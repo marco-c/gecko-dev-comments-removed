@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsTableWrapperFrame_h_
 #define nsTableWrapperFrame_h_
 

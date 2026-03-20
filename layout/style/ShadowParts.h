@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ShadowParts_h
 #define mozilla_ShadowParts_h
 

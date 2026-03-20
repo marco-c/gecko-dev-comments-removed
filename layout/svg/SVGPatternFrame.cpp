@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGPatternFrame.h"
 
 

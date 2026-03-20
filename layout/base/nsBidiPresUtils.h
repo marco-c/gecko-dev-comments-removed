@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsBidiPresUtils_h_
 #define nsBidiPresUtils_h_
 

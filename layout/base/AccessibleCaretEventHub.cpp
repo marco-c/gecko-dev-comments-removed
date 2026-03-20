@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AccessibleCaretEventHub.h"
 
 #include "AccessibleCaretLogger.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSPageRule.h"
 
 #include "mozilla/DeclarationBlock.h"

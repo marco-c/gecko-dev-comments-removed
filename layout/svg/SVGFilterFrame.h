@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LAYOUT_SVG_SVGFILTERFRAME_H_
 #define LAYOUT_SVG_SVGFILTERFRAME_H_
 

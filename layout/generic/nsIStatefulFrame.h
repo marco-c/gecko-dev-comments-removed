@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef _nsIStatefulFrame_h
 #define _nsIStatefulFrame_h
 

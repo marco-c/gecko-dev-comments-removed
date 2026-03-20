@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsCaret_h_
 #define nsCaret_h_
 

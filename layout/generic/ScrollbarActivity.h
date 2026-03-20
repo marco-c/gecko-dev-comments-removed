@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ScrollbarActivity_h_
 #define ScrollbarActivity_h_
 

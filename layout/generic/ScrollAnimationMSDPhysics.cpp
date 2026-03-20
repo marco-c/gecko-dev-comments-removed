@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollAnimationMSDPhysics.h"
 
 #include "mozilla/Logging.h"

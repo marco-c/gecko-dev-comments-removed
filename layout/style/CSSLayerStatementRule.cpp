@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSLayerStatementRule.h"
 
 #include "mozilla/ServoBindings.h"

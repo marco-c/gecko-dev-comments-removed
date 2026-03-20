@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTextPaintStyle.h"
 
 #include "mozilla/LookAndFeel.h"

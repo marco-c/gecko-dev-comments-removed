@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsColorControlFrame_h_
 #define nsColorControlFrame_h_
 

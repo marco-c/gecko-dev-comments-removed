@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MediaList_h
 #define mozilla_dom_MediaList_h
 

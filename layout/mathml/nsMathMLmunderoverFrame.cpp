@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmunderoverFrame.h"
 
 #include <algorithm>

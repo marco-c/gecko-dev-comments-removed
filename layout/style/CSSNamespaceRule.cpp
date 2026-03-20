@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSNamespaceRule.h"
 
 #include "mozilla/ServoBindings.h"

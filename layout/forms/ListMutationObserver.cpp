@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "ListMutationObserver.h"
 
 #include "mozilla/dom/HTMLInputElement.h"

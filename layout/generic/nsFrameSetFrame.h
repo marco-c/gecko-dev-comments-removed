@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsHTMLFrameset_h_
 #define nsHTMLFrameset_h_
 

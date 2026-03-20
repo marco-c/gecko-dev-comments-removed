@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsIntervalSet_h_
 #define nsIntervalSet_h_
 

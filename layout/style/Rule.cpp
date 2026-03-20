@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "Rule.h"
 
 #include "mozilla/HoldDropJSObjects.h"

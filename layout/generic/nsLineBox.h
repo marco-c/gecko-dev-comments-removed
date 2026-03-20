@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsLineBox_h_
 #define nsLineBox_h_
 

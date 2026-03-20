@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "PreferenceSheet.h"
 #include "mozilla/GeckoBindings.h"
 #include "mozilla/LookAndFeel.h"

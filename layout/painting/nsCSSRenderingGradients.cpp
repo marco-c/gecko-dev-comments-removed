@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsCSSRenderingGradients.h"
 
 #include <tuple>

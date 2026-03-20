@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_css_DocumentMatchingFunction_h
 #define mozilla_css_DocumentMatchingFunction_h
 

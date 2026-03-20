@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMathClamp.h"
 
 #include "mozilla/AlreadyAddRefed.h"

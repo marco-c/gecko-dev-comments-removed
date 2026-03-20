@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGInnerSVGFrame.h"
 
 #include "mozilla/PresShell.h"

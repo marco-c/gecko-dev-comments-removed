@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeSelection.h"
 
 #include "XULTreeElement.h"

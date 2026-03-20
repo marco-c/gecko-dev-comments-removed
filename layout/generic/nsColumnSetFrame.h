@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsColumnSetFrame_h_
 #define nsColumnSetFrame_h_
 

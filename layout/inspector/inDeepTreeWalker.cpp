@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "inDeepTreeWalker.h"
 
 #include "ChildIterator.h"

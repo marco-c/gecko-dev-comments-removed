@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPrintJob.h"
 
 #include <algorithm>

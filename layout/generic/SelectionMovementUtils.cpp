@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SelectionMovementUtils.h"
 
 #include "ErrorList.h"

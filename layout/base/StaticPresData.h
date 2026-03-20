@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StaticPresData_h
 #define mozilla_StaticPresData_h
 

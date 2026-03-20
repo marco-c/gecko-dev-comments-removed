@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsProgressFrame_h_
 #define nsProgressFrame_h_
 

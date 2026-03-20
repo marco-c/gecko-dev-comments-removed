@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsILineIterator_h_
 #define nsILineIterator_h_
 

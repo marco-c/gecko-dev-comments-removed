@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DottedCornerFinder_h_
 #define mozilla_DottedCornerFinder_h_
 

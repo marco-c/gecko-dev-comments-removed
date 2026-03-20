@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPresContextInlines_h
 #define nsPresContextInlines_h
 

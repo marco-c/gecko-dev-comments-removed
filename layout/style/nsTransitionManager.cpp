@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsTransitionManager.h"
 
 #include "AnimatedPropertyIDSet.h"

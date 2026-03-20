@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DrawEventRecorder.h"
 
 namespace mozilla {

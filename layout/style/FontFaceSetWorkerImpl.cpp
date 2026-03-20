@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FontFaceSetWorkerImpl.h"
 
 #include "mozilla/FontLoaderUtils.h"

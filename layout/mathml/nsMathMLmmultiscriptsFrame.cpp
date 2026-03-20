@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmmultiscriptsFrame.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layout_RemotePrintJobParent_h
 #define mozilla_layout_RemotePrintJobParent_h
 

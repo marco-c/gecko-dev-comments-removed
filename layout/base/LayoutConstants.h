@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef LayoutConstants_h_
 #define LayoutConstants_h_
 

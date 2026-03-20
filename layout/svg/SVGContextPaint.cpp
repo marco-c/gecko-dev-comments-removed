@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGContextPaint.h"
 
 #include "SVGPaintServerFrame.h"

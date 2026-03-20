@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsGenConList_h_
 #define nsGenConList_h_
 

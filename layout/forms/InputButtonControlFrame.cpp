@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ButtonControlFrame.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/HTMLInputElement.h"

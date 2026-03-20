@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "BlockReflowState.h"
 
 #include <algorithm>

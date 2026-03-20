@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeStyleCache.h"
 
 #include "mozilla/ComputedStyleInlines.h"

@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsSliderFrame.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMathNegate.h"
 
 #include "mozilla/AlreadyAddRefed.h"

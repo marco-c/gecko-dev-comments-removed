@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsRepeatService.h"
 
 #include "mozilla/StaticPtr.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPagePrintTimer.h"
 
 #include "mozilla/ProfilerMarkers.h"

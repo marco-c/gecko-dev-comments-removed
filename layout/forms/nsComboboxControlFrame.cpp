@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsComboboxControlFrame.h"
 
 #include <algorithm>

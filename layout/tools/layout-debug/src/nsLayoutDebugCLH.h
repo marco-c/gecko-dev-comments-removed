@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsLayoutDebugCLH_h_
 #define nsLayoutDebugCLH_h_
 

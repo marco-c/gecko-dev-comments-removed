@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DISPLAYITEMCLIP_H_
 #define DISPLAYITEMCLIP_H_
 

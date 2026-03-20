@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSEnabledState_h
 #define mozilla_CSSEnabledState_h
 

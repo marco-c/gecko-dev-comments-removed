@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ServoStyleRuleMap.h"
 
 #include "mozilla/IntegerRange.h"

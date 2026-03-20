@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PopupQueue.h"
 
 #include "mozilla/StaticPtr.h"

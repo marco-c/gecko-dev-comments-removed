@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollbarActivity.h"
 
 #include "PresShell.h"

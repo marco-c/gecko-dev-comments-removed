@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsFrameManager.h"
 
 #include "ChildIterator.h"

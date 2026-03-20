@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLayoutDebuggingTools.h"
 
 #include "ErrorList.h"

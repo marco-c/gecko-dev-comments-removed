@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsSplittableFrame.h"
 
 #include "nsContainerFrame.h"

@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGImageContext.h"
 
 

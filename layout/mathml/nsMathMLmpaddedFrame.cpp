@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMathMLmpaddedFrame.h"
 
 #include <algorithm>

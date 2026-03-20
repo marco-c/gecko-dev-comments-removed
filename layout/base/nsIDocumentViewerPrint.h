@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIDocumentViewerPrint_h_
 #define nsIDocumentViewerPrint_h_
 

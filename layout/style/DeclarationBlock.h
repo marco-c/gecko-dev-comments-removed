@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_DeclarationBlock_h
 #define mozilla_DeclarationBlock_h
 

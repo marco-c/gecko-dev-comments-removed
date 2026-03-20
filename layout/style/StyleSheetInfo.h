@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StyleSheetInfo_h
 #define mozilla_StyleSheetInfo_h
 

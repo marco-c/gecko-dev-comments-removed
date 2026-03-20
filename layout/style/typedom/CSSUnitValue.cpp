@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSUnitValue.h"
 
 #include "mozilla/AlreadyAddRefed.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PseudoStyleType.h"
 
 #include <ostream>

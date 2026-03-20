@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollSnapInfo.h"
 
 #include "mozilla/WritingModes.h"

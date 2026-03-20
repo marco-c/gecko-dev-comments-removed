@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/PrintedSheetFrame.h"
 
 #include "mozilla/PresShell.h"
@@ -150,10 +148,13 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
     
     
     const nsSize physPageSize = pageFrame->ComputePageSize();
-    const LogicalSize pageSize(wm, physPageSize);
+    LogicalSize availSize(wm, physPageSize);
+    if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
+      availSize.BSize(wm) = aReflowInput.AvailableBSize();
+    }
 
     ReflowInput pageReflowInput(aPresContext, aReflowInput, pageFrame,
-                                pageSize);
+                                availSize);
 
     
     

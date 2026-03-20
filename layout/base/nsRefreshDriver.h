@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsRefreshDriver_h_
 #define nsRefreshDriver_h_
 
@@ -397,8 +395,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void UpdateRemoteFrameEffects();
   void UpdateRelevancyOfContentVisibilityAutoFrames();
   MOZ_CAN_RUN_SCRIPT void PerformPendingViewTransitionOperations();
-  MOZ_CAN_RUN_SCRIPT void
-  DetermineProximityToViewportAndNotifyResizeObservers();
   void MaybeIncreaseMeasuredTicksSinceLoading();
   void EvaluateMediaQueriesAndReportChanges();
 

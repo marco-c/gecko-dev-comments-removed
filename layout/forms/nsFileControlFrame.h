@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFileControlFrame_h_
 #define nsFileControlFrame_h_
 

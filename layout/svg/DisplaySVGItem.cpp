@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "DisplaySVGItem.h"
 
 #include "mozilla/ISVGDisplayableFrame.h"

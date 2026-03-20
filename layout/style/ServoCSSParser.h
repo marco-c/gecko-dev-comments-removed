@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoCSSParser_h
 #define mozilla_ServoCSSParser_h
 

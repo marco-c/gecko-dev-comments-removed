@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CSSCustomMediaRule_h
 #define mozilla_dom_CSSCustomMediaRule_h
 

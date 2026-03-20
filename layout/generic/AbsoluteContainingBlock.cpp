@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/AbsoluteContainingBlock.h"
 
 #include "AnchorPositioningUtils.h"
@@ -138,14 +136,14 @@ static LogicalPoint* GetUnfragmentedPosition(const ReflowInput& aCBReflowInput,
   
   
   
-  return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
+  return aCBReflowInput.mFlags.mIsInFragmentainerMeasuringReflow
              ? nullptr
              : aFrame->GetProperty(UnfragmentedPositionProperty());
 }
 
 static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
                                         const nsIFrame* aFrame) {
-  return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
+  return aCBReflowInput.mFlags.mIsInFragmentainerMeasuringReflow
              ? nullptr
              
              
@@ -613,7 +611,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   const auto* unfragmentedContainingBlockRects =
       [&]() -> const ContainingBlockRects* {
-    if (aReflowInput.mFlags.mIsInColumnMeasuringReflow) {
+    if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
       
       
       NS_WARNING_ASSERTION(aDelegatingFrame->FirstInFlow() == aDelegatingFrame,
@@ -738,8 +736,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       }
     }
     if (kidNeedsReflow && !aPresContext->HasPendingInterrupt()) {
-      
-      
       const LogicalSize cbSize(containerWM,
                                unfragmentedContainingBlockRects->mLocal.Size());
       const LogicalMargin border =
@@ -772,10 +768,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                             anchorPosResolutionCache.ptrOr(nullptr),
                             reuseUnfragmentedAnchorPosReferences);
 
-        
-        
-        
-        if (aReflowInput.mFlags.mIsInColumnMeasuringReflow) {
+        if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
           kidFrame->SetOrUpdateDeletableProperty(
               UnfragmentedPositionProperty(),
               kidFrame->GetLogicalPosition(containerWM, cbBorderBoxSize));

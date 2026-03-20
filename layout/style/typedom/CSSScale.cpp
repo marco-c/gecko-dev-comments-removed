@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSScale.h"
 
 #include "mozilla/AlreadyAddRefed.h"

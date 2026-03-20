@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSPropFlags_h
 #define mozilla_CSSPropFlags_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsContentDLF_h_
 #define nsContentDLF_h_
 

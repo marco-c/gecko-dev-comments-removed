@@ -1,7 +1,6 @@
 
 
 
-
 #include "nsTableColGroupFrame.h"
 
 #include "mozilla/ComputedStyle.h"

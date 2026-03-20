@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIFrameInlines_h_
 #define nsIFrameInlines_h_
 

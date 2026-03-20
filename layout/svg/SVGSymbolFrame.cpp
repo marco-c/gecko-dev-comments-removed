@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGSymbolFrame.h"
 
 #include "mozilla/PresShell.h"

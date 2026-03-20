@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGClipPathFrame.h"
 
 

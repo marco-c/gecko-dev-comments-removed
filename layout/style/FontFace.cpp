@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/FontFace.h"
 
 #include <algorithm>

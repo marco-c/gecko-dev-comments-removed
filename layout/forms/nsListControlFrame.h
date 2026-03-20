@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsListControlFrame_h_
 #define nsListControlFrame_h_
 

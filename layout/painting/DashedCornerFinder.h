@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DashedCornerFinder_h_
 #define mozilla_DashedCornerFinder_h_
 

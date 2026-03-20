@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsDOMCSSValueList_h_
 #define nsDOMCSSValueList_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ServoStyleSet.h"
 
 #include "PseudoStyleType.h"

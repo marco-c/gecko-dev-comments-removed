@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsILineIterator.h"
 
 #include "nsIFrame.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeColumns.h"
 
 #include "mozilla/CSSOrderAwareFrameIterator.h"

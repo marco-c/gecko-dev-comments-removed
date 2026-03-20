@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/URLExtraData.h"
 
 #include "ReferrerInfo.h"

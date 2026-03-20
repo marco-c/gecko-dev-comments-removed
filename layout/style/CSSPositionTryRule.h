@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_dom_CSSPositionTryRule_h
 #define mozilla_dom_CSSPositionTryRule_h
 

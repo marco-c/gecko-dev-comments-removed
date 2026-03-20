@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MiddleCroppingLabelFrame.h"
 
 #include "MiddleCroppingBlockFrame.h"

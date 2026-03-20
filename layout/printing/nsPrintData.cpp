@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPrintData.h"
 
 #include "mozilla/Services.h"

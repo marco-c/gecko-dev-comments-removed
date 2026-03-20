@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AspectRatio.h"
 
 #include "mozilla/WritingModes.h"

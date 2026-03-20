@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsIReflowCallback_h_
 #define nsIReflowCallback_h_
 

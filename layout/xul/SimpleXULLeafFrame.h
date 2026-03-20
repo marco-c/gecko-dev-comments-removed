@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_SimpleXULLeafFrame_h
 #define mozilla_SimpleXULLeafFrame_h
 

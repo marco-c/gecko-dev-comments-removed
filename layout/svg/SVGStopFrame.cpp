@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGGradientFrame.h"

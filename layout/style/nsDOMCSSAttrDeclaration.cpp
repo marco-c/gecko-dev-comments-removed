@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsDOMCSSAttrDeclaration.h"
 
 #include "ActiveLayerTracker.h"

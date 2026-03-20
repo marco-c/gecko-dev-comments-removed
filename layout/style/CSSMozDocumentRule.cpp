@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMozDocumentRule.h"
 
 #include "js/RegExpFlags.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsStyleUtil.h"
 
 #include <cctype>

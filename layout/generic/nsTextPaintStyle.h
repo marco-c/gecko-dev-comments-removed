@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTextPaintStyle_h_
 #define nsTextPaintStyle_h_
 

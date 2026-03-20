@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsFileControlFrame.h"
 
 #include "MiddleCroppingBlockFrame.h"

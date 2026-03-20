@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmrootFrame_h_
 #define nsMathMLmrootFrame_h_
 

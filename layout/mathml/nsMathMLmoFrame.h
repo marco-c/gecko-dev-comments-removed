@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLmoFrame_h_
 #define nsMathMLmoFrame_h_
 
@@ -95,6 +93,8 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
 
   
   bool IsFrameInSelection(nsIFrame* aFrame);
+
+  nscoord FixInterFrameSpacing(ReflowOutput& aDesiredSize) final;
 };
 
 #endif 

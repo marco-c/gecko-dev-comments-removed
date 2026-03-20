@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsCSSColorUtils.h"
 
 #include <math.h>

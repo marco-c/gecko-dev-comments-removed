@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_PresShellWidgetListener_h_
 #define mozilla_PresShellWidgetListener_h_
 

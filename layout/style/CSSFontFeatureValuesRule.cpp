@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSFontFeatureValuesRule.h"
 
 #include "mozilla/ServoBindings.h"

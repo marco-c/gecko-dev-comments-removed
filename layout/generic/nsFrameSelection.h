@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFrameSelection_h_
 #define nsFrameSelection_h_
 
@@ -960,6 +958,13 @@ class nsFrameSelection final {
 
  private:
   ~nsFrameSelection();
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void PopulateHighlightSelection(
+      mozilla::dom::Selection& aSelection, mozilla::dom::Highlight& aHighlight);
 
   
   

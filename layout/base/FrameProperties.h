@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FRAMEPROPERTIES_H_
 #define FRAMEPROPERTIES_H_
 

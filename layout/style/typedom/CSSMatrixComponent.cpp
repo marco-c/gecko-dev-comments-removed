@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMatrixComponent.h"
 
 #include "mozilla/AlreadyAddRefed.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLParts_h_
 #define nsMathMLParts_h_
 

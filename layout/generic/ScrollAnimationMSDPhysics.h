@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layout_ScrollAnimationMSDPhysics_h_
 #define mozilla_layout_ScrollAnimationMSDPhysics_h_
 

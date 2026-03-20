@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/InspectorUtils.h"
 
 #include "AnchorPositioningUtils.h"

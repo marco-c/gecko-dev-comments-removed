@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/InspectorCSSParser.h"
 
 #include "mozilla/ServoBindings.h"

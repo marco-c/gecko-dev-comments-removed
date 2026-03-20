@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_RubyUtils_h_
 #define mozilla_RubyUtils_h_
 

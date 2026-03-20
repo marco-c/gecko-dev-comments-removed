@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef TouchManager_h_
 #define TouchManager_h_
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsROCSSPrimitiveValue_h_
 #define nsROCSSPrimitiveValue_h_
 

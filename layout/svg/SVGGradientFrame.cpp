@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "SVGGradientFrame.h"
 
 #include <algorithm>

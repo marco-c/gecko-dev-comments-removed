@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SharedSubResourceCache_h_
 #define mozilla_SharedSubResourceCache_h_
 

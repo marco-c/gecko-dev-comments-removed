@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AnimationCollection_h
 #define mozilla_AnimationCollection_h
 

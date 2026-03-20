@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsComboboxControlFrame_h_
 #define nsComboboxControlFrame_h_
 

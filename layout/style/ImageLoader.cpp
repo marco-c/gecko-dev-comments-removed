@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/css/ImageLoader.h"
 
 #include "Image.h"

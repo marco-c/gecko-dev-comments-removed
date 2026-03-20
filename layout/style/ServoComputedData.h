@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoComputedData_h
 #define mozilla_ServoComputedData_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DocumentStyleRootIterator_h
 #define DocumentStyleRootIterator_h
 

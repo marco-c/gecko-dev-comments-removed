@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/FontLoaderUtils.h"
 
 #include "gfxUserFontSet.h"

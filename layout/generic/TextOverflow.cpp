@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextOverflow.h"
 
 #include <algorithm>

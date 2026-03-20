@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSCounterStyleRule_h
 #define mozilla_CSSCounterStyleRule_h
 

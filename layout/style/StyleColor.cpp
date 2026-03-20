@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/StyleColorInlines.h"

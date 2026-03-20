@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSLCH.h"
 
 #include "mozilla/AlreadyAddRefed.h"

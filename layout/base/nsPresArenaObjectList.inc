@@ -9,8 +9,6 @@
 
 
 
-
-
 #define FRAME_ID(classname, ...) PRES_ARENA_OBJECT(classname)
 #define ABSTRACT_FRAME_ID(classname) PRES_ARENA_OBJECT(classname)
 #include "mozilla/FrameIdList.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PresShellInlines_h
 #define mozilla_PresShellInlines_h
 

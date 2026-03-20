@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MappedDeclarationsBuilder.h"
 
 #include "mozilla/dom/Document.h"

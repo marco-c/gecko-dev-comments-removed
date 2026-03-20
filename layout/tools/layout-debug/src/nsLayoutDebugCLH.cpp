@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsLayoutDebugCLH.h"
 
 #include "mozIDOMWindow.h"

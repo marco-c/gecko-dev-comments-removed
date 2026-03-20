@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_css_Rule_h_
 #define mozilla_css_Rule_h_
 

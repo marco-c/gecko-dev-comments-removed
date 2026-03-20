@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsComputedDOMStyle_h_
 #define nsComputedDOMStyle_h_
 

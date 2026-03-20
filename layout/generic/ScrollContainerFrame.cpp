@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/ScrollContainerFrame.h"
 
 #include <stdint.h>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMediaRule.h"
 
 #include "mozilla/ServoBindings.h"

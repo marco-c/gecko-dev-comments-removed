@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef _nsCSSColorUtils_h
 #define _nsCSSColorUtils_h
 

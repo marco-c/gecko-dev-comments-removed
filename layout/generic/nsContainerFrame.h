@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef nsContainerFrame_h_
 #define nsContainerFrame_h_
 

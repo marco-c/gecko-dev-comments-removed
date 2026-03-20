@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsProgressFrame.h"
 
 #include <algorithm>

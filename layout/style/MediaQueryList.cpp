@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/dom/MediaQueryList.h"
 
 #include "mozilla/dom/Document.h"

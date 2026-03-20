@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsStyleUtil_h_
 #define nsStyleUtil_h_
 

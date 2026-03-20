@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ServoStyleRuleMap_h
 #define mozilla_ServoStyleRuleMap_h
 

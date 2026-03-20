@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BindgenUniquePtr_h
 #define mozilla_BindgenUniquePtr_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ListMutationObserver_h
 #define mozilla_ListMutationObserver_h
 

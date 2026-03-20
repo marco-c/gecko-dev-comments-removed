@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef NSDISPLAYLIST_H_
 #define NSDISPLAYLIST_H_
 

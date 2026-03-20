@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLChar_h_
 #define nsMathMLChar_h_
 

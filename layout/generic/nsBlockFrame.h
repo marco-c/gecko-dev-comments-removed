@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsBlockFrame_h_
 #define nsBlockFrame_h_
 

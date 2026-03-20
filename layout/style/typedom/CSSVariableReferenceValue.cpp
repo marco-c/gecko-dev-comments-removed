@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSVariableReferenceValue.h"
 
 #include "mozilla/AlreadyAddRefed.h"

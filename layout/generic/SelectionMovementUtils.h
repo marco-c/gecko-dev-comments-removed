@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SelectionMovementUtils_h
 #define mozilla_SelectionMovementUtils_h
 

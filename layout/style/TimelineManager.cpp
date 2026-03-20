@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TimelineManager.h"
 
 #include "mozilla/ElementAnimationData.h"

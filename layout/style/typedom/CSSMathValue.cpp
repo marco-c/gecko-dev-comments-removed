@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSMathValue.h"
 
 #include "mozilla/dom/CSSMathValueBinding.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AccessibleCaret.h"
 
 #include "AccessibleCaretLogger.h"

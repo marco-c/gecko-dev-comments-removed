@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsCanvasFrame.h"
 
 #include "gfxContext.h"

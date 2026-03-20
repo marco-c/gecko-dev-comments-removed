@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LAYOUT_SVG_FILTERINSTANCE_H_
 #define LAYOUT_SVG_FILTERINSTANCE_H_
 

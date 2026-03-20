@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/css/Loader.h"
 
 #include "MainThreadUtils.h"

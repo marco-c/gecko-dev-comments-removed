@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WritingModes_h_
 #define WritingModes_h_
 
@@ -256,6 +254,10 @@ class WritingMode {
     return !!(mWritingMode & StyleWritingMode::VERTICAL_SIDEWAYS);
   }
 
+  bool IsUpright() const {
+    return !!(mWritingMode & StyleWritingMode::UPRIGHT);
+  }
+
   
 
 
@@ -470,7 +472,7 @@ class WritingMode {
 
 
 
-  WritingMode() : mWritingMode{0} {}
+  constexpr WritingMode() : mWritingMode{0} {}
 
   
 

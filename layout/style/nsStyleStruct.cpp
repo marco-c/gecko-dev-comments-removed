@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsStyleStruct.h"
 
 #include <algorithm>

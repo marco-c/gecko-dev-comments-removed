@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_URLExtraData_h
 #define mozilla_URLExtraData_h
 

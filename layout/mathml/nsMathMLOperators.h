@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMathMLOperators_h_
 #define nsMathMLOperators_h_
 

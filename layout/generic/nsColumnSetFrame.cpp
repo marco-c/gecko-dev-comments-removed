@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsColumnSetFrame.h"
 
 #include "mozilla/ColumnUtils.h"
@@ -667,7 +665,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mIsBalancing;
       kidReflowInput.mFlags.mIsInLastColumnBalancingReflow =
           aConfig.mIsLastBalancingReflow;
-      kidReflowInput.mFlags.mIsInColumnMeasuringReflow =
+      kidReflowInput.mFlags.mIsInFragmentainerMeasuringReflow =
           aConfig.mIsInMeasuringReflow;
       kidReflowInput.mBreakType = ReflowInput::BreakType::Column;
 
@@ -1245,7 +1243,7 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      return aReflowInput.mFlags.mIsInColumnMeasuringReflow;
+      return aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow;
     }
     
     if (GetPrevInFlow()) {

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "mozilla/ComputedStyle.h"
 
 #include "PseudoStyleType.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsTextFrame_h_
 #define nsTextFrame_h_
 

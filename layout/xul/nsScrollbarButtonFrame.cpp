@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsScrollbarButtonFrame.h"
 
 #include "mozilla/LookAndFeel.h"

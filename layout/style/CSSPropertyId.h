@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSPropertyId_h
 #define mozilla_CSSPropertyId_h
 

@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef mozilla_ColumnSetWrapperFrame_h
 #define mozilla_ColumnSetWrapperFrame_h
 

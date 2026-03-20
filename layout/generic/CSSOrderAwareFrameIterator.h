@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_CSSOrderAwareFrameIterator_h
 #define mozilla_CSSOrderAwareFrameIterator_h
 

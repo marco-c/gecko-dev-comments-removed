@@ -5,8 +5,6 @@
 
 
 
-
-
 #define DECLARE_DISPLAY_ITEM_TYPE(name_, ...) DISPLAY_LIST_ARENA_OBJECT(name_)
 DISPLAY_LIST_ARENA_OBJECT(UNUSED)  
 #include "nsDisplayItemTypesList.inc"

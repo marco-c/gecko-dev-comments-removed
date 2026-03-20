@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef nsDateTimeControlFrame_h_
 #define nsDateTimeControlFrame_h_
 

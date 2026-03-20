@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ScrollbarPreferences_h
 #define mozilla_ScrollbarPreferences_h
 
