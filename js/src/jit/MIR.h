@@ -3247,32 +3247,6 @@ class MAssertShape : public MUnaryInstruction, public NoTypePolicy::Data {
 };
 
 
-class MCreateArgumentsObject : public MUnaryInstruction,
-                               public ObjectPolicy<0>::Data {
-  CompilerGCPointer<ArgumentsObject*> templateObj_;
-
-  MCreateArgumentsObject(MDefinition* callObj, ArgumentsObject* templateObj)
-      : MUnaryInstruction(classOpcode, callObj), templateObj_(templateObj) {
-    setResultType(MIRType::Object);
-  }
-
- public:
-  INSTRUCTION_HEADER(CreateArgumentsObject)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, getCallObject))
-
-  ArgumentsObject* templateObject() const { return templateObj_; }
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-  bool possiblyCalls() const override { return true; }
-
-  [[nodiscard]] bool writeRecoverData(
-      CompactBufferWriter& writer) const override;
-  bool canRecoverOnBailout() const override { return true; }
-};
-
-
 class MCreateInlinedArgumentsObject : public MVariadicInstruction,
                                       public NoFloatPolicyAfter<0>::Data {
   CompilerGCPointer<ArgumentsObject*> templateObj_;
