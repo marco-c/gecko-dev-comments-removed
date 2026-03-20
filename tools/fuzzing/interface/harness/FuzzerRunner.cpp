@@ -2,7 +2,6 @@
 
 
 
-
 #include <cstdlib>
 
 #include "FuzzerRunner.h"

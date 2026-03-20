@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerNativeStack_h
 #define ProfilerNativeStack_h
 

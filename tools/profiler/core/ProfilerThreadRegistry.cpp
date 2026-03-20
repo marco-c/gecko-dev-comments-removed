@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ProfilerThreadRegistry.h"
 
 namespace mozilla::profiler {

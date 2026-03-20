@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsCodeCoverage.h"
 #include "mozilla/CodeCoverageHandler.h"
 #include "mozilla/dom/ContentParent.h"

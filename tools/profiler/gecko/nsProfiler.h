@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsProfiler_h
 #define nsProfiler_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_codecoveragehandler_h
 #define mozilla_codecoveragehandler_h
 

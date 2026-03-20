@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/ProfilerUtils.h"
 
 

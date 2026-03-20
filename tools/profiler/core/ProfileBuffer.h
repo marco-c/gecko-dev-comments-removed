@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZ_PROFILE_BUFFER_H
 #define MOZ_PROFILE_BUFFER_H
 

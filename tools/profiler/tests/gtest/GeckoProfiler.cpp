@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/ProfilerThreadPlatformData.h"
 #include "mozilla/ProfilerThreadRegistration.h"
 #include "mozilla/ProfilerThreadRegistrationInfo.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "ProfilerBindings.h"
 
 #include "GeckoProfiler.h"

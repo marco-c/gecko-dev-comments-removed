@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef RustFuzzingTargets_h_
 #define RustFuzzingTargets_h_
 

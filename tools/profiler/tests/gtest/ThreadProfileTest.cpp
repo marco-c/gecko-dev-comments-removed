@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProfileBuffer.h"
 
 #include "mozilla/PowerOfTwo.h"

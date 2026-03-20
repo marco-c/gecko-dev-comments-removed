@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef GeckoProfiler_h
 #define GeckoProfiler_h
 

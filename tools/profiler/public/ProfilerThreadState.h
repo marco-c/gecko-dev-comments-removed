@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef ProfilerThreadState_h
 #define ProfilerThreadState_h
 

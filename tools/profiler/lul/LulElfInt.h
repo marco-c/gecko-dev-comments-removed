@@ -34,9 +34,6 @@
 
 
 
-
-
-
 #ifndef LulElfInt_h
 #define LulElfInt_h
 
@@ -44,7 +41,6 @@
 
 
 #include <elf.h>
-#include <stdlib.h>
 
 #include "mozilla/Assertions.h"
 

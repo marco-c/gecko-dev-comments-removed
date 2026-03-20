@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ProfilerMarkers.h"
 
 template mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(

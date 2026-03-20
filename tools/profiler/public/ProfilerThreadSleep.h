@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef ProfilerThreadSleep_h
 #define ProfilerThreadSleep_h
 

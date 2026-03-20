@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ETWTools.h"
 
 #include <atomic>

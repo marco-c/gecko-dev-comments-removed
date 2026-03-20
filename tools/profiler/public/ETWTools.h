@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ETWTools_h
 #define ETWTools_h
 

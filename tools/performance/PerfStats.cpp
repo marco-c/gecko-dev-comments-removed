@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PerfStats.h"
 #include "nsAppRunner.h"
 #include <string_view>

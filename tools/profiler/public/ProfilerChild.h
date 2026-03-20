@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerChild_h
 #define ProfilerChild_h
 

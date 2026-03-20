@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef FuzzingInterfaceStream_h_
 #define FuzzingInterfaceStream_h_
 

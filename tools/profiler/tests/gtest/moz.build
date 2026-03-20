@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, you can obtain one at http://mozilla.org/MPL/2.0/.
 
 if CONFIG["OS_TARGET"] in ("Android", "Linux") and CONFIG["TARGET_CPU"] in (
     "arm",
@@ -24,11 +22,11 @@ LOCAL_INCLUDES += [
     "/tools/profiler/lul",
 ]
 
-
+# Bug 1885381 - Hangs/timeouts under TSAN
 if (
     CONFIG["OS_TARGET"] != "Android"
     and not CONFIG["MOZ_TSAN"]
-    
+    # Bug 1930156 - Frequent OOMs on 32-bit platforms.
     and CONFIG["TARGET_CPU"] != "x86"
 ):
     UNIFIED_SOURCES += [

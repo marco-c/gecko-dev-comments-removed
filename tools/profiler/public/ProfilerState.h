@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef ProfilerState_h
 #define ProfilerState_h
 

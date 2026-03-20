@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef ProfilerControl_h
 #define ProfilerControl_h
 

@@ -32,8 +32,6 @@
 
 
 
-
-
 #ifndef ProfilerThreadRegistrationData_h
 #define ProfilerThreadRegistrationData_h
 

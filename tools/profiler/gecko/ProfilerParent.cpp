@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProfilerParent.h"
 
 #include "nsProfiler.h"

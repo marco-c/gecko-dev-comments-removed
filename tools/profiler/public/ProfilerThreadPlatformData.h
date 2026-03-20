@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerThreadPlatformData_h
 #define ProfilerThreadPlatformData_h
 

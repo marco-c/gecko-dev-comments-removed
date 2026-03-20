@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerRunnable_h
 #define ProfilerRunnable_h
 

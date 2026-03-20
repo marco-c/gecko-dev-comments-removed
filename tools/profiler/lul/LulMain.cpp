@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LulMain.h"
 
 #include <stdio.h>

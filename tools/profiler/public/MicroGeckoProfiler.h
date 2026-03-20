@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef MICRO_GECKO_PROFILER
 #define MICRO_GECKO_PROFILER
 
@@ -19,6 +17,7 @@ extern "C" {
 
 #include <mozilla/Types.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #  include <libloaderapi.h>

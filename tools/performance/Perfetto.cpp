@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Perfetto.h"
 #include <stdlib.h>
 

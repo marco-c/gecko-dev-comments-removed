@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IPCFuzzController.h"
 #include "mozilla/Fuzzing.h"
 #include "mozilla/SpinEventLoopUntil.h"

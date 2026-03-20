@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ProfilerThreadRegistration.h"
 
 #include "mozilla/ProfilerMarkers.h"

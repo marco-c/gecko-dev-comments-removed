@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZ_PLATFORM_LINUX_LUL_H
 #define MOZ_PLATFORM_LINUX_LUL_H
 

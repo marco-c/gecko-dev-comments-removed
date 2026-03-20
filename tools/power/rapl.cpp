@@ -30,8 +30,6 @@
 
 
 
-
-
 #include <assert.h>
 #include <getopt.h>
 #include <math.h>
@@ -48,10 +46,11 @@
 #include <numeric>
 #include <vector>
 
-#ifdef MOZ_CLANG_PLUGIN
-#  define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
+#if defined(MOZ_CLANG_PLUGIN) && defined(__GLIBCXX__) && \
+    (__GLIBCXX__ <= 20230707)
+#  define MOZ_GLIBCXX_CONSTINIT __attribute__((annotate("moz_global_var")))
 #else
-#  define MOZ_RUNINIT
+#  define MOZ_GLIBCXX_CONSTINIT
 #endif
 
 
@@ -610,7 +609,7 @@ static double gSampleInterval_sec;
 static RAPL* gRapl;
 
 
-MOZ_RUNINIT static std::vector<double> gTotals_W;
+MOZ_GLIBCXX_CONSTINIT static std::vector<double> gTotals_W;
 
 
 

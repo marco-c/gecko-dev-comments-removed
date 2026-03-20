@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AutoObjectMapper_h
 #define AutoObjectMapper_h
 

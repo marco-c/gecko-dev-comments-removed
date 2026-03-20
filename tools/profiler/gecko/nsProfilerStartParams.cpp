@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsProfilerStartParams.h"
 #include "ipc/IPCMessageUtils.h"
 

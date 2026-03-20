@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PageInformation.h"
 
 #include "mozilla/ProfileJSONWriter.h"

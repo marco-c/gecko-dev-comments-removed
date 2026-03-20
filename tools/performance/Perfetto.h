@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Perfetto_h
 #define mozilla_Perfetto_h
 

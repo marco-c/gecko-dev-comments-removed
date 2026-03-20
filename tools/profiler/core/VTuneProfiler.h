@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef VTuneProfiler_h
 #define VTuneProfiler_h
 
@@ -31,7 +29,6 @@
 
 #  include "vtune/ittnotify.h"
 
-#  include <stddef.h>
 #  include <unordered_map>
 #  include <string>
 

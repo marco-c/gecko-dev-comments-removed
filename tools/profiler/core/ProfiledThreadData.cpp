@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProfiledThreadData.h"
 
 #include "platform.h"

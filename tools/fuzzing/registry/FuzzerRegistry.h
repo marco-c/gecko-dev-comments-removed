@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef FuzzerRegistry_h_
 #define FuzzerRegistry_h_
 

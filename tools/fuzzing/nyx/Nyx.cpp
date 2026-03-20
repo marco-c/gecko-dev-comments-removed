@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Vector.h"
 #include "mozilla/fuzzing/Nyx.h"

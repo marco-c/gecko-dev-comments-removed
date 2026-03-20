@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 SharedLibrary("breakpadinjector")
 
@@ -34,7 +32,7 @@ USE_LIBS += [
 
 DisableStlWrapping()
 
-
+# On Linux we override the guid_creator.h header and use our own instead
 if CONFIG["OS_TARGET"] in ("Linux", "Android"):
     DEFINES["COMMON_LINUX_GUID_CREATOR_H__"] = 1
 

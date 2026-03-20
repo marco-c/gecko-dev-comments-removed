@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PROFILEJSONWRITER_H
 #define PROFILEJSONWRITER_H
 

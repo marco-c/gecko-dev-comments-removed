@@ -24,8 +24,6 @@
 
 
 
-
-
 #include "platform.h"
 
 #include "GeckoProfiler.h"

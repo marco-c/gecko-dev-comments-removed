@@ -2,7 +2,6 @@
 
 
 
-
 #ifdef XP_WIN
 #  include <process.h>
 #  define getpid _getpid

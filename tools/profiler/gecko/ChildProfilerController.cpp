@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ChildProfilerController.h"
 
 #include "ProfilerChild.h"

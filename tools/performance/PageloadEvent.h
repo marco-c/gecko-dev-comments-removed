@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PageloadEvent_h
 #define mozilla_PageloadEvent_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "memory_counter.h"
 
 #include "mozilla/UniquePtr.h"

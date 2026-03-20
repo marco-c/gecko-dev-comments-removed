@@ -2,7 +2,6 @@
 
 
 
-
 #include "FuzzingInterface.h"
 #include "RustFuzzingTargets.h"
 

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DEFINES["MOZ_REPLACE_MALLOC_PREFIX"] = "profiler"
 XPIDL_MODULE = "profiler"
@@ -39,7 +37,7 @@ if CONFIG["MOZ_MEMORY"] and CONFIG["MOZ_PROFILER_MEMORY"]:
         ]
 if CONFIG["MOZ_REPLACE_MALLOC"] and CONFIG["MOZ_PROFILER_MEMORY"]:
     SOURCES += [
-        "core/memory_hooks.cpp",  
+        "core/memory_hooks.cpp",  # Non-unified because of order of #includes
     ]
 
 XPCOM_MANIFESTS += [
@@ -47,10 +45,10 @@ XPCOM_MANIFESTS += [
 ]
 
 if CONFIG["OS_TARGET"] == "Darwin":
-    
-    
-    
-    
+    # This file cannot be built in unified mode because it includes
+    # "nsLocalFile.h", which pulls in a system header which uses a type
+    # called TextRange, which conflicts with mozilla::TextRange due to
+    # a "using namespace mozilla;" declaration from a different file.
     SOURCES += [
         "gecko/nsProfiler.cpp",
     ]
@@ -139,7 +137,7 @@ if CONFIG["OS_TARGET"] == "Android":
     DEFINES["ANDROID_NDK_MAJOR_VERSION"] = CONFIG["ANDROID_NDK_MAJOR_VERSION"]
     DEFINES["ANDROID_NDK_MINOR_VERSION"] = CONFIG["ANDROID_NDK_MINOR_VERSION"]
     LOCAL_INCLUDES += [
-        
+        # We need access to Breakpad's getcontext(3) which is suitable for Android
         "/toolkit/crashreporter/google-breakpad/src/common/android/include",
     ]
 
@@ -234,7 +232,7 @@ TEST_DIRS += ["tests/gtest"]
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     CXXFLAGS += [
         "-Wno-error=stack-protector",
-        "-Wno-ignored-qualifiers",  
+        "-Wno-ignored-qualifiers",  # due to use of breakpad headers
     ]
 
 with Files("**"):

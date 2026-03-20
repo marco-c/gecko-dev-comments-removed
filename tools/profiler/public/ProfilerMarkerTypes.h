@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerMarkerTypes_h
 #define ProfilerMarkerTypes_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ProfilerThreadRegistrationData.h"
 
 #include "mozilla/CycleCollectedJSContext.h"

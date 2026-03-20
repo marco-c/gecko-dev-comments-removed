@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GeckoProfilerReporter_h
 #define GeckoProfilerReporter_h
 

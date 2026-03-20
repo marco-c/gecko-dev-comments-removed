@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef FuzzingInterface_h_
 #define FuzzingInterface_h_
 

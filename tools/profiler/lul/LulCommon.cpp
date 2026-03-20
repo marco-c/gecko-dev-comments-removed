@@ -36,9 +36,6 @@
 
 
 
-
-
-
 #include "LulCommonExt.h"
 
 #include <stdlib.h>

@@ -6,7 +6,6 @@
 
 
 
-
 #include <stdarg.h>
 #include <stdlib.h>
 #include "FuzzingInterface.h"

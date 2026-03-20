@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef FuzzerTestHarness_h_
 #define FuzzerTestHarness_h_
 

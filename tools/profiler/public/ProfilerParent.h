@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerParent_h
 #define ProfilerParent_h
 

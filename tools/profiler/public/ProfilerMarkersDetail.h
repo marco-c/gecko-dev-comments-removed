@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfilerMarkersDetail_h
 #define ProfilerMarkersDetail_h
 

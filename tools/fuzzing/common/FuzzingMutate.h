@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_fuzzing_FuzzingMutate_h
 #define mozilla_fuzzing_FuzzingMutate_h
 

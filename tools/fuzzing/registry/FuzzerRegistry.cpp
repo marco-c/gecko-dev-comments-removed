@@ -2,7 +2,6 @@
 
 
 
-
 #include "FuzzerRegistry.h"
 
 namespace mozilla {

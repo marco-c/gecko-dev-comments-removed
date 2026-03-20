@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef ProfilerMarkersPrerequisites_h
 #define ProfilerMarkersPrerequisites_h
 

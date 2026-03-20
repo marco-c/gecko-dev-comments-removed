@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsProfiler.h"
 
 #include <fstream>

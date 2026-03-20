@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfileBufferEntrySerializationGeckoExtensions_h
 #define ProfileBufferEntrySerializationGeckoExtensions_h
 

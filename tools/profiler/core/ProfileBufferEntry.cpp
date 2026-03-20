@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProfileBufferEntry.h"
 
 #include "mozilla/ProfilerMarkers.h"

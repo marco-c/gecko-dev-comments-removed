@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef PROFILER_BACKTRACE_H
 #define PROFILER_BACKTRACE_H
 

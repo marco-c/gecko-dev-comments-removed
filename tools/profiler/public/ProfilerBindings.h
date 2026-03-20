@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef ProfilerBindings_h
 #define ProfilerBindings_h
 

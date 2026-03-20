@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsProfilerCIID_h_
 #define nsProfilerCIID_h_
 

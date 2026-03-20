@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef XP_WIN
 #  undef UNICODE
 #  undef _UNICODE
