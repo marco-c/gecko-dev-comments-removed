@@ -18,7 +18,6 @@
 
 #include "mozilla/UniquePtr.h"
 
-class nsSHEntry;
 class nsISHEntry;
 class nsISHistory;
 class nsIDocShellTreeItem;
@@ -173,46 +172,5 @@ class SHEntrySharedChildState {
 
 }  
 }  
-
-
-
-
-
-
-
-
-class nsSHEntryShared final : public nsIBFCacheEntry,
-                              public nsStubMutationObserver,
-                              public mozilla::dom::SHEntrySharedParentState,
-                              public mozilla::dom::SHEntrySharedChildState {
- public:
-  static void EnsureHistoryTracker();
-  static void Shutdown();
-
-  using SHEntrySharedParentState::SHEntrySharedParentState;
-
-  already_AddRefed<nsSHEntryShared> Duplicate();
-
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIBFCACHEENTRY
-
-  
-  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-
- private:
-  ~nsSHEntryShared();
-
-  friend class nsSHEntry;
-
-  void RemoveFromExpirationTracker();
-  void SyncPresentationState();
-  void DropPresentationState();
-
-  nsresult SetDocumentViewer(nsIDocumentViewer* aViewer);
-};
 
 #endif
