@@ -13,7 +13,6 @@
 
 
 
-
 cfg_os_poll! {
     macro_rules! debug_detail {
         (
@@ -81,3 +80,68 @@ cfg_not_os_poll! {
         pub use self::unix::SourceFd;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[allow(dead_code)]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "redox",
+    target_os = "espidf",
+    target_os = "horizon"
+))]
+pub(crate) const LISTEN_BACKLOG_SIZE: i32 = 128;
+
+
+
+
+
+#[allow(dead_code)]
+#[cfg(target_os = "hermit")]
+pub(crate) const LISTEN_BACKLOG_SIZE: i32 = 1024;
+
+#[allow(dead_code)]
+#[cfg(any(
+    
+    target_os = "linux",
+    
+    target_os = "freebsd",
+    
+    target_os = "openbsd",
+    
+    target_vendor = "apple",
+))]
+pub(crate) const LISTEN_BACKLOG_SIZE: i32 = -1;
+
+#[allow(dead_code)]
+#[cfg(not(any(
+    target_os = "windows",
+    target_os = "redox",
+    target_os = "espidf",
+    target_os = "horizon",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "wasi",
+    target_os = "hermit",
+    target_vendor = "apple",
+)))]
+pub(crate) const LISTEN_BACKLOG_SIZE: i32 = libc::SOMAXCONN;

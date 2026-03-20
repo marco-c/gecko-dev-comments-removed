@@ -124,7 +124,7 @@ impl Selector {
         })
     }
 
-    #[cfg(feature = "net")]
+    cfg_io_source! {
     pub(crate) fn register(
         &self,
         fd: wasi::Fd,
@@ -166,7 +166,6 @@ impl Selector {
         Ok(())
     }
 
-    #[cfg(feature = "net")]
     pub(crate) fn reregister(
         &self,
         fd: wasi::Fd,
@@ -177,13 +176,12 @@ impl Selector {
             .and_then(|()| self.register(fd, token, interests))
     }
 
-    #[cfg(feature = "net")]
     pub(crate) fn deregister(&self, fd: wasi::Fd) -> io::Result<()> {
         let mut subscriptions = self.subscriptions.lock().unwrap();
 
         let predicate = |subscription: &wasi::Subscription| {
-            
-            
+            // Safety: `subscription.u.tag` defines the type of the union in
+            // `subscription.u.u`.
             match subscription.u.tag {
                 t if t == wasi::EVENTTYPE_FD_WRITE.raw() => unsafe {
                     subscription.u.u.fd_write.file_descriptor == fd
@@ -203,6 +201,7 @@ impl Selector {
         }
 
         ret
+    }
     }
 }
 

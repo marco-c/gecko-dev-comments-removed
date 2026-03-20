@@ -77,7 +77,7 @@ fn main() -> io::Result<()> {
                     
                     
                     
-                    warn!("Got event for unexpected token: {:?}", event);
+                    warn!("Got event for unexpected token: {event:?}");
                 }
             }
         }

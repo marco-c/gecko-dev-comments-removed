@@ -24,6 +24,7 @@ pub(crate) fn new_socket(domain: libc::c_int, socket_type: libc::c_int) -> io::R
         target_os = "openbsd",
         target_os = "solaris",
         target_os = "hermit",
+        target_os = "cygwin",
     ))]
     let socket_type = socket_type | libc::SOCK_NONBLOCK | libc::SOCK_CLOEXEC;
     #[cfg(target_os = "nto")]
@@ -52,6 +53,7 @@ pub(crate) fn new_socket(domain: libc::c_int, socket_type: libc::c_int) -> io::R
 
     
     #[cfg(any(
+        target_os = "aix",
         target_os = "ios",
         target_os = "macos",
         target_os = "tvos",
@@ -164,6 +166,7 @@ pub(crate) fn socket_addr(addr: &SocketAddr) -> (SocketAddrCRepr, libc::socklen_
                     target_os = "espidf",
                     target_os = "vita",
                     target_os = "nto",
+                    target_os = "hermit",
                 ))]
                 sin6_len: 0,
                 #[cfg(target_os = "vita")]

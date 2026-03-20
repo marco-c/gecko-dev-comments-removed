@@ -7,8 +7,8 @@ use std::sync::{Arc, Mutex};
 use std::{fmt, mem, slice};
 
 use windows_sys::Win32::Foundation::{
-    ERROR_BROKEN_PIPE, ERROR_IO_INCOMPLETE, ERROR_IO_PENDING, ERROR_NO_DATA, ERROR_PIPE_CONNECTED,
-    ERROR_PIPE_LISTENING, HANDLE, INVALID_HANDLE_VALUE,
+    ERROR_BROKEN_PIPE, ERROR_IO_INCOMPLETE, ERROR_IO_PENDING, ERROR_MORE_DATA, ERROR_NO_DATA,
+    ERROR_PIPE_CONNECTED, ERROR_PIPE_LISTENING, HANDLE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
     ReadFile, WriteFile, FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED, PIPE_ACCESS_DUPLEX,
@@ -701,6 +701,9 @@ impl Inner {
     
     
     
+    
+    
+    
     fn schedule_read(me: &Arc<Inner>, io: &mut Io, events: Option<&mut Vec<Event>>) -> bool {
         
         match io.read {
@@ -727,6 +730,20 @@ impl Inner {
             
             
             Err(ref e) if e.raw_os_error() == Some(ERROR_PIPE_LISTENING as i32) => false,
+
+            
+            
+            
+            
+            
+            
+            
+            
+            Err(ref e) if e.raw_os_error() == Some(ERROR_MORE_DATA as i32) => {
+                io.read = State::Ok(buf, 0);
+                mem::forget(me.clone());
+                true
+            }
 
             
             
@@ -864,16 +881,36 @@ fn read_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
     
     let me = unsafe { Arc::from_raw(Inner::ptr_from_read_overlapped(status.overlapped())) };
 
-    
     let mut io = me.io.lock().unwrap();
     let mut buf = match mem::replace(&mut io.read, State::None) {
+        State::Ok(buf, pos) => {
+            io.read = State::Ok(buf, pos);
+
+            
+            io.notify_readable(&me, events);
+            return;
+        }
         State::Pending(buf, _) => buf,
-        _ => unreachable!(),
+        State::Err(e) => {
+            io.read = State::Err(e);
+
+            
+            io.notify_readable(&me, events);
+            return;
+        }
+        State::None => unreachable!(),
     };
     unsafe {
         match me.result(status.overlapped()) {
             Ok(n) => {
                 debug_assert_eq!(status.bytes_transferred() as usize, n);
+                buf.set_len(status.bytes_transferred() as usize);
+                io.read = State::Ok(buf, 0);
+            }
+            
+            
+            
+            Err(e) if e.raw_os_error() == Some(ERROR_MORE_DATA as i32) => {
                 buf.set_len(status.bytes_transferred() as usize);
                 io.read = State::Ok(buf, 0);
             }
@@ -902,12 +939,20 @@ fn write_done(status: &OVERLAPPED_ENTRY, events: Option<&mut Vec<Event>>) {
     let (buf, pos) = match mem::replace(&mut io.write, State::None) {
         
         
+        
         State::Ok(..) => {
             io.notify_writable(&me, events);
             return;
         }
         State::Pending(buf, pos) => (buf, pos),
-        _ => unreachable!(),
+        State::Err(e) => {
+            io.write = State::Err(e);
+
+            
+            io.notify_writable(&me, events);
+            return;
+        }
+        State::None => unreachable!(),
     };
 
     unsafe {

@@ -2,13 +2,15 @@ use std::fmt;
 use std::io::{self, IoSlice, IoSliceMut, Read, Write};
 use std::net::{self, Shutdown, SocketAddr};
 #[cfg(any(unix, target_os = "wasi"))]
-use std::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd};
 
 
 #[cfg(target_os = "hermit")]
-use std::os::hermit::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
+use std::os::hermit::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, OwnedFd, RawFd};
 #[cfg(windows)]
-use std::os::windows::io::{AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket};
+use std::os::windows::io::{
+    AsRawSocket, AsSocket, BorrowedSocket, FromRawSocket, IntoRawSocket, OwnedSocket, RawSocket,
+};
 
 use crate::io_source::IoSource;
 #[cfg(not(target_os = "wasi"))]
@@ -210,7 +212,9 @@ impl TcpStream {
     
     
     pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.inner.peek(buf)
+        
+        
+        self.inner.do_io(|inner| inner.peek(buf))
     }
 
     
@@ -282,7 +286,7 @@ impl Read for TcpStream {
     }
 }
 
-impl<'a> Read for &'a TcpStream {
+impl Read for &'_ TcpStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.do_io(|mut inner| inner.read(buf))
     }
@@ -306,7 +310,7 @@ impl Write for TcpStream {
     }
 }
 
-impl<'a> Write for &'a TcpStream {
+impl Write for &'_ TcpStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.inner.do_io(|mut inner| inner.write(buf))
     }
@@ -378,9 +382,29 @@ impl FromRawFd for TcpStream {
 }
 
 #[cfg(any(unix, target_os = "hermit", target_os = "wasi"))]
+impl From<TcpStream> for OwnedFd {
+    fn from(tcp_stream: TcpStream) -> Self {
+        tcp_stream.inner.into_inner().into()
+    }
+}
+
+#[cfg(any(unix, target_os = "hermit", target_os = "wasi"))]
 impl AsFd for TcpStream {
     fn as_fd(&self) -> BorrowedFd<'_> {
         self.inner.as_fd()
+    }
+}
+
+#[cfg(any(unix, target_os = "hermit", target_os = "wasi"))]
+impl From<OwnedFd> for TcpStream {
+    
+    
+    
+    
+    
+    
+    fn from(fd: OwnedFd) -> Self {
+        TcpStream::from_std(From::from(fd))
     }
 }
 
@@ -408,6 +432,33 @@ impl FromRawSocket for TcpStream {
     
     unsafe fn from_raw_socket(socket: RawSocket) -> TcpStream {
         TcpStream::from_std(FromRawSocket::from_raw_socket(socket))
+    }
+}
+
+#[cfg(windows)]
+impl From<TcpStream> for OwnedSocket {
+    fn from(tcp_stream: TcpStream) -> Self {
+        tcp_stream.inner.into_inner().into()
+    }
+}
+
+#[cfg(windows)]
+impl AsSocket for TcpStream {
+    fn as_socket(&self) -> BorrowedSocket<'_> {
+        self.inner.as_socket()
+    }
+}
+
+#[cfg(windows)]
+impl From<OwnedSocket> for TcpStream {
+    
+    
+    
+    
+    
+    
+    fn from(socket: OwnedSocket) -> Self {
+        TcpStream::from_std(From::from(socket))
     }
 }
 

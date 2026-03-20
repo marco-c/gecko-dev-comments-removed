@@ -42,6 +42,13 @@ impl Waker {
 
     #[allow(clippy::unused_io_amount)] 
     pub(crate) fn wake(&self) -> io::Result<()> {
+        
+        
+        
+        
+        #[cfg(target_os = "illumos")]
+        self.reset()?;
+
         let buf: [u8; 8] = 1u64.to_ne_bytes();
         match (&self.fd).write(&buf) {
             Ok(_) => Ok(()),

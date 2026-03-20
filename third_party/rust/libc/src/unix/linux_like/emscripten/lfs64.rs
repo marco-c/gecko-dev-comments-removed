@@ -109,7 +109,10 @@ pub unsafe extern "C" fn mmap64(
 
 
 
-pub use crate::{open as open64, openat as openat64};
+pub use crate::{
+    open as open64,
+    openat as openat64,
+};
 
 #[inline]
 pub unsafe extern "C" fn posix_fadvise64(

@@ -1,5 +1,7 @@
 
 
+#[cfg(feature = "extra_traits")]
+use core::hash::Hash;
 use core::mem::MaybeUninit;
 
 use crate::prelude::*;
@@ -20,6 +22,18 @@ impl<T: Copy> Default for Padding<T> {
     }
 }
 
+impl<T: Copy> Padding<T> {
+    
+    
+    
+    #[allow(unused)]
+    pub(crate) const fn uninit() -> Self {
+        
+        
+        Self(MaybeUninit::uninit())
+    }
+}
+
 impl<T: Copy> fmt::Debug for Padding<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         
@@ -29,6 +43,24 @@ impl<T: Copy> fmt::Debug for Padding<T> {
         f.pad(&full_name[prefix_len..])
     }
 }
+
+
+#[cfg(feature = "extra_traits")]
+impl<T: Copy> Hash for Padding<T> {
+    fn hash<H: hash::Hasher>(&self, _state: &mut H) {}
+}
+
+
+#[cfg(feature = "extra_traits")]
+impl<T: Copy> PartialEq for Padding<T> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+
+#[cfg(feature = "extra_traits")]
+impl<T: Copy> Eq for Padding<T> {}
 
 
 #[cfg(target_env = "msvc")]

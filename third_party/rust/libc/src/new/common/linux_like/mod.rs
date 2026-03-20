@@ -1,0 +1,9 @@
+
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "l4re",
+    target_os = "linux"
+))]
+pub(crate) mod pthread;
