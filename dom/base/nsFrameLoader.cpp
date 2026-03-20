@@ -2617,6 +2617,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
       
       
       
+      
+      
       nsIURI* parentURI = parentWin->GetDocumentURI();
       if (!parentURI) {
         return false;
@@ -2630,6 +2632,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
       const bool allowed = [&] {
         const nsLiteralCString kAllowedURIs[] = {
             "about:addons"_ns,
+            "chrome://browser/content/aiwindow/aiWindow.html"_ns,
             "chrome://mozapps/content/extensions/aboutaddons.html"_ns,
 #ifdef MOZ_THUNDERBIRD
             "about:3pane"_ns,
