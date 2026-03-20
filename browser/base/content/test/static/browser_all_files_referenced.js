@@ -335,6 +335,12 @@ var allowlist = [
   {
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
+
+  
+  
+  {
+    file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
