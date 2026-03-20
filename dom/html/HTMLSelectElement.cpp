@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLSelectElement.h"
 
 #include "ButtonControlFrame.h"
@@ -148,7 +146,7 @@ void HTMLSelectElement::SetupShadowTree() {
   }
   sr->AppendChildTo(label, false, IgnoreErrors());
   RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
-  icon->SetPseudoElementType(PseudoStyleType::MozSelectPickerIcon);
+  icon->SetPseudoElementType(PseudoStyleType::PickerIcon);
   {
     RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
     icon->AppendChildTo(text, false, IgnoreErrors());
