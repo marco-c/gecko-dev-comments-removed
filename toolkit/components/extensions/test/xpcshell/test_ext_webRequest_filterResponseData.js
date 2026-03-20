@@ -649,6 +649,10 @@ add_task(async function test_alternate_cached_data() {
         },
         ["blocking"]
       );
+
+      browser.webRequest.handlerBehaviorChanged().then(() => {
+        browser.test.sendMessage("cache_stabilized");
+      });
     },
 
     manifest: {
@@ -657,12 +661,28 @@ add_task(async function test_alternate_cached_data() {
   });
 
   
+  
+  
+  
+  
   let contentPage = await ExtensionTestUtils.loadContentPage(
     "http://example.com/data/file_script.html"
   );
   await contentPage.close();
 
   await extension.startup();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await extension.awaitMessage("cache_stabilized");
 
   let page_cached = await ExtensionTestUtils.loadContentPage(
     "http://example.com/data/file_script.html"
