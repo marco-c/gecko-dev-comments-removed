@@ -24,6 +24,18 @@ pub use self::core::{RuleTree, StrongRuleNode};
 pub use self::level::{CascadeLevel, CascadeOrigin, ShadowCascadeOrder};
 pub use self::source::StyleSource;
 
+bitflags! {
+    /// Flags that are part of the cascade priority, and that we use to track
+    /// information about where the rule came from.
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    pub struct RuleCascadeFlags: u8 {
+        /// Whether the rule is inside a @starting-style block.
+        const STARTING_STYLE = 1 << 0;
+    }
+}
+
+malloc_size_of::malloc_size_of_is_0!(RuleCascadeFlags);
+
 impl RuleTree {
     fn dump<W: Write>(&self, guards: &StylesheetGuards, writer: &mut W) {
         let _ = writeln!(writer, " + RuleTree");
@@ -150,6 +162,7 @@ impl RuleTree {
                 CascadePriority::new(
                     CascadeLevel::new(CascadeOrigin::Transitions),
                     LayerOrder::root(),
+                    RuleCascadeFlags::empty(),
                 ),
             );
         }
@@ -218,7 +231,7 @@ impl RuleTree {
             current = current.parent().unwrap().clone();
         }
 
-        let cascade_priority = CascadePriority::new(level, layer_order);
+        let cascade_priority = CascadePriority::new(level, layer_order, RuleCascadeFlags::empty());
 
         
         
@@ -287,7 +300,16 @@ impl RuleTree {
     }
 
     
-    pub fn remove_transition_rule_if_applicable(&self, path: &StrongRuleNode) -> StrongRuleNode {
+    pub fn has_starting_style(path: &StrongRuleNode) -> bool {
+        path.self_and_ancestors().any(|node| {
+            node.cascade_priority()
+                .flags()
+                .intersects(RuleCascadeFlags::STARTING_STYLE)
+        })
+    }
+
+    
+    pub fn remove_transition_rule_if_applicable(path: &StrongRuleNode) -> StrongRuleNode {
         
         if path.cascade_level().origin() != CascadeOrigin::Transitions {
             return path.clone();

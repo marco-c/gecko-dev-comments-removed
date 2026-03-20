@@ -319,30 +319,19 @@ trait PrivateMatchMethods: TElement {
     ) -> Option<Arc<ComputedValues>> {
         
         
-        
-        
-        if !new_styles.may_have_starting_style()
-            || !new_styles.primary_style().get_ui().specifies_transitions()
-        {
+        let new_primary = new_styles.primary_style();
+        if !new_primary.get_ui().specifies_transitions() {
             return None;
         }
 
         
         
         if old_values.is_some()
-            && !new_styles
-                .primary_style()
-                .is_display_property_changed_from_none(old_values.map(|s| &**s))
+            && !new_primary.is_display_property_changed_from_none(old_values.map(|s| &**s))
         {
             return None;
         }
 
-        
-        
-        
-        
-        
-        
         let mut resolver = StyleResolverForElement::new(
             *self,
             context,
@@ -350,7 +339,7 @@ trait PrivateMatchMethods: TElement {
             PseudoElementResolution::IfApplicable,
         );
 
-        let starting_style = resolver.resolve_starting_style().style;
+        let starting_style = resolver.resolve_starting_style(new_primary)?;
         if starting_style.style().clone_display().is_none() {
             return None;
         }
@@ -372,11 +361,7 @@ trait PrivateMatchMethods: TElement {
         new_styles: &mut ResolvedElementStyles,
     ) -> Option<Arc<ComputedValues>> {
         let starting_values = self.maybe_resolve_starting_style(context, old_values, new_styles);
-        let before_change_or_starting = if starting_values.is_some() {
-            starting_values.as_ref()
-        } else {
-            old_values
-        };
+        let before_change_or_starting = starting_values.as_ref().or(old_values);
         let new_values = new_styles.primary_style_mut();
 
         if !self.might_need_transitions_update(
@@ -567,6 +552,7 @@ trait PrivateMatchMethods: TElement {
                     rules: Some(rule_node),
                     visited_rules: primary_style.visited_rules().cloned(),
                     flags: primary_style.flags.for_cascade_inputs(),
+                    include_starting_style: Default::default(),
                 };
 
                 new_resolved_styles.primary.style = StyleResolverForElement::new(
@@ -656,6 +642,7 @@ trait PrivateMatchMethods: TElement {
             rules: Some(rule_node),
             visited_rules: style.visited_rules().cloned(),
             flags: style.flags.for_cascade_inputs(),
+            include_starting_style: Default::default(),
         };
 
         let new_style = StyleResolverForElement::new(

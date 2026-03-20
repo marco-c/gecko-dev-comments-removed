@@ -87,42 +87,6 @@ static nsPresContext* EnsureSafeToHandOutRules(Element& aElement) {
   return presContext;
 }
 
-static already_AddRefed<const ComputedStyle> GetStartingStyle(
-    Element& aElement, const PseudoStyleRequest& aPseudo) {
-  Element* elementOrPseudoElement = aElement.GetPseudoElement(aPseudo);
-  if (!elementOrPseudoElement) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return nullptr;
-  }
-  
-  
-  if (!Servo_Element_MayHaveStartingStyle(elementOrPseudoElement)) {
-    return nullptr;
-  }
-  if (!EnsureSafeToHandOutRules(aElement)) {
-    return nullptr;
-  }
-  RefPtr<Document> doc = aElement.GetComposedDoc();
-  if (!doc) {
-    return nullptr;
-  }
-  doc->FlushPendingNotifications(FlushType::Style);
-  RefPtr<PresShell> ps = doc->GetPresShell();
-  if (!ps) {
-    return nullptr;
-  }
-  return ps->StyleSet()->ResolveStartingStyle(*elementOrPseudoElement);
-}
-
 static already_AddRefed<const ComputedStyle> GetCleanComputedStyleForElement(
     dom::Element* aElement, const PseudoStyleRequest& aPseudo) {
   MOZ_ASSERT(aElement);
@@ -365,6 +329,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(ReadOnlyInspectorDeclaration)
 
 static void GetCSSRulesFromComputedValues(
     Element& aElement, const ComputedStyle* aComputedStyle,
+    bool aWithStartingStyle,
     nsTArray<OwningCSSRuleOrInspectorDeclaration>& aResult) {
   const PresShell* presShell = aElement.OwnerDoc()->GetPresShell();
   if (!presShell) {
@@ -372,7 +337,8 @@ static void GetCSSRulesFromComputedValues(
   }
 
   AutoTArray<StyleMatchingDeclarationBlock, 8> rawDecls;
-  Servo_ComputedValues_GetMatchingDeclarations(aComputedStyle, &rawDecls);
+  Servo_ComputedValues_GetMatchingDeclarations(aComputedStyle,
+                                               aWithStartingStyle, &rawDecls);
 
   AutoTArray<ServoStyleRuleMap*, 8> maps;
   {
@@ -459,19 +425,8 @@ void InspectorUtils::GetMatchingCSSRules(
     return;
   }
 
-  RefPtr<const ComputedStyle> computedStyle;
-  if (aWithStartingStyle) {
-    computedStyle = GetStartingStyle(aElement, *pseudo);
-  }
-
-  
-  
-  
-  
-  if (!computedStyle) {
-    computedStyle = GetCleanComputedStyleForElement(&aElement, *pseudo);
-  }
-
+  RefPtr<const ComputedStyle> computedStyle =
+      GetCleanComputedStyleForElement(&aElement, *pseudo);
   if (!computedStyle) {
     
     
@@ -484,7 +439,8 @@ void InspectorUtils::GetMatchingCSSRules(
     }
   }
 
-  GetCSSRulesFromComputedValues(aElement, computedStyle, aResult);
+  GetCSSRulesFromComputedValues(aElement, computedStyle, aWithStartingStyle,
+                                aResult);
 }
 
 

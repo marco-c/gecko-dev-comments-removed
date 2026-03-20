@@ -72,10 +72,11 @@ impl VisitedHandlingMode {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum IncludeStartingStyle {
     
     
+    #[default]
     No,
     
     
@@ -171,12 +172,6 @@ where
     visited_handling: VisitedHandlingMode,
 
     
-    pub include_starting_style: IncludeStartingStyle,
-
-    
-    pub has_starting_style: bool,
-
-    
     pub featureless: bool,
 
     
@@ -229,7 +224,6 @@ where
             bloom_filter,
             selector_caches,
             VisitedHandlingMode::AllLinksUnvisited,
-            IncludeStartingStyle::No,
             quirks_mode,
             needs_selector_flags,
             matching_for_invalidation,
@@ -251,7 +245,6 @@ where
             bloom_filter,
             selector_caches,
             VisitedHandlingMode::AllLinksUnvisited,
-            IncludeStartingStyle::No,
             quirks_mode,
             needs_selector_flags,
             MatchingForInvalidation::No,
@@ -265,7 +258,6 @@ where
         bloom_filter: Option<&'a BloomFilter>,
         selector_caches: &'a mut SelectorCaches,
         visited_handling: VisitedHandlingMode,
-        include_starting_style: IncludeStartingStyle,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
         matching_for_invalidation: MatchingForInvalidation,
@@ -275,7 +267,6 @@ where
             bloom_filter,
             selector_caches,
             visited_handling,
-            include_starting_style,
             quirks_mode,
             needs_selector_flags,
             matching_for_invalidation,
@@ -288,7 +279,6 @@ where
         bloom_filter: Option<&'a BloomFilter>,
         selector_caches: &'a mut SelectorCaches,
         visited_handling: VisitedHandlingMode,
-        include_starting_style: IncludeStartingStyle,
         quirks_mode: QuirksMode,
         needs_selector_flags: NeedsSelectorFlags,
         matching_for_invalidation: MatchingForInvalidation,
@@ -298,8 +288,6 @@ where
             matching_mode,
             bloom_filter,
             visited_handling,
-            include_starting_style,
-            has_starting_style: false,
             quirks_mode,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             needs_selector_flags,

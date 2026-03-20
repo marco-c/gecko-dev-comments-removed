@@ -261,10 +261,6 @@ class ServoStyleSet {
       dom::Element* aParentElement, PseudoStyleType aType,
       ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 
-  
-  
-  already_AddRefed<ComputedStyle> ResolveStartingStyle(dom::Element& aElement);
-
   already_AddRefed<ComputedStyle> ResolvePositionTry(
       dom::Element& aElement, const ComputedStyle& aStyle,
       const StylePositionTryFallbacksItem&);

@@ -6,7 +6,7 @@
 
 use crate::derives::*;
 use crate::properties::PropertyDeclarationBlock;
-use crate::rule_tree::{CascadeLevel, StyleSource};
+use crate::rule_tree::{CascadeLevel, RuleCascadeFlags, StyleSource};
 use crate::shared_lock::Locked;
 use crate::stylesheets::layer_rule::LayerOrder;
 use servo_arc::Arc;
@@ -40,6 +40,7 @@ const SOURCE_ORDER_MASK: u32 = SOURCE_ORDER_MAX;
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub struct CascadePriority {
     cascade_level: CascadeLevel,
+    flags: RuleCascadeFlags,
     layer_order: LayerOrder,
 }
 
@@ -96,11 +97,28 @@ pub enum RevertKind {
 
 impl CascadePriority {
     
-    pub fn new(cascade_level: CascadeLevel, layer_order: LayerOrder) -> Self {
+    pub fn new(
+        cascade_level: CascadeLevel,
+        layer_order: LayerOrder,
+        flags: RuleCascadeFlags,
+    ) -> Self {
         Self {
             cascade_level,
+            flags,
             layer_order,
         }
+    }
+
+    
+    #[inline]
+    pub fn flags(&self) -> RuleCascadeFlags {
+        self.flags
+    }
+
+    
+    #[inline]
+    pub fn set_flags(&mut self, flags: RuleCascadeFlags) {
+        self.flags.insert(flags);
     }
 
     
@@ -121,7 +139,9 @@ impl CascadePriority {
     
     pub fn allows_when_reverted(&self, other: &Self, kind: RevertKind) -> bool {
         match kind {
-            RevertKind::Origin => other.cascade_level.origin().origin() < self.cascade_level.origin().origin(),
+            RevertKind::Origin => {
+                other.cascade_level.origin().origin() < self.cascade_level.origin().origin()
+            },
             RevertKind::Layer => other.unimportant() < self.unimportant(),
             
             
@@ -131,17 +151,29 @@ impl CascadePriority {
 
     
     pub fn unimportant(&self) -> Self {
-        Self::new(self.cascade_level().unimportant(), self.layer_order())
+        Self {
+            cascade_level: self.cascade_level.unimportant(),
+            flags: self.flags,
+            layer_order: self.layer_order,
+        }
     }
 
     
     pub fn important(&self) -> Self {
-        Self::new(self.cascade_level().important(), self.layer_order())
+        Self {
+            cascade_level: self.cascade_level.important(),
+            flags: self.flags,
+            layer_order: self.layer_order,
+        }
     }
 
     
     pub fn same_tree_author_normal_at_root_layer() -> Self {
-        Self::new(CascadeLevel::same_tree_author_normal(), LayerOrder::root())
+        Self::new(
+            CascadeLevel::same_tree_author_normal(),
+            LayerOrder::root(),
+            RuleCascadeFlags::empty(),
+        )
     }
 }
 
@@ -225,7 +257,7 @@ impl ApplicableDeclarationBlock {
             source_order: 0,
             specificity: 0,
             scope_proximity: ScopeProximity::infinity(),
-            cascade_priority: CascadePriority::new(level, layer_order),
+            cascade_priority: CascadePriority::new(level, layer_order, RuleCascadeFlags::empty()),
         }
     }
 
@@ -238,13 +270,14 @@ impl ApplicableDeclarationBlock {
         specificity: u32,
         layer_order: LayerOrder,
         scope_proximity: ScopeProximity,
+        flags: RuleCascadeFlags,
     ) -> Self {
         ApplicableDeclarationBlock {
             source,
             source_order: source_order & SOURCE_ORDER_MASK,
             specificity,
             scope_proximity,
-            cascade_priority: CascadePriority::new(level, layer_order),
+            cascade_priority: CascadePriority::new(level, layer_order, flags),
         }
     }
 

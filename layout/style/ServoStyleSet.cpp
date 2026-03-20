@@ -474,6 +474,10 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
                 .Consume();
     if (!style) {
       MOZ_ASSERT(isProbe);
+      if (cacheable) {
+        aParentStyle->SetCachedLazyPseudoStyle(nullptr, aType,
+                                               aFunctionalPseudoParameter);
+      }
       return nullptr;
     }
     if (cacheable) {
@@ -496,7 +500,7 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
         return true;
       }();
       if (shouldCache) {
-        aParentStyle->SetCachedLazyPseudoStyle(style,
+        aParentStyle->SetCachedLazyPseudoStyle(style, aType,
                                                aFunctionalPseudoParameter);
       }
     }
@@ -610,18 +614,6 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolveXULTreePseudoStyle(
 
   return Servo_ComputedValues_ResolveXULTreePseudoStyle(
              aParentElement, aType, aParentStyle, &aInputWord, mRawData.get())
-      .Consume();
-}
-
-already_AddRefed<ComputedStyle> ServoStyleSet::ResolveStartingStyle(
-    dom::Element& aElement) {
-  nsPresContext* pc = GetPresContext();
-  if (!pc) {
-    return nullptr;
-  }
-
-  return Servo_ResolveStartingStyle(
-             &aElement, &pc->RestyleManager()->Snapshots(), mRawData.get())
       .Consume();
 }
 
