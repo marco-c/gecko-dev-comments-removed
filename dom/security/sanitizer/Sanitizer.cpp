@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Sanitizer.h"
 
 #include "mozilla/ClearOnShutdown.h"
@@ -1175,11 +1173,20 @@ bool Sanitizer::RemoveElementCanonical(CanonicalElement&& aElement) {
 
 bool Sanitizer::ReplaceElementWithChildren(
     const StringOrSanitizerElementNamespace& aElement) {
+  
+  
   MaybeMaterializeDefaultConfig();
 
   
   
   CanonicalElement element = CanonicalizeElement(aElement);
+
+  
+  
+  if (element == CanonicalElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml)) {
+    
+    return false;
+  }
 
   
   if (mReplaceWithChildrenElements &&
