@@ -27,7 +27,9 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.BL
 import org.mozilla.fenix.GleanMetrics.Autoplay
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentManageSitePermissionsFeaturePhoneBinding
+import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.PhoneFeature
@@ -49,8 +51,11 @@ enum class AutoplaySettingMetricsExtraKey {
     BLOCK_CELLULAR, BLOCK_AUDIO, BLOCK_ALL, ALLOW_ALL
 }
 
+/**
+ * Settings screen allowing users to manage the browser phone permission.
+ */
 @SuppressWarnings("TooManyFunctions")
-class SitePermissionsManagePhoneFeatureFragment : Fragment() {
+class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<SitePermissionsManagePhoneFeatureFragmentArgs>()
     private val settings by lazy { requireContext().settings() }
@@ -245,8 +250,7 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment() {
      * Returns a [CharSequence] that arranges and styles [mainText], a line break, and then [subText]
      */
     private fun getCombinedLabel(mainText: CharSequence, subText: CharSequence): CharSequence {
-        val subTextSize =
-            resources.getDimensionPixelSize(R.dimen.phone_feature_label_recommended_text_size)
+        val subTextSize = pixelSizeFor(R.dimen.phone_feature_label_recommended_text_size)
         val recommendedSpannable = SpannableString(subText)
         val subTextColor = ContextCompat.getColor(
             requireContext(),
