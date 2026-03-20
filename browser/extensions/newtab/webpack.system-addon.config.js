@@ -4,42 +4,15 @@
 
 const path = require("path");
 const webpack = require("webpack");
+const TerserPlugin = require("terser-webpack-plugin");
 const { ResourceUriPlugin } = require("../../tools/resourceUriPlugin");
 const { MozSrcUriPlugin } = require("../../tools/mozsrcUriPlugin");
 
 const absolute = relPath => path.join(__dirname, relPath);
 
-module.exports = (env = {}) => ({
-  mode: "none",
-  entry: absolute("content-src/activity-stream.jsx"),
-  output: {
-    path: absolute("data/content"),
-    filename: "activity-stream.bundle.js",
-    library: "NewtabRenderUtils",
-  },
+const baseConfig = env => ({
+  mode: env.development ? "development" : "production",
   devtool: env.development ? "inline-source-map" : false,
-  plugins: [
-    
-    
-    new ResourceUriPlugin({
-      resourcePathRegExes: [
-        [new RegExp("^resource://newtab/"), path.join(__dirname, "./")],
-        [
-          new RegExp("^resource:///modules/topsites/"),
-          path.join(__dirname, "../../components/topsites/"),
-        ],
-        [
-          new RegExp("^resource:///modules/Dedupe.sys.mjs"),
-          path.join(__dirname, "../../modules/Dedupe.sys.mjs"),
-        ],
-      ],
-    }),
-    new MozSrcUriPlugin({ baseDir: path.join(__dirname, "..", "..", "..") }),
-    new webpack.BannerPlugin(
-      `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
-    ),
-    new webpack.optimize.ModuleConcatenationPlugin(),
-  ],
   module: {
     rules: [
       {
@@ -50,19 +23,97 @@ module.exports = (env = {}) => ({
           presets: ["@babel/preset-react"],
         },
       },
+      {
+        
+        
+        test: /\.mjs$/,
+        resolve: { fullySpecified: false },
+      },
     ],
   },
-  
   resolve: {
     extensions: [".js", ".jsx", ".mjs"],
     modules: ["node_modules", "."],
   },
-  externals: {
-    "prop-types": "PropTypes",
-    react: "React",
-    "react-dom": "ReactDOM",
-    redux: "Redux",
-    "react-redux": "ReactRedux",
-    "react-transition-group": "ReactTransitionGroup",
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false,
+        terserOptions: {
+          format: {
+            comments: /THIS FILE IS AUTO-GENERATED/,
+          },
+        },
+      }),
+    ],
   },
 });
+
+module.exports = (env = {}) => [
+  
+  Object.assign({}, baseConfig(env), {
+    name: "vendor",
+    entry: absolute("content-src/vendor.mjs"),
+    output: {
+      path: absolute("data/content"),
+      filename: "vendor.bundle.js",
+    },
+    plugins: [
+      new webpack.DefinePlugin({
+        "process.env.NODE_ENV": JSON.stringify(
+          env.development ? "development" : "production"
+        ),
+      }),
+      new webpack.BannerPlugin(
+        `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
+      ),
+    ],
+  }),
+  
+  Object.assign({}, baseConfig(env), {
+    name: "activity-stream",
+    entry: absolute("content-src/activity-stream.jsx"),
+    output: {
+      path: absolute("data/content"),
+      filename: "activity-stream.bundle.js",
+      library: {
+        name: "NewtabRenderUtils",
+        type: "var",
+      },
+    },
+    externalsType: "window",
+    externals: {
+      react: "React",
+      "react-dom": "ReactDOM",
+      "prop-types": "PropTypes",
+      "react-transition-group": "ReactTransitionGroup",
+      "react-redux": "ReactRedux",
+      redux: "Redux",
+    },
+    plugins: [
+      new webpack.DefinePlugin({
+        "process.env.NODE_ENV": JSON.stringify(
+          env.development ? "development" : "production"
+        ),
+      }),
+      new ResourceUriPlugin({
+        resourcePathRegExes: [
+          [new RegExp("^resource://newtab/"), path.join(__dirname, "./")],
+          [
+            new RegExp("^resource:///modules/topsites/"),
+            path.join(__dirname, "../../components/topsites/"),
+          ],
+          [
+            new RegExp("^resource:///modules/Dedupe.sys.mjs"),
+            path.join(__dirname, "../../modules/Dedupe.sys.mjs"),
+          ],
+        ],
+      }),
+      new MozSrcUriPlugin({ baseDir: path.join(__dirname, "..", "..", "..") }),
+      new webpack.BannerPlugin(
+        `THIS FILE IS AUTO-GENERATED: ${path.basename(__filename)}`
+      ),
+      new webpack.optimize.ModuleConcatenationPlugin(),
+    ],
+  }),
+];

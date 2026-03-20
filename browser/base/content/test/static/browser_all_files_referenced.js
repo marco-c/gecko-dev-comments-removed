@@ -193,6 +193,11 @@ var allowlist = [
 
   
   
+  { file: "chrome://global/content/vendor/react-dev.js" },
+  { file: "chrome://global/content/vendor/react-dom-dev.js" },
+
+  
+  
   {
     file: "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple.svg",
   },
