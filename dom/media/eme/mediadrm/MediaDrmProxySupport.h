@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MediaDrmProxySupport_H
 #define MediaDrmProxySupport_H
 
@@ -32,7 +30,8 @@ class MediaDrmCDMCallbackProxy;
 
 class MediaDrmProxySupport final {
  public:
-  explicit MediaDrmProxySupport(const nsAString& aKeySystem);
+  MediaDrmProxySupport(const nsAString& aKeySystem,
+                       const nsACString& aOriginID);
   ~MediaDrmProxySupport();
 
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_mediakeys_h_
 #define mozilla_dom_mediakeys_h_
 
@@ -112,6 +110,8 @@ class MediaKeys final : public nsIObserver,
   void OnSessionClosed(MediaKeySession* aSession);
 
   CDMProxy* GetCDMProxy() { return mProxy; }
+
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
 
   
   already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,

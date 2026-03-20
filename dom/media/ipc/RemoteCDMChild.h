@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteCDMChild_h
 #define include_dom_media_ipc_RemoteCDMChild_h
 
@@ -115,7 +113,7 @@ class RemoteCDMChild final : public PRemoteCDMChild,
  private:
   virtual ~RemoteCDMChild();
 
-  void InitInternal(PromiseId aPromiseId);
+  void InitInternal(PromiseId aPromiseId, const nsCString& aOriginID);
   void RejectPromise(PromiseId aId, const MediaResult& aResult);
   void ResolveOrRejectPromise(PromiseId aId, const MediaResult& aResult);
 
