@@ -655,14 +655,6 @@ RefPtr<CubebHandle> GetCubebUnlocked() {
     return sCubebHandle;
   }
 
-  if (!sBrandName && NS_IsMainThread()) {
-    InitBrandName();
-  } else {
-    NS_WARNING_ASSERTION(
-        sBrandName,
-        "Did not initialize sbrandName, and not on the main thread?");
-  }
-
   int rv = CUBEB_ERROR;
 #ifdef MOZ_CUBEB_REMOTING
   MOZ_LOG(gCubebLog, LogLevel::Info,
@@ -670,6 +662,9 @@ RefPtr<CubebHandle> GetCubebUnlocked() {
 
   if (sCubebSandbox) {
     if (XRE_IsParentProcess() && !sIPCConnection) {
+      if (!sBrandName && NS_IsMainThread()) {
+        InitBrandName();
+      }
       
       auto fd = CreateAudioIPCConnectionUnlocked();
       if (fd.IsValid()) {
@@ -695,12 +690,19 @@ RefPtr<CubebHandle> GetCubebUnlocked() {
     initParams.mThreadDestroyCallback = []() { PROFILER_UNREGISTER_THREAD(); };
 
     cubeb* temp = nullptr;
-    rv = audioipc2::audioipc2_client_init(&temp, sBrandName, &initParams);
+    rv = audioipc2::audioipc2_client_init(&temp, &initParams);
     if (temp) {
       sCubebHandle = new CubebHandle(temp);
     }
   } else {
 #endif
+
+
+
+
+    if (!sBrandName && NS_IsMainThread()) {
+      InitBrandName();
+    }
 #ifdef XP_WIN
     mozilla::mscom::EnsureMTA([&]() -> void {
 #endif
@@ -842,8 +844,14 @@ void InitLibrary() {
   }
 
 #ifndef MOZ_WIDGET_ANDROID
-  NS_DispatchToMainThread(
-      NS_NewRunnableFunction("CubebUtils::InitLibrary", &InitBrandName));
+  if (XRE_IsParentProcess()
+#  ifdef MOZ_CUBEB_REMOTING
+      || !sCubebSandbox
+#  endif
+  ) {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("CubebUtils::InitLibrary", &InitBrandName));
+  }
 #endif
 #ifdef MOZ_CUBEB_REMOTING
   if (sCubebSandbox && XRE_IsContentProcess()) {
