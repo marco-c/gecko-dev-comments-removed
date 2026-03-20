@@ -20,8 +20,6 @@
 
 
 
-
-
 #ifndef mozilla_ErrorResult_h
 #define mozilla_ErrorResult_h
 

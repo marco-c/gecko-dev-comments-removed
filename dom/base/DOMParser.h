@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_DOMParser_h_
 #define mozilla_dom_DOMParser_h_
 

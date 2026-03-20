@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsJSEnvironment.h"
 
 #include "mozilla/EventDispatcher.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_Arena_h_
 #define DOM_Arena_h_
 #include "mozilla/mozalloc_oom.h"  

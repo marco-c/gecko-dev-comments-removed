@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDOMJSUtils_h_
 #define nsDOMJSUtils_h_
 

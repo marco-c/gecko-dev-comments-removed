@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/dom/CharacterData.h"
 
 #include "mozAutoDocUpdate.h"

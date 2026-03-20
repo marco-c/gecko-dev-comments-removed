@@ -2,7 +2,6 @@
 
 
 
-
 #include "ClientWebGLContext.h"
 #include "GLContext.h"
 #include "WebGL2Context.h"

@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "mozilla/dom/Element.h"
 
 #include <inttypes.h>

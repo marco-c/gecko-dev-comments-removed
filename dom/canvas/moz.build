@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Graphics: Canvas2D")
@@ -28,8 +26,8 @@ with Files("test/chrome/*webgl*"):
 with Files("test/crossorigin/*webgl*"):
     BUG_COMPONENT = ("Core", "Graphics: CanvasWebGL")
 
-
-
+# Change the following line(s) to avoid bug 1081323 (clobber after changing a manifest):
+# * Adjust failure errata for webgl-conf.
 
 MOCHITEST_MANIFESTS += [
     "test/crash/mochitest.toml",
@@ -81,18 +79,18 @@ EXPORTS.mozilla.dom += [
     "WebGLTypes.h",
     "XRWebGLLayer.h",
 ]
-
+# XRWebGLLayer.h must be exported for use by the generated WebXRBinding.h
 
 EXPORTS.mozilla.gfx += [
     "DrawTargetWebgl.h",
 ]
 
-
-
-
-
-
-
+# Canvas 2D and common sources
+#
+# Due to bug 1745384, and the associated clang mingw cross compile crash, we
+# must be careful about disturbing the unified file combinations.
+# nsICanvasRenderingContextInternal.cpp cannot be built standalone until this
+# is resolved, so new files may need to be added to SOURCES for the time being.
 UNIFIED_SOURCES += [
     "CanvasGradient.cpp",
     "CanvasImageCache.cpp",
@@ -109,15 +107,15 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    "DrawTargetWebgl.cpp",  
+    "DrawTargetWebgl.cpp",  # Isolate Skia
     "FilterNodeWebgl.cpp",
     "ImageUtils.cpp",
-    "OffscreenCanvasDisplayHelper.cpp",  
-    "OffscreenCanvasRenderingContext2D.cpp",  
+    "OffscreenCanvasDisplayHelper.cpp",  # See bug 1745384
+    "OffscreenCanvasRenderingContext2D.cpp",  # See bug 1745384
     "SourceSurfaceWebgl.cpp",
 ]
 
-
+# WebGL Sources
 UNIFIED_SOURCES += [
     "CacheInvalidator.cpp",
     "ClientWebGLContext.cpp",
@@ -185,7 +183,7 @@ TEST_DIRS += [
     "gtest",
 ]
 
-
+# Suppress warnings from third-party code.
 SOURCES["MurmurHash3.cpp"].flags += ["-Wno-implicit-fallthrough"]
 
 LOCAL_INCLUDES += [
@@ -195,7 +193,7 @@ LOCAL_INCLUDES += [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 
-USE_LIBS += ["translator"]  
+USE_LIBS += ["translator"]  # Grab the Angle shader translator.
 
 FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
@@ -225,7 +223,7 @@ if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
     CXXFLAGS += ["-Werror=switch"]
 
 if CONFIG["CC_TYPE"] == "gcc":
-    CXXFLAGS += ["-Wno-error=unused-result"]  
+    CXXFLAGS += ["-Wno-error=unused-result"]  # GCC doesn't ignore (void)MustUse();
 
-
+# Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")

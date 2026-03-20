@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MozQueryInterface.h"
 
 #include <string.h>

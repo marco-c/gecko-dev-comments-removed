@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_timeout_handler_h
 #define mozilla_dom_timeout_handler_h
 

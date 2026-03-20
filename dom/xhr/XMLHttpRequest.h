@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XMLHttpRequest_h
 #define mozilla_dom_XMLHttpRequest_h
 
@@ -73,7 +71,7 @@ class XMLHttpRequest : public XMLHttpRequestEventTarget {
 #define DECL_EVENT(NAME) static constexpr EventType NAME{#NAME, u## #NAME};
 
 #define DECL_PROGRESSEVENT(NAME) \
-  static constexpr ProgressEventType NAME { #NAME, u## #NAME }
+  static constexpr ProgressEventType NAME{#NAME, u## #NAME}
 
 #define DECL_ERRORPROGRESSEVENT(NAME, ERR) \
   static constexpr ErrorProgressEventType NAME{#NAME, u## #NAME, ERR};

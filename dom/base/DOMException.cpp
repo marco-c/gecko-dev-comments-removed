@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMException.h"
 
 #include "js/StructuredClone.h"

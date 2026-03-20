@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IdleRequest.h"
 
 #include "mozilla/TimeStamp.h"

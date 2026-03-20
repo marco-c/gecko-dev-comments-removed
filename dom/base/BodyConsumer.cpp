@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BodyConsumer.h"
 
 #include "mozilla/ScopeExit.h"

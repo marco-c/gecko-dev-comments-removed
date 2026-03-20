@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_cache_FileUtilsImpl_h
 #define mozilla_dom_cache_FileUtilsImpl_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsGlobalWindowOuter.h"
 
 #include <algorithm>

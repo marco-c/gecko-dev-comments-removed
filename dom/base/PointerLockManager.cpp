@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PointerLockManager.h"
 
 #include "mozilla/AsyncEventDispatcher.h"

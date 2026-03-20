@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/ManagerId.h"
 
 #include "CacheCommon.h"

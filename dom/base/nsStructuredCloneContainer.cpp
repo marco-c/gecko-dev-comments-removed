@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsStructuredCloneContainer.h"
 
 #include <cstddef>

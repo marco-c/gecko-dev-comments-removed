@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_DOM_DOMMATRIX_H_
 #define MOZILLA_DOM_DOMMATRIX_H_
 

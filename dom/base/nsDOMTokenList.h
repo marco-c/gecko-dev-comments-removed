@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsDOMTokenList_h_
 #define nsDOMTokenList_h_
 

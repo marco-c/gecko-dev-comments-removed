@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_STRONG_TYPES_H_
 #define WEBGL_STRONG_TYPES_H_
 

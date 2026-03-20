@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef AttrArray_h_
 #define AttrArray_h_
 

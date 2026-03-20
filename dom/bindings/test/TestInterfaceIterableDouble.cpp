@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceIterableDouble.h"
 
 #include "mozilla/dom/BindingUtils.h"

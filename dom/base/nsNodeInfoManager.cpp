@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsNodeInfoManager.h"
 
 #include "mozilla/BasePrincipal.h"

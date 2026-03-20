@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/PlacesEvent.h"
 
 namespace mozilla::dom {

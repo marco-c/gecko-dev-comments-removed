@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_EffectCompositor_h
 #define mozilla_EffectCompositor_h
 

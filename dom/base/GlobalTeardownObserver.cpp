@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GlobalTeardownObserver.h"
 
 #include "mozilla/dom/Document.h"

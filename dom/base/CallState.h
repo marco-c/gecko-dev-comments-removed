@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CallState_h
 #define mozilla_CallState_h
 

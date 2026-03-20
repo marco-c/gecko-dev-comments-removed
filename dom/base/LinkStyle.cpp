@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "mozilla/dom/LinkStyle.h"
 
 #include "mozilla/Preferences.h"

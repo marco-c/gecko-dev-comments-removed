@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ObservableArrayProxyHandler.h"
 
 #include "js/Conversions.h"
@@ -275,6 +273,9 @@ bool ObservableArrayProxyHandler::GetBackingListObject(
     JS::Rooted<JSObject*> newBackingListObj(aCx);
     newBackingListObj.set(JS::NewArrayObject(aCx, 0));
     if (NS_WARN_IF(!newBackingListObj)) {
+      return false;
+    }
+    if (NS_WARN_IF(!JS_SetPrototype(aCx, newBackingListObj, nullptr))) {
       return false;
     }
     slotValue = JS::ObjectValue(*newBackingListObj);

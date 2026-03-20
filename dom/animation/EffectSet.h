@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_EffectSet_h
 #define mozilla_EffectSet_h
 

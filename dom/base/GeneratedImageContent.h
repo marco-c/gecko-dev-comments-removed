@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef dom_base_GeneratedImageContent_h
 #define dom_base_GeneratedImageContent_h
 

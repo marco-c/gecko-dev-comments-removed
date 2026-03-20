@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheStorageParent.h"
 
 #include "mozilla/ErrorResult.h"

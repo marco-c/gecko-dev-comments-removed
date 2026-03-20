@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CSSAnimation.h"
 
 #include "mozilla/AnimationEventDispatcher.h"

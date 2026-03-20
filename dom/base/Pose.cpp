@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Pose.h"
 
 #include "js/experimental/TypedData.h"  

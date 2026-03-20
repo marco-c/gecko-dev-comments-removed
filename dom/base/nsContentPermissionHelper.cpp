@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsContentPermissionHelper.h"
 
 #include <map>

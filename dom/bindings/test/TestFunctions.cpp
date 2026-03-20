@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestFunctions.h"
 
 #include "mozITestInterfaceJS.h"

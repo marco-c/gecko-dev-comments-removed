@@ -4,7 +4,6 @@
 
 
 
-
 var doc; 
 
 add_setup(function init() {

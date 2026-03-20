@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL2CONTEXT_H_
 #define WEBGL2CONTEXT_H_
 

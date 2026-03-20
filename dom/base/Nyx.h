@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_NyxFunctions
 #define mozilla_dom_NyxFunctions
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BorrowedAttrInfo.h"
 
 #include "mozilla/Assertions.h"

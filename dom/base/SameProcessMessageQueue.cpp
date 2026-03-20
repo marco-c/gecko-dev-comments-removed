@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SameProcessMessageQueue.h"
 
 #include "nsThreadUtils.h"

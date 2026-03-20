@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsTreeSanitizer.h"
 
 #include <algorithm>

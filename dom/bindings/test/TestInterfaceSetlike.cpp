@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceSetlike.h"
 
 #include "mozilla/dom/BindingUtils.h"

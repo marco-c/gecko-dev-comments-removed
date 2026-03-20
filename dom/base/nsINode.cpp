@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsINode.h"
 
 #include <algorithm>

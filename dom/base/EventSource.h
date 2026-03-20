@@ -9,8 +9,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_EventSource_h
 #define mozilla_dom_EventSource_h
 

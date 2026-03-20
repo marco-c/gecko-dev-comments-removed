@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsHistory_h_
 #define nsHistory_h_
 

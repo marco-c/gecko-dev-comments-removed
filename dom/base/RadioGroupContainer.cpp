@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/RadioGroupContainer.h"
 
 #include "mozilla/Assertions.h"

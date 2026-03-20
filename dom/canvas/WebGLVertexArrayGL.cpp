@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLVertexArrayGL.h"
 
 #include "GLContext.h"

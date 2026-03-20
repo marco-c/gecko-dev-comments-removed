@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsISizeOfEventTarget_h_
 #define nsISizeOfEventTarget_h_
 

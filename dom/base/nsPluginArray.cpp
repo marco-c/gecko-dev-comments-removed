@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPluginArray.h"
 
 #include "mozilla/StaticPrefs_pdfjs.h"

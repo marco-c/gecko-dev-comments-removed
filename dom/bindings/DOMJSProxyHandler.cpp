@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMJSProxyHandler.h"
 
 #include "WrapperFactory.h"

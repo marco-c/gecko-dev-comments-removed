@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ResizeObserver.h"
 
 #include <limits>

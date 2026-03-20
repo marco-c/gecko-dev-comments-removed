@@ -2,7 +2,6 @@
 
 
 
-
 #include "CanvasUtils.h"
 #include "GLContext.h"
 #include "WebGLBuffer.h"

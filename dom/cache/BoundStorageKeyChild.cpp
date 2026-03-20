@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BoundStorageKeyChild.h"
 
 #include "mozilla/dom/cache/CacheChild.h"

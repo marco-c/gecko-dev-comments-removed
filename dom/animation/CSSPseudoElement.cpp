@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CSSPseudoElement.h"
 
 #include "mozilla/AnimationUtils.h"

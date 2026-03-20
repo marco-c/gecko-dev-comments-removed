@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_INTERACTIVE_WIDGET_H_
 #define DOM_INTERACTIVE_WIDGET_H_
 

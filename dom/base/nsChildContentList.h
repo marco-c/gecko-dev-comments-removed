@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsChildContentList_h_
 #define nsChildContentList_h_
 

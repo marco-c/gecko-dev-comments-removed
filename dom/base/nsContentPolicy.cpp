@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsContentPolicy.h"
 
 #include "mozilla/Logging.h"

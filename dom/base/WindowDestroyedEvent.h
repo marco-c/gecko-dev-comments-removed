@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WindowDestroyedEvent_h
 #define WindowDestroyedEvent_h
 

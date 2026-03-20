@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnimationPerformanceWarning.h"
 
 #include "nsContentUtils.h"

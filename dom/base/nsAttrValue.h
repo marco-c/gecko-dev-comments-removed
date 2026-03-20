@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsAttrValue_h_
 #define nsAttrValue_h_
 

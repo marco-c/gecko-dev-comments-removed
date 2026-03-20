@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_cache_CacheStreamControlParent_h
 #define mozilla_dom_cache_CacheStreamControlParent_h
 

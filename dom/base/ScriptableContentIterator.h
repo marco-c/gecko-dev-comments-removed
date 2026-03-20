@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_scriptablecontentiterator_h
 #define mozilla_scriptablecontentiterator_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsGlobalWindowInner.h"
 
 #include <inttypes.h>

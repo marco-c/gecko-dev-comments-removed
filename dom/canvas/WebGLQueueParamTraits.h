@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WEBGLQUEUEPARAMTRAITS_H_
 #define WEBGLQUEUEPARAMTRAITS_H_
 

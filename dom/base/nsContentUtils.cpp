@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "nsContentUtils.h"
 
 #include <algorithm>

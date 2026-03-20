@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/StructuredCloneBlob.h"
 
 #include <cstddef>

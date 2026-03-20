@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsStyledElement.h"
 
 #include "mozAutoDocUpdate.h"

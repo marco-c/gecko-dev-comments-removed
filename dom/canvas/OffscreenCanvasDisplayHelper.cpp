@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OffscreenCanvasDisplayHelper.h"
 
 #include "mozilla/SVGObserverUtils.h"

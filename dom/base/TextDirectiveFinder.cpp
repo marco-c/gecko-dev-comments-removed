@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "TextDirectiveFinder.h"
 
 #include "Document.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMPoint.h"
 
 #include <cstdint>

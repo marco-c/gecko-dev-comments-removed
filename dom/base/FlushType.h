@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_FlushType_h
 #define mozilla_FlushType_h
 

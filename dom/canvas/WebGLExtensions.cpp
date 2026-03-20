@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLExtensions.h"
 
 #include "GLContext.h"

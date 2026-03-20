@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/Document.h"
 
 #include <inttypes.h>

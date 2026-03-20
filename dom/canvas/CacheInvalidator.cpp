@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CacheInvalidator.h"
 
 namespace mozilla {

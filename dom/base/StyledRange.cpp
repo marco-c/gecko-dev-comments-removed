@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/StyledRange.h"
 
 #include "AbstractRange.h"

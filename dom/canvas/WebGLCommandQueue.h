@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGLCOMMANDQUEUE_H_
 #define WEBGLCOMMANDQUEUE_H_
 

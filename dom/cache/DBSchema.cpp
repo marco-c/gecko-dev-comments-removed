@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/DBSchema.h"
 
 #include "ipc/IPCMessageUtils.h"

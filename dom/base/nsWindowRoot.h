@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWindowRoot_h_
 #define nsWindowRoot_h_
 

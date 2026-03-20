@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XPathGenerator.h"
 
 #include "Element.h"

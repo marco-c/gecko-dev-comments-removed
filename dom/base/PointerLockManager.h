@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PointerLockManager_h
 #define mozilla_PointerLockManager_h
 

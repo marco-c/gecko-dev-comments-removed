@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FuzzingInterface.h"
 #include "js/StructuredClone.h"
 #include "jsapi.h"

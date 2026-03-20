@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_PLACESEVENTCOUNTS_H_
 #define DOM_PLACESEVENTCOUNTS_H_
 

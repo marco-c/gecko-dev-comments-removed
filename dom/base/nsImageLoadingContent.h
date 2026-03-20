@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef nsImageLoadingContent_h_
 #define nsImageLoadingContent_h_
 

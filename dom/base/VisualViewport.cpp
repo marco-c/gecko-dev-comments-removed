@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VisualViewport.h"
 
 #include "DocumentInlines.h"

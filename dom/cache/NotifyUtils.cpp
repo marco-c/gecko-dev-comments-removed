@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NotifyUtils.h"
 
 #include "mozilla/StaticPrefs_dom.h"

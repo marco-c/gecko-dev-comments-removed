@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDOMWindowUtils.h"
 
 #include <algorithm>

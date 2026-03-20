@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIScriptObjectPrincipal_h_
 #define nsIScriptObjectPrincipal_h_
 

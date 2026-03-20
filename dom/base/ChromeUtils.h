@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ChromeUtils_
 #define mozilla_dom_ChromeUtils_
 

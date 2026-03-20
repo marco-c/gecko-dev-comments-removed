@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsNameSpaceManager_h_
 #define nsNameSpaceManager_h_
 

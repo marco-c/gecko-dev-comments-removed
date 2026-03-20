@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CacheCipherKeyManager.h"
 #include "DBSchema.h"
 #include "FileUtilsImpl.h"

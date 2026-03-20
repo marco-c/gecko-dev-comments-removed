@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsNameSpaceManager.h"
 
 #include "mozilla/ClearOnShutdown.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLQuery.h"
 
 #include "GLContext.h"

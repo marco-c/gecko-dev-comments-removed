@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TimingParams_h
 #define mozilla_TimingParams_h
 

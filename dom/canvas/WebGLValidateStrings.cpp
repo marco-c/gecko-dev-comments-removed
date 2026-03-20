@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLValidateStrings.h"
 
 #include <regex>

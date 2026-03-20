@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_FullscreenRequest_h
 #define mozilla_FullscreenRequest_h
 

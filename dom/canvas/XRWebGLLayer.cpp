@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XRWebGLLayer.h"
 
 #include "ClientWebGLContext.h"

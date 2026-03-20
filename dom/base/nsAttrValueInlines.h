@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsAttrValueInlines_h_
 #define nsAttrValueInlines_h_
 

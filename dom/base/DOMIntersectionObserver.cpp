@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DOMIntersectionObserver.h"
 
 #include "NonCustomCSSPropertyId.h"

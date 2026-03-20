@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheStorageChild.h"
 
 #include "mozilla/dom/cache/CacheChild.h"

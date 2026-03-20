@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PostRestyleMode_h
 #define mozilla_PostRestyleMode_h
 

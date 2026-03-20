@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MaybeCrossOriginObject.h"
 
 #include "AccessCheck.h"

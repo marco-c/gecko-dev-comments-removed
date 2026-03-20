@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsTraversal_h_
 #define nsTraversal_h_
 

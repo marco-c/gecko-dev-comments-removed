@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_FRAMEBUFFER_H_
 #define WEBGL_FRAMEBUFFER_H_
 

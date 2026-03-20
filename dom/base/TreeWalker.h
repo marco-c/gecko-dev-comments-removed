@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_TreeWalker_h
 #define mozilla_dom_TreeWalker_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/KeyframeEffect.h"
 
 #include "mozilla/dom/Animation.h"

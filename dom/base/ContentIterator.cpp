@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentIterator.h"
 
 #include "mozilla/Assertions.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/Action.h"
 
 namespace mozilla::dom::cache {

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsIContent_h_
 #define nsIContent_h_
 

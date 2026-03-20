@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SimpleGlobalObject.h"
 
 #include "js/Class.h"

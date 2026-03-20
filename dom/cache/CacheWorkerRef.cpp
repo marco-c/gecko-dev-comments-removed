@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheWorkerRef.h"
 
 #include "mozilla/dom/WorkerPrivate.h"

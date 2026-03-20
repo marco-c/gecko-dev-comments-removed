@@ -2,7 +2,6 @@
 
 
 
-
 #include <bit>
 
 #include "GLContext.h"

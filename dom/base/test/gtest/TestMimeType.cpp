@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MimeType.h"
 #include "gtest/gtest.h"
 #include "nsString.h"

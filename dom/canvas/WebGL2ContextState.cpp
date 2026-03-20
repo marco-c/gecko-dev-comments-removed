@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GLContext.h"
 #include "WebGL2Context.h"
 #include "WebGLBuffer.h"

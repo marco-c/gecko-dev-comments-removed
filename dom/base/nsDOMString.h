@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDOMString_h_
 #define nsDOMString_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EventSourceEventService.h"
 
 #include "mozilla/Services.h"

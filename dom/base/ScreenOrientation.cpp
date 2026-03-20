@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenOrientation.h"
 
 #include "mozilla/DOMEventTargetHelper.h"

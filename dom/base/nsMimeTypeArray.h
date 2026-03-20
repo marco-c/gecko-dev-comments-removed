@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsMimeTypeArray_h_
 #define nsMimeTypeArray_h_
 

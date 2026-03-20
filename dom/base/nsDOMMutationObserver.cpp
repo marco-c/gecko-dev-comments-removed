@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDOMMutationObserver.h"
 
 #include "PseudoStyleType.h"

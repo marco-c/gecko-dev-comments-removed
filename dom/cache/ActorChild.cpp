@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/ActorChild.h"
 
 #include "mozilla/dom/cache/CacheWorkerRef.h"

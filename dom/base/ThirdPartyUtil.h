@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ThirdPartyUtil_h_
 #define ThirdPartyUtil_h_
 

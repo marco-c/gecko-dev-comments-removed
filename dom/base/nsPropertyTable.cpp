@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsPropertyTable.h"
 
 #include "mozilla/MemoryReporting.h"

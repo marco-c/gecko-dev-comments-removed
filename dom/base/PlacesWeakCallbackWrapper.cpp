@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/PlacesWeakCallbackWrapper.h"
 
 #include "mozilla/dom/ContentProcessMessageManager.h"

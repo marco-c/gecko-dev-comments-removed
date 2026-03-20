@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnonymousContent.h"
 
 #include "mozilla/dom/AnonymousContentBinding.h"

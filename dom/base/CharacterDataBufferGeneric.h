@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CharacterDataBufferGeneric_h
 #define mozilla_dom_CharacterDataBufferGeneric_h
 

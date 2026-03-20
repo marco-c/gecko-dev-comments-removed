@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef nsAttrName_h_
 #define nsAttrName_h_
 

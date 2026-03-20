@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ChromeMessageBroadcaster_h
 #define mozilla_dom_ChromeMessageBroadcaster_h
 

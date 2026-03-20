@@ -2,7 +2,6 @@
 
 
 
-
 #include "HostWebGLContext.h"
 
 #include "CompositableHost.h"

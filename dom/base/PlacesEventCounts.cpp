@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PlacesEventCounts.h"
 
 #include "mozilla/ErrorResult.h"

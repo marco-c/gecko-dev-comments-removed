@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_cache_CacheStorageChild_h
 #define mozilla_dom_cache_CacheStorageChild_h
 

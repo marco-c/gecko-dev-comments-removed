@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnimationTimelinesController.h"
 
 #include "mozilla/dom/DocumentTimeline.h"

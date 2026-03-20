@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
 #include "WebGL2Context.h"

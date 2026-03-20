@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "CharacterDataBuffer.h"
 
 #include <algorithm>

@@ -10,7 +10,6 @@
 
 
 
-
 #ifndef _nsContentPolicyUtils_h_
 #define _nsContentPolicyUtils_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceLength.h"
 
 #include "mozilla/dom/TestFunctionsBinding.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CacheStreamControlChild.h"
 
 #include "mozilla/dom/cache/ActorUtils.h"

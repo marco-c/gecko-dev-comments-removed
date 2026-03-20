@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DocGroup_h
 #define DocGroup_h
 

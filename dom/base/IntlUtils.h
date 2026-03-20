@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_IntlUtils_h
 #define mozilla_dom_IntlUtils_h
 

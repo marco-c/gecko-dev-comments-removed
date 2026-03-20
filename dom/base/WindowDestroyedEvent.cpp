@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowDestroyedEvent.h"
 
 #include "js/Wrapper.h"

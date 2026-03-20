@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIContentInlines_h
 #define nsIContentInlines_h
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "TextDirectiveUtil.h"
 
 #include "ContentIterator.h"

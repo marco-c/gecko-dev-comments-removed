@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "imgLoader.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/BindContext.h"

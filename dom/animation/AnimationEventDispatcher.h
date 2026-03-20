@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AnimationEventDispatcher_h
 #define mozilla_AnimationEventDispatcher_h
 

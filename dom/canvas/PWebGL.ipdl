@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PCanvasManager;
 include "mozilla/layers/LayersMessageUtils.h";
@@ -36,17 +33,17 @@ namespace mozilla {
 namespace dom {
 
 union ReadPixelsBuffer {
-  
+  // The buffer needs to be allocated, and the value specifies the maximum size.
   uint64_t;
-  
+  // The buffer is a pre-allocated Shmem.
   Shmem;
 };
 
-
-
-
-
-
+/**
+ * Represents the connection between a WebGLChild actor that issues WebGL
+ * command from the content process, and a WebGLParent in the compositor
+ * process that runs the commands.
+ */
 sync protocol PWebGL
 {
   manager PCanvasManager;
@@ -59,7 +56,7 @@ parent:
 
   async WaitForTxn(RemoteTextureOwnerId ownerId, RemoteTextureTxnType txnType, RemoteTextureTxnId txnId);
 
-  
+  // -
 
   async DispatchCommands(BigBuffer commands, uint64_t size);
   async Ping() returns (void_t ok);
@@ -67,13 +64,13 @@ parent:
   async TexImage(uint32_t level, uint32_t respecFormat, uvec3 offset,
                  PackingInfo pi, TexUnpackBlobDesc src);
 
-  
+  // -
 
   sync GetBufferSubData(uint32_t target, uint64_t srcByteOffset, uint64_t byteSize) returns (Shmem ret);
   sync GetFrontBufferSnapshot() returns (FrontBufferSnapshotIpc ret);
   sync ReadPixels(ReadPixelsDesc desc, ReadPixelsBuffer buffer) returns (ReadPixelsResultIpc ret);
 
-  
+  // -
 
   sync CheckFramebufferStatus(uint32_t target) returns (uint32_t ret);
   sync ClientWaitSync(uint64_t id, uint32_t flags, uint64_t timeout) returns (uint32_t ret);
@@ -105,12 +102,12 @@ parent:
 child:
   async JsWarning(string text);
 
-  
+  // Tell client that this queue needs to be shut down
   async OnContextLoss(ContextLossReason aReason);
 
-  
+  // Triggered when the id from FenceSync completes.
   async OnSyncComplete(uint64_t id);
 };
 
-} 
-} 
+} // dom
+} // mozilla

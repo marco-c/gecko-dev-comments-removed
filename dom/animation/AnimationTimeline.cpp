@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnimationTimeline.h"
 
 #include "mozilla/dom/Animation.h"

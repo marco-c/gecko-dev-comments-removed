@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsGlobalWindowInner_h_
 #define nsGlobalWindowInner_h_
 

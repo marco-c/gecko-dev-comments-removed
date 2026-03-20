@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/External.h"
 
 using namespace mozilla;

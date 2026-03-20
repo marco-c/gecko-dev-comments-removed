@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/IterableIterator.h"
 
 #include "mozilla/dom/Promise-inl.h"

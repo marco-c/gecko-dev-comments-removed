@@ -12,8 +12,6 @@
 
 
 
-
-
 #ifndef mozilla_RootedRefPtr_h_
 #define mozilla_RootedRefPtr_h_
 

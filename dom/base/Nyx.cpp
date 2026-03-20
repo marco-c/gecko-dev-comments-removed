@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Nyx.h"
 
 #include "mozilla/dom/TypedArray.h"

@@ -2,7 +2,6 @@
 
 
 
-
 async function xmlEncode(aFile, aFlags, aCharset) {
   if (aFlags == undefined) {
     aFlags = 0;

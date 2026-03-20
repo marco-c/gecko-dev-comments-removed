@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMMatrix.h"
 
 #include <cmath>

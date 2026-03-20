@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptableContentIterator.h"
 
 #include "mozilla/ContentIterator.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/PrincipalVerifier.h"
 
 #include "CacheCommon.h"

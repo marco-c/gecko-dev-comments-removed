@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Crypto.h"
 
 #include "js/ScalarType.h"

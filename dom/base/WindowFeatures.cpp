@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowFeatures.h"
 
 #include "nsContentUtils.h"        

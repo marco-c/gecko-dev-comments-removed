@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDOMNavigationTiming_h_
 #define nsDOMNavigationTiming_h_
 

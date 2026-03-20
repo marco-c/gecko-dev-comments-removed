@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsICanvasRenderingContextInternal.h"
 
 #include "mozilla/ErrorResult.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/UserActivation.h"
 
 #include "mozilla/TextEvents.h"

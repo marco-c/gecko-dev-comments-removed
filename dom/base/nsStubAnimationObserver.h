@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStubAnimationObserver_h_
 #define nsStubAnimationObserver_h_
 

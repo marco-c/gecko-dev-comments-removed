@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDOMCID_h_
 #define nsDOMCID_h_
 

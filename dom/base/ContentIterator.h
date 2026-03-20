@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ContentIterator_h
 #define mozilla_ContentIterator_h
 

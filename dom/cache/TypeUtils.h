@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_cache_TypesUtils_h
 #define mozilla_dom_cache_TypesUtils_h
 

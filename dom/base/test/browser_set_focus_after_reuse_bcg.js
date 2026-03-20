@@ -2,8 +2,6 @@
 
 
 
-
-
 const SITE_A_URL =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",

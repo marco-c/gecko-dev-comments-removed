@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Selection_h_
 #define mozilla_Selection_h_
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_BindingIPCUtils_h
 #define _mozilla_dom_BindingIPCUtils_h
 

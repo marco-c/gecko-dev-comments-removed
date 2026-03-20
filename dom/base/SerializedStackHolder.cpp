@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SerializedStackHolder.h"
 
 #include "js/SavedFrameAPI.h"

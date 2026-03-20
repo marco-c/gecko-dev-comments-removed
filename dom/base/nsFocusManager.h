@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFocusManager_h_
 #define nsFocusManager_h_
 

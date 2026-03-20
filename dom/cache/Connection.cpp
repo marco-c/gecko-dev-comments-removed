@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/Connection.h"
 
 #include "mozStorageHelper.h"

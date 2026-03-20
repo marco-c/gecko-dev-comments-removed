@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_BASE_STYLED_RANGE_H_
 #define DOM_BASE_STYLED_RANGE_H_
 

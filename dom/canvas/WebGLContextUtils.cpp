@@ -2,10 +2,7 @@
 
 
 
-
 #include "WebGLContextUtils.h"
-
-#include <stdarg.h>
 
 #include "GLContext.h"
 #include "HostWebGLContext.h"

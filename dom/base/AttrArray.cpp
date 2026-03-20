@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "AttrArray.h"
 
 #include "mozilla/AttributeStyles.h"

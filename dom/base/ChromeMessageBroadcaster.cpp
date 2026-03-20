@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ChromeMessageBroadcaster.h"
 
 #include "AccessCheck.h"

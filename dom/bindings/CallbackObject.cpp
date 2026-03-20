@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CallbackObject.h"
 
 #include "WorkerPrivate.h"

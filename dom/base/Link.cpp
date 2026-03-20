@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Link.h"
 
 #include "mozilla/Components.h"

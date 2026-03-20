@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NodeUbiReporting.h"
 
 #include "js/UbiNodeUtils.h"

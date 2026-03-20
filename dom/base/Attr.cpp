@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/Attr.h"
 
 #include "NodeUbiReporting.h"

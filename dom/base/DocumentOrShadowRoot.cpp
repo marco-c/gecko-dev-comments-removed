@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DocumentOrShadowRoot.h"
 
 #include "mozilla/AnimationComparator.h"

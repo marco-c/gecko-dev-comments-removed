@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_TEXTDIRECTIVEUTIL_H_
 #define DOM_TEXTDIRECTIVEUTIL_H_
 

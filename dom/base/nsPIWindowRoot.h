@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPIWindowRoot_h_
 #define nsPIWindowRoot_h_
 

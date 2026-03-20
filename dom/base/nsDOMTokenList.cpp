@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsDOMTokenList.h"
 
 #include "mozilla/ErrorResult.h"

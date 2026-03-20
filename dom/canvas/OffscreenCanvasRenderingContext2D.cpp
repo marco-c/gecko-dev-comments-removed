@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OffscreenCanvasRenderingContext2D.h"
 
 #include "mozilla/CycleCollectedJSRuntime.h"

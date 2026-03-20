@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DrawTargetWebglInternal.h"
 #include "FilterNodeWebgl.h"
 #include "GLContext.h"

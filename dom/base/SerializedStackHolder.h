@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SerializedStackHolder_h
 #define mozilla_dom_SerializedStackHolder_h
 

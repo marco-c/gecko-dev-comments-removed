@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheStreamControlParent.h"
 
 #include "mozilla/dom/cache/CacheTypes.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CrossShadowBoundaryRange_h
 #define mozilla_dom_CrossShadowBoundaryRange_h
 

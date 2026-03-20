@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ParentProcessMessageManager.h"
 
 #include "AccessCheck.h"

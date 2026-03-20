@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_RangeBoundary_h
 #define mozilla_RangeBoundary_h
 

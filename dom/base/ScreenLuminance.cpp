@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenLuminance.h"
 
 #include "nsScreen.h"

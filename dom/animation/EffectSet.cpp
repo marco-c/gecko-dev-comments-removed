@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EffectSet.h"
 
 #include "ElementAnimationData.h"

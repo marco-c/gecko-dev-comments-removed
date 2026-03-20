@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_TestInterfaceAsyncIterableDoubleUnion_h
 #define mozilla_dom_TestInterfaceAsyncIterableDoubleUnion_h
 

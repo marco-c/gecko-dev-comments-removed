@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLContextLossHandler.h"
 
 #include "WebGLContext.h"

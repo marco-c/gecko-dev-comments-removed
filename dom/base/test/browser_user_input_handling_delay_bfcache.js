@@ -2,8 +2,6 @@
 
 
 
-
-
 async function test_user_input_handling_delay_BFCache_helper(prefs) {
   await SpecialPowers.pushPrefEnv({
     set: prefs,

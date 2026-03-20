@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFrameMessageManager_h_
 #define nsFrameMessageManager_h_
 

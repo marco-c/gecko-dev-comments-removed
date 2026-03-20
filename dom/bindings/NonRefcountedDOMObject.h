@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_NonRefcountedDOMObject_h_
 #define mozilla_dom_NonRefcountedDOMObject_h_
 

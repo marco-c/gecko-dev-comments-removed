@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ViewportMetaData.h"
 
 #include "nsCRT.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsContentAreaDragDrop_h_
 #define nsContentAreaDragDrop_h_
 

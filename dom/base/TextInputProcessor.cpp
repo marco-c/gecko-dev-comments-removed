@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/TextInputProcessor.h"
 
 #include "mozilla/EventForwards.h"

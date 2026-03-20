@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/AnimationEffect.h"
 
 #include "mozilla/AnimationUtils.h"

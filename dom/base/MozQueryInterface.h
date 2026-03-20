@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MozQueryInterface
 #define mozilla_dom_MozQueryInterface
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_UnbindContext_h_
 #define mozilla_dom_UnbindContext_h_
 

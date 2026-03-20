@@ -22,8 +22,6 @@
 
 
 
-
-
 #include "mozilla/dom/DirectionalityUtils.h"
 
 #include "mozilla/Maybe.h"

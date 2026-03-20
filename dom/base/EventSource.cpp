@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/EventSource.h"
 
 #include "ReferrerInfo.h"

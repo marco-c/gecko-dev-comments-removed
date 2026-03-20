@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ScrollTimelineAnimationTracker_h
 #define mozilla_ScrollTimelineAnimationTracker_h
 

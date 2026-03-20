@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsImageLoadingContent.h"
 
 #include "Orientation.h"

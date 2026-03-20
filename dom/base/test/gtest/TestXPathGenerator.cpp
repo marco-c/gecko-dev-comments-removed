@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XPathGenerator.h"
 #include "gtest/gtest.h"
 #include "nsString.h"

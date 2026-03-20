@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLShaderValidator.h"
 
 #include <string>

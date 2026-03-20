@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_KeyframeUtils_h
 #define mozilla_KeyframeUtils_h
 

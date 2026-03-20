@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDOMMutationObserver_h
 #define nsDOMMutationObserver_h
 

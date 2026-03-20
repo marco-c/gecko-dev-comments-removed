@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIGlobalObject_h_
 #define nsIGlobalObject_h_
 

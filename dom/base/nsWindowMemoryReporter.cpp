@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWindowMemoryReporter.h"
 
 #include "XPCJSMemoryReporter.h"

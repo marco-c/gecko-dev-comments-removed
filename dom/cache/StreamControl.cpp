@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/StreamControl.h"
 
 namespace mozilla::dom::cache {

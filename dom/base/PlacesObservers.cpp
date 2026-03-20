@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PlacesObservers.h"
 
 #include "PlacesWeakCallbackWrapper.h"

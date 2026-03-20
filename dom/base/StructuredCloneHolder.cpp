@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/StructuredCloneHolder.h"
 
 #include <new>

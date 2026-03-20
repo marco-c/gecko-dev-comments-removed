@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FuzzingFunctions.h"
 
 #include "js/GCAPI.h"

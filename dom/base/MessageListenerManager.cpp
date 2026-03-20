@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MessageListenerManager.h"
 
 #include "mozilla/dom/MessageBroadcaster.h"

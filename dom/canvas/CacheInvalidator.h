@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_CACHE_INVALIDATOR_H_
 #define MOZILLA_CACHE_INVALIDATOR_H_
 

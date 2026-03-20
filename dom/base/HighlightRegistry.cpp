@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HighlightRegistry.h"
 
 #include "Document.h"

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsIAnimationObserver_h_
 #define nsIAnimationObserver_h_
 

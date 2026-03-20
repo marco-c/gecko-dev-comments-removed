@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef UseCounter_h_
 #define UseCounter_h_
 

@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsStubMutationObserver.h"
 
 #include "mozilla/RefCountType.h"

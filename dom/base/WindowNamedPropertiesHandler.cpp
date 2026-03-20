@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowNamedPropertiesHandler.h"
 
 #include "mozilla/StaticPrefs_dom.h"

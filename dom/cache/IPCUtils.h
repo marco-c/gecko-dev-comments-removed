@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_cache_IPCUtils_h
 #define mozilla_dom_cache_IPCUtils_h
 

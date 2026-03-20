@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EffectCompositor.h"
 
 #include "mozilla/AnimationComparator.h"

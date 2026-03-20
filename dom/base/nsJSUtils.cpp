@@ -9,8 +9,6 @@
 
 
 
-
-
 #include "nsJSUtils.h"
 
 #include <utility>

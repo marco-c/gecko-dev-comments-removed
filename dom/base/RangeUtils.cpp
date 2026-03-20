@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RangeUtils.h"
 
 #include "mozilla/Assertions.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InProcessBrowserChildMessageManager.h"
 
 #include "mozilla/EventDispatcher.h"

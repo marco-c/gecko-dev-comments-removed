@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PopoverData.h"
 
 #include "mozilla/dom/CloseWatcher.h"

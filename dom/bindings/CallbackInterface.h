@@ -11,8 +11,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CallbackInterface_h
 #define mozilla_dom_CallbackInterface_h
 

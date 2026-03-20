@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsScreen.h"
 
 #include "mozilla/GeckoBindings.h"

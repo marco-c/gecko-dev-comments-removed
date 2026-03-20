@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_TEXTURE_H_
 #define WEBGL_TEXTURE_H_
 

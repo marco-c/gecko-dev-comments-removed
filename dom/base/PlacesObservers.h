@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PlacesObservers_
 #define mozilla_dom_PlacesObservers_
 

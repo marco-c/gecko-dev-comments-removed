@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWindowRoot.h"
 
 #include "mozilla/BasicEvents.h"

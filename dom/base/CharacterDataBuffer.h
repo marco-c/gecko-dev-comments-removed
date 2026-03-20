@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CharacterDataBuffer_h
 #define mozilla_dom_CharacterDataBuffer_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TimeoutHandler.h"
 
 #include "mozilla/Assertions.h"

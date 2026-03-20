@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "Selection.h"
 
 #include <algorithm>

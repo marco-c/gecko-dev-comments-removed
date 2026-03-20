@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceMaplikeObject.h"
 
 #include "mozilla/dom/BindingUtils.h"

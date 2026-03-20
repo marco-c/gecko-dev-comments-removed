@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsFrameLoader.h"
 
 #include "BrowserParent.h"

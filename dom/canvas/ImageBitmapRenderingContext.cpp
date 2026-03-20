@@ -2,7 +2,6 @@
 
 
 
-
 #include "ImageBitmapRenderingContext.h"
 
 #include "ImageContainer.h"

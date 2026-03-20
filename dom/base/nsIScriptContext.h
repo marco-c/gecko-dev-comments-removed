@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIScriptContext_h_
 #define nsIScriptContext_h_
 

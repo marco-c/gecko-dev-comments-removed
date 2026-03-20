@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_DOMQUAD_H_
 #define MOZILLA_DOMQUAD_H_
 

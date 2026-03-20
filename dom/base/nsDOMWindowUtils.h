@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDOMWindowUtils_h_
 #define nsDOMWindowUtils_h_
 

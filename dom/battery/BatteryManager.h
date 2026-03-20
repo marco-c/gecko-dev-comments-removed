@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_battery_BatteryManager_h
 #define mozilla_dom_battery_BatteryManager_h
 

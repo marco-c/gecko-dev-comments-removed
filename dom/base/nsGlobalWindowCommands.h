@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsGlobalWindowCommands_h_
 #define nsGlobalWindowCommands_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsViewportInfo.h"
 
 #include <algorithm>

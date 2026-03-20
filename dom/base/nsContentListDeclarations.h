@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsContentListDeclarations_h
 #define nsContentListDeclarations_h
 
@@ -40,7 +38,7 @@ using nsContentListDestroyFunc = void (*)(void* aData);
 
 
 
-using nsFuncStringContentListDataAllocator = void* (*)(nsINode* aRootNode,
+using nsFuncStringContentListDataAllocator = void* (*)(nsINode * aRootNode,
                                                        const nsString* aString);
 
 

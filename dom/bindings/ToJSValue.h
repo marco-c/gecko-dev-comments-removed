@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ToJSValue_h
 #define mozilla_dom_ToJSValue_h
 

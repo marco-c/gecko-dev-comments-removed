@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_SAMPLER_H_
 #define WEBGL_SAMPLER_H_
 

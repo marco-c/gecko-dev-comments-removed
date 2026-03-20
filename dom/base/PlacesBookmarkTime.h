@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PlacesBookmarkTime_h
 #define mozilla_dom_PlacesBookmarkTime_h
 

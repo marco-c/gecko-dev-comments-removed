@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_AncestorIterator_h
 #define mozilla_dom_AncestorIterator_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/LocationBase.h"
 
 #include "mozilla/NullPrincipal.h"
@@ -44,7 +42,26 @@ void LocationBase::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
   bool needsCompletelyLoadedDocument = !IncumbentGlobalHasTransientActivation();
 
   
-  navigable->Navigate(aURI, aSubjectPrincipal, aRv, aHistoryHandling,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsCOMPtr<nsPIDOMWindowInner> incumbent =
+      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+  nsCOMPtr<Document> doc = incumbent ? incumbent->GetDoc() : nullptr;
+
+  
+  navigable->Navigate(aURI, doc, aSubjectPrincipal, aRv, aHistoryHandling,
                       needsCompletelyLoadedDocument);
 }
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ImageEncoder_h
 #define ImageEncoder_h
 

@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsDOMAttributeMap_h
 #define nsDOMAttributeMap_h
 

@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "MainThreadUtils.h"
 #include "js/Wrapper.h"
 #include "mozilla/Assertions.h"

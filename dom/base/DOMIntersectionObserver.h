@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOMIntersectionObserver_h
 #define DOMIntersectionObserver_h
 

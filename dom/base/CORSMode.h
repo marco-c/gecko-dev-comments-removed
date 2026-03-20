@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CORSMode_h_
 #define CORSMode_h_
 

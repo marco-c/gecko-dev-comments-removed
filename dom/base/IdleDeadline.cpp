@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/IdleDeadline.h"
 
 #include <algorithm>

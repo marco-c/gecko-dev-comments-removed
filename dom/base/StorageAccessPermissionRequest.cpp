@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StorageAccessPermissionRequest.h"
 
 #include <cstdlib>

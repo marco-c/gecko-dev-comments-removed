@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SourceLocation_h
 #define mozilla_SourceLocation_h
 

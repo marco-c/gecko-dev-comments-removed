@@ -8,8 +8,6 @@
 
 
 
-
-
 DOCUMENT_WARNING(IgnoringWillChangeOverBudget)
 DOCUMENT_WARNING(PreventDefaultFromPassiveListener)
 DOCUMENT_WARNING(SVGRefLoop)

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGLTEXTUREUPLOAD_H_
 #define WEBGLTEXTUREUPLOAD_H_
 

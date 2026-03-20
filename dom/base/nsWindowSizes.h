@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWindowSizes_h
 #define nsWindowSizes_h
 

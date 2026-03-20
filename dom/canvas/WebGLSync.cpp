@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLSync.h"
 
 #include "GLContext.h"

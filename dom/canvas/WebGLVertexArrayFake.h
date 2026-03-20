@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_VERTEX_ARRAY_FAKE_H_
 #define WEBGL_VERTEX_ARRAY_FAKE_H_
 

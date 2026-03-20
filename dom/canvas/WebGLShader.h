@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_SHADER_H_
 #define WEBGL_SHADER_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceObservableArray.h"
 
 #include "mozilla/dom/BindingUtils.h"

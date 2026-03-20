@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StructuredCloneTester.h"
 
 #include "js/StructuredClone.h"

@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsScriptError.h"
 
 #include "MainThreadUtils.h"

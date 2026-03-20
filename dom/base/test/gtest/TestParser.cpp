@@ -2,7 +2,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/DOMParser.h"

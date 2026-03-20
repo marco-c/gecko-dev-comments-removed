@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/Context.h"
 
 #include "CacheCommon.h"

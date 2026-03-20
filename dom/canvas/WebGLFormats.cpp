@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLFormats.h"
 
 #include "GLContext.h"

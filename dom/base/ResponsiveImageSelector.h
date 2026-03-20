@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_responsiveimageselector_h_
 #define mozilla_dom_responsiveimageselector_h_
 

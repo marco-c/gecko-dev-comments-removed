@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_FuzzingFunctions
 #define mozilla_dom_FuzzingFunctions
 

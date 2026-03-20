@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsIDocumentObserver_h_
 #define nsIDocumentObserver_h_
 

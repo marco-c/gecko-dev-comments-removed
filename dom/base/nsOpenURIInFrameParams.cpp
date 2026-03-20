@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsOpenURIInFrameParams.h"
 
 #include "mozilla/BasePrincipal.h"

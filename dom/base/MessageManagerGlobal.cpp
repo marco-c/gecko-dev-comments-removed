@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MessageManagerGlobal.h"
 
 #include "mozilla/IntentionalCrash.h"

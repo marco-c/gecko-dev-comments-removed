@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_DOMJSProxyHandler_h
 #define mozilla_dom_DOMJSProxyHandler_h
 

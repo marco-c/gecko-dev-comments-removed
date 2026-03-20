@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef nsDataDocumentContentPolicy_h_
 #define nsDataDocumentContentPolicy_h_
 

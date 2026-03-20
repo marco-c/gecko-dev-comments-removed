@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDOMNavigationTiming.h"
 
 #include "GeckoProfiler.h"

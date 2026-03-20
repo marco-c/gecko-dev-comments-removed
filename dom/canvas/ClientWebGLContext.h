@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef CLIENTWEBGLCONTEXT_H_
 #define CLIENTWEBGLCONTEXT_H_
 

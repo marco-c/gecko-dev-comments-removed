@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OffscreenCanvas.h"
 
 #include "CanvasRenderingContext2D.h"

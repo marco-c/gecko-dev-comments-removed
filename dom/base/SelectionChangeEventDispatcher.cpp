@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "SelectionChangeEventDispatcher.h"
 
 #include "mozilla/AsyncEventDispatcher.h"

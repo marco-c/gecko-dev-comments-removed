@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef StructuredCloneTags_h_
 #define StructuredCloneTags_h_
 

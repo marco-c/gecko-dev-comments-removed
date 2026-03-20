@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "nsContentSink.h"
 
 #include <stdint.h>

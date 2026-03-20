@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/TreeWalker.h"
 
 #include "mozilla/dom/NodeFilterBinding.h"

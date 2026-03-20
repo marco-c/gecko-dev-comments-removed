@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AbortSignal.h"
 
 #include "mozilla/RefPtr.h"

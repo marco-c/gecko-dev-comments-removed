@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_EXTENSIONS_H_
 #define WEBGL_EXTENSIONS_H_
 

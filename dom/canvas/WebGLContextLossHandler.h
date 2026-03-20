@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_CONTEXT_LOSS_HANDLER_H_
 #define WEBGL_CONTEXT_LOSS_HANDLER_H_
 

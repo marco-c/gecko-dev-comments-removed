@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CharacterData_h
 #define mozilla_dom_CharacterData_h
 

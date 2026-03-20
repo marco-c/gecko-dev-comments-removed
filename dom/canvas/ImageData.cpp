@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ImageData.h"
 
 #include "ErrorList.h"

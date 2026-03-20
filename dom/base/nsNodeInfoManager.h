@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef nsNodeInfoManager_h_
 #define nsNodeInfoManager_h_
 
@@ -32,6 +30,7 @@ class Document;
 
 class nsNodeInfoManager final {
  private:
+  using NodeInfo = mozilla::dom::NodeInfo;
   ~nsNodeInfoManager();
 
  public:
@@ -51,30 +50,32 @@ class nsNodeInfoManager final {
   
 
 
-  already_AddRefed<mozilla::dom::NodeInfo> GetNodeInfo(
-      nsAtom* aName, nsAtom* aPrefix, int32_t aNamespaceID, uint16_t aNodeType,
-      nsAtom* aExtraName = nullptr);
+  already_AddRefed<NodeInfo> GetNodeInfo(nsAtom* aName, nsAtom* aPrefix,
+                                         int32_t aNamespaceID,
+                                         uint16_t aNodeType,
+                                         nsAtom* aExtraName = nullptr);
   nsresult GetNodeInfo(const nsAString& aName, nsAtom* aPrefix,
                        int32_t aNamespaceID, uint16_t aNodeType,
-                       mozilla::dom::NodeInfo** aNodeInfo);
+                       NodeInfo** aNodeInfo);
   nsresult GetNodeInfo(const nsAString& aName, nsAtom* aPrefix,
                        const nsAString& aNamespaceURI, uint16_t aNodeType,
-                       mozilla::dom::NodeInfo** aNodeInfo);
+                       NodeInfo** aNodeInfo);
 
   
 
 
-  already_AddRefed<mozilla::dom::NodeInfo> GetTextNodeInfo();
+  already_AddRefed<NodeInfo> GetTextNodeInfo();
 
   
 
 
-  already_AddRefed<mozilla::dom::NodeInfo> GetCommentNodeInfo();
+  already_AddRefed<NodeInfo> GetCommentNodeInfo();
 
   
 
 
-  already_AddRefed<mozilla::dom::NodeInfo> GetDocumentNodeInfo();
+  already_AddRefed<NodeInfo> GetDocumentNodeInfo();
+  already_AddRefed<NodeInfo> GetDocumentFragmentNodeInfo();
 
   
 
@@ -90,7 +91,7 @@ class nsNodeInfoManager final {
     return mPrincipal;
   }
 
-  void RemoveNodeInfo(mozilla::dom::NodeInfo* aNodeInfo);
+  void RemoveNodeInfo(NodeInfo* aNodeInfo);
 
   
 
@@ -131,8 +132,7 @@ class nsNodeInfoManager final {
   bool InternalSVGEnabled();
   bool InternalMathMLEnabled();
 
-  class NodeInfoInnerKey
-      : public nsPtrHashKey<mozilla::dom::NodeInfo::NodeInfoInner> {
+  class NodeInfoInnerKey : public nsPtrHashKey<NodeInfo::NodeInfoInner> {
    public:
     explicit NodeInfoInnerKey(KeyTypePointer aKey) : nsPtrHashKey(aKey) {}
     NodeInfoInnerKey(NodeInfoInnerKey&&) = default;
@@ -141,22 +141,20 @@ class nsNodeInfoManager final {
     static PLDHashNumber HashKey(KeyTypePointer aKey) { return aKey->Hash(); }
   };
 
-  struct NodeInfoCache
-      : public mozilla::MruCache<mozilla::dom::NodeInfo::NodeInfoInner,
-                                 mozilla::dom::NodeInfo*, NodeInfoCache> {
-    static mozilla::HashNumber Hash(
-        const mozilla::dom::NodeInfo::NodeInfoInner& aKey) {
+  struct NodeInfoCache : public mozilla::MruCache<NodeInfo::NodeInfoInner,
+                                                  NodeInfo*, NodeInfoCache> {
+    static mozilla::HashNumber Hash(const NodeInfo::NodeInfoInner& aKey) {
       return aKey.Hash();
     }
-    static bool Match(const mozilla::dom::NodeInfo::NodeInfoInner& aKey,
-                      const mozilla::dom::NodeInfo* aVal) {
+    static bool Match(const NodeInfo::NodeInfoInner& aKey,
+                      const NodeInfo* aVal) {
       return (aKey.Hash() == aVal->mInner.Hash()) && (aKey == aVal->mInner);
     }
   };
 
-  nsTHashMap<NodeInfoInnerKey, mozilla::dom::NodeInfo*> mNodeInfoHash;
+  nsTHashMap<NodeInfoInnerKey, NodeInfo*> mNodeInfoHash;
   mozilla::dom::Document* MOZ_NON_OWNING_REF mDocument;  
-  uint32_t mNonDocumentNodeInfos;
+  uint32_t mNonDocumentNodeInfos = 0;
 
   
   
@@ -164,12 +162,12 @@ class nsNodeInfoManager final {
   nsCOMPtr<nsIPrincipal> mPrincipal;         
   nsCOMPtr<nsIPrincipal> mDefaultPrincipal;  
 
-  mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
-      mTextNodeInfo;  
-  mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
-      mCommentNodeInfo;  
-  mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
-      mDocumentNodeInfo;  
+  
+  NodeInfo* MOZ_NON_OWNING_REF mTextNodeInfo = nullptr;
+  NodeInfo* MOZ_NON_OWNING_REF mCommentNodeInfo = nullptr;
+  NodeInfo* MOZ_NON_OWNING_REF mDocumentNodeInfo = nullptr;
+  NodeInfo* MOZ_NON_OWNING_REF mDocumentFragmentNodeInfo = nullptr;
+
   NodeInfoCache mRecentlyUsedNodeInfos;
   mozilla::Maybe<bool> mSVGEnabled;     
   mozilla::Maybe<bool> mMathMLEnabled;  

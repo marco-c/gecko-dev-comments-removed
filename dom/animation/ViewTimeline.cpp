@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ViewTimeline.h"
 
 #include "mozilla/ScrollContainerFrame.h"

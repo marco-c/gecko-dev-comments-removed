@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XrayExpandoClass_h
 #define mozilla_dom_XrayExpandoClass_h
 

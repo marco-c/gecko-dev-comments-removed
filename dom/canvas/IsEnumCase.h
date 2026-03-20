@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_DOM_ISENUMCASE_H
 #define MOZILLA_DOM_ISENUMCASE_H
 

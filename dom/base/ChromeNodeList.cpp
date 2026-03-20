@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ChromeNodeList.h"
 
 #include <new>

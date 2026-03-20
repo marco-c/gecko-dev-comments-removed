@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef CANVASIMAGECACHE_H_
 #define CANVASIMAGECACHE_H_
 

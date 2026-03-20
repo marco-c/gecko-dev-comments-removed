@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PlacesBookmarkUrl_h
 #define mozilla_dom_PlacesBookmarkUrl_h
 

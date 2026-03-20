@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/GeneratedImageContent.h"
 
 #include "mozilla/dom/Document.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_PARAMTRAITS_STL_H
 #define MOZILLA_PARAMTRAITS_STL_H
 

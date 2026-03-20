@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollingMetrics.h"
 
 #include "mozilla/StaticPrefs_browser.h"

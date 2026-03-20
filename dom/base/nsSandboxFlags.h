@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsSandboxFlags_h_
 #define nsSandboxFlags_h_
 

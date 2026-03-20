@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CSSTransition.h"
 
 #include "mozilla/AnimationEventDispatcher.h"

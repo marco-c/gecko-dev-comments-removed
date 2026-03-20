@@ -1,12 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Error Message definitions. */
 
 
-
-
-
-
-
-
-
+/* DOM4 errors from http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#domexception */
 
 DOM4_MSG_DEF(IndexSizeError, "Index or size is negative or greater than the allowed amount", NS_ERROR_DOM_INDEX_SIZE_ERR)
 DOM4_MSG_DEF(HierarchyRequestError, "Node cannot be inserted at the specified point in the hierarchy", NS_ERROR_DOM_HIERARCHY_REQUEST_ERR)
@@ -33,20 +32,20 @@ DOM4_MSG_DEF(InvalidNodeTypeError, "The supplied node is incorrect or has an inc
 DOM4_MSG_DEF(DataCloneError, "The object could not be cloned.", NS_ERROR_DOM_DATA_CLONE_ERR)
 DOM4_MSG_DEF(NotAllowedError, "The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.", NS_ERROR_DOM_NOT_ALLOWED_ERR)
 
-
+/* StringEncoding API errors from http://wiki.whatwg.org/wiki/StringEncoding */
 DOM4_MSG_DEF(EncodingError, "The given encoding is not supported.", NS_ERROR_DOM_ENCODING_NOT_SUPPORTED_ERR)
 
-
+/* WebCrypto API errors from http://www.w3.org/TR/WebCryptoAPI/ */
 DOM4_MSG_DEF(UnknownError, "The operation failed for an unknown transient reason", NS_ERROR_DOM_UNKNOWN_ERR)
 DOM4_MSG_DEF(DataError, "Data provided to an operation does not meet requirements", NS_ERROR_DOM_DATA_ERR)
 DOM4_MSG_DEF(OperationError, "The operation failed for an operation-specific reason", NS_ERROR_DOM_OPERATION_ERR)
 
-
+/* Media API extra messages for QuotaExceededError */
 DOM4_MSG_DEF(QuotaExceededError, "MediaKeys object is already bound to another HTMLMediaElement.", NS_ERROR_DOM_MEDIA_KEY_QUOTA_EXCEEDED_ERR)
 DOM4_MSG_DEF(QuotaExceededError, "Too many SourceBuffer objects created for a single MediaSource object.", NS_ERROR_DOM_MEDIA_SOURCE_MAX_BUFFER_QUOTA_EXCEEDED_ERR)
 DOM4_MSG_DEF(QuotaExceededError, "MediaSource buffer not sufficient.", NS_ERROR_DOM_MEDIA_SOURCE_FULL_BUFFER_QUOTA_EXCEEDED_ERR)
 
-
+/* IndexedDB errors http://dvcs.w3.org/hg/IndexedDB/raw-file/tip/Overview.html#exceptions */
 
 DOM4_MSG_DEF(UnknownError, "The operation failed for reasons unrelated to the database itself and not covered by any other error code.", NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR)
 DOM4_MSG_DEF(ConstraintError, "A mutation operation in the transaction failed because a constraint was not satisfied.", NS_ERROR_DOM_INDEXEDDB_CONSTRAINT_ERR)
@@ -63,7 +62,7 @@ DOM4_MSG_DEF(InvalidStateError, "A mutation operation was attempted on a databas
 DOM4_MSG_DEF(AbortError, "A request was aborted, for example through a call to IDBTransaction.abort.", NS_ERROR_DOM_INDEXEDDB_ABORT_ERR)
 DOM4_MSG_DEF(QuotaExceededError, "The current transaction exceeded its quota limitations.", NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR)
 
-
+/* FileSystem DOM errors. */
 DOM4_MSG_DEF(InvalidAccessError, "Invalid file system path.", NS_ERROR_DOM_FILESYSTEM_INVALID_PATH_ERR)
 DOM4_MSG_DEF(InvalidModificationError, "Failed to modify the file.", NS_ERROR_DOM_FILESYSTEM_INVALID_MODIFICATION_ERR)
 DOM4_MSG_DEF(NoModificationAllowedError, "Modifications are not allowed for this file", NS_ERROR_DOM_FILESYSTEM_NO_MODIFICATION_ALLOWED_ERR)
@@ -71,7 +70,7 @@ DOM4_MSG_DEF(AbortError, "File already exists.", NS_ERROR_DOM_FILESYSTEM_PATH_EX
 DOM4_MSG_DEF(TypeMismatchError, "The type of the file is incompatible with the expected type.", NS_ERROR_DOM_FILESYSTEM_TYPE_MISMATCH_ERR)
 DOM4_MSG_DEF(UnknownError, "The operation failed for reasons unrelated to the file system itself and not covered by any other error code.", NS_ERROR_DOM_FILESYSTEM_UNKNOWN_ERR)
 
-
+/* DOM error codes defined by us */
 
 DOM_MSG_DEF(NS_ERROR_DOM_WRONG_TYPE_ERR, "Object is of wrong type")
 DOM_MSG_DEF(NS_ERROR_DOM_NOT_NUMBER_ERR, "Parameter is not a number")
@@ -83,7 +82,7 @@ DOM_MSG_DEF(NS_ERROR_DOM_RETVAL_UNDEFINED, "Return value is undefined")
 DOM4_MSG_DEF(NotFoundError, "File was not found", NS_ERROR_DOM_FILE_NOT_FOUND_ERR)
 DOM4_MSG_DEF(NotReadableError, "File could not be read", NS_ERROR_DOM_FILE_NOT_READABLE_ERR)
 
-
+/* common global codes (from nsError.h) */
 
 DOM_MSG_DEF(NS_OK                                  , "Success")
 DOM_MSG_DEF(NS_ERROR_NOT_INITIALIZED               , "Component not initialized")
@@ -113,14 +112,14 @@ DOM4_MSG_DEF(InvalidStateError, "A mutation operation was attempted on a file st
 DOM4_MSG_DEF(AbortError, "A request was aborted, for example through a call to FileHandle.abort.", NS_ERROR_DOM_FILEHANDLE_ABORT_ERR)
 DOM4_MSG_DEF(QuotaExceededError, "The current file handle exceeded its quota limitations.", NS_ERROR_DOM_FILEHANDLE_QUOTA_ERR)
 
-
+/* Push API errors. */
 DOM4_MSG_DEF(NotAllowedError, "User denied permission to use the Push API.", NS_ERROR_DOM_PUSH_DENIED_ERR)
 DOM4_MSG_DEF(AbortError, "Error retrieving push subscription.", NS_ERROR_DOM_PUSH_ABORT_ERR)
 DOM4_MSG_DEF(NetworkError, "Push service unreachable.", NS_ERROR_DOM_PUSH_SERVICE_UNREACHABLE)
 DOM4_MSG_DEF(InvalidAccessError, "Invalid raw ECDSA P-256 public key.", NS_ERROR_DOM_PUSH_INVALID_KEY_ERR)
 DOM4_MSG_DEF(InvalidStateError, "A subscription with a different application server key already exists.", NS_ERROR_DOM_PUSH_MISMATCHED_KEY_ERR)
 
-
+/* Media errors */
 DOM4_MSG_DEF(AbortError,        "The fetching process for the media resource was aborted by the user agent at the user's request.", NS_ERROR_DOM_MEDIA_ABORT_ERR)
 DOM4_MSG_DEF(NotAllowedError,   "The play method is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.", NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR)
 DOM4_MSG_DEF(NotSupportedError, "The media resource indicated by the src attribute or assigned media provider object was not suitable.", NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR)
@@ -129,10 +128,10 @@ DOM4_MSG_DEF(SyntaxError, "The URI is malformed.", NS_ERROR_DOM_MALFORMED_URI)
 DOM4_MSG_DEF(SyntaxError, "Invalid header name.", NS_ERROR_DOM_INVALID_HEADER_NAME)
 DOM4_MSG_DEF(SyntaxError, "Invalid header value.", NS_ERROR_DOM_INVALID_HEADER_VALUE)
 
-
+/* XMLHttpRequest errors. */
 DOM4_MSG_DEF(InvalidStateError, "XMLHttpRequest has an invalid context.", NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT)
 
-
+/* Image decode errors. */
 DOM4_MSG_DEF(EncodingError, "Node bound to inactive document.", NS_ERROR_DOM_IMAGE_INACTIVE_DOCUMENT)
 DOM4_MSG_DEF(EncodingError, "Invalid image request.", NS_ERROR_DOM_IMAGE_INVALID_REQUEST)
 DOM4_MSG_DEF(EncodingError, "Invalid encoded image data.", NS_ERROR_DOM_IMAGE_BROKEN)

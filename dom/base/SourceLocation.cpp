@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SourceLocation.h"
 
 #include "jsapi.h"

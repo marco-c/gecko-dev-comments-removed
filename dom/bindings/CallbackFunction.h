@@ -12,8 +12,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CallbackFunction_h
 #define mozilla_dom_CallbackFunction_h
 

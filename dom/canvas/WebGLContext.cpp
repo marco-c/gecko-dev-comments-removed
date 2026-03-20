@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLContext.h"
 
 #include <algorithm>

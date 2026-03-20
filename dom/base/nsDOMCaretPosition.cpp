@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsDOMCaretPosition.h"
 
 #include "mozilla/ErrorResult.h"

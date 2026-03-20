@@ -2,7 +2,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/OriginAttributes.h"

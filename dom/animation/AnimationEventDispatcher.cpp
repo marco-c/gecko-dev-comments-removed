@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/AnimationEventDispatcher.h"
 
 #include "mozilla/EventDispatcher.h"

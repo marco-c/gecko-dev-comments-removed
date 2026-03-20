@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Timeout.h"
 
 #include "GeckoProfiler.h"

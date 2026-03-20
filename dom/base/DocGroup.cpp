@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DocGroup.h"
 
 #include "mozilla/AbstractThread.h"

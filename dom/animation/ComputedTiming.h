@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ComputedTiming_h
 #define mozilla_ComputedTiming_h
 

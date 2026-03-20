@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsStructuredCloneContainer_h_
 #define nsStructuredCloneContainer_h_
 

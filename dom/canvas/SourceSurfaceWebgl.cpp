@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SourceSurfaceWebgl.h"
 
 #include "DrawTargetWebglInternal.h"

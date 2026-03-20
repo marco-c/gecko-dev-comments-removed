@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Text.h"
 
 #include "mozAutoDocUpdate.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsContentPolicy_h_
 #define _nsContentPolicy_h_
 

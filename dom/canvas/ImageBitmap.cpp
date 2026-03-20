@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ImageBitmap.h"
 
 #include "imgLoader.h"

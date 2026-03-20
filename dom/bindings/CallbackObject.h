@@ -12,8 +12,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CallbackObject_h
 #define mozilla_dom_CallbackObject_h
 

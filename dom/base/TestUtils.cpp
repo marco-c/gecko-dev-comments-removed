@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestUtils.h"
 
 #include "mozilla/ErrorResult.h"

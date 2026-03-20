@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsInProcessBrowserChildGlobal_h
 #define nsInProcessBrowserChildGlobal_h
 

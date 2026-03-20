@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/Cache.h"
 
 #include "js/Array.h"               

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CacheExpirationTime_h_
 #define mozilla_dom_CacheExpirationTime_h_
 

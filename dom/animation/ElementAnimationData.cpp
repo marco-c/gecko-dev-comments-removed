@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ElementAnimationData.h"
 
 #include "mozilla/AnimationCollection.h"

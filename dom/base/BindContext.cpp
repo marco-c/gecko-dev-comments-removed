@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BindContext.h"
 
 #include "mozilla/StaticPrefs_browser.h"

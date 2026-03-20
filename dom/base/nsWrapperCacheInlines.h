@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWrapperCacheInline_h_
 #define nsWrapperCacheInline_h_
 

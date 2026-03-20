@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsFrameMessageManager.h"
 
 #include <algorithm>

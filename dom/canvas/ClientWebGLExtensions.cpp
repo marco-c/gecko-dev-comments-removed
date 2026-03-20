@@ -2,7 +2,6 @@
 
 
 
-
 #include "ClientWebGLExtensions.h"
 
 namespace mozilla {

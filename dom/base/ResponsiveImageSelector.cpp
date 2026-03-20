@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ResponsiveImageSelector.h"
 
 #include "mozilla/PresShell.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ChromeMessageSender.h"
 
 #include "mozilla/dom/MessageManagerBinding.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_CONTEXT_UTILS_H_
 #define WEBGL_CONTEXT_UTILS_H_
 

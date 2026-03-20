@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ConnectedAncestorTracker_h
 #define mozilla_ConnectedAncestorTracker_h
 

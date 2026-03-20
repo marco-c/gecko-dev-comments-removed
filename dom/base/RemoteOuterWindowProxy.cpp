@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AccessCheck.h"
 #include "js/Proxy.h"
 #include "mozilla/Maybe.h"

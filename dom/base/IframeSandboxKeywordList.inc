@@ -8,8 +8,6 @@
 
 
 
-
-
 SANDBOX_KEYWORD("allow-same-origin", allowsameorigin, SANDBOXED_ORIGIN)
 SANDBOX_KEYWORD("allow-forms", allowforms, SANDBOXED_FORMS)
 SANDBOX_KEYWORD("allow-scripts", allowscripts,

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextDirectiveCreator.h"
 
 #include <algorithm>

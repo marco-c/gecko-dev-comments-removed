@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_dom_TextMetrics_h
 #define mozilla_dom_TextMetrics_h
 

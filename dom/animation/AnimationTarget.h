@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AnimationTarget_h
 #define mozilla_AnimationTarget_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_KeyframeEffectParams_h
 #define mozilla_KeyframeEffectParams_h
 

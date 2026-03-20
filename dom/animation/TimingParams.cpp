@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/TimingParams.h"
 
 #include "mozilla/AnimationUtils.h"

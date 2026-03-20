@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef nsSyncLoadService_h_
 #define nsSyncLoadService_h_
 

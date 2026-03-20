@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsQueryContentEventResult.h"
 
 #include <utility>

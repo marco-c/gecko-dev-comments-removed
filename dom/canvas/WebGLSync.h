@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_SYNC_H_
 #define WEBGL_SYNC_H_
 

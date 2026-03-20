@@ -9,8 +9,6 @@
 
 
 
-
-
 "use strict";
 
 const BASE_URL = "http://mochi.test:8888/browser/dom/base/test/";

@@ -1,14 +1,12 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DEFINES["IMPL_LIBXUL"] = True
 DEFINES["MOZILLA_INTERNAL_API"] = True
 
-
-
+# Do NOT export this library.  We don't actually want our test code
+# being added to libxul or anything.
 
 Library("dombindings_test_s")
 
@@ -40,7 +38,7 @@ WEBIDL_EXAMPLE_INTERFACES += [
     "TestExampleWorkerInterface",
 ]
 
-
+# Bug 932082 tracks having bindings use namespaced includes.
 LOCAL_INCLUDES += [
     "!/dist/include/mozilla/dom",
 ]
@@ -61,8 +59,8 @@ if CONFIG["MOZ_DEBUG"]:
 
     XPIDL_MODULE = "dom_bindings_test"
 
-
-
+# Because we don't actually link this code anywhere, we don't care about
+# their optimization level, so don't waste time on optimization.
 if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += ["-Od"]
 else:

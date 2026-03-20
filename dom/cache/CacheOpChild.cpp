@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheOpChild.h"
 
 #include "mozilla/dom/Promise.h"

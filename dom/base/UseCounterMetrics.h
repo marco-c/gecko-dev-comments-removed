@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef UseCounterMetrics_h_
 #define UseCounterMetrics_h_
 

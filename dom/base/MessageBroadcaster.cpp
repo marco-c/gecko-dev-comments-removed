@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MessageBroadcaster.h"
 
 #include "mozilla/dom/ContentParent.h"

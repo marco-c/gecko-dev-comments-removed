@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "js/Class.h"
 #include "js/Proxy.h"
 #include "jsfriendapi.h"

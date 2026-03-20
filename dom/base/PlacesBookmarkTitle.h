@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PlacesBookmarkTitle_h
 #define mozilla_dom_PlacesBookmarkTitle_h
 

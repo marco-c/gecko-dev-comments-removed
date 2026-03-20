@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BoundStorageKeyCache.h"
 
 #include "mozilla/dom/CacheBinding.h"

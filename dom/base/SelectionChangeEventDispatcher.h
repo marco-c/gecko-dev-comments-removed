@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SelectionChangeEventDispatcher_h
 #define mozilla_SelectionChangeEventDispatcher_h
 

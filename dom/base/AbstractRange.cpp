@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/AbstractRange.h"
 
 #include "mozilla/Assertions.h"

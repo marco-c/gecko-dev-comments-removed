@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WrapperCachedNonISupportsTestInterface.h"
 
 #include "mozilla/dom/TestFunctionsBinding.h"

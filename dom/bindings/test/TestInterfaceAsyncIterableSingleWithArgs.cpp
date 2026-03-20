@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceAsyncIterableSingleWithArgs.h"
 
 #include "ScriptSettings.h"

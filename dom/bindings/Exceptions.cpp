@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Exceptions.h"
 
 #include "WorkerPrivate.h"

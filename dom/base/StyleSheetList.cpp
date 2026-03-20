@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/StyleSheetList.h"
 
 #include "mozilla/dom/StyleSheetListBinding.h"

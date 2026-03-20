@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DirectionalityUtils_h_
 #define DirectionalityUtils_h_
 

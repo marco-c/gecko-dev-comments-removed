@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_MEMORY_TRACKER_H_
 #define WEBGL_MEMORY_TRACKER_H_
 

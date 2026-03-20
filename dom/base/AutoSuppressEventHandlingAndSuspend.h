@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef dom_base_AutoSuppressEventHandlingAndSuspend_h
 #define dom_base_AutoSuppressEventHandlingAndSuspend_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CallbackInterface.h"
 
 #include "js/CallAndConstruct.h"  

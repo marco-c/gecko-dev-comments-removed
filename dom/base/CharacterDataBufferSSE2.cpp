@@ -2,7 +2,6 @@
 
 
 
-
 #include "CharacterDataBufferGeneric.h"
 
 namespace mozilla {

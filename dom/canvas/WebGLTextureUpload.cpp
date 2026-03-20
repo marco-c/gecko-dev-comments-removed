@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLTextureUpload.h"
 
 #include <algorithm>

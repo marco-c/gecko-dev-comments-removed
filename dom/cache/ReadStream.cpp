@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/ReadStream.h"
 
 #include "mozilla/SnappyUncompressInputStream.h"

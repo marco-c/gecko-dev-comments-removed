@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_BASE_CHROMENODELIST_H_
 #define DOM_BASE_CHROMENODELIST_H_
 

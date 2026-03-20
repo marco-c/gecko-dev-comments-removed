@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AnimationComparator_h
 #define mozilla_AnimationComparator_h
 

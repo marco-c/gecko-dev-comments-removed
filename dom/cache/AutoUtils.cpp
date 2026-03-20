@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/AutoUtils.h"
 
 #include "mozilla/dom/InternalHeaders.h"

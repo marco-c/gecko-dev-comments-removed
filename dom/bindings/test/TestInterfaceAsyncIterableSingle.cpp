@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceAsyncIterableSingle.h"
 
 #include "mozilla/dom/BindingUtils.h"

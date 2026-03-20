@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentFrameMessageManager.h"
 
 #include "js/RootingAPI.h"

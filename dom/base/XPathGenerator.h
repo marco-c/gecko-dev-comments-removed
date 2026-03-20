@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XPATHGENERATOR_H_
 #define XPATHGENERATOR_H_
 #include "nsINode.h"

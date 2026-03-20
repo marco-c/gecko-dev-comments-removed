@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsFocusManager.h"
 
 #include <algorithm>

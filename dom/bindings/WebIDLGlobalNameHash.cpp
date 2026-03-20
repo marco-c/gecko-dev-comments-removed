@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebIDLGlobalNameHash.h"
 
 #include "WrapperFactory.h"

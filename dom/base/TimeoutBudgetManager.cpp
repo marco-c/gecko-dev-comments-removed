@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TimeoutBudgetManager.h"
 
 #include "mozilla/dom/Timeout.h"

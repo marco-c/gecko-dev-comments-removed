@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_IdentifierMapEntry_h
 #define mozilla_IdentifierMapEntry_h
 

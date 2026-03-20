@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheChild.h"
 
 #include "CacheWorkerRef.h"

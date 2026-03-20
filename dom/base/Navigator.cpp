@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "Navigator.h"
 
 #include "Geolocation.h"

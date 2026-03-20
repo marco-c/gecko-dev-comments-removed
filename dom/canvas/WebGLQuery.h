@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_QUERY_H_
 #define WEBGL_QUERY_H_
 

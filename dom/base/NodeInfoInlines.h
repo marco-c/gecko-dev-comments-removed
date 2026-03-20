@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_NodeInfoInlines_h_
 #define mozilla_dom_NodeInfoInlines_h_
 

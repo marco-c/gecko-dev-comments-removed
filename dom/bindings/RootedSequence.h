@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_RootedSequence_h_
 #define mozilla_dom_RootedSequence_h_
 

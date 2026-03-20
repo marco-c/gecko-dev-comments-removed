@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWindowMemoryReporter_h_
 #define nsWindowMemoryReporter_h_
 

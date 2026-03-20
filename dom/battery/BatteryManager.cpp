@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BatteryManager.h"
 
 #include <cmath>

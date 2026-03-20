@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCopySupport.h"
 
 #include "imgIContainer.h"

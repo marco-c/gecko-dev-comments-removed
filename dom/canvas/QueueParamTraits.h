@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef QUEUEPARAMTRAITS_H_
 #define QUEUEPARAMTRAITS_H_ 1
 

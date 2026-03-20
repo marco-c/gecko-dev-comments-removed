@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef nsNoDataProtocolContentPolicy_h_
 #define nsNoDataProtocolContentPolicy_h_
 

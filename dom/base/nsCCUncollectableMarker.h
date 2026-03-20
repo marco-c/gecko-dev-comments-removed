@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCCUncollectableMarker_h_
 #define nsCCUncollectableMarker_h_
 

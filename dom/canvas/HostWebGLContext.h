@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HOSTWEBGLCONTEXT_H_
 #define HOSTWEBGLCONTEXT_H_
 

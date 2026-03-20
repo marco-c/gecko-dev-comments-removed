@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/Comment.h"
 
 #include "mozilla/IntegerPrintfMacros.h"

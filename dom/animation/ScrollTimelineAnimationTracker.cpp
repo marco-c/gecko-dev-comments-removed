@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollTimelineAnimationTracker.h"
 
 #include "mozilla/dom/Document.h"

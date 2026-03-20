@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMQuad.h"
 
 #include "mozilla/FloatingPoint.h"

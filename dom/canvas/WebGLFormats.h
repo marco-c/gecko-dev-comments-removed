@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGL_FORMATS_H_
 #define WEBGL_FORMATS_H_
 

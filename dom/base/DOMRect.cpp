@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMRect.h"
 
 #include <cmath>

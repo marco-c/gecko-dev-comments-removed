@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsNoDataProtocolContentPolicy.h"
 
 #include "nsContentUtils.h"

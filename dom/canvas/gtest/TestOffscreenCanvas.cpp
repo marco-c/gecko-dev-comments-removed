@@ -2,7 +2,6 @@
 
 
 
-
 #include "OffscreenCanvasDisplayHelper.h"
 #include "gtest/gtest.h"
 #include "mozilla/dom/CanvasRenderingContextHelper.h"

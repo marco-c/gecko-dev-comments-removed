@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsMimeTypeArray.h"
 
 #include "mozilla/StaticPrefs_pdfjs.h"

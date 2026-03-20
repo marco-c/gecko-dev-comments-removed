@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsCopySupport_h_
 #define nsCopySupport_h_
 

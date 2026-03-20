@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMParser.h"
 
 #include "MainThreadUtils.h"

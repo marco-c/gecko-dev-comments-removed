@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestInterfaceIterableDoubleUnion.h"
 
 #include "mozilla/dom/BindingUtils.h"

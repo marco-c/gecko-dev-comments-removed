@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsTextNode.h"
 
 #include "mozilla/IntegerPrintfMacros.h"

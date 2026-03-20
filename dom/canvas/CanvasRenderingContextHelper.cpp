@@ -2,7 +2,6 @@
 
 
 
-
 #include "CanvasRenderingContextHelper.h"
 
 #include "ClientWebGLContext.h"

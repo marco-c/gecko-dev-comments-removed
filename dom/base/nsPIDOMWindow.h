@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPIDOMWindow_h_
 #define nsPIDOMWindow_h_
 

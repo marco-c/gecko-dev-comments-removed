@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsDataDocumentContentPolicy.h"
 
 #include "mozilla/ScopeExit.h"

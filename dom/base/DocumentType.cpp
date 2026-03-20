@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/DocumentType.h"
 
 #include "mozilla/dom/DocumentTypeBinding.h"

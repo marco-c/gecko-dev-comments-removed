@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FilterNodeWebgl.h"
 
 #include <limits>

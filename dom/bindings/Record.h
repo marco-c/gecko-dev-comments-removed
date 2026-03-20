@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Record_h
 #define mozilla_dom_Record_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentProcessMessageManager.h"
 
 #include "mozilla/HoldDropJSObjects.h"

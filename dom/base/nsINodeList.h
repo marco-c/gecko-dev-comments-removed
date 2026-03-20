@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsINodeList_h_
 #define nsINodeList_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsContentCreatorFunctions_h_
 #define nsContentCreatorFunctions_h_
 

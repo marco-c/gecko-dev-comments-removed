@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WEBGLTYPES_H_
 #define WEBGLTYPES_H_
 

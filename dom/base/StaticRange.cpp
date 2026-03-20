@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/StaticRange.h"
 
 #include "mozilla/dom/StaticRangeBinding.h"

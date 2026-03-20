@@ -2,7 +2,6 @@
 
 
 
-
 #include "ClientWebGLContext.h"
 
 #include <fmt/format.h>

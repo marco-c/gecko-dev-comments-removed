@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIScriptGlobalObject_h_
 #define nsIScriptGlobalObject_h_
 

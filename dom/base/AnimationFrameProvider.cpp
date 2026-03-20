@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnimationFrameProvider.h"
 
 #include "MainThreadUtils.h"

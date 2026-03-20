@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsTraversal.h"
 
 #include "mozilla/AutoRestore.h"

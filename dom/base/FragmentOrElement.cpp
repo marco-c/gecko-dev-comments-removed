@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/FragmentOrElement.h"
 
 #include "DOMIntersectionObserver.h"

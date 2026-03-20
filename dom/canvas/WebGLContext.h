@@ -2,11 +2,8 @@
 
 
 
-
 #ifndef WEBGLCONTEXT_H_
 #define WEBGLCONTEXT_H_
-
-#include <stdarg.h>
 
 #include <bitset>
 #include <memory>

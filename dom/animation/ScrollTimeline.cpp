@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollTimeline.h"
 
 #include "mozilla/AnimationTarget.h"

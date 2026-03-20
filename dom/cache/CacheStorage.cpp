@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/CacheStorage.h"
 
 #include "js/Object.h"              

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageEncoder.h"
 
 #include "YCbCrUtils.h"

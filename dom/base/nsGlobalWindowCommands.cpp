@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsGlobalWindowCommands.h"
 
 #include "ContentEventHandler.h"

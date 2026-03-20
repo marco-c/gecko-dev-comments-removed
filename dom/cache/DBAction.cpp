@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/DBAction.h"
 
 #include "mozIStorageConnection.h"

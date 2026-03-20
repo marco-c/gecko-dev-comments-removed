@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Highlight.h"
 
 #include "AbstractRange.h"

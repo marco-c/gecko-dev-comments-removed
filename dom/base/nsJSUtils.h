@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsJSUtils_h_
 #define nsJSUtils_h_
 

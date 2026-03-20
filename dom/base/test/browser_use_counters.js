@@ -1,5 +1,3 @@
-
-
 requestLongerTimeout(2);
 
 const gHttpTestRoot = "https://example.com/browser/dom/base/test/";

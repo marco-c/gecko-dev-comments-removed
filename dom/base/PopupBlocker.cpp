@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/PopupBlocker.h"
 
 #include "mozilla/BasePrincipal.h"

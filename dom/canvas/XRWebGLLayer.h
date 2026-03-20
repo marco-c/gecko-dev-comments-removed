@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XRWebGLLayer_h_
 #define mozilla_dom_XRWebGLLayer_h_
 

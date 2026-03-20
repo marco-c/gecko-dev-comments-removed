@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_VIEWPORT_META_DATA_H_
 #define DOM_VIEWPORT_META_DATA_H_
 

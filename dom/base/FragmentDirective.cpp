@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FragmentDirective.h"
 
 #include <cstdint>

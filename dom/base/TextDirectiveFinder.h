@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_TEXTDIRECTIVEFINDER_H_
 #define DOM_TEXTDIRECTIVEFINDER_H_
 #include "mozilla/RefPtr.h"

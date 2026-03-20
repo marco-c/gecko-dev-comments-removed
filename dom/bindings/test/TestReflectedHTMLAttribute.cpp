@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TestReflectedHTMLAttribute.h"
 
 #include "mozilla/dom/TestFunctionsBinding.h"

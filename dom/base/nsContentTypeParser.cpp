@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsContentTypeParser.h"
 
 #include "nsContentUtils.h"

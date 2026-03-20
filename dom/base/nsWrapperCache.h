@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWrapperCache_h_
 #define nsWrapperCache_h_
 

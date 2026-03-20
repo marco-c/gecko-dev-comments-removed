@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FRAGMENTDIRECTIVE_H_
 #define DOM_FRAGMENTDIRECTIVE_H_
 

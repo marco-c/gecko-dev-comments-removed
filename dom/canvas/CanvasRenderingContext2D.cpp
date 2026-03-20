@@ -2,7 +2,6 @@
 
 
 
-
 #include "CanvasRenderingContext2D.h"
 
 #include <algorithm>

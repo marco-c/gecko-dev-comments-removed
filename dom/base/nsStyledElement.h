@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef NS_STYLEDELEMENT_H_
 #define NS_STYLEDELEMENT_H_
 

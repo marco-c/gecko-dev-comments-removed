@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/cache/Manager.h"
 
 #include "QuotaClientImpl.h"

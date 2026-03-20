@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BindingUtils.h"
 
 #include <stdarg.h>

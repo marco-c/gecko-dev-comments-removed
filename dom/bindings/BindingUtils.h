@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BindingUtils_h_
 #define mozilla_dom_BindingUtils_h_
 

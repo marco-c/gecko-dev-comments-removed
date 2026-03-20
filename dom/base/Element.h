@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Element_h_
 #define mozilla_dom_Element_h_
 

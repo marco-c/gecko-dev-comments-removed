@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsHistory.h"
 
 #include "jsapi.h"

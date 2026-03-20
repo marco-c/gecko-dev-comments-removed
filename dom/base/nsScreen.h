@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef nsScreen_h_
 #define nsScreen_h_
 

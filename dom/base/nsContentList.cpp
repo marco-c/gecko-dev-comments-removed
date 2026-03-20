@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsContentList.h"
 
 #include <algorithm>

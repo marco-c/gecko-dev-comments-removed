@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/DOMImplementation.h"
 
 #include "mozilla/ContentEvents.h"

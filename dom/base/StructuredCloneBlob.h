@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_StructuredCloneBlob_h
 #define mozilla_dom_StructuredCloneBlob_h
 

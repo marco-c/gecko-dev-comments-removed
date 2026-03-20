@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaStreamError.h"
 
 #include "mozilla/dom/MediaStreamErrorBinding.h"
@@ -15,7 +13,10 @@ namespace mozilla {
 BaseMediaMgrError::BaseMediaMgrError(Name aName, const nsACString& aMessage,
                                      const nsAString& aConstraint)
     : mMessage(aMessage), mConstraint(aConstraint), mName(aName) {
-#define MAP_MEDIAERR(name, msg) {Name::name, #name, msg}
+#define MAP_MEDIAERR(name, msg) \
+  {                             \
+    Name::name, #name, msg      \
+  }
 
   static struct {
     Name mName;

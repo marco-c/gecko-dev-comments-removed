@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ChildIterator.h"
 
 #include "mozilla/dom/Document.h"

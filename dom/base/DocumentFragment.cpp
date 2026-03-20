@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/dom/DocumentFragment.h"
 
 #include "mozilla/IntegerPrintfMacros.h"

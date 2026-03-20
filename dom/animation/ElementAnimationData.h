@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ElementAnimationData_h
 #define mozilla_ElementAnimationData_h
 

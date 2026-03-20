@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
 
 #include "nsContentUtils.h"

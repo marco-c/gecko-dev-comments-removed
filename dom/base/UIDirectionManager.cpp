@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/UIDirectionManager.h"
 
 #include "mozilla/Preferences.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebGLTexture.h"
 
 #include <algorithm>

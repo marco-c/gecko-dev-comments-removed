@@ -7,7 +7,6 @@
 
 
 
-
 #include "mozilla/dom/NodeIterator.h"
 
 #include "mozilla/dom/Document.h"

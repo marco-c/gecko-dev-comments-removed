@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "nsDOMAttributeMap.h"
 
 #include "mozilla/MemoryReporting.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef TreeIterator_h
 #define TreeIterator_h
 

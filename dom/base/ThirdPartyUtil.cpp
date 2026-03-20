@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThirdPartyUtil.h"
 
 #include <cstdint>
