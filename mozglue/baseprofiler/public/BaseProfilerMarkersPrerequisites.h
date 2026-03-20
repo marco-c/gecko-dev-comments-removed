@@ -1042,44 +1042,55 @@ class MarkerSchema {
 
 namespace detail {
 
-template <typename PayloadType>
-static void StreamPayload(baseprofiler::SpliceableJSONWriter& aWriter,
-                          const Span<const char> aKey,
-                          const PayloadType& aPayload) {
-  using CleanT = std::remove_cv_t<PayloadType>;
-  if constexpr (std::is_integral_v<CleanT>) {
-    aWriter.IntProperty(aKey, aPayload);
-  } else if constexpr (std::is_same_v<CleanT, double>) {
-    aWriter.DoubleProperty(aKey, aPayload);
-  } else {
-    aWriter.StringProperty(aKey, aPayload);
+
+
+
+template <typename PayloadType, MarkerSchema::Format aFormat>
+struct StreamPayloadHelper {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey, const PayloadType& aPayload) {
+    using CleanT = std::remove_cv_t<PayloadType>;
+    if constexpr (std::is_integral_v<CleanT>) {
+      aWriter.IntProperty(aKey, aPayload);
+    } else if constexpr (std::is_same_v<CleanT, double>) {
+      aWriter.DoubleProperty(aKey, aPayload);
+    } else if constexpr (aFormat == MarkerSchema::Format::UniqueString) {
+      aWriter.UniqueStringProperty(aKey, aPayload);
+    } else {
+      aWriter.StringProperty(aKey, aPayload);
+    }
   }
-}
+};
 
-template <typename PayloadType>
-inline void StreamPayload(baseprofiler::SpliceableJSONWriter& aWriter,
-                          const Span<const char> aKey,
-                          const Maybe<PayloadType>& aPayload) {
-  if (aPayload.isSome()) {
-    StreamPayload(aWriter, aKey, *aPayload);
-  } else {
-    aWriter.NullProperty(aKey);
+template <typename PayloadType, MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<Maybe<PayloadType>, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey,
+                     const Maybe<PayloadType>& aPayload) {
+    if (aPayload.isSome()) {
+      StreamPayloadHelper<PayloadType, aFormat>::Stream(aWriter, aKey,
+                                                        *aPayload);
+    } else {
+      aWriter.NullProperty(aKey);
+    }
   }
-}
+};
 
-template <>
-inline void StreamPayload<bool>(baseprofiler::SpliceableJSONWriter& aWriter,
-                                const Span<const char> aKey,
-                                const bool& aPayload) {
-  aWriter.BoolProperty(aKey, aPayload);
-}
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<bool, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey, const bool& aPayload) {
+    aWriter.BoolProperty(aKey, aPayload);
+  }
+};
 
-template <>
-inline void StreamPayload<Flow>(baseprofiler::SpliceableJSONWriter& aWriter,
-                                const Span<const char> aKey,
-                                const Flow& aPayload) {
-  aWriter.FlowProperty(aKey, aPayload);
-}
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<Flow, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey, const Flow& aPayload) {
+    aWriter.FlowProperty(aKey, aPayload);
+  }
+};
 
 }  
 
@@ -1150,14 +1161,24 @@ struct BaseMarkerType {
   
   
   
+  template <typename... PayloadArguments, std::size_t... Is>
+  static void StreamJSONMarkerDataImplHelper(
+      baseprofiler::SpliceableJSONWriter& aWriter, std::index_sequence<Is...>,
+      const PayloadArguments&... aPayloadArguments) {
+    (detail::StreamPayloadHelper<std::remove_cv_t<PayloadArguments>,
+                                 T::PayloadFields[Is].Fmt>::
+         Stream(aWriter, MakeStringSpan(T::PayloadFields[Is].Key),
+                aPayloadArguments),
+     ...);
+  }
+
   template <typename... PayloadArguments>
   static void StreamJSONMarkerDataImpl(
       baseprofiler::SpliceableJSONWriter& aWriter,
       const PayloadArguments&... aPayloadArguments) {
-    size_t i = 0;
-    (detail::StreamPayload(aWriter, MakeStringSpan(T::PayloadFields[i++].Key),
-                           aPayloadArguments),
-     ...);
+    StreamJSONMarkerDataImplHelper(
+        aWriter, std::index_sequence_for<PayloadArguments...>{},
+        aPayloadArguments...);
   }
 };
 }  
