@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GeckoViewContentChannel_h_
 #define GeckoViewContentChannel_h_
 

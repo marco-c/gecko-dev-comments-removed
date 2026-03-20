@@ -1,13 +1,11 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
-
-
-
+# If --with-gradle is specified, build mobile/android with Gradle.  If no
+# Gradle binary is specified use the in tree Gradle wrapper.  The wrapper
+# downloads and installs Gradle, which is good for local developers but not
+# good in automation.
 option(
     "--without-gradle",
     nargs="?",
@@ -38,7 +36,7 @@ def gradle(host, value, build_env):
         if host.os == "WINNT":
             gradle = gradle + ".bat"
 
-    
+    # TODO: verify that $GRADLE is executable.
     if not isfile(gradle):
         die("GRADLE must be executable: %s", gradle)
 
@@ -52,7 +50,7 @@ set_config("GRADLE", gradle)
 @imports(_from="itertools", _import="chain")
 def gradle_android_build_config():
     def capitalize(s):
-        
+        # str.capitalize lower cases trailing letters.
         if s:
             return s[0].upper() + s[1:]
         else:
@@ -61,7 +59,7 @@ def gradle_android_build_config():
     def variant(buildType):
         return namespace(
             buildType=buildType,
-            
+            # Like 'Debug'
             name="".join(capitalize(t) for t in chain((buildType,))),
         )
 
@@ -92,7 +90,7 @@ def gradle_android_intermediates_folder(build_config):
             return s
 
     def capitalize(s):
-        
+        # str.capitalize lower cases trailing letters.
         if s:
             return s[0].upper() + s[1:]
         else:
@@ -121,7 +119,7 @@ def gradle_android_geckoview_test_runner_bundle(build_config):
             return s
 
     def capitalize(s):
-        
+        # str.capitalize lower cases trailing letters.
         if s:
             return s[0].upper() + s[1:]
         else:
@@ -153,7 +151,7 @@ def gradle_android_geckoview_example_bundle(build_config):
             return s
 
     def capitalize(s):
-        
+        # str.capitalize lower cases trailing letters.
         if s:
             return s[0].upper() + s[1:]
         else:
@@ -579,7 +577,7 @@ def gradle_android_compile_all_tasks(build_config):
     """
 
     def capitalize(s):
-        
+        # str.capitalize lower cases trailing letters.
         if s:
             return s[0].upper() + s[1:]
         else:
@@ -594,20 +592,20 @@ def gradle_android_compile_all_tasks(build_config):
         f"compileTestKotlin",
     ]
 
-    
+    # Apps without product flavors (GeckoView, Fenix) use just `buildType` in task names
     tasks += [
         f"compile{buildType}Sources",
         f"compile{buildType}UnitTestSources",
     ]
 
-    
+    # Apps with product flavors include `flavor` name and `buildType` in task names
     for flavor in ["Focus", "Klar"]:
         tasks += [
             f"compile{flavor}{buildType}Sources",
             f"compile{flavor}{buildType}UnitTestSources",
         ]
 
-    
+    # These tasks do not appear to have a Release variant
     if buildType == "Debug":
         tasks += [f"compile{buildType}AndroidTestSources"]
 
@@ -687,16 +685,16 @@ set_config(
 def gradle_android_dependencies_tasks(*tasks):
     """Gradle tasks run by |mach android dependencies|."""
 
-    
-    
+    # The union, plus a bit more, of all of the Gradle tasks
+    # invoked by the android-* automation jobs.
     return list(t for t in chain(*tasks))
 
 
 set_config("GRADLE_ANDROID_DEPENDENCIES_TASKS", gradle_android_dependencies_tasks)
 
 
-
-
+# Automation uses this to change log levels, not use the daemon, and use
+# offline mode.
 option(env="GRADLE_FLAGS", default="", help="Flags to pass to Gradle")
 
 
@@ -707,8 +705,8 @@ def gradle_flags(value):
 
 set_config("GRADLE_FLAGS", gradle_flags)
 
-
-
+# Automation will set this to (file:///path/to/local, ...) via the mozconfig.
+# Local developer default is (maven.google.com).
 option(
     env="GRADLE_MAVEN_REPOSITORIES",
     nargs="+",

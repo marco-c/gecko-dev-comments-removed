@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.geckoview;
 
 import static java.lang.annotation.ElementType.CONSTRUCTOR;

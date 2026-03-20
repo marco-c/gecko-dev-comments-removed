@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GeckoViewContentProtocolHandler_h_
 #define GeckoViewContentProtocolHandler_h_
 

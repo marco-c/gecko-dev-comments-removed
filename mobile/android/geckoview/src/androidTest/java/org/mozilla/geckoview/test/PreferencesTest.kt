@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -34,9 +33,9 @@ import org.mozilla.geckoview.GeckoPreferenceController.SetGeckoPreference
 @Suppress("LargeClass")
 @OptIn(ExperimentalGeckoViewApi::class)
 class PreferencesTest : BaseSessionTest() {
-    
-
-
+    /**
+     * Checking if delegate getter and setter behave as expected.
+     */
     @Test
     fun settingPreferenceDelegate() {
         class ExamplePrefDelegate : GeckoPreferenceController.Observer.Delegate {
@@ -52,12 +51,12 @@ class PreferencesTest : BaseSessionTest() {
         )
     }
 
-    
-
-
+    /**
+     * Basic observer delegate test to check registration on ints.
+     */
     @Test
     fun intPrefObservationTest() {
-        
+        // Arbitrary int preference selected from StaticPrefList.yaml
         val intPref = "dom.popup_maximum"
         val changeValue = 3
         var timesCalled = 0
@@ -92,12 +91,12 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", 1, timesCalled)
     }
 
-    
-
-
+    /**
+     * Basic observer delegate test to check registration on strings.
+     */
     @Test
     fun stringPrefObservationTest() {
-        
+        // Arbitrary string preference selected from StaticPrefList.yaml
         val stringPref = "editor.background_color"
         val changeValue = "#000000"
         var timesCalled = 0
@@ -131,14 +130,14 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", 1, timesCalled)
     }
 
-    
-
-
+    /**
+     * Basic observer delegate test to check registration on floats.
+     */
     @Test
     fun floatPrefObservationTest() {
-        
+        // Arbitrary float preference selected from StaticPrefList.yaml
         val floatPref = "dom.media.silence_duration_for_audibility"
-        
+        // Floats are treated as strings in Gecko
         val changeValue = "2.1"
         var timesCalled = 0
 
@@ -156,7 +155,7 @@ class PreferencesTest : BaseSessionTest() {
                     assertEquals("Observation requested should match.", floatPref, observedGeckoPreference.pref)
                     assertEquals("Changed value matches.", changeValue, observedGeckoPreference.userValue)
 
-                    
+                    // Floats are strings in pref world
                     assertEquals("Type is as expected for observed.", PREF_TYPE_STRING, observedGeckoPreference.type)
                     timesCalled++
                 }
@@ -173,12 +172,12 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", 1, timesCalled)
     }
 
-    
-
-
+    /**
+     * Basic observer delegate test to check registration on bools.
+     */
     @Test
     fun boolPrefObservationTest() {
-        
+        // Arbitrary boolean preference selected from StaticPrefList.yaml
         val boolPref = "dom.allow_cut_copy"
         val changeValue = false
         var timesCalled = 0
@@ -213,17 +212,17 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", timesCalled, 1)
     }
 
-    
-
-
+    /**
+     * Checking all pref types and multiple observations. Using pref examples defined in StaticPrefList.yaml.
+     */
     @Test
     fun multiPrefObservationRegistrationAndDeregistration() {
         var timesCalled = 0
 
-        
+        // Arbitrarily selected based on pref type
         val intPref = "dom.popup_maximum"
         val stringPref = "editor.background_color"
-        
+        // Floats are a string according to static prefs file "Note that float prefs are stored internally as strings."
         val floatPref = "dom.media.silence_duration_for_audibility"
         val boolPref = "dom.allow_cut_copy"
         val unknownPref = "pref.unknown.does.not.exist"
@@ -312,12 +311,12 @@ class PreferencesTest : BaseSessionTest() {
         )
     }
 
-    
-
-
+    /**
+     * Checking singular deregistration mechanisms.
+     */
     @Test
     fun unregisterPrefFromObservation() {
-        
+        // Arbitrary int preference selected from StaticPrefList.yaml
         val intPref = "dom.popup_maximum"
         var timesCalled = 0
 
@@ -359,9 +358,9 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", 1, timesCalled)
     }
 
-    
-
-
+    /**
+     * Tests what happens in an observation when a pref is removed.
+     */
     @Test
     fun observationWhenPrefIsRemoved() {
         val arbitraryPref = "arbitrary.test-only.pref"
@@ -378,7 +377,7 @@ class PreferencesTest : BaseSessionTest() {
                 .registerPreference(arbitraryPref),
         )
 
-        
+        // Removing the pref, so it'll no longer be valid
         sessionRule.clearUserPref(arbitraryPref)
 
         sessionRule.addExternalDelegateUntilTestEnd(
@@ -399,12 +398,12 @@ class PreferencesTest : BaseSessionTest() {
         )
     }
 
-    
-
-
+    /**
+     * If a pref "changes" to the same value, it should be a no-op.
+     */
     @Test
     fun noObservationOnSameChange() {
-        
+        // Arbitrary int preference selected from StaticPrefList.yaml
         val intPref = "dom.popup_maximum"
         val initialValue = sessionRule.getPrefs(intPref)[0]
         var timesCalled = 0
@@ -432,9 +431,9 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Called onGeckoPreferenceChange the expected times: $timesCalled", 0, timesCalled)
     }
 
-    
-
-
+    /**
+     * The pref is not real.
+     */
     @Test
     fun invalidObservation() {
         var timesCalled = 0
@@ -456,12 +455,12 @@ class PreferencesTest : BaseSessionTest() {
         )
     }
 
-    
-
-
+    /**
+     * Checks if getting from the user branch behaves as expected.
+     */
     @Test
     fun gettingUserGeckoPreference() {
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
         val intPref = "dom.user_activation.transient.timeout"
         val intExpected = sessionRule.getPrefs(intPref)[0]
         val intActual = sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
@@ -512,12 +511,12 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Correct type for unknown pref.", PREF_TYPE_INVALID, unknownActual.type)
     }
 
-    
-
-
+    /**
+     * Checks if getting multiple prefs from the user branch behaves as expected.
+     */
     @Test
     fun gettingMultipleUserGeckoPreference() {
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
         val intPref = "dom.user_activation.transient.timeout"
         val intExpected = sessionRule.getPrefs(intPref)[0]
 
@@ -579,13 +578,13 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Correct type for unknown pref.", PREF_TYPE_INVALID, unknownActual.type)
     }
 
-    
-
-
+    /**
+     * Checks if getting from the default branch behaves as expected.
+     */
     @Test
     fun gettingDefaultGeckoPreference() {
-        
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
+        // Initial values are presumed actual defaults (no existing junit test API to get defaults directly)
         val intPref = "dom.popup_maximum"
         val intInitial = sessionRule.getPrefs(intPref)[0] as Int
         val intSet = intInitial + 1
@@ -602,7 +601,7 @@ class PreferencesTest : BaseSessionTest() {
         val boolInitial = sessionRule.getPrefs(boolPref)[0] as Boolean
         val boolSet = !boolInitial
 
-        
+        // Change away from the default
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 intPref to intSet,
@@ -612,14 +611,14 @@ class PreferencesTest : BaseSessionTest() {
             ),
         )
 
-        
+        // Confirm user prefs set
         val valuesSet = sessionRule.getPrefs(intPref, stringPref, floatPref, boolPref)
         assertEquals("Int user pref set as expected", intSet, valuesSet[0])
         assertEquals("String user pref set as expected", stringSet, valuesSet[1])
         assertEquals("Float user pref set as expected", floatSet, valuesSet[2])
         assertEquals("Bool user pref set as expected", boolSet, valuesSet[3])
 
-        
+        // Check default prefs
         val intActual = sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
         assertEquals("Getting int worked as expected.", intSet, intActual.value)
         assertEquals("Default value is as expected.", intInitial, intActual.defaultValue)
@@ -654,15 +653,15 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Correct type for bool.", PREF_TYPE_BOOL, boolActual.type)
     }
 
-    
-
-
+    /**
+     * Checks if setting from the user branch behaves as expected.
+     */
     @Test
     fun settingUserGeckoPreference() {
         val branch = PREF_BRANCH_USER
-        
-        
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
+        // Note: The setting tests are specifically different from the rest in this file to prevent test harness interference
+        // during concurrent runs.
         val intPref = "dom.fullscreen.force_exit_on_multiple_escape_interval"
         val stringPref = "browser.active_color"
         val floatPref = "dom.vr.controller_trigger_threshold"
@@ -705,15 +704,15 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Setting bool set as expected.", unknownSet, unknownExpected)
     }
 
-    
-
-
+    /**
+     * Checks if setting from the default branch behaves as expected.
+     */
     @Test
     fun settingDefaultGeckoPreference() {
         val branch = PREF_BRANCH_DEFAULT
-        
-        
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
+        // Note: The setting tests are specifically different from the rest in this file to prevent test harness interference
+        // during concurrent runs.
         val intPref = "dom.innerSize.rounding"
         val stringPref = "browser.active_color.dark"
         val floatPref = "general.smoothScroll.currentVelocityWeighting"
@@ -729,13 +728,13 @@ class PreferencesTest : BaseSessionTest() {
         val floatDefaultSet = floatInitial + "1"
         val boolDefaultSet = !boolInitial
 
-        
+        // Set new defaults
         sessionRule.waitForResult(GeckoPreferenceController.setGeckoPref(intPref, intDefaultSet, branch))
         sessionRule.waitForResult(GeckoPreferenceController.setGeckoPref(stringPref, stringDefaultSet, branch))
         sessionRule.waitForResult(GeckoPreferenceController.setGeckoPref(floatPref, floatDefaultSet, branch))
         sessionRule.waitForResult(GeckoPreferenceController.setGeckoPref(boolPref, boolDefaultSet, branch))
 
-        
+        // Check setting occurred both on default and user branches
         val intDefault = sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
         val intUser = sessionRule.getPrefs(intPref)[0] as Int
         assertEquals("Default int set as expected.", intDefaultSet, intDefault.defaultValue)
@@ -756,7 +755,7 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Default bool set as expected.", boolDefaultSet, boolDefault.defaultValue)
         assertEquals("User bool set as expected to the default.", boolDefaultSet, boolUser)
 
-        
+        // Change the user pref, but not the default
         val intSetUserPost = intDefaultSet + 1
         val stringSetUserPost = stringDefaultSet + "A"
         val floatSetUserPost = floatDefaultSet + "1"
@@ -770,7 +769,7 @@ class PreferencesTest : BaseSessionTest() {
             ),
         )
 
-        
+        // Confirm default remained unchanged
         val intDefaultPostChange = sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
         val intUserPost = sessionRule.getPrefs(intPref)[0] as Int
         assertEquals("Default int set as expected.", intDefaultSet, intDefaultPostChange.defaultValue)
@@ -792,16 +791,16 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("User bool set as expected.", boolSetUserPost, boolUserPost)
     }
 
-    
-
-
+    /**
+     * Checks setting using the wrong API behaves as expected.
+     */
     @Test
     fun settingUserGeckoPreferenceWrongAPI() {
         val intPref = "dom.navigation.navigationRateLimit.timespan"
         val intInitial = sessionRule.getPrefs(intPref)[0]
         val intSetUserPost = intInitial as Int + 1
 
-        
+        // Setting incorrectly as String when it is an Int pref
         try {
             sessionRule.waitForResult(
                 GeckoPreferenceController.setGeckoPref(
@@ -824,15 +823,15 @@ class PreferencesTest : BaseSessionTest() {
                 ),
             )
 
-        
+        // It'll retrieve the original registered value
         assertEquals("Pref name matches as expected.", intPref, result.pref)
         assertEquals("Pref type matches as expected.", PREF_TYPE_INT, result.type)
         assertEquals("Pref value matches as expected.", intInitial, result.value)
     }
 
-    
-
-
+    /**
+     * Basic test of clearing a user pref.
+     */
     @Test
     fun clearUserPref() {
         val arbitraryPref = "some.arbitrary.pref.test"
@@ -865,13 +864,13 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Pref type after clearing is as expected.", PREF_TYPE_INVALID, postClearing.type)
     }
 
-    
-
-
+    /**
+     * Basic test of setting multiple prefs on the user branch.
+     */
     @Test
     fun setMultiplePrefsUserBranchPref() {
         val branch = PREF_BRANCH_USER
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
         val intPref = "browser.contentanalysis.max_connections"
         val intPrefInitial = sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
         val intSet = intPrefInitial.defaultValue as Int + 1
@@ -919,13 +918,13 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Unknown pref actually set, as expected.", unknownSet, actuals[4] as String)
     }
 
-    
-
-
+    /**
+     * Basic test of setting multiple prefs on the default branch.
+     */
     @Test
     fun setMultiplePrefsDefaultBranchPref() {
         val branch = PREF_BRANCH_DEFAULT
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
         val intPref = "browser.tabs.inTitlebar"
         val intPrefInitial =
             sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
@@ -971,12 +970,12 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("Bool pref actually set as, expected.", boolSet, actuals[3] as Boolean)
     }
 
-    
-
-
+    /**
+     * These APIs must be ran on a thread with a handler. Test checks it fails as expected.
+     */
     @Test
     fun getGeckoPreferenceOnNonHandlerThread() {
-        
+        // Arbitrary preferences selected from StaticPrefList.yaml
         val intPref = "dom.user_activation.transient.timeout"
 
         var didThrow = false

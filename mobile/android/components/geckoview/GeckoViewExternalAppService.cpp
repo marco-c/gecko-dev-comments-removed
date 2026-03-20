@@ -2,7 +2,6 @@
 
 
 
-
 #include "GeckoViewExternalAppService.h"
 
 #include "mozilla/dom/BrowsingContext.h"

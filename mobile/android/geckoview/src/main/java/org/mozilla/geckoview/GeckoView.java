@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.geckoview;
 
 import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_ACTIVITY_CONTEXT;

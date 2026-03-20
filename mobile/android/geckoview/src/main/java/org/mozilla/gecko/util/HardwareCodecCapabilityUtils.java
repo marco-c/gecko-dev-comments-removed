@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.gecko.util;
 
 import android.media.MediaCodec;

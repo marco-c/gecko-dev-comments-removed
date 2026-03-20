@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -66,7 +65,7 @@ class WebPushTest : BaseSessionTest() {
     @Before
     fun setup() {
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.webnotifications.requireuserinteraction" to false))
-        
+        // Grant "desktop notification" permission
         mainSession.delegateUntilTestEnd(object : PermissionDelegate {
             override fun onContentPermissionRequest(session: GeckoSession, perm: GeckoSession.PermissionDelegate.ContentPermission): GeckoResult<Int>? {
                 assertThat("Should grant DESKTOP_NOTIFICATIONS permission", perm.permission, equalTo(GeckoSession.PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION))
@@ -101,25 +100,25 @@ class WebPushTest : BaseSessionTest() {
 
     @Test
     fun subscribe() {
-        
+        // PushManager.subscribe()
         val appServerKey = WebPushUtils.keyToString(APP_SERVER_KEY_PAIR.public as ECPublicKey)
         var pushSubscription = mainSession.evaluatePromiseJS("window.doSubscribe(\"$appServerKey\")").value as JSONObject
         assertThat("Should have a stored subscription", delegate!!.storedSubscription, notNullValue())
         verifySubscription(pushSubscription)
 
-        
+        // PushManager.getSubscription()
         pushSubscription = mainSession.evaluatePromiseJS("window.doGetSubscription()").value as JSONObject
         verifySubscription(pushSubscription)
     }
 
     @Test
     fun subscribeNoAppServerKey() {
-        
+        // PushManager.subscribe()
         var pushSubscription = mainSession.evaluatePromiseJS("window.doSubscribe()").value as JSONObject
         assertThat("Should have a stored subscription", delegate!!.storedSubscription, notNullValue())
         verifySubscription(pushSubscription)
 
-        
+        // PushManager.getSubscription()
         pushSubscription = mainSession.evaluatePromiseJS("window.doGetSubscription()").value as JSONObject
         verifySubscription(pushSubscription)
     }
@@ -140,7 +139,7 @@ class WebPushTest : BaseSessionTest() {
     fun unsubscribe() {
         subscribe()
 
-        
+        // PushManager.unsubscribe()
         val unsubResult = mainSession.evaluatePromiseJS("window.doUnsubscribe()").value as JSONObject
         assertThat("Unsubscribe result should be non-null", unsubResult, notNullValue())
         assertThat("Should not have a stored subscription", delegate!!.storedSubscription, nullValue())

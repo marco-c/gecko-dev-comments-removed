@@ -1,8 +1,6 @@
 
 
 
-
-
 package org.mozilla.geckoview;
 
 import android.content.Context;

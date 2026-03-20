@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -134,9 +133,9 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         val fingerprintingProtectionPrivateBrowsing =
             (sessionRule.getPrefs("privacy.fingerprintingProtection.pbmode").get(0)) as Boolean
 
-        
-        
-        
+        // Removing two of these defaults tests because depending on the test order,
+        // NavigationDelegateTest.desktopModeRFP can change the value and hence cause default
+        // verification failure
 
         assertThat(
             "Suspected Fingerprint Protection should be disabled by default in normal tabs",

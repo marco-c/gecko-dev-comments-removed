@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.geckoview_example;
 
 import android.app.Activity;

@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko.gfx;
 
 import static org.mozilla.geckoview.BuildConfig.DEBUG_BUILD;

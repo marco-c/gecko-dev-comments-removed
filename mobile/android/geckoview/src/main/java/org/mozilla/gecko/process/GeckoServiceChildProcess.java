@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko.process;
 
 import android.app.Application;

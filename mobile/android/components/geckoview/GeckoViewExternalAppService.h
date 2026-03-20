@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GeckoViewExternalAppService_h_
 #define GeckoViewExternalAppService_h_
 

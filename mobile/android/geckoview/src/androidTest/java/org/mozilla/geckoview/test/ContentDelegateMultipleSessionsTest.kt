@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -51,36 +50,36 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
         var numContentProcesses = (sessionRule.getPrefs(e10sProcessCountPref)[0] as Int)
 
         if (isExtensionProcessEnabled && numContentProcesses > 1) {
-            
+            // Extension process counts against the content process budget
             --numContentProcesses
         }
 
         return numContentProcesses
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This function ensures that a second GeckoSession that shares the same
+    // content process as mainSession is returned to the test:
+    //
+    // First, we assume that we're starting with a known initial state with respect
+    // to sessions and content processes:
+    // * mainSession is the only session, it is open, and its content process is the only
+    //   content process (but note that the content process assigned to mainSession is
+    //   *not* guaranteed to be ":tab_disable_art_image_0").
+    // * With multi-e10s configured to run N content processes, we create and open
+    //   an additional N content processes. With the default e10s process allocation
+    //   scheme, this means that the first N-1 new sessions we create each get their
+    //   own content process. The Nth new session is assigned to the same content
+    //   process as mainSession, which is the session we want to return to the test.
     fun getSecondGeckoSession(): GeckoSession {
         val numContentProcesses = getE10sProcessCount()
 
-        
-        
-        
+        // If we change the content process allocation scheme, this function will need to be
+        // fixed to ensure that we still have two test sessions in at least one content
+        // process (with one of those sessions being mainSession).
         val additionalSessions = Array(numContentProcesses) { _ -> sessionRule.createOpenSession() }
 
-        
-        
+        // The second session that shares a process with mainSession should be at
+        // the end of the array.
         return additionalSessions.last()
     }
 
@@ -92,17 +91,17 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
     @IgnoreCrash
     @Test
     fun crashContentMultipleSessions() {
-        
-        
+        // We need to make sure all sessions in a given content process receive onCrash
+        // or onKill. To test this, we need to make sure we have two tabs sharing the same process.
         val newSession = getSecondGeckoSession()
 
-        
-        
-        
+        // We can inadvertently catch the `onCrash` call for the cached session if we don't specify
+        // individual sessions here. Therefore, assert 'onCrash' is called for the two sessions
+        // individually...
         val mainSessionCrash = GeckoResult<Void>()
         val newSessionCrash = GeckoResult<Void>()
 
-        
+        // ...but we use GeckoResult.allOf for waiting on the aggregated results
         val allCrashesFound = GeckoResult.allOf(mainSessionCrash, newSessionCrash)
 
         sessionRule.delegateUntilTestEnd(object : ContentDelegate {
@@ -114,8 +113,8 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
                 }
             }
 
-            
-            
+            // Slower devices may not catch crashes in a timely manner, so we check to see
+            // if either `onKill` or `onCrash` is called
             override fun onCrash(session: GeckoSession) {
                 reportCrash(session)
             }

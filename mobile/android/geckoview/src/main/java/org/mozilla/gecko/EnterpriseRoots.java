@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko;
 
 import android.util.Log;

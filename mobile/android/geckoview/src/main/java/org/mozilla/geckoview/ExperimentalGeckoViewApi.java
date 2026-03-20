@@ -1,8 +1,6 @@
 
 
 
-
-
 package org.mozilla.geckoview;
 
 import androidx.annotation.RequiresOptIn;

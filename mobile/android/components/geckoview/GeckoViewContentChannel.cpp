@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoViewContentChannel.h"
 #include "GeckoViewInputStream.h"
 #include "mozilla/java/ContentInputStreamWrappers.h"

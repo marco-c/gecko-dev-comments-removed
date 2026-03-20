@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko;
 
 import static android.content.Context.UI_MODE_SERVICE;

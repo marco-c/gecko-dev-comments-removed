@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -38,7 +37,7 @@ class PrivateModeTest : BaseSessionTest() {
         """,
         ) as String
 
-        
+        // Ensure that the regular session's data hasn't leaked into the private session.
         assertThat(
             "Private mode local storage value should be empty",
             localStorage,
@@ -57,7 +56,7 @@ class PrivateModeTest : BaseSessionTest() {
         """,
         ) as String
 
-        
+        // Conversely, ensure private data hasn't leaked into the regular session.
         assertThat(
             "Regular mode storage value should be unchanged",
             localStorage,
@@ -67,7 +66,7 @@ class PrivateModeTest : BaseSessionTest() {
 
     @Test
     fun privateModeStorageShared() {
-        
+        // Two private mode sessions should share the same storage (bug 1533406).
         val privateSession1 = sessionRule.createOpenSession(
             GeckoSessionSettings.Builder(mainSession.settings)
                 .usePrivateMode(true)

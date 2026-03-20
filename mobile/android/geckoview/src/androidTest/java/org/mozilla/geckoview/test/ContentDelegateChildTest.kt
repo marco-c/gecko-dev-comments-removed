@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
@@ -74,23 +73,23 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 downTime,
                 eventTime,
                 MotionEvent.ACTION_DOWN,
-                
+                // pointerCount
                 1,
                 pp,
                 pc,
-                
+                // metaState
                 0,
                 MotionEvent.BUTTON_SECONDARY,
-                
+                // xPrecision
                 1.0f,
-                
+                // yPrecision
                 1.0f,
-                
+                // deviceId
                 0,
-                
+                // edgeFlags
                 0,
                 InputDevice.SOURCE_MOUSE,
-                
+                // flags
                 0,
             )
         mainSession.panZoomController.onTouchEvent(event)
@@ -118,25 +117,25 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 downTime,
                 eventTime,
                 MotionEvent.ACTION_UP,
-                
+                // pointerCount
                 1,
                 pp,
                 pc,
-                
+                // metaState
                 0,
-                
-                
+                // buttonState is unset in ACTION_UP
+                // buttonState
                 0,
-                
+                // xPrecision
                 1.0f,
-                
+                // yPrecision
                 1.0f,
-                
+                // deviceId
                 0,
-                
+                // edgeFlags
                 0,
                 InputDevice.SOURCE_MOUSE,
-                
+                // flags
                 0,
             )
         mainSession.panZoomController.onTouchEvent(event)
@@ -389,7 +388,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         element.linkUri,
                         endsWith("hello.html"),
                     )
-                    @Suppress("DEPRECATION") 
+                    @Suppress("DEPRECATION") // remove when textContent is removed
                     assertThat(
                         "The element link text content should be the text content of the anchor.",
                         element.textContent,
@@ -431,7 +430,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         element.altText?.length,
                         equalTo(4096),
                     )
-                    @Suppress("DEPRECATION") 
+                    @Suppress("DEPRECATION") // remove when textContent is removed
                     assertThat(
                         "The element link text content should not exceed a maximum of 4096 chars.",
                         element.textContent?.length,
@@ -478,7 +477,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         element.linkUri,
                         endsWith("hello.html"),
                     )
-                    @Suppress("DEPRECATION") 
+                    @Suppress("DEPRECATION") // remove when textContent is removed
                     assertThat(
                         "The element link text content should be the text content of the " +
                                 "anchor including white spaces.",
@@ -578,7 +577,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         element.linkUri,
                         endsWith("hello.html"),
                     )
-                    @Suppress("DEPRECATION") 
+                    @Suppress("DEPRECATION") // remove when textContent is removed
                     assertThat(
                         "The element link text content should be the text content of the anchor.",
                         element.textContent,
@@ -631,7 +630,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         element.linkUri,
                         endsWith("hello.html"),
                     )
-                    @Suppress("DEPRECATION") 
+                    @Suppress("DEPRECATION") // remove when textContent is removed
                     assertThat(
                         "The element link text content should be the text content of the anchor.",
                         element.textContent,
@@ -705,7 +704,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
+        // When right-click by mouse, we don't show context menu if there is a selection range.
 
         mainSession.evaluateJS(
             """
@@ -725,7 +724,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
             ),
         )
 
-        
+        // Calling preventDefault doesn't show action menu
 
         val contextmenuEventPromise =
             mainSession.evaluatePromiseJS(
@@ -770,7 +769,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Create content editable
 
         val contentEditablePromise =
             mainSession.evaluatePromiseJS(
@@ -813,7 +812,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
         mainSession.loadTestPath(TEXT_CONTROL_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Click text control with selection shows action menu
 
         mainSession.evaluateJS(
             """
@@ -835,7 +834,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
             ),
         )
 
-        
+        // Click non-text control doesn't show action menu and context menu
 
         val contextmenuEventPromise =
             mainSession.evaluatePromiseJS(

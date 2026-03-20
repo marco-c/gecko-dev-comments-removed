@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -39,7 +38,7 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 @MediumTest
 @RunWith(Parameterized::class)
 class TextInputDelegateTest : BaseSessionTest() {
-    
+    // "parameters" needs to be a static field, so it has to be in a companion object.
     companion object {
         @get:Parameterized.Parameters(name = "{0}")
         @JvmStatic
@@ -57,9 +56,9 @@ class TextInputDelegateTest : BaseSessionTest() {
 
     @Before
     fun setup() {
-        
-        
-        
+        // Disable the DOM security feature that filters key events immediately
+        // after navigation. Our tests otherwise may lose events if they send
+        // too fast.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "dom.input_events.security.minTimeElapsedInMS" to 0,
@@ -167,12 +166,12 @@ class TextInputDelegateTest : BaseSessionTest() {
 
     private fun commitText(ic: InputConnection, text: CharSequence, newCursorPosition: Int) {
         if (text == "") {
-            
+            // No composition event is fired
             ic.commitText(text, newCursorPosition)
             return
         }
-        
-        
+        // InputConnection.commitText might not dispatch composition event if no composition.
+        // So we look both input event and compositionend event for the completion.
         val promise = mainSession.evaluatePromiseJS(
             when (id) {
                 "#designmode" -> """(function() {
@@ -208,15 +207,15 @@ class TextInputDelegateTest : BaseSessionTest() {
         ic.commitText(text, newCursorPosition)
         promise.value
 
-        
-        
+        // In Gecko, commit text always set caret position to the end of committed text.
+        // So if the newCursorPosition isn't 1, Gecko may notify new position after committing text.
         if (newCursorPosition != 1) {
             mainSession.waitForJS("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
         }
     }
 
     private fun deleteSurroundingText(ic: InputConnection, before: Int, after: Int) {
-        
+        // deleteSurroundingText might fire multiple events.
         val promise = mainSession.evaluatePromiseJS(
             when (id) {
                 "#designmode" -> "new Promise(r => document.querySelector('$id').contentDocument.addEventListener('input', r, { once: true }))"
@@ -227,7 +226,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         if (before != 0 || after != 0) {
             promise.value
         }
-        
+        // XXX: No way to wait for all events.
         processChildEvents()
     }
 
@@ -262,7 +261,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     private fun syncShadowText(ic: InputConnection) {
-        
+        // Workaround for sync shadow text
         ic.beginBatchEdit()
         ic.endBatchEdit()
 
@@ -271,7 +270,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @Test fun restartInput() {
-        
+        // Check that restartInput is called on focus and blur.
         mainSession.loadTestPath(INPUTS_PATH)
         mainSession.waitForPageStop()
 
@@ -298,7 +297,7 @@ class TextInputDelegateTest : BaseSessionTest() {
                 )
             }
 
-            
+            // Also check that showSoftInput/hideSoftInput are not called before a user action.
             @AssertCalled(count = 0)
             override fun showSoftInput(session: GeckoSession) {
             }
@@ -310,19 +309,19 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @Test fun restartInput_temporaryFocus() {
-        
+        // Our user action trick doesn't work for design-mode, so we can't test that here.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
-        
+        // Disable for frequent failures Bug 1542525
         assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
 
         mainSession.loadTestPath(INPUTS_PATH)
         mainSession.waitForPageStop()
 
-        
-        
+        // Focus the input once here and once below, but we should only get a
+        // single restartInput or showSoftInput call for the second focus.
         mainSession.evaluateJS("document.querySelector('$id').focus(); document.querySelector('$id').blur()")
 
-        
+        // Simulate a user action so we're allowed to show/hide the keyboard.
         mainSession.pressKey(KeyEvent.KEYCODE_CTRL_LEFT)
         mainSession.evaluateJS("document.querySelector('$id').focus()")
 
@@ -347,13 +346,13 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @Test fun restartInput_temporaryBlur() {
-        
+        // Our user action trick doesn't work for design-mode, so we can't test that here.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         mainSession.loadTestPath(INPUTS_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Simulate a user action so we're allowed to show/hide the keyboard.
         mainSession.pressKey(KeyEvent.KEYCODE_CTRL_LEFT)
         mainSession.evaluateJS("document.querySelector('$id').focus()")
         mainSession.waitUntilCalled(
@@ -362,8 +361,8 @@ class TextInputDelegateTest : BaseSessionTest() {
             "showSoftInput",
         )
 
-        
-        
+        // We should get a pair of restartInput calls for the blur/focus,
+        // but only one showSoftInput call and no hideSoftInput call.
         mainSession.evaluateJS("document.querySelector('$id').blur(); document.querySelector('$id').focus()")
 
         mainSession.waitUntilCalled(object : TextInputDelegate {
@@ -392,13 +391,13 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @Test fun showHideSoftInput() {
-        
+        // Our user action trick doesn't work for design-mode, so we can't test that here.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         mainSession.loadTestPath(INPUTS_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Simulate a user action so we're allowed to show/hide the keyboard.
         mainSession.pressKey(KeyEvent.KEYCODE_CTRL_LEFT)
 
         mainSession.evaluateJS("document.querySelector('$id').focus()")
@@ -476,7 +475,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertThat("hideSoftInput isn't called", true, equalTo(true))
     }
 
-    
+    // When navigating away from a page with a focused input field, the keyboard should be dismissed.
     @WithDisplay(width = 100, height = 100)
     @Test
     fun restartInput_dismissAfterNavigation() {
@@ -519,8 +518,8 @@ class TextInputDelegateTest : BaseSessionTest() {
         ic.getExtractedText(ExtractedTextRequest(), 0).text.toString()
 
     private fun assertText(message: String, actual: String, expected: String) =
-        
-        
+        // In an HTML editor, Gecko may insert an additional element that show up as a
+        // return character at the end. Deal with that here.
         assertThat(message, actual.trimEnd('\n'), equalTo(expected))
 
     private fun assertText(
@@ -607,11 +606,11 @@ class TextInputDelegateTest : BaseSessionTest() {
         mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
     }
 
-    
+    // Test setSelection
     @Ignore
-    
+    // Disable for frequent timeout for selection event.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_setSelection() {
         setupContent("")
@@ -619,17 +618,17 @@ class TextInputDelegateTest : BaseSessionTest() {
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
         assertText("Can set initial text", ic, "")
 
-        
-        
-        
-        commitText(ic, "foo", 1) 
+        // TODO:
+        // onselectionchange won't be fired if caret is last. But commitText
+        // can set text and selection well (Bug 1360388).
+        commitText(ic, "foo", 1) // Selection at end of new text
         assertTextAndSelectionAt("Can commit text", ic, "foo", 3)
 
         setSelection(ic, 0, 3)
         assertSelection("Can set selection to range", ic, 0, 3)
-        
+        // No selection change event is fired
         ic.setSelection(-3, 6)
-        
+        // Test both forms of assert
         assertTextAndSelection(
             "Can handle invalid range",
             ic,
@@ -639,14 +638,14 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
         setSelection(ic, 3, 3)
         assertSelectionAt("Can collapse selection", ic, 3)
-        
+        // No selection change event is fired
         ic.setSelection(4, 4)
         assertTextAndSelectionAt("Can handle invalid cursor", ic, "foo", 3)
     }
 
-    
+    // Test commitText
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_commitText() {
         setupContent("")
@@ -654,32 +653,32 @@ class TextInputDelegateTest : BaseSessionTest() {
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
         assertText("Can set initial text", ic, "")
 
-        commitText(ic, "foo", 1) 
+        commitText(ic, "foo", 1) // Selection at end of new text
         assertTextAndSelectionAt("Can commit empty text", ic, "foo", 3)
 
-        commitText(ic, "", 10) 
+        commitText(ic, "", 10) // Selection past end of new text
         assertTextAndSelectionAt("Can commit empty text", ic, "foo", 3)
-        commitText(ic, "bar", 1) 
+        commitText(ic, "bar", 1) // Selection at end of new text
         assertTextAndSelectionAt(
             "Can commit text (select after)",
             ic,
             "foobar",
             6,
         )
-        commitText(ic, "foo", -1) 
+        commitText(ic, "foo", -1) // Selection at start of new text
         assertTextAndSelectionAt(
             "Can commit text (select before)",
             ic,
             "foobarfoo",
             5,
-            
+            // checkGecko
             false,
         )
     }
 
-    
+    // Test deleteSurroundingText
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_deleteSurroundingText() {
         setupContent("")
@@ -714,9 +713,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertTextAndSelectionAt("Can delete empty text", ic, "foo", 3)
     }
 
-    
+    // Test setComposingText
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_setComposingText() {
         setupContent("")
@@ -724,7 +723,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
         assertText("Can set initial text", ic, "")
 
-        commitText(ic, "foo", 1) 
+        commitText(ic, "foo", 1) // Selection at end of new text
         assertTextAndSelectionAt("Can commit text", ic, "foo", 3)
 
         setComposingText(ic, "foo", 1)
@@ -734,14 +733,14 @@ class TextInputDelegateTest : BaseSessionTest() {
         setComposingText(ic, "bar", 1)
         assertTextAndSelectionAt("Can update composition", ic, "foobar", 6)
 
-        
+        // Test finishComposingText
         finishComposingText(ic)
         assertTextAndSelectionAt("Can finish composition", ic, "foobar", 6)
     }
 
-    
+    // Test setComposingRegion
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_setComposingRegion() {
         setupContent("")
@@ -749,7 +748,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
         assertText("Can set initial text", ic, "")
 
-        commitText(ic, "foobar", 1) 
+        commitText(ic, "foobar", 1) // Selection at end of new text
         assertTextAndSelectionAt("Can commit text", ic, "foobar", 6)
 
         ic.setComposingRegion(0, 3)
@@ -777,16 +776,16 @@ class TextInputDelegateTest : BaseSessionTest() {
             ic,
             "frabar",
             6,
-            
+            // checkGecko
             false,
         )
 
         finishComposingText(ic)
     }
 
-    
+    // Test getTextBefore/AfterCursor
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_getTextBeforeAfterCursor() {
         setupContent("foobar")
@@ -797,14 +796,14 @@ class TextInputDelegateTest : BaseSessionTest() {
         setSelection(ic, 3, 3)
         assertSelection("Can set selection to range", ic, 3, 3)
 
-        
+        // Test getTextBeforeCursor
         assertThat(
             "Can retrieve text before cursor",
             "foo",
             equalTo(ic.getTextBeforeCursor(3, 0)),
         )
 
-        
+        // Test getTextAfterCursor
         assertThat(
             "Can retrieve text after cursor",
             "bar",
@@ -813,7 +812,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_selectionByArrowKey() {
         setupContent("")
@@ -821,10 +820,10 @@ class TextInputDelegateTest : BaseSessionTest() {
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
         assertText("Set initial text", ic, "")
 
-        commitText(ic, "foo", 1) 
+        commitText(ic, "foo", 1) // Selection at end of new text
         assertTextAndSelectionAt("Commit foo text", ic, "foo", 3)
 
-        
+        // backward selection test
         var time = SystemClock.uptimeMillis()
         var shiftKey = KeyEvent(
             time,
@@ -840,16 +839,16 @@ class TextInputDelegateTest : BaseSessionTest() {
         processChildEvents()
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
-        
+        // No way to get notification for selection on Java side. So sync shadow text
         syncShadowText(ic)
         assertSelection("Set backward select using key event", ic, 3, 0)
 
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
-        
+        // No way to get notification for selection on Java side. So sync shadow text
         syncShadowText(ic)
         assertSelectionAt("Reset selection using key event", ic, 0)
 
-        
+        // forward selection test
         time = SystemClock.uptimeMillis()
         shiftKey = KeyEvent(
             time,
@@ -865,14 +864,14 @@ class TextInputDelegateTest : BaseSessionTest() {
         processChildEvents()
         pressKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT)
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
-        
+        // No way to get notification for selection on Java side. So sync shadow text
         syncShadowText(ic)
         assertSelection("Set forward select using key event", ic, 0, 3)
     }
 
-    
+    // Test sendKeyEvent
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_sendKeyEvent() {
         setupContent("")
@@ -880,7 +879,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
         assertText("Can set initial text", ic, "")
 
-        commitText(ic, "frabar", 1) 
+        commitText(ic, "frabar", 1) // Selection at end of new text
         assertTextAndSelectionAt("Can commit text", ic, "frabar", 6)
 
         val time = SystemClock.uptimeMillis()
@@ -892,7 +891,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             0,
         )
 
-        
+        // Wait for selection change
         var promise = mainSession.evaluatePromiseJS(
             when (id) {
                 "#designmode" -> "new Promise(r => document.querySelector('$id').contentDocument.addEventListener('selectionchange', r, { once: true }))"
@@ -906,9 +905,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
         promise.value
 
-        
-        
-        
+        // TODO(m_kato)
+        // Since geckoview-junit doesn't attach View, there is no way to wait for correct selection data.
+        // So Sync shadow text to avoid failures.
         syncShadowText(ic)
         assertTextAndSelection(
             "Can select using key event",
@@ -930,15 +929,15 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertText("Can type using event", ic, "frabat")
     }
 
-    
+    // Test for Multiple setComposingText with same string length.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_multiple_setComposingText() {
         setupContent("")
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
 
-        
+        // Don't wait composition event for this test.
         ic.setComposingText("aaa", 1)
         ic.setComposingText("aaa", 1)
         ic.setComposingText("aab", 1)
@@ -952,9 +951,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
     }
 
-    
+    // Test for setting large text on text box.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_largeText() {
         val content = (1..102400).map {
@@ -966,13 +965,13 @@ class TextInputDelegateTest : BaseSessionTest() {
             "Can set large initial text",
             ic,
             content,
-            
+            // checkGecko
             false,
         )
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_commitContent() {
         if (id == "#input" || id == "#textarea") {
@@ -1011,7 +1010,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             },
         )
 
-        
+        // InputContentInfo requires content:// uri, so we have to set test data to custom content provider.
         TestContentProvider.setTestData(this.getTestBytes("/assets/www/images/test.gif"), "image/gif")
         val info = InputContentInfo("content://org.mozilla.geckoview.test.provider/gif".toUri(), ClipDescription("test", arrayOf("image/gif")))
         ic.commitContent(info, 0, null)
@@ -1019,9 +1018,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertThat("Input event is fired by inserting image", true, equalTo(true))
     }
 
-    
+    // Bug 1133802, duplication when setting the same composing text more than once.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1133802() {
         setupContent("")
@@ -1031,7 +1030,7 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         setComposingText(ic, "foo", 1)
         assertTextAndSelectionAt("Can set the composing text", ic, "foo", 3)
-        
+        // Setting same text doesn't fire compositionupdate
         ic.setComposingText("foo", 1)
         assertTextAndSelectionAt(
             "Can set the same composing text",
@@ -1046,7 +1045,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             "bar",
             3,
         )
-        
+        // Setting same text doesn't fire compositionupdate
         ic.setComposingText("bar", 1)
         assertTextAndSelectionAt(
             "Can set the same composing text",
@@ -1054,7 +1053,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             "bar",
             3,
         )
-        
+        // Setting same text doesn't fire compositionupdate
         ic.setComposingText("bar", 1)
         assertTextAndSelectionAt(
             "Can set the same composing text again",
@@ -1066,13 +1065,13 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertTextAndSelectionAt("Can finish composing text", ic, "bar", 3)
     }
 
-    
+    // Bug 1209465, cannot enter ideographic space character by itself (U+3000).
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1209465() {
-        
-        
+        // The ideographic space char may trigger font fallback; we don't want that to be async,
+        // as the resulting deferred reflow may confuse a following test.
         sessionRule.setPrefsUntilTestEnd(mapOf("gfx.font_rendering.fallback.async" to false))
 
         setupContent("")
@@ -1089,9 +1088,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
     }
 
-    
+    // Bug 1275371 - shift+backspace should not forward delete on Android.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1275371() {
         setupContent("")
@@ -1115,7 +1114,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
         ic.sendKeyEvent(shiftKey)
 
-        
+        // Wait for input change
         val promise = mainSession.evaluatePromiseJS(
             when (id) {
                 "#designmode" -> "new Promise(r => document.querySelector('$id').contentDocument.addEventListener('input', r, { once: true }))"
@@ -1137,9 +1136,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
     }
 
-    
+    // Bug 1490391 - Committing then setting composition can result in duplicates.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1490391() {
         setupContent("")
@@ -1165,17 +1164,17 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         finishComposingText(ic)
 
-        
-        
-        
-        
+        // TODO:
+        // Call ic.deleteSurroundingText(6, 0) and check result.
+        // Actually, no way to wait deleteSurroudingText since this may fire
+        // multiple events.
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun sendDummyKeyboardEvent() {
-        
+        // unnecessary for designmode
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         setupContent("")
@@ -1186,7 +1185,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         commitText(ic, "foo", 1)
         assertTextAndSelectionAt("commit text and selection", ic, "foo", 3)
 
-        
+        // Dispatching keydown, input and keyup
         val promise =
             mainSession.evaluatePromiseJS(
                 """
@@ -1205,7 +1204,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun editorInfo_default() {
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -1241,12 +1240,12 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun editorInfo_defaultByInputType() {
         assumeThat("type attribute is input element only", id, equalTo("#input"))
-        
-        
+        // Disable this with WebRender due to unexpected abort by mozilla::gl::GLContext::fTexSubImage2D
+        // (Bug 1706688, Bug 1710060 and etc)
         assumeThat(sessionRule.env.isWebrender and sessionRule.env.isDebugBuild, equalTo(false))
 
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -1257,7 +1256,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             mainSession.evaluateJS("document.querySelector('$inputType').focus()")
             mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
 
-            
+            // IC will be updated asynchronously, so spin event loop
             processChildEvents()
             processParentEvents()
 
@@ -1265,8 +1264,8 @@ class TextInputDelegateTest : BaseSessionTest() {
             val ic = mainSession.textInput.onCreateInputConnection(editorInfo)!!
             assertThat("InputConnection is created correctly", ic, notNullValue())
 
-            
-            
+            // Even if we get IC, new EditorInfo isn't updated yet.
+            // We post and wait for empty job to IC thread to flush all IC's job.
             val result = object : GeckoResult<Boolean>() {
                 init {
                     val icHandler = mainSession.textInput.getHandler(Handler(Looper.getMainLooper()))
@@ -1307,10 +1306,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun editorInfo_enterKeyHint() {
-        
+        // no way to set enterkeyhint on designmode.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
 
@@ -1351,10 +1350,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun editorInfo_autocapitalize() {
-        
+        // no way to set autocapitalize on designmode.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -1394,10 +1393,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun editorInfo_autocorrect() {
-        
+        // design mode is always on.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.forms.autocorrect" to true))
@@ -1436,10 +1435,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun editorInfo_dynamic() {
-        
+        // no way on designmode
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -1471,7 +1470,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun bug1613804_finishComposingText() {
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -1489,16 +1488,16 @@ class TextInputDelegateTest : BaseSessionTest() {
         ic.setComposingText("abc", 1)
         ic.endBatchEdit()
 
-        
+        // finishComposingText has to dispatch compositionend event.
         finishComposingText(ic)
 
         assertText("commit abc", ic, "abc")
     }
 
-    
-    
+    // Bug 1837931 - When 2nd commitText uses -1 as newCursorPosition into batch mode, text
+    // cannot insert correct position.
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_multiple_commitText_into_batchEdit() {
         setupContent("")
@@ -1528,7 +1527,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             },
         )
 
-        
+        // Emulate GBoard's InputConnection API calls
         ic.beginBatchEdit()
         ic.commitText("ab", 1)
         ic.commitText("c", -1)
@@ -1540,9 +1539,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertText("committed text is \"abc\"", ic, "abc")
     }
 
-    
+    // Bug 1593683 - Cursor is jumping when using the arrow keys in input field on GBoard
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1593683() {
         setupContent("")
@@ -1551,7 +1550,7 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         setComposingText(ic, "foo", 1)
         assertTextAndSelectionAt("Can set the composing text", ic, "foo", 3)
-        
+        // Arrow key should keep composition then move caret
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
@@ -1560,7 +1559,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             ic,
             0,
             0,
-            
+            // checkGecko
             false,
         )
 
@@ -1570,10 +1569,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1633621() {
-        
+        // no way on designmode.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         setupContent("")
@@ -1613,10 +1612,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1650705() {
-        
+        // no way on designmode.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
 
         setupContent("")
@@ -1643,13 +1642,13 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_bug1767556() {
         setupContent("")
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
 
-        
+        // Emulate GBoard's InputConnection API calls
         ic.beginBatchEdit()
         ic.setComposingText("fooba", 1)
         ic.endBatchEdit()
@@ -1673,7 +1672,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun inputConnection_setComposingTextWithEmptyStringSpan() {
         assumeThat("input only", id, equalTo("#input"))
@@ -1710,7 +1709,7 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         pressKeyNoWait(ic, KeyEvent.KEYCODE_4)
 
-        
+        // ATOK will set empty text that has a composing span.
         val text = SpannableString("")
         BaseInputConnection.setComposingSpans(text)
         ic.setComposingText(text, 1)
@@ -1744,9 +1743,9 @@ class TextInputDelegateTest : BaseSessionTest() {
         }
     }
 
-    
+    // Bug 1964660 - Sync selection without text change
     @WithDisplay(width = 512, height = 512)
-    
+    // Child process updates require having a display.
     @Test
     fun updateSelectionWithoutTextChange() {
         assumeThat("input only", id, equalTo("#input"))
@@ -1780,7 +1779,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertSelection("selection isn't collapsed", ic, 1, 4)
     }
 
-    
+    // Bug 1563640 - SwiftKey commits empty text with setComposingRegion after enter key
     @WithDisplay(width = 512, height = 512)
     @Test
     fun swiftKeyUsesSetComposingRegionAfterEnterKey() {
@@ -1795,7 +1794,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         pressKey(ic, KeyEvent.KEYCODE_SPACE)
         assertSelection("Can set selection to range", ic, 4, 4)
 
-        
+        // After SwiftKey sends enter key, it calls setComposingRegion then finishComposingText to commit empty text.
         val promise =
             mainSession.evaluatePromiseJS(
                 """

@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.geckoview;
 
 import android.app.Service;

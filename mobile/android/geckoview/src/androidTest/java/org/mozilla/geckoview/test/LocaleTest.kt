@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -45,8 +44,8 @@ class LocaleTest : BaseSessionTest() {
 
     @Test
     fun acceptLanguageFormat() {
-        
-        
+        // No way to override default language settings from unit test.
+        // So we only test this on current settings.
 
         val intlAcceptLanguage = "intl.accept_languages"
         val prefValue = (sessionRule.getPrefs(intlAcceptLanguage)[0] as String).split(",")

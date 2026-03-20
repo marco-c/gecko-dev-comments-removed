@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -63,10 +62,10 @@ class WebExecutorTest {
 
     @Before
     fun setup() {
-        
-        
-        
-        
+        // Using @UiThreadTest here does not seem to block
+        // the tests which are not using @UiThreadTest, so we do that
+        // ourselves here as GeckoRuntime needs to be initialized
+        // on the UI thread.
         runBlocking(Dispatchers.Main) {
             executor = GeckoWebExecutor(RuntimeCreator.getRuntime())
         }
@@ -199,8 +198,8 @@ class WebExecutorTest {
 
     @Test
     fun testAuth() {
-        
-        
+        // We don't support authentication yet, but want to make sure it doesn't do anything
+        // silly like try to prompt the user.
         val response = fetch(webRequest("$TEST_ENDPOINT/basic-auth/foo/bar"))
         assertThat("Status code should match", response.statusCode, equalTo(401))
     }
@@ -259,7 +258,7 @@ class WebExecutorTest {
         val uptimeMillis = SystemClock.uptimeMillis()
         val response = fetch(webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"))
 
-        
+        // We get redirected to /cookies which returns the cookies that were sent in the request
         assertThat("URI should match", response.uri, equalTo("$TEST_ENDPOINT/cookies"))
         assertThat("Status code should match", response.statusCode, equalTo(200))
 
@@ -283,7 +282,7 @@ class WebExecutorTest {
         val uptimeMillis = SystemClock.uptimeMillis()
         val response = fetch(webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"), GeckoWebExecutor.FETCH_FLAGS_ANONYMOUS)
 
-        
+        // We get redirected to /cookies which returns the cookies that were sent in the request
         assertThat("URI should match", response.uri, equalTo("$TEST_ENDPOINT/cookies"))
         assertThat("Status code should match", response.statusCode, equalTo(200))
 
@@ -297,7 +296,7 @@ class WebExecutorTest {
 
     @Test
     fun testAnonymousGetCookies() {
-        
+        // Ensure a cookie is set for the test server
         testCookies()
 
         val response = fetch(
@@ -326,7 +325,7 @@ class WebExecutorTest {
         val uptimeMillis = SystemClock.uptimeMillis()
         val response = fetch(webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"), GeckoWebExecutor.FETCH_FLAGS_PRIVATE)
 
-        
+        // We get redirected to /cookies which returns the cookies that were sent in the request
         assertThat("URI should match", response.uri, equalTo("$TEST_ENDPOINT/cookies"))
         assertThat("Status code should match", response.statusCode, equalTo(200))
 
@@ -354,11 +353,11 @@ class WebExecutorTest {
 
     @Test
     fun testSpeculativeConnect() {
-        
-        
+        // We don't have a way to know if it succeeds or not, but at least we can ensure
+        // it doesn't explode.
         executor.speculativeConnect("http://localhost")
 
-        
+        // This is just a fence to ensure the above actually ran.
         fetch(webRequest("$TEST_ENDPOINT/cookies"))
     }
 
@@ -417,7 +416,7 @@ class WebExecutorTest {
 
     @Test
     fun testFetchStream() {
-        val expectedCount = 1 * 1024 * 1024 
+        val expectedCount = 1 * 1024 * 1024 // 1MB
         val response = executor.fetch(webRequest("$TEST_ENDPOINT/bytes/$expectedCount")).pollDefault()!!
 
         assertThat("Status code should match", response.statusCode, equalTo(200))
@@ -439,7 +438,7 @@ class WebExecutorTest {
 
     @Test(expected = IOException::class)
     fun testFetchStreamError() {
-        val expectedCount = 1 * 1024 * 1024 
+        val expectedCount = 1 * 1024 * 1024 // 1MB
         val response = executor.fetch(
             webRequest("$TEST_ENDPOINT/bytes/$expectedCount"),
             GeckoWebExecutor.FETCH_FLAGS_STREAM_FAILURE_TEST,
@@ -472,7 +471,7 @@ class WebExecutorTest {
         assertThat("Status code should match", response.statusCode, equalTo(200))
         assertThat("Content-Length should match", response.headers["Content-Length"]!!.toInt(), equalTo(expectedCount))
 
-        
+        // Only allow 1ms of blocking. This should reliably timeout with 1MB of data.
         response.setReadTimeoutMillis(1)
 
         val stream = response.body!!
@@ -481,7 +480,7 @@ class WebExecutorTest {
 
     @Test
     fun testFetchStreamCancel() {
-        val expectedCount = 1 * 1024 * 1024 
+        val expectedCount = 1 * 1024 * 1024 // 1MB
         val response = executor.fetch(webRequest("$TEST_ENDPOINT/bytes/$expectedCount")).pollDefault()!!
 
         assertThat("Status code should match", response.statusCode, equalTo(200))
@@ -491,8 +490,8 @@ class WebExecutorTest {
 
         assertThat("Stream should have 0 bytes available", stream.available(), equalTo(0))
 
-        
-        
+        // Wait a second. Not perfect, but should be enough time for at least one buffer
+        // to be appended if things are not going as they should.
         SystemClock.sleep(1000)
 
         assertThat("Stream should still have 0 bytes available", stream.available(), equalTo(0))

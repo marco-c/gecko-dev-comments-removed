@@ -1,8 +1,7 @@
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
-
+// For ContentBlockingException
 @file:Suppress("DEPRECATION")
 
 package org.mozilla.geckoview.test
@@ -26,7 +25,7 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContentBlockingControllerTest : BaseSessionTest() {
-    
+    // Smoke test for safe browsing settings, most testing is through platform tests
     @Test
     fun safeBrowsingSettings() {
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
@@ -35,7 +34,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
         val google4 = contentBlocking.safeBrowsingProviders.first { it.name == "google4" }
         val google5 = contentBlocking.safeBrowsingProviders.first { it.name == "google5" }
 
-        
+        // Let's make sure the initial value of safeBrowsingProviders is correct
         assertThat(
             "Expected number of default providers",
             contentBlocking.safeBrowsingProviders.size,
@@ -45,7 +44,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
         assertThat("Google provider is present", google4, notNullValue())
         assertThat("Google5 provider is present", google5, notNullValue())
 
-        
+        // Checks that the default provider values make sense
         assertThat(
             "Default provider values are sensible",
             google.getHashUrl,
@@ -82,7 +81,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             containsString("/safebrowsing5-dummy/"),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "browser.safebrowsing.provider.google4.updateURL",
             "browser.safebrowsing.provider.google4.gethashURL",
@@ -129,7 +128,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(google5.enabled),
         )
 
-        
+        // Makes sure we can override a default value
         val override = ContentBlocking.SafeBrowsingProvider
             .from(ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER)
             .updateUrl("http://test-update-url.com")
@@ -143,7 +142,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             .enabled(true)
             .build()
 
-        
+        // ... and that we can add a custom provider
         val custom = ContentBlocking.SafeBrowsingProvider
             .withName("custom-provider")
             .updateUrl("http://test-custom-update-url.com")
@@ -248,10 +247,10 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo("a,b,c"),
         )
 
-        
+        // Restore defaults
         contentBlocking.setSafeBrowsingProviders(google, google4, google5)
 
-        
+        // Checks that after restoring the providers the prefs get updated
         val restoredPrefs = sessionRule.getPrefs(
             "browser.safebrowsing.provider.google4.updateURL",
             "browser.safebrowsing.provider.google4.gethashURL",
@@ -336,7 +335,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun cookieBannerHandlingSettings() {
-        
+        // Check default value
 
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
@@ -351,7 +350,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(CookieBannerMode.COOKIE_BANNER_MODE_REJECT),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "cookiebanners.service.mode",
             "cookiebanners.service.mode.privateBrowsing",
@@ -374,7 +373,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun cookieBannerGlobalRulesEnabledSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -383,7 +382,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "cookiebanners.service.enableGlobalRules",
         )
@@ -399,7 +398,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun cookieBannerGlobalRulesSubFramesEnabledSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -408,7 +407,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "cookiebanners.service.enableGlobalRules.subFrames",
         )
@@ -424,7 +423,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun cookieBannerHandlingDetectOnlyModeSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -433,7 +432,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "cookiebanners.service.detectOnly",
         )
@@ -459,7 +458,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun queryParameterStrippingSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -468,7 +467,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "privacy.query_stripping.enabled",
         )
@@ -494,7 +493,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun queryParameterStrippingPrivateBrowsingSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -503,7 +502,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "privacy.query_stripping.enabled.pbmode",
         )
@@ -529,7 +528,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun queryParameterStrippingAllowListSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -538,7 +537,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(""),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "privacy.query_stripping.allow_list",
         )
@@ -564,7 +563,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun queryParameterStrippingStripListSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -573,7 +572,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(""),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "privacy.query_stripping.strip_list",
         )
@@ -599,7 +598,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun etpCategorySettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -608,7 +607,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(ContentBlocking.EtpCategory.STANDARD),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val defaultPrefs = sessionRule.getPrefs(
             "browser.contentblocking.category",
         )
@@ -656,7 +655,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun toggleEmailTrackingForPrivateBrowsingMode() {
-        
+        // check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         val originalPref = sessionRule.getPrefs(
@@ -682,7 +681,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun toggleEmailTrackingWhenETBAddedToAntiTrackingList() {
-        
+        // check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         val originalPref = sessionRule.getPrefs(
@@ -708,7 +707,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun bounceTrackingProtectionModeSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -717,7 +716,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(ContentBlocking.BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalPrefs = sessionRule.getPrefs(
             "privacy.bounceTrackingProtection.mode",
         )
@@ -740,7 +739,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(contentBlocking.bounceTrackingProtectionMode),
         )
 
-        
+        // Set a new pref value, with a different setter method.
         contentBlocking.setBounceTrackingProtectionMode(ContentBlocking.BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY)
 
         val actualPrefs2 = sessionRule.getPrefs(
@@ -753,7 +752,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(contentBlocking.bounceTrackingProtectionMode),
         )
 
-        
+        // Test that the getter returns the correct value.
         assertThat(
             "The getter returns the correct value",
             contentBlocking.getBounceTrackingProtectionMode(),
@@ -763,7 +762,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
 
     @Test
     fun allowListTrackingProtectionSettings() {
-        
+        // Check default value
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 
         assertThat(
@@ -778,7 +777,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        
+        // Checks that the pref value is also consistent with the runtime settings
         val originalAllowListBaseline = sessionRule.getPrefs(
             "privacy.trackingprotection.allow_list.baseline.enabled",
         )
@@ -811,7 +810,7 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        
+        // Set a new pref value, with a different setter method.
         contentBlocking.setAllowListConvenienceTrackingProtection(true)
 
         val actualPrefs2 = sessionRule.getPrefs(

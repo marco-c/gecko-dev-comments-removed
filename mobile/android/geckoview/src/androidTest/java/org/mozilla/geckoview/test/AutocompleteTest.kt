@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -40,8 +39,8 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 class AutocompleteTest : BaseSessionTest() {
 	@org.junit.Before
     fun setup() {
-        
-        
+        // Ensure programmatic focus is allowed to open the autofill popup
+        // for all tests in this class.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "extensions.formautofill.skipProgrammaticCheckForTests" to true,
@@ -51,9 +50,9 @@ class AutocompleteTest : BaseSessionTest() {
 
     val acceptDelay: Long = 100
 
-    
-    
-    
+    // This is a utility to delete previous credit card and address information.
+    // Some credit card tests may not use fetched data since pop up is opened
+    // before fetching it.
     private fun clearData() {
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
@@ -117,7 +116,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun fetchLogins() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.testOnlyNotWaitForPaint" to true,
@@ -199,17 +198,17 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun creditCardSelectAndFill() {
-        
+        // Workaround to fetch and open prompt
         clearData()
 
-        
-        
-        
-        
-        
-        
-        
-        
+        // Test:
+        // 1. Load a credit card form page.
+        // 2. Focus on the name input field.
+        //    a. Ensure onCreditCardFetch is called.
+        //    b. Return the saved entries.
+        //    c. Ensure onCreditCardSelect is called.
+        //    d. Select and return one of the options.
+        //    e. Ensure the form is filled accordingly.
 
         val name = arrayOf("Peter Parker", "John Doe")
         val number = arrayOf("1234-1234-1234-1234", "2345-2345-2345-2345")
@@ -295,7 +294,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Focus on the name input field.
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         sessionRule.waitForResult(selectHandled)
 
@@ -390,7 +389,7 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun creditCardSelectDismiss() {
-        
+        // Workaround to fetch and open prompt
         clearData()
 
         val name = arrayOf("Peter Parker", "John Doe", "Taro Yamada")
@@ -485,14 +484,14 @@ class AutocompleteTest : BaseSessionTest() {
     }
 
     fun checkAddressesForCorrectness(savedAddresses: Array<Address>, selectedAddress: Address) {
-        
-        
-        
-        
-        
-        
-        
-        
+        // Test:
+        // 1. Load an address form page.
+        // 2. Focus on the given name input field.
+        //    a. Ensure onAddressFetch is called.
+        //    b. Return the saved entries.
+        //    c. Ensure onAddressSelect is called.
+        //    d. Select and return one of the options.
+        //    e. Ensure the form is filled accordingly.
 
         val selectHandled = GeckoResult<Void>()
 
@@ -596,7 +595,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Focus on the given name input field.
         mainSession.evaluateJS("document.querySelector('#givenName').focus()")
         sessionRule.waitForResult(selectHandled)
 
@@ -817,7 +816,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSaveDismiss() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -842,11 +841,11 @@ class AutocompleteTest : BaseSessionTest() {
             override fun onLoginSave(login: LoginEntry) {}
         })
 
-        
+        // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = 'user1x'")
         mainSession.evaluateJS("document.querySelector('#pass1').value = 'pass1x'")
 
-        
+        // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
         sessionRule.waitUntilCalled(object : PromptDelegate {
@@ -881,7 +880,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSaveAccept() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -942,11 +941,11 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = 'user1x'")
         mainSession.evaluateJS("document.querySelector('#pass1').value = 'pass1x'")
 
-        
+        // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
         sessionRule.waitForResult(saveHandled)
@@ -956,7 +955,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSaveModifyAccept() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -1025,11 +1024,11 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = 'user1x'")
         mainSession.evaluateJS("document.querySelector('#pass1').value = 'pass1x'")
 
-        
+        // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
         sessionRule.waitForResult(saveHandled)
@@ -1039,7 +1038,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginUpdateAccept() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -1131,7 +1130,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign login credentials.
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
@@ -1140,7 +1139,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         sessionRule.waitForResult(saveHandled)
 
-        
+        // Update login credentials.
         val session2 = sessionRule.createOpenSession()
         session2.loadTestPath(FORMS3_HTML_PATH)
         session2.waitForPageStop()
@@ -1211,7 +1210,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         mainSession.evaluateJS("document.querySelector('#number').value = '$ccNumber'")
@@ -1221,7 +1220,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#expYear').value = '$ccExpYear'")
         mainSession.evaluateJS("document.querySelector('#expYear').focus()")
 
-        
+        // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
         sessionRule.waitForResult(saveHandled)
@@ -1229,8 +1228,8 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun creditCardSaveAcceptForm2() {
-        
-        
+        // TODO Bug 1764709: Right now we fill normalized credit card data to match
+        // the expected result.
         val ccName = "MyCard"
         val ccNumber = "5105105105105100"
         val ccExpMonth = "6"
@@ -1290,7 +1289,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Enter the card values
         mainSession.evaluateJS("document.querySelector('#form2 #name').value = '$ccName'")
         mainSession.evaluateJS("document.querySelector('#form2 #name').focus()")
         mainSession.evaluateJS("document.querySelector('#form2 #number').value = '$ccNumber'")
@@ -1298,7 +1297,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#form2 #exp').value = '$ccExpMonth/$ccExpYear'")
         mainSession.evaluateJS("document.querySelector('#form2 #exp').focus()")
 
-        
+        // Submit the form
         mainSession.evaluateJS("document.querySelector('#form2').requestSubmit()")
 
         sessionRule.waitForResult(saveHandled)
@@ -1326,7 +1325,7 @@ class AutocompleteTest : BaseSessionTest() {
             override fun onCreditCardSave(creditCard: CreditCard) {}
         })
 
-        
+        // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         mainSession.evaluateJS("document.querySelector('#number').value = '$ccNumber'")
@@ -1336,7 +1335,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#expYear').value = '$ccExpYear'")
         mainSession.evaluateJS("document.querySelector('#expYear').focus()")
 
-        
+        // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
         sessionRule.waitUntilCalled(object : PromptDelegate {
@@ -1447,7 +1446,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         mainSession.evaluateJS("document.querySelector('#number').value = '$ccNumber'")
@@ -1457,7 +1456,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#expYear').value = '$ccExpYear'")
         mainSession.evaluateJS("document.querySelector('#expYear').focus()")
 
-        
+        // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
         sessionRule.waitForResult(saveHandled)
@@ -1482,14 +1481,14 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Setup delegates for fetching data and handling prompts.
         sessionRule.delegateUntilTestEnd(object : StorageDelegate, PromptDelegate {
             @AssertCalled
             override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>> {
                 return GeckoResult.fromValue(savedCreditCards)
             }
 
-            
+            // These should NOT be called because no information has changed.
             @AssertCalled(count = 0)
             override fun onCreditCardSave(creditCard: CreditCard) = Unit
 
@@ -1498,12 +1497,12 @@ class AutocompleteTest : BaseSessionTest() {
                 session: GeckoSession,
                 request: AutocompleteRequest<CreditCardSaveOption>,
             ): GeckoResult<PromptDelegate.PromptResponse> {
-                
+                // This block should not be reached. If it is, the test will fail.
                 return GeckoResult.fromValue(request.dismiss())
             }
         })
 
-        
+        // Fill in the fields with the same saved data
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
         mainSession.evaluateJS("document.querySelector('#name').focus()")
@@ -1514,10 +1513,10 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#expYear').value = '$ccExpYear'")
         mainSession.evaluateJS("document.querySelector('#expYear').focus()")
 
-        
+        // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
-        
+        // Wait for the form to submit
         mainSession.waitForRoundTrip()
     }
 
@@ -1622,7 +1621,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         mainSession.evaluateJS("document.querySelector('#number').value = '$ccNumber1'")
@@ -1632,12 +1631,12 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#expYear').value = '$ccExpYear1'")
         mainSession.evaluateJS("document.querySelector('#expYear').focus()")
 
-        
+        // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
         sessionRule.waitForResult(saveHandled1)
 
-        
+        // Update credit card
         val session2 = sessionRule.createOpenSession()
         session2.loadTestPath(CC_FORM_HTML_PATH)
         session2.waitForPageStop()
@@ -1658,7 +1657,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun testLoginUsed(autofillEnabled: Boolean) {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -1769,7 +1768,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun testPasswordAutofill(autofillEnabled: Boolean) {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -1855,7 +1854,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSelectAccept() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "dom.disable_open_during_load" to false,
@@ -1864,25 +1863,25 @@ class AutocompleteTest : BaseSessionTest() {
             ),
         )
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Test:
+        // 1. Load a login form page.
+        // 2. Input un/pw and submit.
+        //    a. Ensure onLoginSave is called accordingly.
+        //    b. Save the submitted login entry.
+        // 3. Reload the login form page.
+        //    a. Ensure onLoginFetch is called.
+        //    b. Return empty login entry list to avoid autofilling.
+        // 4. Input a new set of un/pw and submit.
+        //    a. Ensure onLoginSave is called again.
+        //    b. Save the submitted login entry.
+        // 5. Reload the login form page.
+        // 6. Focus on the username input field.
+        //    a. Ensure onLoginFetch is called.
+        //    b. Return the saved login entries.
+        //    c. Ensure onLoginSelect is called.
+        //    d. Select and return one of the options.
+        //    e. Submit the form.
+        //    f. Ensure that onLoginUsed is called.
 
         val user1 = "user1x"
         val user2 = "user2x"
@@ -2012,15 +2011,15 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
         mainSession.evaluateJS("document.querySelector('#pass1').value = '$pass1'")
 
-        
+        // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
         sessionRule.waitForResult(saveHandled1)
 
-        
+        // Reload.
         val session2 = sessionRule.createOpenSession()
         session2.loadTestPath(FORMS3_HTML_PATH)
         session2.waitForPageStop()
@@ -2054,15 +2053,15 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign alternative login credentials.
         session2.evaluateJS("document.querySelector('#user1').value = '$user2'")
         session2.evaluateJS("document.querySelector('#pass1').value = '$pass2'")
 
-        
+        // Submit the form.
         session2.evaluateJS("document.querySelector('#form1').submit()")
         sessionRule.waitForResult(saveHandled2)
 
-        
+        // Reload for the last time.
         val session3 = sessionRule.createOpenSession()
 
         session3.delegateUntilTestEnd(object : PromptDelegate {
@@ -2109,7 +2108,7 @@ class AutocompleteTest : BaseSessionTest() {
         session3.loadTestPath(FORMS3_HTML_PATH)
         session3.waitForPageStop()
 
-        
+        // Focus on the username input field.
         session3.evaluateJS("document.querySelector('#user1').focus()")
         sessionRule.waitForResult(selectHandled)
 
@@ -2125,7 +2124,7 @@ class AutocompleteTest : BaseSessionTest() {
             equalTo(pass1),
         )
 
-        
+        // Submit the selection.
         session3.evaluateJS("document.querySelector('#form1').submit()")
         sessionRule.waitForResult(usedHandled)
     }
@@ -2134,7 +2133,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSelectModifyAccept() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "dom.disable_open_during_load" to false,
@@ -2143,25 +2142,25 @@ class AutocompleteTest : BaseSessionTest() {
             ),
         )
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Test:
+        // 1. Load a login form page.
+        // 2. Input un/pw and submit.
+        //    a. Ensure onLoginSave is called accordingly.
+        //    b. Save the submitted login entry.
+        // 3. Reload the login form page.
+        //    a. Ensure onLoginFetch is called.
+        //    b. Return empty login entry list to avoid autofilling.
+        // 4. Input a new set of un/pw and submit.
+        //    a. Ensure onLoginSave is called again.
+        //    b. Save the submitted login entry.
+        // 5. Reload the login form page.
+        // 6. Focus on the username input field.
+        //    a. Ensure onLoginFetch is called.
+        //    b. Return the saved login entries.
+        //    c. Ensure onLoginSelect is called.
+        //    d. Select and return a new login entry.
+        //    e. Submit the form.
+        //    f. Ensure that onLoginUsed is not called.
 
         val user1 = "user1x"
         val user2 = "user2x"
@@ -2266,15 +2265,15 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
         mainSession.evaluateJS("document.querySelector('#pass1').value = '$pass1'")
 
-        
+        // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
         sessionRule.waitForResult(saveHandled1)
 
-        
+        // Reload.
         val session2 = sessionRule.createOpenSession()
         session2.loadTestPath(FORMS3_HTML_PATH)
         session2.waitForPageStop()
@@ -2308,15 +2307,15 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign alternative login credentials.
         session2.evaluateJS("document.querySelector('#user1').value = '$user2'")
         session2.evaluateJS("document.querySelector('#pass1').value = '$pass2'")
 
-        
+        // Submit the form.
         session2.evaluateJS("document.querySelector('#form1').submit()")
         sessionRule.waitForResult(saveHandled2)
 
-        
+        // Reload for the last time.
         val session3 = sessionRule.createOpenSession()
 
         session3.delegateUntilTestEnd(object : PromptDelegate {
@@ -2373,7 +2372,7 @@ class AutocompleteTest : BaseSessionTest() {
         session3.loadTestPath(FORMS3_HTML_PATH)
         session3.waitForPageStop()
 
-        
+        // Focus on the username input field.
         session3.evaluateJS("document.querySelector('#user1').focus()")
         sessionRule.waitForResult(selectHandled)
 
@@ -2389,7 +2388,7 @@ class AutocompleteTest : BaseSessionTest() {
             equalTo(passMod),
         )
 
-        
+        // Submit the selection.
         session3.evaluateJS("document.querySelector('#form1').submit()")
         session3.waitForPageStop()
     }
@@ -2398,7 +2397,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSelectGeneratedPassword() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.generation.enabled" to true,
@@ -2409,14 +2408,14 @@ class AutocompleteTest : BaseSessionTest() {
             ),
         )
 
-        
-        
-        
-        
-        
-        
-        
-        
+        // Test:
+        // 1. Load a login form page.
+        // 2. Input username.
+        // 3. Focus on the password input field.
+        //    a. Ensure onLoginSelect is called with a generated password.
+        //    b. Return the login entry with the generated password.
+        // 4. Submit the login form.
+        //    a. Ensure onLoginSave is called with accordingly.
 
         val user1 = "user1x"
         var genPass = ""
@@ -2530,13 +2529,13 @@ class AutocompleteTest : BaseSessionTest() {
                     equalTo(user1),
                 )
 
-                
-                
-
-
-
-
-
+                // TODO: The flag is only set for login entry updates yet.
+                /*
+                assertThat(
+                    "Hint should match",
+                    option.hint,
+                    equalTo(LoginSaveOption.Hint.GENERATED))
+                 */
 
                 assertThat(
                     "Password should not be empty",
@@ -2554,7 +2553,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // Assign username and focus on password.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
         mainSession.evaluateJS("document.querySelector('#pass1').focus()")
         sessionRule.waitForResult(selectHandled)
@@ -2593,7 +2592,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         sessionRule.waitForResult(saveHandled1)
 
-        
+        // Submit the selection.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
         mainSession.waitForPageStop()
 
@@ -2604,7 +2603,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSelectDismiss() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
@@ -2744,7 +2743,7 @@ class AutocompleteTest : BaseSessionTest() {
     fun loginSelectRelayUsername() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
-                
+                // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.generation.enabled" to true,
@@ -2756,13 +2755,13 @@ class AutocompleteTest : BaseSessionTest() {
             ),
         )
 
-        
-        
-        
-        
-        
-        
-        
+        // Test:
+        // 1. Load a sign-up form page.
+        // 2. Focus on the username input field.
+        //    a. Ensure onLoginSelect is called with a generate relay option.
+        //    b. Return the login entry with a hard-coded relay username.
+        // 3. Submit the login form.
+        //    a. Ensure onLoginSave is called with accordingly.
 
         val genRelayUsername = "userRelay"
 
@@ -2788,16 +2787,16 @@ class AutocompleteTest : BaseSessionTest() {
                 val option = prompt.options[0]
                 val login = option.value
 
-                
-                
-                
+                // GENERATE_RELAY_USERNAME option is only offered when users are signed in to their FxAccount.
+                // However, Gecko currently doesn't detect whether the FxAccount is signed in on mobile,
+                // so this option is always OFFER_RELAY_INTEGRATION.
                 assertThat(
                     "Hint should match",
                     option.hint,
                     equalTo(SelectOption.Hint.FIREFOX_RELAY),
                 )
 
-                
+                // Change `hint` to FILL_LOGIN to instruct Gecko to fill the generated relay username.
                 val hint = SelectOption.Hint.FIREFOX_RELAY
                 val origin = GeckoSessionTestRule.TEST_ENDPOINT
                 val relayUsername = LoginEntry.Builder()
@@ -2814,7 +2813,7 @@ class AutocompleteTest : BaseSessionTest() {
             }
         })
 
-        
+        // focus on username.
         mainSession.evaluateJS("document.querySelector('#user1').focus()")
         sessionRule.waitForResult(selectHandled)
 

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 project_flag(
     "MOZ_ANDROID_EXCLUDE_FONTS",
@@ -105,14 +103,14 @@ def android_subproject(value):
 set_config("MOZ_ANDROID_SUBPROJECT", android_subproject)
 
 
-
-
-
-
-
-
-
-
+# The android:debuggable flag controls if a debugger can be attached on to the
+# running app. Default this setting to follow `--enable-debug`. Use this flag to
+# allow attaching debugging to app compiled in an optimized / release
+# configuration.
+#
+# NOTE: There are numerous performance implications for a package marked as
+#       android:debuggable versus a similar one that isn't. Particularly around
+#       AOT compilation heuristics and caches.
 
 option(
     "--enable-android-debuggable",
@@ -174,7 +172,7 @@ include("../../build/moz.configure/android-sdk.configure")
 include("../../build/moz.configure/java.configure")
 include("gradle.configure")
 
-
+# Automation will set this via the TC environment.
 option(
     env="MOZ_ANDROID_FAT_AAR_ARCHITECTURES",
     nargs="*",
@@ -188,27 +186,27 @@ set_config(
 )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Template to check for a build-time host/bin program that is either produced as
+# part of the build or is fetched from a toolchain artifact.  Also allows
+# `--without-{prog}` to disable checking.
+#
+# Such compiled programs are "part of the build" but need special accommodations
+# to distribute to artifact builds: they are distributed as toolchain builds
+# rather than extracted from a package or a test package.  In addition, these
+# compiled programs may not be needed for very unusual jobs, in particular
+# `android-gradle-dependencies` jobs, so they can be disabled entirely.
+#
+# - `var` is the name of the variable that will be set with `set_config` when
+#   the program is found, like "A_PROG".
+# - `prog` is the name of the program, like "a-prog".
+# - `toolchain` is the name of the toolchain (defaults to `prog`).
 @template
 def check_host_bin_prog(var, prog, toolchain=None):
     option(f"--without-{prog}", help="Disable building with {prog}")
 
     with only_when(f"--with-{prog}"):
         with only_when(compile_environment):
-            
+            # Produced at build-time.  Look in `$DIST/host/bin`.
             set_config(
                 var,
                 depends(build_environment.dist, bin_suffix(host))(
@@ -217,8 +215,8 @@ def check_host_bin_prog(var, prog, toolchain=None):
             )
 
         with only_when(~compile_environment):
-            
-            
+            # Fetched at configure-time.  Look in `~/.mozbuild` locally or
+            # `$MOZ_FETCH_DIR` in automation.
             check_prog(
                 var,
                 [prog],

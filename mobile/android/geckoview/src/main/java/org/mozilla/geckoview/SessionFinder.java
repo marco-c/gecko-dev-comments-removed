@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.geckoview;
 
 import android.util.Pair;

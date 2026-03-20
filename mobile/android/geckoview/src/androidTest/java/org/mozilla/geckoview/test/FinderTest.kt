@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -19,7 +18,7 @@ class FinderTest : BaseSessionTest() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Initial search.
         var result = sessionRule.waitForResult(mainSession.finder.find("dolore", 0))
 
         assertThat("Should be found", result.found, equalTo(true))
@@ -33,7 +32,7 @@ class FinderTest : BaseSessionTest() {
         )
         assertThat("Flags should be correct", result.flags, equalTo(0))
 
-        
+        // Search again using new flags.
         result = sessionRule.waitForResult(
             mainSession.finder.find(
                 null,
@@ -62,7 +61,7 @@ class FinderTest : BaseSessionTest() {
             ),
         )
 
-        
+        // And again using same flags.
         result = sessionRule.waitForResult(
             mainSession.finder.find(
                 null,
@@ -91,7 +90,7 @@ class FinderTest : BaseSessionTest() {
             ),
         )
 
-        
+        // And again but go forward.
         result = sessionRule.waitForResult(
             mainSession.finder.find(
                 null,
@@ -233,7 +232,7 @@ class FinderTest : BaseSessionTest() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Initial search.
         var result = sessionRule.waitForResult(mainSession.finder.find("trace", 0))
 
         assertThat("Should be found", result.found, equalTo(true))
@@ -247,7 +246,7 @@ class FinderTest : BaseSessionTest() {
         )
         assertThat("Flags should be correct", result.flags, equalTo(0))
 
-        
+        // Search again using new flags.
         result = sessionRule.waitForResult(
             mainSession.finder.find(
                 null,
@@ -276,7 +275,7 @@ class FinderTest : BaseSessionTest() {
             ),
         )
 
-        
+        // And again using same flags.
         result = sessionRule.waitForResult(
             mainSession.finder.find(
                 null,
@@ -305,7 +304,7 @@ class FinderTest : BaseSessionTest() {
             ),
         )
 
-        
+        // And again but go forward.
         result = sessionRule.waitForResult(
             mainSession.finder.find(
                 null,
@@ -337,7 +336,7 @@ class FinderTest : BaseSessionTest() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
-        
+        // Initial search.
         var result = sessionRule.waitForResult(
             mainSession.finder.find(
                 "SpiderMonkey",
@@ -357,7 +356,7 @@ class FinderTest : BaseSessionTest() {
                 equalTo("SpiderMonkey"),
             )
 
-            
+            // And again.
             result = sessionRule.waitForResult(
                 mainSession.finder.find(
                     null,

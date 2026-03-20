@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -10,19 +9,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-
-
-
+/**
+ * This pref references the request blocking feature of the Local Network / Device Access feature.
+ */
 private const val LNA_BLOCKING_PREF = "network.lna.blocking"
 
-
-
-
+/**
+ * This pref references the tracker blocking features of the Local Network / Device Access feature.
+ */
 private const val LNA_TRACKER_BLOCKING_PREF = "network.lna.block_trackers"
 
-
-
-
+/**
+ * This pref references the state of the overall Local Network / Device Access feature.
+ */
 private const val LNA_FEATURE_ENABLED_PREF = "network.lna.enabled"
 
 @RunWith(AndroidJUnit4::class)

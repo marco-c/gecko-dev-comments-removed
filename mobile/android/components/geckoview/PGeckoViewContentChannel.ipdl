@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PNecko;
 include NeckoChannelParams;
@@ -17,8 +15,8 @@ async protocol PGeckoViewContentChannel
   manager PNecko;
 
 parent:
-  
-  
+  // Note: channels are opened during construction, so no open method here:
+  // see PNecko.ipdl
   async __delete__();
 
   async Cancel(nsresult status);
@@ -38,5 +36,5 @@ child:
   async DeleteSelf();
 };
 
-} 
-} 
+} // namespace net
+} // namespace mozilla

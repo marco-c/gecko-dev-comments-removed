@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoViewContentChannelChild.h"
 
 #include "mozilla/dom/BrowserChild.h"

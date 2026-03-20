@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -122,14 +121,14 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     @Before
     fun setup() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            
+            // Writing clipboard requires foreground on Android 10.
             activityRule.scenario.onActivity { activity ->
                 activity.onWindowFocusChanged(true)
             }
         }
     }
 
-    
+    /** Generic tests for each content type. */
 
     @Test fun request() {
         if (editable) {
@@ -298,7 +297,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
     @Test fun selectAll() {
         if (type == ContentType.DIV && !editable) {
-            
+            // "Select all" for non-editable div means selecting the whole document.
             testThat(
                 selectedContent,
                 withResponse(ACTION_SELECT_ALL),
@@ -345,12 +344,12 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     @Test fun pagehide() {
-        
+        // Navigating to another page should hide selection action.
         testThat(selectedContent, { mainSession.loadTestPath(HELLO_HTML_PATH) }, clearsSelection())
     }
 
     @Test fun deactivate() {
-        
+        // Blurring the window should hide selection action.
         testThat(selectedContent, { mainSession.setFocused(false) }, clearsSelection())
         mainSession.setFocused(true)
     }
@@ -379,15 +378,15 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             document.querySelector('$id').style.display = "block";
             document.querySelector('$id').style.border = "0";
             document.querySelector('$id').style.padding = "0";
-            document.querySelector('$id').offsetHeight; 
+            document.querySelector('$id').offsetHeight; // flush layout
         })()"""
         val jsBorder10pxPadding10px = """(function() {
             document.querySelector('$id').style.display = "block";
             document.querySelector('$id').style.border = "10px solid";
             document.querySelector('$id').style.padding = "10px";
-            document.querySelector('$id').offsetHeight; 
+            document.querySelector('$id').offsetHeight; // flush layout
         })()"""
-        val expectedDiff = RectF(10f, 10f, 10f, 10f) 
+        val expectedDiff = RectF(10f, 10f, 10f, 10f) // left, top, right, bottom
         testClientRect(selectedContent, jsCssReset, jsBorder10pxPadding10px, expectedDiff)
     }
 
@@ -396,13 +395,13 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     fun clipboardReadAllow() {
         assumeThat("Unnecessary to run multiple times", id, equalTo("#text"))
 
-        withClipboard("clipboardReadAllow") {} 
+        withClipboard("clipboardReadAllow") {} // Reset clipboard data
 
         val url = createTestUrl(CLIPBOARD_READ_HTML_PATH)
         mainSession.loadUri(url)
         mainSession.waitForPageStop()
 
-        
+        // Select allow
         val result = GeckoResult<Void>()
         mainSession.delegateDuringNextWait(object : SelectionActionDelegate, PromptDelegate {
             @AssertCalled(count = 1)
@@ -430,7 +429,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             }
         })
 
-        mainSession.synthesizeTap(50, 50) 
+        mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
     }
 
@@ -439,13 +438,13 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     fun clipboardReadDeny() {
         assumeThat("Unnecessary to run multiple times", id, equalTo("#text"))
 
-        withClipboard("clipboardReadDeny") {} 
+        withClipboard("clipboardReadDeny") {} // Reset clipboard data
 
         val url = createTestUrl(CLIPBOARD_READ_HTML_PATH)
         mainSession.loadUri(url)
         mainSession.waitForPageStop()
 
-        
+        // Select deny
         val result = GeckoResult<Void>()
         mainSession.delegateDuringNextWait(object : SelectionActionDelegate, PromptDelegate {
             @AssertCalled(count = 1, order = [1])
@@ -472,7 +471,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             }
         })
 
-        mainSession.synthesizeTap(50, 50) 
+        mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
     }
 
@@ -481,7 +480,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     fun clipboardReadDeactivate() {
         assumeThat("Unnecessary to run multiple times", id, equalTo("#text"))
 
-        withClipboard("clipboardReadDeactivate") {} 
+        withClipboard("clipboardReadDeactivate") {} // Reset clipboard data
 
         val url = createTestUrl(CLIPBOARD_READ_HTML_PATH)
         mainSession.loadUri(url)
@@ -505,7 +504,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             }
         })
 
-        mainSession.synthesizeTap(50, 50) 
+        mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
 
         mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
@@ -525,7 +524,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     fun clipboardReadDismiss() {
         assumeThat("Unnecessary to run multiple times", id, equalTo("#text"))
 
-        withClipboard("clipboardReadDismiss") {} 
+        withClipboard("clipboardReadDismiss") {} // Reset clipboard data
 
         val url = createTestUrl(CLIPBOARD_READ_HTML_PATH)
         mainSession.loadUri(url)
@@ -549,7 +548,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             }
         })
 
-        mainSession.synthesizeTap(50, 50) 
+        mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
 
         mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
@@ -559,11 +558,11 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             }
         })
 
-        mainSession.synthesizeTap(10, 10) 
+        mainSession.synthesizeTap(10, 10) // click to dismiss.
         sessionRule.waitForResult(permissionResult)
     }
 
-    
+    /** Interface that defines behavior for a particular type of content */
     private interface SelectedContent {
         fun focus() {}
         fun select() {}
@@ -573,7 +572,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         val selectionOffsets: Pair<Int, Int>
     }
 
-    
+    /** Main method that performs test logic. */
     private fun testThat(
         content: SelectedContent,
         respondingWith: (Selection) -> Unit,
@@ -585,8 +584,8 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
         content.focus()
 
-        
-        
+        // Show selection actions for collapsed selections, so we can test them.
+        // Also, always show accessible carets / selection actions for changes due to JS calls.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "geckoview.selection_action.show_on_focus" to true,
@@ -622,8 +621,8 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         initialJsB: String,
         expectedDiff: RectF,
     ) {
-        
-        
+        // Show selection actions for collapsed selections, so we can test them.
+        // Also, always show accessible carets / selection actions for changes due to JS calls.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "geckoview.selection_action.show_on_focus" to true,
@@ -671,7 +670,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         )
     }
 
-    
+    /** Helpers. */
 
     private val clipboard by lazy {
         InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CLIPBOARD_SERVICE)
@@ -744,7 +743,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         lambda?.invoke()
     }
 
-    
+    /** Behavior objects for different content types */
 
     open inner class SelectedDiv(
         val id: String,
@@ -925,7 +924,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         override fun select() = selectTo(0)
     }
 
-    
+    /** Lambda for responding with certain actions. */
 
     private fun withResponse(vararg actions: String): (Selection) -> Unit {
         var responded = false
@@ -937,7 +936,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
     }
 
-    
+    /** Lambdas for asserting the results of actions. */
 
     private fun hasShowActionRequest(
         expectedFlags: Int,

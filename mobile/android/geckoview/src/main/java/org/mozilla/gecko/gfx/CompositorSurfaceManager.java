@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko.gfx;
 
 import android.os.RemoteException;

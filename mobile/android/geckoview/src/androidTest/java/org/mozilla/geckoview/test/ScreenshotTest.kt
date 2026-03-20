@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -56,9 +55,9 @@ class ScreenshotTest : BaseSessionTest() {
     }
 
     companion object {
-        
-
-
+        /**
+         * Compares two Bitmaps and returns the largest color element difference (red, green or blue)
+         */
         public fun imageElementDifference(b1: Bitmap, b2: Bitmap): Int {
             return if (b1.width == b2.width && b1.height == b2.height) {
                 val pixels1 = IntArray(b1.width * b1.height)
@@ -172,7 +171,7 @@ class ScreenshotTest : BaseSessionTest() {
         } ?: run { fail("no display found") }
     }
 
-    
+    // This tests tries to catch problems like Bug 1644561.
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun capturePixelsStressTest() {
@@ -213,7 +212,7 @@ class ScreenshotTest : BaseSessionTest() {
                     sessionRule.waitForResult(result)
                 }
             } catch (ex: RuntimeException) {
-                
+                // Rejecting the screenshot is fine
             }
         }
     }
@@ -243,8 +242,8 @@ class ScreenshotTest : BaseSessionTest() {
             val surface = Surface(texture)
             it.surfaceChanged(SurfaceInfo.Builder(surface).size(SCREEN_WIDTH, SCREEN_HEIGHT / 2).build())
 
-            
-            
+            // The first screenshot will fail due to the compositor being paused, but we expect the
+            // second screenshot to succeed.
             try {
                 sessionRule.waitForResult(result1)
             } catch (e: IllegalStateException) {
@@ -256,7 +255,7 @@ class ScreenshotTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun capturePixelsWhileSessionDeactivated() {
-        
+        // TODO: Bug 1837551
         assumeThat(sessionRule.env.isFission, equalTo(false))
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -269,7 +268,7 @@ class ScreenshotTest : BaseSessionTest() {
 
         mainSession.setActive(false)
 
-        
+        // Deactivating the session should trigger a flush state change
         sessionRule.waitUntilCalled(object : ProgressDelegate {
             @AssertCalled(count = 1)
             override fun onSessionStateChange(

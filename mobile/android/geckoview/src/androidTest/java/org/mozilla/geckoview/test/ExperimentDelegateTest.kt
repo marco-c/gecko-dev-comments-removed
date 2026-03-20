@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -43,9 +42,9 @@ class ExperimentDelegateTest : BaseSessionTest() {
         )
     }
 
-    
-
-
+    /*
+        Basic test of setting a runtime experiment delegate and an example experiment delegate with example functionality usage.
+     */
     @Test
     fun experimentDelegateTest() {
         sessionRule.addExternalDelegateUntilTestEnd(
@@ -114,7 +113,7 @@ class ExperimentDelegateTest : BaseSessionTest() {
         try {
             sessionRule.waitForResult(experimentDelegate.onRecordExperimentExposureEvent("test", "no-slug"))
         } catch (re: RuntimeException) {
-            
+            // no-op, wait for result for testing throws this
         } catch (ee: ExperimentException) {
             assertThat("Correct error of no slug found.", ee.code, equalTo(ERROR_EXPERIMENT_SLUG_NOT_FOUND))
         }
@@ -122,7 +121,7 @@ class ExperimentDelegateTest : BaseSessionTest() {
         try {
             sessionRule.waitForResult(experimentDelegate.onRecordExperimentExposureEvent("no-feature", "test"))
         } catch (re: RuntimeException) {
-            
+            // no-op, wait for result  for testing throws this
         } catch (ee: ExperimentException) {
             assertThat("Correct error of no feature found.", ee.code, equalTo(ERROR_FEATURE_NOT_FOUND))
         }

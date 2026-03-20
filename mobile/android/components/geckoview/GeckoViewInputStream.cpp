@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoViewInputStream.h"
 
 #include "nsIURI.h"

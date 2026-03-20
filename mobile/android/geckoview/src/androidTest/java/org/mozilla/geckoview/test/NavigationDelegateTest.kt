@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -58,7 +57,7 @@ import kotlin.concurrent.thread
 @MediumTest
 class NavigationDelegateTest : BaseSessionTest() {
 
-    
+    // Provides getters for Loader
     class TestLoader : Loader() {
         var mUri: String? = null
         override fun uri(uri: String): TestLoader {
@@ -273,7 +272,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         )
     }
 
-    
+    // External loads should not have access to privileged protocols
     @Test fun loadExternalDenied() {
         testLoadExpectError(
             TestLoader()
@@ -334,7 +333,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             WebRequestError.ERROR_SECURITY_BAD_CERT,
         )
 
-        if (!sessionRule.env.isFission) { 
+        if (!sessionRule.env.isFission) { // todo: Bug 1673954
             mainSession.waitForJS("document.addCertException(false)")
             mainSession.delegateDuringNextWait(
                 object : ProgressDelegate, NavigationDelegate, ContentDelegate {
@@ -417,8 +416,8 @@ class NavigationDelegateTest : BaseSessionTest() {
         })
 
         if (httpsFirstPrefValue) {
-            
-            
+            // if https-first is enabled we get two calls to onLoadRequest
+            // (1) http://example.com/ and  (2) https://example.com/
             assertThat("Assert count mainSession.onLoadRequest", onLoadCalledCounter, equalTo(2))
         } else {
             assertThat("Assert count mainSession.onLoadRequest", onLoadCalledCounter, equalTo(1))
@@ -447,8 +446,8 @@ class NavigationDelegateTest : BaseSessionTest() {
         })
 
         if (httpsFirstPBMPrefValue) {
-            
-            
+            // if https-first is enabled we get two calls to onLoadRequest
+            // (1) http://example.com/ and  (2) https://example.com/
             assertThat("Assert count privateSession.onLoadRequest", onLoadCalledCounter, equalTo(2))
         } else {
             assertThat("Assert count privateSession.onLoadRequest", onLoadCalledCounter, equalTo(1))
@@ -485,8 +484,8 @@ class NavigationDelegateTest : BaseSessionTest() {
         })
 
         if (httpsFirstPrefValue) {
-            
-            
+            // if https-first is enabled we get two calls to onLoadRequest
+            // (1) http://example.com/ and  (2) https://example.com/
             assertThat("Assert count mainSession.onLoadRequest", onLoadCalledCounter, equalTo(2))
         } else {
             assertThat("Assert count mainSession.onLoadRequest", onLoadCalledCounter, equalTo(1))
@@ -495,8 +494,8 @@ class NavigationDelegateTest : BaseSessionTest() {
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.ALLOW_ALL)
     }
 
-    
-    
+    // Due to Bug 1692578 we currently cannot test bypassing of the error
+    // the URI loading process takes the desktop path for iframes
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun loadHTTPSOnlyInSubframe() {
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
@@ -549,7 +548,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun bypassHTTPSOnlyError() {
-        
+        // Bug 1849060. Hit debug assertion with fission
         assumeThat(sessionRule.env.isFission and sessionRule.env.isDebugBuild, equalTo(false))
 
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
@@ -565,7 +564,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
         val testLoader = TestLoader().uri(uri)
 
-        
+        // The two loads below follow testLoadExpectError(TestLoader, Int, Int) flow
 
         sessionRule.delegateDuringNextWait(
             object : ProgressDelegate, NavigationDelegate, ContentDelegate {
@@ -648,9 +647,9 @@ class NavigationDelegateTest : BaseSessionTest() {
                         error.code,
                         equalTo(WebRequestError.ERROR_HTTPS_ONLY),
                     )
-                    
-                    
-                    
+                    // When returning null then process is switched, web extension won't be loaded
+                    // since there is no document element.
+                    // So we shouldn't return null with fission if we want to use `evaluateJS`.
                     return GeckoResult.fromValue("about:blank")
                 }
 
@@ -664,7 +663,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         mainSession.load(testLoader)
         sessionRule.waitForPageStop()
 
-        
+        // No good way to wait for loading about:blank error page. Use onLocaitonChange etc.
         sessionRule.waitUntilCalled(object : ContentDelegate, NavigationDelegate {
             override fun onLocationChange(
                 session: GeckoSession,
@@ -687,7 +686,7 @@ class NavigationDelegateTest : BaseSessionTest() {
                     session: GeckoSession,
                     request: LoadRequest,
                 ): GeckoResult<AllowOrDeny>? {
-                    
+                    // We set http scheme only in case it's not iFrame
                     assertThat("The URLs must match", request.uri, equalTo(uri))
                     return null
                 }
@@ -703,12 +702,12 @@ class NavigationDelegateTest : BaseSessionTest() {
             },
         )
 
-        
-        
+        // Calling eloadWithHttpsOnlyException may causes that the document will be unloaded
+        // immediately before native message isn't handled.
         try {
             mainSession.evaluateJS("document.reloadWithHttpsOnlyException();")
         } catch (ex: RejectedPromiseException) {
-            
+            // Communication port for web extensions is immediately disconnected. Re-try.
             mainSession.evaluateJS("document.reloadWithHttpsOnlyException();")
         }
         mainSession.waitForPageStop()
@@ -723,12 +722,12 @@ class NavigationDelegateTest : BaseSessionTest() {
             ),
         )
 
-        
+        // load secure url with hsts header
         val uri = "https://example.com/tests/junit/hsts_header.sjs"
         mainSession.loadUri(uri)
         mainSession.waitForPageStop()
 
-        
+        // load insecure subdomain url to see if it gets upgraded to https
         val httpUri = "http://test1.example.com/"
         val httpsUri = "https://test1.example.com/"
 
@@ -750,7 +749,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             }
         })
 
-        
+        // load subdomain that will trigger the cert error
         val noCertUri = "https://nocert.example.com/"
         mainSession.loadUri(noCertUri)
         mainSession.waitForPageStop()
@@ -766,7 +765,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         sessionRule.clearHSTSState()
     }
 
-    @Ignore 
+    @Ignore // Disabled for bug 1619344.
     @Test
     fun loadUnknownProtocol() {
         testLoadEarlyError(
@@ -776,10 +775,10 @@ class NavigationDelegateTest : BaseSessionTest() {
         )
     }
 
-    
-    
+    // Due to Bug 1692578 we currently cannot test displaying the error
+    // the URI loading process takes the desktop path for iframes
     @Test fun loadUnknownProtocolIframe() {
-        
+        // Should match iframe URI from IFRAME_UNKNOWN_PROTOCOL
         val iframeUri = "foo://bar"
         mainSession.loadTestPath(IFRAME_UNKNOWN_PROTOCOL)
         mainSession.waitForPageStop()
@@ -805,7 +804,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Setting(key = Setting.Key.USE_TRACKING_PROTECTION, value = "true")
-    @Ignore 
+    @Ignore // Bug 1564373
     @Test
     fun trackingProtection() {
         val category = ContentBlocking.AntiTracking.TEST
@@ -976,7 +975,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         mainSession.loadTestPath(path)
         sessionRule.waitForPageStop()
 
-        
+        // We shouldn't be firing onLoadRequest for iframes, including redirects.
         sessionRule.forCallbacksDuringWait(object : NavigationDelegate {
             @AssertCalled(count = 1)
             override fun onLoadRequest(
@@ -1134,7 +1133,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
         sessionRule.runtime.settings.contentBlocking.setSafeBrowsing(category)
 
-        
+        // Add query string to avoid bypassing classifier check because of cache.
         testLoadExpectError(
             phishingUri + "?block=true",
             WebRequestError.ERROR_CATEGORY_SAFEBROWSING,
@@ -1253,8 +1252,8 @@ class NavigationDelegateTest : BaseSessionTest() {
         )
     }
 
-    
-    
+    // Checks that the User Agent matches the user agent built in
+    // nsHttpHandler::BuildUserAgent
     @Test fun defaultUserAgentMatchesActualUserAgent() {
         var userAgent = sessionRule.waitForResult(mainSession.userAgent)
         assertThat(
@@ -1647,7 +1646,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     @NullDelegate(NavigationDelegate::class)
     @Test
     fun load_withoutNavigationDelegate() {
-        
+        // Test that when navigation delegate is disabled, we can still perform loads.
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -1658,7 +1657,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     @NullDelegate(NavigationDelegate::class)
     @Test
     fun load_canUnsetNavigationDelegate() {
-        
+        // Test that if we unset the navigation delegate during a load, the load still proceeds.
         var onLocationCount = 0
         mainSession.navigationDelegate = object : NavigationDelegate {
             override fun onLocationChange(
@@ -1897,7 +1896,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         mainSession.loadUri("$TEST_ENDPOINT$HELLO2_HTML_PATH")
         sessionRule.waitForPageStop()
 
-        
+        // disabled for frequent failures - on Bug 1934356
         assumeThat(sessionRule.env.isX86, equalTo(false))
 
         sessionRule.forCallbacksDuringWait(object : NavigationDelegate {
@@ -2035,7 +2034,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_calledForWindowOpen() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2078,7 +2077,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test(expected = GeckoSessionTestRule.RejectedPromiseException::class)
     fun onNewSession_rejectLocal() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2088,7 +2087,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_calledForTargetBlankLink() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2097,8 +2096,8 @@ class NavigationDelegateTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#targetBlankLink').click()")
 
         mainSession.waitUntilCalled(object : NavigationDelegate {
-            
-            
+            // We get two onLoadRequest calls for the link click,
+            // one when loading the URL and one when opening a new window.
             @AssertCalled(count = 1, order = [1])
             override fun onLoadRequest(
                 session: GeckoSession,
@@ -2140,7 +2139,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_childShouldLoad() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2148,9 +2147,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
         val newSession = delegateNewSession()
         mainSession.evaluateJS("document.querySelector('#targetBlankLink').click()")
-        
+        // Initial about:blank
         newSession.waitForPageStop()
-        
+        // NEW_SESSION_CHILD_HTML_PATH
         newSession.waitForPageStop()
 
         newSession.forCallbacksDuringWait(object : ProgressDelegate {
@@ -2167,7 +2166,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_setWindowOpener() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2185,7 +2184,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_supportNoOpener() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2203,7 +2202,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_notCalledForHandledLoads() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2214,7 +2213,7 @@ class NavigationDelegateTest : BaseSessionTest() {
                 session: GeckoSession,
                 request: LoadRequest,
             ): GeckoResult<AllowOrDeny>? {
-                
+                // Pretend we handled the target="_blank" link click.
                 if (request.uri.endsWith(NEW_SESSION_CHILD_HTML_PATH)) {
                     return GeckoResult.deny()
                 } else {
@@ -2228,7 +2227,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         mainSession.reload()
         mainSession.waitForPageStop()
 
-        
+        // Assert that onNewSession was not called for the link click.
         mainSession.forCallbacksDuringWait(object : NavigationDelegate {
             @AssertCalled(count = 2)
             override fun onLoadRequest(
@@ -2402,7 +2401,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         additional: Map<String?, String?>,
         filter: Int = GeckoSession.HEADER_FILTER_CORS_SAFELISTED,
     ) {
-        
+        // First collect default headers with no override
         mainSession.loadUri("$TEST_ENDPOINT/anything")
         mainSession.waitForPageStop()
 
@@ -2414,12 +2413,12 @@ class NavigationDelegateTest : BaseSessionTest() {
         for (key in defaultHeaders.keys) {
             expected[key] = defaultHeaders[key]
             if (additional.containsKey(key)) {
-                
+                // TODO: Bug 1671294, headers should be replaced, not appended
                 expected[key] += ", " + additional[key]
             }
         }
 
-        
+        // Now load the page with the header override
         mainSession.load(
             Loader()
                 .uri("$TEST_ENDPOINT/anything")
@@ -2500,7 +2499,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadUriHeader() {
-        
+        // Basic test
         loadUriHeaderTest(
             mapOf("Header1" to "Value", "Header2" to "Value1, Value2"),
             mapOf(),
@@ -2511,13 +2510,13 @@ class NavigationDelegateTest : BaseSessionTest() {
             GeckoSession.HEADER_FILTER_UNRESTRICTED_UNSAFE,
         )
 
-        
+        // Empty value headers are ignored
         loadUriHeaderTest(
             mapOf("ValueLess1" to "", "ValueLess2" to null),
             mapOf(),
         )
 
-        
+        // Null key or special headers are ignored
         loadUriHeaderTest(
             mapOf(
                 null to "BadNull",
@@ -2527,7 +2526,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             mapOf(),
         )
 
-        
+        // Key or value cannot contain '\r\n'
         loadUriHeaderTest(
             mapOf(
                 "Header1" to "Value",
@@ -2584,7 +2583,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             mapOf(),
         )
 
-        
+        // Connection and Host cannot be overriden, no matter the case spelling
         loadUriHeaderTest(
             mapOf("Header1" to "Value1", "ConnEction" to "test", "connection" to "test2"),
             mapOf(),
@@ -2625,7 +2624,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             GeckoSession.HEADER_FILTER_UNRESTRICTED_UNSAFE,
         )
 
-        
+        // Adding white space at the end of a forbidden header still prevents override
         loadUriHeaderTest(
             mapOf(
                 "host" to "amazon.com",
@@ -2636,13 +2635,13 @@ class NavigationDelegateTest : BaseSessionTest() {
             mapOf(),
         )
 
-        
+        // '\r' or '\n' are forbidden character even when not following each other
         loadUriHeaderTest(
             mapOf("abc\ra\n" to "amazon.com"),
             mapOf(),
         )
 
-        
+        // CORS Safelist test
         loadUriHeaderTest(
             mapOf(
                 "Accept-Language" to "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5",
@@ -2659,7 +2658,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             GeckoSession.HEADER_FILTER_CORS_SAFELISTED,
         )
 
-        
+        // CORS safelist doesn't allow Content-type image/svg
         loadUriHeaderTest(
             mapOf(
                 "Accept-Language" to "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5",
@@ -2678,7 +2677,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test(expected = GeckoResult.UncaughtException::class)
     fun onNewSession_doesNotAllowOpened() {
-        
+        // Disable popup blocker.
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         mainSession.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -2722,9 +2721,9 @@ class NavigationDelegateTest : BaseSessionTest() {
             ): GeckoResult<WebExtension.PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     WebExtension.PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -2753,8 +2752,8 @@ class NavigationDelegateTest : BaseSessionTest() {
             ),
         )
 
-        
-        
+        // Wait for the extension to have been started before trying to navigate
+        // to the test extension page.
         sessionRule.waitForResult(onReadyResult)
 
         assertThat(
@@ -2792,7 +2791,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             }
         })
 
-        
+        // This will load a page in the child
         mainSession.loadTestPath(HELLO2_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -2802,13 +2801,13 @@ class NavigationDelegateTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        
+        // This loads in the parent process
         mainSession.loadUri(url)
         sessionRule.waitForPageStop()
 
         assertThat("URL should match", currentUrl!!, equalTo(url))
 
-        
+        // This will load a page in the child
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -3112,7 +3111,7 @@ class NavigationDelegateTest : BaseSessionTest() {
     @NullDelegate(NavigationDelegate::class)
     fun loadOnBackgroundThreadNullNavigationDelegate() {
         thread {
-            
+            // Make sure we're running in a thread without a Looper.
             assertThat(
                 "We should not have a looper.",
                 Looper.myLooper(),
@@ -3159,7 +3158,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         })
 
         thread {
-            
+            // Make sure we're running in a thread without a Looper.
             assertThat(
                 "We should not have a looper.",
                 Looper.myLooper(),
@@ -3317,7 +3316,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             }
         })
 
-        
+        // goBack will be navigated from history.
 
         var lastTitle: String? = ""
         sessionRule.delegateDuringNextWait(object : NavigationDelegate, ContentDelegate {
@@ -3389,8 +3388,8 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test
     fun textDirectiveUserActivationExternalLoad() {
-        
-        
+        // External app links (LOAD_FLAGS_EXTERNAL) are always user-initiated, so
+        // text fragment directives should be allowed to scroll.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "dom.text_fragments.enabled" to true,

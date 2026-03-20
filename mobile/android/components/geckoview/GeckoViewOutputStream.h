@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GeckoViewOutputStream_h_
 #define GeckoViewOutputStream_h_
 

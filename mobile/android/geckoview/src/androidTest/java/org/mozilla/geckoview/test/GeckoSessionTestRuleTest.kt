@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -43,11 +42,11 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
 
-
-
-
-
-
+/**
+ * Test for the GeckoSessionTestRule class, to ensure it properly sets up a session for
+ * each test, and to ensure it can properly wait for and assert delegate
+ * callbacks.
+ */
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
@@ -100,10 +99,10 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @Test(expected = UiThreadUtils.TimeoutException::class)
     @TimeoutMillis(2000)
     fun noPendingCallbacks() {
-        
+        // Make sure we don't have unexpected pending callbacks at the start of a test.
         sessionRule.waitUntilCalled(object : ProgressDelegate, HistoryDelegate {
-            
-            
+            // There may be extraneous onSessionStateChange and onHistoryStateChange calls
+            // after a test, so ignore the first received.
             @AssertCalled(count = 2)
             override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
             }
@@ -206,7 +205,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        mainSession.open(sessionRule.runtime) 
+        mainSession.open(sessionRule.runtime) // Avoid waiting for initial load
         mainSession.reload()
         mainSession.waitForPageStops(2)
     }
@@ -279,13 +278,13 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
                 pageStart = true
             }
 
-            
+            // This is here to verify that we don't wait on all methods of this object
             override fun onPageStop(session: GeckoSession, success: Boolean) {
             }
         })
 
-        
-        
+        // This is to verify that the above only waits until pageStart, but not pageStop.
+        // If the above block waits until pageStop, this will time out, indicating a problem.
         sessionRule.waitForPageStop()
     }
 
@@ -452,7 +451,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun waitUntilCalled_zeroCount() {
-        
+        // Support having @AssertCalled(count = 0) annotations for waitUntilCalled calls.
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitUntilCalled(object : ProgressDelegate, ScrollDelegate {
             @AssertCalled(count = 1)
@@ -807,15 +806,15 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         mainSession.reload()
 
-        
+        // Wait for Gecko to finish all loads.
         Thread.sleep(100)
 
-        sessionRule.waitForPageStop() 
-        sessionRule.waitForPageStop() 
+        sessionRule.waitForPageStop() // Wait for loadUri.
+        sessionRule.waitForPageStop() // Wait for first reload.
 
         var counter = 0
 
-        
+        // assert should only apply to callbacks within range (loadUri, first reload].
         sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
             @AssertCalled(count = 1)
             override fun onPageStart(session: GeckoSession, url: String) {
@@ -1158,7 +1157,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun createOpenSession_canInterleaveOtherCalls() {
-        
+        // TODO: Bug 1673953
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -1203,10 +1202,10 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @ClosedSessionAtStart
     fun noPendingCallbacks_withSpecificSession() {
         sessionRule.createOpenSession()
-        
+        // Make sure we don't have unexpected pending callbacks after opening a session.
         sessionRule.waitUntilCalled(object : HistoryDelegate, ProgressDelegate {
-            
-            
+            // There may be extraneous onSessionStateChange and onHistoryStateChange calls
+            // after a test, so ignore the first received.
             @AssertCalled(count = 2)
             override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
             }
@@ -1249,7 +1248,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun waitForPageStops_acrossSessionCreation() {
-        
+        // TODO: Bug 1673953
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -1343,7 +1342,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         newSession.loadTestPath(HELLO_HTML_PATH)
         newSession.waitForPageStop()
 
-        
+        // forCallbacksDuringWait calls strictly apply to the last wait, session-specific or not.
         var counter = 0
 
         mainSession.forCallbacksDuringWait(object : ProgressDelegate {
@@ -1545,7 +1544,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             sessionRule.evaluateExtensionJS(
                 """
                     return true;
-                    
+                    // Comments at the end are allowed
                 """.trimIndent(),
             ) as Boolean,
             equalTo(true),
@@ -1677,8 +1676,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @Test fun evaluateJS_notBlockMainThread() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
-        
-        
+        // Test that we can still receive delegate callbacks during evaluateJS,
+        // by calling alert(), which blocks until prompt delegate is called.
         assertThat(
             "JS blocking result should be correct",
             mainSession.evaluateJS("alert(); 'foo'") as String,
@@ -1693,7 +1692,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.waitForPageStop()
         mainSession.delegateUntilTestEnd(object : PromptDelegate {
             override fun onAlertPrompt(session: GeckoSession, prompt: PromptDelegate.AlertPrompt): GeckoResult<PromptDelegate.PromptResponse> {
-                
+                // Return a GeckoResult that we will never complete, so it hangs.
                 val res = GeckoResult<PromptDelegate.PromptResponse>()
                 return res
             }
@@ -1892,8 +1891,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.waitForJS("alert()")
         mainSession.waitForJS("alert()")
 
-        
-        
+        // The delegate set through delegateDuringNextWait
+        // should have been cleared after the first wait.
         assertThat("Delegate should only run once", count, equalTo(1))
     }
 
@@ -1902,16 +1901,16 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
+        // disabled for frequent failures - on Bug 1933390
         assumeThat(sessionRule.env.isX86, equalTo(false))
 
-        
+        // Trigger navigation and try again
         mainSession.loadTestPath(HELLO2_HTML_PATH)
         mainSession.waitForPageStop()
 
-        
-        
-        
+        // Navigate away and trigger a waitForJS that never completes, this will
+        // fail because the page navigates away (disconnecting the port) before
+        // the page can respond.
         mainSession.goBack()
         mainSession.waitForJS("new Promise(resolve => {})")
     }
@@ -2040,7 +2039,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @IgnoreCrash
     @Test
     fun contentCrashIgnored() {
-        
+        // TODO: bug 1710940
         assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
         assumeThat(sessionRule.env.isAppZygoteProcess, equalTo(false))
 
@@ -2088,7 +2087,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     }
 
     @Test fun checkCookieBannerRuleForSession() {
-        
+        // set preferences. We have a cookie rule for example.com
         val testRules = "[{\"id\":\"87815b2d-a840-4155-8713-f8a26d1f483a\",\"click\":{\"optOut\":\"#optOutBtn\",\"presence\": \"#cookieBanner\"},\"cookies\":{\"optOut\":[{\"name\":\"foo\", \"value\":\"bar\"}]}, \"domains\":[\"example.org\"]}]"
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
@@ -2109,7 +2108,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Cookie banner rule should be set", prefs[2] as String, equalTo(testRules))
         assertThat("Cookie banner service should not be in detect only mode", prefs[3] as Boolean, equalTo(false))
 
-        
+        // session 1 - load url for which there is no rule
         mainSession.loadUri(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
         val response1 = mainSession.hasCookieBannerRuleForBrowsingContextTree()
@@ -2117,7 +2116,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             assertThat("There should be no rule", it, equalTo(false))
         }
 
-        
+        // session 1 - load url for which there is a rule
         mainSession.loadUri("http://example.org/")
         sessionRule.waitForPageStop()
         val response2 = mainSession.hasCookieBannerRuleForBrowsingContextTree()
@@ -2125,7 +2124,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             assertThat("There should be a rule", it, equalTo(true))
         }
 
-        
+        // session 2 load url for which there is no rule
         val session2 = sessionRule.createOpenSession()
         session2.loadUri(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -2134,7 +2133,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             assertThat("There should be no rule", it, equalTo(false))
         }
 
-        
+        // API shoul return the correct result for the page we have loaded in session 1
         val response4 = mainSession.hasCookieBannerRuleForBrowsingContextTree()
         sessionRule.waitForResult(response4).let {
             assertThat("There should be a rule the second time", it, equalTo(true))

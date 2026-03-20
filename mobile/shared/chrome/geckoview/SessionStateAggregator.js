@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const { GeckoViewChildModule } = ChromeUtils.importESModule(

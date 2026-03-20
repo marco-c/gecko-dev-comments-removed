@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.geckoview.test
 
@@ -23,10 +22,10 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.util.TestServer
 import kotlin.reflect.KClass
 
-
-
-
-
+/**
+ * Common base class for tests using GeckoSessionTestRule,
+ * providing the test rule and other utilities.
+ */
 open class BaseSessionTest(
     noErrorCollector: Boolean = false,
     serverCustomHeaders: Map<String, String>? = null,
@@ -177,7 +176,7 @@ open class BaseSessionTest(
 
     val sessionRule = GeckoSessionTestRule(serverCustomHeaders, responseModifiers)
 
-    
+    // Override this to include more `evaluate` rules in the chain
     @get:Rule
     open val rules = RuleChain.outerRule(sessionRule)
 
@@ -283,7 +282,7 @@ open class BaseSessionTest(
     fun GeckoSession.waitForRoundTrip() = sessionRule.waitForRoundTrip(this)
 
     fun GeckoSession.pressKey(keyCode: Int) {
-        
+        // Create a Promise to listen to the key event, and wait on it below.
         val promise = this.evaluatePromiseJS(
             """new Promise(r => window.addEventListener(
                     'keyup', r, { once: true }))""",

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("GeckoView", "General")
@@ -22,10 +20,10 @@ with Files("focus-android/**"):
 with Files("android-components/**"):
     BUG_COMPONENT = ("Firefox for Android", "General")
 
-
-
-
-
+# The Android APKs are assembled in the `export` tier, which usually occurs
+# before the following files are generated. However, mechanisms in `recurse.mk`
+# are used to pull the generated files into the `pre-export` tier, so do not
+# require an explicit dependency here.
 config_keys = (
     "MOZ_ANDROID_CONTENT_SERVICE_COUNT",
     "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",

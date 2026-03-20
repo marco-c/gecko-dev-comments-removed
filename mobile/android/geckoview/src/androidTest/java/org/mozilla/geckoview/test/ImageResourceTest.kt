@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -198,23 +197,23 @@ class ImageResourceTest : BaseSessionTest() {
                 kValidTestImage4,
             ),
         )
-        
+        // 16, 32, 64
         verifyEqual(collection.getBest(10)!!, kValidTestImage1)
         verifyEqual(collection.getBest(16)!!, kValidTestImage1)
         verifyEqual(collection.getBest(30)!!, kValidTestImage1)
         verifyEqual(collection.getBest(90)!!, kValidTestImage1)
 
-        
+        // 128
         verifyEqual(collection.getBest(100)!!, kValidTestImage2)
         verifyEqual(collection.getBest(120)!!, kValidTestImage2)
         verifyEqual(collection.getBest(140)!!, kValidTestImage2)
 
-        
+        // 256
         verifyEqual(collection.getBest(210)!!, kValidTestImage3)
         verifyEqual(collection.getBest(256)!!, kValidTestImage3)
         verifyEqual(collection.getBest(270)!!, kValidTestImage3)
 
-        
+        // 300
         verifyEqual(collection.getBest(280)!!, kValidTestImage4)
         verifyEqual(collection.getBest(10000)!!, kValidTestImage4)
     }
@@ -230,7 +229,7 @@ class ImageResourceTest : BaseSessionTest() {
                 kValidTestImage5,
             ),
         )
-        
+        // any
         verifyEqual(collection.getBest(10)!!, kValidTestImage5)
         verifyEqual(collection.getBest(16)!!, kValidTestImage5)
         verifyEqual(collection.getBest(30)!!, kValidTestImage5)
@@ -247,8 +246,8 @@ class ImageResourceTest : BaseSessionTest() {
 
     @Test
     fun getBestNull() {
-        
-        
+        // Don't include `any` since two `any` cases would result in undefined
+        // results.
         val collection = buildCollection(
             arrayOf(
                 kValidTestImage1,
@@ -258,7 +257,7 @@ class ImageResourceTest : BaseSessionTest() {
                 kValidTestImage6,
             ),
         )
-        
+        // null, handled as any
         verifyEqual(collection.getBest(10)!!, kValidTestImage6)
         verifyEqual(collection.getBest(16)!!, kValidTestImage6)
         verifyEqual(collection.getBest(30)!!, kValidTestImage6)

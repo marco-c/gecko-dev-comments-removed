@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -49,8 +48,8 @@ class InteractiveWidgetTest : BaseSessionTest() {
     @Before
     fun setup() {
         activityRule.scenario.onActivity { activity ->
-            
-            
+            // To make OnApplyWindowInsetsListener work for `interactive-widget` features
+            // we need to setSession explicitly.
             activity.view.setSession(mainSession)
             activity.view.setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight)
             imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -80,11 +79,11 @@ class InteractiveWidgetTest : BaseSessionTest() {
               });
             """.trimIndent(),
         )
-        
-        
+        // Explicitly call `waitForRoundTrip()` to make sure the above event listener
+        // has set up in the content.
         mainSession.waitForRoundTrip()
 
-        
+        // Open the software keyboard.
         imm.showSoftInput(view, 0)
 
         assertThat(
@@ -106,15 +105,15 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         ensureKeyboardOpen()
 
-        
+        // Hide the dynamic toolbar.
         view.setVerticalClipping(-dynamicToolbarMaxHeight)
 
-        
+        // To make sure the dynamic toolbar height has been reflected into APZ.
         mainSession.flushApzRepaints()
-        
+        // Also to make sure the dynamic toolbar height has been reflected on the main-thread.
         mainSession.promiseAllPaintsDone()
 
-        
+        // Scroll the visual viewport to the bottom.
         mainSession.panZoomController.scrollTo(
             ScreenLength.zero(),
             ScreenLength.bottom(),
@@ -133,7 +132,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
             paint.color = Color.rgb(255, 255, 255)
             canvas.drawRect(0f, 0f, rect.width().toFloat(), height.toFloat(), paint)
 
-            
+            // Draw the sticky element area.
             paint.color = Color.rgb(0, 128, 0)
             canvas.drawRect(
                 0f,
@@ -152,7 +151,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
         val result = sessionRule.waitForResult(view.capturePixels())
         AssertUtils.assertScreenshotResult(result, reference)
 
-        
+        // Close the software keyboard.
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
     }
 
@@ -168,18 +167,18 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         view.requestFocus()
 
-        
+        // Open the software keyboard.
         imm.showSoftInput(view, 0)
 
-        
+        // Hide the dynamic toolbar.
         view.setVerticalClipping(-dynamicToolbarMaxHeight)
 
-        
+        // To make sure the dynamic toolbar height has been reflected into APZ.
         mainSession.flushApzRepaints()
-        
+        // Also to make sure the dynamic toolbar height has been reflected on the main-thread.
         mainSession.promiseAllPaintsDone()
 
-        
+        // Scroll the visual viewport to the bottom once.
         mainSession.panZoomController.scrollTo(
             ScreenLength.zero(),
             ScreenLength.bottom(),
@@ -188,7 +187,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
         mainSession.flushApzRepaints()
         mainSession.promiseAllPaintsDone()
 
-        
+        // Then scroll up a bit.
         mainSession.panZoomController.scrollBy(
             ScreenLength.zero(),
             ScreenLength.fromPixels(-10.0),
@@ -212,13 +211,13 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         val result = sessionRule.waitForResult(view.capturePixels())
 
-        
-        
+        // On overlays-content mode neither the visual viewport nor the layout viewport is changed,
+        // thus there's no way to tell the visible area while the software keyboard is shown.
         val reference = createReferenceImage(result.height.toDouble())
 
         AssertUtils.assertScreenshotResult(result, reference)
 
-        
+        // Close the software keyboard.
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
     }
 
@@ -246,7 +245,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
             }
         })
 
-        
+        // Close the software keyboard.
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
     }
 
@@ -263,13 +262,13 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         val viewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
 
-        
+        // Open the software keyboard.
         ensureKeyboardOpen()
 
         mainSession.flushApzRepaints()
         mainSession.promiseAllPaintsDone()
 
-        
+        // Scroll down visually.
         mainSession.panZoomController.scrollBy(
             ScreenLength.zero(),
             ScreenLength.fromPixels(viewportHeight),
@@ -281,7 +280,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         var scrollY = mainSession.evaluateJS("window.scrollY") as Double
 
-        
+        // Now the layout scroll offset is different from the visual scroll offset.
         assertThat(
               "The layout scroll offset hasn't reached the destination",
               scrollY,
@@ -297,11 +296,11 @@ class InteractiveWidgetTest : BaseSessionTest() {
               });
             """.trimIndent(),
         )
-        
-        
+        // Explicitly call `waitForRoundTrip()` to make sure the above event listener
+        // has set up in the content.
         mainSession.waitForRoundTrip()
 
-        
+        // Dismiss the software keyboard.
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
 
         assertThat(
@@ -317,11 +316,11 @@ class InteractiveWidgetTest : BaseSessionTest() {
             equalTo(viewportHeight),
         )
 
-        
-        
-        
-        
-        
+        // Dismissing the software keyboard changes the root composition size,
+        // and the new composition size is propagated to APZ and the root
+        // content APZC notifies to the main-thread that there's a pending visual
+        // scroll offset change which needs to be reflected to the main-thread.
+        // Because of this round trip of the information we need to wait for it.
         mainSession.flushApzRepaints()
         mainSession.promiseAllPaintsDone()
 
@@ -357,7 +356,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
         val caretHeight = caretRectObject.getDouble("height")
         val caretBottom = caretRectObject.getDouble("bottom")
 
-        
+        // Open the software keyboard.
         ensureKeyboardOpen()
 
         mainSession.evaluateJS("document.querySelector('input').focus();")
@@ -385,7 +384,7 @@ class InteractiveWidgetTest : BaseSessionTest() {
               equalTo(0.0),
             )
 
-        
+        // Close the software keyboard.
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
     }
 }

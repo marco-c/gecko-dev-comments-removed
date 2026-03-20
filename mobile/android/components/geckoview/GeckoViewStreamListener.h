@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GeckoViewStreamListener_h_
 #define GeckoViewStreamListener_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.annotation.WrapForJNI;

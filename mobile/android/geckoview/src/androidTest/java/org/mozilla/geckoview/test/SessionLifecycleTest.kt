@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -60,7 +59,7 @@ class SessionLifecycleTest : BaseSessionTest() {
 
     @Test(expected = IllegalStateException::class)
     fun open_throwOnAlreadyOpen() {
-        
+        // Throw exception if retrying to open again; otherwise we would leak the old open window.
         mainSession.open()
     }
 
@@ -99,8 +98,8 @@ class SessionLifecycleTest : BaseSessionTest() {
     }
 
     @Test fun collectClosed() {
-        
-        
+        // We can't use a normal scoped function like `run` because
+        // those are inlined, which leaves a local reference.
         fun createSession(): QueuedWeakReference<GeckoSession> {
             return QueuedWeakReference<GeckoSession>(GeckoSession())
         }
@@ -129,7 +128,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         waitUntilCollected(createSession())
     }
 
-    
+    // Waits for 4 requestAnimationFrame calls and computes rate
     private fun computeRequestAnimationFrameRate(session: GeckoSession): Double {
         return session.evaluateJS(
             """
@@ -159,9 +158,9 @@ class SessionLifecycleTest : BaseSessionTest() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "privacy.reduceTimerPrecision" to false,
-                
-                
-                
+                // This makes the throttled frame rate 4 times faster than normal,
+                // so this test doesn't time out. Should still be significantly slower tha
+                // the active frame rate so we can measure the effects
                 "layout.throttled_frame_rate" to 4,
             ),
         )
@@ -171,7 +170,7 @@ class SessionLifecycleTest : BaseSessionTest() {
 
         assertThat("docShell should start active", mainSession.active, equalTo(true))
 
-        
+        // Deactivate the GeckoSession and confirm that rAF/setTimeout/etc callbacks do not run
         mainSession.setActive(false)
         assertThat(
             "docShell shouldn't be active after calling setActive(false)",
@@ -206,7 +205,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         ) as Boolean
         assertThat("timeouts have not run yet", isNotGreen, equalTo(true))
 
-        
+        // Reactivate the GeckoSession and confirm that rAF/setTimeout/etc callbacks now run
         mainSession.setActive(true)
         assertThat(
             "docShell should be active after calling setActive(true)",
@@ -214,7 +213,7 @@ class SessionLifecycleTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        
+        // At 60fps, once a frame is about 16.6 ms
         rafRate = computeRequestAnimationFrameRate(mainSession)
         assertThat(
             "requestAnimationFrame should be called about once a frame",

@@ -36,5 +36,4 @@
 
 
 
-
 package org.mozilla.geckoview;

@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko.mozglue;
 
 public interface NativeReference {

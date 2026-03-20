@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko.util;
 
 import java.util.concurrent.Executor;

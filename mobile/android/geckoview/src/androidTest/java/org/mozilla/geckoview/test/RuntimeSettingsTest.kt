@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -80,9 +79,9 @@ class RuntimeSettingsTest : BaseSessionTest() {
             `is`(initialFontInflation),
         )
 
-        
-        
-        
+        // Now check with that with font inflation initially off, the initial state is still
+        // restored correctly after switching auto mode back off.
+        // Also reset font size factor back to its default value of 1.0f.
         initialFontSize = 1.0f
         initialFontInflation = false
         settings.fontSizeFactor = initialFontSize
@@ -123,7 +122,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
     }
 
-    @Ignore 
+    @Ignore // Bug 1546297 disabled test on pgo for frequent failures
     @Test
     fun fontSize() {
         val settings = sessionRule.runtime.settings
@@ -227,17 +226,17 @@ class RuntimeSettingsTest : BaseSessionTest() {
     fun webContentIsolationStrategy() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
-        
+        // Set isolation strategy
         geckoRuntimeSettings.setWebContentIsolationStrategy(GeckoRuntimeSettings.STRATEGY_ISOLATE_NOTHING)
 
-        
+        // Check isolation strategy with GeckoView
         assertThat(
             "WebContentIsolationStrategy was set to isolate nothing.",
             geckoRuntimeSettings.webContentIsolationStrategy,
             equalTo(GeckoRuntimeSettings.STRATEGY_ISOLATE_NOTHING),
         )
 
-        
+        // Check isolation strategy with Gecko
         val geckoPreference =
             (sessionRule.getPrefs("fission.webContentIsolationStrategy").get(0)) as Int
 
@@ -295,8 +294,8 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
         val sanitizedDefaultLargeKeepaliveFactor = 1
 
-        
-        
+        // Setting an invalid factor will cause an exception to be throw in debug build.
+        // otherwise, the factor will be reset to default when an invalid factor is given.
         try {
             settings.setLargeKeepaliveFactor(128)
             prefValue = (sessionRule.getPrefs(largeKeepaliveFactorPref)[0] as Int)
@@ -314,7 +313,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
     @Test
     fun aboutConfig() {
-        
+        // This is broken in automation because document channel is enabled by default
         assumeThat(sessionRule.env.isAutomation, equalTo(false))
         val settings = sessionRule.runtime.settings
 
@@ -1060,29 +1059,29 @@ class RuntimeSettingsTest : BaseSessionTest() {
     fun safeBrowsingV5Enabled() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
-        
+        // Read the default pref value.
         var defaultPrefValue =
             (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
 
-        
-        
+        // Verify the Safe Browsing V5 enabled setting matches the default
+        // pref value.
         assertThat(
             "Safe Browsing V5 enabled pref should match setting",
             geckoRuntimeSettings.contentBlocking.safeBrowsingV5Enabled,
             equalTo(defaultPrefValue),
         )
 
-        
+        // Set the Safe Browsing V5 setting.
         geckoRuntimeSettings.contentBlocking.setSafeBrowsingV5Enabled(!defaultPrefValue)
 
-        
+        // Verify the Safe Browsing V5 enabled setting does change.
         assertThat(
             "Safe Browsing V5 enabled pref should match setting",
             geckoRuntimeSettings.contentBlocking.safeBrowsingV5Enabled,
             equalTo(!defaultPrefValue),
         )
 
-        
+        // Verify the Safe Browsing V5 enabled pref does change.
         var enabled =
             (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
 

@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko;
 
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;

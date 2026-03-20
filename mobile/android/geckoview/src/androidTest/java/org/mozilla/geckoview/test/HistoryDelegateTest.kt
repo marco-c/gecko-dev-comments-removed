@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -26,7 +25,7 @@ import org.mozilla.geckoview.test.util.UiThreadUtils
 @MediumTest
 class HistoryDelegateTest : BaseSessionTest() {
     companion object {
-        
+        // Keep in sync with the styles in `LINKS_HTML_PATH`.
         const val UNVISITED_COLOR = "rgb(0, 0, 255)"
         const val VISITED_COLOR = "rgb(255, 0, 0)"
     }
@@ -79,8 +78,8 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        
-        
+        // Since `getVisited` is called asynchronously after the page loads, we
+        // can't use `waitForPageStop` here.
         mainSession.loadUri(testUri)
         mainSession.waitUntilCalled(
             GeckoSession.HistoryDelegate::class,
@@ -88,7 +87,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             "getVisited",
         )
 
-        
+        // Sometimes link changes are not applied immediately, wait for a little bit
         UiThreadUtils.waitForCondition({
             mainSession.getLinkColor("#mozilla") == VISITED_COLOR
         }, sessionRule.env.defaultTimeoutMillis)
@@ -112,7 +111,7 @@ class HistoryDelegateTest : BaseSessionTest() {
         )
     }
 
-    @Ignore 
+    @Ignore // disable test on debug for frequent failures Bug 1544169
     @Test
     fun onHistoryStateChange() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -255,7 +254,7 @@ class HistoryDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onHistoryStateChangeSavingState() {
-        
+        // This is a smaller version of the above test, in the hopes to minimize race conditions
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
@@ -304,27 +303,27 @@ class HistoryDelegateTest : BaseSessionTest() {
     }
 
     @Test fun fissionDisabledWithShipDisabled() {
-        
+        // Check if this is a fission disabled run.
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
-        
+        // Check preference with Gecko, this can be changed externally through configs.
         val shipPref = sessionRule.getPrefs(
             "fission.disableSessionHistoryInParent",
         )
 
-        
+        // Check if this is a SHIP disabled run.
         assumeThat(
             shipPref[0] as Boolean,
             equalTo(true),
         )
 
-        
+        // Check preference with GeckoView
         assertNull(
             "Default will have no value since we are relying on Gecko.",
             sessionRule.runtime.settings.disableShip,
         )
 
-        
+        // Verify SHIP is not running
         assertFalse(
             "SHIP is not running.",
             sessionRule.isSessionHistoryInParentRunning,
@@ -332,27 +331,27 @@ class HistoryDelegateTest : BaseSessionTest() {
     }
 
     @Test fun fissionDisabledWithShipEnabled() {
-        
+        // Check if this is a fission disabled run.
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
-        
+        // Check preference with Gecko, this can be changed externally through configs.
         val shipPref = sessionRule.getPrefs(
             "fission.disableSessionHistoryInParent",
         )
 
-        
+        // Check if this is a SHIP enabled run.
         assumeThat(
             shipPref[0] as Boolean,
             equalTo(false),
         )
 
-        
+        // Check preference with GeckoView
         assertNull(
             "Default will have no value since we are relying on Gecko.",
             sessionRule.runtime.settings.disableShip,
         )
 
-        
+        // Verify SHIP is running
         assertTrue(
             "SHIP is running.",
             sessionRule.isSessionHistoryInParentRunning,
@@ -360,27 +359,27 @@ class HistoryDelegateTest : BaseSessionTest() {
     }
 
     @Test fun fissionEnabledWithShipEnabled() {
-        
+        // Check if this is a fission enabled run.
         assumeThat(sessionRule.env.isFission, equalTo(true))
 
-        
+        // Check preference with Gecko, this can be changed externally through configs.
         val shipPref = sessionRule.getPrefs(
             "fission.disableSessionHistoryInParent",
         )
 
-        
+        // Check if this is a SHIP enabled run.
         assumeThat(
             shipPref[0] as Boolean,
             equalTo(false),
         )
 
-        
+        // Check preference with GeckoView
         assertNull(
             "Default will have no value since we are relying on Gecko.",
             sessionRule.runtime.settings.disableShip,
         )
 
-        
+        // Verify SHIP is running
         assertTrue(
             "SHIP is running.",
             sessionRule.isSessionHistoryInParentRunning,

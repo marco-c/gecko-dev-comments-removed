@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -106,11 +105,11 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
-        
+        // Load the WebExtension that will add a border to the body
         val borderify = sessionRule.waitForResult(
             controller.installBuiltIn(
                 "resource://android/assets/web_extensions/borderify/",
@@ -130,19 +129,19 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
-        
+        // Check some of the metadata
         assertEquals(borderify.metaData.incognito, "spanning")
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
@@ -151,11 +150,11 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
-        
+        // Load the WebExtension that will add a border to the body
         val borderify = sessionRule.waitForResult(
             controller.installBuiltIn(
                 "resource://android/assets/web_extensions/borderify-mv3/",
@@ -184,16 +183,16 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
@@ -237,7 +236,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // click triggers permissions.request
         mainSession.synthesizeTap(50, 50)
 
         sessionRule.delegateUntilTestEnd(object : WebExtensionController.PromptDelegate {
@@ -272,7 +271,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertThat("Permission request should be accepted.", message, equalTo("true"))
 
         val updatedExtension = sessionRule.waitForResult(
-            
+            // Adds "internal:privateBrowsingAllowed"
             controller.setAllowedInPrivateBrowsing(extension, true),
         )
 
@@ -298,10 +297,10 @@ class WebExtensionTest : BaseSessionTest() {
         )
         assertArrayEquals(arrayOf("healthInfo"), grantedOptionalDataCollectionPermissions)
 
-        
+        // geolocation is part of the manifest but not requested/granted.
         assertFalse(grantedOptionalPermissions.contains("geolocation"))
 
-        
+        // "internal:privateBrowsingAllowed" must not be part of grantedOptionalPermissions.
         assertThat(
             "grantedOptionalPermissions must be activeTab.",
             grantedOptionalPermissions.first(),
@@ -332,7 +331,7 @@ class WebExtensionTest : BaseSessionTest() {
         var grantedOptionalOrigins = extension.metaData.grantedOptionalOrigins
         var grantedOptionalDataCollectionPermissions = extension.metaData.grantedOptionalDataCollectionPermissions
 
-        
+        // Without adding any optional permissions.
         assertThat(
             "grantedOptionalPermissions must be 0.",
             grantedOptionalPermissions.size,
@@ -345,7 +344,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Only adding an origin permission.
         extension = sessionRule.waitForResult(
             controller.addOptionalPermissions(
                 extension.id,
@@ -376,7 +375,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Adding "nothing" to verify that nothing gets changed.
         extension = sessionRule.waitForResult(
             controller.addOptionalPermissions(
                 extension.id,
@@ -398,7 +397,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Adding an optional permission.
         extension = sessionRule.waitForResult(
             controller.addOptionalPermissions(
                 extension.id,
@@ -412,7 +411,7 @@ class WebExtensionTest : BaseSessionTest() {
         grantedOptionalOrigins = extension.metaData.grantedOptionalOrigins
         grantedOptionalDataCollectionPermissions = extension.metaData.grantedOptionalDataCollectionPermissions
 
-        
+        // Both optional and origin permissions must be granted.
         assertThat(
             "grantedOptionalPermissions must be 1.",
             grantedOptionalPermissions.size,
@@ -435,7 +434,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Removing "nothing" to verify that nothing gets changed.
         extension = sessionRule.waitForResult(
             controller.removeOptionalPermissions(
                 extension.id,
@@ -457,7 +456,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Remove an activeTab optional permission.
         extension = sessionRule.waitForResult(
             controller.removeOptionalPermissions(
                 extension.id,
@@ -488,7 +487,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Remove an `*://example.com/*` origin permission.
         extension = sessionRule.waitForResult(
             controller.removeOptionalPermissions(
                 extension.id,
@@ -514,7 +513,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Adding an optional data collection permission.
         extension = sessionRule.waitForResult(
             controller.addOptionalPermissions(
                 extension.id,
@@ -536,8 +535,8 @@ class WebExtensionTest : BaseSessionTest() {
         assertThat("grantedOptionalOrigins must be 0.", grantedOptionalOrigins.size, equalTo(0))
         assertArrayEquals(arrayOf("healthInfo"), grantedOptionalDataCollectionPermissions)
 
-        
-        
+        // Missing origins from the manifest.
+        // Must throw!
         try {
             extension = sessionRule.waitForResult(
                 controller.addOptionalPermissions(
@@ -557,8 +556,8 @@ class WebExtensionTest : BaseSessionTest() {
             assertThat("grantedOptionalOrigins must be 0.", grantedOptionalOrigins.size, equalTo(0))
         }
 
-        
-        
+        // Permission no in the manifest.
+        // Must throw!
         try {
             extension = sessionRule.waitForResult(
                 controller.addOptionalPermissions(
@@ -578,8 +577,8 @@ class WebExtensionTest : BaseSessionTest() {
             assertThat("grantedOptionalOrigins must be 0.", grantedOptionalOrigins.size, equalTo(0))
         }
 
-        
-        
+        // Missing origins from the manifest.
+        // Must throw!
         try {
             extension = sessionRule.waitForResult(
                 controller.addOptionalPermissions(
@@ -604,8 +603,8 @@ class WebExtensionTest : BaseSessionTest() {
 
     @Test
     fun optionalOriginsNormalized() {
-        
-        
+        // For mv3 extensions the host_permissions are being granted automatically at install time
+        // but this test needs them to not be granted yet and so we explicitly opt-out in this test.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "extensions.originControls.grantByDefault" to false,
@@ -735,9 +734,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -772,7 +771,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Now let's add a new optional data collection permission.
         extension = sessionRule.waitForResult(
             controller.addOptionalPermissions(
                 extension.id,
@@ -788,7 +787,7 @@ class WebExtensionTest : BaseSessionTest() {
             grantedOptionalDataCollectionPermissions,
         )
 
-        
+        // Let's add another one.
         extension = sessionRule.waitForResult(
             controller.addOptionalPermissions(
                 extension.id,
@@ -804,7 +803,7 @@ class WebExtensionTest : BaseSessionTest() {
             grantedOptionalDataCollectionPermissions,
         )
 
-        
+        // And now we remove them.
         extension = sessionRule.waitForResult(
             controller.removeOptionalPermissions(
                 extension.id,
@@ -848,7 +847,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForPageStop()
 
         if (!enabled) {
-            
+            // Border should be empty because the extension is disabled
             assertBodyBorderEqualTo("")
         } else {
             assertBodyBorderEqualTo("red")
@@ -960,9 +959,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        true, 
-                        false, 
+                        true, // isPermissionsGranted
+                        true, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -999,8 +998,8 @@ class WebExtensionTest : BaseSessionTest() {
             },
         )
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         var borderify = sessionRule.waitForResult(
@@ -1033,7 +1032,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Border should be empty because the extension is not installed anymore
         assertBodyBorderEqualTo("")
     }
 
@@ -1042,8 +1041,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -1074,9 +1073,9 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1092,7 +1091,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
         var list = extensionsMap(sessionRule.waitForResult(controller.list()))
@@ -1100,7 +1099,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertTrue(list.containsKey(borderify.id))
         assertTrue(list.containsKey(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID))
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         list = extensionsMap(sessionRule.waitForResult(controller.list()))
@@ -1110,7 +1109,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
@@ -1119,8 +1118,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -1150,9 +1149,9 @@ class WebExtensionTest : BaseSessionTest() {
                 assertEquals(extension.metaData.incognito, "spanning")
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1168,7 +1167,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
         assertFalse(borderify.metaData.allowedInPrivateBrowsing)
 
@@ -1177,7 +1176,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertTrue(list.containsKey(borderify.id))
         assertTrue(list.containsKey(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID))
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         list = extensionsMap(sessionRule.waitForResult(controller.list()))
@@ -1187,7 +1186,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
@@ -1197,8 +1196,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -1229,9 +1228,9 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        true, 
-                        false, 
+                        true, // isPermissionsGranted
+                        true, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1247,7 +1246,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
         assertTrue(mainSession.settings.usePrivateMode)
         assertTrue(borderify.metaData.allowedInPrivateBrowsing)
@@ -1257,7 +1256,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertTrue(list.containsKey(borderify.id))
         assertTrue(list.containsKey(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID))
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         list = extensionsMap(sessionRule.waitForResult(controller.list()))
@@ -1267,7 +1266,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
@@ -1277,7 +1276,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
+        // Make sure border is empty before running the extension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -1290,9 +1289,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1305,10 +1304,10 @@ class WebExtensionTest : BaseSessionTest() {
             ),
         )
 
-        
+        // Make sure private mode is enabled
         assertTrue(mainSession.settings.usePrivateMode)
         assertFalse(borderify.metaData.allowedInPrivateBrowsing)
-        
+        // Check that the WebExtension was not applied to a private mode page
         assertBodyBorderEqualTo("")
 
         borderify = sessionRule.waitForResult(
@@ -1316,8 +1315,8 @@ class WebExtensionTest : BaseSessionTest() {
         )
 
         assertTrue(borderify.metaData.allowedInPrivateBrowsing)
-        
-        
+        // Check that the WebExtension was applied to a private mode page now that the extension
+        // is enabled in private mode
         mainSession.reload()
         sessionRule.waitForPageStop()
         assertBodyBorderEqualTo("red")
@@ -1327,13 +1326,13 @@ class WebExtensionTest : BaseSessionTest() {
         )
 
         assertFalse(borderify.metaData.allowedInPrivateBrowsing)
-        
-        
+        // Check that the WebExtension was not applied to a private mode page after being
+        // not allowed to run in private mode
         mainSession.reload()
         sessionRule.waitForPageStop()
         assertBodyBorderEqualTo("")
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(borderify))
         mainSession.reload()
         sessionRule.waitForPageStop()
@@ -1342,15 +1341,15 @@ class WebExtensionTest : BaseSessionTest() {
 
     @Test
     fun optionsUIPageMetadata() {
-        
+        // dummy.xpi is not signed, but it could be
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "xpinstall.signatures.required" to false,
             ),
         )
 
-        
-        
+        // Wait for the onReady AddonManagerDelegate method to be called, and assert
+        // that the baseUrl and optionsPageUrl are both available as expected.
         val onReadyResult = GeckoResult<Void>()
         sessionRule.addExternalDelegateUntilTestEnd(
             WebExtensionController.AddonManagerDelegate::class,
@@ -1380,9 +1379,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1395,8 +1394,8 @@ class WebExtensionTest : BaseSessionTest() {
             ),
         )
 
-        
-        
+        // In the onReady AddonManagerDelegate optionsPageUrl metadata is asserted again
+        // and expected to not be empty anymore.
         assertNull(dummy.metaData.optionsPageUrl)
 
         sessionRule.waitForResult(onReadyResult)
@@ -1405,11 +1404,11 @@ class WebExtensionTest : BaseSessionTest() {
 
     @Test
     fun optionsPageAliasMetadata() {
-        
-        
+        // NOTE: This test case tests options_page is considered an alternative alias for
+        // options_ui.page and the metadata to be set so that it is opened in a tab.
 
-        
-        
+        // Wait for the onReady AddonManagerDelegate method to be called, and assert
+        // that the baseUrl and optionsPageUrl are both available as expected.
         val onReadyResult = GeckoResult<Void>()
         sessionRule.addExternalDelegateUntilTestEnd(
             WebExtensionController.AddonManagerDelegate::class,
@@ -1440,14 +1439,14 @@ class WebExtensionTest : BaseSessionTest() {
 
     @Test
     fun installMultiple() {
-        
+        // dummy.xpi is not signed, but it could be
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "xpinstall.signatures.required" to false,
             ),
         )
 
-        
+        // First, make sure the list only contains the test support extension
         var list = extensionsMap(sessionRule.waitForResult(controller.list()))
         assertEquals(list.size, 1)
         assertTrue(list.containsKey(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID))
@@ -1462,15 +1461,15 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
         })
 
-        
+        // Install in parallell borderify and dummy
         val borderifyResult = controller.install(
             "resource://android/assets/web_extensions/borderify.xpi",
             null,
@@ -1484,14 +1483,14 @@ class WebExtensionTest : BaseSessionTest() {
             GeckoResult.allOf(borderifyResult, dummyResult),
         )
 
-        
+        // Make sure the list is updated accordingly
         list = extensionsMap(sessionRule.waitForResult(controller.list()))
         assertTrue(list.containsKey(borderify.id))
         assertTrue(list.containsKey(dummy.id))
         assertTrue(list.containsKey(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID))
         assertEquals(list.size, 3)
 
-        
+        // Uninstall borderify and verify that it's not in the list anymore
         sessionRule.waitForResult(controller.uninstall(borderify))
 
         list = extensionsMap(sessionRule.waitForResult(controller.list()))
@@ -1500,7 +1499,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertTrue(list.containsKey(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID))
         assertFalse(list.containsKey(borderify.id))
 
-        
+        // Uninstall dummy and make sure the list is now empty
         sessionRule.waitForResult(controller.uninstall(dummy))
 
         list = extensionsMap(sessionRule.waitForResult(controller.list()))
@@ -1524,9 +1523,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1542,7 +1541,7 @@ class WebExtensionTest : BaseSessionTest() {
                     extension: WebExtension?,
                     installException: InstallException,
                 ) {
-                    
+                    // Make sure the extension is present when it should be.
                     assertEquals(expectedExtension, extension != null)
                     assertEquals(expectedExtensionID, extension?.id)
                     assertEquals(expectedError, installException.code)
@@ -1556,7 +1555,7 @@ class WebExtensionTest : BaseSessionTest() {
                 null,
             )
                 .accept({
-                    
+                    // We should not be able to install an extension here.
                     assertTrue(false)
                 }, { exception ->
                     val installException = exception as WebExtension.InstallException
@@ -1592,9 +1591,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1697,9 +1696,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1721,7 +1720,7 @@ class WebExtensionTest : BaseSessionTest() {
                 null,
             )
                 .accept({
-                    
+                    // We should not be able to install extensions without an id.
                     assertTrue(false)
                 }, { exception ->
                     val installException = exception as WebExtension.InstallException
@@ -1755,7 +1754,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
+        // Ensure border is empty to start.
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -1768,9 +1767,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        false, 
-                        false, 
-                        false, 
+                        false, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -1781,7 +1780,7 @@ class WebExtensionTest : BaseSessionTest() {
                 "resource://android/assets/web_extensions/borderify.xpi",
                 null,
             ).accept({
-                
+                // We should not be able to install the extension.
                 assertTrue(false)
             }, { exception ->
                 assertTrue(exception is WebExtension.InstallException)
@@ -1793,7 +1792,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not installed and the border is still empty.
         assertBodyBorderEqualTo("")
     }
 
@@ -1815,7 +1814,7 @@ class WebExtensionTest : BaseSessionTest() {
                 assertEquals(notification.title, "Time for cake!")
                 assertEquals(notification.text, "Something something cake")
                 assertEquals(notification.imageUrl, "http://localhost:4245/assets/www/images/test.gif")
-                
+                // This should be filled out, Bug 1589693
                 assertEquals(notification.source, null)
                 notification.show()
             }
@@ -1826,14 +1825,14 @@ class WebExtensionTest : BaseSessionTest() {
         )
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Registers a web extension
+    // - Listens for messages and waits for a message
+    // - Sends a response to the message and waits for a second message
+    // - Verify that the second message has the correct value
+    //
+    // When `background == true` the test will be run using background messaging, otherwise the
+    // test will use content script messaging.
     private fun testOnMessage(background: Boolean) {
         val messageResult = GeckoResult<Void>()
 
@@ -1844,7 +1843,7 @@ class WebExtensionTest : BaseSessionTest() {
             var completed = false
 
             override fun onConnect(port: WebExtension.Port) {
-                
+                // Ignored for this test
             }
 
             override fun onMessage(
@@ -1881,11 +1880,11 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(messaging))
     }
 
-    
-    
-    
-    
-    
+    // This test
+    // - Listen for a new tab request from a web extension
+    // - Registers a web extension
+    // - Waits for onNewTab request
+    // - Verify that request came from right extension
     @Test
     fun testBrowserTabsCreate() {
         val tabsCreateResult = GeckoResult<Void>()
@@ -1907,12 +1906,12 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(tabsExtension))
     }
 
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Listen for a new tab request from a web extension
+    // - Registers a web extension
+    // - Extension requests creation of new tab with a cookie store id.
+    // - Waits for onNewTab request
+    // - Verify that request came from right extension
     @Test
     fun testBrowserTabsCreateWithCookieStoreId() {
         sessionRule.setPrefsUntilTestEnd(mapOf("privacy.userContext.enabled" to true))
@@ -1936,14 +1935,14 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(tabsExtension))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Create and assign WebExtension TabDelegate to handle creation and closing of tabs
+    // - Registers a WebExtension
+    // - Extension requests creation of new tab
+    // - TabDelegate handles creation of new tab
+    // - Extension requests removal of newly created tab
+    // - TabDelegate handles closing of newly created tab
+    // - Verify that close request came from right extension and targeted session
     @Test
     fun testBrowserTabsCreateBrowserTabsRemove() {
         val onCloseRequestResult = GeckoResult<Void>()
@@ -1977,18 +1976,18 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(tabsExtension))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Create and assign WebExtension TabDelegate to handle creation and closing of tabs
+    // - Create and opens a new GeckoSession
+    // - Set the main session as active tab
+    // - Registers a WebExtension
+    // - Extension listens for activated tab changes
+    // - Set the main session as inactive tab
+    // - Set the newly created GeckoSession as active tab
+    // - Extension requests removal of newly created tab if tabs.query({active: true})
+    //     contains only the newly activated tab
+    // - TabDelegate handles closing of newly created tab
+    // - Verify that close request came from right extension and targeted session
     @Test
     fun testSetTabActive() {
         val onCloseRequestResult = GeckoResult<Void>()
@@ -2102,7 +2101,7 @@ class WebExtensionTest : BaseSessionTest() {
 
         val port = sessionRule.waitForResult(portResult)
 
-        
+        // Test browsingData.removeDownloads
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearDownloads(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2116,7 +2115,7 @@ class WebExtensionTest : BaseSessionTest() {
         })
         sessionRule.waitForResult(browsingDataMessage(port, "clear-downloads", 1234))
 
-        
+        // Test browsingData.removeFormData
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearFormData(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2130,7 +2129,7 @@ class WebExtensionTest : BaseSessionTest() {
         })
         sessionRule.waitForResult(browsingDataMessage(port, "clear-form-data", 1234))
 
-        
+        // Test browsingData.removeHistory
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearHistory(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2144,7 +2143,7 @@ class WebExtensionTest : BaseSessionTest() {
         })
         sessionRule.waitForResult(browsingDataMessage(port, "clear-history", 1234))
 
-        
+        // Test browsingData.removePasswords
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearPasswords(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2158,7 +2157,7 @@ class WebExtensionTest : BaseSessionTest() {
         })
         sessionRule.waitForResult(browsingDataMessage(port, "clear-passwords", 1234))
 
-        
+        // Test browsingData.remove({ indexedDB: true, localStorage: true, passwords: true })
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearPasswords(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2188,7 +2187,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo("response"),
         )
 
-        
+        // Test browsingData.remove({ indexedDB: true, history: true, passwords: true })
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearPasswords(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2228,8 +2227,8 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo("response"),
         )
 
-        
-        
+        // Test browsingData.remove({ indexedDB: true, history: true, passwords: true })
+        // with failure
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearPasswords(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2269,8 +2268,8 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo("Not authorized."),
         )
 
-        
-        
+        // Test browsingData.remove({ indexedDB: true, history: true, passwords: true })
+        // with multiple failures
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             @AssertCalled
             override fun onClearPasswords(sinceUnixTimestamp: Long): GeckoResult<Void>? {
@@ -2311,7 +2310,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        
+        // Test browsingData.settings()
         response = sessionRule.waitForResult(
             browsingDataMessage(port, "get-settings"),
         )
@@ -2349,7 +2348,7 @@ class WebExtensionTest : BaseSessionTest() {
             )
         }
 
-        
+        // Test browsingData.settings() with no delegate
         sessionRule.delegateDuringNextWait(object : WebExtension.BrowsingDataDelegate {
             override fun onGetSettings(): GeckoResult<WebExtension.BrowsingDataDelegate.Settings>? {
                 return null
@@ -2386,9 +2385,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -2448,7 +2447,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(extension))
     }
 
-    
+    // Same as testSetTabActive when the extension is not allowed in private browsing
     @Test
     fun testSetTabActiveNotAllowedInPrivateBrowsing() {
         sessionRule.setPrefsUntilTestEnd(
@@ -2471,9 +2470,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -2492,9 +2491,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -2549,7 +2548,7 @@ class WebExtensionTest : BaseSessionTest() {
             TabDelegate(privateBrowsingPrivateSession, tabsExtensionPB, newPrivateSession),
         )
 
-        
+        // tabsExtension is not allowed in private browsing and shouldn't get this event
         newPrivateSession.webExtensionController.setTabDelegate(
             tabsExtension,
             object : WebExtension.SessionTabDelegate {
@@ -2587,11 +2586,11 @@ class WebExtensionTest : BaseSessionTest() {
         newPrivateSession.close()
     }
 
-    
-    
-    
-    
-    
+    // Verifies that the following messages are received from an extension page loaded in the session
+    // - HELLO_FROM_PAGE_1 from nativeApp browser1
+    // - HELLO_FROM_PAGE_2 from nativeApp browser2
+    // - connection request from browser1
+    // - HELLO_FROM_PORT from the port opened at the above step
     private fun testExtensionMessages(extension: WebExtension, session: GeckoSession) {
         val messageResult2 = GeckoResult<String>()
         session.webExtensionController.setMessageDelegate(
@@ -2660,10 +2659,10 @@ class WebExtensionTest : BaseSessionTest() {
         )
     }
 
-    
-    
-    
-    
+    // This test:
+    // - loads an extension that tries to send some messages when loading tab.html
+    // - verifies that the messages are received when loading the tab normally
+    // - verifies that the messages are received when restoring the tab in a fresh session
     @Test
     fun testRestoringExtensionPagePreservesMessages() {
         val extension = sessionRule.waitForResult(
@@ -2681,27 +2680,27 @@ class WebExtensionTest : BaseSessionTest() {
             }
         })
 
-        
+        // Test that messages are received in the main session
         testExtensionMessages(extension, mainSession)
 
         val newSession = sessionRule.createOpenSession()
         newSession.restoreState(savedState!!)
         newSession.waitForPageStop()
 
-        
+        // Test that messages are received in a restored state
         testExtensionMessages(extension, newSession)
 
         sessionRule.waitForResult(controller.uninstall(extension))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Create and assign WebExtension TabDelegate to handle closing of tabs
+    // - Create new GeckoSession for WebExtension to close
+    // - Load url that will allow extension to identify the tab
+    // - Registers a WebExtension
+    // - Extension finds the tab by url and removes it
+    // - TabDelegate handles closing of the tab
+    // - Verify that request targets previously created GeckoSession
     @Test
     fun testBrowserTabsRemove() {
         val onCloseRequestResult = GeckoResult<Void>()
@@ -2765,15 +2764,15 @@ class WebExtensionTest : BaseSessionTest() {
         testOnMessage(true)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - installs a web extension
+    // - waits for the web extension to connect to the browser
+    // - on connect it will start listening on the port for a message
+    // - When the message is received it sends a message in response and waits for another message
+    // - When the second message is received it verifies it contains the expected value
+    //
+    // When `background == true` the test will be run using background messaging, otherwise the
+    // test will use content script messaging.
     private fun testPortMessage(background: Boolean) {
         val result = GeckoResult<Void>()
         val prefix = if (background) "testBackground" else "testContent"
@@ -2803,7 +2802,7 @@ class WebExtensionTest : BaseSessionTest() {
             }
 
             override fun onDisconnect(port: WebExtension.Port) {
-                
+                // ignored
             }
         }
 
@@ -2821,7 +2820,7 @@ class WebExtensionTest : BaseSessionTest() {
                 message: Any,
                 sender: WebExtension.MessageSender,
             ): GeckoResult<Any>? {
-                
+                // Ignored for this test
                 return null
             }
         }
@@ -2843,17 +2842,17 @@ class WebExtensionTest : BaseSessionTest() {
         testPortMessage(true)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Registers a web extension
+    // - Awaits for the web extension to connect to the browser
+    // - When connected, it triggers a disconnection from the other side and verifies that
+    //   the browser is notified of the port being disconnected.
+    //
+    // When `background == true` the test will be run using background messaging, otherwise the
+    // test will use content script messaging.
+    //
+    // When `refresh == true` the disconnection will be triggered by refreshing the page, otherwise
+    // it will be triggered by sending a message to the web extension.
     private fun testPortDisconnect(background: Boolean, refresh: Boolean) {
         val result = GeckoResult<Void>()
 
@@ -2871,7 +2870,7 @@ class WebExtensionTest : BaseSessionTest() {
             override fun onDisconnect(port: WebExtension.Port) {
                 assertEquals(messaging!!.id, port.sender.webExtension.id)
                 assertEquals(port, messagingPort)
-                
+                // We successfully received a disconnection
                 result.complete(null)
             }
         }
@@ -2886,10 +2885,10 @@ class WebExtensionTest : BaseSessionTest() {
                 port.setDelegate(portDelegate)
 
                 if (refresh) {
-                    
+                    // Refreshing the page should disconnect the port
                     mainSession.reload()
                 } else {
-                    
+                    // Let's ask the web extension to disconnect this port
                     val message = JSONObject()
                     message.put("action", "disconnect")
 
@@ -2904,7 +2903,7 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<Any>? {
                 assertEquals(messaging!!.id, sender.webExtension.id)
 
-                
+                // Ignored for this test
                 return null
             }
         }
@@ -2937,8 +2936,8 @@ class WebExtensionTest : BaseSessionTest() {
         assertEquals("nativeApp should always be 'browser'", nativeApp, "browser")
 
         if (background) {
-            
-            
+            // For background scripts we only want messages from the extension, this should never
+            // happen and it's a bug if we get here.
             assertEquals(
                 "Called from content script with background-only delegate.",
                 sender.environmentType,
@@ -2959,14 +2958,14 @@ class WebExtensionTest : BaseSessionTest() {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // This test
+    // - Register a web extension and waits for connections
+    // - When connected it disconnects the port from the app side
+    // - Awaits for a message from the web extension confirming the web extension was notified of
+    //   port being closed.
+    //
+    // When `background == true` the test will be run using background messaging, otherwise the
+    // test will use content script messaging.
     private fun testPortDisconnectFromApp(background: Boolean) {
         val result = GeckoResult<Void>()
 
@@ -3015,7 +3014,7 @@ class WebExtensionTest : BaseSessionTest() {
         testPortDisconnectFromApp(true)
     }
 
-    
+    // This test checks that scripts running in a iframe have the `isTopLevel` property set to false.
     private fun testIframeTopLevel() {
         val portTopLevel = GeckoResult<Void>()
         val portIframe = GeckoResult<Void>()
@@ -3040,7 +3039,7 @@ class WebExtensionTest : BaseSessionTest() {
                         assertFalse(port.sender.isTopLevel)
                         portIframe.complete(null)
                     }
-                    else -> 
+                    else -> // We shouldn't get other messages
                         fail()
                 }
 
@@ -3066,7 +3065,7 @@ class WebExtensionTest : BaseSessionTest() {
                         assertFalse(sender.isTopLevel)
                         messageIframe.complete(null)
                     }
-                    else -> 
+                    else -> // We shouldn't get other messages
                         fail()
                 }
 
@@ -3119,9 +3118,9 @@ class WebExtensionTest : BaseSessionTest() {
         extension.setMessageDelegate(messageDelegate, "browser")
         sessionRule.waitForResult(result)
 
-        
-        
-        
+        // Extension has set up some webRequest listeners to redirect requests.
+        // Open the test page and verify that the extension has redirected the
+        // scripts as expected.
         mainSession.loadTestPath(TRACKERS_PATH)
         sessionRule.waitForPageStop()
 
@@ -3216,9 +3215,9 @@ class WebExtensionTest : BaseSessionTest() {
             }
         })
 
-        
-        
-        
+        // If ensureBuiltIn works correctly, this will not re-install the extension.
+        // We can verify that it won't reinstall because that would cause the extension page to
+        // close prematurely, making the test fail.
         val ensure = sessionRule.waitForResult(
             controller.ensureBuiltIn(
                 "resource://android/assets/web_extensions/extension-page-update/",
@@ -3229,7 +3228,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertThat("ID match", ensure.id, equalTo(extension.id))
         assertThat("version match", ensure.metaData.version, equalTo(extension.metaData.version))
 
-        
+        // Make sure the page loaded successfully
         sessionRule.waitForResult(pageStop)
 
         assertThat("Url should load WebExtension page", page, endsWith("/tab.html"))
@@ -3240,7 +3239,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo("HELLO_FROM_PAGE"),
         )
 
-        
+        // Test that after uninstalling an extension, all its pages get closed
         sessionRule.addExternalDelegateUntilTestEnd(
             WebExtension.SessionTabDelegate::class,
             { delegate -> mainSession.webExtensionController.setTabDelegate(extension, delegate) },
@@ -3308,7 +3307,7 @@ class WebExtensionTest : BaseSessionTest() {
         try {
             sessionRule.waitForResult(controller.installBuiltIn(location))
         } catch (ex: Exception) {
-            
+            // Let's make sure the error message contains the expected error message
             assertTrue(ex.message!!.contains(expectedError))
 
             return
@@ -3317,7 +3316,7 @@ class WebExtensionTest : BaseSessionTest() {
         fail("The above code should throw.")
     }
 
-    
+    // Test web extension permission.request.
     @WithDisplay(width = 100, height = 100)
     @Test
     fun permissionRequest() {
@@ -3339,7 +3338,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("${extension.metaData.baseUrl}clickToRequestPermission.html")
         sessionRule.waitForPageStop()
 
-        
+        // click triggers permissions.request
         mainSession.synthesizeTap(50, 50)
 
         sessionRule.delegateUntilTestEnd(object : WebExtensionController.PromptDelegate {
@@ -3389,7 +3388,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(extension))
     }
 
-    
+    // Test the basic update extension flow with no new permissions.
     @Test
     fun update() {
         sessionRule.setPrefsUntilTestEnd(
@@ -3405,8 +3404,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3421,9 +3420,9 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3436,7 +3435,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
         val update2 = sessionRule.waitForResult(controller.update(update1))
@@ -3445,20 +3444,20 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that updated extension changed the border color.
         assertBodyBorderEqualTo("blue")
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(update2))
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
 
-        
-        
+        // This pref should have been updated because we expect the cached
+        // metadata to have been refreshed.
         val geckoPrefs = sessionRule.getPrefs(
             "extensions.getAddons.cache.lastUpdate",
         )
@@ -3470,7 +3469,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "xpinstall.signatures.required" to false,
-                
+                // This is the important change here:
                 "extensions.update.enabled" to false,
                 "extensions.install.requireBuiltInCerts" to false,
                 "extensions.update.requireBuiltInCerts" to false,
@@ -3489,25 +3488,25 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
         })
 
-        
+        // Install an extension that can be updated.
         val update1 = sessionRule.waitForResult(
             controller.install("https://example.org/tests/junit/update-1.xpi", null),
         )
 
-        
-        
+        // Attempt to update the extension, which should not be possible since
+        // we set the pref to `false` above.
         val update2 = sessionRule.waitForResult(controller.update(update1))
         assertNull(update2)
 
-        
+        // Cleanup.
         sessionRule.waitForResult(controller.uninstall(update1))
     }
 
@@ -3537,32 +3536,32 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
         })
 
-        
+        // 1. Install
         val update1 = sessionRule.waitForResult(
             controller.install("https://example.org/tests/junit/update-1.xpi", null),
         )
-        
+        // 2. Update
         val update2 = sessionRule.waitForResult(controller.update(update1))
-        
+        // 3. Uninstall
         sessionRule.waitForResult(controller.uninstall(update2))
 
-        
-        
+        // This pref should not have been updated because the cache isn't stale
+        // (we set the pref to the current time at the top of this test case).
         val geckoPrefs = sessionRule.getPrefs(
             "extensions.getAddons.cache.lastUpdate",
         )
         assumeThat(geckoPrefs[0] as Int, equalTo(now))
     }
 
-    
+    // Test extension updating when the new extension has different permissions.
     @Test
     fun updateWithPerms() {
         sessionRule.setPrefsUntilTestEnd(
@@ -3576,8 +3575,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3592,9 +3591,9 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3607,7 +3606,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3631,20 +3630,20 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that updated extension changed the border color.
         assertBodyBorderEqualTo("blue")
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(update2))
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
-    
+    // Ensure update extension works as expected when there is no update available.
     @Test
     fun updateNotAvailable() {
         sessionRule.setPrefsUntilTestEnd(
@@ -3657,8 +3656,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3671,9 +3670,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3689,23 +3688,23 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("blue")
 
         val update2 = sessionRule.waitForResult(controller.update(update1))
         assertNull(update2)
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(update1))
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
-    
+    // Test denying an extension update.
     @Test
     fun updateDenyPerms() {
         sessionRule.setPrefsUntilTestEnd(
@@ -3719,8 +3718,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3735,9 +3734,9 @@ class WebExtensionTest : BaseSessionTest() {
 
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3750,7 +3749,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3768,7 +3767,7 @@ class WebExtensionTest : BaseSessionTest() {
 
         sessionRule.waitForResult(
             controller.update(update1).accept({
-                
+                // We should not be able to update the extension.
                 assertTrue(false)
             }, { exception ->
                 assertTrue(exception is WebExtension.InstallException)
@@ -3780,16 +3779,16 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that updated extension changed the border color.
         assertBodyBorderEqualTo("red")
 
-        
+        // Uninstall WebExtension and check again
         sessionRule.waitForResult(controller.uninstall(update1))
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was not applied after being uninstalled
         assertBodyBorderEqualTo("")
     }
 
@@ -3815,9 +3814,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3849,8 +3848,8 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
-        
+        // First let's check that the color of the border is empty before loading
+        // the WebExtension
         assertBodyBorderEqualTo("")
 
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
@@ -3864,9 +3863,9 @@ class WebExtensionTest : BaseSessionTest() {
                 assertEquals(extension.metaData.version, "1.0")
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3882,12 +3881,12 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension was applied by checking the border color
         assertBodyBorderEqualTo("red")
 
         sessionRule.waitForResult(
             controller.update(update1).accept({
-                
+                // We should not be able to update the extension.
                 assertTrue(false)
             }, { exception ->
                 assertTrue(exception is WebExtension.InstallException)
@@ -3899,17 +3898,17 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        
+        // Check that the WebExtension is still the first extension.
         assertBodyBorderEqualTo("red")
 
         sessionRule.waitForResult(controller.uninstall(update1))
     }
 
-    
+    /*
+     This function installs a web extension, disables it, updates it and uninstalls it
 
-
-
-
+     @param source: Int - represents a logical type; can be EnableSource.APP or EnableSource.USER
+     */
     private fun testUpdatingExtensionDisabledBy(source: Int) {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
@@ -3932,9 +3931,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -3963,9 +3962,9 @@ class WebExtensionTest : BaseSessionTest() {
                 @AssertCalled(count = 1)
                 override fun onUninstalled(extension: WebExtension) {}
 
-                
-                
-                
+                // We expect onInstalling/onInstalled to be invoked twice
+                // because we first install the extension and then we update
+                // it, which results in a second install.
                 @AssertCalled(count = 2)
                 override fun onInstalling(extension: WebExtension) {}
 
@@ -4009,11 +4008,11 @@ class WebExtensionTest : BaseSessionTest() {
         testUpdatingExtensionDisabledBy(EnableSource.APP)
     }
 
-    
-    
-    
-    
-    
+    // This test
+    // - Listen for a newTab request from a web extension
+    // - Registers a web extension
+    // - Waits for onNewTab request
+    // - Verify that request came from right extension
     @Test
     fun testBrowserRuntimeOpenOptionsPageInNewTab() {
         val tabsCreateResult = GeckoResult<Void>()
@@ -4041,11 +4040,11 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(optionsExtension))
     }
 
-    
-    
-    
-    
-    
+    // This test
+    // - Listen for an openOptionsPage request from a web extension
+    // - Registers a web extension
+    // - Waits for onOpenOptionsPage request
+    // - Verify that request came from right extension
     @Test
     fun testBrowserRuntimeOpenOptionsPageDelegate() {
         val openOptionsPageResult = GeckoResult<Void>()
@@ -4071,8 +4070,8 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.waitForResult(controller.uninstall(optionsExtension))
     }
 
-    
-    
+    // This test checks if the request from Web Extension is processed correctly in Java
+    // the Boolean flags are true, other options have non-default values
     @Test
     fun testDownloadsFlagsTrue() {
         val uri = createTestUrl("/assets/www/images/test.gif")
@@ -4098,9 +4097,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -4157,8 +4156,8 @@ class WebExtensionTest : BaseSessionTest() {
         }
     }
 
-    
-    
+    // This test checks if the request from Web Extension is processed correctly in Java
+    // the Boolean flags are absent/false, other options have default values
     @Test
     fun testDownloadsFlagsFalse() {
         val uri = createTestUrl("/assets/www/images/test.gif")
@@ -4184,9 +4183,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -4244,7 +4243,7 @@ class WebExtensionTest : BaseSessionTest() {
         val expectedEndTime = Date().time
         val expectedFilesize = 48L
 
-        
+        // first and second update
         val downloadData = object : Download.Info {
             var endTime: Long? = null
             val startTime = Date().time - 50000
@@ -4313,7 +4312,7 @@ class WebExtensionTest : BaseSessionTest() {
 
                 updates.add(message)
 
-                
+                // Once we get the size finished download, that means we got the last update
                 if (current.getLong("totalBytes") == finishedDownloadSize) {
                     thirdUpdateReceived.complete(message)
                 }
@@ -4331,7 +4330,7 @@ class WebExtensionTest : BaseSessionTest() {
         val downloadCreated = sessionRule.waitForResult(assertOnDownloadCalled)
         assertEquals(downloadId, downloadCreated.id)
 
-        
+        // first and second update (they are identical)
         downloadData.filename = expectedFilename
         downloadData.mime = expectedMime
         downloadData.totalBytes = unfinishedDownloadSize
@@ -4349,7 +4348,7 @@ class WebExtensionTest : BaseSessionTest() {
 
         sessionRule.waitForResult(thirdUpdateReceived)
 
-        
+        // The second update should not be there because the data was identical
         assertEquals(2, updates.size)
 
         val firstUpdateCurrent = updates[0].getJSONObject("current")
@@ -4436,7 +4435,7 @@ class WebExtensionTest : BaseSessionTest() {
 
     @Test
     fun testMozAddonManagerDisabledByDefault() {
-        
+        // Assert the expected precondition (the pref to be set to false by default).
         val geckoPrefs = sessionRule.getPrefs(
             "extensions.webapi.enabled",
         )
@@ -4445,7 +4444,7 @@ class WebExtensionTest : BaseSessionTest() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        
+        // This pref normally exposes the mozAddonManager API to `example.com`.
         sessionRule.setPrefsUntilTestEnd(mapOf("extensions.webapi.testing" to true))
 
         assertThat(
@@ -4463,7 +4462,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "extensions.webapi.enabled" to true,
-                
+                // We still need this pref to be set to allow the API on `example.com`.
                 "extensions.webapi.testing" to true,
             ),
         )
@@ -4474,7 +4473,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo("object"),
         )
 
-        
+        // Install an add-on, then assert results got from `mozAddonManager.getAddonByID()`.
         var addonId = ""
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
@@ -4490,9 +4489,9 @@ class WebExtensionTest : BaseSessionTest() {
                 addonId = extension.id
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -4516,7 +4515,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo("Borderify:1.0:extension"),
         )
 
-        
+        // Uninstall the add-on before exiting the test.
         sessionRule.waitForResult(controller.uninstall(borderify))
     }
 
@@ -4594,7 +4593,7 @@ class WebExtensionTest : BaseSessionTest() {
             equalTo(timeframe),
         )
 
-        
+        // Update with setters and check that settings have updated
         crashThreshold = 5
         timeframe = 120000L
         settings.setExtensionsProcessCrashThreshold(crashThreshold)
@@ -4633,9 +4632,9 @@ class WebExtensionTest : BaseSessionTest() {
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        false, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        false, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -4684,12 +4683,12 @@ class WebExtensionTest : BaseSessionTest() {
                 dataCollectionPermissions: Array<String>,
             ): GeckoResult<PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
-                    
-                    
+                    // We grant the `technicalAndInteraction` data collection
+                    // permission below.
                     PermissionPromptResponse(
-                        true, 
-                        false, 
-                        true, 
+                        true, // isPermissionsGranted
+                        false, // isPrivateModeGranted
+                        true, // isTechnicalAndInteractionDataGranted
                     ),
                 )
             }
@@ -4732,8 +4731,8 @@ class WebExtensionTest : BaseSessionTest() {
             ),
         )
 
-        
-        
+        // A test failure here due to a mismatch will very likely involve more
+        // work than just updating the list of permissions in the Java file.
         assertEquals(
             "Expect list of the data collection permissions to be in sync between Gecko and Android",
             WebExtension.DATA_COLLECTION_PERMISSIONS.sorted(),

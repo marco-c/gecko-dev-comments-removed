@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -22,7 +21,7 @@ class FissionTest : BaseSessionTest() {
     fun fissionEnabledByEnvironment() {
         assumeThat(sessionRule.env.isFission, equalTo(true))
 
-        
+        // Check preference with Gecko
         val fissionAutostart = sessionRule.getPrefs(
             "fission.autostart",
         )
@@ -30,13 +29,13 @@ class FissionTest : BaseSessionTest() {
             fissionAutostart[0] as Boolean,
         )
 
-        
+        // Check preference with GeckoView
         assertNull(
             "Default will have no value since we are relying on Gecko.",
             sessionRule.runtime.settings.fissionEnabled,
         )
 
-        
+        // Verify fission is on
         assertTrue(
             "Fission is running.",
             sessionRule.isFissionRunning,
@@ -47,7 +46,7 @@ class FissionTest : BaseSessionTest() {
     fun fissionDisabledByEnvironment() {
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
-        
+        // Check preference with Gecko
         val fissionAutostart = sessionRule.getPrefs(
             "fission.autostart",
         )
@@ -55,13 +54,13 @@ class FissionTest : BaseSessionTest() {
             fissionAutostart[0] as Boolean,
         )
 
-        
+        // Check preference with GeckoView
         assertNull(
             "Default will have no value since we are relying on Gecko.",
             sessionRule.runtime.settings.fissionEnabled,
         )
 
-        
+        // Verify fission is off
         assertFalse(
             "Fission is not running.",
             sessionRule.isFissionRunning,

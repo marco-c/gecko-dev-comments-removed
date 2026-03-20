@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -167,7 +166,7 @@ class PdfCreationTest : BaseSessionTest() {
         }
     }
 
-    @Ignore 
+    @Ignore // TODO: Re-enable it in bug 1846296.
     @NullDelegate(Autofill.Delegate::class)
     @Test
     fun saveAPdfDocument() {

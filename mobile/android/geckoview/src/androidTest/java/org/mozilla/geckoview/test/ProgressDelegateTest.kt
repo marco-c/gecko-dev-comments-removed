@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -18,6 +17,7 @@ import org.hamcrest.Matchers.lessThanOrEqualTo
 import org.hamcrest.Matchers.notNullValue
 import org.json.JSONObject
 import org.junit.Assume.assumeThat
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoSession
@@ -83,10 +83,10 @@ class ProgressDelegateTest : BaseSessionTest() {
 
     @Test fun loadProgress() {
         testProgress(HELLO_HTML_PATH)
-        
-        
+        // Test that loading the same path again still
+        // results in the right progress events
         testProgress(HELLO_HTML_PATH)
-        
+        // Test that calling a different path works too
         testProgress(HELLO2_HTML_PATH)
     }
 
@@ -121,6 +121,7 @@ class ProgressDelegateTest : BaseSessionTest() {
         })
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test
     fun multipleLoads() {
         mainSession.loadUri(UNKNOWN_HOST_URI)
@@ -139,8 +140,8 @@ class ProgressDelegateTest : BaseSessionTest() {
 
             @AssertCalled(count = 2, order = [2, 4])
             override fun onPageStop(session: GeckoSession, success: Boolean) {
-                
-                
+                // The first load is certain to fail because of interruption by the second load
+                // or by invalid domain name, whereas the second load is certain to succeed.
                 assertThat(
                     "Success flag should match",
                     success,
@@ -177,6 +178,7 @@ class ProgressDelegateTest : BaseSessionTest() {
         })
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun goBackAndForward() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -454,6 +456,7 @@ class ProgressDelegateTest : BaseSessionTest() {
         }
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @WithDisplay(width = 400, height = 400)
     @Test
     fun saveAndRestoreStateNewSession() {
@@ -480,11 +483,11 @@ class ProgressDelegateTest : BaseSessionTest() {
             }
         })
 
-        
-
-
-
-
+        /* TODO: Reenable when we have a workaround for ContentSessionStore not
+                 saving in response to JS-driven formdata changes.
+        assertThat("'name' field should match",
+                mainSession.evaluateJS("$('#name').value").toString(),
+                equalTo("the name"))*/
 
         assertThat(
             "Scroll position should match",
@@ -504,7 +507,7 @@ class ProgressDelegateTest : BaseSessionTest() {
     @WithDisplay(width = 400, height = 400)
     @Test
     fun saveAndRestoreState() {
-        
+        // Bug 1662035 - disable to reduce intermittent failures
         assumeThat(sessionRule.env.isX86, equalTo(false))
         val startUri = createTestUrl(SAVE_STATE_PATH)
         val savedState = collectState(startUri)
@@ -522,11 +525,11 @@ class ProgressDelegateTest : BaseSessionTest() {
             }
         })
 
-        
-
-
-
-
+        /* TODO: Reenable when we have a workaround for ContentSessionStore not
+                 saving in response to JS-driven formdata changes.
+        assertThat("'name' field should match",
+                mainSession.evaluateJS("$('#name').value").toString(),
+                equalTo("the name"))*/
 
         assertThat(
             "Scroll position should match",
@@ -605,7 +608,7 @@ class ProgressDelegateTest : BaseSessionTest() {
 
     @Test
     fun getWebCompatInfoError() {
-        
+        // Catch an exception when no web page is loaded
         try {
             sessionRule.waitForResult(mainSession.webCompatInfo)
             assertThat("This test is expected to fail.", true, equalTo(false))

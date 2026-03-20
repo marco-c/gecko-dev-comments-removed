@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -60,7 +59,7 @@ class PrintDelegateTest : BaseSessionTest() {
                     return it
                 }
             }
-            
+            // An activity delegate is required for printing
             it.view.activityContextDelegate = PrintTestActivityDelegate()
             deviceHeight = it.resources.displayMetrics.heightPixels
             deviceWidth = it.resources.displayMetrics.widthPixels
@@ -104,16 +103,16 @@ class PrintDelegateTest : BaseSessionTest() {
         }
     }
 
-    
+    // Returns the center pixel color of the the print preview's screenshot
     private fun printCenterPixelColor(): GeckoResult<Int> {
         val pixelResult = GeckoResult<Int>()
-        
+        // Listening for Android Print Activity
         uiAutomation.setOnAccessibilityEventListener { event ->
             if (event.packageName == "com.android.printspooler" &&
                 event.eventType == TYPE_VIEW_SCROLLED
             ) {
                 uiAutomation.setOnAccessibilityEventListener {}
-                
+                // Delaying the screenshot to give time for preview to load
                 Handler(Looper.getMainLooper()).postDelayed({
                     val bitmap = uiAutomation.takeScreenshot()
                     val scaled = bitmap.scale(scaledWidth, scaledHeight, filter = false)
@@ -128,10 +127,10 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun printPreviewRendered() {
         activityRule.scenario.onActivity { activity ->
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             val centerPixel = printCenterPixelColor()
             mainSession.printPageContent()
@@ -164,10 +163,10 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun printSuccessWithStatus() {
         activityRule.scenario.onActivity { activity ->
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             val centerPixel = printCenterPixelColor()
             val result = mainSession.didPrintPageContent()
@@ -187,7 +186,7 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun printFailWithStatus() {
         activityRule.scenario.onActivity {
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
             mainSession.printDelegate = null
@@ -211,10 +210,10 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun basicWindowDotPrintTest() {
         activityRule.scenario.onActivity { activity ->
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             val centerPixel = printCenterPixelColor()
             mainSession.evaluateJS("window.print();")
@@ -230,10 +229,10 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun statusWindowDotPrintTest() {
         activityRule.scenario.onActivity { activity ->
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             val centerPixel = printCenterPixelColor()
             mainSession.evaluateJS("window.print()")
@@ -261,11 +260,11 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun staticContextWindowDotPrintTest() {
         activityRule.scenario.onActivity { activity ->
-            
-            
+            // CSS rules render this blue on screen and orange on print
+            // Print button removes content after printing to test if it froze a static page for printing
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             val centerPixel = printCenterPixelColor()
             mainSession.evaluateJS("document.getElementById('print-button').click();")
@@ -281,13 +280,13 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun iframeWindowDotPrintTest() {
         activityRule.scenario.onActivity { activity ->
-            
-            
+            // Main frame CSS rules render red on screen and green on print
+            // iframe CSS rules render blue on screen and orange on print
             mainSession.loadTestPath(PRINT_IFRAME)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
-            
+            // iframe window.print button
             val centerPixelIframe = printCenterPixelColor()
             mainSession.evaluateJS("document.getElementById('iframe').contentDocument.getElementById('print-button').click();")
             val orange = rgb(255, 113, 57)
@@ -302,13 +301,13 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun contentIframeWindowDotPrintTest() {
         activityRule.scenario.onActivity { activity ->
-            
-            
+            // Main frame CSS rules render red on screen and green on print
+            // iframe CSS rules render blue on screen and orange on print
             mainSession.loadTestPath(PRINT_IFRAME)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
-            
+            // Main page window.print button
             val centerPixelContent = printCenterPixelColor()
             mainSession.evaluateJS("document.getElementById('print-button-page').click();")
             assertTrue("Printed the main content correctly.", sessionRule.waitForResult(centerPixelContent) == Color.GREEN)
@@ -319,10 +318,10 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun contentPDFWindowDotPrintTest() {
         activityRule.scenario.onActivity { activity ->
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(ORANGE_PDF_PATH)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             val centerPixel = printCenterPixelColor()
             mainSession.printPageContent()
@@ -338,10 +337,10 @@ class PrintDelegateTest : BaseSessionTest() {
     @Test
     fun availableCanonicalBrowsingContext() {
         activityRule.scenario.onActivity { activity ->
-            
+            // CSS rules render this blue on screen and orange on print
             mainSession.loadTestPath(ORANGE_PDF_PATH)
             mainSession.waitForPageStop()
-            
+            // Setting to the default delegate (test rules changed it)
             mainSession.printDelegate = activity.view.printDelegate
             mainSession.setFocused(false)
             val centerPixel = printCenterPixelColor()

@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.gecko;
 
 import java.lang.reflect.InvocationTargetException;

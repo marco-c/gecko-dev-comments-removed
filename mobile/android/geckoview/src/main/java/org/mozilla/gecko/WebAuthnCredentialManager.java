@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.gecko;
 
 import android.annotation.SuppressLint;

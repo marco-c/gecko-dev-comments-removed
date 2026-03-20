@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -49,7 +48,7 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 const val DISPLAY_WIDTH = 480
 const val DISPLAY_HEIGHT = 640
 
-
+// Constants from {@link AccessibilityNodeInfo.java}
 const val VIRTUAL_DESCENDANT_ID_MASK = -0x100000000L
 const val VIRTUAL_DESCENDANT_ID_SHIFT = 32
 
@@ -66,15 +65,15 @@ class AccessibilityTest : BaseSessionTest() {
     @get:Rule
     override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
-    
-
-
-
-
+    /**
+     * Given a child ID, return the virtual descendent ID.
+     *
+     * @param accessibilityNodeId The id of an AccessibilityNodeInfo.
+     */
     private fun getVirtualDescendantId(accessibilityNodeId: Long): Int {
         try {
-            
-            
+            // Rewritten in Kotlin from https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/view/accessibility/AccessibilityNodeInfo.java;l=1068
+            // due to being a restricted API beginning in Android 12 and unavailable for reflection.
             val virtualDescendantId =
                 (
                     (accessibilityNodeId and VIRTUAL_DESCENDANT_ID_MASK)
@@ -87,7 +86,7 @@ class AccessibilityTest : BaseSessionTest() {
         }
     }
 
-    
+    // Retrieve the virtual descendent ID of the event's source.
     private fun getSourceId(event: AccessibilityEvent): Int {
         try {
             val getSourceIdMethod =
@@ -104,7 +103,7 @@ class AccessibilityTest : BaseSessionTest() {
         return node
     }
 
-    
+    // Get a child ID by index.
     private fun AccessibilityNodeInfo.getChildId(index: Int): Int {
         try {
             val field = AccessibilityNodeInfo::class.java.getDeclaredField("mChildNodeIds")
@@ -137,20 +136,20 @@ class AccessibilityTest : BaseSessionTest() {
     }
 
     @Before fun setup() {
-        
-        
+        // We initialize a view with a parent and grandparent so that the
+        // accessibility events propagate up at least to the parent.
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         view = FrameLayout(context)
         FrameLayout(context).addView(view)
         FrameLayout(context).addView(view.parent as View)
 
-        
-        
+        // Force on accessibility and assign the session's accessibility
+        // object a view.
         sessionRule.runtime.settings.forceEnableAccessibility = true
         mainSession.accessibility.view = view
 
-        
-        @Suppress("DEPRECATION") 
+        // Set up an external delegate that will intercept accessibility events.
+        @Suppress("DEPRECATION") // TYPE_ANNOUNCEMENT is deprecated but triggered by live regions
         sessionRule.addExternalDelegateUntilTestEnd(
             EventDelegate::class,
             { newDelegate ->
@@ -200,8 +199,8 @@ class AccessibilityTest : BaseSessionTest() {
                 return GeckoResult.allow()
             }
         })
-        
-        
+        // XXX: Sometimes we get the window state change of the initial
+        // about:blank page loading. Need to figure out how to ignore that.
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)
             override fun onFocused(event: AccessibilityEvent) { }
@@ -254,7 +253,7 @@ class AccessibilityTest : BaseSessionTest() {
             }
         })
 
-        
+        // XXX: Local pages do not dispatch focus events when loaded
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled
             override fun onWinStateChanged(event: AccessibilityEvent) { }
@@ -467,7 +466,7 @@ class AccessibilityTest : BaseSessionTest() {
             }
         })
 
-        
+        // This focuses the link.
         mainSession.finder.find("sweet", 0)
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)
@@ -477,12 +476,12 @@ class AccessibilityTest : BaseSessionTest() {
             }
         })
 
-        
+        // reset caret position
         mainSession.evaluateJS(
             """
             this.select(document.body, 0, 0);
-            
-            
+            // Changing DOM selection doesn't focus the document! Force focus
+            // here so we can use that to determine when this is done.
             document.activeElement.blur();
             """.trimIndent(),
         )
@@ -582,10 +581,10 @@ class AccessibilityTest : BaseSessionTest() {
     }
 
     @Test fun testClipboard() {
-        
+        // disabled for having over 120+ failures in the last 7 days - turned permafailing on Bug 1837126
         assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            
+            // Writing clipboard requires foreground on Android 10.
             activityRule.scenario?.onActivity { activity ->
                 activity.onWindowFocusChanged(true)
             }
@@ -687,21 +686,21 @@ class AccessibilityTest : BaseSessionTest() {
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER),
         )
-        waitUntilTextTraversed(0, 1, nodeId) 
+        waitUntilTextTraversed(0, 1, nodeId) // "L"
 
         provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER),
         )
-        waitUntilTextTraversed(1, 2, nodeId) 
+        waitUntilTextTraversed(1, 2, nodeId) // "o"
 
         provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER),
         )
-        waitUntilTextTraversed(0, 1, nodeId) 
+        waitUntilTextTraversed(0, 1, nodeId) // "L"
     }
 
     @Test fun testMoveByWord() {
@@ -723,21 +722,21 @@ class AccessibilityTest : BaseSessionTest() {
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
-        waitUntilTextTraversed(0, 5, nodeId) 
+        waitUntilTextTraversed(0, 5, nodeId) // "Lorem"
 
         provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
-        waitUntilTextTraversed(6, 11, nodeId) 
+        waitUntilTextTraversed(6, 11, nodeId) // "ipsum"
 
         provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
-        waitUntilTextTraversed(0, 5, nodeId) 
+        waitUntilTextTraversed(0, 5, nodeId) // "Lorem"
     }
 
     @Test fun testMoveByLine() {
@@ -759,21 +758,21 @@ class AccessibilityTest : BaseSessionTest() {
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE),
         )
-        waitUntilTextTraversed(0, 18, nodeId) 
+        waitUntilTextTraversed(0, 18, nodeId) // "Lorem ipsum dolor "
 
         provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE),
         )
-        waitUntilTextTraversed(18, 28, nodeId) 
+        waitUntilTextTraversed(18, 28, nodeId) // "sit amet, "
 
         provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE),
         )
-        waitUntilTextTraversed(0, 18, nodeId) 
+        waitUntilTextTraversed(0, 18, nodeId) // "Lorem ipsum dolor "
     }
 
     @Test fun testMoveByCharacterAtEdges() {
@@ -781,7 +780,7 @@ class AccessibilityTest : BaseSessionTest() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         waitForInitialFocus()
 
-        
+        // Move to the first link containing "anim id".
         val bundle = Bundle()
         bundle.putString(AccessibilityNodeInfo.ACTION_ARGUMENT_HTML_ELEMENT_STRING, "LINK")
         provider.performAction(nodeId, AccessibilityNodeInfo.ACTION_NEXT_HTML_ELEMENT, bundle)
@@ -795,7 +794,7 @@ class AccessibilityTest : BaseSessionTest() {
         })
 
         var success: Boolean
-        
+        // Navigate forward through "anim id" character by character.
         for (start in 0..6) {
             success = provider.performAction(
                 nodeId,
@@ -806,7 +805,7 @@ class AccessibilityTest : BaseSessionTest() {
             waitUntilTextTraversed(start, start + 1, nodeId)
         }
 
-        
+        // Try to navigate forward past end.
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
@@ -814,7 +813,7 @@ class AccessibilityTest : BaseSessionTest() {
         )
         assertThat("Next char should fail at end", success, equalTo(false))
 
-        
+        // We're already on "d". Navigate backward through "anim i".
         for (start in 5 downTo 0) {
             success = provider.performAction(
                 nodeId,
@@ -825,7 +824,7 @@ class AccessibilityTest : BaseSessionTest() {
             waitUntilTextTraversed(start, start + 1, nodeId)
         }
 
-        
+        // Try to navigate backward past start.
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
@@ -839,7 +838,7 @@ class AccessibilityTest : BaseSessionTest() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         waitForInitialFocus()
 
-        
+        // Move to the first link containing "anim id".
         val bundle = Bundle()
         bundle.putString(AccessibilityNodeInfo.ACTION_ARGUMENT_HTML_ELEMENT_STRING, "LINK")
         provider.performAction(nodeId, AccessibilityNodeInfo.ACTION_NEXT_HTML_ELEMENT, bundle)
@@ -859,7 +858,7 @@ class AccessibilityTest : BaseSessionTest() {
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
         assertThat("Next word should succeed", success, equalTo(true))
-        waitUntilTextTraversed(0, 4, nodeId) 
+        waitUntilTextTraversed(0, 4, nodeId) // "anim"
 
         success = provider.performAction(
             nodeId,
@@ -867,9 +866,9 @@ class AccessibilityTest : BaseSessionTest() {
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
         assertThat("Next word should succeed", success, equalTo(true))
-        waitUntilTextTraversed(5, 7, nodeId) 
+        waitUntilTextTraversed(5, 7, nodeId) // "id"
 
-        
+        // Try to navigate forward past end.
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
@@ -883,9 +882,9 @@ class AccessibilityTest : BaseSessionTest() {
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
         assertThat("Prev word should succeed", success, equalTo(true))
-        waitUntilTextTraversed(0, 4, nodeId) 
+        waitUntilTextTraversed(0, 4, nodeId) // "anim"
 
-        
+        // Try to navigate backward past start.
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
@@ -908,16 +907,16 @@ class AccessibilityTest : BaseSessionTest() {
             }
         })
 
-        
+        // Initial move backward to move to last word.
         var success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD),
         )
         assertThat("Prev word should succeed", success, equalTo(true))
-        waitUntilTextTraversed(418, 424, nodeId) 
+        waitUntilTextTraversed(418, 424, nodeId) // "mollit"
 
-        
+        // Try to move forward past last word.
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
@@ -925,16 +924,16 @@ class AccessibilityTest : BaseSessionTest() {
         )
         assertThat("Next word should fail at last word", success, equalTo(false))
 
-        
+        // Move forward by character (onto trailing space).
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
             moveByGranularityArguments(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER),
         )
         assertThat("Next char should succeed", success, equalTo(true))
-        waitUntilTextTraversed(424, 425, nodeId) 
+        waitUntilTextTraversed(424, 425, nodeId) // " "
 
-        
+        // Try to move forward past last character.
         success = provider.performAction(
             nodeId,
             AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
@@ -1100,8 +1099,8 @@ class AccessibilityTest : BaseSessionTest() {
         provider.performAction(nodeId, AccessibilityNodeInfo.ACTION_SELECT, null)
         waitUntilSelect(false)
 
-        
-        
+        // Ensure that querying an option outside of a selectable container
+        // doesn't crash (bug 1801879).
         mainSession.evaluateJS("document.getElementById('outsideSelectable').focus()")
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)
@@ -1264,7 +1263,7 @@ class AccessibilityTest : BaseSessionTest() {
         return screenRect.contains(nodeBounds)
     }
 
-    @Ignore 
+    @Ignore // Bug 1506276 - We need to reliably wait for APZC here, and it's not trivial.
     @Test
     fun testScroll() {
         var nodeId = View.NO_ID
@@ -1361,7 +1360,7 @@ class AccessibilityTest : BaseSessionTest() {
 
     @Test
     fun autoFill() {
-        
+        // Wait for the accessibility nodes to populate.
         mainSession.loadTestPath(FORMS_HTML_PATH)
         waitForInitialFocus()
 
@@ -1375,9 +1374,9 @@ class AccessibilityTest : BaseSessionTest() {
             "#tel1" to "42",
         )
 
-        
+        // Set up promises to monitor the values changing.
         val promises = autoFills.flatMap { entry ->
-            
+            // Repeat each test with both the top document and the iframe document.
             arrayOf("document", "document.querySelector('#iframe').contentDocument").map { doc ->
                 mainSession.evaluatePromiseJS(
                     """new Promise(resolve =>
@@ -1393,9 +1392,9 @@ class AccessibilityTest : BaseSessionTest() {
             }
         }
 
-        
+        // Perform auto-fill and return number of auto-fills performed.
         fun autoFillChild(id: Int, child: AccessibilityNodeInfo) {
-            
+            // Seal the node info instance so we can perform actions on it.
             if (child.childCount > 0) {
                 for (i in 0 until child.childCount) {
                     val childId = child.getChildId(i)
@@ -1443,7 +1442,7 @@ class AccessibilityTest : BaseSessionTest() {
 
         autoFillChild(View.NO_ID, createNodeInfo(View.NO_ID))
 
-        
+        // Wait on the promises and check for correct values.
         for ((actual, expected, eventInterface) in promises.map { it.value.asJSList<String>() }) {
             assertThat("Auto-filled value must match", actual, equalTo(expected))
             assertThat("input event should be dispatched with InputEvent interface", eventInterface, equalTo("InputEvent"))
@@ -1475,8 +1474,8 @@ class AccessibilityTest : BaseSessionTest() {
                 )
         }
 
-        
-        
+        // XXX: Reliably waiting for iframes to load could be flaky, so we wait
+        // for our autofill nodes to be the right number.
         fun waitForAutoFillNodes() {
             val checkAutoFillNodes = object : EventDelegate, ShouldContinue {
                 var haveAllAutoFills = countAutoFillNodes() == 18
@@ -1492,7 +1491,7 @@ class AccessibilityTest : BaseSessionTest() {
             }
         }
 
-        
+        // Wait for the accessibility nodes to populate.
         mainSession.loadTestPath(FORMS_HTML_PATH)
         waitForInitialFocus()
         waitForAutoFillNodes()
@@ -1508,7 +1507,7 @@ class AccessibilityTest : BaseSessionTest() {
             equalTo(4),
         )
 
-        
+        // Now wait for the nodes to clear.
         mainSession.loadTestPath(HELLO_HTML_PATH)
         waitForInitialFocus()
         assertThat(
@@ -1517,7 +1516,7 @@ class AccessibilityTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        
+        // Now wait for the nodes to reappear.
         mainSession.goBack(false)
         waitForInitialFocus()
         waitForAutoFillNodes()
@@ -1596,7 +1595,7 @@ class AccessibilityTest : BaseSessionTest() {
 
         val buttonNode = createNodeInfo(rootNode.getChildId(2))
         assertThat("Last node is a button", buttonNode.className.toString(), equalTo("android.widget.Button"))
-        
+        // The child text leaf is pruned, so this button is childless.
         assertThat("Button has a single text leaf", buttonNode.childCount, equalTo(0))
         assertThat("Button has correct text", buttonNode.text.toString(), equalTo("Submit"))
         assertThat("Button is visible to user", buttonNode.isVisibleToUser, equalTo(true))
@@ -1716,7 +1715,7 @@ class AccessibilityTest : BaseSessionTest() {
     @Test
     fun testRemoteIframeTree() {
         testIframeTree(REMOTE_IFRAME)
-        
+        // disabled for frequent failures - on Bug 1769324
         assumeThat(sessionRule.env.isX86, equalTo(false))
     }
 
@@ -2125,7 +2124,7 @@ class AccessibilityTest : BaseSessionTest() {
             }
         })
 
-        
+        // hide first and last link
         mainSession.evaluateJS("document.querySelectorAll('body > :first-child, body > :last-child').forEach(e => e.style.display = 'none');")
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)
@@ -2182,7 +2181,7 @@ class AccessibilityTest : BaseSessionTest() {
         performedAction = provider.performAction(nodeId, AccessibilityNodeInfo.ACTION_NEXT_HTML_ELEMENT, null)
         assertThat("Should fail to move a11y focus to last hidden node", performedAction, equalTo(false))
 
-        
+        // show last link
         mainSession.evaluateJS("document.querySelector('body > :last-child').style.display = 'initial';")
         sessionRule.waitUntilCalled(object : EventDelegate {
             @AssertCalled(count = 1)
@@ -2224,7 +2223,7 @@ class AccessibilityTest : BaseSessionTest() {
             @AssertCalled(count = 1)
             override fun onFocused(event: AccessibilityEvent) {}
 
-            
+            // Focus fires a caret moved event which produces this event.
             @AssertCalled(count = 1)
             override fun onTextSelectionChanged(event: AccessibilityEvent) {}
         })
@@ -2238,9 +2237,9 @@ class AccessibilityTest : BaseSessionTest() {
             @AssertCalled(count = 1)
             override fun onTextSelectionChanged(event: AccessibilityEvent) {}
 
-            
-            
-            
+            // Don't fire a11y focus for collapsed caret changes.
+            // This will interfere with on screen keyboards and throw a11y focus
+            // back and fourth.
             @AssertCalled(count = 0)
             override fun onAccessibilityFocused(event: AccessibilityEvent) {}
         })

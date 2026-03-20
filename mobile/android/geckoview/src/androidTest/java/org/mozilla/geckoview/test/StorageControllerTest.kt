@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -139,8 +138,8 @@ class StorageControllerTest : BaseSessionTest() {
         """,
         ) as String
 
-        
-        
+        // With LSNG disabled, storage is also cleared when cookies are,
+        // see bug 1592752.
         if (sessionRule.getPrefs("dom.storage.enable_unsupported_legacy_implementation")[0] as Boolean == false) {
             assertThat(
                 "Local storage value should match",
@@ -330,7 +329,7 @@ class StorageControllerTest : BaseSessionTest() {
     @Test fun clearDataFromBaseDomain() {
         var domains = arrayOf("example.com", "test1.example.com")
 
-        
+        // Set site data for both root domain and subdomain.
         for (domain in domains) {
             mainSession.loadUri("https://" + domain)
             sessionRule.waitForPageStop()
@@ -366,8 +365,8 @@ class StorageControllerTest : BaseSessionTest() {
             )
         }
 
-        
-        
+        // Clear data for an unrelated domain. The test data should still be
+        // set.
         sessionRule.waitForResult(
             sessionRule.runtime.storageController.clearDataFromBaseDomain(
                 "test.com",
@@ -403,8 +402,8 @@ class StorageControllerTest : BaseSessionTest() {
             )
         }
 
-        
-        
+        // Finally, clear the test data by base domain. This should clear both,
+        // the root domain and the subdomain.
         sessionRule.waitForResult(
             sessionRule.runtime.storageController.clearDataFromBaseDomain(
                 "example.com",

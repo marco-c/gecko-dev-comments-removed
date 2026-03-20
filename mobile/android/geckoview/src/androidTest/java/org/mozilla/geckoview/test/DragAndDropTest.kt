@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -22,36 +21,36 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class DragAndDropTest : BaseSessionTest() {
-    
+    // DragEvent has no constructor, so we create it via Java reflection.
     fun createDragEvent(action: Int, x: Float = 0.0F, y: Float = 0.0F): DragEvent {
         val p = Parcel.obtain()
-        p.writeInt(action) 
+        p.writeInt(action) // mAction
 
         if (listOf(DragEvent.ACTION_DRAG_STARTED, DragEvent.ACTION_DRAG_LOCATION, DragEvent.ACTION_DROP).contains(action)) {
-            p.writeFloat(x) 
-            p.writeFloat(y) 
+            p.writeFloat(x) // mX
+            p.writeFloat(y) // mY
         } else {
-            p.writeFloat(0.0F) 
-            p.writeFloat(0.0F) 
+            p.writeFloat(0.0F) // mX
+            p.writeFloat(0.0F) // mY
         }
-        p.writeInt(0) 
+        p.writeInt(0) // mDragResult
 
         val clipData = ClipData.newPlainText("label", "foo")
-        
+        // mClipData
         if (action == DragEvent.ACTION_DROP) {
-            p.writeInt(1) 
+            p.writeInt(1) // indicator of ClipData presence
 
             clipData.writeToParcel(p, 0)
         } else {
-            p.writeInt(0) 
+            p.writeInt(0) // indicator of ClipData presence
         }
-        
+        // mClipDescription
         if (action != DragEvent.ACTION_DRAG_ENDED) {
             val clipDescription = clipData.getDescription()
-            p.writeInt(1) 
+            p.writeInt(1) // indicator of ClipDescription presence
             clipDescription.writeToParcel(p, 0)
         } else {
-            p.writeInt(0) 
+            p.writeInt(0) // indicator of ClipDescription presence
         }
 
         p.setDataPosition(0)
@@ -59,7 +58,7 @@ class DragAndDropTest : BaseSessionTest() {
     }
 
     fun sendDragEvent(startX: Float, startY: Float, endY: Float) {
-        
+        // Android doesn't fire MotionEvent during drag and drop.
         val dragStartEvent = createDragEvent(DragEvent.ACTION_DRAG_STARTED)
         mainSession.panZoomController.onDragEvent(dragStartEvent)
         val dragEnteredEvent = createDragEvent(DragEvent.ACTION_DRAG_ENTERED)

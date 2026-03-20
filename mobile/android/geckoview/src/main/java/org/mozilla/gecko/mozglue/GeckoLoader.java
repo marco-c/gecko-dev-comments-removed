@@ -2,7 +2,6 @@
 
 
 
-
 package org.mozilla.gecko.mozglue;
 
 import android.content.Context;

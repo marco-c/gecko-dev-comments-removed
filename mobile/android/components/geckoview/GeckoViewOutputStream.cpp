@@ -2,7 +2,6 @@
 
 
 
-
 #include "GeckoViewOutputStream.h"
 #include "mozilla/fallible.h"
 

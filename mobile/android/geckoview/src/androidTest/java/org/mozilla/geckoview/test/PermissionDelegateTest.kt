@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
@@ -131,7 +130,7 @@ class PermissionDelegateTest : BaseSessionTest() {
             },
         )
 
-        
+        // Start a video stream, with audio if on a real device.
         val code =
             if (isEmulator()) {
                 """this.stream = window.navigator.mediaDevices.getUserMedia({
@@ -144,7 +143,7 @@ class PermissionDelegateTest : BaseSessionTest() {
                        });"""
             }
 
-        
+        // Stop the stream and check active flag and id
         val isActive =
             mainSession.waitForJS(
                 """$code
@@ -161,7 +160,7 @@ class PermissionDelegateTest : BaseSessionTest() {
 
         assertThat("Stream should be active and id should not be empty.", isActive, equalTo(true))
 
-        
+        // Now test rejecting the request.
         mainSession.delegateDuringNextWait(
             object : PermissionDelegate {
                 @AssertCalled(count = 1)
@@ -206,8 +205,8 @@ class PermissionDelegateTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        
-        
+        // Other tests set that activity is inactive, but geolocation requests requires activity is active.
+        // So we have to set active at start.
         activityRule.scenario?.onActivity { activity ->
             activity.onWindowFocusChanged(true)
         }
@@ -216,7 +215,7 @@ class PermissionDelegateTest : BaseSessionTest() {
         mainSession.loadUri(url)
         mainSession.waitForPageStop()
 
-        
+        // Set location for test
         sessionRule.setPrefsUntilTestEnd(mapOf("geo.provider.testing" to false))
         var context = InstrumentationRegistry.getInstrumentation().targetContext
         var locManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -232,7 +231,7 @@ class PermissionDelegateTest : BaseSessionTest() {
 
         mainSession.delegateDuringNextWait(
             object : PermissionDelegate {
-                
+                // Ensure the content permission is asked first, before the Android permission.
                 @AssertCalled(count = 1, order = [1])
                 override fun onContentPermissionRequest(
                     session: GeckoSession,
@@ -367,7 +366,7 @@ class PermissionDelegateTest : BaseSessionTest() {
                 ))""",
             )
 
-        
+        // Error code 1 means permission denied.
         assertThat("Request should fail", errorCode as Double, equalTo(1.0))
 
         val perms = sessionRule.waitForResult(storageController.getPermissions(url))
@@ -413,27 +412,27 @@ class PermissionDelegateTest : BaseSessionTest() {
     @ClosedSessionAtStart
     @Test
     fun trackingProtection() {
-        
-        
-        
+        // Tests that we get a tracking protection permission for every load, we
+        // can set the value of the permission and that the permission persists
+        // across sessions
         trackingProtection(privateBrowsing = false, permanent = true)
     }
 
     @ClosedSessionAtStart
     @Test
     fun trackingProtectionPrivateBrowsing() {
-        
-        
-        
+        // Tests that we get a tracking protection permission for every load, we
+        // can set the value of the permission in private browsing and that the
+        // permission does not persists across private sessions
         trackingProtection(privateBrowsing = true, permanent = false)
     }
 
     @ClosedSessionAtStart
     @Test
     fun trackingProtectionPrivateBrowsingPermanent() {
-        
-        
-        
+        // Tests that we get a tracking protection permission for every load, we
+        // can set the value of the permission permanently in private browsing
+        // and that the permanent permission _does_ persists across private sessions
         trackingProtection(privateBrowsing = true, permanent = true)
     }
 
@@ -441,7 +440,7 @@ class PermissionDelegateTest : BaseSessionTest() {
         privateBrowsing: Boolean,
         permanent: Boolean,
     ) {
-        
+        // Make sure we start with a clean slate
         storageController.clearDataFromHost(TEST_HOST, ClearFlags.PERMISSIONS)
 
         assertThat(
@@ -486,7 +485,7 @@ class PermissionDelegateTest : BaseSessionTest() {
 
         sessionRule.waitForResult(runtime0.quit())
 
-        
+        // Restart the runtime and verifies that the value is still stored
         val runtime1 =
             TrackingPermissionInstance.start(
                 targetContext,
@@ -545,8 +544,8 @@ class PermissionDelegateTest : BaseSessionTest() {
         )
     }
 
-    
-    
+    // Tests that all pages have a PERMISSION_TRACKING permission,
+    // except for pages that belong to Gecko like about:blank or about:config.
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun trackingProtectionPermissionOnAllPages() {
         val settings = sessionRule.runtime.settings
@@ -713,7 +712,7 @@ class PermissionDelegateTest : BaseSessionTest() {
 
     @Test
     fun autoplayReject() {
-        
+        // The profile used in automation sets this to false, so we need to hack it back to true here.
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "media.geckoview.autoplay.request" to true,
@@ -1212,7 +1211,7 @@ class PermissionDelegateTest : BaseSessionTest() {
             ),
         )
 
-        
+        // enable LNA checks for local network to localhost checks
         sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.local-network-to-localhost.skip-checks" to false))
 
         mainSession.loadUri("https://example.com/")
@@ -1231,8 +1230,8 @@ class PermissionDelegateTest : BaseSessionTest() {
             },
         )
 
-        
-        
+        // when we try to access a localhost address that's actually reachable
+        // in this case - GeckoSessionTestRule.TEST_ENDPOINT
         try {
             sessionRule.waitForJS(
                 mainSession,
@@ -1243,7 +1242,7 @@ class PermissionDelegateTest : BaseSessionTest() {
         } catch (_: RejectedPromiseException) {
         }
 
-        
+        // verify that we receive the local device access permission
         assertEquals(
             "Expected requested permission to be " +
                 "PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS",
@@ -1278,8 +1277,8 @@ class PermissionDelegateTest : BaseSessionTest() {
             },
         )
 
-        
-        
+        // when we try to access a localhost address that's actually reachable
+        // in this case - GeckoSessionTestRule.TEST_ENDPOINT
         try {
             sessionRule.waitForJS(
                 mainSession,
@@ -1290,7 +1289,7 @@ class PermissionDelegateTest : BaseSessionTest() {
         } catch (_: RejectedPromiseException) {
         }
 
-        
+        // verify that any requested permission (if any) is not local device access
         assertNotEquals(
             "Expected requested permission to not be " +
                 "PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS",
@@ -1299,58 +1298,58 @@ class PermissionDelegateTest : BaseSessionTest() {
         )
     }
 
-    
-    
-    
+    // @Test fun persistentStorage() {
+    //     mainSession.loadTestPath(HELLO_HTML_PATH)
+    //     mainSession.waitForPageStop()
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    //     // Persistent storage can be rejected
+    //     mainSession.delegateDuringNextWait(object : PermissionDelegate {
+    //         @AssertCalled(count = 1)
+    //         override fun onContentPermissionRequest(
+    //                 session: GeckoSession, uri: String?, type: Int,
+    //                 callback: PermissionDelegate.Callback) {
+    //             callback.reject()
+    //         }
+    //     })
 
-    
+    //     var success = mainSession.waitForJS("""window.navigator.storage.persist()""")
 
-    
-    
+    //     assertThat("Request should fail",
+    //             success as Boolean, equalTo(false))
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    //     // Persistent storage can be granted
+    //     mainSession.delegateDuringNextWait(object : PermissionDelegate {
+    //         // Ensure the content permission is asked first, before the Android permission.
+    //         @AssertCalled(count = 1, order = [1])
+    //         override fun onContentPermissionRequest(
+    //                 session: GeckoSession, uri: String?, type: Int,
+    //                 callback: PermissionDelegate.Callback) {
+    //             assertThat("URI should match", uri, endsWith(HELLO_HTML_PATH))
+    //             assertThat("Type should match", type,
+    //                     equalTo(PermissionDelegate.PERMISSION_PERSISTENT_STORAGE))
+    //             callback.grant()
+    //         }
+    //     })
 
-    
+    //     success = mainSession.waitForJS("""window.navigator.storage.persist()""")
 
-    
-    
-    
+    //     assertThat("Request should succeed",
+    //             success as Boolean,
+    //             equalTo(true))
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    //     // after permission granted further requests will always return true, regardless of response
+    //     mainSession.delegateDuringNextWait(object : PermissionDelegate {
+    //         @AssertCalled(count = 1)
+    //         override fun onContentPermissionRequest(
+    //                 session: GeckoSession, uri: String?, type: Int,
+    //                 callback: PermissionDelegate.Callback) {
+    //             callback.reject()
+    //         }
+    //     })
 
-    
+    //     success = mainSession.waitForJS("""window.navigator.storage.persist()""")
 
-    
-    
-    
+    //     assertThat("Request should succeed",
+    //             success as Boolean, equalTo(true))
+    // }
 }

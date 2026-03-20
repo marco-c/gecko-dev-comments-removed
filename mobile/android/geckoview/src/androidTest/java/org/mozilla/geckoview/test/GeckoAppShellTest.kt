@@ -1,6 +1,5 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -45,29 +44,29 @@ class GeckoAppShellTest : BaseSessionTest() {
     @After
     fun cleanup() {
         activityRule.scenario.onActivity {
-            
+            // Return the test harness back to original setting
             setAndroid24HourTimeFormat(prior24HourSetting)
             it.view.releaseSession()
         }
     }
 
-    
+    // Sets the Android system is24HourFormat preference
     private fun setAndroid24HourTimeFormat(timeFormat: Boolean) {
         val setting = if (timeFormat) "24" else "12"
         Settings.System.putString(context.contentResolver, Settings.System.TIME_12_24, setting)
     }
 
-    
+    // Sends app to background, then to foreground, and finally loads a page
     private fun goHomeAndReturnWithPageLoad() {
-        
+        // Ensures a return to the foreground (onResume)
         Handler(Looper.getMainLooper()).postDelayed({
             sessionRule.requestActivityToForeground(context)
-            
+            // Will call onLoadRequest and allow test to finish
             mainSession.loadTestPath(HELLO_HTML_PATH)
             mainSession.waitForPageStop()
         }, 1500)
 
-        
+        // Will cause onPause event to occur
         sessionRule.simulatePressHome(context)
     }
 
@@ -77,13 +76,13 @@ class GeckoAppShellTest : BaseSessionTest() {
         activityRule.scenario.onActivity {
             var onLoadRequestCount = 0
 
-            
-            
+            // First clock settings change, takes effect on next onResume
+            // Time format that does not use AM/PM, e.g., 13:00
             setAndroid24HourTimeFormat(true)
-            
+            // Causes an onPause event, onResume event, and finally a page load request
             goHomeAndReturnWithPageLoad()
 
-            
+            // This is waiting and holding the test harness open while Android Lifecycle events complete
             sessionRule.waitUntilCalled(object : GeckoSession.NavigationDelegate {
                 @GeckoSessionTestRule.AssertCalled(count = 2)
                 override fun onLocationChange(
@@ -92,7 +91,7 @@ class GeckoAppShellTest : BaseSessionTest() {
                     perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
                     hasUserGesture: Boolean,
                 ) {
-                    
+                    // Result of first clock settings change
                     if (onLoadRequestCount == 0) {
                         assertThat(
                             "Should use a 24 hour clock.",
@@ -101,12 +100,12 @@ class GeckoAppShellTest : BaseSessionTest() {
                         )
                         onLoadRequestCount++
 
-                        
-                        
+                        // Calling second clock settings change
+                        // Time format that does use AM/PM, e.g., 1:00 PM
                         setAndroid24HourTimeFormat(false)
                         goHomeAndReturnWithPageLoad()
 
-                        
+                        // Result of second clock settings change
                     } else {
                         assertThat(
                             "Should use a 12 hour clock.",

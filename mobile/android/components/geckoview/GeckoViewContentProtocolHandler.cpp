@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GeckoViewContentProtocolHandler.h"
 #include "GeckoViewContentChannel.h"
 #include "GeckoViewContentChannelChild.h"

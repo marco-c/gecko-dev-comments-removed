@@ -2,8 +2,6 @@
 
 
 
-
-
 package org.mozilla.geckoview;
 
 import static org.mozilla.geckoview.ExperimentDelegate.ExperimentException.ERROR_EXPERIMENT_DELEGATE_NOT_IMPLEMENTED;
