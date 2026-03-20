@@ -1014,43 +1014,36 @@ let interfaceNamesInGlobalScope = [
   {
     name: "NavigateEvent",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   {
     name: "Navigation",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   {
     name: "NavigationActivation",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   {
     name: "NavigationCurrentEntryChangeEvent",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   {
     name: "NavigationDestination",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   {
     name: "NavigationHistoryEntry",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   {
     name: "NavigationPrecommitController",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   "NavigationPreloadManager",
@@ -1058,7 +1051,6 @@ let interfaceNamesInGlobalScope = [
   {
     name: "NavigationTransition",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   { name: "Navigator", insecureContext: true },
@@ -1838,7 +1830,6 @@ let interfaceNamesInGlobalScope = [
   {
     name: "navigation",
     insecureContext: true,
-    sessionHistoryInParent: true,
   },
   
   { name: "navigator", insecureContext: true },
