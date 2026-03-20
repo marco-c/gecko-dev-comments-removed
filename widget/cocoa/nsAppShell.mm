@@ -369,7 +369,11 @@ nsresult nsAppShell::Init() {
   mAutoreleasePools = ::CFArrayCreateMutable(nullptr, 0, nullptr);
   NS_ENSURE_STATE(mAutoreleasePools);
 
+  
+  
+  
   bool isNSApplicationProcessType =
+      (XRE_GetProcessType() != GeckoProcessType_Content) &&
       (XRE_GetProcessType() != GeckoProcessType_RDD) &&
       (XRE_GetProcessType() != GeckoProcessType_Socket);
 
