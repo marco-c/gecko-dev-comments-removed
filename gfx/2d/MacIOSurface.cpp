@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MacIOSurface.h"
 #ifdef XP_MACOSX
 #  include <OpenGL/gl.h>

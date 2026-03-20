@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "graphite2/Font.h"
 #include "graphite2/Segment.h"
 #include "graphite2/GraphiteExtra.h"

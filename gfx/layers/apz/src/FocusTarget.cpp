@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/dom/BrowserBridgeChild.h"  
 #include "mozilla/dom/EventTarget.h"         

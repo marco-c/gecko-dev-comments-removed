@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/GeckoContentController.h"

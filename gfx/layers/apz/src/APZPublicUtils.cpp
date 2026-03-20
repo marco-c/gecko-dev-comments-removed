@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZPublicUtils.h"
 
 #include "AsyncPanZoomController.h"

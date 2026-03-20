@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "CompositorThread.h"
 
 #include "CompositorBridgeParent.h"

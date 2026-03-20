@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_WEBRENDERUSERDATA_H
 #define GFX_WEBRENDERUSERDATA_H
 

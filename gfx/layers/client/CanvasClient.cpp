@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasClient.h"
 
 #include "gfx2DGlue.h"             

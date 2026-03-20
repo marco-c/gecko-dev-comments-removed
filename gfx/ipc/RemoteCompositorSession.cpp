@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteCompositorSession.h"
 #include "gfxPlatform.h"
 #include "mozilla/VsyncDispatcher.h"

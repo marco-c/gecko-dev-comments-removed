@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_ScreenshotGrabber_h
 #define mozilla_layers_ScreenshotGrabber_h
 

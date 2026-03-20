@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GLCONTEXT_TYPES_H_
 #define GLCONTEXT_TYPES_H_
 

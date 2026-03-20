@@ -25,7 +25,6 @@
 
 
 
-
 #ifndef __PIXMAN_COMBINE_FLOAT_H__
 #define __PIXMAN_COMBINE_FLOAT_H__
 

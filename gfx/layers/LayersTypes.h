@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_LAYERSTYPES_H
 #define GFX_LAYERSTYPES_H
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageDataSerializer.h"
 
 #include "YCbCrUtils.h"           

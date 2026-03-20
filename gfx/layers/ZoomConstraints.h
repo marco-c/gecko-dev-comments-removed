@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_ZOOMCONSTRAINTS_H
 #define GFX_ZOOMCONSTRAINTS_H
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AsyncImagePipelineManager.h"
 
 #include <algorithm>

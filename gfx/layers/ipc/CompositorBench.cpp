@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositorBench.h"
 
 #ifdef MOZ_COMPOSITOR_BENCH

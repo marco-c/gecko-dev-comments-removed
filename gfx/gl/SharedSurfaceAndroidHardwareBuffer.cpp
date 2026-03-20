@@ -2,7 +2,6 @@
 
 
 
-
 #include "SharedSurfaceAndroidHardwareBuffer.h"
 
 #include "GLBlitHelper.h"

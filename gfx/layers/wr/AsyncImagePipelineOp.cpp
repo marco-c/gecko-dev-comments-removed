@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AsyncImagePipelineOp.h"
 
 #include "mozilla/layers/AsyncImagePipelineManager.h"

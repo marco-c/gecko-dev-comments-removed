@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/WebRenderBridgeParent.h"
 
 #include "mozmemory.h"

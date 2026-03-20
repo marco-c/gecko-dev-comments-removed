@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "UiCompositorControllerParent.h"
 
 #if defined(MOZ_WIDGET_ANDROID)

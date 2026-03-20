@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/UiCompositorControllerChild.h"
 
 #include "mozilla/dom/ContentChild.h"

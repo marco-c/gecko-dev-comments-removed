@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_SourceSurfaceD3D11_H_
 #define MOZILLA_GFX_SourceSurfaceD3D11_H_
 

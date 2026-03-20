@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GLREADTEXIMAGEHELPER_H_
 #define GLREADTEXIMAGEHELPER_H_
 

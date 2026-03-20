@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PersistentBufferProvider.h"
 
 #include "mozilla/layers/KnowsCompositor.h"

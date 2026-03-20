@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SCOPEDGLHELPERS_H_
 #define SCOPEDGLHELPERS_H_
 

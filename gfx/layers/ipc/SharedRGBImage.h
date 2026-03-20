@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SHAREDRGBIMAGE_H_
 #define SHAREDRGBIMAGE_H_
 

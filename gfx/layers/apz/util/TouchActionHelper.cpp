@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TouchActionHelper.h"
 
 #include "mozilla/layers/IAPZCTreeManager.h"

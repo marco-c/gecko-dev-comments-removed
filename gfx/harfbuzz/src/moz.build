@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 FILES_PER_UNIFIED_FILE = 100
 
@@ -149,7 +147,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk':
     ]
     CXXFLAGS += CONFIG['GLIB_CFLAGS']
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'xul'
@@ -164,9 +162,9 @@ DEFINES['HB_NO_UCD'] = True
 DEFINES['HB_NO_UNICODE_FUNCS'] = True
 DEFINES['HB_NO_VAR_COMPOSITES'] = True
 
-
-
-
+# On Android, we want to use harfbuzz's mmap support for file access,
+# so we need to set the appropriate configuration flags as we're not
+# running harfbuzz's own configure script.
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
     DEFINES['HAVE_MMAP'] = 1
     DEFINES['HAVE_SYS_MMAN_H'] = 1

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_gfx_ipc_D3DMessageUtils_h_
 #define _include_gfx_ipc_D3DMessageUtils_h_
 

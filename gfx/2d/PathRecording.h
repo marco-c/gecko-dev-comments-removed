@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_PATHRECORDING_H_
 #define MOZILLA_GFX_PATHRECORDING_H_
 

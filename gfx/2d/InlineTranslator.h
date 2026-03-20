@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layout_InlineTranslator_h
 #define mozilla_layout_InlineTranslator_h
 

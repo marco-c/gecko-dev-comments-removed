@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "GPUProcessImpl.h"
 #include "nsXPCOM.h"
 #include "mozilla/ipc/ProcessUtils.h"

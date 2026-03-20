@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_QUATERNION_H_
 #define MOZILLA_GFX_QUATERNION_H_
 

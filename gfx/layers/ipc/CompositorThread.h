@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_CompositorThread_h
 #define mozilla_layers_CompositorThread_h
 

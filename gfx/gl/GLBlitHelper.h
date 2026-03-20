@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GLBLITHELPER_H_
 #define GLBLITHELPER_H_
 

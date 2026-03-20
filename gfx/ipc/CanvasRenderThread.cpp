@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasRenderThread.h"
 
 #include "mozilla/BackgroundHangMonitor.h"

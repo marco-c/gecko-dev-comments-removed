@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollingInteractionContext.h"
 
 namespace mozilla::layers {

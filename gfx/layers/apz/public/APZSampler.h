@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_APZSampler_h
 #define mozilla_layers_APZSampler_h
 

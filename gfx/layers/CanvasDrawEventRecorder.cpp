@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasDrawEventRecorder.h"
 
 #include "mozilla/dom/WorkerCommon.h"

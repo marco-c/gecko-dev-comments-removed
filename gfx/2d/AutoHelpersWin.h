@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_AutoHelpersWin_h
 #define mozilla_gfx_AutoHelpersWin_h
 

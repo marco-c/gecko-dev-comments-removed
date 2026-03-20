@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_ipc_CompositorWidgetVsyncObserver_h
 #define mozilla_gfx_ipc_CompositorWidgetVsyncObserver_h
 

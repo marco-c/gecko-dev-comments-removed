@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AndroidSurfaceTexture_h_
 #define AndroidSurfaceTexture_h_
 

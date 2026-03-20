@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_WebRenderBridgeChild_h
 #define mozilla_layers_WebRenderBridgeChild_h
 

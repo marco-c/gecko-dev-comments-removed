@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZInputBridge.h"
 
 #include "AsyncPanZoomController.h"

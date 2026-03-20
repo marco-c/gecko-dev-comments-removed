@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/ProfilerScreenshots.h"
 
 #include "mozilla/TimeStamp.h"

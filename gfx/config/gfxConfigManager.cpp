@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/gfx/gfxConfigManager.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Preferences.h"

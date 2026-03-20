@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_WEBRENDERTEXTUREHOST_H
 #define MOZILLA_GFX_WEBRENDERTEXTUREHOST_H
 
@@ -83,8 +81,6 @@ class WebRenderTextureHost final : public TextureHost {
   virtual void PrepareForUse() override;
 
   wr::ExternalImageId GetExternalImageKey();
-
-  int32_t GetRGBStride();
 
   bool NeedsDeferredDeletion() const override;
 

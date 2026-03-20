@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_SWIZZLE_H_
 #define MOZILLA_GFX_SWIZZLE_H_
 

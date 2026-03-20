@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_ScrollingInteractionContext_h
 #define mozilla_layers_ScrollingInteractionContext_h
 

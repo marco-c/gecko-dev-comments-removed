@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_DISPLAY_ITEM_CACHE_H
 #define GFX_DISPLAY_ITEM_CACHE_H
 

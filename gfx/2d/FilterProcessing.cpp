@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FilterProcessing.h"
 #include "Logging.h"
 #include "Swizzle.h"

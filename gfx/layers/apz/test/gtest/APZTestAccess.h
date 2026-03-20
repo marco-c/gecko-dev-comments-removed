@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_APZTestAccess_h
 #define mozilla_layers_APZTestAccess_h
 

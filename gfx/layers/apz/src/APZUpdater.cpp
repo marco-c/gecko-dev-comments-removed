@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZUpdater.h"
 
 #include "APZCTreeManager.h"

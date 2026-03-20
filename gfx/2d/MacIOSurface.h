@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MacIOSurface_h_
 #define MacIOSurface_h_
 #ifdef XP_DARWIN

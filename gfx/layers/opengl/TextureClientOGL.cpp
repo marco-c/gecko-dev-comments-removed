@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GLContext.h"           
 #include "mozilla/Assertions.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"

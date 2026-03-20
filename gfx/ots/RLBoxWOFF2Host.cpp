@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RLBoxWOFF2Host.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"

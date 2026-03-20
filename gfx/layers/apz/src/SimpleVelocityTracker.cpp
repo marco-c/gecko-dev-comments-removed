@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SimpleVelocityTracker.h"
 
 #include "mozilla/ServoStyleConsts.h"  

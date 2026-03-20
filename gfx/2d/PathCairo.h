@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_PATH_CAIRO_H_
 #define MOZILLA_GFX_PATH_CAIRO_H_
 

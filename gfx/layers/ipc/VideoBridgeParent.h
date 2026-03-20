@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef gfx_layers_ipc_VideoBridgeParent_h_
 #define gfx_layers_ipc_VideoBridgeParent_h_
 

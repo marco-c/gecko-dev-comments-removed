@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/RemoteContentController.h"
 
 #include "CompositorThread.h"

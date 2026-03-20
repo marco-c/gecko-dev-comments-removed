@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_mozilla_gfx_ipc_CrossProcessPaint_h_
 #define _include_mozilla_gfx_ipc_CrossProcessPaint_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "APZTestAccess.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 

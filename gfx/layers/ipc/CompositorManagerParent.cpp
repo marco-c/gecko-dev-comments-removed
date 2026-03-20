@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/CanvasManagerParent.h"

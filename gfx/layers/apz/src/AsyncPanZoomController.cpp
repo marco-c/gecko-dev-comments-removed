@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AsyncPanZoomController.h"  
 
 #include <math.h>       

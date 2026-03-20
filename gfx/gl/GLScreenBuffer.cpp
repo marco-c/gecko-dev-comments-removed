@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLScreenBuffer.h"
 
 #include "CompositorTypes.h"

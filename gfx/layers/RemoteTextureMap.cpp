@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/RemoteTextureMap.h"
 
 #include <algorithm>

@@ -32,7 +32,6 @@
 
 
 
-
 #include "cairoint.h"
 
 #include "cairo-win32-private.h"

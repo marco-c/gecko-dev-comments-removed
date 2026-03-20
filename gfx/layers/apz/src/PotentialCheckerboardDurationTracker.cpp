@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PotentialCheckerboardDurationTracker.h"
 
 #include "mozilla/glean/GfxMetrics.h"  

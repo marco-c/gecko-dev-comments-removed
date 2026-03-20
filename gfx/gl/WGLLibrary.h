@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_GL_WGLLIBRARY_H_
 #define GFX_GL_WGLLIBRARY_H_
 
@@ -104,11 +103,11 @@ class WGLLibrary {
 
  private:
   bool mInitialized = false;
-  PRLibrary* mOGLLibrary;
-  bool mHasRobustness;
-  HWND mDummyWindow;
-  HDC mRootDc;
-  HGLRC mDummyGlrc;
+  PRLibrary* mOGLLibrary = nullptr;
+  bool mHasRobustness = false;
+  HWND mDummyWindow = nullptr;
+  HDC mRootDc = nullptr;
+  HGLRC mDummyGlrc = nullptr;
 };
 
 

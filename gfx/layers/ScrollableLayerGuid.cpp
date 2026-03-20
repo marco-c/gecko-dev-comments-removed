@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollableLayerGuid.h"
 
 #include <ostream>

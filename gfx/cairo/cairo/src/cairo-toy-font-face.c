@@ -38,7 +38,6 @@
 
 
 
-
 #define _DEFAULT_SOURCE
 #include "cairoint.h"
 #include "cairo-error-private.h"

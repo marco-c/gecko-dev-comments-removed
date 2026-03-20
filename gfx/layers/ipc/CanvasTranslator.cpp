@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasTranslator.h"
 
 #include "gfxGradientCache.h"

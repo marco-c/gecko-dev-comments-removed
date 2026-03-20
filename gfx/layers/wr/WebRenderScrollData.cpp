@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/WebRenderScrollData.h"
 
 #include <ostream>

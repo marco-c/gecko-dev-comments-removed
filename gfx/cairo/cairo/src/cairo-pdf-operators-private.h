@@ -38,7 +38,6 @@
 
 
 
-
 #ifndef CAIRO_PDF_OPERATORS_H
 #define CAIRO_PDF_OPERATORS_H
 

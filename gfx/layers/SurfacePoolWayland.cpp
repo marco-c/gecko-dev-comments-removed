@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "mozilla/layers/SurfacePoolWayland.h"
 
 #include "GLBlitHelper.h"

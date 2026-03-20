@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "libyuv.h"
 #include "MacIOSurfaceHelpers.h"
 #include "mozilla/gfx/MacIOSurface.h"

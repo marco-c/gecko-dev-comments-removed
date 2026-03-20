@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef include_gfx_ipc_UiCompositorControllerMessageTypes_h
 #define include_gfx_ipc_UiCompositorControllerMessageTypes_h
 

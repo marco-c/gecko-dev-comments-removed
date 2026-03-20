@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_DesktopFlingPhysics_h_
 #define mozilla_layers_DesktopFlingPhysics_h_
 

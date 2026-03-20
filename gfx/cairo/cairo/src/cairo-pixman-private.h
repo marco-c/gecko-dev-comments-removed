@@ -34,7 +34,6 @@
 
 
 
-
 #ifndef CAIRO_PIXMAN_PRIVATE_H
 #define CAIRO_PIXMAN_PRIVATE_H
 

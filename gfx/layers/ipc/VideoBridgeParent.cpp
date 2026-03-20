@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VideoBridgeParent.h"
 #include "CompositorThread.h"
 #include "mozilla/DataMutex.h"

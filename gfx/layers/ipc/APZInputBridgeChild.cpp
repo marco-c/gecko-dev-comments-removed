@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZInputBridgeChild.h"
 
 #include "InputData.h"  

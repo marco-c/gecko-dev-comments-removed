@@ -2,13 +2,10 @@
 
 
 
-
-
 #ifndef mozilla_layers_VelocityTracker_h
 #define mozilla_layers_VelocityTracker_h
 
 #include <utility>
-#include <cstdint>
 
 #include "Axis.h"
 #include "mozilla/Attributes.h"

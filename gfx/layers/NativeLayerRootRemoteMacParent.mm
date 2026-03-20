@@ -2,7 +2,7 @@
 
 
 
-
+#include "mozilla/CheckedInt.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
 #include "xpcpublic.h"
 
@@ -96,10 +96,14 @@ mozilla::ipc::IPCResult NativeLayerRootRemoteMacParent::RecvRequestReadback(
   
   
   auto readbackFormat = gfx::SurfaceFormat::B8G8R8A8;
-  size_t readbackSize =
-      aSize.width * aSize.height * gfx::BytesPerPixel(readbackFormat);
+  auto readbackSize = (CheckedUint32(aSize.width) * aSize.height *
+                       gfx::BytesPerPixel(readbackFormat));
+  if (!readbackSize.isValid()) {
+    return IPC_FAIL(this, "Invalid readback size.");
+  }
+
   Shmem buffer;
-  if (!AllocShmem(readbackSize, &buffer)) {
+  if (!AllocShmem(readbackSize.value(), &buffer)) {
     return IPC_FAIL(this, "Can't allocate shmem.");
   }
 

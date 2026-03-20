@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZUtils.h"
 
 #include "mozilla/StaticPrefs_apz.h"

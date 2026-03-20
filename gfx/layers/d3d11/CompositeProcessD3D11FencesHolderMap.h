@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_CompositeProcessD3D11FencesHolderMap_H
 #define MOZILLA_GFX_CompositeProcessD3D11FencesHolderMap_H
 

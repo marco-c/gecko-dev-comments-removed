@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "2D.h"
 #include "nsIMemoryReporter.h"
 

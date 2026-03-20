@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositorD3D11.h"
 
 #include "TextureD3D11.h"

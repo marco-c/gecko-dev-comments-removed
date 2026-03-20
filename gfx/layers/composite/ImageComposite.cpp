@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageComposite.h"
 
 #include <inttypes.h>

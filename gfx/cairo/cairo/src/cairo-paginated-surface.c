@@ -42,7 +42,6 @@
 
 
 
-
 #include "cairoint.h"
 
 #include "cairo-paginated-private.h"

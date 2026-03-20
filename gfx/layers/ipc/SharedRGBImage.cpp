@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedRGBImage.h"
 #include "ImageTypes.h"         
 #include "mozilla/ipc/Shmem.h"  

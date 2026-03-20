@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebRenderUserData.h"
 
 #include "mozilla/image/WebRenderImageProvider.h"

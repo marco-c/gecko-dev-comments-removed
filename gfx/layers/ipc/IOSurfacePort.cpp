@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IOSurfacePort.h"
 
 #ifdef XP_DARWIN

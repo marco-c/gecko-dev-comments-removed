@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef HEAPCOPYOFSTACKARRAY_H_
 #define HEAPCOPYOFSTACKARRAY_H_
 

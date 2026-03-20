@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_GLXLIBRARY_H
 #define GFX_GLXLIBRARY_H
 

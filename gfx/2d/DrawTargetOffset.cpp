@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DrawTargetOffset.h"
 #include "Logging.h"
 #include "PathHelpers.h"

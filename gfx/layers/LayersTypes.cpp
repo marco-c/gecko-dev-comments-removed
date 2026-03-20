@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LayersTypes.h"
 
 #include <cinttypes>

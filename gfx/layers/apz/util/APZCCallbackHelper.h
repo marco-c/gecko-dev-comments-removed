@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_layers_APZCCallbackHelper_h
 #define mozilla_layers_APZCCallbackHelper_h
 

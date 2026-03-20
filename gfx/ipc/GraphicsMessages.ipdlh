@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include "mozilla/GfxMessageUtils.h";
 
@@ -44,7 +41,7 @@ struct ContentDeviceData
   uint8_t[] cmsOutputProfileData;
 };
 
-
+// Represents the state of a feature that has failed to initialize.
 struct FeatureFailure
 {
   FeatureStatus status;
@@ -54,8 +51,8 @@ struct FeatureFailure
 
 struct GPUDeviceData
 {
-  
-  
+  // If a feature state has changed from Enabled -> Failure, these will be non-
+  // null.
   FeatureFailure? d3d11Compositing;
   FeatureFailure? oglCompositing;
   D3D11DeviceStatus? gpuDevice;
@@ -95,5 +92,5 @@ struct GfxInfoGLStrings {
   nsCString[] extensions;
 };
 
-} 
-} 
+} // namespace gfx
+} // namespace mozilla

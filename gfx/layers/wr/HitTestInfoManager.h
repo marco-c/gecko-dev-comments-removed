@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_HITTESTINFOMANAGER_H
 #define GFX_HITTESTINFOMANAGER_H
 

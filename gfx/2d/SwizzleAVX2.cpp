@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Swizzle.h"
 
 #include <immintrin.h>

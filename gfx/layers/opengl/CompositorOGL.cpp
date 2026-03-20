@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositorOGL.h"
 #include <stddef.h>             
 #include <stdint.h>             

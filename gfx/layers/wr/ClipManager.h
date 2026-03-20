@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_CLIPMANAGER_H
 #define GFX_CLIPMANAGER_H
 

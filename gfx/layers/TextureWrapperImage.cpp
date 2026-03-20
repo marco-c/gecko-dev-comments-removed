@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "TextureWrapperImage.h"
 
 namespace mozilla {

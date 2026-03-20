@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SURFACE_TYPES_H_
 #define SURFACE_TYPES_H_
 

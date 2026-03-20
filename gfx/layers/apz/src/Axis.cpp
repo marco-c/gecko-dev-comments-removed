@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Axis.h"
 
 #include <math.h>     

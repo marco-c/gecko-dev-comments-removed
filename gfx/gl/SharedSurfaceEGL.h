@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SHARED_SURFACE_EGL_H_
 #define SHARED_SURFACE_EGL_H_
 

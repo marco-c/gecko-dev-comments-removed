@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScaledFontDWrite.h"
 #include "gfxDWriteCommon.h"
 #include "UnscaledFontDWrite.h"

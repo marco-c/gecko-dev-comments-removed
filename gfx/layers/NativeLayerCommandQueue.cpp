@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/layers/NativeLayerCommandQueue.h"
 
 namespace mozilla {

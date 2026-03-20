@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositionRecorder.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"

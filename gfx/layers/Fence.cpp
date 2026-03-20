@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Fence.h"
 
 namespace mozilla {

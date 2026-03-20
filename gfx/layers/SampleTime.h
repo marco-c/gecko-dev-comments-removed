@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_SampleTime_h
 #define mozilla_layers_SampleTime_h
 

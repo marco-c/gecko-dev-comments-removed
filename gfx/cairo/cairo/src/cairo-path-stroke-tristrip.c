@@ -36,7 +36,6 @@
 
 
 
-
 #define _DEFAULT_SOURCE
 #include "cairoint.h"
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_SKCONVOLVER_H_
 #define MOZILLA_GFX_SKCONVOLVER_H_
 

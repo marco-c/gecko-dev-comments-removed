@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Effects.h"
 #include "nsAString.h"
 #include "nsPrintfCString.h"  

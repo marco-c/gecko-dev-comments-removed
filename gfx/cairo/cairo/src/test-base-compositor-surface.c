@@ -38,7 +38,6 @@
 
 
 
-
 #include "cairoint.h"
 
 #include "test-compositor-surface-private.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IpcResourceUpdateQueue.h"
 #include <string.h>
 #include <algorithm>

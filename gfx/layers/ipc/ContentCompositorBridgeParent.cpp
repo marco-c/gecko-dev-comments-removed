@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/ContentCompositorBridgeParent.h"
 
 #include <stdint.h>  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IPC_VideoBridgeUtils_h
 #define IPC_VideoBridgeUtils_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageBridgeParent.h"
 #include <stdint.h>            
 #include "CompositableHost.h"  

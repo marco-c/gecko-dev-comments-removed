@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "2D.h"
 #include "Blur.h"
 #include "Logging.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextureRecorded.h"
 #include "mozilla/gfx/DrawTargetRecording.h"
 #include "mozilla/layers/CompositableForwarder.h"

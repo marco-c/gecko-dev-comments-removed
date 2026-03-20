@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RECT_ABSOLUTE_H_
 #define MOZILLA_GFX_RECT_ABSOLUTE_H_
 

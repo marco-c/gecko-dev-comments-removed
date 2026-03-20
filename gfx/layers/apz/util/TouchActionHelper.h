@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _mozilla_layers_TouchActionHelper_h_
 #define _mozilla_layers_TouchActionHelper_h_
 

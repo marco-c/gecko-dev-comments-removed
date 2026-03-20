@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_LOGGING_H_
 #define MOZILLA_GFX_LOGGING_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MemoryPressureObserver.h"
 
 #include "mozilla/Services.h"

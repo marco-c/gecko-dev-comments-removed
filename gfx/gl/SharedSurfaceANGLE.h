@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SHARED_SURFACE_ANGLE_H_
 #define SHARED_SURFACE_ANGLE_H_
 

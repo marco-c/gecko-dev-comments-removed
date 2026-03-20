@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_FontFeature
 #define mozilla_gfx_FontFeature
 

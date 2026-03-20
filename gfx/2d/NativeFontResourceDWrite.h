@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_NativeFontResourceDWrite_h
 #define mozilla_gfx_NativeFontResourceDWrite_h
 
@@ -28,7 +26,7 @@ class NativeFontResourceDWrite final : public NativeFontResource {
 
 
   static already_AddRefed<NativeFontResourceDWrite> Create(
-      uint8_t* aFontData, uint32_t aDataLength);
+      const uint8_t* aFontData, uint32_t aDataLength);
 
   already_AddRefed<UnscaledFont> CreateUnscaledFont(
       uint32_t aIndex, const uint8_t* aInstanceData,

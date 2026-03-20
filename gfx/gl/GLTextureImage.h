@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GLTEXTUREIMAGE_H_
 #define GLTEXTUREIMAGE_H_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLTextureImage.h"
 #include "GLContext.h"
 #include "gfxContext.h"

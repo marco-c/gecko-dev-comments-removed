@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FocusState.h"
 
 #include "mozilla/Logging.h"

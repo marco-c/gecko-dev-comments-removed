@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZInputBridgeParent.h"
 
 #include "mozilla/ipc/Endpoint.h"

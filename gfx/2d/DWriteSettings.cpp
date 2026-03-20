@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DWriteSettings.h"
 
 #include "mozilla/DataMutex.h"

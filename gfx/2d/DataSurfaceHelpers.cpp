@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <cstring>
 
 #include "2D.h"

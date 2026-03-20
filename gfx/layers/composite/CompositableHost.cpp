@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositableHost.h"
 #include "Effects.h"  
 #include "gfxUtils.h"

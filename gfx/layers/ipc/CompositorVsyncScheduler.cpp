@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/CompositorVsyncScheduler.h"
 
 #include <stdio.h>        

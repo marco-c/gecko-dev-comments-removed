@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GLBlitHelper.h"
 
 #include "gfxEnv.h"

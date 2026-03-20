@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/OMTASampler.h"
 
 #include "mozilla/ClearOnShutdown.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScaledFontFreeType.h"
 #include "UnscaledFontFreeType.h"
 #include "NativeFontResourceFreeType.h"

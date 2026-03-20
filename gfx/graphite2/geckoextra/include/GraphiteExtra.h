@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GraphiteExtra_h__
 #define GraphiteExtra_h__
 

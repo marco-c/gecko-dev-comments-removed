@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_layers_SurfacePoolWayland_h
 #define mozilla_layers_SurfacePoolWayland_h
 

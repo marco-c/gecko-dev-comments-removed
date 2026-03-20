@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Swizzle.h"
 #include "Logging.h"
 #include "Orientation.h"

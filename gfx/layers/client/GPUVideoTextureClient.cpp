@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GPUVideoTextureClient.h"
 #include "GPUVideoImage.h"
 #include "mozilla/gfx/2D.h"

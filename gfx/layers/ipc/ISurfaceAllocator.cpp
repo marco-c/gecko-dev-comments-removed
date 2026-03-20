@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ISurfaceAllocator.h"
 
 #include "mozilla/layers/ImageBridgeParent.h"  

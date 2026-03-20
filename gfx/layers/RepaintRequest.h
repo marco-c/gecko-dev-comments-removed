@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_REPAINTREQUEST_H
 #define GFX_REPAINTREQUEST_H
 

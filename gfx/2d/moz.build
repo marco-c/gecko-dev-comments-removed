@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla += [
     "GenericRefCounted.h",
@@ -118,7 +116,7 @@ EXPORTS.mozilla.gfx += [
     "HelpersSkia.h",
 ]
 
-
+# Are we targeting x86 or x64?  If so, build SSE2 files.
 if CONFIG["INTEL_ARCHITECTURE"]:
     SOURCES += [
         "ConvolutionFilterAVX2.cpp",
@@ -130,8 +128,8 @@ if CONFIG["INTEL_ARCHITECTURE"]:
         "SwizzleSSSE3.cpp",
     ]
     DEFINES["USE_SSE2"] = True
-    
-    
+    # The file uses SSE2 intrinsics, so it needs special compile flags on some
+    # compilers.
     SOURCES["ConvolutionFilterAVX2.cpp"].flags += ["-mavx2"]
     SOURCES["ConvolutionFilterSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
     SOURCES["FilterProcessingSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]

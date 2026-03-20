@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DMABUFTextureHostOGL.h"
 #include "mozilla/widget/DMABufSurface.h"
 #include "mozilla/widget/DMABufFormats.h"
@@ -135,7 +133,8 @@ void DMABUFTextureHostOGL::PushResourceUpdates(
                             false);
       break;
     }
-    case gfx::SurfaceFormat::P010: {
+    case gfx::SurfaceFormat::P010:
+    case gfx::SurfaceFormat::P016: {
       MOZ_ASSERT(aImageKeys.length() == 2);
       MOZ_ASSERT(mSurface->GetTextureCount() == 2);
       wr::ImageDescriptor descriptor0(
@@ -205,7 +204,8 @@ void DMABUFTextureHostOGL::PushDisplayItems(
           supportsDirectComposition);
       break;
     }
-    case gfx::SurfaceFormat::P010: {
+    case gfx::SurfaceFormat::P010:
+    case gfx::SurfaceFormat::P016: {
       MOZ_ASSERT(aImageKeys.length() == 2);
       MOZ_ASSERT(mSurface->GetTextureCount() == 2);
       aBuilder.PushP010Image(

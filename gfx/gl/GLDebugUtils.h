@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GLDEBUGUTILS_H_
 #define GLDEBUGUTILS_H_
 

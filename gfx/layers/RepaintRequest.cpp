@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RepaintRequest.h"
 
 #include <ostream>

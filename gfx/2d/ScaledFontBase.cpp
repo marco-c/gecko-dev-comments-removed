@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScaledFontBase.h"
 
 #include "PathSkia.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "APZTaskRunnable.h"
 
 #include "mozilla/PresShell.h"

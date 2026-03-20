@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_BUFFER_EDGE_PAD_H
 #define MOZILLA_GFX_BUFFER_EDGE_PAD_H
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_IMAGECONTAINER_H
 #define GFX_IMAGECONTAINER_H
 

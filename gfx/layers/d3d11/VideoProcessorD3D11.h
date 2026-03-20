@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_VideoProcessorD3D11_H
 #define MOZILLA_GFX_VideoProcessorD3D11_H
 
@@ -75,6 +73,7 @@ class VideoProcessorD3D11 {
   gfx::IntSize mSize;
   RefPtr<ID3D11VideoProcessor> mVideoProcessor;
   RefPtr<ID3D11VideoProcessorEnumerator> mVideoProcessorEnumerator;
+  bool mContentIsHDR = false;
 };
 
 }  

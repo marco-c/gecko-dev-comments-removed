@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_MACIOSURFACEIMAGE_H
 #define GFX_MACIOSURFACEIMAGE_H
 

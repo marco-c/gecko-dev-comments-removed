@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_AsyncPanZoomAnimation_h_
 #define mozilla_layers_AsyncPanZoomAnimation_h_
 

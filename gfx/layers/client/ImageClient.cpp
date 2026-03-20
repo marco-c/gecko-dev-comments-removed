@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageClient.h"
 
 #include <stdint.h>  

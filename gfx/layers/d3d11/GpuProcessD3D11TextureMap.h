@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_GpuProcessD3D11TextureMap_H
 #define MOZILLA_GFX_GpuProcessD3D11TextureMap_H
 

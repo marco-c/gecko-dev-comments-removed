@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_IOSurfacePort_h_
 #define mozilla_gfx_IOSurfacePort_h_
 

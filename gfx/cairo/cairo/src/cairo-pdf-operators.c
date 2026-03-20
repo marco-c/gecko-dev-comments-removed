@@ -38,7 +38,6 @@
 
 
 
-
 #include "cairoint.h"
 
 #if CAIRO_HAS_PDF_OPERATORS

@@ -35,7 +35,6 @@
 
 
 
-
 #ifndef CAIRO_TYPES_PRIVATE_H
 #define CAIRO_TYPES_PRIVATE_H
 

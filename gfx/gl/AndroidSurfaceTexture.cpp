@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AndroidSurfaceTexture.h"
 
 #include "GLContextEGL.h"

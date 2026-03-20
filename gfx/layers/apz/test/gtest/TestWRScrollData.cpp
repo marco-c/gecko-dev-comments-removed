@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TestWRScrollData.h"
 #include "APZTestAccess.h"
 #include "gtest/gtest.h"

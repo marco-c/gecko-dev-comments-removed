@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_mozilla_gfx_ipc_GPUProcessManager_h_
 #define _include_mozilla_gfx_ipc_GPUProcessManager_h_
 

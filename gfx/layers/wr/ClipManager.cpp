@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/ClipManager.h"
 
 #include "DisplayItemClipChain.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextureHostOGL.h"
 
 #include "GLContextEGL.h"  

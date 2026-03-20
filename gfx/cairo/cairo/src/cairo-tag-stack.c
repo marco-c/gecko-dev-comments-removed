@@ -33,7 +33,6 @@
 
 
 
-
 #include "cairoint.h"
 
 #include "cairo-tag-stack-private.h"

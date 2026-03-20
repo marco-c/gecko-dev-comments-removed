@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GLCONTEXTCGL_H_
 #define GLCONTEXTCGL_H_
 

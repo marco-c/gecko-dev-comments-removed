@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef DWRITE_EXTRA_H
 #define DWRITE_EXTRA_H
 

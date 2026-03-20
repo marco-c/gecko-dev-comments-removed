@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WRHitTester.h"
 #include "AsyncPanZoomController.h"
 #include "APZCTreeManager.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #define FILTER_PROCESSING_SCALAR
 
 #include "FilterProcessingSIMD-inl.h"

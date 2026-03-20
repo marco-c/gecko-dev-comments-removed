@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VideoBridgeChild.h"
 #include "VideoBridgeParent.h"
 #include "CompositorThread.h"

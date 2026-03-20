@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLUploadHelpers.h"
 
 #include <bit>

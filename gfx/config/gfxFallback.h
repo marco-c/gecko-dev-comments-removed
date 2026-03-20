@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_config_gfxFallback_h
 #define mozilla_gfx_config_gfxFallback_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "APZThreadUtils.h"
 
 #include "mozilla/ClearOnShutdown.h"

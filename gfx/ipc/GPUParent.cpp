@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef XP_WIN
 #  include "WMF.h"
 #  include "WMFDecoderModule.h"

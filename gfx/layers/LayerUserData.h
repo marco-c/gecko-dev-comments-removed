@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_LAYERUSERDATA_H
 #define GFX_LAYERUSERDATA_H
 

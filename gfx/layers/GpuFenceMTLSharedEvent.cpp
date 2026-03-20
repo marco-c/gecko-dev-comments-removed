@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GpuFenceMTLSharedEvent.h"
 
 #include "mozilla/gfx/Logging.h"

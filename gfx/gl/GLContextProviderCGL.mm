@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLContextProvider.h"
 #include "GLContextCGL.h"
 #include "GLLibraryLoader.h"

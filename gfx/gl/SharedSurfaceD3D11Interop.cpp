@@ -2,7 +2,6 @@
 
 
 
-
 #include "SharedSurfaceD3D11Interop.h"
 
 #include <d3d11.h>

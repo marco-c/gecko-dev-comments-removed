@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositorTypes.h"
 
 #include <ostream>

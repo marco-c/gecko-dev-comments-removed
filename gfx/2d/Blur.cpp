@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Blur.h"
 
 #include <algorithm>

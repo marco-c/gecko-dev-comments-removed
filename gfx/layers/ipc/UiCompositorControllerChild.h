@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_gfx_ipc_UiCompositorControllerChild_h
 #define include_gfx_ipc_UiCompositorControllerChild_h
 

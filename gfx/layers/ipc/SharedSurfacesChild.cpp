@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedSurfacesChild.h"
 #include "CompositorManagerChild.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"

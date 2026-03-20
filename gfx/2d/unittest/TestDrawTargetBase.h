@@ -2,8 +2,6 @@
 
 
 
-
-
 #pragma once
 
 #include "2D.h"

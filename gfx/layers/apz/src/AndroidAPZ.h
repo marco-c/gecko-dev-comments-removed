@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_AndroidAPZ_h_
 #define mozilla_layers_AndroidAPZ_h_
 

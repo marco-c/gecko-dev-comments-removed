@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TestDrawTargetBase.h"
 #include <sstream>
 

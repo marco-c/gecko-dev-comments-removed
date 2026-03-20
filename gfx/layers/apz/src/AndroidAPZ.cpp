@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AndroidAPZ.h"
 
 #include "AndroidFlingPhysics.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextureClientSharedSurface.h"
 
 #include "GLContext.h"

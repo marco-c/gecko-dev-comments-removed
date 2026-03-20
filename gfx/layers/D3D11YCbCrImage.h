@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_D3D11_YCBCR_IMAGE_H
 #define GFX_D3D11_YCBCR_IMAGE_H
 

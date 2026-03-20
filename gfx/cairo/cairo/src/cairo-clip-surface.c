@@ -38,7 +38,6 @@
 
 
 
-
 #include "cairoint.h"
 #include "cairo-clip-private.h"
 #include "cairo-error-private.h"

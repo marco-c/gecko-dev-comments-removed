@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "ScopedGLHelpers.h"

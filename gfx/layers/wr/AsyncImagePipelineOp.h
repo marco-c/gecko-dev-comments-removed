@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_AsyncImagePipelineOp_H
 #define MOZILLA_GFX_AsyncImagePipelineOp_H
 

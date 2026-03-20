@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SanityChecks.h"
 
 SanityChecks::SanityChecks() { REGISTER_TEST(SanityChecks, AlwaysPasses); }

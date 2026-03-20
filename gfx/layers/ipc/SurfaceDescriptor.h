@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IPC_SurfaceDescriptor_h
 #define IPC_SurfaceDescriptor_h
 

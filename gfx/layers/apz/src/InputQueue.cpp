@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InputQueue.h"
 
 #include <inttypes.h>

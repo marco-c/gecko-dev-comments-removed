@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_DIRECTIONUTILS_H
 #define GFX_DIRECTIONUTILS_H
 

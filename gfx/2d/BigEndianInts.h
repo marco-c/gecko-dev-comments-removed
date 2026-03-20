@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BigEndianInts_h
 #define mozilla_BigEndianInts_h
 

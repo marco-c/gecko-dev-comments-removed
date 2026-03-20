@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MockHitTester.h"
 #include "TreeTraversal.h"
 #include "apz/src/APZCTreeManager.h"

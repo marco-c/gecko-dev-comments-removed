@@ -11,7 +11,6 @@
 
 
 
-
 #ifndef SCREEN_BUFFER_H_
 #define SCREEN_BUFFER_H_
 

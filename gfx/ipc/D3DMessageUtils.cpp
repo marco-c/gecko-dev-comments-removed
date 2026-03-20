@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "D3DMessageUtils.h"
 #if defined(XP_WIN)
 #  include "gfxWindowsPlatform.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "KnowsCompositor.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/ImageBridgeChild.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PathHelpers.h"
 
 namespace mozilla {

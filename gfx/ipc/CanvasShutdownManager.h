@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_gfx_ipc_CanvasShutdownManager_h_
 #define _include_gfx_ipc_CanvasShutdownManager_h_
 

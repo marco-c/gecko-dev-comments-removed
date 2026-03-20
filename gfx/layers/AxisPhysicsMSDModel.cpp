@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AxisPhysicsMSDModel.h"
 #include <math.h>  
 

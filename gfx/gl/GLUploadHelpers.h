@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GLUploadHelpers_h_
 #define GLUploadHelpers_h_
 

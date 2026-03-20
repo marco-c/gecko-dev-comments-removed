@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/RenderRootStateManager.h"
 
 #include "mozilla/layers/WebRenderBridgeChild.h"

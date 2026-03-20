@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_GpuFenceMTLSharedEvent_H
 #define MOZILLA_GFX_GpuFenceMTLSharedEvent_H
 

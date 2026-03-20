@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GLImages.h"
 #include "GLContext.h"
 #include "GLContextProvider.h"

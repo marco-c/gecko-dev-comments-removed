@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFXMESSAGEUTILS_H_
 #define GFXMESSAGEUTILS_H_
 

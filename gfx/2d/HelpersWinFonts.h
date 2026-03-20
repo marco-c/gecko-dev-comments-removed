@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_2D_HELPERSWINFONTS_H_
 #define GFX_2D_HELPERSWINFONTS_H_
 

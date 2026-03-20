@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TouchCounter.h"
 
 #include "InputData.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SHARED_SURFACE_GL_H_
 #define SHARED_SURFACE_GL_H_
 

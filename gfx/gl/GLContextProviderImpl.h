@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef IN_GL_CONTEXT_PROVIDER_H
 #  error GLContextProviderImpl.h must only be included from GLContextProvider.h
 #endif

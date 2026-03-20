@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/APZCTreeManagerParent.h"
 
 #include "apz/src/APZCTreeManager.h"

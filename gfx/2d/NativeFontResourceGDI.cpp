@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NativeFontResourceGDI.h"
 
 #include "Logging.h"
@@ -16,10 +14,10 @@ namespace gfx {
 
 
 already_AddRefed<NativeFontResourceGDI> NativeFontResourceGDI::Create(
-    uint8_t* aFontData, uint32_t aDataLength) {
+    const uint8_t* aFontData, uint32_t aDataLength) {
   DWORD numberOfFontsAdded;
-  HANDLE fontResourceHandle =
-      ::AddFontMemResourceEx(aFontData, aDataLength, 0, &numberOfFontsAdded);
+  HANDLE fontResourceHandle = ::AddFontMemResourceEx(
+      (PVOID)aFontData, aDataLength, 0, &numberOfFontsAdded);
   if (!fontResourceHandle) {
     gfxWarning() << "Failed to add memory font resource.";
     return nullptr;

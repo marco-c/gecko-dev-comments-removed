@@ -2,7 +2,6 @@
 
 
 
-
 #include "GLContextProvider.h"
 
 namespace mozilla {

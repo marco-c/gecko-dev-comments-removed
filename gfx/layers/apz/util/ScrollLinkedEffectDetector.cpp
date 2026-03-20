@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollLinkedEffectDetector.h"
 
 #include "mozilla/dom/Document.h"

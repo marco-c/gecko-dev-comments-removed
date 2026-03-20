@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasChild.h"
 
 #include "MainThreadUtils.h"

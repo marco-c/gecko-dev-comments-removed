@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IMFYCbCrImage.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/gfxVars.h"

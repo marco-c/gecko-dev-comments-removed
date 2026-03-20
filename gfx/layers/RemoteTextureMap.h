@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RemoteTextureMap_H
 #define MOZILLA_GFX_RemoteTextureMap_H
 

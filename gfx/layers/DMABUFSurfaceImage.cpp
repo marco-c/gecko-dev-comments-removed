@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DMABUFSurfaceImage.h"
 #include "mozilla/widget/DMABufSurface.h"
 #include "mozilla/layers/CompositableClient.h"

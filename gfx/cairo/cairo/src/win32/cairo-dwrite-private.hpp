@@ -33,7 +33,6 @@
 
 
 
-
 #include "cairoint.h"
 #include "cairo-win32-refptr.hpp"
 #include <dwrite_3.h>

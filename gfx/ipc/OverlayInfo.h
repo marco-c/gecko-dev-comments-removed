@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_mozilla_gfx_ipc_OverlayInfo_h_
 #define _include_mozilla_gfx_ipc_OverlayInfo_h_
 
@@ -31,9 +29,11 @@ struct OverlayInfo {
   OverlaySupportType mYuy2Overlay = OverlaySupportType::None;
   OverlaySupportType mBgra8Overlay = OverlaySupportType::None;
   OverlaySupportType mRgb10a2Overlay = OverlaySupportType::None;
+  OverlaySupportType mRgba16fOverlay = OverlaySupportType::None;
 
   bool mSupportsVpSuperResolution = false;
   bool mSupportsVpAutoHDR = false;
+  bool mSupportsHDR = false;
 
   friend struct IPC::ParamTraits<OverlayInfo>;
 };

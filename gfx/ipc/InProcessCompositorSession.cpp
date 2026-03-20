@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InProcessCompositorSession.h"
 
 #include "mozilla/gfx/GPUProcessManager.h"

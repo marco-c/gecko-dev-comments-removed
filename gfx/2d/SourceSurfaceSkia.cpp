@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Logging.h"
 #include "SourceSurfaceSkia.h"
 #include "HelpersSkia.h"

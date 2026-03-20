@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_TEXTURED3D11_H
 #define MOZILLA_GFX_TEXTURED3D11_H
 

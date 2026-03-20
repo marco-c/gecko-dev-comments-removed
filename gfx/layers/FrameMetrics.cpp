@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FrameMetrics.h"
 
 #include <ostream>

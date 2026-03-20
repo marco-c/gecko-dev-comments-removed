@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_FONTVARIATION_H_
 #define MOZILLA_GFX_FONTVARIATION_H_
 

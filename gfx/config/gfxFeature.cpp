@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gfxFeature.h"
 
 #include "mozilla/Preferences.h"

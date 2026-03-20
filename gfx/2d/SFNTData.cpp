@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SFNTData.h"
 
 #include <algorithm>

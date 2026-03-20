@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OGLShaderProgram.h"
 
 #include <stdint.h>  

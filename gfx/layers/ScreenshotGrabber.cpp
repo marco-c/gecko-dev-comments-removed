@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScreenshotGrabber.h"
 
 #include "mozilla/ProfilerMarkers.h"

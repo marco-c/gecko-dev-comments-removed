@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_LAYERS_BSPTREE_H
 #define MOZILLA_LAYERS_BSPTREE_H
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnimationInfo.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/layers/WebRenderLayerManager.h"

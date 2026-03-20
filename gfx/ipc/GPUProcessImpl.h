@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _include_gfx_ipc_GPUProcessImpl_h_
 #define _include_gfx_ipc_GPUProcessImpl_h_
 

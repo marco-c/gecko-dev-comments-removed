@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedSurfacesParent.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPrefs_image.h"

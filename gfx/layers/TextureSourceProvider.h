@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_layers_TextureSourceProvider_h
 #define mozilla_gfx_layers_TextureSourceProvider_h
 

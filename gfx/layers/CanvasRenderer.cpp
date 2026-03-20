@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasRenderer.h"
 
 #include "BuildConstants.h"

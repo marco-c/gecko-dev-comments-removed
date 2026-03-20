@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DrawEventRecorder.h"
 
 #include "PathRecording.h"

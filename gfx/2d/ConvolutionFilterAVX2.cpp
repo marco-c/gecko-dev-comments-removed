@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SkConvolver.h"
 #include <immintrin.h>
 

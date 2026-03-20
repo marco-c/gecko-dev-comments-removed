@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_mozilla_gfx_ipc_RemoteCompositorSession_h
 #define include_mozilla_gfx_ipc_RemoteCompositorSession_h
 

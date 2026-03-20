@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebRenderCommandBuilder.h"
 
 #include "mozilla/AutoRestore.h"

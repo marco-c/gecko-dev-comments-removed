@@ -2,7 +2,6 @@
 
 
 
-
 #include "SharedSurfaceEGL.h"
 
 #include "GLBlitHelper.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "APZEventState.h"
 
 #include <utility>

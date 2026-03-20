@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SkConvolver.h"
 #include "mozilla/Attributes.h"
 #include <immintrin.h>

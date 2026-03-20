@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BufferTexture.h"
 
 #include <utility>

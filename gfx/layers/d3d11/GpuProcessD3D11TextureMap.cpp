@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GpuProcessD3D11TextureMap.h"
 
 #include "libyuv.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GestureEventListener.h"
 #include <algorithm>  
 #include <ostream>

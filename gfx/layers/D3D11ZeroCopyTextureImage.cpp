@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <d3d11.h>
 #include <mfobjects.h>
 

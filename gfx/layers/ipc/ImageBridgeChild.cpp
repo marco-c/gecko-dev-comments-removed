@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageBridgeChild.h"
 
 #include <vector>  

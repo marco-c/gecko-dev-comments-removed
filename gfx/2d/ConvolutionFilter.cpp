@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ConvolutionFilter.h"
 #include "HelpersSkia.h"
 #include "SkConvolver.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FlingAccelerator.h"
 
 #include "mozilla/StaticPrefs_apz.h"

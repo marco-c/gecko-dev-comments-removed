@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_HELPERSWIN_H_
 #define MOZILLA_GFX_HELPERSWIN_H_
 

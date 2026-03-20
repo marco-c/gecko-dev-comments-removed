@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_CompositorAnimationStorage_h
 #define mozilla_layers_CompositorAnimationStorage_h
 

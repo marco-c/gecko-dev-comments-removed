@@ -2,7 +2,6 @@
 
 
 
-
 #if defined(MOZ_WIDGET_GTK)
 #  define GET_NATIVE_WINDOW_FROM_REAL_WIDGET(aWidget) \
     ((EGLNativeWindowType)aWidget->GetNativeData(NS_NATIVE_EGL_WINDOW))

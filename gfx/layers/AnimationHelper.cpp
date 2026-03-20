@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AnimationHelper.h"
 #include "CompositorAnimationStorage.h"
 #include "base/process_util.h"
@@ -246,8 +244,12 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
 #endif
     }
 
-    uint32_t segmentIndex = 0;
     size_t segmentSize = animation.mSegments.Length();
+    if (segmentSize == 0) {
+      return AnimationHelper::SampleResult();
+    }
+
+    uint32_t segmentIndex = 0;
     PropertyAnimation::SegmentData* segment = animation.mSegments.Elements();
     while (segment->mEndPortion < computedTiming.mProgress.Value() &&
            segmentIndex < segmentSize - 1) {

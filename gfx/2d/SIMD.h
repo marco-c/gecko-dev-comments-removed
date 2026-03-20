@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_SIMD_H_
 #define MOZILLA_GFX_SIMD_H_
 

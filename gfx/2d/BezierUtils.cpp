@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BezierUtils.h"
 
 #include "PathHelpers.h"

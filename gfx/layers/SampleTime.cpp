@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SampleTime.h"
 
 namespace mozilla {

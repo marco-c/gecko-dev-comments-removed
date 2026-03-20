@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_gfx_ipc_VsyncBridgeParent_h
 #define include_gfx_ipc_VsyncBridgeParent_h
 

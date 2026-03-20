@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _include_mozilla_gfx_ipc_GPUProcessHost_h_
 #define _include_mozilla_gfx_ipc_GPUProcessHost_h_
 

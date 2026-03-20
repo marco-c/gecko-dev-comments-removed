@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFXTEXTURESREPORTER_H_
 #define GFXTEXTURESREPORTER_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InputBlockState.h"
 
 #include "APZUtils.h"

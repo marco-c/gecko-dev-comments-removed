@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_STACKARRAY_H_
 #define MOZILLA_GFX_STACKARRAY_H_
 

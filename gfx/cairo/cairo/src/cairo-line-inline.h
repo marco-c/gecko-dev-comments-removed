@@ -29,7 +29,6 @@
 
 
 
-
 #ifndef CAIRO_LINE_INLINE_H
 #define CAIRO_LINE_INLINE_H
 

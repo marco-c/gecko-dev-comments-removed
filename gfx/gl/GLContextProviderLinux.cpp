@@ -2,7 +2,6 @@
 
 
 
-
 #include "prenv.h"
 
 #include "GLContextProvider.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebRenderImageHost.h"
 
 #include <utility>

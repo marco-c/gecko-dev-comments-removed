@@ -43,7 +43,6 @@
 
 
 
-
 #include "cairoint.h"
 
 #if !CAIRO_HAS_XLIB_XCB_FUNCTIONS

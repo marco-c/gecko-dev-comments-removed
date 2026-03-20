@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScaledFontMac.h"
 #include "UnscaledFontMac.h"
 #include "mozilla/webrender/WebRenderTypes.h"

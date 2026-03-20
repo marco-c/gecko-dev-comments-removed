@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageScaling.h"
 #include "mozilla/Attributes.h"
 

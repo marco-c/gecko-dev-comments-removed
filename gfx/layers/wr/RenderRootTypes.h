@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_RENDERROOTTYPES_H
 #define GFX_RENDERROOTTYPES_H
 

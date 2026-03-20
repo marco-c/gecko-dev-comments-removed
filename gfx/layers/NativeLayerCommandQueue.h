@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_layers_NativeLayerCommandQueue_h
 #define mozilla_layers_NativeLayerCommandQueue_h
 

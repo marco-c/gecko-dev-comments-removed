@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include LayersSurfaces;
 include protocol PCompositorBridge;
@@ -17,9 +14,9 @@ using mozilla::layers::TextureFlags from "mozilla/layers/CompositorTypes.h";
 namespace mozilla {
 namespace layers {
 
-
-
-
+/**
+ * PTexture is the IPDL glue between a TextureClient and a TextureHost.
+ */
 [ManualDealloc, ChildImpl=virtual, ParentImpl=virtual]
 sync protocol PTexture {
     manager PImageBridge or PCompositorBridge or PVideoBridge;
@@ -28,13 +25,13 @@ child:
     async __delete__();
 
 parent:
-    
-
-
+    /**
+     * Asynchronously tell the compositor side to remove the texture.
+     */
     async Destroy();
 
     async RecycleTexture(TextureFlags aTextureFlags);
 };
 
-} 
-} 
+} // layers
+} // mozilla

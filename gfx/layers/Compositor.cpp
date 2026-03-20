@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositionRecorder.h"
 #include "base/message_loop.h"  

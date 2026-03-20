@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CompositableForwarder.h"
 
 #include "mozilla/layers/CompositableClient.h"

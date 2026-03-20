@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SkConvolver.h"
 
 #ifdef USE_SSE2

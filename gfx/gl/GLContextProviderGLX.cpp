@@ -2,7 +2,6 @@
 
 
 
-
 #ifdef MOZ_WIDGET_GTK
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
@@ -49,7 +48,7 @@ namespace mozilla::gl {
 using namespace mozilla::gfx;
 using namespace mozilla::widget;
 
-MOZ_RUNINIT GLXLibrary sGLXLibrary;
+MOZ_GLOBINIT GLXLibrary sGLXLibrary;
 
 static inline bool HasExtension(const char* aExtensions,
                                 const char* aRequiredExtension) {

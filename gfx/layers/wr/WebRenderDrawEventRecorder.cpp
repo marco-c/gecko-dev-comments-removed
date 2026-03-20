@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebRenderDrawEventRecorder.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/SharedSurfacesParent.h"

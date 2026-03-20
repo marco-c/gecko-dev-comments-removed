@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "APZTestCommon.h"
 
 already_AddRefed<AsyncPanZoomController> TestAPZCTreeManager::NewAPZCInstance(

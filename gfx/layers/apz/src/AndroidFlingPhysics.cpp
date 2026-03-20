@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AndroidFlingPhysics.h"
 
 #include <cmath>

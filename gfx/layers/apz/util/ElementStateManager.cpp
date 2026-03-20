@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ElementStateManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/PresShell.h"

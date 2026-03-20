@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/WebRenderBridgeChild.h"
 
 #include "gfxPlatform.h"

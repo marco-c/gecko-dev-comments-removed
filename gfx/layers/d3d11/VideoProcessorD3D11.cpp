@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VideoProcessorD3D11.h"
 
 #include <d3d11.h>
@@ -19,8 +17,8 @@ namespace layers {
 
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVColorSpace aYUVColorSpace,
-    const gfx::ColorRange aColorRange) {
+    const gfx::YUVColorSpace aYUVColorSpace, const gfx::ColorRange aColorRange,
+    const bool aContentIsHDR) {
   if (aYUVColorSpace == gfx::YUVColorSpace::BT601) {
     if (aColorRange == gfx::ColorRange::FULL) {
       return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
@@ -35,10 +33,22 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
     }
   } else if (aYUVColorSpace == gfx::YUVColorSpace::BT2020) {
     if (aColorRange == gfx::ColorRange::FULL) {
-      
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+      if (aContentIsHDR) {
+        
+        
+        gfxCriticalNoteOnce
+            << "GetSourceDXGIColorSpace: DXGI has no full range "
+               "BT2020 PQ YCbCr format, using studio range instead";
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+      }
     } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      if (aContentIsHDR) {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      }
     }
   }
 
@@ -46,9 +56,9 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
 }
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVRangedColorSpace aYUVColorSpace) {
+    const gfx::YUVRangedColorSpace aYUVColorSpace, const bool aContentIsHDR) {
   const auto info = FromYUVRangedColorSpace(aYUVColorSpace);
-  return GetSourceDXGIColorSpace(info.space, info.range);
+  return GetSourceDXGIColorSpace(info.space, info.range, aContentIsHDR);
 }
 
 
@@ -110,9 +120,9 @@ VideoProcessorD3D11::VideoProcessorD3D11(ID3D11Device* aDevice,
 
 VideoProcessorD3D11::~VideoProcessorD3D11() {}
 
-bool VideoProcessorD3D11::Init(const gfx::IntSize& aSize) {
+HRESULT VideoProcessorD3D11::Init(const gfx::IntSize& aSize) {
   if (mSize == aSize) {
-    return true;
+    return S_OK;
   }
 
   mVideoProcessorEnumerator = nullptr;
@@ -136,14 +146,14 @@ bool VideoProcessorD3D11::Init(const gfx::IntSize& aSize) {
   if (FAILED(hr)) {
     gfxCriticalNoteOnce << "Failed to create VideoProcessorEnumerator: "
                         << gfx::hexa(hr);
-    return false;
+    return hr;
   }
 
   hr = mVideoDevice->CreateVideoProcessor(mVideoProcessorEnumerator, 0,
                                           getter_AddRefs(mVideoProcessor));
   if (FAILED(hr)) {
     gfxCriticalNoteOnce << "Failed to create VideoProcessor: " << gfx::hexa(hr);
-    return false;
+    return hr;
   }
 
   
@@ -153,24 +163,22 @@ bool VideoProcessorD3D11::Init(const gfx::IntSize& aSize) {
 
   mSize = aSize;
 
-  return true;
+  return S_OK;
 }
 
 bool VideoProcessorD3D11::CallVideoProcessorBlt(
-    DXGITextureHostD3D11* aTextureHost, ID3D11Texture2D* aInputTexture,
-    ID3D11Texture2D* aOutputTexture) {
+    InputTextureInfo& aTextureInfo, ID3D11Texture2D* aOutputTexture) {
   MOZ_ASSERT(mVideoProcessorEnumerator);
   MOZ_ASSERT(mVideoProcessor);
-  MOZ_ASSERT(aTextureHost);
-  MOZ_ASSERT(aInputTexture);
+  MOZ_ASSERT(aTextureInfo.mTexture);
   MOZ_ASSERT(aOutputTexture);
 
   HRESULT hr;
 
   auto yuvRangedColorSpace = gfx::ToYUVRangedColorSpace(
-      gfx::ToYUVColorSpace(aTextureHost->mColorSpace),
-      aTextureHost->mColorRange);
-  auto sourceColorSpace = GetSourceDXGIColorSpace(yuvRangedColorSpace);
+      gfx::ToYUVColorSpace(aTextureInfo.mColorSpace), aTextureInfo.mColorRange);
+  auto sourceColorSpace =
+      GetSourceDXGIColorSpace(yuvRangedColorSpace, mContentIsHDR);
   if (sourceColorSpace.isNothing()) {
     gfxCriticalNoteOnce << "Unsupported color space";
     return false;
@@ -188,11 +196,11 @@ bool VideoProcessorD3D11::CallVideoProcessorBlt(
 
   D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc = {};
   inputDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
-  inputDesc.Texture2D.ArraySlice = aTextureHost->mArrayIndex;
+  inputDesc.Texture2D.ArraySlice = aTextureInfo.mIndex;
 
   RefPtr<ID3D11VideoProcessorInputView> inputView;
   hr = mVideoDevice->CreateVideoProcessorInputView(
-      aInputTexture, mVideoProcessorEnumerator, &inputDesc,
+      aTextureInfo.mTexture, mVideoProcessorEnumerator, &inputDesc,
       getter_AddRefs(inputView));
   if (FAILED(hr)) {
     gfxCriticalNoteOnce << "ID3D11VideoProcessorInputView creation failed: "

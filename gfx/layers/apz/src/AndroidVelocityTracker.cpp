@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AndroidVelocityTracker.h"
 
 #include "mozilla/StaticPrefs_apz.h"

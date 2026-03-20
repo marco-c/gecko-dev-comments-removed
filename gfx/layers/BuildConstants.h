@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BUILD_CONSTANTS_H_
 #define BUILD_CONSTANTS_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_IMFYCBCRIMAGE_H
 #define GFX_IMFYCBCRIMAGE_H
 

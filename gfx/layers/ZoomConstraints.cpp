@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ZoomConstraints.h"
 
 #include <ostream>

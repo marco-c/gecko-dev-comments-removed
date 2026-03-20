@@ -2,7 +2,6 @@
 
 
 
-
 #include "DcompSurfaceImage.h"
 
 #include "mozilla/ipc/FileDescriptor.h"
@@ -64,7 +63,8 @@ DcompSurfaceImage::DcompSurfaceImage(HANDLE aHandle, gfx::IntSize aSize,
   
   
   MOZ_ASSERT(aFormat == gfx::SurfaceFormat::B8G8R8A8 ||
-             aFormat == gfx::SurfaceFormat::R8G8B8A8);
+             aFormat == gfx::SurfaceFormat::R8G8B8A8 ||
+             aFormat == gfx::SurfaceFormat::R16G16B16A16F);
 }
 
 TextureClient* DcompSurfaceImage::GetTextureClient(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_SFNTData_h
 #define mozilla_gfx_SFNTData_h
 

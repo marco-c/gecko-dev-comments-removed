@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteTextureHostWrapper.h"
 
 #include "mozilla/gfx/gfxVars.h"

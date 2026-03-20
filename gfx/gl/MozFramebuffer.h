@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZ_FRAMEBUFFER_H_
 #define MOZ_FRAMEBUFFER_H_
 

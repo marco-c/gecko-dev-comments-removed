@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Graphics")
@@ -94,8 +92,8 @@ EXPORTS.mozilla.layers += [
     "apz/public/GeckoContentControllerTypes.h",
     "apz/public/IAPZCTreeManager.h",
     "apz/public/MatrixMessage.h",
-    
-    
+    # exporting things from apz/src is temporary until we extract a
+    # proper interface for the code there
     "apz/src/APZUtils.h",
     "apz/src/AsyncDragMetrics.h",
     "apz/src/FocusTarget.h",
@@ -458,8 +456,8 @@ UNIFIED_SOURCES += [
     "wr/WebRenderScrollData.cpp",
     "wr/WebRenderUserData.cpp",
     "ZoomConstraints.cpp",
-    
-    
+    # XXX here are some unified build error.
+    #'wr/WebRenderTextureHost.cpp'
 ]
 
 SOURCES += [
@@ -509,12 +507,12 @@ if CONFIG["COMPILE_ENVIRONMENT"] and CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     )
 
 LOCAL_INCLUDES += [
-    "/docshell/base",  
-    "/dom/canvas",  
+    "/docshell/base",  # for nsDocShell.h
+    "/dom/canvas",  # for intertwined WebGL headers
     "/gfx/cairo/cairo/src",
-    "/layout/base",  
-    "/layout/generic",  
-    "/media/libyuv/libyuv/include",  
+    "/layout/base",  # for TouchManager.h
+    "/layout/generic",  # for nsTextFrame.h
+    "/media/libyuv/libyuv/include",  # for libyuv.h
 ]
 
 FINAL_LIBRARY = "xul"
@@ -537,11 +535,11 @@ CXXFLAGS += ["-Werror=switch"]
 
 LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 
-
+# Suppress warnings in third-party code.
 if CONFIG["CC_TYPE"] == "gcc":
     CXXFLAGS += ["-Wno-maybe-uninitialized"]
 
 UNIFIED_SOURCES += []
 
-
+# Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")

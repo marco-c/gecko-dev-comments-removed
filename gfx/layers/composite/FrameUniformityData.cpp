@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FrameUniformityData.h"
 
 #include "mozilla/TimeStamp.h"

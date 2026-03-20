@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScrollThumbUtils.h"
 #include "AsyncPanZoomController.h"
 #include "FrameMetrics.h"

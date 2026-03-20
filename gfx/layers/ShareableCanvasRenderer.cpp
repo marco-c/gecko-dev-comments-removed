@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ShareableCanvasRenderer.h"
 
 #include "mozilla/dom/WebGLTypes.h"

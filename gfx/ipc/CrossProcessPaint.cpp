@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CrossProcessPaint.h"
 
 #include "mozilla/dom/CanonicalBrowsingContext.h"

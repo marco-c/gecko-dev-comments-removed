@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gfx_layers_d3d11_DeviceAttachmentsD3D11_h
 #define mozilla_gfx_layers_d3d11_DeviceAttachmentsD3D11_h
 

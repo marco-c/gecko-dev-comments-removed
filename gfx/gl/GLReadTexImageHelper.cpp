@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GLReadTexImageHelper.h"
 
 #include <utility>

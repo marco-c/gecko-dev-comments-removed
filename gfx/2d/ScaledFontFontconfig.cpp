@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScaledFontFontconfig.h"
 #include "UnscaledFontFreeType.h"
 #include "Logging.h"

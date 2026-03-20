@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentProcessController.h"
 
 #include "mozilla/PresShell.h"

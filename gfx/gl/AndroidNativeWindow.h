@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AndroidNativeWindow_h_
 #define AndroidNativeWindow_h_
 

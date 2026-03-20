@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VsyncIOThreadHolder.h"
 
 #include "mozilla/SchedulerGroup.h"

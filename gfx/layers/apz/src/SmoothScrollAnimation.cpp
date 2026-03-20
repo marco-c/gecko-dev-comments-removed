@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SmoothScrollAnimation.h"
 #include "AsyncPanZoomController.h"
 #include "ScrollAnimationBezierPhysics.h"
@@ -230,8 +228,8 @@ bool SmoothScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
     
     
     SSA_LOG(
-        "Sampling SmoothScrollAnimation: time %f finished %d sampledDest %s "
-        "adjustedOffset %s overscroll %s",
+        "Sampling SmoothScrollAnimation (visual mode): time %f finished %d "
+        "sampledDest %s adjustedOffset %s overscroll %s",
         (now - TimeStamp::ProcessCreation()).ToMilliseconds(), finished,
         ToString(CSSPoint::FromAppUnits(sampledDest)).c_str(),
         ToString(adjustedOffset).c_str(), ToString(overscroll).c_str());
@@ -254,6 +252,12 @@ bool SmoothScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
     if (!IsZero(cssDisplacement) && IsZero(amountScrolled)) {
       finished = true;
     }
+    SSA_LOG(
+        "Sampling SmoothScrollAnimation (layout mode): time %f finished %d "
+        "sampledDest %s offsetAfter %s\n",
+        (now - TimeStamp::ProcessCreation()).ToMilliseconds(), finished,
+        ToString(CSSPoint::FromAppUnits(sampledDest)).c_str(),
+        ToString(offsetAfter).c_str());
   }
   if (finished) {
     

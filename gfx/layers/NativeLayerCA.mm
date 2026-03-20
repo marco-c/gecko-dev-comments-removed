@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/layers/NativeLayerCA.h"
 
 #ifdef XP_MACOSX

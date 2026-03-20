@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OverscrollHandoffState.h"
 
 #include <algorithm>  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/TextureClient.h"
 
 #include <stdint.h>  

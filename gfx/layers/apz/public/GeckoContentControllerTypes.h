@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_layers_GeckoContentControllerTypes_h
 #define mozilla_layers_GeckoContentControllerTypes_h
 

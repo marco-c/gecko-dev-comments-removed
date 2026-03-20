@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AutoscrollAnimation.h"
 
 #include <cmath>  

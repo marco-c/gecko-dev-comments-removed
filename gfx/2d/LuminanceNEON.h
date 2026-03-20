@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LUMINANCENEON_H_
 #define LUMINANCENEON_H_
 

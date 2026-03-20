@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DeviceAttachmentsD3D11.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/Compositor.h"

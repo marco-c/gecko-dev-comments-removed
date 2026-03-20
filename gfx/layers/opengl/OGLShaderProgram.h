@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_OGLSHADERPROGRAM_H
 #define GFX_OGLSHADERPROGRAM_H
 

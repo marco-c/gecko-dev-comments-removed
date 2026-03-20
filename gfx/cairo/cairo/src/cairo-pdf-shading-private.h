@@ -33,7 +33,6 @@
 
 
 
-
 #ifndef CAIRO_PDF_SHADING_H
 #define CAIRO_PDF_SHADING_H
 

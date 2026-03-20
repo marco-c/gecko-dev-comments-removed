@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GraphiteStructsForRLBox_h__
 #define GraphiteStructsForRLBox_h__
 

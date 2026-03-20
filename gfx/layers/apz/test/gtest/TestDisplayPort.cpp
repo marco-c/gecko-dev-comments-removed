@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "apz/src/AsyncPanZoomController.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "gtest/gtest.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageContainer.h"
 
 #include <string.h>  

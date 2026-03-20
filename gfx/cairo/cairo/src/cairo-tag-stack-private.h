@@ -33,7 +33,6 @@
 
 
 
-
 #ifndef CAIRO_TAG_STACK_PRIVATE_H
 #define CAIRO_TAG_STACK_PRIVATE_H
 

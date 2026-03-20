@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef EGLIMAGEHELPERS_H_
 #define EGLIMAGEHELPERS_H_
 

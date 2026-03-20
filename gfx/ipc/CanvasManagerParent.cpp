@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CanvasManagerParent.h"
 #include "gfxPlatform.h"
 #include "mozilla/dom/WebGLParent.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/layers/StackingContextHelper.h"
 
 #include "mozilla/PresShell.h"

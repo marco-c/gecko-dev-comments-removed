@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CheckerboardReportService.h"
 
 #include "jsapi.h"                    

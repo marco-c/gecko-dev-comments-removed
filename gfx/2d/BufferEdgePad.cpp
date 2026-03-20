@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BufferEdgePad.h"
 
 #include "2D.h"     

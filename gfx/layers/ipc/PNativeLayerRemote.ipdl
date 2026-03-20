@@ -1,7 +1,6 @@
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include "mozilla/GfxMessageUtils.h";
 
@@ -69,9 +68,9 @@ struct CommandChangedSurface {
   IntSize Size;
 };
 
-
-
-
+// This protocol allows a NativeLayerRoot implementation on the GPU
+// to send layer commands to the parent process. It also allows the
+// GPU to request readback, which the parent will send as a Shmem.
 [NeedsOtherPid, ParentProc=Parent, ChildProc=GPU]
 sync protocol PNativeLayerRemote
 {
@@ -79,12 +78,12 @@ parent:
   async CommitNativeLayerCommands(NativeLayerCommand[] commands);
   sync RequestReadback(IntSize size) returns (Shmem pixels);
 
-  
-  
-  
-  
+  // A synchronous no-op message, to make sure that any preceding
+  // CommitNativeLayerCommands messages have been processed.
+  // Used for synchronous widget-initiated paints, most importantly
+  // during window resize or when a new window is opened.
   sync Flush();
 };
 
-} 
-} 
+} // layers
+} // mozilla

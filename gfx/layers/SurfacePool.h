@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_layers_SurfacePool_h
 #define mozilla_layers_SurfacePool_h
 
