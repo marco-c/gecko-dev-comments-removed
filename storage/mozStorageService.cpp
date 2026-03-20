@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BaseVFS.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/SpinEventLoopUntil.h"

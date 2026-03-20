@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZSTORAGEHELPER_H
 #define MOZSTORAGEHELPER_H
 

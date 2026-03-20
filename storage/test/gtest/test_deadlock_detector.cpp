@@ -7,8 +7,6 @@
 
 
 
-
-
 #include "mozilla/CondVar.h"
 #include "mozilla/RecursiveMutex.h"
 #include "mozilla/ReentrantMonitor.h"

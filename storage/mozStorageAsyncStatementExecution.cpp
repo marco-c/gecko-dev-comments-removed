@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "sqlite3.h"
 
 #include "mozIStorageStatementCallback.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozStorageArgValueArray_h
 #define mozStorageArgValueArray_h
 

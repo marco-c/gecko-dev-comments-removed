@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <limits.h>
 
 #include "nsError.h"

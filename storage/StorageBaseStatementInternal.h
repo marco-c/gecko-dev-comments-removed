@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_storage_StorageBaseStatementInternal_h_
 #define mozilla_storage_StorageBaseStatementInternal_h_
 

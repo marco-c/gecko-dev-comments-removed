@@ -9,8 +9,6 @@
 
 
 
-
-
 function test_params_enumerate() {
   let stmt = createStatement("SELECT * FROM test WHERE id IN (:a, :b, :c)");
 

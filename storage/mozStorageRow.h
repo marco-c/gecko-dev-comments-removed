@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozStorageRow_h
 #define mozStorageRow_h
 

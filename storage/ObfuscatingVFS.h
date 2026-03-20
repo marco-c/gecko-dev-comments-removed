@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef STORAGE_OBFUSCATINGVFS_H_
 #define STORAGE_OBFUSCATINGVFS_H_
 

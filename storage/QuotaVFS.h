@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef STORAGE_QUOTAVFS_H_
 #define STORAGE_QUOTAVFS_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_storage_Connection_h
 #define mozilla_storage_Connection_h
 

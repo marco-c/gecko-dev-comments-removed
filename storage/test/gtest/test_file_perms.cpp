@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "storage_test_harness.h"
 #include "nsIFile.h"
 #include "prio.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StorageBaseStatementInternal.h"
 
 #include "nsProxyRelease.h"

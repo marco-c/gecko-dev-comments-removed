@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_storage_h_
 #define mozilla_storage_h_
 

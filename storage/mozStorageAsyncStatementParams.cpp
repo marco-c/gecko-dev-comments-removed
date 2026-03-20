@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozStorageAsyncStatementParams.h"
 
 #include "nsJSUtils.h"

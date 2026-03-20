@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Variant.h"
 
 #include "nsCOMPtr.h"

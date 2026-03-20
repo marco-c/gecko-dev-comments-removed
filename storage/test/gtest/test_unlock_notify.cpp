@@ -3,7 +3,6 @@
 
 
 
-
 #include "storage_test_harness.h"
 
 #include "mozilla/ReentrantMonitor.h"

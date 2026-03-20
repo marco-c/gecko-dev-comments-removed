@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "QuotaVFS.h"
 
 #include "mozilla/dom/quota/PersistenceType.h"

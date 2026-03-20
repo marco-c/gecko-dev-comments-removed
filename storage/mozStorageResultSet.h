@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozStorageResultSet_h
 #define mozStorageResultSet_h
 

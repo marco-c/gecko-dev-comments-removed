@@ -4,8 +4,6 @@
 
 
 
-
-
 function setup() {
   getOpenedDatabase().createTable(
     "test",

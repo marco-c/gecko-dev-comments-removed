@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BaseVFS.h"
 #include "ErrorList.h"
 #include "nsError.h"

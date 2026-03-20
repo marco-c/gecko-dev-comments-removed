@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef storage_test_harness_
 #define storage_test_harness_
 

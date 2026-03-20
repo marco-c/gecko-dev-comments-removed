@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "SQLite and Embedded Database Bindings")
@@ -42,8 +40,8 @@ EXPORTS.mozilla += [
     "storage.h",
 ]
 
-
-
+# NOTE When adding something to this list, you probably need to add it to the
+#      storage.h file too.
 EXPORTS.mozilla.storage += [
     "mozStorageAsyncStatementParams.h",
     "mozStorageStatementParams.h",
@@ -53,7 +51,7 @@ EXPORTS.mozilla.storage += [
     "Variant.h",
     "Variant_inl.h",
 ]
-
+# SEE ABOVE NOTE!
 
 UNIFIED_SOURCES += [
     "BaseVFS.cpp",
@@ -82,7 +80,7 @@ UNIFIED_SOURCES += [
     "Variant.cpp",
 ]
 
-
+# These files need to be built separately because they #include variantToSQLiteT_impl.h.
 SOURCES += [
     "mozStorageBindingParams.cpp",
     "mozStorageConnection.cpp",
@@ -92,16 +90,16 @@ include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
 
-
+# Thunderbird needs the 2-argument version of fts3_tokenizer()
 if CONFIG["MOZ_THUNDERBIRD"] or CONFIG["MOZ_SUITE"]:
     DEFINES["MOZ_SQLITE_FTS3_TOKENIZER"] = 1
 
-
+# Disable auxiliary files persistence if requested.
 if not CONFIG["MOZ_AVOID_DISK_REMNANT_ON_CLOSE"]:
     DEFINES["MOZ_SQLITE_PERSIST_AUXILIARY_FILES"] = 1
 
-
-
+# The vector extension is enabled only for Firefox, it could be opened up
+# to other products in the future.
 if CONFIG["MOZ_BUILD_APP"] == "browser":
     DEFINES["MOZ_SQLITE_VEC0_EXT"] = 1
 

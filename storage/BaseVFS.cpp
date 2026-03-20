@@ -2,12 +2,12 @@
 
 
 
-
-
 #include "BaseVFS.h"
 
 #include <string.h>
 #include "sqlite3.h"
+
+#include "mozilla/Assertions.h"
 
 namespace {
 

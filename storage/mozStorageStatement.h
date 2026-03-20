@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozStorageStatement_h
 #define mozStorageStatement_h
 

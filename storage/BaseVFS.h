@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef STORAGE_BASEVFS_H_
 #define STORAGE_BASEVFS_H_
 

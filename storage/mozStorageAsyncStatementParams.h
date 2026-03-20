@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_storage_mozStorageAsyncStatementParams_h_
 #define mozilla_storage_mozStorageAsyncStatementParams_h_
 

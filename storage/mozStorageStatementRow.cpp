@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsString.h"
 
 #include "mozilla/ErrorResult.h"
