@@ -5,6 +5,7 @@
 #include "nsMathMLChar.h"
 
 #include <algorithm>
+#include <numeric>
 
 #include "gfxContext.h"
 #include "gfxMathTable.h"
@@ -1793,7 +1794,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
     } else if (2 == i) {  
       dy = aRect.y + aRect.height - bm.descent;
     } else {  
-      dy = aRect.y + bm.ascent + (aRect.height - (bm.ascent + bm.descent)) / 2;
+      dy = aRect.y + std::midpoint(bm.ascent, aRect.height - bm.descent);
     }
     
     
@@ -1818,7 +1819,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
   
   for (i = 0; i < 2; ++i) {
     if (end[i] > start[i + 1]) {
-      end[i] = (end[i] + start[i + 1]) / 2;
+      end[i] = std::midpoint(end[i], start[i + 1]);
       start[i + 1] = end[i];
     }
   }
@@ -1992,7 +1993,7 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
   
   for (i = 0; i < 2; ++i) {
     if (end[i] > start[i + 1]) {
-      end[i] = (end[i] + start[i + 1]) / 2;
+      end[i] = std::midpoint(end[i], start[i + 1]);
       start[i + 1] = end[i];
     }
   }
