@@ -498,7 +498,7 @@ class GCMarker {
            grayMainThreadBuffer_.ref().empty();
   }
 
-  bool addToMainThreadBuffer(JS::GCCellPtr cell);
+  bool addToMainThreadBuffer(JS::GCCellPtr cell, JS::SliceBudget& budget);
 
 #endif  
 
@@ -530,7 +530,8 @@ class GCMarker {
   friend class gc::GCRuntime;
 
   template <uint32_t markingOptions>
-  bool callOrDelayTraceHook(JSObject* obj, const JSClass* clasp);
+  bool callOrDelayTraceHook(JSObject* obj, const JSClass* clasp,
+                            JS::SliceBudget& budget);
 
   
   

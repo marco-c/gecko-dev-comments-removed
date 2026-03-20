@@ -119,6 +119,8 @@ BEGIN_TEST(testSliceBudgetInterruptibleTime) {
   CHECK(wantInterrupt);
   wantInterrupt = false;
   CHECK(budget.isOverBudget());
+  budget.clearInterrupted();
+  CHECK(!budget.isOverBudget());
 
   
 
@@ -158,6 +160,8 @@ BEGIN_TEST(testSliceBudgetInterruptibleUnlimited) {
   CHECK(wantInterrupt);
   wantInterrupt = false;
   CHECK(budget.isOverBudget());
+  budget.clearInterrupted();
+  CHECK(!budget.isOverBudget());
 
   return true;
 }
