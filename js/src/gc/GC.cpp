@@ -3174,6 +3174,10 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
 
   markSliceCount = 0;
 
+#ifdef JS_GC_CONCURRENT_MARKING
+  concurrentMarkingFinishedCount = 0;
+#endif
+
 #ifdef DEBUG
   queuePos = 0;
   queueMarkColor.reset();
@@ -4112,6 +4116,12 @@ void GCRuntime::finishAnyConcurrentMarking(JS::SliceBudget& budget) {
 
   pauseBackgroundMarking();
 
+  if (concurrentMarker().isMarkStackEmpty()) {
+    concurrentMarkingFinishedCount++;
+  } else {
+    concurrentMarkingFinishedCount = 0;
+  }
+
   
   concurrentMarker().processMainThreadBuffers(budget);
 
@@ -4159,17 +4169,15 @@ std::tuple<JS::SliceBudget, JS::SliceBudget> GCRuntime::budgetConcurrentMarking(
   
   
   
-  
-  
-  
 
-  const size_t MarkOnMainThreadAfterSlices = 5;
+  const size_t MarkOnMainThreadAfterFinishedSlices = 2;
   const double MainThreadMarkTimePerSlice = 0.5;
   if (sliceReason == JS::GCReason::BG_TASK_FINISHED &&
       requestedBudget.isTimeBudget() &&
-      markSliceCount > MarkOnMainThreadAfterSlices) {
-    double millis = MainThreadMarkTimePerSlice *
-                    (markSliceCount - MarkOnMainThreadAfterSlices);
+      concurrentMarkingFinishedCount >= MarkOnMainThreadAfterFinishedSlices) {
+    double millis =
+        MainThreadMarkTimePerSlice *
+        (concurrentMarkingFinishedCount - MarkOnMainThreadAfterFinishedSlices);
     TimeDuration remaining = requestedBudget.deadline() - TimeStamp::Now();
     millis = std::min(millis, remaining.ToMilliseconds());
     if (millis > 0.0) {
