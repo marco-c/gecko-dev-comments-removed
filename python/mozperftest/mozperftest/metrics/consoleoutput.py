@@ -45,7 +45,7 @@ class ConsoleOutput(Layer):
         for name, res in results.items():
             
             subtests = [
-                "{}: {}".format(r["subtest"], [v["value"] for v in r["data"]])
+                f"[{r['subtest']}] {r['name']}: {[v['value'] for v in r['data']]}"
                 for r in res
             ]
 
