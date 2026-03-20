@@ -27,7 +27,7 @@ export const CATEGORIES_JSON = {
         "console games",
       ],
       domains: [
-        "steampowered.com",
+        "store.steampowered.com",
         "roblox.com",
         "ign.com",
         "gamespot.com",
@@ -330,8 +330,7 @@ export async function searchByDomains({
              NULL AS distance,
              visit_count,
              frecency,
-             last_visit_date,
-             preview_image_url
+             last_visit_date
       FROM moz_places
       WHERE frecency <> 0
         AND (:startTs IS NULL OR last_visit_date >= :startTs)
@@ -394,3 +393,9 @@ export function mergeDedupe(primary, secondary, limit) {
 
   return out;
 }
+
+export const SearchBrowsingHistoryDomainBoost = Object.freeze({
+  matchDomains,
+  searchByDomains,
+  mergeDedupe,
+});
