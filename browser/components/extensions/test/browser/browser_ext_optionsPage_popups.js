@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 async function openContextMenuInOptionsPage(optionsBrowser) {

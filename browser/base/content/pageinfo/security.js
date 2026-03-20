@@ -2,7 +2,6 @@
 
 
 
-
 const { SiteDataManager } = ChromeUtils.importESModule(
   "resource:///modules/SiteDataManager.sys.mjs"
 );
@@ -394,8 +393,8 @@ function setText(id, value) {
 
 
 
-function realmHasPasswords(uri) {
-  return Services.logins.countLogins(uri.prePath, "", "") > 0;
+async function realmHasPasswords(uri) {
+  return (await Services.logins.countLoginsAsync(uri.prePath, "", "")) > 0;
 }
 
 

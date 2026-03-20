@@ -16,7 +16,6 @@
 
 
 
-
 class FxrPermissionPromptPrototype {
   constructor(aRequest, aBrowser, aCallback) {
     this.request = aRequest;

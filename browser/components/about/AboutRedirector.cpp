@@ -4,7 +4,6 @@
 
 
 
-
 #include "AboutRedirector.h"
 #include "nsNetUtil.h"
 #include "nsIAppStartup.h"

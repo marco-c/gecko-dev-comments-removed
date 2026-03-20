@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 this.omnibox = class extends ExtensionAPI {

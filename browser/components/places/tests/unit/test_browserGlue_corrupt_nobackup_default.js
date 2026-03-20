@@ -7,8 +7,6 @@
 
 
 
-
-
 function run_test() {
   
   remove_bookmarks_html();

@@ -2,7 +2,6 @@
 
 
 
-
 document.addEventListener(
   "MozBeforeInitialXULLayout",
   () => {
@@ -231,7 +230,7 @@ document.addEventListener(
             OpenBrowserWindow({ aiWindow: false });
             break;
           case "Tools:AIWindow":
-            AIWindow.launchWindow(gBrowser.selectedBrowser, true);
+            AIWindow.launchWindow(gBrowser?.selectedBrowser, true);
             break;
           case "Tools:ChatsHistory":
             FirefoxViewHandler.openTab("chats");

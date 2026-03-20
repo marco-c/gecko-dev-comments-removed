@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const kDownloadAutoHidePref = "browser.download.autohideButton";

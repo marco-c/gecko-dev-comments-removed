@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AboutRedirector_h_
 #define AboutRedirector_h_
 

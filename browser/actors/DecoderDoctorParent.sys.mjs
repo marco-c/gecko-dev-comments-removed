@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
@@ -36,8 +34,8 @@ export class DecoderDoctorParent extends JSWindowActorParent {
           "decoder.noHWAcceleration.message"
         );
       }
-      
-      
+      // Although this name seems generic, this is actually for not being able
+      // to find libavcodec on Linux.
       if (decoderDoctorReportId == "MediaPlatformDecoderNotFound") {
         return lazy.gNavigatorBundle.GetStringFromName(
           "decoder.noCodecsLinux.message"
@@ -91,20 +89,20 @@ export class DecoderDoctorParent extends JSWindowActorParent {
   }
 
   receiveMessage(aMessage) {
-    
+    // The top level browsing context's embedding element should be a xul browser element.
     let browser = this.browsingContext.top.embedderElement;
-    
+    // The xul browser is owned by a window.
     let window = browser?.ownerGlobal;
 
     if (!browser || !window) {
-      
+      // We don't have a browser or window so bail!
       return;
     }
 
     let box = browser.getTabBrowser().getNotificationBox(browser);
     let notificationId = "decoder-doctor-notification";
     if (box.getNotificationWithValue(notificationId)) {
-      
+      // We already have a notification showing, bail.
       return;
     }
 
@@ -118,21 +116,21 @@ export class DecoderDoctorParent extends JSWindowActorParent {
       );
       return;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // parsedData (the result of parsing the incoming 'data' json string)
+    // contains analysis information from Decoder Doctor:
+    // - 'type' is the type of issue, it determines which text to show in the
+    //   infobar.
+    // - 'isSolved' is true when the notification actually indicates the
+    //   resolution of that issue, to be reported as telemetry.
+    // - 'decoderDoctorReportId' is the Decoder Doctor issue identifier, to be
+    //   used here as key for the telemetry (counting infobar displays,
+    //   "Learn how" buttons clicks, and resolutions) and for the prefs used
+    //   to store at-issue formats.
+    // - 'formats' contains a comma-separated list of formats (or key systems)
+    //   that suffer the issue. These are kept in a pref, which the backend
+    //   uses to later find when an issue is resolved.
+    // - 'decodeIssue' is a description of the decode error/warning.
+    // - 'resourceURL' is the resource with the issue.
     let {
       type,
       isSolved,
@@ -143,7 +141,7 @@ export class DecoderDoctorParent extends JSWindowActorParent {
       resourceURL,
     } = parsedData;
     type = type.toLowerCase();
-    
+    // Error out early on invalid ReportId
     if (!/^\w+$/im.test(decoderDoctorReportId)) {
       return;
     }
@@ -161,9 +159,9 @@ export class DecoderDoctorParent extends JSWindowActorParent {
       return;
     }
 
-    
-    
-    
+    // We keep the list of formats in prefs for the sake of the decoder itself,
+    // which reads it to determine when issues get solved for these formats.
+    // (Writing prefs from e10s content is not allowed.)
     let formatsPref =
       formats && "media.decoder-doctor." + decoderDoctorReportId + ".formats";
     let buttonClickedPref =
@@ -175,14 +173,14 @@ export class DecoderDoctorParent extends JSWindowActorParent {
         if (!formatsInPref) {
           Services.prefs.setCharPref(formatsPref, formats);
         } else {
-          
+          // Split existing formats into an array of strings.
           let existing = formatsInPref.split(",").map(x => x.trim());
-          
+          // Keep given formats that were not already recorded.
           let newbies = formats
             .split(",")
             .map(x => x.trim())
             .filter(x => !existing.includes(x));
-          
+          // And rewrite pref with the added new formats (if any).
           if (newbies.length) {
             Services.prefs.setCharPref(
               formatsPref,
@@ -257,14 +255,14 @@ export class DecoderDoctorParent extends JSWindowActorParent {
         notificationId,
         {
           label: title,
-          image: "", 
+          image: "", // This uses the info icon as specified below.
           priority: box.PRIORITY_INFO_LOW,
         },
         buttons
       );
     } else if (formatsInPref) {
-      
-      
+      // Issue is solved, and prefs haven't been cleared yet, meaning it's the
+      // first time we get this resolution -> Clear prefs and report telemetry.
       Services.prefs.clearUserPref(formatsPref);
       Services.prefs.clearUserPref(buttonClickedPref);
     }

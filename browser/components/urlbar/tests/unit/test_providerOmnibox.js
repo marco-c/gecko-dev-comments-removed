@@ -2,8 +2,6 @@
 
 
 
-
-
 const { ExtensionSearchHandler } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionSearchHandler.sys.mjs"
 );

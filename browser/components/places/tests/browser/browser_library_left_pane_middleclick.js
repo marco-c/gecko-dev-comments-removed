@@ -6,7 +6,6 @@
 
 
 
-
 const URIs = ["about:license", "about:mozilla"];
 
 var gLibrary = null;

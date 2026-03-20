@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedSection.h"
 
 #include <algorithm>

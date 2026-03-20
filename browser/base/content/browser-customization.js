@@ -7,7 +7,6 @@
 
 
 
-
 var CustomizationHandler = {
   handleEvent(aEvent) {
     switch (aEvent.type) {

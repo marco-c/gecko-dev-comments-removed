@@ -1,6 +1,3 @@
-
-
-
 const TEST_HTTP = httpURL("dummy_page.html");
 
 

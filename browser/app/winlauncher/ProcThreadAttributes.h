@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ProcThreadAttributes_h
 #define mozilla_ProcThreadAttributes_h
 

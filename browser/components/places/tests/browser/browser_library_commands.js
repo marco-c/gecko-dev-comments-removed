@@ -6,8 +6,6 @@
 
 
 
-
-
 const TEST_URI = NetUtil.newURI("https://www.mozilla.org/");
 
 registerCleanupFunction(async function () {

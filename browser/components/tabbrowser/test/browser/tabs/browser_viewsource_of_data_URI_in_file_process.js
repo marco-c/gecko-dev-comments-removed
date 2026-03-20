@@ -1,6 +1,3 @@
-
-
-
 const DUMMY_FILE = "dummy_page.html";
 const DATA_URI = "data:text/html,Hi";
 const DATA_URI_SOURCE = "view-source:" + DATA_URI;

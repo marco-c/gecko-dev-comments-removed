@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nstoolkitshellservice_h_
 #define nstoolkitshellservice_h_
 

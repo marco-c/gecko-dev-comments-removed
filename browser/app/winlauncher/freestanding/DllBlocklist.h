@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_freestanding_DllBlocklist_h
 #define mozilla_freestanding_DllBlocklist_h
 

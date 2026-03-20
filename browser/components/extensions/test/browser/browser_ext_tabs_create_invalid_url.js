@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const FILE_URL = Services.io.newFileURI(

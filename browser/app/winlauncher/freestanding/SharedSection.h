@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_freestanding_SharedSection_h
 #define mozilla_freestanding_SharedSection_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsmacshellservice_h_
 #define nsmacshellservice_h_
 

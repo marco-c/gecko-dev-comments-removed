@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWindowsDllInterceptor.h"
 #include "mozilla/ImportDir.h"
 #include "mozilla/NativeNt.h"

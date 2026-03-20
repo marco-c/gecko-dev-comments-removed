@@ -1,6 +1,3 @@
-
-
-
 const TEST_FILE = fileURL("dummy_page.html");
 const TEST_HTTP = httpURL("dummy_page.html");
 

@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const HISTOGRAM = "WEBEXT_PAGEACTION_POPUP_OPEN_MS";

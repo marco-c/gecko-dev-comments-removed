@@ -7,8 +7,6 @@
 
 
 
-
-
 const kSecureURI =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",

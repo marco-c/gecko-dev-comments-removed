@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const TIMING_HISTOGRAM = "WEBEXT_BROWSERACTION_POPUP_OPEN_MS";

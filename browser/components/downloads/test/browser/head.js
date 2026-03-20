@@ -7,8 +7,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   DownloadsCommon:

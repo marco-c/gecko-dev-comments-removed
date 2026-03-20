@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <thread>
 #include <winternl.h>
 

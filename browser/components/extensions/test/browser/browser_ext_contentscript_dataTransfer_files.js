@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const TEST_ORIGIN = "http://mochi.test:8888";

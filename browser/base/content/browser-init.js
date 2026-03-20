@@ -2,7 +2,6 @@
 
 
 
-
 const { CustomKeys } = ChromeUtils.importESModule(
   "resource:///modules/CustomKeys.sys.mjs"
 );

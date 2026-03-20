@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsgnomeshellservice_h_
 #define nsgnomeshellservice_h_
 

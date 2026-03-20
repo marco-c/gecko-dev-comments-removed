@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const DUMMY_PAGE =

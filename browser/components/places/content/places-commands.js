@@ -2,7 +2,6 @@
 
 
 
-
 document
   .getElementById("placesCommands")
   .addEventListener("commandupdate", () => {

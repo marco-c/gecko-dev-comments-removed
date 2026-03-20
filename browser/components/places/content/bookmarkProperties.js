@@ -52,7 +52,6 @@
 
 
 
-
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -276,11 +275,9 @@ var BookmarkPropertiesPanel = {
     
     this._mutationObserver = new MutationObserver(mutations => {
       for (let { target, oldValue } of mutations) {
-        let hidden = target.getAttribute("hidden") == "true";
-        if (
-          target.classList.contains("hideable") &&
-          hidden != (oldValue == "true")
-        ) {
+        let hidden = target.hasAttribute("hidden");
+        let wasHidden = oldValue !== null;
+        if (target.classList.contains("hideable") && hidden != wasHidden) {
           
           
           

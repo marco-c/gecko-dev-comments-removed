@@ -4,8 +4,6 @@
 
 
 
-
-
 add_task(async function () {
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     let onLocationChangeCount = 0;

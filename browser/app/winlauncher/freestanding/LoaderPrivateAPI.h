@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_freestanding_LoaderPrivateAPI_h
 #define mozilla_freestanding_LoaderPrivateAPI_h
 

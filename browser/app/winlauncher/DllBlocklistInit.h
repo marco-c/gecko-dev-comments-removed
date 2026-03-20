@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DllBlocklistInit_h
 #define mozilla_DllBlocklistInit_h
 

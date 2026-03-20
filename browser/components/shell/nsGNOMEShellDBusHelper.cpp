@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsGNOMEShellSearchProvider.h"
 
 #include "RemoteUtils.h"

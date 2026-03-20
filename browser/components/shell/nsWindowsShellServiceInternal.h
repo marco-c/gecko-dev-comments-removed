@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nswindowsshellserviceinternal_h_
 #define nswindowsshellserviceinternal_h_
 

@@ -4,8 +4,6 @@
 
 
 
-
-
 add_task(async function testMigrationForDeleteOnClose() {
   await SpecialPowers.pushPrefEnv({
     set: [

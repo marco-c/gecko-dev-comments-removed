@@ -1,5 +1,4 @@
 
-
 "use strict";
 
 const { PermissionTestUtils } = ChromeUtils.importESModule(

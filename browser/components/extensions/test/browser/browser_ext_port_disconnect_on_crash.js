@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function connect_from_tab_to_bg_and_crash_tab() {

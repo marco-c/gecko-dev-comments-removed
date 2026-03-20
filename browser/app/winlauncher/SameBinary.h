@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SameBinary_h
 #define mozilla_SameBinary_h
 

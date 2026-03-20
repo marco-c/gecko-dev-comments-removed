@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef windowsdefaultbrowser_h_
 #define windowsdefaultbrowser_h_
 

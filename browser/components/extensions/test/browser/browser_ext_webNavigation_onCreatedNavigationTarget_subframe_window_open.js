@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 loadTestSubscript("head_webNavigation.js");

@@ -4,7 +4,6 @@
 
 
 
-
 {
   Services.scriptloader.loadSubScript("chrome://browser/content/browser-init.js", this);
   Services.scriptloader.loadSubScript("chrome://global/content/contentAreaUtils.js", this);

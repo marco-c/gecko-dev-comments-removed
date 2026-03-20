@@ -1,6 +1,4 @@
 
-
-
 "use strict";
 
 const triggeringPrincipal_base64 = E10SUtils.SERIALIZED_SYSTEMPRINCIPAL;

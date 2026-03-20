@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 function expectedTabInfo(tab, window) {

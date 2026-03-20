@@ -5,8 +5,6 @@
 
 
 
-
-
 const ROOT_URI = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   "https://example.com"

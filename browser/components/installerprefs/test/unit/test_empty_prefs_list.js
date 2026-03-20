@@ -6,7 +6,6 @@
 
 
 
-
 add_task(function () {
   const PREFS_LIST = [];
 

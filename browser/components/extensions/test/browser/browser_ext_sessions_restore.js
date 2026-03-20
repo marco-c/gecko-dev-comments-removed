@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 SimpleTest.requestCompleteLog();

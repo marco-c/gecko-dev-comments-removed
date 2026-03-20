@@ -11,8 +11,6 @@
 
 
 
-
-
 add_task(async function test_open_and_close() {
   let library = await promiseLibrary();
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 registerCleanupFunction(async function () {
   await task_resetState();
 });

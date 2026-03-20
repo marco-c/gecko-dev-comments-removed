@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 add_task(async function bookmark_leak_window() {

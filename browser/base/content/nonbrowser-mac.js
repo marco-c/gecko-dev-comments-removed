@@ -2,7 +2,6 @@
 
 
 
-
 var NonBrowserWindow = {
   delayedStartupTimeoutId: null,
   MAC_HIDDEN_WINDOW: "chrome://browser/content/hiddenWindowMac.xhtml",

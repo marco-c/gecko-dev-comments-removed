@@ -7,8 +7,6 @@
 
 
 
-
-
 add_task(async function () {
   remove_bookmarks_html();
 

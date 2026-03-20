@@ -7,7 +7,6 @@
 
 
 
-
 const kDefaultFontType = "font.default.%LANG%";
 const kFontNameFmtSerif = "font.name.serif.%LANG%";
 const kFontNameFmtSansSerif = "font.name.sans-serif.%LANG%";

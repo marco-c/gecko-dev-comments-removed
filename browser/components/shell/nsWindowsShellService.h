@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nswindowsshellservice_h_
 #define nswindowsshellservice_h_
 

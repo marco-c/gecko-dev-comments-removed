@@ -25,8 +25,6 @@
 
 
 
-
-
 const SORT_LOOKUP_TABLE = {
   title: { key: "TITLE", dir: "ASCENDING" },
   tags: { key: "TAGS", dir: "ASCENDING" },

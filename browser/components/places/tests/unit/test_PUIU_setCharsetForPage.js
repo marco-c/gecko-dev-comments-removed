@@ -2,8 +2,6 @@
 
 
 
-
-
 const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
 );

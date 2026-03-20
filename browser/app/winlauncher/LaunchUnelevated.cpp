@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LaunchUnelevated.h"
 
 #include "mozilla/Assertions.h"

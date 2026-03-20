@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/LoaderAPIInterfaces.h"
 
 #include "freestanding/CheckForCaller.h"

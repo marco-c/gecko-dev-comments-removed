@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 const { AddonTestUtils } = ChromeUtils.importESModule(

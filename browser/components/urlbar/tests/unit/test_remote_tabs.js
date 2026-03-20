@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 const { Weave } = ChromeUtils.importESModule(
@@ -131,7 +128,7 @@ add_task(async function test_maximal() {
         uri: "http://example.com/",
         device: "My Phone",
         title: "An Example",
-        iconUri: "cached-favicon:http://favicon/",
+        iconUri: "page-icon:http://example.com/",
       }),
     ],
   });

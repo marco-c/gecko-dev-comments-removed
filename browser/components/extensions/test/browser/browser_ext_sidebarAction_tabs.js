@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function sidebar_tab_query_bug_1340739() {
