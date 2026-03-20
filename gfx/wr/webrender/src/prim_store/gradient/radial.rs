@@ -124,7 +124,7 @@ impl PatternBuilder for RadialGradientTemplate {
         
         
         
-        let center = self.center.cast_unit() + ctx.prim_origin.to_vector() + offset;
+        let center = self.center.cast_unit() + self.common.prim_rect.min.to_vector() + offset;
 
         radial_gradient_pattern(
             center,
@@ -159,7 +159,7 @@ impl From<RadialGradientKey> for RadialGradientTemplate {
         let mut brush_segments = Vec::new();
 
         if let Some(ref nine_patch) = item.nine_patch {
-            brush_segments = nine_patch.create_brush_segments(common.prim_size);
+            brush_segments = nine_patch.create_brush_segments(common.prim_rect.size());
         }
 
         let (stops, min_alpha) = stops_and_min_alpha(&item.stops);
@@ -170,8 +170,8 @@ impl From<RadialGradientKey> for RadialGradientTemplate {
         let stops_opacity = PrimitiveOpacity::from_alpha(min_alpha);
 
         let mut stretch_size: LayoutSize = item.stretch_size.into();
-        stretch_size.width = stretch_size.width.min(common.prim_size.width);
-        stretch_size.height = stretch_size.height.min(common.prim_size.height);
+        stretch_size.width = stretch_size.width.min(common.prim_rect.width());
+        stretch_size.height = stretch_size.height.min(common.prim_rect.height());
 
         
         

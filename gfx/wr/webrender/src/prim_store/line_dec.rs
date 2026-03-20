@@ -252,6 +252,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<LineDecoration>(), 20, "LineDecoration size changed");
-    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 52, "LineDecorationTemplate size changed");
-    assert_eq!(mem::size_of::<LineDecorationKey>(), 32, "LineDecorationKey size changed");
+    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 60, "LineDecorationTemplate size changed");
+    assert_eq!(mem::size_of::<LineDecorationKey>(), 40, "LineDecorationKey size changed");
 }
