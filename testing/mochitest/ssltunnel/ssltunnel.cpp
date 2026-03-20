@@ -11,7 +11,6 @@
 
 
 
-
 #include "ScopedNSSTypes.h"
 #include <assert.h>
 #include <stdio.h>
@@ -201,8 +200,8 @@ const uint32_t MAX_THREADS = 100;
 const uint32_t DEFAULT_STACKSIZE = (512 * 1024);
 
 
-MOZ_RUNINIT string nssconfigdir;
-MOZ_RUNINIT vector<server_info_t> servers;
+MOZ_GLIBCXX_CONSTINIT string nssconfigdir;
+MOZ_GLIBCXX_CONSTINIT vector<server_info_t> servers;
 PRNetAddr remote_addr;
 PRNetAddr websocket_server;
 PRThreadPool* threads = nullptr;

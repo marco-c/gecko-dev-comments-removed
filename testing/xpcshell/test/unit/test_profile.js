@@ -2,8 +2,6 @@
 
 
 
-
-
 function run_test() {
   
   load("check_profile.js");

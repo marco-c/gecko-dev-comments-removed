@@ -2,7 +2,6 @@
 
 
 
-
 function run_test() {
   var lf = do_get_file("file.txt");
   Assert.ok(lf.exists());

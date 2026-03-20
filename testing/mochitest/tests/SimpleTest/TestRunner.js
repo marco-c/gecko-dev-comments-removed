@@ -12,7 +12,6 @@
 
 
 
-
 "use strict";
 
 const { StructuredLogger, StructuredFormatter } =

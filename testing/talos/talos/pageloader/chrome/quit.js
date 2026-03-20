@@ -40,7 +40,6 @@
 
 
 
-
 function canQuitApplication() {
   try {
     var cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(

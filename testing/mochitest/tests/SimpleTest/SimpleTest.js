@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var SimpleTest = {};
 var parentRunner = null;
 

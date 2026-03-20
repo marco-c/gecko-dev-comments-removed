@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GTEST_MOZGTESTFRIEND_H
 #define GTEST_MOZGTESTFRIEND_H
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 function parseTestManifest(testManifest, params, callback) {
   let links = {};
   let paths = [];

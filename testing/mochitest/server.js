@@ -11,8 +11,6 @@
 
 
 
-
-
 let protocolHandler = Services.io
   .getProtocolHandler("resource")
   .QueryInterface(Ci.nsIResProtocolHandler);

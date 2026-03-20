@@ -1,7 +1,5 @@
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
 });

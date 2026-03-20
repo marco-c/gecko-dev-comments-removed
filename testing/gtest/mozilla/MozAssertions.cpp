@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MozAssertions.h"
 #include "mozilla/ErrorNames.h"
 #include "nsString.h"

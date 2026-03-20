@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 function ChromeTask_ChromeScript() {

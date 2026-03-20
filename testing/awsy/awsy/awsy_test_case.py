@@ -2,8 +2,6 @@
 
 
 
-
-
 import fnmatch
 import glob
 import gzip

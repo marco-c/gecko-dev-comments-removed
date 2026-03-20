@@ -4,8 +4,6 @@
 
 
 
-
-
 function run_test() {
   Assert.equal(__LOCATION__.leafName, "test_location.js");
   

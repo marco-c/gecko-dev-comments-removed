@@ -7,8 +7,6 @@
 
 
 
-
-
 function run_test() {
   Assert.equal(typeof this.MODULE_IMPORTED, "undefined");
   Assert.equal(typeof this.MODULE_URI, "undefined");

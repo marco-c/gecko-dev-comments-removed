@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_gtest_MozAssertions_h_
 #define mozilla_gtest_MozAssertions_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GTEST_MOZGTESTBENCH_H
 #define GTEST_MOZGTESTBENCH_H
 

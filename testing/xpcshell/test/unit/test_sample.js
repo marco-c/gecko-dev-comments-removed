@@ -9,8 +9,6 @@
 
 
 
-
-
 function run_test() {
   Assert.equal(57, 57);
   Assert.notEqual(1, 2);
