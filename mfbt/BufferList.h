@@ -12,8 +12,10 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <type_traits>
 #include <utility>
+#ifdef DEBUG
+#  include <type_traits>
+#endif
 
 
 

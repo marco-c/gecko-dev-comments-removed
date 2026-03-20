@@ -38,7 +38,7 @@
 #    include <sys/mman.h>
 #  endif  
 
-#  include "mozilla/Types.h"
+#  include "mozilla/Types.h"  
 
 #  ifdef XP_LINUX
 
