@@ -279,13 +279,11 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
 
     for (uint32_t i = 0; i < shapeList.length(); i++) {
       if (!shapeObj->append(cx, shapeList[i])) {
-        cx->recoverFromOutOfMemory();
         return false;
       }
 
       if (hasSlotOffsets) {
         if (!shapeObj->append(cx, offsetList[i])) {
-          cx->recoverFromOutOfMemory();
           return false;
         }
       }
@@ -705,7 +703,10 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
 
   
   
-  if (numShapes == ShapeListObject::MaxLength) {
+  size_t maxLength = offsetFieldOffset.isSome()
+                         ? ShapeListWithOffsetsObject::MaxLength
+                         : ShapeListObject::MaxLength;
+  if (numShapes == maxLength) {
     MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
     fallback->state().forceTransition();
     fallback->discardStubs(cx->zone(), icEntry);
