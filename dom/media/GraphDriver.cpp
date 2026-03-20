@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GraphDriver.h"
 
 #include "AudioNodeEngine.h"
@@ -489,29 +487,6 @@ AudioCallbackDriver::~AudioCallbackDriver() {
   }
 }
 
-bool IsMacbookOrMacbookAir() {
-#ifdef XP_MACOSX
-  size_t len = 0;
-  sysctlbyname("hw.model", NULL, &len, NULL, 0);
-  if (len) {
-    UniquePtr<char[]> model(new char[len]);
-    
-    
-    
-    sysctlbyname("hw.model", model.get(), &len, NULL, 0);
-    char* substring = strstr(model.get(), "MacBook");
-    if (substring) {
-      const size_t offset = strlen("MacBook");
-      if (!strncmp(model.get() + offset, "Air", 3) ||
-          isdigit(model[offset + 1])) {
-        return true;
-      }
-    }
-  }
-#endif
-  return false;
-}
-
 void AudioCallbackDriver::Init(const nsCString& aStreamName) {
   LOG(LogLevel::Debug,
       ("%p: AudioCallbackDriver::Init driver=%p", Graph(), this));
@@ -583,14 +558,6 @@ void AudioCallbackDriver::Init(const nsCString& aStreamName) {
   uint32_t latencyFrames = CubebUtils::GetCubebMTGLatencyInFrames(&output);
 
   LOG(LogLevel::Debug, ("Minimum latency in frames: %d", latencyFrames));
-
-  
-  
-  if (IsMacbookOrMacbookAir()) {
-    latencyFrames = std::max((uint32_t)512, latencyFrames);
-    LOG(LogLevel::Debug,
-        ("Macbook or macbook air, new latency: %d", latencyFrames));
-  }
 
   
   
