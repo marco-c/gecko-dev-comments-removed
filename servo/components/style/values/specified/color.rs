@@ -54,6 +54,9 @@ impl ColorMix {
                     .ok()
             };
 
+            let allow_multiple_items =
+                static_prefs::pref!("layout.css.color-mix-multi-color.enabled");
+
             let mut items = ColorMixItemList::default();
 
             loop {
@@ -71,14 +74,16 @@ impl ColorMix {
                     break;
                 }
 
-                if items.len() == 2
-                    && !static_prefs::pref!("layout.css.color-mix-multi-color.enabled")
-                {
+                
+                if !allow_multiple_items && items.len() == 2 {
                     break;
                 }
             }
 
-            if items.len() < 2 {
+            
+            
+            let min_item_count = if allow_multiple_items { 1 } else { 2 };
+            if items.len() < min_item_count {
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }
 
