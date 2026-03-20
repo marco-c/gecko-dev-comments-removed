@@ -26,7 +26,7 @@ public class WindowUtils {
 
 
 
-  public static void setupPersistentInsets(Window window) {
+  public static void setupPersistentInsets(Window window, final boolean isBrowser) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       WindowCompat.setDecorFitsSystemWindows(window, false);
 
@@ -49,7 +49,7 @@ public class WindowUtils {
                 persistentInsets.left,
                 persistentInsets.top,
                 persistentInsets.right,
-                persistentInsets.bottom);
+                isBrowser && EdgeToEdgeUtils.isEdgeToEdgeEnabled() ? 0 : persistentInsets.bottom);
 
             
             return windowInsets;
