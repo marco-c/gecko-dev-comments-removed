@@ -85,7 +85,7 @@ class JujutsuRepository(Repository):
         """
         return super()._run("--ignore-working-copy", *args, **kwargs)
 
-    def _snapshot(self):
+    def _snapshot(self, reason):
         """_snapshot() can be used to update the repository after changing files in the working
         directory. Normally jj commands will do this automatically, but we often run jj commands
         using `_run_read_only` which passes `--ignore-working-copy` to jj.
@@ -94,7 +94,8 @@ class JujutsuRepository(Repository):
         An alternative option would be to add an extra argument to methods such as
         `get_commits`.
         """
-        self._run("log", "-n0")
+        
+        self._run("log", "-n0", "-T", f'"snapshot: {reason}"')
 
     def _resolve_to_change(self, revset: str) -> Optional[str]:
         change_id = self._run_read_only(
@@ -495,7 +496,7 @@ class JujutsuRepository(Repository):
         function that can be called to restore the repository to its original
         state prior to this function having been run.
         """
-        self._run("debug", "snapshot")  
+        self._snapshot("prepare_try_push")
         
         
         
@@ -513,7 +514,7 @@ class JujutsuRepository(Repository):
                 
                 self.add_remove_files(p)
             
-            self._snapshot()
+            self._snapshot("prepare_try_push")
 
             
             self._run(
