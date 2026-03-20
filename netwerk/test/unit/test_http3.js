@@ -138,3 +138,10 @@ add_task(async function test_slow_receiver() {
 add_task(async function test_version_fallback() {
   await do_test_version_fallback(httpsOrigin);
 });
+
+
+
+
+add_task(async function test_unknown_reset() {
+  await do_test_unknown_reset(httpsOrigin);
+});
