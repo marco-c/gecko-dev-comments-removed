@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsNetAddr.h"
 #include "nsString.h"
 #include "mozilla/net/DNS.h"

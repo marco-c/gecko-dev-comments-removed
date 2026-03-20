@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsString.h"
 #include "mozilla/Assertions.h"

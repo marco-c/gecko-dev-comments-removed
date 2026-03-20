@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProxyAutoConfig.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"

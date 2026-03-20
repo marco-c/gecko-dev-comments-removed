@@ -8,8 +8,6 @@
 
 
 
-
-
 var srv = createServer();
 srv.start(-1);
 const PORT = srv.identity.primaryPort;

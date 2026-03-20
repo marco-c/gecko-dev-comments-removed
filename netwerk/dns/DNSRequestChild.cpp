@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/net/ChildDNSService.h"
 #include "mozilla/net/DNSByTypeRecord.h"

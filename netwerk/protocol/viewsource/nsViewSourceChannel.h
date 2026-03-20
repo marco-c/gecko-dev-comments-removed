@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsViewSourceChannel_h_
 #define nsViewSourceChannel_h_
 

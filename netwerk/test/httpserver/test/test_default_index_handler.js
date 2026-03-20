@@ -6,8 +6,6 @@
 
 
 
-
-
 var srv, dir, gDirEntries;
 
 ChromeUtils.defineLazyGetter(this, "BASE_URL", function () {

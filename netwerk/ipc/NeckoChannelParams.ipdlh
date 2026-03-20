@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PHttpChannel;
 include ClientIPCTypes;
@@ -51,9 +48,9 @@ using mozilla::RFPTargetSet from "nsRFPService.h";
 namespace mozilla {
 namespace net {
 
-
-
-
+//-----------------------------------------------------------------------------
+// CookieJarSettings IPDL structs
+//-----------------------------------------------------------------------------
 
 struct CookiePermissionData
 {
@@ -63,7 +60,7 @@ struct CookiePermissionData
 
 struct CookieJarSettingsArgs
 {
-  
+  // Copy of the cookie jar settings for the top-level document.
   uint32_t cookieBehavior;
   bool isFirstPartyIsolated;
   bool shouldResistFingerprinting;
@@ -76,9 +73,9 @@ struct CookieJarSettingsArgs
   uint64_t topLevelWindowContextId;
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// CookieChange
+//-----------------------------------------------------------------------------
 
 struct CookieChange
 {
@@ -87,9 +84,9 @@ struct CookieChange
   OriginAttributes originAttributes;
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// Preferrer alternative data type
+//-----------------------------------------------------------------------------
 
 struct PreferredAlternativeDataTypeParams
 {
@@ -98,9 +95,9 @@ struct PreferredAlternativeDataTypeParams
   PreferredAlternativeDataDeliveryTypeIPC deliverAltData;
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// LoadInfo IPDL structs
+//-----------------------------------------------------------------------------
 
 struct RedirectHistoryEntryInfo
 {
@@ -164,27 +161,27 @@ struct LoadInfoArgs
   SchemelessInputType         schemelessInput;
   HTTPSUpgradeTelemetryType   httpsUpgradeTelemetry;
 
-  
-
-
-
+  /**
+   * ClientInfo structure representing the window or worker that triggered
+   * this network request.  May be Nothing if its a system internal request.
+   */
   IPCClientInfo?              clientInfo;
 
-  
-
-
-
-
-
-
+  /**
+   * Non-subresource requests will result in the creation of a window or
+   * worker client.  The reserved and initial ClientInfo values represent
+   * this resulting client.  An initial ClientInfo represents an initial
+   * about:blank window that will be re-used while a reserved ClientInfo
+   * represents a to-be-newly-created window/worker.
+   */
   IPCClientInfo?              reservedClientInfo;
   IPCClientInfo?              initialClientInfo;
 
-  
-
-
-
-
+  /**
+   * Subresource loads may have a controller set based on their owning
+   * window/worker client.  We must send this across IPC to support
+   * performing interception in the parent.
+   */
   IPCServiceWorkerDescriptor? controller;
 
   nsCString[]                 corsUnsafeHeaders;
@@ -225,35 +222,35 @@ struct LoadInfoArgs
   bool                        isNewWindowTarget;
   UserNavigationInvolvement   userNavigationInvolvement;
   FeaturePolicyInfo?          containerFeaturePolicyInfo;
-  
+  // https://html.spec.whatwg.org/#dom-location-ancestororigins
   PrincipalInfo?[]             ancestorOrigins;
 };
 
-
-
-
-
-
-
+/**
+ * This structure is used to carry selected properties of a LoadInfo
+ * object to child processes to merge LoadInfo changes from the parent
+ * process.  We don't want to use LoadInfoArgs for that since it's
+ * too huge and we only care about small subpart of properties anyway.
+ */
 struct ParentLoadInfoForwarderArgs
 {
-  
-  
-  
-  
+  // WebExtextensions' WebRequest API allows extensions to intercept and
+  // redirect a channel to a data URI. This modifications happens in
+  // the parent and needs to be mirrored to the child so that security
+  // checks can pass.
   bool allowInsecureRedirectToDataURI;
 
-  
-  
+  // The ServiceWorker controller that may be set in the parent when
+  // interception occurs.
   IPCServiceWorkerDescriptor? controller;
 
-  
-  
+  // The service worker may synthesize a Response with a particular
+  // tainting value.
   uint32_t tainting;
 
-  
-  
-  
+  // This flag is used for any browsing context where we should not sniff
+  // the content type. E.g if an iframe has the XCTO nosniff header, then
+  // that flag is set to true so we skip content sniffing for that browsing
   bool skipContentSniffing;
 
   uint32_t httpsOnlyStatus;
@@ -264,41 +261,41 @@ struct ParentLoadInfoForwarderArgs
 
   bool hstsStatus;
 
-  
-  
-  
-  
+  // Returns true if at the time of the loadinfo construction the document
+  // that triggered this load has the bit hasValidTransientUserGestureActivation
+  // set or the load was triggered from External. (Mostly this bool is used
+  // in the context of Sec-Fetch-User.)
   bool hasValidUserGestureActivation;
 
-  
-  
-  
+  // Returns true if at the time of the loadinfo construction the document
+  // that triggered this load has an user activation, so that if the new
+  // document has a text fragment, its first text directive can be scrolled to.
   bool textDirectiveUserActivation;
 
-  
-  
-  
+  // The SystemPrincipal is disallowed to make requests to the public web
+  // and all requests will be cancelled. Setting this flag to true prevents
+  // the request from being cancelled.
   bool allowDeprecatedSystemRequests;
 
   bool isInDevToolsContext;
 
-  
-  
+  // Only ever returns true if the loadinfo is of TYPE_SCRIPT and
+  // the script was created by the HTML parser.
   bool parserCreatedScript;
 
   RequestMode? requestMode;
 
-  
+  // Sandbox Flags of the Document that triggered the load
   uint32_t triggeringSandboxFlags;
 
-  
-  
-  
+  // Window ID and UsingStorageAccess of the Document that triggered the load.
+  // Used by the Storage Access API to determine if SubDocument loads should
+  // be partitioned or not.
   uint64_t triggeringWindowId;
   bool triggeringStorageAccess;
 
-  
-  
+  // We must also note that the tainting value was explicitly set
+  // by the service worker.
   bool serviceWorkerTaintingSynthesized;
 
   bool documentHasUserInteracted;
@@ -326,35 +323,35 @@ struct ParentLoadInfoForwarderArgs
 
   UserNavigationInvolvement userNavigationInvolvement;
 
-  
-  
-  
+  // IMPORTANT: when you add new properites here you must also update
+  // LoadInfoToParentLoadInfoForwarder and MergeParentLoadInfoForwarder
+  // in BackgroundUtils.cpp/.h!
 };
 
-
-
-
-
-
-
-
+/**
+ * This structure is used to carry selected properties of a LoadInfo
+ * object to the parent process that might have changed in the child
+ * during a redirect.  We don't want to use LoadInfoArgs for that since
+ * it's too huge and we only care about small subpart of properties
+ * anyway.
+ */
 struct ChildLoadInfoForwarderArgs
 {
-  
-  
+  // The reserved and initial ClientInfo values may change during a
+  // redirect if the new channel is cross-origin to the old channel.
   IPCClientInfo? reservedClientInfo;
   IPCClientInfo? initialClientInfo;
 
-  
-  
+  // The ServiceWorker controller may be cleared in the child during
+  // a redirect.
   IPCServiceWorkerDescriptor? controller;
 
   uint32_t requestBlockingReason;
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// HTTP IPDL structs
+//-----------------------------------------------------------------------------
 
 struct CorsPreflightArgs
 {
@@ -364,9 +361,9 @@ struct CorsPreflightArgs
 struct HttpChannelOpenArgs
 {
   nullable nsIURI             uri;
-  
-  
-  
+  // - TODO: bug 571161: unclear if any HTTP channel clients ever
+  // set originalURI != uri (about:credits?); also not clear if
+  // chrome channel would ever need to know.  Get rid of next arg?
   nullable nsIURI             original;
   nullable nsIURI             doc;
   nullable nsIReferrerInfo    referrerInfo;
@@ -430,8 +427,8 @@ struct HttpChannelConnectArgs
 
 union HttpChannelCreationArgs
 {
-  HttpChannelOpenArgs;      
-  HttpChannelConnectArgs;   
+  HttpChannelOpenArgs;      // For AsyncOpen: the common case.
+  HttpChannelConnectArgs;   // Used for redirected-to channels
 };
 
 struct ProxyInfoCloneArgs
@@ -461,7 +458,7 @@ struct HttpConnectionInfoCloneArgs
   nsCString routedHost;
   int32_t routedPort;
   bool anonymous;
-  bool aPrivate; 
+  bool aPrivate; // use prefix to avoid code generation error
   bool insecureScheme;
   bool noSpdy;
   bool beConservative;
@@ -610,9 +607,9 @@ struct ResourceTimingStructArgs {
   uint64_t encodedBodySize;
   uint64_t decodedBodySize;
 
-  
-  
-  
+  // Not actually part of resource timing, but not part of the transaction
+  // timings either. These need to be passed to HttpChannelChild along with
+  // the rest of the timings so the timing information in the child is complete.
   TimeStamp cacheReadStart;
   TimeStamp cacheReadEnd;
 
@@ -656,9 +653,9 @@ struct SpeculativeConnectionOverriderArgs {
   bool allow1918;
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// GIO IPDL structs
+//-----------------------------------------------------------------------------
 
 struct GIOChannelOpenArgs
 {
@@ -677,13 +674,13 @@ struct GIOChannelConnectArgs
 
 union GIOChannelCreationArgs
 {
-  GIOChannelOpenArgs;      
-  GIOChannelConnectArgs;   
+  GIOChannelOpenArgs;      // For AsyncOpen: the common case.
+  GIOChannelConnectArgs;   // Used for redirected-to channels
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// File IPDL structs
+//-----------------------------------------------------------------------------
 
 struct FileChannelInfo
 {
@@ -695,9 +692,9 @@ struct FileChannelInfo
   uint64_t               channelId;
 };
 
-
-
-
+//-----------------------------------------------------------------------------
+// GeckoView's Android Content IPDL structs
+//-----------------------------------------------------------------------------
 
 struct GeckoViewContentChannelOpenArgs
 {
@@ -722,5 +719,5 @@ struct RemoteStreamInfo {
   nsCString contentType;
   int64_t contentLength;
 };
-} 
-} 
+} // namespace net
+} // namespace mozilla

@@ -2,7 +2,6 @@
 
 
 
-
 #include <ostream>
 
 #include "gtest/gtest-param-test.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsFileProtocolHandler_h_
 #define nsFileProtocolHandler_h_
 

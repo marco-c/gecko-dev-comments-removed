@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIOService.h"
 #include "nsInputStreamPump.h"
 #include "nsIInputStreamPriority.h"

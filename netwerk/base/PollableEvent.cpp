@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsSocketTransportService2.h"
 #include "PollableEvent.h"
 #include "mozilla/Assertions.h"

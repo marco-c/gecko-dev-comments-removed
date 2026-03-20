@@ -4,8 +4,6 @@
 
 
 
-
-
 ChromeUtils.defineLazyGetter(this, "BASE", function () {
   return "http://localhost:" + srv.identity.primaryPort;
 });

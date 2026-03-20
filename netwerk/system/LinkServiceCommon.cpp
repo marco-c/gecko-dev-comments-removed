@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LinkServiceCommon.h"
 
 #include "mozilla/Maybe.h"

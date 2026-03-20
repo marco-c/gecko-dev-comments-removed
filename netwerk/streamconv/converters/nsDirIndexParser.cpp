@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsDirIndexParser.h"
 
 #include "mozilla/ClearOnShutdown.h"

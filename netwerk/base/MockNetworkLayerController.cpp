@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MockNetworkLayerController.h"
 
 #include "mozilla/ClearOnShutdown.h"

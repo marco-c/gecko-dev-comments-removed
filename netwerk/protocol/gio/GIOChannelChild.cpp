@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/NeckoChild.h"
 #include "GIOChannelChild.h"
 #include "nsGIOProtocolHandler.h"

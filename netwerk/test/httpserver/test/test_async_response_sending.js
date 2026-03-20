@@ -14,8 +14,6 @@
 
 
 
-
-
 function run_test() {
   do_test_pending();
   tests.push(function testsComplete(_) {

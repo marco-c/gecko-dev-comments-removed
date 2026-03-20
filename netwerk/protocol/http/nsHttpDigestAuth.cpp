@@ -4,7 +4,6 @@
 
 
 
-
 #include "HttpLog.h"
 
 #include "mozilla/ClearOnShutdown.h"

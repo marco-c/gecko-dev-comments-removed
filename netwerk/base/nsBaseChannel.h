@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBaseChannel_h_
 #define nsBaseChannel_h_
 

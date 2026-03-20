@@ -2,7 +2,6 @@
 
 
 
-
 extern crate urlpattern;
 use urlpattern::quirks;
 use urlpattern::regexp::RegExp;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WebSocketLog_h
 #define WebSocketLog_h
 

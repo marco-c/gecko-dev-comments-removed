@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Services.h"
 #include "nsCOMPtr.h"
 #include "nsIObserverService.h"

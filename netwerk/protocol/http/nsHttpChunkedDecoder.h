@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpChunkedDecoder_h_
 #define nsHttpChunkedDecoder_h_
 

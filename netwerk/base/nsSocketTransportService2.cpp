@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsSocketTransportService2.h"
 
 #include "mozilla/Atomics.h"

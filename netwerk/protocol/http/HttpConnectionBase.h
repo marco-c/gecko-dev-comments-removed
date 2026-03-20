@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HttpConnectionBase_h_
 #define HttpConnectionBase_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_WebSocketChannel_h
 #define mozilla_net_WebSocketChannel_h
 

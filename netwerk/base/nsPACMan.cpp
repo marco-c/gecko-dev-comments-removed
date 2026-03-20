@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPACMan.h"
 
 #include "mozilla/Preferences.h"

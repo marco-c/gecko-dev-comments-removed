@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef PollableEvent_h_
 #define PollableEvent_h_
 

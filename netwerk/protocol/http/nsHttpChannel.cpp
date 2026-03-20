@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "HttpLog.h"
 
 #include <inttypes.h>

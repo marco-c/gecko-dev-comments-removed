@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BackgroundChannelRegistrar.h"
 
 #include "mozilla/ClearOnShutdown.h"

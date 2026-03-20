@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FuzzySecurityInfo_h_
 #define FuzzySecurityInfo_h_
 

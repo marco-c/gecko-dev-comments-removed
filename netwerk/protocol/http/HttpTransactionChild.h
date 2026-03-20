@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HttpTransactionChild_h_
 #define HttpTransactionChild_h_
 

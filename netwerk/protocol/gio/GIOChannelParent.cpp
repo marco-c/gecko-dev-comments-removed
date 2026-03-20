@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GIOChannelParent.h"
 #include "nsGIOProtocolHandler.h"
 #include "mozilla/Assertions.h"

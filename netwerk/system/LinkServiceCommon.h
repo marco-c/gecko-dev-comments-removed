@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LINK_SERVICE_COMMON_H_
 #define LINK_SERVICE_COMMON_H_
 

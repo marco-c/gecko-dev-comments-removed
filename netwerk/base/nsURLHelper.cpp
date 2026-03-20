@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsURLHelper.h"
 
 #include "mozilla/AppShutdown.h"

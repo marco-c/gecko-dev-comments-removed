@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsICorsPreflightCallback_h_
 #define nsICorsPreflightCallback_h_
 

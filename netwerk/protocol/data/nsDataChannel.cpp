@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsDataChannel.h"
 
 #include "mozilla/Base64.h"

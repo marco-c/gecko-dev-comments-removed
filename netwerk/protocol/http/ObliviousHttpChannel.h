@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_net_ObliviousHttpChannel_h
 #define mozilla_net_ObliviousHttpChannel_h
 

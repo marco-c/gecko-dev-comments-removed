@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UrlClassifierFeatureCustomTables_h
 #define mozilla_UrlClassifierFeatureCustomTables_h
 

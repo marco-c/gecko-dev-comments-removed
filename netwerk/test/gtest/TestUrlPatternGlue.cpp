@@ -2,7 +2,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 #include "gtest/MozGTestBench.h"  
 #include "mozilla/dom/ScriptSettings.h"

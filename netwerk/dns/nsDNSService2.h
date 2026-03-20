@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsDNSService2_h_
 #define nsDNSService2_h_
 

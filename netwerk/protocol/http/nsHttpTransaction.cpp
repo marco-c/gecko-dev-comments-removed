@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "nsHttpTransaction.h"
 
 #include <algorithm>

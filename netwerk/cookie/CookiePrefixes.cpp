@@ -2,7 +2,6 @@
 
 
 
-
 #include "CookiePrefixes.h"
 
 namespace mozilla::net {

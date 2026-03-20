@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef RemoteStreamGetter_h_
 #define RemoteStreamGetter_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 #include "mozilla/Base64.h"
 #include "mozilla/gtest/MozAssertions.h"

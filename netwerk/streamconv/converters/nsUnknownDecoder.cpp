@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsUnknownDecoder.h"
 #include "nsIPipe.h"
 #include "nsIInputStream.h"

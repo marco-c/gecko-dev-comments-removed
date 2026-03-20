@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Components.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/HoldDropJSObjects.h"

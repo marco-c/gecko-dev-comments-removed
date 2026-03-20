@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FuzzyLayer.h"
 #include "nsTHashMap.h"
 #include "nsDeque.h"

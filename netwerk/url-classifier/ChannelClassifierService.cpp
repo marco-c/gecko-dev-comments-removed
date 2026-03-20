@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ChannelClassifierService.h"
 
 #include "mozilla/ClearOnShutdown.h"

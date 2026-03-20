@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WebTransportLog_h
 #define WebTransportLog_h
 

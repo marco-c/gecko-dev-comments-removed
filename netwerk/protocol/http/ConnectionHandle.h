@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ConnectionHandle_h_
 #define ConnectionHandle_h_
 

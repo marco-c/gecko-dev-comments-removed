@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NetworkDataCountLayer_h_
 #define NetworkDataCountLayer_h_
 

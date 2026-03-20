@@ -6,8 +6,6 @@
 
 
 
-
-
 ChromeUtils.defineLazyGetter(this, "PREPATH", function () {
   return "http://localhost:" + srv.identity.primaryPort;
 });

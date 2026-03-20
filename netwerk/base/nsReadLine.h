@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsReadLine_h_
 #define nsReadLine_h_
 

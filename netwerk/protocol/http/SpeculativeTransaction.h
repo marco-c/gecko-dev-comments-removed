@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SpeculativeTransaction_h_
 #define SpeculativeTransaction_h_
 

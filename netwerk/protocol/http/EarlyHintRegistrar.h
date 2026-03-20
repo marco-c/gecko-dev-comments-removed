@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_EarlyHintRegistrar_h_
 #define mozilla_net_EarlyHintRegistrar_h_
 

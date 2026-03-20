@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_Tickler_h
 #define mozilla_net_Tickler_h
 

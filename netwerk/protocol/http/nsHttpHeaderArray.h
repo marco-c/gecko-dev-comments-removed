@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHttpHeaderArray_h_
 #define nsHttpHeaderArray_h_
 

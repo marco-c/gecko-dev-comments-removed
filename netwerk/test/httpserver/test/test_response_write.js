@@ -4,8 +4,6 @@
 
 
 
-
-
 ChromeUtils.defineLazyGetter(this, "tests", function () {
   return [
     new Test(

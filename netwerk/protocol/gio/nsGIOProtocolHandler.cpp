@@ -6,7 +6,6 @@
 
 
 
-
 #include "nsGIOProtocolHandler.h"
 #include "GIOChannelChild.h"
 #include "mozilla/Components.h"

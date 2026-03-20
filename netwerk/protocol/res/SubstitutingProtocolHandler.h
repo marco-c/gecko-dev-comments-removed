@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SubstitutingProtocolHandler_h_
 #define SubstitutingProtocolHandler_h_
 

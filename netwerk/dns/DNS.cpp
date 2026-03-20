@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/DNS.h"
 
 #include "mozilla/Assertions.h"

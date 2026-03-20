@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "DocumentChannelParent.h"
 
 #include "mozilla/dom/BrowserParent.h"

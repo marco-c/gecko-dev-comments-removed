@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpTransaction_h_
 #define nsHttpTransaction_h_
 

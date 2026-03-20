@@ -6,8 +6,6 @@
 
 
 
-
-
 var srv;
 
 ChromeUtils.defineLazyGetter(this, "PREFIX", function () {

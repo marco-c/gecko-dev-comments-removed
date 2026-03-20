@@ -2,7 +2,6 @@
 
 
 
-
 #include "WebTransportHash.h"
 
 namespace mozilla::net {

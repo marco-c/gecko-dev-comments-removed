@@ -3,11 +3,9 @@
 
 
 
-
 #include "HttpLog.h"
 
 #include "nsHttpBasicAuth.h"
-#include "plstr.h"
 #include "nsCRT.h"
 #include "nsString.h"
 #include "mozilla/Base64.h"

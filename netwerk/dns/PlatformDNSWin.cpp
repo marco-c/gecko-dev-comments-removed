@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GetAddrInfo.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/DNSPacket.h"

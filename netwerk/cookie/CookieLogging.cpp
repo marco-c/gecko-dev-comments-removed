@@ -2,7 +2,6 @@
 
 
 
-
 #include "CookieLogging.h"
 #include "Cookie.h"
 #include "nsIConsoleReportCollector.h"

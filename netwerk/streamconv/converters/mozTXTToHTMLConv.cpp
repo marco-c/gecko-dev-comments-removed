@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/TextUtils.h"
 #include "mozTXTToHTMLConv.h"
 #include "mozilla/intl/Segmenter.h"

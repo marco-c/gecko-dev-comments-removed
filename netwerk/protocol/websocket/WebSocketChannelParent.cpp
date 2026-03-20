@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebSocketLog.h"
 #include "WebSocketChannelParent.h"
 #include "nsIAuthPromptProvider.h"

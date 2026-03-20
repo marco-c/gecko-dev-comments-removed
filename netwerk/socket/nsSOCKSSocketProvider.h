@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsSOCKSSocketProvider_h_
 #define nsSOCKSSocketProvider_h_
 

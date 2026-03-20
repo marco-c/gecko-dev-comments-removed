@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_PrivateBrowsingChannel_h_
 #define mozilla_net_PrivateBrowsingChannel_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_Http3Stream_h
 #define mozilla_net_Http3Stream_h
 

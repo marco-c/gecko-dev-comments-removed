@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCORSListenerProxy_h_
 #define nsCORSListenerProxy_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpHandler_h_
 #define nsHttpHandler_h_
 

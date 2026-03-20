@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierFeatureGlobalCache.h"
 
 #include "mozilla/StaticPrefs_browser.h"

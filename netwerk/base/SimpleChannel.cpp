@@ -2,7 +2,6 @@
 
 
 
-
 #include "SimpleChannel.h"
 
 #include "nsBaseChannel.h"

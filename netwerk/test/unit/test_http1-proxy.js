@@ -13,8 +13,6 @@
 
 
 
-
-
 "use strict";
 
 const { HttpServer } = ChromeUtils.importESModule(

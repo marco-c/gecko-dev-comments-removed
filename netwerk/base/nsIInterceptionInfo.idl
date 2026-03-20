@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
 #include "nsIContentPolicy.idl"
@@ -15,27 +13,27 @@ interface nsIRedirectHistoryEntry;
 %}
 
 [ref] native nsIRedirectHistoryEntryArray(const nsTArray<nsCOMPtr<nsIRedirectHistoryEntry>>);
-
-
-
-
-
-
+/**
+ * nsIInterceptionInfo is used to record the needed information of the
+ * InterceptedHttpChannel.
+ * This infomration need to be propagated to the new channel which created by
+ * FetchEvent.request or ServiceWorker NavigationPreload.
+ */
 [scriptable, builtinclass, uuid(8b9cd81f-3cd1-4f6a-9086-92a9bbf055f4)]
 interface nsIInterceptionInfo : nsISupports
 {
-  
-
-
+  /**
+   * InterceptedHttpChannel's triggering principal
+   */
   [noscript, notxpcom, nostdcall, binaryname(TriggeringPrincipal)]
   nsIPrincipal binaryTriggeringPrincipal();
 
   [noscript, notxpcom, nostdcall, binaryname(SetTriggeringPrincipal)]
   void binarySetTriggeringPrincipal(in nsIPrincipal aPrincipal);
 
-  
-
-
+  /**
+   * InterceptedHttpChannel's content policy type
+   */
   [noscript, notxpcom, nostdcall, binaryname(ContentPolicyType)]
   nsContentPolicyType binaryContentPolicyType();
 
@@ -52,9 +50,9 @@ interface nsIInterceptionInfo : nsISupports
   }
 %}
 
-  
-
-
+  /**
+   * The InterceptedHttpChannel's redirect chain
+   */
   [noscript, notxpcom, nostdcall, binaryname(RedirectChain)]
   nsIRedirectHistoryEntryArray binaryRedirectChain();
 
@@ -62,9 +60,9 @@ interface nsIInterceptionInfo : nsISupports
   void binarySetRedirectChain(
       in nsIRedirectHistoryEntryArray aRedirectChain);
 
-  
-
-
+  /**
+   * The InterceptedHttpChannel is a third party channel or not.
+   */
   [noscript, notxpcom, nostdcall, binaryname(FromThirdParty)]
   boolean binaryFromThirdParty();
 

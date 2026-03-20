@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_UrlClassifierFeatureHarmfulAddonProtection_h
 #define mozilla_net_UrlClassifierFeatureHarmfulAddonProtection_h
 

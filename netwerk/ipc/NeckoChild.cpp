@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsHttp.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/dom/ContentChild.h"

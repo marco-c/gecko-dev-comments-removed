@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MockNetworkLayerController_h_
 #define MockNetworkLayerController_h_
 

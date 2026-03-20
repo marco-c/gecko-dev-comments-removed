@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHostRecord_h_
 #define nsHostRecord_h_
 

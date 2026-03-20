@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DNS.h"
 #include "DNSUtils.h"
 #include "nsCharSeparatedTokenizer.h"

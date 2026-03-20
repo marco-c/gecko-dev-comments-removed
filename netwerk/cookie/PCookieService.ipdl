@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PNecko;
 include NeckoChannelParams;
@@ -16,18 +13,18 @@ using struct nsID from "nsID.h";
 namespace mozilla {
 namespace net {
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * PCookieService
+ *
+ * Provides IPDL methods for setting and getting cookies. These are stored on
+ * and managed by the parent; the child process goes through the parent for
+ * all cookie operations. Lower-level programmatic operations (i.e. those
+ * provided by the nsICookieManager interface) are not
+ * currently implemented and requesting these interfaces in the child will fail.
+ *
+ * @see nsICookieService
+ * @see nsICookiePermission
+ */
 
 [ManualDealloc, NestedUpTo=inside_cpow] sync protocol PCookieService
 {

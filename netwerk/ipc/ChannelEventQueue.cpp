@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "ChannelEventQueue.h"
 
 #include "mozilla/Assertions.h"

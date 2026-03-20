@@ -2,7 +2,6 @@
 
 
 
-
 #include "Tickler.h"
 
 #ifdef MOZ_USE_WIFI_TICKLER

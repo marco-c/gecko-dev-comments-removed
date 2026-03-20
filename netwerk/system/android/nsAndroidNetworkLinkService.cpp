@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsAndroidNetworkLinkService.h"
 #include "nsServiceManagerUtils.h"
 

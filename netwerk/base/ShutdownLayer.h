@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef SHUTDOWNLAYER_H_
 #define SHUTDOWNLAYER_H_
 

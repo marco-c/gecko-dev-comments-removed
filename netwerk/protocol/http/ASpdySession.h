@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_ASpdySession_h
 #define mozilla_net_ASpdySession_h
 

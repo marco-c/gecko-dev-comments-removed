@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_NullHttpTransaction_h
 #define mozilla_net_NullHttpTransaction_h
 

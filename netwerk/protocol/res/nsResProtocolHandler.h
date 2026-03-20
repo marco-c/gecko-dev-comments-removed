@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsResProtocolHandler_h_
 #define nsResProtocolHandler_h_
 

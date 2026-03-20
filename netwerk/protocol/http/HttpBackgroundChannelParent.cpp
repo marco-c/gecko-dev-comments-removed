@@ -3,9 +3,6 @@
 
 
 
-
-
-
 #include "HttpLog.h"
 
 #include "HttpBackgroundChannelParent.h"

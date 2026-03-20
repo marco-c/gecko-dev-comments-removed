@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBufferedStreams_h_
 #define nsBufferedStreams_h_
 

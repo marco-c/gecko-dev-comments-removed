@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsSocketTransport2.h"
 #include "nsServerSocket.h"
 #include "nsProxyRelease.h"

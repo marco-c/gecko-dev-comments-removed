@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LNAPermissionRequest.h"
 #include "nsGlobalWindowInner.h"
 #include "mozilla/dom/Document.h"

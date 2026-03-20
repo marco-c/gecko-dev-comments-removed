@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsViewSourceHandler_h_
 #define nsViewSourceHandler_h_
 

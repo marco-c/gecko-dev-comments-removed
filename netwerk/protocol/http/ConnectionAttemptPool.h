@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ConnectionAttemptPool_h_
 #define ConnectionAttemptPool_h_
 

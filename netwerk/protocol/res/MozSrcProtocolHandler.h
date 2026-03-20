@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MozSrcProtocolHandler_h_
 #define MozSrcProtocolHandler_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThrottleQueue.h"
 #include "mozilla/Components.h"
 #include "mozilla/net/InputChannelThrottleQueueParent.h"

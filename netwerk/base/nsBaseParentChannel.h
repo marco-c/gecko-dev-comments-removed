@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsBaseParentChannel_h
 #define nsBaseParentChannel_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_Http3StreamTunnel_h
 #define mozilla_net_Http3StreamTunnel_h
 

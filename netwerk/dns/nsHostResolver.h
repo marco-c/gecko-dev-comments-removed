@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHostResolver_h_
 #define nsHostResolver_h_
 

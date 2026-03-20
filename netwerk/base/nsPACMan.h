@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPACMan_h_
 #define nsPACMan_h_
 

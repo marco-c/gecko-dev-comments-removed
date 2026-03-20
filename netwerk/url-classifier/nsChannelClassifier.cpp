@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsChannelClassifier.h"
 
 #include "nsCharSeparatedTokenizer.h"

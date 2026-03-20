@@ -6,8 +6,6 @@
 
 
 
-
-
 ChromeUtils.defineLazyGetter(this, "PORT", function () {
   return srv.identity.primaryPort;
 });

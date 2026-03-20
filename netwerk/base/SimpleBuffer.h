@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SimpleBuffer_h_
 #define SimpleBuffer_h_
 

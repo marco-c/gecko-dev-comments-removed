@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/DNSRequestParent.h"
 #include "mozilla/net/DNSRequestChild.h"
 #include "nsIDNSService.h"

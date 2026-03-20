@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsString.h"
 #include "nsISocketProvider.h"
 #include "nsError.h"

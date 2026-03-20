@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIDocShell.h"
 #include "mozilla/dom/Document.h"
 #include "nsComponentManagerUtils.h"

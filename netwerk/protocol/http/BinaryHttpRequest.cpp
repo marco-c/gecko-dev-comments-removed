@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "BinaryHttpRequest.h"
 
 namespace mozilla::net {

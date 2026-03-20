@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsFileChannel_h_
 #define nsFileChannel_h_
 

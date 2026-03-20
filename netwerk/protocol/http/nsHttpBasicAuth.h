@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBasicAuth_h_
 #define nsBasicAuth_h_
 

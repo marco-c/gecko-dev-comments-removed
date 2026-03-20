@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 add_task(function test_ua_nonsnap() {

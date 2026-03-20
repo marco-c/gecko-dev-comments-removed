@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsProxyInfo_h_
 #define nsProxyInfo_h_
 

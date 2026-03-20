@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UrlClassifierExceptionList_h
 #define mozilla_UrlClassifierExceptionList_h
 

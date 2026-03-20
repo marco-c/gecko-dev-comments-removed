@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIObserverService.h"
 #include "nsNetworkLinkService.h"
 #include "nsString.h"

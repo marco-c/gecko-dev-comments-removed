@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProxyConfigLookupChild.h"
 
 #include "mozilla/net/SocketProcessChild.h"

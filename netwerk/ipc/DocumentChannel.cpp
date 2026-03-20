@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/net/DocumentChannel.h"
 
 #include <inttypes.h>

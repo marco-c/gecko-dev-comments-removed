@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsDigestAuth_h_
 #define nsDigestAuth_h_
 

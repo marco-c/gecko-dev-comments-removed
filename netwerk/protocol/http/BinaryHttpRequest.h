@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_net_BinaryHttpRequest_h
 #define mozilla_net_BinaryHttpRequest_h
 

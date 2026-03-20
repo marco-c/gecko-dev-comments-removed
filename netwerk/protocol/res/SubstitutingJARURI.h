@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SubstitutingJARURI_h
 #define SubstitutingJARURI_h
 

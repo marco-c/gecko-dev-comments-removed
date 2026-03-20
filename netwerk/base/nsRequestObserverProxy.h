@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsRequestObserverProxy_h_
 #define nsRequestObserverProxy_h_
 

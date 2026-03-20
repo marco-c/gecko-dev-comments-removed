@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/net/AltDataOutputStreamParent.h"
 #include "mozilla/PerfStats.h"
 #include "nsIAsyncOutputStream.h"

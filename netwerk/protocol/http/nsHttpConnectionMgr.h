@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpConnectionMgr_h_
 #define nsHttpConnectionMgr_h_
 

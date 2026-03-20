@@ -2,7 +2,6 @@
 
 
 
-
 #include "IPv4Parser.h"
 #include "mozilla/EndianUtils.h"
 #include "nsPrintfCString.h"

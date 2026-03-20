@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsDirIndex_h_
 #define nsDirIndex_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebSocketLog.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/net/NeckoChild.h"

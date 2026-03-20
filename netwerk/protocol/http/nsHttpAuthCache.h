@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpAuthCache_h_
 #define nsHttpAuthCache_h_
 

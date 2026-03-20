@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SuspendableChannelWrapper_h_
 #define SuspendableChannelWrapper_h_
 

@@ -8,8 +8,6 @@
 
 
 
-
-
 var srv = createServer();
 srv.start(-1);
 registerCleanupFunction(() => new Promise(resolve => srv.stop(resolve)));

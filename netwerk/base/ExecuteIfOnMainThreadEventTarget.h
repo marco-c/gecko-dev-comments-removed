@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ExecuteIfOnMainThreadEventTarget_h_
 #define ExecuteIfOnMainThreadEventTarget_h_
 

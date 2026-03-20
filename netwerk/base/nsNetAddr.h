@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsNetAddr_h_
 #define nsNetAddr_h_
 

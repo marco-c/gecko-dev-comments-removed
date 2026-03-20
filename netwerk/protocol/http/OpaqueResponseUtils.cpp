@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/OpaqueResponseUtils.h"
 
 #include "mozilla/dom/Document.h"

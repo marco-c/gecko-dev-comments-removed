@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIInterfaceRequestor.h"
 #include "WebSocketConnection.h"
 

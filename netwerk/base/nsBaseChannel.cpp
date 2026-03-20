@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsBaseChannel.h"
 #include "nsContentUtils.h"
 #include "nsURLHelper.h"

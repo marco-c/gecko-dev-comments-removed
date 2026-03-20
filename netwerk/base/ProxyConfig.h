@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_netwerk_base_proxy_config_h
 #define mozilla_netwerk_base_proxy_config_h
 

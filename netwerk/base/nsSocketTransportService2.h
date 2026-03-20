@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSocketTransportService2_h_
 #define nsSocketTransportService2_h_
 

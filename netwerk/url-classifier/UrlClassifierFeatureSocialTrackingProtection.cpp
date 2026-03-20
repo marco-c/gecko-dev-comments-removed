@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierFeatureSocialTrackingProtection.h"
 
 #include "mozilla/AntiTrackingUtils.h"

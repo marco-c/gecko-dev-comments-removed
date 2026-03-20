@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TRRLoadInfo_h
 #define mozilla_TRRLoadInfo_h
 

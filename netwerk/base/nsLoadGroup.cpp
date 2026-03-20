@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/DebugOnly.h"
 
 #include "nsLoadGroup.h"

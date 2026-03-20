@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsRedirectHistoryEntry.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LoadTainting_h
 #define mozilla_LoadTainting_h
 

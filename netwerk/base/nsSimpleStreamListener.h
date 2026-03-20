@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSimpleStreamListener_h_
 #define nsSimpleStreamListener_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CapsuleParser.h"
 
 #include "CapsuleDecoder.h"

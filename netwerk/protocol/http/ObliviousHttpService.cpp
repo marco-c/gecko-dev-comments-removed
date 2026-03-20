@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "ObliviousHttpService.h"
 
 #include "DNSUtils.h"

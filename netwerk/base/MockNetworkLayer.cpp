@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MockNetworkLayer.h"
 #include "MockNetworkLayerController.h"
 #include "nsSocketTransportService2.h"

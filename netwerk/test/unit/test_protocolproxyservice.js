@@ -16,8 +16,6 @@
 
 
 
-
-
 "use strict";
 
 var ios = Services.io;

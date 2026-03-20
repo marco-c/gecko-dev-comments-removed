@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_net_DocumentChannelChild_h
 #define mozilla_net_DocumentChannelChild_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsDirectoryIndexStream_h_
 #define nsDirectoryIndexStream_h_
 

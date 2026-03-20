@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpResponseHead_h_
 #define nsHttpResponseHead_h_
 

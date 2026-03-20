@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "nsURLHelper.h"
 #include "nsEscape.h"
 #include "nsIFile.h"

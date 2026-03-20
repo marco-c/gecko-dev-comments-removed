@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FuzzySocketControl_h_
 #define FuzzySocketControl_h_
 

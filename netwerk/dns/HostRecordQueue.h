@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HostRecordQueue_h_
 #define HostRecordQueue_h_
 

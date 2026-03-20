@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FuzzyLayer_h_
 #define FuzzyLayer_h_
 

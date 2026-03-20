@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_net_NeckoChild_h
 #define mozilla_net_NeckoChild_h
 

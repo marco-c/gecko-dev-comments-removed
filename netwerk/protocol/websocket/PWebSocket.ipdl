@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PNecko;
 include protocol PBrowser;
@@ -26,14 +23,14 @@ async protocol PWebSocket
   manager PNecko;
 
 parent:
-  
+  // Forwarded methods corresponding to methods on nsIWebSocketChannel
   async AsyncOpen(nullable nsIURI aURI,
                   nsCString aOrigin,
                   OriginAttributes aOriginAttributes,
                   uint64_t aInnerWindowID,
                   nsCString aProtocol,
                   bool aSecure,
-                  
+                  // ping values only meaningful if client set them
                   uint32_t aPingInterval,
                   bool aClientSetPingInterval,
                   uint32_t aPingTimeout,
@@ -49,7 +46,7 @@ parent:
   async DeleteSelf();
 
 child:
-  
+  // Forwarded notifications corresponding to the nsIWebSocketListener interface
   async OnStart(nsCString aProtocol, nsCString aExtensions,
                 nsString aEffectiveURL, bool aEncrypted,
                 uint64_t aHttpChannelId);
@@ -63,5 +60,5 @@ child:
 
 };
 
-} 
-} 
+} //namespace net
+} //namespace mozilla

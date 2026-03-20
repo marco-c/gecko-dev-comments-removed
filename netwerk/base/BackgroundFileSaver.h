@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef BackgroundFileSaver_h_
 #define BackgroundFileSaver_h_
 

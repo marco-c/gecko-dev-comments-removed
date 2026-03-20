@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_AsyncUrlChannelClassifier_h
 #define mozilla_net_AsyncUrlChannelClassifier_h
 

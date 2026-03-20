@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "NeckoTargetHolder.h"
 
 #include "nsContentUtils.h"

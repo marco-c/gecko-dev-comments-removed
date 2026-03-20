@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_UrlClassifierFeatureCryptominingAnnotation_h
 #define mozilla_net_UrlClassifierFeatureCryptominingAnnotation_h
 

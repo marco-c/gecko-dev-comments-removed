@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SubstitutingURL_h
 #define SubstitutingURL_h
 

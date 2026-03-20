@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Omnijar.h"

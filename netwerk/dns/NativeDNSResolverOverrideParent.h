@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_NativeDNSResolverOverrideParent_h
 #define mozilla_net_NativeDNSResolverOverrideParent_h
 

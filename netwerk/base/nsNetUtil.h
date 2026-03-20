@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsNetUtil_h_
 #define nsNetUtil_h_
 

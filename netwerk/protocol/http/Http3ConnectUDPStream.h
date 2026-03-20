@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_Http3ConnectUDPStream_h
 #define mozilla_net_Http3ConnectUDPStream_h
 

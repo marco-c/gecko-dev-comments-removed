@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/TRRServiceParent.h"
 
 #include "DNSServiceBase.h"

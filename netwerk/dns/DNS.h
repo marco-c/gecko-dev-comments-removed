@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DNS_h_
 #define DNS_h_
 

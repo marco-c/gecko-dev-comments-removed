@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EventTokenBucket.h"
 
 #include "nsICancelable.h"

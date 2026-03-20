@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsServerTiming.h"
 
 #include "nsHttp.h"

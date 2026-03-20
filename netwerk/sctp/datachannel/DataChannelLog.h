@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DataChannelLog_h
 #define DataChannelLog_h
 

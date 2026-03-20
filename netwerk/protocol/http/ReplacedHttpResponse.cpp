@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ReplacedHttpResponse.h"
 
 namespace mozilla::net {

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsURLHelper_h_
 #define nsURLHelper_h_
 

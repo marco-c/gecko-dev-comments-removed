@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_SocketProcessBridgeChild_h
 #define mozilla_net_SocketProcessBridgeChild_h
 

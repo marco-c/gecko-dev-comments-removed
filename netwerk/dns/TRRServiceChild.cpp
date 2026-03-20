@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/TRRServiceChild.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Components.h"

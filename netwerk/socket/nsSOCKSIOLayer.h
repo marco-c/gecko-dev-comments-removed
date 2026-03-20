@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef nsSOCKSIOLayer_h_
 #define nsSOCKSIOLayer_h_
 

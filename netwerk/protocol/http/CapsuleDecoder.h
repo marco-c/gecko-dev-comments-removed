@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_capsule_decoder_h
 #define mozilla_net_capsule_decoder_h
 

@@ -16,8 +16,6 @@
 
 
 
-
-
 function assertValidHeader(fieldName, fieldValue, headers) {
   try {
     headers.setHeader(fieldName, fieldValue, false);

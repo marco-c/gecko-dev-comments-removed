@@ -2,7 +2,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/net/UriTemplate.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProxyConfigLookup.h"
 #include "ProxyConfigLookupChild.h"
 #include "mozilla/Components.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_InterceptionInfo_h
 #define mozilla_net_InterceptionInfo_h
 

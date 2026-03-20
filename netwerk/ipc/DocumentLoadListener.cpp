@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "DocumentLoadListener.h"
 
 #include "imgLoader.h"

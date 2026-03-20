@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SocketProcessLogging_h
 #define mozilla_SocketProcessLogging_h
 

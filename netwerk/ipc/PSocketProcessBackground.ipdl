@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PVerifySSLServerCert;
 include protocol PSelectTLSClientAuthCert;
@@ -16,12 +14,12 @@ using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 namespace mozilla {
 namespace net {
 
-
-
-
-
-
-
+/**
+  * PSocketProcessBackground is the top level IPC protocol between
+  * a background task queue in the socket process and the parent process.
+  * We use this to create several IPC protocols between the socket process
+  * and the parent process.
+  */
 [ChildProc=Socket]
 sync protocol PSocketProcessBackground
 {
@@ -55,5 +53,5 @@ parent:
                                 uint32_t aListenerId);
 };
 
-} 
-} 
+} // namespace net
+} // namespace mozilla

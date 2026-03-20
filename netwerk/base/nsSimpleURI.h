@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSimpleURI_h_
 #define nsSimpleURI_h_
 

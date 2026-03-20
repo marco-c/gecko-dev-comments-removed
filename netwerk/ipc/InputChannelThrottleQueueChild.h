@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef InputChannelThrottleQueueChild_h_
 #define InputChannelThrottleQueueChild_h_
 

@@ -3,9 +3,6 @@
 
 
 
-
-
-
 #include "mozilla/net/HttpBaseChannel.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NS_GIOCHANNELCHILD_H
 #define NS_GIOCHANNELCHILD_H
 

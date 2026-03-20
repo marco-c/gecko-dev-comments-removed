@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PendingTransactionInfo_h_
 #define PendingTransactionInfo_h_
 

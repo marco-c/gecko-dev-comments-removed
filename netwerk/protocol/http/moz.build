@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Networking: HTTP")
@@ -88,7 +86,7 @@ EXPORTS.mozilla.net += [
 ]
 
 SOURCES += [
-    "nsHttpChannelAuthProvider.cpp",  
+    "nsHttpChannelAuthProvider.cpp",  # redefines GetAuthType
 ]
 
 UNIFIED_SOURCES += [
@@ -204,7 +202,7 @@ if CONFIG["TARGET_OS"] == "OSX":
         "-framework AuthenticationServices",
     ]
 
-
+# These files cannot be built in unified mode because of OS X headers.
 SOURCES += [
     "nsHttpHandler.cpp",
 ]

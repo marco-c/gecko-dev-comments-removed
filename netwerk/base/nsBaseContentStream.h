@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsBaseContentStream_h_
 #define nsBaseContentStream_h_
 

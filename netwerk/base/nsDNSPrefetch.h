@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsDNSPrefetch_h_
 #define nsDNSPrefetch_h_
 

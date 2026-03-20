@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_WebTransportEventService_h
 #define mozilla_net_WebTransportEventService_h
 

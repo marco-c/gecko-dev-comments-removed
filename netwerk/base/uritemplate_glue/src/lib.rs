@@ -2,7 +2,6 @@
 
 
 
-
 extern crate uritemplate;
 use uritemplate::UriTemplate;
 

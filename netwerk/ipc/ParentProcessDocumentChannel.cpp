@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "ParentProcessDocumentChannel.h"
 
 #include "mozilla/extensions/StreamFilterParent.h"

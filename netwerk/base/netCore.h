@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _netCore_h_
 #define _netCore_h_
 

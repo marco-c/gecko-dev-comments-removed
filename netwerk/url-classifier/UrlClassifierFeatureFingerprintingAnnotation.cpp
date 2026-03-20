@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 
 #include "mozilla/net/UrlClassifierCommon.h"

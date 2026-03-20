@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_CookieServiceChild_h_
 #define mozilla_net_CookieServiceChild_h_
 

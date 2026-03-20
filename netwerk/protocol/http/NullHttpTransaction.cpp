@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "HttpLog.h"
 
 #include "mozilla/net/NeckoChannelParams.h"  

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "ParentChannelWrapper.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/UrlClassifierCommon.h"

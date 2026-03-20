@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NetworkMarker_h_
 #define NetworkMarker_h_
 

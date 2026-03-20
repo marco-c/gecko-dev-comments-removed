@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHttpChannelAuthProvider_h_
 #define nsHttpChannelAuthProvider_h_
 

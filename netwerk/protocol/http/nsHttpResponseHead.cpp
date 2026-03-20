@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "HttpLog.h"
 
 #include "mozilla/dom/MimeType.h"

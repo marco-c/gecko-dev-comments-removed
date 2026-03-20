@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsInputStreamChannel_h_
 #define nsInputStreamChannel_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsProxyInfo.h"
 
 #include "mozilla/net/NeckoChannelParams.h"

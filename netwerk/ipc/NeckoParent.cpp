@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsBaseParentChannel.h"
 #include "nsHttp.h"
 #include "mozilla/BasePrincipal.h"

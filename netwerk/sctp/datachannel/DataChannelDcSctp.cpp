@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DataChannelDcSctp.h"
 #include "mozilla/Components.h"
 #include "mozilla/RandomNum.h"

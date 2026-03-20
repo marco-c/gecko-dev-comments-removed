@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 var pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService();

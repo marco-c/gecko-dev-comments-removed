@@ -6,8 +6,6 @@
 
 
 
-
-
 ChromeUtils.defineLazyGetter(this, "PATH", function () {
   return "http://localhost:" + srv.identity.primaryPort + "/object-state.sjs";
 });

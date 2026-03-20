@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsInputStreamPump_h_
 #define nsInputStreamPump_h_
 

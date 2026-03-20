@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIThreadPool.h"
 #if defined(HAVE_RES_NINIT)
 #  include <sys/types.h>

@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const gDashboard = Cc["@mozilla.org/network/dashboard;1"].getService(

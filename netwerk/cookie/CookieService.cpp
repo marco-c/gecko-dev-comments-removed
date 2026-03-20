@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CookieCommons.h"
 #include "CookieLogging.h"
 #include "CookieParser.h"

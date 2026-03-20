@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _binary_http_h_
 #define _binary_http_h_
 

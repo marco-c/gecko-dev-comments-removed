@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/UrlClassifierFeatureResult.h"
 
 namespace mozilla {

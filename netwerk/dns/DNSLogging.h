@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_DNSLogging_h
 #define mozilla_DNSLogging_h
 

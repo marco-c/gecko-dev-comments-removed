@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierExceptionList.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIUrlClassifierExceptionListEntry.h"

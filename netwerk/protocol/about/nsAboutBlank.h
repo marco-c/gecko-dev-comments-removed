@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAboutBlank_h_
 #define nsAboutBlank_h_
 

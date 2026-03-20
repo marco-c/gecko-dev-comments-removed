@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_netwerk_protocol_http_HttpTrafficAnalyzer_h
 #define mozilla_netwerk_protocol_http_HttpTrafficAnalyzer_h
 

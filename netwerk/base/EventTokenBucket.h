@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NetEventTokenBucket_h_
 #define NetEventTokenBucket_h_
 

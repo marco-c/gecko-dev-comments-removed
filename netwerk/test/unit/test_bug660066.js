@@ -1,4 +1,3 @@
-
 "use strict";
 
 const SIMPLEURI_SPEC = "data:text/plain,hello world";

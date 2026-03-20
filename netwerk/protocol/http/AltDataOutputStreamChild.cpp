@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/AltDataOutputStreamChild.h"
 #include "nsIInputStream.h"
 #include "nsStreamUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef HttpLog_h_
 #define HttpLog_h_
 

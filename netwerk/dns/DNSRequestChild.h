@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_DNSRequestChild_h
 #define mozilla_net_DNSRequestChild_h
 

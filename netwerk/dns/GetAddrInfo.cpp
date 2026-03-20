@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GetAddrInfo.h"
 
 #ifdef DNSQUERY_AVAILABLE

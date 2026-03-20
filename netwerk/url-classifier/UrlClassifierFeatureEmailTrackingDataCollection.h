@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_UrlClassifierFeatureEmailTrackingDataCollection_h
 #define mozilla_net_UrlClassifierFeatureEmailTrackingDataCollection_h
 

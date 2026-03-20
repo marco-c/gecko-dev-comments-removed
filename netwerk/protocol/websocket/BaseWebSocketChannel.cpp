@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebSocketLog.h"
 #include "BaseWebSocketChannel.h"
 #include "mozilla/dom/Document.h"

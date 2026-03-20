@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DNSListenerProxy_h_
 #define DNSListenerProxy_h_
 

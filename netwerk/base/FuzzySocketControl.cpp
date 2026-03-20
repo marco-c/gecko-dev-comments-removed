@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FuzzySocketControl.h"
 
 #include "FuzzySecurityInfo.h"

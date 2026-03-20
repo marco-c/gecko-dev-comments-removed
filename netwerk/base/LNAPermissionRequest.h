@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef LNAPermissionRequest_h_
 #define LNAPermissionRequest_h_
 #include "nsContentPermissionHelper.h"

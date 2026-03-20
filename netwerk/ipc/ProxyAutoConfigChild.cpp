@@ -2,7 +2,6 @@
 
 
 
-
 #include "ProxyAutoConfigChild.h"
 
 #include "mozilla/ipc/Endpoint.h"

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSocketProviderService_h_
 #define nsSocketProviderService_h_
 

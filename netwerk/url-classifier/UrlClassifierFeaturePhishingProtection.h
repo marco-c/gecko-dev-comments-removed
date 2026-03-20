@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UrlClassifierFeaturePhishingProtection_h
 #define mozilla_UrlClassifierFeaturePhishingProtection_h
 

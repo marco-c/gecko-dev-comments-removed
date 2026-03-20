@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/Assertions.h"
 #include "ShutdownLayer.h"
 #include "prerror.h"

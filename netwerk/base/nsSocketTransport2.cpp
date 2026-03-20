@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <algorithm>
 
 #include "nsSocketTransport2.h"

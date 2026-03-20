@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_Http2StreamTunnel_h
 #define mozilla_net_Http2StreamTunnel_h
 

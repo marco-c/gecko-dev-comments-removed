@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef QuicSocketControl_h
 #define QuicSocketControl_h
 

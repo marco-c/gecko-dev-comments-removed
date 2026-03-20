@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MozNewTabWallpaperProtocolHandler_h_
 #define MozNewTabWallpaperProtocolHandler_h_
 

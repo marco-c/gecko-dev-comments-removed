@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef nsSimpleNestedURI_h_
 #define nsSimpleNestedURI_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SimpleChannel.h"
 #include "mozilla/AutoRestore.h"
 

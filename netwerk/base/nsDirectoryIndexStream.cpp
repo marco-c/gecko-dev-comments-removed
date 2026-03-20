@@ -11,8 +11,6 @@
 
 
 
-
-
 #include "nsEscape.h"
 #include "nsDirectoryIndexStream.h"
 #include "mozilla/Logging.h"

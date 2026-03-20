@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierFeatureFingerprintingProtection.h"
 
 #include "mozilla/AntiTrackingUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierExceptionListEntry.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_privacy.h"

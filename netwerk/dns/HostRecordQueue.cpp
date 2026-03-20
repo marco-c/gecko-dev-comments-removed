@@ -2,7 +2,6 @@
 
 
 
-
 #include "HostRecordQueue.h"
 #include "mozilla/glean/NetwerkDnsMetrics.h"
 #include "nsQueryObject.h"

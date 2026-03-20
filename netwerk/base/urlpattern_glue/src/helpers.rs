@@ -2,7 +2,6 @@
 
 
 
-
 extern crate nsstring;
 use nsstring::nsACString;
 use nsstring::nsCString;

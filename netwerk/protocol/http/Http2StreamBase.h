@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_Http2StreamBase_h
 #define mozilla_net_Http2StreamBase_h
 

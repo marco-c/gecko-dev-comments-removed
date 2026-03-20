@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PageThumbProtocolHandler_h_
 #define PageThumbProtocolHandler_h_
 

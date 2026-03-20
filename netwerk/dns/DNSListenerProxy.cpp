@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/DNSListenerProxy.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsICancelable.h"

@@ -6,8 +6,6 @@
 
 
 
-
-
 #include "mozilla/Components.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/MemoryReporting.h"

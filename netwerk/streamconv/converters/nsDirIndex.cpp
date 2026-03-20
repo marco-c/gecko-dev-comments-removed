@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsDirIndex.h"
 
 NS_IMPL_ISUPPORTS(nsDirIndex, nsIDirIndex)

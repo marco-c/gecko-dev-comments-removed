@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ExecuteIfOnMainThreadEventTarget.h"
 #include "mozilla/ClearOnShutdown.h"
 

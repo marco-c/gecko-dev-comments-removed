@@ -2,8 +2,6 @@
 
 
 
-
-
 #define ALLOW_LATE_HTTPLOG_H_INCLUDE 1
 #include "base/basictypes.h"
 

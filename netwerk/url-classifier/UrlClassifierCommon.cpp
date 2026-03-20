@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/net/UrlClassifierCommon.h"
 
 #include "mozilla/AntiTrackingUtils.h"

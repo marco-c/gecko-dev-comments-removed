@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_net_TRRServiceChannel_h
 #define mozilla_net_TRRServiceChannel_h
 

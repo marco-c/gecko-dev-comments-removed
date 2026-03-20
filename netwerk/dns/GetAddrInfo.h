@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef netwerk_dns_GetAddrInfo_h
 #define netwerk_dns_GetAddrInfo_h
 

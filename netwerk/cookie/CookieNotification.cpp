@@ -2,7 +2,6 @@
 
 
 
-
 #include "CookieNotification.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "nsICookieNotification.h"

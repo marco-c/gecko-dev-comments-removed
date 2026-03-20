@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ExtensionProtocolHandler.h"
 
 #include "mozilla/BinarySearch.h"

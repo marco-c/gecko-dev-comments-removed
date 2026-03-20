@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsBaseParentChannel.h"
 
 NS_IMPL_ISUPPORTS(nsBaseParentChannel, nsIParentChannel, nsIStreamListener,

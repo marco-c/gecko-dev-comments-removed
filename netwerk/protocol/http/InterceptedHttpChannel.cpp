@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "InterceptedHttpChannel.h"
 #include "NetworkMarker.h"
 #include "nsContentSecurityManager.h"

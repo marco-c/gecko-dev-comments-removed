@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierFeatureEmailTrackingDataCollection.h"
 
 #include "mozilla/AntiTrackingUtils.h"

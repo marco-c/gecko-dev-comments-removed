@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsServerTiming_h_
 #define nsServerTiming_h_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsmimeheaderparamimpl_h_
 #define _nsmimeheaderparamimpl_h_
 #include "nsIMIMEHeaderParam.h"

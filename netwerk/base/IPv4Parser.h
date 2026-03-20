@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_net_IPv4Parser_h
 #define mozilla_net_IPv4Parser_h
 

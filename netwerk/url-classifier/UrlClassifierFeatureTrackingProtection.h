@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_UrlClassifierFeatureTrackingProtection_h
 #define mozilla_net_UrlClassifierFeatureTrackingProtection_h
 

@@ -3,13 +3,11 @@
 
 
 
-
 #include "HttpLog.h"
 
 #include "nsHttpAuthCache.h"
 
 #include <algorithm>
-#include <stdlib.h>
 
 #include "nsString.h"
 #include "nsCRT.h"

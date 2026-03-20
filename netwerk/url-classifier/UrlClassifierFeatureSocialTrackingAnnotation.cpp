@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UrlClassifierFeatureSocialTrackingAnnotation.h"
 
 #include "mozilla/net/UrlClassifierCommon.h"

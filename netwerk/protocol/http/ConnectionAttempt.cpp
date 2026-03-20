@@ -2,7 +2,6 @@
 
 
 
-
 #include "ConnectionAttempt.h"
 #include "nsHttpTransaction.h"
 #include "nsHttpConnectionInfo.h"

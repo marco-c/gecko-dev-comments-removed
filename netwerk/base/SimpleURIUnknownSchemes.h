@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SimpleURIUnknownSchemes_h_
 #define SimpleURIUnknownSchemes_h_
 

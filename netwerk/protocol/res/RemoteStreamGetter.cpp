@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteStreamGetter.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/net/NeckoChild.h"

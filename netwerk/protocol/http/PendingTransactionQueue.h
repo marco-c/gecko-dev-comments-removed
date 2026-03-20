@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef PendingTransactionQueue_h_
 #define PendingTransactionQueue_h_
 

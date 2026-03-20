@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BackgroundFileSaver.h"
 
 #include "ScopedNSSTypes.h"

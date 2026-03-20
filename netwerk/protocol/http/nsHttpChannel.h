@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHttpChannel_h_
 #define nsHttpChannel_h_
 

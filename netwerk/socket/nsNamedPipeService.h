@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_netwerk_socket_nsNamedPipeService_h
 #define mozilla_netwerk_socket_nsNamedPipeService_h
 

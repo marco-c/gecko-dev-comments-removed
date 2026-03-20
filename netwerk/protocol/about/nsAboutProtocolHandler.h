@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAboutProtocolHandler_h_
 #define nsAboutProtocolHandler_h_
 

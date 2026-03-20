@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TRRLoadInfo.h"
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/FeaturePolicy.h"

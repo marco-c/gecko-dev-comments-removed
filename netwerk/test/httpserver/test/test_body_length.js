@@ -8,8 +8,6 @@
 
 
 
-
-
 var srv;
 
 function run_test() {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsHTTPCompressConv.h"
 #include "ErrorList.h"
 #include "nsCOMPtr.h"

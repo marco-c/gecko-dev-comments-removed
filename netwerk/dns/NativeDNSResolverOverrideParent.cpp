@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NativeDNSResolverOverrideParent.h"
 
 #include "mozilla/ClearOnShutdown.h"

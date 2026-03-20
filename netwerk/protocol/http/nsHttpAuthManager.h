@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHttpAuthManager_h_
 #define nsHttpAuthManager_h_
 

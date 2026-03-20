@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef _mozTXTToHTMLConv_h_
 #define _mozTXTToHTMLConv_h_
 

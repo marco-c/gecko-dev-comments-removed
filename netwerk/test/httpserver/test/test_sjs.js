@@ -4,8 +4,6 @@
 
 
 
-
-
 var srv = createServer();
 
 var sjs = do_get_file("data/sjs/cgi.sjs");

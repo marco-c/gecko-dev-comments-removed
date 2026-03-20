@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CapsuleDecoder.h"
 
 #include "ErrorList.h"

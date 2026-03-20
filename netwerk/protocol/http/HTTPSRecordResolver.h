@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef HTTPSRecordResolver_h_
 #define HTTPSRecordResolver_h_
 

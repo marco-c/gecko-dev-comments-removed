@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsIURIMutator.h"
 #include "nsIURI.h"
 #include "nsComponentManagerUtils.h"

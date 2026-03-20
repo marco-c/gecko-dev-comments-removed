@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebTransportEventService.h"
 #include "nsThreadUtils.h"
 #include "nsIObserverService.h"

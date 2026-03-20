@@ -5,8 +5,6 @@
 
 
 
-
-
 var srv;
 
 ChromeUtils.defineLazyGetter(this, "tests", function () {

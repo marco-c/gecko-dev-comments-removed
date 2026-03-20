@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Capsule.h"
 #include "CapsuleEncoder.h"
 

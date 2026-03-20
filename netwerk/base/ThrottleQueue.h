@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_ThrottleQueue_h
 #define mozilla_net_ThrottleQueue_h
 

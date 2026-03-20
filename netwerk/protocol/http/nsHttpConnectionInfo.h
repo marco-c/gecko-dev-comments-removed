@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHttpConnectionInfo_h_
 #define nsHttpConnectionInfo_h_
 

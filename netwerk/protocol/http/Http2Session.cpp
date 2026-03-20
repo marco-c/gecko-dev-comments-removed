@@ -3,8 +3,6 @@
 
 
 
-
-
 #include "HttpLog.h"
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"

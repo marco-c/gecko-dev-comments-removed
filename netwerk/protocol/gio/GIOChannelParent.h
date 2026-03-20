@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NS_GIOCHANNELPARENT_H
 #define NS_GIOCHANNELPARENT_H
 

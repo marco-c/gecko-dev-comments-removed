@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef NETLINKSERVICE_H_
 #define NETLINKSERVICE_H_
 

@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNamedPipeIOLayer.h"
 
 #include <algorithm>

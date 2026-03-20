@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(_nsHTTPCompressConv_h_)
 #  define _nsHTTPCompressConv_h_ 1
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_ProtocolHandlerInfo_h
 #define mozilla_net_ProtocolHandlerInfo_h
 

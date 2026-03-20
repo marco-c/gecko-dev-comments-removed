@@ -1,7 +1,6 @@
 
 
 
-
 #ifndef nsURIHashKey_h_
 #define nsURIHashKey_h_
 

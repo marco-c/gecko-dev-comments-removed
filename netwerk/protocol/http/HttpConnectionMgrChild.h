@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef HttpConnectionMgrChild_h_
 #define HttpConnectionMgrChild_h_
 

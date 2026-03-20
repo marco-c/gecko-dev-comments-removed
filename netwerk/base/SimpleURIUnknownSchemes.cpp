@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SimpleURIUnknownSchemes.h"
 #include "mozilla/StaticPrefs_network.h"
 

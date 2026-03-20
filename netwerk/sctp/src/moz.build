@@ -1,14 +1,12 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla.net += [
     'usrsctp.h',
 ]
 
-
+# for socket
 OS_LIBS += CONFIG["SOCKET_LIBS"]
 
 UNIFIED_SOURCES += [
@@ -36,13 +34,13 @@ UNIFIED_SOURCES += [
 
 SOURCES += [
     'netinet/sctp_asconf.c',
-    'netinet/sctp_bsd_addr.c', 
+    'netinet/sctp_bsd_addr.c', # defines some macros (FREE, MALLOC) that clash
     'user_environment.c',
 ]
 
 Library('nksctp_s')
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'xul'

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_net_CacheEntryWriteHandleChild_h
 #define mozilla_net_CacheEntryWriteHandleChild_h
 

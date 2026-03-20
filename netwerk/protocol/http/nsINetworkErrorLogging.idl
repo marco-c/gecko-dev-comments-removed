@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
 interface nsIHttpChannel;
@@ -18,13 +16,13 @@ interface nsINetworkErrorReport : nsISupports
 [scriptable, uuid(391ba410-0a68-42f7-b3e4-3ec26db645c0)]
 interface nsINetworkErrorLogging : nsISupports
 {
-  
-
-
+  /**
+   * Called by nsHttpChannel to register a NEL policy
+   */
   void registerPolicy(in nsIHttpChannel aChannel);
 
-  
-
-
+  /**
+   * Maybe send error log payload if theres a policy.
+   */
   nsINetworkErrorReport generateNELReport(in nsIHttpChannel aChannel);
 };

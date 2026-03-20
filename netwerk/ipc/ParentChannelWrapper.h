@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_net_ParentChannelWrapper_h
 #define mozilla_net_ParentChannelWrapper_h
 

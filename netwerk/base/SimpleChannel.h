@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef SimpleChannel_h
 #define SimpleChannel_h
 

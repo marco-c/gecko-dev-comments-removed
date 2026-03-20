@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProxyAutoConfig_h_
 #define ProxyAutoConfig_h_
 
