@@ -263,8 +263,7 @@ pub fn prepare_repeatable_quad(
 
     
     
-    
-    let src_task_id: Option<RenderTaskId> = None;
+    let src_task_id = pattern.as_render_task();
 
     
     
@@ -274,8 +273,8 @@ pub fn prepare_repeatable_quad(
         || (num_repetitions > 64.0 && surface_rect.area() < 1024.0 * 1024.0);
 
     if repeat_using_a_shader {
-        let (src_task_id, opaque) = match src_task_id {
-            Some(_) => unimplemented!(),
+        let src_task_id = match src_task_id {
+            Some(task) => task,
             None => {
                 
                 
@@ -308,7 +307,7 @@ pub fn prepare_repeatable_quad(
                     return;
                 };
 
-                (task_id, pattern.is_opaque)
+                task_id
             }
         };
 
@@ -316,7 +315,7 @@ pub fn prepare_repeatable_quad(
             stretch_size,
             spacing: tile_spacing,
             src_task_id,
-            src_is_opaque: opaque,
+            src_is_opaque: pattern.is_opaque,
         };
 
         let repeat_pattern = repetitions.build(
