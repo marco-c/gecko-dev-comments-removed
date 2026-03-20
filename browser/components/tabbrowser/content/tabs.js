@@ -1367,7 +1367,11 @@
           let rect = ele => {
             return window.windowUtils.getBoundsWithoutFlushing(ele);
           };
-          let tab = this.visibleTabs[gBrowser.pinnedTabCount];
+          
+          
+          let tab = this.visibleTabs
+            .slice(gBrowser.pinnedTabCount)
+            .find(t => !t.splitview);
           if (tab && rect(tab).width <= this._tabClipWidth) {
             this.setAttribute("closebuttons", "activetab");
           } else {
