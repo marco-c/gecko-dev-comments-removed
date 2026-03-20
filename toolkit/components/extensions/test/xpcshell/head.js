@@ -166,6 +166,8 @@ function clearCache() {
     .getService(Ci.imgITools)
     .getImgCacheForDocument(null);
   imageCache.clearCache(false);
+
+  ChromeUtils.clearResourceCache();
 }
 
 var promiseConsoleOutput = async function (task) {
