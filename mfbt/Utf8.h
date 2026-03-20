@@ -20,12 +20,12 @@
                                 
 #include "mozilla/Types.h"      
 
+#include <limits>    
 #include <limits.h>  
 #include <stddef.h>  
 #include <stdint.h>  
 
 #if MOZ_HAS_JSRUST()
-#  include <limits>  
 
 extern "C" {
 
