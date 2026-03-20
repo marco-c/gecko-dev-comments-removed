@@ -14,11 +14,9 @@ add_task(async function test_no_category_values_as_markup_ids() {
 
   let categories = gBrowser.contentDocument.getElementById("categories");
 
-  let categoryValues = [
-    ...categories.querySelectorAll("moz-page-nav-button[view]"),
-  ].map(elem => {
+  let categoryValues = categories.itemChildren.map(elem => {
     return gBrowser.contentWindow.internalPrefCategoryNameToFriendlyName(
-      elem.getAttribute("view")
+      elem.value
     );
   });
 
