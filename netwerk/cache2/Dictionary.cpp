@@ -26,9 +26,13 @@
 #include "nsILoadGroup.h"
 #include "nsIObserverService.h"
 #include "nsIURI.h"
+#include "mozilla/Services.h"
 #include "nsIURIMutator.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsInputStreamPump.h"
+#include "nsIOService.h"
 #include "nsNetUtil.h"
+#include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsSimpleURI.h"
 #include "nsStandardURL.h"
@@ -45,6 +49,7 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/GleanPings.h"
 
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoParent.h"
@@ -243,7 +248,9 @@ bool DictionaryCacheEntry::IsReading() const {
 void DictionaryCacheEntry::CallbackOnCacheRead(
     const std::function<void(nsresult)>& aFunc) {
   MOZ_ASSERT(NS_IsMainThread());
-  mWaitingPrefetch.AppendElement(aFunc);
+  
+  
+  mWaitingPrefetch.AppendElement(PrefetchRequest{aFunc, false});
 }
 
 const Vector<uint8_t>& DictionaryCacheEntry::GetDictionary() const
@@ -275,12 +282,17 @@ nsresult DictionaryCacheEntry::Prefetch(
     nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
     const std::function<void(nsresult)>& aFunc) {
   MOZ_ASSERT(NS_IsMainThread());
+
   DICTIONARY_LOG(("Prefetch for %s", mURI.get()));
+
+  
+  bool isPrivateBrowsing = aLoadContextInfo && aLoadContextInfo->IsPrivate();
+
   
   
   if (!mWaitingPrefetch.IsEmpty()) {
     DICTIONARY_LOG(("Prefetch for %s - already waiting", mURI.get()));
-    mWaitingPrefetch.AppendElement(aFunc);
+    mWaitingPrefetch.AppendElement(PrefetchRequest{aFunc, isPrivateBrowsing});
     aShouldSuspend = true;
     return NS_OK;
   }
@@ -298,7 +310,7 @@ nsresult DictionaryCacheEntry::Prefetch(
 
   
   
-  mWaitingPrefetch.AppendElement(aFunc);
+  mWaitingPrefetch.AppendElement(PrefetchRequest{aFunc, isPrivateBrowsing});
 
   
   nsCOMPtr<nsICacheStorageService> cacheStorageService(
@@ -606,22 +618,21 @@ void DictionaryCacheEntry::CleanupOnCacheData(nsresult result) {
   DICTIONARY_LOG(("Unsuspending %zu channels", mWaitingPrefetch.Length()));
 
   
-  nsTArray<std::function<void(nsresult)>> callbacks =
-      std::move(mWaitingPrefetch);
+  nsTArray<PrefetchRequest> callbacks = std::move(mWaitingPrefetch);
 
-  for (auto& lambda : callbacks) {
-    (lambda)(result);
+  for (auto& request : callbacks) {
+    (request.callback)(result);
   }
 
   
   if (mReplacement) {
     DICTIONARY_LOG(("Unsuspending %zu replacement channels",
                     mReplacement->mWaitingPrefetch.Length()));
-    nsTArray<std::function<void(nsresult)>> replacementCallbacks =
+    nsTArray<PrefetchRequest> replacementCallbacks =
         std::move(mReplacement->mWaitingPrefetch);
 
-    for (auto& lambda : replacementCallbacks) {
-      (lambda)(result);
+    for (auto& request : replacementCallbacks) {
+      (request.callback)(result);
     }
   }
 
@@ -678,6 +689,36 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
             DICTIONARY_LOG(("Hash mismatch for %s: expected %s, computed %s",
                             self->mURI.get(), self->mHash.get(),
                             computedHash.get()));
+            
+            
+            
+            bool hasNonPrivateRequest = false;
+            for (const auto& request : self->mWaitingPrefetch) {
+              if (!request.isPrivateBrowsing) {
+                hasNonPrivateRequest = true;
+                break;
+              }
+            }
+
+            if (hasNonPrivateRequest) {
+              nsAutoCString site;
+              nsCOMPtr<nsIURI> uri;
+              if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), self->mURI))) {
+                nsCOMPtr<nsIEffectiveTLDService> eTLDService =
+                    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+                if (eTLDService) {
+                  (void)eTLDService->GetBaseDomain(uri, 0, site);
+                }
+              }
+              if (site.IsEmpty()) {
+                site.AssignLiteral("unknown");
+              }
+              mozilla::glean::network::ContentDecodingErrorReportExtra extra = {
+                  .errorType = Some(nsCString("dict_hash_mismatch"_ns)),
+                  .topLevelSite = Some(site)};
+              glean::network::content_decoding_error_report.Record(Some(extra));
+            }
+
             finalResult = NS_ERROR_CORRUPTED_CONTENT;
             pendingData.clear();
             shouldRemoveDictionary = true;
@@ -926,7 +967,6 @@ already_AddRefed<DictionaryCache> DictionaryCache::GetInstance() {
   
   if (!gDictionaryCache) {
     gDictionaryCache = new DictionaryCache();
-    MOZ_ASSERT(NS_SUCCEEDED(gDictionaryCache->Init()));
   }
   return do_AddRef(gDictionaryCache);
 }
@@ -945,17 +985,47 @@ nsresult DictionaryCache::Init() {
       return rv;
     }
     sCacheStorage = temp;
+
+    nsCOMPtr<nsIObserverService> obsService =
+        mozilla::services::GetObserverService();
+    if (obsService) {
+      obsService->AddObserver(this, "idle-daily", false);
+    }
   }
   DICTIONARY_LOG(("Inited DictionaryCache %p", sCacheStorage.get()));
   return NS_OK;
 }
 
-
 void DictionaryCache::Shutdown() {
+  DICTIONARY_LOG(("DictionaryCache::Shutdown"));
   sShutdown = true;
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIObserverService> obsService =
+        mozilla::services::GetObserverService();
+    if (obsService && gDictionaryCache) {
+      obsService->RemoveObserver(gDictionaryCache.get(), "idle-daily");
+    }
+  }
   gDictionaryCache = nullptr;
   sCacheStorage = nullptr;
 }
+
+NS_IMETHODIMP
+DictionaryCache::Observe(nsISupports* subject, const char* topic,
+                         const char16_t* data) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!strcmp(topic, "idle-daily")) {
+    
+    glean_pings::ContentDecodingError.Submit();
+  }
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMPL_ISUPPORTS(DictionaryCache, nsIObserver)
 
 nsresult DictionaryCache::AddEntry(nsIURI* aURI, const nsACString& aKey,
                                    const nsACString& aPattern,

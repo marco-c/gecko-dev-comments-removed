@@ -199,7 +199,13 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsCOMPtr<nsICryptoHash> mCrypto;
 
   
-  nsTArray<std::function<void(nsresult)>> mWaitingPrefetch;
+  struct PrefetchRequest {
+    std::function<void(nsresult)> callback;
+    bool isPrivateBrowsing;
+  };
+
+  
+  nsTArray<PrefetchRequest> mWaitingPrefetch;
 
   
   
@@ -309,7 +315,7 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
 };
 
 
-class DictionaryCache final {
+class DictionaryCache final : public nsIObserver {
  private:
   DictionaryCache() {
     nsresult rv = Init();
@@ -322,7 +328,8 @@ class DictionaryCache final {
   friend class DictionaryCacheEntry;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DictionaryCache)
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
   static already_AddRefed<DictionaryCache> GetInstance();
 
