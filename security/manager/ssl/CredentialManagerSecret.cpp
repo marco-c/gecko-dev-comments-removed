@@ -3,7 +3,6 @@
 
 
 
-
 #include "CredentialManagerSecret.h"
 
 #include <windows.h>

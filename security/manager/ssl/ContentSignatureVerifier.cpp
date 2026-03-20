@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentSignatureVerifier.h"
 
 #include "AppTrustDomain.h"

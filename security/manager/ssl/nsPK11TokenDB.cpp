@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsPK11TokenDB.h"
 
 #include "ScopedNSSTypes.h"

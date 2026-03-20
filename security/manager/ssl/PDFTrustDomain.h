@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef PDFTrustDomain_h
 #define PDFTrustDomain_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozISandboxReporter.h"
 #include "SandboxReporter.h"
 

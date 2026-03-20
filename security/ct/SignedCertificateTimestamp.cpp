@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SignedCertificateTimestamp.h"
 
 #include "CTUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxLogging_h
 #define mozilla_SandboxLogging_h
 

@@ -2,7 +2,6 @@
 
 
 
-
 pub mod error;
 
 use byteorder::{BigEndian, ReadBytesExt};

@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsNSSDialogHelper.h"
 
 #include "mozIDOMWindow.h"

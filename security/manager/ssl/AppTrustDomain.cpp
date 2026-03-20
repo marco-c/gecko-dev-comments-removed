@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AppTrustDomain.h"
 
 #include "MainThreadUtils.h"

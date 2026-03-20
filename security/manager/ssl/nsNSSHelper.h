@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsNSSHelper_h
 #define nsNSSHelper_h
 

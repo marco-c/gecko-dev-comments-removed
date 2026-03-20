@@ -2,7 +2,6 @@
 
 
 
-
 use pkcs11_bindings::*;
 use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::error_here;

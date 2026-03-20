@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxInternal_h
 #define mozilla_SandboxInternal_h
 

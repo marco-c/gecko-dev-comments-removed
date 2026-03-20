@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CTLogVerifier_h
 #define CTLogVerifier_h
 

@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef LibSecret_h
 #define LibSecret_h
 

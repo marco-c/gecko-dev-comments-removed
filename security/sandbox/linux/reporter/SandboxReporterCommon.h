@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxReporterCommon_h
 #define mozilla_SandboxReporterCommon_h
 

@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef CredentialManagerSecret_h
 #define CredentialManagerSecret_h
 

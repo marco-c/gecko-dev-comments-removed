@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CTUtils_h
 #define CTUtils_h
 

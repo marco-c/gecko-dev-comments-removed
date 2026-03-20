@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxReporterClient_h
 #define mozilla_SandboxReporterClient_h
 

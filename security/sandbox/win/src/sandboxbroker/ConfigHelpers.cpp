@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ConfigHelpers.h"
 
 #include <windows.h>

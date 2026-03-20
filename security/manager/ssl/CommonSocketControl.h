@@ -1,8 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef CommonSocketControl_h
 #define CommonSocketControl_h
@@ -25,15 +24,15 @@
     } while (false)
 #endif
 
-// CommonSocketControl is the base class that implements nsITLSSocketControl.
-// Various concrete TLS socket control implementations inherit from this class.
-// Currently these implementations consist of NSSSocketControl (a socket
-// control for NSS) and QuicSocketControl (a socket control for quic).
-// NB: these classes must only be used on the socket thread (the one exception
-// being tests that incidentally use CommonSocketControl on the main thread
-// (and only the main thread)). This is enforced via the macro
-// COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD() that should be called at the
-// beginning of every function in this class and all subclasses.
+
+
+
+
+
+
+
+
+
 class CommonSocketControl : public nsITLSSocketControl {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -42,7 +41,7 @@ class CommonSocketControl : public nsITLSSocketControl {
   CommonSocketControl(const nsCString& aHostName, int32_t aPort,
                       uint32_t aProviderFlags);
 
-  // Use "errorCode" 0 to indicate success.
+  
   virtual void SetCertVerificationResult(PRErrorCode errorCode) {
     MOZ_ASSERT_UNREACHABLE("Subclasses must override this.");
   }
@@ -153,14 +152,14 @@ class CommonSocketControl : public nsITLSSocketControl {
   uint16_t mSSLVersionUsed;
   uint32_t mProviderFlags;
 
-  // Fields used to build a TransportSecurityInfo
+  
   uint32_t mSecurityState;
   PRErrorCode mErrorCode;
-  // Certificates provided in the TLS handshake by the server.
+  
   nsTArray<RefPtr<nsIX509Cert>> mHandshakeCertificates;
-  // The server end-entity certificate.
+  
   nsCOMPtr<nsIX509Cert> mServerCert;
-  // The chain built during certificate validation, if successful.
+  
   nsTArray<RefPtr<nsIX509Cert>> mSucceededCertChain;
   mozilla::Maybe<uint16_t> mCipherSuite;
   mozilla::Maybe<nsCString> mKeaGroupName;
@@ -185,4 +184,4 @@ class CommonSocketControl : public nsITLSSocketControl {
 #endif
 };
 
-#endif  // CommonSocketControl_h
+#endif  

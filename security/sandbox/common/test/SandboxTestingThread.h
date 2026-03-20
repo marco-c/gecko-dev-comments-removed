@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxTestingThread_h
 #define mozilla_SandboxTestingThread_h
 

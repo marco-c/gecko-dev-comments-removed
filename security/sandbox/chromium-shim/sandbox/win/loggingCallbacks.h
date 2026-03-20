@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef security_sandbox_loggingCallbacks_h__
 #define security_sandbox_loggingCallbacks_h__
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_psm_PKCS11ModuleChild_h
 #define mozilla_psm_PKCS11ModuleChild_h
 

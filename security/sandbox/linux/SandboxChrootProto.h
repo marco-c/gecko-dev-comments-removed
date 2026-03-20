@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxChrootProto_h
 #define mozilla_SandboxChrootProto_h
 

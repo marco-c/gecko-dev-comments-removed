@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef Buffer_h
 #define Buffer_h
 

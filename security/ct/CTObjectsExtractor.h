@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CTObjectsExtractor_h
 #define CTObjectsExtractor_h
 

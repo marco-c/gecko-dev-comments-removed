@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_sandboxing_SandboxInitialization_h
 #define mozilla_sandboxing_SandboxInitialization_h
 

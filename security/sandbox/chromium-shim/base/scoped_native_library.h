@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef BASE_SCOPED_NATIVE_LIBRARY_H_
 #define BASE_SCOPED_NATIVE_LIBRARY_H_
 

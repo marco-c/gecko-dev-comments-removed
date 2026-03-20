@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSecureBrowserUIImpl_h
 #define nsSecureBrowserUIImpl_h
 

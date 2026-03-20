@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CTLogVerifier.h"
 #include "CTTestUtils.h"
 #include "nss.h"

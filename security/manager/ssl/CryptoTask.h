@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CryptoTask_h
 #define mozilla_CryptoTask_h
 

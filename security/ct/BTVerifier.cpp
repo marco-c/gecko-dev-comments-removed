@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BTVerifier.h"
 
 #include <stdint.h>

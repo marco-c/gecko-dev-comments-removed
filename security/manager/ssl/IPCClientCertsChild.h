@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_psm_IPCClientCertsChild_h_
 #define mozilla_psm_IPCClientCertsChild_h_
 

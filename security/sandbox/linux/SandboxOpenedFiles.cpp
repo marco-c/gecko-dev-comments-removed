@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SandboxOpenedFiles.h"
 
 #include <errno.h>

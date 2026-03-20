@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LinuxCapabilities.h"
 
 #include <unistd.h>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ContentSignatureVerifier_h
 #define ContentSignatureVerifier_h
 

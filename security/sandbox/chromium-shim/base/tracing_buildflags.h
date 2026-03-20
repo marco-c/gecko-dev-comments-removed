@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BASE_TRACING_BUILDFLAGS_H_
 #define BASE_TRACING_BUILDFLAGS_H_
 

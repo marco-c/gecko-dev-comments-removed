@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsNSSCertificate_h
 #define nsNSSCertificate_h
 

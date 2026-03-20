@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxOpenedFiles_h
 #define mozilla_SandboxOpenedFiles_h
 

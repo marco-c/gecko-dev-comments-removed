@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsNSSIOLayer.h"
 #include "sslproto.h"
 #include "sslerr.h"

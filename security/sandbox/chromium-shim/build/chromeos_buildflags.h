@@ -7,8 +7,6 @@
 
 
 
-
-
 #ifndef BUILD_CHROMEOS_BUILDFLAGS_H_
 #define BUILD_CHROMEOS_BUILDFLAGS_H_
 

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla += [
     "SandboxLaunch.h",
@@ -32,12 +30,12 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
         "-Wno-empty-body",
     ]
 
-
-
-
+# The include of chromium-config.mozbuild will add include path of the other
+# chromium headers living within ipc/chromium where base/compiler_specific.h
+# exists but is not the right version used in syscall_wrappers.cc
 LOCAL_INCLUDES += [
-    
-    
+    # Need this for safe_sprintf.h used by SandboxLogging.h,
+    # but it has to be after ipc/chromium/src.
     "/security/sandbox/chromium",
     "/security/sandbox/chromium-shim",
     "/security/sandbox/chromium-shim/base/allocator/partition_allocator/src",
@@ -52,7 +50,7 @@ USE_LIBS += [
     "mozsandbox",
 ]
 
-
+# For the X11 socket domain inspection in SandboxLaunch:
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 

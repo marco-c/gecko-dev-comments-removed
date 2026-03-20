@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxBroker_h
 #define mozilla_SandboxBroker_h
 

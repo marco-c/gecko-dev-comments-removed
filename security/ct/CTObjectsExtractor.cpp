@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CTObjectsExtractor.h"
 
 #include <limits>

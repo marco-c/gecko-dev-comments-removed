@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AppSignatureVerification_h
 #define AppSignatureVerification_h
 

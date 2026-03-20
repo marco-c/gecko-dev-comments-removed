@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MultiLogCTVerifier.h"
 
 #include "CTObjectsExtractor.h"

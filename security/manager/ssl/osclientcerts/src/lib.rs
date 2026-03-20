@@ -2,7 +2,6 @@
 
 
 
-
 #![allow(non_snake_case)]
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]

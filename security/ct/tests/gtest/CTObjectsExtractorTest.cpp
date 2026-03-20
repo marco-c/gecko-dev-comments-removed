@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CTLogVerifier.h"
 #include "CTObjectsExtractor.h"
 #include "CTSerialization.h"

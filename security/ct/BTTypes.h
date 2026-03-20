@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BTTypes_h
 #define BTTypes_h
 

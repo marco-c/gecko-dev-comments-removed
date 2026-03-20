@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "QWACTrustDomain.h"
 
 #include "mozpkix/pkixnss.h"

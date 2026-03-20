@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 const CHECK_AT_TIME = new Date("2020-01-01T00:00:00Z").getTime() / 1000;

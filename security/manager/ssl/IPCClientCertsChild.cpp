@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "IPCClientCertsChild.h"
 
 #include "mozilla/ipc/BackgroundChild.h"

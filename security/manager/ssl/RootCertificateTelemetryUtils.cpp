@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RootCertificateTelemetryUtils.h"
 
 #include "PKCS11ModuleDB.h"

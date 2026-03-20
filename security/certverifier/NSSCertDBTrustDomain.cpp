@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NSSCertDBTrustDomain.h"
 
 #include <stdint.h>

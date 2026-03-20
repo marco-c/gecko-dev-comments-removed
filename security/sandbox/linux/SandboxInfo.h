@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef mozilla_SandboxInfo_h
 #define mozilla_SandboxInfo_h
 
 #include "mozilla/Types.h"
+#include <cstdint>
 
 
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SandboxFilterUtil.h"
 
 #ifndef ANDROID

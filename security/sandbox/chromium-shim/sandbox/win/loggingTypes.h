@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef security_sandbox_loggingTypes_h__
 #define security_sandbox_loggingTypes_h__
 

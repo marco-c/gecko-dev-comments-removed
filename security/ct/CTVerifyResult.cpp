@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CTVerifyResult.h"
 
 #include <stdint.h>

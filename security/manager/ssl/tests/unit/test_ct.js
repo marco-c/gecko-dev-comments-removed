@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 do_get_profile(); 

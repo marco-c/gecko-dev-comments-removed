@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "sandbox/win/src/line_break_policy.h"
 
 #include <algorithm>

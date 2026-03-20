@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BTVerifier.h"
 #include "CTTestUtils.h"
 #include "gtest/gtest.h"

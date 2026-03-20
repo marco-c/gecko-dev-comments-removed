@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CertVerifier.h"
 #include "OCSPCache.h"
 #include "gtest/gtest.h"
@@ -27,7 +25,7 @@ inline Input LiteralInput(const char (&valueString)[N]) {
   
   
   
-  return Input(reinterpret_cast<const uint8_t(&)[N - 1]>(valueString));
+  return Input(reinterpret_cast<const uint8_t (&)[N - 1]>(valueString));
 }
 
 const int MaxCacheEntries = 1024;

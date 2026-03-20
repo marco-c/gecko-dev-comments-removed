@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SandboxPolicyGMP_h
 #define mozilla_SandboxPolicyGMP_h
 

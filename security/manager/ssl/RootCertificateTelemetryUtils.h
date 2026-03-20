@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef RootCertificateTelemetryUtils_h
 #define RootCertificateTelemetryUtils_h
 

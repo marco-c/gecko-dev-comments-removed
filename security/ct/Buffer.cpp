@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Buffer.h"
 
 #include <string.h>

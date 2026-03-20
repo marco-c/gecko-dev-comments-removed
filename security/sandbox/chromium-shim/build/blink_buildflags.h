@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BUILD_BLINK_BUILDFLAGS_H_
 #define BUILD_BLINK_BUILDFLAGS_H_
 

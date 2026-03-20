@@ -7,7 +7,6 @@
 
 
 
-
 #include "nsNSSDialogs.h"
 
 #include "mozIDOMWindow.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CTPolicyEnforcer.h"
 
 #include <algorithm>

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsPKCS12Blob_h
 #define nsPKCS12Blob_h
 

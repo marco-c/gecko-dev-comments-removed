@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef QWACTrustDomain_h
 #define QWACTrustDomain_h
 

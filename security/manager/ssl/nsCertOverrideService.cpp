@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsCertOverrideService.h"
 
 #include "NSSCertDBTrustDomain.h"

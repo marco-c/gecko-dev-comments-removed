@@ -8,7 +8,6 @@
 
 
 
-
 pub type OSStatus = i32;
 pub const errSecSuccess: OSStatus = 0;
 pub const errSecItemNotFound: OSStatus = -25300;
@@ -66,14 +65,15 @@ extern "C" {
     ) -> CFDataRef;
     pub fn SecKeyCopyAttributes(key: SecKeyRef) -> CFDictionaryRef;
     pub fn SecKeyCopyExternalRepresentation(key: SecKeyRef, err: *mut CFErrorRef) -> CFDataRef;
+    pub static kSecAttrKeyTypeECSECPrimeRandom: CFStringRef;
     pub static kSecKeyAlgorithmECDSASignatureDigestX962SHA1: CFStringRef;
     pub static kSecKeyAlgorithmECDSASignatureDigestX962SHA256: CFStringRef;
     pub static kSecKeyAlgorithmECDSASignatureDigestX962SHA384: CFStringRef;
     pub static kSecKeyAlgorithmECDSASignatureDigestX962SHA512: CFStringRef;
     pub static kSecKeyAlgorithmRSASignatureDigestPKCS1v15Raw: CFStringRef;
+    pub static kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1: CFStringRef;
     pub static kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA256: CFStringRef;
     pub static kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA384: CFStringRef;
     pub static kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA512: CFStringRef;
-    pub static kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1: CFStringRef;
-    pub static kSecAttrKeyTypeECSECPrimeRandom: CFStringRef;
+    pub static kSecKeyAlgorithmRSASignatureRaw: CFStringRef;
 }

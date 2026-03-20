@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PDFTrustDomain.h"
 
 #include "cert_storage/src/cert_storage.h"

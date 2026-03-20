@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxTest_h
 #define mozilla_SandboxTest_h
 

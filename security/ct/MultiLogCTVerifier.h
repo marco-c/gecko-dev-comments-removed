@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MultiLogCTVerifier_h
 #define MultiLogCTVerifier_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SandboxBrokerCommon.h"
 
 #include "mozilla/Assertions.h"

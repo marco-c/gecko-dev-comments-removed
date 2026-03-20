@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SandboxPolicySocket_h
 #define mozilla_SandboxPolicySocket_h
 

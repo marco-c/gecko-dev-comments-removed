@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxLaunch_h
 #define mozilla_SandboxLaunch_h
 

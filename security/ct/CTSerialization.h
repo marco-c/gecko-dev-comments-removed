@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CTSerialization_h
 #define CTSerialization_h
 

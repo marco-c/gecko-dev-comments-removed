@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LinuxSched_h
 #define mozilla_LinuxSched_h
 

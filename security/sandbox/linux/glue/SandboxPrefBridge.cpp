@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Sandbox.h"
 
 #include "mozilla/Preferences.h"

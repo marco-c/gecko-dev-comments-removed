@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NSSCertDBTrustDomain_h
 #define NSSCertDBTrustDomain_h
 

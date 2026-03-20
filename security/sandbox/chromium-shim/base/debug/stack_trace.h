@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef BASE_DEBUG_STACK_TRACE_H_
 #define BASE_DEBUG_STACK_TRACE_H_
 

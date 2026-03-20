@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "VerifySSLServerCertChild.h"
 
 #include "CertVerifier.h"

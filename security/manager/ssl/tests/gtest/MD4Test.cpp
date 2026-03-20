@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "md4.h"
 #include "mozilla/ArrayUtils.h"

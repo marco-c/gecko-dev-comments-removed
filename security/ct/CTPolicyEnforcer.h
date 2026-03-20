@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CTPolicyEnforcer_h
 #define CTPolicyEnforcer_h
 

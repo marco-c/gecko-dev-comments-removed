@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/BasePrincipal.h"
 #include "nsTLSSocketProvider.h"
 #include "nsNSSIOLayer.h"

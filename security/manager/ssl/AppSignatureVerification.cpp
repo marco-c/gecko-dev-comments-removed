@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsNSSCertificateDB.h"
 
 #include "AppSignatureVerification.h"

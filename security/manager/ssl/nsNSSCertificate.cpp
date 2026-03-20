@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNSSCertificate.h"
 
 #include "CertVerifier.h"

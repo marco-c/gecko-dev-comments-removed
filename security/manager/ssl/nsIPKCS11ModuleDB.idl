@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISerialEventTarget.idl"
 #include "nsISupports.idl"
@@ -23,10 +22,10 @@ interface nsIPKCS11ModuleDB : nsISupports
                     in unsigned long mechanismFlags,
                     in unsigned long cipherFlags);
 
-  
-
-
-
+  /**
+   * Resolves with an array of nsIPKCS11Module describing the configured
+   * PKCS#11 modules known to the module DB.
+   */
   [implicit_jscontext, must_use]
   Promise listModules();
 };

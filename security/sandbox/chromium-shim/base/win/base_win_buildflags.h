@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BASE_WIN_BASE_WIN_BUILDFLAGS_H_
 #define BASE_WIN_BASE_WIN_BUILDFLAGS_H_
 

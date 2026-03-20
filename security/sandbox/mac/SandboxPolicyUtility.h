@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SandboxPolicyUtility_h
 #define mozilla_SandboxPolicyUtility_h
 

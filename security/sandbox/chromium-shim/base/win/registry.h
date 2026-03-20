@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BASE_WIN_REGISTRY_H_
 #define BASE_WIN_REGISTRY_H_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OSReauthenticator.h"
 
 #include "mozilla/MacStringHelpers.h"

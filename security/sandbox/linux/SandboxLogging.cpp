@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SandboxLogging.h"
 
 #ifdef ANDROID

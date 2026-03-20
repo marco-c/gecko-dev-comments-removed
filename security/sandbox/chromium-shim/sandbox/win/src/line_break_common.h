@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SANDBOX_SRC_LINE_BREAK_COMMON_H_
 #define SANDBOX_SRC_LINE_BREAK_COMMON_H_
 

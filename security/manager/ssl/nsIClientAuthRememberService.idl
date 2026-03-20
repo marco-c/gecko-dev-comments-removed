@@ -1,8 +1,7 @@
-
-
-
-
-
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
 
@@ -41,12 +40,12 @@ interface nsIClientAuthRememberService : nsISupports
   Array<nsIClientAuthRememberRecord> getDecisions();
 
 
-  
-
-
-
-
-
+  /**
+   * Remember the use of a particular client certificate for a particular
+   * hostname in the context of a given OriginAttributes for the given
+   * duration. The certificate may be null, indicating that no certificate was
+   * used.
+   */
   [must_use, noscript]
   void rememberDecision(in ACString aHostName,
                         in const_OriginAttributesRef aOriginAttributes,

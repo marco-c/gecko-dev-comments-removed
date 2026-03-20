@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -28,14 +27,17 @@ const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 
 
-function checkChain(
+
+
+async function checkChain(
   rootKeyType,
   rootKeySize,
   intKeyType,
   intKeySize,
   eeKeyType,
   eeKeySize,
-  eeExpectedError
+  eeExpectedError,
+  makeRootBuiltIn = false
 ) {
   let rootName = "root_" + rootKeyType + "_" + rootKeySize;
   let intName = "int_" + intKeyType + "_" + intKeySize;
@@ -48,14 +50,28 @@ function checkChain(
   addCertFromFile(certdb, `test_keysize/${intFullName}.pem`, ",,");
   let eeCert = constructCertFromFile(`test_keysize/${eeFullName}.pem`);
 
-  info("cert o=" + eeCert.organization);
-  info("cert issuer o=" + eeCert.issuerOrganization);
-  return checkCertErrorGeneric(
+  if (makeRootBuiltIn) {
+    let root = constructCertFromFile(`test_keysize/${rootName}.pem`);
+    Services.prefs.setCharPref(
+      "security.test.built_in_root_hash",
+      root.sha256Fingerprint
+    );
+  }
+
+  info("end-entity: " + eeCert.commonName);
+  info("issuer: " + eeCert.issuerCommonName);
+  let result = await checkCertErrorGeneric(
     certdb,
     eeCert,
     eeExpectedError,
     Ci.nsIX509CertDB.verifyUsageTLSServer
   );
+
+  if (makeRootBuiltIn) {
+    Services.prefs.clearUserPref("security.test.built_in_root_hash");
+  }
+
+  return result;
 }
 
 
@@ -64,7 +80,12 @@ function checkChain(
 
 
 
-async function checkRSAChains(inadequateKeySize, adequateKeySize) {
+
+async function checkRSAChains(
+  inadequateKeySize,
+  adequateKeySize,
+  makeRootBuiltIn
+) {
   
   await checkChain(
     "rsa",
@@ -73,7 +94,8 @@ async function checkRSAChains(inadequateKeySize, adequateKeySize) {
     adequateKeySize,
     "rsa",
     adequateKeySize,
-    PRErrorCodeSuccess
+    PRErrorCodeSuccess,
+    makeRootBuiltIn
   );
 
   
@@ -84,7 +106,8 @@ async function checkRSAChains(inadequateKeySize, adequateKeySize) {
     adequateKeySize,
     "rsa",
     adequateKeySize,
-    MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE
+    MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE,
+    makeRootBuiltIn
   );
 
   
@@ -95,7 +118,8 @@ async function checkRSAChains(inadequateKeySize, adequateKeySize) {
     inadequateKeySize,
     "rsa",
     adequateKeySize,
-    MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE
+    MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE,
+    makeRootBuiltIn
   );
 
   
@@ -106,7 +130,8 @@ async function checkRSAChains(inadequateKeySize, adequateKeySize) {
     adequateKeySize,
     "rsa",
     inadequateKeySize,
-    MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE
+    MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE,
+    makeRootBuiltIn
   );
 }
 
@@ -198,7 +223,13 @@ async function checkCombinationChains() {
 }
 
 add_task(async function () {
-  await checkRSAChains(1016, 1024);
+  
+  await checkRSAChains(1016, 1024, false);
+  
+  
+  if (gIsDebugBuild) {
+    await checkRSAChains(1024, 2048, true);
+  }
   await checkECCChains();
   await checkCombinationChains();
 });

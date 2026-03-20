@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef INC_NSVERIFICATIONJOB_H
 #define INC_NSVERIFICATIONJOB_H
 

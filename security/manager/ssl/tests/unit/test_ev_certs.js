@@ -2,9 +2,7 @@
 
 
 
-
 "use strict";
-
 
 
 
@@ -115,7 +113,7 @@ function asyncTestEV(
   });
 }
 
-function ensureVerifiesAsEV(testcase) {
+function ensureVerifiesAsEVWithOneOCSPRequest(testcase) {
   let cert = constructCertFromFile(`test_ev_certs/${testcase}-ee.pem`);
   addCertFromFile(certdb, `test_ev_certs/${testcase}-int.pem`, ",,");
   let expectedOCSPRequestPaths = [`${testcase}-ee`];
@@ -150,12 +148,12 @@ function ensureVerificationFails(testcase, expectedPRErrorCode) {
   return asyncTestEV(cert, expectedPRErrorCode, false, []);
 }
 
-function verifyWithFlags_LOCAL_ONLY_and_MUST_BE_EV(testcase, expectSuccess) {
+function ensureVerifiesAsEVWithFLAG_LOCAL_ONLY(testcase) {
   let cert = constructCertFromFile(`test_ev_certs/${testcase}-ee.pem`);
   addCertFromFile(certdb, `test_ev_certs/${testcase}-int.pem`, ",,");
   let now = Date.now() / 1000;
   let expectedErrorCode = SEC_ERROR_POLICY_VALIDATION_FAILED;
-  if (expectSuccess && gEVExpected) {
+  if (gEVExpected) {
     expectedErrorCode = PRErrorCodeSuccess;
   }
   return new Promise(resolve => {
@@ -163,7 +161,7 @@ function verifyWithFlags_LOCAL_ONLY_and_MUST_BE_EV(testcase, expectSuccess) {
     let result = new EVCertVerificationResult(
       cert.subjectName,
       expectedErrorCode,
-      expectSuccess && gEVExpected,
+      gEVExpected,
       resolve,
       ocspResponder
     );
@@ -181,14 +179,6 @@ function verifyWithFlags_LOCAL_ONLY_and_MUST_BE_EV(testcase, expectSuccess) {
   });
 }
 
-function ensureNoOCSPMeansNoEV(testcase) {
-  return verifyWithFlags_LOCAL_ONLY_and_MUST_BE_EV(testcase, false);
-}
-
-function ensureVerifiesAsEVWithFLAG_LOCAL_ONLY(testcase) {
-  return verifyWithFlags_LOCAL_ONLY_and_MUST_BE_EV(testcase, true);
-}
-
 function verifyWithOCSPResponseType(testcase, response, expectEV) {
   let cert = constructCertFromFile(`test_ev_certs/${testcase}-ee.pem`);
   addCertFromFile(certdb, `test_ev_certs/${testcase}-int.pem`, ",,");
@@ -203,32 +193,38 @@ function verifyWithOCSPResponseType(testcase, response, expectEV) {
   );
 }
 
-function ensureVerifiesAsDVWithOldEndEntityOCSPResponse(testcase) {
-  return verifyWithOCSPResponseType(testcase, "longvalidityalmostold", false);
+function ensureVerifiesAsEVWithOldEndEntityOCSPResponse(testcase) {
+  return verifyWithOCSPResponseType(testcase, "longvalidityalmostold", true);
 }
 
-function ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(testcase) {
-  return verifyWithOCSPResponseType(testcase, "ancientstillvalid", false);
+function ensureVerifiesAsEVWithVeryOldEndEntityOCSPResponse(testcase) {
+  return verifyWithOCSPResponseType(testcase, "ancientstillvalid", true);
 }
 
 
 add_task(async function plainExpectSuccessEVTests() {
-  await ensureVerifiesAsEV("anyPolicy-int-path");
-  await ensureVerifiesAsEV("test-oid-path");
-  await ensureVerifiesAsEV("cabforum-oid-path");
-  await ensureVerifiesAsEV("cabforum-and-test-oid-ee-path");
-  await ensureVerifiesAsEV("test-and-cabforum-oid-ee-path");
-  await ensureVerifiesAsEV("reverse-order-oids-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("test-oid-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("cabforum-oid-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("cabforum-and-test-oid-ee-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("test-and-cabforum-oid-ee-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("reverse-order-oids-path");
+  await ensureVerifiesAsEVWithNoOCSPRequests("no-ocsp-ee-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("no-ocsp-int-path");
   
   
   
   
-  await ensureVerifiesAsEV("cabforum-and-test-oid-ee-cabforum-oid-int-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest(
+    "cabforum-and-test-oid-ee-cabforum-oid-int-path"
+  );
   
   
   
   
-  await ensureVerifiesAsEV("test-and-cabforum-oid-ee-cabforum-oid-int-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest(
+    "test-and-cabforum-oid-ee-cabforum-oid-int-path"
+  );
 });
 
 
@@ -236,8 +232,6 @@ add_task(async function plainExpectSuccessEVTests() {
 add_task(async function expectDVFallbackTests() {
   await ensureVerifiesAsDV("anyPolicy-ee-path");
   await ensureVerifiesAsDV("non-ev-root-path");
-  await ensureVerifiesAsDV("no-ocsp-ee-path", []);
-  await ensureVerifiesAsEV("no-ocsp-int-path");
   
   
   
@@ -262,19 +256,17 @@ add_task(async function evRootTrustTests() {
     Ci.nsIX509Cert.CA_CERT,
     Ci.nsIX509CertDB.TRUSTED_SSL
   );
-  await ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("test-oid-path");
 });
 
 
 
-add_task(async function localOnlyMustBeEVTests() {
+add_task(async function expectEVWithFlagLocalOnly() {
   clearOCSPCache();
-  await ensureNoOCSPMeansNoEV("anyPolicy-ee-path");
-  await ensureNoOCSPMeansNoEV("anyPolicy-int-path");
-  await ensureNoOCSPMeansNoEV("non-ev-root-path");
-  await ensureNoOCSPMeansNoEV("no-ocsp-ee-path");
-  await ensureNoOCSPMeansNoEV("no-ocsp-int-path");
-  await ensureNoOCSPMeansNoEV("test-oid-path");
+  await ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("no-ocsp-ee-path");
+  await ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("no-ocsp-int-path");
+  await ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("test-oid-path");
 });
 
 
@@ -284,8 +276,8 @@ add_task(async function localOnlyMustBeEVTests() {
 add_task(async function ocspCachingTests() {
   clearOCSPCache();
 
-  await ensureVerifiesAsEV("anyPolicy-int-path");
-  await ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithOneOCSPRequest("test-oid-path");
 
   await ensureVerifiesAsEVWithNoOCSPRequests("anyPolicy-int-path");
   await ensureVerifiesAsEVWithNoOCSPRequests("test-oid-path");
@@ -297,16 +289,57 @@ add_task(async function ocspCachingTests() {
 
 
 
+
 add_task(async function oldOCSPResponseTests() {
   clearOCSPCache();
 
   clearOCSPCache();
-  await ensureVerifiesAsDVWithOldEndEntityOCSPResponse("anyPolicy-int-path");
-  await ensureVerifiesAsDVWithOldEndEntityOCSPResponse("test-oid-path");
+  await ensureVerifiesAsEVWithOldEndEntityOCSPResponse("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithOldEndEntityOCSPResponse("test-oid-path");
 
   clearOCSPCache();
-  await ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(
+  await ensureVerifiesAsEVWithVeryOldEndEntityOCSPResponse(
     "anyPolicy-int-path"
   );
-  await ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse("test-oid-path");
+  await ensureVerifiesAsEVWithVeryOldEndEntityOCSPResponse("test-oid-path");
 });
+
+add_task(
+  { skip_if: () => !AppConstants.DEBUG },
+  async function expectEVUsingBuiltInRoot() {
+    
+    Services.prefs.setCharPref(
+      "security.test.built_in_root_hash",
+      evroot.sha256Fingerprint
+    );
+    
+    
+    Services.prefs.setIntPref("security.pki.crlite_mode", 2);
+    Services.prefs.setBoolPref("security.OCSP.require", false);
+
+    clearOCSPCache();
+    await ensureVerifiesAsEVWithNoOCSPRequests("anyPolicy-int-path");
+    await ensureVerifiesAsEVWithNoOCSPRequests("test-oid-path");
+
+    
+    
+    Services.prefs.setIntPref("security.pki.crlite_mode", 0);
+    Services.prefs.setBoolPref("security.OCSP.require", false);
+
+    clearOCSPCache();
+    await ensureVerifiesAsEVWithOneOCSPRequest("anyPolicy-int-path");
+    await ensureVerifiesAsEVWithOneOCSPRequest("test-oid-path");
+
+    
+    Services.prefs.setIntPref("security.pki.crlite_mode", 2);
+    Services.prefs.setBoolPref("security.OCSP.require", true);
+
+    clearOCSPCache();
+    await ensureVerifiesAsEVWithOneOCSPRequest("anyPolicy-int-path");
+    await ensureVerifiesAsEVWithOneOCSPRequest("test-oid-path");
+
+    Services.prefs.clearUserPref("security.test.built_in_root_hash");
+    Services.prefs.clearUserPref("security.pki.crlite_mode");
+    Services.prefs.clearUserPref("security.OCSP.require");
+  }
+);

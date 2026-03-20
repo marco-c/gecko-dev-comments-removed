@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsClientAuthRemember.h"
 
 #include "mozilla/BasePrincipal.h"

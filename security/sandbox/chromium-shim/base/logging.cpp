@@ -10,8 +10,6 @@
 
 
 
-
-
 #include "base/logging.h"
 
 #if defined(OS_WIN)

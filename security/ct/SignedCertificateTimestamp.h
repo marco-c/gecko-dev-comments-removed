@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef SignedCertificateTimestamp_h
 #define SignedCertificateTimestamp_h
 

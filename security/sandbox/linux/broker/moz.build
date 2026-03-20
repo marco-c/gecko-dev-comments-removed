@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla += [
     "SandboxBroker.h",
@@ -18,14 +16,14 @@ UNIFIED_SOURCES += [
 ]
 
 LOCAL_INCLUDES += [
-    "/security/sandbox/linux",  
+    "/security/sandbox/linux",  # SandboxLogging.h, SandboxInfo.h
 ]
 
-
+# Need this for mozilla::ipc::FileDescriptor etc.
 include("/ipc/chromium/chromium-config.mozbuild")
 
-
-
+# Need this for safe_sprintf.h used by SandboxLogging.h,
+# but it has to be after ipc/chromium/src.
 LOCAL_INCLUDES += [
     "/security/sandbox/chromium",
     "/security/sandbox/chromium-shim",

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LinuxCapabilities_h
 #define mozilla_LinuxCapabilities_h
 

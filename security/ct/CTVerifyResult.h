@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CTVerifyResult_h
 #define CTVerifyResult_h
 

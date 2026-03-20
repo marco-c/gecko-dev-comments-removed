@@ -6,8 +6,6 @@
 
 
 
-
-
 #ifndef security_sandbox_sandboxLogging_h__
 #define security_sandbox_sandboxLogging_h__
 

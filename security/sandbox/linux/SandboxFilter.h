@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxFilter_h
 #define mozilla_SandboxFilter_h
 

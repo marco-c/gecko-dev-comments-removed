@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsNTLMAuthModule_h_
 #define nsNTLMAuthModule_h_
 

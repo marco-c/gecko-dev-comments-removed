@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsSecureBrowserUI.h"
 
 #include "mozilla/Assertions.h"

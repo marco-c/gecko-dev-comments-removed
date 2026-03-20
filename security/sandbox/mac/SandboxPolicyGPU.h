@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SandboxPolicyGPU_h
 #define mozilla_SandboxPolicyGPU_h
 

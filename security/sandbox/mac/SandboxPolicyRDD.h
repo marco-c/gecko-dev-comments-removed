@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_SandboxPolicyRDD_h
 #define mozilla_SandboxPolicyRDD_h
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxBrokerUtils_h
 #define mozilla_SandboxBrokerUtils_h
 

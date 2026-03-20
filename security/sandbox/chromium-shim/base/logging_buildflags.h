@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef BASE_LOGGING_BUILDFLAGS_H_
 #define BASE_LOGGING_BUILDFLAGS_H_
 

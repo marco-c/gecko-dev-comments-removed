@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/SandboxSettings.h"
 #include "mozISandboxSettings.h"
 #include "nsServiceManagerUtils.h"

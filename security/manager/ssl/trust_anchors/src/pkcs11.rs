@@ -2,7 +2,6 @@
 
 
 
-
 #![allow(non_snake_case)]
 
 use pkcs11_bindings::*;

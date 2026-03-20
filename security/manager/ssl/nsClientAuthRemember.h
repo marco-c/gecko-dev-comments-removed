@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef NSCLIENTAUTHREMEMBER_H_
 #define NSCLIENTAUTHREMEMBER_H_
 

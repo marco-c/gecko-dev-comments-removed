@@ -2,7 +2,6 @@
 
 
 
-
 pub(crate) struct TrustAnchor {
     bytes: &'static [u8],
     subject: (u16, u8),

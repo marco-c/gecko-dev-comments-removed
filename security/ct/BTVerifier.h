@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef BTVerifier_h
 #define BTVerifier_h
 

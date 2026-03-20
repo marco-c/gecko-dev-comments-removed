@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SandboxTest.h"
 
 #include "mozilla/Components.h"

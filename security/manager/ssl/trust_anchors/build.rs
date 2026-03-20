@@ -2,7 +2,6 @@
 
 
 
-
 extern crate bindgen;
 extern crate nom;
 extern crate sha2;

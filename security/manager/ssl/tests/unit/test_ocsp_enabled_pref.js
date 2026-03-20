@@ -1,6 +1,5 @@
 
 
-
 "use strict";
 
 
@@ -47,7 +46,7 @@ async function testOff() {
     gCertDB,
     certFromFile("test-oid-path-ee"),
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    false
+    gEVExpected
   );
   await stopOCSPResponder(ocspResponder);
 
@@ -68,7 +67,6 @@ async function testOn() {
   Services.prefs.setIntPref("security.OCSP.enabled", 1);
   info("Setting security.OCSP.enabled to 1");
 
-  
   
   clearOCSPCache();
   let ocspResponder = getOCSPResponder(["test-oid-path-ee"]);
@@ -123,6 +121,8 @@ async function testCRLiteEnforced() {
 
   
   
+  Services.prefs.setBoolPref("security.OCSP.require", false);
+  info("Setting security.OCSP.require to false");
   let nonEVRootCert = certFromFile("non-evroot-ca");
   Services.prefs.setCharPref(
     "security.test.built_in_root_hash",
@@ -145,6 +145,29 @@ async function testCRLiteEnforced() {
 
   
   
+  Services.prefs.setBoolPref("security.OCSP.require", false);
+  info("Setting security.OCSP.require to false");
+  let evroot = certFromFile("evroot");
+  Services.prefs.setCharPref(
+    "security.test.built_in_root_hash",
+    evroot.sha256Fingerprint
+  );
+  info(
+    "Setting security.test.built_in_root_hash to " + evroot.sha256Fingerprint
+  );
+
+  clearOCSPCache();
+  ocspResponder = getOCSPResponder([]);
+  await checkEVStatus(
+    gCertDB,
+    certFromFile("test-oid-path-ee"),
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    gEVExpected
+  );
+  await stopOCSPResponder(ocspResponder);
+
+  
+  
   Services.prefs.setBoolPref("security.OCSP.require", true);
   info("Setting security.OCSP.require to true");
   clearOCSPCache();
@@ -158,9 +181,9 @@ async function testCRLiteEnforced() {
   await stopOCSPResponder(ocspResponder);
 
   
+  
   Services.prefs.setBoolPref("security.OCSP.require", true);
   info("Setting security.OCSP.require to true");
-  let evroot = certFromFile("evroot");
   Services.prefs.setCharPref(
     "security.test.built_in_root_hash",
     evroot.sha256Fingerprint

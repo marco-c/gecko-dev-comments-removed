@@ -1,9 +1,6 @@
-
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include PSMIPCTypes;
 
@@ -18,12 +15,12 @@ namespace psm {
 protocol PVerifySSLServerCert
 {
 child:
-  
-  
-  
-  
-  
-  
+  // This is not an incredibly intuitive order for these arguments, as
+  // `aFinalError` is probably the most salient argument (if it is 0, the
+  // connection will proceed, regardless of the value of, e.g. `aSucceeded`).
+  // However, this ordering matches the order of the related functions in
+  // SSLServerCertVerification.{h,cpp} (minus unnecessary arguments such as
+  // `aPeerCertChain`).
   async OnVerifySSLServerCertFinished(ByteArray[] aBuiltCertChain,
                                       uint16_t aCertTransparencyStatus,
                                       EVStatus aEVStatus,
@@ -36,5 +33,5 @@ child:
   async __delete__();
 };
 
-} 
-} 
+} // namespace psm
+} // namespace mozilla

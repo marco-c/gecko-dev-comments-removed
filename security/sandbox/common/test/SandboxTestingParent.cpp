@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SandboxTestingParent.h"
 #include "SandboxTestingThread.h"
 #include "nsIObserverService.h"

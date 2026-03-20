@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CTSerialization.h"
 #include "CTTestUtils.h"
 #include "gtest/gtest.h"

@@ -31,7 +31,6 @@
 
 
 
-
 #include "TLSClientAuthCertSelection.h"
 #include "cert_storage/src/cert_storage.h"
 #include "mozilla/Logging.h"

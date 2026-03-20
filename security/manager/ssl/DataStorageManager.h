@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_DataStorageManager_h
 #define mozilla_DataStorageManager_h
 

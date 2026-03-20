@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SandboxBrokerPolicyFactory_h
 #define mozilla_SandboxBrokerPolicyFactory_h
 

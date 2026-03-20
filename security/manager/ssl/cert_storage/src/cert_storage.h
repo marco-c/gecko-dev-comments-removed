@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _cert_storage_h_
 #define _cert_storage_h_
 

@@ -3,7 +3,6 @@
 
 
 
-
 #include "LibSecret.h"
 
 #include <gio/gio.h>
