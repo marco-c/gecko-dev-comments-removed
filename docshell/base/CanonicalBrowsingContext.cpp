@@ -2216,8 +2216,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
         return error.StealNSResult();
       }
 
-      rv = newDocShell->ResumeRedirectedLoad(mPendingSwitchId,
-                                              -1);
+      rv = newDocShell->ResumeRedirectedLoad(mPendingSwitchId);
       if (NS_FAILED(rv)) {
         return rv;
       }
