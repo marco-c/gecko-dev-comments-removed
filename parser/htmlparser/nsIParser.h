@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef NS_IPARSER_
 #define NS_IPARSER_
 

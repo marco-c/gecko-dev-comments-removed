@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsHtml5TreeOperation.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/CycleCollectedJSContext.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsParserConstants_h_
 #define nsParserConstants_h_
 

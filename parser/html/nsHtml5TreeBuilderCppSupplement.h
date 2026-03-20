@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ErrorList.h"
 #include "nsError.h"
 #include "nsHtml5AttributeName.h"

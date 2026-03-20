@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZ_EXPAT_H_
 #define MOZ_EXPAT_H_
 

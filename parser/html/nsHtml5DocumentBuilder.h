@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHtml5DocumentBuilder_h
 #define nsHtml5DocumentBuilder_h
 

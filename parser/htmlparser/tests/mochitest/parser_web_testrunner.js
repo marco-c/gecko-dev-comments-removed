@@ -18,7 +18,6 @@
 
 
 
-
 var functionsToRunAsync = [];
 
 window.addEventListener(

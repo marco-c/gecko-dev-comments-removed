@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsHtml5StreamParserReleaser_h
 #define nsHtml5StreamParserReleaser_h
 

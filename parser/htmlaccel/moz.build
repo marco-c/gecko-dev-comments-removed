@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla.htmlaccel += [
     "htmlaccel.h",
@@ -10,11 +8,11 @@ EXPORTS.mozilla.htmlaccel += [
     "htmlaccelNotInline.h",
 ]
 
-
-
-
-
-
+# Make sure the result is consistent with mozilla::htmlaccel::htmlaccelEnabled().
+#
+# Due to https://github.com/llvm/llvm-project/issues/160886, the entry points
+# need to be _not_ inline and, therefore, need a compilation unit. This should
+# go away once the LLVM bug is fixed.
 
 if (
     (CONFIG["TARGET_CPU"] == "x86_64")

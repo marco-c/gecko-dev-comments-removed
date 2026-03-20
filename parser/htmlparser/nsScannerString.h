@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsScannerString_h_
 #define nsScannerString_h_
 

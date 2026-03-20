@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsElementTable.h"
 
 struct HTMLElement {

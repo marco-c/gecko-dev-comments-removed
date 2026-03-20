@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsHtml5OplessBuilder_h
 #define nsHtml5OplessBuilder_h
 
