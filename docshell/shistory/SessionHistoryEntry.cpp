@@ -4,6 +4,8 @@
 
 #include "SessionHistoryEntry.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
+#include "nsCOMPtr.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsFrameLoader.h"
@@ -777,6 +779,11 @@ SessionHistoryEntry::GetParent(nsISHEntry** aParent) {
   return NS_OK;
 }
 
+already_AddRefed<SessionHistoryEntry> SessionHistoryEntry::GetParent() {
+  RefPtr<SessionHistoryEntry> parent = do_QueryReferent(mParent);
+  return parent.forget();
+}
+
 NS_IMETHODIMP
 SessionHistoryEntry::SetParent(nsISHEntry* aParent) {
   mParent = do_GetWeakReference(aParent);
@@ -1207,11 +1214,10 @@ SessionHistoryEntry::HasBFCacheEntry(SHEntrySharedParentState* aEntry) {
 
 NS_IMETHODIMP
 SessionHistoryEntry::AdoptBFCacheEntry(nsISHEntry* aEntry) {
-  nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aEntry);
-  NS_ENSURE_STATE(she && she->mInfo->mSharedState.Get());
+  auto* entry = static_cast<SessionHistoryEntry*>(aEntry);
+  NS_ENSURE_STATE(entry && entry->mInfo->mSharedState.Get());
 
-  mInfo->mSharedState =
-      static_cast<SessionHistoryEntry*>(aEntry)->mInfo->mSharedState;
+  mInfo->mSharedState = entry->mInfo->mSharedState;
 
   return NS_OK;
 }
@@ -1225,7 +1231,7 @@ SessionHistoryEntry::AbandonBFCacheEntry() {
 NS_IMETHODIMP
 SessionHistoryEntry::SharesDocumentWith(nsISHEntry* aEntry,
                                         bool* aSharesDocumentWith) {
-  SessionHistoryEntry* entry = static_cast<SessionHistoryEntry*>(aEntry);
+  SessionHistoryEntry* entry = aEntry->GetAsSessionHistoryEntry();
 
   MOZ_ASSERT_IF(entry->SharedInfo() != SharedInfo(),
                 entry->SharedInfo()->GetId() != SharedInfo()->GetId());
@@ -1243,9 +1249,8 @@ SessionHistoryEntry::SetLoadTypeAsHistory() {
 NS_IMETHODIMP
 SessionHistoryEntry::AddChild(nsISHEntry* aChild, int32_t aOffset,
                               bool aUseRemoteSubframes) {
-  nsCOMPtr<SessionHistoryEntry> child = do_QueryInterface(aChild);
-  MOZ_ASSERT_IF(aChild, child);
-  AddChild(child, aOffset, aUseRemoteSubframes);
+  AddChild(static_cast<SessionHistoryEntry*>(aChild), aOffset,
+           aUseRemoteSubframes);
 
   return NS_OK;
 }
@@ -1351,8 +1356,7 @@ NS_IMETHODIMP
 SessionHistoryEntry::RemoveChild(nsISHEntry* aChild) {
   NS_ENSURE_TRUE(aChild, NS_ERROR_FAILURE);
 
-  nsCOMPtr<SessionHistoryEntry> child = do_QueryInterface(aChild);
-  MOZ_ASSERT(child);
+  RefPtr<SessionHistoryEntry> child = aChild->GetAsSessionHistoryEntry();
   RemoveChild(child);
 
   return NS_OK;
@@ -1389,21 +1393,25 @@ SessionHistoryEntry::GetChildAt(int32_t aIndex, nsISHEntry** aChild) {
   return NS_OK;
 }
 
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
-    int32_t aChildOffset, nsISHEntry** aChild) {
-  *aChild = nullptr;
+void SessionHistoryEntry::GetChildAt(int32_t aIndex,
+                                     SessionHistoryEntry** aChild) {
+  RefPtr<SessionHistoryEntry> child = mChildren.SafeElementAt(aIndex);
+  child.forget(aChild);
+}
 
+SessionHistoryEntry*
+SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
+    int32_t aChildOffset) {
   bool dynamicallyAddedChild = false;
   HasDynamicallyAddedChild(&dynamicallyAddedChild);
   if (dynamicallyAddedChild) {
-    return;
+    return nullptr;
   }
 
   
   
   if (IsForceReloadType(mInfo->mLoadType) || mInfo->mLoadType == LOAD_REFRESH) {
-    return;
+    return nullptr;
   }
 
   
@@ -1415,23 +1423,28 @@ SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
 
   if (SharedInfo()->mExpired && (mInfo->mLoadType == LOAD_RELOAD_NORMAL)) {
     
-    *aChild = nullptr;
-    return;
+    return nullptr;
   }
   
-  GetChildAt(aChildOffset, aChild);
-  if (*aChild) {
+  auto* child = mChildren.SafeElementAt(aChildOffset);
+  if (child) {
     
-    (*aChild)->SetLoadType(mInfo->mLoadType);
+    child->SetLoadType(mInfo->mLoadType);
   }
+  return child;
+}
+
+NS_IMETHODIMP_(void)
+SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
+    int32_t aChildOffset, nsISHEntry** aChild) {
+  *aChild = GetChildSHEntryIfHasNoDynamicallyAddedChild(aChildOffset);
 }
 
 NS_IMETHODIMP
 SessionHistoryEntry::ReplaceChild(nsISHEntry* aNewChild) {
   NS_ENSURE_STATE(aNewChild);
 
-  nsCOMPtr<SessionHistoryEntry> newChild = do_QueryInterface(aNewChild);
-  MOZ_ASSERT(newChild);
+  RefPtr<SessionHistoryEntry> newChild = aNewChild->GetAsSessionHistoryEntry();
   return ReplaceChild(newChild) ? NS_OK : NS_ERROR_FAILURE;
 }
 
@@ -1511,16 +1524,15 @@ SessionHistoryEntry::SyncTreesForSubframeNavigation(
   
   
   
-  
-  
-  nsCOMPtr<nsISHEntry> newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
+  RefPtr<SessionHistoryEntry> newRootEntry =
+      nsSHistory::GetRootSHEntry(aEntry->GetAsSessionHistoryEntry());
   if (newRootEntry) {
     
     
 
     
     
-    nsCOMPtr<nsISHEntry> oldRootEntry = nsSHistory::GetRootSHEntry(this);
+    RefPtr<SessionHistoryEntry> oldRootEntry = nsSHistory::GetRootSHEntry(this);
 
     if (oldRootEntry) {
       nsSHistory::SwapEntriesData data = {aIgnoreBC, newRootEntry, nullptr};
@@ -1589,7 +1601,8 @@ already_AddRefed<nsIURI> SessionHistoryEntry::GetURIOrInheritedForAboutBlank()
 }
 
 already_AddRefed<nsSHistory> SessionHistoryEntry::GetSessionHistory() {
-  if (nsCOMPtr<nsISHEntry> rootSHEntry = nsSHistory::GetRootSHEntry(this)) {
+  if (RefPtr<SessionHistoryEntry> rootSHEntry =
+          nsSHistory::GetRootSHEntry(this)) {
     return rootSHEntry->GetShistory().downcast<nsSHistory>();
   }
   return nullptr;
@@ -1632,6 +1645,9 @@ PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
   return Some(PreviousSessionHistoryInfo(aPreviousEntryForActivation));
 }
 
+SessionHistoryEntry* SessionHistoryEntry::GetAsSessionHistoryEntry() {
+  return this;
+}
 }  
 }  
 

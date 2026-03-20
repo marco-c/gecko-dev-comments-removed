@@ -157,7 +157,6 @@
 #include "nsISecureBrowserUI.h"
 #include "nsISeekableStream.h"
 #include "nsISelectionDisplay.h"
-#include "nsISHEntry.h"
 #include "nsISiteSecurityService.h"
 #include "nsISocketProvider.h"
 #include "nsIStringBundle.h"
@@ -2607,7 +2606,7 @@ void nsDocShell::StoreWindowNameToSHEntries() {
         mBrowsingContext->Canonical()->GetActiveSessionHistoryEntry();
     if (entry) {
       nsSHistory::WalkContiguousEntries(
-          entry, [&](nsISHEntry* aEntry) { aEntry->SetName(name); });
+          entry, [&](SessionHistoryEntry* aEntry) { aEntry->SetName(name); });
     }
   } else {
     
@@ -10605,6 +10604,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   
   
+  [[maybe_unused]]
   bool updateSHistory = mBrowsingContext->ShouldUpdateSessionHistory(mLoadType);
 
   
@@ -10987,7 +10987,7 @@ nsresult nsDocShell::UpdateURLAndHistory(
 
   mLoadType = LOAD_PUSHSTATE;
 
-  nsCOMPtr<nsISHEntry> newSHEntry;
+  RefPtr<SessionHistoryEntry> newSHEntry;
   if (!isReplace) {
     
 
@@ -11251,7 +11251,8 @@ void nsDocShell::UpdateActiveEntry(
   }
 }
 
-nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
+nsresult nsDocShell::LoadHistoryEntry(SessionHistoryEntry* aEntry,
+                                      uint32_t aLoadType,
                                       bool aUserActivation) {
   NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
 
@@ -11264,7 +11265,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
   
   
   
-  nsCOMPtr<nsISHEntry> kungFuDeathGrip(aEntry);
+  RefPtr<SessionHistoryEntry> kungFuDeathGrip(aEntry);
 
   loadState->SetHasValidUserGestureActivation(
       loadState->HasValidUserGestureActivation() || aUserActivation);

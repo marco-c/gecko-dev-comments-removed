@@ -102,6 +102,7 @@
 
 
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/XMLHttpRequestMainThread.h"
 #include "nsIDOMEventListener.h"
 #include "nsISHEntry.h"
@@ -400,7 +401,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIDocumentViewer> mPreviousViewer;
-  nsCOMPtr<nsISHEntry> mSHEntry;
+  RefPtr<SessionHistoryEntry> mSHEntry;
   
   
   RefPtr<BFCachePreventionObserver> mBFCachePreventionObserver;
@@ -1440,7 +1441,7 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
   
   
 
-  mSHEntry = aSHEntry;
+  mSHEntry = static_cast<SessionHistoryEntry*>(aSHEntry);
 
   
   
@@ -1545,7 +1546,7 @@ nsDocumentViewer::Destroy() {
     
     MOZ_LOG(gPageCacheLog, LogLevel::Debug,
             ("BFCache not allowed, dropping SHEntry"));
-    nsCOMPtr<nsISHEntry> shEntry = std::move(mSHEntry);
+    RefPtr<SessionHistoryEntry> shEntry = std::move(mSHEntry);
     shEntry->SetDocumentViewer(nullptr);
     shEntry->SyncPresentationState();
   }
@@ -1578,7 +1579,7 @@ nsDocumentViewer::Destroy() {
 
     
     
-    nsCOMPtr<nsISHEntry> shEntry =
+    RefPtr<SessionHistoryEntry> shEntry =
         std::move(mSHEntry);  
 
     MOZ_LOG(gPageCacheLog, LogLevel::Debug,

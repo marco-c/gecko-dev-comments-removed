@@ -8,6 +8,7 @@
 
 #include "ContentAnalysis.h"
 #include "ErrorList.h"
+#include "SessionHistoryEntry.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorResult.h"
@@ -490,28 +491,27 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntryFromBFCache(
   mActiveEntry = aEntry;
 }
 
-bool CanonicalBrowsingContext::HasHistoryEntry(nsISHEntry* aEntry) {
+bool CanonicalBrowsingContext::HasHistoryEntry(SessionHistoryEntry* aEntry) {
   
   return aEntry && mActiveEntry == aEntry;
 }
 
-void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
-                                                  nsISHEntry* aNewEntry) {
+void CanonicalBrowsingContext::SwapHistoryEntries(
+    SessionHistoryEntry* aOldEntry, SessionHistoryEntry* aNewEntry) {
   
   if (mActiveEntry != aOldEntry) {
     return;
   }
 
-  nsCOMPtr<SessionHistoryEntry> newEntry = do_QueryInterface(aNewEntry);
   MOZ_LOG(gSHLog, LogLevel::Verbose,
           ("Swapping History Entries: mActiveEntry=%p, aNewEntry=%p. ",
            mActiveEntry.get(), aNewEntry));
-  if (!newEntry) {
+  if (!aNewEntry) {
     mActiveEntry = nullptr;
     return;
   }
 
-  mActiveEntry = newEntry.forget();
+  mActiveEntry = aNewEntry;
 }
 
 void CanonicalBrowsingContext::AddLoadingSessionHistoryEntry(
@@ -534,15 +534,12 @@ void CanonicalBrowsingContext::GetLoadingSessionHistoryInfoFromParent(
     for (BrowsingContext* sibling : GetParent()->Children()) {
       ++index;
       if (sibling == this) {
-        nsCOMPtr<nsISHEntry> shEntry;
-        parentSHE->GetChildSHEntryIfHasNoDynamicallyAddedChild(
-            index, getter_AddRefs(shEntry));
-        nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(shEntry);
-        if (she) {
-          aLoadingInfo.emplace(she);
+        if (RefPtr entry =
+                parentSHE->GetChildSHEntryIfHasNoDynamicallyAddedChild(index)) {
+          aLoadingInfo.emplace(entry);
           mLoadingEntries.AppendElement(LoadingSessionHistoryEntry{
-              aLoadingInfo.value().mLoadId, she.get()});
-          (void)SetHistoryID(she->DocshellID());
+              aLoadingInfo.value().mLoadId, entry.get()});
+          (void)SetHistoryID(entry->DocshellID());
         }
         break;
       }
@@ -1187,7 +1184,8 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
 
       int32_t indexOfHistoryLoad = -1;
       if (loadFromSessionHistory) {
-        nsCOMPtr<nsISHEntry> root = nsSHistory::GetRootSHEntry(newActiveEntry);
+        RefPtr<SessionHistoryEntry> root =
+            nsSHistory::GetRootSHEntry(newActiveEntry);
         indexOfHistoryLoad = shistory->GetIndexOfEntry(root);
         if (indexOfHistoryLoad < 0) {
           
@@ -1203,9 +1201,10 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
       nsAutoString nameOfNewEntry;
       newActiveEntry->GetName(nameOfNewEntry);
       if (!nameOfNewEntry.IsEmpty()) {
-        nsSHistory::WalkContiguousEntries(
-            newActiveEntry,
-            [](nsISHEntry* aEntry) { aEntry->SetName(EmptyString()); });
+        nsSHistory::WalkContiguousEntries(newActiveEntry,
+                                          [](SessionHistoryEntry* aEntry) {
+                                            aEntry->SetName(EmptyString());
+                                          });
       }
 
       MOZ_LOG(gSHLog, LogLevel::Verbose,
@@ -1493,7 +1492,7 @@ void CanonicalBrowsingContext::RemoveDynEntriesFromActiveSessionHistoryEntry() {
   
   
   NS_ENSURE_TRUE_VOID(shistory);
-  nsCOMPtr<nsISHEntry> root = nsSHistory::GetRootSHEntry(mActiveEntry);
+  RefPtr<SessionHistoryEntry> root = nsSHistory::GetRootSHEntry(mActiveEntry);
   shistory->RemoveDynEntries(shistory->GetIndexOfEntry(root), mActiveEntry);
 }
 
@@ -1501,7 +1500,7 @@ void CanonicalBrowsingContext::RemoveFromSessionHistory(const nsID& aChangeID) {
   nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
   if (shistory) {
     CallerWillNotifyHistoryIndexAndLengthChanges caller(shistory);
-    nsCOMPtr<nsISHEntry> root = nsSHistory::GetRootSHEntry(mActiveEntry);
+    RefPtr<SessionHistoryEntry> root = nsSHistory::GetRootSHEntry(mActiveEntry);
     bool didRemove;
     AutoTArray<nsID, 16> ids({GetHistoryID()});
     shistory->RemoveEntries(ids, shistory->GetIndexOfEntry(root), &didRemove);
@@ -2865,10 +2864,7 @@ void CanonicalBrowsingContext::ReactivateDocuments(
   if (Navigation::IsAPIEnabled()) {
     nsSHistory::WalkContiguousEntriesInOrder(
         aEntry, [&topNewSHIs](auto* aContiguousEntry) {
-          if (nsCOMPtr<SessionHistoryEntry> she =
-                  do_QueryInterface(aContiguousEntry)) {
-            topNewSHIs.AppendElement(she->Info());
-          }
+          topNewSHIs.AppendElement(aContiguousEntry->Info());
           return true;
         });
   }
@@ -3434,8 +3430,8 @@ struct ClearSiteWalkHistoryData {
 
 
 nsresult CanonicalBrowsingContext::ContainsSameOriginBfcacheEntry(
-    nsISHEntry* aEntry, mozilla::dom::BrowsingContext* aBC, int32_t aChildIndex,
-    void* aData) {
+    SessionHistoryEntry* aEntry, mozilla::dom::BrowsingContext* aBC,
+    int32_t aChildIndex, void* aData) {
   if (!aEntry) {
     return NS_OK;
   }
@@ -3490,12 +3486,12 @@ nsresult CanonicalBrowsingContext::ClearBfcacheByPrincipal(
         continue;
       }
 
-      AutoTArray<nsCOMPtr<nsISHEntry>, 4> entriesToDelete;
+      AutoTArray<RefPtr<SessionHistoryEntry>, 4> entriesToDelete;
       
       
       
       
-      for (nsCOMPtr<nsISHEntry>& entry : sh->Entries()) {
+      for (RefPtr<SessionHistoryEntry>& entry : sh->Entries()) {
         
         
         ClearSiteWalkHistoryData data;
@@ -3507,7 +3503,7 @@ nsresult CanonicalBrowsingContext::ClearBfcacheByPrincipal(
           entriesToDelete.AppendElement(entry);
         }
       }
-      for (nsCOMPtr<nsISHEntry>& entry : entriesToDelete) {
+      for (RefPtr<SessionHistoryEntry>& entry : entriesToDelete) {
         sh->EvictDocumentViewerForEntry(entry);
       }
     }

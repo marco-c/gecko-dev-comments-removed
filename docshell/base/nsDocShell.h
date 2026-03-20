@@ -14,6 +14,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsCOMPtr.h"
 #include "nsCharsetSource.h"
@@ -848,6 +849,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  
 
   static void ReportBFCacheComboTelemetry(uint32_t aCombo);
 
@@ -965,8 +967,8 @@ class nsDocShell final : public nsDocLoader,
       const mozilla::dom::SessionHistoryInfo& aInfo,
       mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
 
-  nsresult LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
-                            bool aUserActivation);
+  nsresult LoadHistoryEntry(mozilla::dom::SessionHistoryEntry* aEntry,
+                            uint32_t aLoadType, bool aUserActivation);
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
       bool aUserActivation, bool aNotifiedBeforeUnloadListeners);
