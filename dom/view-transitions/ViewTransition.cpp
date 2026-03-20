@@ -1266,7 +1266,8 @@ template <typename Callback>
 static bool ForEachDescendantWithViewTransitionNameInPaintOrder(
     nsIFrame* aFrame, const Callback& aCb) {
   
-  if (!aFrame->StyleUIReset()->mViewTransitionName.IsNone() && !aCb(aFrame)) {
+  if (!aFrame->StyleUIReset()->mViewTransitionName.value.IsNone() &&
+      !aCb(aFrame)) {
     return false;
   }
 
@@ -1332,7 +1333,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     if (!usedTransitionNames.EnsureInserted(name)) {
       
       
-      MOZ_ASSERT(!aFrame->StyleUIReset()->mViewTransitionName.IsMatchElement());
+      MOZ_ASSERT(
+          !aFrame->StyleUIReset()->mViewTransitionName.value.IsMatchElement());
 
       
       result.emplace(
@@ -1407,7 +1409,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     if (!usedTransitionNames.EnsureInserted(name)) {
       
       
-      MOZ_ASSERT(!aFrame->StyleUIReset()->mViewTransitionName.IsMatchElement());
+      MOZ_ASSERT(
+          !aFrame->StyleUIReset()->mViewTransitionName.value.IsMatchElement());
       result.emplace(
           SkipTransitionReason::DuplicateTransitionNameCapturingNewState);
       return false;
@@ -1843,7 +1846,7 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   const auto& computed = aFrame->StyleUIReset()->mViewTransitionName;
 
   
-  if (computed.IsNone()) {
+  if (computed.value.IsNone()) {
     return nullptr;
   }
 
@@ -1854,14 +1857,14 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   }
 
   
-  if (computed.IsIdent()) {
-    return RefPtr<nsAtom>{computed.AsIdent().AsAtom()}.forget();
+  if (computed.value.IsIdent()) {
+    return RefPtr<nsAtom>{computed.value.AsIdent().AsAtom()}.forget();
   }
 
   
   
   
-  MOZ_ASSERT(computed.IsMatchElement());
+  MOZ_ASSERT(computed.value.IsMatchElement());
 
   
   
