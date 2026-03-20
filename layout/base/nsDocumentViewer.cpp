@@ -339,7 +339,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
 
 
-  nsresult InitInternal(nsIWidget* aParentWidget, nsISupports* aState,
+  nsresult InitInternal(nsIWidget* aParentWidget,
                         mozilla::dom::WindowGlobalChild* aActor,
                         const LayoutDeviceIntRect& aBounds, bool aDoCreation,
                         bool aNeedMakeCX = true,
@@ -401,7 +401,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIDocumentViewer> mPreviousViewer;
-  RefPtr<SessionHistoryEntry> mSHEntry;
   
   
   RefPtr<BFCachePreventionObserver> mBFCachePreventionObserver;
@@ -528,7 +527,7 @@ NS_INTERFACE_MAP_END
 
 nsDocumentViewer::~nsDocumentViewer() {
   if (mDocument) {
-    Close(nullptr);
+    Close();
     mDocument->Destroy();
   }
 
@@ -543,10 +542,6 @@ nsDocumentViewer::~nsDocumentViewer() {
   NS_ASSERTION(!mPresShell && !mPresContext,
                "User did not call nsIDocumentViewer::Destroy");
   if (mPresShell || mPresContext) {
-    
-    
-    mSHEntry = nullptr;
-
     Destroy();
   }
 
@@ -657,7 +652,7 @@ NS_IMETHODIMP
 nsDocumentViewer::Init(nsIWidget* aParentWidget,
                        const LayoutDeviceIntRect& aBounds,
                        WindowGlobalChild* aActor) {
-  return InitInternal(aParentWidget, nullptr, aActor, aBounds, true);
+  return InitInternal(aParentWidget, aActor, aBounds, true);
 }
 
 nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
@@ -765,10 +760,10 @@ static already_AddRefed<nsPresContext> CreatePresContext(
 
 
 nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
-                                        nsISupports* aState,
                                         WindowGlobalChild* aActor,
                                         const LayoutDeviceIntRect& aBounds,
-                                        bool aDoCreation, bool aNeedMakeCX,
+                                        bool aDoCreation,
+                                        bool aNeedMakeCX ,
                                         bool aForceSetNewDocument ) {
   
   
@@ -833,7 +828,7 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
     if (window) {
       nsCOMPtr<Document> curDoc = window->GetExtantDoc();
       if (aForceSetNewDocument || curDoc != mDocument) {
-        nsresult rv = window->SetNewDocument(mDocument, aState, false, aActor);
+        nsresult rv = window->SetNewDocument(mDocument, nullptr, false, aActor);
         if (NS_FAILED(rv)) {
           Destroy();
           return rv;
@@ -1358,40 +1353,15 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
   return NS_OK;
 }
 
-static void AttachContainerRecurse(nsIDocShell* aShell) {
-  nsCOMPtr<nsIDocumentViewer> viewer;
-  aShell->GetDocViewer(getter_AddRefs(viewer));
-  if (viewer) {
-    viewer->SetIsHidden(false);
-    Document* doc = viewer->GetDocument();
-    if (doc) {
-      doc->SetContainer(static_cast<nsDocShell*>(aShell));
-    }
-    if (PresShell* presShell = viewer->GetPresShell()) {
-      presShell->SetForwardingContainer(WeakPtr<nsDocShell>());
-    }
-  }
-
-  
-  int32_t childCount;
-  aShell->GetInProcessChildCount(&childCount);
-  for (int32_t i = 0; i < childCount; ++i) {
-    nsCOMPtr<nsIDocShellTreeItem> childItem;
-    aShell->GetInProcessChildAt(i, getter_AddRefs(childItem));
-    nsCOMPtr<nsIDocShell> shell = do_QueryInterface(childItem);
-    AttachContainerRecurse(shell);
-  }
-}
-
 NS_IMETHODIMP
-nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
+nsDocumentViewer::Open() {
   NS_ENSURE_TRUE(mPresShell, NS_ERROR_NOT_INITIALIZED);
 
   if (mDocument) {
     mDocument->SetContainer(mContainer);
   }
 
-  MOZ_TRY(InitInternal(mParentWidget, aState, nullptr, mBounds, false));
+  MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, false));
 
   mHidden = false;
 
@@ -1401,17 +1371,6 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
 
   
   
-
-  if (aSHEntry) {
-    nsCOMPtr<nsIDocShellTreeItem> item;
-    int32_t itemIndex = 0;
-    while (NS_SUCCEEDED(
-               aSHEntry->ChildShellAt(itemIndex++, getter_AddRefs(item))) &&
-           item) {
-      nsCOMPtr<nsIDocShell> shell = do_QueryInterface(item);
-      AttachContainerRecurse(shell);
-    }
-  }
 
   SyncParentSubDocMap();
 
@@ -1435,13 +1394,11 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
 }
 
 NS_IMETHODIMP
-nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
+nsDocumentViewer::Close() {
   
   
   
   
-
-  mSHEntry = static_cast<SessionHistoryEntry*>(aSHEntry);
 
   
   
@@ -1451,14 +1408,6 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
 
   if (!mDocument) {
     return NS_OK;
-  }
-
-  if (mSHEntry) {
-    if (mBFCachePreventionObserver) {
-      mBFCachePreventionObserver->Disconnect();
-    }
-    mBFCachePreventionObserver = new BFCachePreventionObserver(mDocument);
-    mDocument->AddMutationObserver(mBFCachePreventionObserver);
   }
 
 #ifdef NS_PRINTING
@@ -1473,39 +1422,13 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
     
     mDocument->SetScriptGlobalObject(nullptr);
 
-    if (!mSHEntry && mDocument) {
+    if (mDocument) {
       mDocument->RemovedFromDocShell();
     }
   }
 
   RemoveFocusListener();
   return NS_OK;
-}
-
-static void DetachContainerRecurse(nsIDocShell* aShell) {
-  
-  aShell->SynchronizeLayoutHistoryState();
-  nsCOMPtr<nsIDocumentViewer> viewer;
-  aShell->GetDocViewer(getter_AddRefs(viewer));
-  if (viewer) {
-    if (Document* doc = viewer->GetDocument()) {
-      doc->SetContainer(nullptr);
-    }
-    if (PresShell* presShell = viewer->GetPresShell()) {
-      auto weakShell = static_cast<nsDocShell*>(aShell);
-      presShell->SetForwardingContainer(weakShell);
-    }
-  }
-
-  
-  int32_t childCount;
-  aShell->GetInProcessChildCount(&childCount);
-  for (int32_t i = 0; i < childCount; ++i) {
-    nsCOMPtr<nsIDocShellTreeItem> childItem;
-    aShell->GetInProcessChildAt(i, getter_AddRefs(childItem));
-    nsCOMPtr<nsIDocShell> shell = do_QueryInterface(childItem);
-    DetachContainerRecurse(shell);
-  }
 }
 
 NS_IMETHODIMP
@@ -1536,96 +1459,6 @@ nsDocumentViewer::Destroy() {
   if (mBFCachePreventionObserver) {
     mBFCachePreventionObserver->Disconnect();
     mBFCachePreventionObserver = nullptr;
-  }
-
-  if (mSHEntry && mDocument && !mDocument->IsBFCachingAllowed()) {
-    
-    
-    
-    
-    
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("BFCache not allowed, dropping SHEntry"));
-    RefPtr<SessionHistoryEntry> shEntry = std::move(mSHEntry);
-    shEntry->SetDocumentViewer(nullptr);
-    shEntry->SyncPresentationState();
-  }
-
-  
-  
-  if (mSHEntry) {
-    if (mPresShell) {
-      mPresShell->Freeze();
-    }
-
-    
-    mSHEntry->SetSticky(mIsSticky);
-    mIsSticky = true;
-
-    
-    if (nsSubDocumentFrame* f = FindContainerFrame()) {
-      f->ClearDisplayItems();
-    }
-
-    Hide();
-
-    
-    if (mDocument) {
-      mDocument->Sanitize();
-    }
-
-    
-    
-
-    
-    
-    RefPtr<SessionHistoryEntry> shEntry =
-        std::move(mSHEntry);  
-
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("Storing content viewer into cache entry"));
-    shEntry->SetDocumentViewer(this);
-
-    
-    
-    
-    shEntry->SyncPresentationState();
-    
-    
-
-    
-#ifdef ACCESSIBILITY
-    if (mPresShell) {
-      if (a11y::DocAccessible* docAcc = mPresShell->GetDocAccessible()) {
-        docAcc->Shutdown();
-      }
-    }
-#endif
-
-    
-    
-    
-    
-
-    if (mDocument) {
-      mDocument->SetContainer(nullptr);
-    }
-    if (mPresShell) {
-      mPresShell->SetForwardingContainer(mContainer);
-    }
-
-    
-    
-    nsCOMPtr<nsIDocShellTreeItem> item;
-    int32_t itemIndex = 0;
-    while (NS_SUCCEEDED(
-               shEntry->ChildShellAt(itemIndex++, getter_AddRefs(item))) &&
-           item) {
-      nsCOMPtr<nsIDocShell> shell = do_QueryInterface(item);
-      DetachContainerRecurse(shell);
-    }
-
-    return NS_OK;
   }
 
   
@@ -1795,8 +1628,7 @@ nsDocumentViewer::SetDocumentInternal(Document* aDocument,
     DestroyPresContext();
 
     mWindow = nullptr;
-    MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, true,
-                         false));
+    MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, true, true, false));
   }
 
   return NS_OK;
@@ -2064,7 +1896,6 @@ nsDocumentViewer::ClearHistoryEntry() {
                             StaticPrefs::javascript_options_gc_delay() * 2));
   }
 
-  mSHEntry = nullptr;
   return NS_OK;
 }
 
@@ -3207,16 +3038,10 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     mPresContext->SetIsRootPaginatedDocument(true);
     mPresContext->SetPageScale(1.0f);
   }
-  MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, false,
-                       false));
+
+  MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, true, false, false));
 
   Show();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocumentViewer::GetHistoryEntry(nsISHEntry** aHistoryEntry) {
-  NS_IF_ADDREF(*aHistoryEntry = mSHEntry);
   return NS_OK;
 }
 
