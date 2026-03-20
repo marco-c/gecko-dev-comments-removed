@@ -304,7 +304,11 @@ bool WebRenderLayerScrollData::ValidateSubtree(
     const WebRenderLayerScrollData* currentChild =
         &aParent.mLayerScrollData[currentChildIndex];
     childDescendantCounts += currentChild->mDescendantCount;
-    currentChild->ValidateSubtree(aParent, aVisitCounts, currentChildIndex);
+    if (!currentChild->ValidateSubtree(aParent, aVisitCounts,
+                                       currentChildIndex)) {
+      
+      return false;
+    }
 
     
     
