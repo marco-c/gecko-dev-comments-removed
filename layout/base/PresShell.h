@@ -764,6 +764,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
                                const nsIFrame* aPositionedFrame) const;
+  void CollectAnchorNames(const nsIFrame* aPositionedFrame,
+                          nsTArray<nsString>& aResult);
   void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   enum class AnchorPosUpdateResult {
