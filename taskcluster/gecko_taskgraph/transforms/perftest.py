@@ -6,53 +6,59 @@ This transform passes options from `mach perftest` to the corresponding task.
 """
 
 from datetime import date, timedelta
+from typing import Optional, Union
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
-from voluptuous import Any, Extra, Optional
 
 from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
 
 transforms = TransformSequence()
 
 
-perftest_description_schema = LegacySchema({
+class PerftestDescriptionSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     
-    Optional("perftest"): [[str]],
-    
-    
-    Optional("perftest-metrics"): optionally_keyed_by(
-        "perftest",
-        Any(
-            [str],
-            {str: Any(None, {str: Any(None, str, [str])})},
-        ),
-    ),
+    perftest: Optional[list[list[str]]] = None
     
     
-    Optional("perftest-perfherder-global"): optionally_keyed_by(
-        "perftest", {str: Any(None, str, [str])}
-    ),
+    perftest_metrics: Optional[
+        optionally_keyed_by(
+            "perftest",
+            Union[
+                list[str],
+                dict[str, Union[None, dict[str, Union[None, str, list[str]]]]],
+            ],
+            use_msgspec=True,
+        )
+    ] = None
     
-    Optional("perftest-extra-options"): optionally_keyed_by("perftest", [str]),
+    
+    perftest_perfherder_global: Optional[
+        optionally_keyed_by(
+            "perftest",
+            dict[str, Union[None, str, list[str]]],
+            use_msgspec=True,
+        )
+    ] = None
+    
+    perftest_extra_options: Optional[
+        optionally_keyed_by("perftest", list[str], use_msgspec=True)
+    ] = None
     
     
     
     
     
     
-    Optional("perftest-btime-variants"): optionally_keyed_by(
-        "perftest", [[Any(None, str)]]
-    ),
-    
-    Extra: object,
-})
+    perftest_btime_variants: Optional[
+        optionally_keyed_by("perftest", list[list[Optional[str]]], use_msgspec=True)
+    ] = None
 
 
-transforms.add_validate(perftest_description_schema)
+transforms.add_validate(PerftestDescriptionSchema)
 
 
 @transforms.add
