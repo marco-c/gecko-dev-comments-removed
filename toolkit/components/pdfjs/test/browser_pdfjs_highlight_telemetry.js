@@ -33,6 +33,9 @@ add_task(async function test() {
         set: [
           ["pdfjs.annotationEditorMode", 0],
           ["pdfjs.enableHighlight", true],
+          
+          
+          ["pdfjs.imagesRightClickMinSize", -1],
         ],
       });
 
