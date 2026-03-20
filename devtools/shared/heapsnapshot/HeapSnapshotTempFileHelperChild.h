@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_devtools_HeapSnapshotTempFileHelperChild_h
 #define mozilla_devtools_HeapSnapshotTempFileHelperChild_h
 

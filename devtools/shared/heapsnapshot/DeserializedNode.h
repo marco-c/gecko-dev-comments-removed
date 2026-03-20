@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_devtools_DeserializedNode_
 #define mozilla_devtools_DeserializedNode_
 

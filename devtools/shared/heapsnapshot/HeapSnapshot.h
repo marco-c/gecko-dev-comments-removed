@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_devtools_HeapSnapshot_
 #define mozilla_devtools_HeapSnapshot_
 
