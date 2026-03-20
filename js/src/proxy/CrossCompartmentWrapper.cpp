@@ -524,7 +524,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
   
   
   ObjectWrapperMap::Ptr p = wcompartment->lookupWrapper(origTarget);
-  MOZ_ASSERT(*p->value().unsafeGet() == wobj);
+  MOZ_ASSERT(p->value().unbarrieredGet() == wobj);
   wcompartment->removeWrapper(p);
 
   
@@ -647,7 +647,7 @@ JS_PUBLIC_API bool js::RecomputeWrappers(
          iter.next()) {
       
       
-      JSObject* wrapper = *iter.get().value().unsafeGet();
+      JSObject* wrapper = iter.get().value().unbarrieredGet();
       if (Wrapper::wrappedObject(wrapper)->is<FinalizationRecordObject>()) {
         continue;
       }

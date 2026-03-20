@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_Compartment_h
 #define vm_Compartment_h
 
@@ -485,10 +487,10 @@ struct WrapperValue {
 
 
   explicit WrapperValue(const ObjectWrapperMap::Ptr& ptr)
-      : value(*ptr->value().unsafeGet()) {}
+      : value(ptr->value().unbarrieredGet()) {}
 
   explicit WrapperValue(const ObjectWrapperMap::ModIterator& e)
-      : value(*e.get().value().unsafeGet()) {}
+      : value(e.get().value().unbarrieredGet()) {}
 
   JSObject*& get() { return value; }
   JSObject* get() const { return value; }
