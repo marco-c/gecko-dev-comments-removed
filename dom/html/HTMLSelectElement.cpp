@@ -124,16 +124,9 @@ HTMLSelectElement::HTMLSelectElement(
       mOptGroupCount(0),
       mSelectedIndex(-1) {
   SetHasWeirdParserInsertionMode();
-
-  
-  
-
   
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
                     ElementState::VALID);
-
-  AddMutationObserver(this);
-  SetupShadowTree();
 }
 
 void HTMLSelectElement::SetupShadowTree() {
@@ -155,7 +148,7 @@ void HTMLSelectElement::SetupShadowTree() {
   }
   sr->AppendChildTo(label, false, IgnoreErrors());
   RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
-  icon->SetPseudoElementType(PseudoStyleType::MozSelectPickerIcon);
+  icon->SetPseudoElementType(PseudoStyleType::PickerIcon);
   {
     RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
     icon->AppendChildTo(text, false, IgnoreErrors());
@@ -168,7 +161,7 @@ void HTMLSelectElement::SetupShadowTree() {
 Text* HTMLSelectElement::GetSelectedContentText() const {
   auto* sr = GetShadowRoot();
   if (!sr) {
-    MOZ_ASSERT(OwnerDoc()->IsStaticDocument());
+    MOZ_ASSERT(OwnerDoc()->IsStaticDocument() || !IsInComposedDoc());
     return nullptr;
   }
   auto* label = sr->GetFirstChild();
@@ -1131,9 +1124,8 @@ bool HTMLSelectElement::SelectSomething(bool aNotify) {
 
 nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  nsresult rv =
-      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(
+      nsGenericHTMLFormControlElementWithState::BindToTree(aContext, aParent));
 
   
   
@@ -1144,10 +1136,24 @@ nsresult HTMLSelectElement::BindToTree(BindContext& aContext,
   
   UpdateValidityElementStates(false);
 
-  return rv;
+  if (IsInComposedDoc()) {
+    if (!GetShadowRoot()) {
+      SetupShadowTree();
+    }
+    SelectedContentTextMightHaveChanged(false);
+    AddMutationObserver(this);
+  }
+
+  return NS_OK;
 }
 
 void HTMLSelectElement::UnbindFromTree(UnbindContext& aContext) {
+  if (IsInComposedDoc()) {
+    RemoveMutationObserver(this);
+    
+    
+  }
+
   nsGenericHTMLFormControlElementWithState::UnbindFromTree(aContext);
 
   
@@ -1684,7 +1690,7 @@ static void OptionValueMightHaveChanged(nsIContent* aMutatingNode) {
 #endif
 }
 
-void HTMLSelectElement::SelectedContentTextMightHaveChanged() {
+void HTMLSelectElement::SelectedContentTextMightHaveChanged(bool aNotify) {
   RefPtr textNode = GetSelectedContentText();
   if (!textNode) {
     return;
@@ -1696,7 +1702,7 @@ void HTMLSelectElement::SelectedContentTextMightHaveChanged() {
     selectedOption->GetRenderedLabel(newText);
   }
   ButtonControlFrame::EnsureNonEmptyLabel(newText);
-  textNode->SetText(newText, true);
+  textNode->SetText(newText, aNotify);
 #ifdef ACCESSIBILITY
   if (nsAccessibilityService* acc = GetAccService()) {
     if (nsIFrame* f = GetPrimaryFrame()) {
