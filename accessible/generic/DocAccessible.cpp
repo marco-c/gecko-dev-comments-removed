@@ -1866,15 +1866,8 @@ void DocAccessible::DoInitialUpdate() {
   
   
   if (!IPCDoc() && !IsRoot()) {
-    LocalAccessible* parent = LocalParent();
-    
-    
-    
-    MOZ_ASSERT(parent || mDocumentNode->IsStaticDocument());
-    if (parent) {
-      RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(LocalParent());
-      ParentDocument()->FireDelayedEvent(reorderEvent);
-    }
+    RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(LocalParent());
+    ParentDocument()->FireDelayedEvent(reorderEvent);
   }
 
   if (AppShutdown::IsShutdownImpending()) {
@@ -3365,43 +3358,4 @@ void DocAccessible::RefreshAnchorRelationCacheForTarget(
       }
     }
   }
-}
-
-void DocAccessible::BindChildDocument(DocAccessible* aDocument) {
-  if (mDocumentNode->IsStaticDocument()) {
-    
-    
-    
-    
-    
-    if (nsIContent* embedder =
-            aDocument->DocumentNode()->GetEmbedderElement()) {
-      LocalAccessible* embedderAcc = GetAccessible(embedder);
-      if (embedderAcc && embedderAcc->AppendChild(aDocument)) {
-        AppendChildDocument(aDocument);
-        if (mIPCDoc) {
-          MOZ_ASSERT(!aDocument->IPCDoc());
-          DocAccessibleChild* ipcDoc =
-              new DocAccessibleChild(aDocument, mIPCDoc->Manager());
-          aDocument->SetIPCDoc(ipcDoc);
-          auto* bc = dom::BrowserChild::GetFrom(mDocumentNode->GetDocShell());
-          MOZ_ASSERT(bc);
-          bc->SendPDocAccessibleConstructor(
-              ipcDoc, mIPCDoc, embedderAcc->ID(),
-              aDocument->DocumentNode()->GetBrowsingContext());
-        }
-      }
-    }
-    return;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mNotificationController->ScheduleChildDocBinding(aDocument);
 }

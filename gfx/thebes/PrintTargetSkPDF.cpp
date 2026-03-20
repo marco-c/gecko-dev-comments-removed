@@ -19,10 +19,6 @@
 #include "nsString.h"
 #include "skia/src/pdf/SkPDFUtils.h"
 
-#ifdef ACCESSIBILITY
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
-#endif
-
 using namespace mozilla::image;
 using namespace mozilla;
 
@@ -210,7 +206,6 @@ static SkPDF::Metadata GetDefaultMetadata() {
 
 nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
                                          const nsAString& aPrintToFileName,
-                                         uint64_t aBrowsingContextId,
                                          int32_t aStartPage, int32_t aEndPage) {
   
   
@@ -227,17 +222,6 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
 
   metadata.jpegDecoder = DecodeJpeg;
   metadata.jpegEncoder = EncodeJpeg;
-
-#ifdef ACCESSIBILITY
-  
-  SkPDF::StructureElementNode structRoot = {};
-  if (auto* builder =
-          mozilla::a11y::PdfStructTreeBuilder::Get(aBrowsingContextId)) {
-    if (builder->BuildStructTree(structRoot)) {
-      metadata.fStructureElementTreeRoot = &structRoot;
-    }
-  }
-#endif
 
   
   mPDFDoc = SkPDF::MakeDocument(mOStream.get(), metadata);

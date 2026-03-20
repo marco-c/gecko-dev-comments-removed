@@ -83,10 +83,6 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsPageSequenceFrame.h"
 #include "nsRange.h"
 
-#ifdef ACCESSIBILITY
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -886,31 +882,14 @@ nsresult nsPrintJob::SetupToPrintContent() {
     endPage = std::min(mNumPrintablePages, std::max(endPage, ranges[i + 1]));
   }
 
-  uint64_t browsingContextId = 0;
-  if (auto* bc = mPrintObject->mDocument->GetBrowsingContext()) {
-    browsingContextId = bc->Id();
-  }
-
   nsresult rv = NS_OK;
   
   
   
   
   if (mIsDoingPrinting) {
-#ifdef ACCESSIBILITY
-    if (!mIsCreatingPrintPreview) {
-      if (nsAccessibilityService* serv = GetAccService()) {
-        serv->NotifyOfPrintDocument(mPrintObject->mDocument);
-        
-        
-        
-        
-        
-      }
-    }
-#endif
-    rv = printData->mPrintDC->BeginDocument(
-        docTitleStr, fileNameStr, browsingContextId, startPage, endPage);
+    rv = printData->mPrintDC->BeginDocument(docTitleStr, fileNameStr, startPage,
+                                            endPage);
   }
 
   if (mIsCreatingPrintPreview) {

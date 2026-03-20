@@ -504,13 +504,6 @@ class nsDisplayHeaderFooter final : public nsPaintedDisplayItem {
     nsPageFrame* pageFrame = do_QueryFrame(mFrame);
     MOZ_ASSERT(pageFrame, "We should have an nsPageFrame");
 #endif
-#ifdef ACCESSIBILITY
-    
-    
-    
-    
-    aCtx->GetDrawTarget()->AccessibleId(0, 0);
-#endif
     static_cast<nsPageFrame*>(mFrame)->PaintHeaderFooter(
         *aCtx, ToReferenceFrame(), false);
   }

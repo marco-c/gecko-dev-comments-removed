@@ -123,7 +123,6 @@
 #include "nsWindowSizes.h"
 
 #ifdef ACCESSIBILITY
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #  include "nsAccessibilityService.h"
 #endif
 
@@ -4269,21 +4268,10 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   
   
   Maybe<nsDisplayListBuilder::Linkifier> linkifier;
-  if (aBuilder->IsForPrinting()) {
-    if (StaticPrefs::print_save_as_pdf_links_enabled()) {
-      linkifier.emplace(aBuilder, childOrOutOfFlow, aLists.Content());
-      linkifier->MaybeAppendLink(aBuilder, childOrOutOfFlow);
-    }
-#ifdef ACCESSIBILITY
-    auto [bcId, accId] = a11y::PdfStructTreeBuilder::GetAccId(childOrOutOfFlow);
-    if (bcId) {
-      
-      
-      auto* item = MakeDisplayItem<nsDisplayAccessibleId>(
-          aBuilder, childOrOutOfFlow, bcId, accId);
-      aLists.Content()->AppendToTop(item);
-    }
-#endif
+  if (StaticPrefs::print_save_as_pdf_links_enabled() &&
+      aBuilder->IsForPrinting()) {
+    linkifier.emplace(aBuilder, childOrOutOfFlow, aLists.Content());
+    linkifier->MaybeAppendLink(aBuilder, childOrOutOfFlow);
   }
 
   nsIFrame* parent = childOrOutOfFlow->GetParent();
