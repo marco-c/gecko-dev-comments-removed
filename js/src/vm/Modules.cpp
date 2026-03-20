@@ -1061,7 +1061,7 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
     JSContext* cx, Handle<ModuleObject*> module) {
   
   
-  MOZ_ASSERT(module->status() != ModuleStatus::New ||
+  MOZ_ASSERT(module->status() != ModuleStatus::New &&
              module->status() != ModuleStatus::Unlinked);
 
   
