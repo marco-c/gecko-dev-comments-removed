@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RDDProcessManager.h"
 #include "mozilla/image/ImageMemoryReporter.h"
@@ -3785,9 +3784,14 @@ void gfxPlatform::GetOverlayInfo(mozilla::widget::InfoObject& aObj) {
     return "Not Supported";
   };
 
+  
+  
+  
+  
+  
   nsPrintfCString value(
       "NV12=%s YUV2=%s BGRA8=%s RGB10A2=%s RGBA16F=%s VpSR=%s VpAutoHDR=%s "
-      "HDR=%s",
+      "HwOverlayHDR=%s",
       toString(mOverlayInfo.ref().mNv12Overlay),
       toString(mOverlayInfo.ref().mYuy2Overlay),
       toString(mOverlayInfo.ref().mBgra8Overlay),
