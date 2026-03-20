@@ -8,11 +8,11 @@
 
 #include <stdint.h>
 #include <cstdint>
+#include <cmath>
 #include <limits>
 #include <type_traits>
 #include <iostream>
 #include <tuple>
-#include <type_traits>
 
 using mozilla::AssertedCast;
 using mozilla::BitwiseCast;
@@ -41,6 +41,60 @@ static void TestBitwiseCast() {
   MOZ_RELEASE_ASSERT(BitwiseCast<int>(int(8675309)) == int(8675309));
   UintUlongBitwiseCast<unsigned int, unsigned long>::test();
 }
+
+
+
+
+#if defined(__clang__)
+#  define MOZ_NEVER_OPTIMIZE [[clang::optnone]]
+#elif defined(__GNUC__)
+#  define MOZ_NEVER_OPTIMIZE __attribute__((optimize("O0")))
+#else
+#  define MOZ_NEVER_OPTIMIZE
+#endif
+
+MOZ_NEVER_OPTIMIZE static void TestBitwiseCastNaN() {
+  
+  
+
+  
+  
+  
+
+  for (uint32_t nan : {
+           0x7f80'0001,  
+           0x7fbf'ffff,  
+           0x7fc0'0000,  
+           0x7fff'ffff,  
+       }) {
+    float f;
+    BitwiseCast<float>(nan, &f);
+    MOZ_RELEASE_ASSERT(std::isnan(f));
+
+    uint32_t bits;
+    BitwiseCast<uint32_t>(f, &bits);
+
+    MOZ_RELEASE_ASSERT(bits == nan);
+  }
+
+  for (uint64_t nan : {
+           UINT64_C(0x7ff0'0000'0000'0001),  
+           UINT64_C(0x7ff7'ffff'ffff'ffff),  
+           UINT64_C(0x7ff8'0000'0000'0000),  
+           UINT64_C(0x7fff'ffff'ffff'ffff),  
+       }) {
+    double d;
+    BitwiseCast<double>(nan, &d);
+    MOZ_RELEASE_ASSERT(std::isnan(d));
+
+    uint64_t bits;
+    BitwiseCast<uint64_t>(d, &bits);
+
+    MOZ_RELEASE_ASSERT(bits == nan);
+  }
+}
+
+#undef MOZ_NEVER_OPTIMIZE
 
 static void TestSameSize() {
   MOZ_RELEASE_ASSERT((IsInBounds<int16_t, int16_t>(int16_t(0))));
@@ -381,6 +435,7 @@ void TestSaturatingCast() {
 
 int main() {
   TestBitwiseCast();
+  TestBitwiseCastNaN();
 
   TestSameSize();
   TestToBiggerSize();

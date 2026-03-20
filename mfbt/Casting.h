@@ -51,6 +51,8 @@ namespace mozilla {
 template <typename To, typename From>
 inline void BitwiseCast(const From aFrom, To* aResult) {
   
+  
+  
 #if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 11)
   *aResult = __builtin_bit_cast(To, aFrom);
 #else
