@@ -7,10 +7,10 @@ Support for running spidermonkey jobs via dedicated scripts
 
 import os
 import re
+from typing import Literal, Optional
 
 import taskgraph
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.transforms.job import run_job_using
@@ -20,47 +20,52 @@ from gecko_taskgraph.util.hash import hash_path
 DSC_PACKAGE_RE = re.compile(".*(?=_)")
 SOURCE_PACKAGE_RE = re.compile(r".*(?=[-_]\d)")
 
-source_definition = {
-    Required("url"): str,
-    Required("sha256"): str,
-}
 
-common_schema = LegacySchema({
-    
-    
-    Required(Any("dsc", "tarball")): source_definition,
-    
-    
-    
-    Optional("name"): str,
-    
-    Optional("patch"): str,
-    
-    Optional("pre-build-command"): str,
-    
-    Optional("arch"): str,
-    
-    Optional("packages"): [str],
-    
-    
-    
-    
-    Optional("resolver"): Any("apt-get", "aptitude"),
-    
-    Required("workdir"): str,
-})
+class SourceDefinition(Schema, kw_only=True):
+    url: str
+    sha256: str
 
-debian_schema = common_schema.extend({
-    Required("using"): "debian-package",
-    
-    Required("dist"): str,
-})
 
-ubuntu_schema = common_schema.extend({
-    Required("using"): "ubuntu-package",
+class CommonSchema(Schema, kw_only=True):
     
-    Required("dist"): str,
-})
+    
+    dsc: Optional[SourceDefinition] = None
+    tarball: Optional[SourceDefinition] = None
+    
+    
+    
+    name: Optional[str] = None
+    
+    patch: Optional[str] = None
+    
+    pre_build_command: Optional[str] = None
+    
+    arch: Optional[str] = None
+    
+    packages: Optional[list[str]] = None
+    
+    
+    
+    
+    resolver: Optional[Literal["apt-get", "aptitude"]] = None
+    
+    workdir: str
+
+    def __post_init__(self):
+        if self.dsc is None and self.tarball is None:
+            raise ValueError("Either 'dsc' or 'tarball' must be provided")
+
+
+class DebianSchema(CommonSchema, kw_only=True):
+    using: Literal["debian-package"]
+    
+    dist: str
+
+
+class UbuntuSchema(CommonSchema, kw_only=True):
+    using: Literal["ubuntu-package"]
+    
+    dist: str
 
 
 def common_package(config, job, taskdesc, distro, version):
@@ -206,7 +211,7 @@ def common_package(config, job, taskdesc, distro, version):
         }
 
 
-@run_job_using("docker-worker", "debian-package", schema=debian_schema)
+@run_job_using("docker-worker", "debian-package", schema=DebianSchema)
 def docker_worker_debian_package(config, job, taskdesc):
     run = job["run"]
     version = {
@@ -221,7 +226,7 @@ def docker_worker_debian_package(config, job, taskdesc):
     common_package(config, job, taskdesc, "debian", version)
 
 
-@run_job_using("docker-worker", "ubuntu-package", schema=ubuntu_schema)
+@run_job_using("docker-worker", "ubuntu-package", schema=UbuntuSchema)
 def docker_worker_ubuntu_package(config, job, taskdesc):
     run = job["run"]
     version = {
