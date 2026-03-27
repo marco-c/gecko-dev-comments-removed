@@ -1,3 +1,4 @@
+/* vim: set ts=4 sts=4 sw=4 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -132,6 +133,12 @@ export class FormHistoryAutoCompleteResult {
 
   getImageAt(index) {
     const item = this.getAt(index);
+
+    if (this.getStyleAt(index) === "fromhistory") {
+      // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+      return "chrome://browser/skin/history.svg";
+    }
+
     return item?.image || "";
   }
 
