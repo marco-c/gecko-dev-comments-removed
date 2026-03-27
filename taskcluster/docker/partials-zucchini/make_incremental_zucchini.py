@@ -532,7 +532,7 @@ def main():
         "--cert-path",
         help="Certificate path",
         type=argparse.FileType("rb"),
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "--allow-staging-urls",
@@ -563,8 +563,11 @@ def main():
 
     base_workdir = os.path.abspath(args.workdir)
 
-    signing_cert = args.cert_path.read()
-    assert get_keysize(signing_cert) == 4096
+    if args.cert_path:
+        signing_cert = args.cert_path.read()
+        assert get_keysize(signing_cert) == 4096
+    else:
+        signing_cert = None
 
     
     cpus = os.cpu_count()  
