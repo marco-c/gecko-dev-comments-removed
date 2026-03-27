@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ContentParent_h
 #define mozilla_dom_ContentParent_h
 
@@ -425,8 +423,6 @@ class ContentParent final : public PContentParent,
 
   bool RequestRunToCompletion();
 
-  void UpdateCookieStatus(nsIChannel* aChannel);
-
   bool IsLaunching() const {
     return mLifecycleState == LifecycleState::LAUNCHING;
   }
@@ -647,9 +643,9 @@ class ContentParent final : public PContentParent,
   
   
   
-  nsresult AboutToLoadHttpDocumentForChild(
-      nsIChannel* aChannel,
-      bool* aShouldWaitForPermissionCookieUpdate = nullptr);
+  
+  
+  nsresult AboutToLoadDocumentForChild(nsIChannel* aChannel);
 
   
   

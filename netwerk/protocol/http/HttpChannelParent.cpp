@@ -1181,13 +1181,26 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
   
   
+  
+  
+  
+  
   if (!mIPCClosed) {
-    PContentParent* pcp = Manager()->Manager();
-    MOZ_ASSERT(pcp, "We should have a manager if our IPC isn't closed");
-    DebugOnly<nsresult> rv =
-        static_cast<ContentParent*>(pcp)->AboutToLoadHttpDocumentForChild(
-            chan, &args.shouldWaitForOnStartRequestSent());
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    
+    
+    
+    nsLoadFlags loadFlags;
+    MOZ_ALWAYS_SUCCEEDS(chan->GetLoadFlags(&loadFlags));
+    if (loadFlags & nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE) {
+      PNeckoParent* neckoParent = Manager();
+      MOZ_ASSERT(neckoParent,
+                 "We should have a manager if our IPC isn't closed");
+      if (PCookieServiceParent* csParent = LoneManagedOrNullAsserts(
+              neckoParent->ManagedPCookieServiceParent())) {
+        static_cast<CookieServiceParent*>(csParent)->TrackCookieLoad(chan);
+        args.shouldWaitForOnStartRequestSent() = true;
+      }
+    }
   }
 
   args.multiPartID() = multiPartID;
