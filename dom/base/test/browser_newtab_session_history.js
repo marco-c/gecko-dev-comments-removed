@@ -9,8 +9,7 @@ add_task(async function test_blank() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (browser) {
-      
-      BrowserTestUtils.startLoadingURIString(browser, "http://example.com");
+      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
       await BrowserTestUtils.browserLoaded(browser);
       ok(!gBrowser.canGoBack, "about:blank wasn't added to session history");
     }
@@ -26,10 +25,11 @@ add_task(async function test_newtab() {
       BrowserTestUtils.startLoadingURIString(browser, "about:newtab");
       await stopped;
 
-      
-      stopped = BrowserTestUtils.browserStopped(browser, "http://example.com/");
-      
-      BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
+      stopped = BrowserTestUtils.browserStopped(
+        browser,
+        "https://example.com/"
+      );
+      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
       await stopped;
 
       
@@ -53,4 +53,35 @@ add_task(async function test_newtab() {
       Assert.ok(gBrowser.canGoBack, "Should be able to browse back.");
     }
   );
+});
+
+
+add_task(async function test_blank_newtab() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtabpage.enabled", false]],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:newtab" },
+    async function (browser) {
+      const loaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
+      await loaded;
+
+      await TabStateFlusher.flush(browser);
+
+      const tab = gBrowser.getTabForBrowser(browser);
+      const tabState = JSON.parse(SessionStore.getTabState(tab));
+
+      Assert.equal(tabState.entries.length, 1, "Should only have one entry");
+      Assert.equal(
+        tabState.entries[0].url,
+        "https://example.com/",
+        "Should have example.com SH entry"
+      );
+      Assert.ok(!gBrowser.canGoBack, "Should not be able to go back");
+    }
+  );
+
+  await SpecialPowers.popPrefEnv();
 });

@@ -6,6 +6,7 @@ const BASE = getRootDirectory(gTestPath).replace(
 );
 
 async function navigateTo(browser, urls, expectedPersist) {
+  const initialUri = browser.currentURI.spec;
   
   for (let url of urls) {
     let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
@@ -78,6 +79,12 @@ async function navigateTo(browser, urls, expectedPersist) {
     let persisted = await SpecialPowers.spawn(browser, [], async function () {
       return content.document.documentElement.getAttribute("persisted");
     });
+    const penultimateUri = urls.length > 1 ? urls[urls.length - 2] : initialUri;
+    is(
+      browser.currentURI.spec,
+      penultimateUri,
+      "Went back to expected penultimate URL"
+    );
     is(
       persisted,
       expectedPersist.toString(),
@@ -97,6 +104,8 @@ add_task(async function testAboutPagesExemptFromBfcache() {
   await SpecialPowers.pushPrefEnv({ set: [["fission.bfcacheInParent", true]] });
 
   
+  
+  
   var browser;
   
   const private_test_cases = [
@@ -115,11 +124,7 @@ add_task(async function testAboutPagesExemptFromBfcache() {
   }
 
   
-  const regular_test_cases = [
-    ["about:home"],
-    ["about:home", "about:blank"],
-    ["about:blank", "about:newtab"],
-  ];
+  const regular_test_cases = [["about:home"], ["about:home", "about:blank"]];
   for (const urls of regular_test_cases) {
     info(`Regular tab - navigate to ${urls} urls`);
     let win = await BrowserTestUtils.openNewBrowserWindow();

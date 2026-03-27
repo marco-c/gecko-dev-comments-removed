@@ -7063,10 +7063,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
     aOpenedChannel->SetNotificationCallbacks(this);
   }
 
-  if (mLoadingEntry && mBrowsingContext->IsTop() &&
-      !ShouldAddToSessionHistory(finalURI, aOpenedChannel)) {
-    mLoadingEntry->mInfo.SetTransient();
-  }
   NS_ENSURE_SUCCESS(Embed(viewer, nullptr, false, aOpenedChannel, previousURI),
                     NS_ERROR_FAILURE);
 
@@ -11128,48 +11124,6 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(uint32_t aCacheKey) {
           mBrowsingContext, aCacheKey);
     }
   }
-}
-
-
-bool nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel) {
-  
-  
-  
-  
-  nsresult rv;
-  nsAutoCString buf;
-
-  rv = aURI->GetScheme(buf);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  if (buf.EqualsLiteral("about")) {
-    rv = aURI->GetPathQueryRef(buf);
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    if (buf.EqualsLiteral("blank")) {
-      return false;
-    }
-    
-    
-    if (buf.EqualsLiteral("newtab")) {
-      if (!StaticPrefs::browser_newtabpage_enabled()) {
-        return false;
-      }
-
-      NS_ENSURE_TRUE(aChannel, false);
-      nsCOMPtr<nsIPrincipal> resultPrincipal;
-      rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
-          aChannel, getter_AddRefs(resultPrincipal));
-      NS_ENSURE_SUCCESS(rv, false);
-      return !resultPrincipal->IsSystemPrincipal();
-    }
-  }
-
-  return true;
 }
 
 void nsDocShell::UpdateActiveEntry(

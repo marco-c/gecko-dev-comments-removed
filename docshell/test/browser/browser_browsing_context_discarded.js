@@ -104,6 +104,10 @@ add_task(async function replaceToplevel() {
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
     wantLoad: "about:blank",
   });
+  
+  tab.linkedBrowser.browsingContext.sessionHistory
+    .getEntryAtIndex(0)
+    .setTransient();
 
   const browsingContext = tab.linkedBrowser.browsingContext;
 
