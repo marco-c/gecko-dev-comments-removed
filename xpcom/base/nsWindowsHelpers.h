@@ -10,8 +10,10 @@
 
 #include <windows.h>
 #include <msi.h>
+#include <winternl.h>
 #include "nsAutoRef.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 
 
@@ -352,4 +354,52 @@ inline bool IsDynamicBlocklistDisabled(bool isSafeMode,
                                        bool hasCommandLineDisableArgument) {
   return isSafeMode || hasCommandLineDisableArgument;
 }
+
+extern "C" {
+NTSTATUS NTAPI RtlDosPathNameToNtPathName_U_WithStatus(PCWSTR aDosFileName,
+                                                       PUNICODE_STRING aNtName,
+                                                       PCWSTR* aFilePart,
+                                                       PVOID aRelativeName);
+}
+
+
+
+
+class NtPathFromDosPath {
+ public:
+  explicit NtPathFromDosPath(const wchar_t* aDosPath) : mUnicodeString{} {
+    mStatus = ::RtlDosPathNameToNtPathName_U_WithStatus(
+        aDosPath, &mUnicodeString, nullptr, nullptr);
+  }
+
+  ~NtPathFromDosPath() {
+    if (NT_SUCCESS(mStatus)) {
+      ::RtlFreeUnicodeString(&mUnicodeString);
+    }
+  }
+
+  NtPathFromDosPath(const NtPathFromDosPath&) = delete;
+  NtPathFromDosPath& operator=(const NtPathFromDosPath&) = delete;
+
+  bool IsValid() const {
+    return NT_SUCCESS(mStatus) && mUnicodeString.Length > 0;
+  }
+
+  
+  USHORT LengthInBytes() const { return mUnicodeString.Length; }
+
+  
+  bool CopyTo(mozilla::Span<WCHAR> aBuffer) const {
+    if (aBuffer.size_bytes() < mUnicodeString.Length) {
+      return false;
+    }
+    memcpy(aBuffer.data(), mUnicodeString.Buffer, mUnicodeString.Length);
+    return true;
+  }
+
+ private:
+  UNICODE_STRING mUnicodeString;
+  NTSTATUS mStatus;
+};
+
 #endif
