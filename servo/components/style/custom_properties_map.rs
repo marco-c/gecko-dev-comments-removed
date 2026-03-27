@@ -238,11 +238,13 @@ impl<'a> Equivalent<Key> for KeyRef<'a> {
 
 impl AllSubstitutionFunctions {
     
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
     
+    #[inline(always)]
     pub fn get(
         &self,
         name: &Name,
@@ -253,6 +255,7 @@ impl AllSubstitutionFunctions {
     }
 
     
+    #[inline(always)]
     pub fn insert(
         &mut self,
         name: &Name,
@@ -265,6 +268,7 @@ impl AllSubstitutionFunctions {
     }
 
     
+    #[inline(always)]
     pub fn iter(
         &self,
     ) -> impl Iterator<Item = (&Name, SubstitutionFunctionKind, &ComputedRegisteredValue)> {
