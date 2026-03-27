@@ -113,6 +113,7 @@ const char* const sExecutableExts[] = {
   ".scf",         
   ".scr",
   ".sct",
+  ".search-ms",  
   ".settingcontent-ms",
   ".shb",
   ".shs",
