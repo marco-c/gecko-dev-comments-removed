@@ -5,6 +5,7 @@
 package org.mozilla.geckoview;
 
 import androidx.annotation.NonNull;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
 
@@ -12,16 +13,52 @@ import org.mozilla.gecko.util.ThreadUtils;
 public class PageExtractionController {
 
   
+  public static class PageMetadata {
+    
+    @NonNull public final String[] structuredDataTypes;
+
+    
+    public final int wordCount;
+
+    
+    @NonNull public final String language;
+
+    
 
 
 
 
 
-  @ExperimentalGeckoViewApi
+
+    public PageMetadata(
+        @NonNull final String[] structuredDataTypes,
+        final int wordCount,
+        @NonNull final String language) {
+      this.structuredDataTypes = structuredDataTypes;
+      this.wordCount = wordCount;
+      this.language = language;
+    }
+
+     static PageMetadata fromBundle(@NonNull final GeckoBundle bundle) {
+      final String[] structuredDataTypes = bundle.getStringArray("structuredDataTypes");
+      final int wordCount = bundle.getInt("wordCount", -1);
+      final String language = bundle.getString("language");
+
+      return new PageMetadata(structuredDataTypes, wordCount, language);
+    }
+  }
+
+  
+
+
+
+
+
   public static class SessionPageExtractor {
 
     
     private static final String GET_TEXT_CONTENT_EVENT = "GeckoView:PageExtractor:GetTextContent";
+    private static final String GET_PAGE_METADATA_EVENT = "GeckoView:PageExtractor:GetPageMetadata";
 
     private static final String GET_TEXT_CONTENT_RESULT_KEY = "text";
 
@@ -60,6 +97,32 @@ public class PageExtractionController {
                       new PageExtractionException(PageExtractionException.ERROR_MALFORMED_RESULT));
 
                 return GeckoResult.fromValue(textContent);
+              },
+              exception ->
+                  GeckoResult.fromException(
+                      new PageExtractionException(
+                          PageExtractionException.ERROR_UNKNOWN, exception)));
+    }
+
+    
+
+
+
+
+
+    @HandlerThread
+    public @NonNull GeckoResult<PageMetadata> getPageMetadata() {
+      ThreadUtils.assertOnHandlerThread();
+      return mSession
+          .getEventDispatcher()
+          .queryBundle(GET_PAGE_METADATA_EVENT)
+          .then(
+              result -> {
+                if (result == null)
+                  return GeckoResult.fromException(
+                      new PageExtractionException(PageExtractionException.ERROR_NULL_RESULT));
+
+                return GeckoResult.fromValue(PageMetadata.fromBundle(result));
               },
               exception ->
                   GeckoResult.fromException(
