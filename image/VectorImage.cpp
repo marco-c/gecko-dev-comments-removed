@@ -1603,6 +1603,10 @@ void VectorImage::OnSVGDocumentError() {
   
   ReportDocumentUseCounters();
 
+  
+  
+  RefPtr<VectorImage> kungFuDeathGrip(this);
+
   if (mProgressTracker) {
     
     Progress progress = FLAG_HAS_ERROR;
