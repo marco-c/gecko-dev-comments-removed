@@ -2,6 +2,8 @@
 
 
 
+
+
 add_task(async function test_query_title_update() {
   try {
     var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].getService(

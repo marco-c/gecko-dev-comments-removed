@@ -2,6 +2,8 @@
 
 
 
+
+
 var observer = {
   handlePlacesEvents(events) {
     for (const event of events) {

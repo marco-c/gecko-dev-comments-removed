@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const { ExtensionTaskScheduler } = ChromeUtils.importESModule(

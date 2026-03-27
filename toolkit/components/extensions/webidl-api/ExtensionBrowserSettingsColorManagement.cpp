@@ -2,6 +2,7 @@
 
 
 
+
 #include "ExtensionBrowserSettingsColorManagement.h"
 #include "ExtensionEventManager.h"
 

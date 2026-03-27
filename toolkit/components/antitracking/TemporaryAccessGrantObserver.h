@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_temporaryaccessgrantobserver_h
 #define mozilla_temporaryaccessgrantobserver_h
 

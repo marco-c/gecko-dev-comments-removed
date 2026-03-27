@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const HISTOGRAM = "WEBEXT_BACKGROUND_PAGE_LOAD_MS";

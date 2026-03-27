@@ -2,6 +2,7 @@
 
 
 
+
 #include "MainThreadUtils.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/DocumentObserver.h"

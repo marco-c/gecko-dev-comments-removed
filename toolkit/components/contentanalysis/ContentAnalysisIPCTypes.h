@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_ContentAnalysisIPCTypes_h
 #define mozilla_ContentAnalysisIPCTypes_h
 

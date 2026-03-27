@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "mozilla/extensions/StreamFilterEvents.h"
 
 namespace mozilla {

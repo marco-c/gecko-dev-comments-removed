@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_antitrackingredirectheuristic_h
 #define mozilla_antitrackingredirectheuristic_h
 

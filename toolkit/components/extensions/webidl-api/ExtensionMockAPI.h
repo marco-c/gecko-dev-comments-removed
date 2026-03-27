@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_extensions_ExtensionMockAPI_h
 #define mozilla_extensions_ExtensionMockAPI_h
 

@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_glean_GleanText_h
 #define mozilla_glean_GleanText_h
 

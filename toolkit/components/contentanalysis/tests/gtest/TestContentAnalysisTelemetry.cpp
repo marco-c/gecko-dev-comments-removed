@@ -2,6 +2,7 @@
 
 
 
+
 #include "gtest/gtest.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/glean/ContentanalysisMetrics.h"

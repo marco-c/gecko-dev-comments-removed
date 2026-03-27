@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const cps = Cc["@mozilla.org/addons/content-policy;1"].getService(

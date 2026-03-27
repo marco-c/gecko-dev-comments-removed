@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsNavHistory_h_
 #define nsNavHistory_h_
 

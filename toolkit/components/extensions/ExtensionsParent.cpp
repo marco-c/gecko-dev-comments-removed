@@ -2,6 +2,7 @@
 
 
 
+
 #include "extIWebNavigation.h"
 #include "mozilla/extensions/ExtensionsParent.h"
 #include "mozilla/dom/BrowsingContext.h"

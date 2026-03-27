@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_settingschangeobserver_h
 #define mozilla_settingschangeobserver_h
 

@@ -2,6 +2,8 @@
 
 
 
+
+
 function run_test() {
   let query = PlacesUtils.history.getNewQuery();
   let options = PlacesUtils.history.getNewQueryOptions();

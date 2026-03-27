@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "mozilla/glean/bindings/Denominator.h"
 
 #include "nsString.h"

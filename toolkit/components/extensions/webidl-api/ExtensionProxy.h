@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef mozilla_extensions_ExtensionProxy_h
 #define mozilla_extensions_ExtensionProxy_h
 

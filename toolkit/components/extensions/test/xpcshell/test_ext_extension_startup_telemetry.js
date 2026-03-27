@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 const HISTOGRAM = "WEBEXT_EXTENSION_STARTUP_MS";

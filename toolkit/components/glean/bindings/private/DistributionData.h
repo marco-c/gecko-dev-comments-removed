@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_glean_DistributionData_h
 #define mozilla_glean_DistributionData_h
 

@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "mozilla/glean/bindings/DualLabeledCounter.h"
 
 #include "mozilla/dom/GleanMetricsBinding.h"

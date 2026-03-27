@@ -1,24 +1,26 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
 import { ExtensionUtils } from "resource://gre/modules/ExtensionUtils.sys.mjs";
 
-// Hard limits on maximum message size that can be read/written
-// These are defined in the native messaging documentation, note that
-// the write limit is imposed by the "wire protocol" in which message
-// boundaries are defined by preceding each message with its length as
-// 4-byte unsigned integer so this is the largest value that can be
-// represented.  Good luck generating a serialized message that large,
-// the practical write limit is likely to be dictated by available memory.
+
+
+
+
+
+
+
 const MAX_READ = 1024 * 1024;
 const MAX_WRITE = 0xffffffff;
 
-// Preferences that can lower the message size limits above,
-// used for testing the limits.
+
+
 const PREF_MAX_READ = "webextensions.native-messaging.max-input-message-bytes";
 const PREF_MAX_WRITE =
   "webextensions.native-messaging.max-output-message-bytes";
@@ -37,29 +39,29 @@ const lazy = XPCOMUtils.declareLazy({
 
 const { ExtensionError, promiseTimeout } = ExtensionUtils;
 
-// For a graceful shutdown (i.e., when the extension is unloaded or when it
-// explicitly calls disconnect() on a native port), how long we give the native
-// application to exit before we start trying to kill it.  (in milliseconds)
+
+
+
 const GRACEFUL_SHUTDOWN_TIME = 3000;
 
 export class NativeApp extends EventEmitter {
   _throwGenericError(application) {
-    // Report a generic error to not leak information about whether a native
-    // application is installed to addons that do not have the right permission.
+    
+    
     throw new ExtensionError(`No such native application ${application}`);
   }
 
-  /**
-   * @param {BaseContext} context The context that initiated the native app.
-   * @param {string} application The identifier of the native app.
-   */
+  
+
+
+
   constructor(context, application) {
     super();
 
     this.context = context;
     this.name = application;
 
-    // We want a close() notification when the window is destroyed.
+    
     this.context.callOnClose(this);
 
     this.proc = null;
@@ -92,19 +94,19 @@ export class NativeApp extends EventEmitter {
 
         let command = hostInfo.manifest.path;
         if (AppConstants.platform == "win") {
-          // Normalize in case the extension used / instead of \.
+          
           command = command.replaceAll("/", "\\");
 
-          // Relative paths are only supported on Windows. On Linux and macOS,
-          // _tryPath in NativeManifests.sys.mjs enforces that the command path
-          // is absolute.
+          
+          
+          
           if (!PathUtils.isAbsolute(command)) {
-            // Note: hostInfo.path is an absolute path to the manifest.
+            
             const parentPath = PathUtils.parent(
               hostInfo.path.replaceAll("/", "\\")
             );
-            // PathUtils.joinRelative cannot be used because it throws for "..".
-            // but command is allowed to contain ".." to traverse the directory.
+            
+            
             command = `${parentPath}\\${command}`;
           }
         }
@@ -194,15 +196,15 @@ export class NativeApp extends EventEmitter {
     this._startStderrRead();
   }
 
-  /**
-   * Open a connection to a native messaging host.
-   *
-   * @param {number} portId A unique internal ID that identifies the port.
-   * @param {import("ExtensionParent.sys.mjs").NativeMessenger} port Parent NativeMessenger used to send messages.
-   * @returns {import("ExtensionParent.sys.mjs").ParentPort}
-   */
+  
+
+
+
+
+
+
   onConnect(portId, port) {
-    // eslint-disable-next-line
+    
     this.on("message", (_, message) => {
       port.sendPortMessage(
         portId,
@@ -222,11 +224,11 @@ export class NativeApp extends EventEmitter {
     };
   }
 
-  /**
-   * @param {BaseContext} context The scope from where `message` originates.
-   * @param {*} message A message from the extension, meant for a native app.
-   * @returns {ArrayBufferLike} An ArrayBuffer that can be sent to the native app.
-   */
+  
+
+
+
+
   static encodeMessage(context, message) {
     message = context.jsonStringify(message);
     let buffer = new TextEncoder().encode(message).buffer;
@@ -236,10 +238,10 @@ export class NativeApp extends EventEmitter {
     return buffer;
   }
 
-  // A port is definitely "alive" if this.proc is non-null.  But we have
-  // to provide a live port object immediately when connecting so we also
-  // need to consider a port alive if proc is null but the startupPromise
-  // is still pending.
+  
+  
+  
+  
   get _isDisconnected() {
     return !this.proc && !this.startupPromise;
   }
@@ -305,7 +307,7 @@ export class NativeApp extends EventEmitter {
       while (true) {
         let data = await proc.stderr.readString();
         if (!data.length) {
-          // We have hit EOF, just stop reading
+          
           if (partial) {
             Services.console.logStringMessage(
               `stderr output from native app ${app}: ${partial}`
@@ -333,8 +335,8 @@ export class NativeApp extends EventEmitter {
     }
     let msg = holder.deserialize(globalThis);
     if (Cu.getClassName(msg, true) != "ArrayBuffer") {
-      // This error cannot be triggered by extensions; it indicates an error in
-      // our implementation.
+      
+      
       throw new Error(
         "The message to the native messaging host is not an ArrayBuffer"
       );
@@ -352,8 +354,8 @@ export class NativeApp extends EventEmitter {
     }
   }
 
-  // Shut down the native application and (by default) signal to the extension
-  // that the connect has been disconnected.
+  
+  
   async _cleanup(err, fromExtension = false) {
     if (this.cleanupStarted) {
       return;
@@ -374,9 +376,9 @@ export class NativeApp extends EventEmitter {
       if (this.writePromise) {
         await this.writePromise.catch(Cu.reportError);
       }
-      // When using the WebExtensions portal, we don't control the external
-      // process, the portal does. So let the portal handle waiting/killing the
-      // external process as it sees fit.
+      
+      
+      
       await lazy.portal
         .closeSession(this.portalSessionHandle)
         .catch(Cu.reportError);
@@ -387,41 +389,41 @@ export class NativeApp extends EventEmitter {
     }
 
     if (!this.proc) {
-      // Failed to initialize proc in the constructor.
+      
       return;
     }
 
-    // To prevent an uncooperative process from blocking shutdown, we take the
-    // following actions, and wait for GRACEFUL_SHUTDOWN_TIME in between.
-    //
-    // 1. Allow exit by closing the stdin pipe.
-    // 2. Allow exit by a kill signal.
-    // 3. Allow exit by forced kill signal.
-    // 4. Give up and unblock shutdown despite the process still being alive.
+    
+    
+    
+    
+    
+    
+    
 
-    // Close the stdin stream and allow the process to exit on its own.
-    // proc.wait() below will resolve once the process has exited gracefully.
+    
+    
     this.proc.stdin.close().catch(err => {
       if (err.errorCode != lazy.Subprocess.ERROR_END_OF_FILE) {
         Cu.reportError(err);
       }
     });
     let exitPromise = Promise.race([
-      // 1. Allow the process to exit on its own after closing stdin.
+      
       this.proc.wait().then(() => {
         this.proc = null;
       }),
       promiseTimeout(GRACEFUL_SHUTDOWN_TIME).then(() => {
         if (this.proc) {
-          // 2. Kill the process gracefully. 3. Force kill after a timeout.
+          
           this.proc.kill(GRACEFUL_SHUTDOWN_TIME);
 
-          // 4. If the process is still alive after a kill + timeout followed
-          // by a forced kill + timeout, give up and just resolve exitPromise.
-          //
-          // Note that waiting for just one interval is not enough, because the
-          // `proc.kill()` is asynchronous, so we need to wait a bit after the
-          // kill signal has been sent.
+          
+          
+          
+          
+          
+          
           return promiseTimeout(2 * GRACEFUL_SHUTDOWN_TIME);
         }
       }),
@@ -433,7 +435,7 @@ export class NativeApp extends EventEmitter {
     );
   }
 
-  // Called when the Context or Port is closed.
+  
   close() {
     this._cleanup(null, true);
   }
@@ -449,9 +451,9 @@ export class NativeApp extends EventEmitter {
     });
 
     let result = this.startupPromise.then(() => {
-      // Skip .send() if _cleanup() has been called already;
-      // otherwise the error passed to _cleanup/"disconnect" would be hidden by the
-      // "Attempt to postMessage on disconnected port" error from this.send().
+      
+      
+      
       if (!this.cleanupStarted) {
         this.send(holder);
       }
@@ -463,8 +465,8 @@ export class NativeApp extends EventEmitter {
         this._cleanup();
       },
       () => {
-        // Prevent the response promise from being reported as an
-        // unchecked rejection if the startup promise fails.
+        
+        
         responsePromise.catch(() => {});
 
         this._cleanup();

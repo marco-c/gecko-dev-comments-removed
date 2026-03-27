@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function test_manifest_minimum_opera_version() {

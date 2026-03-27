@@ -2,6 +2,7 @@
 
 
 
+
 #include "ExtensionAPIRequest.h"
 
 #include "mozilla/dom/ClientInfo.h"

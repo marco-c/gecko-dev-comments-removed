@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 add_task(async function test_reload_generated_background_page() {

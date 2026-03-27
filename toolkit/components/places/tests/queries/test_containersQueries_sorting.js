@@ -12,6 +12,8 @@
 
 
 
+
+
 var resultTypes = [
   {
     value: Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY,
