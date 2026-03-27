@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef IntegrityPolicyWAICT_h_
 #define IntegrityPolicyWAICT_h_
 
@@ -17,6 +15,9 @@
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
+
+
+class WAICTHeaderParsingTest;
 
 class nsIPrincipal;
 class nsIURI;
@@ -99,6 +100,8 @@ class IntegrityPolicyWAICT : public nsIStreamLoaderObserver {
   bool mQueueUpMessages = true;
   bool mEnforce = false;
   bool mManifestValid = false;
+
+  friend class ::WAICTHeaderParsingTest;
 };
 
 }  
