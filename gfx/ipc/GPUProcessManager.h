@@ -198,7 +198,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   
-  bool NotifyGpuObservers(const char* aTopic);
+  bool FlushActiveCheckerboardReports();
 
   
   
