@@ -122,6 +122,8 @@ extern "C" {
 
 
 
+
+
 typedef struct cubeb
     cubeb; 
 typedef struct cubeb_stream
@@ -561,6 +563,7 @@ cubeb_get_supported_input_processing_params(
 
 CUBEB_EXPORT void
 cubeb_destroy(cubeb * context);
+
 
 
 
