@@ -974,16 +974,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   mDocument->ProcessInvalidationList();
 
-  
-  for (uint32_t idx = 0; idx < mRelocations.Length(); idx++) {
-    
-    
-    if (mRelocations[idx]->IsInDocument() &&
-        mRelocations[idx]->HasOwnContent()) {
-      mDocument->DoARIAOwnsRelocation(mRelocations[idx]);
-    }
-  }
-  mRelocations.Clear();
+  ProcessRelocations();
 
   
   
@@ -1125,6 +1116,18 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       mPresShell->RemoveRefreshObserver(this, FlushType::Display)) {
     mObservingState = eNotObservingRefresh;
   }
+}
+
+void NotificationController::ProcessRelocations() {
+  for (uint32_t idx = 0; idx < mRelocations.Length(); idx++) {
+    
+    
+    if (mRelocations[idx]->IsInDocument() &&
+        mRelocations[idx]->HasOwnContent()) {
+      mDocument->DoARIAOwnsRelocation(mRelocations[idx]);
+    }
+  }
+  mRelocations.Clear();
 }
 
 void NotificationController::EventMap::PutEvent(AccTreeMutationEvent* aEvent) {

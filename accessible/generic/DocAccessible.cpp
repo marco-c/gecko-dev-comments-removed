@@ -392,7 +392,10 @@ static uint64_t GetCacheDomainsQueueUpdateSuperset(uint64_t aCacheDomains) {
 
 void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
                                      bool aBypassActiveDomains) {
-  if (!mIPCDoc) {
+  if (!mIPCDoc || !HasLoadState(eTreeConstructed)) {
+    
+    
+    
     return;
   }
   
@@ -1848,6 +1851,13 @@ void DocAccessible::DoInitialUpdate() {
 
   
   CacheChildrenInSubtree(this);
+  
+  
+  
+  
+  
+  
+  mNotificationController->ProcessRelocations();
 
   mLoadState |= eTreeConstructed;
 
@@ -2907,6 +2917,13 @@ void DocAccessible::PutChildrenBack(
 }
 
 void DocAccessible::TrackMovedAccessible(LocalAccessible* aAcc) {
+  MOZ_ASSERT(mIPCDoc);
+  if (!HasLoadState(eTreeConstructed)) {
+    
+    
+    
+    return;
+  }
   MOZ_ASSERT(aAcc->mDoc == this);
   
   

@@ -26,6 +26,11 @@ TreeMutation::TreeMutation(LocalAccessible* aParent, bool aNoEvents)
 #endif
 
   mParent->mStateFlags |= LocalAccessible::eKidsMutating;
+  if (mQueueEvents &&
+      !mParent->Document()->HasLoadState(DocAccessible::eTreeConstructed)) {
+    
+    mQueueEvents = false;
+  }
 }
 
 TreeMutation::~TreeMutation() {
