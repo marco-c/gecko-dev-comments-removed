@@ -526,6 +526,9 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   void ScrollbarCurPosChanged(bool aDoScroll = true);
 
+  void DisableOverlayScrollbars();
+  void EnableOverlayScrollbars();
+
   
 
 
@@ -1547,6 +1550,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   
   bool mScrollbarClickAndHoldScrollendPending : 1;
+
+  
+  bool mForceDisableOverlayScrollbars : 1;
 
 #ifdef MOZ_WIDGET_ANDROID
   
