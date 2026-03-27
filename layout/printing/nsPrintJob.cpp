@@ -83,6 +83,10 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsPageSequenceFrame.h"
 #include "nsRange.h"
 
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -893,6 +897,18 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   if (mIsDoingPrinting) {
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+    if (!mIsCreatingPrintPreview) {
+      if (nsAccessibilityService* serv = GetAccService()) {
+        serv->NotifyOfPrintDocument(mPrintObject->mDocument);
+        
+        
+        
+        
+        
+      }
+    }
+#endif
     rv = printData->mPrintDC->BeginDocument(
         docTitleStr, fileNameStr, browsingContextId, startPage, endPage);
   }
