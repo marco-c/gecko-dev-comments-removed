@@ -9,6 +9,7 @@
 
 #include "gc/Barrier.h"
 #include "js/TypeDecls.h"
+#include "util/LanguageId.h"
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
 #include "vm/SymbolType.h"
@@ -43,7 +44,7 @@ class GlobalIntlData {
   
 
 
-  GCPtr<JSLinearString*> defaultLocale_;
+  LanguageId defaultLocale_ = LanguageId::und();
 
   
 
@@ -136,7 +137,7 @@ class GlobalIntlData {
   
 
 
-  JSLinearString* defaultLocale(JSContext* cx);
+  bool defaultLocale(JSContext* cx, LanguageId* result);
 
   
 

@@ -216,7 +216,7 @@ ArrayObject* SupportedLocalesOf(JSContext* cx,
 
 
 
-JSLinearString* ComputeDefaultLocale(JSContext* cx);
+bool ComputeDefaultLocale(JSContext* cx, LanguageId* result);
 
 }  
 
