@@ -71,18 +71,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(_MSC_VER)
-#  pragma intrinsic(_byteswap_ushort)
-#  pragma intrinsic(_byteswap_ulong)
-#  pragma intrinsic(_byteswap_uint64)
-#endif
-
 namespace mozilla {
 
 
 
 template <typename T>
-T byteswap(T n) {
+constexpr T byteswap(T n) {
   if constexpr (sizeof(T) == 2) {
     return __builtin_bswap16(n);
   } else if constexpr (sizeof(T) == 4) {
@@ -119,7 +113,7 @@ class EndianUtils {
 
 
   template <std::endian SourceEndian, std::endian DestEndian, typename T>
-  static inline T maybeSwap(T aValue) {
+  static constexpr T maybeSwap(T aValue) {
     if constexpr (SourceEndian == DestEndian) {
       return aValue;
     }
@@ -265,7 +259,7 @@ class Endian : private EndianUtils {
 
 
   template <typename T>
-  [[nodiscard]] static T swapToLittleEndian(T aValue) {
+  [[nodiscard]] static constexpr T swapToLittleEndian(T aValue) {
     return maybeSwap<ThisEndian, std::endian::little>(aValue);
   }
 
@@ -294,7 +288,7 @@ class Endian : private EndianUtils {
 
 
   template <typename T>
-  [[nodiscard]] static T swapToBigEndian(T aValue) {
+  [[nodiscard]] static constexpr T swapToBigEndian(T aValue) {
     return maybeSwap<ThisEndian, std::endian::big>(aValue);
   }
 
@@ -325,7 +319,7 @@ class Endian : private EndianUtils {
 
 
   template <typename T>
-  [[nodiscard]] static T swapToNetworkOrder(T aValue) {
+  [[nodiscard]] static constexpr T swapToNetworkOrder(T aValue) {
     return swapToBigEndian(aValue);
   }
 
@@ -344,7 +338,7 @@ class Endian : private EndianUtils {
 
 
   template <typename T>
-  [[nodiscard]] static T swapFromLittleEndian(T aValue) {
+  [[nodiscard]] static constexpr T swapFromLittleEndian(T aValue) {
     return maybeSwap<std::endian::little, ThisEndian>(aValue);
   }
 
@@ -373,7 +367,7 @@ class Endian : private EndianUtils {
 
 
   template <typename T>
-  [[nodiscard]] static T swapFromBigEndian(T aValue) {
+  [[nodiscard]] static constexpr T swapFromBigEndian(T aValue) {
     return maybeSwap<std::endian::big, ThisEndian>(aValue);
   }
 
@@ -403,7 +397,7 @@ class Endian : private EndianUtils {
 
 
   template <typename T>
-  [[nodiscard]] static T swapFromNetworkOrder(T aValue) {
+  [[nodiscard]] static constexpr T swapFromNetworkOrder(T aValue) {
     return swapFromBigEndian(aValue);
   }
 
