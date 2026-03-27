@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "builtin/intl/PluralRules.h"
 
 #include "mozilla/Assertions.h"
@@ -328,7 +330,11 @@ static bool ResolveLocale(JSContext* cx,
   }
 
   
-  pluralRules->setLocale(resolved.dataLocale());
+  auto* locale = resolved.toLocale(cx);
+  if (!locale) {
+    return false;
+  }
+  pluralRules->setLocale(locale);
 
   MOZ_ASSERT(pluralRules->isLocaleResolved(), "locale successfully resolved");
   return true;

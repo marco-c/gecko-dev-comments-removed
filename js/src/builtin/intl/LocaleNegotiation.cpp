@@ -216,20 +216,9 @@ static bool BestAvailableLocale(JSContext* cx,
 
 
 
-static bool BestAvailableLocale(JSContext* cx,
-                                AvailableLocaleKind availableLocales,
-                                LanguageId locale,
-                                mozilla::Maybe<LanguageId>* result) {
-  return BestAvailableLocale(cx, availableLocales, locale, mozilla::Nothing(),
-                             result);
-}
-
-
-
-
 bool js::intl::BestAvailableLocale(JSContext* cx,
                                    AvailableLocaleKind availableLocales,
-                                   Handle<JSLinearString*> locale,
+                                   LanguageId locale,
                                    mozilla::Maybe<LanguageId>* result) {
   return BestAvailableLocale(cx, availableLocales, locale, mozilla::Nothing(),
                              result);
@@ -566,12 +555,14 @@ void js::intl::LocaleOptions::trace(JSTracer* trc) {
 }
 
 JSLinearString* js::intl::ResolvedLocale::toLocale(JSContext* cx) const {
+  auto dataLocaleStr = dataLocale_.toString();
+
   if (keywords_.isEmpty()) {
-    return dataLocale_;
+    return NewStringCopy<CanGC>(cx, std::string_view{dataLocaleStr});
   }
 
   JSStringBuilder sb(cx);
-  if (!sb.append(dataLocale_)) {
+  if (!sb.append(dataLocaleStr.data(), dataLocaleStr.length())) {
     return nullptr;
   }
   if (!sb.append("-u")) {
@@ -597,7 +588,6 @@ JSLinearString* js::intl::ResolvedLocale::toLocale(JSContext* cx) const {
 }
 
 void js::intl::ResolvedLocale::trace(JSTracer* trc) {
-  TraceNullableRoot(trc, &dataLocale_, "ResolvedLocale::dataLocale");
   for (auto& extension : extensions_) {
     TraceNullableRoot(trc, &extension, "ResolvedLocale::extension");
   }
@@ -1211,12 +1201,7 @@ bool js::intl::ResolveLocale(
   result.setUnicodeKeywords(supportedKeywords);
 
   
-  auto* foundLocaleStr =
-      NewStringCopy<CanGC>(cx, std::string_view{foundLocale.toString()});
-  if (!foundLocaleStr) {
-    return false;
-  }
-  result.setDataLocale(foundLocaleStr);
+  result.setDataLocale(foundLocale);
 
   
   return true;
