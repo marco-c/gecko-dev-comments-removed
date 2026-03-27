@@ -127,9 +127,7 @@ impl EventLoopHandle {
     
     pub(crate) fn wake_connection(&self, token: Token) {
         if self.requests.push(Request::WakeConnection(token)).is_ok() {
-            if let Err(e) = self.waker.wake() {
-                error!("wake_connection: waker.wake() failed: {e}");
-            }
+            self.waker.wake().expect("wake failed");
         }
     }
 }
