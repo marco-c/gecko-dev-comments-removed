@@ -39,7 +39,7 @@ class ScopedRequestSuspender {
   }
 
  private:
-  nsIRequest* mRequest;
+  nsCOMPtr<nsIRequest> mRequest;
 };
 
 
