@@ -6,6 +6,7 @@ use crate::cg;
 use crate::to_css::{CssFieldAttrs, CssInputAttrs, CssVariantAttrs};
 use proc_macro2::TokenStream;
 use quote::quote;
+use quote::ToTokens;
 use syn::{Data, DataEnum, DeriveInput, Fields, WhereClause};
 use synstructure::{BindingInfo, Structure};
 
@@ -275,14 +276,9 @@ fn derive_variant_fields_expr(
     };
 
     
-    
-    
-    if iter.peek().is_some() {
-        return quote! { Err(()) };
-    }
 
     
-    if !css_field_attrs.iterable {
+    if !css_field_attrs.iterable && iter.peek().is_none() {
         
         
         
@@ -293,9 +289,22 @@ fn derive_variant_fields_expr(
     }
 
     
-    derive_single_field_expr(first, css_field_attrs, where_clause, comma)
-}
+    
+    let mut expr = derive_single_field_expr(first, css_field_attrs, where_clause);
+    for (binding, css_field_attrs) in iter {
+        derive_single_field_expr(binding, css_field_attrs, where_clause).to_tokens(&mut expr)
+    }
 
+    quote! {{
+        let old_len = dest.len();
+        #expr
+        if !#comma && dest.len() - old_len > 1 {
+            dest.truncate(old_len);
+            return Err(());
+        }
+        Ok(())
+    }}
+}
 
 
 
@@ -314,53 +323,56 @@ fn derive_single_field_expr(
     field: &BindingInfo,
     css_field_attrs: CssFieldAttrs,
     where_clause: &mut Option<WhereClause>,
-    comma: bool,
 ) -> TokenStream {
-    assert!(css_field_attrs.iterable);
+    let expr = if css_field_attrs.iterable {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for item_ty in field_generic_arguments(field) {
+            cg::add_predicate(where_clause, parse_quote!(#item_ty: style_traits::ToTyped));
+        }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for item_ty in field_generic_arguments(field) {
-        cg::add_predicate(where_clause, parse_quote!(#item_ty: style_traits::ToTyped));
-    }
-
-    let expr = if let Some(if_empty) = css_field_attrs.if_empty {
-        quote! {
-            let mut iter = #field.iter().peekable();
-            if iter.peek().is_none() {
-                dest.push(style_traits::TypedValue::Keyword(
-                    style_traits::KeywordValue(style_traits::CssString::from(#if_empty)),
-                ));
-            } else {
-                for item in iter {
+        if let Some(if_empty) = css_field_attrs.if_empty {
+            quote! {
+                let mut iter = #field.iter().peekable();
+                if iter.peek().is_none() {
+                    dest.push(style_traits::TypedValue::Keyword(
+                        style_traits::KeywordValue(style_traits::CssString::from(#if_empty)),
+                    ));
+                } else {
+                    for item in iter {
+                        style_traits::ToTyped::to_typed(&item, dest)?;
+                    }
+                }
+            }
+        } else {
+            quote! {
+                for item in #field.iter() {
                     style_traits::ToTyped::to_typed(&item, dest)?;
                 }
             }
-            Ok(())
         }
     } else {
+        
+        
+        
+        let ty = &field.ast().ty;
+        cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToTyped));
+
         quote! {
-            for item in #field.iter() {
-                style_traits::ToTyped::to_typed(&item, dest)?;
-            }
-            Ok(())
+           style_traits::ToTyped::to_typed(#field, dest)?;
         }
     };
 
-    quote! {{
-        if !#comma && #field.len() > 1 {
-            return Err(());
-        }
-        #expr
-    }}
+    expr
 }
 
 
