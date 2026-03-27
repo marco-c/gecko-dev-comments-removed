@@ -330,17 +330,13 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   
   void SetDragIcon(GdkDragContext* aContext);
 
-  void MarkAsActive();
-  bool IsActive() const;
-  RefPtr<GdkDragContext> GetSourceDragContext();
+  void MarkAsActive() { mActive = true; }
+  bool IsActive() const { return mActive; }
 
  protected:
   virtual ~nsDragSession();
 
  private:
-  
-  RefPtr<GdkDragContext> mSourceDragContext;
-
   
   
 
@@ -369,6 +365,9 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
 
   
   GtkWidget* mHiddenWidget;
+  
+  
+  bool mActive = false;
 
   
   GtkTargetList* GetSourceList(void);
