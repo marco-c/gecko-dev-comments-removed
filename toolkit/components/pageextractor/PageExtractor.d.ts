@@ -40,3 +40,14 @@ export type ExtractionResult = {
   links: string[];
   canvasSnapshots: CanvasSnapshot[];
 };
+
+export type PageMetadata = {
+  
+  
+  
+  structuredDataTypes: string[];
+  
+  wordCount: number;
+  
+  language: string;
+};
