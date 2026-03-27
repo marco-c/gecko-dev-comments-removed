@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WorkerNavigator.h"
 
 #include "ErrorList.h"
@@ -65,7 +63,7 @@ already_AddRefed<WorkerNavigator> WorkerNavigator::Create(bool aOnLine) {
   RuntimeService* rts = RuntimeService::GetService();
   MOZ_ASSERT(rts);
 
-  const RuntimeService::NavigatorProperties& properties =
+  RuntimeService::NavigatorProperties properties =
       rts->GetNavigatorProperties();
 
   RefPtr<WorkerNavigator> navigator = new WorkerNavigator(properties, aOnLine);

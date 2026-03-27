@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_runtimeservice_h_
 #define mozilla_dom_workers_runtimeservice_h_
 
@@ -51,7 +49,7 @@ class RuntimeService final : public nsIObserver {
     }
   };
 
-  mozilla::Mutex mMutex;
+  mutable mozilla::Mutex mMutex;
 
   
   nsClassHashtable<nsCStringHashKey, WorkerDomainInfo> mDomainMap
@@ -74,7 +72,7 @@ class RuntimeService final : public nsIObserver {
   };
 
  private:
-  NavigatorProperties mNavigatorProperties;
+  NavigatorProperties mNavigatorProperties MOZ_GUARDED_BY(mMutex);
 
   
   bool mObserved;
@@ -112,7 +110,8 @@ class RuntimeService final : public nsIObserver {
   void PropagateStorageAccessPermissionGranted(
       const nsPIDOMWindowInner& aWindow);
 
-  const NavigatorProperties& GetNavigatorProperties() const {
+  NavigatorProperties GetNavigatorProperties() const {
+    MutexAutoLock lock(mMutex);
     return mNavigatorProperties;
   }
 
