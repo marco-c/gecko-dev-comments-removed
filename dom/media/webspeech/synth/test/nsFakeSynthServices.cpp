@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsFakeSynthServices.h"
 
 #include "SharedBuffer.h"
@@ -239,6 +237,8 @@ static void AddVoices(nsISpeechService* aService, const VoiceDetails* aVoices,
 void nsFakeSynthServices::Init() {
   mSynthService = new FakeSpeechSynth();
   AddVoices(mSynthService, sVoices, std::size(sVoices));
+  nsSynthVoiceRegistry::GetInstance()->RemoveVoice(mSynthService,
+                                                   u"urn:moz-tts:fake:amy"_ns);
 }
 
 
