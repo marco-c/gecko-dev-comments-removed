@@ -25,23 +25,6 @@ add_setup(async function () {
 
 
 
-async function submitSmartbar(browser) {
-  await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-    const inputField = smartbar.inputField;
-    inputField.focus();
-    EventUtils.synthesizeKey("KEY_Enter", {}, content);
-  });
-}
-
-
-
-
-
-
 
 
 async function dispatchSmartbarCommit(browser, value, action) {
