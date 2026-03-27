@@ -15,6 +15,13 @@ const { BANDWIDTH } = ChromeUtils.importESModule(
 
 
 
+add_setup(async function () {
+  await IPPProxyManager.refreshUsage();
+});
+
+
+
+
 
 
 
