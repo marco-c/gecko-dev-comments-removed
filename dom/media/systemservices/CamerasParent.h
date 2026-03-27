@@ -18,8 +18,9 @@ class WebrtcLogSinkHandle;
 class nsIThread;
 
 namespace mozilla {
+class DesktopCaptureInterface;
 class VideoCaptureFactory;
-}
+}  
 
 namespace mozilla::camera {
 
@@ -116,6 +117,11 @@ class AggregateCapturer final
   
   const int mCaptureId;
   
+  const webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
+  
+  
+  DesktopCaptureInterface* const mDesktopCapturer = nullptr;
+  
   const TrackingId mTrackingId;
   
   
@@ -128,6 +134,8 @@ class AggregateCapturer final
   AggregateCapturer(nsISerialEventTarget* aVideoCaptureThread,
                     CaptureEngine aCapEng, VideoEngine* aEngine,
                     const nsCString& aUniqueId, int aCaptureId,
+                    webrtc::VideoCaptureModule* aCapturer,
+                    DesktopCaptureInterface* aDesktopCapturer,
                     nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
 
   Maybe<webrtc::VideoCaptureCapability> CombinedCapability(
