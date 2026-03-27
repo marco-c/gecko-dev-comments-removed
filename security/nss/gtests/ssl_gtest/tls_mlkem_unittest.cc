@@ -404,7 +404,7 @@ class Mlkem768x25519ShareDamager : public TlsExtensionFilter {
         break;
       case Mlkem768x25519ShareDamager::modify_mlkem:
         
-        mlkem_component[0] ^= 0x01;
+        mlkem_component[mlkem_component_len - 1] ^= 0x01;
         break;
       case Mlkem768x25519ShareDamager::modify_mlkem_pubkey_mod_q:
         if (agent()->role() == TlsAgent::CLIENT) {
@@ -416,8 +416,8 @@ class Mlkem768x25519ShareDamager : public TlsExtensionFilter {
             
             uint16_t coeff0 =
                 mlkem_component[i] | ((mlkem_component[i + 1] & 0x0f) << 8);
-            uint16_t coeff1 = (mlkem_component[i + 1] & 0xf0 >> 4) |
-                              ((mlkem_component[i + 2]) << 4);
+            uint16_t coeff1 =
+                (mlkem_component[i + 1] >> 4) | ((mlkem_component[i + 2]) << 4);
             if (coeff0 < 4096 - 3329) {
               coeff0 += 3329;
             }

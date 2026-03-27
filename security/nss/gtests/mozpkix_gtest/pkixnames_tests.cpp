@@ -2133,6 +2133,45 @@ static const NameConstraintParams NAME_CONSTRAINT_PARAMS[] =
   },
 
   
+  { ByteString(), DNSName("*.example.com"),
+    GeneralSubtree(DNSName(".example.com")),
+    Success,
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { ByteString(), DNSName("*.example.com"),
+    GeneralSubtree(DNSName("example.com")),
+    Success,
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  
+  
+  
+  
+  
+  
+  { ByteString(), DNSName("*.example.com"),
+    GeneralSubtree(DNSName("foo.example.com")),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE,
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { ByteString(), DNSName("*.foo.example.com"),
+    GeneralSubtree(DNSName("example.com")),
+    Success,
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE
+  },
+  { ByteString(), DNSName("*.example.com"),
+    GeneralSubtree(DNSName("foo.example.org")),
+    Result::ERROR_CERT_NOT_IN_NAME_SPACE,
+    Success
+  },
+  
+  { ByteString(), DNSName("*invalid.example.com"),
+    GeneralSubtree(DNSName("invalid.example.com")),
+    Result::ERROR_BAD_DER,
+    Result::ERROR_BAD_DER
+  },
+
+  
   
 
   

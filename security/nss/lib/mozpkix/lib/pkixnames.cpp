@@ -172,6 +172,12 @@ enum class IDRole
   NameConstraint = 2,
 };
 
+enum class NameConstraintsSubtrees : uint8_t
+{
+  permittedSubtrees = der::CONSTRUCTED | der::CONTEXT_SPECIFIC | 0,
+  excludedSubtrees  = der::CONSTRUCTED | der::CONTEXT_SPECIFIC | 1
+};
+
 enum class AllowWildcards { No = 0, Yes = 1 };
 
 
@@ -184,16 +190,22 @@ enum class AllowDotlessSubdomainMatches { No = 0, Yes = 1 };
 bool IsValidDNSID(Input hostname, IDRole idRole,
                   AllowWildcards allowWildcards);
 
+
+
 Result MatchPresentedDNSIDWithReferenceDNSID(
          Input presentedDNSID,
          AllowWildcards allowWildcards,
          AllowDotlessSubdomainMatches allowDotlessSubdomainMatches,
          IDRole referenceDNSIDRole,
+          const NameConstraintsSubtrees* subtreesType,
          Input referenceDNSID,
           bool& matches);
 
+
+
 Result MatchPresentedRFC822NameWithReferenceRFC822Name(
          Input presentedRFC822Name, IDRole referenceRFC822NameRole,
+          const NameConstraintsSubtrees* subtreesType,
          Input referenceRFC822Name,  bool& matches);
 
 } 
@@ -212,7 +224,7 @@ MatchPresentedDNSIDWithReferenceDNSID(Input presentedDNSID,
   return MatchPresentedDNSIDWithReferenceDNSID(
            presentedDNSID, AllowWildcards::Yes,
            AllowDotlessSubdomainMatches::Yes, IDRole::ReferenceID,
-           referenceDNSID, matches);
+           nullptr, referenceDNSID, matches);
 }
 
 
@@ -731,7 +743,7 @@ MatchPresentedIDWithReferenceID(GeneralNameType presentedIDType,
       rv = MatchPresentedDNSIDWithReferenceDNSID(
              presentedID, AllowWildcards::Yes,
              AllowDotlessSubdomainMatches::Yes, IDRole::ReferenceID,
-             referenceID, foundMatch);
+             nullptr, referenceID, foundMatch);
       break;
 
     case GeneralNameType::iPAddress:
@@ -741,7 +753,7 @@ MatchPresentedIDWithReferenceID(GeneralNameType presentedIDType,
 
     case GeneralNameType::rfc822Name:
       rv = MatchPresentedRFC822NameWithReferenceRFC822Name(
-             presentedID, IDRole::ReferenceID, referenceID, foundMatch);
+             presentedID, IDRole::ReferenceID, nullptr, referenceID, foundMatch);
       break;
 
     case GeneralNameType::directoryName:
@@ -767,20 +779,16 @@ MatchPresentedIDWithReferenceID(GeneralNameType presentedIDType,
   return Success;
 }
 
-enum class NameConstraintsSubtrees : uint8_t
-{
-  permittedSubtrees = der::CONSTRUCTED | der::CONTEXT_SPECIFIC | 0,
-  excludedSubtrees  = der::CONSTRUCTED | der::CONTEXT_SPECIFIC | 1
-};
-
 Result CheckPresentedIDConformsToNameConstraintsSubtrees(
          GeneralNameType presentedIDType,
          Input presentedID,
          Reader& nameConstraints,
          NameConstraintsSubtrees subtreesType);
+
 Result MatchPresentedIPAddressWithConstraint(Input presentedID,
                                              Input iPAddressConstraint,
                                               bool& foundMatch);
+
 Result MatchPresentedDirectoryNameWithConstraint(
          NameConstraintsSubtrees subtreesType, Input presentedID,
          Input directoryNameConstraint,  bool& matches);
@@ -886,7 +894,7 @@ CheckPresentedIDConformsToNameConstraintsSubtrees(
           rv = MatchPresentedDNSIDWithReferenceDNSID(
                  presentedID, AllowWildcards::Yes,
                  AllowDotlessSubdomainMatches::Yes, IDRole::NameConstraint,
-                 base, matches);
+                 &subtreesType, base, matches);
           if (rv != Success) {
             return rv;
           }
@@ -911,7 +919,7 @@ CheckPresentedIDConformsToNameConstraintsSubtrees(
 
         case GeneralNameType::rfc822Name:
           rv = MatchPresentedRFC822NameWithReferenceRFC822Name(
-                 presentedID, IDRole::NameConstraint, base, matches);
+                 presentedID, IDRole::NameConstraint, &subtreesType, base, matches);
           if (rv != Success) {
             return rv;
           }
@@ -1094,6 +1102,7 @@ MatchPresentedDNSIDWithReferenceDNSID(
   AllowWildcards allowWildcards,
   AllowDotlessSubdomainMatches allowDotlessSubdomainMatches,
   IDRole referenceDNSIDRole,
+   const NameConstraintsSubtrees* subtreesType,
   Input referenceDNSID,
    bool& matches)
 {
@@ -1184,18 +1193,28 @@ MatchPresentedDNSIDWithReferenceDNSID(
       return NotReached("Skipping '*' failed",
                         Result::FATAL_ERROR_LIBRARY_FAILURE);
     }
-    do {
-      
-      if (reference.AtEnd()) {
-        matches = false;
-        return Success;
-      }
-      uint8_t referenceByte;
-      if (reference.Read(referenceByte) != Success) {
-        return NotReached("invalid reference ID",
-                          Result::FATAL_ERROR_INVALID_ARGS);
-      }
-    } while (!reference.Peek('.'));
+    
+    
+    
+    
+    
+    
+    
+    if (referenceDNSIDRole != IDRole::NameConstraint ||
+        (subtreesType && *subtreesType != NameConstraintsSubtrees::permittedSubtrees)) {
+      do {
+        
+        if (reference.AtEnd()) {
+          matches = false;
+          return Success;
+        }
+        uint8_t referenceByte;
+        if (reference.Read(referenceByte) != Success) {
+          return NotReached("invalid reference ID",
+                            Result::FATAL_ERROR_INVALID_ARGS);
+        }
+      } while (!reference.Peek('.'));
+    }
   }
 
   for (;;) {
@@ -1552,11 +1571,13 @@ IsValidRFC822Name(Input input)
   }
 }
 
+
+
 Result
-MatchPresentedRFC822NameWithReferenceRFC822Name(Input presentedRFC822Name,
-                                                IDRole referenceRFC822NameRole,
-                                                Input referenceRFC822Name,
-                                                 bool& matches)
+MatchPresentedRFC822NameWithReferenceRFC822Name(
+  Input presentedRFC822Name, IDRole referenceRFC822NameRole,
+   const NameConstraintsSubtrees* subtreesType,
+  Input referenceRFC822Name,  bool& matches)
 {
   if (!IsValidRFC822Name(presentedRFC822Name)) {
     return Result::ERROR_BAD_DER;
@@ -1599,6 +1620,7 @@ MatchPresentedRFC822NameWithReferenceRFC822Name(Input presentedRFC822Name,
       return MatchPresentedDNSIDWithReferenceDNSID(
                presentedDNSID, AllowWildcards::No,
                AllowDotlessSubdomainMatches::No, IDRole::NameConstraint,
+               subtreesType,
                referenceRFC822Name, matches);
     }
   }
