@@ -29,13 +29,13 @@ add_task(function test() {
   UrlbarPrefs.set("maxRichResults", 6);
   Assert.deepEqual(UrlbarPrefs.get("maxRichResults"), 6);
 
-  Assert.deepEqual(UrlbarPrefs.get("autoFill.stddevMultiplier"), 0.0);
-  UrlbarPrefs.set("autoFill.stddevMultiplier", 0.01);
+  Assert.deepEqual(UrlbarPrefs.get("intentThreshold"), 0.5);
+  UrlbarPrefs.set("intentThreshold", 0.75);
   
   
   Assert.deepEqual(
-    parseFloat(UrlbarPrefs.get("autoFill.stddevMultiplier").toFixed(2)),
-    0.01
+    parseFloat(UrlbarPrefs.get("intentThreshold").toFixed(2)),
+    0.75
   );
 });
 
