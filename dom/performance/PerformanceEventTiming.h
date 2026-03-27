@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PerformanceEventTiming_h_
 #define mozilla_dom_PerformanceEventTiming_h_
 
@@ -114,6 +112,16 @@ class PerformanceEventTiming final
 
   void FinalizeEventTiming(const WidgetEvent* aEvent);
 
+  
+  
+  void SetFallbackTimeIfNotSet(DOMHighResTimeStamp aTime) {
+    if (mFallbackTime.isNothing()) {
+      mFallbackTime = Some(aTime);
+    }
+  }
+
+  Maybe<DOMHighResTimeStamp> GetFallbackTime() const { return mFallbackTime; }
+
   EventMessage GetMessage() const { return mMessage; }
 
  private:
@@ -144,6 +152,8 @@ class PerformanceEventTiming final
   bool mCancelable;
 
   Maybe<uint64_t> mInteractionId;
+
+  Maybe<DOMHighResTimeStamp> mFallbackTime;
 
   EventMessage mMessage;
 };

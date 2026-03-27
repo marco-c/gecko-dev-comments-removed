@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Performance_h
 #define mozilla_dom_Performance_h
 
@@ -167,6 +165,9 @@ class Performance : public DOMEventTargetHelper {
   bool IsPerformanceTimingAttribute(const nsAString& aName) const;
 
   virtual bool IsGlobalObjectWindow() const { return false; };
+
+  virtual void RecordModalFallbackTime() {}
+  virtual DOMHighResTimeStamp GetLastModalFallbackTime() const { return 0; }
 
  protected:
   Performance(nsIGlobalObject* aGlobal);

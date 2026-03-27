@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PerformanceEventTiming.h"
 
 #include <algorithm>
@@ -61,6 +59,7 @@ PerformanceEventTiming::PerformanceEventTiming(
       mDuration(aEventTimingEntry.mDuration),
       mCancelable(aEventTimingEntry.mCancelable),
       mInteractionId(aEventTimingEntry.mInteractionId),
+      mFallbackTime(aEventTimingEntry.mFallbackTime),
       mMessage(aEventTimingEntry.mMessage) {}
 
 JSObject* PerformanceEventTiming::WrapObject(
@@ -203,7 +202,19 @@ void PerformanceEventTiming::FinalizeEventTiming(const WidgetEvent* aEvent) {
     return;
   }
 
-  mProcessingEnd = mPerformance->NowUnclamped();
+  
+  
+  DOMHighResTimeStamp lastModalFallback =
+      mPerformance->GetLastModalFallbackTime();
+  if (lastModalFallback > 0 && mStartTime < lastModalFallback) {
+    SetFallbackTimeIfNotSet(lastModalFallback);
+  }
+
+  
+  
+  
+  
+  mProcessingEnd = mFallbackTime.valueOr(mPerformance->NowUnclamped());
 
   Element* element = Element::FromEventTarget(target);
   if (!element || element->ChromeOnlyAccess()) {

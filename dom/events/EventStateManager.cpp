@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EventStateManager.h"
 
 #include "ContentEventHandler.h"
@@ -67,6 +65,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/PerformanceMainThread.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PopoverData.h"
 #include "mozilla/dom/Record.h"
@@ -4270,6 +4269,19 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         frameSelection->SetDragState(false);
       }
     } break;
+    case eContextMenu: {
+      
+      
+      
+      
+      
+      if (!aEvent->DefaultPrevented() && aEvent->IsTrusted()) {
+        if (auto* perf = aPresContext->GetPerformanceMainThread()) {
+          perf->RecordModalFallbackTime();
+        }
+      }
+      break;
+    }
     case eWheelOperationEnd: {
       MOZ_ASSERT(aEvent->IsTrusted());
       ScrollbarsForWheel::MayInactivate();

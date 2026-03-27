@@ -70,7 +70,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PerformanceMainThread,
   NS_IMPL_CYCLE_COLLECTION_UNLINK(
       mTiming, mNavigation, mDocEntry, mFCPTiming, mEventTimingEntries,
       mLargestContentfulPaintEntries, mFirstInputEvent, mPendingPointerDown,
-      mPendingEventTimingEntries, mEventCounts, mInteractionMetrics)
+      mPendingEventTimingEntries, mEventCounts, mInteractionMetrics,
+      mCurrentEventTimingEntry)
   tmp->mTextFrameUnions.Clear();
   mozilla::DropJSObjects(tmp);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -81,7 +82,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(PerformanceMainThread,
       mTiming, mNavigation, mDocEntry, mFCPTiming, mEventTimingEntries,
       mLargestContentfulPaintEntries, mFirstInputEvent, mPendingPointerDown,
       mPendingEventTimingEntries, mEventCounts, mTextFrameUnions,
-      mInteractionMetrics)
+      mInteractionMetrics, mCurrentEventTimingEntry)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -299,6 +300,27 @@ void PerformanceMainThread::BufferLargestContentfulPaintEntryIfNeeded(
   }
 }
 
+void PerformanceMainThread::RecordModalFallbackTime() {
+  DOMHighResTimeStamp now = NowUnclamped();
+  mLastModalFallbackTime = now;
+  if (mCurrentEventTimingEntry) {
+    mCurrentEventTimingEntry->SetFallbackTimeIfNotSet(now);
+  }
+  for (auto* entry : mPendingEventTimingEntries) {
+    entry->SetFallbackTimeIfNotSet(now);
+  }
+}
+
+void PerformanceMainThread::SetCurrentEventTimingEntry(
+    PerformanceEventTiming* aEntry) {
+  mCurrentEventTimingEntry = aEntry;
+}
+
+PerformanceEventTiming* PerformanceMainThread::GetCurrentEventTimingEntry()
+    const {
+  return mCurrentEventTimingEntry;
+}
+
 void PerformanceMainThread::DispatchPendingEventTimingEntries() {
   DOMHighResTimeStamp renderingTime = NowUnclamped();
 
@@ -308,7 +330,13 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
     
     PerformanceEventTiming* entry = *it;
     if (entry->RawDuration().isNothing()) {
-      entry->SetDuration(renderingTime - entry->RawStartTime());
+      
+      
+      
+      
+      DOMHighResTimeStamp effectiveRenderingTime =
+          entry->GetFallbackTime().valueOr(renderingTime);
+      entry->SetDuration(effectiveRenderingTime - entry->RawStartTime());
     }
 
     if (!(mPendingEventTimingEntries.end() != entriesToBeQueuedEnd) &&

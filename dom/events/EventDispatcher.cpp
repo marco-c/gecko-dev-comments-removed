@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/EventDispatcher.h"
 
 #include <new>
@@ -908,6 +906,25 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
       }
     }
   }
+
+  
+  
+  
+  
+  RefPtr<PerformanceMainThread> perfMainThread;
+  RefPtr<PerformanceEventTiming> prevEventTimingEntry;
+  if (eventTimingEntry) {
+    perfMainThread = aPresContext->GetPerformanceMainThread();
+    if (perfMainThread) {
+      prevEventTimingEntry = perfMainThread->GetCurrentEventTimingEntry();
+      perfMainThread->SetCurrentEventTimingEntry(eventTimingEntry);
+    }
+  }
+  auto restoreEventTimingEntry = MakeScopeExit([&]() {
+    if (perfMainThread) {
+      perfMainThread->SetCurrentEventTimingEntry(prevEventTimingEntry);
+    }
+  });
 
   bool retargeted = false;
 

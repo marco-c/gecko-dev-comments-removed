@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PerformanceMainThread_h
 #define mozilla_dom_PerformanceMainThread_h
 
@@ -116,6 +114,14 @@ class PerformanceMainThread final : public Performance,
 
   bool IsGlobalObjectWindow() const override { return true; };
 
+  void RecordModalFallbackTime() override;
+  DOMHighResTimeStamp GetLastModalFallbackTime() const override {
+    return mLastModalFallbackTime;
+  }
+
+  void SetCurrentEventTimingEntry(PerformanceEventTiming* aEntry);
+  PerformanceEventTiming* GetCurrentEventTimingEntry() const;
+
   bool HasDispatchedInputEvent() const { return mHasDispatchedInputEvent; }
 
   void SetHasDispatchedScrollEvent();
@@ -180,6 +186,12 @@ class PerformanceMainThread final : public Performance,
   void SetHasDispatchedInputEvent();
 
   bool mHasQueuedRefreshdriverObserver = false;
+  DOMHighResTimeStamp mLastModalFallbackTime = 0;
+
+  
+  
+  
+  RefPtr<PerformanceEventTiming> mCurrentEventTimingEntry;
 
   RefPtr<class EventCounts> mEventCounts;
   void IncEventCount(const nsAtom* aType);

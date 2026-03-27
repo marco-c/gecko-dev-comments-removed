@@ -18292,6 +18292,16 @@ nsAutoSyncOperation::nsAutoSyncOperation(Document* aDoc,
     ccjs->EnterSyncOperation();
   }
   if (aDoc) {
+    
+    
+    
+    
+    
+    if (nsPIDOMWindowInner* inner = aDoc->GetInnerWindow()) {
+      if (Performance* perf = inner->GetPerformance()) {
+        perf->RecordModalFallbackTime();
+      }
+    }
     mBrowsingContext = aDoc->GetBrowsingContext();
     if (InputTaskManager::CanSuspendInputEvent()) {
       if (auto* bcg = aDoc->GetDocGroup()->GetBrowsingContextGroup()) {
