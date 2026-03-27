@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IntegrityPolicyWAICT.h"
 
 #include "IntegrityPolicy.h"
@@ -409,7 +407,7 @@ void IntegrityPolicyWAICT::FlushConsoleMessages() {
 
   for (const auto& elem : mConsoleMsgQueue) {
     nsContentUtils::ReportToConsole(elem.mErrorFlags, elem.mCategory, doc,
-                                    nsContentUtils::eSECURITY_PROPERTIES,
+                                    PropertiesFile::SECURITY_PROPERTIES,
                                     elem.mMessageName.get(), elem.mParams);
   }
   mConsoleMsgQueue.Clear();
@@ -434,7 +432,7 @@ void IntegrityPolicyWAICT::ReportMessage(uint32_t aErrorFlags,
   }
 
   nsContentUtils::ReportToConsole(aErrorFlags, aCategory, doc,
-                                  nsContentUtils::eSECURITY_PROPERTIES,
+                                  PropertiesFile::SECURITY_PROPERTIES,
                                   aMessageName, aParams);
 }
 

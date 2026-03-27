@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLFormElement.h"
 
 #include <utility>
@@ -225,7 +223,7 @@ void HTMLFormElement::ReportInvalidUnfocusableElements(
 
       nsContentUtils::ReportToConsole(
           nsIScriptError::errorFlag, "DOM"_ns, element->GetOwnerDocument(),
-          nsContentUtils::eDOM_PROPERTIES, messageName.get(), params,
+          PropertiesFile::DOM_PROPERTIES, messageName.get(), params,
           SourceLocation(element->GetBaseURI()));
     }
   }

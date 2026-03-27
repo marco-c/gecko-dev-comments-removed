@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioContext.h"
 
 #include "AudioBuffer.h"
@@ -1313,7 +1311,7 @@ void AudioContext::ReportToConsole(uint32_t aErrorFlags,
   MOZ_ASSERT(aMsg);
   Document* doc = GetOwnerWindow() ? GetOwnerWindow()->GetExtantDoc() : nullptr;
   nsContentUtils::ReportToConsole(aErrorFlags, "Media"_ns, doc,
-                                  nsContentUtils::eDOM_PROPERTIES, aMsg);
+                                  PropertiesFile::DOM_PROPERTIES, aMsg);
 }
 
 BasicWaveFormCache::BasicWaveFormCache(uint32_t aSampleRate)

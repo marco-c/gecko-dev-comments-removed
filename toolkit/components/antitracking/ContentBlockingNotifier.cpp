@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "AntiTrackingLog.h"
 #include "ContentBlockingNotifier.h"
 #include "AntiTrackingUtils.h"
@@ -92,7 +94,7 @@ void ReportUnblockingToConsole(
 
         nsAutoString errorText;
         rv = nsContentUtils::FormatLocalizedString(
-            nsContentUtils::eNECKO_PROPERTIES, messageWithSameOrigin, params,
+            PropertiesFile::NECKO_PROPERTIES, messageWithSameOrigin, params,
             errorText);
         NS_ENSURE_SUCCESS_VOID(rv);
 
@@ -203,7 +205,7 @@ void ReportBlockingToConsole(uint64_t aWindowID, nsIURI* aURI,
 
         nsAutoString errorText;
         nsresult rv = nsContentUtils::FormatLocalizedString(
-            nsContentUtils::eNECKO_PROPERTIES, message, params, errorText);
+            PropertiesFile::NECKO_PROPERTIES, message, params, errorText);
         NS_ENSURE_SUCCESS_VOID(rv);
 
         nsContentUtils::ReportToConsoleByWindowID(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "NetworkLoadHandler.h"
 
 #include "CacheLoadHandler.h"  
@@ -73,7 +71,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   if (aStringLen > GetWorkerScriptMaxSizeInBytes()) {
     Document* parentDoc = mWorkerRef->Private()->GetDocument();
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "DOM"_ns,
-                                    parentDoc, nsContentUtils::eDOM_PROPERTIES,
+                                    parentDoc, PropertiesFile::DOM_PROPERTIES,
                                     "WorkerScriptTooLargeError");
     return NS_ERROR_DOM_ABORT_ERR;
   }
@@ -207,9 +205,9 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!loadContext->mRequest->ScriptTextLength()) {
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, "DOM"_ns, parentDoc,
-          nsContentUtils::eDOM_PROPERTIES, "EmptyWorkerSourceWarning");
+      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
+                                      parentDoc, PropertiesFile::DOM_PROPERTIES,
+                                      "EmptyWorkerSourceWarning");
     }
   }
 

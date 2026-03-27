@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptErrorHelper.h"
 
 #include "MainThreadUtils.h"
@@ -59,7 +57,7 @@ class ScriptErrorRunnable final : public mozilla::Runnable {
 
     nsAutoString localizedMessage;
     if (NS_WARN_IF(NS_FAILED(nsContentUtils::GetLocalizedString(
-            nsContentUtils::eDOM_PROPERTIES, aMessageName.BeginReading(),
+            PropertiesFile::DOM_PROPERTIES, aMessageName.BeginReading(),
             localizedMessage)))) {
       return;
     }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/PrototypeDocumentContentSink.h"
 
 #include "js/CompilationAndEvaluation.h"
@@ -603,7 +601,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalkInternal() {
 
             nsContentUtils::ReportToConsole(
                 nsIScriptError::warningFlag, "XUL Document"_ns, nullptr,
-                nsContentUtils::eXUL_PROPERTIES, "PINotInProlog2", params,
+                PropertiesFile::XUL_PROPERTIES, "PINotInProlog2", params,
                 SourceLocation(docURI.get()));
           }
 

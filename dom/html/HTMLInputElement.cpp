@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLInputElement.h"
 
 #include <algorithm>
@@ -723,7 +721,7 @@ static bool IsPickerBlocked(Document* aDoc) {
   }
 
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns, aDoc,
-                                  nsContentUtils::eDOM_PROPERTIES,
+                                  PropertiesFile::DOM_PROPERTIES,
                                   "InputPickerBlockedNoUserActivation");
   return true;
 }
@@ -888,7 +886,7 @@ nsresult HTMLInputElement::InitColorPicker() {
 
   
   nsAutoString title;
-  nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+  nsContentUtils::GetLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                      "ColorPicker", title);
 
   nsCOMPtr<nsIColorPicker> colorPicker =
@@ -939,14 +937,14 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
   nsAutoString title;
   nsAutoString okButtonLabel;
   if (aType == FILE_PICKER_DIRECTORY) {
-    nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+    nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                             "DirectoryUpload", doc, title);
 
-    nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+    nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                             "DirectoryPickerOkButtonLabel", doc,
                                             okButtonLabel);
   } else {
-    nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+    nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                             "FileUpload", doc, title);
   }
 
@@ -2654,15 +2652,14 @@ void HTMLInputElement::GetDisplayFileName(nsAString& aValue) const {
   if (mFileData->mFilesOrDirectories.IsEmpty()) {
     if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
         HasAttr(nsGkAtoms::webkitdirectory)) {
-      nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
-                                              "NoDirSelected", OwnerDoc(),
-                                              value);
+      nsContentUtils::GetMaybeLocalizedString(
+          PropertiesFile::FORMS_PROPERTIES, "NoDirSelected", OwnerDoc(), value);
     } else if (HasAttr(nsGkAtoms::multiple)) {
-      nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+      nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                               "NoFilesSelected", OwnerDoc(),
                                               value);
     } else {
-      nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+      nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                               "NoFileSelected", OwnerDoc(),
                                               value);
     }
@@ -2671,7 +2668,7 @@ void HTMLInputElement::GetDisplayFileName(nsAString& aValue) const {
     count.AppendInt(int(mFileData->mFilesOrDirectories.Length()));
 
     nsContentUtils::FormatMaybeLocalizedString(
-        value, nsContentUtils::eFORMS_PROPERTIES, "XFilesSelected", OwnerDoc(),
+        value, PropertiesFile::FORMS_PROPERTIES, "XFilesSelected", OwnerDoc(),
         count);
   }
 
@@ -6235,7 +6232,7 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
       !HasAttr(nsGkAtoms::value)) {
     
     nsAutoString defaultValue;
-    nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+    nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                             "Submit", OwnerDoc(), defaultValue);
     value = defaultValue;
   }
@@ -7420,7 +7417,7 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
   
   if (filters.Length() > 1) {
     nsAutoString title;
-    nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+    nsContentUtils::GetLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                        "AllSupportedTypes", title);
     filePicker->AppendFilter(title, allExtensionsList);
   }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workerscope_h_
 #define mozilla_dom_workerscope_h_
 
@@ -323,8 +321,7 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
   bool IsEligibleForMessaging() final;
 
   void ReportToConsole(uint32_t aErrorFlags, const nsCString& aCategory,
-                       nsContentUtils::PropertiesFile aFile,
-                       const nsCString& aMessageName,
+                       PropertiesFile aFile, const nsCString& aMessageName,
                        const nsTArray<nsString>& aParams,
                        const mozilla::SourceLocation& aLocation) final;
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLTableElement.h"
 
 #include "jsfriendapi.h"
@@ -801,7 +799,7 @@ void HTMLTableElement::DeleteRow(int32_t aIndex, ErrorResult& aError) {
     return;
   }
 
-  row->RemoveFromParent();
+  row->Remove();
 }
 
 bool HTMLTableElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,

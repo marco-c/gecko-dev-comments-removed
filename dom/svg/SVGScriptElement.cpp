@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGScriptElement.h"
 
 #include "mozilla/dom/Document.h"
@@ -144,7 +142,7 @@ void SVGScriptElement::FreezeExecutionAttrs(const Document* aOwnerDoc) {
 
         nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "SVG"_ns,
                                         OwnerDoc(),
-                                        nsContentUtils::eDOM_PROPERTIES,
+                                        PropertiesFile::DOM_PROPERTIES,
                                         "ScriptSourceInvalidUri", params, loc);
       }
     } else {
@@ -152,7 +150,7 @@ void SVGScriptElement::FreezeExecutionAttrs(const Document* aOwnerDoc) {
 
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "SVG"_ns, OwnerDoc(),
-          nsContentUtils::eDOM_PROPERTIES, "ScriptSourceEmpty", params, loc);
+          PropertiesFile::DOM_PROPERTIES, "ScriptSourceEmpty", params, loc);
     }
 
     

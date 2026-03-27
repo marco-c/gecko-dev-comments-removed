@@ -1075,10 +1075,9 @@ bool Sanitizer::AllowElement(
     
     
     if (auto* win = mGlobal->GetAsInnerWindow()) {
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      "Sanitizer"_ns, win->GetDoc(),
-                                      nsContentUtils::eSECURITY_PROPERTIES,
-                                      "SanitizerAllowElementIgnored2");
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::warningFlag, "Sanitizer"_ns, win->GetDoc(),
+          PropertiesFile::SECURITY_PROPERTIES, "SanitizerAllowElementIgnored2");
     }
 
     
@@ -1601,7 +1600,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       
       
       if (!mComments) {
-        child->RemoveFromParent();
+        child->Remove();
       }
       continue;
     }
@@ -1630,7 +1629,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       
       
       if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
-        child->RemoveFromParent();
+        child->Remove();
         continue;
       }
 
@@ -1655,7 +1654,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
           }
         }
 
-        child->RemoveFromParent();
+        child->Remove();
         if (firstChild) {
           next = firstChild;
         }
@@ -1667,7 +1666,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       if (mRemoveElements) {
         if (mRemoveElements->Contains(*elementName)) {
           
-          child->RemoveFromParent();
+          child->Remove();
           
           continue;
         }
@@ -1678,7 +1677,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       if (mElements) {
         if (!mElements->Contains(*elementName)) {
           
-          child->RemoveFromParent();
+          child->Remove();
           
           continue;
         }
@@ -1711,7 +1710,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       }
       if (!found) {
         
-        child->RemoveFromParent();
+        child->Remove();
         
         continue;
       }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DataTransferItem.h"
 
 #include "DataTransferItemList.h"
@@ -425,7 +423,7 @@ already_AddRefed<File> DataTransferItem::CreateFileFromInputStream(
     const nsAString& aContentType) {
   nsAutoString fileName;
   nsresult rv = nsContentUtils::GetLocalizedString(
-      nsContentUtils::eDOM_PROPERTIES, aFileNameKey, fileName);
+      PropertiesFile::DOM_PROPERTIES, aFileNameKey, fileName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }

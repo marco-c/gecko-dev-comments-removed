@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XMLStylesheetProcessingInstruction.h"
 
 #include "mozilla/dom/Document.h"
@@ -67,6 +65,16 @@ void XMLStylesheetProcessingInstruction::SetNodeValueInternal(
   if (!aError.Failed()) {
     (void)UpdateStyleSheetInternal(nullptr, nullptr, ForceUpdate::Yes);
   }
+}
+
+void XMLStylesheetProcessingInstruction::SetDataInternal(
+    const nsAString& aData, MutationEffectOnScript aMutationEffectOnScript,
+    ErrorResult& rv) {
+  CharacterData::SetDataInternal(aData, aMutationEffectOnScript, rv);
+  if (rv.Failed()) {
+    return;
+  }
+  (void)UpdateStyleSheetInternal(nullptr, nullptr, ForceUpdate::Yes);
 }
 
 

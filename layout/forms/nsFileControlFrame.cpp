@@ -92,7 +92,7 @@ static already_AddRefed<Element> MakeAnonButton(
 
   
   nsAutoString buttonTxt;
-  nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+  nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
                                           labelKey, aDoc, buttonTxt);
 
   auto* nim = aDoc->NodeInfoManager();

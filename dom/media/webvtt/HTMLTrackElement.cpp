@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLTrackElement.h"
 
 #include "mozilla/LoadInfo.h"
@@ -171,7 +169,7 @@ void HTMLTrackElement::CreateTextTrack() {
   if (!parentObject) {
     nsContentUtils::ReportToConsole(
         nsIScriptError::errorFlag, "Media"_ns, OwnerDoc(),
-        nsContentUtils::eDOM_PROPERTIES,
+        PropertiesFile::DOM_PROPERTIES,
         "Using track element in non-window context");
     return;
   }

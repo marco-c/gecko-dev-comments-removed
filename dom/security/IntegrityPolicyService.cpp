@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "IntegrityPolicyService.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -223,7 +221,7 @@ void IntegrityPolicyService::ReportToConsole(
       NS_ConvertUTF8toUTF16(aContentLocation->GetSpecOrDefault())};
   nsAutoString localizedMsg;
   nsresult rv = nsContentUtils::FormatLocalizedString(
-      nsContentUtils::eSECURITY_PROPERTIES, messageKey, params, localizedMsg);
+      PropertiesFile::SECURITY_PROPERTIES, messageKey, params, localizedMsg);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   uint64_t windowID = aLoadInfo->GetInnerWindowID();

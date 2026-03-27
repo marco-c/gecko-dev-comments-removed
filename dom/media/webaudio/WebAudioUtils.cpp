@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebAudioUtils.h"
 
 #include "blink/HRTFDatabaseLoader.h"
@@ -74,7 +72,7 @@ void WebAudioUtils::LogToDeveloperConsole(uint64_t aWindowID,
 
   nsAutoString result;
   nsresult rv = nsContentUtils::GetLocalizedString(
-      nsContentUtils::eDOM_PROPERTIES, aKey, result);
+      PropertiesFile::DOM_PROPERTIES, aKey, result);
 
   if (NS_FAILED(rv)) {
     NS_WARNING("Failed to log message to console.");

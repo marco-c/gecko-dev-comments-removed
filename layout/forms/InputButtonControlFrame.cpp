@@ -104,7 +104,7 @@ void InputButtonControlFrame::GetDefaultLabel(nsAString& aLabel) const {
   }
 
   if (NS_FAILED(nsContentUtils::GetMaybeLocalizedString(
-          nsContentUtils::eFORMS_PROPERTIES, prop.get(), mContent->OwnerDoc(),
+          PropertiesFile::FORMS_PROPERTIES, prop.get(), mContent->OwnerDoc(),
           aLabel))) {
     
     CopyUTF8toUTF16(prop, aLabel);

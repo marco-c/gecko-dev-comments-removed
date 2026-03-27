@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerContainer.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -291,7 +289,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     AutoTArray<nsString, 1> param;
     CopyUTF8toUTF16(cleanedScopeURL, *param.AppendElement());
     aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
-                             nsContentUtils::eDOM_PROPERTIES,
+                             PropertiesFile::DOM_PROPERTIES,
                              "ServiceWorkerRegisterStorageError"_ns, param);
   });
 
@@ -366,7 +364,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::GetRegistrations(
     ErrorResult& aRv) {
   nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIGlobalObject* aGlobal) {
     aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
-                             nsContentUtils::eDOM_PROPERTIES,
+                             PropertiesFile::DOM_PROPERTIES,
                              "ServiceWorkerGetRegistrationStorageError"_ns);
   });
   if (aRv.Failed()) {
@@ -451,7 +449,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
     const nsAString& aURL, ErrorResult& aRv) {
   nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIGlobalObject* aGlobal) {
     aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
-                             nsContentUtils::eDOM_PROPERTIES,
+                             PropertiesFile::DOM_PROPERTIES,
                              "ServiceWorkerGetRegistrationStorageError"_ns);
   });
   if (aRv.Failed()) {

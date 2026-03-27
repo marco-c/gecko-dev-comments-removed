@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RuntimeService.h"
 
 #include <algorithm>
@@ -1265,7 +1263,7 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
       
       
       WorkerPrivate::ReportErrorToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                          nsContentUtils::eDOM_PROPERTIES,
+                                          PropertiesFile::DOM_PROPERTIES,
                                           "HittingMaxWorkersPerDomain2"_ns);
 
       if (isServiceWorker) {

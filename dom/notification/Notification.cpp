@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/Notification.h"
 
 #include <utility>
@@ -212,7 +210,7 @@ nsresult NotificationPermissionRequest::ResolvePromise() {
       nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
       if (doc) {
         nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "DOM"_ns,
-                                        doc, nsContentUtils::eDOM_PROPERTIES,
+                                        doc, PropertiesFile::DOM_PROPERTIES,
                                         "NotificationsRequireUserGesture");
       }
     }

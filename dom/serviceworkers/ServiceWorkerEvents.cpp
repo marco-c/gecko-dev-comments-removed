@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerEvents.h"
 
 #include <utility>
@@ -65,7 +63,7 @@ void AsyncLog(nsIInterceptedChannel* aInterceptedChannel,
   if (reporter) {
     reporter->AddConsoleReport(nsIScriptError::errorFlag,
                                "Service Worker Interception"_ns,
-                               nsContentUtils::eDOM_PROPERTIES,
+                               PropertiesFile::DOM_PROPERTIES,
                                aRespondWithScriptSpec, aRespondWithLineNumber,
                                aRespondWithColumnNumber, aMessageName, aParams);
   }

@@ -515,9 +515,8 @@ bool nsIGlobalObject::IsRFPTargetActive(const nsAString& aTargetName,
 }
 
 void nsIGlobalObject::ReportToConsole(
-    uint32_t aErrorFlags, const nsCString& aCategory,
-    nsContentUtils::PropertiesFile aFile, const nsCString& aMessageName,
-    const nsTArray<nsString>& aParams,
+    uint32_t aErrorFlags, const nsCString& aCategory, PropertiesFile aFile,
+    const nsCString& aMessageName, const nsTArray<nsString>& aParams,
     const mozilla::SourceLocation& aLocation) {
   
   

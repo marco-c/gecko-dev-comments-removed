@@ -3423,7 +3423,7 @@ static void WarnIfSandboxIneffective(nsIDocShell* aDocShell,
       !(aSandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION)) {
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Iframe Sandbox"_ns,
-        aDocShell->GetDocument(), nsContentUtils::eSECURITY_PROPERTIES,
+        aDocShell->GetDocument(), PropertiesFile::SECURITY_PROPERTIES,
         "BothAllowTopNavigationAndUserActivationPresent");
   }
   
@@ -3467,7 +3467,7 @@ static void WarnIfSandboxIneffective(nsIDocShell* aDocShell,
     parentChannel->GetURI(getter_AddRefs(iframeUri));
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Iframe Sandbox"_ns, parentDocument,
-        nsContentUtils::eSECURITY_PROPERTIES,
+        PropertiesFile::SECURITY_PROPERTIES,
         "BothAllowScriptsAndSameOriginPresent", nsTArray<nsString>(),
         SourceLocation(iframeUri.get()));
   }
@@ -3770,7 +3770,7 @@ void Document::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages) {
 
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                     NS_ConvertUTF16toUTF8(category), this,
-                                    nsContentUtils::eSECURITY_PROPERTIES,
+                                    PropertiesFile::SECURITY_PROPERTIES,
                                     NS_ConvertUTF16toUTF8(messageTag).get());
   }
 }
@@ -5750,7 +5750,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
       
       
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                      this, nsContentUtils::eDOM_PROPERTIES,
+                                      this, PropertiesFile::DOM_PROPERTIES,
                                       "ExecCommandCutCopyDeniedNotInputDriven");
       return false;
     }
@@ -5760,7 +5760,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
         
         
         nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                        this, nsContentUtils::eDOM_PROPERTIES,
+                                        this, PropertiesFile::DOM_PROPERTIES,
                                         "ExecCommandPasteDeniedNotInputDriven");
       }
       return false;
@@ -10649,7 +10649,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "DOM Events"_ns, this,
-          nsContentUtils::eDOM_PROPERTIES, "DocumentWriteIgnored");
+          PropertiesFile::DOM_PROPERTIES, "DocumentWriteIgnored");
       return;
     }
     
@@ -10666,7 +10666,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "DOM Events"_ns, this,
-          nsContentUtils::eDOM_PROPERTIES, "DocumentWriteIgnored");
+          PropertiesFile::DOM_PROPERTIES, "DocumentWriteIgnored");
       return;
     }
 
@@ -14437,7 +14437,7 @@ void Document::WarnOnceAbout(
   uint32_t flags =
       asError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(
-      flags, "DOM Core"_ns, this, nsContentUtils::eDOM_PROPERTIES,
+      flags, "DOM Core"_ns, this, PropertiesFile::DOM_PROPERTIES,
       kDeprecationWarnings[static_cast<size_t>(aOperation)], aParams);
 }
 
@@ -14456,7 +14456,7 @@ void Document::WarnOnceAbout(
   uint32_t flags =
       asError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(flags, "DOM Core"_ns, this,
-                                  nsContentUtils::eDOM_PROPERTIES,
+                                  PropertiesFile::DOM_PROPERTIES,
                                   kDocumentWarnings[aWarning], aParams);
 }
 
@@ -18422,7 +18422,7 @@ void Document::ReportHasScrollLinkedEffect(
     
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Async Pan/Zoom"_ns, this,
-        nsContentUtils::eLAYOUT_PROPERTIES, "ScrollLinkedEffectFound3");
+        PropertiesFile::LAYOUT_PROPERTIES, "ScrollLinkedEffectFound3");
   }
 
   mLastScrollLinkedEffectDetectionTime = aTimeStamp;
@@ -19493,7 +19493,7 @@ Document::CreatePermissionGrantPromise(nsPIDOMWindowInner* aInnerWindow,
             nsContentUtils::ReportToConsole(
                 nsIScriptError::errorFlag,
                 nsLiteralCString("requestStorageAccess"), self,
-                nsContentUtils::eDOM_PROPERTIES,
+                PropertiesFile::DOM_PROPERTIES,
                 "RequestStorageAccessUserGesture");
             p->Reject(false, __func__);
             return;
@@ -19773,7 +19773,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
                                     nsLiteralCString("requestStorageAccess"),
-                                    this, nsContentUtils::eDOM_PROPERTIES,
+                                    this, PropertiesFile::DOM_PROPERTIES,
                                     "RequestStorageAccessUserGesture");
     ConsumeTransientUserGestureActivation();
     promise->MaybeRejectWithNotAllowedError(

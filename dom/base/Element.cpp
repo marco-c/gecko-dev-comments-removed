@@ -3087,7 +3087,7 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     
     
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                    OwnerDoc(), nsContentUtils::eDOM_PROPERTIES,
+                                    OwnerDoc(), PropertiesFile::DOM_PROPERTIES,
                                     "RemovedFullscreenElement");
     
     Document::ExitFullscreenInDocTree(OwnerDoc());

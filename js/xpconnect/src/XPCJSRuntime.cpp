@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/AppShutdown.h"
@@ -25,6 +27,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsIObserverService.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/NodeBinding.h"
 #include "nsIRunnable.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
