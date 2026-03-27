@@ -701,17 +701,6 @@ class BarrieredPtrImpl
 
 DEFINE_BARRIERED_PTR(PreBarriered, gc::BarrierOption_PreWriteBarrier);
 
-}  
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::PreBarriered<T>> : std::true_type {
-  static const T& get(const js::PreBarriered<T>& v) { return v.get(); }
-};
-}  
-
-namespace js {
-
 
 
 
@@ -726,17 +715,6 @@ namespace js {
 DEFINE_BARRIERED_PTR(GCPtr, gc::BarrierOption_PreWriteBarrier |
                                 gc::BarrierOption_PostWriteBarrier |
                                 gc::BarrierOption_HasGCLifetime);
-
-}  
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::GCPtr<T>> : std::true_type {
-  static const T& get(const js::GCPtr<T>& v) { return v.get(); }
-};
-}  
-
-namespace js {
 
 
 
@@ -818,17 +796,6 @@ class GCStructPtr : public BarrieredBase<T> {
   }
 };
 
-}  
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::HeapPtr<T>> : std::true_type {
-  static const T& get(const js::HeapPtr<T>& v) { return v.get(); }
-};
-}  
-
-namespace js {
-
 
 
 
@@ -845,19 +812,6 @@ DEFINE_BARRIERED_PTR(WeakHeapPtr, gc::BarrierOption_ReadBarrier |
 
 
 DEFINE_BARRIERED_PTR(UnsafeBarePtr, gc::BarrierOption_None);
-
-}  
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::WeakHeapPtr<T>> : std::true_type {
-  static const T& get(const js::WeakHeapPtr<T>& v) {
-    return v.unbarrieredGet();
-  }
-};
-}  
-
-namespace js {
 
 
 
@@ -928,17 +882,6 @@ class HeapSlot : public BarrieredBase<Value>,
     }
   }
 };
-
-}  
-
-namespace JS::detail {
-template <>
-struct DefineComparisonOps<js::HeapSlot> : std::true_type {
-  static const Value& get(const js::HeapSlot& v) { return v.get(); }
-};
-}  
-
-namespace js {
 
 class HeapSlotArray {
   HeapSlot* array;
@@ -1271,6 +1214,34 @@ template <class T>
 using PreBarrierWrapper = PreBarriered<T>;
 template <class T>
 using PreAndPostBarrierWrapper = GCPtr<T>;
+
+}  
+
+
+
+namespace JS::detail {
+
+
+
+#define DEFINE_BARRIERED_PTR_COMPARISON_OPS(BarrieredPtr)        \
+  template <typename T>                                          \
+  struct DefineComparisonOps<BarrieredPtr<T>> : std::true_type { \
+    static const T& get(const BarrieredPtr<T>& v) {              \
+      return v.unbarrieredGet();                                 \
+    }                                                            \
+  }
+
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::PreBarriered);
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::GCPtr);
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::HeapPtr);
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::WeakHeapPtr);
+
+#undef DEFINE_BARRIERED_PTR_COMPARISON_OPS
+
+template <>
+struct DefineComparisonOps<js::HeapSlot> : std::true_type {
+  static const Value& get(const js::HeapSlot& v) { return v.get(); }
+};
 
 }  
 
