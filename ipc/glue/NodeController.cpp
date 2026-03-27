@@ -276,6 +276,11 @@ void NodeController::DropPeer(NodeName aNodeName) {
   MOZ_FUZZING_IPC_DROP_PEER("NodeController::DropPeer");
 #endif
 
+  
+  
+  
+  MessageChannel::ErrorNotifyBatcher autoBatchNotify;
+
   Invite invite;
   RefPtr<NodeChannel> channel;
   nsTArray<PortRef> pendingMerges;
@@ -869,6 +874,8 @@ void NodeController::CleanUp() {
 
   RefPtr<NodeController> nodeController = gNodeController;
   gNodeController = nullptr;
+
+  MessageChannel::ErrorNotifyBatcher autoBatchNotify;
 
   
   nsTArray<NodeName> lostConnections;

@@ -260,6 +260,36 @@ class MessageChannel : HasResultCodes {
     return mMessageChannelId;
   }
 
+  
+
+
+
+
+
+
+
+
+
+  struct MOZ_RAII ErrorNotifyBatcher {
+    ErrorNotifyBatcher();
+    ~ErrorNotifyBatcher();
+
+    
+    
+    static void BatchDispatch(nsIEventTarget* aTarget,
+                              already_AddRefed<CancelableRunnable> aRunnable);
+
+   private:
+    [[nodiscard]] static bool TryBatchDispatch(
+        nsIEventTarget* aTarget, RefPtr<CancelableRunnable>& aRunnable);
+
+    
+    static ErrorNotifyBatcher* sCurrent;
+
+    class BatchTask;
+    AutoTArray<RefPtr<BatchTask>, 8> mToNotify;
+  };
+
 #ifdef FUZZING_SNAPSHOT
   Maybe<mojo::core::ports::PortName> GetPortName() {
     MonitorAutoLock lock(*mMonitor);
