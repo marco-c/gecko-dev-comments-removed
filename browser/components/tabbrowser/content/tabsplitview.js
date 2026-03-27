@@ -149,7 +149,7 @@
 
     #observeTabChanges() {
       if (!this.#tabChangeObserver) {
-        this.#tabChangeObserver = new window.MutationObserver(() => {
+        this.#tabChangeObserver = new window.MutationObserver(mutations => {
           if (this.tabs.length) {
             this.hasActiveTab = this.tabs.some(tab => tab.selected);
             this.tabs.forEach((tab, index) => {
@@ -168,7 +168,9 @@
             this.remove();
           }
 
-          if (this.tabs.length < 2) {
+          if (mutations.length == 1 && mutations[0].removedNodes.length == 1) {
+            
+            
             this.unsplitTabs("tab_close");
           }
         });
@@ -236,11 +238,11 @@
     
 
 
+
     #deactivate() {
       gBrowser.tabpanels.removeTabsFromSplitview(
         this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
       );
-
       updateUrlbarButton.arm();
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
@@ -345,12 +347,38 @@
 
 
 
+
+
     unsplitTabs(trigger = null) {
-      gBrowser.unsplitTabs(this, this.#isClosing ? null : trigger);
-      gBrowser.setIsSplitViewActive(
-        false,
-        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
+      let telemetryTrigger = this.#isClosing ? null : trigger;
+      
+      if (telemetryTrigger) {
+        const tab_layout = gBrowser.tabContainer.verticalMode
+          ? "vertical"
+          : "horizontal";
+
+        Glean.splitview.end.record({
+          tab_layout,
+          telemetryTrigger,
+        });
+      }
+
+      
+      let aboutOpenTabs = this.#tabs.filter(
+        tab => tab?.linkedBrowser?.currentURI?.spec === "about:opentabs"
       );
+      aboutOpenTabs.forEach(aboutOpenTab => {
+        gBrowser.removeTab(aboutOpenTab);
+      });
+
+      for (let i = this.tabs.length - 1; i >= 0; i--) {
+        gBrowser.handleTabMove(this.tabs[i], () =>
+          gBrowser.tabContainer.insertBefore(
+            this.tabs[i],
+            this.nextElementSibling
+          )
+        );
+      }
     }
 
     
