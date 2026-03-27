@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 async function testAppliedFilters(ext, expectedFilter, expectedFilterCount) {

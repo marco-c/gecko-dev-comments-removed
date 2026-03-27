@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UntrustedModulesBackupService_h
 #define mozilla_UntrustedModulesBackupService_h
 

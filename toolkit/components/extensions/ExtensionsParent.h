@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_extensions_ExtensionsParent_h
 #define mozilla_extensions_ExtensionsParent_h
 

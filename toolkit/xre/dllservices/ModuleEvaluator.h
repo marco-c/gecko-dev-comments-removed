@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ModuleEvaluator_h
 #define mozilla_ModuleEvaluator_h
 

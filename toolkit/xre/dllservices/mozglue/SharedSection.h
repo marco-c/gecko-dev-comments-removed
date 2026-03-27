@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glue_SharedSection_h
 #define mozilla_glue_SharedSection_h
 

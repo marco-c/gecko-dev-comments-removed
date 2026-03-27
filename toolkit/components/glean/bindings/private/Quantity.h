@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glean_GleanQuantity_h
 #define mozilla_glean_GleanQuantity_h
 

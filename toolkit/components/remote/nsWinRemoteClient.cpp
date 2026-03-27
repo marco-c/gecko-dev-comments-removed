@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsWinRemoteClient.h"
 #include <windows.h>
 #include "RemoteUtils.h"

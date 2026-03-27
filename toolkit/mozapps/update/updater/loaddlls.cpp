@@ -2,7 +2,6 @@
 
 
 
-
 #include <windows.h>
 
 #ifdef MOZ_CLANG_PLUGIN

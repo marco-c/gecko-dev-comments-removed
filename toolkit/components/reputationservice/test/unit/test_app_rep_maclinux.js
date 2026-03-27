@@ -3,8 +3,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });

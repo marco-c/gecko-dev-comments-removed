@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsBrowserStatusFilter.h"
 #include "nsITimer.h"
 #include "nsString.h"

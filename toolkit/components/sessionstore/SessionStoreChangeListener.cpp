@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SessionStoreChangeListener.h"
 
 #include "mozilla/dom/BrowsingContext.h"

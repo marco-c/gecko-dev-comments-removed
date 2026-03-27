@@ -4,8 +4,6 @@
 
 
 
-
-
 var timeInMicroseconds = Date.now() * 1000;
 
 const VISITS = [

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Registry.h"
 
 #include <windows.h>

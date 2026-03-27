@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsXULAppAPI.h"
 #include "nsINIParser.h"
 #include "nsIFile.h"

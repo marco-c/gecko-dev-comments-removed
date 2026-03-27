@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ThreadStackHelper.h"
 #include "MainThreadUtils.h"
 #include "nsJSPrincipals.h"
@@ -33,7 +31,6 @@
 #endif
 
 #include <string.h>
-#include <cstdlib>
 
 #ifdef XP_LINUX
 #  include <ucontext.h>

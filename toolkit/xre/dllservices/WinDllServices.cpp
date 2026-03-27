@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WinDllServices.h"
 
 #include <windows.h>

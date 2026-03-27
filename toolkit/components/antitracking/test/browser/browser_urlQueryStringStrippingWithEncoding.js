@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const TEST_THIRD_PARTY_DOMAIN = TEST_DOMAIN_2;

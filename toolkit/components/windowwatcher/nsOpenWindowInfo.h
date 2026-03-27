@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsOpenWindowInfo_h
 #define nsOpenWindowInfo_h
 

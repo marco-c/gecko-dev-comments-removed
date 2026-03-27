@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsParentalControlsService_h_
 #define nsParentalControlsService_h_
 

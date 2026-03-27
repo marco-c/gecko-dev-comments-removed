@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ClearSiteData.h"
 
 #include "mozilla/net/HttpBaseChannel.h"

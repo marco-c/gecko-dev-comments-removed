@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Safe Browsing")
@@ -46,14 +44,14 @@ UNIFIED_SOURCES += [
     "UrlClassifierTelemetryUtils.cpp",
 ]
 
-
+# define conflicting LOG() macros
 SOURCES += [
     "nsUrlClassifierPrefixSet.cpp",
     "nsUrlClassifierStreamUpdater.cpp",
     "VariableLengthPrefixSet.cpp",
 ]
 
-
+# contains variables that conflict with LookupCache.cpp
 SOURCES += [
     "HashStore.cpp",
 ]
@@ -94,7 +92,7 @@ LOCAL_INCLUDES += [
 
 CXXFLAGS += CONFIG["SQLITE_CFLAGS"]
 
-
+# Suppress warnings in third-party code.
 if CONFIG["CC_TYPE"] == "gcc":
     CXXFLAGS += [
         "-Wno-maybe-uninitialized",

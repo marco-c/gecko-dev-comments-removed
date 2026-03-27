@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsComponentManagerUtils.h"
 #include "nsSystemAlertsService.h"
 #include "nsAlertsIconListener.h"

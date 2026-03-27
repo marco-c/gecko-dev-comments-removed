@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DEFAULT_BROWSER_UTF_CONVERT_H_
 #define DEFAULT_BROWSER_UTF_CONVERT_H_
 

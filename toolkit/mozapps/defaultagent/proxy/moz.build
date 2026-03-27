@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Program("default-browser-agent")
 
@@ -52,21 +50,21 @@ for var in (
 ):
     DEFINES[var] = '"%s"' % CONFIG[var]
 
-
-
+# We need STL headers that aren't allowed when wrapping is on (at least
+# <filesystem>, and possibly others).
 DisableStlWrapping()
 
-
-
+# We need this to be able to use wmain as the entry point on MinGW;
+# otherwise it will try to use WinMain.
 if CONFIG["CC_TYPE"] == "clang-cl":
     WIN32_EXE_LDFLAGS += ["-ENTRY:wmainCRTStartup"]
 else:
     WIN32_EXE_LDFLAGS += ["-municode"]
 
-
-
-
-
+# This binary should never open a console window in release builds, because
+# it's going to run in the background when the user may not expect it, and
+# we don't want a console window to just appear out of nowhere on them.
+# For debug builds though, it's okay to use the existing WINCONSOLE value.
 if not CONFIG["MOZ_DEBUG"]:
     WINCONSOLE = False
 

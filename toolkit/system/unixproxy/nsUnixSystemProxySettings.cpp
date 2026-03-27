@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsISystemProxySettings.h"
 #include "mozilla/Components.h"
 #include "nsIURI.h"

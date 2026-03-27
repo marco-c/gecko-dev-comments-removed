@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UntrustedModulesData_h
 #define mozilla_UntrustedModulesData_h
 

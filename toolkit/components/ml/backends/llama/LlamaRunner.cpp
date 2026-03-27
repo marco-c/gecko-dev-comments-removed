@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LlamaRunner.h"
 
 #include "mozilla/dom/LlamaRunnerBinding.h"

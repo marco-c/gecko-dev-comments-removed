@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/telemetry/Stopwatch.h"
 
 #include "TelemetryUserInteraction.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_contentblockingallowlist_h
 #define mozilla_contentblockingallowlist_h
 

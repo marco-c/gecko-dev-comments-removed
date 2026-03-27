@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <math.h>
 
 #include "gtest/gtest.h"

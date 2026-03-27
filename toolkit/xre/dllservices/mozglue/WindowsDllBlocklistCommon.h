@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsDllBlocklistCommon_h
 #define mozilla_WindowsDllBlocklistCommon_h
 

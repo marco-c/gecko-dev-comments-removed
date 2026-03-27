@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS += [
     "commonupdatedir.h",
@@ -36,8 +34,8 @@ if CONFIG["DISABLE_UPDATER_AUTHENTICODE_CHECK"]:
     DEFINES["DISABLE_UPDATER_AUTHENTICODE_CHECK"] = True
 
 if CONFIG["OS_ARCH"] == "WINNT":
-    
-    
+    # This forces the creation of updatecommon.lib, which the update agent needs
+    # in order to link to updatecommon library functions.
     NO_EXPAND_LIBS = True
 
 DisableStlWrapping()

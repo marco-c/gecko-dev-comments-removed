@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 LOCAL_INCLUDES += [
     "../..",
@@ -15,7 +13,7 @@ UNIFIED_SOURCES += [
 if (
     CONFIG["OS_ARCH"] == "Linux"
     and CONFIG["OS_TARGET"] != "Android"
-    and not CONFIG["MOZ_TSAN"]  
+    and not CONFIG["MOZ_TSAN"]  # Bug 1894417
 ):
     UNIFIED_SOURCES += [
         "TestProfileLockRetry.cpp",

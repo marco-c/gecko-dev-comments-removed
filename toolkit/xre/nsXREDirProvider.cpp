@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsAppRunner.h"
 #include "nsXREDirProvider.h"
 #ifndef ANDROID

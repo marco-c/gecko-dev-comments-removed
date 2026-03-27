@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef UPDATEERRORS_H
 #define UPDATEERRORS_H
 

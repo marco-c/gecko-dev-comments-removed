@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsOpenWindowInfo.h"
 
 #include "mozilla/dom/BrowserParent.h"

@@ -2,11 +2,9 @@
 
 
 
-
 #ifndef MacLaunchHelper_h_
 #define MacLaunchHelper_h_
 
-#include <stdint.h>
 #include <unistd.h>
 
 #ifdef __OBJC__

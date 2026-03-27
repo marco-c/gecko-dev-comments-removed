@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_Authenticode_h
 #define mozilla_Authenticode_h
 

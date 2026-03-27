@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function test_downloads_api_namespace_and_permissions() {

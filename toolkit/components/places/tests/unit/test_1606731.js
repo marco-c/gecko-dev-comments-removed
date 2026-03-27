@@ -2,8 +2,6 @@
 
 
 
-
-
 let hs = PlacesUtils.history;
 
 

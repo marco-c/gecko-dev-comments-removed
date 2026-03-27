@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AddonManagerStartup_h
 #define AddonManagerStartup_h
 

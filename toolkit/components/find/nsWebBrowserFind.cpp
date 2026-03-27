@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWebBrowserFind.h"
 
 

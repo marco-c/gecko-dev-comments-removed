@@ -2,8 +2,6 @@
 
 
 
-
-
 from os.path import abspath, relpath
 
 from mozbuild.action.zip import main as create_zip

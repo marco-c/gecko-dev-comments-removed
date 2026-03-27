@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ProcessedStack.h"
 
 namespace {

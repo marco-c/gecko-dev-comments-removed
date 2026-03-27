@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsUrlClassifierPrefixSet.h"
 #include "nsIUrlClassifierPrefixSet.h"
 #include "nsCOMPtr.h"

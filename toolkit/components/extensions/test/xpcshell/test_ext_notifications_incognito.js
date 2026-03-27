@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const ALERTS_SERVICE_CONTRACT_ID = "@mozilla.org/alerts-service;1";

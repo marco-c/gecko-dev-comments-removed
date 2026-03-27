@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UntrustedModulesProcessor_h
 #define mozilla_UntrustedModulesProcessor_h
 

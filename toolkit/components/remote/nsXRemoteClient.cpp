@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 #include "nsDebug.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"

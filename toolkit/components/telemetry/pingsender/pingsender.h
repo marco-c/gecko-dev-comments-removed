@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_telemetry_pingsender_h
 #define mozilla_telemetry_pingsender_h
 

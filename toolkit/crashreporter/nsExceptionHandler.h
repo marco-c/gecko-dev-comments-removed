@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef nsExceptionHandler_h_
 #define nsExceptionHandler_h_
 

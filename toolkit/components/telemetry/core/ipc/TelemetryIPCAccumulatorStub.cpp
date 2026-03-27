@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TelemetryIPCAccumulator.h"
 
 using mozilla::Telemetry::ScalarActionType;

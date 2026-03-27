@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_HangAnnotations_h
 #define mozilla_HangAnnotations_h
 

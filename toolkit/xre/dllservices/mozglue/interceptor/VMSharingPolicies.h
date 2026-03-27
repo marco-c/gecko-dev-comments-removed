@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_interceptor_VMSharingPolicies_h
 #define mozilla_interceptor_VMSharingPolicies_h
 

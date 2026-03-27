@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 UNIFIED_SOURCES += [
     'crash_generation/crash_generation_client.cc',
@@ -19,13 +17,13 @@ UNIFIED_SOURCES += [
 ]
 
 if CONFIG["CC_TYPE"] == "gcc":
-    
-    
+    # Workaround for an ICE in the hazard detection GCC plug-in, see
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1756505#c7
     SOURCES += ['minidump_writer/minidump_writer.cc']
 else:
     UNIFIED_SOURCES += ['minidump_writer/minidump_writer.cc']
 
-
+# On Linux we override the guid_creator.h header and use our own instead
 if CONFIG['OS_TARGET'] == 'Linux' or CONFIG['OS_TARGET'] == 'Android':
     DEFINES['COMMON_LINUX_GUID_CREATOR_H__'] = 1
 

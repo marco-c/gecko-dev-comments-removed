@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/extensions/MatchPattern.h"
 #include "mozilla/extensions/MatchGlob.h"
 

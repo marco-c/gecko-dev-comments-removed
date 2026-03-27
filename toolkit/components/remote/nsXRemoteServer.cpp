@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsXRemoteServer.h"
 #include "nsCOMPtr.h"
 #include "nsICommandLine.h"

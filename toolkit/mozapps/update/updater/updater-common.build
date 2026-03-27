@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 link_with_nss = CONFIG["MOZ_USE_NSS_FOR_MAR"] or (
     CONFIG["OS_ARCH"] == "Linux" and CONFIG["MOZ_VERIFY_MAR_SIGNATURE"]
@@ -45,7 +43,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
     DEFINES["_UNICODE"] = True
     USE_STATIC_MSVCRT = True
 
-    
+    # Pick up nsWindowsRestart.cpp
     LOCAL_INCLUDES += [
         "/toolkit/xre",
     ]
@@ -136,7 +134,7 @@ for var in ("MAR_CHANNEL_ID", "MOZ_APP_VERSION", "ACCEPTED_MAR_CHANNEL_IDS"):
 
 LOCAL_INCLUDES += [
     "/toolkit/mozapps/update/common",
-    "/xpcom/base",  
+    "/xpcom/base",  # for nsVersionComparator.cpp
 ]
 
 DELAYLOAD_DLLS += [

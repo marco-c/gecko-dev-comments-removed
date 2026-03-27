@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef PROGRESSUI_H_
 #define PROGRESSUI_H_
 

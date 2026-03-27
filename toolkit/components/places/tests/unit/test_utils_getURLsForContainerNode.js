@@ -7,8 +7,6 @@
 
 
 
-
-
 var PU = PlacesUtils;
 var hs = PU.history;
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_OwnedRustBuffer_h
 #define mozilla_OwnedRustBuffer_h
 

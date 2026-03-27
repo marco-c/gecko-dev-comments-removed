@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsUrlClassifierDBService.h"
 
 #include "Common.h"

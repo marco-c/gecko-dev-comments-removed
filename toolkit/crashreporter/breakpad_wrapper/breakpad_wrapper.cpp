@@ -2,7 +2,6 @@
 
 
 
-
 #include <string>
 
 #if defined(XP_LINUX)
@@ -42,7 +41,7 @@ namespace mozilla::phc {
 
 
 
-MOZ_RUNINIT mozilla::phc::AddrInfo gAddrInfo;
+constinit mozilla::phc::AddrInfo gAddrInfo;
 
 }  
 

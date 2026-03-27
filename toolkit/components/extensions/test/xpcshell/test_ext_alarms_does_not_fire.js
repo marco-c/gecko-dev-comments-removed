@@ -1,6 +1,4 @@
 
-
-
 "use strict";
 
 add_task(async function test_cleared_alarm_does_not_fire() {

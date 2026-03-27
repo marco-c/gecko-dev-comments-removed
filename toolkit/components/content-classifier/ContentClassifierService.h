@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ContentClassifierService_h
 #define mozilla_ContentClassifierService_h
 

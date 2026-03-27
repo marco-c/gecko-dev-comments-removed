@@ -13,8 +13,6 @@
 
 
 
-
-
 #include "mozilla/ShutdownPhase.h"
 #include "nsTerminator.h"
 

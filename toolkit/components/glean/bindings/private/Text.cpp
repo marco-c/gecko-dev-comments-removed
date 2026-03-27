@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Text.h"
 
 #include "jsapi.h"

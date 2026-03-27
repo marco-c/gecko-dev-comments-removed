@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LauncherRegistryInfo_h
 #define mozilla_LauncherRegistryInfo_h
 

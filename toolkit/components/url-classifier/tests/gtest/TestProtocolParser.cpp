@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/EndianUtils.h"
 #include "ProtocolParser.h"
 

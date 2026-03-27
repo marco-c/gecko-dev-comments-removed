@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef NSXREMOTESERVER_H
 #define NSXREMOTESERVER_H
 

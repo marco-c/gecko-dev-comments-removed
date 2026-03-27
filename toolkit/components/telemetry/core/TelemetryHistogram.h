@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryHistogram_h_
 #define TelemetryHistogram_h_
 

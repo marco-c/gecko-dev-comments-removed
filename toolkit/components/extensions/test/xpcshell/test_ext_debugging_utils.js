@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { ExtensionParent } = ChromeUtils.importESModule(

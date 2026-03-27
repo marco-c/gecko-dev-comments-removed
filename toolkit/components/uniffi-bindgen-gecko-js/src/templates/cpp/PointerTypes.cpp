@@ -3,8 +3,6 @@
 
 
 
-
-
 {%- for (preprocessor_condition, pointer_types, preprocessor_condition_end) in pointer_types.iter() %}
 {{ preprocessor_condition }}
 {%- for pointer_type in pointer_types %}

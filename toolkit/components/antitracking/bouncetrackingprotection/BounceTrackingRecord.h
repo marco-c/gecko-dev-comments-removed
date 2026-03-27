@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BounceTrackingRecord_h
 #define mozilla_BounceTrackingRecord_h
 

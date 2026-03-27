@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryUserInteraction_h_
 #define TelemetryUserInteraction_h_
 

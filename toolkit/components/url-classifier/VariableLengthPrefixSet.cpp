@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VariableLengthPrefixSet.h"
 #include "nsIInputStream.h"
 #include "nsUrlClassifierPrefixSet.h"

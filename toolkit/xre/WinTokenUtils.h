@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WinTokenUtils_h
 #define mozilla_WinTokenUtils_h
 

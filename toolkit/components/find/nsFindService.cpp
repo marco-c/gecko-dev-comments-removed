@@ -8,7 +8,6 @@
 
 
 
-
 #include "nsFindService.h"
 
 nsFindService::nsFindService()

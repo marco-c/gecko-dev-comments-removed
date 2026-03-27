@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsComponentManagerUtils.h"
 #include "nsIMutableArray.h"
 #include "nsUrlClassifierInfo.h"

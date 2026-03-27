@@ -2,7 +2,6 @@
 
 
 
-
 #include "Classifier.h"
 #include "HashStore.h"
 #include "mozilla/Components.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TelemetryHistogram.h"
 
 #include <limits>

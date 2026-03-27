@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsCommandLine.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/Try.h"

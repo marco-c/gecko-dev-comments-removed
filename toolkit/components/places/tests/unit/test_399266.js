@@ -2,8 +2,6 @@
 
 
 
-
-
 const TOTAL_SITES = 20;
 
 add_task(async function test_execute() {

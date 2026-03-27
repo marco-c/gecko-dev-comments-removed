@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function test_not_ephemeral_profile() {
   
   

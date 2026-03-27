@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_TestShellEx_RegUtils_h
 #define mozilla_TestShellEx_RegUtils_h
 

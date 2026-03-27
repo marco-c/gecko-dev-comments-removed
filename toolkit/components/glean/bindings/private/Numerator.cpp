@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Numerator.h"
 
 #include "nsString.h"

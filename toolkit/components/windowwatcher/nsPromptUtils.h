@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NSPROMPTUTILS_H_
 #define NSPROMPTUTILS_H_
 

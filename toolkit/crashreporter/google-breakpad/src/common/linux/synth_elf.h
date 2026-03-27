@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef COMMON_LINUX_SYNTH_ELF_H_
 #define COMMON_LINUX_SYNTH_ELF_H_
 

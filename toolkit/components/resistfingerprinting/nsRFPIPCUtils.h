@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_resistfingerprinting_nsRFPIPCUtils_h
 #define mozilla_resistfingerprinting_nsRFPIPCUtils_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWindowsDllInterceptor.h"
 
 #include <functional>

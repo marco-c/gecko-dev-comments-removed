@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_antitrackingservice_h
 #define mozilla_antitrackingservice_h
 

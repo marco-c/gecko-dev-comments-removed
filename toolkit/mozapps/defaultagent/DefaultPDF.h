@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DEFAULT_BROWSER_DEFAULT_PDF_H_
 #define DEFAULT_BROWSER_DEFAULT_PDF_H_
 

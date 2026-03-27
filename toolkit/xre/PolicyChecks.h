@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PolicyChecks_h
 #define mozilla_PolicyChecks_h
 

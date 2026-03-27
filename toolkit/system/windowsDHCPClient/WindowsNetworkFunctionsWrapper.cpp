@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WindowsNetworkFunctionsWrapper.h"
 
 #ifndef __MINGW32__

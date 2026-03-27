@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <filesystem>
 #include <string>
 
@@ -13,7 +11,7 @@
 
 using namespace std::filesystem;
 
-MOZ_RUNINIT static path processDllPath = {};
+MOZ_GLIBCXX_CONSTINIT static path processDllPath = {};
 
 
 bool PopulateDllPath(HINSTANCE dllInstance) {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsThreadUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"

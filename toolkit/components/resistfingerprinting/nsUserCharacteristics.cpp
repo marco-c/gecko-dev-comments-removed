@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsUserCharacteristics.h"
 
 #include "nsComponentManagerUtils.h"
@@ -1123,7 +1122,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 33;
+const int kSubmissionSchema = 37;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";

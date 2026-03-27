@@ -34,8 +34,6 @@
 
 
 
-
-
 #ifndef COMMON_BYTE_CURSOR_H_
 #define COMMON_BYTE_CURSOR_H_
 

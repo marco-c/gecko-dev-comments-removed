@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SessionStoreChild.h"
 
 #include "mozilla/AlreadyAddRefed.h"

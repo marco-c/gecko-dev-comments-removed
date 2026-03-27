@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ModuleLoadInfo_h
 #define mozilla_ModuleLoadInfo_h
 

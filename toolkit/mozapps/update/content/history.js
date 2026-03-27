@@ -2,7 +2,6 @@
 
 
 
-
 var gUpdateHistory = {
   _view: null,
 

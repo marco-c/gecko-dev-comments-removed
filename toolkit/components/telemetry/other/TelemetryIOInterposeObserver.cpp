@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TelemetryIOInterposeObserver.h"
 #include "core/TelemetryCommon.h"
 #include "js/Array.h"               

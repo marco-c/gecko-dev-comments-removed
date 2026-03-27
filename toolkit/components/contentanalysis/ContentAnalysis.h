@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_contentanalysis_h
 #define mozilla_contentanalysis_h
 

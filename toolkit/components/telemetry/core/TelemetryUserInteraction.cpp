@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsString.h"
 #include "MainThreadUtils.h"
 #include "TelemetryUserInteraction.h"

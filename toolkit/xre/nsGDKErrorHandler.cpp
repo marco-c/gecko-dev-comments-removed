@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsGDKErrorHandler.h"
 
 #include <gtk/gtk.h>

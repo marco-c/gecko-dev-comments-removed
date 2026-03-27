@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 Services.prefs.setBoolPref("webextensions.storage.sync.kinto", false);

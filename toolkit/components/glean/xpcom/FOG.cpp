@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/FOG.h"
 
 #include "mozilla/AppShutdown.h"

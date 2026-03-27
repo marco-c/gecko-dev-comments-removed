@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsNavBookmarks_h_
 #define nsNavBookmarks_h_
 

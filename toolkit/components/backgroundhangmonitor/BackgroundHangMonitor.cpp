@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/BackgroundHangMonitor.h"
 
 #include <string_view>

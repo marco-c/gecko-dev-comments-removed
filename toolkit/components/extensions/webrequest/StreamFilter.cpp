@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StreamFilter.h"
 
 #include "jsapi.h"

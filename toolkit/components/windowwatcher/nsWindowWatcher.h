@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsWindowWatcher_h_
 #define _nsWindowWatcher_h_
 

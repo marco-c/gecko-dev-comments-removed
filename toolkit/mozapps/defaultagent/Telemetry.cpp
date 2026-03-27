@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Telemetry.h"
 
 #include <fstream>

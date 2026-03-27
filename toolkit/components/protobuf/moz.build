@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Library('protobuf')
 
@@ -86,7 +84,7 @@ EXPORTS.google.protobuf.stubs += [
     'src/google/protobuf/stubs/platform_macros.h',
     'src/google/protobuf/stubs/port.h',
     'src/google/protobuf/stubs/status.h',
-    
+    # 'src/google/protobuf/stubs/statusor.h', # Unused file
     'src/google/protobuf/stubs/stl_util.h',
     'src/google/protobuf/stubs/stringpiece.h',
     'src/google/protobuf/stubs/stringprintf.h',
@@ -102,11 +100,11 @@ EXPORTS.google.protobuf.util += [
 ]
 
 UNIFIED_SOURCES += [
-    
+    # 'src/google/protobuf/any_lite.cc', # Unused file
     'src/google/protobuf/arena.cc',
     'src/google/protobuf/arenastring.cc',
-    
-    
+    # 'src/google/protobuf/arenaz_sampler.cc', # Unused file
+    # 'src/google/protobuf/io/strtod.cc', # Unused file
     'src/google/protobuf/io/zero_copy_stream.cc',
     'src/google/protobuf/stubs/stringpiece.cc',
     'src/google/protobuf/stubs/structurally_valid.cc',
@@ -120,44 +118,44 @@ SOURCES += [
     'src/google/protobuf/descriptor.pb.cc',
     'src/google/protobuf/descriptor_database.cc',
     'src/google/protobuf/dynamic_message.cc',
-    'src/google/protobuf/extension_set.cc', 
+    'src/google/protobuf/extension_set.cc', # port_def conflicts
     'src/google/protobuf/extension_set_heavy.cc',
-    'src/google/protobuf/generated_enum_util.cc', 
+    'src/google/protobuf/generated_enum_util.cc', # port_def conflicts
     'src/google/protobuf/generated_message_reflection.cc',
     'src/google/protobuf/generated_message_tctable_lite.cc',
-    'src/google/protobuf/generated_message_util.cc', 
-    'src/google/protobuf/implicit_weak_message.cc', 
-    
-    'src/google/protobuf/io/coded_stream.cc', 
-    'src/google/protobuf/io/gzip_stream.cc', 
-    'src/google/protobuf/io/io_win32.cc', 
+    'src/google/protobuf/generated_message_util.cc', # port_def conflicts
+    'src/google/protobuf/implicit_weak_message.cc', # port_def conflicts
+    # 'src/google/protobuf/inlined_string_field.cc', # Unused file # port_def conflicts
+    'src/google/protobuf/io/coded_stream.cc', # port_def conflicts
+    'src/google/protobuf/io/gzip_stream.cc', # technically not in libprotobuf-lite.cmake but devtools/shared/heapsnapshot/HeapSnapshot.cpp uses it.
+    'src/google/protobuf/io/io_win32.cc', # port_def conflicts
     'src/google/protobuf/io/strtod.cc',
     'src/google/protobuf/io/tokenizer.cc',
-    'src/google/protobuf/io/zero_copy_stream_impl.cc', 
-    'src/google/protobuf/io/zero_copy_stream_impl_lite.cc', 
-    'src/google/protobuf/map.cc', 
-    'src/google/protobuf/map_field.cc', 
+    'src/google/protobuf/io/zero_copy_stream_impl.cc', # port_def conflicts
+    'src/google/protobuf/io/zero_copy_stream_impl_lite.cc', # port_def conflicts
+    'src/google/protobuf/map.cc', # port_def conflicts
+    'src/google/protobuf/map_field.cc', # port_def conflicts
     'src/google/protobuf/message.cc',
-    'src/google/protobuf/message_lite.cc', 
-    'src/google/protobuf/parse_context.cc', 
+    'src/google/protobuf/message_lite.cc', # port_def conflicts
+    'src/google/protobuf/parse_context.cc', # port_def conflicts
     'src/google/protobuf/reflection_ops.cc',
-    'src/google/protobuf/repeated_field.cc', 
-    'src/google/protobuf/repeated_ptr_field.cc', 
-    
-    'src/google/protobuf/stubs/common.cc', 
-    'src/google/protobuf/stubs/int128.cc', 
-    'src/google/protobuf/stubs/status.cc', 
-    
+    'src/google/protobuf/repeated_field.cc', # port_def conflicts
+    'src/google/protobuf/repeated_ptr_field.cc', # port_def conflicts
+    # 'src/google/protobuf/stubs/bytestream.cc', # Unused file # port_def conflicts
+    'src/google/protobuf/stubs/common.cc', # port_def conflicts
+    'src/google/protobuf/stubs/int128.cc', # port_def conflicts
+    'src/google/protobuf/stubs/status.cc', # port_def conflicts
+    # 'src/google/protobuf/stubs/statusor.cc', # Unused file. # port_def conflicts
     'src/google/protobuf/stubs/stringprintf.cc',
     'src/google/protobuf/stubs/substitute.cc',
-    
+    # 'src/google/protobuf/stubs/time.cc', # Unused file # GetCurrentTime conflict in winbase.h
     'src/google/protobuf/text_format.cc',
     'src/google/protobuf/unknown_field_set.cc',
     'src/google/protobuf/wire_format.cc',
-    'src/google/protobuf/wire_format_lite.cc', 
+    'src/google/protobuf/wire_format_lite.cc', # port_def conflicts
 ]
 
-
+# We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'xul'
@@ -165,7 +163,7 @@ FINAL_LIBRARY = 'xul'
 DEFINES['GOOGLE_PROTOBUF_NO_RTTI'] = True
 DEFINES['GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER'] = True
 
-
+# Suppress warnings in third-party code.
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CXXFLAGS += [
         '-Wno-ignored-qualifiers',
@@ -183,22 +181,22 @@ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
         ]
 elif CONFIG['CC_TYPE'] == 'clang-cl':
     CXXFLAGS += [
-        '-Wno-macro-redefined',  
+        '-Wno-macro-redefined',  # 'WIN32_LEAN_AND_MEAN' : macro redefinition
         '-Wno-sign-compare',
     ]
 
 if CONFIG['OS_TARGET'] == 'WINNT':
-    DEFINES['NOGDI'] = True  
+    DEFINES['NOGDI'] = True  # wingdi.h defines ERROR as 0 and conflicts with logging.h
 
 if CONFIG['MOZ_USE_PTHREADS']:
     DEFINES['HAVE_PTHREAD'] = True
 
-
+# Needed for the gzip streams.
 DEFINES['HAVE_ZLIB'] = True
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG['MOZ_GTK3_CFLAGS']
 
-
+# Work around bug 1841201.
 if CONFIG['TARGET_CPU'] in ('mips32', 'mips64'):
     DEFINES['musttail'] = 'nomusttail'

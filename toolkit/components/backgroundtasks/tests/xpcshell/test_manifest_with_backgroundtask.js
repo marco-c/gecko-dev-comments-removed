@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function test_manifest_with_backgroundtask() {
   let bts = Cc["@mozilla.org/backgroundtasks;1"].getService(
     Ci.nsIBackgroundTasks

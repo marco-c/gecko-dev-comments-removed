@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DefaultPDF.h"
 
 #include <string>

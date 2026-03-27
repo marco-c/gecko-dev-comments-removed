@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UniFFIPointerType_h
 #define mozilla_UniFFIPointerType_h
 

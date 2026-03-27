@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryIPCAccumulator_h_
 #define TelemetryIPCAccumulator_h_
 

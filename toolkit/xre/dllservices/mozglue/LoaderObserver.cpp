@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LoaderObserver.h"
 
 #include "mozilla/BaseProfilerMarkers.h"

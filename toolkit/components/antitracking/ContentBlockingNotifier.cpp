@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AntiTrackingLog.h"
 #include "ContentBlockingNotifier.h"
 #include "AntiTrackingUtils.h"

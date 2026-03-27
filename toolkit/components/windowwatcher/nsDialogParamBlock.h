@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsDialogParamBlock_h
 #define _nsDialogParamBlock_h
 

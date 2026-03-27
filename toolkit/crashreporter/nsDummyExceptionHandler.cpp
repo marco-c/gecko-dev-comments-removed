@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsExceptionHandler.h"
 
 using mozilla::UniqueFileHandle;

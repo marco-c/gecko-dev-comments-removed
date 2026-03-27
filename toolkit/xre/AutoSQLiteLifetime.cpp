@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsDebug.h"
 #include "AutoSQLiteLifetime.h"
 #include "sqlite3.h"

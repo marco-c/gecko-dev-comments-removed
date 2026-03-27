@@ -5,7 +5,6 @@
 
 
 
-
 #include "FOGIPC.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"

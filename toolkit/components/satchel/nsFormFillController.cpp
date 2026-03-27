@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsFormFillController.h"
 
 #include "mozilla/ClearOnShutdown.h"

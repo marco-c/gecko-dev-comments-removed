@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef NotificationFactory_h_
 #define NotificationFactory_h_
 

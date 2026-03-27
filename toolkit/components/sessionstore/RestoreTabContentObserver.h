@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_dom_RestoreTabContentObserver_h
 #define mozilla_dom_RestoreTabContentObserver_h
 

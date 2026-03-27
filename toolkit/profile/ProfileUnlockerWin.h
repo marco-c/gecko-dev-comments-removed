@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ProfileUnlockerWin_h
 #define ProfileUnlockerWin_h
 

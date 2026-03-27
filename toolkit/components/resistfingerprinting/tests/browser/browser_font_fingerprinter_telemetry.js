@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const TEST_PATH = getRootDirectory(gTestPath).replace(

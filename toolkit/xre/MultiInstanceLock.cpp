@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MultiInstanceLock.h"
 
 #include "commonupdatedir.h"  

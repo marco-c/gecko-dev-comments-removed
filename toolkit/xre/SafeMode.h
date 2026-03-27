@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SafeMode_h
 #define mozilla_SafeMode_h
 

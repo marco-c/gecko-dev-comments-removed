@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsDBusRemoteServer_h_
 #define _nsDBusRemoteServer_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsStackWalkInitialization.h"
 
 #include "nsWindowsDllInterceptor.h"

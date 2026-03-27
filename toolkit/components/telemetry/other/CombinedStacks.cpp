@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CombinedStacks.h"
 
 #include "jsapi.h"

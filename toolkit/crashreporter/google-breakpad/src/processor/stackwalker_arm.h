@@ -35,8 +35,6 @@
 
 
 
-
-
 #ifndef PROCESSOR_STACKWALKER_ARM_H__
 #define PROCESSOR_STACKWALKER_ARM_H__
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_extensions_ExtensionBrowser_h
 #define mozilla_extensions_ExtensionBrowser_h
 

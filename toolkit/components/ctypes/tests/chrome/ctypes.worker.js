@@ -2,7 +2,6 @@
 
 
 
-
 importScripts("xpcshellTestHarnessAdaptor.js");
 
 onmessage = function (event) {

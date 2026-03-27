@@ -1,6 +1,3 @@
-
-
-
 const { history } = PlacesUtils;
 
 add_task(async function test_addVisitCheckFields() {

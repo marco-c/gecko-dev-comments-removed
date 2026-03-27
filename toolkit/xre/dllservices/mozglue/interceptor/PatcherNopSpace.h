@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_interceptor_PatcherNopSpace_h
 #define mozilla_interceptor_PatcherNopSpace_h
 

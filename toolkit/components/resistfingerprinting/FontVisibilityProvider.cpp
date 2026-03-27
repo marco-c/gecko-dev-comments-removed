@@ -2,7 +2,6 @@
 
 
 
-
 #include "FontVisibilityProvider.h"
 
 #include "gfxTypes.h"

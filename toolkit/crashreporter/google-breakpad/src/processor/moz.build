@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 SOURCES += [
     '../third_party/libdisasm/ia32_invariant.c',
@@ -11,9 +9,9 @@ SOURCES += [
     'exploitability_win.cc',
 ]
 
-
-
-
+# clang -Wtautological-constant-in-range-compare implicitly enables
+# -Wtautological-value-range-compare, but we need to disable it to avoid
+# Breakpad bug https://bugs.chromium.org/p/google-breakpad/issues/detail?id=859
 if CONFIG["WARNINGS_CFLAGS"] and "-Wtautological-constant-in-range-compare" in CONFIG["WARNINGS_CFLAGS"]:
     SOURCES['../third_party/libdisasm/ia32_invariant.c'].flags += ["-Wno-tautological-value-range-compare"]
 
@@ -67,10 +65,10 @@ DEFINES['BPLOG_MINIMUM_SEVERITY'] = 'SEVERITY_CRITICAL'
 
 Library('breakpad_processor')
 
-
+# Don't use the STL wrappers in the crashreporter clients
 DisableStlWrapping()
 
 include('/toolkit/crashreporter/crashreporter.mozbuild')
 
 if CONFIG['CC_TYPE'] == 'clang-cl':
-    AllowCompilerWarnings()  
+    AllowCompilerWarnings()  # workaround for bug 1090497

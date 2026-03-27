@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef nsToolkitProfileService_h
 #define nsToolkitProfileService_h
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ModuleLoadFrame.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/UniquePtr.h"

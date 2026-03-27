@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryEvent_h_
 #define TelemetryEvent_h_
 

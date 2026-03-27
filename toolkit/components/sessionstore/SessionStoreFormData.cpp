@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SessionStoreFormData.h"
 
 #include "mozilla/dom/BindingUtils.h"

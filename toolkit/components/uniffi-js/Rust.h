@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_UniFFIRust_h
 #define mozilla_UniFFIRust_h
 

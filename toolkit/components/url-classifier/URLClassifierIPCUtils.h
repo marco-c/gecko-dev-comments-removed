@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_urlclassiferipcutils_h
 #define mozilla_urlclassiferipcutils_h
 

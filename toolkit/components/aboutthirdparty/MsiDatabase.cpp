@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MsiDatabase.h"
 
 #ifdef UNICODE

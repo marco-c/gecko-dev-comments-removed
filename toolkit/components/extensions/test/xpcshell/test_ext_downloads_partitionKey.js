@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { Downloads } = ChromeUtils.importESModule(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glean_Ping_h
 #define mozilla_glean_Ping_h
 

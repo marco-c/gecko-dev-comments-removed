@@ -12,8 +12,6 @@
 
 
 
-
-
 var tests = [
   {
     desc: "Set max_pages to a negative value, with 1 page.",

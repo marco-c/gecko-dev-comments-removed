@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef updaterfileutils_osx_h_
 #define updaterfileutils_osx_h_
 

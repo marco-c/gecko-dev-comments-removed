@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Base64.h"
 #include "nsUrlClassifierUtils.h"
 #include "safebrowsing.pb.h"

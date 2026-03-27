@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef FontVisibilityProvider_h_
 #define FontVisibilityProvider_h_
 

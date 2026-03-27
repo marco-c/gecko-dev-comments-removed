@@ -7,7 +7,6 @@
 
 
 
-
 #include "nsSigHandlers.h"
 
 #ifdef XP_UNIX

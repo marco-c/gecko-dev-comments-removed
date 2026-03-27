@@ -1,8 +1,5 @@
 
 
-
-
-
 #include "nsString.h"
 #include "nsPrintfCString.h"
 #include "mozilla/Logging.h"

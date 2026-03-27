@@ -2,8 +2,6 @@
 
 
 
-
-
 extern "C" {
   {%- for (preprocessor_condition, ffi_definitions, preprocessor_condition_end) in ffi_definitions.iter() %}
 {{ preprocessor_condition }}

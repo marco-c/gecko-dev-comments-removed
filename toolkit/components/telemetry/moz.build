@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
@@ -66,7 +64,7 @@ UNIFIED_SOURCES += [
     "other/TelemetryIOInterposeObserver.cpp",
 ]
 
-
+# Android and iOS don't support Legacy Telemetry.
 if CONFIG["MOZ_WIDGET_TOOLKIT"] not in ("android", "uikit"):
     UNIFIED_SOURCES += [
         "core/ipc/TelemetryIPC.cpp",
@@ -134,7 +132,7 @@ PYTHON_UNITTEST_MANIFESTS += [
     "tests/python/python.toml",
 ]
 
-
+# Generate histogram files.
 histogram_files = [
     "Histograms.json",
 ]
@@ -157,7 +155,7 @@ GeneratedFile(
     inputs=histogram_files,
 )
 
-
+# Generate scalar files.
 scalar_files = [
     "Scalars.yaml",
 ]
@@ -175,8 +173,8 @@ GeneratedFile(
     inputs=scalar_files,
 )
 
-
-
+# Generate the JSON scalar definitions. They will only be
+# used in artifact or "build faster" builds.
 GeneratedFile(
     "ScalarArtifactDefinitions.json",
     script="build_scripts/gen_scalar_data.py",
@@ -184,10 +182,10 @@ GeneratedFile(
     inputs=scalar_files,
 )
 
-
+# Move the scalars JSON file to the directory where the Firefox binary is.
 FINAL_TARGET_FILES += ["!ScalarArtifactDefinitions.json"]
 
-
+# Generate event files.
 event_files = [
     "Events.yaml",
 ]
@@ -204,8 +202,8 @@ GeneratedFile(
     inputs=event_files,
 )
 
-
-
+# Generate the JSON event definitions. They will only be
+# used in artifact or "build faster" builds.
 GeneratedFile(
     "EventArtifactDefinitions.json",
     script="build_scripts/gen_event_data.py",
@@ -213,10 +211,10 @@ GeneratedFile(
     inputs=event_files,
 )
 
-
+# Move the events JSON file to the directory where the Firefox binary is.
 FINAL_TARGET_FILES += ["!EventArtifactDefinitions.json"]
 
-
+# Generate data from Processes.yaml
 processes_files = [
     "Processes.yaml",
 ]
@@ -234,7 +232,7 @@ GeneratedFile(
     inputs=processes_files,
 )
 
-
+# Generate UserInteraction file
 userinteraction_files = [
     "UserInteractions.yaml",
 ]

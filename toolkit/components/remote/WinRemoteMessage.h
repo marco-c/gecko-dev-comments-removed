@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef WinRemoteMessage_h_
 #define WinRemoteMessage_h_
 

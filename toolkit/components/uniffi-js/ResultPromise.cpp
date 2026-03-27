@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/uniffi/Call.h"
 #include "mozilla/uniffi/ResultPromise.h"
 

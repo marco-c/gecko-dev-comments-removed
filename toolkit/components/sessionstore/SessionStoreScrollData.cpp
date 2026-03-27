@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SessionStoreScrollData.h"
 
 #include "js/PropertyAndElement.h"

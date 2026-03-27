@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_AutoSQLiteLifetime_h
 #define mozilla_AutoSQLiteLifetime_h
 

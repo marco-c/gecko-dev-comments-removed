@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsIAppStartup.h"
 #include "nsIFile.h"
 #include "nsIStringBundle.h"

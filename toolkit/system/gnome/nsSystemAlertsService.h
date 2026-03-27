@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsSystemAlertsService_h_
 #define nsSystemAlertsService_h_
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TelemetryScalar.h"
 
 #include "ipc/TelemetryIPCAccumulator.h"

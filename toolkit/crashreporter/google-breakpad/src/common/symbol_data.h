@@ -27,8 +27,6 @@
 
 
 
-
-
 #ifndef COMMON_SYMBOL_DATA_H_
 #define COMMON_SYMBOL_DATA_H_
 

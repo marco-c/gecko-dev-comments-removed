@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsPrintfCString.h"
 #include "js/GCAPI.h"
 #include "mozilla/EndianUtils.h"

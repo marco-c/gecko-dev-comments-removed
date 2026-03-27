@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsExceptionHandler.h"
 #include "nsExceptionHandlerUtils.h"
 #include "ExtraFileParser.h"

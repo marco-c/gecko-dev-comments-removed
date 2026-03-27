@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WinDllServices_h
 #define mozilla_WinDllServices_h
 

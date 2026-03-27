@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "common.h"
 
 #include "EventLog.h"

@@ -4,8 +4,6 @@
 
 
 
-
-
 var FontBuilder = {
   _enumerator: null,
   get enumerator() {

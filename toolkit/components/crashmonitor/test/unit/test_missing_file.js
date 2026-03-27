@@ -5,7 +5,6 @@
 
 
 
-
 add_task(async function test_missing_file() {
   CrashMonitor.init();
   let checkpoints = await CrashMonitor.previousCheckpoints;

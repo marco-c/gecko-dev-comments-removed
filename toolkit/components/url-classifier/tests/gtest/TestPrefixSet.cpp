@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Preferences.h"
 #include "nsString.h"
 #include "nsUrlClassifierPrefixSet.h"

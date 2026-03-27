@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsOleAut32Initialization.h"
 
 #include <windows.h>

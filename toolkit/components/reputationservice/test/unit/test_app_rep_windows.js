@@ -8,8 +8,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",

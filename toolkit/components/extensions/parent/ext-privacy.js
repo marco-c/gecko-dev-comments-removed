@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var { ExtensionPreferencesManager } = ChromeUtils.importESModule(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AddonManagerWebAPI.h"
 
 #include "mozilla/BasePrincipal.h"

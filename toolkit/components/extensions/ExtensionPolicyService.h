@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_ExtensionPolicyService_h
 #define mozilla_ExtensionPolicyService_h
 

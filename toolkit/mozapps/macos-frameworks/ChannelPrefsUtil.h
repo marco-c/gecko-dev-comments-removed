@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ChannelPrefsUtil_h_
 #define ChannelPrefsUtil_h_
 

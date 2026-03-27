@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CustomElementTypes.h"
 #include "mozilla/dom/Document.h"

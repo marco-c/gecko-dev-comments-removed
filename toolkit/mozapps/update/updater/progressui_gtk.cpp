@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <gtk/gtk.h>
 #include <unistd.h>
 #include "mozilla/Sprintf.h"
@@ -24,7 +22,7 @@ static GtkWidget* sLabel;
 static GtkWidget* sProgressBar;
 static GdkPixbuf* sPixbuf;
 
-MOZ_RUNINIT StringTable sStrings;
+constinit StringTable sStrings;
 
 static gboolean UpdateDialog(gpointer data) {
   if (sQuit) {

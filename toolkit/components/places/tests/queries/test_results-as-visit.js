@@ -1,8 +1,6 @@
 
 
 
-
-
 var testData = [];
 var timeInMicroseconds = PlacesUtils.toPRTime(Date.now() - 10000);
 

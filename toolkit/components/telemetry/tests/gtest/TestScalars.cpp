@@ -2,7 +2,6 @@
 
 
 
-
 #include "core/TelemetryScalar.h"
 #include "gtest/gtest.h"
 #include "js/Conversions.h"

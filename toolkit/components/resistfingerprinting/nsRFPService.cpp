@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsRFPService.h"
 
 #include <algorithm>

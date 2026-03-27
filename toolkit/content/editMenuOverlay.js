@@ -3,8 +3,6 @@
 
 
 
-
-
 function goUpdateGlobalEditMenuItems(force) {
   
   

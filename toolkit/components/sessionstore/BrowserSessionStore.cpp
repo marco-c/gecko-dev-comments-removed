@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/BrowserSessionStore.h"
 #include <cstdint>
 #include <functional>

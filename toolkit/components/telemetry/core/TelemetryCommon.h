@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryCommon_h_
 #define TelemetryCommon_h_
 

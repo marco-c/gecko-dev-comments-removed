@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef _nsUserCharacteristics_h_
 #define _nsUserCharacteristics_h_
 

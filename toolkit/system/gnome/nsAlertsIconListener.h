@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAlertsIconListener_h_
 #define nsAlertsIconListener_h_
 

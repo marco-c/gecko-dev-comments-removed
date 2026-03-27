@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glean_QuantityStandalone_h
 #define mozilla_glean_QuantityStandalone_h
 

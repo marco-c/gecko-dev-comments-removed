@@ -2,8 +2,6 @@
 
 
 
-
-
 function zoomWindow() {
   if (window.windowState == window.STATE_NORMAL) {
     window.maximize();

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CmdLineAndEnvUtils_h
 #define mozilla_CmdLineAndEnvUtils_h
 

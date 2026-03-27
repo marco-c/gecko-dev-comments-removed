@@ -2,7 +2,6 @@
 
 
 
-
 #include "RiceDeltaDecoder.h"
 
 #include "Common.h"

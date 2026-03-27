@@ -5,7 +5,6 @@
 
 
 
-
 #ifdef NIGHTLY_BUILD
 DESKTOP_DEFAULT(CanvasRandomization)
 DESKTOP_DEFAULT(EfficientCanvasRandomization)

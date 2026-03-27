@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsFaviconService_h_
 #define nsFaviconService_h_
 

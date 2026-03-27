@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/Attributes.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "nsWindowsDllInterceptor.h"

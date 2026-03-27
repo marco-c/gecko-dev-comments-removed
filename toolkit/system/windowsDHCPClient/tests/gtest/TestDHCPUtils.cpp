@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DHCPUtils.h"
 #include "gtest/gtest.h"
 #include "nsCOMPtr.h"

@@ -5,8 +5,6 @@
 
 
 
-
-
 "use strict";
 
 var { Integration } = ChromeUtils.importESModule(

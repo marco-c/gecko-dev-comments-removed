@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const HISTOGRAM = "WEBEXT_CONTENT_SCRIPT_INJECTION_MS";

@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef COMMON_MAC_BYTESWAP_H_
 #define COMMON_MAC_BYTESWAP_H_
 

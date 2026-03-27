@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsX11ErrorHandler.h"
 
 #include "prenv.h"

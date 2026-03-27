@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsBCryptInitialization.h"
 
 #include "nsWindowsDllInterceptor.h"

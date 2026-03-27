@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BounceTrackingMapEntry_h
 #define mozilla_BounceTrackingMapEntry_h
 

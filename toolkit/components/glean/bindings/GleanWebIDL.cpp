@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/GleanWebIDL.h"
 
 #include "mozilla/BasePrincipal.h"

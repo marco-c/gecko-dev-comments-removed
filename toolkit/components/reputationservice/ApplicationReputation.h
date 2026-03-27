@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ApplicationReputation_h_
 #define ApplicationReputation_h_
 

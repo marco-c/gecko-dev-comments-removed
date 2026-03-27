@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_contentblockingtelemetryservice_h
 #define mozilla_contentblockingtelemetryservice_h
 

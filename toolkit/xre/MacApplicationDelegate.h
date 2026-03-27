@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef MacApplicationDelegate_h_
 #define MacApplicationDelegate_h_
 

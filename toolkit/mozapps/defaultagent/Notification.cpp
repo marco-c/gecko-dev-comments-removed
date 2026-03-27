@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Notification.h"
 
 #include <shlwapi.h>

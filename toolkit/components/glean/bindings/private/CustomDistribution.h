@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glean_GleanCustomDistribution_h
 #define mozilla_glean_GleanCustomDistribution_h
 

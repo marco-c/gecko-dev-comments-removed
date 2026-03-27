@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_toolkit_system_commonproxy_ProxyUtils_h
 #define mozilla_toolkit_system_commonproxy_ProxyUtils_h
 

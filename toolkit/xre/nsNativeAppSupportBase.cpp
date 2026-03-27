@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNativeAppSupportBase.h"
 
 nsNativeAppSupportBase::nsNativeAppSupportBase() = default;

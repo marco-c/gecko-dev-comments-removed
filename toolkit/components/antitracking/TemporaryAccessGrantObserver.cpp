@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TemporaryAccessGrantObserver.h"
 
 #include "mozilla/AppShutdown.h"

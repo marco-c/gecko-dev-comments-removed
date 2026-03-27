@@ -33,8 +33,6 @@
 
 
 
-
-
 #ifndef COMMON_LINUX_MODULE_H__
 #define COMMON_LINUX_MODULE_H__
 

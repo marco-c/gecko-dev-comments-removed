@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DEFAULT_BROWSER_AGENT_CACHE_H_
 #define DEFAULT_BROWSER_AGENT_CACHE_H_
 

@@ -9,8 +9,6 @@
 
 
 
-
-
 var ZoomManager = {
   set useFullZoom(aVal) {
     Services.prefs.setBoolPref("browser.zoom.full", aVal);

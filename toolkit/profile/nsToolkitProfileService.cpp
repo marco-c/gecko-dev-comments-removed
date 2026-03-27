@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/HelperMacros.h"

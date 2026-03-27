@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AntiTrackingLog.h"
 #include "StorageAccessAPIHelper.h"
 #include "AntiTrackingUtils.h"

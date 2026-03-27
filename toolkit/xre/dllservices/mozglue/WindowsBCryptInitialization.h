@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsBCryptInitialization_h
 #define mozilla_WindowsBCryptInitialization_h
 

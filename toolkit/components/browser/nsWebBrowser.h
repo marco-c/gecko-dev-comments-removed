@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsWebBrowser_h_
 #define nsWebBrowser_h_
 

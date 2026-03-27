@@ -35,8 +35,6 @@
 
 
 
-
-
 #ifndef COMMON_DWARF_DWARF2READER_H__
 #define COMMON_DWARF_DWARF2READER_H__
 

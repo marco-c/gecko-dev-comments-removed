@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef _nsGTKRemoteServer_h_
 #define _nsGTKRemoteServer_h_
 

@@ -11,8 +11,6 @@
 
 
 
-
-
 "use strict";
 
 const { Actions, runActions } = ChromeUtils.importESModule(

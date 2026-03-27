@@ -3,8 +3,6 @@
 
 
 
-
-
 let moz_log = "BackgroundTasks:5";
 
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AddonManagerStartup_inlines_h
 #define AddonManagerStartup_inlines_h
 

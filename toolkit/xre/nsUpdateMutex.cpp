@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsUpdateMutex.h"
 
 #include "mozilla/DebugOnly.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_toolkit_system_windowsDHCPClient_windowsNetworkFunctionsWrapper_h
 #define mozilla_toolkit_system_windowsDHCPClient_windowsNetworkFunctionsWrapper_h
 

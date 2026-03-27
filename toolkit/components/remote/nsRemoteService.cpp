@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsRemoteClient.h"
 #ifdef MOZ_WIDGET_GTK
 #  ifdef MOZ_ENABLE_DBUS

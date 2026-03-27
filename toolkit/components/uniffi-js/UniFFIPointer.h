@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_UniFFIPointer_h
 #define mozilla_dom_UniFFIPointer_h
 

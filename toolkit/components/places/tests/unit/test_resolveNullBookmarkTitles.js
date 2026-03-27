@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function () {
   let uri1 = uri("http://foo.tld/");
   let uri2 = uri("https://bar.tld/");

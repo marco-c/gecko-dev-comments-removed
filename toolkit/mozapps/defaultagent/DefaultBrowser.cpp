@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DefaultBrowser.h"
 
 #include <string>

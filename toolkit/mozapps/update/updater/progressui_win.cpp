@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <stdio.h>
 #include <windows.h>
 #include <commctrl.h>
@@ -42,7 +40,7 @@
 static float sProgress;  
 static BOOL sQuit = FALSE;
 static BOOL sIndeterminate = FALSE;
-MOZ_RUNINIT static StringTable sUIStrings;
+constinit static StringTable sUIStrings;
 
 static BOOL GetStringsFile(WCHAR filename[MAX_PATH]) {
   if (!GetModuleFileNameW(nullptr, filename, MAX_PATH)) {

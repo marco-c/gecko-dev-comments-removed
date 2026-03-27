@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsUrlClassifierProxies.h"
 #include "nsUrlClassifierDBService.h"
 

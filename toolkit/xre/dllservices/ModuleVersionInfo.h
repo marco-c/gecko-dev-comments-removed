@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ModuleVersionInfo_h
 #define mozilla_ModuleVersionInfo_h
 

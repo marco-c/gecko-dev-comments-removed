@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/CustomDistribution.h"
 
 #include "mozilla/ErrorResult.h"

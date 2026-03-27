@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_LoaderAPIInterfaces_h
 #define mozilla_LoaderAPIInterfaces_h
 
@@ -114,7 +112,7 @@ struct WinLauncherServices final {
   nt::LoaderAPI::HandleLauncherErrorFnPtr mHandleLauncherError;
   SharedSection* mSharedSection;
 
-  WinLauncherServices()
+  constexpr WinLauncherServices()
       : mInitDllBlocklistOOP(nullptr),
         mHandleLauncherError(nullptr),
         mSharedSection(nullptr) {}

@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef COMMON_LINUX_ELF_GNU_COMPAT_H_
 #define COMMON_LINUX_ELF_GNU_COMPAT_H_
 
