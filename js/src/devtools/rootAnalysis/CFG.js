@@ -627,6 +627,23 @@ function referencedCSUName(type) {
     }
 }
 
+function containsGCPointer(typeInfo, type) {
+    if (type.Kind == "CSU") {
+        if (!(type.Name in typeInfo.AllGCPointers)) {
+            return false;
+        }
+    } else if (type.Kind == "Pointer") {
+        const pointeeType = type.Type;
+        if (pointeeType.Kind != "CSU" || !(pointeeType.Name in typeInfo.AllGCTypes)) {
+            return false;
+        }
+    } else {
+        
+        return false;
+    }
+    return true;
+}
+
 
 
 
@@ -662,6 +679,12 @@ function exprCoversVariable(typeInfo, exp, decl)
         
         
         
+        
+        
+        
+        
+        
+        
 
         
         
@@ -671,11 +694,30 @@ function exprCoversVariable(typeInfo, exp, decl)
 
         
         
+        if (!containsGCPointer(typeInfo, exp.Field.Type)) {
+            return false;
+        }
+
         
         
         
-        const lhsCSUName = referencedCSUName(exp.Field.Type);
-        if (!lhsCSUName || !typeInfo.SingleGCField[lhsCSUName]) {
+        let trail = exp;
+        let e = exp.Exp[0]; 
+        while (e.Kind == "Fld") {
+            const csu = referencedCSUName(e.Field.Type);
+            if (!csu || !(csu in typeInfo.SingleGCField)) {
+                return false;
+            }
+            trail = e;
+            e = e.Exp[0];
+        }
+
+        
+        
+        
+        
+        
+        if (trail && !(trail.Field.FieldCSU.Type.Name in typeInfo.SingleGCField)) {
             return false;
         }
 
@@ -683,29 +725,11 @@ function exprCoversVariable(typeInfo, exp, decl)
         
         
         
-        
-        
-        
-
-        let top = exp;
-        let topField;
-        while (top.Kind === "Fld") {
-            topField = top;
-            top = top.Exp[0];
-        }
-
-        
-        if (top.Kind != "Var" || !sameVariable(top.Variable, decl.Variable)) {
+        if (e.Kind != "Var" || !sameVariable(e.Variable, decl.Variable)) {
             return false;
         }
 
-        
-        
-        
-        
-        
-        const typeName = referencedCSUName(topField.Field.FieldCSU.Type);
-        return typeName && (typeName in typeInfo.SingleGCField);
+        return true;
     }
 
     return false;
