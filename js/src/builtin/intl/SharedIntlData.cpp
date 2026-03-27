@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <stdint.h>
-#include <string>
 #include <string.h>
 #include <string_view>
 #include <utility>
@@ -37,6 +36,8 @@
 #include "vm/JSAtomUtils.h"  
 #include "vm/JSContext.h"
 #include "vm/StringType.h"
+
+#include "vm/NativeObject-inl.h"
 
 using js::HashNumber;
 
@@ -387,41 +388,31 @@ js::intl::SharedIntlData::LocaleHasher::Lookup::Lookup(std::string_view locale)
 
 bool js::intl::SharedIntlData::LocaleHasher::match(Locale key,
                                                    const Lookup& lookup) {
-  if (key->length() != lookup.length) {
+  
+  auto str = key.toString();
+  if (str.length() != lookup.length) {
     return false;
   }
 
-  if (key->hasLatin1Chars()) {
-    const Latin1Char* keyChars = key->latin1Chars(lookup.nogc);
-    if (lookup.isLatin1) {
-      return EqualChars(keyChars, lookup.latin1Chars, lookup.length);
-    }
-    return EqualChars(keyChars, lookup.twoByteChars, lookup.length);
-  }
-
-  const char16_t* keyChars = key->twoByteChars(lookup.nogc);
   if (lookup.isLatin1) {
-    return EqualChars(lookup.latin1Chars, keyChars, lookup.length);
+    return EqualChars(str.data(), lookup.latin1Chars, lookup.length);
   }
-  return EqualChars(keyChars, lookup.twoByteChars, lookup.length);
+  return EqualChars(str.data(), lookup.twoByteChars, lookup.length);
 }
 
 template <class AvailableLocales>
 bool js::intl::SharedIntlData::getAvailableLocales(
     JSContext* cx, LocaleSet& locales,
     const AvailableLocales& availableLocales) {
-  auto addLocale = [cx, &locales](const char* locale, size_t length) {
-    JSAtom* atom = Atomize(cx, locale, length);
-    if (!atom) {
-      return false;
-    }
+  auto addLocale = [cx, &locales](LanguageId langId) {
+    auto str = langId.toString();
 
-    LocaleHasher::Lookup lookup(atom);
+    LocaleHasher::Lookup lookup(std::string_view{str});
     LocaleSet::AddPtr p = locales.lookupForAdd(lookup);
 
     
     
-    if (!p && !locales.add(p, atom)) {
+    if (!p && !locales.add(p, langId)) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -429,22 +420,25 @@ bool js::intl::SharedIntlData::getAvailableLocales(
     return true;
   };
 
-  js::Vector<char, 16> lang(cx);
+  for (auto locale : availableLocales) {
+    auto parsedLangId = LanguageId::fromId(locale);
 
-  for (mozilla::Span<const char> locale : availableLocales) {
-    size_t length = locale.Length();
+#if !MOZ_SYSTEM_ICU
+    MOZ_ASSERT(parsedLangId.isSome(), "unparseable ICU locale identifier");
+    MOZ_ASSERT(parsedLangId->second == 0,
+               "ICU locale identifier with unexpected subtags");
+#else
+    
+    if (parsedLangId.isNothing() || parsedLangId->second > 0) {
+      continue;
+    }
+#endif
 
-    lang.clear();
-    if (!lang.append(locale.Elements(), length)) {
+    auto lang = parsedLangId->first;
+
+    if (!addLocale(lang)) {
       return false;
     }
-    MOZ_ASSERT(lang.length() == length);
-
-    std::replace(lang.begin(), lang.end(), '_', '-');
-
-    if (!addLocale(lang.begin(), length)) {
-      return false;
-    }
 
     
     
@@ -453,73 +447,10 @@ bool js::intl::SharedIntlData::getAvailableLocales(
     
     
 
-    
-    
-    
-    
-    
-    using namespace mozilla::intl::LanguageTagLimits;
-    static constexpr size_t MinLanguageLength = 2;
-    static constexpr size_t MinLengthForScriptAndRegion =
-        MinLanguageLength + 1 + ScriptLength + 1 + AlphaRegionLength;
-
-    
-    if (length < MinLengthForScriptAndRegion) {
-      continue;
-    }
-
-    
-    
-
-    
-    const char* sep = std::char_traits<char>::find(lang.begin(), length, '-');
-    if (!sep) {
-      continue;
-    }
-
-    
-    const char* script = sep + 1;
-
-    
-    sep = std::char_traits<char>::find(script, lang.end() - script, '-');
-    if (!sep) {
-      continue;
-    }
-
-    
-    size_t scriptLength = sep - script;
-    if (!mozilla::intl::IsStructurallyValidScriptTag<char>(
-            {script, scriptLength})) {
-      continue;
-    }
-
-    
-    const char* region = sep + 1;
-
-    
-    sep = std::char_traits<char>::find(region, lang.end() - region, '-');
-
-    
-    size_t regionLength = (sep ? sep : lang.end()) - region;
-    if (!mozilla::intl::IsStructurallyValidRegionTag<char>(
-            {region, regionLength})) {
-      continue;
-    }
-
-    
-
-    static constexpr size_t ScriptWithSeparatorLength = ScriptLength + 1;
-
-    
-    
-    char* p = const_cast<char*>(script);
-    lang.erase(p, p + ScriptWithSeparatorLength);
-
-    MOZ_ASSERT(lang.length() == length - ScriptWithSeparatorLength);
-
-    
-    if (!addLocale(lang.begin(), lang.length())) {
-      return false;
+    if (lang.hasScript() && lang.hasRegion()) {
+      if (!addLocale(lang.withoutScript())) {
+        return false;
+      }
     }
   }
 
@@ -527,8 +458,9 @@ bool js::intl::SharedIntlData::getAvailableLocales(
   
   
   {
-    static constexpr auto lastDitch = LastDitchLocale();
-    static_assert(lastDitch == "en-GB");
+    static constexpr auto lastDitch =
+        LanguageId::fromValidBcp49(LastDitchLocale());
+    static_assert(std::string_view{lastDitch.toString()} == "en-GB");
 
 #ifdef DEBUG
     static constexpr std::string_view lastDitchParent = "en";
@@ -539,7 +471,7 @@ bool js::intl::SharedIntlData::getAvailableLocales(
                "last-ditch locale, merely just the last-ditch locale");
 #endif
 
-    if (!addLocale(lastDitch.data(), lastDitch.length())) {
+    if (!addLocale(lastDitch)) {
       return false;
     }
   }
@@ -649,16 +581,19 @@ js::ArrayObject* js::intl::SharedIntlData::availableLocalesOf(
   }
 
   const uint32_t count = localeSet->count();
-  ArrayObject* result = NewDenseFullyAllocatedArray(cx, count);
+  Rooted<ArrayObject*> result(cx, NewDenseFullyAllocatedArray(cx, count));
   if (!result) {
     return nullptr;
   }
-  result->setDenseInitializedLength(count);
+  result->ensureDenseInitializedLength(0, count);
 
   uint32_t index = 0;
   for (auto range = localeSet->iter(); !range.done(); range.next()) {
-    JSAtom* locale = range.get();
-    cx->markAtom(locale);
+    auto langIdStr = range.get().toString();
+    auto* locale = NewStringCopy<CanGC>(cx, std::string_view{langIdStr});
+    if (!locale) {
+      return nullptr;
+    }
 
     result->initDenseElement(index++, StringValue(locale));
   }
@@ -677,23 +612,25 @@ bool js::intl::SharedIntlData::ensureUpperCaseFirstLocales(JSContext* cx) {
   
   upperCaseFirstLocales.clearAndCompact();
 
-  for (mozilla::Span<const char> rawLocale :
-       mozilla::intl::Collator::GetAvailableLocales()) {
-    if (!mozilla::intl::Collator::LocaleIsUpperFirst(rawLocale)) {
+  for (auto locale : mozilla::intl::Collator::GetAvailableLocales()) {
+    if (!mozilla::intl::Collator::LocaleIsUpperFirst(locale)) {
       continue;
     }
 
-    JSAtom* locale = Atomize(cx, rawLocale.Elements(), rawLocale.Length());
-    if (!locale) {
-      return false;
-    }
+    auto parsedLangId = LanguageId::fromBcp49(locale);
+    MOZ_ASSERT(parsedLangId.isSome(), "unparseable ICU4X data locale");
+    MOZ_ASSERT(parsedLangId->second == 0,
+               "ICU4X data locale with unexpected subtags");
 
-    LocaleHasher::Lookup lookup(locale);
+    auto langId = parsedLangId->first;
+    auto str = langId.toString();
+
+    LocaleHasher::Lookup lookup(std::string_view{str});
     LocaleSet::AddPtr p = upperCaseFirstLocales.lookupForAdd(lookup);
 
     
     
-    if (!p && !upperCaseFirstLocales.add(p, locale)) {
+    if (!p && !upperCaseFirstLocales.add(p, langId)) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -747,23 +684,25 @@ bool js::intl::SharedIntlData::ensureIgnorePunctuationLocales(JSContext* cx) {
   
   ignorePunctuationLocales.clearAndCompact();
 
-  for (mozilla::Span<const char> rawLocale :
-       mozilla::intl::Collator::GetAvailableLocales()) {
-    if (!mozilla::intl::Collator::LocaleIgnoresPunctuation(rawLocale)) {
+  for (auto locale : mozilla::intl::Collator::GetAvailableLocales()) {
+    if (!mozilla::intl::Collator::LocaleIgnoresPunctuation(locale)) {
       continue;
     }
 
-    JSAtom* locale = Atomize(cx, rawLocale.Elements(), rawLocale.Length());
-    if (!locale) {
-      return false;
-    }
+    auto parsedLangId = LanguageId::fromBcp49(locale);
+    MOZ_ASSERT(parsedLangId.isSome(), "unparseable ICU4X data locale");
+    MOZ_ASSERT(parsedLangId->second == 0,
+               "ICU4X data locale with unexpected subtags");
 
-    LocaleHasher::Lookup lookup(locale);
+    auto langId = parsedLangId->first;
+    auto str = langId.toString();
+
+    LocaleHasher::Lookup lookup(std::string_view{str});
     LocaleSet::AddPtr p = ignorePunctuationLocales.lookupForAdd(lookup);
 
     
     
-    if (!p && !ignorePunctuationLocales.add(p, locale)) {
+    if (!p && !ignorePunctuationLocales.add(p, langId)) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -861,12 +800,6 @@ void js::intl::SharedIntlData::trace(JSTracer* trc) {
     availableTimeZones.trace(trc);
     ianaZonesTreatedAsLinksByICU.trace(trc);
     ianaLinksCanonicalizedDifferentlyByICU.trace(trc);
-    availableLocales.trace(trc);
-    collatorAvailableLocales.trace(trc);
-#if DEBUG
-    upperCaseFirstLocales.trace(trc);
-    ignorePunctuationLocales.trace(trc);
-#endif
   }
 }
 

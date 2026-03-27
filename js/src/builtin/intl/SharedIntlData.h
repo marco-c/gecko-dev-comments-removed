@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef builtin_intl_SharedIntlData_h
 #define builtin_intl_SharedIntlData_h
 
@@ -18,6 +20,7 @@
 #include "js/Result.h"
 #include "js/RootingAPI.h"
 #include "js/Utility.h"
+#include "util/LanguageId.h"
 #include "vm/StringType.h"
 
 namespace mozilla::intl {
@@ -256,7 +259,7 @@ class SharedIntlData {
       JSContext* cx);
 
  private:
-  using Locale = JSAtom*;
+  using Locale = LanguageId;
 
   struct LocaleHasher {
     struct Lookup : LinearStringLookup {
@@ -268,7 +271,7 @@ class SharedIntlData {
     static bool match(Locale key, const Lookup& lookup);
   };
 
-  using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
+  using LocaleSet = HashSet<Locale, LocaleHasher, SystemAllocPolicy>;
 
   
   
