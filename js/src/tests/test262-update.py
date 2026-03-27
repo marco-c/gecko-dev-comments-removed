@@ -20,6 +20,7 @@ UNSUPPORTED_FEATURES = set([
     "source-phase-imports",
     "source-phase-imports-module-source",
     "import-defer",
+    "import-text",
     "nonextensible-applies-to-private",  
     "ShadowRealm",
 ])
@@ -33,14 +34,20 @@ FEATURE_CHECK_NEEDED = {
     "Error.isError": "!Error.isError",  
     "iterator-sequencing": "!Iterator.concat",  
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
+    "await-dictionary": "!Promise.allKeyed",
 }
-RELEASE_OR_BETA = set(["legacy-regexp"])
+RELEASE_OR_BETA = set([
+    "legacy-regexp",
+    "import-bytes",
+])
 SHELL_OPTIONS = {
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
     "explicit-resource-management": "--enable-explicit-resource-management",
     "iterator-sequencing": "--enable-iterator-sequencing",
     "Atomics.waitAsync": "--setpref=atomics_wait_async",
     "immutable-arraybuffer": "--enable-arraybuffer-immutable",
+    "import-bytes": "--enable-import-bytes",
+    "await-dictionary": "--enable-promise-allkeyed",
 }
 
 INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {}
@@ -447,10 +454,9 @@ def convertFixtureFile(fixtureSource, fixtureName):
     (terms, comments) = createRefTestEntry(
         refTestOptions, refTestSkip, refTestSkipIf, errorType, isModule, isAsync
     )
-    refTest = createRefTestLine(terms, comments)
 
-    source = createSource(fixtureSource, refTest, "", "")
-    externRefTest = None
+    source = createSource(fixtureSource, "", "", "")
+    externRefTest = (terms, comments)
     yield (fixtureName, source, externRefTest)
 
 
