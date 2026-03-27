@@ -12,6 +12,7 @@
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"     
 #include "mozilla/layers/LayersSurfaces.h"      
+#include "ImageContainer.h"                     
 #include "mozilla/layers/TextureClient.h"       
 #include "mozilla/mozalloc.h"                   
 #include "nsCOMPtr.h"                           

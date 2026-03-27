@@ -17,7 +17,7 @@ NS_IMPL_ISUPPORTS(GfxMemoryImageReporter, nsIMemoryReporter)
 mozilla::Atomic<ptrdiff_t> GfxMemoryImageReporter::sAmount(0);
 
 void HostIPCAllocator::SendPendingAsyncMessages() {
-  if (mPendingAsyncMessage.empty()) {
+  if (mPendingAsyncMessage.IsEmpty()) {
     return;
   }
 
@@ -28,22 +28,15 @@ void HostIPCAllocator::SendPendingAsyncMessages() {
   static const uint32_t kMaxMessageNumber =
       IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE;
 
-  nsTArray<AsyncParentMessageData> messages;
-  messages.SetCapacity(mPendingAsyncMessage.size());
-  for (size_t i = 0; i < mPendingAsyncMessage.size(); i++) {
-    messages.AppendElement(mPendingAsyncMessage[i]);
-    
-    if (messages.Length() >= kMaxMessageNumber) {
-      SendAsyncMessage(messages);
-      
-      messages.Clear();
-    }
+  nsTArray<AsyncParentMessageData> messages = std::move(mPendingAsyncMessage);
+  
+  Span<const AsyncParentMessageData> span(messages);
+  while (!span.IsEmpty()) {
+    auto [chunk, rest] =
+        span.SplitAt(std::min<size_t>(kMaxMessageNumber, span.Length()));
+    SendAsyncMessage(chunk);
+    span = rest;
   }
-
-  if (messages.Length() > 0) {
-    SendAsyncMessage(messages);
-  }
-  mPendingAsyncMessage.clear();
 }
 
 
@@ -251,10 +244,6 @@ bool ShmemSection::Init(const mozilla::ipc::Shmem& aShmem, uint32_t aOffset,
   mSize = aSize;
 
   return true;
-}
-
-UntrustedShmemSection ShmemSection::AsUntrusted() {
-  return UntrustedShmemSection(mShmem, mOffset, mSize);
 }
 
 }  

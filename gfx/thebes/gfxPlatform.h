@@ -5,7 +5,6 @@
 #ifndef GFX_PLATFORM_H
 #define GFX_PLATFORM_H
 
-#include "mozilla/FontPropertyTypes.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "nsTArray.h"
@@ -45,6 +44,11 @@ typedef struct FT_LibraryRec_* FT_Library;
 
 namespace mozilla {
 struct StyleFontFamilyList;
+struct StyleFontFaceSourceTechFlags;
+enum class StyleFontFaceSourceFormatKeyword : uint8_t;
+class WeightRange;
+class StretchRange;
+class SlantStyleRange;
 class LogModule;
 class VsyncDispatcher;
 namespace layers {
@@ -84,7 +88,7 @@ enum class CMSMode : int32_t {
   _ENUM_MAX = TaggedOnly
 };
 
-enum eGfxLog {
+enum eGfxLog : uint8_t {
   
   eGfxLog_fontlist = 0,
   
@@ -165,9 +169,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   friend class SRGBOverrideObserver;
 
  public:
-  typedef mozilla::StretchRange StretchRange;
-  typedef mozilla::SlantStyleRange SlantStyleRange;
-  typedef mozilla::WeightRange WeightRange;
+  using WeightRange = mozilla::WeightRange;
+  using StretchRange = mozilla::StretchRange;
+  using SlantStyleRange = mozilla::SlantStyleRange;
   typedef mozilla::gfx::sRGBColor sRGBColor;
   typedef mozilla::gfx::DeviceColor DeviceColor;
   typedef mozilla::gfx::DataSourceSurface DataSourceSurface;
@@ -396,9 +400,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
                                 const nsACString& aFontName,
-                                WeightRange aWeightForEntry,
-                                StretchRange aStretchForEntry,
-                                SlantStyleRange aStyleForEntry);
+                                const WeightRange& aWeightForEntry,
+                                const StretchRange& aStretchForEntry,
+                                const SlantStyleRange& aStyleForEntry);
 
   
 
@@ -409,9 +413,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
   gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                 WeightRange aWeightForEntry,
-                                 StretchRange aStretchForEntry,
-                                 SlantStyleRange aStyleForEntry,
+                                 const WeightRange& aWeightForEntry,
+                                 const StretchRange& aStretchForEntry,
+                                 const SlantStyleRange& aStyleForEntry,
                                  const uint8_t* aFontData, uint32_t aLength);
 
   
@@ -479,7 +483,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   virtual bool IsFontFormatSupported(
       mozilla::StyleFontFaceSourceFormatKeyword aFormatHint,
-      mozilla::StyleFontFaceSourceTechFlags aTechFlags);
+      const mozilla::StyleFontFaceSourceTechFlags& aTechFlags);
 
   bool IsKnownIconFontFamily(const nsAtom* aFamilyName) const;
 

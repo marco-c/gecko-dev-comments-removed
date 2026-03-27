@@ -1,5 +1,3 @@
-/* -*- tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -146,8 +144,8 @@ using mozilla::dom::PermitUnloadResult from "nsIDocumentViewer.h";
 using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 using mozilla::dom::WindowContextTransaction from "mozilla/dom/WindowContext.h";
 [MoveOnly] using mozilla::ipc::ReadOnlySharedMemoryHandle from "mozilla/ipc/SharedMemoryHandle.h";
-using gfxSparseBitSet from "gfxFontUtils.h";
-using FontVisibility from "gfxFontEntry.h";
+using gfxSparseBitSet from "gfxSparseBitSet.h";
+using FontVisibility from "gfxTypes.h";
 using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h";
 using mozilla::dom::MediaPlaybackState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaAudibleState from "mozilla/dom/MediaPlaybackStatus.h";

@@ -2446,11 +2446,10 @@ class nsLayoutUtils {
 
 
 
-  typedef nsTArray<mozilla::UniquePtr<mozilla::dom::InspectorFontFace>>
-      UsedFontFaceList;
-  typedef nsTHashMap<nsPtrHashKey<gfxFontEntry>,
-                     mozilla::dom::InspectorFontFace*>
-      UsedFontFaceTable;
+  using UsedFontFaceList =
+      nsTArray<mozilla::UniquePtr<mozilla::dom::InspectorFontFace>>;
+  using UsedFontFaceTable =
+      nsTHashMap<nsPtrHashKey<gfxFontEntry>, mozilla::dom::InspectorFontFace*>;
 
   
 
