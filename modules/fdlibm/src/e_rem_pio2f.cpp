@@ -54,7 +54,7 @@ __ieee754_rem_pio2f(float x, double *y)
 	ix = hx&0x7fffffff;
     
 	if(ix<0x4dc90fdb) {		
-	    fn = rnint((float)x*invpio2);
+	    fn = rnint((float_t)x*invpio2);
 	    n  = irint(fn);
 	    r  = x-fn*pio2_1;
 	    w  = fn*pio2_1t;
