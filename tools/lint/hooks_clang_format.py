@@ -51,7 +51,7 @@ def run_clang_format(hooktype, changedFiles):
         
         return
 
-    arguments = ["clang-format", "-p"] + path_list
+    arguments = ["format", "-p"] + path_list
     
     if os.name == "nt":
         clang_format_cmd = [sys.executable, "mach"] + arguments
