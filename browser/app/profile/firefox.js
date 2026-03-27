@@ -3423,7 +3423,8 @@ pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\
 
 pref("browser.firefox-view.button-clicks", "{\"count\":0,\"lastCountTime\":\"\"}");
 
-pref("browser.firefox-view.max-history-rows", 0);
+
+pref("browser.firefox-view.virtual-list.enabled", true);
 
 
 
