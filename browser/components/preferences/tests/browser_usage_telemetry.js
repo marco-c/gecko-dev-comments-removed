@@ -117,9 +117,14 @@ add_task(async function testSettingGroupTelemetry() {
       };
       group.getSetting = win.Preferences.getSetting.bind(win.Preferences);
       group.dataset.category = "paneGeneral";
-      doc.body.append(group);
+      doc.getElementById("mainPrefPane").append(group);
 
       
+      await new Promise(r => win.requestAnimationFrame(r));
+
+      
+      
+      group.scrollIntoView();
       await new Promise(r => win.requestAnimationFrame(r));
 
       let checkbox = doc.getElementById("test-checkbox");
