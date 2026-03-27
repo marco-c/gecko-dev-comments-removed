@@ -2,12 +2,11 @@
 
 
 
-
-
 #include "WMFDecoderModule.h"
 
 #include <algorithm>
 
+#include "AOMDecoder.h"
 #include "DriverCrashGuard.h"
 #include "GfxDriverInfo.h"
 #include "MFTDecoder.h"
@@ -31,10 +30,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsWindowsHelpers.h"
 #include "prsystem.h"
-
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
@@ -236,7 +231,6 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
         }
         return aDecoder->Create(CLSID_CMSVPXDecMFT);
       }
-#ifdef MOZ_AV1
     case WMFStreamType::AV1:
       
       
@@ -251,7 +245,6 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
       
       return aDecoder->Create(MFT_CATEGORY_VIDEO_DECODER, MFVideoFormat_AV1,
                               MFVideoFormat_NV12);
-#endif
     case WMFStreamType::HEVC:
       if (!StaticPrefs::media_hevc_enabled() || !sDXVAEnabled) {
         return E_FAIL;
@@ -288,14 +281,12 @@ bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
         return false;
       }
       break;
-#ifdef MOZ_AV1
     case WMFStreamType::AV1:
       if (!StaticPrefs::media_av1_enabled() ||
           !StaticPrefs::media_wmf_av1_enabled()) {
         return false;
       }
       break;
-#endif
     case WMFStreamType::HEVC:
       if (!StaticPrefs::media_hevc_enabled()) {
         return false;

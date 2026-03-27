@@ -3,12 +3,9 @@
 
 
 
-
 #include <jni.h>
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "MediaInfo.h"
 #include "RemoteDataDecoder.h"
 #include "VPXDecoder.h"
@@ -294,14 +291,12 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
     return support;
   }
 
-#ifdef MOZ_AV1
   
   if (AOMDecoder::IsAV1(aParams.MimeType()) &&
       (!StaticPrefs::media_av1_enabled() ||
        !support.contains(media::DecodeSupport::HardwareDecode))) {
     return media::DecodeSupportSet{};
   }
-#endif
 
   
   const TrackInfo& trackInfo = aParams.mConfig;

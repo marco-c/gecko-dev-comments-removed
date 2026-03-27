@@ -2,19 +2,15 @@
 
 
 
-
-
 #include "MP4Decoder.h"
 
+#include "AOMDecoder.h"
 #include "H264.h"
-#include "VPXDecoder.h"
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
 #include "MP4Demuxer.h"
 #include "MediaContainerType.h"
 #include "PDMFactory.h"
 #include "PlatformDecoderModule.h"
+#include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/Tools.h"
@@ -22,32 +18,6 @@
 #include "nsReadableUtils.h"
 
 namespace mozilla {
-
-static bool IsWhitelistedH264Codec(const nsAString& aCodec) {
-  uint8_t profile = 0, constraint = 0;
-  H264_LEVEL level;
-
-  
-  if (!ExtractH264CodecDetails(aCodec, profile, constraint, level,
-                               H264CodecStringStrictness::Lenient)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return level >= H264_LEVEL::H264_LEVEL_1 &&
-         level <= H264_LEVEL::H264_LEVEL_6_2 &&
-         (profile == H264_PROFILE_BASE || profile == H264_PROFILE_MAIN ||
-          profile == H264_PROFILE_EXTENDED || profile == H264_PROFILE_HIGH);
-}
 
 static bool IsTypeValid(const MediaContainerType& aType) {
   
@@ -115,7 +85,6 @@ nsTArray<UniquePtr<TrackInfo>> MP4Decoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#ifdef MOZ_AV1
     if (StaticPrefs::media_av1_enabled() && IsAV1CodecString(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
@@ -124,7 +93,6 @@ nsTArray<UniquePtr<TrackInfo>> MP4Decoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#endif
     if (StaticPrefs::media_hevc_enabled() && IsH265CodecString(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
@@ -132,7 +100,7 @@ nsTArray<UniquePtr<TrackInfo>> MP4Decoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-    if (isVideo && IsWhitelistedH264Codec(codec)) {
+    if (isVideo && IsAllowedH264Codec(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
               "video/avc"_ns, aType);

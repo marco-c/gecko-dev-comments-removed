@@ -1,16 +1,11 @@
 
 
 
-
-
 #include "RemoteVideoDecoder.h"
 
+#include "AOMDecoder.h"
+#include "DAV1DDecoder.h"
 #include "mozilla/layers/ImageDataSerializer.h"
-
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#  include "DAV1DDecoder.h"
-#endif
 #ifdef XP_WIN
 #  include "WMFDecoderModule.h"
 #endif

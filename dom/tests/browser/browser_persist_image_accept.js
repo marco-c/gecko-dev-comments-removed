@@ -50,13 +50,7 @@ function expectedImageAcceptHeader() {
 
   let header = "";
 
-  
-  try {
-    Services.catMan.getCategoryEntry("Gecko-Content-Viewers", "image/avif");
-    header += "image/avif,";
-  } catch (e) {
-    
-  }
+  header += "image/avif,";
 
   if (Services.prefs.getBoolPref("image.jxl.enabled", false)) {
     header += "image/jxl,";

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WMFUtils.h"
 
 #include <initguid.h>
@@ -12,9 +10,7 @@
 #include <shlwapi.h>
 #include <stdint.h>
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
@@ -71,11 +67,9 @@ WMFStreamType GetStreamTypeFromMimeType(const nsCString& aMimeType) {
   if (VPXDecoder::IsVP9(aMimeType)) {
     return WMFStreamType::VP9;
   }
-#ifdef MOZ_AV1
   if (AOMDecoder::IsAV1(aMimeType)) {
     return WMFStreamType::AV1;
   }
-#endif
   if (MP4Decoder::IsHEVC(aMimeType)) {
     return WMFStreamType::HEVC;
   }
@@ -131,6 +125,10 @@ nsCString GetSubTypeStr(const GUID& aSubtype) {
   ENUM_TO_STR(MFVideoFormat_P016)
   ENUM_TO_STR(MFVideoFormat_ARGB32)
   ENUM_TO_STR(MFVideoFormat_RGB32)
+  ENUM_TO_STR(MFVideoFormat_A2R10G10B10)
+  ENUM_TO_STR(MFVideoFormat_A16B16G16R16F)
+  ENUM_TO_STR(MFVideoFormat_I420)
+  ENUM_TO_STR(MFVideoFormat_YUY2)
   
   ENUM_TO_STR(MFAudioFormat_MP3)
   ENUM_TO_STR(MFAudioFormat_AAC)
@@ -351,11 +349,9 @@ GUID VideoMimeTypeToMediaFoundationSubtype(const nsACString& aMimeType) {
   if (VPXDecoder::IsVP9(aMimeType)) {
     return MFVideoFormat_VP90;
   }
-#ifdef MOZ_AV1
   if (AOMDecoder::IsAV1(aMimeType)) {
     return MFVideoFormat_AV1;
   }
-#endif
   if (MP4Decoder::IsHEVC(aMimeType)) {
     return MFVideoFormat_HEVC;
   }

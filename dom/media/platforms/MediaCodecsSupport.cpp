@@ -1,15 +1,12 @@
 
 
 
-
+#include "MediaCodecsSupport.h"
 
 #include <array>
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "MP4Decoder.h"
-#include "MediaCodecsSupport.h"
 #include "PDMFactory.h"
 #include "PEMFactory.h"
 #include "PlatformDecoderModule.h"
@@ -303,14 +300,12 @@ MediaCodec MCSInfo::GetMediaCodecFromMimeType(const nsACString& aMimeType) {
   if (MP4Decoder::IsHEVC(aMimeType)) {
     return MediaCodec::HEVC;
   }
-#ifdef MOZ_AV1
   if (AOMDecoder::IsAV1(aMimeType)) {
     return MediaCodec::AV1;
   }
   if (aMimeType.EqualsLiteral("video/av01")) {
     return MediaCodec::AV1;
   }
-#endif
   
 #ifdef ANDROID
   if (aMimeType.EqualsLiteral("video/x-vnd.on2.vp8")) {

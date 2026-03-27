@@ -2,14 +2,11 @@
 
 
 
+#include "DXVA2Manager.h"
 
-
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
 #include <d3d11.h>
 
-#include "DXVA2Manager.h"
+#include "AOMDecoder.h"
 #include "DriverCrashGuard.h"
 #include "GfxDriverInfo.h"
 #include "ImageContainer.h"
