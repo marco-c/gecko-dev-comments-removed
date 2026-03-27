@@ -345,10 +345,11 @@ auto ToResultInvokeMember(const SmartPtr<const T>& aObj,
 
 
 
-#define MOZ_TO_RESULT_INVOKE_MEMBER(obj, methodname, ...)                \
-  ::mozilla::ToResultInvokeMember(                                       \
-      (obj), &::mozilla::detail::DerefedType<decltype(obj)>::methodname, \
-      ##__VA_ARGS__)
+#define MOZ_TO_RESULT_INVOKE_MEMBER(obj, methodname, ...)                    \
+  ::mozilla::ToResultInvokeMember(                                           \
+      (obj),                                                                 \
+      &::mozilla::detail::DerefedType<decltype(obj)>::methodname __VA_OPT__( \
+          , ) __VA_ARGS__)
 
 
 
@@ -362,7 +363,7 @@ auto ToResultInvokeMember(const SmartPtr<const T>& aObj,
   ::mozilla::ToResultInvoke<MOZ_REMOVE_PAREN(resultType)>(                  \
       ::std::mem_fn(                                                        \
           &::mozilla::detail::DerefedType<decltype(obj)>::methodname),      \
-      (obj), ##__VA_ARGS__)
+      (obj)__VA_OPT__(, ) __VA_ARGS__)
 
 }  
 
