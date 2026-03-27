@@ -318,6 +318,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   void AddStorageAccessHeadersToRequest();
+  bool DispatchRelease();
 
  public:
   
@@ -560,6 +561,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   
+  
   nsCOMPtr<nsIHttpChannelAuthProvider> mAuthProvider;
   nsCOMPtr<nsIURI> mRedirectURI;
   nsCOMPtr<nsIURI> mUnstrippedRedirectURI;
@@ -584,7 +586,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
 
   
-  void ReleaseMainThreadOnlyReferences();
 
   
   
