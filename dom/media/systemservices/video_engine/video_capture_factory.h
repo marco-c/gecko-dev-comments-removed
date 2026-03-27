@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_VIDEO_CAPTURE_FACTORY_H_
 #define MOZILLA_VIDEO_CAPTURE_FACTORY_H_
@@ -19,9 +19,9 @@ class DesktopCaptureImpl;
 }
 
 namespace mozilla {
-
-
-
+/**
+ *  NOTE: This class must be accessed only on a single SerialEventTarget
+ */
 class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoCaptureFactory);
@@ -30,66 +30,68 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
 
   VideoCaptureFactory();
 
-  std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> CreateDeviceInfo(
-      mozilla::camera::CaptureDeviceType aType);
+  virtual std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
+  CreateDeviceInfo(mozilla::camera::CaptureDeviceType aType);
 
   struct CreateVideoCaptureResult {
     webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
-    
-    
+    // Pointer to the DesktopCaptureImpl instance if mCapturer is of this
+    // type. nullptr otherwise.
     webrtc::DesktopCaptureImpl* mDesktopImpl = nullptr;
   };
 
-  CreateVideoCaptureResult CreateVideoCapture(
+  virtual CreateVideoCaptureResult CreateVideoCapture(
       int32_t aCaptureId, const char* aUniqueId,
       mozilla::camera::CaptureDeviceType aType);
 
   using CameraBackendInitPromise = MozPromise<nsresult, nsresult, false>;
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Request to initialize webrtc::VideoCaptureOptions
+   *
+   * Resolves with NS_OK when VideoCaptureOptions has been properly initialized
+   * or rejects with one of the possible errors. Since this is only now
+   * supported by PipeWire, all the errors are PipeWire specific:
+   *  1) NS_ERROR_NOT_AVAILABLE - PipeWire libraries are not available on
+   *     the system
+   *  2) NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR - camera access has been rejected
+   *  3) NS_ERROR_FAILURE - generic error, usually a PipeWire failure
+   */
   RefPtr<CameraBackendInitPromise> InitCameraBackend();
 
-  
-
-
+  /**
+   * Updates information about camera availability
+   */
   using UpdateCameraAvailabilityPromise =
       MozPromise<CameraAvailability, nsresult, true>;
   RefPtr<UpdateCameraAvailabilityPromise> UpdateCameraAvailability();
 
-  
-
-
+  /**
+   * Invalidate any runtime state tied to backend creation.
+   */
   void Invalidate();
 
- private:
+ protected:
   ~VideoCaptureFactory() = default;
-  
-  
+
+ private:
+  // aka OnCameraBackendInitialized
+  // this method override has to follow webrtc::VideoCaptureOptions::Callback
   void OnInitialized(webrtc::VideoCaptureOptions::Status status) override;
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Resolves with true or false depending on whether there is a camera device
+   * advertised by the xdg-desktop-portal (Camera portal). Rejects with one
+   * of the following errors:
+   *  1) NS_ERROR_NOT_IMPLEMENTED - support for the Camera portal is not
+   *     implemented or enabled
+   *  2) NS_ERROR_NO_INTERFACE - the camera portal is not available
+   *  3) NS_ERROR_UNEXPECTED - the camera portal returned wrong value
+   */
   using HasCameraDevicePromise = MozPromise<CameraAvailability, nsresult, true>;
   RefPtr<HasCameraDevicePromise> HasCameraDevice();
 
-  
-  
+  // Whether we have created fake camera device info. If true,
+  // CreateVideoCapture needs to create a fake capturer.
   Maybe<bool> mUseFakeCamera;
   std::atomic<bool> mCameraBackendInitialized = false;
   CameraAvailability mCameraAvailability = Unknown;
@@ -100,6 +102,6 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
   RefPtr<CameraBackendInitPromise> mPromise;
 };
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // MOZILLA_VIDEO_CAPTURE_FACTORY_H_
