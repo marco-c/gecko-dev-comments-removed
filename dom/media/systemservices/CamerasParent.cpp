@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CamerasParent.h"
 
 #include <algorithm>
@@ -553,9 +551,6 @@ Maybe<webrtc::VideoCaptureCapability> AggregateCapturer::CombinedCapability() {
     uint64_t minDistance = UINT64_MAX;
 
     for (const auto& candidateCapability : mCapabilities) {
-      if (candidateCapability.videoType != combinedCap->videoType) {
-        continue;
-      }
       
       
       uint64_t distance =
@@ -570,9 +565,10 @@ Maybe<webrtc::VideoCaptureCapability> AggregateCapturer::CombinedCapability() {
         minDistance = distance;
       }
     }
-    if (minDistanceCapability) {
-      combinedCap = Some(*minDistanceCapability);
+    if (!minDistanceCapability) {
+      return Nothing();
     }
+    combinedCap = Some(*minDistanceCapability);
   }
   return combinedCap;
 }
