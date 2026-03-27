@@ -27,6 +27,7 @@
 #include "mozilla/Mutex.h"
 #include "nsPrintfCString.h"
 #include "nsContentUtils.h"
+#include "MessageQueue.h"
 
 #include "EventDispatcher.h"
 
@@ -141,9 +142,6 @@ AndroidBridge::AndroidBridge() {
   
   mMessageQueueNext =
       GetMethodID(jEnv, msgQueueClass.Get(), "next", "()Landroid/os/Message;");
-  
-  mMessageQueueMessages = jEnv->GetFieldID(msgQueueClass.Get(), "mMessages",
-                                           "Landroid/os/Message;");
 }
 
 void AndroidBridge::Vibrate(const nsTArray<uint32_t>& aPattern) {
@@ -317,20 +315,16 @@ nsresult AndroidBridge::GetProxyForURI(const nsACString& aSpec,
 }
 
 bool AndroidBridge::PumpMessageLoop() {
-  JNIEnv* const env = jni::GetGeckoThreadEnv();
-
-  if (mMessageQueueMessages) {
-    auto msg = jni::Object::LocalRef::Adopt(
-        env, env->GetObjectField(mMessageQueue.Get(), mMessageQueueMessages));
-    
-    
-    
-    
-    if (!msg) {
-      return false;
-    }
+  auto msgQueue = java::sdk::MessageQueue::LocalRef::From(mMessageQueue);
+  
+  
+  
+  
+  if (msgQueue->IsIdle()) {
+    return false;
   }
 
+  JNIEnv* const env = jni::GetGeckoThreadEnv();
   auto msg = jni::Object::LocalRef::Adopt(
       env, env->CallObjectMethod(mMessageQueue.Get(), mMessageQueueNext));
   if (!msg) {
