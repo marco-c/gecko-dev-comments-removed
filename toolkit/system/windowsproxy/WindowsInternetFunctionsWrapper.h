@@ -2,12 +2,14 @@
 
 
 
+
+
 #ifndef mozilla_toolkit_system_windowsproxy_WindowsInternetFunctionsWrapper_h
 #define mozilla_toolkit_system_windowsproxy_WindowsInternetFunctionsWrapper_h
 
 #include <windows.h>
 
-#include "mozilla/Atomics.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
@@ -43,20 +45,23 @@ class WindowsInternetFunctionsWrapper : public mozilla::SupportsWeakPtr {
  private:
   friend class NetworkLinkObserver;
 
-  nsresult ReadAllOptionsLocked(DWORD aConnFlags, const nsString& aConnName);
+  nsresult ReadAllOptionsLocked(DWORD aConnFlags, const nsString& aConnName)
+      MOZ_REQUIRES(mMutex);
+
+  mozilla::Mutex mMutex{"WindowsInternetFunctionsWrapper"};
 
   
-  mozilla::Atomic<bool> mConnCacheValid{false};
-  DWORD mCachedConnFlags{0};
+  bool mConnCacheValid MOZ_GUARDED_BY(mMutex){false};
+  DWORD mCachedConnFlags MOZ_GUARDED_BY(mMutex){0};
   
-  nsString mCachedConnName;
+  nsString mCachedConnName MOZ_GUARDED_BY(mMutex);
 
   
-  mozilla::Atomic<bool> mCacheValid{false};
-  uint32_t mCachedFlags = 0;
-  nsString mCachedProxyServer;
-  nsString mCachedProxyBypass;
-  nsString mCachedAutoConfigUrl;
+  bool mCacheValid MOZ_GUARDED_BY(mMutex){false};
+  uint32_t mCachedFlags MOZ_GUARDED_BY(mMutex) = 0;
+  nsString mCachedProxyServer MOZ_GUARDED_BY(mMutex);
+  nsString mCachedProxyBypass MOZ_GUARDED_BY(mMutex);
+  nsString mCachedAutoConfigUrl MOZ_GUARDED_BY(mMutex);
 
   mozilla::UniquePtr<mozilla::widget::WinRegistry::KeyWatcher> mKeyWatcher;
   nsCOMPtr<nsIObserver> mNetworkLinkObserver;
