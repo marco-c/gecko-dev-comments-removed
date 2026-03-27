@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "VariableLengthPrefixSet.h"
 #include "nsIInputStream.h"
 #include "nsUrlClassifierPrefixSet.h"
@@ -11,6 +13,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
 #include <algorithm>
+#include <bit>
 
 
 static mozilla::LazyLogModule gUrlClassifierPrefixSetLog(
@@ -145,16 +148,16 @@ nsresult VariableLengthPrefixSet::SetPrefixes(PrefixStringMap& aPrefixMap) {
     
     
     
-#if MOZ_LITTLE_ENDIAN()
-    char* begin = prefixes->BeginWriting();
-    char* end = prefixes->EndWriting();
+    if constexpr (std::endian::native == std::endian::little) {
+      char* begin = prefixes->BeginWriting();
+      char* end = prefixes->EndWriting();
 
-    while (begin != end) {
-      uint32_t* p = reinterpret_cast<uint32_t*>(begin);
-      *p = BigEndian::readUint32(begin);
-      begin += sizeof(uint32_t);
+      while (begin != end) {
+        uint32_t* p = reinterpret_cast<uint32_t*>(begin);
+        *p = BigEndian::readUint32(begin);
+        begin += sizeof(uint32_t);
+      }
     }
-#endif
     const uint32_t* arrayPtr =
         reinterpret_cast<const uint32_t*>(prefixes->BeginReading());
 

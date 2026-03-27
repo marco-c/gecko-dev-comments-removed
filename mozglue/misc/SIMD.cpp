@@ -4,11 +4,12 @@
 
 #include "mozilla/SIMD.h"
 
+#include <bit>
 #include <cstring>
 #include <stdint.h>
 #include <type_traits>
 
-#include "mozilla/EndianUtils.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/SSE.h"
 
 #ifdef MOZILLA_PRESUME_SSE2
@@ -327,7 +328,7 @@ const TValue* TwoElementLoop(uintptr_t start, uintptr_t end, TValue v1,
                       (static_cast<uint32_t>(v2) << (sizeof(TValue) * 8));
   while (cur < preEnd) {
     
-    static_assert(MOZ_LITTLE_ENDIAN());
+    static_assert(std::endian::native == std::endian::little);
     
     
     
