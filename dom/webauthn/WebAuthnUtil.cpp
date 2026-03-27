@@ -2,16 +2,19 @@
 
 
 
-
-
 #include "mozilla/dom/WebAuthnUtil.h"
 
 #include "hasht.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
+#include "mozilla/extensions/MatchPattern.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/net/DNS.h"
 #include "mozpkix/pkixutil.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
@@ -44,6 +47,12 @@ bool IsValidAppId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
   
 
   auto* principal = BasePrincipal::Cast(aPrincipal);
+  bool reqIsFromExtension = !!principal->AddonPolicy();
+  if (reqIsFromExtension) {
+    
+    return false;
+  }
+
   nsCOMPtr<nsIURI> callerUri;
   nsresult rv = principal->GetURI(getter_AddRefs(callerUri));
   if (NS_FAILED(rv)) {
@@ -182,8 +191,52 @@ bool IsWebAuthnAllowedForTransportSecurityInfo(
   }
 }
 
-bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
-                 const nsACString& aRpId) {
+
+
+
+
+
+
+bool IsRegistrableDomainSuffixOfOrEqualTo(const nsACString& aQuery,
+                                          const nsACString& aReference) {
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+      mozilla::components::EffectiveTLD::Service();
+  if (!tldService) {
+    return false;
+  }
+
+  
+  nsAutoCString queryPublicSuffix;
+  nsresult rv =
+      tldService->GetKnownPublicSuffixFromHost(aQuery, queryPublicSuffix);
+  if (NS_FAILED(rv) || aQuery == queryPublicSuffix) {
+    return false;
+  }
+
+  if (aQuery.Equals(aReference)) {
+    return true;
+  }
+
+  if (aQuery.Length() > aReference.Length() &&
+      StringEndsWith(aQuery, aReference) &&
+      aQuery.CharAt(aQuery.Length() - aReference.Length() - 1) == '.') {
+    
+    
+    
+    nsAutoCString queryBaseDomain;
+    rv = tldService->GetBaseDomainFromHost(aQuery, 0, queryBaseDomain);
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+
+    return aReference.Length() >= queryBaseDomain.Length();
+  }
+
+  return false;
+}
+
+static bool OriginCanClaimRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                               const nsACString& aRpId) {
   
   
   
@@ -197,7 +250,7 @@ bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
   
 
   
-  nsCString normalizedRpId;
+  nsAutoCString normalizedRpId;
   nsresult rv = NS_DomainToASCII(aRpId, normalizedRpId);
   if (NS_FAILED(rv)) {
     return false;
@@ -207,23 +260,142 @@ bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
   }
 
   
-  
-  
-  
-  
-  
-  
   auto* basePrin = BasePrincipal::Cast(aPrincipal);
-  nsCOMPtr<nsIURI> currentURI;
-  if (NS_FAILED(basePrin->GetURI(getter_AddRefs(currentURI)))) {
+  nsAutoCString current;
+  if (NS_FAILED(basePrin->GetAsciiHost(current))) {
     return false;
   }
-  nsCOMPtr<nsIURI> targetURI;
-  rv = NS_MutateURI(currentURI).SetHost(aRpId).Finalize(targetURI);
+  if (!IsRegistrableDomainSuffixOfOrEqualTo(current, aRpId)) {
+    return false;
+  }
+
+  
+  if (!aPrincipal->GetIsOriginPotentiallyTrustworthy()) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool ExtensionCanClaimRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                                  const nsACString& aRpId) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  nsAutoCString normalizedRpId;
+  nsresult rv = NS_DomainToASCII(aRpId, normalizedRpId);
   if (NS_FAILED(rv)) {
     return false;
   }
-  return Document::IsValidDomain(currentURI, targetURI);
+  if (normalizedRpId != aRpId) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+      mozilla::components::EffectiveTLD::Service();
+  if (!tldService) {
+    return false;
+  }
+
+  nsAutoCString rpIdPublicSuffix;
+  if (NS_FAILED(
+          tldService->GetKnownPublicSuffixFromHost(aRpId, rpIdPublicSuffix))) {
+    return false;
+  }
+
+  if (aRpId == rpIdPublicSuffix) {
+    return false;
+  }
+
+  
+  int32_t firstDot = aRpId.FindChar('.');
+  if ((firstDot < 0 || firstDot == (int32_t)aRpId.Length() - 1) &&
+      !mozilla::net::IsLoopbackHostname(aRpId)) {
+    return false;
+  }
+
+  
+  auto* basePrin = BasePrincipal::Cast(aPrincipal);
+  MOZ_ASSERT(basePrin->AddonPolicy());
+
+  RefPtr<mozilla::extensions::MatchPatternSet> matchPatternSet =
+      basePrin->AddonPolicy()->AllowedOrigins();
+
+  nsTArray<RefPtr<mozilla::extensions::MatchPattern>> matchPatterns;
+  matchPatternSet->GetPatterns(matchPatterns);
+
+  for (const auto& matchPattern : matchPatterns) {
+    bool matchesHttps = matchPattern->Core()->ContainsScheme(nsGkAtoms::https);
+    bool matchesHttp = matchPattern->Core()->ContainsScheme(nsGkAtoms::http);
+
+    if (matchPattern->MatchesDomain(aRpId)) {
+      return matchesHttps ||
+             (matchesHttp && mozilla::net::IsLoopbackHostname(aRpId));
+    }
+
+    if (matchesHttps) {
+      
+      
+      
+      nsCString patternDomain;
+      matchPattern->Core()->GetDomain(patternDomain);
+      return IsRegistrableDomainSuffixOfOrEqualTo(patternDomain, aRpId);
+    }
+  }
+
+  return false;
+}
+
+bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
+                 const nsACString& aRpId) {
+  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
+  bool reqIsFromExtension = !!basePrincipal->AddonPolicy();
+  if (reqIsFromExtension) {
+    return ExtensionCanClaimRpId(aPrincipal, aRpId);
+  }
+  return OriginCanClaimRpId(aPrincipal, aRpId);
+}
+
+nsresult GetWebAuthnClientDataOrigin(nsIPrincipal* aPrincipal,
+                                      nsACString& aOrigin) {
+  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
+
+  bool reqIsFromExtension = !!basePrincipal->AddonPolicy();
+  if (reqIsFromExtension) {
+    nsAutoCString extensionId;
+    basePrincipal->AddonPolicy()->Id()->ToUTF8String(extensionId);
+
+    nsTArray<uint8_t> hashedId;
+    nsresult rv = HashCString(extensionId, hashedId);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    
+    aOrigin.Assign("moz-extension://");
+    for (uint8_t byte : hashedId) {
+      aOrigin.Append(char('a' + ((byte >> 4) & 0x0F)));
+      aOrigin.Append(char('a' + (byte & 0x0F)));
+    }
+
+    return NS_OK;
+  }
+
+  return basePrincipal->GetWebExposedOriginSerialization(aOrigin);
 }
 
 static nsresult HashCString(nsICryptoHash* aHashService, const nsACString& aIn,

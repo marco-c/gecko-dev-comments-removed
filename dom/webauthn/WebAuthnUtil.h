@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_WebAuthnUtil_h
 #define mozilla_dom_WebAuthnUtil_h
 
@@ -29,6 +27,9 @@ nsresult DefaultRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
 
 bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
                  const nsACString& aRpId);
+
+nsresult GetWebAuthnClientDataOrigin(nsIPrincipal* aPrincipal,
+                                      nsACString& aOrigin);
 
 nsresult HashCString(const nsACString& aIn,  nsTArray<uint8_t>& aOut);
 
