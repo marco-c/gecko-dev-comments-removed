@@ -4985,7 +4985,7 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickSwapLanguagesButton() {
+  async invokeSwapLanguagesButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5002,7 +5002,7 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickCopyButton() {
+  async invokeCopyButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5017,7 +5017,7 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickTranslationErrorButton() {
+  async invokeTranslationErrorButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5034,7 +5034,7 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickLanguageLoadErrorButton() {
+  async invokeLanguageLoadErrorButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5051,7 +5051,7 @@ class AboutTranslationsTestUtils {
   
 
 
-  async clickUnblockFeatureButton() {
+  async invokeUnblockFeatureButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -6118,7 +6118,7 @@ class AboutTranslationsTestUtils {
 
 
 
-  async clickClearButton() {
+  async invokeClearButton() {
     await doubleRaf(document);
     try {
       await this.#runInPage(selectors => {

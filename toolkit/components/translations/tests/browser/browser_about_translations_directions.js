@@ -126,7 +126,7 @@ add_task(
       },
       async () => {
         info("Swap languages to Arabic source and English target");
-        await aboutTranslationsTestUtils.clickSwapLanguagesButton();
+        await aboutTranslationsTestUtils.invokeSwapLanguagesButton();
         await aboutTranslationsTestUtils.assertSourceTextArea({
           
           scriptDirection: "rtl",
@@ -228,7 +228,7 @@ add_task(
       showsPlaceholder: true,
     });
 
-    await aboutTranslationsTestUtils.clickSwapLanguagesButton();
+    await aboutTranslationsTestUtils.invokeSwapLanguagesButton();
 
     await aboutTranslationsTestUtils.assertSourceLanguageSelector({
       value: "ar",
