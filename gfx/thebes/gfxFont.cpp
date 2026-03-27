@@ -2,7 +2,6 @@
 
 
 
-
 #include "gfxFont.h"
 
 #include "mozilla/DebugOnly.h"
@@ -46,6 +45,7 @@
 #include "gfxSVGGlyphs.h"
 #include "gfx2DGlue.h"
 #include "TextDrawTarget.h"
+#include "COLRFonts.h"
 
 #include "ThebesRLBox.h"
 
