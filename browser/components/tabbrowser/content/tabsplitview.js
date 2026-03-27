@@ -149,7 +149,7 @@
 
     #observeTabChanges() {
       if (!this.#tabChangeObserver) {
-        this.#tabChangeObserver = new window.MutationObserver(mutations => {
+        this.#tabChangeObserver = new window.MutationObserver(() => {
           if (this.tabs.length) {
             this.hasActiveTab = this.tabs.some(tab => tab.selected);
             this.tabs.forEach((tab, index) => {
@@ -168,9 +168,7 @@
             this.remove();
           }
 
-          if (mutations.length == 1 && mutations[0].removedNodes.length == 1) {
-            
-            
+          if (this.tabs.length < 2) {
             this.unsplitTabs("tab_close");
           }
         });
@@ -238,11 +236,11 @@
     
 
 
-
     #deactivate() {
       gBrowser.tabpanels.removeTabsFromSplitview(
         this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
       );
+
       updateUrlbarButton.arm();
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
@@ -326,6 +324,7 @@
 
       if (this.hasActiveTab || isSessionRestore) {
         this.#activate();
+        gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       }
       
       
@@ -346,38 +345,12 @@
 
 
 
-
-
     unsplitTabs(trigger = null) {
-      let telemetryTrigger = this.#isClosing ? null : trigger;
-      
-      if (telemetryTrigger) {
-        const tab_layout = gBrowser.tabContainer.verticalMode
-          ? "vertical"
-          : "horizontal";
-
-        Glean.splitview.end.record({
-          tab_layout,
-          telemetryTrigger,
-        });
-      }
-
-      
-      let aboutOpenTabs = this.#tabs.filter(
-        tab => tab?.linkedBrowser?.currentURI?.spec === "about:opentabs"
+      gBrowser.unsplitTabs(this, this.#isClosing ? null : trigger);
+      gBrowser.setIsSplitViewActive(
+        false,
+        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
       );
-      aboutOpenTabs.forEach(aboutOpenTab => {
-        gBrowser.removeTab(aboutOpenTab);
-      });
-
-      for (let i = this.tabs.length - 1; i >= 0; i--) {
-        gBrowser.handleTabMove(this.tabs[i], () =>
-          gBrowser.tabContainer.insertBefore(
-            this.tabs[i],
-            this.nextElementSibling
-          )
-        );
-      }
     }
 
     
@@ -402,6 +375,7 @@
 
       
       this.#activate();
+      gBrowser.setIsSplitViewActive(true, this.#tabs);
     }
 
     
@@ -453,6 +427,7 @@
 
     on_TabSelect(event) {
       this.hasActiveTab = event.target.splitview === this;
+      gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       if (this.hasActiveTab) {
         this.#activate();
       } else {

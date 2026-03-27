@@ -1249,7 +1249,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else if (tabsToMove.includes(otherTabInSplit)) {
                 
                 
-                splitview.unsplitTabs();
+                gBrowser.unsplitTabs(splitview);
                 splitview = splitviewTabs = null;
               } else {
                 

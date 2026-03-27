@@ -272,7 +272,7 @@ add_task(async function test_splitview_start_event_menu_open() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -325,7 +325,7 @@ add_task(async function test_splitview_start_event_menu_add() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(newTab);
@@ -382,7 +382,7 @@ add_task(async function test_splitview_start_event_tabgroup_main() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -442,7 +442,7 @@ add_task(async function test_splitview_start_event_tabgroup_other() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -503,7 +503,7 @@ add_task(async function test_splitview_start_event_tabgroup_both_same() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -565,7 +565,7 @@ add_task(async function test_splitview_start_event_tabgroup_both_different() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -963,7 +963,7 @@ add_task(async function test_splitview_reverse_event_icon() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -1026,7 +1026,7 @@ add_task(async function test_splitview_reverse_event_footer() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
@@ -1094,7 +1094,7 @@ add_task(async function test_splitview_resize_event() {
 
   
   if (splitView) {
-    splitView.unsplitTabs();
+    gBrowser.unsplitTabs(splitView);
   }
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
