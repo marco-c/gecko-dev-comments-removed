@@ -4,4 +4,7 @@
 
 
 
-DevToolsModules("css-logic.js")
+DevToolsModules(
+  "css-logic.js",
+  "font-utils.js",
+)
