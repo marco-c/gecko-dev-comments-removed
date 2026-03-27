@@ -28,7 +28,6 @@ class nsWindowsShellService : public nsToolkitShellService,
 
  protected:
   nsresult LaunchControlPanelDefaultsSelectionUI();
-  nsresult LaunchModernSettingsDialogDefaultApps();
 };
 
 #endif  
