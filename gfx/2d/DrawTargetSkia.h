@@ -145,6 +145,8 @@ class DrawTargetSkia : public DrawTarget {
   bool Init(SkCanvas* aCanvas);
   bool Init(RefPtr<DataSourceSurface>&& aSurface);
 
+  static void UpdateSurfaceProps();
+
   
   static size_t GetMaxSurfaceSize() { return 65535; }
   

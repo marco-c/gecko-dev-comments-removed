@@ -304,9 +304,9 @@ public:
         }
 
 #ifndef SK_GAMMA_APPLY_TO_A8
-        
-        
-        rec->ignorePreBlend();
+        if (!isLCD(*rec)) {
+            rec->ignorePreBlend();
+        }
 #endif
     }
 
