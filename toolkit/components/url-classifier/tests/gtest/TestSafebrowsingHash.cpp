@@ -3,7 +3,7 @@
 
 
 
-#include <bit>
+#include "mozilla/EndianUtils.h"
 
 #include "Common.h"
 
@@ -34,15 +34,15 @@ TEST(UrlClassifierHash, Compare)
   Prefix p1, p2, p3;
 
   
-  if constexpr (std::endian::native == std::endian::little) {
-    p1.Assign(nsCString("\x01\x00\x00\x00", 4));
-    p2.Assign(nsCString("\x00\x00\x00\x01", 4));
-    p3.Assign(nsCString("\x01\x00\x00\x00", 4));
-  } else {
-    p1.Assign(nsCString("\x00\x00\x00\x01", 4));
-    p2.Assign(nsCString("\x01\x00\x00\x00", 4));
-    p3.Assign(nsCString("\x00\x00\x00\x01", 4));
-  }
+#if MOZ_LITTLE_ENDIAN()
+  p1.Assign(nsCString("\x01\x00\x00\x00", 4));
+  p2.Assign(nsCString("\x00\x00\x00\x01", 4));
+  p3.Assign(nsCString("\x01\x00\x00\x00", 4));
+#else
+  p1.Assign(nsCString("\x00\x00\x00\x01", 4));
+  p2.Assign(nsCString("\x01\x00\x00\x00", 4));
+  p3.Assign(nsCString("\x00\x00\x00\x01", 4));
+#endif
 
   
   

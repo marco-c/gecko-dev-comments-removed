@@ -23,7 +23,6 @@
 #include "mozilla/Base64.h"
 #include "nsUrlClassifierDBService.h"
 #include "nsUrlClassifierUtils.h"
-#include <bit>
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
@@ -1700,7 +1699,7 @@ nsresult Classifier::ReadNoiseEntries(const Prefix& aPrefix,
     
     
     
-    if (!cacheV2 && std::endian::native != std::endian::big) {
+    if (!cacheV2 && !bool(MOZ_BIG_ENDIAN())) {
       hash = NativeEndian::swapFromBigEndian(hash);
     }
 

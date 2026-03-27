@@ -6,11 +6,11 @@
 #define MOZILLA_GFX_TYPES_H_
 
 #include "mozilla/DefineEnum.h"  
+#include "mozilla/EndianUtils.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/MacroArgs.h"  
 #include "mozilla/TypedEnumBits.h"
 
-#include <bit>
 #include <iosfwd>  
 #include <stddef.h>
 #include <stdint.h>
@@ -105,15 +105,18 @@ enum class SurfaceFormat : int8_t {
   
   UNKNOWN,  
 
-  
-  
-  
-  A8R8G8B8_UINT32 = std::endian::native == std::endian::little
-                        ? B8G8R8A8
-                        : A8R8G8B8,  
-  X8R8G8B8_UINT32 = std::endian::native == std::endian::little
-                        ? B8G8R8X8
-                        : X8R8G8B8,  
+
+
+
+#if MOZ_LITTLE_ENDIAN()
+  A8R8G8B8_UINT32 = B8G8R8A8,  
+  X8R8G8B8_UINT32 = B8G8R8X8,  
+#elif MOZ_BIG_ENDIAN()
+  A8R8G8B8_UINT32 = A8R8G8B8,  
+  X8R8G8B8_UINT32 = X8R8G8B8,  
+#else
+#  error "bad endianness"
+#endif
 
   
   
@@ -263,10 +266,19 @@ std::ostream& operator<<(std::ostream& aOut, const SurfaceFormat& aFormat);
 
 
 enum class SurfaceFormatBit : uint32_t {
-  R8G8B8A8_R = std::endian::native == std::endian::little ? 0 : 24,
-  R8G8B8A8_G = std::endian::native == std::endian::little ? 8 : 16,
-  R8G8B8A8_B = std::endian::native == std::endian::little ? 16 : 8,
-  R8G8B8A8_A = std::endian::native == std::endian::little ? 24 : 0,
+#if MOZ_LITTLE_ENDIAN()
+  R8G8B8A8_R = 0,
+  R8G8B8A8_G = 8,
+  R8G8B8A8_B = 16,
+  R8G8B8A8_A = 24,
+#elif MOZ_BIG_ENDIAN()
+  R8G8B8A8_A = 0,
+  R8G8B8A8_B = 8,
+  R8G8B8A8_G = 16,
+  R8G8B8A8_R = 24,
+#else
+#  error "bad endianness"
+#endif
 
   
   A8R8G8B8_UINT32_B = 0,
