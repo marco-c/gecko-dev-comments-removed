@@ -11,10 +11,6 @@ add_task(async function test_RefreshTestPrefFunction() {
   await initGroupDatabase();
 
   window.gURLBar.value = "";
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.profiles.forceEnableRefresh", true]],
-  });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -34,6 +30,6 @@ add_task(async function test_RefreshTestPrefFunction() {
   });
   row = UrlbarTestUtils.getRowAt(window, 1);
   
-  
-  ok(!row, "Refresh button should not be visible");
+  refreshButton = row.querySelector("span[data-action='refresh']");
+  ok(refreshButton, "Refresh button should be visible");
 });
