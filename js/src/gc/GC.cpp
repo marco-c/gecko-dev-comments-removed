@@ -5899,11 +5899,16 @@ void GCRuntime::setPerformanceHint(PerformanceHint hint) {
 }
 
 #ifdef MOZ_TSAN
-void js::FullMemoryFence(JSRuntime* runtime) {
-  
-  
-  
-  
-  runtime->gc.tsanMemoryBarrier++;
+
+
+
+
+
+
+void js::TSANMemoryReleaseFence(JSRuntime* runtime) {
+  runtime->gc.tsanFenceAtomic = 0;
+}
+void js::TSANMemoryAcquireFence(JSRuntime* runtime) {
+  (void)(int)runtime->gc.tsanFenceAtomic;
 }
 #endif

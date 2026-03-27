@@ -1122,7 +1122,7 @@ class GCRuntime {
 #ifdef MOZ_TSAN
   
   
-  mozilla::Atomic<int, mozilla::SequentiallyConsistent> tsanMemoryBarrier;
+  mozilla::Atomic<int, mozilla::ReleaseAcquire> tsanFenceAtomic;
 #endif
 
  private:
