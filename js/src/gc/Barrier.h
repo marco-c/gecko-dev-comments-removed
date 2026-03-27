@@ -308,8 +308,6 @@
 
 
 
-
-
 namespace js {
 
 class NativeObject;
@@ -678,36 +676,6 @@ class BarrieredPtrImpl
 
 }  
 
-template <class T>
-class WriteBarriered : public BarrieredBase<T>,
-                       public WrappedPtrOperations<T, WriteBarriered<T>> {
- protected:
-  
-  explicit WriteBarriered(const T& v) : BarrieredBase<T>(v) {}
-
- public:
-  DECLARE_POINTER_CONSTREF_OPS(T);
-
-  
-  const T& get() const { return this->unbarrieredGet(); }
-
-  
-  
-  using BarrieredBase<T>::unbarrieredSet;
-
-  
-  static void preWriteBarrier(const T& v) {
-    InternalBarrierMethods<T>::preBarrier(v);
-  }
-
- protected:
-  void pre() { InternalBarrierMethods<T>::preBarrier(this->unbarrieredGet()); }
-  MOZ_ALWAYS_INLINE void post(const T& prev, const T& next) {
-    InternalBarrierMethods<T>::postBarrier(this->unbarrieredAddress(), prev,
-                                           next);
-  }
-};
-
 
 
 
@@ -894,7 +862,8 @@ namespace js {
 
 
 
-class HeapSlot : public WriteBarriered<Value> {
+class HeapSlot : public BarrieredBase<Value>,
+                 public WrappedPtrOperations<Value, HeapSlot> {
  public:
   enum Kind { Slot = 0, Element = 1 };
 
@@ -904,6 +873,20 @@ class HeapSlot : public WriteBarriered<Value> {
   }
 
   void initAsUndefined() { this->unbarrieredSet(UndefinedValue()); }
+
+  DECLARE_POINTER_CONSTREF_OPS(Value);
+
+  
+  const Value& get() const { return this->unbarrieredGet(); }
+
+  
+  
+  using BarrieredBase<Value>::unbarrieredSet;
+
+  
+  static void preWriteBarrier(const Value& v) {
+    InternalBarrierMethods<Value>::preBarrier(v);
+  }
 
   void destroy() { pre(); }
 
@@ -928,6 +911,10 @@ class HeapSlot : public WriteBarriered<Value> {
   }
 
  private:
+  void pre() {
+    InternalBarrierMethods<Value>::preBarrier(this->unbarrieredGet());
+  }
+
   void post(NativeObject* owner, Kind kind, uint32_t slot,
             const Value& target) {
 #ifdef DEBUG
