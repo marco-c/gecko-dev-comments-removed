@@ -326,7 +326,6 @@
 
       if (this.hasActiveTab || isSessionRestore) {
         this.#activate();
-        gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       }
       
       
@@ -403,7 +402,6 @@
 
       
       this.#activate();
-      gBrowser.setIsSplitViewActive(true, this.#tabs);
     }
 
     
@@ -455,7 +453,6 @@
 
     on_TabSelect(event) {
       this.hasActiveTab = event.target.splitview === this;
-      gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       if (this.hasActiveTab) {
         this.#activate();
       } else {
