@@ -31,8 +31,27 @@ nsJXLDecoder::nsJXLDecoder(RasterImage* aImage)
 
 nsresult nsJXLDecoder::InitInternal() {
   bool premultiply = !(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
+
+  qcms_profile* outputProfile = nullptr;
+  const uint8_t* iccData = nullptr;
+  size_t iccLen = 0;
+
+  
+  
+  if (GetCMSOutputProfile() && mCMSMode != CMSMode::Off) {
+    outputProfile = GetCMSOutputProfile();
+    if (!qcms_profile_is_sRGB(GetCMSOutputProfile())) {
+      const auto& outputICC = gfxPlatform::GetCMSOutputICCProfileData();
+      if (outputICC.isSome() && !outputICC->IsEmpty()) {
+        iccData = outputICC->Elements();
+        iccLen = outputICC->Length();
+      }
+    }
+  }
+
   mDecoder.reset(jxl_decoder_new(IsMetadataDecode(), premultiply,
-                                 gfxPlatform::GetRenderingIntent()));
+                                 gfxPlatform::GetRenderingIntent(),
+                                 outputProfile, iccData, iccLen));
   return NS_OK;
 }
 
