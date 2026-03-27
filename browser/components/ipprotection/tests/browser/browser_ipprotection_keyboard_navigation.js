@@ -15,10 +15,17 @@ async function expectFocusAfterKey(aKey, aFocus) {
     key = "KEY_" + res[2]; 
   }
   info("Waiting for focus on " + aFocus.id);
-  let focused = BrowserTestUtils.waitForEvent(aFocus, "focus");
+  
+  let focused = BrowserTestUtils.waitForEvent(
+    aFocus.buttonEl ?? aFocus,
+    "focus"
+  );
   EventUtils.synthesizeKey(key, { shiftKey: shift });
   await focused;
-  ok(true, aFocus.id + " focused after " + aKey + " pressed");
+  ok(
+    true,
+    `${aFocus.id || "unidentified element"} focused after [${aKey}] pressed`
+  );
 }
 
 
@@ -78,21 +85,20 @@ add_task(async function test_keyboard_navigation_in_panel() {
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
   
-  await expectFocusAfterKey(
-    "ArrowDown",
-    content.ownerDocument.querySelector(
-      `#${IPProtectionPanel.HEADER_BUTTON_ID}`
-    )
+  let headerButton = content.ownerDocument.querySelector(
+    `#${IPProtectionPanel.HEADER_BUTTON_ID}`
   );
+  await expectFocusAfterKey("ArrowDown", headerButton);
   await expectFocusAfterKey("ArrowDown", turnOnButton);
 
   
-  await expectFocusAfterKey(
-    "Shift+Tab",
-    content.ownerDocument.querySelector(
-      `#${IPProtectionPanel.HEADER_BUTTON_ID}`
-    )
-  );
+  await expectFocusAfterKey("ArrowUp", headerButton);
+
+  
+  await expectFocusAfterKey("ArrowDown", turnOnButton);
+
+  
+  await expectFocusAfterKey("Shift+Tab", headerButton);
 
   
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
