@@ -213,7 +213,7 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
 
 
 extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
-    JSContext* cx, const Value& defaultExport);
+    JSContext* cx, Handle<Value> defaultExport);
 
 
 

@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "vm/Modules.h"
 
 #include "mozilla/Assertions.h"  
@@ -274,7 +276,7 @@ JS_PUBLIC_API JSObject* JS::CompileJsonModule(
 }
 
 JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
-    JSContext* cx, const Value& defaultExport) {
+    JSContext* cx, Handle<Value> defaultExport) {
   CHECK_THREAD(cx);
   cx->check(defaultExport);
 

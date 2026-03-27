@@ -528,16 +528,16 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
       return nullptr;
     }
 
-    RootedObject bytesArray(cx, FileAsTypedArray(cx, resolvedPath));
+    auto* bytesArray = FileAsTypedArray(cx, resolvedPath);
     if (!bytesArray) {
       return nullptr;
     }
+    JS::Rooted<JS::Value> defaultExport(cx, ObjectValue(*bytesArray));
 
     
     
     
-    module =
-        JS::CreateDefaultExportSyntheticModule(cx, ObjectValue(*bytesArray));
+    module = JS::CreateDefaultExportSyntheticModule(cx, defaultExport);
     if (!module) {
       return nullptr;
     }
