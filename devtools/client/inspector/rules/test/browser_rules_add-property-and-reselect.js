@@ -14,7 +14,7 @@ add_task(async function () {
   await selectNode("#target", inspector);
 
   info("Setting a font-weight property on all rules");
-  await setPropertyOnAllRules(view);
+  await setPropertyOnAllRules(view, inspector);
 
   info("Reselecting the element");
   await selectNode("body", inspector);
@@ -23,12 +23,19 @@ add_task(async function () {
   checkPropertyOnAllRules(view);
 });
 
-async function setPropertyOnAllRules(view) {
+async function setPropertyOnAllRules(view, inspector) {
   
   
   
   info("Adding font-weight:bold in the inline style rule");
-  await addProperty(view, 0, "font-weight", "bold");
+  const inlineStyleRuleEditor = view.elementStyle.rules[0].editor;
+
+  const onMutation = inspector.once("markupmutation");
+  const onRuleViewRefreshed = inspector.once("rule-view-refreshed");
+
+  inlineStyleRuleEditor.addProperty("font-weight", "bold", "", true);
+
+  await Promise.all([onMutation, onRuleViewRefreshed]);
 
   
   
@@ -36,7 +43,14 @@ async function setPropertyOnAllRules(view) {
   is(allRules.length, 6, "We have the expected number of rules");
   for (let i = 1; i < allRules.length; i++) {
     info(`Adding font-weight:bold in rule ${i}`);
-    await addProperty(view, i, "font-weight", "bold");
+    const rule = allRules[i];
+    const ruleEditor = rule.editor;
+
+    const onRuleViewChanged = view.once("ruleview-changed");
+
+    ruleEditor.addProperty("font-weight", "bold", "", true);
+
+    await onRuleViewChanged;
   }
 }
 

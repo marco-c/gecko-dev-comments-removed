@@ -377,32 +377,6 @@ class CssRuleView extends EventEmitter {
     return this.#dummyElement;
   }
 
-  #refreshDummyElement() {
-    
-    if (
-      !this.viewedElement ||
-      this.#dummyElement?.tagName === this.viewedElement.tagName
-    ) {
-      return;
-    }
-
-    
-    
-    
-    try {
-      
-      const namespaceURI =
-        this.viewedElement.namespaceURI ||
-        this.styleDocument.documentElement.namespaceURI;
-      this.#dummyElement = this.styleDocument.createElementNS(
-        namespaceURI,
-        this.viewedElement.tagName
-      );
-    } catch (e) {
-      console.error("Error while creating dummy element", e);
-    }
-  }
-
   
   #highlighters;
   get highlighters() {
@@ -1148,7 +1122,6 @@ class CssRuleView extends EventEmitter {
 
     this.#clearPseudoClassPanel();
     this.#refreshAddRuleButtonState();
-    this.#refreshDummyElement();
 
     if (!this.viewedElement) {
       this.#stopSelectingElement();
@@ -1167,6 +1140,22 @@ class CssRuleView extends EventEmitter {
 
     this.pageStyle = element.inspectorFront.pageStyle;
     this.pageStyle.on("stylesheet-updated", this.refreshPanel);
+
+    
+    
+    
+    try {
+      
+      const namespaceURI =
+        this.element.namespaceURI ||
+        this.styleDocument.documentElement.namespaceURI;
+      this.#dummyElement = this.styleDocument.createElementNS(
+        namespaceURI,
+        this.element.tagName
+      );
+    } catch (e) {
+      console.error("Error while creating dummy element", e);
+    }
 
     const elementStyle = new ElementStyle(
       element,
