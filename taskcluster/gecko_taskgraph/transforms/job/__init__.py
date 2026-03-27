@@ -11,6 +11,8 @@ run-using handlers in `taskcluster/gecko_taskgraph/transforms/job`.
 
 import logging
 import os
+from typing import Literal, Union
+from typing import Optional as TOptional
 
 import mozpack.path as mozpath
 from packaging.version import Version
@@ -19,12 +21,15 @@ from taskgraph.transforms.run import rewrite_when_to_optimization
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.python_path import import_sibling_modules
-from taskgraph.util.schema import LegacySchema, validate_schema
+from taskgraph.util.schema import LegacySchema, Schema, validate_schema
 from taskgraph.util.taskcluster import get_artifact_prefix
 from voluptuous import Any, Coerce, Exclusive, Extra, Optional, Required
 
 from gecko_taskgraph.transforms.cached_tasks import order_tasks
-from gecko_taskgraph.transforms.task import task_description_schema
+from gecko_taskgraph.transforms.task import (
+    TaskDescriptionSchema,
+    task_description_schema,
+)
 from gecko_taskgraph.util.workertypes import worker_type_implementation
 
 logger = logging.getLogger(__name__)
@@ -108,8 +113,113 @@ job_description_schema = LegacySchema({
     Optional("worker"): dict,
 })
 
+
+class FetchArtifactSchema(Schema, kw_only=True):
+    artifact: str
+    dest: TOptional[str] = None
+    extract: TOptional[bool] = None
+    verify_hash: TOptional[bool] = None
+
+
+class JobRunSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    
+    using: str
+    
+    workdir: TOptional[str] = None
+
+
+class WhenSchema(Schema, kw_only=True):
+    
+    
+    
+    files_changed: TOptional[list[str]] = None
+
+
+class JobDescriptionSchema(Schema, kw_only=True):
+    
+    
+    
+    name: TOptional[str] = None
+    label: TOptional[str] = None
+    
+    
+    
+    description: TaskDescriptionSchema.__annotations__["description"]  
+    attributes: TOptional[TaskDescriptionSchema.__annotations__["attributes"]] = None  
+    task_from: TOptional[TaskDescriptionSchema.__annotations__["task_from"]] = None  
+    dependencies: TOptional[TaskDescriptionSchema.__annotations__["dependencies"]] = (
+        None  
+    )
+    if_dependencies: TOptional[
+        TaskDescriptionSchema.__annotations__["if_dependencies"]
+    ] = None  
+    soft_dependencies: TOptional[
+        TaskDescriptionSchema.__annotations__["soft_dependencies"]
+    ] = None  
+    requires: TOptional[TaskDescriptionSchema.__annotations__["requires"]] = None  
+    expires_after: TOptional[TaskDescriptionSchema.__annotations__["expires_after"]] = (
+        None  
+    )
+    expiration_policy: TOptional[
+        TaskDescriptionSchema.__annotations__["expiration_policy"]
+    ] = None  
+    routes: TOptional[TaskDescriptionSchema.__annotations__["routes"]] = None  
+    scopes: TOptional[TaskDescriptionSchema.__annotations__["scopes"]] = None  
+    tags: TOptional[TaskDescriptionSchema.__annotations__["tags"]] = None  
+    extra: TOptional[TaskDescriptionSchema.__annotations__["extra"]] = None  
+    treeherder: TOptional[TaskDescriptionSchema.__annotations__["treeherder"]] = None  
+    index: TOptional[TaskDescriptionSchema.__annotations__["index"]] = None  
+    run_on_repo_type: TOptional[
+        TaskDescriptionSchema.__annotations__["run_on_repo_type"]
+    ] = None  
+    run_on_projects: TOptional[
+        TaskDescriptionSchema.__annotations__["run_on_projects"]
+    ] = None  
+    run_on_git_branches: TOptional[
+        TaskDescriptionSchema.__annotations__["run_on_git_branches"]
+    ] = None  
+    shipping_phase: TOptional[
+        TaskDescriptionSchema.__annotations__["shipping_phase"]
+    ] = None  
+    shipping_product: TOptional[
+        TaskDescriptionSchema.__annotations__["shipping_product"]
+    ] = None  
+    always_target: TOptional[TaskDescriptionSchema.__annotations__["always_target"]] = (
+        None  
+    )
+    
+    optimization: TOptional[TaskDescriptionSchema.__annotations__["optimization"]] = (
+        None  
+    )
+    use_sccache: TOptional[TaskDescriptionSchema.__annotations__["use_sccache"]] = None  
+    use_python: TOptional[Union[Literal["system", "default"], str]] = None
+    
+    use_uv: TOptional[bool] = None
+    priority: TOptional[TaskDescriptionSchema.__annotations__["priority"]] = None  
+    
+    
+    
+    
+    
+    when: TOptional[WhenSchema] = None
+    
+    fetches: TOptional[dict[str, list[Union[str, FetchArtifactSchema]]]] = None
+    
+    run: JobRunSchema
+    worker_type: TaskDescriptionSchema.__annotations__["worker_type"]  
+    
+    
+    worker: TOptional[dict] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        
+        if self.optimization is not None and self.when is not None:
+            raise ValueError("'optimization' and 'when' are mutually exclusive")
+
+
 transforms = TransformSequence()
-transforms.add_validate(job_description_schema)
+transforms.add_validate(JobDescriptionSchema)
 transforms.add(rewrite_when_to_optimization)
 
 
