@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef wasm_table_h
 #define wasm_table_h
 
@@ -110,8 +112,7 @@ class Table : public ShareableBase<Table> {
 
   
   
-  [[nodiscard]] bool copy(JSContext* cx, const Table& srcTable,
-                          uint32_t dstIndex, uint32_t srcIndex);
+  void copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex);
 
   
   [[nodiscard]] uint32_t grow(uint32_t delta);

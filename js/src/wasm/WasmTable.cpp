@@ -14,6 +14,8 @@
 
 
 
+
+
 #include "wasm/WasmTable.h"
 
 #include "mozilla/CheckedInt.h"
@@ -297,13 +299,15 @@ void Table::setNull(uint32_t address) {
   }
 }
 
-bool Table::copy(JSContext* cx, const Table& srcTable, uint32_t dstIndex,
-                 uint32_t srcIndex) {
+void Table::copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex) {
   MOZ_RELEASE_ASSERT(!srcTable.isAsmJS_);
+
+  
+  
+  MOZ_RELEASE_ASSERT(srcTable.repr() == repr());
+
   switch (repr()) {
     case TableRepr::Func: {
-      MOZ_RELEASE_ASSERT(elemType().isFuncHierarchy() &&
-                         srcTable.elemType().isFuncHierarchy());
       FunctionTableElem& dst = functions_[dstIndex];
       if (dst.instance) {
         gc::PreWriteBarrier(dst.instance->objectUnbarriered());
@@ -322,28 +326,10 @@ bool Table::copy(JSContext* cx, const Table& srcTable, uint32_t dstIndex,
       }
       break;
     }
-    case TableRepr::Ref: {
-      switch (srcTable.repr()) {
-        case TableRepr::Ref: {
-          setAnyRef(dstIndex, srcTable.getAnyRef(srcIndex));
-          break;
-        }
-        case TableRepr::Func: {
-          MOZ_RELEASE_ASSERT(srcTable.elemType().isFuncHierarchy());
-          
-          RootedFunction fun(cx);
-          if (!srcTable.getFuncRef(cx, srcIndex, &fun)) {
-            
-            return false;
-          }
-          setAnyRef(dstIndex, AnyRef::fromJSObject(*fun));
-          break;
-        }
-      }
+    case TableRepr::Ref:
+      setAnyRef(dstIndex, srcTable.getAnyRef(srcIndex));
       break;
-    }
   }
-  return true;
 }
 
 uint32_t Table::grow(uint32_t delta) {
