@@ -22,7 +22,6 @@
 #include "gc/ParallelMarking.h"
 #include "gc/TraceKind.h"
 #include "jit/JitCode.h"
-#include "jit/JitScript.h"
 #include "js/GCTypeMacros.h"  
 #include "js/SliceBudget.h"
 #include "util/Poison.h"
@@ -1477,21 +1476,14 @@ bool GCMarker::processMainThreadBuffer(MainThreadBuffer& buffer,
       continue;
     }
 
-    if (cell.is<JSObject>()) {
-      JSObject* obj = &cell.as<JSObject>();
-      const JSClass* clasp = obj->getClass();
-      
-      
-      
-      if (clasp->hasTrace()) {
-        AutoSetTracingSource asts(tracer(), obj);
-        clasp->doTrace(tracer(), obj);
-      }
-    } else {
-      BaseScript* script = &cell.as<BaseScript>();
-      if (script->hasJitScript()) {
-        script->jitScript()->trace(tracer());
-      }
+    MOZ_ASSERT(cell.is<JSObject>());
+    JSObject* obj = &cell.as<JSObject>();
+    const JSClass* clasp = obj->getClass();
+    
+    
+    if (clasp->hasTrace()) {
+      AutoSetTracingSource asts(tracer(), obj);
+      clasp->doTrace(tracer(), obj);
     }
 
     budget.step();
@@ -1689,21 +1681,6 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
           markImplicitEdges(script);
         }
         AutoSetTracingSource asts(tracer(), script);
-
-#ifdef JS_GC_CONCURRENT_MARKING
-        
-        
-        if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
-          bool skippedJitScript = false;
-          script->traceChildrenConcurrently(tracer(), &skippedJitScript);
-          if (skippedJitScript && MOZ_UNLIKELY(!addToMainThreadBuffer(
-                                      JS::GCCellPtr(script), budget))) {
-            delayMarkingChildrenOnOOM(script);
-          }
-          return true;
-        }
-#endif
-
         script->traceChildren(tracer());
         return true;
       }

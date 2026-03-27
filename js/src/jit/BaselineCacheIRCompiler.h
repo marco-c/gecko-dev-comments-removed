@@ -44,6 +44,10 @@ ICAttachResult AttachBaselineCacheIRStub(JSContext* cx,
                                          ICScript* icScript,
                                          ICFallbackStub* stub,
                                          const char* name);
+ICAttachResult AttachBaselineCacheIRStubLocked(
+    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
+    const char* name, const gc::AutoMarkingLock& lock);
 
 
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {

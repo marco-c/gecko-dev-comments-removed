@@ -550,11 +550,14 @@ void ICFallbackStub::unlinkStubUnbarriered(ICEntry* icEntry,
 
   state_.trackUnlinkedStub();
 
-#ifdef DEBUG
   
   
   
   
+  
+  
+  
+#if defined(DEBUG) && !defined(JS_GC_CONCURRENT_MARKING)
   if (!stub->makesGCCalls()) {
     stub->stubCode_ = (uint8_t*)0xbad;
   }
