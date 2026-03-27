@@ -74,7 +74,9 @@ describe("RemoteL10n", () => {
       assert.calledOnce(domL10nStub);
       const { args } = domL10nStub.firstCall;
       
-      assert.equal(args.length, 1);
+      
+      
+      assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
         "branding/brand.ftl",
         "browser/defaultBrowserNotification.ftl",
@@ -84,6 +86,7 @@ describe("RemoteL10n", () => {
         "browser/termsofuse.ftl",
         "toolkit/branding/brandings.ftl",
       ]);
+      assert.isFalse(args[1]);
       assert.calledOnce(l10nRegInstance.hasSource);
       assert.calledOnce(l10nRegInstance.registerSources);
       assert.notCalled(l10nRegInstance.removeSources);
@@ -95,7 +98,9 @@ describe("RemoteL10n", () => {
 
       const { args } = domL10nStub.firstCall;
       
-      assert.equal(args.length, 1);
+      
+      
+      assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
         "branding/brand.ftl",
         "browser/defaultBrowserNotification.ftl",
