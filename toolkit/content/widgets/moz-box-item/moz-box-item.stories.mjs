@@ -29,6 +29,10 @@ export default {
       ],
       control: { type: "select" },
     },
+    layout: {
+      options: ["default", "medium-icon", "large-icon"],
+      control: { type: "select" },
+    },
   },
   parameters: {
     status: "in-development",
@@ -63,6 +67,7 @@ const Template = ({
   slottedActions,
   slottedActionsStart,
   supportPage,
+  slottedDescription,
 }) => html`
   <style>
     .container {
@@ -92,7 +97,10 @@ const Template = ({
     >
       ${slottedContent
         ? html`<div class="slotted">
-            <img src="chrome://global/skin/illustrations/security-error.svg" />
+            <img
+              src="chrome://global/skin/illustrations/security-error.svg"
+              alt="Confused Kit is looking at an orange exclamation mark"
+            />
             <span>This is an example message</span>
             <span class="text-deemphasized">
               Message description would go down here
@@ -128,6 +136,12 @@ const Template = ({
             ></moz-button>
           `
         : ""}
+      ${slottedDescription
+        ? html`<span slot="description"
+            >This is a slotted description
+            <a href="https://www.example.com" target="_blank">click me</a></span
+          >`
+        : ""}
     </moz-box-item>
   </div>
 `;
@@ -141,6 +155,8 @@ Default.args = {
   slottedActions: false,
   slottedActionsStart: false,
   supportPage: "",
+  slottedDescription: false,
+  layout: "default",
 };
 
 export const WithDescription = Template.bind({});
@@ -184,6 +200,12 @@ export const WithSlottedActionAtTheStart = Template.bind({});
 WithSlottedActionAtTheStart.args = {
   ...Default.args,
   slottedActionsStart: true,
+};
+
+export const WithSlottedDescription = Template.bind({});
+WithSlottedDescription.args = {
+  ...Default.args,
+  slottedDescription: true,
 };
 
 export const WithSupportPage = Template.bind({});
