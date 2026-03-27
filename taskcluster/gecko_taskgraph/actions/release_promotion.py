@@ -264,7 +264,9 @@ def get_flavors(graph_config, param):
         "required": ["release_promotion_flavor", "build_number"],
     },
 )
-def release_promotion_action(parameters, graph_config, input, task_group_id, task_id):
+def release_promotion_action(
+    push_parameters, graph_config, input, task_group_id, task_id
+):
     release_promotion_flavor = input["release_promotion_flavor"]
     promotion_config = graph_config["release-promotion"]["flavors"][
         release_promotion_flavor
@@ -283,7 +285,7 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
 
     if promotion_config.get("partial-updates", False):
         partial_updates = input.get("partial_updates", {})
-        if not partial_updates and release_level(parameters) == "production":
+        if not partial_updates and release_level(push_parameters) == "production":
             raise Exception(
                 f"`partial_updates` property needs to be provided for `{release_promotion_flavor}`"
                 "target."
@@ -291,11 +293,11 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
         balrog_prefix = product.title()
         os.environ["PARTIAL_UPDATES"] = json.dumps(partial_updates, sort_keys=True)
         release_history = populate_release_history(
-            balrog_prefix, parameters["project"], partial_updates=partial_updates
+            balrog_prefix, push_parameters["project"], partial_updates=partial_updates
         )
 
     target_tasks_method = promotion_config["target-tasks-method"].format(
-        project=parameters["project"]
+        project=push_parameters["project"]
     )
     rebuild_kinds = input.get(
         "rebuild_kinds", promotion_config.get("rebuild-kinds", [])
@@ -321,22 +323,26 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
     
     
     previous_graph_ids = input.get("previous_graph_ids")
+    head_rev_param = "{}head_rev".format(graph_config["project-repo-param-prefix"])
     if not previous_graph_ids:
         revision = input.get("revision")
         if revision:
-            head_rev_param = "{}head_rev".format(
-                graph_config["project-repo-param-prefix"]
-            )
-            push_parameters = {
-                head_rev_param: revision,
-                "project": parameters["project"],
-            }
-        else:
-            push_parameters = parameters
+            push_parameters[head_rev_param] = revision
         previous_graph_ids = [find_decision_task(push_parameters, graph_config)]
 
     
     parameters = get_artifact(previous_graph_ids[0], "public/parameters.yml")
+    
+    
+    
+    
+    
+    
+    parameters["head_rev"] = push_parameters["head_rev"]
+    
+    
+    parameters[head_rev_param] = push_parameters[head_rev_param]
+
     
     
     

@@ -80,7 +80,9 @@ from gecko_taskgraph.util.taskgraph import (
         },
     },
 )
-def run_nightly_builds_action(parameters, graph_config, input, task_group_id, task_id):
+def run_nightly_builds_action(
+    push_parameters, graph_config, input, task_group_id, task_id
+):
     rebuild_kinds = input.get("rebuild_kinds", [])
     do_not_optimize = input.get("do_not_optimize", [])
 
@@ -100,10 +102,18 @@ def run_nightly_builds_action(parameters, graph_config, input, task_group_id, ta
 
     previous_graph_ids = input.get("previous_graph_ids")
     if not previous_graph_ids:
-        previous_graph_ids = [find_decision_task(parameters, graph_config)]
+        previous_graph_ids = [find_decision_task(push_parameters, graph_config)]
 
     
     parameters = get_artifact(previous_graph_ids[0], "public/parameters.yml")
+    
+    
+    
+    
+    
+    
+    parameters["head_rev"] = push_parameters["head_rev"]
+
     
     
     
