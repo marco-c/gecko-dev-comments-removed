@@ -86,6 +86,8 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
 
   gfxFontEntry* Clone() const override;
 
+  AutoHBFace GetHBFace() override;
+
   FcPattern* GetPattern() { return mFontPattern; }
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
@@ -123,6 +125,14 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   
   mozilla::Atomic<mozilla::gfx::SharedFTFace*> mFTFace;
   mozilla::Atomic<bool> mFTFaceInitialized;
+
+  
+  
+  mozilla::Atomic<hb_face_t*> mHBFace;
+
+  
+  
+  bool mUseTableCache = false;
 
   
   
