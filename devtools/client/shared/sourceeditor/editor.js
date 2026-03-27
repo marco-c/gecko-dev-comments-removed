@@ -230,6 +230,7 @@ class Editor extends EventEmitter {
   
   #scrollSnapshots = new Map();
   #updateListener = null;
+  #beforeUpdateListener = null;
 
   
   
@@ -511,6 +512,10 @@ class Editor extends EventEmitter {
   
   setUpdateListener(listener = null) {
     this.#updateListener = listener;
+  }
+
+  setBeforeUpdateListener(listener = null) {
+    this.#beforeUpdateListener = listener;
   }
 
   
@@ -843,6 +848,25 @@ class Editor extends EventEmitter {
       highlightSelectionMatches(),
       
       codemirror.minimalSetup,
+      EditorState.transactionFilter.of(tr => {
+        if (tr.docChanged) {
+          
+          
+          if (typeof this.#beforeUpdateListener == "function") {
+            const a = [];
+            tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+              a.push({
+                from: lezerUtils.positionToLocation(tr.state.doc, fromA),
+                to: lezerUtils.positionToLocation(tr.newDoc, toB),
+                origin: !inserted.length ? "+delete" : "+input",
+                text: inserted.toString(),
+              });
+            });
+            this.#beforeUpdateListener(a);
+          }
+        }
+        return tr;
+      }),
     ];
 
     if (!this.config.disableSearchAddon && this.config.useSearchAddonPanel) {
@@ -3584,7 +3608,8 @@ class Editor extends EventEmitter {
         return false;
       }
       const { x, y, width, height } = cm.dom.getBoundingClientRect();
-      const gutterWidth = cm.dom.querySelector(".cm-gutters").clientWidth;
+      const gutterEl = cm.dom.querySelector(".cm-gutters");
+      const gutterWidth = gutterEl ? gutterEl.clientWidth : 0;
 
       inXView = coords.left > x + gutterWidth && coords.right < x + width;
       inYView = coords.top > y && coords.bottom < y + height;
@@ -3916,6 +3941,7 @@ class Editor extends EventEmitter {
     this.version = null;
     this.#ownerDoc = null;
     this.#updateListener = null;
+    this.#beforeUpdateListener = null;
     this.#lineGutterMarkers.clear();
     this.#lineContentMarkers.clear();
     this.#scrollSnapshots.clear();

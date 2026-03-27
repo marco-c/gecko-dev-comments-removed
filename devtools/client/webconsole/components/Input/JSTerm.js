@@ -89,6 +89,7 @@ const {
 } = require("resource://devtools/client/webconsole/constants.js");
 
 const JSTERM_CODEMIRROR_ORIGIN = "jsterm";
+const PREF_CMNEXT_ENABLED = "devtools.webconsole.codemirrorNext";
 
 
 
@@ -268,14 +269,17 @@ class JSTerm extends Component {
       };
 
       this.editor = new Editor({
+        cm6: Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED),
         autofocus: true,
         enableCodeFolding: this.props.editorMode,
         lineNumbers: this.props.editorMode,
         lineWrapping: true,
-        mode: {
-          name: "javascript",
-          globalVars: true,
-        },
+        mode: Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
+          ? Editor.modes.javascript
+          : {
+              name: "javascript",
+              globalVars: true,
+            },
         styleActiveLine: false,
         tabIndex: "0",
         viewportMargin: Infinity,
@@ -512,15 +516,34 @@ class JSTerm extends Component {
         },
       });
 
-      this.editor.on("changes", this._onEditorChanges);
-      this.editor.on("beforeChange", this._onEditorBeforeChange);
-      this.editor.on("blur", this._onEditorBlur);
-      this.editor.on("keyHandled", this._onEditorKeyHandled);
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        this.editor.on("changes", this._onEditorChanges);
+        this.editor.on("beforeChange", this._onEditorBeforeChange);
+        this.editor.on("blur", this._onEditorBlur);
+        this.editor.on("keyHandled", this._onEditorKeyHandled);
+      }
 
       this.editor.appendToLocalElement(this.node);
-      const cm = this.editor.codeMirror;
-      cm.on("paste", (_, event) => this.props.onPaste(event));
-      cm.on("drop", (_, event) => this.props.onPaste(event));
+      if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        this.editor.setUpdateListener(viewUpdate => {
+          if (viewUpdate.docChanged) {
+            this._onEditorChanges(viewUpdate, viewUpdate.changes);
+          }
+        });
+        this.editor.setBeforeUpdateListener(changes => {
+          this._onEditorBeforeChange(this.editor, changes[0]);
+        });
+        this.editor.addEditorDOMEventListeners({
+          blur: (event, cm) => this._onEditorBlur(cm),
+          keyDown: () => this._onEditorKeyHandled(),
+          paste: event => this.props.onPaste(event),
+          drop: event => this.props.onPaste(event),
+        });
+      } else {
+        const cm = this.editor.codeMirror;
+        cm.on("paste", (_, event) => this.props.onPaste(event));
+        cm.on("drop", (_, event) => this.props.onPaste(event));
+      }
 
       this.#abortController = new AbortController();
       const signal = this.#abortController.signal;
@@ -568,7 +591,10 @@ class JSTerm extends Component {
           return;
         }
         
-        this.editor.codeMirror.refresh();
+        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          
+          this.editor.codeMirror.refresh();
+        }
       });
       this.resizeObserver.observe(this.node);
 
@@ -600,11 +626,14 @@ class JSTerm extends Component {
       return;
     }
 
-    if (
-      nextProps.autocompleteData !== this.props.autocompleteData &&
-      nextProps.autocompleteData.pendingRequestId === null
-    ) {
-      this.updateAutocompletionPopup(nextProps.autocompleteData);
+    
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        nextProps.autocompleteData !== this.props.autocompleteData &&
+        nextProps.autocompleteData.pendingRequestId === null
+      ) {
+        this.updateAutocompletionPopup(nextProps.autocompleteData);
+      }
     }
 
     if (nextProps.editorMode !== this.props.editorMode) {
@@ -619,17 +648,23 @@ class JSTerm extends Component {
         this.setEditorWidth(null);
       }
 
-      if (this.autocompletePopup.isOpen) {
-        this.autocompletePopup.hidePopup();
+      
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        if (this.autocompletePopup.isOpen) {
+          this.autocompletePopup.hidePopup();
+        }
       }
     }
 
-    if (
-      nextProps.autocompletePopupPosition !==
-        this.props.autocompletePopupPosition &&
-      this.autocompletePopup
-    ) {
-      this.autocompletePopup.position = nextProps.autocompletePopupPosition;
+    
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      if (
+        nextProps.autocompletePopupPosition !==
+          this.props.autocompletePopupPosition &&
+        this.autocompletePopup
+      ) {
+        this.autocompletePopup.position = nextProps.autocompletePopupPosition;
+      }
     }
 
     if (
@@ -725,7 +760,9 @@ class JSTerm extends Component {
       this.props.terminalInputChanged("");
       this._setValue("");
     }
-    this.clearCompletion();
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      this.clearCompletion();
+    }
     this.props.evaluateExpression(executeString);
   }
 
@@ -741,21 +778,25 @@ class JSTerm extends Component {
     this.terminalInputChanged(newValue);
 
     if (this.editor) {
-      
-      
-      
-      
-      this.editor.codeMirror.operation(() => {
-        this.editor.setText(newValue);
+      const lines = newValue.split("\n");
+      const ch = lines.at(-1).length;
 
+      if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        this.editor.setText(newValue);
+        this.editor.setCursorAt(lines.length, ch);
+      } else {
         
-        const lines = newValue.split("\n");
-        this.editor.setCursor({
-          line: lines.length - 1,
-          ch: lines[lines.length - 1].length,
+        
+        
+        
+        this.editor.codeMirror.operation(() => {
+          this.editor.setText(newValue);
+
+          
+          this.editor.setCursor({ line: lines.length - 1, ch });
+          this.editor.setAutoCompletionText();
         });
-        this.editor.setAutoCompletionText();
-      });
+      }
     }
 
     this.emitForTests("set-input-value");
@@ -825,8 +866,11 @@ class JSTerm extends Component {
     
     
     const { from, to, origin, text } = change;
+    const col = Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
+      ? "column"
+      : "ch";
     const isAddedText =
-      from.line === to.line && from.ch === to.ch && origin === "+input";
+      from.line === to.line && from[col] === to[col] && origin === "+input";
 
     
     
@@ -834,58 +878,67 @@ class JSTerm extends Component {
       !isAddedText &&
       origin === "+delete" &&
       from.line === to.line &&
-      from.ch === to.ch
+      from[col] === to[col]
     ) {
       return;
     }
 
-    const addedText = text.join("");
-    const completionText = this.getAutoCompletionText();
+    
+    const addedText = Array.isArray(text) ? text.join("") : text;
 
-    const addedCharacterMatchCompletion =
-      isAddedText && completionText.startsWith(addedText);
+    
+    if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+      const completionText = this.getAutoCompletionText();
 
-    const addedCharacterMatchPopupItem =
-      isAddedText &&
-      this.autocompletePopup.items.some(({ preLabel, label }) =>
-        label.startsWith(preLabel + addedText)
-      );
-    const nextSelectedAutocompleteItemIndex =
-      addedCharacterMatchPopupItem &&
-      this.autocompletePopup.items.findIndex(({ preLabel, label }) =>
-        label.startsWith(preLabel + addedText)
-      );
+      const addedCharacterMatchCompletion =
+        isAddedText && completionText.startsWith(addedText);
 
-    if (addedCharacterMatchPopupItem) {
-      this.autocompletePopup.selectItemAtIndex(
-        nextSelectedAutocompleteItemIndex,
-        { preventSelectCallback: true }
-      );
-    }
+      const addedCharacterMatchPopupItem =
+        isAddedText &&
+        this.autocompletePopup.items.some(({ preLabel, label }) =>
+          label.startsWith(preLabel + addedText)
+        );
+      const nextSelectedAutocompleteItemIndex =
+        addedCharacterMatchPopupItem &&
+        this.autocompletePopup.items.findIndex(({ preLabel, label }) =>
+          label.startsWith(preLabel + addedText)
+        );
 
-    if (!completionText || change.canceled || !addedCharacterMatchCompletion) {
-      this.setAutoCompletionText("");
-    }
+      if (addedCharacterMatchPopupItem) {
+        this.autocompletePopup.selectItemAtIndex(
+          nextSelectedAutocompleteItemIndex,
+          { preventSelectCallback: true }
+        );
+      }
 
-    if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
-      this.autocompletePopup.hidePopup();
-    } else if (
-      !change.canceled &&
-      (completionText ||
-        addedCharacterMatchCompletion ||
-        addedCharacterMatchPopupItem)
-    ) {
-      
-      
-      
-      this.pendingCompletionText = completionText.substring(text.length);
-      
-      
-      this.autocompletePopup.items.forEach(item => {
-        if (item.label.startsWith(item.preLabel + addedText)) {
-          item.preLabel += addedText;
-        }
-      });
+      if (
+        !completionText ||
+        change.canceled ||
+        !addedCharacterMatchCompletion
+      ) {
+        this.setAutoCompletionText("");
+      }
+
+      if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
+        this.autocompletePopup.hidePopup();
+      } else if (
+        !change.canceled &&
+        (completionText ||
+          addedCharacterMatchCompletion ||
+          addedCharacterMatchPopupItem)
+      ) {
+        
+        
+        
+        this.pendingCompletionText = completionText.substring(text.length);
+        
+        
+        this.autocompletePopup.items.forEach(item => {
+          if (item.label.startsWith(item.preLabel + addedText)) {
+            item.preLabel += addedText;
+          }
+        });
+      }
     }
   }
 
@@ -931,17 +984,20 @@ class JSTerm extends Component {
 
     if (this.lastInputValue !== value) {
       
-      
-      const isJsTermChangeOnly = changes.every(
-        ({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN
-      );
+      if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        
+        
+        const isJsTermChangeOnly = changes.every(
+          ({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN
+        );
 
-      if (
-        !isJsTermChangeOnly &&
-        (this.props.autocomplete || this.hasAutocompletionSuggestion())
-      ) {
-        const variables = await this.editor.getExpressionVariables();
-        this.autocompleteUpdate(false, null, variables);
+        if (
+          !isJsTermChangeOnly &&
+          (this.props.autocomplete || this.hasAutocompletionSuggestion())
+        ) {
+          const variables = await this.editor.getExpressionVariables();
+          this.autocompleteUpdate(false, null, variables);
+        }
       }
       this.lastInputValue = value;
       this.terminalInputChanged(value);
