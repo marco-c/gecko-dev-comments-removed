@@ -442,6 +442,11 @@ pref("browser.urlbar.scotchBonnet.enableOverride", true);
 pref("browser.urlbar.trustPanel.featureGate", true);
 
 
+
+
+pref("browser.urlbar.perplexity.hasBeenInSearchMode", false);
+
+
 pref("browser.urlbar.unifiedSearchButton.always", false);
 
 
