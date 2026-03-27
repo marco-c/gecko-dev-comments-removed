@@ -668,7 +668,7 @@ pub enum DominantBaseline {
     
     Auto,
     
-    #[parse(aliases = "text-before-edge")]
+    #[parse(aliases = "text-after-edge")]
     TextBottom,
     
     Alphabetic,
@@ -685,7 +685,7 @@ pub enum DominantBaseline {
     
     Hanging,
     
-    #[parse(aliases = "text-after-edge")]
+    #[parse(aliases = "text-before-edge")]
     TextTop,
 }
 
