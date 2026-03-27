@@ -132,8 +132,29 @@ static MsaaAccessible* GetTextPatternProviderFor(Accessible* aOrigin) {
   return MsaaAccessible::GetFrom(GetTextContainer(aOrigin));
 }
 
+static bool IsSingleSelectOption(Accessible* aAcc) {
+  const role accRole = aAcc->Role();
+  if (accRole != roles::OPTION && accRole != roles::COMBOBOX_OPTION) {
+    return false;
+  }
+  Accessible* container =
+      nsAccUtils::GetSelectableContainer(aAcc, aAcc->State());
+  return !container || !(container->State() & states::MULTISELECTABLE);
+}
+
 static bool MustSelectUsingDoAction(Accessible* aAcc) {
-  return IsRadio(aAcc) || aAcc->Role() == roles::PAGETAB;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return IsRadio(aAcc) || aAcc->Role() == roles::PAGETAB ||
+         IsSingleSelectOption(aAcc);
 }
 
 
@@ -451,6 +472,7 @@ uiaRawElmProvider::GetPatternProvider(
       }
       return S_OK;
     case UIA_InvokePatternId:
+      
       
       
       
