@@ -19,6 +19,11 @@ export type GetTextOptions = Partial<{
   maxCanvasDimension: number;
   
   canvasQuality: number;
+  
+  
+  removeBoilerplate: boolean;
+  
+  _forceRemoveBoilerplate: boolean;
 }>;
 
 export type GetDOMOptions = GetTextOptions;
@@ -51,3 +56,51 @@ export type PageMetadata = {
   
   language: string;
 };
+
+
+
+
+
+export interface ReaderModeDocument {
+  title: string;
+  byline: null | string;
+  dir: "ltr" | "rtl";
+
+  
+
+
+  content: string;
+
+  
+
+
+  textContent: string;
+
+  
+
+
+  length: number;
+
+  
+
+
+  excerpt: string;
+  siteName: null | string;
+  publishedTime: null | string;
+  url: string;
+
+  
+
+
+  detectedLanguage: string;
+
+  
+
+
+  readingTimeMinsSlow: number;
+
+  
+
+
+  readingTimeMinsFast: number;
+}
