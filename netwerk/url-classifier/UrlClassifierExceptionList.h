@@ -32,9 +32,6 @@ class UrlClassifierExceptionList final : public nsIUrlClassifierExceptionList {
       nsTArray<RefPtr<nsIUrlClassifierExceptionListEntry>>;
 
   
-  using SiteToEntries = nsTHashMap<nsCStringHashKey, ExceptionEntryArray>;
-
-  
   
   static bool ExceptionListMatchesLoad(ExceptionEntryArray* aExceptions,
                                        nsIURI* aURI, nsIURI* aTopLevelURI,
@@ -49,9 +46,7 @@ class UrlClassifierExceptionList final : public nsIUrlClassifierExceptionList {
 
   
   
-  
-  
-  nsTHashMap<nsCStringHashKey, SiteToEntries> mExceptions;
+  nsTHashMap<nsCStringHashKey, ExceptionEntryArray> mExceptions;
 
   
   

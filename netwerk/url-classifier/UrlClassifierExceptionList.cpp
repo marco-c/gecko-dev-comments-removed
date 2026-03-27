@@ -34,13 +34,6 @@ UrlClassifierExceptionList::AddEntry(
   nsresult rv = aEntry->GetUrlPattern(urlPattern);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsAutoCString site;
-  rv = GetSchemelessSiteFromUrlPattern(urlPattern, site);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  NS_ENSURE_TRUE(!site.IsEmpty(), NS_ERROR_INVALID_ARG);
-
   nsAutoCString topLevelUrlPattern;
   rv = aEntry->GetTopLevelUrlPattern(topLevelUrlPattern);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -64,20 +57,19 @@ UrlClassifierExceptionList::AddEntry(
   
   
   if (topLevelSite.IsEmpty()) {
+    nsAutoCString site;
+    rv = GetSchemelessSiteFromUrlPattern(urlPattern, site);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    NS_ENSURE_TRUE(!site.IsEmpty(), NS_ERROR_INVALID_ARG);
+
     mGlobalExceptions.LookupOrInsert(site).AppendElement(aEntry);
     return NS_OK;
   }
 
   
-  mExceptions
-      
-      
-      
-      .LookupOrInsert(topLevelSite)
-      
-      .LookupOrInsert(site)
-      
-      .AppendElement(aEntry);
+  mExceptions.LookupOrInsert(topLevelSite).AppendElement(aEntry);
 
   return NS_OK;
 }
@@ -136,12 +128,9 @@ UrlClassifierExceptionList::Matches(nsIURI* aURI, nsIURI* aTopLevelURI,
   }
 
   
-  SiteToEntries* topLevelSiteToEntries =
+  ExceptionEntryArray* siteSpecificExceptions =
       mExceptions.Lookup(aTopLevelSite).DataPtrOrNull();
-  if (topLevelSiteToEntries) {
-    ExceptionEntryArray* siteSpecificExceptions =
-        topLevelSiteToEntries->Lookup(aSite).DataPtrOrNull();
-
+  if (siteSpecificExceptions) {
     *aResult = ExceptionListMatchesLoad(siteSpecificExceptions, aURI,
                                         aTopLevelURI, aIsPrivateBrowsing);
     if (*aResult) {
@@ -229,16 +218,10 @@ UrlClassifierExceptionList::TestGetEntries(
   }
 
   
-  
-  for (const auto& outerEntry : mExceptions) {
-    const SiteToEntries& innerMap = outerEntry.GetData();
-
+  for (const auto& entry : mExceptions) {
+    const ExceptionEntryArray& entries = entry.GetData();
     
-    for (const auto& innerEntry : innerMap) {
-      const ExceptionEntryArray& entries = innerEntry.GetData();
-      
-      aEntries.AppendElements(entries);
-    }
+    aEntries.AppendElements(entries);
   }
 
   return NS_OK;
