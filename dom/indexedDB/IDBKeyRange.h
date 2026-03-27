@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_idbkeyrange_h_
 #define mozilla_dom_idbkeyrange_h_
 
@@ -24,6 +22,7 @@ class ErrorResult;
 namespace dom {
 
 class GlobalObject;
+class IDBTransaction;
 
 namespace indexedDB {
 class SerializedKeyRange;
@@ -49,7 +48,8 @@ class IDBKeyRange {
 
   
   static void FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
-                        RefPtr<IDBKeyRange>* aKeyRange, ErrorResult& aRv);
+                        RefPtr<IDBKeyRange>* aKeyRange, ErrorResult& aRv,
+                        IDBTransaction* aTransaction = nullptr);
 
   [[nodiscard]] static RefPtr<IDBKeyRange> FromSerialized(
       const indexedDB::SerializedKeyRange& aKeyRange);

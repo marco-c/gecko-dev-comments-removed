@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_idbobjectstore_h_
 #define mozilla_dom_idbobjectstore_h_
 
@@ -93,7 +91,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
 
     const JS::Rooted<JS::Value>& Value() const { return mValue; }
 
-    bool Clone(JSContext* aCx);
+    bool Clone(JSContext* aCx, IDBTransaction* aTransaction = nullptr);
   };
 
   [[nodiscard]] static RefPtr<IDBObjectStore> Create(
