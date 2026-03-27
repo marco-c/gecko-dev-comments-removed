@@ -3674,11 +3674,13 @@ wasapi_register_device_collection_changed(
   }
 
   if (collection_changed_callback) {
-    
-    XASSERT(((devtype & CUBEB_DEVICE_TYPE_INPUT) &&
-             !context->input_collection_changed_callback) ||
-            ((devtype & CUBEB_DEVICE_TYPE_OUTPUT) &&
-             !context->output_collection_changed_callback));
+    if (((devtype & CUBEB_DEVICE_TYPE_INPUT) &&
+         context->input_collection_changed_callback) ||
+        ((devtype & CUBEB_DEVICE_TYPE_OUTPUT) &&
+         context->output_collection_changed_callback)) {
+      LOG("register_device_collection_changed: callback already registered");
+      return CUBEB_ERROR_INVALID_PARAMETER;
+    }
 
     
     
