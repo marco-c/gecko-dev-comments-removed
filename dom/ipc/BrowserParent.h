@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BrowserParent_h
 #define mozilla_dom_BrowserParent_h
 
@@ -924,6 +922,7 @@ class BrowserParent final : public PBrowserParent,
   float mDPI;
   int32_t mRounding;
   CSSToLayoutDeviceScale mDefaultScale;
+  DesktopToLayoutDeviceScale mDesktopToDeviceScale;
   bool mUpdatedDimensions;
   nsSizeMode mSizeMode;
   LayoutDeviceIntPoint mClientOffset;

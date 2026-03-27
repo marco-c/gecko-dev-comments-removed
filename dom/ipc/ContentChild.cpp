@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidDecoderModule.h"
 #endif
@@ -1210,11 +1208,12 @@ nsresult ContentChild::ProvideWindowCommon(
       return;
     }
 
-    ParentShowInfo showInfo(u""_ns,  true,
-                             false,
-                            newChild->WebWidget()->GetDPI(),
-                            newChild->WebWidget()->RoundsWidgetCoordinatesTo(),
-                            newChild->WebWidget()->GetDefaultScale().scale);
+    ParentShowInfo showInfo(
+        u""_ns,  true,
+         false, newChild->WebWidget()->GetDPI(),
+        newChild->WebWidget()->RoundsWidgetCoordinatesTo(),
+        newChild->WebWidget()->GetDefaultScale().scale,
+        newChild->WebWidget()->GetDesktopToDeviceScale().scale);
 
     newChild->SetMaxTouchPoints(maxTouchPoints);
 
