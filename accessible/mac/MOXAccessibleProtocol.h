@@ -210,6 +210,9 @@
 - (NSString* _Nullable)moxARIABrailleRoleDescription;
 
 
+- (NSString* _Nullable)moxARIABrailleLabel;
+
+
 
 
 

@@ -228,6 +228,9 @@ enum CheckedState {
 - (NSString*)moxARIABrailleRoleDescription;
 
 
+- (NSString*)moxARIABrailleLabel;
+
+
 - (NSString*)moxPlaceholderValue;
 
 
