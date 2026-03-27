@@ -4,8 +4,6 @@
 
 
 
-use std::marker::PhantomData;
-
 
 pub trait Provider {
     type Event;
@@ -19,33 +17,17 @@ pub trait Provider {
     fn has_events(&self) -> bool;
 
     
-    fn events(&'_ mut self) -> Iter<'_, Self, Self::Event> {
-        Iter::new(self)
+    fn events(&'_ mut self) -> Iter<'_, Self> {
+        Iter { p: self }
     }
 }
 
-pub struct Iter<'a, P, E>
-where
-    P: ?Sized,
-{
+pub struct Iter<'a, P: ?Sized> {
     p: &'a mut P,
-    _e: PhantomData<E>,
 }
 
-impl<'a, P, E> Iter<'a, P, E>
-where
-    P: Provider<Event = E> + ?Sized,
-{
-    const fn new(p: &'a mut P) -> Self {
-        Self { p, _e: PhantomData }
-    }
-}
-
-impl<P, E> Iterator for Iter<'_, P, E>
-where
-    P: Provider<Event = E>,
-{
-    type Item = E;
+impl<P: Provider + ?Sized> Iterator for Iter<'_, P> {
+    type Item = P::Event;
     fn next(&mut self) -> Option<Self::Item> {
         self.p.next_event()
     }

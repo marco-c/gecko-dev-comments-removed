@@ -65,7 +65,7 @@ impl Qlog {
             None,
             now,
             new_trace(role),
-            qlog::events::EventImportance::Base,
+            qlog::events::EventImportance::Extra,
             Box::new(BufWriter::new(file)),
         );
         Self::enabled(streamer, qlog_path)
@@ -128,14 +128,18 @@ impl Qlog {
             return;
         };
 
-        if let Err(e) = f(&mut shared_streamer.streamer) {
-            log::error!("Qlog event generation failed with error {e}; closing qlog.");
+        match f(&mut shared_streamer.streamer) {
             
-            *borrow = None;
-            
-            drop(borrow);
-            
-            self.inner = None;
+            Ok(()) | Err(qlog::Error::Done) => (),
+            Err(e) => {
+                log::error!("Qlog event generation failed with error {e}; closing qlog.");
+                
+                *borrow = None;
+                
+                drop(borrow);
+                
+                self.inner = None;
+            }
         }
     }
 }

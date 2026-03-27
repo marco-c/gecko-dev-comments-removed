@@ -1109,7 +1109,8 @@ impl Path {
 
     
     pub fn set_qlog(&mut self, qlog: Qlog) {
-        self.sender.set_qlog(qlog);
+        self.sender.set_qlog(qlog.clone());
+        self.qlog = qlog;
     }
 }
 

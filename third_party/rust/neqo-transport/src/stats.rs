@@ -134,8 +134,16 @@ pub struct DatagramStats {
     pub dropped_queue_full: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SlowStartExitReason {
+    
+    CongestionEvent,
+    
+    Heuristic,
+}
 
-#[derive(Default, Clone, PartialEq, Eq)]
+
+#[derive(Default, Clone, PartialEq)]
 pub struct CongestionControlStats {
     
     
@@ -150,7 +158,22 @@ pub struct CongestionControlStats {
     pub slow_start_exit_cwnd: Option<usize>,
     
     
-    pub cwnd: usize,
+    pub slow_start_exit_reason: Option<SlowStartExitReason>,
+    
+    
+    
+    pub hystart_css_entries: usize,
+    
+    
+    pub hystart_css_rounds_finished: usize,
+    
+    
+    
+    
+    pub w_max: Option<f64>,
+    
+    
+    pub cwnd: Option<usize>,
 }
 
 #[derive(Default, Clone, PartialEq, Eq)]
@@ -250,7 +273,7 @@ impl DerefMut for DscpCount {
 }
 
 
-#[derive(Default, Clone, PartialEq, Eq)]
+#[derive(Default, Clone, PartialEq)]
 pub struct Stats {
     pub info: String,
 
@@ -399,8 +422,8 @@ impl Debug for Stats {
         )?;
         writeln!(
             f,
-            "    final_cwnd {} ss_exit_cwnd {:?}",
-            self.cc.cwnd, self.cc.slow_start_exit_cwnd
+            "    final_cwnd {:?} ss_exit_cwnd {:?} ss_exit_reason {:?}",
+            self.cc.cwnd, self.cc.slow_start_exit_cwnd, self.cc.slow_start_exit_reason
         )?;
         writeln!(
             f,
@@ -462,7 +485,7 @@ fn debug() {
   tx: 0 lost 0 lateack 0 ptoack 0 unackdrop 0
   cc:
     ce_loss 0 ce_ecn 0 ce_spurious 0
-    final_cwnd 0 ss_exit_cwnd None
+    final_cwnd None ss_exit_cwnd None ss_exit_reason None
   pmtud: 0 sent 0 acked 0 lost 0 iface_mtu None peer_max_udp_payload 0 pmtu
   resumed: false
   frames rx:

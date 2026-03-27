@@ -335,6 +335,7 @@ fn setup_standalone(nss: &str) -> Vec<String> {
     setup_clang();
 
     println!("cargo:rerun-if-env-changed=NSS_DIR");
+    println!("cargo:rerun-if-env-changed=NSS_PREBUILT");
     let nss = PathBuf::from(nss);
     assert!(
         !nss.is_relative(),
@@ -347,7 +348,8 @@ fn setup_standalone(nss: &str) -> Vec<String> {
     let nsstarget = "Release";
 
     
-    if env::var("NSS_PREBUILT").is_err() {
+    
+    if !env::var("NSS_PREBUILT").is_ok_and(|v| v != "0") {
         build_nss(nss);
     }
 

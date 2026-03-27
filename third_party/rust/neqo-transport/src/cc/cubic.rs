@@ -13,7 +13,10 @@ use std::{
 
 use neqo_common::{qdebug, qtrace};
 
-use crate::cc::{CongestionEvent, classic_cc::WindowAdjustment};
+use crate::{
+    cc::{CongestionEvent, classic_cc::WindowAdjustment},
+    stats::CongestionControlStats,
+};
 
 
 
@@ -71,7 +74,7 @@ pub struct State {
     
     
     
-    w_max: f64,
+    w_max: Option<f64>,
     
     
     
@@ -86,7 +89,7 @@ impl Display for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "state [w_max: {}, k: {}, t_epoch: {:?}]",
+            "state [w_max: {:?}, k: {}, t_epoch: {:?}]",
             self.w_max, self.k, self.t_epoch
         )?;
         Ok(())
@@ -202,8 +205,8 @@ impl Cubic {
     
     
     
-    fn calc_k(&self, cwnd_epoch: f64, max_datagram_size: f64) -> f64 {
-        ((self.current.w_max - cwnd_epoch) / max_datagram_size / Self::C).cbrt()
+    fn calc_k(w_max: f64, cwnd_epoch: f64, max_datagram_size: f64) -> f64 {
+        ((w_max - cwnd_epoch) / max_datagram_size / Self::C).cbrt()
     }
 
     
@@ -216,8 +219,8 @@ impl Cubic {
     
     
     
-    fn w_cubic(&self, t: f64, max_datagram_size: f64) -> f64 {
-        (Self::C * (t - self.current.k).powi(3)).mul_add(max_datagram_size, self.current.w_max)
+    fn w_cubic(&self, t: f64, w_max: f64, max_datagram_size: f64) -> f64 {
+        (Self::C * (t - self.current.k).powi(3)).mul_add(max_datagram_size, w_max)
     }
 
     
@@ -246,23 +249,24 @@ impl Cubic {
         
         
         
-        self.current.k = if self.current.w_max <= curr_cwnd {
-            self.current.w_max = curr_cwnd;
-            0.0
-        } else {
-            self.calc_k(curr_cwnd, max_datagram_size)
+        self.current.k = match self.current.w_max {
+            Some(w_max) if w_max > curr_cwnd => Self::calc_k(w_max, curr_cwnd, max_datagram_size),
+            _ => {
+                self.current.w_max = Some(curr_cwnd);
+                0.0
+            }
         };
         qtrace!("[{self}] New epoch");
     }
 
     #[cfg(test)]
-    pub const fn w_max(&self) -> f64 {
+    pub const fn w_max(&self) -> Option<f64> {
         self.current.w_max
     }
 
     #[cfg(test)]
     pub const fn set_w_max(&mut self, w_max: f64) {
-        self.current.w_max = w_max;
+        self.current.w_max = Some(w_max);
     }
 }
 
@@ -315,9 +319,13 @@ impl WindowAdjustment for Cubic {
         
         
         let t = now.saturating_duration_since(t_epoch);
+        let w_max = self
+            .current
+            .w_max
+            .expect("w_max must be set in self.start_epoch");
         
         let target_cubic = f64::clamp(
-            self.w_cubic((t + min_rtt).as_secs_f64(), max_datagram_size),
+            self.w_cubic((t + min_rtt).as_secs_f64(), w_max, max_datagram_size),
             curr_cwnd,
             curr_cwnd * 1.5,
         );
@@ -338,7 +346,7 @@ impl WindowAdjustment for Cubic {
 
         
         if increase > 0.0 {
-            self.current.w_est += increase * max_datagram_size;
+            self.current.w_est = increase.mul_add(max_datagram_size, self.current.w_est);
             
             
             let acked_bytes_used = increase * curr_cwnd / Self::ALPHA;
@@ -413,6 +421,7 @@ impl WindowAdjustment for Cubic {
         acked_bytes: usize,
         max_datagram_size: usize,
         congestion_event: CongestionEvent,
+        cc_stats: &mut CongestionControlStats,
     ) -> (usize, usize) {
         let curr_cwnd_f64 = convert_to_f64(curr_cwnd);
         
@@ -431,12 +440,18 @@ impl WindowAdjustment for Cubic {
         
         
         
-        self.current.w_max =
-            if curr_cwnd_f64 + convert_to_f64(max_datagram_size) < self.current.w_max {
+        self.current.w_max = Some(
+            if self
+                .current
+                .w_max
+                .is_some_and(|w| curr_cwnd_f64 + convert_to_f64(max_datagram_size) < w)
+            {
                 curr_cwnd_f64 * Self::FAST_CONVERGENCE_FACTOR
             } else {
                 curr_cwnd_f64
-            };
+            },
+        );
+        cc_stats.w_max = self.current.w_max;
 
         
         self.current.t_epoch = None;
@@ -461,7 +476,7 @@ impl WindowAdjustment for Cubic {
         self.stored = Some(self.current.clone());
     }
 
-    fn restore_undo_state(&mut self) {
+    fn restore_undo_state(&mut self, cc_stats: &mut CongestionControlStats) {
         let Some(stored) = self.stored.take() else {
             debug_assert!(false, "couldn't restore {self} specific undo state");
             return;
@@ -472,5 +487,6 @@ impl WindowAdjustment for Cubic {
             self.current
         );
         self.current = stored;
+        cc_stats.w_max = self.current.w_max;
     }
 }

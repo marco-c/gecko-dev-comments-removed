@@ -15,6 +15,20 @@ use std::{
 
 use crate::{packet, recovery};
 
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LossTrigger {
+    TimeThreshold,
+    ReorderingThreshold,
+}
+
+
+#[derive(Debug, Clone, Copy)]
+pub struct LossInfo {
+    pub time: Instant,
+    pub trigger: LossTrigger,
+}
+
 #[derive(Debug, Clone)]
 pub struct Packet {
     pt: packet::Type,
@@ -24,7 +38,7 @@ pub struct Packet {
     primary_path: bool,
     tokens: Rc<recovery::Tokens>,
 
-    time_declared_lost: Option<Instant>,
+    loss_info: Option<LossInfo>,
     
     pto: bool,
 
@@ -48,7 +62,7 @@ impl Packet {
             ack_eliciting,
             primary_path: true,
             tokens: Rc::new(tokens),
-            time_declared_lost: None,
+            loss_info: None,
             pto: false,
             len,
         }
@@ -132,7 +146,7 @@ impl Packet {
     
     #[must_use]
     pub const fn lost(&self) -> bool {
-        self.time_declared_lost.is_some()
+        self.loss_info.is_some()
     }
 
     
@@ -153,11 +167,12 @@ impl Packet {
     }
 
     
-    pub const fn declare_lost(&mut self, now: Instant) -> bool {
+    
+    pub const fn declare_lost(&mut self, now: Instant, trigger: LossTrigger) -> bool {
         if self.lost() {
             false
         } else {
-            self.time_declared_lost = Some(now);
+            self.loss_info = Some(LossInfo { time: now, trigger });
             true
         }
     }
@@ -166,14 +181,20 @@ impl Packet {
     
     #[must_use]
     pub fn expired(&self, now: Instant, expiration_period: Duration) -> bool {
-        self.time_declared_lost
-            .is_some_and(|loss_time| (loss_time + expiration_period) <= now)
+        self.loss_info
+            .is_some_and(|info| (info.time + expiration_period) <= now)
     }
 
     
     #[must_use]
     pub const fn pto_fired(&self) -> bool {
         self.pto
+    }
+
+    
+    #[must_use]
+    pub const fn loss_info(&self) -> Option<LossInfo> {
+        self.loss_info
     }
 
     
@@ -334,7 +355,7 @@ mod tests {
         time::{Duration, Instant},
     };
 
-    use super::{Packet, Packets};
+    use super::{LossTrigger, Packet, Packets};
     use crate::{packet, recovery};
 
     const PACKET_GAP: Duration = Duration::from_secs(1);
@@ -435,7 +456,7 @@ mod tests {
         remove_one(&mut pkts, 0);
 
         for p in pkts.iter_mut() {
-            p.declare_lost(p.time_sent); 
+            p.declare_lost(p.time_sent, LossTrigger::TimeThreshold); 
         }
 
         
@@ -470,7 +491,27 @@ mod tests {
     #[test]
     fn pto_after_lost() {
         let mut p = pkt(0);
-        p.declare_lost(start_time());
+        p.declare_lost(start_time(), LossTrigger::TimeThreshold);
         assert!(!p.pto()); 
+    }
+
+    #[test]
+    fn loss_info_default() {
+        let p = pkt(0);
+        assert!(p.loss_info().is_none());
+    }
+
+    #[test]
+    fn loss_info_declared() {
+        let t = start_time();
+        let mut p = pkt(0);
+        assert!(p.declare_lost(t, LossTrigger::TimeThreshold));
+        let info = p.loss_info().unwrap();
+        assert_eq!(info.time, t);
+        assert_eq!(info.trigger, LossTrigger::TimeThreshold);
+
+        
+        assert!(!p.declare_lost(t, LossTrigger::ReorderingThreshold));
+        assert_eq!(p.loss_info().unwrap().trigger, LossTrigger::TimeThreshold);
     }
 }

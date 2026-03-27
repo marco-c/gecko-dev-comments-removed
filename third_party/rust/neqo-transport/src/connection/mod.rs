@@ -347,6 +347,8 @@ impl Connection {
     
     
     const LOOSE_TIMER_RESOLUTION: Duration = Duration::from_millis(50);
+    
+    const SCONE_INDICATION: &[u8] = &[0xc8, 0x13];
 
     
     
@@ -1761,7 +1763,7 @@ impl Connection {
                     let pn = payload.pn();
                     self.idle_timeout.on_packet_received(now);
                     self.log_packet(
-                        packet::MetaData::new_in(path, tos, packet_len, &payload),
+                        packet::MetaData::new_in(path, tos, packet_len, &payload, self.version),
                         now,
                     );
 
@@ -2669,15 +2671,6 @@ impl Connection {
         qdebug!("[{self}] output_dgram_on_path send_profile {profile:?}");
 
         
-        let limit = if path.borrow().pmtud().needs_probe() {
-            needs_padding = true;
-            debug_assert!(path.borrow().pmtud().probe_size() >= profile.limit());
-            path.borrow().pmtud().probe_size()
-        } else {
-            profile.limit()
-        };
-
-        
         
         for space in PacketNumberSpace::iter() {
             
@@ -2689,6 +2682,25 @@ impl Connection {
 
             let header_start = encoder.len();
 
+            
+            let limit = if path.borrow().pmtud().needs_probe() {
+                needs_padding = true;
+                debug_assert!(path.borrow().pmtud().probe_size() >= profile.limit());
+                path.borrow().pmtud().probe_size()
+            } else {
+                profile.limit()
+                    - if space == PacketNumberSpace::Initial {
+                        
+                        
+                        
+                        
+                        
+                        Self::SCONE_INDICATION.len()
+                    } else {
+                        0
+                    }
+            } - aead_expansion;
+
             let (pt, mut builder, pn) = Self::build_packet_header(
                 &path.borrow(),
                 epoch,
@@ -2697,9 +2709,7 @@ impl Connection {
                 &self.address_validation,
                 version,
                 grease_quic_bit,
-                
-                
-                limit - aead_expansion,
+                limit,
                 self.loss_recovery.largest_acknowledged_pn(space),
             );
             
@@ -2743,6 +2753,7 @@ impl Connection {
                     builder.len() + aead_expansion,
                     &builder.as_ref()[payload_start..],
                     packet_tos,
+                    self.version,
                 ),
                 now,
             );
@@ -2819,21 +2830,43 @@ impl Connection {
         } else {
             
             if let Some(mut initial) = initial_sent.take() {
-                if needs_padding && encoder.len() < profile.limit() {
-                    qdebug!(
-                        "[{self}] pad Initial from {} to PLPMTU {}",
-                        encoder.len(),
-                        profile.limit()
-                    );
-                    initial.track_padding(profile.limit() - encoder.len());
-                    
-                    
-                    encoder.pad_to(profile.limit(), 0);
+                if needs_padding {
+                    self.pad_initial(&mut encoder, &mut initial, &profile);
                 }
                 self.loss_recovery.on_packet_sent(path, initial, now);
             }
             path.borrow_mut().add_sent(encoder.len());
             Ok(SendOption::Yes)
+        }
+    }
+
+    fn pad_initial(
+        &self,
+        encoder: &mut Encoder<&mut Vec<u8>>,
+        initial: &mut sent::Packet,
+        profile: &SendProfile,
+    ) {
+        if encoder.len() >= profile.limit() {
+            return;
+        }
+
+        qdebug!(
+            "[{self}] pad Initial from {} to {}",
+            encoder.len(),
+            profile.limit()
+        );
+        let pad_amount = profile.limit() - encoder.len();
+        initial.track_padding(pad_amount);
+        
+        
+        if pad_amount >= Self::SCONE_INDICATION.len() {
+            encoder.pad_to(
+                profile.limit() - Self::SCONE_INDICATION.len() + 1,
+                Self::SCONE_INDICATION[0],
+            );
+            encoder.encode(&Self::SCONE_INDICATION[1..]);
+        } else {
+            encoder.pad_to(profile.limit(), Self::SCONE_INDICATION[0]);
         }
     }
 
@@ -2862,6 +2895,12 @@ impl Connection {
         debug_assert_eq!(self.role, Role::Client);
         if let Some(path) = self.paths.primary() {
             qlog::client_connection_started(&mut self.qlog, &path, now);
+            qlog::recovery_parameters_set(
+                &mut self.qlog,
+                path.borrow().plpmtu(),
+                self.conn_params.get_congestion_control(),
+                now,
+            );
         }
         qlog::client_version_information_initiated(
             &mut self.qlog,
@@ -3484,6 +3523,7 @@ impl Connection {
             now,
         );
         let largest_acknowledged = acked_packets.first().map(sent::Packet::pn);
+        qlog::packets_acked(&mut self.qlog, space, &acked_packets, now);
         for acked in acked_packets {
             for token in acked.tokens() {
                 match token {
@@ -3557,6 +3597,12 @@ impl Connection {
             path.borrow_mut().set_valid(now);
             
             qlog::server_connection_started(&mut self.qlog, &path, now);
+            qlog::recovery_parameters_set(
+                &mut self.qlog,
+                path.borrow().plpmtu(),
+                self.conn_params.get_congestion_control(),
+                now,
+            );
         } else {
             self.zero_rtt_state = if self
                 .crypto
@@ -3593,12 +3639,16 @@ impl Connection {
     fn set_state(&mut self, state: State, now: Instant) {
         if state > self.state {
             qdebug!("[{self}] State change from {:?} -> {state:?}", self.state);
+            let old_state = self.state.clone();
             self.state = state.clone();
             if self.state.closed() {
                 self.streams.clear_streams();
             }
             self.events.connection_state_change(state);
-            qlog::connection_state_updated(&mut self.qlog, &self.state, now);
+            qlog::connection_state_updated(&mut self.qlog, &old_state, &self.state, now);
+            if let State::Closed(reason) = &self.state {
+                qlog::connection_closed(&mut self.qlog, reason, now);
+            }
         } else if mem::discriminant(&state) != mem::discriminant(&self.state) {
             
             
