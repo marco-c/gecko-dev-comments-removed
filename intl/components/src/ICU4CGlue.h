@@ -604,6 +604,11 @@ class AvailableLocalesEnumeration final {
 
   
 
+
+  int32_t Count() const { return mLocalesCount; }
+
+  
+
   
 
 
@@ -685,6 +690,11 @@ class ICU4XEnumeration final {
       return mozilla::Span<const char>{ptr, len};
     }
   };
+
+  
+
+
+  uintptr_t Count() const { return mLen; }
 
   
 
