@@ -4240,6 +4240,30 @@ static bool ShouldSkipFrame(nsDisplayListBuilder* aBuilder,
          aFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually;
 }
 
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+
+
+
+
+
+#  if defined(XP_WIN) && !defined(_WIN64)
+MOZ_NEVER_INLINE
+#  endif
+static void MaybeAddAccId(nsIFrame* aChildOrOutOfFlow,
+                          nsDisplayListBuilder* aBuilder,
+                          const nsDisplayListSet& aLists) {
+  auto [bcId, accId] = a11y::PdfStructTreeBuilder::GetAccId(aChildOrOutOfFlow);
+  if (!bcId) {
+    return;
+  }
+  
+  
+  auto* item = MakeDisplayItem<nsDisplayAccessibleId>(
+      aBuilder, aChildOrOutOfFlow, bcId, accId);
+  aLists.Content()->AppendToTop(item);
+}
+#endif
+
 void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
                                         nsIFrame* aChild,
                                         const nsDisplayListSet& aLists,
@@ -4277,14 +4301,7 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
       linkifier->MaybeAppendLink(aBuilder, childOrOutOfFlow);
     }
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
-    auto [bcId, accId] = a11y::PdfStructTreeBuilder::GetAccId(childOrOutOfFlow);
-    if (bcId) {
-      
-      
-      auto* item = MakeDisplayItem<nsDisplayAccessibleId>(
-          aBuilder, childOrOutOfFlow, bcId, accId);
-      aLists.Content()->AppendToTop(item);
-    }
+    MaybeAddAccId(childOrOutOfFlow, aBuilder, aLists);
 #endif
   }
 
