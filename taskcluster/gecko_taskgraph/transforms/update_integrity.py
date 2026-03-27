@@ -115,11 +115,20 @@ def add_additional_fetches_and_command(config, jobs):
             
             base_url = info["mar_url"].split(".complete.mar")[0]
             buildid = info["buildid"]
+
+            
+            
+            linux64_info = config.params["release_history"]["Linux_x86_64-gcc3"][
+                locale
+            ][mar]
+            linux64_installer = linux64_info["mar_url"].replace(
+                ".complete.mar", ".tar.xz"
+            )
             
             
             job["run"]["command"].append("--from")
             job["run"]["command"].append(
-                f"{buildid}|{base_url}.{installer_suffix}|{mar}"
+                f"{buildid}|{base_url}.{installer_suffix}|{linux64_installer}|{mar}"
             )
 
         job["fetches"]["partials-signing"] = fetches
