@@ -1,0 +1,12 @@
+
+
+
+
+
+
+UNIFIED_SOURCES += [
+    "TestLockstoreDatastore.cpp",
+    "TestLockstoreKeystore.cpp",
+]
+
+FINAL_LIBRARY = "xul-gtest"
