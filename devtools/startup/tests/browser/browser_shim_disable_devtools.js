@@ -69,7 +69,7 @@ add_task(async function () {
   
   await new Promise(r => setTimeout(r, 1000));
 
-  is(gDevTools._toolboxesPerCommands.size, 0, "No toolbox has been opened");
+  is(gDevTools.toolboxesPerCommands.size, 0, "No toolbox has been opened");
 
   info("Open the context menu for the content page.");
   const contextMenu = win.document.getElementById("contentAreaContextMenu");
@@ -149,6 +149,8 @@ function waitForDelayedStartupFinished(win) {
     }, "browser-delayed-startup-finished");
   });
 }
+
+
 
 
 

@@ -78,6 +78,13 @@ const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 
 
 class DevTools extends EventEmitter {
+  #commandsPromiseByWebExtId;
+  #creatingToolboxes;
+  #telemetry;
+  #themes;
+  #toolboxesPerCommands;
+  #tools;
+
   
   
   
@@ -98,20 +105,19 @@ class DevTools extends EventEmitter {
 
     super();
 
-    this._tools = new Map(); 
-    this._themes = new Map(); 
-    this._toolboxesPerCommands = new Map(); 
+    this.#tools = new Map(); // Map<toolId, tool>
+    this.#themes = new Map(); // Map<themeId, theme>
+    this.#toolboxesPerCommands = new Map(); // Map<commands, toolbox>
     
-    this._creatingToolboxes = new Map(); 
+    this.#creatingToolboxes = new Map(); // Map<commands, toolbox Promise>
 
-    this._telemetry = new Telemetry();
-
-    
-    this._commandsPromiseByWebExtId = new Map(); 
+    this.#telemetry = new Telemetry();
 
     
-    this._onThemeChanged = this._onThemeChanged.bind(this);
-    addThemeObserver(this._onThemeChanged);
+    this.#commandsPromiseByWebExtId = new Map(); // Map<extensionId, commands>
+
+    
+    addThemeObserver(this.#onThemeChanged);
 
     
     
@@ -186,7 +192,7 @@ class DevTools extends EventEmitter {
       toolDefinition.visibilityswitch = "devtools." + toolId + ".enabled";
     }
 
-    this._tools.set(toolId, toolDefinition);
+    this.#tools.set(toolId, toolDefinition);
 
     this.emit("tool-registered", toolId);
   }
@@ -202,7 +208,7 @@ class DevTools extends EventEmitter {
 
 
   unregisterTool(toolId, isQuitApplication) {
-    this._tools.delete(toolId);
+    this.#tools.delete(toolId);
 
     if (!isQuitApplication) {
       this.emit("tool-unregistered", toolId);
@@ -224,7 +230,7 @@ class DevTools extends EventEmitter {
 
   getAdditionalTools() {
     const tools = [];
-    for (const [, value] of this._tools) {
+    for (const [, value] of this.#tools) {
       if (!DefaultTools.includes(value)) {
         tools.push(value);
       }
@@ -234,6 +240,14 @@ class DevTools extends EventEmitter {
 
   getDefaultThemes() {
     return DefaultThemes.sort(this.ordinalSort);
+  }
+
+  get tools() {
+    return this.#tools;
+  }
+
+  get toolboxesPerCommands() {
+    return this.#toolboxesPerCommands;
   }
 
   
@@ -246,7 +260,7 @@ class DevTools extends EventEmitter {
 
 
   getToolDefinition(toolId) {
-    const tool = this._tools.get(toolId);
+    const tool = this.#tools.get(toolId);
     if (!tool) {
       return null;
     } else if (!tool.visibilityswitch) {
@@ -268,7 +282,7 @@ class DevTools extends EventEmitter {
   getToolDefinitionMap() {
     const tools = new Map();
 
-    for (const [id, definition] of this._tools) {
+    for (const [id, definition] of this.#tools) {
       if (this.getToolDefinition(id)) {
         tools.set(id, definition);
       }
@@ -288,7 +302,7 @@ class DevTools extends EventEmitter {
   getToolDefinitionArray() {
     const definitions = [];
 
-    for (const [id, definition] of this._tools) {
+    for (const [id, definition] of this.#tools) {
       if (this.getToolDefinition(id)) {
         definitions.push(definition);
       }
@@ -319,9 +333,9 @@ class DevTools extends EventEmitter {
   
 
 
-  _onThemeChanged() {
+  #onThemeChanged = () => {
     this.emit("theme-changed", getTheme());
-  }
+  };
 
   
 
@@ -352,11 +366,11 @@ class DevTools extends EventEmitter {
       throw new Error("Invalid theme id");
     }
 
-    if (this._themes.get(themeId)) {
+    if (this.#themes.get(themeId)) {
       throw new Error("Theme with the same id is already registered");
     }
 
-    this._themes.set(themeId, themeDefinition);
+    this.#themes.set(themeId, themeDefinition);
 
     this.emit("theme-registered", themeId);
   }
@@ -372,7 +386,7 @@ class DevTools extends EventEmitter {
     let themeId = null;
     if (typeof theme == "string") {
       themeId = theme;
-      theme = this._themes.get(theme);
+      theme = this.#themes.get(theme);
     } else {
       themeId = theme.id;
     }
@@ -397,7 +411,7 @@ class DevTools extends EventEmitter {
       this.emit("theme-unregistered", theme);
     }
 
-    this._themes.delete(themeId);
+    this.#themes.delete(themeId);
   }
 
   
@@ -410,7 +424,7 @@ class DevTools extends EventEmitter {
 
 
   getThemeDefinition(themeId) {
-    const theme = this._themes.get(themeId);
+    const theme = this.#themes.get(themeId);
     if (!theme) {
       return null;
     }
@@ -426,7 +440,7 @@ class DevTools extends EventEmitter {
   getThemeDefinitionMap() {
     const themes = new Map();
 
-    for (const [id, definition] of this._themes) {
+    for (const [id, definition] of this.#themes) {
       if (this.getThemeDefinition(id)) {
         themes.set(id, definition);
       }
@@ -444,7 +458,7 @@ class DevTools extends EventEmitter {
   getThemeDefinitionArray() {
     const definitions = [];
 
-    for (const [id, definition] of this._themes) {
+    for (const [id, definition] of this.#themes) {
       if (this.getThemeDefinition(id)) {
         definitions.push(definition);
       }
@@ -483,7 +497,7 @@ class DevTools extends EventEmitter {
 
 
 
-  _firstShowToolbox = true;
+  #firstShowToolbox = true;
 
   
 
@@ -531,7 +545,7 @@ class DevTools extends EventEmitter {
       hostOptions,
     } = {}
   ) {
-    let toolbox = this._toolboxesPerCommands.get(commands);
+    let toolbox = this.#toolboxesPerCommands.get(commands);
 
     if (toolbox) {
       if (hostType != null && toolbox.hostType != hostType) {
@@ -551,24 +565,24 @@ class DevTools extends EventEmitter {
       
       
       
-      const promise = this._creatingToolboxes.get(commands);
+      const promise = this.#creatingToolboxes.get(commands);
       if (promise) {
         return promise;
       }
-      const toolboxPromise = this._createToolbox(commands, {
+      const toolboxPromise = this.#createToolbox(commands, {
         toolId,
         toolOptions,
         hostType,
         hostOptions,
       });
-      this._creatingToolboxes.set(commands, toolboxPromise);
+      this.#creatingToolboxes.set(commands, toolboxPromise);
       toolbox = await toolboxPromise;
-      this._creatingToolboxes.delete(commands);
+      this.#creatingToolboxes.delete(commands);
 
       if (startTime) {
         this.logToolboxOpenTime(toolbox, startTime);
       }
-      this._firstShowToolbox = false;
+      this.#firstShowToolbox = false;
     }
 
     
@@ -577,7 +591,7 @@ class DevTools extends EventEmitter {
     const panelName = this.makeToolIdHumanReadable(
       toolId || toolbox.defaultToolId
     );
-    this._telemetry.addEventProperty(
+    this.#telemetry.addEventProperty(
       toolbox,
       "enter",
       panelName,
@@ -663,14 +677,14 @@ class DevTools extends EventEmitter {
     
     
     
-    let commandsPromise = this._commandsPromiseByWebExtId.get(extensionId);
+    let commandsPromise = this.#commandsPromiseByWebExtId.get(extensionId);
     if (!commandsPromise) {
       commandsPromise = CommandsFactory.forAddon(extensionId);
-      this._commandsPromiseByWebExtId.set(extensionId, commandsPromise);
+      this.#commandsPromiseByWebExtId.set(extensionId, commandsPromise);
     }
     const commands = await commandsPromise;
     commands.client.once("closed").then(() => {
-      this._commandsPromiseByWebExtId.delete(extensionId);
+      this.#commandsPromiseByWebExtId.delete(extensionId);
     });
 
     return this.showToolbox(commands, {
@@ -702,13 +716,13 @@ class DevTools extends EventEmitter {
     const delay = ChromeUtils.now() - startTime;
     const panelName = this.makeToolIdHumanReadable(toolId);
 
-    if (this._firstShowToolbox) {
+    if (this.#firstShowToolbox) {
       Glean.devtools.coldToolboxOpenDelay[toolId].accumulateSingleSample(delay);
     } else {
       Glean.devtools.warmToolboxOpenDelay[toolId].accumulateSingleSample(delay);
     }
     const browserWin = toolbox.topWindow;
-    this._telemetry.addEventProperty(
+    this.#telemetry.addEventProperty(
       browserWin,
       "open",
       "tools",
@@ -742,7 +756,7 @@ class DevTools extends EventEmitter {
 
 
 
-  async _createToolbox(
+  async #createToolbox(
     commands,
     { toolId, toolOptions, hostType, hostOptions } = {}
   ) {
@@ -750,14 +764,14 @@ class DevTools extends EventEmitter {
 
     const toolbox = await manager.create(toolId, toolOptions);
 
-    this._toolboxesPerCommands.set(commands, toolbox);
+    this.#toolboxesPerCommands.set(commands, toolbox);
 
     toolbox.once("destroy", () => {
       this.emit("toolbox-destroy", toolbox);
     });
 
     toolbox.once("destroyed", () => {
-      this._toolboxesPerCommands.delete(commands);
+      this.#toolboxesPerCommands.delete(commands);
       this.emit("toolbox-destroyed", toolbox);
     });
 
@@ -777,7 +791,7 @@ class DevTools extends EventEmitter {
 
 
   getToolboxForCommands(commands) {
-    return this._toolboxesPerCommands.get(commands);
+    return this.#toolboxesPerCommands.get(commands);
   }
 
   
@@ -785,7 +799,7 @@ class DevTools extends EventEmitter {
 
 
   getToolboxForDescriptorFront(descriptorFront) {
-    for (const [commands, toolbox] of this._toolboxesPerCommands) {
+    for (const [commands, toolbox] of this.#toolboxesPerCommands) {
       if (commands.descriptorFront == descriptorFront) {
         return toolbox;
       }
@@ -818,9 +832,9 @@ class DevTools extends EventEmitter {
   async closeToolboxForTab(tab) {
     const commands = await LocalTabCommandsFactory.getCommandsForTab(tab);
 
-    let toolbox = await this._creatingToolboxes.get(commands);
+    let toolbox = await this.#creatingToolboxes.get(commands);
     if (!toolbox) {
-      toolbox = this._toolboxesPerCommands.get(commands);
+      toolbox = this.#toolboxesPerCommands.get(commands);
     }
     if (!toolbox) {
       return;
@@ -954,7 +968,7 @@ class DevTools extends EventEmitter {
   destroy({ shuttingDown }) {
     
     if (!shuttingDown) {
-      for (const [, toolbox] of this._toolboxesPerCommands) {
+      for (const [, toolbox] of this.#toolboxesPerCommands) {
         toolbox.destroy();
       }
     }
@@ -965,7 +979,7 @@ class DevTools extends EventEmitter {
 
     gDevTools.unregisterDefaults();
 
-    removeThemeObserver(this._onThemeChanged);
+    removeThemeObserver(this.#onThemeChanged);
 
     
     
@@ -988,7 +1002,7 @@ class DevTools extends EventEmitter {
 
 
   getToolboxes() {
-    return Array.from(this._toolboxesPerCommands.values());
+    return Array.from(this.#toolboxesPerCommands.values());
   }
 
   

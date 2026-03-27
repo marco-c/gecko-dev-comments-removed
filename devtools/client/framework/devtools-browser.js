@@ -427,7 +427,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
   hasToolboxOpened(win) {
     const tab = win.gBrowser.selectedTab;
-    for (const commands of gDevTools._toolboxesPerCommands.keys()) {
+    for (const commands of gDevTools.toolboxesPerCommands.keys()) {
       if (commands.descriptorFront.localTab == tab) {
         return true;
       }
@@ -527,7 +527,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     BrowserMenus.removeMenus(win.document);
 
     
-    for (const [commands, toolbox] of gDevTools._toolboxesPerCommands) {
+    for (const [commands, toolbox] of gDevTools.toolboxesPerCommands) {
       if (
         commands.descriptorFront.localTab?.ownerDocument?.defaultView == win
       ) {
@@ -593,7 +593,7 @@ gDevTools
   .forEach(def => gDevToolsBrowser._addToolToWindows(def));
 
 gDevTools.on("tool-registered", function (toolId) {
-  const toolDefinition = gDevTools._tools.get(toolId);
+  const toolDefinition = gDevTools.tools.get(toolId);
   
   
   if (toolDefinition) {
