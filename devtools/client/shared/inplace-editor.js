@@ -44,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-function.mjs",
   getAutocompleteDataForAnchorSizeFunction:
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-size-function.mjs",
+  getAutocompleteDataForLinearGradientFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-linear-gradient-function.mjs",
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -1988,7 +1990,10 @@ class InplaceEditor extends EventEmitter {
     }
 
     if (functionName.includes("gradient")) {
-      return this.#getAutocompleteDataForGradientFunction();
+      return this.#getAutocompleteDataForGradientFunction(
+        functionName,
+        functionStackEntry
+      );
     }
 
     if (functionName === "color") {
@@ -2039,11 +2044,23 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  #getAutocompleteDataForGradientFunction() {
+  #getAutocompleteDataForGradientFunction(functionName, functionStackEntry) {
+    const { tokens } = functionStackEntry;
+    if (
+      functionName === "linear-gradient" ||
+      
+      functionName === "repeating-linear-gradient"
+    ) {
+      return lazy.getAutocompleteDataForLinearGradientFunction({
+        functionTokens: tokens,
+        getCSSValuesForPropertyName:
+          this.#getCSSValuesForPropertyName.bind(this),
+      });
+    }
+
     
     
-    const list = this.#getCSSValuesForPropertyName("color");
-    return { list };
+    return { list: this.#getCSSValuesForPropertyName("color") };
   }
 
   
