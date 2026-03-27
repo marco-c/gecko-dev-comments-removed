@@ -2032,7 +2032,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
  public:
   mozilla::StyleUserSelect ComputedUserSelect() const { return mUserSelect; }
 
-  mozilla::StyleScrollbarWidth ScrollbarWidth() const;
+  
+  
+  mozilla::StyleScrollbarWidth ComputedScrollbarWidth() const {
+    return mScrollbarWidth;
+  }
 
   const mozilla::StyleTransitionProperty& GetTransitionProperty(
       uint32_t aIndex) const {
