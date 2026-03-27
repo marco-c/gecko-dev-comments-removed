@@ -278,10 +278,7 @@ void AudioDecoderInputTrack::DestroyImpl() {
   LOG("DestroyImpl");
   AssertOnGraphThreadOrNotRunning();
   mBufferedData.Clear();
-  if (mTimeStretcher) {
-    delete mTimeStretcher;
-    mTimeStretcher = nullptr;
-  }
+  mTimeStretcher = nullptr;
   ProcessedMediaTrack::DestroyImpl();
 }
 
@@ -406,8 +403,11 @@ TrackTime AudioDecoderInputTrack::AppendTimeStretchedDataToSegment(
 
   MOZ_ASSERT(mPlaybackRate != 1.0f);
   MOZ_ASSERT(aExpectedDuration >= 0);
-  MOZ_ASSERT(mTimeStretcher);
   MOZ_ASSERT(aOutput.IsEmpty());
+
+  if (!mTimeStretcher) {
+    return AppendUnstretchedDataToSegment(aExpectedDuration, aOutput);
+  }
 
   
   
@@ -601,9 +601,17 @@ uint32_t AudioDecoderInputTrack::NumberOfChannels() const {
 void AudioDecoderInputTrack::EnsureTimeStretcher() {
   AssertOnGraphThread();
   if (!mTimeStretcher) {
-    mTimeStretcher = new RLBoxSoundTouch();
-    MOZ_RELEASE_ASSERT(mTimeStretcher);
-    MOZ_RELEASE_ASSERT(mTimeStretcher->Init());
+    mTimeStretcher = std::make_unique<RLBoxSoundTouch>();
+    if (!mTimeStretcher->Init()) {
+      MOZ_LOG(gMediaDecoderLog, LogLevel::Error,
+              ("AudioDecoderInputTrack=%p Failed to initialize time stretcher, "
+               "audio will play at normal speed",
+               this));
+      mTimeStretcher = nullptr;
+      mPlaybackRate = 1.0f;
+      mOnPlaybackRateFallback.Notify();
+      return;
+    }
 
     mTimeStretcher->setSampleRate(Graph()->GraphRate());
     mTimeStretcher->setChannels(GetChannelCountForTimeStretcher());

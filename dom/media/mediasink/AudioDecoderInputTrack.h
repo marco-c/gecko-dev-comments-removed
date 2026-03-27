@@ -5,6 +5,7 @@
 #ifndef AudioDecoderInputTrack_h
 #define AudioDecoderInputTrack_h
 
+#include <memory>
 #include <thread>
 
 #include "AudioSegment.h"
@@ -104,6 +105,9 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
 
   MediaEventSource<int64_t>& OnOutput() { return mOnOutput; }
   MediaEventSource<void>& OnEnd() { return mOnEnd; }
+  MediaEventSource<void>& OnPlaybackRateFallback() {
+    return mOnPlaybackRateFallback;
+  }
 
   
   void DestroyImpl() override;
@@ -176,6 +180,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   MediaEventProducer<int64_t> mOnOutput;
   
   MediaEventProducer<void> mOnEnd;
+  MediaEventProducer<void> mOnPlaybackRateFallback;
 
   
   nsAutoRef<SpeexResamplerState> mResampler;
@@ -220,7 +225,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   bool mSentAllData = false;
 
   
-  RLBoxSoundTouch* mTimeStretcher = nullptr;
+  std::unique_ptr<RLBoxSoundTouch> mTimeStretcher;
 
   
   AutoTArray<AudioDataValue, 2> mInterleavedBuffer;

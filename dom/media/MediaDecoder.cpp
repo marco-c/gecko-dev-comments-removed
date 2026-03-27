@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaDecoder.h"
 
 #include <algorithm>
@@ -359,6 +357,12 @@ void MediaDecoder::OnPlaybackEvent(const MediaPlaybackEvent& aEvent) {
       break;
     case MediaPlaybackEvent::VideoOnlySeekCompleted:
       GetOwner()->QueueEvent(u"mozvideoonlyseekcompleted"_ns);
+      break;
+    case MediaPlaybackEvent::PlaybackRateFallback:
+      nsContentUtils::ReportToConsoleNonLocalized(
+          u"Failed to initialize the audio time stretcher. Audio will play at "
+          u"normal speed."_ns,
+          nsIScriptError::warningFlag, "Media"_ns, GetOwner()->GetDocument());
       break;
     default:
       break;

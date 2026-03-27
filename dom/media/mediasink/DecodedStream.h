@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DecodedStream_h_
 #define DecodedStream_h_
 
@@ -74,6 +72,9 @@ class DecodedStream : public MediaSink {
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) override;
 
   MediaEventSource<bool>& AudibleEvent() { return mAudibleEvent; }
+  MediaEventSource<void>& PlaybackRateFallbackEvent() {
+    return mPlaybackRateFallbackForwarder;
+  }
 
  protected:
   virtual ~DecodedStream();
@@ -137,6 +138,7 @@ class DecodedStream : public MediaSink {
   bool mIsAudioDataAudible = false;
   Maybe<AudibilityMonitor> mAudibilityMonitor;
   MediaEventProducer<bool> mAudibleEvent;
+  MediaEventForwarder<void> mPlaybackRateFallbackForwarder;
 
   MediaQueue<AudioData>& mAudioQueue;
   MediaQueue<VideoData>& mVideoQueue;

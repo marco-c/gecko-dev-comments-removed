@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaDecoderStateMachine.h"
 
 #include <stdint.h>
@@ -3373,6 +3371,7 @@ RefPtr<ShutdownPromise> MediaDecoderStateMachine::ShutdownState::Enter() {
   master->mMetadataManager.Disconnect();
   master->mOnMediaNotSeekable.Disconnect();
   master->mAudibleListener.DisconnectIfExists();
+  master->mPlaybackRateFallbackListener.DisconnectIfExists();
 
   
   master->mStreamName.DisconnectIfConnected();
@@ -3469,6 +3468,11 @@ void MediaDecoderStateMachine::AudioAudibleChanged(bool aAudible) {
   mIsAudioDataAudible = aAudible;
 }
 
+void MediaDecoderStateMachine::OnPlaybackRateFallback() {
+  MOZ_ASSERT(OnTaskQueue());
+  mOnPlaybackEvent.Notify(MediaPlaybackEvent::PlaybackRateFallback);
+}
+
 MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
   if (mOutputCaptureInfo.Ref().mState !=
       MediaDecoder::OutputCaptureState::None) {
@@ -3484,6 +3488,9 @@ MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
     mAudibleListener.DisconnectIfExists();
     mAudibleListener = stream->AudibleEvent().Connect(
         OwnerThread(), this, &MediaDecoderStateMachine::AudioAudibleChanged);
+    mPlaybackRateFallbackListener.DisconnectIfExists();
+    mPlaybackRateFallbackListener = stream->PlaybackRateFallbackEvent().Connect(
+        OwnerThread(), this, &MediaDecoderStateMachine::OnPlaybackRateFallback);
     return stream;
   }
 
