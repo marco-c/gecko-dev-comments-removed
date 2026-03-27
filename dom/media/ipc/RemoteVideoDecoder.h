@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteVideoDecoderChild_h
 #define include_dom_media_ipc_RemoteVideoDecoderChild_h
 #include "RemoteDecoderChild.h"
@@ -19,7 +17,7 @@ class KnowsCompositorVideo : public layers::KnowsCompositor {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(KnowsCompositorVideo, override)
 
-  layers::TextureForwarder* GetTextureForwarder() override;
+  RefPtr<layers::TextureForwarder> GetTextureForwarder() override;
   layers::LayersIPCActor* GetLayersIPCActor() override;
 
   static already_AddRefed<KnowsCompositorVideo> TryCreateForIdentifier(

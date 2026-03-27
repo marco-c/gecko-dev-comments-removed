@@ -31,18 +31,18 @@ using namespace layers;
 using namespace ipc;
 using namespace gfx;
 
-layers::TextureForwarder* KnowsCompositorVideo::GetTextureForwarder() {
-  auto* vbc = VideoBridgeChild::GetSingleton();
+RefPtr<layers::TextureForwarder> KnowsCompositorVideo::GetTextureForwarder() {
+  auto vbc = VideoBridgeChild::GetSingleton();
   return (vbc && vbc->CanSend()) ? vbc : nullptr;
 }
 layers::LayersIPCActor* KnowsCompositorVideo::GetLayersIPCActor() {
-  return GetTextureForwarder();
+  return GetTextureForwarder().get();
 }
 
  already_AddRefed<KnowsCompositorVideo>
 KnowsCompositorVideo::TryCreateForIdentifier(
     const layers::TextureFactoryIdentifier& aIdentifier) {
-  VideoBridgeChild* child = VideoBridgeChild::GetSingleton();
+  auto child = VideoBridgeChild::GetSingleton();
   if (!child) {
     return nullptr;
   }
