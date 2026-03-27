@@ -29,14 +29,22 @@ use euclid::default::Size2D;
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
+use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
+
+
+
+
+#[derive(Clone, Debug, ToCss, ToShmem)]
+#[css(comma)]
+pub struct ContainerConditions(#[css(iterable)] pub SmallVec<[Arc<ContainerCondition>; 1]>);
 
 
 #[derive(Debug, ToShmem)]
 pub struct ContainerRule {
     
-    pub condition: Arc<ContainerCondition>,
+    pub conditions: ContainerConditions,
     
     pub rules: Arc<Locked<CssRules>>,
     
@@ -45,13 +53,23 @@ pub struct ContainerRule {
 
 impl ContainerRule {
     
+    
+    
+    
+    
     pub fn query_condition(&self) -> Option<&QueryCondition> {
-        self.condition.condition.as_ref()
+        debug_assert_eq!(self.conditions.0.len(), 1);
+        self.conditions.0[0].condition.as_ref()
     }
 
     
+    
+    
+    
+    
     pub fn container_name(&self) -> &ContainerName {
-        &self.condition.name
+        debug_assert_eq!(self.conditions.0.len(), 1);
+        &self.conditions.0[0].name
     }
 
     
@@ -67,7 +85,7 @@ impl DeepCloneWithLock for ContainerRule {
     fn deep_clone_with_lock(&self, lock: &SharedRwLock, guard: &SharedRwLockReadGuard) -> Self {
         let rules = self.rules.read_with(guard);
         Self {
-            condition: self.condition.clone(),
+            conditions: self.conditions.clone(),
             rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock, guard))),
             source_location: self.source_location.clone(),
         }
@@ -79,7 +97,7 @@ impl ToCssWithGuard for ContainerRule {
         dest.write_str("@container ")?;
         {
             let mut writer = CssWriter::new(dest);
-            self.condition.to_css(&mut writer)?;
+            self.conditions.to_css(&mut writer)?;
         }
         self.rules.read_with(guard).to_css_block(guard, dest)
     }
