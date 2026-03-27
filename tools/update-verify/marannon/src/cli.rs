@@ -13,22 +13,24 @@ use crate::updater::CertOverride;
 pub struct FromBuild {
     pub id: String,
     pub installer: String,
+    pub updater_package: String,
     pub partial_mar: Option<PathBuf>,
 }
 
 impl std::str::FromStr for FromBuild {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.splitn(3, '|').collect();
-        if parts.len() < 2 {
+        let parts: Vec<&str> = s.splitn(4, '|').collect();
+        if parts.len() < 3 {
             return Err(format!(
-                "expected 'id|installer or id|installer|partial', got: {s}"
+                "expected 'id|installer|updater_package|partial', got: {s}"
             ));
         }
         Ok(FromBuild {
             id: parts[0].to_string(),
             installer: parts[1].to_string(),
-            partial_mar: parts.get(2).map(|s| PathBuf::from(s)),
+            updater_package: parts[2].to_string(),
+            partial_mar: parts.get(3).map(|s| PathBuf::from(s)),
         })
     }
 }
@@ -55,6 +57,7 @@ pub struct Args {
     pub appname: String,
     
     pub artifact_dir: PathBuf,
+    
     
     
     
