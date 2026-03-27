@@ -21,6 +21,8 @@ const SUGGEST_PREF = "browser.search.suggest.enabled";
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarProviderTabToSearch:
     "moz-src:///browser/components/urlbar/UrlbarProviderTabToSearch.sys.mjs",
+  SpecialMessageActions:
+    "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -65,6 +67,43 @@ function assertSearchModeScalars(entry, engineOrSource) {
 
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
+}
+
+
+
+
+
+
+
+
+
+function assertSearchModeTelemetry(entry, engineOrSource) {
+  for (let e of UrlbarUtils.SEARCH_MODE_ENTRY) {
+    
+    
+    let camelCaseEntry = e
+      .split("_")
+      .map((chars, index) =>
+        index == 0 ? chars : chars[0].toUpperCase() + chars.slice(1)
+      )
+      .join("");
+
+    if (camelCaseEntry == entry) {
+      Assert.strictEqual(
+        1,
+        Glean.urlbarSearchmode[entry]?.[engineOrSource].testGetValue(),
+        `This search must only increment one entry in the correct label counter: ${camelCaseEntry}`
+      );
+    } else {
+      Assert.strictEqual(
+        null,
+        Glean.urlbarSearchmode[camelCaseEntry]?.[engineOrSource].testGetValue(),
+        `No other urlbar.searchmode label counters should be recorded. Checking ${camelCaseEntry}`
+      );
+    }
+  }
+
+  Services.fog.testResetFOG();
 }
 
 add_setup(async function () {
@@ -702,4 +741,34 @@ add_task(async function test_unified_search_button() {
 
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_messaging_system() {
+  
+  let searchMode = {
+    engineName: "Bing",
+    isGeneralPurposeEngine: true,
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    isPreview: false,
+    entry: "messagingSystem",
+  };
+
+  let action = {
+    type: "SET_SEARCH_MODE",
+    data: searchMode,
+    dismiss: true,
+  };
+  await SpecialMessageActions.handleAction(action, gBrowser);
+
+  await UrlbarTestUtils.assertSearchMode(window, {
+    engineName: "Bing",
+    isGeneralPurposeEngine: true,
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    isPreview: false,
+    entry: "messagingSystem",
+  });
+
+  
+  assertSearchModeTelemetry("messagingSystem", "Bing");
+  await UrlbarTestUtils.exitSearchMode(window);
 });
