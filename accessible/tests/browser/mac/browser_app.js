@@ -211,17 +211,42 @@ add_task(async () => {
       const identityPopup = document.getElementById("identity-popup");
       await BrowserTestUtils.waitForPopupEvent(identityPopup, "shown");
 
-      
-      is(rootChildCount(), baseRootChildCount + 1, "Root has another child");
+      let popupAcc = getAccessible(
+        identityPopup
+      ).nativeInterface.QueryInterface(Ci.nsIAccessibleMacInterface);
+      is(
+        popupAcc.getAttributeValue("AXSubrole"),
+        "AXApplicationAlertDialog",
+        "Popup has correct subrole"
+      );
+
+      if (!Services.env.get("MOZ_HEADLESS")) {
+        is(
+          rootChildCount(),
+          baseRootChildCount,
+          "popups do not show up as root children"
+        );
+
+        let popupAccParent = popupAcc.getAttributeValue("AXParent");
+        is(
+          popupAccParent.getAttributeValue("AXRole"),
+          "AXPopover",
+          "Popup's parent is the popover window"
+        );
+        is(
+          popupAccParent
+            .getAttributeValue("AXParent")
+            .getAttributeValue("AXRole"),
+          "AXApplication",
+          "Popup's grandparent is the app"
+        );
+      }
 
       
       let hide = waitForMacEvent("AXUIElementDestroyed");
       EventUtils.synthesizeKey("KEY_Escape");
       await BrowserTestUtils.waitForPopupEvent(identityPopup, "hidden");
       await hide;
-
-      
-      is(rootChildCount(), baseRootChildCount, "Root has the base child count");
     }
   );
 });

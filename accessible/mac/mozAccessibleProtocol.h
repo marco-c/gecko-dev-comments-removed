@@ -37,6 +37,9 @@
 - (id)representedView;
 
 
+- (BOOL)hasMozAccessible;
+
+
 
 
 - (id)accessibilityHitTest:(NSPoint)point;

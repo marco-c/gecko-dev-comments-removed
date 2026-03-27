@@ -78,6 +78,10 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   return nil;
 }
 
+- (BOOL)hasMozAccessible {
+  return YES;
+}
+
 - (BOOL)isRoot {
   return NO;
 }
@@ -489,6 +493,14 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   NSArray* allChildren = [self moxChildren];
 
   for (MOXAccessibleBase* nativeChild in allChildren) {
+    if ([nativeChild hasRepresentedView]) {
+      
+      
+      
+      
+      continue;
+    }
+
     if ([nativeChild moxIgnoreWithParent:self]) {
       
       

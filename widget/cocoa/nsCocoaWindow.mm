@@ -85,6 +85,10 @@
 #include "mozilla/widget/Screen.h"
 #include <algorithm>
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/DocAccessible.h"
+#endif
+
 #undef DEBUG_UPDATE
 #undef INVALIDATE_DEBUGGING  // flash areas as they are invalidated
 
@@ -1479,8 +1483,16 @@ void nsCocoaWindow::LookUpDictionary(
 }
 
 #ifdef ACCESSIBILITY
-already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetDocumentAccessible() {
+already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetWindowAccessible() {
   if (!mozilla::a11y::ShouldA11yBeEnabled()) return nullptr;
+
+  if (GetWindowType() == WindowType::Popup &&
+      GetPopupType() != PopupType::Panel) {
+    
+    
+    
+    return nullptr;
+  }
 
   
   
@@ -1494,6 +1506,14 @@ already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetDocumentAccessible() {
   
   
   RefPtr<a11y::LocalAccessible> acc = GetRootAccessible();
+  if (GetWindowType() == WindowType::Popup) {
+    
+    
+    if (nsIFrame* popupFrame = GetFrame()) {
+      acc = acc->AsDoc()->GetAccessible(popupFrame->GetContent());
+    }
+  }
+
   mAccessible = do_GetWeakReference(acc.get());
 
   return acc.forget();
@@ -4301,8 +4321,7 @@ nsresult nsCocoaWindow::RestoreHiDPIMode() {
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
   RefPtr<nsCocoaWindow> geckoChild(mGeckoChild);
-  RefPtr<a11y::LocalAccessible> accessible =
-      geckoChild->GetDocumentAccessible();
+  RefPtr<a11y::LocalAccessible> accessible = geckoChild->GetWindowAccessible();
   if (!accessible) return nil;
 
   accessible->GetNativeInterface((void**)&nativeAccessible);
@@ -4323,6 +4342,10 @@ nsresult nsCocoaWindow::RestoreHiDPIMode() {
 
 - (id)representedView {
   return self;
+}
+
+- (BOOL)hasMozAccessible {
+  return [self accessible] != nil;
 }
 
 - (BOOL)isRoot {
@@ -4399,16 +4422,13 @@ nsresult nsCocoaWindow::RestoreHiDPIMode() {
   if (!mozilla::a11y::ShouldA11yBeEnabled())
     return [super accessibilityAttributeValue:attribute];
 
-  id<mozAccessible> accessible = [self accessible];
-
-  
-  
-  
-  if ([attribute isEqualToString:NSAccessibilityParentAttribute] &&
-      [accessible isRoot]) {
-    id parentAccessible = [super accessibilityAttributeValue:attribute];
-    return parentAccessible;
+  if ([attribute isEqualToString:NSAccessibilityParentAttribute]) {
+    
+    
+    return [super accessibilityAttributeValue:attribute];
   }
+
+  id<mozAccessible> accessible = [self accessible];
 
   return [accessible accessibilityAttributeValue:attribute];
 
@@ -7917,6 +7937,14 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
 - (id)accessibilityAttributeValue:(NSString*)attribute {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
+  if ([self isKindOfClass:[PopupWindow class]]) {
+    if ([attribute isEqualToString:NSAccessibilityRoleAttribute]) {
+      
+      
+      return NSAccessibilityPopoverRole;
+    }
+  }
+
   id retval = [super accessibilityAttributeValue:attribute];
 
   
@@ -7962,6 +7990,15 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   return retval;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+}
+
+- (BOOL)isAccessibilityElement {
+  if (!mozilla::a11y::ShouldA11yBeEnabled())
+    return [super isAccessibilityElement];
+
+  
+  
+  return [self.mainChildView hasMozAccessible];
 }
 
 - (void)releaseJSObjects {

@@ -76,13 +76,21 @@ using namespace mozilla::a11y;
 }
 
 - (id)representedView {
-  if (![self isRoot]) {
+  if (!mGeckoAccessible || !mGeckoAccessible->IsLocal()) {
+    
     
     return nil;
   }
 
-  return static_cast<AccessibleWrap*>(mGeckoAccessible->AsLocal())
-      ->GetNativeWidget();
+  id view = static_cast<AccessibleWrap*>(mGeckoAccessible->AsLocal())
+                ->GetNativeWidget();
+
+  if (![view hasMozAccessible]) {
+    
+    return nil;
+  }
+
+  return view;
 }
 
 - (BOOL)isRoot {
