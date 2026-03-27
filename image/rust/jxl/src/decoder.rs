@@ -2,7 +2,7 @@
 
 
 
-use crate::cms::{QcmsCms, RenderingIntent};
+use crate::cms::{QcmsCms, RenderingIntent, SRGB_ICC};
 use jxl::api::{
     JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlColorType, JxlDataFormat,
     JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
@@ -60,7 +60,13 @@ impl JxlApiDecoder {
             let output_profile = match output_icc {
                 
                 Some(icc) => JxlColorProfile::Icc(icc.to_vec()),
-                None => JxlColorProfile::Simple(JxlColorEncoding::srgb( false)),
+                None => {
+                    if static_prefs::pref!("image.jxl.force_icc_slow_path") {
+                        JxlColorProfile::Icc(SRGB_ICC.clone())
+                    } else {
+                        JxlColorProfile::Simple(JxlColorEncoding::srgb( false))
+                    }
+                }
             };
             inner
                 .set_output_color_profile(output_profile)
