@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPChild.h"
 
 #include <algorithm>
@@ -52,6 +51,7 @@
 
 #  include "WinUtils.h"
 #  include "mozilla/Services.h"
+#  include "mozilla/StaticPrefs_dom.h"
 #  include "mozilla/WinDllServices.h"
 #  include "nsIObserverService.h"
 #else
@@ -468,11 +468,11 @@ GMPChild::MakeCDMHostVerificationPaths(const nsACString& aPluginLibPath) {
   
   
   
-  const std::string pluginContainer =
+  const std::string currentProcessBinary =
       WideToUTF8(CommandLine::ForCurrentProcess()->program());
   nsString str;
 
-  CopyUTF8toUTF16(nsDependentCString(pluginContainer.c_str()), str);
+  CopyUTF8toUTF16(nsDependentCString(currentProcessBinary.c_str()), str);
   nsCOMPtr<nsIFile> path;
   if (NS_FAILED(NS_NewLocalFile(str, getter_AddRefs(path))) ||
       !AppendHostPath(path, paths)) {
@@ -482,29 +482,22 @@ GMPChild::MakeCDMHostVerificationPaths(const nsACString& aPluginLibPath) {
   }
 
 #if defined(XP_WIN)
-  
-  
-  const bool isWindowsOnARM64 =
-      IsFileLeafEqualToASCII(GetParentFile(path), "i686");
-  if (isWindowsOnARM64) {
-    nsCOMPtr<nsIFile> x86XulPath =
-        AppendFile(GetParentFile(path), XUL_LIB_FILE);
-    if (!AppendHostPath(x86XulPath, paths)) {
-      return paths;
-    }
-  }
+  bool addFirefoxBinaryPath = !StaticPrefs::dom_ipc_alwaysUseParentBinary();
+#else
+  bool addFirefoxBinaryPath = true;
 #endif
 
   
   nsCOMPtr<nsIFile> appDir = GetFirefoxAppPath(path);
-  path = AppendFile(CloneFile(appDir), FIREFOX_FILE);
-  if (!AppendHostPath(path, paths)) {
-    return paths;
+  if (addFirefoxBinaryPath) {
+    path = AppendFile(CloneFile(appDir), FIREFOX_FILE);
+    if (!AppendHostPath(path, paths)) {
+      return paths;
+    }
   }
 
   
   
-  appDir->GetPath(str);
   path = AppendFile(CloneFile(appDir), XUL_LIB_FILE);
   if (!AppendHostPath(path, paths)) {
     return paths;

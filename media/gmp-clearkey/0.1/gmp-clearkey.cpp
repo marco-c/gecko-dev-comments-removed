@@ -128,12 +128,7 @@ static uint32_t NumExpectedHostFiles(const cdm::HostFile* aHostFiles,
 #else
   
   
-  
-  
-  bool i686underAArch64 = false;
-  
-  
-  const std::wstring plugincontainer = L"i686\\plugin-container.exe";
+  const std::wstring plugincontainer = L"plugin-container.exe";
   for (uint32_t i = 0; i < aNumFiles; i++) {
     const cdm::HostFile& hostFile = aHostFiles[i];
     if (hostFile.file != cdm::kInvalidPlatformFile) {
@@ -141,12 +136,14 @@ static uint32_t NumExpectedHostFiles(const cdm::HostFile* aHostFiles,
       auto offset = path.find(plugincontainer);
       if (offset != std::string::npos &&
           offset == path.size() - plugincontainer.size()) {
-        i686underAArch64 = true;
-        break;
+        
+        return 4;
       }
     }
   }
-  return i686underAArch64 ? 5 : 4;
+
+  
+  return 3;
 #endif
 }
 
