@@ -104,6 +104,14 @@ typedef IntRect (*ReorientRowFn)(const uint8_t* aSrc, int32_t aSrcRow,
 GFX2D_API ReorientRowFn
 ReorientRow(const struct image::Orientation& aOrientation);
 
+
+
+
+
+
+GFX2D_API void ConvertFloat16RowToUint16(const uint16_t* aSrc, uint16_t* aDst,
+                                         uint32_t aWidth, uint32_t aChannels);
+
 }  
 }  
 
