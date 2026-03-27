@@ -596,7 +596,7 @@ class CallFrameInfo::Rule final {
   
   string show() const {
     char buf[100];
-    string s = "";
+    string s;
     switch (tag_) {
       case Tag::INVALID:
         s = "INVALID";
