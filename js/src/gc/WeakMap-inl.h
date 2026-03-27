@@ -140,8 +140,8 @@ WeakMap<K, V, AP>::WeakMap(JS::Zone* zone)
 template <class K, class V, class AP>
 
 MOZ_ALWAYS_INLINE void WeakMap<K, V, AP>::staticAssertions() {
-  static_assert(std::is_same_v<typename RemoveBarrier<K>::Type, K>);
-  static_assert(std::is_same_v<typename RemoveBarrier<V>::Type, V>);
+  static_assert(!IsBarriered<K>::value, "Don't use barriered types");
+  static_assert(!IsBarriered<V>::value, "Don't use barriered types");
 
   
   
