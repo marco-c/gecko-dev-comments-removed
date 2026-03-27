@@ -1328,4 +1328,20 @@ hb_ot_shape_glyphs_closure (hb_font_t          *font,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+unsigned int
+hb_ot_shape_get_buffer_format_serial (void)
+{
+  return HB_OT_SHAPE_BUFFER_FORMAT_SERIAL;
+}
+
 #endif

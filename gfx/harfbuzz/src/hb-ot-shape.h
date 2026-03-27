@@ -54,6 +54,21 @@ hb_ot_shape_plan_get_feature_tags (hb_shape_plan_t *shape_plan,
 				   unsigned int    *tag_count, 
 				   hb_tag_t        *tags );
 
+
+
+
+
+
+
+
+
+
+
+#define HB_OT_SHAPE_BUFFER_FORMAT_SERIAL 1
+
+HB_EXTERN unsigned int
+hb_ot_shape_get_buffer_format_serial (void);
+
 HB_END_DECLS
 
 #endif 
