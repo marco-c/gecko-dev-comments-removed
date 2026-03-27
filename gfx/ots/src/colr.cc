@@ -797,7 +797,6 @@ bool ParseBaseGlyphList(const ots::Font* font,
   int32_t prevGlyphID = -1;
   
   
-  size_t saveOffset = subtable.offset();
   for (auto i = 0u; i < numBaseGlyphPaintRecords; ++i) {
     uint16_t glyphID;
     uint32_t paintOffset;
@@ -825,18 +824,9 @@ bool ParseBaseGlyphList(const ots::Font* font,
     prevGlyphID = glyphID;
   }
 
-  subtable.set_offset(saveOffset);
-  for (auto i = 0u; i < numBaseGlyphPaintRecords; ++i) {
-    uint16_t glyphID;
-    uint32_t paintOffset;
-
-    if (!subtable.ReadU16(&glyphID) ||
-        !subtable.ReadU32(&paintOffset)) {
-      return OTS_FAILURE_MSG("Failed to read base glyph list");
-    }
-
-    if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, 0)) {
-      return OTS_FAILURE_MSG("Failed to parse paint for base glyph ID %u", glyphID);
+  for (const auto& [gid, rec] : state.baseGlyphMap) {
+    if (!ParsePaint(font, rec.first, rec.second, state, 0)) {
+      return OTS_FAILURE_MSG("Failed to parse paint for base glyph ID %u", gid);
     }
 
     
