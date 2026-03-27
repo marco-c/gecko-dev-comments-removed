@@ -229,22 +229,22 @@ class TestStructuredLogging(unittest.TestCase):
 
         host, port = self.log_server.server_address
 
-        sock = socket.socket()
-        sock.connect((host, port))
+        with socket.socket() as sock:
+            sock.connect((host, port))
 
-        
-        
-        sock.sendall(message_string[:8].encode())
-        time.sleep(0.01)
-        sock.sendall(message_string[8:32].encode())
-        time.sleep(0.01)
-        sock.sendall(message_string[32:64].encode())
-        time.sleep(0.01)
-        sock.sendall(message_string[64:128].encode())
-        time.sleep(0.01)
-        sock.sendall(message_string[128:].encode())
+            
+            
+            sock.sendall(message_string[:8].encode())
+            time.sleep(0.01)
+            sock.sendall(message_string[8:32].encode())
+            time.sleep(0.01)
+            sock.sendall(message_string[32:64].encode())
+            time.sleep(0.01)
+            sock.sendall(message_string[64:128].encode())
+            time.sleep(0.01)
+            sock.sendall(message_string[128:].encode())
 
-        server_thread.join()
+            server_thread.join()
 
 
 class Loggable(mozlog.LoggingMixin):
