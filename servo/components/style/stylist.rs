@@ -61,6 +61,7 @@ use crate::stylesheets::{
     CounterStyleRule, CssRule, CssRuleRef, EffectiveRulesIterator, FontFaceRule,
     FontFeatureValuesRule, FontPaletteValuesRule, Origin, OriginSet, PagePseudoClassFlags,
     PageRule, PerOrigin, PerOriginIter, PositionTryRule, StylesheetContents, StylesheetInDocument,
+    ViewTransitionRule,
 };
 use crate::stylesheets::{CustomMediaEvaluator, CustomMediaMap};
 #[cfg(feature = "gecko")]
@@ -1813,6 +1814,17 @@ impl Stylist {
     }
 
     
+    
+    #[inline]
+    pub fn last_view_transition_rule(&self) -> Option<&Arc<ViewTransitionRule>> {
+        
+        self.iter_extra_data_origins()
+            .flat_map(|(d, _)| d.view_transitions.iter())
+            .last()
+            .map(|(rule, _)| rule)
+    }
+
+    
     #[inline]
     #[cfg(feature = "gecko")]
     fn lookup_position_try<'a, E>(
@@ -2333,6 +2345,9 @@ pub struct ExtraStyleData {
 
     
     pub pages: PageRuleMap,
+
+    
+    pub view_transitions: LayerOrderedVec<Arc<ViewTransitionRule>>,
 }
 
 impl ExtraStyleData {
@@ -2397,12 +2412,17 @@ impl ExtraStyleData {
         Ok(())
     }
 
+    fn add_view_transition(&mut self, rule: &Arc<ViewTransitionRule>, layer: LayerId) {
+        self.view_transitions.push(rule.clone(), layer)
+    }
+
     fn sort_by_layer(&mut self, layers: &[CascadeLayer]) {
         self.font_faces.sort(layers);
         self.font_feature_values.sort(layers);
         self.font_palette_values.sort(layers);
         self.counter_styles.sort(layers);
         self.position_try_rules.sort(layers);
+        self.view_transitions.sort(layers);
     }
 
     fn clear(&mut self) {
@@ -4121,6 +4141,10 @@ impl CascadeData {
                     self.extra_data
                         .add_page(guard, rule, containing_rule_state.layer_id)?;
                     handled = false;
+                },
+                CssRule::ViewTransition(ref rule) => {
+                    self.extra_data
+                        .add_view_transition(rule, containing_rule_state.layer_id);
                 },
                 _ => {
                     handled = false;
