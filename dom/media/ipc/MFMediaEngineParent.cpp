@@ -574,6 +574,15 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
 
   rv = mContentProtectionManager->SetCDMProxy(proxy);
   CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to set CDM proxy");
+
+  mContentProtectionManager->SetNotifyWaitingForKeyCallback(
+      [self = RefPtr{this}]() {
+        if (self->CanSend() && self->mMediaEngine) {
+          (void)self->SendNotifyWaitingForKey();
+        }
+      },
+      mManagerThread);
+
   
   
   if (mMediaSource) {
