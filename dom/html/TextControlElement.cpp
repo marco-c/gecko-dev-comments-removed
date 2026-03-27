@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextControlElement.h"
 
 #include "mozilla/ContentEvents.h"
@@ -15,6 +13,7 @@
 #include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsFocusManager.h"
 #include "nsFrameSelection.h"
@@ -257,6 +256,11 @@ void TextControlElement::SetupShadowTree(ShadowRoot& aShadow, bool aNotify) {
       text->MarkAsMaybeMasked();
     }
     root->AppendChildTo(text, false, IgnoreErrors());
+    if (IsTextArea()) {
+      RefPtr br = doc.CreateHTMLElement(nsGkAtoms::br);
+      br->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+      root->AppendChildTo(br, false, IgnoreErrors());
+    }
   }
   aShadow.AppendChildTo(root, aNotify, IgnoreErrors());
 
