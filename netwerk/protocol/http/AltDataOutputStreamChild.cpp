@@ -52,6 +52,9 @@ void AltDataOutputStreamChild::AddIPDLReference() {
 
 void AltDataOutputStreamChild::ReleaseIPDLReference() {
   MOZ_ASSERT(mIPCOpen, "Attempt to release nonexistent IPDL reference");
+  if (!mIPCOpen) {
+    return;  
+  }
   mIPCOpen = false;
 
   if (mCallback) {
