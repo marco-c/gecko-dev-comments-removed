@@ -337,12 +337,12 @@ class txCompileObserver final : public txACompileObserver {
                      nsIPrincipal* aSourcePrincipal,
                      ReferrerPolicy aReferrerPolicy);
 
+  
+  txCompileObserver() = delete;
+
  private:
   RefPtr<txMozillaXSLTProcessor> mProcessor;
   nsCOMPtr<Document> mLoaderDocument;
-
-  
-  txCompileObserver();
 
   
   ~txCompileObserver() = default;

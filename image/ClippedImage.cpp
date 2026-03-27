@@ -125,7 +125,7 @@ ClippedImage::ClippedImage(Image* aImage, nsIntRect aClip,
   }
 }
 
-ClippedImage::~ClippedImage() {}
+ClippedImage::~ClippedImage() = default;
 
 bool ClippedImage::ShouldClip() {
   

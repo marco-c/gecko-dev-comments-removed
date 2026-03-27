@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "nsExceptionHandler.h"
 #include "nsExceptionHandlerUtils.h"
 #include "ExtraFileParser.h"
@@ -571,11 +573,10 @@ class PlatformWriter {
 
   FileHandle FileDesc() { return mFD; }
 
- private:
   PlatformWriter(const PlatformWriter&) = delete;
-
   const PlatformWriter& operator=(const PlatformWriter&) = delete;
 
+ private:
   void WriteChar(char aChar) {
     if (mPos == kBufferSize) {
       Flush();

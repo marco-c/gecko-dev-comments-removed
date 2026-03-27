@@ -604,7 +604,7 @@ nsresult CSP_AppendCSPFromHeader(nsIContentSecurityPolicy* aCsp,
 
 
 
-nsCSPBaseSrc::nsCSPBaseSrc() {}
+nsCSPBaseSrc::nsCSPBaseSrc() = default;
 
 nsCSPBaseSrc::~nsCSPBaseSrc() = default;
 

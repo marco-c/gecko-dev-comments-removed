@@ -27,9 +27,8 @@ AuthenticatorResponse::AuthenticatorResponse(nsPIDOMWindowInner* aParent)
   
 }
 
-AuthenticatorResponse::~AuthenticatorResponse() {
-  
-}
+
+AuthenticatorResponse::~AuthenticatorResponse() = default;
 
 nsISupports* AuthenticatorResponse::GetParentObject() const { return mParent; }
 

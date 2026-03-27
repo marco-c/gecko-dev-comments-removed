@@ -66,9 +66,8 @@ TransportLayerIce::TransportLayerIce() : stream_(nullptr), component_(0) {
   
 }
 
-TransportLayerIce::~TransportLayerIce() {
-  
-}
+
+TransportLayerIce::~TransportLayerIce() = default;
 
 void TransportLayerIce::SetParameters(RefPtr<NrIceMediaStream> stream,
                                       int component) {

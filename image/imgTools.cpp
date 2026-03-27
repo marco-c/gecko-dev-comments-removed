@@ -282,9 +282,9 @@ NS_IMPL_ISUPPORTS_INHERITED(ImageDecoderHelper, Runnable,
 
 NS_IMPL_ISUPPORTS(imgTools, imgITools)
 
-imgTools::imgTools() {  }
+imgTools::imgTools() = default;
 
-imgTools::~imgTools() {  }
+imgTools::~imgTools() = default;
 
 NS_IMETHODIMP
 imgTools::DecodeImageFromArrayBuffer(JS::Handle<JS::Value> aArrayBuffer,
