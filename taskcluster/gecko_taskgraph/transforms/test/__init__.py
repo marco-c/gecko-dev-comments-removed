@@ -19,15 +19,25 @@ for example - use `all_tests.py` instead.
 
 import logging
 from importlib import import_module
+from typing import Literal, Union
+from typing import Optional as TOptional
 
 from mozbuild.schedules import INCLUSIVE_COMPONENTS
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import (
+    LegacySchema,
+    Schema,
+    optionally_keyed_by,
+    resolve_keyed_by,
+)
 from voluptuous import Any, Exclusive, Optional, Required
 
-from gecko_taskgraph.optimize.schema import LegacyOptimizationSchema
-from gecko_taskgraph.transforms.job import job_description_schema
-from gecko_taskgraph.transforms.job.run_task import run_task_schema
+from gecko_taskgraph.optimize.schema import (
+    LegacyOptimizationSchema,
+    OptimizationSchema,
+)
+from gecko_taskgraph.transforms.job import JobDescriptionSchema, job_description_schema
+from gecko_taskgraph.transforms.job.run_task import RunTaskSchema, run_task_schema
 from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
 from gecko_taskgraph.transforms.test.other import get_mobile_project
 from gecko_taskgraph.util.chunking import manifest_loaders
@@ -317,6 +327,353 @@ test_description_schema = LegacySchema({
 })
 
 
+class SuiteSchema(Schema, kw_only=True):
+    category: TOptional[str] = None
+    name: TOptional[  
+        optionally_keyed_by("variant", str, use_msgspec=True)
+    ] = None
+
+
+class MozharnessSchema(Schema, kw_only=True):
+    
+    script: optionally_keyed_by("test-platform", str, use_msgspec=True)  
+    
+    config: optionally_keyed_by("test-platform", list[str], use_msgspec=True)  
+    
+    mochitest_flavor: TOptional[str] = None
+    
+    actions: TOptional[list[str]] = None
+    
+    
+    extra_options: optionally_keyed_by(  
+        "test-platform", "variant", "subtest", "app", list[str], use_msgspec=True
+    )
+    
+    
+    build_artifact_name: TOptional[str] = None
+    installer_url: TOptional[str] = None
+    
+    
+    tooltool_downloads: Union[bool, Literal["public", "internal"]] = False
+    
+    include_blob_upload_branch: TOptional[bool] = None
+    
+    
+    download_symbols: TOptional[Union[bool, Literal["ondemand"]]] = None
+    
+    
+    
+    
+    set_moz_node_path: bool = False
+    
+    
+    chunked: optionally_keyed_by("test-platform", bool, use_msgspec=True)  
+    requires_signed_builds: optionally_keyed_by(  
+        "test-platform", "variant", bool, use_msgspec=True
+    )
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.download_symbols is False:
+            raise ValueError("download-symbols must be True or 'ondemand'")
+        if self.tooltool_downloads is True:
+            raise ValueError(
+                "tooltool-downloads must be False, 'public', or 'internal'"
+            )
+
+
+class DockerImageSchema(Schema, kw_only=True):
+    in_tree: TOptional[str] = None
+    indexed: TOptional[str] = None
+
+
+class TargetIndexSchema(Schema, kw_only=True):
+    index: str
+    name: str
+
+
+class TargetUpstreamTaskSchema(Schema, kw_only=True):
+    upstream_task: str
+    name: str
+
+
+class TestManifestsSchema(Schema, kw_only=True):
+    active: list[str]
+    skipped: list[str]
+
+
+class TestDescriptionSchema(Schema, kw_only=True):
+    
+    description: str
+    
+    suite: TOptional[  
+        Union[
+            optionally_keyed_by("variant", str, use_msgspec=True),
+            SuiteSchema,
+        ]
+    ] = None
+    
+    workdir: TOptional[  
+        optionally_keyed_by(
+            "test-platform", Union[str, Literal["default"]], use_msgspec=True
+        )
+    ] = None
+    
+    
+    
+    try_name: TOptional[str] = None
+    
+    tags: TOptional[dict[str, object]] = None
+    
+    
+    treeherder_symbol: str
+    
+    
+    
+    treeherder_machine_platform: TOptional[str] = None
+    
+    
+    attributes: TOptional[dict[str, object]] = None
+    
+    task_from: TOptional[str] = None
+    
+    
+    
+    
+    
+    
+    
+    run_on_projects: TOptional[  
+        optionally_keyed_by(
+            "app",
+            "subtest",
+            "test-platform",
+            "test-name",
+            "variant",
+            Union[list[str], Literal["built-projects"]],
+            use_msgspec=True,
+        )
+    ] = None
+    
+    run_on_repo_type: TOptional[
+        JobDescriptionSchema.__annotations__["run_on_repo_type"]
+    ] = None  
+    
+    run_on_git_branches: TOptional[
+        JobDescriptionSchema.__annotations__["run_on_git_branches"]
+    ] = None  
+    
+    
+    
+    built_projects_only: TOptional[bool] = None
+    
+    tier: TOptional[  
+        optionally_keyed_by(
+            "test-platform",
+            "variant",
+            "app",
+            "subtest",
+            Union[int, Literal["default"]],
+            use_msgspec=True,
+        )
+    ] = None
+    
+    
+    
+    chunks: optionally_keyed_by(  
+        "test-platform", "variant", Union[int, Literal["dynamic"]], use_msgspec=True
+    )
+    default_chunks: TOptional[  
+        optionally_keyed_by("test-platform", "variant", int, use_msgspec=True)
+    ] = None
+    
+    
+    timeoutfactor: TOptional[  
+        optionally_keyed_by("test-platform", Union[int, float], use_msgspec=True)
+    ] = None
+    
+    
+    
+    test_manifest_loader: TOptional[  
+        optionally_keyed_by(
+            "test-platform",
+            TOptional[Union[Literal[tuple(manifest_loaders)]]],  
+            use_msgspec=True,
+        )
+    ] = None
+    
+    
+    expires_after: TOptional[str] = None
+    
+    
+    variants: TOptional[list[str]] = None
+    
+    run_without_variant: optionally_keyed_by("test-platform", bool, use_msgspec=True)  
+    
+    instance_size: optionally_keyed_by(  
+        "test-platform",
+        "variant",
+        Literal[
+            "default",
+            "large-legacy",
+            "large",
+            "large-noscratch",
+            "xlarge",
+            "xlarge-noscratch",
+            "highcpu",
+        ],
+        use_msgspec=True,
+    )
+    
+    virtualization: optionally_keyed_by(  
+        "test-platform",
+        Literal["virtual", "virtual-with-gpu", "hardware"],
+        use_msgspec=True,
+    )
+    
+    
+    loopback_audio: bool
+    loopback_video: bool
+    
+    
+    
+    
+    allow_software_gl_layers: TOptional[bool] = None
+    
+    
+    
+    
+    docker_image: optionally_keyed_by(  
+        "test-platform",
+        Union[str, DockerImageSchema],
+        use_msgspec=True,
+    )
+    
+    
+    max_run_time: optionally_keyed_by(  
+        "test-platform", "subtest", "variant", "app", int, use_msgspec=True
+    )
+    
+    retry_exit_status: TOptional[list[int]] = None
+    
+    checkout: bool
+    
+    reboot: TOptional[Union[bool, Literal["always", "on-exception", "on-failure"]]] = (
+        None
+    )
+    
+    mozharness: MozharnessSchema
+    
+    test_manifests: TOptional[Union[list[str], TestManifestsSchema]] = None
+    
+    confirm_failure: TOptional[bool] = None
+    
+    this_chunk: TOptional[int] = None
+    
+    
+    os_groups: TOptional[  
+        optionally_keyed_by("test-platform", list[str], use_msgspec=True)
+    ] = None
+    run_as_administrator: TOptional[  
+        optionally_keyed_by("test-platform", bool, use_msgspec=True)
+    ] = None
+    
+    
+    build_platform: str
+    
+    build_label: str
+    
+    
+    build_signing_label: TOptional[  
+        optionally_keyed_by("variant", str, use_msgspec=True)
+    ] = None
+    
+    build_attributes: dict[str, object]
+    
+    test_platform: str
+    
+    
+    limit_platforms: TOptional[  
+        optionally_keyed_by("app", "subtest", list[str], use_msgspec=True)
+    ] = None
+    
+    test_name: str
+    
+    product: TOptional[str] = None
+    
+    
+    when: TOptional[dict[str, list[str]]] = None
+    
+    
+    
+    optimization: TOptional[OptimizationSchema] = None
+    
+    
+    
+    schedules_component: TOptional[Union[str, list[str]]] = None
+    worker_type: TOptional[  
+        optionally_keyed_by(
+            "test-platform", "variant", TOptional[str], use_msgspec=True
+        )
+    ] = None
+    
+    require_signed_extensions: TOptional[  
+        optionally_keyed_by("release-type", "test-platform", bool, use_msgspec=True)
+    ] = None
+    
+    
+    
+    
+    target: TOptional[  
+        optionally_keyed_by(
+            "app",
+            "test-platform",
+            "variant",
+            Union[str, None, TargetIndexSchema, TargetUpstreamTaskSchema],
+            use_msgspec=True,
+        )
+    ] = None
+    
+    
+    fetches: TOptional[object] = None
+    
+    dependencies: TOptional[object] = None
+    
+    
+    raptor: TOptional[object] = None
+    
+    
+    app: TOptional[str] = None
+    subtest: TOptional[str] = None
+    
+    supports_artifact_builds: TOptional[bool] = None
+    
+    use_python: TOptional[JobDescriptionSchema.__annotations__["use_python"]] = None  
+    
+    use_uv: TOptional[bool] = None
+    
+    use_caches: TOptional[  
+        optionally_keyed_by(
+            "test-platform",
+            RunTaskSchema.__annotations__["use_caches"],
+            use_msgspec=True,
+        )
+    ] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        
+        exclusive_count = sum([
+            self.optimization is not None,
+            self.when is not None,
+            self.schedules_component is not None,
+        ])
+        if exclusive_count > 1:
+            raise ValueError(
+                "'optimization', 'when', and 'schedules-component' are mutually exclusive"
+            )
+
+
 @transforms.add
 def handle_keyed_by_mozharness(config, tasks):
     """Resolve a mozharness field if it is keyed by something"""
@@ -391,7 +748,7 @@ def set_defaults(config, tasks):
         yield task
 
 
-transforms.add_validate(test_description_schema)
+transforms.add_validate(TestDescriptionSchema)
 
 
 @transforms.add
