@@ -216,7 +216,8 @@ const gExperimentalPane = {
 
     if (
       shouldHide &&
-      document.getElementById("categories").currentView == "paneExperimental"
+      document.getElementById("categories").selectedItem?.id ==
+        "category-experimental"
     ) {
       
       gotoPref("general");
