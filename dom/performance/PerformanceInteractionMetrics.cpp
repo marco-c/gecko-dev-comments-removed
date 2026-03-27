@@ -2,15 +2,16 @@
 
 
 
-
-
 #include "PerformanceInteractionMetrics.h"
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/TextEvents.h"
+
+static mozilla::LazyLogModule gEventTimingLog("EventTiming");
 
 
 
@@ -105,9 +106,15 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
     
     
     
+    MOZ_LOG(gEventTimingLog, mozilla::LogLevel::Debug,
+            ("PendingKeyDowns: inserting keydown code=%u, total pending=%u",
+             code, mPendingKeyDowns.Count() + 1));
     mPendingKeyDowns.InsertOrUpdate(code, aEventTiming);
     uint64_t interactionId = IncreaseInteractionValueAndCount();
     mLastKeydownInteractionValue = Some(interactionId);
+    MOZ_LOG(gEventTimingLog, mozilla::LogLevel::Debug,
+            ("PendingKeyDowns: keydown assigned interactionId=%" PRIu64,
+             interactionId));
     return Some(interactionId);
   }
 
@@ -133,10 +140,18 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
     auto entry = mPendingKeyDowns.MaybeGet(code);
     
     if (!entry) {
+      MOZ_LOG(gEventTimingLog, mozilla::LogLevel::Debug,
+              ("PendingKeyDowns: keyup code=%u not found in pendingKeyDowns "
+               "(size=%u), returning 0",
+               code, mPendingKeyDowns.Count()));
       return Some(0);
     }
 
     uint64_t interactionId = (*entry)->InteractionId();
+    MOZ_LOG(gEventTimingLog, mozilla::LogLevel::Debug,
+            ("PendingKeyDowns: keyup code=%u found, interactionId=%" PRIu64
+             ", removing from pendingKeyDowns",
+             code, interactionId));
 
     
     mPendingKeyDowns.Remove(code);
@@ -147,6 +162,9 @@ Maybe<uint64_t> PerformanceInteractionMetrics::ComputeInteractionId(
 
   
   if (eventType == eCompositionStart) {
+    MOZ_LOG(gEventTimingLog, mozilla::LogLevel::Debug,
+            ("PendingKeyDowns: compositionstart clearing %u pending keydowns",
+             mPendingKeyDowns.Count()));
     
     for (auto iter = mPendingKeyDowns.Iter(); !iter.Done(); iter.Next()) {
       PerformanceEventTiming* entry = iter.Data();
