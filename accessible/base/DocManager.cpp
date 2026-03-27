@@ -15,10 +15,15 @@
 #  include "Logging.h"
 #endif
 
+#include "mozilla/a11y/DocAccessibleChild.h"
+#ifdef MOZ_ENABLE_SKIA_PDF
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/dom/Event.h"  
 #include "nsContentUtils.h"
 #include "nsDocShellLoadTypes.h"
@@ -167,6 +172,44 @@ bool DocManager::IsProcessingRefreshDriverNotification() const {
     }
   }
   return false;
+}
+#endif
+
+#ifdef MOZ_ENABLE_SKIA_PDF
+void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
+  if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
+    return;
+  }
+  
+  
+  DocAccessible* topDocAcc =
+      CreateDocOrRootAccessible(aDoc,  true);
+  if (!topDocAcc) {
+    return;
+  }
+  
+  
+  topDocAcc->DoInitialUpdate();
+  
+  
+  
+  AutoTArray<RefPtr<dom::Document>, 8> descendants;
+  aDoc->CollectDescendantDocuments(
+      descendants, dom::Document::IncludeSubResources::No,
+      [](const dom::Document* aDescDoc) { return true; });
+  for (dom::Document* descDoc : descendants) {
+    if (DocAccessible* descDocAcc =
+            CreateDocOrRootAccessible(descDoc,  true)) {
+      descDocAcc->DoInitialUpdate();
+    }
+  }
+  if (DocAccessibleChild* ipcDoc = topDocAcc->IPCDoc()) {
+    ipcDoc->SendPrinting();
+  } else if (XRE_IsParentProcess()) {
+    if (BrowsingContext* bc = aDoc->GetBrowsingContext()) {
+      PdfStructTreeBuilder::Init(bc);
+    }
+  }
 }
 #endif
 
@@ -427,11 +470,13 @@ void DocManager::RemoveListeners(Document* aDocument) {
                                  TrustedEventsAtCapture());
 }
 
-DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
+DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
+                                                     bool aAllowStatic) {
   
   
   if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
-      aDocument->IsResourceDoc() || aDocument->IsStaticDocument() ||
+      aDocument->IsResourceDoc() ||
+      (!aAllowStatic && aDocument->IsStaticDocument()) ||
       !aDocument->IsActive()) {
     return nullptr;
   }
@@ -461,7 +506,8 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
   }
 
   nsIWidget* widget = presShell->GetRootWidget();
-  if (!widget || widget->GetWindowType() == widget::WindowType::Invisible) {
+  if (!aAllowStatic &&
+      (!widget || widget->GetWindowType() == widget::WindowType::Invisible)) {
     return nullptr;
   }
 
