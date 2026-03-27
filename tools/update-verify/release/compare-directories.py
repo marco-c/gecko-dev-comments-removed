@@ -30,6 +30,19 @@ TRANSFORMS = [
         "files": [
             "defaults/pref/channel-prefs.js",
         ],
+        "channel_prefix": ["nightly-try"],
+        "side": "source",
+        "substitution": [
+            'pref("app.update.channel", "nightly");\n',
+            'pref("app.update.channel", "nightly-try");\n',
+        ],
+    },
+    {
+        
+        
+        "files": [
+            "defaults/pref/channel-prefs.js",
+        ],
         "channel_prefix": ["aurora", "beta", "release", "esr"],
         "side": "source",
         "deletion": '//@line 6 "',
