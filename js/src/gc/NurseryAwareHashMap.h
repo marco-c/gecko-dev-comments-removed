@@ -21,39 +21,9 @@ namespace detail {
 
 
 
-template <typename T>
-class UnsafeBareWeakHeapPtr : public ReadBarriered<T> {
- public:
-  UnsafeBareWeakHeapPtr()
-      : ReadBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-  MOZ_IMPLICIT UnsafeBareWeakHeapPtr(const T& v) : ReadBarriered<T>(v) {}
-  explicit UnsafeBareWeakHeapPtr(const UnsafeBareWeakHeapPtr& v)
-      : ReadBarriered<T>(v) {}
-  UnsafeBareWeakHeapPtr(UnsafeBareWeakHeapPtr&& v)
-      : ReadBarriered<T>(std::move(v)) {}
 
-  UnsafeBareWeakHeapPtr& operator=(const UnsafeBareWeakHeapPtr& v) {
-    this->unbarrieredSet(v.unbarrieredGet());
-    return *this;
-  }
+DEFINE_BARRIERED_PTR(UnsafeBareWeakHeapPtr, gc::BarrierOption_ReadBarrier);
 
-  UnsafeBareWeakHeapPtr& operator=(const T& v) {
-    this->unbarrieredSet(v);
-    return *this;
-  }
-
-  const T get() const {
-    if (!InternalBarrierMethods<T>::isMarkable(this->unbarrieredGet())) {
-      return JS::SafelyInitialized<T>::create();
-    }
-    this->read();
-    return this->unbarrieredGet();
-  }
-
-  using ReadBarriered<T>::unbarrieredGet;
-
-  explicit operator bool() const { return bool(this->unbarrieredGet()); }
-};
 }  
 
 enum : bool { DuplicatesNotPossible, DuplicatesPossible };

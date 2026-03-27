@@ -310,7 +310,6 @@
 
 
 
-
 namespace js {
 
 class NativeObject;
@@ -491,8 +490,6 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
  protected:
   
   explicit BarrieredBase(const T& v) : value(v) {}
-
-  
   BarrieredBase(const BarrieredBase<T>& other) = default;
 
   
@@ -509,7 +506,6 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
   
   T* unbarrieredAddress() const { return const_cast<T*>(&value); }
 };
-
 
 namespace gc {
 
@@ -712,11 +708,18 @@ class WriteBarriered : public BarrieredBase<T>,
   }
 };
 
-#define DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(Wrapper, T) \
-  DECLARE_POINTER_ASSIGN_OPS(Wrapper, T)                \
-  Wrapper<T>& operator=(Wrapper<T>&& other) noexcept {  \
-    setUnchecked(other.release());                      \
-    return *this;                                       \
+
+
+
+
+#define DEFINE_BARRIERED_PTR(Name, Options)              \
+  template <typename T>                                  \
+  class Name : public gc::BarrieredPtrImpl<T, Options> { \
+    using Base = gc::BarrieredPtrImpl<T, Options>;       \
+                                                         \
+   public:                                               \
+    using Base::Base;                                    \
+    using Base::operator=;                               \
   }
 
 
@@ -728,47 +731,7 @@ class WriteBarriered : public BarrieredBase<T>,
 
 
 
-template <class T>
-class PreBarriered : public WriteBarriered<T> {
- public:
-  PreBarriered() : WriteBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-  
-
-
-  MOZ_IMPLICIT PreBarriered(const T& v) : WriteBarriered<T>(v) {}
-
-  explicit PreBarriered(const PreBarriered<T>& other)
-      : WriteBarriered<T>(other.unbarrieredGet()) {}
-
-  PreBarriered(PreBarriered<T>&& other) noexcept
-      : WriteBarriered<T>(other.release()) {}
-
-  ~PreBarriered() { this->pre(); }
-
-  void init(const T& v) { this->unbarrieredSet(v); }
-
-  
-  void clear() { set(JS::SafelyInitialized<T>::create()); }
-
-  DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(PreBarriered, T);
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
- private:
-  void setUnchecked(const T& v) {
-    this->pre();
-    this->unbarrieredSet(v);
-  }
-
-  T release() {
-    T tmp = this->unbarrieredGet();
-    this->unbarrieredSet(JS::SafelyInitialized<T>::create());
-    return tmp;
-  }
-};
+DEFINE_BARRIERED_PTR(PreBarriered, gc::BarrierOption_PreWriteBarrier);
 
 }  
 
@@ -792,65 +755,9 @@ namespace js {
 
 
 
-template <class T>
-class GCPtr : public WriteBarriered<T> {
- public:
-  GCPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-
-  explicit GCPtr(const T& v) : WriteBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-  explicit GCPtr(const GCPtr<T>& v) : WriteBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-#ifdef DEBUG
-  ~GCPtr() {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing() ||
-               this->unbarrieredGet() == JS::SafelyInitialized<T>::create());
-
-    Poison(this, JS_FREED_HEAP_PTR_PATTERN, sizeof(*this),
-           MemCheckKind::MakeNoAccess);
-  }
-#endif
-
-  
-
-
-
-
-
-
-  GCPtr(GCPtr<T>&&) = delete;
-  GCPtr<T>& operator=(GCPtr<T>&&) = delete;
-
-  void init(const T& v) {
-    AssertTargetIsNotGray(v);
-    this->unbarrieredSet(v);
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-  DECLARE_POINTER_ASSIGN_OPS(GCPtr, T);
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
- private:
-  void setUnchecked(const T& v) {
-    this->pre();
-    T tmp = this->unbarrieredGet();
-    this->unbarrieredSet(v);
-    this->post(tmp, this->unbarrieredGet());
-  }
-};
+DEFINE_BARRIERED_PTR(GCPtr, gc::BarrierOption_PreWriteBarrier |
+                                gc::BarrierOption_PostWriteBarrier |
+                                gc::BarrierOption_HasGCLifetime);
 
 }  
 
@@ -884,66 +791,8 @@ namespace js {
 
 
 
-template <class T>
-class HeapPtr : public WriteBarriered<T> {
- public:
-  HeapPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-
-  
-  MOZ_IMPLICIT HeapPtr(const T& v) : WriteBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), this->unbarrieredGet());
-  }
-
-  MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& other) : WriteBarriered<T>(other) {
-    this->post(JS::SafelyInitialized<T>::create(), this->unbarrieredGet());
-  }
-
-  HeapPtr(HeapPtr<T>&& other) noexcept : WriteBarriered<T>(other.release()) {
-    this->post(JS::SafelyInitialized<T>::create(), this->unbarrieredGet());
-  }
-
-  ~HeapPtr() {
-    this->pre();
-    this->post(this->unbarrieredGet(), JS::SafelyInitialized<T>::create());
-  }
-
-  void init(const T& v) {
-    MOZ_ASSERT(this->unbarrieredGet() == JS::SafelyInitialized<T>::create());
-    AssertTargetIsNotGray(v);
-    this->unbarrieredSet(v);
-    this->post(JS::SafelyInitialized<T>::create(), this->unbarrieredGet());
-  }
-
-  DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(HeapPtr, T);
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
-  
-  template <class T1, class T2>
-  friend inline void BarrieredSetPair(Zone* zone, HeapPtr<T1*>& v1, T1* val1,
-                                      HeapPtr<T2*>& v2, T2* val2);
-
- protected:
-  void setUnchecked(const T& v) {
-    this->pre();
-    postBarrieredSet(v);
-  }
-
-  void postBarrieredSet(const T& v) {
-    T tmp = this->unbarrieredGet();
-    this->unbarrieredSet(v);
-    this->post(tmp, this->unbarrieredGet());
-  }
-
-  T release() {
-    T tmp = this->unbarrieredGet();
-    postBarrieredSet(JS::SafelyInitialized<T>::create());
-    return tmp;
-  }
-};
+DEFINE_BARRIERED_PTR(HeapPtr, gc::BarrierOption_PreWriteBarrier |
+                                  gc::BarrierOption_PostWriteBarrier);
 
 
 
@@ -1013,20 +862,6 @@ struct DefineComparisonOps<js::HeapPtr<T>> : std::true_type {
 namespace js {
 
 
-template <typename T>
-class ReadBarriered : public BarrieredBase<T> {
- protected:
-  
-  explicit ReadBarriered(const T& v) : BarrieredBase<T>(v) {}
-
-  void read() const {
-    InternalBarrierMethods<T>::readBarrier(this->unbarrieredGet());
-  }
-  void post(const T& prev, const T& next) {
-    InternalBarrierMethods<T>::postBarrier(this->unbarrieredAddress(), prev,
-                                           next);
-  }
-};
 
 
 
@@ -1034,95 +869,14 @@ class ReadBarriered : public BarrieredBase<T> {
 
 
 
-
-template <typename T>
-class WeakHeapPtr : public ReadBarriered<T>,
-                    public WrappedPtrOperations<T, WeakHeapPtr<T>> {
- public:
-  WeakHeapPtr() : ReadBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-
-  
-  MOZ_IMPLICIT WeakHeapPtr(const T& v) : ReadBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-  
-  
-  explicit WeakHeapPtr(const WeakHeapPtr& other) : ReadBarriered<T>(other) {
-    this->post(JS::SafelyInitialized<T>::create(), this->unbarrieredGet());
-  }
-
-  
-  
-  WeakHeapPtr(WeakHeapPtr&& other) noexcept
-      : ReadBarriered<T>(other.release()) {
-    this->post(JS::SafelyInitialized<T>::create(), this->unbarrieredGet());
-  }
-
-  ~WeakHeapPtr() {
-    this->post(this->unbarrieredGet(), JS::SafelyInitialized<T>::create());
-  }
-
-  WeakHeapPtr& operator=(const WeakHeapPtr& v) {
-    AssertTargetIsNotGray(v.unbarrieredGet());
-    T prior = this->unbarrieredGet();
-    this->unbarrieredSet(v.unbarrieredGet());
-    this->post(prior, v.unbarrieredGet());
-    return *this;
-  }
-
-  const T& get() const {
-    if (InternalBarrierMethods<T>::isMarkable(this->unbarrieredGet())) {
-      this->read();
-    }
-    return this->unbarrieredGet();
-  }
-
-  using BarrieredBase<T>::unbarrieredGet;
-
-  explicit operator bool() const { return bool(this->unbarrieredGet()); }
-
-  operator const T&() const { return get(); }
-
-  const T& operator->() const { return get(); }
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
-  void unbarrieredSet(const T& v) {
-    AssertTargetIsNotGray(v);
-    ReadBarriered<T>::unbarrieredSet(v);
-  }
-
- private:
-  void setUnchecked(const T& v) {
-    T tmp = this->unbarrieredGet();
-    this->unbarrieredSet(v);
-    this->post(tmp, v);
-  }
-
-  T release() {
-    T tmp = this->unbarrieredGet();
-    set(JS::SafelyInitialized<T>::create());
-    return tmp;
-  }
-};
+DEFINE_BARRIERED_PTR(WeakHeapPtr, gc::BarrierOption_ReadBarrier |
+                                      gc::BarrierOption_PostWriteBarrier);
 
 
 
 
 
-template <typename T>
-class UnsafeBarePtr : public BarrieredBase<T> {
- public:
-  UnsafeBarePtr() : BarrieredBase<T>(JS::SafelyInitialized<T>::create()) {}
-  MOZ_IMPLICIT UnsafeBarePtr(T v) : BarrieredBase<T>(v) {}
-  const T& get() const { return this->unbarrieredGet(); }
-  void set(T newValue) { this->unbarrieredSet(newValue); }
-  DECLARE_POINTER_CONSTREF_OPS(T);
-};
+DEFINE_BARRIERED_PTR(UnsafeBarePtr, gc::BarrierOption_None);
 
 }  
 
