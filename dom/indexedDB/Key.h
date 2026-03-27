@@ -22,6 +22,10 @@ class ArrayBufferOrView;
 class AutoCheckCannotGC;
 }  
 
+namespace mozilla::dom {
+class IDBTransaction;
+}  
+
 namespace mozilla::dom::indexedDB {
 
 class Key {
@@ -144,7 +148,8 @@ class Key {
   
   
   IDBResult<Ok, IDBSpecialValue::Invalid> SetFromJSVal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal);
+      JSContext* aCx, JS::Handle<JS::Value> aVal,
+      mozilla::dom::IDBTransaction* aTransaction = nullptr);
 
   nsresult ToJSVal(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) const;
 
