@@ -21,12 +21,10 @@
 namespace js {
 
 class JS_PUBLIC_API GenericPrinter;
-class PlainObject;
 
 namespace jit {
 
 class MBasicBlock;
-class MCompare;
 class MDefinition;
 class MIRGenerator;
 class MIRGraph;
@@ -80,14 +78,6 @@ void RenumberBlocks(MIRGraph& graph);
                                         uint32_t numMarkedBlocks);
 
 [[nodiscard]] bool BuildPhiReverseMapping(MIRGraph& graph);
-
-void AssertBasicGraphCoherency(MIRGraph& graph, bool force = false);
-
-void AssertGraphCoherency(MIRGraph& graph, bool force = false);
-
-void AssertExtendedGraphCoherency(MIRGraph& graph,
-                                  bool underValueNumberer = false,
-                                  bool force = false);
 
 [[nodiscard]] bool EliminateRedundantChecks(MIRGraph& graph);
 
@@ -187,39 +177,6 @@ bool DeadIfUnusedAllowEffectful(const MDefinition* def);
 bool IsDiscardable(const MDefinition* def);
 bool IsDiscardableAllowEffectful(const MDefinition* def);
 
-class CompileInfo;
-
-
-
-
-
-
-
-
-void DumpHashedPointer(GenericPrinter& out, const void* p);
-
-
-void DumpMIRDefinitionID(GenericPrinter& out, const MDefinition* def,
-                         bool showDetails = false);
-
-void DumpMIRDefinition(GenericPrinter& out, const MDefinition* def,
-                       bool showDetails = false);
-
-
-void DumpMIRBlockID(GenericPrinter& out, const MBasicBlock* block,
-                    bool showDetails = false);
-
-void DumpMIRBlock(GenericPrinter& out, MBasicBlock* block,
-                  bool showDetails = false);
-
-
-void DumpMIRGraph(GenericPrinter& out, MIRGraph& graph,
-                  bool showDetails = false);
-
-
-void DumpMIRExpressions(GenericPrinter& out, MIRGraph& graph,
-                        const CompileInfo& info, const char* phase,
-                        bool showDetails = false);
 }  
 }  
 
