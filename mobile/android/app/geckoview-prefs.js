@@ -253,8 +253,6 @@ pref("formhelper.autozoom", true);
 
 pref("geckoview.console.enabled", false);
 
-pref("image.cache.size", 1048576); 
-
 
 pref("intl.locale.requested", "");
 
