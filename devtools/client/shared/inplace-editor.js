@@ -417,7 +417,7 @@ class InplaceEditor extends EventEmitter {
       options.start(this, event);
     }
 
-    this.#getGridNamesBeforeCompletion(options.getGridLineNames);
+    this.#populatePropertySpecificDataBeforeCompletion(options);
   }
   static CONTENT_TYPES = CONTENT_TYPES;
 
@@ -1178,13 +1178,22 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  async #getGridNamesBeforeCompletion(getGridLineNames) {
+
+
+  async #populatePropertySpecificDataBeforeCompletion({
+    getGridLineNames,
+    getCssAnchors,
+  }) {
     if (
       getGridLineNames &&
       this.property &&
       GRID_PROPERTY_NAMES.includes(this.property.name)
     ) {
       this.gridLineNames = await getGridLineNames();
+    }
+
+    if (getCssAnchors && this.property?.name === "position-anchor") {
+      this.anchorNames = await getCssAnchors();
     }
 
     if (
@@ -1823,10 +1832,14 @@ class InplaceEditor extends EventEmitter {
 
       
       
+      const alphaNumOrDashedRegExp = /^(\w|--)/;
       finalList.sort((item1, item2) => {
         
         let comparison = item1.label.localeCompare(item2.label);
-        if (/^\w/.test(item1.label) != /^\w/.test(item2.label)) {
+        if (
+          alphaNumOrDashedRegExp.test(item1.label) !=
+          alphaNumOrDashedRegExp.test(item2.label)
+        ) {
           
           comparison = -1 * comparison;
         }
@@ -2052,18 +2065,22 @@ class InplaceEditor extends EventEmitter {
 
 
   #getCSSValuesForPropertyName(propertyName) {
-    const gridLineList = [];
+    const additionalItems = [];
     if (this.gridLineNames) {
       if (GRID_ROW_PROPERTY_NAMES.includes(this.property.name)) {
-        gridLineList.push(...this.gridLineNames.rows);
+        additionalItems.push(...this.gridLineNames.rows);
       }
       if (GRID_COL_PROPERTY_NAMES.includes(this.property.name)) {
-        gridLineList.push(...this.gridLineNames.cols);
+        additionalItems.push(...this.gridLineNames.cols);
       }
     }
+    if (this.property?.name === "position-anchor" && this.anchorNames) {
+      additionalItems.push(...this.anchorNames);
+    }
+
     
     
-    return gridLineList
+    return additionalItems
       .concat(this.cssProperties.getValues(propertyName))
       .sort();
   }

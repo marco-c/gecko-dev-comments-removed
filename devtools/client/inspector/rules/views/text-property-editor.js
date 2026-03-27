@@ -436,6 +436,7 @@ class TextPropertyEditor {
         multiline: true,
         maxWidth: () => this.container.getBoundingClientRect().width,
         cssProperties: this.cssProperties,
+        getCssAnchors: this.#getAnchorNames,
         getCssVariables,
         getGridLineNames: this.#getGridlineNames,
         showSuggestCompletionOnEmpty: true,
@@ -454,6 +455,27 @@ class TextPropertyEditor {
       });
     }
   }
+
+  
+
+
+
+
+  #getAnchorNames = async () => {
+    
+    
+    if (!this.ruleView.pageStyle.traits.hasGetAnchorNames) {
+      return [];
+    }
+
+    const names = await this.ruleView.pageStyle.getAnchorNames(
+      this.ruleView.inspector.selection.nodeFront
+    );
+
+    
+    this.ruleView.inspector.emitForTests("anchor-names-updated");
+    return names;
+  };
 
   
 

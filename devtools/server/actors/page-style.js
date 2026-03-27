@@ -150,6 +150,8 @@ class PageStyleActor extends Actor {
         
         fontWeightLevel4:
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
+        
+        hasGetAnchorNames: true,
       },
     };
   }
@@ -1600,6 +1602,16 @@ class PageStyleActor extends Actor {
         }
       }
     }
+  }
+
+  
+
+
+
+
+
+  getAnchorNames(node) {
+    return InspectorUtils.getAnchorNamesFor(node.rawNode);
   }
 }
 exports.PageStyleActor = PageStyleActor;
