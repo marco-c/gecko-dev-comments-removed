@@ -1130,20 +1130,19 @@ void ScrollContainerFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   mScrolledFrame->SetPosition(ScrollPort().TopLeft() - aScrollPosition);
 
-  
-  
-  
-  
-  
-  AdjustForPerspective(aState.mContentsOverflowAreas.ScrollableOverflow());
-
+  if (ChildrenHavePerspective()) {
+    
+    
+    if (RecomputePerspectiveChildrenOverflow(this)) {
+      aState.mContentsOverflowAreas = mScrolledFrame->GetOverflowAreas();
+    }
+    AdjustForPerspective(aState.mContentsOverflowAreas.ScrollableOverflow());
+  }
   
   const nsSize portSize = ScrollPort().Size();
   nsRect scrolledRect = GetUnsnappedScrolledRectInternal(
       aState.mContentsOverflowAreas.ScrollableOverflow(), portSize);
-  nsRect scrolledArea =
-      scrolledRect.UnionEdges(nsRect(nsPoint(0, 0), portSize));
-
+  nsRect scrolledArea = scrolledRect.UnionEdges(nsRect(nsPoint(), portSize));
   
   
   
@@ -1445,9 +1444,7 @@ void ScrollContainerFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {
   
   
   
-  if (!ChildrenHavePerspective()) {
-    return;
-  }
+  MOZ_ASSERT(ChildrenHavePerspective());
   aScrollableOverflow.SetEmpty();
   GetScrollableOverflowForPerspective(mScrolledFrame, mScrolledFrame,
                                       ScrollPort(), nsPoint(),
@@ -3252,19 +3249,12 @@ void ScrollContainerFrame::ScrollToImpl(
     }
   }
 
-  if (ChildrenHavePerspective()) {
-    
-    
-
+  if (ChildrenHavePerspective() && RecomputePerspectiveChildrenOverflow(this)) {
     
     
     
-    RecomputePerspectiveChildrenOverflow(this);
-
     
     
-    mScrolledFrame->UpdateOverflow();
-
     
     UpdateOverflow();
   }
