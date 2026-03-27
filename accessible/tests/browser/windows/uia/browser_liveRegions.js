@@ -39,7 +39,6 @@ addAccessibleTask(
     
     
     
-    
     is(
       await runPython(`findUiaByDomId(doc, "inner").CurrentLiveSetting`),
       LiveSetting.Off,
