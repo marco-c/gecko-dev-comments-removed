@@ -6,12 +6,14 @@ Support for running jobs that are invoked via the `run-task` script.
 """
 
 import dataclasses
+import functools
 import os
+from typing import Literal, Union
+from typing import Optional as TOptional
 
-from mozbuild.util import memoize
 from mozpack import path
 from taskgraph.transforms.run.common import support_caches
-from taskgraph.util.schema import LegacySchema
+from taskgraph.util.schema import LegacySchema, Schema, taskref_or_string_msgspec
 from taskgraph.util.yaml import load_yaml
 from voluptuous import Any, Optional, Required
 
@@ -57,6 +59,46 @@ run_task_schema = LegacySchema({
     
     Optional("run-as-root"): bool,
 })
+
+
+class RunTaskSchema(Schema, kw_only=True):
+    using: Literal["run-task"]
+    
+    use_caches: TOptional[Union[bool, list[str]]] = None
+    
+    checkout: bool = True
+    
+    
+    cwd: TOptional[str] = None
+    
+    
+    sparse_profile: TOptional[Union[str, None]] = None
+    
+    sparse_profile_prefix: TOptional[str] = None
+    
+    shallow_clone: TOptional[bool] = None
+    
+    
+    comm_checkout: bool = False
+    
+    
+    
+    command: Union[list[taskref_or_string_msgspec], taskref_or_string_msgspec]
+    
+    workdir: TOptional[str] = None
+    
+    
+    
+    tooltool_downloads: Union[bool, Literal["public", "internal"]] = False
+    
+    run_as_root: TOptional[bool] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.tooltool_downloads is True:
+            raise ValueError(
+                "tooltool-downloads must be False, 'public', or 'internal'"
+            )
 
 
 def common_setup(config, job, taskdesc, command):
@@ -111,7 +153,7 @@ worker_defaults = {
 }
 
 
-load_yaml = memoize(load_yaml)
+load_yaml = functools.cache(load_yaml)
 
 
 def script_url(config, script):
