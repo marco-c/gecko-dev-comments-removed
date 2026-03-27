@@ -29,7 +29,7 @@ class ProfileBufferChunkManagerWithLocalLimit;
 
 
 
-const int GECKO_PROFILER_FORMAT_VERSION = 33;
+const int GECKO_PROFILER_FORMAT_VERSION = 34;
 
 namespace baseprofiler::detail {
 
