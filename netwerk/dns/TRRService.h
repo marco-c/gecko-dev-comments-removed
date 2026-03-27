@@ -136,7 +136,6 @@ class TRRService : public TRRServiceBase,
   
   bool MaybeSetPrivateURI(const nsACString& aURI) override;
   void ClearEntireCache();
-  void MaybeSpeculativeConnectToTRR();
 
   virtual void ReadEtcHostsFile() override;
   void AddEtcHosts(const nsTArray<nsCString>&);
