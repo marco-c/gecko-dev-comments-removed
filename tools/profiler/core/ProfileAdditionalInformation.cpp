@@ -106,7 +106,7 @@ void mozilla::ProfileGenerationAdditionalInformation::ToJSValue(
           MaybeCreateJSStringFromSourceData(aCx, entry.sourceData);
       if (sourceStr) {
         JS::Rooted<JS::Value> sourceVal(aCx, JS::StringValue(sourceStr));
-        JS_SetProperty(aCx, jsSourcesObj, PromiseFlatCString(entry.uuid).get(),
+        JS_SetProperty(aCx, jsSourcesObj, PromiseFlatCString(entry.id).get(),
                        sourceVal);
       }
     }
@@ -376,13 +376,13 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
 
 void IPC::ParamTraits<mozilla::JSSourceEntry>::Write(MessageWriter* aWriter,
                                                      const paramType& aParam) {
-  WriteParam(aWriter, aParam.uuid);
+  WriteParam(aWriter, aParam.id);
   WriteParam(aWriter, aParam.sourceData);
 }
 
 bool IPC::ParamTraits<mozilla::JSSourceEntry>::Read(MessageReader* aReader,
                                                     paramType* aResult) {
-  return (ReadParam(aReader, &aResult->uuid) &&
+  return (ReadParam(aReader, &aResult->id) &&
           ReadParam(aReader, &aResult->sourceData));
 }
 

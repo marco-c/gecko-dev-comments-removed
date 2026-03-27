@@ -2569,7 +2569,7 @@ ProfileBuffer::StreamSourceTableToJSON(
     SpliceableJSONWriter& aWriter,
     const nsTArray<mozilla::JSSourceEntry>& aJSSourceEntries) const {
   enum Schema : uint32_t {
-    UUID = 0,
+    ID = 0,
     FILENAME = 1,
     START_LINE = 2,
     START_COLUMN = 3,
@@ -2582,7 +2582,7 @@ ProfileBuffer::StreamSourceTableToJSON(
     
     {
       JSONSchemaWriter schema(aWriter);
-      schema.WriteField("uuid");
+      schema.WriteField("id");
       schema.WriteField("filename");
       schema.WriteField("startLine");
       schema.WriteField("startColumn");
@@ -2599,7 +2599,7 @@ ProfileBuffer::StreamSourceTableToJSON(
     uint32_t index = 0;
     for (const auto& entry : aJSSourceEntries) {
       IndexIntoSourceTable targetIndex;
-      auto hashEntry = hashToIndexMap.Lookup(entry.uuid);
+      auto hashEntry = hashToIndexMap.Lookup(entry.id);
 
       if (hashEntry) {
         
@@ -2611,7 +2611,7 @@ ProfileBuffer::StreamSourceTableToJSON(
           
           
           
-          aWriter.StringElement(MakeStringSpan(entry.uuid.get()));
+          aWriter.StringElement(MakeStringSpan(entry.id.get()));
           aWriter.StringElement(MakeStringSpan(entry.sourceData.filePath()));
           aWriter.IntElement(entry.sourceData.startLine());
           aWriter.IntElement(entry.sourceData.startColumn());
@@ -2625,7 +2625,7 @@ ProfileBuffer::StreamSourceTableToJSON(
         aWriter.EndArray();
 
         targetIndex = index;
-        hashToIndexMap.InsertOrUpdate(entry.uuid, index);
+        hashToIndexMap.InsertOrUpdate(entry.id, index);
         index++;
       }
 
