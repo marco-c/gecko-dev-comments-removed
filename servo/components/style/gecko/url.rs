@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::gecko_bindings::bindings;
 use crate::gecko_bindings::structs;
 use crate::parser::{Parse, ParserContext};
@@ -16,7 +17,7 @@ use servo_arc::Arc;
 use std::collections::HashMap;
 use std::fmt::{self, Write};
 use std::mem::ManuallyDrop;
-use std::sync::RwLock;
+use std::sync::{LazyLock, RwLock};
 use style_traits::{CssWriter, ParseError, ToCss};
 use to_shmem::{SharedMemoryBuilder, ToShmem};
 
@@ -108,6 +109,10 @@ impl CssUrl {
         input: &mut Parser<'i, 't>,
         cors_mode: CorsMode,
     ) -> Result<Self, ParseError<'i>> {
+        use style_traits::StyleParseErrorKind;
+        if context.parsing_mode.disallows_urls() {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
         let url = input.expect_url()?;
         Ok(Self::parse_from_string(
             url.as_ref().to_owned(),
@@ -381,10 +386,7 @@ impl ToCss for ComputedUrl {
     }
 }
 
-lazy_static! {
-    /// A table mapping CssUrlData objects to their lazily created LoadData
-    /// objects.
-    static ref LOAD_DATA_TABLE: RwLock<HashMap<LoadDataKey, Box<LoadData>>> = {
-        Default::default()
-    };
-}
+
+
+static LOAD_DATA_TABLE: LazyLock<RwLock<HashMap<LoadDataKey, Box<LoadData>>>> =
+    LazyLock::new(|| Default::default());
