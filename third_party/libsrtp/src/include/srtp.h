@@ -211,8 +211,9 @@ typedef enum {
                                         
     srtp_err_status_pkt_idx_old = 26,   
                                         
-    srtp_err_status_pkt_idx_adv = 27    
+    srtp_err_status_pkt_idx_adv = 27,   
                                         
+    srtp_err_status_cryptex_err = 28    
 } srtp_err_status_t;
 
 typedef struct srtp_ctx_t_ srtp_ctx_t;
@@ -1745,6 +1746,24 @@ srtp_err_status_t srtp_set_stream_roc(srtp_t session,
 srtp_err_status_t srtp_get_stream_roc(srtp_t session,
                                       uint32_t ssrc,
                                       uint32_t *roc);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+srtp_err_status_t srtp_set_stream_use_cryptex(srtp_t session,
+                                              const srtp_ssrc_t *ssrc,
+                                              int enable);
 
 
 
