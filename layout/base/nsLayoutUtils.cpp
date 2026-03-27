@@ -8261,12 +8261,12 @@ nsMargin nsLayoutUtils::ScrollbarAreaToExcludeFromCompositionBoundsFor(
   if (!isRootContentDocRootScrollFrame) {
     return nsMargin();
   }
+  if (presContext->UseOverlayScrollbars()) {
+    return nsMargin();
+  }
   ScrollContainerFrame* scrollContainerFrame =
       aScrollFrame->GetScrollTargetFrame();
   if (!scrollContainerFrame) {
-    return nsMargin();
-  }
-  if (scrollContainerFrame->UseOverlayScrollbars()) {
     return nsMargin();
   }
   return scrollContainerFrame->GetActualScrollbarSizes(
@@ -9794,7 +9794,8 @@ bool nsLayoutUtils::ShouldHandleMetaViewport(const Document* aDocument) {
   return StaticPrefs::dom_meta_viewport_enabled() || (bc && bc->InRDMPane());
 }
 
-static nsIContent* GetOriginatingElementForScrollbarPart(
+
+ComputedStyle* nsLayoutUtils::StyleForScrollbar(
     const nsIFrame* aScrollbarPart) {
   
   
@@ -9812,14 +9813,6 @@ static nsIContent* GetOriginatingElementForScrollbarPart(
     content = content->GetParent();
   }
   MOZ_ASSERT(content, "Native anonymous element with no originating node?");
-  return content;
-}
-
-
-ComputedStyle* nsLayoutUtils::StyleForScrollbar(
-    const nsIFrame* aScrollbarPart) {
-  nsIContent* content = GetOriginatingElementForScrollbarPart(aScrollbarPart);
-
   
   
   
@@ -9843,40 +9836,6 @@ ComputedStyle* nsLayoutUtils::StyleForScrollbar(
   
   
   return style.get();
-}
-
-
-bool nsLayoutUtils::UseOverlayScrollbars(const nsIFrame* aScrollbarPart) {
-  nsIContent* content = GetOriginatingElementForScrollbarPart(aScrollbarPart);
-  if (nsIFrame* primaryFrame = content->GetPrimaryFrame()) {
-    ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(primaryFrame);
-    if (!scrollContainerFrame) {
-      scrollContainerFrame =
-          primaryFrame->PresShell()->GetRootScrollContainerFrame();
-    }
-    if (scrollContainerFrame) {
-      return scrollContainerFrame->UseOverlayScrollbars();
-    }
-  }
-  return aScrollbarPart->PresContext()->UseOverlayScrollbars();
-}
-
-
-StyleScrollbarWidth nsLayoutUtils::ScrollbarWidthFor(
-    const nsIFrame* aScrollbarPart) {
-  const auto* style = StyleForScrollbar(aScrollbarPart);
-  nsIContent* content = GetOriginatingElementForScrollbarPart(aScrollbarPart);
-  if (nsIFrame* primaryFrame = content->GetPrimaryFrame()) {
-    ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(primaryFrame);
-    if (!scrollContainerFrame) {
-      scrollContainerFrame =
-          primaryFrame->PresShell()->GetRootScrollContainerFrame();
-    }
-    if (scrollContainerFrame) {
-      return scrollContainerFrame->ScrollbarWidth(style);
-    }
-  }
-  return style->StyleUIReset()->ComputedScrollbarWidth();
 }
 
 enum class FramePosition : uint8_t {

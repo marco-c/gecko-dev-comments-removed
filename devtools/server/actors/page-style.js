@@ -959,8 +959,6 @@ class PageStyleActor extends Actor {
         
         
         return false;
-      case "::-webkit-scrollbar":
-        return false;
       default:
         console.error("Unhandled pseudo-element " + pseudo);
         return false;

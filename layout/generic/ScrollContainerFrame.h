@@ -526,9 +526,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   void ScrollbarCurPosChanged(bool aDoScroll = true);
 
-  void DisableOverlayScrollbars();
-  void EnableOverlayScrollbars();
-
   
 
 
@@ -1006,12 +1003,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsExpirationState* GetExpirationState() { return &mActivityExpirationState; }
 
   bool UseOverlayScrollbars() const;
-
-  
-  
-  StyleScrollbarWidth ScrollbarWidth(
-      const ComputedStyle* aStyle = nullptr) const;
-
   bool IsLastSnappedTarget(const nsIFrame* aFrame) const;
 
   
@@ -1439,10 +1430,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   
   
-  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
-
-  
-  
   InScrollingGesture mInScrollingGesture : 1;
 
   bool mAllowScrollOriginDowngrade : 1;
@@ -1556,9 +1543,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   
   bool mScrollbarClickAndHoldScrollendPending : 1;
-
-  
-  bool mForceDisableOverlayScrollbars : 1;
 
 #ifdef MOZ_WIDGET_ANDROID
   
