@@ -25,41 +25,43 @@ class HostRecordQueue final {
 
   
   
-  void InsertRecord(nsHostRecord* aRec, nsIDNSService::DNSFlags aFlags,
-                    const MutexAutoLock& aProofOfLock);
+  
+  mutable Mutex mLock{"nsHostResolver.mQueueLock"};
+
+  
+  
+  void InsertRecord(nsHostRecord* aRec, nsIDNSService::DNSFlags aFlags)
+      MOZ_REQUIRES(mLock);
   
   
   void AddToEvictionQ(
       nsHostRecord* aRec, uint32_t aMaxCacheEntries,
-      nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB,
-      const MutexAutoLock& aProofOfLock);
+      nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB)
+      MOZ_REQUIRES(mLock);
 
   
-  void MoveToEvictionQueueTail(nsHostRecord* aRec,
-                               const MutexAutoLock& aProofOfLock);
+  void MoveToEvictionQueueTail(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
 
   
   
-  void MaybeRenewHostRecord(nsHostRecord* aRec,
-                            const MutexAutoLock& aProofOfLock);
+  void MaybeRenewHostRecord(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
   
   void FlushEvictionQ(
-      nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB,
-      const MutexAutoLock& aProofOfLock);
+      nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB)
+      MOZ_REQUIRES(mLock);
   
-  void MaybeRemoveFromQ(nsHostRecord* aRec, const MutexAutoLock& aProofOfLock);
+  void MaybeRemoveFromQ(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
   
-  void MoveToAnotherPendingQ(nsHostRecord* aRec, nsIDNSService::DNSFlags aFlags,
-                             const MutexAutoLock& aProofOfLock);
-  
-  
-  
-  already_AddRefed<nsHostRecord> Dequeue(bool aHighQOnly,
-                                         const MutexAutoLock& aProofOfLock);
+  void MoveToAnotherPendingQ(nsHostRecord* aRec, nsIDNSService::DNSFlags aFlags)
+      MOZ_REQUIRES(mLock);
   
   
-  void ClearAll(const std::function<void(nsHostRecord*)>& aCallback,
-                const MutexAutoLock& aProofOfLock);
+  
+  already_AddRefed<nsHostRecord> Dequeue(bool aHighQOnly) MOZ_REQUIRES(mLock);
+  
+  
+  void ClearAll(const std::function<void(nsHostRecord*)>& aCallback)
+      MOZ_REQUIRES(mLock);
 
  private:
   Atomic<uint32_t> mPendingCount{0};
