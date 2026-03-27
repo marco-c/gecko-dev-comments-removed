@@ -2113,6 +2113,9 @@ pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=adm");
 
 
+pref("browser.newtabpage.activity-stream.selfLoading.enabled", true);
+
+
 pref("browser.newtabpage.resource-mapping.log", false);
 
 
