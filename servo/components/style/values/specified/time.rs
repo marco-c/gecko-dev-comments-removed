@@ -76,6 +76,26 @@ impl Time {
     }
 
     
+    pub fn canonical_unit(&self) -> Option<&'static str> {
+        Some("s")
+    }
+
+    
+    pub fn to(&self, unit: &str) -> Result<Self, ()> {
+        let unit = match_ignore_ascii_case! { unit,
+            "s" => TimeUnit::Second,
+            "ms" => TimeUnit::Millisecond,
+             _ => return Err(()),
+        };
+
+        Ok(Time {
+            seconds: self.seconds,
+            unit,
+            calc_clamping_mode: None,
+        })
+    }
+
+    
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Time, ()> {
         let (seconds, unit) = match_ignore_ascii_case! { unit,
             "s" => (value, TimeUnit::Second),
