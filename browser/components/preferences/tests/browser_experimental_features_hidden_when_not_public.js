@@ -58,7 +58,7 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   
   await TestUtils.waitForCondition(
     () =>
-      doc.getElementById("categories").currentView === "paneGeneral" &&
+      doc.querySelector(".category[selected]").id === "category-general" &&
       doc.getElementById("category-experimental").hidden &&
       doc.getElementById("firefoxExperimentalCategory").hidden,
     "Wait for redirect to general and elements to be hidden"
@@ -73,8 +73,8 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
     "Experimental Features header should be hidden when all features are hidden"
   );
   is(
-    doc.getElementById("categories").currentView,
-    "paneGeneral",
+    doc.querySelector(".category[selected]").id,
+    "category-general",
     "When the experimental features section is hidden, navigating to #experimental should redirect to #general"
   );
 
