@@ -26,6 +26,7 @@ use std::mem;
 use std::os::fd::{FromRawFd, IntoRawFd, OwnedFd, RawFd};
 use std::os::raw::c_char;
 use std::ptr;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 #[allow(unused_imports)]
@@ -731,6 +732,20 @@ impl From<Result<(), BufferAccessError>> for BufferMapAsyncStatus {
     }
 }
 
+impl From<Result<(), wgc::device::WaitIdleError>> for BufferMapAsyncStatus {
+    fn from(result: Result<(), wgc::device::WaitIdleError>) -> Self {
+        match result {
+            Ok(()) => BufferMapAsyncStatus::Success,
+            Err(err) => match err {
+                wgc::device::WaitIdleError::Device(_) => BufferMapAsyncStatus::ContextLost,
+                wgc::device::WaitIdleError::WrongSubmissionIndex(_, _)
+                | wgc::device::WaitIdleError::Timeout => BufferMapAsyncStatus::Error,
+                _ => BufferMapAsyncStatus::Error,
+            },
+        }
+    }
+}
+
 #[repr(C)]
 pub struct BufferMapClosure {
     pub callback: unsafe extern "C" fn(user_data: *mut u8, status: BufferMapAsyncStatus),
@@ -765,6 +780,79 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     if let Err(error) = result {
         error_buf.init(error, device_id);
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_buffer_map_blocking(
+    global: &Global,
+    device_id: id::DeviceId,
+    buffer_id: id::BufferId,
+    offset: wgt::BufferAddress,
+    size: wgt::BufferAddress,
+    map_mode: wgc::device::HostMap,
+) -> BufferMapAsyncStatus {
+    
+    
+    
+    let status_passback = Arc::new(OnceLock::new());
+    let op = wgc::resource::BufferMapOperation {
+        host: map_mode,
+        callback: Some(Box::new({
+            let status_passback = Arc::clone(&status_passback);
+            move |status| {
+                
+                
+                status_passback.set(status).unwrap();
+            }
+        })),
+    };
+
+    
+    let submission_index;
+    match global.buffer_map_async(buffer_id, offset, Some(size), op) {
+        Ok(i) => {
+            submission_index = i;
+        }
+        Err(err) => {
+            return BufferMapAsyncStatus::from(Err(err));
+        }
+    }
+
+    
+    let poll_type = wgt::PollType::Wait {
+        submission_index: Some(submission_index),
+        timeout: Some(Duration::from_secs(60)),
+    };
+    if let Err(err) = global.device_poll(device_id, poll_type) {
+        return BufferMapAsyncStatus::from(Err(err));
+    }
+
+    
+    
+
+    
+    let status_oncelock = Arc::into_inner(status_passback).unwrap();
+
+    
+    let status_result = status_oncelock.into_inner().unwrap();
+
+    BufferMapAsyncStatus::from(status_result)
 }
 
 #[repr(C)]
