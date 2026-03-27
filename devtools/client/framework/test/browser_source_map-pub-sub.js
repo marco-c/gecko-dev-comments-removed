@@ -37,19 +37,10 @@ add_task(async function () {
   const cb = originalLocation => cbCalls.push(originalLocation);
   const expectedArg = { url: ORIGINAL_URL, line: ORIGINAL_LINE, column: 0 };
 
-  
-  
-  await service._ensureAllSourcesPopulated();
-
   const unsubscribe1 = service.subscribeByURL(JS_URL, GENERATED_LINE, 1, cb);
 
   
-  
-  for (const map of service._mapsById.values()) {
-    for (const query of map.queries.values()) {
-      await query.action;
-    }
-  }
+  await service.waitForPendingQueries();
 
   is(
     cbCalls.length,
