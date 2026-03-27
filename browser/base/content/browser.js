@@ -3796,6 +3796,12 @@ function WindowIsClosing(event) {
   }
 
   
+  const { Spotlight } = ChromeUtils.importESModule(
+    "resource:///modules/asrouter/Spotlight.sys.mjs"
+  );
+  Spotlight.close();
+
+  
   
   
   
