@@ -830,15 +830,14 @@ class CssRuleView extends EventEmitter {
 
 
   addNewRule() {
-    const elementStyle = this.elementStyle;
-    const element = elementStyle.element;
-    const pseudoClasses = element.pseudoClassLocks;
-
     
     this.#onClearSearch({ focusSearchField: false });
 
     this.#focusNextUserAddedRule = true;
-    this.pageStyle.addNewRule(element, pseudoClasses);
+    this.pageStyle.addNewRule(
+      this.viewedElement,
+      this.viewedElement.pseudoClassLocks
+    );
   }
 
   
@@ -849,13 +848,6 @@ class CssRuleView extends EventEmitter {
 
   canAddNewRuleForSelectedNode() {
     return this.viewedElement && this.inspector.selection.isElementNode();
-  }
-
-  
-
-
-  #refreshAddRuleButtonState() {
-    this.addRuleButton.disabled = !this.canAddNewRuleForSelectedNode();
   }
 
   
@@ -1037,7 +1029,18 @@ class CssRuleView extends EventEmitter {
 
   destroy() {
     this.isDestroyed = true;
-    this.#clear();
+
+    this.viewedElement = null;
+
+    if (this.elementStyle) {
+      this.elementStyle.destroy();
+      this.elementStyle = null;
+    }
+
+    if (this.pageStyle) {
+      this.pageStyle.off("stylesheet-updated", this.refreshPanel);
+      this.pageStyle = null;
+    }
 
     this.#dummyElement = null;
     this.#prefObserver.destroy();
@@ -1099,10 +1102,6 @@ class CssRuleView extends EventEmitter {
       this.element.remove();
     }
 
-    if (this.elementStyle) {
-      this.elementStyle.destroy();
-    }
-
     if (this.#popup) {
       this.#popup.destroy();
       this.#popup = null;
@@ -1128,6 +1127,35 @@ class CssRuleView extends EventEmitter {
   
 
 
+  #refreshAddRuleButtonState() {
+    this.addRuleButton.disabled = !this.canAddNewRuleForSelectedNode();
+  }
+
+  
+
+
+  #refreshPageStyle() {
+    const newPageStyle = this.viewedElement?.inspectorFront.pageStyle;
+    if (this.pageStyle == newPageStyle) {
+      return;
+    }
+    
+    
+    if (this.pageStyle) {
+      this.pageStyle.off("stylesheet-updated", this.refreshPanel);
+      this.pageStyle = null;
+    }
+    
+    
+    if (newPageStyle) {
+      this.pageStyle = newPageStyle;
+      this.pageStyle.on("stylesheet-updated", this.refreshPanel);
+    }
+  }
+
+  
+
+
 
 
 
@@ -1139,34 +1167,41 @@ class CssRuleView extends EventEmitter {
       return;
     }
 
+    
     if (this.#popup && this.#popup.isOpen) {
       this.#popup.hidePopup();
     }
 
-    this.#clear(false);
+    if (this.elementStyle) {
+      this.elementStyle.destroy();
+      this.elementStyle = null;
+    }
+
+    
     this.viewedElement = element;
 
-    this.#clearPseudoClassPanel();
+    
+
+    
+    
+    
+    if (!element) {
+      this.#clearRules();
+    }
+
+    this.#refreshEmptyNotice();
     this.#refreshAddRuleButtonState();
     this.#refreshDummyElement();
+    this.#refreshPageStyle();
+    this.#refreshPseudoClassPanel();
 
-    if (!this.viewedElement) {
+    if (!element) {
       this.#stopSelectingElement();
-      this.#clearRules();
-      this.#showEmpty();
-      this.refreshPseudoClassPanel();
-      if (this.pageStyle) {
-        this.pageStyle.off("stylesheet-updated", this.refreshPanel);
-        this.pageStyle = null;
-      }
       return;
     }
 
     const isProfilerActive = Services.profiler.IsActive();
     const startTime = isProfilerActive ? ChromeUtils.now() : null;
-
-    this.pageStyle = element.inspectorFront.pageStyle;
-    this.pageStyle.on("stylesheet-updated", this.refreshPanel);
 
     const elementStyle = new ElementStyle(
       element,
@@ -1239,21 +1274,6 @@ class CssRuleView extends EventEmitter {
 
 
 
-  #clearPseudoClassPanel() {
-    for (const checkbox of this.pseudoClassCheckboxes) {
-      checkbox.checked = false;
-      checkbox.disabled = false;
-    }
-    for (const checkbox of this.elementSpecificPseudoClassCheckboxes) {
-      checkbox.checked = false;
-      checkbox.disabled = true;
-    }
-  }
-
-  
-
-
-
 
 
 
@@ -1286,12 +1306,11 @@ class CssRuleView extends EventEmitter {
 
 
   #getApplicableElementSpecificPseudoClasses() {
-    if (!this.elementStyle?.element) {
+    if (!this.viewedElement) {
       return [];
     }
 
-    const element = this.elementStyle.element;
-    const tagName = element.tagName?.toLowerCase();
+    const tagName = this.viewedElement.tagName?.toLowerCase();
     const applicablePseudoClasses = [];
 
     for (const [pseudo, elementTypes] of Object.entries(
@@ -1308,9 +1327,9 @@ class CssRuleView extends EventEmitter {
   
 
 
-  refreshPseudoClassPanel() {
+  #refreshPseudoClassPanel() {
     if (
-      !this.elementStyle ||
+      !this.viewedElement ||
       !this.inspector.canTogglePseudoClassForSelectedNode()
     ) {
       for (const checkbox of [
@@ -1323,7 +1342,7 @@ class CssRuleView extends EventEmitter {
       return;
     }
 
-    const pseudoClassLocks = this.elementStyle.element.pseudoClassLocks;
+    const pseudoClassLocks = this.viewedElement.pseudoClassLocks;
     for (const checkbox of this.pseudoClassCheckboxes) {
       checkbox.disabled = false;
       checkbox.checked = pseudoClassLocks.includes(checkbox.value);
@@ -1366,10 +1385,7 @@ class CssRuleView extends EventEmitter {
       }
 
       this.#clearRules();
-      const onEditorsReady = this.#createEditors();
-      this.refreshPseudoClassPanel();
-
-      await onEditorsReady;
+      await this.#createEditors();
 
       
       this.inspector.emit("rule-view-refreshed");
@@ -1382,16 +1398,19 @@ class CssRuleView extends EventEmitter {
   
 
 
-  #showEmpty() {
-    if (this.styleDocument.getElementById("ruleview-no-results")) {
-      return;
+  #refreshEmptyNotice() {
+    const emptyNotice = this.styleDocument.getElementById(
+      "ruleview-no-results"
+    );
+    if (this.viewedElement && emptyNotice) {
+      emptyNotice.remove();
+    } else if (!this.viewedElement && !emptyNotice) {
+      createChild(this.element, "div", {
+        id: "ruleview-no-results",
+        class: "devtools-sidepanel-no-result",
+        textContent: l10n("rule.empty"),
+      });
     }
-
-    createChild(this.element, "div", {
-      id: "ruleview-no-results",
-      class: "devtools-sidepanel-no-result",
-      textContent: l10n("rule.empty"),
-    });
   }
 
   
@@ -1399,26 +1418,6 @@ class CssRuleView extends EventEmitter {
 
   #clearRules() {
     this.element.innerHTML = "";
-  }
-
-  
-
-
-  #clear(clearDom = true) {
-    if (clearDom) {
-      this.#clearRules();
-    }
-    this.viewedElement = null;
-
-    if (this.elementStyle) {
-      this.elementStyle.destroy();
-      this.elementStyle = null;
-    }
-
-    if (this.pageStyle) {
-      this.pageStyle.off("stylesheet-updated", this.refreshPanel);
-      this.pageStyle = null;
-    }
   }
 
   
