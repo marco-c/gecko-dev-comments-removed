@@ -21,7 +21,9 @@ static const struct {
     {"mathml.disabled", "dis"},
     {"mathml.scale_stretchy_operators.enabled", "str"},
     {"mathml.mathspace_names.disabled", "spc"},
+    {"mathml.rtl_operator_mirroring.enabled", "rtl"},
     {"mathml.mathvariant_styling_fallback.disabled", "var"},
+    {"mathml.math_shift.enabled", "shf"},
     {"mathml.operator_dictionary_accent.disabled", "acc"},
     {"mathml.legacy_mathvariant_attribute.disabled", "leg"},
     {"mathml.font_family_math.enabled", "fnt"},
@@ -119,7 +121,7 @@ TEST(ResistFingerprinting, UserCharacteristics_MathMLPrefs_NonAdjacent)
                 .TestGetValue()
                 .unwrap()
                 .value();
-        ASSERT_STREQ("dis=1,var=0", result.get());
+        ASSERT_STREQ("dis=1,rtl=0", result.get());
       },
       []() {
         testing::PopulateMathMLPrefs();
