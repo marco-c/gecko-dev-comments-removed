@@ -828,6 +828,11 @@
 
 
 
+
+
+
+
+
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -871,6 +876,8 @@
 #    define MOZ_OWNING_REF __attribute__((annotate("moz_owning_ref")))
 #    define MOZ_NON_OWNING_REF __attribute__((annotate("moz_non_owning_ref")))
 #    define MOZ_UNSAFE_REF(reason) __attribute__((annotate("moz_unsafe_ref")))
+#    define MOZ_NON_TERMINATED_STRING \
+      __attribute__((annotate("moz_non_terminated_string")))
 #    define MOZ_NO_ADDREF_RELEASE_ON_RETURN \
       __attribute__((annotate("moz_no_addref_release_on_return")))
 #    define MOZ_NEEDS_NO_VTABLE_TYPE \
@@ -968,6 +975,7 @@
 #    define MOZ_OWNING_REF
 #    define MOZ_NON_OWNING_REF
 #    define MOZ_UNSAFE_REF(reason)
+#    define MOZ_NON_TERMINATED_STRING
 #    define MOZ_NO_ADDREF_RELEASE_ON_RETURN
 #    define MOZ_NEEDS_NO_VTABLE_TYPE
 #    define MOZ_NON_MEMMOVABLE
