@@ -1,27 +1,27 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDeviceContext.h"
-#include <algorithm>  
+#include <algorithm>  // for max
 #include "gfxContext.h"
-#include "gfxPoint.h"    
-#include "gfxTextRun.h"  
+#include "gfxPoint.h"    // for gfxSize
+#include "gfxTextRun.h"  // for gfxFontGroup
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PrintTarget.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Try.h"            
-#include "mozilla/widget/Screen.h"  
-#include "nsDebug.h"                
-#include "nsFontMetrics.h"          
-#include "nsIDeviceContextSpec.h"   
-#include "nsIWidget.h"              
-#include "nsRect.h"                 
-#include "nsTArray.h"               
+#include "mozilla/Try.h"            // for MOZ_TRY
+#include "mozilla/widget/Screen.h"  // for Screen
+#include "nsDebug.h"                // for NS_ASSERTION, etc
+#include "nsFontMetrics.h"          // for nsFontMetrics
+#include "nsIDeviceContextSpec.h"   // for nsIDeviceContextSpec
+#include "nsIWidget.h"              // for nsIWidget, NS_NATIVE_WINDOW
+#include "nsRect.h"                 // for nsRect
+#include "nsTArray.h"               // for nsTArray, nsTArray_Impl
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/widget/ScreenManager.h"  
+#include "mozilla/widget/ScreenManager.h"  // for ScreenManager
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -58,7 +58,7 @@ int32_t nsDeviceContext::ApplyFullZoomToAPD(int32_t aUnzoomedAppUnits,
 void nsDeviceContext::SetDPI() {
   float dpi;
 
-  
+  // Use the printing DC to determine DPI values, if we have one.
   if (mDeviceContextSpec) {
     dpi = mDeviceContextSpec->GetDPI();
     mPrintingScale = mDeviceContextSpec->GetPrintingScale();
@@ -67,10 +67,10 @@ void nsDeviceContext::SetDPI() {
         ComputeAppUnitsPerDevPixelForWidgetScale(
             CSSToLayoutDeviceScale(dpi / 96.0));
   } else {
-    
-    
-    
-    
+    // A value of -1 means use the maximum of 96 and the system DPI.
+    // A value of 0 means use the system DPI. A positive value is used as the
+    // DPI. This sets the physical size of a device pixel and thus controls the
+    // interpretation of physical units.
     int32_t prefDPI = StaticPrefs::layout_css_dpi();
     if (prefDPI > 0) {
       dpi = prefDPI;
@@ -103,22 +103,22 @@ void nsDeviceContext::Init(nsIWidget* aWidget) {
     return;
   }
 
-  
-  
-  
+  // We can't assert |!mIsInitialized| here since EndSwapDocShellsForDocument
+  // re-initializes nsDeviceContext objects.  We can only assert in
+  // InitForPrinting (below).
   mIsInitialized = true;
 
   mWidget = aWidget;
   SetDPI();
 }
 
-
+// XXX This is only for printing. We should make that obvious in the name.
 UniquePtr<gfxContext> nsDeviceContext::CreateRenderingContext() {
-  return CreateRenderingContextCommon( false);
+  return CreateRenderingContextCommon(/* not a reference context */ false);
 }
 
 UniquePtr<gfxContext> nsDeviceContext::CreateReferenceRenderingContext() {
-  return CreateRenderingContextCommon( true);
+  return CreateRenderingContextCommon(/* a reference context */ true);
 }
 
 UniquePtr<gfxContext> nsDeviceContext::CreateRenderingContextCommon(
@@ -127,7 +127,7 @@ UniquePtr<gfxContext> nsDeviceContext::CreateRenderingContextCommon(
   MOZ_ASSERT(mWidth > 0 && mHeight > 0);
 
   if (NS_WARN_IF(!mPrintTarget)) {
-    
+    // Printing canceled already.
     return nullptr;
   }
 
@@ -135,7 +135,7 @@ UniquePtr<gfxContext> nsDeviceContext::CreateRenderingContextCommon(
   if (aWantReferenceContext) {
     dt = mPrintTarget->GetReferenceDrawTarget();
   } else {
-    
+    // This will be null if printing a page from the parent process.
     RefPtr<DrawEventRecorder> recorder;
     mDeviceContextSpec->GetDrawEventRecorder(getter_AddRefs(recorder));
     dt = mPrintTarget->MakeDrawTarget(gfx::IntSize(mWidth, mHeight), recorder);
@@ -216,7 +216,7 @@ nsresult nsDeviceContext::InitForPrinting(nsIDeviceContextSpec* aDevice) {
   MOZ_ASSERT(!mIsInitialized,
              "Only initialize once, immediately after construction");
 
-  
+  // We don't set mIsInitialized here. The Init() call below does that.
 
   mPrintTarget = aDevice->MakePrintTarget();
   if (!mPrintTarget) {
@@ -236,24 +236,26 @@ nsresult nsDeviceContext::InitForPrinting(nsIDeviceContextSpec* aDevice) {
 
 nsresult nsDeviceContext::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
+                                        uint64_t aBrowsingContextId,
                                         int32_t aStartPage, int32_t aEndPage) {
   MOZ_DIAGNOSTIC_ASSERT(!mIsCurrentlyPrintingDoc,
                         "Mismatched BeginDocument/EndDocument calls");
   AUTO_PROFILER_MARKER_TEXT("DeviceContext Printing", LAYOUT_Printing, {},
                             "nsDeviceContext::BeginDocument"_ns);
 
-  nsresult rv = mPrintTarget->BeginPrinting(aTitle, aPrintToFileName,
-                                            aStartPage, aEndPage);
+  mBrowsingContextId = aBrowsingContextId;
+  nsresult rv = mPrintTarget->BeginPrinting(
+      aTitle, aPrintToFileName, aBrowsingContextId, aStartPage, aEndPage);
 
   if (NS_SUCCEEDED(rv)) {
     if (mDeviceContextSpec) {
-      rv = mDeviceContextSpec->BeginDocument(aTitle, aPrintToFileName,
-                                             aStartPage, aEndPage);
+      rv = mDeviceContextSpec->BeginDocument(
+          aTitle, aPrintToFileName, aBrowsingContextId, aStartPage, aEndPage);
     }
     mIsCurrentlyPrintingDoc = true;
   }
 
-  
+  // Warn about any failure (except user cancelling):
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv) || rv == NS_ERROR_ABORT,
                        "nsDeviceContext::BeginDocument failed");
 
@@ -346,8 +348,8 @@ already_AddRefed<widget::Screen> nsDeviceContext::FindScreen() {
 
 bool nsDeviceContext::CalcPrintingSize() {
   gfxSize size(mPrintTarget->GetSize());
-  
-  
+  // For printing, CSS inches and physical inches are identical
+  // so it doesn't matter which we use here
   mWidth = NSToCoordRound(size.width * AppUnitsPerPhysicalInch() /
                           POINTS_PER_INCH_FLOAT);
   mHeight = NSToCoordRound(size.height * AppUnitsPerPhysicalInch() /
@@ -378,7 +380,7 @@ bool nsDeviceContext::SetFullZoom(float aScale) {
 }
 
 int32_t nsDeviceContext::AppUnitsPerDevPixelInTopLevelChromePage() const {
-  
+  // The only zoom that applies to chrome pages is the system zoom, if any.
   return ApplyFullZoomToAPD(mAppUnitsPerDevPixelAtUnitFullZoom,
                             LookAndFeel::SystemZoomSettings().mFullZoom);
 }
@@ -386,7 +388,7 @@ int32_t nsDeviceContext::AppUnitsPerDevPixelInTopLevelChromePage() const {
 void nsDeviceContext::UpdateAppUnitsForFullZoom() {
   mAppUnitsPerDevPixel =
       ApplyFullZoomToAPD(mAppUnitsPerDevPixelAtUnitFullZoom, mFullZoom);
-  
+  // adjust mFullZoom to reflect appunit rounding
   mFullZoom = float(mAppUnitsPerDevPixelAtUnitFullZoom) / mAppUnitsPerDevPixel;
 }
 
