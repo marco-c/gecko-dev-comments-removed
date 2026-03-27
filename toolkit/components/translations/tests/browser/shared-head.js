@@ -50,6 +50,10 @@ const DIR_PATH = "toolkit/components/translations/tests/browser/";
 
 
 
+
+
+
+
 function _url(path) {
   return URL_COM_PREFIX + DIR_PATH + path;
 }
@@ -5034,14 +5038,72 @@ class AboutTranslationsTestUtils {
   
 
 
-  async invokeSwapLanguagesButton() {
-    logAction();
-    try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.swapLanguagesButton
+
+
+
+
+
+  async #invokeElement({ selectorKey, action = "click" }) {
+    await this.#runInPage(
+      async (selectors, options) => {
+        const { selectorKey, action } = options;
+        const selector = selectors[selectorKey];
+        if (!selector) {
+          throw new Error(`Unsupported selector key: ${selectorKey}`);
+        }
+
+        const element = content.document.querySelector(selector);
+        if (!element) {
+          throw new Error(
+            `Could not find element for selector key: ${selectorKey}`
+          );
+        }
+
+        const EventUtils = ContentTaskUtils.getEventUtils(content);
+
+        if (action === "click") {
+          EventUtils.synthesizeMouseAtCenter(element, {}, content);
+          return;
+        }
+
+        const focusTarget = element.buttonEl ?? element;
+        focusTarget.focus({ focusVisible: true });
+        await new Promise(resolve =>
+          content.requestAnimationFrame(() =>
+            content.requestAnimationFrame(resolve)
+          )
         );
-        button.click();
+        if (action === "enter") {
+          EventUtils.synthesizeKey("KEY_Enter", {}, content);
+          return;
+        }
+
+        if (action === "space") {
+          EventUtils.synthesizeKey(" ", {}, content);
+          return;
+        }
+
+        throw new Error(`Unsupported action: ${action}`);
+      },
+      {
+        selectorKey,
+        action,
+      }
+    );
+  }
+
+  
+
+
+
+
+
+  async invokeSwapLanguagesButton({ action = "click" } = {}) {
+    logAction(action);
+    try {
+      await this.#invokeElement({
+        selectorKey: "swapLanguagesButton",
+        action,
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
@@ -5051,12 +5113,15 @@ class AboutTranslationsTestUtils {
   
 
 
-  async invokeCopyButton() {
-    logAction();
+
+
+
+  async invokeCopyButton({ action = "click" } = {}) {
+    logAction(action);
     try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(selectors.copyButton);
-        button.click();
+      await this.#invokeElement({
+        selectorKey: "copyButton",
+        action,
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
@@ -5066,14 +5131,15 @@ class AboutTranslationsTestUtils {
   
 
 
-  async invokeTranslationErrorButton() {
-    logAction();
+
+
+
+  async invokeTranslationErrorButton({ action = "click" } = {}) {
+    logAction(action);
     try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.translationErrorButton
-        );
-        button.click();
+      await this.#invokeElement({
+        selectorKey: "translationErrorButton",
+        action,
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
@@ -5083,14 +5149,15 @@ class AboutTranslationsTestUtils {
   
 
 
-  async invokeLanguageLoadErrorButton() {
-    logAction();
+
+
+
+  async invokeLanguageLoadErrorButton({ action = "click" } = {}) {
+    logAction(action);
     try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.languageLoadErrorButton
-        );
-        button.click();
+      await this.#invokeElement({
+        selectorKey: "languageLoadErrorButton",
+        action,
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
@@ -5100,14 +5167,15 @@ class AboutTranslationsTestUtils {
   
 
 
-  async invokeUnblockFeatureButton() {
-    logAction();
+
+
+
+  async invokeUnblockFeatureButton({ action = "click" } = {}) {
+    logAction(action);
     try {
-      await this.#runInPage(selectors => {
-        const button = content.document.querySelector(
-          selectors.unblockFeatureButton
-        );
-        button.click();
+      await this.#invokeElement({
+        selectorKey: "unblockFeatureButton",
+        action,
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
@@ -6167,14 +6235,16 @@ class AboutTranslationsTestUtils {
 
 
 
-  async invokeClearButton() {
+
+
+
+  async invokeClearButton({ action = "click" } = {}) {
     await doubleRaf(document);
+    logAction(action);
     try {
-      await this.#runInPage(selectors => {
-        const clearButton = content.document.querySelector(
-          selectors.clearButton
-        );
-        clearButton.click();
+      await this.#invokeElement({
+        selectorKey: "clearButton",
+        action,
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
