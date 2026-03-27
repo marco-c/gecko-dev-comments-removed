@@ -929,9 +929,6 @@ pref("browser.spin_cursor_while_busy", false);
 pref("browser.contextual-password-manager.enabled", true);
 
 
-pref("browser.autocomplete-row-item-ui.enabled", false);
-
-
 pref("browser.dataFeatureRecommendations.enabled", false);
 
 
