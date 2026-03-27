@@ -14,7 +14,6 @@
 #import "MOXSearchInfo.h"
 #import "MOXTextMarkerDelegate.h"
 #import "MOXWebAreaAccessible.h"
-#import "mozRootAccessible.h"
 #import "mozTextAccessible.h"
 
 #include "LocalAccessible-inl.h"
@@ -73,15 +72,22 @@ using namespace mozilla::a11y;
 #pragma mark - mozAccessible widget
 
 - (BOOL)hasRepresentedView {
-  return NO;
+  return [self representedView] != nil;
 }
 
 - (id)representedView {
-  return nil;
+  if (![self isRoot]) {
+    
+    return nil;
+  }
+
+  return static_cast<AccessibleWrap*>(mGeckoAccessible->AsLocal())
+      ->GetNativeWidget();
 }
 
 - (BOOL)isRoot {
-  return NO;
+  return mGeckoAccessible && mGeckoAccessible->IsLocal() &&
+         mGeckoAccessible->IsRoot();
 }
 
 #pragma mark -
@@ -1019,7 +1025,6 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (void)maybePostA11yUtilNotification {
   MOZ_ASSERT(mGeckoAccessible);
-  
   
   
   

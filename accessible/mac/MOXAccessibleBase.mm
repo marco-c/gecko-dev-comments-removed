@@ -508,6 +508,13 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 }
 
 - (id<mozAccessible>)moxUnignoredParent {
+  if ([self hasRepresentedView]) {
+    
+    
+    return [[self representedView]
+        accessibilityAttributeValue:NSAccessibilityParentAttribute];
+  }
+
   id<mozAccessible> nativeParent = [self moxParent];
   if (!nativeParent) {
     return nil;

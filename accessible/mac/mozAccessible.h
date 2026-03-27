@@ -14,8 +14,6 @@
 
 #import "MOXAccessibleBase.h"
 
-@class mozRootAccessible;
-
 
 
 

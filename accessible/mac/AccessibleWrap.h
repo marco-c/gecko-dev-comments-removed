@@ -23,6 +23,7 @@
 
 #if defined(__OBJC__)
 @class mozAccessible;
+@class NSView;
 #endif
 
 namespace mozilla {
@@ -41,6 +42,15 @@ class AccessibleWrap : public LocalAccessible {
 
 
   virtual void GetNativeInterface(void** aOutAccessible) override;
+
+  
+
+
+#if defined(__OBJC__)
+  NSView* GetNativeWidget();
+#else
+  id GetNativeWidget();
+#endif
 
   
 
