@@ -285,6 +285,13 @@ class nsFrameSelection final {
                                           CaretAssociationHint aHint);
 
  public:
+  [[nodiscard]] bool IsAvailable() const {
+    
+    
+    
+    return !!mDomSelections[0];
+  }
+
   
 
 

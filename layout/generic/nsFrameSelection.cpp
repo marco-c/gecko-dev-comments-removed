@@ -1831,76 +1831,84 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
                                     SelectionIntoView aSelectionIntoView) {
   MOZ_ASSERT(aFrame);
 
+  if (!IsAvailable()) [[unlikely]] {
+    return NS_OK;
+  }
+
   
   
+
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(GetSelection(mozilla::SelectionType::eNormal));
+  const OwningNonNull<Selection> selection = NormalSelection();
 
   
   
   ScrollContainerFrame* scrollContainerFrame = aFrame->GetScrollTargetFrame();
-  
-  
-  nsIFrame* scrolledFrame =
-      scrollContainerFrame ? scrollContainerFrame->GetScrolledFrame() : aFrame;
-  if (!scrolledFrame) {
-    return NS_OK;
-  }
+  const AutoWeakFrame scrollContainerFrameWeak(scrollContainerFrame);
 
-  
-  
-  
-  RefPtr<Selection> selection = &NormalSelection();
-  if (!selection) {
-    return NS_OK;
-  }
-
-  nsRect caretPos;
-  nsIFrame* caretFrame = nsCaret::GetGeometry(selection, &caretPos);
-  if (!caretFrame) {
-    return NS_OK;
-  }
-
-  
-  
-  nsIFrame* frameToClick = scrolledFrame;
-  if (!NodeIsInLimiters(scrolledFrame->GetContent())) {
-    frameToClick = GetFrameToPageSelect();
-    if (NS_WARN_IF(!frameToClick)) {
-      return NS_OK;
+  bool scrolledFrameIsInLimiter = true;
+  const auto offsets = [&]()
+                           MOZ_NEVER_INLINE_DEBUG -> nsIFrame::ContentOffsets {
+    
+    
+    nsIFrame* scrolledFrame = scrollContainerFrame
+                                  ? scrollContainerFrame->GetScrolledFrame()
+                                  : aFrame;
+    if (!scrolledFrame) [[unlikely]] {
+      return {};
     }
-  }
 
-  if (scrollContainerFrame) {
+    nsRect caretPos;
+    nsIFrame* caretFrame = nsCaret::GetGeometry(selection, &caretPos);
+    if (!caretFrame) [[unlikely]] {
+      return {};
+    }
+
     
     
-    
-    
-    
-    
-    
-    if (aForward) {
-      caretPos.y += scrollContainerFrame->GetPageScrollAmount().height;
+    nsIFrame* frameToClick = scrolledFrame;
+    if (!NodeIsInLimiters(scrolledFrame->GetContent())) {
+      frameToClick = GetFrameToPageSelect();
+      scrolledFrameIsInLimiter = scrolledFrame == frameToClick;
+      if (NS_WARN_IF(!frameToClick)) {
+        return {};
+      }
+    }
+
+    if (scrollContainerFrame) {
+      
+      
+      
+      
+      
+      
+      
+      if (aForward) {
+        caretPos.y += scrollContainerFrame->GetPageScrollAmount().height;
+      } else {
+        caretPos.y -= scrollContainerFrame->GetPageScrollAmount().height;
+      }
     } else {
-      caretPos.y -= scrollContainerFrame->GetPageScrollAmount().height;
+      
+      if (aForward) {
+        caretPos.y += frameToClick->GetSize().height;
+      } else {
+        caretPos.y -= frameToClick->GetSize().height;
+      }
     }
-  } else {
+
+    caretPos += caretFrame->GetOffsetTo(frameToClick);
+
     
-    if (aForward) {
-      caretPos.y += frameToClick->GetSize().height;
-    } else {
-      caretPos.y -= frameToClick->GetSize().height;
-    }
-  }
-
-  caretPos += caretFrame->GetOffsetTo(frameToClick);
-
-  
-  nsPoint desiredPoint;
-  desiredPoint.x = caretPos.x;
-  desiredPoint.y = caretPos.y + caretPos.height / 2;
-  nsIFrame::ContentOffsets offsets =
-      frameToClick->GetContentOffsetsFromPoint(desiredPoint);
-
-  if (!offsets.content) {
+    nsPoint desiredPoint;
+    desiredPoint.x = caretPos.x;
+    desiredPoint.y = caretPos.y + caretPos.height / 2;
+    return frameToClick->GetContentOffsetsFromPoint(desiredPoint);
+  }();
+  if (!offsets.content) [[unlikely]] {
     
     return NS_OK;
   }
@@ -1910,7 +1918,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
   {
     
     
-    SelectionBatcher ensureNoSelectionChangeNotifications(selection,
+    SelectionBatcher ensureNoSelectionChangeNotifications(selection.ref(),
                                                           __FUNCTION__);
 
     RangeBoundary oldAnchor = selection->AnchorRef();
@@ -1930,7 +1938,7 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
       aSelectionIntoView == SelectionIntoView::IfChanged && !selectionChanged);
 
   
-  if (scrollContainerFrame) {
+  if (scrollContainerFrameWeak.IsAlive()) {
     
     
     
@@ -1939,9 +1947,10 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
     
     
     ScrollMode scrollMode = doScrollSelectionIntoView && !selectionChanged &&
-                                    scrolledFrame != frameToClick
+                                    !scrolledFrameIsInLimiter
                                 ? ScrollMode::Instant
                                 : ScrollMode::Smooth;
+    MOZ_ASSERT(scrollContainerFrameWeak.GetFrame() == scrollContainerFrame);
     scrollContainerFrame->ScrollBy(nsIntPoint(0, aForward ? 1 : -1),
                                    ScrollUnit::PAGES, scrollMode);
   }
