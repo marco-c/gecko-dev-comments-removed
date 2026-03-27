@@ -149,11 +149,15 @@ public class AIFeaturesController {
     public final boolean isAllowed;
 
     
+    public final boolean isBlocked;
+
+    
     @VisibleForTesting
     protected AIFeature() {
       this.id = "";
       this.isEnabled = false;
       this.isAllowed = false;
+      this.isBlocked = false;
     }
 
     
@@ -165,6 +169,7 @@ public class AIFeaturesController {
       this.id = builder.mId;
       this.isEnabled = builder.mIsEnabled;
       this.isAllowed = builder.mIsAllowed;
+      this.isBlocked = builder.mIsBlocked;
     }
 
     
@@ -172,6 +177,7 @@ public class AIFeaturesController {
       private final @NonNull String mId;
       private boolean mIsEnabled;
       private boolean mIsAllowed;
+      private boolean mIsBlocked;
 
       
 
@@ -212,6 +218,19 @@ public class AIFeaturesController {
       
 
 
+
+
+
+      @AnyThread
+       @NonNull
+      Builder isBlocked(final boolean isBlocked) {
+        this.mIsBlocked = isBlocked;
+        return this;
+      }
+
+      
+
+
       @AnyThread
        @NonNull
       AIFeature build() {
@@ -234,9 +253,12 @@ public class AIFeaturesController {
         if (featureId == null) {
           return null;
         }
-        final var isEnabled = bundle.getBoolean("isEnabled");
-        final var isAllowed = bundle.getBoolean("isAllowed");
-        return new Builder(featureId).isEnabled(isEnabled).isAllowed(isAllowed).build();
+
+        return new Builder(featureId)
+            .isEnabled(bundle.getBoolean("isEnabled"))
+            .isAllowed(bundle.getBoolean("isAllowed"))
+            .isBlocked(bundle.getBoolean("isBlocked"))
+            .build();
       } catch (final Exception e) {
         Log.w(LOGTAG, "Could not deserialize AIFeature object: " + e);
         return null;
@@ -251,6 +273,8 @@ public class AIFeaturesController {
           + isEnabled
           + ", isAllowed="
           + isAllowed
+          + ", isBlocked="
+          + isBlocked
           + " }";
     }
   }
