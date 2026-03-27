@@ -433,9 +433,9 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".scptd",  
     
     
-    
-    ".seplugin",  
-    ".service",   
+    ".search-ms",  
+    ".seplugin",   
+    ".service",    
     
     ".sh",    
     ".shar",  
