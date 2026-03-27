@@ -147,6 +147,10 @@ const gTestSyntaxExamples = {
         description: "a calc time",
         input: new CSSMathSum(new CSSUnitValue(0, 's'), new CSSUnitValue(0, 'ms')),
         specifiedExpected: new CSSMathSum(new CSSUnitValue(0, 's'), new CSSUnitValue(0, 's')),
+        
+        
+        
+        specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(0, 's')),
         defaultSpecified: (_, result) => assert_is_calc_sum(result),
         defaultComputed: (_, result) => assert_is_unit('s', result)
       }
@@ -221,6 +225,10 @@ const gTestSyntaxExamples = {
       {
         description: "a calc number",
         input: new CSSMathSum(new CSSUnitValue(2, 'number'), new CSSUnitValue(3, 'number')),
+        
+        
+        
+        specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(5, 'number')),
         defaultSpecified: (_, result) => assert_is_calc_sum(result),
         defaultComputed: (_, result) => {
           assert_style_value_equals(result, new CSSUnitValue(5, 'number'));
