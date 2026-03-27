@@ -79,7 +79,7 @@ DriveMapping::~DriveMapping() {
   }
 }
 
-bool DriveToNtPath(const wchar_t aDriveLetter, nsAString& aNtPath) {
+bool DriveToNtPath(const wchar_t aDriveLetter, nsString& aNtPath) {
   const wchar_t drvTpl[] = {aDriveLetter, L':', L'\0'};
   aNtPath.SetLength(MAX_PATH);
   DWORD pathLen;
@@ -97,7 +97,7 @@ bool DriveToNtPath(const wchar_t aDriveLetter, nsAString& aNtPath) {
   }
   
   
-  aNtPath.SetLength(NS_strlen(aNtPath.BeginReading()));
+  aNtPath.SetLength(NS_strlen(aNtPath.get()));
   return true;
 }
 

@@ -2,6 +2,7 @@
 
 
 
+
 #include "nsAppRunner.h"
 #include "nsXREDirProvider.h"
 #ifndef ANDROID
@@ -1625,7 +1626,7 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
     folder.Append(profileStart);
     ToLowerCase(folder);
 
-    rv = AppendProfileString(aFile, folder.BeginReading());
+    rv = AppendProfileString(aFile, folder.get());
   } else {
     if (!vendor.IsEmpty()) {
       folder.Append(vendor);

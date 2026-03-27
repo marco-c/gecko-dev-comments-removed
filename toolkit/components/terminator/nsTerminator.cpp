@@ -13,6 +13,8 @@
 
 
 
+
+
 #include "mozilla/ShutdownPhase.h"
 #include "nsTerminator.h"
 
@@ -235,7 +237,7 @@ void RunWatchdog(void* arg) {
         mozilla::AppShutdown::GetShutdownPhaseName(lastPhase));
 
     CrashReporter::SetMinidumpAnalysisAllThreads();
-    MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
+    MOZ_CRASH_UNSAFE(strdup(msg.get()));
   }
 }
 

@@ -14,7 +14,7 @@ namespace mozilla {
 
 NS_IMETHODIMP AboutThirdParty::LoadModuleForTesting(
     const nsAString& aModuleName) {
-  HMODULE module = ::LoadLibraryW(aModuleName.Data());
+  HMODULE module = ::LoadLibraryW(PromiseFlatString(aModuleName).get());
 
   
   if (module) {

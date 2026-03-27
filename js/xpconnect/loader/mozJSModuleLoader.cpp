@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "ScriptLoadRequest.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"
@@ -614,7 +616,7 @@ nsresult mozJSModuleLoader::LoadSingleModuleScriptOnWorker(
   
   
   options.setNoScriptRval(true);
-  options.setFileAndLine(location.BeginReading(), 1);
+  options.setFileAndLine(location.get(), 1);
   SetModuleOptions(options);
 
   

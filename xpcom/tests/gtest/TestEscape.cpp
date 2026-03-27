@@ -20,7 +20,7 @@ TEST(Escape, FallibleNoEscape)
   nsresult rv = NS_EscapeURL(toEscape, esc_OnlyNonASCII, escaped, fallible);
   EXPECT_EQ(rv, NS_OK);
   
-  EXPECT_STREQ(toEscape.BeginReading(), escaped.BeginReading());
+  EXPECT_STREQ(toEscape.get(), escaped.get());
   
   EXPECT_EQ(toEscape.BeginReading(), escaped.BeginReading());
 }
@@ -33,9 +33,9 @@ TEST(Escape, FallibleEscape)
   nsCString escaped;
   nsresult rv = NS_EscapeURL(toEscape, esc_OnlyNonASCII, escaped, fallible);
   EXPECT_EQ(rv, NS_OK);
-  EXPECT_STRNE(toEscape.BeginReading(), escaped.BeginReading());
+  EXPECT_STRNE(toEscape.get(), escaped.get());
   const char* const kExpected = "data:,Hello%2C%20World!%C4%9F";
-  EXPECT_STREQ(escaped.BeginReading(), kExpected);
+  EXPECT_STREQ(escaped.get(), kExpected);
 }
 
 TEST(Escape, BadEscapeSequences)
@@ -133,12 +133,12 @@ TEST(Escape, EscapeSpaces)
   nsresult rv = NS_EscapeURL(toEscape, esc_OnlyNonASCII, escaped, fallible);
   EXPECT_EQ(rv, NS_OK);
   
-  EXPECT_STREQ(escaped.BeginReading(), "data:%0D%0A spa ces%C4%9F");
+  EXPECT_STREQ(escaped.get(), "data:%0D%0A spa ces%C4%9F");
 
   escaped.Truncate();
   rv = NS_EscapeURL(toEscape, esc_OnlyNonASCII | esc_Spaces, escaped, fallible);
   EXPECT_EQ(rv, NS_OK);
-  EXPECT_STREQ(escaped.BeginReading(), "data:%0D%0A%20spa%20ces%C4%9F");
+  EXPECT_STREQ(escaped.get(), "data:%0D%0A%20spa%20ces%C4%9F");
 }
 
 TEST(Escape, AppleNSURLEscapeHash)
@@ -147,7 +147,7 @@ TEST(Escape, AppleNSURLEscapeHash)
   nsCString escaped;
   bool isEscapedOK = NS_Escape(toEscape, escaped, url_NSURLRef);
   EXPECT_EQ(isEscapedOK, true);
-  EXPECT_STREQ(escaped.BeginReading(), "%23");
+  EXPECT_STREQ(escaped.get(), "%23");
 }
 
 TEST(Escape, AppleNSURLEscapeNoDouble)
@@ -157,7 +157,7 @@ TEST(Escape, AppleNSURLEscapeNoDouble)
   nsCString escaped;
   bool isEscapedOK = NS_Escape(toEscape, escaped, url_NSURLRef);
   EXPECT_EQ(isEscapedOK, true);
-  EXPECT_STREQ(escaped.BeginReading(), "%23");
+  EXPECT_STREQ(escaped.get(), "%23");
 }
 
 
@@ -173,7 +173,7 @@ TEST(Escape, AppleNSURLEscapeLists)
     nsCString escaped;
     nsresult rv = NS_GetSpecWithNSURLEncoding(escaped, pair.first);
     EXPECT_EQ(rv, NS_OK);
-    EXPECT_STREQ(pair.second.BeginReading(), escaped.BeginReading());
+    EXPECT_STREQ(pair.second.get(), escaped.get());
   }
 
   
@@ -195,7 +195,7 @@ TEST(Escape, AppleNSURLEscapeLists)
     nsCString escaped;
     nsresult rv = NS_GetSpecWithNSURLEncoding(escaped, toEscape);
     EXPECT_EQ(rv, NS_OK);
-    EXPECT_STREQ(toEscape.BeginReading(), escaped.BeginReading());
+    EXPECT_STREQ(toEscape.get(), escaped.get());
   }
 }
 

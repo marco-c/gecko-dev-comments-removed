@@ -463,7 +463,7 @@ nsZipItem* nsZipArchive::GetItem(const nsACString& aEntryName) {
         
         
         if (mUseZipLog && mURI.Length()) {
-          zipLog.Write(mURI, aEntryName.BeginReading());
+          zipLog.Write(mURI, PromiseFlatCString(aEntryName).get());
         }
         return item;  
       }

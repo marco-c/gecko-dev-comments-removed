@@ -145,7 +145,10 @@ class nsTStringRepr {
   typedef nsTStringLengthStorage<T> LengthStorage;
 
   
-  constexpr const_char_iterator BeginReading() const MOZ_LIFETIME_BOUND {
+  
+  
+  constexpr const_char_iterator BeginReading() const MOZ_LIFETIME_BOUND
+      MOZ_NON_TERMINATED_STRING {
     return mData;
   }
   constexpr const_char_iterator EndReading() const MOZ_LIFETIME_BOUND {
@@ -168,7 +171,7 @@ class nsTStringRepr {
   }
 
   const_char_iterator& BeginReading(const_char_iterator& aIter) const
-      MOZ_LIFETIME_BOUND {
+      MOZ_LIFETIME_BOUND MOZ_NON_TERMINATED_STRING {
     return aIter = mData;
   }
 
@@ -190,7 +193,10 @@ class nsTStringRepr {
 #endif
 
   
-  constexpr typename raw_type<T, int>::type Data() const MOZ_LIFETIME_BOUND {
+  
+  
+  constexpr typename raw_type<T, int>::type Data() const MOZ_LIFETIME_BOUND
+      MOZ_NON_TERMINATED_STRING {
     return mData;
   }
 

@@ -659,7 +659,7 @@ bool GeckoChildProcessHost::PrepareLaunch(
       for (const nsAString& readPath : readPaths.Split(',')) {
         nsString trimmedPath(readPath);
         trimmedPath.Trim(" ", true, true);
-        std::wstring resolvedPath(trimmedPath.Data());
+        std::wstring resolvedPath(trimmedPath.getW());
         
         
         if (resolvedPath.back() == L'\\') {

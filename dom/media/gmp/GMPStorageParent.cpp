@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPStorageParent.h"
 
 #include "GMPParent.h"
@@ -52,7 +51,7 @@ nsresult GMPStorageParent::Init() {
   }
 
   LOGD(("GMPStorageParent[%p]::Init succeeded, nodeId=%s, persistent=%d", this,
-        mNodeId.BeginReading(), persistent));
+        mNodeId.get(), persistent));
   mShutdown = false;
   return NS_OK;
 }

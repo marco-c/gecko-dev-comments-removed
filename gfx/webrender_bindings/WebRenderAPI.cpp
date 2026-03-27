@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebRenderAPI.h"
 
 #include "mozilla/Logging.h"
@@ -221,7 +219,7 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
             RenderCompositor::Create(std::move(aWidget), error);
         if (!compositor) {
           if (!error.IsEmpty()) {
-            gfxCriticalNote << error.BeginReading();
+            gfxCriticalNote << error.get();
           }
           return CreatePromise::CreateAndReject(error, __func__);
         }

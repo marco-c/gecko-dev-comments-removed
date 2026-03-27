@@ -1249,7 +1249,7 @@ GfxInfoBase::LogFailure(const nsACString& failure) {
 
   
   gfxCriticalError(CriticalLog::DefaultOptions(false))
-      << "(LF) " << failure.BeginReading();
+      << "(LF) " << PromiseFlatCString(failure).get();
 }
 
 NS_IMETHODIMP GfxInfoBase::GetFailures(nsTArray<int32_t>& indices,

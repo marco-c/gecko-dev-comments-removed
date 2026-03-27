@@ -2,7 +2,6 @@
 
 
 
-
 #include "MediaEngineRemoteVideoSource.h"
 
 #include "CamerasChild.h"
@@ -572,7 +571,7 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
       GetErrorName(rv, name);
       LOG("Video source %p for video device %d Reconfigure() failed "
           "unexpectedly in Start(). rv=%s",
-          this, mCaptureId, name.Data());
+          this, mCaptureId, name.get());
       return NS_ERROR_UNEXPECTED;
     }
   }

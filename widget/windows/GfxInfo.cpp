@@ -529,8 +529,7 @@ nsresult GfxInfo::Init() {
     if (len < sizeof(sysdir)) {
       nsString rdpudd(sysdir);
       rdpudd.AppendLiteral("\\rdpudd.dll");
-      gfxWindowsPlatform::GetDLLVersion(rdpudd.BeginReading(),
-                                        mDriverVersion[0]);
+      gfxWindowsPlatform::GetDLLVersion(rdpudd.get(), mDriverVersion[0]);
       mDriverDate[0].AssignLiteral("01-01-1970");
 
       

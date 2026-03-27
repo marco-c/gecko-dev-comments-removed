@@ -1710,7 +1710,7 @@ void RuntimeService::CrashIfHanging() {
   msg.Append(activeStats.mMessage);
 
   
-  MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
+  MOZ_CRASH_UNSAFE(strdup(msg.get()));
 }
 
 

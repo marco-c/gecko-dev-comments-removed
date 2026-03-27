@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebrtcTCPSocket.h"
 
 #include "WebrtcTCPSocketCallback.h"
@@ -335,7 +333,7 @@ void WebrtcTCPSocket::OpenWithoutHttpProxy(nsIProxyInfo* aSocksProxyInfo) {
   }
 
   if (NS_WARN_IF(PR_SUCCESS !=
-                 PR_StringToNetAddr(mLocalAddress.BeginReading(), &prAddr))) {
+                 PR_StringToNetAddr(mLocalAddress.get(), &prAddr))) {
     CloseWithReason(NS_ERROR_FAILURE);
     return;
   }

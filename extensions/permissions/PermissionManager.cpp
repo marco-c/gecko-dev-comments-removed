@@ -3396,7 +3396,7 @@ void PermissionManager::NotifyObservers(
     
     MonitorAutoUnlock unlock{mMonitor};
     observerService->NotifyObservers(aPermission, kPermissionChangeNotification,
-                                     aData.Data());
+                                     aData.get());
   }
 }
 

@@ -899,7 +899,7 @@ RefPtr<GenericPromise> ProfilerParent::ProfilerStarted(
   
   auto filtersCStrings = nsTArray<const char*>{aParams->GetFilters().Length()};
   for (const auto& filter : aParams->GetFilters()) {
-    filtersCStrings.AppendElement(filter.Data());
+    filtersCStrings.AppendElement(filter.get());
   }
   aParams->GetActiveTabID(&ipcParams.activeTabID());
 

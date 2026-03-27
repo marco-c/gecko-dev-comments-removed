@@ -672,8 +672,7 @@ void JumpListBuilder::DoPopulateJumpList(
     }
 
     hr = mJumpListBackend->AppendCategory(
-        reinterpret_cast<const wchar_t*>(aCustomTitle.BeginReading()),
-        pCustomArray);
+        PromiseFlatString(aCustomTitle).getW(), pCustomArray);
 
     
     
