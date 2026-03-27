@@ -10,38 +10,36 @@ const PAGE_URL =
 
 
 
-add_task(
-  async function test_email_field_shows_login_priority_with_saved_address() {
-    await SpecialPowers.pushPrefEnv({
-      set: [["signon.rememberSignons", true]],
-    });
+add_task(async function test_email_field_is_address_dropdown() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["signon.rememberSignons", true]],
+  });
+  
+  await setStorage(TEST_ADDRESS_1);
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: PAGE_URL },
+    async function (browser) {
+      const focusInput = "#email";
+      
+      
+      await focusAndWaitForFieldsIdentified(browser, "#given-name");
+      await openPopupOn(browser, focusInput);
+      const item = getDisplayedPopupItems(browser)[1];
 
-    
-    
-    await setStorage(TEST_ADDRESS_1);
+      is(
+        item.getAttribute("ac-value"),
+        "Manage addresses",
+        "Address popup should show a valid email suggestion"
+      );
 
-    await BrowserTestUtils.withNewTab(
-      { gBrowser, url: PAGE_URL },
-      async function (browser) {
-        const focusInput = "#email";
-        await focusAndWaitForFieldsIdentified(browser, "#given-name");
-        await openPopupOn(browser, focusInput);
-        const item = getDisplayedPopupItems(browser)[0];
-
-        is(
-          item.getAttribute("ac-value"),
-          "Manage Passwords",
-          "Login Manager should have priority over Form Autofill when password fields are present"
-        );
-
-        await closePopup(browser);
-      }
-    );
-  }
-);
+      await closePopup(browser);
+    }
+  );
+});
 
 add_task(
   async function test_email_field_shows_login_dropdown_when_no_saved_address() {
+    
     await removeAllRecords();
     await BrowserTestUtils.withNewTab(
       { gBrowser, url: PAGE_URL },
@@ -54,7 +52,7 @@ add_task(
         is(
           item.getAttribute("ac-value"),
           "Manage Passwords",
-          "Login Manager should be shown when no addresses are saved"
+          "Login Manager should be shown"
         );
 
         await closePopup(browser);
@@ -63,26 +61,35 @@ add_task(
   }
 );
 
-add_task(async function test_email_field_shows_login_priority_onfocus() {
+
+
+
+add_task(async function test_email_field_is_address_dropdown_onfocus() {
+  
+  await removeAllRecords();
+
   await SpecialPowers.pushPrefEnv({
     set: [["signon.rememberSignons", true]],
   });
+  
   await setStorage(TEST_ADDRESS_1);
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: PAGE_URL },
     async function (browser) {
+      
+      
+      
       await SpecialPowers.spawn(browser, [], () => {
         content.document.getElementById("email").focus();
       });
       await runAndWaitForAutocompletePopupOpen(browser, () => {});
-
-      const item = getDisplayedPopupItems(browser)[0];
+      const item = getDisplayedPopupItems(browser)[1];
 
       is(
         item.getAttribute("ac-value"),
-        "Manage Passwords",
-        "Login Manager should have priority on focus due to password fields"
+        "Manage addresses",
+        "Address popup should show a valid email suggestion"
       );
 
       await closePopup(browser);
@@ -92,6 +99,7 @@ add_task(async function test_email_field_shows_login_priority_onfocus() {
 
 add_task(
   async function test_email_field_shows_login_dropdown_when_no_saved_address_onfocus() {
+    
     await removeAllRecords();
     await BrowserTestUtils.withNewTab(
       { gBrowser, url: PAGE_URL },
@@ -105,7 +113,7 @@ add_task(
         is(
           item.getAttribute("ac-value"),
           "Manage Passwords",
-          "Login Manager should be the result on focus"
+          "Login Manager should be shown"
         );
 
         await closePopup(browser);
@@ -113,39 +121,3 @@ add_task(
     );
   }
 );
-
-add_task(async function test_single_email_field_now_shows_address_autofill() {
-  await removeAllRecords();
-  await setStorage(TEST_ADDRESS_1);
-
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: PAGE_URL },
-    async function (browser) {
-      
-      await SpecialPowers.spawn(browser, [], () => {
-        content.document.getElementById("new-password").remove();
-        content.document.getElementById("new-password-repeat").remove();
-      });
-
-      const focusInput = "#email";
-      await focusAndWaitForFieldsIdentified(browser, "#given-name");
-      await openPopupOn(browser, focusInput);
-
-      const items = getDisplayedPopupItems(browser);
-
-      is(
-        items[0].getAttribute("ac-value"),
-        TEST_ADDRESS_1.email,
-        "The first result should be the saved email address"
-      );
-
-      is(
-        items[1].getAttribute("ac-value"),
-        "Manage addresses",
-        "The second result should be the Manage addresses footer"
-      );
-
-      await closePopup(browser);
-    }
-  );
-});
