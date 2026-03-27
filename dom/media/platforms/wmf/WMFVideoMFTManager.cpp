@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WMFVideoMFTManager.h"
 
 #include <cguid.h>
@@ -23,6 +21,7 @@
 #include "gfx2DGlue.h"
 #include "gfxWindowsPlatform.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/SchedulerGroup.h"
@@ -258,9 +257,13 @@ MediaResult WMFVideoMFTManager::InitInternal() {
       }
     }
 
+    
+    
+    
     if (gfx::gfxVars::HwDecodedVideoZeroCopy() && mKnowsCompositor &&
         mKnowsCompositor->UsingHardwareWebRender() && mDXVA2Manager &&
-        mDXVA2Manager->SupportsZeroCopyNV12Texture()) {
+        mDXVA2Manager->SupportsZeroCopyNV12Texture() &&
+        mColorDepth == gfx::ColorDepth::COLOR_8 && !IsHDR()) {
       mZeroCopyNV12Texture = true;
       const int kOutputBufferSize = 10;
 
@@ -322,13 +325,18 @@ MediaResult WMFVideoMFTManager::InitInternal() {
         uint32_t(media::MediaDecoderBackend::WMFSoftware));
   }
 
-  LOG("Created a video decoder, useDxva=%s, streamType=%s, outputSubType=%s",
+  
+  
+  
+  const GUID& outputSubType = GetOutputSubtype();
+  LOG("Created a video decoder, useDxva=%s, streamType=%s, outputSubType=%s, "
+      "isHDR=%u",
       mUseHwAccel ? "Yes" : "No", EnumValueToString(mStreamType),
-      GetSubTypeStr(GetOutputSubtype()).get());
+      GetSubTypeStr(outputSubType).get(), (unsigned int)IsHDR());
 
   mDecoder = decoder;
   RETURN_PARAM_IF_FAILED(
-      SetDecoderMediaTypes(),
+      SetDecoderMediaTypes(outputSubType),
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   RESULT_DETAIL("Fail to set the decoder media types")));
 
@@ -356,14 +364,16 @@ MediaResult WMFVideoMFTManager::InitInternal() {
   LOG("Video Decoder initialized, Using DXVA: %s",
       (mUseHwAccel ? "Yes" : "No"));
 
+  
   if (mUseHwAccel) {
     RETURN_PARAM_IF_FAILED(
         mDXVA2Manager->ConfigureForSize(
             outputType,
             mColorSpace.refOr(
                 DefaultColorSpace({mImageSize.width, mImageSize.height})),
-            mColorRange, mColorDepth, mVideoInfo.ImageRect().width,
-            mVideoInfo.ImageRect().height),
+            mColorRange, mColorDepth,
+            mVideoInfo.mTransferFunction.refOr(gfx::TransferFunction::BT709),
+            mVideoInfo.ImageRect().width, mVideoInfo.ImageRect().height),
         MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                     RESULT_DETAIL("Fail to configure image size for "
                                   "DXVA2Manager.")));
@@ -386,7 +396,7 @@ MediaResult WMFVideoMFTManager::InitInternal() {
 }
 
 HRESULT
-WMFVideoMFTManager::SetDecoderMediaTypes() {
+WMFVideoMFTManager::SetDecoderMediaTypes(const GUID& aFallbackSubType) {
   
   RefPtr<IMFMediaType> inputType;
   RETURN_IF_FAILED(wmf::MFCreateMediaType(getter_AddRefs(inputType)));
@@ -428,7 +438,7 @@ WMFVideoMFTManager::SetDecoderMediaTypes() {
                           D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DECODER));
     }
   }
-  return mDecoder->SetMediaTypes(inputType, outputType);
+  return mDecoder->SetMediaTypes(inputType, outputType, aFallbackSubType);
 }
 
 HRESULT
@@ -578,6 +588,10 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
     stride = mVideoStride;
   }
+  if (stride <= 0) {
+    LOG("CreateBasicVideoFrame: invalid stride %ld", stride);
+    return E_FAIL;
+  }
 
   const GUID& subType = mDecoder->GetOutputMediaSubType();
   MOZ_DIAGNOSTIC_ASSERT(subType == MFVideoFormat_YV12 ||
@@ -606,9 +620,17 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
 
   MOZ_DIAGNOSTIC_ASSERT(mSoftwareImageSize.height % 16 == 0,
                         "decoded height must be 16 bytes aligned");
-  const uint32_t y_size = stride * mSoftwareImageSize.height;
-  const uint32_t v_size = stride * mSoftwareImageSize.height / 4;
-  const uint32_t halfStride = (stride + 1) / 2;
+  mozilla::CheckedInt<uint32_t> y_size_checked =
+      mozilla::CheckedInt<uint32_t>(static_cast<uint32_t>(stride)) *
+      mSoftwareImageSize.height;
+  if (!y_size_checked.isValid()) {
+    LOG("CreateBasicVideoFrame: plane size overflow");
+    return E_FAIL;
+  }
+  const uint32_t y_size = y_size_checked.value();
+  const uint32_t v_size = y_size / 4;
+  const uint32_t halfStride =
+      static_cast<uint32_t>((static_cast<int64_t>(stride) + 1) / 2);
   const uint32_t halfHeight = (videoHeight + 1) / 2;
   const uint32_t halfWidth = (videoWidth + 1) / 2;
 
@@ -807,28 +829,53 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
       
       
       
-      if (FAILED(
-              (hr = (mDecoder->FindDecoderOutputTypeWithSubtype(
-                   mUseHwAccel ? MFVideoFormat_NV12 : MFVideoFormat_YV12)))) &&
-          FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
-                      MFVideoFormat_P010))) &&
-          FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
-                      MFVideoFormat_P016)))) {
-        LOG("No suitable output format found");
-        return hr;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const GUID& SDRSubType =
+          mUseHwAccel ? MFVideoFormat_NV12 : MFVideoFormat_YV12;
+      bool preferP010 = mColorDepth > gfx::ColorDepth::COLOR_8 || IsHDR();
+      if (preferP010) {
+        if (FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
+                        MFVideoFormat_P010, GUID_NULL))) &&
+            FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
+                        MFVideoFormat_P016, SDRSubType)))) {
+          LOG("No suitable output format found");
+          return hr;
+        }
+      } else {
+        if (FAILED((hr = (mDecoder->FindDecoderOutputTypeWithSubtype(
+                        SDRSubType, GUID_NULL)))) &&
+            FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
+                        MFVideoFormat_P010, MFVideoFormat_P016)))) {
+          LOG("No suitable output format found");
+          return hr;
+        }
       }
 
       RefPtr<IMFMediaType> outputType;
       hr = mDecoder->GetOutputMediaType(outputType);
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
+      
       if (mUseHwAccel) {
         hr = mDXVA2Manager->ConfigureForSize(
             outputType,
             mColorSpace.refOr(
                 DefaultColorSpace({mImageSize.width, mImageSize.height})),
-            mColorRange, mColorDepth, mVideoInfo.ImageRect().width,
-            mVideoInfo.ImageRect().height);
+            mColorRange, mColorDepth,
+            mVideoInfo.mTransferFunction.refOr(gfx::TransferFunction::BT709),
+            mVideoInfo.ImageRect().width, mVideoInfo.ImageRect().height);
         NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
       } else {
         
@@ -987,13 +1034,13 @@ nsCString WMFVideoMFTManager::GetDescriptionName() const {
     }
     if (format == MFVideoFormat_P010) {
       if (!gfx::DeviceManagerDx::Get()->CanUseP010()) {
-        return "p010->argb32";
+        return "p010->a2rgb10";
       }
       return "p010";
     }
     if (format == MFVideoFormat_P016) {
       if (!gfx::DeviceManagerDx::Get()->CanUseP016()) {
-        return "p016->argb32";
+        return "p016->argb16f";
       }
       return "p016";
     }
