@@ -73,9 +73,12 @@ async function _eventListenerLeakStep(target, name, extra) {
   frame = null;
 
   
-  await new Promise(resolve => SpecialPowers.exactGC(resolve));
-  await new Promise(resolve => SpecialPowers.exactGC(resolve));
-  await new Promise(resolve => SpecialPowers.exactGC(resolve));
+  
+  
+  for (let i = 0; i < 3; i++) {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => SpecialPowers.exactGC(resolve));
+  }
 
   ok(
     !weakRef.get(),
