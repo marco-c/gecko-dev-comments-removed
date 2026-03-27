@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_CamerasParent_h
 #define mozilla_CamerasParent_h
 
@@ -68,12 +66,11 @@ class AggregateCapturer final
   RemoveStreamResult RemoveStream(int aStreamId);
   RemoveStreamResult RemoveStreamsFor(CamerasParent* aParent);
   Maybe<int> CaptureIdFor(int aStreamId);
-  void SetConfigurationFor(int aStreamId,
-                           const webrtc::VideoCaptureCapability& aCapability,
-                           const NormalizedConstraints& aConstraints,
-                           const dom::VideoResizeModeEnum& aResizeMode,
-                           bool aStarted);
-  Maybe<webrtc::VideoCaptureCapability> CombinedCapability();
+  int32_t StartStream(int aStreamId,
+                      const webrtc::VideoCaptureCapability& aCapability,
+                      const NormalizedConstraints& aConstraints,
+                      const dom::VideoResizeModeEnum& aResizeMode);
+  int32_t StopStream(int aStreamId);
 
   void OnCaptureEnded();
   void OnFrame(const webrtc::VideoFrame& aVideoFrame) override;
@@ -101,7 +98,7 @@ class AggregateCapturer final
     
     
     
-    bool mStarted{false};
+    bool mActive{false};
     
     media::TimeUnit mLastFrameTime{media::TimeUnit::FromNegativeInfinity()};
   };
@@ -132,6 +129,11 @@ class AggregateCapturer final
                     CaptureEngine aCapEng, VideoEngine* aEngine,
                     const nsCString& aUniqueId, int aCaptureId,
                     nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
+
+  Maybe<webrtc::VideoCaptureCapability> CombinedCapability(
+      const decltype(mStreams)::AutoLock& aStreamsGuard);
+
+  int32_t UpdateDevice(const Maybe<webrtc::VideoCaptureCapability>& aState);
 
   MediaEventListener mCaptureEndedListener;
 };
