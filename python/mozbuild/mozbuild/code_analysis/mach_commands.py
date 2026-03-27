@@ -455,11 +455,7 @@ def _get_required_version(command_context):
 
 
 def _get_current_version(command_context, clang_paths):
-    
-    
-    
-    
-    cmd = [clang_paths._clang_format_path, "--version"]
+    cmd = [clang_paths._clang_tidy_path, "--version"]
     version_info = None
     try:
         version_info = (
@@ -474,7 +470,7 @@ def _get_current_version(command_context, clang_paths):
                 logging.INFO,
                 "static-analysis",
                 {},
-                f"{clang_paths._clang_format_path} Version = {version_info} ",
+                f"{clang_paths._clang_tidy_path} Version = {version_info} ",
             )
 
     except subprocess.CalledProcessError as e:
@@ -482,7 +478,7 @@ def _get_current_version(command_context, clang_paths):
             logging.ERROR,
             "static-analysis",
             {},
-            "Error determining the version clang-tidy/format binary, please see the "
+            "Error determining the version clang-tidy binary, please see the "
             f"attached exception: \n{e.output}",
         )
     return version_info
@@ -496,7 +492,7 @@ def _is_version_eligible(command_context, clang_paths, log_error=True):
     current_version = _get_current_version(command_context, clang_paths)
     if current_version is None:
         return False
-    version = "clang-format version " + version
+    version = "clang-tidy version " + version
     if version in current_version:
         return True
 
@@ -505,7 +501,7 @@ def _is_version_eligible(command_context, clang_paths, log_error=True):
             logging.ERROR,
             "static-analysis",
             {},
-            f"ERROR: You're using an old or incorrect version ({_get_current_version(command_context, clang_paths)}) of clang-format binary. "
+            f"ERROR: You're using an old or incorrect version ({_get_current_version(command_context, clang_paths)}) of clang-tidy binary. "
             f"Please update to a more recent one (at least > {_get_required_version(command_context)}) "
             "by running: './mach bootstrap' ",
         )
@@ -1310,12 +1306,6 @@ def _set_clang_tools_paths(command_context):
         "bin",
         "clang-tidy" + config.substs.get("HOST_BIN_SUFFIX", ""),
     )
-    clang_paths._clang_format_path = mozpath.join(
-        clang_paths._clang_tools_path,
-        "clang-tidy",
-        "bin",
-        "clang-format" + config.substs.get("HOST_BIN_SUFFIX", ""),
-    )
     clang_paths._clang_apply_replacements = mozpath.join(
         clang_paths._clang_tools_path,
         "clang-tidy",
@@ -1328,20 +1318,12 @@ def _set_clang_tools_paths(command_context):
         "bin",
         "run-clang-tidy",
     )
-    clang_paths._clang_format_diff = mozpath.join(
-        clang_paths._clang_tools_path,
-        "clang-tidy",
-        "share",
-        "clang",
-        "clang-format-diff.py",
-    )
     return 0, clang_paths
 
 
 def _do_clang_tools_exist(clang_paths):
     return (
         os.path.exists(clang_paths._clang_tidy_path)
-        and os.path.exists(clang_paths._clang_format_path)
         and os.path.exists(clang_paths._clang_apply_replacements)
         and os.path.exists(clang_paths._run_clang_tidy_path)
     )
@@ -1419,7 +1401,6 @@ def _get_clang_tools_from_source(command_context, clang_paths, filename):
         raise Exception("Extracted the archive but didn't find the expected output")
 
     assert os.path.exists(clang_paths._clang_tidy_path)
-    assert os.path.exists(clang_paths._clang_format_path)
     assert os.path.exists(clang_paths._clang_apply_replacements)
     assert os.path.exists(clang_paths._run_clang_tidy_path)
     return 0, clang_paths
