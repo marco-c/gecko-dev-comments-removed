@@ -262,6 +262,13 @@ void PdfStructTreeBuilder::BuildStructSubtree(
       
       break;
     case roles::HEADING: {
+      
+      
+      
+      
+      
+      AccNameToPdfAlt(aAcc, aPdf);
+      aPdf.fExposeAlt = false;
       int32_t level = aAcc->GroupPosition().level;
       
       if (1 <= level && level <= 6) {

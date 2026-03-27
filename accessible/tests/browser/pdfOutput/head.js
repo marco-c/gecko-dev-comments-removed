@@ -63,6 +63,21 @@ function simplifyStructTreeNode(node, contentItems) {
   }
 }
 
+
+
+
+
+function simplifyOutlineNode(node) {
+  for (const key in node) {
+    if (!["items", "title"].includes(key)) {
+      delete node[key];
+    }
+  }
+  for (const child of node.items) {
+    simplifyOutlineNode(child);
+  }
+}
+
 function addPdfTest(testName, doc, task, options = {}) {
   async function pdfTask(browser) {
     const helper = new PrintHelper(browser);
@@ -108,6 +123,25 @@ function addPdfStructTreeTest(testName, doc, pageTrees, options = {}) {
         `Page ${pageNum} struct tree correct`
       );
     }
+  }
+  addPdfTest(testName, doc, task, options);
+}
+
+
+
+
+
+
+
+
+
+function addPdfOutlineTest(testName, doc, outline, options = {}) {
+  async function task(pdf) {
+    const actualOutline = await pdf.getOutline();
+    for (const node of actualOutline) {
+      simplifyOutlineNode(node);
+    }
+    SimpleTest.isDeeply(actualOutline, outline, "Outline correct");
   }
   addPdfTest(testName, doc, task, options);
 }
