@@ -3,8 +3,8 @@
 
 
 
-#ifndef JSON_H_INCLUDED
-#define JSON_H_INCLUDED
+#ifndef JSON_VALUE_H_INCLUDED
+#define JSON_VALUE_H_INCLUDED
 
 #if !defined(JSON_IS_AMALGAMATION)
 #include "forwards.h"
@@ -39,6 +39,12 @@
 #endif
 #endif
 
+#ifndef JSONCPP_HAS_STRING_VIEW
+#if __cplusplus >= 201703L
+#define JSONCPP_HAS_STRING_VIEW 1
+#endif
+#endif
+
 #include <array>
 #include <exception>
 #include <map>
@@ -47,13 +53,21 @@
 #include <vector>
 
 
+struct ValueTest;
+
+#ifdef JSONCPP_HAS_STRING_VIEW
+#include <string_view>
+#endif
+
+
 
 #if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 #pragma warning(push)
 #pragma warning(disable : 4251 4275)
 #endif 
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 
 
@@ -192,6 +206,7 @@ private:
 
 class JSON_API Value {
   friend class ValueIteratorBase;
+  friend struct ::ValueTest;
 
 public:
   using Members = std::vector<String>;
@@ -257,7 +272,7 @@ public:
 private:
 #endif
 #ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
-  class CZString {
+  class JSON_API CZString {
   public:
     enum DuplicationPolicy { noDuplication = 0, duplicate, duplicateOnCopy };
     CZString(ArrayIndex index);
@@ -341,6 +356,9 @@ public:
 
   Value(const StaticString& value);
   Value(const String& value);
+#ifdef JSONCPP_HAS_STRING_VIEW
+  Value(std::string_view value);
+#endif
   Value(bool value);
   Value(std::nullptr_t ptr) = delete;
   Value(const Value& other);
@@ -374,7 +392,7 @@ public:
   int compare(const Value& other) const;
 
   const char* asCString() const; 
-#if JSONCPP_USING_SECURE_MEMORY
+#if JSONCPP_USE_SECURE_MEMORY
   unsigned getCStringLength() const; 
                                      
 #endif
@@ -383,6 +401,12 @@ public:
 
 
   bool getString(char const** begin, char const** end) const;
+#ifdef JSONCPP_HAS_STRING_VIEW
+  
+
+
+  bool getString(std::string_view* str) const;
+#endif
   Int asInt() const;
   UInt asUInt() const;
 #if defined(JSON_HAS_INT64)
@@ -469,6 +493,15 @@ public:
   bool insert(ArrayIndex index, const Value& newValue);
   bool insert(ArrayIndex index, Value&& newValue);
 
+#ifdef JSONCPP_HAS_STRING_VIEW
+  
+  
+  Value& operator[](std::string_view key);
+  
+  
+  
+  const Value& operator[](std::string_view key) const;
+#else
   
   
   
@@ -483,6 +516,7 @@ public:
   
   
   const Value& operator[](const String& key) const;
+#endif
   
 
 
@@ -496,9 +530,19 @@ public:
 
 
   Value& operator[](const StaticString& key);
+#ifdef JSONCPP_HAS_STRING_VIEW
+  
+  
+  Value get(std::string_view key, const Value& defaultValue) const;
+#else
   
   
   Value get(const char* key, const Value& defaultValue) const;
+  
+  
+  
+  Value get(const String& key, const Value& defaultValue) const;
+#endif
   
   
   
@@ -507,11 +551,33 @@ public:
   
   
   
-  Value get(const String& key, const Value& defaultValue) const;
-  
-  
-  
   Value const* find(char const* begin, char const* end) const;
+  
+  
+  Value const* find(const String& key) const;
+
+  
+  template <typename T, bool (T::*TMemFn)() const>
+  Value const* findValue(const String& key) const {
+    Value const* found = find(key);
+    if (!found || !(found->*TMemFn)())
+      return nullptr;
+    return found;
+  }
+
+  Value const* findNull(const String& key) const;
+  Value const* findBool(const String& key) const;
+  Value const* findInt(const String& key) const;
+  Value const* findInt64(const String& key) const;
+  Value const* findUInt(const String& key) const;
+  Value const* findUInt64(const String& key) const;
+  Value const* findIntegral(const String& key) const;
+  Value const* findDouble(const String& key) const;
+  Value const* findNumeric(const String& key) const;
+  Value const* findString(const String& key) const;
+  Value const* findArray(const String& key) const;
+  Value const* findObject(const String& key) const;
+
   
   
   
@@ -521,20 +587,28 @@ public:
   
   
   
+#if JSONCPP_HAS_STRING_VIEW
+  void removeMember(std::string_view key);
+#else
   void removeMember(const char* key);
   
   
   void removeMember(const String& key);
+#endif
+  
+
+
+
+
+
+#if JSONCPP_HAS_STRING_VIEW
+  bool removeMember(std::string_view key, Value* removed);
+#else
+  bool removeMember(String const& key, Value* removed);
   
   
   bool removeMember(const char* key, Value* removed);
-  
-
-
-
-
-
-  bool removeMember(String const& key, Value* removed);
+#endif
   
   bool removeMember(const char* begin, const char* end, Value* removed);
   
@@ -545,12 +619,18 @@ public:
 
   bool removeIndex(ArrayIndex index, Value* removed);
 
+#ifdef JSONCPP_HAS_STRING_VIEW
+  
+  
+  bool isMember(std::string_view key) const;
+#else
   
   
   bool isMember(const char* key) const;
   
   
   bool isMember(const String& key) const;
+#endif
   
   bool isMember(const char* begin, const char* end) const;
 
@@ -583,6 +663,26 @@ public:
 
   iterator begin();
   iterator end();
+
+  
+  
+  
+  const Value& front() const;
+
+  
+  
+  
+  Value& front();
+
+  
+  
+  
+  const Value& back() const;
+
+  
+  
+  
+  Value& back();
 
   
   
@@ -923,6 +1023,14 @@ public:
 };
 
 inline void swap(Value& a, Value& b) { a.swap(b); }
+
+inline const Value& Value::front() const { return *begin(); }
+
+inline Value& Value::front() { return *begin(); }
+
+inline const Value& Value::back() const { return *(--end()); }
+
+inline Value& Value::back() { return *(--end()); }
 
 } 
 

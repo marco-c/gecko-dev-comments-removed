@@ -10,7 +10,8 @@
 #include "forwards.h"
 #endif 
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 namespace Json {
 

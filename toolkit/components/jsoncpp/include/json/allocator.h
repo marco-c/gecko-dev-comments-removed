@@ -6,10 +6,12 @@
 #ifndef JSON_ALLOCATOR_H_INCLUDED
 #define JSON_ALLOCATOR_H_INCLUDED
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 
-#pragma pack(push, 8)
+#pragma pack(push)
+#pragma pack()
 
 namespace Json {
 template <typename T> class SecureAllocator {
@@ -38,7 +40,15 @@ public:
 
   void deallocate(pointer p, size_type n) {
     
+    
+#if defined(HAVE_MEMSET_S)
     memset_s(p, n * sizeof(T), 0, n * sizeof(T));
+#elif defined(_WIN32)
+    RtlSecureZeroMemory(p, n * sizeof(T));
+#else
+    std::fill_n(reinterpret_cast<volatile unsigned char*>(p), n, 0);
+#endif
+
     
     ::operator delete(p);
   }
@@ -68,7 +78,9 @@ public:
   
   SecureAllocator() {}
   template <typename U> SecureAllocator(const SecureAllocator<U>&) {}
-  template <typename U> struct rebind { using other = SecureAllocator<U>; };
+  template <typename U> struct rebind {
+    using other = SecureAllocator<U>;
+  };
 };
 
 template <typename T, typename U>
