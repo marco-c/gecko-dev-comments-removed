@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_PLATFORM_H
 #define GFX_PLATFORM_H
 
@@ -545,6 +544,16 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static qcms_profile* GetCMSOutputProfile() {
     return GetPlatform()->mCMSOutputProfile;
+  }
+
+  static const mozilla::Maybe<nsTArray<uint8_t>>& GetCMSOutputICCProfileData() {
+    
+    
+    
+    MOZ_ASSERT(qcms_profile_is_sRGB(GetPlatform()->mCMSsRGBProfile));
+    MOZ_ASSERT(GetPlatform()->mCMSsRGBProfile !=
+               GetPlatform()->mCMSOutputProfile);
+    return GetPlatform()->mCMSOutputProfileData;
   }
 
   

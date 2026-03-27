@@ -2113,6 +2113,8 @@ void gfxPlatform::InitializeCMS() {
   gCMSMode = GfxColorManagementMode();
 
   mCMSsRGBProfile = qcms_profile_sRGB();
+  NS_ASSERTION(!qcms_profile_is_bogus(mCMSsRGBProfile),
+               "Builtin sRGB profile tagged as bogus!!!");
 
   
 
@@ -2131,16 +2133,25 @@ void gfxPlatform::InitializeCMS() {
     if (!outputProfileData.IsEmpty()) {
       mCMSOutputProfile = qcms_profile_from_memory_curves_only(
           outputProfileData.Elements(), outputProfileData.Length());
+
+      
+
+      if (mCMSOutputProfile && qcms_profile_is_bogus(mCMSOutputProfile)) {
+        NS_WARNING("system ICC profile looks bogus, ignoring, using sRGB");
+        qcms_profile_release(mCMSOutputProfile);
+        mCMSOutputProfile = nullptr;
+        mCMSOutputProfileData.reset();
+      }
+
+      
+      
+      
+      
+      if (mCMSOutputProfile && (mCMSOutputProfileData.isNothing() ||
+                                mCMSOutputProfileData->IsEmpty())) {
+        mCMSOutputProfileData = Some(std::move(outputProfileData));
+      }
     }
-  }
-
-  
-
-  if (mCMSOutputProfile && qcms_profile_is_bogus(mCMSOutputProfile)) {
-    NS_ASSERTION(mCMSOutputProfile != mCMSsRGBProfile,
-                 "Builtin sRGB profile tagged as bogus!!!");
-    qcms_profile_release(mCMSOutputProfile);
-    mCMSOutputProfile = nullptr;
   }
 
   if (!mCMSOutputProfile) {
