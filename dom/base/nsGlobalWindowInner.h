@@ -459,6 +459,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
                                   const char16_t* aStorageType,
                                   bool aPrivateBrowsing);
 
+  
+  void NoteMediaSourceURL(const nsACString& aURL);
+  void UnnoteMediaSourceURL(const nsACString& aURL);
+
   static void Init();
   static void ShutDown();
   static bool IsCallerChrome();
@@ -1521,6 +1525,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   RefPtr<mozilla::dom::DataTransfer> mCurrentPasteDataTransfer;
+
+  nsTArray<nsCString> mMediaSourceURLs;
 
   
   

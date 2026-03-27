@@ -20,6 +20,7 @@ namespace dom {
 
 class CustomElementReactionsStack;
 class JSExecutionManager;
+class MediaSource;
 
 
 
@@ -86,6 +87,13 @@ class DocGroup final {
   nsTArray<RefPtr<HTMLSlotElement>> MoveSignalSlotList();
 
   
+  nsresult RegisterMediaSourceURL(nsGlobalWindowInner* aWindow,
+                                  MediaSource* aMediaSource, nsACString& aURL);
+  bool UnregisterMediaSourceURL(const nsACString& aURL,
+                                bool aNotifyWindow = true);
+  already_AddRefed<MediaSource> LookupMediaSourceURL(nsIURI* aURI);
+
+  
   static AutoTArray<RefPtr<DocGroup>, 2>* sPendingDocGroups;
 
   
@@ -107,6 +115,18 @@ class DocGroup final {
   RefPtr<mozilla::dom::CustomElementReactionsStack> mReactionsStack;
   nsTArray<RefPtr<HTMLSlotElement>> mSignalSlotList;
   RefPtr<BrowsingContextGroup> mBrowsingContextGroup;
+
+  
+  
+  
+  
+  
+  
+  struct MediaSourceURLEntry {
+    RefPtr<MediaSource> mMediaSource;
+    RefPtr<nsGlobalWindowInner> mOwner;
+  };
+  nsTHashMap<nsCString, MediaSourceURLEntry> mMediaSourceURLs;
 
   
   

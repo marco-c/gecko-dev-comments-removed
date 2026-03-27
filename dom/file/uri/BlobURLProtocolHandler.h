@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BlobURLProtocolHandler_h
 #define mozilla_dom_BlobURLProtocolHandler_h
 
@@ -49,9 +47,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
-  static nsresult AddDataEntry(MediaSource*, nsIPrincipal*,
-                               const nsCString& aPartitionKey,
-                               nsACString& aUri);
   
   static void AddDataEntry(
       const nsACString& aURI, nsIPrincipal* aPrincipal,
@@ -80,9 +75,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                            uint64_t aInnerWindowId,
                            const nsCString& aPartitionKey,
                            bool aAlsoIfRevoked = false);
-
-  static void Traverse(const nsACString& aUri,
-                       nsCycleCollectionTraversalCallback& aCallback);
 
   
   
@@ -113,17 +105,16 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   static bool IsBlobURLBroadcastPrincipal(nsIPrincipal* aPrincipal);
 
+  
+  static nsresult GenerateURIString(nsIPrincipal* aPrincipal, nsACString& aUri);
+
  private:
   ~BlobURLProtocolHandler();
 
   static void Init();
-
-  
-  static nsresult GenerateURIString(nsIPrincipal* aPrincipal, nsACString& aUri);
 };
 
 bool IsBlobURI(nsIURI* aUri);
-bool IsMediaSourceURI(nsIURI* aUri);
 
 }  
 }  
@@ -138,8 +129,5 @@ extern nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec,
 extern nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel,
                                                     nsIURI* aURI,
                                                     nsACString& aRangeHeader);
-
-extern nsresult NS_GetSourceForMediaSourceURI(
-    nsIURI* aURI, mozilla::dom::MediaSource** aSource);
 
 #endif 
