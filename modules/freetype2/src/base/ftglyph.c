@@ -856,9 +856,9 @@
       goto Exit;
 
     
-    error = ft_bitmap_glyph_init( (FT_Glyph)bitmap, &dummy );
-    if ( error )
-      goto Exit;
+    bitmap->left   = dummy.bitmap_left;
+    bitmap->top    = dummy.bitmap_top;
+    bitmap->bitmap = dummy.bitmap;
 
     
     bitmap->root.advance = glyph->advance;

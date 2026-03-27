@@ -408,6 +408,8 @@
       FT_UInt   class1Count;
       FT_UInt   class2Count;
 
+      FT_UInt  max_size;
+
 
       
       if ( !tt_face_validate_coverage( coverage, table_limit, FT_UINT_MAX ) )
@@ -432,7 +434,11 @@
 
       
       
-      limit = p + class1Count * class2Count * 2;
+      max_size = class1Count * class2Count;
+      if ( max_size > FT_UINT_MAX / 2 )
+        return FALSE;
+
+      limit = p + max_size * 2;
       if ( table_limit < limit )
         return FALSE;
 
@@ -713,7 +719,7 @@
     return error;
 
   Fail:
-    FT_FREE( gpos );
+    FT_FRAME_RELEASE( gpos );
     FT_FREE( gpos_lookups_kerning );
     FT_FREE( use_lookup_table );
 
@@ -817,7 +823,7 @@
 
       
       if ( startGlyphID              <= glyph_index &&
-           startGlyphID + glyphCount >= glyph_index )
+           startGlyphID + glyphCount > glyph_index  )
         return FT_PEEK_USHORT( p + ( glyph_index - startGlyphID ) * 2 );
     }
     else
@@ -884,7 +890,7 @@
 
 
       if ( second_glyph > mid_index )
-        min = max + 1;
+        min = mid + 1;
       else if ( second_glyph < mid_index )
         max = mid;
       else

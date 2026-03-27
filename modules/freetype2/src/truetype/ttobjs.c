@@ -734,6 +734,10 @@
         
         if ( face->glyf_len && FT_ERR_EQ( error, Table_Missing ) )
           goto Exit;
+        
+        
+        if ( face->glyf_len == 0 && FT_ERR_EQ( error, Locations_Missing ) )
+          goto Bad_Format;
         if ( error )
           goto Exit;
       }
@@ -1059,7 +1063,21 @@
 
     
     
-    exec->stackSize = maxp->maxStackElements + 32;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    exec->stackSize = maxp->maxStackElements +
+                      FT_MAX( maxp->maxStackElements / 2, 128 );
+
     exec->storeSize = maxp->maxStorage;
     exec->cvtSize   = face->cvt_size;
 

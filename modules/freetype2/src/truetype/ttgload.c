@@ -1185,9 +1185,7 @@
 
 
     
-    error = FT_GLYPHLOADER_CHECK_POINTS( loader->gloader,
-                                         outline->n_points + 4,
-                                         0 );
+    error = FT_GLYPHLOADER_CHECK_POINTS( loader->gloader, 4, 0 );
     if ( error )
       return error;
 
@@ -1424,6 +1422,14 @@
     if ( recurse_count )
       FT_TRACE5(( "  nesting level: %u\n", recurse_count ));
 #endif
+
+    
+    if ( recurse_count > 100 )
+    {
+      FT_TRACE4(( "load_truetype_glyph: recursion depth exceeded\n" ));
+      error = FT_THROW( Invalid_Composite );
+      goto Exit;
+    }
 
     
     if ( recurse_count > face->max_profile.maxComponentDepth )
