@@ -2,22 +2,25 @@
 
 
 
-use api::{NormalBorder, PremultipliedColorF, Shadow, RasterSpace};
+use api::{BorderStyle, NormalBorder, PremultipliedColorF, RasterSpace, Shadow};
 use api::units::*;
-use crate::border::create_border_segments;
+use crate::border::{build_border_instances, create_border_segments, get_max_scale_for_border};
 use crate::border::NormalBorderAu;
 use crate::gpu_types::ImageBrushPrimitiveData;
+use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
 use crate::renderer::GpuBufferWriterF;
 use crate::scene_building::{CreateShadow, IsVisible};
-use crate::frame_builder::FrameBuildingState;
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
 use crate::intern;
 use crate::internal_types::{LayoutPrimitiveInfo, FrameId};
 use crate::prim_store::{
     BorderSegmentInfo, BrushSegment, InternablePrimitive, NinePatchDescriptor, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceKind, PrimitiveOpacity, PrimitiveStore, VECS_PER_SEGMENT
 };
 use crate::resource_cache::ImageRequest;
-use crate::render_task::RenderTask;
+use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
+use crate::spatial_tree::SpatialNodeIndex;
+use crate::util::clamp_to_scale_factor;
 
 use super::storage;
 
@@ -60,41 +63,110 @@ impl NormalBorderData {
     
     
     
-    pub fn update(
+    pub fn write_brush_gpu_blocks(
         &mut self,
         common: &mut PrimTemplateCommonData,
         frame_state: &mut FrameBuildingState,
     ) {
         let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + self.brush_segments.len() * VECS_PER_SEGMENT);
-        self.write_prim_gpu_blocks(&mut writer, common.prim_size);
-        self.write_segment_gpu_blocks(&mut writer);
-        common.gpu_buffer_address = writer.finish();
-        common.opacity = PrimitiveOpacity::translucent();
-    }
 
-    fn write_prim_gpu_blocks(
-        &self,
-        writer: &mut GpuBufferWriterF,
-        prim_size: LayoutSize
-    ) {
         
         
         
         writer.push(&ImageBrushPrimitiveData {
             color: PremultipliedColorF::WHITE,
             background_color: PremultipliedColorF::WHITE,
-            stretch_size: prim_size,
+            stretch_size: common.prim_size,
         });
+
+        for segment in &self.brush_segments {
+            segment.write_gpu_blocks(&mut writer);
+        }
+
+        common.gpu_buffer_address = writer.finish();
+        common.opacity = PrimitiveOpacity::translucent();
     }
 
-    fn write_segment_gpu_blocks(
-        &self,
-        writer: &mut GpuBufferWriterF,
+    pub fn update(
+        &mut self,
+        common_data: &mut PrimTemplateCommonData,
+        prim_spatial_node_index: SpatialNodeIndex,
+        device_pixel_scale: DevicePixelScale,
+        frame_context: &FrameBuildingContext,
+        frame_state: &mut FrameBuildingState,
+        segment_cb: &mut dyn FnMut(RenderTaskId),
     ) {
-        for segment in &self.brush_segments {
-            segment.write_gpu_blocks(writer);
+        common_data.may_need_repetition =
+            matches!(self.border.top.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
+            matches!(self.border.right.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
+            matches!(self.border.bottom.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
+            matches!(self.border.left.style, BorderStyle::Dotted | BorderStyle::Dashed);
+
+        
+        
+        
+        
+        let scale = frame_context
+            .spatial_tree
+            .get_world_transform(prim_spatial_node_index)
+            .scale_factors();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let scale_width = clamp_to_scale_factor(scale.0, false);
+        let scale_height = clamp_to_scale_factor(scale.1, false);
+        
+        let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
+        let mut scale = world_scale * device_pixel_scale;
+        let max_scale = get_max_scale_for_border(self);
+        scale.0 = scale.0.min(max_scale.0);
+
+        
+        
+        
+        
+        
+
+        for segment in &self.border_segments {
+            
+            let cache_size = to_cache_size(segment.local_task_size, &mut scale);
+            let cache_key = RenderTaskCacheKey {
+                kind: RenderTaskCacheKeyKind::BorderSegment(segment.cache_key.clone()),
+                origin: DeviceIntPoint::zero(),
+                size: cache_size,
+            };
+
+            let task_id = frame_state.resource_cache.request_render_task(
+                Some(cache_key),
+                false,          
+                RenderTaskParent::Surface,
+                &mut frame_state.frame_gpu_data.f32,
+                frame_state.rg_builder,
+                &mut frame_state.surface_builder,
+                &mut |rg_builder, _| {
+                    rg_builder.add().init(RenderTask::new_dynamic(
+                        cache_size,
+                        RenderTaskKind::new_border_segment(
+                            build_border_instances(
+                                &segment.cache_key,
+                                cache_size,
+                                &self.border,
+                                scale,
+                            )
+                        ),
+                    ))
+                }
+            );
+
+            segment_cb(task_id);
         }
-   }
+    }
 }
 
 pub type NormalBorderTemplate = PrimTemplate<NormalBorderData>;
