@@ -80,7 +80,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
@@ -2331,12 +2330,12 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     
     
     
-#if MOZ_BIG_ENDIAN()
-    return offsetof(HashTable, mGenAndHashShift) + sizeof(mGenAndHashShift) -
-           sizeof(uint8_t);
-#else
-    return offsetof(HashTable, mGenAndHashShift);
-#endif
+    if constexpr (std::endian::native == std::endian::big) {
+      return offsetof(HashTable, mGenAndHashShift) + sizeof(mGenAndHashShift) -
+             sizeof(uint8_t);
+    } else {
+      return offsetof(HashTable, mGenAndHashShift);
+    }
   }
   static size_t offsetOfTable() { return offsetof(HashTable, mTable); }
   static size_t offsetOfEntryCount() {
