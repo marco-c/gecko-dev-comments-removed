@@ -153,14 +153,6 @@ Atomic<RuntimeService*> gRuntimeService(nullptr);
 
 bool gRuntimeServiceDuringInit = false;
 
-class LiteralRebindingCString : public nsDependentCString {
- public:
-  template <int N>
-  void RebindLiteral(const char (&aStr)[N]) {
-    Rebind(aStr, N - 1);
-  }
-};
-
 template <typename T>
 struct PrefTraits;
 
