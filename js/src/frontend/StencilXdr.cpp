@@ -12,6 +12,7 @@
 #include "mozilla/ScopeExit.h"              
 #include "mozilla/Try.h"                    
 
+#include <bit>          
 #include <stddef.h>     
 #include <stdint.h>     
 #include <type_traits>  
@@ -1378,7 +1379,8 @@ JS_PUBLIC_API bool JS::GetScriptTranscodingBuildId(
   
   static_assert(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8);
   buildId->infallibleAppend(sizeof(uintptr_t) == 4 ? '4' : '8');
-  buildId->infallibleAppend(MOZ_LITTLE_ENDIAN() ? 'l' : 'b');
+  buildId->infallibleAppend(std::endian::native == std::endian::little ? 'l'
+                                                                       : 'b');
 
   return true;
 }
