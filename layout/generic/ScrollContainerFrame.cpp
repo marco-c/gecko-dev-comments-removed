@@ -5719,6 +5719,14 @@ void ScrollContainerFrame::AppendAnonymousContentTo(
 void ScrollContainerFrame::DidSetComputedStyle(
     ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
+
+  
+  if (StaticPrefs::layout_css_fake_webkit_scrollbar_enabled()) {
+    mWebKitScrollbarStyle = PresContext()->StyleSet()->ProbePseudoElementStyle(
+        *GetContent()->AsElement(), PseudoStyleType::WebkitScrollbar, nullptr,
+        mComputedStyle);
+  }
+
   if (aOldComputedStyle && !mIsRoot &&
       StyleDisplay()->mScrollSnapType !=
           aOldComputedStyle->StyleDisplay()->mScrollSnapType) {
