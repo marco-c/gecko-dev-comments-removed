@@ -580,8 +580,10 @@ struct WROTSAlloc {
   wr::Vec<uint8_t> mVec;
 
   void* Grow(void* aPtr, size_t aLength) {
+    
     if (aLength > mVec.Capacity()) {
-      mVec.Reserve(aLength - mVec.Capacity());
+      
+      mVec.Reserve(aLength - mVec.Length());
     }
     return mVec.inner.data;
   }
