@@ -93,25 +93,23 @@ for (let {day, leapMonth, expected} of tests) {
     assertEq(pd.toString(), expectedToString);
 
     
-    
-    {
-      let pmd = pd.toPlainMonthDay();
-      assertEq(pmd.monthCode, monthCode);
-      assertEq(pmd.day, day);
-      assertEq(pmd.toString(), expectedToString);
-    }
-
-    
+    let expectedMonthCode = monthCode;
     if (leapMonth && pd.withCalendar("iso8601").year < 1900) {
       
       expectedToString = tests.find(e => e.day === day && !e.leapMonth).expected[i - 1];
-      monthCode = monthCode.slice(0, -1);
+      expectedMonthCode = monthCode.slice(0, -1);
     }
 
-    let pmd = Temporal.PlainMonthDay.from({calendar, monthCode, day});
-    assertEq(pmd.monthCode, monthCode);
-    assertEq(pmd.day, day);
-    assertEq(pmd.toString(), expectedToString);
+    for (let pmd of [
+      Temporal.PlainMonthDay.from({calendar, monthCode, day}),
+      Temporal.PlainMonthDay.from({calendar, monthCode: expectedMonthCode, day}),
+      Temporal.PlainMonthDay.from({calendar, year: pd.year, month: pd.month, day}),
+      pd.toPlainMonthDay(),
+    ]) {
+      assertEq(pmd.monthCode, expectedMonthCode);
+      assertEq(pmd.day, day);
+      assertEq(pmd.toString(), expectedToString);
+    }
   }
 }
 
