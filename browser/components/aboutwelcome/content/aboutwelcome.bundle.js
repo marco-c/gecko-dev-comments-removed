@@ -2078,8 +2078,9 @@ const CTAParagraph = props => {
     }
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "cta-paragraph-icon-wrapper"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("img", {
     className: "cta-paragraph-icon",
+    src: content?.icon?.iconURL,
     style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.getValidStyle(content?.icon, _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES)
   })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: content.text
