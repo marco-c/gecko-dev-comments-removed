@@ -3558,60 +3558,6 @@
 
 
 
-
-
-
-
-    unsplitTabs(splitview, trigger = null) {
-      if (!splitview) {
-        return;
-      }
-
-      
-      if (trigger) {
-        const tab_layout = this.tabContainer.verticalMode
-          ? "vertical"
-          : "horizontal";
-
-        Glean.splitview.end.record({
-          tab_layout,
-          trigger,
-        });
-      }
-
-      
-      
-      let aboutOpenTabs = splitview.tabs.filter(
-        tab => tab?.linkedBrowser?.currentURI?.spec === "about:opentabs"
-      );
-
-      if (!aboutOpenTabs.length) {
-        gBrowser.setIsSplitViewActive(false, splitview.tabs);
-
-        for (let i = splitview.tabs.length - 1; i >= 0; i--) {
-          this.#handleTabMove(splitview.tabs[i], () =>
-            gBrowser.tabContainer.insertBefore(
-              splitview.tabs[i],
-              splitview.nextElementSibling
-            )
-          );
-        }
-
-        splitview.remove();
-      } else {
-        aboutOpenTabs.forEach(aboutOpenTab => {
-          
-          
-          gBrowser.removeTab(aboutOpenTab);
-        });
-      }
-    }
-
-    
-
-
-
-
     showSplitViewPanels(tabs) {
       const panels = [];
       for (const tab of tabs) {
@@ -7330,6 +7276,11 @@
     }
 
     
+    handleTabMove(element, moveActionCallback, metricsContext) {
+      this.#handleTabMove(element, moveActionCallback, metricsContext);
+    }
+
+    
 
 
 
@@ -10939,9 +10890,7 @@ var TabContextMenu = {
     const splitviews = new Set(
       this.contextTabs.map(tab => tab.splitview).filter(Boolean)
     );
-    splitviews.forEach(splitview =>
-      gBrowser.unsplitTabs(splitview, "menu_separate")
-    );
+    splitviews.forEach(splitview => splitview.unsplitTabs("menu_separate"));
   },
 
   reverseSplitView() {
