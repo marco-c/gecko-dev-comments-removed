@@ -8003,7 +8003,8 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
   if (!iter.isFunctionFrame() && iter.isModuleFrame()) {
     
     
-    return true;
+    
+    return false;
   }
 
   MOZ_ASSERT(iter.calleeTemplate()->isAsync());
