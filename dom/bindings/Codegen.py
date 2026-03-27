@@ -5787,6 +5787,7 @@ def getJSToNativeConversionInfo(
     isClamp = type.hasClamp()
     isEnforceRange = type.hasEnforceRange()
     isAllowShared = type.hasAllowShared()
+    isAllowLarge = type.hasAllowLarge()
 
     
     
@@ -6903,19 +6904,17 @@ def getJSToNativeConversionInfo(
                     objRef=objRef,
                     badType=onFailureIsShared().define(),
                 )
-            
-            
-            
-            template += fill(
-                """
-                if (${isLargeMethod}(${objRef}.Obj())) {
-                  $*{badType}
-                }
-                """,
-                isLargeMethod=isLargeMethod,
-                objRef=objRef,
-                badType=onFailureIsLarge().define(),
-            )
+            if not isAllowLarge:
+                template += fill(
+                    """
+                    if (${isLargeMethod}(${objRef}.Obj())) {
+                      $*{badType}
+                    }
+                    """,
+                    isLargeMethod=isLargeMethod,
+                    objRef=objRef,
+                    badType=onFailureIsLarge().define(),
+                )
             
             
             
