@@ -22,10 +22,11 @@ ManagedPostRefreshObserver::~ManagedPostRefreshObserver() = default;
 
 void ManagedPostRefreshObserver::Cancel() {
   
-  if (mAction) {
-    mAction(true);
-  }
+  auto action = std::move(mAction);
   mAction = nullptr;
+  if (action) {
+    action(true);
+  }
   mPresContext = nullptr;
 }
 
@@ -36,8 +37,8 @@ void ManagedPostRefreshObserver::DidRefresh() {
 
   RefPtr<ManagedPostRefreshObserver> thisObject = this;
   auto action = std::move(mAction);
+  mAction = nullptr;
   Unregister unregister = action(false);
-
   if (unregister == Unregister::Yes) {
     if (RefPtr<nsPresContext> pc = std::move(mPresContext)) {
       
