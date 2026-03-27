@@ -68,29 +68,35 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
 
   
   ProfilerJSSourceData(uint32_t sourceId, JS::UniqueChars&& filePath,
-                       size_t pathLen)
+                       size_t pathLen, uint32_t startLine, uint32_t startColumn)
       : sourceId_(sourceId),
         filePath_(std::move(filePath)),
         filePathLength_(pathLen),
-        data_(Unavailable{}) {}
+        data_(Unavailable{}),
+        startLine_(startLine),
+        startColumn_(startColumn) {}
 
   
   ProfilerJSSourceData(uint32_t sourceId, JS::UniqueChars&& chars,
                        size_t length, JS::UniqueChars&& filePath,
-                       size_t pathLen)
+                       size_t pathLen, uint32_t startLine, uint32_t startColumn)
       : sourceId_(sourceId),
         filePath_(std::move(filePath)),
         filePathLength_(pathLen),
-        data_(SourceTextUTF8{std::move(chars), length}) {}
+        data_(SourceTextUTF8{std::move(chars), length}),
+        startLine_(startLine),
+        startColumn_(startColumn) {}
 
   
   ProfilerJSSourceData(uint32_t sourceId, JS::UniqueTwoByteChars&& chars,
                        size_t length, JS::UniqueChars&& filePath,
-                       size_t pathLen)
+                       size_t pathLen, uint32_t startLine, uint32_t startColumn)
       : sourceId_(sourceId),
         filePath_(std::move(filePath)),
         filePathLength_(pathLen),
-        data_(SourceTextUTF16{std::move(chars), length}) {}
+        data_(SourceTextUTF16{std::move(chars), length}),
+        startLine_(startLine),
+        startColumn_(startColumn) {}
 
   
   ProfilerJSSourceData(JS::UniqueChars&& chars, size_t length)
@@ -104,8 +110,11 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
 
   static ProfilerJSSourceData CreateRetrievableFile(uint32_t sourceId,
                                                     JS::UniqueChars&& filePath,
-                                                    size_t pathLength) {
-    ProfilerJSSourceData result(sourceId, std::move(filePath), pathLength);
+                                                    size_t pathLength,
+                                                    uint32_t startLine,
+                                                    uint32_t startColumn) {
+    ProfilerJSSourceData result(sourceId, std::move(filePath), pathLength,
+                                startLine, startColumn);
     result.data_.emplace<RetrievableFile>();
     return result;
   }
@@ -125,11 +134,14 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
   }
   size_t filePathLength() const { return filePathLength_; }
   const ProfilerSourceVariant& data() const { return data_; }
+  uint32_t startLine() const { return startLine_; }
+  uint32_t startColumn() const { return startColumn_; }
 
   
   size_t SizeOf() const {
     
-    size_t size = sizeof(uint32_t) + filePathLength_ * sizeof(char);
+    size_t size = sizeof(uint32_t) + filePathLength_ * sizeof(char) +
+                  sizeof(uint32_t) + sizeof(uint32_t);
 
     data_.match(
         [&](const SourceTextUTF16& srcText) {
@@ -152,6 +164,9 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
     if (filePathLength_ > 0) {
       hash = HashBytes(filePath_.get(), filePathLength_, hash);
     }
+
+    hash = mozilla::AddToHash(hash, startLine_);
+    hash = mozilla::AddToHash(hash, startColumn_);
 
     hash = data_.addTagToHash(hash);
     data_.match(
@@ -181,6 +196,12 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
   JS::UniqueChars filePath_;
   size_t filePathLength_;
   ProfilerSourceVariant data_;
+  
+  
+  uint32_t startLine_ = 1;
+  
+  
+  uint32_t startColumn_ = 1;
 };
 
 namespace js {

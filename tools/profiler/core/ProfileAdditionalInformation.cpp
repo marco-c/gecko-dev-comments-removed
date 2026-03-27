@@ -211,6 +211,10 @@ void IPC::ParamTraits<ProfilerJSSourceData>::Write(MessageWriter* aWriter,
   }
 
   
+  WriteParam(aWriter, aParam.startLine());
+  WriteParam(aWriter, aParam.startColumn());
+
+  
   aParam.data().match(
       [&](const ProfilerJSSourceData::SourceTextUTF16& srcText) {
         WriteParam(aWriter, kSourceTextUTF16Tag);
@@ -259,6 +263,13 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
   }
 
   
+  uint32_t startLine;
+  uint32_t startColumn;
+  if (!ReadParam(aReader, &startLine) || !ReadParam(aReader, &startColumn)) {
+    return false;
+  }
+
+  
   uint8_t typeTag;
   if (!ReadParam(aReader, &typeTag)) {
     return false;
@@ -281,12 +292,13 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
         }
         
         chars[length] = u'\0';
-        *aResult =
-            ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(chars),
-                                 length, std::move(filePath), pathLength);
+        *aResult = ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(chars),
+                                        length, std::move(filePath), pathLength,
+                                        startLine, startColumn);
       } else {
         *aResult = ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(), 0,
-                                        std::move(filePath), pathLength);
+                                        std::move(filePath), pathLength,
+                                        startLine, startColumn);
       }
       return true;
     }
@@ -305,23 +317,24 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
         }
         
         chars[length] = '\0';
-        *aResult =
-            ProfilerJSSourceData(sourceId, JS::UniqueChars(chars), length,
-                                 std::move(filePath), pathLength);
+        *aResult = ProfilerJSSourceData(sourceId, JS::UniqueChars(chars),
+                                        length, std::move(filePath), pathLength,
+                                        startLine, startColumn);
       } else {
         *aResult = ProfilerJSSourceData(sourceId, JS::UniqueChars(), 0,
-                                        std::move(filePath), pathLength);
+                                        std::move(filePath), pathLength,
+                                        startLine, startColumn);
       }
       return true;
     }
     case kRetrievableFileTag: {
       *aResult = ProfilerJSSourceData::CreateRetrievableFile(
-          sourceId, std::move(filePath), pathLength);
+          sourceId, std::move(filePath), pathLength, startLine, startColumn);
       return true;
     }
     case kUnavailableTag: {
-      *aResult =
-          ProfilerJSSourceData(sourceId, std::move(filePath), pathLength);
+      *aResult = ProfilerJSSourceData(sourceId, std::move(filePath), pathLength,
+                                      startLine, startColumn);
       return true;
     }
     default:
