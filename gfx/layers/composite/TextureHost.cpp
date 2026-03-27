@@ -261,17 +261,19 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
       switch (data.type()) {
         case MemoryOrShmem::TShmem: {
           const ipc::Shmem& shmem = data.get_Shmem();
-          const BufferDescriptor& desc = bufferDesc.desc();
           if (!shmem.IsReadable()) {
             
             
             
-            result = new ShmemTextureHost(shmem, desc, aDeallocator, aFlags);
-            break;
+            
+            
+            gfxCriticalError() << "Failed texture host with unmappable shmem.";
+            return nullptr;
           }
 
           size_t bufSize = shmem.Size<char>();
           Maybe<size_t> reqSize;
+          const BufferDescriptor& desc = bufferDesc.desc();
           switch (desc.type()) {
             case BufferDescriptor::TYCbCrDescriptor: {
               const YCbCrDescriptor& ycbcr = desc.get_YCbCrDescriptor();
