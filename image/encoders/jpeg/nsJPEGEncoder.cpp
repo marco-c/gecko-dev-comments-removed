@@ -84,6 +84,13 @@ nsJPEGEncoder::~nsJPEGEncoder() {
   }
 }
 
+NS_IMETHODIMP
+nsJPEGEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
+                                 imgIEncoder::CICPTransferCharacteristics,
+                                 imgIEncoder::CICPMatrixCoefficients, bool) {
+  return NS_OK;
+}
+
 
 
 

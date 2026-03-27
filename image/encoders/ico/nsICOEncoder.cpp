@@ -37,6 +37,13 @@ nsICOEncoder::~nsICOEncoder() {
   }
 }
 
+NS_IMETHODIMP
+nsICOEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
+                                imgIEncoder::CICPTransferCharacteristics,
+                                imgIEncoder::CICPMatrixCoefficients, bool) {
+  return NS_OK;
+}
+
 
 
 
