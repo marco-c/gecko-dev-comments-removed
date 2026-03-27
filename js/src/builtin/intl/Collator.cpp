@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "builtin/intl/Collator.h"
 
 #include "mozilla/Assertions.h"
@@ -531,17 +533,17 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
       CollatorOptions::IgnorePunctuation::Locale) {
     
     
-    Rooted<JSLinearString*> dataLocale(cx);
+    mozilla::Maybe<LanguageId> actualLocale{};
     if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator,
-                             resolved.dataLocale(), &dataLocale)) {
+                             resolved.dataLocale(), &actualLocale)) {
       return false;
     }
-    MOZ_ASSERT(dataLocale);
+    MOZ_ASSERT(actualLocale);
 
     auto& sharedIntlData = cx->runtime()->sharedIntlData.ref();
 
     bool ignorePunctuation;
-    if (!sharedIntlData.isIgnorePunctuation(cx, dataLocale,
+    if (!sharedIntlData.isIgnorePunctuation(cx, *actualLocale,
                                             &ignorePunctuation)) {
       return false;
     }

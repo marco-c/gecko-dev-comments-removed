@@ -2,12 +2,15 @@
 
 
 
+
+
 #ifndef builtin_intl_LocaleNegotiation_h
 #define builtin_intl_LocaleNegotiation_h
 
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
+#include "mozilla/Maybe.h"
 
 #include <stdint.h>
 
@@ -18,7 +21,8 @@ class JSLinearString;
 
 namespace js {
 class ArrayObject;
-}
+class LanguageId;
+}  
 
 namespace js::intl {
 enum class UnicodeExtensionKey : uint8_t {
@@ -70,7 +74,7 @@ ArrayObject* CanonicalizeLocaleList(JSContext* cx,
 
 bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
                          JS::Handle<JSLinearString*> locale,
-                         JS::MutableHandle<JSLinearString*> result);
+                         mozilla::Maybe<LanguageId>* result);
 
 
 
