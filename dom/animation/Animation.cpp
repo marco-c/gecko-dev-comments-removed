@@ -1783,6 +1783,17 @@ void Animation::PostUpdate() {
 
 void Animation::CancelPendingTasks() {
   mPendingState = PendingState::NotPending;
+
+  
+  
+  
+  
+  if (Document* doc = GetRenderedDocument()) {
+    if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
+      
+      tracker->RemovePending(*this);
+    }
+  }
 }
 
 
