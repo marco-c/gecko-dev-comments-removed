@@ -42,6 +42,9 @@ user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 2);
 user_pref("gfx.logging.level", 1);
 
+
+user_pref("gfx.webgpu.ignore-blocklist", true);
+
 user_pref("image.downscale-during-decode.enabled", false);
 
 
