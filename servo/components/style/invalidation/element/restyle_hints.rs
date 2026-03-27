@@ -52,6 +52,9 @@ bitflags! {
         /// any other style data. This hint is only processed in animation-only
         /// traversal which is prior to normal traversal.
         const RESTYLE_SMIL = 1 << 10;
+
+        /// Match self or a descendant if it is dependent on a style query.
+        const RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES = 1 << 11;
     }
 }
 
@@ -121,6 +124,18 @@ impl RestyleHint {
         if self.contains(RestyleHint::RECASCADE_DESCENDANTS) {
             result |= Self::recascade_subtree();
         }
+        if self.contains(RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES) {
+            
+            
+            
+            
+            
+            
+            
+            
+            result |= RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES;
+        }
+
         result
     }
 
@@ -192,4 +207,4 @@ impl Default for RestyleHint {
 }
 
 #[cfg(feature = "servo")]
-malloc_size_of_is_0!(RestyleHint);
+malloc_size_of::malloc_size_of_is_0!(RestyleHint);
