@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.PlainYearMonth(2000, 3);
+assert.sameValue(instance.calendarId, "iso8601");
+
+reportCompare(0, 0);

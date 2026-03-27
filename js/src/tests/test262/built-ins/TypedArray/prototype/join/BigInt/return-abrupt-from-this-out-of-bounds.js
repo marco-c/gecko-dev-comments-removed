@@ -56,6 +56,6 @@ testWithBigIntTypedArrayConstructors(TA => {
     array.join(',');
     throw new Test262Error('join completed successfully');
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

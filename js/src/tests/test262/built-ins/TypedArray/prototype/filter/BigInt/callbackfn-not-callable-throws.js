@@ -13,8 +13,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(4);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(4));
 
   assert.throws(TypeError, function() {
     sample.filter();

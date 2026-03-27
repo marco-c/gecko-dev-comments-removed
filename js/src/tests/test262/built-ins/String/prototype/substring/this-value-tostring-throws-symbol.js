@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+    String.prototype.substring.call(Symbol())
+}, "If this value is a Symbol, String.prototype.substring should throw a TypeError")
+
+reportCompare(0, 0);

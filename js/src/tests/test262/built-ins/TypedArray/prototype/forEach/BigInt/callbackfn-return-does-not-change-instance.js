@@ -15,8 +15,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample1 = new TA(3);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample1 = new TA(makeCtorArg(3));
 
   sample1[1] = 1n;
 

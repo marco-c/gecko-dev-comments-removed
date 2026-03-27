@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  var stack = new AsyncDisposableStack();
+  var resource = {
+      disposed: false,
+      async [Symbol.asyncDispose]() {
+          this.disposed = true;
+      }
+  };
+  stack.use(resource);
+  await stack.disposeAsync();
+  assert.sameValue(resource.disposed, true, 'Expected resource to have been disposed');
+});

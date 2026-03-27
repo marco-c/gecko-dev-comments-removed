@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+    String.prototype.replace.call({toString: undefined, valueOf: undefined})
+}, "String.prototype.replace should throw a TypeError in its ToPrimitive step.")
+
+reportCompare(0, 0);

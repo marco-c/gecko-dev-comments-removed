@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+    (0n).toString(Symbol());
+}, "If _radix_ is Symbol, BigInt.prototype.toString must throw a TypeError")
+
+reportCompare(0, 0);

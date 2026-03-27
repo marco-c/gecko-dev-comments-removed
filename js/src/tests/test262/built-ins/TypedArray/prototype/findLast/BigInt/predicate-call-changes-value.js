@@ -17,12 +17,12 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var arr = [1n, 2n, 3n];
   var sample;
   var result;
 
-  sample = new TA(3);
+  sample = new TA(makeCtorArg(3));
   sample.findLast(function(val, i) {
     sample[i] = arr[i];
 

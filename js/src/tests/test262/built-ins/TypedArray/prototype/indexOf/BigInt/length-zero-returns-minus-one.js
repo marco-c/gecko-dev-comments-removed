@@ -34,6 +34,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     sample.indexOf(0n, fromIndex), -1,
     "length is checked before ToInteger(fromIndex)"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+    Error(Symbol())
+}, "If _message_ is a Symbol, Error must throw TypeError");
+
+reportCompare(0, 0);

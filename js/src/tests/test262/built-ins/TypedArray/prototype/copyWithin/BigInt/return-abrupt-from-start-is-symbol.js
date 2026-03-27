@@ -32,6 +32,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.copyWithin(0, s);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

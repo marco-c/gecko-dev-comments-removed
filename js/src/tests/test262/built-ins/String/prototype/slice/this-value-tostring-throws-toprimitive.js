@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+    String.prototype.slice.call({toString: undefined, valueOf: undefined})
+}, "String.prototype.slice throws in its toprimitive step.")
+
+reportCompare(0, 0);

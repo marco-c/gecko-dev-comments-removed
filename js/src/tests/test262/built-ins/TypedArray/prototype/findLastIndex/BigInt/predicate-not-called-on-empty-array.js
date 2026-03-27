@@ -36,6 +36,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     result, -1,
     "returns -1 on an empty instance"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

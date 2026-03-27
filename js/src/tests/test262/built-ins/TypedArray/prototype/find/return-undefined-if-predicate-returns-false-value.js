@@ -28,8 +28,8 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(3);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(3));
   var called = 0;
 
   var result = sample.find(function() {

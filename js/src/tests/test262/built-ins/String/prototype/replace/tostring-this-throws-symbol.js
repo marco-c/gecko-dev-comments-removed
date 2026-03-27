@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+    String.prototype.replace.call(Symbol())
+}, "If this value is a Symbol String.prototype.replace should throw a TypeError.")
+
+reportCompare(0, 0);

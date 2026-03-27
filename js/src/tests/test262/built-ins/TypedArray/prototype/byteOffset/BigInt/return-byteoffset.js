@@ -28,6 +28,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(buffer2, offset);
   var ta3 = new TA(sample);
   assert.sameValue(ta3.byteOffset, 0, "TA(typedArray)");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

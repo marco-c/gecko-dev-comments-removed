@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.ZonedDateTime(0n, "UTC");
+assert.sameValue(instance.timeZoneId, "UTC");
+
+reportCompare(0, 0);

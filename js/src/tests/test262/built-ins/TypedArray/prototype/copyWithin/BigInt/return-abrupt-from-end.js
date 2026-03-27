@@ -36,6 +36,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(Test262Error, function() {
     sample.copyWithin(0, 0, o1);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

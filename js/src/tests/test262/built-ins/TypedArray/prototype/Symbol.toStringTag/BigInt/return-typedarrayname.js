@@ -18,6 +18,6 @@
 testWithBigIntTypedArrayConstructors(function(TA) {
   var ta = new TA();
   assert.sameValue(ta[Symbol.toStringTag], TA.name, "property value");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

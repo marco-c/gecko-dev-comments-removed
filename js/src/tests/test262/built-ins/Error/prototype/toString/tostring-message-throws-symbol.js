@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+    Error.prototype.toString.call({message : Symbol()})
+}, "If message field is a symbol, Error.prototype.toString must throw a TypeError")
+
+reportCompare(0, 0);

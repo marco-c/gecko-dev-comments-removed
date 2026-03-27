@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new AsyncDisposableStack();
+stack.disposeAsync();
+
+assert.throws(ReferenceError, function() {
+  stack.adopt(null, async _ => {});
+});
+
+reportCompare(0, 0);

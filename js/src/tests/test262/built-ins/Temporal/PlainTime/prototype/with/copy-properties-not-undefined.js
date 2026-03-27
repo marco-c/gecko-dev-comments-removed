@@ -22,4 +22,5 @@ TemporalHelpers.assertPlainTime(plainTime.with({ hour: 8, second: undefined }),
   "only the properties that are present and defined in the plain object are copied"
 );
 
+
 reportCompare(0, 0);

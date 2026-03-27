@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Symbol.keyFor(Symbol.asyncDispose), undefined);
+
+reportCompare(0, 0);

@@ -60,7 +60,7 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.findIndex(/./);
   }, "/./");
-});
+}, null, ["passthrough"]);
 
 
 reportCompare(0, 0);

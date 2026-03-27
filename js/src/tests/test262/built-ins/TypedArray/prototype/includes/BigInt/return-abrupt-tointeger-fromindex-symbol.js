@@ -24,8 +24,8 @@
 
 var fromIndex = Symbol("1");
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([7n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([7n]));
 
   assert.throws(TypeError, function() {
     sample.includes(7n, fromIndex);

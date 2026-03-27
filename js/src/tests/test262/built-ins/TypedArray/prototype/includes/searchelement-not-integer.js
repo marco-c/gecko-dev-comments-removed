@@ -18,8 +18,8 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(10);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(10));
   function throwFunc(){
     throw Test262Error()
     return 0;

@@ -34,6 +34,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     undefined,
     "findLast returns undefined when predicate is not called"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

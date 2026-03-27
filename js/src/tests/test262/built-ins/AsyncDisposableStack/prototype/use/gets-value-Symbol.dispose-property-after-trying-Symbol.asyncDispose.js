@@ -1,0 +1,70 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  var stack = new AsyncDisposableStack();
+  var order = [];
+  var resource = {
+      get [Symbol.asyncDispose]() {
+          order.push('Symbol.asyncDispose');
+          return undefined;
+      },
+      get [Symbol.dispose]() {
+          order.push('Symbol.dispose');
+          return function() {};
+      },
+  };
+  stack.use(resource);
+  await stack.disposeAsync();
+  assert.deepEqual(order, ['Symbol.asyncDispose', 'Symbol.dispose']);
+});

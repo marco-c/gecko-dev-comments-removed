@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Promise.allKeyed, "length", {
+  configurable: true,
+  writable: false,
+  enumerable: false,
+  value: 1,
+});
+
+reportCompare(0, 0);

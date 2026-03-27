@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Promise.allSettledKeyed),
+  false,
+  "isConstructor(Promise.allSettledKeyed) must return false"
+);
+
+assert.throws(TypeError, () => {
+  new Promise.allSettledKeyed({});
+});
+
+reportCompare(0, 0);

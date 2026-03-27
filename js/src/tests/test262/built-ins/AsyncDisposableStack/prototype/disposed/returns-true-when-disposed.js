@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new AsyncDisposableStack();
+stack.disposeAsync();
+assert.sameValue(stack.disposed, true);
+
+reportCompare(0, 0);

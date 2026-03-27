@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new AsyncDisposableStack();
+var disposed = false;
+stack.defer(() => { disposed = true; });
+stack.move();
+assert.sameValue(disposed, false);
+
+reportCompare(0, 0);

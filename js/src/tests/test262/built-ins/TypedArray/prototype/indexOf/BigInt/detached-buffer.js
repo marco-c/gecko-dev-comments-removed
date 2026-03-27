@@ -25,6 +25,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.indexOf(0n);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

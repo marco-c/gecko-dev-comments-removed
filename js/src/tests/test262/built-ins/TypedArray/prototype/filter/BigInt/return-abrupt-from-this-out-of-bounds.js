@@ -56,6 +56,6 @@ testWithBigIntTypedArrayConstructors(TA => {
     array.filter(() => {});
     throw new Test262Error('filter completed successfully');
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

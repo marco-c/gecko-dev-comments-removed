@@ -56,6 +56,6 @@ testWithBigIntTypedArrayConstructors(TA => {
     array.findLastIndex(() => {});
     throw new Test262Error('findLastIndex completed successfully');
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

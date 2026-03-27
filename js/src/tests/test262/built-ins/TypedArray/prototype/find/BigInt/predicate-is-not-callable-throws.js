@@ -63,6 +63,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.find(/./);
   }, "regexp");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

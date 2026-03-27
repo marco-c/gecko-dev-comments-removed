@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.ZonedDateTime(0n, "UTC");
+assert.sameValue(instance.calendarId, "iso8601");
+
+reportCompare(0, 0);

@@ -1,5 +1,4 @@
 
 
 
-
 throw new Error('foobar');

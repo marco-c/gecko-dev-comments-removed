@@ -56,6 +56,6 @@ testWithBigIntTypedArrayConstructors(TA => {
     array.lastIndexOf(0n);
     throw new Test262Error('lastIndexOf completed successfully');
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);
