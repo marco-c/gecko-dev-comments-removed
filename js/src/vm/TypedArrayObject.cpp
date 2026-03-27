@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "vm/TypedArrayObject-inl.h"
 #include "vm/TypedArrayObject.h"
 
@@ -5795,6 +5797,37 @@ static void ToHex(TypedArrayObject* tarray, size_t length,
     chars[1] = HexDigits[byte & 0xf];
 
     appendN(chars);
+  }
+
+  MOZ_ASSERT(outPtr == out.end(), "all characters were written");
+}
+
+template <>
+void ToHex<UnsharedOps>(TypedArrayObject* tarray, size_t length,
+                        mozilla::Range<Latin1Char> out) {
+  
+  
+  
+  
+  
+  
+  
+  auto toLowerHex = [](uint8_t x) -> char {
+    static_assert('a' - '9' == 40);
+    return x + '0' + ((x > 9) * 39);
+  };
+
+  auto outPtr = out.begin();
+
+  
+  
+  
+  
+  auto data = UnsharedOps::extract(tarray).template cast<uint8_t*>();
+  for (size_t index = 0; index < length;) {
+    auto byte = UnsharedOps::load(data + index++);
+    *outPtr++ = toLowerHex(byte >> 4);
+    *outPtr++ = toLowerHex(byte & 0xf);
   }
 
   MOZ_ASSERT(outPtr == out.end(), "all characters were written");
