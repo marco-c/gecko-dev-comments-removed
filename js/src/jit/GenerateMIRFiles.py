@@ -60,6 +60,7 @@ type_policies = {
     "String": "StringPolicy",
     "Symbol": "SymbolPolicy",
     "Slots": "NoTypePolicy",
+    "any": "NoTypePolicy",
 }
 
 
@@ -293,9 +294,7 @@ def gen_mir_class(
             mir_type = operands[oper_name]
 
             
-            
-            
-            if no_type_policy and mir_type == "Value":
+            if mir_type == "any":
                 continue
 
             policy = type_policies.get(mir_type, "NoTypePolicy")
