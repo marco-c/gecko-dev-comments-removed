@@ -1922,6 +1922,7 @@ pref("messaging-system.askForFeedback", true);
 pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", true);
 
 
+pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);
 pref("browser.newtabpage.activity-stream.discoverystream.hardcoded-basic-layout", false);
 pref("browser.newtabpage.activity-stream.discoverystream.hybridLayout.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.hideCardBackground.enabled", false);
