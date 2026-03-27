@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef VariableLengthPrefixSet_h
 #define VariableLengthPrefixSet_h
 

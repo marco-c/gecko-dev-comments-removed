@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsUrlClassifierPrefixSet_h_
 #define nsUrlClassifierPrefixSet_h_
 
