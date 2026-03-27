@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CDMProxy_h_
 #define CDMProxy_h_
 
@@ -19,7 +17,7 @@ namespace mozilla {
 class ErrorResult;
 class MediaRawData;
 class ChromiumCDMProxy;
-class RemoteCDMChild;
+class RemoteCDMProxy;
 #ifdef MOZ_WMF_CDM
 class WMFCDMProxy;
 #endif
@@ -255,7 +253,7 @@ class CDMProxy {
   virtual WMFCDMProxy* AsWMFCDMProxy() { return nullptr; }
 #endif
 
-  virtual RemoteCDMChild* AsRemoteCDMChild() { return nullptr; }
+  virtual RemoteCDMProxy* AsRemoteCDMProxy() { return nullptr; }
 
   virtual bool IsHardwareDecryptionSupported() const { return false; }
 

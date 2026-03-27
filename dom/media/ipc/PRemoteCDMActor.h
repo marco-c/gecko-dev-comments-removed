@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_PRemoteCDMActor_h
 #define include_dom_media_ipc_PRemoteCDMActor_h
 
@@ -12,6 +10,7 @@ namespace mozilla {
 
 class PRemoteCDMChild;
 class PRemoteCDMParent;
+class RemoteCDMProxy;
 enum class RemoteMediaIn;
 
 class PRemoteCDMActor {
@@ -21,6 +20,8 @@ class PRemoteCDMActor {
   virtual PRemoteCDMChild* AsPRemoteCDMChild() { return nullptr; }
 
   virtual PRemoteCDMParent* AsPRemoteCDMParent() { return nullptr; }
+
+  virtual RemoteCDMProxy* AsRemoteCDMProxy() = 0;
 
   virtual RemoteMediaIn GetLocation() const = 0;
 };

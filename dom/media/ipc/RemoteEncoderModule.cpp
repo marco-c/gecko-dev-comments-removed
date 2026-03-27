@@ -2,12 +2,10 @@
 
 
 
-
-
 #include "RemoteEncoderModule.h"
 
 #include "RemoteDecodeUtils.h"
-#include "RemoteMediaDataEncoderChild.h"
+#include "RemoteMediaDataEncoder.h"
 #include "RemoteMediaManagerChild.h"
 
 #ifdef MOZ_APPLEMEDIA
@@ -64,7 +62,7 @@ already_AddRefed<MediaDataEncoder> RemoteEncoderModule::CreateEncoder(
   }
 
   auto encoder =
-      MakeRefPtr<RemoteMediaDataEncoderChild>(std::move(thread), mLocation);
+      MakeRefPtr<RemoteMediaDataEncoder>(std::move(thread), mLocation);
 
   
   
@@ -93,7 +91,7 @@ RemoteEncoderModule::AsyncCreateEncoder(const EncoderConfig& aEncoderConfig,
   }
 
   auto encoder =
-      MakeRefPtr<RemoteMediaDataEncoderChild>(std::move(thread), mLocation);
+      MakeRefPtr<RemoteMediaDataEncoder>(std::move(thread), mLocation);
   return RemoteMediaManagerChild::InitializeEncoder(std::move(encoder),
                                                     aEncoderConfig);
 }

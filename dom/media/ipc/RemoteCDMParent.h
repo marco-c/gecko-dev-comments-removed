@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteCDMParent_h
 #define include_dom_media_ipc_RemoteCDMParent_h
 
@@ -45,6 +43,7 @@ class RemoteCDMParent : public PRemoteCDMParent, public PRemoteCDMActor {
 
   
   PRemoteCDMParent* AsPRemoteCDMParent() final { return this; }
+  RemoteCDMProxy* AsRemoteCDMProxy() final { return nullptr; }
   RemoteMediaIn GetLocation() const final;
 
  protected:

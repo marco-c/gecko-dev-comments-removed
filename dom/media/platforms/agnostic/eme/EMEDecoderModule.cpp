@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "EMEDecoderModule.h"
 
 #include <inttypes.h>
@@ -20,7 +18,7 @@
 #include "PDMFactory.h"
 #include "mozilla/CDMProxy.h"
 #include "mozilla/EMEUtils.h"
-#include "mozilla/RemoteCDMChild.h"
+#include "mozilla/RemoteCDMProxy.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/UniquePtr.h"
 #include "nsClassHashtable.h"
@@ -399,7 +397,7 @@ EMEDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
 
   
   
-  if (auto* cdm = static_cast<PRemoteCDMActor*>(mProxy->AsRemoteCDMChild())) {
+  if (auto* cdm = static_cast<PRemoteCDMActor*>(mProxy->AsRemoteCDMProxy())) {
     return mPDM->CreateDecoder(CreateDecoderParams{aParams, cdm});
   }
 
