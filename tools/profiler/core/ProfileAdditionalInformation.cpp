@@ -106,7 +106,7 @@ void mozilla::ProfileGenerationAdditionalInformation::ToJSValue(
           MaybeCreateJSStringFromSourceData(aCx, entry.sourceData);
       if (sourceStr) {
         JS::Rooted<JS::Value> sourceVal(aCx, JS::StringValue(sourceStr));
-        JS_SetProperty(aCx, jsSourcesObj, PromiseFlatCString(entry.id).get(),
+        JS_SetProperty(aCx, jsSourcesObj, PromiseFlatCString(entry.uuid).get(),
                        sourceVal);
       }
     }
@@ -211,17 +211,6 @@ void IPC::ParamTraits<ProfilerJSSourceData>::Write(MessageWriter* aWriter,
   }
 
   
-  WriteParam(aWriter, aParam.startLine());
-  WriteParam(aWriter, aParam.startColumn());
-
-  
-  WriteParam(aWriter, aParam.sourceMapURLLength());
-  if (aParam.sourceMapURLLength() > 0) {
-    aWriter->WriteBytes(aParam.sourceMapURL(),
-                        aParam.sourceMapURLLength() * sizeof(char16_t));
-  }
-
-  
   aParam.data().match(
       [&](const ProfilerJSSourceData::SourceTextUTF16& srcText) {
         WriteParam(aWriter, kSourceTextUTF16Tag);
@@ -270,32 +259,6 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
   }
 
   
-  uint32_t startLine;
-  uint32_t startColumn;
-  if (!ReadParam(aReader, &startLine) || !ReadParam(aReader, &startColumn)) {
-    return false;
-  }
-
-  
-  size_t sourceMapURLLength;
-  if (!ReadParam(aReader, &sourceMapURLLength)) {
-    return false;
-  }
-
-  JS::UniqueTwoByteChars sourceMapURL;
-  if (sourceMapURLLength > 0) {
-    char16_t* chars = static_cast<char16_t*>(
-        js_malloc((sourceMapURLLength + 1) * sizeof(char16_t)));
-    if (!chars ||
-        !aReader->ReadBytesInto(chars, sourceMapURLLength * sizeof(char16_t))) {
-      js_free(chars);
-      return false;
-    }
-    chars[sourceMapURLLength] = u'\0';
-    sourceMapURL.reset(chars);
-  }
-
-  
   uint8_t typeTag;
   if (!ReadParam(aReader, &typeTag)) {
     return false;
@@ -318,15 +281,12 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
         }
         
         chars[length] = u'\0';
-        *aResult = ProfilerJSSourceData(
-            sourceId, JS::UniqueTwoByteChars(chars), length,
-            std::move(filePath), pathLength, startLine, startColumn,
-            std::move(sourceMapURL), sourceMapURLLength);
+        *aResult =
+            ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(chars),
+                                 length, std::move(filePath), pathLength);
       } else {
-        *aResult = ProfilerJSSourceData(
-            sourceId, JS::UniqueTwoByteChars(), 0, std::move(filePath),
-            pathLength, startLine, startColumn, std::move(sourceMapURL),
-            sourceMapURLLength);
+        *aResult = ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(), 0,
+                                        std::move(filePath), pathLength);
       }
       return true;
     }
@@ -345,28 +305,23 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
         }
         
         chars[length] = '\0';
-        *aResult = ProfilerJSSourceData(
-            sourceId, JS::UniqueChars(chars), length, std::move(filePath),
-            pathLength, startLine, startColumn, std::move(sourceMapURL),
-            sourceMapURLLength);
+        *aResult =
+            ProfilerJSSourceData(sourceId, JS::UniqueChars(chars), length,
+                                 std::move(filePath), pathLength);
       } else {
-        *aResult = ProfilerJSSourceData(
-            sourceId, JS::UniqueChars(), 0, std::move(filePath), pathLength,
-            startLine, startColumn, std::move(sourceMapURL),
-            sourceMapURLLength);
+        *aResult = ProfilerJSSourceData(sourceId, JS::UniqueChars(), 0,
+                                        std::move(filePath), pathLength);
       }
       return true;
     }
     case kRetrievableFileTag: {
       *aResult = ProfilerJSSourceData::CreateRetrievableFile(
-          sourceId, std::move(filePath), pathLength, startLine, startColumn,
-          std::move(sourceMapURL), sourceMapURLLength);
+          sourceId, std::move(filePath), pathLength);
       return true;
     }
     case kUnavailableTag: {
-      *aResult = ProfilerJSSourceData(
-          sourceId, std::move(filePath), pathLength, startLine, startColumn,
-          std::move(sourceMapURL), sourceMapURLLength);
+      *aResult =
+          ProfilerJSSourceData(sourceId, std::move(filePath), pathLength);
       return true;
     }
     default:
@@ -376,13 +331,13 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
 
 void IPC::ParamTraits<mozilla::JSSourceEntry>::Write(MessageWriter* aWriter,
                                                      const paramType& aParam) {
-  WriteParam(aWriter, aParam.id);
+  WriteParam(aWriter, aParam.uuid);
   WriteParam(aWriter, aParam.sourceData);
 }
 
 bool IPC::ParamTraits<mozilla::JSSourceEntry>::Read(MessageReader* aReader,
                                                     paramType* aResult) {
-  return (ReadParam(aReader, &aResult->id) &&
+  return (ReadParam(aReader, &aResult->uuid) &&
           ReadParam(aReader, &aResult->sourceData));
 }
 

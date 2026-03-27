@@ -40,14 +40,13 @@ add_task(async function test_source_table() {
   Assert.ok(profile.sources.data, "Sources table has data");
 
   
-  Assert.ok("id" in profile.sources.schema, "Sources schema has 'id' field");
+  Assert.ok(
+    "uuid" in profile.sources.schema,
+    "Sources schema has 'uuid' field"
+  );
   Assert.ok(
     "filename" in profile.sources.schema,
     "Sources schema has 'filename' field"
-  );
-  Assert.ok(
-    "sourceMapURL" in profile.sources.schema,
-    "Sources schema has 'sourceMapURL' field"
   );
 
   
@@ -58,20 +57,12 @@ add_task(async function test_source_table() {
   );
 
   
-  const idCol = profile.sources.schema.id;
+  const uuidCol = profile.sources.schema.uuid;
   const filenameCol = profile.sources.schema.filename;
-  const sourceMapURLCol = profile.sources.schema.sourceMapURL;
 
   for (const source of profile.sources.data) {
-    Assert.ok(source[idCol], "Source entry has an ID");
+    Assert.ok(source[uuidCol], "Source entry has a UUID");
     Assert.ok(source[filenameCol], "Source entry has a filename");
-    
-    Assert.ok(
-      source[sourceMapURLCol] === null ||
-        source[sourceMapURLCol] === undefined ||
-        typeof source[sourceMapURLCol] === "string",
-      "Source entry has a nullable sourceMapURL field"
-    );
   }
 
   
@@ -109,69 +100,5 @@ add_task(async function test_source_table() {
   info(
     `Found ${profile.sources.data.length} sources in the table, ` +
       `referenced by ${framesWithSourceIndex} frames.`
-  );
-});
-
-
-
-
-add_task(async function test_source_table_with_sourcemap() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
-
-  info("Start profiler with 'js' feature");
-  await ProfilerTestUtils.startProfiler({
-    entries: 1000000,
-    interval: 1,
-    threads: ["GeckoMain"],
-    features: ["js"],
-  });
-
-  
-  const testCode = `
-    function testFunctionWithSourceMap() {
-      const startTime = Date.now();
-      while (Date.now() - startTime < 10) {
-        // Busy wait for 10ms to ensure profiler captures samples
-      }
-      return 42;
-    }
-    testFunctionWithSourceMap();
-    //# sourceMappingURL=test-source-map.js.map
-  `;
-
-  
-  
-  eval(testCode);
-
-  await ProfilerTestUtils.captureAtLeastOneJsSample();
-
-  const profile = await ProfilerTestUtils.stopNowAndGetProfile();
-
-  
-  Assert.ok(profile.sources, "Profile has a sources table");
-  Assert.ok(profile.sources.data, "Sources table has data");
-
-  const idCol = profile.sources.schema.id;
-  const filenameCol = profile.sources.schema.filename;
-  const sourceMapURLCol = profile.sources.schema.sourceMapURL;
-
-  
-  let foundSourceWithMap = false;
-  for (const source of profile.sources.data) {
-    const sourceMapURL = source[sourceMapURLCol];
-    if (sourceMapURL === "test-source-map.js.map") {
-      foundSourceWithMap = true;
-      Assert.ok(source[idCol], "Source with sourceMapURL has an ID");
-      Assert.ok(source[filenameCol], "Source with sourceMapURL has a filename");
-      break;
-    }
-  }
-
-  Assert.ok(
-    foundSourceWithMap,
-    "Should find at least one source with the test sourceMapURL"
   );
 });
