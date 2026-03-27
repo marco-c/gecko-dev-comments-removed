@@ -87,9 +87,7 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   
   
   
-  
-  
-  hb_face_t* CreateHBFace();
+  hb_face_t* CreateHBFace() const;
 
   
 
@@ -107,21 +105,14 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
 
-  nsCString mFilename;
-  uint8_t mFTFontIndex;
-
- protected:
-  FontTableCache* GetFontTableCache(bool aCreate) override;
-
-  mozilla::Atomic<FontTableCache*> mFontTableCache;
-
-  mozilla::Atomic<hb_face_t*> mHBFace;
-
   
   
   mozilla::Atomic<mozilla::gfx::SharedFTFace*> mFTFace;
 
   FT_MM_Var* mMMVar = nullptr;
+
+  nsCString mFilename;
+  uint8_t mFTFontIndex;
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
 

@@ -8,8 +8,10 @@
 #include "gfxFT2FontBase.h"
 #include "gfxPlatformFontList.h"
 #include "mozilla/FontPropertyTypes.h"
+#include "mozilla/mozalloc.h"
 #include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"
+#include "nsTHashMap.h"
 
 #include <fontconfig/fontconfig.h>
 #include "ft2build.h"
@@ -86,8 +88,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
 
   gfxFontEntry* Clone() const override;
 
-  AutoHBFace GetHBFace() override;
-
   FcPattern* GetPattern() { return mFontPattern; }
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
@@ -106,9 +106,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   bool HasFontTable(uint32_t aTableTag) override;
   nsresult CopyFontTable(uint32_t aTableTag, nsTArray<uint8_t>&) override;
   hb_blob_t* GetFontTable(uint32_t aTableTag) override;
-  FontTableCache* GetFontTableCache(bool aCreate) override {
-    return mFontTableCache;
-  };
 
   double GetAspect(uint8_t aSizeAdjustBasis);
 
@@ -128,14 +125,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   
   mozilla::Atomic<mozilla::gfx::SharedFTFace*> mFTFace;
   mozilla::Atomic<bool> mFTFaceInitialized;
-
-  
-  
-  mozilla::Atomic<hb_face_t*> mHBFace;
-
-  
-  
-  mozilla::Atomic<FontTableCache*> mFontTableCache;
 
   
   
