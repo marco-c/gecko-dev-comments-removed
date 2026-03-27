@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DOMLocalization.h"
 
 #include "js/ForOfIterator.h"  
@@ -57,7 +55,7 @@ DOMLocalization::DOMLocalization(nsIGlobalObject* aGlobal, bool aIsSync,
 already_AddRefed<DOMLocalization> DOMLocalization::Constructor(
     const GlobalObject& aGlobal,
     const Sequence<dom::OwningUTF8StringOrResourceId>& aResourceIds,
-    bool aIsSync, const Optional<NonNull<L10nRegistry>>& aRegistry,
+    const Optional<NonNull<L10nRegistry>>& aRegistry,
     const Optional<Sequence<nsCString>>& aLocales, ErrorResult& aRv) {
   auto ffiResourceIds{L10nRegistry::ResourceIdsToFFI(aResourceIds)};
   Maybe<nsTArray<nsCString>> locales;
@@ -75,19 +73,19 @@ already_AddRefed<DOMLocalization> DOMLocalization::Constructor(
 
   if (aRegistry.WasPassed()) {
     result = ffi::localization_new_with_locales(
-        &ffiResourceIds, aIsSync, aRegistry.Value().Raw(),
+        &ffiResourceIds,  false, aRegistry.Value().Raw(),
         locales.ptrOr(nullptr), getter_AddRefs(raw));
   } else {
-    result = ffi::localization_new_with_locales(&ffiResourceIds, aIsSync,
-                                                nullptr, locales.ptrOr(nullptr),
-                                                getter_AddRefs(raw));
+    result = ffi::localization_new_with_locales(
+        &ffiResourceIds,  false, nullptr, locales.ptrOr(nullptr),
+        getter_AddRefs(raw));
   }
 
   if (result) {
     nsCOMPtr<nsIGlobalObject> global =
         do_QueryInterface(aGlobal.GetAsSupports());
 
-    return do_AddRef(new DOMLocalization(global, aIsSync, raw));
+    return do_AddRef(new DOMLocalization(global,  false, raw));
   }
   aRv.ThrowInvalidStateError(
       "Failed to create the Localization. Check the locales arguments.");
