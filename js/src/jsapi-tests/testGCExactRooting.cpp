@@ -217,7 +217,7 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
 }
 END_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
 
-MOZ_RUNINIT static JS::PersistentRooted<JSObject*> sLongLived;
+constinit static JS::PersistentRooted<JSObject*> sLongLived;
 BEGIN_TEST(testGCPersistentRootedOutlivesRuntime) {
   sLongLived.init(cx, JS_NewObject(cx, nullptr));
   CHECK(sLongLived);
@@ -229,7 +229,7 @@ END_TEST(testGCPersistentRootedOutlivesRuntime)
 
 
 
-MOZ_RUNINIT static JS::PersistentRooted<MyContainer> sContainer;
+static JS::PersistentRooted<MyContainer> sContainer;
 BEGIN_TEST(testGCPersistentRootedTraceableCannotOutliveRuntime) {
   JS::Rooted<MyContainer> container(cx);
   container.obj() = JS_NewObject(cx, nullptr);

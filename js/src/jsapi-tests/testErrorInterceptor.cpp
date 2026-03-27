@@ -6,7 +6,7 @@
 
 
 namespace {
-MOZ_RUNINIT static JS::PersistentRootedString gLatestMessage;
+constinit static JS::PersistentRootedString gLatestMessage;
 
 
 struct SimpleInterceptor : JSErrorInterceptor {
