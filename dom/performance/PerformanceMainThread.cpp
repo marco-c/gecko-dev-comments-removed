@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PerformanceMainThread.h"
 
 #include "LargestContentfulPaint.h"
@@ -32,6 +30,7 @@
 #include "nsIChannel.h"
 #include "nsIDocShell.h"
 #include "nsIHttpChannel.h"
+#include "nsRefreshDriver.h"
 
 namespace mozilla::dom {
 
@@ -261,18 +260,27 @@ void PerformanceMainThread::InsertEventTimingEntry(
   
   
   
-  mHasQueuedRefreshdriverObserver = true;
-  presContext->RegisterManagedPostRefreshObserver(
-      new ManagedPostRefreshObserver(
-          presContext, [performance = RefPtr<PerformanceMainThread>(this)](
-                           bool aWasCanceled) {
-            if (!aWasCanceled) {
-              
-              performance->DispatchPendingEventTimingEntries();
-            }
-            performance->mHasQueuedRefreshdriverObserver = false;
-            return ManagedPostRefreshObserver::Unregister::Yes;
-          }));
+  
+  if (presContext->RefreshDriver()->HasReasonsToTick()) {
+    
+    
+    
+    
+    mHasQueuedRefreshdriverObserver = true;
+
+    presContext->RegisterManagedPostRefreshObserver(
+        new ManagedPostRefreshObserver(
+            presContext, [performance = RefPtr<PerformanceMainThread>(this)](
+                             bool aWasCanceled) {
+              if (!aWasCanceled) {
+                performance->DispatchPendingEventTimingEntries();
+              }
+              performance->mHasQueuedRefreshdriverObserver = false;
+              return ManagedPostRefreshObserver::Unregister::Yes;
+            }));
+  } else {
+    DispatchPendingEventTimingEntries();
+  }
 }
 
 void PerformanceMainThread::BufferEventTimingEntryIfNeeded(
