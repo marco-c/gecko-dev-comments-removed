@@ -6,7 +6,6 @@
 
 #include "jit/JitOptions.h"
 
-#include <bit>
 #include <cstdlib>
 #include <type_traits>
 
@@ -410,9 +409,12 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   SET_DEFAULT(regexp_optimization, true);
+#if MOZ_BIG_ENDIAN()
   
-  SET_DEFAULT(regexp_peephole_optimization,
-              std::endian::native == std::endian::little);
+  SET_DEFAULT(regexp_peephole_optimization, false);
+#else
+  SET_DEFAULT(regexp_peephole_optimization, true);
+#endif
 }
 
 bool DefaultJitOptions::isSmallFunction(JSScript* script) const {
