@@ -343,7 +343,10 @@ function formatTokens({ mediaQuery, surface, args, overrideIdentifier }) {
     
     if (
       !overrideIdentifier &&
-      OVERRIDE_IDENTIFIERS.some(({ name }) => token.name.includes(`-${name}-`))
+      (OVERRIDE_IDENTIFIERS.some(({ name }) =>
+        token.name.includes(`-${name}-`)
+      ) ||
+        token.override)
     ) {
       return;
     }
@@ -616,6 +619,7 @@ function tokensTableFormat(args, isSemanticTable = false) {
     
     .filter(
       token =>
+        !token.override &&
         !OVERRIDE_IDENTIFIERS.some(({ name }) =>
           token.name.includes(`-${name}-`)
         )

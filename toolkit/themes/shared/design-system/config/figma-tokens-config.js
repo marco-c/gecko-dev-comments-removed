@@ -762,7 +762,8 @@ const overrideFilter = (token, overrideIdentifier) => {
   
   if (
     !overrideIdentifier &&
-    OVERRIDE_IDENTIFIERS.some(({ name }) => token.name.includes(`.${name}`))
+    (token.override ||
+      OVERRIDE_IDENTIFIERS.some(({ name }) => token.name.includes(`.${name}`)))
   ) {
     return false;
   }
