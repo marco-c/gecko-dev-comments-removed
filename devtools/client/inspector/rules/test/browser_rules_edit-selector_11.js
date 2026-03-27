@@ -34,12 +34,7 @@ add_task(async function () {
 
 async function testEditSelector(view) {
   let ruleEditor = getRuleViewRuleEditorAt(view, 1);
-  const editor = await focusEditableField(view, ruleEditor.selectorText);
-
-  editor.input.value = ".pickme";
-  const onRuleViewChanged = once(view, "ruleview-changed");
-  EventUtils.synthesizeKey("KEY_Enter");
-  await onRuleViewChanged;
+  await editSelectorForRuleEditor(view, ruleEditor, ".pickme");
 
   
   ruleEditor = getRuleViewRuleEditorAt(view, 1);
