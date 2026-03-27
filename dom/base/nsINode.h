@@ -1790,10 +1790,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT mozilla::dom::Element* GetAnonymousRootElementOfTextEditor(
-      mozilla::TextEditor** aTextEditor = nullptr);
+  mozilla::dom::Element* GetAnonymousRootElementOfTextEditor();
 
   enum class IgnoreOwnIndependentSelection : bool { No, Yes };
   using AllowCrossShadowBoundary = mozilla::dom::AllowRangeCrossShadowBoundary;
@@ -1814,7 +1811,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsIContent* GetSelectionRootContent(
+  nsIContent* GetSelectionRootContent(
       mozilla::PresShell* aPresShell,
       IgnoreOwnIndependentSelection aIgnoreOwnIndependentSelection,
       AllowCrossShadowBoundary aAllowCrossShadowBoundary);
