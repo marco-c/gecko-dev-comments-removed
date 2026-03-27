@@ -180,22 +180,14 @@ describe("AI Window session restore", () => {
       );
 
       await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should remain open when switching to new tab with no state"
+        () => !AIWindowUI.isSidebarOpen(win),
+        "Sidebar should close when switching to new tab"
       );
 
       findStub.resetHistory();
 
       
-      
-      if (AIWindowUI.isSidebarOpen(win)) {
-        AIWindowUI.closeSidebar(win);
-        await TestUtils.waitForCondition(
-          () => !AIWindowUI.isSidebarOpen(win),
-          "Sidebar should close first"
-        );
-      }
-      AIWindowUI.openSidebar(win);
+      AIWindowUI.toggleSidebar(win);
 
       await TestUtils.waitForCondition(
         () => AIWindowUI.isSidebarOpen(win),
