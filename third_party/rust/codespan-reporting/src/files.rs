@@ -26,12 +26,6 @@
 use alloc::vec::Vec;
 use core::ops::Range;
 
-#[cfg(feature = "std")]
-use std::error;
-
-#[cfg(not(feature = "std"))]
-use core::error;
-
 
 #[derive(Debug)]
 #[non_exhaustive]
@@ -42,6 +36,7 @@ pub enum Error {
     IndexTooLarge { given: usize, max: usize },
     
     LineTooLarge { given: usize, max: usize },
+    
     
     ColumnTooLarge { given: usize, max: usize },
     
@@ -87,8 +82,14 @@ impl core::fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+#[cfg(feature = "std")]
+use std::error::Error as RustError;
+
+#[cfg(not(feature = "std"))]
+use core::error::Error as RustError;
+
+impl RustError for Error {
+    fn source(&self) -> Option<&(dyn RustError + 'static)> {
         match &self {
             #[cfg(feature = "std")]
             Error::Io(err) => Some(err),
@@ -223,6 +224,7 @@ pub struct Location {
 
 
 
+#[must_use]
 pub fn column_index(source: &str, line_range: Range<usize>, byte_index: usize) -> usize {
     let end_index = core::cmp::min(byte_index, core::cmp::min(line_range.end, source.len()));
 
@@ -323,7 +325,7 @@ where
             Ordering::Less => Ok(self
                 .line_starts
                 .get(line_index)
-                .cloned()
+                .copied()
                 .expect("failed despite previous check")),
             Ordering::Equal => Ok(self.source.as_ref().len()),
             Ordering::Greater => Err(Error::LineTooLarge {
@@ -382,6 +384,7 @@ where
     Source: AsRef<str>,
 {
     
+    #[must_use]
     pub fn new() -> SimpleFiles<Name, Source> {
         SimpleFiles { files: Vec::new() }
     }

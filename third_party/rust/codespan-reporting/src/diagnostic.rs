@@ -1,9 +1,9 @@
 
 
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
+use core::fmt::Display;
 use core::ops::Range;
 
 #[cfg(feature = "serialization")]
@@ -90,7 +90,8 @@ impl<FileId> Label<FileId> {
     }
 
     
-    pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
+    #[must_use]
+    pub fn with_message(mut self, message: impl Display) -> Label<FileId> {
         self.message = message.to_string();
         self
     }
@@ -137,6 +138,7 @@ impl<FileId> Diagnostic<FileId> {
     
     
     
+    #[must_use]
     pub fn bug() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Bug)
     }
@@ -144,6 +146,7 @@ impl<FileId> Diagnostic<FileId> {
     
     
     
+    #[must_use]
     pub fn error() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Error)
     }
@@ -151,6 +154,7 @@ impl<FileId> Diagnostic<FileId> {
     
     
     
+    #[must_use]
     pub fn warning() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Warning)
     }
@@ -158,6 +162,7 @@ impl<FileId> Diagnostic<FileId> {
     
     
     
+    #[must_use]
     pub fn note() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Note)
     }
@@ -165,35 +170,41 @@ impl<FileId> Diagnostic<FileId> {
     
     
     
+    #[must_use]
     pub fn help() -> Diagnostic<FileId> {
         Diagnostic::new(Severity::Help)
     }
 
     
-    pub fn with_code(mut self, code: impl ToString) -> Diagnostic<FileId> {
+    #[must_use]
+    pub fn with_code(mut self, code: impl Display) -> Diagnostic<FileId> {
         self.code = Some(code.to_string());
         self
     }
 
     
-    pub fn with_message(mut self, message: impl ToString) -> Diagnostic<FileId> {
+    #[must_use]
+    pub fn with_message(mut self, message: impl Display) -> Diagnostic<FileId> {
         self.message = message.to_string();
         self
     }
 
     
+    #[must_use]
     pub fn with_label(mut self, label: Label<FileId>) -> Diagnostic<FileId> {
         self.labels.push(label);
         self
     }
 
     
+    #[must_use]
     pub fn with_labels(mut self, mut labels: Vec<Label<FileId>>) -> Diagnostic<FileId> {
         self.labels.append(&mut labels);
         self
     }
 
     
+    #[must_use]
     pub fn with_labels_iter(
         mut self,
         labels: impl IntoIterator<Item = Label<FileId>>,
@@ -203,18 +214,22 @@ impl<FileId> Diagnostic<FileId> {
     }
 
     
+    #[allow(clippy::needless_pass_by_value)]
+    #[must_use]
     pub fn with_note(mut self, note: impl ToString) -> Diagnostic<FileId> {
         self.notes.push(note.to_string());
         self
     }
 
     
+    #[must_use]
     pub fn with_notes(mut self, mut notes: Vec<String>) -> Diagnostic<FileId> {
         self.notes.append(&mut notes);
         self
     }
 
     
+    #[must_use]
     pub fn with_notes_iter(
         mut self,
         notes: impl IntoIterator<Item = String>,

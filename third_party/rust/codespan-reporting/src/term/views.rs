@@ -1,8 +1,6 @@
-use alloc::{
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::ops::Range;
 
 use crate::diagnostic::{Diagnostic, LabelStyle};
@@ -25,6 +23,7 @@ impl<'diagnostic, 'config, FileId> RichDiagnostic<'diagnostic, 'config, FileId>
 where
     FileId: Copy + PartialEq,
 {
+    #[must_use]
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
         config: &'config Config,
@@ -100,44 +99,41 @@ where
             
             
             
-            let labeled_file = match labeled_files
+            let labeled_file = labeled_files
                 .iter_mut()
-                .find(|labeled_file| label.file_id == labeled_file.file_id)
-            {
-                Some(labeled_file) => {
+                .find(|labeled_file| label.file_id == labeled_file.file_id);
+            let labeled_file = if let Some(labeled_file) = labeled_file {
+                
+                if labeled_file.max_label_style > label.style
+                    || (labeled_file.max_label_style == label.style
+                        && labeled_file.start > label.range.start)
+                {
                     
-                    if labeled_file.max_label_style > label.style
-                        || (labeled_file.max_label_style == label.style
-                            && labeled_file.start > label.range.start)
-                    {
-                        
-                        labeled_file.start = label.range.start;
-                        labeled_file.location = files.location(label.file_id, label.range.start)?;
-                        labeled_file.max_label_style = label.style;
-                    }
-                    labeled_file
+                    labeled_file.start = label.range.start;
+                    labeled_file.location = files.location(label.file_id, label.range.start)?;
+                    labeled_file.max_label_style = label.style;
                 }
-                None => {
-                    
-                    labeled_files.push(LabeledFile {
-                        file_id: label.file_id,
-                        start: label.range.start,
-                        name: files.name(label.file_id)?.to_string(),
-                        location: files.location(label.file_id, label.range.start)?,
-                        num_multi_labels: 0,
-                        lines: BTreeMap::new(),
-                        max_label_style: label.style,
-                    });
-                    
-                    labeled_files
-                        .last_mut()
-                        .expect("just pushed an element that disappeared")
-                }
+                labeled_file
+            } else {
+                
+                labeled_files.push(LabeledFile {
+                    file_id: label.file_id,
+                    start: label.range.start,
+                    name: files.name(label.file_id)?.to_string(),
+                    location: files.location(label.file_id, label.range.start)?,
+                    num_multi_labels: 0,
+                    lines: BTreeMap::new(),
+                    max_label_style: label.style,
+                });
+                
+                labeled_files
+                    .last_mut()
+                    .expect("just pushed an element that disappeared")
             };
 
             
             
-            for offset in 1..self.config.before_label_lines + 1 {
+            for offset in 1..=self.config.before_label_lines {
                 let index = if let Some(index) = start_line_index.checked_sub(offset) {
                     index
                 } else {
@@ -158,7 +154,7 @@ where
 
             
             
-            for offset in 1..self.config.after_label_lines + 1 {
+            for offset in 1..=self.config.after_label_lines {
                 let index = end_line_index
                     .checked_add(offset)
                     .expect("line index too big");
@@ -445,6 +441,7 @@ impl<'diagnostic, FileId> ShortDiagnostic<'diagnostic, FileId>
 where
     FileId: Copy + PartialEq,
 {
+    #[must_use]
     pub fn new(
         diagnostic: &'diagnostic Diagnostic<FileId>,
         show_notes: bool,

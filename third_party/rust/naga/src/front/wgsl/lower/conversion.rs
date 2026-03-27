@@ -256,29 +256,44 @@ impl<'source> super::ExpressionContext<'source, '_, '_> {
     
     pub fn concretize(
         &mut self,
-        mut expr: Handle<crate::Expression>,
+        expr: Handle<crate::Expression>,
     ) -> Result<'source, Handle<crate::Expression>> {
         let inner = super::resolve_inner!(self, expr);
         if let Some(scalar) = inner.automatically_convertible_scalar(&self.module.types) {
-            let concretized = scalar.concretize();
-            if concretized != scalar {
-                assert!(scalar.is_abstract());
-                let expr_span = self.get_expression_span(expr);
-                expr = self
+            use crate::ScalarKind as Sk;
+            let concretization_preferences = match scalar.kind {
+                
+                Sk::Sint | Sk::Uint | Sk::Float | Sk::Bool => return Ok(expr),
+                Sk::AbstractInt => {
+                    [crate::Scalar::I32, crate::Scalar::U32, crate::Scalar::F32].as_slice()
+                }
+                Sk::AbstractFloat => [crate::Scalar::F32].as_slice(),
+            };
+            let expr_span = self.get_expression_span(expr);
+            let mut errors = Vec::new();
+            for concrete_scalar in concretization_preferences {
+                match self
                     .as_const_evaluator()
-                    .cast_array(expr, concretized, expr_span)
-                    .map_err(|err| {
-                        
-                        
-                        
-                        let expr_type = &self.typifier()[expr];
-                        super::Error::ConcretizationFailed(Box::new(ConcretizationFailedError {
-                            expr_span,
-                            expr_type: self.type_resolution_to_string(expr_type),
-                            scalar: concretized.to_wgsl_for_diagnostics(),
-                            inner: err,
-                        }))
-                    })?;
+                    .cast_array(expr, *concrete_scalar, expr_span)
+                {
+                    Ok(expr) => return Ok(expr),
+                    Err(err) => {
+                        errors.push((concrete_scalar.to_wgsl_for_diagnostics(), err));
+                    }
+                }
+            }
+            if !errors.is_empty() {
+                
+                
+                
+                let expr_type = &self.typifier()[expr];
+                return Err(Box::new(super::Error::ConcretizationFailed(Box::new(
+                    ConcretizationFailedError {
+                        expr_span,
+                        expr_type: self.type_resolution_to_string(expr_type),
+                        concretization_preferences: errors,
+                    },
+                ))));
             }
         }
 

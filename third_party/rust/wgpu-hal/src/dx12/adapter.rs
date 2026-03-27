@@ -23,7 +23,10 @@ use crate::{
         self,
         dxgi::{factory::DxgiAdapter, result::HResult},
     },
-    dx12::{dcomp::DCompLib, shader_compilation, FeatureLevel, ShaderModel, SurfaceTarget},
+    dx12::{
+        dcomp::DCompLib, device_creation::DeviceFactory, shader_compilation, FeatureLevel,
+        ShaderModel, SurfaceTarget,
+    },
 };
 
 impl Drop for super::Adapter {
@@ -62,6 +65,7 @@ impl super::Adapter {
     pub(super) fn expose(
         adapter: DxgiAdapter,
         library: &Arc<D3D12Lib>,
+        device_factory: &Arc<DeviceFactory>,
         dcomp_lib: &Arc<DCompLib>,
         instance_flags: wgt::InstanceFlags,
         memory_budget_thresholds: wgt::MemoryBudgetThresholds,
@@ -86,7 +90,7 @@ impl super::Adapter {
         
         let res = {
             profiling::scope!("ID3D12Device::create_device");
-            library.create_device(&adapter, Direct3D::D3D_FEATURE_LEVEL_11_0)
+            device_factory.create_device(library, &adapter, Direct3D::D3D_FEATURE_LEVEL_11_0)
         };
         if let Some(telemetry) = telemetry {
             if let Err(err) = res {
@@ -216,7 +220,26 @@ impl super::Adapter {
         }
         .unwrap();
 
-        if options.ResourceBindingTier.0 < Direct3D12::D3D12_RESOURCE_BINDING_TIER_2.0 {
+        
+        #[derive(PartialEq, Eq, PartialOrd, Ord)]
+        enum ResourceBindingTier {
+            T1,
+            T2,
+            T3,
+        }
+        let rbt = match options.ResourceBindingTier {
+            Direct3D12::D3D12_RESOURCE_BINDING_TIER_1 => ResourceBindingTier::T1,
+            Direct3D12::D3D12_RESOURCE_BINDING_TIER_2 => ResourceBindingTier::T2,
+            tier if tier.0 >= Direct3D12::D3D12_RESOURCE_BINDING_TIER_3.0 => {
+                ResourceBindingTier::T3
+            }
+            other => {
+                log::debug!("Got zero or negative value for resource binding tier {other:?}");
+                ResourceBindingTier::T1
+            }
+        };
+
+        if rbt == ResourceBindingTier::T1 {
             if let Some(telemetry) = telemetry {
                 (telemetry.d3d12_expose_adapter)(
                     &desc,
@@ -433,38 +456,6 @@ impl super::Adapter {
         };
 
         
-        let tier3_practical_descriptor_limit = 1 << 20;
-
-        let (full_heap_count, uav_count) = match options.ResourceBindingTier {
-            Direct3D12::D3D12_RESOURCE_BINDING_TIER_1 => {
-                let uav_count = match max_feature_level {
-                    FeatureLevel::_11_0 => 8,
-                    _ => 64,
-                };
-
-                (
-                    Direct3D12::D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1,
-                    uav_count,
-                )
-            }
-            Direct3D12::D3D12_RESOURCE_BINDING_TIER_2 => (
-                Direct3D12::D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
-                64,
-            ),
-            tier if tier.0 >= Direct3D12::D3D12_RESOURCE_BINDING_TIER_3.0 => (
-                tier3_practical_descriptor_limit,
-                tier3_practical_descriptor_limit,
-            ),
-            other => {
-                log::debug!("Got zero or negative value for resource binding tier {other:?}");
-                (
-                    Direct3D12::D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1,
-                    8,
-                )
-            }
-        };
-
-        
         let mut features = wgt::Features::empty()
             | wgt::Features::DEPTH_CLIP_CONTROL
             | wgt::Features::DEPTH32FLOAT_STENCIL8
@@ -483,14 +474,15 @@ impl super::Adapter {
             | wgt::Features::CLEAR_TEXTURE
             | wgt::Features::TEXTURE_FORMAT_16BIT_NORM
             | wgt::Features::IMMEDIATES
-            | wgt::Features::SHADER_PRIMITIVE_INDEX
+            | wgt::Features::PRIMITIVE_INDEX
             | wgt::Features::RG11B10UFLOAT_RENDERABLE
             | wgt::Features::DUAL_SOURCE_BLENDING
             | wgt::Features::TEXTURE_FORMAT_NV12
             | wgt::Features::FLOAT32_FILTERABLE
             | wgt::Features::TEXTURE_ATOMIC
             | wgt::Features::PASSTHROUGH_SHADERS
-            | wgt::Features::EXTERNAL_TEXTURE;
+            | wgt::Features::EXTERNAL_TEXTURE
+            | wgt::Features::MEMORY_DECORATION_COHERENT;
 
         
         
@@ -515,8 +507,7 @@ impl super::Adapter {
                 | wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING
                 
                 | wgt::Features::PARTIALLY_BOUND_BINDING_ARRAY,
-            shader_model >= naga::back::hlsl::ShaderModel::V5_1
-                && options.ResourceBindingTier.0 >= Direct3D12::D3D12_RESOURCE_BINDING_TIER_3.0,
+            shader_model >= naga::back::hlsl::ShaderModel::V5_1 && rbt >= ResourceBindingTier::T3,
         );
 
         let bgra8unorm_storage_supported = {
@@ -615,9 +606,19 @@ impl super::Adapter {
             >= Direct3D12::D3D12_RAYTRACING_TIER_1_1.0
             && shader_model >= naga::back::hlsl::ShaderModel::V6_5
             && has_features5;
+
         features.set(
             wgt::Features::EXPERIMENTAL_RAY_QUERY
                 | wgt::Features::EXTENDED_ACCELERATION_STRUCTURE_VERTEX_FORMATS,
+            supports_ray_tracing,
+        );
+
+        
+        
+        
+        
+        features.set(
+            wgt::Features::ACCELERATION_STRUCTURE_BINDING_ARRAY,
             supports_ray_tracing,
         );
 
@@ -730,27 +731,109 @@ impl super::Adapter {
         
         let presentation_timer = auxil::dxgi::time::PresentationTimer::new_dxgi();
 
-        let base = wgt::Limits::default();
-
         let downlevel = wgt::DownlevelCapabilities::default();
 
         
-        let max_color_attachments = 8;
-        let max_color_attachment_bytes_per_sample =
-            max_color_attachments * wgt::TextureFormat::MAX_TARGET_PIXEL_BYTE_COST;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let max_immediate_size = 128;
+        let max_bind_groups = 8;
+        let max_dynamic_uniform_buffers_per_pipeline_layout = 8;
+        let max_dynamic_storage_buffers_per_pipeline_layout = 4;
 
-        let max_srv_count = match options.ResourceBindingTier {
-            Direct3D12::D3D12_RESOURCE_BINDING_TIER_1 => 128,
+        
+        let full_heap_count = match rbt {
+            ResourceBindingTier::T1 | ResourceBindingTier::T2 => 1_000_000,
+            
+            ResourceBindingTier::T3 => {
+                
+                1 << 20
+            }
+        };
+
+        
+        let max_uniform_buffers_per_shader_stage = match rbt {
+            ResourceBindingTier::T1 | ResourceBindingTier::T2 => 14,
+            _ => full_heap_count,
+        };
+
+        
+        let mut max_srv_per_shader_stage = match rbt {
+            ResourceBindingTier::T1 => 128,
             _ => full_heap_count,
         };
 
         
         
+        max_srv_per_shader_stage -= max_bind_groups;
+
         
-        let max_sampled_textures_per_shader_stage = if !supports_ray_tracing {
-            max_srv_count
+        
+        
+        let mut max_sampled_textures_per_shader_stage = if supports_ray_tracing {
+            max_srv_per_shader_stage / 2
         } else {
-            max_srv_count / 2
+            max_srv_per_shader_stage
+        };
+        let mut max_acceleration_structures_per_shader_stage = if supports_ray_tracing {
+            max_srv_per_shader_stage / 2
+        } else {
+            0
+        };
+
+        
+        let max_uav_across_all_stages = match rbt {
+            ResourceBindingTier::T1 => match max_feature_level {
+                FeatureLevel::_11_0 => 8,
+                _ => 64,
+            },
+            ResourceBindingTier::T2 => 64,
+            ResourceBindingTier::T3 => full_heap_count,
+        };
+        const MAX_SHADER_STAGES_PER_PIPELINE: u32 = 2;
+        
+        let max_uav_per_shader_stage = max_uav_across_all_stages / MAX_SHADER_STAGES_PER_PIPELINE;
+        let max_storage_textures_per_shader_stage = max_uav_per_shader_stage / 2;
+        let mut max_storage_buffers_per_shader_stage = max_uav_per_shader_stage / 2;
+
+        
+        
+        
+        
+        auxil::cap_limits_to_be_under_the_sum_limit(
+            [
+                &mut max_sampled_textures_per_shader_stage,
+                &mut max_acceleration_structures_per_shader_stage,
+                &mut max_storage_buffers_per_shader_stage,
+            ],
+            max_srv_per_shader_stage,
+        );
+
+        
+        let max_samplers_per_shader_stage = match rbt {
+            ResourceBindingTier::T1 => 16,
+            _ => 2048,
         };
 
         
@@ -782,80 +865,82 @@ impl super::Adapter {
             info,
             features,
             capabilities: crate::Capabilities {
-                limits: auxil::apply_hal_limits(wgt::Limits {
+                limits: auxil::adjust_raw_limits(wgt::Limits {
+                    
+                    
+                    
+                    
+                    
                     max_texture_dimension_1d: Direct3D12::D3D12_REQ_TEXTURE1D_U_DIMENSION,
+                    
                     max_texture_dimension_2d: Direct3D12::D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION
                         .min(Direct3D12::D3D12_REQ_TEXTURECUBE_DIMENSION),
+                    
                     max_texture_dimension_3d: Direct3D12::D3D12_REQ_TEXTURE3D_U_V_OR_W_DIMENSION,
+                    
                     max_texture_array_layers: Direct3D12::D3D12_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION,
-                    max_bind_groups: crate::MAX_BIND_GROUPS as u32,
-                    max_bindings_per_bind_group: 65535,
                     
-                    max_dynamic_uniform_buffers_per_pipeline_layout: base
-                        .max_dynamic_uniform_buffers_per_pipeline_layout,
-                    max_dynamic_storage_buffers_per_pipeline_layout: base
-                        .max_dynamic_storage_buffers_per_pipeline_layout,
+                    max_bindings_per_bind_group: u32::MAX,
                     max_sampled_textures_per_shader_stage,
-                    max_samplers_per_shader_stage: match options.ResourceBindingTier {
-                        Direct3D12::D3D12_RESOURCE_BINDING_TIER_1 => 16,
-                        _ => Direct3D12::D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
-                    },
+                    max_samplers_per_shader_stage,
+                    max_storage_textures_per_shader_stage,
+                    max_storage_buffers_per_shader_stage,
+                    max_uniform_buffers_per_shader_stage,
+                    
+                    max_vertex_buffers: 16,
                     
                     
                     
-                    max_storage_buffers_per_shader_stage: uav_count / 4,
-                    max_storage_textures_per_shader_stage: uav_count / 4,
-                    max_uniform_buffers_per_shader_stage: full_heap_count,
-                    max_binding_array_elements_per_shader_stage: full_heap_count,
-                    max_binding_array_sampler_elements_per_shader_stage: full_heap_count,
-                    max_uniform_buffer_binding_size: u64::from(
-                        Direct3D12::D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT,
-                    ) * 16,
-                    max_storage_buffer_binding_size: u64::from(auxil::MAX_I32_BINDING_SIZE),
-                    max_vertex_buffers: Direct3D12::D3D12_VS_INPUT_REGISTER_COUNT,
-                    max_vertex_attributes: Direct3D12::D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
-                    max_vertex_buffer_array_stride: Direct3D12::D3D12_SO_BUFFER_MAX_STRIDE_IN_BYTES,
+                    max_buffer_size: i32::MAX as u64,
+                    max_storage_buffer_binding_size: auxil::MAX_I32_BINDING_SIZE as u64,
                     
+                    max_uniform_buffer_binding_size:
+                        Direct3D12::D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT as u64 * 16,
                     
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    max_immediate_size: 128,
                     min_uniform_buffer_offset_alignment:
                         Direct3D12::D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT,
-                    min_storage_buffer_offset_alignment: 4,
-                    max_inter_stage_shader_variables: base.max_inter_stage_shader_variables,
-                    max_color_attachments,
-                    max_color_attachment_bytes_per_sample,
+                    
+                    min_storage_buffer_offset_alignment:
+                        Direct3D12::D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT,
+                    
+                    max_vertex_attributes: Direct3D12::D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
+                    
+                    max_vertex_buffer_array_stride: Direct3D12::D3D12_SO_BUFFER_MAX_STRIDE_IN_BYTES,
+                    
+                    max_inter_stage_shader_variables: Direct3D12::D3D12_VS_OUTPUT_REGISTER_COUNT
+                        .min(Direct3D12::D3D12_PS_INPUT_REGISTER_COUNT)
+                        - 1, 
+                    max_immediate_size,
+                    max_bind_groups,
+                    max_dynamic_uniform_buffers_per_pipeline_layout,
+                    max_dynamic_storage_buffers_per_pipeline_layout,
+                    
+                    max_color_attachments: Direct3D12::D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT,
+                    
+                    max_color_attachment_bytes_per_sample:
+                        Direct3D12::D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT
+                            * wgt::TextureFormat::MAX_TARGET_PIXEL_BYTE_COST,
                     
                     max_compute_workgroup_storage_size: 32768,
+                    
                     max_compute_invocations_per_workgroup:
-                        Direct3D12::D3D12_CS_4_X_THREAD_GROUP_MAX_THREADS_PER_GROUP,
+                        Direct3D12::D3D12_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP,
+                    
                     max_compute_workgroup_size_x: Direct3D12::D3D12_CS_THREAD_GROUP_MAX_X,
+                    
                     max_compute_workgroup_size_y: Direct3D12::D3D12_CS_THREAD_GROUP_MAX_Y,
+                    
                     max_compute_workgroup_size_z: Direct3D12::D3D12_CS_THREAD_GROUP_MAX_Z,
+                    
                     max_compute_workgroups_per_dimension:
                         Direct3D12::D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION,
                     
                     
                     
-                    max_buffer_size: i32::MAX as u64,
                     max_non_sampler_bindings: 1_000_000,
+
+                    max_binding_array_elements_per_shader_stage: full_heap_count,
+                    max_binding_array_sampler_elements_per_shader_stage: full_heap_count,
 
                     
                     max_task_mesh_workgroup_total_count: if mesh_shader_supported {
@@ -910,12 +995,9 @@ impl super::Adapter {
                     } else {
                         0
                     },
-                    max_acceleration_structures_per_shader_stage: if supports_ray_tracing {
-                        max_srv_count / 2
-                    } else {
-                        0
-                    },
-
+                    max_acceleration_structures_per_shader_stage,
+                    max_binding_array_acceleration_structure_elements_per_shader_stage:
+                        max_acceleration_structures_per_shader_stage,
                     max_multiview_view_count,
                 }),
                 alignments: crate::Alignments {
@@ -1229,6 +1311,18 @@ impl crate::Adapter for super::Adapter {
 
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp {
         wgt::PresentationTimestamp(self.presentation_timer.get_timestamp_ns())
+    }
+
+    fn get_ordered_buffer_usages(&self) -> wgt::BufferUses {
+        wgt::BufferUses::INCLUSIVE | wgt::BufferUses::MAP_WRITE
+    }
+
+    
+    
+    fn get_ordered_texture_usages(&self) -> wgt::TextureUses {
+        wgt::TextureUses::INCLUSIVE
+            | wgt::TextureUses::COLOR_TARGET
+            | wgt::TextureUses::DEPTH_STENCIL_WRITE
     }
 }
 

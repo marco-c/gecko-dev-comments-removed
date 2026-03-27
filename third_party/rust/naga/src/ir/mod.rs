@@ -402,6 +402,11 @@ pub enum AddressSpace {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum BuiltIn {
     
+    
+    
+    PrimitiveIndex,
+
+    
     Position { invariant: bool },
     
     ViewIndex,
@@ -429,8 +434,6 @@ pub enum BuiltIn {
     PointCoord,
     
     FrontFacing,
-    
-    PrimitiveIndex,
     
     Barycentric { perspective: bool },
     
@@ -724,6 +727,22 @@ bitflags::bitflags! {
         const STORE = 0x2;
         /// Storage can be used as a target for atomic ops.
         const ATOMIC = 0x4;
+    }
+}
+
+bitflags::bitflags! {
+    /// Memory decorations for global variables.
+    #[cfg_attr(feature = "serialize", derive(Serialize))]
+    #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    pub struct MemoryDecorations: u8 {
+        /// Reads and writes are automatically visible to other invocations
+        /// without explicit barriers.
+        const COHERENT = 0x1;
+        /// The variable may be modified by something external to the shader,
+        /// preventing certain compiler optimizations.
+        const VOLATILE = 0x2;
     }
 }
 
@@ -1170,6 +1189,13 @@ pub struct GlobalVariable {
     
     
     pub init: Option<Handle<Expression>>,
+    
+    
+    
+    
+    
+    
+    pub memory_decorations: MemoryDecorations,
 }
 
 

@@ -134,7 +134,7 @@ impl TryFrom<SerialId> for RawId {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum PointerId<T: Marker> {
     
-    PointerId(usize, #[serde(skip)] PhantomData<T>),
+    PointerId(core::num::NonZeroUsize, #[serde(skip)] PhantomData<T>),
 }
 
 #[cfg(feature = "serde")]
@@ -177,7 +177,10 @@ impl<T: crate::storage::StorageItem> From<&alloc::sync::Arc<T>> for PointerId<T:
         
         
         
-        PointerId::PointerId(alloc::sync::Arc::as_ptr(arc) as usize, PhantomData)
+        PointerId::PointerId(
+            core::num::NonZeroUsize::new(alloc::sync::Arc::as_ptr(arc) as usize).unwrap(),
+            PhantomData,
+        )
     }
 }
 

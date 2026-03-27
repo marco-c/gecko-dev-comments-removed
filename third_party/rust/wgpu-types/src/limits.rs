@@ -38,6 +38,10 @@ macro_rules! with_limits {
         $macro_name!(max_storage_textures_per_shader_stage, Ordering::Less);
         $macro_name!(max_uniform_buffers_per_shader_stage, Ordering::Less);
         $macro_name!(max_binding_array_elements_per_shader_stage, Ordering::Less);
+        $macro_name!(
+            max_binding_array_acceleration_structure_elements_per_shader_stage,
+            Ordering::Less
+        );
         $macro_name!(max_uniform_buffer_binding_size, Ordering::Less);
         $macro_name!(max_storage_buffer_binding_size, Ordering::Less);
         $macro_name!(max_vertex_buffers, Ordering::Less);
@@ -155,6 +159,10 @@ pub struct Limits {
     
     
     pub max_binding_array_elements_per_shader_stage: u32,
+    
+    
+    
+    pub max_binding_array_acceleration_structure_elements_per_shader_stage: u32,
     
     
     
@@ -359,6 +367,7 @@ impl Limits {
     
     
     
+    
     #[must_use]
     pub const fn defaults() -> Self {
         Self {
@@ -376,6 +385,7 @@ impl Limits {
             max_storage_textures_per_shader_stage: 4,
             max_uniform_buffers_per_shader_stage: 12,
             max_binding_array_elements_per_shader_stage: 0,
+            max_binding_array_acceleration_structure_elements_per_shader_stage: 0,
             max_binding_array_sampler_elements_per_shader_stage: 0,
             max_uniform_buffer_binding_size: 64 << 10, 
             max_storage_buffer_binding_size: 128 << 20, 
@@ -479,6 +489,7 @@ impl Limits {
     
     
     
+    
     #[must_use]
     pub const fn downlevel_defaults() -> Self {
         Self {
@@ -495,6 +506,7 @@ impl Limits {
         }
     }
 
+    
     
     
     

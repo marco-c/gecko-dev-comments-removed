@@ -41,12 +41,12 @@ impl<T> HandleSet<T> {
 
     
     pub fn clear(&mut self) {
-        self.members.clear();
+        self.members.make_empty();
     }
 
     
     pub fn clear_for_arena(&mut self, arena: &impl ArenaType<T>) {
-        self.members.clear();
+        self.members.make_empty();
         self.members.reserve_len(arena.len());
     }
 
@@ -79,7 +79,7 @@ impl<T> HandleSet<T> {
 
     
     pub fn add_all(&mut self) {
-        self.members.get_mut().set_all();
+        self.members.get_mut().fill(true);
     }
 
     pub fn contains(&self, handle: Handle<T>) -> bool {

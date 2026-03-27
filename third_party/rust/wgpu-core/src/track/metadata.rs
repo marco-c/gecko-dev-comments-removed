@@ -36,7 +36,7 @@ impl<T: Clone> ResourceMetadata<T> {
 
     pub(super) fn clear(&mut self) {
         self.resources.clear();
-        self.owned.clear();
+        self.owned.fill(false);
     }
 
     

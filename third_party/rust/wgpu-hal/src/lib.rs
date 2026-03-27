@@ -794,6 +794,16 @@ pub trait Adapter: WasmNotSendSync {
     
     
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp;
+
+    
+    
+    
+    fn get_ordered_buffer_usages(&self) -> wgt::BufferUses;
+
+    
+    
+    
+    fn get_ordered_texture_usages(&self) -> wgt::TextureUses;
 }
 
 
