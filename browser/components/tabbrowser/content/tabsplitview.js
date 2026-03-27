@@ -41,6 +41,8 @@
 
     #isClosing = false;
 
+    #isUnsplitting = false;
+
     #shouldMoveAllTabsAtOnce = true;
 
     #storedPanelWidths = new WeakMap();
@@ -326,7 +328,6 @@
 
       if (this.hasActiveTab || isSessionRestore) {
         this.#activate();
-        gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       }
       
       
@@ -350,6 +351,10 @@
 
 
     unsplitTabs(trigger = null) {
+      if (this.#isUnsplitting) {
+        return;
+      }
+      this.#isUnsplitting = true;
       let telemetryTrigger = this.#isClosing ? null : trigger;
       
       if (telemetryTrigger) {
@@ -359,7 +364,7 @@
 
         Glean.splitview.end.record({
           tab_layout,
-          telemetryTrigger,
+          trigger: telemetryTrigger,
         });
       }
 
@@ -403,7 +408,6 @@
 
       
       this.#activate();
-      gBrowser.setIsSplitViewActive(true, this.#tabs);
     }
 
     
@@ -455,7 +459,6 @@
 
     on_TabSelect(event) {
       this.hasActiveTab = event.target.splitview === this;
-      gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       if (this.hasActiveTab) {
         this.#activate();
       } else {

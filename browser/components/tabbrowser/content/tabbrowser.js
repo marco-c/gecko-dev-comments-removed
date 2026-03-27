@@ -3558,6 +3558,7 @@
 
 
 
+
     showSplitViewPanels(tabs) {
       const panels = [];
       for (const tab of tabs) {
@@ -3567,22 +3568,10 @@
           tab.linkedBrowser.docShellIsActive = true;
           panels.push(tab.linkedPanel);
         }
+        const panelEl = document.getElementById(tab.linkedPanel);
+        panelEl?.classList.toggle("split-view-panel-active", true);
       }
-      this.setIsSplitViewActive(true, tabs);
       this.tabpanels.splitViewPanels = panels;
-    }
-
-    
-
-
-
-
-
-    setIsSplitViewActive(isActive, tabs) {
-      for (const tab of tabs) {
-        this.tabpanels.setSplitViewPanelActive(isActive, tab.linkedPanel);
-      }
-      this.tabpanels.setSplitViewActive(!!gBrowser.selectedTab.splitview);
     }
 
     

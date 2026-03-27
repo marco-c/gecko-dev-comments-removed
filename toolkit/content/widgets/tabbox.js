@@ -601,11 +601,6 @@
       
       this.#splitterAriaUpdateTask.arm();
     }
-
-    setSplitViewPanelActive(isActive, panel) {
-      const panelEl = document.getElementById(panel);
-      panelEl?.classList.toggle("split-view-panel-active", isActive);
-    }
   }
 
   MozXULElement.implementCustomInterface(MozTabpanels, [
