@@ -2020,6 +2020,16 @@ function rint32tobigint_nonnegative(i) {
     return i;
 }
 
+let uceFault_int32tobigint_asuintn = eval(`(${uceFault})`.replace('uceFault', 'uceFault_int32tobigint_asuintn'));
+function rint32tobigint_asuintn(i) {
+    i = Math.max(i, 0);
+    var x = BigInt.asUintN(64, BigInt(i));
+    if (uceFault_int32tobigint_asuintn(i) || uceFault_int32tobigint_asuintn(i))
+        assertEq(x, 99n);
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
 let uceFault_nantozero_nan = eval(`(${uceFault})`.replace('uceFault', 'uceFault_nantozero_nan'));
 function rnantozero_nan(i) {
     
@@ -2070,6 +2080,44 @@ function ratomicsislockfree_false(i) {
     if (uceFault_ratomicsislockfree_false(i) || uceFault_ratomicsislockfree_false(i))
         assertEq(y, false);
     assertRecoveredOnBailout(y, true);
+    return i;
+}
+
+let uceFault_rstrictconstantcompareint32_eq = eval(`(${uceFault})`.replace('uceFault', 'uceFault_rstrictconstantcompareint32_eq'));
+function rstrictconstantcompareint32_eq(i) {
+    var x = i === 0;
+    if (uceFault_rstrictconstantcompareint32_eq(i) || uceFault_rstrictconstantcompareint32_eq(i))
+        assertEq(x, false );
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
+let uceFault_rstrictconstantcompareint32_ne = eval(`(${uceFault})`.replace('uceFault', 'uceFault_rstrictconstantcompareint32_ne'));
+function rstrictconstantcompareint32_ne(i) {
+    var x = i !== 0;
+    if (uceFault_rstrictconstantcompareint32_ne(i) || uceFault_rstrictconstantcompareint32_ne(i))
+        assertEq(x, true );
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
+let uceFault_rstrictconstantcompareboolean_eq = eval(`(${uceFault})`.replace('uceFault', 'uceFault_rstrictconstantcompareboolean_eq'));
+function rstrictconstantcompareboolean_eq(i) {
+    var value = [null, true][i & 1];
+    var x = value === true;
+    if (uceFault_rstrictconstantcompareboolean_eq(i) || uceFault_rstrictconstantcompareboolean_eq(i))
+        assertEq(x, true );
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
+let uceFault_rstrictconstantcompareboolean_ne = eval(`(${uceFault})`.replace('uceFault', 'uceFault_rstrictconstantcompareboolean_ne'));
+function rstrictconstantcompareboolean_ne(i) {
+    var value = [null, true][i & 1];
+    var x = value !== true;
+    if (uceFault_rstrictconstantcompareboolean_ne(i) || uceFault_rstrictconstantcompareboolean_ne(i))
+        assertEq(x, false );
+    assertRecoveredOnBailout(x, true);
     return i;
 }
 
@@ -2278,11 +2326,16 @@ for (j = 100 - max; j < 100; j++) {
     rbigintasuint(BigInt(i));
     rint32tobigint(i);
     rint32tobigint_nonnegative(i);
+    rint32tobigint_asuintn(i);
     rnantozero_nan(i);
     rnantozero_poszero(i);
     rnantozero_negzero(i);
     ratomicsislockfree_true(i);
     ratomicsislockfree_false(i);
+    rstrictconstantcompareint32_eq(i);
+    rstrictconstantcompareint32_ne(i);
+    rstrictconstantcompareboolean_eq(i);
+    rstrictconstantcompareboolean_ne(i);
 }
 
 
