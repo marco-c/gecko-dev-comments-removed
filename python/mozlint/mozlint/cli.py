@@ -417,7 +417,7 @@ def run(
             mode="wb",
             delete=False,
             dir=os.path.dirname(fpath),
-            suffix=os.path.splitext(fpath)[1],
+            suffix="".join(Path(fpath).suffixes),
         )
 
         
