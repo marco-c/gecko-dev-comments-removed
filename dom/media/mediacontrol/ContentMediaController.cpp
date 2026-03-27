@@ -349,8 +349,8 @@ void ContentMediaController::RemoveReceiver(
   mReceivers.RemoveElement(aListener);
 }
 
-void ContentMediaController::HandleMediaKey(MediaControlKey aKey,
-                                            Maybe<SeekDetails> aDetails) {
+void ContentMediaController::HandleMediaKey(
+    MediaControlKey aKey, const MediaControlActionParams& aParams) {
   MOZ_ASSERT(NS_IsMainThread());
   if (mReceivers.IsEmpty()) {
     return;
@@ -368,11 +368,14 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey,
     case MediaControlKey::Seekto:
     case MediaControlKey::Seekforward:
     case MediaControlKey::Seekbackward:
+    case MediaControlKey::Setvolume:
+    case MediaControlKey::Mute:
+    case MediaControlKey::Unmute:
       
       
       
       for (auto& receiver : Reversed(mReceivers)) {
-        receiver->HandleMediaKey(aKey, aDetails);
+        receiver->HandleMediaKey(aKey, aParams);
       }
       return;
     default:

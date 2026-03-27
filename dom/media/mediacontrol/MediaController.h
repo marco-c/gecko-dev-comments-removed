@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
@@ -40,6 +38,9 @@ class IMediaController {
   virtual void SeekForward(double aSeekOffset) = 0;
   virtual void SkipAd() = 0;
   virtual void SeekTo(double aSeekTime, bool aFastSeek) = 0;
+  virtual void SetVolume(double aVolume) = 0;
+  virtual void Mute() = 0;
+  virtual void Unmute() = 0;
 
   
   virtual uint64_t Id() const = 0;
@@ -108,6 +109,9 @@ class MediaController final : public DOMEventTargetHelper,
   void SeekForward(double aSeekOffset) override;
   void SkipAd() override;
   void SeekTo(double aSeekTime, bool aFastSeek) override;
+  void SetVolume(double aVolume) override;
+  void Mute() override;
+  void Unmute() override;
 
   uint64_t Id() const override;
   bool IsAudible() const override;
