@@ -1153,14 +1153,7 @@ impl FontContext {
 
         match font.render_mode {
             FontRenderMode::Alpha => {
-                
-                
-                
-                if cfg!(target_os = "android") {
-                    gamma_lut.preblend(pixels, font.color);
-                } else {
-                    gamma_lut.preblend_grayscale(pixels, font.color);
-                }
+                gamma_lut.preblend_grayscale(pixels, font.color);
             }
             FontRenderMode::Subpixel => {
                 gamma_lut.preblend(pixels, font.color);
