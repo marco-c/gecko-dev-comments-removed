@@ -14860,6 +14860,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
   }
   render() {
     const prefs = this.props.Prefs.values;
+    
+    const novaEnabled = prefs["nova.enabled"];
     const {
       wallpaperList,
       categories
@@ -14937,173 +14939,181 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       htmlFor: "solid-color-picker",
       "data-l10n-id": "newtab-wallpaper-custom-color"
     })) : "";
-    return external_React_default().createElement("div", null, external_React_default().createElement("div", {
-      className: "category-header"
-    }, external_React_default().createElement("h2", {
-      "data-l10n-id": "newtab-wallpaper-title"
-    }), external_React_default().createElement("button", {
-      className: "wallpapers-reset",
-      onClick: this.handleReset,
-      "data-l10n-id": "newtab-wallpaper-reset"
-    })), external_React_default().createElement("div", {
-      role: "grid",
-      "aria-label": "Wallpaper category selection. Use arrow keys to navigate."
-    }, external_React_default().createElement("fieldset", {
-      className: "category-list"
-    }, categories.map((category, index) => {
-      const filteredList = wallpaperList.filter(wallpaper => wallpaper.category === category);
-      const sortedList = this.sortWallpapersByOrder(filteredList);
-      const activeWallpaperObj = activeWallpaper && sortedList.find(wp => wp.title === activeWallpaper);
+    return (
       
-      const isCustomSolidColor = category === "solid-colors" && activeWallpaper.startsWith("solid-color-picker");
-      const thumbnail = activeWallpaperObj || sortedList[0];
-      let fluent_id;
-      switch (category) {
-        case "abstracts":
-          fluent_id = "newtab-wallpaper-category-title-abstract";
-          break;
-        case "celestial":
-          fluent_id = "newtab-wallpaper-category-title-celestial";
-          break;
-        case "custom-wallpaper":
-          fluent_id = "newtab-wallpaper-upload-image";
-          break;
-        case "photographs":
-          fluent_id = "newtab-wallpaper-category-title-photographs";
-          break;
-        case "solid-colors":
-          fluent_id = "newtab-wallpaper-category-title-colors";
-          break;
-        case "firefox":
-          fluent_id = "newtab-wallpaper-category-title-firefox";
-          break;
-      }
-      let style = {};
-      if (thumbnail?.wallpaperUrl) {
-        style.backgroundImage = `url(${thumbnail?.thumbnail || thumbnail?.wallpaperUrl})`;
-        style.backgroundPosition = thumbnail.background_position || "center";
-      } else {
-        style.backgroundColor = thumbnail?.solid_color || "";
-      }
       
-      if (isCustomSolidColor) {
-        const hex = activeWallpaper.split("solid-color-picker-")[1] || "";
-        style.backgroundColor = hex;
-      }
-      const isCategorySelected = activeWallpaperObj || isCustomSolidColor;
-      return external_React_default().createElement("div", {
-        key: category
-      }, external_React_default().createElement("button", WallpaperCategories_extends({
-        ref: el => {
-          if (el) {
-            this.categoryRef[index] = el;
-          }
-        },
-        id: category,
-        style: style,
-        onKeyDown: e => this.handleCategoryKeyDown(e, category)
+      external_React_default().createElement("div", {
+        className: novaEnabled ? "nova-enabled" : undefined
+      }, external_React_default().createElement("div", {
+        className: "category-header"
+      },
+      
+      !novaEnabled && external_React_default().createElement("h2", {
+        "data-l10n-id": "newtab-wallpaper-title"
+      }), external_React_default().createElement("button", {
+        className: "wallpapers-reset",
+        onClick: this.handleReset,
+        "data-l10n-id": "newtab-wallpaper-reset"
+      })), external_React_default().createElement("div", {
+        role: "grid",
+        "aria-label": "Wallpaper category selection. Use arrow keys to navigate."
+      }, external_React_default().createElement("fieldset", {
+        className: "category-list"
+      }, categories.map((category, index) => {
+        const filteredList = wallpaperList.filter(wallpaper => wallpaper.category === category);
+        const sortedList = this.sortWallpapersByOrder(filteredList);
+        const activeWallpaperObj = activeWallpaper && sortedList.find(wp => wp.title === activeWallpaper);
         
-        ,
-        onClick: event => {
-          this.setState({
-            focusedCategoryIndex: index
-          });
-          if (category !== "custom-wallpaper") {
-            this.handleCategory(event);
-          } else {
-            this.handleUpload();
-          }
-        },
-        className: `wallpaper-input
+        const isCustomSolidColor = category === "solid-colors" && activeWallpaper.startsWith("solid-color-picker");
+        const thumbnail = activeWallpaperObj || sortedList[0];
+        let fluent_id;
+        switch (category) {
+          case "abstracts":
+            fluent_id = "newtab-wallpaper-category-title-abstract";
+            break;
+          case "celestial":
+            fluent_id = "newtab-wallpaper-category-title-celestial";
+            break;
+          case "custom-wallpaper":
+            fluent_id = "newtab-wallpaper-upload-image";
+            break;
+          case "photographs":
+            fluent_id = "newtab-wallpaper-category-title-photographs";
+            break;
+          case "solid-colors":
+            fluent_id = "newtab-wallpaper-category-title-colors";
+            break;
+          case "firefox":
+            fluent_id = "newtab-wallpaper-category-title-firefox";
+            break;
+        }
+        let style = {};
+        if (thumbnail?.wallpaperUrl) {
+          style.backgroundImage = `url(${thumbnail?.thumbnail || thumbnail?.wallpaperUrl})`;
+          style.backgroundPosition = thumbnail.background_position || "center";
+        } else {
+          style.backgroundColor = thumbnail?.solid_color || "";
+        }
+        
+        if (isCustomSolidColor) {
+          const hex = activeWallpaper.split("solid-color-picker-")[1] || "";
+          style.backgroundColor = hex;
+        }
+        const isCategorySelected = activeWallpaperObj || isCustomSolidColor;
+        return external_React_default().createElement("div", {
+          key: category
+        }, external_React_default().createElement("button", WallpaperCategories_extends({
+          ref: el => {
+            if (el) {
+              this.categoryRef[index] = el;
+            }
+          },
+          id: category,
+          style: style,
+          onKeyDown: e => this.handleCategoryKeyDown(e, category)
+          
+          ,
+          onClick: event => {
+            this.setState({
+              focusedCategoryIndex: index
+            });
+            if (category !== "custom-wallpaper") {
+              this.handleCategory(event);
+            } else {
+              this.handleUpload();
+            }
+          },
+          className: `wallpaper-input
                       ${category === "custom-wallpaper" ? "theme-custom-wallpaper" : ""}
                       ${isCategorySelected ? "selected" : ""}`,
-        tabIndex: this.state.focusedCategoryIndex === index ? 0 : -1
-      }, category === "custom-wallpaper" ? {
-        "aria-errormessage": "customWallpaperError"
-      } : {})), external_React_default().createElement("label", {
-        htmlFor: category,
-        "data-l10n-id": fluent_id
-      }, fluent_id));
-    })), this.state.customWallpaperErrorType && external_React_default().createElement("div", {
-      className: "custom-wallpaper-error",
-      id: "customWallpaperError"
-    }, external_React_default().createElement("span", {
-      className: "icon icon-info"
-    }), (() => {
-      switch (this.state.customWallpaperErrorType) {
-        case "fileSize":
-          return external_React_default().createElement("span", {
-            "data-l10n-id": "newtab-wallpaper-error-max-file-size",
-            "data-l10n-args": `{"file_size": ${wallpaperUploadMaxFileSize}}`
-          });
-        case "fileType":
-          return external_React_default().createElement("span", {
-            "data-l10n-id": "newtab-wallpaper-error-upload-file-type"
-          });
-        default:
-          return null;
-      }
-    })())), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
-      nodeRef: this.wallpaperListRef,
-      in: !!activeCategory,
-      timeout: 300,
-      classNames: "wallpaper-list",
-      unmountOnExit: true,
-      onEntered: this.handleWallpaperListEntered
-    }, external_React_default().createElement("section", {
-      ref: this.wallpaperListRef,
-      className: "category wallpaper-list ignore-color-mode"
-    }, external_React_default().createElement("button", {
-      ref: this.arrowButtonRef,
-      className: "arrow-button",
-      "data-l10n-id": activeCategoryFluentID,
-      onClick: this.handleBack
-    }), external_React_default().createElement("div", {
-      role: "grid",
-      "aria-label": "Wallpaper selection. Use arrow keys to navigate."
-    }, external_React_default().createElement("fieldset", null, this.sortWallpapersByOrder(filteredWallpapers).map(({
-      background_position,
-      fluent_id,
-      solid_color,
-      theme,
-      title,
-      thumbnail,
-      wallpaperUrl
-    }, index) => {
-      let style = {};
-      if (wallpaperUrl) {
-        style.backgroundImage = `url(${thumbnail || wallpaperUrl})`;
-        style.backgroundPosition = background_position || "center";
-      } else {
-        style.backgroundColor = solid_color || "";
-      }
-      return external_React_default().createElement((external_React_default()).Fragment, {
-        key: title
-      }, external_React_default().createElement("input", {
-        ref: el => {
-          if (el) {
-            this.wallpaperRef[index] = el;
-          }
-        },
-        onChange: this.handleChange,
-        onKeyDown: e => this.handleWallpaperKeyDown(e, title),
-        style: style,
-        type: "radio",
-        name: `wallpaper-${title}`,
-        id: title,
-        value: title,
-        checked: title === activeWallpaper,
-        "aria-checked": title === activeWallpaper,
-        className: `wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`,
-        onClick: () => this.setActiveId(title) 
-        ,
-        tabIndex: index === 0 ? 0 : -1 
-      }), external_React_default().createElement("label", {
-        htmlFor: title,
-        className: "sr-only",
-        "data-l10n-id": fluent_id
-      }, fluent_id));
-    }), colorPickerInput)))));
+          tabIndex: this.state.focusedCategoryIndex === index ? 0 : -1
+        }, category === "custom-wallpaper" ? {
+          "aria-errormessage": "customWallpaperError"
+        } : {})), external_React_default().createElement("label", {
+          htmlFor: category,
+          "data-l10n-id": fluent_id
+        }, fluent_id));
+      })), this.state.customWallpaperErrorType && external_React_default().createElement("div", {
+        className: "custom-wallpaper-error",
+        id: "customWallpaperError"
+      }, external_React_default().createElement("span", {
+        className: "icon icon-info"
+      }), (() => {
+        switch (this.state.customWallpaperErrorType) {
+          case "fileSize":
+            return external_React_default().createElement("span", {
+              "data-l10n-id": "newtab-wallpaper-error-max-file-size",
+              "data-l10n-args": `{"file_size": ${wallpaperUploadMaxFileSize}}`
+            });
+          case "fileType":
+            return external_React_default().createElement("span", {
+              "data-l10n-id": "newtab-wallpaper-error-upload-file-type"
+            });
+          default:
+            return null;
+        }
+      })())), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+        nodeRef: this.wallpaperListRef,
+        in: !!activeCategory,
+        timeout: 300,
+        classNames: "wallpaper-list",
+        unmountOnExit: true,
+        onEntered: this.handleWallpaperListEntered
+      }, external_React_default().createElement("section", {
+        ref: this.wallpaperListRef,
+        className: "category wallpaper-list ignore-color-mode"
+      }, external_React_default().createElement("button", {
+        ref: this.arrowButtonRef,
+        className: "arrow-button",
+        "data-l10n-id": activeCategoryFluentID,
+        onClick: this.handleBack
+      }), external_React_default().createElement("div", {
+        role: "grid",
+        "aria-label": "Wallpaper selection. Use arrow keys to navigate."
+      }, external_React_default().createElement("fieldset", null, this.sortWallpapersByOrder(filteredWallpapers).map(({
+        background_position,
+        fluent_id,
+        solid_color,
+        theme,
+        title,
+        thumbnail,
+        wallpaperUrl
+      }, index) => {
+        let style = {};
+        if (wallpaperUrl) {
+          style.backgroundImage = `url(${thumbnail || wallpaperUrl})`;
+          style.backgroundPosition = background_position || "center";
+        } else {
+          style.backgroundColor = solid_color || "";
+        }
+        return external_React_default().createElement((external_React_default()).Fragment, {
+          key: title
+        }, external_React_default().createElement("input", {
+          ref: el => {
+            if (el) {
+              this.wallpaperRef[index] = el;
+            }
+          },
+          onChange: this.handleChange,
+          onKeyDown: e => this.handleWallpaperKeyDown(e, title),
+          style: style,
+          type: "radio",
+          name: `wallpaper-${title}`,
+          id: title,
+          value: title,
+          checked: title === activeWallpaper,
+          "aria-checked": title === activeWallpaper,
+          className: `wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`,
+          onClick: () => this.setActiveId(title) 
+          ,
+          tabIndex: index === 0 ? 0 : -1 
+        }), external_React_default().createElement("label", {
+          htmlFor: title,
+          className: "sr-only",
+          "data-l10n-id": fluent_id
+        }, fluent_id));
+      }), colorPickerInput)))))
+    );
   }
 }
 const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(state => {
@@ -15113,7 +15123,171 @@ const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(stat
   };
 })(_WallpaperCategories);
 ;
+
+
+
+
+
+
+
+
+
+
+
+function WidgetsManagementPanel({
+  exitEventFired,
+  onSubpanelToggle,
+  togglePanel,
+  showPanel,
+  enabledSections,
+  enabledWidgets,
+  mayHaveWeather,
+  mayHaveTimerWidget,
+  mayHaveListsWidget,
+  mayHaveWeatherForecast,
+  weatherDisplay,
+  setPref
+}) {
+  const arrowButtonRef = (0,external_React_namespaceObject.useRef)(null);
+  const panelRef = (0,external_React_namespaceObject.useRef)(null);
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (exitEventFired && showPanel) {
+      togglePanel();
+    }
+  }, [exitEventFired, showPanel, togglePanel]);
+
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (onSubpanelToggle) {
+      onSubpanelToggle(showPanel);
+    }
+  }, [showPanel, onSubpanelToggle]);
+  const handlePanelEntered = () => {
+    arrowButtonRef.current?.focus();
+  };
+  const onToggleWidget = e => {
+    const {
+      preference,
+      eventSource
+    } = e.target.dataset;
+    const value = e.target.pressed;
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.UserEvent({
+        event: "PREF_CHANGED",
+        source: eventSource,
+        value: {
+          status: value,
+          menu_source: "CUSTOMIZE_MENU"
+        }
+      }));
+      let widgetName;
+      switch (eventSource) {
+        case "WEATHER":
+          widgetName = "weather";
+          break;
+        case "WIDGET_LISTS":
+          widgetName = "lists";
+          break;
+        case "WIDGET_TIMER":
+          widgetName = "focus_timer";
+          break;
+      }
+      if (widgetName) {
+        const {
+          widgetsMaximized,
+          widgetsMayBeMaximized
+        } = enabledWidgets;
+        let widgetSize;
+        if (widgetName === "weather") {
+          if (mayHaveWeatherForecast && weatherDisplay === "detailed") {
+            widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+          } else {
+            widgetSize = "mini";
+          }
+        } else {
+          widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+        }
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_ENABLED,
+          data: {
+            widget_name: widgetName,
+            widget_source: "customize_panel",
+            enabled: value,
+            widget_size: widgetSize
+          }
+        }));
+      }
+      setPref(preference, value);
+    });
+  };
+  const {
+    weatherEnabled
+  } = enabledSections;
+  const {
+    timerEnabled,
+    listsEnabled
+  } = enabledWidgets;
+  return external_React_default().createElement("div", null, external_React_default().createElement("moz-box-button", {
+    onClick: togglePanel,
+    "data-l10n-id": "newtab-widget-manage-widget-button"
+  }), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+    nodeRef: panelRef,
+    in: showPanel,
+    timeout: 300,
+    classNames: "widgets-mgmt-panel",
+    unmountOnExit: true,
+    onEntered: handlePanelEntered
+  }, external_React_default().createElement("div", {
+    ref: panelRef,
+    className: "widgets-mgmt-panel"
+  }, external_React_default().createElement("button", {
+    ref: arrowButtonRef,
+    className: "arrow-button",
+    onClick: togglePanel
+  }, external_React_default().createElement("h1", {
+    "data-l10n-id": "newtab-widget-manage-title"
+  })), external_React_default().createElement("div", {
+    className: "settings-widgets"
+  }, mayHaveWeather && external_React_default().createElement("div", {
+    id: "weather-section",
+    className: "section"
+  }, external_React_default().createElement("moz-toggle", {
+    id: "weather-toggle",
+    pressed: weatherEnabled || null,
+    ontoggle: onToggleWidget,
+    "data-preference": "showWeather",
+    "data-event-source": "WEATHER",
+    "data-l10n-id": "newtab-custom-widget-weather-toggle"
+  })), mayHaveTimerWidget && external_React_default().createElement("div", {
+    id: "timer-widget-section",
+    className: "section"
+  }, external_React_default().createElement("moz-toggle", {
+    id: "timer-toggle",
+    pressed: timerEnabled || null,
+    ontoggle: onToggleWidget,
+    "data-preference": "widgets.focusTimer.enabled",
+    "data-event-source": "WIDGET_TIMER",
+    "data-l10n-id": "newtab-custom-widget-timer-toggle"
+  })), mayHaveListsWidget && external_React_default().createElement("div", {
+    id: "lists-widget-section",
+    className: "section"
+  }, external_React_default().createElement("moz-toggle", {
+    id: "lists-toggle",
+    pressed: listsEnabled || null,
+    ontoggle: onToggleWidget,
+    "data-preference": "widgets.lists.enabled",
+    "data-event-source": "WIDGET_LISTS",
+    "data-l10n-id": "newtab-custom-widget-lists-toggle"
+  }))))));
+}
+
+;
 function ContentSection_extends() { return ContentSection_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, ContentSection_extends.apply(null, arguments); }
+
+
 
 
 
@@ -15248,15 +15422,21 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveWidgets,
       mayHaveTimerWidget,
       mayHaveListsWidget,
+      mayHaveWeatherForecast,
       openPreferences,
       wallpapersEnabled,
       activeWallpaper,
       setPref,
       mayHaveTopicSections,
+      weatherDisplay,
       exitEventFired,
       onSubpanelToggle,
       toggleSectionsMgmtPanel,
-      showSectionsMgmtPanel
+      showSectionsMgmtPanel,
+      
+      novaEnabled,
+      toggleWidgetsManagementPanel,
+      showWidgetsManagementPanel
     } = this.props;
     const {
       topSitesEnabled,
@@ -15269,11 +15449,20 @@ class ContentSection extends (external_React_default()).PureComponent {
       timerEnabled,
       listsEnabled
     } = enabledWidgets;
+
+    
     return external_React_default().createElement("div", {
       className: "home-section"
-    }, wallpapersEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    }, (wallpapersEnabled || novaEnabled) && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "wallpapers-section"
-    }, external_React_default().createElement(WallpaperCategories, {
+    }, novaEnabled && external_React_default().createElement("moz-toggle", {
+      id: "wallpapers-toggle",
+      pressed: wallpapersEnabled || null,
+      ontoggle: this.onPreferenceSelect,
+      "data-preference": "newtabWallpapers.enabled",
+      "data-event-source": "WALLPAPERS",
+      "data-l10n-id": "newtab-wallpaper-toggle-title"
+    }), wallpapersEnabled && external_React_default().createElement(WallpaperCategories, {
       setPref: setPref,
       activeWallpaper: activeWallpaper,
       exitEventFired: exitEventFired,
@@ -15281,7 +15470,20 @@ class ContentSection extends (external_React_default()).PureComponent {
     })), !mayHaveWidgets && external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
-    })), mayHaveWidgets && external_React_default().createElement("div", {
+    })), mayHaveWidgets && (novaEnabled ? external_React_default().createElement(WidgetsManagementPanel, {
+      enabledSections: enabledSections,
+      enabledWidgets: enabledWidgets,
+      mayHaveWeather: mayHaveWeather,
+      mayHaveTimerWidget: mayHaveTimerWidget,
+      mayHaveListsWidget: mayHaveListsWidget,
+      mayHaveWeatherForecast: mayHaveWeatherForecast,
+      weatherDisplay: weatherDisplay,
+      setPref: setPref,
+      exitEventFired: exitEventFired,
+      onSubpanelToggle: onSubpanelToggle,
+      togglePanel: toggleWidgetsManagementPanel,
+      showPanel: showWidgetsManagementPanel
+    }) : external_React_default().createElement("div", {
       className: "widgets-section"
     }, external_React_default().createElement("div", {
       className: "category-header"
@@ -15322,7 +15524,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     })), external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
-    }))), external_React_default().createElement("div", {
+    })))), external_React_default().createElement("div", {
       className: "settings-toggles"
     }, !mayHaveWidgets && mayHaveWeather && external_React_default().createElement("div", {
       id: "weather-section",
@@ -15438,6 +15640,7 @@ class ContentSection extends (external_React_default()).PureComponent {
 
 
 
+const CustomizeMenu_PREF_NOVA_ENABLED = "nova.enabled";
 
 
 class _CustomizeMenu extends (external_React_default()).PureComponent {
@@ -15478,6 +15681,8 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
   render() {
     const activationWindowVariant = this.props.Prefs.values["activationWindow.variant"];
     const activationWindowClass = activationWindowVariant ? `activation-window-variant-${activationWindowVariant}` : "";
+    
+    const novaEnabled = this.props.Prefs.values[CustomizeMenu_PREF_NOVA_ENABLED];
     return external_React_default().createElement("span", null, external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       nodeRef: this.personalizeButtonRef,
       timeout: 300,
@@ -15544,7 +15749,10 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       exitEventFired: this.state.exitEventFired,
       onSubpanelToggle: this.onSubpanelToggle,
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
-      showSectionsMgmtPanel: this.props.showSectionsMgmtPanel
+      showSectionsMgmtPanel: this.props.showSectionsMgmtPanel,
+      novaEnabled: novaEnabled,
+      toggleWidgetsManagementPanel: this.props.toggleWidgetsManagementPanel,
+      showWidgetsManagementPanel: this.props.showWidgetsManagementPanel
     })))));
   }
 }
@@ -17080,6 +17288,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.handleDismissDownloadHighlight = this.handleDismissDownloadHighlight.bind(this);
     this.applyBodyClasses = this.applyBodyClasses.bind(this);
     this.toggleSectionsMgmtPanel = this.toggleSectionsMgmtPanel.bind(this);
+    this.toggleWidgetsManagementPanel = this.toggleWidgetsManagementPanel.bind(this);
     this.state = {
       fixedSearch: false,
       firstVisibleTimestamp: null,
@@ -17088,7 +17297,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       wallpaperTheme: "",
       showDownloadHighlightOverride: null,
       visible: false,
-      showSectionsMgmtPanel: false
+      showSectionsMgmtPanel: false,
+      showWidgetsManagementPanel: false
     };
     this.spocPlaceholderStartTime = null;
   }
@@ -17554,6 +17764,11 @@ class BaseContent extends (external_React_default()).PureComponent {
       showSectionsMgmtPanel: !prevState.showSectionsMgmtPanel
     }));
   }
+  toggleWidgetsManagementPanel() {
+    this.setState(prevState => ({
+      showWidgetsManagementPanel: !prevState.showWidgetsManagementPanel
+    }));
+  }
   shouldDisplayTopicSelectionModal() {
     const prefs = this.props.Prefs.values;
     const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
@@ -17717,7 +17932,8 @@ class BaseContent extends (external_React_default()).PureComponent {
         showing: customizeMenuVisible,
         toggleSectionsMgmtPanel: this.toggleSectionsMgmtPanel,
         showSectionsMgmtPanel: this.state.showSectionsMgmtPanel,
-        showWidgetMgmtPanel: this.state.showWidgetMgmtPanel
+        showWidgetsManagementPanel: this.state.showWidgetsManagementPanel,
+        toggleWidgetsManagementPanel: this.toggleWidgetsManagementPanel
       })));
     }
 
