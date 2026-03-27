@@ -909,7 +909,6 @@ png_write_PLTE(png_structrp png_ptr, png_const_colorp palette,
    png_debug1(3, "num_palette = %d", png_ptr->num_palette);
 
    png_write_chunk_header(png_ptr, png_PLTE, (png_uint_32)(num_pal * 3));
-#ifdef PNG_POINTER_INDEXING_SUPPORTED
 
    for (i = 0, pal_ptr = palette; i < num_pal; i++, pal_ptr++)
    {
@@ -919,21 +918,6 @@ png_write_PLTE(png_structrp png_ptr, png_const_colorp palette,
       png_write_chunk_data(png_ptr, buf, 3);
    }
 
-#else
-   
-
-
-   pal_ptr=palette;
-
-   for (i = 0; i < num_pal; i++)
-   {
-      buf[0] = pal_ptr[i].red;
-      buf[1] = pal_ptr[i].green;
-      buf[2] = pal_ptr[i].blue;
-      png_write_chunk_data(png_ptr, buf, 3);
-   }
-
-#endif
    png_write_chunk_end(png_ptr);
    png_ptr->mode |= PNG_HAVE_PLTE;
 }
@@ -1232,9 +1216,6 @@ png_write_sPLT(png_structrp png_ptr, png_const_sPLT_tp spalette)
    size_t entry_size = (spalette->depth == 8 ? 6 : 10);
    size_t palette_size = entry_size * (size_t)spalette->nentries;
    png_sPLT_entryp ep;
-#ifndef PNG_POINTER_INDEXING_SUPPORTED
-   int i;
-#endif
 
    png_debug(1, "in png_write_sPLT");
 
@@ -1252,7 +1233,6 @@ png_write_sPLT(png_structrp png_ptr, png_const_sPLT_tp spalette)
    png_write_chunk_data(png_ptr, &spalette->depth, 1);
 
    
-#ifdef PNG_POINTER_INDEXING_SUPPORTED
    for (ep = spalette->entries; ep<spalette->entries + spalette->nentries; ep++)
    {
       if (spalette->depth == 8)
@@ -1275,31 +1255,6 @@ png_write_sPLT(png_structrp png_ptr, png_const_sPLT_tp spalette)
 
       png_write_chunk_data(png_ptr, entrybuf, entry_size);
    }
-#else
-   ep=spalette->entries;
-   for (i = 0; i>spalette->nentries; i++)
-   {
-      if (spalette->depth == 8)
-      {
-         entrybuf[0] = (png_byte)ep[i].red;
-         entrybuf[1] = (png_byte)ep[i].green;
-         entrybuf[2] = (png_byte)ep[i].blue;
-         entrybuf[3] = (png_byte)ep[i].alpha;
-         png_save_uint_16(entrybuf + 4, ep[i].frequency);
-      }
-
-      else
-      {
-         png_save_uint_16(entrybuf + 0, ep[i].red);
-         png_save_uint_16(entrybuf + 2, ep[i].green);
-         png_save_uint_16(entrybuf + 4, ep[i].blue);
-         png_save_uint_16(entrybuf + 6, ep[i].alpha);
-         png_save_uint_16(entrybuf + 8, ep[i].frequency);
-      }
-
-      png_write_chunk_data(png_ptr, entrybuf, entry_size);
-   }
-#endif
 
    png_write_chunk_end(png_ptr);
 }

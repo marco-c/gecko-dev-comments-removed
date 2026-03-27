@@ -115,7 +115,7 @@ typedef enum
    (((png_ptr)->chunks & png_chunk_flag_from_index(i)) != 0)
    
 
-#define png_file_add_chunk(pnt_ptr, i)\
+#define png_file_add_chunk(png_ptr, i)\
    ((void)((png_ptr)->chunks |= png_chunk_flag_from_index(i)))
    
 

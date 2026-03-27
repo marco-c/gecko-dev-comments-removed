@@ -495,6 +495,9 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
    if (png_rtran_ok(png_ptr, 0) == 0)
       return;
 
+   if (palette == NULL)
+      return;
+
    png_ptr->transformations |= PNG_QUANTIZE;
 
    if (full_quantize == 0)
@@ -811,7 +814,13 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
    }
    if (png_ptr->palette == NULL)
    {
-      png_ptr->palette = palette;
+      
+
+
+      png_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
+          PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
+      memcpy(png_ptr->palette, palette, (unsigned int)num_palette *
+          (sizeof (png_color)));
    }
    png_ptr->num_palette = (png_uint_16)num_palette;
 
@@ -2060,6 +2069,21 @@ void
 png_read_transform_info(png_structrp png_ptr, png_inforp info_ptr)
 {
    png_debug(1, "in png_read_transform_info");
+
+   if (png_ptr->transformations != 0)
+   {
+      if (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE &&
+          info_ptr->palette != NULL && png_ptr->palette != NULL)
+      {
+         
+
+
+
+
+         memcpy(info_ptr->palette, png_ptr->palette,
+             PNG_MAX_PALETTE_LENGTH * (sizeof (png_color)));
+      }
+   }
 
 #ifdef PNG_READ_EXPAND_SUPPORTED
    if ((png_ptr->transformations & PNG_EXPAND) != 0)

@@ -1019,6 +1019,16 @@ png_write_destroy(png_structrp png_ptr)
    png_ptr->chunk_list = NULL;
 #endif
 
+#if defined(PNG_tRNS_SUPPORTED)
+   
+   png_free(png_ptr, png_ptr->trans_alpha);
+   png_ptr->trans_alpha = NULL;
+#endif
+
+   
+   png_free(png_ptr, png_ptr->palette);
+   png_ptr->palette = NULL;
+
    
 
 
@@ -2029,7 +2039,7 @@ png_image_write_main(png_voidp argument)
             display->row_stride = (png_int_32)png_row_stride;
 
          if (display->row_stride < 0)
-            check = (png_uint_32)(-display->row_stride);
+            check = -(png_uint_32)display->row_stride;
 
          else
             check = (png_uint_32)display->row_stride;

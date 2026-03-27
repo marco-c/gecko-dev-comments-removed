@@ -333,7 +333,8 @@ png_set_eXIf_1(png_const_structrp png_ptr, png_inforp info_ptr,
    png_debug1(1, "in %s storage function", "eXIf");
 
    if (png_ptr == NULL || info_ptr == NULL ||
-       (png_ptr->mode & PNG_WROTE_eXIf) != 0)
+       (png_ptr->mode & PNG_WROTE_eXIf) != 0 ||
+       exif == NULL)
       return;
 
    new_exif = png_voidcast(png_bytep, png_malloc_warn(png_ptr, num_exif));
@@ -388,7 +389,7 @@ png_set_hIST(png_const_structrp png_ptr, png_inforp info_ptr,
 
    png_debug1(1, "in %s storage function", "hIST");
 
-   if (png_ptr == NULL || info_ptr == NULL)
+   if (png_ptr == NULL || info_ptr == NULL || hist == NULL)
       return;
 
    if (info_ptr->num_palette == 0 || info_ptr->num_palette
@@ -780,28 +781,38 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
       png_error(png_ptr, "Invalid palette");
    }
 
-   
-
-
-
-
-
-
    png_free_data(png_ptr, info_ptr, PNG_FREE_PLTE, 0);
 
    
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+   png_free(png_ptr, png_ptr->palette);
    png_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
        PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
+   info_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
+       PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
+   png_ptr->num_palette = info_ptr->num_palette = (png_uint_16)num_palette;
 
    if (num_palette > 0)
+   {
+      memcpy(info_ptr->palette, palette, (unsigned int)num_palette *
+          (sizeof (png_color)));
       memcpy(png_ptr->palette, palette, (unsigned int)num_palette *
           (sizeof (png_color)));
+   }
 
-   info_ptr->palette = png_ptr->palette;
-   info_ptr->num_palette = png_ptr->num_palette = (png_uint_16)num_palette;
    info_ptr->free_me |= PNG_FREE_PLTE;
    info_ptr->valid |= PNG_INFO_PLTE;
 }
@@ -1159,28 +1170,40 @@ png_set_tRNS(png_structrp png_ptr, png_inforp info_ptr,
 
    if (trans_alpha != NULL)
    {
-       
-
-
-
-
-
-
-
-
        png_free_data(png_ptr, info_ptr, PNG_FREE_TRNS, 0);
 
        if (num_trans > 0 && num_trans <= PNG_MAX_PALETTE_LENGTH)
        {
-         
+          
+
+
+
           info_ptr->trans_alpha = png_voidcast(png_bytep,
               png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
+          memset(info_ptr->trans_alpha, 0xff, PNG_MAX_PALETTE_LENGTH);
           memcpy(info_ptr->trans_alpha, trans_alpha, (size_t)num_trans);
-
           info_ptr->free_me |= PNG_FREE_TRNS;
           info_ptr->valid |= PNG_INFO_tRNS;
+
+          
+
+
+
+
+
+
+
+          png_free(png_ptr, png_ptr->trans_alpha);
+          png_ptr->trans_alpha = png_voidcast(png_bytep,
+              png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
+          memset(png_ptr->trans_alpha, 0xff, PNG_MAX_PALETTE_LENGTH);
+          memcpy(png_ptr->trans_alpha, trans_alpha, (size_t)num_trans);
        }
-       png_ptr->trans_alpha = info_ptr->trans_alpha;
+       else
+       {
+          png_free(png_ptr, png_ptr->trans_alpha);
+          png_ptr->trans_alpha = NULL;
+       }
    }
 
    if (trans_color != NULL)
