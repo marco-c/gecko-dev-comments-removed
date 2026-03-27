@@ -9,49 +9,65 @@ treeherder configuration and attributes for that platform.
 
 import copy
 import os
+from typing import Optional, Union
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import keymatch
-from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
-from voluptuous import Any, Extra, Optional, Required
 
-from gecko_taskgraph.transforms.job import job_description_schema
+from gecko_taskgraph.transforms.job import JobDescriptionSchema
 
-source_test_description_schema = LegacySchema({
-    
-    
-    Extra: object,
-    
-    
-    
-    Required("platform"): Any(str, [str]),
+
+class SourceTestDescriptionSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     
     
     
     
-    Optional("require-build"): optionally_keyed_by("project", {str: str}),
+    platform: Union[str, list[str]]
     
     
-    Required("worker-type"): optionally_keyed_by(
-        "platform", job_description_schema["worker-type"]
-    ),
-    Required("worker"): optionally_keyed_by(
-        "platform", job_description_schema["worker"]
-    ),
-    Optional("dependencies"): {
-        k: optionally_keyed_by("platform", v)
-        for k, v in job_description_schema["dependencies"].items()
-    },
     
-    Optional("fetches"): {
-        str: optionally_keyed_by("platform", job_description_schema["fetches"][str]),
-    },
-})
+    
+    require_build: Optional[  
+        optionally_keyed_by("project", dict[str, str], use_msgspec=True)
+    ] = None
+    
+    
+    worker_type: optionally_keyed_by(
+        "platform",
+        JobDescriptionSchema.__annotations__["worker_type"],
+        use_msgspec=True,
+    )
+    worker: optionally_keyed_by(
+        "platform", JobDescriptionSchema.__annotations__["worker"], use_msgspec=True
+    )
+    dependencies: Optional[  
+        dict[
+            str,
+            optionally_keyed_by(
+                "platform",
+                JobDescriptionSchema.__annotations__["dependencies"],
+                use_msgspec=True,
+            ),
+        ]
+    ] = None
+    
+    fetches: Optional[  
+        dict[
+            str,
+            optionally_keyed_by(
+                "platform",
+                JobDescriptionSchema.__annotations__["fetches"],
+                use_msgspec=True,
+            ),
+        ]
+    ] = None
+
 
 transforms = TransformSequence()
 
-transforms.add_validate(source_test_description_schema)
+transforms.add_validate(SourceTestDescriptionSchema)
 
 
 @transforms.add
