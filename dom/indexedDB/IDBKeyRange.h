@@ -22,7 +22,6 @@ class ErrorResult;
 namespace dom {
 
 class GlobalObject;
-class IDBTransaction;
 
 namespace indexedDB {
 class SerializedKeyRange;
@@ -48,8 +47,7 @@ class IDBKeyRange {
 
   
   static void FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
-                        RefPtr<IDBKeyRange>* aKeyRange, ErrorResult& aRv,
-                        IDBTransaction* aTransaction = nullptr);
+                        RefPtr<IDBKeyRange>* aKeyRange, ErrorResult& aRv);
 
   [[nodiscard]] static RefPtr<IDBKeyRange> FromSerialized(
       const indexedDB::SerializedKeyRange& aKeyRange);
