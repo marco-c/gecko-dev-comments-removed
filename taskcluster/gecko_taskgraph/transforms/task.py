@@ -16,6 +16,8 @@ import re
 import time
 import typing
 from pathlib import Path
+from typing import Literal, Union
+from typing import Optional as TOptional
 from urllib.parse import quote
 
 import msgspec
@@ -29,6 +31,7 @@ from taskgraph.util.copy import deepcopy
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.schema import (
     LegacySchema,
+    Schema,
     optionally_keyed_by,
     resolve_keyed_by,
     taskref_or_string,
@@ -38,7 +41,10 @@ from taskgraph.util.treeherder import split_symbol
 from voluptuous import All, Any, Extra, Match, NotIn, Optional, Required
 
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.optimize.schema import LegacyOptimizationSchema
+from gecko_taskgraph.optimize.schema import (
+    LegacyOptimizationSchema,
+    OptimizationSchema,
+)
 from gecko_taskgraph.transforms.job.common import get_expiration
 from gecko_taskgraph.util import docker as dockerutil
 from gecko_taskgraph.util.attributes import TRUNK_PROJECTS, is_try, release_level
@@ -215,6 +221,151 @@ task_description_schema = LegacySchema({
     
     Optional("retries"): int,
 })
+
+
+class TreeherderSchema(Schema, kw_only=True):
+    
+    symbol: TOptional[str] = None
+    
+    kind: TOptional[Literal["build", "test", "other"]] = None
+    
+    tier: TOptional[int] = None
+    
+    
+    
+    platform: TOptional[str] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.platform and not re.match(
+            r"^[A-Za-z0-9_-]{1,50}/[A-Za-z0-9_-]{1,50}$", self.platform
+        ):
+            raise ValueError(f"Invalid treeherder platform: {self.platform!r}")
+
+
+class IndexSchema(Schema, kw_only=True):
+    
+    product: TOptional[str] = None
+    
+    job_name: str
+    
+    type: Literal[
+        "generic",
+        "l10n",
+        "shippable",
+        "shippable-l10n",
+        "android-shippable",
+        "android-shippable-with-multi-l10n",
+        "shippable-with-multi-l10n",
+    ] = "generic"
+    
+    
+    
+    
+    rank: Union[Literal["by-tier", "build_date"], int] = "by-tier"
+
+
+class TaskWorkerSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    implementation: str
+
+
+class TaskDescriptionSchema(Schema, kw_only=True):
+    
+    label: str
+    
+    description: str
+    
+    attributes: TOptional[dict[str, object]] = None
+    
+    task_from: TOptional[str] = None
+    
+    
+    
+    dependencies: TOptional[dict[str, object]] = None
+    
+    soft_dependencies: TOptional[list[str]] = None
+    
+    if_dependencies: TOptional[list[str]] = None
+    requires: TOptional[Literal["all-completed", "all-resolved"]] = None
+    
+    
+    expires_after: TOptional[str] = None
+    deadline_after: TOptional[str] = None
+    expiration_policy: TOptional[str] = None
+    
+    
+    routes: TOptional[list[str]] = None
+    
+    
+    
+    
+    
+    scopes: TOptional[list[str]] = None
+    
+    tags: TOptional[dict[str, str]] = None
+    
+    extra: TOptional[dict[str, object]] = None
+    
+    
+    
+    
+    treeherder: TOptional[TreeherderSchema] = None
+    
+    
+    index: TOptional[IndexSchema] = None
+    
+    
+    
+    run_on_repo_type: TOptional[list[Literal["git", "hg"]]] = None
+    
+    
+    
+    run_on_projects: TOptional[  
+        optionally_keyed_by("build-platform", list[str], use_msgspec=True)
+    ] = None
+    
+    run_on_hg_branches: TOptional[  
+        optionally_keyed_by("project", list[str], use_msgspec=True)
+    ] = None
+    
+    run_on_git_branches: TOptional[list[str]] = None
+    
+    
+    shipping_phase: TOptional[Literal["build", "promote", "push", "ship"]] = None
+    
+    
+    shipping_product: TOptional[str] = None
+    
+    
+    
+    
+    
+    always_target: bool = False
+    
+    
+    optimization: OptimizationSchema = None
+    
+    
+    
+    worker_type: TOptional[str] = None
+    
+    use_sccache: bool = False
+    
+    worker: TOptional[TaskWorkerSchema] = None
+    
+    priority: TOptional[str] = None
+    
+    retries: TOptional[int] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.dependencies:
+            for key in self.dependencies:
+                if key in ("self", "decision"):
+                    raise ValueError(
+                        "Can't use 'self` or 'decision' as depdency names."
+                    )
+
 
 TREEHERDER_ROOT_URL = "https://treeherder.mozilla.org"
 TC_TREEHERDER_SCHEMA_URL = (
