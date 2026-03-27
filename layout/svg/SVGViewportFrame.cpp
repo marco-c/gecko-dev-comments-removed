@@ -122,14 +122,14 @@ void SVGViewportFrame::NotifySVGChanged(ChangeFlags aFlags) {
 }
 
 SVGBBox SVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                              uint32_t aFlags) {
+                                              SVGBBoxFlags aFlags) {
   
   
   
 
   SVGBBox bbox;
 
-  if (aFlags & SVGUtils::eForGetClientRects) {
+  if (aFlags.contains(SVGBBoxFlag::ForGetClientRects)) {
     
     
     

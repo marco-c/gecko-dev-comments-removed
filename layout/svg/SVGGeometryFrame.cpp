@@ -266,8 +266,9 @@ void SVGGeometryFrame::ReflowSVG() {
     return;
   }
 
-  uint32_t flags = SVGUtils::eBBoxIncludeFillGeometry |
-                   SVGUtils::eBBoxIncludeStroke | SVGUtils::eBBoxIncludeMarkers;
+  SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
+                        SVGBBoxFlag::IncludeStroke,
+                        SVGBBoxFlag::IncludeMarkers};
 
   
   
@@ -277,10 +278,10 @@ void SVGGeometryFrame::ReflowSVG() {
   
   SVGHitTestFlags hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
   if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
-    flags |= SVGUtils::eBBoxIncludeFillGeometry;
+    flags += SVGBBoxFlag::IncludeFillGeometry;
   }
   if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
-    flags |= SVGUtils::eBBoxIncludeStrokeGeometry;
+    flags += SVGBBoxFlag::IncludeStrokeGeometry;
   }
 
   SVGBBox extent = GetBBoxContribution({}, flags).ToThebesRect();
@@ -351,7 +352,7 @@ void SVGGeometryFrame::NotifySVGChanged(ChangeFlags aFlags) {
 }
 
 SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                              uint32_t aFlags) {
+                                              SVGBBoxFlags aFlags) {
   SVGBBox bbox;
 
   if (aToBBoxUserspace.IsSingular()) {
@@ -359,7 +360,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
     return bbox;
   }
 
-  if ((aFlags & SVGUtils::eForGetClientRects) &&
+  if (aFlags.contains(SVGBBoxFlag::ForGetClientRects) &&
       aToBBoxUserspace.PreservesAxisAlignedRectangles()) {
     if (!mRect.IsEmpty()) {
       Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());
@@ -370,11 +371,11 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
 
-  const bool getFill = (aFlags & SVGUtils::eBBoxIncludeFillGeometry);
+  const bool getFill = aFlags.contains(SVGBBoxFlag::IncludeFillGeometry);
 
   const bool getStroke =
-      ((aFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||
-       ((aFlags & SVGUtils::eBBoxIncludeStroke) &&
+      (aFlags.contains(SVGBBoxFlag::IncludeStrokeGeometry) ||
+       (aFlags.contains(SVGBBoxFlag::IncludeStroke) &&
         SVGUtils::HasStroke(this))) &&
       
       
@@ -392,7 +393,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
       
       
       !(StyleSVGReset()->HasNonScalingStroke() &&
-        (aFlags & SVGUtils::eAvoidCycleIfNonScalingStroke));
+        aFlags.contains(SVGBBoxFlag::AvoidCycleIfNonScalingStroke));
 
   SVGContentUtils::AutoStrokeOptions strokeOptions;
   if (getStroke) {
@@ -512,7 +513,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   }
 
   
-  if ((aFlags & SVGUtils::eBBoxIncludeMarkers) && element->IsMarkable()) {
+  if (aFlags.contains(SVGBBoxFlag::IncludeMarkers) && element->IsMarkable()) {
     SVGMarkerFrames markerFrames;
     if (SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
       nsTArray<SVGMark> marks;

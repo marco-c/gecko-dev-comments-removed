@@ -28,6 +28,43 @@ namespace image {
 struct imgDrawingParams;
 }  
 
+enum class SVGBBoxFlag : uint16_t {
+  
+  
+  IncludeFillGeometry,
+  IncludeStroke,
+  
+  
+  IncludeStrokeGeometry,
+  IncludeMarkers,
+  IncludeClipped,
+  
+  
+  
+  UseFrameBoundsForOuterSVG,
+  
+  ForGetClientRects,
+  
+  
+  
+  IncludeOnlyCurrentFrameForNonSVGElement,
+  
+  
+  
+  
+  UseUserSpaceOfUseElement,
+  
+  
+  DoNotClipToBBoxOfContentInsideClipPath,
+  
+  
+  
+  
+  
+  AvoidCycleIfNonScalingStroke
+};
+using SVGBBoxFlags = EnumSet<SVGBBoxFlag>;
+
 
 
 
@@ -141,7 +178,7 @@ class ISVGDisplayableFrame : public nsQueryFrame {
 
 
   virtual SVGBBox GetBBoxContribution(const gfx::Matrix& aToBBoxUserspace,
-                                      uint32_t aFlags) = 0;
+                                      SVGBBoxFlags aFlags) = 0;
 
   
   virtual bool IsDisplayContainer() = 0;

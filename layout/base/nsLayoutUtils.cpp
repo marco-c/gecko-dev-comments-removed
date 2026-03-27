@@ -9472,11 +9472,12 @@ nsRect nsLayoutUtils::ComputeSVGReferenceRect(
       
       
       
-      const uint32_t flags = SVGUtils::eBBoxIncludeFillGeometry |
-                             SVGUtils::eBBoxIncludeStroke |
-                             (bool(aMayHaveCyclicDependency)
-                                  ? SVGUtils::eAvoidCycleIfNonScalingStroke
-                                  : 0);
+      SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
+                            SVGBBoxFlag::IncludeStroke};
+      if (bool(aMayHaveCyclicDependency)) {
+        flags += SVGBBoxFlag::AvoidCycleIfNonScalingStroke;
+      }
+
       gfxRect bbox = SVGUtils::GetBBox(aFrame, flags);
       r = nsLayoutUtils::RoundGfxRectToAppRect(bbox, AppUnitsPerCSSPixel());
       break;
@@ -9493,7 +9494,7 @@ nsRect nsLayoutUtils::ComputeSVGReferenceRect(
     }
     case StyleGeometryBox::FillBox: {
       gfxRect bbox =
-          SVGUtils::GetBBox(aFrame, SVGUtils::eBBoxIncludeFillGeometry);
+          SVGUtils::GetBBox(aFrame, SVGBBoxFlag::IncludeFillGeometry);
       r = nsLayoutUtils::RoundGfxRectToAppRect(bbox, AppUnitsPerCSSPixel());
       break;
     }

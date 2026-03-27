@@ -310,43 +310,8 @@ class SVGUtils final {
 
   static gfxMatrix AdjustMatrixForUnits(const gfxMatrix& aMatrix,
                                         const SVGAnimatedEnumeration* aUnits,
-                                        nsIFrame* aFrame, uint32_t aFlags);
+                                        nsIFrame* aFrame, SVGBBoxFlags aFlags);
 
-  enum BBoxFlags {
-    
-    
-    eBBoxIncludeFillGeometry = 1 << 0,
-    eBBoxIncludeStroke = 1 << 1,
-    
-    
-    eBBoxIncludeStrokeGeometry = 1 << 2,
-    eBBoxIncludeMarkers = 1 << 3,
-    eBBoxIncludeClipped = 1 << 4,
-    
-    
-    
-    eUseFrameBoundsForOuterSVG = 1 << 5,
-    
-    eForGetClientRects = 1 << 6,
-    
-    
-    
-    eIncludeOnlyCurrentFrameForNonSVGElement = 1 << 7,
-    
-    
-    
-    
-    eUseUserSpaceOfUseElement = 1 << 8,
-    
-    
-    eDoNotClipToBBoxOfContentInsideClipPath = 1 << 9,
-    
-    
-    
-    
-    
-    eAvoidCycleIfNonScalingStroke = 1 << 10,
-  };
   
 
 
@@ -367,7 +332,7 @@ class SVGUtils final {
   static gfxRect GetBBox(nsIFrame* aFrame,
                          
                          
-                         uint32_t aFlags = eBBoxIncludeFillGeometry,
+                         SVGBBoxFlags aFlags = SVGBBoxFlag::IncludeFillGeometry,
                          const gfxMatrix* aToBoundsSpace = nullptr);
 
   
