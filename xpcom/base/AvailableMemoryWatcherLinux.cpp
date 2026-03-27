@@ -156,6 +156,10 @@ class nsAvailableMemoryWatcher final
 
   
   
+  bool mPSIReadFailed MOZ_GUARDED_BY(mMutex);
+
+  
+  
   static const uint32_t kHighMemoryPollingIntervalMS = 5000;
 
   
@@ -176,7 +180,8 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
       mPSIInfo{},
       mLastOOMTime(),
       mPSIPath(kPSIPath),
-      mIsTesting(false) {}
+      mIsTesting(false),
+      mPSIReadFailed(false) {}
 
 nsAvailableMemoryWatcher::~nsAvailableMemoryWatcher() = default;
 
@@ -424,9 +429,16 @@ void nsAvailableMemoryWatcher::UpdatePSIInfo(const MutexAutoLock&)
   }
 #endif
 
+  
+  
+  if (mPSIReadFailed) {
+    return;
+  }
+
   nsresult rv = ReadPSIFile(mPSIPath.get(), mPSIInfo);
   if (NS_FAILED(rv)) {
     mPSIInfo = {};
+    mPSIReadFailed = true;
   }
 }
 
@@ -508,6 +520,8 @@ NS_IMETHODIMP nsAvailableMemoryWatcher::SetPSIPathForTesting(
   MutexAutoLock lock(mMutex);
   mPSIPath.Assign(aPSIPath);
   mIsTesting = true;
+  
+  mPSIReadFailed = false;
   return NS_OK;
 }
 
