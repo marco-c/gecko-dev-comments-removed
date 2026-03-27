@@ -161,16 +161,19 @@ inline nsresult BlockUntilLoadableCertsLoaded() {
   return component->BlockUntilLoadableCertsLoaded();
 }
 
-inline nsresult CheckForSmartCardChanges() {
-#ifndef MOZ_NO_SMART_CARDS
-  nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
-  if (!component) {
-    return NS_ERROR_FAILURE;
-  }
-  return component->CheckForSmartCardChanges();
-#else
-  return NS_OK;
-#endif
-}
+
+
+
+nsresult CheckForSmartCardChanges();
+
+
+
+
+
+nsresult GetNSSProfilePath(nsAutoCString& aProfilePath);
+
+
+
+bool GetInSafeMode();
 
 #endif  

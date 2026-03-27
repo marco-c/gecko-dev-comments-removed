@@ -1,0 +1,66 @@
+
+
+
+
+
+#ifndef PKCS11Slot_h
+#define PKCS11Slot_h
+
+#include "ScopedNSSTypes.h"
+#include "nsIPKCS11Slot.h"
+#include "nsISupports.h"
+#include "nsString.h"
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#include "mozilla/psm/PPKCS11Module.h"
+#endif  
+
+class PKCS11Slot : public nsIPKCS11Slot {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPKCS11SLOT
+
+  explicit PKCS11Slot(PK11SlotInfo* slot);
+
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  nsresult GetSlotInfo(mozilla::psm::SlotInfo& slotInfo);
+#endif  
+
+ protected:
+  virtual ~PKCS11Slot() = default;
+
+ private:
+  mozilla::UniquePK11SlotInfo mSlot;
+  
+  bool mIsInternalCryptoSlot;
+  
+  bool mIsInternalKeySlot;
+  nsCString mSlotDesc;
+  nsCString mSlotManufacturerID;
+  nsCString mSlotHWVersion;
+  nsCString mSlotFWVersion;
+  int mSeries;
+
+  nsresult refreshSlotInfo();
+  nsresult GetAttributeHelper(const nsACString& attribute,
+                               nsACString& xpcomOutParam);
+};
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+class RemotePKCS11Slot : public nsIPKCS11Slot {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPKCS11SLOT
+
+  explicit RemotePKCS11Slot(const mozilla::psm::SlotInfo& slotInfo);
+
+ protected:
+  virtual ~RemotePKCS11Slot() = default;
+
+ private:
+  mozilla::psm::SlotInfo mSlotInfo;
+};
+#endif  
+
+#endif  

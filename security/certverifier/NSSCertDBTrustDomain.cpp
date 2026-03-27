@@ -1542,7 +1542,15 @@ void NSSCertDBTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension extension,
 
 SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
                         PKCS11DBConfig pkcs11DbConfig) {
-  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  MOZ_ASSERT(NS_IsMainThread() || XRE_IsUtilityProcess());
+  
+  
+  MOZ_ASSERT(
+      !XRE_IsUtilityProcess() ||
+      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup() ||
+      PR_GetEnv("MOZ_RUN_GTEST"));
 
   
   
@@ -1553,8 +1561,20 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   if (nssDbConfig == NSSDBConfig::ReadOnly) {
     flags |= NSS_INIT_READONLY;
   }
-  if (pkcs11DbConfig == PKCS11DBConfig::DoNotLoadModules) {
+  
+  
+  
+  bool isParentProcessButLoadingModulesInUtilityProcess =
+      XRE_IsParentProcess() &&
+      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup();
+  if (pkcs11DbConfig == PKCS11DBConfig::DoNotLoadModules ||
+      isParentProcessButLoadingModulesInUtilityProcess) {
     flags |= NSS_INIT_NOMODDB;
+  }
+  
+  
+  if (XRE_IsUtilityProcess()) {
+    flags |= NSS_INIT_NOCERTDB;
   }
   nsAutoCString dbTypeAndDirectory("sql:");
   dbTypeAndDirectory.Append(dir);
@@ -1567,22 +1587,30 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
     return srv;
   }
 
-  if (nssDbConfig == NSSDBConfig::ReadWrite) {
+  
+  
+  
+  
+  if (nssDbConfig == NSSDBConfig::ReadWrite && XRE_IsParentProcess()) {
     UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
     if (!slot) {
       return SECFailure;
     }
-    
-    
-    
     if (PK11_NeedUserInit(slot.get())) {
       srv = PK11_InitPin(slot.get(), nullptr, nullptr);
-      MOZ_ASSERT(srv == SECSuccess);
-      (void)srv;
+      MOZ_ALWAYS_TRUE(srv == SECSuccess);
     }
   }
 
-  CollectThirdPartyPKCS11ModuleTelemetry(true);
+  
+  
+  bool isParentProcessAndNotLoadingModulesInUtilityProcess =
+      XRE_IsParentProcess() &&
+      !StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup();
+  if (isParentProcessAndNotLoadingModulesInUtilityProcess ||
+      XRE_IsUtilityProcess()) {
+    CollectThirdPartyPKCS11ModuleTelemetry(true);
+  }
 
   return SECSuccess;
 }
