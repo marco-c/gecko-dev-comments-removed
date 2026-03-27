@@ -413,29 +413,31 @@ static void AddLLVMProfilePathDirectoryToPolicy(
 #undef WSTRING
 
 static void EnsureAppLockerAccess(sandbox::TargetConfig* aConfig) {
-  if (aConfig->GetLockdownTokenLevel() < sandbox::USER_LIMITED) {
-    
-    
-    
-    auto result = aConfig->AllowFileAccess(
-        sandbox::FileSemantics::kAllowReadonly, L"\\Device\\SrpDevice");
-    if (sandbox::SBOX_ALL_OK != result) {
-      NS_ERROR("Failed to add rule for SrpDevice.");
-      LOG_E("Failed (ResultCode %d) to add read access to SrpDevice", result);
-    }
-    result = aConfig->AllowRegistryRead(
-        L"HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Srp\\GP\\");
-    if (sandbox::SBOX_ALL_OK != result) {
-      NS_ERROR("Failed to add rule for Srp\\GP.");
-      LOG_E("Failed (ResultCode %d) to add read access to Srp\\GP", result);
-    }
-    
-    result = aConfig->AllowRegistryRead(
-        L"HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Srp\\\\GP\\");
-    if (sandbox::SBOX_ALL_OK != result) {
-      NS_ERROR("Failed to add rule for Srp\\\\GP.");
-      LOG_E("Failed (ResultCode %d) to add read access to Srp\\\\GP", result);
-    }
+  
+  if (aConfig->GetLockdownTokenLevel() >= sandbox::USER_LIMITED) {
+    return;
+  }
+
+  
+  auto result = aConfig->AllowRegistryRead(
+      LR"(HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Srp\GP\)");
+  if (sandbox::SBOX_ALL_OK != result) {
+    NS_ERROR(R"(Failed to add rule for Srp\GP.)");
+    LOG_E(R"(Failed (ResultCode %d) to add read access to Srp\GP)", result);
+  }
+
+  
+  
+  
+  AddCachedWindowsDirRule(aConfig, sandbox::FileSemantics::kAllowReadonly,
+                          FOLDERID_System, uR"(\AppLocker\MDM)"_ns);
+
+  
+  result = aConfig->AllowFileAccess(sandbox::FileSemantics::kAllowReadonly,
+                                    LR"(\Device\SrpDevice)");
+  if (sandbox::SBOX_ALL_OK != result) {
+    NS_ERROR("Failed to add rule for SrpDevice.");
+    LOG_E("Failed (ResultCode %d) to add read access to SrpDevice", result);
   }
 }
 
