@@ -1455,6 +1455,13 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
+  virtual void AccessibleId(uint64_t aBrowsingContextId, uint64_t aAccId) {}
+
+  
+
+
+
+
   virtual already_AddRefed<SourceSurface> Snapshot() = 0;
 
   
