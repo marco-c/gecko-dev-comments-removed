@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef FFmpegVideoDecoder_h_
 #define FFmpegVideoDecoder_h_
 
@@ -260,8 +258,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
    private:
     uint32_t mDecodedFrames = 0;
 
-    float mAverageFrameDecodeTime = 0;
-    float mAverageFrameDuration = 0;
+    double mAverageFrameDecodeTime = 0;
+    double mAverageFrameDuration = 0;
 
     
     const uint32_t mMaxLateDecodedFrames = 15;
