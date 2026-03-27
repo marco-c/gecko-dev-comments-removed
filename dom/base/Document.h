@@ -287,6 +287,7 @@ class TrustedHTMLOrString;
 class OwningTrustedHTMLOrString;
 enum class ViewportFitType : uint8_t;
 class ViewTransition;
+struct ViewTransitionParams;
 class ViewTransitionUpdateCallbackOrStartViewTransitionOptions;
 class WakeLockSentinel;
 class WindowContext;
@@ -4131,6 +4132,16 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
 
   
+  
+  Maybe<nsTArray<RefPtr<nsAtom>>> ResolveViewTransitionRule();
+
+  void SetInboundViewTransitionParams(UniquePtr<ViewTransitionParams> aParams);
+
+  
+  
+  Maybe<RefPtr<ViewTransition>> ResolveInboundCrossDocumentViewTransition();
+
+  
   PermissionDelegateHandler* GetPermissionDelegateHandler();
 
   
@@ -5717,6 +5728,9 @@ class Document : public nsINode,
   RefPtr<ChromeObserver> mChromeObserver;
 
   RefPtr<HTMLAllCollection> mAll;
+
+  
+  UniquePtr<ViewTransitionParams> mInboundViewTransitionParams;
 
   
   

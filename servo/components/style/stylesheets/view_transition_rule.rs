@@ -67,6 +67,7 @@ impl DeepCloneWithLock for ViewTransitionRule {
 
 
 #[derive(Clone, Copy, Debug, Default, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
+#[repr(u8)]
 pub enum NavigationType {
     
     #[default]

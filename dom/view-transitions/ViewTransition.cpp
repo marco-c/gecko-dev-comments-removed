@@ -194,7 +194,7 @@ struct CapturedElementOldState {
 };
 
 
-struct ViewTransition::CapturedElement {
+struct ViewTransitionCapturedElement {
   CapturedElementOldState mOldState;
   RefPtr<Element> mNewElement;
   wr::SnapshotImageKey mNewSnapshotKey{kNoKey};
@@ -203,10 +203,11 @@ struct ViewTransition::CapturedElement {
   nsRect mNewSnapshotRect;
   nsSize mNewBorderBoxSize;
 
-  CapturedElement() = default;
+  ViewTransitionCapturedElement() = default;
 
-  CapturedElement(nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize,
-                  StyleViewTransitionClass&& aClassList)
+  ViewTransitionCapturedElement(nsIFrame* aFrame,
+                                const nsSize& aSnapshotContainingBlockSize,
+                                StyleViewTransitionClass&& aClassList)
       : mOldState(aFrame, aSnapshotContainingBlockSize),
         mClassList(std::move(aClassList)) {}
 
@@ -234,7 +235,7 @@ struct ViewTransition::CapturedElement {
     mClassList = std::move(aClassList);
   }
 
-  ~CapturedElement() {
+  ~ViewTransitionCapturedElement() {
     if (wr::AsImageKey(mNewSnapshotKey) != kNoKey) {
       MOZ_ASSERT(mOldState.mSnapshot.mManager);
       mOldState.mSnapshot.mManager->AddSnapshotImageKeyForDiscard(
@@ -243,9 +244,13 @@ struct ViewTransition::CapturedElement {
   }
 };
 
+
+
+ViewTransitionParams::~ViewTransitionParams() = default;
+
 static inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCb,
-    const ViewTransition::CapturedElement& aField, const char* aName,
+    const ViewTransitionCapturedElement& aField, const char* aName,
     uint32_t aFlags = 0) {
   ImplCycleCollectionTraverse(aCb, aField.mNewElement, aName, aFlags);
 }
@@ -270,6 +275,32 @@ ViewTransition::ViewTransition(Document& aDoc,
     : mDocument(&aDoc), mUpdateCallback(aCb), mTypeList(std::move(aTypeList)) {}
 
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
+
+
+already_AddRefed<ViewTransition> ViewTransition::CreateCrossDocument(
+    Document& aDocument, UniquePtr<ViewTransitionParams> aInboundParams,
+    TypeList&& aResolvedRule) {
+  
+
+  
+  
+  
+  MOZ_ASSERT(aInboundParams);
+  RefPtr<ViewTransition> vt =
+      new ViewTransition(aDocument, nullptr, std::move(aResolvedRule));
+  vt->mNamedElements = std::move(aInboundParams->namedElements);
+  vt->mNames = std::move(aInboundParams->names);
+  vt->mInitialSnapshotContainingBlockSize =
+      aInboundParams->initialSnapshotContainingBlockSize;
+
+  
+  vt->mUpdateCallbackDonePromise->MaybeResolveWithUndefined();
+
+  
+  vt->mPhase = Phase::UpdateCallbackCalled;
+
+  return vt.forget();
+}
 
 Element* ViewTransition::GetViewTransitionTreeRoot() const {
   return mSnapshotContainingBlock

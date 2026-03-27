@@ -17119,11 +17119,12 @@ void Document::Reveal() {
 
   
   
-  
+  Maybe<RefPtr<ViewTransition>> vt =
+      ResolveInboundCrossDocumentViewTransition();
 
   
   PageRevealEventInit init;
-  
+  init.mViewTransition = vt.valueOr(nullptr);
 
   RefPtr<PageRevealEvent> event =
       PageRevealEvent::Constructor(win, u"pagereveal"_ns, init);
@@ -17131,7 +17132,10 @@ void Document::Reveal() {
   win->DispatchEvent(*event);
 
   
-  
+  if (vt.isSome()) {
+    nsAutoMicroTask mt;
+    vt.ref()->Activate();
+  }
 }
 
 void Document::MaybeActiveMediaComponents() {
@@ -19275,6 +19279,85 @@ void Document::PerformPendingViewTransitionOperations() {
 
 void Document::EnsureViewTransitionOperationsHappen() {
   MaybeScheduleRenderingPhases({RenderingPhase::ViewTransitionOperations});
+}
+
+Maybe<nsTArray<RefPtr<nsAtom>>> Document::ResolveViewTransitionRule() {
+  
+  if (Hidden()) {
+    return Nothing();
+  }
+
+  
+  RefPtr<StyleViewTransitionRule> matchingRule =
+      EnsureStyleSet().GetLastViewTransitionRule();
+
+  
+  if (!matchingRule) {
+    return Nothing();
+  }
+
+  
+  const StyleNavigationType nav =
+      Servo_ViewTransitionRule_GetNavigationDescriptor(matchingRule);
+  if (nav == StyleNavigationType::None) {
+    return Nothing();
+  }
+
+  
+  MOZ_ASSERT(nav == StyleNavigationType::Auto);
+
+  
+  AutoTArray<nsAtom*, 8> atoms;
+  Servo_ViewTransitionRule_GetTypes(matchingRule, &atoms);
+  ViewTransition::TypeList types;
+  types.AppendElements(atoms);
+
+  return Some(std::move(types));
+}
+
+Maybe<RefPtr<ViewTransition>>
+Document::ResolveInboundCrossDocumentViewTransition() {
+  
+  MOZ_ASSERT(IsFullyActive());
+  MOZ_ASSERT(mHasBeenRevealed);
+
+  
+  
+
+  
+  
+  auto inboundParams = std::move(mInboundViewTransitionParams);
+
+  
+  if (!inboundParams) {
+    return Nothing();
+  }
+
+  
+  if (mActiveViewTransition) {
+    return Nothing();
+  }
+
+  
+  
+  auto resolvedRule = ResolveViewTransitionRule();
+
+  
+  if (resolvedRule.isNothing()) {
+    return Nothing();
+  }
+
+  
+  mActiveViewTransition = ViewTransition::CreateCrossDocument(
+      *this, std::move(inboundParams), resolvedRule.extract());
+
+  
+  return Some(mActiveViewTransition);
+}
+
+void Document::SetInboundViewTransitionParams(
+    UniquePtr<ViewTransitionParams> aParams) {
+  mInboundViewTransitionParams = std::move(aParams);
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {
