@@ -232,14 +232,14 @@ class CamerasParent : public PCamerasParent {
   virtual ~CamerasParent();
 
  private:
-  struct GetOrCreateCapturerResult {
-    AggregateCapturer* mCapturer{};
+  struct GetOrCreateAggregatorResult {
+    AggregateCapturer* mAggregator{};
     int mStreamId{};
   };
-  GetOrCreateCapturerResult GetOrCreateCapturer(
+  GetOrCreateAggregatorResult GetOrCreateAggregator(
       CaptureEngine aEngine, uint64_t aWindowId, const nsCString& aUniqueId,
       nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
-  AggregateCapturer* GetCapturer(CaptureEngine aEngine, int aStreamId);
+  AggregateCapturer* GetAggregator(CaptureEngine aEngine, int aStreamId);
   int ReleaseStream(CaptureEngine aEngine, int aStreamId);
 
   nsTArray<webrtc::VideoCaptureCapability> const* EnsureCapabilitiesPopulated(
@@ -275,9 +275,10 @@ class CamerasParent : public PCamerasParent {
   
   
   
+  
   const RefPtr<
       media::Refcountable<nsTArray<std::unique_ptr<AggregateCapturer>>>>
-      mCapturers;
+      mAggregators;
 
   
   
