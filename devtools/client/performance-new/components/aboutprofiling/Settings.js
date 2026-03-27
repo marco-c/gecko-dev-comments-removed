@@ -643,7 +643,8 @@ function _intervalTextDisplay(value) {
 
 
 function _entriesTextDisplay(value) {
-  return formatFileSize(value * PROFILE_ENTRY_SIZE);
+  const { size, unitL10nId } = formatFileSize(value * PROFILE_ENTRY_SIZE);
+  return Localized({ id: unitL10nId, $num: size });
 }
 
 
