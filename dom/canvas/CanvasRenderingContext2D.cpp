@@ -5051,6 +5051,9 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   }
 
   
+  const bool doCalculateBounds = NeedToCalculateBounds();
+
+  
   const ContextState& state = CurrentState();
   bool isRTL;
   switch (state.textDirection) {
@@ -5075,8 +5078,6 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
       MOZ_CRASH("unknown direction!");
   }
 
-  
-  const bool doCalculateBounds = NeedToCalculateBounds();
   if (presShell && presShell->IsDestroying()) {
     aError = NS_ERROR_FAILURE;
     return nullptr;
