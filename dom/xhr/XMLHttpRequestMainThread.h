@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XMLHttpRequestMainThread_h
 #define mozilla_dom_XMLHttpRequestMainThread_h
 
@@ -16,6 +14,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/Document.h"
@@ -184,6 +183,7 @@ class XMLHttpRequestDoneNotifier;
 
 
 class XMLHttpRequestMainThread final : public XMLHttpRequest,
+                                       public SupportsWeakPtr,
                                        public nsIStreamListener,
                                        public nsIChannelEventSink,
                                        public nsIProgressEventSink,
@@ -848,21 +848,18 @@ class nsXHRParseEndListener : public nsIDOMEventListener {
  public:
   NS_DECL_ISUPPORTS
   NS_IMETHOD HandleEvent(Event* event) override {
-    if (mXHR) {
-      mXHR->OnBodyParseEnd();
+    if (RefPtr<XMLHttpRequestMainThread> xhr = mXHR.get()) {
+      xhr->OnBodyParseEnd();
     }
-    mXHR = nullptr;
     return NS_OK;
   }
 
   explicit nsXHRParseEndListener(XMLHttpRequestMainThread* aXHR) : mXHR(aXHR) {}
 
-  void SetIsStale() { mXHR = nullptr; }
-
  private:
   virtual ~nsXHRParseEndListener() = default;
 
-  XMLHttpRequestMainThread* mXHR;
+  WeakPtr<XMLHttpRequestMainThread> mXHR;
 };
 
 }  
