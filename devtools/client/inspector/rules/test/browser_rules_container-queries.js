@@ -270,7 +270,7 @@ async function assertJumpToContainerButton(
   
   
   EventUtils.synthesizeMouse(
-    selectContainerButton.closest("body"),
+    view.styleDocument.body,
     0,
     0,
     { type: "mouseover" },

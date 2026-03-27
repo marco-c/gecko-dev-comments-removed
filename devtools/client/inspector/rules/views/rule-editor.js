@@ -131,6 +131,10 @@ class RuleEditor extends EventEmitter {
     if (this.#unsubscribeSourceMap) {
       this.#unsubscribeSourceMap();
     }
+
+    
+    this.element.remove();
+    this.element = null;
   }
 
   #sourceMapURLService;
@@ -1279,7 +1283,10 @@ class RuleEditor extends EventEmitter {
 
       ruleProps.isUnmatched = !isMatching;
       const newRule = new Rule(elementStyle, ruleProps);
-      const editor = new RuleEditor(ruleView, newRule);
+      const editor = new RuleEditor(ruleView, newRule, {
+        elementsWithPendingClicks: new Set(),
+      });
+      newRule.editor = editor;
       const rules = elementStyle.rules;
 
       let newRuleIndex = applied.findIndex(r => r.rule == ruleProps.rule);
@@ -1309,6 +1316,9 @@ class RuleEditor extends EventEmitter {
       
       
       editor.#moveSelectorFocus(direction);
+
+      
+      this.destroy();
     } catch (err) {
       this.isEditing = false;
       promiseWarn(err);

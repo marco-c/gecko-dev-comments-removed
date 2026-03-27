@@ -586,6 +586,5 @@ function assertHeaders(view) {
 
 
 function getPseudoElementContainer(view) {
-  
-  return view.element.children[1];
+  return view.element.querySelector("#pseudo-elements-container");
 }

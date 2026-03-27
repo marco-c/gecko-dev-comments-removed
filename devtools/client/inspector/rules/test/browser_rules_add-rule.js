@@ -29,6 +29,8 @@ const TEST_URI = `
 `;
 
 const TEST_DATA = [
+  
+  
   { node: "#testid", expected: "#testid", expectedIndex: 2 },
   { node: ".testclass2", expected: ".testclass2" },
   { node: ".class1.class2", expected: ".class1.class2" },

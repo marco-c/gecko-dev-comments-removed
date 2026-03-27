@@ -1598,11 +1598,17 @@ function _getRuleViewElements(view) {
       
       continue;
     }
+
     
-    if (el.classList.contains("ruleview-expandable-container")) {
-      elementsInView.push(...el.children);
-    } else {
+    if (el.classList.contains("ruleview-header")) {
+      
+      if (el.hidden) {
+        continue;
+      }
       elementsInView.push(el);
+    } else {
+      
+      elementsInView.push(...el.children);
     }
   }
   return elementsInView;

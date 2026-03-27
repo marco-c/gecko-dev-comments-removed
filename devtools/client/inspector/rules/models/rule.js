@@ -684,6 +684,16 @@ class Rule {
       this.darkColorScheme !== appliedStyle.darkColorScheme;
     this.darkColorScheme = appliedStyle.darkColorScheme;
 
+    
+    
+    
+    
+    
+    if (appliedStyle.inherited != this.inherited) {
+      this.inherited = appliedStyle.inherited;
+      this.#inheritedSectionLabel = null;
+    }
+
     const newTextProps = this.#getTextProperties();
 
     

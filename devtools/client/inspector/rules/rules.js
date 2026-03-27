@@ -92,7 +92,10 @@ const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
 const FILTER_STRICT_RE = /\s*`(.*?)`\s*$/;
 
 const RULE_VIEW_HEADER_CLASSNAME = "ruleview-header";
+
+
 const PSEUDO_ELEMENTS_CONTAINER_ID = "pseudo-elements-container";
+const ELEMENT_CONTAINER_ID = "element-container";
 const REGISTERED_PROPERTIES_CONTAINER_ID = "registered-properties-container";
 const POSITION_TRY_CONTAINER_ID = "position-try-container";
 
@@ -1178,11 +1181,6 @@ class CssRuleView extends EventEmitter {
       this.#popup.hidePopup();
     }
 
-    if (this.elementStyle) {
-      this.elementStyle.destroy();
-      this.elementStyle = null;
-    }
-
     
     this.selectedNodeFront = element;
 
@@ -1191,7 +1189,7 @@ class CssRuleView extends EventEmitter {
     
     
     
-    if (!element) {
+    if (!sameElementSelected) {
       this.#clearRules();
     }
 
@@ -1203,6 +1201,14 @@ class CssRuleView extends EventEmitter {
 
     if (!element) {
       this.#stopSelectingElement();
+
+      
+      
+      
+      if (this.elementStyle) {
+        this.elementStyle.destroy();
+        this.elementStyle = null;
+      }
       return;
     }
 
@@ -1216,6 +1222,7 @@ class CssRuleView extends EventEmitter {
       this.pageStyle,
       this.#showUserAgentStyles
     );
+    let previousElementStyle = this.elementStyle;
     this.elementStyle = elementStyle;
 
     this.#startSelectingElement();
@@ -1228,13 +1235,20 @@ class CssRuleView extends EventEmitter {
       if (this.elementStyle !== elementStyle) {
         return;
       }
-      if (!sameElementSelected) {
-        this.element.scrollTop = 0;
-      }
-      this.#stopSelectingElement();
       this.elementStyle.onChanged = () => {
         this.#onElementStyleChanged();
       };
+      
+      
+      
+      if (previousElementStyle) {
+        previousElementStyle.destroy();
+        previousElementStyle = null;
+
+        
+        this.#updateContainers();
+      }
+      this.#stopSelectingElement();
       if (isProfilerActive && this.elementStyle.rules) {
         let declarations = 0;
         for (const rule of this.elementStyle.rules) {
@@ -1390,7 +1404,6 @@ class CssRuleView extends EventEmitter {
         return;
       }
 
-      this.#clearRules();
       await this.#createEditors();
 
       
@@ -1478,6 +1491,35 @@ class CssRuleView extends EventEmitter {
 
 
 
+
+  createSimpleContainer(label, containerId) {
+    const header = this.styleDocument.createElementNS(HTML_NS, "div");
+    header.className = RULE_VIEW_HEADER_CLASSNAME;
+    header.setAttribute("role", "heading");
+    
+    
+    if (containerId == ELEMENT_CONTAINER_ID) {
+      header.hidden = true;
+    }
+    header.append(label);
+
+    const container = this.styleDocument.createElementNS(HTML_NS, "div");
+    container.classList.add("ruleview-container");
+    container.id = containerId;
+
+    return { header, container };
+  }
+
+  
+
+
+
+
+
+
+
+
+
   createExpandableContainer(label, containerId) {
     const header = this.styleDocument.createElementNS(HTML_NS, "div");
     header.classList.add(
@@ -1485,6 +1527,8 @@ class CssRuleView extends EventEmitter {
       "ruleview-expandable-header"
     );
     header.setAttribute("role", "heading");
+    header.setAttribute("aria-level", "3");
+    header.hidden = false;
 
     const toggleButton = this.styleDocument.createElementNS(HTML_NS, "button");
     toggleButton.setAttribute(
@@ -1497,15 +1541,16 @@ class CssRuleView extends EventEmitter {
     const twisty = this.styleDocument.createElementNS(HTML_NS, "span");
     twisty.className = "ruleview-expander theme-twisty";
 
-    toggleButton.append(twisty, this.styleDocument.createTextNode(label));
+    toggleButton.append(twisty, label);
     header.append(toggleButton);
 
     const container = this.styleDocument.createElementNS(HTML_NS, "div");
     container.id = containerId;
-    container.classList.add("ruleview-expandable-container");
+    container.classList.add(
+      "ruleview-container",
+      "ruleview-expandable-container"
+    );
     container.hidden = false;
-
-    this.element.append(header, container);
 
     const isPseudo = containerId == PSEUDO_ELEMENTS_CONTAINER_ID;
     const { signal } = this.#abortController;
@@ -1531,7 +1576,7 @@ class CssRuleView extends EventEmitter {
       );
     }
 
-    return container;
+    return { header, container };
   }
 
   
@@ -1540,16 +1585,22 @@ class CssRuleView extends EventEmitter {
 
 
   getOrCreateRegisteredPropertiesExpandableContainer() {
-    const existingContainer = this.view.styleDocument.getElementById(
+    const existingEntry = this.#containers.get(
       REGISTERED_PROPERTIES_CONTAINER_ID
     );
-    if (existingContainer) {
-      return existingContainer;
+    if (existingEntry) {
+      return existingEntry.container;
     }
-    return this.createExpandableContainer(
+    const { header, container } = this.createExpandableContainer(
       "@property",
       REGISTERED_PROPERTIES_CONTAINER_ID
     );
+    this.#containers.set(REGISTERED_PROPERTIES_CONTAINER_ID, {
+      header,
+      container,
+    });
+    this.element.append(header, container);
+    return container;
   }
 
   
@@ -1602,16 +1653,18 @@ class CssRuleView extends EventEmitter {
   #createEditors() {
     
     
-    let lastInherited = null;
-    let lastinheritedSectionLabel = "";
-    let seenNormalElement = false;
     let seenSearchTerm = false;
 
     if (!this.elementStyle.rules) {
       return Promise.resolve();
     }
 
+    
+    
+    const currentContainers = [];
+
     const editorReadyPromises = [];
+    const lastElementPerContainer = new Map();
     for (const rule of this.elementStyle.rules) {
       
       if (!rule.editor) {
@@ -1627,56 +1680,33 @@ class CssRuleView extends EventEmitter {
         }
       }
 
-      
-      if (
-        this.#containers.has(PSEUDO_ELEMENTS_CONTAINER_ID) &&
-        !seenNormalElement &&
-        !rule.pseudoElement
-      ) {
-        seenNormalElement = true;
-        const div = this.styleDocument.createElementNS(HTML_NS, "div");
-        div.className = RULE_VIEW_HEADER_CLASSNAME;
-        div.setAttribute("role", "heading");
-        div.textContent = this.selectedElementLabel;
-        this.element.appendChild(div);
-      }
-
-      const { inherited, inheritedSectionLabel } = rule;
-      
-      
-      
-      
-      
-      
-      
-      
-      if (
-        inherited &&
-        (inherited !== lastInherited ||
-          inheritedSectionLabel !== lastinheritedSectionLabel)
-      ) {
-        const div = this.styleDocument.createElementNS(HTML_NS, "div");
-        div.classList.add(RULE_VIEW_HEADER_CLASSNAME);
-        div.setAttribute("role", "heading");
-        div.setAttribute("aria-level", "3");
-        div.textContent = rule.inheritedSectionLabel;
-        lastInherited = inherited;
-        lastinheritedSectionLabel = inheritedSectionLabel;
-        this.element.appendChild(div);
-      }
-
-      const container = this.#getContainerForRule(rule);
-      container.appendChild(rule.editor.element);
+      const container = this.#getContainerForRule(rule, currentContainers);
 
       
-      if (this.#focusNextUserAddedRule && rule.domRule.userAdded) {
-        this.#focusNextUserAddedRule = null;
-        rule.editor.selectorText.click();
-        this.emitForTests("new-rule-added", rule);
+      const lastElement = lastElementPerContainer.get(container);
+      if (lastElement) {
+        lastElement.insertAdjacentElement("afterend", rule.editor.element);
+      } else {
+        container.appendChild(rule.editor.element);
       }
+      lastElementPerContainer.set(container, rule.editor.element);
     }
 
     this.#createRegisteredPropertyEditors();
+
+    this.#updateContainers();
+
+    
+    
+    
+    if (this.#focusNextUserAddedRule) {
+      const rule = this.elementStyle.rules.find(r => r.domRule.userAdded);
+      if (rule) {
+        rule.editor.selectorText.click();
+        this.emitForTests("new-rule-added", rule);
+      }
+      this.#focusNextUserAddedRule = null;
+    }
 
     const searchBox = this.searchField.parentNode;
     searchBox.classList.toggle(
@@ -1716,8 +1746,11 @@ class CssRuleView extends EventEmitter {
 
 
 
-  #getContainerForRule(rule) {
-    let id, label;
+
+  #getContainerForRule(rule, currentContainers) {
+    let id,
+      label,
+      expandable = false;
 
     
     
@@ -1727,37 +1760,107 @@ class CssRuleView extends EventEmitter {
     if (isNonInheritedPseudo) {
       id = PSEUDO_ELEMENTS_CONTAINER_ID;
       label = this.pseudoElementLabel;
+      expandable = true;
     } else if (keyframes) {
       
       
       
-      id = `keyframes-container-${rule.keyframes.actorID}`;
+      
+      id = `keyframes-container-${rule.keyframes.actorID.match(/\w+$/)[0]}`;
       label = rule.keyframesName;
+      expandable = true;
     } else if (rule.domRule.className === "CSSPositionTryRule") {
       id = POSITION_TRY_CONTAINER_ID;
       label = "@position-try";
+      expandable = true;
+    } else if (rule.inherited) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      id = `inherited-${rule.inherited.actorID}-${rule.pseudoElement}`;
+      label = rule.inheritedSectionLabel;
     } else {
-      return this.element;
+      id = ELEMENT_CONTAINER_ID;
+      label = this.selectedElementLabel;
     }
 
-    let container = this.#containers.get(id);
-    if (container) {
-      return container;
+    let entry = this.#containers.get(id);
+    
+    if (!entry) {
+      if (expandable) {
+        entry = this.createExpandableContainer(label, id);
+      } else {
+        entry = this.createSimpleContainer(label, id);
+      }
+      this.#containers.set(id, entry);
     }
-    container = this.createExpandableContainer(label, id);
-    this.#containers.set(id, container);
+
+    const { header, container } = entry;
+
+    
+    if (!currentContainers.includes(container)) {
+      const lastContainer = currentContainers.at(-1);
+      
+      
+      if (id == PSEUDO_ELEMENTS_CONTAINER_ID || !lastContainer) {
+        this.element.insertAdjacentElement("afterbegin", header);
+        header.insertAdjacentElement("afterend", container);
+      } else {
+        lastContainer.insertAdjacentElement("afterend", header);
+        header.insertAdjacentElement("afterend", container);
+      }
+      currentContainers.push(container);
+    }
 
     return container;
   }
 
+  
+
+
+
+
+  #updateContainers() {
+    
+    for (const [
+      containerId,
+      { header, container },
+    ] of this.#containers.entries()) {
+      if (!container.children.length) {
+        header.remove();
+        container.remove();
+        this.#containers.delete(containerId);
+      }
+    }
+
+    
+    const elementEntry = this.#containers.get(ELEMENT_CONTAINER_ID);
+    if (elementEntry) {
+      const hasPseudoElementRules = this.#containers.has(
+        PSEUDO_ELEMENTS_CONTAINER_ID
+      );
+      
+      elementEntry.header.hidden = !hasPseudoElementRules;
+    }
+  }
+
   #createRegisteredPropertyEditors() {
+    const registeredPropertiesContainer =
+      this.getOrCreateRegisteredPropertiesExpandableContainer();
+    
+    registeredPropertiesContainer.replaceChildren();
+
     const targetRegisteredProperties =
       this.getRegisteredPropertiesForSelectedNodeTarget();
     if (!targetRegisteredProperties?.size) {
       return;
     }
-    const registeredPropertiesContainer =
-      this.getOrCreateRegisteredPropertiesExpandableContainer();
 
     
     const propertyDefinitions = Array.from(
@@ -2100,10 +2203,10 @@ class CssRuleView extends EventEmitter {
     }
   }
 
-  
-
-
-
+  /**
+   * Called when the pseudo class panel button is clicked and toggles
+   * the display of the pseudo class panel.
+   */
   #onTogglePseudoClassPanel = () => {
     if (this.pseudoClassPanel.hidden) {
       this.showPseudoClassPanel();
