@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_Runtime_h
 #define vm_Runtime_h
 
@@ -45,6 +47,7 @@
 #include "js/WaitCallbacks.h"
 #include "js/Warnings.h"  
 #include "js/Zone.h"
+#include "util/LanguageId.h"
 #include "vm/Caches.h"  
 #include "vm/CodeCoverage.h"
 #include "vm/GeckoProfiler.h"
@@ -710,7 +713,7 @@ struct JSRuntime {
   js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
 
   
-  js::MainThreadData<js::UniqueChars> defaultLocale;
+  js::MainThreadData<js::LanguageId> defaultLocale;
 
   
   js::MainThreadOrIonCompileData<bool> profilingScripts;
@@ -800,8 +803,16 @@ struct JSRuntime {
   
   
 
+  void setDefaultLocale(js::LanguageId locale);
+
  public:
   
+
+
+
+
+
+
 
 
 
@@ -814,14 +825,19 @@ struct JSRuntime {
   void resetDefaultLocale();
 
   
-  const char* getDefaultLocale();
+
+
+
+
+
+
+  js::LanguageId getDefaultLocale();
 
   
 
 
-
-  const char* getDefaultLocaleIfInitialized() const {
-    return defaultLocale.ref().get();
+  js::LanguageId getDefaultLocaleIfInitialized() const {
+    return defaultLocale.ref();
   }
 
   

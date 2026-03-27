@@ -13,10 +13,7 @@ function testTurkishCaseMapping() {
 }
 
 
-assertEq(
-  getDefaultLocale() === "en-US" || getDefaultLocale() === "en-US-POSIX",
-  true
-);
+assertEq(getDefaultLocale() === "en-US", true);
 assertEq(getRealmLocale(), "en-US");
 
 
@@ -27,7 +24,7 @@ testDefaultCaseMapping();
 
 
 setDefaultLocale("fra-FR");
-assertEq(getDefaultLocale(), "fra-FR");
+assertEq(getDefaultLocale(), "fr-FR");
 assertEq(getRealmLocale(), "fr-FR");
 
 
@@ -38,7 +35,7 @@ testDefaultCaseMapping();
 
 
 setDefaultLocale("tur-TR");
-assertEq(getDefaultLocale(), "tur-TR");
+assertEq(getDefaultLocale(), "tr-TR");
 assertEq(getRealmLocale(), "tr-TR");
 
 
@@ -48,7 +45,7 @@ testTurkishCaseMapping();
 
 
 setDefaultLocale("eng-US");
-assertEq(getDefaultLocale(), "eng-US");
+assertEq(getDefaultLocale(), "en-US");
 assertEq(getRealmLocale(), "en-US");
 
 

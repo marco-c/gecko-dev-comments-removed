@@ -39,9 +39,6 @@ extern JS_PUBLIC_API bool JS_SetDefaultLocale(JSRuntime* rt,
 
 
 
-
-
-
 extern JS_PUBLIC_API JS::UniqueChars JS_GetDefaultLocale(JSContext* cx);
 
 

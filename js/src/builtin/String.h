@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef builtin_String_h
 #define builtin_String_h
 
@@ -14,6 +16,7 @@ namespace js {
 
 class ArrayObject;
 class GlobalObject;
+class LanguageId;
 
 
 extern JSObject* InitStringClass(JSContext* cx, Handle<GlobalObject*> global);
@@ -81,7 +84,7 @@ extern JSLinearString* StringFromCharCode(JSContext* cx, int32_t charCode);
 extern JSLinearString* StringFromCodePoint(JSContext* cx, char32_t codePoint);
 
 #if JS_HAS_INTL_API
-bool LocaleHasDefaultCaseMapping(const char* locale);
+bool LocaleHasDefaultCaseMapping(LanguageId locale);
 #endif
 
 } 

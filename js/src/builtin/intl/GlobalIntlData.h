@@ -39,7 +39,7 @@ class GlobalIntlData {
 
 
 
-  GCPtr<JSLinearString*> realmLocale_;
+  LanguageId realmLocale_ = LanguageId::und();
 
   
 

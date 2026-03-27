@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_Realm_h
 #define vm_Realm_h
 
@@ -22,6 +24,7 @@
 #include "js/RealmOptions.h"
 #include "js/TelemetryTimers.h"
 #include "js/UniquePtr.h"
+#include "util/LanguageId.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/GuardFuse.h"
 #include "vm/InvalidatingFuse.h"
@@ -345,6 +348,9 @@ class JS::Realm : public JS::shadow::Realm {
 
   const js::AllocationMetadataBuilder* allocationMetadataBuilder_ = nullptr;
   void* realmPrivate_ = nullptr;
+
+  
+  js::LanguageId localeId_ = js::LanguageId::und();
 
 #if JS_HAS_INTL_API
   
@@ -812,7 +818,11 @@ class JS::Realm : public JS::shadow::Realm {
   bool shouldCaptureStackForThrow();
 
   
-  const char* getLocale() const;
+  
+  
+  
+  
+  js::LanguageId getLocale();
 
   
   

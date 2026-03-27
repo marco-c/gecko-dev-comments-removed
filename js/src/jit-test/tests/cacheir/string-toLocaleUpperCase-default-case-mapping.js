@@ -13,10 +13,7 @@ function testTurkishCaseMapping() {
 }
 
 
-assertEq(
-  getDefaultLocale() === "en-US" || getDefaultLocale() === "en-US-POSIX",
-  true
-);
+assertEq(getDefaultLocale() === "en-US", true);
 assertEq(getRealmLocale(), "en-US");
 
 

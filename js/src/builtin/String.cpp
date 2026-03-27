@@ -966,36 +966,11 @@ static const char* CaseMappingLocale(std::string_view lang) {
   return nullptr;
 }
 
-bool js::LocaleHasDefaultCaseMapping(const char* locale) {
-  MOZ_ASSERT(locale);
+bool js::LocaleHasDefaultCaseMapping(LanguageId locale) {
+  auto language = locale.language();
 
-  size_t languageSubtagLength;
-  if (auto* sep = strchr(locale, '-')) {
-    languageSubtagLength = sep - locale;
-  } else {
-    languageSubtagLength = std::strlen(locale);
-  }
-
-  
-  
-  mozilla::Span<const char> span{locale, languageSubtagLength};
-  {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-    if (!mozilla::intl::IsStructurallyValidLanguageTag(span)) {
-      return true;
-    }
-  }
-
-  mozilla::intl::LanguageSubtag subtag{span};
-
-  
-  {
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    subtag.ToLowerCase();
-  }
+  mozilla::intl::LanguageSubtag subtag{
+      mozilla::Span{language.data(), language.length()}};
 
   
   

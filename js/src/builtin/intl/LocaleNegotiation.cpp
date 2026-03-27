@@ -1201,30 +1201,6 @@ ArrayObject* js::intl::CanonicalizeLocaleList(JSContext* cx,
   return LocalesListToArray(cx, requestedLocales);
 }
 
-static mozilla::Maybe<LanguageId> FromLocale(
-    const mozilla::intl::Locale& locale) {
-  MOZ_ASSERT(locale.Language().Present());
-
-  
-  if (locale.Language().Length() > 3) {
-    return mozilla::Nothing();
-  }
-
-  
-  
-  
-
-  auto toStringView = [](auto span) {
-    return std::string_view{span.data(), span.size()};
-  };
-
-  auto language = toStringView(locale.Language().Span());
-  auto script = toStringView(locale.Script().Span());
-  auto region = toStringView(locale.Region().Span());
-
-  return mozilla::Some(LanguageId::fromParts(language, script, region));
-}
-
 
 
 
@@ -1255,29 +1231,9 @@ static auto AddImplicitScriptToLocale(LanguageId locale) {
 }
 
 bool js::intl::ComputeDefaultLocale(JSContext* cx, LanguageId* result) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  auto span = mozilla::MakeStringSpan(locale);
-
-  mozilla::intl::Locale tag;
-  bool canParseLocale =
-      mozilla::intl::LocaleParser::TryParse(span, tag).isOk() &&
-      tag.Canonicalize().isOk();
-
-  static constexpr LanguageId lastDitchLocale = LastDitchLocale();
-
-  auto candidate = lastDitchLocale;
-  if (canParseLocale) {
-    candidate = FromLocale(tag).valueOr(lastDitchLocale);
-
-    
-    
-    candidate = AddImplicitScriptToLocale(candidate);
-  }
+  
+  
+  auto candidate = AddImplicitScriptToLocale(cx->realm()->getLocale());
 
   
   
@@ -1337,7 +1293,7 @@ bool js::intl::ComputeDefaultLocale(JSContext* cx, LanguageId* result) {
     }
   } else {
     
-    *result = lastDitchLocale;
+    *result = LastDitchLocale();
   }
   return true;
 }
