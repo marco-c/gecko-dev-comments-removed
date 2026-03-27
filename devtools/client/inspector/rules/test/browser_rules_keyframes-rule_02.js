@@ -35,10 +35,7 @@ async function testPacman(inspector, view) {
   
 
   
-  
-  
 
-  
   
 
   
