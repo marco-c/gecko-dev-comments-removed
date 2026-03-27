@@ -7,8 +7,12 @@ use crate::to_css::{CssFieldAttrs, CssInputAttrs, CssVariantAttrs};
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::ToTokens;
-use syn::{Data, DataEnum, DeriveInput, Fields, WhereClause};
+use syn::{Data, DataEnum, DeriveInput, Fields, Path, WhereClause};
 use synstructure::{BindingInfo, Structure};
+
+
+
+
 
 
 
@@ -251,6 +255,7 @@ fn derive_variant_arm(
 
 
 
+
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
@@ -262,16 +267,17 @@ fn derive_variant_fields_expr(
         .iter()
         .filter_map(|binding| {
             let css_field_attrs = cg::parse_field_attrs::<CssFieldAttrs>(&binding.ast());
+            let field_attrs = cg::parse_field_attrs::<TypedValueFieldAttrs>(&binding.ast());
             if css_field_attrs.skip {
                 return None;
             }
-            Some((binding, css_field_attrs))
+            Some((binding, css_field_attrs, field_attrs))
         })
         .peekable();
 
     
-    let (first, css_field_attrs) = match iter.next() {
-        Some(pair) => pair,
+    let (first, css_field_attrs, field_attrs) = match iter.next() {
+        Some(triple) => triple,
         None => return quote! { Err(()) },
     };
 
@@ -285,14 +291,25 @@ fn derive_variant_fields_expr(
         let ty = &first.ast().ty;
         cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToTyped));
 
-        return quote! { style_traits::ToTyped::to_typed(#first, dest) };
+        let mut expr = quote! { style_traits::ToTyped::to_typed(#first, dest) };
+
+        if let Some(condition) = field_attrs.skip_if {
+            expr = quote! {
+                if !#condition(#first) {
+                    #expr
+                }
+            }
+        }
+
+        return expr;
     }
 
     
     
-    let mut expr = derive_single_field_expr(first, css_field_attrs, where_clause);
-    for (binding, css_field_attrs) in iter {
-        derive_single_field_expr(binding, css_field_attrs, where_clause).to_tokens(&mut expr)
+    let mut expr = derive_single_field_expr(first, css_field_attrs, field_attrs, where_clause);
+    for (binding, css_field_attrs, field_attrs) in iter {
+        derive_single_field_expr(binding, css_field_attrs, field_attrs, where_clause)
+            .to_tokens(&mut expr)
     }
 
     quote! {{
@@ -319,12 +336,17 @@ fn derive_variant_fields_expr(
 
 
 
+
+
+
+
 fn derive_single_field_expr(
     field: &BindingInfo,
     css_field_attrs: CssFieldAttrs,
+    field_attrs: TypedValueFieldAttrs,
     where_clause: &mut Option<WhereClause>,
 ) -> TokenStream {
-    let expr = if css_field_attrs.iterable {
+    let mut expr = if css_field_attrs.iterable {
         
         
         
@@ -371,6 +393,14 @@ fn derive_single_field_expr(
            style_traits::ToTyped::to_typed(#field, dest)?;
         }
     };
+
+    if let Some(condition) = field_attrs.skip_if {
+        expr = quote! {
+            if !#condition(#field) {
+                #expr
+            }
+        }
+    }
 
     expr
 }
@@ -454,4 +484,14 @@ pub struct TypedValueVariantAttrs {
     
     
     pub todo: bool,
+}
+
+#[derive(Default, FromField)]
+#[darling(attributes(typed_value), default)]
+pub struct TypedValueFieldAttrs {
+    
+    
+    
+    
+    pub skip_if: Option<Path>,
 }
