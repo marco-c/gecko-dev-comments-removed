@@ -625,6 +625,8 @@ var SidebarController = {
     if (!isValidSidebar) {
       state.command = "";
     }
+    
+    delete this._launcherStateAtOpen;
 
     const hasOpenPanel =
       state.panelOpen &&
@@ -1912,6 +1914,11 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
+    
+    if (this._launcherStateAtOpen === undefined) {
+      this._launcherStateAtOpen = this._state.launcherVisible;
+    }
+
     return this._show(commandID).then(() => {
       this._loadSidebarExtension(commandID);
 
@@ -2079,6 +2086,12 @@ var SidebarController = {
       
       this._state.command = "";
       this.lastOpenedId = null;
+      if (this._launcherStateAtOpen !== undefined) {
+        if (this.sidebarRevampVisibility === "hide-sidebar") {
+          this._state.launcherVisible = this._launcherStateAtOpen;
+        }
+        delete this._launcherStateAtOpen;
+      }
     }
 
     if (this.sidebarRevampEnabled) {
