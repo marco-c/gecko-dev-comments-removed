@@ -3134,7 +3134,13 @@ toolbar#nav-bar {
         options.manifestFile = None
         
         
-        if not options.runByManifest:
+        
+        
+        if (
+            not options.runByManifest
+            or options.restartAfterFailure
+            or options.restartBetweenTests
+        ):
             options.profilePath = None
 
     def initializeVirtualAudioDevices(self):
@@ -3345,7 +3351,10 @@ toolbar#nav-bar {
                     )
                     bisection_log = 1
 
-            result = self.doTests(options, testsToRun, manifestToFilter)
+            if options.restartBetweenTests:
+                result = self.doTests(options, testsToRun[:1], manifestToFilter)
+            else:
+                result = self.doTests(options, testsToRun, manifestToFilter)
             if result == TBPL_RETRY:  
                 return result
 
@@ -3364,6 +3373,10 @@ toolbar#nav-bar {
                     testsToRun = testsToRun[firstFail + 1 :]
                     if testsToRun == []:
                         status = -1
+            elif options.restartBetweenTests:
+                testsToRun = testsToRun[1:]
+                if not testsToRun:
+                    status = -1
             else:
                 status = -1
 
@@ -3765,7 +3778,12 @@ toolbar#nav-bar {
     def doTests(self, options, testsToFilter=None, manifestToFilter=None):
         
         
-        if options.bisectChunk or options.runByManifest:
+        if (
+            options.bisectChunk
+            or options.runByManifest
+            or options.restartAfterFailure
+            or options.restartBetweenTests
+        ):
             self.initializeLooping(options)
 
         
