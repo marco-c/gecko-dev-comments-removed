@@ -6137,6 +6137,32 @@ class AboutTranslationsTestUtils {
 
 
 
+
+  async invokeSourceTextAreaUndoAction() {
+    logAction();
+    await doubleRaf(document);
+    try {
+      await this.#runInPage(selectors => {
+        const sourceTextArea = content.document.querySelector(
+          selectors.sourceSectionTextArea
+        );
+        sourceTextArea.focus();
+      });
+      await BrowserTestUtils.synthesizeKey(
+        "z",
+        { accelKey: true },
+        this.#browser
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+
+
   async getTargetTextAreaValue() {
     await doubleRaf(document);
     try {
