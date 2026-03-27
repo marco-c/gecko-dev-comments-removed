@@ -48,13 +48,6 @@ class MFCDMProxy {
   
   void OnHardwareContextReset();
 
-  
-  
-  
-  
-  
-  void ResetTrustedInput();
-
   void Shutdown();
 
   
