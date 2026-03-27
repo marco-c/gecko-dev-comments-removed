@@ -1157,12 +1157,10 @@ class FlowGraphSummary {
     
     static Entry createWithSingleEdgeOrMultipleEdge(uint32_t lineno,
                                                     uint32_t column) {
-      MOZ_ASSERT(lineno != Line_HasNoEdge);
       return Entry(lineno, column);
     }
 
     static Entry createWithMultipleEdgesFromSingleLine(uint32_t lineno) {
-      MOZ_ASSERT(lineno != Line_HasNoEdge);
       return Entry(lineno, Column_HasMultipleEdge);
     }
 
@@ -1220,11 +1218,6 @@ class FlowGraphSummary {
     
 
     uint32_t prevLineno = script->lineno();
-    if (prevLineno == Entry::Line_HasNoEdge) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_LINE_NUMBER);
-      return false;
-    }
     uint32_t prevColumn = 1;
     JSOp prevOp = JSOp::Nop;
     for (BytecodeRangeWithPosition r(cx, script, SkipPrologueOps::Yes);
@@ -1250,15 +1243,6 @@ class FlowGraphSummary {
       if (r.frontIsEntryPoint()) {
         lineno = r.frontLineNumber();
         column = r.frontColumnNumber().oneOriginValue();
-        if (lineno == Entry::Line_HasNoEdge) {
-          JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                    JSMSG_BAD_LINE_NUMBER);
-          return false;
-        }
-        
-        
-        
-        MOZ_ASSERT(column != Entry::Column_HasMultipleEdge);
       }
 
       if (IsJumpOpcode(op)) {
