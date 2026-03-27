@@ -73,12 +73,7 @@ class nsTLiteralString : public mozilla::detail::nsTStringRepr<T> {
   };
 #endif
 
-  
-
-
-
-  constexpr const typename raw_type<T, int>::type get() const&& = delete;
-  constexpr const typename raw_type<T, int>::type get() const& {
+  constexpr const typename raw_type<T, int>::type get() const {
     return this->mData;
   }
 
