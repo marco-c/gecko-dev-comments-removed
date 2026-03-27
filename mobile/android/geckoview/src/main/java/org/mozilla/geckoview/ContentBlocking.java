@@ -448,6 +448,20 @@ public class ContentBlocking {
         new Pref<Boolean>("browser.safebrowsing.phishing.enabled", true);
      final Pref<Boolean> mSbHarmfulAddon =
         new Pref<Boolean>("privacy.trackingprotection.harmfuladdon.enabled", true);
+     final Pref<Boolean> mSbGlobalCacheEnabled =
+        new Pref<Boolean>("browser.safebrowsing.globalCache.enabled", false);
+     final Pref<Boolean> mSbRealTimeEnabled =
+        new Pref<Boolean>("browser.safebrowsing.realTime.enabled", false);
+     final Pref<Boolean> mSbRealTimeSimulationEnabled =
+        new Pref<Boolean>("browser.safebrowsing.realTime.simulation.enabled", false);
+     final Pref<Integer> mSbRealTimeSimulationHitProbability =
+        new Pref<Integer>("browser.safebrowsing.realTime.simulation.hitProbability", 5);
+     final Pref<Integer> mSbRealTimeSimulationCacheTTLSec =
+        new Pref<Integer>("browser.safebrowsing.realTime.simulation.cacheTTLSec", 300);
+     final Pref<Boolean> mSbRealTimeSimulationNegativeCacheEnabled =
+        new Pref<Boolean>("browser.safebrowsing.realTime.simulation.negativeCacheEnabled", false);
+     final Pref<Integer> mSbRealTimeSimulationNegativeCacheTTLSec =
+        new Pref<Integer>("browser.safebrowsing.realTime.simulation.negativeCacheTTLSec", 300);
      final Pref<Integer> mCookieBehavior =
         new Pref<Integer>(
             "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS);
@@ -647,6 +661,159 @@ public class ContentBlocking {
       }
 
       provider.mEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getSafeBrowsingGlobalCacheEnabled() {
+      return mSbGlobalCacheEnabled.get();
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setSafeBrowsingGlobalCacheEnabled(final boolean enabled) {
+      mSbGlobalCacheEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getSafeBrowsingRealTimeEnabled() {
+      return mSbRealTimeEnabled.get();
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setSafeBrowsingRealTimeEnabled(final boolean enabled) {
+      mSbRealTimeEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public boolean getSafeBrowsingRealTimeSimulationEnabled() {
+      return mSbRealTimeSimulationEnabled.get();
+    }
+
+    
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationEnabled(final boolean enabled) {
+      mSbRealTimeSimulationEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public int getSafeBrowsingRealTimeSimulationHitProbability() {
+      return mSbRealTimeSimulationHitProbability.get();
+    }
+
+    
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationHitProbability(
+        final int hitProbability) {
+      mSbRealTimeSimulationHitProbability.commit(hitProbability);
+      return this;
+    }
+
+    
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public int getSafeBrowsingRealTimeSimulationCacheTTLSec() {
+      return mSbRealTimeSimulationCacheTTLSec.get();
+    }
+
+    
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationCacheTTLSec(final int cacheTTLSec) {
+      mSbRealTimeSimulationCacheTTLSec.commit(cacheTTLSec);
+      return this;
+    }
+
+    
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public boolean getSafeBrowsingRealTimeSimulationNegativeCacheEnabled() {
+      return mSbRealTimeSimulationNegativeCacheEnabled.get();
+    }
+
+    
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationNegativeCacheEnabled(
+        final boolean enabled) {
+      mSbRealTimeSimulationNegativeCacheEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public int getSafeBrowsingRealTimeSimulationNegativeCacheTTLSec() {
+      return mSbRealTimeSimulationNegativeCacheTTLSec.get();
+    }
+
+    
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec(
+        final int negativeCacheTTLSec) {
+      mSbRealTimeSimulationNegativeCacheTTLSec.commit(negativeCacheTTLSec);
       return this;
     }
 
