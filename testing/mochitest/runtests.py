@@ -3676,17 +3676,6 @@ toolbar#nav-bar {
                     f"The following extra environment variables will be set:\n  {env_list}"
                 )
 
-            self.parseAndCreateTestsDirs(m)
-
-            profilePath = list(self.profile_path_by_manifest[m])[0]
-            if profilePath:
-                options.profilePath = os.path.expanduser(profilePath.strip())
-                self.log.info(
-                    f"The following profile path will be set:\n  {options.profilePath}"
-                )
-            else:
-                options.profilePath = None
-
             
             
             
@@ -3790,6 +3779,20 @@ toolbar#nav-bar {
             or options.restartBetweenTests
         ):
             self.initializeLooping(options)
+
+        
+        
+        
+        if manifestToFilter:
+            self.parseAndCreateTestsDirs(manifestToFilter)
+            profilePath = list(self.profile_path_by_manifest[manifestToFilter])[0]
+            if profilePath:
+                options.profilePath = os.path.expanduser(profilePath.strip())
+                self.log.info(
+                    f"The following profile path will be set:\n  {options.profilePath}"
+                )
+            else:
+                options.profilePath = None
 
         
         
