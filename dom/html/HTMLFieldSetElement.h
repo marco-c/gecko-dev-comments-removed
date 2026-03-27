@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLFieldSetElement_h
 #define mozilla_dom_HTMLFieldSetElement_h
 
@@ -131,7 +129,7 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
   
   nsTArray<nsGenericHTMLFormElement*> mDependentElements;
 
-  nsIContent* mFirstLegend;
+  RefPtr<nsIContent> mFirstLegend;
 
   
 
