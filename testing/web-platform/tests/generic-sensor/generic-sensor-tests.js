@@ -18,7 +18,7 @@ function runGenericSensorTests(sensorData, readingData) {
   validate_sensor_data(sensorData);
   validate_reading_data(readingData);
 
-  const {sensorName, permissionName, testDriverName, featurePolicyNames} =
+  const {sensorName, permissionName, testDriverName, permissionsPolicyNames} =
       sensorData;
   const sensorType = self[sensorName];
 
@@ -155,7 +155,7 @@ function runGenericSensorTests(sensorData, readingData) {
 
   sensor_test(async t => {
     const iframe = document.createElement('iframe');
-    iframe.allow = featurePolicyNames.join(' \'none\'; ') + ' \'none\';';
+    iframe.allow = permissionsPolicyNames.join(' \'none\'; ') + ' \'none\';';
     iframe.srcdoc = '<script>' +
         '  window.onmessage = message => {' +
         '    if (message.data === "LOADED") {' +
@@ -177,11 +177,11 @@ function runGenericSensorTests(sensorData, readingData) {
     const message = await windowWatcher.wait_for('message');
     assert_equals(message.data, 'PASS: got SecurityError');
   }, `${sensorName}: Test that sensor cannot be constructed within iframe\
- disallowed to use feature policy.`);
+ disallowed to use permissions policy.`);
 
   sensor_test(async t => {
     const iframe = document.createElement('iframe');
-    iframe.allow = featurePolicyNames.join(';') + ';';
+    iframe.allow = permissionsPolicyNames.join(';') + ';';
     iframe.srcdoc = '<script>' +
         '  window.onmessage = message => {' +
         '    if (message.data === "LOADED") {' +
@@ -203,7 +203,7 @@ function runGenericSensorTests(sensorData, readingData) {
     const message = await windowWatcher.wait_for('message');
     assert_equals(message.data, 'PASS');
   }, `${sensorName}: Test that sensor can be constructed within an iframe\
- allowed to use feature policy.`);
+ allowed to use permissions policy.`);
 
   sensor_test(async (t, readings, expectedReadings) => {
     await test_driver.bidi.permissions.set_permission(

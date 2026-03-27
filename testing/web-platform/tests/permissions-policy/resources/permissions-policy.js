@@ -463,7 +463,7 @@ function test_frame_policy(
   document.body.appendChild(frame);
   
   
-  var frame_policy = frame.featurePolicy;
+  var frame_policy = frame.permissionsPolicy;
   if (typeof allow !== 'undefined') {
     frame.setAttribute('allow', allow);
   }
