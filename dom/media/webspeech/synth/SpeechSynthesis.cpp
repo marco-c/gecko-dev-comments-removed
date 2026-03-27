@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SpeechSynthesis.h"
 
 #include "mozilla/Logging.h"
@@ -170,8 +168,8 @@ void SpeechSynthesis::Cancel() {
     mSpeechQueue.Clear();
   }
 
-  if (mCurrentTask) {
-    mCurrentTask->Cancel();
+  if (RefPtr<nsSpeechTask> task = mCurrentTask) {
+    task->Cancel();
   }
 }
 

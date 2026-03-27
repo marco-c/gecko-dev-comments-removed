@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsSpeechTask.h"
 
 #include "AudioChannelService.h"
@@ -304,8 +302,8 @@ void nsSpeechTask::Cancel() {
 
   LOG(LogLevel::Debug, ("nsSpeechTask::Cancel"));
 
-  if (mCallback) {
-    DebugOnly<nsresult> rv = mCallback->OnCancel();
+  if (nsCOMPtr<nsISpeechTaskCallback> callback = mCallback) {
+    DebugOnly<nsresult> rv = callback->OnCancel();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Unable to call onCancel() callback");
   }
