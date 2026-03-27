@@ -782,7 +782,8 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
 
   
   
-  int32_t size = aRtl ? 0 : 1;
+  int32_t size =
+      (StaticPrefs::mathml_rtl_operator_mirroring_enabled() && aRtl) ? 0 : 1;
   nsGlyphCode ch;
   nscoord displayOperatorMinHeight = 0;
   if (largeopOnly) {
@@ -1472,6 +1473,9 @@ nsresult nsMathMLChar::Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
   mMirroringMethod = [&] {
     if (!aRTL || !nsMathMLOperators::IsMirrorableOperator(mData)) {
       return MirroringMethod::None;
+    }
+    if (!StaticPrefs::mathml_rtl_operator_mirroring_enabled()) {
+      return MirroringMethod::ScaleFallback;
     }
     
     if (nsMathMLOperators::GetMirroredOperator(mData) != mData) {

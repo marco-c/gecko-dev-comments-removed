@@ -53,6 +53,13 @@ NS_IMETHODIMP
 nsMathMLmfracFrame::TransmitAutomaticData() {
   
   
+  if (!StaticPrefs::mathml_math_shift_enabled()) {
+    UpdatePresentationDataFromChildAt(1, 1, MathMLPresentationFlag::Compressed,
+                                      MathMLPresentationFlag::Compressed);
+  }
+
+  
+  
   if (StyleFont()->mMathStyle == StyleMathStyle::Compact) {
     PropagateFrameFlagFor(mFrames.FirstChild(),
                           NS_FRAME_MATHML_SCRIPT_DESCENDANT);
