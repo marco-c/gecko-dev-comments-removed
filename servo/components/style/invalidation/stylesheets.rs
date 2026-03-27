@@ -681,6 +681,9 @@ impl StylesheetInvalidationSet {
                 
                 
             },
+            ViewTransition(..) => {
+                
+            },
             CustomMedia(..) => {
                 
                 

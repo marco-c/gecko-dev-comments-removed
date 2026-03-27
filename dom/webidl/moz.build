@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
@@ -559,6 +557,7 @@ WEBIDL_FILES = [
     "CSSUnitValue.webidl",
     "CSSUnparsedValue.webidl",
     "CSSVariableReferenceValue.webidl",
+    "CSSViewTransitionRule.webidl",
     "CustomElementRegistry.webidl",
     "DataTransfer.webidl",
     "DataTransferItem.webidl",
@@ -1119,7 +1118,7 @@ WEBIDL_FILES = [
     "XSLTProcessor.webidl",
 ]
 
-
+# Native llama.cpp for ml engine.
 if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
     WEBIDL_FILES += [
         "LlamaRunner.webidl",
@@ -1179,7 +1178,7 @@ WEBIDL_FILES += [
     "CustomEvent.webidl",
 ]
 
-
+# WebExtensions API.
 WEBIDL_FILES += [
     "ExtensionAlarms.webidl",
     "ExtensionBrowser.webidl",
@@ -1187,7 +1186,7 @@ WEBIDL_FILES += [
     "ExtensionBrowserSettingsColorManagement.webidl",
     "ExtensionDns.webidl",
     "ExtensionEventManager.webidl",
-    
+    # ExtensionMockAPI is not a real WebExtensions API, and it is only enabled in tests.
     "ExtensionMockAPI.webidl",
     "ExtensionPort.webidl",
     "ExtensionProxy.webidl",
@@ -1197,8 +1196,8 @@ WEBIDL_FILES += [
     "ExtensionTest.webidl",
 ]
 
-
-
+# We only expose our prefable test interfaces in debug builds, just to be on
+# the safe side.
 if CONFIG["MOZ_DEBUG"] and CONFIG["ENABLE_TESTS"]:
     WEBIDL_FILES += [
         "TestFunctions.webidl",

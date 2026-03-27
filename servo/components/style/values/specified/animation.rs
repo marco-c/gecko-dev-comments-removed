@@ -783,6 +783,7 @@ impl ViewTransitionName {
 #[derive(
     Clone,
     Debug,
+    Default,
     Eq,
     Hash,
     PartialEq,
@@ -811,6 +812,11 @@ impl ViewTransitionClassList {
     
     pub fn is_none(&self) -> bool {
         self.0.is_empty()
+    }
+
+    
+    pub fn iter(&self) -> impl Iterator<Item = &CustomIdent> {
+        self.0.iter()
     }
 }
 

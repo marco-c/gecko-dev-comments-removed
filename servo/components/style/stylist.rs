@@ -4527,7 +4527,8 @@ impl CascadeData {
                 | CssRule::StartingStyle(..)
                 | CssRule::AppearanceBase(..)
                 | CssRule::CustomMedia(..)
-                | CssRule::PositionTry(..) => {
+                | CssRule::PositionTry(..)
+                | CssRule::ViewTransition(..) => {
                     
                     
                     continue;
