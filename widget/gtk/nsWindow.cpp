@@ -589,7 +589,9 @@ void nsWindow::DispatchResized() {
     return;
   }
 
-  auto clientSize = gUseStableRounding
+  
+  
+  auto clientSize = gUseStableRounding && !IsWaylandPopup()
                         ? GetClientSize()
                         : LayoutDeviceIntSize::Round(mClientArea.Size() *
                                                      GetDesktopToDeviceScale());
