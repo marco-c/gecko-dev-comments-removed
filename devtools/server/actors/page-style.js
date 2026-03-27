@@ -449,7 +449,15 @@ class PageStyleActor extends Actor {
           ...axis,
           defaultValue: toFixed(axis.defaultValue, 3),
         }));
-        fontFace.variationInstances = font.getVariationInstances();
+        fontFace.variationInstances = font
+          .getVariationInstances()
+          .map(instance => ({
+            ...instance,
+            values: instance.values.map(variationValue => ({
+              ...variationValue,
+              value: toFixed(variationValue.value, 3),
+            })),
+          }));
       }
 
       fontsArray.push(fontFace);
