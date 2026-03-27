@@ -396,6 +396,8 @@ static void InitializeVarFuncs() {
 }
 
 gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
+  auto* face = mHBFace.exchange(nullptr);
+  hb_face_destroy(face);
   if (mMMVar) {
     
     
@@ -413,6 +415,65 @@ gfxFontconfigFontEntry::~gfxFontconfigFontEntry() {
     auto* face = mFTFace.exchange(nullptr);
     NS_IF_RELEASE(face);
   }
+}
+
+gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
+  hb_face_t* face = mHBFace;
+  if (!face) {
+    FcChar8* filename;
+    FcPattern* pattern = GetPattern();
+    bool useTableCache = false;
+    if (FcPatternGetString(pattern, FC_FILE, 0, &filename) == FcResultMatch) {
+      
+      
+      
+      int index;
+      if (FcPatternGetInteger(pattern, FC_INDEX, 0, &index) != FcResultMatch) {
+        index = 0;  
+      }
+      
+      
+      index &= 0xFFFF;
+      face = hb_face_create_from_file_or_fail((const char*)filename, index);
+    } else {
+      
+      
+      if (mFTFaceInitialized) {
+        if (const FTUserFontData* ufd = GetUserFontData()) {
+          if (ufd->FontData()) {
+            hb_blob_t* blob = hb_blob_create((const char*)ufd->FontData(),
+                                             ufd->FontDataLength(),
+                                             HB_MEMORY_MODE_READONLY, nullptr,
+                                             nullptr);
+            
+            
+            face = hb_face_create(blob, 0);
+            
+            hb_blob_destroy(blob);
+          }
+        }
+      }
+    }
+    if (!face) {
+      
+      
+      NS_WARNING(nsPrintfCString("fallback to gfxFontEntry::GetHBFace for %s",
+                                 Name().get()).get());
+      face = hb_face_reference(gfxFontEntry::GetHBFace());
+      useTableCache = true;
+    }
+    AutoWriteLock lock(mLock);
+    if (mHBFace.compareExchange(nullptr, face)) {
+      mUseTableCache = useTableCache;
+    } else {
+      
+      
+      hb_face_destroy(face);
+      face = mHBFace;
+    }
+  }
+  
+  return AutoHBFace(hb_face_reference(face));
 }
 
 nsresult gfxFontconfigFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
@@ -523,7 +584,12 @@ hb_blob_t* gfxFontconfigFontEntry::GetFontTable(uint32_t aTableTag) {
     }
   }
 
-  return gfxFontEntry::GetFontTable(aTableTag);
+  if (mUseTableCache) {
+    return gfxFontEntry::GetFontTable(aTableTag);
+  }
+
+  auto* table = hb_face_reference_table(GetHBFace(), aTableTag);
+  return table != hb_blob_get_empty() ? table : nullptr;
 }
 
 double gfxFontconfigFontEntry::GetAspect(uint8_t aSizeAdjustBasis) {
