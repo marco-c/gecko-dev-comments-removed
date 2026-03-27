@@ -1242,19 +1242,6 @@ MsaaAccessible::accHitTest(
 
   
   if (accessible) {
-    if (accessible != mAcc && accessible->IsTextLeaf()) {
-      Accessible* parent = accessible->Parent();
-      if (parent != mAcc && parent->Role() == roles::LINK) {
-        
-        
-        
-        
-        
-        
-        
-        accessible = parent;
-      }
-    }
     if (accessible == mAcc) {
       pvarChild->vt = VT_I4;
       pvarChild->lVal = CHILDID_SELF;
