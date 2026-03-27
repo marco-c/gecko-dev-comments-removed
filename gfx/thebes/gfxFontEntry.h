@@ -749,13 +749,6 @@ class gfxFontEntry {
   
   
 
-  
-  
-  
-  
-  
-  mozilla::Atomic<hb_face_t*> mHBFace;
-
   static hb_blob_t* HBGetTable(hb_face_t* face, uint32_t aTag, void* aUserData);
 
   
@@ -804,96 +797,35 @@ class gfxFontEntry {
   int16_t mXMax = std::numeric_limits<int16_t>::max();
   int16_t mYMax = std::numeric_limits<int16_t>::max();
 
- private:
+ protected:
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  class FontTableBlobData;
-
   
-
-
-
-
-
-
-
-
-
-
-  class FontTableHashEntry : public nsUint32HashKey {
+  class FontTableBlob {
    public:
-    
-
-    typedef nsUint32HashKey KeyClass;
-    typedef KeyClass::KeyType KeyType;
-    typedef KeyClass::KeyTypePointer KeyTypePointer;
-
-    explicit FontTableHashEntry(KeyTypePointer aTag)
-        : KeyClass(aTag), mSharedBlobData(nullptr), mBlob(nullptr) {}
-
-    
-    
-    
-    FontTableHashEntry(FontTableHashEntry&& toMove)
-        : KeyClass(std::move(toMove)),
-          mSharedBlobData(std::move(toMove.mSharedBlobData)),
-          mBlob(std::move(toMove.mBlob)) {
-      toMove.mSharedBlobData = nullptr;
-      toMove.mBlob = nullptr;
+    FontTableBlob() = default;
+    explicit FontTableBlob(nsTArray<uint8_t>&& aData);
+    FontTableBlob(const FontTableBlob& aOther) = delete;
+    FontTableBlob(FontTableBlob&& aOther)
+        : mData(std::move(aOther.mData)), mBlob(std::move(aOther.mBlob)) {
+      aOther.mBlob = nullptr;
     }
 
-    ~FontTableHashEntry() { Clear(); }
-
-    
-
-    
-    
-    
-    
-    hb_blob_t* ShareTableAndGetBlob(nsTArray<uint8_t>&& aTable,
-                                    gfxFontEntry* aFontEntry);
-
-    
-    
-    hb_blob_t* GetBlob() const;
-
-    void Clear();
+    ~FontTableBlob() { hb_blob_destroy(mBlob); }
+    hb_blob_t* GetBlob() const { return hb_blob_reference(mBlob); }
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-   private:
-    static void DeleteFontTableBlobData(void* aBlobData);
-    
-    FontTableHashEntry& operator=(FontTableHashEntry& toCopy);
-
-    FontTableBlobData* mSharedBlobData;
-    hb_blob_t* mBlob;
+   protected:
+    nsTArray<uint8_t> mData;
+    hb_blob_t* mBlob = nullptr;
   };
 
-  using FontTableCache = nsTHashtable<FontTableHashEntry>;
-  mozilla::UniquePtr<FontTableCache> mFontTableCache MOZ_GUARDED_BY(mLock);
+  using FontTableCache = nsTHashMap<uint32_t, FontTableBlob>;
+  
+  
+  
+  
+  virtual FontTableCache* GetFontTableCache(bool aCreate) = 0;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)

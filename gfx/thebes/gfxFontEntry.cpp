@@ -97,8 +97,6 @@ gfxFontEntry::~gfxFontEntry() {
     }
   }
 
-  mFontTableCache.reset(nullptr);
-
   delete mSVGGlyphs.exchange(nullptr);
   delete[] mUVSData.exchange(nullptr);
 
@@ -108,7 +106,6 @@ gfxFontEntry::~gfxFontEntry() {
   
   
   
-  MOZ_ASSERT(!mHBFace);
   MOZ_ASSERT(!mGrFaceInitialized);
 }
 
@@ -390,158 +387,6 @@ bool gfxFontEntry::TryGetColorGlyphs() {
   return mCOLR && mCPAL;
 }
 
-
-
-
-
-
-
-class gfxFontEntry::FontTableBlobData {
- public:
-  explicit FontTableBlobData(nsTArray<uint8_t>&& aBuffer)
-      : mTableData(std::move(aBuffer)), mFontEntry(nullptr), mHashKey(0) {
-    MOZ_COUNT_CTOR(FontTableBlobData);
-  }
-
-  ~FontTableBlobData() {
-    MOZ_COUNT_DTOR(FontTableBlobData);
-    if (mFontEntry && mHashKey) {
-      AutoWriteLock lock(mFontEntry->mLock);
-      mFontEntry->mFontTableCache->RemoveEntry(mHashKey);
-    }
-  }
-
-  
-  const char* GetTable() const {
-    return reinterpret_cast<const char*>(mTableData.Elements());
-  }
-  uint32_t GetTableLength() const { return mTableData.Length(); }
-
-  
-  
-  void ManageHashEntry(gfxFontEntry* aFontEntry, uint32_t aHashKey) {
-    mFontEntry = aFontEntry;
-    mHashKey = aHashKey;
-  }
-
-  
-  
-  void ForgetHashEntry() {
-    mFontEntry = nullptr;
-    mHashKey = 0;
-  }
-
-  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-    return mTableData.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  }
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
-  }
-
-  FontTableBlobData(const FontTableBlobData&) = delete;
-
- private:
-  
-  const nsTArray<uint8_t> mTableData;
-
-  
-  
-  
-  gfxFontEntry* mFontEntry;
-  uint32_t mHashKey;
-};
-
-hb_blob_t* gfxFontEntry::FontTableHashEntry::ShareTableAndGetBlob(
-    nsTArray<uint8_t>&& aTable, gfxFontEntry* aFontEntry) {
-  Clear();
-  
-  mSharedBlobData = new FontTableBlobData(std::move(aTable));
-
-  mBlob = hb_blob_create(
-      mSharedBlobData->GetTable(), mSharedBlobData->GetTableLength(),
-      HB_MEMORY_MODE_READONLY, mSharedBlobData, DeleteFontTableBlobData);
-  if (mBlob == hb_blob_get_empty()) {
-    
-    
-    
-    mSharedBlobData = nullptr;
-    return hb_blob_reference(mBlob);
-  }
-
-  
-  
-  mSharedBlobData->ManageHashEntry(aFontEntry, GetKey());
-  return mBlob;
-}
-
-void gfxFontEntry::FontTableHashEntry::Clear() {
-  
-  
-  
-  if (mSharedBlobData) {
-    mSharedBlobData->ForgetHashEntry();
-    mSharedBlobData = nullptr;
-  } else {
-    hb_blob_destroy(mBlob);
-  }
-  mBlob = nullptr;
-}
-
-
-
-
-void gfxFontEntry::FontTableHashEntry::DeleteFontTableBlobData(
-    void* aBlobData) {
-  delete static_cast<FontTableBlobData*>(aBlobData);
-}
-
-hb_blob_t* gfxFontEntry::FontTableHashEntry::GetBlob() const {
-  return hb_blob_reference(mBlob);
-}
-
-bool gfxFontEntry::GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob) {
-  AutoReadLock lock(mLock);
-
-  if (MOZ_UNLIKELY(!mFontTableCache)) {
-    return false;
-  }
-
-  if (const auto* entry = mFontTableCache->GetEntry(aTag)) {
-    *aBlob = entry->GetBlob();
-    return true;
-  }
-
-  return false;
-}
-
-hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
-                                                  nsTArray<uint8_t>* aBuffer) {
-  AutoWriteLock lock(mLock);
-
-  if (MOZ_UNLIKELY(!mFontTableCache)) {
-    mFontTableCache = MakeUnique<FontTableCache>(8);
-  }
-
-  FontTableHashEntry* entry;
-  if (MOZ_UNLIKELY(entry = mFontTableCache->GetEntry(aTag))) {
-    
-    
-    
-    return entry->GetBlob();
-  }
-
-  
-  entry = mFontTableCache->PutEntry(aTag);
-
-  if (!aBuffer) {
-    
-    entry->Clear();
-    return nullptr;
-  }
-
-  return entry->ShareTableAndGetBlob(std::move(*aBuffer), this);
-}
-
 already_AddRefed<gfxCharacterMap> gfxFontEntry::GetCMAPFromFontInfo(
     FontInfoData* aFontInfoData, uint32_t& aUVSOffset) {
   if (!aFontInfoData || !aFontInfoData->mLoadCmaps) {
@@ -551,16 +396,46 @@ already_AddRefed<gfxCharacterMap> gfxFontEntry::GetCMAPFromFontInfo(
   return aFontInfoData->GetCMAP(mName, aUVSOffset);
 }
 
+gfxFontEntry::FontTableBlob::FontTableBlob(nsTArray<uint8_t>&& aData)
+    : mData(std::move(aData)) {
+  if (!mData.IsEmpty()) {
+    mBlob = hb_blob_create(reinterpret_cast<const char*>(mData.Elements()),
+                           mData.Length(), HB_MEMORY_MODE_READONLY, nullptr,
+                           nullptr);
+  }
+}
+
+size_t gfxFontEntry::FontTableBlob::SizeOfExcludingThis(
+    MallocSizeOf aMallocSizeOf) const {
+  return mData.ShallowSizeOfExcludingThis(aMallocSizeOf) +
+         ((mBlob && mBlob != hb_blob_get_empty()) ? aMallocSizeOf(mBlob) : 0);
+}
+
 hb_blob_t* gfxFontEntry::GetFontTable(uint32_t aTag) {
-  hb_blob_t* blob;
-  if (GetExistingFontTable(aTag, &blob)) {
-    return blob;
+  auto* cache = GetFontTableCache(true);
+  MOZ_ASSERT(cache, "missing or incomplete GetFontTable override?");
+  if (!cache) {
+    return nullptr;
+  }
+
+  {
+    AutoReadLock lock(mLock);
+    if (auto lookup = cache->Lookup(aTag)) {
+      return lookup.Data().GetBlob();
+    }
   }
 
   nsTArray<uint8_t> buffer;
   bool haveTable = NS_SUCCEEDED(CopyFontTable(aTag, buffer));
 
-  return ShareFontTableAndGetBlob(aTag, haveTable ? &buffer : nullptr);
+  AutoWriteLock lock(mLock);
+  return cache
+      ->LookupOrInsertWith(aTag,
+                           [&] {
+                             return haveTable ? FontTableBlob(std::move(buffer))
+                                              : FontTableBlob();
+                           })
+      .GetBlob();
 }
 
 
@@ -1387,18 +1262,6 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
   }
 }
 
-size_t gfxFontEntry::FontTableHashEntry::SizeOfExcludingThis(
-    mozilla::MallocSizeOf aMallocSizeOf) const {
-  size_t n = 0;
-  if (mBlob) {
-    n += aMallocSizeOf(mBlob);
-  }
-  if (mSharedBlobData) {
-    n += mSharedBlobData->SizeOfIncludingThis(aMallocSizeOf);
-  }
-  return n;
-}
-
 void gfxFontEntry::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                                           FontListSizes* aSizes) const {
   aSizes->mFontListSize += mName.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
@@ -1408,11 +1271,19 @@ void gfxFontEntry::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
     aSizes->mCharMapsSize +=
         GetCharacterMap()->SizeOfIncludingThis(aMallocSizeOf);
   }
+
   {
     AutoReadLock lock(mLock);
-    if (mFontTableCache) {
+    
+    
+    if (auto* cache =
+            const_cast<gfxFontEntry*>(this)->GetFontTableCache(false)) {
       aSizes->mFontTableCacheSize +=
-          mFontTableCache->SizeOfIncludingThis(aMallocSizeOf);
+          cache->ShallowSizeOfIncludingThis(aMallocSizeOf);
+      for (auto it = cache->ConstIter(); !it.Done(); it.Next()) {
+        aSizes->mFontTableCacheSize +=
+            it.Data().SizeOfExcludingThis(aMallocSizeOf);
+      }
     }
   }
 
