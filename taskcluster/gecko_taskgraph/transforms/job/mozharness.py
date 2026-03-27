@@ -8,13 +8,13 @@ way, and certainly anything using mozharness should use this approach.
 
 """
 
+import re
 from textwrap import dedent
+from typing import Literal, Optional, Union
 
 from mozpack import path as mozpath
 from taskgraph.util import json
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
-from voluptuous.validators import Match
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 from gecko_taskgraph.transforms.job.common import (
@@ -25,70 +25,78 @@ from gecko_taskgraph.transforms.job.common import (
 )
 from gecko_taskgraph.util.attributes import is_try
 
-mozharness_run_schema = LegacySchema({
-    Required("using"): "mozharness",
+
+class MozharnessRunSchema(Schema, kw_only=True):
+    using: Literal["mozharness"]
     
     
-    Required("script"): str,
+    script: str
     
     
-    Optional("config-paths"): [str],
+    config_paths: Optional[list[str]] = None
     
     
     
-    Required("config"): [str],
+    config: list[str]
     
-    Optional("actions"): [
-        Match("^[a-z0-9-]+$", "actions must be `-` seperated alphanumeric strings")
-    ],
+    actions: Optional[list[str]] = None
     
-    Optional("options"): [
-        Match(
-            "^[a-z0-9-]+(=[^ ]+)?$",
-            "options must be `-` seperated alphanumeric strings (with optional argument)",
-        )
-    ],
+    options: Optional[list[str]] = None
     
-    Optional("custom-build-variant-cfg"): str,
+    custom_build_variant_cfg: Optional[str] = None
     
-    Optional("extra-config"): dict,
+    extra_config: Optional[dict] = None
     
     
-    Required("tooltool-downloads"): Any(
-        False,
-        "public",
-        "internal",
-    ),
+    tooltool_downloads: Union[bool, Literal["public", "internal"]]
     
     
     
     
     
-    Required("secrets"): Any(bool, [str]),
+    secrets: Union[bool, list[str]]
     
     
-    Required("taskcluster-proxy"): bool,
+    taskcluster_proxy: bool
     
     
-    Required("keep-artifacts"): bool,
+    keep_artifacts: bool
     
-    Optional("job-script"): str,
-    Required("requires-signed-builds"): bool,
+    job_script: Optional[str] = None
+    requires_signed_builds: bool
     
-    Optional("use-caches"): Any(bool, [str]),
-    
-    
-    Required("use-simple-package"): bool,
+    use_caches: Optional[Union[bool, list[str]]] = None
     
     
-    Required("use-magic-mh-args"): bool,
+    use_simple_package: bool
     
     
-    Required("comm-checkout"): bool,
+    use_magic_mh_args: bool
     
-    Optional("workdir"): str,
-    Optional("run-as-root"): bool,
-})
+    
+    comm_checkout: bool
+    
+    workdir: Optional[str] = None
+    run_as_root: Optional[bool] = None
+
+    def __post_init__(self):
+        if self.tooltool_downloads is True:
+            raise ValueError(
+                "tooltool-downloads must be False, 'public', or 'internal'"
+            )
+        if self.actions:
+            for action in self.actions:
+                if not re.match(r"^[a-z0-9-]+$", action):
+                    raise ValueError(
+                        "actions must be `-` separated alphanumeric strings"
+                    )
+        if self.options:
+            for option in self.options:
+                if not re.match(r"^[a-z0-9-]+(=[^ ]+)?$", option):
+                    raise ValueError(
+                        "options must be `-` separated alphanumeric strings"
+                        " (with optional argument)"
+                    )
 
 
 mozharness_defaults = {
@@ -107,7 +115,7 @@ mozharness_defaults = {
 @run_job_using(
     "docker-worker",
     "mozharness",
-    schema=mozharness_run_schema,
+    schema=MozharnessRunSchema,
     defaults=mozharness_defaults,
 )
 def mozharness_on_docker_worker_setup(config, job, taskdesc):
@@ -200,7 +208,7 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
 @run_job_using(
     "generic-worker",
     "mozharness",
-    schema=mozharness_run_schema,
+    schema=MozharnessRunSchema,
     defaults=mozharness_defaults,
 )
 def mozharness_on_generic_worker(config, job, taskdesc):
