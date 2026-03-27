@@ -201,12 +201,6 @@ const CONFIG_PANES = Object.freeze({
     visible: () =>
       Services.prefs.getBoolPref("browser.preferences.aiControls", false),
   },
-  customHomepage: {
-    parent: "home",
-    l10nId: "home-custom-homepage-subpage",
-    groupIds: ["customHomepage"],
-    module: "chrome://browser/content/preferences/config/home-startup.mjs",
-  },
   dnsOverHttps: {
     parent: "privacy",
     l10nId: "preferences-doh-header2",
@@ -337,6 +331,17 @@ function init_all() {
       continue;
     }
     SettingPaneManager.registerPane(id, config);
+  }
+
+  
+  
+  if (redesignEnabled) {
+    SettingPaneManager.registerPane("customHomepage", {
+      parent: "home",
+      l10nId: "home-custom-homepage-subpage",
+      groupIds: ["customHomepage"],
+      module: "chrome://browser/content/preferences/config/home-startup.mjs",
+    });
   }
 
   if (ExperimentAPI.labsEnabled) {
