@@ -239,7 +239,11 @@ class CommandAction(argparse.Action):
 
             if extra:
                 setattr(command_namespace, name, extra)
-            else:
+            
+            
+            
+            
+            elif not getattr(command_namespace, name, None):
                 setattr(command_namespace, name, options.get("default", []))
         elif extra:
             raise UnrecognizedArgumentError(command, extra)
