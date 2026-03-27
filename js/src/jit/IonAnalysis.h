@@ -82,10 +82,6 @@ void RenumberBlocks(MIRGraph& graph);
 
 [[nodiscard]] bool MarkLoadsUsedAsPropertyKeys(MIRGraph& graph);
 
-[[nodiscard]] bool TrackWasmRefTypes(MIRGraph& graph);
-
-[[nodiscard]] bool OptimizeWasmCasts(MIRGraph& graph);
-
 
 struct SimpleLinearSum {
   MDefinition* term;
