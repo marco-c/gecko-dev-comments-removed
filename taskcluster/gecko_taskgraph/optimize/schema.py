@@ -4,9 +4,12 @@
 
 
 import logging
+from typing import Optional, Union
 
+import msgspec
 import voluptuous
 from mozbuild import schedules
+from taskgraph.util.schema import Schema
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +52,81 @@ default_optimizations = (
     {"skip-unless-sphinx-js": None},
 )
 
-OptimizationSchema = voluptuous.Any(*default_optimizations)
+LegacyOptimizationSchema = voluptuous.Any(*default_optimizations)
+
+
+class OptimizationSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    
+    always: Optional[None] = None
+    
+    build: Optional[list[str]] = None
+    
+    docs: Optional[None] = None
+    
+    
+    index_search: Optional[list[str]] = None
+    
+    never: Optional[None] = None
+    
+    skip_unless_expanded: Optional[None] = None
+    skip_unless_backstop: Optional[None] = None
+    skip_unless_android_perftest_backstop: Optional[None] = None
+    
+    skip_unless_changed: Optional[list[str]] = None
+    skip_unless_missing_or_changed: Optional[list[Union[str, list[str]]]] = None
+    
+    skip_unless_schedules: Optional[list[str]] = None
+    
+    test: Optional[list[str]] = None
+    test_inclusive: Optional[list[str]] = None
+    
+    test_verify: Optional[list[str]] = None
+    
+    upload_symbols: Optional[None] = None
+    
+    reprocess_symbols: Optional[None] = None
+    
+    skip_unless_mozlint: Optional[Union[str, list[str]]] = None
+    
+    skip_unless_sphinx_js: Optional[None] = None
+
+    _COMPONENT_FIELDS = (
+        "build",
+        "skip_unless_schedules",
+        "test",
+        "test_inclusive",
+        "test_verify",
+    )
+
+    @classmethod
+    def validate(cls, data):
+        if not isinstance(data, dict) or len(data) != 1:
+            keys = list(data.keys()) if isinstance(data, dict) else []
+            raise msgspec.ValidationError(
+                f"Exactly one optimization strategy must be specified, got: {keys}"
+            )
+        super().validate(data)
+
+    def __post_init__(self):
+        for field in self._COMPONENT_FIELDS:
+            value = getattr(self, field)
+            if value is not None:
+                invalid = set(value) - set(schedules.ALL_COMPONENTS)
+                if invalid:
+                    raise ValueError(f"Invalid components in '{field}': {invalid}")
 
 
 def set_optimization_schema(schema_tuple):
-    """Sets OptimizationSchema so it can be imported by the task transform.
+    """Sets LegacyOptimizationSchema so it can be imported by the task transform.
     This function is called by projects that extend Firefox's taskgraph.
     It should be called by the project's taskgraph:register function before
     any transport or job runner code is imported.
 
     :param tuple schema_tuple: Tuple of possible optimization strategies
     """
-    global OptimizationSchema
-    if OptimizationSchema.validators == default_optimizations:
-        logger.info("OptimizationSchema updated.")
-        OptimizationSchema = voluptuous.Any(*schema_tuple)
+    global LegacyOptimizationSchema
+    if LegacyOptimizationSchema.validators == default_optimizations:
+        logger.info("LegacyOptimizationSchema updated.")
+        LegacyOptimizationSchema = voluptuous.Any(*schema_tuple)
     else:
         raise Exception("Can only call set_optimization_schema once.")
