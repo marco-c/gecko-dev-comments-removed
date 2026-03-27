@@ -2,21 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionServerlist:
-    "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs",
   IPPProxyManager:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 const AUTOSTART_FEATURE_ENABLE_PREF = "browser.ipProtection.features.autoStart";
@@ -100,7 +101,10 @@ class IPPAutoStartSingleton {
       case lazy.IPProtectionStates.READY:
         if (this.#shouldStartWhenReady) {
           this.#shouldStartWhenReady = false;
-          lazy.IPPProxyManager.start(/* user action: */ false);
+          lazy.IPPProxyManager.start(
+            false,
+            PrivateBrowsingUtils.permanentPrivateBrowsing
+          );
         }
         break;
 
