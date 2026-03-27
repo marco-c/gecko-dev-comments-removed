@@ -17,26 +17,82 @@ var PTR_RVALUE_REF = 2;
 
 
 
+var FunctionFlowGraph = class FunctionFlowGraph {
+    constructor({ name, bodies, typeInfo }) {
+        
+        assert(name);
+        this.name = name;
 
-function findAllPoints(bodies, blockId, bits)
-{
-    var points = [];
-    var body;
+        
+        
+        
+        
+        
+        assert(bodies);
+        this.bodies = bodies;
 
-    for (var xbody of bodies) {
-        if (sameBlockId(xbody.BlockId, blockId)) {
-            assert(!body);
-            body = xbody;
-        }
+        
+        
+        assert(typeInfo);
+        this.typeInfo = typeInfo;
     }
-    assert(body);
+
+    mainBody() {
+        
+        return this.bodies.at(-1);
+    }
+
+    forEachBody(f) {
+        this.bodies.forEach(f);
+    }
+
+    
+    
+    
+    
+    
+    lookupDecl(variable) {
+        return this.mainBody().DefineVariable?.find(
+            decl => sameVariable(decl.Variable, variable)
+        );
+    }
+
+    forEachDecl(f) {
+        this.mainBody().DefineVariable?.forEach(f);
+    }
+
+    getAttrsForTypeName(typeName) {
+        let attrs = 0;
+        if (typeName in this.typeInfo.GCSuppressors) {
+            attrs = attrs | ATTR_GC_SUPPRESSED;
+        }
+        return attrs;
+    }
+
+    getBodyByBlockId(blockId) {
+        const body = this.bodies.find(
+            body => sameBlockId(body.BlockId, blockId)
+        );
+        assert(body);
+        return body;
+    }
+};
+
+
+
+
+
+
+function findAllPoints(ffg, blockId, bits) {
+    const body = ffg.getBodyByBlockId(blockId);
 
     if (!("PEdge" in body))
         return;
+    const points = [];
     for (var edge of body.PEdge) {
         points.push([body, edge.Index[0], bits]);
         if (edge.Kind == "Loop")
-            points.push(...findAllPoints(bodies, edge.BlockId, bits));
+            points.push(...findAllPoints(ffg, edge.BlockId, bits));
     }
 
     return points;
@@ -48,11 +104,9 @@ function findAllPoints(bodies, blockId, bits)
 
 
 var Visitor = class {
-    constructor(bodies) {
+    constructor(ffg) {
         this.visited_bodies = new Map();
-        for (const body of bodies) {
-            this.visited_bodies.set(body, new Map());
-        }
+        ffg.forEachBody(body => { this.visited_bodies.set(body, new Map()); });
     }
 
     
@@ -104,14 +158,6 @@ var Visitor = class {
     }
 };
 
-function findMatchingBlock(bodies, blockId) {
-    for (const body of bodies) {
-        if (sameBlockId(body.BlockId, blockId)) {
-            return body;
-        }
-    }
-    assert(false);
-}
 
 
 
@@ -152,8 +198,7 @@ function findMatchingBlock(bodies, blockId) {
 
 
 
-
-function BFS_upwards(start_body, start_ppoint, bodies, visitor,
+function BFS_upwards(start_body, start_ppoint, ffg, visitor,
                      initial_successor_value = {},
                      entrypoint_fallback_value=null)
 {
@@ -188,7 +233,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
         for (const edge of (predecessors[ppoint] || [])) {
             if (edge.Kind == "Loop") {
                 
-                const loopBody = findMatchingBlock(bodies, edge.BlockId);
+                const loopBody = ffg.getBodyByBlockId(edge.BlockId);
                 const loopEnd = loopBody.Index[1];
                 work.push([loopBody, loopEnd, null, value]);
                 
@@ -202,7 +247,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
         if (ppoint == body.Index[0] && body.BlockId.Kind == "Loop") {
             
             for (const parent of (body.BlockPPoint || [])) {
-                const parentBody = findMatchingBlock(bodies, parent.BlockId);
+                const parentBody = ffg.getBodyByBlockId(parent.BlockId);
                 work.push([parentBody, parent.Index, null, value]);
             }
 
@@ -265,7 +310,7 @@ function isMatchingDestructor(edge, constructed)
 
 
 
-function allRAIIGuardedCallPoints(typeInfo, bodies, body)
+function allRAIIGuardedCallPoints(ffg, body)
 {
     if (!("PEdge" in body))
         return [];
@@ -273,9 +318,9 @@ function allRAIIGuardedCallPoints(typeInfo, bodies, body)
     var points = [];
 
     for (const edge of body.PEdge) {
-        const result = matchConstructorEdge(typeInfo, edge);
+        const result = matchConstructorEdge(ffg, edge);
         if (result && result.attrs != 0) {
-            points.push(...pointsInRAIIScope(bodies, body, edge, result.attrs, result.constructed));
+            points.push(...pointsInRAIIScope(ffg, body, edge, result.attrs, result.constructed));
         }
     }
 
@@ -346,7 +391,7 @@ function findMatchingConstructor(destructorEdge, body, warnIfNotFound=true)
 
 
 
-function pointsInRAIIScope(bodies, body, constructorEdge, bits, constructed) {
+function pointsInRAIIScope(ffg, body, constructorEdge, bits, constructed) {
     var seen = {};
     var worklist = [constructorEdge.Index[1]];
     var points = [];
@@ -363,7 +408,7 @@ function pointsInRAIIScope(bodies, body, constructorEdge, bits, constructed) {
             if (isMatchingDestructor(nedge, constructed))
                 continue;
             if (nedge.Kind == "Loop")
-                points.push(...findAllPoints(bodies, nedge.BlockId, bits));
+                points.push(...findAllPoints(ffg, nedge.BlockId, bits));
             worklist.push(nedge.Index[1]);
         }
     }
@@ -513,7 +558,7 @@ function isReturningImmobileValue(edge, variable)
 
 
 
-function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
+function edgeUsesVariable(ffg, edge, decl, body, liveToEnd=false)
 {
     const variable = decl.Variable;
 
@@ -545,7 +590,7 @@ function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
             return src;
         
         
-        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(typeInfo, lhs, decl)) {
+        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(ffg, lhs, decl)) {
             return src;
         }
         return 0;
@@ -560,7 +605,7 @@ function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
             return src;
         if ("PEdgeCallInstance" in edge) {
             if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable)) {
-                if (edgeStartsValueLiveRange(typeInfo, edge, decl)) {
+                if (edgeStartsValueLiveRange(ffg, edge, decl)) {
                     
                     
                     
@@ -585,7 +630,7 @@ function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
 
         
         const lhs = edge.Exp[1];
-        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(typeInfo, lhs, decl))
+        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(ffg, lhs, decl))
             return src;
         return 0;
     }
@@ -627,14 +672,14 @@ function referencedCSUName(type) {
     }
 }
 
-function containsGCPointer(typeInfo, type) {
+function containsGCPointer(ffg, type) {
     if (type.Kind == "CSU") {
-        if (!(type.Name in typeInfo.AllGCPointers)) {
+        if (!(type.Name in ffg.typeInfo.AllGCPointers)) {
             return false;
         }
     } else if (type.Kind == "Pointer") {
         const pointeeType = type.Type;
-        if (pointeeType.Kind != "CSU" || !(pointeeType.Name in typeInfo.AllGCTypes)) {
+        if (pointeeType.Kind != "CSU" || !(pointeeType.Name in ffg.typeInfo.AllGCTypes)) {
             return false;
         }
     } else {
@@ -670,7 +715,7 @@ function containsGCPointer(typeInfo, type) {
 
 
 
-function exprCoversVariable(typeInfo, exp, decl)
+function exprCoversVariable(ffg, exp, decl)
 {
     if (exp.Kind == "Var") {
         return sameVariable(exp.Variable, decl.Variable);
@@ -694,7 +739,7 @@ function exprCoversVariable(typeInfo, exp, decl)
 
         
         
-        if (!containsGCPointer(typeInfo, exp.Field.Type)) {
+        if (!containsGCPointer(ffg, exp.Field.Type)) {
             return false;
         }
 
@@ -705,7 +750,7 @@ function exprCoversVariable(typeInfo, exp, decl)
         let e = exp.Exp[0]; 
         while (e.Kind == "Fld") {
             const csu = referencedCSUName(e.Field.Type);
-            if (!csu || !(csu in typeInfo.SingleGCField)) {
+            if (!csu || !(csu in ffg.typeInfo.SingleGCField)) {
                 return false;
             }
             trail = e;
@@ -717,7 +762,7 @@ function exprCoversVariable(typeInfo, exp, decl)
         
         
         
-        if (trail && !(trail.Field.FieldCSU.Type.Name in typeInfo.SingleGCField)) {
+        if (trail && !(trail.Field.FieldCSU.Type.Name in ffg.typeInfo.SingleGCField)) {
             return false;
         }
 
@@ -761,13 +806,13 @@ function expressionIsMethodOnVariableDecl(exp, decl)
 
 
 
-function edgeStartsValueLiveRange(typeInfo, edge, decl)
+function edgeStartsValueLiveRange(ffg, edge, decl)
 {
     
     
     if (edge.Kind == "Assign") {
         const [lhs, rhs] = edge.Exp;
-        return (exprCoversVariable(typeInfo, lhs, decl) &&
+        return (exprCoversVariable(ffg, lhs, decl) &&
                 !isReturningImmobileValue(edge, decl.Variable));
     }
 
@@ -777,7 +822,7 @@ function edgeStartsValueLiveRange(typeInfo, edge, decl)
     
     if (1 in edge.Exp) {
         var lhs = edge.Exp[1];
-        if (exprCoversVariable(typeInfo, lhs, decl))
+        if (exprCoversVariable(ffg, lhs, decl))
             return true;
     }
 
@@ -789,7 +834,7 @@ function edgeStartsValueLiveRange(typeInfo, edge, decl)
         if (instance.Kind == "Drf")
             instance = instance.Exp[0];
 
-        if (!exprCoversVariable(typeInfo, instance, decl))
+        if (!exprCoversVariable(ffg, instance, decl))
             return false;
 
         var callee = edge.Exp[0];
@@ -896,12 +941,12 @@ function parseTypeName(typeName) {
 
 
 
-function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
+function edgeEndsValueLiveRange(ffg, edge, decl, body)
 {
     if (edge.Kind == "Assign") {
         
         const [lhs, rhs] = edge.Exp;
-        if (exprCoversVariable(typeInfo, lhs, decl) && isImmobileValue(rhs)) {
+        if (exprCoversVariable(ffg, lhs, decl) && isImmobileValue(rhs)) {
             return true;
         }
         
@@ -970,7 +1015,7 @@ function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
         
 
         const lhs = edge.Exp[1].Variable;
-        if (basicBlockEatsVariable(typeInfo, lhs, body, edge.Index[1]))
+        if (basicBlockEatsVariable(ffg, lhs, body, edge.Index[1]))
           return true;
     }
 
@@ -1036,16 +1081,6 @@ function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
     return false;
 }
 
-
-function lookupVariable(body, variable) {
-    for (const decl of (body.DefineVariable || [])) {
-        if (sameVariable(decl.Variable, variable)) {
-            return decl;
-        }
-    }
-    return undefined;
-}
-
 function edgeMovesVariable(edge, decl)
 {
     if (edge.Kind != 'Call')
@@ -1082,9 +1117,10 @@ function edgeMovesVariable(edge, decl)
 
 
 
-function basicBlockEatsVariable(typeInfo, variable, body, startpoint)
+function basicBlockEatsVariable(ffg, variable, body, startpoint)
 {
-    let decl = lookupVariable(body, variable);
+    const decl = ffg.lookupDecl(variable);
+    assert(decl);
 
     const successors = getSuccessors(body);
     let point = startpoint;
@@ -1104,7 +1140,7 @@ function basicBlockEatsVariable(typeInfo, variable, body, startpoint)
         
         
         
-        if (edgeStartsValueLiveRange(typeInfo, edge, decl)) {
+        if (edgeStartsValueLiveRange(ffg, edge, decl)) {
             return false;
         }
 
@@ -1160,7 +1196,7 @@ function synthesizeDestructorName(className) {
     return mangled_dtor + "$" + pretty_dtor;
 }
 
-function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies) {
+function getCallEdgeProperties(ffg, body, edge, calleeName) {
     let attrs = 0;
     let extraCalls = [];
 
@@ -1231,7 +1267,7 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
     
     
 
-    const decl = lookupVariable(body, instance.Variable);
+    const decl = ffg.lookupDecl(instance.Variable);
 
     const visitor = new class DominatorVisitor extends Visitor {
         
@@ -1248,12 +1284,12 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
                 return "continue";
             }
 
-            if (!edgeUsesVariable(typeInfo, edge, decl, body)) {
+            if (!edgeUsesVariable(ffg, edge, decl, body)) {
                 
                 return "continue";
             }
 
-            if (edgeEndsValueLiveRange(typeInfo, edge, decl, body)) {
+            if (edgeEndsValueLiveRange(ffg, edge, decl, body)) {
                 
                 return "prune";
             }
@@ -1262,7 +1298,7 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
             
             return "done";
         }
-    }(functionBodies);
+    }(ffg);
 
     
     
@@ -1270,7 +1306,7 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
     
     
     const edgeIsNonReleasingDtor = !BFS_upwards(
-        body, edge.Index[0], functionBodies, visitor, "start",
+        body, edge.Index[0], ffg, visitor, "start",
         false 
     );
     if (edgeIsNonReleasingDtor) {
