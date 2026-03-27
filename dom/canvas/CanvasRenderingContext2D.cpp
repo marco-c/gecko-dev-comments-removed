@@ -5077,7 +5077,7 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
 
   
   const bool doCalculateBounds = NeedToCalculateBounds();
-  if (!IsTargetValid() || (presShell && presShell->IsDestroying())) {
+  if (presShell && presShell->IsDestroying()) {
     aError = NS_ERROR_FAILURE;
     return nullptr;
   }
