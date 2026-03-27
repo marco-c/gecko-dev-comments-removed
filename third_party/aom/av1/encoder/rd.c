@@ -386,7 +386,8 @@ static double def_kf_rd_multiplier(int qindex) {
 
 int av1_compute_rd_mult_based_on_qindex(aom_bit_depth_t bit_depth,
                                         FRAME_UPDATE_TYPE update_type,
-                                        int qindex, aom_tune_metric tuning) {
+                                        int qindex, aom_tune_metric tuning,
+                                        MODE mode) {
   const int q = av1_dc_quant_QTX(qindex, 0, bit_depth);
   int64_t rdmult = q * q;
   if (update_type == KF_UPDATE) {
@@ -401,21 +402,32 @@ int av1_compute_rd_mult_based_on_qindex(aom_bit_depth_t bit_depth,
   }
 
   if (tuning == AOM_TUNE_IQ || tuning == AOM_TUNE_SSIMULACRA2) {
+    int weight;
+
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const int weight = clamp(((255 - qindex) * 3) / 4, 0, 72) + 128;
+    if (mode == REALTIME) {
+      
+      
+      
+      
+      
+      weight = 32;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      weight = clamp(((255 - qindex) * 3) / 4, 0, 72) + 128;
+    }
     rdmult = (int64_t)((double)rdmult * weight / 128.0);
   }
 
@@ -436,9 +448,9 @@ int av1_compute_rd_mult(const int qindex, const aom_bit_depth_t bit_depth,
                         const FRAME_TYPE frame_type,
                         const int use_fixed_qp_offsets,
                         const int is_stat_consumption_stage,
-                        const aom_tune_metric tuning) {
+                        const aom_tune_metric tuning, const MODE mode) {
   int64_t rdmult = av1_compute_rd_mult_based_on_qindex(bit_depth, update_type,
-                                                       qindex, tuning);
+                                                       qindex, tuning, mode);
   if (is_stat_consumption_stage && (use_fixed_qp_offsets == 0) &&
       (frame_type != KEY_FRAME)) {
     
@@ -506,7 +518,8 @@ int av1_get_adaptive_rdmult(const AV1_COMP *cpi, double beta) {
                    cpi->ppi->gf_group.update_type[cpi->gf_frame_index],
                    layer_depth, boost_index, frame_type,
                    cpi->oxcf.q_cfg.use_fixed_qp_offsets,
-                   is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning) /
+                   is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning,
+                   cpi->oxcf.mode) /
                beta);
 }
 #endif  
@@ -790,7 +803,8 @@ void av1_initialize_rd_consts(AV1_COMP *cpi) {
       qindex_rdmult, cm->seq_params->bit_depth,
       cpi->ppi->gf_group.update_type[cpi->gf_frame_index], layer_depth,
       boost_index, frame_type, cpi->oxcf.q_cfg.use_fixed_qp_offsets,
-      is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning);
+      is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning,
+      cpi->oxcf.mode);
 #if CONFIG_RD_COMMAND
   if (cpi->oxcf.pass == 2) {
     const RD_COMMAND *rd_command = &cpi->rd_command;

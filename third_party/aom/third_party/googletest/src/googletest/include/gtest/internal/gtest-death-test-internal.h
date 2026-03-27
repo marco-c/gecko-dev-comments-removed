@@ -42,9 +42,11 @@
 #include <stdio.h>
 
 #include <memory>
+#include <string>
 
 #include "gtest/gtest-matchers.h"
 #include "gtest/internal/gtest-internal.h"
+#include "gtest/internal/gtest-port.h"
 
 GTEST_DECLARE_string_(internal_run_death_test);
 
@@ -52,11 +54,31 @@ namespace testing {
 namespace internal {
 
 
-const char kDeathTestStyleFlag[] = "death_test_style";
-const char kDeathTestUseFork[] = "death_test_use_fork";
 const char kInternalRunDeathTestFlag[] = "internal_run_death_test";
 
-#if GTEST_HAS_DEATH_TEST
+
+
+
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(
+    ::testing::internal::RE regex) {
+  return ContainsRegex(regex.pattern());
+}
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(const char* regex) {
+  return ContainsRegex(regex);
+}
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(
+    const ::std::string& regex) {
+  return ContainsRegex(regex);
+}
+
+
+
+inline Matcher<const ::std::string&> MakeDeathTestMatcher(
+    Matcher<const ::std::string&> matcher) {
+  return matcher;
+}
+
+#ifdef GTEST_HAS_DEATH_TEST
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
@@ -87,7 +109,7 @@ class GTEST_API_ DeathTest {
   static bool Create(const char* statement, Matcher<const std::string&> matcher,
                      const char* file, int line, DeathTest** test);
   DeathTest();
-  virtual ~DeathTest() {}
+  virtual ~DeathTest() = default;
 
   
   class ReturnSentinel {
@@ -99,7 +121,7 @@ class GTEST_API_ DeathTest {
     DeathTest* const test_;
     ReturnSentinel(const ReturnSentinel&) = delete;
     ReturnSentinel& operator=(const ReturnSentinel&) = delete;
-  } GTEST_ATTRIBUTE_UNUSED_;
+  };
 
   
   
@@ -152,7 +174,7 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()
 
 class DeathTestFactory {
  public:
-  virtual ~DeathTestFactory() {}
+  virtual ~DeathTestFactory() = default;
   virtual bool Create(const char* statement,
                       Matcher<const std::string&> matcher, const char* file,
                       int line, DeathTest** test) = 0;
@@ -168,28 +190,6 @@ class DefaultDeathTestFactory : public DeathTestFactory {
 
 
 GTEST_API_ bool ExitedUnsuccessfully(int exit_status);
-
-
-
-
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(
-    ::testing::internal::RE regex) {
-  return ContainsRegex(regex.pattern());
-}
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(const char* regex) {
-  return ContainsRegex(regex);
-}
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(
-    const ::std::string& regex) {
-  return ContainsRegex(regex);
-}
-
-
-
-inline Matcher<const ::std::string&> MakeDeathTestMatcher(
-    Matcher<const ::std::string&> matcher) {
-  return matcher;
-}
 
 
 
@@ -237,7 +237,7 @@ inline Matcher<const ::std::string&> MakeDeathTestMatcher(
           }                                                                    \
           break;                                                               \
         case ::testing::internal::DeathTest::EXECUTE_TEST: {                   \
-          ::testing::internal::DeathTest::ReturnSentinel gtest_sentinel(       \
+          const ::testing::internal::DeathTest::ReturnSentinel gtest_sentinel( \
               gtest_dt);                                                       \
           GTEST_EXECUTE_DEATH_TEST_STATEMENT_(statement, gtest_dt);            \
           gtest_dt->Abort(::testing::internal::DeathTest::TEST_DID_NOT_DIE);   \

@@ -1239,6 +1239,10 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   float bias_obmc_mode_rd_scale_pct;
+
+  
+  
+  bool skip_comp_eval_using_top_comp_avg_est_rd;
 } INTER_MODE_SPEED_FEATURES;
 
 typedef struct INTERP_FILTER_SPEED_FEATURES {

@@ -47,9 +47,6 @@
 
 
 
-#define NUM_16X16 16
-
-
 static void tf_determine_block_partition(const MV block_mv, const int block_mse,
                                          const MV *midblock_mvs,
                                          const int *midblock_mses,
@@ -1176,7 +1173,7 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
 #endif  
         } else {
           
-          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_32X32 &&
+          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_64X64 &&
               TF_WINDOW_LENGTH == 5) {
             av1_apply_temporal_filter(
                 frame_to_filter, mbd, block_size, mb_row, mb_col, num_planes,
@@ -1368,10 +1365,10 @@ static void tf_setup_filtering_buffer(AV1_COMP *cpi,
     num_before = AOMMIN(is_forward_keyframe ? num_frames / 2 : 0, max_before);
     num_after = AOMMIN(num_frames - 1, max_after);
   } else {
-    int gfu_boost = av1_calc_arf_boost(&cpi->ppi->twopass, &cpi->twopass_frame,
-                                       &cpi->ppi->p_rc, &cpi->frame_info,
-                                       filter_frame_lookahead_idx, max_before,
-                                       max_after, NULL, NULL, 0);
+    int gfu_boost = av1_calc_arf_boost(
+        &cpi->ppi->twopass, &cpi->twopass_frame, &cpi->ppi->p_rc,
+        &cpi->frame_info, filter_frame_lookahead_idx, max_before, max_after,
+        NULL, NULL, 0, cpi->oxcf.mode != REALTIME);
 
     num_frames = AOMMIN(num_frames, gfu_boost / 150);
     num_frames += !(num_frames & 1);  
@@ -1592,7 +1589,10 @@ static void init_tf_ctx(AV1_COMP *cpi, int filter_frame_lookahead_idx,
 
 int av1_check_show_filtered_frame(const YV12_BUFFER_CONFIG *frame,
                                   const FRAME_DIFF *frame_diff, int q_index,
-                                  aom_bit_depth_t bit_depth) {
+                                  aom_bit_depth_t bit_depth, int enable_overlay,
+                                  int is_second_arf) {
+  if (!enable_overlay || is_second_arf) return 1;
+
   const int frame_height = frame->y_crop_height;
   const int frame_width = frame->y_crop_width;
   const int block_height = block_size_high[TF_BLOCK_SIZE];

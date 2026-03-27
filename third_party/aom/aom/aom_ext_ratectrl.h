@@ -160,6 +160,11 @@ typedef struct aom_rc_encodeframe_decision {
   int q_index; 
   int rdmult;  
   
+  
+  
+  
+  int *use_delta_q;
+  
 
 
 

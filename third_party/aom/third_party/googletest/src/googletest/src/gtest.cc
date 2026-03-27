@@ -43,23 +43,31 @@
 #include <algorithm>
 #include <chrono>  
 #include <cmath>
+#include <csignal>  
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <initializer_list>
 #include <iomanip>
+#include <ios>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <list>
 #include <map>
 #include <ostream>  
+#include <set>
 #include <sstream>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest-assertion-result.h"
 #include "gtest/gtest-spi.h"
 #include "gtest/internal/custom/gtest.h"
+#include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_LINUX
+#ifdef GTEST_OS_LINUX
 
 #include <fcntl.h>   
 #include <limits.h>  
@@ -72,18 +80,18 @@
 
 #include <string>
 
-#elif GTEST_OS_ZOS
+#elif defined(GTEST_OS_ZOS)
 #include <sys/time.h>  
 
 
 #include <strings.h>   
 
-#elif GTEST_OS_WINDOWS_MOBILE  
+#elif defined(GTEST_OS_WINDOWS_MOBILE)  
 
 #include <windows.h>  
 #undef min
 
-#elif GTEST_OS_WINDOWS  
+#elif defined(GTEST_OS_WINDOWS)  
 
 #include <windows.h>  
 #undef min
@@ -97,7 +105,7 @@
 #include <sys/timeb.h>  
 #include <sys/types.h>  
 
-#if GTEST_OS_WINDOWS_MINGW
+#ifdef GTEST_OS_WINDOWS_MINGW
 #include <sys/time.h>  
 #endif                 
 
@@ -123,17 +131,18 @@
 
 #include "src/gtest-internal-inl.h"
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 #define vsnprintf _vsnprintf
 #endif  
 
-#if GTEST_OS_MAC
+#ifdef GTEST_OS_MAC
 #ifndef GTEST_OS_IOS
 #include <crt_externs.h>
 #endif
 #endif
 
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
+#include "absl/container/flat_hash_set.h"
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
@@ -141,7 +150,21 @@
 #include "absl/flags/usage.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #endif  
+
+
+
+#if defined(__has_builtin)
+#define GTEST_HAS_BUILTIN(x) __has_builtin(x)
+#else
+#define GTEST_HAS_BUILTIN(x) 0
+#endif  
+
+#if defined(GTEST_HAS_ABSL) && !defined(GTEST_NO_ABSL_FLAGS)
+#define GTEST_HAS_ABSL_FLAGS
+#endif
 
 namespace testing {
 
@@ -170,11 +193,16 @@ static const char kDefaultOutputFormat[] = "xml";
 static const char kDefaultOutputFile[] = "test_detail";
 
 
+
+
+
 static const char kTestShardIndex[] = "GTEST_SHARD_INDEX";
 
 static const char kTestTotalShards[] = "GTEST_TOTAL_SHARDS";
 
 static const char kTestShardStatusFile[] = "GTEST_SHARD_STATUS_FILE";
+
+static const char kTestWarningsOutputFile[] = "TEST_WARNINGS_OUTPUT_FILE";
 
 namespace internal {
 
@@ -186,6 +214,7 @@ const char kStackTraceMarker[] = "\nStack trace:\n";
 
 bool g_help_flag = false;
 
+#if GTEST_HAS_FILE_SYSTEM
 
 static FILE* OpenFileForWriting(const std::string& output_file) {
   FILE* fileout = nullptr;
@@ -200,6 +229,7 @@ static FILE* OpenFileForWriting(const std::string& output_file) {
   }
   return fileout;
 }
+#endif  
 
 }  
 
@@ -232,6 +262,12 @@ GTEST_DEFINE_bool_(
     testing::internal::BoolFromGTestEnv("fail_fast",
                                         testing::GetDefaultFailFast()),
     "True if and only if a test failure should stop further test execution.");
+
+GTEST_DEFINE_bool_(
+    fail_if_no_test_linked,
+    testing::internal::BoolFromGTestEnv("fail_if_no_test_linked", false),
+    "True if and only if the test should fail if no test case (including "
+    "disabled test cases) is linked.");
 
 GTEST_DEFINE_bool_(
     also_run_disabled_tests,
@@ -354,7 +390,7 @@ GTEST_DEFINE_string_(
     testing::internal::StringFromGTestEnv("stream_result_to", ""),
     "This flag specifies the host name and the port number on which to stream "
     "test results. Example: \"localhost:555\". The flag is effective only on "
-    "Linux.");
+    "Linux and macOS.");
 
 GTEST_DEFINE_bool_(
     throw_on_failure,
@@ -371,6 +407,8 @@ GTEST_DEFINE_string_(
 
 namespace testing {
 namespace internal {
+
+const uint32_t Random::kMaxRange;
 
 
 
@@ -394,7 +432,7 @@ uint32_t Random::Generate(uint32_t range) {
 
 
 
-static bool GTestIsInitialized() { return GetArgvs().size() > 0; }
+static bool GTestIsInitialized() { return !GetArgvs().empty(); }
 
 
 
@@ -424,6 +462,19 @@ static bool ShouldRunTestSuite(const TestSuite* test_suite) {
   return test_suite->should_run();
 }
 
+namespace {
+
+
+
+bool ShouldEmitStackTraceForResultType(TestPartResult::Type type) {
+  
+  
+  
+  return type != TestPartResult::kSuccess && type != TestPartResult::kSkip;
+}
+
+}  
+
 
 AssertHelper::AssertHelper(TestPartResult::Type type, const char* file,
                            int line, const char* message)
@@ -436,7 +487,9 @@ void AssertHelper::operator=(const Message& message) const {
   UnitTest::GetInstance()->AddTestPartResult(
       data_->type, data_->file, data_->line,
       AppendUserMessage(data_->message, message),
-      UnitTest::GetInstance()->impl()->CurrentOsStackTraceExceptTop(1)
+      ShouldEmitStackTraceForResultType(data_->type)
+          ? UnitTest::GetInstance()->impl()->CurrentOsStackTraceExceptTop(1)
+          : ""
       
   );  
 }
@@ -494,7 +547,8 @@ void InsertSyntheticTestCase(const std::string& name, CodeLocation location,
   if (ignored.find(name) != ignored.end()) return;
 
   const char kMissingInstantiation[] =  
-      " is defined via TEST_P, but never instantiated. None of the test cases "
+      " is defined via TEST_P, but never instantiated. None of the test "
+      "cases "
       "will run. Either no INSTANTIATE_TEST_SUITE_P is provided or the only "
       "ones provided expand to nothing."
       "\n\n"
@@ -535,7 +589,7 @@ void InsertSyntheticTestCase(const std::string& name, CodeLocation location,
 void RegisterTypeParameterizedTestSuite(const char* test_suite_name,
                                         CodeLocation code_location) {
   GetUnitTestImpl()->type_parameterized_test_registry().RegisterTestSuite(
-      test_suite_name, code_location);
+      test_suite_name, std::move(code_location));
 }
 
 void RegisterTypeParameterizedTestSuiteInstantiation(const char* case_name) {
@@ -546,7 +600,7 @@ void RegisterTypeParameterizedTestSuiteInstantiation(const char* case_name) {
 void TypeParameterizedTestSuiteRegistry::RegisterTestSuite(
     const char* test_suite_name, CodeLocation code_location) {
   suites_.emplace(std::string(test_suite_name),
-                  TypeParameterizedTestSuiteInfo(code_location));
+                  TypeParameterizedTestSuiteInfo(std::move(code_location)));
 }
 
 void TypeParameterizedTestSuiteRegistry::RegisterInstantiation(
@@ -573,10 +627,12 @@ void TypeParameterizedTestSuiteRegistry::CheckForInstantiations() {
         "\n\n"
         "Ideally, TYPED_TEST_P definitions should only ever be included as "
         "part of binaries that intend to use them. (As opposed to, for "
-        "example, being placed in a library that may be linked in to get other "
+        "example, being placed in a library that may be linked in to get "
+        "other "
         "utilities.)"
         "\n\n"
-        "To suppress this error for this test suite, insert the following line "
+        "To suppress this error for this test suite, insert the following "
+        "line "
         "(in a non-header) in the namespace it is defined in:"
         "\n\n"
         "GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(" +
@@ -610,19 +666,24 @@ static ::std::vector<std::string> g_argvs;
 #endif  
 }
 
+#if GTEST_HAS_FILE_SYSTEM
 
 
 FilePath GetCurrentExecutableName() {
   FilePath result;
 
-#if GTEST_OS_WINDOWS || GTEST_OS_OS2
-  result.Set(FilePath(GetArgvs()[0]).RemoveExtension("exe"));
+  auto args = GetArgvs();
+  if (!args.empty()) {
+#if defined(GTEST_OS_WINDOWS) || defined(GTEST_OS_OS2)
+    result.Set(FilePath(args[0]).RemoveExtension("exe"));
 #else
-  result.Set(FilePath(GetArgvs()[0]));
+    result.Set(FilePath(args[0]));
 #endif  
+  }
 
   return result.RemoveDirectoryName();
 }
+#endif  
 
 
 
@@ -637,6 +698,7 @@ std::string UnitTestOptions::GetOutputFormat() {
                            static_cast<size_t>(colon - gtest_output_flag));
 }
 
+#if GTEST_HAS_FILE_SYSTEM
 
 
 std::string UnitTestOptions::GetAbsolutePathToOutputFile() {
@@ -667,6 +729,7 @@ std::string UnitTestOptions::GetAbsolutePathToOutputFile() {
       GetOutputFormat().c_str()));
   return result.string();
 }
+#endif  
 
 
 
@@ -752,7 +815,7 @@ class UnitTestFilter {
   
   
   bool MatchesName(const std::string& name) const {
-    return exact_match_patterns_.count(name) > 0 ||
+    return exact_match_patterns_.find(name) != exact_match_patterns_.end() ||
            std::any_of(glob_patterns_.begin(), glob_patterns_.end(),
                        [&name](const std::string& pattern) {
                          return PatternMatchesString(
@@ -837,10 +900,15 @@ bool UnitTestOptions::FilterMatchesTest(const std::string& test_suite_name,
 }
 
 #if GTEST_HAS_SEH
+static std::string FormatSehExceptionMessage(DWORD exception_code,
+                                             const char* location) {
+  Message message;
+  message << "SEH exception with code 0x" << std::setbase(16) << exception_code
+          << std::setbase(10) << " thrown in " << location << ".";
+  return message.GetString();
+}
 
-
-
-int UnitTestOptions::GTestShouldProcessSEH(DWORD exception_code) {
+int UnitTestOptions::GTestProcessSEH(DWORD seh_code, const char* location) {
   
   
   
@@ -851,16 +919,20 @@ int UnitTestOptions::GTestShouldProcessSEH(DWORD exception_code) {
   
   const DWORD kCxxExceptionCode = 0xe06d7363;
 
-  bool should_handle = true;
+  if (!GTEST_FLAG_GET(catch_exceptions) || seh_code == kCxxExceptionCode ||
+      seh_code == EXCEPTION_BREAKPOINT ||
+      seh_code == EXCEPTION_STACK_OVERFLOW) {
+    return EXCEPTION_CONTINUE_SEARCH;  
+  }
 
-  if (!GTEST_FLAG_GET(catch_exceptions))
-    should_handle = false;
-  else if (exception_code == EXCEPTION_BREAKPOINT)
-    should_handle = false;
-  else if (exception_code == kCxxExceptionCode)
-    should_handle = false;
+  internal::ReportFailureInUnknownLocation(
+      TestPartResult::kFatalFailure,
+      FormatSehExceptionMessage(seh_code, location) +
+          "\n"
+          "Stack trace:\n" +
+          ::testing::internal::GetCurrentOsStackTraceExceptTop(1));
 
-  return should_handle ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH;
+  return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif  
 
@@ -1008,14 +1080,14 @@ void DefaultPerThreadTestPartResultReporter::ReportTestPartResult(
 TestPartResultReporterInterface*
 UnitTestImpl::GetGlobalTestPartResultReporter() {
   internal::MutexLock lock(&global_test_part_result_reporter_mutex_);
-  return global_test_part_result_repoter_;
+  return global_test_part_result_reporter_;
 }
 
 
 void UnitTestImpl::SetGlobalTestPartResultReporter(
     TestPartResultReporterInterface* reporter) {
   internal::MutexLock lock(&global_test_part_result_reporter_mutex_);
-  global_test_part_result_repoter_ = reporter;
+  global_test_part_result_reporter_ = reporter;
 }
 
 
@@ -1113,17 +1185,24 @@ std::string UnitTestImpl::CurrentOsStackTraceExceptTop(int skip_count) {
 
 class Timer {
  public:
-  Timer() : start_(std::chrono::steady_clock::now()) {}
+  Timer() : start_(clock::now()) {}
 
   
   TimeInMillis Elapsed() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-               std::chrono::steady_clock::now() - start_)
+    return std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() -
+                                                                 start_)
         .count();
   }
 
  private:
-  std::chrono::steady_clock::time_point start_;
+  
+  
+#if defined(_NEWLIB_VERSION) && !defined(CLOCK_MONOTONIC)
+  using clock = std::chrono::system_clock;
+#else
+  using clock = std::chrono::steady_clock;
+#endif
+  clock::time_point start_;
 };
 
 
@@ -1140,7 +1219,7 @@ TimeInMillis GetTimeInMillis() {
 
 
 
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
 
 
 
@@ -1593,9 +1672,24 @@ std::string GetBoolAssertionFailureMessage(
 }
 
 
+
+
+
 AssertionResult DoubleNearPredFormat(const char* expr1, const char* expr2,
                                      const char* abs_error_expr, double val1,
                                      double val2, double abs_error) {
+  
+  
+  
+  
+  
+  
+  if (std::isinf(val1) && std::isinf(val2) &&
+      (std::signbit(val1) == std::signbit(val2) ||
+       (abs_error > 0.0 && std::isinf(abs_error)))) {
+    return AssertionSuccess();
+  }
+
   const double diff = fabs(val1 - val2);
   if (diff <= abs_error) return AssertionSuccess();
 
@@ -1842,14 +1936,14 @@ AssertionResult IsNotSubstring(const char* needle_expr,
 
 namespace internal {
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 namespace {
 
 
 AssertionResult HRESULTFailureHelper(const char* expr, const char* expected,
                                      long hr) {  
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_TV_TITLE
+#if defined(GTEST_OS_WINDOWS_MOBILE) || defined(GTEST_OS_WINDOWS_TV_TITLE)
 
   
   const char error_text[] = "";
@@ -2110,9 +2204,9 @@ bool String::CaseInsensitiveWideCStringEquals(const wchar_t* lhs,
 
   if (rhs == nullptr) return false;
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
   return _wcsicmp(lhs, rhs) == 0;
-#elif GTEST_OS_LINUX && !GTEST_OS_LINUX_ANDROID
+#elif defined(GTEST_OS_LINUX) && !defined(GTEST_OS_LINUX_ANDROID)
   return wcscasecmp(lhs, rhs) == 0;
 #else
   
@@ -2212,7 +2306,7 @@ TestResult::TestResult()
     : death_test_count_(0), start_timestamp_(0), elapsed_time_(0) {}
 
 
-TestResult::~TestResult() {}
+TestResult::~TestResult() = default;
 
 
 
@@ -2300,6 +2394,8 @@ static std::vector<std::string> GetReservedAttributesForElement(
   return std::vector<std::string>();
 }
 
+#if GTEST_HAS_FILE_SYSTEM
+
 
 static std::vector<std::string> GetReservedOutputAttributesForElement(
     const std::string& xml_element) {
@@ -2315,6 +2411,7 @@ static std::vector<std::string> GetReservedOutputAttributesForElement(
   
   return std::vector<std::string>();
 }
+#endif
 
 static std::string FormatWordList(const std::vector<std::string>& words) {
   Message word_list;
@@ -2418,7 +2515,7 @@ Test::Test() : gtest_flag_saver_(new GTEST_FLAG_SAVER_) {}
 
 
 
-Test::~Test() {}
+Test::~Test() = default;
 
 
 
@@ -2433,13 +2530,6 @@ void Test::TearDown() {}
 
 void Test::RecordProperty(const std::string& key, const std::string& value) {
   UnitTest::GetInstance()->RecordProperty(key, value);
-}
-
-
-void Test::RecordProperty(const std::string& key, int value) {
-  Message value_message;
-  value_message << value;
-  RecordProperty(key, value_message.GetString().c_str());
 }
 
 namespace internal {
@@ -2524,23 +2614,6 @@ bool Test::HasSameFixtureClass() {
   return true;
 }
 
-#if GTEST_HAS_SEH
-
-
-
-
-
-static std::string* FormatSehExceptionMessage(DWORD exception_code,
-                                              const char* location) {
-  Message message;
-  message << "SEH exception with code 0x" << std::setbase(16) << exception_code
-          << std::setbase(10) << " thrown in " << location << ".";
-
-  return new std::string(message.GetString());
-}
-
-#endif  
-
 namespace internal {
 
 #if GTEST_HAS_EXCEPTIONS
@@ -2582,16 +2655,8 @@ Result HandleSehExceptionsInMethodIfSupported(T* object, Result (T::*method)(),
 #if GTEST_HAS_SEH
   __try {
     return (object->*method)();
-  } __except (internal::UnitTestOptions::GTestShouldProcessSEH(  
-      GetExceptionCode())) {
-    
-    
-    
-    std::string* exception_message =
-        FormatSehExceptionMessage(GetExceptionCode(), location);
-    internal::ReportFailureInUnknownLocation(TestPartResult::kFatalFailure,
-                                             *exception_message);
-    delete exception_message;
+  } __except (internal::UnitTestOptions::GTestProcessSEH(  
+      GetExceptionCode(), location)) {
     return static_cast<Result>(0);
   }
 #else
@@ -2704,17 +2769,16 @@ bool Test::IsSkipped() {
 
 
 
-TestInfo::TestInfo(const std::string& a_test_suite_name,
-                   const std::string& a_name, const char* a_type_param,
-                   const char* a_value_param,
+TestInfo::TestInfo(std::string a_test_suite_name, std::string a_name,
+                   const char* a_type_param, const char* a_value_param,
                    internal::CodeLocation a_code_location,
                    internal::TypeId fixture_class_id,
                    internal::TestFactoryBase* factory)
-    : test_suite_name_(a_test_suite_name),
-      name_(a_name),
+    : test_suite_name_(std::move(a_test_suite_name)),
+      name_(std::move(a_name)),
       type_param_(a_type_param ? new std::string(a_type_param) : nullptr),
       value_param_(a_value_param ? new std::string(a_value_param) : nullptr),
-      location_(a_code_location),
+      location_(std::move(a_code_location)),
       fixture_class_id_(fixture_class_id),
       should_run_(false),
       is_disabled_(false),
@@ -2747,19 +2811,19 @@ namespace internal {
 
 
 TestInfo* MakeAndRegisterTestInfo(
-    const char* test_suite_name, const char* name, const char* type_param,
+    std::string test_suite_name, const char* name, const char* type_param,
     const char* value_param, CodeLocation code_location,
     TypeId fixture_class_id, SetUpTestSuiteFunc set_up_tc,
     TearDownTestSuiteFunc tear_down_tc, TestFactoryBase* factory) {
   TestInfo* const test_info =
-      new TestInfo(test_suite_name, name, type_param, value_param,
-                   code_location, fixture_class_id, factory);
+      new TestInfo(std::move(test_suite_name), name, type_param, value_param,
+                   std::move(code_location), fixture_class_id, factory);
   GetUnitTestImpl()->AddTestInfo(set_up_tc, tear_down_tc, test_info);
   return test_info;
 }
 
 void ReportInvalidTestSuiteType(const char* test_suite_name,
-                                CodeLocation code_location) {
+                                const CodeLocation& code_location) {
   Message errors;
   errors
       << "Attempted redefinition of test suite " << test_suite_name << ".\n"
@@ -2775,37 +2839,6 @@ void ReportInvalidTestSuiteType(const char* test_suite_name,
                                           code_location.line)
                     << " " << errors.GetString();
 }
-}  
-
-namespace {
-
-
-
-
-
-
-
-
-
-class TestNameIs {
- public:
-  
-  
-  
-  explicit TestNameIs(const char* name) : name_(name) {}
-
-  
-  bool operator()(const TestInfo* test_info) const {
-    return test_info && test_info->name() == name_;
-  }
-
- private:
-  std::string name_;
-};
-
-}  
-
-namespace internal {
 
 
 
@@ -2830,14 +2863,13 @@ void TestInfo::Run() {
   }
 
   
-  internal::UnitTestImpl* const impl = internal::GetUnitTestImpl();
-  impl->set_current_test_info(this);
+  UnitTest::GetInstance()->set_current_test_info(this);
 
   
   repeater->OnTestStart(*this);
   result_.set_start_timestamp(internal::GetTimeInMillis());
   internal::Timer timer;
-  impl->os_stack_trace_getter()->UponLeavingGTest();
+  UnitTest::GetInstance()->UponLeavingGTest();
 
   
   Test* const test = internal::HandleExceptionsInMethodIfSupported(
@@ -2855,7 +2887,7 @@ void TestInfo::Run() {
 
   if (test != nullptr) {
     
-    impl->os_stack_trace_getter()->UponLeavingGTest();
+    UnitTest::GetInstance()->UponLeavingGTest();
     internal::HandleExceptionsInMethodIfSupported(
         test, &Test::DeleteSelf_, "the test fixture's destructor");
   }
@@ -2867,15 +2899,14 @@ void TestInfo::Run() {
 
   
   
-  impl->set_current_test_info(nullptr);
+  UnitTest::GetInstance()->set_current_test_info(nullptr);
 }
 
 
 void TestInfo::Skip() {
   if (!should_run_) return;
 
-  internal::UnitTestImpl* const impl = internal::GetUnitTestImpl();
-  impl->set_current_test_info(this);
+  UnitTest::GetInstance()->set_current_test_info(this);
 
   TestEventListener* repeater = UnitTest::GetInstance()->listeners().repeater();
 
@@ -2884,12 +2915,13 @@ void TestInfo::Skip() {
 
   const TestPartResult test_part_result =
       TestPartResult(TestPartResult::kSkip, this->file(), this->line(), "");
-  impl->GetTestPartResultReporterForCurrentThread()->ReportTestPartResult(
-      test_part_result);
+  internal::GetUnitTestImpl()
+      ->GetTestPartResultReporterForCurrentThread()
+      ->ReportTestPartResult(test_part_result);
 
   
   repeater->OnTestEnd(*this);
-  impl->set_current_test_info(nullptr);
+  UnitTest::GetInstance()->set_current_test_info(nullptr);
 }
 
 
@@ -2943,7 +2975,7 @@ int TestSuite::total_test_count() const {
 
 
 
-TestSuite::TestSuite(const char* a_name, const char* a_type_param,
+TestSuite::TestSuite(const std::string& a_name, const char* a_type_param,
                      internal::SetUpTestSuiteFunc set_up_tc,
                      internal::TearDownTestSuiteFunc tear_down_tc)
     : name_(a_name),
@@ -2985,10 +3017,28 @@ void TestSuite::AddTestInfo(TestInfo* test_info) {
 void TestSuite::Run() {
   if (!should_run_) return;
 
-  internal::UnitTestImpl* const impl = internal::GetUnitTestImpl();
-  impl->set_current_test_suite(this);
+  UnitTest::GetInstance()->set_current_test_suite(this);
 
   TestEventListener* repeater = UnitTest::GetInstance()->listeners().repeater();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::stable_sort(test_info_list_.begin(), test_info_list_.end(),
+                   [](const TestInfo* const a, const TestInfo* const b) {
+                     if (const int result = std::strcmp(a->file(), b->file())) {
+                       return result < 0;
+                     }
+
+                     return a->line() < b->line();
+                   });
 
   
   repeater->OnTestSuiteStart(*this);
@@ -2997,11 +3047,12 @@ void TestSuite::Run() {
   repeater->OnTestCaseStart(*this);
 #endif  
 
-  impl->os_stack_trace_getter()->UponLeavingGTest();
+  UnitTest::GetInstance()->UponLeavingGTest();
   internal::HandleExceptionsInMethodIfSupported(
       this, &TestSuite::RunSetUpTestSuite, "SetUpTestSuite()");
 
-  const bool skip_all = ad_hoc_test_result().Failed();
+  const bool skip_all =
+      ad_hoc_test_result().Failed() || ad_hoc_test_result().Skipped();
 
   start_timestamp_ = internal::GetTimeInMillis();
   internal::Timer timer;
@@ -3021,7 +3072,7 @@ void TestSuite::Run() {
   }
   elapsed_time_ = timer.Elapsed();
 
-  impl->os_stack_trace_getter()->UponLeavingGTest();
+  UnitTest::GetInstance()->UponLeavingGTest();
   internal::HandleExceptionsInMethodIfSupported(
       this, &TestSuite::RunTearDownTestSuite, "TearDownTestSuite()");
 
@@ -3032,15 +3083,14 @@ void TestSuite::Run() {
   repeater->OnTestCaseEnd(*this);
 #endif  
 
-  impl->set_current_test_suite(nullptr);
+  UnitTest::GetInstance()->set_current_test_suite(nullptr);
 }
 
 
 void TestSuite::Skip() {
   if (!should_run_) return;
 
-  internal::UnitTestImpl* const impl = internal::GetUnitTestImpl();
-  impl->set_current_test_suite(this);
+  UnitTest::GetInstance()->set_current_test_suite(this);
 
   TestEventListener* repeater = UnitTest::GetInstance()->listeners().repeater();
 
@@ -3062,7 +3112,7 @@ void TestSuite::Skip() {
   repeater->OnTestCaseEnd(*this);
 #endif  
 
-  impl->set_current_test_suite(nullptr);
+  UnitTest::GetInstance()->set_current_test_suite(nullptr);
 }
 
 
@@ -3153,7 +3203,7 @@ static void PrintTestPartResult(const TestPartResult& test_part_result) {
   
   
   
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MOBILE
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_MOBILE)
   
   
   
@@ -3163,8 +3213,9 @@ static void PrintTestPartResult(const TestPartResult& test_part_result) {
 }
 
 
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MOBILE && !GTEST_OS_WINDOWS_PHONE && \
-    !GTEST_OS_WINDOWS_RT && !GTEST_OS_WINDOWS_MINGW
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_MOBILE) &&       \
+    !defined(GTEST_OS_WINDOWS_GAMES) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+    !defined(GTEST_OS_WINDOWS_RT) && !defined(GTEST_OS_WINDOWS_MINGW)
 
 
 static WORD GetColorAttribute(GTestColor color) {
@@ -3224,7 +3275,8 @@ static const char* GetAnsiColorCode(GTestColor color) {
     case GTestColor::kYellow:
       return "3";
     default:
-      return nullptr;
+      assert(false);
+      return "9";
   }
 }
 
@@ -3236,7 +3288,7 @@ bool ShouldUseColor(bool stdout_is_tty) {
   const char* const gtest_color = c.c_str();
 
   if (String::CaseInsensitiveCStringEquals(gtest_color, "auto")) {
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MINGW
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_MINGW)
     
     
     return stdout_is_tty;
@@ -3244,17 +3296,16 @@ bool ShouldUseColor(bool stdout_is_tty) {
     
     const char* const term = posix::GetEnv("TERM");
     const bool term_supports_color =
-        String::CStringEquals(term, "xterm") ||
-        String::CStringEquals(term, "xterm-color") ||
-        String::CStringEquals(term, "xterm-256color") ||
-        String::CStringEquals(term, "screen") ||
-        String::CStringEquals(term, "screen-256color") ||
-        String::CStringEquals(term, "tmux") ||
-        String::CStringEquals(term, "tmux-256color") ||
-        String::CStringEquals(term, "rxvt-unicode") ||
-        String::CStringEquals(term, "rxvt-unicode-256color") ||
-        String::CStringEquals(term, "linux") ||
-        String::CStringEquals(term, "cygwin");
+        term != nullptr && (String::CStringEquals(term, "xterm") ||
+                            String::CStringEquals(term, "xterm-color") ||
+                            String::CStringEquals(term, "xterm-kitty") ||
+                            String::CStringEquals(term, "alacritty") ||
+                            String::CStringEquals(term, "screen") ||
+                            String::CStringEquals(term, "tmux") ||
+                            String::CStringEquals(term, "rxvt-unicode") ||
+                            String::CStringEquals(term, "linux") ||
+                            String::CStringEquals(term, "cygwin") ||
+                            String::EndsWithCaseInsensitive(term, "-256color"));
     return stdout_is_tty && term_supports_color;
 #endif  
   }
@@ -3279,7 +3330,10 @@ static void ColoredPrintf(GTestColor color, const char* fmt, ...) {
   va_start(args, fmt);
 
   static const bool in_color_mode =
+      
+      
       ShouldUseColor(posix::IsATTY(posix::FileNo(stdout)) != 0);
+
   const bool use_color = in_color_mode && (color != GTestColor::kDefault);
 
   if (!use_color) {
@@ -3288,8 +3342,9 @@ static void ColoredPrintf(GTestColor color, const char* fmt, ...) {
     return;
   }
 
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MOBILE && !GTEST_OS_WINDOWS_PHONE && \
-    !GTEST_OS_WINDOWS_RT && !GTEST_OS_WINDOWS_MINGW
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_MOBILE) &&       \
+    !defined(GTEST_OS_WINDOWS_GAMES) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+    !defined(GTEST_OS_WINDOWS_RT) && !defined(GTEST_OS_WINDOWS_MINGW)
   const HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
   
@@ -3343,7 +3398,7 @@ static void PrintFullTestCommentIfPresent(const TestInfo& test_info) {
 
 class PrettyUnitTestResultPrinter : public TestEventListener {
  public:
-  PrettyUnitTestResultPrinter() {}
+  PrettyUnitTestResultPrinter() = default;
   static void PrintTestName(const char* test_suite, const char* test) {
     printf("%s.%s", test_suite, test);
   }
@@ -3651,7 +3706,7 @@ void PrettyUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
 
 class BriefUnitTestResultPrinter : public TestEventListener {
  public:
-  BriefUnitTestResultPrinter() {}
+  BriefUnitTestResultPrinter() = default;
   static void PrintTestName(const char* test_suite, const char* test) {
     printf("%s.%s", test_suite, test);
   }
@@ -3766,28 +3821,28 @@ class TestEventRepeater : public TestEventListener {
   bool forwarding_enabled() const { return forwarding_enabled_; }
   void set_forwarding_enabled(bool enable) { forwarding_enabled_ = enable; }
 
-  void OnTestProgramStart(const UnitTest& unit_test) override;
+  void OnTestProgramStart(const UnitTest& parameter) override;
   void OnTestIterationStart(const UnitTest& unit_test, int iteration) override;
-  void OnEnvironmentsSetUpStart(const UnitTest& unit_test) override;
-  void OnEnvironmentsSetUpEnd(const UnitTest& unit_test) override;
+  void OnEnvironmentsSetUpStart(const UnitTest& parameter) override;
+  void OnEnvironmentsSetUpEnd(const UnitTest& parameter) override;
 
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   void OnTestCaseStart(const TestSuite& parameter) override;
 #endif  
   void OnTestSuiteStart(const TestSuite& parameter) override;
-  void OnTestStart(const TestInfo& test_info) override;
-  void OnTestDisabled(const TestInfo& test_info) override;
-  void OnTestPartResult(const TestPartResult& result) override;
-  void OnTestEnd(const TestInfo& test_info) override;
+  void OnTestStart(const TestInfo& parameter) override;
+  void OnTestDisabled(const TestInfo& parameter) override;
+  void OnTestPartResult(const TestPartResult& parameter) override;
+  void OnTestEnd(const TestInfo& parameter) override;
 
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   void OnTestCaseEnd(const TestCase& parameter) override;
 #endif  
   void OnTestSuiteEnd(const TestSuite& parameter) override;
-  void OnEnvironmentsTearDownStart(const UnitTest& unit_test) override;
-  void OnEnvironmentsTearDownEnd(const UnitTest& unit_test) override;
+  void OnEnvironmentsTearDownStart(const UnitTest& parameter) override;
+  void OnEnvironmentsTearDownEnd(const UnitTest& parameter) override;
   void OnTestIterationEnd(const UnitTest& unit_test, int iteration) override;
-  void OnTestProgramEnd(const UnitTest& unit_test) override;
+  void OnTestProgramEnd(const UnitTest& parameter) override;
 
  private:
   
@@ -3884,6 +3939,7 @@ void TestEventRepeater::OnTestIterationEnd(const UnitTest& unit_test,
 
 
 
+#if GTEST_HAS_FILE_SYSTEM
 
 class XmlUnitTestResultPrinter : public EmptyTestEventListener {
  public:
@@ -3945,6 +4001,12 @@ class XmlUnitTestResultPrinter : public EmptyTestEventListener {
                                               const TestResult& result);
 
   
+  
+  
+  static void OutputXmlTestCaseForTestResult(::std::ostream* stream,
+                                             const TestResult& result);
+
+  
   static void OutputXmlTestResult(::std::ostream* stream,
                                   const TestResult& result);
 
@@ -3963,14 +4025,9 @@ class XmlUnitTestResultPrinter : public EmptyTestEventListener {
 
   
   
-  
-  
-  static std::string TestPropertiesAsXmlAttributes(const TestResult& result);
-
-  
-  
   static void OutputXmlTestProperties(std::ostream* stream,
-                                      const TestResult& result);
+                                      const TestResult& result,
+                                      const std::string& indent);
 
   
   const std::string output_file_;
@@ -4093,6 +4150,13 @@ std::string XmlUnitTestResultPrinter::RemoveInvalidXmlCharacters(
 
 std::string FormatTimeInMillisAsSeconds(TimeInMillis ms) {
   ::std::stringstream ss;
+  
+  
+  
+  ss << std::fixed
+     << std::setprecision(
+            ms % 1000 == 0 ? 0 : (ms % 100 == 0 ? 1 : (ms % 10 == 0 ? 2 : 3)))
+     << std::showpoint;
   ss << (static_cast<double>(ms) * 1e-3);
   return ss.str();
 }
@@ -4184,6 +4248,15 @@ void XmlUnitTestResultPrinter::OutputXmlTestSuiteForTestResult(
       FormatEpochTimeInMillisAsIso8601(result.start_timestamp()));
   *stream << ">";
 
+  OutputXmlTestCaseForTestResult(stream, result);
+
+  
+  *stream << "  </testsuite>\n";
+}
+
+
+void XmlUnitTestResultPrinter::OutputXmlTestCaseForTestResult(
+    ::std::ostream* stream, const TestResult& result) {
   
   *stream << "    <testcase";
   OutputXmlAttribute(stream, "testcase", "name", "");
@@ -4198,9 +4271,6 @@ void XmlUnitTestResultPrinter::OutputXmlTestSuiteForTestResult(
 
   
   OutputXmlTestResult(stream, result);
-
-  
-  *stream << "  </testsuite>\n";
 }
 
 
@@ -4291,7 +4361,7 @@ void XmlUnitTestResultPrinter::OutputXmlTestResult(::std::ostream* stream,
     if (failures == 0 && skips == 0) {
       *stream << ">\n";
     }
-    OutputXmlTestProperties(stream, result);
+    OutputXmlTestProperties(stream, result, "      ");
     *stream << "    </testcase>\n";
   }
 }
@@ -4320,13 +4390,18 @@ void XmlUnitTestResultPrinter::PrintXmlTestSuite(std::ostream* stream,
     OutputXmlAttribute(
         stream, kTestsuite, "timestamp",
         FormatEpochTimeInMillisAsIso8601(test_suite.start_timestamp()));
-    *stream << TestPropertiesAsXmlAttributes(test_suite.ad_hoc_test_result());
   }
   *stream << ">\n";
+  OutputXmlTestProperties(stream, test_suite.ad_hoc_test_result(),
+                          "    ");
   for (int i = 0; i < test_suite.total_test_count(); ++i) {
     if (test_suite.GetTestInfo(i)->is_reportable())
       OutputXmlTestInfo(stream, test_suite.name(), *test_suite.GetTestInfo(i));
   }
+  if (test_suite.ad_hoc_test_result().Failed()) {
+    OutputXmlTestCaseForTestResult(stream, test_suite.ad_hoc_test_result());
+  }
+
   *stream << "  </" << kTestsuite << ">\n";
 }
 
@@ -4356,11 +4431,12 @@ void XmlUnitTestResultPrinter::PrintXmlUnitTest(std::ostream* stream,
     OutputXmlAttribute(stream, kTestsuites, "random_seed",
                        StreamableToString(unit_test.random_seed()));
   }
-  *stream << TestPropertiesAsXmlAttributes(unit_test.ad_hoc_test_result());
 
   OutputXmlAttribute(stream, kTestsuites, "name", "AllTests");
   *stream << ">\n";
 
+  OutputXmlTestProperties(stream, unit_test.ad_hoc_test_result(),
+                          "  ");
   for (int i = 0; i < unit_test.total_test_suite_count(); ++i) {
     if (unit_test.GetTestSuite(i)->reportable_test_count() > 0)
       PrintXmlTestSuite(stream, *unit_test.GetTestSuite(i));
@@ -4397,21 +4473,8 @@ void XmlUnitTestResultPrinter::PrintXmlTestsList(
   *stream << "</" << kTestsuites << ">\n";
 }
 
-
-
-std::string XmlUnitTestResultPrinter::TestPropertiesAsXmlAttributes(
-    const TestResult& result) {
-  Message attributes;
-  for (int i = 0; i < result.test_property_count(); ++i) {
-    const TestProperty& property = result.GetTestProperty(i);
-    attributes << " " << property.key() << "="
-               << "\"" << EscapeXmlAttribute(property.value()) << "\"";
-  }
-  return attributes.GetString();
-}
-
 void XmlUnitTestResultPrinter::OutputXmlTestProperties(
-    std::ostream* stream, const TestResult& result) {
+    std::ostream* stream, const TestResult& result, const std::string& indent) {
   const std::string kProperties = "properties";
   const std::string kProperty = "property";
 
@@ -4419,19 +4482,21 @@ void XmlUnitTestResultPrinter::OutputXmlTestProperties(
     return;
   }
 
-  *stream << "      <" << kProperties << ">\n";
+  *stream << indent << "<" << kProperties << ">\n";
   for (int i = 0; i < result.test_property_count(); ++i) {
     const TestProperty& property = result.GetTestProperty(i);
-    *stream << "        <" << kProperty;
+    *stream << indent << "  <" << kProperty;
     *stream << " name=\"" << EscapeXmlAttribute(property.key()) << "\"";
     *stream << " value=\"" << EscapeXmlAttribute(property.value()) << "\"";
     *stream << "/>\n";
   }
-  *stream << "      </" << kProperties << ">\n";
+  *stream << indent << "</" << kProperties << ">\n";
 }
 
 
+#endif  
 
+#if GTEST_HAS_FILE_SYSTEM
 
 class JsonUnitTestResultPrinter : public EmptyTestEventListener {
  public:
@@ -4463,6 +4528,12 @@ class JsonUnitTestResultPrinter : public EmptyTestEventListener {
   
   static void OutputJsonTestSuiteForTestResult(::std::ostream* stream,
                                                const TestResult& result);
+
+  
+  
+  
+  static void OutputJsonTestCaseForTestResult(::std::ostream* stream,
+                                              const TestResult& result);
 
   
   static void OutputJsonTestResult(::std::ostream* stream,
@@ -4634,6 +4705,15 @@ void JsonUnitTestResultPrinter::OutputJsonTestSuiteForTestResult(
   }
   *stream << Indent(6) << "\"testsuite\": [\n";
 
+  OutputJsonTestCaseForTestResult(stream, result);
+
+  
+  *stream << "\n" << Indent(6) << "]\n" << Indent(4) << "}";
+}
+
+
+void JsonUnitTestResultPrinter::OutputJsonTestCaseForTestResult(
+    ::std::ostream* stream, const TestResult& result) {
   
   *stream << Indent(8) << "{\n";
   OutputJsonKey(stream, "testcase", "name", "", Indent(10));
@@ -4650,9 +4730,6 @@ void JsonUnitTestResultPrinter::OutputJsonTestSuiteForTestResult(
 
   
   OutputJsonTestResult(stream, result);
-
-  
-  *stream << "\n" << Indent(6) << "]\n" << Indent(4) << "}";
 }
 
 
@@ -4707,28 +4784,53 @@ void JsonUnitTestResultPrinter::OutputJsonTestResult(::std::ostream* stream,
                                                      const TestResult& result) {
   const std::string kIndent = Indent(10);
 
-  int failures = 0;
-  for (int i = 0; i < result.total_part_count(); ++i) {
-    const TestPartResult& part = result.GetTestPartResult(i);
-    if (part.failed()) {
-      *stream << ",\n";
-      if (++failures == 1) {
-        *stream << kIndent << "\""
-                << "failures"
-                << "\": [\n";
+  {
+    int failures = 0;
+    for (int i = 0; i < result.total_part_count(); ++i) {
+      const TestPartResult& part = result.GetTestPartResult(i);
+      if (part.failed()) {
+        *stream << ",\n";
+        if (++failures == 1) {
+          *stream << kIndent << "\"" << "failures" << "\": [\n";
+        }
+        const std::string location =
+            internal::FormatCompilerIndependentFileLocation(part.file_name(),
+                                                            part.line_number());
+        const std::string message =
+            EscapeJson(location + "\n" + part.message());
+        *stream << kIndent << "  {\n"
+                << kIndent << "    \"failure\": \"" << message << "\",\n"
+                << kIndent << "    \"type\": \"\"\n"
+                << kIndent << "  }";
       }
-      const std::string location =
-          internal::FormatCompilerIndependentFileLocation(part.file_name(),
-                                                          part.line_number());
-      const std::string message = EscapeJson(location + "\n" + part.message());
-      *stream << kIndent << "  {\n"
-              << kIndent << "    \"failure\": \"" << message << "\",\n"
-              << kIndent << "    \"type\": \"\"\n"
-              << kIndent << "  }";
     }
+
+    if (failures > 0) *stream << "\n" << kIndent << "]";
   }
 
-  if (failures > 0) *stream << "\n" << kIndent << "]";
+  {
+    int skipped = 0;
+    for (int i = 0; i < result.total_part_count(); ++i) {
+      const TestPartResult& part = result.GetTestPartResult(i);
+      if (part.skipped()) {
+        *stream << ",\n";
+        if (++skipped == 1) {
+          *stream << kIndent << "\"" << "skipped" << "\": [\n";
+        }
+        const std::string location =
+            internal::FormatCompilerIndependentFileLocation(part.file_name(),
+                                                            part.line_number());
+        const std::string message =
+            EscapeJson(location + "\n" + part.message());
+        *stream << kIndent << "  {\n"
+                << kIndent << "    \"message\": \"" << message << "\"\n"
+                << kIndent << "  }";
+      }
+    }
+
+    if (skipped > 0) *stream << "\n" << kIndent << "]";
+  }
+
   *stream << "\n" << Indent(8) << "}";
 }
 
@@ -4772,6 +4874,16 @@ void JsonUnitTestResultPrinter::PrintJsonTestSuite(
       OutputJsonTestInfo(stream, test_suite.name(), *test_suite.GetTestInfo(i));
     }
   }
+
+  
+  
+  if (test_suite.ad_hoc_test_result().Failed()) {
+    if (comma) {
+      *stream << ",\n";
+    }
+    OutputJsonTestCaseForTestResult(stream, test_suite.ad_hoc_test_result());
+  }
+
   *stream << "\n" << kIndent << "]\n" << Indent(4) << "}";
 }
 
@@ -4821,6 +4933,9 @@ void JsonUnitTestResultPrinter::PrintJsonUnitTest(std::ostream* stream,
   
   
   if (unit_test.ad_hoc_test_result().Failed()) {
+    if (comma) {
+      *stream << ",\n";
+    }
     OutputJsonTestSuiteForTestResult(stream, unit_test.ad_hoc_test_result());
   }
 
@@ -4862,13 +4977,14 @@ std::string JsonUnitTestResultPrinter::TestPropertiesAsJson(
   for (int i = 0; i < result.test_property_count(); ++i) {
     const TestProperty& property = result.GetTestProperty(i);
     attributes << ",\n"
-               << indent << "\"" << property.key() << "\": "
-               << "\"" << EscapeJson(property.value()) << "\"";
+               << indent << "\"" << property.key() << "\": " << "\""
+               << EscapeJson(property.value()) << "\"";
   }
   return attributes.GetString();
 }
 
 
+#endif  
 
 #if GTEST_CAN_STREAM_RESULTS_
 
@@ -4886,7 +5002,8 @@ std::string StreamingListener::UrlEncode(const char* str) {
       case '=':
       case '&':
       case '\n':
-        result.append("%" + String::FormatByte(static_cast<unsigned char>(ch)));
+        result.push_back('%');
+        result.append(String::FormatByte(static_cast<unsigned char>(ch)));
         break;
       default:
         result.push_back(ch);
@@ -4947,7 +5064,7 @@ const char* const OsStackTraceGetterInterface::kElidedFramesMarker =
 
 std::string OsStackTraceGetter::CurrentStackTrace(int max_depth, int skip_count)
     GTEST_LOCK_EXCLUDED_(mutex_) {
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
   std::string result;
 
   if (max_depth <= 0) {
@@ -4996,7 +5113,7 @@ std::string OsStackTraceGetter::CurrentStackTrace(int max_depth, int skip_count)
 }
 
 void OsStackTraceGetter::UponLeavingGTest() GTEST_LOCK_EXCLUDED_(mutex_) {
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
   void* caller_frame = nullptr;
   if (absl::GetStackTrace(&caller_frame, 1, 3) <= 0) {
     caller_frame = nullptr;
@@ -5007,6 +5124,7 @@ void OsStackTraceGetter::UponLeavingGTest() GTEST_LOCK_EXCLUDED_(mutex_) {
 #endif  
 }
 
+#ifdef GTEST_HAS_DEATH_TEST
 
 
 class ScopedPrematureExitFile {
@@ -5026,7 +5144,7 @@ class ScopedPrematureExitFile {
   }
 
   ~ScopedPrematureExitFile() {
-#if !defined GTEST_OS_ESP8266
+#ifndef GTEST_OS_ESP8266
     if (!premature_exit_filepath_.empty()) {
       int retval = remove(premature_exit_filepath_.c_str());
       if (retval) {
@@ -5044,6 +5162,7 @@ class ScopedPrematureExitFile {
   ScopedPrematureExitFile(const ScopedPrematureExitFile&) = delete;
   ScopedPrematureExitFile& operator=(const ScopedPrematureExitFile&) = delete;
 };
+#endif  
 
 }  
 
@@ -5115,8 +5234,8 @@ bool TestEventListeners::EventForwardingEnabled() const {
   return repeater_->forwarding_enabled();
 }
 
-void TestEventListeners::SuppressEventForwarding() {
-  repeater_->set_forwarding_enabled(false);
+void TestEventListeners::SuppressEventForwarding(bool suppress) {
+  repeater_->set_forwarding_enabled(!suppress);
 }
 
 
@@ -5257,6 +5376,22 @@ TestSuite* UnitTest::GetMutableTestSuite(int i) {
   return impl()->GetMutableSuiteCase(i);
 }
 
+void UnitTest::UponLeavingGTest() {
+  impl()->os_stack_trace_getter()->UponLeavingGTest();
+}
+
+
+void UnitTest::set_current_test_suite(TestSuite* a_current_test_suite) {
+  internal::MutexLock lock(&mutex_);
+  impl_->set_current_test_suite(a_current_test_suite);
+}
+
+
+void UnitTest::set_current_test_info(TestInfo* a_current_test_info) {
+  internal::MutexLock lock(&mutex_);
+  impl_->set_current_test_info(a_current_test_info);
+}
+
 
 
 TestEventListeners& UnitTest::listeners() { return *impl()->listeners(); }
@@ -5293,7 +5428,7 @@ void UnitTest::AddTestPartResult(TestPartResult::Type result_type,
   msg << message;
 
   internal::MutexLock lock(&mutex_);
-  if (impl_->gtest_trace_stack().size() > 0) {
+  if (!impl_->gtest_trace_stack().empty()) {
     msg << "\n" << GTEST_NAME_ << " trace:";
 
     for (size_t i = impl_->gtest_trace_stack().size(); i > 0; --i) {
@@ -5306,6 +5441,8 @@ void UnitTest::AddTestPartResult(TestPartResult::Type result_type,
 
   if (os_stack_trace.c_str() != nullptr && !os_stack_trace.empty()) {
     msg << internal::kStackTraceMarker << os_stack_trace;
+  } else {
+    msg << "\n";
   }
 
   const TestPartResult result = TestPartResult(
@@ -5321,7 +5458,8 @@ void UnitTest::AddTestPartResult(TestPartResult::Type result_type,
     
     
     if (GTEST_FLAG_GET(break_on_failure)) {
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+    !defined(GTEST_OS_WINDOWS_RT)
       
       
       
@@ -5331,6 +5469,10 @@ void UnitTest::AddTestPartResult(TestPartResult::Type result_type,
      (defined(__x86_64__) || defined(__i386__)))
       
       asm("int3");
+#elif GTEST_HAS_BUILTIN(__builtin_trap)
+      __builtin_trap();
+#elif defined(SIGTRAP)
+      raise(SIGTRAP);
 #else
       
       
@@ -5365,8 +5507,9 @@ void UnitTest::RecordProperty(const std::string& key,
 
 
 int UnitTest::Run() {
+#ifdef GTEST_HAS_DEATH_TEST
   const bool in_death_test_child_process =
-      GTEST_FLAG_GET(internal_run_death_test).length() > 0;
+      !GTEST_FLAG_GET(internal_run_death_test).empty();
 
   
   
@@ -5393,31 +5536,36 @@ int UnitTest::Run() {
       in_death_test_child_process
           ? nullptr
           : internal::posix::GetEnv("TEST_PREMATURE_EXIT_FILE"));
+#else
+  const bool in_death_test_child_process = false;
+#endif  
 
   
   
   impl()->set_catch_exceptions(GTEST_FLAG_GET(catch_exceptions));
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
   
   
   
   
   if (impl()->catch_exceptions() || in_death_test_child_process) {
-#if !GTEST_OS_WINDOWS_MOBILE && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
+#if !defined(GTEST_OS_WINDOWS_MOBILE) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+    !defined(GTEST_OS_WINDOWS_RT) && !defined(GTEST_OS_WINDOWS_GAMES)
     
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT |
                  SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif  
 
-#if (defined(_MSC_VER) || GTEST_OS_WINDOWS_MINGW) && !GTEST_OS_WINDOWS_MOBILE
+#if (defined(_MSC_VER) || defined(GTEST_OS_WINDOWS_MINGW)) && \
+    !defined(GTEST_OS_WINDOWS_MOBILE)
     
     
     
     _set_error_mode(_OUT_TO_STDERR);
 #endif
 
-#if defined(_MSC_VER) && !GTEST_OS_WINDOWS_MOBILE
+#if defined(_MSC_VER) && !defined(GTEST_OS_WINDOWS_MOBILE)
     
     
     
@@ -5439,6 +5587,8 @@ int UnitTest::Run() {
     }
 #endif
   }
+#else
+  (void)in_death_test_child_process;  
 #endif  
 
   return internal::HandleExceptionsInMethodIfSupported(
@@ -5448,11 +5598,13 @@ int UnitTest::Run() {
              : 1;
 }
 
+#if GTEST_HAS_FILE_SYSTEM
 
 
 const char* UnitTest::original_working_dir() const {
   return impl_->original_working_dir_.c_str();
 }
+#endif  
 
 
 
@@ -5516,7 +5668,7 @@ UnitTestImpl::UnitTestImpl(UnitTest* parent)
       GTEST_DISABLE_MSC_WARNINGS_PUSH_(4355 )
           default_global_test_part_result_reporter_(this),
       default_per_thread_test_part_result_reporter_(this),
-      GTEST_DISABLE_MSC_WARNINGS_POP_() global_test_part_result_repoter_(
+      GTEST_DISABLE_MSC_WARNINGS_POP_() global_test_part_result_reporter_(
           &default_global_test_part_result_reporter_),
       per_thread_test_part_result_reporter_(
           &default_per_thread_test_part_result_reporter_),
@@ -5532,7 +5684,7 @@ UnitTestImpl::UnitTestImpl(UnitTest* parent)
       random_(0),       
       start_timestamp_(0),
       elapsed_time_(0),
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
       death_test_factory_(new DefaultDeathTestFactory),
 #endif
       
@@ -5572,12 +5724,12 @@ void UnitTestImpl::RecordProperty(const TestProperty& test_property) {
   test_result->RecordProperty(xml_element, test_property);
 }
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 
 
 void UnitTestImpl::SuppressTestEventsIfInSubprocess() {
-  if (internal_run_death_test_flag_.get() != nullptr)
-    listeners()->SuppressEventForwarding();
+  if (internal_run_death_test_flag_ != nullptr)
+    listeners()->SuppressEventForwarding(true);
 }
 #endif  
 
@@ -5585,16 +5737,23 @@ void UnitTestImpl::SuppressTestEventsIfInSubprocess() {
 
 void UnitTestImpl::ConfigureXmlOutput() {
   const std::string& output_format = UnitTestOptions::GetOutputFormat();
+#if GTEST_HAS_FILE_SYSTEM
   if (output_format == "xml") {
     listeners()->SetDefaultXmlGenerator(new XmlUnitTestResultPrinter(
         UnitTestOptions::GetAbsolutePathToOutputFile().c_str()));
   } else if (output_format == "json") {
     listeners()->SetDefaultXmlGenerator(new JsonUnitTestResultPrinter(
         UnitTestOptions::GetAbsolutePathToOutputFile().c_str()));
-  } else if (output_format != "") {
+  } else if (!output_format.empty()) {
     GTEST_LOG_(WARNING) << "WARNING: unrecognized output format \""
                         << output_format << "\" ignored.";
   }
+#else
+  if (!output_format.empty()) {
+    GTEST_LOG_(ERROR) << "ERROR: alternative output formats require "
+                      << "GTEST_HAS_FILE_SYSTEM to be enabled";
+  }
+#endif  
 }
 
 #if GTEST_CAN_STREAM_RESULTS_
@@ -5630,7 +5789,7 @@ void UnitTestImpl::PostFlagParsingInit() {
     listeners()->Append(new GTEST_CUSTOM_TEST_EVENT_LISTENER_());
 #endif  
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
     InitDeathTestSubprocessControlInfo();
     SuppressTestEventsIfInSubprocess();
 #endif  
@@ -5653,7 +5812,7 @@ void UnitTestImpl::PostFlagParsingInit() {
     ConfigureStreamingOutput();
 #endif  
 
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
     if (GTEST_FLAG_GET(install_failure_signal_handler)) {
       absl::FailureSignalHandlerOptions options;
       absl::InstallFailureSignalHandler(options);
@@ -5670,47 +5829,32 @@ void UnitTestImpl::PostFlagParsingInit() {
 
 
 
-class TestSuiteNameIs {
- public:
-  
-  explicit TestSuiteNameIs(const std::string& name) : name_(name) {}
-
-  
-  bool operator()(const TestSuite* test_suite) const {
-    return test_suite != nullptr &&
-           strcmp(test_suite->name(), name_.c_str()) == 0;
-  }
-
- private:
-  std::string name_;
-};
-
-
-
-
-
-
-
-
-
 
 
 
 
 TestSuite* UnitTestImpl::GetTestSuite(
-    const char* test_suite_name, const char* type_param,
+    const std::string& test_suite_name, const char* type_param,
     internal::SetUpTestSuiteFunc set_up_tc,
     internal::TearDownTestSuiteFunc tear_down_tc) {
   
-  const auto test_suite =
-      std::find_if(test_suites_.rbegin(), test_suites_.rend(),
-                   TestSuiteNameIs(test_suite_name));
+  
+  
+  if (!test_suites_.empty() &&
+      (*test_suites_.rbegin())->name_ == test_suite_name) {
+    return *test_suites_.rbegin();
+  }
 
-  if (test_suite != test_suites_.rend()) return *test_suite;
+  
+  auto item_it = test_suites_by_name_.find(test_suite_name);
+  if (item_it != test_suites_by_name_.end()) {
+    return item_it->second;
+  }
 
   
   auto* const new_test_suite =
       new TestSuite(test_suite_name, type_param, set_up_tc, tear_down_tc);
+  test_suites_by_name_.emplace(test_suite_name, new_test_suite);
 
   const UnitTestFilter death_test_suite_filter(kDeathTestSuiteFilter);
   
@@ -5738,6 +5882,23 @@ static void TearDownEnvironment(Environment* env) { env->TearDown(); }
 
 
 
+#if GTEST_HAS_FILE_SYSTEM
+static void AppendToTestWarningsOutputFile(const std::string& str) {
+  const char* const filename = posix::GetEnv(kTestWarningsOutputFile);
+  if (filename == nullptr) {
+    return;
+  }
+  auto* const file = posix::FOpen(filename, "a");
+  if (file == nullptr) {
+    return;
+  }
+  GTEST_CHECK_(fwrite(str.data(), 1, str.size(), file) == str.size());
+  GTEST_CHECK_(posix::FClose(file) == 0);
+}
+#endif  
+
+
+
 
 
 
@@ -5759,16 +5920,39 @@ bool UnitTestImpl::RunAllTests() {
 
   
   
+  if (total_test_count() == 0) {
+    constexpr char kNoTestLinkedMessage[] =
+        "This test program does NOT link in any test case.";
+    constexpr char kNoTestLinkedFatal[] =
+        "This is INVALID. Please make sure to link in at least one test case.";
+    constexpr char kNoTestLinkedWarning[] =
+        "Please make sure this is intended.";
+    const bool fail_if_no_test_linked = GTEST_FLAG_GET(fail_if_no_test_linked);
+    ColoredPrintf(
+        GTestColor::kRed, "%s %s\n", kNoTestLinkedMessage,
+        fail_if_no_test_linked ? kNoTestLinkedFatal : kNoTestLinkedWarning);
+    if (fail_if_no_test_linked) {
+      return false;
+    }
+#if GTEST_HAS_FILE_SYSTEM
+    AppendToTestWarningsOutputFile(std::string(kNoTestLinkedMessage) + ' ' +
+                                   kNoTestLinkedWarning + '\n');
+#endif  
+  }
+
+#if GTEST_HAS_FILE_SYSTEM
+  
+  
   
   internal::WriteToShardStatusFileIfNeeded();
+#endif  
 
   
   
   bool in_subprocess_for_death_test = false;
 
-#if GTEST_HAS_DEATH_TEST
-  in_subprocess_for_death_test =
-      (internal_run_death_test_flag_.get() != nullptr);
+#ifdef GTEST_HAS_DEATH_TEST
+  in_subprocess_for_death_test = (internal_run_death_test_flag_ != nullptr);
 #if defined(GTEST_EXTRA_DEATH_TEST_CHILD_SETUP_)
   if (in_subprocess_for_death_test) {
     GTEST_EXTRA_DEATH_TEST_CHILD_SETUP_();
@@ -5922,6 +6106,23 @@ bool UnitTestImpl::RunAllTests() {
   }
 
   repeater->OnTestProgramEnd(*parent_);
+  
+  bool delete_environment_on_teardown = true;
+  if (delete_environment_on_teardown) {
+    ForEach(environments_, internal::Delete<Environment>);
+    environments_.clear();
+  }
+
+  
+  if (ShouldWarnIfNoTestsMatchFilter()) {
+    const std::string filter_warning =
+        std::string("filter \"") + GTEST_FLAG_GET(filter) +
+        "\" did not match any test; no tests were run\n";
+    ColoredPrintf(GTestColor::kRed, "WARNING: %s", filter_warning.c_str());
+#if GTEST_HAS_FILE_SYSTEM
+    AppendToTestWarningsOutputFile(filter_warning);
+#endif  
+  }
 
   if (!gtest_is_initialized_before_run_all_tests) {
     ColoredPrintf(
@@ -5931,15 +6132,12 @@ bool UnitTestImpl::RunAllTests() {
         "() before calling RUN_ALL_TESTS(). This is INVALID. Soon " GTEST_NAME_
         " will start to enforce the valid usage. "
         "Please fix it ASAP, or IT WILL START TO FAIL.\n");  
-#if GTEST_FOR_GOOGLE_
-    ColoredPrintf(GTestColor::kRed,
-                  "For more details, see http://wiki/Main/ValidGUnitMain.\n");
-#endif  
   }
 
   return !failed;
 }
 
+#if GTEST_HAS_FILE_SYSTEM
 
 
 
@@ -5959,6 +6157,7 @@ void WriteToShardStatusFileIfNeeded() {
     fclose(file);
   }
 }
+#endif  
 
 
 
@@ -6057,12 +6256,11 @@ int UnitTestImpl::FilterTests(ReactionToSharding shard_tests) {
   int num_runnable_tests = 0;
   int num_selected_tests = 0;
   for (auto* test_suite : test_suites_) {
-    const std::string& test_suite_name = test_suite->name();
+    const std::string& test_suite_name = test_suite->name_;
     test_suite->set_should_run(false);
 
-    for (size_t j = 0; j < test_suite->test_info_list().size(); j++) {
-      TestInfo* const test_info = test_suite->test_info_list()[j];
-      const std::string test_name(test_info->name());
+    for (TestInfo* test_info : test_suite->test_info_list()) {
+      const std::string& test_name = test_info->name_;
       
       
       const bool is_disabled =
@@ -6092,6 +6290,30 @@ int UnitTestImpl::FilterTests(ReactionToSharding shard_tests) {
     }
   }
   return num_selected_tests;
+}
+
+
+
+
+
+bool UnitTestImpl::ShouldWarnIfNoTestsMatchFilter() const {
+  if (total_test_count() == 0) {
+    
+    
+    return false;
+  }
+  const PositiveAndNegativeUnitTestFilter gtest_flag_filter(
+      GTEST_FLAG_GET(filter));
+  for (auto* test_suite : test_suites_) {
+    const std::string& test_suite_name = test_suite->name_;
+    for (TestInfo* test_info : test_suite->test_info_list()) {
+      const std::string& test_name = test_info->name_;
+      if (gtest_flag_filter.MatchesTest(test_suite_name, test_name)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 
@@ -6150,10 +6372,11 @@ void UnitTestImpl::ListTestsMatchingFilter() {
     }
   }
   fflush(stdout);
+#if GTEST_HAS_FILE_SYSTEM
   const std::string& output_format = UnitTestOptions::GetOutputFormat();
   if (output_format == "xml" || output_format == "json") {
-    FILE* fileout = OpenFileForWriting(
-        UnitTestOptions::GetAbsolutePathToOutputFile().c_str());
+    FILE* fileout =
+        OpenFileForWriting(UnitTestOptions::GetAbsolutePathToOutputFile());
     std::stringstream stream;
     if (output_format == "xml") {
       XmlUnitTestResultPrinter(
@@ -6167,6 +6390,7 @@ void UnitTestImpl::ListTestsMatchingFilter() {
     fprintf(fileout, "%s", StringStreamToString(&stream).c_str());
     fclose(fileout);
   }
+#endif  
 }
 
 
@@ -6245,7 +6469,7 @@ void UnitTestImpl::UnshuffleTests() {
 
 
 GTEST_NO_INLINE_ GTEST_NO_TAIL_CALL_ std::string
-GetCurrentOsStackTraceExceptTop(UnitTest* , int skip_count) {
+GetCurrentOsStackTraceExceptTop(int skip_count) {
   
   
   return GetUnitTestImpl()->CurrentOsStackTraceExceptTop(skip_count + 1);
@@ -6486,7 +6710,7 @@ static const char kColorEncodedHelpMessage[] =
 #endif  
     "\n"
     "Assertion Behavior:\n"
-#if GTEST_HAS_DEATH_TEST && !GTEST_OS_WINDOWS
+#if defined(GTEST_HAS_DEATH_TEST) && !defined(GTEST_OS_WINDOWS)
     "  @G--" GTEST_FLAG_PREFIX_
     "death_test_style=@Y(@Gfast@Y|@Gthreadsafe@Y)@D\n"
     "      Set the default death test style.\n"
@@ -6538,6 +6762,7 @@ static bool ParseGoogleTestFlag(const char* const arg) {
   GTEST_INTERNAL_PARSE_FLAG(death_test_style);
   GTEST_INTERNAL_PARSE_FLAG(death_test_use_fork);
   GTEST_INTERNAL_PARSE_FLAG(fail_fast);
+  GTEST_INTERNAL_PARSE_FLAG(fail_if_no_test_linked);
   GTEST_INTERNAL_PARSE_FLAG(filter);
   GTEST_INTERNAL_PARSE_FLAG(internal_run_death_test);
   GTEST_INTERNAL_PARSE_FLAG(list_tests);
@@ -6555,7 +6780,7 @@ static bool ParseGoogleTestFlag(const char* const arg) {
   return false;
 }
 
-#if GTEST_USE_OWN_FLAGFILE_FLAG_
+#if GTEST_USE_OWN_FLAGFILE_FLAG_ && GTEST_HAS_FILE_SYSTEM
 static void LoadFlagsFromFile(const std::string& path) {
   FILE* flagfile = posix::FOpen(path.c_str(), "r");
   if (!flagfile) {
@@ -6588,7 +6813,7 @@ void ParseGoogleTestFlagsOnlyImpl(int* argc, CharType** argv) {
     bool remove_flag = false;
     if (ParseGoogleTestFlag(arg)) {
       remove_flag = true;
-#if GTEST_USE_OWN_FLAGFILE_FLAG_
+#if GTEST_USE_OWN_FLAGFILE_FLAG_ && GTEST_HAS_FILE_SYSTEM
     } else if (ParseFlag(arg, "flagfile", &flagfile_value)) {
       GTEST_FLAG_SET(flagfile, flagfile_value);
       LoadFlagsFromFile(flagfile_value);
@@ -6602,15 +6827,15 @@ void ParseGoogleTestFlagsOnlyImpl(int* argc, CharType** argv) {
 
     if (remove_flag) {
       
-      
-      
-      
-      for (int j = i; j != *argc; j++) {
-        argv[j] = argv[j + 1];
+      for (int j = i + 1; j < *argc; ++j) {
+        argv[j - 1] = argv[j];
       }
 
       
       (*argc)--;
+
+      
+      argv[*argc] = nullptr;
 
       
       
@@ -6628,25 +6853,59 @@ void ParseGoogleTestFlagsOnlyImpl(int* argc, CharType** argv) {
 
 
 
+
+
+
+
 void ParseGoogleTestFlagsOnly(int* argc, char** argv) {
-#if GTEST_HAS_ABSL
-  if (*argc > 0) {
+#ifdef GTEST_HAS_ABSL_FLAGS
+  if (*argc <= 0) return;
+
+  std::vector<char*> positional_args;
+  std::vector<absl::UnrecognizedFlag> unrecognized_flags;
+  absl::ParseAbseilFlagsOnly(*argc, argv, positional_args, unrecognized_flags);
+  absl::flat_hash_set<absl::string_view> unrecognized;
+  for (const auto& flag : unrecognized_flags) {
+    unrecognized.insert(flag.flag_name);
+  }
+  absl::flat_hash_set<char*> positional;
+  for (const auto& arg : positional_args) {
+    positional.insert(arg);
+  }
+
+  int out_pos = 1;
+  int in_pos = 1;
+  for (; in_pos < *argc; ++in_pos) {
+    char* arg = argv[in_pos];
+    absl::string_view arg_str(arg);
+    if (absl::ConsumePrefix(&arg_str, "--")) {
+      
+      
+      if (unrecognized.contains(arg_str)) {
+        argv[out_pos++] = argv[in_pos];
+        continue;
+      }
+    }
+
+    if (arg_str.empty()) {
+      ++in_pos;
+      break;  
+    }
+
     
-    auto positional_args = absl::flags_internal::ParseCommandLineImpl(
-        *argc, argv, absl::flags_internal::ArgvListAction::kRemoveParsedArgs,
-        absl::flags_internal::UsageFlagsAction::kHandleUsage,
-        absl::flags_internal::OnUndefinedFlag::kReportUndefined);
     
-    
-    
-    
-    
-    std::copy(positional_args.begin(), positional_args.end(), argv);
-    if (static_cast<int>(positional_args.size()) < *argc) {
-      argv[positional_args.size()] = nullptr;
-      *argc = static_cast<int>(positional_args.size());
+    if (positional.contains(arg)) {
+      argv[out_pos++] = arg;
     }
   }
+
+  
+  while (in_pos < *argc) {
+    argv[out_pos++] = argv[in_pos++];
+  }
+
+  *argc = out_pos;
+  argv[out_pos] = nullptr;
 #else
   ParseGoogleTestFlagsOnlyImpl(argc, argv);
 #endif
@@ -6654,7 +6913,7 @@ void ParseGoogleTestFlagsOnly(int* argc, char** argv) {
   
   
   
-#if GTEST_OS_MAC
+#ifdef GTEST_OS_MAC
 #ifndef GTEST_OS_IOS
   if (*_NSGetArgv() == argv) {
     *_NSGetArgc() = *argc;
@@ -6682,14 +6941,16 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
     g_argvs.push_back(StreamableToString(argv[i]));
   }
 
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
   absl::InitializeSymbolizer(g_argvs[0].c_str());
 
+#ifdef GTEST_HAS_ABSL_FLAGS
   
   
   absl::SetProgramUsageMessage(absl::StrReplaceAll(
       kColorEncodedHelpMessage,
       {{"@D", ""}, {"@R", ""}, {"@G", ""}, {"@Y", ""}, {"@@", "@"}}));
+#endif  
 #endif  
 
   ParseGoogleTestFlagsOnly(argc, argv);
@@ -6741,12 +7002,13 @@ void InitGoogleTest() {
 #endif  
 }
 
-#if !defined(GTEST_CUSTOM_TEMPDIR_FUNCTION_)
+#if !defined(GTEST_CUSTOM_TEMPDIR_FUNCTION_) || \
+    !defined(GTEST_CUSTOM_SRCDIR_FUNCTION_)
 
 
 
 
-static std::string GetTempDirFromEnv(
+static std::string GetDirFromEnv(
     std::initializer_list<const char*> environment_variables,
     const char* fallback, char separator) {
   for (const char* variable_name : environment_variables) {
@@ -6765,14 +7027,40 @@ static std::string GetTempDirFromEnv(
 std::string TempDir() {
 #if defined(GTEST_CUSTOM_TEMPDIR_FUNCTION_)
   return GTEST_CUSTOM_TEMPDIR_FUNCTION_();
-#elif GTEST_OS_WINDOWS || GTEST_OS_WINDOWS_MOBILE
-  return GetTempDirFromEnv({"TEST_TMPDIR", "TEMP"}, "\\temp\\", '\\');
-#elif GTEST_OS_LINUX_ANDROID
-  return GetTempDirFromEnv({"TEST_TMPDIR", "TMPDIR"}, "/data/local/tmp/", '/');
+#elif defined(GTEST_OS_WINDOWS) || defined(GTEST_OS_WINDOWS_MOBILE)
+  return GetDirFromEnv({"TEST_TMPDIR", "TEMP"}, "\\temp\\", '\\');
+#elif defined(GTEST_OS_LINUX_ANDROID)
+  return GetDirFromEnv({"TEST_TMPDIR", "TMPDIR"}, "/data/local/tmp/", '/');
 #else
-  return GetTempDirFromEnv({"TEST_TMPDIR", "TMPDIR"}, "/tmp/", '/');
+  return GetDirFromEnv({"TEST_TMPDIR", "TMPDIR"}, "/tmp/", '/');
 #endif
 }
+
+#if GTEST_HAS_FILE_SYSTEM && !defined(GTEST_CUSTOM_SRCDIR_FUNCTION_)
+
+
+static std::string GetCurrentExecutableDirectory() {
+  internal::FilePath argv_0(internal::GetArgvs()[0]);
+  return argv_0.RemoveFileName().string();
+}
+#endif
+
+#if GTEST_HAS_FILE_SYSTEM
+std::string SrcDir() {
+#if defined(GTEST_CUSTOM_SRCDIR_FUNCTION_)
+  return GTEST_CUSTOM_SRCDIR_FUNCTION_();
+#elif defined(GTEST_OS_WINDOWS) || defined(GTEST_OS_WINDOWS_MOBILE)
+  return GetDirFromEnv({"TEST_SRCDIR"}, GetCurrentExecutableDirectory().c_str(),
+                       '\\');
+#elif defined(GTEST_OS_LINUX_ANDROID)
+  return GetDirFromEnv({"TEST_SRCDIR"}, GetCurrentExecutableDirectory().c_str(),
+                       '/');
+#else
+  return GetDirFromEnv({"TEST_SRCDIR"}, GetCurrentExecutableDirectory().c_str(),
+                       '/');
+#endif
+}
+#endif
 
 
 

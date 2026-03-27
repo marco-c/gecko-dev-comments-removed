@@ -43,8 +43,17 @@ typedef enum aom_img_fmt {
   AOM_IMG_FMT_YV12 =
       AOM_IMG_FMT_PLANAR | AOM_IMG_FMT_UV_FLIP | 1, 
   AOM_IMG_FMT_I420 = AOM_IMG_FMT_PLANAR | 2,
-  AOM_IMG_FMT_AOMYV12 = AOM_IMG_FMT_PLANAR | AOM_IMG_FMT_UV_FLIP |
-                        3, 
+  
+
+
+
+
+  AOM_IMG_FMT_AOMYV12 = AOM_IMG_FMT_PLANAR | AOM_IMG_FMT_UV_FLIP | 3,
+  
+
+
+
+
   AOM_IMG_FMT_AOMI420 = AOM_IMG_FMT_PLANAR | 4,
   AOM_IMG_FMT_I422 = AOM_IMG_FMT_PLANAR | 5,
   AOM_IMG_FMT_I444 = AOM_IMG_FMT_PLANAR | 6,
@@ -229,8 +238,13 @@ typedef struct aom_image {
   
 
   unsigned char *planes[3]; 
-  int stride[3];            
-  size_t sz;                
+  
+
+
+
+
+  int stride[3];
+  size_t sz; 
 
   int bps; 
 

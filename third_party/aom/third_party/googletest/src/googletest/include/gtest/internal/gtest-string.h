@@ -51,6 +51,7 @@
 #include <string.h>
 
 #include <cstdint>
+#include <sstream>
 #include <string>
 
 #include "gtest/internal/gtest-port.h"
@@ -72,7 +73,7 @@ class GTEST_API_ String {
   
   static const char* CloneCString(const char* c_str);
 
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
   
   
   

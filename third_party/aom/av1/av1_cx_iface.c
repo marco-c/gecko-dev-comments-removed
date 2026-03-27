@@ -713,12 +713,6 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
   RANGE_CHECK_BOOL(extra_cfg, lossless);
   RANGE_CHECK_HI(extra_cfg, aq_mode, AQ_MODE_COUNT - 1);
   RANGE_CHECK_HI(extra_cfg, deltaq_mode, DELTA_Q_MODE_COUNT - 1);
-
-  if (cfg->g_usage != ALLINTRA &&
-      extra_cfg->deltaq_mode == DELTA_Q_VARIANCE_BOOST) {
-    ERROR("Variance Boost (deltaq_mode = 6) can only be set in all intra mode");
-  }
-
   RANGE_CHECK_HI(extra_cfg, deltalf_mode, 1);
   RANGE_CHECK_HI(extra_cfg, frame_periodic_boost, 1);
 #if CONFIG_REALTIME_ONLY
@@ -995,6 +989,10 @@ static aom_codec_err_t validate_img(aom_codec_alg_priv_t *ctx,
 
   if (img->d_w != ctx->cfg.g_w || img->d_h != ctx->cfg.g_h)
     ERROR("Image size must match encoder init configuration size");
+  assert(img->fmt & AOM_IMG_FMT_PLANAR);
+  if (!ctx->cfg.monochrome && img->fmt != AOM_IMG_FMT_NV12 &&
+      img->stride[AOM_PLANE_U] != img->stride[AOM_PLANE_V])
+    ERROR("Image U/V strides must match");
 
   
   
@@ -1373,7 +1371,7 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
   
   const int is_low_complexity_decode_mode_supported =
       (cfg->g_usage == AOM_USAGE_GOOD_QUALITY) &&
-      (oxcf->speed >= 1 && oxcf->speed <= 3) && (cfg->g_w < cfg->g_h) &&
+      (oxcf->speed >= 1 && oxcf->speed <= 3) &&
       (AOMMIN(cfg->g_w, cfg->g_h) >= 608 && AOMMIN(cfg->g_w, cfg->g_h) <= 1080);
   oxcf->enable_low_complexity_decode =
       extra_cfg->enable_low_complexity_decode &&
@@ -1388,6 +1386,8 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
 
   
 #if CONFIG_REALTIME_ONLY
+  
+  
   gf_cfg->lag_in_frames = (oxcf->mode == REALTIME)
                               ? 0
                               : clamp(cfg->g_lag_in_frames, 0, MAX_LAG_BUFFERS);
@@ -1898,11 +1898,9 @@ static aom_codec_err_t ctrl_set_arnr_strength(aom_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
-static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
-                                     struct av1_extracfg *extra_cfg) {
+static aom_codec_err_t handle_tuning(struct av1_extracfg *extra_cfg) {
   if (extra_cfg->tuning == AOM_TUNE_IQ ||
       extra_cfg->tuning == AOM_TUNE_SSIMULACRA2) {
-    if (ctx->cfg.g_usage != AOM_USAGE_ALL_INTRA) return AOM_CODEC_INCAPABLE;
     
     
     
@@ -1930,6 +1928,8 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     extra_cfg->enable_chroma_deltaq = 1;
     
     extra_cfg->deltaq_mode = DELTA_Q_VARIANCE_BOOST;
+    
+    extra_cfg->screen_detection_mode = AOM_SCREEN_DETECTION_ANTIALIASING_AWARE;
   }
   if (extra_cfg->tuning == AOM_TUNE_IQ) {
     
@@ -1944,7 +1944,7 @@ static aom_codec_err_t ctrl_set_tuning(aom_codec_alg_priv_t *ctx,
                                        va_list args) {
   struct av1_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.tuning = CAST(AOME_SET_TUNING, args);
-  aom_codec_err_t err = handle_tuning(ctx, &extra_cfg);
+  aom_codec_err_t err = handle_tuning(&extra_cfg);
   if (err != AOM_CODEC_OK) return err;
   return update_extra_cfg(ctx, &extra_cfg);
 }
@@ -3055,8 +3055,16 @@ static aom_codec_err_t encoder_init(aom_codec_ctx_t *ctx) {
       set_encoder_config(&priv->oxcf, &priv->cfg, &priv->extra_cfg);
       if (priv->oxcf.pass == AOM_RC_ONE_PASS) {
         
+#if CONFIG_REALTIME_ONLY
+        
+        
+        const int lag_in_frames =
+            (priv->oxcf.mode == REALTIME) ? 0 : (int)priv->cfg.g_lag_in_frames;
+#else
+        const int lag_in_frames = (int)priv->cfg.g_lag_in_frames;
+#endif
         *num_lap_buffers =
-            AOMMIN((int)priv->cfg.g_lag_in_frames,
+            AOMMIN(lag_in_frames,
                    AOMMIN(MAX_LAP_BUFFERS, priv->oxcf.kf_cfg.key_freq_max +
                                                SCENE_CUT_KEY_TEST_INTERVAL));
         if ((int)priv->cfg.g_lag_in_frames - (*num_lap_buffers) >=
@@ -4418,7 +4426,7 @@ static aom_codec_err_t encoder_set_option(aom_codec_alg_priv_t *ctx,
   } else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.tune_metric, argv,
                               err_string)) {
     extra_cfg.tuning = arg_parse_enum_helper(&arg, err_string);
-    err = handle_tuning(ctx, &extra_cfg);
+    err = handle_tuning(&extra_cfg);
   }
 #if CONFIG_TUNE_VMAF
   else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.vmaf_model_path, argv,

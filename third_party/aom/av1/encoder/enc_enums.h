@@ -265,6 +265,17 @@ enum {
   USE_LARGESTALL,
 } UENUM1BYTE(TX_SIZE_SEARCH_METHOD);
 
+enum {
+  
+  
+  GOOD,
+  
+  
+  REALTIME,
+  
+  ALLINTRA
+} UENUM1BYTE(MODE);
+
 #ifdef __cplusplus
 }  
 #endif

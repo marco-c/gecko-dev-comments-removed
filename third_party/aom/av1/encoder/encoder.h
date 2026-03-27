@@ -108,17 +108,6 @@ typedef struct aom_rational64 {
 } aom_rational64_t;  
 
 enum {
-  
-  
-  GOOD,
-  
-  
-  REALTIME,
-  
-  ALLINTRA
-} UENUM1BYTE(MODE);
-
-enum {
   FRAMEFLAGS_KEY = 1 << 0,
   FRAMEFLAGS_GOLDEN = 1 << 1,
   FRAMEFLAGS_BWDREF = 1 << 2,
@@ -167,9 +156,8 @@ enum {
   DELTA_Q_PERCEPTUAL = 2,     
   DELTA_Q_PERCEPTUAL_AI = 3,  
   DELTA_Q_USER_RATING_BASED = 4,  
-  DELTA_Q_HDR = 5,  
-  DELTA_Q_VARIANCE_BOOST =
-      6,              
+  DELTA_Q_HDR = 5,             
+  DELTA_Q_VARIANCE_BOOST = 6,  
   DELTA_Q_MODE_COUNT  
 } UENUM1BYTE(DELTAQ_MODE);
 
@@ -822,6 +810,7 @@ typedef struct {
 
 typedef struct {
   
+
 
 
 
@@ -3338,6 +3327,13 @@ typedef struct AV1_COMP {
 
 
   int prune_ref_frame_mask;
+
+  
+
+
+
+
+  int keep_single_ref_frame_mask;
 
   
 

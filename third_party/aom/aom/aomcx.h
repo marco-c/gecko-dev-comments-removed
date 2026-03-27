@@ -1747,6 +1747,7 @@ typedef enum {
 
 
 
+
 typedef enum {
   AOM_TUNE_PSNR = 0,
   AOM_TUNE_SSIM = 1,
@@ -1763,11 +1764,15 @@ typedef enum {
 
 
 
+
+
   AOM_TUNE_IQ = 10,
 
 
 #define AOM_HAVE_TUNE_SSIMULACRA2 1
   
+
+
 
 
 

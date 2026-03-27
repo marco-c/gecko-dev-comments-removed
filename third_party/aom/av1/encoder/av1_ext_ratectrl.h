@@ -20,6 +20,11 @@
 typedef struct AOM_EXT_RATECTRL {
   int ready;
   int ext_rdmult;
+  
+  
+  
+  
+  int use_delta_q;
   aom_rc_model_t model;
   aom_rc_funcs_t funcs;
   aom_rc_config_t ratectrl_config;

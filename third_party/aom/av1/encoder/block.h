@@ -874,6 +874,9 @@ typedef struct SetOffsetsLoc {
 
 
 
+#define TOP_COMP_AVG_EST_RD_COUNT 2
+
+
 
 
 
@@ -1418,6 +1421,9 @@ typedef struct macroblock {
 
 
   struct SB_FIRST_PASS_STATS *sb_fp_stats;
+
+  
+  int64_t top_comp_avg_est_rd[TOP_COMP_AVG_EST_RD_COUNT];
 
 #if CONFIG_PARTITION_SEARCH_ORDER
   

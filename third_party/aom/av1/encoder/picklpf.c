@@ -219,8 +219,15 @@ void av1_pick_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
 
   
   
-  lf->sharpness_level =
-      cpi->oxcf.mode == ALLINTRA ? cpi->oxcf.algo_cfg.sharpness : 0;
+  
+  
+  
+  if (cpi->oxcf.mode == ALLINTRA || cpi->oxcf.tune_cfg.tuning == AOM_TUNE_IQ ||
+      cpi->oxcf.tune_cfg.tuning == AOM_TUNE_SSIMULACRA2) {
+    lf->sharpness_level = cpi->oxcf.algo_cfg.sharpness;
+  } else {
+    lf->sharpness_level = 0;
+  }
 
   if (cpi->oxcf.algo_cfg.enable_adaptive_sharpness) {
     

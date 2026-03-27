@@ -336,11 +336,6 @@ typedef struct {
   
 
 
-  bool accumulate_stats_stage;
-
-  
-
-
   int gf_intervals[MAX_NUM_GF_INTERVALS];
 
   

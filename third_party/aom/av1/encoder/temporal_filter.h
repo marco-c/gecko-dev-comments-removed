@@ -26,14 +26,17 @@ struct ThreadData;
 
 
 
-#define BH 32
-#define BW 32
+#define BH 64
+#define BW 64
 
 
 #define TF_BLOCK_SIZE BLOCK_64X64
 
 
 #define TF_WINDOW_LENGTH 5
+
+
+#define NUM_16X16 16
 
 
 static const double SQRT_PI_BY_2 = 1.25331413732;
@@ -346,9 +349,12 @@ void av1_temporal_filter(struct AV1_COMP *cpi,
 
 
 
+
+
 int av1_check_show_filtered_frame(const YV12_BUFFER_CONFIG *frame,
                                   const FRAME_DIFF *frame_diff, int q_index,
-                                  aom_bit_depth_t bit_depth);
+                                  aom_bit_depth_t bit_depth, int enable_overlay,
+                                  int is_second_arf);
 
 
 
