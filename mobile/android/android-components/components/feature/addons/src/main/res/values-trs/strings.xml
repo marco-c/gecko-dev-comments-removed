@@ -6,7 +6,7 @@
   You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Gatū riña nej si datôt guendâ %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -31,8 +31,6 @@
     then we will show another collapsed entry saying "Access your data on other domains".
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Gatū riña nej si datôt riña a’ngô nej dominio</string>
-  <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Gātū riña nej si datôt guendâ nej sitiô riña nej dominio %1$d</string>
   <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="one">Gātū riña màn nej si datôt guendâ nej sitiô riña si dominiô %1$d</item>
@@ -379,8 +377,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s nu gā’hue nāñùnj dadin’ huā niñā yi’nïn’ nû yikïn nā’nïnj man, yī’ì dan nu nāhuin rā’a luguà nan man.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s nitāj si nìkoj nej nuguan’ āhī huā ‘hiaj Mozilla yi’ì dan na’hue nàñunj riña %2$s.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s huā chì’ rayi’ij nī sê sī gā’hue nānunj %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Nu ga\'ue nānùn %1$s</string>
@@ -427,11 +423,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Ganarán riña ekstensiûn nan dadin’ nitāj si nīkāj ni’ñan ngà si nūguàn’ Mozilla yi’ì dan giyichinj si ‘hiaj sunj.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Giyichin’ ekstensiûn nan dadin’ nitāj si nīkāj ni’ñan ngà si nūguàn’ Mozilla. Gā’hue nāchrūnt man, sāni gā’hue gānika sa yī’ìi.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Huā chì’ yi’îj yi’ì dan giyichinj. Gā’hue nāchrūnt man, sanī gā’hue gā’huì’ yī’ij.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Nitāj si nīkāj nī’ñānj ēkstensiûn nan ngà si nūguàn’ Mozilla. Āhī huaj si gārasunt man.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Huā chì’ rayi’î ēkstensiûn nan. Gā’hue gā’huì’ yī’ij si gārāsunt man.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

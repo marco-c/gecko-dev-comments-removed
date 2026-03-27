@@ -6,7 +6,7 @@
   You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">تمكين وصول بياناتك لـ %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -31,8 +31,6 @@
     then we will show another collapsed entry saying "Access your data on other domains".
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">الوصول إلى بياناتك في نطاقات أخرى</string>
-  <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">الوصول إلى بياناتك للمواقع في %1$d نطاقات</string>
   <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="zero">الوصول إلى بياناتك في مواقع ضمن %1$d نطاق</item>
@@ -383,8 +381,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">لم يتم تثبيت %1$s لأنه لا يمكن تثبيته إلا بواسطة منظمة تستخدم سياسات المؤسسة، وهو أمر غير مدعوم على هذه المنصة.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">ينتهك %1$s سياسات موزيلا ولا يمكن تثبيته على %2$s.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s مُقيّد ولا يمكن تثبيته على %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">فشل تفعيل %1$s</string>
@@ -431,11 +427,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">حُظِر هذا الامتداد بسبب انتهاكه لسياسات Mozilla وتم تعطيله.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">حُظر هذا الامتداد بسبب انتهاكه لسياسات موزيلا وتم تعطيله. يمكنك تفعيله، ولكن هذا قد يكون محفوفًا بالمخاطر.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">قٌيّد هذا الامتداد وتم تعطيله. يمكنك تفعيله، ولكن قد يشكل هذا خطرًا عليك.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">هذا الامتداد ينتهك سياسات موزيلا. قد يشكل استخدامه خطرًا.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">هذا الامتداد مُقيد، واستخدامه قد يكون خطيرًا.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
