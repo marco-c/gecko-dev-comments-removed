@@ -32,14 +32,14 @@ namespace mozilla {
 
 
 struct JSSourceEntry {
-  nsCString uuid;
+  nsCString id;
   ProfilerJSSourceData sourceData;
 
   JSSourceEntry() = default;
-  JSSourceEntry(nsCString&& aUuid, ProfilerJSSourceData&& aSourceData)
-      : uuid(std::move(aUuid)), sourceData(std::move(aSourceData)) {}
+  JSSourceEntry(nsCString&& aId, ProfilerJSSourceData&& aSourceData)
+      : id(std::move(aId)), sourceData(std::move(aSourceData)) {}
 
-  size_t SizeOf() const { return uuid.Length() + sourceData.SizeOf(); }
+  size_t SizeOf() const { return id.Length() + sourceData.SizeOf(); }
 };
 
 
@@ -84,7 +84,7 @@ struct ProfileGenerationAdditionalInformation {
   friend IPC::ParamTraits<mozilla::ProfileGenerationAdditionalInformation>;
 
  private:
-  JSString* CreateJSStringFromSourceData(
+  JSString* MaybeCreateJSStringFromSourceData(
       JSContext* aCx, const ProfilerJSSourceData& aSourceData) const;
 
   SharedLibraryInfo mSharedLibraries;
