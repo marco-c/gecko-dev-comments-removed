@@ -55,7 +55,6 @@ add_setup(async function ippSetup() {
 
 async function setupVpnPrefs({
   feature = false,
-  added = true,
   siteExceptions = false,
   autostartFeatureEnabled = false,
   bandwidth = false,
@@ -66,7 +65,6 @@ async function setupVpnPrefs({
 }) {
   let prefs = [
     [FEATURE_PREF, feature],
-    [IPP_ADDED_PREF, added],
     [SITE_EXCEPTIONS_FEATURE_PREF, siteExceptions],
     [AUTOSTART_FEATURE_ENABLED_PREF, autostartFeatureEnabled],
     [BANDWIDTH_FEATURE_ENABLED_PREF, bandwidth],
@@ -122,22 +120,6 @@ add_task(
     );
   }
 );
-
-
-
-add_task(async function test_section_shown_when_set_to_experiment_control() {
-  await setupVpnPrefs({ feature: true, added: false });
-
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:preferences#privacy" },
-    async function (browser) {
-      let settingGroup = browser.contentDocument.querySelector(
-        `setting-group[groupid="ipprotection"]`
-      );
-      is_element_hidden(settingGroup, "ipprotection setting group is hidden");
-    }
-  );
-});
 
 
 add_task(async function test_exceptions_settings() {
