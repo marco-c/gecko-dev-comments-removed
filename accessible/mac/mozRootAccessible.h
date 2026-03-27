@@ -38,12 +38,6 @@
 #pragma mark - MOXAccessible
 
 
-- (NSNumber*)moxMain;
-
-
-- (NSNumber*)moxMinimized;
-
-
 - (id)moxUnignoredParent;
 
 #pragma mark - mozAccessible/widget

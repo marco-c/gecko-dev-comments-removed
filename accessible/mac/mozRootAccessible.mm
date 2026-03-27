@@ -41,14 +41,6 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-- (NSNumber*)moxMain {
-  return @([[self moxWindow] isMainWindow]);
-}
-
-- (NSNumber*)moxMinimized {
-  return @([[self moxWindow] isMiniaturized]);
-}
-
 
 - (id)moxUnignoredParent {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
