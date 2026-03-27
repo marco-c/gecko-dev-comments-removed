@@ -8,49 +8,47 @@
 
 import os
 import re
+from typing import Optional
 
 import attr
 import taskgraph
 from mozpack import path as mozpath
 from mozshellutil import quote as shell_quote
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import LegacySchema, validate_schema
+from taskgraph.util.schema import LegacySchema, Schema, validate_schema
 from taskgraph.util.treeherder import join_symbol
-from voluptuous import Any, Extra, Optional, Required
+from voluptuous import Any, Required
+from voluptuous import Optional as VOptional
 
 import gecko_taskgraph
-from gecko_taskgraph.transforms.task import task_description_schema
+from gecko_taskgraph.transforms.task import TaskDescriptionSchema
 
 from ..util.cached_tasks import add_optimization
 
 CACHE_TYPE = "content.v1"
 
-FETCH_SCHEMA = LegacySchema({
+
+class FetchTypeSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: str
+
+
+class FetchSchema(Schema, kw_only=True):
     
-    Required("name"): str,
+    name: str
+    
+    task_from: Optional[str] = None
+    
+    description: str
     
     
-    Optional("task-from"): str,
+    fetch_alias: Optional[str] = None
     
-    Required("description"): str,
-    Optional(
-        "fetch-alias",
-        description="An alias that can be used instead of the real fetch job name in "
-        "fetch stanzas for jobs.",
-    ): str,
-    Optional(
-        "artifact-prefix",
-        description="The prefix of the taskcluster artifact being uploaded. "
-        "Defaults to `public/`; if it starts with something other than "
-        "`public/` the artifact will require scopes to access.",
-    ): str,
-    Optional("attributes"): {str: object},
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    Required("fetch"): {
-        Required("type"): str,
-        Extra: object,
-    },
-})
+    
+    
+    artifact_prefix: Optional[str] = None
+    attributes: Optional[dict[str, object]] = None
+    run_on_repo_type: TaskDescriptionSchema.__annotations__["run_on_repo_type"] = None
+    fetch: FetchTypeSchema  
 
 
 
@@ -59,7 +57,7 @@ fetch_builders = {}
 
 @attr.s(frozen=True)
 class FetchBuilder:
-    schema = attr.ib(type=LegacySchema)
+    schema = attr.ib()
     builder = attr.ib()
 
 
@@ -74,7 +72,7 @@ def fetch_builder(name, schema):
 
 
 transforms = TransformSequence()
-transforms.add_validate(FETCH_SCHEMA)
+transforms.add_validate(FetchSchema)
 
 
 @transforms.add
@@ -199,7 +197,7 @@ def make_task(config, jobs):
         
         Required("size"): int,
         
-        Optional("gpg-signature"): {
+        VOptional("gpg-signature"): {
             
             
             
@@ -208,19 +206,19 @@ def make_task(config, jobs):
             
             Required("key-path"): str,
         },
-        Optional("headers"): [str],
+        VOptional("headers"): [str],
         
         
         
         
-        Optional("artifact-name"): str,
+        VOptional("artifact-name"): str,
         
         
         
-        Optional("strip-components"): int,
+        VOptional("strip-components"): int,
         
         
-        Optional("add-prefix"): str,
+        VOptional("add-prefix"): str,
         
         
     },
@@ -294,14 +292,14 @@ def create_fetch_url_task(config, name, fetch):
     schema={
         Required("repo"): str,
         Required(Any("revision", "branch")): str,
-        Optional("include-dot-git"): bool,
-        Optional("artifact-name"): str,
-        Optional("path-prefix"): str,
+        VOptional("include-dot-git"): bool,
+        VOptional("artifact-name"): str,
+        VOptional("path-prefix"): str,
         
         
         
         
-        Optional("ssh-key"): str,
+        VOptional("ssh-key"): str,
     },
 )
 def create_git_fetch_task(config, name, fetch):
@@ -390,7 +388,7 @@ def create_onnxruntime_deps_fetch_task(config, name, fetch):
         
         Required("platform"): str,
         
-        Optional("revision"): str,
+        VOptional("revision"): str,
         
         Required("artifact-name"): str,
     },
@@ -434,11 +432,11 @@ def create_chromium_fetch_task(config, name, fetch):
         
         Required("artifact-name"): str,
         
-        Optional("channel"): str,
+        VOptional("channel"): str,
         
-        Optional("backup"): bool,
+        VOptional("backup"): bool,
         
-        Optional("version"): str,
+        VOptional("version"): str,
     },
 )
 def create_cft_canary_fetch_task(config, name, fetch):
