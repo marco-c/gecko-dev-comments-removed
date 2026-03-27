@@ -192,7 +192,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
 
 
 
-  void InvalidateStyleAndLayoutOnSubtree(Element*);
+  static void InvalidateStyleAndLayoutOnSubtree(Element*);
 
  private:
   void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&,

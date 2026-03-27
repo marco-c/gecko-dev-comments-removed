@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLSlotElement.h"
 
 #include "mozilla/AppShutdown.h"
@@ -228,7 +226,9 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
     if (!mAssignedNodes.IsEmpty()) {
       changedSlots.EnsureInserted(this);
       if (root) {
-        root->InvalidateStyleAndLayoutOnSubtree(this);
+        
+        
+        ShadowRoot::InvalidateStyleAndLayoutOnSubtree(this);
       }
       ClearAssignedNodes();
     }
@@ -250,18 +250,14 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
     
     if (content->GetManualSlotAssignment() != this) {
       if (HTMLSlotElement* oldSlot = content->GetAssignedSlot()) {
-        if (changedSlots.EnsureInserted(oldSlot)) {
-          if (root) {
-            MOZ_ASSERT(oldSlot->GetContainingShadow() == root);
-            root->InvalidateStyleAndLayoutOnSubtree(oldSlot);
-          }
+        if (changedSlots.EnsureInserted(oldSlot) && root) {
+          MOZ_ASSERT(oldSlot->GetContainingShadow() == root);
+          ShadowRoot::InvalidateStyleAndLayoutOnSubtree(oldSlot);
         }
       }
 
-      if (changedSlots.EnsureInserted(this)) {
-        if (root) {
-          root->InvalidateStyleAndLayoutOnSubtree(this);
-        }
+      if (changedSlots.EnsureInserted(this) && root) {
+        ShadowRoot::InvalidateStyleAndLayoutOnSubtree(this);
       }
       
       
