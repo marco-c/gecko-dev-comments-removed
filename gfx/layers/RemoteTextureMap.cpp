@@ -1320,7 +1320,7 @@ bool RemoteTextureMap::WaitRemoteTextureReady(const RemoteTextureInfo& aInfo) {
       return false;
     }
 
-    auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
+    owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
     
     if (!owner || owner->mIsContextLost) {
       
