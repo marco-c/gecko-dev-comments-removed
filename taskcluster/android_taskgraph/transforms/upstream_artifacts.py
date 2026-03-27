@@ -2,10 +2,9 @@
 
 
 
+from gecko_taskgraph.util.scriptworker import generate_beetmover_upstream_artifacts
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_dependencies
-
-from android_taskgraph.util.scriptworker import generate_beetmover_upstream_artifacts
 
 transforms = TransformSequence()
 
