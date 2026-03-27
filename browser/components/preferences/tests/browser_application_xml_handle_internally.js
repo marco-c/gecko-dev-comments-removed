@@ -9,9 +9,6 @@ const MIMEService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 
 
 add_task(async function applicationXmlHandleInternally() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
   const mimeInfo = MIMEService.getFromTypeAndExtension(
     "application/xml",
     "xml"
@@ -29,7 +26,7 @@ add_task(async function applicationXmlHandleInternally() {
 
   let win = gBrowser.selectedBrowser.contentWindow;
 
-  let container = win.document.getElementById("applicationsHandlersView");
+  let container = win.document.getElementById("handlersView");
 
   
   let xmlItem = container.querySelector("moz-box-item[type='application/xml']");
