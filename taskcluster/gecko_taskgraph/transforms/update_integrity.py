@@ -58,13 +58,7 @@ def add_to_installer(config, jobs):
 def add_additional_fetches_and_command(config, jobs):
     """Adds fetch entries for the "from" installers and partial MARs."""
     for job in jobs:
-        
-        
-        if job["attributes"]["build_platform"].startswith("linux64-aarch64"):
-            platform = "linux"
-            build_target = "Linux_aarch64-gcc3"
-            installer_suffix = "tar.xz"
-        elif job["attributes"]["build_platform"].startswith("linux64"):
+        if job["attributes"]["build_platform"].startswith("linux64"):
             platform = "linux"
             build_target = "Linux_x86_64-gcc3"
             installer_suffix = "tar.xz"
@@ -121,20 +115,11 @@ def add_additional_fetches_and_command(config, jobs):
             
             base_url = info["mar_url"].split(".complete.mar")[0]
             buildid = info["buildid"]
-
-            
-            
-            linux64_info = config.params["release_history"]["Linux_x86_64-gcc3"][
-                locale
-            ][mar]
-            linux64_installer = linux64_info["mar_url"].replace(
-                ".complete.mar", ".tar.xz"
-            )
             
             
             job["run"]["command"].append("--from")
             job["run"]["command"].append(
-                f"{buildid}|{base_url}.{installer_suffix}|{linux64_installer}|{mar}"
+                f"{buildid}|{base_url}.{installer_suffix}|{mar}"
             )
 
         job["fetches"]["partials-signing"] = fetches
