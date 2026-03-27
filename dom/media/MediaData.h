@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef MediaData_h
 #define MediaData_h
 
@@ -343,13 +341,13 @@ class MediaData {
 
   template <typename ReturnType>
   const ReturnType* As() const {
-    MOZ_ASSERT(this->mType == ReturnType::sType);
+    MOZ_RELEASE_ASSERT(this->mType == ReturnType::sType);
     return static_cast<const ReturnType*>(this);
   }
 
   template <typename ReturnType>
   ReturnType* As() {
-    MOZ_ASSERT(this->mType == ReturnType::sType);
+    MOZ_RELEASE_ASSERT(this->mType == ReturnType::sType);
     return static_cast<ReturnType*>(this);
   }
 
