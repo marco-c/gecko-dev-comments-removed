@@ -85,6 +85,17 @@ class ResponsiveImageSelector {
   
   bool SelectImage(bool aReselect = false);
 
+  
+  
+  bool SetAutoWidth(Maybe<nscoord> aWidth) {
+    nscoord width = aWidth.valueOr(-1);
+    if (mAutoWidth == width) {
+      return false;
+    }
+    mAutoWidth = width;
+    return true;
+  }
+
  protected:
   virtual ~ResponsiveImageSelector();
 
@@ -118,6 +129,8 @@ class ResponsiveImageSelector {
   
   
   nsTArray<ResponsiveImageCandidate> mCandidates;
+  
+  nscoord mAutoWidth = -1;
   int mSelectedCandidateIndex;
   
   

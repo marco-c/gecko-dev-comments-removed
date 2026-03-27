@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLImageElement_h
 #define mozilla_dom_HTMLImageElement_h
 
@@ -39,6 +37,8 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   bool Draggable() const override;
+
+  void MaybeRecomputeAutoSizes(bool aQueueImageTask);
 
   ResponsiveImageSelector* GetResponsiveImageSelector() const {
     return mResponsiveSelector.get();
@@ -258,6 +258,12 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   FetchPriority GetFetchPriorityForImage() const override;
 
+  
+
+
+
+  bool AllowsAutoSizes() const;
+
  protected:
   virtual ~HTMLImageElement();
 
@@ -357,6 +363,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
  private:
   bool SourceElementMatches(Element* aSourceElement);
+
+  
+  void UpdateAutoSizeObserver();
 
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);
   

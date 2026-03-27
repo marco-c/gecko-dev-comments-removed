@@ -569,6 +569,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   
   bool mInDocResponsiveContent : 1 = false;
 
+  
+  
+  bool mObservingResize : 1 = false;
+
  private:
   
   

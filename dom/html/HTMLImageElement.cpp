@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLImageElement.h"
 
 #include "imgLoader.h"
@@ -297,6 +295,7 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                Loading(aOldValue->GetEnumValue()) == Loading::Lazy) {
       StopLazyLoading(StartLoad(aNotify));
     }
+    UpdateAutoSizeObserver();
   } else if (aName == nsGkAtoms::src && !aValue) {
     
     
@@ -331,6 +330,7 @@ void HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
 
+    UpdateAutoSizeObserver();
     PictureSourceSizesChanged(this, attrVal.String(), aNotify);
   } else if (aName == nsGkAtoms::decoding) {
     
@@ -441,6 +441,7 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   UpdateFormOwner();
 
+  UpdateAutoSizeObserver();
   
   
   if (IsInPicture()) {
@@ -475,6 +476,8 @@ void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsImageLoadingContent::UnbindFromTree();
   nsGenericHTMLElement::UnbindFromTree(aContext);
+
+  UpdateAutoSizeObserver();
 
   if (wasInPicture != IsInPicture()) {
     MOZ_ASSERT(wasInPicture);
@@ -676,6 +679,52 @@ bool HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource) {
   bool equal = false;
   return NS_SUCCEEDED(mLastSelectedSource->Equals(aSelectedSource, &equal)) &&
          equal;
+}
+
+bool HTMLImageElement::AllowsAutoSizes() const {
+  const nsAttrValue* val = GetParsedAttr(nsGkAtoms::loading);
+  if (!val || Element::Loading(val->GetEnumValue()) != Element::Loading::Lazy) {
+    return false;
+  }
+
+  nsAutoString sizes;
+  GetAttr(nsGkAtoms::sizes, sizes);
+  ToLowerCase(sizes);
+  return StringBeginsWith(sizes, u"auto"_ns) &&
+         (sizes.Length() == 4 || sizes[4] == ',');
+}
+
+void HTMLImageElement::MaybeRecomputeAutoSizes(bool aQueueImageTask) {
+  MOZ_ASSERT(AllowsAutoSizes(), "Should only be called if allows auto sizing");
+  nsImageFrame* frame = do_QueryFrame(GetPrimaryFrame());
+  if (!frame || !mResponsiveSelector) {
+    return;
+  }
+  bool widthChanged =
+      mResponsiveSelector->SetAutoWidth(Some(frame->GetComputedSize().width));
+  if (widthChanged && aQueueImageTask) {
+    UpdateSourceSyncAndQueueImageTask(true, true);
+  }
+}
+
+void HTMLImageElement::UpdateAutoSizeObserver() {
+  bool shouldObserve = IsInComposedDoc() && AllowsAutoSizes();
+  if (shouldObserve == mObservingResize) {
+    return;
+  }
+  if (shouldObserve) {
+    OwnerDoc()->ObserveAutoSizesImage(*this);
+    mObservingResize = true;
+    
+    MaybeRecomputeAutoSizes(false);
+  } else {
+    OwnerDoc()->UnobserveAutoSizesImage(*this);
+    if (mResponsiveSelector) {
+      
+      mResponsiveSelector->SetAutoWidth(Nothing());
+    }
+    mObservingResize = false;
+  }
 }
 
 void HTMLImageElement::LoadSelectedImage(bool aAlwaysLoad,
@@ -1032,6 +1081,7 @@ bool HTMLImageElement::SelectSourceForTagWithAttrs(
 
   sel->SetCandidatesFromSourceSet(aSrcsetAttr);
   if (!aSizesAttr.IsEmpty()) {
+    
     sel->SetSizesFromDescriptor(aSizesAttr);
   }
   if (!aIsSourceTag) {
@@ -1132,6 +1182,11 @@ void HTMLImageElement::SetResponsiveSelector(
   }
 
   mResponsiveSelector = std::move(aSource);
+
+  if (mObservingResize) {
+    
+    MaybeRecomputeAutoSizes(false);
+  }
 
   
   InvalidateAttributeMapping();
