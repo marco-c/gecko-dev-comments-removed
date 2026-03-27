@@ -1071,6 +1071,54 @@ SimpleDateFormat::_format(Calendar& cal, UnicodeString& appendTo,
         }
     }
 
+    
+    if (typeid(*fCalendar) == typeid(JapaneseCalendar) && fHasHanYearChar &&
+        uprv_strcmp(fLocale.getLanguage(), "ja") == 0) {
+
+        int32_t era = workCal->get(UCAL_ERA, status);
+        if (U_FAILURE(status)) {
+            return appendTo;
+        }
+
+        
+        auto* self = const_cast<SimpleDateFormat *>(this);
+
+        
+        bool useGannen = era != GregorianCalendar::AD && era != GregorianCalendar::BC;
+
+        
+        if (!useGannen && fDateOverride == UnicodeString(u"y=jpanyear")) {
+            
+            
+            if (fSharedNumberFormatters) {
+                freeSharedNumberFormatters(fSharedNumberFormatters);
+                self->fSharedNumberFormatters = nullptr;
+            }
+            self->fDateOverride.setToBogus(); 
+        } else if (useGannen && fDateOverride.isBogus()) {
+            
+            
+            umtx_lock(&LOCK);
+            if (fSharedNumberFormatters == nullptr) {
+                self->fSharedNumberFormatters = allocSharedNumberFormatters();
+            }
+            umtx_unlock(&LOCK);
+            if (fSharedNumberFormatters != nullptr) {
+                Locale ovrLoc(fLocale.getLanguage(), fLocale.getCountry(), fLocale.getVariant(), "numbers=jpanyear");
+                const SharedNumberFormat *snf = createSharedNumberFormat(ovrLoc, status);
+                if (U_FAILURE(status)) {
+                    return appendTo;
+                }
+                
+                
+                UDateFormatField patternCharIndex = DateFormatSymbols::getPatternCharIndex(u'y');
+                SharedObject::copyPtr(snf, fSharedNumberFormatters[patternCharIndex]);
+                snf->deleteIfZeroRefCount();
+                self->fDateOverride.setTo(u"y=jpanyear", -1); 
+            }
+        }
+    }
+
     UBool inQuote = false;
     char16_t prevCh = 0;
     int32_t count = 0;
@@ -1727,12 +1775,15 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
 
     
     case UDAT_AM_PM_FIELD:
-        if (count < 5) {
-            _appendSymbol(appendTo, value, fSymbols->fAmPms,
-                          fSymbols->fAmPmsCount);
-        } else {
+        if (count == 4) {
+            _appendSymbol(appendTo, value, fSymbols->fWideAmPms,
+                          fSymbols->fWideAmPmsCount);
+        } else if (count == 5) {
             _appendSymbol(appendTo, value, fSymbols->fNarrowAmPms,
                           fSymbols->fNarrowAmPmsCount);
+        } else {
+            _appendSymbol(appendTo, value, fSymbols->fAmPms,
+                          fSymbols->fAmPmsCount);
         }
         break;
 
@@ -3485,7 +3536,13 @@ int32_t SimpleDateFormat::subParse(const UnicodeString& text, int32_t& start, ch
             
             int32_t newStart = 0;
             
-            if( getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count < 5 ) {
+            if( getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count == 4 ) {
+                if ((newStart = matchString(text, start, UCAL_AM_PM, fSymbols->fWideAmPms, fSymbols->fWideAmPmsCount, nullptr, cal)) > 0) {
+                    return newStart;
+                }
+            }
+            
+            if( getBooleanAttribute(UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH, status) || count <= 3 ) {
                 if ((newStart = matchString(text, start, UCAL_AM_PM, fSymbols->fAmPms, fSymbols->fAmPmsCount, nullptr, cal)) > 0) {
                     return newStart;
                 }
