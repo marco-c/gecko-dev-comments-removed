@@ -56,7 +56,9 @@ class CachedInheritingStyles {
 
   
   
-  void AppendEntriesTo(nsTArray<CachedStyleEntry>& aArray) const;
+  
+  template <typename Func>
+  void ForEachLazyPseudoEntry(Func&& aFunc) const;
 
   CachedInheritingStyles() : mBits(0) {}
   ~CachedInheritingStyles() {

@@ -196,9 +196,8 @@ class ComputedStyle {
     mCachedInheritingStyles.AppendTo(aArray);
   }
 
-  void GetCachedLazyPseudoEntries(nsTArray<CachedStyleEntry>& aArray) const {
-    mCachedInheritingStyles.AppendEntriesTo(aArray);
-  }
+  template <typename Func>
+  void ForEachCachedLazyPseudoEntry(Func&& aFunc) const;
 
   
   
