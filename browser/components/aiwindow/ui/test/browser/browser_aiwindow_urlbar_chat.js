@@ -88,6 +88,9 @@ add_task(async function test_chat_intent_in_aiwindow() {
   await lazy.PlacesTestUtils.addVisits(Services.io.newURI(url + "hello"));
 
   
+  AIWindowUI.closeSidebar(win);
+
+  
   await lazy.UrlbarTestUtils.promiseAutocompleteResultPopup({
     window: win,
     value: "Hello",
