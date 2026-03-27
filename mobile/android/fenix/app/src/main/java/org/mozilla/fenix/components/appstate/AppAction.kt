@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.appstate
 
+import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_SHORT
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
@@ -162,6 +163,13 @@ sealed class AppAction : Action {
      * Action dispatched when open in firefox action is completed.
      */
     data object OpenInFirefoxFinished : AppAction()
+
+    /**
+     * Updates whether Firefox is the default browser.
+     *
+     * @property isDefault The updated boolean to [AppState.isDefaultBrowser]
+     */
+    data class UpdateDefaultBrowserStatus(val isDefault: Boolean) : AppAction()
 
     /**
      * [Action]s related to interactions with the Messaging Framework.
@@ -471,6 +479,14 @@ sealed class AppAction : Action {
          * [SnackbarAction] dispatched to reset the [AppState.snackbarState] to its default state.
          */
         data object Reset : SnackbarAction()
+
+        /**
+         * [SnackbarAction] dispatched to show a snackbar with a custom title.
+         *
+         * @property title The title to display in the snackbar.
+         * @property duration The length of time for the snackbar to show.
+         */
+        data class ShowSnackbar(val title: String, val duration: Int = LENGTH_SHORT) : SnackbarAction()
     }
 
     /**
@@ -775,4 +791,11 @@ sealed class AppAction : Action {
          */
         data class RemoveMenuNotification(val notification: SupportedMenuNotifications) : MenuNotification()
     }
+
+    /**
+     * Updates the total count of trackers blocked for the privacy report.
+     *
+     * @property count The new count of trackers blocked.
+     */
+    data class UpdateTrackersBlockedCount(val count: Int) : AppAction()
 }
