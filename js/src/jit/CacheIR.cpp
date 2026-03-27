@@ -6179,6 +6179,46 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       newTarget_(newTarget),
       args_(args) {}
 
+CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
+                                 jsbytecode* pc, ICState state,
+                                 BaselineFrame* frame, uint32_t argc,
+                                 HandleValue callee, HandleValue thisval,
+                                 HandleValue newTarget,
+                                 Handle<ArrayObject*> args)
+    : IRGenerator(cx, script, pc, CacheKind::Call, state, frame),
+      argc_(argc),
+      callee_(callee),
+      thisval_(thisval),
+      newTarget_(newTarget),
+      args_(args) {}
+
+Value CallIRGenerator::arg(uint32_t index) const {
+  MOZ_ASSERT(index < argsLength());
+  return args_.match([&](HandleValueArray a) -> Value { return a[index]; },
+                     [&](Handle<ArrayObject*> a) -> Value {
+                       return a->getDenseElement(index);
+                     });
+}
+
+size_t CallIRGenerator::argsLength() const {
+  return args_.match(
+      [](HandleValueArray a) -> size_t { return a.length(); },
+      [](Handle<ArrayObject*> a) -> size_t { return a->length(); });
+}
+
+Value InlinableNativeIRGenerator::arg(uint32_t index) const {
+  return args_.match([&](HandleValueArray a) -> Value { return a[index]; },
+                     [&](Handle<ArrayObject*> a) -> Value {
+                       return a->getDenseElement(index);
+                     });
+}
+
+size_t InlinableNativeIRGenerator::argsLength() const {
+  return args_.match(
+      [](HandleValueArray a) -> size_t { return a.length(); },
+      [](Handle<ArrayObject*> a) -> size_t { return a->length(); });
+}
+
 bool InlinableNativeIRGenerator::isCalleeBoundFunction() const {
   return callee()->is<BoundFunctionObject>();
 }
@@ -6594,10 +6634,10 @@ Maybe<ObjOperandId> CallIRGenerator::emitFunApplyArgsGuard(
 
   if (format == CallFlags::FunApplyArgsObj) {
     ObjOperandId argObjId = writer.guardToObject(argValId);
-    if (args_[1].toObject().is<MappedArgumentsObject>()) {
+    if (arg(1).toObject().is<MappedArgumentsObject>()) {
       writer.guardClass(argObjId, GuardClassKind::MappedArguments);
     } else {
-      MOZ_ASSERT(args_[1].toObject().is<UnmappedArgumentsObject>());
+      MOZ_ASSERT(arg(1).toObject().is<UnmappedArgumentsObject>());
       writer.guardClass(argObjId, GuardClassKind::UnmappedArguments);
     }
     uint8_t flags = ArgumentsObject::ELEMENT_OVERRIDDEN_BIT |
@@ -6608,7 +6648,7 @@ Maybe<ObjOperandId> CallIRGenerator::emitFunApplyArgsGuard(
 
   if (format == CallFlags::FunApplyArray) {
     ObjOperandId argObjId = writer.guardToObject(argValId);
-    emitOptimisticClassGuard(argObjId, &args_[1].toObject(),
+    emitOptimisticClassGuard(argObjId, &arg(1).toObject(),
                              GuardClassKind::Array);
     writer.guardArrayIsPacked(argObjId);
     return mozilla::Some(argObjId);
@@ -6621,7 +6661,7 @@ Maybe<ObjOperandId> CallIRGenerator::emitFunApplyArgsGuard(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
   
-  if (args_.length() != 1 || !thisval_.isObject()) {
+  if (argsLength() != 1 || !thisval_.isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -6688,7 +6728,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayPopShift(
     InlinableNative native) {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -6737,7 +6777,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPopShift(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
 
@@ -6747,7 +6787,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
   }
 
   
-  if (args_.length() > 0 && !args_[0].isString()) {
+  if (argsLength() > 0 && !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
@@ -6766,7 +6806,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
                            GuardClassKind::Array);
 
   StringOperandId sepId;
-  if (args_.length() == 1) {
+  if (argsLength() == 1) {
     
     ValOperandId argValId = loadArgument(calleeId, ArgumentKind::Arg0);
     sepId = writer.guardToString(argValId);
@@ -6785,7 +6825,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   
-  if (args_.length() > 2) {
+  if (argsLength() > 2) {
     return AttachDecision::NoAction;
   }
 
@@ -6818,10 +6858,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   }
 
   
-  if (args_.length() > 0 && !args_[0].isInt32()) {
+  if (argsLength() > 0 && !arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() > 1 && !args_[1].isInt32()) {
+  if (argsLength() > 1 && !arg(1).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -6861,7 +6901,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   }
 
   Int32OperandId int32BeginId;
-  if (args_.length() > 0) {
+  if (argsLength() > 0) {
     ValOperandId beginId = loadArgument(calleeId, ArgumentKind::Arg0);
     int32BeginId = writer.guardToInt32(beginId);
   } else {
@@ -6869,7 +6909,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   }
 
   Int32OperandId int32EndId;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     ValOperandId endId = loadArgument(calleeId, ArgumentKind::Arg1);
     int32EndId = writer.guardToInt32(endId);
   } else if (isPackedArray) {
@@ -6891,7 +6931,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayIsArray() {
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -6918,14 +6958,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   }
 
   
-  if (args_.length() < 1 || args_.length() > 2) {
+  if (argsLength() < 1 || argsLength() > 2) {
     return AttachDecision::NoAction;
   }
   int64_t offsetInt64;
-  if (!ValueIsInt64Index(args_[0], &offsetInt64)) {
+  if (!ValueIsInt64Index(arg(0), &offsetInt64)) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() > 1 && !args_[1].isBoolean()) {
+  if (argsLength() > 1 && !arg(1).isBoolean()) {
     return AttachDecision::NoAction;
   }
 
@@ -6942,7 +6982,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   
   bool forceDoubleForUint32 = false;
   if (type == Scalar::Uint32) {
-    bool isLittleEndian = args_.length() > 1 && args_[1].toBoolean();
+    bool isLittleEndian = argsLength() > 1 && arg(1).toBoolean();
     uint32_t res = dv->read<uint32_t>(offsetInt64, byteLength, isLittleEndian);
     forceDoubleForUint32 = res >= INT32_MAX;
   }
@@ -6968,10 +7008,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   
   ValOperandId offsetId = loadArgument(calleeId, ArgumentKind::Arg0);
   IntPtrOperandId intPtrOffsetId =
-      guardToIntPtrIndex(args_[0], offsetId,  false);
+      guardToIntPtrIndex(arg(0), offsetId,  false);
 
   BooleanOperandId boolLittleEndianId;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     ValOperandId littleEndianId = loadArgument(calleeId, ArgumentKind::Arg1);
     boolLittleEndianId = writer.guardToBoolean(littleEndianId);
   } else {
@@ -6996,17 +7036,17 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   }
 
   
-  if (args_.length() < 2 || args_.length() > 3) {
+  if (argsLength() < 2 || argsLength() > 3) {
     return AttachDecision::NoAction;
   }
   int64_t offsetInt64;
-  if (!ValueIsInt64Index(args_[0], &offsetInt64)) {
+  if (!ValueIsInt64Index(arg(0), &offsetInt64)) {
     return AttachDecision::NoAction;
   }
-  if (!ValueCanConvertToNumeric(type, args_[1])) {
+  if (!ValueCanConvertToNumeric(type, arg(1))) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() > 2 && !args_[2].isBoolean()) {
+  if (argsLength() > 2 && !arg(2).isBoolean()) {
     return AttachDecision::NoAction;
   }
 
@@ -7043,14 +7083,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   
   ValOperandId offsetId = loadArgument(calleeId, ArgumentKind::Arg0);
   IntPtrOperandId intPtrOffsetId =
-      guardToIntPtrIndex(args_[0], offsetId,  false);
+      guardToIntPtrIndex(arg(0), offsetId,  false);
 
   
   ValOperandId valueId = loadArgument(calleeId, ArgumentKind::Arg1);
-  OperandId numericValueId = emitNumericGuard(valueId, args_[1], type);
+  OperandId numericValueId = emitNumericGuard(valueId, arg(1), type);
 
   BooleanOperandId boolLittleEndianId;
-  if (args_.length() > 2) {
+  if (argsLength() > 2) {
     ValOperandId littleEndianId = loadArgument(calleeId, ArgumentKind::Arg2);
     boolLittleEndianId = writer.guardToBoolean(littleEndianId);
   } else {
@@ -7069,7 +7109,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteLength() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -7152,7 +7192,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteLength() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteOffset() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -7230,12 +7270,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteOffset() {
 AttachDecision InlinableNativeIRGenerator::tryAttachUnsafeGetReservedSlot(
     InlinableNative native) {
   
-  MOZ_ASSERT(args_.length() == 2);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isInt32());
-  MOZ_ASSERT(args_[1].toInt32() >= 0);
+  MOZ_ASSERT(argsLength() == 2);
+  MOZ_ASSERT(arg(0).isObject());
+  MOZ_ASSERT(arg(1).isInt32());
+  MOZ_ASSERT(arg(1).toInt32() >= 0);
 
-  uint32_t slot = uint32_t(args_[1].toInt32());
+  uint32_t slot = uint32_t(arg(1).toInt32());
   if (slot >= NativeObject::MAX_FIXED_SLOTS) {
     return AttachDecision::NoAction;
   }
@@ -7278,12 +7318,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachUnsafeGetReservedSlot(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachUnsafeSetReservedSlot() {
   
-  MOZ_ASSERT(args_.length() == 3);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isInt32());
-  MOZ_ASSERT(args_[1].toInt32() >= 0);
+  MOZ_ASSERT(argsLength() == 3);
+  MOZ_ASSERT(arg(0).isObject());
+  MOZ_ASSERT(arg(1).isInt32());
+  MOZ_ASSERT(arg(1).toInt32() >= 0);
 
-  uint32_t slot = uint32_t(args_[1].toInt32());
+  uint32_t slot = uint32_t(arg(1).toInt32());
   if (slot >= NativeObject::MAX_FIXED_SLOTS) {
     return AttachDecision::NoAction;
   }
@@ -7319,7 +7359,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
   
   
 
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   initializeInputOperand();
 
@@ -7342,11 +7382,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachToObject() {
   
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   
   
-  if (!args_[0].isObject()) {
+  if (!arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -7369,13 +7409,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToObject() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachToInteger() {
   
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   
   
   
   
-  if (!args_[0].isInt32()) {
+  if (!arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -7398,10 +7438,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToInteger() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachToLength() {
   
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   
-  if (!args_[0].isInt32()) {
+  if (!arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -7425,7 +7465,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToLength() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachIsObject() {
   
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   
   initializeInputOperand();
@@ -7443,8 +7483,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsObject() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachIsPackedArray() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
   initializeInputOperand();
@@ -7463,7 +7503,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsPackedArray() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachIsCallable() {
   
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   
   initializeInputOperand();
@@ -7481,10 +7521,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsCallable() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructor() {
   
-  MOZ_ASSERT(args_.length() == 1);
+  MOZ_ASSERT(argsLength() == 1);
 
   
-  if (!args_[0].isObject()) {
+  if (!arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -7508,10 +7548,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructor() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachIsCrossRealmArrayConstructor() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
-  if (args_[0].toObject().is<ProxyObject>()) {
+  if (arg(0).toObject().is<ProxyObject>()) {
     return AttachDecision::NoAction;
   }
 
@@ -7532,8 +7572,8 @@ InlinableNativeIRGenerator::tryAttachIsCrossRealmArrayConstructor() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   SharedShape* shape = GlobalObject::getArrayShapeWithDefaultProto(cx_);
   if (!shape) {
@@ -7565,12 +7605,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
     InlinableNative native) {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
   const JSClass* clasp = InlinableNativeGuardToClass(native);
-  if (args_[0].toObject().getClass() != clasp) {
+  if (arg(0).toObject().getClass() != clasp) {
     return AttachDecision::NoAction;
   }
 
@@ -7597,12 +7637,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
     GuardClassKind kind) {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
   const JSClass* clasp = ClassFor(kind);
-  if (args_[0].toObject().getClass() != clasp) {
+  if (arg(0).toObject().getClass() != clasp) {
     return AttachDecision::NoAction;
   }
 
@@ -7628,11 +7668,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToArrayBuffer() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
-  if (!args_[0].toObject().is<ArrayBufferObject>()) {
+  if (!arg(0).toObject().is<ArrayBufferObject>()) {
     return AttachDecision::NoAction;
   }
 
@@ -7658,11 +7698,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToArrayBuffer() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToSharedArrayBuffer() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
-  if (!args_[0].toObject().is<SharedArrayBufferObject>()) {
+  if (!arg(0).toObject().is<SharedArrayBufferObject>()) {
     return AttachDecision::NoAction;
   }
 
@@ -7689,11 +7729,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToSharedArrayBuffer() {
 AttachDecision InlinableNativeIRGenerator::tryAttachHasClass(
     const JSClass* clasp, bool isPossiblyWrapped) {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
-  if (isPossiblyWrapped && args_[0].toObject().is<ProxyObject>()) {
+  if (isPossiblyWrapped && arg(0).toObject().is<ProxyObject>()) {
     return AttachDecision::NoAction;
   }
 
@@ -7720,7 +7760,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachHasClass(
 AttachDecision InlinableNativeIRGenerator::tryAttachRegExpFlag(
     JS::RegExpFlags flags) {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -7819,16 +7859,16 @@ static void EmitGuardLastIndexIsNonNegativeInt32(CacheIRWriter& writer,
 AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpBuiltinExec(
     InlinableNative native) {
   
-  MOZ_ASSERT(args_.length() == 2);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isString());
+  MOZ_ASSERT(argsLength() == 2);
+  MOZ_ASSERT(arg(0).isObject());
+  MOZ_ASSERT(arg(1).isString());
 
   JitCode* stub = GetOrCreateRegExpStub(cx_, native);
   if (!stub) {
     return AttachDecision::NoAction;
   }
 
-  RegExpObject* re = &args_[0].toObject().as<RegExpObject>();
+  RegExpObject* re = &arg(0).toObject().as<RegExpObject>();
   if (!HasOptimizableLastIndexSlot(re, cx_)) {
     return AttachDecision::NoAction;
   }
@@ -7860,13 +7900,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpBuiltinExec(
 AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
     InlinableNative native) {
   
-  MOZ_ASSERT(args_.length() == 2);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isString());
+  MOZ_ASSERT(argsLength() == 2);
+  MOZ_ASSERT(arg(0).isObject());
+  MOZ_ASSERT(arg(1).isString());
 
   
   
-  if (!IsOptimizableRegExpObject(&args_[0].toObject(), cx_)) {
+  if (!IsOptimizableRegExpObject(&arg(0).toObject(), cx_)) {
     return AttachDecision::NoAction;
   }
 
@@ -7875,7 +7915,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
     return AttachDecision::NoAction;
   }
 
-  RegExpObject* re = &args_[0].toObject().as<RegExpObject>();
+  RegExpObject* re = &arg(0).toObject().as<RegExpObject>();
   if (!HasOptimizableLastIndexSlot(re, cx_)) {
     return AttachDecision::NoAction;
   }
@@ -7908,13 +7948,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIntrinsicRegExpExec(
 AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcher(
     InlinableNative native) {
   
-  MOZ_ASSERT(args_.length() == 3);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[1].isString());
-  MOZ_ASSERT(args_[2].isNumber());
+  MOZ_ASSERT(argsLength() == 3);
+  MOZ_ASSERT(arg(0).isObject());
+  MOZ_ASSERT(arg(1).isString());
+  MOZ_ASSERT(arg(2).isNumber());
 
   
-  if (!args_[2].isInt32()) {
+  if (!arg(2).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -7961,8 +8001,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcher(
 AttachDecision InlinableNativeIRGenerator::tryAttachRegExpSearcherLastLimit() {
   
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isString());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isString());
 
   
   initializeInputOperand();
@@ -7978,9 +8018,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpSearcherLastLimit() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachRegExpHasCaptureGroups() {
   
-  MOZ_ASSERT(args_.length() == 2);
-  MOZ_ASSERT(args_[0].toObject().is<RegExpObject>());
-  MOZ_ASSERT(args_[1].isString());
+  MOZ_ASSERT(argsLength() == 2);
+  MOZ_ASSERT(arg(0).toObject().is<RegExpObject>());
+  MOZ_ASSERT(arg(1).isString());
 
   
   initializeInputOperand();
@@ -8003,7 +8043,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpHasCaptureGroups() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachIsRegExpPrototypeOptimizable() {
   
-  MOZ_ASSERT(args_.length() == 0);
+  MOZ_ASSERT(argsLength() == 0);
 
   
   initializeInputOperand();
@@ -8027,8 +8067,8 @@ InlinableNativeIRGenerator::tryAttachIsRegExpPrototypeOptimizable() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachIsOptimizableRegExpObject() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   Shape* optimizableShape = cx_->global()->maybeRegExpShapeWithDefaultProto();
   if (!optimizableShape) {
@@ -8058,8 +8098,8 @@ InlinableNativeIRGenerator::tryAttachIsOptimizableRegExpObject() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachGetFirstDollarIndex() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isString());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isString());
 
   
   initializeInputOperand();
@@ -8078,10 +8118,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGetFirstDollarIndex() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachSubstringKernel() {
   
-  MOZ_ASSERT(args_.length() == 3);
-  MOZ_ASSERT(args_[0].isString());
-  MOZ_ASSERT(args_[1].isInt32());
-  MOZ_ASSERT(args_[2].isInt32());
+  MOZ_ASSERT(argsLength() == 3);
+  MOZ_ASSERT(arg(0).isString());
+  MOZ_ASSERT(arg(1).isInt32());
+  MOZ_ASSERT(arg(2).isInt32());
 
   
   initializeInputOperand();
@@ -8110,7 +8150,7 @@ static bool CanConvertToString(const Value& v) {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachString() {
   
-  if (args_.length() != 1 || !CanConvertToString(args_[0])) {
+  if (argsLength() != 1 || !CanConvertToString(arg(0))) {
     return AttachDecision::NoAction;
   }
 
@@ -8122,7 +8162,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachString() {
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
-  StringOperandId strId = emitToStringGuard(argId, args_[0]);
+  StringOperandId strId = emitToStringGuard(argId, arg(0));
 
   
   writer.loadStringResult(strId);
@@ -8134,7 +8174,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachString() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor() {
   
-  if (args_.length() != 1 || !CanConvertToString(args_[0])) {
+  if (argsLength() != 1 || !CanConvertToString(arg(0))) {
     return AttachDecision::NoAction;
   }
 
@@ -8154,7 +8194,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor() {
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
-  StringOperandId strId = emitToStringGuard(argId, args_[0]);
+  StringOperandId strId = emitToStringGuard(argId, arg(0));
 
   writer.newStringObjectResult(templateObj, strId);
   writer.returnFromIC();
@@ -8165,7 +8205,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringToStringValueOf() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8194,10 +8234,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToStringValueOf() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringReplaceString() {
   
-  MOZ_ASSERT(args_.length() == 3);
-  MOZ_ASSERT(args_[0].isString());
-  MOZ_ASSERT(args_[1].isString());
-  MOZ_ASSERT(args_[2].isString());
+  MOZ_ASSERT(argsLength() == 3);
+  MOZ_ASSERT(arg(0).isString());
+  MOZ_ASSERT(arg(1).isString());
+  MOZ_ASSERT(arg(2).isString());
 
   
   initializeInputOperand();
@@ -8222,9 +8262,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringReplaceString() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringSplitString() {
   
-  MOZ_ASSERT(args_.length() == 2);
-  MOZ_ASSERT(args_[0].isString());
-  MOZ_ASSERT(args_[1].isString());
+  MOZ_ASSERT(argsLength() == 2);
+  MOZ_ASSERT(arg(0).isString());
+  MOZ_ASSERT(arg(1).isString());
 
   
   initializeInputOperand();
@@ -8247,13 +8287,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringSplitString() {
 AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
     StringChar kind) {
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
 
   
   
-  auto indexArg = args_.length() > 0 ? args_[0] : Int32Value(0);
+  auto indexArg = argsLength() > 0 ? arg(0) : Int32Value(0);
 
   auto attach = CanAttachStringChar(thisval_, indexArg, kind);
   if (attach == AttachStringChar::No) {
@@ -8275,9 +8315,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
 
   
   Int32OperandId int32IndexId;
-  if (args_.length() > 0) {
+  if (argsLength() > 0) {
     ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg0);
-    int32IndexId = EmitGuardToInt32Index(writer, args_[0], indexId);
+    int32IndexId = EmitGuardToInt32Index(writer, arg(0), indexId);
   } else {
     int32IndexId = writer.loadInt32Constant(0);
   }
@@ -8360,7 +8400,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringAt() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -8373,7 +8413,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
   Int32OperandId codeId;
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     codeId = writer.guardToInt32(argId);
   } else {
     
@@ -8391,12 +8431,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint() {
   
-  if (args_.length() != 1 || !args_[0].isInt32()) {
+  if (argsLength() != 1 || !arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
   
-  int32_t codePoint = args_[0].toInt32();
+  int32_t codePoint = arg(0).toInt32();
   if (codePoint < 0 || codePoint > int32_t(unicode::NonBMPMax)) {
     return AttachDecision::NoAction;
   }
@@ -8421,7 +8461,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringIncludes() {
   
-  if (args_.length() != 1 || !args_[0].isString()) {
+  if (argsLength() != 1 || !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
@@ -8453,7 +8493,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIncludes() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
   
-  if (args_.length() != 1 || !args_[0].isString()) {
+  if (argsLength() != 1 || !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
@@ -8485,7 +8525,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringLastIndexOf() {
   
-  if (args_.length() != 1 || !args_[0].isString()) {
+  if (argsLength() != 1 || !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
@@ -8517,7 +8557,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringLastIndexOf() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringStartsWith() {
   
-  if (args_.length() != 1 || !args_[0].isString()) {
+  if (argsLength() != 1 || !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
@@ -8549,7 +8589,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringStartsWith() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringEndsWith() {
   
-  if (args_.length() != 1 || !args_[0].isString()) {
+  if (argsLength() != 1 || !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
@@ -8581,7 +8621,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringEndsWith() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringToLowerCase() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8610,7 +8650,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLowerCase() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8640,7 +8680,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
 AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleLowerCase() {
 #if JS_HAS_INTL_API
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8690,7 +8730,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleLowerCase() {
 AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleUpperCase() {
 #if JS_HAS_INTL_API
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8739,7 +8779,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleUpperCase() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8767,7 +8807,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimStart() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8795,7 +8835,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimStart() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimEnd() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8823,7 +8863,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringTrimEnd() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathRandom() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -8848,11 +8888,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRandom() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathAbs() {
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
-  if (!args_[0].isNumber()) {
+  if (!arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -8865,7 +8905,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathAbs() {
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
   
-  if (args_[0].isInt32() && args_[0].toInt32() != INT_MIN) {
+  if (arg(0).isInt32() && arg(0).toInt32() != INT_MIN) {
     Int32OperandId int32Id = writer.guardToInt32(argumentId);
     writer.mathAbsInt32Result(int32Id);
   } else {
@@ -8881,7 +8921,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathAbs() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathClz32() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -8894,10 +8934,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathClz32() {
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
 
   Int32OperandId int32Id;
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     int32Id = writer.guardToInt32(argId);
   } else {
-    MOZ_ASSERT(args_[0].isDouble());
+    MOZ_ASSERT(arg(0).isDouble());
     NumberOperandId numId = writer.guardIsNumber(argId);
     int32Id = writer.truncateDoubleToUInt32(numId);
   }
@@ -8910,7 +8950,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathClz32() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathSign() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -8922,13 +8962,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSign() {
 
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
 
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     Int32OperandId int32Id = writer.guardToInt32(argId);
     writer.mathSignInt32Result(int32Id);
   } else {
     
     
-    double d = math_sign_impl(args_[0].toDouble());
+    double d = math_sign_impl(arg(0).toDouble());
     int32_t unused;
     bool resultIsInt32 = mozilla::NumberIsInt32(d, &unused);
 
@@ -8948,7 +8988,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSign() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathImul() {
   
-  if (args_.length() != 2 || !args_[0].isNumber() || !args_[1].isNumber()) {
+  if (argsLength() != 2 || !arg(0).isNumber() || !arg(1).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -8962,7 +9002,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathImul() {
   ValOperandId arg1Id = loadArgument(calleeId, ArgumentKind::Arg1);
 
   Int32OperandId int32Arg0Id, int32Arg1Id;
-  if (args_[0].isInt32() && args_[1].isInt32()) {
+  if (arg(0).isInt32() && arg(1).isInt32()) {
     int32Arg0Id = writer.guardToInt32(arg0Id);
     int32Arg1Id = writer.guardToInt32(arg1Id);
   } else {
@@ -8981,12 +9021,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathImul() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathFloor() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
   
-  double res = math_floor_impl(args_[0].toNumber());
+  double res = math_floor_impl(arg(0).toNumber());
   int32_t unused;
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
@@ -8998,7 +9038,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFloor() {
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
     
@@ -9024,12 +9064,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFloor() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathCeil() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
   
-  double res = math_ceil_impl(args_[0].toNumber());
+  double res = math_ceil_impl(arg(0).toNumber());
   int32_t unused;
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
@@ -9041,7 +9081,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathCeil() {
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
     
@@ -9067,12 +9107,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathCeil() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathTrunc() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
   
-  double res = math_trunc_impl(args_[0].toNumber());
+  double res = math_trunc_impl(arg(0).toNumber());
   int32_t unused;
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
@@ -9084,7 +9124,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathTrunc() {
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
     
@@ -9109,12 +9149,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathTrunc() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathRound() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
   
-  double res = math_round_impl(args_[0].toNumber());
+  double res = math_round_impl(arg(0).toNumber());
   int32_t unused;
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
@@ -9126,7 +9166,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRound() {
 
   ValOperandId argumentId = loadArgument(calleeId, ArgumentKind::Arg0);
 
-  if (args_[0].isInt32()) {
+  if (arg(0).isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
     
@@ -9152,7 +9192,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRound() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathSqrt() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -9173,7 +9213,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSqrt() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathFRound() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -9194,7 +9234,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFRound() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathF16Round() {
   
-  if (args_.length() != 1 || !args_[0].isNumber()) {
+  if (argsLength() != 1 || !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -9243,7 +9283,7 @@ static bool CanAttachInt32Pow(const Value& baseVal, const Value& powerVal) {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathPow() {
   
-  if (args_.length() != 2 || !args_[0].isNumber() || !args_[1].isNumber()) {
+  if (argsLength() != 2 || !arg(0).isNumber() || !arg(1).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -9256,8 +9296,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathPow() {
   ValOperandId baseId = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId exponentId = loadArgument(calleeId, ArgumentKind::Arg1);
 
-  if (args_[0].isInt32() && args_[1].isInt32() &&
-      CanAttachInt32Pow(args_[0], args_[1])) {
+  if (arg(0).isInt32() && arg(1).isInt32() &&
+      CanAttachInt32Pow(arg(0), arg(1))) {
     Int32OperandId baseInt32Id = writer.guardToInt32(baseId);
     Int32OperandId exponentInt32Id = writer.guardToInt32(exponentId);
     writer.int32PowResult(baseInt32Id, exponentInt32Id);
@@ -9275,12 +9315,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathPow() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathHypot() {
   
-  if (args_.length() < 2 || args_.length() > 4) {
+  if (argsLength() < 2 || argsLength() > 4) {
     return AttachDecision::NoAction;
   }
 
-  for (size_t i = 0; i < args_.length(); i++) {
-    if (!args_[i].isNumber()) {
+  for (size_t i = 0; i < argsLength(); i++) {
+    if (!arg(i).isNumber()) {
       return AttachDecision::NoAction;
     }
   }
@@ -9302,7 +9342,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathHypot() {
   NumberOperandId thirdNumId;
   NumberOperandId fourthNumId;
 
-  switch (args_.length()) {
+  switch (argsLength()) {
     case 2:
       writer.mathHypot2NumberResult(firstNumId, secondNumId);
       break;
@@ -9331,7 +9371,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathHypot() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathATan2() {
   
-  if (args_.length() != 2 || !args_[0].isNumber() || !args_[1].isNumber()) {
+  if (argsLength() != 2 || !arg(0).isNumber() || !arg(1).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -9356,17 +9396,17 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathATan2() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMathMinMax(bool isMax) {
   
-  if (args_.length() < 1 || args_.length() > 4) {
+  if (argsLength() < 1 || argsLength() > 4) {
     return AttachDecision::NoAction;
   }
 
   
   bool allInt32 = true;
-  for (size_t i = 0; i < args_.length(); i++) {
-    if (!args_[i].isNumber()) {
+  for (size_t i = 0; i < argsLength(); i++) {
+    if (!arg(i).isNumber()) {
       return AttachDecision::NoAction;
     }
-    if (!args_[i].isInt32()) {
+    if (!arg(i).isInt32()) {
       allInt32 = false;
     }
   }
@@ -9380,7 +9420,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathMinMax(bool isMax) {
   if (allInt32) {
     ValOperandId valId = loadArgument(calleeId, ArgumentKind::Arg0);
     Int32OperandId resId = writer.guardToInt32(valId);
-    for (size_t i = 1; i < args_.length(); i++) {
+    for (size_t i = 1; i < argsLength(); i++) {
       ValOperandId argId = loadArgument(calleeId, ArgumentKindForArgIndex(i));
       Int32OperandId argInt32Id = writer.guardToInt32(argId);
       resId = writer.int32MinMax(isMax, resId, argInt32Id);
@@ -9389,7 +9429,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathMinMax(bool isMax) {
   } else {
     ValOperandId valId = loadArgument(calleeId, ArgumentKind::Arg0);
     NumberOperandId resId = writer.guardIsNumber(valId);
-    for (size_t i = 1; i < args_.length(); i++) {
+    for (size_t i = 1; i < argsLength(); i++) {
       ValOperandId argId = loadArgument(calleeId, ArgumentKindForArgIndex(i));
       NumberOperandId argNumId = writer.guardIsNumber(argId);
       resId = writer.numberMinMax(isMax, resId, argNumId);
@@ -9410,12 +9450,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpreadMathMinMax(
 
   
   
-  bool int32Result = args_.length() > 0;
-  for (size_t i = 0; i < args_.length(); i++) {
-    if (!args_[i].isNumber()) {
+  bool int32Result = argsLength() > 0;
+  for (size_t i = 0; i < argsLength(); i++) {
+    if (!arg(i).isNumber()) {
       return AttachDecision::NoAction;
     }
-    if (!args_[i].isInt32()) {
+    if (!arg(i).isInt32()) {
       int32Result = false;
     }
   }
@@ -9444,11 +9484,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpreadMathMinMax(
 AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
     UnaryMathFunction fun) {
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
-  if (!args_[0].isNumber()) {
+  if (!arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -9486,12 +9526,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNumber() {
   
-  if (args_.length() != 1 || !args_[0].isString()) {
+  if (argsLength() != 1 || !arg(0).isString()) {
     return AttachDecision::NoAction;
   }
 
   double num;
-  if (!StringToNumber(cx_, args_[0].toString(), &num)) {
+  if (!StringToNumber(cx_, arg(0).toString(), &num)) {
     cx_->recoverFromOutOfMemory();
     return AttachDecision::NoAction;
   }
@@ -9523,14 +9563,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumber() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
   
-  if (args_.length() < 1 || args_.length() > 2) {
+  if (argsLength() < 1 || argsLength() > 2) {
     return AttachDecision::NoAction;
   }
-  if (!args_[0].isString() && !args_[0].isNumber()) {
+  if (!arg(0).isString() && !arg(0).isNumber()) {
     return AttachDecision::NoAction;
   }
-  if (args_[0].isDouble()) {
-    double d = args_[0].toDouble();
+  if (arg(0).isDouble()) {
+    double d = arg(0).toDouble();
 
     
     
@@ -9541,7 +9581,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
       return AttachDecision::NoAction;
     }
   }
-  if (args_.length() > 1 && !args_[1].isInt32(10)) {
+  if (argsLength() > 1 && !arg(1).isInt32(10)) {
     return AttachDecision::NoAction;
   }
 
@@ -9560,28 +9600,28 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberParseInt() {
 
   ValOperandId inputId = loadArgument(calleeId, ArgumentKind::Arg0);
 
-  if (args_[0].isString()) {
+  if (arg(0).isString()) {
     StringOperandId strId = writer.guardToString(inputId);
 
     Int32OperandId intRadixId;
-    if (args_.length() > 1) {
+    if (argsLength() > 1) {
       intRadixId = guardRadix();
     } else {
       intRadixId = writer.loadInt32Constant(0);
     }
 
     writer.numberParseIntResult(strId, intRadixId);
-  } else if (args_[0].isInt32()) {
+  } else if (arg(0).isInt32()) {
     Int32OperandId intId = writer.guardToInt32(inputId);
-    if (args_.length() > 1) {
+    if (argsLength() > 1) {
       guardRadix();
     }
     writer.loadInt32Result(intId);
   } else {
-    MOZ_ASSERT(args_[0].isDouble());
+    MOZ_ASSERT(arg(0).isDouble());
 
     NumberOperandId numId = writer.guardIsNumber(inputId);
-    if (args_.length() > 1) {
+    if (argsLength() > 1) {
       guardRadix();
     }
     writer.doubleParseIntResult(numId);
@@ -9624,10 +9664,10 @@ StringOperandId IRGenerator::emitToStringGuard(ValOperandId id,
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() == 1 && !args_[0].isInt32()) {
+  if (argsLength() == 1 && !arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -9638,8 +9678,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
 
   
   int32_t base = 10;
-  if (args_.length() > 0) {
-    base = args_[0].toInt32();
+  if (argsLength() > 0) {
+    base = arg(0).toInt32();
     if (base < 2 || base > 36) {
       return AttachDecision::NoAction;
     }
@@ -9663,7 +9703,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   
   if (base == 10) {
     
-    if (args_.length() > 0) {
+    if (argsLength() > 0) {
       
       ValOperandId baseId = loadArgument(calleeId, ArgumentKind::Arg0);
       Int32OperandId intBaseId = writer.guardToInt32(baseId);
@@ -9677,7 +9717,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
     
     writer.loadStringResult(strId);
   } else {
-    MOZ_ASSERT(args_.length() > 0);
+    MOZ_ASSERT(argsLength() > 0);
 
     
     Int32OperandId thisIntId = writer.guardToInt32(thisValId);
@@ -9698,11 +9738,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachReflectGetPrototypeOf() {
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
-  if (!args_[0].isObject()) {
+  if (!arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -9775,28 +9815,28 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange() {
   }
 
   
-  if (args_.length() != 4) {
+  if (argsLength() != 4) {
     return AttachDecision::NoAction;
   }
 
   
-  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+  if (!arg(0).isObject() || !arg(0).toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
-  if (!args_[1].isNumber()) {
+  if (!arg(1).isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
-  if (!AtomicsMeetsPreconditions(typedArray, args_[1], AtomicAccess::Write)) {
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
+  if (!AtomicsMeetsPreconditions(typedArray, arg(1), AtomicAccess::Write)) {
     return AttachDecision::NoAction;
   }
 
   Scalar::Type elementType = typedArray->type();
-  if (!ValueCanConvertToNumeric(elementType, args_[2])) {
+  if (!ValueCanConvertToNumeric(elementType, arg(2))) {
     return AttachDecision::NoAction;
   }
-  if (!ValueCanConvertToNumeric(elementType, args_[3])) {
+  if (!ValueCanConvertToNumeric(elementType, arg(3))) {
     return AttachDecision::NoAction;
   }
 
@@ -9813,17 +9853,17 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange() {
   
   ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg1);
   IntPtrOperandId intPtrIndexId =
-      guardToIntPtrIndex(args_[1], indexId,  false);
+      guardToIntPtrIndex(arg(1), indexId,  false);
 
   
   ValOperandId expectedId = loadArgument(calleeId, ArgumentKind::Arg2);
   OperandId numericExpectedId =
-      emitNumericGuard(expectedId, args_[2], elementType);
+      emitNumericGuard(expectedId, arg(2), elementType);
 
   
   ValOperandId replacementId = loadArgument(calleeId, ArgumentKind::Arg3);
   OperandId numericReplacementId =
-      emitNumericGuard(replacementId, args_[3], elementType);
+      emitNumericGuard(replacementId, arg(3), elementType);
 
   auto viewKind = ToArrayBufferViewKind(typedArray);
   writer.atomicsCompareExchangeResult(objId, intPtrIndexId, numericExpectedId,
@@ -9841,23 +9881,23 @@ bool InlinableNativeIRGenerator::canAttachAtomicsReadWriteModify() {
   }
 
   
-  if (args_.length() != 3) {
+  if (argsLength() != 3) {
     return false;
   }
 
   
-  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+  if (!arg(0).isObject() || !arg(0).toObject().is<TypedArrayObject>()) {
     return false;
   }
-  if (!args_[1].isNumber()) {
+  if (!arg(1).isNumber()) {
     return false;
   }
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
-  if (!AtomicsMeetsPreconditions(typedArray, args_[1], AtomicAccess::Write)) {
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
+  if (!AtomicsMeetsPreconditions(typedArray, arg(1), AtomicAccess::Write)) {
     return false;
   }
-  if (!ValueCanConvertToNumeric(typedArray->type(), args_[2])) {
+  if (!ValueCanConvertToNumeric(typedArray->type(), arg(2))) {
     return false;
   }
   return true;
@@ -9867,7 +9907,7 @@ InlinableNativeIRGenerator::AtomicsReadWriteModifyOperands
 InlinableNativeIRGenerator::emitAtomicsReadWriteModifyOperands() {
   MOZ_ASSERT(canAttachAtomicsReadWriteModify());
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
 
   
   Int32OperandId argcId = initializeInputOperand();
@@ -9882,12 +9922,12 @@ InlinableNativeIRGenerator::emitAtomicsReadWriteModifyOperands() {
   
   ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg1);
   IntPtrOperandId intPtrIndexId =
-      guardToIntPtrIndex(args_[1], indexId,  false);
+      guardToIntPtrIndex(arg(1), indexId,  false);
 
   
   ValOperandId valueId = loadArgument(calleeId, ArgumentKind::Arg2);
   OperandId numericValueId =
-      emitNumericGuard(valueId, args_[2], typedArray->type());
+      emitNumericGuard(valueId, arg(2), typedArray->type());
 
   return {objId, intPtrIndexId, numericValueId};
 }
@@ -9900,7 +9940,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsExchange() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
   auto viewKind = ToArrayBufferViewKind(typedArray);
 
   writer.atomicsExchangeResult(objId, intPtrIndexId, numericValueId,
@@ -9919,7 +9959,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsAdd() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
   auto viewKind = ToArrayBufferViewKind(typedArray);
 
@@ -9939,7 +9979,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsSub() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
   auto viewKind = ToArrayBufferViewKind(typedArray);
 
@@ -9959,7 +9999,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsAnd() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
   auto viewKind = ToArrayBufferViewKind(typedArray);
 
@@ -9979,7 +10019,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsOr() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
   auto viewKind = ToArrayBufferViewKind(typedArray);
 
@@ -9999,7 +10039,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsXor() {
   auto [objId, intPtrIndexId, numericValueId] =
       emitAtomicsReadWriteModifyOperands();
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
   bool forEffect = ignoresResult();
   auto viewKind = ToArrayBufferViewKind(typedArray);
 
@@ -10017,20 +10057,20 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad() {
   }
 
   
-  if (args_.length() != 2) {
+  if (argsLength() != 2) {
     return AttachDecision::NoAction;
   }
 
   
-  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+  if (!arg(0).isObject() || !arg(0).toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
-  if (!args_[1].isNumber()) {
+  if (!arg(1).isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
-  if (!AtomicsMeetsPreconditions(typedArray, args_[1], AtomicAccess::Read)) {
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
+  if (!AtomicsMeetsPreconditions(typedArray, arg(1), AtomicAccess::Read)) {
     return AttachDecision::NoAction;
   }
 
@@ -10047,7 +10087,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad() {
   
   ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg1);
   IntPtrOperandId intPtrIndexId =
-      guardToIntPtrIndex(args_[1], indexId,  false);
+      guardToIntPtrIndex(arg(1), indexId,  false);
 
   auto viewKind = ToArrayBufferViewKind(typedArray);
   writer.atomicsLoadResult(objId, intPtrIndexId, typedArray->type(), viewKind);
@@ -10063,7 +10103,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   }
 
   
-  if (args_.length() != 3) {
+  if (argsLength() != 3) {
     return AttachDecision::NoAction;
   }
 
@@ -10077,26 +10117,26 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   
 
   
-  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+  if (!arg(0).isObject() || !arg(0).toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
-  if (!args_[1].isNumber()) {
+  if (!arg(1).isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
-  if (!AtomicsMeetsPreconditions(typedArray, args_[1], AtomicAccess::Write)) {
+  auto* typedArray = &arg(0).toObject().as<TypedArrayObject>();
+  if (!AtomicsMeetsPreconditions(typedArray, arg(1), AtomicAccess::Write)) {
     return AttachDecision::NoAction;
   }
 
   Scalar::Type elementType = typedArray->type();
-  if (!ValueCanConvertToNumeric(elementType, args_[2])) {
+  if (!ValueCanConvertToNumeric(elementType, arg(2))) {
     return AttachDecision::NoAction;
   }
 
   bool guardIsInt32 = !Scalar::isBigIntType(elementType) && !ignoresResult();
 
-  if (guardIsInt32 && !args_[2].isInt32()) {
+  if (guardIsInt32 && !arg(2).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -10113,7 +10153,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   
   ValOperandId indexId = loadArgument(calleeId, ArgumentKind::Arg1);
   IntPtrOperandId intPtrIndexId =
-      guardToIntPtrIndex(args_[1], indexId,  false);
+      guardToIntPtrIndex(arg(1), indexId,  false);
 
   
   ValOperandId valueId = loadArgument(calleeId, ArgumentKind::Arg2);
@@ -10121,7 +10161,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   if (guardIsInt32) {
     numericValueId = writer.guardToInt32(valueId);
   } else {
-    numericValueId = emitNumericGuard(valueId, args_[2], elementType);
+    numericValueId = emitNumericGuard(valueId, arg(2), elementType);
   }
 
   auto viewKind = ToArrayBufferViewKind(typedArray);
@@ -10135,11 +10175,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsIsLockFree() {
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
-  if (!args_[0].isInt32()) {
+  if (!arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -10162,7 +10202,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsIsLockFree() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsPause() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -10181,7 +10221,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsPause() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachBoolean() {
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10191,7 +10231,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBoolean() {
   
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
-  if (args_.length() == 0) {
+  if (argsLength() == 0) {
     writer.loadBooleanResult(false);
   } else {
     ValOperandId valId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -10207,7 +10247,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBoolean() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachBailout() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -10227,13 +10267,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBailout() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachAssertFloat32() {
   
-  if (args_.length() != 2) {
+  if (argsLength() != 2) {
     return AttachDecision::NoAction;
   }
 
   
   
-  bool mustBeFloat32 = args_[1].toBoolean();
+  bool mustBeFloat32 = arg(1).toBoolean();
 
   
   Int32OperandId argcId = initializeInputOperand();
@@ -10252,13 +10292,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertFloat32() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachAssertRecoveredOnBailout() {
   
-  if (args_.length() != 2) {
+  if (argsLength() != 2) {
     return AttachDecision::NoAction;
   }
 
   
   
-  bool mustBeRecovered = args_[1].toBoolean();
+  bool mustBeRecovered = arg(1).toBoolean();
 
   
   Int32OperandId argcId = initializeInputOperand();
@@ -10277,7 +10317,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertRecoveredOnBailout() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectIs() {
   
-  if (args_.length() != 2) {
+  if (argsLength() != 2) {
     return AttachDecision::NoAction;
   }
 
@@ -10290,8 +10330,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIs() {
   ValOperandId lhsId = loadArgument(calleeId, ArgumentKind::Arg0);
   ValOperandId rhsId = loadArgument(calleeId, ArgumentKind::Arg1);
 
-  HandleValue lhs = args_[0];
-  HandleValue rhs = args_[1];
+  Value lhs = arg(0);
+  Value rhs = arg(1);
 
   if (!isFirstStub()) {
     writer.sameValueResult(lhsId, rhsId);
@@ -10380,7 +10420,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10405,19 +10445,19 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
   
-  if (!args_[0].isObject()) {
+  if (!arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
   
   
   
   
-  const JSClass* clasp = args_[0].toObject().getClass();
+  const JSClass* clasp = arg(0).toObject().getClass();
   if (clasp->isProxyObject()) {
     return AttachDecision::NoAction;
   }
@@ -10459,7 +10499,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -10492,7 +10532,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachBigInt() {
   
-  if (args_.length() != 1 || !args_[0].isInt32()) {
+  if (argsLength() != 1 || !arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -10517,12 +10557,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigInt() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN() {
   
-  if (args_.length() != 2 || !args_[0].isInt32() || !args_[1].isBigInt()) {
+  if (argsLength() != 2 || !arg(0).isInt32() || !arg(1).isBigInt()) {
     return AttachDecision::NoAction;
   }
 
   
-  if (args_[0].toInt32() < 0) {
+  if (arg(0).toInt32() < 0) {
     return AttachDecision::NoAction;
   }
 
@@ -10534,7 +10574,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN() {
 
   
   ValOperandId bitsId = loadArgument(calleeId, ArgumentKind::Arg0);
-  Int32OperandId int32BitsId = EmitGuardToInt32Index(writer, args_[0], bitsId);
+  Int32OperandId int32BitsId = EmitGuardToInt32Index(writer, arg(0), bitsId);
 
   
   writer.guardInt32IsNonNegative(int32BitsId);
@@ -10551,12 +10591,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsUintN() {
   
-  if (args_.length() != 2 || !args_[0].isInt32() || !args_[1].isBigInt()) {
+  if (argsLength() != 2 || !arg(0).isInt32() || !arg(1).isBigInt()) {
     return AttachDecision::NoAction;
   }
 
   
-  if (args_[0].toInt32() < 0) {
+  if (arg(0).toInt32() < 0) {
     return AttachDecision::NoAction;
   }
 
@@ -10568,7 +10608,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsUintN() {
 
   
   ValOperandId bitsId = loadArgument(calleeId, ArgumentKind::Arg0);
-  Int32OperandId int32BitsId = EmitGuardToInt32Index(writer, args_[0], bitsId);
+  Int32OperandId int32BitsId = EmitGuardToInt32Index(writer, arg(0), bitsId);
 
   
   writer.guardInt32IsNonNegative(int32BitsId);
@@ -10590,7 +10630,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10612,7 +10652,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   
   
   if (isFirstStub()) {
-    switch (args_[0].type()) {
+    switch (arg(0).type()) {
       case ValueType::Double:
       case ValueType::Int32:
       case ValueType::Boolean:
@@ -10673,7 +10713,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetDelete() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10703,7 +10743,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetAdd() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10733,7 +10773,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
   }
 
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -10762,7 +10802,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10784,7 +10824,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas() {
   
   
   if (isFirstStub()) {
-    switch (args_[0].type()) {
+    switch (arg(0).type()) {
       case ValueType::Double:
       case ValueType::Int32:
       case ValueType::Boolean:
@@ -10845,7 +10885,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10867,7 +10907,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet() {
   
   
   if (isFirstStub()) {
-    switch (args_[0].type()) {
+    switch (arg(0).type()) {
       case ValueType::Double:
       case ValueType::Int32:
       case ValueType::Boolean:
@@ -10928,7 +10968,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapDelete() {
   }
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -10964,7 +11004,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   }
 
   
-  if (args_.length() != 2) {
+  if (argsLength() != 2) {
     return AttachDecision::NoAction;
   }
 
@@ -10995,7 +11035,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSize() {
   }
 
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11024,7 +11064,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachWeakMapGet() {
   }
 
   
-  if (args_.length() != 1 || !args_[0].isObject()) {
+  if (argsLength() != 1 || !arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -11058,7 +11098,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachWeakMapHas() {
   }
 
   
-  if (args_.length() != 1 || !args_[0].isObject()) {
+  if (argsLength() != 1 || !arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -11092,7 +11132,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachWeakSetHas() {
   }
 
   
-  if (args_.length() != 1 || !args_[0].isObject()) {
+  if (argsLength() != 1 || !arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -11126,7 +11166,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime() {
   }
 
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11158,7 +11198,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
   }
 
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11248,7 +11288,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   if (callee->native() != fun_call) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() > JIT_ARGS_LENGTH_MAX) {
+  if (argsLength() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
@@ -11273,9 +11313,10 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
 
   if (mode_ == ICState::Mode::Specialized && !isScripted) {
     HandleValue newTarget = NullHandleValue;
-    HandleValue thisValue = argc_ > 0 ? args_[0] : UndefinedHandleValue;
+    RootedValue thisValue(cx_, argc_ > 0 ? arg(0) : UndefinedValue());
     HandleValueArray args =
-        argc_ > 0 ? HandleValueArray::subarray(args_, 1, args_.length() - 1)
+        argc_ > 0 ? HandleValueArray::subarray(argsAsHandleValueArray(), 1,
+                                               argsLength() - 1)
                   : HandleValueArray::empty();
 
     
@@ -11329,7 +11370,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
   
-  if (args_.length() < 1 || args_.length() > 3) {
+  if (argsLength() < 1 || argsLength() > 3) {
     return AttachDecision::NoAction;
   }
 
@@ -11345,10 +11386,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
 
   
   int64_t unusedIndex;
-  if (args_.length() > 1 && !ValueIsInt64Index(args_[1], &unusedIndex)) {
+  if (argsLength() > 1 && !ValueIsInt64Index(arg(1), &unusedIndex)) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() > 2 && !ValueIsInt64Index(args_[2], &unusedIndex)) {
+  if (argsLength() > 2 && !ValueIsInt64Index(arg(2), &unusedIndex)) {
     return AttachDecision::NoAction;
   }
 
@@ -11371,7 +11412,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
   }
 
   
-  if (!ValueCanConvertToNumeric(elementType, args_[0])) {
+  if (!ValueCanConvertToNumeric(elementType, arg(0))) {
     return AttachDecision::NoAction;
   }
 
@@ -11392,14 +11433,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
   writer.guardHasAttachedArrayBuffer(objId);
 
   ValOperandId fillValId = loadArgument(calleeId, ArgumentKind::Arg0);
-  OperandId fillNumericId = emitNumericGuard(fillValId, args_[0], elementType);
+  OperandId fillNumericId = emitNumericGuard(fillValId, arg(0), elementType);
 
   
   IntPtrOperandId intPtrStartId;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     ValOperandId startId = loadArgument(calleeId, ArgumentKind::Arg1);
     intPtrStartId =
-        guardToIntPtrIndex(args_[1], startId,  false);
+        guardToIntPtrIndex(arg(1), startId,  false);
   } else {
     
     intPtrStartId = writer.loadInt32AsIntPtrConstant(0);
@@ -11407,9 +11448,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
 
   
   IntPtrOperandId intPtrEndId;
-  if (args_.length() > 2) {
+  if (argsLength() > 2) {
     ValOperandId endId = loadArgument(calleeId, ArgumentKind::Arg2);
-    intPtrEndId = guardToIntPtrIndex(args_[2], endId,  false);
+    intPtrEndId = guardToIntPtrIndex(arg(2), endId,  false);
   } else {
     
     intPtrEndId = writer.loadArrayBufferViewLength(objId);
@@ -11425,7 +11466,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySet() {
   
-  if (args_.length() < 1 || args_.length() > 2) {
+  if (argsLength() < 1 || argsLength() > 2) {
     return AttachDecision::NoAction;
   }
 
@@ -11440,22 +11481,22 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySet() {
   }
 
   
-  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+  if (!arg(0).isObject() || !arg(0).toObject().is<TypedArrayObject>()) {
     return AttachDecision::NoAction;
   }
 
   
   uint64_t targetOffset = 0;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     int64_t offsetIndex;
-    if (!ValueIsInt64Index(args_[1], &offsetIndex) || offsetIndex < 0) {
+    if (!ValueIsInt64Index(arg(1), &offsetIndex) || offsetIndex < 0) {
       return AttachDecision::NoAction;
     }
     targetOffset = uint64_t(offsetIndex);
   }
 
   auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
-  auto* source = &args_[0].toObject().as<TypedArrayObject>();
+  auto* source = &arg(0).toObject().as<TypedArrayObject>();
 
   
   if (tarr->hasDetachedBuffer() || source->hasDetachedBuffer()) {
@@ -11521,10 +11562,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySet() {
 
   
   IntPtrOperandId intPtrOffsetId;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     ValOperandId offsetId = loadArgument(calleeId, ArgumentKind::Arg1);
     intPtrOffsetId =
-        guardToIntPtrIndex(args_[1], offsetId,  false);
+        guardToIntPtrIndex(arg(1), offsetId,  false);
     writer.guardIntPtrIsNonNegative(intPtrOffsetId);
   } else {
     
@@ -11541,7 +11582,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySet() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
   
-  if (args_.length() > 2) {
+  if (argsLength() > 2) {
     return AttachDecision::NoAction;
   }
 
@@ -11557,10 +11598,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
 
   
   int64_t unusedIndex;
-  if (args_.length() > 0 && !ValueIsInt64Index(args_[0], &unusedIndex)) {
+  if (argsLength() > 0 && !ValueIsInt64Index(arg(0), &unusedIndex)) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() > 1 && !ValueIsInt64Index(args_[1], &unusedIndex)) {
+  if (argsLength() > 1 && !ValueIsInt64Index(arg(1), &unusedIndex)) {
     return AttachDecision::NoAction;
   }
 
@@ -11626,10 +11667,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
 
   
   IntPtrOperandId intPtrStartId;
-  if (args_.length() > 0) {
+  if (argsLength() > 0) {
     ValOperandId startId = loadArgument(calleeId, ArgumentKind::Arg0);
     intPtrStartId =
-        guardToIntPtrIndex(args_[0], startId,  false);
+        guardToIntPtrIndex(arg(0), startId,  false);
   } else {
     
     intPtrStartId = writer.loadInt32AsIntPtrConstant(0);
@@ -11637,9 +11678,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
 
   
   IntPtrOperandId intPtrEndId;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     ValOperandId endId = loadArgument(calleeId, ArgumentKind::Arg1);
-    intPtrEndId = guardToIntPtrIndex(args_[1], endId,  false);
+    intPtrEndId = guardToIntPtrIndex(arg(1), endId,  false);
   } else {
     
     intPtrEndId = writer.loadArrayBufferViewLength(objId);
@@ -11655,7 +11696,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11700,7 +11741,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteLength() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11745,7 +11786,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteLength() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteOffset() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11785,8 +11826,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteOffset() {
 AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
     bool isPossiblyWrapped) {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
   initializeInputOperand();
@@ -11805,8 +11846,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArrayConstructor() {
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
   initializeInputOperand();
@@ -11826,17 +11867,17 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
     bool isPossiblyWrapped) {
   
   
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() == 1);
+  MOZ_ASSERT(arg(0).isObject());
 
   
-  if (isPossiblyWrapped && IsWrapper(&args_[0].toObject())) {
+  if (isPossiblyWrapped && IsWrapper(&arg(0).toObject())) {
     return AttachDecision::NoAction;
   }
 
-  MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
+  MOZ_ASSERT(arg(0).toObject().is<TypedArrayObject>());
 
-  auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
+  auto* tarr = &arg(0).toObject().as<TypedArrayObject>();
 
   
   auto length = tarr->length();
@@ -11884,7 +11925,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11929,7 +11970,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachSharedArrayBufferByteLength() {
   
-  if (args_.length() != 0) {
+  if (argsLength() != 0) {
     return AttachDecision::NoAction;
   }
 
@@ -11979,7 +12020,7 @@ InlinableNativeIRGenerator::tryAttachSharedArrayBufferByteLength() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructing() {
   
-  MOZ_ASSERT(args_.length() == 0);
+  MOZ_ASSERT(argsLength() == 0);
   MOZ_ASSERT(script()->isFunction());
 
   
@@ -11997,13 +12038,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructing() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachGetNextMapSetEntryForIterator(bool isMap) {
   
-  MOZ_ASSERT(args_.length() == 2);
+  MOZ_ASSERT(argsLength() == 2);
   if (isMap) {
-    MOZ_ASSERT(args_[0].toObject().is<MapIteratorObject>());
+    MOZ_ASSERT(arg(0).toObject().is<MapIteratorObject>());
   } else {
-    MOZ_ASSERT(args_[0].toObject().is<SetIteratorObject>());
+    MOZ_ASSERT(arg(0).toObject().is<SetIteratorObject>());
   }
-  MOZ_ASSERT(args_[1].toObject().is<ArrayObject>());
+  MOZ_ASSERT(arg(1).toObject().is<ArrayObject>());
 
   
   initializeInputOperand();
@@ -12025,7 +12066,7 @@ InlinableNativeIRGenerator::tryAttachGetNextMapSetEntryForIterator(bool isMap) {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNewArrayIterator() {
   
-  MOZ_ASSERT(args_.length() == 0);
+  MOZ_ASSERT(argsLength() == 0);
 
   JSObject* templateObj = NewArrayIteratorTemplate(cx_);
   if (!templateObj) {
@@ -12047,7 +12088,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNewArrayIterator() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNewStringIterator() {
   
-  MOZ_ASSERT(args_.length() == 0);
+  MOZ_ASSERT(argsLength() == 0);
 
   JSObject* templateObj = NewStringIteratorTemplate(cx_);
   if (!templateObj) {
@@ -12069,7 +12110,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNewStringIterator() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachNewRegExpStringIterator() {
   
-  MOZ_ASSERT(args_.length() == 0);
+  MOZ_ASSERT(argsLength() == 0);
 
   JSObject* templateObj = NewRegExpStringIteratorTemplate(cx_);
   if (!templateObj) {
@@ -12092,7 +12133,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNewRegExpStringIterator() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachArrayIteratorPrototypeOptimizable() {
   
-  MOZ_ASSERT(args_.length() == 0);
+  MOZ_ASSERT(argsLength() == 0);
 
   if (!isFirstStub()) {
     
@@ -12118,7 +12159,7 @@ InlinableNativeIRGenerator::tryAttachArrayIteratorPrototypeOptimizable() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate() {
   
-  if (args_.length() != 1 || !args_[0].isObjectOrNull()) {
+  if (argsLength() != 1 || !arg(0).isObjectOrNull()) {
     return AttachDecision::NoAction;
   }
 
@@ -12127,7 +12168,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate() {
     return AttachDecision::NoAction;
   }
 
-  RootedObject proto(cx_, args_[0].toObjectOrNull());
+  RootedObject proto(cx_, arg(0).toObjectOrNull());
   JSObject* templateObj = ObjectCreateImpl(cx_, proto, TenuredObject);
   if (!templateObj) {
     cx_->recoverFromOutOfMemory();
@@ -12159,16 +12200,16 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate() {
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() == 1 && !args_[0].isObject()) {
+  if (argsLength() == 1 && !arg(0).isObject()) {
     return AttachDecision::NoAction;
   }
 
   gc::AllocSite* site = nullptr;
   PlainObject* templateObj = nullptr;
-  if (args_.length() == 0) {
+  if (argsLength() == 0) {
     
     if (!BytecodeOpCanHaveAllocSite(op())) {
       return AttachDecision::NoAction;
@@ -12199,7 +12240,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
-  if (args_.length() == 0) {
+  if (argsLength() == 0) {
     uint32_t numFixedSlots = templateObj->numUsedFixedSlots();
     uint32_t numDynamicSlots = templateObj->numDynamicSlots();
     gc::AllocKind allocKind = templateObj->allocKindForTenure();
@@ -12232,14 +12273,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
 
   
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
-  if (args_.length() == 1 && !args_[0].isInt32()) {
+  if (argsLength() == 1 && !arg(0).isInt32()) {
     return AttachDecision::NoAction;
   }
 
-  int32_t length = (args_.length() == 1) ? args_[0].toInt32() : 0;
+  int32_t length = (argsLength() == 1) ? arg(0).toInt32() : 0;
   if (length < 0 || uint32_t(length) > ArrayObject::EagerAllocationMaxLength) {
     return AttachDecision::NoAction;
   }
@@ -12269,11 +12310,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   Int32OperandId lengthId;
-  if (args_.length() == 1) {
+  if (argsLength() == 1) {
     ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
     lengthId = writer.guardToInt32(arg0Id);
   } else {
-    MOZ_ASSERT(args_.length() == 0);
+    MOZ_ASSERT(argsLength() == 0);
     lengthId = writer.loadInt32Constant(0);
   }
 
@@ -12287,14 +12328,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
   MOZ_ASSERT(flags_.isConstructing());
-  MOZ_ASSERT(args_.length() == 0 || args_[0].isInt32());
+  MOZ_ASSERT(argsLength() == 0 || arg(0).isInt32());
 
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
 
-  int32_t length = args_.length() > 0 ? args_[0].toInt32() : 0;
+  int32_t length = argsLength() > 0 ? arg(0).toInt32() : 0;
 
   Scalar::Type type = TypedArrayConstructorType(target_);
   Rooted<TypedArrayObject*> templateObj(cx_);
@@ -12316,7 +12357,7 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   Int32OperandId lengthId;
-  if (args_.length() > 0) {
+  if (argsLength() > 0) {
     ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
     lengthId = writer.guardToInt32(arg0Id);
   } else {
@@ -12332,11 +12373,11 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArrayBuffer() {
   MOZ_ASSERT(flags_.isConstructing());
-  MOZ_ASSERT(args_.length() > 0);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() > 0);
+  MOZ_ASSERT(arg(0).isObject());
 
   
-  if (args_.length() > 3) {
+  if (argsLength() > 3) {
     return AttachDecision::NoAction;
   }
 
@@ -12348,7 +12389,7 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArrayBuffer() {
   Scalar::Type type = TypedArrayConstructorType(target_);
 
   Rooted<ArrayBufferObjectMaybeShared*> obj(
-      cx_, &args_[0].toObject().as<ArrayBufferObjectMaybeShared>());
+      cx_, &arg(0).toObject().as<ArrayBufferObjectMaybeShared>());
 
   Rooted<TypedArrayObject*> templateObj(
       cx_, TypedArrayObject::GetTemplateObjectForBuffer(cx_, type, obj));
@@ -12380,14 +12421,14 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArrayBuffer() {
   }
 
   ValOperandId byteOffsetId;
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     byteOffsetId = loadArgument(calleeId, ArgumentKind::Arg1);
   } else {
     byteOffsetId = writer.loadUndefined();
   }
 
   ValOperandId lengthId;
-  if (args_.length() > 2) {
+  if (argsLength() > 2) {
     lengthId = loadArgument(calleeId, ArgumentKind::Arg2);
   } else {
     lengthId = writer.loadUndefined();
@@ -12405,15 +12446,15 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArrayBuffer() {
 AttachDecision
 InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArray() {
   MOZ_ASSERT(flags_.isConstructing());
-  MOZ_ASSERT(args_.length() > 0);
-  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(argsLength() > 0);
+  MOZ_ASSERT(arg(0).isObject());
 
   
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
-  Rooted<JSObject*> obj(cx_, &args_[0].toObject());
+  Rooted<JSObject*> obj(cx_, &arg(0).toObject());
   MOZ_ASSERT(!obj->is<ProxyObject>());
   MOZ_ASSERT(!obj->is<ArrayBufferObjectMaybeShared>());
 
@@ -12454,12 +12495,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
 
   
 
-  if (args_.length() == 0 || args_[0].isInt32()) {
+  if (argsLength() == 0 || arg(0).isInt32()) {
     return tryAttachTypedArrayConstructorFromLength();
   }
 
-  if (args_[0].isObject()) {
-    auto* obj = &args_[0].toObject();
+  if (arg(0).isObject()) {
+    auto* obj = &arg(0).toObject();
 
     
     if (obj->is<ProxyObject>()) {
@@ -12483,7 +12524,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
   MOZ_ASSERT(flags_.isConstructing());
 
   
-  if (args_.length() > 1) {
+  if (argsLength() > 1) {
     return AttachDecision::NoAction;
   }
 
@@ -12509,7 +12550,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
   
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
-  if (args_.length() == 1) {
+  if (argsLength() == 1) {
     ValOperandId iterableId = loadArgument(calleeId, ArgumentKind::Arg0);
     if (native == InlinableNative::MapConstructor) {
       writer.newMapObjectFromIterableResult(templateObj, iterableId);
@@ -12560,7 +12601,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpecializedFunctionBind(
   if (target->staticPrototype() != &cx_->global()->getFunctionPrototype()) {
     return AttachDecision::NoAction;
   }
-  size_t numBoundArgs = args_.length() > 0 ? args_.length() - 1 : 0;
+  size_t numBoundArgs = argsLength() > 0 ? argsLength() - 1 : 0;
   if (numBoundArgs > BoundFunctionObject::MaxInlineBoundArgs) {
     return AttachDecision::NoAction;
   }
@@ -12659,7 +12700,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpecializedFunctionBind(
                                bound->getNameForInitialShape());
   }
 
-  writer.specializedBindFunctionResult(targetId, args_.length(), templateObj);
+  writer.specializedBindFunctionResult(targetId, argsLength(), templateObj);
   writer.returnFromIC();
 
   trackAttached("SpecializedFunctionBind");
@@ -12687,13 +12728,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFunctionBind() {
   if (hasBoundArguments()) {
     return AttachDecision::NoAction;
   }
-  MOZ_ASSERT(stackArgc() == args_.length(), "argc matches number of arguments");
+  MOZ_ASSERT(stackArgc() == argsLength(), "argc matches number of arguments");
 
   
   
   
   static constexpr size_t MaxArguments = 6;
-  if (args_.length() > MaxArguments) {
+  if (argsLength() > MaxArguments) {
     return AttachDecision::NoAction;
   }
 
@@ -12720,7 +12761,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFunctionBind() {
     writer.guardClass(targetId, GuardClassKind::BoundFunction);
   }
 
-  writer.bindFunctionResult(targetId, args_.length(), templateObj);
+  writer.bindFunctionResult(targetId, argsLength(), templateObj);
   writer.returnFromIC();
 
   trackAttached("FunctionBind");
@@ -12755,21 +12796,21 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     
     
     format = CallFlags::FunCall;
-  } else if (args_[1].isNullOrUndefined()) {
+  } else if (arg(1).isNullOrUndefined()) {
     
     
     
     format = CallFlags::FunApplyNullUndefined;
-  } else if (args_[1].isObject() && args_[1].toObject().is<ArgumentsObject>()) {
-    auto* argsObj = &args_[1].toObject().as<ArgumentsObject>();
+  } else if (arg(1).isObject() && arg(1).toObject().is<ArgumentsObject>()) {
+    auto* argsObj = &arg(1).toObject().as<ArgumentsObject>();
     if (argsObj->hasOverriddenElement() || argsObj->anyArgIsForwarded() ||
         argsObj->hasOverriddenLength() ||
         argsObj->initialLength() > JIT_ARGS_LENGTH_MAX) {
       return AttachDecision::NoAction;
     }
     format = CallFlags::FunApplyArgsObj;
-  } else if (args_[1].isObject() && args_[1].toObject().is<ArrayObject>() &&
-             IsPackedArray(&args_[1].toObject())) {
+  } else if (arg(1).isObject() && arg(1).toObject().is<ArrayObject>() &&
+             IsPackedArray(&arg(1).toObject())) {
     format = CallFlags::FunApplyArray;
   } else {
     return AttachDecision::NoAction;
@@ -12785,18 +12826,15 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
   if (mode_ == ICState::Mode::Specialized && !isScripted &&
       format == CallFlags::FunApplyArray) {
     HandleValue newTarget = NullHandleValue;
-    HandleValue thisValue = args_[0];
-    Rooted<ArrayObject*> aobj(cx_, &args_[1].toObject().as<ArrayObject>());
-    HandleValueArray args = HandleValueArray::fromMarkedLocation(
-        aobj->length(), aobj->getDenseElements());
-
+    RootedValue thisValue(cx_, arg(0));
+    Rooted<ArrayObject*> aobj(cx_, &arg(1).toObject().as<ArrayObject>());
     
     InlinableNativeIRGenerator nativeGen(*this, calleeFunc, target, newTarget,
-                                         thisValue, args, targetFlags);
+                                         thisValue, aobj, targetFlags);
     TRY_ATTACH(nativeGen.tryAttachStub());
   }
   if (format == CallFlags::FunApplyArray &&
-      args_[1].toObject().as<ArrayObject>().length() > JIT_ARGS_LENGTH_MAX) {
+      arg(1).toObject().as<ArrayObject>().length() > JIT_ARGS_LENGTH_MAX) {
     
     
     return AttachDecision::NoAction;
@@ -12806,7 +12844,7 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
       (format == CallFlags::FunCall ||
        format == CallFlags::FunApplyNullUndefined)) {
     HandleValue newTarget = NullHandleValue;
-    HandleValue thisValue = argc_ > 0 ? args_[0] : UndefinedHandleValue;
+    RootedValue thisValue(cx_, argc_ > 0 ? arg(0) : UndefinedValue());
     HandleValueArray args = HandleValueArray::empty();
 
     
@@ -12947,7 +12985,7 @@ AttachDecision CallIRGenerator::tryAttachWasmCall(HandleFunction calleeFunc) {
   
   
   for (size_t i = 0; i < sig.args().length(); i++) {
-    Value argVal = i < argc_ ? args_[i] : UndefinedValue();
+    Value argVal = i < argc_ ? arg(i) : UndefinedValue();
     switch (sig.args()[i].kind()) {
       case wasm::ValType::I32:
       case wasm::ValType::F32:
@@ -13018,7 +13056,7 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(HandleFunction callee,
 
 #ifdef FUZZING_JS_FUZZILLI
 AttachDecision InlinableNativeIRGenerator::tryAttachFuzzilliHash() {
-  if (args_.length() != 1) {
+  if (argsLength() != 1) {
     return AttachDecision::NoAction;
   }
 
@@ -13748,7 +13786,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   }
 
   
-  if (args_.length() > JIT_ARGS_LENGTH_MAX) {
+  if (argsLength() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
@@ -13817,7 +13855,7 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   
   
   
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+  if (isSpread && argsLength() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
@@ -14095,7 +14133,7 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
   }
 
   
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+  if (isSpread && argsLength() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
@@ -14110,7 +14148,7 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
   
   JS::RootedVector<Value> concatenatedArgs(cx_);
   if (numBoundArgs != 0) {
-    if (!concatenatedArgs.reserve(numBoundArgs + args_.length())) {
+    if (!concatenatedArgs.reserve(numBoundArgs + argsLength())) {
       cx_->recoverFromOutOfMemory();
       return AttachDecision::NoAction;
     }
@@ -14118,11 +14156,14 @@ AttachDecision CallIRGenerator::tryAttachBoundNative(
     for (size_t i = 0; i < numBoundArgs; i++) {
       concatenatedArgs.infallibleAppend(calleeObj->getBoundArg(i));
     }
-    concatenatedArgs.infallibleAppend(args_.begin(), args_.length());
+    auto hva = argsAsHandleValueArray();
+    concatenatedArgs.infallibleAppend(hva.begin(), hva.length());
   }
-  auto args = numBoundArgs != 0 ? concatenatedArgs : args_;
 
-  
+  mozilla::Variant<HandleValueArray, Handle<ArrayObject*>> args =
+      numBoundArgs != 0 ? mozilla::AsVariant(HandleValueArray(concatenatedArgs))
+                        : args_;
+
   InlinableNativeIRGenerator nativeGen(*this, calleeObj, target, newTarget_,
                                        thisValue, args, flags);
   return nativeGen.tryAttachStub();
@@ -14196,15 +14237,16 @@ AttachDecision CallIRGenerator::tryAttachBoundFunCall(
   if (numBoundArgs > 0) {
     thisValue = calleeObj->getBoundArg(0);
   } else if (argc_ > 0) {
-    thisValue = args_[0];
+    thisValue = arg(0);
   } else {
     MOZ_ASSERT(thisValue.isUndefined());
   }
 
+  HandleValueArray argsArray = argsAsHandleValueArray();
   
   JS::RootedVector<Value> concatenatedArgs(cx_);
   if (numBoundArgs > 1) {
-    if (!concatenatedArgs.reserve((numBoundArgs - 1) + args_.length())) {
+    if (!concatenatedArgs.reserve((numBoundArgs - 1) + argsLength())) {
       cx_->recoverFromOutOfMemory();
       return AttachDecision::NoAction;
     }
@@ -14212,7 +14254,8 @@ AttachDecision CallIRGenerator::tryAttachBoundFunCall(
     for (size_t i = 1; i < numBoundArgs; i++) {
       concatenatedArgs.infallibleAppend(calleeObj->getBoundArg(i));
     }
-    concatenatedArgs.infallibleAppend(args_.begin(), args_.length());
+
+    concatenatedArgs.infallibleAppend(argsArray.begin(), argsArray.length());
   }
   auto args = ([&]() -> HandleValueArray {
     if (numBoundArgs > 1) {
@@ -14221,11 +14264,11 @@ AttachDecision CallIRGenerator::tryAttachBoundFunCall(
     }
     if (numBoundArgs > 0) {
       
-      return args_;
+      return argsArray;
     }
     if (argc_ > 0) {
       
-      return HandleValueArray::subarray(args_, 1, args_.length() - 1);
+      return HandleValueArray::subarray(argsArray, 1, argsLength() - 1);
     }
     
     return HandleValueArray::empty();
@@ -14286,15 +14329,15 @@ AttachDecision CallIRGenerator::tryAttachBoundFunApply(
   if (numBoundArgs + argc_ < 2) {
     format = CallFlags::FunCall;
   } else {
-    Value arg;
+    Value argVal;
     if (numBoundArgs == 2) {
-      arg = calleeObj->getBoundArg(1);
+      argVal = calleeObj->getBoundArg(1);
     } else if (numBoundArgs == 1) {
-      arg = args_[0];
+      argVal = arg(0);
     } else {
-      arg = args_[1];
+      argVal = arg(1);
     }
-    if (!arg.isNullOrUndefined()) {
+    if (!argVal.isNullOrUndefined()) {
       return AttachDecision::NoAction;
     }
     format = CallFlags::FunApplyNullUndefined;
@@ -14312,7 +14355,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunApply(
   if (numBoundArgs > 0) {
     thisValue = calleeObj->getBoundArg(0);
   } else if (argc_ > 0) {
-    thisValue = args_[0];
+    thisValue = arg(0);
   } else {
     MOZ_ASSERT(thisValue.isUndefined());
   }
@@ -14381,9 +14424,9 @@ AttachDecision CallIRGenerator::tryAttachFunCallBound(
   
   Rooted<Value> thisValue(cx_, bound->getBoundThis());
 
-  auto callArgs = argc_ > 0
-                      ? HandleValueArray::subarray(args_, 1, args_.length() - 1)
-                      : HandleValueArray::empty();
+  auto callArgs = argc_ > 0 ? HandleValueArray::subarray(
+                                  argsAsHandleValueArray(), 1, argsLength() - 1)
+                            : HandleValueArray::empty();
 
   
   JS::RootedVector<Value> concatenatedArgs(cx_);
@@ -14454,7 +14497,7 @@ AttachDecision CallIRGenerator::tryAttachFunApplyBound(
   CallFlags::ArgFormat format;
   if (argc_ < 2) {
     format = CallFlags::FunCall;
-  } else if (args_[1].isNullOrUndefined()) {
+  } else if (arg(1).isNullOrUndefined()) {
     format = CallFlags::FunApplyNullUndefined;
   } else {
     return AttachDecision::NoAction;
@@ -14567,11 +14610,11 @@ void CallIRGenerator::trackAttached(const char* name) {
     sp.valueProperty("argc", Int32Value(argc_));
 
     
-    if (args_.length() >= 1) {
-      sp.valueProperty("arg0", args_[0]);
+    if (argsLength() >= 1) {
+      sp.valueProperty("arg0", arg(0));
     }
-    if (args_.length() >= 2) {
-      sp.valueProperty("arg1", args_[1]);
+    if (argsLength() >= 2) {
+      sp.valueProperty("arg1", arg(1));
     }
   }
 #endif
