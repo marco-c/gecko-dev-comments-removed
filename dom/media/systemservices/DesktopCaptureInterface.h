@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef DOM_MEDIA_SYSTEMSERVICES_DESKTOPCAPTUREINTERFACE_H_
+#define DOM_MEDIA_SYSTEMSERVICES_DESKTOPCAPTUREINTERFACE_H_
+
+#include "mozilla/media/MediaUtils.h"
+
+namespace mozilla {
+class DesktopCaptureInterface {
+ public:
+  virtual mozilla::MediaEventSource<void>* CaptureEndedEvent() = 0;
+};
+}  
+
+#endif  
