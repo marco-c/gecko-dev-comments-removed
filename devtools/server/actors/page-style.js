@@ -447,6 +447,8 @@ class PageStyleActor extends Actor {
         
         fontFace.variationAxes = font.getVariationAxes().map(axis => ({
           ...axis,
+          minValue: toFixed(axis.minValue, 3),
+          maxValue: toFixed(axis.maxValue, 3),
           defaultValue: toFixed(axis.defaultValue, 3),
         }));
         fontFace.variationInstances = font

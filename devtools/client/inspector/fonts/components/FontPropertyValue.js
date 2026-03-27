@@ -96,17 +96,7 @@ class FontPropertyValue extends PureComponent {
 
   getPropLabel(prop) {
     const label = this.props[`${prop}Label`];
-    let labelValue;
-
-    
-    if (typeof this.props[prop] === "number") {
-      
-      const decimals = Math.abs(Math.log10(this.props.step));
-      labelValue = toFixed(this.props[prop], decimals);
-    } else {
-      labelValue = this.props[prop];
-    }
-    return label ? labelValue : null;
+    return label ? this.props[prop] : null;
   }
 
   
