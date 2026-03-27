@@ -486,7 +486,7 @@ bool SkConvolutionFilter1D::ComputeFilterValues(
 
     
     float srcBegin = std::max(0.0f, floorf(srcPixel - srcSupport));
-    float srcEnd = std::min(aSrcSize - 1.0f, ceilf(srcPixel + srcSupport));
+    float srcEnd = std::min(float(aSrcSize - 1), ceilf(srcPixel + srcSupport));
 
     
     
