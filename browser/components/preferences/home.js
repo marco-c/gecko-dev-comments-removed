@@ -651,11 +651,6 @@ var gHomePane = {
 
   init() {
     
-    
-    if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
-      return;
-    }
-    
     document
       .getElementById("homePageUrl")
       .addEventListener("change", this.onCustomHomePageChange.bind(this));
