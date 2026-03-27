@@ -197,15 +197,21 @@ class ProcessHandlerMixin:
                         try:
                             os.killpg(pid, sig)
                         except BaseException as e:
+                            self.debug(f"Exception from killpg({pid}, {sig}): {e}")
                             
                             
                             
                             
                             
                             
-                            if retries < 1 and getattr(e, "errno", None) == errno.EPERM:
+                            
+                            if retries < 3 and (
+                                isinstance(e, PermissionError)
+                                or getattr(e, "errno", None) == errno.EPERM
+                            ):
+                                time.sleep(self.TIMEOUT_BEFORE_SIGKILL)
                                 try:
-                                    os.waitpid(-pid, 0)
+                                    os.waitpid(-pid, os.WNOHANG)
                                 except OSError:
                                     pass
                                 return send_sig(sig, retries + 1)
@@ -213,7 +219,10 @@ class ProcessHandlerMixin:
                             
                             
                             
-                            if getattr(e, "errno", None) != errno.ESRCH:
+                            if not (
+                                isinstance(e, ProcessLookupError)
+                                or getattr(e, "errno", None) == errno.ESRCH
+                            ):
                                 print(
                                     "Could not terminate process: %s" % self.pid,
                                     file=sys.stderr,
