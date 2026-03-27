@@ -53,10 +53,6 @@ var HarMenuUtils = {
 
 
   saveAllAsHar(requests, connector) {
-    
-    
-    
-    
     return HarExporter.save(this.getDefaultHarOptions(requests, connector));
   },
 

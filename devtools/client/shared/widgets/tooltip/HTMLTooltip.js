@@ -278,10 +278,7 @@ const calculateHorizontalPosition = (
 
 
 const getRelativeRect = function (node, relativeTo) {
-  
-  
   if (
-    !node.getBoxQuads ||
     !node.getBoxQuads({
       relativeTo,
       createFramesForSuppressedWhitespace: false,

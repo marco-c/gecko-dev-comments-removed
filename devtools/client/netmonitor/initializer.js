@@ -66,7 +66,6 @@ function initialize(api) {
 
 
 
-
 const href = window.location.href.replace(/chrome:/, "http://");
 const url = new window.URL(href);
 
