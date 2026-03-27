@@ -7,11 +7,12 @@
 
 
 use crate::derives::*;
+use crate::error_reporting::ContextualParseError;
 use crate::parser::ParserContext;
-use crate::properties::view_transition::Descriptors;
+use crate::properties::view_transition::{DescriptorParser, Descriptors};
 use crate::shared_lock::DeepCloneWithLock;
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
-use cssparser::{Parser, SourceLocation};
+use cssparser::{Parser, RuleBodyParser, SourceLocation};
 use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ToCss};
 
@@ -26,11 +27,27 @@ pub struct ViewTransitionRule {
 
 impl ViewTransitionRule {
     
-    pub fn parse(_context: &ParserContext, _input: &mut Parser, location: SourceLocation) -> Self {
-        ViewTransitionRule {
+    pub fn parse(context: &ParserContext, input: &mut Parser, location: SourceLocation) -> Self {
+        let mut rule = ViewTransitionRule {
             descriptors: Descriptors::default(),
             source_location: location,
+        };
+
+        let mut parser = DescriptorParser {
+            context,
+            descriptors: &mut rule.descriptors,
+        };
+        let mut iter = RuleBodyParser::new(input, &mut parser);
+
+        while let Some(declaration) = iter.next() {
+            if let Err((error, slice)) = declaration {
+                let location = error.location;
+                let error = ContextualParseError::UnsupportedViewTransitionDescriptor(slice, error);
+                context.log_css_error(location, error);
+            }
         }
+
+        rule
     }
 }
 
