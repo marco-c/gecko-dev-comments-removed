@@ -180,8 +180,6 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
   }
   nsIFrame* frame = aContent->GetPrimaryFrame();
   MOZ_ASSERT(frame);
-  nsAutoCString overflow;
-  frame->Style()->GetComputedPropertyValue(eCSSProperty_overflow, overflow);
   
   
   
@@ -195,8 +193,7 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
           frame->IsStickyPositioned() ||
           (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
            nsLayoutUtils::IsReallyFixedPos(frame)) ||
-          overflow.Equals("auto"_ns) || overflow.Equals("scroll"_ns) ||
-          overflow.Equals("hidden"_ns));
+          frame->StyleDisplay()->IsScrollableOverflow());
 }
 
 
