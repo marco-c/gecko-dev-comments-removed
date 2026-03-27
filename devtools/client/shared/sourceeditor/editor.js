@@ -102,6 +102,7 @@ const CM_MAPPING = [
 ];
 
 const ONLY_SPACES_REGEXP = /^\s*$/;
+const PREF_CMNEXT_ENABLED = "devtools.webconsole.codemirrorNext";
 
 const editors = new WeakMap();
 
@@ -138,9 +139,10 @@ class Editor extends EventEmitter {
 
 
   static accel(key, modifiers = {}) {
+    const osShortcut = Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-";
     return (
       (modifiers.shift ? "Shift-" : "") +
-      (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") +
+      (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED) ? "Mod-" : osShortcut) +
       (modifiers.alt ? "Alt-" : "") +
       key
     );
@@ -155,6 +157,33 @@ class Editor extends EventEmitter {
   static keyFor(cmd, opts = { noaccel: false }) {
     const key = L10N.getStr(cmd + ".commandkey");
     return opts.noaccel ? key : Editor.accel(key);
+  }
+
+  
+
+
+
+
+
+
+  static mapKeyBindings(keyBindings) {
+    
+    const keyEvents = {
+      Up: "ArrowUp",
+      Down: "ArrowDown",
+      Left: "ArrowLeft",
+      Right: "ArrowRight",
+    };
+    const keyBindingsArr = [];
+    for (const key in keyBindings) {
+      if (typeof keyBindings[key] == "function") {
+        keyBindingsArr.push({
+          key: keyEvents[key] ? keyEvents[key] : key,
+          run: keyBindings[key],
+        });
+      }
+    }
+    return keyBindingsArr;
   }
 
   static modes = {
@@ -2158,6 +2187,21 @@ class Editor extends EventEmitter {
     return cm.getDoc().getRange({ line: 0, ch: 0 }, cm.getCursor());
   }
 
+  
+
+
+
+
+  getCursorPos() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      const line = cm.state.doc.lineAt(pos);
+      return { line: line.number, ch: pos - line.from };
+    }
+    return cm.getCursor();
+  }
+
   getDoc() {
     if (!this.config) {
       return null;
@@ -4139,13 +4183,14 @@ class Editor extends EventEmitter {
 
 
 
-
-CM_MAPPING.forEach(name => {
-  Editor.prototype[name] = function (...args) {
-    const cm = editors.get(this);
-    return cm[name].apply(cm, args);
-  };
-});
+if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+  CM_MAPPING.forEach(name => {
+    Editor.prototype[name] = function (...args) {
+      const cm = editors.get(this);
+      return cm[name].apply(cm, args);
+    };
+  });
+}
 
 
 
