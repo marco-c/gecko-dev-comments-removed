@@ -430,7 +430,7 @@ pub struct PrimKeyCommonData {
     pub flags: PrimitiveFlags,
     pub aligned_aa_edges: EdgeMask,
     pub transformed_aa_edges: EdgeMask,
-    pub prim_rect: RectKey,
+    pub prim_size: SizeKey,
 }
 
 impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
@@ -439,7 +439,7 @@ impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
             flags: info.flags,
             aligned_aa_edges: info.aligned_aa_edges,
             transformed_aa_edges: info.transformed_aa_edges,
-            prim_rect: info.rect.into(),
+            prim_size: info.rect.size().into(),
         }
     }
 }
@@ -459,7 +459,7 @@ pub struct PrimKey<T: MallocSizeOf> {
 pub struct PrimTemplateCommonData {
     pub flags: PrimitiveFlags,
     pub may_need_repetition: bool,
-    pub prim_rect: LayoutRect,
+    pub prim_size: LayoutSize,
     pub opacity: PrimitiveOpacity,
     
     
@@ -476,7 +476,7 @@ impl PrimTemplateCommonData {
         PrimTemplateCommonData {
             flags: common.flags,
             may_need_repetition: true,
-            prim_rect: common.prim_rect.into(),
+            prim_size: common.prim_size.into(),
             gpu_buffer_address: GpuBufferAddress::INVALID,
             opacity: PrimitiveOpacity::translucent(),
             aligned_aa_edges: common.aligned_aa_edges,
@@ -874,6 +874,9 @@ pub struct PrimitiveInstance {
     pub clip_leaf_id: ClipLeafId,
 
     
+    pub prim_origin: LayoutPoint,
+
+    
     
     
     pub vis: PrimitiveVisibility,
@@ -883,11 +886,13 @@ impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveInstanceKind,
         clip_leaf_id: ClipLeafId,
+        prim_origin: LayoutPoint,
     ) -> Self {
         PrimitiveInstance {
             kind,
             vis: PrimitiveVisibility::new(),
             clip_leaf_id,
+            prim_origin,
         }
     }
 
@@ -1305,6 +1310,6 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 88, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 96, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
 }
