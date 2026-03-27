@@ -27,7 +27,7 @@ function testCustomUiaRelationArray(id, prop, targets) {
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <input id="controls" aria-controls="t1 t2">
 <input id="error" aria-errormessage="t3 t4" aria-invalid="true">
@@ -41,16 +41,13 @@ addUiaTask(
   async function testControllerFor() {
     await definePyVar("doc", `getDocUia()`);
     await testUiaRelationArray("controls", "ControllerFor", ["t1", "t2"]);
-    
-    if (gIsUiaEnabled) {
-      await testUiaRelationArray("error", "ControllerFor", ["t3", "t4"]);
-      await testUiaRelationArray("controlsError", "ControllerFor", [
-        "t1",
-        "t2",
-        "t3",
-        "t4",
-      ]);
-    }
+    await testUiaRelationArray("error", "ControllerFor", ["t3", "t4"]);
+    await testUiaRelationArray("controlsError", "ControllerFor", [
+      "t1",
+      "t2",
+      "t3",
+      "t4",
+    ]);
     await testUiaRelationArray("none", "ControllerFor", []);
   }
 );
@@ -58,7 +55,7 @@ addUiaTask(
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <input id="describedby" aria-describedby="t1 t2">
 <input id="details" aria-details="t3 t4">
@@ -72,16 +69,13 @@ addUiaTask(
   async function testDescribedBy() {
     await definePyVar("doc", `getDocUia()`);
     await testUiaRelationArray("describedby", "DescribedBy", ["t1", "t2"]);
-    
-    if (gIsUiaEnabled) {
-      await testUiaRelationArray("details", "DescribedBy", ["t3", "t4"]);
-      await testUiaRelationArray("describedbyDetails", "DescribedBy", [
-        "t1",
-        "t2",
-        "t3",
-        "t4",
-      ]);
-    }
+    await testUiaRelationArray("details", "DescribedBy", ["t3", "t4"]);
+    await testUiaRelationArray("describedbyDetails", "DescribedBy", [
+      "t1",
+      "t2",
+      "t3",
+      "t4",
+    ]);
     await testUiaRelationArray("none", "DescribedBy", []);
   }
 );
@@ -89,7 +83,7 @@ addUiaTask(
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <div id="t1" aria-flowto="t2">t1</div>
 <div id="t2">t2</div>
@@ -107,7 +101,7 @@ addUiaTask(
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <label id="label">label</label>
 <input id="input" aria-labelledby="label">
@@ -149,15 +143,13 @@ addUiaTask(
       )),
       "noLabel has no LabeledBy"
     );
-  },
-  
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );
 
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <dialog aria-actions="btn" id="dlg" onclick="" open>
   Dialog with its own click listener
@@ -170,15 +162,13 @@ addUiaTask(
     await definePyVar("doc", `getDocUia()`);
     await testCustomUiaRelationArray("dlg", "AccessibleActions", ["btn"]);
     await testCustomUiaRelationArray("btn", "AccessibleActions", []);
-  },
-  
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );
 
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <button id="button">button</button>
 <div role="tablist">
@@ -211,7 +201,5 @@ addUiaTask(
       "hasactions=true",
       "tab2 hasactions=true"
     );
-  },
-  
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );

@@ -67,14 +67,11 @@ async function testSelectionProps(id, selection, multiple, required) {
     multiple,
     `${id} has correct CanSelectMultiple`
   );
-  
-  if (gIsUiaEnabled) {
-    is(
-      !!(await runPython(`pattern.CurrentIsSelectionRequired`)),
-      required,
-      `${id} has correct IsSelectionRequired`
-    );
-  }
+  is(
+    !!(await runPython(`pattern.CurrentIsSelectionRequired`)),
+    required,
+    `${id} has correct IsSelectionRequired`
+  );
 }
 
 async function testSelectionItemProps(id, selected, container) {
@@ -103,7 +100,7 @@ async function testSelectionItemProps(id, selected, container) {
 
 
 
-addUiaTask(SNIPPET, async function testSelection(browser) {
+addAccessibleTask(SNIPPET, async function testSelection(browser) {
   await definePyVar("doc", `getDocUia()`);
   await testSelectionProps("selectList", ["sl1"], false, false);
   await testSelectionProps("selectRequired", [], false, true);
@@ -136,10 +133,7 @@ addUiaTask(SNIPPET, async function testSelection(browser) {
 
   await testSelectionProps("ariaListbox", ["al1"], false, false);
   await testSelectionProps("tablist", ["t2"], false, false);
-  
-  if (gIsUiaEnabled) {
-    await testSelectionProps("grid", ["g2", "g4"], true, false);
-  }
+  await testSelectionProps("grid", ["g2", "g4"], true, false);
 
   
   
@@ -152,7 +146,7 @@ addUiaTask(SNIPPET, async function testSelection(browser) {
 
 
 
-addUiaTask(SNIPPET, async function testSelection(browser) {
+addAccessibleTask(SNIPPET, async function testSelection(browser) {
   await definePyVar("doc", `getDocUia()`);
   await testPatternAbsent("selectList", "SelectionItem");
   await testSelectionItemProps("sl1", true, "selectList");
@@ -188,56 +182,42 @@ addUiaTask(SNIPPET, async function testSelection(browser) {
 
   await testSelectionItemProps("t2", true, "tablist");
   await testSelectionItemProps("t1", false, "tablist");
+  info("Calling Select on t1");
   
-  if (gIsUiaEnabled) {
-    info("Calling Select on t1");
-    
-    await invokeContentTask(browser, [], () => {
-      content.document.getElementById("t1").addEventListener("click", evt => {
-        evt.target.ariaSelected = "true";
-        content.document.getElementById("t2").ariaSelected = "false";
-      });
+  await invokeContentTask(browser, [], () => {
+    content.document.getElementById("t1").addEventListener("click", evt => {
+      evt.target.ariaSelected = "true";
+      content.document.getElementById("t2").ariaSelected = "false";
     });
-    await setUpWaitForUiaEvent("SelectionItem_ElementSelected", "t1");
-    await runPython(`pattern.Select()`);
-    await waitForUiaEvent();
-    ok(true, "t1 got ElementSelected event");
-    await testSelectionItemProps("t1", true, "tablist");
-    await testSelectionItemProps("t2", false, "tablist");
-  }
+  });
+  await setUpWaitForUiaEvent("SelectionItem_ElementSelected", "t1");
+  await runPython(`pattern.Select()`);
+  await waitForUiaEvent();
+  ok(true, "t1 got ElementSelected event");
+  await testSelectionItemProps("t1", true, "tablist");
+  await testSelectionItemProps("t2", false, "tablist");
 
-  
-  
-  if (gIsUiaEnabled) {
-    await testSelectionItemProps("g1", false, "grid");
-    await testSelectionItemProps("g2", true, "grid");
-  }
+  await testSelectionItemProps("g1", false, "grid");
+  await testSelectionItemProps("g2", true, "grid");
 
   await testSelectionItemProps("r1", true, null);
   await testSelectionItemProps("r2", false, null);
-  
-  if (gIsUiaEnabled) {
-    info("Calling Select on r2");
-    await setUpWaitForUiaEvent("SelectionItem_ElementSelected", "r2");
-    await runPython(`pattern.Select()`);
-    await waitForUiaEvent();
-    ok(true, "r2 got ElementSelected event");
-    await testSelectionItemProps("r1", false, null);
-    await testSelectionItemProps("r2", true, null);
-    info("Calling RemoveFromSelection on r2");
-    await testPythonRaises(
-      `pattern.RemoveFromSelection()`,
-      "RemoveFromSelection failed on r2"
-    );
-  }
+  info("Calling Select on r2");
+  await setUpWaitForUiaEvent("SelectionItem_ElementSelected", "r2");
+  await runPython(`pattern.Select()`);
+  await waitForUiaEvent();
+  ok(true, "r2 got ElementSelected event");
+  await testSelectionItemProps("r1", false, null);
+  await testSelectionItemProps("r2", true, null);
+  info("Calling RemoveFromSelection on r2");
+  await testPythonRaises(
+    `pattern.RemoveFromSelection()`,
+    "RemoveFromSelection failed on r2"
+  );
 
   await testPatternAbsent("m1", "SelectionItem");
-  
-  
-  if (gIsUiaEnabled) {
-    await testSelectionItemProps("m2", false, null);
-    await testSelectionItemProps("m3", true, null);
-  }
+  await testSelectionItemProps("m2", false, null);
+  await testSelectionItemProps("m3", true, null);
 
   await testPatternAbsent("button", "SelectionItem");
 });

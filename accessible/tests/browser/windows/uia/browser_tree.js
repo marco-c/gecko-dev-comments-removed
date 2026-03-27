@@ -13,7 +13,7 @@ async function testIsControl(pyVar, isControl) {
   }
 }
 
-addUiaTask(
+addAccessibleTask(
   `
 <p id="p">paragraph</p>
 <div id="div">div</div>
@@ -52,10 +52,6 @@ addUiaTask(
     await testIsControl("editable", true);
     await assignPyVarToUiaWithId("table");
     await testIsControl("table", true);
-    if (!gIsUiaEnabled) {
-      
-      return;
-    }
     await definePyVar(
       "linkTextLeaf",
       `uiaClient.RawViewWalker.GetFirstChildElement(link)`

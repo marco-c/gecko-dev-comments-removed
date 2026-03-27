@@ -14,7 +14,7 @@ const LiveSetting = {
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <div id="polite" aria-live="polite">
   <div id="inner">polite</div>
@@ -40,13 +40,11 @@ addUiaTask(
     
     
     
-    if (gIsUiaEnabled) {
-      is(
-        await runPython(`findUiaByDomId(doc, "inner").CurrentLiveSetting`),
-        LiveSetting.Off,
-        "inner has correct LiveSetting"
-      );
-    }
+    is(
+      await runPython(`findUiaByDomId(doc, "inner").CurrentLiveSetting`),
+      LiveSetting.Off,
+      "inner has correct LiveSetting"
+    );
     is(
       await runPython(`findUiaByDomId(doc, "assertive").CurrentLiveSetting`),
       LiveSetting.Assertive,
@@ -73,7 +71,7 @@ addUiaTask(
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <div id="implicit" aria-live="polite">live</div>
 <div id="false" aria-live="polite" aria-atomic="false">false</div>
@@ -114,15 +112,13 @@ addUiaTask(
       -1,
       "AriaProperties for none doesn't contain atomic"
     );
-  },
-  
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );
 
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <div id="live" aria-live="polite">
   <div id="inner">live</div>
@@ -135,15 +131,12 @@ addUiaTask(
       await runPython(`findUiaByDomId(doc, "live").CurrentIsControlElement`),
       "live is a control element"
     );
-    
-    if (gIsUiaEnabled) {
-      ok(
-        !(await runPython(
-          `findUiaByDomId(doc, "inner").CurrentIsControlElement`
-        )),
-        "inner is not a control element"
-      );
-    }
+    ok(
+      !(await runPython(
+        `findUiaByDomId(doc, "inner").CurrentIsControlElement`
+      )),
+      "inner is not a control element"
+    );
     ok(
       !(await runPython(
         `findUiaByDomId(doc, "notLive").CurrentIsControlElement`
@@ -156,7 +149,7 @@ addUiaTask(
 
 
 
-addUiaTask(
+addAccessibleTask(
   `
 <div id="live" aria-live="polite">
   a
@@ -206,7 +199,5 @@ addUiaTask(
     });
     await waitForUiaEvent();
     ok(true, "Got LiveRegionChanged on live");
-  },
-  
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );
