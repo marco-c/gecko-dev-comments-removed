@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/intl/OSPreferences.h"
@@ -511,6 +510,17 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTable(uint32_t aTag) {
   }
 
   return nullptr;
+}
+
+gfxFontEntry::FontTableCache* gfxDWriteFontEntry::GetFontTableCache(bool aCreate) {
+  
+  if (!mFontTableCache && aCreate) {
+    auto* cache = new FontTableCache();
+    if (!mFontTableCache.compareExchange(nullptr, cache)) {
+      delete cache;
+    }
+  }
+  return mFontTableCache;
 }
 
 nsresult gfxDWriteFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {

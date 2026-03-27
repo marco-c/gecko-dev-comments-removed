@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_DWRITEFONTLIST_H
 #define GFX_DWRITEFONTLIST_H
 
@@ -219,6 +218,8 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   static bool InitLogFont(IDWriteFont* aFont, LOGFONTW* aLogFont);
 
+  FontTableCache* GetFontTableCache(bool aCreate) override;
+
   
 
 
@@ -237,6 +238,8 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   RefPtr<IDWriteFontFace5> mFontFace5;
 
   DWRITE_FONT_FACE_TYPE mFaceType;
+
+  mozilla::Atomic<FontTableCache*> mFontTableCache;
 
   int8_t mIsCJK;
   bool mIsSystemFont;

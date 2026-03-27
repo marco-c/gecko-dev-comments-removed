@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_USER_FONT_SET_H
 #define GFX_USER_FONT_SET_H
 
@@ -775,6 +774,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   virtual void GetUserFontSets(nsTArray<RefPtr<gfxUserFontSet>>& aResult);
+
+  FontTableCache* GetFontTableCache(bool aCreate) override { return nullptr; }
 
   
   UserFontLoadState mUserFontLoadState;

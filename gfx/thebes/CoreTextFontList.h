@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef CoreTextFontList_H
 #define CoreTextFontList_H
 
@@ -89,6 +88,8 @@ class CTFontEntry final : public gfxFontEntry {
   bool HasFontTable(uint32_t aTableTag) override;
 
   static void DestroyBlobFunc(void* aUserData);
+
+  FontTableCache* GetFontTableCache(bool aCreate) override { return nullptr; }
 
   CGFontRef mFontRef MOZ_GUARDED_BY(mLock);  
 

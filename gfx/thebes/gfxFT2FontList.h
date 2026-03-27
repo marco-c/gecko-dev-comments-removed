@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_FT2FONTLIST_H
 #define GFX_FT2FONTLIST_H
 
@@ -106,14 +105,19 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
 
+  nsCString mFilename;
+  uint8_t mFTFontIndex;
+
+ protected:
+  FontTableCache* GetFontTableCache(bool aCreate) override;
+
+  mozilla::Atomic<FontTableCache*> mFontTableCache;
+
   
   
   mozilla::Atomic<mozilla::gfx::SharedFTFace*> mFTFace;
 
   FT_MM_Var* mMMVar = nullptr;
-
-  nsCString mFilename;
-  uint8_t mFTFontIndex;
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
 

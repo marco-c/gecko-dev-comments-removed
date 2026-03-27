@@ -464,7 +464,12 @@ gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
     }
     AutoWriteLock lock(mLock);
     if (mHBFace.compareExchange(nullptr, face)) {
-      mUseTableCache = useTableCache;
+      if (useTableCache) {
+        auto* cache = new FontTableCache();
+        if (!mFontTableCache.compareExchange(nullptr, cache)) {
+          delete cache;
+        }
+      }
     } else {
       
       
@@ -584,7 +589,8 @@ hb_blob_t* gfxFontconfigFontEntry::GetFontTable(uint32_t aTableTag) {
     }
   }
 
-  if (mUseTableCache) {
+  
+  if (mFontTableCache) {
     return gfxFontEntry::GetFontTable(aTableTag);
   }
 

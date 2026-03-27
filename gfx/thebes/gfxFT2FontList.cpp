@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/Base64.h"
 #include "mozilla/MemoryReporting.h"
 
@@ -588,6 +587,17 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
   
   
   return gfxFontEntry::GetFontTable(aTableTag);
+}
+
+gfxFontEntry::FontTableCache* FT2FontEntry::GetFontTableCache(bool aCreate) {
+  
+  if (!mFontTableCache && aCreate) {
+    auto* cache = new FontTableCache();
+    if (!mFontTableCache.compareExchange(nullptr, cache)) {
+      delete cache;
+    }
+  }
+  return mFontTableCache;
 }
 
 bool FT2FontEntry::HasVariations() {
