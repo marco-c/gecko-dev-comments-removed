@@ -87,7 +87,9 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   
   
   
-  hb_face_t* CreateHBFace() const;
+  
+  
+  hb_face_t* CreateHBFace();
 
   
 
@@ -112,6 +114,8 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   FontTableCache* GetFontTableCache(bool aCreate) override;
 
   mozilla::Atomic<FontTableCache*> mFontTableCache;
+
+  mozilla::Atomic<hb_face_t*> mHBFace;
 
   
   

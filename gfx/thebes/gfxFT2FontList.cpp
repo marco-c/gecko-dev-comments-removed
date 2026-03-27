@@ -167,6 +167,8 @@ FTUserFontData* FT2FontEntry::GetUserFontData() {
 FT2FontEntry::~FT2FontEntry() {
   auto* cache = mFontTableCache.exchange(nullptr);
   delete cache;
+  auto* face = mHBFace.exchange(nullptr);
+  hb_face_destroy(face);
   if (mMMVar) {
     SharedFTFace* face = mFTFace;
     FT_Done_MM_Var(face->GetFace()->glyph->library, mMMVar);
@@ -465,45 +467,52 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   return rv;
 }
 
-hb_face_t* FT2FontEntry::CreateHBFace() const {
-  hb_face_t* result = nullptr;
+hb_face_t* FT2FontEntry::CreateHBFace() {
+  if (mHBFace) {
+    return hb_face_reference(mHBFace);
+  }
 
+  hb_face_t* face = nullptr;
   if (mFilename[0] == '/') {
     
     
-    gfxFontUtils::AutoHBBlob fileBlob(
-        hb_blob_create_from_file(mFilename.get()));
-    if (hb_blob_get_length(fileBlob) > 0) {
-      result = hb_face_create(fileBlob, mFTFontIndex);
+    face = hb_face_create_from_file_or_fail(mFilename.get(), mFTFontIndex);
+    if (face) {
+      if (!mHBFace.compareExchange(nullptr, face)) {
+        hb_face_destroy(face);
+        face = mHBFace;
+      }
     }
-  } else {
+    return hb_face_reference(face);
+  }
+
+  
+  
+  RefPtr<nsZipArchive> reader = Omnijar::GetReader(Omnijar::Type::GRE);
+  nsZipItem* item = reader->GetItem(mFilename);
+  MOZ_ASSERT(item, "failed to find zip entry");
+  if (item) {
     
     
-    RefPtr<nsZipArchive> reader = Omnijar::GetReader(Omnijar::Type::GRE);
-    nsZipItem* item = reader->GetItem(mFilename);
-    MOZ_ASSERT(item, "failed to find zip entry");
-    if (item) {
-      
-      
-      
-      
-      uint32_t length = item->RealSize();
-      uint8_t* buffer = static_cast<uint8_t*>(malloc(length));
-      if (buffer) {
-        nsZipCursor cursor(item, reader, buffer, length);
-        cursor.Copy(&length);
-        MOZ_ASSERT(length == item->RealSize(), "error reading font");
-        if (length == item->RealSize()) {
-          gfxFontUtils::AutoHBBlob blob(
-              hb_blob_create((const char*)buffer, length,
-                             HB_MEMORY_MODE_READONLY, buffer, free));
-          result = hb_face_create(blob, mFTFontIndex);
-        }
+    
+    
+    uint32_t length = item->RealSize();
+    uint8_t* buffer = static_cast<uint8_t*>(malloc(length));
+    if (buffer) {
+      nsZipCursor cursor(item, reader, buffer, length);
+      cursor.Copy(&length);
+      MOZ_ASSERT(length == item->RealSize(), "error reading font");
+      if (length == item->RealSize()) {
+        gfxFontUtils::AutoHBBlob blob(
+            hb_blob_create((const char*)buffer, length, HB_MEMORY_MODE_READONLY,
+                           buffer, free));
+        
+        return hb_face_create(blob, mFTFontIndex);
       }
     }
   }
 
-  return result;
+  return nullptr;
 }
 
 bool FT2FontEntry::HasFontTable(uint32_t aTableTag) {
@@ -576,12 +585,11 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
 
   
   
-  if (!mFTFace && !mFilename.IsEmpty()) {
-    hb_face_t* face = CreateHBFace();
-    if (face) {
+  if (mHBFace || (!mFilename.IsEmpty() && mFilename[0] == '/')) {
+    if (hb_face_t* face = CreateHBFace()) {
       hb_blob_t* result = hb_face_reference_table(face, aTableTag);
       hb_face_destroy(face);
-      return result;
+      return result != hb_blob_get_empty() ? result : nullptr;
     }
   }
 
