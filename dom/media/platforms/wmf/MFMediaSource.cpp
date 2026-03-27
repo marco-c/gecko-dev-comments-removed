@@ -583,7 +583,9 @@ void MFMediaSource::SetCDMProxy(MFCDMProxy* aCDMProxy) {
   AssertOnManagerThread();
   LOG("SetCDMProxy");
   mCDMProxy = aCDMProxy;
-  
+  if (mCDMProxy) {
+    mCDMProxy->ResetTrustedInput();
+  }
 }
 #endif
 
