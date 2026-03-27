@@ -280,9 +280,26 @@ static bool DispatchOffThreadBaselineBatchImpl(JSContext* cx, bool isEager) {
   BaselineCompileQueue& queue = cx->realm()->baselineCompileQueue();
   MOZ_ASSERT(queue.numQueued() > 0);
 
+  
+  
+  
+  
+#ifdef DEBUG
+  auto queueIsNotFullOnExit = mozilla::MakeScopeExit([&]() {
+    MOZ_ASSERT(queue.numQueued() < JitOptions.baselineQueueCapacity);
+  });
+#endif
+
   auto alloc = cx->make_unique<LifoAlloc>(TempAllocator::PreferredLifoChunkSize,
                                           js::BackgroundMallocArena);
   if (!alloc) {
+    
+    if (queue.numQueued() == JitOptions.baselineQueueCapacity) {
+      JSScript* script = queue.pop();
+      if (script->hasJitScript()) {
+        script->jitScript()->clearIsBaselineQueued(script);
+      }
+    }
     ReportOutOfMemory(cx);
     return false;
   }

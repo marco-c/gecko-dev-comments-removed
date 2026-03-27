@@ -2784,9 +2784,8 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
     }
 
     
-    if (!queue.enqueue(script)) {
-      return false;
-    }
+    
+    MOZ_ALWAYS_TRUE(queue.enqueue(script));
     TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_function", script);
   }
 
