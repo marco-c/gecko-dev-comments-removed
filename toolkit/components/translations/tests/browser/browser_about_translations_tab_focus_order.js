@@ -7,15 +7,6 @@ const SOURCE_TEXT = "Hello focus order";
 const DETECTED_UNSUPPORTED_TEXT = "Hola, ¿cómo estás?";
 const TRANSLATION_ERROR_SOURCE_TEXT = "This is a test.";
 
-const LANGUAGE_PAIRS_WITHOUT_SPANISH = [
-  
-  
-  { fromLang: "en", toLang: "fr" },
-  { fromLang: "fr", toLang: "en" },
-  { fromLang: "en", toLang: "de" },
-  { fromLang: "de", toLang: "en" },
-];
-
 const DEFAULT_FOCUS_ORDER = [
   "learnMoreLink",
   "sourceLanguageSelector",
