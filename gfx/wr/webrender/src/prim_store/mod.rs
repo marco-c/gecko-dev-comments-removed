@@ -806,6 +806,7 @@ pub enum PrimitiveInstanceKind {
         data_handle: ImageDataHandle,
         image_instance_index: ImageInstanceIndex,
         compositor_surface_kind: CompositorSurfaceKind,
+        use_legacy_path: bool,
     },
     
     
