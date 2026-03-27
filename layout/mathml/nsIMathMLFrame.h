@@ -34,10 +34,6 @@ constexpr auto MathMLFrameTypeCount = size_t(MathMLFrameType::Unknown);
 enum class MathMLPresentationFlag : uint8_t {
   
   
-  Compressed,
-
-  
-  
   
   
   StretchAllChildrenVertically,

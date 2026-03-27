@@ -64,19 +64,8 @@ nsMathMLFrame::InheritAutomaticData(nsIFrame* aParent) {
 NS_IMETHODIMP
 nsMathMLFrame::UpdatePresentationData(MathMLPresentationFlags aFlagsValues,
                                       MathMLPresentationFlags aWhichFlags) {
-  NS_ASSERTION(aWhichFlags.contains(MathMLPresentationFlag::Compressed) ||
-                   aWhichFlags.contains(MathMLPresentationFlag::Dtls),
-               "aWhichFlags should only be compression or dtls flag");
-
-  if (!StaticPrefs::mathml_math_shift_enabled() &&
-      aWhichFlags.contains(MathMLPresentationFlag::Compressed)) {
-    
-    if (aFlagsValues.contains(MathMLPresentationFlag::Compressed)) {
-      
-      mPresentationData.flags += MathMLPresentationFlag::Compressed;
-    }
-    
-  }
+  NS_ASSERTION(aWhichFlags.contains(MathMLPresentationFlag::Dtls),
+               "aWhichFlags should only dtls flag");
   
   
   if (aWhichFlags.contains(MathMLPresentationFlag::Dtls)) {

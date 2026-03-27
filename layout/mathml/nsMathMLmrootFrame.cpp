@@ -83,29 +83,8 @@ NS_IMETHODIMP
 nsMathMLmrootFrame::TransmitAutomaticData() {
   bool isRootWithIndex = GetContent()->IsMathMLElement(nsGkAtoms::mroot);
   if (isRootWithIndex) {
-    
-    
-    
-    
-    
-    if (!StaticPrefs::mathml_math_shift_enabled()) {
-      UpdatePresentationDataFromChildAt(1, 1,
-                                        MathMLPresentationFlag::Compressed,
-                                        MathMLPresentationFlag::Compressed);
-      UpdatePresentationDataFromChildAt(0, 0,
-                                        MathMLPresentationFlag::Compressed,
-                                        MathMLPresentationFlag::Compressed);
-    }
-
     PropagateFrameFlagFor(mFrames.LastChild(),
                           NS_FRAME_MATHML_SCRIPT_DESCENDANT);
-  } else {
-    
-    if (!StaticPrefs::mathml_math_shift_enabled()) {
-      UpdatePresentationDataFromChildAt(0, -1,
-                                        MathMLPresentationFlag::Compressed,
-                                        MathMLPresentationFlag::Compressed);
-    }
   }
 
   return NS_OK;

@@ -297,11 +297,6 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
 
 
-
-
-
-
-
   if (mContent->IsAnyOfMathMLElements(nsGkAtoms::mover,
                                       nsGkAtoms::munderover)) {
     mIncrementOver =
@@ -312,18 +307,7 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
     if (mIncrementOver) {
       PropagateFrameFlagFor(overscriptFrame, NS_FRAME_MATHML_SCRIPT_DESCENDANT);
     }
-    if (!StaticPrefs::mathml_math_shift_enabled()) {
-      MathMLPresentationFlags flags;
-      if (mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver)) {
-        flags += MathMLPresentationFlag::Compressed;
-      }
-      PropagatePresentationDataFor(overscriptFrame, flags, flags);
-    }
   }
-  
-
-
-
   if (mContent->IsAnyOfMathMLElements(nsGkAtoms::munder,
                                       nsGkAtoms::munderover)) {
     mIncrementUnder =
@@ -333,11 +317,6 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
     if (mIncrementUnder) {
       PropagateFrameFlagFor(underscriptFrame,
                             NS_FRAME_MATHML_SCRIPT_DESCENDANT);
-    }
-    if (!StaticPrefs::mathml_math_shift_enabled()) {
-      PropagatePresentationDataFor(underscriptFrame,
-                                   MathMLPresentationFlag::Compressed,
-                                   MathMLPresentationFlag::Compressed);
     }
   }
 
