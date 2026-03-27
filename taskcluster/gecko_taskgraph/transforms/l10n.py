@@ -5,23 +5,24 @@
 Do transforms specific to l10n kind
 """
 
+from typing import Literal, Optional, Union
+
 from mozbuild.chunkify import chunkify
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.dependencies import get_dependencies, get_primary_dependency
 from taskgraph.util.schema import (
-    LegacySchema,
+    Schema,
     optionally_keyed_by,
     resolve_keyed_by,
-    taskref_or_string,
+    taskref_or_string_msgspec,
 )
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.treeherder import add_suffix
-from voluptuous import Any, Optional, Required
 
-from gecko_taskgraph.transforms.job import job_description_schema
-from gecko_taskgraph.transforms.task import task_description_schema
+from gecko_taskgraph.transforms.job import JobDescriptionSchema
+from gecko_taskgraph.transforms.task import TaskDescriptionSchema
 from gecko_taskgraph.util.attributes import (
     copy_attributes_from_dependent_job,
     sorted_unique_list,
@@ -30,95 +31,100 @@ from gecko_taskgraph.util.attributes import (
 
 
 def _by_platform(arg):
-    return optionally_keyed_by("build-platform", arg)
+    return optionally_keyed_by("build-platform", arg, use_msgspec=True)
 
 
-l10n_description_schema = LegacySchema({
+class MozharnessSchema(Schema, kw_only=True):
     
-    Required("name"): str,
+    script: _by_platform(str)  
     
-    Required("build-platform"): str,
-    
-    Required("run-time"): _by_platform(int),
-    
-    Required("ignore-locales"): _by_platform([str]),
-    
-    Required("mozharness"): {
-        
-        Required("script"): _by_platform(str),
-        
-        Required("config"): _by_platform([str]),
-        
-        
-        Optional("config-paths"): [str],
-        
-        Optional("options"): _by_platform([str]),
-        
-        Required("actions"): _by_platform([str]),
-        
-        
-        Optional("comm-checkout"): bool,
-    },
-    
-    Optional("index"): {
-        
-        Required("product"): _by_platform(str),
-        
-        Required("job-name"): _by_platform(str),
-        
-        Optional("type"): _by_platform(str),
-    },
-    
-    Required("description"): _by_platform(str),
-    Optional("run-on-projects"): job_description_schema["run-on-projects"],
-    Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
-    
-    Required("worker-type"): _by_platform(str),
-    
-    Required("locales-file"): _by_platform(str),
-    
-    Required("tooltool"): _by_platform(Any("internal", "public")),
+    config: _by_platform(list[str])  
     
     
-    Optional("docker-image"): _by_platform(
-        
-        {"in-tree": str},
-    ),
-    Optional("fetches"): {
-        str: _by_platform([str]),
-    },
+    config_paths: Optional[list[str]] = None
+    
+    options: Optional[_by_platform(list[str])] = None  
+    
+    actions: _by_platform(list[str])  
     
     
+    comm_checkout: Optional[bool] = None
+
+
+class L10nTreeherderSchema(Schema, kw_only=True):
+    
+    platform: _by_platform(str)  
+    
+    symbol: str
+    
+    tier: _by_platform(int)  
+
+
+class L10nIndexSchema(Schema, kw_only=True):
+    
+    product: _by_platform(str)  
+    
+    job_name: _by_platform(str)  
+    
+    type: Optional[_by_platform(str)] = None  
+
+
+class InTreeDockerImageSchema(Schema):
+    in_tree: str
+
+
+class WhenSchema(Schema, kw_only=True):
+    files_changed: Optional[list[str]] = None
+
+
+class L10nDescriptionSchema(Schema, kw_only=True):
+    
+    name: str
+    
+    build_platform: str
+    
+    run_time: _by_platform(int)  
+    
+    ignore_locales: _by_platform(list[str])  
+    
+    mozharness: MozharnessSchema  
+    
+    index: Optional[L10nIndexSchema] = None
+    
+    description: _by_platform(str)  
+    run_on_projects: JobDescriptionSchema.__annotations__["run_on_projects"] = None
+    run_on_repo_type: JobDescriptionSchema.__annotations__["run_on_repo_type"] = None
+    
+    worker_type: _by_platform(str)  
+    
+    locales_file: _by_platform(str)  
+    
+    tooltool: _by_platform(Literal["internal", "public"])  
     
     
+    docker_image: Optional[_by_platform(InTreeDockerImageSchema)] = None  
+    fetches: Optional[dict[str, object]] = None
     
-    Optional("secrets"): _by_platform(Any(bool, [str])),
+    secrets: Optional[_by_platform(Union[bool, list[str]])] = None  
     
-    Required("treeherder"): {
-        
-        Required("platform"): _by_platform(str),
-        
-        Required("symbol"): str,
-        
-        Required("tier"): _by_platform(int),
-    },
+    treeherder: L10nTreeherderSchema  
     
-    Optional("env"): _by_platform({str: taskref_or_string}),
+    env: Optional[_by_platform(dict[str, taskref_or_string_msgspec])] = None  
     
-    Optional("locales-per-chunk"): _by_platform(int),
+    locales_per_chunk: Optional[_by_platform(int)] = None  
     
     
-    Optional("dependencies"): {str: str},
+    dependencies: Optional[dict[str, str]] = None
     
-    Optional("when"): {"files-changed": [str]},
+    when: Optional[WhenSchema] = None
     
-    Optional("attributes"): job_description_schema["attributes"],
-    Optional("extra"): job_description_schema["extra"],
+    attributes: JobDescriptionSchema.__annotations__["attributes"] = None
+    extra: JobDescriptionSchema.__annotations__["extra"] = None
     
-    Optional("shipping-product"): task_description_schema["shipping-product"],
-    Optional("shipping-phase"): task_description_schema["shipping-phase"],
-    Optional("task-from"): task_description_schema["task-from"],
-})
+    shipping_product: TaskDescriptionSchema.__annotations__["shipping_product"] = None
+    shipping_phase: TaskDescriptionSchema.__annotations__["shipping_phase"] = None
+    task_from: TaskDescriptionSchema.__annotations__["task_from"] = None
+
 
 transforms = TransformSequence()
 
@@ -177,7 +183,7 @@ def copy_in_useful_magic(config, jobs):
         yield job
 
 
-transforms.add_validate(l10n_description_schema)
+transforms.add_validate(L10nDescriptionSchema)
 
 
 @transforms.add
@@ -318,7 +324,7 @@ def chunk_locales(config, jobs):
             yield job
 
 
-transforms.add_validate(l10n_description_schema)
+transforms.add_validate(L10nDescriptionSchema)
 
 
 @transforms.add
