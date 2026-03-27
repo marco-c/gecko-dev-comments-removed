@@ -26,6 +26,7 @@ async function testPacman(inspector, view) {
     keyframeRules: ["100%", "100%"],
   });
 
+  
   assertRuleViewHeaders(view, ["Keyframes pacman", "Keyframes pacman"]);
 }
 

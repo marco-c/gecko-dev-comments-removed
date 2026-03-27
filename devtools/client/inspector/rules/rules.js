@@ -325,6 +325,12 @@ class CssRuleView extends EventEmitter {
 
   
   
+  
+  
+  #containers = new Map();
+
+  
+  
   #childHasDragged = false;
 
   
@@ -1417,6 +1423,7 @@ class CssRuleView extends EventEmitter {
 
 
   #clearRules() {
+    this.#containers.clear();
     this.element.innerHTML = "";
   }
 
@@ -1471,9 +1478,7 @@ class CssRuleView extends EventEmitter {
 
 
 
-
-
-  createExpandableContainer(label, containerId, isPseudo = false) {
+  createExpandableContainer(label, containerId) {
     const header = this.styleDocument.createElementNS(HTML_NS, "div");
     header.classList.add(
       RULE_VIEW_HEADER_CLASSNAME,
@@ -1502,6 +1507,7 @@ class CssRuleView extends EventEmitter {
 
     this.element.append(header, container);
 
+    const isPseudo = containerId == PSEUDO_ELEMENTS_CONTAINER_ID;
     const { signal } = this.#abortController;
     toggleButton.addEventListener(
       "click",
@@ -1533,13 +1539,17 @@ class CssRuleView extends EventEmitter {
 
 
 
-  createRegisteredPropertiesExpandableContainer() {
-    const el = this.createExpandableContainer(
+  getOrCreateRegisteredPropertiesExpandableContainer() {
+    const existingContainer = this.view.styleDocument.getElementById(
+      REGISTERED_PROPERTIES_CONTAINER_ID
+    );
+    if (existingContainer) {
+      return existingContainer;
+    }
+    return this.createExpandableContainer(
       "@property",
       REGISTERED_PROPERTIES_CONTAINER_ID
     );
-    el.classList.add("registered-properties");
-    return el;
   }
 
   
@@ -1589,7 +1599,6 @@ class CssRuleView extends EventEmitter {
   
 
 
-  
   #createEditors() {
     
     
@@ -1597,7 +1606,6 @@ class CssRuleView extends EventEmitter {
     let lastinheritedSectionLabel = "";
     let seenNormalElement = false;
     let seenSearchTerm = false;
-    const containers = new Map();
 
     if (!this.elementStyle.rules) {
       return Promise.resolve();
@@ -1607,20 +1615,7 @@ class CssRuleView extends EventEmitter {
     for (const rule of this.elementStyle.rules) {
       
       if (!rule.editor) {
-        const ruleActorID = rule.domRule.actorID;
-        rule.editor = new RuleEditor(this, rule, {
-          elementsWithPendingClicks: this.#elementsWithPendingClicks,
-          onShowUnusedCustomCssProperties: () => {
-            this.store.expandedUnusedCustomCssPropertiesRuleActorIds.add(
-              ruleActorID
-            );
-          },
-          shouldHideUnusedCustomCssProperties:
-            !this.store.expandedUnusedCustomCssPropertiesRuleActorIds.has(
-              ruleActorID
-            ),
-        });
-        editorReadyPromises.push(rule.editor.once("source-link-updated"));
+        editorReadyPromises.push(this.#createEditorForRule(rule));
       }
 
       
@@ -1632,11 +1627,9 @@ class CssRuleView extends EventEmitter {
         }
       }
 
-      const isNonInheritedPseudo = !!rule.pseudoElement && !rule.inherited;
-
       
       if (
-        containers.has(PSEUDO_ELEMENTS_CONTAINER_ID) &&
+        this.#containers.has(PSEUDO_ELEMENTS_CONTAINER_ID) &&
         !seenNormalElement &&
         !rule.pseudoElement
       ) {
@@ -1672,55 +1665,8 @@ class CssRuleView extends EventEmitter {
         this.element.appendChild(div);
       }
 
-      const keyframes = rule.keyframes;
-
-      let containerKey = null;
-
-      
-      
-      if (isNonInheritedPseudo) {
-        containerKey = PSEUDO_ELEMENTS_CONTAINER_ID;
-        if (!containers.has(containerKey)) {
-          containers.set(
-            containerKey,
-            this.createExpandableContainer(
-              this.pseudoElementLabel,
-              containerKey,
-              true
-            )
-          );
-        }
-      } else if (keyframes) {
-        containerKey = keyframes;
-        if (!containers.has(containerKey)) {
-          containers.set(
-            containerKey,
-            this.createExpandableContainer(
-              rule.keyframesName,
-              `keyframes-container-${keyframes.name}`
-            )
-          );
-        }
-      } else if (rule.domRule.className === "CSSPositionTryRule") {
-        containerKey = POSITION_TRY_CONTAINER_ID;
-        if (!containers.has(containerKey)) {
-          containers.set(
-            containerKey,
-            this.createExpandableContainer(
-              `@position-try`,
-              `position-try-container`
-            )
-          );
-        }
-      }
-
-      rule.editor.element.setAttribute("role", "article");
-      const container = containers.get(containerKey);
-      if (container) {
-        container.appendChild(rule.editor.element);
-      } else {
-        this.element.appendChild(rule.editor.element);
-      }
+      const container = this.#getContainerForRule(rule);
+      container.appendChild(rule.editor.element);
 
       
       if (this.#focusNextUserAddedRule && rule.domRule.userAdded) {
@@ -1730,27 +1676,7 @@ class CssRuleView extends EventEmitter {
       }
     }
 
-    const targetRegisteredProperties =
-      this.getRegisteredPropertiesForSelectedNodeTarget();
-    if (targetRegisteredProperties?.size) {
-      const registeredPropertiesContainer =
-        this.createRegisteredPropertiesExpandableContainer();
-
-      
-      const propertyDefinitions = Array.from(
-        targetRegisteredProperties.values()
-      ).sort((a, b) => (a.name < b.name ? -1 : 1));
-      for (const propertyDefinition of propertyDefinitions) {
-        const registeredPropertyEditor = new RegisteredPropertyEditor(
-          this,
-          propertyDefinition
-        );
-
-        registeredPropertiesContainer.appendChild(
-          registeredPropertyEditor.element
-        );
-      }
-    }
+    this.#createRegisteredPropertyEditors();
 
     const searchBox = this.searchField.parentNode;
     searchBox.classList.toggle(
@@ -1759,6 +1685,94 @@ class CssRuleView extends EventEmitter {
     );
 
     return Promise.all(editorReadyPromises);
+  }
+
+  
+
+
+
+
+
+  #createEditorForRule(rule) {
+    const ruleActorID = rule.domRule.actorID;
+    rule.editor = new RuleEditor(this, rule, {
+      elementsWithPendingClicks: this.#elementsWithPendingClicks,
+      onShowUnusedCustomCssProperties: () => {
+        this.store.expandedUnusedCustomCssPropertiesRuleActorIds.add(
+          ruleActorID
+        );
+      },
+      shouldHideUnusedCustomCssProperties:
+        !this.store.expandedUnusedCustomCssPropertiesRuleActorIds.has(
+          ruleActorID
+        ),
+    });
+
+    return rule.editor.once("source-link-updated");
+  }
+
+  
+
+
+
+
+  #getContainerForRule(rule) {
+    let id, label;
+
+    
+    
+    const isNonInheritedPseudo = !!rule.pseudoElement && !rule.inherited;
+    const keyframes = rule.keyframes;
+
+    if (isNonInheritedPseudo) {
+      id = PSEUDO_ELEMENTS_CONTAINER_ID;
+      label = this.pseudoElementLabel;
+    } else if (keyframes) {
+      
+      
+      
+      id = `keyframes-container-${rule.keyframes.actorID}`;
+      label = rule.keyframesName;
+    } else if (rule.domRule.className === "CSSPositionTryRule") {
+      id = POSITION_TRY_CONTAINER_ID;
+      label = "@position-try";
+    } else {
+      return this.element;
+    }
+
+    let container = this.#containers.get(id);
+    if (container) {
+      return container;
+    }
+    container = this.createExpandableContainer(label, id);
+    this.#containers.set(id, container);
+
+    return container;
+  }
+
+  #createRegisteredPropertyEditors() {
+    const targetRegisteredProperties =
+      this.getRegisteredPropertiesForSelectedNodeTarget();
+    if (!targetRegisteredProperties?.size) {
+      return;
+    }
+    const registeredPropertiesContainer =
+      this.getOrCreateRegisteredPropertiesExpandableContainer();
+
+    
+    const propertyDefinitions = Array.from(
+      targetRegisteredProperties.values()
+    ).sort((a, b) => (a.name < b.name ? -1 : 1));
+    for (const propertyDefinition of propertyDefinitions) {
+      const registeredPropertyEditor = new RegisteredPropertyEditor(
+        this,
+        propertyDefinition
+      );
+
+      registeredPropertiesContainer.appendChild(
+        registeredPropertyEditor.element
+      );
+    }
   }
 
   
@@ -2809,15 +2823,8 @@ class RuleViewTool {
 
     if (addedRegisteredProperties.length) {
       
-      let registeredPropertiesContainer =
-        this.view.styleDocument.getElementById(
-          REGISTERED_PROPERTIES_CONTAINER_ID
-        );
-      
-      if (!registeredPropertiesContainer) {
-        registeredPropertiesContainer =
-          this.view.createRegisteredPropertiesExpandableContainer();
-      }
+      const registeredPropertiesContainer =
+        this.view.getOrCreateRegisteredPropertiesExpandableContainer();
 
       
       const names = new Set();
