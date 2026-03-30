@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "builtin/MapObject-inl.h"
 #include "builtin/MapObject.h"
 
@@ -700,7 +702,7 @@ void MapObject::clearNurseryIteratorsBeforeMinorGC() {
 
 
 MapObject* MapObject::sweepAfterMinorGC(JS::GCContext* gcx, MapObject* mapobj) {
-  Nursery& nursery = gcx->runtime()->gc.nursery();
+  Nursery& nursery = gcx->gcRuntime()->nursery();
   bool wasInCollectedRegion = nursery.inCollectedRegion(mapobj);
   if (wasInCollectedRegion && !IsForwarded(mapobj)) {
     
@@ -1432,7 +1434,7 @@ void SetObject::clearNurseryIteratorsBeforeMinorGC() {
 
 
 SetObject* SetObject::sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj) {
-  Nursery& nursery = gcx->runtime()->gc.nursery();
+  Nursery& nursery = gcx->gcRuntime()->nursery();
   bool wasInCollectedRegion = nursery.inCollectedRegion(setobj);
   if (wasInCollectedRegion && !IsForwarded(setobj)) {
     
