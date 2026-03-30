@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TextControlState.h"
 
 #include "mozilla/Attributes.h"
