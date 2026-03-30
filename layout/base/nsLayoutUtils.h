@@ -3159,6 +3159,9 @@ class nsLayoutUtils {
 
   static bool UseOverlayScrollbars(const nsIFrame* aScrollbarPart);
 
+  static mozilla::StyleScrollbarWidth ScrollbarWidthFor(
+      const nsIFrame* aScrollbarPart);
+
   
 
 
