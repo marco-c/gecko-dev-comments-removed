@@ -1430,6 +1430,10 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   
   
+  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+
+  
+  
   InScrollingGesture mInScrollingGesture : 1;
 
   bool mAllowScrollOriginDowngrade : 1;

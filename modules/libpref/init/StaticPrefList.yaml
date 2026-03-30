@@ -9284,6 +9284,13 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+  # Experimental support for import text in JavaScript.
+- name: javascript.options.experimental.import_text
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: startup
+
   # Experimental support for Promise.allKeyed in JavaScript.
 - name: javascript.options.experimental.promise_allkeyed
   type: bool
@@ -10535,16 +10542,6 @@
   mirror: always
   rust: true
 
-# Pref to control whether the ::marker property restrictions defined in [1]
-# apply.
-#
-# [1]: https://drafts.csswg.org/css-pseudo-4/#selectordef-marker
-- name: layout.css.marker.restricted
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # Is -moz-osx-font-smoothing enabled? (Only supported in OSX builds)
 - name: layout.css.osx-font-smoothing.enabled
   type: bool
@@ -11251,6 +11248,14 @@
   value: false
   mirror: always
 
+# Whether we refer ::-webkit-scrollbar's width/height properties to disable
+# overlay scrollbars.
+- name: layout.css.fake-webkit-scrollbar.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+  rust: true
+
 # Is support for the ::details-content pseudo-element enabled?
 - name: layout.css.details-content.enabled
   type: RelaxedAtomicBool
@@ -11474,13 +11479,6 @@
   value: @IS_EARLY_BETA_OR_EARLIER@
   mirror: always
 
-# Whether to enable character and glyph level mirroring for operators when
-# the writing mode is right to left.
-- name: mathml.rtl_operator_mirroring.enabled
-  type: bool
-  value: true
-  mirror: always
-
 # Whether to disable fallback for mathvariant=italic/bold/bold-italic via
 # styling when lacking proper fonts for Mathematical Alphanumeric Symbols.
 # We expect all OSes to have relevant fonts, except Android, see bug 1789083.
@@ -11491,12 +11489,6 @@
 #else
   value: true
 #endif
-  mirror: always
-
-# Whether to enable support for the math-shift CSS property.
-- name: mathml.math_shift.enabled
-  type: RelaxedAtomicBool
-  value: true
   mirror: always
 
 # Whether to remove the accent property from the operator dictionary.
@@ -13903,47 +13895,7 @@
   value: "WORKSTATION"
   mirror: always
 
-# If we should attempt to race the cache with network.
-# See also race_with_non_ssd for auto-enable behavior on Windows non-SSD drives.
-- name: network.http.rcwn.enabled
-  type: bool
-  value: false
-  mirror: always
-
-# If we should attempt to race the cache with network for non-SSD drives (Windows only).
-- name: network.http.rcwn.race_with_non_ssd
-  type: bool
-  value: false
-  mirror: always
-
-- name: network.http.rcwn.cache_queue_normal_threshold
-  type: uint32_t
-  value: 8
-  mirror: always
-
-- name: network.http.rcwn.cache_queue_priority_threshold
-  type: uint32_t
-  value: 2
-  mirror: always
-
-# We might attempt to race the cache with the network only if a resource
-# is smaller than this size.
-- name: network.http.rcwn.small_resource_size_kb
-  type: uint32_t
-  value: 256
-  mirror: always
-
-- name: network.http.rcwn.min_wait_before_racing_ms
-  type: uint32_t
-  value: 0
-  mirror: always
-
-- name: network.http.rcwn.max_wait_before_racing_ms
-  type: uint32_t
-  value: 500
-  mirror: always
-
-  # Whether to send the Referer header in response to a meta refresh, or
+# Whether to send the Referer header in response to a meta refresh, or
   # in response to a Refresh header.
 - name: network.http.referer.sendFromRefresh
   type: bool
@@ -14673,11 +14625,7 @@
 # Use platform DNS APIs (where available) to resolve HTTPS queries
 - name: network.dns.native_https_query
   type: RelaxedAtomicBool
-#if !defined(XP_MACOSX)
   value: true
-#else
-  value: false
-#endif
   mirror: always
 
 # DnsQuery_A is broken for HTTPS queries on Windows 10.
@@ -17398,7 +17346,7 @@
 # Reduce page protection infobar
 - name: privacy.reducePageProtection.infobar.enabled.pbmode
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 #---------------------------------------------------------------------------
