@@ -26,10 +26,11 @@ pub enum PatternKind {
     Repeat = 2,
 
     Mask = 3,
+    BoxShadow = 4,
     
 }
 
-pub const NUM_PATTERNS: u32 = 4;
+pub const NUM_PATTERNS: u32 = 5;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
