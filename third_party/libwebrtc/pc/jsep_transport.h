@@ -91,7 +91,7 @@ class JsepTransport {
   
   
   absl::string_view name() const {
-    return GetRtpDtlsTransportInternal()->ice_transport()->transport_name();
+    return dtls_transport_internal()->ice_transport()->transport_name();
   }
 
   
@@ -152,11 +152,11 @@ class JsepTransport {
   RtpTransportInternal* rtp_transport() const { return rtp_transport_.get(); }
 
   const DtlsTransportInternal* rtp_dtls_transport() const {
-    return GetRtpDtlsTransportInternal();
+    return dtls_transport_internal();
   }
 
   DtlsTransportInternal* rtp_dtls_transport() {
-    return GetRtpDtlsTransportInternal();
+    return dtls_transport_internal();
   }
 
   DtlsTransportInternal* rtcp_dtls_transport() const {
@@ -248,7 +248,7 @@ class JsepTransport {
                          int component,
                          TransportStats* stats) const;
 
-  DtlsTransportInternal* GetRtpDtlsTransportInternal() const {
+  DtlsTransportInternal* dtls_transport_internal() const {
     
     
     
@@ -278,12 +278,6 @@ class JsepTransport {
   const scoped_refptr<::webrtc::SctpTransport> sctp_transport_;
 
   RtcpMuxFilter rtcp_mux_negotiator_ RTC_GUARDED_BY(transport_sequence_);
-
-  
-  std::optional<std::vector<int>> send_extension_ids_
-      RTC_GUARDED_BY(transport_sequence_);
-  std::optional<std::vector<int>> recv_extension_ids_
-      RTC_GUARDED_BY(transport_sequence_);
 
   
   
