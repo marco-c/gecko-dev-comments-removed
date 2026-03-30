@@ -18,6 +18,7 @@
 #include "api/priority.h"
 #include "api/rtc_error.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 namespace webrtc {
 
@@ -65,6 +66,9 @@ class DataChannelSink {
   virtual ~DataChannelSink() = default;
 
   
+  virtual void OnTransportConnected() = 0;
+
+  
   virtual void OnDataReceived(int channel_id,
                               DataMessageType type,
                               const CopyOnWriteBuffer& buffer) = 0;
@@ -86,9 +90,7 @@ class DataChannelSink {
   virtual void OnReadyToSend() = 0;
 
   
-  
-  
-  virtual void OnTransportClosed(RTCError ) {}
+  virtual void OnTransportClosed(RTCError ) = 0;
 
   
   
@@ -122,13 +124,16 @@ class DataChannelTransportInterface {
   virtual void SetDataSink(DataChannelSink* sink) = 0;
 
   
-  
-  
   virtual bool IsReadyToSend() const = 0;
 
   virtual size_t buffered_amount(int channel_id) const = 0;
   virtual size_t buffered_amount_low_threshold(int channel_id) const = 0;
   virtual void SetBufferedAmountLowThreshold(int channel_id, size_t bytes) = 0;
+
+  
+  
+  virtual std::optional<int> MaxChannels() = 0;
+  virtual std::optional<SSLRole> DtlsRole() = 0;
 };
 
 }  

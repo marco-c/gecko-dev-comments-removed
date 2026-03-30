@@ -1954,10 +1954,6 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
   }
 
   
-  
-  AllocateSctpSids();
-
-  
   if (ConfiguredForMedia()) {
     std::set<uint32_t> used_ssrcs;
     for (const auto& content : local_description()->description()->contents()) {
@@ -2230,10 +2226,6 @@ void SdpOfferAnswerHandler::ApplyRemoteDescription(
           PeerConnectionInterface::kIceConnectionNew) {
     pc_->SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
   }
-
-  
-  
-  AllocateSctpSids();
 
   if (operation->unified_plan()) {
     ApplyRemoteDescriptionUpdateTransceiverState(operation->type());
@@ -3599,31 +3591,6 @@ void SdpOfferAnswerHandler::UpdateNegotiationNeeded() {
   
   
   GenerateNegotiationNeededEvent();
-}
-
-void SdpOfferAnswerHandler::AllocateSctpSids() {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  if (!local_description() || !remote_description()) {
-    RTC_DLOG(LS_VERBOSE)
-        << "Local and Remote descriptions must be applied to get the "
-           "SSL Role of the SCTP transport.";
-    return;
-  }
-
-  std::optional<std::string> sctp_mid = pc_->sctp_mid();
-  std::optional<SSLRole> role =
-      sctp_mid ? transport_controller_s()->GetDtlsRole(*sctp_mid)
-               : std::nullopt;
-
-  std::optional<SSLRole> guessed_role = GuessSslRole();
-  network_thread()->BlockingCall(
-      [&, data_channel_controller = data_channel_controller()] {
-        RTC_DCHECK_RUN_ON(network_thread());
-        if (!role)
-          role = guessed_role;
-        if (role)
-          data_channel_controller->AllocateSctpSids(*role);
-      });
 }
 
 std::optional<SSLRole> SdpOfferAnswerHandler::GuessSslRole() const {
