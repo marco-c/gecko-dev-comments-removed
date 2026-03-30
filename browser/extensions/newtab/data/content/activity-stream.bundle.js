@@ -13525,11 +13525,13 @@ function WeatherForecast({
   }, external_React_default().createElement("span", {
     className: "high-temperature"
   }, external_React_default().createElement("span", {
-    className: "arrow-icon arrow-up"
+    className: "arrow-icon arrow-up",
+    "data-l10n-id": "newtab-weather-high"
   }), WEATHER_SUGGESTION.forecast.high[prefs["weather.temperatureUnits"]], "\xB0"), external_React_default().createElement("span", {
     className: "low-temperature"
   }, external_React_default().createElement("span", {
-    className: "arrow-icon arrow-down"
+    className: "arrow-icon arrow-down",
+    "data-l10n-id": "newtab-weather-low"
   }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), external_React_default().createElement("hr", null)), hasError && external_React_default().createElement("div", {
     className: "forecast-error",
     ref: errorRef
