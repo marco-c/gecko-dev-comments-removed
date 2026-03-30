@@ -36,6 +36,16 @@ enum class NetworkPreference {
   NOT_PREFERRED = -1,
 };
 
+
+
+
+
+
+enum class NetworkSlice {
+  NO_SLICE = 0,
+  UNIFIED_COMMUNICATIONS = 1,
+};
+
 const char* NetworkPreferenceToString(NetworkPreference preference);
 
 
@@ -92,6 +102,9 @@ class NetworkMonitorInterface {
     
     
     bool available = true;
+
+    
+    NetworkSlice slice = NetworkSlice::NO_SLICE;
   };
 
   NetworkMonitorInterface();
@@ -135,16 +148,5 @@ class NetworkMonitorInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::NetworkBinderInterface;
-using ::webrtc::NetworkBindingResult;
-using ::webrtc::NetworkMonitorInterface;
-using ::webrtc::NetworkPreference;
-using ::webrtc::NetworkPreferenceToString;
-}  
-#endif  
 
 #endif  
