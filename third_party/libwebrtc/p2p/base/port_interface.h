@@ -96,7 +96,16 @@ class PortInterface {
   
   
   
+  [[deprecated("Use SubscribeUnknownAddress(const void* tag, ...)")]]
   virtual void SubscribeUnknownAddress(
+      absl::AnyInvocable<void(PortInterface*,
+                              const SocketAddress&,
+                              ProtocolType,
+                              IceMessage*,
+                              const std::string&,
+                              bool)> callback) = 0;
+  virtual void SubscribeUnknownAddress(
+      const void* tag,
       absl::AnyInvocable<void(PortInterface*,
                               const SocketAddress&,
                               ProtocolType,
@@ -119,7 +128,11 @@ class PortInterface {
 
   
   
+  [[deprecated("Use SubscribePortDestroyed(const void* tag, ...)")]]
   virtual void SubscribePortDestroyed(
+      std::function<void(PortInterface*)> callback) = 0;
+  virtual void SubscribePortDestroyed(
+      const void* tag,
       std::function<void(PortInterface*)> callback) = 0;
 
   
@@ -129,9 +142,14 @@ class PortInterface {
   
   
   
-  
   virtual void EnablePortPackets() = 0;
+  [[deprecated("Use SubscribeReadPacket(const void* tag, ...)")]]
   virtual void SubscribeReadPacket(
+      absl::AnyInvocable<
+          void(PortInterface*, const char*, size_t, const SocketAddress&)>
+          callback) = 0;
+  virtual void SubscribeReadPacket(
+      const void* tag,
       absl::AnyInvocable<
           void(PortInterface*, const char*, size_t, const SocketAddress&)>
           callback) = 0;
@@ -141,7 +159,11 @@ class PortInterface {
                                 const SocketAddress&) = 0;
 
   
+  [[deprecated("Use SubscribeSentPacket(const void* tag, ...)")]]
   virtual void SubscribeSentPacket(
+      absl::AnyInvocable<void(const SentPacketInfo&)> callback) = 0;
+  virtual void SubscribeSentPacket(
+      const void* tag,
       absl::AnyInvocable<void(const SentPacketInfo&)> callback) = 0;
   virtual void NotifySentPacket(const SentPacketInfo& packet) = 0;
 

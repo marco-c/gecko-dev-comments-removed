@@ -190,7 +190,7 @@ class CallbackList {
 
   
   template <typename F>
-  void AddReceiver(F&& f) {
+  [[deprecated]] void AddReceiver(F&& f) {
     receivers_.AddReceiver(
         UntypedFunction::PrepareArgs<void(ArgT...)>(std::forward<F>(f)));
   }

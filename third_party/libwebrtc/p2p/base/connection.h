@@ -135,9 +135,15 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   ConnectionInfo stats();
 
+  [[deprecated("Use SubscribeStateChange(void* tag, ...)")]]
   void SubscribeStateChange(
       absl::AnyInvocable<void(Connection* connection)> callback) {
     state_change_callbacks_.AddReceiver(std::move(callback));
+  }
+  void SubscribeStateChange(
+      void* tag,
+      absl::AnyInvocable<void(Connection* connection)> callback) {
+    state_change_callbacks_.AddReceiver(tag, std::move(callback));
   }
   
   
@@ -166,9 +172,15 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
           received_packet_callback);
   void DeregisterReceivedPacketCallback();
 
+  [[deprecated("Use SubscribeReadyToSend(void* tag, ...)")]]
   void SubscribeReadyToSend(
       absl::AnyInvocable<void(Connection* connection)> callback) {
     ready_to_send_callbacks_.AddReceiver(std::move(callback));
+  }
+  void SubscribeReadyToSend(
+      void* tag,
+      absl::AnyInvocable<void(Connection* connection)> callback) {
+    ready_to_send_callbacks_.AddReceiver(tag, std::move(callback));
   }
   
   void OnReadPacket(const ReceivedIpPacket& packet);
@@ -280,9 +292,16 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
+  [[deprecated("Use SubscribeNominated(void* tag, ...)")]]
   void SubscribeNominated(
       absl::AnyInvocable<void(Connection* connection)> callback) {
     nominated_callbacks_.AddReceiver(std::move(callback));
+  }
+
+  void SubscribeNominated(
+      void* tag,
+      absl::AnyInvocable<void(Connection* connection)> callback) {
+    nominated_callbacks_.AddReceiver(tag, std::move(callback));
   }
   IceCandidatePairState state() const;
 

@@ -87,7 +87,10 @@ class RTC_EXPORT PacketTransportInternal {
   void NotifyReadyToSend(PacketTransportInternal* packet_transport);
 
   
+  [[deprecated]] void SubscribeReceivingState(
+      absl::AnyInvocable<void(PacketTransportInternal*)> callback);
   void SubscribeReceivingState(
+      void* tag,
       absl::AnyInvocable<void(PacketTransportInternal*)> callback);
   void NotifyReceivingState(PacketTransportInternal* packet_transport);
 

@@ -260,7 +260,11 @@ class RTC_EXPORT Port : public PortInterface {
 
   
   
+  [[deprecated("Use SubscribeCandidateReadyCallback(const void* tag, ...)")]]
   void SubscribeCandidateReadyCallback(
+      absl::AnyInvocable<void(Port*, const Candidate&)> callback);
+  void SubscribeCandidateReadyCallback(
+      const void* tag,
       absl::AnyInvocable<void(Port*, const Candidate&)> callback);
   void NotifyCandidateReady(Port* port, const Candidate& candidate) {
     RTC_DCHECK_RUN_ON(thread_);
@@ -269,13 +273,20 @@ class RTC_EXPORT Port : public PortInterface {
   
   const std::vector<Candidate>& Candidates() const override;
   
+  [[deprecated("Use SubscribeCandidateError(const void* tag, ...)")]]
   void SubscribeCandidateError(
+      std::function<void(Port*, const IceCandidateErrorEvent&)> callback);
+  void SubscribeCandidateError(
+      const void* tag,
       std::function<void(Port*, const IceCandidateErrorEvent&)> callback);
   void SendCandidateError(const IceCandidateErrorEvent& candidate_error_event);
 
   
   
+  [[deprecated("Use SubscribePortComplete(const void* tag, ...)")]]
   void SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback);
+  void SubscribePortComplete(const void* tag,
+                             absl::AnyInvocable<void(Port*)> callback);
   void NotifyPortComplete(Port* port) {
     RTC_DCHECK_RUN_ON(thread_);
     port_complete_callback_list_.Send(this);
@@ -286,13 +297,20 @@ class RTC_EXPORT Port : public PortInterface {
   
   
   
+  [[deprecated("Use SubscribePortError(const void* tag, ...)")]]
   void SubscribePortError(absl::AnyInvocable<void(Port*)> callback);
+  void SubscribePortError(const void* tag,
+                          absl::AnyInvocable<void(Port*)> callback);
   void NotifyPortError(Port* port) {
     RTC_DCHECK_RUN_ON(thread_);
     port_error_callback_list_.Send(this);
   }
 
+  [[deprecated("Use SubscribePortDestroyed(const void* tag, ...)")]]
   void SubscribePortDestroyed(
+      std::function<void(PortInterface*)> callback) override;
+  void SubscribePortDestroyed(
+      const void* tag,
       std::function<void(PortInterface*)> callback) override;
   void SendPortDestroyed(Port* port);
   
@@ -393,7 +411,16 @@ class RTC_EXPORT Port : public PortInterface {
   void SubscribeRoleConflict(absl::AnyInvocable<void()> callback) override;
   void NotifyRoleConflict() override;
 
+  [[deprecated("Use SubscribeUnknownAddress(const void* tag, ...)")]]
   void SubscribeUnknownAddress(
+      absl::AnyInvocable<void(PortInterface*,
+                              const SocketAddress&,
+                              ProtocolType,
+                              IceMessage*,
+                              const std::string&,
+                              bool)> callback) override;
+  void SubscribeUnknownAddress(
+      const void* tag,
       absl::AnyInvocable<void(PortInterface*,
                               const SocketAddress&,
                               ProtocolType,
@@ -407,7 +434,13 @@ class RTC_EXPORT Port : public PortInterface {
                             const std::string& rf,
                             bool port_muxed) override;
 
+  [[deprecated("Use SubscribeReadPacket(const void* tag, ...)")]]
   void SubscribeReadPacket(
+      absl::AnyInvocable<
+          void(PortInterface*, const char*, size_t, const SocketAddress&)>
+          callback) override;
+  void SubscribeReadPacket(
+      const void* tag,
       absl::AnyInvocable<
           void(PortInterface*, const char*, size_t, const SocketAddress&)>
           callback) override;
@@ -416,7 +449,11 @@ class RTC_EXPORT Port : public PortInterface {
                         size_t size,
                         const SocketAddress& remote_address) override;
 
+  [[deprecated("Use SubscribeSentPacket(const void* tag, ...)")]]
   void SubscribeSentPacket(
+      absl::AnyInvocable<void(const SentPacketInfo&)> callback) override;
+  void SubscribeSentPacket(
+      const void* tag,
       absl::AnyInvocable<void(const SentPacketInfo&)> callback) override;
   void NotifySentPacket(const SentPacketInfo& packet) override;
 
