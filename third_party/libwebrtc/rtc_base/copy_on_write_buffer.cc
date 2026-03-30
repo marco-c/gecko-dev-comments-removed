@@ -10,9 +10,8 @@
 
 #include "rtc_base/copy_on_write_buffer.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <cstddef>
 #include <cstring>
 #include <utility>
 
@@ -39,7 +38,8 @@ CopyOnWriteBuffer::CopyOnWriteBuffer(absl::string_view s)
     : CopyOnWriteBuffer(s.data(), s.length()) {}
 
 CopyOnWriteBuffer::CopyOnWriteBuffer(size_t size)
-    : buffer_(size > 0 ? new RefCountedBuffer(size) : nullptr),
+    : buffer_(size > 0 ? new RefCountedBuffer(size, size) : nullptr),
+      
       offset_(0),
       size_(size) {
   RTC_DCHECK(IsConsistent());
@@ -67,7 +67,8 @@ void CopyOnWriteBuffer::SetSize(size_t size) {
   RTC_DCHECK(IsConsistent());
   if (!buffer_) {
     if (size > 0) {
-      buffer_ = new RefCountedBuffer(size);
+      buffer_ = new RefCountedBuffer(size, size);
+      
       offset_ = 0;
       size_ = size;
     }

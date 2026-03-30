@@ -1,12 +1,12 @@
-/*
- *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "pc/dtls_srtp_transport.h"
 
@@ -33,8 +33,8 @@ void ValidateAndLogTransport(DtlsTransportInternal* rtp_dtls_transport,
                              DtlsTransportInternal* rtcp_dtls_transport,
                              bool is_srtp_active) {
   if (rtcp_dtls_transport && rtcp_dtls_transport != old_rtcp_dtls_transport) {
-    // This would only be possible if using BUNDLE but not rtcp-mux, which isn't
-    // allowed according to the BUNDLE spec.
+    
+    
     RTC_CHECK(!is_srtp_active)
         << "Setting RTCP for DTLS/SRTP after the DTLS is active "
            "should never happen.";
@@ -54,7 +54,7 @@ void ValidateAndLogTransport(DtlsTransportInternal* rtp_dtls_transport,
                      << rtp_dtls_transport;
   }
 }
-}  // namespace
+}  
 
 DtlsSrtpTransport::DtlsSrtpTransport(bool rtcp_mux_enabled,
                                      const FieldTrialsView& field_trials)
@@ -68,15 +68,15 @@ void DtlsSrtpTransport::SetDtlsTransports(DtlsTransportInternal* rtp_dtls,
   bool rtp_changed = MaybeUnsubscribe(rtp_dtls_transport(), rtp_dtls);
   bool rtcp_changed = MaybeUnsubscribe(rtcp_dtls_transport(), rtcp_dtls);
 
-  // Now pass the RTP transport to RtpTransport.
+  
   SetRtpPacketTransport(rtp_dtls);
   SetRtcpPacketTransport(rtcp_dtls);
 
   if (rtp_changed) {
-    SetupDtlsTransport(rtp_dtls, /*is_rtcp=*/false);
+    SetupDtlsTransport(rtp_dtls, false);
   }
   if (rtcp_changed) {
-    SetupDtlsTransport(rtcp_dtls, /*is_rtcp=*/true);
+    SetupDtlsTransport(rtcp_dtls, true);
   }
 }
 
@@ -89,17 +89,17 @@ void DtlsSrtpTransport::SetDtlsTransportsOwned(
   bool rtp_changed = MaybeUnsubscribe(rtp_dtls_transport(), rtp_dtls.get());
   bool rtcp_changed = MaybeUnsubscribe(rtcp_dtls_transport(), rtcp_dtls.get());
 
-  // Pass the RTP transport to RtpTransport and ownership of
-  // rtcp_dtls_transport.
+  
+  
   SetRtpPacketTransportOwned(std::move(rtp_dtls));
   SetRtcpPacketTransportOwned(std::move(rtcp_dtls));
 
   if (rtp_changed) {
-    SetupDtlsTransport(rtp_dtls_transport(), /*is_rtcp=*/false);
+    SetupDtlsTransport(rtp_dtls_transport(), false);
   }
 
   if (rtcp_changed) {
-    SetupDtlsTransport(rtcp_dtls_transport(), /*is_rtcp=*/true);
+    SetupDtlsTransport(rtcp_dtls_transport(), true);
   }
 }
 
@@ -117,7 +117,7 @@ void DtlsSrtpTransport::UpdateSendEncryptedHeaderExtensionIds(
   }
   send_extension_ids_.emplace(send_extension_ids);
   if (DtlsHandshakeCompleted()) {
-    // Reset the crypto parameters to update the send extension IDs.
+    
     SetupRtpDtlsSrtp();
   }
 }
@@ -129,7 +129,7 @@ void DtlsSrtpTransport::UpdateRecvEncryptedHeaderExtensionIds(
   }
   recv_extension_ids_.emplace(recv_extension_ids);
   if (DtlsHandshakeCompleted()) {
-    // Reset the crypto parameters to update the receive extension IDs.
+    
     SetupRtpDtlsSrtp();
   }
 }
@@ -174,9 +174,9 @@ void DtlsSrtpTransport::MaybeSetupDtlsSrtp() {
 }
 
 void DtlsSrtpTransport::SetupRtpDtlsSrtp() {
-  // Use an empty encrypted header extension ID vector if not set. This could
-  // happen when the DTLS handshake is completed before processing the
-  // Offer/Answer which contains the encrypted header extension IDs.
+  
+  
+  
   std::vector<int> send_extension_ids;
   std::vector<int> recv_extension_ids;
   if (send_extension_ids_) {
@@ -199,9 +199,9 @@ void DtlsSrtpTransport::SetupRtpDtlsSrtp() {
 }
 
 void DtlsSrtpTransport::SetupRtcpDtlsSrtp() {
-  // Return if the DTLS-SRTP is active because the encrypted header extension
-  // IDs don't need to be updated for RTCP and the crypto params don't need to
-  // be reset.
+  
+  
+  
   if (IsSrtpActive()) {
     return;
   }
@@ -252,20 +252,21 @@ bool DtlsSrtpTransport::ExtractParams(DtlsTransportInternal* dtls_transport,
     return false;
   }
 
-  // OK, we're now doing DTLS (RFC 5764)
-  ZeroOnFreeBuffer<uint8_t> dtls_buffer(key_len * 2 + salt_len * 2);
+  
+  auto dtls_buffer = ZeroOnFreeBuffer<uint8_t>::CreateUninitializedWithSize(
+      key_len * 2 + salt_len * 2);
 
-  // RFC 5705 exporter using the RFC 5764 parameters
+  
   if (!dtls_transport->ExportSrtpKeyingMaterial(dtls_buffer)) {
     RTC_LOG(LS_ERROR) << "DTLS-SRTP key export failed";
-    RTC_DCHECK_NOTREACHED();  // This should never happen
+    RTC_DCHECK_NOTREACHED();  
     return false;
   }
 
-  // Sync up the keys with the DTLS-SRTP interface
-  // https://datatracker.ietf.org/doc/html/rfc5764#section-4.2
-  // The keying material is in the format:
-  // client_write_key|server_write_key|client_write_salt|server_write_salt
+  
+  
+  
+  
   ZeroOnFreeBuffer<uint8_t> client_write_key(&dtls_buffer[0], key_len,
                                              key_len + salt_len);
   ZeroOnFreeBuffer<uint8_t> server_write_key(&dtls_buffer[key_len], key_len,
@@ -299,13 +300,13 @@ void DtlsSrtpTransport::SetupDtlsTransport(
         [this](DtlsTransportInternal* transport, DtlsTransportState state) {
           OnDtlsState(transport, state);
         });
-    // Set the initial state.
+    
     OnDtlsState(dtls_transport, dtls_transport->dtls_state());
   } else {
-    // When the transport is removed, we usually reset the SRTP parameters.
-    // However, if the RTCP transport is removed because we are enabling RTCP
-    // muxing, we should not reset the parameters because the SRTP session
-    // will be maintained by the RTP transport.
+    
+    
+    
+    
     if (is_rtcp && rtcp_mux_enabled()) {
       return;
     }
@@ -346,4 +347,4 @@ void DtlsSrtpTransport::SetOnDtlsStateChange(
     absl::AnyInvocable<void()> callback) {
   on_dtls_state_change_ = std::move(callback);
 }
-}  // namespace webrtc
+}  

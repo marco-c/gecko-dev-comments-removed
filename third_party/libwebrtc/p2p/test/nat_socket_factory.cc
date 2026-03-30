@@ -151,7 +151,8 @@ class NATSocket : public Socket {
       return socket_->SendTo(data, size, addr);
     }
     
-    Buffer buf(size + kNATEncodedIPv6AddressSize);
+    Buffer buf = Buffer::CreateUninitializedWithSize(
+        size + kNATEncodedIPv6AddressSize);
     PackAddressForNAT(addr, buf);
     size_t addrlength = buf.size();
     buf.AppendData(static_cast<const uint8_t*>(data), size);
@@ -302,7 +303,8 @@ class NATSocket : public Socket {
 
   
   void SendConnectRequest() {
-    Buffer buf(kNATEncodedIPv6AddressSize);
+    Buffer buf =
+        Buffer::CreateUninitializedWithSize(kNATEncodedIPv6AddressSize);
     PackAddressForNAT(remote_addr_, buf);
     socket_->Send(buf.data(), buf.size());
   }

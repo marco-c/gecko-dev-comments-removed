@@ -131,7 +131,7 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
     
     
     const auto generate_payload = [](size_t num_bytes) {
-      Buffer payload(num_bytes);
+      Buffer payload = Buffer::CreateUninitializedWithSize(num_bytes);
       uint8_t value = 0;
       
       for (size_t i = 0; i != payload.size(); ++i, ++value) {

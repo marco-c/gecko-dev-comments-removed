@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "rtc_base/checks.h"
@@ -86,6 +87,7 @@ class BufferT {
   }
 
   
+  ABSL_DEPRECATED("Use CreateUninitializedWithSize()")
   explicit BufferT(size_t size) : BufferT(size, size) {}
 
   BufferT(size_t size, size_t capacity)
@@ -126,6 +128,14 @@ class BufferT {
   operator typename std::enable_if<internal::BufferCompat<U, char>::value,
                                    absl::string_view>::type() const {
     return absl::string_view(data<char>(), size());
+  }
+
+  
+  static BufferT CreateWithCapacity(size_t capacity) {
+    return BufferT(0, capacity);
+  }
+  static BufferT CreateUninitializedWithSize(size_t size) {
+    return BufferT(size, size);
   }
 
   
@@ -449,16 +459,5 @@ using ZeroOnFreeBuffer = BufferT<T, true>;
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-template <typename T, bool ZeroOnFree = false>
-using BufferT = ::webrtc::BufferT<T, ZeroOnFree>;
-using ::webrtc::Buffer;
-template <typename T>
-using ZeroOnFreeBuffer = ::webrtc::ZeroOnFreeBuffer<T>;
-}  
-#endif  
 
 #endif  

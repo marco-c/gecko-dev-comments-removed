@@ -11,10 +11,9 @@
 
 #include "common_video/h264/sps_vui_rewriter.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <optional>
 #include <vector>
 
@@ -152,7 +151,8 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
 
   
   
-  Buffer out_buffer(buffer.size() + kMaxVuiSpsIncrease);
+  Buffer out_buffer =
+      Buffer::CreateUninitializedWithSize(buffer.size() + kMaxVuiSpsIncrease);
   BitBufferWriter sps_writer(out_buffer.data(), out_buffer.size());
 
   

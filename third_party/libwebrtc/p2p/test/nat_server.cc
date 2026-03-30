@@ -234,7 +234,8 @@ void NATServer::OnExternalUDPPacket(AsyncPacketSocket* socket,
 
   
   
-  Buffer real_buf(packet.payload().size() + kNATEncodedIPv6AddressSize);
+  Buffer real_buf = Buffer::CreateUninitializedWithSize(
+      packet.payload().size() + kNATEncodedIPv6AddressSize);
   PackAddressForNAT(packet.source_address(), real_buf);
   
   AsyncSocketPacketOptions options;

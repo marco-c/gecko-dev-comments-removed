@@ -132,7 +132,7 @@ class DtlsSrtpTransportTest : public ::testing::Test {
 
     size_t rtp_len = sizeof(kPcmuFrame);
     size_t packet_size = rtp_len + kRtpAuthTagLen;
-    Buffer rtp_packet_buffer(packet_size);
+    Buffer rtp_packet_buffer = Buffer::CreateUninitializedWithSize(packet_size);
     char* rtp_packet_data = rtp_packet_buffer.data<char>();
     memcpy(rtp_packet_data, kPcmuFrame, rtp_len);
     
@@ -165,7 +165,8 @@ class DtlsSrtpTransportTest : public ::testing::Test {
   void SendRecvRtcpPackets() {
     size_t rtcp_len = sizeof(kRtcpReportForTest);
     size_t packet_size = rtcp_len + 4 + kRtpAuthTagLen;
-    Buffer rtcp_packet_buffer(packet_size);
+    Buffer rtcp_packet_buffer =
+        Buffer::CreateUninitializedWithSize(packet_size);
 
     
     
@@ -204,7 +205,7 @@ class DtlsSrtpTransportTest : public ::testing::Test {
 
     size_t rtp_len = sizeof(kPcmuFrameWithExtensions);
     size_t packet_size = rtp_len + kRtpAuthTagLen;
-    Buffer rtp_packet_buffer(packet_size);
+    Buffer rtp_packet_buffer = Buffer::CreateUninitializedWithSize(packet_size);
     char* rtp_packet_data = rtp_packet_buffer.data<char>();
     memcpy(rtp_packet_data, kPcmuFrameWithExtensions, rtp_len);
     
