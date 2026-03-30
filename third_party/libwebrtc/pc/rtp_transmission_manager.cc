@@ -84,8 +84,8 @@ void RtpTransmissionManager::Close() {
 
 void RtpTransmissionManager::OnSetStreams() {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (IsUnifiedPlan())
-    OnNegotiationNeeded();
+  RTC_DCHECK(IsUnifiedPlan());
+  OnNegotiationNeeded();
 }
 
 
