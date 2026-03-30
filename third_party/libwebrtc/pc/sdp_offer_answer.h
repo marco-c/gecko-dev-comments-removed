@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/audio_options.h"
 #include "api/candidate.h"
@@ -173,6 +174,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   std::optional<SSLRole> GuessSslRole() const;
+
+  
+  
+  
+  
+  void GetMediaChannelTeardownTasks(
+      std::vector<absl::AnyInvocable<void() &&>>& network_tasks,
+      std::vector<absl::AnyInvocable<void() &&>>& worker_tasks);
 
   
   void DestroyMediaChannels();
