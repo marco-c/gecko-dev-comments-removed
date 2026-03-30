@@ -61,7 +61,7 @@
 #endif
 
 #define STARTUP_COMPLETE_TOPIC "browser-delayed-startup-finished"
-#define DOC_ELEM_INSERTED_TOPIC "document-element-inserted"
+#define START_LOADING_UNTRUSTED_TOPIC "start-loading-untrusted"
 #define CONTENT_DOCUMENT_LOADED_TOPIC "content-document-loaded"
 #define CACHE_WRITE_TOPIC "browser-idle-startup-tasks-finished"
 #define XPCOM_SHUTDOWN_TOPIC "xpcom-shutdown"
@@ -563,9 +563,7 @@ Result<Ok, nsresult> ScriptPreloader::InitCache(
   } else {
     
     
-    
-    
-    mContentStartupFinishedTopic.AssignLiteral(DOC_ELEM_INSERTED_TOPIC);
+    mContentStartupFinishedTopic.AssignLiteral(START_LOADING_UNTRUSTED_TOPIC);
   }
   obs->AddObserver(this, mContentStartupFinishedTopic.get(), false);
 
