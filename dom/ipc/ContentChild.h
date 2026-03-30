@@ -857,8 +857,8 @@ class ContentChild final : public PContentChild,
   AppInfo mAppInfo;
 
   bool mIsForBrowser;
-  nsCString mRemoteType = NOT_REMOTE_TYPE;
   bool mIsAlive;
+  nsCString mRemoteType = NOT_REMOTE_TYPE;
   nsCString mProcessName;
 
   static ContentChild* sSingleton;
@@ -895,10 +895,10 @@ class ContentChild final : public PContentChild,
 
   uint32_t mNetworkLinkType = 0;
 
+  hal::ProcessPriority mProcessPriority = hal::PROCESS_PRIORITY_UNKNOWN;
+
   
   uint64_t mBrowsingContextFieldEpoch = 0;
-
-  hal::ProcessPriority mProcessPriority = hal::PROCESS_PRIORITY_UNKNOWN;
 
   
   
