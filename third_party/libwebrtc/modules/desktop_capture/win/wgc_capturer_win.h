@@ -19,9 +19,11 @@
 #include <map>
 #include <memory>
 
+#include "api/scoped_refptr.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/full_screen_window_detector.h"
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "modules/desktop_capture/win/wgc_capture_session.h"
 #include "modules/desktop_capture/win/wgc_capture_source.h"
@@ -111,6 +113,9 @@ class WgcCapturerWin : public DesktopCapturer {
 
   
   bool IsSourceBeingCaptured(SourceId id);
+  void SetUpFullScreenDetectorForTest(
+      DesktopCapturer::SourceId source_id,
+      bool fullscreen_slide_show_started_after_capture_start = true);
 
  private:
   typedef HRESULT(WINAPI* CreateDispatcherQueueControllerFunc)(
@@ -147,6 +152,11 @@ class WgcCapturerWin : public DesktopCapturer {
   
   
   
+  DesktopCapturer::SourceId selected_source_id_;
+
+  
+  
+  
   
   
   
@@ -164,6 +174,13 @@ class WgcCapturerWin : public DesktopCapturer {
   
   
   Microsoft::WRL::ComPtr<::ID3D11Device> d3d11_device_;
+
+  
+  
+  scoped_refptr<FullScreenWindowDetector> full_screen_window_detector_;
+
+  
+  bool fullscreen_usage_logged_ = false;
 };
 
 }  
