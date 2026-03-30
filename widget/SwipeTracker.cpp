@@ -46,7 +46,9 @@ SwipeTracker::SwipeTracker(nsIWidget& aWidget,
           PixelCastJustification::LayoutDeviceIsScreenForUntransformedEvent))),
       mLastEventTimeStamp(aSwipeStartEvent.mTimeStamp),
       mAllowedDirections(aAllowedDirections),
-      mSwipeDirection(aSwipeDirection) {
+      mSwipeDirection(aSwipeDirection) {}
+
+void SwipeTracker::StartTracking(const PanGestureInput& aSwipeStartEvent) {
   SendSwipeEvent(eSwipeGestureStart, 0, 0.0, aSwipeStartEvent.mTimeStamp);
   ProcessEvent(aSwipeStartEvent,  true);
 }
@@ -94,6 +96,8 @@ bool SwipeTracker::ComputeSwipeSuccess() const {
 
 nsEventStatus SwipeTracker::ProcessEvent(
     const PanGestureInput& aEvent, bool aProcessingFirstEvent ) {
+  RefPtr<SwipeTracker> selfPin(this);
+
   
   
   if (!mEventsAreControllingSwipe || !SwipingInAllowedDirection()) {
@@ -183,6 +187,8 @@ void SwipeTracker::StartAnimating(double aStartValue, double aTargetValue) {
 }
 
 void SwipeTracker::WillRefresh(TimeStamp aTime) {
+  RefPtr<SwipeTracker> selfPin(this);
+
   
   TimeStamp now = TimeStamp::Now();
   mAxis.Simulate(now - mLastAnimationFrameTime);
