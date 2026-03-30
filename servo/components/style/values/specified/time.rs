@@ -15,8 +15,10 @@ use cssparser::{match_ignore_ascii_case, Parser, Token};
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{
-    CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, ToTyped,
+    CssString, CssWriter, MathSum, NumericValue, ParseError, SpecifiedValueInfo,
+    StyleParseErrorKind, ToCss, ToTyped, TypedValue, UnitValue,
 };
+use thin_vec::ThinVec;
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
@@ -204,6 +206,24 @@ impl ToCss for Time {
     }
 }
 
-impl ToTyped for Time {}
+impl ToTyped for Time {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        let numeric_value = NumericValue::Unit(UnitValue {
+            value: self.unitless_value(),
+            unit: CssString::from(self.unit()),
+        });
+
+        
+        if self.calc_clamping_mode.is_some() {
+            dest.push(TypedValue::Numeric(NumericValue::Sum(MathSum {
+                values: ThinVec::from([numeric_value]),
+            })));
+        } else {
+            dest.push(TypedValue::Numeric(numeric_value));
+        }
+
+        Ok(())
+    }
+}
 
 impl SpecifiedValueInfo for Time {}
