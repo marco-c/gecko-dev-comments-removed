@@ -302,7 +302,10 @@ TEST_P(DataChannelIntegrationTest,
       WaitUntil([&] { return callee()->data_observer()->IsOpen(); }, IsTrue()),
       IsRtcOk());
 
-  for (int message_size = 1; message_size < 100000; message_size *= 2) {
+  
+  
+  for (int message_size = 1; message_size <= kSctpSendBufferSize;
+       message_size *= 2) {
     std::string data(message_size, 'a');
     caller()->data_channel()->Send(DataBuffer(data));
     EXPECT_THAT(
@@ -337,6 +340,44 @@ TEST_P(DataChannelIntegrationTest,
   EXPECT_THAT(WaitUntil([&] { return callee()->data_observer()->state(); },
                         Eq(DataChannelInterface::kClosed)),
               IsRtcOk());
+}
+
+
+
+
+
+TEST_P(DataChannelIntegrationTest,
+       EndToEndCallWithSctpDataChannelOversizedMessage) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  
+  
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(WaitUntil([&] { return SignalingStateStable(); }, IsTrue()),
+              IsRtcOk());
+  
+  
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_THAT(WaitUntil([&] { return callee()->data_channel(); }, Ne(nullptr)),
+              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return caller()->data_observer()->IsOpen(); }, IsTrue()),
+      IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return callee()->data_observer()->IsOpen(); }, IsTrue()),
+      IsRtcOk());
+
+  
+  
+  
+  std::string data(kSctpSendBufferSize + 1, 'a');
+  EXPECT_FALSE(caller()->data_channel()->Send(DataBuffer(data)));
+  EXPECT_EQ(caller()->data_channel()->state(), DataChannelInterface::kClosed);
+  RTCError last_error = caller()->data_channel()->error();
+  EXPECT_FALSE(last_error.ok());
+  EXPECT_FALSE(std::string(last_error.message()).empty());
+  EXPECT_EQ(RTCErrorType::NETWORK_ERROR, last_error.type());
 }
 
 
