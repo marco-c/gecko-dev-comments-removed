@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/crypto/crypto_options.h"
 #include "api/media_types.h"
 #include "api/rtp_parameters.h"
@@ -45,7 +46,7 @@ struct SenderOptions {
 
 struct MediaDescriptionOptions {
   MediaDescriptionOptions(MediaType type,
-                          const std::string& mid,
+                          absl::string_view mid,
                           RtpTransceiverDirection direction,
                           bool stopped)
       : type(type), mid(mid), direction(direction), stopped(stopped) {}

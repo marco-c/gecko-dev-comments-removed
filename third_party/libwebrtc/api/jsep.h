@@ -119,14 +119,14 @@ using IceCandidateInterface = IceCandidate;
 
 
 
-RTC_EXPORT IceCandidate* CreateIceCandidate(const std::string& sdp_mid,
+RTC_EXPORT IceCandidate* CreateIceCandidate(absl::string_view sdp_mid,
                                             int sdp_mline_index,
                                             const std::string& sdp,
                                             SdpParseError* error);
 
 
 RTC_EXPORT std::unique_ptr<IceCandidate> CreateIceCandidate(
-    const std::string& sdp_mid,
+    absl::string_view sdp_mid,
     int sdp_mline_index,
     const Candidate& candidate);
 

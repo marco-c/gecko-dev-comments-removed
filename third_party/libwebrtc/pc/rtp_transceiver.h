@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -227,7 +228,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   
-  void set_mid(const std::optional<std::string>& mid) { mid_ = mid; }
+  void set_mid(const std::optional<std::string>& mid) { mid_ = std::move(mid); }
 
   
   

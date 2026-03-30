@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
@@ -50,8 +51,8 @@ namespace webrtc {
 
 struct RtpSenderInfo {
   RtpSenderInfo() : first_ssrc(0) {}
-  RtpSenderInfo(const std::string& stream_id,
-                const std::string& sender_id,
+  RtpSenderInfo(absl::string_view stream_id,
+                absl::string_view sender_id,
                 uint32_t ssrc)
       : stream_id(stream_id), sender_id(sender_id), first_ssrc(ssrc) {}
   bool operator==(const RtpSenderInfo& other) {
@@ -98,7 +99,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   
   scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> CreateSender(
-      webrtc::MediaType media_type,
+      MediaType media_type,
       const std::string& id,
       scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids,
@@ -107,7 +108,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   
   scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-  CreateReceiver(webrtc::MediaType media_type, const std::string& receiver_id);
+  CreateReceiver(MediaType media_type, const std::string& receiver_id);
 
   
   
@@ -156,14 +157,14 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   void OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
                            MediaStreamInterface* stream,
-                           webrtc::MediaType media_type);
+                           MediaType media_type);
 
   
   
   
   void OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
                              MediaStreamInterface* stream,
-                             webrtc::MediaType media_type);
+                             MediaType media_type);
 
   
   
@@ -171,7 +172,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   
   void OnLocalSenderAdded(const RtpSenderInfo& sender_info,
-                          webrtc::MediaType media_type);
+                          MediaType media_type);
 
   
   
@@ -179,11 +180,10 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   
   void OnLocalSenderRemoved(const RtpSenderInfo& sender_info,
-                            webrtc::MediaType media_type);
+                            MediaType media_type);
 
-  std::vector<RtpSenderInfo>* GetRemoteSenderInfos(
-      webrtc::MediaType media_type);
-  std::vector<RtpSenderInfo>* GetLocalSenderInfos(webrtc::MediaType media_type);
+  std::vector<RtpSenderInfo>* GetRemoteSenderInfos(MediaType media_type);
+  std::vector<RtpSenderInfo>* GetLocalSenderInfos(MediaType media_type);
   const RtpSenderInfo* FindSenderInfo(const std::vector<RtpSenderInfo>& infos,
                                       const std::string& stream_id,
                                       const std::string& sender_id) const;
@@ -194,11 +194,11 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   
   scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> FindSenderById(
-      const std::string& sender_id) const;
+      absl::string_view sender_id) const;
 
   
   scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-  FindReceiverById(const std::string& receiver_id) const;
+  FindReceiverById(absl::string_view receiver_id) const;
 
   TransceiverList* transceivers() { return &transceivers_; }
   const TransceiverList* transceivers() const { return &transceivers_; }
@@ -242,7 +242,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
       const RtpSenderInfo& remote_sender_info) RTC_RUN_ON(signaling_thread());
 
   void RunWithObserver(
-      absl::AnyInvocable<void(webrtc::PeerConnectionObserver*) &&>);
+      absl::AnyInvocable<void(PeerConnectionObserver*) &&>);  
   void OnNegotiationNeeded();
 
   const MediaEngineInterface* media_engine() const;

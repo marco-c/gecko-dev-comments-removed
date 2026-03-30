@@ -905,7 +905,7 @@ RtpTransceiver::GetOfferedAndImplementedHeaderExtensions(
 
 
 
-bool IsMandatoryHeaderExtension(const std::string& uri) {
+bool IsMandatoryHeaderExtension(absl::string_view uri) {
   return uri == RtpExtension::kMidUri;
 }
 
