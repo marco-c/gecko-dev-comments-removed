@@ -94,6 +94,7 @@
 #include "rtc_base/time_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 #include "test/wait_until.h"
 
 using ::testing::_;
@@ -186,6 +187,12 @@ std::unique_ptr<Candidate> CreateFakeCandidate(
   candidate->set_underlying_type_for_vpn(underlying_type_for_vpn);
   return candidate;
 }
+
+class MockStatsCollectorCallback : public RTCStatsCollectorCallback {
+ public:
+  MOCK_METHOD1(OnStatsDelivered,
+               void(const scoped_refptr<const RTCStatsReport>&));
+};
 
 class FakeAudioProcessor : public AudioProcessorInterface {
  public:
@@ -388,7 +395,7 @@ class RTCStatsCollectorWrapper {
       const Environment& env)
       : pc_(pc),
         stats_collector_(
-            RTCStatsCollector::Create(pc.get(),
+            RTCStatsCollector::Create(pc_.get(),
                                       env,
                                       50 * kNumMicrosecsPerMillisec)) {}
 
@@ -3829,7 +3836,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   static scoped_refptr<FakeRTCStatsCollector> Create(
       PeerConnectionInternal* pc,
       const Environment& env,
-      int64_t cache_lifetime_us) {
+      int64_t cache_lifetime_us = 50 * kNumMicrosecsPerMillisec) {
     return scoped_refptr<FakeRTCStatsCollector>(
         new RefCountedObject<FakeRTCStatsCollector>(pc, env,
                                                     cache_lifetime_us));
@@ -3904,6 +3911,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
       Timestamp timestamp,
       const std::map<std::string, TransportStats>& transport_stats_by_name,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
+      const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
       RTCStatsReport* partial_report) override {
     EXPECT_TRUE(network_thread_->IsCurrent());
     {
@@ -3927,8 +3935,77 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   int produced_on_network_thread_ = 0;
 };
 
+
+
+
+
+
+
+
+TEST(RTCStatsCollectorSafetyTest, WaitPendingRequestGetsCallback) {
+  test::RunLoop loop;
+  auto pc = make_ref_counted<FakePeerConnectionForStats>();
+  auto env = CreateEnvironment();
+  RTCStatsCollectorWrapper wrapper(pc, env);
+  auto callback = make_ref_counted<MockStatsCollectorCallback>();
+  EXPECT_CALL(*callback, OnStatsDelivered(_)).WillOnce([&] { loop.Quit(); });
+  wrapper.stats_collector()->GetStatsReport(callback);
+  loop.Run();
+}
+
+
+
+
+
+
+
+
+TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestPreventsCallback) {
+  test::RunLoop loop;
+  auto pc = make_ref_counted<FakePeerConnectionForStats>();
+  RTCStatsCollectorWrapper wrapper(pc, CreateEnvironment());
+  auto callback = make_ref_counted<MockStatsCollectorCallback>();
+  EXPECT_CALL(*callback, OnStatsDelivered(_)).Times(0);
+  
+  
+  wrapper.stats_collector()->GetStatsReport(callback);
+  
+  
+  
+  auto network_task =
+      wrapper.stats_collector()->CancelPendingRequestAndGetShutdownTask();
+  loop.Flush();
+  
+  std::move(network_task)();
+}
+
+
+
+
+
+
+TEST(RTCStatsCollectorSafetyTest, NetworkThreadSafetyPreventsCallback) {
+  test::RunLoop loop;
+  auto pc = make_ref_counted<FakePeerConnectionForStats>();
+  RTCStatsCollectorWrapper wrapper(pc, CreateEnvironment());
+  auto callback = make_ref_counted<MockStatsCollectorCallback>();
+  EXPECT_CALL(*callback, OnStatsDelivered(_)).Times(0);
+  
+  
+  auto network_task =
+      wrapper.stats_collector()->CancelPendingRequestAndGetShutdownTask();
+  
+  
+  std::move(network_task)();
+  
+  
+  wrapper.stats_collector()->GetStatsReport(callback);
+
+  loop.Flush();
+}
+
 TEST(RTCStatsCollectorTestWithFakeCollector, ThreadUsageAndResultsMerging) {
-  AutoThread main_thread_;
+  test::RunLoop loop;
   auto pc = make_ref_counted<FakePeerConnectionForStats>();
   scoped_refptr<FakeRTCStatsCollector> stats_collector(
       FakeRTCStatsCollector::Create(pc.get(), CreateEnvironment(),

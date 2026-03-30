@@ -17,9 +17,11 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/audio/audio_device.h"
 #include "api/data_channel_interface.h"
 #include "api/environment/environment.h"
@@ -29,6 +31,7 @@
 #include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats_collector_callback.h"
 #include "api/stats/rtc_stats_report.h"
+#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
 #include "call/call.h"
@@ -42,7 +45,6 @@
 #include "rtc_base/containers/flat_set.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ssl_certificate.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
@@ -51,6 +53,22 @@ namespace webrtc {
 
 class RtpSenderInternal;
 class RtpReceiverInternal;
+
+
+
+
+
+
+
+
+struct RtpTransceiverStatsInfo {
+  const scoped_refptr<RtpTransceiver> transceiver;
+  const MediaType media_type;
+  const std::optional<std::string> mid;
+  std::optional<std::string> transport_name;
+  TrackMediaInfoMap track_media_info_map;
+  const std::optional<RtpTransceiverDirection> current_direction;
+};
 
 
 
@@ -92,6 +110,11 @@ class RTCStatsCollector : public RefCountInterface {
   void WaitForPendingRequest();
 
   
+  
+  
+  absl::AnyInvocable<void() &&> CancelPendingRequestAndGetShutdownTask();
+
+  
   void OnSctpDataChannelStateChanged(int channel_id,
                                      DataChannelInterface::DataState state);
 
@@ -112,10 +135,12 @@ class RTCStatsCollector : public RefCountInterface {
   virtual void ProducePartialResultsOnSignalingThreadImpl(
       Timestamp timestamp,
       RTCStatsReport* partial_report);
+
   virtual void ProducePartialResultsOnNetworkThreadImpl(
       Timestamp timestamp,
       const std::map<std::string, TransportStats>& transport_stats_by_name,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
+      const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
       RTCStatsReport* partial_report);
 
  private:
@@ -160,22 +185,6 @@ class RTCStatsCollector : public RefCountInterface {
   };
 
   void GetStatsReportInternal(RequestInfo request);
-
-  
-  
-  
-  
-  
-  
-  
-  struct RtpTransceiverStatsInfo {
-    scoped_refptr<RtpTransceiver> transceiver;
-    webrtc::MediaType media_type;
-    std::optional<std::string> mid;
-    std::optional<std::string> transport_name;
-    TrackMediaInfoMap track_media_info_map;
-    std::optional<RtpTransceiverDirection> current_direction;
-  };
 
   void DeliverCachedReport(scoped_refptr<const RTCStatsReport> cached_report,
                            std::vector<RequestInfo> requests);
@@ -237,8 +246,10 @@ class RTCStatsCollector : public RefCountInterface {
   
   void ProducePartialResultsOnSignalingThread(Timestamp timestamp);
   void ProducePartialResultsOnNetworkThread(
+      scoped_refptr<PendingTaskSafetyFlag> signaling_safety,
       Timestamp timestamp,
-      std::optional<std::string> sctp_transport_name);
+      std::set<std::string> transport_names,
+      std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos);
   
   
   void MergeNetworkReport_s();
@@ -263,7 +274,7 @@ class RTCStatsCollector : public RefCountInterface {
   
   
   scoped_refptr<RTCStatsReport> partial_report_;
-  std::vector<RequestInfo> requests_;
+  std::vector<RequestInfo> requests_ RTC_GUARDED_BY(signaling_thread_);
   
   
   
@@ -284,13 +295,13 @@ class RTCStatsCollector : public RefCountInterface {
   
   
   
-  std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos_;
+  std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos_
+      RTC_GUARDED_BY(signaling_thread_);
   
   
   
-  Mutex cached_certificates_mutex_;
   std::map<std::string, CertificateStatsPair> cached_certificates_by_transport_
-      RTC_GUARDED_BY(cached_certificates_mutex_);
+      RTC_GUARDED_BY(network_thread_);
 
   Call::Stats call_stats_;
 
@@ -302,7 +313,8 @@ class RTCStatsCollector : public RefCountInterface {
   
   int64_t cache_timestamp_us_;
   int64_t cache_lifetime_us_;
-  scoped_refptr<const RTCStatsReport> cached_report_;
+  scoped_refptr<const RTCStatsReport> cached_report_
+      RTC_GUARDED_BY(signaling_thread_);
 
   
   
@@ -321,6 +333,8 @@ class RTCStatsCollector : public RefCountInterface {
     flat_set<int> opened_data_channels;
   };
   InternalRecord internal_record_;
+  const scoped_refptr<PendingTaskSafetyFlag> signaling_safety_;
+  const scoped_refptr<PendingTaskSafetyFlag> network_safety_;
 };
 
 }  
