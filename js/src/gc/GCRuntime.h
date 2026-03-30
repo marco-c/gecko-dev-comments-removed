@@ -320,6 +320,13 @@ class GCRuntime {
   void resetParameter(JSContext* cx, JSGCParamKey key);
   uint32_t getParameter(JSGCParamKey key);
 
+  const mozilla::TimeStamp& lastAnimationTime() const {
+    return lastAnimationTime_.ref();
+  }
+  void setLastAnimationTime(const mozilla::TimeStamp& time) {
+    lastAnimationTime_ = time;
+  }
+
   void setPerformanceHint(PerformanceHint hint);
   bool isInPageLoad() const { return inPageLoadCount != 0; }
 
@@ -1505,6 +1512,9 @@ class GCRuntime {
 
   
   MainThreadData<mozilla::TimeDuration> collectorTimeSinceAllocRateUpdate;
+
+  
+  MainThreadData<mozilla::TimeStamp> lastAnimationTime_;
 
 #ifdef JS_GC_ZEAL
   

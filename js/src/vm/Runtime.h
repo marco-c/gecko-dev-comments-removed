@@ -1045,9 +1045,6 @@ struct JSRuntime {
 
   js::MainThreadData<mozilla::MallocSizeOf> debuggerMallocSizeOf;
 
-  
-  js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
-
  private:
   
 
