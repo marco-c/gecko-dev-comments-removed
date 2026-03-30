@@ -18,7 +18,6 @@
 #include "mozilla/Vector.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include <vector>
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/TimeStamp.h"
 #include "nsTHashMap.h"
@@ -200,14 +199,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsCOMPtr<nsICryptoHash> mCrypto;
 
   
-  struct PrefetchRequest {
-    std::function<void(nsresult)> callback;
-    bool isPrivateBrowsing;
-  };
-
-  
-  
-  std::vector<PrefetchRequest> mWaitingPrefetch;
+  nsTArray<std::function<void(nsresult)>> mWaitingPrefetch;
 
   
   
@@ -317,7 +309,7 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
 };
 
 
-class DictionaryCache final : public nsIObserver {
+class DictionaryCache final {
  private:
   DictionaryCache() {
     nsresult rv = Init();
@@ -330,8 +322,7 @@ class DictionaryCache final : public nsIObserver {
   friend class DictionaryCacheEntry;
 
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DictionaryCache)
 
   static already_AddRefed<DictionaryCache> GetInstance();
 
