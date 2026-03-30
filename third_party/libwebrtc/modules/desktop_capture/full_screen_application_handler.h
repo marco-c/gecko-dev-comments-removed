@@ -37,6 +37,20 @@ class FullScreenApplicationHandler {
       const DesktopCapturer::SourceList& window_list,
       int64_t timestamp) const;
 
+  void SetHeuristicForFindingEditor(bool use_heuristic) {
+    use_heuristic_for_finding_editor_ = use_heuristic;
+  }
+
+  bool UseHeuristicForFindingEditor() const {
+    return use_heuristic_for_finding_editor_;
+  }
+
+  
+  
+  
+  virtual DesktopCapturer::SourceId FindEditorWindow(
+      const DesktopCapturer::SourceList& window_list) const;
+
   
   
   DesktopCapturer::SourceId GetSourceId() const;
@@ -44,8 +58,13 @@ class FullScreenApplicationHandler {
   virtual void SetSlideShowCreationStateForTest(
       bool fullscreen_slide_show_started_after_capture_start) {}
 
+  virtual void SetEditorWasFound() {}
+
  private:
   const DesktopCapturer::SourceId source_id_;
+  
+  
+  bool use_heuristic_for_finding_editor_ = false;
 };
 
 }  

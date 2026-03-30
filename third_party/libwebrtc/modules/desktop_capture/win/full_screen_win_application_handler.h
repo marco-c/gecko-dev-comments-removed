@@ -20,6 +20,24 @@
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/full_screen_application_handler.h"
 
+
+
+enum class FullScreenDetectorResult {
+  kUnknown = 0,
+  kSuccess = 1,
+  kFailureDueToSameTitleWindows = 2,
+  kFailureDueToSlideShowWasNotChosen = 3,
+  kMaxValue = kFailureDueToSlideShowWasNotChosen
+};
+
+
+
+enum class FullScreenFindEditorResult {
+  kSuccess = 0,
+  kFailureDueToSameTitleWindows = 1,
+  kMaxValue = kFailureDueToSameTitleWindows
+};
+
 namespace webrtc {
 
 class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
@@ -33,6 +51,14 @@ class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
   DesktopCapturer::SourceId FindFullScreenWindow(
       const DesktopCapturer::SourceList& window_list,
       int64_t timestamp) const override;
+
+  DesktopCapturer::SourceId FindEditorWindow(
+      const DesktopCapturer::SourceList& window_list) const override;
+
+  void SetSlideShowCreationStateForTest(
+      bool fullscreen_slide_show_started_after_capture_start) override;
+
+  void SetEditorWasFound() override;
 
  private:
   WindowType GetWindowType(HWND window) const;
@@ -52,6 +78,10 @@ class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
   bool IsEditorWindow(HWND window) const;
 
   bool IsSlideShowWindow(HWND window) const;
+
+  mutable bool was_slide_show_created_after_capture_started_;
+
+  mutable FullScreenDetectorResult full_screen_detector_result_;
 };
 
 std::unique_ptr<FullScreenApplicationHandler>

@@ -113,9 +113,14 @@ class WgcCapturerWin : public DesktopCapturer {
 
   
   bool IsSourceBeingCaptured(SourceId id);
+  DesktopCapturer::SourceId SelectedSourceId() const {
+    return selected_source_id_;
+  }
+
   void SetUpFullScreenDetectorForTest(
       DesktopCapturer::SourceId source_id,
-      bool fullscreen_slide_show_started_after_capture_start = true);
+      bool fullscreen_slide_show_started_after_capture_start = true,
+      bool use_heuristic_for_finding_editor_ = false);
 
  private:
   typedef HRESULT(WINAPI* CreateDispatcherQueueControllerFunc)(
@@ -170,6 +175,12 @@ class WgcCapturerWin : public DesktopCapturer {
   
   
   bool allow_delayed_capturable_check_ = false;
+
+  DesktopCapturer::SourceId chosen_slide_show_id_ = 0;
+
+  
+  
+  DesktopCapturer::SourceId editor_id_ = 0;
 
   
   

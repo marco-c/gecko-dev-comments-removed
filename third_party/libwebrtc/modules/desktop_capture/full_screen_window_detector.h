@@ -47,6 +47,16 @@ class FullScreenWindowDetector
   FullScreenWindowDetector(const FullScreenWindowDetector&) = delete;
   FullScreenWindowDetector& operator=(const FullScreenWindowDetector&) = delete;
 
+  void SetHeuristicForFindingEditor(bool use_heuristic) {
+    use_heuristic_for_finding_editor_ = use_heuristic;
+    if (app_handler_) {
+      app_handler_->SetHeuristicForFindingEditor(use_heuristic);
+    }
+  }
+  bool UseHeuristicForFindingEditor() {
+    return use_heuristic_for_finding_editor_;
+  }
+
   
   
   
@@ -55,17 +65,25 @@ class FullScreenWindowDetector
 
   
   
+  
+  DesktopCapturer::SourceId FindEditorWindow(
+      DesktopCapturer::SourceId original_source_id);
+
+  
+  
   void UpdateWindowListIfNeeded(
       DesktopCapturer::SourceId original_source_id,
       FunctionView<bool(DesktopCapturer::SourceList*)> get_sources);
 
+  void SetEditorWasFoundForChosenSlideShow();
   static scoped_refptr<FullScreenWindowDetector>
   CreateFullScreenWindowDetector();
 
   
   void CreateFullScreenApplicationHandlerForTest(
       DesktopCapturer::SourceId source_id,
-      bool fullscreen_slide_show_started_after_capture_start);
+      bool fullscreen_slide_show_started_after_capture_start,
+      bool use_heuristic_for_finding_editor);
 
  protected:
   std::unique_ptr<FullScreenApplicationHandler> app_handler_;
@@ -74,6 +92,17 @@ class FullScreenWindowDetector
   void CreateApplicationHandlerIfNeeded(DesktopCapturer::SourceId source_id);
 
   ApplicationHandlerFactory application_handler_factory_;
+
+  
+  
+  
+  
+  bool use_heuristic_for_finding_editor_ = false;
+
+  
+  
+  
+  bool found_editor_for_chosen_slide_show_ = false;
 
   int64_t last_update_time_ms_;
   DesktopCapturer::SourceId previous_source_id_;

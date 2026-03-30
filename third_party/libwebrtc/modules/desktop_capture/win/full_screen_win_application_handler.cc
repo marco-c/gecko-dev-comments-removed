@@ -18,6 +18,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "absl/strings/ascii.h"
@@ -33,6 +34,12 @@ void RecordFullScreenDetectorResult(FullScreenDetectorResult result) {
   RTC_HISTOGRAM_ENUMERATION(
       "WebRTC.Screenshare.FullScreenDetectorResult", static_cast<int>(result),
       static_cast<int>(FullScreenDetectorResult::kMaxValue));
+}
+
+void RecordFullScreenFindEditorResult(FullScreenFindEditorResult result) {
+  RTC_HISTOGRAM_ENUMERATION(
+      "WebRTC.Screenshare.FullScreenFindEditorResult", static_cast<int>(result),
+      static_cast<int>(FullScreenFindEditorResult::kMaxValue));
 }
 
 namespace webrtc {
@@ -201,10 +208,77 @@ DesktopCapturer::SourceId FullScreenPowerPointHandler::FindFullScreenWindow(
   return full_screen_slide_show_id;
 }
 
+DesktopCapturer::SourceId FullScreenPowerPointHandler::FindEditorWindow(
+    const DesktopCapturer::SourceList& window_list) const {
+  if (!UseHeuristicForFindingEditor() || window_list.empty()) {
+    return 0;
+  }
+
+  auto original_window = reinterpret_cast<HWND>(GetSourceId());
+  if (GetWindowType(original_window) == WindowType::kEditor) {
+    return GetSourceId();
+  }
+
+  if (GetWindowType(original_window) != WindowType::kSlideShow) {
+    return 0;
+  }
+
+  DesktopCapturer::SourceList powerpoint_windows = GetProcessWindows(
+      window_list, WindowProcessId(original_window), original_window);
+
+  
+  
+  if (powerpoint_windows.empty()) {
+    return 0;
+  }
+
+  std::unordered_set<DesktopCapturer::SourceId> editor_ids;
+  const std::string original_document_title =
+      GetDocumentTitleFromSlideShow(original_window);
+  for (const auto& source : powerpoint_windows) {
+    auto window_id = reinterpret_cast<HWND>(source.id);
+    
+    
+    if (GetWindowType(window_id) == WindowType::kEditor &&
+        GetDocumentTitleFromEditor(window_id) == original_document_title) {
+      editor_ids.insert(source.id);
+    }
+  }
+
+  if (editor_ids.size() != 1) {
+    RecordFullScreenFindEditorResult(
+        FullScreenFindEditorResult::kFailureDueToSameTitleWindows);
+    
+    
+    
+    return 0;
+  }
+
+  RecordFullScreenFindEditorResult(FullScreenFindEditorResult::kSuccess);
+  return *editor_ids.begin();
+}
+
 void FullScreenPowerPointHandler::SetSlideShowCreationStateForTest(
     bool fullscreen_slide_show_started_after_capture_start) {
   was_slide_show_created_after_capture_started_ =
       fullscreen_slide_show_started_after_capture_start;
+}
+
+void FullScreenPowerPointHandler::SetEditorWasFound() {
+  if (!UseHeuristicForFindingEditor())
+    return;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  was_slide_show_created_after_capture_started_ = true;
 }
 
 FullScreenPowerPointHandler::WindowType

@@ -252,6 +252,29 @@ bool WgcCapturerWin::GetSourceList(SourceList* sources) {
 bool WgcCapturerWin::SelectSource(DesktopCapturer::SourceId id) {
   selected_source_id_ = id;
 
+  if (full_screen_window_detector_ &&
+      full_screen_window_detector_->UseHeuristicForFindingEditor() &&
+      editor_id_ == 0) {
+    
+    
+    
+    
+    
+    
+    editor_id_ = full_screen_window_detector_->FindEditorWindow(id);
+    if (editor_id_ && editor_id_ != selected_source_id_) {
+      
+      
+      selected_source_id_ = editor_id_;
+      chosen_slide_show_id_ = id;
+
+      
+      
+      
+      
+      full_screen_window_detector_->SetEditorWasFoundForChosenSlideShow();
+    }
+  }
   
   
   const DesktopCapturer::SourceId full_screen_source_id =
@@ -267,6 +290,12 @@ bool WgcCapturerWin::SelectSource(DesktopCapturer::SourceId id) {
     
     fullscreen_usage_logged_ = true;
     LogDesktopCapturerFullscreenDetectorUsage();
+
+    if (chosen_slide_show_id_) {
+      RTC_HISTOGRAM_BOOLEAN(
+          "WebRTC.Screenshare.DesktopCapturerFullScreenFindEditorUsage",
+          capture_id == chosen_slide_show_id_);
+    }
   }
 
   if (!capture_source_ || capture_source_->GetSourceId() != capture_id) {
@@ -461,10 +490,12 @@ bool WgcCapturerWin::IsSourceBeingCaptured(DesktopCapturer::SourceId id) {
 
 void WgcCapturerWin::SetUpFullScreenDetectorForTest(
     DesktopCapturer::SourceId source_id,
-    bool fullscreen_slide_show_started_after_capture_start) {
+    bool fullscreen_slide_show_started_after_capture_start,
+    bool use_heuristic_for_finding_editor) {
   if (full_screen_window_detector_) {
     full_screen_window_detector_->CreateFullScreenApplicationHandlerForTest(
-        source_id, fullscreen_slide_show_started_after_capture_start);
+        source_id, fullscreen_slide_show_started_after_capture_start,
+        use_heuristic_for_finding_editor);
   }
 }
 
