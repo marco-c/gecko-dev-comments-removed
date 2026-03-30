@@ -135,33 +135,50 @@ class Menu extends EventEmitter {
     if (this.id) {
       popup.id = this.id;
     }
-    this.#createMenuItems(popup);
+
+    
+    
+    
+    const ac = new AbortController();
+    const { signal } = ac;
+
+    this.#createMenuItems(popup, signal);
 
     
     
     const onWindowUnload = () => popup.hidePopup();
-    win.addEventListener("unload", onWindowUnload);
+    win.addEventListener("unload", onWindowUnload, { signal });
 
     
-    popup.addEventListener("popuphidden", e => {
-      if (e.target === popup) {
-        win.removeEventListener("unload", onWindowUnload);
-        popup.remove();
-        this.emit("close");
-      }
-    });
+    
+    
+    popup.addEventListener(
+      "popuphidden",
+      e => {
+        if (e.target === popup) {
+          popup.remove();
+          this.emit("close");
+          ac.abort();
+        }
+      },
+      { signal }
+    );
 
-    popup.addEventListener("popupshown", e => {
-      if (e.target === popup) {
-        this.emit("open");
-      }
-    });
+    popup.addEventListener(
+      "popupshown",
+      e => {
+        if (e.target === popup) {
+          this.emit("open");
+        }
+      },
+      { signal }
+    );
 
     popupset.appendChild(popup);
     popup.openPopupAtScreen(screenX, screenY, true);
   }
 
-  #createMenuItems(parent) {
+  #createMenuItems(parent, signal) {
     const doc = parent.ownerDocument;
     this.menuitems.forEach(item => {
       if (!item.visible) {
@@ -172,7 +189,7 @@ class Menu extends EventEmitter {
         const menupopup = doc.createXULElement("menupopup");
         menupopup.setAttribute("escapecontentshell", "true");
 
-        item.submenu.#createMenuItems(menupopup);
+        item.submenu.#createMenuItems(menupopup, signal);
 
         const menu = doc.createXULElement("menu");
         menu.appendChild(menupopup);
@@ -185,12 +202,20 @@ class Menu extends EventEmitter {
         const menuitem = doc.createXULElement("menuitem");
         applyItemAttributesToNode(item, menuitem);
 
-        menuitem.addEventListener("command", () => {
-          item.click();
-        });
-        menuitem.addEventListener("DOMMenuItemActive", () => {
-          item.hover();
-        });
+        menuitem.addEventListener(
+          "command",
+          () => {
+            item.click();
+          },
+          { signal }
+        );
+        menuitem.addEventListener(
+          "DOMMenuItemActive",
+          () => {
+            item.hover();
+          },
+          { signal }
+        );
 
         parent.appendChild(menuitem);
       }
