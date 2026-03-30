@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/video/corruption_detection/frame_instrumentation_generator_factory.h"
+
+#include <memory>
+
+#include "api/video/corruption_detection/frame_instrumentation_generator.h"
+#include "api/video/video_codec_type.h"
+#include "video/corruption_detection/frame_instrumentation_generator_impl.h"
+
+namespace webrtc {
+
+std::unique_ptr<FrameInstrumentationGenerator>
+FrameInstrumentationGeneratorFactory::Create(VideoCodecType video_codec_type) {
+  return std::make_unique<FrameInstrumentationGeneratorImpl>(video_codec_type);
+}
+
+}  

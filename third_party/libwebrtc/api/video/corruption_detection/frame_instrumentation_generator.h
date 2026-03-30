@@ -29,6 +29,7 @@ namespace webrtc {
 
 class FrameInstrumentationGenerator {
  public:
+  
   static std::unique_ptr<FrameInstrumentationGenerator> Create(
       VideoCodecType video_codec_type);
 
