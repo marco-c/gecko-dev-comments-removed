@@ -55,6 +55,15 @@
 namespace webrtc {
 
 
+enum class HistogramDtlsVersion {
+  kUnknown = 0,
+  kDtls10 = 1,
+  kDtls12 = 2,
+  kDtls13 = 3,
+  kMax = 4
+};
+
+
 
 class StreamInterfaceChannel : public StreamInterface {
  public:
