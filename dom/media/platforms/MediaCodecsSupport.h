@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_PLATFORMS_MEDIACODECSSUPPORT_H_
 #define DOM_MEDIA_PLATFORMS_MEDIACODECSSUPPORT_H_
 #include <array>
@@ -227,7 +225,7 @@ class MCSInfo final {
 
  private:
   MCSInfo();
-  static MCSInfo* GetInstance();
+  static MCSInfo* GetInstance(const StaticMutexAutoLock& );
 
   
   
