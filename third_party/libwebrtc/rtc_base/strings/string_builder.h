@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/strings/has_absl_stringify.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
@@ -43,6 +44,12 @@ class SimpleStringBuilder {
   SimpleStringBuilder& operator<<(float f);
   SimpleStringBuilder& operator<<(double f);
   SimpleStringBuilder& operator<<(long double f);
+
+  template <typename T>
+    requires absl::HasAbslStringify<T>::value
+  SimpleStringBuilder& operator<<(const T& value) {
+    return *this << absl::StrCat(value);
+  }
 
   
   
@@ -137,6 +144,13 @@ class StringBuilder {
     return *this;
   }
 
+  template <typename T>
+    requires absl::HasAbslStringify<T>::value
+  StringBuilder& operator<<(const T& value) {
+    str_ += absl::StrCat(value);
+    return *this;
+  }
+
   const std::string& str() const { return str_; }
 
   void Clear() { str_.clear(); }
@@ -162,13 +176,5 @@ class StringBuilder {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::SimpleStringBuilder;
-using ::webrtc::StringBuilder;
-}  
-#endif  
 
 #endif  
