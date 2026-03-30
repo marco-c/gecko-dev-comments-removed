@@ -180,9 +180,6 @@ pref("browser.triple_click_selects_paragraph", true);
 pref("mathml.disabled",    false);
 
 
-pref("mathml.scale_stretchy_operators.enabled", true);
-
-
 
 
 
