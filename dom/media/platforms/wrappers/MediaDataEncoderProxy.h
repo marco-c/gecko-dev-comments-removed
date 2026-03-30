@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(MediaDataEncoderProxy_h_)
 #  define MediaDataEncoderProxy_h_
 
@@ -19,12 +17,12 @@ class MediaDataEncoderProxy final : public MediaDataEncoder {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataEncoderProxy, final);
 
-  explicit MediaDataEncoderProxy(
-      already_AddRefed<MediaDataEncoder> aProxyEncoder,
-      already_AddRefed<nsISerialEventTarget> aProxyThread);
+  explicit MediaDataEncoderProxy(RefPtr<MediaDataEncoder>&& aProxyEncoder,
+                                 nsCOMPtr<nsISerialEventTarget>&& aProxyThread);
 
   RefPtr<InitPromise> Init() override;
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
       override;

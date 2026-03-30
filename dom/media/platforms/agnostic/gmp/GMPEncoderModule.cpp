@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "GMPEncoderModule.h"
 
 #include "GMPService.h"
@@ -34,9 +32,9 @@ already_AddRefed<MediaDataEncoder> GMPEncoderModule::CreateVideoEncoder(
     return nullptr;
   }
 
-  RefPtr<MediaDataEncoder> encoder(new GMPVideoEncoder(aConfig));
-  return do_AddRef(
-      new MediaDataEncoderProxy(encoder.forget(), thread.forget()));
+  auto encoder = MakeRefPtr<GMPVideoEncoder>(aConfig);
+  return MakeAndAddRef<MediaDataEncoderProxy>(std::move(encoder),
+                                              std::move(thread));
 }
 
 media::EncodeSupportSet GMPEncoderModule::Supports(
