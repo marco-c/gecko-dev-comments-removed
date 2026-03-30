@@ -12,11 +12,9 @@
 #define MODULES_CONGESTION_CONTROLLER_GOOG_CC_SCREAM_NETWORK_CONTROLLER_GOOG_CC_SCREAM_NETWORK_CONTROLLER_H_
 
 #include <memory>
-#include <string_view>
 
 #include "absl/functional/any_invocable.h"
 #include "api/environment/environment.h"
-#include "api/field_trials_view.h"
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
@@ -28,23 +26,16 @@ namespace webrtc {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class GoogCcScreamNetworkController : public NetworkControllerInterface {
  public:
-  enum class CcType { kGoogCC, kScream };
+  enum class Mode {
+    kScreamAfterCe,  
+    kGoogCcWithEct1  
+                     
+  };
   GoogCcScreamNetworkController(NetworkControllerConfig config,
-                                GoogCcConfig goog_cc_config);
+                                GoogCcConfig goog_cc_config,
+                                Mode mode);
   ~GoogCcScreamNetworkController() override;
 
   
@@ -67,24 +58,14 @@ class GoogCcScreamNetworkController : public NetworkControllerInterface {
 
   bool SupportsEcnAdaptation() const override {
     switch (mode_) {
-      case Mode::kGoogCc:
-        return false;
       case Mode::kGoogCcWithEct1:
         return !ecn_ce_seen_;
-      case Mode::kScreamAlways:
       case Mode::kScreamAfterCe:
         return true;
     }
   }
-  
-  
-  std::string_view CurrentControllerType() const;
 
  private:
-  enum class Mode { kGoogCc, kScreamAlways, kScreamAfterCe, kGoogCcWithEct1 };
-
-  static Mode ParseMode(const FieldTrialsView& field_trials);
-
   NetworkControlUpdate MaybeRunOnAllControllers(
       absl::AnyInvocable<NetworkControlUpdate(NetworkControllerInterface&)>
           update);
