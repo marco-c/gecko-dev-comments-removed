@@ -100,6 +100,12 @@ class TransceiverList {
   }
 
   
+  const std::vector<RtpTransceiverProxyRefPtr>& ListRef() const {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    return transceivers_;
+  }
+
+  
   
   
   std::vector<RtpTransceiver*> ListInternal() const;
