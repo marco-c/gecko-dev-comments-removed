@@ -397,8 +397,10 @@ addAccessibleTask(
 
     
     p = waitForEvent(EVENT_STATE_CHANGE, "ContentSelectDropdown");
+    let shownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
     EventUtils.synthesizeKey("VK_SPACE");
     await p;
+    const selectPopup = await shownPromise;
 
     p = waitForEvents({
       expected: [
@@ -412,12 +414,21 @@ addAccessibleTask(
       ],
     });
 
-    
-    
-    
-    
-    EventUtils.synthesizeKey("VK_UP");
-    EventUtils.synthesizeKey("VK_RETURN");
+    if (
+      AppConstants.platform == "macosx" &&
+      Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
+      Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
+    ) {
+      
+      selectPopup.activateItem(selectPopup.childNodes[0]);
+    } else {
+      
+      
+      
+      
+      EventUtils.synthesizeKey("VK_UP");
+      EventUtils.synthesizeKey("VK_RETURN");
+    }
     await p;
 
     is(

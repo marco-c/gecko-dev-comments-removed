@@ -43,9 +43,13 @@ add_task(async function () {
   let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(window);
   mozSelect.focus();
   EventUtils.synthesizeKey(" ", {}, contentWindow);
-  await pickerOpened;
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow);
+  let selectPopup = await pickerOpened;
+  if (nativeSelectEnabled()) {
+    selectPopup.activateItem(selectPopup.childNodes[1]);
+  } else {
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
+    EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow);
+  }
   await prefChangePromise;
 
   fontFamily = Services.prefs.getCharPref(fontFamilyPref);
@@ -56,13 +60,29 @@ add_task(async function () {
   pickerOpened = BrowserTestUtils.waitForSelectPopupShown(window);
   mozSelect.focus();
   EventUtils.synthesizeKey(" ", {}, contentWindow);
-  await pickerOpened;
-  EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
-  EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow);
+  selectPopup = await pickerOpened;
+  if (nativeSelectEnabled()) {
+    selectPopup.activateItem(selectPopup.childNodes[0]);
+  } else {
+    EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
+    EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow);
+  }
   await prefChangePromise;
+
+  
+  
+  
+  let settingControl = fontsGroup.querySelector("#setting-control-defaultFont");
+  await settingControl.updateComplete;
+  await mozSelect.updateComplete;
 
   fontFamily = Services.prefs.getCharPref(fontFamilyPref);
   is(mozSelect.value, fontFamily, "The font family has been updated.");
+  is(
+    mozSelect.value,
+    "",
+    "The default font value should be the empty string sentinel."
+  );
   is(
     selectEl.selectedIndex,
     0,

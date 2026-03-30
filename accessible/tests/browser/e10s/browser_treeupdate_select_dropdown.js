@@ -25,6 +25,12 @@ const snippet = `
 addAccessibleTask(
   snippet,
   async function (browser) {
+    if (AppConstants.platform == "macosx") {
+      
+      await SpecialPowers.pushPrefEnv({
+        set: [["widget.macos.allow-native-select", false]],
+      });
+    }
     await invokeFocus(browser, "select");
     
     

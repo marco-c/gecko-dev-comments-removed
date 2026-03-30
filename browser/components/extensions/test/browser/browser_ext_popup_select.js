@@ -2,6 +2,14 @@
 
 "use strict";
 
+add_setup(async () => {
+  if (AppConstants.platform == "macosx") {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.macos.allow-native-select", false]],
+    });
+  }
+});
+
 add_task(async function testPopupSelectPopup() {
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,

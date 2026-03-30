@@ -20,6 +20,12 @@ addAccessibleTask(
     <option id="four" disabled>Four</option>
   </select>`,
   async (browser, accDoc) => {
+    if (AppConstants.platform == "macosx") {
+      
+      await SpecialPowers.pushPrefEnv({
+        set: [["widget.macos.allow-native-select", false]],
+      });
+    }
     
     let select = getNativeInterface(accDoc, "select");
     is(
@@ -43,7 +49,7 @@ addAccessibleTask(
       "select does not provide value for AXHasPopup"
     );
 
-    ok(select.actionNames.includes("AXPress"), "Selectt has press action");
+    ok(select.actionNames.includes("AXPress"), "Select has press action");
     
     let events = Promise.all([
       waitForMacEvent("AXMenuOpened"),

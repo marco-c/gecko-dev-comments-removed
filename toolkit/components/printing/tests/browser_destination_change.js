@@ -25,16 +25,29 @@ async function setupPrinters(helper) {
   return resolvePrinterInfo;
 }
 
-async function changeDestination(helper, dir) {
+async function changeDestination(helper, index) {
   let picker = helper.get("printer-picker");
   let changed = BrowserTestUtils.waitForEvent(picker, "change");
 
   let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(window);
   picker.focus();
   EventUtils.sendKey("space", helper.win);
-  await pickerOpened;
-  EventUtils.sendKey(dir, window);
-  EventUtils.sendKey("return", window);
+  const selectPopup = await pickerOpened;
+  if (nativeSelectEnabled()) {
+    selectPopup.activateItem(selectPopup.childNodes[index]);
+  } else {
+    let selectedIndex = picker.selectedIndex;
+    while (selectedIndex != index) {
+      if (index > selectedIndex) {
+        EventUtils.sendKey("down", window);
+        selectedIndex++;
+      } else {
+        EventUtils.sendKey("up", window);
+        selectedIndex--;
+      }
+    }
+    EventUtils.sendKey("return", window);
+  }
   await changed;
 }
 
@@ -71,7 +84,7 @@ add_task(async function testSlowDestinationChange() {
       { printerName: pdfPrinterName, orientation: 0 },
       { printerName: fastPrinterName, orientation: 0 },
       async () => {
-        await changeDestination(helper, "down");
+        await changeDestination(helper, 1);
         is(destinationPicker.value, fastPrinterName, "Fast printer selected");
         
         await helper.awaitAnimationFrame();
@@ -83,7 +96,7 @@ add_task(async function testSlowDestinationChange() {
     await helper.assertSettingsNotChanged(
       { printerName: fastPrinterName, orientation: 0 },
       async () => {
-        await changeDestination(helper, "down");
+        await changeDestination(helper, 2);
         is(destinationPicker.value, slowPrinterName, "Slow printer selected");
         
         
@@ -116,13 +129,13 @@ add_task(async function testSwitchAwayFromSlowDestination() {
 
     
     await helper.waitForSettingsEvent(async () => {
-      await changeDestination(helper, "down");
+      await changeDestination(helper, 1);
     });
     await helper.awaitAnimationFrame();
     assertFormEnabled(printForm);
 
     
-    await changeDestination(helper, "down");
+    await changeDestination(helper, 2);
     is(destinationPicker.value, slowPrinterName, "Slow printer selected");
     
     await helper.awaitAnimationFrame();
@@ -130,7 +143,7 @@ add_task(async function testSwitchAwayFromSlowDestination() {
 
     
     await helper.waitForSettingsEvent(async () => {
-      await changeDestination(helper, "up");
+      await changeDestination(helper, 1);
     });
     helper.assertSettingsMatch({
       printerName: fastPrinterName,

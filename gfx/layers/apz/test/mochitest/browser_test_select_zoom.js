@@ -10,7 +10,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_task(async function setup_pref() {
+add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["test.wait300msAfterTabSwitch", true],
@@ -22,6 +22,9 @@ add_task(async function setup_pref() {
       
       
       ["apz.fling_min_velocity_threshold", "10000"],
+      
+      
+      ["widget.macos.allow-native-select", false],
     ],
   });
 });

@@ -1,6 +1,16 @@
 
 
 
+add_setup(async () => {
+  if (AppConstants.platform == "macosx") {
+    
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.macos.allow-native-select", false]],
+    });
+  }
+});
+
 add_task(async function test_select_popup_closing_enables_pointer_events() {
   const INITIAL_PAGE = `
 <!doctype html>
