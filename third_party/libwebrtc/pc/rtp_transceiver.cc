@@ -737,10 +737,6 @@ void RtpTransceiver::StopTransceiverProcedure() {
   stopped_ = true;
 
   
-  for (const auto& sender : senders_)
-    sender->internal()->SetTransceiverAsStopped();
-
-  
   receptive_ = false;
 
   
