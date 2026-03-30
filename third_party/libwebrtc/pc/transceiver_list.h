@@ -98,11 +98,6 @@ class TransceiverList {
     RTC_DCHECK_RUN_ON(&sequence_checker_);
     return transceivers_;
   }
-  
-  
-  std::vector<RtpTransceiverProxyRefPtr> UnsafeList() const {
-    return transceivers_;
-  }
 
   
   
@@ -140,9 +135,8 @@ class TransceiverList {
 
  private:
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
-  std::vector<RtpTransceiverProxyRefPtr> transceivers_;
-  
-
+  std::vector<RtpTransceiverProxyRefPtr> transceivers_
+      RTC_GUARDED_BY(sequence_checker_);
   
   
   std::map<RtpTransceiverProxyRefPtr, TransceiverStableState>

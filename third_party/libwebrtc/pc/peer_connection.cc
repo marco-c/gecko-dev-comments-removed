@@ -3084,6 +3084,38 @@ void PeerConnection::ReportNegotiatedCiphers(
   }
 }
 
+void PeerConnection::OnTransportChanging(bool change_done) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  std::vector<ChannelInterface*> channels;
+  if (!change_done) {
+    
+    for (const auto& transceiver : rtp_manager()->transceivers()->List()) {
+      ChannelInterface* channel = transceiver->internal()->channel();
+      if (channel && !channel->mid().empty()) {
+        channels.push_back(channel);
+      }
+    }
+  }
+
+  if (network_thread()->IsCurrent()) {
+    
+    
+    
+    
+    
+    
+    
+    RTC_DCHECK_RUN_ON(network_thread());
+    negotiated_channels_ = std::move(channels);
+    return;
+  }
+  network_thread()->PostTask(
+      SafeTask(network_thread_safety_, [this, channels = std::move(channels)] {
+        RTC_DCHECK_RUN_ON(network_thread());
+        negotiated_channels_ = channels;
+      }));
+}
+
 bool PeerConnection::OnTransportChanged(
     absl::string_view mid,
     RtpTransportInternal* rtp_transport,
@@ -3092,12 +3124,12 @@ bool PeerConnection::OnTransportChanged(
   RTC_DCHECK_RUN_ON(network_thread());
   bool ret = true;
   if (ConfiguredForMedia()) {
-    for (const auto& transceiver :
-         rtp_manager()->transceivers()->UnsafeList()) {
-      ChannelInterface* channel = transceiver->internal()->channel();
-      if (channel && channel->mid() == mid) {
-        ret = channel->SetRtpTransport(rtp_transport);
-      }
+    auto it = absl::c_find_if(negotiated_channels_,
+                              [&](const auto* c) { return c->mid() == mid; });
+    if (it != negotiated_channels_.end()) {
+      ret = (*it)->SetRtpTransport(rtp_transport);
+    } else {
+      
     }
   }
 
