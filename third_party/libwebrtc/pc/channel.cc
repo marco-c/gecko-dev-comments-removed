@@ -217,15 +217,17 @@ std::string BaseChannel::ToString() const {
       MediaTypeToString(media_send_channel_->media_type()).c_str());
 }
 
-bool BaseChannel::ConnectToRtpTransport_n() {
-  RTC_DCHECK(rtp_transport_);
+bool BaseChannel::ConnectToRtpTransport_n(RtpTransportInternal* rtp_transport) {
+  RTC_DCHECK(!rtp_transport_);
+  RTC_DCHECK(rtp_transport);
   RTC_DCHECK(media_send_channel());
 
   
   
-  if (!rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria_, this)) {
+  if (!rtp_transport->RegisterRtpDemuxerSink(demuxer_criteria_, this)) {
     return false;
   }
+  rtp_transport_ = rtp_transport;
   rtp_transport_->SubscribeReadyToSend(
       this, [this](bool ready) { OnTransportReadyToSend(ready); });
   rtp_transport_->SubscribeNetworkRouteChanged(
@@ -263,33 +265,46 @@ bool BaseChannel::SetRtpTransport(RtpTransportInternal* rtp_transport) {
   if (rtp_transport_) {
     DisconnectFromRtpTransport_n();
     
-    worker_thread_->PostTask(SafeTask(alive_, [this] {
+    
+    
+    
+    
+    
+    
+    
+    if (worker_thread_ == network_thread_) {
       RTC_DCHECK_RUN_ON(worker_thread());
       rtp_header_extensions_.clear();
-    }));
+    } else {
+      worker_thread_->PostTask(SafeTask(alive_, [this] {
+        RTC_DCHECK_RUN_ON(worker_thread());
+        rtp_header_extensions_.clear();
+      }));
+    }
   }
 
-  rtp_transport_ = rtp_transport;
-  if (rtp_transport_) {
-    if (!ConnectToRtpTransport_n()) {
-      return false;
-    }
+  if (!rtp_transport) {
+    return true;  
+  }
 
-    RTC_DCHECK(!media_send_channel()->HasNetworkInterface());
-    media_send_channel()->SetInterface(this);
-    media_receive_channel()->SetInterface(this);
+  if (!ConnectToRtpTransport_n(rtp_transport)) {
+    return false;
+  }
 
-    media_send_channel()->OnReadyToSend(rtp_transport_->IsReadyToSend());
-    UpdateWritableState_n();
+  RTC_DCHECK(!media_send_channel()->HasNetworkInterface());
+  media_send_channel()->SetInterface(this);
+  media_receive_channel()->SetInterface(this);
 
-    
-    for (const auto& pair : socket_options_) {
-      rtp_transport_->SetRtpOption(pair.first, pair.second);
-    }
-    if (!rtp_transport_->rtcp_mux_enabled()) {
-      for (const auto& pair : rtcp_socket_options_) {
-        rtp_transport_->SetRtcpOption(pair.first, pair.second);
-      }
+  media_send_channel()->OnReadyToSend(rtp_transport_->IsReadyToSend());
+  UpdateWritableState_n();
+
+  
+  for (const auto& pair : socket_options_) {
+    rtp_transport_->SetRtpOption(pair.first, pair.second);
+  }
+  if (!rtp_transport_->rtcp_mux_enabled()) {
+    for (const auto& pair : rtcp_socket_options_) {
+      rtp_transport_->SetRtcpOption(pair.first, pair.second);
     }
   }
 
