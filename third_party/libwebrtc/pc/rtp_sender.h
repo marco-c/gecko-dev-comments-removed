@@ -253,6 +253,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   virtual void SetSend() = 0;
   
   virtual void ClearSend() = 0;
+  virtual void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) = 0;
 
   
   
@@ -264,6 +265,9 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   const Environment env_;
   TaskQueueBase* const signaling_thread_;
   Thread* const worker_thread_;
+  
+  
+  
   uint32_t ssrc_ = 0;
   bool stopped_ RTC_GUARDED_BY(signaling_thread_) = false;
   bool is_transceiver_stopped_ RTC_GUARDED_BY(signaling_thread_) = false;
@@ -371,9 +375,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   
   void OnChanged() override;
 
-  webrtc::MediaType media_type() const override {
-    return webrtc::MediaType::AUDIO;
-  }
+  MediaType media_type() const override { return MediaType::AUDIO; }
   std::string track_kind() const override {
     return MediaStreamTrackInterface::kAudioKind;
   }
@@ -391,6 +393,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
 
   void SetSend() override;
   void ClearSend() override;
+  void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) override;
 
   
   void AttachTrack() RTC_RUN_ON(signaling_thread_) override;
@@ -437,9 +440,7 @@ class VideoRtpSender : public RtpSenderBase {
   
   void OnChanged() override;
 
-  webrtc::MediaType media_type() const override {
-    return webrtc::MediaType::VIDEO;
-  }
+  MediaType media_type() const override { return MediaType::VIDEO; }
   std::string track_kind() const override {
     return MediaStreamTrackInterface::kVideoKind;
   }
@@ -456,6 +457,7 @@ class VideoRtpSender : public RtpSenderBase {
 
   void SetSend() override;
   void ClearSend() override;
+  void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) override;
 
   
   void AttachTrack() RTC_RUN_ON(signaling_thread_) override;
