@@ -12,7 +12,6 @@
 #define MODULES_CONGESTION_CONTROLLER_SCREAM_SCREAM_V2_H_
 
 #include <algorithm>
-#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/transport/network_types.h"
@@ -52,9 +51,6 @@ class ScreamV2 {
   TimeDelta rtt() const { return delay_based_congestion_control_.rtt(); }
 
   
-  std::optional<DataSize> congestion_window() const;
-
-  
   DataSize max_data_in_flight() const;
 
   
@@ -62,7 +58,15 @@ class ScreamV2 {
   DataSize ref_window() const { return ref_window_; }
 
   
+  DataSize ref_window_i() const { return ref_window_i_; }
+
+  
   double l4s_alpha() const { return l4s_alpha_; }
+
+  
+  const DelayBasedCongestionControl& delay_based_congestion_control() const {
+    return delay_based_congestion_control_;
+  }
 
  private:
   void UpdateL4SAlpha(const TransportPacketsFeedback& msg);
