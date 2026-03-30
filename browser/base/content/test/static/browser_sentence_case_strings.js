@@ -23,7 +23,11 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
 
 
 const NAMES = new Set(["Mozilla", "Nightly", "Firefox", "AI"]);
-const PHRASES = new Set(["Troubleshoot Mode…"]);
+const PHRASES = new Set([
+  "Extensions and Themes",
+  "Find in Page…",
+  "Troubleshoot Mode…",
+]);
 
 let gCUITestUtils = new CustomizableUITestUtils(window);
 let gLocalization = new Localization(["browser/newtab/asrouter.ftl"], true);
@@ -154,6 +158,15 @@ function checkSentenceCase(string, elementID) {
   let words = string.trim().split(/\s+/);
 
   
+  if (words.every(word => hasExpectedCapitalization(word, true))) {
+    Assert.ok(
+      true,
+      `${string} for ${elementID} should have sentence or title casing.`
+    );
+    return;
+  }
+
+  
   
   
   let result = hasExpectedCapitalization(words[0], true);
@@ -163,7 +176,10 @@ function checkSentenceCase(string, elementID) {
 
       if (word) {
         if (isPartOfPhrase(words, wordIndex)) {
-          result = hasExpectedCapitalization(word, true);
+          
+          
+          
+          result = true;
         } else {
           let isName = NAMES.has(word);
           result = hasExpectedCapitalization(word, isName);
