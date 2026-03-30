@@ -205,6 +205,13 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
   virtual void SetGain(float gain) = 0;
 
   
+  virtual void SetJitterBufferMaxPackets(size_t max_packets) = 0;
+
+  
+  
+  virtual void SetJitterBufferFastAccelerate(bool fast_accelerate) = 0;
+
+  
   
   
   

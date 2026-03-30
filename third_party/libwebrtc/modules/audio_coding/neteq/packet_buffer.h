@@ -53,6 +53,10 @@ class PacketBuffer {
   virtual void Flush();
 
   
+  
+  virtual void SetMaxNumberOfPackets(size_t max_number_of_packets);
+
+  
   virtual bool Empty() const;
 
   

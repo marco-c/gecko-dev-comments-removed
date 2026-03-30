@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "api/audio_options.h"
 #include "api/call/audio_sink.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/frame_transformer_interface.h"
@@ -78,6 +79,7 @@ class MockVoiceMediaReceiveChannelInterface
   MOCK_METHOD(void, SetRtcpMode, (::webrtc::RtcpMode mode), (override));
   MOCK_METHOD(void, SetReceiveNackEnabled, (bool enabled), (override));
   MOCK_METHOD(void, SetReceiveNonSenderRttEnabled, (bool enabled), (override));
+  MOCK_METHOD(bool, SetOptions, (const AudioOptions& options), (override));
 
   
   MOCK_METHOD(VideoMediaReceiveChannelInterface*,
@@ -137,12 +139,5 @@ static_assert(!std::is_abstract_v<MockVoiceMediaReceiveChannelInterface>, "");
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::MockVoiceMediaReceiveChannelInterface;
-}  
-#endif  
 
 #endif  

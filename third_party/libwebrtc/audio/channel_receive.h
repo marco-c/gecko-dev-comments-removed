@@ -138,6 +138,8 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
   
   virtual bool SetBaseMinimumPlayoutDelayMs(int delay_ms) = 0;
   virtual int GetBaseMinimumPlayoutDelayMs() const = 0;
+  virtual void SetMaximumBufferPackets(size_t max_packets) = 0;
+  virtual void SetFastAccelerate(bool enable) = 0;
 
   
   virtual std::optional<Syncable::Info> GetSyncInfo() const = 0;
