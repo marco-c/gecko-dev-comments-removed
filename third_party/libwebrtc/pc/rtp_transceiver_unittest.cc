@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/audio_options.h"
+#include "api/crypto/crypto_options.h"
 #include "api/environment/environment.h"
 #include "api/jsep.h"
 #include "api/make_ref_counted.h"
@@ -34,6 +36,9 @@
 #include "media/base/codec.h"
 #include "media/base/codec_comparators.h"
 #include "media/base/fake_media_engine.h"
+#include "media/base/media_channel.h"
+#include "media/base/media_config.h"
+#include "media/engine/fake_webrtc_call.h"
 #include "pc/codec_vendor.h"
 #include "pc/connection_context.h"
 #include "pc/rtp_parameters_conversion.h"
@@ -41,6 +46,7 @@
 #include "pc/rtp_receiver_proxy.h"
 #include "pc/rtp_sender.h"
 #include "pc/rtp_sender_proxy.h"
+#include "pc/rtp_transport_internal.h"
 #include "pc/session_description.h"
 #include "pc/test/enable_fake_media.h"
 #include "pc/test/fake_codec_lookup_helper.h"
@@ -938,6 +944,53 @@ TEST_F(RtpTransceiverTestForHeaderExtensions,
   EXPECT_EQ(svc_extensions[0].direction, RtpTransceiverDirection::kSendRecv);
   EXPECT_EQ(svc_extensions[1].uri, RtpExtension::kVideoLayersAllocationUri);
   EXPECT_EQ(svc_extensions[1].direction, RtpTransceiverDirection::kSendRecv);
+}
+
+class RtpTransceiverTestWithFakeCall : public RtpTransceiverTest {
+ public:
+  RtpTransceiverTestWithFakeCall()
+      : call_(std::make_unique<FakeCall>(env(),
+                                         Thread::Current(),
+                                         Thread::Current())) {}
+
+ protected:
+  std::unique_ptr<FakeCall> call_;
+};
+
+TEST_F(RtpTransceiverTestWithFakeCall,
+       SetChannelAppliesAudioOptionsToSendChannel) {
+  AudioOptions audio_options;
+  audio_options.audio_network_adaptor = true;
+
+  auto transceiver = make_ref_counted<RtpTransceiver>(
+      env(), call_.get(), MediaConfig(),
+      "sender", "receiver", MediaType::AUDIO,
+      nullptr,
+      std::vector<std::string>(),
+      std::vector<RtpEncodingParameters>(), context(),
+      codec_lookup_helper(),
+      nullptr, nullptr, audio_options,
+      VideoOptions(), CryptoOptions(),
+      nullptr,
+      std::vector<RtpHeaderExtensionCapability>(),
+      [] {});
+
+  EXPECT_FALSE(transceiver->channel());
+  auto error = transceiver->CreateChannel(
+      "0", call_.get(), MediaConfig(), false, CryptoOptions(),
+      audio_options, VideoOptions(), nullptr,
+      [](absl::string_view) -> RtpTransportInternal* { return nullptr; });
+  EXPECT_TRUE(error.ok());
+
+  auto* channel = transceiver->channel();
+  ASSERT_TRUE(channel);
+  auto* voice_channel = channel->voice_media_send_channel();
+  ASSERT_TRUE(voice_channel);
+  auto* fake_channel = static_cast<FakeVoiceMediaSendChannel*>(voice_channel);
+  EXPECT_TRUE(fake_channel->options().audio_network_adaptor);
+
+  transceiver->ClearChannel();
+  transceiver->StopStandard();
 }
 
 }  

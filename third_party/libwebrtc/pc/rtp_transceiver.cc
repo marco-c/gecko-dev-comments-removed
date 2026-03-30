@@ -458,10 +458,10 @@ RTCError RtpTransceiver::CreateChannel(
       RTC_DCHECK(owned_receive_channel_);
       media_send_channel = std::move(owned_send_channel_);
       media_receive_channel = std::move(owned_receive_channel_);
+      
+      
       if (media_type() == MediaType::AUDIO) {
-        
-        
-        
+        media_send_channel->AsVoiceSendChannel()->SetOptions(audio_options);
         media_receive_channel->AsVoiceReceiveChannel()->SetOptions(
             audio_options);
       } else if (media_type() == MediaType::VIDEO) {
