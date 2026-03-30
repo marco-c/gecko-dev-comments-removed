@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/devtools/ZeroCopyNSIOutputStream.h"
 
 #include "mozilla/DebugOnly.h"

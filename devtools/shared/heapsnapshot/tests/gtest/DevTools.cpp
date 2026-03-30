@@ -2,6 +2,5 @@
 
 
 
-
 #include "DevTools.h"
 const char16_t JS::ubi::Concrete<FakeNode>::concreteTypeName[] = u"FakeNode";

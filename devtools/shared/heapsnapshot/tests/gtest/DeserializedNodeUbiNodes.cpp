@@ -6,7 +6,6 @@
 
 
 
-
 #include "DevTools.h"
 #include "js/TypeDecls.h"
 #include "mozilla/devtools/DeserializedNode.h"

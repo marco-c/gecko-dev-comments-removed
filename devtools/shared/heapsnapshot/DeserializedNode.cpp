@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/devtools/DeserializedNode.h"
 #include "mozilla/devtools/HeapSnapshot.h"
 #include "nsCRTGlue.h"

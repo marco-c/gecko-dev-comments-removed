@@ -4,7 +4,6 @@
 
 
 
-
 #include "DevTools.h"
 
 using testing::Field;
