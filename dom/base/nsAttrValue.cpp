@@ -1332,7 +1332,11 @@ void nsAttrValue::ParseAtom(const nsAString& aValue) {
 void nsAttrValue::ParseAtomArray(nsAtom* aValue) {
   if (MiscContainer* cont = AtomArrayCache::Lookup(aValue)) {
     
+    
+    
+    
     NS_ADDREF(cont);
+    ResetIfSet();
     SetPtrValueAndType(cont, eOtherBase);
     return;
   }
@@ -1932,7 +1936,11 @@ bool nsAttrValue::ParseStyleAttribute(const nsAString& aString,
   if (cachingAllowed) {
     if (MiscContainer* cont = attrStyles->LookupStyleAttr(aString)) {
       
+      
+      
+      
       NS_ADDREF(cont);
+      ResetIfSet();
       SetPtrValueAndType(cont, eOtherBase);
       return true;
     }
