@@ -143,7 +143,9 @@ inline bool ReadBuffer(JSStructuredCloneReader* aReader,
                        CryptoBuffer& aBuffer) {
   uint32_t length, zero;
   bool ret = JS_ReadUint32Pair(aReader, &length, &zero);
-  if (!ret) {
+  
+  
+  if (!ret || zero != 0) {
     return false;
   }
 
