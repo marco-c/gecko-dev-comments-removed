@@ -76,7 +76,6 @@ class TestScreenCaptureChrome(
 
         
         
-        
         screenshot_full = self.marionette.screenshot()
         screenshot_root = self.marionette.screenshot(element=self.document_element)
 
