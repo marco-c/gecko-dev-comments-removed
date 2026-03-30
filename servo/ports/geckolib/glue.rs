@@ -8471,7 +8471,10 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetPropertyTypedValue(
     let non_custom_property_id = match property_id.non_custom_id() {
         Some(id) => id,
         
-        None => return false,
+        None => {
+            *result = PropertyTypedValue::None;
+            return true;
+        },
     };
 
     let typed_value: Option<TypedValue> = match non_custom_property_id.longhand_or_shorthand() {
