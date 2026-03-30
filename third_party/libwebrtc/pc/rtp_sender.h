@@ -89,9 +89,6 @@ class RtpSenderInternal : public RtpSenderInterface {
       const RtpParameters& parameters) = 0;
 
   
-  virtual RTCError CheckCodecParameters(const RtpParameters& parameters) = 0;
-
-  
   
   
   virtual int AttachmentId() const = 0;
@@ -129,6 +126,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
     
     
     
+    
     return track_;
   }
 
@@ -144,7 +142,6 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
                              SetParametersCallback callback = nullptr,
                              bool blocking = true) override;
   RTCError CheckSetParameters(const RtpParameters& parameters);
-  RTCError CheckCodecParameters(const RtpParameters& parameters) override;
   RtpParameters GetParametersInternalWithAllLayers() const override;
   RTCError SetParametersInternalWithAllLayers(
       const RtpParameters& parameters) override;
@@ -247,6 +244,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   virtual void ClearSend() = 0;
   virtual void ClearSend_w(uint32_t ssrc) RTC_RUN_ON(worker_thread_) = 0;
+  RTCError CheckCodecParameters(const RtpParameters& parameters)
+      RTC_RUN_ON(worker_thread_);
 
   
   
@@ -275,8 +274,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  
-  MediaSendChannelInterface* media_channel_ = nullptr;
+  MediaSendChannelInterface* media_channel_ RTC_GUARDED_BY(worker_thread_) =
+      nullptr;
   
   scoped_refptr<MediaStreamTrackInterface> track_;
 
@@ -289,11 +288,13 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  mutable std::optional<std::string> last_transaction_id_;
+  mutable std::optional<std::string> last_transaction_id_
+      RTC_GUARDED_BY(signaling_thread_);
   std::vector<std::string> disabled_rids_;
 
   SetStreamsObserver* const set_streams_observer_ = nullptr;
-  RtpSenderObserverInterface* observer_ = nullptr;
+  RtpSenderObserverInterface* observer_ RTC_GUARDED_BY(signaling_thread_) =
+      nullptr;
   bool sent_first_packet_ = false;
 
   scoped_refptr<FrameTransformerInterface> frame_transformer_;
