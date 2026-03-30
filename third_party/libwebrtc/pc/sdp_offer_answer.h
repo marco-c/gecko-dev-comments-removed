@@ -15,10 +15,8 @@
 #include <stdint.h>
 
 #include <functional>
-#include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -60,6 +58,8 @@
 #include "pc/stream_collection.h"
 #include "pc/transceiver_list.h"
 #include "pc/webrtc_session_description_factory.h"
+#include "rtc_base/containers/flat_map.h"
+#include "rtc_base/containers/flat_set.h"
 #include "rtc_base/operations_chain.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_stream_adapter.h"
@@ -250,7 +250,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   RTCError ApplyLocalDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
   void ApplyRemoteDescription(
       std::unique_ptr<RemoteDescriptionOperation> operation);
 
@@ -297,7 +297,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       SdpType type,
       ContentSource source,
       const SessionDescription* description,
-      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   bool IsUnifiedPlan() const;
 
@@ -333,7 +333,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   RTCError ValidateSessionDescription(
       const SessionDescriptionInterface* sdesc,
       ContentSource source,
-      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid)
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid)
       RTC_RUN_ON(signaling_thread());
 
   
@@ -343,7 +343,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       const SessionDescriptionInterface& new_session,
       const SessionDescriptionInterface* old_local_description,
       const SessionDescriptionInterface* old_remote_description,
-      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   
   RTCErrorOr<scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
@@ -489,7 +489,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   RTCError PushdownMediaDescription(
       SdpType type,
       ContentSource source,
-      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   RTCError PushdownTransportDescription(ContentSource source, SdpType type);
   
@@ -545,18 +545,18 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   MediaDescriptionOptions GetMediaDescriptionOptionsForActiveData(
-      const std::string& mid) const;
+      absl::string_view mid) const;
 
   
   
   MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
-      const std::string& mid) const;
+      absl::string_view mid) const;
 
   
   
   bool UpdatePayloadTypeDemuxingState(
       ContentSource source,
-      const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   
   void SetSessionError(SessionError error, const std::string& error_desc);
@@ -650,7 +650,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
 
   
-  std::set<std::string> pending_ice_restarts_
+  flat_set<std::string> pending_ice_restarts_
       RTC_GUARDED_BY(signaling_thread());
 
   std::unique_ptr<LocalIceCredentialsToReplace>

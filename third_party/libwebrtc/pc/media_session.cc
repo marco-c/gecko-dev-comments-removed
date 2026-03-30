@@ -613,7 +613,7 @@ bool CreateMediaContentAnswer(
 }
 
 bool IsMediaProtocolSupported(MediaType type,
-                              const std::string& protocol,
+                              absl::string_view protocol,
                               bool secure_transport) {
   
   
