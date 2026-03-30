@@ -263,8 +263,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   Thread* const worker_thread_;
   
   
-  
-  uint32_t ssrc_ = 0;
+  uint32_t ssrc_ RTC_GUARDED_BY(signaling_thread_) = 0;
   bool stopped_ RTC_GUARDED_BY(signaling_thread_) = false;
   int attachment_id_ = 0;
   const std::string id_;
