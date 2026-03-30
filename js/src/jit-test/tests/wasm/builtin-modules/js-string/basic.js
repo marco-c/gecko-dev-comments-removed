@@ -445,6 +445,25 @@ for (let a of testStringsAndNull) {
 }
 
 
+for (let a of WasmExternrefValues) {
+  if (a === null || typeof a === "string") {
+    continue;
+  }
+  for (let b of testStringsAndNull) {
+    assertErrorMessage(() => assertSameBehavior(
+      builtinExports['equals'],
+      polyfillExports['equals'],
+      a, b
+    ), WebAssembly.RuntimeError, /./);
+    assertErrorMessage(() => assertSameBehavior(
+      builtinExports['equals'],
+      polyfillExports['equals'],
+      b, a
+    ), WebAssembly.RuntimeError, /./);
+  }
+}
+
+
 {
   let arrayMutI16 = createArrayMutI16(1);
   assertErrorMessage(() => assertSameBehavior(
