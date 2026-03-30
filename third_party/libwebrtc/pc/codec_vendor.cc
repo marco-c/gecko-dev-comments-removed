@@ -170,7 +170,7 @@ const RTCErrorOr<std::vector<const Codec*>> GetAssociatedCodecsForRed(
 
 
 RTCError MergeCodecs(const CodecList& reference_codecs,
-                     const std::string& mid,
+                     absl::string_view mid,
                      CodecList& offered_codecs,
                      PayloadTypeSuggester& pt_suggester) {
   
@@ -599,7 +599,7 @@ RTCError AssignCodecIdsAndLinkRed(PayloadTypeSuggester* pt_suggester,
 
 
 RTCError MergeCodecsForTesting(const CodecList& reference_codecs,
-                               const std::string& mid,
+                               absl::string_view mid,
                                CodecList& offered_codecs,
                                PayloadTypeSuggester& pt_suggester) {
   return MergeCodecs(reference_codecs, mid, offered_codecs, pt_suggester);
