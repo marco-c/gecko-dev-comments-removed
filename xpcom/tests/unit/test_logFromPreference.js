@@ -21,20 +21,21 @@ add_task(async () => {
   const profileData = await Services.profiler.getProfileDataAsync();
   await Services.profiler.StopProfiler();
   const { markers, stringTable } = profileData.threads[0];
-  const stringIndexForLogMessages = stringTable.indexOf("LogMessages");
+  
+  
+  
+  const stringIndexForProf = stringTable.indexOf("prof");
   Assert.greaterOrEqual(
-    stringIndexForLogMessages,
+    stringIndexForProf,
     0,
-    "A string index for the string LogMessages have been found."
+    "A string index for the string 'prof' have been found."
   );
 
-  
-  
   const logMessageMarkers = markers.data.filter(
-    tuple => tuple[markers.schema.name] === stringIndexForLogMessages
+    tuple => tuple[markers.schema.name] === stringIndexForProf
   );
 
-  Assert.greaterOrEqual(
+  Assert.greater(
     logMessageMarkers.length,
     0,
     "At least one log message have been found."
