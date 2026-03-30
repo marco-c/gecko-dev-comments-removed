@@ -444,6 +444,12 @@ document.addEventListener(
     );
 
     document
+      .getElementById("sidebar-bookmarks-context-container-tab-popup")
+      .addEventListener("popupshowing", event =>
+        PlacesUIUtils.createContainerTabMenu(event)
+      );
+
+    document
       .getElementById("context_reopenInContainerPopupMenu")
       .addEventListener("command", event => {
         
