@@ -41,25 +41,23 @@ namespace webrtc {
 
 
 void PackAddressForNAT(const SocketAddress& remote_addr, Buffer& buf) {
-  RTC_DCHECK_GE(buf.capacity(), 4);
   const IPAddress& ip = remote_addr.ipaddr();
   int family = ip.family();
-  buf[0] = 0;
-  buf[1] = family;
-  
-  *(reinterpret_cast<uint16_t*>(&buf[2])) = HostToNetwork16(remote_addr.port());
+
   if (family == AF_INET) {
-    RTC_DCHECK_GE(buf.capacity(), kNATEncodedIPv4AddressSize);
+    buf.AppendData<uint8_t>(0);
+    buf.AppendData<uint8_t>(family);
+    uint16_t port = HostToNetwork16(remote_addr.port());
+    buf.AppendData(reinterpret_cast<const uint8_t*>(&port), sizeof(port));
     in_addr v4addr = ip.ipv4_address();
-    memcpy(&buf[4], &v4addr, kNATEncodedIPv4AddressSize - 4);
-    buf.SetSize(kNATEncodedIPv4AddressSize);
+    buf.AppendData(reinterpret_cast<const uint8_t*>(&v4addr), sizeof(v4addr));
   } else if (family == AF_INET6) {
-    RTC_DCHECK_GE(buf.capacity(), kNATEncodedIPv6AddressSize);
+    buf.AppendData<uint8_t>(0);
+    buf.AppendData<uint8_t>(family);
+    uint16_t port = HostToNetwork16(remote_addr.port());
+    buf.AppendData(reinterpret_cast<const uint8_t*>(&port), sizeof(port));
     in6_addr v6addr = ip.ipv6_address();
-    memcpy(&buf[4], &v6addr, kNATEncodedIPv6AddressSize - 4);
-    buf.SetSize(kNATEncodedIPv6AddressSize);
-  } else {
-    buf.SetSize(0);
+    buf.AppendData(reinterpret_cast<const uint8_t*>(&v6addr), sizeof(v6addr));
   }
 }
 
@@ -151,7 +149,7 @@ class NATSocket : public Socket {
       return socket_->SendTo(data, size, addr);
     }
     
-    Buffer buf = Buffer::CreateUninitializedWithSize(
+    Buffer buf = Buffer::CreateWithCapacity(
         size + kNATEncodedIPv6AddressSize);
     PackAddressForNAT(addr, buf);
     size_t addrlength = buf.size();
@@ -303,8 +301,7 @@ class NATSocket : public Socket {
 
   
   void SendConnectRequest() {
-    Buffer buf =
-        Buffer::CreateUninitializedWithSize(kNATEncodedIPv6AddressSize);
+    Buffer buf = Buffer::CreateWithCapacity(kNATEncodedIPv6AddressSize);
     PackAddressForNAT(remote_addr_, buf);
     socket_->Send(buf.data(), buf.size());
   }

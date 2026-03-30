@@ -152,8 +152,8 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
   
   
   Buffer out_buffer =
-      Buffer::CreateUninitializedWithSize(buffer.size() + kMaxVuiSpsIncrease);
-  BitBufferWriter sps_writer(out_buffer.data(), out_buffer.size());
+      Buffer::CreateWithCapacity(buffer.size() + kMaxVuiSpsIncrease);
+  BitBufferWriter sps_writer(out_buffer.data(), out_buffer.capacity());
 
   
   RTC_DCHECK(source_buffer.Ok());
