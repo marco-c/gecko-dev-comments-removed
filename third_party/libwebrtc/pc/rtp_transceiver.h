@@ -199,7 +199,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   
-  absl::AnyInvocable<void() &&> GetDeleteChannelWorkerTask();
+  absl::AnyInvocable<void() &&> GetDeleteChannelWorkerTask(bool stop_senders);
 
   
   scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> AddSenderPlanB(
