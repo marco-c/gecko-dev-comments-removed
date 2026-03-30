@@ -10,6 +10,7 @@
 #include "nsICacheEntry.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/PerfStats.h"
+#include "mozilla/ScriptPreloaderNotification.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
@@ -404,7 +405,6 @@ void HttpChannelChild::OnStartRequest(
   ipc::MergeParentLoadInfoForwarder(aArgs.loadInfoForwarder(), mLoadInfo);
 
   mIsFromCache = aArgs.isFromCache();
-  mIsRacing = aArgs.isRacing();
   mCacheEntryAvailable = aArgs.cacheEntryAvailable();
   mCacheEntryId = aArgs.cacheEntryId();
   mCacheDisposition = aArgs.cacheDisposition();
@@ -1928,6 +1928,8 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
     }
   }
 
+  AssertScriptPreloaderCacheHasBeenSent();
+
   HttpChannelConnectArgs connectArgs(registrarId);
   if (!gNeckoChild->SendPHttpChannelConstructor(
           this, browserChild, IPC::SerializedLoadContext(this), connectArgs)) {
@@ -2589,6 +2591,8 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   
   SetEventTarget();
 
+  AssertScriptPreloaderCacheHasBeenSent();
+
   if (!gNeckoChild->SendPHttpChannelConstructor(
           this, browserChild, IPC::SerializedLoadContext(this), openArgs)) {
     return NS_ERROR_FAILURE;
@@ -2768,15 +2772,6 @@ HttpChannelChild::GetCacheEntryId(uint64_t* aCacheEntryId) {
   }
 
   *aCacheEntryId = mCacheEntryId;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpChannelChild::IsRacing(bool* aIsRacing) {
-  if (!LoadAfterOnStartRequestBegun()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  *aIsRacing = mIsRacing;
   return NS_OK;
 }
 

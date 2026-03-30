@@ -1,0 +1,48 @@
+
+
+
+
+
+#ifndef ScriptPreloaderNotification_h
+#define ScriptPreloaderNotification_h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace mozilla {
+
+
+void EnsureScriptPreloaderCacheIsSent();
+
+
+
+
+
+
+
+#ifdef DEBUG
+void AssertScriptPreloaderCacheHasBeenSent();
+#else
+inline void AssertScriptPreloaderCacheHasBeenSent() {}
+#endif
+
+}  
+
+#endif  

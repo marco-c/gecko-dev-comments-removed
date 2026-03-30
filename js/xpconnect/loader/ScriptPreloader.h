@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef ScriptPreloader_h
 #define ScriptPreloader_h
 
@@ -139,6 +140,11 @@ class ScriptPreloader : public nsIObserver,
       MOZ_REQUIRES(sMainThreadCapability);
 
   bool Active() const;
+
+  void EnsureCacheIsSent();
+#ifdef DEBUG
+  void AssertCacheHasBeenSent();
+#endif
 
  private:
   Result<Ok, nsresult> InitCacheInternal(JS::Handle<JSObject*> scope = nullptr);
