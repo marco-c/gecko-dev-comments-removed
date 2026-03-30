@@ -13,7 +13,7 @@
 #include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 #include "nsClassHashtable.h"
-#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "ARefBase.h"
 #include "nsWeakReference.h"
@@ -229,11 +229,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
 
-  ReentrantMonitor mReentrantMonitor{"nsHttpConnectionMgr.mReentrantMonitor"};
   
   
-  nsCOMPtr<nsIEventTarget> mSocketThreadTarget
-      MOZ_GUARDED_BY(mReentrantMonitor);
+  DataMutex<nsCOMPtr<nsIEventTarget>> mSocketThreadTarget{
+      "nsHttpConnectionMgr.mSocketThreadTarget"};
 
   Atomic<bool, mozilla::Relaxed> mIsShuttingDown{false};
 
