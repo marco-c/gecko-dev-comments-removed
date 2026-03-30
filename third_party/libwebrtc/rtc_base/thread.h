@@ -553,6 +553,9 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
 
 
 
+
+
+
 class AutoThread : public Thread {
  public:
   AutoThread();
@@ -561,6 +564,9 @@ class AutoThread : public Thread {
   AutoThread(const AutoThread&) = delete;
   AutoThread& operator=(const AutoThread&) = delete;
 };
+
+
+
 
 
 
