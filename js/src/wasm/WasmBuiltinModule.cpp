@@ -14,6 +14,8 @@
 
 
 
+
+
 #include "wasm/WasmBuiltinModule.h"
 
 #include "util/Text.h"
@@ -393,6 +395,7 @@ bool wasm::ImportMatchesBuiltinModuleFunc(mozilla::Span<const char> importName,
         return true;
       }
     }
+    return false;
   }
 #endif
 
