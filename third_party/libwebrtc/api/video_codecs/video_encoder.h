@@ -70,8 +70,6 @@ class RTC_EXPORT EncodedImageCallback {
   
   
   
-  
-  
   enum class DropReason : uint8_t {
     kDroppedByMediaOptimizations,
     kDroppedByEncoder
@@ -82,7 +80,22 @@ class RTC_EXPORT EncodedImageCallback {
       const EncodedImage& encoded_image,
       const CodecSpecificInfo* codec_specific_info) = 0;
 
+  
+  
   virtual void OnDroppedFrame(DropReason ) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void OnFrameDropped(uint32_t rtp_timestamp,
+                              int spatial_id,
+                              bool is_end_of_temporal_unit) {}
 };
 
 class RTC_EXPORT VideoEncoder {
