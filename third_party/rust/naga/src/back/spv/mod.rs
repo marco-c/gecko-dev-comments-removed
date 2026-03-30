@@ -971,12 +971,7 @@ pub struct Writer {
     pub(crate) ray_query_initialization_tracking: bool,
 
     
-    
-    
-    
     task_dispatch_limits: Option<TaskDispatchLimits>,
-    
-    
     
     mesh_shader_primitive_indices_clamp: bool,
 }
@@ -1084,8 +1079,15 @@ pub struct Options<'a> {
 
     pub debug_info: Option<DebugInfo<'a>>,
 
+    
+    
+    
+    
     pub task_dispatch_limits: Option<TaskDispatchLimits>,
 
+    
+    
+    
     pub mesh_shader_primitive_indices_clamp: bool,
 }
 
@@ -1158,7 +1160,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::STORAGE_TEXTURE_BINDING_ARRAY
         | Caps::STORAGE_BUFFER_BINDING_ARRAY
         | Caps::ACCELERATION_STRUCTURE_BINDING_ARRAY
-        | Caps::CLIP_DISTANCE
+        | Caps::CLIP_DISTANCES
         
         | Caps::STORAGE_TEXTURE_16BIT_NORM_FORMATS
         | Caps::MULTIVIEW

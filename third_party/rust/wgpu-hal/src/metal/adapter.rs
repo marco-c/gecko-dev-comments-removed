@@ -1,4 +1,5 @@
-use objc2::{available, runtime::ProtocolObject};
+use objc2::runtime::{AnyObject, ProtocolObject, Sel};
+use objc2::{available, sel};
 use objc2_foundation::{NSOperatingSystemVersion, NSProcessInfo};
 use objc2_metal::{
     MTLArgumentBuffersTier, MTLCounterSamplingPoint, MTLDevice, MTLFeatureSet, MTLGPUFamily,
@@ -13,6 +14,16 @@ use core::sync::atomic;
 use crate::metal::QueueShared;
 
 use super::{OsFeatures, TimestampQuerySupport};
+
+
+
+
+
+
+
+fn device_class_responds_to(device: &ProtocolObject<dyn MTLDevice>, sel: Sel) -> bool {
+    AnyObject::class(device.as_ref()).responds_to(sel)
+}
 
 
 
@@ -711,6 +722,7 @@ impl super::CapabilitiesQuery {
             texture_cube_array: Self::supports_any(device, TEXTURE_CUBE_ARRAY_SUPPORT),
             supports_float_filtering: os_type == super::OsType::Macos
                 || (available!(macos = 11.0, ios = 14.0, tvos = 16.0, visionos = 1.0)
+                    && device_class_responds_to(device, sel!(supports32BitFloatFiltering))
                     && device.supports32BitFloatFiltering()),
             format_depth24_stencil8: os_type == super::OsType::Macos
                 && device.isDepth24Stencil8PixelFormatSupported(),
@@ -983,7 +995,12 @@ impl super::CapabilitiesQuery {
                     || device.supportsFamily(MTLGPUFamily::Apple7)
                     || device.supportsFamily(MTLGPUFamily::Mac2)),
             
-            has_unified_memory: if available!(macos = 15.0, ios = 13.0, tvos = 13.0, visionos = 1.0)
+            has_unified_memory: if available!(
+                macos = 10.15,
+                ios = 13.0,
+                tvos = 13.0,
+                visionos = 1.0
+            ) && device_class_responds_to(device, sel!(hasUnifiedMemory))
             {
                 Some(device.hasUnifiedMemory())
             } else {
@@ -1057,7 +1074,10 @@ impl super::CapabilitiesQuery {
                 tvos = 18.0,
                 visionos = 2.0,
             ) {
-                device.supportsRaytracing() && device.supportsRaytracingFromRender()
+                device_class_responds_to(device, sel!(supportsRaytracing))
+                    && device.supportsRaytracing()
+                    && device_class_responds_to(device, sel!(supportsRaytracingFromRender))
+                    && device.supportsRaytracingFromRender()
             } else {
                 false
             },
@@ -1094,6 +1114,7 @@ impl super::CapabilitiesQuery {
             self.timestamp_query_support
                 .contains(TimestampQuerySupport::INSIDE_WGPU_PASSES),
         );
+        features.set(F::CLIP_DISTANCES, true);
         features.set(
             F::DUAL_SOURCE_BLENDING,
             self.msl_version >= MTLLanguageVersion::Version1_2 && self.dual_source_blending,

@@ -146,6 +146,7 @@
 mod conv;
 mod help;
 mod keywords;
+mod mesh_shader;
 mod ray;
 mod storage;
 mod writer;
@@ -155,7 +156,10 @@ use core::fmt::Error as FmtError;
 
 use thiserror::Error;
 
-use crate::{back, ir, proc};
+use crate::{
+    back::{self, TaskDispatchLimits},
+    ir, proc, Handle,
+};
 
 
 
@@ -543,6 +547,17 @@ pub struct Options {
     
     
     pub force_loop_bounding: bool,
+
+    
+    
+    
+    
+    pub task_dispatch_limits: Option<TaskDispatchLimits>,
+
+    
+    
+    
+    pub mesh_shader_primitive_indices_clamp: bool,
     
     
     pub ray_query_initialization_tracking: bool,
@@ -563,6 +578,8 @@ impl Default for Options {
             zero_initialize_workgroup_memory: true,
             restrict_indexing: true,
             force_loop_bounding: true,
+            task_dispatch_limits: None,
+            mesh_shader_primitive_indices_clamp: true,
             ray_query_initialization_tracking: true,
         }
     }
@@ -759,6 +776,9 @@ pub struct Writer<'a, W> {
     
     temp_access_chain: Vec<storage::SubAccess>,
     need_bake_expressions: back::NeedBakeExpressions,
+
+    function_task_payload_var:
+        crate::FastHashMap<Handle<crate::Function>, Handle<crate::GlobalVariable>>,
 }
 
 pub fn supported_capabilities() -> crate::valid::Capabilities {
@@ -794,7 +814,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         | Caps::TEXTURE_EXTERNAL
         | Caps::SHADER_FLOAT16_IN_FLOAT32
         | Caps::SHADER_BARYCENTRICS
-        
+        | Caps::MESH_SHADER
         
         | Caps::TEXTURE_AND_SAMPLER_BINDING_ARRAY_NON_UNIFORM_INDEXING
         

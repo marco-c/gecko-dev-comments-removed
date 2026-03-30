@@ -416,7 +416,7 @@ pub enum BuiltIn {
     
     BaseVertex,
     
-    ClipDistance,
+    ClipDistances,
     
     CullDistance,
     

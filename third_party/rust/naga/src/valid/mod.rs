@@ -102,10 +102,10 @@ bitflags::bitflags! {
         const STORAGE_TEXTURE_BINDING_ARRAY = 1 << 5;
         /// Support for binding arrays of storage buffers.
         const STORAGE_BUFFER_BINDING_ARRAY = 1 << 6;
-        /// Support for [`BuiltIn::ClipDistance`].
+        /// Support for [`BuiltIn::ClipDistances`].
         ///
-        /// [`BuiltIn::ClipDistance`]: crate::BuiltIn::ClipDistance
-        const CLIP_DISTANCE = 1 << 7;
+        /// [`BuiltIn::ClipDistances`]: crate::BuiltIn::ClipDistances
+        const CLIP_DISTANCES = 1 << 7;
         /// Support for [`BuiltIn::CullDistance`].
         ///
         /// [`BuiltIn::CullDistance`]: crate::BuiltIn::CullDistance
@@ -229,7 +229,7 @@ impl Capabilities {
             Self::DUAL_SOURCE_BLENDING => Some(Ext::DualSourceBlending),
             
             Self::SHADER_FLOAT16 => Some(Ext::F16),
-            Self::CLIP_DISTANCE => Some(Ext::ClipDistances),
+            Self::CLIP_DISTANCES => Some(Ext::ClipDistances),
             Self::MESH_SHADER => Some(Ext::WgpuMeshShader),
             Self::RAY_QUERY => Some(Ext::WgpuRayQuery),
             Self::RAY_HIT_VERTEX_POSITION => Some(Ext::WgpuRayQueryVertexReturn),
@@ -408,9 +408,10 @@ enum TraceRayVertexReturnState {
     
     
     
-    
-    
-    #[expect(unused)]
+    #[expect(
+        unused,
+        reason = "Don't yet have vertex return builtins to return this error for."
+    )]
     NoVertexReturn(crate::Span),
     
     

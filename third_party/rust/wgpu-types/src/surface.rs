@@ -279,7 +279,8 @@ pub enum SurfaceStatus {
     
     Lost,
     
-    Unknown,
+    
+    Validation,
 }
 
 

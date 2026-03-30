@@ -1084,7 +1084,7 @@ impl<'a, W: Write> Writer<'a, W> {
                             }
                         }
                     }
-                    crate::BuiltIn::ClipDistance => {
+                    crate::BuiltIn::ClipDistances => {
                         
                         let TypeInner::Array { size, .. } = self.module.types[ty].inner else {
                             unreachable!();

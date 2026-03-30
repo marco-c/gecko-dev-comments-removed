@@ -1,7 +1,7 @@
-use alloc::string::String;
+use alloc::{borrow::Cow, string::String};
 use core::{fmt, mem};
 
-use crate::{link_to_wgpu_docs, Backend, Backends};
+use crate::{link_to_wgc_docs, link_to_wgpu_docs, Backend, Backends};
 
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
@@ -30,6 +30,7 @@ pub enum FeatureLevel {
 
 
 
+
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -43,6 +44,16 @@ pub struct RequestAdapterOptions<S> {
     
     
     pub compatible_surface: Option<S>,
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc = link_to_wgc_docs!(["limit bucketing"]: "limits/index.html#Limit-bucketing")]
+    pub apply_limit_buckets: bool,
 }
 
 impl<S> Default for RequestAdapterOptions<S> {
@@ -51,6 +62,7 @@ impl<S> Default for RequestAdapterOptions<S> {
             power_preference: PowerPreference::default(),
             force_fallback_adapter: false,
             compatible_surface: None,
+            apply_limit_buckets: false,
         }
     }
 }
@@ -101,6 +113,28 @@ pub enum DeviceType {
     VirtualGpu,
     
     Cpu,
+}
+
+
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct AdapterLimitBucketInfo {
+    
+    
+    
+    
+    pub name: Cow<'static, str>,
+
+    
+    pub raw_limits: crate::Limits,
+    
+    pub raw_features: crate::Features,
+
+    
+    pub raw_subgroup_min_size: u32,
+    
+    pub raw_subgroup_max_size: u32,
 }
 
 
@@ -177,6 +211,32 @@ pub struct AdapterInfo {
     pub subgroup_max_size: u32,
     
     pub transient_saves_memory: bool,
+
+    
+    
+    pub limit_bucket: Option<AdapterLimitBucketInfo>,
+}
+
+impl AdapterInfo {
+    
+    
+    
+    pub const fn new(device_type: DeviceType, backend: Backend) -> Self {
+        Self {
+            name: String::new(),
+            vendor: 0,
+            device: 0,
+            device_type,
+            device_pci_bus_id: String::new(),
+            driver: String::new(),
+            driver_info: String::new(),
+            backend,
+            subgroup_min_size: crate::MINIMUM_SUBGROUP_MIN_SIZE,
+            subgroup_max_size: crate::MAXIMUM_SUBGROUP_MAX_SIZE,
+            transient_saves_memory: false,
+            limit_bucket: None,
+        }
+    }
 }
 
 

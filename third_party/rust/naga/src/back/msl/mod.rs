@@ -686,7 +686,7 @@ impl ResolvedBinding {
                     
                     Bi::BaseInstance => "base_instance",
                     Bi::BaseVertex => "base_vertex",
-                    Bi::ClipDistance => "clip_distance",
+                    Bi::ClipDistances => "clip_distance",
                     Bi::InstanceIndex => "instance_id",
                     Bi::PointSize => "point_size",
                     Bi::VertexIndex => "vertex_id",
@@ -841,7 +841,7 @@ pub fn supported_capabilities() -> crate::valid::Capabilities {
         
         | Caps::STORAGE_TEXTURE_BINDING_ARRAY
         | Caps::STORAGE_BUFFER_BINDING_ARRAY
-        | Caps::CLIP_DISTANCE 
+        | Caps::CLIP_DISTANCES
         
         | Caps::STORAGE_TEXTURE_16BIT_NORM_FORMATS
         | Caps::MULTIVIEW

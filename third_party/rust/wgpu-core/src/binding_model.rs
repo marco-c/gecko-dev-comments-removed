@@ -1236,6 +1236,7 @@ pub struct BindGroup {
     pub(crate) used: BindGroupStates,
     pub(crate) used_buffer_ranges: Vec<BufferInitTrackerAction>,
     pub(crate) used_texture_ranges: Vec<TextureInitTrackerAction>,
+    
     pub(crate) dynamic_binding_info: Vec<BindGroupDynamicBindingData>,
     
     

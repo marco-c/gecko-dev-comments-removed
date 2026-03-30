@@ -610,9 +610,32 @@ pub struct NoopBackendOptions {
     
     
     pub enable: bool,
+
+    
+    pub limits: Option<crate::Limits>,
+
+    
+    pub features: Option<crate::Features>,
+
+    
+    pub device_type: Option<crate::DeviceType>,
+
+    
+    pub subgroup_min_size: Option<u32>,
+
+    
+    pub subgroup_max_size: Option<u32>,
 }
 
 impl NoopBackendOptions {
+    
+    pub fn enabled() -> Self {
+        Self {
+            enable: true,
+            ..Default::default()
+        }
+    }
+
     
     
     
@@ -621,6 +644,7 @@ impl NoopBackendOptions {
     pub fn from_env_or_default() -> Self {
         Self {
             enable: Self::enable_from_env().unwrap_or(false),
+            ..Default::default()
         }
     }
 
@@ -632,6 +656,7 @@ impl NoopBackendOptions {
     pub fn with_env(self) -> Self {
         Self {
             enable: Self::enable_from_env().unwrap_or(self.enable),
+            ..self
         }
     }
 
