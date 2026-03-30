@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 
 #include "StreamUtils.h"
@@ -449,8 +447,10 @@ void InputToReadableStreamAlgorithms::PullFromInputStream(JSContext* aCx,
     
     
     MOZ_DIAGNOSTIC_ASSERT(pullSize == bytesWritten);
-    ReadableByteStreamControllerRespond(
-        aCx, MOZ_KnownLive(mStream->Controller()->AsByte()), bytesWritten, aRv);
+    RefPtr<ReadableByteStreamController> byteController(
+        mStream->Controller()->AsByte());
+    MOZ_ASSERT(byteController);
+    ReadableByteStreamControllerRespond(aCx, byteController, bytesWritten, aRv);
   }
   
   else {
@@ -484,8 +484,10 @@ void InputToReadableStreamAlgorithms::PullFromInputStream(JSContext* aCx,
 
     
     
-    ReadableByteStreamControllerEnqueue(
-        aCx, MOZ_KnownLive(mStream->Controller()->AsByte()), view, aRv);
+    RefPtr<ReadableByteStreamController> byteController(
+        mStream->Controller()->AsByte());
+    MOZ_ASSERT(byteController);
+    ReadableByteStreamControllerEnqueue(aCx, byteController, view, aRv);
   }
 }
 

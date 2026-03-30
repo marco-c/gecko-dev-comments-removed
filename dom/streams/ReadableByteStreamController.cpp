@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ReadableByteStreamController.h"
 
 #include <algorithm>  
@@ -1448,14 +1446,15 @@ static void ReadableByteStreamControllerRespondInReadableState(
       return;
     }
 
+    RefPtr<ReadableStream> stream(aController->Stream());
+
     
     for (auto& filledPullInto : filledPullIntos) {
       
       
       
       ReadableByteStreamControllerCommitPullIntoDescriptor(
-          aCx, MOZ_KnownLive(aController->Stream()),
-          MOZ_KnownLive(filledPullInto), aRv);
+          aCx, stream, MOZ_KnownLive(filledPullInto), aRv);
       if (aRv.Failed()) {
         return;
       }
