@@ -190,8 +190,6 @@ NetworkControlUpdate ScreamNetworkController::CreateUpdate(Timestamp now) {
     update.target_rate = target_rate_msg;
   }
   update.pacer_config = MaybeCreatePacerConfig();
-  
-  
   update.congestion_window = scream_->max_data_in_flight();
   return update;
 }

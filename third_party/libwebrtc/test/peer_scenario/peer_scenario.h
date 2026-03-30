@@ -22,6 +22,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/media_stream_interface.h"
@@ -75,8 +76,17 @@ class PeerScenario {
   SignalingRoute ConnectSignaling(PeerScenarioClient* caller,
                                   PeerScenarioClient* callee,
                                   std::vector<EmulatedNetworkNode*> send_link,
+                                  std::vector<EmulatedNetworkNode*> ret_link) {
+    return ConnectSignaling(true, caller, callee, std::move(send_link),
+                            std::move(ret_link));
+  }
+  SignalingRoute ConnectSignaling(bool send_sdp_via_network,
+                                  PeerScenarioClient* caller,
+                                  PeerScenarioClient* callee,
+                                  std::vector<EmulatedNetworkNode*> send_link,
                                   std::vector<EmulatedNetworkNode*> ret_link);
 
+  
   
   
   
