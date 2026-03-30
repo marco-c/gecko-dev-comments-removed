@@ -1663,7 +1663,7 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
 
     
     
-    StoreBuffer sb(runtime());
+    StoreBuffer sb(gc);
     {
       AutoEnterOOMUnsafeRegion oomUnsafe;
       if (!sb.enable()) {
