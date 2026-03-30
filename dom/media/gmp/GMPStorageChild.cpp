@@ -2,7 +2,6 @@
 
 
 
-
 #include "GMPStorageChild.h"
 
 #include "GMPChild.h"
@@ -34,57 +33,117 @@ GMPRecordImpl::GMPRecordImpl(GMPStorageChild* aOwner, const nsCString& aName,
                              GMPRecordClient* aClient)
     : mName(aName), mClient(aClient), mOwner(aOwner) {}
 
-GMPErr GMPRecordImpl::Open() { return mOwner->Open(this); }
-
-void GMPRecordImpl::OpenComplete(GMPErr aStatus) {
-  mClient->OpenComplete(aStatus);
+RefPtr<GMPStorageChild> GMPRecordImpl::GetOwner() {
+  RecursiveMutexAutoLock lock(mMutex);
+  return RefPtr{mOwner};
 }
 
-GMPErr GMPRecordImpl::Read() { return mOwner->Read(this); }
+GMPErr GMPRecordImpl::Open() {
+  
+  
+  if (auto owner = GetOwner()) {
+    return owner->Open(this);
+  }
+  return GMPClosedErr;
+}
+
+void GMPRecordImpl::OpenComplete(GMPErr aStatus) {
+  
+  
+  
+  RecursiveMutexAutoLock lock(mMutex);
+  if (mClient) {
+    mClient->OpenComplete(aStatus);
+  }
+}
+
+GMPErr GMPRecordImpl::Read() {
+  
+  
+  if (auto owner = GetOwner()) {
+    return owner->Read(this);
+  }
+  return GMPClosedErr;
+}
 
 void GMPRecordImpl::ReadComplete(GMPErr aStatus, const uint8_t* aBytes,
                                  uint32_t aLength) {
-  mClient->ReadComplete(aStatus, aBytes, aLength);
+  
+  
+  
+  RecursiveMutexAutoLock lock(mMutex);
+  if (mClient) {
+    mClient->ReadComplete(aStatus, aBytes, aLength);
+  }
 }
 
 GMPErr GMPRecordImpl::Write(const uint8_t* aData, uint32_t aDataSize) {
-  return mOwner->Write(this, aData, aDataSize);
+  
+  
+  if (auto owner = GetOwner()) {
+    return owner->Write(this, aData, aDataSize);
+  }
+  return GMPClosedErr;
 }
 
 void GMPRecordImpl::WriteComplete(GMPErr aStatus) {
-  mClient->WriteComplete(aStatus);
+  
+  
+  
+  RecursiveMutexAutoLock lock(mMutex);
+  if (mClient) {
+    mClient->WriteComplete(aStatus);
+  }
 }
 
 GMPErr GMPRecordImpl::Close() {
   RefPtr<GMPRecordImpl> kungfuDeathGrip(this);
   
   Release();
-  mOwner->Close(this->Name());
+
+  
+  
+  
+  
+  RefPtr<GMPStorageChild> owner;
+  {
+    RecursiveMutexAutoLock lock(mMutex);
+    owner = RefPtr{mOwner};
+    mClient = nullptr;
+  }
+
+  if (owner) {
+    owner->Close(this->Name());
+  }
   return GMPNoErr;
 }
 
-GMPStorageChild::GMPStorageChild(GMPChild* aPlugin)
-    : mMonitor("GMPStorageChild"), mPlugin(aPlugin), mShutdown(false) {
+void GMPRecordImpl::DestroyOwner() {
+  RecursiveMutexAutoLock lock(mMutex);
+  mOwner = nullptr;
+}
+
+GMPStorageChild::GMPStorageChild(GMPChild* aPlugin) : mPlugin(aPlugin) {
   MOZ_ASSERT(ON_GMP_THREAD());
 }
 
 GMPErr GMPStorageChild::CreateRecord(const nsCString& aRecordName,
                                      GMPRecord** aOutRecord,
                                      GMPRecordClient* aClient) {
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
 
-  if (mShutdown) {
-    NS_WARNING("GMPStorage used after it's been shutdown!");
+  if (NS_WARN_IF(mShutdown)) {
     return GMPClosedErr;
   }
 
-  MOZ_ASSERT(aRecordName.Length() && aOutRecord);
+  MOZ_ASSERT(!aRecordName.IsEmpty());
+  MOZ_ASSERT(aOutRecord);
 
   if (HasRecord(aRecordName)) {
     return GMPRecordInUse;
   }
 
-  RefPtr<GMPRecordImpl> record(new GMPRecordImpl(this, aRecordName, aClient));
+  auto record = MakeRefPtr<GMPRecordImpl>(this, aRecordName, aClient);
   mRecords.InsertOrUpdate(aRecordName, RefPtr{record});  
 
   
@@ -96,23 +155,24 @@ GMPErr GMPStorageChild::CreateRecord(const nsCString& aRecordName,
 }
 
 bool GMPStorageChild::HasRecord(const nsCString& aRecordName) {
-  mMonitor.AssertCurrentThreadOwns();
   return mRecords.Contains(aRecordName);
 }
 
 already_AddRefed<GMPRecordImpl> GMPStorageChild::GetRecord(
     const nsCString& aRecordName) {
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
+  if (NS_WARN_IF(mShutdown)) {
+    return nullptr;
+  }
   RefPtr<GMPRecordImpl> record;
   mRecords.Get(aRecordName, getter_AddRefs(record));
   return record.forget();
 }
 
 GMPErr GMPStorageChild::Open(GMPRecordImpl* aRecord) {
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
 
-  if (mShutdown) {
-    NS_WARNING("GMPStorage used after it's been shutdown!");
+  if (NS_WARN_IF(mShutdown)) {
     return GMPClosedErr;
   }
 
@@ -127,10 +187,9 @@ GMPErr GMPStorageChild::Open(GMPRecordImpl* aRecord) {
 }
 
 GMPErr GMPStorageChild::Read(GMPRecordImpl* aRecord) {
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
 
-  if (mShutdown) {
-    NS_WARNING("GMPStorage used after it's been shutdown!");
+  if (NS_WARN_IF(mShutdown)) {
     return GMPClosedErr;
   }
 
@@ -150,10 +209,9 @@ GMPErr GMPStorageChild::Write(GMPRecordImpl* aRecord, const uint8_t* aData,
     return GMPQuotaExceededErr;
   }
 
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
 
-  if (mShutdown) {
-    NS_WARNING("GMPStorage used after it's been shutdown!");
+  if (NS_WARN_IF(mShutdown)) {
     return GMPClosedErr;
   }
 
@@ -168,14 +226,12 @@ GMPErr GMPStorageChild::Write(GMPRecordImpl* aRecord, const uint8_t* aData,
 }
 
 GMPErr GMPStorageChild::Close(const nsCString& aRecordName) {
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
 
-  if (!HasRecord(aRecordName)) {
+  if (!mRecords.Remove(aRecordName)) {
     
     return GMPClosedErr;
   }
-
-  mRecords.Remove(aRecordName);
 
   if (!mShutdown) {
     CALL_ON_GMP_THREAD(SendClose, aRecordName);
@@ -186,46 +242,26 @@ GMPErr GMPStorageChild::Close(const nsCString& aRecordName) {
 
 mozilla::ipc::IPCResult GMPStorageChild::RecvOpenComplete(
     const nsCString& aRecordName, const GMPErr& aStatus) {
-  
-  
-  if (mShutdown) {
-    return IPC_OK();
+  if (RefPtr<GMPRecordImpl> record = GetRecord(aRecordName)) {
+    record->OpenComplete(aStatus);
   }
-  RefPtr<GMPRecordImpl> record = GetRecord(aRecordName);
-  if (!record) {
-    
-    return IPC_OK();
-  }
-  record->OpenComplete(aStatus);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult GMPStorageChild::RecvReadComplete(
     const nsCString& aRecordName, const GMPErr& aStatus,
     nsTArray<uint8_t>&& aBytes) {
-  if (mShutdown) {
-    return IPC_OK();
+  if (RefPtr<GMPRecordImpl> record = GetRecord(aRecordName)) {
+    record->ReadComplete(aStatus, aBytes.Elements(), aBytes.Length());
   }
-  RefPtr<GMPRecordImpl> record = GetRecord(aRecordName);
-  if (!record) {
-    
-    return IPC_OK();
-  }
-  record->ReadComplete(aStatus, aBytes.Elements(), aBytes.Length());
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult GMPStorageChild::RecvWriteComplete(
     const nsCString& aRecordName, const GMPErr& aStatus) {
-  if (mShutdown) {
-    return IPC_OK();
+  if (RefPtr<GMPRecordImpl> record = GetRecord(aRecordName)) {
+    record->WriteComplete(aStatus);
   }
-  RefPtr<GMPRecordImpl> record = GetRecord(aRecordName);
-  if (!record) {
-    
-    return IPC_OK();
-  }
-  record->WriteComplete(aStatus);
   return IPC_OK();
 }
 
@@ -233,9 +269,24 @@ mozilla::ipc::IPCResult GMPStorageChild::RecvShutdown() {
   
   
   
-  MonitorAutoLock lock(mMonitor);
+  MutexAutoLock lock(mMutex);
   mShutdown = true;
   return IPC_OK();
+}
+
+void GMPStorageChild::ActorDestroy(ActorDestroyReason aWhy) {
+  nsRefPtrHashtable<nsCStringHashKey, GMPRecordImpl> records;
+  {
+    MutexAutoLock lock(mMutex);
+    mShutdown = true;
+    records = std::move(mRecords);
+  }
+
+  
+  
+  for (auto& record : records) {
+    record.GetData()->DestroyOwner();
+  }
 }
 
 }  

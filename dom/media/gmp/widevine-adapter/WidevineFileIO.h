@@ -2,11 +2,8 @@
 
 
 
-
 #ifndef WidevineFileIO_h_
 #define WidevineFileIO_h_
-
-#include <stddef.h>
 
 #include <string>
 
@@ -15,10 +12,9 @@
 
 namespace mozilla {
 
-class WidevineFileIO : public cdm::FileIO, public GMPRecordClient {
+class WidevineFileIO final : public cdm::FileIO, public GMPRecordClient {
  public:
-  explicit WidevineFileIO(cdm::FileIOClient* aClient)
-      : mClient(aClient), mRecord(nullptr) {}
+  explicit WidevineFileIO(cdm::FileIOClient* aClient) : mClient(aClient) {}
 
   
   void Open(const char* aFilename, uint32_t aFilenameLength) override;
@@ -33,8 +29,10 @@ class WidevineFileIO : public cdm::FileIO, public GMPRecordClient {
   void WriteComplete(GMPErr aStatus) override;
 
  private:
+  void DestroyRecord();
+
   cdm::FileIOClient* mClient;
-  GMPRecord* mRecord;
+  GMPRecord* mRecord = nullptr;
   std::string mName;
 };
 
