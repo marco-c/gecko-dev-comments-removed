@@ -73,7 +73,7 @@ class GypContext(TemplateContext):
     """
 
     def __init__(self, config, relobjdir):
-        self._relobjdir = relobjdir
+        self.relobjdir = relobjdir
         TemplateContext.__init__(
             self, template="Gyp", allowed_variables=VARIABLES, config=config
         )
@@ -345,6 +345,7 @@ def process_gyp_result(
                 }
                 variables = (suffix_map[e] for e in extensions if e in suffix_map)
                 for var in variables:
+                    pending_flag = None
                     for f in flags:
                         
                         
@@ -352,11 +353,30 @@ def process_gyp_result(
                         f = expand_variables(f, config.substs).split()
                         if not f:
                             continue
+
+                        def add_flag(context, flag):
+                            nonlocal pending_flag
+
+                            if flag == "-Xclang":
+                                assert pending_flag is None
+                                pending_flag = flag
+                                return
+
+                            if not var.startswith("CM") and flag.startswith("-W"):
+                                dest = context["COMPILE_FLAGS"][f"WARNINGS_{var}"]
+                            else:
+                                dest = context[var]
+                            if pending_flag:
+                                dest.append(pending_flag)
+                                pending_flag = None
+                            dest.append(flag)
+
                         
                         if isinstance(f, str):
-                            context[var].append(f)
+                            add_flag(context, f)
                         else:
-                            context[var].extend(f)
+                            for elem in f:
+                                add_flag(context, elem)
         else:
             
             

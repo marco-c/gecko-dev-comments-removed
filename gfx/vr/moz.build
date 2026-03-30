@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS += [
     "external_api/moz_external_vr.h",
@@ -78,7 +76,7 @@ IPDL_SOURCES = [
     "ipc/PVRManager.ipdl",
 ]
 
-
+# For now, only enable FxR CLH for Windows Nightly builds (BUG 1565349)
 if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["NIGHTLY_BUILD"]:
     XPCOM_MANIFESTS += [
         "components.conf",
@@ -96,7 +94,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 
 if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
-    CXXFLAGS += ["-Werror=switch"]
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

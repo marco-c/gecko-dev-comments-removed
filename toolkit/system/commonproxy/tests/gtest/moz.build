@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, you can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 UNIFIED_SOURCES += [
     "TestProxyBypassRules.cpp",
@@ -13,4 +15,4 @@ LOCAL_INCLUDES += [
 FINAL_LIBRARY = "xul-gtest"
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wshadow"]
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Wshadow"]
