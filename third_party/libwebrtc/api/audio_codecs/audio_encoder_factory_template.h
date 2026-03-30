@@ -53,6 +53,7 @@ struct Helper<> {
 
 struct Rank0 {};
 struct Rank1 : Rank0 {};
+struct Rank2 : Rank1 {};
 
 template <typename Trait,
           typename = std::enable_if_t<std::is_convertible_v<
@@ -62,11 +63,25 @@ template <typename Trait,
                   std::declval<AudioEncoderFactory::Options>())),
               std::unique_ptr<AudioEncoder>>>>
 absl_nullable std::unique_ptr<AudioEncoder> CreateEncoder(
-    Rank1,
+    Rank2,  
     const Environment& env,
     typename Trait::Config config,
     const AudioEncoderFactory::Options& options) {
   return Trait::MakeAudioEncoder(env, std::move(config), options);
+}
+
+template <
+    typename Trait,
+    typename = std::enable_if_t<std::is_convertible_v<
+        decltype(Trait::MakeAudioEncoder(std::declval<typename Trait::Config>(),
+                                         int{})),
+        std::unique_ptr<AudioEncoder>>>>
+absl_nullable std::unique_ptr<AudioEncoder> CreateEncoder(
+    Rank1,  
+    const Environment& ,
+    const typename Trait::Config& config,
+    const AudioEncoderFactory::Options& options) {
+  return Trait::MakeAudioEncoder(config, options.payload_type);
 }
 
 template <typename Trait,
@@ -110,7 +125,7 @@ struct Helper<T, Ts...> {
       const SdpAudioFormat& format,
       const AudioEncoderFactory::Options& options) {
     if (auto opt_config = T::SdpToConfig(format); opt_config.has_value()) {
-      return CreateEncoder<T>(Rank1{}, env, *std::move(opt_config), options);
+      return CreateEncoder<T>(Rank2{}, env, *opt_config, options);
     }
     return Helper<Ts...>::CreateAudioEncoder(env, format, options);
   }
@@ -139,6 +154,10 @@ class AudioEncoderFactoryT : public AudioEncoderFactory {
 };
 
 }  
+
+
+
+
 
 
 

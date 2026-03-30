@@ -92,6 +92,7 @@ struct BaseAudioEncoderApi {
   
   
   static constexpr int kV1SameRate = 10'000;
+  static constexpr int kV1NoCodecPairSameRate = 15'000;
   static constexpr int kV2SameRate = 20'000;
 
   struct Config {};
@@ -118,6 +119,17 @@ struct AudioEncoderApiWithV1Make : BaseAudioEncoderApi {
       std::optional<AudioCodecPairId> ) {
     auto encoder = std::make_unique<NiceMock<MockAudioEncoder>>();
     ON_CALL(*encoder, SampleRateHz).WillByDefault(Return(kV1SameRate));
+    return encoder;
+  }
+};
+
+struct AudioEncoderApiWithV1AndNoCodecPairId : BaseAudioEncoderApi {
+  static std::unique_ptr<AudioEncoder> MakeAudioEncoder(
+      const Config&,
+      int ) {
+    auto encoder = std::make_unique<NiceMock<MockAudioEncoder>>();
+    ON_CALL(*encoder, SampleRateHz)
+        .WillByDefault(Return(kV1NoCodecPairSameRate));
     return encoder;
   }
 };
@@ -161,6 +173,17 @@ TEST(AudioEncoderFactoryTemplateTest,
   EXPECT_THAT(factory->Create(env, BaseAudioEncoderApi::AudioFormat(), {}),
               Pointer(Property(&AudioEncoder::SampleRateHz,
                                BaseAudioEncoderApi::kV1SameRate)));
+}
+
+TEST(AudioEncoderFactoryTemplateTest,
+     UsesV1NoCodecPairMakeAudioEncoderWhenV2IsNotAvailable) {
+  const Environment env = CreateEnvironment();
+  auto factory =
+      CreateAudioEncoderFactory<AudioEncoderApiWithV1AndNoCodecPairId>();
+
+  EXPECT_THAT(factory->Create(env, BaseAudioEncoderApi::AudioFormat(), {}),
+              Pointer(Property(&AudioEncoder::SampleRateHz,
+                               BaseAudioEncoderApi::kV1NoCodecPairSameRate)));
 }
 
 TEST(AudioEncoderFactoryTemplateTest,
