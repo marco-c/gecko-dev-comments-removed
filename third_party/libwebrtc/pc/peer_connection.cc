@@ -1811,18 +1811,7 @@ void PeerConnection::SetDataChannelEventObserver(
 scoped_refptr<DtlsTransportInterface> PeerConnection::LookupDtlsTransportByMid(
     const std::string& mid) {
   RTC_DCHECK_RUN_ON(network_thread());
-  return transport_controller_->LookupDtlsTransportByMid(mid);
-}
-
-scoped_refptr<DtlsTransport> PeerConnection::LookupDtlsTransportByMidInternal(
-    const std::string& mid) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  
-  
-  return network_thread()->BlockingCall([this, mid]() {
-    RTC_DCHECK_RUN_ON(network_thread());
-    return transport_controller_->LookupDtlsTransportByMid(mid);
-  });
+  return transport_controller_->LookupDtlsTransportByMid_n(mid);
 }
 
 scoped_refptr<SctpTransportInterface> PeerConnection::GetSctpTransport() const {

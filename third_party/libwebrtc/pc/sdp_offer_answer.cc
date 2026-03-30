@@ -70,7 +70,6 @@
 #include "pc/channel_interface.h"
 #include "pc/codec_vendor.h"
 #include "pc/connection_context.h"
-#include "pc/dtls_transport.h"
 #include "pc/jsep_transport_controller.h"
 #include "pc/legacy_stats_collector.h"
 #include "pc/media_options.h"
@@ -915,20 +914,6 @@ bool CanAddLocalMediaStream(StreamCollectionInterface* current_streams,
     return false;
   }
   return true;
-}
-
-scoped_refptr<DtlsTransport> LookupDtlsTransportByMid(
-    Thread* network_thread,
-    JsepTransportController* controller,
-    const std::string& mid) {
-  
-  
-  
-  
-  
-  
-  return network_thread->BlockingCall(
-      [controller, &mid] { return controller->LookupDtlsTransportByMid(mid); });
 }
 
 bool ContentHasHeaderExtension(const ContentInfo& content_info,
@@ -1873,9 +1858,9 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
         
         
         if (transceiver->mid()) {
-          auto dtls_transport = LookupDtlsTransportByMid(
-              context_->network_thread(), transport_controller_s(),
-              *transceiver->mid());
+          auto dtls_transport =
+              transport_controller_s()->LookupDtlsTransportByMid(
+                  *transceiver->mid());
           transceiver->sender_internal()->set_transport(dtls_transport);
           transceiver->receiver_internal()->set_transport(dtls_transport);
         }
@@ -2335,9 +2320,9 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
       transceiver->set_current_direction(local_direction);
       
       if (transceiver->mid()) {
-        auto dtls_transport = LookupDtlsTransportByMid(
-            context_->network_thread(), transport_controller_s(),
-            *transceiver->mid());
+        auto dtls_transport =
+            transport_controller_s()->LookupDtlsTransportByMid(
+                *transceiver->mid());
         transceiver->sender_internal()->set_transport(dtls_transport);
         transceiver->receiver_internal()->set_transport(dtls_transport);
       }
