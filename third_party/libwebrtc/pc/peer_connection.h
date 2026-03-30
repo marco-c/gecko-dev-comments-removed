@@ -709,8 +709,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   std::unique_ptr<LegacyStatsCollector> legacy_stats_
       RTC_GUARDED_BY(signaling_thread());  
-  std::unique_ptr<RTCStatsCollector> stats_collector_
-      RTC_GUARDED_BY(signaling_thread());
+  RTCStatsCollector stats_collector_ RTC_GUARDED_BY(signaling_thread());
 
   const std::string session_id_;
 

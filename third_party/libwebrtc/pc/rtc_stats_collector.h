@@ -75,11 +75,6 @@ struct RtpTransceiverStatsInfo {
 
 class RTCStatsCollector {
  public:
-  static std::unique_ptr<RTCStatsCollector> Create(
-      PeerConnectionInternal* pc,
-      const Environment& env,
-      int64_t cache_lifetime_us = 50 * kNumMicrosecsPerMillisec);
-
   
   
   
@@ -119,11 +114,11 @@ class RTCStatsCollector {
 
   virtual ~RTCStatsCollector();
 
- protected:
   RTCStatsCollector(PeerConnectionInternal* pc,
                     const Environment& env,
-                    int64_t cache_lifetime_us);
+                    int64_t cache_lifetime_us = 50 * kNumMicrosecsPerMillisec);
 
+ protected:
   struct CertificateStatsPair {
     std::unique_ptr<SSLCertificateStats> local;
     std::unique_ptr<SSLCertificateStats> remote;
