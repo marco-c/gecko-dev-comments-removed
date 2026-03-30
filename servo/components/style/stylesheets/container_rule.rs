@@ -29,16 +29,9 @@ use euclid::default::Size2D;
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
-use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
-
-
-
-#[derive(Clone, Debug, ToCss, ToShmem)]
-#[css(comma)]
-pub struct ContainerConditions(#[css(iterable)] pub SmallVec<[Arc<ContainerCondition>; 1]>);
+use style_traits::arc_slice::ArcSlice;
 
 
 #[derive(Debug, ToShmem)]
@@ -52,26 +45,6 @@ pub struct ContainerRule {
 }
 
 impl ContainerRule {
-    
-    
-    
-    
-    
-    pub fn query_condition(&self) -> Option<&QueryCondition> {
-        debug_assert_eq!(self.conditions.0.len(), 1);
-        self.conditions.0[0].condition.as_ref()
-    }
-
-    
-    
-    
-    
-    
-    pub fn container_name(&self) -> &ContainerName {
-        debug_assert_eq!(self.conditions.0.len(), 1);
-        &self.conditions.0[0].name
-    }
-
     
     #[cfg(feature = "gecko")]
     pub fn size_of(&self, guard: &SharedRwLockReadGuard, ops: &mut MallocSizeOfOps) -> usize {
@@ -102,6 +75,13 @@ impl ToCssWithGuard for ContainerRule {
         self.rules.read_with(guard).to_css_block(guard, dest)
     }
 }
+
+
+
+
+#[derive(Clone, Debug, ToCss, ToShmem)]
+#[css(comma)]
+pub struct ContainerConditions(#[css(iterable)] pub ArcSlice<ContainerCondition>);
 
 
 #[derive(Debug, ToShmem, ToCss)]
@@ -173,6 +153,16 @@ where
 }
 
 impl ContainerCondition {
+    
+    #[inline]
+    pub fn name(&self) -> &ContainerName{
+        &self.name
+    }
+    
+    #[inline]
+    pub fn query_condition(&self) -> Option<&QueryCondition>{
+        self.condition.as_ref()
+    }
     
     pub fn parse<'a>(
         context: &ParserContext,
