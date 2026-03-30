@@ -27,7 +27,6 @@
 #include "api/audio/audio_frame_processor.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio/audio_processing.h"
-#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
@@ -102,16 +101,14 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
       Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const CryptoOptions& crypto_options,
-      AudioCodecPairId codec_pair_id) override;
+      const CryptoOptions& crypto_options) override;
 
   std::unique_ptr<VoiceMediaReceiveChannelInterface> CreateReceiveChannel(
       const Environment& env,
       Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const CryptoOptions& crypto_options,
-      AudioCodecPairId codec_pair_id) override;
+      const CryptoOptions& crypto_options) override;
 
   const std::vector<Codec>& LegacySendCodecs() const override;
   const std::vector<Codec>& LegacyRecvCodecs() const override;
@@ -186,8 +183,7 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
                          const MediaConfig& config,
                          const AudioOptions& options,
                          const CryptoOptions& crypto_options,
-                         Call* call,
-                         AudioCodecPairId codec_pair_id);
+                         Call* call);
 
   WebRtcVoiceSendChannel() = delete;
   WebRtcVoiceSendChannel(const WebRtcVoiceSendChannel&) = delete;
@@ -308,9 +304,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
       RTC_GUARDED_BY(worker_thread_);
 
   
-  const AudioCodecPairId codec_pair_id_;
-
-  
   
   const CryptoOptions crypto_options_;
   scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
@@ -330,8 +323,7 @@ class WebRtcVoiceReceiveChannel final
                             const MediaConfig& config,
                             const AudioOptions& options,
                             const CryptoOptions& crypto_options,
-                            Call* call,
-                            AudioCodecPairId codec_pair_id);
+                            Call* call);
 
   WebRtcVoiceReceiveChannel() = delete;
   WebRtcVoiceReceiveChannel(const WebRtcVoiceReceiveChannel&) = delete;
@@ -481,9 +473,6 @@ class WebRtcVoiceReceiveChannel final
 
   std::optional<AudioSendStream::Config::SendCodecSpec> send_codec_spec_
       RTC_GUARDED_BY(worker_thread_);
-
-  
-  const AudioCodecPairId codec_pair_id_;
 
   
   

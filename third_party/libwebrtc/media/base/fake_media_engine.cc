@@ -22,7 +22,6 @@
 
 #include "absl/strings/match.h"
 #include "api/audio/audio_device.h"
-#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_options.h"
 #include "api/call/audio_sink.h"
 #include "api/crypto/crypto_options.h"
@@ -581,20 +580,19 @@ FakeVoiceEngine::CreateSendChannel(const Environment& ,
                                    Call* call,
                                    const MediaConfig& ,
                                    const AudioOptions& options,
-                                   const CryptoOptions& ,
-                                   AudioCodecPairId ) {
+                                   const CryptoOptions& ) {
   std::unique_ptr<FakeVoiceMediaSendChannel> ch =
       std::make_unique<FakeVoiceMediaSendChannel>(options,
                                                   call->network_thread());
   return ch;
 }
 std::unique_ptr<VoiceMediaReceiveChannelInterface>
-FakeVoiceEngine::CreateReceiveChannel(const Environment& ,
-                                      Call* call,
-                                      const MediaConfig& ,
-                                      const AudioOptions& options,
-                                      const CryptoOptions& ,
-                                      AudioCodecPairId ) {
+FakeVoiceEngine::CreateReceiveChannel(
+    const Environment& ,
+    Call* call,
+    const MediaConfig& ,
+    const AudioOptions& options,
+    const CryptoOptions& ) {
   std::unique_ptr<FakeVoiceMediaReceiveChannel> ch =
       std::make_unique<FakeVoiceMediaReceiveChannel>(options,
                                                      call->network_thread());
