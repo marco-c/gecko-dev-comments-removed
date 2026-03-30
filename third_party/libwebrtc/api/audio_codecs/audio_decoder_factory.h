@@ -32,15 +32,11 @@ class AudioDecoderFactory : public RefCountInterface {
   virtual bool IsSupportedDecoder(const SdpAudioFormat& format) = 0;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  virtual absl_nullable std::unique_ptr<AudioDecoder> Create(
+      const Environment& env,
+      const SdpAudioFormat& format) {
+    return Create(env, format, std::nullopt);
+  }
   
   
   
@@ -48,7 +44,11 @@ class AudioDecoderFactory : public RefCountInterface {
   virtual absl_nullable std::unique_ptr<AudioDecoder> Create(
       const Environment& env,
       const SdpAudioFormat& format,
-      std::optional<AudioCodecPairId> codec_pair_id) = 0;
+      std::optional<AudioCodecPairId> ) {
+    
+    
+    return Create(env, format);
+  }
 };
 
 }  

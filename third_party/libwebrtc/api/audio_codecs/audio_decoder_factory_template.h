@@ -53,6 +53,36 @@ struct Helper<> {
 
 struct Rank0 {};
 struct Rank1 : Rank0 {};
+struct Rank2 : Rank1 {};
+struct Rank3 : Rank2 {};
+
+template <typename Trait,
+          typename = std::enable_if_t<std::is_convertible_v<
+              decltype(Trait::MakeAudioDecoder(
+                  std::declval<Environment>(),
+                  std::declval<typename Trait::Config>())),
+              std::unique_ptr<AudioDecoder>>>>
+absl_nullable std::unique_ptr<AudioDecoder> CreateDecoder(
+    Rank3,
+    const Environment& env,
+    typename Trait::Config config,
+    std::optional<AudioCodecPairId> ) {
+  return Trait::MakeAudioDecoder(env, std::move(config));
+}
+
+template <typename Trait,
+          typename = std::enable_if_t<std::is_convertible_v<
+              decltype(Trait::MakeAudioDecoder(
+                  std::declval<typename Trait::Config>())),
+              std::unique_ptr<AudioDecoder>>>>
+absl_nullable std::unique_ptr<AudioDecoder> CreateDecoder(
+    Rank2,
+    const Environment& ,
+    typename Trait::Config config,
+    std::optional<AudioCodecPairId> ) {
+  return Trait::MakeAudioDecoder(std::move(config));
+}
+
 
 template <typename Trait,
           typename = std::enable_if_t<std::is_convertible_v<
@@ -106,7 +136,7 @@ struct Helper<T, Ts...> {
       std::optional<AudioCodecPairId> codec_pair_id) {
     auto opt_config = T::SdpToConfig(format);
     return opt_config.has_value()
-               ? CreateDecoder<T>(Rank1{}, env, *std::move(opt_config),
+               ? CreateDecoder<T>(Rank3{}, env, *std::move(opt_config),
                                   codec_pair_id)
                : Helper<Ts...>::MakeAudioDecoder(env, format, codec_pair_id);
   }
