@@ -54,8 +54,8 @@ class AndroidVoipClient : public webrtc::Transport {
   
   static AndroidVoipClient* Create(
       JNIEnv* env,
-      const jni_zero::JavaParamRef<jobject>& application_context,
-      const jni_zero::JavaParamRef<jobject>& j_voip_client);
+      const jni_zero::JavaRef<jobject>& application_context,
+      const jni_zero::JavaRef<jobject>& j_voip_client);
 
   ~AndroidVoipClient() override;
 
@@ -71,24 +71,22 @@ class AndroidVoipClient : public webrtc::Transport {
 
   
   void SetEncoder(JNIEnv* env,
-                  const jni_zero::JavaParamRef<jstring>& j_encoder_string);
+                  const jni_zero::JavaRef<jstring>& j_encoder_string);
 
   
   void SetDecoders(JNIEnv* env,
-                   const jni_zero::JavaParamRef<jobject>& j_decoder_strings);
+                   const jni_zero::JavaRef<jobject>& j_decoder_strings);
 
   
   
   
   
-  void SetLocalAddress(
-      JNIEnv* env,
-      const jni_zero::JavaParamRef<jstring>& j_ip_address_string,
-      jint j_port_number_int);
-  void SetRemoteAddress(
-      JNIEnv* env,
-      const jni_zero::JavaParamRef<jstring>& j_ip_address_string,
-      jint j_port_number_int);
+  void SetLocalAddress(JNIEnv* env,
+                       const jni_zero::JavaRef<jstring>& j_ip_address_string,
+                       jint j_port_number_int);
+  void SetRemoteAddress(JNIEnv* env,
+                        const jni_zero::JavaRef<jstring>& j_ip_address_string,
+                        jint j_port_number_int);
 
   
   
@@ -135,10 +133,9 @@ class AndroidVoipClient : public webrtc::Transport {
 
  private:
   AndroidVoipClient(JNIEnv* env,
-                    const jni_zero::JavaParamRef<jobject>& j_voip_client);
+                    const jni_zero::JavaRef<jobject>& j_voip_client);
 
-  void Init(JNIEnv* env,
-            const jni_zero::JavaParamRef<jobject>& application_context);
+  void Init(JNIEnv* env, const jni_zero::JavaRef<jobject>& application_context);
 
   
   void SetEncoder(const std::string& encoder);
