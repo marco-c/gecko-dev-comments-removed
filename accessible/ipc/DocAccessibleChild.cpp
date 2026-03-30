@@ -90,7 +90,7 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
       
       const uint32_t accCount = data.Length();
       PushMutationEventData(
-          ShowEventData{std::move(data), std::move(aSuppressShowEvent), false,
+          ShowEventData{std::move(data), bool(aSuppressShowEvent), false,
                         false},
           accCount);
 
