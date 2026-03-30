@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DOMSVGPointList.h"
 
 #include <algorithm>
@@ -254,9 +252,8 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::InsertItemBefore(
     return nullptr;
   }
 
-  aIndex = std::min(aIndex, LengthNoFlush());
-  if (aIndex >= DOMSVGPoint::MaxListIndex()) {
-    aRv.ThrowIndexSizeError("Index out of range");
+  if (LengthNoFlush() >= DOMSVGPoint::MaxListIndex()) {
+    aRv.ThrowIndexSizeError("List too long");
     return nullptr;
   }
 
@@ -280,6 +277,8 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::InsertItemBefore(
       return nullptr;
     }
   }
+
+  aIndex = std::min(aIndex, LengthNoFlush());
 
   AutoChangePointListNotifier notifier(this);
   
