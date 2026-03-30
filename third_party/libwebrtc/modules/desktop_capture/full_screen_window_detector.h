@@ -61,10 +61,6 @@ class FullScreenWindowDetector
 
   static scoped_refptr<FullScreenWindowDetector>
   CreateFullScreenWindowDetector();
-  
-  void SetUseHeuristicFullscreenPowerPointWindows(
-      bool use_heuristic_fullscreen_powerpoint_windows = true,
-      bool use_heuristic_for_wgc = true) {}
 
   
   void CreateFullScreenApplicationHandlerForTest(
