@@ -114,6 +114,11 @@ struct ScreamV2Parameters {
 
   
   FieldTrialParameter<double> pacing_factor;
+
+  
+  
+  
+  FieldTrialParameter<double> feedback_hold_time_avg_g;
 };
 
 }  
