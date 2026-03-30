@@ -85,9 +85,6 @@ class SdpPayloadTypeSuggester : public PayloadTypeSuggester {
   RTCError AddLocalMapping(absl::string_view mid,
                            PayloadType payload_type,
                            const Codec& codec) override;
-  const PayloadTypePicker& PayloadTypePickerForTesting() const override {
-    return payload_type_picker_;
-  }
   
   RTCError Update(const SessionDescription* description,
                   bool local,

@@ -62,10 +62,6 @@ class PayloadTypeSuggester {
   virtual RTCError AddLocalMapping(absl::string_view mid,
                                    PayloadType payload_type,
                                    const Codec& codec) = 0;
-  
-  
-  
-  virtual const PayloadTypePicker& PayloadTypePickerForTesting() const = 0;
 };
 
 }  

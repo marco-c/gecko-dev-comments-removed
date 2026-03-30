@@ -37,9 +37,6 @@
 #include "api/transport/ecn_marking.h"
 #include "api/transport/sctp_transport_factory_interface.h"
 #include "api/units/timestamp.h"
-#include "call/payload_type.h"
-#include "call/payload_type_picker.h"
-#include "media/base/codec.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/packet_transport_internal.h"
@@ -67,7 +64,7 @@
 
 namespace webrtc {
 
-class JsepTransportController final : public PayloadTypeSuggester {
+class JsepTransportController final {
  public:
   
   
@@ -164,9 +161,8 @@ class JsepTransportController final : public PayloadTypeSuggester {
       PortAllocator* port_allocator,
       AsyncDnsResolverFactoryInterface* async_dns_resolver_factory,
       LocalNetworkAccessPermissionFactoryInterface* lna_permission_factory,
-      PayloadTypePicker& payload_type_picker,
       Config config);
-  ~JsepTransportController() override;
+  ~JsepTransportController();
 
   JsepTransportController(const JsepTransportController&) = delete;
   JsepTransportController& operator=(const JsepTransportController&) = delete;
@@ -257,21 +253,6 @@ class JsepTransportController final : public PayloadTypeSuggester {
   
   std::optional<SSLRole> GetDtlsRole(const std::string& mid) const;
 
-  
-  
-  
-  
-  
-  
-  RTCErrorOr<PayloadType> SuggestPayloadType(absl::string_view mid,
-                                             const Codec& codec) override;
-  RTCError AddLocalMapping(absl::string_view mid,
-                           PayloadType payload_type,
-                           const Codec& codec) override;
-  const PayloadTypePicker& PayloadTypePickerForTesting() const override {
-    return payload_type_picker_;
-  }
-
   bool GetStats(absl::string_view transport_name, TransportStats* stats) const;
 
   
@@ -306,11 +287,6 @@ class JsepTransportController final : public PayloadTypeSuggester {
 
   
   bool SetLocalCertificate_n(const scoped_refptr<RTCCertificate>& certificate)
-      RTC_RUN_ON(network_thread_);
-
-  
-  RTCErrorOr<PayloadType> SuggestPayloadType_n(absl::string_view mid,
-                                               const Codec& codec)
       RTC_RUN_ON(network_thread_);
 
   
@@ -481,8 +457,6 @@ class JsepTransportController final : public PayloadTypeSuggester {
   scoped_refptr<RTCCertificate> certificate_;
 
   BundleManager bundles_;
-  
-  PayloadTypePicker& payload_type_picker_;
 };
 
 }  

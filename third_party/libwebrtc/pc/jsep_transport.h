@@ -23,7 +23,6 @@
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/transport/data_channel_transport_interface.h"
-#include "call/payload_type_picker.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/transport_description.h"
@@ -80,8 +79,7 @@ class JsepTransport {
                 std::unique_ptr<RtpTransport> rtp_transport,
                 scoped_refptr<DtlsTransport> rtp_dtls_transport,
                 std::unique_ptr<SctpTransportInternal> sctp_transport,
-                absl::AnyInvocable<void()> rtcp_mux_active_callback,
-                PayloadTypePicker& suggester);
+                absl::AnyInvocable<void()> rtcp_mux_active_callback);
 
   ~JsepTransport();
 
@@ -195,25 +193,6 @@ class JsepTransport {
       const RTCCertificate* certificate,
       const SSLFingerprint* fingerprint) const;
 
-  
-  
-  RTCError RecordPayloadTypes(bool local,
-                              SdpType type,
-                              const ContentInfo& content);
-
-  const PayloadTypeRecorder& remote_payload_types() const {
-    return remote_payload_types_;
-  }
-  const PayloadTypeRecorder& local_payload_types() const {
-    return local_payload_types_;
-  }
-  PayloadTypeRecorder& local_payload_types() { return local_payload_types_; }
-  void CommitPayloadTypes() {
-    RTC_DCHECK_RUN_ON(&transport_sequence_);
-    local_payload_types_.Commit();
-    remote_payload_types_.Commit();
-  }
-
  private:
   bool SetRtcpMux(bool enable, SdpType type, ContentSource source);
 
@@ -283,11 +262,6 @@ class JsepTransport {
   
   
   absl::AnyInvocable<void()> rtcp_mux_active_callback_;
-
-  
-  PayloadTypeRecorder remote_payload_types_ RTC_GUARDED_BY(transport_sequence_);
-  
-  PayloadTypeRecorder local_payload_types_ RTC_GUARDED_BY(transport_sequence_);
 };
 
 }  
