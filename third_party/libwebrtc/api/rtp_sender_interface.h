@@ -135,6 +135,11 @@ class RTC_EXPORT RtpSenderInterface : public RefCountInterface,
   void SetFrameTransformer(scoped_refptr<FrameTransformerInterface>
                            ) override {}
 
+  
+  virtual RTCError GenerateKeyFrame(const std::vector<std::string>& rids) {
+    return RTCError::OK();
+  }
+
  protected:
   ~RtpSenderInterface() override = default;
 };
