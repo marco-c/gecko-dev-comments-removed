@@ -155,12 +155,14 @@ class DBusMenuBar;
 class Screen;
 class WaylandSurface;
 class WaylandSurfaceLock;
+class nsWindowX11;
+class nsWindowWayland;
 }  
 }  
 
 class gfxImageSurface;
 
-class nsWindow final : public nsIWidget {
+class nsWindow : public nsIWidget {
  public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::WidgetEventTime WidgetEventTime;
@@ -173,6 +175,9 @@ class nsWindow final : public nsIWidget {
   static void ReleaseGlobals();
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsIWidget)
+
+  virtual mozilla::widget::nsWindowWayland* AsWayland() { return nullptr; }
+  virtual mozilla::widget::nsWindowX11* AsX11() { return nullptr; }
 
   
   void OnDestroy() override;
@@ -219,6 +224,7 @@ class nsWindow final : public nsIWidget {
   bool PersistClientBounds() const override { return true; }
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
 
+  bool WorkspaceManagementDisabled();
   bool ConstrainSizeWithScale(int* aWidth, int* aHeight, double aScale);
 
   
@@ -343,9 +349,8 @@ class nsWindow final : public nsIWidget {
       mozilla::gfx::DrawTarget* aDrawTarget,
       const LayoutDeviceIntRegion& aInvalidRegion) override;
 
-  void SetProgress(unsigned long progressPercent);
+  virtual void SetProgress(unsigned long progressPercent) {};
 
-  RefPtr<mozilla::VsyncDispatcher> GetVsyncDispatcher() override;
   bool SynchronouslyRepaintOnResize() override;
 
   void OnDPIChanged();
@@ -371,7 +376,6 @@ class nsWindow final : public nsIWidget {
   void SetGdkWindow(GdkWindow* aGdkWindow);
   GdkWindow* GetToplevelGdkWindow() const;
   GtkWidget* GetGtkWidget() const { return mShell; }
-  nsWindow* GetEffectiveParent() const;
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::widget::WaylandSurface> GetWaylandSurface() {
     return mSurface;
@@ -485,9 +489,6 @@ class nsWindow final : public nsIWidget {
   nsresult SetSystemFont(const nsCString& aFontName) override;
   nsresult GetSystemFont(nsCString& aFontName) override;
 
-  void MaybeCreatePipResources();
-  void ClearPipResources();
-
   typedef enum {
     GTK_DECORATION_SYSTEM,  
     GTK_DECORATION_CLIENT,  
@@ -500,33 +501,12 @@ class nsWindow final : public nsIWidget {
   static GtkWindowDecoration GetSystemGtkWindowDecoration();
 
   bool IsRemoteContent() const { return HasRemoteContent(); }
-  void NativeMoveResizeWaylandPopupCallback(const GdkRectangle* aFinalSize,
-                                            bool aFlippedX, bool aFlippedY);
+
   static bool IsToplevelWindowTransparent();
 
   static nsWindow* GetFocusedWindow();
 
   mozilla::UniquePtr<mozilla::widget::WaylandSurfaceLock> LockSurface();
-
-  bool WaylandPipEnabled() const;
-
-#ifdef MOZ_WAYLAND
-  
-  static void TransferFocusToWaylandWindow(nsWindow* aWindow);
-  void FocusWaylandWindow(const char* aTokenID);
-
-  void WaylandDragWorkaround(GdkEventButton* aEvent);
-
-  void CreateCompositorVsyncDispatcher() override;
-  LayoutDeviceIntPoint GetNativePointerLockCenter() {
-    return mNativePointerLockCenter;
-  }
-  void SetNativePointerLockCenter(
-      const LayoutDeviceIntPoint& aLockCenter) override;
-  void LockNativePointer() override;
-  void UnlockNativePointer() override;
-  LayoutDeviceIntSize GetMoveToRectPopupSize() override;
-#endif
 
   bool ApplyEnterLeaveMutterWorkaround();
 
@@ -545,6 +525,9 @@ class nsWindow final : public nsIWidget {
   void SetDragPopupSurface(RefPtr<gfxImageSurface> aDragPopupSurface,
                            const LayoutDeviceIntRegion& aInvalidRegion);
 
+  static nsWindow* FromGtkWidget(GtkWidget* widget);
+  static nsWindow* FromGdkWindow(GdkWindow* window);
+
   static nsWindow* FromWidget(nsIWidget* aWidget) {
     if (aWidget && aWidget->IsNativeWidget()) {
       return static_cast<nsWindow*>(aWidget);
@@ -561,6 +544,12 @@ class nsWindow final : public nsIWidget {
  protected:
   virtual ~nsWindow();
 
+  virtual void CreateNative() = 0;
+  virtual void DestroyNative() = 0;
+
+  virtual void EnableVSyncSource() {};
+  virtual void DisableVSyncSource() {};
+
   
   void DispatchActivateEvent(void);
   void DispatchDeactivateEvent(void);
@@ -570,7 +559,7 @@ class nsWindow final : public nsIWidget {
 
   void NativeMoveResize(bool aMoved, bool aResized);
 
-  void NativeShow(bool aAction);
+  virtual void NativeShow(bool aAction) = 0;
   void SetHasMappedToplevel(bool aState);
 
   bool SetSafeWindowSize(LayoutDeviceIntSize& aSize);
@@ -608,7 +597,6 @@ class nsWindow final : public nsIWidget {
 
   void ResizeInt(const mozilla::Maybe<DesktopIntPoint>& aMove,
                  DesktopIntSize aSize);
-  void NativeMoveResizeWaylandPopup(bool aMove, bool aResize);
 
   
   
@@ -758,103 +746,8 @@ class nsWindow final : public nsIWidget {
   bool mUndecorated : 1;
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool mPopupTrackInHierarchy : 1;
-  bool mPopupTrackInHierarchyConfigured : 1;
-
-  
-
-
-
-  bool mX11HiddenPopupPositioned : 1;
-
-  
-
-
-
-  bool mWaylandApplyPopupPositionBeforeShow : 1;
-
-  
   
   bool mHasAlphaVisual : 1;
-
-  
-  bool mPopupAnchored : 1;
-
-  
-  bool mPopupContextMenu : 1;
-
-  
-  
-  bool mPopupMatchesLayout : 1;
-
-  
-
-
-  bool mPopupChanged : 1;
-
-  
-  bool mPopupTemporaryHidden : 1;
-
-  
-  bool mPopupClosed : 1;
-
-  
-  bool mPopupUseMoveToRect : 1;
-
-  
-
-
-
-
-
-  bool mWaitingForMoveToRectCallback : 1;
-  bool mMovedAfterMoveToRect : 1;
-  bool mResizedAfterMoveToRect : 1;
-
-  
-  
-  
-  
-  struct WaylandPopupMoveToRectParams {
-    LayoutDeviceIntRect mAnchorRect = {0, 0, 0, 0};
-    GdkGravity mAnchorRectType = GDK_GRAVITY_NORTH_WEST;
-    GdkGravity mPopupAnchorType = GDK_GRAVITY_NORTH_WEST;
-    GdkAnchorHints mHints = GDK_ANCHOR_SLIDE;
-    GdkPoint mOffset = {0, 0};
-    bool mAnchorSet = false;
-  };
-
-  WaylandPopupMoveToRectParams mPopupMoveToRectParams;
 
   
   bool mConfiguredClearColor : 1;
@@ -864,6 +757,15 @@ class nsWindow final : public nsIWidget {
 
   
   bool mNeedsToRetryCapturingMouse : 1;
+
+  
+
+
+
+  bool mX11HiddenPopupPositioned : 1;
+
+  
+  bool mPopupTemporaryHidden : 1;
 
   
   void InitDragEvent(mozilla::WidgetDragEvent& aEvent);
@@ -894,55 +796,6 @@ class nsWindow final : public nsIWidget {
 
   void ApplySizeConstraints();
 
-  
-
-  
-  DesktopIntPoint WaylandGetParentPosition() const;
-
-  bool WaylandPopupConfigure();
-  bool WaylandPopupIsAnchored();
-  bool WaylandPopupIsContextMenu();
-  bool WaylandPopupIsPermanent();
-  
-  bool WaylandPopupIsFirst();
-  bool IsWidgetOverflowWindow();
-  void RemovePopupFromHierarchyList();
-  void ShowWaylandPopupWindow();
-  void HideWaylandPopupWindow(bool aTemporaryHidden, bool aRemoveFromPopupList);
-  void ShowWaylandToplevelWindow();
-  void HideWaylandToplevelWindow();
-  void WaylandPopupHideTooltips();
-  void WaylandPopupCloseOrphanedPopups();
-  void AppendPopupToHierarchyList(nsWindow* aToplevelWindow);
-  void WaylandPopupHierarchyHideTemporary();
-  void WaylandPopupHierarchyShowTemporaryHidden();
-  void WaylandPopupHierarchyCalculatePositions();
-  bool IsInPopupHierarchy();
-  void AddWindowToPopupHierarchy();
-  void UpdateWaylandPopupHierarchy();
-  void WaylandPopupHierarchyHideByLayout(
-      nsTArray<nsIWidget*>* aLayoutWidgetHierarchy);
-  void WaylandPopupHierarchyValidateByLayout(
-      nsTArray<nsIWidget*>* aLayoutWidgetHierarchy);
-  void CloseAllPopupsBeforeRemotePopup();
-  void WaylandPopupHideClosedPopups();
-  void WaylandPopupPrepareForMove();
-  void WaylandPopupMoveImpl();
-  void WaylandPopupMovePlain(int aX, int aY);
-  bool WaylandPopupRemoveNegativePosition(int* aX = nullptr, int* aY = nullptr);
-  bool WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
-                                     GdkPoint* aOffset);
-  bool WaylandPopupAnchorAdjustForParentPopup(GdkRectangle* aPopupAnchor,
-                                              GdkPoint* aOffset);
-  bool IsPopupInLayoutPopupChain(nsTArray<nsIWidget*>* aLayoutWidgetHierarchy,
-                                 bool aMustMatchParent);
-  void WaylandPopupMarkAsClosed();
-  void WaylandPopupRemoveClosedPopups();
-  void WaylandPopupSetDirectPosition();
-  bool WaylandPopupFitsToplevelWindow();
-  const WaylandPopupMoveToRectParams WaylandPopupGetPositionFromLayout();
-  void WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize);
-  nsWindow* WaylandPopupFindLast(nsWindow* aPopup);
   GtkWindow* GetCurrentTopmostWindow() const;
   nsAutoCString GetFrameTag() const;
   nsCString GetPopupTypeName();
@@ -953,14 +806,6 @@ class nsWindow final : public nsIWidget {
   void LogPopupAnchorHints(int aHints);
   void LogPopupGravity(GdkGravity aGravity);
 #endif
-
-  
-  
-  RefPtr<nsWindow> mWaylandToplevel;
-
-  
-  RefPtr<nsWindow> mWaylandPopupNext;
-  RefPtr<nsWindow> mWaylandPopupPrev;
 
   
   
@@ -1064,22 +909,6 @@ class nsWindow final : public nsIWidget {
   bool DrawDragPopupSurface(cairo_t* cr);
   bool ExtractExposeRegion(LayoutDeviceIntRegion& aRegion, cairo_t* cr);
 
-#ifdef MOZ_X11
-  typedef enum {
-    GTK_WIDGET_COMPOSITED_DEFAULT = 0,
-    GTK_WIDGET_COMPOSITED_DISABLED = 1,
-    GTK_WIDGET_COMPOSITED_ENABLED = 2
-  } WindowComposeRequest;
-  void SetCompositorHint(WindowComposeRequest aState);
-  bool ConfigureX11GLVisual();
-#endif
-#ifdef MOZ_WAYLAND
-  RefPtr<mozilla::WaylandVsyncSource> mWaylandVsyncSource;
-  RefPtr<mozilla::VsyncDispatcher> mWaylandVsyncDispatcher;
-  LayoutDeviceIntPoint mNativePointerLockCenter;
-  zwp_locked_pointer_v1* mLockedPointer = nullptr;
-  zwp_relative_pointer_v1* mRelativePointer = nullptr;
-#endif
   
   
   nsCString mWindowActivationTokenFromEnv;
@@ -1092,13 +921,10 @@ class nsWindow final : public nsIWidget {
   mozilla::Maybe<int> mKioskMonitor;
   LayoutDeviceIntRegion mOpaqueRegion MOZ_GUARDED_BY(mOpaqueRegionLock);
   mutable mozilla::RWLock mOpaqueRegionLock{"nsWindow::mOpaqueRegion"};
-#ifdef MOZ_WAYLAND
-  struct {
-    struct xdg_surface* mXdgSurface = nullptr;
-    struct xx_pip_v1* mPipSurface = nullptr;
-    LayoutDeviceIntSize mConfigureSize;
-  } mPipResources;
-#endif
 };
+
+nsWindow* get_window_for_gtk_widget(GtkWidget* widget);
+nsWindow* get_window_for_gdk_window(GdkWindow* window);
+void GtkWindowSetTransientFor(GtkWindow* aWindow, GtkWindow* aParent);
 
 #endif 
