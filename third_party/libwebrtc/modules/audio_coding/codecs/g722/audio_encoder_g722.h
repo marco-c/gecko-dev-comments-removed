@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include "api/array_view.h"
 #include "api/audio_codecs/audio_encoder.h"
@@ -67,7 +68,10 @@ class AudioEncoderG722Impl final : public AudioEncoder {
   size_t num_10ms_frames_buffered_;
   uint32_t first_timestamp_in_buffer_;
   const std::unique_ptr<EncoderState[]> encoders_;
-  Buffer interleave_buffer_;
+  
+  
+  
+  std::vector<uint8_t> interleave_buffer_;
 };
 
 }  
