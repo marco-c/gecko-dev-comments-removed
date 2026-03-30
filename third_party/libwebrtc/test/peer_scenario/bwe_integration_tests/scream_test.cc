@@ -23,8 +23,10 @@
 #include "api/test/network_emulation/network_config_schedule.pb.h"
 #include "api/test/network_emulation/network_queue.h"
 #include "api/test/network_emulation/schedulable_network_node_builder.h"
+#include "api/test/network_emulation/token_bucket_network_behavior_builder.h"
 #include "api/test/network_emulation_manager.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "test/create_frame_generator_capturer.h"
@@ -576,6 +578,32 @@ TEST(ScreamTest, SendVideoOnlyReturnLinkWithBurstLoss) {
   
   EXPECT_GT(GetPacketsSent(result.caller_stats.back()),
             GetPacketsSent(result.caller_stats[5]));
+  EXPECT_THAT(result.caller().subview(1), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(50),
+                                              DataRate::KilobitsPerSec(1100))));
+}
+
+
+
+TEST(ScreamTest, LinkCapacity5MbitPolicedTo256Kbit) {
+  PeerScenario s(*testing::UnitTest::GetInstance()->current_test_info());
+  SendMediaTestParams params;
+  NetworkEmulationManager::SimulatedNetworkNode::Builder network_builder =
+      s.net()->NodeBuilder().capacity_Mbps(5).delay_ms(25);
+  params.caller_to_callee_path = {
+      s.net()->NodeBuilder().capacity_Mbps(5).delay_ms(25).Build().node,
+      TokenBucketNetworkBehaviorNodeBuilder(s.net())
+          .burst(DataSize::Bytes(16384))  
+          .rate(DataRate::KilobitsPerSec(256))
+          .Build()};
+  params.callee_to_caller_path =
+      CreateNetworkPath(network_builder,  false);
+
+  SendMediaTestResult result = SendMediaInOneDirection(std::move(params), s);
+
+  
+  
+  
   EXPECT_THAT(result.caller().subview(1), Each(AvailableSendBitrateIsBetween(
                                               DataRate::KilobitsPerSec(50),
                                               DataRate::KilobitsPerSec(1100))));
