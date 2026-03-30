@@ -494,9 +494,9 @@ bool CSP_IsQuotelessKeyword(const nsAString& aKey) {
   ToLowerCase(aKey, lowerKey);
 
   nsAutoString keyword;
-  for (uint32_t i = 0; i < CSP_LAST_KEYWORD_VALUE; i++) {
+  for (auto& gCSPUTF8Keyword : gCSPUTF8Keywords) {
     
-    keyword.AssignASCII(gCSPUTF8Keywords[i] + 1);
+    keyword.AssignASCII(gCSPUTF8Keyword + 1);
     keyword.Trim("'", false, true);
     if (lowerKey.Equals(keyword)) {
       return true;
@@ -1338,10 +1338,14 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
 
       
       
+      if (hasStrictDynamicKeyword) {
+        
+        if (aLoadInfo->InternalContentPolicyType() ==
+            nsIContentPolicy::TYPE_XSLT) {
+          CSPUTILSLOG(("  Blocked XSLT by default with 'strict-dynamic'"));
+          return false;
+        }
 
-      
-      if (hasStrictDynamicKeyword && aLoadInfo->InternalContentPolicyType() !=
-                                         nsIContentPolicy::TYPE_XSLT) {
         
         
         if (aLoadInfo->GetParserCreatedScript()) {
