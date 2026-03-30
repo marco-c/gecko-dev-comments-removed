@@ -271,6 +271,9 @@ void RtpTransportControllerSend::SetAllocatedSendBitrateLimits(
 }
 void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
+  
+  
+  
   streams_config_.pacing_factor = pacing_factor;
   UpdateStreamsConfig();
 }
@@ -647,6 +650,7 @@ void RtpTransportControllerSend::SetPreferredRtcpCcAckType(
   packet_router_.ConfigureForRtcpFeedback(
       rfc_8888_feedback_negotiated_,
       sending_packets_as_ect1_);
+  
   
   
   
