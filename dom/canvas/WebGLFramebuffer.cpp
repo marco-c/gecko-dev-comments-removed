@@ -1060,7 +1060,6 @@ FBStatus WebGLFramebuffer::CheckFramebufferStatus() const {
     }
     MOZ_ASSERT(info.width && info.height);
     mCompletenessInfo = std::move(info);
-    info.fb = nullptr;  
     return LOCAL_GL_FRAMEBUFFER_COMPLETE;
   } while (false);
 
