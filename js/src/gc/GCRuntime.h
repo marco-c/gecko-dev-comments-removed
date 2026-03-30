@@ -26,6 +26,7 @@
 #include "gc/StoreBuffer.h"
 #include "js/friend/PerformanceHint.h"
 #include "js/GCAnnotations.h"
+#include "js/RootingAPI.h"
 #include "js/UniquePtr.h"
 #include "vm/AtomsTable.h"
 
@@ -302,6 +303,14 @@ class GCRuntime {
   void clearZealMode(ZealMode mode);
   bool needZealousGC();
   bool zealModeControlsYieldPoint() const;
+
+  using PersistentRoots =
+      mozilla::EnumeratedArray<JS::RootKind,
+                               mozilla::LinkedList<js::PersistentRootedBase>,
+                               size_t(JS::RootKind::Limit)>;
+  PersistentRoots& persistentRoots() { return persistentRoots_.ref(); }
+  void tracePersistentRoots(JSTracer* trc);
+  void finishPersistentRoots();
 
   [[nodiscard]] bool addRoot(Value* vp, const char* name);
   void removeRoot(Value* vp);
@@ -1180,6 +1189,7 @@ class GCRuntime {
 
   GCLockData<uint32_t> minEmptyChunkCount_;
 
+  MainThreadData<PersistentRoots> persistentRoots_;
   MainThreadData<RootedValueMap> rootsHash;
 
   
@@ -1407,45 +1417,6 @@ class GCRuntime {
 
   MainThreadData<bool> rootsRemoved;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef JS_GC_ZEAL
-  static_assert(size_t(ZealMode::Count) <= 32,
-                "Too many zeal modes to store in a uint32_t");
-  MainThreadData<uint32_t> zealModeBits;
-  MainThreadData<int> zealFrequency;
-  MainThreadData<int> nextScheduled;
-  MainThreadData<bool> deterministicOnly;
-  MainThreadData<int> zealSliceBudget;
-  MainThreadData<size_t> maybeMarkStackLimit;
-
-  MainThreadData<PersistentRooted<GCVector<JSObject*, 0, SystemAllocPolicy>>>
-      selectedForMarking;
-#endif
-
   MainThreadData<bool> fullCompartmentChecks;
 
   MainThreadData<uint32_t> gcCallbackDepth;
@@ -1534,6 +1505,34 @@ class GCRuntime {
 
   
   MainThreadData<mozilla::TimeDuration> collectorTimeSinceAllocRateUpdate;
+
+#ifdef JS_GC_ZEAL
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static_assert(size_t(ZealMode::Count) <= 32,
+                "Too many zeal modes to store in a uint32_t");
+  MainThreadData<uint32_t> zealModeBits;
+  MainThreadData<int> zealFrequency;
+  MainThreadData<int> nextScheduled;
+  MainThreadData<bool> deterministicOnly;
+  MainThreadData<int> zealSliceBudget;
+  MainThreadData<size_t> maybeMarkStackLimit;
+  MainThreadData<PersistentRooted<GCVector<JSObject*, 0, SystemAllocPolicy>>>
+      selectedForMarking;
+#endif
 
 #ifdef DEBUG
   
