@@ -238,8 +238,12 @@ RTCError MergeCodecs(const CodecList& reference_codecs,
       }
       if (associated_codecs.value().empty()) {
         
-        RTC_LOG(LS_WARNING)
-            << "RED codec with no associated codecs found: " << red_codec;
+        
+        if (red_codec.type == Codec::Type::kAudio) {
+          RTC_LOG(LS_WARNING)
+              << "RED audio codec with no associated codecs found: "
+              << red_codec;
+        }
         RTCErrorOr<PayloadType> suggestion =
             pt_suggester.SuggestPayloadType(mid, red_codec);
         if (!suggestion.ok()) {
