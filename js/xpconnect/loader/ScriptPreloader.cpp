@@ -15,6 +15,7 @@
 
 #include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/IOBuffers.h"
 #include "mozilla/Logging.h"
@@ -48,6 +49,16 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "xpcpublic.h"
+
+#if defined(XP_LINUX)
+#  include <sys/mman.h>
+
+
+
+#  ifndef MADV_COLD
+#    define MADV_COLD 20
+#  endif
+#endif
 
 #define STARTUP_COMPLETE_TOPIC "browser-delayed-startup-finished"
 #define DOC_ELEM_INSERTED_TOPIC "document-element-inserted"
@@ -366,6 +377,16 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
     MOZ_ASSERT(mStartupFinished);
     MOZ_ASSERT(XRE_IsParentProcess());
     mStartupHasAdvancedToCacheWritingStage = true;
+
+#if defined(XP_LINUX)
+    
+    
+    if (mCacheData->initialized()) {
+      
+      (void)madvise(mCacheData->get<uint8_t>().get(), mCacheData->size(),
+                    MADV_COLD);
+    }
+#endif
 
     StartCacheWriteIfReady();
   } else if (mContentStartupFinishedTopic.Equals(topic)) {
