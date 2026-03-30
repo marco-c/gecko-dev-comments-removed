@@ -131,10 +131,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   bool SetTrack(MediaStreamTrackInterface* track) override;
   scoped_refptr<MediaStreamTrackInterface> track() const override {
-    
-    
-    
-    
+    RTC_DCHECK_RUN_ON(signaling_thread_);
     return track_;
   }
 
@@ -160,9 +157,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   void SetSsrc(uint32_t ssrc) override;
   uint32_t ssrc() const override {
-    
-    
-    
+    RTC_DCHECK_RUN_ON(signaling_thread_);
     return ssrc_;
   }
 

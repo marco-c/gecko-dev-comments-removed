@@ -11,23 +11,19 @@
 #ifndef PC_TRACK_MEDIA_INFO_MAP_H_
 #define PC_TRACK_MEDIA_INFO_MAP_H_
 
-#include <stdint.h>
-
-#include <map>
-#include <memory>
+#include <cstdint>
 #include <optional>
 #include <string>
-#include <vector>
 
 #include "api/array_view.h"
-#include "api/media_stream_interface.h"
-#include "api/scoped_refptr.h"
+#include "api/media_types.h"
+#include "api/rtp_parameters.h"
 #include "media/base/media_channel.h"
-#include "pc/rtp_receiver.h"
-#include "pc/rtp_sender.h"
-#include "rtc_base/ref_count.h"
+#include "rtc_base/containers/flat_map.h"
 
 namespace webrtc {
+class RtpSenderInternal;
+class RtpReceiverInternal;
 
 
 
@@ -35,22 +31,28 @@ namespace webrtc {
 
 class TrackMediaInfoMap {
  public:
-  TrackMediaInfoMap();
+  struct RtpSenderSignalInfo {
+    uint32_t ssrc = 0;
+    int attachment_id = 0;
+    MediaType media_type = MediaType::AUDIO;
+  };
 
-  
-  
-  
-  void Initialize(std::optional<VoiceMediaInfo> voice_media_info,
-                  std::optional<VideoMediaInfo> video_media_info,
-                  ArrayView<scoped_refptr<RtpSenderInternal>> rtp_senders,
-                  ArrayView<scoped_refptr<RtpReceiverInternal>> rtp_receivers);
+  struct RtpReceiverSignalInfo {
+    std::string track_id;
+    int attachment_id = 0;
+    MediaType media_type = MediaType::AUDIO;
+  };
+
+  TrackMediaInfoMap(std::optional<VoiceMediaInfo> voice_media_info,
+                    std::optional<VideoMediaInfo> video_media_info,
+                    ArrayView<const RtpSenderSignalInfo> senders,
+                    ArrayView<const RtpReceiverSignalInfo> receivers,
+                    ArrayView<const RtpParameters> receiver_parameters);
 
   const std::optional<VoiceMediaInfo>& voice_media_info() const {
-    RTC_DCHECK(is_initialized_);
     return voice_media_info_;
   }
   const std::optional<VideoMediaInfo>& video_media_info() const {
-    RTC_DCHECK(is_initialized_);
     return video_media_info_;
   }
 
@@ -59,49 +61,29 @@ class TrackMediaInfoMap {
   const VideoSenderInfo* GetVideoSenderInfoBySsrc(uint32_t ssrc) const;
   const VideoReceiverInfo* GetVideoReceiverInfoBySsrc(uint32_t ssrc) const;
 
-  scoped_refptr<AudioTrackInterface> GetAudioTrack(
-      const VoiceSenderInfo& voice_sender_info) const;
-  scoped_refptr<AudioTrackInterface> GetAudioTrack(
-      const VoiceReceiverInfo& voice_receiver_info) const;
-  scoped_refptr<VideoTrackInterface> GetVideoTrack(
-      const VideoSenderInfo& video_sender_info) const;
-  scoped_refptr<VideoTrackInterface> GetVideoTrack(
-      const VideoReceiverInfo& video_receiver_info) const;
-
-  
-  
-  
-  
-  std::optional<int> GetAttachmentIdByTrack(
-      const MediaStreamTrackInterface* track) const;
+  std::optional<int> GetAttachmentIdBySsrc(uint32_t ssrc,
+                                           MediaType media_type,
+                                           bool is_sender) const;
+  std::optional<std::string> GetReceiverTrackIdBySsrc(
+      uint32_t ssrc,
+      MediaType media_type) const;
 
  private:
-  bool is_initialized_ = false;
-  std::optional<VoiceMediaInfo> voice_media_info_;
-  std::optional<VideoMediaInfo> video_media_info_;
+  const std::optional<VoiceMediaInfo> voice_media_info_;
+  const std::optional<VideoMediaInfo> video_media_info_;
+
   
   
   
+  const flat_map<uint32_t, int> audio_sender_attachment_id_by_ssrc_;
+  const flat_map<uint32_t, int> video_sender_attachment_id_by_ssrc_;
+  const flat_map<uint32_t, int> audio_receiver_attachment_id_by_ssrc_;
+  const flat_map<uint32_t, int> video_receiver_attachment_id_by_ssrc_;
+  const flat_map<uint32_t, std::string> audio_receiver_track_id_by_ssrc_;
+  const flat_map<uint32_t, std::string> video_receiver_track_id_by_ssrc_;
   
-  std::map<const VoiceSenderInfo*, scoped_refptr<AudioTrackInterface>>
-      audio_track_by_sender_info_;
-  std::map<const VoiceReceiverInfo*, scoped_refptr<AudioTrackInterface>>
-      audio_track_by_receiver_info_;
-  std::map<const VideoSenderInfo*, scoped_refptr<VideoTrackInterface>>
-      video_track_by_sender_info_;
-  std::map<const VideoReceiverInfo*, scoped_refptr<VideoTrackInterface>>
-      video_track_by_receiver_info_;
-  
-  
-  
-  
-  
-  std::map<const MediaStreamTrackInterface*, int> attachment_id_by_track_;
-  
-  std::map<uint32_t, VoiceSenderInfo*> voice_info_by_sender_ssrc_;
-  std::map<uint32_t, VoiceReceiverInfo*> voice_info_by_receiver_ssrc_;
-  std::map<uint32_t, VideoSenderInfo*> video_info_by_sender_ssrc_;
-  std::map<uint32_t, VideoReceiverInfo*> video_info_by_receiver_ssrc_;
+  const flat_map<uint32_t, const VoiceSenderInfo*> voice_info_by_sender_ssrc_;
+  const flat_map<uint32_t, const VideoSenderInfo*> video_info_by_sender_ssrc_;
 };
 
 }  
