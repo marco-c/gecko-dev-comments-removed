@@ -272,10 +272,6 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   
   
-  void SetPeerConnectionClosed();
-
-  
-  
   void StopTransceiverProcedure();
 
   
@@ -356,7 +352,6 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   bool stopped_ RTC_GUARDED_BY(thread_) = false;
   bool stopping_ RTC_GUARDED_BY(thread_) = false;
-  bool is_pc_closed_ = false;
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kInactive;
   std::optional<RtpTransceiverDirection> current_direction_;
   std::optional<RtpTransceiverDirection> fired_direction_;

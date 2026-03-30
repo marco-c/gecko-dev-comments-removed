@@ -691,14 +691,11 @@ RTCError RtpTransceiver::StopStandard() {
   
   
   
-  if (is_pc_closed_) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
-                         "PeerConnection is closed.");
-  }
-
   
-  if (stopping_)
+  
+  if (stopping_) {
     return RTCError::OK();
+  }
 
   
   
@@ -957,11 +954,6 @@ void RtpTransceiver::OnNegotiationUpdate(
       header_extensions_to_negotiate_ = header_extensions_for_rollback_;
     }
   }
-}
-
-
-void RtpTransceiver::SetPeerConnectionClosed() {
-  is_pc_closed_ = true;
 }
 
 }  
