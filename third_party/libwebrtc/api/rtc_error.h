@@ -22,6 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -125,7 +126,7 @@ class RTC_EXPORT RTCError {
   
 
   
-  RTCError() {}
+  RTCError() = default;
   explicit RTCError(RTCErrorType type) : type_(type) {}
 
   RTCError(RTCErrorType type, absl::string_view message)
@@ -143,6 +144,9 @@ class RTC_EXPORT RTCError {
   
   
   static RTCError OK();
+  static RTCError InvalidParameter() {
+    return RTCError(RTCErrorType::INVALID_PARAMETER);
+  }
 
   
   RTCErrorType type() const { return type_; }
@@ -153,7 +157,33 @@ class RTC_EXPORT RTCError {
   
   const char* message() const;
 
+  
+  
+  StringBuilder& string_builder() { return message_; }
+
   void set_message(absl::string_view message);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  RTCError&& operator<<(const T& val) && {
+    message_ << val;
+    return std::move(*this);
+  }
 
   RTCErrorDetailType error_detail() const { return error_detail_; }
   void set_error_detail(RTCErrorDetailType detail) { error_detail_ = detail; }
@@ -169,16 +199,16 @@ class RTC_EXPORT RTCError {
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const RTCError& error) {
     sink.Append(ToString(error.type_));
-    if (!error.message_.empty()) {
+    if (!error.message_.str().empty()) {
       sink.Append(" with message: \"");
-      sink.Append(error.message_);
+      sink.Append(error.message_.str());
       sink.Append("\"");
     }
   }
 
  private:
   RTCErrorType type_ = RTCErrorType::NONE;
-  std::string message_;
+  StringBuilder message_;
   RTCErrorDetailType error_detail_ = RTCErrorDetailType::NONE;
   std::optional<uint16_t> sctp_cause_code_;
 };
@@ -193,8 +223,37 @@ class RTC_EXPORT RTCError {
     return ::webrtc::RTCError(type, message);                                \
   }
 
+
 #define LOG_AND_RETURN_ERROR(type, message) \
   LOG_AND_RETURN_ERROR_EX(type, message, LS_ERROR)
+
+inline RTCError LogErrorImpl(RTCError error,
+                             LoggingSeverity severity,
+                             const char* file,
+                             int line) {
+#if defined(RTC_LOG_FILE_LINE)
+  
+  RTC_LOG_FILE_LINE(severity, file, line)
+      << error.message() << " (" << ToString(error.type()) << ")";
+#else
+  
+  RTC_LOG_V(severity) << error.message() << " (" << ToString(error.type())
+                      << ")";
+#endif
+  return error;
+}
+
+
+
+
+
+
+
+
+
+
+
+#define LOG_ERROR(x) LogErrorImpl(x, LS_ERROR, __FILE__, __LINE__)
 
 
 
