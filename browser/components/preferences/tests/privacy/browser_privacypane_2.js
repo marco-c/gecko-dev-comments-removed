@@ -4,8 +4,8 @@ if (jar) {
   let tmpdir = extractJarToTmp(jar);
   rootDir = "file://" + tmpdir.path + "/";
 }
-
 Services.scriptloader.loadSubScript(
+  
   rootDir + "privacypane_tests_perwindow.js",
   this
 );
