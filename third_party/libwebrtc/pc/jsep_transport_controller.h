@@ -30,6 +30,7 @@
 #include "api/local_network_access_permission.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
+#include "api/rtp_transport_factory.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
@@ -111,6 +112,7 @@ class JsepTransportController final {
     
     IceTransportFactory* ice_transport_factory = nullptr;
     DtlsTransportFactory* dtls_transport_factory = nullptr;
+    RtpTransportFactory* rtp_transport_factory = nullptr;
     Observer* transport_observer = nullptr;
     
     
