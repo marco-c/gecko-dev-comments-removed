@@ -60,6 +60,15 @@ const WebCompatExtension = new (class WebCompatExtension {
     }).catch(_ => {});
   }
 
+  async allOriginalInterventions() {
+    return this.#run(async function () {
+      const available =
+        content.wrappedJSObject.interventions.getAllOriginalInterventions();
+      
+      return JSON.parse(JSON.stringify(available));
+    });
+  }
+
   async availableInterventions() {
     return this.#run(async function () {
       const available =
