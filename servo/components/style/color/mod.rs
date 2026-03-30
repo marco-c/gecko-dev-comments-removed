@@ -202,7 +202,7 @@ bitflags! {
 
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem, ToTyped)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct AbsoluteColor {
@@ -214,6 +214,22 @@ pub struct AbsoluteColor {
     pub color_space: ColorSpace,
     
     pub flags: ColorFlags,
+}
+
+impl PartialEq for AbsoluteColor {
+    
+    
+    
+    
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.0001;
+        let a = self.to_color_space(ColorSpace::Oklab);
+        let b = other.to_color_space(ColorSpace::Oklab);
+        (a.components.0 - b.components.0).abs() <= EPSILON
+            && (a.components.1 - b.components.1).abs() <= EPSILON
+            && (a.components.2 - b.components.2).abs() <= EPSILON
+            && (a.alpha - b.alpha).abs() <= EPSILON
+    }
 }
 
 
