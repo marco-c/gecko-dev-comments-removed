@@ -56,6 +56,12 @@ bool ScalabilityModeIsShiftMode(ScalabilityMode scalability_mode);
 ScalabilityMode LimitNumSpatialLayers(ScalabilityMode scalability_mode,
                                       int max_spatial_layers);
 
+
+
+
+
+ScalabilityMode GetScalabilityModeFromVideoCodec(const VideoCodec& codec);
+
 }  
 
 #endif  
