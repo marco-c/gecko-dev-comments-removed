@@ -168,6 +168,18 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   
   
+  
+  
+  absl::AnyInvocable<void() &&> GetClearChannelNetworkTask();
+
+  
+  
+  
+  
+  absl::AnyInvocable<void() &&> GetDeleteChannelWorkerTask();
+
+  
+  
   void AddSender(
       scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender);
 
@@ -321,9 +333,6 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   void PushNewMediaChannel();
-  
-  
-  void DeleteChannel();
 
   RTCError UpdateCodecPreferencesCaches(
       const std::vector<RtpCodecCapability>& codecs);
