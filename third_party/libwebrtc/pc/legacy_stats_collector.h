@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/legacy_stats_types.h"
@@ -37,6 +38,7 @@
 #include "rtc_base/network_constants.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/thread_annotations.h"
+#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -57,8 +59,11 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
  public:
   
   
-  LegacyStatsCollector(PeerConnectionInternal* pc, Clock& clock);
-  virtual ~LegacyStatsCollector();
+  LegacyStatsCollector(
+      PeerConnectionInternal* pc,
+      Clock& clock,
+      absl::AnyInvocable<int64_t()> utc_time_now = TimeUTCMillis);
+  ~LegacyStatsCollector() override;
 
   
   
@@ -110,8 +115,6 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
   bool UseStandardBytesStats() const { return use_standard_bytes_stats_; }
 
  private:
-  friend class LegacyStatsCollectorTest;
-
   
   
   struct TransportStats {
@@ -141,11 +144,7 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
     std::map<std::string, std::string> transport_names_by_mid;
   };
 
-  
-  virtual std::optional<std::string> GetTransportName(absl::string_view mid);
-
-  
-  virtual double GetTimeNow();
+  std::optional<std::string> GetTransportName(absl::string_view mid);
 
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
 
@@ -211,6 +210,7 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
   typedef std::vector<std::pair<AudioTrackInterface*, uint32_t>>
       LocalAudioTrackVector;
   LocalAudioTrackVector local_audio_tracks_;
+  absl::AnyInvocable<int64_t()> utc_time_now_;
 };
 
 }  
