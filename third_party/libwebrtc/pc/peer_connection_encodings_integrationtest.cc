@@ -2587,17 +2587,25 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest,
 
   
   
-  auto error_or_report =
-      GetStatsUntil(local_pc_wrapper, HasOutboundRtpBytesSent(3u),
-                    {.timeout = kLongTimeoutForRampingUp});
+  auto error_or_report = GetStatsUntil(
+      local_pc_wrapper,
+      AllOf(HasOutboundRtpBytesSent(3u),
+            OutboundRtpStatsAre(
+                Each(ScalabilityModeIs(Optional(StrEq("L1T3")))))),
+      {.timeout = kLongTimeoutForRampingUp});
   ASSERT_THAT(error_or_report, IsRtcOk());
   
   scoped_refptr<const RTCStatsReport> report = error_or_report.value();
   auto outbound_rtp_by_rid = GetOutboundRtpStreamStatsByRid(report);
-  EXPECT_THAT(outbound_rtp_by_rid,
-              UnorderedElementsAre(Pair("q", ResolutionIs(320, 180)),
-                                   Pair("h", ResolutionIs(640, 360)),
-                                   Pair("f", ResolutionIs(1280, 720))));
+  EXPECT_THAT(
+      outbound_rtp_by_rid,
+      UnorderedElementsAre(
+          Pair("q", AllOf(ResolutionIs(320, 180),
+                          ScalabilityModeIs(Optional(StrEq("L1T3"))))),
+          Pair("h", AllOf(ResolutionIs(640, 360),
+                          ScalabilityModeIs(Optional(StrEq("L1T3"))))),
+          Pair("f", AllOf(ResolutionIs(1280, 720),
+                          ScalabilityModeIs(Optional(StrEq("L1T3")))))));
   
   std::vector<const RTCOutboundRtpStreamStats*> outbound_rtps =
       report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -2608,9 +2616,6 @@ TEST_P(PeerConnectionEncodingsIntegrationParameterizedTest,
               StrCaseEq(mime_type_));
   EXPECT_THAT(GetCurrentCodecMimeType(report, *outbound_rtps[2]),
               StrCaseEq(mime_type_));
-  EXPECT_THAT(*outbound_rtps[0]->scalability_mode, StrEq("L1T3"));
-  EXPECT_THAT(*outbound_rtps[1]->scalability_mode, StrEq("L1T3"));
-  EXPECT_THAT(*outbound_rtps[2]->scalability_mode, StrEq("L1T3"));
 }
 
 
