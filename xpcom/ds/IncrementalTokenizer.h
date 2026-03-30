@@ -99,21 +99,21 @@ class IncrementalTokenizer : public TokenizerBase<char> {
 
 #ifdef DEBUG
   
-  bool mConsuming;
+  bool mConsuming{false};
 #endif  
   
   
-  bool mNeedMoreInput;
+  bool mNeedMoreInput{false};
   
   
   
-  bool mRollback;
+  bool mRollback{false};
   
   nsCString mInput;
   
   
   
-  nsCString::index_type mInputCursor;
+  nsCString::index_type mInputCursor{0};
   
   Consumer mConsumer;
 };
