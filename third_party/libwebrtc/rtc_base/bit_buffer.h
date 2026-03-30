@@ -15,6 +15,7 @@
 #include <stdint.h>  
 
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
 #include "api/units/data_size.h"
 
 namespace webrtc {
@@ -28,6 +29,7 @@ class BitBufferWriter {
   static constexpr DataSize kMaxLeb128Length = DataSize::Bytes(10);
 
   
+  explicit BitBufferWriter(ArrayView<uint8_t> bytes);
   BitBufferWriter(uint8_t* bytes, size_t byte_count);
 
   BitBufferWriter(const BitBufferWriter&) = delete;
@@ -42,10 +44,7 @@ class BitBufferWriter {
 
   
   
-  bool ConsumeBytes(size_t byte_count);
-  
-  
-  bool ConsumeBits(size_t bit_count);
+  bool ZeroBits(size_t bit_count);
 
   
   
@@ -85,6 +84,10 @@ class BitBufferWriter {
 
  private:
   
+  
+  void ConsumeBits(size_t bit_count);
+
+  
   uint8_t* const writable_bytes_;
   
   const size_t byte_count_;
@@ -96,12 +99,5 @@ class BitBufferWriter {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::BitBufferWriter;
-}  
-#endif  
 
 #endif  

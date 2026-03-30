@@ -13,10 +13,12 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <limits>
 
 #include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
 #include "rtc_base/checks.h"
 
 namespace {
@@ -52,6 +54,9 @@ uint8_t WritePartialByte(uint8_t source,
 
 namespace webrtc {
 
+BitBufferWriter::BitBufferWriter(ArrayView<uint8_t> bytes)
+    : BitBufferWriter(bytes.data(), bytes.size()) {}
+
 BitBufferWriter::BitBufferWriter(uint8_t* bytes, size_t byte_count)
     : writable_bytes_(bytes),
       byte_count_(byte_count),
@@ -65,18 +70,11 @@ uint64_t BitBufferWriter::RemainingBitCount() const {
   return (static_cast<uint64_t>(byte_count_) - byte_offset_) * 8 - bit_offset_;
 }
 
-bool BitBufferWriter::ConsumeBytes(size_t byte_count) {
-  return ConsumeBits(byte_count * 8);
-}
-
-bool BitBufferWriter::ConsumeBits(size_t bit_count) {
-  if (bit_count > RemainingBitCount()) {
-    return false;
-  }
+void BitBufferWriter::ConsumeBits(size_t bit_count) {
+  RTC_DCHECK_LE(bit_count, RemainingBitCount());
 
   byte_offset_ += (bit_offset_ + bit_count) / 8;
   bit_offset_ = (bit_offset_ + bit_count) % 8;
-  return true;
 }
 
 void BitBufferWriter::GetCurrentOffset(size_t* out_byte_offset,
@@ -109,6 +107,23 @@ bool BitBufferWriter::WriteUInt32(uint32_t val) {
   return WriteBits(val, sizeof(uint32_t) * 8);
 }
 
+bool BitBufferWriter::ZeroBits(size_t bit_count) {
+  if (bit_count > RemainingBitCount()) {
+    return false;
+  }
+  
+  
+  size_t old_end = byte_offset_ + (bit_offset_ > 0 ? 1 : 0);
+  ConsumeBits(bit_count);
+  size_t new_end = byte_offset_ + (bit_offset_ > 0 ? 1 : 0);
+  if (new_end > old_end) {
+    
+    
+    memset(writable_bytes_ + old_end, 0, new_end - old_end);
+  }
+  return true;
+}
+
 bool BitBufferWriter::WriteBits(uint64_t val, size_t bit_count) {
   if (bit_count > RemainingBitCount()) {
     return false;
@@ -120,24 +135,23 @@ bool BitBufferWriter::WriteBits(uint64_t val, size_t bit_count) {
 
   uint8_t* bytes = writable_bytes_ + byte_offset_;
 
-  
-  
-  
-  size_t remaining_bits_in_current_byte = 8 - bit_offset_;
-  size_t bits_in_first_byte =
-      std::min(bit_count, remaining_bits_in_current_byte);
-  *bytes = WritePartialByte(HighestByte(val), bits_in_first_byte, *bytes,
-                            bit_offset_);
-  if (bit_count <= remaining_bits_in_current_byte) {
+  if (bit_offset_ > 0) {
     
-    return ConsumeBits(total_bits);
+    
+    
+    size_t remaining_bits_in_current_byte = 8 - bit_offset_;
+    size_t bits_in_first_byte =
+        std::min(bit_count, remaining_bits_in_current_byte);
+    *bytes = WritePartialByte(HighestByte(val), bits_in_first_byte, *bytes,
+                              bit_offset_);
+
+    
+    
+    val <<= bits_in_first_byte;
+    bytes++;
+    bit_count -= bits_in_first_byte;
   }
 
-  
-  
-  val <<= bits_in_first_byte;
-  bytes++;
-  bit_count -= bits_in_first_byte;
   while (bit_count >= 8) {
     *bytes++ = HighestByte(val);
     val <<= 8;
@@ -147,11 +161,12 @@ bool BitBufferWriter::WriteBits(uint64_t val, size_t bit_count) {
   
   
   if (bit_count > 0) {
-    *bytes = WritePartialByte(HighestByte(val), bit_count, *bytes, 0);
+    *bytes = HighestByte(val);
   }
 
   
-  return ConsumeBits(total_bits);
+  ConsumeBits(total_bits);
+  return true;
 }
 
 bool BitBufferWriter::WriteNonSymmetric(uint32_t val, uint32_t num_values) {
