@@ -445,12 +445,6 @@ struct JSRuntime {
   js::MainThreadData<bool> allowRelazificationForTesting;
 
   
-  js::MainThreadData<JSDestroyZoneCallback> destroyZoneCallback;
-
-  
-  js::MainThreadData<JSDestroyCompartmentCallback> destroyCompartmentCallback;
-
-  
   js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback>
       sizeOfIncludingThisCompartmentCallback;
 
@@ -462,9 +456,6 @@ struct JSRuntime {
 
 
   void (*constructUbiNodeForDOMObjectCallback)(void*, JSObject*) = nullptr;
-
-  
-  js::MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
   
   js::MainThreadData<JS::RealmNameCallback> realmNameCallback;
