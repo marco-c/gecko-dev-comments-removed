@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_DOMSVGLENGTH_H_
 #define DOM_SVG_DOMSVGLENGTH_H_
 
@@ -132,7 +130,10 @@ class DOMSVGLength final : public nsWrapperCache {
   }
 
   
-  void UpdateListIndex(uint32_t aListIndex) { mListIndex = aListIndex; }
+  void UpdateListIndex(uint32_t aListIndex) { 
+    MOZ_RELEASE_ASSERT(aListIndex <= MaxListIndex());
+    mListIndex = aListIndex;
+  }
 
   
 

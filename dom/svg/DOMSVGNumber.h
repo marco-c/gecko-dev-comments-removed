@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_DOMSVGNUMBER_H_
 #define DOM_SVG_DOMSVGNUMBER_H_
 
@@ -108,7 +106,10 @@ class DOMSVGNumber final : public nsWrapperCache {
   }
 
   
-  void UpdateListIndex(uint32_t aListIndex) { mListIndex = aListIndex; }
+  void UpdateListIndex(uint32_t aListIndex) { 
+    MOZ_RELEASE_ASSERT(aListIndex <= MaxListIndex());
+    mListIndex = aListIndex;
+  }
 
   
 
