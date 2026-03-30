@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteMediaData.h"
 
 #include "PerformanceRecorder.h"
@@ -273,7 +271,6 @@ IPC::ParamTraits<mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData>::Write(
  bool
 IPC::ParamTraits<mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData>::Read(
     MessageReader* aReader, paramType* aVar) {
-  mozilla::MediaDataIPDL mBase;
   return ReadParam(aReader, &aVar->mBase) && ReadParam(aReader, &aVar->mEOS) &&
          ReadParam(aReader, &aVar->mHeight) &&
          ReadParam(aReader, &aVar->mTemporalLayerId) &&
@@ -341,6 +338,14 @@ already_AddRefed<AudioData> ArrayOfRemoteAudioData::ElementAt(
   audioData->mDuration = sample.mBase.duration();
   audioData->mOriginalTime = sample.mOriginalTime;
   audioData->mTrimWindow = sample.mTrimWindow;
+  CheckedInt<size_t> requiredLen =
+      CheckedInt<size_t>(sample.mDataOffset) +
+      CheckedInt<size_t>(sample.mFrames) * CheckedInt<size_t>(sample.mChannels);
+  if (!requiredLen.isValid() ||
+      requiredLen.value() > audioData->mAudioData.Length()) {
+    NS_WARNING("Malformed RemoteAudioData");
+    return nullptr;
+  }
   audioData->mFrames = sample.mFrames;
   audioData->mDataOffset = sample.mDataOffset;
   return audioData.forget();
@@ -382,7 +387,6 @@ IPC::ParamTraits<mozilla::ArrayOfRemoteAudioData::RemoteAudioData>::Write(
  bool
 IPC::ParamTraits<mozilla::ArrayOfRemoteAudioData::RemoteAudioData>::Read(
     IPC::MessageReader* aReader, paramType* aVar) {
-  mozilla::MediaDataIPDL mBase;
   return ReadParam(aReader, &aVar->mBase) &&
          ReadParam(aReader, &aVar->mChannels) &&
          ReadParam(aReader, &aVar->mRate) &&
