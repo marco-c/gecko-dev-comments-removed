@@ -6,6 +6,20 @@
 
 do_get_profile();
 
+let gSetPasswordShownCount = 0;
+
+
+const gTokenPasswordDialogs = {
+  setPassword(ctx, tokenName) {
+    gSetPasswordShownCount++;
+    info(`setPassword() called; shown ${gSetPasswordShownCount} times`);
+    info(`tokenName: ${tokenName}`);
+    return false; 
+  },
+
+  QueryInterface: ChromeUtils.generateQI(["nsITokenPasswordDialogs"]),
+};
+
 let gMockPrompter = {
   promptPassword() {
     
@@ -82,6 +96,31 @@ add_task(function testEncryptString() {
     /NS_ERROR_ILLEGAL_VALUE/,
     "decryptString() should throw if given non-Base64 input"
   );
+
+  
+  
+  
+  if (AppConstants.platform != "android") {
+    let tokenPasswordDialogsCID = MockRegistrar.register(
+      "@mozilla.org/nsTokenPasswordDialogs;1",
+      gTokenPasswordDialogs
+    );
+    registerCleanupFunction(() => {
+      MockRegistrar.unregister(tokenPasswordDialogsCID);
+    });
+
+    equal(
+      gSetPasswordShownCount,
+      0,
+      "changePassword() dialog should have been shown zero times"
+    );
+    sdr.changePassword();
+    equal(
+      gSetPasswordShownCount,
+      1,
+      "changePassword() dialog should have been shown exactly once"
+    );
+  }
 });
 
 add_task(async function testAsyncEncryptStrings() {
