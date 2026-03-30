@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/dtls_transport_interface.h"
@@ -73,6 +74,13 @@ class RtpSenderInternal : public RtpSenderInterface {
       scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
 
   virtual void Stop() = 0;
+
+  
+  
+  
+  
+  
+  virtual absl::AnyInvocable<void() &&> DetachTrackAndGetStopTask() = 0;
 
   
   
@@ -195,6 +203,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   }
 
   void Stop() override;
+  absl::AnyInvocable<void() &&> DetachTrackAndGetStopTask() override;
 
   
   

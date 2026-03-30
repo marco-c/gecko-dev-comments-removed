@@ -18,6 +18,8 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
+#include "api/audio_options.h"
+#include "api/crypto/crypto_options.h"
 #include "api/environment/environment.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
@@ -28,7 +30,10 @@
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
+#include "api/video/video_bitrate_allocator_factory.h"
+#include "call/call.h"
 #include "media/base/media_channel.h"
+#include "media/base/media_config.h"
 #include "media/base/media_engine.h"
 #include "pc/codec_vendor.h"
 #include "pc/connection_context.h"
@@ -73,6 +78,7 @@ struct RtpSenderInfo {
 class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
  public:
   RtpTransmissionManager(const Environment& env,
+                         Call* call,
                          bool is_unified_plan,
                          ConnectionContext* context,
                          CodecLookupHelper* codec_lookup_helper,
@@ -91,39 +97,21 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   
   void OnSetStreams() override;
 
-  
-  RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrack(
-      scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids,
-      const std::vector<RtpEncodingParameters>* init_send_encodings);
-
-  
-  scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> CreateSender(
-      MediaType media_type,
-      const std::string& id,
-      scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids,
-      const std::vector<RtpEncodingParameters>& send_encodings,
-      MediaSendChannelInterface* media_channel);
-
-  
-  scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-  CreateReceiver(MediaType media_type, const std::string& receiver_id);
-
-  
-  
   scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   CreateAndAddTransceiver(
-      scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
-      scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-          receiver);
-
-  
-  
-  scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-  FindFirstTransceiverForAddedTrack(
+      const MediaConfig& media_config,
+      const AudioOptions& audio_options,
+      const VideoOptions& video_options,
+      const CryptoOptions& crypto_options,
+      VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
+      MediaType media_type,
       scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<RtpEncodingParameters>* init_send_encodings);
+      const std::vector<std::string>& stream_ids,
+      const std::vector<RtpEncodingParameters>& init_send_encodings,
+      const std::vector<RtpHeaderExtensionCapability>&
+          header_extensions_to_negotiate,
+      absl::string_view sender_id,
+      absl::string_view receiver_id = "");
 
   
   
@@ -142,29 +130,26 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   GetVideoTransceiver() const;
 
   
-  void AddAudioTrack(AudioTrackInterface* track, MediaStreamInterface* stream);
+  void AddTrackPlanB(MediaStreamTrackInterface* track,
+                     MediaStreamInterface* stream);
   
-  void RemoveAudioTrack(AudioTrackInterface* track,
-                        MediaStreamInterface* stream);
-  
-  void AddVideoTrack(VideoTrackInterface* track, MediaStreamInterface* stream);
-  
-  void RemoveVideoTrack(VideoTrackInterface* track,
+  void RemoveTrackPlanB(MediaStreamTrackInterface* track,
                         MediaStreamInterface* stream);
 
   
   
   
-  void OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
-                           MediaStreamInterface* stream,
-                           MediaType media_type);
+  
+  void OnRemoteSenderAddedPlanB(const RtpSenderInfo& sender_info,
+                                MediaStreamInterface* stream,
+                                MediaType media_type);
 
   
   
   
-  void OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
-                             MediaStreamInterface* stream,
-                             MediaType media_type);
+  void OnRemoteSenderRemovedPlanB(const RtpSenderInfo& sender_info,
+                                  MediaStreamInterface* stream,
+                                  MediaType media_type);
 
   
   
@@ -184,9 +169,6 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   std::vector<RtpSenderInfo>* GetRemoteSenderInfos(MediaType media_type);
   std::vector<RtpSenderInfo>* GetLocalSenderInfos(MediaType media_type);
-  const RtpSenderInfo* FindSenderInfo(const std::vector<RtpSenderInfo>& infos,
-                                      const std::string& stream_id,
-                                      const std::string& sender_id) const;
 
   
   scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
@@ -210,33 +192,47 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   VoiceMediaReceiveChannelInterface* voice_media_receive_channel() const;
   VideoMediaReceiveChannelInterface* video_media_receive_channel() const;
 
- private:
-  Thread* signaling_thread() const { return context_->signaling_thread(); }
-  Thread* worker_thread() const { return context_->worker_thread(); }
-  bool IsUnifiedPlan() const { return is_unified_plan_; }
-  void NoteUsageEvent(UsageEvent event) {
-    usage_pattern_->NoteUsageEvent(event);
-  }
-
-  
-  RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrackUnifiedPlan(
-      scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids,
-      const std::vector<RtpEncodingParameters>* init_send_encodings);
-  
   RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrackPlanB(
       scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids,
       const std::vector<RtpEncodingParameters>* init_send_encodings);
 
   
-  void CreateAudioReceiver(MediaStreamInterface* stream,
-                           const RtpSenderInfo& remote_sender_info)
+  RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrackUnifiedPlan(
+      const MediaConfig& media_config,
+      const AudioOptions& audio_options,
+      const VideoOptions& video_options,
+      const CryptoOptions& crypto_options,
+      VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
+      scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_ids,
+      const std::vector<RtpEncodingParameters>* init_send_encodings);
+
+ private:
+  Thread* signaling_thread() const { return context_->signaling_thread(); }
+  Thread* worker_thread() const { return context_->worker_thread(); }
+  bool IsUnifiedPlan() const { return is_unified_plan_; }
+  std::vector<RtpHeaderExtensionCapability> GetDefaultHeaderExtensions(
+      MediaType media_type);
+  void NoteUsageEvent(UsageEvent event) {
+    usage_pattern_->NoteUsageEvent(event);
+  }
+
+  
+  
+  scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  FindFirstTransceiverForAddedTrack(
+      scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<RtpEncodingParameters>* init_send_encodings);
+
+  
+  void CreateAudioReceiverPlanB(MediaStreamInterface* stream,
+                                const RtpSenderInfo& remote_sender_info)
       RTC_RUN_ON(signaling_thread());
 
   
-  void CreateVideoReceiver(MediaStreamInterface* stream,
-                           const RtpSenderInfo& remote_sender_info)
+  void CreateVideoReceiverPlanB(MediaStreamInterface* stream,
+                                const RtpSenderInfo& remote_sender_info)
       RTC_RUN_ON(signaling_thread());
   scoped_refptr<RtpReceiverInterface> RemoveAndStopReceiver(
       const RtpSenderInfo& remote_sender_info) RTC_RUN_ON(signaling_thread());
@@ -266,6 +262,7 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
 
   bool closed_ = false;
   bool const is_unified_plan_;
+  Call* const call_;
   ConnectionContext* context_;
   CodecLookupHelper* codec_lookup_helper_;
   UsagePattern* usage_pattern_;

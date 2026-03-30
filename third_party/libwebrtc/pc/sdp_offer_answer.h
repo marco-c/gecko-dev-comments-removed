@@ -102,6 +102,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
     return webrtc_session_desc_factory_.get();
   }
 
+  VideoBitrateAllocatorFactory* video_bitrate_allocator_factory() const {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    return video_bitrate_allocator_factory_.get();
+  }
+
+  const AudioOptions& audio_options() { return audio_options_; }
+  const VideoOptions& video_options() { return video_options_; }
+
   
   void Close();
 
@@ -473,8 +481,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  void UpdateLocalSenders(const std::vector<StreamParams>& streams,
-                          webrtc::MediaType media_type);
+  void UpdateLocalSendersPlanB(const std::vector<StreamParams>& streams,
+                               webrtc::MediaType media_type);
 
   
   
@@ -482,10 +490,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  void UpdateRemoteSendersList(const std::vector<StreamParams>& streams,
-                               bool default_track_needed,
-                               webrtc::MediaType media_type,
-                               StreamCollection* new_streams);
+  void UpdateRemoteSendersListPlanB(const std::vector<StreamParams>& streams,
+                                    bool default_track_needed,
+                                    webrtc::MediaType media_type,
+                                    StreamCollection* new_streams);
 
   
   
@@ -598,8 +606,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   const JsepTransportController* transport_controller_n() const
       RTC_RUN_ON(network_thread());
   
-  const AudioOptions& audio_options() { return audio_options_; }
-  const VideoOptions& video_options() { return video_options_; }
+
   bool ConfiguredForMedia() const;
 
   const Environment& env_;
