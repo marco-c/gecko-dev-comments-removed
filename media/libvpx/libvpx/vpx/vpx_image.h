@@ -102,7 +102,12 @@ typedef struct vpx_image {
 #define VPX_PLANE_V 2       /**< V (Chroma) plane */
 #define VPX_PLANE_ALPHA 3   /**< A (Transparency) plane */
   unsigned char *planes[4]; 
-  int stride[4];            
+  
+
+
+
+
+  int stride[4];
 
   int bps; 
 
