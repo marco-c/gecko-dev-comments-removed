@@ -49,7 +49,7 @@ class SctpDataChannelControllerInterface {
                             const SendDataParams& params,
                             const CopyOnWriteBuffer& payload) = 0;
   
-  virtual void AddSctpDataStream(StreamId sid, PriorityValue priority) = 0;
+  virtual RTCError AddSctpDataStream(StreamId sid, PriorityValue priority) = 0;
   
   
   virtual void RemoveSctpDataStream(StreamId sid) = 0;
