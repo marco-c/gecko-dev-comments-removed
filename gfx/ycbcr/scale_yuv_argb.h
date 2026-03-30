@@ -8,32 +8,26 @@
 
 
 
-#ifndef INCLUDE_LIBYUV_SCALE_YUV_ARGB_H_  
-#define INCLUDE_LIBYUV_SCALE_YUV_ARGB_H_
+#ifndef GFX_YCBCR_SCALE_YUV_ARGB_H_
+#define GFX_YCBCR_SCALE_YUV_ARGB_H_
 
 #include "libyuv/basic_types.h"
 #include "libyuv/scale.h"  
 
-#include "mozilla/gfx/Types.h" 
+#include "mozilla/gfx/Types.h"  
 
-#ifdef __cplusplus
-namespace libyuv {
-extern "C" {
-#endif
+namespace mozilla::gfx {
 
 int YUVToARGBScale(const uint8_t* src_y, int src_stride_y,
                    const uint8_t* src_u, int src_stride_u,
                    const uint8_t* src_v, int src_stride_v,
                    uint32_t src_fourcc,
-                   mozilla::gfx::YUVColorSpace yuv_color_space,
+                   YUVColorSpace yuv_color_space,
                    int src_width, int src_height,
                    uint8_t* dst_argb, int dst_stride_argb,
                    int dst_width, int dst_height,
-                   enum FilterMode filtering);
+                   libyuv::FilterMode filtering);
 
-#ifdef __cplusplus
 }  
-}  
-#endif
 
 #endif  

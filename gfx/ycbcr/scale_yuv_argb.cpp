@@ -22,10 +22,9 @@
 
 #include "mozilla/gfx/Types.h"
 
-#ifdef __cplusplus
-namespace libyuv {
-extern "C" {
-#endif
+using namespace libyuv;
+
+namespace mozilla::gfx {
 
 
 
@@ -1126,7 +1125,4 @@ int YUVToARGBScale(const uint8_t* src_y, int src_stride_y,
   return 0;
 }
 
-#ifdef __cplusplus
 }  
-}  
-#endif
