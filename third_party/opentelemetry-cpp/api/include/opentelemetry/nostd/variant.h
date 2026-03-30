@@ -51,6 +51,8 @@ OPENTELEMETRY_END_NAMESPACE
 
 #  include "opentelemetry/nostd/internal/absl/base/options.h"
 
+
+
 namespace absl
 {
 namespace OTABSL_OPTION_NAMESPACE_NAME
@@ -61,6 +63,7 @@ template <typename... Ts>
 class variant;
 }  
 }  
+
 
 #  include "opentelemetry/nostd/internal/absl/types/variant.h"
 

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -34,7 +35,7 @@ namespace trace
 
 
 
-enum class Decision
+enum class Decision : std::uint8_t
 {
   
   
@@ -71,9 +72,16 @@ struct SamplingResult
 class Sampler
 {
 public:
-  virtual ~Sampler() = default;
-  
+  Sampler() = default;
 
+  Sampler(const Sampler &)            = delete;
+  Sampler(Sampler &&)                 = delete;
+  Sampler &operator=(const Sampler &) = delete;
+  Sampler &operator=(Sampler &&)      = delete;
+
+  virtual ~Sampler() = default;
+
+  
 
 
 

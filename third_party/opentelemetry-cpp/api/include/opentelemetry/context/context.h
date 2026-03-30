@@ -35,7 +35,7 @@ public:
   
   
   Context(nostd::string_view key, ContextValue value) noexcept
-      : head_{nostd::shared_ptr<DataList>{new DataList(key, value)}}
+      : head_{nostd::shared_ptr<DataList>{new DataList(key, std::move(value))}}
   {}
 
   
@@ -59,7 +59,7 @@ public:
   
   Context SetValue(nostd::string_view key, ContextValue value) noexcept
   {
-    Context context      = Context(key, value);
+    Context context      = Context(key, std::move(value));
     context.head_->next_ = head_;
     return context;
   }
@@ -125,13 +125,13 @@ private:
 
     
     
-    DataList(nostd::string_view key, const ContextValue &value)
+    DataList(nostd::string_view key, ContextValue value)
     {
       key_        = new char[key.size()];
       key_length_ = key.size();
       std::memcpy(key_, key.data(), key.size() * sizeof(char));
       next_  = nostd::shared_ptr<DataList>{nullptr};
-      value_ = value;
+      value_ = std::move(value);
     }
 
     DataList(const DataList &other)

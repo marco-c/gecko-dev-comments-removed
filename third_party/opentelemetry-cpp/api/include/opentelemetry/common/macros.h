@@ -246,8 +246,10 @@
 
 
 #if (__GNUC__ == 4 && (__GNUC_MINOR__ == 8 || __GNUC_MINOR__ == 9))
+
 #  define OPENTELEMETRY_HAVE_WORKING_REGEX 0
 #else
+
 #  define OPENTELEMETRY_HAVE_WORKING_REGEX 1
 #endif
 

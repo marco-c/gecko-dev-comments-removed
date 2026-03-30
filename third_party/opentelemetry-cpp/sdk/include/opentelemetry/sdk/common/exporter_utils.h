@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "opentelemetry/version.h"
 
 OPENTELEMETRY_BEGIN_NAMESPACE
@@ -13,7 +15,7 @@ namespace common
 
 
 
-enum class ExportResult
+enum class ExportResult : std::uint8_t
 {
   
   kSuccess = 0,
