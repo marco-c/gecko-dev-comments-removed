@@ -68,7 +68,7 @@ class TextInputProcessor final : public nsITextInputProcessor,
 
 
 
-  nsresult BeginInputTransactionForFuzzing(
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult BeginInputTransactionForFuzzing(
       nsPIDOMWindowInner* aWindow, nsITextInputProcessorCallback* aCallback,
       bool* aSucceeded);
 
@@ -124,7 +124,7 @@ class TextInputProcessor final : public nsITextInputProcessor,
 
  private:
   bool IsComposing() const;
-  nsresult BeginInputTransactionInternal(
+  MOZ_CAN_RUN_SCRIPT nsresult BeginInputTransactionInternal(
       mozIDOMWindow* aWindow, nsITextInputProcessorCallback* aCallback,
       bool aForTests, bool& aSucceeded);
   MOZ_CAN_RUN_SCRIPT nsresult CommitCompositionInternal(

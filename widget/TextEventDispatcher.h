@@ -72,7 +72,11 @@ class TextEventDispatcher final {
 
 
 
-  void EndInputTransaction(TextEventDispatcherListener* aListener);
+
+
+
+  MOZ_CAN_RUN_SCRIPT void EndInputTransaction(
+      TextEventDispatcherListener* aListener);
 
   
 
