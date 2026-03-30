@@ -77,7 +77,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/adaptation/resource.h"
 #include "api/async_dns_resolver.h"
@@ -964,19 +963,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   CreateDataChannelOrError(const std::string& ,
                            const DataChannelInit* ) {
     return RTCError(RTCErrorType::INTERNAL_ERROR, "dummy function called");
-  }
-  
-  
-  ABSL_DEPRECATED("Use CreateDataChannelOrError")
-  virtual scoped_refptr<DataChannelInterface> CreateDataChannel(
-      const std::string& label,
-      const DataChannelInit* config) {
-    auto result = CreateDataChannelOrError(label, config);
-    if (!result.ok()) {
-      return nullptr;
-    } else {
-      return result.MoveValue();
-    }
   }
 
   
