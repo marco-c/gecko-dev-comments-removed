@@ -60,18 +60,24 @@ enum class FecMechanism {
 };
 
 
+
 enum class RtcpFeedbackType {
+  NONE,
   CCM,
   LNTF,  
   NACK,
   REMB,  
   TRANSPORT_CC,
   CCFB,  
+  MAX = CCFB
 };
 
 template <typename Sink>
 void AbslStringify(Sink& sink, RtcpFeedbackType type) {
   switch (type) {
+    case RtcpFeedbackType::NONE:
+      sink.Append("NONE");
+      break;
     case RtcpFeedbackType::CCM:
       sink.Append("CCM");
       break;
