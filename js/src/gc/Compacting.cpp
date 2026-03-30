@@ -848,7 +848,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
   
   jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
-  for (JS::detail::WeakCacheBase* cache : rt->weakCaches()) {
+  for (JS::detail::WeakCacheBase* cache : weakCaches()) {
     cache->traceWeak(&trc, JS::detail::WeakCacheBase::DontLock);
   }
 

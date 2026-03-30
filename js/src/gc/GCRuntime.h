@@ -532,6 +532,13 @@ class GCRuntime {
       Handle<FinalizationRecordObject*> record);
   void queueFinalizationRegistryForCleanup(FinalizationQueueObject* queue);
 
+  mozilla::LinkedList<JS::detail::WeakCacheBase>& weakCaches() {
+    return weakCaches_.ref();
+  }
+  void registerWeakCache(JS::detail::WeakCacheBase* cache) {
+    weakCaches().insertBack(cache);
+  }
+
   void setFullCompartmentChecks(bool enable);
 
   
@@ -1341,28 +1348,6 @@ class GCRuntime {
   MainThreadOrGCTaskData<AllocKind> foregroundFinalizedAllocKind;
   MainThreadData<mozilla::Maybe<SortedArenaList>> foregroundFinalizedArenas;
 
-#ifdef DEBUG
-  
-
-
-
-
-
-
-
-
-
-
-  JS::WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>>
-      testMarkQueue;
-
-  
-  size_t queuePos = 0;
-
-  
-  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
-#endif
-
   friend class SweepGroupsIter;
 
   
@@ -1537,6 +1522,11 @@ class GCRuntime {
   
   MainThreadOrGCTaskData<gc::StoreBuffer> storeBuffer_;
 
+  
+  
+  MainThreadOrGCTaskData<mozilla::LinkedList<JS::detail::WeakCacheBase>>
+      weakCaches_;
+
   mozilla::TimeStamp lastLastDitchTime;
 
   
@@ -1544,6 +1534,28 @@ class GCRuntime {
 
   
   MainThreadData<mozilla::TimeDuration> collectorTimeSinceAllocRateUpdate;
+
+#ifdef DEBUG
+  
+
+
+
+
+
+
+
+
+
+
+  JS::WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>>
+      testMarkQueue;
+
+  
+  size_t queuePos = 0;
+
+  
+  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
+#endif
 
   friend class MarkingValidator;
   friend class AutoEnterIteration;
