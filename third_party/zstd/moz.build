@@ -44,7 +44,7 @@ UNIFIED_SOURCES += [
 
 
 
-COMPILE_FLAGS["WARNINGS_CFLAGS"] += [
+CFLAGS += [
      '-Wextra',
      '-Wcast-qual',
      '-Wcast-align',
