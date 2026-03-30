@@ -196,8 +196,8 @@ void DOMSVGPoint::CleanupWeakRefs() {
   
   
   if (nsCOMPtr<DOMSVGPointList> pointList = do_QueryInterface(mOwner)) {
-    MOZ_RELEASE_ASSERT(pointList->mItems[mListIndex] == this,
-                       "Clearing out the wrong list index...?");
+    MOZ_ASSERT(pointList->mItems[mListIndex] == this,
+               "Clearing out the wrong list index...?");
     pointList->mItems[mListIndex] = nullptr;
   }
 

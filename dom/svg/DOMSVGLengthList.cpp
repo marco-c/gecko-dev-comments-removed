@@ -196,8 +196,9 @@ already_AddRefed<DOMSVGLength> DOMSVGLengthList::InsertItemBefore(
     return nullptr;
   }
 
-  if (LengthNoFlush() >= DOMSVGLength::MaxListIndex()) {
-    aRv.ThrowIndexSizeError("List too long");
+  index = std::min(index, LengthNoFlush());
+  if (index >= DOMSVGLength::MaxListIndex()) {
+    aRv.ThrowIndexSizeError("Index out of range");
     return nullptr;
   }
 
@@ -219,8 +220,6 @@ already_AddRefed<DOMSVGLength> DOMSVGLengthList::InsertItemBefore(
       return nullptr;
     }
   }
-
-  index = std::min(index, LengthNoFlush());
 
   AutoChangeLengthListNotifier notifier(this);
   
