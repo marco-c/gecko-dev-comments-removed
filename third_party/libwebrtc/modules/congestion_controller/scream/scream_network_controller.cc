@@ -37,12 +37,17 @@ ScreamNetworkController::ScreamNetworkController(NetworkControllerConfig config)
       target_rate_constraints_(config.constraints),
       streams_config_(config.stream_based_config),
       last_padding_interval_started_(Timestamp::Zero()) {
-  if (config.constraints.min_data_rate.has_value() ||
-      config.constraints.max_data_rate.has_value()) {
-    scream_->SetTargetBitrateConstraints(
-        config.constraints.min_data_rate.value_or(DataRate::Zero()),
-        config.constraints.max_data_rate.value_or(DataRate::PlusInfinity()));
-  }
+  UpdateScreamTargetBitrateConstraints();
+}
+
+void ScreamNetworkController::UpdateScreamTargetBitrateConstraints() {
+  
+  
+  scream_->SetTargetBitrateConstraints(
+      target_rate_constraints_.min_data_rate.value_or(DataRate::Zero()),
+      std::min(target_rate_constraints_.max_data_rate.value_or(
+                   DataRate::PlusInfinity()),
+               remote_bitrate_report_.value_or(DataRate::PlusInfinity())));
 }
 
 NetworkControlUpdate ScreamNetworkController::CreateFirstUpdate(Timestamp now) {
@@ -86,13 +91,7 @@ NetworkControlUpdate ScreamNetworkController::OnNetworkRouteChange(
   target_rate_constraints_ = msg.constraints;
   scream_.emplace(env_);
   first_update_created_ = false;
-  
-  
-  scream_->SetTargetBitrateConstraints(
-      target_rate_constraints_.min_data_rate.value_or(DataRate::Zero()),
-      target_rate_constraints_.max_data_rate.value_or(
-          DataRate::PlusInfinity()));
-
+  UpdateScreamTargetBitrateConstraints();
   if (network_available_ &&
       streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {
     return CreateFirstUpdate(msg.at_time);
@@ -108,8 +107,9 @@ NetworkControlUpdate ScreamNetworkController::OnProcessInterval(
 
 NetworkControlUpdate ScreamNetworkController::OnRemoteBitrateReport(
     RemoteBitrateReport msg) {
-  
-  return NetworkControlUpdate();
+  remote_bitrate_report_ = msg.bandwidth;
+  UpdateScreamTargetBitrateConstraints();
+  return CreateUpdate(msg.receive_time);
 }
 
 NetworkControlUpdate ScreamNetworkController::OnRoundTripTimeUpdate(
@@ -146,13 +146,7 @@ NetworkControlUpdate ScreamNetworkController::OnStreamsConfig(
 NetworkControlUpdate ScreamNetworkController::OnTargetRateConstraints(
     TargetRateConstraints msg) {
   target_rate_constraints_ = msg;
-
-  
-  
-  scream_->SetTargetBitrateConstraints(
-      target_rate_constraints_.min_data_rate.value_or(DataRate::Zero()),
-      target_rate_constraints_.max_data_rate.value_or(
-          DataRate::PlusInfinity()));
+  UpdateScreamTargetBitrateConstraints();
   
   return NetworkControlUpdate();
 }
