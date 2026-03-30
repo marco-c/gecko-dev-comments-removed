@@ -40,12 +40,52 @@ TEST(AsyncDnsResolver, ResolvingLocalhostWorks) {
   }
 }
 
+
+
+
+TEST(AsyncDnsResolver, ResolvingIpAddressWorks) {
+  test::RunLoop loop;  
+  AsyncDnsResolver resolver;
+  bool done = false;
+  resolver.Start(SocketAddress("127.0.0.1", kSomePortNumber), [&]() {
+    done = true;
+    loop.Quit();
+  });
+  EXPECT_FALSE(done);  
+  loop.Run();          
+  EXPECT_TRUE(done);   
+  EXPECT_EQ(resolver.result().GetError(), 0);
+  SocketAddress resolved_address;
+  if (resolver.result().GetResolvedAddress(AF_INET, &resolved_address)) {
+    EXPECT_EQ(resolved_address, SocketAddress("127.0.0.1", kSomePortNumber));
+  } else {
+    RTC_LOG(LS_INFO) << "Resolution gave no address, skipping test";
+  }
+}
+
+TEST(AsyncDnsResolver, ResolvingBogusFails) {
+  test::RunLoop loop;  
+  AsyncDnsResolver resolver;
+  bool done = false;
+  resolver.Start(SocketAddress("*!#*", kSomePortNumber), [&]() {
+    done = true;
+    loop.Quit();
+  });
+  EXPECT_FALSE(done);  
+  loop.Run();          
+  EXPECT_TRUE(done);   
+  EXPECT_NE(resolver.result().GetError(), 0);
+  SocketAddress resolved_address;
+  EXPECT_FALSE(
+      resolver.result().GetResolvedAddress(AF_INET, &resolved_address));
+}
+
 TEST(AsyncDnsResolver, ResolveAfterDeleteDoesNotReturn) {
   bool done = false;
   test::RunLoop loop;
   {
     AsyncDnsResolver resolver;
-    SocketAddress address("localhost", kSomePortNumber);
+    SocketAddress address("some-very-slow-dns-entry.local", kSomePortNumber);
     resolver.Start(address, [&] { done = true; });
   }
   EXPECT_FALSE(done);  
