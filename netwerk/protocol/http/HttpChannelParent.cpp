@@ -272,14 +272,11 @@ void HttpChannelParent::CleanupBackgroundChannel() {
 
     
     
-    
-    
-    RefPtr<BackgroundChannelRegistrar> registrar =
-        do_QueryObject(BackgroundChannelRegistrar::GetOrCreate());
+    nsCOMPtr<nsIBackgroundChannelRegistrar> registrar =
+        BackgroundChannelRegistrar::GetOrCreate();
     MOZ_ASSERT(registrar);
-    if (registrar) {
-      registrar->DeleteChannelIfMatches(mChannel->ChannelId(), this);
-    }
+
+    registrar->DeleteChannel(mChannel->ChannelId());
 
     
     
@@ -979,11 +976,6 @@ HttpChannelParent::ContinueVerification(
 
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
-
-  if (mIPCClosed) {
-    aCallback->ReadyToVerify(NS_ERROR_FAILURE);
-    return NS_OK;
-  }
 
   
   if (mBgParent) {

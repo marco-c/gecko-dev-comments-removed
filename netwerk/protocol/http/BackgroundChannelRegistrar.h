@@ -37,13 +37,6 @@ class BackgroundChannelRegistrar final : public nsIBackgroundChannelRegistrar {
   
   
   
-  void DeleteChannelIfMatches(uint64_t aKey, HttpChannelParent* aExpected);
-  friend class HttpChannelParent;
-
-  
-  
-  
-  
   void NotifyChannelLinked(HttpChannelParent* aChannelParent,
                            HttpBackgroundChannelParent* aBgParent);
 
