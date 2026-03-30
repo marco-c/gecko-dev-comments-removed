@@ -77,10 +77,11 @@ void TLSServerSocket::CreateClientTransport(PRFileDesc* aClientFD,
   SSL_AuthCertificateHook(aClientFD, AuthCertificateHook, nullptr);
   
   
-  
-  
+  trans->mFDDetachCallback = [aliveRef = RefPtr{info}](PRFileDesc* fd) {
+    SSL_HandshakeCallback(fd, nullptr, nullptr);
+  };
   SSL_HandshakeCallback(aClientFD, TLSServerConnectionInfo::HandshakeCallback,
-                        info);
+                        info.get());
 
   
   
@@ -375,9 +376,11 @@ TLSServerConnectionInfo::GetInterface(const nsIID& aIID, void** aResult) {
 
 
 void TLSServerConnectionInfo::HandshakeCallback(PRFileDesc* aFD, void* aArg) {
+  
+  
   RefPtr<TLSServerConnectionInfo> info =
       static_cast<TLSServerConnectionInfo*>(aArg);
-  nsISocketTransport* transport = info->mTransport;
+  RefPtr<nsISocketTransport> transport = info->mTransport;
   
   info->mTransport = nullptr;
   nsresult rv = info->HandshakeCallback(aFD);
