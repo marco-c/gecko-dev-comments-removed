@@ -789,7 +789,7 @@ class FirefoxDataProvider {
       
       
       
-      mimeType: response.content.mimeType,
+      mimeType: response.content?.mimeType || "text/plain",
       responseContent: response,
     });
     this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_CONTENT, response);
