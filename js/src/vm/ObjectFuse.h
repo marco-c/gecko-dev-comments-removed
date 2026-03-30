@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_ObjectFuse_h
 #define vm_ObjectFuse_h
 
@@ -271,9 +273,16 @@ class ObjectFuseMap {
       GCHashMap<WeakHeapPtr<JSObject*>, UniquePtr<ObjectFuse>,
                 StableCellHasher<WeakHeapPtr<JSObject*>>, SystemAllocPolicy>;
   JS::WeakCache<Map> objectFuses_;
+#ifdef DEBUG
+  JS::Zone* zone_;
+#endif
 
  public:
-  explicit ObjectFuseMap(JSRuntime* rt) : objectFuses_(rt) {}
+  explicit ObjectFuseMap(JS::Zone* zone) : objectFuses_(zone) {
+#ifdef DEBUG
+    zone_ = zone;
+#endif
+  }
 
   ObjectFuse* getOrCreate(JSContext* cx, NativeObject* obj);
   ObjectFuse* get(NativeObject* obj);
