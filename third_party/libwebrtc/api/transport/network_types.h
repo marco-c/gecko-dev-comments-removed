@@ -175,6 +175,9 @@ struct RTC_EXPORT PacketResult {
   SentPacket sent_packet;
   Timestamp receive_time = Timestamp::PlusInfinity();
   
+  
+  std::optional<TimeDelta> arrival_time_offset;
+  
   EcnMarking ecn = EcnMarking::kNotEct;
 
   
@@ -198,13 +201,9 @@ struct RTC_EXPORT TransportPacketsFeedback {
 
   Timestamp feedback_time = Timestamp::PlusInfinity();
   DataSize data_in_flight = DataSize::Zero();
+
   bool transport_supports_ecn = false;
   std::vector<PacketResult> packet_feedbacks;
-  
-  
-  
-  
-  TimeDelta smoothed_rtt = TimeDelta::PlusInfinity();
 
   
   std::vector<Timestamp> sendless_arrival_times;

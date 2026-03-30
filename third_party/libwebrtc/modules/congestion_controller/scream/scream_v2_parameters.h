@@ -29,6 +29,10 @@ struct ScreamV2Parameters {
   FieldTrialParameter<double> l4s_avg_g_down;
 
   
+  FieldTrialParameter<double> smoothed_rtt_avg_g_up;
+  FieldTrialParameter<double> smoothed_l4s_avg_g_down;
+
+  
   
   
   FieldTrialParameter<DataSize> max_segment_size;
@@ -107,6 +111,9 @@ struct ScreamV2Parameters {
 
   
   FieldTrialParameter<TimeDelta> periodic_padding_duration;
+
+  
+  FieldTrialParameter<double> pacing_factor;
 };
 
 }  

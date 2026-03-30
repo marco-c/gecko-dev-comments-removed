@@ -74,7 +74,8 @@ void ScreamV2::OnTransportPacketsFeedback(const TransportPacketsFeedback& msg) {
   UpdateRefWindow(msg);
   UpdateTargetRate(msg);
   env_.event_log().Log(std::make_unique<RtcEventBweUpdateScream>(
-      ref_window_, msg.data_in_flight, target_rate_, msg.smoothed_rtt,
+      ref_window_, msg.data_in_flight, target_rate_,
+      delay_based_congestion_control_.rtt(),
       delay_based_congestion_control_.queue_delay(),
        l4s_alpha_ * 1000));
 }
@@ -119,17 +120,20 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
 
   if ((is_virtual_ce || is_ce || is_loss) &&
       msg.feedback_time - last_reaction_to_congestion_time_ >=
-          std::min(msg.smoothed_rtt, params_.virtual_rtt.Get())) {
+          std::min(delay_based_congestion_control_.rtt(),
+                   params_.virtual_rtt.Get())) {
     last_reaction_to_congestion_time_ = msg.feedback_time;
     if (is_loss) {  
       ref_window_ = ref_window_ * params_.beta_loss.Get() /
-                    std::max(1.0, msg.smoothed_rtt / params_.virtual_rtt);
+                    std::max(1.0, delay_based_congestion_control_.rtt() /
+                                      params_.virtual_rtt);
     }
     if (is_ce) {  
       double backoff = l4s_alpha_ / 2.0;
       
       
-      backoff /= std::max(1.0, msg.smoothed_rtt / params_.virtual_rtt);
+      backoff /= std::max(
+          1.0, delay_based_congestion_control_.rtt() / params_.virtual_rtt);
       
       backoff *= std::max(0.5, 1.0 - ref_window_mss_ratio());
 
@@ -151,7 +155,8 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
       if (msg.feedback_time - last_reaction_to_congestion_time_ >
           params_.number_of_rtts_between_reset_ref_window_i_on_congestion
                   .Get() *
-              std::max(params_.virtual_rtt.Get(), msg.smoothed_rtt)) {
+              std::max(params_.virtual_rtt.Get(),
+                       delay_based_congestion_control_.rtt())) {
         
         
         
@@ -176,8 +181,8 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
     }
   }
 
-  const TimeDelta max_of_virtual_and_smothed_rtt =
-      std::max(params_.virtual_rtt.Get(), msg.smoothed_rtt);
+  const TimeDelta max_of_virtual_and_smothed_rtt = std::max(
+      params_.virtual_rtt.Get(), delay_based_congestion_control_.rtt());
 
   
   
@@ -192,8 +197,9 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
         DataUnitsAckedAndNotMarked(msg) * ref_window_mss_ratio();
 
     
-    if (msg.smoothed_rtt < params_.virtual_rtt.Get()) {
-      double rtt_ratio = msg.smoothed_rtt / params_.virtual_rtt.Get();
+    if (delay_based_congestion_control_.rtt() < params_.virtual_rtt.Get()) {
+      double rtt_ratio =
+          delay_based_congestion_control_.rtt() / params_.virtual_rtt.Get();
       increase = increase * (rtt_ratio * rtt_ratio);
     }
 
@@ -268,7 +274,7 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
       << " bytes "
       << ", l4s_alpha=" << l4s_alpha_ << ", is_ce=" << is_ce
       << " is_virtual_ce=" << is_virtual_ce << " is_loss=" << is_loss
-      << " smoothed_rtt=" << msg.smoothed_rtt.ms()
+      << " smoothed_rtt=" << delay_based_congestion_control_.rtt().ms()
       << ", queue_delay=" << delay_based_congestion_control_.queue_delay().ms()
       << ", queue_delay_dev_norm="
       << delay_based_congestion_control_.queue_delay_dev_norm()
@@ -291,7 +297,7 @@ DataSize ScreamV2::max_data_in_flight() const {
 void ScreamV2::UpdateTargetRate(const TransportPacketsFeedback& msg) {
   
   const TimeDelta non_zero_smoothed_rtt =
-      std::max(msg.smoothed_rtt, TimeDelta::Millis(1));
+      std::max(delay_based_congestion_control_.rtt(), TimeDelta::Millis(1));
   double scale_target_rate = 1.0;
   
   
