@@ -250,11 +250,11 @@ class NetEq {
   virtual int RemovePayloadType(uint8_t rtp_payload_type) = 0;
 
   
-  virtual void SetMaximumBufferPackets(size_t max_packets) {}
+  virtual void SetMaximumBufferPackets(size_t max_packets) = 0;
 
   
   
-  virtual void SetFastAccelerate(bool enable) {}
+  virtual void SetFastAccelerate(bool enable) = 0;
 
   
   virtual void RemoveAllPayloadTypes() = 0;
