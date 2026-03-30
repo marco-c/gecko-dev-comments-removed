@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MediaStreamTrackAudioSourceNode_h_
 #define MediaStreamTrackAudioSourceNode_h_
 
@@ -104,7 +102,7 @@ class MediaStreamTrackAudioSourceNode
 
  private:
   RefPtr<MediaInputPort> mInputPort;
-  RefPtr<MediaStreamTrack> mInputTrack;
+  RefPtr<AudioStreamTrack> mInputTrack;
   TrackListener mTrackListener;
 };
 
