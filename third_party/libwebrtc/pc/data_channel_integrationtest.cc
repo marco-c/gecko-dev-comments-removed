@@ -43,7 +43,6 @@
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/fake_clock.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/socket_address.h"
@@ -53,6 +52,7 @@
 #include "rtc_base/virtual_socket_server.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 #include "test/wait_until.h"
 
 namespace webrtc {
@@ -548,8 +548,10 @@ TEST_P(DataChannelIntegrationTest, EndToEndCallWithSctpDataChannelHarmfulMtu) {
     
     
     
-    WAIT(callee()->data_observer()->received_message_count() > message_count,
-         100);
+    callee()->data_observer()->set_on_message_callback(
+        [&](const DataBuffer&) { run_loop().Quit(); });
+    run_loop().RunFor(TimeDelta::Millis(100));
+    callee()->data_observer()->set_on_message_callback(nullptr);
     if (callee()->data_observer()->received_message_count() == message_count) {
       ASSERT_EQ(kMessageSizeThatIsNotDelivered, message_size);
       failure_seen = true;
@@ -1024,7 +1026,7 @@ TEST_P(DataChannelIntegrationTest, ClosingConnectionStopsPacketFlow) {
   ClosePeerConnections();
   
   uint32_t sent_packets_a = virtual_socket_server()->sent_packets();
-  WAIT(false, 1000);
+  run_loop().RunFor(TimeDelta::Seconds(1));
   uint32_t sent_packets_b = virtual_socket_server()->sent_packets();
   EXPECT_EQ(sent_packets_a, sent_packets_b);
 }
@@ -1268,7 +1270,7 @@ TEST_P(DataChannelIntegrationTest, QueuedPacketsGetDroppedInUnreliableMode) {
   }
   
   
-  WAIT(false, 10);
+  run_loop().RunFor(TimeDelta::Millis(10));
   EXPECT_EQ(1u, callee()->data_observer()->received_message_count());
   
   virtual_socket_server()->set_drop_probability(0.0);
@@ -1314,7 +1316,7 @@ TEST_P(DataChannelIntegrationTest,
   
   
   
-  WAIT(false, 10);
+  run_loop().RunFor(TimeDelta::Millis(10));
   EXPECT_EQ(1u, callee()->data_observer()->received_message_count());
   
   virtual_socket_server()->set_drop_probability(0.0);
@@ -1372,7 +1374,7 @@ TEST_P(DataChannelIntegrationTest,
   }
   
   
-  WAIT(false, 10);
+  run_loop().RunFor(TimeDelta::Millis(10));
   EXPECT_EQ(1u, callee()->data_observer()->received_message_count());
   
   virtual_socket_server()->set_drop_probability(0.0);

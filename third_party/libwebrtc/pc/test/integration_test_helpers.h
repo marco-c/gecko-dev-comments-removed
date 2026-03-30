@@ -1,3 +1,4 @@
+#include "test/run_loop.h"
 
 
 
@@ -1893,6 +1894,8 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
  protected:
   void OverrideLoggingLevelForTest(LoggingSeverity new_severity);
 
+  test::RunLoop& run_loop() { return run_loop_; }
+
   SdpSemantics sdp_semantics_;
   const Environment env_;
 
@@ -1903,7 +1906,8 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
   class ScopedSetLoggingLevel;
   std::unique_ptr<ScopedSetLoggingLevel> overridden_logging_level_;
 
-  AutoThread main_thread_;  
+  
+  test::RunLoop run_loop_;
   
   std::unique_ptr<VirtualSocketServer> ss_;
   std::unique_ptr<FirewallSocketServer> fss_;

@@ -16,14 +16,6 @@
 #include "test/gtest.h"       
 
 
-#define WAIT(ex, timeout)                                                 \
-  for (int64_t wait_start = ::webrtc::SystemTimeMillis();                 \
-       !(ex) && ::webrtc::SystemTimeMillis() < wait_start + (timeout);) { \
-    ::webrtc::Thread::Current()->ProcessMessages(0);                      \
-    ::webrtc::Thread::Current()->SleepMs(1);                              \
-  }
-
-
 
 
 #define SIMULATED_WAIT(ex, timeout, clock)                          \

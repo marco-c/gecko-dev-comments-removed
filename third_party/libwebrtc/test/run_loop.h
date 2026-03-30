@@ -13,14 +13,18 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "api/scoped_refptr.h"
+#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
 namespace test {
+
 
 
 
@@ -30,13 +34,28 @@ class RunLoop {
   RunLoop();
   ~RunLoop();
 
+  
   TaskQueueBase* task_queue();
 
+  
   void Run();
+
+  
+  
   void Quit();
 
+  
+  absl::AnyInvocable<void()> QuitClosure();
+
+  
+  
+  void RunFor(TimeDelta max_wait_duration);
+
+  
+  
   void Flush();
 
+  
   void PostTask(absl::AnyInvocable<void() &&> task) {
     task_queue()->PostTask(std::move(task));
   }
@@ -67,8 +86,10 @@ class RunLoop {
     CurrentTaskQueueSetter tq_setter_;
   };
 
+  scoped_refptr<PendingTaskSafetyFlag> run_for_flag_ = nullptr;
   FakeSocketServer socket_server_;
   WorkerThread worker_thread_{&socket_server_};
+  WeakPtrFactory<RunLoop> weak_factory_;
 };
 
 }  

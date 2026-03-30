@@ -701,7 +701,8 @@ class PortTest : public ::testing::Test {
                           {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
                 IsRtcOk());  
     ch1->Ping();
-    WAIT(!ch2->remote_address().IsNil(), kShortTimeout);
+    EXPECT_TRUE(WaitUntil([&] { return !ch2->remote_address().IsNil(); },
+                          {.timeout = TimeDelta::Millis(kShortTimeout)}));
 
     
     ch2->AcceptConnection(GetCandidate(ch1->port()));
