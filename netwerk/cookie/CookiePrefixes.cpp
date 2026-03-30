@@ -15,17 +15,26 @@ struct CookiePrefix {
   std::function<bool(const CookieStruct&, bool)> mCallback;
 };
 
+
+
+
+
+
+
+
+
 MOZ_RUNINIT CookiePrefix gCookiePrefixes[] = {
-    {CookiePrefixes::eSecure, "__Secure-"_ns, u"__Secure-"_ns,
+    {CookiePrefixes::eHostHttp, "__Host-Http-"_ns, u"__Host-Http-"_ns,
      [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
        
        
-       return aSecureRequest && aCookieData.isSecure();
+       return aSecureRequest && aCookieData.isSecure() &&
+              aCookieData.isHttpOnly() && aCookieData.host()[0] != '.' &&
+              aCookieData.path().EqualsLiteral("/");
      }},
 
     {CookiePrefixes::eHost, "__Host-"_ns, u"__Host-"_ns,
      [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
-       
        
        
        return aSecureRequest && aCookieData.isSecure() &&
@@ -36,21 +45,14 @@ MOZ_RUNINIT CookiePrefix gCookiePrefixes[] = {
     {CookiePrefixes::eHttp, "__Http-"_ns, u"__Http-"_ns,
      [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
        
-       
-       
        return aSecureRequest && aCookieData.isSecure() &&
               aCookieData.isHttpOnly();
      }},
 
-    {CookiePrefixes::eHostHttp, "__Host-Http-"_ns, u"__Host-Http-"_ns,
+    {CookiePrefixes::eSecure, "__Secure-"_ns, u"__Secure-"_ns,
      [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
        
-       
-       
-       
-       return aSecureRequest && aCookieData.isSecure() &&
-              aCookieData.isHttpOnly() && aCookieData.host()[0] != '.' &&
-              aCookieData.path().EqualsLiteral("/");
+       return aSecureRequest && aCookieData.isSecure();
      }},
 };
 
@@ -83,6 +85,9 @@ bool CookiePrefixes::Has(const nsACString& aString) {
 
 bool CookiePrefixes::Check(const CookieStruct& aCookieData,
                            bool aSecureRequest) {
+  
+  
+  
   for (CookiePrefix& prefix : gCookiePrefixes) {
     if (StringBeginsWith(aCookieData.name(), prefix.mPrefixCString,
                          nsCaseInsensitiveCStringComparator)) {
