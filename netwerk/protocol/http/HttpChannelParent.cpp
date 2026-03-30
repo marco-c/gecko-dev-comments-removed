@@ -272,11 +272,14 @@ void HttpChannelParent::CleanupBackgroundChannel() {
 
     
     
-    nsCOMPtr<nsIBackgroundChannelRegistrar> registrar =
-        BackgroundChannelRegistrar::GetOrCreate();
+    
+    
+    RefPtr<BackgroundChannelRegistrar> registrar =
+        do_QueryObject(BackgroundChannelRegistrar::GetOrCreate());
     MOZ_ASSERT(registrar);
-
-    registrar->DeleteChannel(mChannel->ChannelId());
+    if (registrar) {
+      registrar->DeleteChannelIfMatches(mChannel->ChannelId(), this);
+    }
 
     
     
@@ -977,6 +980,11 @@ HttpChannelParent::ContinueVerification(
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
 
+  if (mIPCClosed) {
+    aCallback->ReadyToVerify(NS_ERROR_FAILURE);
+    return NS_OK;
+  }
+
   
   if (mBgParent) {
     aCallback->ReadyToVerify(NS_OK);
@@ -1214,20 +1222,12 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (httpChannelImpl) {
     httpChannelImpl->IsFromCache(&args.isFromCache());
     httpChannelImpl->GetCacheDisposition(&args.cacheDisposition());
-    httpChannelImpl->IsRacing(&args.isRacing());
     httpChannelImpl->GetCacheEntryId(&args.cacheEntryId());
     httpChannelImpl->GetCacheTokenFetchCount(&args.cacheFetchCount());
     httpChannelImpl->GetCacheTokenExpirationTime(&args.cacheExpirationTime());
     httpChannelImpl->GetProtocolVersion(args.protocolVersion());
 
     mDataSentToChildProcess = httpChannelImpl->DataSentToChildProcess();
-
-    
-    
-    if (args.isRacing()) {
-      mDataSentToChildProcess =
-          httpChannelImpl->DataSentToChildProcess() && !args.isFromCache();
-    }
     args.dataFromSocketProcess() = mDataSentToChildProcess;
   }
 
