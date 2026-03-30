@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGElement.h"
 
 #include <stdarg.h>
@@ -267,8 +265,9 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
 
 
 void SVGElement::DidAnimateClass() {
+  auto* doc = GetComposedDoc();
   
-  if (auto* doc = GetComposedDoc()) {
+  if (doc) {
     if (auto* pc = doc->GetPresContext()) {
       pc->RestyleManager()->ClassAttributeWillBeChangedBySMIL(this);
     }
@@ -285,6 +284,13 @@ void SVGElement::DidAnimateClass() {
   UpdateSubtreeBloomFilterForClass(mClassAnimAttr.get());
   UpdateSubtreeBloomFilterForAttribute(nsGkAtoms::_class);
   PropagateBloomFilterToParents();
+
+  if (doc) {
+    if (PresShell* presShell = doc->GetPresShell()) {
+      presShell->RestyleForAnimation(this, RestyleHint::RESTYLE_SELF);
+    }
+  }
+
   DidAnimateAttribute(kNameSpaceID_None, nsGkAtoms::_class);
 }
 
