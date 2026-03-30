@@ -27,13 +27,6 @@ namespace mozilla {
 class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("mutex")
     StaticMutex {
  public:
-  
-  
-  
-#ifdef DEBUG
-  constexpr StaticMutex() { MOZ_ASSERT(!mMutex); }
-#endif
-
   void Lock() MOZ_CAPABILITY_ACQUIRE() { Mutex()->Lock(); }
 
   [[nodiscard]] bool TryLock() MOZ_TRY_ACQUIRE(true) {
@@ -47,6 +40,16 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("mutex")
     Mutex()->AssertCurrentThreadOwns();
 #endif
   }
+
+  StaticMutex() = default;
+
+  
+  
+  
+  
+#ifdef DEBUG
+  StaticMutex(StaticMutex& aOther) = delete;
+#endif
 
  private:
   OffTheBooksMutex* Mutex() {
@@ -62,15 +65,7 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("mutex")
     return mMutex;
   }
 
-  Atomic<OffTheBooksMutex*, SequentiallyConsistent> mMutex;
-
-  
-  
-  
-  
-#ifdef DEBUG
-  StaticMutex(StaticMutex& aOther);
-#endif
+  Atomic<OffTheBooksMutex*, SequentiallyConsistent> mMutex{nullptr};
 
   
   StaticMutex& operator=(StaticMutex* aRhs);

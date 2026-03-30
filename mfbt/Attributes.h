@@ -929,15 +929,6 @@
 
 
 
-#    if defined(DEBUG)
-#      define MOZ_RELEASE_CONSTINIT MOZ_RUNINIT
-#    else
-#      define MOZ_RELEASE_CONSTINIT constinit
-#    endif
-
-
-
-
 
 #    ifdef __clang__
 #      define MOZ_HEAP_ALLOCATOR                                         \

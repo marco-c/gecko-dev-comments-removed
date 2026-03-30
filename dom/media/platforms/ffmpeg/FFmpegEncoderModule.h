@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGENCODERMODULE_H_
 #define DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGENCODERMODULE_H_
 
@@ -48,7 +46,7 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
  private:
   
   const FFmpegLibWrapper* mLib;  
-  MOZ_RELEASE_CONSTINIT static inline StaticDataMutex<nsTArray<uint32_t>>
+  constinit static inline StaticDataMutex<nsTArray<uint32_t>>
       sSupportedHWCodecs{"sSupportedHWCodecs"};
 };
 

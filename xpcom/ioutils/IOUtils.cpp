@@ -299,7 +299,7 @@ static void AssertParentProcessWithCallerLocation(GlobalObject& aGlobal) {
 
 
 
-MOZ_RELEASE_CONSTINIT IOUtils::StateMutex IOUtils::sState{"IOUtils::sState"};
+constinit IOUtils::StateMutex IOUtils::sState{"IOUtils::sState"};
 
 
 template <typename Fn>
