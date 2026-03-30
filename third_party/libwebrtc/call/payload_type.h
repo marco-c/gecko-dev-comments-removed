@@ -12,7 +12,6 @@
 #define CALL_PAYLOAD_TYPE_H_
 
 #include <cstdint>
-#include <string>
 
 #include "absl/strings/string_view.h"
 #include "api/rtc_error.h"
@@ -20,6 +19,8 @@
 #include "rtc_base/strong_alias.h"
 
 namespace webrtc {
+
+class PayloadTypePicker;
 
 class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
  public:
@@ -61,6 +62,10 @@ class PayloadTypeSuggester {
   virtual RTCError AddLocalMapping(absl::string_view mid,
                                    PayloadType payload_type,
                                    const Codec& codec) = 0;
+  
+  
+  
+  virtual const PayloadTypePicker& PayloadTypePickerForTesting() const = 0;
 };
 
 }  
