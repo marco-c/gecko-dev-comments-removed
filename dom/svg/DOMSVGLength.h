@@ -130,10 +130,7 @@ class DOMSVGLength final : public nsWrapperCache {
   }
 
   
-  void UpdateListIndex(uint32_t aListIndex) {
-    MOZ_RELEASE_ASSERT(aListIndex <= MaxListIndex());
-    mListIndex = aListIndex;
-  }
+  void UpdateListIndex(uint32_t aListIndex) { mListIndex = aListIndex; }
 
   
 
