@@ -224,6 +224,22 @@ class MediaSendChannelInterface {
       const RtpParameters& parameters,
       SetParametersCallback callback = nullptr) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void SetOnRtpSendParametersChanged(
+      absl::AnyInvocable<void(std::optional<uint32_t>, const RtpParameters&)>
+          callback) = 0;
+
   virtual void SetEncoderToPacketizerFrameTransformer(
       uint32_t ssrc,
       scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
