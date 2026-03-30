@@ -288,13 +288,14 @@ ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
       mApzAnimationTriggeredByScriptRequested(false),
       mReclampVVOffsetInReflowFinished(false),
       mMayScheduleScrollAnimations(false),
+      mForceDisableOverlayScrollbars(false),
 #ifdef MOZ_WIDGET_ANDROID
       mHasVerticalOverflowForDynamicToolbar(false),
 #endif
       mVelocityQueue(PresContext()) {
   AppendScrollUpdate(ScrollPositionUpdate::NewScrollframe(nsPoint()));
 
-  if (UseOverlayScrollbars()) {
+  if (PresContext()->UseOverlayScrollbars()) {
     mScrollbarActivity = new ScrollbarActivity(this);
   }
 
@@ -1690,10 +1691,14 @@ nscoord ScrollContainerFrame::GetNonOverlayScrollbarSize(
 
 void ScrollContainerFrame::HandleScrollbarStyleSwitching() {
   
-  if (mScrollbarActivity && !UseOverlayScrollbars()) {
+  
+  
+  
+  
+  if (mScrollbarActivity && !PresContext()->UseOverlayScrollbars()) {
     mScrollbarActivity->Destroy();
     mScrollbarActivity = nullptr;
-  } else if (!mScrollbarActivity && UseOverlayScrollbars()) {
+  } else if (!mScrollbarActivity && PresContext()->UseOverlayScrollbars()) {
     mScrollbarActivity = new ScrollbarActivity(this);
   }
 }
@@ -5730,6 +5735,41 @@ void ScrollContainerFrame::DidSetComputedStyle(
         mComputedStyle);
   }
 
+  const bool disableOverlayScrollbars = [](const RefPtr<ComputedStyle>& style) {
+    
+    
+    if (!style) {
+      return false;
+    }
+    const auto webkitScrollbarWidth = style->StylePosition()->GetWidth(
+        
+        AnchorPosResolutionParams{nullptr, StylePositionProperty::Static});
+    const auto webkitScrollbarHeight = style->StylePosition()->GetHeight(
+        
+        AnchorPosResolutionParams{nullptr, StylePositionProperty::Static});
+
+    auto isNonZeroLength = [](const AnchorResolvedSize& size) {
+      
+      return size->IsLengthPercentage() &&
+             size->AsLengthPercentage().IsLength() &&
+             !size->AsLengthPercentage().AsLength().IsZero();
+    };
+
+    return isNonZeroLength(webkitScrollbarWidth) ||
+           isNonZeroLength(webkitScrollbarHeight);
+  }(mWebKitScrollbarStyle);
+
+  if (mForceDisableOverlayScrollbars != disableOverlayScrollbars) {
+    mForceDisableOverlayScrollbars = disableOverlayScrollbars;
+    MarkScrollbarsDirtyForReflow();
+
+    if (mForceDisableOverlayScrollbars) {
+      DisableOverlayScrollbars();
+    } else {
+      EnableOverlayScrollbars();
+    }
+  }
+
   if (aOldComputedStyle && !mIsRoot &&
       StyleDisplay()->mScrollSnapType !=
           aOldComputedStyle->StyleDisplay()->mScrollSnapType) {
@@ -5846,6 +5886,24 @@ void ScrollContainerFrame::ScrollbarCurPosChanged(bool aDoScroll) {
         ScrollOperationParams{ScrollMode::Instant, ScrollOrigin::Scrollbars});
   }
   
+}
+
+void ScrollContainerFrame::DisableOverlayScrollbars() {
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "ScrollContainerFrame::DisableOverlayScrollbars", [&] {
+        if (mScrollbarActivity) {
+          mScrollbarActivity->ActivityStarted();
+        }
+      }));
+}
+
+void ScrollContainerFrame::EnableOverlayScrollbars() {
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "ScrollContainerFrame::EnableOverlayScrollbars", [&] {
+        if (mScrollbarActivity) {
+          mScrollbarActivity->ActivityStopped();
+        }
+      }));
 }
 
 
@@ -7715,7 +7773,10 @@ ScrollContainerFrame::GetScrollSnapAlignFor(const nsIFrame* aFrame) const {
 }
 
 bool ScrollContainerFrame::UseOverlayScrollbars() const {
-  return PresContext()->UseOverlayScrollbars();
+  if (!PresContext()->UseOverlayScrollbars()) {
+    return false;
+  }
+  return !mForceDisableOverlayScrollbars;
 }
 
 bool ScrollContainerFrame::DragScroll(WidgetEvent* aEvent) {
