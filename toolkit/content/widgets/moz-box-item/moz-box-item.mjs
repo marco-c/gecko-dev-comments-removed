@@ -28,8 +28,11 @@ const NAVIGATION_DIRECTIONS = {
  * @property {string} label - Label for the button.
  * @property {string} description - Descriptive text for the button.
  * @property {string} iconSrc - The src for an optional icon shown next to the label.
+ * @property {string} supportPage - The name of the SUMO support page to link to.
  * @property {"default"|"medium-icon"|"large-icon"} layout - Layout style for the box content.
  * @slot default - Slot for the box item's content, which overrides label and description.
+ * @slot support-link - Slot for custom support link element.
+ * @slot description - Slot for custom description content.
  * @slot actions - Slot for the actions positioned at the end of the component container.
  * @slot actions-start - Slot for the actions positioned at the start of the component container.
  */
@@ -39,6 +42,8 @@ export default class MozBoxItem extends MozBoxBase {
   static properties = {
     layout: { type: String, reflect: true },
     supportPage: { type: String, attribute: "support-page" },
+    _hasSlottedSupportLink: { type: Boolean, state: true },
+    _hasSlottedDescription: { type: Boolean, state: true },
   };
 
   static queries = {
@@ -51,7 +56,26 @@ export default class MozBoxItem extends MozBoxBase {
   constructor() {
     super();
     this.layout = "default";
+    this._hasSlottedDescription = false;
     this.addEventListener("keydown", e => this.handleKeydown(e));
+  }
+
+  get hasSupportPage() {
+    return this.supportPage || this._hasSlottedSupportLink;
+  }
+
+  get hasDescription() {
+    return this.description || this._hasSlottedDescription;
+  }
+
+  /** @param {Event} e */
+  checkSlottedSupportLink(e) {
+    this._hasSlottedSupportLink = !!e.target?.assignedNodes()?.length;
+  }
+
+  /** @param {Event} e */
+  checkSlottedDescription(e) {
+    this._hasSlottedDescription = !!e.target?.assignedNodes()?.length;
   }
 
   firstUpdated() {
@@ -61,15 +85,13 @@ export default class MozBoxItem extends MozBoxBase {
   handleKeydown(event) {
     let isHandleEvent = event.originalTarget === this.handleEl;
 
-    if (
-      !isHandleEvent &&
-      event.target?.slot !== "actions" &&
-      event.target?.slot !== "actions-start"
-    ) {
+    // Find which action element the event came from
+    let target = isHandleEvent
+      ? this.handleEl
+      : this.#actionEls.find(el => el.contains(event.target));
+    if (!target) {
       return;
     }
-
-    let target = isHandleEvent ? event.originalTarget : event.target;
 
     let directions = this.getNavigationDirections();
     switch (event.key) {
@@ -160,31 +182,37 @@ export default class MozBoxItem extends MozBoxBase {
     `;
   }
 
-  textTemplate() {
-    if (this.supportPage) {
-      return this.supportTextTemplate();
+  descriptionTemplate() {
+    if (!this.description) {
+      return html`<slot
+        class="description text-deemphasized"
+        id="description"
+        name="description"
+        @slotchange=${this.checkSlottedDescription}
+      ></slot>`;
     }
-    return super.textTemplate();
+    return html`<span class="description text-deemphasized" id="description"
+      >${this.description}</span
+    >`;
   }
 
-  supportTextTemplate() {
+  textTemplate() {
     return html`<div
       class=${classMap({
         "text-content": true,
         "has-icon": this.iconSrc,
-        "has-description": this.description,
-        "has-support-page": this.supportPage,
+        "has-description": this.hasDescription,
+        "has-support-page": this.hasSupportPage,
       })}
     >
+      ${this.iconTemplate()}
       <span class="label-wrapper">
-        ${this.iconTemplate()}<span>
-          ${this.labelTemplate()}${!this.description
-            ? this.supportPageTemplate()
-            : ""}
-        </span>
+        ${this.labelTemplate()}${!this.hasDescription
+          ? this.supportPageTemplate()
+          : ""}
       </span>
       <span class="description-wrapper">
-        ${this.descriptionTemplate()}${this.description
+        ${this.descriptionTemplate()}${this.hasDescription
           ? this.supportPageTemplate()
           : ""}
       </span>
@@ -201,7 +229,11 @@ export default class MozBoxItem extends MozBoxBase {
         aria-describedby=${this.description ? "description" : "label"}
       ></a>`;
     }
-    return "";
+    return html`<slot
+      name="support-link"
+      class="support-page"
+      @slotchange=${this.checkSlottedSupportLink}
+    ></slot>`;
   }
 
   render() {
