@@ -729,6 +729,10 @@ RTCError UpdateSimulcastLayerStatusInSender(
     const std::vector<SimulcastLayer>& layers,
     scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
+  
+  
+  
+  
   RtpParameters parameters = sender->GetParametersInternalWithAllLayers();
   std::vector<std::string> disabled_layers;
 
