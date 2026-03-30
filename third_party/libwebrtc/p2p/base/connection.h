@@ -412,6 +412,8 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
     NotifyNominated(connection);
   }
 
+  bool set_writable_for_fake_ice_lite() const;
+
  protected:
   
   class ConnectionRequest;
