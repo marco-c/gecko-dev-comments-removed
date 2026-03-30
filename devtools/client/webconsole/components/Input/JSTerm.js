@@ -138,6 +138,7 @@ class JSTerm extends Component {
 
   
   #abortController = null;
+  #destroyed = false;
 
   constructor(props) {
     super(props);
@@ -705,7 +706,11 @@ class JSTerm extends Component {
 
     if (nextProps.editorMode !== this.props.editorMode) {
       if (this.editor) {
-        if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+        if (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+          nextProps.editorMode
+            ? this.editor.enableGutter()
+            : this.editor.disableGutter();
+        } else {
           this.editor.setOption("lineNumbers", nextProps.editorMode);
           this.editor.setOption("enableCodeFolding", nextProps.editorMode);
         }
@@ -1065,6 +1070,13 @@ class JSTerm extends Component {
           (this.props.autocomplete || this.hasAutocompletionSuggestion())
         ) {
           const variables = await this.editor.getExpressionVariables();
+
+          
+          
+          if (this.#destroyed) {
+            return;
+          }
+
           this.autocompleteUpdate(false, null, variables);
         }
       }
@@ -1579,6 +1591,7 @@ class JSTerm extends Component {
     }
 
     this.webConsoleUI = null;
+    this.#destroyed = true;
   }
 
   renderOpenEditorButton() {
