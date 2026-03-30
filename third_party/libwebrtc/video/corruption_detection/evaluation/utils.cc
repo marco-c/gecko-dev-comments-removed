@@ -10,7 +10,6 @@
 
 #include "video/corruption_detection/evaluation/utils.h"
 
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -33,7 +32,7 @@ constexpr char kFrameHeader[] = "FRAME\n";
 
 
 
-constexpr int kHeaderBytesToRead = 30;
+constexpr int kHeaderBytesToRead = 40;
 
 }  
 
@@ -92,7 +91,7 @@ Y4mMetadata ReadMetadataFromY4mHeader(absl::string_view clip_path) {
   int fps_denominator;
   int width;
   int height;
-  RTC_CHECK_EQ(sscanf(header, "YUV4MPEG2 W%u H%u F%i:%i", &width, &height,
+  RTC_CHECK_EQ(sscanf(header, "YUV4MPEG2 W%u H%u F%u:%u", &width, &height,
                       &fps_numerator, &fps_denominator),
                4);
   RTC_CHECK_NE(fps_denominator, 0);
