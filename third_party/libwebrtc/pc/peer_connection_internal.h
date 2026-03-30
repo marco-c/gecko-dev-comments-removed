@@ -38,7 +38,6 @@
 #include "call/payload_type_picker.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
-#include "pc/channel_interface.h"
 #include "pc/data_channel_utils.h"
 #include "pc/jsep_transport_controller.h"
 #include "pc/peer_connection_message_handler.h"
@@ -139,14 +138,6 @@ class PeerConnectionSdpMethods {
                         .remote_port = remote_port,
                         .max_message_size = max_message_size});
   }
-
-  
-  
-  
-  
-  
-  
-  virtual void OnTransportChanging(bool change_done) = 0;
 
   
   virtual void AddRemoteCandidate(absl::string_view mid,

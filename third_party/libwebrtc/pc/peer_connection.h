@@ -391,11 +391,6 @@ class PeerConnection : public PeerConnectionInternal,
                           const Candidate& candidate) override;
 
   
-  
-  
-  void OnTransportChanging(bool change_done) override;
-
-  
   void ReportSdpBundleUsage(
       const SessionDescriptionInterface& remote_description) override;
 
@@ -744,15 +739,6 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_GUARDED_BY(network_thread());
   JsepTransportController* transport_controller_copy_
       RTC_GUARDED_BY(signaling_thread()) = nullptr;
-
-  
-  
-  
-  
-  
-  
-  std::vector<ChannelInterface*> negotiated_channels_
-      RTC_GUARDED_BY(network_thread());
 
   
   std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
