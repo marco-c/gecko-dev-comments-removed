@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ImageDecoder.h"
 
 #include <algorithm>
@@ -1047,6 +1045,7 @@ void ImageDecoder::Reset(const MediaResult& aResult) {
 }
 
 void ImageDecoder::Close(const MediaResult& aResult) {
+  RefPtr<ImageDecoder> kungFuDeathGrip(this);
   MOZ_LOG(gWebCodecsLog, LogLevel::Debug, ("ImageDecoder %p Close", this));
 
   
