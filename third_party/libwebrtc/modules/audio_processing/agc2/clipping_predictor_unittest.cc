@@ -174,13 +174,15 @@ class ClippingPredictorParameterization
   int num_channels() const { return std::get<0>(GetParam()); }
   ClippingPredictorConfig GetConfig(ClippingPredictorMode mode) const {
     
-    return {true,
-            mode,
-            std::get<1>(GetParam()),
-            std::get<2>(GetParam()),
-            std::get<3>(GetParam()),
-            -1.0f,
-            0.5f};
+    return {.enabled = true,
+            .mode = mode,
+            .window_length = std::get<1>(GetParam()),
+            .reference_window_length =
+                std::get<2>(GetParam()),
+            .reference_window_delay =
+                std::get<3>(GetParam()),
+            .clipping_threshold = -1.0f,
+            .crest_factor_margin = 0.5f};
   }
 };
 
@@ -291,13 +293,14 @@ class ClippingEventPredictorParameterization
  protected:
   ClippingPredictorConfig GetConfig() const {
     
-    return {true,
-            ClippingPredictorMode::kClippingEventPrediction,
-            5,
-            5,
-            5,
-            std::get<0>(GetParam()),
-            std::get<1>(GetParam())};
+    return {
+        .enabled = true,
+        .mode = ClippingPredictorMode::kClippingEventPrediction,
+        .window_length = 5,
+        .reference_window_length = 5,
+        .reference_window_delay = 5,
+        .clipping_threshold = std::get<0>(GetParam()),
+        .crest_factor_margin = std::get<1>(GetParam())};
   }
 };
 
@@ -337,13 +340,14 @@ class ClippingPredictorModeParameterization
  protected:
   ClippingPredictorConfig GetConfig(float clipping_threshold_dbfs) const {
     
-    return {true,
-            GetParam(),
-            5,
-            5,
-            5,
-            clipping_threshold_dbfs,
-            3.0f};
+    return {
+        .enabled = true,
+        .mode = GetParam(),
+        .window_length = 5,
+        .reference_window_length = 5,
+        .reference_window_delay = 5,
+        .clipping_threshold = clipping_threshold_dbfs,
+        .crest_factor_margin = 3.0f};
   }
 };
 
@@ -400,13 +404,13 @@ INSTANTIATE_TEST_SUITE_P(
 TEST(ClippingEventPredictorTest, CheckEstimateAfterReset) {
   
   constexpr ClippingPredictorConfig kConfig{
-      true,
-      ClippingPredictorMode::kClippingEventPrediction,
-      5,
-      5,
-      5,
-      -1.0f,
-      3.0f};
+      .enabled = true,
+      .mode = ClippingPredictorMode::kClippingEventPrediction,
+      .window_length = 5,
+      .reference_window_length = 5,
+      .reference_window_delay = 5,
+      .clipping_threshold = -1.0f,
+      .crest_factor_margin = 3.0f};
   auto predictor = CreateClippingPredictor(kNumChannels, kConfig);
   AnalyzeNonZeroCrestFactorAudio(kConfig.reference_window_length,
                                  kNumChannels,
@@ -425,12 +429,13 @@ TEST(ClippingEventPredictorTest, CheckEstimateAfterReset) {
 TEST(ClippingPeakPredictorTest, CheckNoEstimateAfterReset) {
   
   constexpr ClippingPredictorConfig kConfig{
-      true,
-      ClippingPredictorMode::kAdaptiveStepClippingPeakPrediction,
-      5,
-      5,
-      5,
-      -1.0f};
+      .enabled = true,
+      .mode =
+          ClippingPredictorMode::kAdaptiveStepClippingPeakPrediction,
+      .window_length = 5,
+      .reference_window_length = 5,
+      .reference_window_delay = 5,
+      .clipping_threshold = -1.0f};
   auto predictor = CreateClippingPredictor(kNumChannels, kConfig);
   AnalyzeNonZeroCrestFactorAudio(kConfig.reference_window_length,
                                  kNumChannels,
@@ -449,12 +454,13 @@ TEST(ClippingPeakPredictorTest, CheckNoEstimateAfterReset) {
 TEST(ClippingPeakPredictorTest, CheckAdaptiveStepEstimate) {
   
   constexpr ClippingPredictorConfig kConfig{
-      true,
-      ClippingPredictorMode::kAdaptiveStepClippingPeakPrediction,
-      5,
-      5,
-      5,
-      -1.0f};
+      .enabled = true,
+      .mode =
+          ClippingPredictorMode::kAdaptiveStepClippingPeakPrediction,
+      .window_length = 5,
+      .reference_window_length = 5,
+      .reference_window_delay = 5,
+      .clipping_threshold = -1.0f};
   auto predictor = CreateClippingPredictor(kNumChannels, kConfig);
   AnalyzeNonZeroCrestFactorAudio(kConfig.reference_window_length,
                                  kNumChannels, 0.99f,
@@ -472,12 +478,12 @@ TEST(ClippingPeakPredictorTest, CheckAdaptiveStepEstimate) {
 TEST(ClippingPeakPredictorTest, CheckFixedStepEstimate) {
   
   constexpr ClippingPredictorConfig kConfig{
-      true,
-      ClippingPredictorMode::kFixedStepClippingPeakPrediction,
-      5,
-      5,
-      5,
-      -1.0f};
+      .enabled = true,
+      .mode = ClippingPredictorMode::kFixedStepClippingPeakPrediction,
+      .window_length = 5,
+      .reference_window_length = 5,
+      .reference_window_delay = 5,
+      .clipping_threshold = -1.0f};
   auto predictor = CreateClippingPredictor(kNumChannels, kConfig);
   AnalyzeNonZeroCrestFactorAudio(kConfig.reference_window_length,
                                  kNumChannels, 0.99f,

@@ -21,8 +21,8 @@
 #include "api/environment/environment.h"
 #include "api/neteq/neteq.h"
 #include "api/rtp_headers.h"
-#include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 
@@ -40,8 +40,8 @@ class NetEqDecodingTest : public ::testing::Test {
   static constexpr int kInitSampleRateHz = 8000;
 
   NetEqDecodingTest();
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
   void OpenInputFile(absl::string_view rtp_file);
   void Process();
 
@@ -76,7 +76,7 @@ class NetEqDecodingTest : public ::testing::Test {
   std::unique_ptr<NetEq> neteq_;
   NetEq::Config config_;
   std::unique_ptr<test::RtpFileSource> rtp_source_;
-  std::unique_ptr<test::Packet> packet_;
+  std::unique_ptr<RtpPacketReceived> packet_;
   AudioFrame out_frame_;
   int output_sample_rate_;
   int algorithmic_delay_ms_;

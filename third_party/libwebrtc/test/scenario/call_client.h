@@ -83,7 +83,7 @@ class LoggingNetworkControllerFactory
   LoggingNetworkControllerFactory(LogWriterFactoryInterface* log_writer_factory,
                                   TransportControllerConfig config);
 
-  ~LoggingNetworkControllerFactory();
+  ~LoggingNetworkControllerFactory() override;
 
   LoggingNetworkControllerFactory(const LoggingNetworkControllerFactory&) =
       delete;
@@ -120,7 +120,7 @@ class CallClient : public EmulatedNetworkReceiverInterface {
              std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
              CallClientConfig config);
 
-  ~CallClient();
+  ~CallClient() override;
 
   CallClient(const CallClient&) = delete;
   CallClient& operator=(const CallClient&) = delete;
@@ -131,7 +131,6 @@ class CallClient : public EmulatedNetworkReceiverInterface {
     return DataRate::BitsPerSec(GetStats().send_bandwidth_bps);
   }
   DataRate target_rate() const;
-  DataRate stable_target_rate() const;
   DataRate padding_rate() const;
   void UpdateBitrateConstraints(const BitrateConstraints& constraints);
   void SetRemoteBitrate(DataRate bitrate);

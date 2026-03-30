@@ -197,7 +197,7 @@ bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
   
   
   
-  sources->push_back({source_id_});
+  sources->push_back({.id = source_id_});
   return true;
 }
 

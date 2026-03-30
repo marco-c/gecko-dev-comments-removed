@@ -341,7 +341,7 @@ struct MediaSenderInfo {
     return retval;
   }
   
-  bool connected() const { return local_stats.size() > 0; }
+  bool connected() const { return !local_stats.empty(); }
   
   
   
@@ -407,7 +407,7 @@ struct MediaReceiverInfo {
     return retval;
   }
   
-  bool connected() const { return local_stats.size() > 0; }
+  bool connected() const { return !local_stats.empty(); }
   
   
   

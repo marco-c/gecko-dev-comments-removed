@@ -96,12 +96,10 @@ class AudioBuffer {
   
   
   const float* const* split_bands_const(size_t channel) const {
-    return split_data_.get() ? split_data_->bands(channel)
-                             : data_->bands(channel);
+    return split_data_ ? split_data_->bands(channel) : data_->bands(channel);
   }
   float* const* split_bands(size_t channel) {
-    return split_data_.get() ? split_data_->bands(channel)
-                             : data_->bands(channel);
+    return split_data_ ? split_data_->bands(channel) : data_->bands(channel);
   }
 
   
@@ -112,7 +110,7 @@ class AudioBuffer {
   
   
   const float* const* split_channels_const(Band band) const {
-    if (split_data_.get()) {
+    if (split_data_) {
       return split_data_->channels(band);
     } else {
       return band == kBand0To8kHz ? data_->channels() : nullptr;

@@ -91,7 +91,9 @@ std::vector<Cluster> CalculateFrameClusters(
       ++clusters.back().number_of_repeated_frames;
     } else {
       
-      clusters.push_back({index,  1});
+      clusters.push_back(
+          {.index = index,
+            .number_of_repeated_frames = 1});
     }
   }
 

@@ -159,7 +159,7 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   FakeAudioCaptureModule();
   
   
-  virtual ~FakeAudioCaptureModule();
+  ~FakeAudioCaptureModule() override;
 
  private:
   

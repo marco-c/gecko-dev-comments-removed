@@ -234,7 +234,7 @@ struct RTC_EXPORT RtpCodec {
 
 struct RTC_EXPORT RtpCodecCapability : public RtpCodec {
   RtpCodecCapability();
-  virtual ~RtpCodecCapability();
+  ~RtpCodecCapability() override;
 
   
   
@@ -647,7 +647,7 @@ struct RTC_EXPORT RtpEncodingParameters {
 struct RTC_EXPORT RtpCodecParameters : public RtpCodec {
   RtpCodecParameters();
   RtpCodecParameters(const RtpCodecParameters&);
-  virtual ~RtpCodecParameters();
+  ~RtpCodecParameters() override;
 
   
   

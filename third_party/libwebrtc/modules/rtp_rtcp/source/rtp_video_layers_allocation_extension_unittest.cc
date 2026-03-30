@@ -53,22 +53,24 @@ TEST(RtpVideoLayersAllocationExtension,
   written_allocation.rtp_stream_index = 1;
   written_allocation.active_spatial_layers = {
       {
-           0,
-           0,
+           .rtp_stream_index = 0,
+           .spatial_id = 0,
           
-          {DataRate::KilobitsPerSec(25), DataRate::KilobitsPerSec(50)},
-           0,
-           0,
-           0,
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(25),
+                                                DataRate::KilobitsPerSec(50)},
+           .width = 0,
+           .height = 0,
+           .frame_rate_fps = 0,
       },
       {
-           1,
-           0,
+           .rtp_stream_index = 1,
+           .spatial_id = 0,
           
-          {DataRate::KilobitsPerSec(100), DataRate::KilobitsPerSec(200)},
-           0,
-           0,
-           0,
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(100),
+                                                DataRate::KilobitsPerSec(200)},
+           .width = 0,
+           .height = 0,
+           .frame_rate_fps = 0,
       },
   };
   Buffer buffer = Buffer::CreateUninitializedWithSize(
@@ -86,24 +88,27 @@ TEST(RtpVideoLayersAllocationExtension,
   VideoLayersAllocation written_allocation;
   written_allocation.rtp_stream_index = 1;
   written_allocation.active_spatial_layers = {
-      { 0,
-        0,
-        {DataRate::KilobitsPerSec(50)},
-        0,
-        0,
-        0},
-      { 1,
-        0,
-        {DataRate::KilobitsPerSec(100)},
-        0,
-        0,
-        0},
-      { 1,
-        1,
-        {DataRate::KilobitsPerSec(200)},
-        0,
-        0,
-        0},
+      { .rtp_stream_index = 0,
+        .spatial_id = 0,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(50)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
+      { .rtp_stream_index = 1,
+        .spatial_id = 0,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(100)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
+      { .rtp_stream_index = 1,
+        .spatial_id = 1,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(200)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
   };
   Buffer buffer = Buffer::CreateUninitializedWithSize(
       RtpVideoLayersAllocationExtension::ValueSize(written_allocation));
@@ -120,18 +125,20 @@ TEST(RtpVideoLayersAllocationExtension,
   VideoLayersAllocation written_allocation;
   written_allocation.rtp_stream_index = 1;
   written_allocation.active_spatial_layers = {
-      { 0,
-        0,
-        {DataRate::KilobitsPerSec(50)},
-        0,
-        0,
-        0},
-      { 1,
-        1,
-        {DataRate::KilobitsPerSec(200)},
-        0,
-        0,
-        0},
+      { .rtp_stream_index = 0,
+        .spatial_id = 0,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(50)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
+      { .rtp_stream_index = 1,
+        .spatial_id = 1,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(200)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
   };
   Buffer buffer = Buffer::CreateUninitializedWithSize(
       RtpVideoLayersAllocationExtension::ValueSize(written_allocation));
@@ -148,18 +155,20 @@ TEST(RtpVideoLayersAllocationExtension,
   VideoLayersAllocation written_allocation;
   written_allocation.rtp_stream_index = 2;
   written_allocation.active_spatial_layers = {
-      { 0,
-        0,
-        {DataRate::KilobitsPerSec(50)},
-        0,
-        0,
-        0},
-      { 2,
-        0,
-        {DataRate::KilobitsPerSec(200)},
-        0,
-        0,
-        0},
+      { .rtp_stream_index = 0,
+        .spatial_id = 0,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(50)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
+      { .rtp_stream_index = 2,
+        .spatial_id = 0,
+       
+       .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(200)},
+        .width = 0,
+        .height = 0,
+        .frame_rate_fps = 0},
   };
   Buffer buffer = Buffer::CreateUninitializedWithSize(
       RtpVideoLayersAllocationExtension::ValueSize(written_allocation));
@@ -177,21 +186,23 @@ TEST(RtpVideoLayersAllocationExtension,
   written_allocation.rtp_stream_index = 1;
   written_allocation.active_spatial_layers = {
       {
-           0,
-           0,
+           .rtp_stream_index = 0,
+           .spatial_id = 0,
           
-          {DataRate::KilobitsPerSec(25), DataRate::KilobitsPerSec(50)},
-           0,
-           0,
-           0,
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(25),
+                                                DataRate::KilobitsPerSec(50)},
+           .width = 0,
+           .height = 0,
+           .frame_rate_fps = 0,
       },
       {
-           1,
-           0,
-           {DataRate::KilobitsPerSec(100)},
-           0,
-           0,
-           0,
+           .rtp_stream_index = 1,
+           .spatial_id = 0,
+          
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(100)},
+           .width = 0,
+           .height = 0,
+           .frame_rate_fps = 0,
       },
   };
   Buffer buffer = Buffer::CreateUninitializedWithSize(
@@ -211,22 +222,24 @@ TEST(RtpVideoLayersAllocationExtension,
   written_allocation.resolution_and_frame_rate_is_valid = true;
   written_allocation.active_spatial_layers = {
       {
-           0,
-           0,
+           .rtp_stream_index = 0,
+           .spatial_id = 0,
           
-          {DataRate::KilobitsPerSec(25), DataRate::KilobitsPerSec(50)},
-           320,
-           240,
-           8,
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(25),
+                                                DataRate::KilobitsPerSec(50)},
+           .width = 320,
+           .height = 240,
+           .frame_rate_fps = 8,
       },
       {
-           1,
-           1,
+           .rtp_stream_index = 1,
+           .spatial_id = 1,
           
-          {DataRate::KilobitsPerSec(100), DataRate::KilobitsPerSec(200)},
-           640,
-           320,
-           30,
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(100),
+                                                DataRate::KilobitsPerSec(200)},
+           .width = 640,
+           .height = 320,
+           .frame_rate_fps = 30,
       },
   };
 
@@ -263,13 +276,14 @@ TEST(RtpVideoLayersAllocationExtension, DiscardsInvalidHeight) {
   written_allocation.resolution_and_frame_rate_is_valid = true;
   written_allocation.active_spatial_layers = {
       {
-           0,
-           0,
+           .rtp_stream_index = 0,
+           .spatial_id = 0,
           
-          {DataRate::KilobitsPerSec(25), DataRate::KilobitsPerSec(50)},
-           320,
-           240,
-           8,
+          .target_bitrate_per_temporal_layer = {DataRate::KilobitsPerSec(25),
+                                                DataRate::KilobitsPerSec(50)},
+           .width = 320,
+           .height = 240,
+           .frame_rate_fps = 8,
       },
   };
   Buffer buffer = Buffer::CreateUninitializedWithSize(

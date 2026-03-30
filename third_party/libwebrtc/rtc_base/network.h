@@ -71,7 +71,6 @@ std::string MakeNetworkKey(absl::string_view name,
 
 
 RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
-RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
 
 class DefaultLocalAddressProvider {
  public:
@@ -535,7 +534,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
       SocketFactory* absl_nonnull socket_factory,
       NetworkMonitorFactory* absl_nullable network_monitor_factory = nullptr);
 
-  ~BasicNetworkManager();
+  ~BasicNetworkManager() override;
 
   void StartUpdating() override;
   void StopUpdating() override;

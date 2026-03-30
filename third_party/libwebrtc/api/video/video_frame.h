@@ -257,7 +257,8 @@ class RTC_EXPORT VideoFrame {
   
   
   UpdateRect update_rect() const {
-    return update_rect_.value_or(UpdateRect{0, 0, width(), height()});
+    return update_rect_.value_or(UpdateRect{
+        .offset_x = 0, .offset_y = 0, .width = width(), .height = height()});
   }
 
   

@@ -69,10 +69,13 @@ class RtcEventAlrState final : public RtcEvent {
   static constexpr RtcEventDefinition<RtcEventAlrState,
                                       LoggedAlrStateEvent,
                                       bool>
-      definition_{{"AlrState", RtcEventAlrState::kType},
-                  {&RtcEventAlrState::in_alr_,
-                   &LoggedAlrStateEvent::in_alr,
-                   {"in_alr", 1, FieldType::kFixed8, 1}}};
+      definition_{{.name = "AlrState", .id = RtcEventAlrState::kType},
+                  {.event_member = &RtcEventAlrState::in_alr_,
+                   .logged_member = &LoggedAlrStateEvent::in_alr,
+                   .params = {.name = "in_alr",
+                              .field_id = 1,
+                              .field_type = FieldType::kFixed8,
+                              .value_width = 1}}};
 };
 
 }  

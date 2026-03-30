@@ -10,7 +10,7 @@
 
 #include "rtc_base/event_tracer.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "api/units/time_delta.h"
 #include "rtc_base/trace_event.h"
@@ -19,11 +19,10 @@
 #include "rtc_base/trace_categories.h"
 #include "third_party/perfetto/include/perfetto/tracing/tracing.h"
 #else
-#include <inttypes.h>
-#include <stdint.h>
-#include <string.h>
-
 #include <atomic>
+#include <cinttypes>
+#include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -146,8 +145,13 @@ class EventLogger final {
       }
     }
     MutexLock lock(&mutex_);
-    trace_events_.push_back(
-        {name, category_enabled, phase, args, timestamp, 1, thread_id});
+    trace_events_.push_back({.name = name,
+                             .category_enabled = category_enabled,
+                             .phase = phase,
+                             .args = args,
+                             .timestamp = timestamp,
+                             .pid = 1,
+                             .tid = thread_id});
   }
 
   

@@ -400,25 +400,32 @@ TEST(FecControllerPlrBasedTest, SingleThresholdCurveForEnablingAndDisabling) {
   };
 
   std::vector<NetworkState> below{
-      {kBandwidthLow - 1, kPacketLossAtLowBw + 0.1f},  
-      {(kBandwidthLow + kBandwidthHigh) / 2,
-       (kPacketLossAtLowBw + kPacketLossAtHighBw) / 2 - kEpsilon},  
-      {kBandwidthHigh + 1, kPacketLossAtHighBw - kEpsilon}          
+      {.bandwidth = kBandwidthLow - 1,
+       .packet_loss = kPacketLossAtLowBw + 0.1f},  
+      {.bandwidth = (kBandwidthLow + kBandwidthHigh) / 2,
+       .packet_loss =
+           (kPacketLossAtLowBw + kPacketLossAtHighBw) / 2 - kEpsilon},  
+      {.bandwidth = kBandwidthHigh + 1,
+       .packet_loss = kPacketLossAtHighBw - kEpsilon}  
   };
 
   std::vector<NetworkState> on{
-      {kBandwidthLow, kPacketLossAtLowBw + 0.1f},  
-      {kBandwidthLow, kPacketLossAtLowBw},         
-      {(kBandwidthLow + kBandwidthHigh) / 2,
-       (kPacketLossAtLowBw + kPacketLossAtHighBw) / 2},  
-      {kBandwidthHigh, kPacketLossAtHighBw},             
-      {kBandwidthHigh + 1, kPacketLossAtHighBw},         
+      {.bandwidth = kBandwidthLow,
+       .packet_loss = kPacketLossAtLowBw + 0.1f},                       
+      {.bandwidth = kBandwidthLow, .packet_loss = kPacketLossAtLowBw},  
+      {.bandwidth = (kBandwidthLow + kBandwidthHigh) / 2,
+       .packet_loss = (kPacketLossAtLowBw + kPacketLossAtHighBw) / 2},    
+      {.bandwidth = kBandwidthHigh, .packet_loss = kPacketLossAtHighBw},  
+      {.bandwidth = kBandwidthHigh + 1,
+       .packet_loss = kPacketLossAtHighBw},  
   };
 
   std::vector<NetworkState> above{
-      {(kBandwidthLow + kBandwidthHigh) / 2,
-       (kPacketLossAtLowBw + kPacketLossAtHighBw) / 2 + kEpsilon},  
-      {kBandwidthHigh + 1, kPacketLossAtHighBw + kEpsilon},         
+      {.bandwidth = (kBandwidthLow + kBandwidthHigh) / 2,
+       .packet_loss =
+           (kPacketLossAtLowBw + kPacketLossAtHighBw) / 2 + kEpsilon},  
+      {.bandwidth = kBandwidthHigh + 1,
+       .packet_loss = kPacketLossAtHighBw + kEpsilon},  
   };
 
   

@@ -34,7 +34,7 @@ namespace test {
 
 namespace {
 const VideoEncoder::Capabilities kCapabilities(false);
-}
+}  
 
 
 
@@ -92,7 +92,7 @@ class VideoEncoderProxyFactory : public VideoEncoderFactory {
     explicit EncoderProxy(VideoEncoder* encoder,
                           VideoEncoderProxyFactory* encoder_factory)
         : encoder_(encoder), encoder_factory_(encoder_factory) {}
-    ~EncoderProxy() { encoder_factory_->OnDestroyVideoEncoder(); }
+    ~EncoderProxy() override { encoder_factory_->OnDestroyVideoEncoder(); }
 
    private:
     void SetFecControllerOverride(

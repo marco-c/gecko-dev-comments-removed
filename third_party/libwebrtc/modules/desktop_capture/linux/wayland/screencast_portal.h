@@ -94,7 +94,7 @@ class RTC_EXPORT ScreenCastPortal
                    
                    bool prefer_cursor_embedded = false);
 
-  ~ScreenCastPortal();
+  ~ScreenCastPortal() override;
 
   
   

@@ -17,6 +17,6 @@
 
 namespace webrtc {
 void Pcm16BAppendSupportedCodecSpecs(std::vector<AudioCodecSpec>* specs);
-}
+}  
 
 #endif  

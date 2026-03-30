@@ -95,7 +95,7 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
 
   explicit RTPSenderVideo(const Config& config);
 
-  virtual ~RTPSenderVideo();
+  ~RTPSenderVideo() override;
 
   
   

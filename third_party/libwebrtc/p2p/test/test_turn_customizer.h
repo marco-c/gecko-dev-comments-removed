@@ -24,7 +24,7 @@ namespace webrtc {
 class TestTurnCustomizer : public TurnCustomizer {
  public:
   TestTurnCustomizer() {}
-  virtual ~TestTurnCustomizer() {}
+  ~TestTurnCustomizer() override {}
 
   enum TestTurnAttributeExtensions {
     
@@ -59,12 +59,5 @@ class TestTurnCustomizer : public TurnCustomizer {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::TestTurnCustomizer;
-}  
-#endif  
 
 #endif  

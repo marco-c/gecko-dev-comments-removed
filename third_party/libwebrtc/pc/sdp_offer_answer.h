@@ -80,7 +80,7 @@ namespace webrtc {
 
 class SdpOfferAnswerHandler : public SdpStateProvider {
  public:
-  ~SdpOfferAnswerHandler();
+  ~SdpOfferAnswerHandler() override;
 
   
   static std::unique_ptr<SdpOfferAnswerHandler> Create(

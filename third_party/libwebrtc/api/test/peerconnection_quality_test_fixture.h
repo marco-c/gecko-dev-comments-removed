@@ -31,7 +31,7 @@ class PeerConnectionE2EQualityTestFixture {
   
   class QualityMetricsReporter : public StatsObserverInterface {
    public:
-    virtual ~QualityMetricsReporter() = default;
+    ~QualityMetricsReporter() override = default;
 
     
     

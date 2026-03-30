@@ -11,7 +11,10 @@
 #ifndef AUDIO_DEVICE_AUDIO_DEVICE_PULSE_LINUX_H_
 #define AUDIO_DEVICE_AUDIO_DEVICE_PULSE_LINUX_H_
 
-#include <memory>
+#include <pulse/pulseaudio.h>
+
+#include <cstddef>
+#include <cstdint>
 
 #include "api/audio/audio_device.h"
 #include "api/audio/audio_device_defines.h"
@@ -28,10 +31,6 @@
 #if defined(WEBRTC_USE_X11)
 #include <X11/Xlib.h>
 #endif
-
-#include <pulse/pulseaudio.h>
-#include <stddef.h>
-#include <stdint.h>
 
 
 
@@ -108,7 +107,7 @@ namespace webrtc {
 class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
  public:
   AudioDeviceLinuxPulse();
-  virtual ~AudioDeviceLinuxPulse();
+  ~AudioDeviceLinuxPulse() override;
 
   
   int32_t ActiveAudioLayer(

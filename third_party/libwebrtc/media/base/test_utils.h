@@ -20,7 +20,7 @@
 
 namespace webrtc {
 class VideoFrame;
-}
+}  
 
 namespace webrtc {
 
@@ -53,15 +53,5 @@ StreamParams CreatePrimaryWithFecFrStreamParams(const std::string& cname,
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CreatePrimaryWithFecFrStreamParams;
-using ::webrtc::CreateSimStreamParams;
-using ::webrtc::CreateSimWithRtxStreamParams;
-using ::webrtc::MakeVector;
-}  
-#endif  
 
 #endif  
