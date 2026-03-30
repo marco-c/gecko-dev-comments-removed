@@ -128,7 +128,7 @@ GainController2::GainController2(
   if (config.input_volume_controller.enabled) {
     
     input_volume_controller_ = std::make_unique<InputVolumeController>(
-        num_channels, input_volume_controller_config);
+        num_channels, input_volume_controller_config, env.field_trials());
     
     input_volume_controller_->Initialize();
   }

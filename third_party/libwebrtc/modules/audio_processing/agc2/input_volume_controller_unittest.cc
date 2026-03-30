@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "api/audio/audio_processing.h"
+#include "api/environment/environment_factory.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_minmax.h"
@@ -82,8 +83,8 @@ std::unique_ptr<InputVolumeController> CreateInputVolumeController(
       .speech_ratio_threshold = kSpeechRatioThreshold,
   };
 
-  return std::make_unique<InputVolumeController>(1,
-                                                 config);
+  return std::make_unique<InputVolumeController>(
+      1, config, CreateEnvironment().field_trials());
 }
 
 
@@ -249,7 +250,9 @@ class InputVolumeControllerTestHelper {
                      kNumChannels,
                      kSampleRateHz,
                      kNumChannels),
-        controller(1, config) {
+        controller(1,
+                   config,
+                   CreateEnvironment().field_trials()) {
     controller.Initialize();
     WriteAudioBufferSamples(0.0f, 0.0f,
                             audio_buffer);
@@ -343,7 +346,8 @@ TEST_P(InputVolumeControllerChannelSampleRateTest, CheckIsAlive) {
 
   constexpr InputVolumeController::Config kConfig{.enable_clipping_predictor =
                                                       true};
-  InputVolumeController controller(num_channels, kConfig);
+  InputVolumeController controller(num_channels, kConfig,
+                                   CreateEnvironment().field_trials());
   controller.Initialize();
   AudioBuffer buffer(sample_rate_hz, num_channels, sample_rate_hz, num_channels,
                      sample_rate_hz, num_channels);
@@ -1185,7 +1189,8 @@ TEST_P(InputVolumeControllerParametrizedTest,
 
 TEST_P(InputVolumeControllerParametrizedTest, EmptyRmsErrorHasNoEffect) {
   InputVolumeController controller(kNumChannels,
-                                   GetInputVolumeControllerTestConfig());
+                                   GetInputVolumeControllerTestConfig(),
+                                   CreateEnvironment().field_trials());
   controller.Initialize();
 
   
