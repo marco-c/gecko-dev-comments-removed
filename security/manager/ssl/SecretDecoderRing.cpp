@@ -17,7 +17,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObserverService.h"
-#include "nsITokenPasswordDialogs.h"
 #include "nsNSSComponent.h"
 #include "nsNSSHelper.h"
 #include "nsNetCID.h"
@@ -113,19 +112,13 @@ nsresult SecretDecoderRing::Encrypt(CK_MECHANISM_TYPE type,
                                      nsACString& result) {
   UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   if (!slot) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_FAILURE;
   }
 
   
   nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
-  nsresult rv = setPassword(slot.get(), ctx);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
   if (PK11_Authenticate(slot.get(), true, ctx) != SECSuccess) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   
@@ -150,7 +143,7 @@ nsresult SecretDecoderRing::Decrypt(const nsACString& data,
   
   UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   if (!slot) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -295,30 +288,6 @@ SecretDecoderRing::AsyncDecryptStrings(
 
   promise.forget(aPromise);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-SecretDecoderRing::ChangePassword() {
-  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  if (!slot) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  
-  nsCOMPtr<nsIPK11Token> token = new nsPK11Token(slot.get());
-
-  nsCOMPtr<nsITokenPasswordDialogs> dialogs;
-  nsresult rv = getNSSDialogs(getter_AddRefs(dialogs),
-                              NS_GET_IID(nsITokenPasswordDialogs),
-                              NS_TOKENPASSWORDSDIALOG_CONTRACTID);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
-  bool canceled;  
-  return dialogs->SetPassword(ctx, token, &canceled);
 }
 
 NS_IMETHODIMP
