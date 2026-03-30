@@ -33,7 +33,6 @@ namespace webrtc {
 namespace {
 
 using ::testing::_;
-using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::NiceMock;
 using ::testing::Optional;
@@ -292,6 +291,7 @@ TEST(ChannelSendFrameTransformerDelegateTest, ShortCircuitingSkipsTransform) {
   delegate->Transform(AudioFrameType::kEmptyFrame, 0, 0, data, sizeof(data), 0,
                       0, "audio/opus",
                       std::nullopt);
+  channel_queue.WaitForPreviouslyPostedTasks();
 }
 
 TEST(ChannelSendFrameTransformerDelegateTest,

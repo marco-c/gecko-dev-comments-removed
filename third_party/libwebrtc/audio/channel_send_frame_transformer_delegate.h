@@ -47,7 +47,7 @@ class ChannelSendFrameTransformerDelegate : public TransformedFrameCallback {
   ChannelSendFrameTransformerDelegate(
       SendFrameCallback send_frame_callback,
       scoped_refptr<FrameTransformerInterface> frame_transformer,
-      TaskQueueBase* encoder_queue);
+      TaskQueueBase* send_queue);
 
   
   
@@ -88,7 +88,7 @@ class ChannelSendFrameTransformerDelegate : public TransformedFrameCallback {
   mutable Mutex send_lock_;
   SendFrameCallback send_frame_callback_ RTC_GUARDED_BY(send_lock_);
   scoped_refptr<FrameTransformerInterface> frame_transformer_;
-  TaskQueueBase* const encoder_queue_;
+  TaskQueueBase* const send_queue_;
   bool short_circuit_ RTC_GUARDED_BY(send_lock_) = false;
 };
 
