@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <optional>
 #include <utility>  
 
 #include "api/audio_codecs/audio_format.h"
@@ -303,8 +302,8 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   
   
   
-  DecoderDatabase decoder_database(
-      env, make_ref_counted<MockAudioDecoderFactory>(), std::nullopt);
+  DecoderDatabase decoder_database(env,
+                                   make_ref_counted<MockAudioDecoderFactory>());
   decoder_database.RegisterPayload(0, SdpAudioFormat("cn", 8000, 1));
   decoder_database.RegisterPayload(1, SdpAudioFormat("pcmu", 8000, 1));
   decoder_database.RegisterPayload(2,
@@ -339,8 +338,8 @@ TEST(RedPayloadSplitter, CheckRedPayloadsRecursiveRed) {
   
   
   
-  DecoderDatabase decoder_database(
-      env, make_ref_counted<MockAudioDecoderFactory>(), std::nullopt);
+  DecoderDatabase decoder_database(env,
+                                   make_ref_counted<MockAudioDecoderFactory>());
   decoder_database.RegisterPayload(kRedPayloadType,
                                    SdpAudioFormat("red", 8000, 1));
 

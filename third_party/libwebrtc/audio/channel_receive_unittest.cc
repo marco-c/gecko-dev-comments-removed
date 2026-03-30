@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -79,7 +78,6 @@ class ChannelReceiveTest : public Test {
          false,
          0,
          false, audio_decoder_factory_,
-         std::nullopt,
          nullptr, crypto_options,
          nullptr);
     channel->SetReceiveCodecs(
