@@ -21,43 +21,38 @@ namespace webrtc {
 
 struct RTC_EXPORT AudioEncoderMultiChannelOpusConfig {
   static constexpr int kDefaultFrameSizeMs = 20;
+  static constexpr int kDefaultComplexity = 9;
 
   
   
   static constexpr int kMinBitrateBps = 6000;
   static constexpr int kMaxBitrateBps = 510000;
 
-  AudioEncoderMultiChannelOpusConfig();
-  AudioEncoderMultiChannelOpusConfig(const AudioEncoderMultiChannelOpusConfig&);
-  ~AudioEncoderMultiChannelOpusConfig();
-  AudioEncoderMultiChannelOpusConfig& operator=(
-      const AudioEncoderMultiChannelOpusConfig&);
+  bool IsOk() const;
 
-  int frame_size_ms;
-  size_t num_channels;
+  int frame_size_ms = kDefaultFrameSizeMs;
+  size_t num_channels = 1;
   enum class ApplicationMode { kVoip, kAudio };
-  ApplicationMode application;
-  int bitrate_bps;
-  bool fec_enabled;
-  bool cbr_enabled;
-  bool dtx_enabled;
-  int max_playback_rate_hz;
+  ApplicationMode application = ApplicationMode::kVoip;
+  int bitrate_bps = 32000;
+  bool fec_enabled = false;
+  bool cbr_enabled = false;
+  bool dtx_enabled = false;
+  int max_playback_rate_hz = 48000;
   std::vector<int> supported_frame_lengths_ms;
 
-  int complexity;
+  int complexity = kDefaultComplexity;
 
   
-  int num_streams;
+  int num_streams = -1;
 
   
   
-  int coupled_streams;
+  int coupled_streams = -1;
 
   
   
   std::vector<unsigned char> channel_mapping;
-
-  bool IsOk() const;
 };
 
 }  

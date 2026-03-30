@@ -70,6 +70,6 @@ std::unique_ptr<AudioDecoder> AudioDecoderMultiChannelOpus::MakeAudioDecoder(
     AudioDecoderMultiChannelOpusConfig config,
     std::optional<AudioCodecPairId> ,
     const FieldTrialsView* ) {
-  return AudioDecoderMultiChannelOpusImpl::MakeAudioDecoder(config);
+  return AudioDecoderMultiChannelOpusImpl::MakeAudioDecoder(std::move(config));
 }
 }  

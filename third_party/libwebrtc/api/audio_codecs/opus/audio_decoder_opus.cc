@@ -35,15 +35,6 @@ int GetDefaultNumChannels(const FieldTrialsView& field_trials) {
 
 }  
 
-bool AudioDecoderOpus::Config::IsOk() const {
-  if (sample_rate_hz != 16000 && sample_rate_hz != 48000) {
-    
-    
-    return false;
-  }
-  return !num_channels.has_value() || *num_channels == 1 || *num_channels == 2;
-}
-
 std::optional<AudioDecoderOpus::Config> AudioDecoderOpus::SdpToConfig(
     const SdpAudioFormat& format) {
   if (!absl::EqualsIgnoreCase(format.name, "opus") ||

@@ -47,13 +47,13 @@ AudioDecoderMultiChannelOpusImpl::MakeAudioDecoder(
   
   
   return std::unique_ptr<AudioDecoderMultiChannelOpusImpl>(
-      new AudioDecoderMultiChannelOpusImpl(dec_state, config));
+      new AudioDecoderMultiChannelOpusImpl(dec_state, std::move(config)));
 }
 
 AudioDecoderMultiChannelOpusImpl::AudioDecoderMultiChannelOpusImpl(
     OpusDecInst* dec_state,
     AudioDecoderMultiChannelOpusConfig config)
-    : dec_state_(dec_state), config_(config) {
+    : dec_state_(dec_state), config_(std::move(config)) {
   RTC_DCHECK(dec_state);
   WebRtcOpus_DecoderInit(dec_state_);
 }

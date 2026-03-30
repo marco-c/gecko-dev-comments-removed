@@ -250,9 +250,9 @@ TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsTrivialStereo) {
   WhiteNoiseGenerator generator(-70.0);
   std::array<int16_t, kInputFrameLength> input_frame;
   
-  const AudioEncoderOpusConfig encoder_config =
+  AudioEncoderOpusConfig encoder_config =
       GetEncoderConfig(1, false);
-  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  AudioEncoderOpusImpl encoder(env, std::move(encoder_config), kPayloadType);
   
   constexpr size_t kDecoderNumChannels = 2;
   AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,
@@ -286,9 +286,9 @@ TEST(AudioDecoderOpusTest,
      MonoEncoderStereoDecoderOutputsTrivialStereoComfortNoise) {
   const Environment env = EnvironmentFactory().Create();
   
-  const AudioEncoderOpusConfig encoder_config =
+  AudioEncoderOpusConfig encoder_config =
       GetEncoderConfig(1, true);
-  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  AudioEncoderOpusImpl encoder(env, std::move(encoder_config), kPayloadType);
   
   constexpr size_t kDecoderNumChannels = 2;
   AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,
@@ -332,9 +332,9 @@ TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsTrivialStereoPlc) {
       CreateTestFieldTrials("WebRTC-Audio-OpusGeneratePlc/Enabled/");
   const Environment env = CreateEnvironment(&trials);
   
-  const AudioEncoderOpusConfig encoder_config =
+  AudioEncoderOpusConfig encoder_config =
       GetEncoderConfig(1, false);
-  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  AudioEncoderOpusImpl encoder(env, std::move(encoder_config), kPayloadType);
   
   constexpr size_t kDecoderNumChannels = 2;
   AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,
@@ -371,7 +371,7 @@ TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsTrivialStereoFec) {
   AudioEncoderOpusConfig encoder_config =
       GetEncoderConfig(1, false);
   encoder_config.fec_enabled = true;
-  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  AudioEncoderOpusImpl encoder(env, std::move(encoder_config), kPayloadType);
   
   encoder.OnReceivedUplinkPacketLossFraction(0.2);
 
@@ -424,9 +424,9 @@ TEST(AudioDecoderOpusTest,
      StereoEncoderStereoDecoderOutputsNonTrivialStereoComfortNoise) {
   const Environment env = EnvironmentFactory().Create();
   
-  const AudioEncoderOpusConfig encoder_config =
+  AudioEncoderOpusConfig encoder_config =
       GetEncoderConfig(2, true);
-  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  AudioEncoderOpusImpl encoder(env, std::move(encoder_config), kPayloadType);
   
   constexpr size_t kDecoderNumChannels = 2;
   AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,
@@ -464,9 +464,9 @@ TEST(AudioDecoderOpusTest,
       CreateTestFieldTrials("WebRTC-Audio-OpusGeneratePlc/Enabled/");
   const Environment env = CreateEnvironment(&trials);
   
-  const AudioEncoderOpusConfig encoder_config =
+  AudioEncoderOpusConfig encoder_config =
       GetEncoderConfig(2, false);
-  AudioEncoderOpusImpl encoder(env, encoder_config, kPayloadType);
+  AudioEncoderOpusImpl encoder(env, std::move(encoder_config), kPayloadType);
   
   constexpr size_t kDecoderNumChannels = 2;
   AudioDecoderOpusImpl decoder(env.field_trials(), kDecoderNumChannels,

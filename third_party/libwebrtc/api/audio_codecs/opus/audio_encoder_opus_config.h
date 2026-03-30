@@ -21,33 +21,34 @@
 namespace webrtc {
 
 struct RTC_EXPORT AudioEncoderOpusConfig {
+  static const int kDefaultLowRateComplexity;
   static constexpr int kDefaultFrameSizeMs = 20;
 
   
   
-  static constexpr int kMinBitrateBps = 6000;
-  static constexpr int kMaxBitrateBps = 510000;
-
-  AudioEncoderOpusConfig();
-  AudioEncoderOpusConfig(const AudioEncoderOpusConfig&);
-  ~AudioEncoderOpusConfig();
-  AudioEncoderOpusConfig& operator=(const AudioEncoderOpusConfig&);
+  static constexpr int kMinBitrateBps = 6'000;
+  static constexpr int kMaxBitrateBps = 510'000;
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+  static constexpr int kDefaultComplexity = 5;
+#else
+  static constexpr int kDefaultComplexity = 9;
+#endif
 
   bool IsOk() const;  
 
-  int frame_size_ms;
-  int sample_rate_hz;
-  size_t num_channels;
+  int frame_size_ms = kDefaultFrameSizeMs;
+  int sample_rate_hz = 48'000;
+  size_t num_channels = 1;
   enum class ApplicationMode { kVoip, kAudio };
-  ApplicationMode application;
+  ApplicationMode application = ApplicationMode::kVoip;
 
   
   
-  std::optional<int> bitrate_bps;
+  std::optional<int> bitrate_bps = 32'000;
 
-  bool fec_enabled;
-  bool cbr_enabled;
-  int max_playback_rate_hz;
+  bool fec_enabled = false;
+  bool cbr_enabled = false;
+  int max_playback_rate_hz = 48'000;
 
   
   
@@ -55,18 +56,18 @@ struct RTC_EXPORT AudioEncoderOpusConfig {
   
   
   
-  int complexity;
-  int low_rate_complexity;
-  int complexity_threshold_bps;
-  int complexity_threshold_window_bps;
+  int complexity = kDefaultComplexity;
+  int low_rate_complexity = kDefaultLowRateComplexity;
+  int complexity_threshold_bps = 12500;
+  int complexity_threshold_window_bps = 1500;
 
-  bool dtx_enabled;
+  bool dtx_enabled = false;
   std::vector<int> supported_frame_lengths_ms;
-  int uplink_bandwidth_update_interval_ms;
+  int uplink_bandwidth_update_interval_ms = 200;
 
   
   
-  int payload_type;
+  int payload_type = -1;
 };
 
 }  

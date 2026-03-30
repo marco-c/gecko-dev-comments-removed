@@ -75,6 +75,15 @@ class FuzzDataHelper {
     return select_from[index];
   }
 
+  
+  template <typename T, size_t N>
+  T MoveOneOf(T (&select_from)[N]) {
+    static_assert(N <= std::numeric_limits<uint8_t>::max(), "");
+    
+    uint8_t index = ReadOrDefaultValue<uint8_t>(0) % N;
+    return std::move(select_from[index]);
+  }
+
   ArrayView<const uint8_t> ReadByteArray(size_t bytes) {
     if (!CanReadBytes(bytes)) {
       return ArrayView<const uint8_t>(nullptr, 0);

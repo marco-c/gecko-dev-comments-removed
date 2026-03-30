@@ -10,10 +10,9 @@
 
 #include "api/audio_codecs/audio_decoder.h"
 
-#include <stdlib.h>
-
 #include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -368,7 +367,8 @@ class AudioDecoderOpusTest
                              ? AudioEncoderOpusConfig::ApplicationMode::kVoip
                              : AudioEncoderOpusConfig::ApplicationMode::kAudio;
     audio_encoder_ = AudioEncoderOpus::MakeAudioEncoder(
-        CreateEnvironment(), config, {.payload_type = payload_type_});
+        CreateEnvironment(), std::move(config),
+        {.payload_type = payload_type_});
     audio_encoder_->OnReceivedOverhead(kOverheadBytesPerPacket);
   }
   const int opus_sample_rate_hz_{std::get<0>(GetParam())};
