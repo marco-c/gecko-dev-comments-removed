@@ -690,6 +690,12 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     
     
     
+    
+    int max_sctp_streams = kMaxSctpStreams;
+
+    
+    
+    
   };
 
   
