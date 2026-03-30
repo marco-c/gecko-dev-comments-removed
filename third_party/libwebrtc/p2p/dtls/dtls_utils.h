@@ -14,7 +14,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -30,9 +29,6 @@ bool IsDtlsPacket(ArrayView<const uint8_t> payload);
 bool IsDtlsClientHelloPacket(ArrayView<const uint8_t> payload);
 bool IsDtlsHandshakePacket(ArrayView<const uint8_t> payload);
 
-std::optional<std::vector<uint16_t>> GetDtlsHandshakeAcks(
-    ArrayView<const uint8_t> dtls_packet);
-
 uint32_t ComputeDtlsPacketHash(ArrayView<const uint8_t> dtls_packet);
 
 class PacketStash {
@@ -44,6 +40,7 @@ class PacketStash {
   void Prune(const absl::flat_hash_set<uint32_t>& packet_hashes);
   void Prune(uint32_t max_size);
   ArrayView<const uint8_t> GetNext();
+  std::vector<ArrayView<const uint8_t>> GetAll() const;
 
   void clear() {
     packets_.clear();
@@ -71,17 +68,5 @@ class PacketStash {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::GetDtlsHandshakeAcks;
-using ::webrtc::IsDtlsClientHelloPacket;
-using ::webrtc::IsDtlsHandshakePacket;
-using ::webrtc::IsDtlsPacket;
-using ::webrtc::kDtlsRecordHeaderLen;
-using ::webrtc::kMaxDtlsPacketLen;
-}  
-#endif  
 
 #endif  

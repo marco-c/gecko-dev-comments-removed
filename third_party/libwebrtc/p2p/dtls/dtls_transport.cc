@@ -33,7 +33,6 @@
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/ecn_marking.h"
-#include "api/transport/stun.h"
 #include "api/units/time_delta.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
@@ -787,7 +786,7 @@ void DtlsTransportInternalImpl::OnWritableState(
       if (dtls_in_stun_ && dtls_ && first_ice_writable) {
         
         
-        ConfigureHandshakeTimeout();
+        UpdateHandshakeTimeout();
         PeriodicRetransmitDtlsPacketUntilDtlsConnected();
       }
       set_writable(ice_transport()->writable());
@@ -797,7 +796,7 @@ void DtlsTransportInternalImpl::OnWritableState(
         
         
         
-        ConfigureHandshakeTimeout();
+        UpdateHandshakeTimeout();
         PeriodicRetransmitDtlsPacketUntilDtlsConnected();
       }
       break;
@@ -1012,6 +1011,11 @@ void DtlsTransportInternalImpl::MaybeStartDtls() {
   if (dtls_ && (ice_transport()->writable() || dtls_in_stun_)) {
     ConfigureHandshakeTimeout();
 
+    RTC_LOG(LS_INFO)
+        << ToString()
+        << ": DtlsTransportInternalImpl: Start DTLS handshake active="
+        << IsDtlsActive()
+        << " role=" << (*dtls_role_ == SSL_SERVER ? "server" : "client");
     if (dtls_->StartSSL()) {
       
       
@@ -1019,16 +1023,11 @@ void DtlsTransportInternalImpl::MaybeStartDtls() {
       
       
       
-      RTC_DCHECK_NOTREACHED() << "StartSSL failed.";
       RTC_LOG(LS_ERROR) << ToString() << ": Couldn't start DTLS handshake";
+      RTC_DCHECK_NOTREACHED() << "StartSSL failed.";
       set_dtls_state(DtlsTransportState::kFailed);
       return;
     }
-    RTC_LOG(LS_INFO)
-        << ToString()
-        << ": DtlsTransportInternalImpl: Started DTLS handshake active="
-        << IsDtlsActive()
-        << " role=" << (*dtls_role_ == SSL_SERVER ? "server" : "client");
     set_dtls_state(DtlsTransportState::kConnecting);
     
     
@@ -1163,6 +1162,17 @@ void DtlsTransportInternalImpl::ConfigureHandshakeTimeout() {
   }
 }
 
+void DtlsTransportInternalImpl::UpdateHandshakeTimeout() {
+  RTC_DCHECK(dtls_);
+  const auto rtt_ms = ice_transport()->GetRttEstimate();
+  const int delay_ms = ComputeRetransmissionTimeout(
+      rtt_ms.value_or(kDefaultHandshakeEstimateRttMs));
+  RTC_LOG(LS_INFO) << ToString() << ": Update DTLS handshake timeout to "
+                   << delay_ms << "ms based on ICE RTT "
+                   << (rtt_ms ? std::to_string(*rtt_ms) : "<unset>");
+  dtls_->UpdateRetransmissionTimeout(delay_ms);
+}
+
 void DtlsTransportInternalImpl::SetPiggybackDtlsDataCallback(
     absl::AnyInvocable<void(PacketTransportInternal* transport,
                             const ReceivedIpPacket& packet)> callback) {
@@ -1184,13 +1194,10 @@ bool DtlsTransportInternalImpl::WasDtlsCompletedByPiggybacking() {
                                DtlsStunPiggybackController::State::PENDING);
 }
 
-
-
-
-
 void DtlsTransportInternalImpl::
     PeriodicRetransmitDtlsPacketUntilDtlsConnected() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+
   if (pending_periodic_retransmit_dtls_packet_ == true) {
     
     
@@ -1198,20 +1205,29 @@ void DtlsTransportInternalImpl::
     
     return;
   }
+
+  if (dtls_stun_piggyback_controller_.state() ==
+      DtlsStunPiggybackController::State::COMPLETE) {
+    
+    return;
+  }
+
   if (ice_transport()->writable() && dtls_in_stun_) {
-    auto data_to_send = dtls_stun_piggyback_controller_.GetDataToPiggyback(
-        STUN_BINDING_INDICATION);
-    if (!data_to_send) {
+    auto data_to_send = dtls_stun_piggyback_controller_.GetPending();
+    if (data_to_send.empty()) {
       
       return;
     }
-    AsyncSocketPacketOptions packet_options;
-    ice_transport()->SendPacket(data_to_send->data(), data_to_send->size(),
-                                packet_options,
-                                 0);
+    for (const auto& packet : data_to_send) {
+      AsyncSocketPacketOptions packet_options;
+      ice_transport()->SendPacket(reinterpret_cast<const char*>(packet.data()),
+                                  packet.size(), packet_options,
+                                   0);
+    }
   }
 
-  const auto rtt_ms = ice_transport()->GetRttEstimate().value_or(100);
+  const auto rtt_ms = ice_transport()->GetRttEstimate().value_or(
+      kDefaultHandshakeEstimateRttMs);
   const int delay_ms = ComputeRetransmissionTimeout(rtt_ms);
 
   

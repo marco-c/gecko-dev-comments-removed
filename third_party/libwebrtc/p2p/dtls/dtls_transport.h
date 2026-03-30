@@ -129,6 +129,11 @@ class StreamInterfaceChannel : public StreamInterface {
 class DtlsTransportInternalImpl : public DtlsTransportInternal {
  public:
   
+  
+  
+  static constexpr int kDefaultHandshakeEstimateRttMs = 200;
+
+  
   using SslStreamFactory = std::function<std::unique_ptr<SSLStreamAdapter>(
       std::unique_ptr<StreamInterface>,
       absl::AnyInvocable<void(SSLHandshakeError)> handshake_error_callback,
@@ -279,6 +284,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   bool HandleDtlsPacket(ArrayView<const uint8_t> payload);
   void OnDtlsHandshakeError(SSLHandshakeError error);
   void ConfigureHandshakeTimeout();
+  void UpdateHandshakeTimeout();
 
   void set_receiving(bool receiving);
   void set_writable(bool writable);

@@ -100,8 +100,7 @@ DtlsStunPiggybackController::GetDataToPiggyback(
     StunMessageType stun_message_type) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_DCHECK(stun_message_type == STUN_BINDING_REQUEST ||
-             stun_message_type == STUN_BINDING_RESPONSE ||
-             stun_message_type == STUN_BINDING_INDICATION);
+             stun_message_type == STUN_BINDING_RESPONSE);
 
   
   RTC_DCHECK(!writing_packets_);
@@ -110,11 +109,7 @@ DtlsStunPiggybackController::GetDataToPiggyback(
     return std::nullopt;
   }
 
-  if (stun_message_type == STUN_BINDING_INDICATION) {
-    
-    
-    
-  } else if (state_ == State::OFF) {
+  if (state_ == State::OFF) {
     return std::nullopt;
   }
 
@@ -136,6 +131,12 @@ DtlsStunPiggybackController::GetAckToPiggyback(
     return std::nullopt;
   }
   return handshake_messages_received_;
+}
+
+std::vector<ArrayView<const uint8_t>>
+DtlsStunPiggybackController::GetPending() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  return pending_packets_.GetAll();
 }
 
 void DtlsStunPiggybackController::ReportDataPiggybacked(
@@ -186,6 +187,12 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
       
       pending_packets_.Prune(acked_packets);
     }
+  }
+
+  if (!data.has_value()) {
+    
+    
+    handshake_messages_received_.clear();
   }
 
   
