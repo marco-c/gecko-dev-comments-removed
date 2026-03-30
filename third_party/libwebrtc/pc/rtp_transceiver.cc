@@ -152,6 +152,7 @@ RtpTransceiver::RtpTransceiver(
   RTC_DCHECK(media_type_ == MediaType::AUDIO ||
              media_type_ == MediaType::VIDEO);
   RTC_DCHECK_EQ(sender->media_type(), receiver->media_type());
+  RTC_LOG_THREAD_BLOCK_COUNT();
   sender->internal()->SetSendCodecs(
       sender->media_type() == MediaType::VIDEO
           ? codec_vendor().video_send_codecs().codecs()
@@ -653,6 +654,10 @@ void RtpTransceiver::StopSendingAndReceiving() {
 
   
   
+  RTC_LOG_THREAD_BLOCK_COUNT();
+
+  
+  
   for (const auto& sender : senders_)
     sender->internal()->Stop();
 
@@ -661,6 +666,7 @@ void RtpTransceiver::StopSendingAndReceiving() {
     receiver->internal()->Stop();
 
   context()->worker_thread()->BlockingCall([&]() {
+    RTC_DCHECK_RUN_ON(context()->worker_thread());
     
     for (const auto& receiver : receivers_)
       receiver->internal()->SetMediaChannel(nullptr);
@@ -677,6 +683,7 @@ RTCError RtpTransceiver::StopStandard() {
     StopInternal();
     return RTCError::OK();
   }
+  
   
   
   
@@ -951,6 +958,7 @@ void RtpTransceiver::OnNegotiationUpdate(
     }
   }
 }
+
 
 void RtpTransceiver::SetPeerConnectionClosed() {
   is_pc_closed_ = true;

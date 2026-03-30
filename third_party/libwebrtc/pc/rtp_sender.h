@@ -238,10 +238,13 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   RtpSenderBase(const Environment& env,
                 Thread* worker_thread,
                 const std::string& id,
-                SetStreamsObserver* set_streams_observer);
+                SetStreamsObserver* set_streams_observer,
+                MediaSendChannelInterface* media_channel);
   
   
-  bool can_send_track() const { return track_ && ssrc_; }
+  bool can_send_track() const RTC_RUN_ON(signaling_thread_) {
+    return track_ && ssrc_;
+  }
 
   virtual std::string track_kind() const = 0;
 
@@ -252,10 +255,10 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   
   
-  virtual void AttachTrack() {}
-  virtual void DetachTrack() {}
-  virtual void AddTrackToStats() {}
-  virtual void RemoveTrackFromStats() {}
+  virtual void AttachTrack() RTC_RUN_ON(signaling_thread_) {}
+  virtual void DetachTrack() RTC_RUN_ON(signaling_thread_) {}
+  virtual void AddTrackToStats() RTC_RUN_ON(signaling_thread_) {}
+  virtual void RemoveTrackFromStats() RTC_RUN_ON(signaling_thread_) {}
 
   const Environment env_;
   TaskQueueBase* const signaling_thread_;
@@ -275,10 +278,14 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
+  
   MediaSendChannelInterface* media_channel_ = nullptr;
+  
   scoped_refptr<MediaStreamTrackInterface> track_;
 
   scoped_refptr<DtlsTransportInterface> dtls_transport_;
+  
+  
   scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
   
   
@@ -288,11 +295,12 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   mutable std::optional<std::string> last_transaction_id_;
   std::vector<std::string> disabled_rids_;
 
-  SetStreamsObserver* set_streams_observer_ = nullptr;
+  SetStreamsObserver* const set_streams_observer_ = nullptr;
   RtpSenderObserverInterface* observer_ = nullptr;
   bool sent_first_packet_ = false;
 
   scoped_refptr<FrameTransformerInterface> frame_transformer_;
+  
   std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
       encoder_selector_;
 };
@@ -351,7 +359,8 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
       Thread* worker_thread,
       const std::string& id,
       LegacyStatsCollectorInterface* stats,
-      SetStreamsObserver* set_streams_observer);
+      SetStreamsObserver* set_streams_observer,
+      MediaSendChannelInterface* media_channel);
   virtual ~AudioRtpSender();
 
   
@@ -376,34 +385,37 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
                  Thread* worker_thread,
                  const std::string& id,
                  LegacyStatsCollectorInterface* legacy_stats,
-                 SetStreamsObserver* set_streams_observer);
+                 SetStreamsObserver* set_streams_observer,
+                 MediaSendChannelInterface* media_channel);
 
   void SetSend() override;
   void ClearSend() override;
 
   
-  void AttachTrack() override;
-  void DetachTrack() override;
-  void AddTrackToStats() override;
-  void RemoveTrackFromStats() override;
+  void AttachTrack() RTC_RUN_ON(signaling_thread_) override;
+  void DetachTrack() RTC_RUN_ON(signaling_thread_) override;
+  void AddTrackToStats() RTC_RUN_ON(signaling_thread_) override;
+  void RemoveTrackFromStats() RTC_RUN_ON(signaling_thread_) override;
 
  private:
-  VoiceMediaSendChannelInterface* voice_media_channel() {
+  VoiceMediaSendChannelInterface* voice_media_channel()
+      RTC_RUN_ON(worker_thread_) {
     return media_channel_->AsVoiceSendChannel();
   }
-  scoped_refptr<AudioTrackInterface> audio_track() const {
+  scoped_refptr<AudioTrackInterface> audio_track() const
+      RTC_RUN_ON(signaling_thread_) {
     return scoped_refptr<AudioTrackInterface>(
         static_cast<AudioTrackInterface*>(track_.get()));
   }
 
-  LegacyStatsCollectorInterface* legacy_stats_ = nullptr;
-  scoped_refptr<DtmfSender> dtmf_sender_;
-  scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
+  LegacyStatsCollectorInterface* const legacy_stats_ = nullptr;
+  const scoped_refptr<DtmfSender> dtmf_sender_;
+  const scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
   bool cached_track_enabled_ = false;
 
   
   
-  std::unique_ptr<LocalAudioSinkAdapter> sink_adapter_;
+  const std::unique_ptr<LocalAudioSinkAdapter> sink_adapter_;
 };
 
 class VideoRtpSender : public RtpSenderBase {
@@ -417,7 +429,8 @@ class VideoRtpSender : public RtpSenderBase {
       const Environment& env,
       Thread* worker_thread,
       const std::string& id,
-      SetStreamsObserver* set_streams_observer);
+      SetStreamsObserver* set_streams_observer,
+      MediaSendChannelInterface* media_channel);
   virtual ~VideoRtpSender();
 
   
@@ -437,19 +450,22 @@ class VideoRtpSender : public RtpSenderBase {
   VideoRtpSender(const Environment& env,
                  Thread* worker_thread,
                  const std::string& id,
-                 SetStreamsObserver* set_streams_observer);
+                 SetStreamsObserver* set_streams_observer,
+                 MediaSendChannelInterface* media_channel);
 
   void SetSend() override;
   void ClearSend() override;
 
   
-  void AttachTrack() override;
+  void AttachTrack() RTC_RUN_ON(signaling_thread_) override;
 
  private:
-  VideoMediaSendChannelInterface* video_media_channel() {
+  VideoMediaSendChannelInterface* video_media_channel()
+      RTC_RUN_ON(worker_thread_) {
     return media_channel_->AsVideoSendChannel();
   }
-  scoped_refptr<VideoTrackInterface> video_track() const {
+  scoped_refptr<VideoTrackInterface> video_track() const
+      RTC_RUN_ON(signaling_thread_) {
     return scoped_refptr<VideoTrackInterface>(
         static_cast<VideoTrackInterface*>(track_.get()));
   }
