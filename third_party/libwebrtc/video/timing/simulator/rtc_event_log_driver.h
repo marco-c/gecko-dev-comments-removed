@@ -21,7 +21,6 @@
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
 #include "api/task_queue/task_queue_base.h"
-#include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/logged_rtp_rtcp.h"
@@ -30,11 +29,10 @@
 #include "logging/rtc_event_log/rtc_event_processor.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/thread_annotations.h"
+#include "test/time_controller/simulated_time_task_queue_controller.h"
 #include "video/timing/simulator/rtp_packet_simulator.h"
 
 namespace webrtc::video_timing_simulator {
-
-
 
 
 
@@ -93,8 +91,8 @@ class RtcEventLogDriver {
   
   void Simulate();
 
-  Timestamp GetCurrentTimeForTesting() const {
-    return time_controller_->GetClock()->CurrentTime();
+  Timestamp GetCurrentTimeForTesting() {
+    return time_controller_.GetClock()->CurrentTime();
   }
 
  private:
@@ -114,7 +112,7 @@ class RtcEventLogDriver {
 
   
   const Config config_;
-  std::unique_ptr<TimeController> absl_nonnull time_controller_;
+  SimulatedTimeTaskQueueController time_controller_;
   const Environment env_;
 
   
