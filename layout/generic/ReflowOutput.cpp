@@ -57,6 +57,24 @@ void OverflowAreas::UnionWith(const OverflowAreas& aOther) {
   }
 }
 
+void OverflowAreas::UnionWithAbsoluteOverflowAreas(
+    const OverflowAreas& aOther) {
+  
+  
+  
+  
+  
+  
+  for (const auto t : AllOverflowTypes()) {
+    const auto& kidOverflow = aOther.Overflow(t);
+    if (kidOverflow.IsEmpty()) {
+      continue;
+    }
+    auto& overflow = Overflow(t);
+    overflow.UnionRect(overflow, kidOverflow);
+  }
+}
+
 void OverflowAreas::UnionAllWith(const nsRect& aRect) {
   if (!IsValidOverflowRect(aRect)) {
     

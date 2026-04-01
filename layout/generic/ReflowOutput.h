@@ -70,6 +70,10 @@ struct OverflowAreas {
   void UnionWith(const OverflowAreas& aOther);
 
   
+  
+  void UnionWithAbsoluteOverflowAreas(const OverflowAreas& aOther);
+
+  
   void UnionAllWith(const nsRect& aRect);
 
   

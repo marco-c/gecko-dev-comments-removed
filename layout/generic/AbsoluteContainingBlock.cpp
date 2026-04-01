@@ -555,10 +555,11 @@ static ModifiedContainingBlock ComputeContainingBlock(
   if (aIsGrid) {
     const auto border = aDelegatingFrame->GetUsedBorder();
     const nsPoint borderShift{border.left, border.top};
+    const nsRect preGridCB = containingBlock;
     
     containingBlock = nsGridContainerFrame::GridItemCB(aKidFrame) + borderShift;
     if (!defaultAnchorInfo) {
-      return ModifiedContainingBlock{containingBlock};
+      return ModifiedContainingBlock{preGridCB, containingBlock};
     }
   }
   
@@ -2223,6 +2224,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   }
 
   if (aOverflowAreas) {
-    aOverflowAreas->UnionWith(aKidFrame->GetOverflowAreasRelativeToParent());
+    aOverflowAreas->UnionWithAbsoluteOverflowAreas(
+        aKidFrame->GetOverflowAreasRelativeToParent());
   }
 }
