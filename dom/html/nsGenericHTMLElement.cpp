@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsGenericHTMLElement.h"
 
 #include "HTMLBRElement.h"
@@ -713,7 +711,18 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
     }
 
     if (newState == PopoverAttributeState::None) {
-      ClearPopoverData();
+      auto* popoverData = GetPopoverData();
+      if (popoverData) {
+        
+        
+        
+        
+        if (popoverData->IsShowingOrHiding()) {
+          popoverData->SetPopoverAttributeState(newState);
+        } else {
+          ClearPopoverData();
+        }
+      }
       RemoveStates(ElementState::POPOVER_OPEN);
     } else {
       
@@ -3475,6 +3484,9 @@ bool nsGenericHTMLElement::FireToggleEvent(const nsAString& aOldState,
 
 void nsGenericHTMLElement::QueuePopoverEventTask(
     PopoverVisibilityState aOldState, Element* aSource) {
+  PopoverVisibilityState newState = aOldState == PopoverVisibilityState::Hidden
+                                        ? PopoverVisibilityState::Showing
+                                        : PopoverVisibilityState::Hidden;
   auto* data = GetPopoverData();
   MOZ_ASSERT(data, "Should have popover data");
 
@@ -3482,15 +3494,15 @@ void nsGenericHTMLElement::QueuePopoverEventTask(
     aOldState = queuedToggleEventTask->GetOldState();
   }
 
-  auto task = MakeRefPtr<PopoverToggleEventTask>(
-      do_GetWeakReference(this), do_GetWeakReference(aSource), aOldState);
+  auto task = MakeRefPtr<PopoverToggleEventTask>(do_GetWeakReference(this),
+                                                 do_GetWeakReference(aSource),
+                                                 aOldState, newState);
   data->SetToggleEventTask(task);
   OwnerDoc()->Dispatch(task.forget());
 }
 
 void nsGenericHTMLElement::RunPopoverToggleEventTask(
-    PopoverToggleEventTask* aTask, PopoverVisibilityState aOldState,
-    Element* aSource) {
+    PopoverToggleEventTask* aTask, Element* aSource) {
   auto* data = GetPopoverData();
   if (!data) {
     return;
@@ -3500,14 +3512,15 @@ void nsGenericHTMLElement::RunPopoverToggleEventTask(
   if (!popoverToggleEventTask || aTask != popoverToggleEventTask) {
     return;
   }
+  auto oldState = aTask->GetOldState();
+  auto newState = aTask->GetNewState();
   data->ClearToggleEventTask();
   
   
   auto stringForState = [](PopoverVisibilityState state) {
     return state == PopoverVisibilityState::Hidden ? u"closed"_ns : u"open"_ns;
   };
-  FireToggleEvent(stringForState(aOldState),
-                  stringForState(data->GetPopoverVisibilityState()),
+  FireToggleEvent(stringForState(oldState), stringForState(newState),
                   u"toggle"_ns, aSource);
 }
 
