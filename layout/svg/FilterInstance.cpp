@@ -632,15 +632,11 @@ static WrFiltersStatus WrFilterOpSVGFEComponentTransfer(
   }
   
   
-  size_t stops = 256;
-  for (const auto& v : aAttributes.mValues) {
-    if (stops < v.Length()) {
-      stops = v.Length();
-    }
-  }
+  static constexpr size_t kStops = 256;
+
   aWrFilters.values.AppendElement(nsTArray<float>());
   nsTArray<float>& values = aWrFilters.values.LastElement();
-  values.SetCapacity(stops * 4);
+  values.SetCapacity(kStops * 4);
 
   
   
@@ -668,15 +664,15 @@ static WrFiltersStatus WrFilterOpSVGFEComponentTransfer(
   
   
   
-  values.SetLength(stops * 4);
+  values.SetLength(kStops * 4);
   filterData.R_values = &(values[0]);
-  filterData.R_values_count = stops;
-  filterData.G_values = &(values[stops]);
-  filterData.G_values_count = stops;
-  filterData.B_values = &(values[stops * 2]);
-  filterData.B_values_count = stops;
-  filterData.A_values = &(values[stops * 3]);
-  filterData.A_values_count = stops;
+  filterData.R_values_count = kStops;
+  filterData.G_values = &(values[kStops]);
+  filterData.G_values_count = kStops;
+  filterData.B_values = &(values[kStops * 2]);
+  filterData.B_values_count = kStops;
+  filterData.A_values = &(values[kStops * 3]);
+  filterData.A_values_count = kStops;
 
   
   
@@ -696,70 +692,64 @@ static WrFiltersStatus WrFilterOpSVGFEComponentTransfer(
       case SVGFEComponentTransferType::Discrete: {
         size_t length = (size_t)aAttributes.mValues[c].Length();
         size_t length1 = length - 1;
-        float step = (float)length / (float)stops;
-        for (size_t i = 0; i < stops; i++) {
+        float step = (float)length / (float)kStops;
+        for (size_t i = 0; i < kStops; i++) {
           
           
           float kf = (float)i * step;
-          float floorkf = floor(kf);
-          size_t k = (size_t)floorkf;
-          k = std::min(k, length1);
+          float floorkf = std::floor(kf);
+          size_t k = std::min((size_t)floorkf, length1);
           float v = aAttributes.mValues[c][k];
-          v = std::clamp(v, 0.0f, 1.0f);
-          values[i * 4 + c] = v;
+          values[i * 4 + c] = std::clamp(v, 0.0f, 1.0f);
         }
         break;
       }
       case SVGFEComponentTransferType::Gamma: {
-        float step = 1.0f / (float)(stops - 1);
+        float step = 1.0f / (float)(kStops - 1);
         float amplitude = aAttributes.mValues[c][0];
         float exponent = aAttributes.mValues[c][1];
         float offset = aAttributes.mValues[c][2];
-        for (size_t i = 0; i < stops; i++) {
+        for (size_t i = 0; i < kStops; i++) {
           float v = amplitude * pow((float)i * step, exponent) + offset;
-          v = std::clamp(v, 0.0f, 1.0f);
-          values[i * 4 + c] = v;
+          values[i * 4 + c] = std::clamp(v, 0.0f, 1.0f);
         }
         break;
       }
       case SVGFEComponentTransferType::Identity: {
-        float step = 1.0f / (float)(stops - 1);
-        for (size_t i = 0; i < stops; i++) {
+        float step = 1.0f / (float)(kStops - 1);
+        for (size_t i = 0; i < kStops; i++) {
           float v = (float)i * step;
-          v = std::clamp(v, 0.0f, 1.0f);
-          values[i * 4 + c] = v;
+          values[i * 4 + c] = std::clamp(v, 0.0f, 1.0f);
         }
         break;
       }
       case SVGFEComponentTransferType::Linear: {
-        float step = aAttributes.mValues[c][0] / (float)(stops - 1);
+        float step = aAttributes.mValues[c][0] / (float)(kStops - 1);
         float intercept = aAttributes.mValues[c][1];
-        for (size_t i = 0; i < stops; i++) {
+        for (size_t i = 0; i < kStops; i++) {
           float v = (float)i * step + intercept;
-          v = std::clamp(v, 0.0f, 1.0f);
-          values[i * 4 + c] = v;
+          values[i * 4 + c] = std::clamp(v, 0.0f, 1.0f);
         }
         break;
       }
       case SVGFEComponentTransferType::Table: {
         size_t length1 = (size_t)aAttributes.mValues[c].Length() - 1;
-        float step = (float)length1 / (float)(stops - 1);
-        for (size_t i = 0; i < stops; i++) {
+        float step = (float)length1 / (float)(kStops - 1);
+        for (size_t i = 0; i < kStops; i++) {
           
           float kf = (float)i * step;
           float floorkf = floor(kf);
-          size_t k = (size_t)floorkf;
+          size_t k = std::min((size_t)floorkf, length1);
           float v1 = aAttributes.mValues[c][k];
           float v2 = aAttributes.mValues[c][(k + 1 <= length1) ? k + 1 : k];
           float v = v1 + (v2 - v1) * (kf - floorkf);
-          v = std::clamp(v, 0.0f, 1.0f);
-          values[i * 4 + c] = v;
+          values[i * 4 + c] = std::clamp(v, 0.0f, 1.0f);
         }
         break;
       }
       case SVGFEComponentTransferType::SameAsR: {
         
-        for (size_t i = 0; i < stops; i++) {
+        for (size_t i = 0; i < kStops; i++) {
           values[i * 4 + c] = values[i * 4];
         }
         break;
