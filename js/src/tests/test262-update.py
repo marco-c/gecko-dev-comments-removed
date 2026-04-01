@@ -17,8 +17,6 @@ from operator import itemgetter
 UNSUPPORTED_FEATURES = set([
     "tail-call-optimization",
     "Intl.Locale-info",  
-    "source-phase-imports",
-    "source-phase-imports-module-source",
     "import-defer",
     "import-text",
     "nonextensible-applies-to-private",  
@@ -35,6 +33,7 @@ FEATURE_CHECK_NEEDED = {
     "iterator-sequencing": "!Iterator.concat",  
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
     "await-dictionary": "!Promise.allKeyed",
+    "source-phase-imports": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('source-phase-imports'))",
 }
 RELEASE_OR_BETA = set([
     "legacy-regexp",
@@ -48,6 +47,8 @@ SHELL_OPTIONS = {
     "immutable-arraybuffer": "--enable-arraybuffer-immutable",
     "import-bytes": "--enable-import-bytes",
     "await-dictionary": "--enable-promise-allkeyed",
+    "source-phase-imports": "--enable-source-phase-imports",
+    "source-phase-imports-module-source": "--enable-source-phase-imports-test262-module-source",
 }
 
 INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {}

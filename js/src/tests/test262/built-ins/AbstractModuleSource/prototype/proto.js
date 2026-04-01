@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof $262.AbstractModuleSource, 'function');
+var proto = Object.getPrototypeOf($262.AbstractModuleSource.prototype);
+assert.sameValue(proto, Object.prototype);
+
+reportCompare(0, 0);
