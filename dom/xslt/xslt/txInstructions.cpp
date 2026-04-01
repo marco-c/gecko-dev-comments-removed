@@ -2,7 +2,6 @@
 
 
 
-
 #include "txInstructions.h"
 
 #include <utility>
@@ -47,26 +46,26 @@ nsresult txApplyImportsEnd::execute(txExecutionState& aEs) {
 }
 
 nsresult txApplyImportsStart::execute(txExecutionState& aEs) {
-  txExecutionState::TemplateRule* rule = aEs.getCurrentTemplateRule();
+  txExecutionState::TemplateRule rule = *aEs.getCurrentTemplateRule();
   
   
   
-  if (!rule->mFrame) {
+  if (!rule.mFrame) {
     
     return NS_ERROR_XSLT_EXECUTION_FAILURE;
   }
 
-  aEs.pushParamMap(rule->mParams);
+  aEs.pushParamMap(rule.mParams);
 
   txStylesheet::ImportFrame* frame = 0;
-  txExpandedName mode(rule->mModeNsId, rule->mModeLocalName);
+  txExpandedName mode(rule.mModeNsId, rule.mModeLocalName);
   txInstruction* templ;
   nsresult rv =
       aEs.mStylesheet->findTemplate(aEs.getEvalContext()->getContextNode(),
-                                    mode, &aEs, rule->mFrame, &templ, &frame);
+                                    mode, &aEs, rule.mFrame, &templ, &frame);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aEs.pushTemplateRule(frame, mode, rule->mParams);
+  aEs.pushTemplateRule(frame, mode, rule.mParams);
 
   rv = aEs.runTemplate(templ);
   if (NS_FAILED(rv)) {
