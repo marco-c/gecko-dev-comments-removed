@@ -1072,7 +1072,7 @@ void GCRuntime::finish() {
   
   markTask.join();
   sweepTask.join();
-  markTask.join();
+  unmarkTask.join();
   freeTask.join();
   allocTask.cancelAndWait();
   decommitTask.cancelAndWait();
