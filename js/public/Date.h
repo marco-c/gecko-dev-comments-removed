@@ -81,6 +81,7 @@ class ClippedTime {
 
   explicit ClippedTime(double time) : t(time) {}
   friend ClippedTime TimeClip(double time);
+  friend ClippedTime TimeClip(int64_t time);
 
  public:
   
@@ -101,13 +102,28 @@ class ClippedTime {
 
 inline ClippedTime TimeClip(double time) {
   
-  const double MaxTimeMagnitude = 8.64e15;
+  constexpr double MaxTimeMagnitude = 8.64e15;
   if (!std::isfinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
     return ClippedTime(mozilla::UnspecifiedNaN<double>());
   }
 
   
   return ClippedTime(ToInteger(time));
+}
+
+
+
+
+
+inline ClippedTime TimeClip(int64_t time) {
+  
+  constexpr int64_t MaxTimeMagnitude = 8.64e15;
+  if (mozilla::Abs(time) > MaxTimeMagnitude) {
+    return ClippedTime(mozilla::UnspecifiedNaN<double>());
+  }
+
+  
+  return ClippedTime(static_cast<double>(time));
 }
 
 
