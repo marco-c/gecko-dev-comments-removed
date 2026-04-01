@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Core & HTML")
+    BUG_COMPONENT = ("Core", "Machine Learning: General")
 
 XPIDL_SOURCES += [
     "nsIModelContextService.idl",
