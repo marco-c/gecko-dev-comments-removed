@@ -484,6 +484,21 @@ mozilla::pkix::Result DoOCSPRequest(
   return Success;
 }
 
+
+struct BackgroundPromptStatus final {
+  explicit BackgroundPromptStatus(PK11SlotInfo* slot)
+      : mSlot(slot), mDone(false), mResult(SECFailure) {}
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BackgroundPromptStatus)
+
+  UniquePK11SlotInfo mSlot;
+  Atomic<bool> mDone;
+  SECStatus mResult;
+
+ private:
+  ~BackgroundPromptStatus() = default;
+};
+
 static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(slot);
@@ -494,12 +509,13 @@ static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
 
   
   
-  Atomic<bool> done;
-  Atomic<SECStatus> result;
-  nsresult rv =
-      NS_DispatchBackgroundTask(NS_NewRunnableFunction(__func__, [&]() mutable {
-        result = PK11_CheckUserPassword(slot, nullptr);
-        done = true;
+  RefPtr<BackgroundPromptStatus> backgroundPromptStatus(
+      new BackgroundPromptStatus(PK11_ReferenceSlot(slot)));
+  nsresult rv = NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(__func__, [backgroundPromptStatus]() mutable {
+        backgroundPromptStatus->mResult = PK11_CheckUserPassword(
+            backgroundPromptStatus->mSlot.get(), nullptr);
+        backgroundPromptStatus->mDone = true;
       }));
   if (NS_FAILED(rv)) {
     return nullptr;
@@ -522,15 +538,23 @@ static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
   if (NS_FAILED(errorResult.StealNSResult())) {
     return nullptr;
   }
+
+  
+  
+  
+  
   rv = prompt->Alert(nullptr, NS_ConvertUTF8toUTF16(promptString).get());
   if (NS_FAILED(rv)) {
     return nullptr;
   }
 
+  
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-      "ShowProtectedAuthPrompt"_ns, [&]() { return static_cast<bool>(done); }));
+      "ShowProtectedAuthPrompt"_ns, [backgroundPromptStatus]() {
+        return static_cast<bool>(backgroundPromptStatus->mDone);
+      }));
 
-  switch (result) {
+  switch (backgroundPromptStatus->mResult) {
     case SECSuccess:
       return ToNewCString(nsDependentCString(PK11_PW_AUTHENTICATED));
     case SECWouldBlock:
