@@ -592,7 +592,6 @@ public class GeckoSession {
                     message.getString("alt"),
                     message.getString("elementType"),
                     message.getString("elementSrc"),
-                    message.getString("textContent"),
                     message.getString("linkText"));
 
             delegate.onContextMenu(
@@ -4017,23 +4016,12 @@ public class GeckoSession {
       public final @Nullable String srcUri;
 
       
-
-
-
-
-
-      @Deprecated
-      @DeprecationSchedule(id = "context-element-api-updates", version = 151)
-      public final @Nullable String textContent;
-
-      
       public final @Nullable String linkText;
 
       
       final List<WebExtension.Menu> extensionMenus;
 
       
-
 
 
 
@@ -4051,7 +4039,6 @@ public class GeckoSession {
           final @Nullable String altText,
           final @NonNull String typeStr,
           final @Nullable String srcUri,
-          final @Nullable String textContent,
           final @Nullable String linkText) {
         this.baseUri = baseUri;
         this.linkUri = linkUri;
@@ -4059,33 +4046,8 @@ public class GeckoSession {
         this.altText = altText;
         this.type = getType(typeStr);
         this.srcUri = srcUri;
-        this.textContent = textContent;
         this.extensionMenus = null;
         this.linkText = linkText;
-      }
-
-      
-
-
-
-
-
-
-
-
-
-
-
-      @Deprecated
-      @DeprecationSchedule(id = "context-element-api-updates", version = 151)
-      protected ContextElement(
-          final @Nullable String baseUri,
-          final @Nullable String linkUri,
-          final @Nullable String title,
-          final @Nullable String altText,
-          final @NonNull String typeStr,
-          final @Nullable String srcUri) {
-        this(baseUri, linkUri, title, altText, typeStr, srcUri, null, null);
       }
 
       private static int getType(final String name) {
