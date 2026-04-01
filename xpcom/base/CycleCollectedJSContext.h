@@ -334,6 +334,10 @@ class FinalizationRegistryCleanup {
   
   CycleCollectedJSContext* mContext;
 
+  
+  
+  CleanupRunnable* mPendingRunnable = nullptr;
+
   using CallbackVector = JS::GCVector<Callback, 0, JSInfallibleAllocPolicy>;
   JS::PersistentRooted<CallbackVector> mCallbacks;
 };
