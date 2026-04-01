@@ -50,7 +50,7 @@ struct RefPtrTraits {
 }  
 
 template <class T>
-class MOZ_IS_REFPTR RefPtr {
+class MOZ_IS_REFPTR MOZ_NULL_AFTER_MOVE RefPtr {
  private:
   void assign_with_AddRef(T* aRawPtr) {
     if (aRawPtr) {

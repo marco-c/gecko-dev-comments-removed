@@ -490,6 +490,37 @@
 
 
 
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(clang::reinitializes)
+#    define MOZ_REINITIALIZES [[clang::reinitializes]]
+#  else
+#    define MOZ_REINITIALIZES
+#  endif
+#else
+#  define MOZ_REINITIALIZES
+#endif
+
+
+
+
+
+
+
+
+
+
+#if defined(__clang__)
+#  define MOZ_NULL_AFTER_MOVE                                  \
+    [[clang::annotate("clang-tidy", "bugprone-use-after-move", \
+                      "null_after_move")]]
+#else
+#  define MOZ_NULL_AFTER_MOVE
+#endif
+
+
+
+
+
 
 
 #if defined(__clang__) && defined(__has_cpp_attribute)
