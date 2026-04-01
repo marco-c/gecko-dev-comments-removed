@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_DateObject_h_
 #define vm_DateObject_h_
 
@@ -61,13 +63,6 @@ class DateObject : public NativeObject {
   static const JSClass protoClass_;
 
   js::DateTimeInfo* dateTimeInfo() const;
-
-  JS::ClippedTime clippedTime() const {
-    double t = getFixedSlot(UTC_TIME_SLOT).toDouble();
-    JS::ClippedTime clipped = JS::TimeClip(t);
-    MOZ_ASSERT(mozilla::NumbersAreIdentical(clipped.toDouble(), t));
-    return clipped;
-  }
 
   
 
