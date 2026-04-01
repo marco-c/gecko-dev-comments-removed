@@ -153,8 +153,6 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   
   virtual void EnsureWebRenderBridgeParentInitialized() = 0;
 
-  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
-
  protected:
   virtual ~CompositorBridgeParentBase();
 
