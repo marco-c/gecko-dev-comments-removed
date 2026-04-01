@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "SMILCSSValueType.h"
 
 #include "mozilla/DeclarationBlock.h"
@@ -438,7 +436,7 @@ void SMILCSSValueType::ValueFromString(NonCustomCSSPropertyId aPropId,
   }
 
   RefPtr<const ComputedStyle> computedStyle =
-      nsComputedDOMStyle::GetComputedStyle(aTargetElement);
+      nsComputedDOMStyle::GetComputedStyleNoFlush(aTargetElement);
   if (!computedStyle) {
     return;
   }
