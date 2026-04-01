@@ -79,7 +79,7 @@ void AbortSignalImpl::RunAbortSteps() {
   
   
   
-  for (RefPtr<AbortFollower> follower : mFollowers.ForwardRange()) {
+  for (RefPtr<AbortFollower>& follower : mFollowers.ForwardRange()) {
     MOZ_ASSERT(follower->mFollowingSignal == this);
     follower->RunAbortAlgorithm();
   }
@@ -484,11 +484,12 @@ void AbortFollower::Follow(AbortSignalImpl* aSignal) {
 
 
 void AbortFollower::Unfollow() {
-  if (WeakPtr<AbortSignalImpl> followingSignal = std::move(mFollowingSignal)) {
+  if (mFollowingSignal) {
     
     
     
-    followingSignal->mFollowers.RemoveElement(this);
+    mFollowingSignal->mFollowers.RemoveElement(this);
+    mFollowingSignal = nullptr;
   }
 }
 
