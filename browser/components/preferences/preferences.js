@@ -53,6 +53,8 @@ var { FxAccounts, getFxAccountsSingleton } = ChromeUtils.importESModule(
 );
 var fxAccounts = getFxAccountsSingleton();
 
+var TAB_SESSION_ID = crypto.randomUUID();
+
 XPCOMUtils.defineLazyServiceGetters(this, {
   gApplicationUpdateService: [
     "@mozilla.org/updates/update-service;1",
@@ -383,6 +385,7 @@ function init_all() {
   maybeDisplayPoliciesNotice();
 
   window.addEventListener("hashchange", onHashChange);
+  window.addEventListener("beforeunload", onBeforeunload);
 
   document.getElementById("focusSearch1").addEventListener("command", () => {
     gSearchResultsPane.searchInput.focus();
@@ -410,6 +413,25 @@ function init_all() {
 
 function onHashChange() {
   gotoPref(null, "Hash");
+}
+
+function onBeforeunload() {
+  Glean.aboutpreferences.close.record({ session: TAB_SESSION_ID });
+}
+
+
+
+
+
+
+
+
+function recordSettingChangeTelemetry(id) {
+  Glean.aboutpreferences.change.record({
+    session: TAB_SESSION_ID,
+    setting: id,
+    pane: gLastCategory.category,
+  });
 }
 
 
@@ -546,7 +568,10 @@ async function gotoPref(
   let gleanId =  (
     "show" + aShowReason
   );
-  Glean.aboutpreferences[gleanId].record({ value: category });
+  Glean.aboutpreferences[gleanId].record({
+    value: category,
+    session: TAB_SESSION_ID,
+  });
 
   document.dispatchEvent(
     new CustomEvent("paneshown", {
