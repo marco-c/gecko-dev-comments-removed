@@ -265,14 +265,12 @@ void AbsoluteContainingBlock::SanityCheckChildListsBeforeReflow(
   
   
   
-  for (const nsFrameList* list : {&mAbsoluteFrames, &mPushedAbsoluteFrames}) {
-    for (const nsIFrame* child : *list) {
-      for (nsIFrame* prev = child->GetPrevInFlow(); prev;
-           prev = prev->GetPrevInFlow()) {
-        MOZ_ASSERT(!list->ContainsFrame(prev),
-                   "It is wrong that both a child and its prev-in-flow are in "
-                   "the same child list!");
-      }
+  for (const nsIFrame* child : mAbsoluteFrames) {
+    for (nsIFrame* prev = child->GetPrevInFlow(); prev;
+         prev = prev->GetPrevInFlow()) {
+      MOZ_ASSERT(!GetChildList().ContainsFrame(prev),
+                 "It is wrong that both a child and its prev-in-flow are in "
+                 "our child list!");
     }
   }
 
