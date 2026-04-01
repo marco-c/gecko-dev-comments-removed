@@ -6,21 +6,21 @@
 import logging
 import os
 import re
+from typing import Optional
 
 import mozpack.path as mozpath
 import taskgraph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.docker import create_context_tar, generate_context_hash
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Optional, Required
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.util.docker import (
     image_path,
 )
 
 from .. import GECKO
-from .task import task_description_schema
+from .task import TaskDescriptionSchema
 
 logger = logging.getLogger(__name__)
 
@@ -36,37 +36,33 @@ IMAGE_BUILDER_IMAGE = (
 
 transforms = TransformSequence()
 
-docker_image_schema = LegacySchema({
+
+class DockerImageSchema(Schema, kw_only=True):
     
-    Required("name"): str,
+    name: str
     
-    Optional("parent"): str,
+    parent: Optional[str] = None
     
-    Required("symbol"): str,
-    
-    
-    Optional("task-from"): str,
-    
-    Optional("args"): {str: str},
+    symbol: str
     
     
-    Optional("definition"): str,
+    task_from: Optional[str] = None
     
-    Optional("packages"): [str],
-    Optional("arch"): str,
-    Optional(
-        "index",
-        description="information for indexing this build so its artifacts can be discovered",
-    ): task_description_schema["index"],
-    Optional(
-        "cache",
-        description="Whether this image should be cached based on inputs.",
-    ): bool,
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+    args: Optional[dict[str, str]] = None
+    
+    
+    definition: Optional[str] = None
+    
+    packages: Optional[list[str]] = None
+    arch: Optional[str] = None
+    
+    index: TaskDescriptionSchema.__annotations__["index"] = None
+    
+    cache: Optional[bool] = None
+    run_on_repo_type: TaskDescriptionSchema.__annotations__["run_on_repo_type"] = None
 
 
-transforms.add_validate(docker_image_schema)
+transforms.add_validate(DockerImageSchema)
 
 
 @transforms.add
