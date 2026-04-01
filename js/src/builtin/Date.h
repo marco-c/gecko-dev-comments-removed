@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef builtin_Date_h
 #define builtin_Date_h
 
@@ -28,17 +30,6 @@ namespace js {
 
 extern JSObject* NewDateObjectMsec(JSContext* cx, JS::ClippedTime t,
                                    JS::HandleObject proto = nullptr);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, int year, int mon,
-                                             int mday, int hour, int min,
-                                             int sec);
 
 
 

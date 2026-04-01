@@ -150,6 +150,10 @@ extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, ClippedTime time);
 
 
 
+
+
+
+
 extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, int year, int mon,
                                              int mday, int hour, int min,
                                              int sec);
