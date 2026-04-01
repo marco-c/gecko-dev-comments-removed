@@ -1837,7 +1837,7 @@ static bool CountEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
   *optimized = true;
 
-  int32_t num_properties = 0;
+  size_t num_properties = 0;
 
   
   Rooted<PropertyIteratorObject*> piter(cx,
@@ -1867,7 +1867,6 @@ static bool CountEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     
     
     
-    
     if (len > NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
       ReportOversizedAllocation(cx, JSMSG_ALLOC_OVERFLOW);
       return false;
@@ -1894,6 +1893,7 @@ static bool CountEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     }
   }
 
+  MOZ_RELEASE_ASSERT(num_properties <= INT32_MAX);
   rval = num_properties;
   return true;
 }
