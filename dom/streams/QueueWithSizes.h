@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_QueueWithSizes_h
 #define mozilla_dom_QueueWithSizes_h
 
@@ -84,8 +82,9 @@ inline void EnqueueValueWithSize(QueueContainingClass aContainer,
 
 
 template <class QueueContainingClass>
-inline void DequeueValue(QueueContainingClass aContainer,
-                         JS::MutableHandle<JS::Value> aResultValue) {
+inline void DequeueValue(JSContext* aCx, QueueContainingClass aContainer,
+                         JS::MutableHandle<JS::Value> aResultValue,
+                         ErrorResult& aRv) {
   
   
   MOZ_ASSERT(!aContainer->Queue().isEmpty());
@@ -105,12 +104,17 @@ inline void DequeueValue(QueueContainingClass aContainer,
 
   
   aResultValue.set(valueWithSize->mValue);
+  if (!JS_WrapValue(aCx, aResultValue)) {
+    aResultValue.setUndefined();
+    aRv.StealExceptionFromJSContext(aCx);
+  }
 }
 
 
 template <class QueueContainingClass>
-inline void PeekQueueValue(QueueContainingClass aContainer,
-                           JS::MutableHandle<JS::Value> aResultValue) {
+inline void PeekQueueValue(JSContext* aCx, QueueContainingClass aContainer,
+                           JS::MutableHandle<JS::Value> aResultValue,
+                           ErrorResult& aRv) {
   
   
   
@@ -121,6 +125,10 @@ inline void PeekQueueValue(QueueContainingClass aContainer,
 
   
   aResultValue.set(valueWithSize->mValue);
+  if (!JS_WrapValue(aCx, aResultValue)) {
+    aResultValue.setUndefined();
+    aRv.StealExceptionFromJSContext(aCx);
+  }
 }
 
 

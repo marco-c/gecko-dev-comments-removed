@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WritableStreamDefaultController.h"
 
 #include "js/Exception.h"
@@ -257,7 +255,10 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessClose(
 
   
   JS::Rooted<JS::Value> value(aCx);
-  DequeueValue(aController, &value);
+  DequeueValue(aCx, aController, &value, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   MOZ_ASSERT(aController->Queue().isEmpty());
@@ -335,7 +336,10 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessWrite(
 
             
             JS::Rooted<JS::Value> value(aCx);
-            DequeueValue(aController, &value);
+            DequeueValue(aCx, aController, &value, aRv);
+            if (aRv.Failed()) {
+              return;
+            }
 
             
             
@@ -418,7 +422,10 @@ static void WritableStreamDefaultControllerAdvanceQueueIfNeeded(
 
   
   JS::Rooted<JS::Value> value(aCx);
-  PeekQueueValue(aController, &value);
+  PeekQueueValue(aCx, aController, &value, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   

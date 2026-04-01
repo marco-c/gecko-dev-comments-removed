@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ReadableStream.h"
 
 #include "ReadIntoRequest.h"
@@ -109,6 +107,16 @@ ReadableStream::~ReadableStream() {
 JSObject* ReadableStream::WrapObject(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {
   return ReadableStream_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+void ReadableStream::GetStoredError(JSContext* aCx,
+                                    JS::MutableHandle<JS::Value> aStoredError,
+                                    ErrorResult& aRv) const {
+  aStoredError.set(mStoredError);
+  if (!JS_WrapValue(aCx, aStoredError)) {
+    aStoredError.setUndefined();
+    aRv.StealExceptionFromJSContext(aCx);
+  }
 }
 
 ReadableStreamDefaultReader* ReadableStream::GetDefaultReader() {
@@ -585,7 +593,12 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
 
   
   if (aStream->State() == ReadableStream::ReaderState::Errored) {
-    JS::Rooted<JS::Value> storedError(aCx, aStream->StoredError());
+    JS::Rooted<JS::Value> storedError(aCx);
+    aStream->GetStoredError(aCx, &storedError, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
     return Promise::CreateRejected(aStream->GetParentObject(), storedError,
                                    aRv);
   }
@@ -891,13 +904,21 @@ ReadableStreamDefaultTeeSourceAlgorithms::CancelCallback(
       return nullptr;
     }
 
-    JS::Rooted<JS::Value> reason1(aCx, mTeeState->Reason1());
+    JS::Rooted<JS::Value> reason1(aCx);
+    mTeeState->GetReason1(aCx, &reason1, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
     if (!JS_SetElement(aCx, compositeReason, 0, reason1)) {
       aRv.StealExceptionFromJSContext(aCx);
       return nullptr;
     }
 
-    JS::Rooted<JS::Value> reason2(aCx, mTeeState->Reason2());
+    JS::Rooted<JS::Value> reason2(aCx);
+    mTeeState->GetReason2(aCx, &reason2, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
     if (!JS_SetElement(aCx, compositeReason, 1, reason2)) {
       aRv.StealExceptionFromJSContext(aCx);
       return nullptr;

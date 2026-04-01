@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReadableStream_h
 #define mozilla_dom_ReadableStream_h
 
@@ -103,7 +101,9 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   ReaderState State() const { return mState; }
   void SetState(const ReaderState& aState) { mState = aState; }
 
-  JS::Value StoredError() const { return mStoredError; }
+  void GetStoredError(JSContext* aCx, JS::MutableHandle<JS::Value> aStoredError,
+                      ErrorResult& aRv) const;
+  JS::Value UnsafeStoredError() const { return mStoredError; }
   void SetStoredError(JS::Handle<JS::Value> aStoredError) {
     mStoredError = aStoredError;
   }

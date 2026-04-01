@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WritableStream.h"
 
 #include "StreamUtils.h"
@@ -78,6 +76,16 @@ JSObject* WritableStream::WrapObject(JSContext* aCx,
   return WritableStream_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+void WritableStream::GetStoredError(JSContext* aCx,
+                                    JS::MutableHandle<JS::Value> aStoredError,
+                                    ErrorResult& aRv) const {
+  aStoredError.set(mStoredError);
+  if (!JS_WrapValue(aCx, aStoredError)) {
+    aStoredError.setUndefined();
+    aRv.StealExceptionFromJSContext(aCx);
+  }
+}
+
 
 void WritableStream::DealWithRejection(JSContext* aCx,
                                        JS::Handle<JS::Value> aError,
@@ -139,6 +147,10 @@ void WritableStream::FinishErroring(JSContext* aCx, ErrorResult& aRv) {
   
   RefPtr<Promise> abortPromise = mPendingAbortRequestPromise;
   JS::Rooted<JS::Value> abortReason(aCx, mPendingAbortRequestReason);
+  if (!JS_WrapValue(aCx, &abortReason)) {
+    aRv.StealExceptionFromJSContext(aCx);
+    return;
+  }
   bool abortWasAlreadyErroring = mPendingAbortRequestWasAlreadyErroring;
 
   

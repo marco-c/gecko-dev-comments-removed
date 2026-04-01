@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ReadableStreamPipeTo.h"
 
 #include "js/Exception.h"
@@ -258,7 +256,8 @@ bool PipeToPump::SourceOrDestErroredOrClosed(JSContext* aCx) {
   
   
   if (source->State() == ReadableStream::ReaderState::Errored) {
-    JS::Rooted<JS::Value> storedError(aCx, source->StoredError());
+    JS::Rooted<JS::Value> storedError(aCx);
+    source->GetStoredError(aCx, &storedError, IgnoredErrorResult());
     OnSourceErrored(aCx, storedError);
     return true;
   }
@@ -266,7 +265,8 @@ bool PipeToPump::SourceOrDestErroredOrClosed(JSContext* aCx) {
   
   
   if (dest->State() == WritableStream::WriterState::Errored) {
-    JS::Rooted<JS::Value> storedError(aCx, dest->StoredError());
+    JS::Rooted<JS::Value> storedError(aCx);
+    dest->GetStoredError(aCx, &storedError, IgnoredErrorResult());
     OnDestErrored(aCx, storedError);
     return true;
   }
@@ -456,15 +456,20 @@ class ShutdownActionFinishedPromiseHandler final : public PromiseNativeHandler {
   }
 
   void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult&) override {
+                        ErrorResult& aRv) override {
     
     
     
-    JS::Rooted<Maybe<JS::Value>> error(aCx);
+    JS::Rooted<Maybe<JS::Value>> maybeError(aCx);
     if (mHasError) {
-      error = Some(mError);
+      JS::Rooted<JS::Value> error(aCx, mError);
+      if (!JS_WrapValue(aCx, &error)) {
+        aRv.StealExceptionFromJSContext(aCx);
+        return;
+      }
+      maybeError = Some(error.get());
     }
-    mPipeToPump->Finalize(aCx, error);
+    mPipeToPump->Finalize(aCx, maybeError);
   }
 
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aReason,
