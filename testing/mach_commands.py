@@ -428,6 +428,11 @@ def test(command_context, what, extra_args, **log_args):
     if log_args.get("auto"):
         from itertools import chain
 
+        
+        
+        command_context._virtualenv_name = "taskgraph"
+        command_context.activate_virtualenv()
+
         from gecko_taskgraph.util.bugbug import patch_schedules
         from mozversioncontrol.factory import get_specific_repository_object
 
