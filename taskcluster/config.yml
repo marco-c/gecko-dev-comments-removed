@@ -223,6 +223,7 @@ treeherder:
         'browser-engine-gecko': 'browser-engine-gecko'
         'browser-engine-system': 'browser-engine-system'
         'browser-errorpages': 'browser-errorpages'
+        'browser-favicons': 'browser-favicons'
         'browser-icons': 'browser-icons'
         'browser-menu': 'browser-menu'
         'browser-menu2': 'browser-menu2'
@@ -535,6 +536,7 @@ taskgraph:
     repositories:
         gecko:
             name: 'Mozilla Firefox'
+    decision-parameters: 'gecko_taskgraph.parameters:get_decision_parameters'
 
 workers:
     aliases:
