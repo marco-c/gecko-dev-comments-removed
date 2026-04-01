@@ -392,9 +392,6 @@ void Link::BindToTree(const BindContext& aContext) {
 
 void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   
-  
-  
-  
   mNeedsRegistration = aHasHref;
 
   
