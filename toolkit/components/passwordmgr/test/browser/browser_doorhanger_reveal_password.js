@@ -27,7 +27,7 @@ add_task(async function test_do_not_reveal_password() {
   });
 
   
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 });
 
 
