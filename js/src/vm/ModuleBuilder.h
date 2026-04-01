@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef vm_ModuleBuilder_h
 #define vm_ModuleBuilder_h
 
@@ -40,9 +42,6 @@ class MOZ_STACK_CLASS ModuleBuilder {
       : ModuleBuilder(fc, frontend::EitherParser(parser)) {}
 
   bool processImport(frontend::BinaryNode* importNode);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  bool processImportSource(frontend::BinaryNode* importNode);
-#endif
   bool processExport(frontend::ParseNode* exportNode);
   bool processExportFrom(frontend::BinaryNode* exportNode);
 
@@ -104,7 +103,8 @@ class MOZ_STACK_CLASS ModuleBuilder {
 
   MaybeModuleRequestIndex appendModuleRequest(
       frontend::TaggedParserAtomIndex specifier,
-      frontend::ListNode* attributeList);
+      frontend::ListNode* attributeList,
+      ImportPhase phase = ImportPhase::Evaluation);
 
   bool appendExportEntry(frontend::TaggedParserAtomIndex exportName,
                          frontend::TaggedParserAtomIndex localName,
