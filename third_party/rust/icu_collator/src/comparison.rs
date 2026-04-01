@@ -1536,11 +1536,17 @@ impl<'data> CollatorBorrowed<'data> {
 
                             
                             
-                            if let Some(mut left_primary) =
-                                left_ce32.to_primary_in_quick_check(left_data)
+                            if let Some(mut left_primary) = left_ce32
+                                .to_primary_in_quick_check_numeric(
+                                    left_data,
+                                    numeric_primary.is_some(),
+                                )
                             {
-                                if let Some(mut right_primary) =
-                                    right_ce32.to_primary_in_quick_check(right_data)
+                                if let Some(mut right_primary) = right_ce32
+                                    .to_primary_in_quick_check_numeric(
+                                        right_data,
+                                        numeric_primary.is_some(),
+                                    )
                                 {
                                     quick_primary_compare!(
                                         left_primary,
