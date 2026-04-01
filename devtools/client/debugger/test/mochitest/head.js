@@ -201,6 +201,45 @@ function getEventListenersPanel(dbg) {
   return findElementWithSelector(dbg, ".event-listeners-pane .event-listeners");
 }
 
+
+
+
+
+
+
+
+
+
+
+
+async function waitForEventBreakpointChecked(
+  dbg,
+  eventBreakpointGroup,
+  eventBreakpointName
+) {
+  const eventCheckbox = await getEventBreakpointCheckbox(
+    dbg,
+    eventBreakpointGroup,
+    eventBreakpointName
+  );
+
+  info("Wait for the event breakpoint checkbox state to be restored");
+  await waitFor(() => eventCheckbox.checked);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function toggleEventBreakpoint(
   dbg,
   eventBreakpointGroup,
@@ -227,6 +266,16 @@ async function toggleEventBreakpoint(
     return eventCheckbox.checked == !checked;
   });
 }
+
+
+
+
+
+
+
+
+
+
 
 async function getEventBreakpointCheckbox(
   dbg,

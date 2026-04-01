@@ -255,6 +255,12 @@ add_task(async function () {
   await assertPausedAtSourceAndLine(dbg, eventBreakpointsSource.id, 82);
   await resume(dbg);
   await onReload;
+  
+  
+  
+  
+  
+  await waitForEventBreakpointChecked(dbg, "Load", "event.load.beforeunload");
   await toggleEventBreakpoint(dbg, "Load", "event.load.beforeunload");
 
   info(`Check that breakpoint can be set on "unload" event`);
@@ -264,6 +270,7 @@ add_task(async function () {
   await assertPausedAtSourceAndLine(dbg, eventBreakpointsSource.id, 87);
   await resume(dbg);
   await onReload;
+  await waitForEventBreakpointChecked(dbg, "Load", "event.load.unload");
   await toggleEventBreakpoint(dbg, "Load", "event.load.unload");
 });
 
