@@ -370,7 +370,8 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
          curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid",
          newConfig.ToString().get());
 
-    if (!newConfig.HasSPS() && !curConfig.unwrap().HasSPS()) {
+    if (!newConfig.HasSPS() &&
+        (curConfig.isErr() || !curConfig.inspect().HasSPS())) {
       
       
       LOG("No sps found, waiting for initialization");
