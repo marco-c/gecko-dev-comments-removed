@@ -8,6 +8,7 @@
 use super::feature::{Evaluator, QueryFeatureDescription};
 use super::feature::{FeatureFlags, KeywordDiscriminant};
 use crate::context::QuirksMode;
+use crate::custom_properties::VariableValue as CustomVariableValue;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::CSSWideKeyword;
@@ -681,6 +682,10 @@ pub enum QueryExpressionValue {
     
     
     Var(DashedIdent),
+    
+    
+    
+    Function(Box<CustomVariableValue>),
 }
 
 impl QueryExpressionValue {
@@ -709,6 +714,7 @@ impl QueryExpressionValue {
                 v.to_css(dest)?;
                 dest.write_char(')')
             },
+            QueryExpressionValue::Function(ref f) => f.to_css(dest),
             QueryExpressionValue::Enumerated(value) => match for_expr
                 .expect("caller should have passed for_expr")
                 .feature()
@@ -793,17 +799,38 @@ impl QueryExpressionValue {
         if let Ok(keyword) = input.try_parse(|i| CSSWideKeyword::parse(i)) {
             return Ok(Self::Keyword(keyword));
         }
+        input.skip_whitespace();
+        let start = input.position();
         if let Ok(Token::Function(ref name)) = input.next() {
             
             
-            
-            
+            let parse_func =
+                |input: &mut Parser<'i, 't>| -> Result<CustomVariableValue, ParseError<'i>> {
+                    input.parse_nested_block(|i| i.expect_no_error_token().map_err(Into::into))?;
+                    let mut input = ParserInput::new(input.slice_from(start));
+                    CustomVariableValue::parse(
+                        &mut Parser::new(&mut input),
+                        Some(&context.namespaces.prefixes),
+                        context.url_data,
+                    )
+                };
+
             if name.eq_ignore_ascii_case("var") {
+                
+                
+                
                 if let Ok(ident) =
                     input.try_parse(|i| i.parse_nested_block(|i| DashedIdent::parse(context, i)))
                 {
                     return Ok(Self::Var(ident));
                 }
+                
+                
+                
+                return Ok(Self::Function(Box::new(parse_func(input)?)));
+            }
+            if static_prefs::pref!("layout.css.attr.enabled") && name.eq_ignore_ascii_case("attr") {
+                return Ok(Self::Function(Box::new(parse_func(input)?)));
             }
         }
         Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
