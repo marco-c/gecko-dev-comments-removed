@@ -87,7 +87,8 @@ bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
       
       
       JS::RootingContext* rcx = RootingCx();
-      JS::Rooted<JS::Value> rootedError(rcx, aStream->StoredError());
+      
+      JS::Rooted<JS::Value> rootedError(rcx, aStream->UnsafeStoredError());
       aReader->ClosedPromise()->MaybeReject(rootedError);
 
       
@@ -222,7 +223,11 @@ void ReadableStreamDefaultReaderRead(JSContext* aCx,
     }
 
     case ReadableStream::ReaderState::Errored: {
-      JS::Rooted<JS::Value> storedError(aCx, stream->StoredError());
+      JS::Rooted<JS::Value> storedError(aCx);
+      stream->GetStoredError(aCx, &storedError, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
       aRequest->ErrorSteps(aCx, storedError, aRv);
       return;
     }

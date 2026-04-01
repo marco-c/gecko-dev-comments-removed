@@ -123,7 +123,12 @@ void TransformStreamDefaultController::Enqueue(JSContext* aCx,
     TransformStreamErrorWritableAndUnblockWrite(aCx, stream, error, aRv);
 
     
-    JS::Rooted<JS::Value> storedError(aCx, stream->Readable()->StoredError());
+    JS::Rooted<JS::Value> storedError(aCx);
+    stream->Readable()->GetStoredError(aCx, &storedError, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+
     aRv.MightThrowJSException();
     aRv.ThrowJSException(aCx, storedError);
     return;
