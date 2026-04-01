@@ -656,7 +656,8 @@ class Manager::CacheMatchAction final : public Manager::BaseAction {
 
     
     
-    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
+    if (IsCanceled() ||
+        AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
       if (stream) {
         stream->Close();
       }
@@ -732,7 +733,8 @@ class Manager::CacheMatchAllAction final : public Manager::BaseAction {
 
       
       
-      if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
+      if (IsCanceled() ||
+          AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
         if (stream) {
           stream->Close();
         }
@@ -1295,7 +1297,8 @@ class Manager::CacheKeysAction final : public Manager::BaseAction {
 
       
       
-      if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
+      if (IsCanceled() ||
+          AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
         if (stream) {
           stream->Close();
         }
@@ -1374,7 +1377,8 @@ class Manager::StorageMatchAction final : public Manager::BaseAction {
 
     
     
-    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
+    if (IsCanceled() ||
+        AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownQM)) {
       if (stream) {
         stream->Close();
       }
