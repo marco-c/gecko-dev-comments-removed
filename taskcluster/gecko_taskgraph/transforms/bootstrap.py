@@ -3,30 +3,35 @@
 
 
 
-from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
+from typing import Optional, Union
 
-from gecko_taskgraph.transforms.task import task_description_schema
+from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.schema import Schema
+
+from gecko_taskgraph.transforms.task import TaskDescriptionSchema
 
 transforms = TransformSequence()
 
-bootstrap_schema = LegacySchema({
-    
-    Required("name"): str,
-    
-    
-    
-    Required("image"): Any(str, {"in-tree": str}),
-    
-    Required("pre-commands"): [str],
-    
-    Optional("task-from"): str,
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+
+class InTreeImageSchema(Schema):
+    in_tree: str
 
 
-transforms.add_validate(bootstrap_schema)
+class BootstrapSchema(Schema, kw_only=True):
+    
+    name: str
+    
+    
+    
+    image: Union[str, InTreeImageSchema]
+    
+    pre_commands: list[str]
+    
+    task_from: Optional[str] = None
+    run_on_repo_type: TaskDescriptionSchema.__annotations__["run_on_repo_type"] = None
+
+
+transforms.add_validate(BootstrapSchema)
 
 
 @transforms.add
