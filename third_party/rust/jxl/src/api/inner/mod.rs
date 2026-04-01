@@ -157,6 +157,10 @@ impl JxlDecoderInner {
     
     
     
+    
+    
+    
+    
     pub fn start_new_frame(&mut self, seek_target: VisibleFrameSeekTarget) {
         self.box_parser
             .reset_for_codestream_seek(seek_target.remaining_in_box);

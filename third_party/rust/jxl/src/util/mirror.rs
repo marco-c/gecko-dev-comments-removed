@@ -4,6 +4,7 @@
 
 
 
+#[inline(always)]
 pub fn mirror(mut v: isize, s: usize) -> usize {
     
     loop {

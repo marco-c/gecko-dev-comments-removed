@@ -44,6 +44,7 @@ struct FrameStartInfo {
 pub(super) struct CodestreamParser {
     
     pub(super) file_header: Option<FileHeader>,
+    notified_image_info: bool,
     icc_parser: Option<IncrementalIccReader>,
     
     decoder_state: Option<DecoderState>,
@@ -75,8 +76,6 @@ pub(super) struct CodestreamParser {
     
     
     visible_frames_to_skip: usize,
-    
-    saved_file_header: Option<crate::headers::FileHeader>,
 
     section_state: SectionState,
 
@@ -114,6 +113,9 @@ pub(super) struct CodestreamParser {
     
     current_frame_remaining_in_box: u64,
 
+    
+    did_seek: bool,
+
     #[cfg(test)]
     pub frame_callback: Option<Box<FrameCallback>>,
     #[cfg(test)]
@@ -124,6 +126,7 @@ impl CodestreamParser {
     pub(super) fn new() -> Self {
         Self {
             file_header: None,
+            notified_image_info: false,
             icc_parser: None,
             decoder_state: None,
             basic_info: None,
@@ -145,7 +148,6 @@ impl CodestreamParser {
             process_without_output: false,
             preview_done: false,
             visible_frames_to_skip: 0,
-            saved_file_header: None,
             section_state: SectionState::new(0, 0),
             lf_global_section: None,
             lf_sections: vec![],
@@ -161,6 +163,7 @@ impl CodestreamParser {
             lf_slot_decode_start: [None; DecoderState::NUM_LF_FRAMES],
             current_frame_file_offset: 0,
             current_frame_remaining_in_box: u64::MAX,
+            did_seek: false,
             #[cfg(test)]
             frame_callback: None,
             #[cfg(test)]
@@ -343,6 +346,7 @@ impl CodestreamParser {
         self.candidate_hf_sections.clear();
         self.has_more_frames = true;
         self.header_needed_bytes = None;
+        self.did_seek = true;
     }
 
     pub(super) fn process(
@@ -597,7 +601,10 @@ impl CodestreamParser {
                     }
                 }
 
-                if self.decoder_state.is_some() && self.frame_header.is_none() {
+                if (!self.notified_image_info && self.decoder_state.is_some())
+                    && self.frame_header.is_none()
+                {
+                    self.notified_image_info = true;
                     
                     return Ok(());
                 }
@@ -617,7 +624,7 @@ impl CodestreamParser {
                     }
 
                     
-                    if !is_preview_frame {
+                    if !is_preview_frame && !self.did_seek {
                         self.record_frame_info();
                     }
 

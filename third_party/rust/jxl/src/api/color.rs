@@ -1260,6 +1260,8 @@ impl JxlColorProfile {
                 }
             }
             
+            (Self::Icc(a), Self::Icc(b)) => a == b,
+            
             _ => false,
         }
     }
@@ -2746,7 +2748,11 @@ mod test {
         let icc = JxlColorProfile::Icc(vec![0u8; 100]); 
         assert!(!srgb.same_color_encoding(&icc));
         assert!(!icc.same_color_encoding(&srgb));
-        assert!(!icc.same_color_encoding(&icc));
+        
+        assert!(icc.same_color_encoding(&icc));
+        
+        let icc2 = JxlColorProfile::Icc(vec![1u8; 100]);
+        assert!(!icc.same_color_encoding(&icc2));
     }
 
     #[test]
