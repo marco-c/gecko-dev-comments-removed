@@ -984,43 +984,51 @@ static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
 
 
 template <typename CharT>
-static bool ParseDigits(size_t* result, const CharT* s, size_t* i,
-                        size_t limit) {
-  size_t init = *i;
-  *result = 0;
-  while (*i < limit && ('0' <= s[*i] && s[*i] <= '9')) {
-    *result *= 10;
-    *result += (s[*i] - '0');
-    ++(*i);
-  }
-  return *i != init;
-}
-
-
-
-
-
-
-
-
-
-
-template <typename CharT>
-static bool ParseFractional(int* result, const CharT* s, size_t* i,
-                            size_t limit) {
-  int factor = 100;
-  size_t init = *i;
-  *result = 0;
-  for (; *i < limit && ('0' <= s[*i] && s[*i] <= '9'); ++(*i)) {
-    if (*i - init >= 3) {
-      
-      
-      continue;
+static MOZ_ALWAYS_INLINE size_t ParseFractional(const CharT* s, size_t start,
+                                                size_t limit, int32_t* result) {
+  int32_t acc = 0;
+  size_t i = 0;
+  for (; i < 3 && start + i < limit && IsAsciiDigit(s[start + i]); i++) {
+    if (i == 0) {
+      acc += AsciiDigitToNumber(s[start + i]) * 100;
+    } else if (i == 1) {
+      acc += AsciiDigitToNumber(s[start + i]) * 10;
+    } else if (i == 2) {
+      acc += AsciiDigitToNumber(s[start + i]) * 1;
     }
-    *result += (s[*i] - '0') * factor;
-    factor /= 10;
   }
-  return *i != init;
+
+  
+  for (; start + i < limit && IsAsciiDigit(s[start + i]); i++) {
+    
+    
+  }
+
+  *result = acc;
+  return i;
+}
+
+
+
+
+
+
+template <size_t N, typename CharT>
+static MOZ_ALWAYS_INLINE bool ParseDigitsN(const CharT* s, size_t start,
+                                           size_t limit, int32_t* result) {
+  static_assert(N == 2 || N == 4 || N == 6);
+
+  int32_t acc = 0;
+  size_t i = 0;
+  if (start + N <= limit) {
+    for (; i < N && IsAsciiDigit(s[start + i]); i++) {
+      acc *= 10;
+      acc += AsciiDigitToNumber(s[start + i]);
+    }
+  }
+
+  *result = acc;
+  return i == N;
 }
 
 
@@ -1029,38 +1037,20 @@ static bool ParseFractional(int* result, const CharT* s, size_t* i,
 
 
 
+template <size_t N, typename CharT>
+static size_t ParseDigitsNOrLess(const CharT* s, size_t start, size_t limit,
+                                 int32_t* result) {
+  static_assert(N == 2 || N == 6);
 
-template <typename CharT>
-static bool ParseDigitsN(size_t n, size_t* result, const CharT* s, size_t* i,
-                         size_t limit) {
-  size_t init = *i;
-
-  if (ParseDigits(result, s, i, std::min(limit, init + n))) {
-    return (*i - init) == n;
+  int32_t acc = 0;
+  size_t i = 0;
+  for (; i < N && start + i < limit && IsAsciiDigit(s[start + i]); i++) {
+    acc *= 10;
+    acc += AsciiDigitToNumber(s[start + i]);
   }
 
-  *i = init;
-  return false;
-}
-
-
-
-
-
-
-
-
-template <typename CharT>
-static bool ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s,
-                               size_t* i, size_t limit) {
-  size_t init = *i;
-
-  if (ParseDigits(result, s, i, std::min(limit, init + n))) {
-    return ((*i - init) > 0) && ((*i - init) <= n);
-  }
-
-  *i = init;
-  return false;
+  *result = acc;
+  return i;
 }
 
 
@@ -1122,141 +1112,191 @@ static bool ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s,
 template <typename CharT>
 static bool ParseISOStyleDate(DateTimeInfo* dtInfo, const CharT* s,
                               size_t length, ClippedTime* result) {
-  size_t i = 0;
-  int tzMul = 1;
-  int dateMul = 1;
-  size_t year = 1970;
-  size_t month = 1;
-  size_t day = 1;
-  size_t hour = 0;
-  size_t min = 0;
-  size_t sec = 0;
-  int msec = 0;
-  bool isLocalTime = false;
-  size_t tzHour = 0;
-  size_t tzMin = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#define JS_ALWAYS_INLINE_LAMBDA __attribute__((always_inline))
 
-#define PEEK(ch) (i < length && s[i] == ch)
+  
+  size_t index = 0;
 
-#define NEED(ch)                   \
-  if (i >= length || s[i] != ch) { \
-    return false;                  \
-  } else {                         \
-    ++i;                           \
-  }
-
-#define DONE_DATE_UNLESS(ch)       \
-  if (i >= length || s[i] != ch) { \
-    goto done_date;                \
-  } else {                         \
-    ++i;                           \
-  }
-
-#define DONE_UNLESS(ch)            \
-  if (i >= length || s[i] != ch) { \
-    goto done;                     \
-  } else {                         \
-    ++i;                           \
-  }
-
-#define NEED_NDIGITS(n, field)                   \
-  if (!ParseDigitsN(n, &field, s, &i, length)) { \
-    return false;                                \
-  }
-
-  if (PEEK('+') || PEEK('-')) {
-    if (PEEK('-')) {
-      dateMul = -1;
+  
+  auto match = [&](char ch) JS_ALWAYS_INLINE_LAMBDA {
+    if (index < length && s[index] == ch) {
+      ++index;
+      return true;
     }
-    ++i;
-    NEED_NDIGITS(6, year);
+    return false;
+  };
+
+  
+  auto matchSign = [&](int32_t* sign) JS_ALWAYS_INLINE_LAMBDA {
+    if (match('+')) {
+      *sign = 1;
+      return true;
+    }
+    if (match('-')) {
+      *sign = -1;
+      return true;
+    }
+    return false;
+  };
+
+  
+  
+  auto parseDigits = [&]<size_t N>(int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    if (ParseDigitsN<N>(s, index, length, result)) {
+      index += N;
+      return true;
+    }
+    return false;
+  };
+
+  
+  auto parseExpandedYear = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    return parseDigits.template operator()<6>(result);
+  };
+
+  
+  auto parseYear = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    return parseDigits.template operator()<4>(result);
+  };
+
+  
+  auto parseTwoDigits = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    return parseDigits.template operator()<2>(result);
+  };
+
+  
+  
+  auto parseFractional = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    if (size_t digits = ParseFractional(s, index, length, result)) {
+      index += digits;
+      return true;
+    }
+    return false;
+  };
+
+  int32_t yearSign = 1;
+  int32_t year = 0;
+  int32_t month = 1;
+  int32_t day = 1;
+  int32_t hour = 0;
+  int32_t min = 0;
+  int32_t sec = 0;
+  int32_t msec = 0;
+  bool isLocalTime = false;
+  int32_t tzSign = 1;
+  int32_t tzHour = 0;
+  int32_t tzMin = 0;
+
+  if (matchSign(&yearSign)) {
+    if (!parseExpandedYear(&year)) {
+      return false;
+    }
 
     
     
-    if (year == 0 && dateMul == -1) {
+    if (year == 0 && yearSign == -1) {
       return false;
     }
   } else {
-    NEED_NDIGITS(4, year);
-  }
-  DONE_DATE_UNLESS('-');
-  NEED_NDIGITS(2, month);
-  DONE_DATE_UNLESS('-');
-  NEED_NDIGITS(2, day);
-
-done_date:
-  if (PEEK('T')) {
-    ++i;
-  } else {
-    goto done;
+    if (!parseYear(&year)) {
+      return false;
+    }
   }
 
-  NEED_NDIGITS(2, hour);
-  NEED(':');
-  NEED_NDIGITS(2, min);
+  if (match('-')) {
+    if (!parseTwoDigits(&month)) {
+      return false;
+    }
 
-  if (PEEK(':')) {
-    ++i;
-    NEED_NDIGITS(2, sec);
-    if (PEEK('.')) {
-      ++i;
-      if (!ParseFractional(&msec, s, &i, length)) {
+    if (match('-')) {
+      if (!parseTwoDigits(&day)) {
         return false;
       }
     }
   }
 
-  if (PEEK('Z')) {
-    ++i;
-  } else if (PEEK('+') || PEEK('-')) {
-    if (PEEK('-')) {
-      tzMul = -1;
+  if (match('T')) {
+    if (!parseTwoDigits(&hour)) {
+      return false;
     }
-    ++i;
-    NEED_NDIGITS(2, tzHour);
-    
-
-
-
-    if (PEEK(':')) {
-      ++i;
+    if (!match(':')) {
+      return false;
     }
-    NEED_NDIGITS(2, tzMin);
-  } else {
-    isLocalTime = true;
+    if (!parseTwoDigits(&min)) {
+      return false;
+    }
+
+    if (match(':')) {
+      if (!parseTwoDigits(&sec)) {
+        return false;
+      }
+      if (match('.')) {
+        if (!parseFractional(&msec)) {
+          return false;
+        }
+      }
+    }
+
+    if (match('Z')) {
+      
+    } else if (matchSign(&tzSign)) {
+      if (!parseTwoDigits(&tzHour)) {
+        return false;
+      }
+
+      
+      
+      match(':');
+
+      if (!parseTwoDigits(&tzMin)) {
+        return false;
+      }
+    } else {
+      isLocalTime = true;
+    }
   }
 
-done:
-  if (year > 275943  
-      || month == 0 || month > 12 || day == 0 || day > 31 || hour > 24 ||
+  
+  
+  
+  
+  
+  
+  if (month == 0 || month > 12 || day == 0 || day > 31 || hour > 24 ||
       (hour == 24 && (min > 0 || sec > 0 || msec > 0)) || min > 59 ||
       sec > 59 || tzHour > 23 || tzMin > 59) {
     return false;
   }
 
-  if (i != length) {
+  
+  if (index != length) {
     return false;
   }
 
   month -= 1; 
 
-  double date = MakeDate(MakeDay(dateMul * int32_t(year), month, day),
+  double date = MakeDate(MakeDay(yearSign * year, month, day),
                          MakeTime(hour, min, sec, msec));
 
   if (isLocalTime) {
     date = UTC(dtInfo, date);
   } else {
-    date -=
-        tzMul * (int32_t(tzHour) * msPerHour + int32_t(tzMin) * msPerMinute);
+    date -= tzSign * (tzHour * msPerHour + tzMin * msPerMinute);
   }
 
   *result = TimeClip(date);
   return NumbersAreIdentical(date, result->toDouble());
 
-#undef PEEK
-#undef NEED
-#undef DONE_UNLESS
-#undef NEED_NDIGITS
+#undef JS_ALWAYS_INLINE_LAMBDA
 }
 
 
@@ -1352,12 +1392,13 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
                                      int* monOut, int* mdayOut) {
   size_t i = *indexOut;
 
-  size_t pre = i;
-  size_t mday;
-  if (!ParseDigitsNOrLess(6, &mday, s, &i, length)) {
+  
+  int32_t mday;
+  size_t mdayDigits = ParseDigitsNOrLess<6>(s, i, length, &mday);
+  if (!mdayDigits) {
     return false;
   }
-  size_t mdayDigits = i - pre;
+  i += mdayDigits;
 
   if (i >= length || s[i] != '-') {
     return false;
@@ -1385,12 +1426,13 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
     ++i;
   }
 
-  pre = i;
-  size_t year;
-  if (!ParseDigitsNOrLess(6, &year, s, &i, length)) {
+  
+  int32_t year;
+  size_t yearDigits = ParseDigitsNOrLess<6>(s, i, length, &year);
+  if (!yearDigits) {
     return false;
   }
-  size_t yearDigits = i - pre;
+  i += yearDigits;
 
   if (i < length && IsAsciiDigit(s[i])) {
     return false;
@@ -1437,30 +1479,40 @@ static bool TryParseDashedNumericDatePrefix(const CharT* s, size_t length,
                                             int* monOut, int* mdayOut) {
   size_t i = *indexOut;
 
-  size_t first;
-  if (!ParseDigitsNOrLess(6, &first, s, &i, length)) {
+  
+  int32_t first;
+  size_t digits = ParseDigitsNOrLess<6>(s, i, length, &first);
+  if (!digits) {
     return false;
   }
+  i += digits;
 
   if (i >= length || s[i] != '-') {
     return false;
   }
   ++i;
 
-  size_t second;
-  if (!ParseDigitsNOrLess(2, &second, s, &i, length)) {
+  
+  
+  int32_t second;
+  digits = ParseDigitsNOrLess<2>(s, i, length, &second);
+  if (!digits) {
     return false;
   }
+  i += digits;
 
   if (i >= length || s[i] != '-') {
     return false;
   }
   ++i;
 
-  size_t third;
-  if (!ParseDigitsNOrLess(6, &third, s, &i, length)) {
+  
+  int32_t third;
+  digits = ParseDigitsNOrLess<6>(s, i, length, &third);
+  if (!digits) {
     return false;
   }
+  i += digits;
 
   int year;
   int mon = -1;
@@ -1808,9 +1860,11 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
         sec =  n;
         if (c == '.') {
           index++;
-          if (!ParseFractional(&msec, s, &index, length)) {
+          size_t digits = ParseFractional(s, index, length, &msec);
+          if (!digits) {
             return false;
           }
+          index += digits;
         }
       } else if (mon < 0) {
         mon =  n;
