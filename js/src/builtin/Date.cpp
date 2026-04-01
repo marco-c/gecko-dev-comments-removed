@@ -69,13 +69,11 @@
 using namespace js;
 
 using mozilla::Atomic;
-using mozilla::BitwiseCast;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
 using mozilla::IsAsciiLowercaseAlpha;
 using mozilla::Relaxed;
 
-using JS::AutoCheckCannotGC;
 using JS::ClippedTime;
 using JS::GenericNaN;
 using JS::GetBuiltinClass;
@@ -2165,7 +2163,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
 
 static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo,
                       const JSLinearString* s, ClippedTime* result) {
-  AutoCheckCannotGC nogc;
+  JS::AutoCheckCannotGC nogc;
   
   
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE);
@@ -2232,7 +2230,7 @@ static ClippedTime NowAsMillis(JSContext* cx) {
       
       
 
-      uint64_t midpoint = BitwiseCast<uint64_t>(clamped);
+      uint64_t midpoint = mozilla::BitwiseCast<uint64_t>(clamped);
       midpoint ^= 0x0F00DD1E2BAD2DED;  
       
       
