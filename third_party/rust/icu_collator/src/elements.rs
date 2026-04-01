@@ -2227,22 +2227,32 @@ where
                                             digits.push(ce32.digit());
                                         }
                                     }
-                                    
-                                    let mut zeros = 0;
-                                    while let Some(&digit) = digits.get(zeros) {
-                                        if digit != 0 {
-                                            break;
-                                        }
-                                        zeros += 1;
-                                    }
-                                    if zeros == digits.len() {
-                                        
-                                        zeros = digits.len() - 1;
-                                    }
-                                    
-                                    #[expect(clippy::indexing_slicing)]
-                                    let mut remaining = &digits[zeros..];
+                                    let mut remaining = digits.as_slice();
                                     while !remaining.is_empty() {
+                                        
+
+                                        
+                                        
+                                        
+                                        
+                                        loop {
+                                            let Some((first, tail)) = remaining.split_first()
+                                            else {
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                remaining = &[0];
+                                                break;
+                                            };
+                                            if *first != 0 {
+                                                break;
+                                            }
+                                            remaining = tail;
+                                        }
                                         
                                         
                                         let (head, tail) = remaining
