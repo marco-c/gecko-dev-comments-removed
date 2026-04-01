@@ -1470,9 +1470,11 @@ static bool FailWithUnsupportedAttributeException(
 
 
 
+enum class LoadType { Single, RecursiveLoad };
 static bool InnerModuleLoading(JSContext* cx,
                                Handle<GraphLoadingStateRecordObject*> state,
-                               Handle<ModuleObject*> module) {
+                               Handle<ModuleObject*> module,
+                               LoadType loadType) {
   MOZ_ASSERT(state);
   MOZ_ASSERT(module);
 
@@ -1486,7 +1488,8 @@ static bool InnerModuleLoading(JSContext* cx,
 
   
   
-  if (module->hasCyclicModuleFields() &&
+  
+  if (loadType == LoadType::RecursiveLoad && module->hasCyclicModuleFields() &&
       module->status() == ModuleStatus::New && !state->visited().has(module)) {
     
     if (!state->visited().putNew(module)) {
@@ -1504,12 +1507,12 @@ static bool InnerModuleLoading(JSContext* cx,
     state->setPendingModulesCount(count);
 
     
+    
     Rooted<ModuleRequestObject*> moduleRequest(cx);
     Rooted<ModuleObject*> recordModule(cx);
     Rooted<JSAtom*> invalidKey(cx);
     for (const RequestedModule& request : module->requestedModules()) {
       moduleRequest = request.moduleRequest();
-
       
       if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
         if (!FailWithUnsupportedAttributeException(cx, state, moduleRequest)) {
@@ -1520,8 +1523,16 @@ static bool InnerModuleLoading(JSContext* cx,
         
         
         
+        
+        LoadType innerLoadType = LoadType::RecursiveLoad;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+        if (moduleRequest->phase() == ImportPhase::Source) {
+          innerLoadType = LoadType::Single;
+        }
+#endif
+        
         recordModule = record->value();
-        if (!InnerModuleLoading(cx, state, recordModule)) {
+        if (!InnerModuleLoading(cx, state, recordModule, innerLoadType)) {
           return false;
         }
       } else {
@@ -1597,10 +1608,16 @@ static bool ContinueModuleLoading(JSContext* cx,
   
   if (moduleCompletion) {
     
-    MOZ_ASSERT(phase == ImportPhase::Evaluation);
-
     
-    return InnerModuleLoading(cx, state, moduleCompletion);
+    LoadType loadType = LoadType::RecursiveLoad;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    if (phase == ImportPhase::Source) {
+      loadType = LoadType::Single;
+    }
+#endif
+    
+    
+    return InnerModuleLoading(cx, state, moduleCompletion, loadType);
   }
 
   
@@ -1639,7 +1656,7 @@ bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   
-  return InnerModuleLoading(cx, state, module);
+  return InnerModuleLoading(cx, state, module, LoadType::RecursiveLoad);
 }
 
 bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
@@ -1670,7 +1687,7 @@ bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   
-  if (!InnerModuleLoading(cx, state, module)) {
+  if (!InnerModuleLoading(cx, state, module, LoadType::RecursiveLoad)) {
     return false;
   }
 
@@ -1793,8 +1810,13 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
-    
     required = request.moduleRequest();
+    
+    if (required->phase() != ImportPhase::Evaluation) {
+      continue;
+    }
+    
+    
     MOZ_ASSERT(required->phase() == ImportPhase::Evaluation);
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
@@ -1812,13 +1834,11 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     if (requiredModule->hasCyclicModuleFields()) {
       
       
-      
       MOZ_ASSERT(requiredModule->status() == ModuleStatus::Linking ||
                  requiredModule->status() == ModuleStatus::Linked ||
                  requiredModule->status() == ModuleStatus::EvaluatingAsync ||
                  requiredModule->status() == ModuleStatus::Evaluated);
 
-      
       
       
       MOZ_ASSERT((requiredModule->status() == ModuleStatus::Linking) ==
@@ -2078,13 +2098,17 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   index++;
 
   
+  
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
     
     
     required = request.moduleRequest();
-    MOZ_ASSERT(required->phase() == ImportPhase::Evaluation);
+    
+    if (required->phase() != ImportPhase::Evaluation) {
+      continue;
+    }
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
@@ -2121,6 +2145,7 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
         module->setDfsAncestorIndex(std::min(
             module->dfsAncestorIndex(), requiredModule->dfsAncestorIndex()));
       } else {
+        
         
         
         requiredModule = requiredModule->getCycleRoot();
