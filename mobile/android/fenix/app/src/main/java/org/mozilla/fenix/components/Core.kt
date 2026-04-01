@@ -21,6 +21,8 @@ import mozilla.components.browser.engine.gecko.cookiebanners.ReportSiteDomainsRe
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.engine.gecko.permission.GeckoSitePermissionsStorage
 import mozilla.components.browser.engine.gecko.util.EngineDownloadDelegate
+import mozilla.components.browser.favicons.FaviconsMiddleware
+import mozilla.components.browser.favicons.storage.DiskFaviconStorage
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.engine.EngineMiddleware
@@ -127,6 +129,7 @@ import org.mozilla.fenix.gecko.GeckoProvider
 import org.mozilla.fenix.historymetadata.DefaultHistoryMetadataService
 import org.mozilla.fenix.historymetadata.HistoryMetadataMiddleware
 import org.mozilla.fenix.historymetadata.HistoryMetadataService
+import org.mozilla.fenix.longfox.LongFoxFeature
 import org.mozilla.fenix.media.MediaSessionService
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.perf.StrictModeManager
@@ -367,6 +370,7 @@ class Core(
                 ),
                 ReaderViewMiddleware(),
                 TelemetryMiddleware(context, context.settings(), metrics, crashReporter),
+                FaviconsMiddleware(faviconStorage),
                 ThumbnailsMiddleware(thumbnailStorage),
                 UndoMiddleware(context.getUndoDelay()),
                 RegionMiddleware(context, locationService),
@@ -599,6 +603,11 @@ class Core(
      */
     val thumbnailStorage by lazyMonitored { ThumbnailStorage(context) }
 
+    /**
+     * A storage component for persisting favicon images of tabs.
+     */
+    val faviconStorage by lazyMonitored { DiskFaviconStorage(context) }
+
     val pinnedSiteStorage by lazyMonitored { PinnedSiteStorage(context) }
 
     @Suppress("MagicNumber")
@@ -712,6 +721,8 @@ class Core(
     val summarizationEligibilityChecker: SummarizationEligibilityChecker by lazyMonitored {
         DefaultSummarizationEligibilityChecker()
     }
+
+    val longFoxFeature by lazyMonitored { LongFoxFeature() }
 
     /**
      * Shared Preferences that encrypt/decrypt using Android KeyStore and lib-dataprotect for 23+
