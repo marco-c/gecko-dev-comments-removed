@@ -37,6 +37,11 @@ void AbortSignalImpl::GetReason(JSContext* aCx,
   }
   MaybeAssignAbortError(aCx);
   aReason.set(mReason);
+  if (NS_WARN_IF(!JS_WrapValue(aCx, aReason))) {
+    aReason.setUndefined();
+    
+    JS_ClearPendingException(aCx);
+  }
 }
 
 JS::Value AbortSignalImpl::RawReason() const { return mReason.get(); }
@@ -74,7 +79,7 @@ void AbortSignalImpl::RunAbortSteps() {
   
   
   
-  for (RefPtr<AbortFollower>& follower : mFollowers.ForwardRange()) {
+  for (RefPtr<AbortFollower> follower : mFollowers.ForwardRange()) {
     MOZ_ASSERT(follower->mFollowingSignal == this);
     follower->RunAbortAlgorithm();
   }
@@ -479,12 +484,11 @@ void AbortFollower::Follow(AbortSignalImpl* aSignal) {
 
 
 void AbortFollower::Unfollow() {
-  if (mFollowingSignal) {
+  if (WeakPtr<AbortSignalImpl> followingSignal = std::move(mFollowingSignal)) {
     
     
     
-    mFollowingSignal->mFollowers.RemoveElement(this);
-    mFollowingSignal = nullptr;
+    followingSignal->mFollowers.RemoveElement(this);
   }
 }
 
