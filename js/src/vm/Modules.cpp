@@ -1118,16 +1118,14 @@ static bool IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
   return resolution.isObject();
 }
 
-static void InitNamespaceBinding(JSContext* cx,
-                                 Handle<ModuleEnvironmentObject*> env,
-                                 Handle<JSAtom*> name,
-                                 Handle<ModuleNamespaceObject*> ns) {
+static void InitNamespaceOrSourceBinding(JSContext* cx,
+                                         ModuleEnvironmentObject* env,
+                                         JSAtom* name, const Value& obj) {
   
   
-  RootedId id(cx, AtomToId(name));
-  mozilla::Maybe<PropertyInfo> prop = env->lookup(cx, id);
+  mozilla::Maybe<PropertyInfo> prop = env->lookup(cx, AtomToId(name));
   MOZ_ASSERT(prop.isSome());
-  env->setSlot(prop->slot(), ObjectValue(*ns));
+  env->setSlot(prop->slot(), obj);
 }
 
 struct AtomComparator {
@@ -1195,9 +1193,9 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
       
       
       
-      Rooted<ModuleEnvironmentObject*> env(
-          cx, &importedModule->initialEnvironment());
-      InitNamespaceBinding(cx, env, bindingName, importedNamespace);
+      InitNamespaceOrSourceBinding(cx, &importedModule->initialEnvironment(),
+                                   bindingName,
+                                   ObjectValue(*importedNamespace));
     }
 
     if (!ns->addBinding(cx, name, importedModule, bindingName)) {
@@ -1304,6 +1302,7 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
 
 
 
+
 static bool ModuleInitializeEnvironment(JSContext* cx,
                                         Handle<ModuleObject*> module) {
   MOZ_ASSERT(module->status() == ModuleStatus::Linking);
@@ -1351,16 +1350,21 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     if (!importedModule) {
       return false;
     }
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    MOZ_ASSERT(importedModule->status() >= ModuleStatus::Linking ||
+               moduleRequest->phase() == ImportPhase::Source);
+#else
     MOZ_ASSERT(importedModule->status() >= ModuleStatus::Linking);
+#endif
 
     localName = in.localName();
     importName = in.importName();
 
     
-    if (!importName) {
+    if (!importName && moduleRequest->phase() == ImportPhase::Evaluation) {
       
-      Rooted<ModuleNamespaceObject*> ns(
-          cx, GetOrCreateModuleNamespace(cx, importedModule));
+      ModuleNamespaceObject* ns =
+          GetOrCreateModuleNamespace(cx, importedModule);
       if (!ns) {
         return false;
       }
@@ -1370,8 +1374,33 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
 
       
       
-      InitNamespaceBinding(cx, env, localName, ns);
-    } else {
+      InitNamespaceOrSourceBinding(cx, env, localName, ObjectValue(*ns));
+    }
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    else if (moduleRequest->phase() == ImportPhase::Source) {
+      
+      
+      
+      ModuleSourceObject* moduleSourceObject = importedModule->moduleSource();
+
+      
+      
+      if (!moduleSourceObject) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_MODULE_SOURCE_NOT_AVAILABLE);
+        return false;
+      }
+
+      
+      
+
+      
+      
+      InitNamespaceOrSourceBinding(cx, env, localName,
+                                   ObjectValue(*moduleSourceObject));
+    }
+#endif
+    else {
       
       
       
@@ -1411,9 +1440,8 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
         
         
         
-        Rooted<ModuleEnvironmentObject*> sourceEnv(
-            cx, &sourceModule->initialEnvironment());
-        InitNamespaceBinding(cx, sourceEnv, bindingName, ns);
+        InitNamespaceOrSourceBinding(cx, &sourceModule->initialEnvironment(),
+                                     bindingName, ObjectValue(*ns));
         if (!env->createImportBinding(cx, localName, sourceModule,
                                       bindingName)) {
           return false;
