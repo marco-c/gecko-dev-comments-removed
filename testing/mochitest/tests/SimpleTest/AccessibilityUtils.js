@@ -234,6 +234,32 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+
+
+
+
+  function isNoKeyNavButton(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal || node.getAttribute("keyNav") != "false") {
+      return false;
+    }
+
+    const ariaRoles = getAriaRoles(accessible);
+    return (
+      ariaRoles.includes("button") ||
+      accessible.role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON
+    );
+  }
+
+  
+
+
+
+
+
+
   function isKeyboardFocusableBrowserToolbarButton(accessible) {
     const node = accessible.DOMNode;
     if (!node || !node.ownerGlobal) {
@@ -244,22 +270,6 @@ this.AccessibilityUtils = (function () {
       node.flattenedTreeParentNode.closest("toolbar");
     if (!toolbar || toolbar.getAttribute("keyNav") != "true") {
       return false;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (node.getAttribute("keyNav") == "false") {
-      const ariaRoles = getAriaRoles(accessible);
-      return (
-        ariaRoles.includes("button") ||
-        accessible.role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON
-      );
     }
     return node.ownerGlobal.ToolbarKeyboardNavigator._isButton(node);
   }
@@ -838,6 +848,7 @@ this.AccessibilityUtils = (function () {
     if (
       gEnv.mustBeEnabled &&
       gEnv.focusableRule &&
+      !isNoKeyNavButton(accessible) &&
       !isKeyboardFocusable(accessible)
     ) {
       const ariaRoles = getAriaRoles(accessible);
