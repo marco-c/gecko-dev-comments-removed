@@ -3,8 +3,6 @@
 
 
 
-
-
 #undef CreateEvent
 
 #include "mozilla/EventListenerManager.h"
@@ -2017,9 +2015,13 @@ const TypedEventHandler* EventListenerManager::GetTypedEventHandler(
   }
 
   JSEventHandler* jsEventHandler = listener->GetJSEventHandler();
-
+  Maybe<RefPtr<JSEventHandler>> pin;
   if (listener->mHandlerIsString) {
-    CompileEventHandlerInternal(listener, aEventName, nullptr, nullptr);
+    pin.emplace(jsEventHandler);
+    if (NS_FAILED(CompileEventHandlerInternal(listener, aEventName, nullptr,
+                                              nullptr))) {
+      listener = nullptr;
+    }
   }
 
   const TypedEventHandler& typedHandler =
