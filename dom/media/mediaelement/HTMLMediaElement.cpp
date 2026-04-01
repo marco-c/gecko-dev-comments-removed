@@ -781,13 +781,7 @@ class HTMLMediaElement::MediaStreamRenderer {
     if (mFirstFrameVideoOutput) {
       mWatchManager.Watch(mFirstFrameVideoOutput->mFirstFrameRendered,
                           &MediaStreamRenderer::SetFirstFrameRendered);
-      mWatchManager.Watch(mFirstFrameVideoOutput->mAttachment,
-                          &MediaStreamRenderer::UpdateVideoTrackListeners);
     }
-    mWatchManager.Watch(mVideoTrack,
-                        &MediaStreamRenderer::UpdateVideoTrackListeners);
-    mWatchManager.Watch(mRendering,
-                        &MediaStreamRenderer::UpdateVideoTrackListeners);
   }
 
   void Shutdown() {
@@ -796,12 +790,11 @@ class HTMLMediaElement::MediaStreamRenderer {
         RemoveTrack(t->AsAudioStreamTrack());
       }
     }
-    if (mVideoTrack.Ref()) {
-      RemoveTrack(mVideoTrack.Ref()->AsVideoStreamTrack());
+    if (mVideoTrack) {
+      RemoveTrack(mVideoTrack->AsVideoStreamTrack());
     }
     mWatchManager.Shutdown();
     mFirstFrameVideoOutput = nullptr;
-    mVideoOutput = nullptr;
   }
 
   void UpdateGraphTime() {
@@ -813,14 +806,12 @@ class HTMLMediaElement::MediaStreamRenderer {
     if (!mFirstFrameVideoOutput) {
       return;
     }
-    if (mVideoTrack.Ref()) {
-      mVideoTrack.Ref()->AsVideoStreamTrack()->RemoveVideoOutput(
+    if (mVideoTrack) {
+      mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(
           mFirstFrameVideoOutput);
     }
     mWatchManager.Unwatch(mFirstFrameVideoOutput->mFirstFrameRendered,
                           &MediaStreamRenderer::SetFirstFrameRendered);
-    mWatchManager.Unwatch(mFirstFrameVideoOutput->mAttachment,
-                          &MediaStreamRenderer::UpdateVideoTrackListeners);
     mFirstFrameVideoOutput = nullptr;
   }
 
@@ -862,8 +853,10 @@ class HTMLMediaElement::MediaStreamRenderer {
                                                       mAudioOutputVolume);
       }
     }
-    
-    
+
+    if (mVideoTrack) {
+      mVideoTrack->AsVideoStreamTrack()->AddVideoOutput(mVideoContainer);
+    }
   }
 
   void Stop() {
@@ -887,11 +880,8 @@ class HTMLMediaElement::MediaStreamRenderer {
     
     ResolveAudioDevicePromiseIfExists(__func__);
 
-    if (mVideoTrack.Ref() && mVideoOutput) {
-      
-      
-      
-      mVideoTrack.Ref()->AsVideoStreamTrack()->RemoveVideoOutput(mVideoOutput);
+    if (mVideoTrack) {
+      mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(mVideoContainer);
     }
   }
 
@@ -980,14 +970,21 @@ class HTMLMediaElement::MediaStreamRenderer {
     }
   }
   void AddTrack(VideoStreamTrack* aTrack) {
-    MOZ_DIAGNOSTIC_ASSERT(!mVideoTrack.Ref());
+    MOZ_DIAGNOSTIC_ASSERT(!mVideoTrack);
     if (!mVideoContainer) {
       return;
     }
     mVideoTrack = aTrack;
     EnsureGraphTimeDummy();
-    
-    
+    if (mFirstFrameVideoOutput) {
+      
+      
+      
+      aTrack->AddVideoOutput(mFirstFrameVideoOutput);
+    }
+    if (mRendering) {
+      aTrack->AddVideoOutput(mVideoContainer);
+    }
   }
 
   void RemoveTrack(AudioStreamTrack* aTrack) {
@@ -1004,18 +1001,15 @@ class HTMLMediaElement::MediaStreamRenderer {
     }
   }
   void RemoveTrack(VideoStreamTrack* aTrack) {
-    MOZ_DIAGNOSTIC_ASSERT(mVideoTrack.Ref() == aTrack);
+    MOZ_DIAGNOSTIC_ASSERT(mVideoTrack == aTrack);
     if (!mVideoContainer) {
       return;
     }
     if (mFirstFrameVideoOutput) {
       aTrack->RemoveVideoOutput(mFirstFrameVideoOutput);
     }
-    if (mRendering && mVideoOutput) {
-      
-      
-      
-      aTrack->RemoveVideoOutput(mVideoOutput);
+    if (mRendering) {
+      aTrack->RemoveVideoOutput(mVideoContainer);
     }
     mVideoTrack = nullptr;
   }
@@ -1052,8 +1046,8 @@ class HTMLMediaElement::MediaStreamRenderer {
       }
     }
 
-    if (!graph && mVideoTrack.Ref() && !mVideoTrack.Ref()->Ended()) {
-      graph = mVideoTrack.Ref()->Graph();
+    if (!graph && mVideoTrack && !mVideoTrack->Ended()) {
+      graph = mVideoTrack->Graph();
     }
 
     if (!graph) {
@@ -1063,43 +1057,6 @@ class HTMLMediaElement::MediaStreamRenderer {
     
     mGraphTimeDummy = MakeRefPtr<SharedDummyTrack>(
         graph->CreateSourceTrack(MediaSegment::AUDIO));
-  }
-
-  void UpdateVideoTrackListeners() {
-    if (mFirstFrameVideoOutput &&
-        mFirstFrameVideoOutput->mAttachment == VideoOutput::State::Detached &&
-        mVideoTrack.Ref()) {
-      
-      
-      
-      
-      
-      MOZ_ASSERT_IF(mVideoOutput,
-                    mVideoOutput->mAttachment != VideoOutput::State::Attached);
-      mVideoTrack.Ref()->AsVideoStreamTrack()->AddVideoOutput(
-          mFirstFrameVideoOutput);
-    }
-    if (mVideoOutput &&
-        mVideoOutput->mAttachment == VideoOutput::State::Detached) {
-      
-      mWatchManager.Unwatch(mVideoOutput->mAttachment,
-                            &MediaStreamRenderer::UpdateVideoTrackListeners);
-      mVideoOutput = nullptr;
-    }
-    if (mRendering && mVideoTrack.Ref() && !mVideoOutput) {
-      
-      
-      MOZ_ASSERT_IF(
-          mFirstFrameVideoOutput,
-          mFirstFrameVideoOutput->mAttachment == VideoOutput::State::Attached);
-      RefPtr o = new VideoOutput(mVideoContainer, AbstractThread::MainThread());
-      mVideoTrack.Ref()->AsVideoStreamTrack()->AddVideoOutput(o);
-      if (o->mAttachment == VideoOutput::State::Attached) {
-        mVideoOutput = std::move(o);
-        mWatchManager.Watch(mVideoOutput->mAttachment,
-                            &MediaStreamRenderer::UpdateVideoTrackListeners);
-      }
-    }
   }
 
   void ResolveAudioDevicePromiseIfExists(StaticString aMethodName) {
@@ -1114,7 +1071,7 @@ class HTMLMediaElement::MediaStreamRenderer {
 
   
   
-  Watchable<bool> mRendering = {false, "MediaStreamRenderer::mRendering"};
+  bool mRendering = false;
 
   
   bool mProgressingCurrentTime = false;
@@ -1132,6 +1089,7 @@ class HTMLMediaElement::MediaStreamRenderer {
   MozPromiseRequestHolder<GenericPromise::AllSettledPromiseType>
       mDeviceStartedRequest;
 
+  
   WatchManager<MediaStreamRenderer> mWatchManager;
 
   
@@ -1152,21 +1110,12 @@ class HTMLMediaElement::MediaStreamRenderer {
   nsTArray<WeakPtr<MediaStreamTrack>> mAudioTracks;
 
   
-  
-  Watchable<WeakPtr<MediaStreamTrack>> mVideoTrack = {
-      nullptr, "MediaStreamRenderer::mVideoTrack"};
+  WeakPtr<MediaStreamTrack> mVideoTrack;
 
   
   
   
   RefPtr<FirstFrameVideoOutput> mFirstFrameVideoOutput;
-
-  
-  
-  
-  
-  
-  RefPtr<VideoOutput> mVideoOutput;
 };
 
 static uint32_t sDecoderCaptureSourceId = 0;
