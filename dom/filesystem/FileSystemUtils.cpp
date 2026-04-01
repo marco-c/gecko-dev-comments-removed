@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/FileSystemUtils.h"
 
 #include "nsCharSeparatedTokenizer.h"
@@ -13,11 +11,28 @@
 namespace mozilla::dom {
 
 
-bool FileSystemUtils::IsDescendantPath(const nsAString& aPath,
-                                       const nsAString& aDescendantPath) {
+bool FileSystemUtils::IsDescendantPath(const nsAString& aAuthorizedRoot,
+                                       const nsAString& aRequestedDescendant) {
   
-  if (!aDescendantPath.Equals(aPath) &&
-      !StringBeginsWith(aDescendantPath, aPath)) {
+  if (aRequestedDescendant.Equals(aAuthorizedRoot)) {
+    return true;
+  }
+
+  if (!StringBeginsWith( aRequestedDescendant,
+                         aAuthorizedRoot)) {
+    return false;
+  }
+
+  
+  const uint32_t prefixLen = aAuthorizedRoot.Length();
+  if (prefixLen > 0 &&
+      aAuthorizedRoot.Last() == FILESYSTEM_DOM_PATH_SEPARATOR_CHAR) {
+    return true;
+  }
+
+  if (aRequestedDescendant.Length() <= prefixLen ||
+      aRequestedDescendant.CharAt(prefixLen) !=
+          FILESYSTEM_DOM_PATH_SEPARATOR_CHAR) {
     return false;
   }
 
