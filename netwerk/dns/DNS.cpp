@@ -111,7 +111,12 @@ bool NetAddr::ToStringBuffer(char* buf, uint32_t bufSize) const {
   }
 #if defined(XP_UNIX)
   if (addr->raw.family == AF_LOCAL) {
-    if (bufSize < sizeof(addr->local.path)) {
+    
+    
+    
+    
+    
+    if (bufSize <= sizeof(addr->local.path)) {
       
       
       if (bufSize > 0) {
@@ -126,6 +131,7 @@ bool NetAddr::ToStringBuffer(char* buf, uint32_t bufSize) const {
     
     
     memcpy(buf, addr->local.path, sizeof(addr->local.path));
+    buf[sizeof(addr->local.path)] = '\0';
     return true;
   }
 #endif
@@ -141,7 +147,8 @@ bool NetAddr::ToString(nsACString& aOutput) const {
   }
 #if defined(XP_UNIX)
   else if (raw.family == AF_LOCAL) {
-    bufferSize = sizeof(local.path);
+    
+    bufferSize = sizeof(local.path) + 1;
   }
 #endif
 
