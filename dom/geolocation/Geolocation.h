@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Geolocation_h
 #define mozilla_dom_Geolocation_h
 
@@ -123,6 +121,8 @@ namespace mozilla::dom {
 
 
 class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
+  friend class ::nsGeolocationService;
+
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Geolocation)
@@ -230,6 +230,9 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
 
   
   static void RequestIfPermitted(nsGeolocationRequest* request);
+
+  
+  void SetService(nsGeolocationService* aService) { mService = aService; }
 
   
   
