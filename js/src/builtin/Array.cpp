@@ -3543,13 +3543,6 @@ static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  Rooted<ArrayObject*> arr(cx,
-                           NewDensePartlyAllocatedArray(cx, uint32_t(newLen)));
-  if (!arr) {
-    return false;
-  }
-
-  
   if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, len)) {
     MOZ_ASSERT(len <= UINT32_MAX);
     MOZ_ASSERT(actualDeleteCount <= UINT32_MAX,
@@ -3647,6 +3640,13 @@ static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
 
     args.rval().setObject(*arr);
     return true;
+  }
+
+  
+  Rooted<ArrayObject*> arr(cx,
+                           NewDensePartlyAllocatedArray(cx, uint32_t(newLen)));
+  if (!arr) {
+    return false;
   }
 
   
