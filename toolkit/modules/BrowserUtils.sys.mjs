@@ -451,50 +451,53 @@ export var BrowserUtils = {
     if (!content?.HTMLAnchorElement) {
       return null;
     }
-    function isHTMLLink(aNode) {
-      
-      return (
-        (content.HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
-        (content.HTMLAreaElement.isInstance(aNode) && aNode.href) ||
-        content.HTMLLinkElement.isInstance(aNode)
-      );
+    
+    function hrefAndLinkNodeForHTMLLink(aElement) {
+      if (
+        (content.HTMLAnchorElement.isInstance(aElement) && aElement.href) ||
+        (content.HTMLAreaElement.isInstance(aElement) && aElement.href) ||
+        content.HTMLLinkElement.isInstance(aElement)
+      ) {
+        let href = URL.parse(aElement.href)?.href ?? null;
+        if (href) {
+          return [href, aElement, aElement.ownerDocument.nodePrincipal];
+        }
+      }
+      return null;
+    }
+    function hrefAndLinkNodeForNonHTMLink(aElement) {
+      if (
+        aElement.localName == "a" ||
+        content.MathMLElement.isInstance(aElement)
+      ) {
+        let href =
+          aElement.getAttribute("href") ||
+          aElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+        href =
+          URL.parse(href, aElement.ownerDocument.baseURIObject.spec)?.href ??
+          null;
+        if (href) {
+          
+          
+          return [href, null, aElement.ownerDocument.nodePrincipal];
+        }
+      }
+      return null;
     }
 
     let node = event.composedTarget;
-    while (node && !isHTMLLink(node)) {
-      node = node.flattenedTreeParentNode;
-    }
-
-    if (node) {
-      return [node.href, node, node.ownerDocument.nodePrincipal];
-    }
-
-    
-    let href, baseURI;
-    node = event.composedTarget;
-    while (node && !href) {
-      if (
-        node.nodeType == content.Node.ELEMENT_NODE &&
-        (node.localName == "a" || content.MathMLElement.isInstance(node))
-      ) {
-        href =
-          node.getAttribute("href") ||
-          node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
-        if (href) {
-          baseURI = node.ownerDocument.baseURIObject;
-          break;
+    while (node) {
+      if (node.nodeType == node.ELEMENT_NODE) {
+        let linkData =
+          hrefAndLinkNodeForHTMLLink(node) ||
+          hrefAndLinkNodeForNonHTMLink(node);
+        if (linkData) {
+          return linkData;
         }
       }
       node = node.flattenedTreeParentNode;
     }
-
-    
-    
-    return [
-      URL.parse(href, baseURI?.spec)?.href ?? null,
-      null,
-      node && node.ownerDocument.nodePrincipal,
-    ];
+    return [null, null, null];
   },
 
   
