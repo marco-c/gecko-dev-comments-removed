@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef include_dom_media_ipc_RemoteDecoderParent_h
 #define include_dom_media_ipc_RemoteDecoderParent_h
 
@@ -62,6 +60,8 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
 
   
   const Maybe<uint64_t> mMediaEngineId;
+
+  bool mShutdown = false;
 
  private:
   void DecodeNextSample(const RefPtr<ArrayOfRemoteMediaRawData>& aData,
