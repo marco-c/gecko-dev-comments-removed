@@ -90,7 +90,10 @@ impl Pacer {
         let deficit =
             u128::try_from(packet - self.c).expect("packet is larger than current credit");
         let d = r.saturating_mul(deficit);
-        let add = d / u128::try_from(cwnd * Self::SPEEDUP).expect("usize fits into u128");
+        let divisor = u128::try_from(cwnd)
+            .expect("usize fits into u128")
+            .saturating_mul(u128::try_from(Self::SPEEDUP).expect("usize fits into u128"));
+        let add = d / divisor;
         let w = u64::try_from(add).map_or(rtt, Duration::from_nanos);
 
         
@@ -102,6 +105,30 @@ impl Pacer {
         let nxt = self.t + w;
         qtrace!("[{self}] next {cwnd}/{rtt:?} wait {w:?} = {nxt:?}");
         nxt
+    }
+
+    
+    
+    #[allow(
+        clippy::allow_attributes,
+        clippy::unwrap_in_result,
+        reason = "Check if this can be removed with MSRV > 1.90"
+    )]
+    fn bytes_for(cwnd: usize, rtt: Duration, elapsed: Duration) -> Option<u128> {
+        let factor = u128::try_from(cwnd)
+            .expect("usize fits into u128")
+            .saturating_mul(u128::try_from(Self::SPEEDUP).expect("usize fits into u128"));
+        elapsed
+            .as_nanos()
+            .saturating_mul(factor)
+            .checked_div(rtt.as_nanos())
+    }
+
+    
+    
+    
+    pub(crate) fn rate(cwnd: usize, rtt: Duration) -> Option<u64> {
+        u64::try_from(Self::bytes_for(cwnd, rtt, Duration::from_secs(1))?).ok()
     }
 
     
@@ -120,13 +147,8 @@ impl Pacer {
         qtrace!("[{self}] spend {count} over {cwnd}, {rtt:?}");
         
         
-        
-        let incr = now
-            .saturating_duration_since(self.t)
-            .as_nanos()
-            .saturating_mul(u128::try_from(cwnd * Self::SPEEDUP).expect("usize fits into u128"))
-            .checked_div(rtt.as_nanos())
-            .and_then(|i| usize::try_from(i).ok())
+        let incr = Self::bytes_for(cwnd, rtt, now.saturating_duration_since(self.t))
+            .and_then(|b| usize::try_from(b).ok())
             .unwrap_or(self.m);
 
         
@@ -226,6 +248,20 @@ mod tests {
         }
         
         assert!(n - start > Duration::ZERO);
+    }
+
+    #[test]
+    fn rate_basic() {
+        
+        assert_eq!(
+            Pacer::rate(10_000, Duration::from_millis(100)),
+            Some(200_000)
+        );
+    }
+
+    #[test]
+    fn rate_zero_rtt() {
+        assert_eq!(Pacer::rate(10_000, Duration::ZERO), None);
     }
 
     #[test]

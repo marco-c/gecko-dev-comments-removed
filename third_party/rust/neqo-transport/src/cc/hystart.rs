@@ -107,15 +107,30 @@ impl HyStart {
     
     
     
-    fn maybe_start_new_round(&mut self, sent_pn: packet::Number) {
+    fn start_next_round(&mut self) {
+        self.window_end = None;
+        self.last_round_min_rtt = self.current_round_min_rtt;
+        self.current_round_min_rtt = None;
+        self.rtt_sample_count = 0;
+        qdebug!(
+            "HyStart: start_next_round -> started new round with last_min_rtt: {:?}",
+            self.last_round_min_rtt
+        );
+    }
+
+    
+    
+    
+    
+    fn maybe_set_window_end(&mut self, sent_pn: packet::Number) {
         if self.window_end.is_some() {
             return;
         }
         self.window_end = Some(sent_pn);
-        self.last_round_min_rtt = self.current_round_min_rtt;
-        self.current_round_min_rtt = None;
-        self.rtt_sample_count = 0;
-        qdebug!("HyStart: maybe_start_new_round -> started new round");
+        qdebug!(
+            "HyStart: maybe_set_window_end -> set window_end to {:?}",
+            self.window_end
+        );
     }
 
     
@@ -143,6 +158,11 @@ impl HyStart {
     }
 
     #[cfg(test)]
+    pub const fn last_round_min_rtt(&self) -> Option<Duration> {
+        self.last_round_min_rtt
+    }
+
+    #[cfg(test)]
     pub const fn css_round_count(&self) -> usize {
         self.css_round_count
     }
@@ -150,7 +170,7 @@ impl HyStart {
 
 impl SlowStart for HyStart {
     fn on_packet_sent(&mut self, sent_pn: packet::Number) {
-        self.maybe_start_new_round(sent_pn);
+        self.maybe_set_window_end(sent_pn);
     }
 
     fn reset(&mut self) {
@@ -219,6 +239,7 @@ impl SlowStart for HyStart {
                 min(last / Self::MIN_RTT_DIVISOR, Self::MAX_RTT_THRESH),
             );
             if current >= last + rtt_thresh {
+                self.rtt_sample_count = 0;
                 self.css_baseline_min_rtt = Some(current);
                 cc_stats.hystart_css_entries += 1;
                 qdebug!(
@@ -266,7 +287,7 @@ impl SlowStart for HyStart {
             "HyStart: on_packets_acked -> round ended because largest_acked={largest_acked} >= window_end={:?}",
             self.window_end
         );
-        self.window_end = None;
+        self.start_next_round();
 
         if !self.in_css() {
             return None;

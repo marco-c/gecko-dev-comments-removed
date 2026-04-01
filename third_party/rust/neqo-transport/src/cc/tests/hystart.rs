@@ -112,6 +112,11 @@ fn round_tracking_lifecycle() {
             "Round should continue while largest_acked < window_end"
         );
     }
+    assert!(
+        hystart.rtt_sample_count() > 0,
+        "We should have collected RTT samples in this round."
+    );
+    let min_rtt = hystart.current_round_min_rtt().unwrap();
 
     
     hystart.on_packets_acked(
@@ -124,6 +129,16 @@ fn round_tracking_lifecycle() {
         hystart.window_end().is_none(),
         "Round should end when largest_acked >= window_end"
     );
+    assert_eq!(
+        hystart.rtt_sample_count(),
+        0,
+        "RTT sample count should have been reset for the next round"
+    );
+    assert_eq!(
+        hystart.last_round_min_rtt(),
+        Some(min_rtt),
+        "RTT tracking should have been updated for the next round"
+    );
 
     
     let window_end2 = 100;
@@ -131,7 +146,7 @@ fn round_tracking_lifecycle() {
     assert_eq!(
         hystart.window_end(),
         Some(window_end2),
-        "New round should start with new window_end"
+        "New round should now have set new window_end"
     );
 }
 
@@ -139,8 +154,6 @@ fn round_tracking_lifecycle() {
 #[test]
 fn rtt_sample_collection_tracks_minimum() {
     let mut hystart = make_hystart_paced();
-
-    hystart.on_packet_sent(0);
 
     
     hystart.on_packets_acked(
@@ -192,7 +205,6 @@ fn rtt_sample_collection_tracks_minimum() {
 )]
 fn rtt_sample_count_increments_per_ack() {
     let mut hystart = make_hystart_paced();
-    hystart.on_packet_sent(0);
 
     assert_eq!(hystart.rtt_sample_count(), 0);
 
@@ -431,6 +443,73 @@ fn css_back_to_slow_start_on_rtt_decrease() {
         hystart.css_round_count(),
         0,
         "CSS round count should be reset"
+    );
+}
+
+#[test]
+fn css_exit_only_with_new_samples() {
+    let mut hystart = make_hystart_paced();
+
+    
+    let window_end = HyStart::N_RTT_SAMPLE as u64;
+    hystart.on_packet_sent(window_end);
+
+    assert!(hystart.window_end().is_some_and(|pn| pn == window_end));
+
+    
+    for i in 0..=window_end {
+        hystart.on_packets_acked(
+            &RttEstimate::new(BASE_RTT),
+            i,
+            INITIAL_CWND,
+            &mut CongestionControlStats::default(),
+        );
+    }
+
+    assert!(hystart.window_end().is_none());
+
+    
+    let window_end2 = 300;
+    hystart.on_packet_sent(window_end2);
+
+    
+    for _i in 0..HyStart::N_RTT_SAMPLE as u64 {
+        hystart.on_packets_acked(
+            &RttEstimate::new(HIGH_RTT),
+            0,
+            INITIAL_CWND,
+            &mut CongestionControlStats::default(),
+        );
+    }
+
+    assert!(hystart.in_css(), "Should have entered CSS");
+
+    
+    hystart.on_packets_acked(
+        &RttEstimate::new(LOW_RTT),
+        0,
+        INITIAL_CWND,
+        &mut CongestionControlStats::default(),
+    );
+
+    assert!(
+        hystart.in_css(),
+        "Should still be in CSS after one low RTT ACK"
+    );
+
+    
+    for _i in 1..HyStart::N_RTT_SAMPLE as u64 {
+        hystart.on_packets_acked(
+            &RttEstimate::new(LOW_RTT),
+            0,
+            INITIAL_CWND,
+            &mut CongestionControlStats::default(),
+        );
+    }
+
+    assert!(
+        !hystart.in_css(),
+        "Should exit CSS after having enough samples"
     );
 }
 

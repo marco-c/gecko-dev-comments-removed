@@ -27,8 +27,17 @@ impl Socket {
     
     pub fn bind<A: std::net::ToSocketAddrs>(addr: A) -> Result<Self, io::Error> {
         const ONE_MB: usize = 1 << 20;
+
         let socket = std::net::UdpSocket::bind(addr)?;
         let state = quinn_udp::UdpSocketState::new((&socket).into())?;
+        #[cfg(apple)]
+        
+        
+        
+        
+        unsafe {
+            state.set_apple_fast_path();
+        }
 
         
         

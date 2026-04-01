@@ -40,9 +40,9 @@ const RECV_BUF_SIZE: usize = u16::MAX as usize;
 
 
 
-#[cfg(not(all(apple, feature = "fast-apple-datapath")))]
+#[cfg(not(apple))]
 const NUM_BUFS: usize = 1;
-#[cfg(all(apple, feature = "fast-apple-datapath"))]
+#[cfg(apple)]
 
 const NUM_BUFS: usize = 16;
 
@@ -229,10 +229,26 @@ pub struct Socket<S> {
 impl<S: SocketRef> Socket<S> {
     
     pub fn new(socket: S) -> Result<Self, io::Error> {
+        let state = UdpSocketState::new((&socket).into())?;
         Ok(Self {
-            state: UdpSocketState::new((&socket).into())?,
+            state,
             inner: socket,
         })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(apple)]
+    pub unsafe fn enable_apple_fast_path(&self) {
+        
+        unsafe { self.state.set_apple_fast_path() }
     }
 
     
@@ -490,6 +506,16 @@ mod tests {
             normal_datagram.data()
         );
 
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(apple)]
+    fn apple_fast_path() -> Result<(), io::Error> {
+        let socket = socket()?;
+        
+        unsafe { socket.enable_apple_fast_path() };
+        assert!(socket.max_gso_segments() > 1);
         Ok(())
     }
 }
