@@ -5290,9 +5290,19 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
 
           importSourceBinding = MOZ_TRY(newName(bindingAtom));
 
-          if (!noteDeclaredName(bindingAtom, DeclarationKind::Import, pos())) {
+          
+          
+          
+          if (!noteDeclaredName(bindingAtom, DeclarationKind::Const, pos())) {
             return errorResult();
           }
+
+          
+          
+          pc_->varScope()
+              .lookupDeclaredName(bindingAtom)
+              ->value()
+              ->setClosedOver();
         }
       }
       if (!isSourcePhaseImport)
