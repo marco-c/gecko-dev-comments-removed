@@ -445,16 +445,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   virtual gfx::SurfaceFormat GetReadFormat() const { return GetFormat(); }
 
-  
-
-
-
-
-
-  virtual gfx::TransferFunction GetTransferFunction() const {
-    return gfx::TransferFunction::SRGB;
-  }
-
   virtual gfx::YUVColorSpace GetYUVColorSpace() const {
     return gfx::YUVColorSpace::Identity;
   }
@@ -823,8 +813,6 @@ class BufferTextureHost : public TextureHost {
   gfx::SurfaceFormat GetFormat() const override;
 
   gfx::YUVColorSpace GetYUVColorSpace() const override;
-
-  gfx::TransferFunction GetTransferFunction() const override;
 
   gfx::ColorDepth GetColorDepth() const override;
 
