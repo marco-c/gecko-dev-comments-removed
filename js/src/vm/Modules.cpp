@@ -60,7 +60,8 @@ static bool ContinueModuleLoading(JSContext* cx,
 static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue specifierArg,
                                         HandleValue optionsArg,
-                                        HandleObject promise);
+                                        HandleObject promise,
+                                        ImportPhase phase);
 static bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
                                   Handle<PromiseObject*> promiseCapability,
                                   Handle<ModuleObject*> module,
@@ -2661,7 +2662,7 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
   }
 
   if (!TryStartDynamicModuleImport(cx, script, specifierArg, optionsArg,
-                                   promise)) {
+                                   promise, ImportPhase::Evaluation)) {
     if (!RejectPromiseWithPendingError(cx, promise.as<PromiseObject>())) {
       return nullptr;
     }
@@ -2670,30 +2671,12 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
   return promise;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-JSObject* js::StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
-                                             HandleValue specifierArg) {
-  JS::Rooted<PromiseObject*> promise(cx,
-                                     PromiseObject::createSkippingExecutor(cx));
-  if (!promise) {
-    return nullptr;
-  }
-
-  
-  JS_ReportErrorASCII(cx, "source phase imports are not yet implemented");
-  if (!RejectPromiseWithPendingError(cx, promise)) {
-    return nullptr;
-  }
-
-  return promise;
-}
-#endif
-
 
 static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue specifierArg,
                                         HandleValue optionsArg,
-                                        HandleObject promise) {
+                                        HandleObject promise,
+                                        ImportPhase phase) {
   RootedString specifier(cx, ToString(cx, specifierArg));
   if (!specifier) {
     return false;
@@ -2704,16 +2687,28 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
     return false;
   }
 
-  Rooted<ImportAttributeVector> attributes(cx);
-  if (!EvaluateDynamicImportOptions(cx, optionsArg, &attributes)) {
-    return false;
-  }
+  RootedObject moduleRequest(cx);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (phase == ImportPhase::Source) {
+    
+    
+    
+    moduleRequest = ModuleRequestObject::create(
+        cx, specifierAtom, JS::ModuleType::JavaScript, phase);
+  } else
+#endif
+  {
+    MOZ_ASSERT(phase == ImportPhase::Evaluation);
+    Rooted<ImportAttributeVector> attributes(cx);
+    if (!EvaluateDynamicImportOptions(cx, optionsArg, &attributes)) {
+      return false;
+    }
 
-  
-  
-  RootedObject moduleRequest(
-      cx, ModuleRequestObject::create(cx, specifierAtom, attributes,
-                                      ImportPhase::Evaluation));
+    
+    
+    moduleRequest =
+        ModuleRequestObject::create(cx, specifierAtom, attributes, phase);
+  }
   if (!moduleRequest) {
     return false;
   }
@@ -2726,6 +2721,28 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
 
   return true;
 }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+
+JSObject* js::StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
+                                             HandleValue specifierArg) {
+  JS::Rooted<PromiseObject*> promise(cx,
+                                     PromiseObject::createSkippingExecutor(cx));
+  if (!promise) {
+    return nullptr;
+  }
+
+  if (!TryStartDynamicModuleImport(cx, script, specifierArg,
+                                   JS::UndefinedHandleValue, promise,
+                                   ImportPhase::Source)) {
+    if (!RejectPromiseWithPendingError(cx, promise)) {
+      return nullptr;
+    }
+  }
+
+  return promise;
+}
+#endif
 
 static bool OnRootModuleRejected(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -2869,6 +2886,35 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
   MOZ_ASSERT(module);
 
   
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  
+  
+  if (phase == ImportPhase::Source) {
+    
+    ModuleSourceObject* moduleSource = module->moduleSource();
+
+    
+    if (!moduleSource) {
+      
+      
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_MODULE_SOURCE_NOT_AVAILABLE);
+      return RejectPromiseWithPendingError(cx, promiseCapability);
+    }
+
+    
+    
+    
+    RootedValue moduleSourceValue(cx, ObjectValue(*moduleSource));
+    if (!PromiseObject::resolve(cx, promiseCapability, moduleSourceValue)) {
+      return false;
+    }
+
+    
+    return true;
+  }
+#endif
 
   
   
