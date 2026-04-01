@@ -12,6 +12,7 @@
 #include "mozilla/ScopeExit.h"              
 #include "mozilla/Try.h"                    
 
+#include <bit>          
 #include <stddef.h>     
 #include <stdint.h>     
 #include <type_traits>  
@@ -600,6 +601,9 @@ template <XDRMode mode>
   MOZ_TRY(xdr->codeUint32(stencil.specifier.rawDataRef()));
   MOZ_TRY(xdr->codeUint32(stencil.firstUnsupportedAttributeKey.rawDataRef()));
   MOZ_TRY(XDRVectorContent(xdr, stencil.attributes));
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  MOZ_TRY(xdr->codeUint8(reinterpret_cast<uint8_t*>(&stencil.phase)));
+#endif
 
   return Ok();
 }
@@ -1378,7 +1382,11 @@ JS_PUBLIC_API bool JS::GetScriptTranscodingBuildId(
   
   static_assert(sizeof(uintptr_t) == 4 || sizeof(uintptr_t) == 8);
   buildId->infallibleAppend(sizeof(uintptr_t) == 4 ? '4' : '8');
-  buildId->infallibleAppend(MOZ_LITTLE_ENDIAN() ? 'l' : 'b');
+  if constexpr (std::endian::native == std::endian::little) {
+    buildId->infallibleAppend('l');
+  } else {
+    buildId->infallibleAppend('b');
+  }
 
   return true;
 }
