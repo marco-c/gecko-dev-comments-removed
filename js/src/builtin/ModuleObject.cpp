@@ -787,17 +787,35 @@ static bool AbstractModuleSource_toStringTagGetter(JSContext* cx, unsigned argc,
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  
   if (!args.thisv().isObject()) {
     args.rval().setUndefined();
     return true;
   }
 
   
+  JSObject* obj = &args.thisv().toObject();
+
   
   
   
-  args.rval().setUndefined();
+  
+  
+  if (!obj->is<ModuleSourceObject>()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  MOZ_ASSERT(
+      JS::Prefs::experimental_source_phase_imports_test262_module_source());
+
+  
+  JSAtom* name = cx->names().Module;
+
+  
+  
+
+  
+  args.rval().setString(name);
   return true;
 }
 

@@ -1,0 +1,10 @@
+
+
+load(libdir + "asserts.js");
+
+import source mod from "<module source>";
+
+const AbstractModuleSource = getAbstractModuleSource();
+
+assertEq(mod instanceof AbstractModuleSource, true);
+assertEq(Object.getPrototypeOf(mod), AbstractModuleSource.prototype);

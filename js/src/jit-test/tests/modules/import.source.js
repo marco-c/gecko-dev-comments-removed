@@ -2,6 +2,32 @@
 
 load(libdir + "asserts.js");
 
+let result;
+import.source("<module source>").then(
+  (moduleSource) => {
+    result = moduleSource;
+  },
+  (error) => {
+    throw new Error("import.source should not have been rejected: " + error);
+  }
+);
+
+drainJobQueue();
+
+const AbstractModuleSource = getAbstractModuleSource();
+
+assertEq(result instanceof AbstractModuleSource, true);
+assertEq(Object.getPrototypeOf(result), AbstractModuleSource.prototype);
+
+
+assertThrowsInstanceOf(() => new AbstractModuleSource(), TypeError);
+assertThrowsInstanceOf(() => AbstractModuleSource(), TypeError);
+
+const toStringTag = Object.getOwnPropertyDescriptor(AbstractModuleSource.prototype, Symbol.toStringTag).get;
+assertEq(toStringTag.call(result), "Module");
+assertEq(toStringTag.call({}), undefined);
+assertEq(toStringTag.call(42), undefined);
+
 
 let error;
 import.source("empty.js").then(
