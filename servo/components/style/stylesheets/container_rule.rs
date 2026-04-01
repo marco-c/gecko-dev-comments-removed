@@ -8,7 +8,7 @@
 
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::derives::*;
-use crate::dom::{AttributeTracker, TElement};
+use crate::dom::TElement;
 use crate::logical_geometry::{LogicalSize, WritingMode};
 use crate::parser::ParserContext;
 use crate::properties::ComputedValues;
@@ -30,8 +30,8 @@ use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
-use style_traits::arc_slice::ArcSlice;
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::arc_slice::ArcSlice;
 
 
 #[derive(Debug, ToShmem)]
@@ -155,12 +155,12 @@ where
 impl ContainerCondition {
     
     #[inline]
-    pub fn name(&self) -> &ContainerName {
+    pub fn name(&self) -> &ContainerName{
         &self.name
     }
     
     #[inline]
-    pub fn query_condition(&self) -> Option<&QueryCondition> {
+    pub fn query_condition(&self) -> Option<&QueryCondition>{
         self.condition.as_ref()
     }
     
@@ -298,18 +298,13 @@ impl ContainerCondition {
         let size_query_container_lookup = ContainerSizeQuery::for_element(
             container,  None,  false,
         );
-        let mut attribute_tracker = AttributeTracker::new(&container);
         Context::for_container_query_evaluation(
             stylist.device(),
             Some(stylist),
             Some(info),
             size_query_container_lookup,
             |context| {
-                let matches = condition.matches(
-                    context,
-                    &mut CustomMediaEvaluator::none(),
-                    &mut attribute_tracker,
-                );
+                let matches = condition.matches(context, &mut CustomMediaEvaluator::none());
                 let flags = context.style().flags();
                 if flags.contains(ComputedValueFlags::USES_VIEWPORT_UNITS) {
                     
