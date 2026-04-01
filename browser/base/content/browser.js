@@ -3359,71 +3359,12 @@ const DynamicShortcutTooltip = {
 
 
 
-function hrefAndLinkNodeForClickEvent(event) {
-  
-  let content = event.view || event.composedTarget?.ownerGlobal;
-  if (!content?.HTMLAnchorElement) {
-    return null;
-  }
-  function isHTMLLink(aNode) {
-    
-    return (
-      (content.HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
-      (content.HTMLAreaElement.isInstance(aNode) && aNode.href) ||
-      content.HTMLLinkElement.isInstance(aNode)
-    );
-  }
-
-  let node = event.composedTarget;
-  while (node && !isHTMLLink(node)) {
-    node = node.flattenedTreeParentNode;
-  }
-
-  if (node) {
-    return [node.href, node];
-  }
-
-  
-  let href, baseURI;
-  node = event.composedTarget;
-  while (node && !href) {
-    if (
-      node.nodeType == content.Node.ELEMENT_NODE &&
-      (node.localName == "a" || content.MathMLElement.isInstance(node))
-    ) {
-      href =
-        node.getAttribute("href") ||
-        node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
-
-      if (href) {
-        baseURI = node.ownerDocument.baseURIObject;
-        break;
-      }
-    }
-    node = node.flattenedTreeParentNode;
-  }
-
-  
-  
-  return [URL.parse(href, baseURI?.spec)?.href ?? null];
-}
-
-
-
-
-
-
-
-
-
-
-
 function contentAreaClick(event, isPanelClick) {
   if (!event.isTrusted || event.defaultPrevented || event.button != 0) {
     return;
   }
 
-  let [href, linkNode] = hrefAndLinkNodeForClickEvent(event);
+  let [href, linkNode] = BrowserUtils.hrefAndLinkNodeForClickEvent(event);
   if (!href) {
     
     if (
