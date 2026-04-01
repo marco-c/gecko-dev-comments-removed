@@ -66,7 +66,8 @@ class ImportAttribute {
 
 using ImportAttributeVector = GCVector<ImportAttribute, 0, SystemAllocPolicy>;
 
-enum class ImportPhase : uint8_t { Evaluation, Limit };
+
+enum class ImportPhase : uint8_t { Source, Evaluation, Limit };
 
 class ModuleRequestObject : public NativeObject {
  public:
