@@ -3,63 +3,93 @@
 
 
 
+from typing import Optional
+
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
-from voluptuous import Extra, Optional, Required
 
-from gecko_taskgraph.transforms.test import test_description_schema
+from gecko_taskgraph.transforms.test import TestDescriptionSchema
 from gecko_taskgraph.util.perftest import is_external_browser
 
 transforms = TransformSequence()
 task_transforms = TransformSequence()
 
-raptor_description_schema = LegacySchema({
-    
-    Optional("raptor"): {
-        Optional("activity"): optionally_keyed_by("app", str),
-        Optional("apps"): optionally_keyed_by("test-platform", "subtest", [str]),
-        Optional("binary-path"): optionally_keyed_by("app", str),
-        Optional("run-visual-metrics"): optionally_keyed_by(
-            "app", "test-platform", bool
-        ),
-        Optional("subtests"): optionally_keyed_by("app", "test-platform", list),
-        Optional("test"): str,
-        Optional("test-url-param"): optionally_keyed_by(
-            "subtest", "test-platform", str
-        ),
-        Optional("lull-schedule"): optionally_keyed_by("subtest", "test-platform", str),
-        Optional("network-conditions"): optionally_keyed_by("subtest", list),
-    },
-    
-    Optional("max-run-time"): optionally_keyed_by(
-        "app", "subtest", "test-platform", test_description_schema["max-run-time"]
-    ),
-    Optional("run-on-projects"): optionally_keyed_by(
-        "app",
-        "test-name",
-        "raptor.test",
-        "subtest",
-        "variant",
-        test_description_schema["run-on-projects"],
-    ),
-    Optional("variants"): test_description_schema["variants"],
-    Optional("target"): optionally_keyed_by("app", test_description_schema["target"]),
-    Optional("tier"): optionally_keyed_by(
-        "app", "raptor.test", "subtest", "variant", test_description_schema["tier"]
-    ),
-    Required("test-name"): test_description_schema["test-name"],
-    Required("test-platform"): test_description_schema["test-platform"],
-    Required("require-signed-extensions"): test_description_schema[
-        "require-signed-extensions"
-    ],
-    Required("treeherder-symbol"): test_description_schema["treeherder-symbol"],
-    
-    Extra: object,
-})
 
-transforms.add_validate(raptor_description_schema)
+class RaptorSchema(Schema, kw_only=True):
+    activity: Optional[optionally_keyed_by("app", str, use_msgspec=True)] = None  
+    apps: Optional[  
+        optionally_keyed_by("test-platform", "subtest", list[str], use_msgspec=True)
+    ] = None
+    binary_path: Optional[optionally_keyed_by("app", str, use_msgspec=True)] = None  
+    run_visual_metrics: Optional[  
+        optionally_keyed_by("app", "test-platform", bool, use_msgspec=True)
+    ] = None
+    subtests: Optional[  
+        optionally_keyed_by("app", "test-platform", list[object], use_msgspec=True)
+    ] = None
+    test: Optional[str] = None
+    test_url_param: Optional[  
+        optionally_keyed_by("subtest", "test-platform", str, use_msgspec=True)
+    ] = None
+    lull_schedule: Optional[  
+        optionally_keyed_by("subtest", "test-platform", str, use_msgspec=True)
+    ] = None
+    network_conditions: Optional[  
+        optionally_keyed_by("subtest", list[object], use_msgspec=True)
+    ] = None
+
+
+class RaptorDescriptionSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    
+    raptor: Optional[RaptorSchema] = None
+    
+    max_run_time: Optional[  
+        optionally_keyed_by(
+            "app",
+            "subtest",
+            "test-platform",
+            TestDescriptionSchema.__annotations__["max_run_time"],
+            use_msgspec=True,
+        )
+    ] = None
+    run_on_projects: Optional[  
+        optionally_keyed_by(
+            "app",
+            "test-name",
+            "raptor.test",
+            "subtest",
+            "variant",
+            TestDescriptionSchema.__annotations__["run_on_projects"],
+            use_msgspec=True,
+        )
+    ] = None
+    variants: TestDescriptionSchema.__annotations__["variants"] = None
+    target: Optional[  
+        optionally_keyed_by(
+            "app", TestDescriptionSchema.__annotations__["target"], use_msgspec=True
+        )
+    ] = None
+    tier: Optional[  
+        optionally_keyed_by(
+            "app",
+            "raptor.test",
+            "subtest",
+            "variant",
+            TestDescriptionSchema.__annotations__["tier"],
+            use_msgspec=True,
+        )
+    ] = None
+    test_name: TestDescriptionSchema.__annotations__["test_name"]  
+    test_platform: TestDescriptionSchema.__annotations__["test_platform"]  
+    require_signed_extensions: TestDescriptionSchema.__annotations__[
+        "require_signed_extensions"  
+    ]
+    treeherder_symbol: TestDescriptionSchema.__annotations__["treeherder_symbol"]  
+
+
+transforms.add_validate(RaptorDescriptionSchema)
 
 
 @transforms.add
