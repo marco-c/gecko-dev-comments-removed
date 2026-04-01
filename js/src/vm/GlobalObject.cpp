@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "vm/GlobalObject.h"
 
 #include "jsapi.h"
@@ -232,6 +234,11 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_DisposableStack:
     case JSProto_AsyncDisposableStack:
       return !JS::Prefs::experimental_explicit_resource_management();
+#endif
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    case JSProto_AbstractModuleSource:
+      return !JS::Prefs::experimental_source_phase_imports();
 #endif
 
     default:

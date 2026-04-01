@@ -311,6 +311,14 @@ class ModuleNamespaceObject : public ProxyObject {
   static const ProxyHandler proxyHandler;
 };
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+
+class AbstractModuleSourceObject : public NativeObject {
+ public:
+  static const JSClass class_;
+};
+#endif
+
 
 
 enum class ModuleStatus : int8_t {
