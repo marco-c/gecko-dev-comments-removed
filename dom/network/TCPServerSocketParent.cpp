@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "TCPServerSocketParent.h"
 
 #include "TCPServerSocket.h"
@@ -25,6 +23,11 @@ NS_INTERFACE_MAP_END
 
 void TCPServerSocketParent::ReleaseIPDLReference() {
   MOZ_ASSERT(mIPCOpen);
+  NS_ASSERTION(mIPCOpen,
+               "ReleaseIPDLReference called without matching AddIPDLReference");
+  if (!mIPCOpen) {
+    return;
+  }
   mIPCOpen = false;
   this->Release();
 }
@@ -70,6 +73,7 @@ nsresult TCPServerSocketParent::SendCallbackAccept(TCPSocketParent* socket) {
 
   if (mNeckoParent) {
     if (mNeckoParent->SendPTCPSocketConstructor(socket, host, port)) {
+      
       
       
       socket->AddIPDLReference();
