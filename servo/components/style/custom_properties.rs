@@ -2392,6 +2392,7 @@ impl<'a> Substitution<'a> {
 }
 
 
+#[derive(Debug)]
 pub struct SubstitutionResult<'a> {
     
     pub css: Cow<'a, str>,
