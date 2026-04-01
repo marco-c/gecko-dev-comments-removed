@@ -6,11 +6,11 @@
 #define MOZILLA_GFX_TYPES_H_
 
 #include "mozilla/DefineEnum.h"  
-#include "mozilla/EndianUtils.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/MacroArgs.h"  
 #include "mozilla/TypedEnumBits.h"
 
+#include <bit>
 #include <iosfwd>  
 #include <stddef.h>
 #include <stdint.h>
@@ -105,18 +105,15 @@ enum class SurfaceFormat : int8_t {
   
   UNKNOWN,  
 
-
-
-
-#if MOZ_LITTLE_ENDIAN()
-  A8R8G8B8_UINT32 = B8G8R8A8,  
-  X8R8G8B8_UINT32 = B8G8R8X8,  
-#elif MOZ_BIG_ENDIAN()
-  A8R8G8B8_UINT32 = A8R8G8B8,  
-  X8R8G8B8_UINT32 = X8R8G8B8,  
-#else
-#  error "bad endianness"
-#endif
+  
+  
+  
+  A8R8G8B8_UINT32 = std::endian::native == std::endian::little
+                        ? B8G8R8A8
+                        : A8R8G8B8,  
+  X8R8G8B8_UINT32 = std::endian::native == std::endian::little
+                        ? B8G8R8X8
+                        : X8R8G8B8,  
 
   
   
@@ -266,19 +263,10 @@ std::ostream& operator<<(std::ostream& aOut, const SurfaceFormat& aFormat);
 
 
 enum class SurfaceFormatBit : uint32_t {
-#if MOZ_LITTLE_ENDIAN()
-  R8G8B8A8_R = 0,
-  R8G8B8A8_G = 8,
-  R8G8B8A8_B = 16,
-  R8G8B8A8_A = 24,
-#elif MOZ_BIG_ENDIAN()
-  R8G8B8A8_A = 0,
-  R8G8B8A8_B = 8,
-  R8G8B8A8_G = 16,
-  R8G8B8A8_R = 24,
-#else
-#  error "bad endianness"
-#endif
+  R8G8B8A8_R = std::endian::native == std::endian::little ? 0 : 24,
+  R8G8B8A8_G = std::endian::native == std::endian::little ? 8 : 16,
+  R8G8B8A8_B = std::endian::native == std::endian::little ? 16 : 8,
+  R8G8B8A8_A = std::endian::native == std::endian::little ? 24 : 0,
 
   
   A8R8G8B8_UINT32_B = 0,
@@ -551,12 +539,49 @@ enum class ColorDepth : uint8_t {
 std::ostream& operator<<(std::ostream& aOut, const ColorDepth& aColorDepth);
 
 enum class TransferFunction : uint8_t {
+  
+  
+  
+  
   BT709,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   SRGB,
+  
+  
+  
+  
   PQ,
+  
+  
+  
+  
+  
   HLG,
+  
+  
+  
+  
+  LINEAR,
   _First = BT709,
-  _Last = HLG,
+  _Last = LINEAR,
   Default = BT709,
 };
 
@@ -568,13 +593,35 @@ enum class ColorRange : uint8_t {
 };
 
 
+
+
+
+
+
+
 enum class YUVRangedColorSpace : uint8_t {
+  
+  
+  
+  
   BT601_Narrow = 0,
   BT601_Full,
   BT709_Narrow,
   BT709_Full,
+  
+  
+  
+  
   BT2020_Narrow,
   BT2020_Full,
+  
+  
+  BT2100_HLG_Narrow,
+  BT2100_HLG_Full,
+  
+  BT2100_PQ_Narrow,
+  
+  BT2100_PQ_Full,
   GbrIdentity,
 
   _First = BT601_Narrow,
@@ -584,17 +631,29 @@ enum class YUVRangedColorSpace : uint8_t {
 
 
 
-
-
 enum class ColorSpace2 : uint8_t {
+  
+  
   Display,
   UNKNOWN = Display,  
+  
+  
+  
   SRGB,
+  
+  
   DISPLAY_P3,
-  BT601_525,  
-  BT709,      
-  BT601_625 =
-      BT709,  
+  
+  BT601_525,
+  
+  BT709,
+  
+  
+  BT601_625 = BT709,
+  
+  
+  
+  
   BT2020,
   _First = Display,
   _Last = BT2020,
@@ -635,35 +694,49 @@ inline YUVColorSpace ToYUVColorSpace(const ColorSpace2 in) {
 struct FromYUVRangedColorSpaceT final {
   const YUVColorSpace space;
   const ColorRange range;
+  const TransferFunction transferFunction;
 };
 
 inline FromYUVRangedColorSpaceT FromYUVRangedColorSpace(
     const YUVRangedColorSpace s) {
   switch (s) {
     case YUVRangedColorSpace::BT601_Narrow:
-      return {YUVColorSpace::BT601, ColorRange::LIMITED};
+      return {YUVColorSpace::BT601, ColorRange::LIMITED,
+              TransferFunction::BT709};
     case YUVRangedColorSpace::BT601_Full:
-      return {YUVColorSpace::BT601, ColorRange::FULL};
+      return {YUVColorSpace::BT601, ColorRange::FULL, TransferFunction::BT709};
 
     case YUVRangedColorSpace::BT709_Narrow:
-      return {YUVColorSpace::BT709, ColorRange::LIMITED};
+      return {YUVColorSpace::BT709, ColorRange::LIMITED,
+              TransferFunction::BT709};
     case YUVRangedColorSpace::BT709_Full:
-      return {YUVColorSpace::BT709, ColorRange::FULL};
+      return {YUVColorSpace::BT709, ColorRange::FULL, TransferFunction::BT709};
 
     case YUVRangedColorSpace::BT2020_Narrow:
-      return {YUVColorSpace::BT2020, ColorRange::LIMITED};
+      return {YUVColorSpace::BT2020, ColorRange::LIMITED,
+              TransferFunction::BT709};
     case YUVRangedColorSpace::BT2020_Full:
-      return {YUVColorSpace::BT2020, ColorRange::FULL};
+      return {YUVColorSpace::BT2020, ColorRange::FULL, TransferFunction::BT709};
+    case YUVRangedColorSpace::BT2100_HLG_Narrow:
+      return {YUVColorSpace::BT2020, ColorRange::LIMITED,
+              TransferFunction::HLG};
+    case YUVRangedColorSpace::BT2100_HLG_Full:
+      return {YUVColorSpace::BT2020, ColorRange::FULL, TransferFunction::HLG};
+    case YUVRangedColorSpace::BT2100_PQ_Narrow:
+      return {YUVColorSpace::BT2020, ColorRange::LIMITED, TransferFunction::PQ};
+    case YUVRangedColorSpace::BT2100_PQ_Full:
+      return {YUVColorSpace::BT2020, ColorRange::FULL, TransferFunction::PQ};
 
     case YUVRangedColorSpace::GbrIdentity:
-      return {YUVColorSpace::Identity, ColorRange::FULL};
+      return {YUVColorSpace::Identity, ColorRange::FULL,
+              TransferFunction::BT709};
   }
   MOZ_CRASH("bad YUVRangedColorSpace");
 }
 
-
-inline YUVRangedColorSpace ToYUVRangedColorSpace(const YUVColorSpace space,
-                                                 const ColorRange range) {
+inline YUVRangedColorSpace ToYUVRangedColorSpace(
+    const YUVColorSpace space, const ColorRange range,
+    const gfx::TransferFunction transferFunction) {
   bool narrow;
   switch (range) {
     case ColorRange::FULL:
@@ -688,15 +761,30 @@ inline YUVRangedColorSpace ToYUVRangedColorSpace(const YUVColorSpace space,
                     : YUVRangedColorSpace::BT709_Full;
 
     case YUVColorSpace::BT2020:
-      return narrow ? YUVRangedColorSpace::BT2020_Narrow
-                    : YUVRangedColorSpace::BT2020_Full;
+      switch (transferFunction) {
+        case gfx::TransferFunction::PQ:
+          return narrow ? YUVRangedColorSpace::BT2100_PQ_Narrow
+                        : YUVRangedColorSpace::BT2100_PQ_Full;
+        case gfx::TransferFunction::HLG:
+          return narrow ? YUVRangedColorSpace::BT2100_HLG_Narrow
+                        : YUVRangedColorSpace::BT2100_HLG_Full;
+        case gfx::TransferFunction::SRGB:
+          return narrow ? YUVRangedColorSpace::BT2020_Narrow
+                        : YUVRangedColorSpace::BT2020_Full;
+        case gfx::TransferFunction::BT709:
+          return narrow ? YUVRangedColorSpace::BT2020_Narrow
+                        : YUVRangedColorSpace::BT2020_Full;
+        default:
+          MOZ_CRASH("bad TransferFunction for BT2020");
+      }
   }
   MOZ_CRASH("bad YUVColorSpace");
 }
 
 template <typename DescriptorT>
 inline YUVRangedColorSpace GetYUVRangedColorSpace(const DescriptorT& d) {
-  return ToYUVRangedColorSpace(d.yUVColorSpace(), d.colorRange());
+  return ToYUVRangedColorSpace(d.yUVColorSpace(), d.colorRange(),
+                               d.transferFunction());
 }
 
 static inline SurfaceFormat SurfaceFormatForColorDepth(ColorDepth aColorDepth) {
@@ -773,6 +861,7 @@ static inline bool IsHDRTransferFunction(
   switch (aTransferFunction) {
     case gfx::TransferFunction::PQ:
     case gfx::TransferFunction::HLG:
+    case gfx::TransferFunction::LINEAR:
       return true;
     case gfx::TransferFunction::BT709:
     case gfx::TransferFunction::SRGB:

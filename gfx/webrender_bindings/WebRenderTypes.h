@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_WEBRENDERTYPES_H
 #define GFX_WEBRENDERTYPES_H
 
@@ -844,6 +842,14 @@ static inline wr::YuvRangedColorSpace ToWrYuvRangedColorSpace(
     case gfx::YUVRangedColorSpace::BT2020_Narrow:
       return wr::YuvRangedColorSpace::Rec2020Narrow;
     case gfx::YUVRangedColorSpace::BT2020_Full:
+      return wr::YuvRangedColorSpace::Rec2020Full;
+    case gfx::YUVRangedColorSpace::BT2100_HLG_Narrow:
+      return wr::YuvRangedColorSpace::Rec2020Narrow;
+    case gfx::YUVRangedColorSpace::BT2100_HLG_Full:
+      return wr::YuvRangedColorSpace::Rec2020Full;
+    case gfx::YUVRangedColorSpace::BT2100_PQ_Narrow:
+      return wr::YuvRangedColorSpace::Rec2020Narrow;
+    case gfx::YUVRangedColorSpace::BT2100_PQ_Full:
       return wr::YuvRangedColorSpace::Rec2020Full;
     case gfx::YUVRangedColorSpace::GbrIdentity:
       break;

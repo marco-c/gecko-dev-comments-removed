@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERTEXTUREHOSTSWGL_H
 #define MOZILLA_GFX_RENDERTEXTUREHOSTSWGL_H
 
@@ -28,6 +26,10 @@ class RenderTextureHostSWGL : public RenderTextureHost {
 
   virtual gfx::ColorDepth GetColorDepth() const {
     return gfx::ColorDepth::COLOR_8;
+  }
+
+  virtual gfx::TransferFunction GetTransferFunction() const {
+    return gfx::TransferFunction::BT709;
   }
 
   struct PlaneInfo {

@@ -18,47 +18,135 @@ namespace layers {
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
     const gfx::YUVColorSpace aYUVColorSpace, const gfx::ColorRange aColorRange,
-    const bool aContentIsHDR) {
-  if (aYUVColorSpace == gfx::YUVColorSpace::BT601) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
-    } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601);
-    }
-  } else if (aYUVColorSpace == gfx::YUVColorSpace::BT709) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
-    } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
-    }
-  } else if (aYUVColorSpace == gfx::YUVColorSpace::BT2020) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      if (aContentIsHDR) {
-        
-        
+    const gfx::TransferFunction aTransferFunction) {
+  switch (aYUVColorSpace) {
+    case gfx::YUVColorSpace::BT601:
+      
+      
+      if (aTransferFunction != gfx::TransferFunction::BT709) {
         gfxCriticalNoteOnce
-            << "GetSourceDXGIColorSpace: DXGI has no full range "
-               "BT2020 PQ YCbCr format, using studio range instead";
-        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
-      } else {
-        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+            << "GetSourceDXGIColorSpace: Unhandled transfer function "
+            << static_cast<int>(aTransferFunction)
+            << " for BT601, treating as BT709 transfer function";
       }
-    } else {
-      if (aContentIsHDR) {
-        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
-      } else {
-        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      switch (aColorRange) {
+        case gfx::ColorRange::FULL:
+          return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
+        case gfx::ColorRange::LIMITED:
+          return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601);
       }
-    }
+      gfxCriticalNoteOnce << "GetSourceDXGIColorSpace: Unhandled color range "
+                          << static_cast<int>(aColorRange) << " for BT601";
+      return Nothing();
+    case gfx::YUVColorSpace::Identity:
+      gfxCriticalNoteOnce
+          << "GetSourceDXGIColorSpace: Unhandled YUV color space "
+          << static_cast<int>(aYUVColorSpace)
+          << ", treating as BT709 color space";
+      FMT_FALLTHROUGH;
+    case gfx::YUVColorSpace::BT709:
+      
+      if (aTransferFunction != gfx::TransferFunction::BT709) {
+        gfxCriticalNoteOnce
+            << "GetSourceDXGIColorSpace: Unhandled transfer function "
+            << static_cast<int>(aTransferFunction)
+            << " for BT709, treating as BT709 transfer function";
+      }
+      switch (aColorRange) {
+        case gfx::ColorRange::FULL:
+          return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+        case gfx::ColorRange::LIMITED:
+          return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      }
+      gfxCriticalNoteOnce << "GetSourceDXGIColorSpace: Unhandled color range "
+                          << static_cast<int>(aColorRange) << " for BT709";
+      return Nothing();
+    case gfx::YUVColorSpace::BT2020:
+      
+      if (!StaticPrefs::gfx_color_management_hdr_video()) {
+        
+        
+        switch (aColorRange) {
+          case gfx::ColorRange::FULL:
+            return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+          case gfx::ColorRange::LIMITED:
+            return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+        }
+        gfxCriticalNoteOnce << "GetSourceDXGIColorSpace: Unhandled color range "
+                            << static_cast<int>(aColorRange) << " for BT2020";
+        return Nothing();
+      }
+      switch (aTransferFunction) {
+        case gfx::TransferFunction::SRGB:
+        case gfx::TransferFunction::LINEAR:
+          
+          
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: DXGI has no support for "
+              << static_cast<int>(aTransferFunction)
+              << " transfer function for YCBCR content, treating as BT2020 "
+                 "transfer function";
+          FMT_FALLTHROUGH;
+        case gfx::TransferFunction::BT709:
+          
+          
+          
+          switch (aColorRange) {
+            case gfx::ColorRange::FULL:
+              return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+            case gfx::ColorRange::LIMITED:
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+          }
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: Unhandled color range "
+              << static_cast<int>(aColorRange) << " for BT2020";
+          return Nothing();
+        case gfx::TransferFunction::PQ:
+          
+          
+          
+          switch (aColorRange) {
+            case gfx::ColorRange::FULL:
+              gfxCriticalNoteOnce
+                  << "GetSourceDXGIColorSpace: DXGI has no support for PQ "
+                     "transfer function with full color range for BT2020 "
+                     "content, treating as studio range";
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+            case gfx::ColorRange::LIMITED:
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+          }
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: Unhandled color range "
+              << static_cast<int>(aColorRange) << " for BT2020";
+          return Nothing();
+        case gfx::TransferFunction::HLG:
+          
+          
+          
+          switch (aColorRange) {
+            case gfx::ColorRange::FULL:
+              return Some(DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020);
+            case gfx::ColorRange::LIMITED:
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020);
+          }
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: Unhandled color range "
+              << static_cast<int>(aColorRange) << " for BT2020";
+          return Nothing();
+      }
+      gfxCriticalNoteOnce
+          << "GetSourceDXGIColorSpace: Unhandled transfer function "
+          << static_cast<int>(aTransferFunction) << " for BT2020";
+      return Nothing();
   }
 
   return Nothing();
 }
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVRangedColorSpace aYUVColorSpace, const bool aContentIsHDR) {
+    const gfx::YUVRangedColorSpace aYUVColorSpace) {
   const auto info = FromYUVRangedColorSpace(aYUVColorSpace);
-  return GetSourceDXGIColorSpace(info.space, info.range, aContentIsHDR);
+  return GetSourceDXGIColorSpace(info.space, info.range, info.transferFunction);
 }
 
 
@@ -176,9 +264,9 @@ bool VideoProcessorD3D11::CallVideoProcessorBlt(
   HRESULT hr;
 
   auto yuvRangedColorSpace = gfx::ToYUVRangedColorSpace(
-      gfx::ToYUVColorSpace(aTextureInfo.mColorSpace), aTextureInfo.mColorRange);
-  auto sourceColorSpace =
-      GetSourceDXGIColorSpace(yuvRangedColorSpace, mContentIsHDR);
+      gfx::ToYUVColorSpace(aTextureInfo.mColorSpace), aTextureInfo.mColorRange,
+      aTextureInfo.mTransferFunction);
+  auto sourceColorSpace = GetSourceDXGIColorSpace(yuvRangedColorSpace);
   if (sourceColorSpace.isNothing()) {
     gfxCriticalNoteOnce << "Unsupported color space";
     return false;

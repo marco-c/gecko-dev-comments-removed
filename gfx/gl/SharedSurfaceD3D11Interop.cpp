@@ -450,7 +450,8 @@ SharedSurface_D3D11Interop::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorD3D10(
       mData.dxgiHandle,  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
-      gfx::ColorRange::FULL,  true,
+      gfx::ColorRange::FULL, mDesc.transferFunction,
+       true,
        Nothing()));
 }
 

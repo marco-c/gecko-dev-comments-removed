@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RenderTextureHostWrapper.h"
 
 #include "mozilla/gfx/Logging.h"
@@ -225,6 +223,13 @@ gfx::YUVRangedColorSpace RenderTextureHostWrapper::GetYUVColorSpace() const {
     return swglHost->GetYUVColorSpace();
   }
   return gfx::YUVRangedColorSpace::Default;
+}
+
+gfx::TransferFunction RenderTextureHostWrapper::GetTransferFunction() const {
+  if (RenderTextureHostSWGL* swglHost = EnsureRenderTextureHostSWGL()) {
+    return swglHost->GetTransferFunction();
+  }
+  return gfx::TransferFunction::BT709;
 }
 
 bool RenderTextureHostWrapper::MapPlane(RenderCompositor* aCompositor,

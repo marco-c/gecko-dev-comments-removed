@@ -2,7 +2,6 @@
 
 
 
-
 #include "SharedTextureMacIOSurface.h"
 
 #include "mozilla/gfx/Logging.h"
@@ -75,7 +74,8 @@ SharedTextureMacIOSurface::ToSurfaceDescriptor() {
 
   return Some(layers::SurfaceDescriptorMacIOSurface(
       mSurface->GetIOSurfaceID(), !mSurface->HasAlpha(),
-      mSurface->GetYUVColorSpace(), std::move(gpuFence)));
+      mSurface->GetYUVColorSpace(), mSurface->GetTransferFunction(),
+      std::move(gpuFence)));
 }
 
 void SharedTextureMacIOSurface::GetSnapshot(const ipc::Shmem& aDestShmem,

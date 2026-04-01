@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GFX_TESTS_GTEST_TEXTUREHELPER_H_
 #define GFX_TESTS_GTEST_TEXTUREHELPER_H_
 
@@ -66,8 +64,8 @@ static already_AddRefed<TextureClient> CreateYCbCrTextureClientWithBackend(
         nullptr, clientData.mPictureRect, clientData.YDataSize(),
         clientData.mYStride, clientData.CbCrDataSize(), clientData.mCbCrStride,
         StereoMode::MONO, gfx::ColorDepth::COLOR_8, gfx::YUVColorSpace::BT601,
-        gfx::ColorRange::LIMITED, clientData.mChromaSubsampling,
-        TextureFlags::DEALLOCATE_CLIENT);
+        gfx::ColorRange::LIMITED, gfx::TransferFunction::BT709,
+        clientData.mChromaSubsampling, TextureFlags::DEALLOCATE_CLIENT);
   }
 
   if (data) {

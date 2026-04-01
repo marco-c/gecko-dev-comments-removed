@@ -383,6 +383,7 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
       const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride,
       StereoMode aStereoMode, gfx::ColorDepth aColorDepth,
       gfx::YUVColorSpace aYUVColorSpace, gfx::ColorRange aColorRange,
+      gfx::TransferFunction aTransferFunction,
       gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags);
 
   
