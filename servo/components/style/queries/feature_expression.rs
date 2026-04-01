@@ -683,9 +683,6 @@ pub enum QueryExpressionValue {
     Custom(DashedIdent),
     
     
-    Var(DashedIdent),
-    
-    
     
     Function(Box<CustomVariableValue>),
 }
@@ -711,11 +708,6 @@ impl QueryExpressionValue {
             QueryExpressionValue::Angle(v) => v.to_css(dest),
             QueryExpressionValue::Time(v) => v.to_css(dest),
             QueryExpressionValue::Custom(ref v) => v.to_css(dest),
-            QueryExpressionValue::Var(ref v) => {
-                dest.write_str("var(")?;
-                v.to_css(dest)?;
-                dest.write_char(')')
-            },
             QueryExpressionValue::Function(ref f) => f.to_css(dest),
             QueryExpressionValue::Enumerated(value) => match for_expr
                 .expect("caller should have passed for_expr")
@@ -817,21 +809,10 @@ impl QueryExpressionValue {
                     )
                 };
 
-            if name.eq_ignore_ascii_case("var") {
-                
-                
-                
-                if let Ok(ident) =
-                    input.try_parse(|i| i.parse_nested_block(|i| DashedIdent::parse(context, i)))
-                {
-                    return Ok(Self::Var(ident));
-                }
-                
-                
-                
-                return Ok(Self::Function(Box::new(parse_func(input)?)));
-            }
-            if static_prefs::pref!("layout.css.attr.enabled") && name.eq_ignore_ascii_case("attr") {
+            if name.eq_ignore_ascii_case("var")
+                || (static_prefs::pref!("layout.css.attr.enabled")
+                    && name.eq_ignore_ascii_case("attr"))
+            {
                 return Ok(Self::Function(Box::new(parse_func(input)?)));
             }
         }
@@ -988,7 +969,7 @@ impl QueryStyleRange {
         visited_set: &mut PrecomputedHashSet<DashedIdent>,
     ) -> Option<Component> {
         match value {
-            QueryExpressionValue::Custom(ident) | QueryExpressionValue::Var(ident) => {
+            QueryExpressionValue::Custom(ident) => {
                 
                 
                 let name = ident.undashed();
