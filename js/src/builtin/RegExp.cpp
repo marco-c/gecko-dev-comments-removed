@@ -1746,7 +1746,7 @@ bool js::RegExpSearcher(JSContext* cx, unsigned argc, Value* vp) {
 bool js::RegExpSearcherRaw(JSContext* cx, HandleObject regexp,
                            HandleString input, int32_t lastIndex,
                            MatchPairs* maybeMatches, int32_t* result) {
-  MOZ_ASSERT(lastIndex >= 0);
+  MOZ_ASSERT(lastIndex >= 0 && size_t(lastIndex) <= input->length());
 
   
   
