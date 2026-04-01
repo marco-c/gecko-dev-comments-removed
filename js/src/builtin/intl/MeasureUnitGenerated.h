@@ -1,9 +1,9 @@
 
 
-#ifndef intl_components_MeasureUnitGenerated_h
-#define intl_components_MeasureUnitGenerated_h
+#ifndef builtin_intl_MeasureUnitGenerated_h
+#define builtin_intl_MeasureUnitGenerated_h
 
-namespace mozilla::intl {
+namespace js::intl {
 
 struct SimpleMeasureUnit {
   const char* const name;
