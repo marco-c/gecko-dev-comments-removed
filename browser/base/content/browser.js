@@ -3360,12 +3360,17 @@ const DynamicShortcutTooltip = {
 
 
 function hrefAndLinkNodeForClickEvent(event) {
+  
+  let content = event.view || event.composedTarget?.ownerGlobal;
+  if (!content?.HTMLAnchorElement) {
+    return null;
+  }
   function isHTMLLink(aNode) {
     
     return (
-      (HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
-      (HTMLAreaElement.isInstance(aNode) && aNode.href) ||
-      HTMLLinkElement.isInstance(aNode)
+      (content.HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
+      (content.HTMLAreaElement.isInstance(aNode) && aNode.href) ||
+      content.HTMLLinkElement.isInstance(aNode)
     );
   }
 
@@ -3383,16 +3388,15 @@ function hrefAndLinkNodeForClickEvent(event) {
   node = event.composedTarget;
   while (node && !href) {
     if (
-      node.nodeType == Node.ELEMENT_NODE &&
-      (node.localName == "a" ||
-        node.namespaceURI == "http://www.w3.org/1998/Math/MathML")
+      node.nodeType == content.Node.ELEMENT_NODE &&
+      (node.localName == "a" || content.MathMLElement.isInstance(node))
     ) {
       href =
         node.getAttribute("href") ||
         node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
 
       if (href) {
-        baseURI = node.baseURI;
+        baseURI = node.ownerDocument.baseURIObject;
         break;
       }
     }
@@ -3401,7 +3405,7 @@ function hrefAndLinkNodeForClickEvent(event) {
 
   
   
-  return [href ? makeURLAbsolute(baseURI, href) : null, null];
+  return [URL.parse(href, baseURI?.spec)?.href ?? null];
 }
 
 
