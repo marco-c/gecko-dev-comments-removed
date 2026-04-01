@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioBufferSourceNode.h"
 
 #include <algorithm>
@@ -172,10 +170,14 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
       if (mResamplerOutRate == aOutRate) {
         return;
       }
-      if (speex_resampler_set_rate(mResampler, mBufferSampleRate, aOutRate) !=
-          RESAMPLER_ERR_SUCCESS) {
-        NS_ASSERTION(false, "speex_resampler_set_rate failed");
-        return;
+      int result =
+          speex_resampler_set_rate(mResampler, mBufferSampleRate, aOutRate);
+      if (result != RESAMPLER_ERR_SUCCESS) {
+        WEB_AUDIO_API_LOG("speex_resampler_set_rate failed: %i", result);
+        
+        
+        
+        
       }
     }
 
