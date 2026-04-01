@@ -29,6 +29,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Printf.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/SHA1.h"
@@ -1540,9 +1541,9 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
       
       
       nsAutoCString acceptDictionaryEncodings;
-      rv = Preferences::GetCString(HTTP_PREF("accept-encoding.dictionary"),
-                                   acceptDictionaryEncodings);
-      if (NS_SUCCEEDED(rv) && !acceptDictionaryEncodings.IsEmpty()) {
+      nsresult rvDic = Preferences::GetCString(
+          HTTP_PREF("accept-encoding.dictionary"), acceptDictionaryEncodings);
+      if (NS_SUCCEEDED(rvDic) && !acceptDictionaryEncodings.IsEmpty()) {
         acceptEncodings.Append(", "_ns);
         acceptEncodings.Append(acceptDictionaryEncodings);
         rv = SetAcceptEncodings(acceptEncodings.get(), true, true);

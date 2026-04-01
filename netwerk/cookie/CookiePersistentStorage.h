@@ -20,6 +20,7 @@ class mozIStorageAsyncStatement;
 class mozIStorageService;
 class nsICookieTransactionCallback;
 class nsIEffectiveTLDService;
+class nsIURI;
 
 namespace mozilla {
 namespace net {
@@ -126,6 +127,9 @@ class CookiePersistentStorage final : public CookieStorage,
   nsCOMPtr<nsIThread> mThread;
   nsCOMPtr<mozIStorageService> mStorageService;
   nsCOMPtr<nsIEffectiveTLDService> mTLDService;
+  
+  
+  nsCOMPtr<nsIURI> mPlaceholderURI;
 
   
   struct CookieDomainTuple {
@@ -137,6 +141,10 @@ class CookiePersistentStorage final : public CookieStorage,
   
   TimeStamp mEndInitDBConn;
   nsTArray<CookieDomainTuple> mReadArray;
+  
+  
+  
+  nsTArray<CookieDomainTuple> mCleanupArray;
 
   Monitor mMonitor MOZ_UNANNOTATED;
 
