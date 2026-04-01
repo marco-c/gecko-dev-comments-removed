@@ -591,7 +591,8 @@ Element* nsContentList::NamedItem(const nsAString& aName, bool aDoFlush) {
   return mNamedItemsCache->Get(name);
 }
 
-void nsContentList::GetSupportedNames(nsTArray<nsString>& aNames) {
+void nsContentList::GetSupportedNames(nsTArray<nsString>& aNames,
+                                      FilterElementWithName aFilter) {
   BringSelfUpToDate(true);
 
   AutoTArray<nsAtom*, 8> atoms;
@@ -605,14 +606,14 @@ void nsContentList::GetSupportedNames(nsTArray<nsString>& aNames) {
       }
     }
 
-    nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(content);
-    if (el) {
+    if (nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(content)) {
       
       
       
       
       const nsAttrValue* val = el->GetParsedAttr(nsGkAtoms::name);
-      if (val && val->Type() == nsAttrValue::eAtom) {
+      if (val && val->Type() == nsAttrValue::eAtom &&
+          (!aFilter || aFilter(el))) {
         nsAtom* name = val->GetAtomValue();
         MOZ_ASSERT(name != nsGkAtoms::_empty, "Empty names don't get atomized");
         if (!atoms.Contains(name)) {

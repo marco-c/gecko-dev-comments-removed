@@ -294,12 +294,20 @@ class nsContentList : public nsBaseContentList,
     aFound = !!item;
     return item;
   }
-  void GetSupportedNames(nsTArray<nsString>& aNames) override;
+  void GetSupportedNames(nsTArray<nsString>& aNames) override {
+    GetSupportedNames(aNames, nullptr);
+  }
 
   
   uint32_t Length(bool aDoFlush);
   nsIContent* Item(uint32_t aIndex, bool aDoFlush);
   Element* NamedItem(const nsAString& aName, bool aDoFlush);
+
+  
+  
+  using FilterElementWithName = bool (*)(nsIContent*);
+  void GetSupportedNames(nsTArray<nsString>& aNames,
+                         FilterElementWithName aFilter);
 
   
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED

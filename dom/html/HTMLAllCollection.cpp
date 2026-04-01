@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLAllCollection.h"
 
 #include "jsfriendapi.h"
@@ -151,40 +149,7 @@ void HTMLAllCollection::NamedGetter(
 }
 
 void HTMLAllCollection::GetSupportedNames(nsTArray<nsString>& aNames) {
-  
-  
-  AutoTArray<nsAtom*, 8> atoms;
-  for (uint32_t i = 0; i < Length(); ++i) {
-    nsIContent* content = Item(i);
-    if (content->HasID()) {
-      nsAtom* id = content->GetID();
-      MOZ_ASSERT(id != nsGkAtoms::_empty, "Empty ids don't get atomized");
-      if (!atoms.Contains(id)) {
-        atoms.AppendElement(id);
-      }
-    }
-
-    nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(content);
-    if (el) {
-      
-      
-      const nsAttrValue* val = el->GetParsedAttr(nsGkAtoms::name);
-      if (val && val->Type() == nsAttrValue::eAtom &&
-          IsAllNamedElement(content)) {
-        nsAtom* name = val->GetAtomValue();
-        MOZ_ASSERT(name != nsGkAtoms::_empty, "Empty names don't get atomized");
-        if (!atoms.Contains(name)) {
-          atoms.AppendElement(name);
-        }
-      }
-    }
-  }
-
-  uint32_t atomsLen = atoms.Length();
-  nsString* names = aNames.AppendElements(atomsLen);
-  for (uint32_t i = 0; i < atomsLen; ++i) {
-    atoms[i]->ToString(names[i]);
-  }
+  Collection()->GetSupportedNames(aNames, IsAllNamedElement);
 }
 
 JSObject* HTMLAllCollection::WrapObject(JSContext* aCx,
