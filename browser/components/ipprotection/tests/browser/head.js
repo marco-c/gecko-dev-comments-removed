@@ -22,7 +22,7 @@ const { IPProtectionAlertManager } = ChromeUtils.importESModule(
 );
 
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
 );
 
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
@@ -102,7 +102,11 @@ const defaultState = new IPProtectionPanel().state;
 async function openPanel(state, win = window) {
   let panel = IPProtection.getPanel(win);
   if (state) {
-    panel.setState(state);
+    panel.setState({
+      isCheckingEntitlement: false,
+      unauthenticated: false,
+      ...state,
+    });
   }
 
   let panelShownPromise = waitForPanelEvent(win.document, "popupshown");
@@ -280,6 +284,10 @@ let DEFAULT_SERVICE_STATUS = {
 let STUBS = {
   isEnrolledAndEntitled: undefined,
   hasUpgraded: undefined,
+  isEnrolling: undefined,
+  isCheckingEntitlement: undefined,
+  updateEntitlement: undefined,
+  refetchEntitlement: undefined,
   enroll: undefined,
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
@@ -377,6 +385,20 @@ function setupStubs(stubs = STUBS) {
     IPPEnrollAndEntitleManager,
     "hasUpgraded"
   );
+  
+  
+  stubs.isEnrolling = setupSandbox
+    .stub(IPPEnrollAndEntitleManager, "isEnrolling")
+    .get(() => false);
+  stubs.isCheckingEntitlement = setupSandbox
+    .stub(IPPEnrollAndEntitleManager, "isCheckingEntitlement")
+    .get(() => false);
+  stubs.updateEntitlement = setupSandbox
+    .stub(IPPEnrollAndEntitleManager, "updateEntitlement")
+    .resolves();
+  stubs.refetchEntitlement = setupSandbox
+    .stub(IPPEnrollAndEntitleManager, "refetchEntitlement")
+    .resolves();
 
   const guardianStub = {
     enroll: setupSandbox.stub(),
