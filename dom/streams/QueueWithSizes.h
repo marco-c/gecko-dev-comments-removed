@@ -82,9 +82,8 @@ inline void EnqueueValueWithSize(QueueContainingClass aContainer,
 
 
 template <class QueueContainingClass>
-inline void DequeueValue(JSContext* aCx, QueueContainingClass aContainer,
-                         JS::MutableHandle<JS::Value> aResultValue,
-                         ErrorResult& aRv) {
+inline void DequeueValue(QueueContainingClass aContainer,
+                         JS::MutableHandle<JS::Value> aResultValue) {
   
   
   MOZ_ASSERT(!aContainer->Queue().isEmpty());
@@ -104,17 +103,12 @@ inline void DequeueValue(JSContext* aCx, QueueContainingClass aContainer,
 
   
   aResultValue.set(valueWithSize->mValue);
-  if (!JS_WrapValue(aCx, aResultValue)) {
-    aResultValue.setUndefined();
-    aRv.StealExceptionFromJSContext(aCx);
-  }
 }
 
 
 template <class QueueContainingClass>
-inline void PeekQueueValue(JSContext* aCx, QueueContainingClass aContainer,
-                           JS::MutableHandle<JS::Value> aResultValue,
-                           ErrorResult& aRv) {
+inline void PeekQueueValue(QueueContainingClass aContainer,
+                           JS::MutableHandle<JS::Value> aResultValue) {
   
   
   
@@ -125,10 +119,6 @@ inline void PeekQueueValue(JSContext* aCx, QueueContainingClass aContainer,
 
   
   aResultValue.set(valueWithSize->mValue);
-  if (!JS_WrapValue(aCx, aResultValue)) {
-    aResultValue.setUndefined();
-    aRv.StealExceptionFromJSContext(aCx);
-  }
 }
 
 

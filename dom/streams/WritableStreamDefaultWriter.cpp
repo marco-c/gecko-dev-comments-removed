@@ -300,11 +300,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   
   
   if (state == WritableStream::WriterState::Errored) {
-    JS::Rooted<JS::Value> error(aCx);
-    stream->GetStoredError(aCx, &error, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+    JS::Rooted<JS::Value> error(aCx, stream->StoredError());
     return Promise::CreateRejected(aWriter->GetParentObject(), error, aRv);
   }
 
@@ -320,11 +316,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   
   
   if (state == WritableStream::WriterState::Erroring) {
-    JS::Rooted<JS::Value> error(aCx);
-    stream->GetStoredError(aCx, &error, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+    JS::Rooted<JS::Value> error(aCx, stream->StoredError());
     return Promise::CreateRejected(aWriter->GetParentObject(), error, aRv);
   }
 
@@ -408,9 +400,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
     
     
-    
-    JS::Rooted<JS::Value> storedError(RootingCx(),
-                                      aStream->UnsafeStoredError());
+    JS::Rooted<JS::Value> storedError(RootingCx(), aStream->StoredError());
     RefPtr<Promise> readyPromise =
         Promise::CreateInfallible(aWriter->GetParentObject());
     readyPromise->MaybeReject(storedError);
@@ -448,9 +438,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     MOZ_ASSERT(state == WritableStream::WriterState::Errored);
 
     
-    
-    JS::Rooted<JS::Value> storedError(RootingCx(),
-                                      aStream->UnsafeStoredError());
+    JS::Rooted<JS::Value> storedError(RootingCx(), aStream->StoredError());
 
     
     
@@ -537,11 +525,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriterCloseWithErrorPropagation(
   
   
   if (state == WritableStream::WriterState::Errored) {
-    JS::Rooted<JS::Value> error(aCx);
-    stream->GetStoredError(aCx, &error, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+    JS::Rooted<JS::Value> error(aCx, stream->StoredError());
     return Promise::CreateRejected(aWriter->GetParentObject(), error, aRv);
   }
 

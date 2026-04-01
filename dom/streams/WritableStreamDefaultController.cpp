@@ -255,10 +255,7 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessClose(
 
   
   JS::Rooted<JS::Value> value(aCx);
-  DequeueValue(aCx, aController, &value, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  DequeueValue(aController, &value);
 
   
   MOZ_ASSERT(aController->Queue().isEmpty());
@@ -336,10 +333,7 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessWrite(
 
             
             JS::Rooted<JS::Value> value(aCx);
-            DequeueValue(aCx, aController, &value, aRv);
-            if (aRv.Failed()) {
-              return;
-            }
+            DequeueValue(aController, &value);
 
             
             
@@ -422,10 +416,7 @@ static void WritableStreamDefaultControllerAdvanceQueueIfNeeded(
 
   
   JS::Rooted<JS::Value> value(aCx);
-  PeekQueueValue(aCx, aController, &value, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  PeekQueueValue(aController, &value);
 
   
   

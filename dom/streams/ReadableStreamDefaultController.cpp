@@ -619,10 +619,7 @@ void ReadableStreamDefaultController::PullSteps(JSContext* aCx,
   if (!mQueue.isEmpty()) {
     
     JS::Rooted<JS::Value> chunk(aCx);
-    DequeueValue(aCx, this, &chunk, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+    DequeueValue(this, &chunk);
 
     
     if (CloseRequested() && mQueue.isEmpty()) {
