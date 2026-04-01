@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaSystemResourceService.h"
 
 #include "MediaSystemResourceManagerParent.h"
@@ -17,12 +15,11 @@ namespace mozilla {
 StaticRefPtr<MediaSystemResourceService> MediaSystemResourceService::sSingleton;
 
 
-MediaSystemResourceService* MediaSystemResourceService::Get() {
-  if (sSingleton) {
-    return sSingleton;
+already_AddRefed<MediaSystemResourceService> MediaSystemResourceService::Get() {
+  if (!sSingleton) {
+    Init();
   }
-  Init();
-  return sSingleton;
+  return do_AddRef(sSingleton);
 }
 
 
@@ -34,6 +31,7 @@ void MediaSystemResourceService::Init() {
 
 
 void MediaSystemResourceService::Shutdown() {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (sSingleton) {
     sSingleton->Destroy();
     sSingleton = nullptr;
