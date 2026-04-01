@@ -38,7 +38,7 @@ public class AIFeaturesController {
 
     private static final String LIST_FEATURES_EVENT = "GeckoView:AIFeature:ListFeatures";
     private static final String SET_FEATURE_ENABLED_EVENT = "GeckoView:AIFeature:SetEnabled";
-    private static final String RESET_FEATURE_EVENT = "GeckoView:AIFeature:Reset";
+    private static final String MAKE_FEATURE_AVAILABLE_EVENT = "GeckoView:AIFeature:MakeAvailable";
 
     
 
@@ -114,25 +114,25 @@ public class AIFeaturesController {
 
 
     @HandlerThread
-    public static @NonNull GeckoResult<Void> resetFeature(@NonNull final String featureId) {
+    public static @NonNull GeckoResult<Void> makeFeatureAvailable(@NonNull final String featureId) {
       ThreadUtils.warnOnHandlerThread();
       if (DEBUG) {
-        Log.d(LOGTAG, "Resetting AI feature: " + featureId);
+        Log.d(LOGTAG, "Making AI feature available: " + featureId);
       }
       final GeckoBundle bundle = new GeckoBundle(1);
       bundle.putString("featureId", featureId);
 
       return EventDispatcher.getInstance()
-          .queryVoid(RESET_FEATURE_EVENT, bundle)
+          .queryVoid(MAKE_FEATURE_AVAILABLE_EVENT, bundle)
           .map(
               result -> result,
               exception -> {
                 final String exceptionData =
                     ((EventDispatcher.QueryException) exception).data.toString();
                 if (exceptionData.contains("Unknown AI feature")) {
-                  return new AIFeaturesException(AIFeaturesException.ERROR_UNKNOWN_FEATURE);
+                  throw new AIFeaturesException(AIFeaturesException.ERROR_UNKNOWN_FEATURE);
                 }
-                return new AIFeaturesException(AIFeaturesException.ERROR_COULD_NOT_RESET);
+                throw new AIFeaturesException(AIFeaturesException.ERROR_COULD_NOT_MAKE_AVAILABLE);
               });
     }
   }
@@ -304,7 +304,7 @@ public class AIFeaturesController {
     public static final int ERROR_COULD_NOT_SET = -4;
 
     
-    public static final int ERROR_COULD_NOT_RESET = -5;
+    public static final int ERROR_COULD_NOT_MAKE_AVAILABLE = -5;
 
     
     @Retention(RetentionPolicy.SOURCE)
@@ -314,7 +314,7 @@ public class AIFeaturesController {
           ERROR_COULD_NOT_PARSE,
           ERROR_UNKNOWN_FEATURE,
           ERROR_COULD_NOT_SET,
-          ERROR_COULD_NOT_RESET,
+          ERROR_COULD_NOT_MAKE_AVAILABLE,
         })
     public @interface Code {}
 
