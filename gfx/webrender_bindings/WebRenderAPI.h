@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_LAYERS_WEBRENDERAPI_H
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
 
@@ -315,7 +313,7 @@ class WebRenderAPI final {
 
   void Capture();
 
-  void StartCaptureSequence(const nsACString& aPath, uint32_t aFlags);
+  void StartCaptureSequence(uint32_t aFlags);
   void StopCaptureSequence();
 
   void BeginRecording(const TimeStamp& aRecordingStart,

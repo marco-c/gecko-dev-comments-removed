@@ -876,23 +876,20 @@ bool WebRenderAPI::CheckAndClearDidRasterize() {
 void WebRenderAPI::Capture() {
   
   
-  uint8_t bits = 15;                
-  const char* path = "wr-capture";  
+  uint8_t bits = 15;  
   const char* revision =
       gAppData ? (const char*)gAppData->sourceRevision : nullptr;
-  wr_api_capture(mDocHandle, path, revision, bits);
+  wr_api_capture(mDocHandle, revision, bits);
 }
 
-void WebRenderAPI::StartCaptureSequence(const nsACString& aPath,
-                                        uint32_t aFlags) {
+void WebRenderAPI::StartCaptureSequence(uint32_t aFlags) {
   if (mCaptureSequence) {
     wr_api_stop_capture_sequence(mDocHandle);
   }
   const char* revision =
       gAppData ? (const char*)gAppData->sourceRevision : nullptr;
 
-  wr_api_start_capture_sequence(mDocHandle, PromiseFlatCString(aPath).get(),
-                                revision, aFlags);
+  wr_api_start_capture_sequence(mDocHandle, revision, aFlags);
 
   mCaptureSequence = true;
 }
