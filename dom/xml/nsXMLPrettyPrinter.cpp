@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsXMLPrettyPrinter.h"
 
 #include "mozilla/Preferences.h"
@@ -188,6 +187,8 @@ void nsXMLPrettyPrinter::ContentWillBeRemoved(nsIContent* aChild,
 }
 
 void nsXMLPrettyPrinter::NodeWillBeDestroyed(nsINode* aNode) {
+  MOZ_DIAGNOSTIC_ASSERT(mDocument == aNode);
+  mDocument->RemoveMutationObserver(this);
   mDocument = nullptr;
   NS_RELEASE_THIS();
 }
