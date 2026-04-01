@@ -1643,6 +1643,29 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
     return true;
   }
 
+  auto isAnyOf = [](std::string_view sv, CharT ch) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (auto v : sv) {
+      if (v == ch) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   
   
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE_IMPL_DEF);
@@ -1656,7 +1679,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
   for (; index < length; index++) {
     int c = s[index];
 
-    if (strchr(" ,.-/", c)) {
+    if (isAnyOf(" ,.-/", c)) {
       continue;
     }
     if (!IsAsciiAlpha(c)) {
@@ -1682,7 +1705,9 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
       if (IsAsciiDigit(s[index])) {
         break;
       }
-    } else if (!strchr(" ,.-/", s[index])) {
+      
+      
+    } else if (!isAnyOf(" ,.-/", s[index])) {
       
       
       
@@ -1719,7 +1744,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
       TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday) ||
       TryParseDashedNumericDatePrefix(s, length, &index, &year, &mon, &mday);
 
-  if (isDashedDate && index < length && strchr("T:+", s[index])) {
+  if (isDashedDate && index < length && isAnyOf("T:+", s[index])) {
     return false;
   }
 
@@ -1882,11 +1907,11 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
                  (c != '.' || sec != -1) &&
                  
                  
-                 !(hour != -1 && strchr("Zz+", c)) &&
+                 !(hour != -1 && isAnyOf("Zz+", c)) &&
                  
                  (!IsAsciiAlpha(c) ||
-                  (mon != -1 && !(strchr("AaPp", c) && index < length - 1 &&
-                                  strchr("Mm", s[index + 1]))))) {
+                  (mon != -1 && !(isAnyOf("AaPp", c) && index < length - 1 &&
+                                  isAnyOf("Mm", s[index + 1]))))) {
         return false;
       } else if (seenPlusMinus && n < 60) { 
         if (tzOffset < 0) {
