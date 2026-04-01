@@ -6174,6 +6174,7 @@ class MoreRecommendations extends (external_React_default()).PureComponent {
   }
 }
 ;
+function ModalOverlay_extends() { return ModalOverlay_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, ModalOverlay_extends.apply(null, arguments); }
 
 
 
@@ -6209,7 +6210,7 @@ function ModalOverlayWrapper({
       }
     };
   }, [onClose]);
-  return external_React_default().createElement("dialog", {
+  return external_React_default().createElement("dialog", ModalOverlay_extends({
     ref: dialogRef,
     className: "modalOverlayOuter",
     onClick: e => {
@@ -6217,9 +6218,10 @@ function ModalOverlayWrapper({
         onClose(e);
       }
     }
-  }, external_React_default().createElement("div", {
+  }, headerId ? {
+    "aria-labelledby": headerId
+  } : {}), external_React_default().createElement("div", {
     className: className,
-    "aria-labelledby": headerId,
     id: id
   }, children));
 }
@@ -9300,6 +9302,7 @@ class TopSiteForm extends (external_React_default()).PureComponent {
       className: "form-input-container"
     }, external_React_default().createElement("h3", {
       className: "section-title grey-title",
+      id: "top-site-form-title",
       "data-l10n-id": showAsAdd ? addTopsitesHeaderL10nId : editTopsitesHeaderL10nId
     }), external_React_default().createElement("div", {
       className: "fields-and-preview"
@@ -9517,7 +9520,8 @@ class _TopSites extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(ModalOverlayWrapper, {
       unstyled: true,
       onClose: this.onEditFormClose,
-      innerClassName: "modal"
+      innerClassName: "modal",
+      headerId: "top-site-form-title"
     }, external_React_default().createElement(TopSiteForm, TopSites_extends({
       site: props.TopSites.rows[editForm.index],
       onClose: this.onEditFormClose,
@@ -16887,7 +16891,8 @@ function TopicSelection({
   }
   return external_React_default().createElement(ModalOverlayWrapper, {
     onClose: handleUserClose,
-    innerClassName: "topic-selection-container"
+    innerClassName: "topic-selection-container",
+    headerId: "topic-selection-title"
   }, external_React_default().createElement("div", {
     className: "topic-selection-form",
     ref: modalRef
@@ -16897,6 +16902,7 @@ function TopicSelection({
     onClick: handleUserClose
   }), external_React_default().createElement("h1", {
     className: "title",
+    id: "topic-selection-title",
     "data-l10n-id": "newtab-topic-selection-title"
   }), external_React_default().createElement("p", {
     className: "subtitle",
