@@ -741,9 +741,10 @@ static constexpr size_t kMaxIceUfragLength = 256;
 static constexpr size_t kMinIcePwdLength = 22;
 static constexpr size_t kMaxIcePwdLength = 256;
 
+
 static bool IsValidIceToken(const std::string& aToken) {
   for (unsigned char c : aToken) {
-    if (!isalnum(c) && c != '+' && c != '/') {
+    if (c == '$') {
       return false;
     }
   }
