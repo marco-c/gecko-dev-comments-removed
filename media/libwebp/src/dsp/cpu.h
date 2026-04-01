@@ -189,24 +189,59 @@
 #endif
 #endif
 
-#if defined(WEBP_USE_THREAD) && !defined(_WIN32)
-#include <pthread.h>  
+#if defined(WEBP_USE_THREAD)
+#if defined(_WIN32)
+#include <windows.h>
 
-#define WEBP_DSP_INIT(func)                                         \
-  do {                                                              \
-    static volatile VP8CPUInfo func##_last_cpuinfo_used =           \
-        (VP8CPUInfo)&func##_last_cpuinfo_used;                      \
-    static pthread_mutex_t func##_lock = PTHREAD_MUTEX_INITIALIZER; \
-    if (pthread_mutex_lock(&func##_lock)) break;                    \
-    if (func##_last_cpuinfo_used != VP8GetCPUInfo) func();          \
-    func##_last_cpuinfo_used = VP8GetCPUInfo;                       \
-    (void)pthread_mutex_unlock(&func##_lock);                       \
+#if _WIN32_WINNT >= 0x0600
+
+#define WEBP_DSP_INIT_VARS(func)               \
+  static VP8CPUInfo func##_last_cpuinfo_used = \
+      (VP8CPUInfo)&func##_last_cpuinfo_used;   \
+  static SRWLOCK func##_lock = SRWLOCK_INIT
+#define WEBP_DSP_INIT(func)                                \
+  do {                                                     \
+    AcquireSRWLockExclusive(&func##_lock);                 \
+    if (func##_last_cpuinfo_used != VP8GetCPUInfo) func(); \
+    func##_last_cpuinfo_used = VP8GetCPUInfo;              \
+    ReleaseSRWLockExclusive(&func##_lock);                 \
   } while (0)
-#else  
+
+#else   
+
+#define WEBP_DSP_INIT_VARS(func)                        \
+  static volatile VP8CPUInfo func##_last_cpuinfo_used = \
+      (VP8CPUInfo)&func##_last_cpuinfo_used
 #define WEBP_DSP_INIT(func)                               \
   do {                                                    \
-    static volatile VP8CPUInfo func##_last_cpuinfo_used = \
-        (VP8CPUInfo)&func##_last_cpuinfo_used;            \
+    if (func##_last_cpuinfo_used == VP8GetCPUInfo) break; \
+    func();                                               \
+    func##_last_cpuinfo_used = VP8GetCPUInfo;             \
+  } while (0)
+
+#endif  
+#else   
+
+#include <pthread.h>
+
+#define WEBP_DSP_INIT_VARS(func)               \
+  static VP8CPUInfo func##_last_cpuinfo_used = \
+      (VP8CPUInfo)&func##_last_cpuinfo_used;   \
+  static pthread_mutex_t func##_lock = PTHREAD_MUTEX_INITIALIZER
+#define WEBP_DSP_INIT(func)                                \
+  do {                                                     \
+    if (pthread_mutex_lock(&func##_lock)) break;           \
+    if (func##_last_cpuinfo_used != VP8GetCPUInfo) func(); \
+    func##_last_cpuinfo_used = VP8GetCPUInfo;              \
+    (void)pthread_mutex_unlock(&func##_lock);              \
+  } while (0)
+#endif  
+#else   
+#define WEBP_DSP_INIT_VARS(func)                        \
+  static volatile VP8CPUInfo func##_last_cpuinfo_used = \
+      (VP8CPUInfo)&func##_last_cpuinfo_used
+#define WEBP_DSP_INIT(func)                               \
+  do {                                                    \
     if (func##_last_cpuinfo_used == VP8GetCPUInfo) break; \
     func();                                               \
     func##_last_cpuinfo_used = VP8GetCPUInfo;             \
@@ -221,6 +256,7 @@
 
 
 #define WEBP_DSP_INIT_FUNC(name)                                            \
+  WEBP_DSP_INIT_VARS(name##_body);                                          \
   static WEBP_TSAN_IGNORE_FUNCTION void name##_body(void);                  \
   WEBP_TSAN_IGNORE_FUNCTION void name(void) { WEBP_DSP_INIT(name##_body); } \
   static WEBP_TSAN_IGNORE_FUNCTION void name##_body(void)
