@@ -95,30 +95,27 @@
   }
 }
 
-.customize-menu-animate-wrapper {
+.customize-menu {
   color: var(--newtab-text-primary-color);
   background-color: var(--newtab-background-color-secondary);
   width: 432px;
-  height: 100%;
-  // Becomes block after first open; never reset (see .customize-animate-enter/exit)
-  display: none;
+  min-height: 100%;
   position: fixed;
   inset-block: 0;
-  inset-inline-end: 0;
+  inset-inline: auto 0;
   z-index: 1001;
   padding-block: 0 var(--space-large);
   padding-inline: var(--space-large);
   transform: translateX(435px);
   visibility: hidden;
   cursor: default;
+  overflow: auto;
+  border: none;
+  margin: 0;
 
-  &.customize-animate-enter,
-  &.customize-animate-exit,
-  &.customize-animate-enter-done,
-  &.customize-animate-exit-done {
-    // display: none avoids initial load cost
-    // Stays as display: block after initial load
-    display: block;
+
+  &::backdrop {
+    background: transparent;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -154,9 +151,7 @@
   }
 }
 
-.customize-menu {
-  --toggle-row-height: 42px;
-
+.customize-menu-content {
   overflow: auto;
   height: 100%;
 
@@ -283,15 +278,11 @@
       #row-selector {
         width: 138px;
       }
-
-      // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior for #shortcuts-toggle
-      .nova-enabled & {
-        height: var(--toggle-row-height); // setting fixed height so section doesn't resize and move pixels when it's toggled on/off
-      }
     }
 
     .more-info-top-wrapper,
-    .more-info-pocket-wrapper {
+    .more-info-pocket-wrapper,
+    .more-info-widgets-wrapper {
       margin-inline-start: calc(var(--space-xxsmall) * -1);
       overflow: hidden;
 
@@ -301,11 +292,18 @@
       }
     }
 
-    .more-info-pocket-wrapper {
+    .more-info-pocket-wrapper,
+    .more-info-widgets-wrapper {
       .more-information {
-        // Note: This is necessary so the follow/block topics panel can
+        // Note: This is necessary so the management panels can
         // be positioned absolutely across the entire Customize menu
         position: static;
+      }
+    }
+
+    .more-info-pocket-wrapper {
+      .more-information {
+        padding-block: var(--space-medium);
       }
 
       .check-wrapper {
@@ -600,12 +598,14 @@
 }
 
 .widgets-mgmt-panel-container {
-  margin-block: var(--space-medium);
+  padding-block: var(--space-medium);
 }
 
-// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior for #shortcuts-section and #row-selector
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior for #shortcuts-section, #widgets-section and #row-selector
 .nova-enabled {
-  #shortcuts-section {
+  #shortcuts-section,
+  #widgets-section,
+  #pocket-section {
     margin-block: var(--space-medium);
   }
 
@@ -613,3 +613,4 @@
     width: 100%;
   }
 }
+
