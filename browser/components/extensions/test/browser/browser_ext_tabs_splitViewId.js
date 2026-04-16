@@ -245,6 +245,14 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
         { properties: ["splitViewId"] }
       );
 
+      async function queryTabsInWindow() {
+        return Array.from(await browser.tabs.query({ windowId }), t => ({
+          index: t.index,
+          tabId: t.id,
+          splitViewId: t.splitViewId,
+        }));
+      }
+
       
       let moved = await browser.tabs.move(tabId2, { index: 1 });
       browser.test.assertDeepEq(
@@ -258,11 +266,7 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
           { index: 1, tabId: tabId2, splitViewId },
           { index: 2, tabId: tabId1, splitViewId },
         ],
-        Array.from(await browser.tabs.query({ windowId }), t => ({
-          index: t.index,
-          tabId: t.id,
-          splitViewId: t.splitViewId,
-        })),
+        await queryTabsInWindow(),
         "splitViewId preserved when right tab in split swaps with the left tab"
       );
       browser.test.assertDeepEq(
@@ -289,11 +293,7 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
           { index: 1, tabId: tabId1, splitViewId },
           { index: 2, tabId: tabId2, splitViewId },
         ],
-        Array.from(await browser.tabs.query({ windowId }), t => ({
-          index: t.index,
-          tabId: t.id,
-          splitViewId: t.splitViewId,
-        })),
+        await queryTabsInWindow(),
         "splitViewId preserved when left tab in split swaps with the right tab"
       );
 
@@ -327,11 +327,7 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
           { index: 1, tabId: tabId2, splitViewId },
           { index: 2, tabId: tabId0, splitViewId: -1 },
         ],
-        Array.from(await browser.tabs.query({ windowId }), t => ({
-          index: t.index,
-          tabId: t.id,
-          splitViewId: t.splitViewId,
-        })),
+        await queryTabsInWindow(),
         
         "splitViewId preserved when moving two tabs of split view at once"
       );
@@ -357,14 +353,14 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
       browser.test.assertDeepEq(
         [
           { index: 0, tabId: tabId0, splitViewId: -1 },
+          
+          
+          
+          
           { index: 1, tabId: tabId1, splitViewId },
           { index: 2, tabId: tabId2, splitViewId },
         ],
-        Array.from(await browser.tabs.query({ windowId }), t => ({
-          index: t.index,
-          tabId: t.id,
-          splitViewId: t.splitViewId,
-        })),
+        await queryTabsInWindow(),
         "Moving one tab of split view moves both"
       );
       browser.test.assertDeepEq(
@@ -383,6 +379,56 @@ add_task(async function test_move_tabs_of_splitview_within_same_window() {
         ],
         changes.splice(0),
         "Got expected tabs events after moving one tab in split view elsewhere"
+      );
+
+      
+      
+      const { id: tabId3 } = await browser.tabs.create({ windowId });
+      const { id: tabId4 } = await browser.tabs.create({ windowId });
+      const { id: tabId5 } = await browser.tabs.create({ windowId });
+      browser.test.assertDeepEq(
+        [
+          { index: 0, tabId: tabId0, splitViewId: -1 },
+          { index: 1, tabId: tabId1, splitViewId },
+          { index: 2, tabId: tabId2, splitViewId },
+          { index: 3, tabId: tabId3, splitViewId: -1 },
+          { index: 4, tabId: tabId4, splitViewId: -1 },
+          { index: 5, tabId: tabId5, splitViewId: -1 },
+        ],
+        await queryTabsInWindow(),
+        "Expected order of tabs after creating a few extra new tabs"
+      );
+      browser.test.assertDeepEq([], changes, "Not expecting any events");
+
+      await browser.tabs.move([tabId1, tabId2], { index: 3 });
+      browser.test.assertDeepEq(
+        [
+          { index: 0, tabId: tabId0, splitViewId: -1 },
+          { index: 1, tabId: tabId3, splitViewId: -1 },
+          { index: 2, tabId: tabId4, splitViewId: -1 },
+          { index: 3, tabId: tabId1, splitViewId },
+          { index: 4, tabId: tabId2, splitViewId },
+          { index: 5, tabId: tabId5, splitViewId: -1 },
+        ],
+        await queryTabsInWindow(),
+        "Moved split view to the pair of tabs after it"
+      );
+      browser.test.assertDeepEq(
+        [
+          
+          
+          
+          {
+            movedTabId: tabId2,
+            moveInfo: { windowId, fromIndex: 2, toIndex: 4 },
+          },
+          {
+            movedTabId: tabId1,
+            moveInfo: { windowId, fromIndex: 1, toIndex: 3 },
+          },
+        ],
+        changes.splice(0),
+        "Got expected tabs events after moving both splitview tabs forward"
       );
 
       await browser.windows.remove(windowId);
@@ -481,79 +527,94 @@ add_task(async function test_move_tabs_of_splitview_to_other_window() {
 
       
       
-      const newWindow2 = await browser.windows.create({ tabId: tabId0 });
-      browser.test.assertDeepEq(
-        [
-          { index: 0, tabId: tabId0, splitViewId },
-          { index: 1, tabId: tabId1, splitViewId },
-        ],
-        await queryTabsByWindowId(newWindow2.id),
-        "windows.create() with tab of split view should adopt both tabs"
-      );
-      browser.test.assertDeepEq(
-        [
-          {
-            movedTabId: tabId0,
-            detachInfo: { oldWindowId: newWindow.id, oldPosition: 0 },
-          },
-          {
-            movedTabId: tabId0,
-            attachInfo: { newWindowId: newWindow2.id, newPosition: 0 },
-          },
-          {
-            movedTabId: tabId1,
-            detachInfo: { oldWindowId: newWindow.id, oldPosition: 0 },
-          },
-          {
-            movedTabId: tabId1,
-            attachInfo: { newWindowId: newWindow2.id, newPosition: 1 },
-          },
-          
-          
-        ],
-        changes.splice(0),
-        "Got expected tabs events after moving tab of split to new window"
-      );
 
       
-      await browser.tabs.move(tabId0, {
-        windowId: newWindow.id,
-        index: 0,
-      });
-      browser.test.assertDeepEq(
-        [
-          { index: 0, tabId: tabId0, splitViewId },
-          { index: 1, tabId: tabId1, splitViewId },
-          { index: 2, tabId: tabId2, splitViewId: -1 },
-        ],
-        await queryTabsByWindowId(newWindow.id),
-        "tabs.move of one tab to a different window should move both"
-      );
+      
+      
+      
+      
+      async function testAdoptOneTabOfSplitInNewWindow(tabId0or1) {
+        const whichTab =
+          tabId0or1 === tabId0 ? "left tab of split" : "left tab of split";
+        const newWindow2 = await browser.windows.create({ tabId: tabId0or1 });
+        browser.test.assertDeepEq(
+          [
+            { index: 0, tabId: tabId0, splitViewId },
+            { index: 1, tabId: tabId1, splitViewId },
+          ],
+          await queryTabsByWindowId(newWindow2.id),
+          `windows.create() with ${whichTab} should adopt both tabs`
+        );
+        browser.test.assertDeepEq(
+          [
+            {
+              movedTabId: tabId0,
+              detachInfo: { oldWindowId: newWindow.id, oldPosition: 0 },
+            },
+            {
+              movedTabId: tabId0,
+              attachInfo: { newWindowId: newWindow2.id, newPosition: 0 },
+            },
+            {
+              movedTabId: tabId1,
+              detachInfo: { oldWindowId: newWindow.id, oldPosition: 0 },
+            },
+            {
+              movedTabId: tabId1,
+              attachInfo: { newWindowId: newWindow2.id, newPosition: 1 },
+            },
+            
+            
+          ],
+          changes.splice(0),
+          `Got expected tabs events after moving ${whichTab} to new window`
+        );
 
-      browser.test.assertDeepEq(
-        [
-          {
-            movedTabId: tabId0,
-            detachInfo: { oldWindowId: newWindow2.id, oldPosition: 0 },
-          },
-          {
-            movedTabId: tabId0,
-            attachInfo: { newWindowId: newWindow.id, newPosition: 0 },
-          },
-          {
-            movedTabId: tabId1,
-            detachInfo: { oldWindowId: newWindow2.id, oldPosition: 0 },
-          },
-          {
-            movedTabId: tabId1,
-            attachInfo: { newWindowId: newWindow.id, newPosition: 1 },
-          },
-          
-          
-        ],
-        changes.splice(0),
-        "Got expected tabs events after moving tab of split to existing window"
-      );
+        
+        await browser.tabs.move(tabId0or1, {
+          windowId: newWindow.id,
+          index: 0,
+        });
+        browser.test.assertDeepEq(
+          [
+            { index: 0, tabId: tabId0, splitViewId },
+            { index: 1, tabId: tabId1, splitViewId },
+            { index: 2, tabId: tabId2, splitViewId: -1 },
+          ],
+          await queryTabsByWindowId(newWindow.id),
+          `tabs.move of ${whichTab} to different window should move whole split`
+        );
+
+        browser.test.assertDeepEq(
+          [
+            {
+              movedTabId: tabId0,
+              detachInfo: { oldWindowId: newWindow2.id, oldPosition: 0 },
+            },
+            {
+              movedTabId: tabId0,
+              attachInfo: { newWindowId: newWindow.id, newPosition: 0 },
+            },
+            {
+              movedTabId: tabId1,
+              detachInfo: { oldWindowId: newWindow2.id, oldPosition: 0 },
+            },
+            {
+              movedTabId: tabId1,
+              attachInfo: { newWindowId: newWindow.id, newPosition: 1 },
+            },
+            
+            
+          ],
+          changes.splice(0),
+          `Got expected tabs events after moving ${whichTab} to existing window`
+        );
+      }
+
+      
+      await testAdoptOneTabOfSplitInNewWindow(tabId0);
+      
+      await testAdoptOneTabOfSplitInNewWindow(tabId1);
 
       
       await browser.tabs.remove(tabId0);

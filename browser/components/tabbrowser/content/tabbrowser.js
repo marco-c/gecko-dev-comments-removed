@@ -7029,6 +7029,23 @@
       if (element.splitview) {
         element = element.splitview;
       }
+      
+      
+      
+      
+      let movingForwards = false;
+      if (this.isTab(element)) {
+        movingForwards = tabIndex > element._tPos;
+      } else {
+        
+        let tabsInElement = element.tabs;
+        movingForwards = tabIndex > tabsInElement[0]._tPos;
+        if (movingForwards) {
+          
+          tabIndex += tabsInElement.length - 1;
+          tabIndex = Math.min(tabIndex, this.tabs.length);
+        }
+      }
       this.#handleTabMove(
         element,
         () => {
@@ -7038,15 +7055,14 @@
           }
           if (neighbor?.splitview) {
             neighbor = neighbor.splitview;
-          }
-          let useAfter = false;
-          if (this.isTab(element)) {
-            useAfter = neighbor && tabIndex > element._tPos;
-          } else if (this.isSplitViewWrapper(element)) {
-            useAfter = neighbor && tabIndex >= this.tabs.length - 1;
+            if (neighbor === element) {
+              
+              
+              return;
+            }
           }
 
-          if (useAfter) {
+          if (movingForwards && neighbor) {
             neighbor.after(element);
           } else {
             this.tabContainer.insertBefore(element, neighbor);

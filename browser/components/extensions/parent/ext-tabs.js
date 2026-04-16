@@ -1251,10 +1251,16 @@ this.tabs = class extends ExtensionAPIPersistent {
                 
                 splitview.unsplitTabs();
                 splitview = splitviewTabs = null;
-              } else {
+              } else if (isSameWindow) {
                 
                 
                 wantReversedSplit = otherTabInSplit._tPos === insertionPoint;
+              }
+              if (wantReversedSplit) {
+                
+                
+                splitview.reverseTabs();
+                splitviewTabs = splitview.tabs;
               }
             }
             if (isSameWindow) {
@@ -1288,11 +1294,6 @@ this.tabs = class extends ExtensionAPIPersistent {
               splitview ? splitviewTabs.at(-1)._tPos : nativeTab._tPos
             );
             if (splitview) {
-              if (wantReversedSplit) {
-                
-                
-                splitview.reverseTabs();
-              }
               for (const tab of splitviewTabs) {
                 let tabIsInTabsToMove = tab === nativeTab;
                 let i = 0;

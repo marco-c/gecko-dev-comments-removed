@@ -18,8 +18,7 @@ const spellColour = color => (color === "grey" ? "gray" : color);
 
 
 
-function adjustIndexForMove(group, window, index) {
-  let tabIndex = index < 0 ? window.gBrowser.tabs.length : index;
+function validateTabIndexForMove(group, window, tabIndex) {
   if (group.ownerGlobal === window) {
     let group_tabs = group.tabs;
     if (tabIndex > group_tabs[0]._tPos) {
@@ -43,8 +42,6 @@ function adjustIndexForMove(group, window, index) {
       "Cannot move the group to an index that is in the middle of another group."
     );
   }
-
-  return tabIndex;
 }
 
 this.tabGroups = class extends ExtensionAPIPersistent {
@@ -229,7 +226,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
             }
           }
 
-          let tabIndex = adjustIndexForMove(group, win, index);
+          let maxIndex = win.gBrowser.tabs.length;
+          let tabIndex = index === -1 ? maxIndex : Math.min(maxIndex, index);
+          validateTabIndexForMove(group, win, tabIndex);
           if (win !== group.ownerGlobal) {
             group = win.gBrowser.adoptTabGroup(group, { tabIndex });
           } else {
