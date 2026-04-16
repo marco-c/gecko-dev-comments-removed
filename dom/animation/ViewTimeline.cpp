@@ -196,119 +196,48 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 }
 
 
-
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
     const StyleTimelineRangeName aName,
-    const ScrollTimeline::ComputedTimelineData& aData) const {
-  MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
-
-  
-  
-
-  
-  
-  const nscoord alignedSubjectStartViewEnd = aData.mStart;
-  
-  
-  const nscoord alignedSubjectEndViewStart = aData.mEnd;
-  
-  
-  const nscoord alignedSubjectStartViewStart =
-      alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize;
-  
-  
-  const nscoord alignedSubjectEndViewEnd =
-      alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize;
-
-  
-  
-  const nscoord containStart =
-      std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
-  const nscoord containEnd =
-      std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
-
-  
-  
+    const ScrollTimeline::ComputedTimelineData& aData) {
+  nscoord rangeStart = 0;
   switch (aName) {
     case StyleTimelineRangeName::None:
     case StyleTimelineRangeName::Normal:
-      
     case StyleTimelineRangeName::Cover:
-      
-      
-      
-      
-      
-      
-      
-      return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
-
+      rangeStart = aData.mStart;
+      break;
     case StyleTimelineRangeName::Contain:
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      return {containStart, containEnd};
-
     case StyleTimelineRangeName::Entry:
-      
-      
-      
-      
-      return {alignedSubjectStartViewEnd, containStart};
-
     case StyleTimelineRangeName::Exit:
-      
-      
-      
-      
-      return {containEnd, alignedSubjectEndViewStart};
-
     case StyleTimelineRangeName::EntryCrossing:
-      
-      
-      
-      
-      
-      
-      
-      
-      return {alignedSubjectStartViewEnd, alignedSubjectEndViewEnd};
-
     case StyleTimelineRangeName::ExitCrossing:
-      
-      
-      
-      
-      
-      
-      
-      
-      return {alignedSubjectStartViewStart, alignedSubjectEndViewStart};
-
     case StyleTimelineRangeName::Scroll:
       
       
-      
-      
-      return {0, mCachedCurrentTime->mScrollData.mMaxScrollOffset};
+      break;
   }
+
+  nscoord rangeEnd = 0;
+  switch (aName) {
+    case StyleTimelineRangeName::None:
+    case StyleTimelineRangeName::Normal:
+    case StyleTimelineRangeName::Cover:
+      rangeEnd = aData.mEnd;
+      break;
+    case StyleTimelineRangeName::Contain:
+    case StyleTimelineRangeName::Entry:
+    case StyleTimelineRangeName::Exit:
+    case StyleTimelineRangeName::EntryCrossing:
+    case StyleTimelineRangeName::ExitCrossing:
+    case StyleTimelineRangeName::Scroll:
+      
+      
+      break;
+  }
+
+  
+  
+  return {rangeStart, rangeEnd};
 }
 
 
