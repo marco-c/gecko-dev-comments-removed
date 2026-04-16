@@ -2311,8 +2311,8 @@ nsresult AutoScroller::DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint) {
   bool didScroll;
   while (true) {
     didScroll = presShell->ScrollFrameIntoView(
-        aFrame, Some(nsRect(aPoint, nsSize())), ScrollAxis(), ScrollAxis(),
-        ScrollFlags::None);
+        aFrame, Some(nsRect(aPoint, nsSize())), AxisScrollParams(),
+        AxisScrollParams(), ScrollFlags::None);
     if (!weakFrame || !weakRootFrame) {
       return NS_OK;
     }
@@ -3728,10 +3728,9 @@ Selection::ScrollSelectionIntoViewEvent::Run() {
   return NS_OK;
 }
 
-nsresult Selection::PostScrollSelectionIntoViewEvent(SelectionRegion aRegion,
-                                                     ScrollFlags aFlags,
-                                                     ScrollAxis aVertical,
-                                                     ScrollAxis aHorizontal) {
+nsresult Selection::PostScrollSelectionIntoViewEvent(
+    SelectionRegion aRegion, ScrollFlags aFlags, AxisScrollParams aVertical,
+    AxisScrollParams aHorizontal) {
   
   
   
@@ -3749,7 +3748,8 @@ nsresult Selection::PostScrollSelectionIntoViewEvent(SelectionRegion aRegion,
 }
 
 nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
-                                   ScrollAxis aVertical, ScrollAxis aHorizontal,
+                                   AxisScrollParams aVertical,
+                                   AxisScrollParams aHorizontal,
                                    ScrollFlags aScrollFlags,
                                    SelectionScrollMode aMode) {
   if (!mFrameSelection) {

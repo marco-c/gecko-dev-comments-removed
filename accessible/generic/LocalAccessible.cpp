@@ -2592,7 +2592,8 @@ void LocalAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
   RefPtr<PresShell> presShell = mDoc->PresShellPtr();
 
   
-  presShell->ScrollContentIntoView(mContent, ScrollAxis(), ScrollAxis(),
+  presShell->ScrollContentIntoView(mContent, AxisScrollParams(),
+                                   AxisScrollParams(),
                                    ScrollFlags::ScrollOverflowHidden);
 
   AutoWeakFrame frame = GetFrame();

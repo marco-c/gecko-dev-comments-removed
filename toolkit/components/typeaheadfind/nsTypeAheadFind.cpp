@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsCOMPtr.h"
 #include "nsDocShell.h"
 #include "mozilla/ErrorResult.h"
@@ -539,8 +538,9 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
                   selectionController->ScrollSelectionIntoView(
                       SelectionType::eNormal,
                       nsISelectionController::SELECTION_WHOLE_SELECTION,
-                      ScrollAxis(WhereToScroll::Center), ScrollAxis(),
-                      ScrollFlags::None, SelectionScrollMode::SyncFlush);
+                      AxisScrollParams(WhereToScroll::Center),
+                      AxisScrollParams(), ScrollFlags::None,
+                      SelectionScrollMode::SyncFlush);
                 }
               }));
 

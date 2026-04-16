@@ -87,7 +87,7 @@ enum class WhenToScroll : uint8_t {
   IfNotFullyVisible,
 };
 
-struct ScrollAxis final {
+struct AxisScrollParams final {
   
 
 
@@ -118,8 +118,9 @@ struct ScrollAxis final {
 
 
 
-  explicit ScrollAxis(WhereToScroll aWhere = WhereToScroll::Nearest,
-                      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible)
+  explicit AxisScrollParams(
+      WhereToScroll aWhere = WhereToScroll::Nearest,
+      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible)
       : mWhereToScroll(aWhere), mWhenToScroll(aWhen) {}
 
   WhereToScroll mWhereToScroll;

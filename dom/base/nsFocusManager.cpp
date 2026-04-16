@@ -3115,7 +3115,8 @@ void nsFocusManager::ScrollIntoView(PresShell* aPresShell, nsIContent* aContent,
   }
 
   
-  const ScrollAxis axis(WhereToScroll::Center, WhenToScroll::IfNotVisible);
+  const AxisScrollParams axis(WhereToScroll::Center,
+                              WhenToScroll::IfNotVisible);
   aPresShell->ScrollContentIntoView(aContent, axis, axis,
                                     ScrollFlags::ScrollOverflowHidden);
   

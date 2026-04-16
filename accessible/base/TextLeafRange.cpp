@@ -2490,7 +2490,7 @@ bool TextLeafRange::SetSelection(int32_t aSelectionNum, bool aSetFocus) const {
 
   
   domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
-                         ScrollAxis(), ScrollAxis(),
+                         AxisScrollParams(), AxisScrollParams(),
                          ScrollFlags::ScrollOverflowHidden);
 
   if (aSetFocus && mStart == mEnd && !isFocusable) {

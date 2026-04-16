@@ -407,8 +407,8 @@ class PresShell final : public nsStubDocumentObserver,
   void ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
                                      const nsRect& aPositionFixedRect,
                                      const nsIFrame* aPositionFixedFrame,
-                                     ScrollAxis aVertical,
-                                     ScrollAxis aHorizontal,
+                                     AxisScrollParams aVertical,
+                                     AxisScrollParams aHorizontal,
                                      ScrollFlags aScrollFlags);
 
  public:
@@ -640,7 +640,8 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT
   bool ScrollFrameIntoView(nsIFrame* aTargetFrame,
                            const Maybe<nsRect>& aKnownRectRelativeToTarget,
-                           ScrollAxis aVertical, ScrollAxis aHorizontal,
+                           AxisScrollParams aVertical,
+                           AxisScrollParams aHorizontal,
                            ScrollFlags aScrollFlags);
 
   
@@ -1735,8 +1736,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
-                                 ScrollAxis aHorizontal,
+  nsresult ScrollContentIntoView(nsIContent* aContent,
+                                 AxisScrollParams aVertical,
+                                 AxisScrollParams aHorizontal,
                                  ScrollFlags aScrollFlags);
 
   
@@ -1986,8 +1988,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   struct ScrollIntoViewData {
-    ScrollAxis mContentScrollVAxis;
-    ScrollAxis mContentScrollHAxis;
+    AxisScrollParams mContentScrollVAxis;
+    AxisScrollParams mContentScrollHAxis;
     ScrollFlags mContentToScrollToFlags;
   };
 
