@@ -3,7 +3,7 @@
 
 
 use crate::LockstoreError;
-use kvstore::skv::Value;
+use kvstore::Value;
 
 
 pub fn bytes_to_value(bytes: &[u8]) -> Result<Value, LockstoreError> {

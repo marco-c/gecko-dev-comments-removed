@@ -3,8 +3,7 @@
 
 
 use crate::LockstoreError;
-use kvstore::skv::store::Store;
-use kvstore::skv::{Database, GetOptions, Key};
+use kvstore::{Database, GetOptions, Key, Store};
 use nss_gk_api::aead::{Aead, AeadAlgorithms, Mode};
 use nss_gk_api::p11;
 use serde::{Deserialize, Serialize};
