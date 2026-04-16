@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 
 
@@ -97,14 +96,8 @@ struct IntervalSeries {
 
 
 
-
 class Plot {
  public:
-  virtual ~Plot() {}
-
-  ABSL_DEPRECATED("Use PrintPythonCode() or ExportProtobuf() instead.")
-  virtual void Draw() {}
-
   
   
   
@@ -167,12 +160,10 @@ class Plot {
   
   void AppendTimeSeriesIfNotEmpty(TimeSeries&& time_series);
 
-  
   void PrintPythonCode(
       bool show_grid = false,
       absl::string_view figure_output_path = absl::string_view()) const;
 
-  
   void ExportProtobuf(analytics::Chart* chart) const;
 
  protected:
@@ -191,26 +182,19 @@ class Plot {
 
 class PlotCollection {
  public:
-  virtual ~PlotCollection() {}
+  Plot* AppendNewPlot();
 
-  ABSL_DEPRECATED("Use PrintPythonCode() or ExportProtobuf() instead.")
-  virtual void Draw() {}
-
-  virtual Plot* AppendNewPlot();
-
-  virtual Plot* AppendNewPlot(absl::string_view);
+  Plot* AppendNewPlot(absl::string_view);
 
   void SetCallTimeToUtcOffsetMs(int64_t calltime_to_utc_ms) {
     calltime_to_utc_ms_ = calltime_to_utc_ms;
   }
 
-  
   void PrintPythonCode(
       bool shared_xaxis,
       bool show_grid_on_all_plots,
       absl::string_view figure_output_path = absl::string_view()) const;
 
-  
   void ExportProtobuf(analytics::ChartCollection* collection) const;
 
  protected:
