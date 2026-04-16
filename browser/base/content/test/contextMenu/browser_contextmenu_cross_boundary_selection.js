@@ -21,9 +21,6 @@ add_setup(async function () {
 
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.shadowdom.selection_across_boundary.enabled", true]],
-  });
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,

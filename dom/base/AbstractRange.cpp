@@ -100,31 +100,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(AbstractRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRegisteredClosestCommonInclusiveAncestor)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-static void UpdateDescendantsInSameTree(const nsINode& aNode,
-                                        bool aMarkDesendants) {
-  MOZ_ASSERT(!StaticPrefs::dom_shadowdom_selection_across_boundary_enabled());
-  
-  nsINode* node = aNode.GetNextNode(&aNode);
-  while (node) {
-    if (aMarkDesendants) {
-      node->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
-    } else {
-      node->ClearDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
-    }
-
-    if (!node->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
-      node = node->GetNextNode(&aNode);
-    } else {
-      
-      node = node->GetNextNonChildNode(&aNode);
-    }
-  }
-}
-
 void AbstractRange::UpdateDescendantsInFlattenedTree(nsINode& aNode,
                                                      bool aMarkDescendants) {
-  MOZ_ASSERT(StaticPrefs::dom_shadowdom_selection_across_boundary_enabled());
-
   auto UpdateDescendant = [aMarkDescendants](nsINode* node) {
     if (aMarkDescendants) {
       node->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
@@ -167,11 +144,7 @@ void AbstractRange::MarkDescendants(nsINode& aNode) {
     
     
 
-    if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-      UpdateDescendantsInFlattenedTree(aNode, true );
-    } else {
-      UpdateDescendantsInSameTree(aNode, true );
-    }
+    UpdateDescendantsInFlattenedTree(aNode, true );
   }
 }
 
@@ -182,11 +155,7 @@ void AbstractRange::UnmarkDescendants(nsINode& aNode) {
   
   if (!aNode
            .IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
-    if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-      UpdateDescendantsInFlattenedTree(aNode, false );
-    } else {
-      UpdateDescendantsInSameTree(aNode, false );
-    }
+    UpdateDescendantsInFlattenedTree(aNode, false );
   }
 }
 
@@ -407,8 +376,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
   }
 
   const bool useFlatTree =
-      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
-      StaticPrefs::dom_shadowdom_selection_across_boundary_enabled();
+      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes;
   const Maybe<int32_t> pointOrder =
       useFlatTree ? nsContentUtils::ComparePoints<TreeKind::Flat>(
                         aStartBoundary, aEndBoundary)
@@ -497,10 +465,8 @@ void AbstractRange::RegisterSelection(Selection& aSelection) {
   const bool isValidRange = !IsStaticRange() || AsStaticRange()->IsValid();
   if (isFirstSelection && !mRegisteredClosestCommonInclusiveAncestor &&
       isValidRange) {
-    nsINode* commonAncestor = GetClosestCommonInclusiveAncestor(
-        StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-            ? AllowRangeCrossShadowBoundary::Yes
-            : AllowRangeCrossShadowBoundary::No);
+    nsINode* commonAncestor =
+        GetClosestCommonInclusiveAncestor(AllowRangeCrossShadowBoundary::Yes);
     MOZ_ASSERT(commonAncestor, "unexpected disconnected nodes");
     RegisterClosestCommonInclusiveAncestor(commonAncestor);
   }

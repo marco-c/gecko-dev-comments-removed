@@ -562,16 +562,14 @@ static void MaybeClearAffectsDirAutoSlot(nsIContent* aContent) {
 
 void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
   MOZ_ASSERT(aSlot);
-  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-    if (aSlot->IsMaybeSelected()) {
-      
-      
-      
-      
-      
-      dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-          aAssignedNode, true );
-    }
+  if (aSlot->IsMaybeSelected()) {
+    
+    
+    
+    
+    
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aAssignedNode, true );
   }
 
   if (aSlot->HasDirAuto()) {
@@ -583,8 +581,7 @@ void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
 
 void SlotAssignedNodeRemoved(HTMLSlotElement* aSlot,
                              nsIContent& aUnassignedNode) {
-  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-      aUnassignedNode.IsMaybeSelected()) {
+  if (aUnassignedNode.IsMaybeSelected()) {
     
     
     

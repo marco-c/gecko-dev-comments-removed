@@ -7,8 +7,6 @@
 
 
 
-
-
 #include <utility>
 
 #include "mozilla/Encoding.h"
@@ -969,7 +967,6 @@ nsresult nsDocumentEncoder::NodeSerializer::SerializeToStringRecursive(
       aNode, GetAllowRangeCrossShadowBoundary(mFlags));
 
   if (shadowRoot) {
-    MOZ_ASSERT(StaticPrefs::dom_shadowdom_selection_across_boundary_enabled());
     
     
     SerializeToStringRecursive(shadowRoot, aSerializeRoot, aMaxLength);

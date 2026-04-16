@@ -41,7 +41,6 @@ namespace mozilla {
 class AccessibleCaretEventHub;
 class ErrorResult;
 class HTMLEditor;
-class PostContentIterator;
 enum class CaretAssociationHint;
 enum class TableSelectionMode : uint32_t;
 struct AutoPrepareFocusRange;
@@ -471,9 +470,6 @@ class Selection final : public nsSupportsWeakReference,
     return mStyledRanges.GetAbstractRangeAt(0)->Collapsed();
   }
 
-  
-  
-  
   
   
   bool AreNormalAndCrossShadowBoundaryRangesCollapsed() const {
@@ -958,13 +954,6 @@ class Selection final : public nsSupportsWeakReference,
   void SetAnchorFocusRange(size_t aIndex);
   void RemoveAnchorFocusRange() { mAnchorFocusRange = nullptr; }
   void SelectFramesOf(nsIContent* aContent, bool aSelected) const;
-
-  
-
-
-  nsresult SelectFramesOfInclusiveDescendantsOfContent(
-      PostContentIterator& aPostOrderIter, nsIContent* aContent,
-      bool aSelected) const;
 
   void SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
                                             bool aSelected) const;

@@ -935,10 +935,6 @@ class RangeBoundaryBase {
     MOZ_ASSERT(mParent);
     MOZ_ASSERT(mParent->IsContainerNode(),
                "Range is positioned on a text node!");
-    if (!StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-      return;
-    }
-
     if (!MaybeMutationObserved()) {
       
       
