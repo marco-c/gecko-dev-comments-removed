@@ -439,13 +439,7 @@ class DataChannel {
   
   void EndOfStream();
 
-  dom::RTCDataChannel* GetDomDataChannel() const {
-    MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
-    if (NS_IsMainThread()) {
-      return mMainthreadDomDataChannel;
-    }
-    return mWorkerDomDataChannel;
-  }
+  RefPtr<dom::RTCDataChannel> GetDomDataChannel() const;
 
  private:
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
