@@ -10743,16 +10743,18 @@ const PersonalizedCard = ({
     iconSrc: "chrome://global/skin/icons/close.svg",
     onClick: onDismiss,
     "data-l10n-id": "newtab-card-dismiss-button"
-  })), external_React_default().createElement("div", {
-    className: "personalized-card-inner"
-  }, external_React_default().createElement("img", {
+  })), external_React_default().createElement("img", {
     src: kitFox,
     alt: ""
-  }), external_React_default().createElement("h2", null, messageData.content.cardTitle), external_React_default().createElement("p", null, messageData.content.cardMessage), external_React_default().createElement("div", {
+  }), external_React_default().createElement("div", {
+    className: "personalized-card-inner"
+  }, external_React_default().createElement("div", {
+    className: "personalized-card-message-wrapper"
+  }, external_React_default().createElement("h2", null, messageData.content.cardTitle), external_React_default().createElement("p", null, messageData.content.cardMessage)), external_React_default().createElement("div", {
     className: "personalized-card-cta-wrapper"
   }, external_React_default().createElement("moz-button", {
     type: "primary",
-    class: "personalized-card-cta",
+    class: "personalized-card-button",
     onClick: () => onToggleClick("open-personalization-panel")
   }, messageData.content.ctaText), external_React_default().createElement(SafeAnchor, {
     className: "personalized-card-link",
