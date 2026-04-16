@@ -523,30 +523,35 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
                                                                 __func__);
   }
 
+  RefPtr<dom::BrowsingContext> parentBC = aParentContext;
   auto storePermission =
-      [aParentContext, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
+      [parentBC, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
        aCookieBehavior,
        aReason](int aAllowMode) -> RefPtr<StorageAccessPermissionGrantPromise> {
+    if (parentBC->IsDiscarded()) {
+      return StorageAccessPermissionGrantPromise::CreateAndReject(false,
+                                                                  __func__);
+    }
     
     
     
     
     if (aReason != ContentBlockingNotifier::eOpener) {
-      dom::ContentParent* cp = aParentContext->Canonical()->GetContentParent();
+      dom::ContentParent* cp = parentBC->Canonical()->GetContentParent();
       if (!cp) {
         return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                     __func__);
       }
 
-      (void)cp->SendOnAllowAccessFor(aParentContext, trackingOrigin,
-                                     aCookieBehavior, aReason);
+      (void)cp->SendOnAllowAccessFor(parentBC, trackingOrigin, aCookieBehavior,
+                                     aReason);
     }
 
     Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>
         reportReason;
     
     ContentBlockingNotifier::ReportUnblockingToConsole(
-        aParentContext, NS_ConvertUTF8toUTF16(trackingOrigin), aReason);
+        parentBC, NS_ConvertUTF8toUTF16(trackingOrigin), aReason);
     
     reportReason = Nothing();
 
@@ -554,9 +559,9 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
     bool frameOnly = StaticPrefs::dom_storage_access_frame_only() &&
                      aReason == ContentBlockingNotifier::eStorageAccessAPI;
 
-    uint64_t innerWindowId = aParentContext->GetCurrentInnerWindowId();
+    uint64_t innerWindowId = parentBC->GetCurrentInnerWindowId();
 
-    return SaveAccessForOriginOnParentProcess(aTopLevelWindowId, aParentContext,
+    return SaveAccessForOriginOnParentProcess(aTopLevelWindowId, parentBC,
                                               trackingPrincipal, aAllowMode,
                                               frameOnly)
         ->Then(GetCurrentSerialEventTarget(), __func__,
@@ -745,21 +750,26 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
                                                                 __func__);
   }
 
+  RefPtr<dom::BrowsingContext> parentBC = aParentContext;
   auto storePermission =
-      [aParentContext, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
+      [parentBC, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
        aCookieBehavior,
        aReason](int aAllowMode) -> RefPtr<StorageAccessPermissionGrantPromise> {
+    if (parentBC->IsDiscarded()) {
+      return StorageAccessPermissionGrantPromise::CreateAndReject(false,
+                                                                  __func__);
+    }
     
     
-    StorageAccessAPIHelper::OnAllowAccessFor(aParentContext, trackingOrigin,
+    StorageAccessAPIHelper::OnAllowAccessFor(parentBC, trackingOrigin,
                                              aCookieBehavior, aReason);
 
     Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>
         reportReason;
     
-    if (aParentContext->Top()->IsInProcess()) {
+    if (parentBC->Top()->IsInProcess()) {
       ContentBlockingNotifier::ReportUnblockingToConsole(
-          aParentContext, NS_ConvertUTF8toUTF16(trackingOrigin), aReason);
+          parentBC, NS_ConvertUTF8toUTF16(trackingOrigin), aReason);
 
       
       reportReason = Nothing();
@@ -782,12 +792,12 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
     bool frameOnly = StaticPrefs::dom_storage_access_frame_only() &&
                      aReason == ContentBlockingNotifier::eStorageAccessAPI;
 
-    uint64_t innerWindowId = aParentContext->GetCurrentInnerWindowId();
+    uint64_t innerWindowId = parentBC->GetCurrentInnerWindowId();
 
     return cc
         ->SendStorageAccessPermissionGrantedForOrigin(
-            aTopLevelWindowId, aParentContext, trackingPrincipal,
-            trackingOrigin, aAllowMode, reportReason, frameOnly)
+            aTopLevelWindowId, parentBC, trackingPrincipal, trackingOrigin,
+            aAllowMode, reportReason, frameOnly)
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [aReason, trackingPrincipal,
