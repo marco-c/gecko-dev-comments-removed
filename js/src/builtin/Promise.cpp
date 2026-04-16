@@ -8077,7 +8077,20 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
 
   JSObject* obj = &val.toObject();
   if (!obj->is<PromiseObject>()) {
-    *canSkip = false;
+    
+    
+    
+    
+    Value thenVal;
+    if (!GetPropertyPure(cx, obj, NameToId(cx->names().then), &thenVal)) {
+      
+      *canSkip = false;
+      return true;
+    }
+
+    
+    
+    *canSkip = !IsCallable(thenVal);
     return true;
   }
 
@@ -8123,8 +8136,12 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
   }
 
   JSObject* obj = &val.toObject();
-  PromiseObject* promise = &obj->as<PromiseObject>();
-  resolved.set(promise->value());
+  if (obj->is<PromiseObject>()) {
+    PromiseObject* promise = &obj->as<PromiseObject>();
+    resolved.set(promise->value());
+  } else {
+    resolved.setObject(*obj);
+  }
 
   return true;
 }
