@@ -2,6 +2,7 @@
 
 
 
+
 #include "nsGDKErrorHandler.h"
 
 #include <gtk/gtk.h>
@@ -79,7 +80,7 @@ static void GdkErrorHandler(const gchar* log_domain, GLogLevelFlags log_level,
 
     constexpr auto minorCodeString = " minor_code "_ns;
     start = buffer.Find(minorCodeString, endptr - buffer.BeginReading());
-    if (!start) {
+    if (start == kNotFound) {
       MOZ_CRASH_UNSAFE(message);
     }
 
