@@ -13,6 +13,9 @@ import org.mozilla.fenix.GleanMetrics.TabSearch
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
+import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 /**
  * Middleware that records telemetry events for the Tabs Tray feature.
@@ -44,7 +47,7 @@ class TabsTrayTelemetryMiddleware(
             is TabsTrayAction.EnterSelectMode -> {
                 TabsTray.enterMultiselectMode.record(TabsTray.EnterMultiselectModeExtra(false))
             }
-            is TabsTrayAction.AddSelectTab -> {
+            is TabsTrayAction.AddSelectTabItem -> {
                 TabsTray.enterMultiselectMode.record(TabsTray.EnterMultiselectModeExtra(true))
             }
             is TabsTrayAction.TabAutoCloseDialogShown -> {
