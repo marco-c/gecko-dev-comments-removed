@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_URLQueryStringStripper_h
 #define mozilla_URLQueryStringStripper_h
 

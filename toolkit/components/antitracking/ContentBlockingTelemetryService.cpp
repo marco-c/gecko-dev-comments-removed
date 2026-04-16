@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentBlockingTelemetryService.h"
 
 #include "mozilla/ClearOnShutdown.h"

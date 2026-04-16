@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_llama_backend_h
 #define mozilla_llama_backend_h
 

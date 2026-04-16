@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_BounceTrackingStateGlobal_h
 #define mozilla_BounceTrackingStateGlobal_h
 

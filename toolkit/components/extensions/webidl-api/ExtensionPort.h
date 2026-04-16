@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_extensions_ExtensionPort_h
 #define mozilla_extensions_ExtensionPort_h
 

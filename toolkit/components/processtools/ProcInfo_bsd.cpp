@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/ProcInfo.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Logging.h"

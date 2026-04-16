@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <stdio.h>
 
 #include "mozilla/Components.h"

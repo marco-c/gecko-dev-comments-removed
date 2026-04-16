@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Timespan.h"
 
 #include "nsIThread.h"

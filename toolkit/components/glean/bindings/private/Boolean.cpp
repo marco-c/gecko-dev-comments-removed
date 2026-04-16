@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Boolean.h"
 
 #include "nsString.h"

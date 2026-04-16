@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/AlertNotification.h"
 
 #include "imgIContainer.h"

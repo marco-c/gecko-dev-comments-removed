@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 
@@ -21,18 +19,10 @@ Services.prefs.setBoolPref(
 
 const IS_OOP = Services.prefs.getBoolPref("extensions.webextensions.remote");
 
-const WEBEXT_EVENTPAGE_RUNNING_TIME_MS = "WEBEXT_EVENTPAGE_RUNNING_TIME_MS";
-const WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID =
-  "WEBEXT_EVENTPAGE_RUNNING_TIME_MS_BY_ADDONID";
-const WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT = "WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT";
-const WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT_BY_ADDONID =
-  "WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT_BY_ADDONID";
 
 
 
-
-
-const HISTOGRAM_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
+const GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
   "suspend",
   "reset_other",
   "reset_event",
@@ -40,10 +30,6 @@ const HISTOGRAM_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
   "reset_nativeapp",
   "reset_streamfilter",
   "reset_parentapicall",
-];
-
-const GLEAN_EVENTPAGE_IDLE_RESULT_CATEGORIES = [
-  ...HISTOGRAM_EVENTPAGE_IDLE_RESULT_CATEGORIES,
   "__other__",
 ];
 
@@ -51,156 +37,11 @@ function valueSum(arr) {
   return Object.values(arr).reduce((a, b) => a + b, 0);
 }
 
-function clearHistograms() {
-  Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry.getSnapshotForKeyedHistograms("main", true );
-}
-
-function clearScalars() {
-  Services.telemetry.getSnapshotForScalars("main", true );
-  Services.telemetry.getSnapshotForKeyedScalars("main", true );
-}
-
-function getSnapshots(process) {
-  return Services.telemetry.getSnapshotForHistograms("main", false )[
-    process
-  ];
-}
-
-function getKeyedSnapshots(process) {
-  return Services.telemetry.getSnapshotForKeyedHistograms(
-    "main",
-    false 
-  )[process];
-}
-
-
-
-
-function promiseTelemetryRecorded(id, process, expectedCount) {
-  let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false 
-    )[process][id];
-    return snapshot && valueSum(snapshot.values) >= expectedCount;
-  };
-  return ContentTaskUtils.waitForCondition(condition);
-}
-
-function promiseKeyedTelemetryRecorded(
-  id,
-  process,
-  expectedKey,
-  expectedCount
-) {
-  let condition = () => {
-    let snapshot = Services.telemetry.getSnapshotForKeyedHistograms(
-      "main",
-      false 
-    )[process][id];
-    return (
-      snapshot &&
-      snapshot[expectedKey] &&
-      valueSum(snapshot[expectedKey].values) >= expectedCount
-    );
-  };
-  return ContentTaskUtils.waitForCondition(condition);
-}
-
-function assertHistogramSnapshot(
-  histogramId,
-  { keyed, processSnapshot, expectedValue },
-  msg
-) {
-  let histogram;
-
-  if (keyed) {
-    histogram = Services.telemetry.getKeyedHistogramById(histogramId);
-  } else {
-    histogram = Services.telemetry.getHistogramById(histogramId);
-  }
-
-  let res = processSnapshot(histogram.snapshot());
-  Assert.deepEqual(res, expectedValue, msg);
-  return res;
-}
-
-function assertHistogramEmpty(histogramId) {
-  assertHistogramSnapshot(
-    histogramId,
-    {
-      processSnapshot: snapshot => snapshot.sum,
-      expectedValue: 0,
-    },
-    `No data recorded for histogram: ${histogramId}.`
-  );
-}
-
-function assertKeyedHistogramEmpty(histogramId) {
-  assertHistogramSnapshot(
-    histogramId,
-    {
-      keyed: true,
-      processSnapshot: snapshot => Object.keys(snapshot).length,
-      expectedValue: 0,
-    },
-    `No data recorded for histogram: ${histogramId}.`
-  );
-}
-
-function assertHistogramCategoryNotEmpty(
-  histogramId,
-  { category, categories, keyed, key },
-  msg
-) {
-  let message = msg;
-
-  if (!msg) {
-    message = `Data recorded for histogram: ${histogramId}, category "${category}"`;
-    if (keyed) {
-      message += `, key "${key}"`;
-    }
-  }
-
-  assertHistogramSnapshot(
-    histogramId,
-    {
-      keyed,
-      processSnapshot: snapshot => {
-        const categoryIndex = categories.indexOf(category);
-        if (keyed) {
-          return {
-            [key]: snapshot[key]
-              ? snapshot[key].values[categoryIndex] > 0
-              : null,
-          };
-        }
-        return snapshot.values[categoryIndex] > 0;
-      },
-      expectedValue: keyed ? { [key]: true } : true,
-    },
-    message
-  );
-}
-
 function setupTelemetryForTests() {
   
   do_get_profile();
   
   Services.fog.initializeFOG();
-}
-
-function resetTelemetryData() {
-  Services.fog.testResetFOG();
-
-  
-  
-  
-  
-  
-  clearHistograms();
-  clearScalars();
 }
 
 function assertValidGleanMetric({
@@ -278,18 +119,19 @@ function assertGleanMetricsSamplesCount({
   );
 }
 
-function assertGleanLabeledCounter({
+function assertGleanLabeledMetric({
   metricId,
   gleanMetric,
   gleanMetricLabels,
   expectedLabelsValue,
   ignoreNonExpectedLabels,
   ignoreUnknownLabels,
+  preprocessLabelValueFn,
   message,
 }) {
   const { GleanLabeled } = globalThis;
   const msg = message ? `(${message})` : "";
-  if (!Array.isArray(gleanMetricLabels) || !gleanMetricLabels.length) {
+  if (!Array.isArray(gleanMetricLabels)) {
     throw new Error(
       `Missing mandatory gleanMetricLabels property ${msg}: ${gleanMetricLabels}`
     );
@@ -301,17 +143,35 @@ function assertGleanLabeledCounter({
     );
   }
 
+  let actualLabeledValues = gleanMetric.testGetValue();
+
   for (const label of gleanMetricLabels) {
     const expectedLabelValue = expectedLabelsValue[label];
     if (ignoreNonExpectedLabels && !(label in expectedLabelsValue)) {
       continue;
     }
+
+    
+    
+    
+    let actualLabelValue = actualLabeledValues[label];
+    if (actualLabelValue != null && preprocessLabelValueFn) {
+      
+      
+      actualLabelValue = preprocessLabelValueFn(actualLabelValue);
+    }
     Assert.deepEqual(
-      gleanMetric[label].testGetValue(),
+      actualLabelValue,
       expectedLabelValue,
-      `Expect Glean "${metricId}" metric label "${label}" to be ${
-        expectedLabelValue > 0 ? expectedLabelValue : "empty"
-      }`
+      `Got expected value Glean "${metricId}" metric label "${label}"`
+    );
+  }
+
+  if (gleanMetricLabels.length === 0) {
+    Assert.deepEqual(
+      actualLabeledValues,
+      {},
+      `Expect GleanLabeled "${metricId}" to be empty`
     );
   }
 
@@ -324,7 +184,7 @@ function assertGleanLabeledCounter({
   }
 }
 
-function assertGleanLabeledCounterEmpty({
+function assertGleanLabeledMetricEmpty({
   metricId,
   gleanMetric,
   gleanMetricLabels,
@@ -332,7 +192,7 @@ function assertGleanLabeledCounterEmpty({
 }) {
   
   
-  assertGleanLabeledCounter({
+  assertGleanLabeledMetric({
     metricId,
     gleanMetric,
     gleanMetricLabels,
@@ -341,7 +201,7 @@ function assertGleanLabeledCounterEmpty({
   });
 }
 
-function assertGleanLabeledCounterNotEmpty({
+function assertGleanLabeledMetricNotEmpty({
   metricId,
   gleanMetric,
   expectedNotEmptyLabels,
@@ -400,97 +260,6 @@ function assertDNRTelemetryMetricsDefined(metrics) {
   );
 }
 
-function assertDNRTelemetryMirrored({
-  gleanMetric,
-  gleanLabel,
-  unifiedName,
-  unifiedType,
-}) {
-  assertDNRTelemetryMetricsDefined([
-    { metric: gleanMetric, label: gleanLabel },
-  ]);
-  const gleanData = gleanLabel
-    ? Glean.extensionsApisDnr[gleanMetric][gleanLabel].testGetValue()
-    : Glean.extensionsApisDnr[gleanMetric].testGetValue();
-
-  if (!unifiedName) {
-    Assert.ok(
-      false,
-      `Unexpected missing unifiedName parameter on call to assertDNRTelemetryMirrored`
-    );
-    return;
-  }
-
-  let unifiedData;
-
-  switch (unifiedType) {
-    case "histogram": {
-      let found = false;
-      try {
-        const histogram = Services.telemetry.getHistogramById(unifiedName);
-        found = !!histogram;
-      } catch (err) {
-        Cu.reportError(err);
-      }
-      Assert.ok(found, `Expect an histogram named ${unifiedName} to be found`);
-      unifiedData = Services.telemetry.getSnapshotForHistograms("main", false)
-        .parent[unifiedName];
-      break;
-    }
-    case "keyedScalar": {
-      const snapshot = Services.telemetry.getSnapshotForKeyedScalars(
-        "main",
-        false
-      );
-      if (unifiedName in (snapshot?.parent || {})) {
-        unifiedData = snapshot.parent[unifiedName][gleanLabel];
-      }
-      break;
-    }
-    case "scalar": {
-      const snapshot = Services.telemetry.getSnapshotForScalars("main", false);
-      if (unifiedName in (snapshot?.parent || {})) {
-        unifiedData = snapshot.parent[unifiedName];
-      }
-      break;
-    }
-    default:
-      Assert.ok(
-        false,
-        `Unexpected unifiedType ${unifiedType} on call to assertDNRTelemetryMirrored`
-      );
-      return;
-  }
-
-  if (gleanData == undefined) {
-    Assert.deepEqual(
-      unifiedData,
-      undefined,
-      `Expect mirrored unified telemetry ${unifiedType} ${unifiedName} has no samples as Glean ${gleanMetric}`
-    );
-  } else {
-    switch (unifiedType) {
-      case "histogram": {
-        Assert.deepEqual(
-          valueSum(unifiedData.values),
-          valueSum(gleanData.values),
-          `Expect mirrored unified telemetry ${unifiedType} ${unifiedName} has samples mirrored from Glean ${gleanMetric}`
-        );
-        break;
-      }
-      case "scalar":
-      case "keyedScalar": {
-        Assert.deepEqual(
-          unifiedData,
-          gleanData,
-          `Expect mirrored unified telemetry ${unifiedType} ${unifiedName} has samples mirrored from Glean ${gleanMetric}`
-        );
-        break;
-      }
-    }
-  }
-}
-
 function assertDNRTelemetryMetricsNoSamples(metrics, msg) {
   assertDNRTelemetryMetricsDefined(metrics);
   for (const metricDetails of metrics) {
@@ -504,16 +273,6 @@ function assertDNRTelemetryMetricsNoSamples(metrics, msg) {
       undefined,
       `Expect no sample for Glean metric extensionApisDnr.${metric} (${msg}): ${gleanData}`
     );
-
-    if (metricDetails.mirroredName) {
-      const { mirroredName, mirroredType } = metricDetails;
-      assertDNRTelemetryMirrored({
-        gleanMetric: metric,
-        gleanLabel: label,
-        unifiedName: mirroredName,
-        unifiedType: mirroredType,
-      });
-    }
   }
 }
 
@@ -532,16 +291,6 @@ function assertDNRTelemetryMetricsGetValueEq(metrics, msg) {
         label ? `.${label}` : ""
       } (${msg})`
     );
-
-    if (metricDetails.mirroredName) {
-      const { mirroredName, mirroredType } = metricDetails;
-      assertDNRTelemetryMirrored({
-        gleanMetric: metric,
-        gleanLabel: label,
-        unifiedName: mirroredName,
-        unifiedType: mirroredType,
-      });
-    }
   }
 }
 
@@ -581,14 +330,5 @@ function assertDNRTelemetryMetricsSamplesCount(metrics, msg) {
       !gleanData.values["0"],
       `No sample for Glean metric extensionsApisDnr.${metric} should be collected for the bucket "0"`
     );
-
-    if (metricDetails.mirroredName) {
-      const { mirroredName, mirroredType } = metricDetails;
-      assertDNRTelemetryMirrored({
-        gleanMetric: metric,
-        unifiedName: mirroredName,
-        unifiedType: mirroredType,
-      });
-    }
   }
 }

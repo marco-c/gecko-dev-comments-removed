@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Base64.h"
 #include "nsUrlClassifierUtils.h"
@@ -48,17 +48,17 @@ TEST(UrlClassifierFindFullHash, Request)
                                           prefixArray, requestBase64);
   ASSERT_NS_SUCCEEDED(rv);
 
-  
+  // Base64 URL decode first.
   FallibleTArray<uint8_t> requestBinary;
   rv = Base64URLDecode(requestBase64, Base64URLDecodePaddingPolicy::Require,
                        requestBinary);
   ASSERT_NS_SUCCEEDED(rv);
 
-  
+  // Parse the FindFullHash binary and compare with the expected values.
   FindFullHashesRequest r;
   ASSERT_TRUE(r.ParseFromArray(&requestBinary[0], requestBinary.Length()));
 
-  
+  // Compare client states.
   ASSERT_EQ(r.client_states_size(), (int)std::size(listStates));
   for (int i = 0; i < r.client_states_size(); i++) {
     auto s = r.client_states(i);
@@ -67,7 +67,7 @@ TEST(UrlClassifierFindFullHash, Request)
 
   auto threatInfo = r.threat_info();
 
-  
+  // Compare threat types.
   ASSERT_EQ(threatInfo.threat_types_size(), (int)std::size(listStates));
   for (int i = 0; i < threatInfo.threat_types_size(); i++) {
     uint32_t expectedThreatType;
@@ -77,7 +77,7 @@ TEST(UrlClassifierFindFullHash, Request)
     ASSERT_EQ(threatInfo.threat_types(i), (int)expectedThreatType);
   }
 
-  
+  // Compare prefixes.
   ASSERT_EQ(threatInfo.threat_entries_size(), (int)std::size(prefixes));
   for (int i = 0; i < threatInfo.threat_entries_size(); i++) {
     auto p = threatInfo.threat_entries(i).hash();
@@ -85,12 +85,12 @@ TEST(UrlClassifierFindFullHash, Request)
   }
 }
 
-
-
+/////////////////////////////////////////////////////////////
+// Following is to test parsing the gethash response.
 
 namespace {
 
-
+// safebrowsing::Duration manipulation.
 struct MyDuration {
   uint32_t mSecs;
   uint32_t mNanos;
@@ -100,7 +100,7 @@ void PopulateDuration(Duration& aDest, const MyDuration& aSrc) {
   aDest.set_nanos(aSrc.mNanos);
 }
 
-
+// The expected match data.
 static MyDuration EXPECTED_MIN_WAIT_DURATION = {12, 10};
 static MyDuration EXPECTED_NEG_CACHE_DURATION = {120, 9};
 MOZ_RUNINIT static const struct ExpectedMatch {
@@ -151,7 +151,7 @@ class MyParseCallback final : public nsIUrlClassifierParseFindFullHashCallback {
 
     ASSERT_TRUE(aCompleteHash.Equals(expected.mCompleteHash));
 
-    
+    // Verify aTableNames
     nsUrlClassifierUtils* urlUtil = nsUrlClassifierUtils::GetInstance();
 
     nsCString tableNames;
@@ -176,20 +176,20 @@ class MyParseCallback final : public nsIUrlClassifierParseFindFullHashCallback {
 
 NS_IMPL_ISUPPORTS(MyParseCallback, nsIUrlClassifierParseFindFullHashCallback)
 
-}  
+}  // end of unnamed namespace.
 
 TEST(UrlClassifierFindFullHash, ParseRequest)
 {
-  
+  // Build response.
   FindFullHashesResponse r;
 
-  
+  // Init response-wise durations.
   auto minWaitDuration = r.mutable_minimum_wait_duration();
   PopulateDuration(*minWaitDuration, EXPECTED_MIN_WAIT_DURATION);
   auto negCacheDuration = r.mutable_negative_cache_duration();
   PopulateDuration(*negCacheDuration, EXPECTED_NEG_CACHE_DURATION);
 
-  
+  // Init matches.
   for (uint32_t i = 0; i < std::size(EXPECTED_MATCH); i++) {
     auto expected = EXPECTED_MATCH[i];
     auto match = r.mutable_matches()->Add();

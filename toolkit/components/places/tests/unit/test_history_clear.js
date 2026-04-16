@@ -2,8 +2,6 @@
 
 
 
-
-
 var mDBConn = DBConn();
 
 add_task(async function test_history_clear() {

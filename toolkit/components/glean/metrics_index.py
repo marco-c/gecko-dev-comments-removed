@@ -12,8 +12,6 @@
 
 
 
-
-
 gecko_metrics = [
     "accessible/metrics.yaml",
     "browser/base/content/metrics.yaml",

@@ -5,7 +5,6 @@
 
 
 
-
 add_task(function test_init() {
   CrashMonitor.init();
   try {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PartitioningExceptionList_h
 #define mozilla_PartitioningExceptionList_h
 

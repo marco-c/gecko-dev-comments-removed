@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WebRequestService_h
 #define mozilla_WebRequestService_h
 

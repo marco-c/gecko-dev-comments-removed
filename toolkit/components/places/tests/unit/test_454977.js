@@ -3,8 +3,6 @@
 
 
 
-
-
 var visit_count = 0;
 
 

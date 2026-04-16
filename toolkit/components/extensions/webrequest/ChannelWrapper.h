@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_extensions_ChannelWrapper_h
 #define mozilla_extensions_ChannelWrapper_h
 
@@ -285,6 +283,9 @@ class ChannelWrapper final : public DOMEventTargetHelper,
 
   void CheckEventListeners();
 
+  void ActivityErrorFallbackCheck();
+  void FireErrorEvent();
+
   class ChannelWrapperStub final : public nsISupports {
    public:
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -319,6 +320,8 @@ class ChannelWrapper final : public DOMEventTargetHelper,
   bool mFiredErrorEvent = false;
   bool mSuspended = false;
   bool mResponseStarted = false;
+
+  nsString mActivityError;
 
   nsInterfaceHashtable<nsAtomHashKey, nsIRemoteTab> mAddonEntries;
 

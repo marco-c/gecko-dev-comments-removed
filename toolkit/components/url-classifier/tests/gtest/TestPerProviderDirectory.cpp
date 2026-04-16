@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HashStore.h"
 #include "LookupCache.h"
@@ -20,8 +20,8 @@ class PerProviderDirectoryTestUtils {
   }
 };
 
-}  
-}  
+}  // end of namespace safebrowsing
+}  // end of namespace mozilla
 
 template <typename T>
 static void VerifyPrivateStorePath(T* target, const nsCString& aTableName,
@@ -42,7 +42,7 @@ static void VerifyPrivateStorePath(T* target, const nsCString& aTableName,
   nsString expectedPrivateStorePath = rootStorePath;
 
   if (aUsePerProviderStore) {
-    
+    // Use API to append "provider" to the root directoy path
     nsCOMPtr<nsIFile> expectedPrivateStoreDir;
     rv = aRootDir->Clone(getter_AddRefs(expectedPrivateStoreDir));
     ASSERT_EQ(rv, NS_OK);
@@ -66,8 +66,8 @@ TEST(UrlClassifierPerProviderDirectory, LookupCache)
   NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(rootDir));
 
   RunTestInNewThread([&]() -> void {
-    
-    
+    // For V2 tables (NOT ending with '-proto'), root directory should be
+    // used as the private store.
     {
       nsAutoCString table("goog-phish-shavar");
       nsAutoCString provider("google");
@@ -76,8 +76,8 @@ TEST(UrlClassifierPerProviderDirectory, LookupCache)
                                             false);
     }
 
-    
-    
+    // For V4 tables, if provider is found, use per-provider subdirectory;
+    // If not found, use root directory.
     {
       nsAutoCString table("goog-noprovider-proto");
       nsAutoCString provider("");
@@ -100,16 +100,16 @@ TEST(UrlClassifierPerProviderDirectory, HashStore)
   NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(rootDir));
 
   RunTestInNewThread([&]() -> void {
-    
-    
+    // For V2 tables (NOT ending with '-proto'), root directory should be
+    // used as the private store.
     {
       nsAutoCString table("goog-phish-shavar");
       nsAutoCString provider("google");
       HashStore hs(table, provider, rootDir);
       VerifyPrivateStorePath(&hs, table, provider, rootDir, false);
     }
-    
-    
+    // For V4 tables, if provider is found, use per-provider subdirectory;
+    // If not found, use root directory.
     {
       nsAutoCString table("goog-noprovider-proto");
       nsAutoCString provider("");

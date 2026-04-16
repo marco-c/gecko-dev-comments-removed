@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BounceTrackingAllowList.h"
 #include "nsIPermissionManager.h"
 

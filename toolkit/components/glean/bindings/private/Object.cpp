@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Object.h"
 
 #include "Common.h"

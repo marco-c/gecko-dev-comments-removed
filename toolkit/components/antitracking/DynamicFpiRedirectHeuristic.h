@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dynamicfpiredirectheuristic_h
 #define mozilla_dynamicfpiredirectheuristic_h
 

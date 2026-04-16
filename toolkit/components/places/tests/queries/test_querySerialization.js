@@ -47,8 +47,6 @@
 
 
 
-
-
 const CHOOSE_HOW_MANY_SWITCHES_LO = 1;
 const CHOOSE_HOW_MANY_SWITCHES_HI = 2;
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ContentBlockingLog_h
 #define mozilla_ContentBlockingLog_h
 

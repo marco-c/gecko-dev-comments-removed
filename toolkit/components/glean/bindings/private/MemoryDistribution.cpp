@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/MemoryDistribution.h"
 
 #include "mozilla/Components.h"

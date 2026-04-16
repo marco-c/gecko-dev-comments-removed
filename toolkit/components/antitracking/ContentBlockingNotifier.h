@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_contentblockingnotifier_h
 #define mozilla_contentblockingnotifier_h
 

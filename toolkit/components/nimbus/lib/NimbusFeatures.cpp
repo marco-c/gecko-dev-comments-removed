@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/browser/NimbusFeatures.h"
 #include "mozilla/browser/NimbusFeatureManifest.h"
 #include "mozilla/Try.h"
@@ -15,7 +13,7 @@
 
 namespace mozilla {
 
-MOZ_RUNINIT static nsTHashSet<nsCString> sExposureFeatureSet;
+constinit static nsTHashSet<nsCString> sExposureFeatureSet;
 
 void NimbusFeatures::GetPrefName(const nsACString& branchPrefix,
                                  const nsACString& aFeatureId,

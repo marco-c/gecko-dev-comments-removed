@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/jog/JOG.h"
 
 #include <locale>

@@ -2,8 +2,6 @@
 
 
 
-
-
 var resultObserver = {
   insertedNode: null,
   nodeInserted(parent, node) {

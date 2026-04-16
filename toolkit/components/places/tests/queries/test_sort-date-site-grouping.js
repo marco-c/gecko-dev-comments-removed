@@ -12,8 +12,6 @@
 
 
 
-
-
 var testData = [
   {
     isVisit: true,

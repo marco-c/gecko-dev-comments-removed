@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/StringList.h"
 
 #include "mozilla/ErrorResult.h"

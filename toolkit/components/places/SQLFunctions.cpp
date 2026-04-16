@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/storage.h"
 #include "mozilla/StaticPrefs_places.h"
 #include "nsString.h"

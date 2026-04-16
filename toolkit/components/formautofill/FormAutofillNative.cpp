@@ -2,7 +2,6 @@
 
 
 
-
 #include "FormAutofillNative.h"
 
 #include <math.h>

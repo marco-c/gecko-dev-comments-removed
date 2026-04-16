@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Ping.h"
 
 #include "jsapi.h"

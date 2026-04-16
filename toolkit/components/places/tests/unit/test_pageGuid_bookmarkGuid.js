@@ -2,8 +2,6 @@
 
 
 
-
-
 const histsvc = PlacesUtils.history;
 
 add_task(async function test_addBookmarksAndCheckGuids() {

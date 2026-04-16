@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StoragePrincipalHelper.h"
 
 #include "mozilla/ExpandedPrincipal.h"

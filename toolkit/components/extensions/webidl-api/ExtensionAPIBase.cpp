@@ -2,7 +2,6 @@
 
 
 
-
 #include "ExtensionAPIBase.h"
 
 #include "ExtensionAPIRequestForwarder.h"

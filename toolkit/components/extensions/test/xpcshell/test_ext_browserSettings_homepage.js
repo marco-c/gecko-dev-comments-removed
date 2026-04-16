@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function test_homepage_get_without_set() {

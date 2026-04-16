@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 Services.prefs.setBoolPref(

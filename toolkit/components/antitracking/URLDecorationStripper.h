@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_URLDecorationStripper_h
 #define mozilla_URLDecorationStripper_h
 

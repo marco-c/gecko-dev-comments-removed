@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ChannelWrapper.h"
 
 #include "jsapi.h"
@@ -211,6 +209,7 @@ void ChannelWrapper::ClearCachedAttributes() {
   ChannelWrapper_Binding::ClearCachedStatusLineValue(this);
   ChannelWrapper_Binding::ClearCachedUrlClassificationValue(this);
   if (!mFiredErrorEvent) {
+    mActivityError.Truncate();
     ChannelWrapper_Binding::ClearCachedErrorStringValue(this);
   }
 
@@ -1113,6 +1112,8 @@ void ChannelWrapper::GetErrorString(nsString& aRetVal) const {
       nsAutoCString name;
       GetErrorName(status, name);
       AppendUTF8toUTF16(name, aRetVal);
+    } else if (!mActivityError.IsEmpty()) {
+      aRetVal = mActivityError;
     } else {
       aRetVal.SetIsVoid(true);
     }
@@ -1121,17 +1122,55 @@ void ChannelWrapper::GetErrorString(nsString& aRetVal) const {
   }
 }
 
+void ChannelWrapper::FireErrorEvent() {
+  MOZ_ASSERT(!mFiredErrorEvent);
+  mFiredErrorEvent = true;
+  ChannelWrapper_Binding::ClearCachedErrorStringValue(this);
+  FireEvent(u"error"_ns);
+}
+
 void ChannelWrapper::ErrorCheck() {
-  if (!mFiredErrorEvent) {
-    nsAutoString error;
-    GetErrorString(error);
-    if (error.Length()) {
-      mChannelEntry = nullptr;
-      mFiredErrorEvent = true;
-      ChannelWrapper_Binding::ClearCachedErrorStringValue(this);
-      FireEvent(u"error"_ns);
-    }
+  if (mFiredErrorEvent) {
+    return;
   }
+  nsAutoString error;
+  GetErrorString(error);
+  if (error.Length()) {
+    mChannelEntry = nullptr;
+    FireErrorEvent();
+  }
+}
+
+void ChannelWrapper::ActivityErrorFallbackCheck() {
+  if (mFiredErrorEvent) {
+    return;
+  }
+
+  
+  
+  if (!HasListenersFor(nsGkAtoms::onerror)) {
+    return;
+  }
+
+  nsCOMPtr<nsIHttpChannel> httpChan = MaybeHttpChannel();
+  if (!httpChan) {
+    return;
+  }
+
+  
+  uint32_t responseStatus;
+  if (NS_SUCCEEDED(httpChan->GetResponseStatus(&responseStatus))) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  mActivityError.AssignLiteral("NS_ERROR_NET_ON_RECEIVING_FROM");
+  FireErrorEvent();
 }
 
 
@@ -1174,6 +1213,7 @@ ChannelWrapper::RequestListener::OnStopRequest(nsIRequest* request,
 
   mChannelWrapper->mChannelEntry = nullptr;
   mChannelWrapper->ErrorCheck();
+  mChannelWrapper->ActivityErrorFallbackCheck();
   mChannelWrapper->FireEvent(u"stop"_ns);
 
   return mOrigStreamListener->OnStopRequest(request, aStatus);

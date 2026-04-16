@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/GleanPings.h"
 
 #include "mozilla/dom/BindingUtils.h"

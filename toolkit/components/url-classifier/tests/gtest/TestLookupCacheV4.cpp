@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Classifier.h"
 #include "LookupCacheV4.h"
@@ -29,7 +29,7 @@ static void TestHasPrefix(const nsCString& aURL, bool aExpectedHas,
 
     bool has, confirmed;
     uint32_t matchLength;
-    
+    // Freshness is not used in V4 so we just put dummy values here.
     TableFreshnessMap dummy;
     nsresult rv = cache->Has(lookupHash, &has, &matchLength, &confirmed);
 
@@ -57,7 +57,7 @@ TEST(UrlClassifierLookupCacheV4, Nomatch)
   TestHasPrefix("nomatch.com/"_ns, false, false);
 }
 
-
+// Test an existing .pset should be removed after .vlpset is written
 TEST(UrlClassifierLookupCacheV4, RemoveOldPset)
 {
   nsCOMPtr<nsIFile> oldPsetFile;
@@ -72,7 +72,7 @@ TEST(UrlClassifierLookupCacheV4, RemoveOldPset)
   newPsetFile->AppendNative("safebrowsing"_ns);
   newPsetFile->AppendNative(GTEST_TABLE_V4 + ".vlpset"_ns);
 
-  
+  // Create the legacy .pset file
   nsresult rv = oldPsetFile->Create(nsIFile::NORMAL_FILE_TYPE, 0666);
   EXPECT_EQ(rv, NS_OK);
 
@@ -81,7 +81,7 @@ TEST(UrlClassifierLookupCacheV4, RemoveOldPset)
   EXPECT_EQ(rv, NS_OK);
   EXPECT_EQ(exists, true);
 
-  
+  // Setup the data in lookup cache and write its data to disk
   RefPtr<Classifier> classifier = GetClassifier();
   _PrefixArray array = {CreatePrefixFromURL("entry.com/", 4)};
   rv = BuildLookupCache(classifier, GTEST_TABLE_V4, array);
@@ -91,7 +91,7 @@ TEST(UrlClassifierLookupCacheV4, RemoveOldPset)
   rv = cache->WriteFile();
   EXPECT_EQ(rv, NS_OK);
 
-  
+  // .vlpset should exist while .pset should be removed
   rv = newPsetFile->Exists(&exists);
   EXPECT_EQ(rv, NS_OK);
   EXPECT_EQ(exists, true);
@@ -103,7 +103,7 @@ TEST(UrlClassifierLookupCacheV4, RemoveOldPset)
   newPsetFile->Remove(false);
 }
 
-
+// Test the legacy load
 TEST(UrlClassifierLookupCacheV4, LoadOldPset)
 {
   nsCOMPtr<nsIFile> oldPsetFile;
@@ -112,7 +112,7 @@ TEST(UrlClassifierLookupCacheV4, LoadOldPset)
   PrefixStringMap map;
   PrefixArrayToPrefixStringMap(array, map);
 
-  
+  // Prepare .pset file on disk
   {
     NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                            getter_AddRefs(oldPsetFile));
@@ -131,7 +131,7 @@ TEST(UrlClassifierLookupCacheV4, LoadOldPset)
     EXPECT_EQ(rv, NS_OK);
   }
 
-  
+  // Load data from disk
   RefPtr<Classifier> classifier = GetClassifier();
   RefPtr<LookupCache> cache = classifier->GetLookupCache(GTEST_TABLE_V4, false);
 

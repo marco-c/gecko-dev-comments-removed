@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const STARTUP_APIS = ["backgroundPage"];

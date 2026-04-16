@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_extensions_ExtensionBrowserSettingsColorManagement_h
 #define mozilla_extensions_ExtensionBrowserSettingsColorManagement_h
 

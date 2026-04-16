@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsNavBookmarks.h"
 
 #include "nsNavHistory.h"

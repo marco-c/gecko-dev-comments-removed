@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Counter.h"
 
 #include "nsITelemetry.h"

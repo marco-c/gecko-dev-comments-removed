@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "HangDetails.h"
 
 #include "nsIHangDetails.h"

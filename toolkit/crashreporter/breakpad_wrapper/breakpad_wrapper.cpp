@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <string>
 
@@ -39,19 +39,19 @@ using breakpad_pid = pid_t;
 
 namespace mozilla::phc {
 
-
-
+// HACK: The breakpad code expects this global variable even though we don't
+// use it in the wrapper.
 constinit mozilla::phc::AddrInfo gAddrInfo;
 
-}  
+}  // namespace mozilla::phc
 
-#endif  
+#endif  // defined(MOZ_PHC)
 
 using google_breakpad::ClientInfo;
 using google_breakpad::CrashGenerationServer;
 
-
-
+// This struct and the callback that uses it need to be kept in sync with the
+// corresponding Rust code in src/crash_generation.rs.
 struct BreakpadProcessId {
   breakpad_pid pid;
 #if defined(XP_MACOSX)
@@ -65,7 +65,7 @@ using RustDumpCallback = void (*)(BreakpadProcessId, const char*,
                                   const breakpad_char*);
 #if defined(XP_LINUX)
 using RustAuxvCallback = bool (*)(breakpad_pid, DirectAuxvDumpInfo*);
-#endif  
+#endif  // defined(XP_LINUX)
 
 void onClientDumpRequestCallback(void* context, const ClientInfo& client_info,
                                  const breakpad_string& file_path) {
@@ -83,7 +83,7 @@ void onClientDumpRequestCallback(void* context, const ClientInfo& client_info,
       client_info.error_msg();
 #else
       nullptr;
-#endif  
+#endif  // XP_LINUX
 
   callback(process_id, error_msg, file_path.c_str());
 }
@@ -93,7 +93,7 @@ bool getAuxvDumpInfo(RustAuxvCallback callback, breakpad_pid aPid,
                      DirectAuxvDumpInfo* aAuxvInfo) {
   return callback(aPid, aAuxvInfo);
 }
-#endif  
+#endif  // defined(XP_LINUX)
 
 #ifdef XP_WIN
 
@@ -105,16 +105,16 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
 
   CrashGenerationServer* server = new CrashGenerationServer(
       breakpadData,
-       nullptr,
-       nullptr,
-       nullptr, onClientDumpRequestCallback,
+      /* pipe_sec_attrs */ nullptr,
+      /* connect_callback */ nullptr,
+      /* connect_context */ nullptr, onClientDumpRequestCallback,
       reinterpret_cast<void*>(aDumpCallback),
-       nullptr,
-       nullptr,
-       nullptr,
-       nullptr,
-       nullptr,
-       true, &minidumpPath);
+      /* written_callback */ nullptr,
+      /* exit_callback */ nullptr,
+      /* exit_context */ nullptr,
+      /* upload_request_callback */ nullptr,
+      /* upload_context */ nullptr,
+      /* generate_dumps */ true, &minidumpPath);
 
   if (!server->Start()) {
     delete server;
@@ -134,12 +134,12 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
 
   CrashGenerationServer* server = new CrashGenerationServer(
       breakpadData,
-       nullptr,
-       nullptr, onClientDumpRequestCallback,
+      /* filter */ nullptr,
+      /* filter_context */ nullptr, onClientDumpRequestCallback,
       reinterpret_cast<void*>(aDumpCallback),
-       nullptr,
-       nullptr,
-       true, minidumpPath);
+      /* exit_callback */ nullptr,
+      /* exit_context */ nullptr,
+      /* generate_dumps */ true, minidumpPath);
 
   if (!server->Start()) {
     delete server;
@@ -168,7 +168,7 @@ extern "C" void* CrashGenerationServer_init(breakpad_init_type aBreakpadData,
         onClientDumpRequestCallback(reinterpret_cast<void*>(aDumpCallback),
                                     aClientInfo, aFilePath);
       },
-       nullptr, &minidumpPath);
+      /* dump_context */ nullptr, &minidumpPath);
 
   if (!server->Start()) {
     delete server;

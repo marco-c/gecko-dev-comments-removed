@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Event.h"
 
 #include "nsString.h"

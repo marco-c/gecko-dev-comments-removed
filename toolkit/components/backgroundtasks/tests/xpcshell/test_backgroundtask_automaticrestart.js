@@ -5,8 +5,6 @@
 
 
 
-
-
 add_task(async function test_backgroundtask_automatic_restart() {
   let restartTimeoutSec = 30;
   const path = await IOUtils.createUniqueFile(
