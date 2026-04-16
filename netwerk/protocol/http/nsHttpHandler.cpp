@@ -697,19 +697,19 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
             
             
             
-            aRequest->SetDictionary(aDict);
-
-            
-            
-            
-            
-            
-            
             
             
             if ((aCallback)(aNeedsResume, aDict)) {
               LOG_DICTIONARIES(
                   ("Setting Available-Dictionary: %s", encodedHash.get()));
+              
+              
+              
+              
+              
+              
+              aRequest->SetDictionary(aDict);
+
               nsresult rv = aRequest->SetHeader(
                   nsHttp::Available_Dictionary, encodedHash, false,
                   nsHttpHeaderArray::eVarietyRequestOverride);
@@ -729,7 +729,7 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
               return aRequest->SetHeader(
                   nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
                   false, nsHttpHeaderArray::eVarietyRequestOverride);
-            }
+            }  
             return NS_OK;
           });
     }
@@ -2574,10 +2574,17 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
     }
   }
 
+  bool fetchHTTPSRR = EchConfigEnabled();
+  if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    ci->SetHappyEyeballsEnabled(true);
+    
+    
+    fetchHTTPSRR = false;
+  }
+
   LOG(("MaybeSpeculativeConnectWithHTTPSRR for ci=%s", ci->HashKey().get()));
   
-  return MaybeSpeculativeConnectWithHTTPSRR(ci, aCallbacks, 0,
-                                            EchConfigEnabled());
+  return MaybeSpeculativeConnectWithHTTPSRR(ci, aCallbacks, 0, fetchHTTPSRR);
 }
 
 nsresult nsHttpHandler::SpeculativeConnect(nsHttpConnectionInfo* ci,
