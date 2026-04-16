@@ -176,15 +176,6 @@ nsresult MediaTransportHandlerIPC::SetIceConfig(
   
   
   
-  
-  
-  std::vector<NrIceStunServer> stunServers;
-  std::vector<NrIceTurnServer> turnServers;
-  nsresult rv = ConvertIceServers(aIceServers, &stunServers, &turnServers);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   mInitPromise->Then(
       mThread, __func__,
       [=, this, iceServers = aIceServers.Clone(),

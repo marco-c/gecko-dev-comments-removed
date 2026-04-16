@@ -18,11 +18,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
 
-
-#include "nsIURI.h"
-#include "nsIURLParser.h"
-#include "nsNetUtil.h"
-#include "nsURLHelper.h"
+#include "mozilla/IceServerParser.h"
 
 
 #include "common/browser_logging/CSFLog.h"
@@ -288,166 +284,55 @@ static NrIceCtx::Policy toNrIcePolicy(dom::RTCIceTransportPolicy aPolicy) {
   return NrIceCtx::ICE_POLICY_ALL;
 }
 
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+using IceTransport = IceServerParser::IceTransport;
 
-int16_t gGoodWebrtcPortList[] = {
-    53,    
-    3478,  
-    5349,  
-    0,     
-};
-
-static nsresult addNrIceServer(const nsString& aIceUrl,
-                               const dom::RTCIceServer& aIceServer,
-                               std::vector<NrIceStunServer>* aStunServersOut,
-                               std::vector<NrIceTurnServer>* aTurnServersOut) {
-  
-  
-  
-  
-  
-  RefPtr<nsIURI> url;
-  nsresult rv = NS_NewURI(getter_AddRefs(url), aIceUrl);
-  NS_ENSURE_SUCCESS(rv, rv);
-  bool isStun = url->SchemeIs("stun");
-  bool isStuns = url->SchemeIs("stuns");
-  bool isTurn = url->SchemeIs("turn");
-  bool isTurns = url->SchemeIs("turns");
-  if (!(isStun || isStuns || isTurn || isTurns)) {
-    return NS_ERROR_FAILURE;
+static const char* IceTransportToNrTransport(const ParsedIceServer& aEntry) {
+  if (aEntry.mUri.IsTls()) {
+    return kNrIceTransportTls;
   }
-  if (isStuns) {
-    return NS_OK;  
-  }
-
-  nsAutoCString spec;
-  rv = url->GetSpec(spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  int32_t port;
-  nsAutoCString host;
-  nsAutoCString transport;
-  {
-    uint32_t hostPos;
-    int32_t hostLen;
-    nsAutoCString path;
-    rv = url->GetPathQueryRef(path);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    int32_t questionmark = path.FindChar('?');
-    if (questionmark >= 0) {
-      const nsCString match = "transport="_ns;
-
-      for (int32_t i = questionmark, endPos; i >= 0; i = endPos) {
-        endPos = path.FindCharInSet("&", i + 1);
-        const nsDependentCSubstring fieldvaluepair =
-            Substring(path, i + 1, endPos);
-        if (StringBeginsWith(fieldvaluepair, match)) {
-          transport = Substring(fieldvaluepair, match.Length());
-          ToLowerCase(transport);
-        }
-      }
-      path.SetLength(questionmark);
-    }
-
-    nsCOMPtr<nsIURLParser> parser = net_GetAuthURLParser();
-    rv = parser->ParseAuthority(path.get(), static_cast<int>(path.Length()),
-                                nullptr, nullptr, nullptr, nullptr, &hostPos,
-                                &hostLen, &port);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!hostLen) {
-      return NS_ERROR_FAILURE;
-    }
-    if (hostPos > 1) {
-      
-      return NS_ERROR_FAILURE;
-    }
-    path.Mid(host, hostPos, hostLen);
-    
-    host.Trim("[]");
-  }
-  if (port == -1) port = (isStuns || isTurns) ? 5349 : 3478;
-
-  
-  bool goodPort = false;
-  for (int i = 0; !goodPort && gGoodWebrtcPortList[i]; i++) {
-    if (port == gGoodWebrtcPortList[i]) {
-      goodPort = true;
-    }
-  }
-
-  
-  
-  if (!goodPort) {
-    rv = NS_CheckPortSafety(port, nullptr);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  if (isStuns || isTurns) {
-    
-    transport = kNrIceTransportTls;
-  }
-
-  if (transport.IsEmpty()) {
-    transport = kNrIceTransportUdp;
-  }
-
-  if (isTurn || isTurns) {
-    std::string pwd(
-        NS_ConvertUTF16toUTF8(aIceServer.mCredential.Value()).get());
-    std::string username(
-        NS_ConvertUTF16toUTF8(aIceServer.mUsername.Value()).get());
-
-    std::vector<unsigned char> password(pwd.begin(), pwd.end());
-
-    UniquePtr<NrIceTurnServer> server(NrIceTurnServer::Create(
-        host.get(), port, username, password, transport.get()));
-    if (!server) {
-      return NS_ERROR_FAILURE;
-    }
-    if (server->HasFqdn()) {
-      
-      aTurnServersOut->push_back(*server);
-      server->SetUseIPv6IfFqdn();
-    }
-    aTurnServersOut->emplace_back(std::move(*server));
-  } else {
-    UniquePtr<NrIceStunServer> server(
-        NrIceStunServer::Create(host.get(), port, transport.get()));
-    if (!server) {
-      return NS_ERROR_FAILURE;
-    }
-    if (server->HasFqdn()) {
-      
-      aStunServersOut->push_back(*server);
-      server->SetUseIPv6IfFqdn();
-    }
-    aStunServersOut->emplace_back(std::move(*server));
-  }
-  return NS_OK;
+  return aEntry.mUri.mTransport == IceTransport::Tcp ? kNrIceTransportTcp
+                                                     : kNrIceTransportUdp;
 }
 
+static void ConvertIceServerEntries(
+    const nsTArray<ParsedIceServer>& aEntries,
+    std::vector<NrIceStunServer>* aStunServersOut,
+    std::vector<NrIceTurnServer>* aTurnServersOut) {
+  for (const auto& entry : aEntries) {
+    const char* transport = IceTransportToNrTransport(entry);
 
-nsresult MediaTransportHandler::ConvertIceServers(
-    const nsTArray<dom::RTCIceServer>& aIceServers,
-    std::vector<NrIceStunServer>* aStunServers,
-    std::vector<NrIceTurnServer>* aTurnServers) {
-  for (const auto& iceServer : aIceServers) {
-    NS_ENSURE_STATE(iceServer.mUrls.WasPassed());
-    NS_ENSURE_STATE(iceServer.mUrls.Value().IsStringSequence());
-    for (const auto& iceUrl : iceServer.mUrls.Value().GetAsStringSequence()) {
-      nsresult rv =
-          addNrIceServer(iceUrl, iceServer, aStunServers, aTurnServers);
-      if (NS_FAILED(rv)) {
-        CSFLogError(LOGTAG, "%s: invalid STUN/TURN server: %s", __FUNCTION__,
-                    NS_ConvertUTF16toUTF8(iceUrl).get());
-        return rv;
+    if (entry.mUri.IsTurn()) {
+      std::vector<unsigned char> password(entry.mPassword.BeginReading(),
+                                          entry.mPassword.EndReading());
+      UniquePtr<NrIceTurnServer> server(NrIceTurnServer::Create(
+          entry.mUri.mHost.get(), entry.mUri.mPort,
+          std::string(entry.mUsername.get()), password, transport));
+      if (!server) {
+        CSFLogError(LOGTAG, "%s: failed to create NrIceTurnServer",
+                    __FUNCTION__);
+        continue;
       }
+      if (server->HasFqdn()) {
+        aTurnServersOut->push_back(*server);
+        server->SetUseIPv6IfFqdn();
+      }
+      aTurnServersOut->emplace_back(std::move(*server));
+    } else {
+      UniquePtr<NrIceStunServer> server(NrIceStunServer::Create(
+          entry.mUri.mHost.get(), entry.mUri.mPort, transport));
+      if (!server) {
+        CSFLogError(LOGTAG, "%s: failed to create NrIceStunServer",
+                    __FUNCTION__);
+        continue;
+      }
+      if (server->HasFqdn()) {
+        aStunServersOut->push_back(*server);
+        server->SetUseIPv6IfFqdn();
+      }
+      aStunServersOut->emplace_back(std::move(*server));
     }
   }
-
-  return NS_OK;
 }
 
 static NrIceCtx::GlobalConfig GetGlobalConfig() {
@@ -610,16 +495,21 @@ void MediaTransportHandlerSTS::CreateIceCtx(const std::string& aName) {
       });
 }
 
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+
 nsresult MediaTransportHandlerSTS::SetIceConfig(
     const nsTArray<dom::RTCIceServer>& aIceServers,
     dom::RTCIceTransportPolicy aIcePolicy) {
-  
+  auto result = IceServerParser::Parse(aIceServers);
+  if (result.isErr()) {
+    
+    result.unwrapErr().SuppressException();
+    return NS_ERROR_FAILURE;
+  }
+
   std::vector<NrIceStunServer> stunServers;
   std::vector<NrIceTurnServer> turnServers;
-  nsresult rv = ConvertIceServers(aIceServers, &stunServers, &turnServers);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  ConvertIceServerEntries(result.unwrap(), &stunServers, &turnServers);
 
   MOZ_RELEASE_ASSERT(mInitPromise);
 
