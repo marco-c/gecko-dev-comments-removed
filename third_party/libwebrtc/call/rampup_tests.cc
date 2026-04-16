@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/field_trials_view.h"
 #include "api/make_ref_counted.h"
@@ -43,7 +44,6 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/string_encode.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "test/call_test.h"
@@ -278,10 +278,10 @@ void RampUpTester::ModifyFlexfecConfigs(
   RTC_DCHECK_EQ(1, num_flexfec_streams_);
   (*receive_configs)[0].payload_type =
       test::VideoTestConstants::kFlexfecPayloadType;
-  (*receive_configs)[0].rtp.remote_ssrc =
+  (*receive_configs)[0].remote_ssrc =
       test::VideoTestConstants::kFlexfecSendSsrc;
   (*receive_configs)[0].protected_media_ssrcs = {video_ssrcs_[0]};
-  (*receive_configs)[0].rtp.local_ssrc = video_ssrcs_[0];
+  (*receive_configs)[0].local_ssrc = video_ssrcs_[0];
 }
 
 void RampUpTester::OnCallsCreated(Call* sender_call,
