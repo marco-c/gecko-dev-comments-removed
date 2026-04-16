@@ -13,8 +13,6 @@
 namespace mozilla {
 class ServoStyleSet;
 namespace dom {
-enum class FontFaceLoadedRejectReason : uint8_t;
-class FontFace;
 class FontFaceSet;
 class FontFaceSetImpl;
 }  
@@ -36,23 +34,6 @@ namespace mozilla {
 
 class PostTraversalTask {
  public:
-  static PostTraversalTask ResolveFontFaceLoadedPromise(
-      dom::FontFace* aFontFace) {
-    auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
-    task.mTarget = aFontFace;
-    return task;
-  }
-
-  static PostTraversalTask RejectFontFaceLoadedPromise(
-      dom::FontFace* aFontFace, dom::FontFaceLoadedRejectReason aReason,
-      nsCString&& aMessage) {
-    auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
-    task.mTarget = aFontFace;
-    task.mResult.emplace(aReason);
-    task.mMessage = std::move(aMessage);
-    return task;
-  }
-
   static PostTraversalTask DispatchLoadingEventAndReplaceReadyPromise(
       dom::FontFaceSet* aFontFaceSet) {
     auto task =
@@ -61,29 +42,9 @@ class PostTraversalTask {
     return task;
   }
 
-  static PostTraversalTask DispatchFontFaceSetCheckLoadingFinishedAfterDelay(
-      dom::FontFaceSetImpl* aFontFaceSet) {
-    auto task = PostTraversalTask(
-        Type::DispatchFontFaceSetCheckLoadingFinishedAfterDelay);
-    task.mTarget = aFontFaceSet;
-    return task;
-  }
-
   static PostTraversalTask LoadFontEntry(gfxUserFontEntry* aFontEntry) {
     auto task = PostTraversalTask(Type::LoadFontEntry);
     task.mTarget = aFontEntry;
-    return task;
-  }
-
-  static PostTraversalTask InitializeFamily(fontlist::Family* aFamily) {
-    auto task = PostTraversalTask(Type::InitializeFamily);
-    task.mTarget = aFamily;
-    return task;
-  }
-
-  static PostTraversalTask FontInfoUpdate(ServoStyleSet* aSet) {
-    auto task = PostTraversalTask(Type::FontInfoUpdate);
-    task.mTarget = aSet;
     return task;
   }
 
@@ -95,34 +56,16 @@ class PostTraversalTask {
   
   enum class Type {
     
-    ResolveFontFaceLoadedPromise,
-
-    
-    
-    RejectFontFaceLoadedPromise,
-
-    
     DispatchLoadingEventAndReplaceReadyPromise,
 
     
-    DispatchFontFaceSetCheckLoadingFinishedAfterDelay,
-
-    
     LoadFontEntry,
-
-    
-    InitializeFamily,
-
-    
-    FontInfoUpdate,
   };
 
   explicit PostTraversalTask(Type aType) : mType(aType) {}
 
   const Type mType;
   void* mTarget = nullptr;
-  nsCString mMessage;
-  Maybe<dom::FontFaceLoadedRejectReason> mResult;
 };
 
 }  
