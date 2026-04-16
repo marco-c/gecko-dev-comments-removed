@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_EventStateManager_h_
 #define mozilla_EventStateManager_h_
 
@@ -298,6 +296,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   bool SetContentState(nsIContent* aContent, ElementState aState);
 
   nsIContent* GetActiveContent() const { return mActiveContent; }
+
+  void SetLinkOverFrame(nsIFrame* aFrame) { mLinkOverFrame = aFrame; }
 
   void NativeAnonymousContentRemoved(nsIContent* aAnonContent);
   void ContentInserted(nsIContent* aChild, const ContentInsertInfo& aInfo);
@@ -1394,6 +1394,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   static nsCOMPtr<nsIContent> sDragOverContent;
   nsCOMPtr<nsIContent> mURLTargetContent;
   nsCOMPtr<nsINode> mPopoverPointerDownTarget;
+
+  
+  
+  WeakFrame mLinkOverFrame;
 
   nsPresContext* mPresContext;      
   RefPtr<dom::Document> mDocument;  
