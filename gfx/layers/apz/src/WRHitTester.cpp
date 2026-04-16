@@ -125,7 +125,7 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       
       
       layersIdExists =
-          CompositorBridgeParent::HasIndirectShadowTree(result.mLayersId);
+          CompositorBridgeParent::HasLayerTreeState(result.mLayersId);
       if (FissionAutostart()) {
         MOZ_ASSERT(result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID ||
                    !layersIdExists);

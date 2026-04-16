@@ -442,19 +442,19 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
 
 
-  static LayerTreeState* GetIndirectShadowTree(LayersId aId);
+  static LayerTreeState* GetLayerTreeState(LayersId aId);
 
   
 
 
 
-  static bool HasIndirectShadowTree(LayersId aId);
+  static bool HasLayerTreeState(LayersId aId);
 
   
 
 
 
-  static bool CallWithIndirectShadowTree(
+  static bool CallWithLayerTreeState(
       LayersId aId, const std::function<void(LayerTreeState&)>& aFunc);
 
   
@@ -548,7 +548,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
 
 
-  static LayerTreeState* GetIndirectShadowTreeInternal(LayersId aId);
+  static LayerTreeState* GetLayerTreeStateInternal(LayersId aId);
 
   void Initialize();
 
