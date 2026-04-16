@@ -1374,6 +1374,7 @@ const ProtonScreenActionButtons = props => {
     addonType,
     addonName,
     activeMultiSelect,
+    activeSingleSelectSelections,
     textInputs,
     installedAddons
   } = props;
@@ -1408,6 +1409,14 @@ const ProtonScreenActionButtons = props => {
         }
       }
       return true;
+    }
+    
+    
+    if (disabledValue === "hasActiveSingleSelect") {
+      if (!activeSingleSelectSelections) {
+        return true;
+      }
+      return !Object.values(activeSingleSelectSelections).some(val => val && val !== "none");
     }
     if (disabledValue === "hasTextInput") {
       
@@ -1788,6 +1797,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       addonType: this.props.addonType,
       handleAction: this.props.handleAction,
       activeMultiSelect: this.props.activeMultiSelect,
+      activeSingleSelectSelections: this.props.activeSingleSelectSelections,
       textInputs: this.props.textInputs
     }) : null;
   }
