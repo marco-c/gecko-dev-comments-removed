@@ -49,25 +49,27 @@ class EglDrmDevice {
 
   EglDrmDevice(EGLDisplay display, dev_t device_id = DEVICE_ID_INVALID);
   EglDrmDevice(std::string render_node, dev_t device_id = DEVICE_ID_INVALID);
-
-  ~EglDrmDevice();
+  virtual ~EglDrmDevice();
 
   bool EnsureInitialized();
   bool IsInitialized() const { return initialized_; }
   dev_t GetDeviceId() const { return device_id_; }
 
-  bool ImageFromDmaBuf(const DesktopSize& size,
-                       uint32_t format,
-                       const std::vector<PlaneData>& plane_datas,
-                       uint64_t modifiers,
-                       const DesktopVector& offset,
-                       const DesktopSize& buffer_size,
-                       uint8_t* data);
-  std::vector<uint64_t> QueryDmaBufModifiers(uint32_t format);
+  virtual bool ImageFromDmaBuf(const DesktopSize& size,
+                               uint32_t format,
+                               const std::vector<PlaneData>& plane_datas,
+                               uint64_t modifiers,
+                               const DesktopVector& offset,
+                               const DesktopSize& buffer_size,
+                               uint8_t* data);
+  virtual std::vector<uint64_t> QueryDmaBufModifiers(uint32_t format);
 
   void MarkModifierFailed(uint32_t format, uint64_t modifier);
+  void MarkModifierFailed(uint64_t modifier);
 
  private:
+  friend class TestEglDrmDevice;
+
   EGLStruct egl_;
   bool initialized_ = false;
   bool has_image_dma_buf_import_ext_ = false;
@@ -97,10 +99,13 @@ class EglDrmDevice {
       RTC_GUARDED_BY(failed_modifiers_lock_);
 };
 
+
+
+
 class EglDmaBuf {
  public:
-  EglDmaBuf();
-  ~EglDmaBuf() = default;
+  static std::unique_ptr<EglDmaBuf> CreateDefault();
+  virtual ~EglDmaBuf() = default;
 
   
   
@@ -118,7 +123,16 @@ class EglDmaBuf {
 
   bool SetPreferredRenderDevice(dev_t device_id);
 
+ protected:
+  EglDmaBuf() = default;
+
+  
+  
+  virtual bool Initialize();
+
  private:
+  friend class TestEglDmaBuf;
+
   bool CreatePlatformDevice();
   void EnumerateDrmDevices();
 
