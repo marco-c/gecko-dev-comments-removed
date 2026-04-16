@@ -8,6 +8,7 @@
 #include <queue>
 
 #include "mozilla/layers/TextureHost.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "Units.h"
 
@@ -31,30 +32,26 @@ class AsyncImagePipelineOp {
 
   const Tag mTag;
 
-  AsyncImagePipelineManager* const mAsyncImageManager;
+  
+  
+  
+  const RefPtr<AsyncImagePipelineManager> mAsyncImageManager;
   const wr::PipelineId mPipelineId;
   const CompositableTextureHostRef mTextureHost;
 
- private:
-  AsyncImagePipelineOp(const Tag aTag,
-                       AsyncImagePipelineManager* aAsyncImageManager,
-                       const wr::PipelineId& aPipelineId,
-                       TextureHost* aTextureHost)
-      : mTag(aTag),
-        mAsyncImageManager(aAsyncImageManager),
-        mPipelineId(aPipelineId),
-        mTextureHost(aTextureHost) {
-    MOZ_ASSERT(mTag == Tag::ApplyAsyncImageForPipeline);
-  }
+  
+  
+  ~AsyncImagePipelineOp();
+  AsyncImagePipelineOp(AsyncImagePipelineOp&&);
+  AsyncImagePipelineOp(const AsyncImagePipelineOp&);
 
-  AsyncImagePipelineOp(const Tag aTag,
-                       AsyncImagePipelineManager* aAsyncImageManager,
-                       const wr::PipelineId& aPipelineId)
-      : mTag(aTag),
-        mAsyncImageManager(aAsyncImageManager),
-        mPipelineId(aPipelineId) {
-    MOZ_ASSERT(mTag == Tag::RemoveAsyncImagePipeline);
-  }
+ private:
+  AsyncImagePipelineOp(Tag aTag, AsyncImagePipelineManager* aAsyncImageManager,
+                       const wr::PipelineId& aPipelineId,
+                       TextureHost* aTextureHost);
+
+  AsyncImagePipelineOp(Tag aTag, AsyncImagePipelineManager* aAsyncImageManager,
+                       const wr::PipelineId& aPipelineId);
 
  public:
   static AsyncImagePipelineOp ApplyAsyncImageForPipeline(
@@ -75,6 +72,9 @@ class AsyncImagePipelineOp {
 struct AsyncImagePipelineOps {
   explicit AsyncImagePipelineOps(wr::Transaction* aTransaction)
       : mTransaction(aTransaction) {}
+  
+  
+  ~AsyncImagePipelineOps();
 
   void HandleOps(wr::TransactionBuilder& aTxn);
 
