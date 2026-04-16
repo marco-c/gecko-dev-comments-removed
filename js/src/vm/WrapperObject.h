@@ -23,6 +23,16 @@ class CrossCompartmentWrapperObject : public WrapperObject {
   static const unsigned GrayLinkReservedSlot = 1;
 };
 
+extern void NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper);
+extern void RemapWrapper(JSContext* cx, JSObject* wobj, JSObject* newTarget);
+extern void RemapDeadWrapper(JSContext* cx, JS::HandleObject wobj,
+                             JS::HandleObject newTarget);
+
+
+
+extern void NukeRemovedCrossCompartmentWrapper(JSContext* cx,
+                                               JSObject* wrapper);
+
 }  
 
 template <>

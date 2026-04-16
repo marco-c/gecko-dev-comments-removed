@@ -56,6 +56,7 @@
 #include "js/UbiNodeUtils.h"
 #include "js/friend/UsageStatistics.h"  
 #include "js/friend/WindowProxy.h"  
+#include "js/friend/Wrapper.h"      
 #include "js/friend/XrayJitInfo.h"  
 #include "js/Utility.h"             
 #include "mozilla/dom/AbortSignalBinding.h"

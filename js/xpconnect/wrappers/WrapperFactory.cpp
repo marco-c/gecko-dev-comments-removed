@@ -15,6 +15,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "jsfriendapi.h"
 #include "js/friend/WindowProxy.h"  
+#include "js/friend/Wrapper.h"      
 #include "js/Object.h"              
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"

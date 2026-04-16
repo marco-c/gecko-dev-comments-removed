@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "builtin/FinalizationRegistryObject.h"
 #include "debugger/Debugger.h"
 #include "gc/GC.h"
@@ -356,8 +354,7 @@ bool CrossCompartmentWrapper::boxedValue_unbox(JSContext* cx,
 
 const CrossCompartmentWrapper CrossCompartmentWrapper::singleton(0u);
 
-JS_PUBLIC_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
-                                                   JSObject* wrapper) {
+void js::NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper) {
   JS::Compartment* comp = wrapper->compartment();
   auto ptr = comp->lookupWrapper(Wrapper::wrappedObject(wrapper));
   if (ptr) {
