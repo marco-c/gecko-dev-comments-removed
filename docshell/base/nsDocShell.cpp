@@ -10929,7 +10929,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 nsresult nsDocShell::UpdateURLAndHistory(
     Document* aDocument, nsIURI* aNewURI, nsIStructuredCloneContainer* aData,
     NavigationHistoryBehavior aHistoryHandling, nsIURI* aCurrentURI,
-    bool aEqualURIs) {
+    bool aEqualURIs, bool aFiredNavigateEvent) {
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "UpdateURLAndHistory {}",
               aHistoryHandling);
 
@@ -11074,7 +11074,8 @@ nsresult nsDocShell::UpdateURLAndHistory(
     
     navigation->UpdateEntriesForSameDocumentNavigation(
         mActiveEntry.get(),
-        isReplace ? NavigationType::Replace : NavigationType::Push);
+        isReplace ? NavigationType::Replace : NavigationType::Push,
+        aFiredNavigateEvent);
   }
 
   return NS_OK;
@@ -12020,7 +12021,7 @@ nsresult nsDocShell::OnLinkClick(
     return NS_OK;
   }
 
-  Document* ownerDoc = aContent->OwnerDoc();
+  RefPtr<Document> ownerDoc = aContent->OwnerDoc();
   if (nsContentUtils::IsExternalProtocol(aURI)) {
     ownerDoc->EnsureNotEnteringAndExitFullscreen();
   }
