@@ -59,7 +59,6 @@ add_task(async function () {
     1,
     true
   );
-  const onPlaybackRateSet = animations.setPlaybackRates([animationPlayer], 10);
 
   await onPause;
   ok(true, "pauseSome succeeded");
@@ -69,9 +68,6 @@ add_task(async function () {
 
   await onCurrentTimeSet;
   ok(true, "setCurrentTimes succedded");
-
-  await onPlaybackRateSet;
-  ok(true, "setPlaybackRates succedded");
 
   
   await wait(500);

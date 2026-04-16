@@ -6,7 +6,7 @@
 
 const {
   ANIMATION_TYPES,
-  AnimationPlayerActor,
+  AnimationActor,
 } = require("resource://devtools/server/actors/animation.js");
 
 function run_test() {
@@ -70,7 +70,7 @@ function run_test() {
 
   for (const { desc, animation, expectedType } of TEST_DATA) {
     info(desc);
-    const actor = new AnimationPlayerActor({}, animation);
+    const actor = new AnimationActor({}, animation);
     Assert.equal(actor.getType(), expectedType);
   }
 }

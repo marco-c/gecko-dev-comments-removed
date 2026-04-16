@@ -97,6 +97,7 @@ const animationsSpec = generateActorSpec({
       },
       response: {},
     },
+    
     setPlaybackRates: {
       request: {
         players: Arg(0, "array:animationplayer"),

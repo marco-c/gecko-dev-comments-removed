@@ -6,7 +6,7 @@
 
 
 const {
-  AnimationPlayerActor,
+  AnimationActor,
 } = require("resource://devtools/server/actors/animation.js");
 
 function run_test() {
@@ -91,7 +91,7 @@ function run_test() {
     for (const key in props) {
       animation[key] = props[key];
     }
-    const actor = new AnimationPlayerActor({}, animation);
+    const actor = new AnimationActor({}, animation);
     Assert.equal(actor.getName(), expectedName);
   }
 }

@@ -21,10 +21,6 @@
 
 
 
-
-
-
-
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   animationPlayerSpec,
@@ -74,23 +70,34 @@ exports.getAnimationTypeForLonghand = getAnimationTypeForLonghand;
 
 
 
+function getAnimationBrowsingContextPlayBackRateMultiplier(animation) {
+  return animation.effect.target.ownerGlobal.browsingContext
+    .animationsPlayBackRateMultiplier;
+}
 
 
 
-class AnimationPlayerActor extends Actor {
+
+
+
+
+
+
+
+class AnimationActor extends Actor {
   
 
 
 
 
-  constructor(animationsActor, player, createdTime) {
+  constructor(animationsActor, animation, createdTime) {
     super(animationsActor.conn, animationPlayerSpec);
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
 
     this.animationsActor = animationsActor;
     this.walker = animationsActor.walker;
-    this.player = player;
+    this.animation = animation;
     
     
     this.node = this.getNode();
@@ -103,7 +110,7 @@ class AnimationPlayerActor extends Actor {
       
       
       
-      this.observer.observe(this.player.effect.target, {
+      this.observer.observe(this.animation.effect.target, {
         animations: true,
         subtree: true,
       });
@@ -112,7 +119,7 @@ class AnimationPlayerActor extends Actor {
     }
 
     this.createdTime = createdTime;
-    this.currentTimeAtCreated = player.currentTime;
+    this.currentTimeAtCreated = animation.currentTime;
   }
 
   destroy() {
@@ -121,21 +128,21 @@ class AnimationPlayerActor extends Actor {
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
-    this.player = this.observer = this.walker = this.animationsActor = null;
+    this.animation = this.observer = this.walker = this.animationsActor = null;
 
     super.destroy();
   }
 
   get isPseudoElement() {
-    return !!this.player.effect.pseudoElement;
+    return !!this.animation.effect.pseudoElement;
   }
 
   getNode() {
     if (!this.isPseudoElement) {
-      return this.player.effect.target;
+      return this.animation.effect.target;
     }
 
-    const originatingElem = this.player.effect.target;
+    const originatingElem = this.animation.effect.target;
     const treeWalker = this.walker.getDocumentWalker(originatingElem);
 
     
@@ -151,20 +158,20 @@ class AnimationPlayerActor extends Actor {
         continue;
       }
 
-      if (this.player.effect.pseudoElement === getNodeDisplayName(next)) {
+      if (this.animation.effect.pseudoElement === getNodeDisplayName(next)) {
         return next;
       }
     }
 
     console.warn(
-      `Pseudo element ${this.player.effect.pseudoElement} is not found`
+      `Pseudo element ${this.animation.effect.pseudoElement} is not found`
     );
 
     return null;
   }
 
   get document() {
-    return this.player.effect.target.ownerDocument;
+    return this.animation.effect.target.ownerDocument;
   }
 
   get window() {
@@ -190,20 +197,20 @@ class AnimationPlayerActor extends Actor {
     return data;
   }
 
-  isCssAnimation(player = this.player) {
-    return this.window.CSSAnimation.isInstance(player);
+  isCssAnimation(animation = this.animation) {
+    return this.window.CSSAnimation.isInstance(animation);
   }
 
-  isCssTransition(player = this.player) {
-    return this.window.CSSTransition.isInstance(player);
+  isCssTransition(animation = this.animation) {
+    return this.window.CSSTransition.isInstance(animation);
   }
 
-  isScriptAnimation(player = this.player) {
+  isScriptAnimation(animation = this.animation) {
     return (
-      this.window.Animation.isInstance(player) &&
+      this.window.Animation.isInstance(animation) &&
       !(
-        this.window.CSSAnimation.isInstance(player) ||
-        this.window.CSSTransition.isInstance(player)
+        this.window.CSSAnimation.isInstance(animation) ||
+        this.window.CSSTransition.isInstance(animation)
       )
     );
   }
@@ -228,12 +235,12 @@ class AnimationPlayerActor extends Actor {
 
 
   getName() {
-    if (this.player.id) {
-      return this.player.id;
+    if (this.animation.id) {
+      return this.animation.id;
     } else if (this.isCssAnimation()) {
-      return this.player.animationName;
+      return this.animation.animationName;
     } else if (this.isCssTransition()) {
-      return this.player.transitionProperty;
+      return this.animation.transitionProperty;
     }
 
     return "";
@@ -245,7 +252,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getDuration() {
-    return this.player.effect.getComputedTiming().duration;
+    return this.animation.effect.getComputedTiming().duration;
   }
 
   
@@ -254,7 +261,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getDelay() {
-    return this.player.effect.getComputedTiming().delay;
+    return this.animation.effect.getComputedTiming().delay;
   }
 
   
@@ -263,7 +270,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getEndDelay() {
-    return this.player.effect.getComputedTiming().endDelay;
+    return this.animation.effect.getComputedTiming().endDelay;
   }
 
   
@@ -274,7 +281,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getIterationCount() {
-    const iterations = this.player.effect.getComputedTiming().iterations;
+    const iterations = this.animation.effect.getComputedTiming().iterations;
     return iterations === Infinity ? null : iterations;
   }
 
@@ -285,7 +292,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getIterationStart() {
-    return this.player.effect.getComputedTiming().iterationStart;
+    return this.animation.effect.getComputedTiming().iterationStart;
   }
 
   
@@ -294,7 +301,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getEasing() {
-    return this.player.effect.getComputedTiming().easing;
+    return this.animation.effect.getComputedTiming().easing;
   }
 
   
@@ -303,7 +310,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getFill() {
-    return this.player.effect.getComputedTiming().fill;
+    return this.animation.effect.getComputedTiming().fill;
   }
 
   
@@ -312,7 +319,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getDirection() {
-    return this.player.effect.getComputedTiming().direction;
+    return this.animation.effect.getComputedTiming().direction;
   }
 
   
@@ -325,13 +332,13 @@ class AnimationPlayerActor extends Actor {
       return null;
     }
 
-    const { target, pseudoElement } = this.player.effect;
+    const { target, pseudoElement } = this.animation.effect;
     return this.window.getComputedStyle(target, pseudoElement)
       .animationTimingFunction;
   }
 
   getPropertiesCompositorStatus() {
-    const properties = this.player.effect.getProperties();
+    const properties = this.animation.effect.getProperties();
     return properties.map(prop => {
       return {
         property: prop.property,
@@ -348,6 +355,7 @@ class AnimationPlayerActor extends Actor {
 
   getState() {
     const compositorStatus = this.getPropertiesCompositorStatus();
+
     
     
     
@@ -357,10 +365,13 @@ class AnimationPlayerActor extends Actor {
       
       type: this.animationRemoved ? null : this.getType(),
       
-      startTime: this.player.startTime,
-      currentTime: this.player.currentTime,
-      playState: this.player.playState,
-      playbackRate: this.player.playbackRate,
+      startTime: this.animation.startTime,
+      currentTime: this.animation.currentTime,
+      playState: this.animation.playState,
+      playbackRate: this.animation.playbackRate,
+      playBackRateMultiplier: getAnimationBrowsingContextPlayBackRateMultiplier(
+        this.animation
+      ),
       name: this.getName(),
       duration: this.getDuration(),
       delay: this.getDelay(),
@@ -429,7 +440,7 @@ class AnimationPlayerActor extends Actor {
 
 
   onAnimationMutation(mutations) {
-    const isCurrentAnimation = animation => animation === this.player;
+    const isCurrentAnimation = animation => animation === this.animation;
     const hasCurrentAnimation = animations =>
       animations.some(isCurrentAnimation);
     let hasChanged = false;
@@ -458,7 +469,8 @@ class AnimationPlayerActor extends Actor {
           newState.fill !== oldState.fill ||
           newState.animationTimingFunction !==
             oldState.animationTimingFunction ||
-          newState.playbackRate !== oldState.playbackRate;
+          newState.playbackRate !== oldState.playbackRate ||
+          newState.playBackRateMultiplier !== oldState.playBackRateMultiplier;
         break;
       }
     }
@@ -479,7 +491,7 @@ class AnimationPlayerActor extends Actor {
 
 
   getProperties() {
-    const properties = this.player.effect.getProperties().map(property => {
+    const properties = this.animation.effect.getProperties().map(property => {
       return { name: property.property, values: property.values };
     });
 
@@ -502,7 +514,7 @@ class AnimationPlayerActor extends Actor {
           return;
         }
         if (!underlyingValue) {
-          const { target, pseudoElement } = this.player.effect;
+          const { target, pseudoElement } = this.animation.effect;
           const value = DOMWindowUtils.getUnanimatedComputedStyle(
             target,
             pseudoElement,
@@ -616,7 +628,7 @@ class AnimationPlayerActor extends Actor {
   }
 }
 
-exports.AnimationPlayerActor = AnimationPlayerActor;
+exports.AnimationActor = AnimationActor;
 
 
 
@@ -640,7 +652,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     this.targetActor.off("will-navigate", this.onWillNavigate);
     this.targetActor.off("navigate", this.onNavigate);
 
-    this.stopAnimationPlayerUpdates();
+    this.stopAnimationsUpdates();
     this.targetActor = this.observer = this.actors = this.walker = null;
   }
 
@@ -691,7 +703,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
     for (const animation of animations) {
       const createdTime = this.getCreatedTime(animation);
-      const actor = new AnimationPlayerActor(this, animation, createdTime);
+      const actor = new AnimationActor(this, animation, createdTime);
       this.actors.push(actor);
     }
 
@@ -699,7 +711,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     
     
     
-    this.stopAnimationPlayerUpdates();
+    this.stopAnimationsUpdates();
     
     
     const win = rawNode.ownerDocument.defaultView;
@@ -743,18 +755,18 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     const readyPromises = [];
 
     for (const { addedAnimations, removedAnimations } of mutations) {
-      for (const player of removedAnimations) {
+      for (const animation of removedAnimations) {
         
         
         
         
         
         
-        if (player.playState !== "idle") {
+        if (animation.playState !== "idle") {
           continue;
         }
 
-        const index = this.actors.findIndex(a => a.player === player);
+        const index = this.actors.findIndex(a => a.animation === animation);
         if (index !== -1) {
           eventData.push({
             type: "removed",
@@ -765,10 +777,10 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
         }
       }
 
-      for (const player of addedAnimations) {
+      for (const animation of addedAnimations) {
         
         
-        if (this.actors.find(a => a.player === player)) {
+        if (this.actors.find(a => a.animation === animation)) {
           continue;
         }
 
@@ -776,15 +788,15 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
         
         
         const index = this.actors.findIndex(a => {
-          const isSameType = a.player.constructor === player.constructor;
+          const isSameType = a.animation.constructor === animation.constructor;
           const isSameName =
             (a.isCssAnimation() &&
-              a.player.animationName === player.animationName) ||
+              a.animation.animationName === animation.animationName) ||
             (a.isCssTransition() &&
-              a.player.transitionProperty === player.transitionProperty);
+              a.animation.transitionProperty === animation.transitionProperty);
           const isSameNode =
-            a.player.effect.target === player.effect.target &&
-            a.player.effect.pseudoElement === player.effect.pseudoElement;
+            a.animation.effect.target === animation.effect.target &&
+            a.animation.effect.pseudoElement === animation.effect.pseudoElement;
 
           return isSameType && isSameNode && isSameName;
         });
@@ -797,14 +809,14 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
           this.actors.splice(index, 1);
         }
 
-        const createdTime = this.getCreatedTime(player);
-        const actor = new AnimationPlayerActor(this, player, createdTime);
+        const createdTime = this.getCreatedTime(animation);
+        const actor = new AnimationActor(this, animation, createdTime);
         this.actors.push(actor);
         eventData.push({
           type: "added",
           player: actor,
         });
-        readyPromises.push(player.ready);
+        readyPromises.push(animation.ready);
       }
     }
 
@@ -822,7 +834,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
-  stopAnimationPlayerUpdates() {
+  stopAnimationsUpdates() {
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
@@ -830,7 +842,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
   onWillNavigate({ isTopLevel }) {
     if (isTopLevel) {
-      this.stopAnimationPlayerUpdates();
+      this.stopAnimationsUpdates();
     }
   }
 
@@ -855,7 +867,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
       if (!this.actors.includes(actor)) {
         continue;
       }
-      this.pauseSync(actor.player);
+      this.pauseSync(actor.animation);
       handledActors.push(actor);
     }
 
@@ -877,7 +889,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
       if (!this.actors.includes(actor)) {
         continue;
       }
-      this.playSync(actor.player);
+      this.playSync(actor.animation);
       handledActors.push(actor);
     }
 
@@ -901,17 +913,20 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
       if (!this.actors.includes(actor)) {
         continue;
       }
-      const player = actor.player;
+      const animation = actor.animation;
 
       if (shouldPause) {
-        player.startTime = null;
+        animation.startTime = null;
       }
 
       const currentTime =
-        player.playbackRate > 0
+        animation.playbackRate > 0
           ? time - actor.createdTime
           : actor.createdTime - time;
-      player.currentTime = currentTime * Math.abs(player.playbackRate);
+      const multiplier =
+        animation.playbackRate *
+        getAnimationBrowsingContextPlayBackRateMultiplier(animation);
+      animation.currentTime = currentTime * Math.abs(multiplier);
       handledActors.push(actor);
     }
 
@@ -923,21 +938,8 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
-
-  setPlaybackRates(actors, rate) {
-    const readyPromises = [];
-    for (const actor of actors) {
-      
-      
-      
-      
-      if (!this.actors.includes(actor)) {
-        continue;
-      }
-      actor.player.updatePlaybackRate(rate);
-      readyPromises.push(actor.player.ready);
-    }
-    return Promise.all(readyPromises);
+  pauseSync(animation) {
+    animation.startTime = null;
   }
 
   
@@ -945,25 +947,19 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
-  pauseSync(player) {
-    player.startTime = null;
-  }
-
-  
-
-
-
-
-  playSync(player) {
-    if (!player.playbackRate) {
+  playSync(animation) {
+    if (!animation.playbackRate) {
       
       return;
     }
 
     
-    const currentTime = player.currentTime || 0;
-    player.startTime =
-      player.timeline.currentTime - currentTime / player.playbackRate;
+    const currentTime = animation.currentTime || 0;
+    const multiplier =
+      animation.playbackRate *
+      getAnimationBrowsingContextPlayBackRateMultiplier(animation);
+    animation.startTime =
+      animation.timeline.currentTime - currentTime / multiplier;
   }
 
   
@@ -972,10 +968,13 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
   getCreatedTime(animation) {
+    const multiplier =
+      animation.playbackRate *
+      getAnimationBrowsingContextPlayBackRateMultiplier(animation);
+
     return (
       animation.startTime ||
-      animation.timeline.currentTime -
-        animation.currentTime / animation.playbackRate
+      animation.timeline.currentTime - animation.currentTime / multiplier
     );
   }
 

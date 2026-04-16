@@ -49,6 +49,11 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
       currentTime: this._form.currentTime,
       playState: this._form.playState,
       playbackRate: this._form.playbackRate,
+      playBackRateMultiplier:
+        
+        
+        
+        this._form.playBackRateMultiplier || 1,
       name: this._form.name,
       duration: this._form.duration,
       delay: this._form.delay,
@@ -128,9 +133,12 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
       fill,
       iterationCount,
       playbackRate,
+      playBackRateMultiplier = 1,
     } = data;
 
-    const toRate = v => v / Math.abs(playbackRate);
+    const multiplier = playbackRate * playBackRateMultiplier;
+
+    const toRate = v => v / Math.abs(multiplier);
     const isPositivePlaybackRate = playbackRate > 0;
     let absoluteDelay = 0;
     let absoluteEndDelay = 0;
