@@ -32,7 +32,14 @@ from . import util
 
 
 
-SUPPORTED_METRIC_TYPES = ["string", "quantity", "event", "datetime", "boolean", "string_list"]
+SUPPORTED_METRIC_TYPES = [
+    "string",
+    "quantity",
+    "event",
+    "datetime",
+    "boolean",
+    "string_list",
+]
 
 
 def generate_ping_type_name(ping_name: str) -> str:
