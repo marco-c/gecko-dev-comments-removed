@@ -4877,6 +4877,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     }
 
     mCtx->EnsureTarget();
+    const bool needBounds = mCtx->NeedToCalculateBounds();
     if (!mCtx->IsTargetValid()) {
       return;
     }
@@ -4891,7 +4892,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     const ContextState& state = mCtx->CurrentState();
 
     gfx::Rect bounds;
-    if (mCtx->NeedToCalculateBounds()) {
+    if (needBounds) {
       bounds = ToRect(mBoundingBox);
       bounds.MoveBy(mPt / mAppUnitsPerDevPixel);
       if (style == Style::STROKE) {
@@ -5414,53 +5415,58 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
     visProvider = mOffscreenCanvas;
   }
 
-  
-  
-  RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
   if (ResolveFontLang()) {
-    fontGroup = nullptr;
-  }
-  if (fontGroup) {
-    if (fontGroup->GetFontVisibilityProvider() != visProvider) {
+    
+    CurrentState().fontGroup = nullptr;
+  } else {
+    
+    
+    RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
+    if (fontGroup && fontGroup->GetFontVisibilityProvider() != visProvider) {
       fontGroup = nullptr;
     }
-  }
-
-  if (!fontGroup) {
-    ErrorResult err;
-    constexpr auto kDefaultFontStyle = "10px sans-serif"_ns;
-    const float kDefaultFontSize = 10.0;
-    
-    
-    
-    const nsCString& currentFont = CurrentState().font;
-    bool fontUpdated = SetFontInternal(
-        currentFont.IsEmpty() ? kDefaultFontStyle : currentFont, err);
-    if (err.Failed() || !fontUpdated) {
-      err.SuppressException();
-      
-      nsAtom* language = nsGkAtoms::x_western;
-      bool explicitLanguage = false;
-      gfxFontStyle style;
-      style.size = kDefaultFontSize;
-      int32_t perDevPixel, perCSSPixel;
-      GetAppUnitsValues(&perDevPixel, &perCSSPixel);
-      gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
-      const auto* sans =
-          Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
-      fontGroup = new gfxFontGroup(
-          visProvider, sans->families, &style, language, explicitLanguage,
-          presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
-          devToCssSize, StyleFontVariantEmoji::Normal);
-      if (fontGroup) {
-        CurrentState().font = kDefaultFontStyle;
-      } else {
-        NS_ERROR("Default canvas font is invalid");
-      }
+    if (fontGroup) {
+      return fontGroup;
     }
   }
 
-  return fontGroup;
+  ErrorResult err;
+  constexpr auto kDefaultFontStyle = "10px sans-serif"_ns;
+  const float kDefaultFontSize = 10.0;
+  
+  
+  
+  
+  
+  
+  nsAutoCString currentFont(CurrentState().font);
+  if (currentFont.IsEmpty()) {
+    currentFont = kDefaultFontStyle;
+  }
+  if (!SetFontInternal(currentFont, err) || err.Failed()) {
+    err.SuppressException();
+    
+    nsAtom* language = nsGkAtoms::x_western;
+    bool explicitLanguage = false;
+    gfxFontStyle style;
+    style.size = kDefaultFontSize;
+    int32_t perDevPixel, perCSSPixel;
+    GetAppUnitsValues(&perDevPixel, &perCSSPixel);
+    gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
+    const auto* sans =
+        Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
+    CurrentState().fontGroup = new gfxFontGroup(
+        visProvider, sans->families, &style, language, explicitLanguage,
+        presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
+        devToCssSize, StyleFontVariantEmoji::Normal);
+    if (CurrentState().fontGroup) {
+      CurrentState().font = kDefaultFontStyle;
+    } else {
+      NS_ERROR("Default canvas font is invalid");
+    }
+  }
+
+  return CurrentState().fontGroup;
 }
 
 
