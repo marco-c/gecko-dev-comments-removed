@@ -986,10 +986,14 @@ void js::gc::PerformIncrementalPreWriteBarrier(TenuredCell* cell) {
 
 #ifdef ENABLE_WASM_JSPI
 void js::gc::PerformIncrementalPreWriteBarrierAllChildren(JSObject* cell) {
-  if (!cell || cell->isMarkedBlack()) {
+  if (!cell) {
     return;
   }
 
+  
+  
+  
+  
   Zone* zone = cell->zoneFromAnyThread();
   MOZ_ASSERT(!zone->isAtomsZone());
   MOZ_ASSERT(zone->needsMarkingBarrier());
