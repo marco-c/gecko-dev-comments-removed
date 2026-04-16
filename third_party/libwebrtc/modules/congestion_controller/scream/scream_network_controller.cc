@@ -138,7 +138,13 @@ NetworkControlUpdate ScreamNetworkController::OnReceivedPacket(
 
 NetworkControlUpdate ScreamNetworkController::OnStreamsConfig(
     StreamsConfig msg) {
+  RTC_LOG_IF(LS_VERBOSE, msg.max_total_allocated_bitrate.has_value())
+      << "OnStreamsConfig: max_total_allocated_bitrate="
+      << *msg.max_total_allocated_bitrate;
   streams_config_ = msg;
+  max_seen_total_allocated_bitrate_ = std::max(
+      max_seen_total_allocated_bitrate_,
+      streams_config_.max_total_allocated_bitrate.value_or(DataRate::Zero()));
   if (!first_update_created_ && network_available_ &&
       streams_config_.max_total_allocated_bitrate > DataRate::Zero()) {
     return CreateFirstUpdate(msg.at_time);
@@ -194,10 +200,6 @@ NetworkControlUpdate ScreamNetworkController::CreateUpdate(Timestamp now) {
 }
 
 std::optional<PacerConfig> ScreamNetworkController::MaybeCreatePacerConfig() {
-  DataRate max_needed_rate =
-      streams_config_.max_total_allocated_bitrate.value_or(DataRate::Zero());
-  DataRate padding_rate = DataRate::Zero();
-
   
   
   TimeDelta pacing_window =
@@ -206,13 +208,21 @@ std::optional<PacerConfig> ScreamNetworkController::MaybeCreatePacerConfig() {
           ? TimeDelta::Millis(10)
           : default_pacing_window_;
   DataRate target_rate = scream_->target_rate();
-
   Timestamp now = env_.clock().CurrentTime();
-  if (target_rate < max_needed_rate &&
-      target_rate < target_rate_constraints_.max_data_rate.value_or(
-                        DataRate::PlusInfinity())) {
-    
-    
+  DataRate padding_rate = DataRate::Zero();
+  
+  
+  
+  DataRate max_padding_rate =
+      std::min({target_rate_constraints_.max_data_rate.value_or(
+                    DataRate::PlusInfinity()),
+                max_seen_total_allocated_bitrate_,
+                2 * streams_config_.max_total_allocated_bitrate.value_or(
+                        DataRate::Zero()),
+                remote_bitrate_report_.value_or(DataRate::PlusInfinity())});
+  if (target_rate < max_padding_rate &&
+      now - scream_->last_reference_window_decrease_time() >
+          params_.allow_padding_after_last_congestion_time) {
     if (params_.periodic_padding_interval->IsFinite() &&
         (now - last_padding_interval_started_ >
          params_.periodic_padding_interval.Get())) {

@@ -64,6 +64,10 @@ class ScreamV2 {
   
   double l4s_alpha() const { return l4s_alpha_; }
 
+  Timestamp last_reference_window_decrease_time() const {
+    return last_ref_window_decrease_time_;
+  }
+
   
   const DelayBasedCongestionControl& delay_based_congestion_control() const {
     return delay_based_congestion_control_;
@@ -138,6 +142,10 @@ class ScreamV2 {
   
   
   Timestamp last_reaction_to_congestion_time_ = Timestamp::MinusInfinity();
+  
+  
+  
+  Timestamp last_ref_window_decrease_time_ = Timestamp::MinusInfinity();
 
   Timestamp drain_queue_start_ = Timestamp::MinusInfinity();
 
