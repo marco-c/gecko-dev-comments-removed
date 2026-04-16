@@ -336,7 +336,7 @@ export default class IPProtectionContentElement extends MozLitElement {
                 slot="icon"
                 role="presentation"
                 class="icon"
-                src="chrome://browser/content/ipprotection/assets/states/ipprotection-error.svg"
+                src="chrome://browser/content/ipprotection/assets/states/ipprotection-info.svg"
               />
             `
           : null}
@@ -352,8 +352,14 @@ export default class IPProtectionContentElement extends MozLitElement {
         .descriptionL10nArgs=${JSON.stringify({
           maxUsage: this.state.bandwidthUsage.max / BANDWIDTH.BYTES_IN_GB,
         })}
-        type="disconnected"
+        type="paused"
       >
+        <img
+          slot="icon"
+          role="presentation"
+          class="icon"
+          src="chrome://browser/content/ipprotection/assets/states/ipprotection-paused.svg"
+        />
         ${this.upgradeTemplate()}
       </ipprotection-status-box>
     `;
@@ -403,7 +409,29 @@ export default class IPProtectionContentElement extends MozLitElement {
     `;
   }
 
+  enrollingTemplate() {
+    return html`
+      <div id="enrolling-container" aria-busy="true">
+        <span id="enrolling-header">
+          <span>
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-line"></div>
+          </span>
+          <img
+            role="presentation"
+            src="chrome://global/skin/icons/loading.svg"
+          />
+        </span>
+        <div class="skeleton skeleton-line-thick"></div>
+      </div>
+    `;
+  }
+
   mainContentTemplate() {
+    if (this.state.isCheckingEntitlement) {
+      return html`${this.enrollingTemplate()} ${this.footerTemplate()}`;
+    }
+
     if (this.state.unauthenticated) {
       return html`
         <ipprotection-unauthenticated></ipprotection-unauthenticated>
