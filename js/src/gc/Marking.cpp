@@ -939,8 +939,6 @@ void js::gc::PerformIncrementalPreWriteBarrier(TenuredCell* cell) {
   
   
 
-  Zone* zone = cell->zoneFromAnyThread();
-
   MOZ_ASSERT(cell);
   if (cell->isMarkedBlack()) {
     return;
@@ -949,6 +947,7 @@ void js::gc::PerformIncrementalPreWriteBarrier(TenuredCell* cell) {
   
   
   
+  Zone* zone = cell->zoneFromAnyThread();
   bool checkThread = zone->isAtomsZone();
   JSRuntime* runtime = cell->runtimeFromAnyThread();
   if (checkThread && !CurrentThreadCanAccessRuntime(runtime)) {
@@ -2325,8 +2324,7 @@ inline void MarkStack::poisonUnused() {
                capacity_ - topIndex_, MemCheckKind::MakeUndefined);
 }
 
-size_t MarkStack::sizeOfExcludingThis(
-    mozilla::MallocSizeOf mallocSizeOf) const {
+size_t MarkStack::sizeOfExcludingThis() const {
   return capacity_ * sizeof(uintptr_t);
 }
 
@@ -2826,8 +2824,8 @@ void GCMarker::checkZone(Cell* cell) {
 #endif
 
 size_t GCMarker::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-  return mallocSizeOf(this) + stack.sizeOfExcludingThis(mallocSizeOf) +
-         otherStack.sizeOfExcludingThis(mallocSizeOf);
+  return mallocSizeOf(this) + stack.sizeOfExcludingThis() +
+         otherStack.sizeOfExcludingThis();
 }
 
 

@@ -159,16 +159,6 @@ inline RelocationOverlay* RelocationOverlay::forwardCell(Cell* src, Cell* dst) {
   return new (src) RelocationOverlay(dst);
 }
 
-inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell** cellp) {
-  MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
-
-  if ((*cellp)->isTenured()) {
-    return false;
-  }
-
-  return !Nursery::getForwardedPointer(cellp);
-}
-
 
 
 
