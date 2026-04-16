@@ -136,9 +136,25 @@ function focusElementAndSynthesizeKey(element, key) {
 
 
 async function focusWindow(win) {
-  const windowFocusPromise = BrowserTestUtils.waitForEvent(win, "focus");
-  win.focus();
-  await windowFocusPromise;
+  await SimpleTest.promiseFocus(win);
+}
+
+
+
+
+
+
+async function openNewFocusedBrowserWindow() {
+  
+  
+  
+  const win = OpenBrowserWindow();
+
+  await win.delayedStartupPromise;
+  await BrowserTestUtils.firstBrowserLoaded(win);
+  await SimpleTest.promiseFocus(win);
+
+  return win;
 }
 
 
