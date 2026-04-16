@@ -75,16 +75,16 @@ class ScreamV2 {
   
   TimeDelta feedback_hold_time() const { return feedback_hold_time_; }
 
+  
+  double ref_window_mss_ratio() const {
+    return std::min(1.0, params_.max_segment_size.Get() / ref_window_);
+  }
+
  private:
   void UpdateL4SAlpha(const TransportPacketsFeedback& msg);
   void UpdateRefWindow(const TransportPacketsFeedback& msg);
   void UpdateFeedbackHoldTime(const TransportPacketsFeedback& msg);
   void UpdateTargetRate(const TransportPacketsFeedback& msg);
-
-  
-  double ref_window_mss_ratio() const {
-    return params_.max_segment_size.Get() / ref_window_;
-  }
 
   
   

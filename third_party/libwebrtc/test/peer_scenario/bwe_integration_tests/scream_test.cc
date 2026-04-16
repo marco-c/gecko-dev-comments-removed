@@ -279,8 +279,8 @@ TEST(ScreamTest,
       Each(AvailableSendBitrateIsBetween(DataRate::KilobitsPerSec(200),
                                          DataRate::KilobitsPerSec(600))));
   
-  EXPECT_THAT(result.caller().subview(8), Each(AvailableSendBitrateIsBetween(
-                                              DataRate::KilobitsPerSec(1500),
+  EXPECT_THAT(result.caller().subview(9), Each(AvailableSendBitrateIsBetween(
+                                              DataRate::KilobitsPerSec(1200),
                                               DataRate::KilobitsPerSec(5000))));
 }
 

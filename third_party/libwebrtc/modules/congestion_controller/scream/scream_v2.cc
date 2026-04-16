@@ -180,10 +180,10 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
         
         
         
-        backoff *= std::max(
-            0.1,
-            (0.1 - delay_based_congestion_control_.queue_delay_dev_norm()) /
-                0.1);
+        backoff *=
+            std::max(0.1, delay_based_congestion_control_
+                              .ref_window_scale_factor_due_to_delay_variation(
+                                  ref_window_mss_ratio()));
       }
 
       if (msg.feedback_time - last_reaction_to_congestion_time_ >
@@ -245,15 +245,20 @@ void ScreamV2::UpdateRefWindow(const TransportPacketsFeedback& msg) {
 
     
     if (l4s_alpha_ < 0.0001) {
-      increase = increase * delay_based_congestion_control_.scale_increase();
+      increase =
+          increase * delay_based_congestion_control_
+                         .ref_window_scale_factor_due_to_increased_delay();
     }
 
     
+    
+    
+    
     increase =
         increase *
-        std::max(0.1, (0.1 -
-                       delay_based_congestion_control_.queue_delay_dev_norm()) /
-                          0.1);
+        std::max(0.1, delay_based_congestion_control_
+                          .ref_window_scale_factor_due_to_delay_variation(
+                              ref_window_mss_ratio()));
 
     
     
@@ -319,10 +324,10 @@ DataSize ScreamV2::max_data_in_flight() const {
       params_.ref_window_overhead_min.Get() +
       (params_.ref_window_overhead_max.Get() -
        params_.ref_window_overhead_min.Get()) *
-          std::max(
-              0.0,
-              (0.1 - delay_based_congestion_control_.queue_delay_dev_norm()) /
-                  0.1);
+          delay_based_congestion_control_
+              .ref_window_scale_factor_due_to_delay_variation(
+                  ref_window_mss_ratio());
+
   return ref_window_ * ref_window_overhead;
 }
 
@@ -375,6 +380,8 @@ void ScreamV2::UpdateTargetRate(const TransportPacketsFeedback& msg) {
     drain_queue_start_ = Timestamp::MinusInfinity();
   }
 
+  
+  
   target_rate =
       std::clamp(target_rate, min_target_bitrate_, max_target_bitrate_);
 

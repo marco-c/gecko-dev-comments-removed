@@ -77,6 +77,9 @@ struct ScreamV2Parameters {
   FieldTrialParameter<double> queue_delay_dev_avg_g;
 
   
+  FieldTrialParameter<TimeDelta> queue_delay_dev_normalization;
+
+  
   
   FieldTrialParameter<int> base_delay_window_length;
   
@@ -85,12 +88,8 @@ struct ScreamV2Parameters {
   
   
   
-  FieldTrialParameter<TimeDelta> queue_delay_first_reaction;
   
-  
-  
-  
-  FieldTrialParameter<TimeDelta> queue_delay_max_reaction;
+  FieldTrialParameter<TimeDelta> queue_delay_target;
 
   
   
