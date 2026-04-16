@@ -140,6 +140,8 @@ class FirefoxWebDriver(WebDriver):
         prefs[CB_PREF] = cookieBehavior
         prefs[CB_PBM_PREF] = cookieBehavior
 
+        prefs["layout.css.getBoxQuads.enabled"] = True
+
         
         
         prefs[NOTIFICATIONS_PERMISSIONS_PREF] = 2
