@@ -1,5 +1,7 @@
 <!doctype html>
 <title>SVGGraphicsElement.prototype.getBBox</title>
+<link rel="help" href="https://w3c.github.io/svgwg/svg2-draft/types.html#__svg__SVGGraphicsElement__getBBox">
+<link rel="help" href="https://w3c.github.io/svgwg/svg2-draft/coords.html#BoundingBoxes">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <div id="testcontainer">
@@ -20,7 +22,7 @@
 <g id="g3">
   <path id="p2" fill="none" stroke="red"/>
   <rect id="r6" x="50" y="50" width="50" height="50" fill="green"/>
-  
+  <!-- The following path should be included in the bbox. -->
   <path d=""/>
 </g>
 <g id="g4">
