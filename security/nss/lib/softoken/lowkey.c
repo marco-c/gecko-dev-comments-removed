@@ -10,6 +10,7 @@
 #include "secerr.h"
 #include "softoken.h"
 #include "ec.h"
+#include "kem.h"
 
 SEC_ASN1_MKSUB(SEC_AnyTemplate)
 SEC_ASN1_MKSUB(SEC_BitStringTemplate)
@@ -101,7 +102,9 @@ const SEC_ASN1Template nsslowkey_PQBothSeedAndPrivateKeyTemplate[] = {
 };
 
 const SEC_ASN1Template nsslowkey_PQSeedTemplate[] = {
-    { SEC_ASN1_CONTEXT_SPECIFIC | 0,
+    
+
+    { SEC_ASN1_CONTEXT_SPECIFIC | SEC_ASN1_XTRN | 0, 
       offsetof(NSSLOWKEYPrivateKey, u.genpq.seedItem),
       SEC_ASN1_SUB(SEC_OctetStringTemplate) },
     { 0 }
@@ -312,8 +315,12 @@ nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privk)
                 if (rv == SECSuccess) {
                     rv = SECITEM_CopyItem(arena, &pubk->u.rsa.publicExponent,
                                           &privk->u.rsa.publicExponent);
-                    if (rv == SECSuccess)
+                    if (rv == SECSuccess) {
+                        
+
+                        pubk->u.rsa.needVerify = PR_FALSE;
                         return pubk;
+                    }
                 }
             } else {
                 PORT_SetError(SEC_ERROR_NO_MEMORY);
@@ -480,6 +487,35 @@ nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privk)
                 return pubk;
             }
             break;
+        case NSSLOWKEYMLKEMKey:
+            pubk = (NSSLOWKEYPublicKey *)PORT_ArenaZAlloc(arena,
+                                                          sizeof(NSSLOWKEYPublicKey));
+            if (pubk != NULL) {
+                size_t pubKeyLen;
+                SECItem *item = NULL;
+
+                pubk->arena = arena;
+                pubk->keyType = privk->keyType;
+                pubk->u.mlkem.mlkemParams = privk->u.mlkem.mlkemParams;
+                
+                
+                
+
+                pubKeyLen = sftk_kyber_pubKeyLen(pubk->u.mlkem.mlkemParams);
+                if (privk->u.mlkem.key.len < 2 * pubKeyLen) {
+                    PORT_SetError(SEC_ERROR_BAD_KEY);
+                    break;
+                }
+                item = SECITEM_AllocItem(arena, &pubk->u.mlkem.key, (int)pubKeyLen);
+                if (item == NULL) {
+                    break;
+                }
+                PORT_Memcpy(pubk->u.mlkem.key.data,
+                            privk->u.mlkem.key.data + pubKeyLen - 32,
+                            pubKeyLen);
+                return pubk;
+            }
+            break;
         
 
         default:
@@ -619,6 +655,17 @@ nsslowkey_CopyPrivateKey(NSSLOWKEYPrivateKey *privKey)
         case NSSLOWKEYMLDSAKey:
             returnKey->u.mldsa = privKey->u.mldsa;
             rv = SECSuccess;
+            break;
+        case NSSLOWKEYMLKEMKey:
+            returnKey->u.mlkem.mlkemParams = privKey->u.mlkem.mlkemParams;
+            rv = SECITEM_CopyItem(poolp, &(returnKey->u.mlkem.key),
+                                  &(privKey->u.mlkem.key));
+            if (rv != SECSuccess)
+                break;
+            rv = SECITEM_CopyItem(poolp, &(returnKey->u.mlkem.seed),
+                                  &(privKey->u.mlkem.seed));
+            if (rv != SECSuccess)
+                break;
             break;
         default:
             rv = SECFailure;

@@ -1163,14 +1163,16 @@ generate_blinding_params(RSAPrivateKey *key, mp_int *f, mp_int *g, mp_int *n,
                          unsigned int modLen)
 {
     SECStatus rv = SECSuccess;
-    mp_int e, k;
+    mp_int e, k, res;
     mp_err err = MP_OKAY;
     unsigned char *kb = NULL;
 
     MP_DIGITS(&e) = 0;
     MP_DIGITS(&k) = 0;
+    MP_DIGITS(&res) = 0;
     CHECK_MPI_OK(mp_init(&e));
     CHECK_MPI_OK(mp_init(&k));
+    CHECK_MPI_OK(mp_init(&res));
     SECITEM_TO_MPINT(key->publicExponent, &e);
     
     kb = PORT_Alloc(modLen);
@@ -1178,8 +1180,12 @@ generate_blinding_params(RSAPrivateKey *key, mp_int *f, mp_int *g, mp_int *n,
         PORT_SetError(SEC_ERROR_NO_MEMORY);
         goto cleanup;
     }
-    CHECK_SEC_OK(RNG_GenerateGlobalRandomBytes(kb, modLen));
-    CHECK_MPI_OK(mp_read_unsigned_octets(&k, kb, modLen));
+    
+    do {
+        CHECK_SEC_OK(RNG_GenerateGlobalRandomBytes(kb, modLen));
+        CHECK_MPI_OK(mp_read_unsigned_octets(&k, kb, modLen));
+        CHECK_MPI_OK(mp_gcd(&k, n, &res));
+    } while (mp_cmp_d(&res, 1) != MP_EQ);
     
     CHECK_MPI_OK(mp_mod(&k, n, &k));
     
@@ -1191,6 +1197,7 @@ generate_blinding_params(RSAPrivateKey *key, mp_int *f, mp_int *g, mp_int *n,
 cleanup:
     if (kb)
         PORT_ZFree(kb, modLen);
+    mp_clear(&res);
     mp_clear(&k);
     mp_clear(&e);
     if (err) {

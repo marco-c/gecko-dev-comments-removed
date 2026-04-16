@@ -914,6 +914,23 @@ NSSUTIL_MkModuleSpec(char *dllName, char *commonName, char *parameters,
 }
 
 
+static size_t
+nssutil_CountParams(const char *params)
+{
+    size_t count = 0;
+    const char *p = params;
+    while (*p) {
+        p = NSSUTIL_ArgStrip(p);
+        if (!*p) {
+            break;
+        }
+        p = NSSUTIL_ArgSkipParameter(p);
+        count++;
+    }
+    return count;
+}
+
+
 
 char *
 NSSUTIL_AddNSSFlagToModuleSpec(char *spec, char *addFlag)
@@ -946,7 +963,11 @@ NSSUTIL_AddNSSFlagToModuleSpec(char *spec, char *addFlag)
     } else {
         const char *iNss = nss;
         PRBool alreadyAdded = PR_FALSE;
-        size_t maxSize = strlen(nss) + strlen(addFlag) + prefixLen + 2; 
+        
+        
+        
+        size_t nParams = nssutil_CountParams(nss);
+        size_t maxSize = strlen(nss) + nParams + strlen(addFlag) + prefixLen + 2;
         nss2 = PORT_Alloc(maxSize);
         *nss2 = 0;
         while (*iNss) {

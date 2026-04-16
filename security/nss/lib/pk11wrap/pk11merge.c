@@ -1255,6 +1255,8 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
         
         for (i = 0; i < trustAttrsCount; i++) {
+            SECStatus lrv;
+
             targetTemplate.type = (targetClass == CKO_TRUST)
                                       ? nssTrustAttrs[i]
                                       : pkcsTrustAttrs[i];
@@ -1264,12 +1266,28 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
             targetTemplate.pValue = sourceTemplate.pValue = NULL;
             targetTemplate.ulValueLen = sourceTemplate.ulValueLen = 0;
-            PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
-            PK11_GetAttributes(arena, targetSlot, targetTrustID,
-                               &targetTemplate, 1);
+
+            lrv = PK11_GetAttributes(arena, targetSlot, targetTrustID,
+                                     &targetTemplate, 1);
+            if (lrv != CKR_OK &&
+                
+                !(lrv == CKR_ATTRIBUTE_TYPE_INVALID &&
+                  targetTemplate.ulValueLen == CK_UNAVAILABLE_INFORMATION)) {
+                rv = SECFailure;
+                error = PORT_GetError();
+            }
+            lrv = PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
+            if (lrv != CKR_OK &&
+                
+                !(lrv == CKR_ATTRIBUTE_TYPE_INVALID &&
+                  targetTemplate.ulValueLen == CK_UNAVAILABLE_INFORMATION)) {
+                rv = SECFailure;
+                error = PORT_GetError();
+                continue;
+            }
+
             if (pk11_mergeTrustEntry(&targetTemplate, &sourceTemplate)) {
                 
-                SECStatus lrv;
 
                 
                 if (sourceClass != targetClass) {

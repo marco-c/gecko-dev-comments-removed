@@ -7,8 +7,9 @@
 
 #include "pk11_keygen.h"
 #include "pk11pub.h"
+#include "secmodi.h"
+#include "secmodti.h"
 
-#include "blapi.h"
 #include "secport.h"
 
 namespace nss_test {
@@ -148,6 +149,42 @@ TEST_P(Pkcs11KEMTest, KemConsistencyTest) {
   NSS_DECLASSIFY(item1->data, item1->len);
   NSS_DECLASSIFY(item2->data, item2->len);
   EXPECT_EQ(0, SECITEM_CompareItem(item1, item2));
+}
+
+
+
+
+TEST_P(Pkcs11KEMTest, KemWrongObjectTypeTest) {
+  Pkcs11KeyPairGenerator generator(keyGenMech());
+  ScopedSECKEYPrivateKey priv;
+  ScopedSECKEYPublicKey pub;
+  generator.GenerateKey(&priv, &pub, false);
+  ASSERT_NE(nullptr, priv);
+  ASSERT_NE(nullptr, pub);
+
+  
+  PK11SlotInfo *slot = priv->pkcs11Slot;
+  ASSERT_NE(nullptr, slot);
+
+  CK_MECHANISM mech = {encapsMech(), nullptr, 0};
+  CK_OBJECT_HANDLE outKey = CK_INVALID_HANDLE;
+
+  
+  
+  CK_ULONG ciphertextLen = 0;
+  CK_RV crv = PK11_GETTAB(slot)->C_EncapsulateKey(
+      slot->session, &mech, priv->pkcs11ID, nullptr, 0, nullptr, &ciphertextLen,
+      &outKey);
+  EXPECT_EQ(CKR_KEY_TYPE_INCONSISTENT, crv);
+
+  
+  
+  CK_BYTE dummyCiphertext[1] = {0};
+  CK_ATTRIBUTE dummyTemplate[1] = {};
+  crv = PK11_GETTAB(slot)->C_DecapsulateKey(slot->session, &mech, pub->pkcs11ID,
+                                            dummyTemplate, 0, dummyCiphertext,
+                                            sizeof(dummyCiphertext), &outKey);
+  EXPECT_EQ(CKR_KEY_TYPE_INCONSISTENT, crv);
 }
 
 #ifndef NSS_DISABLE_KYBER
