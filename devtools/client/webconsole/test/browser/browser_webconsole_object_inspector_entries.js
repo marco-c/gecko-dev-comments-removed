@@ -77,7 +77,14 @@ add_task(async function () {
 
         
         for (const node of oi.querySelectorAll(".tree-node")) {
-          const label = node.textContent.replace(/\u200B/g, "");
+          let label = node.textContent.replace(/\u200B/g, "");
+
+          
+          
+          label = label.replace(
+            /lastModified: "[^"]*"/,
+            'lastModified: "<removed-for-test>"'
+          );
 
           let icon = "\u251C "; 
           if (isObjectInspectorNodeExpandable(node)) {
@@ -105,6 +112,7 @@ add_task(async function () {
       
       
       const object = messageNode.querySelectorAll(".message-body > *")[1];
+
       return object.textContent;
     }
   );
