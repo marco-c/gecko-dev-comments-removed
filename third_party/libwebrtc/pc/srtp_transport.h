@@ -82,12 +82,6 @@ class SrtpTransport : public RtpTransport {
 
   
   
-  void CacheRtpAbsSendTimeHeaderExtension(int rtp_abs_sendtime_extn_id) {
-    rtp_abs_sendtime_extn_id_ = rtp_abs_sendtime_extn_id;
-  }
-
-  
-  
   bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override;
 
  protected:
@@ -129,8 +123,6 @@ class SrtpTransport : public RtpTransport {
   ZeroOnFreeBuffer<uint8_t> recv_key_;
 
   bool writable_ = false;
-
-  int rtp_abs_sendtime_extn_id_ = -1;
 
   int decryption_failure_count_ = 0;
 
