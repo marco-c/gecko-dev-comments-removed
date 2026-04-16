@@ -79,7 +79,7 @@
     <string name="mozac_summarize_content_too_long_error_title">Page too long to summarize</string>
 
     <!-- Title for the info error screen -->
-    <string name="mozac_summarize_info_error_title">Can\'t summarize right now</string>
+    <string name="mozac_summarize_info_error_title">Can’t summarize right now</string>
 
     <!-- Generic fallback message for the info error screen. %1$d is an error code. -->
     <string name="mozac_summarize_info_error_message">Try again later. Error code: %1$d</string>
@@ -116,6 +116,12 @@
 
     <!-- Disclaimer message -->
     <string name="mozac_feature_summarize_disclaimer_message">AI can make mistakes</string>
+
+    <!-- Title for the page summary AI controllable feature -->
+    <string name="mozac_ai_controls_page_summary_title">Page summaries</string>
+
+    <!-- Description for the page summary AI controllable feature -->
+    <string name="mozac_ai_controls_page_summary_description">Pages and summaries are never stored.</string>
 
     <!-- Keep these strings in static_strings.xml -->
 
