@@ -1293,9 +1293,9 @@ class MockSpec {
 
   
   
-  internal::OnCallSpec<F>& InternalDefaultActionSetAt(const char* file,
-                                                      int line, const char* obj,
-                                                      const char* call) {
+  
+  [[nodiscard]] internal::OnCallSpec<F>& InternalDefaultActionSetAt(
+      const char* file, int line, const char* obj, const char* call) {
     LogWithLocation(internal::kInfo, file, line,
                     std::string("ON_CALL(") + obj + ", " + call + ") invoked");
     return function_mocker_->AddNewOnCallSpec(file, line, matchers_);

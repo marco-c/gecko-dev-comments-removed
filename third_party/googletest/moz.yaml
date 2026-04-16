@@ -10,9 +10,9 @@ origin:
 
   url: https://google.github.io/googletest/
 
-  release: 4969d0ad540da8fc9944e99457361dc7e35943c2 (2025-09-13T03:45:06Z).
+  release: 085af2cc08600bdb13827ca40261abcbe5048bb5 (2025-11-08T10:53:26Z).
 
-  revision: 4969d0ad540da8fc9944e99457361dc7e35943c2
+  revision: 085af2cc08600bdb13827ca40261abcbe5048bb5
 
   license: BSD-3-Clause
   license-file: LICENSE

@@ -1329,17 +1329,23 @@ class AllOfMatcherImpl : public MatcherInterface<const T&> {
     
     
     std::string all_match_result;
+    bool success = true;
     for (const Matcher<T>& matcher : matchers_) {
       StringMatchResultListener slistener;
       
       if (!matcher.MatchAndExplain(x, &slistener)) {
         const std::string explanation = slistener.str();
+        if (!success) {
+          
+          *listener << ", and ";
+        }
         if (!explanation.empty()) {
           *listener << explanation;
         } else {
           *listener << "which doesn't match (" << Describe(matcher) << ")";
         }
-        return false;
+        success = false;
+        continue;
       }
       
       std::string explanation = slistener.str();
@@ -1356,8 +1362,10 @@ class AllOfMatcherImpl : public MatcherInterface<const T&> {
       }
     }
 
-    *listener << all_match_result;
-    return true;
+    if (success) {
+      *listener << all_match_result;
+    }
+    return success;
   }
 
  private:
