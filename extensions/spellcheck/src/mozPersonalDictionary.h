@@ -14,6 +14,7 @@
 #include "nsCRT.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
+#include "mozilla/Atomics.h"
 #include <mozilla/Monitor.h>
 
 #define MOZ_PERSONALDICTIONARY_CONTRACTID \
@@ -44,10 +45,10 @@ class mozPersonalDictionary final : public mozIPersonalDictionary,
   virtual ~mozPersonalDictionary();
 
   
-  bool mIsLoaded;
+  mozilla::Atomic<bool> mIsLoaded;
 
   
-  bool mSavePending;
+  mozilla::Atomic<bool> mSavePending;
 
   nsCOMPtr<nsIFile> mFile;
   mozilla::Monitor mMonitor MOZ_UNANNOTATED;
