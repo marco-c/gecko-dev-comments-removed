@@ -61,11 +61,20 @@ class BaseAlloc {
       mozilla::CeilingLog2(kBaseQuantum);
 
   
+  constexpr static unsigned kBaseMinimumSize =
+      (kCacheLineSize > kBaseQuantum * 2) ? (kCacheLineSize - kBaseQuantum * 2)
+                                          : kBaseQuantum;
+
+  
   
   constexpr static base_alloc_size_t kMaxSizeForLists = 4096;
   static_assert(std::has_single_bit(kMaxSizeForLists));
 
-  constexpr static unsigned kNumFreeLists = kMaxSizeForLists / kBaseQuantum;
+  
+  
+  constexpr static unsigned kNumFreeLists =
+      kMaxSizeForLists / kCacheLineSize *
+      std::min(kCacheLineSize / kBaseQuantum, size_t(3));
 
   static base_alloc_size_t size_round_up(base_alloc_size_t aSize);
 
