@@ -2,14 +2,14 @@
 
 
 
-#include "ReadableStreamAbstract.h"
-#include "ReadableStreamDefaultReaderAbstract.h"
-#include "ReadableStreamGenericReaderAbstract.h"
+#include "mozilla/dom/ReadableStreamDefaultReader.h"
+
 #include "js/PropertyAndElement.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "jsapi.h"
 #include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultReaderBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"

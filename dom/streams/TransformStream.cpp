@@ -2,13 +2,11 @@
 
 
 
-#include "ReadableStreamDefaultControllerAbstract.h"
+#include "mozilla/dom/TransformStream.h"
+
 #include "StreamUtils.h"
-#include "TransformStreamAbstract.h"
-#include "TransformStreamDefaultControllerAbstract.h"
 #include "TransformerCallbackHelpers.h"
 #include "UnderlyingSourceCallbackHelpers.h"
-#include "WritableStreamDefaultControllerAbstract.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Promise-inl.h"

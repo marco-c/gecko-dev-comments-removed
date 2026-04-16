@@ -2,10 +2,9 @@
 
 
 
+#include "mozilla/dom/WritableStream.h"
+
 #include "StreamUtils.h"
-#include "WritableStreamAbstract.h"
-#include "WritableStreamDefaultControllerAbstract.h"
-#include "WritableStreamDefaultWriterAbstract.h"
 #include "js/Array.h"
 #include "js/PropertyAndElement.h"
 #include "js/TypeDecls.h"
@@ -24,6 +23,8 @@
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/UnderlyingSinkBinding.h"
 #include "mozilla/dom/WritableStreamBinding.h"
+#include "mozilla/dom/WritableStreamDefaultController.h"
+#include "mozilla/dom/WritableStreamDefaultWriter.h"
 #include "nsCOMPtr.h"
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
