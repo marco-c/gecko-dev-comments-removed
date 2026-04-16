@@ -822,6 +822,10 @@ pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
 
 pref("browser.urlbar.nova.featureGate", false);
 
+
+
+pref("browser.urlbar.resultExplanations.featureGate", false);
+
 pref("browser.altClickSave", false);
 
 

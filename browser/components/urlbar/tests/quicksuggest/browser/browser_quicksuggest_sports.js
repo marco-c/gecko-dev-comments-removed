@@ -3,11 +3,6 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  SportsSuggestions:
-    "moz-src:///browser/components/urlbar/private/SportsSuggestions.sys.mjs",
-});
-
 
 requestLongerTimeout(3);
 
@@ -150,6 +145,18 @@ const SUGGESTION_VALUE_NHL_SCHEDULED = {
   sport: "NHL",
 };
 
+
+const SUGGESTION_VALUE_MLB_LIVE = {
+  ...SUGGESTION_VALUE_LIVE,
+  sport: "MLB",
+};
+
+
+const SUGGESTION_VALUE_MLB_SCHEDULED = {
+  ...SUGGESTION_VALUE_SCHEDULED,
+  sport: "MLB",
+};
+
 add_setup(async function () {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
   registerCleanupFunction(async () => {
@@ -166,7 +173,7 @@ add_setup(async function () {
   });
 
   registerCleanupFunction(() => {
-    setNow(null);
+    UrlbarTestUtils.stubNowZonedDateTime(null);
   });
 });
 
@@ -182,10 +189,12 @@ add_task(async function manyItems() {
       SUGGESTION_VALUE_NBA_LIVE,
       SUGGESTION_VALUE_NFL_LIVE,
       SUGGESTION_VALUE_NHL_LIVE,
+      SUGGESTION_VALUE_MLB_LIVE,
       
       SUGGESTION_VALUE_NBA_SCHEDULED,
       SUGGESTION_VALUE_NFL_SCHEDULED,
       SUGGESTION_VALUE_NHL_SCHEDULED,
+      SUGGESTION_VALUE_MLB_SCHEDULED,
     ]),
     expectedItems: [
       
@@ -376,6 +385,39 @@ add_task(async function manyItems() {
           },
         },
       },
+      {
+        item: {
+          attributes: {
+            sport: "MLB",
+            status: "live",
+          },
+        },
+        image: null,
+        image_container: {
+          attributes: {
+            "is-fallback": "",
+          },
+          backgroundImage:
+            'url("chrome://browser/skin/urlbar/sports-baseball.svg")',
+        },
+        "scheduled-date-chiclet-day": {
+          isHidden: true,
+        },
+        "scheduled-date-chiclet-month": {
+          isHidden: true,
+        },
+        "sport-name": "MLB",
+        "home-team-name": "Team 2 Home",
+        "home-team-score": "1",
+        "away-team-name": "Team 2 Away",
+        "away-team-score": "0",
+        date: "Today",
+        status: {
+          l10n: {
+            id: "urlbar-result-sports-status-live",
+          },
+        },
+      },
 
       
       {
@@ -466,6 +508,42 @@ add_task(async function manyItems() {
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
         "sport-name": "NHL",
+        "team-names": {
+          l10n: {
+            id: "urlbar-result-sports-team-names",
+            args: {
+              homeTeam: "Team 3 Home",
+              awayTeam: "Team 3 Away",
+            },
+          },
+        },
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Tomorrow",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
+        status: "",
+      },
+      {
+        item: {
+          attributes: {
+            sport: "MLB",
+            status: "scheduled",
+          },
+        },
+        image: null,
+        image_container: {
+          attributes: {
+            "is-fallback": "",
+          },
+        },
+        "scheduled-date-chiclet-day": "1",
+        "scheduled-date-chiclet-month": "Nov",
+        "sport-name": "MLB",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -930,7 +1008,15 @@ add_task(async function past_todayFuture_noIcon() {
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
         "away-team-score": "4",
-        date: "Today",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Today",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: {
           l10n: {
             id: "urlbar-result-sports-status-final",
@@ -971,7 +1057,15 @@ add_task(async function past_todayFuture_icon() {
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
         "away-team-score": "4",
-        date: "Today",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Today",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: {
           l10n: {
             id: "urlbar-result-sports-status-final",
@@ -1326,7 +1420,15 @@ add_task(async function live_todayFuture_noIcon() {
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
         "away-team-score": "0",
-        date: "Today",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Today",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: {
           l10n: {
             id: "urlbar-result-sports-status-live",
@@ -1367,7 +1469,15 @@ add_task(async function live_todayFuture_icon() {
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
         "away-team-score": "0",
-        date: "Today",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Today",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: {
           l10n: {
             id: "urlbar-result-sports-status-live",
@@ -1404,7 +1514,15 @@ add_task(async function live_tomorrow_noIcon() {
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
         "away-team-score": "0",
-        date: "Tomorrow",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Tomorrow",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: {
           l10n: {
             id: "urlbar-result-sports-status-live",
@@ -1445,7 +1563,15 @@ add_task(async function live_tomorrow_icon() {
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
         "away-team-score": "0",
-        date: "Tomorrow",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Tomorrow",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: {
           l10n: {
             id: "urlbar-result-sports-status-live",
@@ -1731,15 +1857,7 @@ add_task(async function scheduled_todayPast_noIcon() {
             },
           },
         },
-        date: {
-          l10n: {
-            id: "urlbar-result-sports-game-date-with-time",
-            args: {
-              date: "Today",
-              time: "1:00 PM GMT-4",
-            },
-          },
-        },
+        date: "Today",
         status: "",
       },
     ],
@@ -1781,15 +1899,7 @@ add_task(async function scheduled_todayPast_icon() {
             },
           },
         },
-        date: {
-          l10n: {
-            id: "urlbar-result-sports-game-date-with-time",
-            args: {
-              date: "Today",
-              time: "1:00 PM GMT-4",
-            },
-          },
-        },
+        date: "Today",
         status: "",
       },
     ],
@@ -1984,14 +2094,10 @@ add_task(async function scheduled_tomorrow_icon() {
   });
 });
 
-add_task(async function scheduled_afterTomorrow_noIcon() {
+add_task(async function scheduled_afterTomorrow_noIcon_thisYear() {
   await doTest({
-    now: [
-      
-      "2025-10-01T14:00:00-04:00[-04:00]",
-      
-      "2024-10-01T14:00:00-04:00[-04:00]",
-    ],
+    
+    now: "2025-10-01T14:00:00-04:00[-04:00]",
     suggestions: merinoSuggestions([SUGGESTION_VALUE_SCHEDULED]),
     expectedItems: [
       {
@@ -2019,7 +2125,63 @@ add_task(async function scheduled_afterTomorrow_noIcon() {
             },
           },
         },
-        date: "Sat at 1:00 PM GMT-4",
+        
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Nov 1",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
+        status: "",
+      },
+    ],
+  });
+});
+
+add_task(async function scheduled_afterTomorrow_noIcon_nextYear() {
+  await doTest({
+    
+    now: "2024-10-01T14:00:00-04:00[-04:00]",
+    suggestions: merinoSuggestions([SUGGESTION_VALUE_SCHEDULED]),
+    expectedItems: [
+      {
+        item: {
+          attributes: {
+            sport: "Sport 3",
+            status: "scheduled",
+          },
+        },
+        image: null,
+        image_container: {
+          attributes: {
+            "is-fallback": "",
+          },
+        },
+        "scheduled-date-chiclet-day": "1",
+        "scheduled-date-chiclet-month": "Nov",
+        "sport-name": "Sport 3",
+        "team-names": {
+          l10n: {
+            id: "urlbar-result-sports-team-names",
+            args: {
+              homeTeam: "Team 3 Home",
+              awayTeam: "Team 3 Away",
+            },
+          },
+        },
+        
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Nov 1, 2025",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: "",
       },
     ],
@@ -2062,7 +2224,15 @@ add_task(async function scheduled_afterTomorrow_icon_thisYear() {
           },
         },
         
-        date: "Sat, Nov 1 at 1:00 PM GMT-4",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Nov 1",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: "",
       },
     ],
@@ -2105,7 +2275,15 @@ add_task(async function scheduled_afterTomorrow_icon_nextYear() {
           },
         },
         
-        date: "Sat, Nov 1, 2025 at 1:00 PM GMT-4",
+        date: {
+          l10n: {
+            id: "urlbar-result-sports-game-date-with-time",
+            args: {
+              date: "Nov 1, 2025",
+              time: "1:00 PM GMT-4",
+            },
+          },
+        },
         status: "",
       },
     ],
@@ -2119,7 +2297,7 @@ async function doTest({ now, suggestions, expectedItems }) {
 
   for (let n of nows) {
     info("Testing with `now`: " + n);
-    setNow(n);
+    UrlbarTestUtils.stubNowZonedDateTime(n);
     await doOneTest({ expectedItems });
   }
 }
@@ -2263,23 +2441,6 @@ async function doOneTest({ expectedItems }) {
 
   await UrlbarTestUtils.promisePopupClose(window);
   gURLBar.handleRevert();
-}
-
-let gSandbox;
-let gDateStub;
-
-function setNow(dateStr) {
-  if (!dateStr) {
-    gSandbox?.restore();
-    return;
-  }
-
-  let global = Cu.getGlobalForObject(SportsSuggestions);
-  if (!gSandbox) {
-    gSandbox = sinon.createSandbox();
-    gDateStub = gSandbox.stub(SportsSuggestions, "_zonedDateTimeISO");
-  }
-  gDateStub.returns(global.Temporal.ZonedDateTime.from(dateStr));
 }
 
 function merinoSuggestions(values) {
