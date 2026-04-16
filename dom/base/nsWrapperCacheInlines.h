@@ -84,12 +84,18 @@ inline void nsWrapperCache::UpdateWrapperForNewGlobal(T* aScriptObjectHolder,
     SetPreservingWrapper(false);
   }
 
+  JSObject* oldWrapper = mWrapper;
   SetWrapper(aNewWrapper);
 
   if (zoneChanged) {
     PreserveWrapper(aScriptObjectHolder);
   } else if (preserving) {
     SetPreservingWrapper(true);
+    if (!JS::ObjectIsTenured(mWrapper)) {
+      
+      
+      JS::HeapObjectPostWriteBarrier(&mWrapper, oldWrapper, mWrapper);
+    }
   }
 }
 
