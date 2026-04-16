@@ -283,14 +283,10 @@ class AddrHostRecord final : public nsHostRecord {
 
 
 
-
-
-
-
-  Mutex addr_info_lock MOZ_UNANNOTATED{"AddrHostRecord.addr_info_lock"};
+  mutable Mutex addr_info_lock{"AddrHostRecord.addr_info_lock"};
   
-  int addr_info_gencnt = 0;
-  RefPtr<mozilla::net::AddrInfo> addr_info;
+  int addr_info_gencnt MOZ_GUARDED_BY(addr_info_lock) = 0;
+  RefPtr<mozilla::net::AddrInfo> addr_info MOZ_GUARDED_BY(addr_info_lock);
   mozilla::UniquePtr<mozilla::net::NetAddr> addr;
 
   
@@ -345,7 +341,7 @@ class AddrHostRecord final : public nsHostRecord {
   
   
   
-  nsTArray<nsCString> mUnusableItems;
+  nsTArray<nsCString> mUnusableItems MOZ_GUARDED_BY(addr_info_lock);
 };
 
 
