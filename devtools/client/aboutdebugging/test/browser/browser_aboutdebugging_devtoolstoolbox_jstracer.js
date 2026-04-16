@@ -23,6 +23,7 @@ Services.scriptloader.loadSubScript(
 add_task(async function () {
   
   await pushPref("devtools.debugger.features.javascript-tracing", true);
+  await pushPref("devtools.command-button-jstracer.enabled", true);
 
   const testTab = await addTab(TAB_URL);
 
