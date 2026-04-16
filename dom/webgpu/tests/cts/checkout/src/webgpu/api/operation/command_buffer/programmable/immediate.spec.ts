@@ -18,6 +18,11 @@ import {
   kProgrammableEncoderTypes,
   ProgrammableEncoderType,
 } from '../../../../util/command_buffer_maker.js';
+import { align } from '../../../../util/math.js';
+
+const kRenderTargetFormat = 'rgba32uint' as const;
+const kBytesPerPixel = 16; 
+const kMinBytesPerRow = 256; 
 
 class ImmediateDataOperationTest extends AllFeaturesMaxLimitsGPUTest {
   override async init() {
@@ -28,93 +33,115 @@ class ImmediateDataOperationTest extends AllFeaturesMaxLimitsGPUTest {
       return;
     }
   }
-
-  skipIfStorageBuffersInFragmentStageNotAvailable(encoderType: ProgrammableEncoderType) {
-    if (!this.isCompatibility) {
-      return;
-    }
-    const needsStorageBuffersInFragmentStage =
-      encoderType === 'render pass' || encoderType === 'render bundle';
-    this.skipIf(
-      needsStorageBuffersInFragmentStage &&
-        !(this.device.limits.maxStorageBuffersInFragmentStage! >= 1),
-      `maxStorageBuffersInFragmentStage(${this.device.limits.maxStorageBuffersInFragmentStage}) < 1`
-    );
-  }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 function createPipeline(
   t: AllFeaturesMaxLimitsGPUTest,
   encoderType: ProgrammableEncoderType,
   wgslDecl: string,
   copyCode: string,
+  fragmentReturnExpr: string,
   immediateSize: number,
+  renderTargetWidth: number = 4,
   pipelineLayout?: GPUPipelineLayout
 ) {
-  const layout =
-    pipelineLayout ||
-    t.device.createPipelineLayout({
-      bindGroupLayouts: [
-        t.device.createBindGroupLayout({
-          entries: [
-            {
-              binding: 0,
-              visibility: GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
-              buffer: { type: 'storage' },
-            },
-            {
-              binding: 1,
-              visibility: GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
-              buffer: { type: 'uniform', hasDynamicOffset: true },
-            },
-          ],
-        }),
-      ],
-      immediateSize,
-    });
-
-  const fullCode = `
-    ${wgslDecl}
-    @group(0) @binding(0) var<storage, read_write> output: array<u32>;
-    @group(0) @binding(1) var<uniform> outIndex: u32;
-
-    @compute @workgroup_size(1) fn cs_main() {
-      ${copyCode}
-    }
-    @fragment fn fs_main() -> @location(0) vec4u {
-      ${copyCode}
-      return vec4u(0);
-    }
-  `;
-
   if (encoderType === 'compute pass') {
+    const layout =
+      pipelineLayout ||
+      t.device.createPipelineLayout({
+        bindGroupLayouts: [
+          t.device.createBindGroupLayout({
+            entries: [
+              {
+                binding: 0,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'storage' },
+              },
+              {
+                binding: 1,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'uniform', hasDynamicOffset: true },
+              },
+            ],
+          }),
+        ],
+        immediateSize,
+      });
+
+    const computeCode = `
+      ${wgslDecl}
+      @group(0) @binding(0) var<storage, read_write> output: array<u32>;
+      @group(0) @binding(1) var<uniform> outIndex: u32;
+
+      @compute @workgroup_size(1) fn cs_main() {
+        ${copyCode}
+      }
+    `;
+
     return t.device.createComputePipeline({
       layout,
       compute: {
-        module: t.device.createShaderModule({ code: fullCode }),
+        module: t.device.createShaderModule({ code: computeCode }),
       },
     });
   } else {
+    
+    
+    const layout =
+      pipelineLayout ||
+      t.device.createPipelineLayout({
+        bindGroupLayouts: [
+          t.device.createBindGroupLayout({
+            entries: [
+              {
+                binding: 0,
+                visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                buffer: { type: 'uniform', hasDynamicOffset: true },
+              },
+            ],
+          }),
+        ],
+        immediateSize,
+      });
+
+    const vertexCode = `
+      @group(0) @binding(0) var<uniform> outIndex: u32;
+
+      @vertex fn vs_main() -> @builtin(position) vec4f {
+        // Map outIndex to pixel centers in a ${renderTargetWidth}x1 render target.
+        let x = (f32(outIndex) + 0.5) / f32(${renderTargetWidth}) * 2.0 - 1.0;
+        return vec4f(x, 0.0, 0.0, 1.0);
+      }
+    `;
+
+    const fragmentCode = `
+      ${wgslDecl}
+      @group(0) @binding(0) var<uniform> outIndex: u32;
+
+      @fragment fn fs_main() -> @location(0) vec4u {
+        return ${fragmentReturnExpr};
+      }
+    `;
+
     return t.device.createRenderPipeline({
       layout,
       vertex: {
-        module: t.device.createShaderModule({
-          code: `
-            // Re-declare outIndex in the vertex shader
-            @group(0) @binding(1) var<uniform> outIndex: u32;
-
-            @vertex fn vs_main() -> @builtin(position) vec4f {
-              // Map outIndex 0..3 to pixel centers in a 4x1 render target.
-              // x = (f32(outIndex) + 0.5) / 2.0 - 1.0
-              let x = (f32(outIndex) + 0.5) / 2.0 - 1.0;
-              return vec4f(x, 0.0, 0.0, 1.0);
-            }
-          `,
-        }),
+        module: t.device.createShaderModule({ code: vertexCode }),
       },
       fragment: {
-        module: t.device.createShaderModule({ code: fullCode }),
-        targets: [{ format: 'r32uint' }],
+        module: t.device.createShaderModule({ code: fragmentCode }),
+        targets: [{ format: kRenderTargetFormat }],
       },
       primitive: {
         topology: 'point-list',
@@ -155,20 +182,26 @@ function createOutputIndexBuffer(t: AllFeaturesMaxLimitsGPUTest, count: number):
   return buffer;
 }
 
+
+
+
+
 function encodeForPassType(
   t: AllFeaturesMaxLimitsGPUTest,
   encoderType: ProgrammableEncoderType,
   commandEncoder: GPUCommandEncoder,
-  fn: (pass: GPURenderPassEncoder | GPUComputePassEncoder | GPURenderBundleEncoder) => void
-) {
+  fn: (pass: GPURenderPassEncoder | GPUComputePassEncoder | GPURenderBundleEncoder) => void,
+  renderTargetWidth: number = 4
+): GPUTexture | undefined {
   if (encoderType === 'compute pass') {
     const pass = commandEncoder.beginComputePass();
     fn(pass);
     pass.end();
+    return undefined;
   } else {
     const renderTargetTexture = t.createTextureTracked({
-      size: [4, 1, 1],
-      format: 'r32uint',
+      size: [renderTargetWidth, 1, 1],
+      format: kRenderTargetFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
 
@@ -188,7 +221,7 @@ function encodeForPassType(
     } else {
       
       const bundleEncoder = t.device.createRenderBundleEncoder({
-        colorFormats: ['r32uint'],
+        colorFormats: [kRenderTargetFormat],
       });
       fn(bundleEncoder);
       const bundle = bundleEncoder.finish();
@@ -206,6 +239,8 @@ function encodeForPassType(
       pass.executeBundles([bundle]);
       pass.end();
     }
+
+    return renderTargetTexture;
   }
 }
 
@@ -223,6 +258,19 @@ function setPipeline(
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function runAndCheck(
   t: AllFeaturesMaxLimitsGPUTest,
   encoderType: ProgrammableEncoderType,
@@ -230,41 +278,110 @@ function runAndCheck(
   setImmediatesFn: (
     encoder: GPUComputePassEncoder | GPURenderPassEncoder | GPURenderBundleEncoder
   ) => void,
-  expectedValues: number[]
+  expectedValues: number[],
+  {
+    numDraws = 1,
+    outputU32sPerDraw,
+    encodeFn,
+    renderTargetWidth = 4,
+  }: {
+    numDraws?: number;
+    outputU32sPerDraw?: number;
+    encodeFn?: (
+      enc: GPUComputePassEncoder | GPURenderPassEncoder | GPURenderBundleEncoder,
+      bindGroup: GPUBindGroup,
+      indexUniformBuffer: GPUBuffer
+    ) => void;
+    renderTargetWidth?: number;
+  } = {}
 ) {
   assert(expectedValues.length > 0, 'expectedValues must not be empty');
-  const outputBuffer = t.createBufferTracked({
-    size: expectedValues.length * 4,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-  });
-  
-  
-  
-  
-  
-  
-  
-  const indexUniformBuffer = t.makeBufferWithContents(new Uint32Array([0]), GPUBufferUsage.UNIFORM);
 
-  const bindGroup = t.device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
-    entries: [
-      { binding: 0, resource: { buffer: outputBuffer } },
-      { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-    ],
-  });
+  
+  
+  const u32sPerDraw = outputU32sPerDraw ?? expectedValues.length;
 
-  const commandEncoder = t.device.createCommandEncoder();
-  encodeForPassType(t, encoderType, commandEncoder, encoder => {
-    setPipeline(encoderType, encoder, pipeline);
-    encoder.setBindGroup(0, bindGroup, [0]);
-    setImmediatesFn(encoder);
-    dispatchOrDraw(encoderType, encoder);
-  });
+  const indexUniformBuffer = encodeFn
+    ? createOutputIndexBuffer(t, numDraws)
+    : t.makeBufferWithContents(new Uint32Array([0]), GPUBufferUsage.UNIFORM);
 
-  t.device.queue.submit([commandEncoder.finish()]);
+  if (encoderType === 'compute pass') {
+    const outputBuffer = t.createBufferTracked({
+      size: u32sPerDraw * 4 * numDraws,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    });
 
-  t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array(expectedValues));
+    const bindGroup = t.device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: outputBuffer } },
+        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
+      ],
+    });
+
+    const commandEncoder = t.device.createCommandEncoder();
+    encodeForPassType(t, encoderType, commandEncoder, encoder => {
+      setPipeline(encoderType, encoder, pipeline);
+      if (encodeFn) {
+        encodeFn(encoder, bindGroup, indexUniformBuffer);
+      } else {
+        encoder.setBindGroup(0, bindGroup, [0]);
+        setImmediatesFn(encoder);
+        dispatchOrDraw(encoderType, encoder);
+      }
+    });
+
+    t.device.queue.submit([commandEncoder.finish()]);
+    t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array(expectedValues));
+  } else {
+    assert(u32sPerDraw <= 4, 'runAndCheck supports at most 4 u32s per draw (one rgba32uint pixel)');
+
+    const bindGroup = t.device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: indexUniformBuffer, size: 4 } }],
+    });
+
+    const commandEncoder = t.device.createCommandEncoder();
+    const pixelWidth = encodeFn ? renderTargetWidth : 1;
+    const renderTarget = encodeForPassType(
+      t,
+      encoderType,
+      commandEncoder,
+      encoder => {
+        setPipeline(encoderType, encoder, pipeline);
+        if (encodeFn) {
+          encodeFn(encoder, bindGroup, indexUniformBuffer);
+        } else {
+          encoder.setBindGroup(0, bindGroup, [0]);
+          setImmediatesFn(encoder);
+          dispatchOrDraw(encoderType, encoder);
+        }
+      },
+      pixelWidth
+    )!;
+
+    const bytesPerRow = align(pixelWidth * kBytesPerPixel, kMinBytesPerRow);
+    const readbackBuffer = t.createBufferTracked({
+      size: bytesPerRow,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+    });
+    commandEncoder.copyTextureToBuffer(
+      { texture: renderTarget },
+      { buffer: readbackBuffer, bytesPerRow },
+      [pixelWidth, 1]
+    );
+
+    t.device.queue.submit([commandEncoder.finish()]);
+
+    
+    const paddedExpected = new Uint32Array(pixelWidth * 4);
+    for (let d = 0; d < numDraws; d++) {
+      for (let i = 0; i < u32sPerDraw; i++) {
+        paddedExpected[d * 4 + i] = expectedValues[d * u32sPerDraw + i];
+      }
+    }
+    t.expectGPUBufferValuesEqual(readbackBuffer, paddedExpected);
+  }
 }
 
 export const g = makeTestGroup(ImmediateDataOperationTest);
@@ -291,10 +408,10 @@ g.test('basic_execution')
   .fn(t => {
     const { encoderType, dataType, scalarType, vectorSize } = t.params;
     t.skipIf(scalarType === 'f16', 'Immediate data blocks do not yet support f16 types');
-    t.skipIfStorageBuffersInFragmentStageNotAvailable(encoderType);
 
     let wgslDecl = '';
     let copyCode = '';
+    let fragmentReturnExpr = '';
     let immediateSize = 0;
     let expected: number[] = [];
     let inputData: Uint32Array;
@@ -306,6 +423,7 @@ g.test('basic_execution')
         var<immediate> data: S;
       `;
       copyCode = 'output[0] = data.a; output[1] = data.b;';
+      fragmentReturnExpr = 'vec4u(data.a, data.b, 0, 0)';
       inputData = new Uint32Array([0xdeadbeef, 0xcafebabe]);
       expected = [0xdeadbeef, 0xcafebabe];
     } else {
@@ -320,6 +438,20 @@ g.test('basic_execution')
       for (let i = 0; i < vSize; i++) {
         const valExpr = vSize === 1 ? 'data' : `data[${i}]`;
         copyCode += `output[${i}] = bitcast<u32>(${valExpr});\n`;
+      }
+
+      
+      if (vSize === 1) {
+        fragmentReturnExpr = 'vec4u(bitcast<u32>(data), 0, 0, 0)';
+      } else if (vSize === 2) {
+        fragmentReturnExpr = 'vec4u(bitcast<u32>(data[0]), bitcast<u32>(data[1]), 0, 0)';
+      } else if (vSize === 3) {
+        fragmentReturnExpr =
+          'vec4u(bitcast<u32>(data[0]), bitcast<u32>(data[1]), bitcast<u32>(data[2]), 0)';
+      } else {
+        
+        fragmentReturnExpr =
+          'vec4u(bitcast<u32>(data[0]), bitcast<u32>(data[1]), bitcast<u32>(data[2]), bitcast<u32>(data[3]))';
       }
 
       inputData = new Uint32Array(vSize);
@@ -342,7 +474,14 @@ g.test('basic_execution')
       }
     }
 
-    const pipeline = createPipeline(t, encoderType, wgslDecl, copyCode, immediateSize);
+    const pipeline = createPipeline(
+      t,
+      encoderType,
+      wgslDecl,
+      copyCode,
+      fragmentReturnExpr,
+      immediateSize
+    );
 
     runAndCheck(
       t,
@@ -360,7 +499,6 @@ g.test('update_data')
   .params(u => u.combine('encoderType', kProgrammableEncoderTypes))
   .fn(t => {
     const { encoderType } = t.params;
-    t.skipIfStorageBuffersInFragmentStageNotAvailable(encoderType);
     const immediateSize = 16;
     const wgslDecl = 'var<immediate> data: vec4<u32>;';
     const copyCode = `
@@ -370,57 +508,37 @@ g.test('update_data')
       output[base + 2] = data[2];
       output[base + 3] = data[3];
     `;
+    const fragmentReturnExpr = 'vec4u(data[0], data[1], data[2], data[3])';
 
-    const pipeline = createPipeline(t, encoderType, wgslDecl, copyCode, immediateSize);
+    const pipeline = createPipeline(
+      t,
+      encoderType,
+      wgslDecl,
+      copyCode,
+      fragmentReturnExpr,
+      immediateSize
+    );
 
-    const outputBuffer = t.createBufferTracked({
-      size: 4 * 4 * 3, 
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    runAndCheck(t, encoderType, pipeline, () => {}, [1, 2, 3, 4, 5, 6, 7, 8, 5, 9, 10, 8], {
+      numDraws: 3,
+      outputU32sPerDraw: 4,
+      encodeFn: (enc, bindGroup) => {
+        
+        enc.setBindGroup(0, bindGroup, [0]);
+        enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+        dispatchOrDraw(encoderType, enc);
+
+        
+        enc.setBindGroup(0, bindGroup, [256]);
+        enc.setImmediates!(0, new Uint32Array([5, 6, 7, 8]));
+        dispatchOrDraw(encoderType, enc);
+
+        
+        enc.setBindGroup(0, bindGroup, [512]);
+        enc.setImmediates!(4, new Uint32Array([9, 10]));
+        dispatchOrDraw(encoderType, enc);
+      },
     });
-
-    
-    
-    const indexUniformBuffer = createOutputIndexBuffer(t, 3);
-
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-      ],
-    });
-
-    const commandEncoder = t.device.createCommandEncoder();
-
-    
-    const runStep = (
-      pass: GPURenderPassEncoder | GPUComputePassEncoder | GPURenderBundleEncoder,
-      stepIndex: number,
-      data: Uint32Array,
-      dstOffset: number = 0
-    ) => {
-      pass.setBindGroup(0, bindGroup, [stepIndex * 256]);
-      pass.setImmediates!(dstOffset, data);
-      dispatchOrDraw(encoderType, pass);
-    };
-
-    encodeForPassType(t, encoderType, commandEncoder, enc => {
-      setPipeline(encoderType, enc, pipeline);
-
-      
-      runStep(enc, 0, new Uint32Array([1, 2, 3, 4]));
-
-      
-      runStep(enc, 1, new Uint32Array([5, 6, 7, 8]));
-
-      
-      runStep(enc, 2, new Uint32Array([9, 10]), 4);
-    });
-
-    t.device.queue.submit([commandEncoder.finish()]);
-
-    const expected = new Uint32Array([1, 2, 3, 4, 5, 6, 7, 8, 5, 9, 10, 8]);
-    t.expectGPUBufferValuesEqual(outputBuffer, expected);
   });
 
 g.test('pipeline_switch')
@@ -437,22 +555,24 @@ g.test('pipeline_switch')
   )
   .fn(t => {
     const { encoderType, sameImmediateSize } = t.params;
-    t.skipIfStorageBuffersInFragmentStageNotAvailable(encoderType);
 
     
     const wgslDeclA = 'var<immediate> data: vec4<u32>;';
     const copyCodeA = `
       output[0] = data.x; output[1] = data.y; output[2] = data.z; output[3] = data.w;
     `;
+    const fragmentReturnExprA = 'vec4u(data.x, data.y, data.z, data.w)';
 
     let wgslDeclB: string;
     let copyCodeB: string;
+    let fragmentReturnExprB: string;
     let immediateSizeB: number;
 
     if (sameImmediateSize) {
       
       wgslDeclB = wgslDeclA;
       copyCodeB = copyCodeA;
+      fragmentReturnExprB = fragmentReturnExprA;
       immediateSizeB = 16;
     } else {
       
@@ -460,6 +580,7 @@ g.test('pipeline_switch')
       copyCodeB = `
         output[0] = data.x; output[1] = data.y; output[2] = 0u; output[3] = 0u;
       `;
+      fragmentReturnExprB = 'vec4u(data.x, data.y, 0, 0)';
       immediateSizeB = 8;
     }
 
@@ -468,67 +589,131 @@ g.test('pipeline_switch')
     const immDataSizeB = sameImmediateSize ? undefined : immediateSizeB / 4;
     const expectedB = sameImmediateSize ? [5, 6, 7, 8] : [5, 6, 0, 0];
 
+    
+    
     const bindGroupLayout = t.device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
-          buffer: { type: 'storage' },
-        },
-        {
-          binding: 1,
-          visibility: GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
-          buffer: { type: 'uniform', hasDynamicOffset: true },
-        },
-      ],
+      entries:
+        encoderType === 'compute pass'
+          ? [
+              {
+                binding: 0,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'storage' },
+              },
+              {
+                binding: 1,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: 'uniform', hasDynamicOffset: true },
+              },
+            ]
+          : [
+              {
+                binding: 0,
+                visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                buffer: { type: 'uniform', hasDynamicOffset: true },
+              },
+            ],
     });
 
     const layoutA = t.device.createPipelineLayout({
       bindGroupLayouts: [bindGroupLayout],
       immediateSize: 16,
     });
-    const pipelineA = createPipeline(t, encoderType, wgslDeclA, copyCodeA, 16, layoutA);
+    const pipelineA = createPipeline(
+      t,
+      encoderType,
+      wgslDeclA,
+      copyCodeA,
+      fragmentReturnExprA,
+      16,
+      4,
+      layoutA
+    );
 
     const layoutB = t.device.createPipelineLayout({
       bindGroupLayouts: [bindGroupLayout],
       immediateSize: immediateSizeB,
     });
-    const pipelineB = createPipeline(t, encoderType, wgslDeclB, copyCodeB, immediateSizeB, layoutB);
+    const pipelineB = createPipeline(
+      t,
+      encoderType,
+      wgslDeclB,
+      copyCodeB,
+      fragmentReturnExprB,
+      immediateSizeB,
+      4,
+      layoutB
+    );
 
-    const outputBuffer = t.createBufferTracked({
-      size: 16, 
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
     const indexUniformBuffer = createOutputIndexBuffer(t, 1);
 
-    const bindGroup = t.device.createBindGroup({
-      layout: bindGroupLayout,
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-      ],
-    });
+    let bindGroup: GPUBindGroup;
+    if (encoderType === 'compute pass') {
+      const outputBuffer = t.createBufferTracked({
+        size: 16, 
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      });
+      bindGroup = t.device.createBindGroup({
+        layout: bindGroupLayout,
+        entries: [
+          { binding: 0, resource: { buffer: outputBuffer } },
+          { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
+        ],
+      });
 
-    const commandEncoder = t.device.createCommandEncoder();
-    encodeForPassType(t, encoderType, commandEncoder, enc => {
-      
-      setPipeline(encoderType, enc, pipelineA);
-      enc.setBindGroup(0, bindGroup, [0]);
-      enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+      const commandEncoder = t.device.createCommandEncoder();
+      encodeForPassType(t, encoderType, commandEncoder, enc => {
+        
+        setPipeline(encoderType, enc, pipelineA);
+        enc.setBindGroup(0, bindGroup, [0]);
+        enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+
+        
+        setPipeline(encoderType, enc, pipelineB);
+        enc.setImmediates!(0, immDataB, undefined, immDataSizeB);
+        dispatchOrDraw(encoderType, enc);
+      });
+
+      t.device.queue.submit([commandEncoder.finish()]);
+      t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array(expectedB));
+    } else {
+      bindGroup = t.device.createBindGroup({
+        layout: bindGroupLayout,
+        entries: [{ binding: 0, resource: { buffer: indexUniformBuffer, size: 4 } }],
+      });
+
+      const commandEncoder = t.device.createCommandEncoder();
+      const renderTarget = encodeForPassType(t, encoderType, commandEncoder, enc => {
+        setPipeline(encoderType, enc, pipelineA);
+        enc.setBindGroup(0, bindGroup, [0]);
+        enc.setImmediates!(0, new Uint32Array([1, 2, 3, 4]));
+
+        
+        setPipeline(encoderType, enc, pipelineB);
+        enc.setImmediates!(0, immDataB, undefined, immDataSizeB);
+        dispatchOrDraw(encoderType, enc);
+      })!;
+
+      const bytesPerRow = align(kBytesPerPixel, kMinBytesPerRow);
+      const readbackBuffer = t.createBufferTracked({
+        size: bytesPerRow,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+      });
+      commandEncoder.copyTextureToBuffer(
+        { texture: renderTarget },
+        { buffer: readbackBuffer, bytesPerRow },
+        [1, 1]
+      );
+
+      t.device.queue.submit([commandEncoder.finish()]);
 
       
-      
-      setPipeline(encoderType, enc, pipelineB);
-      
-      
-      enc.setImmediates!(0, immDataB, undefined, immDataSizeB);
-      dispatchOrDraw(encoderType, enc);
-    });
-
-    t.device.queue.submit([commandEncoder.finish()]);
-
-    
-    t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array(expectedB));
+      const paddedExpected = new Uint32Array(4);
+      for (let i = 0; i < expectedB.length; i++) {
+        paddedExpected[i] = expectedB[i];
+      }
+      t.expectGPUBufferValuesEqual(readbackBuffer, paddedExpected);
+    }
   });
 
 g.test('use_max_immediate_size')
@@ -536,7 +721,6 @@ g.test('use_max_immediate_size')
   .params(u => u.combine('encoderType', kProgrammableEncoderTypes))
   .fn(t => {
     const { encoderType } = t.params;
-    t.skipIfStorageBuffersInFragmentStageNotAvailable(encoderType);
 
     const maxImmediateSize = t.device.limits.maxImmediateSize;
     if (maxImmediateSize === undefined) {
@@ -555,37 +739,30 @@ g.test('use_max_immediate_size')
       output[0] = data.m0;
       output[1] = data.m${count - 1};
     `;
+    const fragmentReturnExpr = `vec4u(data.m0, data.m${count - 1}, 0, 0)`;
 
-    const pipeline = createPipeline(t, encoderType, wgslDecl, copyCode, maxImmediateSize);
+    const pipeline = createPipeline(
+      t,
+      encoderType,
+      wgslDecl,
+      copyCode,
+      fragmentReturnExpr,
+      maxImmediateSize
+    );
 
-    const outputBuffer = t.createBufferTracked({
-      size: 8,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    const indexUniformBuffer = createOutputIndexBuffer(t, 1);
+    const data = new Uint32Array(count);
+    data[0] = 0xdeadbeef;
+    data[count - 1] = 0xcafebabe;
 
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-      ],
-    });
-
-    const commandEncoder = t.device.createCommandEncoder();
-    encodeForPassType(t, encoderType, commandEncoder, enc => {
-      const data = new Uint32Array(count);
-      data[0] = 0xdeadbeef;
-      data[count - 1] = 0xcafebabe;
-
-      setPipeline(encoderType, enc, pipeline);
-      enc.setBindGroup(0, bindGroup, [0]);
-      enc.setImmediates!(0, data);
-      dispatchOrDraw(encoderType, enc);
-    });
-
-    t.device.queue.submit([commandEncoder.finish()]);
-    t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array([0xdeadbeef, 0xcafebabe]));
+    runAndCheck(
+      t,
+      encoderType,
+      pipeline,
+      encoder => {
+        encoder.setImmediates!(0, data);
+      },
+      [0xdeadbeef, 0xcafebabe]
+    );
   });
 
 g.test('typed_array_arguments')
@@ -610,7 +787,6 @@ g.test('typed_array_arguments')
   .fn(t => {
     const { typedArray, encoderType, dataOffset, dataSize } = t.params;
     t.skipIf(typedArray === 'Float16Array', 'TODO(#4297): Float16Array not yet supported');
-    t.skipIfStorageBuffersInFragmentStageNotAvailable(encoderType);
     const Ctor = kTypedArrayBufferViews[typedArray];
     const elementSize = Ctor.BYTES_PER_ELEMENT;
 
@@ -644,7 +820,25 @@ g.test('typed_array_arguments')
       output[14] = data.m3.z;
       output[15] = data.m3.w;
     `;
-    const pipeline = createPipeline(t, encoderType, wgslDecl, copyCode, kImmediateByteSize);
+    
+    
+    const fragmentReturnExpr = `select(select(select(
+      vec4u(data.m3),
+      vec4u(data.m2),
+      outIndex == 2u),
+      vec4u(data.m1),
+      outIndex == 1u),
+      vec4u(data.m0),
+      outIndex == 0u)`;
+
+    const pipeline = createPipeline(
+      t,
+      encoderType,
+      wgslDecl,
+      copyCode,
+      fragmentReturnExpr,
+      kImmediateByteSize
+    );
 
     const actualDataOffset = dataOffset ?? 0;
     const maxElements = kImmediateByteSize / elementSize;
@@ -675,35 +869,6 @@ g.test('typed_array_arguments')
     const clearData = new Uint32Array(kImmediateU32Count);
     for (let i = 0; i < kImmediateU32Count; i++) clearData[i] = 0xaaaaaaaa + i * 0x11111111;
 
-    const outputBuffer = t.createBufferTracked({
-      size: kImmediateByteSize,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    const indexUniformBuffer = createOutputIndexBuffer(t, 1);
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-      ],
-    });
-
-    const commandEncoder = t.device.createCommandEncoder();
-    encodeForPassType(t, encoderType, commandEncoder, enc => {
-      setPipeline(encoderType, enc, pipeline);
-      enc.setBindGroup(0, bindGroup, [0]);
-
-      
-      enc.setImmediates!(0, clearData);
-
-      
-      
-      enc.setImmediates!(0, arr, dataOffset, dataSize);
-
-      dispatchOrDraw(encoderType, enc);
-    });
-    t.device.queue.submit([commandEncoder.finish()]);
-
     
     const expected = new Uint32Array(clearData);
     memcpy(
@@ -715,7 +880,33 @@ g.test('typed_array_arguments')
       { dst: expected.buffer, start: 0 }
     );
 
-    t.expectGPUBufferValuesEqual(outputBuffer, expected);
+    
+    
+    const numDraws = encoderType === 'compute pass' ? 1 : 4;
+
+    runAndCheck(t, encoderType, pipeline, () => {}, Array.from(expected), {
+      numDraws,
+      outputU32sPerDraw: encoderType === 'compute pass' ? kImmediateU32Count : 4,
+      encodeFn: (enc, bindGroup) => {
+        enc.setBindGroup(0, bindGroup, [0]);
+
+        
+        enc.setImmediates!(0, clearData);
+
+        
+        enc.setImmediates!(0, arr, dataOffset, dataSize);
+
+        if (encoderType === 'compute pass') {
+          dispatchOrDraw(encoderType, enc);
+        } else {
+          
+          for (let i = 0; i < 4; i++) {
+            enc.setBindGroup(0, bindGroup, [i * 256]);
+            dispatchOrDraw(encoderType, enc);
+          }
+        }
+      },
+    });
   });
 
 g.test('multiple_updates_before_draw_or_dispatch')
@@ -725,12 +916,12 @@ g.test('multiple_updates_before_draw_or_dispatch')
   .params(u => u.combine('encoderType', kProgrammableEncoderTypes))
   .fn(t => {
     const { encoderType } = t.params;
-    t.skipIfStorageBuffersInFragmentStageNotAvailable(encoderType);
     
     const wgslDecl = 'var<immediate> data: vec4<u32>;';
     const copyCode =
       'output[0] = data.x; output[1] = data.y; output[2] = data.z; output[3] = data.w;';
-    const pipeline = createPipeline(t, encoderType, wgslDecl, copyCode, 16);
+    const fragmentReturnExpr = 'vec4u(data.x, data.y, data.z, data.w)';
+    const pipeline = createPipeline(t, encoderType, wgslDecl, copyCode, fragmentReturnExpr, 16);
 
     runAndCheck(
       t,
@@ -751,33 +942,31 @@ g.test('multiple_updates_before_draw_or_dispatch')
 g.test('render_pass_and_bundle_mix')
   .desc('Verify interaction between executeBundles and direct render pass commands.')
   .fn(t => {
-    t.skipIfStorageBuffersInFragmentStageNotAvailable('render pass');
     const wgslDecl = 'var<immediate> data: vec2<u32>;';
-    const copyCode = `
-      let base = outIndex * 2;
-      output[base] = data.x;
-      output[base + 1] = data.y;
-    `;
-    
-    
-    const pipeline = createPipeline(t, 'render pass', wgslDecl, copyCode, 8) as GPURenderPipeline;
+    const fragmentReturnExpr = 'vec4u(data.x, data.y, 0, 0)';
+    const renderTargetWidth = 2;
 
-    const outputBuffer = t.createBufferTracked({
-      size: 16,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
+    const pipeline = createPipeline(
+      t,
+      'render pass',
+      wgslDecl,
+      '', 
+      fragmentReturnExpr,
+      8,
+      renderTargetWidth
+    ) as GPURenderPipeline;
+
     const indexUniformBuffer = createOutputIndexBuffer(t, 2);
 
     const bindGroup = t.device.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-      ],
+      entries: [{ binding: 0, resource: { buffer: indexUniformBuffer, size: 4 } }],
     });
 
     
-    const bundleEncoder = t.device.createRenderBundleEncoder({ colorFormats: ['r32uint'] });
+    const bundleEncoder = t.device.createRenderBundleEncoder({
+      colorFormats: [kRenderTargetFormat],
+    });
     bundleEncoder.setPipeline(pipeline);
     bundleEncoder.setBindGroup(0, bindGroup, [0]);
     bundleEncoder.setImmediates!(0, new Uint32Array([1, 10]));
@@ -785,8 +974,8 @@ g.test('render_pass_and_bundle_mix')
     const bundle = bundleEncoder.finish();
 
     const renderTargetTexture = t.createTextureTracked({
-      size: [4, 1, 1],
-      format: 'r32uint',
+      size: [renderTargetWidth, 1, 1],
+      format: kRenderTargetFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
     const commandEncoder = t.device.createCommandEncoder();
@@ -811,39 +1000,65 @@ g.test('render_pass_and_bundle_mix')
     pass.draw(1);
 
     pass.end();
+
+    
+    const bytesPerRow = align(renderTargetWidth * kBytesPerPixel, kMinBytesPerRow);
+    const readbackBuffer = t.createBufferTracked({
+      size: bytesPerRow,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+    });
+    commandEncoder.copyTextureToBuffer(
+      { texture: renderTargetTexture },
+      { buffer: readbackBuffer, bytesPerRow },
+      [renderTargetWidth, 1]
+    );
+
     t.device.queue.submit([commandEncoder.finish()]);
 
-    t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array([1, 10, 2, 20]));
+    
+    t.expectGPUBufferValuesEqual(
+      readbackBuffer,
+      new Uint32Array([
+        1,
+        10,
+        0,
+        0, 
+        2,
+        20,
+        0,
+        0, 
+      ])
+    );
   });
 
 g.test('render_bundle_isolation')
   .desc('Verify that immediate data state is isolated between bundles executed in the same pass.')
   .fn(t => {
-    t.skipIfStorageBuffersInFragmentStageNotAvailable('render bundle');
     const wgslDecl = 'var<immediate> data: vec2<u32>;';
-    const copyCode = `
-      let base = outIndex * 2;
-      output[base] = data.x;
-      output[base + 1] = data.y;
-    `;
-    const pipeline = createPipeline(t, 'render pass', wgslDecl, copyCode, 8) as GPURenderPipeline;
+    const fragmentReturnExpr = 'vec4u(data.x, data.y, 0, 0)';
+    const renderTargetWidth = 2;
 
-    const outputBuffer = t.createBufferTracked({
-      size: 16, 
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
+    const pipeline = createPipeline(
+      t,
+      'render pass',
+      wgslDecl,
+      '', 
+      fragmentReturnExpr,
+      8,
+      renderTargetWidth
+    ) as GPURenderPipeline;
+
     const indexUniformBuffer = createOutputIndexBuffer(t, 2);
 
     const bindGroup = t.device.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: indexUniformBuffer, size: 4 } },
-      ],
+      entries: [{ binding: 0, resource: { buffer: indexUniformBuffer, size: 4 } }],
     });
 
     
-    const bundleEncoderA = t.device.createRenderBundleEncoder({ colorFormats: ['r32uint'] });
+    const bundleEncoderA = t.device.createRenderBundleEncoder({
+      colorFormats: [kRenderTargetFormat],
+    });
     bundleEncoderA.setPipeline(pipeline);
     bundleEncoderA.setBindGroup(0, bindGroup, [0]);
     bundleEncoderA.setImmediates!(0, new Uint32Array([1, 2]));
@@ -851,7 +1066,9 @@ g.test('render_bundle_isolation')
     const bundleA = bundleEncoderA.finish();
 
     
-    const bundleEncoderB = t.device.createRenderBundleEncoder({ colorFormats: ['r32uint'] });
+    const bundleEncoderB = t.device.createRenderBundleEncoder({
+      colorFormats: [kRenderTargetFormat],
+    });
     bundleEncoderB.setPipeline(pipeline);
     bundleEncoderB.setBindGroup(0, bindGroup, [256]);
     bundleEncoderB.setImmediates!(0, new Uint32Array([3, 4]));
@@ -859,8 +1076,8 @@ g.test('render_bundle_isolation')
     const bundleB = bundleEncoderB.finish();
 
     const renderTargetTexture = t.createTextureTracked({
-      size: [4, 1, 1],
-      format: 'r32uint',
+      size: [renderTargetWidth, 1, 1],
+      format: kRenderTargetFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
     const commandEncoder = t.device.createCommandEncoder();
@@ -879,7 +1096,33 @@ g.test('render_bundle_isolation')
     pass.executeBundles([bundleA, bundleB]);
 
     pass.end();
+
+    
+    const bytesPerRow = align(renderTargetWidth * kBytesPerPixel, kMinBytesPerRow);
+    const readbackBuffer = t.createBufferTracked({
+      size: bytesPerRow,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+    });
+    commandEncoder.copyTextureToBuffer(
+      { texture: renderTargetTexture },
+      { buffer: readbackBuffer, bytesPerRow },
+      [renderTargetWidth, 1]
+    );
+
     t.device.queue.submit([commandEncoder.finish()]);
 
-    t.expectGPUBufferValuesEqual(outputBuffer, new Uint32Array([1, 2, 3, 4]));
+    
+    t.expectGPUBufferValuesEqual(
+      readbackBuffer,
+      new Uint32Array([
+        1,
+        2,
+        0,
+        0, 
+        3,
+        4,
+        0,
+        0, 
+      ])
+    );
   });
