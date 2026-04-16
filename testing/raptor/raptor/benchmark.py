@@ -202,7 +202,8 @@ class Benchmark:
             try:
                 
                 default_branch = (
-                    subprocess.check_output(
+                    subprocess
+                    .check_output(
                         ["git", "rev-parse", "--abbrev-ref", "origin/HEAD"],
                         cwd=external_repo_path,
                     )
@@ -211,7 +212,8 @@ class Benchmark:
                     .split("/")[-1]
                 )
                 remote_default_branch = (
-                    subprocess.check_output(
+                    subprocess
+                    .check_output(
                         ["git", "remote", "set-head", "origin", "-a"],
                         cwd=external_repo_path,
                     )
@@ -285,7 +287,8 @@ class Benchmark:
         else:
             
             url = (
-                subprocess.check_output(
+                subprocess
+                .check_output(
                     ["git", "config", "--get", "remote.origin.url"],
                     cwd=external_repo_path,
                 )

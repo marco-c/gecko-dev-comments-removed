@@ -2,20 +2,20 @@
 
 
 
+import functools
 import hashlib
 from os.path import dirname
 from pathlib import Path
 
 import jinja2
 from buildconfig import config, topsrcdir  
-from mozbuild.util import memoize  
 from schema_parser import parse_and_validate
 
 THIS_DIR = Path(dirname(__file__))
 TEMPLATES = THIS_DIR / "templates"
 
 
-@memoize
+@functools.cache
 def get_deps():
     
     
@@ -38,7 +38,8 @@ def generate_cpp_events(output_fd, *inputs):
             
             
             
-            input_hash=hashlib.sha256("".join(inputs).encode())
+            input_hash=hashlib
+            .sha256("".join(inputs).encode())
             .hexdigest()
             .upper()[:15],
         )
@@ -72,7 +73,7 @@ def generate_glean_adapter(output_fd, *inputs):
     return get_deps().union(load_schema_index() if not inputs else {})
 
 
-@memoize
+@functools.cache
 def load_schema_index():
     index = THIS_DIR.parent / "index.py"
 
@@ -85,7 +86,7 @@ def load_schema_index():
     return [str(Path(topsrcdir) / x) for x in namespace["gecko_trace_files"]]
 
 
-@memoize
+@functools.cache
 def _jinja2_env():
     from jinja2.exceptions import TemplateRuntimeError
     from jinja2.ext import Extension
