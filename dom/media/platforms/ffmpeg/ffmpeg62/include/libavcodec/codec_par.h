@@ -212,6 +212,11 @@ typedef struct AVCodecParameters {
 
 
     int seek_preroll;
+
+    
+
+
+    enum AVAlphaMode alpha_mode;
 } AVCodecParameters;
 
 

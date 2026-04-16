@@ -254,6 +254,12 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_3D_REFERENCE_DISPLAYS,
+
+    
+
+
+
+     AV_FRAME_DATA_EXIF,
 };
 
 enum AVActiveFormatDescription {
@@ -767,6 +773,13 @@ typedef struct AVFrame {
 
 
     int64_t duration;
+
+    
+
+
+
+
+    enum AVAlphaMode alpha_mode;
 } AVFrame;
 
 

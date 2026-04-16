@@ -45,7 +45,8 @@ extern const SideDataMap ff_sd_global_map[];
 
 
 
-int ff_decode_receive_frame(struct AVCodecContext *avctx, struct AVFrame *frame);
+int ff_decode_receive_frame(struct AVCodecContext *avctx, struct AVFrame *frame,
+                            unsigned flags);
 
 
 
@@ -93,7 +94,8 @@ void ff_thread_flush(struct AVCodecContext *avctx);
 
 
 
-int ff_thread_receive_frame(struct AVCodecContext *avctx, AVFrame *frame);
+int ff_thread_receive_frame(struct AVCodecContext *avctx, AVFrame *frame,
+                            unsigned flags);
 
 
 

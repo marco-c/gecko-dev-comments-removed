@@ -80,21 +80,6 @@
 
 #define AV_CODEC_CAP_SMALL_LAST_FRAME    (1 <<  6)
 
-#if FF_API_SUBFRAMES
-
-
-
-
-
-
-
-
-
-
-
-#define AV_CODEC_CAP_SUBFRAMES           (1 <<  8)
-#endif
-
 
 
 

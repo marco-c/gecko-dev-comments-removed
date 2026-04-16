@@ -185,6 +185,9 @@
 #define AV_PROFILE_PRORES_4444      4
 #define AV_PROFILE_PRORES_XQ        5
 
+#define AV_PROFILE_PRORES_RAW       0
+#define AV_PROFILE_PRORES_RAW_HQ    1
+
 #define AV_PROFILE_ARIB_PROFILE_A 0
 #define AV_PROFILE_ARIB_PROFILE_C 1
 
@@ -193,6 +196,14 @@
 
 #define AV_PROFILE_EVC_BASELINE             0
 #define AV_PROFILE_EVC_MAIN                 1
+
+#define AV_PROFILE_APV_422_10  33
+#define AV_PROFILE_APV_422_12  44
+#define AV_PROFILE_APV_444_10  55
+#define AV_PROFILE_APV_444_12  66
+#define AV_PROFILE_APV_4444_10 77
+#define AV_PROFILE_APV_4444_12 88
+#define AV_PROFILE_APV_400_10  99
 
 
 #define AV_LEVEL_UNKNOWN                  -99
@@ -324,6 +335,20 @@ typedef struct AVProducerReferenceTime {
     int64_t wallclock;
     int flags;
 } AVProducerReferenceTime;
+
+
+
+
+
+
+
+typedef struct AVRTCPSenderReport {
+    uint32_t ssrc; 
+    uint64_t ntp_timestamp; 
+    uint32_t rtp_timestamp; 
+    uint32_t sender_nb_packets; 
+    uint32_t sender_nb_bytes; 
+} AVRTCPSenderReport;
 
 
 
