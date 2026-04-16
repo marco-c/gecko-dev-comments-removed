@@ -48,6 +48,8 @@ struct StreamBase {
       return;
     }
 
+    SortByArrivalOrder(self().frames);
+
     
     Timestamp arrival_offset = Timestamp::PlusInfinity();
     Timestamp departure_offset = Timestamp::PlusInfinity();
