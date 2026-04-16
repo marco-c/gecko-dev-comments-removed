@@ -236,7 +236,7 @@ const clickOnInspectIcon = async function (animationInspector, panel, index) {
 
 
 
-const changePlaybackRateSelector = async function (
+const changePlaybackRateMultiplierSelector = async function (
   animationInspector,
   panel,
   rate
@@ -258,8 +258,12 @@ const changePlaybackRateSelector = async function (
 
   const win = selectEl.ownerGlobal;
   while (selectEl.selectedIndex != optionIndex) {
+    const onUpdated = animationInspector.once(
+      "playbackrate-multiplier-updated"
+    );
     const key = selectEl.selectedIndex > optionIndex ? "LEFT" : "RIGHT";
     EventUtils.sendKey(key, win);
+    await onUpdated;
   }
 };
 
