@@ -1012,8 +1012,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
                        (mCanvasElement && mCanvasElement->IsWriteOnly()) ||
                        (mOffscreenCanvas && mOffscreenCanvas->IsWriteOnly());
     if (CurrentState().filterSourceGraphicTainted != isWriteOnly) {
-      UpdateFilter( true);
-      EnsureTarget();
+      
+      
+      
+      UpdateFilter( false);
     }
     MOZ_ASSERT(CurrentState().filterSourceGraphicTainted == isWriteOnly);
     return CurrentState().filter;
