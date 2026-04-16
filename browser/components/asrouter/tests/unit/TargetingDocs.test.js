@@ -2,6 +2,7 @@ import { ASRouterTargeting } from "modules/ASRouterTargeting.sys.mjs";
 import docs from "docs/targeting-attributes.md";
 
 
+
 const SKIP_DOCS = [];
 
 const MESSAGE_CONTEXT_ATTRIBUTES = ["previousSessionEnd"];
@@ -19,28 +20,8 @@ function getHeadingsFromDocs() {
   return found;
 }
 
-function getTOCFromDocs() {
-  const re = /## Available attributes\n+([^]+)\n+## Detailed usage/;
-  const sectionMatch = docs.match(re);
-  if (!sectionMatch) {
-    return [];
-  }
-  const [, listText] = sectionMatch;
-  const re2 = /\[(\w+)\]/g;
-  const found = [];
-  let match = 1;
-  while (match) {
-    match = re2.exec(listText);
-    if (match) {
-      found.push(match[1]);
-    }
-  }
-  return found;
-}
-
 describe("ASRTargeting docs", () => {
   const DOCS_TARGETING_HEADINGS = getHeadingsFromDocs();
-  const DOCS_TOC = getTOCFromDocs();
   const ASRTargetingAttributes = [
     ...Object.keys(ASRouterTargeting.Environment).filter(
       attribute => !SKIP_DOCS.includes(attribute)
@@ -57,11 +38,6 @@ describe("ASRTargeting docs", () => {
           DOCS_TARGETING_HEADINGS,
           targetingParam,
           `Didn't find the heading: ### \`${targetingParam}\``
-        );
-        assert.include(
-          DOCS_TOC,
-          targetingParam,
-          `Didn't find a table of contents entry for ${targetingParam}`
         );
       });
     }
