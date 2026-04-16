@@ -396,8 +396,8 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
 
     
     struct PlayoutAudioDeviceInfo {
-      int id;          
-      int max_volume;  
+      int id = 0;          
+      int max_volume = 0;  
     };
 
     RuntimeSetting() : type_(Type::kNotSpecified), value_(0.0f) {}
