@@ -199,6 +199,8 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
     SampleCounter vp8;   
     SampleCounter vp9;   
     SampleCounter h264;  
+    SampleCounter av1;   
+    SampleCounter h265;  
   };
   struct AdaptChanges {
     int down = 0;
