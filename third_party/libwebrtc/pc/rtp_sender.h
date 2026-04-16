@@ -124,6 +124,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
     virtual void OnSetStreams() = 0;
   };
 
+  ~RtpSenderBase() override;
+
   
   
   
@@ -236,6 +238,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
                 absl::string_view id,
                 SetStreamsObserver* set_streams_observer,
                 MediaSendChannelInterface* media_channel);
+
   
   
   bool can_send_track() const RTC_RUN_ON(signaling_thread_) {
