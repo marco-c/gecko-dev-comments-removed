@@ -38,7 +38,7 @@ constexpr uint16_t kNetworkCostVpn = 1;
 
 
 
-constexpr uint16_t kNetworkCostSlice = -2;
+constexpr int16_t kNetworkCostSlice = -2;
 
 
 constexpr uint16_t kNetworkCostCellular5GSlice =  
