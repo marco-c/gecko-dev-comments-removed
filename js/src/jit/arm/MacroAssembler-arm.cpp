@@ -3569,7 +3569,7 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), sp, r0, r1, r2);
+  wasm::GenerateJumpToCatchHandler(asMasm(), sp, r0, r1);
 }
 
 Assembler::Condition MacroAssemblerARMCompat::testStringTruthy(
