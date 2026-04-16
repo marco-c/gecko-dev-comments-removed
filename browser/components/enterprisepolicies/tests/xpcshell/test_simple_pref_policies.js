@@ -1227,6 +1227,24 @@ const POLICIES_TESTS = [
   
   {
     policies: {
+      XSLTEnabled: true,
+    },
+    lockedPrefs: {
+      "dom.xslt.enabled": true,
+    },
+  },
+  {
+    policies: {
+      XSLTEnabled: false,
+    },
+    lockedPrefs: {
+      "dom.xslt.enabled": false,
+    },
+  },
+
+  
+  {
+    policies: {
       AIControls: {
         Default: { Value: "blocked", Locked: true },
         Translations: { Value: "available" },
