@@ -329,23 +329,17 @@ add_task(async function test_cross_window_between_tab_and_sidebar_popup() {
   const panelB = winB.document.getElementById("notification-popup");
 
   
-  const popupAHidden = BrowserTestUtils.waitForEvent(panelA, "popuphidden");
   const popupBShown = BrowserTestUtils.waitForEvent(panelB, "popupshown");
-
   await clickRequestMic(innerB);
-
-  await popupAHidden;
-  Assert.ok(true, "Window A tab notification canceled");
-
   await popupBShown;
+
   Assert.equal(panelB.state, "open", "Window B sidebar notification shown");
+  Assert.equal(panelA.state, "open", "Window A PopupNotification still show");
 
   
-  if (panelB.state === "open") {
-    const popupBHidden = BrowserTestUtils.waitForEvent(panelB, "popuphidden");
-    panelB.hidePopup();
-    await popupBHidden;
-  }
+  const popupBHidden = BrowserTestUtils.waitForEvent(panelB, "popuphidden");
+  panelB.hidePopup();
+  await popupBHidden;
 
   await winB.SidebarController.hide();
 
