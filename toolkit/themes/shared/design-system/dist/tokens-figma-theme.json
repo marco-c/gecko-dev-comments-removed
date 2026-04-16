@@ -103,13 +103,13 @@
     "forcedColors": "transparent"
   },
   "box-shadow/color/lighter/layer-1": {
-    "light": "rgba(0, 0, 0, 0.05)",
-    "dark": "rgba(0, 0, 0, 0.2)",
+    "light": "rgba(0, 0, 0, 0.03)",
+    "dark": "rgba(0, 0, 0, 0.15)",
     "forcedColors": "transparent"
   },
   "box-shadow/color/lighter/layer-2": {
-    "light": "rgba(0, 0, 0, 0.1)",
-    "dark": "rgba(0, 0, 0, 0.4)",
+    "light": "rgba(0, 0, 0, 0.05)",
+    "dark": "rgba(0, 0, 0, 0.2)",
     "forcedColors": "transparent"
   },
   "color/accent/primary": {
@@ -536,7 +536,7 @@
   },
   "card/border/color": {
     "light": "color-mix(in srgb, currentColor 10%, transparent)",
-    "dark": "color-mix(in srgb, currentColor 10%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 6%, transparent)",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "icon/color": {
@@ -583,11 +583,6 @@
     "light": "{Theme$link/color}",
     "dark": "{Theme$link/color}",
     "forcedColors": "{Theme$link/color}"
-  },
-  "tab/attention/dot/color": {
-    "light": "{Theme$color/accent/attention}",
-    "dark": "{Theme$color/accent/attention}",
-    "forcedColors": "{Theme$color/accent/attention}"
   },
   "table/background/color": {
     "light": "#f8f8fa",
@@ -713,5 +708,20 @@
     "light": "{Theme$background/color/canvas}",
     "dark": "{Theme$background/color/canvas}",
     "forcedColors": "{Theme$button/background/color}"
+  },
+  "tab/attention/dot/color": {
+    "light": "{Theme$color/accent/attention}",
+    "dark": "{Theme$color/accent/attention}",
+    "forcedColors": "{Theme$color/accent/attention}"
+  },
+  "tab/hover/outline/color": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "currentColor"
+  },
+  "tab/selected/outline/color": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "currentColor"
   }
 }
