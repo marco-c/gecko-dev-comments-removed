@@ -8,17 +8,15 @@
 
 import os
 import re
-from typing import Optional
+from typing import Literal, Optional
 
 import attr
 import taskgraph
 from mozpack import path as mozpath
 from mozshellutil import quote as shell_quote
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import LegacySchema, Schema, validate_schema
+from taskgraph.util.schema import Schema, validate_schema
 from taskgraph.util.treeherder import join_symbol
-from voluptuous import Any, Required
-from voluptuous import Optional as VOptional
 
 import gecko_taskgraph
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
@@ -62,8 +60,6 @@ class FetchBuilder:
 
 
 def fetch_builder(name, schema):
-    schema = LegacySchema({Required("type"): name}).extend(schema)
-
     def wrap(func):
         fetch_builders[name] = FetchBuilder(schema, func)
         return func
@@ -187,42 +183,40 @@ def make_task(config, jobs):
         yield task
 
 
-@fetch_builder(
-    "static-url",
-    schema={
-        
-        Required("url"): str,
-        
-        Required("sha256"): str,
-        
-        Required("size"): int,
-        
-        VOptional("gpg-signature"): {
-            
-            
-            
-            Required("sig-url"): str,
-            
-            
-            Required("key-path"): str,
-        },
-        VOptional("headers"): [str],
-        
-        
-        
-        
-        VOptional("artifact-name"): str,
-        
-        
-        
-        VOptional("strip-components"): int,
-        
-        
-        VOptional("add-prefix"): str,
-        
-        
-    },
-)
+class GpgSignatureSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    
+    
+    sig_url: str
+    
+    key_path: str
+
+
+class StaticUrlFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["static-url"]
+    
+    url: str
+    
+    sha256: str
+    
+    size: int
+    
+    gpg_signature: Optional[GpgSignatureSchema] = None
+    headers: Optional[list[str]] = None
+    
+    
+    
+    artifact_name: Optional[str] = None
+    
+    
+    strip_components: Optional[int] = None
+    
+    
+    add_prefix: Optional[str] = None
+    
+    
+
+
+@fetch_builder("static-url", schema=StaticUrlFetchSchema)
 def create_fetch_url_task(config, name, fetch):
     artifact_name = fetch.get("artifact-name")
     if not artifact_name:
@@ -287,21 +281,23 @@ def create_fetch_url_task(config, name, fetch):
     }
 
 
-@fetch_builder(
-    "git",
-    schema={
-        Required("repo"): str,
-        Required(Any("revision", "branch")): str,
-        VOptional("include-dot-git"): bool,
-        VOptional("artifact-name"): str,
-        VOptional("path-prefix"): str,
-        
-        
-        
-        
-        VOptional("ssh-key"): str,
-    },
-)
+class GitFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["git"]
+    repo: str
+    
+    revision: Optional[str] = None
+    branch: Optional[str] = None
+    include_dot_git: Optional[bool] = None
+    artifact_name: Optional[str] = None
+    path_prefix: Optional[str] = None
+    
+    
+    
+    
+    ssh_key: Optional[str] = None
+
+
+@fetch_builder("git", schema=GitFetchSchema)
 def create_git_fetch_task(config, name, fetch):
     path_prefix = fetch.get("path-prefix")
     if not path_prefix:
@@ -351,14 +347,14 @@ def create_git_fetch_task(config, name, fetch):
     }
 
 
-@fetch_builder(
-    "onnxruntime-deps-fetch",
-    schema={
-        Required("repo"): str,
-        Required("revision"): str,
-        Required("artifact-name"): str,
-    },
-)
+class OnnxruntimeDepsFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["onnxruntime-deps-fetch"]
+    repo: str
+    revision: str
+    artifact_name: str
+
+
+@fetch_builder("onnxruntime-deps-fetch", schema=OnnxruntimeDepsFetchSchema)
 def create_onnxruntime_deps_fetch_task(config, name, fetch):
     artifact_name = fetch.get("artifact-name")
     workdir = "/builds/worker"
@@ -381,18 +377,18 @@ def create_onnxruntime_deps_fetch_task(config, name, fetch):
     }
 
 
-@fetch_builder(
-    "chromium-fetch",
-    schema={
-        Required("script"): str,
-        
-        Required("platform"): str,
-        
-        VOptional("revision"): str,
-        
-        Required("artifact-name"): str,
-    },
-)
+class ChromiumFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["chromium-fetch"]
+    script: str
+    
+    platform: str
+    
+    revision: Optional[str] = None
+    
+    artifact_name: str
+
+
+@fetch_builder("chromium-fetch", schema=ChromiumFetchSchema)
 def create_chromium_fetch_task(config, name, fetch):
     artifact_name = fetch.get("artifact-name")
 
@@ -423,22 +419,22 @@ def create_chromium_fetch_task(config, name, fetch):
     }
 
 
-@fetch_builder(
-    "cft-chromedriver-fetch",
-    schema={
-        Required("script"): str,
-        
-        Required("platform"): str,
-        
-        Required("artifact-name"): str,
-        
-        VOptional("channel"): str,
-        
-        VOptional("backup"): bool,
-        
-        VOptional("version"): str,
-    },
-)
+class CftChromedriverFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["cft-chromedriver-fetch"]
+    script: str
+    
+    platform: str
+    
+    artifact_name: str
+    
+    channel: Optional[str] = None
+    
+    backup: Optional[bool] = None
+    
+    version: Optional[str] = None
+
+
+@fetch_builder("cft-chromedriver-fetch", schema=CftChromedriverFetchSchema)
 def create_cft_canary_fetch_task(config, name, fetch):
     artifact_name = fetch.get("artifact-name")
 
