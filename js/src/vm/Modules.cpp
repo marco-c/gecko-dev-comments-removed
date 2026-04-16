@@ -2372,7 +2372,9 @@ static void RejectExecutionWithPendingException(JSContext* cx,
     (void)cx->getPendingException(&exception);
   }
   cx->clearPendingException();
-  AsyncModuleExecutionRejected(cx, module, exception);
+  if (!AsyncModuleExecutionRejected(cx, module, exception)) {
+    MOZ_ASSERT(cx->isThrowingOverRecursed());
+  }
 }
 
 
@@ -2515,16 +2517,21 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
 
 
 
-void js::AsyncModuleExecutionRejected(JSContext* cx,
+bool js::AsyncModuleExecutionRejected(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       HandleValue error) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   
   if (module->status() == ModuleStatus::Evaluated) {
     
     MOZ_ASSERT(module->hadEvaluationError());
 
     
-    return;
+    return true;
   }
 
   
@@ -2568,10 +2575,13 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
     parent = &parents->get(i).toObject().as<ModuleObject>();
 
     
-    AsyncModuleExecutionRejected(cx, parent, error);
+    if (!AsyncModuleExecutionRejected(cx, parent, error)) {
+      return false;
+    }
   }
 
   
+  return true;
 }
 
 

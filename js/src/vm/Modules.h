@@ -47,7 +47,9 @@ ModuleNamespaceObject* GetOrCreateModuleNamespace(JSContext* cx,
 
 void AsyncModuleExecutionFulfilled(JSContext* cx, Handle<ModuleObject*> module);
 
-void AsyncModuleExecutionRejected(JSContext* cx, Handle<ModuleObject*> module,
+
+
+bool AsyncModuleExecutionRejected(JSContext* cx, Handle<ModuleObject*> module,
                                   HandleValue error);
 
 bool OnModuleEvaluationFailure(JSContext* cx, HandleObject evaluationPromise,
