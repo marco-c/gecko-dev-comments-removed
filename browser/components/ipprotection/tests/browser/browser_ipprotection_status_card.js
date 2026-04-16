@@ -46,7 +46,8 @@ async function setupStatusCardTest(
     },
     usageInfo: null,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  IPProtectionService.updateState();
+  await waitForProxyState(IPPProxyStates.READY);
 
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -323,6 +324,12 @@ add_task(async function test_status_card_connecting() {
 
   checkLocationAndBandwidth(statusBoxEl, mockLocation, mockBandwidthUsage);
 
+  const button = statusCard.actionButtonEl;
+  Assert.ok(
+    button?.disabled,
+    "Button in connecting state should be present and disabled"
+  );
+
   await closePanel();
   await cleanupStatusCardTest();
 });
@@ -414,7 +421,7 @@ add_task(async function test_bandwidth_states() {
       used: 45.1 * BANDWIDTH.BYTES_IN_GB,
       usedGB: 45.1,
       percent: "90",
-      remainingRounded: 5, 
+      remainingRounded: 4.9,
       gbCount: 2,
       mbCount: 0,
     },
