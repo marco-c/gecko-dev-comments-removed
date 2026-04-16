@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FS_TEST_GTEST_FILESYSTEMMOCKS_H_
 #define DOM_FS_TEST_GTEST_FILESYSTEMMOCKS_H_
 
@@ -23,6 +21,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/FileSystemHandle.h"
 #include "mozilla/dom/FileSystemManagerChild.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
@@ -91,14 +90,16 @@ class MockFileSystemRequestHandler : public FileSystemRequestHandler {
               (override));
 
   MOCK_METHOD(void, MoveEntry,
-              (RefPtr<FileSystemManager> & aManager, FileSystemHandle* aHandle,
+              (RefPtr<FileSystemManager> & aManager,
+               RefPtr<FileSystemHandle> aHandle,
                FileSystemEntryMetadata* const aEntry,
                const FileSystemChildMetadata& aNewEntry,
                RefPtr<Promise> aPromise, ErrorResult& aError),
               (override));
 
   MOCK_METHOD(void, RenameEntry,
-              (RefPtr<FileSystemManager> & aManager, FileSystemHandle* aHandle,
+              (RefPtr<FileSystemManager> & aManager,
+               RefPtr<FileSystemHandle> aHandle,
                FileSystemEntryMetadata* const aEntry, const Name& aName,
                RefPtr<Promise> aPromise, ErrorResult& aError),
               (override));
