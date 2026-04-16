@@ -276,6 +276,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   
   bool IsDtlsPiggybackSupportedByPeer();
   bool WasDtlsCompletedByPiggybacking();
+  void SetFakeIceLite() { fake_ice_lite_ = true; }
 
  private:
   void ConnectToIceTransport();
@@ -367,6 +368,9 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   
   bool pending_periodic_retransmit_dtls_packet_ = false;
   ScopedTaskSafetyDetached safety_flag_;
+
+  
+  bool fake_ice_lite_ = false;
 };
 
 }  
