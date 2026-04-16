@@ -1119,8 +1119,9 @@ void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
     if (auto* loader = ufe->GetLoader()) {
       
       
+      
+      
       loader->Cancel();
-      RemoveLoader(loader);
     } else {
       
       
