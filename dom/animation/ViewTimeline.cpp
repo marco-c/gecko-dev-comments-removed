@@ -22,9 +22,9 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  
-  auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoRequest);
-  auto scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  auto scroller = ScrollerInfo::Anonymous(
+      StyleScroller::Nearest,
+      NonOwningAnimationTarget{aSubject, aPseudoRequest});
 
   
   return MakeAndAddRef<ViewTimeline>(
@@ -37,9 +37,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
     Document* aDocument, const NonOwningAnimationTarget& aTarget,
     StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset) {
   
-  auto [element, pseudo] =
-      FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
-  Scroller scroller = Scroller::Nearest(const_cast<Element*>(element), pseudo);
+  auto scroller = ScrollerInfo::Anonymous(StyleScroller::Nearest, aTarget);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement,
                                      aTarget.mPseudoRequest.mType, aInset);
@@ -102,7 +100,8 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   mCachedCurrentTime.reset();
 
   
-  if (!mSource || !mSource.Source().mElement->GetPrimaryFrame()) {
+  const auto* e = mScrollerInfo.Source().mElement;
+  if (!e || !e->GetPrimaryFrame()) {
     return;
   }
 

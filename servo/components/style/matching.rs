@@ -30,6 +30,8 @@ use crate::style_resolver::{PseudoElementResolution, ResolvedElementStyles};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
+use crate::values::generics::animation::GenericAnimationTimeline;
+use crate::values::specified::animation::Scroller;
 use servo_arc::{Arc, ArcBorrow};
 
 
@@ -188,6 +190,35 @@ trait PrivateMatchMethods: TElement {
         false
     }
 
+    #[inline]
+    fn requires_animation_update_for_scroll_self(
+        old: &ComputedValues,
+        new: &ComputedValues,
+    ) -> bool {
+        
+        
+        
+        
+        
+        
+        let scrollable_changed = old.clone_overflow_x().is_scrollable()
+            != new.clone_overflow_x().is_scrollable()
+            || old.clone_overflow_y().is_scrollable() != new.clone_overflow_y().is_scrollable();
+        if !scrollable_changed {
+            return false;
+        }
+        new.get_ui().animation_timeline_iter().any(|timeline| {
+            let scroll_function = match timeline {
+                GenericAnimationTimeline::Scroll(ref sf) => sf,
+                _ => return false,
+            };
+            if scroll_function.scroller != Scroller::SelfElement {
+                return false;
+            }
+            true
+        })
+    }
+
     
     fn after_change_style(
         &self,
@@ -280,6 +311,10 @@ trait PrivateMatchMethods: TElement {
         
         
         if new_style.writing_mode != old_style.writing_mode {
+            return has_animations;
+        }
+
+        if Self::requires_animation_update_for_scroll_self(old_style, new_style) {
             return has_animations;
         }
 
