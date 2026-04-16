@@ -30,13 +30,21 @@ void VideoStreamTrack::AddVideoOutput(VideoOutput* aOutput) {
   if (Ended()) {
     return;
   }
-  for (const auto& output : mVideoOutputs) {
-    if (output == aOutput) {
+  MOZ_ASSERT(aOutput->mAttachment == VideoOutput::State::Detached);
+  const bool exists = mVideoOutputs.Contains(aOutput);
+  if (exists) {
+    
+    
+    
+    
+    
+    if (aOutput->mAttachment == VideoOutput::State::Attached) {
       MOZ_ASSERT_UNREACHABLE("A VideoOutput was already added");
       return;
     }
+  } else {
+    mVideoOutputs.AppendElement(aOutput);
   }
-  mVideoOutputs.AppendElement(aOutput);
   aOutput->mAttachment = VideoOutput::State::Attached;
   AddDirectListener(aOutput);
   AddListener(aOutput);
@@ -46,9 +54,13 @@ void VideoStreamTrack::RemoveVideoOutput(VideoOutput* aOutput) {
   for (const auto& output : mVideoOutputs.Clone()) {
     if (output == aOutput) {
       mVideoOutputs.RemoveElement(aOutput);
-      aOutput->mAttachment = VideoOutput::State::Detaching;
-      RemoveDirectListener(aOutput);
-      RemoveListener(aOutput);
+      
+      
+      if (aOutput->mAttachment == VideoOutput::State::Attached) {
+        aOutput->mAttachment = VideoOutput::State::Detaching;
+        RemoveDirectListener(aOutput);
+        RemoveListener(aOutput);
+      }
     }
   }
 }
