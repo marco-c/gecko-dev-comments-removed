@@ -4272,6 +4272,16 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
   
   
   
+  if (!aFullscreen) {
+    Document* doc = GetExtantDoc();
+    if (doc) {
+      doc->SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock::None);
+    }
+  }
+
+  
+  
+  
   
   
   
