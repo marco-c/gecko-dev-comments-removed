@@ -250,7 +250,7 @@ static_assert(sizeof(arena_bin_t) == 32);
 
 enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
 
-struct arena_t {
+struct arena_t : public BaseAllocClass {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
 #  define ARENA_MAGIC 0x947d3d24
   uint32_t mMagic = ARENA_MAGIC;
@@ -470,8 +470,25 @@ struct arena_t {
       MOZ_REQUIRES(mLock);
 #endif
 
-  [[nodiscard]] bool SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
-                              bool aZero) MOZ_REQUIRES(mLock);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] bool SplitAndAllocRun(arena_run_t* aRun, size_t aSize,
+                                      bool aLarge, bool aZero)
+      MOZ_REQUIRES(mLock);
 
   void TrimRunHead(arena_chunk_t* aChunk, arena_run_t* aRun, size_t aOldSize,
                    size_t aNewSize) MOZ_REQUIRES(mLock);
@@ -681,11 +698,15 @@ struct arena_t {
 
   bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
 
-  void* operator new(size_t aCount) = delete;
-
+  
   void* operator new(size_t aCount, const mozilla::fallible_t&) noexcept;
 
-  void operator delete(void*);
+  
+  void* operator new(size_t aCount) noexcept = delete;
+  void* operator new[](size_t aCount) noexcept = delete;
+  void* operator new[](size_t aCount,
+                       const mozilla::fallible_t&) noexcept = delete;
+  void operator delete[](void* aPtr) = delete;
 };
 
 #endif 

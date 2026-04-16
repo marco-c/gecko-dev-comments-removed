@@ -646,15 +646,6 @@ void jemalloc_set_profiler_callbacks(
 }  
 #endif
 
-template <>
-arena_t* TypedBaseAlloc<arena_t>::sFirstFree = nullptr;
-
-template <>
-size_t TypedBaseAlloc<arena_t>::size_of() {
-  
-  return sizeof(arena_t) + (sizeof(arena_bin_t) * NUM_SMALL_CLASSES);
-}
-
 
 
 
@@ -832,8 +823,8 @@ void arena_t::TouchMadvisedPage(arena_chunk_t* aChunk, size_t page) {
 }
 #endif
 
-bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
-                       bool aZero) {
+bool arena_t::SplitAndAllocRun(arena_run_t* aRun, size_t aSize, bool aLarge,
+                               bool aZero) {
   arena_chunk_t* chunk = GetChunkForPtr(aRun);
   size_t old_ndirty = chunk->mNumDirty;
   size_t run_ind =
@@ -911,8 +902,6 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     }
   }
 #endif
-
-  mRunsAvail.Remove(&chunk->mPageMap[run_ind]);
 
   
   if (rem_pages > 0) {
@@ -1088,7 +1077,6 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
   aChunk->mPageMap[gChunkHeaderNumPages].bits |= gMaxLargeClass;
   aChunk->mPageMap[gChunkNumPages - gPagesPerRealPage - 1].bits |=
       gMaxLargeClass;
-  mRunsAvail.Insert(&aChunk->mPageMap[gChunkHeaderNumPages]);
 }
 
 bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
@@ -1175,16 +1163,16 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
 
     MOZ_ASSERT((chunk->mPageMap[pageind].bits & CHUNK_MAP_BUSY) == 0);
     run = (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
+    mRunsAvail.Remove(mapelm);
   } else if (mSpare && !mSpare->mIsPurging) {
     
     arena_chunk_t* chunk = mSpare;
     mSpare = nullptr;
     run = (arena_run_t*)(uintptr_t(chunk) +
                          (gChunkHeaderNumPages << gPageSize2Pow));
-    
     MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
                0);
-    mRunsAvail.Insert(&chunk->mPageMap[gChunkHeaderNumPages]);
+    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
   } else {
     
     
@@ -1197,9 +1185,14 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     InitChunk(chunk, aSize >> gPageSize2Pow);
     run = (arena_run_t*)(uintptr_t(chunk) +
                          (gChunkHeaderNumPages << gPageSize2Pow));
+    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
   }
   
-  return SplitRun(run, aSize, aLarge, aZero) ? run : nullptr;
+  if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
+    mRunsAvail.Insert(mapelm);
+    return nullptr;
+  }
+  return run;
 }
 
 void arena_t::UpdateMaxDirty() {
@@ -2854,9 +2847,12 @@ bool arena_t::RallocGrowLarge(arena_chunk_t* aChunk, void* aPtr, size_t aSize,
       
       
       
-      if (!SplitRun((arena_run_t*)(uintptr_t(aChunk) +
-                                   ((pageind + npages) << gPageSize2Pow)),
-                    aSize - aOldSize, true, false)) {
+      mRunsAvail.Remove(&aChunk->mPageMap[pageind + npages]);
+      if (!SplitAndAllocRun(
+              (arena_run_t*)(uintptr_t(aChunk) +
+                             ((pageind + npages) << gPageSize2Pow)),
+              aSize - aOldSize, true, false)) {
+        mRunsAvail.Insert(&aChunk->mPageMap[pageind + npages]);
         return false;
       }
 
@@ -2954,11 +2950,10 @@ void* arena_t::Ralloc(void* aPtr, size_t aSize, size_t aOldSize) {
 
 void* arena_t::operator new(size_t aCount, const fallible_t&) noexcept {
   MOZ_ASSERT(aCount == sizeof(arena_t));
-  return TypedBaseAlloc<arena_t>::alloc();
-}
-
-void arena_t::operator delete(void* aPtr) {
-  TypedBaseAlloc<arena_t>::dealloc((arena_t*)aPtr);
+  
+  
+  return sBaseAlloc.alloc(sizeof(arena_t) +
+                          (sizeof(arena_bin_t) * NUM_SMALL_CLASSES));
 }
 
 arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
@@ -3183,7 +3178,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   }
 
   
-  node = ExtentAlloc::alloc();
+  node = new (fallible) extent_node_t();
   if (!node) {
     return nullptr;
   }
@@ -3191,7 +3186,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   
   ret = chunk_alloc(csize, aAlignment, false);
   if (!ret) {
-    ExtentAlloc::dealloc(node);
+    delete node;
     return nullptr;
   }
   psize = REAL_PAGE_CEILING(aSize);
@@ -3348,7 +3343,7 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
   
   chunk_dealloc(node->mAddr, mapped, HUGE_CHUNK);
 
-  ExtentAlloc::dealloc(node);
+  delete node;
 }
 
 

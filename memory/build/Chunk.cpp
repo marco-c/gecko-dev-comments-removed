@@ -553,7 +553,7 @@ static void chunk_record(void* aChunk, size_t aSize, ChunkType aType) {
   
   
   
-  UniqueBaseNode xnode(ExtentAlloc::alloc());
+  UniqueBaseNode xnode(new (fallible) extent_node_t());
   
   UniqueBaseNode xprev;
 
@@ -694,9 +694,8 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment) {
       
       
       
-      
       chunks_mtx.Unlock();
-      node = ExtentAlloc::alloc();
+      node = new (fallible) extent_node_t();
       if (!node) {
         chunk_dealloc(ret, aSize, ZEROED_CHUNK);
         return nullptr;
@@ -716,7 +715,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment) {
   chunks_mtx.Unlock();
 
   if (node) {
-    ExtentAlloc::dealloc(node);
+    delete node;
   }
   if (!pages_commit(ret, aSize)) {
     return nullptr;
@@ -757,11 +756,6 @@ void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase) {
   MOZ_ASSERT(GetChunkOffsetForPtr(ret) == 0);
   return ret;
 }
-
-
-
-template <>
-extent_node_t* ExtentAlloc::sFirstFree = nullptr;
 
 arena_chunk_t::arena_chunk_t(arena_t* aArena)
     : mArena(aArena), mDirtyRunHint(gChunkHeaderNumPages) {}
