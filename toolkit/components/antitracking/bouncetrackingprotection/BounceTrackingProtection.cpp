@@ -130,7 +130,7 @@ nsresult BounceTrackingProtection::Init() {
       "Init BounceTrackingProtection. Config: mode: {}, "
       "bounceTrackingActivationLifetimeSec: {}, bounceTrackingGracePeriodSec: "
       "{}, bounceTrackingPurgeTimerPeriodSec: {}, "
-      "clientBounceDetectionTimerPeriodMS: {}, requireStatefulBounces: {}, "
+      "clientBounceDetectionTimerPeriodMS: {}, "
       "HasMigratedUserActivationData: {}",
       static_cast<nsIBounceTrackingProtection::Modes>(
           StaticPrefs::privacy_bounceTrackingProtection_mode()),
@@ -142,7 +142,6 @@ nsresult BounceTrackingProtection::Init() {
           privacy_bounceTrackingProtection_bounceTrackingPurgeTimerPeriodSec(),
       StaticPrefs::
           privacy_bounceTrackingProtection_clientBounceDetectionTimerPeriodMS(),
-      StaticPrefs::privacy_bounceTrackingProtection_requireStatefulBounces(),
       StaticPrefs::
           privacy_bounceTrackingProtection_hasMigratedUserActivationData());
 
@@ -257,13 +256,9 @@ nsresult BounceTrackingProtection::OnModeChange(bool aIsStartup) {
       mode == nsIBounceTrackingProtection::MODE_ENABLED_STANDBY) {
     
     if (aIsStartup) {
-      MOZ_ASSERT(!mStorageObserver);
       MOZ_ASSERT(!mBounceTrackingPurgeTimer);
       return result;
     }
-
-    
-    mStorageObserver = nullptr;
 
     
     nsresult rv = UpdateBounceTrackingPurgeTimer(false);
@@ -282,12 +277,7 @@ nsresult BounceTrackingProtection::OnModeChange(bool aIsStartup) {
              mode == nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN);
 
   
-  mStorageObserver = new BounceTrackingStorageObserver();
-  nsresult rv = mStorageObserver->Init();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  rv = UpdateBounceTrackingPurgeTimer(true);
+  nsresult rv = UpdateBounceTrackingPurgeTimer(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return result;
@@ -350,17 +340,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
     if (globalState->HasBounceTracker(host)) {
       MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
                   "{}: Skip already existing host: {}", __FUNCTION__, host);
-      continue;
-    }
-
-    
-    
-    if (StaticPrefs::
-            privacy_bounceTrackingProtection_requireStatefulBounces() &&
-        !record->GetStorageAccessHosts().Contains(host)) {
-      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                  "{}: Skip host without storage access: {}", __FUNCTION__,
-                  host);
       continue;
     }
 

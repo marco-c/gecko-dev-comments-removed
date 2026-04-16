@@ -6,7 +6,6 @@
 
 #include "BounceTrackingMapEntry.h"
 #include "BounceTrackingRecord.h"
-#include "BounceTrackingStorageObserver.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 #include "nsIBounceTrackingProtection.h"
@@ -131,9 +130,6 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
-
-  
-  RefPtr<BounceTrackingStorageObserver> mStorageObserver;
 
   
   RefPtr<BounceTrackingProtectionStorage> mStorage;

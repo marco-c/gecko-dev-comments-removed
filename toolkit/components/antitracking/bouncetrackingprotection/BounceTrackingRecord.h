@@ -36,13 +36,9 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
 
   void AddBounceHost(const nsACString& aHost);
 
-  void AddStorageAccessHost(const nsACString& aHost);
-
   void AddUserActivationHost(const nsACString& aHost);
 
   const nsTHashSet<nsCStringHashKey>& GetBounceHosts() const;
-
-  const nsTHashSet<nsCStringHashKey>& GetStorageAccessHosts() const;
 
   const nsTHashSet<nsCStringHashKey>& GetUserActivationHosts() const;
 
@@ -59,10 +55,6 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
   
   
   nsTHashSet<nsCStringHashKey> mBounceHosts;
-
-  
-  
-  nsTHashSet<nsCStringHashKey> mStorageAccessHosts;
 
   
   
@@ -88,9 +80,9 @@ struct fmt::formatter<mozilla::BounceTrackingRecord>
     return fmt::format_to(
         out,
         "{{mInitialHost:{}, mFinalHost:{}, mBounceHosts:[{}], "
-        "mStorageAccessHosts:[{}], mUserActivationHosts:[{}]}}",
+        "mUserActivationHosts:[{}]}}",
         aRec.mInitialHost, aRec.mFinalHost, aRec.mBounceHosts,
-        aRec.mStorageAccessHosts, aRec.mUserActivationHosts);
+        aRec.mUserActivationHosts);
   }
 };
 

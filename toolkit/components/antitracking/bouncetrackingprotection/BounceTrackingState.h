@@ -84,10 +84,6 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
-  [[nodiscard]] nsresult OnCookieWrite(const nsACString& aSiteHost);
-
-  
-  
   static bool ShouldCreateBounceTrackingStateForBC(
       dom::CanonicalBrowsingContext* aBrowsingContext);
 
@@ -111,10 +107,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   uint64_t GetBrowserId() { return mBrowserId; }
 
   const OriginAttributes& OriginAttributesRef();
-
-  
-  
-  [[nodiscard]] nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
 
   
   
@@ -163,10 +155,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   [[nodiscard]] nsresult OnDocumentLoaded(nsIPrincipal* aDocumentPrincipal);
-
-  
-  
-  [[nodiscard]] nsresult OnServiceWorkerActivation();
 
   friend struct fmt::formatter<BounceTrackingState>;
 };
