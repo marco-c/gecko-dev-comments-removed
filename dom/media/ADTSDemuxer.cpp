@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ADTSDemuxer.h"
 
 #include <inttypes.h>
@@ -312,7 +310,8 @@ TimeUnit ADTSTrackDemuxer::Duration(int64_t aNumFrames) const {
     return TimeUnit::Invalid();
   }
 
-  return TimeUnit(aNumFrames * mSamplesPerFrame, mSamplesPerSecond);
+  return TimeUnit(CheckedInt64(aNumFrames) * mSamplesPerFrame,
+                  mSamplesPerSecond);
 }
 
 const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
@@ -550,7 +549,7 @@ uint32_t ADTSTrackDemuxer::Read(uint8_t* aBuffer, int64_t aOffset,
   if (mInfo && streamLen > 0) {
     int64_t max = streamLen > aOffset ? streamLen - aOffset : 0;
     
-    aSize = std::min<int32_t>(aSize, AssertedCast<int32_t>(max));
+    aSize = static_cast<int32_t>(std::min(static_cast<int64_t>(aSize), max));
   }
 
   uint32_t read = 0;
