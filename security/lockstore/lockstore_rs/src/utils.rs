@@ -18,20 +18,13 @@ pub fn value_to_bytes(value: &Value) -> Result<Vec<u8>, LockstoreError> {
     use base64::Engine;
 
     
-    let variant = value.to_variant().map_err(|e| {
-        LockstoreError::Serialization(format!("Failed to convert to variant: {:?}", e))
-    })?;
-
-    
-    let mut cstring = nsstring::nsCString::new();
-    unsafe { variant.GetAsAUTF8String(&mut *cstring) }
-        .to_result()
-        .map_err(|e| LockstoreError::Serialization(format!("Failed to get string: {:?}", e)))?;
-
-    let base64_str = cstring.to_utf8();
+    let base64_str = value
+        .inner()
+        .as_str()
+        .ok_or_else(|| LockstoreError::Serialization("Expected string value".to_string()))?;
 
     
     base64::engine::general_purpose::STANDARD
-        .decode(base64_str.as_ref())
+        .decode(base64_str)
         .map_err(|e| LockstoreError::Serialization(format!("Failed to decode base64: {}", e)))
 }
