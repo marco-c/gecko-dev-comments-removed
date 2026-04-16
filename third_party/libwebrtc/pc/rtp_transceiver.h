@@ -373,12 +373,6 @@ class RtpTransceiver : public RtpTransceiverInterface {
   VideoMediaReceiveChannelInterface* video_media_receive_channel();
   VoiceMediaReceiveChannelInterface* voice_media_receive_channel();
 
-  
-  
-  
-  VideoChannel* video_channel();
-  VoiceChannel* voice_channel();
-
  private:
   
   
