@@ -358,35 +358,10 @@ extern void GenerateDirectCallFromJit(jit::MacroAssembler& masm,
                                       jit::Register scratch,
                                       uint32_t* callOffset);
 
-#ifdef ENABLE_WASM_JSPI
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern bool GenerateContBaseFrameStub(jit::MacroAssembler& masm,
-                                      Offsets* offsets);
-#endif
-
-
-
-extern void ClobberWasmRegsForLongJmp(jit::MacroAssembler& masm,
-                                      jit::Register jumpReg);
-
 extern void GenerateJumpToCatchHandler(jit::MacroAssembler& masm,
                                        jit::Register rfe,
                                        jit::Register scratch1,
-                                       jit::Register scratch2,
-                                       jit::Register scratch3);
+                                       jit::Register scratch2);
 
 }  
 }  

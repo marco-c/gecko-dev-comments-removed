@@ -136,19 +136,6 @@ class DebuggerFrame : public NativeObject {
     
     GENERATOR_INFO_SLOT,
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    WASM_CONT_FRAME_PTR_SLOT,
-
     RESERVED_SLOTS,
   };
 
@@ -187,7 +174,7 @@ class DebuggerFrame : public NativeObject {
       MutableHandle<SavedFrame*> result);
   [[nodiscard]] static bool getThis(JSContext* cx, Handle<DebuggerFrame*> frame,
                                     MutableHandleValue result);
-  static DebuggerFrameType getType(JSContext* cx, Handle<DebuggerFrame*> frame);
+  static DebuggerFrameType getType(Handle<DebuggerFrame*> frame);
   static DebuggerFrameImplementation getImplementation(
       Handle<DebuggerFrame*> frame);
   [[nodiscard]] static bool setOnStepHandler(JSContext* cx,
@@ -201,7 +188,7 @@ class DebuggerFrame : public NativeObject {
 
   [[nodiscard]] static DebuggerFrame* check(JSContext* cx, HandleValue thisv);
 
-  bool isOnStack(JSContext* cx) const;
+  bool isOnStack() const;
   bool isOnStackOrSuspendedWasmStack() const;
 
   bool isSuspended() const;

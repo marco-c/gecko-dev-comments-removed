@@ -4,6 +4,8 @@
 
 #include "jit/AliasAnalysis.h"
 
+#include "mozilla/DebugOnly.h"
+
 #include "jit/JitSpewer.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
@@ -200,17 +202,10 @@ bool AliasAnalysis::analyze() {
       
       
       
-#ifdef DEBUG
-      MControlInstruction* lastIns = block->lastIns();
-      bool isWasmCallOrResume =
-          lastIns->isWasmCallCatchable() || lastIns->isWasmReturnCall();
-#  ifdef ENABLE_WASM_JSPI
-      if (lastIns->isWasmResume()) {
-        isWasmCallOrResume = true;
-      }
-#  endif
-      MOZ_ASSERT_IF(!isWasmCallOrResume, lastIns->getAliasSet().isNone());
-#endif
+      mozilla::DebugOnly<MControlInstruction*> lastIns = block->lastIns();
+      MOZ_ASSERT_IF(
+          !lastIns->isWasmCallCatchable() && !lastIns->isWasmReturnCall(),
+          lastIns->getAliasSet().isNone());
     }
 
     for (MInstructionIterator def(block->begin()), end(block->end());

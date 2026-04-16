@@ -48,8 +48,6 @@ struct FuncOffsets;
 struct Offsets;
 class Frame;
 class FrameWithInstances;
-struct Handlers;
-class ContStack;
 
 using RegisterState = JS::ProfilingFrameIterator::RegisterState;
 
@@ -65,7 +63,6 @@ class WasmFrameIter {
   
   
 
-  JSContext* cx_ = nullptr;
   jit::JitActivation* activation_ = nullptr;
   bool isLeavingFrames_ = false;
   bool enableInlinedFrames_ = false;
@@ -87,9 +84,6 @@ class WasmFrameIter {
   bool failedUnwindSignatureMismatch_ = false;
   
   bool currentFrameStackSwitched_ = false;
-#ifdef ENABLE_WASM_JSPI
-  ContStack* contStack_ = nullptr;
-#endif
 
   
   
@@ -115,7 +109,7 @@ class WasmFrameIter {
   explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr);
 
   
-  WasmFrameIter(Instance* instance, Frame* fp, void* returnAddress);
+  WasmFrameIter(FrameWithInstances* fp, void* returnAddress);
 
   
   
@@ -131,9 +125,6 @@ class WasmFrameIter {
   
   
   void enableInlinedFrames() { enableInlinedFrames_ = true; }
-
-  
-  JSContext* cx() const { return cx_; }
 
   
   
@@ -187,13 +178,6 @@ class WasmFrameIter {
     MOZ_ASSERT(!done());
     return currentFrameStackSwitched_;
   }
-
-#ifdef ENABLE_WASM_JSPI
-  ContStack* contStack() const {
-    MOZ_ASSERT(!done());
-    return contStack_;
-  }
-#endif
 
   
   
@@ -366,8 +350,6 @@ class ProfilingFrameIterator {
   }
 };
 
-const char* ThunkedNativeToDescription(SymbolicAddress func);
-
 
 
 void LoadActivation(jit::MacroAssembler& masm, jit::Register instance,
@@ -435,7 +417,6 @@ void ClearExitFP(jit::MacroAssembler& masm, jit::Register activation);
 
 
 void GenerateExitPrologueMainStackSwitch(jit::MacroAssembler& masm,
-                                         uint32_t framePushedForSavedStack,
                                          jit::Register instance,
                                          jit::Register scratch1,
                                          jit::Register scratch2,
@@ -447,20 +428,10 @@ void GenerateExitPrologueMainStackSwitch(jit::MacroAssembler& masm,
 
 
 void GenerateExitEpilogueMainStackReturn(jit::MacroAssembler& masm,
-                                         uint32_t framePushedForSavedStack,
                                          jit::Register instance,
-                                         jit::Register scratch1,
+                                         jit::Register activationAndScratch1,
                                          jit::Register scratch2);
 #endif
-
-enum class ExitFrameAlignment {
-  
-  
-  Static,
-  
-  
-  Dynamic,
-};
 
 
 
@@ -479,13 +450,13 @@ enum class ExitFrameAlignment {
 
 
 void GenerateExitPrologue(jit::MacroAssembler& masm, ExitReason reason,
-                          bool switchToMainStack, ExitFrameAlignment alignment,
-                          unsigned frameSize, CallableOffsets* offsets);
+                          bool switchToMainStack, unsigned framePushedPreSwitch,
+                          unsigned framePushedPostSwitch,
+                          CallableOffsets* offsets);
 
 
 void GenerateExitEpilogue(jit::MacroAssembler& masm, ExitReason reason,
-                          bool switchToMainStack, ExitFrameAlignment alignment,
-                          CallableOffsets* offsets);
+                          bool switchToMainStack, CallableOffsets* offsets);
 
 
 

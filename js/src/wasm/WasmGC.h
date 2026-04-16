@@ -566,25 +566,6 @@ void EmitWasmPreBarrierCallIndex(jit::MacroAssembler& masm,
                                  jit::Register instance, jit::Register scratch1,
                                  jit::Register scratch2, jit::BaseIndex addr);
 
-#ifdef ENABLE_WASM_JSPI
-
-
-
-void EmitWasmResumeBarrierGuard(jit::MacroAssembler& masm,
-                                jit::Register instance, jit::Register scratch,
-                                jit::Label* enterBarrier);
-
-
-
-
-
-
-
-void EmitWasmResumeBarrier(jit::MacroAssembler& masm, jit::Register instance,
-                           jit::Register cont);
-
-#endif  
-
 
 
 

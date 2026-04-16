@@ -195,7 +195,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
 
   const ValTypeVector& args = argTypes();
   
-  if (!exceptionArgOffsets_.resize(args.length())) {
+  if (!argOffsets_.resize(args.length())) {
     return false;
   }
 
@@ -205,7 +205,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
     if (!offset.isValid()) {
       return false;
     }
-    exceptionArgOffsets_[i] = offset.value();
+    argOffsets_[i] = offset.value();
   }
 
   
@@ -219,7 +219,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
 }
 
 size_t TagType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
-  return exceptionArgOffsets_.sizeOfExcludingThis(mallocSizeOf);
+  return argOffsets_.sizeOfExcludingThis(mallocSizeOf);
 }
 
 size_t TagDesc::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
