@@ -115,7 +115,7 @@ class NackTracker {
     
     
     
-    std::optional<TimeDelta> fixed_delay;
+    std::optional<TimeDelta> fixed_delay = TimeDelta::Seconds(1);
   };
 
   struct NackElement {
