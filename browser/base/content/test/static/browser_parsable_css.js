@@ -119,6 +119,9 @@ let propNameAllowlist = [
   { propName: "--highlighter-font-family", isFromDevTools: true },
 
   
+  { propName: "--icon-url", isFromDevTools: false },
+
+  
   {
     propName: "--browser-stack-z-index-devtools-splitter",
     isFromDevTools: false,

@@ -169,7 +169,7 @@ add_task(async function test_button_visibility_by_navigate_blank_page() {
 });
 
 async function assertState(expectedVisible, expectedProxyPageState) {
-  let switcher = gURLBar.querySelector(".searchmode-switcher");
+  let switcher = document.getElementById("urlbar-searchmode-switcher");
   await BrowserTestUtils.waitForCondition(() => {
     
     
