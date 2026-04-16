@@ -304,7 +304,10 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
 
     case StyleTimelineRangeName::Scroll:
       
-      return {0, 0};
+      
+      
+      
+      return {0, mCachedCurrentTime->mScrollData.mMaxScrollOffset};
   }
 
   MOZ_ASSERT_UNREACHABLE("All cases should be hanlded.");
