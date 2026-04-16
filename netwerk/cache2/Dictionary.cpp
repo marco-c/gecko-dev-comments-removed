@@ -11,7 +11,6 @@
 #include "nsContentPolicyUtils.h"
 #include "nsString.h"
 #include "nsAppDirectoryServiceDefs.h"
-#include "nsHTTPCompressConv.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICacheStorageService.h"
 #include "nsICacheStorage.h"
@@ -256,9 +255,9 @@ void DictionaryCacheEntry::CallbackOnCacheRead(
 
 const Vector<uint8_t>& DictionaryCacheEntry::GetDictionary() const
     MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  MOZ_ASSERT(NS_IsMainThread());
   
   
-  MOZ_ASSERT(mDictionaryDataComplete);
   return mDictionaryData;
 }
 
@@ -269,7 +268,7 @@ void DictionaryCacheEntry::ClearDataForTesting() {
 }
 
 uint8_t* DictionaryCacheEntry::DictionaryData(size_t* aLength) const {
-  MOZ_ASSERT(mDictionaryDataComplete);
+  MOZ_ASSERT(NS_IsMainThread());
   *aLength = mDictionaryData.length();
   return (uint8_t*)mDictionaryData.begin();
 }
@@ -361,13 +360,7 @@ nsresult DictionaryCacheEntry::Prefetch(
 }
 
 void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
-  
-  
-  
-  
-  
-  
-  
+  MOZ_ASSERT(NS_IsMainThread());
   if (!mHash.IsEmpty()) {
     if (!mDictionaryData.empty()) {
       
@@ -402,61 +395,28 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
     rv = mCrypto->Init(nsICryptoHash::SHA256);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Cache InitCrypto failed");
   }
-  
-  
-  if (MOZ_UNLIKELY(MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
-    if (dataLen == 0 && aCount >= 2) {
-      const uint8_t* bytes = reinterpret_cast<const uint8_t*>(aBuf);
-      if (bytes[0] == GZIP_MAGIC_0 && bytes[1] == GZIP_MAGIC_1) {
-        DICTIONARY_LOG((
-            "**** WARNING: AccumulateHash for %s starts with gzip magic bytes! "
-            "Data may be stored compressed instead of decompressed.",
-            mURI.get()));
-      } else if (bytes[0] == BROTLI_BYTE_0 && bytes[1] == BROTLI_BYTE_1) {
-        
-        
-        DICTIONARY_LOG(
-            ("*** NOTE: AccumulateHash likely brotli for %s", mURI.get()));
-      }
-    }
-  }
   mCrypto->Update(reinterpret_cast<const uint8_t*>(aBuf), aCount);
   DICTIONARY_LOG(
       ("Accumulate Hash %p: %d bytes, total %zu", this, aCount, dataLen));
 }
 
 void DictionaryCacheEntry::FinishHash() {
-  
-  
+  MOZ_ASSERT(NS_IsMainThread());
   if (mCrypto) {
     mCrypto->Finish(true, mHash);
     mCrypto = nullptr;
     DICTIONARY_LOG(("Hash for %p (%s) is %s", this, mURI.get(), mHash.get()));
     if (mOrigin) {
-      if (NS_IsMainThread()) {
-        FinishHashOnMainThread();
-      } else {
-        NS_DispatchToMainThread(NewRunnableMethod(
-            "DictionaryCacheEntry::FinishHashOnMainThread", this,
-            &DictionaryCacheEntry::FinishHashOnMainThread));
+      DICTIONARY_LOG(("Write on hash"));
+      
+      if (NS_FAILED(mOrigin->Write(this))) {
+        mOrigin->RemoveEntry(this);
+        return;
+      }
+      if (!mBlocked) {
+        mOrigin->FinishAddEntry(this);
       }
     }
-  }
-}
-
-void DictionaryCacheEntry::FinishHashOnMainThread() {
-  MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<DictionaryOrigin> origin = std::move(mOrigin);
-  if (!origin) {
-    return;
-  }
-  DICTIONARY_LOG(("Write on hash"));
-  if (NS_FAILED(origin->Write(this))) {
-    origin->RemoveEntry(this);
-    return;
-  }
-  if (!mBlocked) {
-    origin->FinishAddEntry(this);
   }
 }
 
@@ -701,25 +661,6 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   }
 
   
-  if (MOZ_UNLIKELY(MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
-    if (NS_SUCCEEDED(result) && pendingData.length() >= 4) {
-      const uint8_t* b = pendingData.begin();
-      if (b[0] == GZIP_MAGIC_0 && b[1] == GZIP_MAGIC_1) {
-        DICTIONARY_LOG(
-            ("WARNING: Prefetched dictionary data for %s starts with gzip "
-             "magic! length=%zu. Cache stored compressed data.",
-             mURI.get(), pendingData.length()));
-      } else if (b[0] == ZSTD_MAGIC_0 && b[1] == ZSTD_MAGIC_1 &&
-                 b[2] == ZSTD_MAGIC_2 && b[3] == ZSTD_MAGIC_3) {
-        DICTIONARY_LOG(
-            ("WARNING: Prefetched dictionary data for %s starts with zstd "
-             "magic! length=%zu. Cache stored compressed data.",
-             mURI.get(), pendingData.length()));
-      }
-    }
-  }
-
-  
   if (NS_SUCCEEDED(result) && !pendingData.empty()) {
     nsCOMPtr<nsICryptoHash> hasher =
         do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
@@ -745,30 +686,6 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
             DICTIONARY_LOG(("Hash mismatch for %s: expected %s, computed %s",
                             self->mURI.get(), self->mHash.get(),
                             computedHash.get()));
-            
-            
-            if (MOZ_UNLIKELY(
-                    MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
-              if (!self->mStoredContentEncoding.IsEmpty()) {
-                DICTIONARY_LOG(
-                    ("Hash mismatch: stored Content-Encoding was '%s' — "
-                     "data is compressed!",
-                     self->mStoredContentEncoding.get()));
-              }
-              
-              if (pendingData.length() >= 4) {
-                const uint8_t* b = pendingData.begin();
-                DICTIONARY_LOG(
-                    ("Hash mismatch data: first bytes 0x%02x 0x%02x 0x%02x "
-                     "0x%02x, length %zu %s",
-                     b[0], b[1], b[2], b[3], pendingData.length(),
-                     (b[0] == 0x1f && b[1] == 0x8b) ? "(GZIP!)"
-                     : (b[0] == 0x28 && b[1] == 0xb5 && b[2] == 0x2f &&
-                        b[3] == 0xfd)
-                         ? "(ZSTD!)"
-                         : ""));
-              }
-            }
             
             
             
@@ -863,32 +780,6 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
   DICTIONARY_LOG(("OnCacheEntryAvailable %p, result %u, entry %p", this,
                   (uint32_t)status, entry));
   if (entry) {
-    if (MOZ_UNLIKELY(MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
-      
-      
-      
-      nsCString responseHead;
-      if (NS_SUCCEEDED(entry->GetMetaDataElement(
-              "response-head", getter_Copies(responseHead)))) {
-        
-        auto ceStart = responseHead.Find("Content-Encoding:"_ns);
-        if (ceStart != kNotFound) {
-          auto valueStart = ceStart + 17;  
-          auto lineEnd = responseHead.FindChar('\n', valueStart);
-          if (lineEnd == kNotFound) {
-            lineEnd = responseHead.Length();
-          }
-          mStoredContentEncoding =
-              Substring(responseHead, valueStart, lineEnd - valueStart);
-          mStoredContentEncoding.Trim(" \t\r");
-          DICTIONARY_LOG(
-              ("WARNING: Cache entry for dictionary %s has stored "
-               "Content-Encoding: '%s'. Data is likely compressed!",
-               mURI.get(), mStoredContentEncoding.get()));
-        }
-      }
-    }
-
     nsCOMPtr<nsIInputStream> stream;
     entry->OpenInputStream(0, getter_AddRefs(stream));
     if (!stream) {
