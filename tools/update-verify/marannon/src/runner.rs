@@ -2,21 +2,47 @@
 
 
 
-use std::process::Command;
+use std::io::{self, Read};
+use std::process::{Command, Stdio};
+
+pub(crate) struct CommandResult {
+    pub(crate) exit_code: i32,
+    pub(crate) output: String,
+}
 
 
 pub(crate) trait CommandRunner {
-    fn run(&self, cmd: &mut Command) -> Result<i32, Box<dyn std::error::Error>>;
+    fn run(&self, cmd: Command) -> Result<CommandResult, Box<dyn std::error::Error>>;
 }
 
 pub(crate) struct RealRunner;
 
 impl CommandRunner for RealRunner {
-    fn run(&self, cmd: &mut Command) -> Result<i32, Box<dyn std::error::Error>> {
-        Ok(cmd
-            .spawn()?
-            .wait()?
-            .code()
-            .ok_or("process had no exit code")?)
+    fn run(&self, mut cmd: Command) -> Result<CommandResult, Box<dyn std::error::Error>> {
+        
+        
+        
+        let (mut stdout_r, stdout_w) = io::pipe()?;
+        let stderr = stdout_w.try_clone()?;
+        let mut child = cmd
+            .stdout(Stdio::from(stdout_w))
+            .stderr(Stdio::from(stderr))
+            .spawn()?;
+
+        
+        
+        
+        
+        drop(cmd);
+
+        let mut output = String::new();
+        stdout_r.read_to_string(&mut output)?;
+
+        let exit_code = child.wait()?.code().ok_or("process had no exit code")?;
+
+        return Ok(CommandResult {
+            exit_code: exit_code,
+            output: output,
+        });
     }
 }
