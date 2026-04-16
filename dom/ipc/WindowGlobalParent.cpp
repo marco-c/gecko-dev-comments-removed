@@ -97,6 +97,20 @@ extern mozilla::LazyLogModule gUseCountersLog;
 
 namespace mozilla::dom {
 
+
+
+
+struct PageUseCounters {
+  
+  uint32_t mWaiting = 0;
+
+  
+  bool mReceivedAny = false;
+
+  
+  UseCounters mUseCounters;
+};
+
 WindowGlobalParent::WindowGlobalParent(
     CanonicalBrowsingContext* aBrowsingContext, uint64_t aInnerWindowId,
     uint64_t aOuterWindowId, FieldValues&& aInit)
@@ -1131,20 +1145,6 @@ void WindowGlobalParent::DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
         paint->LostFragment(wgp);
       });
 }
-
-
-
-
-struct PageUseCounters {
-  
-  uint32_t mWaiting = 0;
-
-  
-  bool mReceivedAny = false;
-
-  
-  UseCounters mUseCounters;
-};
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvExpectPageUseCounters(
     const MaybeDiscarded<WindowContext>& aTop) {
