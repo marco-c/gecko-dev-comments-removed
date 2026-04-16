@@ -678,11 +678,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   if (![self isRoot]) {
     mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
-    if (![parent isRoot] &&
-        [parent respondsToSelector:@selector(disableChild)]) {
-      
-      
-      
+    if (![parent isRoot]) {
       return @(![parent disableChild:self]);
     }
   }
