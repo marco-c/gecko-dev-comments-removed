@@ -7,11 +7,17 @@
 
 "use strict";
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  this
+);
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.quickactions.enabled", true],
       ["browser.urlbar.secondaryActions.featureGate", true],
+      ["browser.preferences.experimental.hidden", false],
     ],
   });
 });
@@ -54,6 +60,25 @@ let COMMANDS_TESTS = [
     testFun: async () => isSelected("button[name=theme]"),
   },
   {
+    cmd: "labs",
+    uri: "about:preferences#experimental",
+    loadType: LOAD_TYPE.PRE_LOADED,
+    setup: async () => {
+      
+      const cleanup = await setupLabsTest();
+      registerCleanupFunction(cleanup);
+    },
+    testFun: async () => {
+      await BrowserTestUtils.waitForCondition(() => {
+        return (
+          window.gBrowser.selectedBrowser.currentURI.spec ==
+          "about:preferences#experimental"
+        );
+      });
+      return true;
+    },
+  },
+  {
     cmd: "add-ons",
     setup: async () => {
       const onLoad = BrowserTestUtils.browserLoaded(
@@ -109,6 +134,17 @@ let COMMANDS_TESTS = [
     testFun: async () => isSelected("button[name=theme]"),
     numTabPress: 2,
   },
+  {
+    cmd: "library",
+    testFun: async () => {
+      await BrowserTestUtils.waitForCondition(() => {
+        return Services.wm.getMostRecentWindow("Places:Organizer");
+      });
+      const libraryWindow = Services.wm.getMostRecentWindow("Places:Organizer");
+      libraryWindow?.close();
+      return true;
+    },
+  },
 ];
 
 let isSelected = async selector =>
@@ -135,10 +171,18 @@ add_task(async function test_pages() {
       await setup();
     }
 
-    let onLoad =
-      loadType == LOAD_TYPE.NEW_TAB
-        ? BrowserTestUtils.waitForNewTab(gBrowser, uri, true)
-        : BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, false, uri);
+    let onLoad;
+    if (loadType == LOAD_TYPE.NEW_TAB) {
+      onLoad = BrowserTestUtils.waitForNewTab(gBrowser, uri, true);
+    } else if (uri) {
+      onLoad = BrowserTestUtils.browserLoaded(
+        gBrowser.selectedBrowser,
+        false,
+        uri
+      );
+    } else {
+      onLoad = null;
+    }
 
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -150,8 +194,14 @@ add_task(async function test_pages() {
     }
     EventUtils.synthesizeKey("KEY_Enter", {}, window);
 
-    const newTab =
-      loadType == LOAD_TYPE.PRE_LOADED ? gBrowser.selectedTab : await onLoad;
+    let newTab;
+    if (loadType == LOAD_TYPE.PRE_LOADED) {
+      newTab = gBrowser.selectedTab;
+    } else if (onLoad) {
+      newTab = await onLoad;
+    } else {
+      newTab = null;
+    }
 
     Assert.ok(
       await testFun(),
