@@ -49,7 +49,7 @@ class RenderingSimulator {
 
     
     
-    bool reuse_streams = true;
+    bool reuse_streams = false;
   };
 
   
