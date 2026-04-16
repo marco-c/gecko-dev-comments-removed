@@ -307,9 +307,9 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
                                      stringFromPboardType:(NSString*)
                                                               kUTTypeFileURL],
                                  [UTIHelper
-                                     stringFromPboardType:NSPasteboardTypePNG],
-                                 [UTIHelper
                                      stringFromPboardType:NSPasteboardTypeTIFF],
+                                 [UTIHelper
+                                     stringFromPboardType:NSPasteboardTypePNG],
                                  nil]];
     if (!type) {
       return nsCOMPtr<nsISupports>{};
@@ -332,18 +332,6 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
       outputType = CFSTR("com.compuserve.gif");
     } else {
       return nsCOMPtr<nsISupports>{};
-    }
-
-    
-    
-    
-    if ([type isEqualToString:(__bridge NSString*)outputType]) {
-      nsCOMPtr<nsIInputStream> byteStream;
-      NS_NewByteInputStream(getter_AddRefs(byteStream),
-                            mozilla::Span((const char*)[pasteboardData bytes],
-                                          [pasteboardData length]),
-                            NS_ASSIGNMENT_COPY);
-      return nsCOMPtr<nsISupports>(std::move(byteStream));
     }
 
     
@@ -377,20 +365,7 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
       CFRelease(source);
       return nsCOMPtr<nsISupports>{};
     }
-    CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
-    if (!cgImage) {
-      CFRelease(dest);
-      CFRelease(source);
-      return nsCOMPtr<nsISupports>{};
-    }
-    CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-    CGImageRef srgbImage = CGImageCreateCopyWithColorSpace(cgImage, srgb);
-    CGImageDestinationAddImage(dest, srgbImage ? srgbImage : cgImage, NULL);
-    CGColorSpaceRelease(srgb);
-    if (srgbImage) {
-      CGImageRelease(srgbImage);
-    }
-    CGImageRelease(cgImage);
+    CGImageDestinationAddImageFromSource(dest, source, 0, NULL);
 
     nsCOMPtr<nsIInputStream> byteStream;
     if (CGImageDestinationFinalize(dest)) {
