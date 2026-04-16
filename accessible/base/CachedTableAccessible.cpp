@@ -80,10 +80,14 @@ void CachedTableAccessible::Invalidate(Accessible* aAcc) {
     return;
   }
 
-  if (Accessible* table = nsAccUtils::TableFor(aAcc)) {
+  Accessible* table = nsAccUtils::TableFor(aAcc);
+  while (table && table->IsTable()) {
     
     
     sCachedTables->Remove(table);
+    
+    
+    table = table->Parent();
   }
 }
 

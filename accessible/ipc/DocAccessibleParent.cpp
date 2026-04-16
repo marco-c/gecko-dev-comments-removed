@@ -1079,6 +1079,8 @@ void DocAccessibleParent::Destroy() {
     RemoteAccessible* acc = iter.Get()->mProxy;
     MOZ_ASSERT(acc != this);
     if (acc->IsTable()) {
+      
+      acc->SetParent(nullptr);
       CachedTableAccessible::Invalidate(acc);
     }
     ProxyDestroyed(acc);
