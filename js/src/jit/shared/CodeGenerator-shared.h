@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_shared_CodeGenerator_shared_h
 #define jit_shared_CodeGenerator_shared_h
 
@@ -451,6 +449,12 @@ class OutOfLineCode : public TempObject,
 
 template <typename Func>
 class LambdaOutOfLineCode : public OutOfLineCode {
+  
+  
+  static_assert(std::is_void_v<std::invoke_result_t<Func, OutOfLineCode&>>,
+                "LambdaOutOfLineCode lambda must return void; use "
+                "masm.setOOM() to report failure");
+
   Func generateFunc_;
 
  public:
