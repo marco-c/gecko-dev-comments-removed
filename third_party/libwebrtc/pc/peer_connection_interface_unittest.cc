@@ -1687,7 +1687,7 @@ TEST_P(PeerConnectionInterfaceTest, AddTrackBeforeConnecting) {
       CreateVideoTrack("video_track"));
   auto audio_sender = pc_->AddTrack(audio_track, std::vector<std::string>());
   auto video_sender = pc_->AddTrack(video_track, std::vector<std::string>());
-  EXPECT_TRUE(DoGetStats(nullptr));
+  EXPECT_TRUE(DoGetRTCStats());
 }
 
 TEST_P(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddTrack) {
@@ -1934,7 +1934,7 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
   ASSERT_LT(0u, pc_->GetReceivers().size());
   scoped_refptr<MediaStreamTrackInterface> remote_audio =
       pc_->GetReceivers()[0]->track();
-  EXPECT_TRUE(DoGetStats(remote_audio.get()));
+  EXPECT_TRUE(DoGetRTCStats());
 
   
   
@@ -1944,7 +1944,7 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
 
   
   
-  EXPECT_TRUE(DoGetStats(remote_audio.get()));
+  EXPECT_TRUE(DoGetRTCStats());
 }
 
 
@@ -1952,7 +1952,7 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForVideoTrack) {
   InitiateCall();
   auto video_receiver = GetFirstReceiverOfType(MediaType::VIDEO);
   ASSERT_TRUE(video_receiver);
-  EXPECT_TRUE(DoGetStats(video_receiver->track().get()));
+  EXPECT_TRUE(DoGetRTCStats());
 }
 
 
@@ -2673,7 +2673,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CloseAndTestMethods) {
 TEST_P(PeerConnectionInterfaceTest, CloseAndGetStats) {
   InitiateCall();
   pc_->Close();
-  DoGetStats(nullptr);
+  DoGetRTCStats();
 }
 
 
