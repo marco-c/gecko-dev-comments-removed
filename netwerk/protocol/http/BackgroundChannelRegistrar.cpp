@@ -32,7 +32,7 @@ BackgroundChannelRegistrar::~BackgroundChannelRegistrar() {
 }
 
 
-already_AddRefed<nsIBackgroundChannelRegistrar>
+already_AddRefed<BackgroundChannelRegistrar>
 BackgroundChannelRegistrar::GetOrCreate() {
   if (!gSingleton) {
     gSingleton = new BackgroundChannelRegistrar();

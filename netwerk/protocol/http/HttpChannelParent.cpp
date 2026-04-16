@@ -274,12 +274,11 @@ void HttpChannelParent::CleanupBackgroundChannel() {
     
     
     
-    nsCOMPtr<nsIBackgroundChannelRegistrar> registrar =
+    RefPtr<BackgroundChannelRegistrar> registrar =
         BackgroundChannelRegistrar::GetOrCreate();
     MOZ_ASSERT(registrar);
-    if (RefPtr<BackgroundChannelRegistrar> bkregistrar =
-            do_QueryObject(registrar)) {
-      bkregistrar->DeleteChannelIfMatches(mChannel->ChannelId(), this);
+    if (registrar) {
+      registrar->DeleteChannelIfMatches(mChannel->ChannelId(), this);
     }
 
     
