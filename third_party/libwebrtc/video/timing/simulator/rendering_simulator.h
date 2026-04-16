@@ -26,6 +26,7 @@
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/video_coding/timing/timing.h"
+#include "rtc_base/checks.h"
 #include "video/timing/simulator/frame_base.h"
 #include "video/timing/simulator/results_base.h"
 #include "video/timing/simulator/stream_base.h"
@@ -105,6 +106,7 @@ class RenderingSimulator {
     TimeDelta PacketBufferDuration() const {
       return assembled_timestamp - first_packet_arrival_timestamp;
     }
+
     
     
     
@@ -113,45 +115,80 @@ class RenderingSimulator {
     TimeDelta FrameBufferDuration() const {
       return decoded_timestamp - assembled_timestamp;
     }
+
     
     TimeDelta RenderBufferDuration() const {
       return rendered_timestamp - decoded_timestamp;
     }
+
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    TimeDelta RenderMargin() const {
-      return render_timestamp - assembled_timestamp;
+    TimeDelta TotalBufferDuration() const {
+      TimeDelta total_duration = PacketBufferDuration() +
+                                 FrameBufferDuration() + RenderBufferDuration();
+      RTC_DCHECK_EQ(total_duration,
+                    rendered_timestamp - first_packet_arrival_timestamp);
+      return total_duration;
     }
+
     
     
     
     
     
     
-    std::optional<TimeDelta> RenderExcessMargin() const {
-      TimeDelta margin = RenderMargin();
-      if (margin < TimeDelta::Zero()) {
-        return std::nullopt;
-      }
-      return margin;
+    
+    
+    
+    
+    
+    
+    
+    
+    TimeDelta AssembledMargin() const {
+      
+      
+      return (render_timestamp - kRenderDelay) - assembled_timestamp;
     }
-    std::optional<TimeDelta> RenderDeficitMargin() const {
-      TimeDelta margin = RenderMargin();
-      if (margin > TimeDelta::Zero()) {
-        return std::nullopt;
-      }
-      return margin;
+    bool AssembledInTime() const {
+      return AssembledMargin() > kInTimeMarginThreshold;
+    }
+
+    
+    
+    
+    
+    
+    
+    std::optional<TimeDelta> AssembledMarginExcess() const {
+      return AssembledInTime() ? std::optional<TimeDelta>(AssembledMargin())
+                               : std::nullopt;
+    }
+    std::optional<TimeDelta> AssembledMarginDeficit() const {
+      return !AssembledInTime() ? std::optional<TimeDelta>(AssembledMargin())
+                                : std::nullopt;
+    }
+
+    
+    
+    
+    
+    
+    TimeDelta RenderedMargin() const {
+      return (render_timestamp - kRenderDelay) - rendered_timestamp;
+    }
+    bool RenderedInTime() const {
+      return RenderedMargin() > kInTimeMarginThreshold;
+    }
+
+    
+    
+    std::optional<TimeDelta> RenderedMarginExcess() const {
+      return RenderedInTime() ? std::optional<TimeDelta>(RenderedMargin())
+                              : std::nullopt;
+    }
+    std::optional<TimeDelta> RenderedMarginDeficit() const {
+      return !RenderedInTime() ? std::optional<TimeDelta>(RenderedMargin())
+                               : std::nullopt;
     }
   };
 
@@ -169,7 +206,18 @@ class RenderingSimulator {
   };
 
   
+
+  
+  
+  
   static constexpr TimeDelta kRenderDelay = TimeDelta::Millis(10);
+  
+  
+  
+  
+  
+  
+  static constexpr TimeDelta kInTimeMarginThreshold = TimeDelta::Micros(-500);
 
   explicit RenderingSimulator(Config config);
   ~RenderingSimulator();
