@@ -145,7 +145,13 @@ def main():
         
         "Decimal.o",
         
+        "regexp-ast-printer.o",
         "regexp-ast.o",
+        "regexp-bytecode-peephole.o",
+        "regexp-compiler.o",
+        "regexp-compiler-tonode.o",
+        "regexp-graph-printer.o",
+        "regexp-node-printer.o",
         
         
         
