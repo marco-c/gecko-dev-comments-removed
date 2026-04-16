@@ -1,13 +1,11 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 include("js-config.mozbuild")
 include("js-cxxflags.mozbuild")
 
-
+# Directory metadata
 component_engine = ("Core", "JavaScript Engine")
 component_gc = ("Core", "JavaScript: GC")
 component_intl = ("Core", "JavaScript: Internationalization API")
@@ -17,8 +15,8 @@ component_wasm = ("Core", "Javascript: Web Assembly")
 
 FILES_PER_UNIFIED_FILE = 6
 
-
-
+# Prevent redefining FILES_PER_UNIFIED_FILE in each sub-directory of js. This
+# will not escape this directory.
 export("FILES_PER_UNIFIED_FILE")
 
 with Files("*"):
@@ -35,7 +33,7 @@ with Files("gc/**"):
 with Files("jit/**"):
     BUG_COMPONENT = component_jit
 
-
+# File-specific metadata
 for gcfile in ["devtools/rootAnalysis", "devtools/gc-ubench", "devtools/gctrace"]:
     with Files(gcfile):
         BUG_COMPONENT = component_gc
@@ -67,8 +65,8 @@ LegacyTest(
 )
 
 if CONFIG["FUZZING_JS_FUZZILLI"]:
-    
-    
+    # When building for Fuzzilli, we instrument everything with standard
+    # trace-pc instrumentation.
     include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 CONFIGURE_DEFINE_FILES += [
@@ -79,9 +77,9 @@ CONFIGURE_DEFINE_FILES += [
     "js-config.h",
 ]
 
-
-
-
+# Changes to internal header files, used externally, massively slow down
+# browser builds.  Don't add new files here unless you know what you're
+# doing!
 EXPORTS += [
     "!js-config.h",
     "jsapi.h",
@@ -210,9 +208,9 @@ EXPORTS.js += [
     "../public/Zone.h",
 ]
 
-
-
-
+# Public APIs that are experimental: the precise contour of the APIs may still
+# change, but they're at least plausible first passes at designing something.
+# We expose them as-is, buyer beware.
 EXPORTS.js.experimental += [
     "../public/experimental/BindingAllocs.h",
     "../public/experimental/CodeCoverage.h",
@@ -227,12 +225,13 @@ EXPORTS.js.experimental += [
     "../public/experimental/TypedData.h",
 ]
 
-
-
-
-
-
+# Friend APIs are APIs that either basically SpiderMonkey-internal, or their
+# contours are gross and terrible -- but the functionality is too important to
+# some embedder (often, Gecko) to just not expose anything or to agonize through
+# a clean design.  Use this only if you absolutely must, and feel free to
+# propose clean APIs to replace what's here!
 EXPORTS.js.friend += [
+    "../public/friend/CycleCollector.h",
     "../public/friend/DOMProxy.h",
     "../public/friend/DumpFunctions.h",
     "../public/friend/ErrorMessages.h",
@@ -246,20 +245,20 @@ EXPORTS.js.friend += [
     "../public/friend/XrayJitInfo.h",
 ]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# "Shadow" API defines the internal layout of public JSAPI types like |JSObject|
+# and |JSString|, so that other *inline* public functions can efficiently access
+# their internal fields.
+#
+# Embedders must never include these headers themselves or use their contents.
+# These internal layout details are publicly exposed for access *only* so that
+# other public API definitions may use them.
+#
+# When adding new shadow structure definitions (or new fields/static constants
+# to existing structures) for access by inline methods, make sure to add static
+# asserts to the original header file to ensure that offsets and duplicated
+# constants are consistent.  (Long term, it might be worth figuring out some way
+# to back actual implementations *with* these shadow definitions to eliminate
+# this requirement.)
 EXPORTS.js.shadow += [
     "../public/shadow/Function.h",
     "../public/shadow/Object.h",
@@ -275,8 +274,8 @@ UNIFIED_SOURCES += [
     "jsfriendapi.cpp",
 ]
 
-
-
+# Must be in SOURCES so that Glean symbols from xul will take priority over the
+# no-op symbols implemented in jsglean.cpp
 SOURCES += [
     "jsglean.cpp",
 ]
@@ -305,9 +304,9 @@ DIRS += [
     "builtin/normalizer_glue",
 ]
 
-
+# Glean integration
 if CONFIG["JS_STANDALONE"]:
-    
+    # For MetricTypes.h and related headers
     include("/toolkit/components/glean/glean.mozbuild")
 
     glean_parser_flags = [CONFIG["MOZ_APP_VERSION"]]
@@ -338,9 +337,9 @@ if CONFIG["JS_HAS_INTL_API"]:
 
 CXXFLAGS += CONFIG["MOZ_ZLIB_CFLAGS"]
 
-
-
-
+# Bug 1722102 - This should never be enabled in Release without explicit
+# security and SpiderMonkey review.
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1722102#c16
 if CONFIG["ENABLE_WASM_MOZ_INTGEMM"]:
     DIRS += ["intgemm"]
 
