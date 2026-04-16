@@ -19,6 +19,47 @@ extern "C" {
 #endif
 
 
+
+
+
+
+
+LIBYUV_API extern const struct ArgbConstants kArgbI601Constants;  
+LIBYUV_API extern const struct ArgbConstants kArgbJPEGConstants;  
+LIBYUV_API extern const struct ArgbConstants kArgbH709Constants;  
+LIBYUV_API extern const struct ArgbConstants kArgbF709Constants;  
+LIBYUV_API extern const struct ArgbConstants kArgbU2020Constants;  
+LIBYUV_API extern const struct ArgbConstants
+    kArgbV2020Constants;  
+
+
+LIBYUV_API extern const struct ArgbConstants kAbgrI601Constants;  
+LIBYUV_API extern const struct ArgbConstants kAbgrJPEGConstants;  
+LIBYUV_API extern const struct ArgbConstants kAbgrH709Constants;  
+LIBYUV_API extern const struct ArgbConstants kAbgrF709Constants;  
+LIBYUV_API extern const struct ArgbConstants kAbgrU2020Constants;  
+LIBYUV_API extern const struct ArgbConstants
+    kAbgrV2020Constants;  
+
+
+LIBYUV_API extern const struct ArgbConstants kRgbaI601Constants;  
+LIBYUV_API extern const struct ArgbConstants kRgbaJPEGConstants;  
+LIBYUV_API extern const struct ArgbConstants kRgbaH709Constants;  
+LIBYUV_API extern const struct ArgbConstants kRgbaF709Constants;  
+LIBYUV_API extern const struct ArgbConstants kRgbaU2020Constants;  
+LIBYUV_API extern const struct ArgbConstants
+    kRgbaV2020Constants;  
+
+
+LIBYUV_API extern const struct ArgbConstants kBgraI601Constants;  
+LIBYUV_API extern const struct ArgbConstants kBgraJPEGConstants;  
+LIBYUV_API extern const struct ArgbConstants kBgraH709Constants;  
+LIBYUV_API extern const struct ArgbConstants kBgraF709Constants;  
+LIBYUV_API extern const struct ArgbConstants kBgraU2020Constants;  
+LIBYUV_API extern const struct ArgbConstants
+    kBgraV2020Constants;  
+
+
 #define ARGBToARGB ARGBCopy
 LIBYUV_API
 int ARGBCopy(const uint8_t* src_argb,
@@ -155,6 +196,20 @@ int ARGBToI444(const uint8_t* src_argb,
 
 
 LIBYUV_API
+int ARGBToI444Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_u,
+                     int dst_stride_u,
+                     uint8_t* dst_v,
+                     int dst_stride_v,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+
+LIBYUV_API
 int ARGBToAR64(const uint8_t* src_argb,
                int src_stride_argb,
                uint16_t* dst_ar64,
@@ -189,6 +244,20 @@ int ARGBToI422(const uint8_t* src_argb,
                int dst_stride_v,
                int width,
                int height);
+
+
+LIBYUV_API
+int ARGBToI422Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_u,
+                     int dst_stride_u,
+                     uint8_t* dst_v,
+                     int dst_stride_v,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
 
 
 LIBYUV_API
@@ -323,6 +392,18 @@ int ARGBToNV12(const uint8_t* src_argb,
                int dst_stride_uv,
                int width,
                int height);
+
+
+LIBYUV_API
+int ARGBToNV12Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint8_t* dst_y,
+                     int dst_stride_y,
+                     uint8_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
 
 
 LIBYUV_API

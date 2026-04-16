@@ -18,8 +18,7 @@
 #include "libyuv/row.h"
 
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
-    defined(__clang__)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #include <assert.h>
 #include <riscv_vector.h>
 
@@ -2596,4 +2595,3 @@ void ARGBCopyYToAlphaRow_RVV(const uint8_t* src, uint8_t* dst, int width) {
 #endif
 
 #endif  
-        

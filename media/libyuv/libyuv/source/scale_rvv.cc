@@ -19,8 +19,7 @@
 #include "libyuv/scale_row.h"
 
 
-#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector) && \
-    defined(__clang__)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv_vector)
 #include <assert.h>
 #include <riscv_vector.h>
 #ifdef __cplusplus
@@ -1968,4 +1967,3 @@ void ScaleUVRowUp2_Bilinear_RVV(const uint8_t* src_ptr,
 #endif
 
 #endif  
-        
