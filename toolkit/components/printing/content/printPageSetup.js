@@ -2,8 +2,6 @@
 
 
 
-
-
 var gDialog;
 var paramBlock;
 var gPrintService = null;

@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1");

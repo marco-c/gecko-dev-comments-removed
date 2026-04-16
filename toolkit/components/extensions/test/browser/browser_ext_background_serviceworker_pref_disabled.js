@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function assert_background_serviceworker_pref_disabled() {

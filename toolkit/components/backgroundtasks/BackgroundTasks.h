@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_BackgroundTasks_h
 #define mozilla_BackgroundTasks_h
 

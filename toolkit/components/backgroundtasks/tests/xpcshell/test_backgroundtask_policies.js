@@ -6,8 +6,6 @@
 
 
 
-
-
 const { updateAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"
 );

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Labeled.h"
 
 #include "mozilla/dom/GleanBinding.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 var { ExtensionUtils } = ChromeUtils.importESModule(

@@ -2,8 +2,6 @@
 
 
 
-
-
 const { BackgroundTasksUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/BackgroundTasksUtils.sys.mjs"
 );

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "BounceTrackingMapEntry.h"
 
 namespace mozilla {

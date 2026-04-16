@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef AboutThirdParty_h_
 #define AboutThirdParty_h_
 

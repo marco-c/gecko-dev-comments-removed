@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function compress_bookmark_backups_test() {
   
   let todayFilename = PlacesBackups.getFilenameForDate(

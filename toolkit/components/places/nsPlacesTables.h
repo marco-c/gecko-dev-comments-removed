@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef _nsPlacesTables_h_
 #define _nsPlacesTables_h_
 

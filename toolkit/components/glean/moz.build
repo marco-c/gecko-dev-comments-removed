@@ -1,12 +1,10 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 SPHINX_TREES["/toolkit/components/glean"] = "docs"
 
-
+# Needed so that we can include IPC things.
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"
@@ -82,16 +80,16 @@ SOURCES += [
     "!ScalarGIFFTMap.cpp",
 ]
 
-
+# Provides us the list of dependent metrics|pings.yaml.
 include("metrics_index.py")
 
-
+# Provides the function to convert a metrics.yaml path to the name of a header.
 include("build_scripts/glean_parser_ext/metrics_header_names.py")
 
 
-
-
-
+# Allow defining metrics/pings/tags elsewhere (like for Thunderbird).
+# See https://source-docs.thunderbird.net/en/latest/telemetry/index.html
+# See also: MOZ_GLEAN_INTERESTING_METRICS_FILES
 if CONFIG["MOZ_GLEAN_EXTRA_METRICS_FILES"]:
     metrics_yamls.extend(CONFIG["MOZ_GLEAN_EXTRA_METRICS_FILES"])
     metrics_yamls = sorted(metrics_yamls)
@@ -111,16 +109,16 @@ metrics_headers = sorted({
 })
 EXPORTS.mozilla.glean += [("!" + filename) for filename in metrics_headers]
 
-
-
+# GeneratedFile's `inputs` are relative to our dir.
+# The yamls arrays are relative to topsrcdir, so we need to transform:
 metrics_yamls = ["../../../" + x for x in metrics_yamls]
 pings_yamls = ["../../../" + x for x in pings_yamls]
 tags_yamls = ["../../../" + x for x in tags_yamls]
 
 glean_parser_flags = [CONFIG["MOZ_APP_VERSION"]]
 
-
-
+# In local developer builds, we optimize for speed of recompilation above
+# binary size, see bug 1944663.
 if CONFIG["DEVELOPER_OPTIONS"]:
     glean_parser_flags += ["--fast-rebuild"]
 
@@ -190,8 +188,8 @@ GeneratedFile(
     inputs=["!pings_yamls.cached"],
 )
 
-
-
+# Glean Interface For Firefox Telemetry Maps from Glean MetricId to Telemetry ProbeId
+# We split it one map per header to avoid unused function warnings on build.
 GeneratedFile(
     "EventGIFFTMap.cpp",
     script="build_scripts/glean_parser_ext/run_glean_parser.py",
@@ -216,10 +214,10 @@ GeneratedFile(
     inputs=["!metrics_yamls.cached"],
 )
 
-
-
-
-
+# JOG provides both the Rust factory for building runtime-registered metrics
+# and pings _and_ the YAML file used at runtime to register those metrics and
+# pings for Artifact Builds.
+# The factory lives inside the `fog` crate to avoid a circular dependency.
 GeneratedFile(
     "api/src/factory.rs",
     script="build_scripts/glean_parser_ext/run_glean_parser.py",
@@ -228,8 +226,8 @@ GeneratedFile(
     inputs=["!metrics_yamls.cached", "!pings_yamls.cached"],
 )
 
-
-
+# Only generate jogfile.json in Artifact Builds since
+# its presence triggers main-thread I/O.
 if CONFIG["MOZ_ARTIFACT_BUILDS"]:
     GeneratedFile(
         "jogfile.json",
@@ -238,7 +236,7 @@ if CONFIG["MOZ_ARTIFACT_BUILDS"]:
         flags=glean_parser_flags,
         inputs=["!metrics_yamls.cached", "!pings_yamls.cached"],
     )
-    
+    # Once generated, it needs to be placed in GreD so it can be found.
     FINAL_TARGET_FILES += ["!jogfile.json"]
 
 if CONFIG["MOZ_GLEAN_INTERESTING_METRICS_FILES"]:
@@ -248,12 +246,12 @@ if CONFIG["MOZ_GLEAN_INTERESTING_METRICS_FILES"]:
         flags=[CONFIG["MOZ_APP_VERSION"]],
         inputs=["!metrics_yamls.cached"],
     )
-    
+    # Once generated, it needs to be placed in GreD so it can be found.
     FINAL_TARGET_FILES += ["!interesting_serverknobs.json"]
 
 
 DIRS += [
-    "tests",  
+    "tests",  # Must be in DIRS, not TEST_DIRS or python-test won't find it.
     "xpcom",
 ]
 

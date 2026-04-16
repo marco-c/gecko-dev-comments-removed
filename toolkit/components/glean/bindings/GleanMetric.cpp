@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/GleanMetric.h"
 
 #include "nsIThread.h"

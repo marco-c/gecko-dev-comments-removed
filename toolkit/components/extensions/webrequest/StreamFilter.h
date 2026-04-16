@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_extensions_StreamFilter_h
 #define mozilla_extensions_StreamFilter_h
 

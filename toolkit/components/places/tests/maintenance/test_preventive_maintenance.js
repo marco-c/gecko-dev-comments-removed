@@ -11,8 +11,6 @@
 
 
 
-
-
 var defaultBookmarksMaxId = 0;
 async function cleanDatabase() {
   

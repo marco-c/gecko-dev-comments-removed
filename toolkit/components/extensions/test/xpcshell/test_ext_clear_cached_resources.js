@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 Services.prefs.setBoolPref("extensions.blocklist.enabled", false);

@@ -9,8 +9,6 @@
 
 
 
-
-
 const { ForgetAboutSite } = ChromeUtils.importESModule(
   "resource://gre/modules/ForgetAboutSite.sys.mjs"
 );

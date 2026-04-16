@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 async function test_theme_property(property) {

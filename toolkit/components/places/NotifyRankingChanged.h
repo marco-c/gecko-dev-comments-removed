@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_places_NotifyRankingChanged_h_
 #define mozilla_places_NotifyRankingChanged_h_
 

@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { AddonManager } = ChromeUtils.importESModule(

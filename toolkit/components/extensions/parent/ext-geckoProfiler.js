@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const PREF_ASYNC_STACK = "javascript.options.asyncstack";

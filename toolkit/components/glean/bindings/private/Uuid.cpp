@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Uuid.h"
 
 #include "jsapi.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/glean/bindings/Datetime.h"
 
 #include "jsapi.h"

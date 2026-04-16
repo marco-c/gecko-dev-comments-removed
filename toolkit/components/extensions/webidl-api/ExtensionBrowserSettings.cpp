@@ -2,7 +2,6 @@
 
 
 
-
 #include "ExtensionBrowserSettings.h"
 #include "ExtensionEventManager.h"
 #include "ExtensionSetting.h"

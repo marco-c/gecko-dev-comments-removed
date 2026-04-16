@@ -12,8 +12,6 @@
 
 
 
-
-
 add_task(async function test_query_with_remove_shortcut() {
   let folder = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,

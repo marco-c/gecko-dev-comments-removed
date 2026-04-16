@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const { ExtensionCommon } = ChromeUtils.importESModule(

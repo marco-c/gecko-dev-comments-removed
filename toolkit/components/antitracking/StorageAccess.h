@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_StorageAccess_h
 #define mozilla_StorageAccess_h
 

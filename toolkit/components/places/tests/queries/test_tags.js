@@ -6,8 +6,6 @@
 
 
 
-
-
 "use strict";
 
 add_task(async function tags_getter_setter() {

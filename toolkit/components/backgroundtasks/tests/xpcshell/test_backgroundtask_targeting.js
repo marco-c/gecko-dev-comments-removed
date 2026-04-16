@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { EXIT_CODE } = ChromeUtils.importESModule(

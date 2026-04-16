@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const isAndroid = AppConstants.platform == "android";

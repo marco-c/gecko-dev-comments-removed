@@ -8,8 +8,6 @@
 
 
 
-
-
 const ITEM_TITLE = "invalid uri";
 const ITEM_URL = "http://test.mozilla.org/";
 const TAG_NAME = "testTag";

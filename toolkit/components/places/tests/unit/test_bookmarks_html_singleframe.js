@@ -5,8 +5,6 @@
 
 
 
-
-
 const { BookmarkHTMLUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/BookmarkHTMLUtils.sys.mjs"
 );

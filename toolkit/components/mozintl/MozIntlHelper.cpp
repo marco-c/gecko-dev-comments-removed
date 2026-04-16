@@ -2,7 +2,6 @@
 
 
 
-
 #include "MozIntlHelper.h"
 #include "nsBidiUtils.h"
 #include "nsJSUtils.h"

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ADTSDemuxer.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ModuleUtils.h"

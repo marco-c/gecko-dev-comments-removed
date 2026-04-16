@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/browser/NimbusFeatures.h"
 #include "mozilla/browser/NimbusFeatureManifest.h"
 #include "mozilla/Try.h"

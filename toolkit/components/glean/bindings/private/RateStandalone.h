@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glean_RateStandalone_h
 #define mozilla_glean_RateStandalone_h
 

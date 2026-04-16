@@ -3,8 +3,6 @@
 
 
 
-
-
 let bm = PlacesUtils.bookmarks;
 
 

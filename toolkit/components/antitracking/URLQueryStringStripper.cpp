@@ -2,7 +2,6 @@
 
 
 
-
 #include "URLQueryStringStripper.h"
 
 #include "mozilla/Components.h"

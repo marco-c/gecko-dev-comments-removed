@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_extensions_ExtensionAPIRequestForwarder_h
 #define mozilla_extensions_ExtensionAPIRequestForwarder_h
 

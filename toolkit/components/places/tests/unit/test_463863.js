@@ -9,8 +9,6 @@
 
 
 
-
-
 var transitions = [
   TRANSITION_LINK,
   TRANSITION_TYPED,

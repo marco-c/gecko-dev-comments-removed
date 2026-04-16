@@ -5,8 +5,6 @@
 
 
 
-
-
 add_task(async function test_backgroundtask_no_output() {
   let sentinel = Services.uuid.generateUUID().toString();
   sentinel = sentinel.substring(1, sentinel.length - 1);

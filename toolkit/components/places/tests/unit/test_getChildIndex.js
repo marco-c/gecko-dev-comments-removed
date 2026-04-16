@@ -6,8 +6,6 @@
 
 
 
-
-
 add_task(async function test_get_child_index() {
   
   await PlacesUtils.bookmarks.insert({

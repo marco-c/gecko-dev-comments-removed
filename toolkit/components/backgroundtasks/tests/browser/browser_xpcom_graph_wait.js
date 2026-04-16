@@ -14,8 +14,6 @@
 
 
 
-
-
 "use strict";
 
 const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);

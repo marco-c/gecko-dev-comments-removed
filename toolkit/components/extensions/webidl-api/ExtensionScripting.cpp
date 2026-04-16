@@ -2,7 +2,6 @@
 
 
 
-
 #include "ExtensionScripting.h"
 #include "ExtensionEventManager.h"
 
