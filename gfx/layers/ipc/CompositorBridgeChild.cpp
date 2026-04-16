@@ -223,17 +223,26 @@ void CompositorBridgeChild::InitForContent(uint32_t aNamespace) {
 }
 
 void CompositorBridgeChild::InitForWidget(uint64_t aProcessToken,
-                                          WebRenderLayerManager* aLayerManager,
                                           uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aProcessToken);
-  MOZ_ASSERT(aLayerManager);
   MOZ_ASSERT(aNamespace);
 
   mCanSend = true;
   mProcessToken = aProcessToken;
-  mLayerManager = aLayerManager;
   mIdNamespace = aNamespace;
+}
+
+RefPtr<WebRenderLayerManager> CompositorBridgeChild::CreateLayerManager(
+    nsIWidget* aWidget, wr::PipelineId aPipelineId, nsCString& aError) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess(),
+             "Must only be called for widget CompositorBridgeChild");
+  MOZ_ASSERT(!mLayerManager, "Must only be called once");
+
+  mLayerManager =
+      WebRenderLayerManager::Create(aWidget, this, aPipelineId, aError);
+  return mLayerManager;
 }
 
 
@@ -386,7 +395,7 @@ bool CompositorBridgeChild::SendStopFrameTimeRecording(
 
 PTextureChild* CompositorBridgeChild::AllocPTextureChild(
     const SurfaceDescriptor&, ReadLockDescriptor&, const LayersBackend&,
-    const TextureFlags&, const LayersId&, const uint64_t& aSerial,
+    const TextureFlags&, const uint64_t& aSerial,
     const wr::MaybeExternalImageId& aExternalImageId) {
   return TextureClient::CreateIPDLActor();
 }
@@ -508,11 +517,11 @@ PTextureChild* CompositorBridgeChild::CreateTexture(
     wr::MaybeExternalImageId& aExternalImageId) {
   PTextureChild* textureChild =
       AllocPTextureChild(aSharedData, aReadLock, aLayersBackend, aFlags,
-                         LayersId{0} , aSerial, aExternalImageId);
+                         aSerial, aExternalImageId);
 
-  return SendPTextureConstructor(
-      textureChild, aSharedData, std::move(aReadLock), aLayersBackend, aFlags,
-      LayersId{0} , aSerial, aExternalImageId);
+  return SendPTextureConstructor(textureChild, aSharedData,
+                                 std::move(aReadLock), aLayersBackend, aFlags,
+                                 aSerial, aExternalImageId);
 }
 
 already_AddRefed<CanvasChild> CompositorBridgeChild::GetCanvasChild() {

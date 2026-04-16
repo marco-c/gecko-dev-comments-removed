@@ -11,13 +11,17 @@
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"  
 #include "nsCOMPtr.h"          
 #include "nsHashKeys.h"        
 #include "nsISupportsImpl.h"   
 #include "nsIWeakReferenceUtils.h"
+#include "nsStringFwd.h"
 
 #include <unordered_map>
+
+class nsIWidget;
 
 namespace mozilla {
 
@@ -60,8 +64,13 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   void InitForContent(uint32_t aNamespace);
 
-  void InitForWidget(uint64_t aProcessToken,
-                     WebRenderLayerManager* aLayerManager, uint32_t aNamespace);
+  void InitForWidget(uint64_t aProcessToken, uint32_t aNamespace);
+
+  
+  
+  RefPtr<WebRenderLayerManager> CreateLayerManager(nsIWidget* aWidget,
+                                                   wr::PipelineId aPipelineId,
+                                                   nsCString& aError);
 
   void Destroy();
 
@@ -84,7 +93,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   PTextureChild* AllocPTextureChild(
       const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
       const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
-      const LayersId& aId, const uint64_t& aSerial,
+      const uint64_t& aSerial,
       const wr::MaybeExternalImageId& aExternalImageId);
 
   bool DeallocPTextureChild(PTextureChild* actor);
