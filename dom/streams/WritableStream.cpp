@@ -817,4 +817,13 @@ void WritableStream::ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
                                                aError, aRv);
 }
 
+
+
+
+
+already_AddRefed<Promise> WritableStream::AbortNative(
+    JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
+  return WritableStreamAbort(aCx, this, aReason, aRv);
+}
+
 }  

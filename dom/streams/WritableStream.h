@@ -192,6 +192,10 @@ class WritableStream : public nsISupports, public nsWrapperCache {
                                       ErrorResult& aRv);
 
   
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> AbortNative(
+      JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv);
+
+  
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
