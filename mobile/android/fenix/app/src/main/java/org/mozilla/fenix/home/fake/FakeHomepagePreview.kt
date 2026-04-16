@@ -99,6 +99,8 @@ internal object FakeHomepagePreview {
             override fun onChecklistItemClicked(item: ChecklistItem) { /* no op */ }
 
             override fun onRemoveChecklistButtonClicked() { /* no op */ }
+
+            override fun onLogoClicked() { /* no op */ }
         }
 
     internal val storiesInteractor
@@ -417,7 +419,6 @@ internal object FakeHomepagePreview {
         categoryColors = FilterChipDefaults.filterChipColors(),
         textColor = MaterialTheme.colorScheme.onSurface,
         linkTextColor = MaterialTheme.colorScheme.tertiary,
-        showDiscoverMoreButton = false,
     )
 
     internal fun contentRecommendation(index: Int = Random.nextInt(until = 5)): ContentRecommendation =

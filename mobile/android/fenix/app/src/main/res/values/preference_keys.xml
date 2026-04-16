@@ -136,6 +136,7 @@
 
     <!-- Search Settings -->
     <string name="pref_key_search_engine_list" translatable="false">pref_key_search_engine_list</string>
+    <string name="pref_key_private_search_engine_list" translatable="false">pref_key_private_search_engine_list</string>
     <string name="pref_key_show_search_engine_shortcuts" translatable="false">pref_key_show_search_engine_shortcuts</string>
     <string name="pref_key_show_search_suggestions" translatable="false">pref_key_show_search_suggestions</string>
     <string name="pref_key_show_clipboard_suggestions" translatable="false">pref_key_show_clipboard_suggestions</string>
@@ -329,6 +330,7 @@
     <string name="pref_key_utm_campaign" translatable="false">pref_key_utm_campaign</string>
     <string name="pref_key_utm_term" translatable="false">pref_key_utm_term</string>
     <string name="pref_key_utm_content" translatable="false">pref_key_utm_content</string>
+    <string name="pref_key_is_user_meta_attributed" translatable="false">pref_key_is_user_meta_attributed</string>
 
     <string name="pref_key_contile_context_id" translatable="false">pref_key_contile_context_id</string>
 
@@ -446,7 +448,6 @@
     <string name="pref_key_enable_homepage_searchbar" translatable="false">pref_key_enable_homepage_searchbar</string>
     <string name="pref_key_should_show_custom_tab_extensions" translatable="false">pref_key_should_show_custom_tab_extensions</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
-    <string name="pref_key_enable_discover_more_stories" translatable="false">pref_key_enable_discover_more_stories</string>
     <string name="pref_key_enable_mozilla_ads_client" translatable="false">pref_key_enable_mozilla_ads_client</string>
     <string name="pref_key_enable_firefox_labs" translatable="false">pref_key_enable_firefox_labs</string>
     <string name="pref_key_enable_merino_client" translatable="false">pref_key_enable_merino_client</string>
@@ -555,6 +556,13 @@
     <string name="pref_key_downloads" translatable="false">pref_key_downloads</string>
     <string name="pref_key_external_download_manager" translatable="false">pref_key_external_download_manager</string>
     <string name="pref_key_downloads_clean_up_files_automatically" translatable="false">pref_key_downloads_clean_up_files_automatically</string>
+
+    <!-- Downloads Settings Radio Button-->
+    <string name="pref_key_downloads_delete_or_remove_downloads_category" translatable="false">pref_key_downloads_delete_or_remove_downloads_category</string>
+    <string name="pref_key_downloads_delete_from_device" translatable="false">pref_key_downloads_delete_from_device</string>
+    <string name="pref_key_downloads_remove_from_downloads_history" translatable="false">pref_key_downloads_remove_from_downloads_history</string>
+    <string name="pref_key_downloads_ask_when_to_delete_files" translatable="false">pref_key_downloads_ask_when_to_delete_files</string>
+    <string name="pref_key_downloads_delete_behavior" translatable="false">pref_key_downloads_delete_behavior</string>
 
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
