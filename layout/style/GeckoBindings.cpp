@@ -189,10 +189,8 @@ void Gecko_GetQueryContainerSize(const Element* aElement, nscoord* aOutWidth,
 }
 
 void Gecko_ComputedStyle_Init(ComputedStyle* aStyle,
-                              const ServoComputedData* aValues,
-                              PseudoStyleType aPseudoType) {
-  new (KnownNotNull, aStyle)
-      ComputedStyle(aPseudoType, ServoComputedDataForgotten(aValues));
+                              const ServoComputedData* aValues) {
+  new (KnownNotNull, aStyle) ComputedStyle(ServoComputedDataForgotten(aValues));
 }
 
 ServoComputedData::ServoComputedData(const ServoComputedDataForgotten aValue) {
@@ -337,12 +335,13 @@ PseudoStyleType Gecko_GetImplementedPseudoType(const Element* aElement) {
 }
 
 nsAtom* Gecko_GetImplementedPseudoIdentifier(const Element* aElement) {
-  if (!PseudoStyle::IsNamedViewTransitionPseudoElement(
-          aElement->GetPseudoElementType())) {
+  if (!aElement->HasName()) {
     return nullptr;
   }
 
-  if (!aElement->HasName()) {
+  PseudoStyleType type = aElement->GetPseudoElementType();
+  if (!PseudoStyle::IsNamedViewTransitionPseudoElement(type) &&
+      type != PseudoStyleType::Picker) {
     return nullptr;
   }
 

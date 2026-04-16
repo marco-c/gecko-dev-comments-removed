@@ -16,6 +16,8 @@ class nsWindowSizes;
 
 namespace mozilla {
 
+enum class PseudoStyleType : uint8_t;
+
 struct ServoWritingMode {
   uint8_t mBits;
 };
@@ -89,6 +91,8 @@ class ServoComputedData {
   const mozilla::ComputedStyle* visited_style;
   
   mozilla::ServoWritingMode writing_mode;
+  
+  mozilla::PseudoStyleType pseudo_type;
   
   
   
