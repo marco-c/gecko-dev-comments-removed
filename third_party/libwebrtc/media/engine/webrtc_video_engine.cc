@@ -87,7 +87,6 @@
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
@@ -1075,8 +1074,7 @@ std::vector<VideoCodecSettings> WebRtcVideoSendChannel::SelectSendVideoCodecs(
 bool WebRtcVideoSendChannel::GetChangedSenderParameters(
     const VideoSenderParameters& params,
     ChangedSenderParameters* changed_params) const {
-  if (!ValidateCodecFormats(params.codecs) ||
-      !ValidateRtpExtensions(params.extensions, send_rtp_extensions_)) {
+  if (!ValidateCodecFormats(params.codecs)) {
     return false;
   }
 
@@ -2852,12 +2850,15 @@ RtpParameters WebRtcVideoReceiveChannel::GetRtpReceiverParameters(
     return RtpParameters();
   }
   rtp_params = it->second->GetRtpParameters();
-  rtp_params.header_extensions = recv_rtp_extensions_;
 
   
   for (const Codec& codec : recv_params_.codecs) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
   }
+
+  rtp_params.header_extensions = FilterRtpExtensions(
+      recv_params_.extensions, RtpExtension::IsSupportedForVideo, false,
+      env_.field_trials());
 
   return rtp_params;
 }
@@ -2885,8 +2886,7 @@ RtpParameters WebRtcVideoReceiveChannel::GetDefaultRtpReceiveParameters()
 bool WebRtcVideoReceiveChannel::GetChangedReceiverParameters(
     const VideoReceiverParameters& params,
     ChangedReceiverParameters* changed_params) const {
-  if (!ValidateCodecFormats(params.codecs) ||
-      !ValidateRtpExtensions(params.extensions, recv_rtp_extensions_)) {
+  if (!ValidateCodecFormats(params.codecs)) {
     return false;
   }
 
@@ -2922,15 +2922,6 @@ bool WebRtcVideoReceiveChannel::GetChangedReceiverParameters(
         std::optional<std::vector<VideoCodecSettings>>(mapped_codecs);
   }
 
-  
-  std::vector<RtpExtension> filtered_extensions =
-      FilterRtpExtensions(params.extensions, RtpExtension::IsSupportedForVideo,
-                          false, env_.field_trials());
-  if (filtered_extensions != recv_rtp_extensions_) {
-    changed_params->rtp_header_extensions =
-        std::optional<std::vector<RtpExtension>>(filtered_extensions);
-  }
-
   int flexfec_payload_type = mapped_codecs.front().flexfec_payload_type;
   if (flexfec_payload_type != recv_flexfec_payload_type_) {
     changed_params->flexfec_payload_type = flexfec_payload_type;
@@ -2958,16 +2949,6 @@ bool WebRtcVideoReceiveChannel::SetReceiverParameters(
                       << recv_flexfec_payload_type_ << " to "
                       << *changed_params.flexfec_payload_type;
     recv_flexfec_payload_type_ = *changed_params.flexfec_payload_type;
-  }
-  if (changed_params.rtp_header_extensions) {
-    recv_rtp_extensions_ = *changed_params.rtp_header_extensions;
-    call_->network_thread()->PostTask(SafeTask(
-        network_thread_safety_,
-        [this, recv_rtp_extension_map =
-                   RtpHeaderExtensionMap(recv_rtp_extensions_)]() mutable {
-          RTC_DCHECK_RUN_ON(&network_thread_checker_);
-          recv_rtp_extension_map_ = std::move(recv_rtp_extension_map);
-        }));
   }
   if (changed_params.codec_settings) {
     RTC_DLOG(LS_INFO) << "Changing recv codecs from "
@@ -3239,48 +3220,6 @@ void WebRtcVideoReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {
   
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-#if RTC_DCHECK_IS_ON
-  RtpPacketReceived original_packet = packet;
-#endif
-  packet.IdentifyExtensions(recv_rtp_extension_map_);
-#if RTC_DCHECK_IS_ON
-  for (int i = kRtpExtensionNone + 1; i < kRtpExtensionNumberOfExtensions;
-       ++i) {
-    RTPExtensionType type = static_cast<RTPExtensionType>(i);
-    
-    
-    if (recv_rtp_extension_map_.IsRegistered(type)) {
-      
-      
-      
-      
-      
-      
-      
-      if (original_packet.extension_manager().GetId(type) ==
-          recv_rtp_extension_map_.GetId(type)) {
-        bool transport_has = original_packet.HasExtension(type);
-        bool local_has = packet.HasExtension(type);
-        RTC_DCHECK_EQ(transport_has, local_has)
-            << "Extension mapping mismatch for type " << type << ". "
-            << "Transport map has: " << transport_has << " (ID from transport: "
-            << static_cast<int>(original_packet.extension_manager().GetId(type))
-            << "). Local map has: " << local_has << " (ID from local: "
-            << static_cast<int>(recv_rtp_extension_map_.GetId(type)) << ").";
-      }
-    }
-  }
-#endif
   packet.set_payload_type_frequency(kVideoPayloadTypeFrequency);
   if (!packet.arrival_time().IsFinite()) {
     packet.set_arrival_time(env_.clock().CurrentTime());

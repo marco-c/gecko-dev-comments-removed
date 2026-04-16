@@ -11,12 +11,10 @@
 #include "media/engine/webrtc_media_engine.h"
 
 #include <algorithm>
-#include <map>
 #include <string>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/field_trials_view.h"
@@ -48,63 +46,6 @@ void DiscardRedundantExtensions(
 }
 }  
 
-bool ValidateRtpExtensions(ArrayView<const RtpExtension> extensions,
-                           ArrayView<const RtpExtension> old_extensions) {
-  bool id_used[1 + RtpExtension::kMaxId] = {false};
-  for (const auto& extension : extensions) {
-    if (extension.id < RtpExtension::kMinId ||
-        extension.id > RtpExtension::kMaxId) {
-      RTC_LOG(LS_ERROR) << "Bad RTP extension ID: " << extension.ToString();
-      return false;
-    }
-    if (id_used[extension.id]) {
-      RTC_LOG(LS_ERROR) << "Duplicate RTP extension ID: "
-                        << extension.ToString();
-      return false;
-    }
-    id_used[extension.id] = true;
-  }
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!old_extensions.empty()) {
-    absl::string_view urimap[1 + RtpExtension::kMaxId];
-    std::map<absl::string_view, int> idmap;
-    for (const auto& old_extension : old_extensions) {
-      urimap[old_extension.id] = old_extension.uri;
-      idmap[old_extension.uri] = old_extension.id;
-    }
-    for (const auto& extension : extensions) {
-      if (!urimap[extension.id].empty() &&
-          urimap[extension.id] != extension.uri) {
-        RTC_LOG(LS_ERROR) << "Extension negotiation failure: " << extension.id
-                          << " was mapped to " << urimap[extension.id]
-                          << " but is proposed changed to " << extension.uri;
-        return false;
-      }
-      const auto& it = idmap.find(extension.uri);
-      if (it != idmap.end() && it->second != extension.id) {
-        RTC_LOG(LS_ERROR) << "Extension negotation failure: " << extension.uri
-                          << " was identified by " << it->second
-                          << " but is proposed changed to " << extension.id;
-        return false;
-      }
-    }
-  }
-  return true;
-}
 
 std::vector<RtpExtension> FilterRtpExtensions(
     const std::vector<RtpExtension>& extensions,
@@ -112,7 +53,6 @@ std::vector<RtpExtension> FilterRtpExtensions(
     bool filter_redundant_extensions,
     const FieldTrialsView& trials) {
   
-  RTC_DCHECK(ValidateRtpExtensions(extensions, {}));
   RTC_DCHECK(supported);
   std::vector<RtpExtension> result;
 
@@ -144,8 +84,7 @@ std::vector<RtpExtension> FilterRtpExtensions(
     result.erase(it, result.end());
 
     
-    if (absl::StartsWith(trials.Lookup("WebRTC-FilterAbsSendTimeExtension"),
-                         "Enabled")) {
+    if (trials.IsEnabled("WebRTC-FilterAbsSendTimeExtension")) {
       static const char* const kBweExtensionPriorities[] = {
           RtpExtension::kTransportSequenceNumberUri,
           RtpExtension::kAbsSendTimeUri, RtpExtension::kTimestampOffsetUri};

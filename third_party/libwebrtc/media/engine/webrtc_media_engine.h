@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/bitrate_settings.h"
@@ -22,11 +21,6 @@
 
 namespace webrtc {
 
-
-
-
-bool ValidateRtpExtensions(ArrayView<const RtpExtension> extennsions,
-                           ArrayView<const RtpExtension> old_extensions);
 
 
 
@@ -41,14 +35,5 @@ BitrateConstraints GetBitrateConfigForCodec(const Codec& codec);
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::FilterRtpExtensions;
-using ::webrtc::GetBitrateConfigForCodec;
-using ::webrtc::ValidateRtpExtensions;
-}  
-#endif  
 
 #endif  

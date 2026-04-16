@@ -294,13 +294,16 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  
+  bool CheckRtpExtensionValidity(const RtpHeaderExtensions& extensions,
+                                 std::string& error_desc) const
+      RTC_RUN_ON(worker_thread());
+
   
   
   
   bool MaybeUpdateDemuxerAndRtpExtensions_w(
       bool update_demuxer,
-      std::optional<RtpHeaderExtensions> extensions,
+      const RtpHeaderExtensions& extensions,
       std::string& error_desc) RTC_RUN_ON(worker_thread());
 
   bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
@@ -365,6 +368,12 @@ class BaseChannel : public ChannelInterface,
   flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(worker_thread());
   
   RtpHeaderExtensions rtp_header_extensions_ RTC_GUARDED_BY(worker_thread());
+
+  
+  
+  RtpHeaderExtensions historical_rtp_header_extensions_
+      RTC_GUARDED_BY(worker_thread());
+
   
   
   RtpDemuxerCriteria demuxer_criteria_;

@@ -84,7 +84,6 @@
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/async_audio_processing/async_audio_processing.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
@@ -291,7 +290,6 @@ AudioReceiveStreamInterface::Config BuildReceiveStreamConfig(
     bool enable_non_sender_rtt,
     RtcpMode rtcp_mode,
     const std::vector<std::string>& stream_ids,
-    const std::vector<RtpExtension>& ,
     Transport* rtcp_send_transport,
     const scoped_refptr<AudioDecoderFactory>& decoder_factory,
     const std::map<int, SdpAudioFormat>& decoder_map,
@@ -1369,10 +1367,6 @@ bool WebRtcVoiceSendChannel::SetSenderParameters(
     return false;
   }
 
-  if (!ValidateRtpExtensions(params.extensions, send_rtp_extensions_)) {
-    return false;
-  }
-
   if (ExtmapAllowMixed() != params.extmap_allow_mixed) {
     SetExtmapAllowMixed(params.extmap_allow_mixed);
     for (auto& it : send_streams_) {
@@ -2186,26 +2180,11 @@ bool WebRtcVoiceReceiveChannel::SetReceiverParameters(
     return false;
   }
 
-  if (!ValidateRtpExtensions(params.extensions, recv_rtp_extensions_)) {
-    return false;
-  }
-  std::vector<RtpExtension> filtered_extensions =
-      FilterRtpExtensions(params.extensions, RtpExtension::IsSupportedForAudio,
-                          false, env_.field_trials());
-  if (recv_rtp_extensions_ != filtered_extensions) {
-    recv_rtp_extensions_.swap(filtered_extensions);
-    call_->network_thread()->PostTask(SafeTask(
-        network_thread_safety_,
-        [this, recv_rtp_extension_map =
-                   RtpHeaderExtensionMap(recv_rtp_extensions_)]() mutable {
-          RTC_DCHECK_RUN_ON(&network_thread_checker_);
-          recv_rtp_extension_map_ = std::move(recv_rtp_extension_map);
-        }));
-  }
   
   
   
   
+  recv_params_ = params;
   return true;
 }
 
@@ -2223,7 +2202,10 @@ RtpParameters WebRtcVoiceReceiveChannel::GetRtpReceiverParameters(
   }
   rtp_params.encodings.emplace_back();
   rtp_params.encodings.back().ssrc = it->second->stream().remote_ssrc();
-  rtp_params.header_extensions = recv_rtp_extensions_;
+
+  rtp_params.header_extensions = FilterRtpExtensions(
+      recv_params_.extensions, RtpExtension::IsSupportedForAudio, false,
+      env_.field_trials());
 
   for (const Codec& codec : recv_codecs_) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
@@ -2452,8 +2434,7 @@ bool WebRtcVoiceReceiveChannel::AddRecvStream(const StreamParams& sp) {
   
   auto config = BuildReceiveStreamConfig(
       ssrc, recv_nack_enabled_, enable_non_sender_rtt_, recv_rtcp_mode_,
-      sp.stream_ids(), recv_rtp_extensions_, transport(),
-      engine()->decoder_factory_, decoder_map_,
+      sp.stream_ids(), transport(), engine()->decoder_factory_, decoder_map_,
       engine()->audio_jitter_buffer_max_packets_,
       engine()->audio_jitter_buffer_fast_accelerate_,
       engine()->audio_jitter_buffer_min_delay_ms_, unsignaled_frame_decryptor_,
@@ -2604,53 +2585,6 @@ void WebRtcVoiceReceiveChannel::SetFrameDecryptor(
 void WebRtcVoiceReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
 
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-#if RTC_DCHECK_IS_ON
-  RtpPacketReceived original_packet = packet;
-#endif
-  packet.IdentifyExtensions(recv_rtp_extension_map_);
-#if RTC_DCHECK_IS_ON
-  for (int i = kRtpExtensionNone + 1; i < kRtpExtensionNumberOfExtensions;
-       ++i) {
-    RTPExtensionType type = static_cast<RTPExtensionType>(i);
-    if (recv_rtp_extension_map_.IsRegistered(type)) {
-      
-      
-      
-      
-      
-      
-      
-      if (original_packet.extension_manager().GetId(type) ==
-          recv_rtp_extension_map_.GetId(type)) {
-        bool transport_has = original_packet.HasExtension(type);
-        bool local_has = packet.HasExtension(type);
-        RTC_DCHECK_EQ(transport_has, local_has)
-            << "Extension mapping mismatch for type " << type << ". "
-            << "Transport map has: " << transport_has << " (ID from transport: "
-            << static_cast<int>(original_packet.extension_manager().GetId(type))
-            << "). Local map has: " << local_has << " (ID from local: "
-            << static_cast<int>(recv_rtp_extension_map_.GetId(type)) << ").";
-      }
-    }
-  }
-#endif
   if (!packet.arrival_time().IsFinite()) {
     packet.set_arrival_time(env_.clock().CurrentTime());
   }
