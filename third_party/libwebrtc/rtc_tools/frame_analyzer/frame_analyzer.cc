@@ -8,11 +8,15 @@
 
 
 
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <memory>
+#include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/flag.h"
@@ -21,8 +25,8 @@
 #include "api/scoped_refptr.h"
 #include "api/test/metrics/chrome_perf_dashboard_metrics_exporter.h"
 #include "api/test/metrics/global_metrics_logger_and_exporter.h"
+#include "api/test/metrics/metric.h"
 #include "api/test/metrics/metrics_exporter.h"
-#include "api/test/metrics/stdout_metrics_exporter.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_tools/frame_analyzer/video_color_aligner.h"
 #include "rtc_tools/frame_analyzer/video_geometry_aligner.h"
@@ -72,6 +76,98 @@ const char* const kPathDelimiter = "/";
 std::string JoinFilename(std::string directory, std::string filename) {
   return directory + kPathDelimiter + filename;
 }
+
+
+
+
+
+
+
+
+
+
+
+int64_t IntegralPart(double value) {
+  return std::lround(std::floor(std::abs(value)));
+}
+
+void AppendWithPrecision(double value,
+                         int digits_after_comma,
+                         webrtc::StringBuilder& out) {
+  int64_t multiplier = std::lround(std::pow(10, digits_after_comma));
+  int64_t integral_part = IntegralPart(value);
+  double decimal_part = std::abs(value) - integral_part;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int64_t decimal_holder = std::lround((1 + decimal_part) * multiplier);
+  if (decimal_holder >= 2 * multiplier) {
+    
+    
+    integral_part++;
+    decimal_holder -= multiplier;
+  }
+  
+  while (decimal_holder % 10 == 0) {
+    decimal_holder /= 10;
+  }
+
+  
+  if (value < 0) {
+    out << "-";
+  }
+  out << integral_part;
+  if (decimal_holder != 1) {
+    out << "." << std::to_string(decimal_holder).substr(1, digits_after_comma);
+  }
+}
+
+class FrameAnalyzerMetricsExporter : public webrtc::test::MetricsExporter {
+ public:
+  FrameAnalyzerMetricsExporter() : output_(stdout) {}
+  ~FrameAnalyzerMetricsExporter() override = default;
+
+  FrameAnalyzerMetricsExporter(const FrameAnalyzerMetricsExporter&) = delete;
+  FrameAnalyzerMetricsExporter& operator=(const FrameAnalyzerMetricsExporter&) =
+      delete;
+
+  bool Export(std::span<const webrtc::test::Metric> metrics) override {
+    for (const webrtc::test::Metric& metric : metrics) {
+      PrintMetric(metric);
+    }
+    return true;
+  }
+
+ private:
+  void PrintMetric(const webrtc::test::Metric& metric) {
+    webrtc::StringBuilder value_stream;
+    value_stream << metric.test_case << " / " << metric.name << "= {mean=";
+    if (metric.stats.mean.has_value()) {
+      AppendWithPrecision(*metric.stats.mean, 8, value_stream);
+    } else {
+      value_stream << "-";
+    }
+    value_stream << ", stddev=";
+    if (metric.stats.stddev.has_value()) {
+      AppendWithPrecision(*metric.stats.stddev, 8, value_stream);
+    } else {
+      value_stream << "-";
+    }
+    value_stream << "} " << ToString(metric.unit) << " ("
+                 << ToString(metric.improvement_direction) << ")";
+
+    fprintf(output_, "RESULT: %s\n", value_stream.str().c_str());
+  }
+
+  FILE* const output_;
+};
 
 }  
 
@@ -166,7 +262,7 @@ int main(int argc, char* argv[]) {
                                      *webrtc::test::GetGlobalMetricsLogger());
 
   std::vector<std::unique_ptr<webrtc::test::MetricsExporter>> exporters;
-  exporters.push_back(std::make_unique<webrtc::test::StdoutMetricsExporter>());
+  exporters.push_back(std::make_unique<FrameAnalyzerMetricsExporter>());
   std::string chartjson_result_file =
       absl::GetFlag(FLAGS_chartjson_result_file);
   if (!chartjson_result_file.empty()) {

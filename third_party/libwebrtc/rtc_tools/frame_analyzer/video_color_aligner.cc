@@ -10,18 +10,21 @@
 
 #include "rtc_tools/frame_analyzer/video_color_aligner.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/make_ref_counted.h"
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_frame_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_tools/frame_analyzer/linear_least_squares.h"
+#include "rtc_tools/video_file_reader.h"
 #include "third_party/libyuv/include/libyuv/planar_functions.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
@@ -33,11 +36,11 @@ namespace {
 
 
 
-void CalculateYChannel(ArrayView<const uint8_t> y_data,
-                       ArrayView<const uint8_t> u_data,
-                       ArrayView<const uint8_t> v_data,
+void CalculateYChannel(std::span<const uint8_t> y_data,
+                       std::span<const uint8_t> u_data,
+                       std::span<const uint8_t> v_data,
                        const std::array<float, 4>& coeff,
-                       ArrayView<uint8_t> output) {
+                       std::span<uint8_t> output) {
   RTC_CHECK_EQ(y_data.size(), output.size());
   
   
@@ -72,11 +75,11 @@ void CalculateYChannel(ArrayView<const uint8_t> y_data,
 
 
 
-void CalculateUVChannel(ArrayView<const uint8_t> y_data,
-                        ArrayView<const uint8_t> u_data,
-                        ArrayView<const uint8_t> v_data,
+void CalculateUVChannel(std::span<const uint8_t> y_data,
+                        std::span<const uint8_t> u_data,
+                        std::span<const uint8_t> v_data,
                         const std::array<float, 4>& coeff,
-                        ArrayView<uint8_t> output) {
+                        std::span<uint8_t> output) {
   RTC_CHECK_EQ(y_data.size(), u_data.size());
   RTC_CHECK_EQ(y_data.size(), v_data.size());
   RTC_CHECK_EQ(y_data.size(), output.size());
@@ -198,13 +201,13 @@ scoped_refptr<I420BufferInterface> AdjustColors(
   
   for (int y = 0; y < frame->height(); ++y) {
     const int half_y = y / 2;
-    ArrayView<const uint8_t> y_row(frame->DataY() + frame->StrideY() * y,
+    std::span<const uint8_t> y_row(frame->DataY() + frame->StrideY() * y,
                                    frame->width());
-    ArrayView<const uint8_t> u_row(frame->DataU() + frame->StrideU() * half_y,
+    std::span<const uint8_t> u_row(frame->DataU() + frame->StrideU() * half_y,
                                    frame->ChromaWidth());
-    ArrayView<const uint8_t> v_row(frame->DataV() + frame->StrideV() * half_y,
+    std::span<const uint8_t> v_row(frame->DataV() + frame->StrideV() * half_y,
                                    frame->ChromaWidth());
-    ArrayView<uint8_t> output_y_row(
+    std::span<uint8_t> output_y_row(
         adjusted_frame->MutableDataY() + adjusted_frame->StrideY() * y,
         frame->width());
 
@@ -212,13 +215,13 @@ scoped_refptr<I420BufferInterface> AdjustColors(
 
     
     if (y % 2 == 0) {
-      ArrayView<const uint8_t> downscaled_y_row(
+      std::span<const uint8_t> downscaled_y_row(
           downscaled_y_plane.data() + frame->ChromaWidth() * half_y,
           frame->ChromaWidth());
-      ArrayView<uint8_t> output_u_row(
+      std::span<uint8_t> output_u_row(
           adjusted_frame->MutableDataU() + adjusted_frame->StrideU() * half_y,
           frame->ChromaWidth());
-      ArrayView<uint8_t> output_v_row(
+      std::span<uint8_t> output_v_row(
           adjusted_frame->MutableDataV() + adjusted_frame->StrideV() * half_y,
           frame->ChromaWidth());
 
