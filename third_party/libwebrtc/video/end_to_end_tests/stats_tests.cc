@@ -14,12 +14,12 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "api/array_view.h"
 #include "api/environment/environment.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
@@ -30,6 +30,7 @@
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -86,7 +87,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
               }) {}
 
    private:
-    Action OnSendRtp(ArrayView<const uint8_t> packet) override {
+    Action OnSendRtp(std::span<const uint8_t> packet) override {
       
       static const int kPacketLossFrac = 25;
       RtpPacket header;
@@ -100,17 +101,17 @@ TEST_F(StatsEndToEndTest, GetStats) {
       return SEND_PACKET;
     }
 
-    Action OnSendRtcp(ArrayView<const uint8_t> packet) override {
+    Action OnSendRtcp(std::span<const uint8_t> packet) override {
       check_stats_event_.Set();
       return SEND_PACKET;
     }
 
-    Action OnReceiveRtp(ArrayView<const uint8_t> packet) override {
+    Action OnReceiveRtp(std::span<const uint8_t> packet) override {
       check_stats_event_.Set();
       return SEND_PACKET;
     }
 
-    Action OnReceiveRtcp(ArrayView<const uint8_t> packet) override {
+    Action OnReceiveRtcp(std::span<const uint8_t> packet) override {
       check_stats_event_.Set();
       return SEND_PACKET;
     }
@@ -457,7 +458,7 @@ TEST_F(StatsEndToEndTest, TestReceivedRtpPacketStats) {
 
     void OnStreamsStopped() override { task_safety_flag_->SetNotAlive(); }
 
-    Action OnSendRtp(ArrayView<const uint8_t> packet) override {
+    Action OnSendRtp(std::span<const uint8_t> packet) override {
       if (sent_rtp_ >= kNumRtpPacketsToSend) {
         
         task_queue_->PostTask(SafeTask(task_safety_flag_, [this]() {
@@ -516,7 +517,7 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
       }
     }
 
-    Action OnSendRtp(ArrayView<const uint8_t> packet) override {
+    Action OnSendRtp(std::span<const uint8_t> packet) override {
       if (MinNumberOfFramesReceived())
         observation_complete_.Set();
       return SEND_PACKET;
@@ -630,7 +631,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
           task_queue_(task_queue) {}
 
    private:
-    Action OnSendRtp(ArrayView<const uint8_t> packet) override {
+    Action OnSendRtp(std::span<const uint8_t> packet) override {
       {
         MutexLock lock(&mutex_);
         if (++sent_rtp_packets_ == kPacketNumberToDrop) {
@@ -645,7 +646,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
       return SEND_PACKET;
     }
 
-    Action OnReceiveRtcp(ArrayView<const uint8_t> packet) override {
+    Action OnReceiveRtcp(std::span<const uint8_t> packet) override {
       MutexLock lock(&mutex_);
       test::RtcpPacketParser rtcp_parser;
       rtcp_parser.Parse(packet);
@@ -682,12 +683,11 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
     }
 
     bool MinMetricRunTimePassed() {
-      int64_t now_ms = Clock::GetRealTimeClock()->TimeInMilliseconds();
-      if (!start_runtime_ms_)
-        start_runtime_ms_ = now_ms;
+      Timestamp now = Clock::GetRealTimeClock()->CurrentTime();
+      if (!start_runtime_)
+        start_runtime_ = now;
 
-      int64_t elapsed_sec = (now_ms - *start_runtime_ms_) / 1000;
-      return elapsed_sec > metrics::kMinRunTimeInSeconds;
+      return now - *start_runtime_ > metrics::kMinRunTime;
     }
 
     void ModifyVideoConfigs(
@@ -719,7 +719,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
     bool dropped_rtp_packet_requested_ RTC_GUARDED_BY(&mutex_) = false;
     std::vector<VideoReceiveStreamInterface*> receive_streams_;
     VideoSendStream* send_stream_ = nullptr;
-    std::optional<int64_t> start_runtime_ms_;
+    std::optional<Timestamp> start_runtime_;
     TaskQueueBase* const task_queue_;
     scoped_refptr<PendingTaskSafetyFlag> task_safety_flag_ =
         PendingTaskSafetyFlag::CreateDetached();

@@ -13,9 +13,9 @@
 
 #include <stddef.h>
 
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "api/units/data_rate.h"
 #include "api/video/resolution.h"
@@ -44,7 +44,7 @@ size_t LimitSimulcastLayerCount(size_t min_num_layers,
 
 
 std::vector<VideoStream> GetSimulcastConfig(
-    ArrayView<const Resolution> resolutions,
+    std::span<const Resolution> resolutions,
     bool is_screenshare_with_conference_mode,
     bool temporal_layers_supported,
     const FieldTrialsView& trials,
@@ -52,15 +52,5 @@ std::vector<VideoStream> GetSimulcastConfig(
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::BoostMaxSimulcastLayer;
-using ::webrtc::GetSimulcastConfig;
-using ::webrtc::GetTotalMaxBitrate;
-using ::webrtc::LimitSimulcastLayerCount;
-}  
-#endif  
 
 #endif  

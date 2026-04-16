@@ -8,14 +8,13 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/test/simulated_network.h"
@@ -34,7 +33,6 @@
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 #include "test/rtp_rtcp_observer.h"
-#include "test/scoped_key_value_config.h"
 #include "test/video_test_constants.h"
 #include "video/config/video_encoder_config.h"
 
@@ -80,7 +78,7 @@ class RtcpXrObserver : public test::EndToEndTest {
 
  private:
   
-  Action OnReceiveRtcp(ArrayView<const uint8_t> packet) override {
+  Action OnReceiveRtcp(std::span<const uint8_t> packet) override {
     MutexLock lock(&mutex_);
     test::RtcpPacketParser parser;
     EXPECT_TRUE(parser.Parse(packet));
@@ -97,7 +95,7 @@ class RtcpXrObserver : public test::EndToEndTest {
     return SEND_PACKET;
   }
   
-  Action OnSendRtcp(ArrayView<const uint8_t> packet) override {
+  Action OnSendRtcp(std::span<const uint8_t> packet) override {
     MutexLock lock(&mutex_);
     test::RtcpPacketParser parser;
     EXPECT_TRUE(parser.Parse(packet));
@@ -244,8 +242,7 @@ TEST_F(ExtendedReportsEndToEndTest,
 
 TEST_F(ExtendedReportsEndToEndTest,
        TestExtendedReportsWithoutRrtrWithTargetBitrateExplicitlySet) {
-  test::ScopedKeyValueConfig field_trials(
-      field_trials_, "WebRTC-Target-Bitrate-Rtcp/Enabled/");
+  field_trials().Set("WebRTC-Target-Bitrate-Rtcp", "Enabled");
   RtcpXrObserver test(false, true,
                       false,
                       VideoEncoderConfig::ContentType::kRealtimeVideo);
