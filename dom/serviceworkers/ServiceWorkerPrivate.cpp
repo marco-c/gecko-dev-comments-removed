@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerPrivate.h"
 
 #include <utility>
@@ -311,9 +309,6 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
       do_QueryInterface(underlyingChannel);
 
-  nsAutoCString spec;
-  MOZ_TRY(uriNoFragment->GetSpec(spec));
-
   nsAutoCString fragment;
   MOZ_TRY(uri->GetRef(fragment));
 
@@ -427,9 +422,9 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   
   
   return IPCInternalRequest(
-      method, {spec}, ipcHeadersGuard, ipcHeaders, Nothing(), -1,
-      alternativeDataType, contentPolicyType, internalPriority, referrer,
-      referrerPolicy, environmentReferrerPolicy, requestMode,
+      method, {WrapNotNull(uriNoFragment.get())}, ipcHeadersGuard, ipcHeaders,
+      Nothing(), -1, alternativeDataType, contentPolicyType, internalPriority,
+      referrer, referrerPolicy, environmentReferrerPolicy, requestMode,
       requestCredentials, cacheMode, requestRedirect, requestPriority,
       integrity, false, fragment, principalInfo, interceptionPrincipalInfo,
       contentPolicyType, redirectChain, isThirdPartyChannel, embedderPolicy);

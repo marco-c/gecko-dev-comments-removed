@@ -14,6 +14,7 @@
 class nsIGlobalObject;
 class nsIAsyncInputStream;
 class nsIInputStream;
+class nsIURI;
 
 namespace mozilla {
 
@@ -120,22 +121,7 @@ class TypeUtils {
       HeadersGuardEnum aGuard = HeadersGuardEnum::None);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static void ProcessURL(nsACString& aUrl, bool* aSchemeValidOut,
-                         nsACString* aUrlWithoutQueryOut,
-                         nsACString* aUrlQueryOut, ErrorResult& aRv);
+  static bool URLHasValidScheme(nsIURI* aUrl);
 
  private:
   void CheckAndSetBodyUsed(JSContext* aCx, Request& aRequest,

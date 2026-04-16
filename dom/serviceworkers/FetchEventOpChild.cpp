@@ -49,16 +49,15 @@ bool CSPPermitsResponse(nsILoadInfo* aLoadInfo,
   AssertIsOnMainThread();
   MOZ_ASSERT(aLoadInfo);
 
-  nsCString url = aResponse->GetUnfilteredURL();
-  if (url.IsEmpty()) {
-    
-    url = aWorkerScriptSpec;
-  }
+  nsresult rv;
 
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), url, nullptr, nullptr);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
+  nsCOMPtr<nsIURI> uri = aResponse->GetUnfilteredURL();
+  if (!uri) {
+    
+    rv = NS_NewURI(getter_AddRefs(uri), aWorkerScriptSpec, nullptr, nullptr);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return false;
+    }
   }
 
   int16_t decision = nsIContentPolicy::ACCEPT;
@@ -480,20 +479,24 @@ nsresult FetchEventOpChild::StartSynthesizedResponse(
   
   
   const IPCInternalRequest& request = mArgs.common().internalRequest();
-  nsAutoCString responseURL;
-  if (request.requestMode() != RequestMode::Navigate) {
-    responseURL = response->GetUnfilteredURL();
-
+  nsCOMPtr<nsIURI> responseURL;
+  if (request.requestMode() != RequestMode::Navigate &&
+      response->GetUnfilteredURL()) {
     
     
     
     
     
     
-    if (!request.fragment().IsEmpty() && !responseURL.IsEmpty()) {
-      MOZ_ASSERT(!responseURL.Contains('#'));
-      responseURL.AppendLiteral("#");
-      responseURL.Append(request.fragment());
+    if (request.fragment().IsEmpty()) {
+      responseURL = response->GetUnfilteredURL();
+    } else {
+      rv = NS_GetURIWithNewRef(response->GetUnfilteredURL(),
+                               "#"_ns + request.fragment(),
+                               getter_AddRefs(responseURL));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
 
@@ -505,19 +508,31 @@ nsresult FetchEventOpChild::StartSynthesizedResponse(
       new nsMainThreadPtrHolder<ServiceWorkerRegistrationInfo>(
           "ServiceWorkerRegistrationInfo", mRegistration, false));
 
-  nsCString requestURL = request.urlList().LastElement();
-  if (!request.fragment().IsEmpty()) {
-    requestURL.AppendLiteral("#");
-    requestURL.Append(request.fragment());
+  nsCOMPtr<nsIURI> requestURL;
+  if (request.fragment().IsEmpty()) {
+    requestURL = request.urlList().LastElement();
+  } else {
+    rv = NS_GetURIWithNewRef(request.urlList().LastElement(),
+                             "#"_ns + request.fragment(),
+                             getter_AddRefs(requestURL));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  nsAutoCString responseURLSpec;
+  if (responseURL) {
+    responseURL->GetSpec(responseURLSpec);
   }
 
   RefPtr<SynthesizeResponseWatcher> watcher = new SynthesizeResponseWatcher(
       interceptedChannel, registration,
       mArgs.common().isNonSubresourceRequest(), std::move(aArgs.closure()),
-      NS_ConvertUTF8toUTF16(responseURL));
+      NS_ConvertUTF8toUTF16(responseURLSpec));
 
   rv = mInterceptedChannel->StartSynthesizedResponse(
-      body, watcher, nullptr , responseURL, response->IsRedirected());
+      body, watcher, nullptr , responseURLSpec,
+      response->IsRedirected());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

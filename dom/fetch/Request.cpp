@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Request.h"
 
 #include "js/Value.h"
@@ -95,7 +93,7 @@ already_AddRefed<nsIURI> ParseURL(nsIGlobalObject* aGlobal,
 }
 
 void GetRequestURL(nsIGlobalObject* aGlobal, const nsACString& aInput,
-                   nsACString& aRequestURL, nsACString& aURLfragment,
+                   nsIURI** aRequestURL, nsACString& aURLfragment,
                    ErrorResult& aRv) {
   nsCOMPtr<nsIURI> resolvedURI = ParseURL(aGlobal, aInput, aRv);
   if (aRv.Failed()) {
@@ -110,12 +108,7 @@ void GetRequestURL(nsIGlobalObject* aGlobal, const nsACString& aInput,
     return;
   }
 
-  nsCOMPtr<nsIURI> resolvedURIClone;
-  aRv = NS_GetURIWithoutRef(resolvedURI, getter_AddRefs(resolvedURIClone));
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-  aRv = resolvedURIClone->GetSpec(aRequestURL);
+  aRv = NS_GetURIWithoutRef(resolvedURI, aRequestURL);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -174,13 +167,14 @@ SafeRefPtr<Request> Request::Constructor(
     
     
     const nsACString& input = aInput.GetAsUTF8String();
-    nsAutoCString requestURL;
+    nsCOMPtr<nsIURI> requestURL;
     nsCString fragment;
-    GetRequestURL(aGlobal, input, requestURL, fragment, aRv);
+    GetRequestURL(aGlobal, input, getter_AddRefs(requestURL), fragment, aRv);
     if (aRv.Failed()) {
       return nullptr;
     }
-    request = MakeSafeRefPtr<InternalRequest>(requestURL, fragment);
+    request = MakeSafeRefPtr<InternalRequest>(WrapNotNull(requestURL.get()),
+                                              fragment);
   }
   request = request->GetRequestConstructorCopy(aGlobal, aRv);
   if (NS_WARN_IF(aRv.Failed())) {

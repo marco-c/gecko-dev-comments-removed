@@ -363,14 +363,12 @@ class StartResponse final : public Runnable {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(aLoadInfo);
     nsresult rv;
-    nsCOMPtr<nsIURI> uri;
-    nsCString url = mInternalResponse->GetUnfilteredURL();
-    if (url.IsEmpty()) {
+    nsCOMPtr<nsIURI> uri = mInternalResponse->GetUnfilteredURL();
+    if (!uri) {
       
-      url = mScriptSpec;
+      rv = NS_NewURI(getter_AddRefs(uri), mScriptSpec);
+      NS_ENSURE_SUCCESS(rv, false);
     }
-    rv = NS_NewURI(getter_AddRefs(uri), url);
-    NS_ENSURE_SUCCESS(rv, false);
     int16_t decision = nsIContentPolicy::ACCEPT;
     rv = NS_CheckContentLoadPolicy(uri, aLoadInfo, &decision);
     NS_ENSURE_SUCCESS(rv, false);
@@ -652,7 +650,7 @@ void RespondWithHandler::ResolvedCallback(JSContext* aCx,
   
   if (NS_WARN_IF((response->Type() == ResponseType::Opaque ||
                   response->Type() == ResponseType::Cors) &&
-                 ir->GetUnfilteredURL().IsEmpty())) {
+                 !ir->GetUnfilteredURL())) {
     MOZ_DIAGNOSTIC_CRASH("Cors or opaque Response without a URL");
     return;
   }
@@ -662,7 +660,8 @@ void RespondWithHandler::ResolvedCallback(JSContext* aCx,
     
     
     
-    NS_ConvertUTF8toUTF16 responseURL(ir->GetUnfilteredURL());
+    NS_ConvertUTF8toUTF16 responseURL(
+        ir->GetUnfilteredURL()->GetSpecOrDefault());
     autoCancel.SetCancelMessage("CorsResponseForSameOriginRequest"_ns,
                                 mRequestURL, responseURL);
     return;
@@ -673,19 +672,21 @@ void RespondWithHandler::ResolvedCallback(JSContext* aCx,
   
   nsCString responseURL;
   if (mRequestMode != RequestMode::Navigate) {
-    responseURL = ir->GetUnfilteredURL();
-
     
     
     
     
     
     
-    if (!mRequestFragment.IsEmpty() && !responseURL.IsEmpty()) {
-      MOZ_ASSERT(!responseURL.Contains('#'));
-      responseURL.Append("#"_ns);
-      responseURL.Append(mRequestFragment);
+    nsCOMPtr<nsIURI> responseURI;
+    if (mRequestFragment.IsEmpty()) {
+      responseURI = ir->GetUnfilteredURL();
+    } else {
+      MOZ_ALWAYS_SUCCEEDS(NS_GetURIWithNewRef(ir->GetUnfilteredURL(),
+                                              "#"_ns + mRequestFragment,
+                                              getter_AddRefs(responseURI)));
     }
+    MOZ_ALWAYS_SUCCEEDS(responseURI->GetSpec(responseURL));
   }
 
   UniquePtr<RespondWithClosure> closure(new RespondWithClosure(
@@ -761,8 +762,7 @@ void FetchEvent::RespondWith(JSContext* aCx, Promise& aArg, ErrorResult& aRv) {
   auto location = JSCallingLocation::Get(aCx);
   SafeRefPtr<InternalRequest> ir = mRequest->GetInternalRequest();
 
-  nsAutoCString requestURL;
-  ir->GetURL(requestURL);
+  nsCOMPtr<nsIURI> requestURL = ir->GetURL();
 
   StopImmediatePropagation();
   mWaitToRespond = true;
@@ -770,7 +770,8 @@ void FetchEvent::RespondWith(JSContext* aCx, Promise& aArg, ErrorResult& aRv) {
   if (mChannel) {
     RefPtr<RespondWithHandler> handler = new RespondWithHandler(
         mChannel, mRegistration, mRequest->Mode(), ir->IsClientRequest(),
-        mRequest->Redirect(), mScriptSpec, NS_ConvertUTF8toUTF16(requestURL),
+        mRequest->Redirect(), mScriptSpec,
+        NS_ConvertUTF8toUTF16(requestURL->GetSpecOrDefault()),
         ir->GetFragment(), location.FileName(), location.mLine,
         location.mColumn);
 
@@ -809,12 +810,11 @@ void FetchEvent::ReportCanceled() {
   MOZ_ASSERT(mPreventDefaultLocation);
 
   SafeRefPtr<InternalRequest> ir = mRequest->GetInternalRequest();
-  nsAutoCString url;
-  ir->GetURL(url);
+  nsCOMPtr<nsIURI> url = ir->GetURL();
 
   
   
-  NS_ConvertUTF8toUTF16 requestURL(url);
+  NS_ConvertUTF8toUTF16 requestURL(url->GetSpecOrDefault());
   
   
 

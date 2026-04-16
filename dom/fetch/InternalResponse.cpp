@@ -149,7 +149,7 @@ InternalResponseMetadata InternalResponse::GetMetadata() {
   
   nsCOMPtr<nsITransportSecurityInfo> securityInfo(mChannelInfo.SecurityInfo());
   return InternalResponseMetadata(
-      mType, GetUnfilteredURLList(), GetUnfilteredStatus(),
+      mType, GetUnfilteredURLList().Clone(), GetUnfilteredStatus(),
       GetUnfilteredStatusText(), headersGuard, headers, mErrorCode,
       GetAlternativeDataType(), securityInfo, principalInfo, bodyBlobURISpec,
       bodyLocalPath, GetCredentialsMode());

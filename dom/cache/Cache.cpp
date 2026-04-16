@@ -28,19 +28,10 @@ namespace mozilla::dom::cache {
 
 using mozilla::ipc::PBackgroundChild;
 
-bool IsValidPutRequestURL(const nsACString& aUrl, ErrorResult& aRv) {
-  bool validScheme = false;
-
-  
-  nsAutoCString url(aUrl);
-  TypeUtils::ProcessURL(url, &validScheme, nullptr, nullptr, aRv);
-  if (aRv.Failed()) {
-    return false;
-  }
-
-  if (!validScheme) {
-    
-    aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>("Request", aUrl);
+bool IsValidPutRequestURL(nsIURI* aUrl, ErrorResult& aRv) {
+  if (!TypeUtils::URLHasValidScheme(aUrl)) {
+    aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>("Request",
+                                               aUrl->GetSpecOrDefault());
     return false;
   }
 
@@ -311,9 +302,8 @@ already_AddRefed<Promise> Cache::Add(JSContext* aContext,
     return nullptr;
   }
 
-  nsAutoCString url;
-  request->GetUrl(url);
-  if (NS_WARN_IF(!IsValidPutRequestURL(url, aRv))) {
+  SafeRefPtr<InternalRequest> ireq = request->GetInternalRequest();
+  if (NS_WARN_IF(!IsValidPutRequestURL(ireq->GetURLWithoutFragment(), aRv))) {
     return nullptr;
   }
 
@@ -357,9 +347,8 @@ already_AddRefed<Promise> Cache::AddAll(
       return nullptr;
     }
 
-    nsAutoCString url;
-    request->GetUrl(url);
-    if (NS_WARN_IF(!IsValidPutRequestURL(url, aRv))) {
+    SafeRefPtr<InternalRequest> ireq = request->GetInternalRequest();
+    if (NS_WARN_IF(!IsValidPutRequestURL(ireq->GetURLWithoutFragment(), aRv))) {
       return nullptr;
     }
 
