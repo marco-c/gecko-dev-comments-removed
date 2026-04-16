@@ -57,7 +57,7 @@ async function waitForDialogAndDragNDropURL(crossDomain) {
   
   
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
-  urlBarContainer.click();
+  EventUtils.synthesizeMouseAtCenter(urlBarContainer, {});
   AccessibilityUtils.resetEnv();
   
   urlbar.dispatchEvent(urlEvent);
