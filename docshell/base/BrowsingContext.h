@@ -300,6 +300,9 @@ struct EmbedderColorSchemes {
      Document Picture-in-Picture window */                                    \
   FIELD(ControlsDocumentPiP, bool)
 
+#define NS_DOM_BROWSINGCONTEXT_IID \
+  {0x5059a6aa, 0xf09, 0x415c, {0x89, 0xbd, 0x63, 0xfd, 0xe5, 0xab, 0x1a, 0x66}};
+
 
 
 
@@ -318,6 +321,7 @@ struct EmbedderColorSchemes {
 
 class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   MOZ_DECL_SYNCED_CONTEXT(BrowsingContext, MOZ_EACH_BC_FIELD)
+  NS_INLINE_DECL_STATIC_IID(NS_DOM_BROWSINGCONTEXT_IID)
 
  public:
   enum class Type { Chrome, Content };
@@ -854,6 +858,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void SetWindowProxy(JS::Handle<JSObject*> aWindowProxy) {
     mWindowProxy = aWindowProxy;
   }
+
+  
+  static void SweepWindowProxies(JSTracer* aTrc);
 
   Nullable<WindowProxyHolder> GetWindow();
 
@@ -1602,8 +1609,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   JS::UniqueChars mDefaultLocale;
 
-  
-  
   
   
   JS::Heap<JSObject*> mWindowProxy;
