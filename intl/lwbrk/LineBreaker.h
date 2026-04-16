@@ -26,15 +26,6 @@ class LineBreaker final {
   
   
   
-  
-  static int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
-
-  
-  
-  
-  
-  
-  
   static void ComputeBreakPositions(const char16_t* aText, uint32_t aLength,
                                     WordBreakRule aWordBreak,
                                     LineBreakRule aLevel,
@@ -61,20 +52,6 @@ static inline bool NS_IsSpace(char16_t u) {
          u == 0x1361 ||                   
          u == 0x1680 ||                   
          u == 0x205F;                     
-}
-
-static inline bool NS_NeedsPlatformNativeHandling(char16_t aChar) {
-  return
-#if ANDROID || XP_WIN  
-                       
-      (0x0e01 <= aChar && aChar <= 0x0eff) ||  
-#else
-      
-      
-      
-      (0x0e01 <= aChar && aChar <= 0x0fff) ||  
-#endif
-      (0x1780 <= aChar && aChar <= 0x17ff);  
 }
 
 }  

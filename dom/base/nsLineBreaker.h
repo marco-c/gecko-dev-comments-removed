@@ -63,7 +63,7 @@ class nsILineBreakSink {
 
 class nsLineBreaker {
  public:
-  nsLineBreaker();
+  nsLineBreaker() = default;
   ~nsLineBreaker();
 
   static inline bool IsSpace(char16_t u) {
@@ -258,10 +258,6 @@ class nsLineBreaker {
                              const char16_t* aTextLimit, uint8_t* aBreakState);
 
   inline constexpr bool IsSegmentSpace(char16_t u) const {
-    if (mLegacyBehavior) {
-      return nsLineBreaker::IsSpace(u);
-    }
-
     return u == 0x0020 ||  
            u == 0x0009 ||  
            u == 0x000D;    
@@ -302,8 +298,6 @@ class nsLineBreaker {
   
   
   bool mWordContinuation = false;
-  
-  const bool mLegacyBehavior;
 };
 
 #endif 
