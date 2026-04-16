@@ -10,9 +10,8 @@
 
 #include "examples/peerconnection/client/defaults.h"
 
-#include <stdlib.h>
-
 #include <cstdint>
+#include <cstdlib>
 #include <iterator>
 #include <string>
 
@@ -46,6 +45,14 @@ std::string GetPeerConnectionString() {
 
 std::string GetDefaultServerName() {
   return GetEnvVarOrDefault("WEBRTC_SERVER", "localhost");
+}
+
+std::string GetTurnUserName() {
+  return GetEnvVarOrDefault("WEBRTC_TURN_USER", "");
+}
+
+std::string GetTurnPassword() {
+  return GetEnvVarOrDefault("WEBRTC_TURN_PASSWORD", "");
 }
 
 std::string GetPeerName() {

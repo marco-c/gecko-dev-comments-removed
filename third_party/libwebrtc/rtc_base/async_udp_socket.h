@@ -64,6 +64,8 @@ class AsyncUDPSocket : public AsyncPacketSocket {
 
  private:
   
+  void OnConnectEvent(Socket* socket);
+  
   void OnReadEvent(Socket* socket);
   
   void OnWriteEvent(Socket* socket);

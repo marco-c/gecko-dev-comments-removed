@@ -106,7 +106,7 @@ class SSLAdapter : public AsyncSocketAdapter {
   
   
   
-  static SSLAdapter* Create(Socket* socket);
+  static SSLAdapter* Create(Socket* socket, bool dtls = false);
 
  private:
   
@@ -125,15 +125,5 @@ RTC_EXPORT bool CleanupSSL();
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::CleanupSSL;
-using ::webrtc::InitializeSSL;
-using ::webrtc::SSLAdapter;
-using ::webrtc::SSLAdapterFactory;
-}  
-#endif  
 
 #endif  

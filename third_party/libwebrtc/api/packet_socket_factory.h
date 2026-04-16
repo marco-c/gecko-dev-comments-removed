@@ -19,6 +19,7 @@
 #include "api/async_dns_resolver.h"
 #include "api/environment/environment.h"
 #include "rtc_base/async_packet_socket.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/system/rtc_export.h"
@@ -42,6 +43,10 @@ class RTC_EXPORT PacketSocketFactory {
  public:
   enum Options {
     OPT_STUN = 0x04,
+
+    
+    OPT_DTLS = 0x20,           
+    OPT_DTLS_INSECURE = 0x10,  
 
     
     OPT_TLS = 0x02,           
@@ -80,6 +85,19 @@ class RTC_EXPORT PacketSocketFactory {
 
   virtual std::unique_ptr<AsyncDnsResolverInterface>
   CreateAsyncDnsResolver() = 0;
+
+  
+  
+  virtual std::unique_ptr<AsyncPacketSocket> CreateClientUdpSocket(
+      const Environment& env,
+      const SocketAddress& local_address,
+      const SocketAddress& remote_address,
+      uint16_t min_port,
+      uint16_t max_port,
+      const PacketSocketTcpOptions& options) {
+    RTC_DCHECK_NOTREACHED();
+    return nullptr;
+  }
 };
 
 }  

@@ -51,7 +51,8 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   explicit OpenSSLAdapter(Socket* socket,
                           OpenSSLSessionCache* ssl_session_cache = nullptr,
-                          SSLCertificateVerifier* ssl_cert_verifier = nullptr);
+                          SSLCertificateVerifier* ssl_cert_verifier = nullptr,
+                          bool dtls = false);
   ~OpenSSLAdapter() override;
 
   void SetIgnoreBadCert(bool ignore) override;
@@ -235,14 +236,5 @@ std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::OpenSSLAdapter;
-using ::webrtc::OpenSSLAdapterFactory;
-using ::webrtc::TransformAlpnProtocols;
-}  
-#endif  
 
 #endif  

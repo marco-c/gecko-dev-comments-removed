@@ -188,6 +188,7 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   std::vector<absl::string_view> tokens = split(url, '?');
   absl::string_view uri_without_transport = tokens[0];
   
+  bool transport_given_explicitly = false;
   if (tokens.size() == kTurnTransportTokensNum) {  
     std::vector<absl::string_view> transport_tokens = split(tokens[1], '=');
     if (transport_tokens[0] != kTransport) {
@@ -209,6 +210,7 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
           "always be udp or tcp.");
     }
     turn_transport_type = *proto;
+    transport_given_explicitly = true;
   }
 
   auto [service_type, hoststring] =
@@ -236,6 +238,13 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   if (service_type == ServiceType::TURNS) {
     default_port = kDefaultStunTlsPort;
     turn_transport_type = PROTO_TLS;
+    
+    
+    if (!transport_given_explicitly || turn_transport_type == PROTO_TCP) {
+      turn_transport_type = PROTO_TLS;
+    } else if (turn_transport_type == PROTO_UDP) {
+      turn_transport_type = PROTO_DTLS;
+    }
   }
 
   if (hoststring.find('@') != absl::string_view::npos) {

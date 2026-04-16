@@ -18,6 +18,7 @@
 namespace webrtc {
 
 const char UDP_PROTOCOL_NAME[] = "udp";
+const char DTLS_PROTOCOL_NAME[] = "dtls";
 const char TCP_PROTOCOL_NAME[] = "tcp";
 const char SSLTCP_PROTOCOL_NAME[] = "ssltcp";
 const char TLS_PROTOCOL_NAME[] = "tls";
@@ -29,6 +30,7 @@ int GetProtocolOverhead(absl::string_view protocol) {
     return kUdpHeaderSize;
   } else {
     
+    
     return 8;
   }
 }
@@ -37,6 +39,8 @@ absl::string_view ProtoToString(ProtocolType proto) {
   switch (proto) {
     case PROTO_UDP:
       return UDP_PROTOCOL_NAME;
+    case PROTO_DTLS:
+      return DTLS_PROTOCOL_NAME;
     case PROTO_TCP:
       return TCP_PROTOCOL_NAME;
     case PROTO_SSLTCP:
