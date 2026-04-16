@@ -54,6 +54,7 @@
 #include "pc/rtp_sender_proxy.h"
 #include "pc/rtp_transport_internal.h"
 #include "pc/session_description.h"
+#include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -90,6 +91,8 @@ class PeerConnectionSdpMethods;
 
 class RtpTransceiver : public RtpTransceiverInterface {
  public:
+  
+  
   
   
   
@@ -200,20 +203,20 @@ class RtpTransceiver : public RtpTransceiverInterface {
   absl::AnyInvocable<void() &&> GetDeleteChannelWorkerTask(bool stop_senders);
 
   
-  scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> AddSenderPlanB(
-      scoped_refptr<MediaStreamTrackInterface> track,
-      absl::string_view sender_id,
-      const std::vector<std::string>& stream_ids,
-      const std::vector<RtpEncodingParameters>& send_encodings);
+  PLAN_B_ONLY scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
+  AddSenderPlanB(scoped_refptr<MediaStreamTrackInterface> track,
+                 absl::string_view sender_id,
+                 const std::vector<std::string>& stream_ids,
+                 const std::vector<RtpEncodingParameters>& send_encodings);
 
   
   
-  void AddSenderPlanB(
+  PLAN_B_ONLY void AddSenderPlanB(
       scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender);
 
   
   
-  bool RemoveSenderPlanB(RtpSenderInterface* sender);
+  PLAN_B_ONLY bool RemoveSenderPlanB(RtpSenderInterface* sender);
 
   
   std::vector<scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
@@ -223,13 +226,13 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   
   
-  void AddReceiverPlanB(
+  PLAN_B_ONLY void AddReceiverPlanB(
       scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
           receiver);
 
   
   
-  bool RemoveReceiverPlanB(RtpReceiverInterface* receiver);
+  PLAN_B_ONLY bool RemoveReceiverPlanB(RtpReceiverInterface* receiver);
 
   
   std::vector<scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
