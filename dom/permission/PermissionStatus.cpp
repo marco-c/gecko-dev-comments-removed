@@ -61,15 +61,31 @@ nsLiteralCString PermissionStatus::GetPermissionType() const {
 
 
 void PermissionStatus::PermissionChanged(uint32_t aAction) {
-  PermissionState newState = ComputeStateFromAction(aAction);
-  if (mState == newState) {
+  const PermissionState oldEffective = State();
+  mState = ComputeStateFromAction(aAction);
+  const PermissionState newEffective = State();
+
+  if (oldEffective == newEffective) {
     return;
   }
 
-  mState = newState;
+  
+  
+  RefPtr<AsyncEventDispatcher> eventDispatcher =
+      new AsyncEventDispatcher(this, u"change"_ns, CanBubble::eNo);
+  eventDispatcher->PostDOMEvent();
+}
 
-  
-  
+void PermissionStatus::SystemPermissionChanged(
+    PermissionState aNewSystemState) {
+  const PermissionState oldEffective = State();
+  mSystemState = aNewSystemState;
+  const PermissionState newEffective = State();
+
+  if (oldEffective == newEffective) {
+    return;
+  }
+
   RefPtr<AsyncEventDispatcher> eventDispatcher =
       new AsyncEventDispatcher(this, u"change"_ns, CanBubble::eNo);
   eventDispatcher->PostDOMEvent();

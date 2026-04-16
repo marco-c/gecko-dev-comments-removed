@@ -1095,10 +1095,11 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvGraphicsError(const nsACString& aError);
 
-  mozilla::ipc::IPCResult RecvBeginDriverCrashGuard(const uint32_t& aGuardType,
-                                                    bool* aOutCrashed);
+  mozilla::ipc::IPCResult RecvBeginDriverCrashGuard(
+      const gfx::CrashGuardType& aGuardType, bool* aOutCrashed);
 
-  mozilla::ipc::IPCResult RecvEndDriverCrashGuard(const uint32_t& aGuardType);
+  mozilla::ipc::IPCResult RecvEndDriverCrashGuard(
+      const gfx::CrashGuardType& aGuardType);
 
   mozilla::ipc::IPCResult RecvAddIdleObserver(const uint64_t& aObserverId,
                                               const uint32_t& aIdleTimeInS);
@@ -1176,7 +1177,7 @@ class ContentParent final : public PContentParent,
       mozilla::performance::pageload_event::PageloadEventData&&
           aPageLoadEventData,
       const TimeStamp& aNavigationStartTime,
-      uint64_t aAndroidAppLinkLoadIdentifier);
+      const MaybeDiscarded<BrowsingContext>& aBrowsingContext);
   mozilla::ipc::IPCResult RecvRecordOrigin(const uint32_t& aMetricId,
                                            const nsACString& aOrigin);
   mozilla::ipc::IPCResult RecvReportContentBlockingLog(
@@ -1392,6 +1393,9 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvGetSystemGeolocationPermissionBehavior(
       GetSystemGeolocationPermissionBehaviorResolver&& aResolver);
 
+  static void BroadcastSystemPermissionChanged(PermissionName aName,
+                                               PermissionState aState);
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult
   RecvRequestGeolocationPermissionFromUser(
       const MaybeDiscardedBrowsingContext& aBrowsingContext,
@@ -1444,11 +1448,6 @@ class ContentParent final : public PContentParent,
     return mRemoteWorkerServiceActor;
   }
 
-  void SetAndroidAppLinkLaunchType(uint64_t aLoadIdentifier,
-                                   int32_t aAppLinkLaunchType);
-  int32_t GetAndroidAppLinkLaunchType(uint64_t aLoadIdentifier);
-  void ClearAndroidAppLinkLaunchType(uint64_t aLoadIdentifier);
-
  private:
   
   static UniqueContentParentKeepAlive GetUsedBrowserProcess(
@@ -1469,7 +1468,8 @@ class ContentParent final : public PContentParent,
   void RecordAndroidAppLinkTelemetry(
       mozilla::performance::pageload_event::PageloadEventData*
           aPageLoadEventData,
-      const TimeStamp& aNavStartTime, uint64_t aAppLinkLaunchTypeIdentifier);
+      const TimeStamp& aNavStartTime,
+      CanonicalBrowsingContext* aBrowsingContext);
 
  private:
   
@@ -1594,10 +1594,6 @@ class ContentParent final : public PContentParent,
   
   
   nsTArray<uint64_t> mLoadedOriginHashes;
-
-  
-  
-  nsTHashMap<uint64_t, int32_t> mAndroidLoadIdentifierToAppLinkLaunchType;
 
   UniquePtr<mozilla::ipc::CrashReporterHost> mCrashReporter;
 

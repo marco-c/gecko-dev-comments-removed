@@ -106,6 +106,8 @@
 #include "mozilla/dom/PContentPermissionRequestParent.h"
 #include "mozilla/dom/PCycleCollectWithLogsParent.h"
 #include "mozilla/dom/ParentProcessMessageManager.h"
+#include "mozilla/dom/PermissionObserver.h"
+#include "mozilla/dom/PermissionStatusBinding.h"
 #include "mozilla/dom/Permissions.h"
 #include "mozilla/dom/ProcessMessageManager.h"
 #include "mozilla/dom/PushNotifier.h"
@@ -5725,12 +5727,12 @@ mozilla::ipc::IPCResult ContentParent::RecvGraphicsError(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvBeginDriverCrashGuard(
-    const uint32_t& aGuardType, bool* aOutCrashed) {
+    const gfx::CrashGuardType& aGuardType, bool* aOutCrashed) {
   
   MOZ_ASSERT(!mDriverCrashGuard);
 
   UniquePtr<gfx::DriverCrashGuard> guard;
-  switch (gfx::CrashGuardType(aGuardType)) {
+  switch (aGuardType) {
     case gfx::CrashGuardType::D3D11Layers:
       guard = MakeUnique<gfx::D3D11LayersCrashGuard>(this);
       break;
@@ -5755,7 +5757,7 @@ mozilla::ipc::IPCResult ContentParent::RecvBeginDriverCrashGuard(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvEndDriverCrashGuard(
-    const uint32_t& aGuardType) {
+    const gfx::CrashGuardType& aGuardType) {
   mDriverCrashGuard = nullptr;
   return IPC_OK();
 }
@@ -6212,23 +6214,25 @@ static bool WebdriverRunning() {
   return false;
 }
 
+#ifdef ANDROID
 void ContentParent::RecordAndroidAppLinkTelemetry(
     mozilla::performance::pageload_event::PageloadEventData* aPageloadData,
-    const TimeStamp& aNavStartTime, uint64_t aAndroidAppLinkLoadIdentifier) {
+    const TimeStamp& aNavStartTime, CanonicalBrowsingContext* cbc) {
   MOZ_ASSERT(aPageloadData);
-  int32_t appLinkLaunchType =
-      GetAndroidAppLinkLaunchType(aAndroidAppLinkLoadIdentifier);
-  if (appLinkLaunchType < 0) {
+  MOZ_ASSERT(cbc);
+  uint32_t appLinkLaunchType = cbc->GetAndroidAppLinkLaunchType();
+  if (appLinkLaunchType == 0 ) {
     return;
   }
-  ClearAndroidAppLinkLaunchType(aAndroidAppLinkLoadIdentifier);
+  
+  
+  cbc->SetAndroidAppLinkLaunchType(0);
 
   aPageloadData->set_androidAppLinkLaunchType(appLinkLaunchType);
 
   
   
-  if (appLinkLaunchType !=
-      1 ) {
+  if (appLinkLaunchType != 1 ) {
     return;
   }
 
@@ -6255,12 +6259,13 @@ void ContentParent::RecordAndroidAppLinkTelemetry(
                         appLinkLaunchType);
   }
 }
+#endif
 
 mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
     mozilla::performance::pageload_event::PageloadEventData&&
         aPageloadEventData,
     const TimeStamp& aNavigationStartTime,
-    uint64_t aAndroidAppLinkLaunchTypeIdentifier) {
+    const MaybeDiscarded<BrowsingContext>& aBrowsingContext) {
   
   aPageloadEventData.set_usingWebdriver(WebdriverRunning());
 
@@ -6286,22 +6291,30 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
 #endif
 
 #ifdef ANDROID
-  RecordAndroidAppLinkTelemetry(&aPageloadEventData, aNavigationStartTime,
-                                aAndroidAppLinkLaunchTypeIdentifier);
+  if (!aBrowsingContext.IsNullOrDiscarded()) {
+    RefPtr<CanonicalBrowsingContext> cbc = aBrowsingContext.get_canonical();
+    if (cbc->IsOwnedByProcess(ChildID())) {
+      RecordAndroidAppLinkTelemetry(&aPageloadEventData, aNavigationStartTime,
+                                    cbc);
+    }
+  }
 
   
   const nsDependentCSubstring remoteTypePrefix =
       RemoteTypePrefix(GetRemoteType());
 
+  using namespace mozilla::performance::pageload_event;
+  AndroidIsolationCategory isolationCategory;
   if (remoteTypePrefix == WEB_REMOTE_TYPE) {
-    aPageloadEventData.set_androidIsolationCategory("shared_web"_ns);
+    isolationCategory = AndroidIsolationCategory::SHARED_WEB;
   } else if (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE) {
-    aPageloadEventData.set_androidIsolationCategory("site_isolated"_ns);
+    isolationCategory = AndroidIsolationCategory::SITE_ISOLATED;
   } else if (remoteTypePrefix == WITH_COOP_COEP_REMOTE_TYPE) {
-    aPageloadEventData.set_androidIsolationCategory("coop_isolated"_ns);
+    isolationCategory = AndroidIsolationCategory::COOP_ISOLATED;
   } else {
-    aPageloadEventData.set_androidIsolationCategory("other"_ns);
+    isolationCategory = AndroidIsolationCategory::OTHER;
   }
+  aPageloadEventData.set_androidIsolationCategory(isolationCategory);
 #endif
 
   
@@ -7885,8 +7898,17 @@ IPCResult ContentParent::RecvGetSystemIcon(nsIURI* aURI,
 
 IPCResult ContentParent::RecvGetSystemGeolocationPermissionBehavior(
     GetSystemGeolocationPermissionBehaviorResolver&& aResolver) {
+  PermissionObserver::EnsureMonitoringInParent(PermissionName::Geolocation);
   aResolver(Geolocation::GetLocationOSPermission());
   return IPC_OK();
+}
+
+
+void ContentParent::BroadcastSystemPermissionChanged(PermissionName aName,
+                                                     PermissionState aState) {
+  for (auto* cp : AllProcesses(eLive)) {
+    (void)cp->SendSystemPermissionChanged(aName, aState);
+  }
 }
 
 IPCResult ContentParent::RecvRequestGeolocationPermissionFromUser(
@@ -7939,23 +7961,6 @@ ThreadsafeContentParentHandle::TryAddKeepAlive(uint64_t aBrowserId) {
   ++mKeepAlivesPerBrowserId.LookupOrInsert(aBrowserId, 0);
   return UniqueThreadsafeContentParentKeepAlive{do_AddRef(this).take(),
                                                 {.mBrowserId = aBrowserId}};
-}
-
-void ContentParent::SetAndroidAppLinkLaunchType(uint64_t aLoadIdentifier,
-                                                int32_t aAppLinkLaunchType) {
-  mAndroidLoadIdentifierToAppLinkLaunchType.InsertOrUpdate(aLoadIdentifier,
-                                                           aAppLinkLaunchType);
-}
-
-int32_t ContentParent::GetAndroidAppLinkLaunchType(uint64_t aLoadIdentifier) {
-  int32_t appLinkLaunchType = -1;
-  (void)mAndroidLoadIdentifierToAppLinkLaunchType.Get(aLoadIdentifier,
-                                                      &appLinkLaunchType);
-  return appLinkLaunchType;
-}
-
-void ContentParent::ClearAndroidAppLinkLaunchType(uint64_t aLoadIdentifier) {
-  mAndroidLoadIdentifierToAppLinkLaunchType.Remove(aLoadIdentifier);
 }
 
 }  

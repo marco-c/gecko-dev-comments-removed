@@ -2,21 +2,151 @@
 
 
 
-
-
 #include "PermissionObserver.h"
 
 #include "PermissionStatusSink.h"
 #include "PermissionUtils.h"
+#include "mozilla/Array.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/Geolocation.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "nsIObserverService.h"
 #include "nsIPermission.h"
+#include "nsIPermissionMonitor.h"
+#include "nsISupportsPrimitives.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
 
 namespace {
 PermissionObserver* gInstance = nullptr;
+
+class SystemPermissionObserver;
+static StaticRefPtr<SystemPermissionObserver> sSystemObserver;
+
+
+
+static PermissionState GetLocationSystemPermissionState() {
+  return Geolocation::GetLocationOSPermission() ==
+                 geolocation::SystemGeolocationPermissionBehavior::NoPrompt
+             ? PermissionState::Granted
+             : PermissionState::Prompt;
+}
+
+
+
+struct CapabilityMapping {
+  PermissionName mPermission;
+  nsLiteralString mCapability;
+  PermissionState (*mGetState)();
+};
+
+static const mozilla::Array<CapabilityMapping, 1> kCapabilityMappings{
+    CapabilityMapping{PermissionName::Geolocation, u"location"_ns,
+                      &GetLocationSystemPermissionState},
+};
+
+static const CapabilityMapping* FindMappingForPermission(PermissionName aName) {
+  for (const auto& m : kCapabilityMappings) {
+    if (m.mPermission == aName) {
+      return &m;
+    }
+  }
+  return nullptr;
+}
+
+static Maybe<std::pair<PermissionName, PermissionState>> GetSystemPermission(
+    const nsAString& aCapability) {
+  for (const auto& m : kCapabilityMappings) {
+    if (aCapability.Equals(m.mCapability)) {
+      return Some(std::make_pair(m.mPermission, m.mGetState()));
+    }
+  }
+  return Nothing();
+}
+
+
+
+
+
+class SystemPermissionObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  void EnsureMonitoring(PermissionName aName);
+
+ private:
+  ~SystemPermissionObserver() = default;
+
+  struct MonitorEntry {
+    PermissionName mPermission;
+    RefPtr<nsIPermissionMonitor> mMonitor;
+  };
+  nsTArray<MonitorEntry> mMonitors;
+};
+
+NS_IMPL_ISUPPORTS(SystemPermissionObserver, nsIObserver)
+
+void SystemPermissionObserver::EnsureMonitoring(PermissionName aName) {
+  const CapabilityMapping* mapping = FindMappingForPermission(aName);
+  if (!mapping) {
+    return;
+  }
+  const bool alreadyMonitoring = std::any_of(
+      mMonitors.begin(), mMonitors.end(),
+      [aName](const MonitorEntry& e) { return e.mPermission == aName; });
+  if (alreadyMonitoring) {
+    return;
+  }
+  RefPtr<nsIPermissionMonitor> monitor =
+      do_CreateInstance("@mozilla.org/permission-monitor;1");
+  if (!monitor) {
+    return;
+  }
+  if (NS_WARN_IF(NS_FAILED(monitor->StartMonitoring(mapping->mCapability)))) {
+    return;
+  }
+  mMonitors.AppendElement(MonitorEntry{aName, std::move(monitor)});
+}
+
+NS_IMETHODIMP SystemPermissionObserver::Observe(nsISupports*,
+                                                const char* aTopic,
+                                                const char16_t* aData) {
+  if (!aData || strcmp(aTopic, "system-permission-changed") != 0) {
+    return NS_OK;
+  }
+  if (const auto update = GetSystemPermission(nsDependentString(aData))) {
+    const auto [name, state] = *update;
+    ContentParent::BroadcastSystemPermissionChanged(name, state);
+    PermissionObserver::NotifySystemPermissionChanged(name, state);
+  }
+  return NS_OK;
+}
+
+void EnsureOSMonitoring(PermissionName aName) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!sSystemObserver) {
+    nsCOMPtr<nsIObserverService> observerService =
+        services::GetObserverService();
+    if (NS_WARN_IF(!observerService)) {
+      return;
+    }
+    RefPtr<SystemPermissionObserver> observer = new SystemPermissionObserver();
+    if (NS_WARN_IF(NS_FAILED(observerService->AddObserver(
+            observer, "system-permission-changed", false)))) {
+      return;
+    }
+    sSystemObserver = observer;
+    ClearOnShutdown(&sSystemObserver);
+  }
+  sSystemObserver->EnsureMonitoring(aName);
+}
+
 }  
 
 NS_IMPL_ISUPPORTS(PermissionObserver, nsIObserver, nsISupportsWeakReference)
@@ -57,6 +187,11 @@ already_AddRefed<PermissionObserver> PermissionObserver::GetInstance() {
       return nullptr;
     }
 
+    rv = obs->AddObserver(instance, "browser-perm-changed", true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+
     gInstance = instance;
   }
 
@@ -79,12 +214,19 @@ void PermissionObserver::RemoveSink(PermissionStatusSink* aSink) {
   mSinks.RemoveElement(aSink);
 }
 
+
+void PermissionObserver::EnsureMonitoringInParent(PermissionName aName) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  EnsureOSMonitoring(aName);
+}
+
 NS_IMETHODIMP
 PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
                             const char16_t* aData) {
   MOZ_ASSERT_DEBUG_OR_FUZZING(NS_IsMainThread());
   MOZ_ASSERT(!strcmp(aTopic, "perm-changed") ||
-             !strcmp(aTopic, "perm-changed-notify-only"));
+             !strcmp(aTopic, "perm-changed-notify-only") ||
+             !strcmp(aTopic, "browser-perm-changed"));
 
   if (mSinks.IsEmpty()) {
     return NS_OK;
@@ -93,8 +235,27 @@ PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
   nsCOMPtr<nsIPermission> perm = nullptr;
   nsCOMPtr<nsPIDOMWindowInner> innerWindow = nullptr;
   nsAutoCString type;
+  bool isBrowserPerm = !strcmp(aTopic, "browser-perm-changed");
 
-  if (!strcmp(aTopic, "perm-changed")) {
+  if (isBrowserPerm && aData && !NS_strcmp(aData, u"cleared")) {
+    
+    
+    uint64_t clearedBrowserId = 0;
+    nsCOMPtr<nsISupportsPRUint64> wrapper = do_QueryInterface(aSubject);
+    if (wrapper) {
+      wrapper->GetData(&clearedBrowserId);
+    }
+
+    for (PermissionStatusSink* sink : mSinks) {
+      if (!clearedBrowserId ||
+          sink->MaybeAffectedByBrowserIdOnMainThread(clearedBrowserId)) {
+        sink->PermissionChangedOnMainThread();
+      }
+    }
+    return NS_OK;
+  }
+
+  if (!strcmp(aTopic, "perm-changed") || isBrowserPerm) {
     perm = do_QueryInterface(aSubject);
     if (!perm) {
       return NS_OK;
@@ -117,8 +278,15 @@ PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
       
       
       
-      if (perm && sink->MaybeUpdatedByOnMainThread(perm)) {
-        sink->PermissionChangedOnMainThread();
+      
+      if (perm) {
+        if (isBrowserPerm) {
+          if (sink->MaybeUpdatedByBrowserPermOnMainThread(perm)) {
+            sink->PermissionChangedOnMainThread();
+          }
+        } else if (sink->MaybeUpdatedByOnMainThread(perm)) {
+          sink->PermissionChangedOnMainThread();
+        }
       }
       
       
@@ -135,6 +303,20 @@ PermissionObserver::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   return NS_OK;
+}
+
+
+void PermissionObserver::NotifySystemPermissionChanged(PermissionName aName,
+                                                       PermissionState aState) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!gInstance) {
+    return;
+  }
+  for (PermissionStatusSink* sink : gInstance->mSinks) {
+    if (sink->Name() == aName) {
+      sink->SystemPermissionChangedOnMainThread(aState);
+    }
+  }
 }
 
 }  

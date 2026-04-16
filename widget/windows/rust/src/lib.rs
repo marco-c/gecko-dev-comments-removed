@@ -2,6 +2,8 @@
 
 
 
+mod permission_monitor;
+
 use nserror::{nsresult, NS_OK};
 use nsstring::{nsAString, nsString};
 use thin_vec::ThinVec;
