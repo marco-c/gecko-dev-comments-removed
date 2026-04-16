@@ -637,10 +637,6 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   return Result(Result::OK, rtp_timestamp);
 }
 
-void RtpVideoSender::OnFrameDropped(uint32_t ,
-                                    int ,
-                                    bool ) {}
-
 void RtpVideoSender::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& bitrate) {
   RTC_DCHECK_RUN_ON(&transport_checker_);
@@ -696,6 +692,11 @@ void RtpVideoSender::OnVideoLayersAllocationUpdated(
     transport_queue_.PostTask(
         SafeTask(safety_.flag(), [this, sending = std::move(sending)] {
           RTC_DCHECK_RUN_ON(&transport_checker_);
+          
+          
+          if (!IsActive()) {
+            return;
+          }
           RTC_CHECK_EQ(sending.size(), rtp_streams_.size());
           for (size_t i = 0; i < sending.size(); ++i) {
             SetModuleIsActive(sending[i], *rtp_streams_[i].rtp_rtcp);
