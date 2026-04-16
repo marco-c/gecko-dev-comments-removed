@@ -150,7 +150,20 @@ class BaseAllocCell {
   BaseAllocCell* LeftCell();
   BaseAllocCell* RightCell();
 
+  
+  
+  uintptr_t RightCellRaw();
+
   void Merge(BaseAllocCell* cell);
+
+  
+  
+  
+  uintptr_t CanSplit(base_alloc_size_t aSizeRequest);
+
+  
+  
+  BaseAllocCell* Split(uintptr_t aNewSize);
 
   
   BaseAllocCell(const BaseAllocCell&) = delete;
