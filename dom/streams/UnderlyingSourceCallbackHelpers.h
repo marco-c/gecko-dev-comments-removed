@@ -223,7 +223,7 @@ class InputStreamHolder final : public nsIInputStreamCallback,
 
 
 
-class InputToReadableStreamAlgorithms
+class InputToReadableStreamAlgorithms final
     : public UnderlyingSourceAlgorithmsWrapper,
       public nsIInputStreamCallback,
       public SupportsWeakPtr {
@@ -245,7 +245,7 @@ class InputToReadableStreamAlgorithms
 
   nsIInputStream* MaybeGetInputStreamIfUnread() override;
 
- protected:
+ private:
   ~InputToReadableStreamAlgorithms();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
