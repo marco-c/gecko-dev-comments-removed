@@ -10,5 +10,5 @@ def main(request, response):
     response.headers.set(b"Pragma", b"no-cache")
 
     
-    import time
-    response.content = f"Timestamp: {time.time()}".encode('utf-8')
+    import uuid
+    response.content = f"Token: {uuid.uuid4()}".encode('utf-8')
