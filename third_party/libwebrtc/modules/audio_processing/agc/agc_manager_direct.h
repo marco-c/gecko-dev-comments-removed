@@ -104,7 +104,7 @@ class AgcManagerDirect final {
 
   
   
-  std::optional<int> GetDigitalComressionGain();
+  std::optional<int> GetDigitalCompressionGain();
 
   
   bool clipping_predictor_enabled() const { return !!clipping_predictor_; }
