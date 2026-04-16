@@ -25,6 +25,7 @@ class JSObject;
 enum class AttrModType : uint8_t;  
 
 namespace mozilla {
+struct CSSPropertyId;
 enum class StyleCssRuleType : uint8_t;
 class DeclarationBlock;
 struct DeclarationBlockMutationClosure;
@@ -77,6 +78,17 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
                                 const nsACString& aValue,
                                 nsIPrincipal* aSubjectPrincipal,
                                 mozilla::ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+  virtual void SetPropertyTypedValue(const mozilla::CSSPropertyId& aPropId,
+                                     const nsACString& aValue,
+                                     mozilla::ErrorResult& aRv);
 
   
   
@@ -168,6 +180,9 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
                                     const nsACString& aPropValue,
                                     bool aIsImportant,
                                     nsIPrincipal* aSubjectPrincipal);
+
+  nsresult SetPropertyTypedValue(const mozilla::CSSPropertyId& aPropId,
+                                 const nsACString& aPropValue);
 
   void RemovePropertyInternal(NonCustomCSSPropertyId aPropId,
                               mozilla::ErrorResult& aRv);
